@@ -146,6 +146,8 @@ The executor proof is intentionally split across three levels:
 - `push_topology` and `push_executor_topology_proof` show the one-remote,
   one-local, one-drift harness in Docker and Playground, including the shared
   `8080` ingress rule.
+- `push_remote_liveness_topology_contract` keeps the liveness split and the
+  one-remote, one-local, one-drift harness aligned in one compact proof.
 
 The canonical test topology is fixed across both harnesses:
 
@@ -189,6 +191,19 @@ For both Docker and Playground, the test topology is intentionally the same:
   apply, journal inspection, and recovery
 - browser-visible inspection stays on the sandbox-provided `8080` ingress
   and never uses a remote tunnel
+
+The push half of the story is intentionally separate from pull execution:
+
+- exporter/importer provenance creates the immutable base package
+- preflight binds that base package to one live remote identity and one
+  short-lived push session
+- remote snapshot hash listing is planning evidence only
+- dry-run uploads the canonical plan as a receipt, not a lock
+- batched apply revalidates fresh live evidence before every batch and at the
+  storage boundary
+- journal inspect is read-only
+- recovery starts with inspect and only mutates when fresh live hashes still
+  prove the branch safe
 
 Use these fixtures as the canonical proof bundle:
 

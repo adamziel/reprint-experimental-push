@@ -257,6 +257,18 @@ test('push contract fixture binds the pull handoff to the production push sequen
     remoteLivenessTopologyContract.push_guards.apply_revalidation,
     'refreshes fresh live evidence before every batch and at the storage boundary',
   );
+  assert.equal(
+    remoteLivenessTopologyContract.topology.docker.proof.includes(
+      'dry-run and apply remain separate remote calls',
+    ),
+    true,
+  );
+  assert.equal(
+    remoteLivenessTopologyContract.topology.playground.proof.includes(
+      'browser-visible inspection stays on the sandbox-provided 8080 ingress through a local-only proxy',
+    ),
+    true,
+  );
   assert.equal(remoteLivenessTopologyContract.topology.networking.ingress_port, 8080);
   assert.equal(remoteLivenessTopologyContract.topology.networking.proxy_policy, 'local-only');
   assert.ok(

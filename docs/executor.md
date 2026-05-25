@@ -30,6 +30,19 @@ That means the executor is not a general remote write loop. It is the
 production write path for one imported base package, one edited local site,
 and one live remote identity that must be revalidated at apply time.
 
+The same pull-to-push bridge applies here:
+
+- exporter/importer provenance produces the immutable pull base package
+- preflight binds that package to one live remote identity and one short-lived
+  push session
+- remote snapshot hash listing stays planning-only
+- dry-run uploads a canonical plan receipt and never becomes a lock
+- batched apply revalidates fresh live evidence before every batch and at the
+  storage boundary
+- journal inspection stays read-only
+- inspect-first recovery is the only safe starting point for mutating
+  recovery
+
 ## Stage Semantics
 
 The executor needs the same boundary discipline as the protocol:
@@ -110,6 +123,15 @@ The practical boundary is unchanged across both environments:
   run plan, apply batches, inspect the journal, or start recovery
 - browser-visible inspection stays on the sandbox-provided `8080` ingress
   through a local-only proxy
+
+This topology is the production proof shape, not an arbitrary test fixture:
+
+- one remote source site seeds the persisted pull base package
+- one local edited site carries the imported user edits
+- one later observation of the same remote identity proves drift handling
+- one runner process is the only actor allowed to preflight, list hashes,
+  upload the dry-run plan, apply batches, inspect the journal, or start
+  recovery
 
 Docker uses one private network. Playground uses separate disposable
 blueprints. Both keep the same route names, the same protocol order, and the
