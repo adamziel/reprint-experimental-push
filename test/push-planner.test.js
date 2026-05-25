@@ -1263,6 +1263,64 @@ test('keeps the old remote state when failure happens after dependency validatio
   assertRecoveryStateArtifacts(error.details.recovery, 'old-remote');
 });
 
+test('keeps the durable replay contract intact when failure happens after dependency validation', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files[pluginMainFile(atomicDependencyPlugin)] = '<?php /* dependency */';
+  local.files[pluginMainFile(atomicDependentPlugin)] = '<?php /* dependent */';
+  local.plugins[atomicDependencyPlugin] = { version: '2.1.0', active: true };
+  local.plugins[atomicDependentPlugin] = { version: '1.0.0', active: true, requires: [atomicDependencyPlugin] };
+  local.pushIntents = [
+    {
+      id: 'install-atomic-fixture-stack',
+      kind: 'plugin-install',
+      requireAtomic: true,
+      resources: [
+        `file:${pluginMainFile(atomicDependencyPlugin)}`,
+        `file:${pluginMainFile(atomicDependentPlugin)}`,
+        `plugin:${atomicDependencyPlugin}`,
+        `plugin:${atomicDependentPlugin}`,
+      ],
+      dependencies: {
+        plugins: [
+          {
+            name: atomicDependencyPlugin,
+            version: '2.1.0',
+            hash: resourceHash(local, pluginResource(atomicDependencyPlugin)),
+          },
+        ],
+      },
+    },
+  ];
+
+  const remote = baseSite();
+  const plan = planFor(base, local, remote);
+  const journalPath = tempRecoveryJournalPath();
+  const durableJournal = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
+  const before = JSON.stringify(remote);
+
+  const error = captureError(() =>
+    applyPlan(remote, plan, {
+      durableJournal,
+      failAfterDependencyValidation: true,
+    }),
+  );
+  durableJournal.close();
+
+  const persisted = readRecoveryJournal(journalPath);
+
+  assert.ok(error instanceof PushPlanError);
+  assert.equal(error.code, 'INJECTED_FAILURE_AFTER_DEPENDENCY_VALIDATION');
+  assertRemoteUnchanged(remote, before);
+  assertRecoveryStateArtifacts(error.details.recovery, 'old-remote');
+  assert.equal(error.details.recovery.artifacts.journal.status, 'dependencies-validated');
+  assert.equal(error.details.recovery.artifacts.remote, undefined);
+  assert.equal(error.details.recovery.artifacts.journal.entries[0].status, 'staged');
+  assert.equal(persisted.records[0].type, 'journal-opened');
+  assert.equal(persisted.records[persisted.records.length - 1].type, 'recovery-state');
+  assert.equal(persisted.records[persisted.records.length - 1].state, 'old-remote');
+});
+
 test('accepts only old remote, fully updated remote, or blocked recovery across the atomic apply boundary', () => {
   const base = baseSite();
   const local = baseSite();
