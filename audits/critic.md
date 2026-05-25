@@ -1623,7 +1623,9 @@ not route shape, package shape, or a plausible `finalMatchesLocal` result.
   activation hooks, or other side effects outside the allowlist, but the
   claim treats the planner's coverage as exhaustive. Missing proof: the
   surface was either discovered and validated or hard-blocked before write,
-  with the rejection reason recorded for audit.
+  with the rejection reason recorded for audit, and late discovery at apply
+  time did not let a stale manual-review artifact or old retry scope widen to
+  that new surface.
 - A push leaves mixed file, DB, or plugin side effects, but the claim reports
   success because one store finished cleanly. Missing proof: the old/new/
   blocked classification is durable, the partial write is fenced or rolled
