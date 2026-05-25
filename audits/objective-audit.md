@@ -130,6 +130,7 @@ The table below is strict by design:
 ## Evidence Notes
 
 - The strongest executable evidence in this checkout is still refusal-oriented or fixture-scoped. It shows that unsafe shortcuts are blocked, but it does not show that the live source boundary is safe.
+- A passing `npm test` run, even at 89 tests, is still blocker evidence only. It confirms the current model and fixture suite are internally consistent, but it does not prove no data loss, reliability, or speed on the live source boundary.
 - `test/recovery-journal.test.js` proves journaling and restart classification on temporary JSONL files and local site objects, which is useful proof of invariants but not proof of production durability.
 - `test/performance-model.test.js` proves the benchmark model refuses unsupported speed claims and keeps gate obligations intact. It does not measure a live push path, define a threshold, or establish a release-speed claim.
 - `package.json` shows the release gap plainly: many opt-in smokes exist, but no required release command exists to combine auth, journal, lease/fencing, graph identity, plugin-driver, topology, crash, and speed proof into one failing-closed gate.
