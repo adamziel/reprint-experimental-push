@@ -4,6 +4,21 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-05-25 - Public Status Audit 09:34:09
+
+<a id="2026-05-25-public-status-audit-093409"></a>
+
+- Aligned the public page's newest-audit links with the latest dated entry so
+  the header, recent-audits list, and release-gate checklist all point to the
+  same public record.
+- Kept the first-screen summary unchanged in substance: the current state is
+  still lab-only, with no production executor/auth proof and the same four
+  pending gates.
+- Evidence trail: [progress.html](../progress.html),
+  [audits/objective-audit.md](../audits/objective-audit.md),
+  [release-gate checklist](../progress.html#proof-gates),
+  [newest audit](../progress.html#recent-public-audits).
+
 ## 2026-05-25 - Public Status Audit 09:32:25
 
 <a id="2026-05-25-public-status-audit-093225"></a>
