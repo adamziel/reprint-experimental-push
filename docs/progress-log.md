@@ -4,16 +4,16 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
-# 2026-05-25 - Public Status Audit 11:35:58
+# 2026-05-25 - Public Status Audit 11:36:57
 
-<a id="2026-05-25-public-status-audit-113558"></a>
+<a id="2026-05-25-public-status-audit-113657"></a>
 
 - Refreshed [progress.html](../progress.html) to the current `date` output
-  (`2026-05-25 11:35:58 CEST`) and kept the public anchor on
+  (`2026-05-25 11:36:57 CEST`) and kept the public anchor on
   `npm run verify:release` from commit `3089aee2`.
 - The first screen now adds newer lane evidence in `5de7ee40` and `981236d8`:
-  a durable-journal executable boundary, `447/447` planner tests, and the
-  release-gated proof path, while `f9fcb123` keeps the blocker explicit as
+  a durable-journal executable boundary plus `447/447` planner tests, while
+  `f9fcb123` keeps the blocker explicit as
   `auth/session lifecycle and durable journal semantics`.
 - Evidence trail: [progress.html](../progress.html),
   [objective audit](../audits/objective-audit.md),
