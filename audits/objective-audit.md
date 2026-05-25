@@ -91,6 +91,7 @@ What the current tests actually prove:
 - `test/recovery-journal.test.js` proves the file-backed journal keeps monotonic records, redacts raw values, and classifies restart-inspectable failure states in the journal model.
 - `test/performance-model.test.js` proves the benchmark model encodes the intended gates, refusal states, and safe-speedup guardrails.
 - `test/guarded-executor-benchmark.test.js` proves unsupported throughput claims are refused when the model reports missing durable evidence.
+- The `npm run test:playground:*` scripts prove several lab-shaped route and storage slices, but they remain optional and do not collapse into one enforced release decision.
 
 What they do not prove:
 
@@ -98,8 +99,10 @@ What they do not prove:
 - They do not prove production auth/session, lease/fencing, or durable journal storage on the real transport path.
 - They do not prove recovery after a real process death or duplicated request against a live source site.
 - They do not prove speed for the live boundary because no required benchmark runs there, and no enforced gate requires that proof.
+- They do not prove that any single green command is sufficient for release, because the evidence is still split across optional commands.
 
 That is why the suite remains a proof of refusal and local safety modeling, not a proof of release readiness.
+The uncomfortable but useful reading is that the suite is more trustworthy as a blocker than as an approver.
 
 ## Evidence Ledger
 
