@@ -164,6 +164,26 @@ The failure scenarios that still need explicit proof are:
   started; the missing proof is a fail-closed pre-write boundary, not a
   post-hoc "partial recovery" story that rebrands a mixed write as success.
 
+Release-gate addendum for the next production claim:
+
+- Any Reprint, ZS-Sync, or ForkPress citation must name the exact upstream
+  commit or worktree state, the exact live write boundary, and the exact drift
+  or retry case rechecked on this branch; otherwise it is historical only.
+- Any manual-resolution claim must show the preserved remote, the rejection
+  point before mutation, and that the old artifact cannot authorize a retry
+  against a different row, file, relationship-bearing record, or plugin-owned
+  surface.
+- Any create-time identity claim must show either a durable remap proof or a
+  hard block before write on the live remote; a fixture mount, route shape, or
+  `finalMatchesLocal` result is not enough.
+- Any plugin-owned data claim must enumerate or block the full owned surface at
+  apply time, including late-discovered options, custom tables, generated
+  files, cron rows, caches, runtime registries, serialized blobs, activation
+  hooks, and external side effects.
+- Any partial-write claim must classify each touched store as old, new, or
+  blocked and must show that retry rebuilt scope from fresh live evidence
+  instead of inheriting the partial result as authority.
+
 Source-note comparison boundary:
 
 - Reprint at `27c5f25` proves a staged transport rhythm and resumable
