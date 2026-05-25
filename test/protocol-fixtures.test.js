@@ -306,7 +306,7 @@ test('push protocol fixture readme keeps the production ladder and topology brid
   );
   assert.equal(
     packageJson.scripts['test:playground:production-shaped-proof'],
-    'node --test test/protocol-fixtures.test.js && node ./scripts/playground/production-shaped-missing-secret-smoke.mjs',
+    'node ./scripts/playground/production-shaped-proof.mjs',
   );
   assert.ok(
     executorDocs.replace(/\s+/g, ' ').includes(
