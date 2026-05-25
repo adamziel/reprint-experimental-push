@@ -4567,6 +4567,10 @@ true on this branch:
 - any stale manual-review artifact stays audit-only after drift and cannot
   become retry authority for a different row, file, relationship-bearing
   record, remapped create target, or plugin-owned surface;
+- any "manual resolution succeeded" or "comparison passed" wording stays
+  audit-only unless the preserved remote, stale rejection point, and fresh
+  live-hash retry scope are all recorded on this branch for the same live
+  boundary;
 - any route-shaped smoke, packaged-plugin mount, fixture replay, readable
   review artifact, or `finalMatchesLocal` result is treated as compatibility
   evidence only; and
