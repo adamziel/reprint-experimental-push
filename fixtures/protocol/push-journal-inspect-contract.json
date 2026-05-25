@@ -1,0 +1,58 @@
+{
+  "contract_id": "push-journal-inspect-contract-one-remote-one-local",
+  "purpose": "proves that journal inspect is read-only evidence for claim, lease, and fencing state and never authorizes mutation by itself",
+  "auth": {
+    "export_hmac_family": "hmac-sha256",
+    "push_hmac_family": "hmac-sha256",
+    "inspect_requires": [
+      "HMAC-authenticated request",
+      "read-only recovery mode"
+    ]
+  },
+  "journal_row": {
+    "journal_cursor": "journal:dry_01j00000000000000000000000:1",
+    "claim_owner": "worker-17",
+    "claim_generation": 4,
+    "lease_expires_at": "2026-05-24T00:00:09Z",
+    "before_hash": "sha256:base-index",
+    "after_hash": "sha256:remote-index",
+    "storage_guard": "filesystem-compare-rename"
+  },
+  "live_evidence": {
+    "remote_site_id": "remote-example",
+    "snapshot_id": "snap_01j00000000000000000000001",
+    "remote_hash_listing": [
+      {
+        "resource_key": "file:index.php",
+        "hash": "sha256:base-index"
+      },
+      {
+        "resource_key": "row:[\"wp_posts\",\"ID:1\"]",
+        "hash": "sha256:base-post-1"
+      }
+    ]
+  },
+  "inspection": {
+    "mode": "inspect",
+    "mutates": false,
+    "decision_inputs": [
+      "journal row claim generation",
+      "lease expiry",
+      "fresh live hashes",
+      "storage guard"
+    ],
+    "possible_results": [
+      "finish",
+      "rollback",
+      "retry",
+      "block"
+    ]
+  },
+  "required_invariants": [
+    "journal inspect is read-only and never authorizes mutation by itself",
+    "journal inspect may read the claim row, lease fence, and stored before/after hashes",
+    "fresh live hashes must still be checked before any mutating recovery mode",
+    "authentication must be at least as strict as current Reprint HMAC usage",
+    "journal inspect is a separate boundary from recovery mutate"
+  ]
+}

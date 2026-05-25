@@ -30,22 +30,23 @@ The normal sequence is:
 22. `push-auth-session-fencing-contract.json`
 23. `push-auth-session-recovery-contract.json`
 24. `push-auth-session-journal-recovery-contract.json`
-25. `push-pull-mapping.json`
-26. `push-contract.json`
-27. `push-topology-matrix.json`
-28. `push-production-ladder-contract.json`
-29. `push-executor-topology-proof.json`
-30. `push-recovery-path.json`
-31. `push-recovery-inspect-contract.json`
-32. `push-recovery-revalidation-contract.json`
-33. `push-snapshot-hashes-page-contract.json`
-34. `push-dry-run-apply-revalidation-contract.json`
-35. `push-remote-liveness-contract.json`
-36. `push-deployment-topology-contract.json`
-37. `push-protocol-extension-contract.json`
-38. `push-pull-to-topology-contract.json`
-39. `push-preflight-contract.json`
-40. `push-remote-liveness-topology-contract.json`
+25. `push-journal-inspect-contract.json`
+26. `push-pull-mapping.json`
+27. `push-contract.json`
+28. `push-topology-matrix.json`
+29. `push-production-ladder-contract.json`
+30. `push-executor-topology-proof.json`
+31. `push-recovery-path.json`
+32. `push-recovery-inspect-contract.json`
+33. `push-recovery-revalidation-contract.json`
+34. `push-snapshot-hashes-page-contract.json`
+35. `push-dry-run-apply-revalidation-contract.json`
+36. `push-remote-liveness-contract.json`
+37. `push-deployment-topology-contract.json`
+38. `push-protocol-extension-contract.json`
+39. `push-pull-to-topology-contract.json`
+40. `push-preflight-contract.json`
+41. `push-remote-liveness-topology-contract.json`
 
 The production proof bundle is intentionally layered:
 
@@ -74,6 +75,8 @@ The production proof bundle is intentionally layered:
 - `push-auth-session-journal-recovery-contract.json` is the compact proof that
   binds auth, session minting, journal rows, lease fencing, and inspect-first
   recovery into one production-shaped contract.
+- `push-journal-inspect-contract.json` is the compact proof that journal
+  inspection is read-only evidence and never becomes write authority.
 - `push-auth-session-recovery-contract.json` keeps the stronger auth floor and
   the recovery fence together when a test wants to prove the claim is still
   fenced at recovery time.

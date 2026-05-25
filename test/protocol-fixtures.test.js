@@ -55,6 +55,7 @@ test('push contract fixture binds the pull handoff to the production push sequen
   const authSessionJournalRecoveryContract = readJson(
     'fixtures/protocol/push-auth-session-journal-recovery-contract.json',
   );
+  const journalInspectContract = readJson('fixtures/protocol/push-journal-inspect-contract.json');
   const remoteLivenessTopologyContract = readJson(
     'fixtures/protocol/push-remote-liveness-topology-contract.json',
   );
@@ -454,6 +455,17 @@ test('push contract fixture binds the pull handoff to the production push sequen
   assert.ok(
     authSessionJournalRecoveryContract.recovery_inspect.blocked_when.includes(
       'the claim lease has expired and the worker is fenced',
+    ),
+  );
+  assert.equal(journalInspectContract.contract_id, 'push-journal-inspect-contract-one-remote-one-local');
+  assert.equal(journalInspectContract.journal_row.claim_generation, 4);
+  assert.equal(journalInspectContract.journal_row.storage_guard, 'filesystem-compare-rename');
+  assert.equal(journalInspectContract.inspection.mode, 'inspect');
+  assert.equal(journalInspectContract.inspection.mutates, false);
+  assert.deepEqual(journalInspectContract.inspection.possible_results, ['finish', 'rollback', 'retry', 'block']);
+  assert.ok(
+    journalInspectContract.required_invariants.includes(
+      'journal inspect is a separate boundary from recovery mutate',
     ),
   );
   assert.equal(protocolExtensionContract.topology.networking.ingress_port, 8080);

@@ -80,6 +80,9 @@ The executor proof is intentionally split across three levels:
   preflight through inspect-first recovery.
 - `push_pull_to_topology_contract` shows how exporter/importer provenance
   becomes push planning input without rewriting the persisted base package.
+- `push_journal_inspect_contract` isolates the read-only journal boundary from
+  mutating recovery and keeps the claim, lease, and live-hash evidence
+  separate.
 - `push_topology` and `push_executor_topology_proof` show the one-remote,
   one-local, one-drift harness in Docker and Playground, including the shared
   `8080` ingress rule.
@@ -122,6 +125,8 @@ Use these fixtures as the canonical proof bundle:
   proof.
 - `push-pull-to-topology-contract.json` is the smallest composite proof that
   links pull provenance, push stages, auth floor, and topology.
+- `push-journal-inspect-contract.json` is the compact proof that journal
+  inspection remains read-only evidence and never grants write authority.
 - `push-auth-session-journal-recovery-contract.json` is the compact proof that
   ties auth, session minting, journal rows, lease fencing, and inspect-first
   recovery together.

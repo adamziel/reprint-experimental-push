@@ -88,6 +88,7 @@ The canonical proof stack for that executor story is the same one named in
 
 - `push-protocol-extension-contract.json` for the full production ladder
 - `push-pull-to-topology-contract.json` for the pull-to-push bridge
+- `push-journal-inspect-contract.json` for the read-only journal boundary
 - `push-auth-session-journal-recovery-contract.json` for the compact auth,
   session, journal-row, lease-fence, and inspect-first recovery proof
 - `push-executor-topology-proof.json` for the shortest Docker/Playground
