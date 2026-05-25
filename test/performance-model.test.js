@@ -3074,6 +3074,19 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
     rejectedById.get('compressed-remote-index-and-parallel-row-batches-skips-plugin-update-commit').violates.includes('atomic-groups'),
   );
   assert.equal(
+    rejectedById.get('compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-commit-after-pause').rejectedGate,
+    'recovery',
+  );
+  assert.ok(
+    rejectedById.get('compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-commit-after-pause').violates.includes('backpressure'),
+  );
+  assert.ok(
+    rejectedById.get('compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-commit-after-pause').violates.includes('atomic-groups'),
+  );
+  assert.ok(
+    rejectedById.get('compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-commit-after-pause').violates.includes('durable-progress'),
+  );
+  assert.equal(
     rejectedById.get('compressed-remote-index-and-cached-chunk-receipts-skips-large-upload-windowing').rejectedGate,
     'recovery',
   );
