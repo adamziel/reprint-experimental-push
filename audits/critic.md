@@ -19,8 +19,8 @@ The critique target is therefore narrow: this worktree still lacks a rerunnable
 live boundary on a real local, Playground, or Docker
 `REPRINT_PUSH_SOURCE_URL` that preserves the rejected remote, revalidates at
 apply time, and proves production WordPress auth/session lifecycle, durable
-journal semantics, graph identity, plugin-driver coverage, and leases/fencing
-on the same mutation.
+journal semantics outside the lab harness, graph identity, plugin-driver
+coverage, and leases/fencing on the same mutation.
 
 ## Single strongest blocker
 
@@ -77,7 +77,8 @@ the following on the same live boundary:
   the first write;
 - dry-run receipt plus apply-time revalidation on the same live mutation;
 - journal/recovery inspection that proves retry scope from fresh live hashes
-  and lease/fencing behavior under retry;
+  and lease/fencing behavior under retry on production WordPress state, not
+  just retained-source lab state;
 - explicit old/new/blocked classification for touched rows, files,
   relationship-bearing records, and plugin-owned surfaces; and
 - plugin-driver coverage for late-discovered plugin-owned data traps outside
