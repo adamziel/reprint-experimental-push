@@ -4,14 +4,14 @@
 
 Verdict: the design still cannot claim production-grade push support.
 
-Primary blocker: the repo only exposes lab and playground entry points
+Primary blocker: `package.json` exposes only lab and playground entry points
 (`plan`, `apply`, and `test:playground:*`); it does not expose a single
-executable real-site preflight/release command that proves the live boundary
-on an actual remote and preserves the rejected remote, rejection point, and
-fresh retry scope in one auditable flow. Until that exists, and until the
-branch can name the command that performs it, any doc, PR, or review wording
-is still lab-backed or comparison-only, no matter how production-shaped the
-route or reviewer language looks.
+named real-site preflight/release command that can be rerun against an actual
+remote and prove the live boundary while preserving the rejected remote,
+rejection point, and fresh retry scope in one auditable flow. Until that
+command exists and is named here, any doc, PR, or review wording is still
+lab-backed or comparison-only, no matter how production-shaped the route or
+reviewer language looks.
 
 Command-surface audit:
 
@@ -21,9 +21,10 @@ Command-surface audit:
 - `test:playground:*` entries are useful lab checks, but they only prove
   fixture or Playground behavior unless one of them is explicitly the real-
   site release command and reruns the live boundary on an actual remote.
-- The missing evidence is not another reviewer phrase or comparison note; it
-  is the branch-local executable that can be rerun against a real remote and
-  yields preserved-remote proof for the rejected boundary.
+- The missing evidence is not another reviewer phrase, route-smoke polish, or
+  source-note comparison; it is the branch-local executable that can be rerun
+  against a real remote and yields preserved-remote proof for the rejected
+  boundary.
 
 This is the critical production gate because the current scripts can still
 prove only fixture or lab behavior. They do not prove that a live remote was
