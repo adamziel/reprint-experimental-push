@@ -208,11 +208,38 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
   assert.ok(rejectedById.get('compressed-remote-index-and-cached-file-hash-skips-plugin-update').violates.includes('compression'));
   assert.ok(rejectedById.get('compressed-remote-index-and-cached-file-hash-skips-plugin-update').violates.includes('plugin-preconditions'));
   assert.ok(rejectedById.get('compressed-remote-index-and-cached-file-hash-skips-plugin-update').violates.includes('atomic-groups'));
+  assert.ok(rejectedById.get('compressed-remote-index-and-cached-chunk-receipts-skips-plugin-update').violates.includes('remote-index-planning-only'));
+  assert.ok(rejectedById.get('compressed-remote-index-and-cached-chunk-receipts-skips-plugin-update').violates.includes('compression'));
+  assert.ok(rejectedById.get('compressed-remote-index-and-cached-chunk-receipts-skips-plugin-update').violates.includes('chunk-receipts'));
+  assert.ok(rejectedById.get('compressed-remote-index-and-cached-chunk-receipts-skips-plugin-update').violates.includes('plugin-preconditions'));
+  assert.ok(rejectedById.get('compressed-remote-index-and-cached-chunk-receipts-skips-plugin-update').violates.includes('atomic-groups'));
   assert.ok(rejectedById.get('compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-install').violates.includes('compression'));
   assert.ok(rejectedById.get('compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-install').violates.includes('row-preconditions'));
   assert.ok(rejectedById.get('compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-install').violates.includes('plugin-preconditions'));
   assert.ok(rejectedById.get('compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-install').violates.includes('atomic-groups'));
   assert.ok(model.rejectedFastPaths.every((fastPath) => fastPath.rejectedBecause));
+});
+
+test('safe fast paths retain all gate proofs and stay non-rejectable', () => {
+  const model = buildBenchmarkModel();
+
+  assert.ok(model.safeFastPaths.length > 0);
+  assert.ok(model.safeFastPaths.every((fastPath) => fastPath.bypassesLivePreconditions === false));
+  assert.ok(model.safeFastPaths.every((fastPath) => fastPath.splitsAtomicGroup === false));
+  assert.ok(model.safeFastPaths.every((fastPath) => fastPath.publishesStagedDataEarly === false));
+  assert.ok(
+    model.safeFastPaths.every((fastPath) =>
+      fastPath.gateProofs.skip &&
+      fastPath.gateProofs.live &&
+      fastPath.gateProofs.group &&
+      fastPath.gateProofs.recovery
+    ),
+  );
+  assert.ok(
+    model.safeFastPaths.every((fastPath) =>
+      typeof fastPath.visibilityBoundary === 'string' && fastPath.visibilityBoundary.length > 0
+    ),
+  );
 });
 
 test('failure injection boundaries include every durable transition in the benchmark shape', () => {
