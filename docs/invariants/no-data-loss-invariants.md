@@ -98,6 +98,9 @@ This note captures the planner boundary in plain language.
 - A live-preconditioned file delete and file type swap may coexist with a
   matching independent edit, but the remote-only plugin changes must still
   remain untouched and observable as `keep-remote`.
+- A live-preconditioned file delete and file type swap may coexist with a
+  matching independent edit while remote-only plugin drift remains
+  `keep-remote`, and each mutation keeps a live remote precondition.
 - A live-preconditioned file delete may coexist with a matching independent
   file type swap and matching independent row delete, but the remote-only
   plugin drift must still remain untouched and observable as `keep-remote`.
