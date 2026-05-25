@@ -120,6 +120,27 @@ identity remap, or classifies late-discovered plugin-owned surfaces before
 retry. If the branch cannot show those live-boundary proofs here, the source
 note remains design context only.
 
+Must change before the project can claim production-grade push support:
+
+- the branch must show the same live boundary rerun on this worktree against
+  the exact drift case, with a preserved remote that stays inspectable after
+  reject and a fresh retry scope rebuilt from live hashes;
+- any manual-resolution wording must stay audit-only unless the exact rejected
+  boundary, preserved remote, and fresh retry artifact are all present for
+  that same boundary; a readable note alone is not retry authority;
+- create-time identity remap, aliasing, or renumbering must be either proven
+  safe with live identity evidence or hard-blocked before write;
+- every touched surface must be classified old, new, or blocked before retry
+  starts, including mixed file, DB, and plugin side effects;
+- every plugin-owned surface outside the allowlist must be enumerated live or
+  blocked at apply time, including hidden tables, cron rows, runtime
+  registries, generated assets, caches, serialized blobs, and any surface
+  discovered only after the first write; and
+- each Reprint, ZS-Sync, and ForkPress comparison must say what the note
+  proves here, what it does not prove here, whether this branch reran the same
+  live boundary, and whether any later-discovered plugin-owned surface is in
+  scope or explicitly excluded.
+
 Important boundary: a lab-shaped route family, packaged mount, fixture replay,
 or `finalMatchesLocal` result can still be compatible without proving the
 live executor, preserved remote, or fresh retry scope. Route shape alone is
