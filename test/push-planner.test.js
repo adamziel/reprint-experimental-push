@@ -179,6 +179,25 @@ test('executor rejects forged ready plans with mismatched live remote preconditi
   assert.equal(JSON.stringify(remote), before);
 });
 
+test('executor rejects forged ready delete plans missing live remote preconditions', () => {
+  const base = baseSite();
+  const local = baseSite();
+  delete local.files['index.php'];
+
+  const ready = planFor(base, local, baseSite());
+  const deleteMutationId = mutationFor(ready, 'file:index.php').id;
+  const forged = tamperReadyPlan(ready, (plan) => {
+    plan.preconditions = plan.preconditions.filter((entry) => entry.mutationId !== deleteMutationId);
+  });
+  const remote = baseSite();
+  const before = JSON.stringify(remote);
+  const error = captureError(() => applyPlan(remote, forged));
+
+  assert.ok(error instanceof PushPlanError);
+  assert.equal(error.code, 'PRECONDITION_FAILED');
+  assert.equal(JSON.stringify(remote), before);
+});
+
 test('keeps remote-only changes and does not overwrite them', () => {
   const base = baseSite();
   const remote = baseSite();
