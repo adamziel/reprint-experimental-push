@@ -156,6 +156,32 @@ Release-grade checklist:
   revision or worktree state that was reverified; otherwise it is historical
   context only.
 
+Release-go/no-go scenarios:
+
+- If a live remote changes after dry-run and before apply, the stale approval
+  must be rejected before the first mutation and the preserved remote must
+  stay inspectable for audit. If the write already happened, the proof is a
+  failure, not a recovery.
+- If create-time identity remaps, aliases, or renumbering are possible, the
+  design must show either a safe remap at the live boundary or a hard block
+  before mutation. A fixture that keeps the same ID is not proof that the live
+  remote cannot reassign identity.
+- If plugin-owned state exists outside the explicit allowlist, apply-time
+  revalidation must either enumerate it or block it. A matching option row,
+  generated file, or custom-table sample does not prove the rest of the
+  plugin-owned graph is safe.
+- If one store commits and another does not, the failure must be classified
+  durably as partial side effects with fresh retry scope. Manual resolution
+  only counts when the remote is preserved, the stale artifact is rejected as
+  authority, and the retry starts from new live evidence.
+- If a stale manual-review artifact remains readable after drift, that
+  readability is audit evidence only. It is not retry authority unless the
+  proof shows the artifact cannot widen to a different row, file,
+  relationship-bearing record, or plugin-owned surface.
+- If a comparison note cites Reprint, ZS-Sync, or ForkPress, it must name the
+  exact upstream revision or worktree state and the exact live write boundary
+  that was reverified. Otherwise it is historical context, not current proof.
+
 Comparison rule: a source note can support design context, but it cannot
 support current production wording unless the branch rechecked the same
 upstream state at the same live write boundary. If that recheck did not

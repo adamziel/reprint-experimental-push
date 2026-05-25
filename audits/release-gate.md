@@ -139,6 +139,27 @@ or comparison-only.
   the create-time remap decision, the plugin-owned allowlist decision, or the
   partial side-effect classification for the exercised write path.
 
+Release go/no-go scenarios:
+
+- Live drift after dry-run is a hard failure unless the stale approval is
+  rejected before mutation, the remote remains preserved for audit, and the
+  retry scope is rebuilt from fresh live evidence.
+- Create-time identity remapping is a hard failure unless the live boundary
+  proves a safe remap or a hard block before mutation. A fixture that keeps
+  the same ID does not prove the live remote cannot renumber or reassign.
+- Unknown plugin-owned state is a hard failure unless apply-time revalidation
+  either enumerates the surface or blocks it. Matching a fixture row, option,
+  or generated file does not prove the rest of the plugin-owned graph is safe.
+- Partial file, DB, or plugin side effects are a hard failure unless the
+  failure is durably classified and the next retry starts from fresh live
+  evidence rather than inherited approval.
+- A readable stale manual-review artifact is audit evidence only after drift.
+  It is not retry authority unless the proof shows it cannot widen to another
+  row, file, relationship-bearing record, or plugin-owned surface.
+- Reprint, ZS-Sync, or ForkPress comparisons are historical context only
+  unless the exact upstream revision or worktree state and the exact live
+  write boundary were reverified.
+
 If any item is missing, the wording must stay explicitly lab-backed or
 comparison-only.
 
