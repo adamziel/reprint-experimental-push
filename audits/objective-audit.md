@@ -20,7 +20,7 @@ The release gate therefore remains closed until there is executable proof for al
 
 The key point is that these are not separate lab facts. They need one mandatory, checked command that reaches the retained source, revalidates before apply, performs or refuses the live mutation, and emits a machine-checkable release verdict. Without that, helper success still cannot be promoted to release proof.
 
-If any of those remain only lab-backed, fixture-backed, or docs-backed, the release claim is still blocked. The current repo state still leaves the gate closed because the required live-boundary proof does not exist here yet. The next concrete acceptance test is a single checked command that reaches the retained source, revalidates immediately before apply, and emits a machine-checkable failure if production auth/session lifecycle or durable journal semantics are still only lab-backed.
+If any of those remain only lab-backed, fixture-backed, or docs-backed, the release claim is still blocked. The current repo state still leaves the gate closed because the required live-boundary proof does not exist here yet. Even if the upstream verifier now reports live preflight, dry-run, apply, recovery, and journal readback outputs, the remaining decisive gap is still the production auth/session lifecycle and durable journal semantics at the real release boundary. The next concrete acceptance test is a single checked command that reaches the retained source, revalidates immediately before apply, and emits a machine-checkable failure if those production-only claims are still only lab-backed.
 
 ## Explicit Requirements
 
@@ -79,7 +79,7 @@ Direct command-surface recheck on 2026-05-25:
 
 - [`package.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/package.json) still exposes `test`, `plan`, `apply`, `test:recovery:file-journal`, and optional `test:playground:*` helpers.
 - This checkout exposes helper and Playground scripts, but it does not carry the upstream `verify:release` command surface in-tree. That is an enforcement gap in this lane, not the root release blocker.
-- The upstream release verifier now exists in the reliable-executor branch, and its contract explicitly names the remaining first production boundary as auth/session lifecycle plus durable journal semantics.
+- The upstream release verifier now exists in the reliable-executor branch, and its checked outputs move the discussion from command absence to the remaining production boundary: auth/session lifecycle plus durable journal semantics, with graph identity, plugin-driver behavior, leases/fencing, preserved-remote drift, and topology still needing release-boundary proof.
 - There is no checked-in `.github` tree or workflow entrypoint in this checkout.
 - The strongest current scripts remain support evidence, not a release gate, because none of them own the live-source verdict in the same invocation. The current regression suite is green at `89/89`, but it remains regression-only evidence rather than a live-boundary release verdict.
 
