@@ -159,6 +159,19 @@ That identity mapping is fixed:
 This is enough to prove one remote identity observed twice, one imported local
 edit site, and one shared ingress rule without inventing extra topology.
 
+The production proof maps to the same one-remote, one-local shape in both
+harnesses:
+
+- `remote-base` seeds the persisted pull base package from `remote-example`
+- `local-edited` is the imported local site that produces the candidate plan
+- `remote-changed` is the same remote identity observed later after drift
+- `runner` owns preflight, remote snapshot hash listing, dry-run upload,
+  batched apply, journal inspect, and recovery
+- dry-run and apply stay separate remote operations, and apply revalidates
+  fresh live evidence before every batch and at the storage boundary
+- journal inspect is read-only, and recovery begins with inspect before any
+  mutating repair
+
 ## Auth And Recovery
 
 Authentication must be at least as strict as current Reprint HMAC usage.

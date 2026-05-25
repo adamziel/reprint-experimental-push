@@ -32,6 +32,11 @@
     "push_recover auto|finish|rollback": "mutates only when the journal plus fresh live hashes prove the action"
   },
   "push_guards": {
+    "snapshot_hash_listing": "returns live remote comparison evidence for planning only and never upgrades into write authority",
+    "dry_run_receipt": "proves eligibility only and cannot be reused as a liveness lock",
+    "apply_revalidation": "refreshes live evidence before every batch and again at the storage boundary",
+    "journal_inspect": "reads durable claim and fencing evidence without mutating target resources",
+    "recovery_inspect": "must happen before any mutating recovery mode and may block when finish or rollback cannot be proven safe",
     "remote_liveness": "dry-run and apply are separate remote operations",
     "dry_run": "eligibility evidence only and never a lock",
     "apply": "must revalidate the live remote before every batch and at the storage boundary",
