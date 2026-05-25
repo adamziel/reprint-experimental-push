@@ -29,6 +29,21 @@ or Docker `REPRINT_PUSH_SOURCE_URL` that preserves the rejected remote and
 shows apply-time revalidation plus journal/recovery inspection on the same
 mutation.
 
+The hidden-loss scenarios still missing proof on this branch are concrete:
+
+- a remote drifts after dry-run but before apply, and the retry path silently
+  reuses stale authority instead of preserving the rejected remote and
+  rebuilding the scope from fresh live hashes;
+- a create-time identity remap lands on a different row, file, or relation
+  than the preflight graph expected, and the audit does not prove the remap
+  was classified at apply time rather than accepted by route shape;
+- a plugin-owned data trap appears outside the allowlist after the first
+  write, and the system folds it into the earlier approval instead of giving
+  it a separate preserve / reject / retry cycle; and
+- partial file, DB, and plugin side effects are reported as success without a
+  preserved-remote receipt that lets a reviewer audit and retry the exact
+  rejected boundary.
+
 Before this project can claim production-grade push support, it must show:
 
 - one named real-site release command that can be rerun unchanged on the same
@@ -44,6 +59,20 @@ Before this project can claim production-grade push support, it must show:
   allowlist; and
 - old/new/blocked classification for every touched row, file,
   relationship-bearing record, and plugin-owned surface before retry starts.
+
+That bar is not satisfied by source-note similarity alone:
+
+- Reprint only proves staged transport, resumability vocabulary, and
+  chunked-delivery framing in the observed upstream commit; it does not prove
+  preserved-remote safety, stale-drift rejection, or create-time remap safety
+  on this branch.
+- ZS-Sync only proves bounded discovery, resource selection, and cursoring in
+  the observed upstream commit; it does not prove source mutation safety,
+  plugin-owned surface enumeration, or retry authority here.
+- ForkPress only proves merge-review vocabulary and crash-consistency intent
+  in the observed upstream commit; it does not prove that a readable review
+  artifact can authorize a later row, file, remapped create target, or
+  plugin-owned surface on this branch.
 
 That retained-source result is real progress, but it still only proves the
 lab harness for the supervised lane. It does not yet prove this branch can
