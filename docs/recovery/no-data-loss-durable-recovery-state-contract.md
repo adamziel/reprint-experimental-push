@@ -8,6 +8,13 @@ This lane treats atomic apply as safe only when every interrupted run lands in o
 
 Anything else is a release blocker.
 
+The durable journal boundary should prove these transitions at the executable apply path:
+
+- failure before mutation
+- failure after staging
+- failure after dependency validation
+- replay of a completed plan from a durable journal
+
 ## Required failure shape
 
 A failure during apply must not leave the remote partially mutated without a recovery artifact.
@@ -24,6 +31,7 @@ The acceptable aftermath is:
 - Retrying must not duplicate inserts.
 - Retrying must not resurrect stale local data that is already superseded by the remote state.
 - A partial write without recovery artifacts is not safe to retry.
+- A completed-plan replay must stay inert and must not duplicate inserts or revive stale local data.
 
 ## Boundary evidence
 
