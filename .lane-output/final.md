@@ -1,42 +1,39 @@
-`6beb5ed7c74509094d831bc4247541c4b684feae` stays `0/4`.
+`8a85d1da2b89b98a014fd24a1556940be2a5151e` stays `0/4`.
 
-Audit time: 2026-05-26 14:24:58 CEST (+0200)
+Audit time: 2026-05-26 14:45:06 CEST (+0200)
 
 Current verdict:
-- `6beb5ed7` is a small verifier cleanup, but it does not move a production gate.
-- It only cleans up the release journal temp directory inside `scripts/playground/production-shaped-release-verify.mjs`.
-- It does not prove production-backed auth/session lifecycle or production durable-journal semantics on the live `verify:release` boundary.
-
-Evidence check:
-- `rg -n "ce7560be|77da166e|replay-equivalence|auth-session source|authSessionSource" progress.html docs/progress-log.md` returned no matches.
-- Public progress files in this worktree are clean.
+- `8a85d1da` only shares the auth-session source-command helper between the release verifier and package smoke.
+- It removes duplication in source-command plumbing, but it does not prove production-backed auth/session lifecycle.
+- It does not establish production durable-journal ownership or restart-readable production storage semantics on the live `verify:release` boundary.
 
 Changed files:
-- [`audits/current-head-6beb5ed7.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/independent-auditor/audits/current-head-6beb5ed7.md)
+- [`audits/current-head-8a85d1da.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/independent-auditor/audits/current-head-8a85d1da.md)
 - [`audits/objective-audit.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/independent-auditor/audits/objective-audit.md)
 - [`.lane-output/final.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/independent-auditor/.lane-output/final.md)
 
 Commands run:
-- `git ls-remote origin refs/heads/lane/reliable-executor`
+- `pwd && git status --short --branch`
 - `sed -n '1,220p' AGENTS.md`
 - `sed -n '1,220p' supervision/README.md`
-- `sed -n '1,220p' supervision/lanes/independent-auditor.md`
-- `sed -n '1,220p' .lane-output/final.md`
-- `sed -n '1,240p' audits/objective-audit.md`
-- `sed -n '1,220p' audits/current-head-10903372.md`
-- `sed -n '1,220p' audits/current-head-9d0279a3.md`
-- `sed -n '1,220p' audits/current-head-ce3a12fe.md`
+- `find supervision/lanes -maxdepth 1 -type f | sort | xargs -r ls -lt`
+- `cat supervision/lanes/independent-auditor.md`
+- `find .lane-output -maxdepth 1 -name 'final*.md' -type f | sort | xargs -r ls -lt`
 - `git ls-remote origin refs/heads/lane/reliable-executor`
-- `rg -n "ce7560bef4cce2ef5b9f8ae629de0bc54d116ca5|ce7560be|Surface auth session source evidence" audits .lane-output -g '!**/*.png'`
+- `sed -n '1,240p' .lane-output/final.md`
+- `sed -n '1,240p' audits/objective-audit.md`
+- `sed -n '1,240p' .lane-output/final-loop-20260526-144206.md`
+- `git show --stat --oneline 8a85d1da2b89b98a014fd24a1556940be2a5151e`
+- `git show 8a85d1da2b89b98a014fd24a1556940be2a5151e -- scripts/playground/production-shaped-release-verify.mjs test/production-shaped-proof.test.js`
 - `find audits -maxdepth 1 -type f | sort | sed -n '1,120p'`
-- `nl -ba audits/objective-audit.md | sed -n '1,220p'`
-- `sed -n '1,120p' audits/current-head-77da166e.md`
+- `sed -n '1,220p' audits/current-head-8a85d1da.md`
+- `date '+%Y-%m-%d %H:%M:%S %Z (%z)'`
 
 Push result:
 - Not pushed
 
 Worktree status:
-- Dirty: [`audits/current-head-6beb5ed7.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/independent-auditor/audits/current-head-6beb5ed7.md), [`audits/objective-audit.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/independent-auditor/audits/objective-audit.md), [`.lane-output/final.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/independent-auditor/.lane-output/final.md)
+- Dirty: [`audits/current-head-8a85d1da.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/independent-auditor/audits/current-head-8a85d1da.md), [`audits/objective-audit.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/independent-auditor/audits/objective-audit.md), [`.lane-output/final.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/independent-auditor/.lane-output/final.md)
 
 Next supervisor nudge:
-- Keep the gate verdict at `0/4`; the live reliable head is now `6beb5ed7`, and the next gate owner is still `reliable-executor`.
+- Keep the gate verdict at `0/4`; the live reliable head is `8a85d1da`, and the next gate owner is still `reliable-executor`.
