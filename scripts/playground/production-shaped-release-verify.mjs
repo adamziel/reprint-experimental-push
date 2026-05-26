@@ -65,18 +65,29 @@ if (authSessionSource?.ok) {
 
 if (
   requireProductionAuthSession &&
-  liveSourceUrl &&
+  !authSessionSourceCommand &&
   credentials.username &&
   credentials.password
 ) {
   const packagedAuthSessionSource = resolvePackagedProductionPluginAuthSessionSource({
-    sourceUrl: liveSourceUrl,
+    sourceUrl: liveSourceUrl || 'http://127.0.0.1:8080',
     username: credentials.username,
     applicationPassword: credentials.password,
     authSessionSourceCommand,
   });
-  authSessionSourceCommand = packagedAuthSessionSource.command;
-  authSessionSource = packagedAuthSessionSource.source;
+  if (packagedAuthSessionSource.source.ok) {
+    authSessionSourceCommand = packagedAuthSessionSource.command;
+    authSessionSource = packagedAuthSessionSource.source;
+    if (!liveSourceUrl) {
+      liveSourceUrl = packagedAuthSessionSource.source.sourceUrl || liveSourceUrl;
+    }
+    if (!username) {
+      username = packagedAuthSessionSource.source.username || username;
+    }
+    if (!applicationPassword) {
+      applicationPassword = packagedAuthSessionSource.source.applicationPassword || applicationPassword;
+    }
+  }
 }
 
 function summarizeAuthSessionSource(command, source) {
