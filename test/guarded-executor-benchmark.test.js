@@ -1121,10 +1121,50 @@ test('production claim gate fails closed if benchmark evidence is tampered', () 
   missingPrecondition.evidence.preconditions.everyMutationHasLiveRemotePrecondition = false;
   assert.ok(productionThroughputBlockers(missingPrecondition).includes('missing-live-remote-preconditions'));
 
+  const brokenJournalIntegrity = clone(report);
+  brokenJournalIntegrity.evidence.journal.allJournalsIntegrityOk = false;
+  assert.ok(
+    productionThroughputBlockers(brokenJournalIntegrity).includes(
+      'missing-durable-journal-integrity',
+    ),
+  );
+
+  const exposedJournalValues = clone(report);
+  exposedJournalValues.evidence.redaction.durableJournalsContainNoRawValues = false;
+  assert.ok(
+    productionThroughputBlockers(exposedJournalValues).includes(
+      'durable-journal-redaction-not-proven',
+    ),
+  );
+
   const missingRecovery = clone(report);
   missingRecovery.evidence.recovery.partialCommitBlocksRecovery = false;
   assert.ok(
     productionThroughputBlockers(missingRecovery).includes('missing-partial-commit-recovery-evidence'),
+  );
+
+  const missingSuccessRecovery = clone(report);
+  missingSuccessRecovery.evidence.recovery.successReplayInspectable = false;
+  assert.ok(
+    productionThroughputBlockers(missingSuccessRecovery).includes(
+      'missing-success-recovery-evidence',
+    ),
+  );
+
+  const missingPreCommitRecovery = clone(report);
+  missingPreCommitRecovery.evidence.recovery.preCommitFailureInspectable = false;
+  assert.ok(
+    productionThroughputBlockers(missingPreCommitRecovery).includes(
+      'missing-pre-commit-recovery-evidence',
+    ),
+  );
+
+  const partialPreCommitVisibility = clone(report);
+  partialPreCommitVisibility.evidence.atomicGroup.preCommitFailureLeavesRemoteUnchanged = false;
+  assert.ok(
+    productionThroughputBlockers(partialPreCommitVisibility).includes(
+      'atomic-group-pre-commit-visibility-not-proven',
+    ),
   );
 
   const mismatchedAtomicCommitCapability = clone(report);
@@ -1449,6 +1489,24 @@ test('production claim gate fails closed if benchmark evidence is tampered', () 
   brokenWindowEvidence.evidence.resourceLimits.chunkWindowWithinMemoryCeiling = false;
   assert.ok(
     productionThroughputBlockers(brokenWindowEvidence).includes('chunk-window-exceeds-memory-ceiling'),
+  );
+
+  const hiddenPausedMemoryCeiling = clone(report);
+  hiddenPausedMemoryCeiling.evidence.backpressure.queuePausedBeforeOverflow = true;
+  hiddenPausedMemoryCeiling.evidence.backpressure.queueBudgetVisible = true;
+  hiddenPausedMemoryCeiling.evidence.backpressure.receiptCursorMemoryCeilingVisible = false;
+  assert.ok(
+    productionThroughputBlockers(hiddenPausedMemoryCeiling).includes(
+      'queue-budget-visible-without-memory-ceiling-visible',
+    ),
+  );
+
+  const incompletePauseFootprint = clone(report);
+  incompletePauseFootprint.evidence.backpressure.receiptCursorPauseFootprintComplete = false;
+  assert.ok(
+    productionThroughputBlockers(incompletePauseFootprint).includes(
+      'queue-pause-without-complete-receipt-cursor-pause-footprint',
+    ),
   );
 
   const oversizedQueueCursor = clone(report);
