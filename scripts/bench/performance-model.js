@@ -5102,11 +5102,25 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['backpressure', 'atomic-groups', 'row-preconditions', 'durable-progress'],
   },
   {
+    id: 'cached-receipt-cursor-and-staging-disk-headroom-skips-atomic-group-commit-after-pause',
+    proposal: 'use a cached receipt cursor plus staging-disk headroom to skip an atomic-group commit after a pause',
+    rejectedBecause: 'staging-disk headroom can size the next bounded journal batch, but it cannot prove the paused group preserved its live row preconditions, raw receipt order, or atomic-group barrier after interruption',
+    rejectedGate: 'recovery',
+    violates: ['backpressure', 'atomic-groups', 'row-preconditions', 'durable-progress', 'live-preconditions'],
+  },
+  {
     id: 'cached-receipt-cursor-memory-headroom-skips-release-bundle-commit-after-pause',
     proposal: 'use a cached receipt cursor plus memory headroom to skip a release-bundle commit after a pause',
     rejectedBecause: 'memory headroom can size the next bounded release-bundle retry, but it cannot prove the release bundle preserved its atomic-group barrier, live compare, or durable journal trail after interruption',
     rejectedGate: 'recovery',
     violates: ['backpressure', 'atomic-groups', 'durable-progress'],
+  },
+  {
+    id: 'cached-receipt-cursor-and-staging-disk-headroom-skips-release-bundle-commit-after-pause',
+    proposal: 'use a cached receipt cursor plus staging-disk headroom to skip a release-bundle commit after a pause',
+    rejectedBecause: 'staging-disk headroom can size the next bounded journal batch, but it cannot prove the release bundle preserved its atomic-group barrier, live compare, or durable journal trail after interruption',
+    rejectedGate: 'recovery',
+    violates: ['backpressure', 'atomic-groups', 'durable-progress', 'live-preconditions'],
   },
   {
     id: 'compressed-remote-index-and-cached-chunk-hashes-skips-large-upload-window-sizing-after-pause',

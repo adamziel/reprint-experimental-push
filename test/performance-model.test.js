@@ -1594,6 +1594,18 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
     'memory headroom still cannot bypass the backpressure pause boundary',
   );
   assert.equal(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'cached-receipt-cursor-and-staging-disk-headroom-skips-atomic-group-commit-after-pause')?.rejectedGate,
+    'recovery',
+  );
+  assert.ok(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'cached-receipt-cursor-and-staging-disk-headroom-skips-atomic-group-commit-after-pause')?.violates.includes('atomic-groups'),
+    'staging-disk headroom still cannot bypass the atomic-group commit boundary',
+  );
+  assert.ok(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'cached-receipt-cursor-and-staging-disk-headroom-skips-atomic-group-commit-after-pause')?.violates.includes('live-preconditions'),
+    'staging-disk headroom still cannot bypass live preconditions after a pause',
+  );
+  assert.equal(
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'cached-receipt-cursor-memory-headroom-skips-release-bundle-commit-after-pause')?.rejectedGate,
     'recovery',
   );
@@ -1604,6 +1616,18 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
   assert.ok(
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'cached-receipt-cursor-memory-headroom-skips-release-bundle-commit-after-pause')?.violates.includes('durable-progress'),
     'release-bundle commit skipping still cannot bypass durable recovery evidence',
+  );
+  assert.equal(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'cached-receipt-cursor-and-staging-disk-headroom-skips-release-bundle-commit-after-pause')?.rejectedGate,
+    'recovery',
+  );
+  assert.ok(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'cached-receipt-cursor-and-staging-disk-headroom-skips-release-bundle-commit-after-pause')?.violates.includes('atomic-groups'),
+    'staging-disk headroom still cannot bypass the release-bundle atomic-group barrier',
+  );
+  assert.ok(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'cached-receipt-cursor-and-staging-disk-headroom-skips-release-bundle-commit-after-pause')?.violates.includes('durable-progress'),
+    'staging-disk headroom still cannot bypass durable recovery evidence for release bundles',
   );
   assert.equal(
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-chunk-hashes-skips-large-upload-window-sizing-after-pause')?.rejectedGate,
