@@ -6,14 +6,14 @@ The project is **not releasable as a production WordPress push path**.
 
 - Fresh remote heads at audit time, checked on May 26, 2026:
 
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `44545922`
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `ffd3832f`
-- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `8fe6450d`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `6a925082`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `95c53c86`
+- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `be7f578e`
 - `origin/lane/fast-paths` -> `8c5c2ccb`
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `44fd27f9`
-- `origin/lane/reliable-executor` -> `39ded935`
+- `origin/lane/reliable-executor` -> `1b709fb3`
 - `origin/lane/no-data-loss-invariants` -> `f99d6eed`
-- `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `9e077c10`
+- `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `76dc8545`
 - `origin/lane/no-data-loss-recovery` -> `aec5d04b`
 - `origin/lane/cycle-20260525-mainwindows-2349/critic` -> `fa0dc8a0`
 - `origin/lane/critic` -> `5b61693d`
@@ -32,21 +32,21 @@ Fresh lane proof since the last audit pass improved the local evidence floor,
 but it did not change the release conclusion:
 
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now records
-  `5f7885e7`, refreshing public progress freshness only.
+  `6a925082`, refreshing public progress freshness only.
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now records
-  `40e9cccb`, refreshing the supervisor progress surface only.
+  `95c53c86`, refreshing the supervisor progress surface only.
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` now records
-  `8fe6450d`. This refreshes the audit snapshot only and does not change the
+  `be7f578e`. This refreshes the audit snapshot only and does not change the
   release boundary.
 - `origin/lane/fast-paths` now records `8c5c2ccb`, tightening backpressure
   evidence checks only.
-- `origin/lane/reliable-executor` now records `39ded935`, tightening release
+- `origin/lane/reliable-executor` now records `1b709fb3`, tightening release
   proof timeout logging and child cleanup again, but still not proving
   production auth/session lifecycle or a live-source mutation boundary.
 - `origin/lane/no-data-loss-invariants` now records `f99d6eed`, adding special-
   file descendant delete guarding only.
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` now
-  records `9e077c10`, tightening durable recovery remote ownership fencing. It
+  records `76dc8545`, tightening durable recovery remote ownership fencing. It
   still does not add production-backed journal ownership or replay proof.
 - `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration`
   now records `d388db27`, adding nav menu parent reference blocking only.
