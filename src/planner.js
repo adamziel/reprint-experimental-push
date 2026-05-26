@@ -3470,6 +3470,14 @@ function unsupportedTermTaxonomyResourceSupport({ resource, baseValue, localValu
   if (!candidate || candidate === ABSENT) {
     return { supported: true };
   }
+  if (localValue === ABSENT) {
+    return {
+      supported: false,
+      className: 'unsupported-term-taxonomy-resource',
+      unsupportedState: 'delete',
+      reason: 'Term taxonomy graph resource deletes are not yet supported by the planner.',
+    };
+  }
 
   const references = wordpressGraphReferences(resource, candidate);
   const samePlanCreatedTermReferences = references.filter((reference) => (
@@ -3477,32 +3485,20 @@ function unsupportedTermTaxonomyResourceSupport({ resource, baseValue, localValu
     && getResource(remote, reference.targetResource) === ABSENT
     && getResource(local, reference.targetResource) !== ABSENT
   ));
-  const remoteOnlyDrift = (
-    stableStringify(localValue) === stableStringify(baseValue)
-    && stableStringify(remoteValue) !== stableStringify(baseValue)
-  );
-  const convergedDrift = (
-    localValue !== ABSENT
-    && remoteValue !== ABSENT
-    && stableStringify(localValue) === stableStringify(remoteValue)
-    && stableStringify(localValue) !== stableStringify(baseValue)
-  );
-
-  if (samePlanCreatedTermReferences.length === 0 && !remoteOnlyDrift && !convergedDrift) {
-    return { supported: true };
-  }
+  const unsupportedState = samePlanCreatedTermReferences.length > 0
+    ? 'same-plan-reference'
+    : classifyUnsupportedDriftState({
+      baseValue,
+      localValue,
+      remoteValue,
+      allowSteadyUnsupported: true,
+    });
 
   return {
     supported: false,
     className: 'unsupported-term-taxonomy-resource',
-    unsupportedState: samePlanCreatedTermReferences.length > 0
-      ? 'same-plan-reference'
-      : convergedDrift
-        ? 'converged-drift'
-        : 'remote-only-drift',
-    reason: remoteOnlyDrift || convergedDrift
-      ? 'Term taxonomy graph resources are not yet supported by the planner.'
-      : samePlanCreatedTermReferences.some((reference) => reference.relationshipType === 'term-taxonomy-parent')
+    unsupportedState,
+    reason: samePlanCreatedTermReferences.some((reference) => reference.relationshipType === 'term-taxonomy-parent')
       ? `WordPress graph mutation ${resource.key} is created in the same plan as a parent term identity that depends on it, and identity rewriting is not yet supported.`
       : 'Term taxonomy graph resources are not yet supported by the planner.',
     references: samePlanCreatedTermReferences,
