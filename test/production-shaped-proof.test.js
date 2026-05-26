@@ -10,6 +10,10 @@ import {
   resolveAuthSessionSourceCredentials,
 } from '../scripts/playground/auth-session-source.js';
 import {
+  releaseVerifyFixtureCredentials,
+  resolveReleaseVerifyCredentials,
+} from '../scripts/playground/release-verify-credentials.js';
+import {
   buildAuthSessionSourceCommand,
   resolveAuthSessionSourceCommand,
 } from '../scripts/playground/auth-session-source-command.js';
@@ -800,6 +804,21 @@ test('production-shaped release verify can force the production auth/session sou
       applicationPassword: 'reprint-push-admin-app-password',
     },
   );
+});
+
+test('production-shaped release verify keeps fixture bootstrap credentials separate from live source credentials', () => {
+  const resolved = resolveReleaseVerifyCredentials({
+    liveSourceUrl: 'http://127.0.0.1:8080',
+    username: 'custom-live-user',
+    applicationPassword: 'custom-live-password',
+  });
+
+  assert.deepEqual(resolved.fixture, releaseVerifyFixtureCredentials);
+  assert.deepEqual(resolved.live, {
+    liveSourceUrl: 'http://127.0.0.1:8080',
+    username: 'custom-live-user',
+    applicationPassword: 'custom-live-password',
+  });
 });
 
 test('auth-session source command builder emits a shell-safe node snippet', () => {

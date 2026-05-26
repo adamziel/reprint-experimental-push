@@ -16,8 +16,11 @@ import {
 import { digest } from '../../src/stable-json.js';
 import {
   loadAuthSessionSource,
-  resolveAuthSessionSourceCredentials,
 } from './auth-session-source.js';
+import {
+  releaseVerifyFixtureCredentials,
+  resolveReleaseVerifyCredentials,
+} from './release-verify-credentials.js';
 import {
   evaluateProductionAuthSessionLifecycle,
   evaluateProductionAuthSessionLifecycleSummary,
@@ -56,10 +59,6 @@ const packagedServerStartupTimeoutMs = packagedPlaygroundTimeoutSeconds * 1_000;
 const packagedServerFetchTimeoutMs = 3_000;
 const maxReadinessProbes = Math.max(10, Math.ceil(serverStartupTimeoutMs / readinessProbeIntervalMs));
 const maxNotReadyReadinessProbes = Math.max(4, Math.ceil(serverStartupTimeoutMs / readinessProbeIntervalMs));
-const credentials = {
-  username: 'reprint_push_admin',
-  password: 'reprint-push-admin-app-password',
-};
 const requireProductionDurableJournal = process.env.REPRINT_PUSH_REQUIRE_PRODUCTION_DURABLE_JOURNAL === '1';
 const requireProductionAuthSession = process.env.REPRINT_PUSH_REQUIRE_PRODUCTION_AUTH_SESSION === '1';
 const labAuthSessionDrift = process.env.REPRINT_PUSH_LAB_AUTH_SESSION_DRIFT || '';
@@ -74,31 +73,35 @@ let authSessionSourceCommand = process.env.REPRINT_PUSH_AUTH_SESSION_SOURCE_COMM
 let authSessionSource = authSessionSourceCommand ? loadAuthSessionSource(authSessionSourceCommand) : null;
 let packagedProductionPluginAuthSessionSource = null;
 let packagedProductionPluginRequested = isPackagedProductionPluginSourceCommand(authSessionSourceCommand);
+const fixtureCredentials = {
+  username: releaseVerifyFixtureCredentials.username,
+  password: releaseVerifyFixtureCredentials.applicationPassword,
+};
 
 if (authSessionSource?.ok) {
-  const resolvedAuthSessionSource = resolveAuthSessionSourceCredentials({
+  const resolvedAuthSessionSource = resolveReleaseVerifyCredentials({
     liveSourceUrl,
-    username: credentials.username,
-    applicationPassword: credentials.password,
+    username,
+    applicationPassword,
   }, authSessionSource, {
     preferSource: requireProductionAuthSession,
-  });
+  }).live;
   // When a live auth-session source is supplied, prefer it over any stale lab
   // credentials already present in the environment.
   liveSourceUrl = resolvedAuthSessionSource.liveSourceUrl;
-  credentials.username = resolvedAuthSessionSource.username;
-  credentials.password = resolvedAuthSessionSource.applicationPassword;
+  username = resolvedAuthSessionSource.username;
+  applicationPassword = resolvedAuthSessionSource.applicationPassword;
 }
 
 if (
   requireProductionAuthSession &&
-  credentials.username &&
-  credentials.password
+  fixtureCredentials.username &&
+  fixtureCredentials.password
 ) {
   const packagedProductionPluginAuthSessionRequest = resolvePackagedProductionPluginAuthSessionRequest({
     sourceUrl: liveSourceUrl || 'http://127.0.0.1:8080',
-    username: credentials.username,
-    applicationPassword: credentials.password,
+    username: fixtureCredentials.username,
+    applicationPassword: fixtureCredentials.password,
     authSessionSourceCommand,
   });
   packagedProductionPluginAuthSessionSource = packagedProductionPluginAuthSessionRequest;
@@ -690,7 +693,10 @@ try {
   try {
       const client = authenticatedHttpClient({
         sourceUrl: liveSourceUrl,
-        credential: credentials,
+        credential: {
+          username,
+          password: applicationPassword,
+        },
         routeProfile: 'production-shaped',
       });
 
@@ -706,8 +712,8 @@ try {
         sourceUrl: liveSourceUrl,
         base: remoteBaseSnapshot,
         local: localEditedSnapshot,
-        username: credentials.username,
-        applicationPassword: credentials.password,
+        username,
+        applicationPassword,
         idempotencyKey: 'production-shaped-release-verify-001',
         routeProfile: 'production-shaped',
         dryRunOnly: false,
@@ -1314,8 +1320,8 @@ async function startPlaygroundServer(name, blueprintPath) {
         env: {
           ...process.env,
           REPRINT_PUSH_LAB_AUTH_BOOTSTRAP: '1',
-          REPRINT_PUSH_LAB_AUTH_ADMIN_USER: credentials.username,
-          REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD: credentials.password,
+          REPRINT_PUSH_LAB_AUTH_ADMIN_USER: fixtureCredentials.username,
+          REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD: fixtureCredentials.password,
           NODE_OPTIONS: appendNodeOption(process.env.NODE_OPTIONS, localhostListenPreloadOption()),
         },
         detached: true,
@@ -1388,8 +1394,8 @@ async function startPackagedProductionPluginServer(name, packagedFixture) {
       env: {
         ...process.env,
         REPRINT_PUSH_LAB_AUTH_BOOTSTRAP: '1',
-        REPRINT_PUSH_LAB_AUTH_ADMIN_USER: credentials.username,
-        REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD: credentials.password,
+        REPRINT_PUSH_LAB_AUTH_ADMIN_USER: fixtureCredentials.username,
+        REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD: fixtureCredentials.password,
         NODE_OPTIONS: appendNodeOption(process.env.NODE_OPTIONS, localhostListenPreloadOption()),
       },
       detached: true,
@@ -1608,7 +1614,7 @@ installProcessCleanup();
 async function exportSnapshot(name, baseUrl) {
   const response = await fetch(`${baseUrl}/wp-json/reprint-push-lab/v1/snapshot`, {
     headers: {
-      Authorization: `Basic ${Buffer.from(`${credentials.username}:${credentials.password}`).toString('base64')}`,
+      Authorization: `Basic ${Buffer.from(`${fixtureCredentials.username}:${fixtureCredentials.password}`).toString('base64')}`,
     },
   });
   assert.equal(response.status, 200, `${name} snapshot HTTP ${response.status}`);
@@ -2000,9 +2006,9 @@ async function waitForServer(child, baseUrl, getLogs) {
         await response.arrayBuffer();
         const snapshot = await fetchWithTimeout(`${baseUrl}/wp-json/reprint-push-lab/v1/snapshot`, {
           headers: {
-            Authorization: `Basic ${Buffer.from(`${credentials.username}:${credentials.password}`).toString('base64')}`,
-            connection: 'close',
-          },
+          Authorization: `Basic ${Buffer.from(`${fixtureCredentials.username}:${fixtureCredentials.password}`).toString('base64')}`,
+          connection: 'close',
+        },
         });
         const snapshotBody = await snapshot.clone().text().catch(() => '');
         const snapshotPreview = snapshotBody.slice(0, 500);
@@ -2124,7 +2130,7 @@ function describeLastRouteStatusBody(lastRouteStatusBody) {
   )}`;
 }
 
-function signedHeadersForProductionPreflight(auth = credentials) {
+function signedHeadersForProductionPreflight(auth = fixtureCredentials) {
   const contentHash = createHash('sha256').update('', 'utf8').digest('hex');
   const timestamp = String(Math.floor(Date.now() / 1000));
   const nonce = `release-verify-packaged-${auth.username}-${Date.now()}`;
@@ -2150,7 +2156,7 @@ function signedHeadersForProductionPreflight(auth = credentials) {
   };
 }
 
-function authHeaders(auth = credentials) {
+function authHeaders(auth = fixtureCredentials) {
   return {
     authorization: `Basic ${Buffer.from(`${auth.username}:${auth.password}`, 'utf8').toString('base64')}`,
   };
