@@ -41,11 +41,11 @@ The project is **not releasable as a production WordPress push path**.
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `999ff0d8`
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `d7813094`
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `8a7f4edd`
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `3d198310`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `2271b3e8`
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `8cd234a9`
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `0ac76c38`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `2af1ddda`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `4d11356b`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `06f2aec2`
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` -> `0ca7b35d`
 - `origin/lane/cycle-20260525-mainwindows-2357/no-data-loss-invariants-graph-proof` -> `98c0ce26`
 - `origin/lane/cycle-20260525-restart-2340/feedback-supervisor` -> `ef3d911e`
@@ -89,20 +89,11 @@ but it did not change the release conclusion:
   does not prove the live release boundary or any production-backed source
   mutation.
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now records
-  `c49f4eae`, refreshing progress visibility only. It still does not change
-  the release verdict.
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now records
-  `f3bf7e4f`, refreshing progress visibility only. It still does not change
+  `2271b3e8`, refreshing progress visibility only. It still does not change
   the release verdict.
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now records
-  `b717124c`, refreshing public progress freshness only. It still does not
-  add production-backed gate movement.
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now records
-  `ee9d4e2d`, refreshing the public progress freshness only. It still does not
-  add production-backed gate movement.
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now records
-  `3cc2df77`, refreshing the public progress freshness only. It still does not
-  add production-backed gate movement.
+  `06f2aec2`, refreshing public progress freshness only. It still does not add
+  production-backed gate movement.
 - `origin/lane/reliable-executor` now records `41ea37b9`, hardening Playground startup timeout handling. It still does not prove production auth/session lifecycle or a live-source mutation boundary.
 - `origin/lane/reliable-executor` now records `ff94457a`, failing closed on unsupported production origins. It still does not prove production auth/session lifecycle or a live-source mutation boundary.
 - `origin/lane/reliable-executor` now records `5a2e50a9`, hardening live proof
