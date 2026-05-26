@@ -65,15 +65,15 @@ Fresh visibility-lane and invariants heads moved again, but they still do not ch
 
 - Since the last audit pass, the visible progress lanes advanced again:
 `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` ->
-`b9fd44bf` and `origin/lane/cycle-20260525-mainwindows-2349/progress-followup`
--> `7cd095c0`. That changes the freshness surface, not the release gate.
+`a6359b91` and `origin/lane/cycle-20260525-mainwindows-2349/progress-followup`
+-> `6705f663`. That changes the freshness surface, not the release gate.
 - The current public-refresh branch heads remain:
 `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` ->
-`b9fd44bf` and `origin/lane/cycle-20260525-mainwindows-2349/progress-followup`
--> `7cd095c0`.
-- `origin/lane/reliable-executor` -> `d14c9fef`
-- `origin/lane/no-data-loss-invariants` -> `18c1df11`
-- `origin/lane/no-data-loss-recovery` -> `9e077c10`
+`a6359b91` and `origin/lane/cycle-20260525-mainwindows-2349/progress-followup`
+-> `6705f663`.
+- `origin/lane/reliable-executor` -> `0e8ebb86`
+- `origin/lane/no-data-loss-invariants` -> `71e60796`
+- `origin/lane/no-data-loss-recovery` -> `0ff46819`
 - `origin/main` -> `2c8d52cb`
 
 The current remote state still adds no production-backed auth/session
