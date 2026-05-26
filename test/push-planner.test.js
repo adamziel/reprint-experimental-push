@@ -2050,6 +2050,66 @@ test('blocks a term taxonomy parent reference to a same-plan term when the term 
   assert.equal(remote.db.wp_term_taxonomy['term_taxonomy_id:20'].taxonomy, 'nav_menu');
 });
 
+test('blocks a term taxonomy parent reference to a same-plan term when the term is already used by a remote nav menu taxonomy and unrelated remote attachment noise exists', () => {
+  const resourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:9"]';
+  const targetResourceKey = 'row:["wp_terms","term_id:7"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_terms = {
+    'term_id:7': {
+      term_id: 7,
+      name: 'local-private-term-name',
+      slug: 'local-private-term-slug',
+    },
+  };
+  local.db.wp_term_taxonomy = {
+    'term_taxonomy_id:9': {
+      term_taxonomy_id: 9,
+      term_id: 7,
+      taxonomy: 'category',
+      description: '',
+      parent: 7,
+      count: 0,
+    },
+  };
+  const remote = baseSite();
+  remote.db.wp_term_taxonomy = {
+    'term_taxonomy_id:20': {
+      term_taxonomy_id: 20,
+      term_id: 7,
+      taxonomy: 'nav_menu',
+      description: '',
+      parent: 0,
+      count: 0,
+    },
+  };
+  remote.db.wp_posts = {
+    'ID:21': {
+      ID: 21,
+      post_type: 'attachment',
+      post_title: 'remote-noise-attachment',
+      post_content: 'remote-noise-attachment-body',
+    },
+  };
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers[0];
+  const blockerTypes = plan.blockers.flatMap((entry) => entry.references.map((reference) => reference.relationshipType));
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.ok(plan.summary.mutations > 0);
+  assert.equal(mutationFor(plan, resourceKey).changeKind, 'create');
+  assert.equal(decisionFor(plan, targetResourceKey), undefined);
+  assert.equal(blocker.class, 'missing-wordpress-graph-dependency');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.resolutionPolicy, 'preserve-remote-wordpress-graph-and-stop');
+  assert.deepEqual(blockerTypes.sort(), ['term-taxonomy-parent', 'term-taxonomy-term']);
+  assert.equal(plan.blockers.length, 2);
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
+  assert.equal(remote.db.wp_term_taxonomy['term_taxonomy_id:20'].taxonomy, 'nav_menu');
+});
+
 test('blocks local termmeta references to stale remote-created term identity', () => {
   const resourceKey = 'row:["wp_termmeta","meta_id:12"]';
   const targetResourceKey = 'row:["wp_terms","term_id:7"]';
