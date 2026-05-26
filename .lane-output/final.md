@@ -1,8 +1,8 @@
-Updated [audits/critic.md](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/critic-clean-20260526-1530/audits/critic.md) for live reliable head `976c4ad41d48cf256fcb0a842f5be50941035d3c`.
+Updated [audits/critic.md](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/critic-clean-20260526-1530/audits/critic.md) for live reliable head `bd9410492180ac53d61120343b158611f11c25d5`.
 
 - Verdict: `0/4`
-- Reason: `976c4ad4` retries packaged auth-required preflight during readiness, which improves the verifier's recovery from transient packaged startup state, but it still does not prove the checked `verify:release` path has live production-backed auth/session issuance/read/expiry/rotation/revocation/cleanup, nor durable-journal ownership with restart-readable replay consumed by `verify:release`.
-- Next owner/command: `main:reliable-exec` on `src/authenticated-http-push-client.js`, `src/recovery-journal.js`, and `scripts/playground/production-shaped-release-verify.mjs` with `timeout 180s npm run verify:release`, ideally by consuming the current auth-session and durable-journal heads on that path, or the exact missing production auth/session lifecycle primitive or durable-journal ownership primitive if the verifier still cannot consume the proof.
+- Reason: `bd941049` upgrades the checked release verifier to a live checked boundary and reaches `LIVE_RELEASE_BOUNDARY_OK` with live auth/session lifecycle, preserved-remote retry, and checked durable-journal acceptance on the release path. It still does not prove the remaining production primitives the supervised gate is asking for outside that checked boundary: a production-owned auth/session issuer/read/expiry/rotation/revocation/cleanup path and durable-journal ownership with restart-readable replay that the checked release command consumes directly.
+- Next owner/command: `main:reliable-exec` on `src/authenticated-http-push-client.js`, `src/recovery-journal.js`, and `scripts/playground/production-shaped-release-verify.mjs` with `timeout 180s npm run verify:release`, ideally by consuming a real production auth/session issuer and durable-journal ownership surface on that path, or the exact missing production primitive if the verifier still cannot consume it.
 
 Commands run:
 - `git status --short --branch`
