@@ -4,7 +4,7 @@
 
 The project is **not releasable as a production WordPress push path**.
 
-- Fresh remote heads at audit time, checked on 2026-05-26 08:22:32 CEST (+0200):
+- Fresh remote heads at audit time, checked on 2026-05-26 08:24:51 CEST (+0200):
 
 - `origin/lane/cycle-20260524-auth-graph-hardening/critic` -> `e413f7a8`
 - `origin/lane/cycle-20260524-auth-graph-hardening/fast-paths` -> `ad7d82a4`
@@ -144,6 +144,10 @@ The newest visible heads continue that same pattern:
   auth drift before journal reads. This is still client-side fail-closed
   behavior, not production-backed auth/session lifecycle, live production
   replay, or durable journal ownership on the release path.
+- `origin/lane/reliable-executor` now records `9c43e1b9`, failing closed on
+  untrusted recovery inspect. This is still support-side recovery hardening,
+  not production-backed auth/session lifecycle, live production replay, or
+  durable journal ownership on the release path.
 - `origin/lane/reliable-executor` now records `0b8e4340`, failing closed on
   a missing replay auth envelope. This is still support-side auth-envelope
   hardening, not production-backed auth/session lifecycle, live production
