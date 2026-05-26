@@ -142,8 +142,8 @@ export function evaluateProductionAuthSessionLifecycleSummary(summary, now = Dat
       };
     }
 
-    const hasSubsequentObservation = hasTraceBackedPostPreflightObservation(observations, issuedIndex);
-    if (!hasSubsequentObservation) {
+    const hasSubsequentReadObservation = hasTraceBackedPostPreflightReadObservation(observations, issuedIndex);
+    if (!hasSubsequentReadObservation) {
       return {
         ok: false,
         required: 'preserved read',
@@ -243,6 +243,14 @@ export function evaluateProductionAuthSessionLifecycleSummary(summary, now = Dat
   for (const observation of observations) {
     if (!observation || typeof observation !== 'object') {
       continue;
+    }
+
+    if (observation.step !== 'preflight' && !isAuthSessionReadStep(observation.step)) {
+      return {
+        ok: false,
+        required: 'preserved read',
+        observed: observation.step || 'missing',
+      };
     }
 
     const observationSessionId = typeof observation.id === 'string' && observation.id.trim()
@@ -359,10 +367,14 @@ function isAuthSessionReadStep(step) {
     || step === 'journal';
 }
 
-function hasTraceBackedPostPreflightObservation(observations, issuedIndex) {
+function hasTraceBackedPostPreflightReadObservation(observations, issuedIndex) {
   for (let index = observations.length - 1; index > issuedIndex; index -= 1) {
     const observation = observations[index];
-    if (observation && typeof observation === 'object') {
+    if (
+      observation
+      && typeof observation === 'object'
+      && isAuthSessionReadStep(observation.step)
+    ) {
       return true;
     }
   }
