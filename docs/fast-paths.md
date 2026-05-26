@@ -67,6 +67,15 @@ Current executable gate:
   visible on the raw backpressure evidence surface, so the audit view can
   reject a queue-budget drift without reconstructing the bit from derived
   details alone.
+- The current supported production-plumbing surface is narrow:
+  - file-hash reuse is allowed only as resume evidence when the strong digest
+    and fingerprint still line up;
+  - receipt cursors may shorten retries only when the live remote precondition
+    still gates the mutation;
+  - queue budgeting may bound retries only when the memory ceiling, queue
+    budget, and pause footprint all remain aligned;
+  - production storage receipts, atomic-group commit proof, and row-batch
+    executor proof remain blocked until they are measured on the live surface.
 - The same details now also surface the atomic-group metadata visibility bit on
   the backpressure consistency summary, so the production throughput proof can
   keep the atomic-group context visible next to the queue-boundary evidence.
