@@ -2135,6 +2135,16 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
     model.safeFastPaths.find((fastPath) => fastPath.allowedShortcut === 'reuse-file-hash-ledger-to-size-large-upload-resume-with-guarded-publish-check')?.failureEvidence,
     'file-hash ledger plus guarded file-publish record',
   );
+  assert.ok(
+    model.safeFastPaths.some(
+      (fastPath) =>
+        fastPath.allowedShortcut === 'hash-large-files-in-bounded-parallel-chunks-within-budget' &&
+        fastPath.area === 'file-hashing' &&
+        fastPath.guardrails.includes('chunk-hashing-stays-plan-scoped') &&
+        fastPath.gateProofs.live.includes('the final publish still compares the live remote resource hash before visibility changes'),
+    ),
+    'bounded parallel chunk hashing stays plan-scoped and keeps the live publish compare intact',
+  );
   assert.equal(
     model.safeFastPaths.find((fastPath) => fastPath.allowedShortcut === 'reuse-plan-scoped-chunk-receipts-to-resume-bounded-windowing')?.visibilityBoundary,
     'plan-staging-window-resume-only',

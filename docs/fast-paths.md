@@ -119,6 +119,8 @@ Current executable gate:
 - The current supported production-plumbing surface is narrow:
   - file-hash reuse is allowed only as resume evidence when the strong digest
     and fingerprint still line up;
+  - bounded parallel chunk hashing is allowed only inside the plan scope and
+    still keeps the live remote compare at publish time;
   - receipt cursors may shorten retries only when the live remote precondition
     still gates the mutation;
   - queue budgeting may bound retries only when the memory ceiling, queue
