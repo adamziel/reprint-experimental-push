@@ -1149,16 +1149,8 @@ async function waitForServer(child, baseUrl, getLogs) {
             : `Playground index readiness HTTP ${response.status}; ${routeSummary}`,
         );
         const readinessProbeCount = lastProbes.filter((probe) => probe.route === '/wp-json/').length;
-        const readinessWaitBudgetMs = deadline - Date.now();
         if (readinessHint) {
           notReadyProbeCount += 1;
-        } else {
-          notReadyProbeCount = 0;
-        }
-        if (
-          readinessHint &&
-          (notReadyProbeCount >= maxNotReadyReadinessProbes || readinessWaitBudgetMs <= readinessProbeIntervalMs)
-        ) {
           throwPlaygroundReadinessFailure(
             child,
             `Playground server stayed in readiness response ${response.status} after ${readinessProbeCount} /wp-json/ probes (${notReadyProbeCount} consecutive not-ready responses)`,
@@ -1167,7 +1159,8 @@ async function waitForServer(child, baseUrl, getLogs) {
             getLogs(),
           );
         }
-        if (!readinessHint && response.status !== 200 && readinessProbeCount >= maxReadinessProbes) {
+        notReadyProbeCount = 0;
+        if (response.status !== 200 && readinessProbeCount >= maxReadinessProbes) {
           throwPlaygroundReadinessFailure(
             child,
             `Playground server stayed in readiness response ${response.status} after ${readinessProbeCount} /wp-json/ probes`,
