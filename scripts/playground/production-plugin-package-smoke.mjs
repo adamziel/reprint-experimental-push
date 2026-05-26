@@ -382,6 +382,7 @@ async function startPlaygroundServer(name, blueprintPath, mountedPluginDir) {
 async function waitForServer(child, baseUrl, logs) {
   const deadline = Date.now() + serverStartupTimeoutMs;
   let lastError = null;
+  let lastResponse = null;
 
   while (Date.now() < deadline) {
     if (child.exitCode !== null) {
@@ -397,10 +398,11 @@ async function waitForServer(child, baseUrl, logs) {
         authHeaders(),
         { attempts: 2 },
       );
+      lastResponse = response;
       if (response.status === 200 && response.body?.ok === true) {
         return;
       }
-      lastError = new Error(`Production plugin package snapshot readiness HTTP ${response.status}`);
+      lastError = new Error(formatWaitForServerResponse(response));
     } catch (error) {
       lastError = error;
     }
@@ -408,7 +410,8 @@ async function waitForServer(child, baseUrl, logs) {
     await sleep(500);
   }
 
-  throw new Error(`Timed out waiting for Playground server at ${baseUrl}: ${lastError?.message || 'unknown'}\n${logs.join('')}`);
+  const responseLine = lastResponse ? `\nLast response: ${formatWaitForServerResponse(lastResponse)}` : '';
+  throw new Error(`Timed out waiting for Playground server at ${baseUrl}: ${lastError?.message || 'unknown'}${responseLine}\n${logs.join('')}`);
 }
 
 async function stopPlaygroundServer(server) {
@@ -521,6 +524,19 @@ function authHeaders(auth = credentials) {
   return {
     authorization: `Basic ${Buffer.from(`${auth.username}:${auth.password}`, 'utf8').toString('base64')}`,
   };
+}
+
+function formatWaitForServerResponse(response) {
+  const body = response?.body;
+  const bodySummary = body && typeof body === 'object'
+    ? JSON.stringify({
+        ok: body.ok,
+        code: body.code || null,
+        message: body.message || null,
+        routeProfile: body.routeProfile?.profile || null,
+      })
+    : String(body);
+  return `Production plugin package snapshot readiness HTTP ${response?.status ?? 'unknown'} body=${bodySummary}`;
 }
 
 function hmacHex(key, data) {
