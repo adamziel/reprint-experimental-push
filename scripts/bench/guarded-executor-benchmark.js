@@ -370,6 +370,8 @@ export function productionThroughputDetails(report) {
     backpressureConsistency: {
       queueBudgetMatchesResourceCeiling,
       queueHeadroomMatchesResourceHeadroom,
+      queuePausedBeforeOverflow: report.evidence.backpressure?.queuePausedBeforeOverflow ?? false,
+      receiptCursorWithinQueueBudget: report.evidence.backpressure?.receiptCursorWithinQueueBudget ?? false,
       receiptCursorMatchesBackpressure,
       receiptCursorHeadroomMatchesQueueHeadroom,
       receiptCursorBackpressureBytes,

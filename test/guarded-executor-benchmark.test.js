@@ -104,6 +104,8 @@ test('guarded benchmark refuses production throughput claims until production ga
   assert.equal(report.claims.productionThroughputDetails.queueBudgetBytes, 32 * 1024 * 1024);
   assert.equal(report.claims.productionThroughputDetails.backpressureConsistency.queueBudgetMatchesResourceCeiling, true);
   assert.equal(report.claims.productionThroughputDetails.backpressureConsistency.queueHeadroomMatchesResourceHeadroom, true);
+  assert.equal(report.claims.productionThroughputDetails.backpressureConsistency.queuePausedBeforeOverflow, true);
+  assert.equal(report.claims.productionThroughputDetails.backpressureConsistency.receiptCursorWithinQueueBudget, true);
   assert.equal(report.claims.productionThroughputDetails.backpressureConsistency.receiptCursorMatchesBackpressure, true);
   assert.equal(report.claims.productionThroughputDetails.backpressureConsistency.receiptCursorHeadroomMatchesQueueHeadroom, true);
   assert.equal(report.claims.productionThroughputDetails.backpressureConsistency.receiptCursorBackpressureBytes, 512 * 1024);
@@ -371,6 +373,14 @@ test('production claim gate fails closed if benchmark evidence is tampered', () 
     productionThroughputDetails(mismatchedQueueHeadroom).backpressureConsistency.queueHeadroomMatchesResourceHeadroom,
     false,
   );
+  assert.equal(
+    productionThroughputDetails(mismatchedQueueHeadroom).backpressureConsistency.queuePausedBeforeOverflow,
+    true,
+  );
+  assert.equal(
+    productionThroughputDetails(mismatchedQueueHeadroom).backpressureConsistency.receiptCursorWithinQueueBudget,
+    true,
+  );
 
   const mismatchedReceiptCursorHeadroom = clone(report);
   mismatchedReceiptCursorHeadroom.evidence.backpressure.queueHeadroomBytes = 0;
@@ -382,6 +392,10 @@ test('production claim gate fails closed if benchmark evidence is tampered', () 
   assert.equal(
     productionThroughputDetails(mismatchedReceiptCursorHeadroom).receiptCursorHeadroomMatchesQueueHeadroom,
     false,
+  );
+  assert.equal(
+    productionThroughputDetails(mismatchedReceiptCursorHeadroom).backpressureConsistency.queuePausedBeforeOverflow,
+    true,
   );
   assert.equal(
     productionThroughputDetails(mismatchedReceiptCursorHeadroom).receiptCursorHeadroomMatchesResourceHeadroom,
