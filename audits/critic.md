@@ -1,21 +1,19 @@
 # Critic Verdict
 
-Current reliable head: `87822a0bc1ffe173d960cf23e5a1fb1274cdb514`
-(`Accept live recovery journal boundary`).
+Current reliable head: `5701c777fc27c985e79012dc4ad18206ab0b786a`
+(`Pin plugin driver guards in release verify`).
 
 Verdict: `0/4`
 
 Reason:
 
-- This head is a real step forward because the checked release verifier now
-  reaches `LIVE_RELEASE_BOUNDARY_OK` with the live `recovery/inspect` path
-  carrying a production-shaped recovery journal contract, lease fencing, and
-  stale-claim rejection.
-- It still does not prove the remaining production-owned primitive the gate is
-  waiting for: an independently owned durable-journal storage surface that the
-  checked release command consumes as production state, rather than only a
-  live source-owned recovery-inspect contract.
-- Because that production ownership boundary is still not proven directly, the
+- This head is useful plugin-driver guard pinning in the checked release
+  verifier, but it still does not prove the production-owned boundary the gate
+  is waiting for.
+- The missing primitive remains production-backed auth/session and
+  durable-journal ownership on the checked release path, not just plugin
+  guard or packaged smoke hardening.
+- Because that production boundary is still not proven directly, the
   supervised release gate remains closed at `0/4`.
 
 Next owner / command:
@@ -25,6 +23,6 @@ Next owner / command:
   `scripts/playground/push-remote-rest-plugin.php`,
   `src/recovery-journal.js`, and `src/authenticated-http-push-client.js` with
   `timeout 180s npm run verify:release`, but the next needed proof is the
-  exact production-owned durable-journal storage/restart-readable replay
-  primitive consumed by that checked path, or a precise handoff naming the
-  missing API/file/owner if it still cannot be wired.
+  exact production-owned auth/session and durable-journal primitive consumed
+  by that checked path, or a precise handoff naming the missing API/file/owner
+  if it still cannot be wired.
