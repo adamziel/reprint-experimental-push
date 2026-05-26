@@ -3358,6 +3358,7 @@ function addUnsupportedCommentmetaResourceBlocker(plan, {
   localHash,
   remoteHash,
 }) {
+  const references = boundEvidenceList(support.references || [], 3);
   plan.blockers.push({
     id: `blocker-unsupported-commentmeta-resource-${plan.blockers.length + 1}`,
     class: support.className || 'unsupported-commentmeta-resource',
@@ -3366,7 +3367,8 @@ function addUnsupportedCommentmetaResourceBlocker(plan, {
     resourceKey: resource.key,
     reason: support.reason || `Comment meta resource ${resource.key} is not yet supported by the planner.`,
     unsupportedState: support.unsupportedState || null,
-    references: support.references || [],
+    references,
+    referencesTruncated: Boolean((support.references || []).length > references.length),
     baseHash,
     localHash,
     remoteHash,
@@ -3392,6 +3394,7 @@ function addUnsupportedUsermetaResourceBlocker(plan, {
   localHash,
   remoteHash,
 }) {
+  const references = boundEvidenceList(support.references || [], 3);
   plan.blockers.push({
     id: `blocker-unsupported-usermeta-resource-${plan.blockers.length + 1}`,
     class: support.className || 'unsupported-usermeta-resource',
@@ -3400,7 +3403,8 @@ function addUnsupportedUsermetaResourceBlocker(plan, {
     resourceKey: resource.key,
     reason: support.reason || `User meta resource ${resource.key} is not yet supported by the planner.`,
     unsupportedState: support.unsupportedState || null,
-    references: support.references || [],
+    references,
+    referencesTruncated: Boolean((support.references || []).length > references.length),
     baseHash,
     localHash,
     remoteHash,

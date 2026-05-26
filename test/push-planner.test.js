@@ -19259,6 +19259,7 @@ test('blocks local same-plan created comment meta identity while preserving remo
   assert.equal(blocker.class, 'unsupported-commentmeta-resource');
   assert.equal(blocker.resourceKey, resourceKey);
   assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_commentmeta","meta_id:43"] is created in the same plan as a comment identity that depends on it, and identity rewriting is not yet supported.');
+  assert.equal(blocker.referencesTruncated, false);
   assert.equal(reference.relationshipKey, 'wp_commentmeta.comment_id');
   assert.equal(reference.relationshipType, 'commentmeta-comment');
   assert.equal(reference.targetResourceKey, targetResourceKey);
@@ -19676,6 +19677,7 @@ test('blocks local same-plan created user meta identity while preserving remote-
   assert.equal(blocker.resourceKind, 'user-meta');
   assert.equal(blocker.resourceKey, resourceKey);
   assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_usermeta","umeta_id:77"] is created in the same plan as a user identity that depends on it, and identity rewriting is not yet supported.');
+  assert.equal(blocker.referencesTruncated, false);
   assert.equal(reference.relationshipKey, 'wp_usermeta.user_id');
   assert.equal(reference.relationshipType, 'usermeta-user');
   assert.equal(reference.targetResourceKey, 'row:["wp_users","ID:11"]');
