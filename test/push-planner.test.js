@@ -21361,6 +21361,72 @@ test('blocks local revision graph resources while preserving a matching independ
   assert.equal(Object.hasOwn(remote.files, 'wp-content/plugins/forms/forms.php'), false);
 });
 
+test('blocks remote-only revision drift while preserving a matching independent edit and remote-only plugin changes', () => {
+  const resourceKey = 'row:["wp_posts","ID:49"]';
+  const base = baseSite();
+  base.db.wp_posts['ID:49'] = {
+    ID: 49,
+    post_title: 'Base remote-only revision',
+    post_content: 'Base remote-only revision content',
+    post_status: 'inherit',
+    post_type: 'revision',
+  };
+  base.db.wp_posts['ID:50'] = {
+    ID: 50,
+    post_title: 'Base remote-only revision shared row',
+    post_content: 'Base remote-only revision shared content',
+    post_status: 'publish',
+    post_type: 'post',
+  };
+
+  const local = baseSite();
+  local.db.wp_posts['ID:49'] = JSON.parse(JSON.stringify(base.db.wp_posts['ID:49']));
+  local.db.wp_posts['ID:50'] = {
+    ID: 50,
+    post_title: 'Shared remote-only revision row',
+    post_content: 'Shared remote-only revision content',
+    post_status: 'publish',
+    post_type: 'post',
+  };
+
+  const remote = baseSite();
+  remote.db.wp_posts['ID:49'] = {
+    ID: 49,
+    post_title: 'Remote-only revision drift',
+    post_content: 'Remote-only revision drift content',
+    post_status: 'inherit',
+    post_type: 'revision',
+  };
+  remote.db.wp_posts['ID:50'] = JSON.parse(JSON.stringify(local.db.wp_posts['ID:50']));
+  remote.plugins.forms.description = 'remote-only plugin changes';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin changes */';
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  const matchingEdit = decisionFor(plan, 'row:["wp_posts","ID:50"]');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(decisionFor(plan, resourceKey), undefined);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(plan.conflicts.length, 0);
+  assert.equal(blocker.class, 'unsupported-revision-resource');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.reason, `WordPress graph mutation ${resourceKey} is created in the same plan as a revision identity that depends on it, and identity rewriting is not yet supported.`);
+  assert.equal(matchingEdit.decision, 'already-in-sync');
+  assert.equal(matchingEdit.change.localChange, 'update');
+  assert.equal(matchingEdit.change.remoteChange, 'update');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('Remote-only revision drift content'), false);
+  assert.equal(planJson.includes('Base remote-only revision content'), false);
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin changes');
+  assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin changes */');
+});
+
 test('blocks local post-parent references to a same-plan created revision while preserving remote-only plugin drift', () => {
   const resourceKey = 'row:["wp_posts","ID:46"]';
   const targetResourceKey = 'row:["wp_posts","ID:47"]';
