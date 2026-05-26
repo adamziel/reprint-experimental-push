@@ -141,6 +141,7 @@ test('guarded benchmark refuses production throughput claims until production ga
   assert.equal(report.claims.productionThroughputDetails.backpressureConsistency.receiptCursorQueueSlackMatchesBackpressure, true);
   assert.equal(report.claims.productionThroughputDetails.backpressureConsistency.receiptCursorQueueSlackMatchesMemoryHeadroom, true);
   assert.equal(report.claims.productionThroughputDetails.backpressureConsistency.receiptCursorQueueSlackMatchesResourceHeadroom, true);
+  assert.equal(report.claims.productionThroughputDetails.backpressureConsistency.receiptCursorQueueSlackWithinResourceHeadroom, true);
   assert.equal(report.claims.productionThroughputDetails.backpressureConsistency.receiptCursorQueueSlackMeasured, true);
   assert.equal(report.claims.productionThroughputDetails.backpressureConsistency.receiptCursorQueueSlackWithinQueueBudget, true);
   assert.equal(report.claims.productionThroughputDetails.receiptCursorMemoryHeadroomWithinQueueBudget, true);
@@ -520,7 +521,10 @@ test('production claim gate fails closed if benchmark evidence is tampered', () 
   assert.ok(productionThroughputBlockers(missingQueueCursor).includes('backpressure-evidence-incomplete'));
 
   const mismatchedQueueSlack = clone(report);
-  mismatchedQueueSlack.evidence.backpressure.receiptCursorQueueSlackBytes = 0;
+  mismatchedQueueSlack.evidence.backpressure.receiptCursorQueueSlackBytes =
+    mismatchedQueueSlack.resourceLimits.memoryCeilingBytes
+    - mismatchedQueueSlack.evidence.chunkReceipts.resumeCursor.sizeBytes
+    + 1;
   assert.ok(
     productionThroughputBlockers(mismatchedQueueSlack).includes('backpressure-evidence-incomplete'),
   );
@@ -538,6 +542,10 @@ test('production claim gate fails closed if benchmark evidence is tampered', () 
   );
   assert.equal(
     productionThroughputDetails(mismatchedQueueSlack).backpressureConsistency.receiptCursorQueueSlackMatchesResourceHeadroom,
+    false,
+  );
+  assert.equal(
+    productionThroughputDetails(mismatchedQueueSlack).backpressureConsistency.receiptCursorQueueSlackWithinResourceHeadroom,
     false,
   );
 

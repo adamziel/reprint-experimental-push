@@ -97,6 +97,9 @@ Current executable gate:
 - The report now also exposes a `backpressureConsistency` summary for queue
   budget, receipt cursor, and headroom alignment so tampering shows up as a
   named evidence mismatch rather than a silent detail drift.
+- The report now also exposes whether receipt-cursor queue slack stays within
+  the measured resource headroom, so the bounded pause proof can be audited
+  without recomputing the slack bound from separate fields.
 - The report now also allows a durable receipt cursor to size the next journal
   batch after a pause, but only as planning evidence. The pause boundary, raw
   receipt order, and journal records still decide whether recovery can resume

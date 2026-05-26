@@ -481,6 +481,11 @@ export function productionThroughputDetails(report) {
     && Number.isFinite(receiptCursorMemoryCeilingBytes)
     && Number.isFinite(receiptCursorWindowBytes)
     && receiptCursorQueueSlackBytes === receiptCursorMemoryCeilingBytes - receiptCursorWindowBytes;
+  const receiptCursorQueueSlackWithinResourceHeadroom =
+    Number.isFinite(receiptCursorQueueSlackBytes)
+    && Number.isFinite(receiptCursorMemoryCeilingBytes)
+    && Number.isFinite(receiptCursorWindowBytes)
+    && receiptCursorQueueSlackBytes <= receiptCursorMemoryCeilingBytes - receiptCursorWindowBytes;
   const receiptCursorQueueSlackMeasured =
     Number.isFinite(receiptCursorQueueSlackBytes);
   const receiptCursorQueueSlackWithinQueueBudget =
@@ -575,6 +580,7 @@ export function productionThroughputDetails(report) {
     receiptCursorQueueSlackMatchesMemoryHeadroom,
     receiptCursorQueueSlackMatchesQueueHeadroom,
     receiptCursorQueueSlackMatchesResourceHeadroom,
+    receiptCursorQueueSlackWithinResourceHeadroom,
     receiptCursorQueueSlackMeasured,
     receiptCursorQueueSlackWithinQueueBudget,
     receiptCursorMemoryHeadroomWithinQueueBudget,
@@ -617,6 +623,7 @@ export function productionThroughputDetails(report) {
       receiptCursorQueueSlackMatchesMemoryHeadroom,
       receiptCursorQueueSlackMatchesQueueHeadroom,
       receiptCursorQueueSlackMatchesResourceHeadroom,
+      receiptCursorQueueSlackWithinResourceHeadroom,
       receiptCursorQueueSlackMeasured,
       receiptCursorQueueSlackWithinQueueBudget,
       receiptCursorMemoryHeadroomWithinQueueBudget,
