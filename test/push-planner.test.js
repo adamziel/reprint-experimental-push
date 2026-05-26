@@ -17807,6 +17807,65 @@ test('blocks local same-plan created user meta identity while preserving a match
   assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin changes */');
 });
 
+test('blocks local same-plan created user meta identity while preserving a matching independent delete and remote-only plugin drift', () => {
+  const resourceKey = 'row:["wp_usermeta","umeta_id:81"]';
+  const targetFileKey = 'file:index.php';
+  const base = baseSite();
+  base.db.wp_usermeta = {
+    'umeta_id:81': {
+      umeta_id: 81,
+      user_id: 15,
+      meta_key: 'nickname',
+      meta_value: 'Base user meta value',
+    },
+  };
+
+  const local = baseSite();
+  delete local.files['index.php'];
+  local.db.wp_usermeta = {
+    'umeta_id:81': {
+      umeta_id: 81,
+      user_id: 15,
+      meta_key: 'nickname',
+      meta_value: 'Local user meta value',
+    },
+  };
+  local.db.wp_users = {
+    'ID:15': {
+      ID: 15,
+      user_login: 'local-same-plan-user-meta-delete',
+      user_email: 'local-usermeta-delete@example.test',
+    },
+  };
+
+  const remote = baseSite();
+  remote.db.wp_usermeta = JSON.parse(JSON.stringify(base.db.wp_usermeta));
+  remote.plugins.forms.description = 'remote-only plugin drift';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin drift */';
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  const deleteMutation = mutationFor(plan, targetFileKey);
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 1);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(plan.conflicts.length, 0);
+  assert.equal(blocker.class, 'unsupported-usermeta-resource');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_usermeta","umeta_id:81"] is created in the same plan as a user identity that depends on it, and identity rewriting is not yet supported.');
+  assert.equal(deleteMutation.action, 'delete');
+  assert.equal(deleteMutation.changeKind, 'delete');
+  assert.equal(deleteMutation.change.localChange, 'delete');
+  assert.equal(deleteMutation.change.remoteChange, 'unchanged');
+  assert.equal(planJson.includes('Local user meta value'), false);
+  assert.equal(planJson.includes('Base user meta value'), false);
+  assert.equal(planJson.includes('local-same-plan-user-meta-delete'), false);
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin drift');
+  assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin drift */');
+});
+
 test('blocks local same-plan created post author identity while preserving remote-only plugin removals', () => {
   const resourceKey = 'row:["wp_posts","ID:42"]';
   const base = baseSite();
