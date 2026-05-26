@@ -11648,6 +11648,62 @@ test('allows a local post parent reference to a same-plan post even when an unre
   assert.equal(JSON.stringify(reference).includes('local-private-child-body'), false);
 });
 
+test('blocks a local post parent reference when the same-plan post target is itself blocked by a revision parent', () => {
+  const revisionResourceKey = 'row:["wp_posts","ID:2"]';
+  const blockedParentResourceKey = 'row:["wp_posts","ID:3"]';
+  const childResourceKey = 'row:["wp_posts","ID:4"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_type: 'revision',
+    post_title: 'Local revision parent',
+    post_content: 'local-private-revision-parent-body',
+    post_parent: 1,
+  };
+  local.db.wp_posts['ID:3'] = {
+    ID: 3,
+    post_type: 'post',
+    post_title: 'Blocked same-plan parent post',
+    post_content: 'local-private-blocked-parent-body',
+    post_status: 'publish',
+    post_parent: 2,
+  };
+  local.db.wp_posts['ID:4'] = {
+    ID: 4,
+    post_type: 'page',
+    post_title: 'Dependent child page',
+    post_content: 'local-private-child-body',
+    post_status: 'publish',
+    post_parent: 3,
+  };
+
+  const plan = planFor(base, local, baseSite());
+  const revisionMutation = mutationFor(plan, revisionResourceKey);
+  const blockedParentMutation = mutationFor(plan, blockedParentResourceKey);
+  const childMutation = mutationFor(plan, childResourceKey);
+  const revisionBlocker = plan.blockers.find((entry) => entry.resourceKey === revisionResourceKey);
+  const blockedParentBlocker = plan.blockers.find((entry) => entry.resourceKey === blockedParentResourceKey);
+  const childBlocker = plan.blockers.find((entry) => entry.resourceKey === childResourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(revisionMutation, undefined);
+  assert.equal(blockedParentMutation.changeKind, 'create');
+  assert.equal(childMutation.changeKind, 'create');
+  assert.equal(revisionBlocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(revisionBlocker.surface, 'revision');
+  assert.equal(blockedParentBlocker.class, 'missing-wordpress-graph-dependency');
+  assert.equal(blockedParentBlocker.references[0].relationshipType, 'post-parent');
+  assert.equal(blockedParentBlocker.references[0].targetResourceKey, revisionResourceKey);
+  assert.equal(childBlocker.class, 'missing-wordpress-graph-dependency');
+  assert.equal(childBlocker.references[0].relationshipType, 'post-parent');
+  assert.equal(childBlocker.references[0].targetResourceKey, blockedParentResourceKey);
+  assert.equal(JSON.stringify(childBlocker).includes('local-private-revision-parent-body'), false);
+  assert.equal(JSON.stringify(childBlocker).includes('local-private-blocked-parent-body'), false);
+  assert.equal(JSON.stringify(childBlocker).includes('local-private-child-body'), false);
+  assert.throws(() => applyPlan(baseSite(), plan), /Refusing to apply/);
+});
+
 test('allows a local post parent reference owned by an attachment even when it targets a same-plan post', () => {
   const attachmentResourceKey = 'row:["wp_posts","ID:3"]';
   const parentResourceKey = 'row:["wp_posts","ID:4"]';
