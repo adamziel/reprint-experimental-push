@@ -539,7 +539,7 @@ function isValidProductionWriterLease(writerLease) {
     && writerLease.id.trim().length > 0
     && (
       !Object.hasOwn(writerLease, 'epoch')
-      || Number.isInteger(writerLease.epoch)
+      || (Number.isInteger(writerLease.epoch) && writerLease.epoch >= 0)
     )
   );
 }

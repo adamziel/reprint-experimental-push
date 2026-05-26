@@ -1257,7 +1257,7 @@ function hasValidProductionLeaseIdentity(value) {
     && value.id.trim().length > 0
     && (
       !Object.hasOwn(value, 'epoch')
-      || Number.isInteger(value.epoch)
+      || (Number.isInteger(value.epoch) && value.epoch >= 0)
     );
 }
 
