@@ -649,6 +649,24 @@ function reprint_push_lab_rest_merge_checked_recovery_journal_contract(
         );
     }
 
+    $checked_storage_guard = reprint_push_lab_rest_db_journal_storage_guard($checked_db_journal);
+    if (is_array($checked_storage_guard)) {
+        $prefer_checked_storage_guard = reprint_push_lab_rest_should_prefer_authoritative_checked_storage_guard(
+            isset($journal['storageGuard']) && is_array($journal['storageGuard']) ? $journal['storageGuard'] : [],
+            $checked_storage_guard,
+            $checked_db_journal
+        );
+        if (!isset($journal['storageGuard']) || !is_array($journal['storageGuard'])) {
+            $journal['storageGuard'] = $checked_storage_guard;
+        } else {
+            $journal['storageGuard'] = reprint_push_lab_rest_merge_checked_storage_guard(
+                $journal['storageGuard'],
+                $checked_storage_guard,
+                $prefer_checked_storage_guard
+            );
+        }
+    }
+
     return $journal;
 }
 
