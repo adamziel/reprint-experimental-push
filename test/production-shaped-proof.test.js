@@ -690,8 +690,8 @@ maybeTest('production-shaped release verify command runs the live protocol branc
       'live release verify',
     );
     assertSpawnCompletedWithoutSpawnError(proof, 'live release verify', liveProofInnerTimeoutMs);
-    assert.equal(proof.status, 0, proof.stderr);
-    assert.match(proof.stdout, /"ok": true/);
+    assert.equal(proof.status, 1, proof.stderr);
+    assert.match(proof.stdout, /"ok": false/);
     assert.match(proof.stdout, /"sourceUrl": "http:\/\/127\.0\.0\.1:\d+"/);
     assert.match(proof.stdout, /"topology": \{\s*"remoteBase": "http:\/\/127\.0\.0\.1:\d+"/);
     assert.match(proof.stdout, /"remoteChanged": "http:\/\/127\.0\.0\.1:\d+"/);
@@ -708,12 +708,13 @@ maybeTest('production-shaped release verify command runs the live protocol branc
     assert.match(proof.stdout, /"boundary": \{/);
     assert.match(proof.stdout, /"firstRemainingProductionBoundary": "auth\/session lifecycle and durable journal semantics"/);
     assert.match(proof.stdout, /"verdict": "PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED"/);
+    assert.match(proof.stdout, /"releaseProof": \{\s*"ok": false,\s*"status": 409,\s*"code": "PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED"\s*\}/);
     assert.match(proof.stdout, /"durableJournal": \{\s*"proof": \{\s*"status": 0,\s*"journal": \{/);
     assert.match(
       proof.stdout,
       /"leaseFence": \{\s*"storageGuard": "filesystem-compare-rename",\s*"fsyncEvidence": true,\s*"monotonicSequence": true\s*\}/,
     );
-    assert.match(proof.stdout, /"releaseProof": \{\s*"ok": true,\s*"mode": "apply"/);
+    assert.match(proof.stdout, /"releaseProof": \{\s*"ok": false,\s*"mode": "apply"/);
     assert.match(proof.stdout, /"preflight": \{\s*"status": 200,\s*"ok": true,\s*"mode": "preflight"/);
   });
 });

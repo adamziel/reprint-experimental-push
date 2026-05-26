@@ -474,6 +474,7 @@ try {
         idempotencyKey: 'production-shaped-release-verify-001',
         routeProfile: 'production-shaped',
         dryRunOnly: false,
+        requireProductionAuthSession: true,
         labDriftAfterSnapshot,
         now: new Date('2026-05-25T10:12:00.000Z'),
       });
