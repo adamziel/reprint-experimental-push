@@ -741,6 +741,7 @@ try {
               },
             },
             releaseProof: proof,
+            replayEquivalence: proof.replayEquivalence,
           durableJournal: {
             proof: {
               status: 0,
