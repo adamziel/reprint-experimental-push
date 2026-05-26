@@ -8,18 +8,17 @@ Fresh remote heads at audit time, checked on May 26, 2026:
 
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `04753bdc`
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `4a857b41`
-- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `9e791650`
+- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `716e85ba`
 - `origin/lane/critic` -> `2b608e9e`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `2a447f26`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `54960a4f`
 - `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration` -> `0a448b37`
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `fba292d0`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `1e61f98f`
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `60d3b4c6`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `4a857b41`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `95d20044`
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `768076fc`
 - `origin/lane/independent-auditor` -> `6351130f`
 - `origin/lane/reliable-executor` -> `447c203b`
-- `origin/lane/no-data-loss-invariants` -> `055d240b`
+- `origin/lane/no-data-loss-invariants` -> `22ac71bb`
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` -> `db36753e`
 - `origin/lane/critic` -> `a0b89723`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `95d20044`
@@ -30,9 +29,9 @@ Fresh remote heads at audit time, checked on May 26, 2026:
 - `origin/lane/cycle-20260525-mainwindows-2349/critic` -> `a0b89723`
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `a489f4cb`
 - `origin/lane/cycle-20260525-mainwindows-2349/same-plan-wordpress-graph-create` -> `0d2178e9`
-- `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-invariants` -> `055d240b`
+- `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-invariants` -> `22ac71bb`
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `fba292d0`
-- `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration` -> `055d240b`
+- `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration` -> `22ac71bb`
 - `origin/lane/cycle-20260525-mainwindows-2357/no-data-loss-invariants-graph-proof` -> `98c0ce26`
 - `origin/main` -> `e55864f4`
 
@@ -52,19 +51,17 @@ but it did not change the release conclusion:
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now
   advances to `4a857b41`, refreshing public progress visibility only.
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` now
-  advances to `9e791650`, refreshing the audit snapshot only.
+  advances to `716e85ba`, refreshing the audit snapshot only.
 - `origin/lane/critic` now advances to `2b608e9e`, refreshing the critique
   readiness audit only.
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now records
-  `2a447f26`, refreshing the public progress freshness surface only.
+  `54960a4f`, refreshing the public progress freshness surface only.
 - `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration`
   now records `0a448b37`, adding termmeta same-plan drift proof. That is
   stronger boundary hardening, but it still does not produce live source
   mutation evidence.
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now records
-  `1e61f98f`, refreshing the public progress freshness surface only.
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now
-  records `60d3b4c6`, also a freshness-only update.
+  records `4a857b41`, also a freshness-only update.
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` now records
   `768076fc`, which refreshes the audit snapshot but does not change the
   release boundary.
@@ -73,13 +70,9 @@ but it did not change the release conclusion:
 - `origin/lane/reliable-executor` now advances to `447c203b`, which tightens
   live proof startup diagnostics and timeout handling but still does not prove a production-backed
   source mutation boundary.
-- `origin/lane/no-data-loss-invariants` now advances to `055d240b`, adding
-  revision removal boundary proof. A separate cycle-branch proof at `98c0ce26`
-  extends that blocker coverage to missing graph identity references, and the
-  same-plan graph lane at `0d2178e9` now blocks unsupported graph surfaces
-  including revision posts, menu/navigation posts, serialized blocks, and
-  thumbnail parent references, but none of these produce live source mutation
-  evidence.
+- `origin/lane/no-data-loss-invariants` now advances to `22ac71bb`, adding
+  same-plan post-parent/post proof coverage. That remains fail-closed boundary
+  evidence, not live source mutation proof.
 - The newer integration cycle head at `a3a900d7` adds comments graph blocker
   coverage, which strengthens the fail-closed boundary but still does not
   prove live source mutation on unsupported surfaces.
@@ -104,17 +97,16 @@ but it did not change the release conclusion:
   `origin/lane/cycle-20260525-mainwindows-2349/same-plan-wordpress-graph-create`
   now tracks the same `a719e09c` boundary hardening, which further narrows
   unsupported graph writes but still does not add live source mutation proof.
-- `origin/lane/no-data-loss-invariants` now advances to `055d240b`, adding
-  revision removal boundary proof. That remains fail-closed boundary evidence,
-  not a live production mutation proof.
+- `origin/lane/no-data-loss-invariants` now advances to `22ac71bb`, adding
+  same-plan post-parent/post proof coverage. That remains fail-closed boundary
+  evidence, not a live production mutation proof.
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now records
   `10fa7f6b`, refreshing the public progress freshness surface only.
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now records
   `208f3b21`, also a freshness-only update.
-- `origin/lane/no-data-loss-invariants` now advances to `055d240b`, and the
-  broader cycle-branch proof at `98c0ce26` still adds missing graph identity
-  blocker coverage. Both remain fail-closed boundary evidence, not live
-  production mutation proof.
+- `origin/lane/no-data-loss-invariants` now advances to `22ac71bb`, and the
+  broader graph blocker coverage still remains fail-closed boundary evidence,
+  not live production mutation proof.
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` now
   records `95d20044`, tightening recovery journal sequence checks without
   proving production-backed durability.
@@ -223,7 +215,7 @@ These tests are still lab-bound. They mostly prove carefully controlled fixtures
 6. Reliability assertions often count events rather than prove every hash transition.
 7. Auth is lab-auth, not production-auth.
 8. Plugin safety is intentionally hard-coded.
-9. The strongest unsupported production-slice gap is still the boundary coverage for menu/navigation, serialized block references, comments/users, and plugin-owned custom tables. The current proof in [`test/push-planner.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/independent-auditor/test/push-planner.test.js) is refusal-backed for plugin-owned resources, not live-boundary proof for those graph surfaces. The newer same-plan graph proof at `a719e09c` strengthens the fail-closed side for revision posts, menu/navigation posts, serialized blocks, and thumbnail parent references, and the newer revision-removal proof at `055d240b` and missing-graph-identity proof at `98c0ce26` narrow unsupported graph edges, but none produce live source mutation evidence.
+9. The strongest unsupported production-slice gap is still the boundary coverage for menu/navigation, serialized block references, comments/users, and plugin-owned custom tables. The current proof in [`test/push-planner.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/independent-auditor/test/push-planner.test.js) is refusal-backed for plugin-owned resources, not live-boundary proof for those graph surfaces. The newer same-plan graph proof at `a719e09c` strengthens the fail-closed side for revision posts, menu/navigation posts, serialized blocks, and thumbnail parent references, and the newer same-plan post-parent/post proof at `22ac71bb` narrows unsupported graph edges, but none produce live source mutation evidence.
 10. The repository script surface still lacks a checked-in `verify`, `verify:release`, or `release` command in [`package.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/independent-auditor/package.json:10), so there is still no enforced live-source gate that could own the verdict even if the missing proof appeared. The planner tests in [`test/push-planner.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/independent-auditor/test/push-planner.test.js:131) remain strong fixture evidence, but they still stop at local/remote simulation rather than the live release boundary. The exact missing command is a checked entrypoint that runs the live-source preflight, aborts on stale or unsupported boundaries, and exits non-zero before any apply step when the unsupported surface set is hit.
 11. Speed has no measured evidence.
 
