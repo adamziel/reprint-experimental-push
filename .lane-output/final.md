@@ -1,43 +1,29 @@
 # Fast Paths Handoff
 
-## Result
+Timestamp: 2026-05-26 15:41:26 CEST (+0200)
 
-Added a new fail-closed planning shortcut for compressing canonical per-kind
-budget summaries while reusing a planned dependency graph to size bounded
-plugin-update fanout. The shortcut stays planning-only and keeps live
-preconditions, atomic-group boundaries, and durable recovery evidence intact.
-
-## Changed Files
-
-- [`docs/fast-paths.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/fast-paths-current-20260526-1415/docs/fast-paths.md)
-- [`scripts/bench/performance-model.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/fast-paths-current-20260526-1415/scripts/bench/performance-model.js)
-- [`test/performance-model.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/fast-paths-current-20260526-1415/test/performance-model.test.js)
-- [`.lane-output/final.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/fast-paths-current-20260526-1415/.lane-output/final.md)
-
-## Verification
-
-Commands run:
-
-- `timeout 40s node --test test/performance-model.test.js`
-- `git diff --check -- docs/fast-paths.md scripts/bench/performance-model.js test/performance-model.test.js`
+Changed files:
+- [docs/fast-paths.md](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/fast-paths-clean-20260526-1530/docs/fast-paths.md)
+- [scripts/bench/guarded-executor-benchmark.js](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/fast-paths-clean-20260526-1530/scripts/bench/guarded-executor-benchmark.js)
+- [test/guarded-executor-benchmark.test.js](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/fast-paths-clean-20260526-1530/test/guarded-executor-benchmark.test.js)
 
 Result:
+- Added a new fail-closed throughput blocker, `production-row-batch-executor-visible-without-parallelism-limits`, so surfaced production row-batch executor evidence cannot count unless visible measured canonical parallelism caps are present too.
+- Added focused coverage proving the row-batch surface is rejected when atomic-group, storage-receipt, and row-batch visibility are present but the DB parallelism cap surface is hidden.
+- Documented the new guard in the fast-path lane notes.
 
-- `node --test` passed `21/21` subtests.
-- `git diff --check` passed cleanly for the touched files.
+Commands:
+- `timeout 40s node --test test/guarded-executor-benchmark.test.js`
+- `git diff --check -- docs/fast-paths.md scripts/bench/guarded-executor-benchmark.js test/guarded-executor-benchmark.test.js`
+- `git add docs/fast-paths.md scripts/bench/guarded-executor-benchmark.js test/guarded-executor-benchmark.test.js && git commit -m "Guard row-batch fast-path parallelism"`
+- `git push origin HEAD:lane/fast-paths`
 
-## Push Result
+Push result:
+- Pushed successfully to `origin/lane/fast-paths`
+- Commit: `484c86c0` (`Guard row-batch fast-path parallelism`)
 
-- Pending commit and push.
+Worktree status:
+- Expected clean after push; recheck with `git status --short --branch`
 
-## Worktree Status
-
-- Branch: `lane/cycle-20260525-mainwindows-2349/fast-paths-current-20260526-1415`
-- Working tree: dirty until commit and push
-
-## Next Supervisor Nudge
-
-- Keep fast-path work focused on bounded, fail-closed planning shortcuts that
-  do not weaken live preconditions or recovery evidence. The next useful change
-  is another genuinely new safe speedup edge with executable proof, not a
-  status refresh.
+Next supervisor nudge:
+- Keep fast-path work on narrow fail-closed production-plumbing guards. The next useful edge is another bounded throughput-evidence coupling around receipts, cursors, or memory ceilings, not a benchmark-only status refresh.
