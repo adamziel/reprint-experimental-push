@@ -19,7 +19,7 @@ const liveCredentials = {
 };
 const proofSubprocessTimeoutMs = 45_000;
 const proofSubprocessKillSignal = 'SIGKILL';
-const liveProofSubprocessTimeoutMs = 30_000;
+const liveProofSubprocessTimeoutMs = 20_000;
 const releaseVerifySlowPathTimeoutMs = 12_000;
 const liveReleaseVerifyTimeoutMs = liveProofSubprocessTimeoutMs;
 const proofSubprocessOptions = {
