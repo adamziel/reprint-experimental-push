@@ -1,20 +1,22 @@
 # Critic Verdict
 
-Current reliable head: `5b1ee960b54344fafa06bf0b8ff4440c7fa79c62`
-(`Record stale claim rejection evidence`).
+Current reliable head: `593f7af0be408c6acb8d521e4e8c77f99af0a805`
+(`Unblock packaged release boundary proof`).
 
 Verdict: `0/4`
 
 Reason:
 
-- This head persists restart-readable `stale-claim-rejected` evidence and the
-  checked consumer surface reports `staleClaimRejected: true`, which is real
-  recovery-journal progress.
-- It is still support-side evidence rather than a production-backed
-  auth/session lifecycle proof on the checked release boundary, so the gate
-  remains closed.
-- The missing gate after this commit is production-backed auth/session
-  issuance/read/expiry/rotation/revocation/cleanup in `verify:release`.
+- This head reports a checked packaged release verifier result with top-level
+  `ok: true`, `releaseProof.ok: true`, preflight `200`, active preserved
+  `production-auth-session` lifecycle history, and
+  `durableJournal.packagedAccepted: true`, which is real release-path
+  progress.
+- It is still packaged proof rather than the exact remaining production
+  boundary, so the gate remains closed.
+- The missing gate after this commit is the exact production boundary not yet
+  covered by the checked packaged proof, most likely preserved-remote retry or
+  stricter production durable-journal semantics.
 
 Next owner / command:
 
