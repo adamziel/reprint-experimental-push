@@ -8,22 +8,22 @@ Fresh remote heads at audit time, checked on May 26, 2026:
 
 - `origin/lane/reliable-executor` -> `ffdc0a9b`
 - `origin/lane/no-data-loss-invariants` -> `9c70eba6`
-- `origin/lane/no-data-loss-recovery` -> `deb3e35b`
-- `origin/lane/fast-paths` -> `a72b08ad`
-- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `a72b08ad`
-- `origin/lane/independent-auditor` -> `921a94f8`
-- `origin/lane/critic` -> `3b9a9c46`
+- `origin/lane/no-data-loss-recovery` -> `0c53048b`
+- `origin/lane/fast-paths` -> `1e3014e8`
+- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `1e3014e8`
+- `origin/lane/independent-auditor` -> `1d3b495e`
+- `origin/lane/critic` -> `6828861f`
 - `origin/lane/progress-publisher` -> `7695e1f9`
 - `origin/lane/same-plan-wordpress-graph-create` -> `09e6706d`
 - `origin/lane/cycle-20260525-mainwindows-2349/same-plan-wordpress-graph-create` -> `09e6706d`
 - `origin/lane/cycle-20260525-mainwindows-2349/same-plan-wordpress-graph-create` -> `e9cbf9d4`
 - `origin/lane/cycle-20260525-mainwindows-2357/no-data-loss-invariants-graph-proof` -> `98c0ce26`
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `562f0947`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `19ada1a0`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `b9bc7c95`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `23d3fb66`
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` -> `5f256171`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-invariants` -> `9c70eba6`
-- `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `deb3e35b`
-- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `a72b08ad`
+- `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `0c53048b`
+- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `1e3014e8`
 - `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration` -> `a3a900d7`
 - `origin/main` -> `e55864f4`
 
@@ -50,21 +50,21 @@ but it did not change the release conclusion:
 - `origin/lane/no-data-loss-recovery` now fails closed on artifact references
   at `0c53048b`. That narrows unsupported recovery claims, but it still does
   not add production-backed journal ownership or replay proof.
-- `origin/lane/fast-paths` now fails closed on unmeasured backpressure at
-  `21afdad9`. This remains a safe fast-path implementation detail, but it
-  still does not prove the live production push boundary.
-- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` now adds bounded
-  backpressure consistency handling at `a72b08ad`. That is still a
-  fail-closed implementation improvement, not production release proof.
-- `origin/lane/critic` now refreshes the critic handoff at `3b9a9c46`.
+- `origin/lane/fast-paths` now tightens receipt headroom checks at `1e3014e8`.
+  That is still a fail-closed implementation improvement, not production
+  release proof.
+- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` now mirrors the
+  same receipt headroom tightening at `1e3014e8`. That remains boundary
+  hardening, not production release proof.
+- `origin/lane/critic` now refreshes the critic handoff at `6828861f`.
 - `origin/lane/progress-publisher` now refreshes the public progress evidence
   at `7695e1f9`.
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` now refreshes the audit snapshot at
-  `921a94f8`.
+  `1d3b495e`.
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now
-  refreshes the supervisor evidence snapshot at `c4a411f9`.
+  refreshes the supervisor evidence snapshot at `b9bc7c95`.
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now
-  records the latest progress freshness handoff at `1a0122cf`.
+  records the latest progress freshness handoff at `23d3fb66`.
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` now
   hardens the live proof timeout diagnostics at `5f256171`.
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` now
