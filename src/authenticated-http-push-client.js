@@ -459,7 +459,7 @@ function isReplayEquivalent(applyResponse, replayResponse) {
 function hasAuthEnvelopeDrift(expected, response) {
   const body = response?.body || {};
   if (!body.auth) {
-    return false;
+    return true;
   }
   return body.auth?.identity?.userLogin !== expected.userLogin
     || body.auth?.session?.id !== expected.sessionId
