@@ -907,3 +907,63 @@ test('checked storage guard merge preserves more specific inline values', { skip
     outcome: 'retained',
   });
 });
+
+test('authoritative checked storage guard preference upgrades stale fixture-style values on accepted checked boundaries', { skip: !hasPhp }, () => {
+  const result = spawnSync('php', [
+    '-r',
+    [
+      'define("ABSPATH", dirname($argv[1]));',
+      'function add_filter(...$args) {}',
+      'function add_action(...$args) {}',
+      'function register_rest_route(...$args) {}',
+      'class WP_REST_Server { const CREATABLE = "POST"; const READABLE = "GET"; }',
+      'class WP_REST_Response {',
+      '  private $data;',
+      '  public function __construct($data = null, $status = null) { $this->data = $data; }',
+      '  public function get_data() { return $this->data; }',
+      '  public function set_data($data) { $this->data = $data; }',
+      '}',
+      'class WP_REST_Request {}',
+      'require $argv[1];',
+      '$inline = json_decode($argv[2], true);',
+      '$checked = json_decode($argv[3], true);',
+      '$dbJournal = json_decode($argv[4], true);',
+      'echo json_encode([',
+      '  "prefer" => reprint_push_lab_rest_should_prefer_authoritative_checked_storage_guard($inline, $checked, $dbJournal),',
+      '  "merged" => reprint_push_lab_rest_merge_checked_storage_guard(',
+      '    $inline,',
+      '    $checked,',
+      '    reprint_push_lab_rest_should_prefer_authoritative_checked_storage_guard($inline, $checked, $dbJournal)',
+      '  ),',
+      ']);',
+    ].join(' '),
+    pluginFile,
+    JSON.stringify({
+      boundary: 'local-fixture-write',
+      operation: 'playground-append',
+      outcome: 'fixture-only',
+    }),
+    JSON.stringify({
+      boundary: 'wpdb-single-statement-cas',
+      operation: 'insert-or-update',
+      outcome: 'claim-fenced',
+    }),
+    JSON.stringify({
+      acceptedOnCheckedBoundary: true,
+      scope: 'packaged production plugin journal surface; not local Playground fixture only',
+    }),
+  ], {
+    cwd: repoRoot,
+    encoding: 'utf8',
+  });
+
+  assert.equal(result.status, 0, result.stderr);
+  assert.deepEqual(JSON.parse(result.stdout), {
+    prefer: true,
+    merged: {
+      boundary: 'wpdb-single-statement-cas',
+      operation: 'insert-or-update',
+      outcome: 'claim-fenced',
+    },
+  });
+});

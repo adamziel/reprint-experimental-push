@@ -532,13 +532,19 @@ function reprint_push_lab_rest_authenticated_recovery_inspect(WP_REST_Request $r
         }
         $storage_guard = reprint_push_lab_rest_db_journal_storage_guard($db_journal);
         if (is_array($storage_guard)) {
+            $prefer_checked_storage_guard = (isset($upgrade_checked_storage_guard) && $upgrade_checked_storage_guard)
+                || reprint_push_lab_rest_should_prefer_authoritative_checked_storage_guard(
+                    $result['storageGuard'] ?? [],
+                    $storage_guard,
+                    $db_journal
+                );
             if (!isset($result['storageGuard']) || !is_array($result['storageGuard'])) {
                 $result['storageGuard'] = $storage_guard;
             } else {
                 $result['storageGuard'] = reprint_push_lab_rest_merge_checked_storage_guard(
                     $result['storageGuard'],
                     $storage_guard,
-                    isset($upgrade_checked_storage_guard) && $upgrade_checked_storage_guard
+                    $prefer_checked_storage_guard
                 );
             }
         }
@@ -727,6 +733,32 @@ function reprint_push_lab_rest_merge_checked_storage_guard(
     }
 
     return $storage_guard;
+}
+
+function reprint_push_lab_rest_should_prefer_authoritative_checked_storage_guard(
+    array $storage_guard,
+    array $checked_storage_guard,
+    array $db_journal
+): bool {
+    if (($db_journal['acceptedOnCheckedBoundary'] ?? false) !== true) {
+        return false;
+    }
+
+    foreach (['boundary', 'operation', 'outcome'] as $key) {
+        if (!array_key_exists($key, $storage_guard) || !array_key_exists($key, $checked_storage_guard)) {
+            continue;
+        }
+        $existing = is_string($storage_guard[$key]) ? $storage_guard[$key] : '';
+        $checked = is_string($checked_storage_guard[$key]) ? $checked_storage_guard[$key] : '';
+        if ($existing === '' || $checked === '' || $existing === $checked) {
+            continue;
+        }
+        if (preg_match('/fixture|local-playground|local-fixture|playground/i', $existing) === 1) {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 function reprint_push_lab_rest_authenticated_db_journal(WP_REST_Request $request): WP_REST_Response
