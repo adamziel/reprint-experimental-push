@@ -8,6 +8,7 @@ import {
   appendRecoveryClaimOpened,
   appendMutationObserved,
   assertJournalRecordHasNoRawValues,
+  recoveryClaimHash,
   RecoveryJournalClaimStaleError,
   consumeProductionRecoveryJournal,
   openProductionRecoveryJournal,
@@ -296,11 +297,14 @@ test('production recovery journal wrapper writes a restart-readable claim-fenced
   assert.equal(journal.productionAdapter, 'openProductionRecoveryJournal');
   assert.equal(journal.ownsJournal, true);
   assert.equal(journal.restartReadable, true);
+  assert.equal(journal.claimId, 'production-claim-01');
   assert.deepEqual(journal.artifactRefs, {
     releaseProof: 'artifact://release-proof-1',
   });
   assert.equal(inspection.journal.productionAdapter, 'openProductionRecoveryJournal');
   assert.equal(inspection.journal.ownsJournal, true);
+  assert.equal(inspection.journal.claimId, 'production-claim-01');
+  assert.equal(inspection.journal.claimHash, recoveryClaimHash('production-claim-01'));
   assert.equal(inspection.journal.consumed, false);
   assert.equal(inspection.journal.restartReadable, true);
   assert.equal(inspection.journal.schemaVersion, 1);
@@ -333,6 +337,8 @@ test('checked release path consumes the production recovery journal inspection s
 
   assert.equal(inspection.journal.productionAdapter, 'openProductionRecoveryJournal');
   assert.equal(inspection.journal.ownsJournal, true);
+  assert.equal(inspection.journal.claimId, 'production-claim-consumer-01');
+  assert.equal(inspection.journal.claimHash, recoveryClaimHash('production-claim-consumer-01'));
   assert.equal(inspection.journal.consumed, true);
   assert.equal(inspection.journal.restartReadable, true);
   assert.equal(inspection.journal.staleClaimRejected, false);

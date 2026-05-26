@@ -87,6 +87,7 @@ export function openProductionRecoveryJournal({
   journal.productionAdapter = 'openProductionRecoveryJournal';
   journal.ownsJournal = true;
   journal.restartReadable = true;
+  journal.claimId = claimId;
   journal.artifactRefs = { ...artifactRefs };
   journal.schemaVersion = RECOVERY_JOURNAL_SCHEMA_VERSION;
   journal.inspect = function inspectProductionRecoveryJournal() {
@@ -99,6 +100,7 @@ export function openProductionRecoveryJournal({
         productionAdapter: 'openProductionRecoveryJournal',
         claimId,
         ownsJournal: true,
+        claimHash: claimId ? recoveryClaimHash(claimId) : null,
         consumed: persisted.records.some((record) => record.type === 'recovery-journal-consumed'),
         restartReadable: persisted.integrity.status === 'ok',
         schemaVersion: persisted.records[0]?.schemaVersion ?? null,
