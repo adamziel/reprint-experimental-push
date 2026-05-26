@@ -379,6 +379,7 @@ export function productionThroughputDetails(report) {
       receiptCursorWithinQueueBudget: report.evidence.backpressure?.receiptCursorWithinQueueBudget ?? false,
       receiptCursorMatchesBackpressure,
       receiptCursorHeadroomMatchesQueueHeadroom,
+      receiptCursorHeadroomCoveredByQueueBudget,
       receiptCursorBackpressureBytes,
     },
     recovery: report.evidence.recovery,
