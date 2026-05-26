@@ -19,6 +19,21 @@ linked implementation artifacts.
   [objective audit](../audits/objective-audit.md),
   [release-gate checklist](../progress.html#proof-gates).
 
+## 2026-05-26 - Public Status Audit 14:46:47
+
+<a id="2026-05-26-public-status-audit-144647"></a>
+
+- Refreshed [progress.html](../progress.html) to the current `date` output
+  (`2026-05-26 14:46:47 CEST`) and promoted `32c6c88f358f3b97a26e723ff8afa5a1f78701fd` as the current
+  reliable head on the public page for auth source precedence initialization.
+- `32c6c88f358f3b97a26e723ff8afa5a1f78701fd` keeps auth source precedence
+  initialization on the checked release path; the release gate stays at `0/4`
+  because production-backed auth/session lifecycle and durable journal ownership
+  with lease/fencing remain blocked.
+- Evidence trail: [progress.html](../progress.html),
+  [objective audit](../audits/objective-audit.md),
+  [release-gate checklist](../progress.html#proof-gates).
+
 ## 2026-05-26 - Public Status Audit 14:34:55
 
 <a id="2026-05-26-public-status-audit-143455"></a>
