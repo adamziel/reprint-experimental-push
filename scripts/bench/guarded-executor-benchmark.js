@@ -855,6 +855,13 @@ export function productionThroughputBlockers(report) {
   ) {
     blockers.push('production-storage-receipts-without-atomic-commit');
   }
+  if (
+    report.evidence.atomicGroup.productionStorageReceiptsVisible === true
+    && report.evidence.atomicGroup.productionAtomicCommitVisible === true
+    && report.evidence.atomicGroup.productionStorageReceiptsMeasured !== true
+  ) {
+    blockers.push('production-storage-receipts-visible-and-atomic-commit-visible-without-measurement');
+  }
   if (report.executorCapabilities.rowApply !== 'production-batched-compare-and-swap') {
     blockers.push('production-row-batch-executor-not-measured');
   }
