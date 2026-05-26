@@ -17068,6 +17068,7 @@ test('blocks legacy links graph resources while preserving a matching independen
   assert.equal(mutationFor(plan, resourceKey), undefined);
   assert.equal(plan.conflicts.length, 0);
   assert.equal(blocker.class, 'unsupported-legacy-links-resource');
+  assert.equal(blocker.resourceKind, 'legacy-link');
   assert.equal(blocker.resourceKey, resourceKey);
   assert.equal(blocker.reason, 'Legacy link graph resources are not yet supported by the planner.');
   assert.equal(matchingEdit.decision, 'already-in-sync');

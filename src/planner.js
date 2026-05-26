@@ -2281,6 +2281,7 @@ function addUnsupportedLegacyLinksResourceBlocker(plan, {
   plan.blockers.push({
     id: `blocker-unsupported-legacy-links-resource-${plan.blockers.length + 1}`,
     class: support.className || 'unsupported-legacy-links-resource',
+    resourceKind: 'legacy-link',
     resource,
     resourceKey: resource.key,
     reason: support.reason || `Legacy link resource ${resource.key} is not yet supported by the planner.`,
