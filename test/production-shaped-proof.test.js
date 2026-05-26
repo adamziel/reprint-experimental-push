@@ -287,7 +287,8 @@ function spawnReleaseVerifySync(command, args, env, options = {}) {
 }
 
 function spawnBoundedReleaseVerify(command, args, env, options = {}, label = 'release verify') {
-  const timeout = options.timeout ?? proofSubprocessTimeoutMs;
+  const timeoutCeiling = Math.max(1_000, proofSubprocessTimeoutMs - 2_000);
+  const timeout = Math.max(1_000, Math.min(options.timeout ?? proofSubprocessTimeoutMs, timeoutCeiling));
   const killSignal = options.killSignal ?? proofSubprocessKillSignal;
   const proof = spawnSync(command, args, {
     cwd: repoRoot,
@@ -316,7 +317,8 @@ function spawnBoundedReleaseVerify(command, args, env, options = {}, label = 're
 }
 
 function spawnProductionShapedReleaseVerifySync(env, options = {}, label = 'production-shaped release verify') {
-  const timeout = Math.max(1_000, Math.min(options.timeout ?? releaseVerifyInnerTimeoutMs, liveProofSubprocessTimeoutMs));
+  const timeoutCeiling = Math.max(1_000, liveProofSubprocessTimeoutMs - 2_000);
+  const timeout = Math.max(1_000, Math.min(options.timeout ?? releaseVerifyInnerTimeoutMs, timeoutCeiling));
   const killSignal = options.killSignal ?? proofSubprocessKillSignal;
   const proof = spawnBoundedReleaseVerify(
     process.execPath,
