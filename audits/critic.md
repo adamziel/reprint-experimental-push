@@ -1,13 +1,13 @@
 # Critic Verdict
 
-Current reliable head: `128458d3befb621713bff3881e45db21f6ad3b7e`
-(`Expose gated production auth session source`).
+Current reliable head: `62852d5b5f830310703f35c94a984968a02d862a`
+(`Require trace-backed auth session reads`).
 
 Verdict: `0/4`
 
 Reason:
 
-- This head exposes the gated production auth/session source on the release
+- This head adds more trace-backed auth/session read evidence on the release
   verifier path, but it still does not prove a production-backed lifecycle on
   the checked release path.
 - The checked proof is still missing live issuance/read/expiry/rotation/
