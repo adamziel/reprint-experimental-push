@@ -9,6 +9,12 @@ import { fileURLToPath } from 'node:url';
 import { authenticatedHttpClient } from '../../src/authenticated-http-push-client.js';
 import { createPushPlan } from '../../src/planner.js';
 import { digest } from '../../src/stable-json.js';
+import {
+  labReadinessBodyRetryable,
+  labReadinessErrorRetryable,
+  labSnapshotReady,
+  labSnapshotRetryable,
+} from './lab-playground-readiness.js';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const muPluginDir = path.join(repoRoot, 'scripts/playground/rest-mu-plugins');
@@ -434,15 +440,26 @@ async function waitForServer(child, baseUrl, logs) {
           authHeaders(credentials),
           { attempts: 2 },
         );
-        if (snapshot.status === 200 && snapshot.body?.ok === true) {
+        if (labSnapshotReady(snapshot)) {
           return;
         }
         lastError = new Error(`Production-shaped snapshot readiness HTTP ${snapshot.status}`);
+        if (labSnapshotRetryable(snapshot)) {
+          await sleep(500);
+          continue;
+        }
+        break;
+      } else if (labReadinessBodyRetryable(response.status, await response.text())) {
+        lastError = new Error(`HTTP ${response.status}`);
       } else {
         lastError = new Error(`HTTP ${response.status}`);
+        break;
       }
     } catch (error) {
       lastError = error;
+      if (!labReadinessErrorRetryable(error)) {
+        break;
+      }
     }
 
     await sleep(500);
