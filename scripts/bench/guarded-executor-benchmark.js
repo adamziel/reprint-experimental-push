@@ -1281,7 +1281,12 @@ export function productionThroughputDetails(report) {
   const queueBudgetVisibleAndQueueHeadroomVisibleAndMeasured =
     queueBudgetVisible && queueHeadroomVisible && queueHeadroomMeasured;
   const receiptCursorMemoryCeilingVisibleAndQueueHeadroomVisible =
-    receiptCursorMemoryCeilingVisible && queueBudgetVisible && queueHeadroomVisible && queueHeadroomMeasured;
+    receiptCursorMemoryCeilingVisible
+    && queueBudgetVisible
+    && queueHeadroomVisible
+    && queueHeadroomMeasured
+    && receiptCursorQueueSlackVisible
+    && receiptCursorMemoryHeadroomVisible;
   const receiptCursorMemoryHeadroomPositive =
     Number.isFinite(receiptCursorMemoryHeadroomBytes)
     && receiptCursorMemoryHeadroomBytes > 0;

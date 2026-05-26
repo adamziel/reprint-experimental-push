@@ -252,6 +252,10 @@ Current executable gate:
   while receipt-cursor queue slack is hidden, so the queue-budget match cannot
   look complete while the paired bounded-slack proof is absent from the pause
   footprint.
+- The same memory-ceiling plus queue-headroom detail now also fails closed
+  when receipt-cursor queue-slack or memory-headroom visibility is hidden, so
+  the bounded pause surface cannot look complete from the ceiling and
+  headroom bits alone.
 - The same details also fail closed if receipt-cursor memory headroom is
   visible while queue headroom is hidden, so a partial pause-footprint summary
   cannot look complete when the paired bounded-backpressure surface is absent.
