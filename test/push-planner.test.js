@@ -502,6 +502,7 @@ test('blocks plugin-owned custom tables while preserving a matching independent 
   assert.equal(plan.status, 'blocked');
   assert.equal(blocker.class, 'unsupported-plugin-owned-resource');
   assert.equal(blocker.resourceKind, 'custom-table');
+  assert.equal(blocker.unsupportedState, 'local-or-divergent-drift');
   assert.equal(
     blocker.reason,
     'Plugin-owned custom tables, including deletes, are not yet supported by the planner.',
@@ -9999,6 +10000,7 @@ test('blocks plugin-owned rows with missing driver metadata while preserving a m
   assert.equal(blocker.pluginOwner, 'forms');
   assert.equal(blocker.resourceKey, resourceKey);
   assert.equal(blocker.driver, null);
+  assert.equal(blocker.unsupportedState, 'local-or-divergent-drift');
   assert.equal(blocker.reason, 'Plugin-owned resource row:["wp_options","option_name:forms_settings"] is missing explicit driver metadata for plugin forms.');
   assert.equal(matchingEdit.decision, 'already-in-sync');
   assert.equal(matchingEdit.change.localChange, 'update');
@@ -12739,6 +12741,7 @@ test('blocks plugin-owned deletes when the owner plugin was removed remotely whi
   assert.equal(blocker.class, 'stale-plugin-owner-context');
   assert.equal(blocker.resourceKey, resourceKey);
   assert.equal(blocker.pluginOwner, 'forms');
+  assert.equal(blocker.unsupportedState, 'delete');
   assert.equal(blocker.ownerContext.length, 2);
   assert.equal(blocker.ownerContextTruncated, false);
   assert.equal(blockerJson.includes('shared about'), false);

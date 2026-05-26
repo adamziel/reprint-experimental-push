@@ -2565,6 +2565,32 @@ function intentIncludesPluginResource(intent, plugin) {
     && intent.resources.some((resourceKey) => resourceKey === `plugin:${plugin}`);
 }
 
+function classifyUnsupportedDriftState({ baseValue, localValue, remoteValue, allowSteadyUnsupported = false }) {
+  const remoteOnlyDrift = (
+    stableStringify(localValue) === stableStringify(baseValue)
+    && stableStringify(remoteValue) !== stableStringify(baseValue)
+  );
+  const convergedDrift = (
+    localValue !== ABSENT
+    && remoteValue !== ABSENT
+    && stableStringify(localValue) === stableStringify(remoteValue)
+    && stableStringify(localValue) !== stableStringify(baseValue)
+  );
+  const steadyUnsupported = allowSteadyUnsupported
+    && stableStringify(localValue) === stableStringify(baseValue)
+    && stableStringify(remoteValue) === stableStringify(baseValue);
+
+  return localValue === ABSENT
+    ? 'delete'
+    : convergedDrift
+      ? 'converged-drift'
+      : remoteOnlyDrift
+        ? 'remote-only-drift'
+        : steadyUnsupported
+          ? 'steady-unsupported'
+          : 'local-or-divergent-drift';
+}
+
 function addPluginOwnedResourceBlocker(plan, {
   resource,
   owner,
@@ -2596,6 +2622,11 @@ function addPluginOwnedResourceBlocker(plan, {
     resourceKind,
     driver: support.driver || null,
     policySource: support.policySource || null,
+    unsupportedState: support.unsupportedState || classifyUnsupportedDriftState({
+      baseValue,
+      localValue,
+      remoteValue,
+    }),
     ...(ownerContext.length > 0 ? { ownerContext, ownerContextTruncated: Boolean((support.ownerContext || []).length > ownerContext.length) } : {}),
     reason,
     baseHash,
@@ -2634,6 +2665,11 @@ function addPluginContextBlocker(plan, {
     pluginOwner: owner,
     ownerContext,
     ownerContextTruncated: Boolean((support.ownerContext || []).length > ownerContext.length),
+    unsupportedState: support.unsupportedState || classifyUnsupportedDriftState({
+      baseValue,
+      localValue,
+      remoteValue,
+    }),
     reason: support.reason || `Plugin context resource ${resource.key} cannot be applied with stale live remote plugin context.`,
     baseHash,
     localHash,
@@ -3782,15 +3818,12 @@ function unsupportedSpecialFileResourceSupport({ resource, baseValue, localValue
   return {
     supported: false,
     className: 'unsupported-special-file-resource',
-    unsupportedState: localValue === ABSENT
-      ? 'delete'
-      : convergedDrift
-        ? 'converged-drift'
-        : remoteOnlyDrift
-          ? 'remote-only-drift'
-          : steadyUnsupported
-            ? 'steady-unsupported'
-            : 'local-or-divergent-drift',
+    unsupportedState: classifyUnsupportedDriftState({
+      baseValue,
+      localValue,
+      remoteValue,
+      allowSteadyUnsupported: true,
+    }),
     reason: 'Special file entries are not yet supported by the planner.',
   };
 }
