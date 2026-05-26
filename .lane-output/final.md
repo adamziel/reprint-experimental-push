@@ -1,26 +1,27 @@
-Refined the critic audit to reflect the newest readiness failure and durable-journal boundary tightening without changing the production verdict.
-
-Changed files:
-- [`audits/critic.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/critic/audits/critic.md)
-- [`.lane-output/final.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/critic/.lane-output/final.md)
-
-What changed:
-- Noted that the live release verifier now exposes a concrete `HTTP 502` / `WordPress is not ready yet` readiness trail instead of hanging silently.
-- Added that the newer production durable-journal guard is surfacing fixture mismatches rather than a live backend proof.
-- Kept the blocker set unchanged: production auth/session lifecycle, durable journal ownership, preserved-remote retry, and exact replay equivalence are still unproven.
+Refreshed the critic handoff surface after checking the latest reliable-executor proofs; the verdict is unchanged.
 
 Evidence checked:
+- `AGENTS.md`
+- `supervision/README.md`
+- `supervision/lanes/critic.md`
+- `audits/critic.md`
+- newest `../*/.lane-output/final*.md` relevant to the critic blockers
 - `git status --short --branch`
-- `sed -n '1,260p' audits/critic.md`
-- latest `../reliable-executor/.lane-output/final*.md`
-- latest `../no-data-loss-recovery/.lane-output/final*.md`
+- latest reliable-executor lane handoffs in `../reliable-executor/.lane-output/final*.md`
+
+Why nothing changed:
+- The latest reliable-executor evidence hardens the release verifier boundary and replay-idempotency check, but it still does not prove a production-backed mutation path or exact replay equivalence on the live push path.
+- `no-data-loss-recovery` remains boundary-only: the durable-journal guard is fail-closed, but preserved-remote retry with lease/fencing and restart-readable artifacts is still missing.
+
+Changed files:
+- `.lane-output/final.md`
 
 Push result:
-- Not pushed yet.
+- Not attempted
 
 Worktree status:
-- `lane/cycle-20260525-mainwindows-2349/critic...origin/main [ahead 1568, behind 377]`
-- Dirty tracked files: `audits/critic.md`, `.lane-output/final.md`
+- `lane/cycle-20260525-mainwindows-2349/critic...origin/main [ahead 1574, behind 401]`
+- Existing dirty tracked file remains `audits/critic.md`
 
 Next supervisor nudge:
 - Re-poll `reliable-executor` only when it lands exact replay-equivalence or a production-backed mutation path, or `no-data-loss-recovery` only when it proves preserved-remote retry with lease/fencing and restart-readable artifacts.
