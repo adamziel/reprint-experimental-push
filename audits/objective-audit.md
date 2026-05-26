@@ -6,11 +6,11 @@ The project is **not releasable as a production WordPress push path**.
 
 Fresh remote heads at audit time, checked on May 26, 2026:
 
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `7ec3f8bf`
-- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `4d29785b`
-- `origin/lane/reliable-executor` -> `acb309b3`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `485966c4`
-- `origin/lane/no-data-loss-invariants` -> `f3c8fe4f`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `90ac80b8`
+- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `f79384ee`
+- `origin/lane/reliable-executor` -> `e7f49767`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `2335170d`
+- `origin/lane/no-data-loss-invariants` -> `eec3620e`
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `59fe13d4`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `d121c210`
 - `origin/lane/no-data-loss-recovery` -> `aec5d04b`
@@ -32,14 +32,14 @@ Fresh lane proof since the last audit pass improved the local evidence floor,
 but it did not change the release conclusion:
 
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now records
-  `485966c4`, refreshing public progress freshness only.
+  `2335170d`, refreshing public progress freshness only.
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now records
-  `7ec3f8bf`, refreshing the supervisor progress surface only.
-- `origin/lane/reliable-executor` now records `acb309b3`, hardening Playground
-  cleanup handling only.
-- `origin/lane/no-data-loss-invariants` now records `f3c8fe4f`, adding
-  attachment reference blocker proof. That remains fail-closed boundary work,
-  not live source mutation proof.
+  `90ac80b8`, refreshing the supervisor progress surface only.
+- `origin/lane/reliable-executor` now records `e7f49767`, hardening release
+  verify cleanup logging and failure handling only.
+- `origin/lane/no-data-loss-invariants` now records `eec3620e`, adding termmeta
+  preservation proofs. That remains fail-closed boundary work, not live source
+  mutation proof.
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` now
   records `d121c210`, failing closed on inspected remote artifact refs. It
   still does not add production-backed journal ownership or replay proof.
