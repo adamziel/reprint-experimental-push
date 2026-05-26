@@ -134,6 +134,17 @@ test('benchmark model covers large uploads and plugin installs', () => {
   assert.ok(
     model.safeFastPaths.some(
       (fastPath) =>
+        fastPath.area === 'parallelism-limits' &&
+        fastPath.allowedShortcut === 'parallelize-independent-owner-index-scans-and-reuse-cached-release-manifest-cursor-to-size-bounded-release-bundle-fanout' &&
+        fastPath.guardrails.includes('independent-owner-scans-stay-planning-only') &&
+        fastPath.gateProofs.skip.includes('independent owner index scans can run in parallel') &&
+        fastPath.gateProofs.recovery.includes('durable receipts and the guarded release record still classify pause, retry, or crash'),
+    ),
+    'independent owner scans can size release-bundle fanout without weakening recovery evidence',
+  );
+  assert.ok(
+    model.safeFastPaths.some(
+      (fastPath) =>
         fastPath.area === 'file-hashing' &&
         fastPath.allowedShortcut === 'reuse-cached-chunk-ledger-for-resume-with-live-publish-check' &&
         fastPath.guardrails.includes('chunk-ledger-is-resume-evidence-only') &&

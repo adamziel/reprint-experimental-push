@@ -1195,6 +1195,27 @@ export const SAFE_FAST_PATHS = Object.freeze([
     publishesStagedDataEarly: false,
   },
   {
+    area: 'parallelism-limits',
+    reduces: ['planning-round-trips', 'retry-window-recomputation', 'idle-time'],
+    allowedShortcut: 'parallelize-independent-owner-index-scans-and-reuse-cached-release-manifest-cursor-to-size-bounded-release-bundle-fanout',
+    guardrails: [
+      'independent-owner-scans-stay-planning-only',
+      'cached-release-manifest-cursor-remains-planning-evidence-only',
+      'release-bundle-fanout-revalidates-before-write',
+    ],
+    gateProofs: {
+      skip: 'independent owner index scans can run in parallel and reuse a cached release-manifest cursor to trim repeat fanout planning without rescanning the same release bundle shape',
+      live: 'the eventual release still rechecks live file and row preconditions before anything becomes visible',
+      group: 'the independent scans and cached cursor only narrow planning inside the same planned release bundle and never widen the atomic-group barrier',
+      recovery: 'the cached cursor is advisory; durable receipts and the guarded release record still classify pause, retry, or crash',
+    },
+    visibilityBoundary: 'planning-only-for-release-bundle-fanout',
+    failureEvidence: 'independent owner index scans plus cached release-manifest cursor and guarded release record',
+    bypassesLivePreconditions: false,
+    splitsAtomicGroup: false,
+    publishesStagedDataEarly: false,
+  },
+  {
     area: 'remote-indexes',
     reduces: ['planning-round-trips', 'idle-time'],
     allowedShortcut: 'parallelize-independent-owner-index-scans-to-size-bounded-batches',
