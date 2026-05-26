@@ -570,6 +570,20 @@ test('guarded benchmark blocks atomic-commit visibility when the metadata surfac
   assert.equal(blockers.includes('production-atomic-group-commit-visible-without-measurement'), false);
 });
 
+test('guarded benchmark blocks atomic-group metadata proof when the atomic group stops being ready', () => {
+  const report = smallBenchmark();
+  const tampered = clone(report);
+
+  tampered.evidence.atomicGroup.productionAtomicCommitMeasured = true;
+  tampered.evidence.atomicGroup.productionAtomicGroupMetadataVisible = true;
+  tampered.evidence.atomicGroup.groupStatus = 'blocked';
+
+  const blockers = productionThroughputBlockers(tampered);
+
+  assert.equal(blockers.includes('production-atomic-group-metadata-not-proven'), true);
+  assert.equal(blockers.includes('production-atomic-group-metadata-not-visible'), false);
+});
+
 test('guarded benchmark blocks row-batch executor visibility without atomic-commit visibility', () => {
   const report = smallBenchmark();
   const tampered = clone(report);
