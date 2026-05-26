@@ -5767,6 +5767,80 @@ test('allows a local attachment parent and thumbnail graph to resolve in the sam
   assert.equal(result.site.db.wp_postmeta['meta_id:47'].meta_value, 2);
 });
 
+test('allows a local attachment parent and thumbnail graph to resolve in the same plan even when an unrelated remote attachment exists', () => {
+  const postResourceKey = 'row:["wp_posts","ID:1"]';
+  const attachmentResourceKey = 'row:["wp_posts","ID:2"]';
+  const postmetaResourceKey = 'row:["wp_postmeta","meta_id:47"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_posts['ID:1'] = {
+    ID: 1,
+    post_title: 'Local parent post',
+    post_content: 'local-private-parent-post-body',
+    post_status: 'publish',
+  };
+  local.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_title: 'Local attachment child',
+    post_content: 'local-private-attachment-child-body',
+    post_status: 'inherit',
+    post_type: 'attachment',
+    post_parent: 1,
+  };
+  local.db.wp_postmeta = {
+    'meta_id:47': {
+      meta_id: 47,
+      post_id: 1,
+      meta_key: '_thumbnail_id',
+      meta_value: 2,
+    },
+  };
+  const remote = baseSite();
+  remote.db.wp_posts['ID:9'] = {
+    ID: 9,
+    post_title: 'Remote attachment noise',
+    post_content: 'remote-attachment-noise-body',
+    post_status: 'inherit',
+    post_type: 'attachment',
+  };
+
+  const plan = planFor(base, local, remote);
+  const postMutation = mutationFor(plan, postResourceKey);
+  const attachmentMutation = mutationFor(plan, attachmentResourceKey);
+  const postmetaMutation = mutationFor(plan, postmetaResourceKey);
+  const thumbnailReference = postmetaMutation.wordpressGraphReferences.find((entry) => entry.relationshipType === 'featured-image-attachment');
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.blockers, 0);
+  assert.equal(postMutation.changeKind, 'update');
+  assert.equal(attachmentMutation.changeKind, 'create');
+  assert.equal(postmetaMutation.changeKind, 'create');
+  assert.ok(
+    plan.mutations.indexOf(postMutation) < plan.mutations.indexOf(attachmentMutation),
+    'parent post create must be ordered before dependent attachment',
+  );
+  assert.ok(
+    plan.mutations.indexOf(postMutation) < plan.mutations.indexOf(postmetaMutation),
+    'parent post create must be ordered before dependent thumbnail metadata',
+  );
+  assert.ok(
+    plan.mutations.indexOf(attachmentMutation) < plan.mutations.indexOf(postmetaMutation),
+    'attachment create must be ordered before dependent thumbnail metadata',
+  );
+  assert.equal(thumbnailReference.resolutionPolicy, 'same-plan-local-create');
+  assert.equal(thumbnailReference.relationshipType, 'featured-image-attachment');
+  assert.equal(thumbnailReference.targetResourceKey, attachmentResourceKey);
+  assert.equal(JSON.stringify(thumbnailReference).includes('local-private-parent-post-body'), false);
+  assert.equal(JSON.stringify(thumbnailReference).includes('local-private-attachment-child-body'), false);
+  assert.equal(JSON.stringify(thumbnailReference).includes('remote-attachment-noise-body'), false);
+
+  const result = applyPlan(remote, plan);
+  assert.equal(result.site.db.wp_posts['ID:1'].post_title, 'Local parent post');
+  assert.equal(result.site.db.wp_posts['ID:2'].post_parent, 1);
+  assert.equal(result.site.db.wp_postmeta['meta_id:47'].meta_value, 2);
+  assert.equal(result.site.db.wp_posts['ID:9'].post_title, 'Remote attachment noise');
+});
+
 test('blocks a local thumbnail reference owned by an attachment even when it targets a same-plan attachment', () => {
   const sourceAttachmentResourceKey = 'row:["wp_posts","ID:1"]';
   const targetAttachmentResourceKey = 'row:["wp_posts","ID:2"]';
