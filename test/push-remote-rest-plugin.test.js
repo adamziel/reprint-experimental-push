@@ -302,6 +302,45 @@ test('db journal storage guard stays visible when only checked event summaries r
   });
 });
 
+test('db journal storage guard stays visible when only the checked top-level committed proof survives the trimmed summary', { skip: !hasPhp }, () => {
+  const result = runDbJournalStorageGuard({
+    acceptedOnCheckedBoundary: true,
+    applyCommitted: true,
+    latestRows: [
+      {
+        sequence: 24,
+        event: 'apply-replayed',
+        result: {
+          ok: true,
+        },
+      },
+      {
+        sequence: 25,
+        event: 'idempotency-in-progress',
+        result: {
+          ok: false,
+        },
+      },
+    ],
+    eventSummaries: [],
+    leaseFence: {
+      boundary: 'wpdb-single-statement-cas',
+      claimKeyUnique: true,
+      fsyncEvidence: true,
+      monotonicSequence: true,
+      restartReadable: true,
+      staleClaimRejected: false,
+    },
+  });
+
+  assert.equal(result.status, 0, result.stderr);
+  assert.deepEqual(JSON.parse(result.stdout), {
+    boundary: 'wpdb-single-statement-cas',
+    operation: 'update',
+    outcome: 'applied',
+  });
+});
+
 test('checked db journal merge preserves more specific inline values', { skip: !hasPhp }, () => {
   const result = runMerge(
     {

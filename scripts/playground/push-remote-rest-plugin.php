@@ -3645,14 +3645,16 @@ function reprint_push_lab_rest_db_journal_storage_guard(array $summary): ?array
     }
 
     if (($summary['acceptedOnCheckedBoundary'] ?? false) === true) {
-        $has_committed_evidence = false;
-        foreach (($summary['eventSummaries'] ?? []) as $event_summary) {
-            if (!is_array($event_summary)) {
-                continue;
-            }
-            if ((string) ($event_summary['event'] ?? '') === 'apply-committed' && (int) ($event_summary['count'] ?? 0) > 0) {
-                $has_committed_evidence = true;
-                break;
+        $has_committed_evidence = ($summary['applyCommitted'] ?? false) === true;
+        if (!$has_committed_evidence) {
+            foreach (($summary['eventSummaries'] ?? []) as $event_summary) {
+                if (!is_array($event_summary)) {
+                    continue;
+                }
+                if ((string) ($event_summary['event'] ?? '') === 'apply-committed' && (int) ($event_summary['count'] ?? 0) > 0) {
+                    $has_committed_evidence = true;
+                    break;
+                }
             }
         }
 
