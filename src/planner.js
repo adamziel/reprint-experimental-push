@@ -79,6 +79,26 @@ export function createPushPlan({ base, local, remote, now = new Date() }) {
       remoteHash,
     );
 
+    const specialFileSupport = unsupportedSpecialFileResourceSupport({
+      resource,
+      baseValue,
+      localValue,
+      remoteValue,
+    });
+    if (!specialFileSupport.supported) {
+      addUnsupportedSpecialFileBlocker(plan, {
+        resource,
+        support: specialFileSupport,
+        baseValue,
+        localValue,
+        remoteValue,
+        baseHash,
+        localHash,
+        remoteHash,
+      });
+      continue;
+    }
+
     if (localHash === baseHash && remoteHash === baseHash) {
       continue;
     }

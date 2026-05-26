@@ -20326,6 +20326,37 @@ test('blocks unsupported special file entries while preserving remote-only plugi
   assert.equal(remote.plugins.forms.description, 'remote-only plugin drift');
 });
 
+test('blocks unsupported special file entries even when the live remote already matches the local value while preserving remote-only plugin drift', () => {
+  const resourceKey = 'file:wp-content/uploads/same-content-symlink';
+  const base = baseSite();
+  base.files['wp-content/uploads/same-content-symlink'] = { type: 'symlink', target: '../shared/target' };
+
+  const local = baseSite();
+  local.files['wp-content/uploads/same-content-symlink'] = { type: 'symlink', target: '../shared/target' };
+
+  const remote = baseSite();
+  remote.files['wp-content/uploads/same-content-symlink'] = JSON.parse(JSON.stringify(base.files['wp-content/uploads/same-content-symlink']));
+  remote.plugins.forms.description = 'remote-only plugin drift';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin drift */';
+
+  const plan = planFor(base, local, remote);
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.ok(plan.summary.decisions >= 1);
+  assert.equal(plan.blockers.some((entry) => entry.resourceKey === resourceKey), true);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(plan.conflicts.length, 0);
+  assert.equal(blocker.class, 'unsupported-special-file-resource');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.reason, 'Special file entries are not yet supported by the planner.');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin drift');
+  assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin drift */');
+});
+
 test('blocks unsupported mode-encoded special file entries while preserving remote-only plugin changes', () => {
   const resourceKey = 'file:wp-content/uploads/mode-symlink';
   const base = baseSite();
