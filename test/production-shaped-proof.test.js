@@ -8,6 +8,7 @@ import { fileURLToPath } from 'node:url';
 import {
   loadAuthSessionSource,
   resolveAuthSessionRequestCredentials,
+  resolveAuthSessionRequestState,
   resolveAuthSessionSourceCredentials,
 } from '../scripts/playground/auth-session-source.js';
 import {
@@ -970,6 +971,30 @@ test('production-shaped release verify prefers explicit direct credentials over 
       liveSourceUrl: 'http://127.0.0.1:9090',
       username: 'trusted-runtime-username',
       applicationPassword: 'trusted-runtime-password',
+    },
+  );
+});
+
+test('production-shaped release verify request state carries explicit direct credentials into the checked verifier before source override', () => {
+  assert.deepEqual(
+    resolveAuthSessionRequestState(
+      {
+        liveSourceUrl: 'http://127.0.0.1:9090',
+        username: 'trusted-runtime-username',
+        applicationPassword: 'trusted-runtime-password',
+        fallbackUsername: 'reprint_push_admin',
+        fallbackApplicationPassword: 'reprint-push-admin-app-password',
+      },
+      null,
+    ),
+    {
+      liveSourceUrl: 'http://127.0.0.1:9090',
+      username: 'trusted-runtime-username',
+      applicationPassword: 'trusted-runtime-password',
+      credentials: {
+        username: 'trusted-runtime-username',
+        password: 'trusted-runtime-password',
+      },
     },
   );
 });

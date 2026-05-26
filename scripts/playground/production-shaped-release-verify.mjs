@@ -13,6 +13,7 @@ import { digest } from '../../src/stable-json.js';
 import {
   loadAuthSessionSource,
   resolveAuthSessionRequestCredentials,
+  resolveAuthSessionRequestState,
 } from './auth-session-source.js';
 import {
   evaluateProductionAuthSessionLifecycle,
@@ -68,23 +69,22 @@ let authSessionSourceCommand = process.env.REPRINT_PUSH_AUTH_SESSION_SOURCE_COMM
 let authSessionSource = authSessionSourceCommand ? loadAuthSessionSource(authSessionSourceCommand) : null;
 let packagedProductionPluginAuthSessionSource = null;
 let packagedProductionPluginRequested = isPackagedProductionPluginSourceCommand(authSessionSourceCommand);
-
-if (authSessionSource?.ok) {
-  const resolvedAuthSessionSource = resolveAuthSessionRequestCredentials({
-    liveSourceUrl,
-    username,
-    applicationPassword,
-    fallbackUsername: credentials.username,
-    fallbackApplicationPassword: credentials.password,
-  }, authSessionSource, {
-    preferSource: requireProductionAuthSession,
-  });
-  // When a live auth-session source is supplied, prefer it over any stale lab
-  // credentials already present in the environment.
-  liveSourceUrl = resolvedAuthSessionSource.liveSourceUrl;
-  credentials.username = resolvedAuthSessionSource.username;
-  credentials.password = resolvedAuthSessionSource.applicationPassword;
-}
+const resolvedAuthSessionRequest = resolveAuthSessionRequestState({
+  liveSourceUrl,
+  username,
+  applicationPassword,
+  fallbackUsername: credentials.username,
+  fallbackApplicationPassword: credentials.password,
+}, authSessionSource, {
+  preferSource: requireProductionAuthSession,
+});
+// Keep explicit direct credentials ahead of fallback defaults even before an
+// auth-session source command is required or loaded.
+liveSourceUrl = resolvedAuthSessionRequest.liveSourceUrl;
+username = resolvedAuthSessionRequest.username;
+applicationPassword = resolvedAuthSessionRequest.applicationPassword;
+credentials.username = resolvedAuthSessionRequest.credentials.username;
+credentials.password = resolvedAuthSessionRequest.credentials.password;
 
 if (
   requireProductionAuthSession &&
