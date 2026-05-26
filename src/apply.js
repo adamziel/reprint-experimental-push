@@ -600,6 +600,7 @@ function assertProductionDurableJournalSupport(options, writer) {
   if (
     writer
     && writer.kind === 'production-recovery-journal'
+    && writer.ownsJournal === true
     && typeof writer.flush === 'function'
     && typeof writer.close === 'function'
     && typeof writer.inspect === 'function'
@@ -617,6 +618,7 @@ function assertProductionDurableJournalSupport(options, writer) {
       missingDependency: [
         'append-only persisted journal storage',
         'restart-readable recovery inspection',
+        'explicit journal ownership fencing',
         'fencing or lease ownership for the journal writer',
         'stable-storage flush or fsync semantics',
       ],

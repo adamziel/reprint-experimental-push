@@ -19697,6 +19697,7 @@ test('production durable journal claims fail closed without a restart-readable w
   assert.deepEqual(error.details.missingDependency, [
     'append-only persisted journal storage',
     'restart-readable recovery inspection',
+    'explicit journal ownership fencing',
     'fencing or lease ownership for the journal writer',
     'stable-storage flush or fsync semantics',
   ]);
@@ -19887,6 +19888,7 @@ test('production durable journal claims allow a restart-oriented writer contract
   const events = [];
   const writer = {
     kind: 'production-recovery-journal',
+    ownsJournal: true,
     nextSequence: 1,
     appendEvent(type, payload) {
       events.push({ type, payload });
