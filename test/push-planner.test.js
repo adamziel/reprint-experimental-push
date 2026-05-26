@@ -22961,6 +22961,7 @@ test('production durable journal claims fail closed when inspected artifact refe
     'restart-readable recovery artifact references',
     'restart-readable remote recovery artifact ownership',
     'restart-readable recovery remote artifact references',
+    'fencing or lease ownership for the journal writer',
   ]);
   assert.equal(closed, 1);
 });
@@ -24615,6 +24616,7 @@ test('production durable journal claims fail closed when artifact references use
     'restart-readable recovery artifact references',
     'restart-readable remote recovery artifact ownership',
     'restart-readable recovery remote artifact references',
+    'fencing or lease ownership for the journal writer',
   ]);
 });
 
@@ -24672,6 +24674,7 @@ test('production durable journal claims fail closed when the writer advertises a
   assert.deepEqual(error.details.missingDependency, [
     'supported production recovery journal adapter surface',
     'restart-readable recovery remote artifact references',
+    'fencing or lease ownership for the journal writer',
   ]);
   assert.equal(closed, 1);
 });
@@ -24727,6 +24730,7 @@ test('production durable journal claims fail closed when remote artifact referen
   assert.deepEqual(error.details.missingDependency, [
     'supported production recovery journal adapter surface',
     'restart-readable recovery remote artifact references',
+    'fencing or lease ownership for the journal writer',
   ]);
 });
 
@@ -24780,6 +24784,7 @@ test('production durable journal claims fail closed when artifact paths include 
     'restart-readable recovery artifact location',
     'restart-readable recovery artifact references',
     'absolute restart-readable recovery journal path',
+    'fencing or lease ownership for the journal writer',
   ]);
 });
 
@@ -24833,6 +24838,7 @@ test('production durable journal claims fail closed when artifact paths include 
     'restart-readable recovery artifact location',
     'restart-readable recovery artifact references',
     'absolute restart-readable recovery journal path',
+    'fencing or lease ownership for the journal writer',
   ]);
 });
 
@@ -24943,7 +24949,9 @@ test('production durable journal claims fail closed when inspection data is adve
 
   assert.equal(error.code, 'PRODUCTION_DURABLE_JOURNAL_UNSUPPORTED');
   assert.deepEqual(error.details.missingDependency, [
+    'restart-readable recovery journal schema',
     'restart-readable recovery artifact location',
+    'fencing or lease ownership for the journal writer',
   ]);
   assert.equal(events.some((event) => event.type === 'journal-completed'), false);
 });
