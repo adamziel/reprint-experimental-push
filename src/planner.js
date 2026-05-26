@@ -126,6 +126,26 @@ export function createPushPlan({ base, local, remote, now = new Date() }) {
         continue;
       }
 
+      const remoteLegacyLinksSupport = unsupportedLegacyLinksResourceSupport({
+        resource,
+        baseValue,
+        localValue,
+        remoteValue,
+      });
+      if (!remoteLegacyLinksSupport.supported) {
+        addUnsupportedLegacyLinksResourceBlocker(plan, {
+          resource,
+          support: remoteLegacyLinksSupport,
+          baseValue,
+          localValue,
+          remoteValue,
+          baseHash,
+          localHash,
+          remoteHash,
+        });
+        continue;
+      }
+
       plan.decisions.push({
         id: `decision-${plan.decisions.length + 1}`,
         resource,
