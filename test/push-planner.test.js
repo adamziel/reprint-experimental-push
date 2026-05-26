@@ -20397,13 +20397,63 @@ test('production durable journal support checks close a writer when restart insp
   }));
 
   assert.equal(error.code, 'PRODUCTION_DURABLE_JOURNAL_UNSUPPORTED');
-  assert.equal(closed, 0);
+  assert.equal(closed, 1);
   assert.deepEqual(error.details.missingDependency, [
     'explicit production recovery adapter marker',
     'restart-readable recovery inspection',
     'restart-readable recovery artifact references',
   ]);
   assert.equal(error.details.inspectionErrorMessage, 'injected inspect failure');
+});
+
+test('production durable journal support checks close a writer when the support probe rejects it', () => {
+  let closed = 0;
+  const writer = {
+    kind: 'production-recovery-journal',
+    ownsJournal: true,
+    journalPath: '/var/lib/reprint/recovery.jsonl',
+    schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+    appendEvent() {},
+    flush() {},
+    close() {
+      closed += 1;
+    },
+    inspect() {
+      return {
+        filePath: '/var/lib/reprint/recovery.jsonl',
+        schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+        artifactRefs: {
+          journal: '/var/lib/reprint/recovery.jsonl',
+        },
+        records: [{ sequence: 1, type: 'journal-opened' }],
+      };
+    },
+    assertCurrentClaim() {
+      throw new Error('lease missing');
+    },
+  };
+  const plan = planFor(baseSite(), baseSite(), {
+    ...baseSite(),
+    db: {
+      ...baseSite().db,
+      wp_options: {
+        ...baseSite().db.wp_options,
+        'option_name:blogname': { option_name: 'blogname', option_value: 'New Site' },
+      },
+    },
+  });
+  const error = captureError(() => applyPlan(baseSite(), plan, {
+    requireProductionDurableJournal: true,
+    durableJournal: writer,
+  }));
+
+  assert.equal(error.code, 'PRODUCTION_DURABLE_JOURNAL_UNSUPPORTED');
+  assert.equal(closed, 1);
+  assert.deepEqual(error.details.missingDependency, [
+    'explicit production recovery adapter marker',
+    'restart-readable recovery artifact references',
+    'fencing or lease ownership for the journal writer',
+  ]);
 });
 
 test('production durable journal claims fail closed when the writer cannot inspect restart state', () => {

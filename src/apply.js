@@ -598,6 +598,8 @@ function assertProductionDurableJournalSupport(options, writer) {
     return;
   }
 
+  closeUnsupportedProductionRecoveryWriter(writer);
+
   throw new PushPlanError(
     'PRODUCTION_DURABLE_JOURNAL_UNSUPPORTED',
     'Production durable journal recovery is not available in this worktree.',
@@ -721,6 +723,18 @@ function productionRecoverySupportReport(writer) {
     writerJournalPath: typeof writer?.journalPath === 'string' ? writer.journalPath : null,
     inspectionErrorMessage,
   };
+}
+
+function closeUnsupportedProductionRecoveryWriter(writer) {
+  if (!writer || typeof writer.close !== 'function') {
+    return;
+  }
+
+  try {
+    writer.close();
+  } catch {
+    // Unsupported writers are still fail-closed if cleanup fails.
+  }
 }
 
 function inspectProductionRecoveryJournal(writer) {
