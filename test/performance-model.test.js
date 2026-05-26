@@ -232,6 +232,18 @@ test('benchmark model covers large uploads and plugin installs', () => {
   assert.ok(
     model.safeFastPaths.some(
       (fastPath) =>
+        fastPath.allowedShortcut === 'reuse-cached-release-manifest-digest-and-cursor-to-size-bounded-release-bundle-fanout' &&
+        fastPath.visibilityBoundary === 'planning-only-for-release-bundle-fanout' &&
+        fastPath.guardrails.includes('cached-release-manifest-digest-remains-planning-evidence-only') &&
+        fastPath.guardrails.includes('cached-release-manifest-cursor-remains-planning-evidence-only') &&
+        fastPath.gateProofs.skip.includes('a cached release-manifest digest and cursor can trim repeat planning scans') &&
+        fastPath.gateProofs.recovery.includes('guarded release record'),
+    ),
+    'cached release-manifest digests and cursors can size release-bundle fanout without weakening recovery evidence',
+  );
+  assert.ok(
+    model.safeFastPaths.some(
+      (fastPath) =>
         fastPath.allowedShortcut === 'compress-release-manifest-digest-to-size-bounded-release-bundle-retry-windows' &&
         fastPath.visibilityBoundary === 'planning-only-for-release-bundle-retry-windows' &&
         fastPath.guardrails.includes('compressed-release-manifest-digest-stays-planning-evidence-only') &&

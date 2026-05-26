@@ -829,6 +829,27 @@ export const SAFE_FAST_PATHS = Object.freeze([
     publishesStagedDataEarly: false,
   },
   {
+    area: 'remote-indexes',
+    reduces: ['planning-round-trips', 'repeat-scanning', 'retry-window-recomputation'],
+    allowedShortcut: 'reuse-cached-release-manifest-digest-and-cursor-to-size-bounded-release-bundle-fanout',
+    guardrails: [
+      'cached-release-manifest-digest-remains-planning-evidence-only',
+      'cached-release-manifest-cursor-remains-planning-evidence-only',
+      'release-bundle-fanout-stays-within-per-site-and-per-kind-budgets',
+    ],
+    gateProofs: {
+      skip: 'a cached release-manifest digest and cursor can trim repeat planning scans while the planner sizes the next bounded release-bundle fanout',
+      live: 'the eventual release still revalidates live file and row preconditions before anything becomes visible',
+      group: 'the cached digest and cursor only narrow planning inside the same planned release bundle and never widen the atomic-group barrier',
+      recovery: 'cached digest and cursor evidence is advisory; durable receipts and the guarded release record still classify pause, retry, or crash',
+    },
+    visibilityBoundary: 'planning-only-for-release-bundle-fanout',
+    failureEvidence: 'cached release-manifest digest plus cached release-manifest cursor, bounded fanout record, and guarded release record',
+    bypassesLivePreconditions: false,
+    splitsAtomicGroup: false,
+    publishesStagedDataEarly: false,
+  },
+  {
     area: 'compression',
     reduces: ['wire-bytes', 'planning-round-trips', 'duplicate-budget-recomputation'],
     allowedShortcut: 'compress-canonical-per-kind-budget-summaries-and-reuse-cached-release-manifest-digest-to-size-bounded-release-bundle-fanout',
