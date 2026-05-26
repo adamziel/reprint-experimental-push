@@ -19,6 +19,8 @@ const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'reprint-plugin-driver-regi
 const baseBlueprintPath = path.join(tmpDir, 'base.blueprint.json');
 const localBlueprintPath = path.join(tmpDir, 'local.blueprint.json');
 const malformedValidateBlueprintPath = path.join(tmpDir, 'missing-validate.blueprint.json');
+const duplicateDriverNameBlueprintPath = path.join(tmpDir, 'duplicate-driver-name.blueprint.json');
+const duplicateTableBlueprintPath = path.join(tmpDir, 'duplicate-driver-table.blueprint.json');
 const repoTmpDir = path.join(repoRoot, '.tmp');
 const planPath = path.join(repoTmpDir, `plugin-driver-registry-plan-${process.pid}.json`);
 const deletePlanPath = path.join(repoTmpDir, `plugin-driver-registry-delete-plan-${process.pid}.json`);
@@ -37,6 +39,16 @@ try {
     payloadMode: 'base',
     updatedMarker: 'base',
     omitValidateMutationCallback: true,
+  });
+  writeBlueprint(duplicateDriverNameBlueprintPath, {
+    payloadMode: 'base',
+    updatedMarker: 'base',
+    duplicateDriverName: true,
+  });
+  writeBlueprint(duplicateTableBlueprintPath, {
+    payloadMode: 'base',
+    updatedMarker: 'base',
+    duplicateTable: true,
   });
 
   const base = exportSnapshot('base', baseBlueprintPath);
@@ -73,6 +85,22 @@ try {
   assert.match(
     malformedApply.error?.message || '',
     /missing validateMutationCallback for driver: fixture-arbitrary-plugin-table/i,
+  );
+
+  const duplicateDriverNameExport = exportSnapshotFailure('duplicate-driver-name', duplicateDriverNameBlueprintPath);
+  assert.equal(duplicateDriverNameExport.ok, false);
+  assert.equal(duplicateDriverNameExport.error?.class, 'RuntimeException');
+  assert.match(
+    duplicateDriverNameExport.error?.message || '',
+    /duplicate driver name: fixture-arbitrary-plugin-table/i,
+  );
+
+  const duplicateTableExport = exportSnapshotFailure('duplicate-table', duplicateTableBlueprintPath);
+  assert.equal(duplicateTableExport.ok, false);
+  assert.equal(duplicateTableExport.error?.class, 'RuntimeException');
+  assert.match(
+    duplicateTableExport.error?.message || '',
+    /duplicate table mapping for table: wp_reprint_push_driver_fixture/i,
   );
 
   const deleteBase = protocolApply.after;
@@ -112,6 +140,8 @@ try {
     updateVerified: protocolApply.verified,
     deleteVerified: protocolDelete.verified,
     malformedValidateGuard: malformedApply.error?.class,
+    duplicateDriverNameGuard: duplicateDriverNameExport.error?.class,
+    duplicateTableGuard: duplicateTableExport.error?.class,
   }, null, 2));
 } finally {
   fs.rmSync(tmpDir, { recursive: true, force: true });
@@ -119,7 +149,16 @@ try {
   fs.rmSync(deletePlanPath, { force: true });
 }
 
-function writeBlueprint(targetPath, { payloadMode, updatedMarker, omitValidateMutationCallback = false }) {
+function writeBlueprint(
+  targetPath,
+  {
+    payloadMode,
+    updatedMarker,
+    omitValidateMutationCallback = false,
+    duplicateDriverName = false,
+    duplicateTable = false,
+  },
+) {
   const blueprint = JSON.parse(fs.readFileSync(path.join(repoRoot, 'fixtures/playground/remote-base.blueprint.json'), 'utf8'));
   const pluginCode = `<?php
 /*
@@ -138,7 +177,25 @@ add_filter('reprint_push_plugin_owned_row_drivers', static function (array $driv
         'applyRowCallback' => 'reprint_push_driver_fixture_apply_row',
 ${omitValidateMutationCallback ? '' : "        'validateMutationCallback' => 'reprint_push_driver_fixture_validate_mutation',"}
     ];
-    return $drivers;
+${duplicateDriverName ? `    $drivers['${driverName}-duplicate'] = [
+        'driver' => '${driverName}',
+        'table' => 'wp_reprint_push_driver_fixture_duplicate',
+        'pluginOwner' => '${pluginOwner}',
+        'supportsDelete' => true,
+        'exportRowsCallback' => 'reprint_push_driver_fixture_export_rows',
+        'applyRowCallback' => 'reprint_push_driver_fixture_apply_row',
+        'validateMutationCallback' => 'reprint_push_driver_fixture_validate_mutation',
+    ];
+` : ''}${duplicateTable ? `    $drivers['${driverName}-same-table'] = [
+        'driver' => '${driverName}-same-table',
+        'table' => '${driverTable}',
+        'pluginOwner' => '${pluginOwner}',
+        'supportsDelete' => true,
+        'exportRowsCallback' => 'reprint_push_driver_fixture_export_rows',
+        'applyRowCallback' => 'reprint_push_driver_fixture_apply_row',
+        'validateMutationCallback' => 'reprint_push_driver_fixture_validate_mutation',
+    ];
+` : ''}    return $drivers;
 });
 
 function reprint_push_driver_fixture_table_name(): string {
@@ -311,6 +368,52 @@ function exportSnapshot(name, blueprintPath) {
   );
 }
 
+function exportSnapshotFailure(name, blueprintPath) {
+  const result = spawnSync('npx', [
+    '--yes',
+    '@wp-playground/cli@latest',
+    'php',
+    '--blueprint',
+    blueprintPath,
+    '--mount',
+    `${repoRoot}:/workspace`,
+    '--verbosity',
+    'quiet',
+    '--',
+    '/workspace/scripts/playground/export-site-snapshot.php',
+  ], {
+    cwd: repoRoot,
+    encoding: 'utf8',
+    maxBuffer: 1024 * 1024 * 20,
+  });
+
+  if (result.status === 0) {
+    throw new Error(`Expected Playground snapshot export to fail for ${name}\nSTDOUT:\n${result.stdout}\nSTDERR:\n${result.stderr}`);
+  }
+
+  const markedError = tryParseMarkedJson(
+    result.stdout,
+    'REPRINT_PUSH_ERROR_JSON_BEGIN',
+    'REPRINT_PUSH_ERROR_JSON_END',
+  );
+  if (markedError !== null) {
+    return markedError;
+  }
+
+  const fatalMatch = result.stdout.match(/Fatal error: Uncaught ([A-Za-z0-9_\\\\]+): ([\s\S]*?) in /);
+  if (fatalMatch) {
+    return {
+      ok: false,
+      error: {
+        class: fatalMatch[1].split('\\').pop(),
+        message: fatalMatch[2].trim(),
+      },
+    };
+  }
+
+  throw new Error(`Error markers missing for ${name}\nSTDOUT:\n${result.stdout}\nSTDERR:\n${result.stderr}`);
+}
+
 function applyPlanToBase(blueprintPath, planFilePath, { expectStatus = 0 } = {}) {
   const result = spawnSync('npx', [
     '--yes',
@@ -346,9 +449,17 @@ function applyPlanToBase(blueprintPath, planFilePath, { expectStatus = 0 } = {})
 }
 
 function parseMarkedJson(stdout, begin, end, missingMessage) {
+  const parsed = tryParseMarkedJson(stdout, begin, end);
+  if (parsed === null) {
+    throw new Error(missingMessage);
+  }
+  return parsed;
+}
+
+function tryParseMarkedJson(stdout, begin, end) {
   const match = stdout.match(new RegExp(`${begin}\\n([\\s\\S]*)\\n${end}`));
   if (!match) {
-    throw new Error(missingMessage);
+    return null;
   }
   return JSON.parse(match[1]);
 }

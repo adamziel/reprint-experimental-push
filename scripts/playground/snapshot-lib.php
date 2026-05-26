@@ -1499,6 +1499,7 @@ function reprint_push_plugin_owned_row_drivers(): array
     }
 
     $normalized = [];
+    $drivers_by_table = [];
     foreach ($drivers as $name => $driver) {
         if (!is_array($driver)) {
             continue;
@@ -1507,6 +1508,16 @@ function reprint_push_plugin_owned_row_drivers(): array
         $table = (string) ($driver['table'] ?? '');
         if ($driver_name === '' || $table === '') {
             continue;
+        }
+        if (array_key_exists($driver_name, $normalized)) {
+            throw new RuntimeException('Plugin-owned driver registry defines duplicate driver name: ' . $driver_name);
+        }
+        if (array_key_exists($table, $drivers_by_table)) {
+            throw new RuntimeException(
+                'Plugin-owned driver registry defines duplicate table mapping for table: '
+                . $table
+                . ' (' . $drivers_by_table[$table] . ', ' . $driver_name . ')'
+            );
         }
         $normalized[$driver_name] = [
             'driver' => $driver_name,
@@ -1517,6 +1528,7 @@ function reprint_push_plugin_owned_row_drivers(): array
             'applyRowCallback' => $driver['applyRowCallback'] ?? null,
             'validateMutationCallback' => $driver['validateMutationCallback'] ?? null,
         ];
+        $drivers_by_table[$table] = $driver_name;
     }
 
     $drivers = $normalized;

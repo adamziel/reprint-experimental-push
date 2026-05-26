@@ -67,6 +67,8 @@ const driverDeleteServerBlueprintPath = path.join(tmpDir, 'remote-base-with-driv
 const driverMissingExportServerBlueprintPath = path.join(tmpDir, 'remote-base-with-driver-fixture-missing-export-server.blueprint.json');
 const driverMissingApplyServerBlueprintPath = path.join(tmpDir, 'remote-base-with-driver-fixture-missing-apply-server.blueprint.json');
 const driverMissingValidateServerBlueprintPath = path.join(tmpDir, 'remote-base-with-driver-fixture-missing-validate-server.blueprint.json');
+const driverDuplicateNameServerBlueprintPath = path.join(tmpDir, 'remote-base-with-driver-fixture-duplicate-name-server.blueprint.json');
+const driverDuplicateTableServerBlueprintPath = path.join(tmpDir, 'remote-base-with-driver-fixture-duplicate-table-server.blueprint.json');
 const basePath = path.join(tmpDir, 'base.json');
 const localPath = path.join(tmpDir, 'local.json');
 
@@ -100,6 +102,16 @@ try {
     activatePackagedPlugin: true,
     provisionAuth: true,
     omitValidateMutationCallback: true,
+  });
+  writeDriverFixtureBlueprint(path.join(repoRoot, fixtures.base), driverDuplicateNameServerBlueprintPath, {
+    activatePackagedPlugin: true,
+    provisionAuth: true,
+    duplicateDriverName: true,
+  });
+  writeDriverFixtureBlueprint(path.join(repoRoot, fixtures.base), driverDuplicateTableServerBlueprintPath, {
+    activatePackagedPlugin: true,
+    provisionAuth: true,
+    duplicateTable: true,
   });
   fs.writeFileSync(basePath, `${JSON.stringify(snapshots.base, null, 2)}\n`);
   fs.writeFileSync(localPath, `${JSON.stringify(packageLocalSnapshot, null, 2)}\n`);
@@ -135,6 +147,8 @@ try {
     driverExportGuard: {},
     driverApplyGuard: {},
     driverValidateGuard: {},
+    driverDuplicateNameGuard: {},
+    driverDuplicateTableGuard: {},
     final: {},
   };
 
@@ -925,6 +939,48 @@ try {
     };
   });
 
+  await withPlaygroundServer('production-plugin-driver-duplicate-name-guard', driverDuplicateNameServerBlueprintPath, pluginDir, async (server) => {
+    const malformedSnapshot = await requestText(
+      server.baseUrl,
+      'GET',
+      '/wp-json/reprint/v1/push/snapshot',
+      undefined,
+      authHeaders(),
+    );
+    assert.equal(malformedSnapshot.status, 500);
+    assert.match(
+      malformedSnapshot.text,
+      /duplicate driver name: fixture-arbitrary-plugin-table/i,
+      'packaged snapshot did not fail closed on duplicate plugin-owned driver names',
+    );
+
+    summary.driverDuplicateNameGuard = {
+      status: malformedSnapshot.status,
+      duplicateDriverName: /duplicate driver name: fixture-arbitrary-plugin-table/i.test(malformedSnapshot.text),
+    };
+  });
+
+  await withPlaygroundServer('production-plugin-driver-duplicate-table-guard', driverDuplicateTableServerBlueprintPath, pluginDir, async (server) => {
+    const malformedSnapshot = await requestText(
+      server.baseUrl,
+      'GET',
+      '/wp-json/reprint/v1/push/snapshot',
+      undefined,
+      authHeaders(),
+    );
+    assert.equal(malformedSnapshot.status, 500);
+    assert.match(
+      malformedSnapshot.text,
+      /duplicate table mapping for table: wp_reprint_push_driver_fixture/i,
+      'packaged snapshot did not fail closed on duplicate plugin-owned driver table mappings',
+    );
+
+    summary.driverDuplicateTableGuard = {
+      status: malformedSnapshot.status,
+      duplicateTable: /duplicate table mapping for table: wp_reprint_push_driver_fixture/i.test(malformedSnapshot.text),
+    };
+  });
+
   console.log(JSON.stringify(summary, null, 2));
 } finally {
   fs.rmSync(tmpDir, { recursive: true, force: true });
@@ -1028,6 +1084,8 @@ function writeDriverFixtureBlueprint(
     omitExportRowsCallback = false,
     omitApplyRowCallback = false,
     omitValidateMutationCallback = false,
+    duplicateDriverName = false,
+    duplicateTable = false,
   } = {},
 ) {
   const blueprint = JSON.parse(fs.readFileSync(sourceBlueprintPath, 'utf8'));
@@ -1041,6 +1099,8 @@ function writeDriverFixtureBlueprint(
     omitExportRowsCallback,
     omitApplyRowCallback,
     omitValidateMutationCallback,
+    duplicateDriverName,
+    duplicateTable,
   }), 'utf8').toString('base64');
   blueprint.steps.push({
     step: 'runPHP',
@@ -1110,6 +1170,8 @@ function driverFixturePluginPhp({
   omitExportRowsCallback = false,
   omitApplyRowCallback = false,
   omitValidateMutationCallback = false,
+  duplicateDriverName = false,
+  duplicateTable = false,
 }) {
   const exportRowsCallback = omitExportRowsCallback
     ? ''
@@ -1135,7 +1197,25 @@ add_filter('reprint_push_plugin_owned_row_drivers', static function (array $driv
         'supportsDelete' => ${supportsDelete ? 'true' : 'false'},
 ${exportRowsCallback}${applyRowCallback}${validateMutationCallback}
     ];
-    return $drivers;
+${duplicateDriverName ? `    $drivers['${driverFixture.driver}-duplicate'] = [
+        'driver' => '${driverFixture.driver}',
+        'table' => '${driverFixture.table}_duplicate',
+        'pluginOwner' => '${driverFixture.pluginOwner}',
+        'supportsDelete' => ${supportsDelete ? 'true' : 'false'},
+        'exportRowsCallback' => 'reprint_push_driver_fixture_export_rows',
+        'applyRowCallback' => 'reprint_push_driver_fixture_apply_row',
+        'validateMutationCallback' => 'reprint_push_driver_fixture_validate_mutation',
+    ];
+` : ''}${duplicateTable ? `    $drivers['${driverFixture.driver}-same-table'] = [
+        'driver' => '${driverFixture.driver}-same-table',
+        'table' => '${driverFixture.table}',
+        'pluginOwner' => '${driverFixture.pluginOwner}',
+        'supportsDelete' => ${supportsDelete ? 'true' : 'false'},
+        'exportRowsCallback' => 'reprint_push_driver_fixture_export_rows',
+        'applyRowCallback' => 'reprint_push_driver_fixture_apply_row',
+        'validateMutationCallback' => 'reprint_push_driver_fixture_validate_mutation',
+    ];
+` : ''}    return $drivers;
 });
 
 function reprint_push_driver_fixture_table_name(): string {
