@@ -3712,6 +3712,9 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
     'recovery',
   );
   assert.ok(
+    rejectedById.get('compressed-remote-index-and-cached-upload-buffer-skips-large-upload-windowing-after-pause').violates.includes('remote-index-planning-only'),
+  );
+  assert.ok(
     rejectedById.get('compressed-remote-index-and-cached-upload-buffer-skips-large-upload-windowing-after-pause').violates.includes('backpressure'),
   );
   assert.ok(
