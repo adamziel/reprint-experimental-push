@@ -26345,6 +26345,154 @@ test('blocks an existing term relationship taxonomy reference when the same-plan
   assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
 });
 
+test('blocks an existing term relationship taxonomy reference when the same-plan term taxonomy target is itself blocked by a blocked same-plan parent term and unrelated remote attachment noise exists', () => {
+  const postResourceKey = 'row:["wp_posts","ID:3"]';
+  const blockedParentTermResourceKey = 'row:["wp_terms","term_id:7"]';
+  const childTermResourceKey = 'row:["wp_terms","term_id:8"]';
+  const existingTaxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:8"]';
+  const blockedNavMenuTaxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:9"]';
+  const samePlanTaxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:10"]';
+  const relationshipResourceKey = 'row:["wp_term_relationships","object_id:3|term_taxonomy_id:10"]';
+  const base = baseSite();
+  const local = baseSite();
+  const remote = baseSite();
+
+  base.db.wp_posts['ID:3'] = {
+    ID: 3,
+    post_title: 'Existing tagged post',
+    post_content: 'base-private-existing-tagged-post-body',
+    post_status: 'publish',
+  };
+  local.db.wp_posts['ID:3'] = {
+    ...base.db.wp_posts['ID:3'],
+  };
+  remote.db.wp_posts['ID:3'] = {
+    ...base.db.wp_posts['ID:3'],
+  };
+  remote.db.wp_posts['ID:21'] = {
+    ID: 21,
+    post_title: 'Remote unrelated attachment',
+    post_content: 'remote-private-unrelated-attachment-noise-body',
+    post_status: 'inherit',
+    post_type: 'attachment',
+  };
+  base.db.wp_terms = {
+    'term_id:6': {
+      term_id: 6,
+      name: 'Existing category term',
+      slug: 'existing-category-term',
+    },
+  };
+  local.db.wp_terms = {
+    'term_id:6': {
+      ...base.db.wp_terms['term_id:6'],
+    },
+    'term_id:7': {
+      term_id: 7,
+      name: 'Local blocked parent term',
+      slug: 'local-blocked-parent-term',
+    },
+    'term_id:8': {
+      term_id: 8,
+      name: 'Local replacement category term',
+      slug: 'local-replacement-category-term',
+    },
+  };
+  remote.db.wp_terms = {
+    'term_id:6': {
+      ...base.db.wp_terms['term_id:6'],
+    },
+  };
+  base.db.wp_term_taxonomy = {
+    'term_taxonomy_id:8': {
+      term_taxonomy_id: 8,
+      term_id: 6,
+      taxonomy: 'category',
+      description: '',
+      parent: 0,
+      count: 1,
+    },
+  };
+  local.db.wp_term_taxonomy = {
+    'term_taxonomy_id:9': {
+      term_taxonomy_id: 9,
+      term_id: 7,
+      taxonomy: 'nav_menu',
+      description: '',
+      parent: 0,
+      count: 0,
+    },
+    'term_taxonomy_id:10': {
+      term_taxonomy_id: 10,
+      term_id: 8,
+      taxonomy: 'category',
+      description: '',
+      parent: 7,
+      count: 1,
+    },
+  };
+  remote.db.wp_term_taxonomy = {
+    'term_taxonomy_id:8': {
+      ...base.db.wp_term_taxonomy['term_taxonomy_id:8'],
+    },
+  };
+  base.db.wp_term_relationships = {
+    'object_id:3|term_taxonomy_id:8': {
+      object_id: 3,
+      term_taxonomy_id: 8,
+      term_order: 0,
+    },
+  };
+  local.db.wp_term_relationships = {
+    'object_id:3|term_taxonomy_id:10': {
+      object_id: 3,
+      term_taxonomy_id: 10,
+      term_order: 0,
+    },
+  };
+  remote.db.wp_term_relationships = {
+    'object_id:3|term_taxonomy_id:8': {
+      ...base.db.wp_term_relationships['object_id:3|term_taxonomy_id:8'],
+    },
+  };
+
+  const plan = planFor(base, local, remote);
+  const postMutation = mutationFor(plan, postResourceKey);
+  const blockedParentTermMutation = mutationFor(plan, blockedParentTermResourceKey);
+  const childTermMutation = mutationFor(plan, childTermResourceKey);
+  const existingTaxonomyMutation = mutationFor(plan, existingTaxonomyResourceKey);
+  const samePlanTaxonomyMutation = mutationFor(plan, samePlanTaxonomyResourceKey);
+  const navMenuTaxonomyBlocker = plan.blockers.find((entry) => entry.resourceKey === blockedNavMenuTaxonomyResourceKey);
+  const samePlanTaxonomyBlocker = plan.blockers.find((entry) => entry.resourceKey === samePlanTaxonomyResourceKey);
+  const relationshipMutation = mutationFor(plan, relationshipResourceKey);
+  const relationshipBlocker = plan.blockers.find((entry) => entry.resourceKey === relationshipResourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(postMutation, undefined);
+  assert.equal(blockedParentTermMutation.changeKind, 'create');
+  assert.equal(childTermMutation.changeKind, 'create');
+  assert.equal(existingTaxonomyMutation.changeKind, 'delete');
+  assert.equal(samePlanTaxonomyMutation.changeKind, 'create');
+  assert.equal(navMenuTaxonomyBlocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(navMenuTaxonomyBlocker.surface, 'nav_menu');
+  assert.equal(samePlanTaxonomyBlocker.class, 'missing-wordpress-graph-dependency');
+  assert.equal(samePlanTaxonomyBlocker.references[0].relationshipType, 'term-taxonomy-parent');
+  assert.equal(samePlanTaxonomyBlocker.references[0].targetResourceKey, blockedParentTermResourceKey);
+  assert.equal(samePlanTaxonomyMutation.dependsOnMutationIds, undefined);
+  assert.equal(relationshipMutation.changeKind, 'create');
+  assert.equal(relationshipMutation.dependsOnMutationIds, undefined);
+  assert.equal(relationshipBlocker.class, 'missing-wordpress-graph-dependency');
+  assert.equal(relationshipBlocker.references[0].relationshipType, 'term-relationship-taxonomy');
+  assert.equal(relationshipBlocker.references[0].targetResourceKey, samePlanTaxonomyResourceKey);
+  assert.equal(JSON.stringify(relationshipBlocker).includes('local-blocked-parent-term'), false);
+  assert.equal(JSON.stringify(relationshipBlocker).includes('local-replacement-category-term'), false);
+  assert.equal(
+    JSON.stringify(relationshipBlocker).includes('remote-private-unrelated-attachment-noise-body'),
+    false,
+  );
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
+});
+
 test('blocks a local term relationship taxonomy reference when the same-plan term taxonomy target is itself blocked by a blocked same-plan parent term', () => {
   const postResourceKey = 'row:["wp_posts","ID:3"]';
   const blockedParentTermResourceKey = 'row:["wp_terms","term_id:7"]';
