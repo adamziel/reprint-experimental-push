@@ -2169,6 +2169,15 @@ test('fast-path fixture isolates the release-safety benchmark shape', () => {
   );
   assert.ok(
     fixture.rejectedFastPaths.some((fastPath) =>
+      fastPath.id === 'compressed-remote-index-and-cached-release-manifest-and-journal-lag-skips-release-bundle-commit-after-pause' &&
+      fastPath.rejectedGate === 'group' &&
+      fastPath.violates.includes('backpressure') &&
+      fastPath.violates.includes('plugin-preconditions') &&
+      fastPath.violates.includes('row-preconditions')
+    ),
+  );
+  assert.ok(
+    fixture.rejectedFastPaths.some((fastPath) =>
       fastPath.id === 'compressed-remote-index-and-cached-release-manifest-and-batched-receipt-flush-skips-release-bundle-planning-after-pause' &&
       fastPath.rejectedGate === 'skip' &&
       fastPath.violates.includes('remote-indexes') &&

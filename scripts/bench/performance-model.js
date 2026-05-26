@@ -3443,6 +3443,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['remote-index-planning-only', 'compression', 'backpressure', 'atomic-groups', 'plugin-preconditions', 'row-preconditions', 'durable-progress'],
   },
   {
+    id: 'compressed-remote-index-and-cached-release-manifest-and-journal-lag-skips-release-bundle-commit-after-pause',
+    proposal: 'use a compressed remote index plus a cached release manifest and journal lag to skip the release-bundle commit barrier after a pause',
+    rejectedBecause: 'planning evidence, a cached release manifest, and journal-lag savings can trim replay cost, but they still cannot prove the dependent plugin files, row batches, or atomic-group commit survived the pause',
+    rejectedGate: 'group',
+    violates: ['remote-index-planning-only', 'compression', 'backpressure', 'atomic-groups', 'plugin-preconditions', 'row-preconditions', 'durable-progress'],
+  },
+  {
     id: 'compressed-remote-index-and-cached-release-manifest-skips-release-bundle-planning',
     proposal: 'use a compressed remote index plus a cached release manifest to skip release-bundle planning rescans',
     rejectedBecause: 'planning evidence and a cached manifest can reduce planning work, but they cannot turn a remote index into apply authorization or prove the dependent files and rows survived failure',
