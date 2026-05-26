@@ -3717,6 +3717,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['backpressure', 'chunk-receipts', 'durable-progress'],
   },
   {
+    id: 'compressed-remote-index-and-cached-plugin-activation-map-skips-plugin-install-commit-after-pause',
+    proposal: 'use a compressed remote index plus a cached plugin activation map to skip plugin-install commit after a pause',
+    rejectedBecause: 'planning evidence and cached activation state can shorten rescan work, but they cannot prove the dependency checks, staged rows, or atomic-group commit barrier survived the pause',
+    rejectedGate: 'group',
+    violates: ['remote-index-planning-only', 'compression', 'plugin-preconditions', 'atomic-groups', 'backpressure', 'durable-progress'],
+  },
+  {
     id: 'cached-receipt-cursor-and-queue-headroom-skips-backpressure-pause-after-retry',
     proposal: 'use a cached receipt cursor plus queue headroom to skip the backpressure pause after a retry',
     rejectedBecause: 'headroom evidence can size the next bounded queue, but it still cannot prove the pause happened before overflow or that the journal trail is durable enough to recover without guessing which receipts survived the retry',
