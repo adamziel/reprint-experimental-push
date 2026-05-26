@@ -1,13 +1,37 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-26 16:01 CEST
+Last updated: 2026-05-26 16:05 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
 
-## 2026-05-26 16:01 CEST - Reliable Head and Readiness Blocker Refresh
+## 2026-05-26 16:05 CEST - Reliable Head Advanced Past Packaged Readiness
 
-- Going well: the live reliable head is now `50751002253e7ba1a0256261ea903dea78f4e5a5`, so the checked
+- Going well: the live reliable head is now `ea74b2bdc01574dce1380641171497338df62883`, so the checked
+  release path got past the packaged `remote-base` readiness gate and starts
+  `remote-changed`.
+- Not going well: the gate is still `0/4`; the next blocker is the shared
+  non-packaged `waitForServer()` path for `remote-changed` and `local-edited`,
+  which still fails after four `GET /wp-json/` probes with `502 "WordPress is
+  not ready yet"`.
+- Progress change: this is a material release-path step forward, but it still
+  does not prove production-backed auth/session lifecycle, durable-journal
+  ownership, or preserved-remote retry on the checked release boundary.
+- Next nudge: keep `reliable-executor` on the shared `waitForServer()`
+  readiness boundary in
+  `scripts/playground/production-shaped-release-verify.mjs`, and keep
+  `progress-publisher` aligned with `ea74b2bdc01574dce1380641171497338df62883`
+  while leaving the gate posture at `0/4`.
+
+| Lane | Nudge |
+| --- | --- |
+| Reliable executor | Fix the shared `waitForServer()` readiness boundary for `remote-changed` and `local-edited`, not another support-only surface. |
+| Progress publisher | Keep the public page aligned with the live `ea74b2bdc01574dce1380641171497338df62883` head; keep the gate posture at `0/4`. |
+| Audit and critic | Keep the verdict at `0/4` unless production-backed lifecycle, durable ownership, or preserved-remote retry is proven. |
+
+## 2026-05-26 16:04 CEST - Reliable Head and Readiness Blocker Refresh
+
+- Going well: the live reliable head is now `ea74b2bdc01574dce1380641171497338df62883`, so the checked
   release path has the packaged source bound to the runtime server.
 - Not going well: the gate is still `0/4`; the packaged release verifier is still timing out in the readiness
   wait on `GET /wp-json/reprint/v1/push/snapshot` with repeated `502 "WordPress is not ready yet"`.
@@ -15,12 +39,12 @@ changed, what is helping, what is not helping, and the next nudge.
   production-backed auth/session lifecycle or durable-journal ownership on the checked boundary.
 - Next nudge: keep `reliable-executor` on the packaged readiness fix in
   `scripts/playground/production-shaped-release-verify.mjs`, and have `progress-publisher` keep the public head
-  aligned with `50751002253e7ba1a0256261ea903dea78f4e5a5` while leaving the gate posture at `0/4`.
+  aligned with `ea74b2bdc01574dce1380641171497338df62883` while leaving the gate posture at `0/4`.
 
 | Lane | Nudge |
 | --- | --- |
 | Reliable executor | Fix the packaged readiness wait in `scripts/playground/production-shaped-release-verify.mjs`, not another proof-field surface. |
-| Progress publisher | Keep the public page aligned with the live `50751002253e7ba1a0256261ea903dea78f4e5a5` head; keep the gate posture at `0/4`. |
+| Progress publisher | Keep the public page aligned with the live `ea74b2bdc01574dce1380641171497338df62883` head; keep the gate posture at `0/4`. |
 | Audit and critic | Keep the verdict at `0/4` unless production-backed lifecycle or durable ownership is proven. |
 
 ## 2026-05-26 15:56 CEST - Reliable Head Advanced Again
