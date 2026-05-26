@@ -31777,6 +31777,73 @@ test('blocks local post-parent references to a same-plan created attachment iden
   assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin change */');
 });
 
+test('blocks local post-parent references to a same-plan created attachment identity while preserving a matching independent edit and remote-only plugin removals', () => {
+  const resourceKey = 'row:["wp_posts","ID:10"]';
+  const targetResourceKey = 'row:["wp_posts","ID:8"]';
+  const base = baseSite();
+  base.db.wp_posts['ID:1'].post_title = 'Base shared post title';
+  base.plugins.forms = {
+    version: '1.0.0',
+    enabled: true,
+    description: 'base plugin forms',
+  };
+  base.files['wp-content/plugins/forms/forms.php'] = '<?php /* base plugin forms */';
+
+  const local = baseSite();
+  local.db.wp_posts['ID:1'].post_title = 'Shared post title';
+  local.plugins.forms = JSON.parse(JSON.stringify(base.plugins.forms));
+  local.files['wp-content/plugins/forms/forms.php'] = base.files['wp-content/plugins/forms/forms.php'];
+  local.db.wp_posts['ID:8'] = {
+    ID: 8,
+    post_title: 'local-created attachment target',
+    post_content: 'local-created attachment body',
+    post_type: 'attachment',
+    post_status: 'inherit',
+  };
+  local.db.wp_posts['ID:10'] = {
+    ID: 10,
+    post_title: 'local-private-child-post',
+    post_content: 'local-private-child-body',
+    post_status: 'publish',
+    post_parent: 8,
+  };
+
+  const remote = baseSite();
+  remote.db.wp_posts['ID:1'].post_title = 'Shared post title';
+  delete remote.plugins.forms;
+  delete remote.files['wp-content/plugins/forms/forms.php'];
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.class === 'unsupported-attachment-resource' && entry.resourceKey === targetResourceKey);
+  const matchingEdit = decisionFor(plan, 'row:["wp_posts","ID:1"]');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(decisionFor(plan, targetResourceKey), undefined);
+  assert.equal(blocker.class, 'unsupported-attachment-resource');
+  assert.equal(blocker.resourceKey, targetResourceKey);
+  assert.equal(
+    blocker.reason,
+    'WordPress graph mutation row:["wp_posts","ID:8"] is created in the same plan as a post parent attachment target that depends on it, and identity rewriting is not yet supported.',
+  );
+  assert.equal(matchingEdit.decision, 'already-in-sync');
+  assert.equal(matchingEdit.change.localChange, 'update');
+  assert.equal(matchingEdit.change.remoteChange, 'update');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('local-created attachment target'), false);
+  assert.equal(planJson.includes('local-created attachment body'), false);
+  assert.equal(planJson.includes('local-private-child-post'), false);
+  assert.equal(planJson.includes('local-private-child-body'), false);
+  assert.equal(planJson.includes('base plugin forms'), false);
+  assert.equal(remote.plugins.forms, undefined);
+  assert.equal(remote.files['wp-content/plugins/forms/forms.php'], undefined);
+});
+
 test('blocks a file delete that would hide a live remote descendant while preserving matching independent edits and remote-only plugin drift', () => {
   const base = baseSite();
   base.files['wp-content/uploads/gallery'] = 'base gallery file';
