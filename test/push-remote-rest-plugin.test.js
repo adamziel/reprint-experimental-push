@@ -502,6 +502,34 @@ function runCheckedBoundaryContract({
   });
 }
 
+function runCheckedBoundaryContractMatches(journal) {
+  return spawnSync('php', [
+    '-r',
+    [
+      'define("ABSPATH", dirname($argv[1]));',
+      'function add_filter(...$args) {}',
+      'function add_action(...$args) {}',
+      'function register_rest_route(...$args) {}',
+      'class WP_REST_Server { const CREATABLE = "POST"; const READABLE = "GET"; }',
+      'class WP_REST_Response {',
+      '  private $data;',
+      '  public function __construct($data = null, $status = null) { $this->data = $data; }',
+      '  public function get_data() { return $this->data; }',
+      '  public function set_data($data) { $this->data = $data; }',
+      '}',
+      'class WP_REST_Request {}',
+      'require $argv[1];',
+      '$journal = json_decode($argv[2], true);',
+      'echo json_encode(reprint_push_lab_db_journal_checked_boundary_contract_matches($journal));',
+    ].join(' '),
+    pluginFile,
+    JSON.stringify(journal),
+  ], {
+    cwd: repoRoot,
+    encoding: 'utf8',
+  });
+}
+
 function runRecoveryJournalEvidence({ checkedSurface = false, packageMode = false } = {}) {
   return spawnSync('php', [
     '-r',
@@ -4898,6 +4926,86 @@ test('checked db journal boundary contract keeps ownership restart readability a
       },
     },
   });
+});
+
+test('checked db journal boundary contract fails closed when the checked claim contract is missing or malformed', { skip: !hasPhp }, () => {
+  const baseJournal = {
+    schemaVersion: 1,
+    acceptedOnCheckedBoundary: true,
+    scope: 'checked live production-shaped journal surface; not local Playground fixture only',
+    claim: {
+      status: 'stale-claim-rejected',
+      activeClaimKeyHash: 'retry-claim-hash-02',
+      activeClaimSequence: 20,
+      activeClaimEvent: 'stale-claim-retry-started',
+      idempotencyKeyHash: 'idempotency-hash-01',
+      requestHash: 'request-hash-01',
+      staleClaimRejected: true,
+      abandonedSequence: 18,
+      abandonedEvent: 'stale-claim-abandoned',
+      previousStartedSequence: 12,
+      previousClaimSequence: 11,
+      previousClaimKeyHash: 'retry-claim-hash-01',
+      previousClaimEvent: 'idempotency-opened',
+    },
+    ownership: {
+      ownsJournal: true,
+      restartReadable: true,
+      productionAdapter: 'wpdb-single-statement-cas',
+    },
+    writerLease: {
+      strategy: 'claim-fenced-single-writer',
+      claimKeyUnique: true,
+      fsyncEvidence: true,
+      storageGuard: 'wpdb-single-statement-cas',
+      monotonicSequence: true,
+      restartReadable: true,
+      staleClaimRejected: true,
+    },
+    leaseFence: {
+      boundary: 'wpdb-single-statement-cas',
+      claimKeyUnique: true,
+      fsyncEvidence: true,
+      monotonicSequence: true,
+      restartReadable: true,
+      staleClaimRejected: true,
+      writerLease: {
+        strategy: 'claim-fenced-single-writer',
+        claimKeyUnique: true,
+        fsyncEvidence: true,
+        storageGuard: 'wpdb-single-statement-cas',
+        monotonicSequence: true,
+        restartReadable: true,
+        staleClaimRejected: true,
+      },
+    },
+    storageGuard: {
+      boundary: 'wpdb-single-statement-cas',
+      operation: 'update',
+      outcome: 'applied',
+    },
+  };
+
+  let result = runCheckedBoundaryContractMatches(baseJournal);
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(JSON.parse(result.stdout), true);
+
+  result = runCheckedBoundaryContractMatches({
+    ...baseJournal,
+    claim: undefined,
+  });
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(JSON.parse(result.stdout), false);
+
+  result = runCheckedBoundaryContractMatches({
+    ...baseJournal,
+    claim: {
+      ...baseJournal.claim,
+      activeClaimSequence: 0,
+    },
+  });
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(JSON.parse(result.stdout), false);
 });
 
 test('checked db journal merge preserves more specific inline values', { skip: !hasPhp }, () => {
