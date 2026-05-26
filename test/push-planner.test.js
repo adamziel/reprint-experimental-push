@@ -16253,7 +16253,7 @@ test('blocks local term-taxonomy parent references to a missing live remote term
   assert.equal(decisionFor(plan, targetResourceKey).decision, 'keep-remote');
   assert.equal(blocker.class, 'unsupported-term-taxonomy-resource');
   assert.equal(blocker.resourceKey, resourceKey);
-  assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_term_taxonomy","term_taxonomy_id:5"] is created in the same plan as a parent term identity that depends on it, and identity rewriting is not yet supported.');
+  assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_term_taxonomy","term_taxonomy_id:5"] is created in the same plan as a term identity that depends on it, and identity rewriting is not yet supported.');
   assert.equal(planJson.includes('local term taxonomy description'), false);
   assert.equal(planJson.includes('base parent term'), false);
   assert.equal(pluginDecision.decision, 'keep-remote');
@@ -16314,7 +16314,8 @@ test('blocks local term-taxonomy parent references to a same-plan created term i
   assert.equal(blocker.class, 'unsupported-term-taxonomy-resource');
   assert.equal(blocker.resourceKind, 'term-taxonomy');
   assert.equal(blocker.resourceKey, resourceKey);
-  assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_term_taxonomy","term_taxonomy_id:5"] is created in the same plan as a parent term identity that depends on it, and identity rewriting is not yet supported.');
+  assert.equal(blocker.unsupportedState, 'same-plan-reference');
+  assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_term_taxonomy","term_taxonomy_id:5"] is created in the same plan as a term identity that depends on it, and identity rewriting is not yet supported.');
   assert.equal(planJson.includes('Local same-plan parent term'), false);
   assert.equal(planJson.includes('local-same-plan-parent-term'), false);
   assert.equal(remote.plugins.forms.description, 'remote-only plugin drift');
@@ -16376,6 +16377,7 @@ test('blocks local same-plan created parent term identities when a term-taxonomy
   assert.equal(termBlocker.reason, 'WordPress graph mutation row:["wp_terms","term_id:9"] is created in the same plan as a parent term identity that depends on it, and identity rewriting is not yet supported.');
   assert.equal(taxonomyBlocker.class, 'unsupported-term-taxonomy-resource');
   assert.equal(taxonomyBlocker.resourceKey, sourceResourceKey);
+  assert.equal(taxonomyBlocker.unsupportedState, 'same-plan-reference');
   assert.equal(taxonomyBlocker.reason, 'WordPress graph mutation row:["wp_term_taxonomy","term_taxonomy_id:5"] is created in the same plan as a parent term identity that depends on it, and identity rewriting is not yet supported.');
   assert.equal(planJson.includes('Local same-plan parent term'), false);
   assert.equal(planJson.includes('local-same-plan-parent-term'), false);
@@ -16569,6 +16571,7 @@ test('blocks local term-taxonomy parent references to a same-plan created term i
   assert.equal(decisionFor(plan, targetResourceKey), undefined);
   assert.equal(blocker.class, 'unsupported-term-taxonomy-resource');
   assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.unsupportedState, 'same-plan-reference');
   assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_term_taxonomy","term_taxonomy_id:5"] is created in the same plan as a parent term identity that depends on it, and identity rewriting is not yet supported.');
   assert.equal(planJson.includes('Local same-plan removal parent term'), false);
   assert.equal(planJson.includes('local-same-plan-removal-parent-term'), false);
@@ -16949,6 +16952,8 @@ test('blocks local termmeta references to a same-plan created term identity whil
   assert.equal(mutationFor(plan, resourceKey), undefined);
   assert.equal(decisionFor(plan, targetResourceKey), undefined);
   assert.equal(termmetaBlocker.class, 'unsupported-termmeta-resource');
+  assert.equal(termmetaBlocker.resourceKind, 'term-meta');
+  assert.equal(termmetaBlocker.unsupportedState, 'same-plan-reference');
   assert.equal(planJson.includes('Local same-plan term'), false);
   assert.equal(planJson.includes('local-same-plan-term'), false);
   assert.equal(planJson.includes('local termmeta note'), false);
@@ -17171,6 +17176,8 @@ test('blocks local termmeta references to a same-plan created term identity whil
   assert.equal(decisionFor(plan, targetResourceKey), undefined);
   assert.equal(termmetaBlocker.class, 'unsupported-termmeta-resource');
   assert.equal(termmetaBlocker.resourceKey, resourceKey);
+  assert.equal(termmetaBlocker.resourceKind, 'term-meta');
+  assert.equal(termmetaBlocker.unsupportedState, 'same-plan-reference');
   assert.equal(termmetaBlocker.reason, `WordPress graph mutation ${resourceKey} is created in the same plan as a term identity that depends on it, and identity rewriting is not yet supported.`);
   assert.equal(termBlocker.class, 'stale-wordpress-graph-identity');
   assert.equal(termBlocker.resourceKey, targetResourceKey);
