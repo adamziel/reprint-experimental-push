@@ -156,6 +156,7 @@ export function productionThroughputBlockers(report) {
   }
   if (
     !report.evidence.chunkReceipts.resumeCursor
+    || report.evidence.chunkReceipts.resumeCursor.planId !== 'plan-guarded-executor-benchmark'
     || report.evidence.chunkReceipts.resumeCursor.chunkIndex !== report.evidence.chunkReceipts.recorded - 1
     || report.evidence.chunkReceipts.resumeCursor.chunkCount !== report.evidence.chunkReceipts.expected
     || !Number.isFinite(report.evidence.chunkReceipts.resumeCursor.sizeBytes)

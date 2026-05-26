@@ -201,6 +201,15 @@ test('production claim gate fails closed if benchmark evidence is tampered', () 
     productionThroughputBlockers(missingReceiptCursor).includes('missing-valid-receipt-cursor'),
   );
 
+  const wrongPlanReceiptCursor = clone(report);
+  wrongPlanReceiptCursor.evidence.chunkReceipts.resumeCursor = {
+    ...wrongPlanReceiptCursor.evidence.chunkReceipts.resumeCursor,
+    planId: 'plan-other-benchmark',
+  };
+  assert.ok(
+    productionThroughputBlockers(wrongPlanReceiptCursor).includes('missing-valid-receipt-cursor'),
+  );
+
   const wrongResourceReceiptCursor = clone(report);
   wrongResourceReceiptCursor.evidence.chunkReceipts.resumeCursor = {
     ...wrongResourceReceiptCursor.evidence.chunkReceipts.resumeCursor,
