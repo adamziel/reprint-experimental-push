@@ -4574,16 +4574,17 @@ test('verify:release stays pinned to the checked release entrypoint and proves t
 
   assert.equal(proof.status, 0, proof.stderr);
   assert.match(proof.stdout, /"ok": true/);
-  assert.match(proof.stdout, /"preflight": \{\s*"status": 200,\s*"authSessionType": "application-password-basic"/);
+  assert.match(proof.stdout, /"preflight": \{\s*"status": 200,\s*"authSessionType": "production-auth-session"/);
   assert.match(proof.stdout, /"releaseProof": \{\s*"ok": true,\s*"mode": "apply"/);
   assert.match(proof.stdout, /"durableJournal": \{\s*"proof": \{\s*"status": 0,\s*"journal": \{/);
   assert.match(
     proof.stdout,
-    /"boundary": \{\s*"firstRemainingProductionBoundary": "auth\/session lifecycle and durable journal semantics",\s*"status": "unimplemented",\s*"verdict": "PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED",\s*"durableJournal": \{\s*"storageLeaseFence": "production durable journal storage, lease, and fencing are not yet proven beyond the retained Playground journal path",\s*"verdict": "PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED"\s*\}\s*\}/,
+    /"boundary": \{\s*"firstRemainingProductionBoundary": null,\s*"status": "checked",\s*"verdict": "PACKAGED_RELEASE_BOUNDARY_OK"/,
   );
+  assert.match(proof.stdout, /"checkedAccepted": true/);
   assert.equal(
     packageJson.scripts['verify:release'],
-    'npm run test:playground:production-shaped-topology-proof && npm run test:playground:production-shaped-release-verify && npm run test:recovery:file-journal',
+    'npm run test:playground:production-shaped-topology-proof && REPRINT_PUSH_REQUIRE_PRODUCTION_AUTH_SESSION=1 REPRINT_PUSH_REQUIRE_PRODUCTION_DURABLE_JOURNAL=1 npm run test:playground:production-shaped-release-verify && npm run test:recovery:file-journal',
   );
 });
 
