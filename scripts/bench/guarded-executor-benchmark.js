@@ -1624,7 +1624,9 @@ export function productionThroughputDetails(report) {
   const receiptCursorHeadroomCoveredByQueueBudget =
     Number.isFinite(receiptCursorMemoryHeadroomBytes)
     && Number.isFinite(receiptCursorQueueHeadroomBytes)
-    && receiptCursorMemoryHeadroomBytes <= receiptCursorQueueHeadroomBytes;
+    && receiptCursorMemoryHeadroomBytes <= receiptCursorQueueHeadroomBytes
+    && report.evidence.backpressure?.receiptCursorQueueSlackMatchesQueueHeadroom === true
+    && report.evidence.backpressure?.queueHeadroomWithinResourceCeiling === true;
   const receiptCursorMemoryHeadroomWithinQueueBudget =
     receiptCursorHeadroomCoveredByQueueBudget && receiptCursorHeadroomMatchesQueueHeadroom;
   const receiptCursorHeadroomWithinQueueBudget =

@@ -6156,6 +6156,7 @@ test('guarded benchmark keeps paused queue-headroom summaries false when raw res
   assert.equal(details.queueHeadroomMatchesResourceHeadroom, false);
   assert.equal(details.queueHeadroomMatchesMemoryHeadroom, false);
   assert.equal(details.receiptCursorHeadroomMatchesQueueHeadroom, false);
+  assert.equal(details.receiptCursorHeadroomCoveredByQueueBudget, false);
   assert.equal(details.receiptCursorHeadroomWithinQueueBudget, false);
   assert.equal(details.receiptCursorMemoryHeadroomWithinQueueBudget, false);
   assert.equal(details.receiptCursorBackpressureWithinQueueHeadroom, false);
@@ -6187,6 +6188,7 @@ test('guarded benchmark keeps paused queue-headroom summaries false when raw res
   assert.equal(details.backpressureConsistency.queueHeadroomMatchesResourceHeadroom, false);
   assert.equal(details.backpressureConsistency.queueHeadroomMatchesMemoryHeadroom, false);
   assert.equal(details.backpressureConsistency.receiptCursorHeadroomMatchesQueueHeadroom, false);
+  assert.equal(details.backpressureConsistency.receiptCursorHeadroomCoveredByQueueBudget, false);
   assert.equal(details.backpressureConsistency.receiptCursorHeadroomWithinQueueBudget, false);
   assert.equal(details.backpressureConsistency.receiptCursorMemoryHeadroomWithinQueueBudget, false);
   assert.equal(details.backpressureConsistency.receiptCursorBackpressureWithinQueueHeadroom, false);
@@ -6255,6 +6257,7 @@ test('guarded benchmark keeps paused queue-headroom summaries false when raw que
 
   assert.equal(details.receiptCursorQueueSlackMatchesQueueHeadroom, false);
   assert.equal(details.receiptCursorHeadroomMatchesQueueHeadroom, false);
+  assert.equal(details.receiptCursorHeadroomCoveredByQueueBudget, false);
   assert.equal(details.receiptCursorBackpressureWithinQueueHeadroom, false);
   assert.equal(details.receiptCursorHeadroomWithinQueueBudget, false);
   assert.equal(details.receiptCursorQueueSlackWithinQueueHeadroom, false);
@@ -6266,6 +6269,10 @@ test('guarded benchmark keeps paused queue-headroom summaries false when raw que
   );
   assert.equal(
     details.backpressureConsistency.receiptCursorHeadroomMatchesQueueHeadroom,
+    false,
+  );
+  assert.equal(
+    details.backpressureConsistency.receiptCursorHeadroomCoveredByQueueBudget,
     false,
   );
   assert.equal(
