@@ -3566,6 +3566,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['backpressure', 'atomic-groups', 'durable-progress', 'live-preconditions'],
   },
   {
+    id: 'cached-receipt-cursor-queue-headroom-authorizes-atomic-group-commit-after-retry',
+    proposal: 'treat a cached receipt cursor plus queue headroom as enough proof to authorize the atomic-group commit after a retry',
+    rejectedBecause: 'queue headroom can size the next bounded replay, but it cannot prove which rows, chunks, or live compares survived the retry well enough to authorize commit',
+    rejectedGate: 'recovery',
+    violates: ['backpressure', 'atomic-groups', 'durable-progress', 'live-preconditions'],
+  },
+  {
     id: 'cached-receipt-cursor-queue-slack-authorizes-commit-after-pause',
     proposal: 'treat a cached receipt cursor plus queue slack as enough proof to authorize commit after a pause',
     rejectedBecause: 'queue slack can help size bounded replay, but it cannot prove which raw receipts or live compares survived the pause well enough to authorize commit',

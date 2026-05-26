@@ -2288,6 +2288,9 @@ test('unsafe shortcuts stay rejected when they would bypass live preconditions o
   const skipMemoryHeadroomCommit = model.rejectedFastPaths.find(
     (fastPath) => fastPath.id === 'receipt-cursor-memory-headroom-authorizes-commit',
   );
+  const skipQueueHeadroomCommit = model.rejectedFastPaths.find(
+    (fastPath) => fastPath.id === 'cached-receipt-cursor-queue-headroom-authorizes-atomic-group-commit-after-retry',
+  );
 
   assert.ok(skipMemoryHeadroomCommit, 'receipt cursor memory headroom cannot authorize commit');
   assert.equal(skipMemoryHeadroomCommit.rejectedGate, 'recovery');
@@ -2295,6 +2298,13 @@ test('unsafe shortcuts stay rejected when they would bypass live preconditions o
   assert.ok(skipMemoryHeadroomCommit.violates.includes('atomic-groups'));
   assert.ok(skipMemoryHeadroomCommit.violates.includes('live-preconditions'));
   assert.ok(skipMemoryHeadroomCommit.violates.includes('durable-progress'));
+
+  assert.ok(skipQueueHeadroomCommit, 'cached receipt cursor plus queue headroom cannot authorize commit');
+  assert.equal(skipQueueHeadroomCommit.rejectedGate, 'recovery');
+  assert.ok(skipQueueHeadroomCommit.violates.includes('backpressure'));
+  assert.ok(skipQueueHeadroomCommit.violates.includes('atomic-groups'));
+  assert.ok(skipQueueHeadroomCommit.violates.includes('live-preconditions'));
+  assert.ok(skipQueueHeadroomCommit.violates.includes('durable-progress'));
 });
 
 test('fast-path fixture isolates the release-safety benchmark shape', () => {
