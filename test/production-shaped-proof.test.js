@@ -64,6 +64,7 @@ function spawnReleaseVerify(env = {}, timeout = proofSubprocessTimeoutMs) {
     );
   }
   if (proof.status === null) {
+    process.stderr.write(`${describeSpawnProof(proof)}\n`);
     throw new Error(
       `${formatSpawnFailure('production-shaped release verify exited without a status', proof)}\n${describeSpawnProof(proof)}`,
     );
