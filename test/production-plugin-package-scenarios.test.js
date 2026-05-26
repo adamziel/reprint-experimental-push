@@ -110,6 +110,36 @@ test('scenario resolver maps driver-guard-only mode to the bounded receipt guard
   );
 });
 
+test('scenario resolver maps driver-verifier-only mode to the bounded verifier bundle', () => {
+  const resolved = resolveProductionPluginPackageScenarios(
+    [],
+    undefined,
+    'driver-verifier-only',
+  );
+
+  assert.deepEqual(resolved.requestedScenarios, ['driver-verifier-guards']);
+  assert.equal(resolved.resolvedMode, 'driver-verifier-only');
+  assert.deepEqual(
+    Array.from(resolved.selectedScenarios).sort(),
+    scenarioGroups['driver-verifier-guards'].slice().sort(),
+  );
+});
+
+test('scenario resolver maps driver-registration-only mode to the malformed registration bundle', () => {
+  const resolved = resolveProductionPluginPackageScenarios(
+    [],
+    undefined,
+    'driver-registration-only',
+  );
+
+  assert.deepEqual(resolved.requestedScenarios, ['driver-registration-guards']);
+  assert.equal(resolved.resolvedMode, 'driver-registration-only');
+  assert.deepEqual(
+    Array.from(resolved.selectedScenarios).sort(),
+    scenarioGroups['driver-registration-guards'].slice().sort(),
+  );
+});
+
 test('scenario resolver clears mode metadata when explicit scenario input overrides the bounded mode', () => {
   const resolved = resolveProductionPluginPackageScenarios(
     ['--scenario=driver-delete-apply'],

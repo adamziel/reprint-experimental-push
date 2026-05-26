@@ -60,6 +60,12 @@ function resolveScenarioMode(modeValue) {
   if (modeValue === 'driver-guard-only') {
     return 'driver-receipt-guards';
   }
+  if (modeValue === 'driver-verifier-only') {
+    return 'driver-verifier-guards';
+  }
+  if (modeValue === 'driver-registration-only') {
+    return 'driver-registration-guards';
+  }
   throw new Error(
     `Unknown production plugin package smoke mode: ${modeValue}`,
   );
