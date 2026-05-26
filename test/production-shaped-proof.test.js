@@ -27,12 +27,14 @@ import {
   labSnapshotRetryable,
 } from '../scripts/playground/lab-playground-readiness.js';
 import {
+  packagedProductionPluginPreflightTerminal,
   packagedProductionPluginReadinessBodyRetryable,
   packagedProductionPluginReadinessErrorRetryable,
   packagedProductionPluginPreflightReady,
   packagedProductionPluginPreflightRetryable,
   packagedProductionPluginServerReady,
   packagedProductionPluginSnapshotReady,
+  packagedProductionPluginSnapshotTerminal,
   packagedProductionPluginSnapshotRetryable,
 } from '../scripts/playground/packaged-production-plugin-readiness.js';
 import {
@@ -1056,6 +1058,49 @@ test('packaged production plugin readiness helper retries only startup-shaped pa
   );
   assert.equal(
     packagedProductionPluginPreflightRetryable(strictReadyPreflight),
+    false,
+  );
+  assert.equal(
+    packagedProductionPluginSnapshotTerminal({
+      status: 200,
+      body: {
+        ok: true,
+      },
+    }),
+    true,
+  );
+  assert.equal(
+    packagedProductionPluginSnapshotTerminal({
+      status: 404,
+      body: {
+        code: 'rest_no_route',
+      },
+    }),
+    false,
+  );
+  assert.equal(
+    packagedProductionPluginPreflightTerminal({
+      status: 200,
+      body: {
+        ok: true,
+        routeProfile: {
+          profile: 'lab-authenticated',
+          restNamespace: 'reprint/v1',
+          routePrefix: '/push',
+          labBacked: false,
+        },
+        auth: strictReadyPreflight.body.auth,
+      },
+    }),
+    true,
+  );
+  assert.equal(
+    packagedProductionPluginPreflightTerminal({
+      status: 502,
+      body: {
+        code: 'wordpress_not_ready',
+      },
+    }),
     false,
   );
   assert.equal(

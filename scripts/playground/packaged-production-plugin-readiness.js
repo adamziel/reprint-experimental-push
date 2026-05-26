@@ -26,6 +26,11 @@ export function packagedProductionPluginSnapshotRetryable(snapshot) {
   );
 }
 
+export function packagedProductionPluginSnapshotTerminal(snapshot) {
+  return !packagedProductionPluginSnapshotReady(snapshot)
+    && !packagedProductionPluginSnapshotRetryable(snapshot);
+}
+
 export function packagedProductionPluginPreflightReady(preflight) {
   if (preflight?.status !== 200 || preflight?.body?.ok !== true) {
     return false;
@@ -47,6 +52,11 @@ export function packagedProductionPluginPreflightRetryable(preflight) {
   // Once the packaged preflight responds normally, a wrong route profile or
   // invalid production session is a ready-but-broken boundary, not startup lag.
   return false;
+}
+
+export function packagedProductionPluginPreflightTerminal(preflight) {
+  return !packagedProductionPluginPreflightReady(preflight)
+    && !packagedProductionPluginPreflightRetryable(preflight);
 }
 
 export function packagedProductionPluginServerReady({ snapshot, preflight = null } = {}) {

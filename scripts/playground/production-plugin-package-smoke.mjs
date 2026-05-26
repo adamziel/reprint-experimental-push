@@ -13,11 +13,13 @@ import {
   resolveAuthSessionSourceCredentials,
 } from './auth-session-source.js';
 import {
+  packagedProductionPluginPreflightTerminal,
   packagedProductionPluginPreflightReady,
   packagedProductionPluginPreflightRetryable,
   packagedProductionPluginReadinessBodyRetryable,
   packagedProductionPluginReadinessErrorRetryable,
   packagedProductionPluginServerReady,
+  packagedProductionPluginSnapshotTerminal,
   packagedProductionPluginSnapshotRetryable,
 } from './packaged-production-plugin-readiness.js';
 import { resolvePackagedProductionPluginSourceCommand } from './packaged-production-plugin-source-command.js';
@@ -478,6 +480,12 @@ async function waitForServer(child, baseUrl, logs) {
           await sleep(500);
           continue;
         }
+        if (packagedProductionPluginSnapshotTerminal({ status: snapshotResponse.status, body: snapshotBody })) {
+          throw new Error(
+            `Packaged production plugin snapshot returned a terminal readiness failure at ${baseUrl}\n`
+            + `${snapshotText.slice(0, readinessFailureBodyLimit)}\n${logs.join('')}`,
+          );
+        }
       } else {
         const preflightResponse = await fetch(`${baseUrl}/wp-json/reprint/v1/push/preflight`, {
           method: 'GET',
@@ -514,6 +522,12 @@ async function waitForServer(child, baseUrl, logs) {
         if (packagedProductionPluginPreflightRetryable({ status: preflightResponse.status, body: preflightBody })) {
           await sleep(500);
           continue;
+        }
+        if (packagedProductionPluginPreflightTerminal({ status: preflightResponse.status, body: preflightBody })) {
+          throw new Error(
+            `Packaged production plugin preflight returned a terminal readiness failure at ${baseUrl}\n`
+            + `${preflightText.slice(0, readinessFailureBodyLimit)}\n${logs.join('')}`,
+          );
         }
       }
     } catch (error) {
