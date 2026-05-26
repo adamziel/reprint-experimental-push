@@ -992,7 +992,7 @@ function productionRecoverySupportReport(writer) {
     || !isStrictPlainObject(writer.writerLease)
     || !Object.hasOwn(writer.writerLease, 'id')
     || typeof writer.writerLease.id !== 'string'
-    || writer.writerLease.id.length === 0
+    || writer.writerLease.id.trim().length === 0
   ) {
     addMissingDependency('fencing or lease ownership for the journal writer');
   }
