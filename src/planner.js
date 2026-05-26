@@ -174,6 +174,28 @@ export function createPushPlan({ base, local, remote, now = new Date() }) {
         continue;
       }
 
+      const steadyTermTaxonomySupport = unsupportedTermTaxonomyResourceSupport({
+        resource,
+        baseValue,
+        localValue,
+        remoteValue,
+        local,
+        remote,
+      });
+      if (!steadyTermTaxonomySupport.supported) {
+        addUnsupportedTermTaxonomyResourceBlocker(plan, {
+          resource,
+          support: steadyTermTaxonomySupport,
+          baseValue,
+          localValue,
+          remoteValue,
+          baseHash,
+          localHash,
+          remoteHash,
+        });
+        continue;
+      }
+
       continue;
     }
 
