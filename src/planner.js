@@ -3673,7 +3673,9 @@ function unsupportedTermTaxonomyResourceSupport({ resource, baseValue, localValu
     unsupportedState,
     reason: samePlanCreatedTermReferences.some((reference) => reference.relationshipType === 'term-taxonomy-parent')
       ? `WordPress graph mutation ${resource.key} is created in the same plan as a parent term identity that depends on it, and identity rewriting is not yet supported.`
-      : 'Term taxonomy graph resources are not yet supported by the planner.',
+      : samePlanCreatedTermReferences.some((reference) => reference.relationshipType === 'term-taxonomy-term')
+        ? `WordPress graph mutation ${resource.key} is created in the same plan as a term identity that depends on it, and identity rewriting is not yet supported.`
+        : 'Term taxonomy graph resources are not yet supported by the planner.',
     references: samePlanCreatedTermReferences,
   };
 }
