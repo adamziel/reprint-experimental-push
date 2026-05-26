@@ -14,8 +14,10 @@ release gates and named evidence gaps rather than stale percentage estimates.
   `LIVE_RELEASE_BOUNDARY_OK`, but the classifier-named blocker remains
   production-owned durable-journal storage with lease/fencing and
   restart-readable replay on the live boundary.
-- The public page still keeps plugin-driver proof out of the checked release
-  verifier, and the stale percentage bars stay removed.
+- The public page now records that packaged plugin-driver guards are pinned
+  into `verify:release` as support evidence, while production-backed
+  graph/plugin-driver proof and the durable-journal storage boundary still
+  block gate movement. The stale percentage bars stay removed.
 - Evidence trail: [progress.html](../progress.html),
   [objective audit](../audits/objective-audit.md),
   [release-gate checklist](../progress.html#proof-gates).
