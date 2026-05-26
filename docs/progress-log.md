@@ -4,6 +4,24 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-05-26 - Public Status Audit 11:56:11
+
+<a id="2026-05-26-public-status-audit-115611"></a>
+
+- Refreshed [progress.html](../progress.html) to the current `date` output
+  (`2026-05-26 11:56:11 CEST`) so the visible page stays internally
+  consistent. The headline, trend, audit note, and release-gate proof item all
+  name `998e856f` as the current reliable head and describe the surfaced
+  replay-equivalence evidence on the checked release verifier, while release
+  gates remain `0/4`.
+- `998e856f` is the current reliable head for the public lane surface; replay
+  equivalence is now visible on the release verifier, but the production
+  WordPress auth/session lifecycle and durable journal ownership gates remain
+  blocked.
+- Evidence trail: [progress.html](../progress.html),
+  [objective audit](../audits/objective-audit.md),
+  [release-gate checklist](../progress.html#proof-gates).
+
 ## 2026-05-26 - Public Status Audit 11:14:12
 
 <a id="2026-05-26-public-status-audit-111412"></a>
