@@ -48,6 +48,7 @@ import {
   packagedProductionPluginPreflightReady,
   packagedProductionPluginPreflightRetryable,
   packagedProductionPluginResetRouteNotReadyProbeCounts,
+  packagedProductionPluginRetryableRouteProbeWhileIndexProbeTimedOut,
   packagedProductionPluginRouteRetryableWhilePackagedRouteStarting,
   packagedProductionPluginRouteRetryableWhileWordPressStarting,
   packagedProductionPluginServerReady,
@@ -1766,6 +1767,27 @@ test('packaged production plugin timeout fallback classification separates start
       kind: 'retryable-route-index-timeout',
       indexProbeTimedOut: true,
     },
+  );
+  assert.equal(
+    packagedProductionPluginRetryableRouteProbeWhileIndexProbeTimedOut(
+      { retryable: true, status: 404, body: 'No route was found matching the URL and request method.' },
+      { timedOut: true },
+    ),
+    true,
+  );
+  assert.equal(
+    packagedProductionPluginRetryableRouteProbeWhileIndexProbeTimedOut(
+      { retryable: true, status: 404, body: 'No route was found matching the URL and request method.' },
+      { status: 200, body: 'ok' },
+    ),
+    false,
+  );
+  assert.equal(
+    packagedProductionPluginRetryableRouteProbeWhileIndexProbeTimedOut(
+      { retryable: false, status: 404, body: 'No route was found matching the URL and request method.' },
+      { timedOut: true },
+    ),
+    false,
   );
   assert.deepEqual(
     packagedProductionPluginClassifyTimeoutFallbackStartup(
