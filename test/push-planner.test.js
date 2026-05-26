@@ -13075,6 +13075,51 @@ test('fixture forms lab table delete remains blocked without driver delete opt-i
   assert.equal(remote.files['about.php'], '<?php echo "remote about";');
 });
 
+test('fixture forms lab table delete remains blocked after remote plugin removal while remote-only plugin removals stay preserved', () => {
+  const resourceKey = 'row:["wp_reprint_push_forms_lab","id:1"]';
+  const base = baseSite();
+  base.plugins['reprint-push-forms-fixture'] = { version: '1.0.0', active: true };
+  base.db.wp_reprint_push_forms_lab = {
+    'id:1': {
+      id: 1,
+      form_slug: 'contact',
+      payload: { owner: 'forms', mode: 'base' },
+      updated_marker: 'base',
+      __pluginOwner: 'forms',
+    },
+  };
+
+  const local = JSON.parse(JSON.stringify(base));
+  delete local.db.wp_reprint_push_forms_lab['id:1'];
+  local.meta = {
+    pushPolicy: pluginOwnedResourcePolicy(
+      allowedPluginOwnedResource(resourceKey, 'forms', 'fixture-forms-lab-table'),
+    ),
+  };
+
+  const remote = JSON.parse(JSON.stringify(base));
+  delete remote.plugins['reprint-push-forms-fixture'];
+  delete remote.files['wp-content/plugins/reprint-push-forms-fixture/reprint-push-forms-fixture.php'];
+  remote.plugins.seo = { version: '1.0.0', active: true, description: 'remote-only plugin removals' };
+  remote.files['wp-content/plugins/seo/seo.php'] = '<?php /* remote-only plugin removals */';
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers[0];
+  const remoteOnlyPluginDecision = decisionFor(plan, 'plugin:seo');
+  const remoteOnlyPluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/seo/seo.php');
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(blocker.class, 'unsupported-plugin-owned-resource');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.reason, 'Fixture forms lab table driver requires unchanged active reprint-push-forms-fixture evidence.');
+  assert.equal(remoteOnlyPluginDecision.decision, 'keep-remote');
+  assert.equal(remoteOnlyPluginFileDecision.decision, 'keep-remote');
+  assert.equal(remote.plugins.seo.description, 'remote-only plugin removals');
+  assert.equal(remote.files['wp-content/plugins/seo/seo.php'], '<?php /* remote-only plugin removals */');
+});
+
 test('executor rejects forged ready custom table plans without valid fixture driver evidence', () => {
   const resourceKey = 'row:["wp_reprint_push_forms_lab","id:1"]';
   const base = baseSite();
