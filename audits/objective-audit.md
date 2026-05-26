@@ -4,11 +4,11 @@
 
 The project is **not releasable as a production WordPress push path**.
 
-- Fresh remote heads at audit time, checked on 2026-05-26 08:30:50 CEST (+0200):
-- Fresh production-side lane heads re-polled at 2026-05-26 08:30:50 CEST (+0200):
+- Fresh remote heads at audit time, checked on 2026-05-26 08:31:48 CEST (+0200):
+- Fresh production-side lane heads re-polled at 2026-05-26 08:31:48 CEST (+0200):
 
 - `origin/lane/critic` -> `567743c2`
-- `origin/lane/no-data-loss-invariants` -> `7e29df2c`
+- `origin/lane/no-data-loss-invariants` -> `69112382`
 - `origin/lane/no-data-loss-recovery` -> `9e077c10`
 - `origin/lane/reliable-executor` -> `72f5097b`
 
@@ -230,6 +230,9 @@ but it did not change the release conclusion:
 - `origin/lane/no-data-loss-invariants` now records `bce3664d`, blocking post
   author graph drift. It still does not prove the live release boundary or any
   production-backed source mutation.
+- `origin/lane/no-data-loss-invariants` now records `69112382`, classifying
+  comments blockers. This is still unsupported-surface blocking, not a
+  production-backed release proof.
 
 - `origin/lane/reliable-executor` now records `bbf04945`, hardening durable journal ownership. It still does not prove production auth/session lifecycle or a live-source mutation boundary.
 - `origin/lane/cycle-20260525-mainwindows-2349/same-plan-wordpress-graph-create` now records `65a40803`, tightening same-plan attachment rules. It still does not prove the live release boundary or any production-backed source mutation.
