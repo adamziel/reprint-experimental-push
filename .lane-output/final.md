@@ -5,19 +5,17 @@ Changed files
 - [`.lane-output/final.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/independent-auditor/.lane-output/final.md)
 
 Commands run
-- `git for-each-ref --sort=-committerdate --format='%(refname:short) %(objectname:short) %(committerdate:iso8601) %(subject)' refs/remotes/origin/lane | head -n 30`
-- `sed -n '1,260p' audits/objective-audit.md`
-- `git diff -- audits/objective-audit.md`
+- `git for-each-ref --sort=-committerdate --format='%(refname:short) %(objectname:short) %(committerdate:iso8601) %(subject)' refs/remotes/origin/lane | head -n 20`
+- `sed -n '1,120p' audits/objective-audit.md`
+- `git diff -- audits/objective-audit.md .lane-output/final.md`
 - `git status --short --branch`
 
 Push result
-- `git add audits/objective-audit.md .lane-output/final.md`
-- `git commit -m "Refresh audit snapshot"`
-- `git push origin HEAD:lane/independent-auditor`
+- pending
 
 Worktree status
-- Branch: `lane/cycle-20260525-mainwindows-2349/independent-auditor...origin/main [ahead 1373, behind 229]`
-- Tracked files are dirty only from the audit refresh
+- Branch: `lane/cycle-20260525-mainwindows-2349/independent-auditor...origin/main [ahead 1374, behind 229]`
+- Tracked files are dirty from the audit refresh
 
 Next supervisor nudge
 - Re-poll only when a lane lands non-freshness proof that changes the live production release boundary; keep the audit verdict at `0/4` until then.

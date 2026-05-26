@@ -6,14 +6,14 @@ The project is **not releasable as a production WordPress push path**.
 
 Fresh remote heads at audit time, checked on May 26, 2026:
 
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `d702c908`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `c9a0e53d`
 - `origin/lane/reliable-executor` -> `27c9bdd0`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `54c3b972`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `fa1c5e1e`
 - `origin/lane/same-plan-wordpress-graph-create` -> `0d2178e9`
 - `origin/lane/no-data-loss-recovery` -> `9dc4a1f8`
-- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `f574ab87`
+- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `634a1753`
 - `origin/lane/no-data-loss-invariants` -> `b5c81374`
-- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `27d0c72e`
+- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `de5eca6e`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `9dc4a1f8`
 - `origin/lane/critic` -> `cba0890b`
 - `origin/lane/fast-paths` -> `cd0fddad`
@@ -46,7 +46,7 @@ but it did not change the release conclusion:
   advanced to `27d0c72e`, refreshing the audit snapshot. That updates the
   evidence surface but does not change the release boundary.
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now
-  refreshes the progress visibility handoff at `d702c908`. This is freshness
+  refreshes the progress visibility handoff at `c9a0e53d`. This is freshness
   and visibility only, not release-grade live-source evidence.
 - `origin/lane/no-data-loss-invariants` now tightens navigation blocker proof
   at `b5c81374`. A separate cycle-branch proof at `98c0ce26`
@@ -67,12 +67,12 @@ but it did not change the release conclusion:
   `cd0fddad`. That is still a fail-closed implementation improvement, not
   production release proof.
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` now adds receipt
-  cursor headroom rejection at `40d5aa1a`, which is still boundary plumbing
+  cursor headroom rejection at `634a1753`, which is still boundary plumbing
   rather than measured speed proof.
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now
-  records the latest progress freshness handoff at `da528416`.
+  records the latest progress freshness handoff at `fa1c5e1e`.
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` now refreshes the audit snapshot at
-  `27d0c72e`.
+  `de5eca6e`.
 - `origin/lane/critic` now refreshes the critic handoff at `cba0890b`.
 - `origin/lane/progress-publisher` now refreshes the public progress evidence
   at `7695e1f9`.
