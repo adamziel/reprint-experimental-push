@@ -30,7 +30,19 @@ const proofSubprocessOptions = {
   maxBuffer: 1024 * 1024 * 20,
 };
 
-function stopAllPlaygroundChildrenSync() {}
+const activePlaygroundChildren = new Set();
+
+function stopAllPlaygroundChildrenSync() {
+  for (const child of activePlaygroundChildren) {
+    if (child.exitCode !== null) {
+      activePlaygroundChildren.delete(child);
+      continue;
+    }
+    try {
+      child.kill('SIGTERM');
+    } catch {}
+  }
+}
 
 function spawnReleaseVerify(env = {}, timeout = proofSubprocessTimeoutMs) {
   const proof = spawnSync(
@@ -635,6 +647,7 @@ async function startPlaygroundServer(name, blueprintPath) {
       stdio: ['ignore', 'pipe', 'pipe'],
     },
   );
+  activePlaygroundChildren.add(child);
 
   let output = '';
   child.stdout.on('data', (chunk) => {
@@ -663,6 +676,7 @@ async function startPlaygroundServer(name, blueprintPath) {
 
 async function stopPlaygroundServer(server) {
   await stopPlaygroundChild(server.child);
+  activePlaygroundChildren.delete(server.child);
 }
 
 async function waitForServer(child, baseUrl, getLogs) {
@@ -819,6 +833,7 @@ async function waitForExit(child, timeoutMs) {
 
 async function stopPlaygroundChild(child) {
   if (child.exitCode !== null) {
+    activePlaygroundChildren.delete(child);
     return;
   }
   stopProcessGroup(child, 'SIGTERM');
@@ -843,6 +858,7 @@ async function stopPlaygroundChild(child) {
       throw new Error(`Playground server did not exit cleanly after SIGKILL`);
     }
   }
+  activePlaygroundChildren.delete(child);
 }
 
 function stopProcessGroup(child, signal) {
