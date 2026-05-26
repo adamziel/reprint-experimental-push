@@ -1607,7 +1607,7 @@ function recordAuthSessionLifecycle(summary, step, auth) {
     step,
     id: observation?.id || null,
     type: observation?.type || null,
-    status: observation?.status || null,
+    status: normalizeAuthSessionLifecycleHistoryStatus(observation),
     expiresAt: observation?.expiresAt || null,
     ...(observation?.authUser ? { authUser: observation.authUser } : {}),
     expired: Boolean(observation?.expired),
@@ -1644,6 +1644,17 @@ function recordAuthSessionLifecycle(summary, step, auth) {
   summary.authSessionLifecycle.cleanedUp = lifecycleSummary.cleanedUp || null;
   summary.authSessionLifecycle.rotated = lifecycleSummary.rotated || null;
   summary.authSessionLifecycle.preserved = lifecycleSummary.preserved || null;
+}
+
+function normalizeAuthSessionLifecycleHistoryStatus(observation) {
+  if (observation?.revoked) {
+    return 'revoked';
+  }
+  if (observation?.cleanedUp) {
+    return 'cleaned-up';
+  }
+
+  return observation?.status || null;
 }
 
 function summarizeAuthSessionLifecycleHistory(history) {

@@ -2202,6 +2202,7 @@ test('production-shaped authenticated push records revoked and cleaned-up auth s
       { step: 'replay', revoked: false, cleanedUp: true },
       { step: 'journal', revoked: false, cleanedUp: false },
     ]);
+    assert.equal(summary.authSessionLifecycle.apply.status, 'active');
     assert.equal(summary.authSessionLifecycle.dryRun.revoked, true);
     assert.equal(summary.authSessionLifecycle.apply.cleanedUp, true);
     assert.equal(summary.authSessionLifecycle.replay.cleanedUp, true);
@@ -2209,7 +2210,7 @@ test('production-shaped authenticated push records revoked and cleaned-up auth s
       step: 'dry-run',
       id: 'psh_01j00000000000000000000000',
       type: 'production-auth-session',
-      status: 'active',
+      status: 'revoked',
       expiresAt: '2030-01-01T00:00:00Z',
       authUser: 'reprint_push_admin',
       expired: false,
@@ -2222,7 +2223,7 @@ test('production-shaped authenticated push records revoked and cleaned-up auth s
       step: 'apply',
       id: 'psh_01j00000000000000000000000',
       type: 'production-auth-session',
-      status: 'active',
+      status: 'cleaned-up',
       expiresAt: '2030-01-01T00:00:00Z',
       authUser: 'reprint_push_admin',
       expired: false,
@@ -2235,7 +2236,7 @@ test('production-shaped authenticated push records revoked and cleaned-up auth s
       step: 'dry-run',
       id: 'psh_01j00000000000000000000000',
       type: 'production-auth-session',
-      status: 'active',
+      status: 'revoked',
       expiresAt: '2030-01-01T00:00:00Z',
       authUser: 'reprint_push_admin',
       expired: false,
@@ -2244,6 +2245,8 @@ test('production-shaped authenticated push records revoked and cleaned-up auth s
       rotated: false,
       preserved: true,
     });
+    assert.equal(summary.authSessionLifecycleSummary.revoked?.status, 'revoked');
+    assert.equal(summary.authSessionLifecycleSummary.cleanedUp?.status, 'cleaned-up');
     assert.deepEqual(
       summary.authSessionLifecycle.history.map(({ step, revoked, cleanedUp, rotated, preserved }) => ({
         step,

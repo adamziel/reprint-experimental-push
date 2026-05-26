@@ -16,6 +16,7 @@ import {
 import { digest } from '../../src/stable-json.js';
 import {
   loadAuthSessionSource,
+  resolveAuthSessionRequestState,
 } from './auth-session-source.js';
 import {
   releaseVerifyFixtureCredentials,
@@ -92,21 +93,18 @@ const fixtureCredentials = {
   username: releaseVerifyFixtureCredentials.username,
   password: releaseVerifyFixtureCredentials.applicationPassword,
 };
-
-if (authSessionSource?.ok) {
-  const resolvedAuthSessionSource = resolveReleaseVerifyCredentials({
-    liveSourceUrl,
-    username,
-    applicationPassword,
-  }, authSessionSource, {
-    preferSource: requireProductionAuthSession,
-  }).live;
-  // When a live auth-session source is supplied, prefer it over any stale lab
-  // credentials already present in the environment.
-  liveSourceUrl = resolvedAuthSessionSource.liveSourceUrl;
-  username = resolvedAuthSessionSource.username;
-  applicationPassword = resolvedAuthSessionSource.applicationPassword;
-}
+const resolvedAuthSessionRequest = resolveAuthSessionRequestState({
+  liveSourceUrl,
+  username,
+  applicationPassword,
+  fallbackUsername: fixtureCredentials.username,
+  fallbackApplicationPassword: fixtureCredentials.password,
+}, authSessionSource, {
+  preferSource: requireProductionAuthSession,
+});
+liveSourceUrl = resolvedAuthSessionRequest.liveSourceUrl;
+username = resolvedAuthSessionRequest.username;
+applicationPassword = resolvedAuthSessionRequest.applicationPassword;
 
 if (shouldRequestPackagedProductionPluginAuthSession({
   requireProductionAuthSession,
@@ -119,8 +117,8 @@ if (shouldRequestPackagedProductionPluginAuthSession({
 })) {
   const packagedProductionPluginAuthSessionRequest = resolvePackagedProductionPluginAuthSessionRequest({
     sourceUrl: liveSourceUrl || 'http://127.0.0.1:8080',
-    username: fixtureCredentials.username,
-    applicationPassword: fixtureCredentials.password,
+    username: resolvedAuthSessionRequest.credentials.username,
+    applicationPassword: resolvedAuthSessionRequest.credentials.password,
     authSessionSourceCommand,
   });
   packagedProductionPluginAuthSessionSource = packagedProductionPluginAuthSessionRequest;

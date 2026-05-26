@@ -91,6 +91,56 @@ export function resolveAuthSessionSourceCredentials({
   };
 }
 
+export function resolveAuthSessionRequestCredentials({
+  liveSourceUrl = '',
+  username = '',
+  applicationPassword = '',
+  fallbackUsername = '',
+  fallbackApplicationPassword = '',
+}, source, { preferSource = false } = {}) {
+  return resolveAuthSessionSourceCredentials(
+    {
+      liveSourceUrl,
+      username: normalizeAuthSessionSourceField(username) || normalizeAuthSessionSourceField(fallbackUsername),
+      applicationPassword:
+        normalizeAuthSessionSourceField(applicationPassword)
+        || normalizeAuthSessionSourceField(fallbackApplicationPassword),
+    },
+    source,
+    { preferSource },
+  );
+}
+
+export function resolveAuthSessionRequestState({
+  liveSourceUrl = '',
+  username = '',
+  applicationPassword = '',
+  fallbackUsername = '',
+  fallbackApplicationPassword = '',
+}, source, { preferSource = false } = {}) {
+  const resolved = resolveAuthSessionRequestCredentials(
+    {
+      liveSourceUrl,
+      username,
+      applicationPassword,
+      fallbackUsername,
+      fallbackApplicationPassword,
+    },
+    source,
+    { preferSource },
+  );
+
+  return {
+    liveSourceUrl: resolved.liveSourceUrl,
+    username: resolved.username,
+    applicationPassword: resolved.applicationPassword,
+    credentials: {
+      username: resolved.username,
+      password: resolved.applicationPassword,
+    },
+  };
+}
+
 function normalizeAuthSessionSourceField(value) {
   if (value === null || value === undefined) {
     return '';
