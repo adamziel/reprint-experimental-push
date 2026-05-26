@@ -42,8 +42,7 @@ The project is **not releasable as a production WordPress push path**.
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `d7813094`
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `8a7f4edd`
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `c86ece15`
-- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `33be6aa4`
-- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `0ac76c38`
+- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `f9f3fca0`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `2af1ddda`
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `ea8694c3`
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` -> `0ca7b35d`
@@ -55,8 +54,8 @@ The project is **not releasable as a production WordPress push path**.
 - `origin/lane/critic` -> `443dacd6`
 - `origin/lane/fast-paths` -> `8c5c2ccb`
 - `origin/lane/feedback-supervisor` -> `2a67a6b8`
-- `origin/lane/independent-auditor` -> `6351130f`
-- `origin/lane/no-data-loss-invariants` -> `57a487a8`
+- `origin/lane/independent-auditor` -> `f9f3fca0`
+- `origin/lane/no-data-loss-invariants` -> `09ab2491`
 - `origin/lane/no-data-loss-recovery` -> `2af1ddda`
 - `origin/lane/progress-publisher` -> `7695e1f9`
 - `origin/lane/reliable-executor` -> `f1783e10`
@@ -113,6 +112,9 @@ but it did not change the release conclusion:
   verify helper bounds and keeping the live proof wrapper fail-closed. It still
   does not prove production auth/session lifecycle or a live-source mutation
   boundary.
+- `origin/lane/no-data-loss-invariants` now records `09ab2491`, adding a
+  GUID blocker proof. It still does not prove the live release boundary or any
+  production-backed source mutation.
 - `origin/lane/no-data-loss-invariants` now records `57a487a8`, adding a
   special-file delete blocker proof. It still does not prove the live release
   boundary or any production-backed source mutation.
