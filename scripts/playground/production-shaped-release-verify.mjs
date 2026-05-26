@@ -60,9 +60,10 @@ const muPluginDir = path.join(repoRoot, 'scripts/playground/rest-mu-plugins');
 const readinessProbeIntervalMs = 200;
 const readinessFailureBodyLimit = 240;
 // The release verifier starts remote-base, remote-changed, and local-edited in
-// sequence, so the shared readiness helper needs a longer bounded window than
-// the earlier single-server smoke path.
-const serverStartupTimeoutMs = 30_000;
+// sequence, and the shared remote-changed/local-edited fixtures routinely take
+// longer to clear global WordPress startup than the earlier single-server
+// smoke path.
+const serverStartupTimeoutMs = 120_000;
 const serverFetchTimeoutMs = 1_000;
 const packagedPlaygroundTimeoutSeconds = 30;
 const packagedServerStartupTimeoutMs = packagedPlaygroundTimeoutSeconds * 1_000;

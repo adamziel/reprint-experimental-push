@@ -63,7 +63,7 @@ import {
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const muPluginDir = path.join(repoRoot, 'scripts/playground/rest-mu-plugins');
-const serverStartupTimeoutMs = 30_000;
+const serverStartupTimeoutMs = 120_000;
 const playgroundServerTimeoutMs = 40;
 const serverFetchTimeoutMs = 3_000;
 const playgroundStopTimeoutMs = 3_000;
@@ -2933,6 +2933,22 @@ test('shared lab waitForServer keeps index and snapshot body reads child-aware',
   assert.doesNotMatch(sharedWaitSource, /await response\.arrayBuffer\(\)/);
   assert.doesNotMatch(sharedWaitSource, /await snapshot\.arrayBuffer\(\)/);
   assert.doesNotMatch(sharedWaitSource, /await new Promise\(\(resolve\) => setTimeout\(resolve, readinessProbeIntervalMs\)\)/);
+});
+
+test('release verifier keeps the extended shared Playground startup budget for remote-changed and local-edited', () => {
+  const verifierSource = readFileSync(
+    path.join(repoRoot, 'scripts/playground/production-shaped-release-verify.mjs'),
+    'utf8',
+  );
+
+  assert.match(
+    verifierSource,
+    /const serverStartupTimeoutMs = 120_000;/,
+  );
+  assert.match(
+    verifierSource,
+    /shared remote-changed\/local-edited fixtures routinely take[\s\S]*longer to clear global WordPress startup/,
+  );
 });
 
 test('shared lab waitForServer tolerates more than four startup-shaped /wp-json/ responses inside the bounded startup window', async () => {
