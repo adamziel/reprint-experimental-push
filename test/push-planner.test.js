@@ -28731,7 +28731,7 @@ test('blocks local same-plan created comment post identity while preserving remo
   assert.equal(Object.hasOwn(remote.files, 'wp-content/plugins/forms/forms.php'), false);
 });
 
-test('blocks local comments graph references to a same-plan created parent comment identity while preserving remote-only plugin drift', () => {
+test('blocks local same-plan created parent comment target identity while preserving remote-only plugin drift', () => {
   const resourceKey = 'row:["wp_comments","comment_ID:14"]';
   const targetResourceKey = 'row:["wp_comments","comment_ID:15"]';
   const base = baseSite();
@@ -28767,6 +28767,8 @@ test('blocks local comments graph references to a same-plan created parent comme
 
   const plan = planFor(base, local, remote);
   const blocker = plan.blockers.find((entry) => entry.resourceKey === targetResourceKey);
+  const commentBlocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  const reference = blocker.references[0];
   const pluginDecision = decisionFor(plan, 'plugin:forms');
   const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
   const planJson = JSON.stringify(plan);
@@ -28776,12 +28778,23 @@ test('blocks local comments graph references to a same-plan created parent comme
   assert.equal(mutationFor(plan, resourceKey), undefined);
   assert.equal(decisionFor(plan, resourceKey), undefined);
   assert.equal(plan.conflicts.length, 0);
+  assert.equal(commentBlocker.class, 'unsupported-comments-users-resource');
+  assert.equal(commentBlocker.resourceKey, resourceKey);
+  assert.equal(commentBlocker.unsupportedState, 'same-plan-reference');
+  assert.equal(commentBlocker.reason, 'WordPress graph mutation row:["wp_comments","comment_ID:14"] is created in the same plan as a parent comment identity that depends on it, and identity rewriting is not yet supported.');
+  assert.equal(commentBlocker.references[0].relationshipKey, 'wp_comments.comment_parent');
+  assert.equal(commentBlocker.references[0].relationshipType, 'comment-parent');
+  assert.equal(commentBlocker.references[0].targetResourceKey, targetResourceKey);
   assert.equal(blocker.class, 'unsupported-comments-users-resource');
   assert.equal(blocker.resourceKey, targetResourceKey);
   assert.equal(blocker.unsupportedState, 'same-plan-reference');
   assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_comments","comment_ID:15"] is created in the same plan as a parent comment identity that depends on it, and identity rewriting is not yet supported.');
-  assert.equal(blocker.references[0].relationshipType, 'comment-parent');
-  assert.equal(blocker.references[0].sourceResourceKey, resourceKey);
+  assert.equal(reference.relationshipKey, 'wp_comments.comment_parent');
+  assert.equal(reference.relationshipType, 'comment-parent');
+  assert.equal(reference.sourceResourceKey, resourceKey);
+  assert.equal(reference.targetResourceKey, targetResourceKey);
+  assert.equal(reference.targetChange.remote.state, 'absent');
+  assert.equal(reference.targetChange.local.state, 'present');
   assert.equal(pluginDecision.decision, 'keep-remote');
   assert.equal(pluginFileDecision.decision, 'keep-remote');
   assert.equal(planJson.includes('Local parent comment content'), false);
