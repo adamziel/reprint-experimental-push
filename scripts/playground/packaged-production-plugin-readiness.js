@@ -41,7 +41,15 @@ export function packagedProductionPluginPreflightRetryable(preflight) {
     return true;
   }
 
-  return !evaluateProductionAuthSessionLifecycle(preflight.body?.auth?.session).ok;
+  const lifecycle = evaluateProductionAuthSessionLifecycle(preflight.body?.auth?.session);
+  if (lifecycle.ok) {
+    return false;
+  }
+
+  // Once the packaged route profile is production-shaped, invalid auth/session
+  // evidence is a real checked-boundary failure, not a transient readiness
+  // state that should be masked behind more probes.
+  return false;
 }
 
 export function packagedProductionPluginServerReady({ snapshot, preflight = null } = {}) {

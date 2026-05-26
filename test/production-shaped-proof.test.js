@@ -1006,6 +1006,26 @@ test('packaged production plugin readiness helper accepts a stable snapshot befo
     }),
     false,
   );
+  assert.equal(
+    packagedProductionPluginPreflightRetryable({
+      status: 200,
+      body: {
+        ok: true,
+        routeProfile: {
+          labBacked: false,
+        },
+        auth: {
+          session: {
+            type: 'production-auth-session',
+            status: 'revoked',
+            expiresAt: '2099-01-01T00:00:00Z',
+            revoked: true,
+          },
+        },
+      },
+    }),
+    false,
+  );
 });
 
 test('packaged production plugin runtime source binding replaces the stale command source URL', () => {
