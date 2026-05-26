@@ -14124,7 +14124,7 @@ test('blocks local attachment graph resources while preserving a matching indepe
   assert.equal(blocker.class, 'unsupported-attachment-resource');
   assert.equal(blocker.resourceKind, 'attachment');
   assert.equal(blocker.resourceKey, resourceKey);
-  assert.equal(blocker.unsupportedState, 'same-plan-reference');
+  assert.equal(blocker.unsupportedState, 'local-or-divergent-drift');
   assert.equal(blocker.reason, 'Attachment graph resources are not yet supported by the planner.');
   assert.equal(matchingEdit.decision, 'already-in-sync');
   assert.equal(matchingEdit.change.localChange, 'update');
@@ -16367,7 +16367,7 @@ test('blocks local term-taxonomy parent references to a same-plan created term i
   assert.equal(blocker.class, 'unsupported-term-taxonomy-resource');
   assert.equal(blocker.resourceKind, 'term-taxonomy');
   assert.equal(blocker.resourceKey, resourceKey);
-  assert.equal(blocker.unsupportedState, 'same-plan-reference');
+  assert.equal(blocker.unsupportedState, 'local-or-divergent-drift');
   assert.equal(
     blocker.reason,
     'WordPress graph mutation row:["wp_term_taxonomy","term_taxonomy_id:5"] is created in the same plan as a parent term identity that depends on it, and identity rewriting is not yet supported.',
@@ -21931,7 +21931,8 @@ test('blocks local navigation graph resources while preserving remote-only plugi
   assert.equal(blocker.class, 'unsupported-navigation-resource');
   assert.equal(blocker.resourceKind, 'navigation');
   assert.equal(blocker.resourceKey, resourceKey);
-  assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_posts","ID:13"] is created in the same plan as a menu item parent target that depends on it, and identity rewriting is not yet supported.');
+  assert.equal(blocker.unsupportedState, 'local-or-divergent-drift');
+  assert.equal(blocker.reason, 'Navigation and menu graph resources are not yet supported by the planner.');
   assert.equal(pluginDecision.decision, 'keep-remote');
   assert.equal(planJson.includes('Local navigation content'), false);
   assert.equal(planJson.includes('Base navigation content'), false);
@@ -21977,7 +21978,8 @@ test('blocks local wp navigation graph resources while preserving a matching ind
   assert.equal(plan.conflicts.length, 0);
   assert.equal(blocker.class, 'unsupported-navigation-resource');
   assert.equal(blocker.resourceKey, resourceKey);
-  assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_posts","ID:52"] is created in the same plan as a menu item parent target that depends on it, and identity rewriting is not yet supported.');
+  assert.equal(blocker.unsupportedState, 'local-or-divergent-drift');
+  assert.equal(blocker.reason, 'Navigation and menu graph resources are not yet supported by the planner.');
   assert.equal(matchingEdit.decision, 'already-in-sync');
   assert.equal(pluginDecision.decision, 'keep-remote');
   assert.equal(planJson.includes('Local wp navigation content'), false);
@@ -22024,7 +22026,8 @@ test('blocks local wp navigation graph resources while preserving a matching ind
   assert.equal(plan.conflicts.length, 0);
   assert.equal(blocker.class, 'unsupported-navigation-resource');
   assert.equal(blocker.resourceKey, resourceKey);
-  assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_posts","ID:13"] is created in the same plan as a menu item parent target that depends on it, and identity rewriting is not yet supported.');
+  assert.equal(blocker.unsupportedState, 'local-or-divergent-drift');
+  assert.equal(blocker.reason, 'Navigation and menu graph resources are not yet supported by the planner.');
   assert.equal(matchingEdit.decision, 'already-in-sync');
   assert.equal(planJson.includes('Local wp navigation removal content'), false);
   assert.equal(planJson.includes('Base wp navigation removal content'), false);
@@ -24253,7 +24256,8 @@ test('blocks local nav menu item graph resources while preserving a matching ind
   assert.equal(plan.conflicts.length, 0);
   assert.equal(blocker.class, 'unsupported-navigation-resource');
   assert.equal(blocker.resourceKey, resourceKey);
-  assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_posts","ID:12"] is created in the same plan as a post parent target that depends on it, and identity rewriting is not yet supported.');
+  assert.equal(blocker.unsupportedState, 'local-or-divergent-drift');
+  assert.equal(blocker.reason, 'Navigation and menu graph resources are not yet supported by the planner.');
   assert.equal(matchingEdit.decision, 'already-in-sync');
   assert.equal(pluginDecision.decision, 'keep-remote');
   assert.equal(planJson.includes('Local nav menu item content'), false);
@@ -24300,7 +24304,8 @@ test('blocks local nav menu item graph resources while preserving a matching ind
   assert.equal(plan.conflicts.length, 0);
   assert.equal(blocker.class, 'unsupported-navigation-resource');
   assert.equal(blocker.resourceKey, resourceKey);
-  assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_posts","ID:12"] is created in the same plan as a post parent target that depends on it, and identity rewriting is not yet supported.');
+  assert.equal(blocker.unsupportedState, 'local-or-divergent-drift');
+  assert.equal(blocker.reason, 'Navigation and menu graph resources are not yet supported by the planner.');
   assert.equal(matchingSwap.decision, 'already-in-sync');
   assert.equal(matchingSwap.change.localChange, 'type-change');
   assert.equal(matchingSwap.change.remoteChange, 'type-change');
