@@ -834,6 +834,11 @@ test('checked authenticated apply evidence is upgraded to the authoritative db j
       eventSummaries: [
         { event: 'apply-committed', count: 1, latestId: 14 },
       ],
+      storageGuard: {
+        boundary: 'wpdb-single-statement-cas',
+        operation: 'update',
+        outcome: 'applied',
+      },
     },
     storageGuard: {
       boundary: 'wpdb-single-statement-cas',
@@ -954,6 +959,11 @@ test('authenticated apply finalization upgrades checked failure journal evidence
       eventSummaries: [
         { event: 'apply-rejected', count: 1, latestId: 18 },
       ],
+      storageGuard: {
+        boundary: 'wpdb-single-statement-cas',
+        operation: 'compare-and-swap',
+        outcome: 'precondition-failed',
+      },
     },
     storageGuard: {
       boundary: 'wpdb-single-statement-cas',

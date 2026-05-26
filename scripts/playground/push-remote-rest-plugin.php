@@ -640,6 +640,9 @@ function reprint_push_lab_rest_attach_checked_db_journal_contract(
     }
 
     $storage_guard = reprint_push_lab_rest_db_journal_storage_guard($db_journal);
+    if (isset($result['dbJournal']) && is_array($result['dbJournal']) && is_array($storage_guard)) {
+        $result['dbJournal']['storageGuard'] = $storage_guard;
+    }
     if (is_array($storage_guard)) {
         $prefer_checked_storage_guard = $upgrade_checked_storage_guard
             || reprint_push_lab_rest_should_prefer_authoritative_checked_storage_guard(
@@ -3695,11 +3698,14 @@ function reprint_push_lab_rest_db_journal(WP_REST_Request $request): WP_REST_Res
         $limit,
         reprint_push_lab_rest_checked_production_journal_surface($request)
     );
+    $storage_guard = reprint_push_lab_rest_db_journal_storage_guard($db_journal);
+    if (is_array($storage_guard)) {
+        $db_journal['storageGuard'] = $storage_guard;
+    }
     $result = [
         'ok' => true,
         'dbJournal' => $db_journal,
     ];
-    $storage_guard = reprint_push_lab_rest_db_journal_storage_guard($db_journal);
     if (is_array($storage_guard)) {
         $result['storageGuard'] = $storage_guard;
     }
