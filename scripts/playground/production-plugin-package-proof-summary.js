@@ -126,6 +126,9 @@ export function buildProductionPluginPackageProofSummary(
   const requestedConcreteScenarioSet = requestedConcreteScenarios === 'all'
     ? null
     : new Set(requestedConcreteScenarios);
+  const requestedBundleSet = requestedBundles === 'all'
+    ? null
+    : new Set(requestedBundles);
   const scenarioResults = {};
   const bundleResults = {};
   const checkedBundles = [];
@@ -134,6 +137,8 @@ export function buildProductionPluginPackageProofSummary(
   const checkedScenarios = [];
   const passedScenarios = [];
   const failedScenarios = [];
+  const passedRequestedBundles = [];
+  const failedRequestedBundles = [];
   const passedRequestedConcreteScenarios = [];
   const failedRequestedConcreteScenarios = [];
   let checkedBundleCount = 0;
@@ -191,9 +196,15 @@ export function buildProductionPluginPackageProofSummary(
     }
     if (selected && passed) {
       passedBundles.push(bundleKey);
+      if (requestedBundleSet?.has(bundleKey)) {
+        passedRequestedBundles.push(bundleKey);
+      }
     } else if (selected) {
       failedBundles.push(bundleKey);
       failedBundleCount += 1;
+      if (requestedBundleSet?.has(bundleKey)) {
+        failedRequestedBundles.push(bundleKey);
+      }
     }
   }
 
@@ -211,6 +222,12 @@ export function buildProductionPluginPackageProofSummary(
     requestedScenarios: normalizedRequestedScenarios === null ? 'all' : normalizedRequestedScenarios.slice(),
     requestedBundles,
     requestedConcreteScenarios,
+    passedRequestedBundles: requestedBundles === 'all'
+      ? 'all'
+      : passedRequestedBundles.sort(),
+    failedRequestedBundles: requestedBundles === 'all'
+      ? 'all'
+      : failedRequestedBundles.sort(),
     passedRequestedConcreteScenarios: requestedConcreteScenarios === 'all'
       ? 'all'
       : passedRequestedConcreteScenarios.sort(),
