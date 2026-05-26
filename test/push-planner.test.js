@@ -27415,6 +27415,78 @@ test('blocks local postmeta references to a same-plan created revision while pre
   assert.equal(Object.hasOwn(remote.files, 'wp-content/plugins/forms/forms.php'), false);
 });
 
+test('blocks local postmeta references to a same-plan created revision while preserving a matching independent delete and remote-only plugin changes', () => {
+  const resourceKey = 'row:["wp_postmeta","meta_id:57"]';
+  const targetResourceKey = 'row:["wp_posts","ID:51"]';
+  const base = baseSite();
+  base.files['obsolete-change.txt'] = 'legacy revision change sidecar';
+  base.db.wp_postmeta = {
+    'meta_id:57': {
+      meta_id: 57,
+      post_id: 51,
+      meta_key: 'revision_note',
+      meta_value: 'base revision change meta value',
+    },
+  };
+
+  const local = baseSite();
+  local.db.wp_posts['ID:51'] = {
+    ID: 51,
+    post_title: 'Local same-plan revision change',
+    post_content: 'Local same-plan revision change content',
+    post_status: 'inherit',
+    post_type: 'revision',
+  };
+  local.db.wp_postmeta = {
+    'meta_id:57': {
+      meta_id: 57,
+      post_id: 51,
+      meta_key: 'revision_note',
+      meta_value: 'local revision change meta value',
+    },
+  };
+  delete local.files['obsolete-change.txt'];
+
+  const remote = baseSite();
+  remote.db.wp_postmeta = JSON.parse(JSON.stringify(base.db.wp_postmeta));
+  delete remote.files['obsolete-change.txt'];
+  remote.plugins.forms.description = 'remote-only plugin changes';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin changes */';
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  const reference = blocker.references[0];
+  const matchingDelete = decisionFor(plan, 'file:obsolete-change.txt');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(decisionFor(plan, targetResourceKey), undefined);
+  assert.equal(blocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.resolutionPolicy, 'preserve-remote-wordpress-graph-and-stop');
+  assert.equal(reference.relationshipKey, 'wp_postmeta.post_id');
+  assert.equal(reference.relationshipType, 'postmeta-post');
+  assert.equal(reference.sourceResourceKey, resourceKey);
+  assert.equal(reference.targetResourceKey, targetResourceKey);
+  assert.equal(reference.targetChange.remote.state, 'absent');
+  assert.equal(reference.targetRemoteHash.length, 64);
+  assert.equal(matchingDelete.decision, 'already-in-sync');
+  assert.equal(matchingDelete.change.localChange, 'delete');
+  assert.equal(matchingDelete.change.remoteChange, 'delete');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('Local same-plan revision change'), false);
+  assert.equal(planJson.includes('Local same-plan revision change content'), false);
+  assert.equal(planJson.includes('local revision change meta value'), false);
+  assert.equal(Object.hasOwn(remote.files, 'obsolete-change.txt'), false);
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin changes');
+  assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin changes */');
+});
+
 test('blocks local termmeta references to a same-plan created term while preserving remote-only plugin drift', () => {
   const resourceKey = 'row:["wp_termmeta","meta_id:12"]';
   const targetResourceKey = 'row:["wp_terms","term_id:13"]';
