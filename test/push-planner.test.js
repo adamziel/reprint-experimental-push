@@ -20704,6 +20704,61 @@ test('production durable journal claims fail closed when supportedSurface is inh
   assert.ok(error.details.missingDependency.includes('supported production recovery journal adapter surface'));
 });
 
+test('production durable journal claims fail closed when journalPath is inherited through the prototype', () => {
+  const writer = Object.create({
+    journalPath: '/var/lib/reprint/recovery.jsonl',
+  });
+  Object.assign(writer, {
+    kind: 'production-recovery-journal',
+    productionAdapter: true,
+    supportedSurface: 'production-recovery-journal-adapter',
+    ownsJournal: true,
+    ownsRemoteArtifact: false,
+    restartReadable: true,
+    schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+    artifactRefs: {
+      journal: '/var/lib/reprint/recovery.jsonl',
+    },
+    nextSequence: 1,
+    appendEvent(type, payload) {
+      this.nextSequence += 1;
+      return { sequence: this.nextSequence - 1, type, payload };
+    },
+    flush() {},
+    close() {},
+    inspect() {
+      return {
+        filePath: '/var/lib/reprint/recovery.jsonl',
+        schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+        artifactRefs: {
+          journal: '/var/lib/reprint/recovery.jsonl',
+        },
+        records: [{ sequence: 1, type: 'journal-opened' }],
+      };
+    },
+    assertCurrentClaim() {},
+  });
+
+  const plan = planFor(baseSite(), baseSite(), {
+    ...baseSite(),
+    db: {
+      ...baseSite().db,
+      wp_options: {
+        ...baseSite().db.wp_options,
+        'option_name:blogname': { option_name: 'blogname', option_value: 'New Site' },
+      },
+    },
+  });
+
+  const error = captureError(() => applyPlan(baseSite(), plan, {
+    requireProductionDurableJournal: true,
+    durableJournal: writer,
+  }));
+
+  assert.equal(error.code, 'PRODUCTION_DURABLE_JOURNAL_UNSUPPORTED');
+  assert.ok(error.details.missingDependency.includes('owned restart-readable recovery journal path'));
+});
+
 test('production durable journal claims fail closed when the adapter kind is inherited through the prototype', () => {
   const writer = Object.create({
     kind: 'production-recovery-journal',
