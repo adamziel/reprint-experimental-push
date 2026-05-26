@@ -41,6 +41,7 @@ function spawnReleaseVerify(env = {}, timeout = proofSubprocessTimeoutMs) {
     },
   }, 'release verify');
 
+  assertReleaseVerifyProof(proof, 'release verify');
   return proof;
 }
 
