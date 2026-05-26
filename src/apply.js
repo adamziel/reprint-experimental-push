@@ -1190,7 +1190,11 @@ export function isDurableJournalClosed(writer) {
 }
 
 function inspectProductionRecoveryJournal(writer) {
-  if (!writer || typeof writer.inspect !== 'function') {
+  if (
+    !writer
+    || !Object.hasOwn(writer, 'inspect')
+    || typeof writer.inspect !== 'function'
+  ) {
     return null;
   }
   try {

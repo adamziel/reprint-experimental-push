@@ -25620,6 +25620,7 @@ test('production durable journal claims fail closed when inspection data is adve
 
 test('production durable journal claims fail closed when inspect is inherited through the prototype', () => {
   const events = [];
+  let inheritedInspectCalls = 0;
   const writer = {
     kind: 'production-recovery-journal',
     productionAdapter: true,
@@ -25643,6 +25644,7 @@ test('production durable journal claims fail closed when inspect is inherited th
   };
   Object.setPrototypeOf(writer, {
     inspect() {
+      inheritedInspectCalls += 1;
       return {
         filePath: '/var/lib/reprint/recovery.jsonl',
         schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
@@ -25672,6 +25674,7 @@ test('production durable journal claims fail closed when inspect is inherited th
 
   assert.equal(error.code, 'PRODUCTION_DURABLE_JOURNAL_UNSUPPORTED');
   assert.ok(error.details.missingDependency.includes('restart-readable recovery inspection'));
+  assert.equal(inheritedInspectCalls, 0);
   assert.equal(events.some((event) => event.type === 'journal-completed'), false);
 });
 
