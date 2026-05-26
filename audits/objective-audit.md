@@ -63,6 +63,10 @@ The project is **not releasable as a production WordPress push path**.
 
 Fresh visibility-lane heads moved, but they still only refresh public status surfaces:
 
+- Since the last audit pass, the visible progress lanes advanced again:
+  `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` ->
+  `1cdca21b` and `origin/lane/cycle-20260525-mainwindows-2349/progress-followup`
+  -> `f34c148f`. That changes the freshness surface, not the release gate.
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `f2d32e1d`
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `3769f63a`
 - `origin/lane/reliable-executor` -> `c1943da1`
