@@ -1449,10 +1449,10 @@ function recordDurableRecoveryState(writer, current, plan, recoveryState) {
   ) {
     throw new PushPlanError(
       'JOURNAL_WRITER_INVALID',
-      'Production durable journal lost its restart-readable remote artifact reference before recording blocked recovery state.',
+      'Production durable journal lost its distinct restart-readable remote artifact reference before recording blocked recovery state.',
       {
         eventType: 'recovery-state',
-        causeMessage: 'Production durable journal lost its restart-readable remote artifact reference before recording blocked recovery state.',
+        causeMessage: 'Production durable journal lost its distinct restart-readable remote artifact reference before recording blocked recovery state.',
         missingDependency: ['restart-readable recovery remote artifact references'],
       },
     );
@@ -1480,9 +1480,23 @@ function durableJournalArtifactRemoteRef(writer) {
   if (!Object.hasOwn(writer.artifactRefs, 'remote')) {
     return null;
   }
-  return typeof writer.artifactRefs.remote === 'string' && writer.artifactRefs.remote.length > 0
-    ? writer.artifactRefs.remote
-    : null;
+  if (typeof writer.artifactRefs.remote !== 'string' || writer.artifactRefs.remote.length === 0) {
+    return null;
+  }
+  if (!isCanonicalAbsolutePath(writer.artifactRefs.remote)) {
+    return null;
+  }
+  if (typeof writer?.journalPath === 'string' && writer.artifactRefs.remote === writer.journalPath) {
+    return null;
+  }
+  if (
+    Object.hasOwn(writer.artifactRefs, 'journal')
+    && typeof writer.artifactRefs.journal === 'string'
+    && writer.artifactRefs.remote === writer.artifactRefs.journal
+  ) {
+    return null;
+  }
+  return writer.artifactRefs.remote;
 }
 
 function durableOpenedArtifactRefs(writer, explicitArtifactRefs = null) {
