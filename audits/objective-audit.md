@@ -6,21 +6,56 @@ The project is **not releasable as a production WordPress push path**.
 
 - Fresh remote heads at audit time, checked on May 26, 2026:
 
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `cfe956fc`
-- `origin/lane/no-data-loss-invariants` -> `7f30d8fd`
-- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `ee21b05a`
-- `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `556aaba7`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `f50a72b0`
-- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `c48ede0d`
-- `origin/lane/reliable-executor` -> `52881a1d`
-- `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration` -> `29fff11d`
-- `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` -> `9e05da5e`
-- `origin/lane/critic` -> `443dacd6`
+- `origin/lane/cycle-20260524-auth-graph-hardening/critic` -> `e413f7a8`
+- `origin/lane/cycle-20260524-auth-graph-hardening/fast-paths` -> `ad7d82a4`
+- `origin/lane/cycle-20260524-auth-graph-hardening/feedback-supervisor` -> `c57f8610`
+- `origin/lane/cycle-20260524-auth-graph-hardening/no-data-loss-invariants` -> `1242dacd`
+- `origin/lane/cycle-20260524-auth-graph-hardening/no-data-loss-recovery` -> `fac13be4`
+- `origin/lane/cycle-20260524-auth-graph-hardening/progress-publisher` -> `e6d254ed`
+- `origin/lane/cycle-20260524-fast-supervised-accountability/feedback-supervisor` -> `662b7a2a`
+- `origin/lane/cycle-20260524-fast-supervised-accountability/same-plan-graph` -> `0669f87b`
+- `origin/lane/cycle-20260524-production-hardening/feedback-supervisor` -> `dd29b572`
+- `origin/lane/cycle-20260525-keep-busy-1/feedback-supervisor` -> `b68019cd`
+- `origin/lane/cycle-20260525-keep-busy-11/feedback-supervisor` -> `3d16266f`
+- `origin/lane/cycle-20260525-keep-busy-13/feedback-supervisor` -> `be89b6ce`
+- `origin/lane/cycle-20260525-keep-busy-15/feedback-supervisor` -> `1eed9c27`
+- `origin/lane/cycle-20260525-keep-busy-18/feedback-supervisor` -> `031d83e6`
+- `origin/lane/cycle-20260525-keep-busy-3/critic` -> `3b5e24cd`
+- `origin/lane/cycle-20260525-keep-busy-3/feedback-supervisor` -> `f1dfc82e`
+- `origin/lane/cycle-20260525-keep-busy-4/feedback-supervisor` -> `2f445b0b`
+- `origin/lane/cycle-20260525-keep-busy-6/feedback-supervisor` -> `8326e456`
+- `origin/lane/cycle-20260525-keep-busy-8/feedback-supervisor` -> `2843a33a`
+- `origin/lane/cycle-20260525-keep-busy-long-1/critic` -> `ffe646ab`
+- `origin/lane/cycle-20260525-keep-busy-long-1/fast-paths` -> `ea464a32`
+- `origin/lane/cycle-20260525-keep-busy-long-1/feedback-supervisor` -> `9850e4ad`
+- `origin/lane/cycle-20260525-keep-busy-long-1/reliable-executor` -> `9e7847e4`
+- `origin/lane/cycle-20260525-keep-busy-long-2/independent-auditor` -> `d803a87d`
+- `origin/lane/cycle-20260525-keep-busy-long-2/no-data-loss-recovery` -> `312e727e`
+- `origin/lane/cycle-20260525-keep-busy-loop-1/feedback-supervisor` -> `c609be10`
+- `origin/lane/cycle-20260525-keep-busy-loop-1/no-data-loss-invariants` -> `55058b6a`
+- `origin/lane/cycle-20260525-keep-busy-loop-1/reliable-executor` -> `929598e7`
+- `origin/lane/cycle-20260525-keep-busy-loop-2/critic` -> `92422ea0`
+- `origin/lane/cycle-20260525-keep-busy-loop-2/independent-auditor` -> `1d6cb6fd`
+- `origin/lane/cycle-20260525-keep-busy-loop-2/no-data-loss-recovery` -> `63e01a49`
 - `origin/lane/cycle-20260525-mainwindows-2349/critic` -> `fa0dc8a0`
-- `origin/lane/progress-publisher` -> `7695e1f9`
-- `origin/lane/no-data-loss-recovery` -> `9e077c10`
-- `origin/lane/same-plan-wordpress-graph-create` -> `0d2178e9`
+- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `79aa3e50`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `4e2ecdeb`
+- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `3c6c8d8b`
+- `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `b5a70bfa`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `3bb4e35a`
+- `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` -> `9e05da5e`
 - `origin/lane/cycle-20260525-mainwindows-2357/no-data-loss-invariants-graph-proof` -> `98c0ce26`
+- `origin/lane/cycle-20260525-restart-2340/feedback-supervisor` -> `ef3d911e`
+- `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration` -> `29fff11d`
+- `origin/lane/critic` -> `443dacd6`
+- `origin/lane/fast-paths` -> `8c5c2ccb`
+- `origin/lane/feedback-supervisor` -> `f386dfa6`
+- `origin/lane/independent-auditor` -> `6351130f`
+- `origin/lane/no-data-loss-invariants` -> `6fe9cbdb`
+- `origin/lane/no-data-loss-recovery` -> `9e077c10`
+- `origin/lane/progress-publisher` -> `7695e1f9`
+- `origin/lane/reliable-executor` -> `9415449e`
+- `origin/lane/same-plan-wordpress-graph-create` -> `0d2178e9`
 - `origin/main` -> `56063f13`
 
 The current remote state still adds no production-backed auth/session
@@ -30,25 +65,25 @@ real source-site mutation boundary. The release gates still stay `0/4`.
 Fresh lane proof since the last audit pass improved the local evidence floor,
 but it did not change the release conclusion:
 
-- `origin/lane/reliable-executor` now records `52881a1d`, tightening release
+- `origin/lane/reliable-executor` now records `9415449e`, tightening release
   verify subprocess handling again, but still not proving production
   auth/session lifecycle or a live-source mutation boundary.
-- `origin/lane/no-data-loss-invariants` now records `7f30d8fd`, adding a
+- `origin/lane/no-data-loss-invariants` now records `6fe9cbdb`, adding a
   comment-post graph blocker proof to the unsupported-surface boundary set.
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now records
-  `f50a72b0`, refreshing public progress freshness only.
+- `origin/lane/progress-publisher` now records `7695e1f9`, refreshing public
+  progress freshness only.
 - `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration`
   now records `29fff11d`, adding featured-image attachment drift proof only.
-- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` now records
-  `ee21b05a`. This refreshes the audit snapshot only and does not change the
+- `origin/lane/independent-auditor` now records `6351130f`. This refreshes the
+  audit snapshot only and does not change the
   release boundary.
-- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` now records
-  `c48ede0d`, tightening success-claim proof only.
+- `origin/lane/fast-paths` now records `8c5c2ccb`, tightening success-claim
+  proof only.
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` now
-  records `556aaba7`, tightening remote recovery URL suffix fencing. It still
+  records `b5a70bfa`, tightening remote recovery URL suffix fencing. It still
   does not add production-backed journal ownership or replay proof.
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now records
-  `cfe956fc`, refreshing the supervisor progress surface only.
+- `origin/lane/feedback-supervisor` now records `f386dfa6`, refreshing the
+  supervisor progress surface only.
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` now records
   `9e05da5e`, hardening live proof cleanup and timeouts only.
 - `origin/lane/no-data-loss-recovery` now records `9e077c10`, tightening
