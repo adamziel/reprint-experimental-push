@@ -45,7 +45,7 @@ The project is **not releasable as a production WordPress push path**.
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `6f8c87fe`
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `0ac76c38`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `2af1ddda`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `8628119f`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `ec862786`
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` -> `0ca7b35d`
 - `origin/lane/cycle-20260525-mainwindows-2349/same-plan-wordpress-graph-create` -> `af493c80`
 - `origin/lane/cycle-20260525-mainwindows-2357/no-data-loss-invariants-graph-proof` -> `98c0ce26`
@@ -59,7 +59,7 @@ The project is **not releasable as a production WordPress push path**.
 - `origin/lane/no-data-loss-invariants` -> `0247563b`
 - `origin/lane/no-data-loss-recovery` -> `2af1ddda`
 - `origin/lane/progress-publisher` -> `7695e1f9`
-- `origin/lane/reliable-executor` -> `97eaa4df`
+- `origin/lane/reliable-executor` -> `f1783e10`
 - `origin/lane/same-plan-wordpress-graph-create` -> `8dea1ca3`
 - `origin/main` -> `56063f13`
 
@@ -73,14 +73,14 @@ but it did not change the release conclusion:
 - `origin/lane/reliable-executor` now records `03cf6917`, hardening bounded
   release-verify spawn handling. It still does not prove production
   auth/session lifecycle or a live-source mutation boundary.
-- `origin/lane/reliable-executor` now records `97eaa4df`, hardening durable
+- `origin/lane/reliable-executor` now records `f1783e10`, hardening durable
   journal ownership. It still does not prove production auth/session
   lifecycle or a live-source mutation boundary.
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now
   records `584e8219`, refreshing supervisor freshness only. It still does not
   change the release verdict.
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now records
-  `8628119f`, refreshing public progress freshness only. It still does not add
+  `ec862786`, refreshing public progress freshness only. It still does not add
   production-backed gate movement.
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` now records
   `83ec561e`, tightening parallelism limit proof only. It still does not prove
