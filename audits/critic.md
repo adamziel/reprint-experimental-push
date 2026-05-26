@@ -1,15 +1,14 @@
 # Critic Verdict
 
-Current reliable head: `f17c6912cad937ff95617d613d999068c7e9bd71`
-(`Pin preserved remote retry in release verify`).
+Current reliable head: `b48b63fd30d403cfa3a548a7e3dc41bf00d50843`
+(`Classify cleaned-up status drift precisely`).
 
 Verdict: `0/4`
 
 Reason:
 
-- This head pins preserved-remote retry into `verify:release`, which makes the
-  checked entrypoint more constrained, but it is still release-path support
-  evidence rather than a checked production boundary crossing.
+- This head refines how cleaned-up auth/session status drift is classified on
+  the checked path, which is useful hardening but still support-side evidence.
 - The checked release path still lacks live production auth/session
   issuance/read/expiry/rotation/revocation/cleanup evidence, and it still does
   not prove production durable-journal ownership with restart-readable replay
@@ -19,9 +18,8 @@ Reason:
 Next owner / command:
 
 - `main:reliable-exec` should keep working in
-  `scripts/playground/production-shaped-release-verify.mjs`,
-  `src/authenticated-http-push-client.js`, and `src/recovery-journal.js`
-  with the checked command `timeout 180s npm run verify:release`, or hand off
-  the exact missing production auth/session lifecycle primitive or
-  durable-journal ownership primitive if the verifier still cannot consume
-  the proof.
+  `src/authenticated-http-push-client.js`, `src/recovery-journal.js`, and
+  `scripts/playground/production-shaped-release-verify.mjs` with the checked
+  command `timeout 180s npm run verify:release`, or hand off the exact missing
+  production auth/session lifecycle primitive or durable-journal ownership
+  primitive if the verifier still cannot consume the proof.
