@@ -1299,6 +1299,8 @@ export function productionThroughputDetails(report) {
     report.evidence.atomicGroup?.productionAtomicCommitVisible === true;
   const productionAtomicGroupMetadataVisible =
     report.evidence.atomicGroup?.productionAtomicGroupMetadataVisible === true;
+  const productionAtomicGroupMetadataVisibleAndMeasured =
+    productionAtomicGroupMetadataVisible && productionAtomicCommitMeasured;
   const productionStorageReceiptsVisible =
     report.evidence.atomicGroup?.productionStorageReceiptsVisible === true;
   const productionRowBatchExecutorVisible =
@@ -1456,6 +1458,7 @@ export function productionThroughputDetails(report) {
     productionStorageReceiptsMeasured,
     productionRowBatchExecutorMeasured,
     productionAtomicGroupMetadataVisible,
+    productionAtomicGroupMetadataVisibleAndMeasured,
     productionStorageReceiptsVisible,
     productionStorageReceiptsVisibleAndAtomicGroupMetadataVisible,
     productionStorageReceiptsVisibleAndAtomicCommitVisible,
@@ -1495,6 +1498,7 @@ export function productionThroughputDetails(report) {
       receiptCursorMemoryCeilingVisibleAndQueueHeadroomVisible,
       receiptCursorMemoryCeilingVisibleAndQueueHeadroomVisibleAndSafe,
       productionAtomicGroupMetadataVisible,
+      productionAtomicGroupMetadataVisibleAndMeasured,
       productionStorageReceiptsVisible,
       queuePausedBeforeOverflow: report.evidence.backpressure?.queuePausedBeforeOverflow ?? false,
       receiptCursorMemoryCeilingBytes,
