@@ -341,7 +341,10 @@ test('guarded benchmark keeps rollout capability summary blocked when row-batch 
       status: 'blocked',
       measured: false,
       visible: false,
-      blockerRefs: ['production-storage-receipts-not-measured'],
+      blockerRefs: [
+        'production-storage-receipts-not-measured',
+        'production-storage-receipts-visible-without-measurement',
+      ],
     },
     {
       surface: 'file-hashing-concurrency',
@@ -357,12 +360,44 @@ test('guarded benchmark keeps rollout capability summary blocked when row-batch 
       visible: false,
       blockerRefs: [
         'production-atomic-group-commit-not-measured',
+        'production-atomic-group-commit-visible-without-measurement',
         'production-storage-receipts-not-measured',
+        'production-storage-receipts-visible-without-measurement',
         'production-row-batch-executor-not-measured',
         'production-row-batch-executor-measured-not-proven',
+        'production-row-batch-executor-visible-without-measurement',
       ],
     },
   ]);
+});
+
+test('guarded benchmark keeps chunk-upload rollout summary pinned to forged storage-receipts visibility blockers', () => {
+  const report = smallBenchmark();
+  const tampered = clone(report);
+
+  tampered.executorCapabilities.fileReceipts = 'unsupported-file-receipts';
+  tampered.evidence.parallelism.parallelismLimitsVisible = true;
+  tampered.evidence.parallelism.parallelismLimitsMeasured = true;
+  tampered.evidence.atomicGroup.productionStorageReceiptsMeasured = false;
+  tampered.evidence.atomicGroup.productionStorageReceiptsVisible = true;
+
+  const details = productionThroughputDetails(tampered);
+
+  assert.deepEqual(
+    details.productionCapabilityRolloutSummary.find(
+      (entry) => entry.surface === 'chunk-upload-concurrency',
+    ),
+    {
+      surface: 'chunk-upload-concurrency',
+      status: 'blocked',
+      measured: false,
+      visible: false,
+      blockerRefs: [
+        'production-storage-receipts-not-measured',
+        'production-storage-receipts-visible-without-measurement',
+      ],
+    },
+  );
 });
 
 test('guarded benchmark keeps chunk-upload rollout visibility hidden when backpressure proof is incomplete', () => {
