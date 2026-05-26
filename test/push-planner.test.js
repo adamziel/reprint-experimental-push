@@ -12693,6 +12693,61 @@ test('blocks local featured-image references to a same-plan created attachment i
   assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin drift */');
 });
 
+test('blocks local featured-image references to a same-plan created attachment identity while preserving remote-only plugin removals', () => {
+  const resourceKey = 'row:["wp_postmeta","meta_id:50"]';
+  const targetResourceKey = 'row:["wp_posts","ID:9"]';
+  const base = baseSite();
+  base.db.wp_postmeta = {
+    'meta_id:50': {
+      meta_id: 50,
+      post_id: 1,
+      meta_key: '_thumbnail_id',
+      meta_value: 9,
+      note: 'base featured image removal note',
+    },
+  };
+
+  const local = baseSite();
+  local.db.wp_posts['ID:9'] = {
+    ID: 9,
+    post_title: 'Local same-plan attachment removal',
+    post_content: 'Local same-plan attachment removal body',
+    post_type: 'attachment',
+    post_status: 'inherit',
+  };
+  local.db.wp_postmeta = {
+    'meta_id:50': {
+      meta_id: 50,
+      post_id: 1,
+      meta_key: '_thumbnail_id',
+      meta_value: 9,
+      note: 'local featured image removal note',
+    },
+  };
+
+  const remote = baseSite();
+  remote.db.wp_postmeta = JSON.parse(JSON.stringify(base.db.wp_postmeta));
+  delete remote.plugins.forms;
+  delete remote.files['wp-content/plugins/forms/forms.php'];
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.class === 'unsupported-attachment-resource' && entry.resourceKey === targetResourceKey);
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(decisionFor(plan, targetResourceKey), undefined);
+  assert.equal(blocker.class, 'unsupported-attachment-resource');
+  assert.equal(blocker.resourceKey, targetResourceKey);
+  assert.equal(blocker.reason, 'Attachment graph resources are not yet supported by the planner.');
+  assert.equal(planJson.includes('Local same-plan attachment removal'), false);
+  assert.equal(planJson.includes('Local same-plan attachment removal body'), false);
+  assert.equal(planJson.includes('local featured image removal note'), false);
+  assert.equal(Object.hasOwn(remote.plugins, 'forms'), false);
+  assert.equal(Object.hasOwn(remote.files, 'wp-content/plugins/forms/forms.php'), false);
+});
+
 test('blocks local post-parent references to a same-plan created attachment identity while preserving remote-only plugin drift', () => {
   const resourceKey = 'row:["wp_posts","ID:10"]';
   const targetResourceKey = 'row:["wp_posts","ID:8"]';
