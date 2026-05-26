@@ -692,6 +692,9 @@ export function productionRecoverySupportReport(writer) {
   const inspected = inspectProductionRecoveryJournal(writer);
   const openedInspectionRecords = durableJournalInspectRecords(inspected);
   const claimInspectionRecords = durableJournalInspectClaimRecords(inspected);
+  const claimTransitionIntegrityError = (openedInspectionRecords || claimInspectionRecords)
+    ? productionRecoveryClaimTransitionIntegrityError(inspected.records)
+    : null;
   const inspectedJournalPath = durableJournalInspectPath(inspected);
   const inspectionErrorMessage = productionRecoveryInspectionErrorMessage(inspected);
   const inspectedClaimState = (openedInspectionRecords || claimInspectionRecords)
@@ -1064,6 +1067,9 @@ export function productionRecoverySupportReport(writer) {
     addMissingDependency('fencing or lease ownership for the journal writer');
   }
   if (inspectedClaimState?.status === 'blocked') {
+    addMissingDependency('fencing or lease ownership for the journal writer');
+  }
+  if (claimTransitionIntegrityError) {
     addMissingDependency('fencing or lease ownership for the journal writer');
   }
   if (
@@ -1577,6 +1583,24 @@ function durableJournalInspectClaimRecords(inspected) {
       ? record.sequence === 1
       : record.sequence === recordsList[index - 1].sequence + 1
   ));
+}
+
+function productionRecoveryClaimTransitionIntegrityError(records) {
+  const claimRecords = Array.isArray(records)
+    ? records.filter((record) => CLAIM_FENCE_RECORD_TYPES.has(record?.type))
+    : [];
+
+  for (let index = 0; index < claimRecords.length; index += 1) {
+    const record = claimRecords[index];
+    if (record?.type !== 'recovery-claim-opened') {
+      continue;
+    }
+    if (index !== 0) {
+      return 'Recovery claim transition sequence must use stale-claim-advanced instead of reopening a later active claim.';
+    }
+  }
+
+  return null;
 }
 
 function recordRequiresPersistedArtifactRefs(record) {

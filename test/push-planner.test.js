@@ -21350,6 +21350,59 @@ test('production recovery support report fails closed when a fenced claim lacks 
   assert.equal(report.inspectionErrorMessage, null);
 });
 
+test('production recovery support report fails closed when a later claim reopens without stale-claim advancement', () => {
+  const filePath = tempRecoveryJournalPath();
+  const remoteArtifactPath = `${path.dirname(filePath)}/rewritten-claim-remote.jsonl`;
+  const journal = openProductionRecoveryJournal(filePath, {
+    truncate: true,
+    now: fixedNow,
+    claimId: 'claim-rewritten-without-advance',
+    writerLease: { id: 'claim-rewritten-without-advance' },
+    ownsRemoteArtifact: true,
+    remoteArtifactPath,
+  });
+  appendRecoveryClaimOpened(journal, {
+    plan: { id: 'plan-rewritten-without-advance' },
+    current: baseSite(),
+    claimId: 'claim-original',
+    artifactRefs: {
+      journal: filePath,
+      remote: remoteArtifactPath,
+    },
+  });
+  appendRecoveryClaimOpened(journal, {
+    plan: { id: 'plan-rewritten-without-advance' },
+    current: baseSite(),
+    claimId: 'claim-rewritten-without-advance',
+    artifactRefs: {
+      journal: filePath,
+      remote: remoteArtifactPath,
+    },
+  });
+  journal.appendEvent('journal-opened', {
+    planId: 'plan-rewritten-without-advance',
+    state: 'opened',
+    observedHash: 'snapshot-hash-only',
+    artifactRefs: {
+      journal: filePath,
+      remote: remoteArtifactPath,
+    },
+  });
+  journal.close();
+
+  const reopened = openProductionRecoveryJournal(filePath, {
+    claimId: 'claim-rewritten-without-advance',
+    writerLease: { id: 'claim-rewritten-without-advance' },
+    ownsRemoteArtifact: true,
+    remoteArtifactPath,
+  });
+  const report = productionRecoverySupportReport(reopened);
+  reopened.close();
+
+  assert.equal(report.supported, false);
+  assert.ok(report.missingDependency.includes('fencing or lease ownership for the journal writer'));
+});
+
 test('production durable journal support accepts a fenced claim before apply opens the journal body', () => {
   const base = baseSite();
   const local = structuredClone(base);
@@ -21489,6 +21542,54 @@ test('production durable journal support fails closed when stale claim advanceme
     claimId: 'claim-self-advanced',
     staleThresholdMs: 5_000,
     previousClaimAgeMs: 5_001,
+    artifactRefs: {
+      journal: filePath,
+      remote: remoteArtifactPath,
+    },
+  });
+
+  const error = captureError(() => applyPlan(remote, plan, {
+    durableJournal: journal,
+    requireProductionDurableJournal: true,
+  }));
+
+  assert.equal(error.code, 'PRODUCTION_DURABLE_JOURNAL_UNSUPPORTED');
+  assert.ok(error.details.missingDependency.includes('fencing or lease ownership for the journal writer'));
+  journal.close();
+});
+
+test('production durable journal support fails closed when a later claim reopens without stale-claim advancement', () => {
+  const base = baseSite();
+  const local = structuredClone(base);
+  local.db.wp_options['option_name:blogname'] = {
+    option_name: 'blogname',
+    option_value: 'Local Site',
+  };
+  const remote = structuredClone(base);
+  const plan = planFor(base, local, remote);
+  const filePath = tempRecoveryJournalPath();
+  const remoteArtifactPath = `${path.dirname(filePath)}/rewritten-claim-remote.jsonl`;
+  const journal = openProductionRecoveryJournal(filePath, {
+    truncate: true,
+    now: fixedNow,
+    claimId: 'claim-rewritten-before-apply',
+    writerLease: { id: 'claim-rewritten-before-apply' },
+    ownsRemoteArtifact: true,
+    remoteArtifactPath,
+  });
+  appendRecoveryClaimOpened(journal, {
+    plan,
+    current: remote,
+    claimId: 'claim-before-apply-original',
+    artifactRefs: {
+      journal: filePath,
+      remote: remoteArtifactPath,
+    },
+  });
+  appendRecoveryClaimOpened(journal, {
+    plan,
+    current: remote,
+    claimId: 'claim-rewritten-before-apply',
     artifactRefs: {
       journal: filePath,
       remote: remoteArtifactPath,
