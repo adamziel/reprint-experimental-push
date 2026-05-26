@@ -47,6 +47,8 @@ import {
   packagedProductionPluginRouteRetryableWhileWordPressStarting,
   packagedProductionPluginServerReady,
   packagedProductionPluginSnapshotRetryable,
+  packagedProductionPluginTimedOutRouteProbeWhilePackagedRouteStarting,
+  packagedProductionPluginTimedOutRouteProbeWhileWordPressStarting,
 } from './packaged-production-plugin-readiness.js';
 import { loadBlueprintSnapshotFixture } from './blueprint-snapshot-fixture.js';
 import {
@@ -1890,6 +1892,52 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
               },
               lastTimeoutFallbackProbes,
             );
+          }
+          if (indexProbe) {
+            if (
+              packagedProductionPluginTimedOutRouteProbeWhileWordPressStarting(
+                preflightProbe,
+                indexProbe.status,
+                indexProbe.body || '',
+              )
+            ) {
+              lastError = error;
+              await throwPlaygroundReadinessFailure(
+                child,
+                `Packaged production plugin preflight probe timed out while /wp-json/ kept reporting global WordPress startup HTTP ${indexProbe.status} after the snapshot probe timed out at ${baseUrl}`,
+                lastError,
+                lastProbes,
+                getOutput(),
+                {
+                  childPid: child.pid ?? null,
+                  packagedProductionPlugin: true,
+                  globalWordPressStartup: true,
+                },
+                lastTimeoutFallbackProbes,
+              );
+            }
+            if (
+              packagedProductionPluginTimedOutRouteProbeWhilePackagedRouteStarting(
+                preflightProbe,
+                indexProbe.status,
+                indexProbe.body || '',
+              )
+            ) {
+              lastError = error;
+              await throwPlaygroundReadinessFailure(
+                child,
+                `Packaged production plugin preflight probe timed out after global WordPress startup HTTP ${indexProbe.status} while the snapshot probe timed out at ${baseUrl}`,
+                lastError,
+                lastProbes,
+                getOutput(),
+                {
+                  childPid: child.pid ?? null,
+                  packagedProductionPlugin: true,
+                  packagedRouteStartup: true,
+                },
+                lastTimeoutFallbackProbes,
+              );
+            }
           }
         }
         if (indexProbe) {

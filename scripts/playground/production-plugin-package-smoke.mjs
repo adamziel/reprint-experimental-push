@@ -28,6 +28,8 @@ import {
   packagedProductionPluginRouteRetryableWhileWordPressStarting,
   packagedProductionPluginServerReady,
   packagedProductionPluginSnapshotRetryable,
+  packagedProductionPluginTimedOutRouteProbeWhilePackagedRouteStarting,
+  packagedProductionPluginTimedOutRouteProbeWhileWordPressStarting,
 } from './packaged-production-plugin-readiness.js';
 import { loadBlueprintSnapshotFixture } from './blueprint-snapshot-fixture.js';
 import { resolvePackagedProductionPluginSourceCommand } from './packaged-production-plugin-source-command.js';
@@ -986,6 +988,42 @@ async function waitForServer(child, baseUrl, logs) {
                 lastTimeoutFallbackProbes,
               ),
             );
+          }
+          if (indexProbe) {
+            if (
+              packagedProductionPluginTimedOutRouteProbeWhileWordPressStarting(
+                preflightProbe,
+                indexProbe.status,
+                indexProbe.body || '',
+              )
+            ) {
+              throw new Error(
+                formatPackagedReadinessFailure(
+                  `Packaged production plugin preflight probe timed out while /wp-json/ kept reporting global WordPress startup HTTP ${indexProbe.status} after the snapshot probe timed out at ${baseUrl}`,
+                  error,
+                  lastProbes,
+                  logs,
+                  lastTimeoutFallbackProbes,
+                ),
+              );
+            }
+            if (
+              packagedProductionPluginTimedOutRouteProbeWhilePackagedRouteStarting(
+                preflightProbe,
+                indexProbe.status,
+                indexProbe.body || '',
+              )
+            ) {
+              throw new Error(
+                formatPackagedReadinessFailure(
+                  `Packaged production plugin preflight probe timed out after global WordPress startup HTTP ${indexProbe.status} while the snapshot probe timed out at ${baseUrl}`,
+                  error,
+                  lastProbes,
+                  logs,
+                  lastTimeoutFallbackProbes,
+                ),
+              );
+            }
           }
         }
         if (indexProbe) {

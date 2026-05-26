@@ -51,6 +51,8 @@ import {
   packagedProductionPluginSnapshotReady,
   packagedProductionPluginSnapshotTerminal,
   packagedProductionPluginSnapshotRetryable,
+  packagedProductionPluginTimedOutRouteProbeWhilePackagedRouteStarting,
+  packagedProductionPluginTimedOutRouteProbeWhileWordPressStarting,
 } from '../scripts/playground/packaged-production-plugin-readiness.js';
 import {
   evaluateProductionAuthSessionLifecycle,
@@ -1978,6 +1980,54 @@ test('packaged production plugin readiness helper does not retry terminal readin
     ),
     false,
   );
+  assert.equal(
+    packagedProductionPluginTimedOutRouteProbeWhileWordPressStarting(
+      { timedOut: true },
+      502,
+      '<!doctype html><html><body>WordPress is not ready yet</body></html>',
+    ),
+    true,
+  );
+  assert.equal(
+    packagedProductionPluginTimedOutRouteProbeWhileWordPressStarting(
+      { timedOut: true },
+      404,
+      '<!doctype html><html><body>No route was found matching the URL and request method.</body></html>',
+    ),
+    true,
+  );
+  assert.equal(
+    packagedProductionPluginTimedOutRouteProbeWhileWordPressStarting(
+      { timedOut: false },
+      502,
+      '<!doctype html><html><body>WordPress is not ready yet</body></html>',
+    ),
+    false,
+  );
+  assert.equal(
+    packagedProductionPluginTimedOutRouteProbeWhilePackagedRouteStarting(
+      { timedOut: true },
+      200,
+      '{"namespaces":["reprint/v1"]}',
+    ),
+    true,
+  );
+  assert.equal(
+    packagedProductionPluginTimedOutRouteProbeWhilePackagedRouteStarting(
+      { timedOut: true },
+      502,
+      '<!doctype html><html><body>WordPress is not ready yet</body></html>',
+    ),
+    false,
+  );
+  assert.equal(
+    packagedProductionPluginTimedOutRouteProbeWhilePackagedRouteStarting(
+      { timedOut: false },
+      200,
+      '{"namespaces":["reprint/v1"]}',
+    ),
+    false,
+  );
 });
 
 test('packaged release verifier readiness helper uses the provided output collector in wedged packaged-route failures', () => {
@@ -2244,7 +2294,15 @@ test('packaged readiness timeout fallback classifies global WordPress versus pac
   );
   assert.match(
     smokeSource,
+    /preflight probe timed out while \/wp-json\/ kept reporting global WordPress startup HTTP \$\{indexProbe\.status\} after the snapshot probe timed out/,
+  );
+  assert.match(
+    smokeSource,
     /preflight stayed startup-shaped after global WordPress startup HTTP \$\{indexProbe[\s\S]*?while the snapshot probe timed out/,
+  );
+  assert.match(
+    smokeSource,
+    /preflight probe timed out after global WordPress startup HTTP \$\{indexProbe\.status\} while the snapshot probe timed out/,
   );
   assert.match(
     verifierSource,
@@ -2252,8 +2310,20 @@ test('packaged readiness timeout fallback classifies global WordPress versus pac
   );
   assert.match(
     verifierSource,
+    /preflight probe timed out while \/wp-json\/ kept reporting global WordPress startup HTTP \$\{indexProbe\.status\} after the snapshot probe timed out[\s\S]*?globalWordPressStartup:\s*true/s,
+  );
+  assert.match(
+    verifierSource,
     /preflight stayed startup-shaped after global WordPress startup HTTP \$\{indexProbe[\s\S]*?while the snapshot probe timed out[\s\S]*?packagedRouteStartup:\s*true/s,
   );
+  assert.match(
+    verifierSource,
+    /preflight probe timed out after global WordPress startup HTTP \$\{indexProbe\.status\} while the snapshot probe timed out[\s\S]*?packagedRouteStartup:\s*true/s,
+  );
+  assert.match(smokeSource, /packagedProductionPluginTimedOutRouteProbeWhileWordPressStarting\(/);
+  assert.match(smokeSource, /packagedProductionPluginTimedOutRouteProbeWhilePackagedRouteStarting\(/);
+  assert.match(verifierSource, /packagedProductionPluginTimedOutRouteProbeWhileWordPressStarting\(/);
+  assert.match(verifierSource, /packagedProductionPluginTimedOutRouteProbeWhilePackagedRouteStarting\(/);
 });
 
 test('packaged readiness helpers treat signed preflight as the bootstrap authority before terminal snapshot auth failures', () => {

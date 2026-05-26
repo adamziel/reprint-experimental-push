@@ -310,3 +310,22 @@ export function packagedProductionPluginRouteRetryableWhilePackagedRouteStarting
     && indexStatus === 200
     && !packagedProductionPluginReadinessBodyRetryable(indexStatus, indexBodyText);
 }
+
+export function packagedProductionPluginTimedOutRouteProbeWhileWordPressStarting(
+  routeProbe,
+  indexStatus,
+  indexBodyText = '',
+) {
+  return routeProbe?.timedOut === true
+    && packagedProductionPluginReadinessBodyRetryable(indexStatus, indexBodyText);
+}
+
+export function packagedProductionPluginTimedOutRouteProbeWhilePackagedRouteStarting(
+  routeProbe,
+  indexStatus,
+  indexBodyText = '',
+) {
+  return routeProbe?.timedOut === true
+    && indexStatus === 200
+    && !packagedProductionPluginReadinessBodyRetryable(indexStatus, indexBodyText);
+}
