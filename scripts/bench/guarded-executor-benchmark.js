@@ -1619,6 +1619,7 @@ export function productionThroughputDetails(report) {
     receiptCursorPauseFootprintComplete
     && receiptCursorQueueSlackVisible
     && receiptCursorQueueSlackMeasured
+    && queueHeadroomVisible
     && queueHeadroomMeasured
     && queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack;
   const queueHeadroomVisibleAndQueueSlackMeasured =
@@ -1738,6 +1739,7 @@ export function productionThroughputDetails(report) {
     receiptCursorPauseFootprintComplete
     && receiptCursorMemoryHeadroomVisible
     && Number.isFinite(receiptCursorMemoryHeadroomBytes)
+    && queueHeadroomVisible
     && queueHeadroomMeasured
     && queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack;
   const receiptCursorMemoryCeilingVisibleAndMeasured =

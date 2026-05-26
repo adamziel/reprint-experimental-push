@@ -3794,6 +3794,26 @@ test('guarded benchmark treats receipt-cursor queue-slack visibility without que
   assert.ok(blockers.includes('receipt-cursor-queue-slack-visible-without-queue-headroom-measurement'));
 });
 
+test('guarded benchmark treats receipt-cursor queue-slack visible-and-measured detail as incomplete when queue-headroom visibility is hidden', () => {
+  const report = smallBenchmark();
+  const mutated = clone(report);
+
+  mutated.evidence.backpressure.receiptCursorQueueSlackVisible = true;
+  mutated.evidence.backpressure.queueHeadroomVisible = false;
+
+  const details = productionThroughputDetails(mutated);
+  const blockers = productionThroughputBlockers(mutated);
+
+  assert.equal(details.receiptCursorQueueSlackVisible, true);
+  assert.equal(details.queueHeadroomVisible, false);
+  assert.equal(details.receiptCursorQueueSlackVisibleAndMeasured, false);
+  assert.equal(
+    details.backpressureConsistency.receiptCursorQueueSlackVisibleAndMeasured,
+    false,
+  );
+  assert.ok(blockers.includes('receipt-cursor-queue-slack-visible-without-queue-headroom-visibility'));
+});
+
 test('guarded benchmark treats receipt-cursor memory-headroom visibility without queue-headroom measurement as incomplete backpressure evidence', () => {
   const report = smallBenchmark();
   const mutated = clone(report);
@@ -3811,6 +3831,26 @@ test('guarded benchmark treats receipt-cursor memory-headroom visibility without
     false,
   );
   assert.ok(blockers.includes('receipt-cursor-memory-headroom-visible-without-queue-headroom-measurement'));
+});
+
+test('guarded benchmark treats receipt-cursor memory-headroom visible-and-measured detail as incomplete when queue-headroom visibility is hidden', () => {
+  const report = smallBenchmark();
+  const mutated = clone(report);
+
+  mutated.evidence.backpressure.receiptCursorMemoryHeadroomVisible = true;
+  mutated.evidence.backpressure.queueHeadroomVisible = false;
+
+  const details = productionThroughputDetails(mutated);
+  const blockers = productionThroughputBlockers(mutated);
+
+  assert.equal(details.receiptCursorMemoryHeadroomVisible, true);
+  assert.equal(details.queueHeadroomVisible, false);
+  assert.equal(details.receiptCursorMemoryHeadroomVisibleAndMeasured, false);
+  assert.equal(
+    details.backpressureConsistency.receiptCursorMemoryHeadroomVisibleAndMeasured,
+    false,
+  );
+  assert.ok(blockers.includes('receipt-cursor-memory-headroom-visible-without-queue-headroom-visibility'));
 });
 
 test('guarded benchmark treats memory-ceiling and queue-headroom visibility without queue-budget visibility as incomplete backpressure evidence', () => {
