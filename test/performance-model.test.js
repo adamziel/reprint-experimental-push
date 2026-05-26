@@ -1882,6 +1882,10 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
     model.safeFastPaths.find((fastPath) => fastPath.allowedShortcut === 'batch-mixed-durable-receipts-while-preserving-raw-order')?.failureEvidence,
     'batched journal record plus ordered raw durable receipts',
   );
+  assert.ok(
+    model.safeFastPaths.find((fastPath) => fastPath.allowedShortcut === 'batch-mixed-durable-receipts-while-preserving-raw-order')?.gateProofs.recovery.includes('exact ordered receipt keys'),
+    'mixed durable receipt batching stays replayable only when raw order is preserved',
+  );
   assert.equal(
     model.safeFastPaths.find((fastPath) => fastPath.allowedShortcut === 'compress-durable-receipt-logs-with-stable-receipt-keys')?.failureEvidence,
     'compressed receipt log plus original durable receipt key',

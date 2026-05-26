@@ -2,15 +2,16 @@
 
 ## Result
 
-I added one narrow coverage check for planning-only resume sizing with canonical per-kind budgets, keeping the fast-path model fail-closed on retry.
+I added one focused coverage assertion for the existing mixed durable-receipt batching shortcut so the benchmark model now pins the raw-order replay proof explicitly.
 
 ## What Changed
 
 - [`test/performance-model.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/fast-paths/test/performance-model.test.js)
+- [`.lane-output/final.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/fast-paths/.lane-output/final.md)
 
 ## Change Summary
 
-- The fast-path coverage now explicitly asserts that `reuse-canonical-per-kind-budgets-for-planning-only-resume-sizing` stays advisory, keeps its canonical budget guardrails, and still classifies pause/retry/crash through durable receipts and the group staging record.
+- The fast-path coverage now explicitly asserts that `batch-mixed-durable-receipts-while-preserving-raw-order` keeps the ordered receipt-key recovery proof visible, so replay batching cannot drift away from the raw-order contract.
 
 ## Verification
 
@@ -29,7 +30,7 @@ Result:
 ## Worktree Status
 
 - Branch: `lane/cycle-20260525-mainwindows-2349/fast-paths`
-- Current lane relation: `ahead 908, behind 614` relative to `origin/main`
+- Current relation: `ahead 910, behind 615` relative to `origin/main`
 - Working tree: dirty until the new test and handoff are committed
 
 ## Next Supervisor Nudge
