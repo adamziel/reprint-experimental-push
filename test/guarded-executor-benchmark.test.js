@@ -6409,6 +6409,12 @@ test('guarded benchmark keeps receipt-cursor measured visibility details false w
   assert.equal(details.receiptCursorQueueSlackVisible, true);
   assert.equal(details.receiptCursorMemoryHeadroomVisible, true);
   assert.equal(details.receiptCursorMemoryCeilingVisible, true);
+  assert.equal(details.receiptCursorQueueSlackMatchesBackpressure, false);
+  assert.equal(details.receiptCursorQueueSlackMatchesMemoryHeadroom, false);
+  assert.equal(details.receiptCursorQueueSlackMatchesResourceHeadroom, false);
+  assert.equal(details.receiptCursorQueueSlackWithinMemoryCeiling, false);
+  assert.equal(details.receiptCursorQueueSlackWithinQueueBudget, false);
+  assert.equal(details.receiptCursorQueueSlackWithinResourceHeadroom, false);
   assert.equal(details.queueHeadroomVisibleAndQueueSlackMeasured, false);
   assert.equal(details.backpressureConsistency.queueHeadroomVisibleAndQueueSlackMeasured, false);
   assert.equal(details.queueHeadroomVisibleAndQueueSlackVisibleAndMeasured, false);
@@ -6421,6 +6427,12 @@ test('guarded benchmark keeps receipt-cursor measured visibility details false w
     details.backpressureConsistency.queueHeadroomVisibleAndMemoryHeadroomVisible,
     false,
   );
+  assert.equal(details.backpressureConsistency.receiptCursorQueueSlackMatchesBackpressure, false);
+  assert.equal(details.backpressureConsistency.receiptCursorQueueSlackMatchesMemoryHeadroom, false);
+  assert.equal(details.backpressureConsistency.receiptCursorQueueSlackMatchesResourceHeadroom, false);
+  assert.equal(details.backpressureConsistency.receiptCursorQueueSlackWithinMemoryCeiling, false);
+  assert.equal(details.backpressureConsistency.receiptCursorQueueSlackWithinQueueBudget, false);
+  assert.equal(details.backpressureConsistency.receiptCursorQueueSlackWithinResourceHeadroom, false);
   assert.equal(details.receiptCursorQueueSlackVisibleAndMeasured, false);
   assert.equal(details.backpressureConsistency.receiptCursorQueueSlackVisibleAndMeasured, false);
   assert.equal(details.receiptCursorMemoryHeadroomVisibleAndMeasured, false);
