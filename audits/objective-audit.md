@@ -7,8 +7,8 @@ The project is **not releasable as a production WordPress push path**.
 - Fresh remote heads at audit time, checked on May 26, 2026:
 
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `5d60e641`
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `f1261d66`
-- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `b2c9e512`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `97ae15d0`
+- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `57a3e623`
 - `origin/lane/fast-paths` -> `2d335a29`
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `4ba8fb91`
 - `origin/lane/reliable-executor` -> `97eca6ce`
@@ -34,9 +34,9 @@ but it did not change the release conclusion:
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now records
   `5d60e641`, refreshing public progress freshness only.
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now records
-  `f1261d66`, refreshing the supervisor progress surface only.
+  `97ae15d0`, refreshing the supervisor progress surface only.
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` now records
-  `b2c9e512`. This refreshes the audit snapshot only and does not change the
+  `57a3e623`. This refreshes the audit snapshot only and does not change the
   release boundary.
 - `origin/lane/fast-paths` now records `2d335a29`, tightening backpressure
   proof checks only.
