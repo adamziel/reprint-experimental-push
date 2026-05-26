@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {
   authenticatedHttpClient,
   dbJournalProofIsAcceptable,
+  resolveAuthenticatedHttpPushSource,
   runAuthenticatedHttpPush,
 } from '../src/authenticated-http-push-client.js';
 
@@ -108,6 +109,48 @@ test('authenticated push client fails closed for missing production-shaped crede
       routeProfile: 'production-shaped',
     }),
     /Missing credentials for production-shaped authenticated client/,
+  );
+});
+
+test('authenticated push source prefers a complete auth/session source triple over direct credentials', () => {
+  assert.deepEqual(
+    resolveAuthenticatedHttpPushSource({
+      sourceUrl: 'http://127.0.0.1:9090',
+      username: 'trusted-runtime-username',
+      applicationPassword: 'trusted-runtime-password',
+      authSessionSource: {
+        ok: true,
+        sourceUrl: 'http://127.0.0.1:8080',
+        username: 'reprint_push_admin',
+        applicationPassword: 'reprint-push-admin-app-password',
+      },
+    }),
+    {
+      sourceUrl: 'http://127.0.0.1:8080',
+      username: 'reprint_push_admin',
+      applicationPassword: 'reprint-push-admin-app-password',
+    },
+  );
+});
+
+test('authenticated push source does not mix partial auth/session source fields with direct credentials', () => {
+  assert.deepEqual(
+    resolveAuthenticatedHttpPushSource({
+      sourceUrl: 'http://127.0.0.1:9090',
+      username: 'trusted-runtime-username',
+      applicationPassword: 'trusted-runtime-password',
+      authSessionSource: {
+        ok: true,
+        sourceUrl: 'http://127.0.0.1:8080',
+        username: 'reprint_push_admin',
+        applicationPassword: '',
+      },
+    }),
+    {
+      sourceUrl: 'http://127.0.0.1:9090',
+      username: 'trusted-runtime-username',
+      applicationPassword: 'trusted-runtime-password',
+    },
   );
 });
 

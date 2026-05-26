@@ -77,11 +77,18 @@ export function openRecoveryJournal(filePath, options = {}) {
 }
 
 export function checkedDurableJournalBoundarySatisfied(dbJournal) {
+  const leaseFenceBoundary = dbJournal?.leaseFence?.boundary;
+  const writerLease = dbJournal?.writerLease;
+  const nestedWriterLease = dbJournal?.leaseFence?.writerLease;
+  const productionAdapter = dbJournal?.ownership?.productionAdapter;
   return /(packaged production plugin|checked live production-shaped) journal surface/i.test(dbJournal?.scope || '')
     && dbJournal?.ownership?.ownsJournal === true
     && dbJournal?.ownership?.restartReadable === true
-    && dbJournal?.ownership?.productionAdapter === 'wpdb-single-statement-cas'
-    && dbJournal?.leaseFence?.boundary === 'wpdb-single-statement-cas'
+    && productionAdapter === 'wpdb-single-statement-cas'
+    && leaseFenceBoundary === 'wpdb-single-statement-cas'
+    && writerLease?.storageGuard === leaseFenceBoundary
+    && nestedWriterLease?.storageGuard === leaseFenceBoundary
+    && productionAdapter === leaseFenceBoundary
     && dbJournal?.leaseFence?.claimKeyUnique === true
     && dbJournal?.leaseFence?.monotonicSequence === true
     && dbJournal?.leaseFence?.restartReadable === true

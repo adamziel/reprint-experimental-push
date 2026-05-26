@@ -453,12 +453,18 @@ test('checked durable journal boundary stays closed until stale-claim rejection 
       restartReadable: true,
       productionAdapter: 'wpdb-single-statement-cas',
     },
+    writerLease: {
+      storageGuard: 'wpdb-single-statement-cas',
+    },
     leaseFence: {
       boundary: 'wpdb-single-statement-cas',
       claimKeyUnique: true,
       monotonicSequence: true,
       restartReadable: true,
       staleClaimRejected: false,
+      writerLease: {
+        storageGuard: 'wpdb-single-statement-cas',
+      },
     },
   };
 
@@ -472,5 +478,18 @@ test('checked durable journal boundary stays closed until stale-claim rejection 
       },
     }),
     true,
+  );
+  assert.equal(
+    checkedDurableJournalBoundarySatisfied({
+      ...baseContract,
+      leaseFence: {
+        ...baseContract.leaseFence,
+        staleClaimRejected: true,
+        writerLease: {
+          storageGuard: 'filesystem-compare-rename',
+        },
+      },
+    }),
+    false,
   );
 });
