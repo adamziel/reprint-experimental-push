@@ -1721,6 +1721,10 @@ export function productionThroughputDetails(report) {
     receiptCursorBackpressureBytes !== null
     && receiptCursorBackpressureBytes === receiptCursorWindowBytes;
   const receiptCursorBackpressureMeasured =
+    report.evidence.backpressure?.receiptCursorBackpressureMeasured === true
+    && Number.isFinite(receiptCursorBackpressureBytes)
+    && receiptCursorBackpressureBytes > 0;
+  const receiptCursorBackpressurePositive =
     Number.isFinite(receiptCursorBackpressureBytes)
     && receiptCursorBackpressureBytes > 0;
   const queuePauseHasMeasuredReceiptCursorBackpressure =
@@ -2256,6 +2260,7 @@ export function productionThroughputDetails(report) {
       receiptCursorHeadroomWithinQueueBudget,
       receiptCursorBackpressureBytes,
       receiptCursorBackpressureMeasured,
+      receiptCursorBackpressurePositive,
       queuePauseHasMeasuredReceiptCursorBackpressure,
       ...pausedQueueSlackEvidence,
       queuePauseHasBackpressureAlignedReceiptCursorQueueSlack,
@@ -2557,6 +2562,7 @@ function hasCompleteBackpressureEvidence(report) {
     report.evidence.backpressure?.queuePausedBeforeOverflow === true
     && (
       queueHeadroomMeasured
+      && report.evidence.backpressure?.receiptCursorBackpressureMeasured === true
       && Number.isFinite(receiptCursorBackpressureBytes)
       && receiptCursorBackpressureBytes > 0
       && report.evidence.backpressure?.queuePauseHasMeasuredReceiptCursorBackpressure === true
@@ -2634,6 +2640,7 @@ function hasCompleteBackpressureEvidence(report) {
     && queueHeadroomWithinResourceCeiling
     && receiptCursorMemoryHeadroomBytes === receiptCursorMemoryCeilingBytes - receiptCursorWindowBytes
     && report.evidence.backpressure?.queuePausedBeforeOverflow === true
+    && report.evidence.backpressure?.receiptCursorBackpressureMeasured === true
     && report.evidence.backpressure?.receiptCursorWithinQueueBudget === true
     && queuePauseHasMeasuredReceiptCursorQueueSlack
     && queuePauseHasMeasuredReceiptCursorBackpressure

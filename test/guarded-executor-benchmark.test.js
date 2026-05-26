@@ -4379,7 +4379,7 @@ test('production claim gate fails closed if benchmark evidence is tampered', () 
   assert.equal(
     productionThroughputDetails(spoofedMeasuredAndAlignedBackpressure).backpressureConsistency
       .queuePauseHasMeasuredAndAlignedReceiptCursorBackpressure,
-    true,
+    false,
   );
 
   const missingMeasuredBackpressureBit = clone(report);
@@ -4881,6 +4881,39 @@ test('production claim gate fails closed if benchmark evidence is tampered', () 
   );
   assert.equal(
     productionThroughputDetails(zeroBackpressure).backpressureConsistency.backpressureEvidenceComplete,
+    false,
+  );
+
+  const hiddenMeasuredBackpressureBit = clone(report);
+  hiddenMeasuredBackpressureBit.evidence.backpressure.receiptCursorBackpressureMeasured = false;
+  const hiddenMeasuredBackpressureDetails = productionThroughputDetails(hiddenMeasuredBackpressureBit);
+  assert.ok(
+    productionThroughputBlockers(hiddenMeasuredBackpressureBit).includes(
+      'queue-pause-without-measured-receipt-cursor-backpressure',
+    ),
+  );
+  assert.equal(
+    hiddenMeasuredBackpressureDetails.backpressureConsistency.receiptCursorBackpressureMeasured,
+    false,
+  );
+  assert.equal(
+    hiddenMeasuredBackpressureDetails.receiptCursorPauseFootprintComplete,
+    false,
+  );
+  assert.equal(
+    hiddenMeasuredBackpressureDetails.receiptCursorPauseFootprintVisible,
+    false,
+  );
+  assert.equal(
+    hiddenMeasuredBackpressureDetails.queueHeadroomVisibleAndMeasured,
+    false,
+  );
+  assert.equal(
+    hiddenMeasuredBackpressureDetails.queueBudgetVisibleAndMemoryCeilingVisibleAndMeasured,
+    false,
+  );
+  assert.equal(
+    hiddenMeasuredBackpressureDetails.backpressureConsistency.backpressureEvidenceComplete,
     false,
   );
 
