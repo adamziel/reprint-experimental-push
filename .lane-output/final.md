@@ -14,7 +14,7 @@ Evidence checked:
 - `origin/lane/reliable-executor` -> `0c4fd10f`
 - `origin/lane/no-data-loss-invariants` -> `41fba8ae`
 - `origin/lane/no-data-loss-recovery` -> `47b675c0`
-- `origin/lane/fast-paths` -> `9be664b2`
+- `origin/lane/fast-paths` -> `af79456d`
 - `origin/lane/critic` -> `e986a490`
 - `origin/lane/progress-publisher` -> `7695e1f9`
 - `origin/lane/independent-auditor` -> `5624aefd`
@@ -35,8 +35,8 @@ Push result:
 
 Worktree status:
 - Branch: `lane/cycle-20260525-mainwindows-2349/independent-auditor`
-- Dirty tracked files: `audits/objective-audit.md`, `.lane-output/final.md`
-- Relative to `origin/main`: `ahead 1286, behind 200`
+- Dirty tracked files: `audits/objective-audit.md`
+- Relative to `origin/main`: `ahead 1287, behind 201`
 
 Next supervisor nudge:
 - Land one failing proof for a specific unsupported boundary such as `menu/navigation`, `serialized block references`, `comments/users`, or `plugin-owned custom tables`, or add the missing checked-in release gate that fails closed before apply.
