@@ -562,6 +562,13 @@ function getDurableJournalWriter(options) {
       {},
     );
   }
+  if (typeof writer.claimHash !== 'string' || !/^[a-f0-9]{64}$/.test(writer.claimHash)) {
+    throw new PushPlanError(
+      'JOURNAL_OWNERSHIP_REQUIRED',
+      'Durable recovery journal writer must carry a valid claim hash before applyPlan can write to it.',
+      {},
+    );
+  }
   return writer;
 }
 

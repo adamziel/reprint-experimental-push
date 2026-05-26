@@ -25,6 +25,7 @@ function tempRecoveryJournalPath() {
 function failingDurableJournal(failType) {
   return {
     claimFenced: true,
+    claimHash: 'a'.repeat(64),
     events: [],
     nextSequence: 1,
     appendEvent(type, payload) {
@@ -41,6 +42,21 @@ function failingDurableJournal(failType) {
 
 function unfencedDurableJournal() {
   return {
+    events: [],
+    nextSequence: 1,
+    appendEvent(type, payload) {
+      const record = { sequence: this.nextSequence, type, ...payload };
+      this.events.push(record);
+      this.nextSequence++;
+      return record;
+    },
+  };
+}
+
+function halfInitializedDurableJournal() {
+  return {
+    claimFenced: true,
+    claimHash: 'not-a-valid-claim-hash',
     events: [],
     nextSequence: 1,
     appendEvent(type, payload) {
@@ -2169,6 +2185,27 @@ test('durable apply refuses an unfenced journal writer', () => {
   assert.ok(error instanceof PushPlanError);
   assert.equal(error.code, 'JOURNAL_OWNERSHIP_REQUIRED');
   assert.equal(error.details.recovery, undefined);
+});
+
+test('durable apply refuses a claim-fenced journal writer without a valid claim hash', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:1'].post_title = 'Local title';
+  const remote = baseSite();
+  const plan = planFor(base, local, remote);
+
+  const error = captureError(() =>
+    applyPlan(remote, plan, {
+      durableJournal: halfInitializedDurableJournal(),
+    }));
+
+  assert.ok(error instanceof PushPlanError);
+  assert.equal(error.code, 'JOURNAL_OWNERSHIP_REQUIRED');
+  assert.equal(
+    error.message,
+    'Durable recovery journal writer must carry a valid claim hash before applyPlan can write to it.',
+  );
 });
 
 test('durable recovery stays within old remote, fully updated remote, or blocked recovery', () => {
