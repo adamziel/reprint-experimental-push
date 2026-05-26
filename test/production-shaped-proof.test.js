@@ -2070,6 +2070,39 @@ test('packaged readiness helpers can accept signed preflight readiness before sn
   }
 });
 
+test('packaged readiness helpers fall back to signed preflight and index probes after snapshot timeouts', () => {
+  const smokeSource = readFileSync(
+    path.join(repoRoot, 'scripts/playground/production-plugin-package-smoke.mjs'),
+    'utf8',
+  );
+  const verifierSource = readFileSync(
+    path.join(repoRoot, 'scripts/playground/production-shaped-release-verify.mjs'),
+    'utf8',
+  );
+
+  for (const source of [smokeSource, verifierSource]) {
+    assert.match(source, /if \(packagedProductionPluginReadinessProbeTimedOut\(error\)\) \{\s*const \{ preflightProbe, indexProbe \} = await fetchPackagedTimeoutFallbackProbes\(baseUrl, child\);/s);
+    assert.match(source, /if \(preflightProbe\.ready\) \{\s*return;\s*\}/);
+    assert.match(source, /packagedProductionPluginReadinessBodyRetryable\(indexProbe\?\.status, indexProbe\?\.body \|\| ''\)/);
+    assert.match(source, /timeoutProbeCount = 0;\s*await sleepUnlessChildExit\(readinessProbeIntervalMs, child\);\s*continue;/);
+  }
+});
+
+test('packaged readiness helpers treat signed preflight as the bootstrap authority before terminal snapshot auth failures', () => {
+  const smokeSource = readFileSync(
+    path.join(repoRoot, 'scripts/playground/production-plugin-package-smoke.mjs'),
+    'utf8',
+  );
+  const verifierSource = readFileSync(
+    path.join(repoRoot, 'scripts/playground/production-shaped-release-verify.mjs'),
+    'utf8',
+  );
+
+  for (const source of [smokeSource, verifierSource]) {
+    assert.match(source, /const preflightProbe = await fetchPackagedPreflightProbe\(baseUrl, child\);\s*(?:lastProbes\.push\(preflightProbe\)|lastProbe = preflightProbe);\s*if \(preflightProbe\.ready\) \{\s*return;\s*\}\s*if \(preflightProbe\.retryable\) \{\s*await sleepUnlessChildExit\(readinessProbeIntervalMs, child\);\s*continue;\s*\}\s*if \(\s*packagedProductionPluginSnapshotRetryable/s);
+  }
+});
+
 test('packaged smoke readiness helper fails closed on non-retryable route responses without waiting for classifier-specific terminal flags', () => {
   const smokeSource = readFileSync(
     path.join(repoRoot, 'scripts/playground/production-plugin-package-smoke.mjs'),

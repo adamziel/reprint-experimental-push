@@ -1457,17 +1457,21 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
         },
       })) {
         lastError = new Error(`Production plugin package snapshot readiness HTTP ${snapshot.status}`);
+        const preflightProbe = await fetchPackagedPreflightProbe(baseUrl, child);
+        lastProbes.push(preflightProbe);
+        if (preflightProbe.ready) {
+          return;
+        }
+        if (preflightProbe.retryable) {
+          await sleepUnlessChildExit(readinessProbeIntervalMs, child);
+          continue;
+        }
         if (
           packagedProductionPluginSnapshotRetryable({
             status: snapshot.status,
             body: snapshotBody,
           })
         ) {
-          const preflightProbe = await fetchPackagedPreflightProbe(baseUrl, child);
-          lastProbes.push(preflightProbe);
-          if (preflightProbe.ready) {
-            return;
-          }
           if (preflightProbe.terminal) {
             await throwPlaygroundReadinessFailure(
               child,
@@ -1796,6 +1800,44 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
       if (!packagedProductionPluginReadinessErrorRetryable(error)) {
         throw error;
       }
+      if (packagedProductionPluginReadinessProbeTimedOut(error)) {
+        const { preflightProbe, indexProbe } = await fetchPackagedTimeoutFallbackProbes(baseUrl, child);
+        if (preflightProbe) {
+          lastProbes.push(preflightProbe);
+          if (preflightProbe.ready) {
+            return;
+          }
+          if (preflightProbe.retryable) {
+            lastError = error;
+            timeoutProbeCount = 0;
+            await sleepUnlessChildExit(readinessProbeIntervalMs, child);
+            continue;
+          }
+          if (preflightProbe.terminal) {
+            lastError = error;
+            await throwPlaygroundReadinessFailure(
+              child,
+              `Packaged production plugin preflight became terminal while the snapshot probe timed out at ${baseUrl}`,
+              lastError,
+              lastProbes,
+              getOutput(),
+              {
+                childPid: child.pid ?? null,
+                packagedProductionPlugin: true,
+              },
+            );
+          }
+        }
+        if (indexProbe) {
+          lastProbes.push(indexProbe);
+        }
+        if (packagedProductionPluginReadinessBodyRetryable(indexProbe?.status, indexProbe?.body || '')) {
+          lastError = error;
+          timeoutProbeCount = 0;
+          await sleepUnlessChildExit(readinessProbeIntervalMs, child);
+          continue;
+        }
+      }
       lastError = error;
       timeoutProbeCount = packagedProductionPluginNextTimeoutProbeCount(timeoutProbeCount, error);
       if (
@@ -1849,7 +1891,7 @@ async function fetchPackagedPreflightProbe(baseUrl, child = null) {
     method: 'GET',
     headers: {
       connection: 'close',
-      ...signedHeadersForPreflight(),
+      ...signedHeadersForProductionPreflight(),
     },
   }, packagedServerFetchTimeoutMs, child);
 
@@ -1878,6 +1920,33 @@ async function fetchPackagedPreflightProbe(baseUrl, child = null) {
   probe.retryable = packagedProductionPluginReadinessBodyRetryable(response.status, bodyText);
   probe.terminal = !probe.retryable;
   return probe;
+}
+
+async function fetchPackagedTimeoutFallbackProbes(baseUrl, child = null) {
+  const preflightProbe = await fetchPackagedPreflightProbe(baseUrl, child).catch((error) =>
+    buildPackagedTimeoutFallbackProbe('/wp-json/reprint/v1/push/preflight', error),
+  );
+  const indexProbe = await fetchPackagedWordPressIndexProbe(baseUrl, child).catch((error) =>
+    buildPackagedTimeoutFallbackProbe('/wp-json/', error),
+  );
+  return { preflightProbe, indexProbe };
+}
+
+function buildPackagedTimeoutFallbackProbe(route, error) {
+  if (!packagedProductionPluginReadinessProbeTimedOut(error)) {
+    throw error;
+  }
+
+  return {
+    route,
+    status: 0,
+    ok: false,
+    body: String(error?.message || error).slice(0, readinessFailureBodyLimit),
+    ready: false,
+    retryable: false,
+    terminal: false,
+    timedOut: true,
+  };
 }
 
 async function fetchTextWithTimeout(url, init = {}, timeoutMs = serverFetchTimeoutMs, child = null) {
