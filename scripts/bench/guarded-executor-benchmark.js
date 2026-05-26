@@ -278,6 +278,18 @@ export function productionThroughputBlockers(report) {
   ) {
     blockers.push('missing-queue-headroom-evidence');
   }
+  if (
+    Number.isFinite(report.evidence.backpressure?.queueHeadroomBytes)
+    && report.evidence.backpressure.queueHeadroomBytes <= 0
+  ) {
+    blockers.push('queue-headroom-not-positive');
+  }
+  if (
+    Number.isFinite(report.evidence.backpressure?.receiptCursorMemoryHeadroomBytes)
+    && report.evidence.backpressure.receiptCursorMemoryHeadroomBytes <= 0
+  ) {
+    blockers.push('receipt-cursor-memory-headroom-not-positive');
+  }
   if (backpressureEvidenceComplete !== true) {
     blockers.push('backpressure-evidence-incomplete');
   }
@@ -358,6 +370,12 @@ export function productionThroughputBlockers(report) {
     || report.evidence.backpressure.receiptCursorBytes <= 0
   ) {
     blockers.push('receipt-cursor-backpressure-not-measured');
+  }
+  if (
+    Number.isFinite(report.evidence.backpressure?.receiptCursorBytes)
+    && report.evidence.backpressure.receiptCursorBytes <= 0
+  ) {
+    blockers.push('receipt-cursor-backpressure-not-positive');
   }
   if (!report.evidence.atomicGroup.productionAtomicCommitMeasured) {
     blockers.push('production-atomic-group-commit-not-measured');
@@ -614,8 +632,9 @@ function hasCompleteBackpressureEvidence(report) {
     && Number.isFinite(receiptCursorQueueBudgetBytes)
     && receiptCursorQueueBudgetBytes > 0
     && Number.isFinite(receiptCursorQueueHeadroomBytes)
-    && receiptCursorQueueHeadroomBytes >= 0
+    && receiptCursorQueueHeadroomBytes > 0
     && Number.isFinite(receiptCursorMemoryHeadroomBytes)
+    && receiptCursorMemoryHeadroomBytes > 0
     && Number.isFinite(receiptCursorMemoryCeilingBytes)
     && queueHeadroomWithinResourceCeiling
     && receiptCursorMemoryHeadroomBytes === receiptCursorMemoryCeilingBytes - receiptCursorWindowBytes

@@ -626,6 +626,11 @@ test('production claim gate fails closed if benchmark evidence is tampered', () 
   mismatchedQueueHeadroom.evidence.backpressure.queueHeadroomBytes = 0;
   assert.ok(
     productionThroughputBlockers(mismatchedQueueHeadroom).includes(
+      'queue-headroom-not-positive',
+    ),
+  );
+  assert.ok(
+    productionThroughputBlockers(mismatchedQueueHeadroom).includes(
       'queue-headroom-backpressure-mismatch',
     ),
   );
@@ -808,6 +813,42 @@ test('production claim gate fails closed if benchmark evidence is tampered', () 
   );
   assert.ok(
     productionThroughputBlockers(zeroQueueSlack).includes('receipt-cursor-queue-slack-not-positive'),
+  );
+
+  const zeroBackpressure = clone(report);
+  zeroBackpressure.evidence.backpressure.receiptCursorBytes = 0;
+  assert.ok(
+    productionThroughputBlockers(zeroBackpressure).includes('receipt-cursor-backpressure-not-positive'),
+  );
+  assert.equal(
+    productionThroughputDetails(zeroBackpressure).backpressureConsistency.receiptCursorBackpressureMeasured,
+    false,
+  );
+  assert.equal(
+    productionThroughputDetails(zeroBackpressure).backpressureConsistency.backpressureEvidenceComplete,
+    false,
+  );
+
+  const zeroQueueHeadroom = clone(report);
+  zeroQueueHeadroom.evidence.backpressure.queueHeadroomBytes = 0;
+  assert.ok(
+    productionThroughputBlockers(zeroQueueHeadroom).includes('queue-headroom-not-positive'),
+  );
+  assert.equal(
+    productionThroughputDetails(zeroQueueHeadroom).backpressureConsistency.backpressureEvidenceComplete,
+    false,
+  );
+
+  const zeroMemoryHeadroom = clone(report);
+  zeroMemoryHeadroom.evidence.backpressure.receiptCursorMemoryHeadroomBytes = 0;
+  assert.ok(
+    productionThroughputBlockers(zeroMemoryHeadroom).includes(
+      'receipt-cursor-memory-headroom-not-positive',
+    ),
+  );
+  assert.equal(
+    productionThroughputDetails(zeroMemoryHeadroom).backpressureConsistency.backpressureEvidenceComplete,
+    false,
   );
 
   const tamperedResourceHeadroom = clone(report);
