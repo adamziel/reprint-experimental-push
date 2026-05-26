@@ -6284,6 +6284,55 @@ test('allows local menu item parent metadata to reference a post created by the 
   assert.equal(JSON.stringify(reference).includes('remote-attachment-body'), false);
 });
 
+test('allows local menu item parent metadata to reference a post created by the same plan even when an unrelated remote nav_menu_item post exists', () => {
+  const resourceKey = 'row:["wp_postmeta","meta_id:46"]';
+  const targetResourceKey = 'row:["wp_posts","ID:2"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_title: 'Local parent post',
+    post_content: 'local-private-parent-body',
+    post_status: 'publish',
+  };
+  local.db.wp_postmeta = {
+    'meta_id:46': {
+      meta_id: 46,
+      post_id: 1,
+      meta_key: 'menu_item_parent',
+      meta_value: 2,
+    },
+  };
+  const remote = baseSite();
+  remote.db.wp_posts['ID:9'] = {
+    ID: 9,
+    post_title: 'Remote menu item noise',
+    post_content: 'remote-menu-item-body',
+    post_status: 'publish',
+    post_type: 'nav_menu_item',
+  };
+
+  const plan = planFor(base, local, remote);
+  const targetMutation = mutationFor(plan, targetResourceKey);
+  const postmetaMutation = mutationFor(plan, resourceKey);
+  const reference = postmetaMutation.wordpressGraphReferences.find((entry) => entry.relationshipType === 'menu-item-parent-post');
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.blockers, 0);
+  assert.equal(targetMutation.changeKind, 'create');
+  assert.equal(postmetaMutation.changeKind, 'create');
+  assert.ok(
+    plan.mutations.indexOf(targetMutation) < plan.mutations.indexOf(postmetaMutation),
+    'target post create must be ordered before dependent menu item metadata',
+  );
+  assert.deepEqual(postmetaMutation.dependsOnMutationIds, [targetMutation.id]);
+  assert.equal(reference.resolutionPolicy, 'same-plan-local-create');
+  assert.equal(reference.relationshipKey, 'wp_postmeta.meta_value');
+  assert.equal(reference.relationshipType, 'menu-item-parent-post');
+  assert.equal(reference.targetResourceKey, targetResourceKey);
+  assert.equal(JSON.stringify(reference).includes('remote-menu-item-body'), false);
+});
+
 test('blocks menu item parent metadata from referencing a same-plan attachment', () => {
   const resourceKey = 'row:["wp_postmeta","meta_id:47"]';
   const attachmentResourceKey = 'row:["wp_posts","ID:2"]';
