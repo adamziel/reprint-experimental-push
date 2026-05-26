@@ -377,6 +377,9 @@ Current executable gate:
   both visible and canonical, so the audit view can reject a drifted limit
   summary without reconstructing the visible bit from the rest of the
   backpressure evidence.
+- That visible-and-canonical parallelism detail now also fails closed when the
+  measurement bit is hidden, so default cap values plus a forged visibility
+  bit cannot still look like measured canonical production limits.
 - The nested atomic-group and backpressure consistency details now also fail
   closed on that same parallelism visibility rule, so a forged raw visibility
   bit cannot look measured in one subsection while the top-level guard rejects

@@ -1648,6 +1648,7 @@ export function productionThroughputDetails(report) {
     && parallelismLimitsIntegral;
   const parallelismLimitsVisibleAndCanonical =
     parallelismLimitsVisibleOnReport
+    && parallelismLimitsMeasuredOnReport
     && parallelismLimitsCanonical;
   const parallelismLimitsVisibleMeasuredAndCanonical =
     parallelismLimitsVisibleOnReport
