@@ -4,6 +4,21 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-05-26 - Public Status Audit 10:32:12
+
+<a id="2026-05-26-public-status-audit-103212"></a>
+
+- Freshness plus blocker update: the release verifier's Playground readiness
+  path now has bounded `/wp-json/` diagnostics instead of a silent outer-wrapper
+  stall, so the next proof can fail with route/status/body evidence or reach the
+  real ready signal.
+- Gate posture remains conservative at `0/4`; no implementation verdict
+  changed.
+- Latest blocker summary is narrower: real WordPress executor/auth still blocks
+  any production push claim, and durable journal ownership remains pending.
+
+---
+
 ## 2026-05-26 - Public Status Audit 10:27:59
 
 <a id="2026-05-26-public-status-audit-102759"></a>
