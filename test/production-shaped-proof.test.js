@@ -158,15 +158,18 @@ function assertReleaseVerifyProof(proof, label) {
 
 function assertLiveReleaseVerifyProof(proof, label, timeoutMs) {
   if (proof.error) {
+    stopAllPlaygroundChildrenSync();
     reportSpawnFailure(proof);
     const timeoutNote = proof.error.code === 'ETIMEDOUT' && timeoutMs ? ` after ${timeoutMs}ms` : '';
     assert.fail(formatSpawnFailure(`${label} failed${timeoutNote}`, proof));
   }
   if (proof.signal) {
+    stopAllPlaygroundChildrenSync();
     reportSpawnFailure(proof);
     assert.fail(formatSpawnFailure(`${label} terminated by ${proof.signal}${timeoutMs ? ` after ${timeoutMs}ms` : ''}`, proof));
   }
   if (proof.status === null) {
+    stopAllPlaygroundChildrenSync();
     reportSpawnFailure(proof);
     assert.fail(`${label} exited without a status\nstdout:\n${proof.stdout ?? ''}\nstderr:\n${proof.stderr ?? ''}`);
   }
