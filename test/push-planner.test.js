@@ -1900,6 +1900,47 @@ test('blocks revision-owned postmeta references to a same-plan attachment', () =
   assert.throws(() => applyPlan(baseSite(), plan), /Refusing to apply/);
 });
 
+test('blocks nav_menu_item-owned postmeta references to a same-plan post', () => {
+  const resourceKey = 'row:["wp_postmeta","meta_id:48"]';
+  const targetResourceKey = 'row:["wp_posts","ID:3"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_title: 'Local navigation item owner',
+    post_content: 'local-private-navigation-item-owner-body',
+    post_status: 'publish',
+    post_type: 'nav_menu_item',
+  };
+  local.db.wp_posts['ID:3'] = {
+    ID: 3,
+    post_title: 'Local post target',
+    post_content: 'local-private-post-target-body',
+    post_status: 'publish',
+  };
+  local.db.wp_postmeta = {
+    'meta_id:48': {
+      meta_id: 48,
+      post_id: 2,
+      meta_key: 'navigation-item-note',
+      meta_value: 'local-private-navigation-item-note',
+    },
+  };
+
+  const plan = planFor(base, local, baseSite());
+  const targetMutation = mutationFor(plan, targetResourceKey);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.ok(plan.summary.mutations > 0);
+  assert.equal(targetMutation.changeKind, 'create');
+  assert.equal(blocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(blocker.surface, 'nav_menu_item');
+  assert.equal(JSON.stringify(blocker).includes('local-private-navigation-item-owner-body'), false);
+  assert.equal(JSON.stringify(blocker).includes('local-private-navigation-item-note'), false);
+  assert.throws(() => applyPlan(baseSite(), plan), /Refusing to apply/);
+});
+
 test('blocks a local postmeta reference to a same-plan navigation post', () => {
   const resourceKey = 'row:["wp_postmeta","meta_id:49"]';
   const targetResourceKey = 'row:["wp_posts","ID:4"]';

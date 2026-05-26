@@ -1556,6 +1556,8 @@ function isValidSamePlanWordPressGraphTarget(targetMutation, reference, sourceMu
         && (
           ownerValue.post_type === 'attachment'
           || ownerValue.post_type === 'revision'
+          || ownerValue.post_type === 'nav_menu_item'
+          || ownerValue.post_type === 'wp_navigation'
         )
       ) {
         return false;
