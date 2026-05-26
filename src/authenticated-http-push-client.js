@@ -1422,6 +1422,16 @@ function describeAuthEnvelopeDrift(expected, response) {
     };
   }
 
+  const invalidObservedIdentityField = resolveInvalidObservedAuthEnvelopeIdentityField(body.auth?.identity);
+  if (invalidObservedIdentityField) {
+    return {
+      field: `auth.identity.${invalidObservedIdentityField.field}`,
+      required: 'string auth identity fields',
+      observed: `invalid-${invalidObservedIdentityField.label}`,
+      verdict: 'AUTH_SESSION_LIFECYCLE_DRIFT',
+    };
+  }
+
   const observedUserLogin = body.auth?.identity?.userLogin || 'missing';
   if (observedUserLogin !== expected.userLogin) {
     return {
@@ -1469,6 +1479,26 @@ function describeAuthEnvelopeDrift(expected, response) {
       required: expected.sessionExpiresAt || 'auth-session-expiry',
       observed: observedSessionExpiresAt,
       verdict: 'AUTH_SESSION_LIFECYCLE_DRIFT',
+    };
+  }
+
+  return null;
+}
+
+function resolveInvalidObservedAuthEnvelopeIdentityField(identity) {
+  if (!identity || typeof identity !== 'object') {
+    return null;
+  }
+
+  const observedUserLogin = identity.userLogin;
+  if (
+    observedUserLogin !== undefined
+    && observedUserLogin !== null
+    && !normalizeProductionAuthSessionIdentityField(observedUserLogin)
+  ) {
+    return {
+      field: 'userLogin',
+      label: 'user-login',
     };
   }
 
