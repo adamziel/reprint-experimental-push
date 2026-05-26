@@ -20,6 +20,8 @@ const FIXTURE_PLUGIN_OWNED_ROW_DEPENDENCIES = new Map([
     'reprint-push-atomic-dependent-fixture',
   ],
 ]);
+const CLOSED_DURABLE_JOURNAL = Symbol('closed-durable-journal');
+const CLOSED_DURABLE_JOURNALS = new WeakSet();
 export const ACCEPTABLE_RECOVERY_STATES = Object.freeze([
   'old-remote',
   'fully-updated-remote',
@@ -37,16 +39,16 @@ export function isAcceptableRecoveryState(recoveryState) {
 
   if (recoveryState.status !== 'blocked-recovery') {
     return Boolean(
-      recoveryState.artifacts
-      && isPlainObject(recoveryState.artifacts.journal)
+      isStrictPlainObject(recoveryState.artifacts)
+      && isStrictPlainObject(recoveryState.artifacts.journal)
       && recoveryState.artifacts.remote === undefined,
     );
   }
 
   return Boolean(
-    recoveryState.artifacts
-    && isPlainObject(recoveryState.artifacts.journal)
-    && isPlainObject(recoveryState.artifacts.remote)
+    isStrictPlainObject(recoveryState.artifacts)
+    && isStrictPlainObject(recoveryState.artifacts.journal)
+    && isStrictPlainObject(recoveryState.artifacts.remote)
     && recoveryState.artifacts.journal !== recoveryState.artifacts.remote,
   );
 }
@@ -74,9 +76,11 @@ export function applyPlan(remote, plan, options = {}) {
 
   const durableJournalInput = options.durableJournal || options.recoveryJournal || null;
   let durableJournal = null;
+  let shouldCloseDurableJournal = false;
   const preserveWriterForReplay = Boolean(options.journal);
   try {
     durableJournal = getDurableJournalWriter(options);
+    shouldCloseDurableJournal = shouldCloseOwnedDurableJournal(durableJournal);
     assertProductionDurableJournalSupport(options, durableJournal);
     const hasPreviousJournal = Boolean(options.journal);
     let previousJournalState = null;
@@ -247,19 +251,28 @@ export function applyPlan(remote, plan, options = {}) {
       },
     };
   } finally {
+    if (shouldCloseDurableJournal && !isDurableJournalClosed(durableJournal)) {
+      closeOwnedDurableJournal(durableJournal);
+    }
     void durableJournalInput;
     void preserveWriterForReplay;
   }
 }
 
-function assertRecoveryStateEnvelope(recoveryState) {
+export function assertRecoveryStateEnvelope(recoveryState) {
   if (!isAcceptableRecoveryState(recoveryState)) {
     throw new PushPlanError(
       'RECOVERY_STATE_INVALID',
       'Recovery state must be old-remote, fully-updated-remote, or blocked-recovery.',
-      { recoveryState },
+      {
+        recoveryState,
+        artifactKeys: isPlainObject(recoveryState?.artifacts) ? Reflect.ownKeys(recoveryState.artifacts) : null,
+      },
     );
   }
+
+  validateRecoveryStateEnvelopeKeys(recoveryState);
+  validateRecoveryArtifacts(recoveryState);
 }
 
 function validateSupportedPluginOwnedMutations(remote, plan) {
@@ -626,6 +639,7 @@ function productionRecoverySupportReport(writer) {
   const inspectionErrorMessage = inspected && typeof inspected === 'object' && typeof inspected.error?.message === 'string'
     ? inspected.error.message
     : null;
+  const artifactRefs = productionRecoveryArtifactRefs(writer, inspected);
   const addMissingDependency = (item) => {
     if (!missingDependency.includes(item)) {
       missingDependency.push(item);
@@ -634,6 +648,14 @@ function productionRecoverySupportReport(writer) {
 
   if (writer?.kind !== 'production-recovery-journal') {
     addMissingDependency('production recovery journal adapter marker');
+  }
+  if (
+    writer?.productionAdapter === true
+    && writer?.restartReadable === true
+    && writer?.ownsRemoteArtifact === true
+    && writer?.supportedSurface !== 'production-recovery-journal-adapter'
+  ) {
+    addMissingDependency('supported production recovery journal adapter surface');
   }
   if (writer?.supportedSurface === 'production-recovery-journal-adapter' && writer.restartReadable !== true) {
     addMissingDependency('restart-readable recovery journal adapter');
@@ -665,17 +687,26 @@ function productionRecoverySupportReport(writer) {
       addMissingDependency('restart-readable recovery artifact location');
     }
   }
-  const writerJournalArtifactRef = typeof writer?.artifactRefs?.journal === 'string'
-    ? writer.artifactRefs.journal
-    : null;
-  const writerRemoteArtifactRef = typeof writer?.artifactRefs?.remote === 'string'
-    && writer.artifactRefs.remote.length > 0
-    ? writer.artifactRefs.remote
-    : null;
-  const inspectedArtifactRefs = isPlainObject(inspected?.artifactRefs)
-    ? inspected.artifactRefs
-    : null;
-  if (!isPlainObject(writer?.artifactRefs) || !writer.artifactRefs.journal) {
+  const { writerJournalArtifactRef, writerRemoteArtifactRef, inspectedArtifactRefs, inspectedRemoteArtifactRef } = artifactRefs;
+  if (
+    isStrictPlainObject(writer?.artifactRefs)
+    && Reflect.ownKeys(writer.artifactRefs).some((key) => key !== 'journal' && key !== 'remote')
+  ) {
+    addMissingDependency('restart-readable recovery artifact references');
+  }
+  if (
+    isStrictPlainObject(inspectedArtifactRefs)
+    && Reflect.ownKeys(inspectedArtifactRefs).some((key) => key !== 'journal' && key !== 'remote')
+  ) {
+    addMissingDependency('restart-readable recovery artifact references');
+  }
+  if (
+    inspectedArtifactRefs
+    && (!isStrictPlainObject(inspectedArtifactRefs) || hasNestedSymbolOwnKeys(inspectedArtifactRefs))
+  ) {
+    addMissingDependency('restart-readable recovery artifact references');
+  }
+  if (!isStrictPlainObject(writer?.artifactRefs) || !writer.artifactRefs.journal) {
     addMissingDependency('restart-readable recovery artifact references');
   } else if (
     typeof writer.artifactRefs.journal !== 'string'
@@ -711,24 +742,19 @@ function productionRecoverySupportReport(writer) {
     addMissingDependency('restart-readable recovery artifact references');
   }
   if (
-    isPlainObject(writer?.artifactRefs)
+    isStrictPlainObject(writer?.artifactRefs)
     && Object.hasOwn(writer.artifactRefs, 'remote')
     && (typeof writer.artifactRefs.remote !== 'string' || writer.artifactRefs.remote.length === 0)
   ) {
     addMissingDependency('restart-readable recovery remote artifact references');
   }
   if (
-    inspectedArtifactRefs
+    isStrictPlainObject(inspectedArtifactRefs)
     && Object.hasOwn(inspectedArtifactRefs, 'remote')
     && (typeof inspectedArtifactRefs.remote !== 'string' || inspectedArtifactRefs.remote.length === 0)
   ) {
     addMissingDependency('restart-readable recovery remote artifact references');
   }
-  const inspectedRemoteArtifactRef = durableJournalInspectArtifactRefs(inspected)
-    && typeof inspected.artifactRefs.remote === 'string'
-    && inspected.artifactRefs.remote.length > 0
-    ? inspected.artifactRefs.remote
-    : null;
   if (
     writerRemoteArtifactRef
     || inspectedRemoteArtifactRef
@@ -736,6 +762,21 @@ function productionRecoverySupportReport(writer) {
     if (writer?.ownsRemoteArtifact !== true) {
       addMissingDependency('restart-readable remote recovery artifact ownership');
     }
+  }
+  if (
+    writer?.ownsRemoteArtifact === true
+    && writerRemoteArtifactRef
+    && !inspectedRemoteArtifactRef
+  ) {
+    addMissingDependency('restart-readable remote recovery artifact ownership');
+  }
+  if (
+    writer?.ownsRemoteArtifact === true
+    && !writerRemoteArtifactRef
+    && !inspectedRemoteArtifactRef
+  ) {
+    addMissingDependency('restart-readable remote recovery artifact ownership');
+    addMissingDependency('restart-readable recovery remote artifact references');
   }
   if (inspectedRemoteArtifactRef && !writerRemoteArtifactRef) {
     addMissingDependency('restart-readable recovery remote artifact references');
@@ -795,16 +836,83 @@ function productionRecoverySupportReport(writer) {
   };
 }
 
+function productionRecoveryArtifactRefs(writer, inspected) {
+  const writerArtifactRefs = isStrictPlainObject(writer?.artifactRefs) ? writer.artifactRefs : null;
+  const inspectedArtifactRefs = durableJournalInspectArtifactRefs(inspected)
+    ? inspected.artifactRefs
+    : null;
+
+  return {
+    writerJournalArtifactRef: writerArtifactRefs && Object.hasOwn(writerArtifactRefs, 'journal')
+      && typeof writerArtifactRefs.journal === 'string'
+      ? writerArtifactRefs.journal
+      : null,
+    writerRemoteArtifactRef: writerArtifactRefs && Object.hasOwn(writerArtifactRefs, 'remote')
+      && typeof writerArtifactRefs.remote === 'string'
+      && writerArtifactRefs.remote.length > 0
+      ? writerArtifactRefs.remote
+      : null,
+    inspectedArtifactRefs,
+    inspectedRemoteArtifactRef: inspectedArtifactRefs && Object.hasOwn(inspectedArtifactRefs, 'remote')
+      && typeof inspectedArtifactRefs.remote === 'string'
+      && inspectedArtifactRefs.remote.length > 0
+      ? inspectedArtifactRefs.remote
+      : null,
+  };
+}
+
 function closeUnsupportedProductionRecoveryWriter(writer) {
-  if (!writer || typeof writer.close !== 'function') {
+  if (!writer || typeof writer.close !== 'function' || isDurableJournalClosed(writer)) {
     return;
   }
 
   try {
     writer.close();
+    markDurableJournalClosed(writer);
   } catch {
     // Unsupported writers are still fail-closed if cleanup fails.
   }
+}
+
+function shouldCloseOwnedDurableJournal(writer) {
+  return Boolean(
+    writer
+    && writer.kind === 'production-recovery-journal'
+    && writer.ownsJournal === true
+    && typeof writer.close === 'function',
+  );
+}
+
+export function closeOwnedDurableJournal(writer) {
+  if (isDurableJournalClosed(writer)) {
+    return;
+  }
+  try {
+    writer.close();
+    markDurableJournalClosed(writer);
+  } catch {
+    // Owned recovery writers are best-effort closed; failures remain fail-closed.
+  }
+}
+
+function markDurableJournalClosed(writer) {
+  if (
+    writer
+    && typeof writer === 'object'
+  ) {
+    CLOSED_DURABLE_JOURNALS.add(writer);
+    if (Object.isExtensible(writer)) {
+      writer[CLOSED_DURABLE_JOURNAL] = true;
+    }
+  }
+}
+
+export function isDurableJournalClosed(writer) {
+  return Boolean(
+    writer
+    && typeof writer === 'object'
+    && (writer[CLOSED_DURABLE_JOURNAL] === true || CLOSED_DURABLE_JOURNALS.has(writer)),
+  );
 }
 
 function inspectProductionRecoveryJournal(writer) {
@@ -837,7 +945,7 @@ function durableJournalInspectArtifactRefs(inspected) {
   return Boolean(
     inspected
     && typeof inspected === 'object'
-    && isPlainObject(inspected.artifactRefs)
+    && isStrictPlainObject(inspected.artifactRefs)
     && typeof inspected.artifactRefs.journal === 'string'
   );
 }
@@ -1353,25 +1461,75 @@ function recoveryState(status, remote, plan, journal, reason, details = {}) {
 }
 
 export function validateRecoveryArtifacts(recovery) {
-  if (!isPlainObject(recovery.artifacts)) {
+  if (!isStrictPlainObject(recovery.artifacts)) {
     throw new PushPlanError(
       'RECOVERY_ARTIFACTS_INVALID',
-      'Recovery states must preserve a plain-object artifact envelope.',
+      'Recovery states must preserve a standard plain-object artifact envelope.',
       {
         status: recovery.status,
         planId: recovery.planId,
+        artifactKeys: recoveryArtifactKeys(recovery.artifacts),
       },
     );
   }
+  const artifactKeys = Reflect.ownKeys(recovery.artifacts);
 
   if (recovery.status === 'blocked-recovery') {
-    if (!isPlainObject(recovery.artifacts.journal) || !isPlainObject(recovery.artifacts.remote)) {
+    if (artifactKeys.some((key) => typeof key === 'symbol' || (key !== 'journal' && key !== 'remote'))) {
+      throw new PushPlanError(
+        'RECOVERY_ARTIFACTS_INVALID',
+        'Blocked recovery states may only preserve journal and remote artifacts.',
+        {
+          status: recovery.status,
+          planId: recovery.planId,
+          artifactKeys,
+        },
+      );
+    }
+    if (isRecoveryEnvelopeArtifact(recovery.artifacts.journal)) {
+      throw new PushPlanError(
+        'RECOVERY_ARTIFACTS_INVALID',
+        'Blocked recovery states must not nest a recovery envelope inside the journal artifact.',
+        {
+          status: recovery.status,
+          planId: recovery.planId,
+          artifactKeys,
+        },
+      );
+    }
+    if (isRecoveryEnvelopeArtifact(recovery.artifacts.remote)) {
+      throw new PushPlanError(
+        'RECOVERY_ARTIFACTS_INVALID',
+        'Blocked recovery states must not nest a recovery envelope inside the remote artifact.',
+        {
+          status: recovery.status,
+          planId: recovery.planId,
+          artifactKeys,
+        },
+      );
+    }
+    if (!isStrictPlainObject(recovery.artifacts.journal) || !isStrictPlainObject(recovery.artifacts.remote)) {
       throw new PushPlanError(
         'RECOVERY_ARTIFACTS_INVALID',
         'Blocked recovery states must preserve both plain-object journal and remote artifacts.',
         {
           status: recovery.status,
           planId: recovery.planId,
+          artifactKeys,
+        },
+      );
+    }
+    if (
+      hasNestedSymbolOwnKeys(recovery.artifacts.journal)
+      || hasNestedSymbolOwnKeys(recovery.artifacts.remote)
+    ) {
+      throw new PushPlanError(
+        'RECOVERY_ARTIFACTS_INVALID',
+        'Blocked recovery states must not hide unsupported symbol keys inside preserved artifacts.',
+        {
+          status: recovery.status,
+          planId: recovery.planId,
+          artifactKeys,
         },
       );
     }
@@ -1382,19 +1540,65 @@ export function validateRecoveryArtifacts(recovery) {
         {
           status: recovery.status,
           planId: recovery.planId,
+          artifactKeys,
         },
       );
     }
     return;
   }
 
-  if (!isPlainObject(recovery.artifacts.journal)) {
+  if (artifactKeys.some((key) => typeof key === 'symbol' || (key !== 'journal' && key !== 'remote'))) {
+    throw new PushPlanError(
+      'RECOVERY_ARTIFACTS_INVALID',
+      'Non-blocked recovery states may only preserve journal artifacts and a tracked remote placeholder.',
+      {
+        status: recovery.status,
+        planId: recovery.planId,
+        artifactKeys,
+      },
+    );
+  }
+  if (Object.hasOwn(recovery.artifacts, 'remote')) {
+    throw new PushPlanError(
+      'RECOVERY_ARTIFACTS_INVALID',
+      'Non-blocked recovery states must not carry an own remote artifact key.',
+      {
+        status: recovery.status,
+        planId: recovery.planId,
+        artifactKeys,
+      },
+    );
+  }
+  if (!isStrictPlainObject(recovery.artifacts.journal)) {
     throw new PushPlanError(
       'RECOVERY_ARTIFACTS_INVALID',
       'Non-blocked recovery states must preserve a plain-object journal artifact.',
       {
         status: recovery.status,
         planId: recovery.planId,
+        artifactKeys,
+      },
+    );
+  }
+  if (hasNestedSymbolOwnKeys(recovery.artifacts.journal)) {
+    throw new PushPlanError(
+      'RECOVERY_ARTIFACTS_INVALID',
+      'Non-blocked recovery states must not hide unsupported symbol keys inside the journal artifact.',
+      {
+        status: recovery.status,
+        planId: recovery.planId,
+        artifactKeys,
+      },
+    );
+  }
+  if (isRecoveryEnvelopeArtifact(recovery.artifacts.journal)) {
+    throw new PushPlanError(
+      'RECOVERY_ARTIFACTS_INVALID',
+      'Non-blocked recovery states must not nest a recovery envelope inside the journal artifact.',
+      {
+        status: recovery.status,
+        planId: recovery.planId,
+        artifactKeys,
       },
     );
   }
@@ -1406,13 +1610,79 @@ export function validateRecoveryArtifacts(recovery) {
       {
         status: recovery.status,
         planId: recovery.planId,
+        artifactKeys,
       },
     );
   }
 }
 
+function recoveryArtifactKeys(artifacts) {
+  if (!isPlainObject(artifacts)) {
+    return null;
+  }
+  return Reflect.ownKeys(artifacts);
+}
+
+function hasNestedSymbolOwnKeys(value, seen = new Set()) {
+  if (!isPlainObject(value) || seen.has(value)) {
+    return false;
+  }
+
+  seen.add(value);
+
+  if (Reflect.ownKeys(value).some((key) => typeof key === 'symbol')) {
+    return true;
+  }
+
+  return Reflect.ownKeys(value).some((key) => {
+    if (typeof key === 'symbol') {
+      return true;
+    }
+    const nested = value[key];
+    return isPlainObject(nested) && hasNestedSymbolOwnKeys(nested, seen);
+  });
+}
+
+function validateRecoveryStateEnvelopeKeys(recoveryState) {
+  const allowedKeys = recoveryState.status === 'blocked-recovery'
+    ? ['status', 'reason', 'remoteHash', 'planId', 'artifacts', 'driftedResources']
+    : ['status', 'reason', 'remoteHash', 'planId', 'artifacts'];
+
+  const unexpectedKeys = Reflect.ownKeys(recoveryState).filter((key) => typeof key === 'symbol' || !allowedKeys.includes(key));
+  if (unexpectedKeys.length === 0) {
+    return;
+  }
+
+  throw new PushPlanError(
+    'RECOVERY_STATE_INVALID',
+    'Recovery state must not include unsupported envelope fields.',
+    {
+      status: recoveryState.status,
+      planId: recoveryState.planId,
+      unexpectedKeys,
+    },
+  );
+}
+
+function isRecoveryEnvelopeArtifact(artifact) {
+  return isStrictPlainObject(artifact)
+    && (
+      Object.hasOwn(artifact, 'artifacts')
+      || (ACCEPTABLE_RECOVERY_STATES.includes(artifact.status) && Object.hasOwn(artifact, 'reason'))
+    );
+}
+
 function isPlainObject(value) {
-  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return false;
+  }
+
+  const prototype = Object.getPrototypeOf(value);
+  return prototype === Object.prototype || prototype === null;
+}
+
+function isStrictPlainObject(value) {
+  return isPlainObject(value) && Object.getPrototypeOf(value) === Object.prototype;
 }
 
 function sanitizeRecoveryRemote(remote, plan) {
