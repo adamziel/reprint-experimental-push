@@ -13,10 +13,10 @@ Fresh remote heads at audit time, checked on May 26, 2026:
 - `origin/lane/no-data-loss-recovery` -> `b0949e57`
 - `origin/lane/fast-paths` -> `adb53f6d`
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `adb53f6d`
-- `origin/lane/independent-auditor` -> `cbe5e4a0`
+- `origin/lane/independent-auditor` -> `5abd1f65`
 - `origin/lane/critic` -> `6828861f`
 - `origin/lane/progress-publisher` -> `7695e1f9`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `38f53062`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `4be97ee9`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `4372167e`
 - `origin/lane/cycle-20260525-mainwindows-2349/critic` -> `3b9a9c46`
 - `origin/lane/same-plan-wordpress-graph-create` -> `09e6706d`
@@ -69,7 +69,7 @@ but it did not change the release conclusion:
 - `origin/lane/progress-publisher` now refreshes the public progress evidence
   at `7695e1f9`.
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now refreshes
-  the visible freshness surface at `38f53062`, but that remains status
+  the visible freshness surface at `4be97ee9`, but that remains status
   evidence, not release proof.
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` now exposes
   production measurement flags at `a987a664`, which is still boundary plumbing
@@ -77,7 +77,7 @@ but it did not change the release conclusion:
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now aligns
   the newest audit link at `e2439ecb`, which updates visibility only.
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` now refreshes the audit snapshot at
-  `cbe5e4a0`.
+  `5abd1f65`.
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now
   refreshes the supervisor evidence snapshot at `b9bc7c95`.
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now
