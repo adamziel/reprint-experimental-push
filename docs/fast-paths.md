@@ -67,6 +67,9 @@ Current executable gate:
 - The report now also exposes whether receipt-cursor headroom is covered by
   the queue budget, so the cursor audit can fail closed even when the exact
   headroom values drift apart.
+- The report now also fails closed when the recorded receipt-cursor
+  backpressure exceeds the queue budget, so a tampered backpressure record
+  cannot hide behind a still-valid headroom calculation.
 - The report now also blocks when receipt-cursor headroom no longer fits inside
   the queue budget, so the claim gate fails closed on a budget drift instead of
   relying only on a derived detail.

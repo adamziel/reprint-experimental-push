@@ -229,6 +229,13 @@ export function productionThroughputBlockers(report) {
   if (report.evidence.backpressure?.receiptCursorWithinQueueBudget !== true) {
     blockers.push('receipt-cursor-exceeds-queue-budget');
   }
+  if (
+    Number.isFinite(report.evidence.backpressure?.receiptCursorBytes)
+    && Number.isFinite(report.evidence.backpressure?.queueBudgetBytes)
+    && report.evidence.backpressure.receiptCursorBytes > report.evidence.backpressure.queueBudgetBytes
+  ) {
+    blockers.push('receipt-cursor-backpressure-exceeds-queue-budget');
+  }
   if (report.evidence.backpressure?.receiptCursorBackpressureWithinQueueHeadroom !== true) {
     blockers.push('receipt-cursor-exceeds-queue-headroom');
   }
@@ -343,6 +350,10 @@ export function productionThroughputDetails(report) {
     Number.isFinite(receiptCursorBackpressureBytes)
     && Number.isFinite(receiptCursorQueueHeadroomBytes)
     && receiptCursorBackpressureBytes <= receiptCursorQueueHeadroomBytes;
+  const receiptCursorBackpressureWithinQueueBudget =
+    Number.isFinite(receiptCursorBackpressureBytes)
+    && Number.isFinite(receiptCursorQueueBudgetBytes)
+    && receiptCursorBackpressureBytes <= receiptCursorQueueBudgetBytes;
   const receiptCursorHeadroomCoveredByQueueBudget =
     Number.isFinite(receiptCursorMemoryHeadroomBytes)
     && Number.isFinite(receiptCursorQueueHeadroomBytes)
@@ -401,6 +412,7 @@ export function productionThroughputDetails(report) {
     receiptCursorHeadroomMatchesQueueHeadroom,
     receiptCursorBackpressureBytes,
     receiptCursorBackpressureMeasured,
+    receiptCursorBackpressureWithinQueueBudget,
     receiptCursorBackpressureWithinQueueHeadroom,
     receiptCursorHeadroomWithinQueueBudget,
     backpressureEvidenceComplete,
@@ -421,6 +433,7 @@ export function productionThroughputDetails(report) {
       receiptCursorHeadroomWithinQueueBudget,
       receiptCursorBackpressureBytes,
       receiptCursorBackpressureMeasured,
+      receiptCursorBackpressureWithinQueueBudget,
       backpressureEvidenceComplete,
       productionAtomicCommitMeasured,
       productionRowBatchExecutorMeasured,
