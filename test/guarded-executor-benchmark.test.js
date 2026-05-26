@@ -61,6 +61,7 @@ test('guarded executor benchmark moves buffers and row payloads through durable 
   assert.equal(report.resourceLimits.memoryCeilingBytes, 32 * 1024 * 1024);
   assert.equal(report.evidence.resourceLimits.chunkWindowWithinMemoryCeiling, true);
   assert.equal(report.evidence.backpressure.producerQueueBounded, true);
+  assert.equal(report.evidence.backpressure.queueBudgetMatchesResourceCeiling, true);
   assert.equal(report.evidence.backpressure.queuePausedBeforeOverflow, true);
   assert.equal(report.evidence.backpressure.receiptCursorWithinQueueBudget, true);
   assert.equal(report.evidence.backpressure.backpressureEvidenceComplete, true);
@@ -109,6 +110,9 @@ test('guarded benchmark refuses production throughput claims until production ga
   assert.equal(report.claims.productionThroughputDetails.queueHeadroomMatchesResourceHeadroom, true);
   assert.equal(report.claims.productionThroughputDetails.queueHeadroomMatchesMemoryHeadroom, true);
   assert.equal(report.claims.productionThroughputDetails.queueHeadroomWithinResourceCeiling, true);
+  assert.equal(report.claims.productionThroughputDetails.queueHeadroomPositive, true);
+  assert.equal(report.claims.productionThroughputDetails.receiptCursorMemoryHeadroomPositive, true);
+  assert.equal(report.claims.productionThroughputDetails.receiptCursorQueueHeadroomPositive, true);
   assert.equal(report.claims.productionThroughputDetails.backpressureConsistency.queueBudgetMatchesResourceCeiling, true);
   assert.equal(report.claims.productionThroughputDetails.backpressureConsistency.queueHeadroomMatchesResourceHeadroom, true);
   assert.equal(report.claims.productionThroughputDetails.backpressureConsistency.queueHeadroomMatchesMemoryHeadroom, true);
@@ -222,6 +226,7 @@ test('guarded benchmark refuses production throughput claims until production ga
   assert.ok(
     !report.claims.productionThroughput.blockers.includes('missing-valid-receipt-cursor'),
   );
+  assert.ok(!report.claims.productionThroughput.blockers.includes('queue-budget-does-not-match-resource-ceiling'));
   assert.equal(report.results.preCommitFailure.remoteUnchanged, true);
   assert.equal(report.results.partialFailure.remoteUnchanged, false);
   assert.equal(report.results.successInspection.status, 'fully-updated-remote');
@@ -916,5 +921,16 @@ test('production claim gate fails closed if benchmark evidence is tampered', () 
   missingGraphIdentity.evidence.wordpressGraphIdentity.allPostmetaReferencesUseStableRemoteIdentity = false;
   assert.ok(
     productionThroughputBlockers(missingGraphIdentity).includes('wordpress-graph-identity-evidence-not-proven'),
+  );
+});
+
+test('guarded benchmark fails closed when the buffered queue budget drifts from the default ceiling', () => {
+  const report = smallBenchmark({ maxBufferedUploadBytes: 16 * 1024 * 1024 });
+
+  assert.equal(report.resourceLimits.maxBufferedUploadBytes, 16 * 1024 * 1024);
+  assert.equal(report.evidence.backpressure.queueBudgetBytes, 16 * 1024 * 1024);
+  assert.equal(report.evidence.backpressure.queueBudgetMatchesResourceCeiling, false);
+  assert.ok(
+    report.claims.productionThroughput.blockers.includes('queue-budget-does-not-match-resource-ceiling'),
   );
 });

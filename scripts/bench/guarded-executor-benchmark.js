@@ -226,6 +226,9 @@ export function productionThroughputBlockers(report) {
   ) {
     blockers.push('chunk-window-exceeds-memory-ceiling');
   }
+  if (report.evidence.backpressure?.queueBudgetMatchesResourceCeiling !== true) {
+    blockers.push('queue-budget-does-not-match-resource-ceiling');
+  }
   if (report.evidence.backpressure?.receiptCursorWithinQueueBudget !== true) {
     blockers.push('receipt-cursor-exceeds-queue-budget');
   }
@@ -547,12 +550,14 @@ export function productionThroughputDetails(report) {
     queueHeadroomMatchesMemoryHeadroom,
     queueHeadroomWithinResourceCeiling,
     queueHeadroomPositive,
+    receiptCursorMemoryHeadroomPositive: receiptCursorMemoryHeadroomPositiveVisible,
     queuePausedBeforeOverflow: report.evidence.backpressure?.queuePausedBeforeOverflow ?? false,
     receiptCursorWithinQueueBudget: report.evidence.backpressure?.receiptCursorWithinQueueBudget ?? false,
     receiptCursor: report.evidence.chunkReceipts.resumeCursor,
     receiptCursorConsistency: report.evidence.chunkReceipts.cursorConsistency,
     receiptCursorHeadroomBytes: receiptCursorMemoryHeadroomBytes,
     receiptCursorHeadroomMatchesQueueHeadroom,
+    receiptCursorQueueHeadroomPositive: receiptCursorQueueHeadroomPositive,
     receiptCursorBackpressureBytes,
     receiptCursorBackpressureMeasured,
     queuePauseHasMeasuredReceiptCursorBackpressure,
@@ -1083,6 +1088,8 @@ function buildReport({
         producerQueueBounded: true,
         queueBudgetBytes: config.maxBufferedUploadBytes,
         queueHeadroomBytes: config.maxBufferedUploadBytes - config.chunkSizeBytes,
+        queueBudgetMatchesResourceCeiling:
+          config.maxBufferedUploadBytes === DEFAULT_LIMITS.maxBufferedUploadBytes,
         queuePausedBeforeOverflow: config.chunkSizeBytes <= config.maxBufferedUploadBytes,
         chunkWindowBytes: config.chunkSizeBytes,
         receiptCursorBytes: lastChunkReceipt?.sizeBytes ?? null,
