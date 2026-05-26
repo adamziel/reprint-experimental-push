@@ -1,8 +1,9 @@
-Updated the objective audit to include the newer `fast-paths`,
-`no-data-loss-recovery`, `feedback-supervisor`, and `progress-followup`
-remote heads, and kept the release verdict closed. Those heads still only
-strengthen fail-closed boundaries; they do not supply production-backed
-auth/session, durable journal ownership, or a live source mutation boundary.
+Updated the objective audit to record that the sibling reliable-executor
+worktree now has the `spawnSync` timeout-hardening edits in progress, but
+they are still dirty and unpublished, so they are not release evidence yet.
+The release verdict stays closed. The remote heads still only strengthen
+fail-closed boundaries; they do not supply production-backed auth/session,
+durable journal ownership, or a live source mutation boundary.
 
 Changed files:
 - [`audits/objective-audit.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/independent-auditor/audits/objective-audit.md)

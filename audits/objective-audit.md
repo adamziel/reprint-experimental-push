@@ -34,9 +34,10 @@ Fresh lane proof since the last audit pass improved the local evidence floor,
 but it did not change the release conclusion:
 
 - `origin/lane/reliable-executor` now refreshes the audit evidence at
-  `0c4fd10f`. The reliable lane still has the open `spawnSync`
-  timeout-hardening blocker on the live proof path, so the verdict does not
-  move.
+  `0c4fd10f`. The sibling reliable-executor worktree now shows the
+  `spawnSync` timeout-hardening edits in progress, but they are still dirty
+  and unpublished, so the live proof path is not yet release evidence and the
+  verdict does not move.
 - `origin/lane/no-data-loss-invariants` now blocks post GUID mutations at
   `4335ce8b`. A separate cycle-branch proof at `98c0ce26`
   extends that blocker coverage to missing graph identity references, and the
