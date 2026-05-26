@@ -1,15 +1,15 @@
 # Critic Verdict
 
-Current reliable head: `12c0c812e430e879e3dd40316a3a988f5b0d4857`
-(`Fail closed on invalid auth session sources`).
+Current reliable head: `23e0ddbed805f76a7b1a887c744497a59792c825`
+(`Require auth session identity continuity`).
 
 Verdict: `0/4`
 
 Reason:
 
-- This head tightens checked auth/session source validation by failing closed
-  on invalid sources, but it still does not prove a production-backed lifecycle
-  on the release path.
+- This head tightens checked auth/session identity continuity on the release
+  verifier path, but it still does not prove a production-backed lifecycle on
+  the release path.
 - The checked proof is still missing live issuance/read/expiry/rotation/
   revocation/cleanup evidence for `production-auth-session`, and it still does
   not establish stricter durable-journal ownership/restart semantics on the
