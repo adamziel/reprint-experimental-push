@@ -74,6 +74,14 @@ test('guarded executor benchmark moves buffers and row payloads through durable 
   assert.equal(report.evidence.backpressure.receiptCursorQueueSlackBytes, 31.5 * 1024 * 1024);
   assert.equal(report.evidence.backpressure.receiptCursorMemoryHeadroomBytes, 31.5 * 1024 * 1024);
   assert.equal(report.evidence.backpressure.queueHeadroomBytes, 31.5 * 1024 * 1024);
+  assert.deepEqual(report.claims.productionThroughputDetails.receiptCursorPauseFootprint, {
+    receiptCursorBytes: 512 * 1024,
+    queueBudgetBytes: 32 * 1024 * 1024,
+    queueHeadroomBytes: 31.5 * 1024 * 1024,
+    queueSlackBytes: 31.5 * 1024 * 1024,
+    memoryCeilingBytes: 32 * 1024 * 1024,
+    memoryHeadroomBytes: 31.5 * 1024 * 1024,
+  });
   assert.equal(report.claims.productionThroughputDetails.backpressureAlignment.aligned, true);
   assert.equal(
     report.claims.productionThroughputDetails.backpressureAlignment.receiptCursorQueueSlackBytes,

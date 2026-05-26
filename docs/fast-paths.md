@@ -149,6 +149,10 @@ Current executable gate:
 - The report now also exposes whether the receipt-cursor headroom and queue
   headroom match, so the bounded backpressure proof can be audited directly
   without changing the claim gate.
+- The report now also exposes a compact pause-footprint summary for the
+  receipt cursor, queue budget, queue headroom, and memory ceiling, so the
+  bounded backpressure proof can be read without reconstructing those six
+  numbers from separate fields.
 - The report now also exposes a receipt-cursor memory-headroom replay check,
   so bounded replay sizing can stay advisory while the live compare and
   journal evidence still decide visibility.
