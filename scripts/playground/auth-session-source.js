@@ -107,7 +107,7 @@ function normalizeAuthSessionSourceField(value) {
   }
 
   const normalized = value.trim();
-  if (!normalized || /[\u0000-\u001f\u007f]/.test(normalized)) {
+  if (!normalized || normalized !== value || /[\u0000-\u001f\u007f]/.test(normalized)) {
     return '';
   }
 
