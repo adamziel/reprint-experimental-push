@@ -17293,6 +17293,67 @@ test('blocks local same-plan created post author identity while preserving a mat
   assert.equal(Object.hasOwn(remote.files, 'wp-content/plugins/forms/forms.php'), false);
 });
 
+test('blocks local same-plan created post author identity while preserving a matching independent file type swap and remote-only plugin removals', () => {
+  const resourceKey = 'row:["wp_posts","ID:42"]';
+  const base = baseSite();
+  base.db.wp_posts['ID:42'] = {
+    ID: 42,
+    post_author: 9,
+    post_title: 'Base authored post',
+    post_content: 'Base authored post content',
+    post_status: 'publish',
+    post_type: 'post',
+  };
+  base.files['wp-content/uploads/cover'] = 'base cover bytes';
+
+  const local = baseSite();
+  local.db.wp_posts['ID:42'] = {
+    ID: 42,
+    post_author: 9,
+    post_title: 'Local authored post type swap',
+    post_content: 'Local authored post type swap content',
+    post_status: 'publish',
+    post_type: 'post',
+  };
+  local.files['wp-content/uploads/cover'] = {
+    type: 'directory',
+  };
+  local.db.wp_users = {
+    'ID:9': {
+      ID: 9,
+      user_login: 'local-same-plan-author-type-swap',
+      user_email: 'local-author-type-swap@example.test',
+    },
+  };
+
+  const remote = baseSite();
+  remote.db.wp_posts['ID:42'] = JSON.parse(JSON.stringify(base.db.wp_posts['ID:42']));
+  remote.files['wp-content/uploads/cover'] = {
+    type: 'directory',
+  };
+  delete remote.plugins.forms;
+  delete remote.files['wp-content/plugins/forms/forms.php'];
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  const typeSwapDecision = decisionFor(plan, 'file:wp-content/uploads/cover');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(plan.conflicts.length, 0);
+  assert.equal(blocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_posts","ID:42"] references graph identities without proven identity mapping or reference rewriting.');
+  assert.equal(typeSwapDecision.decision, 'already-in-sync');
+  assert.equal(typeSwapDecision.change.localChange, 'type-change');
+  assert.equal(typeSwapDecision.change.remoteChange, 'type-change');
+  assert.equal(planJson.includes('local-same-plan-author-type-swap'), false);
+  assert.equal(Object.hasOwn(remote.plugins, 'forms'), false);
+  assert.equal(Object.hasOwn(remote.files, 'wp-content/plugins/forms/forms.php'), false);
+});
+
 test('blocks local same-plan created comment post identity while preserving remote-only plugin changes', () => {
   const resourceKey = 'row:["wp_comments","comment_ID:21"]';
   const targetResourceKey = 'row:["wp_posts","ID:42"]';
