@@ -7,6 +7,7 @@ import {
   appendJournalCompleted,
   appendMutationObserved,
   appendRecoveryClaimOpened,
+  appendStaleClaimAdvanced,
   assertJournalRecordHasNoRawValues,
   consumeProductionRecoveryJournal,
   createUnsupportedProductionRecoveryJournal,
@@ -505,6 +506,69 @@ test('production recovery journal compatibility overload supports reliable relea
     code: 'RECOVERY_CLAIM_STALE',
   });
   staleJournal.close();
+});
+
+test('production recovery journal consumption surfaces stale claim advancement after a fenced takeover', () => {
+  const filePath = tempJournalPath();
+  const remote = baseSite();
+  const plan = planFor(baseSite(), localSite(), remote);
+  const remoteArtifactPath = `${filePath}.remote`;
+  const artifactRefs = {
+    journal: filePath,
+    remote: remoteArtifactPath,
+  };
+
+  const firstJournal = openProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs,
+    claimId: 'claim-1',
+  });
+  appendRecoveryClaimOpened(firstJournal, {
+    plan,
+    current: remote,
+    claimId: 'claim-1',
+    artifactRefs,
+  });
+  firstJournal.close();
+
+  const secondJournal = openProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs,
+    truncate: false,
+    claimId: 'claim-2',
+  });
+  appendStaleClaimAdvanced(secondJournal, {
+    plan,
+    current: remote,
+    previousClaimId: 'claim-1',
+    claimId: 'claim-2',
+    staleThresholdMs: 30_000,
+    previousClaimAgeMs: 30_001,
+    artifactRefs,
+  });
+  secondJournal.close();
+
+  const inspection = consumeProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs,
+    claimId: 'claim-2',
+  });
+
+  assert.equal(inspection.consumed, true);
+  assert.equal(inspection.journal.consumed, true);
+  assert.equal(inspection.journal.staleClaimRejected, true);
+  assert.equal(inspection.journal.claimHash, recoveryClaimHash('claim-2'));
+  assert.deepEqual(inspection.journal.writerLease, { id: 'claim-2' });
+  assert.deepEqual(inspection.journal.leaseFence, { id: 'claim-2' });
+  assert.equal(inspection.leaseFence.staleClaimRejected, true);
+  assert.equal(inspection.leaseFence.fsyncEvidence, true);
+  assert.equal(inspection.leaseFence.monotonicSequence, true);
 });
 
 test('production recovery journal compatibility overload fails closed when the consumed journal artifact ref diverges from the owned path', () => {
