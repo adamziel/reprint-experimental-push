@@ -546,11 +546,17 @@ function reprint_push_lab_db_journal_summary(int $limit = 20, bool $checked_surf
     $summary['idempotencyOpened'] = reprint_push_lab_db_journal_event_count($summary['eventSummaries'], 'idempotency-opened');
 
     if ($accepted_on_checked_boundary) {
+        $claim_key_unique = reprint_push_lab_db_journal_has_claim_key_unique_index();
+        $monotonic_sequence = reprint_push_lab_db_journal_rows_are_monotonic($summary['latestRows']);
         $stale_claim_rejected = reprint_push_lab_db_journal_has_stale_claim_rejection_evidence(
             $summary['latestRows'],
             $summary['eventSummaries']
         );
-        $writer_lease = reprint_push_lab_db_journal_writer_lease_contract($stale_claim_rejected);
+        $writer_lease = reprint_push_lab_db_journal_writer_lease_contract(
+            $stale_claim_rejected,
+            $claim_key_unique,
+            $monotonic_sequence
+        );
         $summary['acceptedOnCheckedBoundary'] = true;
         $summary['ownership'] = [
             'ownsJournal' => true,
@@ -560,9 +566,9 @@ function reprint_push_lab_db_journal_summary(int $limit = 20, bool $checked_surf
         $summary['writerLease'] = $writer_lease;
         $summary['leaseFence'] = [
             'boundary' => 'wpdb-single-statement-cas',
-            'claimKeyUnique' => reprint_push_lab_db_journal_has_claim_key_unique_index(),
+            'claimKeyUnique' => $claim_key_unique,
             'fsyncEvidence' => true,
-            'monotonicSequence' => reprint_push_lab_db_journal_rows_are_monotonic($summary['latestRows']),
+            'monotonicSequence' => $monotonic_sequence,
             'restartReadable' => true,
             'staleClaimRejected' => $stale_claim_rejected,
             'writerLease' => $writer_lease,
@@ -586,15 +592,20 @@ function reprint_push_lab_db_journal_event_count(array $event_summaries, string 
     return 0;
 }
 
-function reprint_push_lab_db_journal_writer_lease_contract(bool $stale_claim_rejected): array
+function reprint_push_lab_db_journal_writer_lease_contract(
+    bool $stale_claim_rejected,
+    bool $claim_key_unique = true,
+    bool $monotonic_sequence = true,
+    bool $restart_readable = true
+): array
 {
     return [
         'strategy' => 'claim-fenced-single-writer',
-        'claimKeyUnique' => true,
+        'claimKeyUnique' => $claim_key_unique,
         'fsyncEvidence' => true,
         'storageGuard' => 'wpdb-single-statement-cas',
-        'monotonicSequence' => true,
-        'restartReadable' => true,
+        'monotonicSequence' => $monotonic_sequence,
+        'restartReadable' => $restart_readable,
         'staleClaimRejected' => $stale_claim_rejected,
     ];
 }

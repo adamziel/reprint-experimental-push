@@ -128,6 +128,45 @@ function runDbJournalStorageGuard(summary) {
   });
 }
 
+function runWriterLeaseContract({
+  staleClaimRejected,
+  claimKeyUnique = true,
+  monotonicSequence = true,
+  restartReadable = true,
+}) {
+  return spawnSync('php', [
+    '-r',
+    [
+      'define("ABSPATH", dirname($argv[1]));',
+      'function add_filter(...$args) {}',
+      'function add_action(...$args) {}',
+      'function register_rest_route(...$args) {}',
+      'class WP_REST_Server { const CREATABLE = "POST"; const READABLE = "GET"; }',
+      'class WP_REST_Response {',
+      '  private $data;',
+      '  public function __construct($data = null, $status = null) { $this->data = $data; }',
+      '  public function get_data() { return $this->data; }',
+      '  public function set_data($data) { $this->data = $data; }',
+      '}',
+      'class WP_REST_Request {}',
+      'require $argv[1];',
+      '$staleClaimRejected = ($argv[2] ?? "0") === "1";',
+      '$claimKeyUnique = ($argv[3] ?? "1") === "1";',
+      '$monotonicSequence = ($argv[4] ?? "1") === "1";',
+      '$restartReadable = ($argv[5] ?? "1") === "1";',
+      'echo json_encode(reprint_push_lab_db_journal_writer_lease_contract($staleClaimRejected, $claimKeyUnique, $monotonicSequence, $restartReadable));',
+    ].join(' '),
+    pluginFile,
+    staleClaimRejected ? '1' : '0',
+    claimKeyUnique ? '1' : '0',
+    monotonicSequence ? '1' : '0',
+    restartReadable ? '1' : '0',
+  ], {
+    cwd: repoRoot,
+    encoding: 'utf8',
+  });
+}
+
 test('checked db journal merge fills nested ownership and lease fence gaps', { skip: !hasPhp }, () => {
   const result = runMerge(
     {
@@ -338,6 +377,26 @@ test('db journal storage guard stays visible when only the checked top-level com
     boundary: 'wpdb-single-statement-cas',
     operation: 'update',
     outcome: 'applied',
+  });
+});
+
+test('db journal writer lease contract preserves observed checked-boundary evidence instead of hard-coding stronger guarantees', { skip: !hasPhp }, () => {
+  const result = runWriterLeaseContract({
+    staleClaimRejected: true,
+    claimKeyUnique: false,
+    monotonicSequence: false,
+    restartReadable: true,
+  });
+
+  assert.equal(result.status, 0, result.stderr);
+  assert.deepEqual(JSON.parse(result.stdout), {
+    strategy: 'claim-fenced-single-writer',
+    claimKeyUnique: false,
+    fsyncEvidence: true,
+    storageGuard: 'wpdb-single-statement-cas',
+    monotonicSequence: false,
+    restartReadable: true,
+    staleClaimRejected: true,
   });
 });
 
