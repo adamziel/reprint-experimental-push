@@ -68,7 +68,11 @@ const packagedPlaygroundTimeoutSeconds = 30;
 const packagedServerStartupTimeoutMs = packagedPlaygroundTimeoutSeconds * 1_000;
 const packagedServerFetchTimeoutMs = 3_000;
 const maxReadinessProbes = Math.max(10, Math.ceil(serverStartupTimeoutMs / readinessProbeIntervalMs));
-const maxNotReadyReadinessProbes = labMaxConsecutiveNotReadyProbes;
+const maxNotReadyReadinessProbes = Math.max(labMaxConsecutiveNotReadyProbes, maxReadinessProbes);
+const maxPackagedStartupNotReadyProbeCount = Math.max(
+  packagedProductionPluginMaxConsecutiveNotReadyProbes,
+  Math.ceil(packagedServerStartupTimeoutMs / readinessProbeIntervalMs),
+);
 const credentials = {
   username: 'reprint_push_admin',
   password: 'reprint-push-admin-app-password',
@@ -1340,7 +1344,12 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
       } catch (error) {
         if (packagedProductionPluginReadinessBodyRetryable(snapshot.status, snapshotText)) {
           lastError = new Error(`Production plugin package snapshot readiness HTTP ${snapshot.status}`);
-          if (packagedProductionPluginNotReadyProbeLimitReached(snapshotNotReadyProbeCount)) {
+          if (
+            packagedProductionPluginNotReadyProbeLimitReached(
+              snapshotNotReadyProbeCount,
+              maxPackagedStartupNotReadyProbeCount,
+            )
+          ) {
             const indexProbe = await fetchPackagedWordPressIndexProbe(baseUrl, child);
             lastProbes.push(indexProbe);
             if (
@@ -1353,7 +1362,7 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
             ) {
               await throwPlaygroundReadinessFailure(
                 child,
-                `Packaged production plugin snapshot stayed startup-shaped while /wp-json/ kept reporting global WordPress startup HTTP ${indexProbe.status} for ${snapshotNotReadyProbeCount} consecutive response${snapshotNotReadyProbeCount === 1 ? '' : 's'} (limit ${packagedProductionPluginMaxConsecutiveNotReadyProbes})`,
+                `Packaged production plugin snapshot stayed startup-shaped while /wp-json/ kept reporting global WordPress startup HTTP ${indexProbe.status} for ${snapshotNotReadyProbeCount} consecutive response${snapshotNotReadyProbeCount === 1 ? '' : 's'} (limit ${maxPackagedStartupNotReadyProbeCount})`,
                 lastError,
                 lastProbes,
                 getOutput(),
@@ -1373,10 +1382,15 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
                 indexProbe.body,
               )
             ) {
-              if (packagedProductionPluginPackagedRouteStartupLimitReached(snapshotNotReadyProbeCount)) {
+              if (
+                packagedProductionPluginPackagedRouteStartupLimitReached(
+                  snapshotNotReadyProbeCount,
+                  maxPackagedStartupNotReadyProbeCount,
+                )
+              ) {
                 await throwPlaygroundReadinessFailure(
                   child,
-                  `Packaged production plugin snapshot stayed startup-shaped after global WordPress startup HTTP ${indexProbe.status} for ${snapshotNotReadyProbeCount} consecutive response${snapshotNotReadyProbeCount === 1 ? '' : 's'} (limit ${packagedProductionPluginMaxConsecutiveNotReadyProbes})`,
+                  `Packaged production plugin snapshot stayed startup-shaped after global WordPress startup HTTP ${indexProbe.status} for ${snapshotNotReadyProbeCount} consecutive response${snapshotNotReadyProbeCount === 1 ? '' : 's'} (limit ${maxPackagedStartupNotReadyProbeCount})`,
                   lastError,
                   lastProbes,
                   getOutput(),
@@ -1389,7 +1403,7 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
             }
             await throwPlaygroundReadinessFailure(
               child,
-              `Packaged Playground server reported the bounded readiness failure ${snapshot.status} after ${snapshotNotReadyProbeCount} consecutive startup-shaped snapshot response${snapshotNotReadyProbeCount === 1 ? '' : 's'} (limit ${packagedProductionPluginMaxConsecutiveNotReadyProbes})`,
+              `Packaged Playground server reported the bounded readiness failure ${snapshot.status} after ${snapshotNotReadyProbeCount} consecutive startup-shaped snapshot response${snapshotNotReadyProbeCount === 1 ? '' : 's'} (limit ${maxPackagedStartupNotReadyProbeCount})`,
               lastError,
               lastProbes,
               getOutput(),
@@ -1397,7 +1411,7 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
                 childPid: child.pid ?? null,
                 packagedProductionPlugin: true,
                 notReadyProbeCount: snapshotNotReadyProbeCount,
-                maxNotReadyProbeCount: packagedProductionPluginMaxConsecutiveNotReadyProbes,
+                maxNotReadyProbeCount: maxPackagedStartupNotReadyProbeCount,
               },
             );
           }
@@ -1430,7 +1444,12 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
             body: snapshotBody,
           })
         ) {
-          if (packagedProductionPluginNotReadyProbeLimitReached(snapshotNotReadyProbeCount)) {
+          if (
+            packagedProductionPluginNotReadyProbeLimitReached(
+              snapshotNotReadyProbeCount,
+              maxPackagedStartupNotReadyProbeCount,
+            )
+          ) {
             const indexProbe = await fetchPackagedWordPressIndexProbe(baseUrl, child);
             lastProbes.push(indexProbe);
             if (
@@ -1443,7 +1462,7 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
             ) {
               await throwPlaygroundReadinessFailure(
                 child,
-                `Packaged production plugin snapshot stayed startup-shaped while /wp-json/ kept reporting global WordPress startup HTTP ${indexProbe.status} for ${snapshotNotReadyProbeCount} consecutive response${snapshotNotReadyProbeCount === 1 ? '' : 's'} (limit ${packagedProductionPluginMaxConsecutiveNotReadyProbes})`,
+                `Packaged production plugin snapshot stayed startup-shaped while /wp-json/ kept reporting global WordPress startup HTTP ${indexProbe.status} for ${snapshotNotReadyProbeCount} consecutive response${snapshotNotReadyProbeCount === 1 ? '' : 's'} (limit ${maxPackagedStartupNotReadyProbeCount})`,
                 lastError,
                 lastProbes,
                 getOutput(),
@@ -1463,10 +1482,15 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
                 indexProbe.body,
               )
             ) {
-              if (packagedProductionPluginPackagedRouteStartupLimitReached(snapshotNotReadyProbeCount)) {
+              if (
+                packagedProductionPluginPackagedRouteStartupLimitReached(
+                  snapshotNotReadyProbeCount,
+                  maxPackagedStartupNotReadyProbeCount,
+                )
+              ) {
                 await throwPlaygroundReadinessFailure(
                   child,
-                  `Packaged production plugin snapshot stayed startup-shaped after global WordPress startup HTTP ${indexProbe.status} for ${snapshotNotReadyProbeCount} consecutive response${snapshotNotReadyProbeCount === 1 ? '' : 's'} (limit ${packagedProductionPluginMaxConsecutiveNotReadyProbes})`,
+                  `Packaged production plugin snapshot stayed startup-shaped after global WordPress startup HTTP ${indexProbe.status} for ${snapshotNotReadyProbeCount} consecutive response${snapshotNotReadyProbeCount === 1 ? '' : 's'} (limit ${maxPackagedStartupNotReadyProbeCount})`,
                   lastError,
                   lastProbes,
                   getOutput(),
@@ -1479,7 +1503,7 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
             }
             await throwPlaygroundReadinessFailure(
               child,
-              `Packaged Playground server reported the bounded readiness failure ${snapshot.status} after ${snapshotNotReadyProbeCount} consecutive startup-shaped snapshot response${snapshotNotReadyProbeCount === 1 ? '' : 's'} (limit ${packagedProductionPluginMaxConsecutiveNotReadyProbes})`,
+              `Packaged Playground server reported the bounded readiness failure ${snapshot.status} after ${snapshotNotReadyProbeCount} consecutive startup-shaped snapshot response${snapshotNotReadyProbeCount === 1 ? '' : 's'} (limit ${maxPackagedStartupNotReadyProbeCount})`,
               lastError,
               lastProbes,
               getOutput(),
@@ -1487,7 +1511,7 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
                 childPid: child.pid ?? null,
                 packagedProductionPlugin: true,
                 notReadyProbeCount: snapshotNotReadyProbeCount,
-                maxNotReadyProbeCount: packagedProductionPluginMaxConsecutiveNotReadyProbes,
+                maxNotReadyProbeCount: maxPackagedStartupNotReadyProbeCount,
               },
             );
           }
@@ -1540,7 +1564,12 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
       } catch (error) {
         if (packagedProductionPluginReadinessBodyRetryable(preflight.status, preflightText)) {
           lastError = new Error(`Production plugin package preflight readiness HTTP ${preflight.status}`);
-          if (packagedProductionPluginNotReadyProbeLimitReached(preflightNotReadyProbeCount)) {
+          if (
+            packagedProductionPluginNotReadyProbeLimitReached(
+              preflightNotReadyProbeCount,
+              maxPackagedStartupNotReadyProbeCount,
+            )
+          ) {
             const indexProbe = await fetchPackagedWordPressIndexProbe(baseUrl, child);
             lastProbes.push(indexProbe);
             if (
@@ -1553,7 +1582,7 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
             ) {
               await throwPlaygroundReadinessFailure(
                 child,
-                `Packaged production plugin preflight stayed startup-shaped while /wp-json/ kept reporting global WordPress startup HTTP ${indexProbe.status} for ${preflightNotReadyProbeCount} consecutive response${preflightNotReadyProbeCount === 1 ? '' : 's'} (limit ${packagedProductionPluginMaxConsecutiveNotReadyProbes})`,
+                `Packaged production plugin preflight stayed startup-shaped while /wp-json/ kept reporting global WordPress startup HTTP ${indexProbe.status} for ${preflightNotReadyProbeCount} consecutive response${preflightNotReadyProbeCount === 1 ? '' : 's'} (limit ${maxPackagedStartupNotReadyProbeCount})`,
                 lastError,
                 lastProbes,
                 getOutput(),
@@ -1573,10 +1602,15 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
                 indexProbe.body,
               )
             ) {
-              if (packagedProductionPluginPackagedRouteStartupLimitReached(preflightNotReadyProbeCount)) {
+              if (
+                packagedProductionPluginPackagedRouteStartupLimitReached(
+                  preflightNotReadyProbeCount,
+                  maxPackagedStartupNotReadyProbeCount,
+                )
+              ) {
                 await throwPlaygroundReadinessFailure(
                   child,
-                  `Packaged production plugin preflight stayed startup-shaped after global WordPress startup HTTP ${indexProbe.status} for ${preflightNotReadyProbeCount} consecutive response${preflightNotReadyProbeCount === 1 ? '' : 's'} (limit ${packagedProductionPluginMaxConsecutiveNotReadyProbes})`,
+                  `Packaged production plugin preflight stayed startup-shaped after global WordPress startup HTTP ${indexProbe.status} for ${preflightNotReadyProbeCount} consecutive response${preflightNotReadyProbeCount === 1 ? '' : 's'} (limit ${maxPackagedStartupNotReadyProbeCount})`,
                   lastError,
                   lastProbes,
                   getOutput(),
@@ -1589,7 +1623,7 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
             }
             await throwPlaygroundReadinessFailure(
               child,
-              `Packaged Playground server reported the bounded readiness failure ${preflight.status} after ${preflightNotReadyProbeCount} consecutive startup-shaped preflight response${preflightNotReadyProbeCount === 1 ? '' : 's'} (limit ${packagedProductionPluginMaxConsecutiveNotReadyProbes})`,
+              `Packaged Playground server reported the bounded readiness failure ${preflight.status} after ${preflightNotReadyProbeCount} consecutive startup-shaped preflight response${preflightNotReadyProbeCount === 1 ? '' : 's'} (limit ${maxPackagedStartupNotReadyProbeCount})`,
               lastError,
               lastProbes,
               getOutput(),
@@ -1597,7 +1631,7 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
                 childPid: child.pid ?? null,
                 packagedProductionPlugin: true,
                 notReadyProbeCount: preflightNotReadyProbeCount,
-                maxNotReadyProbeCount: packagedProductionPluginMaxConsecutiveNotReadyProbes,
+                maxNotReadyProbeCount: maxPackagedStartupNotReadyProbeCount,
               },
             );
           }
@@ -1632,7 +1666,12 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
         status: preflight.status,
         body: preflightBody,
       })) {
-        if (packagedProductionPluginNotReadyProbeLimitReached(preflightNotReadyProbeCount)) {
+        if (
+          packagedProductionPluginNotReadyProbeLimitReached(
+            preflightNotReadyProbeCount,
+            maxPackagedStartupNotReadyProbeCount,
+          )
+        ) {
           const indexProbe = await fetchPackagedWordPressIndexProbe(baseUrl, child);
           lastProbes.push(indexProbe);
           if (
@@ -1645,7 +1684,7 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
           ) {
             await throwPlaygroundReadinessFailure(
               child,
-              `Packaged production plugin preflight stayed startup-shaped while /wp-json/ kept reporting global WordPress startup HTTP ${indexProbe.status} for ${preflightNotReadyProbeCount} consecutive response${preflightNotReadyProbeCount === 1 ? '' : 's'} (limit ${packagedProductionPluginMaxConsecutiveNotReadyProbes})`,
+              `Packaged production plugin preflight stayed startup-shaped while /wp-json/ kept reporting global WordPress startup HTTP ${indexProbe.status} for ${preflightNotReadyProbeCount} consecutive response${preflightNotReadyProbeCount === 1 ? '' : 's'} (limit ${maxPackagedStartupNotReadyProbeCount})`,
               lastError,
               lastProbes,
               getOutput(),
@@ -1665,10 +1704,15 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
               indexProbe.body,
             )
           ) {
-            if (packagedProductionPluginPackagedRouteStartupLimitReached(preflightNotReadyProbeCount)) {
+            if (
+              packagedProductionPluginPackagedRouteStartupLimitReached(
+                preflightNotReadyProbeCount,
+                maxPackagedStartupNotReadyProbeCount,
+              )
+            ) {
               await throwPlaygroundReadinessFailure(
                 child,
-                `Packaged production plugin preflight stayed startup-shaped after global WordPress startup HTTP ${indexProbe.status} for ${preflightNotReadyProbeCount} consecutive response${preflightNotReadyProbeCount === 1 ? '' : 's'} (limit ${packagedProductionPluginMaxConsecutiveNotReadyProbes})`,
+                `Packaged production plugin preflight stayed startup-shaped after global WordPress startup HTTP ${indexProbe.status} for ${preflightNotReadyProbeCount} consecutive response${preflightNotReadyProbeCount === 1 ? '' : 's'} (limit ${maxPackagedStartupNotReadyProbeCount})`,
                 lastError,
                 lastProbes,
                 getOutput(),
@@ -1681,7 +1725,7 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
           }
           await throwPlaygroundReadinessFailure(
             child,
-            `Packaged Playground server reported the bounded readiness failure ${preflight.status} after ${preflightNotReadyProbeCount} consecutive startup-shaped preflight response${preflightNotReadyProbeCount === 1 ? '' : 's'} (limit ${packagedProductionPluginMaxConsecutiveNotReadyProbes})`,
+            `Packaged Playground server reported the bounded readiness failure ${preflight.status} after ${preflightNotReadyProbeCount} consecutive startup-shaped preflight response${preflightNotReadyProbeCount === 1 ? '' : 's'} (limit ${maxPackagedStartupNotReadyProbeCount})`,
             lastError,
             lastProbes,
             getOutput(),
@@ -1689,7 +1733,7 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
               childPid: child.pid ?? null,
               packagedProductionPlugin: true,
               notReadyProbeCount: preflightNotReadyProbeCount,
-              maxNotReadyProbeCount: packagedProductionPluginMaxConsecutiveNotReadyProbes,
+              maxNotReadyProbeCount: maxPackagedStartupNotReadyProbeCount,
             },
           );
         }
@@ -2393,7 +2437,7 @@ async function waitForServer(child, baseUrl, getLogs) {
         const readinessProbeCount = lastProbes.filter((probe) => probe.route === '/wp-json/').length;
         if (readinessRetryable) {
           notReadyProbeCount += 1;
-          if (labNotReadyProbeLimitReached(notReadyProbeCount)) {
+          if (labNotReadyProbeLimitReached(notReadyProbeCount, maxNotReadyReadinessProbes)) {
             await throwPlaygroundReadinessFailure(
               child,
               `Playground server reported the bounded readiness failure ${response.status} after ${readinessProbeCount} /wp-json/ probes (${notReadyProbeCount} consecutive not-ready response${notReadyProbeCount === 1 ? '' : 's'}; limit ${maxNotReadyReadinessProbes})`,

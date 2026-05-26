@@ -160,8 +160,11 @@ export function labNextTimeoutProbeCount(currentCount, error) {
     : 0;
 }
 
-export function labNotReadyProbeLimitReached(currentCount) {
-  return currentCount >= labMaxConsecutiveNotReadyProbes;
+export function labNotReadyProbeLimitReached(
+  currentCount,
+  limit = labMaxConsecutiveNotReadyProbes,
+) {
+  return currentCount >= limit;
 }
 
 export function labReadinessBodyRetryable(status, bodyText = '') {

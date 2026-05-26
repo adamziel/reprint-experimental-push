@@ -91,7 +91,7 @@ const releaseVerifyInnerTimeoutMs = Math.max(1_000, Math.min(36_000, proofSubpro
 const releaseVerifySlowPathTimeoutMs = 15_000;
 const releaseVerifySlowPathInnerTimeoutMs = Math.max(1_000, Math.min(6_000, releaseVerifySlowPathTimeoutMs - 6_000));
 const maxReadinessProbes = Math.max(10, Math.ceil(serverStartupTimeoutMs / readinessProbeIntervalMs));
-const maxNotReadyReadinessProbes = labMaxConsecutiveNotReadyProbes;
+const maxNotReadyReadinessProbes = Math.max(labMaxConsecutiveNotReadyProbes, maxReadinessProbes);
 const proofSubprocessOptions = {
   timeout: proofSubprocessTimeoutMs,
   killSignal: proofSubprocessKillSignal,
@@ -2895,6 +2895,8 @@ test('shared lab readiness helpers track consecutive timeout probes', () => {
   );
   assert.equal(labNotReadyProbeLimitReached(labMaxConsecutiveNotReadyProbes - 1), false);
   assert.equal(labNotReadyProbeLimitReached(labMaxConsecutiveNotReadyProbes), true);
+  assert.equal(labNotReadyProbeLimitReached(5, 6), false);
+  assert.equal(labNotReadyProbeLimitReached(6, 6), true);
 });
 
 test('shared lab waitForServer keeps index and snapshot body reads child-aware', () => {
@@ -2921,13 +2923,86 @@ test('shared lab waitForServer keeps index and snapshot body reads child-aware',
   assert.match(sharedWaitSource, /timeoutProbeCount = 0;\s*const responsePreview = responseBody\.slice/);
   assert.match(sharedWaitSource, /timeoutProbeCount = 0;\s*const snapshotPreview = snapshotBody\.slice/);
   assert.match(sharedWaitSource, /timeoutProbeCount = labNextTimeoutProbeCount\(timeoutProbeCount, error\);/);
-  assert.match(verifierSource, /const maxNotReadyReadinessProbes = labMaxConsecutiveNotReadyProbes;/);
+  assert.match(
+    verifierSource,
+    /const maxNotReadyReadinessProbes = Math\.max\(labMaxConsecutiveNotReadyProbes, maxReadinessProbes\);/,
+  );
   assert.match(sharedWaitSource, /if \(labReadinessProbeTimedOut\(error\) && labNotReadyProbeLimitReached\(timeoutProbeCount\)\)/);
-  assert.match(sharedWaitSource, /if \(labNotReadyProbeLimitReached\(notReadyProbeCount\)\)/);
+  assert.match(sharedWaitSource, /if \(labNotReadyProbeLimitReached\(notReadyProbeCount, maxNotReadyReadinessProbes\)\)/);
   assert.match(sharedWaitSource, /await sleepUnlessChildExit\(readinessProbeIntervalMs, child\)/);
   assert.doesNotMatch(sharedWaitSource, /await response\.arrayBuffer\(\)/);
   assert.doesNotMatch(sharedWaitSource, /await snapshot\.arrayBuffer\(\)/);
   assert.doesNotMatch(sharedWaitSource, /await new Promise\(\(resolve\) => setTimeout\(resolve, readinessProbeIntervalMs\)\)/);
+});
+
+test('shared lab waitForServer tolerates more than four startup-shaped /wp-json/ responses inside the bounded startup window', async () => {
+  let indexCalls = 0;
+  let snapshotCalls = 0;
+  const readyAfterIndexCalls = labMaxConsecutiveNotReadyProbes + 2;
+  const server = createServer((request, response) => {
+    if (request.url === '/wp-json/') {
+      indexCalls += 1;
+      if (indexCalls < readyAfterIndexCalls) {
+        response.statusCode = 502;
+        response.setHeader('content-type', 'text/html; charset=utf-8');
+        response.end('<!doctype html><html><body>WordPress is not ready yet</body></html>');
+        return;
+      }
+      response.statusCode = 200;
+      response.setHeader('content-type', 'application/json; charset=utf-8');
+      response.end(JSON.stringify({ namespaces: ['reprint-push-lab/v1'] }));
+      return;
+    }
+
+    if (request.url === '/wp-json/reprint-push-lab/v1/snapshot') {
+      snapshotCalls += 1;
+      response.statusCode = 200;
+      response.setHeader('content-type', 'application/json; charset=utf-8');
+      response.end(JSON.stringify({ ok: true, snapshot: {} }));
+      return;
+    }
+
+    response.statusCode = 404;
+    response.end('not found');
+  });
+
+  await new Promise((resolve, reject) => {
+    server.listen(0, '127.0.0.1', (error) => {
+      if (error) {
+        reject(error);
+        return;
+      }
+      resolve();
+    });
+  });
+
+  const address = server.address();
+  assert.ok(address && typeof address === 'object' && typeof address.port === 'number');
+
+  try {
+    await waitForServer(
+      {
+        exitCode: null,
+        signalCode: null,
+        pid: null,
+      },
+      `http://127.0.0.1:${address.port}`,
+      () => '',
+    );
+  } finally {
+    await new Promise((resolve, reject) => {
+      server.close((error) => {
+        if (error) {
+          reject(error);
+          return;
+        }
+        resolve();
+      });
+    });
+  }
+
+  assert.equal(indexCalls, readyAfterIndexCalls);
+  assert.equal(snapshotCalls, 1);
 });
 
 test('live Playground proof helpers keep lab readiness probes child-aware', () => {
@@ -3159,7 +3234,7 @@ async function waitForServer(child, baseUrl, getLogs) {
         const readinessProbeCount = lastProbes.filter((probe) => probe.route === '/wp-json/').length;
         if (readinessRetryable) {
           notReadyProbeCount += 1;
-          if (notReadyProbeCount >= maxNotReadyReadinessProbes) {
+          if (labNotReadyProbeLimitReached(notReadyProbeCount, maxNotReadyReadinessProbes)) {
             await throwPlaygroundReadinessFailure(
               child,
               `Playground server reported the bounded readiness failure ${response.status} after ${readinessProbeCount} /wp-json/ probes (${notReadyProbeCount} consecutive not-ready response${notReadyProbeCount === 1 ? '' : 's'}; limit ${maxNotReadyReadinessProbes})`,

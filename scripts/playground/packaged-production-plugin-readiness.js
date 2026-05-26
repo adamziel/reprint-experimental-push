@@ -230,12 +230,18 @@ export function packagedProductionPluginNextNotReadyProbeCount(currentCount, sta
     : 0;
 }
 
-export function packagedProductionPluginNotReadyProbeLimitReached(currentCount) {
-  return currentCount >= packagedProductionPluginMaxConsecutiveNotReadyProbes;
+export function packagedProductionPluginNotReadyProbeLimitReached(
+  currentCount,
+  limit = packagedProductionPluginMaxConsecutiveNotReadyProbes,
+) {
+  return currentCount >= limit;
 }
 
-export function packagedProductionPluginPackagedRouteStartupLimitReached(currentCount) {
-  return packagedProductionPluginNotReadyProbeLimitReached(currentCount);
+export function packagedProductionPluginPackagedRouteStartupLimitReached(
+  currentCount,
+  limit = packagedProductionPluginMaxConsecutiveNotReadyProbes,
+) {
+  return packagedProductionPluginNotReadyProbeLimitReached(currentCount, limit);
 }
 
 export function packagedProductionPluginNextTimeoutProbeCount(currentCount, error) {
