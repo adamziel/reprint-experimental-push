@@ -4,7 +4,7 @@
 
 The project is **not releasable as a production WordPress push path**.
 
-- Fresh remote heads at audit time, checked on 2026-05-26 07:56:35 CEST (+0200):
+- Fresh remote heads at audit time, checked on 2026-05-26 08:00:00 CEST (+0200):
 
 - `origin/lane/cycle-20260524-auth-graph-hardening/critic` -> `e413f7a8`
 - `origin/lane/cycle-20260524-auth-graph-hardening/fast-paths` -> `ad7d82a4`
@@ -41,8 +41,8 @@ The project is **not releasable as a production WordPress push path**.
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `c0512cd0`
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `4ee4d877`
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `641a1e3d`
-- `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `537c2465`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `b9c0fdcb`
+- `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `09b55454`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `ce5250a5`
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` -> `0ca7b35d`
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `d2288227`
 - `origin/lane/cycle-20260525-mainwindows-2349/same-plan-wordpress-graph-create` -> `65a40803`
@@ -54,10 +54,10 @@ The project is **not releasable as a production WordPress push path**.
 - `origin/lane/fast-paths` -> `8c5c2ccb`
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `a6359b91`
 - `origin/lane/independent-auditor` -> `25a543ff`
-- `origin/lane/no-data-loss-invariants` -> `12c69034`
-- `origin/lane/no-data-loss-recovery` -> `537c2465`
+- `origin/lane/no-data-loss-invariants` -> `bce3664d`
+- `origin/lane/no-data-loss-recovery` -> `9e077c10`
 - `origin/lane/progress-publisher` -> `7695e1f9`
-- `origin/lane/reliable-executor` -> `5d163dd7`
+- `origin/lane/reliable-executor` -> `a279d99b`
 - `origin/lane/same-plan-wordpress-graph-create` -> `8dea1ca3`
 
 Fresh remote heads added after the prior audit note:
@@ -70,16 +70,16 @@ Fresh remote heads added after the prior audit note:
 Fresh remote heads re-polled after the last audit note:
 
 - `origin/lane/reliable-executor` -> `ef3e42b9`
-- `origin/lane/no-data-loss-recovery` -> `537c2465`
-- `origin/lane/no-data-loss-invariants` -> `12c69034`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `b9c0fdcb`
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `4ee4d877`
+- `origin/lane/no-data-loss-recovery` -> `09b55454`
+- `origin/lane/no-data-loss-invariants` -> `bce3664d`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `ce5250a5`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `50be3251`
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-executor` -> `a279d99b`
-- `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-invariants` -> `b3561bd2`
-- `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `55b12556`
+- `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-invariants` -> `bce3664d`
+- `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `09b55454`
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `7f8b3735`
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `5174c983`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `41879e6a`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `50be3251`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `ce5250a5`
 
 These heads are still fail-closed support evidence and freshness work. They
 improve unsupported-surface blocking and public visibility, but they still do
@@ -97,12 +97,12 @@ but it did not change the release conclusion:
 - `origin/lane/reliable-executor` now records `a279d99b`, tightening auth
   session lifecycle checks. It still does not prove production auth/session
   lifecycle on the release path.
-- `origin/lane/no-data-loss-recovery` now records `d3494e40`, failing closed
-  on inherited journal ownership. It still does not prove production-backed
-  journal ownership or restart-readable durable artifacts.
-- `origin/lane/no-data-loss-invariants` now records `b3561bd2`, blocking
-  remote serialized block drift. It still does not prove the live release
-  boundary or any production-backed source mutation.
+- `origin/lane/no-data-loss-recovery` now records `09b55454`, hardening replay
+  journal isolation. It still does not prove production-backed journal
+  ownership or restart-readable durable artifacts.
+- `origin/lane/no-data-loss-invariants` now records `bce3664d`, blocking post
+  author graph drift. It still does not prove the live release boundary or any
+  production-backed source mutation.
 
 - `origin/lane/reliable-executor` now records `bbf04945`, hardening durable journal ownership. It still does not prove production auth/session lifecycle or a live-source mutation boundary.
 - `origin/lane/cycle-20260525-mainwindows-2349/same-plan-wordpress-graph-create` now records `65a40803`, tightening same-plan attachment rules. It still does not prove the live release boundary or any production-backed source mutation.
