@@ -21878,6 +21878,76 @@ test('blocks local same-plan created user meta identity while preserving remote-
   assert.equal(Object.hasOwn(remote.files, 'wp-content/plugins/forms/forms.php'), false);
 });
 
+test('blocks local same-plan created user meta identity while preserving a matching independent edit and remote-only plugin changes', () => {
+  const resourceKey = 'row:["wp_usermeta","umeta_id:79"]';
+  const matchingEditKey = 'row:["wp_posts","ID:1"]';
+  const base = baseSite();
+  base.db.wp_usermeta = {
+    'umeta_id:79': {
+      umeta_id: 79,
+      user_id: 13,
+      meta_key: 'nickname',
+      meta_value: 'Base nickname edit',
+    },
+  };
+  base.db.wp_posts['ID:1'].post_title = 'Base usermeta matching title';
+
+  const local = baseSite();
+  local.db.wp_usermeta = {
+    'umeta_id:79': {
+      umeta_id: 79,
+      user_id: 13,
+      meta_key: 'nickname',
+      meta_value: 'Local nickname edit',
+    },
+  };
+  local.db.wp_users = {
+    'ID:13': {
+      ID: 13,
+      user_login: 'local-same-plan-edit-user',
+      user_email: 'local-edit@example.test',
+    },
+  };
+  local.db.wp_posts['ID:1'].post_title = 'Shared usermeta matching title';
+
+  const remote = baseSite();
+  remote.db.wp_usermeta = JSON.parse(JSON.stringify(base.db.wp_usermeta));
+  remote.db.wp_posts['ID:1'].post_title = 'Shared usermeta matching title';
+  remote.plugins.forms.description = 'remote-only plugin changes';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin changes */';
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  const reference = blocker.references[0];
+  const matchingEdit = decisionFor(plan, matchingEditKey);
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(plan.conflicts.length, 0);
+  assert.equal(blocker.class, 'unsupported-usermeta-resource');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_usermeta","umeta_id:79"] is created in the same plan as a user identity that depends on it, and identity rewriting is not yet supported.');
+  assert.equal(reference.relationshipKey, 'wp_usermeta.user_id');
+  assert.equal(reference.relationshipType, 'usermeta-user');
+  assert.equal(reference.targetResourceKey, 'row:["wp_users","ID:13"]');
+  assert.equal(reference.targetChange.remote.state, 'absent');
+  assert.equal(reference.targetChange.local.state, 'present');
+  assert.equal(matchingEdit.decision, 'already-in-sync');
+  assert.equal(matchingEdit.change.localChange, 'update');
+  assert.equal(matchingEdit.change.remoteChange, 'update');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('Local nickname edit'), false);
+  assert.equal(planJson.includes('Base nickname edit'), false);
+  assert.equal(planJson.includes('local-same-plan-edit-user'), false);
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin changes');
+  assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin changes */');
+});
+
 test('blocks user meta deletes while preserving a matching independent edit and remote-only plugin drift', () => {
   const resourceKey = 'row:["wp_usermeta","umeta_id:80"]';
   const base = baseSite();
