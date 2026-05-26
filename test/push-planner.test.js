@@ -9174,6 +9174,20 @@ test('allows an existing post row to retarget its parent reference to a same-pla
     'parent post create must be ordered before dependent existing child post update',
   );
   assert.deepEqual(childMutation.dependsOnMutationIds, [parentMutation.id]);
+  assert.equal(plan.summary.graphDependencies, 1);
+  assert.deepEqual(plan.graphDependencies, [
+    {
+      sourceMutationId: childMutation.id,
+      sourceResourceKey: childResourceKey,
+      relationshipKey: 'wp_posts.post_parent',
+      relationshipType: 'post-parent',
+      targetMutationId: parentMutation.id,
+      targetResourceKey: parentResourceKey,
+      resolutionPolicy: 'same-plan-local-create',
+      source: 'same-plan-local-create',
+      targetLocalHash: parentMutation.localHash,
+    },
+  ]);
   assert.equal(reference.resolutionPolicy, 'same-plan-local-create');
   assert.equal(reference.relationshipKey, 'wp_posts.post_parent');
   assert.equal(reference.relationshipType, 'post-parent');
@@ -21519,6 +21533,31 @@ test('allows an existing term relationship taxonomy reference to retarget to a s
   assert.equal(samePlanTaxonomyMutation.changeKind, 'create');
   assert.equal(relationshipMutation.changeKind, 'create');
   assert.deepEqual(relationshipMutation.dependsOnMutationIds, [samePlanTaxonomyMutation.id]);
+  assert.equal(plan.summary.graphDependencies, 2);
+  assert.deepEqual(plan.graphDependencies, [
+    {
+      sourceMutationId: samePlanTaxonomyMutation.id,
+      sourceResourceKey: samePlanTaxonomyResourceKey,
+      relationshipKey: 'wp_term_taxonomy.term_id',
+      relationshipType: 'term-taxonomy-term',
+      targetMutationId: termMutation.id,
+      targetResourceKey: termResourceKey,
+      resolutionPolicy: 'same-plan-local-create',
+      source: 'same-plan-local-create',
+      targetLocalHash: termMutation.localHash,
+    },
+    {
+      sourceMutationId: relationshipMutation.id,
+      sourceResourceKey: relationshipResourceKey,
+      relationshipKey: 'wp_term_relationships.term_taxonomy_id',
+      relationshipType: 'term-relationship-taxonomy',
+      targetMutationId: samePlanTaxonomyMutation.id,
+      targetResourceKey: samePlanTaxonomyResourceKey,
+      resolutionPolicy: 'same-plan-local-create',
+      source: 'same-plan-local-create',
+      targetLocalHash: samePlanTaxonomyMutation.localHash,
+    },
+  ]);
   assert.equal(reference.resolutionPolicy, 'same-plan-local-create');
   assert.equal(reference.relationshipKey, 'wp_term_relationships.term_taxonomy_id');
   assert.equal(reference.relationshipType, 'term-relationship-taxonomy');
