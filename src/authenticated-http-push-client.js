@@ -219,10 +219,11 @@ export async function runAuthenticatedHttpPush({
     && replay.status === 200
     && replay.body?.ok === true
     && replay.body?.idempotency?.replayed === true
+    && replay.body?.idempotency?.freshMutationWork === false
     && summary.after?.finalMatchesLocal === true;
   if (!summary.ok) {
     summary.code = apply.body?.code || recoveryInspect.body?.code || replay.body?.code || 'APPLY_FAILED';
-    setDurableJournalBoundary(summary, 'apply');
+    setDurableJournalBoundary(summary, replay.status === 200 ? 'replay' : 'apply');
   }
   return summary;
 }
