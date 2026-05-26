@@ -41,6 +41,7 @@ export function evaluateProductionAuthSessionLifecycle(session, now = Date.now()
   const observedExpiresAt = normalizeAuthSessionObservationField(session?.expiresAt) ?? 'missing';
   const revoked = session?.revoked === true || session?.status === 'revoked';
   const cleanedUp = session?.cleanedUp === true || session?.cleanup === true || session?.status === 'cleaned-up';
+  const rotated = session?.rotated === true || session?.status === 'rotated';
 
   if (observedType !== 'production-auth-session') {
     return {
@@ -55,6 +56,14 @@ export function evaluateProductionAuthSessionLifecycle(session, now = Date.now()
       ok: false,
       required: 'unrevoked',
       observed: revoked ? 'revoked' : 'cleaned-up',
+    };
+  }
+
+  if (rotated) {
+    return {
+      ok: false,
+      required: 'preserved read',
+      observed: 'rotated',
     };
   }
 
@@ -455,7 +464,7 @@ export function summarizeProductionAuthSessionLifecycleTrace(trace) {
       expired: entry.expired === true,
       revoked: entry.revoked === true,
       cleanedUp: entry.cleanedUp === true || entry.cleanup === true,
-      rotated: entry.rotated === true,
+      rotated: entry.rotated === true || entry.status === 'rotated',
       preserved: isAuthSessionReadStep(entry.step) && entry.preserved === true,
     };
   });
@@ -880,7 +889,7 @@ function resolveInvalidReadLifecycleOutcome(observation, required) {
     };
   }
 
-  if (observation.rotated === true) {
+  if (observation.rotated === true || observation.status === 'rotated') {
     return {
       ok: false,
       required,
@@ -917,7 +926,7 @@ function summaryObservationCarriesExpectedFlag(field, observation) {
     case 'cleanedUp':
       return observation.cleanedUp === true || observation.cleanup === true;
     case 'rotated':
-      return observation.rotated === true;
+      return observation.rotated === true || observation.status === 'rotated';
     case 'preserved':
       return observation.preserved === true;
     default:
@@ -993,7 +1002,7 @@ function observationMatchesLifecycleMarker(field, observation) {
     case 'cleanedUp':
       return observation.cleanedUp === true || observation.cleanup === true;
     case 'rotated':
-      return observation.rotated === true;
+      return observation.rotated === true || observation.status === 'rotated';
     default:
       return false;
   }

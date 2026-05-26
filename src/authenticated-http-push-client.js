@@ -982,7 +982,11 @@ function summarizeAuthSessionLifecycle(session) {
     expired: isExpiredSession(session),
     revoked: session.revoked === true || session.status === 'revoked',
     cleanedUp: session.cleanedUp === true || session.cleanup === true || session.status === 'cleaned-up',
-    rotated: session.rotated === true ? true : session.rotated === false ? false : null,
+    rotated: session.rotated === true || session.status === 'rotated'
+      ? true
+      : session.rotated === false
+        ? false
+        : null,
     preserved: session.preserved === true ? true : session.preserved === false ? false : null,
   };
 }
@@ -1516,6 +1520,14 @@ function resolveObservedProductionAuthSessionLifecycleDrift(response) {
     };
   }
 
+  if (session?.rotated === true || session?.status === 'rotated') {
+    return {
+      field: session?.rotated === true ? 'auth.session.rotated' : 'auth.session.status',
+      required: 'preserved read',
+      observed: 'rotated',
+    };
+  }
+
   if (session?.status !== 'active') {
     return {
       field: 'auth.session.status',
@@ -1607,6 +1619,15 @@ function describeRequiredProductionAuthSession(response) {
       observed: session?.revoked === true || session?.status === 'revoked'
         ? 'revoked'
         : 'cleaned-up',
+      verdict,
+    };
+  }
+
+  if (session?.rotated === true || session?.status === 'rotated') {
+    return {
+      field: session?.rotated === true ? 'auth.session.rotated' : 'auth.session.status',
+      required: 'preserved read',
+      observed: 'rotated',
       verdict,
     };
   }
