@@ -726,7 +726,7 @@ test('stops a local file deletion when the remote edited the same file', () => {
   const plan = planFor(base, local, remote);
   const conflict = plan.conflicts[0];
 
-  assert.equal(plan.status, 'conflict');
+  assert.equal(plan.status, 'blocked');
   assert.equal(conflict.class, 'file-conflict');
   assert.equal(conflict.change.localChange, 'delete');
   assert.equal(conflict.change.remoteChange, 'update');
@@ -749,7 +749,7 @@ test('stops a local file deletion on conflict while preserving unrelated remote-
   const pluginDecision = decisionFor(plan, 'plugin:forms');
   const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
 
-  assert.equal(plan.status, 'conflict');
+  assert.equal(plan.status, 'blocked');
   assert.equal(conflict.class, 'file-conflict');
   assert.equal(conflict.change.localChange, 'delete');
   assert.equal(conflict.change.remoteChange, 'update');
@@ -808,7 +808,7 @@ test('stops a local file delete conflict while preserving a matching independent
   const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
   const conflictJson = JSON.stringify(conflict);
 
-  assert.equal(plan.status, 'conflict');
+  assert.equal(plan.status, 'blocked');
   assert.equal(plan.summary.mutations, 0);
   assert.equal(conflict.class, 'file-conflict');
   assert.equal(conflict.resourceKey, 'file:index.php');
@@ -877,7 +877,7 @@ test('stops a local file deletion when the remote turned the same file into a di
   const plan = planFor(base, local, remote);
   const conflict = plan.conflicts[0];
 
-  assert.equal(plan.status, 'conflict');
+  assert.equal(plan.status, 'blocked');
   assert.equal(plan.summary.mutations, 0);
   assert.equal(conflict.class, 'file-conflict');
   assert.equal(conflict.resourceKey, 'file:index.php');
@@ -910,7 +910,7 @@ test('stops a local file delete when the remote turned the same file into a dire
   const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
   const planJson = JSON.stringify(plan);
 
-  assert.equal(plan.status, 'conflict');
+  assert.equal(plan.status, 'blocked');
   assert.equal(plan.summary.mutations, 0);
   assert.equal(plan.preconditions.length, 0);
   assert.equal(conflict.class, 'file-conflict');
@@ -16898,16 +16898,16 @@ test('blocks local term-relationship object references to a same-plan created po
   const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
   const planJson = JSON.stringify(plan);
 
-  assert.equal(plan.status, 'conflict');
+  assert.equal(plan.status, 'blocked');
   assert.equal(plan.summary.mutations, 0);
   assert.equal(mutationFor(plan, resourceKey), undefined);
   assert.equal(decisionFor(plan, targetResourceKey), undefined);
   assert.equal(evidence.class, 'stale-wordpress-graph-identity');
   assert.equal(evidence.resourceKey, resourceKey);
   assert.equal(evidence.resolutionPolicy, 'preserve-remote-wordpress-graph-and-stop');
-  assert.equal(graphBlocker.class, 'unsupported-revision-resource');
+  assert.equal(graphBlocker.class, 'stale-wordpress-graph-identity');
   assert.equal(graphBlocker.resourceKey, targetResourceKey);
-  assert.equal(graphBlocker.reason, 'Revision graph resources are not yet supported by the planner.');
+  assert.equal(graphBlocker.reason, 'WordPress graph mutation row:["wp_posts","ID:7"] is created in the same plan as a term relationship post target that depends on it, and identity rewriting is not yet supported.');
   assert.equal(reference.relationshipKey, 'wp_term_relationships.object_id');
   assert.equal(reference.relationshipType, 'term-relationship-object');
   assert.equal(reference.sourceResourceKey, resourceKey);
