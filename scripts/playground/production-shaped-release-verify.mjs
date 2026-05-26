@@ -9,8 +9,8 @@ import { authenticatedHttpClient, runAuthenticatedHttpPush } from '../../src/aut
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const muPluginDir = path.join(repoRoot, 'scripts/playground/rest-mu-plugins');
-const serverStartupTimeoutMs = 650;
-const serverFetchTimeoutMs = 450;
+const serverStartupTimeoutMs = 450;
+const serverFetchTimeoutMs = 300;
 const credentials = {
   username: 'reprint_push_admin',
   password: 'reprint-push-admin-app-password',
@@ -885,7 +885,6 @@ async function stopSpawnedServer(child) {
       if (typeof child.pid === 'number') {
         process.stderr.write(`Playground child pid still active: ${child.pid}\n`);
       }
-      stopAllPlaygroundChildrenSync();
     }
   }
 }
@@ -957,11 +956,17 @@ function withoutUnmappedGraphPostmeta(snapshot) {
 }
 
 function runBoundedSync(command, args, options, label) {
-  const proof = spawnSync(command, args, options);
+  const boundedOptions = {
+    shell: false,
+    killSignal: 'SIGKILL',
+    timeout: 10_000,
+    ...options,
+  };
+  const proof = spawnSync(command, args, boundedOptions);
   if (proof.error) {
     stopAllPlaygroundChildrenSync();
     process.stderr.write(`${describeSpawnProof(proof)}\n`);
-    const timeoutNote = proof.error.code === 'ETIMEDOUT' && options.timeout ? ` after ${options.timeout}ms` : '';
+    const timeoutNote = proof.error.code === 'ETIMEDOUT' && boundedOptions.timeout ? ` after ${boundedOptions.timeout}ms` : '';
     const detailParts = [
       proof.error.name ?? 'Error',
       proof.error.code ? `code=${proof.error.code}` : null,
@@ -1083,7 +1088,20 @@ function writePlaygroundFailure(message, lastProbes, logs, lastError) {
     lastProbe: lastProbes.at(-1) ?? null,
     lastError: lastError?.message ?? null,
   };
+  const lastProbe = lastProbes.at(-1);
+  const flatLastProbe = lastProbe
+    ? `\nLast route/status/body: ${JSON.stringify(
+        {
+          route: lastProbe.route,
+          status: lastProbe.status,
+          body: lastProbe.body,
+        },
+        null,
+        2,
+      )}`
+    : '';
   process.stderr.write(`${message}\n`);
+  process.stderr.write(`${flatLastProbe}\n`);
   process.stderr.write(`${JSON.stringify(summary)}\n`);
   process.stdout.write(`${JSON.stringify(summary)}\n`);
   if (logs) {
@@ -1130,12 +1148,7 @@ async function waitForExit(child, timeoutMs) {
     }
     await new Promise((resolve) => setTimeout(resolve, 100));
   }
-  if (child.exitCode !== null) {
-    return;
-  }
-  while (child.exitCode === null) {
-    await new Promise((resolve) => setTimeout(resolve, 100));
-  }
+  throw new Error(`Playground server did not exit within ${timeoutMs}ms`);
 }
 
 async function findLocalPort() {
