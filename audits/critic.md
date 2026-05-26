@@ -1,5 +1,28 @@
 # Critic Audit
 
+## 2026-05-26 16:04:09 CEST (+0200)
+
+No gate movement. `ea74b2bdc01574dce1380641171497338df62883` is the current reliable head from `git ls-remote`; it unblocks packaged release-verify readiness by switching the packaged preflight path and loosening the not-ready loop in `scripts/playground/production-shaped-release-verify.mjs`, which makes the checked failure path more reachable, but it still reads as harness/readiness plumbing rather than proof of a production-backed auth/session lifecycle or a closed durable-journal ownership boundary on the checked release path. The verdict remains `0/4`.
+
+Changed files:
+- [`audits/critic.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/critic/audits/critic.md)
+
+Commands run:
+- `date '+%Y-%m-%d %H:%M:%S %Z (%z)'`
+- `git ls-remote origin refs/heads/lane/reliable-executor`
+- `git show --stat --summary --no-renames ea74b2bdc01574dce1380641171497338df62883 -- scripts/playground/production-shaped-release-verify.mjs test/production-shaped-proof.test.js`
+- `git show --no-ext-diff --unified=20 ea74b2bdc01574dce1380641171497338df62883 -- scripts/playground/production-shaped-release-verify.mjs`
+
+Push result:
+- Not attempted
+
+Worktree status:
+- Modified tracked files: `audits/critic.md`
+- Branch: `lane/cycle-20260525-mainwindows-2349/critic-clean-20260526-1530...origin/lane/critic`
+
+Next supervisor nudge:
+- Keep critic narrow and only reclassify again when `reliable-executor` lands checked-path production-backed auth/session lifecycle, durable-journal ownership, or preserved-remote retry proof that reaches the release boundary.
+
 ## 2026-05-26 15:56:05 CEST (+0200)
 
 No gate movement. `50751002253e7ba1a0256261ea903dea78f4e5a5` is the current reliable head from `git ls-remote`; it tightens packaged Playground readiness probes in `scripts/playground/production-shaped-release-verify.mjs`, which makes the checked failure path more bounded, but it still only proves harness-side readiness handling rather than a production-backed auth/session lifecycle or a closed durable-journal ownership boundary on the checked release path. The verdict remains `0/4`.
@@ -1055,3 +1078,4 @@ The next exact failure target should be:
 ## Current Bottom Line
 
 The project has credible lab evidence for staged transport, stale-claim handling, replay idempotency, some guarded writes, and a fail-closed durable-journal boundary. It now also has a bounded failure-mode proof for the retained-source release verifier, plus a bounded test pass that prevents the verifier from hanging silently and surfaces the readiness failure trail. That proof is useful because it now covers the wrapper/startup boundary, replay-idempotency on the release path, replay-equivalence surfacing, auth/session lifecycle fields, gate-dependency surfacing, recovery claim fencing, and recovery adapter surfacing, and the latest replay patch adds signed-request evidence comparison plus replay schema-version equivalence, but it still stops short of canonical replay equivalence or a live production release path. `3a64aef6` fails closed on revoked production auth sessions in the client/test path, but it still does not cross into a production-backed auth/session lifecycle or production durable-journal ownership proof, so the gate remains `0/4`. `fc2de1bd` remains useful preserved-remote retry evidence in the client/test path, but it remains historical support evidence rather than gate-moving proof. The progress surface was refreshed, but that was freshness-only and did not move the gate posture. The push client now rejects mutating requests that omit `session` or `idempotencyKey`, and the newer product-side boundary also fails closed when auth/session is required but not minted or drifts before journal reads; that is useful hardening, but still lab-shaped. The newer `35532d06` proof-count tightening does not change the gap: production auth/session lifecycle, durable journal ownership with lease/fencing/replay, preserved-remote retry, exact replay equivalence, and full graph identity safety are still unproven. The newer durable-journal guard and the newer `4bc94c99` auth/session hardening are still boundary and smoke checks, not a live backend. The honest claim remains unchanged: fixture-scoped and lab-backed push evidence, blocked for production.
+# Critic Audit
