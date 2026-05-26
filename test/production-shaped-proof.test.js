@@ -2612,7 +2612,32 @@ test('packaged readiness helpers treat signed preflight as the bootstrap authori
   );
 
   for (const source of [smokeSource, verifierSource]) {
-    assert.match(source, /const preflightProbe = await fetchPackagedPreflightProbe\(baseUrl, child\);[\s\S]*?if \(preflightProbe\.ready\) \{\s*return;\s*\}[\s\S]*?if \(preflightProbe\.retryable\) \{[\s\S]*?await sleepUnlessChildExit\(readinessProbeIntervalMs, child\);\s*continue;\s*\}[\s\S]*?packagedProductionPluginSnapshotRetryable/s);
+    assert.match(source, /fetchPackagedPreflightProbe\(baseUrl, child(?:, \{[\s\S]*?packagedStartup:\s*true,[\s\S]*?snapshotProbe:[\s\S]*?\})?\)/s);
+    assert.match(source, /if \(preflightProbe\.ready\) \{\s*return;\s*\}/);
+    assert.match(source, /if \(preflightProbe\.retryable\) \{[\s\S]*?await sleepUnlessChildExit\(readinessProbeIntervalMs, child\);\s*continue;\s*\}/s);
+    assert.match(source, /packagedProductionPluginSnapshotRetryable/s);
+  }
+});
+
+test('packaged readiness helpers pass snapshot startup context into signed preflight probes', () => {
+  const smokeSource = readFileSync(
+    path.join(repoRoot, 'scripts/playground/production-plugin-package-smoke.mjs'),
+    'utf8',
+  );
+  const verifierSource = readFileSync(
+    path.join(repoRoot, 'scripts/playground/production-shaped-release-verify.mjs'),
+    'utf8',
+  );
+
+  for (const source of [smokeSource, verifierSource]) {
+    assert.match(
+      source,
+      /fetchPackagedPreflightProbe\(baseUrl, child, \{[\s\S]*?packagedStartup:\s*true,[\s\S]*?snapshotProbe:\s*\{[\s\S]*?status:\s*snapshot(?:Response)?\.status,[\s\S]*?body:\s*snapshotText,[\s\S]*?\}[\s\S]*?\}\)/s,
+    );
+    assert.match(
+      source,
+      /probe\.retryable = packagedProductionPluginPreflightRetryable\(\s*\{ status: response\.status, body \},\s*readinessContext,\s*\);/s,
+    );
   }
 });
 

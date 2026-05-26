@@ -1364,7 +1364,13 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
         if (packagedProductionPluginReadinessBodyRetryable(snapshot.status, snapshotText)) {
           lastError = new Error(`Production plugin package snapshot readiness HTTP ${snapshot.status}`);
           noteReadinessPhase('preflight-fallback', `snapshot is still startup-shaped; probing signed preflight readiness at ${baseUrl}`);
-          const preflightProbe = await fetchPackagedPreflightProbe(baseUrl, child);
+          const preflightProbe = await fetchPackagedPreflightProbe(baseUrl, child, {
+            packagedStartup: true,
+            snapshotProbe: {
+              status: snapshot.status,
+              body: snapshotText,
+            },
+          });
           lastProbes.push(preflightProbe);
           if (preflightProbe.ready) {
             return;
@@ -1488,7 +1494,13 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
       })) {
         lastError = new Error(`Production plugin package snapshot readiness HTTP ${snapshot.status}`);
         noteReadinessPhase('preflight-fallback', `snapshot is still startup-shaped; probing signed preflight readiness at ${baseUrl}`);
-        const preflightProbe = await fetchPackagedPreflightProbe(baseUrl, child);
+        const preflightProbe = await fetchPackagedPreflightProbe(baseUrl, child, {
+          packagedStartup: true,
+          snapshotProbe: {
+            status: snapshot.status,
+            body: snapshotText,
+          },
+        });
         lastProbes.push(preflightProbe);
         if (preflightProbe.ready) {
           return;
@@ -2180,7 +2192,7 @@ async function fetchPackagedWordPressIndexProbe(baseUrl, child = null) {
   };
 }
 
-async function fetchPackagedPreflightProbe(baseUrl, child = null) {
+async function fetchPackagedPreflightProbe(baseUrl, child = null, readinessContext = {}) {
   const { response, bodyText } = await fetchTextWithTimeout(`${baseUrl}/wp-json/reprint/v1/push/preflight`, {
     method: 'GET',
     headers: {
@@ -2206,7 +2218,10 @@ async function fetchPackagedPreflightProbe(baseUrl, child = null) {
 
   if (body !== null) {
     probe.ready = packagedProductionPluginPreflightReady({ status: response.status, body });
-    probe.retryable = packagedProductionPluginPreflightRetryable({ status: response.status, body });
+    probe.retryable = packagedProductionPluginPreflightRetryable(
+      { status: response.status, body },
+      readinessContext,
+    );
     probe.terminal = !probe.ready && !probe.retryable;
     return probe;
   }
