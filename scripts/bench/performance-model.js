@@ -628,6 +628,26 @@ export const SAFE_FAST_PATHS = Object.freeze([
     publishesStagedDataEarly: false,
   },
   {
+    area: 'database-row-batching',
+    reduces: ['wire-bytes-for-planning', 'planning-round-trips'],
+    allowedShortcut: 'compress-planning-row-batch-manifests-with-canonical-row-digests',
+    guardrails: [
+      'compressed-manifest-remains-planning-evidence-only',
+      'batch-bounds-still-honor-row-preconditions',
+    ],
+    gateProofs: {
+      skip: 'a compressed row-batch manifest can shrink planning traffic when the canonical row digests are already known and each row still keeps its own precondition',
+      live: 'every row in the batch still rechecks its live compare at the storage boundary before visibility changes',
+      group: 'the compressed manifest only narrows planning work inside the same atomic group and never widens visibility across owners',
+      recovery: 'the compressed manifest, dependency graph, and batch receipts still classify retry, pause, or crash without guessing',
+    },
+    visibilityBoundary: 'planning-only-until-batch-commit',
+    failureEvidence: 'compressed row-batch manifest, dependency graph, and batch idempotency key',
+    bypassesLivePreconditions: false,
+    splitsAtomicGroup: false,
+    publishesStagedDataEarly: false,
+  },
+  {
     area: 'compression',
     reduces: ['wire-bytes', 'staging-io-for-text-payloads'],
     allowedShortcut: 'compress-transport-frames-with-canonical-uncompressed-digest',
