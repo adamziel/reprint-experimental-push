@@ -42,15 +42,15 @@ The project is **not releasable as a production WordPress push path**.
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `b4eeed32`
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `f1599fb2`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `435f2d1e`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `6198aeac`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `bcdeb490`
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` -> `c4103594`
 - `origin/lane/cycle-20260525-mainwindows-2357/no-data-loss-invariants-graph-proof` -> `98c0ce26`
 - `origin/lane/cycle-20260525-restart-2340/feedback-supervisor` -> `ef3d911e`
-- `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration` -> `29fff11d`
+- `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration` -> `0b33a5f9`
 - `origin/lane/critic` -> `443dacd6`
 - `origin/lane/fast-paths` -> `863075c1`
 - `origin/lane/feedback-supervisor` -> `ca91c444`
-- `origin/lane/independent-auditor` -> `6351130f`
+- `origin/lane/independent-auditor` -> `cff40d78`
 - `origin/lane/no-data-loss-invariants` -> `27184b85`
 - `origin/lane/no-data-loss-recovery` -> `435f2d1e`
 - `origin/lane/progress-publisher` -> `7695e1f9`
@@ -70,13 +70,12 @@ but it did not change the release conclusion:
   auth/session lifecycle or a live-source mutation boundary.
 - `origin/lane/no-data-loss-invariants` now records `27184b85`, adding
   attachment-parent same-plan proof again, but still not proving the live
-  release boundary.
-  graph blocker coverage to the unsupported-surface boundary set.
-- `origin/lane/progress-publisher` now records `7695e1f9`, refreshing public
+  release boundary or any production-backed source mutation.
+- `origin/lane/progress-publisher` now records `bcdeb490`, refreshing public
   progress freshness only.
 - `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration`
-  now records `29fff11d`, adding featured-image attachment drift proof only.
-- `origin/lane/independent-auditor` now records `6351130f`. This refreshes the
+  now records `0b33a5f9`, adding plugin-owned delete-guard coverage only.
+- `origin/lane/independent-auditor` now records `cff40d78`. This refreshes the
   audit snapshot only and does not change the release boundary.
 - `origin/lane/fast-paths` now records `863075c1`, tightening guarded
   benchmark and pause-reporting evidence checks only.
