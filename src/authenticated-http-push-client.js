@@ -95,6 +95,11 @@ export async function runAuthenticatedHttpPush({
     summary.code = 'PREFLIGHT_SESSION_MISSING';
     return summary;
   }
+  const preflightAuthEnvelope = {
+    userLogin: preflight.body.auth?.identity?.userLogin,
+    sessionId: preflight.body.auth?.session?.id,
+    sessionType: preflight.body.auth?.session?.type,
+  };
   if (preflight.body.auth?.session?.id && preflight.body.auth.session.id !== session) {
     summary.code = 'PREFLIGHT_SESSION_MISMATCH';
     summary.authSession = {
@@ -212,6 +217,8 @@ export async function runAuthenticatedHttpPush({
   });
   summary.replay = summarizeResponse(replay);
   const replayEquivalent = isReplayEquivalent(apply, replay);
+  const applyAuthEnvelopeDrift = hasAuthEnvelopeDrift(preflightAuthEnvelope, apply);
+  const replayAuthEnvelopeDrift = hasAuthEnvelopeDrift(preflightAuthEnvelope, replay);
 
   const afterApply = await client.get('/snapshot');
   summary.after = summarizeSnapshot(afterApply, local);
@@ -227,11 +234,14 @@ export async function runAuthenticatedHttpPush({
     && replay.body?.idempotency?.replayed === true
     && replay.body?.idempotency?.freshMutationWork === false
     && replayEquivalent
+    && !applyAuthEnvelopeDrift
+    && !replayAuthEnvelopeDrift
     && dbJournal.status === 200
     && dbJournal.body?.ok === true
     && summary.after?.finalMatchesLocal === true;
   if (!summary.ok) {
     const replayIdempotency = replay.body?.idempotency;
+    const authEnvelopeDrift = applyAuthEnvelopeDrift || replayAuthEnvelopeDrift;
     const replayEquivalenceFailed = replay.status === 200
       && replay.body?.ok === true
       && replayIdempotency
@@ -240,7 +250,9 @@ export async function runAuthenticatedHttpPush({
         || replayIdempotency?.freshMutationWork !== false
         || !replayEquivalent
       );
-    summary.code = replayEquivalenceFailed
+    summary.code = authEnvelopeDrift
+      ? 'AUTH_SESSION_LIFECYCLE_DRIFT'
+      : replayEquivalenceFailed
       ? 'REPLAY_NOT_EQUIVALENT'
       : (replayIdempotency?.replayed !== true || replayIdempotency?.freshMutationWork !== false)
         ? 'REPLAY_NOT_IDEMPOTENT'
@@ -433,6 +445,16 @@ function isReplayEquivalent(applyResponse, replayResponse) {
     && applyBody.auth?.session?.id === replayBody.auth?.session?.id
     && applyBody.auth?.session?.type === replayBody.auth?.session?.type
     && applyBody.signedRequest?.signed === replayBody.signedRequest?.signed;
+}
+
+function hasAuthEnvelopeDrift(expected, response) {
+  const body = response?.body || {};
+  if (!body.auth) {
+    return false;
+  }
+  return body.auth?.identity?.userLogin !== expected.userLogin
+    || body.auth?.session?.id !== expected.sessionId
+    || body.auth?.session?.type !== expected.sessionType;
 }
 
 function setDurableJournalBoundary(summary, phase) {
