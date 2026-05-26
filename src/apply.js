@@ -62,6 +62,10 @@ export function isAcceptableRecoveryState(recoveryState) {
     && Object.hasOwn(recoveryState.artifacts, 'remote')
     && isStrictPlainObject(recoveryState.artifacts.journal)
     && isStrictPlainObject(recoveryState.artifacts.remote)
+    && Object.hasOwn(recoveryState, 'driftedResources')
+    && Array.isArray(recoveryState.driftedResources)
+    && recoveryState.driftedResources.length > 0
+    && recoveryState.driftedResources.every((resourceKey) => typeof resourceKey === 'string' && resourceKey.length > 0)
     && recoveryState.artifacts.journal !== recoveryState.artifacts.remote,
   );
 }

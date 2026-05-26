@@ -24008,10 +24008,29 @@ test('blocked recovery states fail closed when drifted resources are inherited t
     remote: { schemaVersion: 1 },
   };
 
+  assert.equal(isAcceptableRecoveryState(recovery), false);
   const error = captureError(() => assertRecoveryStateEnvelope(recovery));
 
   assert.equal(error.code, 'RECOVERY_STATE_INVALID');
-  assert.match(error.message, /must carry own drifted resources/);
+  assert.match(error.message, /Recovery state must be old-remote, fully-updated-remote, or blocked-recovery\./);
+});
+
+test('blocked recovery states are not acceptable without own drifted resources', () => {
+  const recovery = {
+    status: 'blocked-recovery',
+    planId: 'plan-123',
+    reason: 'stale remote recovery',
+    artifacts: {
+      journal: { schemaVersion: 1 },
+      remote: { schemaVersion: 1 },
+    },
+  };
+
+  assert.equal(isAcceptableRecoveryState(recovery), false);
+  const error = captureError(() => assertRecoveryStateEnvelope(recovery));
+
+  assert.equal(error.code, 'RECOVERY_STATE_INVALID');
+  assert.match(error.message, /Recovery state must be old-remote, fully-updated-remote, or blocked-recovery\./);
 });
 
 test('blocked recovery artifacts fail closed when the envelope hides unsupported symbol keys', () => {
