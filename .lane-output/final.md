@@ -1,15 +1,14 @@
-Refreshed the objective audit snapshot against the current remote heads and kept the verdict closed. The new lane heads are freshness or fail-closed proof, not release-grade live-source proof, and the repository still lacks an enforced `verify`/`verify:release`/`release` command that fails closed at the live-source boundary.
+Refreshed the objective audit snapshot against the current cycle-scoped remote heads, including the newer `origin/lane/no-data-loss-invariants` head, and kept the verdict closed. The new lane heads are freshness or fail-closed proof, not release-grade live-source proof, and the repository still lacks an enforced `verify`/`verify:release`/`release` command that fails closed at the live-source boundary.
 
 Changed files:
 - [`audits/objective-audit.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/independent-auditor/audits/objective-audit.md)
 - [`.lane-output/final.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/independent-auditor/.lane-output/final.md)
 
 Commands run:
-- `sed -n '1,120p' audits/objective-audit.md`
-- `sed -n '120,260p' audits/objective-audit.md`
-- `sed -n '1,200p' package.json`
-- `git for-each-ref --format='%(refname:short) %(objectname:short) %(committerdate:iso8601) %(subject)' refs/remotes/origin/lane | sort | tail -n 24`
+- `sed -n '1,260p' audits/objective-audit.md`
+- `git for-each-ref --format='%(refname:short) %(objectname:short) %(committerdate:iso8601) %(subject)' refs/remotes/origin/lane | sort | tail -n 40`
 - `git status --short --branch`
+- `git diff -- audits/objective-audit.md .lane-output/final.md`
 
 Evidence checked:
 - `origin/lane/reliable-executor` -> `0c4fd10f`
@@ -35,12 +34,12 @@ Why no release verdict change:
 - There is still no checked-in gate command that owns the verdict and fails closed before apply.
 
 Push result:
-- Pending
+- Not pushed in this pass
 
 Worktree status:
 - Branch: `lane/cycle-20260525-mainwindows-2349/independent-auditor`
 - Dirty tracked files: `audits/objective-audit.md`, `.lane-output/final.md`
-- Relative to `origin/main`: `ahead 1292, behind 202`
+- Relative to `origin/main`: `ahead 1293, behind 202`
 
 Next supervisor nudge:
 - Land one failing proof for a specific unsupported boundary such as `menu/navigation`, `serialized block references`, `comments/users`, or `plugin-owned custom tables`, or add the missing checked-in release gate that fails closed before apply.

@@ -7,7 +7,7 @@ The project is **not releasable as a production WordPress push path**.
 Fresh remote heads at audit time, checked on May 26, 2026:
 
 - `origin/lane/reliable-executor` -> `0c4fd10f`
-- `origin/lane/no-data-loss-invariants` -> `0253c05d`
+- `origin/lane/no-data-loss-invariants` -> `4335ce8b`
 - `origin/lane/no-data-loss-recovery` -> `47b675c0`
 - `origin/lane/fast-paths` -> `9be664b2`
 - `origin/lane/independent-auditor` -> `6c3b2e00`
@@ -19,8 +19,8 @@ Fresh remote heads at audit time, checked on May 26, 2026:
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `83b1e256`
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `879e536f`
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` -> `596bdf5e`
-- `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-invariants` -> `0253c05d`
-- `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `37d1cd8d`
+- `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-invariants` -> `4335ce8b`
+- `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `a627bb01`
 - `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration` -> `295dc72a`
 - `origin/main` -> `4b7b47a6`
 
@@ -36,7 +36,7 @@ but it did not change the release conclusion:
   timeout-hardening blocker on the live proof path, so the verdict does not
   move.
 - `origin/lane/no-data-loss-invariants` now blocks post GUID mutations at
-  `0253c05d`. A separate cycle-branch proof at `98c0ce26`
+  `4335ce8b`. A separate cycle-branch proof at `98c0ce26`
   extends that blocker coverage to missing graph identity references, and the
   same-plan graph lane at `69f27361` now blocks unsupported graph surfaces
   including revision posts, menu/navigation posts, serialized blocks, and
@@ -49,17 +49,16 @@ but it did not change the release conclusion:
   production gate at `47b675c0` while preserving the earlier recovery
   evidence.
   `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` now
-  tightens the durable journal inspect gate at `37d1cd8d`, but it still does
+  tightens the durable journal inspect gate at `a627bb01`, but it still does
   not add production-backed journal ownership or replay proof.
 - `origin/lane/fast-paths` now refreshes benchmark evidence at `9be664b2`.
   This remains a safe fast-path implementation detail, but it still does not
   prove the live production push boundary.
-- `origin/lane/critic` now refreshes the critic handoff at `e986a490`.
+- `origin/lane/cycle-20260525-mainwindows-2349/critic` now refreshes the critic handoff at `f8591f9d`.
 - `origin/lane/progress-publisher` now refreshes the public progress evidence
   at `7695e1f9`.
-- `origin/lane/independent-auditor` now refreshes the audit snapshot at
-  `6c3b2e00`.
-- `origin/lane/critic` now refreshes the critic audit snapshot at `f8591f9d`.
+- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` now refreshes the audit snapshot at
+  `c02a0473`.
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now
   refreshes the supervisor evidence snapshot at `83b1e256`.
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now
