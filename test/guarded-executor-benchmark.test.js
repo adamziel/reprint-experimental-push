@@ -411,6 +411,14 @@ test('production claim gate fails closed if benchmark evidence is tampered', () 
     ),
   );
 
+  const mismatchedStorageReceiptEvidence = clone(report);
+  mismatchedStorageReceiptEvidence.evidence.atomicGroup.productionStorageReceiptsMeasured = true;
+  assert.ok(
+    productionThroughputBlockers(mismatchedStorageReceiptEvidence).includes(
+      'production-storage-receipts-evidence-not-aligned',
+    ),
+  );
+
   const mismatchedSuccessRecoveryStatus = clone(report);
   mismatchedSuccessRecoveryStatus.evidence.recovery.successInspectionStatus = 'blocked-recovery';
   assert.ok(
@@ -1622,4 +1630,19 @@ test('guarded benchmark blocks when queue headroom measurement is missing', () =
   assert.equal(details.backpressureConsistency.queueHeadroomMeasured, false);
   assert.equal(details.backpressureConsistency.backpressureEvidenceComplete, false);
   assert.ok(blockers.includes('queue-headroom-not-measured'));
+});
+
+test('guarded benchmark treats missing measured queue-headroom proof as incomplete paused backpressure evidence', () => {
+  const report = smallBenchmark();
+  const mutated = clone(report);
+
+  mutated.evidence.backpressure.queuePausedBeforeOverflow = true;
+  mutated.evidence.backpressure.queueHeadroomMeasured = false;
+
+  const details = productionThroughputDetails(mutated);
+  const blockers = productionThroughputBlockers(mutated);
+
+  assert.equal(details.backpressureConsistency.queueHeadroomMeasured, false);
+  assert.equal(details.backpressureConsistency.backpressureEvidenceComplete, false);
+  assert.ok(blockers.includes('queue-pause-without-measured-queue-headroom-proof'));
 });

@@ -653,6 +653,11 @@ export function productionThroughputBlockers(report) {
   if (report.executorCapabilities.fileReceipts !== 'production-storage-receipts') {
     blockers.push('production-storage-receipts-not-measured');
   }
+  if (
+    report.evidence.atomicGroup.productionStorageReceiptsMeasured !== (report.executorCapabilities.fileReceipts === 'production-storage-receipts')
+  ) {
+    blockers.push('production-storage-receipts-evidence-not-aligned');
+  }
   if (report.executorCapabilities.rowApply !== 'production-batched-compare-and-swap') {
     blockers.push('production-row-batch-executor-not-measured');
   }
