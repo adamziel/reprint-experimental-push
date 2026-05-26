@@ -314,6 +314,18 @@ test('benchmark model covers large uploads and plugin installs', () => {
     model.safeFastPaths.some(
       (fastPath) =>
         fastPath.area === 'parallelism-limits' &&
+        fastPath.allowedShortcut === 'reuse-queue-headroom-and-cached-release-manifest-cursor-to-size-bounded-release-bundle-resume' &&
+        fastPath.guardrails.includes('queue-headroom-stays-planning-evidence-only') &&
+        fastPath.guardrails.includes('cached-release-manifest-cursor-remains-planning-evidence-only') &&
+        fastPath.gateProofs.skip.includes('sizing the next bounded release-bundle resume window') &&
+        fastPath.gateProofs.recovery.includes('durable receipts and the guarded release record still classify pause, retry, or crash'),
+    ),
+    'queue headroom and cached release-manifest cursors can size release-bundle resume windows without weakening recovery evidence',
+  );
+  assert.ok(
+    model.safeFastPaths.some(
+      (fastPath) =>
+        fastPath.area === 'parallelism-limits' &&
         fastPath.allowedShortcut === 'reuse-memory-headroom-and-cached-release-manifest-digest-to-size-bounded-release-bundle-retry-windows' &&
         fastPath.guardrails.includes('memory-headroom-stays-planning-evidence-only') &&
         fastPath.guardrails.includes('cached-release-manifest-digest-remains-planning-evidence-only') &&

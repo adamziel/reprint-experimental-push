@@ -1217,6 +1217,27 @@ export const SAFE_FAST_PATHS = Object.freeze([
   },
   {
     area: 'parallelism-limits',
+    reduces: ['planning-round-trips', 'resume-recomputation', 'idle-time'],
+    allowedShortcut: 'reuse-queue-headroom-and-cached-release-manifest-cursor-to-size-bounded-release-bundle-resume',
+    guardrails: [
+      'queue-headroom-stays-planning-evidence-only',
+      'cached-release-manifest-cursor-remains-planning-evidence-only',
+      'release-bundle-resume-revalidates-before-write',
+    ],
+    gateProofs: {
+      skip: 'the planner can reuse measured queue headroom together with a cached release-manifest cursor to trim repeat planning scans while sizing the next bounded release-bundle resume window',
+      live: 'the eventual release still revalidates live file and row preconditions before anything becomes visible',
+      group: 'the cached cursor and queue headroom only narrow planning inside the same planned release bundle and never widen the atomic-group barrier',
+      recovery: 'the measured headroom and cached cursor are advisory; durable receipts and the guarded release record still classify pause, retry, or crash',
+    },
+    visibilityBoundary: 'planning-only-for-release-bundle-resume',
+    failureEvidence: 'measured queue headroom plus cached release-manifest cursor and guarded release record',
+    bypassesLivePreconditions: false,
+    splitsAtomicGroup: false,
+    publishesStagedDataEarly: false,
+  },
+  {
+    area: 'parallelism-limits',
     reduces: ['planning-round-trips', 'retry-window-recomputation', 'idle-time'],
     allowedShortcut: 'parallelize-independent-owner-index-scans-and-reuse-cached-release-manifest-cursor-to-size-bounded-release-bundle-fanout',
     guardrails: [

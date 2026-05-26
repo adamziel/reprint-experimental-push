@@ -64,6 +64,9 @@ barrier.
 It also includes a compressed per-kind budget summary plus bounded queue
 headroom for release-bundle resume windows, so the planner can trim duplicate
 retry sizing without turning advisory backpressure into mutation authority.
+It also includes bounded queue headroom plus a cached release-manifest cursor
+for release-bundle resume windows, so planning can skip duplicate resume
+scans without changing the live compare or the atomic-group barrier.
 It also includes measured queue headroom plus canonical per-kind budgets for
 plugin-update replay windows, so bounded replay sizing can skip duplicate
 fan-out planning without turning advisory backpressure into mutation
