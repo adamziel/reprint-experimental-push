@@ -4,7 +4,7 @@
 
 The project is **not releasable as a production WordPress push path**.
 
-- Fresh remote heads at audit time, checked on May 26, 2026:
+- Fresh remote heads at audit time, checked on 2026-05-26 07:30:52 CEST (+0200):
 
 - `origin/lane/cycle-20260524-auth-graph-hardening/critic` -> `e413f7a8`
 - `origin/lane/cycle-20260524-auth-graph-hardening/fast-paths` -> `ad7d82a4`
@@ -44,7 +44,7 @@ The project is **not releasable as a production WordPress push path**.
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `2e17cadd`
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `2f470a9a`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `2af1ddda`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `93f15c4d`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `22018284`
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` -> `0ca7b35d`
 - `origin/lane/cycle-20260525-mainwindows-2349/same-plan-wordpress-graph-create` -> `af493c80`
 - `origin/lane/cycle-20260525-mainwindows-2357/no-data-loss-invariants-graph-proof` -> `98c0ce26`
@@ -55,10 +55,10 @@ The project is **not releasable as a production WordPress push path**.
 - `origin/lane/fast-paths` -> `8c5c2ccb`
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `0339a1a4`
 - `origin/lane/independent-auditor` -> `876e1156`
-- `origin/lane/no-data-loss-invariants` -> `c55aab49`
+- `origin/lane/no-data-loss-invariants` -> `18c1df11`
 - `origin/lane/no-data-loss-recovery` -> `9e077c10`
 - `origin/lane/progress-publisher` -> `7695e1f9`
-- `origin/lane/reliable-executor` -> `9658b415`
+- `origin/lane/reliable-executor` -> `0a6de039`
 - `origin/lane/same-plan-wordpress-graph-create` -> `8dea1ca3`
 
 Fresh visibility-lane and invariants heads moved again, but they still do not change the release gate:
@@ -66,14 +66,14 @@ Fresh visibility-lane and invariants heads moved again, but they still do not ch
 - Since the last audit pass, the visible progress lanes advanced again:
 `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` ->
 `196ae0b2` and `origin/lane/cycle-20260525-mainwindows-2349/progress-followup`
--> `e36c0906`. That changes the freshness surface, not the release gate.
+-> `22018284`. That changes the freshness surface, not the release gate.
 - The current public-refresh branch heads remain:
 `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` ->
 `196ae0b2` and `origin/lane/cycle-20260525-mainwindows-2349/progress-followup`
--> `e36c0906`.
-- `origin/lane/reliable-executor` -> `9658b415`
-- `origin/lane/no-data-loss-invariants` -> `7dfb897d`
-- `origin/lane/no-data-loss-recovery` -> `2af1ddda`
+-> `22018284`.
+- `origin/lane/reliable-executor` -> `0a6de039`
+- `origin/lane/no-data-loss-invariants` -> `18c1df11`
+- `origin/lane/no-data-loss-recovery` -> `9e077c10`
 - `origin/main` -> `2c8d52cb`
 
 The current remote state still adds no production-backed auth/session
@@ -83,7 +83,7 @@ real source-site mutation boundary. The release gates still stay `0/4`.
 Fresh lane proof since the last audit pass improved the local evidence floor,
 but it did not change the release conclusion:
 
-- `origin/lane/reliable-executor` now records `9658b415`, hardening bounded
+- `origin/lane/reliable-executor` now records `0a6de039`, hardening bounded
   release-verify spawn handling. It still does not prove production
   auth/session lifecycle or a live-source mutation boundary.
 - `origin/lane/reliable-executor` now records `f1783e10`, hardening durable
