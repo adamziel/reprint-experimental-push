@@ -1166,7 +1166,7 @@ export function productionThroughputBlockers(report) {
   ) {
     blockers.push('production-row-batch-executor-without-atomic-commit');
   }
-  return blockers;
+  return [...new Set(blockers)];
 }
 
 export function productionThroughputClaim(report) {
