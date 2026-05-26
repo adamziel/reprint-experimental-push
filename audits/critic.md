@@ -1,15 +1,15 @@
 # Critic Verdict
 
-Current reliable head: `6611bfe2aba4a3ebc9d42545d41e51cf610360ca`
-(`Keep packaged cleanup seed available`).
+Current reliable head: `2a05f090b686dfd4b6de6f61a741cc0e9387d427`
+(`Carry direct auth session credentials into release verify`).
 
 Verdict: `0/4`
 
 Reason:
 
-- This head keeps the packaged cleanup seed available and adds proof coverage
-  for the packaged plugin smoke, but it still reads as packaged Playground
-  hardening rather than a checked production boundary crossing.
+- This head carries direct auth-session credentials into the checked release
+  verifier and adds request-state coverage, but it still reads as release
+  verify plumbing rather than a checked production boundary crossing.
 - The checked release path still lacks live production auth/session
   issuance/read/expiry/rotation/revocation/cleanup evidence, and it still does
   not prove production durable-journal ownership with restart-readable replay
