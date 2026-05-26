@@ -11433,6 +11433,7 @@ test('blocks comments graph resources while preserving matching independent edit
   assert.equal(plan.status, 'blocked');
   assert.equal(plan.summary.mutations, 1);
   assert.equal(blocker.class, 'unsupported-comments-users-resource');
+  assert.equal(blocker.resourceKind, 'comments-users');
   assert.equal(blocker.reason, 'Comments graph resources are not yet supported by the planner.');
   assert.equal(planJson.includes('Local comment'), false);
   assert.equal(planJson.includes('Base comment'), false);
@@ -11477,6 +11478,7 @@ test('blocks comments graph resources while preserving a matching independent fi
   assert.equal(plan.status, 'blocked');
   assert.equal(plan.summary.mutations, 0);
   assert.equal(blocker.class, 'unsupported-comments-users-resource');
+  assert.equal(blocker.resourceKind, 'comments-users');
   assert.equal(blocker.reason, 'Comments graph resources are not yet supported by the planner.');
   assert.equal(typeSwapDecision.decision, 'already-in-sync');
   assert.equal(typeSwapDecision.change.localChange, 'type-change');

@@ -2219,6 +2219,7 @@ function addUnsupportedCommentsUsersResourceBlocker(plan, {
   plan.blockers.push({
     id: `blocker-unsupported-comments-users-resource-${plan.blockers.length + 1}`,
     class: support.className || 'unsupported-comments-users-resource',
+    resourceKind: 'comments-users',
     resource,
     resourceKey: resource.key,
     reason: support.reason || `Comments and users graph resource ${resource.key} is not yet supported by the planner.`,
