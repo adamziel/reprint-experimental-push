@@ -1,16 +1,16 @@
-`cdea46fd` stays `0/4`.
+`ac41777479f04355b0017e77c2107d89dd66c01a` stays `0/4`.
 
-Audit time: 2026-05-26 15:13:59 CEST (+0200)
+Audit time: 2026-05-26 15:17:00 CEST (+0200)
 
 Current verdict:
-- `cdea46fd` prefers packaged auth session source wiring on the release verifier test surface.
+- `ac41777479f04355b0017e77c2107d89dd66c01a` prefers packaged auth session source wiring on the release verifier test surface.
 - It shows the checked release path can consume packaged source evidence more directly.
 - It does not prove production-backed auth/session lifecycle on the live `verify:release` boundary.
 - It does not establish production durable-journal ownership or restart-readable production storage semantics.
 
 Changed files:
 - [`audits/objective-audit.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/independent-auditor-current-20260526-1424/audits/objective-audit.md)
-- [`audits/current-head-cdea46fd.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/independent-auditor-current-20260526-1424/audits/current-head-cdea46fd.md)
+- [`audits/current-head-ac417774.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/independent-auditor-current-20260526-1424/audits/current-head-ac417774.md)
 - [`.lane-output/final.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/independent-auditor-current-20260526-1424/.lane-output/final.md)
 
 Commands run:
