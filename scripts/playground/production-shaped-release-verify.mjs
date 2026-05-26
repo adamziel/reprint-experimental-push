@@ -17,6 +17,7 @@ import {
 import {
   evaluateProductionAuthSessionLifecycle,
   evaluateProductionAuthSessionLifecycleSummary,
+  summarizeProductionAuthSessionLifecycleTrace,
 } from './production-auth-session-lifecycle.js';
 import {
   bindPackagedProductionPluginRuntimeSource,
@@ -946,7 +947,9 @@ try {
         changedHash: snapshotHash(remoteChangedSnapshot),
         changedFixture: remoteChangedSnapshot.meta?.fixture,
       };
-      const authSessionLifecycleSummary = summarizeAuthSessionLifecycle(proof.authSessionLifecycleTrace);
+      const authSessionLifecycleSummary =
+        proof.authSessionLifecycleSummary
+        || summarizeProductionAuthSessionLifecycleTrace(proof.authSessionLifecycleTrace);
       const checkedAuthSessionLifecycle = evaluateProductionAuthSessionLifecycleSummary(authSessionLifecycleSummary);
       if (!checkedAuthSessionLifecycle.ok) {
         process.stdout.write(
@@ -1941,45 +1944,6 @@ http.Server.prototype.listen = function reprintPushLocalhostListen(...args) {
 };
 `;
   return `--import=data:text/javascript,${encodeURIComponent(source)}`;
-}
-
-function summarizeAuthSessionLifecycle(trace) {
-  if (!Array.isArray(trace) || trace.length === 0) {
-    return null;
-  }
-
-  const observations = trace
-    .filter((entry) => entry && typeof entry === 'object')
-    .map((entry) => ({
-      step: entry.step ?? null,
-      id: entry.id ?? null,
-      type: entry.type ?? null,
-      status: entry.status ?? null,
-      expiresAt: entry.expiresAt ?? null,
-      expired: Boolean(entry.expired),
-      revoked: Boolean(entry.revoked),
-      cleanedUp: Boolean(entry.cleanedUp),
-      rotated: Boolean(entry.rotated),
-      preserved: Boolean(entry.preserved),
-    }));
-  const readObservation = [...observations]
-    .reverse()
-    .find((entry) => entry.step === 'journal'
-      || entry.step === 'replay'
-      || entry.step === 'apply'
-      || entry.step === 'dry-run'
-      || entry.step === 'preflight') ?? null;
-
-  return {
-    issued: observations[0] ?? null,
-    read: readObservation,
-    expired: observations.find((entry) => entry.expired) ?? null,
-    revoked: observations.find((entry) => entry.revoked) ?? null,
-    cleanedUp: observations.find((entry) => entry.cleanedUp) ?? null,
-    rotated: observations.find((entry) => entry.rotated) ?? null,
-    preserved: observations.find((entry) => entry.preserved) ?? null,
-    observations,
-  };
 }
 
 async function waitForServer(child, baseUrl, getLogs) {

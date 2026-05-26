@@ -166,3 +166,42 @@ export function evaluateProductionAuthSessionLifecycleSummary(summary, now = Dat
     observed: 'active-unexpired-preserved',
   };
 }
+
+export function summarizeProductionAuthSessionLifecycleTrace(trace) {
+  if (!Array.isArray(trace) || trace.length === 0) {
+    return null;
+  }
+
+  const observations = trace
+    .filter((entry) => entry && typeof entry === 'object')
+    .map((entry) => ({
+      step: entry.step ?? null,
+      id: entry.id ?? null,
+      type: entry.type ?? null,
+      status: entry.status ?? null,
+      expiresAt: entry.expiresAt ?? null,
+      expired: Boolean(entry.expired),
+      revoked: Boolean(entry.revoked),
+      cleanedUp: Boolean(entry.cleanedUp),
+      rotated: Boolean(entry.rotated),
+      preserved: Boolean(entry.preserved),
+    }));
+  const readObservation = [...observations]
+    .reverse()
+    .find((entry) => entry.step === 'journal'
+      || entry.step === 'replay'
+      || entry.step === 'apply'
+      || entry.step === 'dry-run'
+      || entry.step === 'preflight') ?? null;
+
+  return {
+    issued: observations[0] ?? null,
+    read: readObservation,
+    expired: observations.find((entry) => entry.expired) ?? null,
+    revoked: observations.find((entry) => entry.revoked) ?? null,
+    cleanedUp: observations.find((entry) => entry.cleanedUp) ?? null,
+    rotated: observations.find((entry) => entry.rotated) ?? null,
+    preserved: observations.find((entry) => entry.preserved) ?? null,
+    observations,
+  };
+}
