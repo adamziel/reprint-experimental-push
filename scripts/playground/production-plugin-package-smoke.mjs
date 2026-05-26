@@ -105,6 +105,7 @@ try {
     driverDeleteApply: {},
     driverDeleteGuard: {},
     driverUpdateValidationGuard: {},
+    driverReceiptIdentityGuard: {},
     final: {},
   };
 
@@ -433,6 +434,60 @@ try {
       rowRetainedAfterReject: afterInvalidUpdateReject.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1'] !== undefined,
       updatedMarkerAfterReject: afterInvalidUpdateReject.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1']?.updated_marker,
     };
+
+    const alternateClient = authenticatedHttpClient({
+      sourceUrl: server.baseUrl,
+      credential: alternateCredentials,
+      routeProfile: 'production-shaped',
+    });
+    const alternatePreflight = await alternateClient.signedGet('/preflight');
+    assert.equal(alternatePreflight.status, 200);
+    assert.equal(alternatePreflight.body?.ok, true);
+    const alternateSession = alternatePreflight.body?.session?.id;
+    assert.equal(typeof alternateSession, 'string');
+    assert.ok(alternateSession.length > 0, 'alternate packaged signed preflight did not return a session id');
+
+    const identityMismatchApply = await alternateClient.signedPost(
+      '/apply',
+      {
+        plan: updatePlan,
+        receipt: updateDryRun.body.receipt,
+      },
+      {
+        session: alternateSession,
+        idempotencyKey: 'production-plugin-driver-identity-mismatch-apply',
+      },
+    );
+    assert.equal(identityMismatchApply.status, 409);
+    assert.equal(identityMismatchApply.body?.ok, false);
+    assert.equal(identityMismatchApply.body?.code, 'AUTH_RECEIPT_MISMATCH');
+
+    const afterIdentityMismatchReject = await client.get('/snapshot');
+    assert.equal(afterIdentityMismatchReject.status, 200);
+    assert.equal(afterIdentityMismatchReject.body?.ok, true);
+    assert.equal(
+      afterIdentityMismatchReject.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1']?.updated_marker,
+      'local-update',
+      'identity-mismatched packaged apply still mutated the remote snapshot',
+    );
+    assert.deepEqual(
+      afterIdentityMismatchReject.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1']?.payload,
+      {
+        owner: driverFixture.pluginOwner,
+        mode: 'local-update',
+        version: 2,
+      },
+      'identity-mismatched packaged apply changed the arbitrary driver payload',
+    );
+
+    summary.driverReceiptIdentityGuard = {
+      resourceKey: driverFixture.resourceKey,
+      mismatchedUser: alternateCredentials.username,
+      applyRejectedCode: identityMismatchApply.body?.code,
+      applyRejectedMessage: identityMismatchApply.body?.message,
+      rowRetainedAfterReject: afterIdentityMismatchReject.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1'] !== undefined,
+      updatedMarkerAfterReject: afterIdentityMismatchReject.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1']?.updated_marker,
+    };
   });
 
   await withPlaygroundServer('production-plugin-driver-delete-apply', driverDeleteServerBlueprintPath, pluginDir, async (server) => {
@@ -667,6 +722,15 @@ function writeDriverFixtureBlueprint(
         "require_once '/wordpress/wp-load.php';",
         '$result = reprint_push_lab_rest_provision_push_application_password(array(\'login\' => \'reprint_push_admin\', \'appPassword\' => \'reprint-push-admin-app-password\', \'role\' => \'administrator\', \'slug\' => \'primary-admin\', \'name\' => \'Reprint Push Package Smoke\', \'createUser\' => true, \'updateRole\' => true));',
         'if (empty($result[\'ok\'])) { throw new RuntimeException((string) ($result[\'message\'] ?? \'push credential provisioning failed\')); }',
+      ].join(' '),
+    });
+    blueprint.steps.push({
+      step: 'runPHP',
+      code: [
+        '<?php',
+        "require_once '/wordpress/wp-load.php';",
+        '$result = reprint_push_lab_rest_provision_push_application_password(array(\'login\' => \'reprint_push_alt_admin\', \'appPassword\' => \'reprint-push-alt-admin-app-password\', \'role\' => \'administrator\', \'slug\' => \'alternate-admin\', \'name\' => \'Reprint Push Package Smoke Alt\', \'createUser\' => true, \'updateRole\' => true));',
+        'if (empty($result[\'ok\'])) { throw new RuntimeException((string) ($result[\'message\'] ?? \'alternate push credential provisioning failed\')); }',
       ].join(' '),
     });
   }
