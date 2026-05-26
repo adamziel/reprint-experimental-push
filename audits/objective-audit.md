@@ -4,14 +4,14 @@
 
 The project is **not releasable as a production WordPress push path**.
 
-- Audit time: 2026-05-26 10:02:14 CEST (+0200)
+- Audit time: 2026-05-26 10:05:58 CEST (+0200)
 - Fresh remote heads re-polled at audit time:
-  - `origin/lane/reliable-executor` -> `22fadd9f`
+  - `origin/lane/reliable-executor` -> `37b86e96`
   - `origin/lane/no-data-loss-invariants` -> `19c32bb9`
-  - `origin/lane/no-data-loss-recovery` -> `1d933be5`
+  - `origin/lane/no-data-loss-recovery` -> `7d487b63`
   - `origin/lane/critic` -> `2312a594`
-  - `origin/lane/progress-publisher` -> `7695e1f9`
-  - `origin/lane/feedback-supervisor` -> `e61b7058`
+  - `origin/lane/progress-publisher` -> `46b0e7dd`
+  - `origin/lane/feedback-supervisor` -> `62ca0843`
 
 ## Evidence Table
 
@@ -25,11 +25,11 @@ The project is **not releasable as a production WordPress push path**.
 
 ## Release Blockers
 
-1. `reliable-executor` now has stronger auth/session lifecycle checks in `22fadd9f`, but it still only proves fail-closed support behavior and boundary reporting. It does not establish production-backed auth/session lifecycle, canonical replay on a live source, or durable journal ownership on the release path.
-2. `no-data-loss-recovery` still fences recovery paths, and `1d933be5` tightens recovery lease ownership, but it still does not prove restart-readable durable artifacts owned by the production release path.
+1. `reliable-executor` now has stronger replay proof expectations in `37b86e96`, but it still only proves fail-closed support behavior and boundary reporting. It does not establish production-backed auth/session lifecycle, canonical replay on a live source, or durable journal ownership on the release path.
+2. `no-data-loss-recovery` still fences recovery paths, and `7d487b63` tightens inherited journal kind failure handling, but it still does not prove restart-readable durable artifacts owned by the production release path.
 3. `no-data-loss-invariants` now shows additional unsupported-surface blocking, but `19c32bb9`, `5f5a2f8a`, `6cd23be4`, `3998cb83`, `7400e3eb`, `eed6af9f`, `63baa64d`, `c1cc6e93`, `ad57d11a`, `93a4a4eb`, `8b6c8bca`, `3f5e4919`, `60d398ba`, `22ac2d21`, `56fd6a3a`, `7d614106`, `38e14784`, `b12d7401`, `ff1c8e35`, and `5e76166e` still do not prove the live production mutation boundary.
 4. `critic` refreshed the auth-session evidence in `2312a594`, but that is still a critique update rather than release proof.
-5. `progress-publisher` and `feedback-supervisor` only moved visible freshness. That is useful for visibility, but it does not move a release gate.
+5. `progress-publisher` and `feedback-supervisor` only moved visible freshness in `46b0e7dd` and `62ca0843`. That is useful for visibility, but it does not move a release gate.
 
 ## Conclusion
 
