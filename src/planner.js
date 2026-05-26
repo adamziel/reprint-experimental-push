@@ -233,6 +233,10 @@ export function createPushPlan({ base, local, remote, now = new Date() }) {
         baseValue,
         localValue,
         remoteValue,
+        resources,
+        base,
+        local,
+        remote,
       });
       if (!navigationSupport.supported) {
         addUnsupportedNavigationResourceBlocker(plan, {
@@ -2017,6 +2021,7 @@ function addPluginOwnedResourceBlocker(plan, {
       localHash,
       remoteHash,
     ),
+    references: support.references || [],
   });
 }
 
@@ -2053,6 +2058,7 @@ function addPluginContextBlocker(plan, {
       localHash,
       remoteHash,
     ),
+    references: support.references || [],
   });
 }
 
@@ -2120,6 +2126,7 @@ function addUnsupportedNavigationResourceBlocker(plan, {
       localHash,
       remoteHash,
     ),
+    references: support.references || [],
   });
 }
 
@@ -2488,7 +2495,7 @@ function addConflict(plan, {
   });
 }
 
-function unsupportedNavigationResourceSupport({ resource, baseValue, localValue, remoteValue }) {
+function unsupportedNavigationResourceSupport({ resource, baseValue, localValue, remoteValue, resources, base, local, remote }) {
   if (resource.type !== 'row' || resource.table !== 'wp_posts') {
     return { supported: true };
   }
@@ -2502,10 +2509,32 @@ function unsupportedNavigationResourceSupport({ resource, baseValue, localValue,
     return { supported: true };
   }
 
+  const inboundReferences = resources
+    .filter((sourceResource) => sourceResource.type === 'row')
+    .flatMap((sourceResource) => {
+      const sourceLocalValue = getResource(local, sourceResource);
+      if (sourceLocalValue === ABSENT) {
+        return [];
+      }
+      return wordpressGraphReferences(sourceResource, sourceLocalValue)
+        .filter((reference) => reference.targetResourceKey === resource.key)
+        .map((reference) =>
+          wordpressGraphReferenceEvidence(reference, resources, base, local, remote));
+    })
+    .filter((reference) =>
+      reference.relationshipType === 'menu-item-parent'
+      || reference.relationshipType === 'post-parent');
+
+  const navigationReference = inboundReferences.find((reference) => (
+    reference.relationshipType === 'menu-item-parent'
+    || reference.relationshipType === 'post-parent'
+  ));
+
   return {
     supported: false,
     className: 'unsupported-navigation-resource',
     reason: 'Navigation and menu graph resources are not yet supported by the planner.',
+    references: navigationReference ? [navigationReference] : [],
   };
 }
 
