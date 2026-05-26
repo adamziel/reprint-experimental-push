@@ -15,6 +15,8 @@ Commands run
 - `git diff -- audits/objective-audit.md .lane-output/final.md`
 - `git status --short --branch && git rev-parse --short HEAD`
 - `git for-each-ref --sort=-committerdate --format='%(refname:short) %(objectname:short) %(committerdate:iso8601) %(subject)' refs/remotes/origin/lane | head -n 30`
+- `git diff -- audits/objective-audit.md .lane-output/final.md`
+- `git status --short --branch`
 
 Push result
 - Not pushed yet
