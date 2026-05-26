@@ -6,16 +6,16 @@ linked implementation artifacts.
 
 ## 2026-05-26 - Release Journal Smoke Refresh
 
-- Last update: 2026-05-26 11:10 CEST.
-- Status: `origin/lane/reliable-executor` now points at `5fd9dfb4` for the
-  release-journal smoke, and the public progress page has been aligned to that
-  head.
+- Last update: 2026-05-26 11:13 CEST.
+- Status: `origin/lane/reliable-executor` now points at `5fd9dfb4` as the
+  current reliable head for the release-journal smoke, and the public progress
+  page has been aligned to that head.
 - New proof: the release-journal smoke is now the visible current reliable-head
   evidence on the public page, while the tracked gates remain at `0/4`.
 - Trend: progress freshness improved, but the release gate posture did not move.
-- Supervision: the visible page now names the release-journal smoke, keeps the
-  conservative gate posture, and links the detailed evidence instead of
-  repeating stale head wording.
+- Supervision: the visible page now names `5fd9dfb4` as the current reliable
+  head, keeps the conservative gate posture, and links the detailed evidence
+  instead of repeating stale head wording.
 - Blocker: production auth/session lifecycle, durable storage, leases/fencing,
   full graph identity mapping, Docker/full Playground integration, and
   arbitrary plugin drivers remain unproven.
