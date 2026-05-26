@@ -2493,6 +2493,8 @@ function summarizeProductionCapabilityRollout({
       [
         'backpressure-evidence-incomplete',
         'queue-budget-does-not-match-resource-ceiling',
+        'queue-memory-ceiling-does-not-match-queue-budget',
+        'queue-headroom-exceeds-resource-ceiling',
         'production-parallelism-limits-not-measured',
         'production-parallelism-limits-not-integral',
         'production-parallelism-limits-not-canonical',
@@ -2525,6 +2527,8 @@ function summarizeProductionCapabilityRollout({
       parallelismLimitsVisible && queueBudgetMatchesResourceCeiling,
       [
         'queue-budget-does-not-match-resource-ceiling',
+        'queue-memory-ceiling-does-not-match-queue-budget',
+        'queue-headroom-exceeds-resource-ceiling',
         'production-parallelism-limits-not-measured',
         'production-parallelism-limits-not-integral',
         'production-parallelism-limits-not-canonical',
@@ -2552,6 +2556,8 @@ function summarizeProductionCapabilityRollout({
         && parallelismLimitsVisible,
       [
         'queue-budget-does-not-match-resource-ceiling',
+        'queue-memory-ceiling-does-not-match-queue-budget',
+        'queue-headroom-exceeds-resource-ceiling',
         'production-atomic-group-commit-not-measured',
         'production-atomic-group-commit-not-visible',
         'production-atomic-group-commit-visible-without-measurement',
