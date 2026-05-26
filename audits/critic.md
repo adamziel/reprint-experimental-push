@@ -1,26 +1,25 @@
 # Critic Verdict
 
-Current reliable head: `593f7af0be408c6acb8d521e4e8c77f99af0a805`
-(`Unblock packaged release boundary proof`).
+Current reliable head: `e333ae73f418a2e02517d0535c785fdc090d60f8`
+(`Assert packaged stale claim retry proof`).
 
 Verdict: `0/4`
 
 Reason:
 
-- This head reports a checked packaged release verifier result with top-level
-  `ok: true`, `releaseProof.ok: true`, preflight `200`, active preserved
-  `production-auth-session` lifecycle history, and
-  `durableJournal.packagedAccepted: true`, which is real release-path
-  progress.
-- It is still packaged proof rather than the exact remaining production
-  boundary, so the gate remains closed.
-- The missing gate after this commit is the exact production boundary not yet
-  covered by the checked packaged proof, most likely preserved-remote retry or
+- This head adds a stale-claim retry assertion to the packaged release proof
+  test, which is useful retry-surface evidence.
+- It still lives on the packaged verifier path and does not prove the checked
+  production boundary itself.
+- The missing gate after this commit is still the exact production boundary
+  not yet covered by the checked proof, most likely production-backed
+  auth/session lifecycle, preserved-remote retry on the live release path, or
   stricter production durable-journal semantics.
 
 Next owner / command:
 
 - `main:reliable-exec` should keep working in
   `scripts/playground/production-shaped-release-verify.mjs`, with the next
-  useful result being the production auth/session lifecycle boundary or an
-  exact `GATE CODE BLOCKED:` handoff naming the missing file/function/command.
+  useful result being the production auth/session lifecycle boundary, live
+  preserved-remote retry, or an exact `GATE CODE BLOCKED:` handoff naming the
+  missing file/function/command.
