@@ -264,6 +264,13 @@ export function openProductionRecoveryJournal(filePathOrOptions, options = {}) {
     ownsRemoteArtifact,
     remoteArtifactPath,
   });
+  assertPersistedProductionClaimLeaseMatchesWriterLease({
+    filePath,
+    claimId,
+    writerLease,
+    ownsRemoteArtifact,
+    remoteArtifactPath,
+  });
 
   const persistedArtifactRefs = persistedProductionArtifactRefs(filePath);
   if (persistedArtifactRefs.invalidReason) {
@@ -1044,6 +1051,56 @@ function assertProductionClaimIdentityMatchesWriterLease({
           journal: filePath,
           remote: remoteArtifactPath,
         }),
+        schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+      },
+    );
+  }
+}
+
+function assertPersistedProductionClaimLeaseMatchesWriterLease({
+  filePath,
+  claimId,
+  writerLease,
+  ownsRemoteArtifact,
+  remoteArtifactPath,
+}) {
+  if (!isValidProductionWriterLease(writerLease)) {
+    return;
+  }
+
+  const persisted = readRecoveryJournal(filePath);
+  if (persisted.integrity?.status !== 'ok') {
+    return;
+  }
+
+  const claim = classifyRecoveryJournalClaims(persisted.records);
+  if (
+    claim.status === 'none'
+    || claim.status === 'blocked'
+    || !isValidProductionWriterLease(claim.activeClaimLease)
+    || claim.activeClaimLease.id !== claimId
+    || !Object.hasOwn(claim.activeClaimLease, 'epoch')
+  ) {
+    return;
+  }
+
+  if (!productionLeaseIdentitiesMatch(claim.activeClaimLease, writerLease)) {
+    throw new UnsupportedProductionRecoveryJournalError(
+      'Production recovery journal support requires reopening with the persisted fenced writer lease.',
+      {
+        kind: 'production-recovery-journal',
+        productionAdapter: true,
+        supportedSurface: 'production-recovery-journal-adapter',
+        restartReadable: true,
+        ownsJournal: true,
+        ownsRemoteArtifact,
+        writerLease,
+        journalPath: filePath,
+        artifactRefs: Object.freeze({
+          journal: filePath,
+          remote: remoteArtifactPath,
+        }),
+        activeClaimLease: claim.activeClaimLease,
         schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
       },
     );
