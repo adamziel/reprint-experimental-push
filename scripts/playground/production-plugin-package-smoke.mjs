@@ -67,6 +67,7 @@ const driverDeleteServerBlueprintPath = path.join(tmpDir, 'remote-base-with-driv
 const driverMissingExportServerBlueprintPath = path.join(tmpDir, 'remote-base-with-driver-fixture-missing-export-server.blueprint.json');
 const driverMissingApplyServerBlueprintPath = path.join(tmpDir, 'remote-base-with-driver-fixture-missing-apply-server.blueprint.json');
 const driverMissingValidateServerBlueprintPath = path.join(tmpDir, 'remote-base-with-driver-fixture-missing-validate-server.blueprint.json');
+const driverMissingNameServerBlueprintPath = path.join(tmpDir, 'remote-base-with-driver-fixture-missing-name-server.blueprint.json');
 const driverMissingPluginOwnerServerBlueprintPath = path.join(tmpDir, 'remote-base-with-driver-fixture-missing-plugin-owner-server.blueprint.json');
 const driverMissingTableServerBlueprintPath = path.join(tmpDir, 'remote-base-with-driver-fixture-missing-table-server.blueprint.json');
 const driverDuplicateNameServerBlueprintPath = path.join(tmpDir, 'remote-base-with-driver-fixture-duplicate-name-server.blueprint.json');
@@ -104,6 +105,11 @@ try {
     activatePackagedPlugin: true,
     provisionAuth: true,
     omitValidateMutationCallback: true,
+  });
+  writeDriverFixtureBlueprint(path.join(repoRoot, fixtures.base), driverMissingNameServerBlueprintPath, {
+    activatePackagedPlugin: true,
+    provisionAuth: true,
+    blankDriverName: true,
   });
   writeDriverFixtureBlueprint(path.join(repoRoot, fixtures.base), driverMissingPluginOwnerServerBlueprintPath, {
     activatePackagedPlugin: true,
@@ -159,6 +165,7 @@ try {
     driverExportGuard: {},
     driverApplyGuard: {},
     driverValidateGuard: {},
+    driverMissingNameGuard: {},
     driverPluginOwnerGuard: {},
     driverMissingTableGuard: {},
     driverDuplicateNameGuard: {},
@@ -953,6 +960,27 @@ try {
     };
   });
 
+  await withPlaygroundServer('production-plugin-driver-missing-name-guard', driverMissingNameServerBlueprintPath, pluginDir, async (server) => {
+    const malformedSnapshot = await requestText(
+      server.baseUrl,
+      'GET',
+      '/wp-json/reprint/v1/push/snapshot',
+      undefined,
+      authHeaders(),
+    );
+    assert.equal(malformedSnapshot.status, 500);
+    assert.match(
+      malformedSnapshot.text,
+      /missing driver name for table: wp_reprint_push_driver_fixture/i,
+      'packaged snapshot did not fail closed on a plugin-owned driver registration without a driver name',
+    );
+
+    summary.driverMissingNameGuard = {
+      status: malformedSnapshot.status,
+      missingDriverName: /missing driver name for table: wp_reprint_push_driver_fixture/i.test(malformedSnapshot.text),
+    };
+  });
+
   await withPlaygroundServer('production-plugin-driver-missing-plugin-owner-guard', driverMissingPluginOwnerServerBlueprintPath, pluginDir, async (server) => {
     const malformedSnapshot = await requestText(
       server.baseUrl,
@@ -1140,6 +1168,7 @@ function writeDriverFixtureBlueprint(
     omitExportRowsCallback = false,
     omitApplyRowCallback = false,
     omitValidateMutationCallback = false,
+    blankDriverName = false,
     omitPluginOwner = false,
     duplicateDriverName = false,
     duplicateTable = false,
@@ -1156,6 +1185,7 @@ function writeDriverFixtureBlueprint(
     omitExportRowsCallback,
     omitApplyRowCallback,
     omitValidateMutationCallback,
+    blankDriverName,
     omitPluginOwner,
     duplicateDriverName,
     duplicateTable,
@@ -1228,6 +1258,7 @@ function driverFixturePluginPhp({
   omitExportRowsCallback = false,
   omitApplyRowCallback = false,
   omitValidateMutationCallback = false,
+  blankDriverName = false,
   omitPluginOwner = false,
   omitTable = false,
   duplicateDriverName = false,
@@ -1251,7 +1282,7 @@ Version: 0.0.1
 
 add_filter('reprint_push_plugin_owned_row_drivers', static function (array $drivers): array {
     $drivers['${driverFixture.driver}'] = [
-        'driver' => '${driverFixture.driver}',
+        'driver' => '${blankDriverName ? '' : driverFixture.driver}',
 ${omitTable ? '' : `        'table' => '${driverFixture.table}',`}
 ${omitPluginOwner ? '' : `        'pluginOwner' => '${driverFixture.pluginOwner}',`}
         'supportsDelete' => ${supportsDelete ? 'true' : 'false'},

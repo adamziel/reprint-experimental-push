@@ -42,6 +42,33 @@ function runSupportCheck(resource) {
   });
 }
 
+function runDriverRegistryCheck(drivers) {
+  return spawnSync('php', [
+    '-r',
+    [
+      'function apply_filters($tag, $value) {',
+      '  if ($tag === "reprint_push_plugin_owned_row_drivers") {',
+      '    return json_decode($GLOBALS["argv"][2], true);',
+      '  }',
+      '  return $value;',
+      '}',
+      'require $argv[1];',
+      'try {',
+      '  $drivers = reprint_push_plugin_owned_row_drivers();',
+      '  fwrite(STDOUT, json_encode($drivers));',
+      '} catch (Throwable $error) {',
+      '  fwrite(STDERR, $error->getMessage());',
+      '  exit(2);',
+      '}',
+    ].join(' '),
+    snapshotLib,
+    JSON.stringify(drivers),
+  ], {
+    cwd: repoRoot,
+    encoding: 'utf8',
+  });
+}
+
 test('snapshot apply gate allows only named lab plugin resources', { skip: !hasPhp }, () => {
   assertSupported({ type: 'plugin', name: 'reprint-push-forms-fixture' });
   assertSupported({ type: 'plugin', name: 'reprint-push-atomic-dependency-fixture' });
@@ -94,5 +121,24 @@ test('snapshot apply gate allows only exact forms lab custom table rows', { skip
   assertRejected(
     { type: 'row', table: 'wp_forms_entries', id: 'entry_id:9' },
     /Unsupported apply table/,
+  );
+});
+
+test('plugin-owned driver registry rejects whitespace-only driver names', { skip: !hasPhp }, () => {
+  const result = runDriverRegistryCheck({
+    'fixture-driver': {
+      driver: '   ',
+      table: 'wp_reprint_push_driver_fixture',
+      pluginOwner: 'driver-fixture',
+      exportRowsCallback: 'fixture_export_rows',
+      applyRowCallback: 'fixture_apply_row',
+      validateMutationCallback: 'fixture_validate_mutation',
+    },
+  });
+
+  assert.equal(result.status, 2);
+  assert.match(
+    result.stderr,
+    /missing driver name for table: wp_reprint_push_driver_fixture/,
   );
 });

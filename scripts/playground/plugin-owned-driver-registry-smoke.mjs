@@ -19,6 +19,7 @@ const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'reprint-plugin-driver-regi
 const baseBlueprintPath = path.join(tmpDir, 'base.blueprint.json');
 const localBlueprintPath = path.join(tmpDir, 'local.blueprint.json');
 const malformedValidateBlueprintPath = path.join(tmpDir, 'missing-validate.blueprint.json');
+const missingDriverNameBlueprintPath = path.join(tmpDir, 'missing-driver-name.blueprint.json');
 const missingPluginOwnerBlueprintPath = path.join(tmpDir, 'missing-plugin-owner.blueprint.json');
 const missingTableBlueprintPath = path.join(tmpDir, 'missing-table.blueprint.json');
 const duplicateDriverNameBlueprintPath = path.join(tmpDir, 'duplicate-driver-name.blueprint.json');
@@ -41,6 +42,11 @@ try {
     payloadMode: 'base',
     updatedMarker: 'base',
     omitValidateMutationCallback: true,
+  });
+  writeBlueprint(missingDriverNameBlueprintPath, {
+    payloadMode: 'base',
+    updatedMarker: 'base',
+    blankDriverName: true,
   });
   writeBlueprint(missingPluginOwnerBlueprintPath, {
     payloadMode: 'base',
@@ -123,6 +129,14 @@ try {
     /missing pluginOwner for driver: fixture-arbitrary-plugin-table/i,
   );
 
+  const missingDriverNameExport = exportSnapshotFailure('missing-driver-name', missingDriverNameBlueprintPath);
+  assert.equal(missingDriverNameExport.ok, false);
+  assert.equal(missingDriverNameExport.error?.class, 'RuntimeException');
+  assert.match(
+    missingDriverNameExport.error?.message || '',
+    /missing driver name for table: wp_reprint_push_driver_fixture/i,
+  );
+
   const missingTableExport = exportSnapshotFailure('missing-table', missingTableBlueprintPath);
   assert.equal(missingTableExport.ok, false);
   assert.equal(missingTableExport.error?.class, 'RuntimeException');
@@ -168,6 +182,7 @@ try {
     updateVerified: protocolApply.verified,
     deleteVerified: protocolDelete.verified,
     malformedValidateGuard: malformedApply.error?.class,
+    missingDriverNameGuard: missingDriverNameExport.error?.class,
     missingPluginOwnerGuard: missingPluginOwnerExport.error?.class,
     missingTableGuard: missingTableExport.error?.class,
     duplicateDriverNameGuard: duplicateDriverNameExport.error?.class,
@@ -185,6 +200,7 @@ function writeBlueprint(
     payloadMode,
     updatedMarker,
     omitValidateMutationCallback = false,
+    blankDriverName = false,
     omitPluginOwner = false,
     omitTable = false,
     duplicateDriverName = false,
@@ -201,7 +217,7 @@ Version: 0.0.1
 
 add_filter('reprint_push_plugin_owned_row_drivers', static function (array $drivers): array {
     $drivers['${driverName}'] = [
-        'driver' => '${driverName}',
+        'driver' => '${blankDriverName ? '' : driverName}',
 ${omitTable ? '' : `        'table' => '${driverTable}',`}
 ${omitPluginOwner ? '' : `        'pluginOwner' => '${pluginOwner}',`}
         'supportsDelete' => true,

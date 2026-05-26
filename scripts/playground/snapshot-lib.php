@@ -1504,9 +1504,9 @@ function reprint_push_plugin_owned_row_drivers(): array
         if (!is_array($driver)) {
             continue;
         }
-        $driver_name = (string) ($driver['driver'] ?? $name);
-        $table = (string) ($driver['table'] ?? '');
-        $plugin_owner = (string) ($driver['pluginOwner'] ?? '');
+        $driver_name = trim((string) ($driver['driver'] ?? $name));
+        $table = trim((string) ($driver['table'] ?? ''));
+        $plugin_owner = trim((string) ($driver['pluginOwner'] ?? ''));
         if ($driver_name === '') {
             throw new RuntimeException('Plugin-owned driver registry is missing driver name for table: ' . $table);
         }
