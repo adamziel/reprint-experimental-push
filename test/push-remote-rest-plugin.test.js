@@ -864,6 +864,70 @@ test('checked db journal merge upgrades stale nested checked-boundary booleans e
   });
 });
 
+test('checked db journal merge upgrades nested writer lease evidence when the authoritative checked contract is already accepted', { skip: !hasPhp }, () => {
+  const result = runMerge(
+    {
+      scope: 'packaged production plugin journal surface; not local Playground fixture only',
+      acceptedOnCheckedBoundary: true,
+      leaseFence: {
+        boundary: 'wpdb-single-statement-cas',
+        claimKeyUnique: true,
+        monotonicSequence: true,
+        restartReadable: true,
+        writerLease: {
+          strategy: 'claim-fenced-single-writer',
+          claimKeyUnique: false,
+          storageGuard: 'local-playground-fence',
+          monotonicSequence: false,
+          restartReadable: false,
+          staleClaimRejected: false,
+        },
+        staleClaimRejected: false,
+      },
+    },
+    {
+      scope: 'packaged production plugin journal surface; not local Playground fixture only',
+      acceptedOnCheckedBoundary: true,
+      leaseFence: {
+        boundary: 'wpdb-single-statement-cas',
+        claimKeyUnique: true,
+        monotonicSequence: true,
+        restartReadable: true,
+        writerLease: {
+          strategy: 'claim-fenced-single-writer',
+          claimKeyUnique: true,
+          storageGuard: 'wpdb-single-statement-cas',
+          monotonicSequence: true,
+          restartReadable: true,
+          staleClaimRejected: false,
+        },
+        staleClaimRejected: false,
+      },
+    },
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  assert.deepEqual(JSON.parse(result.stdout), {
+    scope: 'packaged production plugin journal surface; not local Playground fixture only',
+    acceptedOnCheckedBoundary: true,
+    leaseFence: {
+      boundary: 'wpdb-single-statement-cas',
+      claimKeyUnique: true,
+      monotonicSequence: true,
+      restartReadable: true,
+      writerLease: {
+        strategy: 'claim-fenced-single-writer',
+        claimKeyUnique: true,
+        storageGuard: 'wpdb-single-statement-cas',
+        monotonicSequence: true,
+        restartReadable: true,
+        staleClaimRejected: false,
+      },
+      staleClaimRejected: false,
+    },
+  });
+});
+
 test('checked db journal merge upgrades stale fixture-style nested checked-boundary strings without overriding custom inline adapters', { skip: !hasPhp }, () => {
   const result = runMerge(
     {

@@ -715,6 +715,16 @@ function reprint_push_lab_rest_merge_checked_contract_fields(
     $merged = $existing;
 
     foreach ($checked as $key => $value) {
+        if (is_array($value)) {
+            $merged[$key] = reprint_push_lab_rest_merge_checked_contract_fields(
+                isset($merged[$key]) && is_array($merged[$key]) ? $merged[$key] : [],
+                $value,
+                $prefer_checked,
+                $prefer_authoritative_checked
+            );
+            continue;
+        }
+
         if (
             !array_key_exists($key, $merged)
             || $merged[$key] === null
