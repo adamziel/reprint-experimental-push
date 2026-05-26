@@ -11388,7 +11388,6 @@ test('blocks unknown plugin-owned custom table deletes while preserving matching
 
   const plan = planFor(base, local, remote);
   const blocker = plan.blockers[0];
-  const matchingEdit = decisionFor(plan, 'file:about.php');
   const pluginDecision = decisionFor(plan, 'plugin:forms');
   const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
   const blockerJson = JSON.stringify(blocker);
@@ -37677,6 +37676,47 @@ test('blocks local post GUID changes while preserving a matching independent fil
   assert.equal(fileDecision.decision, 'already-in-sync');
   assert.equal(fileDecision.change.localChange, 'type-change');
   assert.equal(fileDecision.change.remoteChange, 'type-change');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+});
+
+test('blocks legacy link resource updates while preserving a matching independent delete and remote-only plugin removals', () => {
+  const resourceKey = 'row:["wp_links","link_id:21"]';
+  const base = baseSite();
+  base.db.wp_links = {
+    'link_id:21': { link_id: 21, link_url: 'https://example.test', link_name: 'Base link' },
+  };
+  base.files['about.php'] = '<?php echo "base about";';
+
+  const local = baseSite();
+  local.db.wp_links = {
+    'link_id:21': { link_id: 21, link_url: 'https://example.test', link_name: 'Local link' },
+  };
+  delete local.files['index.php'];
+  local.files['about.php'] = '<?php echo "base about";';
+
+  const remote = baseSite();
+  remote.db.wp_links = {
+    'link_id:21': { link_id: 21, link_url: 'https://example.test', link_name: 'Base link' },
+  };
+  delete remote.files['index.php'];
+  remote.files['about.php'] = '<?php echo "base about";';
+  remote.plugins.forms.description = 'remote-only plugin removals';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin removals */';
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers[0];
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const blockerJson = JSON.stringify(blocker);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(blocker.class, 'unsupported-legacy-links-resource');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.reason, 'Legacy link graph resources are not yet supported by the planner.');
+  assert.equal(blockerJson.includes('Base link'), false);
+  assert.equal(blockerJson.includes('Local link'), false);
   assert.equal(pluginDecision.decision, 'keep-remote');
   assert.equal(pluginFileDecision.decision, 'keep-remote');
 });
