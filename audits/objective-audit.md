@@ -42,7 +42,7 @@ The project is **not releasable as a production WordPress push path**.
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `c43e1a77`
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `197b3c33`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `2af1ddda`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `996a7c4e`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `57ce0bd3`
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` -> `2d7ed103`
 - `origin/lane/cycle-20260525-mainwindows-2357/no-data-loss-invariants-graph-proof` -> `98c0ce26`
 - `origin/lane/cycle-20260525-restart-2340/feedback-supervisor` -> `ef3d911e`
@@ -51,7 +51,7 @@ The project is **not releasable as a production WordPress push path**.
 - `origin/lane/fast-paths` -> `8c5c2ccb`
 - `origin/lane/feedback-supervisor` -> `ee7069e6`
 - `origin/lane/independent-auditor` -> `6351130f`
-- `origin/lane/no-data-loss-invariants` -> `ad23992d`
+- `origin/lane/no-data-loss-invariants` -> `768b0fc8`
 - `origin/lane/no-data-loss-recovery` -> `9e077c10`
 - `origin/lane/progress-publisher` -> `7695e1f9`
 - `origin/lane/reliable-executor` -> `3676a5ad`
@@ -68,9 +68,9 @@ but it did not change the release conclusion:
 - `origin/lane/reliable-executor` now records `3676a5ad`, tightening the
   Playground startup readiness window. It still does not prove production
   auth/session lifecycle or a live-source mutation boundary.
-- `origin/lane/no-data-loss-invariants` now records `ad23992d`, adding nav
-  menu item parent proof. It still does not prove the live release boundary
-  or any production-backed source mutation.
+- `origin/lane/no-data-loss-invariants` now records `768b0fc8`, adding
+  synchronized unsupported custom-table blocking. It still does not prove the
+  live release boundary or any production-backed source mutation.
 - `origin/lane/no-data-loss-invariants` now records `5c4cb015`, adding
   revision parent-removal proof. It still does not prove the live release
   boundary or any production-backed source mutation.
@@ -94,7 +94,7 @@ but it did not change the release conclusion:
 - `origin/lane/feedback-supervisor` now records `ee7069e6`, refreshing the
   supervisor progress surface only.
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now records
-  `996a7c4e`, refreshing the public progress freshness only.
+  `57ce0bd3`, refreshing the public progress freshness only.
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` now records
   `197b3c33`, refreshing the audit snapshot only and not changing the release
   boundary.
