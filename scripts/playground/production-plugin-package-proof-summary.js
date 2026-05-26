@@ -114,6 +114,8 @@ export function buildProductionPluginPackageProofSummary(
 ) {
   const scenarioResults = {};
   const bundleResults = {};
+  const checkedBundles = [];
+  const passedBundles = [];
   const scenarioPasses = new Map();
   let checkedScenarioCount = 0;
   let passedScenarioCount = 0;
@@ -140,8 +142,21 @@ export function buildProductionPluginPackageProofSummary(
       ? selectedScenarios === null || bundleScenarios.some((scenario) => selectedScenarios.has(scenario))
       : requestedScenarios.includes(bundleName);
     const passed = bundleScenarios.every((scenario) => scenarioPasses.get(scenario) === true);
-    bundleResults[toBundleKey(bundleName)] = summarizeScenario(selected, passed);
+    const bundleKey = toBundleKey(bundleName);
+    bundleResults[bundleKey] = summarizeScenario(selected, passed);
+    if (selected) {
+      checkedBundles.push(bundleKey);
+    }
+    if (selected && passed) {
+      passedBundles.push(bundleKey);
+    }
   }
+
+  const requestedBundles = requestedScenarios === null
+    ? 'all'
+    : requestedScenarios
+      .filter((scenario) => Object.hasOwn(scenarioGroups, scenario))
+      .map((bundleName) => toBundleKey(bundleName));
 
   return {
     kind: 'production-plugin-package-driver-proof',
@@ -150,6 +165,9 @@ export function buildProductionPluginPackageProofSummary(
     passedScenarioCount,
     skippedScenarioCount,
     requestedScenarios: requestedScenarios === null ? 'all' : requestedScenarios.slice(),
+    requestedBundles,
+    checkedBundles: requestedScenarios === null && selectedScenarios === null ? 'all' : checkedBundles.sort(),
+    passedBundles: passedBundles.sort(),
     selectedScenarios: selectedScenarios === null ? 'all' : Array.from(selectedScenarios).sort(),
     package: {
       plugin: summary?.package?.plugin ?? null,

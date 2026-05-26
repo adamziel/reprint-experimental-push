@@ -85,6 +85,14 @@ test('plugin-driver proof summary reports full packaged guard coverage', () => {
   assert.equal(summary.passedScenarioCount, 11);
   assert.equal(summary.skippedScenarioCount, 0);
   assert.equal(summary.requestedScenarios, 'all');
+  assert.equal(summary.requestedBundles, 'all');
+  assert.equal(summary.checkedBundles, 'all');
+  assert.deepEqual(summary.passedBundles, [
+    'driverCallbackGuards',
+    'driverRegistrationGuards',
+    'driverRegistrationShapeGuards',
+    'driverVerifierGuards',
+  ]);
   assert.equal(summary.selectedScenarios, 'all');
   assert.equal(summary.receiptGuards.revokedCredential, 'reprint_push_lab_auth_required');
   assert.equal(summary.mutationProof.deleteRejected, true);
@@ -203,6 +211,9 @@ test('plugin-driver proof summary marks unselected scenarios as skipped', () => 
   assert.equal(summary.passedScenarioCount, 9);
   assert.equal(summary.skippedScenarioCount, 2);
   assert.deepEqual(summary.requestedScenarios, ['driver-verifier-guards']);
+  assert.deepEqual(summary.requestedBundles, ['driverVerifierGuards']);
+  assert.deepEqual(summary.checkedBundles, ['driverVerifierGuards']);
+  assert.deepEqual(summary.passedBundles, ['driverVerifierGuards']);
   assert.deepEqual(summary.selectedScenarios, [
     'driver-duplicate-name-guard',
     'driver-duplicate-table-guard',
