@@ -581,4 +581,46 @@ test('checked durable journal boundary stays closed until stale-claim rejection 
     }),
     false,
   );
+  assert.equal(
+    checkedDurableJournalBoundarySatisfied({
+      ...baseContract,
+      ownership: {
+        ...baseContract.ownership,
+        productionAdapter: 'filesystem-compare-rename',
+      },
+      writerLease: {
+        ...baseContract.writerLease,
+        staleClaimRejected: true,
+      },
+      leaseFence: {
+        ...baseContract.leaseFence,
+        staleClaimRejected: true,
+        writerLease: {
+          ...baseContract.leaseFence.writerLease,
+          staleClaimRejected: true,
+        },
+      },
+    }),
+    false,
+  );
+  assert.equal(
+    checkedDurableJournalBoundarySatisfied({
+      ...baseContract,
+      writerLease: {
+        ...baseContract.writerLease,
+        staleClaimRejected: true,
+        storageGuard: 'filesystem-compare-rename',
+      },
+      leaseFence: {
+        ...baseContract.leaseFence,
+        staleClaimRejected: true,
+        writerLease: {
+          ...baseContract.leaseFence.writerLease,
+          staleClaimRejected: true,
+          storageGuard: 'filesystem-compare-rename',
+        },
+      },
+    }),
+    false,
+  );
 });
