@@ -129,6 +129,11 @@ export function evaluateProductionAuthSessionLifecycleSummary(summary, now = Dat
     };
   }
 
+  const invalidIssuedObservation = resolveInvalidIssuedAuthSessionObservation(issuedObservation);
+  if (invalidIssuedObservation) {
+    return invalidIssuedObservation;
+  }
+
   const issuedLifecycle = evaluateProductionAuthSessionLifecycle(issuedObservation, now);
   if (!issuedLifecycle.ok) {
     return issuedLifecycle;
@@ -200,6 +205,11 @@ export function evaluateProductionAuthSessionLifecycleSummary(summary, now = Dat
       required: 'preserved read',
       observed: normalizeAuthSessionObservationStep(readObservation.step),
     };
+  }
+
+  const invalidReadObservation = resolveInvalidReadAuthSessionObservation(readObservation);
+  if (invalidReadObservation) {
+    return invalidReadObservation;
   }
 
   const readLifecycle = evaluateProductionAuthSessionLifecycle(readObservation, now);
@@ -620,6 +630,70 @@ function resolveMismatchedSummaryObservationSession(summary, issuedSessionId) {
         observed: 'rotated',
       };
     }
+  }
+
+  return null;
+}
+
+function resolveInvalidIssuedAuthSessionObservation(observation) {
+  if (!observation || typeof observation !== 'object') {
+    return null;
+  }
+
+  if (observation.preserved === true) {
+    return {
+      ok: false,
+      required: 'issued preflight',
+      observed: 'preserved',
+    };
+  }
+
+  return resolveInvalidReadLifecycleOutcome(observation, 'issued preflight');
+}
+
+function resolveInvalidReadAuthSessionObservation(observation) {
+  if (!observation || typeof observation !== 'object') {
+    return null;
+  }
+
+  return resolveInvalidReadLifecycleOutcome(observation, 'preserved read');
+}
+
+function resolveInvalidReadLifecycleOutcome(observation, required) {
+  if (!observation || typeof observation !== 'object') {
+    return null;
+  }
+
+  if (observation.expired === true) {
+    return {
+      ok: false,
+      required: 'unexpired',
+      observed: 'expired',
+    };
+  }
+
+  if (observation.revoked === true) {
+    return {
+      ok: false,
+      required: 'unrevoked',
+      observed: 'revoked',
+    };
+  }
+
+  if (observation.cleanedUp === true || observation.cleanup === true) {
+    return {
+      ok: false,
+      required: 'unrevoked',
+      observed: 'cleaned-up',
+    };
+  }
+
+  if (observation.rotated === true) {
+    return {
+      ok: false,
+      required,
+      observed: 'rotated',
+    };
   }
 
   return null;
