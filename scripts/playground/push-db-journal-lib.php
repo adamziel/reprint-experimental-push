@@ -614,7 +614,7 @@ function reprint_push_lab_db_journal_summary(int $limit = 20, bool $checked_surf
             $latest_claim = reprint_push_lab_db_journal_public_row($latest_claim_row);
             $latest_abandoned = null;
             $previous_claim = null;
-            if ((string) ($latest_claim['event'] ?? '') === 'stale-claim-retry-started') {
+            if (reprint_push_lab_db_journal_claim_event_requires_retry_lineage((string) ($latest_claim['event'] ?? ''))) {
                 $latest_abandoned_row = $wpdb->get_row(
                     $wpdb->prepare(
                         "SELECT * FROM {$quoted_table}
@@ -673,6 +673,13 @@ function reprint_push_lab_db_journal_cursor_sequence($cursor): ?int
 
     $sequence = (int) ($matches[1] ?? 0);
     return $sequence > 0 ? $sequence : null;
+}
+
+function reprint_push_lab_db_journal_claim_event_requires_retry_lineage($event): bool
+{
+    return $event === 'stale-claim-retry-started'
+        || $event === 'stale-claim-retry-in-progress'
+        || $event === 'stale-claim-rejected';
 }
 
 function reprint_push_lab_db_journal_claim_summary(
@@ -748,10 +755,7 @@ function reprint_push_lab_db_journal_claim_contract_matches($claim): bool
         && !($stale_claim_rejected === false && $active_claim_event === 'stale-claim-rejected')
         && !($stale_claim_rejected === true && $active_claim_event === 'idempotency-opened');
     $requires_consumed_retry_lineage = $stale_claim_rejected === true
-        && (
-            $active_claim_event === 'stale-claim-retry-started'
-            || $active_claim_event === 'stale-claim-retry-in-progress'
-        );
+        && reprint_push_lab_db_journal_claim_event_requires_retry_lineage($active_claim_event);
 
     $has_previous_claim_identity = reprint_push_lab_db_journal_non_empty_string($claim['previousClaimKeyHash'] ?? null)
         || reprint_push_lab_db_journal_is_positive_int($claim['previousClaimSequence'] ?? null)

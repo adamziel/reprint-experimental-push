@@ -110,6 +110,7 @@ function durableJournalClaimContractMatches(claim) {
     && (
       claim.activeClaimEvent === 'stale-claim-retry-started'
       || claim.activeClaimEvent === 'stale-claim-retry-in-progress'
+      || claim.activeClaimEvent === 'stale-claim-rejected'
     );
   const hasPreviousClaimIdentity = hasNonEmptyString(claim.previousClaimKeyHash)
     || Number.isInteger(claim.previousClaimSequence)
