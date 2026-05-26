@@ -500,20 +500,20 @@
       <div>
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
-        <p class="lead">Last 12 hours: recovery's `351b6bbd` adapter proof is still valid, and reliable has now patched `scripts/playground/production-shaped-release-verify.mjs` so `waitForServer()` should stop treating repeated `/wp-json/` `502` readiness responses as a silent stall. The new behavior still needs a bounded verifier run before the release boundary can move. Release gates remain `0/4`, and the production boundary is still closed.</p>
-        <time class="update-stamp" datetime="2026-05-26T10:34:15+02:00">Last updated: May 26, 2026, 10:34 CEST</time>
+        <p class="lead">Last 12 hours: recovery's `351b6bbd` adapter proof is still valid, and reliable's newest readiness diagnostic patch is `27ad6f6f`, which updates `scripts/playground/production-shaped-release-verify.mjs` so `waitForServer()` should stop treating repeated `/wp-json/` `502` readiness responses as a silent stall. The new behavior still needs a bounded verifier run before the release boundary can move. Release gates remain `0/4`, and the production boundary is still closed.</p>
+        <time class="update-stamp" datetime="2026-05-26T10:35:19+02:00">Last updated: May 26, 2026, 10:35 CEST</time>
         <div class="meta" aria-label="Project status">
           <span class="pill">Evidence class: lab-only</span>
-          <span class="pill">Trend: readiness handling in `scripts/playground/production-shaped-release-verify.mjs` now fails boundedly on repeated `/wp-json/` `502` responses, but the bounded verifier proof is still pending</span>
+          <span class="pill">Trend: readiness handling in `scripts/playground/production-shaped-release-verify.mjs` now points at `27ad6f6f`, but the bounded verifier proof is still pending</span>
           <span class="pill">Top blocker: the new readiness behavior still needs a bounded verifier run before the outer wrapper can prove the live release path</span>
           <span class="pill">Gate status: 0/4 verified; 4 pending</span>
           <span class="pill">Open gates: executor/auth, recovery journal, Docker/Playground, plugin drivers</span>
           <span class="pill">Supervised scope: 8 fast/low worker lanes plus the dedicated live progress watcher</span>
-          <span class="pill">Newest audit: <a href="docs/progress-log.md#2026-05-26-readiness-boundary-blocked-102928">2026-05-26 10:29:28</a></span>
+          <span class="pill">Newest audit: <a href="docs/progress-log.md#2026-05-26-fresh-evidence-delta-103519">2026-05-26 10:35:19</a></span>
         </div>
       </div>
       <div class="header-actions" aria-label="Progress evidence">
-        <a class="log-link" href="docs/progress-log.md#2026-05-26-readiness-boundary-blocked-102928">Open newest audit</a>
+        <a class="log-link" href="docs/progress-log.md#2026-05-26-fresh-evidence-delta-103519">Open newest audit</a>
         <a class="log-link" href="#proof-gates">Open release-gate checklist</a>
         <p><strong>Evidence trail:</strong> <a href="docs/progress-log.md">log</a>, <a href="audits/objective-audit.md">objective audit</a>, <a href="#proof-gates">gate checklist</a>.</p>
       </div>
@@ -522,7 +522,7 @@
     <section class="summary" aria-label="Current evidence summary">
       <div class="metric">
         <strong><a href="audits/objective-audit.md">Lab proof</a></strong>
-        <span>Latest lane evidence now includes the recovery adapter proof at `351b6bbd` and the reliable readiness-boundary patch in `scripts/playground/production-shaped-release-verify.mjs`; the next proof still needs a bounded verifier run to show the new failure path before the live release proof can continue</span>
+        <span>Latest lane evidence now includes the recovery adapter proof at `351b6bbd` and reliable's readiness diagnostic patch at `27ad6f6f`; the next proof still needs a bounded verifier run to show the new failure path before the live release proof can continue</span>
       </div>
       <div class="metric">
         <strong>Pending</strong>

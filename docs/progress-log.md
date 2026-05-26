@@ -4,12 +4,12 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
-# 2026-05-26 - Fresh Evidence Delta 10:34:15
+# 2026-05-26 - Fresh Evidence Delta 10:35:19
 
-<a id="2026-05-26-fresh-evidence-delta-103415"></a>
+<a id="2026-05-26-fresh-evidence-delta-103519"></a>
 
 - Recovery's `351b6bbd` production recovery journal adapter remains the newest durable-journal proof on record.
-- Reliable has now patched the Playground readiness boundary so repeated `/wp-json/` `502` responses should fail with bounded route/status/body diagnostics instead of stalling the outer wrapper.
+- Reliable's newest readiness diagnostic patch is `27ad6f6f`, which updates the Playground readiness boundary so repeated `/wp-json/` `502` responses should fail with bounded route/status/body diagnostics instead of stalling the outer wrapper.
 - This is still release-gate neutral until the bounded verifier proves the new readiness behavior past the outer boundary. The release gate posture remains `0/4`.
 - Evidence trail: [supervisor feedback](supervisor-feedback.md).
 

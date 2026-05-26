@@ -1,10 +1,10 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-26 10:34 CEST
+Last updated: 2026-05-26 10:35 CEST
 
-## 2026-05-26 10:34:15 CEST - Fresh Evidence Delta
+## 2026-05-26 10:35:19 CEST - Fresh Evidence Delta
 
-- Recovery's `351b6bbd` adapter work is still valid evidence, and reliable has now patched the Playground readiness boundary so repeated `/wp-json/` `502` responses should fail with bounded route/status/body diagnostics instead of hanging silently.
+- Recovery's `351b6bbd` adapter work is still valid evidence, and reliable's newest readiness diagnostic patch is `27ad6f6f`, which updates the Playground readiness boundary so repeated `/wp-json/` `502` responses should fail with bounded route/status/body diagnostics instead of hanging silently.
 - The gate is still closed because the new readiness behavior has not yet been proven past the outer release-verifier boundary.
 - The release posture stays conservative at `0/4`.
 
