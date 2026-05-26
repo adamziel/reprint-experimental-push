@@ -624,6 +624,45 @@ test('guarded benchmark blocks staged-disk headroom visibility without a measure
   assert.equal(blockers.includes('staging-disk-headroom-visible-without-measurement'), true);
 });
 
+test('guarded benchmark blocks when the production staging-disk ceiling is not measured', () => {
+  const report = smallBenchmark();
+  const tampered = clone(report);
+
+  tampered.resourceLimits.maxStagingDiskBytes = 0;
+
+  const blockers = productionThroughputBlockers(tampered);
+
+  assert.equal(blockers.includes('production-staging-disk-ceiling-not-measured'), true);
+});
+
+test('guarded benchmark blocks when staging-disk headroom evidence is missing', () => {
+  const report = smallBenchmark();
+  const tampered = clone(report);
+
+  tampered.evidence.backpressure.stagingDiskHeadroomBytes = null;
+
+  const details = productionThroughputDetails(tampered);
+  const blockers = productionThroughputBlockers(tampered);
+
+  assert.equal(details.stagingDiskHeadroomPositive, false);
+  assert.equal(details.backpressureConsistency.stagingDiskHeadroomPositive, false);
+  assert.equal(blockers.includes('missing-staging-disk-headroom-evidence'), true);
+});
+
+test('guarded benchmark blocks when staging-disk headroom is not positive', () => {
+  const report = smallBenchmark();
+  const tampered = clone(report);
+
+  tampered.evidence.backpressure.stagingDiskHeadroomBytes = 0;
+
+  const details = productionThroughputDetails(tampered);
+  const blockers = productionThroughputBlockers(tampered);
+
+  assert.equal(details.stagingDiskHeadroomPositive, false);
+  assert.equal(details.backpressureConsistency.stagingDiskHeadroomPositive, false);
+  assert.equal(blockers.includes('staging-disk-headroom-not-positive'), true);
+});
+
 test('guarded benchmark blocks queue-headroom visibility when the aligned slack proof is hidden', () => {
   const report = smallBenchmark();
   const tampered = clone(report);
