@@ -2676,6 +2676,12 @@ function reprint_push_lab_rest_auth_evidence(WP_REST_Request $request): array
     $auth = reprint_push_lab_rest_basic_auth_context($request);
     $user = wp_get_current_user();
     $package_mode = reprint_push_lab_rest_package_mode_enabled();
+    $session_type = is_array($auth)
+        ? ($package_mode ? 'production-auth-session' : $auth['type'])
+        : null;
+    $session_status = is_array($auth)
+        ? ($package_mode ? 'active' : ($auth['status'] ?? 'active'))
+        : null;
 
     return [
         'schemaVersion' => 1,
@@ -2689,15 +2695,17 @@ function reprint_push_lab_rest_auth_evidence(WP_REST_Request $request): array
             ],
         ],
         'session' => [
-            'type' => is_array($auth)
-                ? ($package_mode ? 'production-auth-session' : $auth['type'])
-                : null,
+            'type' => $session_type,
             'verifier' => is_array($auth) ? ($auth['verifier'] ?? null) : null,
             'applicationPasswordUuid' => is_array($auth) ? $auth['applicationPasswordUuid'] : null,
             'applicationPasswordAppId' => is_array($auth) ? ($auth['applicationPasswordAppId'] ?? null) : null,
             'credentialScope' => is_array($auth) ? ($auth['credentialScope'] ?? null) : null,
             'credentialType' => is_array($auth) ? ($auth['credentialType'] ?? null) : null,
             'credentialHash' => is_array($auth) ? $auth['credentialHash'] : null,
+            'status' => $session_status,
+            'revoked' => is_array($auth) ? ($package_mode ? false : (bool) ($auth['revoked'] ?? false)) : false,
+            'cleanedUp' => is_array($auth) ? ($package_mode ? false : (bool) ($auth['cleanedUp'] ?? false)) : false,
+            'expiresAt' => is_array($auth) ? ($package_mode ? null : ($auth['expiresAt'] ?? null)) : null,
             'playgroundFallback' => is_array($auth)
                 ? ($package_mode ? false : (bool) ($auth['playgroundFallback'] ?? false))
                 : false,
