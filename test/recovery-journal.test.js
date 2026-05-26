@@ -410,3 +410,59 @@ test('checked release path consumes the production recovery journal inspection s
   assert.equal(inspection.leaseFence.restartReadable, true);
   assert.equal(inspection.leaseFence.staleClaimRejected, true);
 });
+
+test('production recovery journal wrapper rejects hidden open options', () => {
+  const filePath = tempJournalPath();
+  const remote = baseSite();
+  const plan = planFor(baseSite(), localSite(), remote);
+
+  assert.throws(
+    () => openProductionRecoveryJournal({
+      filePath,
+      plan,
+      current: remote,
+      artifactRefs: {
+        releaseProof: 'artifact://release-proof-1',
+      },
+      claimId: 'production-claim-01',
+      claim: {
+        id: 'shadow-claim',
+      },
+    }),
+    /openProductionRecoveryJournal\(\) received unsupported option keys: claim/,
+  );
+
+  assert.equal(fs.existsSync(filePath), false);
+});
+
+test('production recovery journal consumer rejects hidden open options', () => {
+  const filePath = tempJournalPath();
+  const remote = baseSite();
+  const plan = planFor(baseSite(), localSite(), remote);
+  const claimId = 'production-claim-consumer-01';
+
+  const journal = openProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs: {
+      releaseProof: 'artifact://release-proof-1',
+    },
+    claimId,
+  });
+  journal.close();
+
+  assert.throws(
+    () => consumeProductionRecoveryJournal({
+      filePath,
+      plan,
+      current: remote,
+      artifactRefs: {
+        releaseProof: 'artifact://release-proof-1',
+      },
+      claimId,
+      truncate: false,
+    }),
+    /consumeProductionRecoveryJournal\(\) received unsupported option keys: truncate/,
+  );
+});
