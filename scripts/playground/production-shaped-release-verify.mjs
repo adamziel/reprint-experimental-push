@@ -47,6 +47,7 @@ const liveAuthSessionSourceBlocker = {
 };
 let authSessionSourceCommand = process.env.REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND || '';
 let authSessionSource = authSessionSourceCommand ? loadAuthSessionSource(authSessionSourceCommand) : null;
+let packagedProductionPluginAuthSessionSource = null;
 
 if (authSessionSource?.ok) {
   const resolvedAuthSessionSource = resolveAuthSessionSourceCredentials({
@@ -65,28 +66,28 @@ if (authSessionSource?.ok) {
 
 if (
   requireProductionAuthSession &&
-  !authSessionSourceCommand &&
   credentials.username &&
   credentials.password
 ) {
-  const packagedAuthSessionSource = resolvePackagedProductionPluginAuthSessionSource({
+  packagedProductionPluginAuthSessionSource = resolvePackagedProductionPluginAuthSessionSource({
     sourceUrl: liveSourceUrl || 'http://127.0.0.1:8080',
     username: credentials.username,
     applicationPassword: credentials.password,
     authSessionSourceCommand,
   });
-  if (packagedAuthSessionSource.source.ok) {
-    authSessionSourceCommand = packagedAuthSessionSource.command;
-    authSessionSource = packagedAuthSessionSource.source;
-    if (!liveSourceUrl) {
-      liveSourceUrl = packagedAuthSessionSource.source.sourceUrl || liveSourceUrl;
-    }
-    if (!username) {
-      username = packagedAuthSessionSource.source.username || username;
-    }
-    if (!applicationPassword) {
-      applicationPassword = packagedAuthSessionSource.source.applicationPassword || applicationPassword;
-    }
+}
+
+if (packagedProductionPluginAuthSessionSource?.source.ok) {
+  authSessionSourceCommand = packagedProductionPluginAuthSessionSource.command;
+  authSessionSource = packagedProductionPluginAuthSessionSource.source;
+  if (!liveSourceUrl) {
+    liveSourceUrl = packagedProductionPluginAuthSessionSource.source.sourceUrl || liveSourceUrl;
+  }
+  if (!username) {
+    username = packagedProductionPluginAuthSessionSource.source.username || username;
+  }
+  if (!applicationPassword) {
+    applicationPassword = packagedProductionPluginAuthSessionSource.source.applicationPassword || applicationPassword;
   }
 }
 
