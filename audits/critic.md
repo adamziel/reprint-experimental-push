@@ -1,20 +1,20 @@
 # Critic Verdict
 
-Current reliable head: `e6dd77c1e5f88d734f1953f7de7a112c42f741ae`
-(`Guard packaged driver revoked credentials in smoke proof`).
+Current reliable head: `941407bd4aef3a4635dc4ac792fc225543ba8752`
+(`Support packaged plugin-owned row drivers`).
 
 Verdict: `0/4`
 
 Reason:
 
-- This head adds packaged plugin-driver smoke coverage for revoked credentials
-  and non-mutation behavior, but it is still support-side packaged proof
-  rather than a checked production boundary crossing.
+- This head adds support for packaged plugin-owned row drivers, but it is
+  still support-side planner/plugin hardening rather than a checked production
+  boundary crossing.
 - The checked release path still lacks live production auth/session
   issuance/read/expiry/rotation/revocation/cleanup evidence, and it still does
   not prove production durable-journal ownership with restart-readable replay
-  consumed by `verify:release`, or packaged plugin-driver proof consumed by
-  the release gate.
+  consumed by `verify:release`, or plugin-driver proof consumed by the release
+  gate.
 - That keeps the release gate closed at `0/4`.
 
 Next owner / command:
