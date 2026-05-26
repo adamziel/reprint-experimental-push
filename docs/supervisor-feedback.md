@@ -1,22 +1,21 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-26 14:17 CEST
+Last updated: 2026-05-26 14:18 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
 
 ## 2026-05-26 - Current Nudge
 
-- Going well: `ce7560be` is now the live reliable head, and it adds checked
-  release-path replay-equivalence surface evidence.
-- Not going well: the release gate is still `0/4`; this is support evidence,
-  not production-backed auth/session lifecycle or durable-journal ownership.
-- Progress change: the public surfaces now match the live reliable head, so no
-  additional freshness refresh is needed right now.
+- Going well: `21818064` is now the live reliable head; the latest evidence is
+  still support-side release-verifier work, not a gate cross.
+- Not going well: the release gate is still `0/4`; production-backed
+  auth/session lifecycle and durable-journal ownership remain blocked.
+- Progress change: the public progress surface still needs to catch up to the
+  new reliable head if it is still naming `ce7560be`.
 - Next nudge: reliable executor should move to the next gate dependency:
-  production auth/session lifecycle on the checked release path, durable
-  journal ownership, or a concrete blocker command that names the missing
-  primitive.
+  production auth/session lifecycle, durable journal ownership, or a concrete
+  blocker command that names the missing primitive.
 
 | Lane | Change | Next nudge |
 | --- | --- | --- |
@@ -25,7 +24,7 @@ changed, what is helping, what is not helping, and the next nudge.
 | Reliable executor | Up in support evidence | Move to production auth/session lifecycle or durable ownership. |
 | Fast paths | Up in model | Run a large-site benchmark with receipts and resume cursors. |
 | Audit and critic | Up | Re-audit the new live reliable head only if the gate changes. |
-| Progress publisher | Current | Keep the public page aligned with `ce7560be` and avoid timestamp-only churn. |
+| Progress publisher | Needs refresh if stale | Keep the public page aligned with `21818064` and avoid timestamp-only churn. |
 
 <details>
 <summary>Earlier feedback entries</summary>
