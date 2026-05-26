@@ -28131,6 +28131,111 @@ test('allows a local termmeta reference to a same-plan term even when an unrelat
   assert.equal(JSON.stringify(reference).includes('remote-attachment-body'), false);
 });
 
+test('allows a local termmeta reference to a same-plan term even when an unrelated remote nav_menu_item post exists', () => {
+  const termResourceKey = 'row:["wp_terms","term_id:7"]';
+  const termmetaResourceKey = 'row:["wp_termmeta","meta_id:12"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_terms = {
+    'term_id:7': {
+      term_id: 7,
+      name: 'Local tagged term',
+      slug: 'local-tagged-term',
+    },
+  };
+  local.db.wp_termmeta = {
+    'meta_id:12': {
+      meta_id: 12,
+      term_id: 7,
+      meta_key: 'term-note',
+      meta_value: 'Local term note',
+    },
+  };
+  const remote = baseSite();
+  remote.db.wp_posts = {
+    'ID:8': {
+      ID: 8,
+      post_title: 'Remote menu item',
+      post_content: 'remote-menu-item-body',
+      post_status: 'publish',
+      post_type: 'nav_menu_item',
+    },
+  };
+
+  const plan = planFor(base, local, remote);
+  const termMutation = mutationFor(plan, termResourceKey);
+  const termmetaMutation = mutationFor(plan, termmetaResourceKey);
+  const reference = termmetaMutation.wordpressGraphReferences[0];
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.blockers, 0);
+  assert.equal(termMutation.changeKind, 'create');
+  assert.equal(termmetaMutation.changeKind, 'create');
+  assert.ok(
+    plan.mutations.indexOf(termMutation) < plan.mutations.indexOf(termmetaMutation),
+    'term create must be ordered before dependent termmeta',
+  );
+  assert.deepEqual(termmetaMutation.dependsOnMutationIds, [termMutation.id]);
+  assert.equal(reference.resolutionPolicy, 'same-plan-local-create');
+  assert.equal(reference.relationshipKey, 'wp_termmeta.term_id');
+  assert.equal(reference.relationshipType, 'termmeta-term');
+  assert.equal(reference.targetResourceKey, termResourceKey);
+  assert.equal(JSON.stringify(reference).includes('remote-menu-item-body'), false);
+});
+
+test('allows a local termmeta reference to a same-plan term even when an unrelated remote revision post exists', () => {
+  const termResourceKey = 'row:["wp_terms","term_id:7"]';
+  const termmetaResourceKey = 'row:["wp_termmeta","meta_id:12"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_terms = {
+    'term_id:7': {
+      term_id: 7,
+      name: 'Local tagged term',
+      slug: 'local-tagged-term',
+    },
+  };
+  local.db.wp_termmeta = {
+    'meta_id:12': {
+      meta_id: 12,
+      term_id: 7,
+      meta_key: 'term-note',
+      meta_value: 'Local term note',
+    },
+  };
+  const remote = baseSite();
+  remote.db.wp_posts = {
+    'ID:8': {
+      ID: 8,
+      post_title: 'Remote revision',
+      post_content: 'remote-revision-body',
+      post_status: 'inherit',
+      post_type: 'revision',
+      post_parent: 1,
+    },
+  };
+
+  const plan = planFor(base, local, remote);
+  const termMutation = mutationFor(plan, termResourceKey);
+  const termmetaMutation = mutationFor(plan, termmetaResourceKey);
+  const reference = termmetaMutation.wordpressGraphReferences[0];
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.blockers, 0);
+  assert.equal(termMutation.changeKind, 'create');
+  assert.equal(termmetaMutation.changeKind, 'create');
+  assert.ok(
+    plan.mutations.indexOf(termMutation) < plan.mutations.indexOf(termmetaMutation),
+    'term create must be ordered before dependent termmeta',
+  );
+  assert.deepEqual(termmetaMutation.dependsOnMutationIds, [termMutation.id]);
+  assert.equal(reference.resolutionPolicy, 'same-plan-local-create');
+  assert.equal(reference.relationshipKey, 'wp_termmeta.term_id');
+  assert.equal(reference.relationshipType, 'termmeta-term');
+  assert.equal(reference.targetResourceKey, termResourceKey);
+  assert.equal(JSON.stringify(reference).includes('remote-revision-body'), false);
+});
+
 test('allows a local post parent reference to a same-plan post even when an unrelated remote attachment exists', () => {
   const parentResourceKey = 'row:["wp_posts","ID:4"]';
   const childResourceKey = 'row:["wp_posts","ID:3"]';
