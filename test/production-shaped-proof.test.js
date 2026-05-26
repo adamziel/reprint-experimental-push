@@ -49,10 +49,16 @@ function spawnReleaseVerify(env = {}, timeout = proofSubprocessTimeoutMs) {
     spawnOptions,
   );
   if (proof.error) {
+    process.stderr.write(
+      `${describeSpawnProof(proof)}\n`,
+    );
     const timeoutNote = proof.error.code === 'ETIMEDOUT' && timeout ? ` after ${timeout}ms` : '';
     throw new Error(formatSpawnFailure(`production-shaped release verify failed${timeoutNote}`, proof));
   }
   if (proof.signal) {
+    process.stderr.write(
+      `${describeSpawnProof(proof)}\n`,
+    );
     const detail = describeSpawnProof(proof);
     throw new Error(
       `${formatSpawnFailure(
@@ -113,10 +119,12 @@ function spawnBoundedSync(command, args, options, label) {
   const proof = spawnSync(command, args, options);
 
   if (proof.error) {
+    process.stderr.write(`${describeSpawnProof(proof)}\n`);
     const timeoutNote = proof.error.code === 'ETIMEDOUT' && options.timeout ? ` after ${options.timeout}ms` : '';
     throw new Error(formatSpawnFailure(`${label} failed${timeoutNote}`, proof));
   }
   if (proof.signal) {
+    process.stderr.write(`${describeSpawnProof(proof)}\n`);
     throw new Error(formatSpawnFailure(`${label} terminated by ${proof.signal}${options.timeout ? ` after ${options.timeout}ms` : ''}`, proof));
   }
   if (proof.status === null) {
