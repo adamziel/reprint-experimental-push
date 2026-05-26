@@ -46,6 +46,13 @@ const releaseVerifyLiveSubprocessOptions = {
 };
 
 const activePlaygroundChildren = new Set();
+process.on('exit', stopAllPlaygroundChildrenSync);
+process.on('SIGINT', () => {
+  stopAllPlaygroundChildrenSync();
+});
+process.on('SIGTERM', () => {
+  stopAllPlaygroundChildrenSync();
+});
 
 function stopAllPlaygroundChildrenSync() {
   for (const child of activePlaygroundChildren) {
@@ -199,6 +206,12 @@ function spawnBoundedSync(command, args, options, label) {
   return proof;
 }
 
+function spawnVerifiedReleaseVerify(env, timeout, label) {
+  const proof = spawnReleaseVerify(env, timeout);
+  assertReleaseVerifyProof(proof, label);
+  return proof;
+}
+
 function logBoundedSpawnProofFailure(command, args, proof) {
   const commandLabel = `${command} ${args.join(' ')}`;
   if (proof.error) {
@@ -346,7 +359,7 @@ test('production-shaped live preflight smoke fails fast when the live source or 
 });
 
 test('production-shaped release verify command fails closed when production durable journal ownership is explicitly required', () => {
-  const proof = spawnReleaseVerify(
+  const proof = spawnVerifiedReleaseVerify(
     {
       REPRINT_PUSH_SOURCE_URL: '',
       REPRINT_PUSH_REMOTE_URL: '',
@@ -359,15 +372,14 @@ test('production-shaped release verify command fails closed when production dura
       NODE_NO_WARNINGS: '1',
     },
     releaseVerifySlowPathTimeoutMs,
+    'durable journal release verify',
   );
-
-  assertReleaseVerifyProof(proof, 'durable journal release verify');
   assert.equal(proof.status, 1, proof.stderr);
   assert.match(proof.stdout, /"code": "PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED"/);
 });
 
 test('production-shaped release verify command fails closed when production auth/session lifecycle is explicitly required', () => {
-  const proof = spawnReleaseVerify(
+  const proof = spawnVerifiedReleaseVerify(
     {
       REPRINT_PUSH_SOURCE_URL: 'http://127.0.0.1:1',
       REPRINT_PUSH_REMOTE_URL: 'http://127.0.0.1:1',
@@ -377,9 +389,8 @@ test('production-shaped release verify command fails closed when production auth
       NODE_NO_WARNINGS: '1',
     },
     releaseVerifySlowPathTimeoutMs,
+    'auth/session release verify',
   );
-
-  assertReleaseVerifyProof(proof, 'auth/session release verify');
   assert.equal(proof.status, 1, proof.stderr);
   assert.match(proof.stdout, /"ok": false/);
   assert.match(
@@ -453,7 +464,6 @@ maybeTest('production-shaped release verify command runs the live protocol branc
       },
       liveProofSubprocessTimeoutMs,
     );
-    process.stderr.write(`${describeSpawnProof(proof)}\n`);
     assertLiveReleaseVerifyProof(proof, 'live release verify', liveReleaseVerifyTimeoutMs);
     assert.equal(proof.status, 0, proof.stderr);
     assert.match(proof.stdout, /"ok": true/);
