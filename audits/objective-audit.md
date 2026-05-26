@@ -7,18 +7,18 @@ The project is **not releasable as a production WordPress push path**.
 Fresh remote heads at audit time, checked on May 26, 2026:
 
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `40d5aa1a`
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `b49f66db`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `e91685f1`
 - `origin/lane/reliable-executor` -> `b8d91776`
 - `origin/lane/no-data-loss-invariants` -> `c718a4af`
 - `origin/lane/no-data-loss-recovery` -> `47b675c0`
 - `origin/lane/fast-paths` -> `cd0fddad`
-- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `27d0c72e`
+- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `d70fc061`
 - `origin/lane/critic` -> `cba0890b`
 - `origin/lane/progress-publisher` -> `7695e1f9`
 - `origin/lane/cycle-20260525-mainwindows-2349/critic` -> `cba0890b`
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `b49f66db`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `e91685f1`
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `40d5aa1a`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `f7550697`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `fec1770b`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `4372167e`
 - `origin/lane/same-plan-wordpress-graph-create` -> `a719e09c`
 - `origin/lane/cycle-20260525-mainwindows-2349/same-plan-wordpress-graph-create` -> `a719e09c`
@@ -62,9 +62,9 @@ but it did not change the release conclusion:
   cursor headroom rejection at `40d5aa1a`, which is still boundary plumbing
   rather than measured speed proof.
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now
-  records the latest progress freshness handoff at `f7550697`.
+  records the latest progress freshness handoff at `fec1770b`.
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` now refreshes the audit snapshot at
-  `27d0c72e`.
+  `d70fc061`.
 - `origin/lane/critic` now refreshes the critic handoff at `cba0890b`.
 - `origin/lane/progress-publisher` now refreshes the public progress evidence
   at `7695e1f9`.
