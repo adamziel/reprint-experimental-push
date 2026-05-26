@@ -18086,6 +18086,8 @@ test('assertRecoveryStateEnvelope rejects unsupported artifact keys on acceptabl
     () => assertRecoveryStateEnvelope({
       status: 'old-remote',
       planId: 'plan-1',
+      reason: 'ok',
+      remoteHash: 'a'.repeat(64),
       artifacts: {
         journal: { status: 'opened' },
         checkpoint: true,
