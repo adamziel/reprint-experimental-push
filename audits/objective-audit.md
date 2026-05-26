@@ -42,11 +42,11 @@ The project is **not releasable as a production WordPress push path**.
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `d7813094`
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `8a7f4edd`
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `185094e1`
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `725d5b81`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `b03ee033`
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `1206eab7`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `2af1ddda`
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `22984597`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `27ddfc82`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `3b3c05e7`
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` -> `0ca7b35d`
 - `origin/lane/cycle-20260525-mainwindows-2349/same-plan-wordpress-graph-create` -> `af493c80`
 - `origin/lane/cycle-20260525-mainwindows-2357/no-data-loss-invariants-graph-proof` -> `98c0ce26`
@@ -57,16 +57,16 @@ The project is **not releasable as a production WordPress push path**.
 - `origin/lane/fast-paths` -> `8c5c2ccb`
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `185094e1`
 - `origin/lane/independent-auditor` -> `b36665ef`
-- `origin/lane/no-data-loss-invariants` -> `cda3a1c3`
-- `origin/lane/no-data-loss-recovery` -> `2af1ddda`
+- `origin/lane/no-data-loss-invariants` -> `8fab9c35`
+- `origin/lane/no-data-loss-recovery` -> `9e077c10`
 - `origin/lane/progress-publisher` -> `7695e1f9`
 - `origin/lane/reliable-executor` -> `f1783e10`
 - `origin/lane/same-plan-wordpress-graph-create` -> `8dea1ca3`
 
 Fresh visibility-lane heads moved, but they still only refresh public status surfaces:
 
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `725d5b81`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `27ddfc82`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `b03ee033`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `3b3c05e7`
 - `origin/main` -> `2c8d52cb`
 
 The current remote state still adds no production-backed auth/session
@@ -83,10 +83,10 @@ but it did not change the release conclusion:
   journal ownership. It still does not prove production auth/session
   lifecycle or a live-source mutation boundary.
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now
-  records `c86ece15`, refreshing supervisor freshness only. It still does not
+  records `b03ee033`, refreshing supervisor freshness only. It still does not
   change the release verdict.
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now records
-  `ea8694c3`, refreshing public progress freshness only. It still does not add
+  `3b3c05e7`, refreshing public progress freshness only. It still does not add
   production-backed gate movement.
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` now records
   `9abe8414`, tightening parallelism limit proof only. It still does not prove
@@ -119,7 +119,7 @@ but it did not change the release conclusion:
   verify helper bounds and keeping the live proof wrapper fail-closed. It still
   does not prove production auth/session lifecycle or a live-source mutation
   boundary.
-- `origin/lane/no-data-loss-invariants` now records `cda3a1c3`, adding an
+- `origin/lane/no-data-loss-invariants` now records `8fab9c35`, adding an
   unsupported plugin version range proof. It still does not prove the live
   release boundary or any production-backed source mutation.
 - `origin/lane/no-data-loss-invariants` now records `57a487a8`, adding a
@@ -203,7 +203,7 @@ but it did not change the release conclusion:
   does not add production-backed journal ownership or replay proof.
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` now records
   `2d7ed103`, hardening production-shaped proof timeouts only.
-- `origin/lane/no-data-loss-recovery` now records `2af1ddda`, tightening
+- `origin/lane/no-data-loss-recovery` now records `9e077c10`, tightening
   unsupported recovery journal boundaries only.
 - `origin/lane/same-plan-wordpress-graph-create` now records `52be8d87`,
   hardening revision graph references only.
