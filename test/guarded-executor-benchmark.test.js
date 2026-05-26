@@ -2370,6 +2370,10 @@ test('production claim gate fails closed if benchmark evidence is tampered', () 
     productionThroughputDetails(blockedReasonWithWhitespace).successInspectionClaimReasonTrimmed,
     '',
   );
+  assert.equal(
+    productionThroughputDetails(blockedReasonWithWhitespace).successInspectionClaimReasonVisible,
+    false,
+  );
 });
 
 test('guarded benchmark fails closed when the buffered queue budget drifts from the default ceiling', () => {

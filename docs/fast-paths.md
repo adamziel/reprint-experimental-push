@@ -194,6 +194,9 @@ Current executable gate:
 - The report now also exposes the success inspection claim status and keeps it
   aligned with the recorded inspection summary, so a tampered recovery claim
   cannot drift away from the replayed success result.
+- The report now also exposes a separate visible bit for blocked success-claim
+  reasons, so a whitespace-only reason cannot look like a proven recovery
+  explanation.
 - The report now also fails closed when the success inspection claim status is
   unrecognized, so an unexpected recovery-claim state cannot masquerade as a
   known inspection result.

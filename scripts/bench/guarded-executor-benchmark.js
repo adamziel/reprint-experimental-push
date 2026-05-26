@@ -1223,6 +1223,7 @@ export function productionThroughputDetails(report) {
     successInspectionClaimStatus !== 'blocked'
     || (successInspectionClaimReasonTrimmed !== null
       && successInspectionClaimReasonTrimmed.length > 0);
+  const successInspectionClaimReasonVisible = successInspectionClaimReasonProven;
   const successInspectionClaimMatchesInspectionStatus =
     successInspectionClaimRecognized
     && (
@@ -1480,6 +1481,7 @@ export function productionThroughputDetails(report) {
     successInspectionClaimReasonTrimmed,
     successInspectionClaimRecognized,
     successInspectionClaimReasonProven,
+    successInspectionClaimReasonVisible,
     successInspectionClaimMatchesInspectionStatus,
     successInspectionClaimCanonical,
     successInspectionClaimReasonCanonical,
@@ -1589,6 +1591,7 @@ export function productionThroughputDetails(report) {
       successInspectionClaimMatchesInspectionStatus,
       successInspectionClaimCanonical,
       successInspectionClaimReasonCanonical,
+      successInspectionClaimReasonVisible,
       successInspectionCountsNewMatchesMutations,
       receiptCursorMemoryHeadroomMatchesResourceHeadroom,
       receiptCursorMemoryHeadroomWithinResourceHeadroom,
