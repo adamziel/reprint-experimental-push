@@ -64,6 +64,9 @@ Current executable gate:
   visible on the raw backpressure evidence surface, so the audit view can
   reject a queue-budget drift without reconstructing the bit from derived
   details alone.
+- The same details now also surface the atomic-group metadata visibility bit on
+  the backpressure consistency summary, so the production throughput proof can
+  keep the atomic-group context visible next to the queue-boundary evidence.
 - The raw backpressure evidence now also carries a pause-footprint completeness
   bit, and the production-throughput gate fails closed if a paused sender does
   not prove that footprint directly on the evidence surface.

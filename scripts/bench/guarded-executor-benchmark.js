@@ -1067,6 +1067,8 @@ export function productionThroughputDetails(report) {
     report.evidence.atomicGroup?.productionAtomicGroupMetadataVisible === true;
   const productionStorageReceiptsVisible =
     report.evidence.atomicGroup?.productionStorageReceiptsVisible === true;
+  const productionRowBatchExecutorVisible =
+    report.evidence.atomicGroup?.productionRowBatchExecutorVisible === true;
   const productionAtomicGroupMetadataProven =
     report.evidence.atomicGroup?.productionAtomicCommitMeasured !== true
     || (
@@ -1177,6 +1179,7 @@ export function productionThroughputDetails(report) {
     productionStorageReceiptsMeasured,
     productionRowBatchExecutorMeasured,
     productionAtomicGroupMetadataVisible,
+    productionStorageReceiptsVisible,
     productionAtomicGroupMetadataProven,
     parallelismLimits,
     parallelismLimitsIntegral,
@@ -1193,6 +1196,8 @@ export function productionThroughputDetails(report) {
       queueBudgetPositive,
       queueBudgetVisible,
       queueHeadroomVisible,
+      productionAtomicGroupMetadataVisible,
+      productionStorageReceiptsVisible,
       queuePausedBeforeOverflow: report.evidence.backpressure?.queuePausedBeforeOverflow ?? false,
       receiptCursorMemoryCeilingBytes,
       receiptCursorQueueBudgetBytes,
@@ -1226,6 +1231,7 @@ export function productionThroughputDetails(report) {
       receiptCursorMemoryHeadroomWithinQueueBudget,
       receiptCursorMemoryHeadroomBytes,
       receiptCursorMemoryHeadroomPositive: receiptCursorMemoryHeadroomPositiveVisible,
+      receiptCursorMemoryHeadroomWithinResourceHeadroom,
       receiptCursorMemoryCeilingMatchesQueueBudget,
       receiptCursorMemoryCeilingMatchesQueueBudgetVisible,
       receiptCursorMemoryCeilingVisible,
@@ -1260,8 +1266,10 @@ export function productionThroughputDetails(report) {
       productionAtomicCommitMeasured,
       productionStorageReceiptsMeasured,
       productionRowBatchExecutorMeasured,
+      productionAtomicGroupMetadataVisible,
       productionAtomicGroupMetadataProven,
       productionStorageReceiptsVisible,
+      productionRowBatchExecutorVisible,
     },
     blockers: productionThroughputBlockers(report),
   };
@@ -1754,6 +1762,8 @@ function buildReport({
     && atomicGroup?.requireAtomic === true;
   const productionStorageReceiptsVisible =
     productionStorageReceiptsMeasured && productionAtomicGroupMetadataVisible;
+  const productionRowBatchExecutorVisible =
+    productionRowBatchExecutorMeasured && productionAtomicGroupMetadataVisible;
 
   return {
     schemaVersion: 1,
@@ -1859,6 +1869,7 @@ function buildReport({
         productionRowBatchExecutorMeasured,
         productionAtomicGroupMetadataVisible,
         productionStorageReceiptsVisible,
+        productionRowBatchExecutorVisible,
       },
       resourceLimits: {
         memoryCeilingBytes: config.maxBufferedUploadBytes,

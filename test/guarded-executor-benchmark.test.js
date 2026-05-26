@@ -99,6 +99,8 @@ test('guarded executor benchmark moves buffers and row payloads through durable 
   assert.equal(report.evidence.atomicGroup.productionStorageReceiptsMeasured, false);
   assert.equal(report.evidence.atomicGroup.productionAtomicGroupMetadataVisible, true);
   assert.equal(report.evidence.atomicGroup.productionStorageReceiptsVisible, false);
+  assert.equal(report.evidence.atomicGroup.productionRowBatchExecutorVisible, false);
+  assert.equal(report.claims.productionThroughputDetails.productionStorageReceiptsVisible, false);
   assert.equal(
     report.evidence.atomicGroup.productionStorageReceiptsMeasured,
     report.claims.productionThroughputDetails.atomicGroup.productionStorageReceiptsMeasured,
@@ -108,9 +110,14 @@ test('guarded executor benchmark moves buffers and row payloads through durable 
     true,
   );
   assert.equal(
+    report.claims.productionThroughputDetails.atomicGroup.productionAtomicGroupMetadataVisible,
+    true,
+  );
+  assert.equal(
     report.evidence.atomicGroup.productionRowBatchExecutorMeasured,
     report.claims.productionThroughputDetails.atomicGroup.productionRowBatchExecutorMeasured,
   );
+  assert.equal(report.claims.productionThroughputDetails.atomicGroup.productionRowBatchExecutorVisible, false);
   assert.equal(report.throughput.productionThroughput, 'not-claimed');
 });
 
@@ -153,6 +160,7 @@ test('guarded benchmark refuses production throughput claims until production ga
   assert.equal(report.claims.productionThroughputDetails.queueHeadroomWithinResourceCeiling, true);
   assert.equal(report.claims.productionThroughputDetails.queueHeadroomPositive, true);
   assert.equal(report.claims.productionThroughputDetails.queueBudgetPositive, true);
+  assert.equal(report.claims.productionThroughputDetails.productionStorageReceiptsVisible, false);
   assert.equal(report.claims.productionThroughputDetails.receiptCursorMemoryCeilingMatchesQueueBudget, true);
   assert.equal(
     report.claims.productionThroughputDetails.backpressureConsistency
@@ -169,6 +177,8 @@ test('guarded benchmark refuses production throughput claims until production ga
   assert.equal(report.claims.productionThroughputDetails.backpressureConsistency.queueHeadroomPositive, true);
   assert.equal(report.claims.productionThroughputDetails.backpressureConsistency.queueBudgetPositive, true);
   assert.equal(report.claims.productionThroughputDetails.backpressureConsistency.queuePausedBeforeOverflow, true);
+  assert.equal(report.claims.productionThroughputDetails.backpressureConsistency.productionAtomicGroupMetadataVisible, true);
+  assert.equal(report.claims.productionThroughputDetails.backpressureConsistency.productionStorageReceiptsVisible, false);
   assert.equal(
     report.claims.productionThroughputDetails.backpressureConsistency.queuePauseHasMeasuredReceiptCursorBackpressure,
     true,
@@ -231,6 +241,7 @@ test('guarded benchmark refuses production throughput claims until production ga
   assert.equal(report.claims.productionThroughputDetails.receiptCursorHeadroomMatchesResourceHeadroom, true);
   assert.equal(report.claims.productionThroughputDetails.receiptCursorMemoryHeadroomWithinResourceHeadroom, true);
   assert.equal(report.claims.productionThroughputDetails.receiptCursorHeadroomCoveredByQueueBudget, true);
+  assert.equal(report.claims.productionThroughputDetails.backpressureConsistency.receiptCursorMemoryHeadroomWithinResourceHeadroom, true);
   assert.equal(report.claims.productionThroughputDetails.receiptCursorHeadroomBytes, 31.5 * 1024 * 1024);
   assert.equal(report.claims.productionThroughputDetails.receiptCursorHeadroomMatchesQueueHeadroom, true);
   assert.equal(report.claims.productionThroughputDetails.receiptCursorWithinQueueBudget, true);
