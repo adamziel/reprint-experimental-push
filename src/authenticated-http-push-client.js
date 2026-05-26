@@ -213,6 +213,16 @@ export async function runAuthenticatedHttpPush({
     hasProductionAuthSessionTypeDrift(apply)
     || hasProductionAuthSessionStatusDrift(apply)
   );
+  if (applyAuthSessionDrift) {
+    summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
+    summary.authSession = {
+      required: 'production-auth-session',
+      observed: apply.body?.auth?.session?.type || 'missing',
+      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+    };
+    setDurableJournalBoundary(summary, 'apply');
+    return summary;
+  }
 
   const recoveryInspect = await client.signedPost('/recovery/inspect', {
     plan,
@@ -258,7 +268,7 @@ export async function runAuthenticatedHttpPush({
     setDurableJournalBoundary(summary, 'recovery-inspect');
     return summary;
   }
-  if (applyAuthSessionDrift || recoveryInspectAuthSessionDrift) {
+  if (recoveryInspectAuthSessionDrift) {
     summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
     summary.authSession = {
       required: 'production-auth-session',
