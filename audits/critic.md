@@ -1,15 +1,15 @@
 # Critic Verdict
 
-Current reliable head: `353bd9e6bda174a6e94c53ad9ae001d13690fcc9`
-(`Keep auth session boundary on later drift`).
+Current reliable head: `83fcb63cfe58d617fbe10aad02fec075909d7671`
+(`Require exact preserved read retry proof`).
 
 Verdict: `0/4`
 
 Reason:
 
-- This head adds more auth-session boundary hardening on the release verifier
-  path, but it still does not prove a production-backed lifecycle on the
-  checked release path.
+- This head adds an exact preserved-read retry assertion on the release
+  verifier path, but it still does not prove a production-backed lifecycle on
+  the checked release path.
 - The checked proof is still missing live issuance/read/expiry/rotation/
   revocation/cleanup evidence for `production-auth-session`, and it still does
   not establish stricter durable-journal ownership/restart semantics on the
