@@ -550,6 +550,15 @@ export function productionThroughputBlockers(report) {
   ) {
     blockers.push('success-inspection-claim-status-not-recognized');
   }
+  if (
+    report.results?.successInspection?.claim?.status === 'blocked'
+    && (
+      typeof report.results.successInspection?.claim?.reason !== 'string'
+      || report.results.successInspection.claim.reason.length === 0
+    )
+  ) {
+    blockers.push('success-inspection-claim-reason-not-proven');
+  }
   if (report.executorCapabilities.fileReceipts !== 'production-storage-receipts') {
     blockers.push('production-storage-receipts-not-measured');
   }
@@ -699,6 +708,9 @@ export function productionThroughputDetails(report) {
     || successInspectionClaimStatus === 'active'
     || successInspectionClaimStatus === 'advanced'
     || successInspectionClaimStatus === 'blocked';
+  const successInspectionClaimReasonProven =
+    successInspectionClaimStatus !== 'blocked'
+    || (typeof successInspectionClaimReason === 'string' && successInspectionClaimReason.length > 0);
   const successInspectionClaimMatchesInspectionStatus =
     successInspectionClaimRecognized
     && (
@@ -834,6 +846,7 @@ export function productionThroughputDetails(report) {
     successInspectionClaimStatus,
     successInspectionClaimReason,
     successInspectionClaimRecognized,
+    successInspectionClaimReasonProven,
     successInspectionClaimMatchesInspectionStatus,
     receiptCursorMemoryHeadroomMatchesResourceHeadroom,
     receiptCursorMemoryHeadroomWithinResourceHeadroom,

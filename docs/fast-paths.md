@@ -119,6 +119,9 @@ Current executable gate:
 - The report now also fails closed when the success inspection claim status is
   unrecognized, so an unexpected recovery-claim state cannot masquerade as a
   known inspection result.
+- The report now also fails closed when a blocked success inspection claim has
+  no reason, so a recovery claim cannot look complete without a concrete
+  explanation.
 - The report now also fails closed if receipt-cursor queue slack is missing on
   any path, so the benchmark cannot quietly accept an under-instrumented
   backpressure record.
