@@ -14,8 +14,8 @@ Fresh remote heads at audit time, checked on May 26, 2026:
 - `origin/lane/independent-auditor` -> `7191fbc6`
 - `origin/lane/critic` -> `68569c0b`
 - `origin/lane/progress-publisher` -> `7695e1f9`
-- `origin/lane/same-plan-wordpress-graph-create` -> `7bf5d421`
-- `origin/lane/cycle-20260525-mainwindows-2349/same-plan-wordpress-graph-create` -> `7bf5d421`
+- `origin/lane/same-plan-wordpress-graph-create` -> `09e6706d`
+- `origin/lane/cycle-20260525-mainwindows-2349/same-plan-wordpress-graph-create` -> `09e6706d`
 - `origin/lane/cycle-20260525-mainwindows-2349/same-plan-wordpress-graph-create` -> `e9cbf9d4`
 - `origin/lane/cycle-20260525-mainwindows-2357/no-data-loss-invariants-graph-proof` -> `98c0ce26`
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `f042a3e3`
@@ -81,6 +81,9 @@ but it did not change the release conclusion:
   serialized blocks, thumbnail parent references, and other same-plan graph
   blockers. That is a stronger fail-closed proof, but it still stops short of
   release-grade live mutation evidence.
+- `origin/lane/same-plan-wordpress-graph-create` now tightens the same-plan
+  graph revision checks at `09e6706d`. This remains boundary hardening, not
+  production-backed mutation proof.
 - `origin/lane/cycle-20260525-mainwindows-2349/same-plan-wordpress-graph-create`
   now adds same-plan graph edge hardening at `7bf5d421`. It tightens the
   planner boundary further, but it still does not add live source mutation
