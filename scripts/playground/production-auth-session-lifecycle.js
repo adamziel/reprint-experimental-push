@@ -573,6 +573,14 @@ function resolveInvalidAuthSessionSummaryObservationField(summary) {
         observed: `invalid-${field}`,
       };
     }
+
+    if (!summaryObservationStepMatchesMarker(field, observation.step)) {
+      return {
+        ok: false,
+        required: 'preserved read',
+        observed: normalizeAuthSessionObservationStep(observation.step),
+      };
+    }
   }
 
   return null;
@@ -615,6 +623,20 @@ function summaryObservationCarriesExpectedFlag(field, observation) {
       return observation.rotated === true;
     case 'preserved':
       return observation.preserved === true;
+    default:
+      return true;
+  }
+}
+
+function summaryObservationStepMatchesMarker(field, step) {
+  switch (field) {
+    case 'expired':
+    case 'revoked':
+    case 'rotated':
+    case 'preserved':
+      return isAuthSessionReadStep(step);
+    case 'cleanedUp':
+      return step === 'cleanup';
     default:
       return true;
   }

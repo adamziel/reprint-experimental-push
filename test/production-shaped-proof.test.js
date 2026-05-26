@@ -3912,6 +3912,74 @@ test('production auth/session lifecycle summary fails closed when top-level mark
   );
 });
 
+test('production auth/session lifecycle summary fails closed when top-level marker objects use incompatible phase steps', () => {
+  assert.deepEqual(
+    evaluateProductionAuthSessionLifecycleSummary({
+      issued: {
+        step: 'preflight',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+      },
+      read: {
+        step: 'journal',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+        preserved: true,
+      },
+      preserved: {
+        step: 'preflight',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+        preserved: true,
+      },
+    }),
+    {
+      ok: false,
+      required: 'preserved read',
+      observed: 'preflight',
+    },
+  );
+
+  assert.deepEqual(
+    evaluateProductionAuthSessionLifecycleSummary({
+      issued: {
+        step: 'preflight',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+      },
+      read: {
+        step: 'journal',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+        preserved: true,
+      },
+      cleanedUp: {
+        step: 'journal',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+        cleanedUp: true,
+      },
+    }),
+    {
+      ok: false,
+      required: 'preserved read',
+      observed: 'journal',
+    },
+  );
+});
+
 test('production auth/session lifecycle summary fails closed when an intermediate preserved-read cleanup alias is a string value', () => {
   assert.deepEqual(
     evaluateProductionAuthSessionLifecycleSummary({
