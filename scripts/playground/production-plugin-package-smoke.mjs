@@ -27,6 +27,11 @@ const alternateCredentials = {
   password: 'reprint-push-alt-admin-app-password',
 };
 
+const rotatedCredentials = {
+  username: 'reprint_push_admin',
+  password: 'reprint-push-admin-rotated-app-password',
+};
+
 const unscopedCredentials = {
   username: 'reprint_push_unscoped_admin',
   password: 'reprint-push-unscoped-app-password',
@@ -107,6 +112,7 @@ try {
     driverUpdateValidationGuard: {},
     driverReceiptIdentityGuard: {},
     driverReceiptExpiryGuard: {},
+    driverReceiptRotatedCredentialGuard: {},
     final: {},
   };
 
@@ -532,6 +538,68 @@ try {
       rowRetainedAfterReject: afterIdentityMismatchReject.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1'] !== undefined,
       updatedMarkerAfterReject: afterIdentityMismatchReject.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1']?.updated_marker,
     };
+
+    const rotatedClient = authenticatedHttpClient({
+      sourceUrl: server.baseUrl,
+      credential: rotatedCredentials,
+      routeProfile: 'production-shaped',
+    });
+    const rotatedPreflight = await rotatedClient.signedGet('/preflight');
+    assert.equal(rotatedPreflight.status, 200);
+    assert.equal(rotatedPreflight.body?.ok, true);
+    assert.equal(rotatedPreflight.body?.auth?.identity?.userLogin, credentials.username);
+    assert.notEqual(
+      rotatedPreflight.body?.auth?.session?.applicationPasswordUuid,
+      preflight.body?.auth?.session?.applicationPasswordUuid,
+      'rotated packaged signed preflight should mint a distinct application password uuid for the same user',
+    );
+    const rotatedSession = rotatedPreflight.body?.session?.id;
+    assert.equal(typeof rotatedSession, 'string');
+    assert.ok(rotatedSession.length > 0, 'rotated packaged signed preflight did not return a session id');
+
+    const rotatedCredentialApply = await rotatedClient.signedPost(
+      '/apply',
+      {
+        plan: updatePlan,
+        receipt: updateDryRun.body.receipt,
+      },
+      {
+        session: rotatedSession,
+        idempotencyKey: 'production-plugin-driver-rotated-credential-apply',
+      },
+    );
+    assert.equal(rotatedCredentialApply.status, 409);
+    assert.equal(rotatedCredentialApply.body?.ok, false);
+    assert.equal(rotatedCredentialApply.body?.code, 'AUTH_RECEIPT_MISMATCH');
+
+    const afterRotatedCredentialReject = await client.get('/snapshot');
+    assert.equal(afterRotatedCredentialReject.status, 200);
+    assert.equal(afterRotatedCredentialReject.body?.ok, true);
+    assert.equal(
+      afterRotatedCredentialReject.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1']?.updated_marker,
+      'local-update',
+      'rotated-credential packaged apply still mutated the remote snapshot',
+    );
+    assert.deepEqual(
+      afterRotatedCredentialReject.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1']?.payload,
+      {
+        owner: driverFixture.pluginOwner,
+        mode: 'local-update',
+        version: 2,
+      },
+      'rotated-credential packaged apply changed the arbitrary driver payload',
+    );
+
+    summary.driverReceiptRotatedCredentialGuard = {
+      resourceKey: driverFixture.resourceKey,
+      rotatedUser: rotatedCredentials.username,
+      rotatedCredentialRejectedCode: rotatedCredentialApply.body?.code,
+      rotatedCredentialRejectedMessage: rotatedCredentialApply.body?.message,
+      originalApplicationPasswordUuid: preflight.body?.auth?.session?.applicationPasswordUuid,
+      rotatedApplicationPasswordUuid: rotatedPreflight.body?.auth?.session?.applicationPasswordUuid,
+      rowRetainedAfterReject: afterRotatedCredentialReject.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1'] !== undefined,
+      updatedMarkerAfterReject: afterRotatedCredentialReject.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1']?.updated_marker,
+    };
   });
 
   await withPlaygroundServer('production-plugin-driver-delete-apply', driverDeleteServerBlueprintPath, pluginDir, async (server) => {
@@ -775,6 +843,15 @@ function writeDriverFixtureBlueprint(
         "require_once '/wordpress/wp-load.php';",
         '$result = reprint_push_lab_rest_provision_push_application_password(array(\'login\' => \'reprint_push_alt_admin\', \'appPassword\' => \'reprint-push-alt-admin-app-password\', \'role\' => \'administrator\', \'slug\' => \'alternate-admin\', \'name\' => \'Reprint Push Package Smoke Alt\', \'createUser\' => true, \'updateRole\' => true));',
         'if (empty($result[\'ok\'])) { throw new RuntimeException((string) ($result[\'message\'] ?? \'alternate push credential provisioning failed\')); }',
+      ].join(' '),
+    });
+    blueprint.steps.push({
+      step: 'runPHP',
+      code: [
+        '<?php',
+        "require_once '/wordpress/wp-load.php';",
+        '$result = reprint_push_lab_rest_provision_push_application_password(array(\'login\' => \'reprint_push_admin\', \'appPassword\' => \'reprint-push-admin-rotated-app-password\', \'role\' => \'administrator\', \'slug\' => \'primary-admin-rotated\', \'name\' => \'Reprint Push Package Smoke Rotated\', \'createUser\' => true, \'updateRole\' => true));',
+        'if (empty($result[\'ok\'])) { throw new RuntimeException((string) ($result[\'message\'] ?? \'rotated push credential provisioning failed\')); }',
       ].join(' '),
     });
   }
