@@ -1928,7 +1928,7 @@ test('production-shaped authenticated push classifies revoked status drift as an
     assert.equal(summary.ok, false);
     assert.equal(summary.code, 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED');
     assert.deepEqual(summary.authSession, {
-      field: 'auth.session.revoked',
+      field: 'auth.session.status',
       required: 'unrevoked',
       observed: 'revoked',
       verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
