@@ -267,6 +267,7 @@ test('production-shaped authenticated push fails closed when production auth ses
       status: 'unimplemented',
       verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
       authSession: {
+        field: 'auth.session.type',
         required: 'production-auth-session',
         observed: 'application-password-basic',
         verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
@@ -319,6 +320,7 @@ test('production-shaped authenticated push fails closed when production auth ses
       status: 'unimplemented',
       verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
       authSession: {
+        field: 'auth.session.status',
         required: 'active',
         observed: 'expired',
         verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
@@ -376,6 +378,7 @@ test('production-shaped authenticated push fails closed when production auth ses
       status: 'unimplemented',
       verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
       authSession: {
+        field: 'auth.session.expiresAt',
         required: 'unexpired',
         observed: '2000-01-01T00:00:00Z',
         verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
@@ -1207,6 +1210,7 @@ test('production-shaped authenticated push fails closed when a required producti
       status: 'unimplemented',
       verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
       authSession: {
+        field: 'auth.session.status',
         required: 'unrevoked',
         observed: 'revoked',
         verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
@@ -2745,8 +2749,9 @@ test('production-shaped authenticated push fails closed when production auth ses
     assert.equal(summary.ok, false);
     assert.equal(summary.code, 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED');
     assert.deepEqual(summary.authSession, {
-      required: 'production-auth-session',
-      observed: 'production-auth-session',
+      field: 'auth.session.status',
+      required: 'active',
+      observed: 'missing',
       verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
     });
     assert.deepEqual(summary.boundary, {
