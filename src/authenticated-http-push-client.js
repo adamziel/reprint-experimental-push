@@ -422,6 +422,15 @@ function summarizeResponse(response) {
     authSessionId: body.auth?.session?.id,
     sessionType: body.auth?.session?.type,
     signed: body.signedRequest?.signed === true,
+    signedRequest: body.signedRequest ? {
+      schemaVersion: body.signedRequest.schemaVersion,
+      contentHash: body.signedRequest.contentHash,
+      timestamp: body.signedRequest.timestamp,
+      nonceHash: body.signedRequest.nonceHash,
+      sessionHash: body.signedRequest.sessionHash,
+      signingKeyHash: body.signedRequest.signingKeyHash,
+      request: body.signedRequest.request,
+    } : undefined,
     idempotency: body.idempotency ? {
       replayed: body.idempotency.replayed === true,
       freshMutationWork: body.idempotency.freshMutationWork === true,
@@ -506,6 +515,13 @@ function isReplayEquivalent(applyResponse, replayResponse) {
     && applyBody.auth?.session?.id === replayBody.auth?.session?.id
     && applyBody.auth?.session?.type === replayBody.auth?.session?.type
     && applyBody.signedRequest?.signed === replayBody.signedRequest?.signed
+    && applyBody.signedRequest?.schemaVersion === replayBody.signedRequest?.schemaVersion
+    && applyBody.signedRequest?.contentHash === replayBody.signedRequest?.contentHash
+    && applyBody.signedRequest?.timestamp === replayBody.signedRequest?.timestamp
+    && applyBody.signedRequest?.nonceHash === replayBody.signedRequest?.nonceHash
+    && applyBody.signedRequest?.sessionHash === replayBody.signedRequest?.sessionHash
+    && applyBody.signedRequest?.signingKeyHash === replayBody.signedRequest?.signingKeyHash
+    && JSON.stringify(applyBody.signedRequest?.request || null) === JSON.stringify(replayBody.signedRequest?.request || null)
     && applyBody.idempotency?.replayed === replayBody.idempotency?.replayed
     && applyBody.idempotency?.freshMutationWork === replayBody.idempotency?.freshMutationWork
     && applyBody.idempotency?.status === replayBody.idempotency?.status
