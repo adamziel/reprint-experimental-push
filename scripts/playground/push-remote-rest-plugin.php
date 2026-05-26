@@ -634,11 +634,11 @@ function reprint_push_lab_rest_merge_checked_recovery_journal_contract(
 
     $upgrade_scope = array_key_exists('scope', $checked_db_journal)
         && reprint_push_lab_rest_should_upgrade_checked_db_journal_scope($journal, $checked_db_journal);
-
-    if (!array_key_exists('acceptedOnCheckedBoundary', $journal) || $journal['acceptedOnCheckedBoundary'] !== true) {
-        $journal['acceptedOnCheckedBoundary'] = true;
-    }
-
+    $upgrade_acceptance = reprint_push_lab_rest_should_upgrade_checked_boundary_acceptance(
+        $journal,
+        $checked_db_journal
+    );
+    $prefer_checked_top_level = $upgrade_scope || $upgrade_acceptance;
     $prefer_authoritative_checked_top_level = reprint_push_lab_rest_checked_boundary_contract_is_authoritative(
         $journal,
         $checked_db_journal
@@ -659,6 +659,12 @@ function reprint_push_lab_rest_merge_checked_recovery_journal_contract(
             (
                 reprint_push_lab_rest_should_fill_checked_db_journal_field($journal, $checked_db_journal, $key)
                 || (
+                    $prefer_checked_top_level
+                    && array_key_exists($key, $journal)
+                    && array_key_exists($key, $checked_db_journal)
+                    && $journal[$key] !== $checked_db_journal[$key]
+                )
+                || (
                     $prefer_authoritative_checked_top_level
                     && array_key_exists($key, $journal)
                     && array_key_exists($key, $checked_db_journal)
@@ -675,6 +681,10 @@ function reprint_push_lab_rest_merge_checked_recovery_journal_contract(
         $journal['scope'] = $checked_db_journal['scope'];
     }
 
+    if ($upgrade_acceptance) {
+        $journal['acceptedOnCheckedBoundary'] = true;
+    }
+
     foreach (['ownership', 'writerLease', 'leaseFence'] as $nested_key) {
         if (!isset($checked_db_journal[$nested_key]) || !is_array($checked_db_journal[$nested_key])) {
             continue;
@@ -682,8 +692,8 @@ function reprint_push_lab_rest_merge_checked_recovery_journal_contract(
         $journal[$nested_key] = reprint_push_lab_rest_merge_checked_contract_fields(
             isset($journal[$nested_key]) && is_array($journal[$nested_key]) ? $journal[$nested_key] : [],
             $checked_db_journal[$nested_key],
-            false,
-            true
+            $prefer_checked_top_level,
+            $prefer_authoritative_checked_top_level
         );
     }
 
@@ -894,7 +904,7 @@ function reprint_push_lab_rest_should_upgrade_checked_db_journal_scope(array $db
         return true;
     }
 
-    return preg_match('/local Playground fixture only|not production durability/i', $existing_scope) === 1;
+    return preg_match('/(^|; )local Playground fixture only|^fixture-scoped|not production durability/i', $existing_scope) === 1;
 }
 
 function reprint_push_lab_rest_should_upgrade_checked_boundary_acceptance(array $db_journal, array $checked_summary): bool
@@ -1052,6 +1062,22 @@ function reprint_push_lab_rest_normalize_authoritative_checked_contract(
         !is_string($checked_storage_guard)
         || $checked_storage_guard === ''
         || $merged_storage_guard !== $checked_storage_guard
+    ) {
+        return $journal;
+    }
+
+    $current_adapter = isset($journal['ownership']['productionAdapter'])
+        ? (string) $journal['ownership']['productionAdapter']
+        : null;
+    $current_boundary = isset($journal['leaseFence']['boundary'])
+        ? (string) $journal['leaseFence']['boundary']
+        : null;
+    if (
+        is_string($current_adapter)
+        && $current_adapter !== ''
+        && is_string($current_boundary)
+        && $current_boundary !== ''
+        && $current_adapter !== $current_boundary
     ) {
         return $journal;
     }
