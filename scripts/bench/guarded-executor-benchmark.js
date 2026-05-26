@@ -177,6 +177,10 @@ export function productionThroughputBlockers(report) {
   const receiptCursorMemoryHeadroomBytes = report.evidence.backpressure?.receiptCursorMemoryHeadroomBytes ?? null;
   const receiptCursorMemoryCeilingBytes = report.resourceLimits?.memoryCeilingBytes ?? null;
   const receiptCursorWindowBytes = report.evidence.chunkReceipts.resumeCursor?.sizeBytes ?? null;
+  const receiptCursorQueueSlackVisible =
+    report.evidence.backpressure?.receiptCursorQueueSlackVisible === true;
+  const receiptCursorMemoryHeadroomVisible =
+    report.evidence.backpressure?.receiptCursorMemoryHeadroomVisible === true;
   const receiptCursorMemoryCeilingVisible =
     Number.isFinite(receiptCursorMemoryCeilingBytes)
     && Number.isFinite(receiptCursorQueueBudgetBytes)
@@ -716,6 +720,18 @@ export function productionThroughputBlockers(report) {
     blockers.push('queue-headroom-not-visible');
   }
   if (
+    report.evidence.backpressure?.queuePausedBeforeOverflow === true
+    && receiptCursorQueueSlackVisible !== true
+  ) {
+    blockers.push('queue-pause-without-visible-receipt-cursor-queue-slack');
+  }
+  if (
+    report.evidence.backpressure?.queuePausedBeforeOverflow === true
+    && receiptCursorMemoryHeadroomVisible !== true
+  ) {
+    blockers.push('queue-pause-without-visible-receipt-cursor-memory-headroom');
+  }
+  if (
     report.evidence.backpressure?.queueHeadroomVisible === true
     && report.evidence.backpressure?.queueHeadroomMeasured !== true
   ) {
@@ -735,6 +751,18 @@ export function productionThroughputBlockers(report) {
     blockers.push('queue-budget-and-queue-headroom-visible-without-queue-headroom-measurement');
   }
   if (
+    receiptCursorQueueSlackVisible === true
+    && report.evidence.backpressure?.queueBudgetVisible !== true
+  ) {
+    blockers.push('receipt-cursor-queue-slack-visible-without-queue-budget-visibility');
+  }
+  if (
+    receiptCursorMemoryHeadroomVisible === true
+    && report.evidence.backpressure?.receiptCursorMemoryCeilingVisible !== true
+  ) {
+    blockers.push('receipt-cursor-memory-headroom-visible-without-memory-ceiling-visibility');
+  }
+  if (
     report.evidence.backpressure?.queuePausedBeforeOverflow === true
     && report.evidence.backpressure?.receiptCursorMemoryCeilingVisible !== true
   ) {
@@ -745,6 +773,18 @@ export function productionThroughputBlockers(report) {
     && report.evidence.backpressure.receiptCursorMemoryHeadroomBytes <= 0
   ) {
     blockers.push('receipt-cursor-memory-headroom-not-positive');
+  }
+  if (
+    receiptCursorQueueSlackVisible === true
+    && !Number.isFinite(report.evidence.backpressure?.receiptCursorQueueSlackBytes)
+  ) {
+    blockers.push('receipt-cursor-queue-slack-visible-without-measurement');
+  }
+  if (
+    receiptCursorMemoryHeadroomVisible === true
+    && !Number.isFinite(report.evidence.backpressure?.receiptCursorMemoryHeadroomBytes)
+  ) {
+    blockers.push('receipt-cursor-memory-headroom-visible-without-measurement');
   }
   if (backpressureEvidenceComplete !== true) {
     blockers.push('backpressure-evidence-incomplete');
@@ -1099,6 +1139,10 @@ export function productionThroughputDetails(report) {
   const queueHeadroomVisible =
     report.evidence.backpressure?.queueHeadroomVisible === true;
   const queueHeadroomMeasured = report.evidence.backpressure?.queueHeadroomMeasured === true;
+  const receiptCursorQueueSlackVisible =
+    report.evidence.backpressure?.receiptCursorQueueSlackVisible === true;
+  const receiptCursorMemoryHeadroomVisible =
+    report.evidence.backpressure?.receiptCursorMemoryHeadroomVisible === true;
   const queueHeadroomVisibleAndMeasured =
     queueHeadroomVisible && queueHeadroomMeasured;
   const queueBudgetVisibleAndMemoryCeilingVisibleAndMeasured =
@@ -1518,6 +1562,7 @@ export function productionThroughputDetails(report) {
     ...pausedQueueSlackEvidence,
     queuePauseHasMeasuredAndAlignedReceiptCursorBackpressure,
     receiptCursorQueueSlackBytes,
+    receiptCursorQueueSlackVisible,
     receiptCursorQueueSlackPositive,
     receiptCursorQueueSlackMatchesBackpressure,
     receiptCursorQueueSlackMatchesMemoryHeadroom,
@@ -1530,6 +1575,7 @@ export function productionThroughputDetails(report) {
     receiptCursorQueueSlackWithinQueueHeadroom,
     receiptCursorMemoryHeadroomWithinQueueBudget,
     receiptCursorMemoryHeadroomBytes,
+    receiptCursorMemoryHeadroomVisible,
     receiptCursorMemoryHeadroomPositive: receiptCursorMemoryHeadroomPositiveVisible,
     receiptCursorMemoryCeilingMatchesQueueBudget,
     receiptCursorMemoryCeilingMatchesQueueBudgetVisible,
@@ -1627,6 +1673,7 @@ export function productionThroughputDetails(report) {
       queuePauseHasMeasuredAndAlignedReceiptCursorBackpressure,
       queueHeadroomMeasured,
       receiptCursorQueueSlackBytes,
+      receiptCursorQueueSlackVisible,
       receiptCursorQueueSlackPositive,
       receiptCursorQueueSlackMatchesBackpressure,
       receiptCursorQueueSlackMatchesMemoryHeadroom,
@@ -1640,6 +1687,7 @@ export function productionThroughputDetails(report) {
       queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack,
       receiptCursorMemoryHeadroomWithinQueueBudget,
       receiptCursorMemoryHeadroomBytes,
+      receiptCursorMemoryHeadroomVisible,
       receiptCursorMemoryHeadroomPositive: receiptCursorMemoryHeadroomPositiveVisible,
       receiptCursorMemoryHeadroomWithinResourceHeadroom,
       receiptCursorMemoryCeilingMatchesQueueBudget,
@@ -2343,6 +2391,8 @@ function buildReport({
           && Number.isFinite(config.maxBufferedUploadBytes)
             ? config.maxBufferedUploadBytes - lastChunkReceipt.sizeBytes
             : null,
+        receiptCursorQueueSlackVisible:
+          config.maxBufferedUploadBytes === DEFAULT_LIMITS.maxBufferedUploadBytes,
         receiptCursorQueueSlackWithinResourceHeadroom:
           Number.isFinite(lastChunkReceipt?.sizeBytes)
           && Number.isFinite(config.maxBufferedUploadBytes)
@@ -2355,6 +2405,8 @@ function buildReport({
           && lastChunkReceipt.sizeBytes <= config.maxBufferedUploadBytes
             ? config.maxBufferedUploadBytes - lastChunkReceipt.sizeBytes
             : null,
+        receiptCursorMemoryHeadroomVisible:
+          config.maxBufferedUploadBytes === DEFAULT_LIMITS.maxBufferedUploadBytes,
         receiptCursorWithinQueueBudget:
           Number.isFinite(lastChunkReceipt?.sizeBytes)
           && lastChunkReceipt.sizeBytes <= config.maxBufferedUploadBytes,

@@ -390,6 +390,9 @@ Current executable gate:
 - The report now also exposes a receipt-cursor memory-headroom replay check,
   so bounded replay sizing can stay advisory while the live compare and
   journal evidence still decide visibility.
+- The report now also exposes raw visibility bits for receipt-cursor queue
+  slack and memory headroom, and the throughput gate fails closed if a paused
+  queue hides either surface while still trying to look fully instrumented.
 - The report now also exposes whether receipt-cursor headroom is covered by
   the queue budget, so the cursor audit can fail closed even when the exact
   headroom values drift apart.
