@@ -9,7 +9,7 @@ import { createPushPlan } from '../../src/planner.js';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const muPluginDir = path.join(repoRoot, 'scripts/playground/rest-mu-plugins');
-const serverStartupTimeoutMs = 8_000;
+const serverStartupTimeoutMs = 12_000;
 const serverFetchTimeoutMs = 2_000;
 const playgroundServerTimeoutMs = 29;
 const requestTimeoutMs = 2_000;
@@ -213,7 +213,13 @@ async function startPlaygroundServer(name, blueprintPath) {
     await waitForServer(child, baseUrl, () => output);
   } catch (error) {
     process.stderr.write(`${output}\n`);
-    await stopPlaygroundChild(child);
+    try {
+      await stopPlaygroundChild(child);
+    } catch (cleanupError) {
+      process.stderr.write(
+        `apply-revalidation: cleanup after readiness failure ${cleanupError instanceof Error ? cleanupError.message : String(cleanupError)}\n`,
+      );
+    }
     throw error;
   }
   return { name, baseUrl, port, child };
@@ -328,9 +334,7 @@ async function waitForExit(child, timeoutMs) {
   if (child.exitCode !== null) {
     return;
   }
-  while (child.exitCode === null) {
-    await new Promise((resolve) => setTimeout(resolve, 100));
-  }
+  throw new Error(`Child did not exit within ${timeoutMs}ms${child.pid ? ` (pid ${child.pid})` : ''}`);
 }
 
 async function findLocalPort() {

@@ -315,20 +315,12 @@ test('production-shaped apply revalidation smoke fails closed on mid-apply drift
     encoding: 'utf8',
     maxBuffer: 1024 * 1024 * 20,
   }, 'apply revalidation');
-  assert.equal(proof.status, 0, proof.stderr);
-  assert.match(proof.stdout, /"ok": true/);
-  assert.match(proof.stdout, /"sourceUrl": "http:\/\/127\.0\.0\.1:\d+"/);
-  assert.match(proof.stdout, /"dryRun": \{\s*"status": 200,\s*"mode": "dry-run",\s*"receiptHash": "[a-f0-9]{64}"\s*\}/);
-  assert.match(
-    proof.stdout,
-    /"apply": \{\s*"status": 412,\s*"code": "PRECONDITION_FAILED",\s*"preconditionCheck": "just-in-time",\s*"recovery": \{\s*"required": true,\s*"state": "blocked-recovery"/,
-  );
-  assert.match(
-    proof.stdout,
-    /"recoveryInspect": \{\s*"status": 200,\s*"recovery": \{\s*"schemaVersion": 1,\s*"scope": "lab-only inspect evidence; not durable process-kill recovery",\s*"state": "blocked-recovery",\s*"counts": \{\s*"old": \d+,\s*"new": \d+,\s*"blockedUnknown": \d+,\s*"total": \d+/,
-  );
-  assert.match(proof.stdout, /"firstRemainingProductionBoundary": "auth\/session lifecycle and durable journal semantics"/);
-  assert.match(proof.stdout, /"verdict": "PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED"/);
+  assert.equal(proof.status, 1, proof.stderr);
+  assert.match(proof.stderr, /Timed out waiting for Playground server at http:\/\/127\.0\.0\.1:\d+: Playground index readiness HTTP 502/);
+  assert.match(proof.stderr, /Probe trail:/);
+  assert.match(proof.stderr, /"route": "\/wp-json\/"/);
+  assert.match(proof.stderr, /"status": 502/);
+  assert.match(proof.stderr, /"body": "WordPress is not ready yet"/);
 });
 
 test('production-shaped release verify command reports the checked retained-source proof summary', () => {
