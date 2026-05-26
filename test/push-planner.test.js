@@ -5737,7 +5737,7 @@ test('blocks a local thumbnail reference owned by a wp_navigation post even when
   assert.throws(() => applyPlan(baseSite(), plan), /Refusing to apply/);
 });
 
-test('blocks a local attachment parent reference to a same-plan attachment', () => {
+test('allows a local attachment parent reference to a same-plan attachment', () => {
   const targetResourceKey = 'row:["wp_posts","ID:2"]';
   const attachmentResourceKey = 'row:["wp_posts","ID:3"]';
   const base = baseSite();
@@ -5760,23 +5760,26 @@ test('blocks a local attachment parent reference to a same-plan attachment', () 
   const remote = baseSite();
 
   const plan = planFor(base, local, remote);
-  const blocker = plan.blockers.find((entry) => entry.resourceKey === attachmentResourceKey);
+  const targetMutation = mutationFor(plan, targetResourceKey);
+  const attachmentMutation = mutationFor(plan, attachmentResourceKey);
+  const reference = attachmentMutation.wordpressGraphReferences[0];
 
-  assert.equal(plan.status, 'blocked');
-  assert.equal(plan.summary.mutations, 2);
-  assert.equal(blocker.class, 'missing-wordpress-graph-dependency');
-  assert.equal(blocker.resolutionPolicy, 'preserve-remote-wordpress-graph-and-stop');
-  assert.equal(blocker.references[0].relationshipType, 'post-parent');
-  assert.equal(blocker.references[0].targetResourceKey, targetResourceKey);
-  assert.equal(
-    JSON.stringify(blocker).includes('local-private-attachment-target-body'),
-    false,
-  );
-  assert.equal(
-    JSON.stringify(blocker).includes('local-private-attachment-child-body'),
-    false,
-  );
-  assert.throws(() => applyPlan(baseSite(), plan), /Refusing to apply/);
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.blockers, 0);
+  assert.equal(targetMutation.changeKind, 'create');
+  assert.equal(attachmentMutation.changeKind, 'create');
+  assert.deepEqual(attachmentMutation.dependsOnMutationIds, [targetMutation.id]);
+  assert.equal(reference.resolutionPolicy, 'same-plan-local-create');
+  assert.equal(reference.relationshipKey, 'wp_posts.post_parent');
+  assert.equal(reference.relationshipType, 'post-parent');
+  assert.equal(reference.targetResourceKey, targetResourceKey);
+  assert.equal(JSON.stringify(reference).includes('local-private-attachment-target-body'), false);
+  assert.equal(JSON.stringify(reference).includes('local-private-attachment-child-body'), false);
+
+  const result = applyPlan(baseSite(), plan);
+  assert.equal(result.site.db.wp_posts['ID:2'].post_title, 'Local attachment target');
+  assert.equal(result.site.db.wp_posts['ID:3'].post_title, 'Local attachment child');
+  assert.equal(result.site.db.wp_posts['ID:3'].post_parent, 2);
 });
 
 test('allows a local attachment parent reference to a same-plan post', () => {
