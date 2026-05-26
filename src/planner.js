@@ -2868,12 +2868,20 @@ function unsupportedSpecialFileResourceSupport({ resource, baseValue, localValue
     return { supported: true };
   }
 
-  const candidate = localValue !== ABSENT ? localValue : (baseValue !== ABSENT ? baseValue : remoteValue);
-  if (!candidate || candidate === ABSENT || typeof candidate !== 'object') {
+  const localChanged = localValue !== ABSENT && localValue !== baseValue;
+  const remoteChanged = remoteValue !== ABSENT && remoteValue !== baseValue;
+  const changedValues = [
+    localChanged ? localValue : null,
+    remoteChanged ? remoteValue : null,
+    baseValue !== ABSENT ? baseValue : null,
+  ].filter(Boolean);
+
+  if (changedValues.length === 0) {
     return { supported: true };
   }
 
-  if (!isUnsupportedSpecialFileValue(candidate)) {
+  const unsupportedValue = changedValues.find((value) => isUnsupportedSpecialFileValue(value));
+  if (!unsupportedValue) {
     return { supported: true };
   }
 
