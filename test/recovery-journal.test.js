@@ -947,6 +947,29 @@ test('production recovery journal compatibility overload fails closed when the c
   });
 });
 
+test('production recovery journal compatibility overload fails closed when the opened journal artifact ref diverges from the owned path', () => {
+  const filePath = tempJournalPath();
+  const remote = baseSite();
+  const plan = planFor(baseSite(), localSite(), remote);
+  const remoteArtifactPath = `${filePath}.remote`;
+
+  assert.throws(() => {
+    openProductionRecoveryJournal({
+      filePath,
+      plan,
+      current: remote,
+      claimId: 'claim-open-bad-journal-ref',
+      artifactRefs: {
+        journal: '/tmp/not-the-owned-recovery-journal.jsonl',
+        remote: remoteArtifactPath,
+      },
+    });
+  }, {
+    name: 'UnsupportedProductionRecoveryJournalError',
+    code: 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL',
+  });
+});
+
 test('production recovery journal compatibility overload fails closed when the consumed remote artifact ref diverges from the owned path', () => {
   const filePath = tempJournalPath();
   const remote = baseSite();

@@ -559,6 +559,29 @@ function normalizeProductionRecoveryJournalOptions(filePathOrOptions, options = 
     const legacyArtifactRefs = Object.hasOwn(legacyOptions, 'artifactRefs') && isStrictPlainObject(legacyOptions.artifactRefs)
       ? legacyOptions.artifactRefs
       : null;
+    if (
+      legacyArtifactRefs
+      && Object.hasOwn(legacyArtifactRefs, 'journal')
+      && legacyArtifactRefs.journal !== legacyOptions.filePath
+    ) {
+      throw new UnsupportedProductionRecoveryJournalError(
+        'Production recovery journal compatibility overload requires artifactRefs.journal to match the owned journal path.',
+        {
+          kind: 'production-recovery-journal',
+          productionAdapter: true,
+          supportedSurface: 'production-recovery-journal-adapter',
+          restartReadable: false,
+          ownsJournal: false,
+          ownsRemoteArtifact: Object.hasOwn(legacyArtifactRefs, 'remote'),
+          journalPath: typeof legacyOptions.filePath === 'string' ? legacyOptions.filePath : null,
+          artifactRefs: Object.freeze({
+            journal: legacyArtifactRefs.journal,
+            remote: Object.hasOwn(legacyArtifactRefs, 'remote') ? legacyArtifactRefs.remote : null,
+          }),
+          schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+        },
+      );
+    }
     const remoteArtifactPath = legacyArtifactRefs && Object.hasOwn(legacyArtifactRefs, 'remote')
       ? legacyArtifactRefs.remote
       : null;
