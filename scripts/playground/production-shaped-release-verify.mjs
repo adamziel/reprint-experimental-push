@@ -709,6 +709,7 @@ try {
               },
               authSessionLifecycle: proof.authSessionLifecycle,
               authSessionLifecycleTrace: proof.authSessionLifecycleTrace,
+              replayEquivalence: proof.replayEquivalence,
             },
             null,
             2,
