@@ -476,6 +476,33 @@ await withPlaygroundServer('authenticated-ready-base', path.join(repoRoot, fixtu
   await assertNoMutation(server, dryRunBefore.body.snapshot, 'authenticated dry-run');
   readyReceipt = dryRun.body.receipt;
 
+  const signedRecoveryInspect = await signedPostAuthenticated(
+    server,
+    '/recovery/inspect',
+    { plan: readyPlan, receipt: readyReceipt },
+    credentials.admin,
+    {
+      session: pushSession,
+      idempotencyKey: 'auth-http-ready-recovery-inspect',
+    },
+  );
+  assert.equal(signedRecoveryInspect.status, 200);
+  assert.equal(signedRecoveryInspect.body.ok, true);
+  assert.equal(signedRecoveryInspect.body.dbJournal.acceptedOnCheckedBoundary, true);
+  assert.deepEqual(signedRecoveryInspect.body.dbJournal.ownership, {
+    ownsJournal: true,
+    restartReadable: true,
+    productionAdapter: 'wpdb-single-statement-cas',
+  });
+  assert.deepEqual(signedRecoveryInspect.body.dbJournal.leaseFence, {
+    boundary: 'wpdb-single-statement-cas',
+    claimKeyUnique: true,
+    monotonicSequence: true,
+    restartReadable: true,
+    staleClaimRejected: false,
+  });
+  await assertNoMutation(server, dryRunBefore.body.snapshot, 'authenticated signed recovery inspect');
+
   const missingKey = await postAuthenticated(
     server,
     '/apply',

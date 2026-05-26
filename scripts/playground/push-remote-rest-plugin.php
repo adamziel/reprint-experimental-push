@@ -514,6 +514,14 @@ function reprint_push_lab_rest_authenticated_recovery_inspect(WP_REST_Request $r
         if (isset($result['recovery']) && is_array($result['recovery']) && !isset($result['recovery']['journal'])) {
             $result['recovery']['journal'] = reprint_push_lab_rest_recovery_journal_evidence();
         }
+        if (!isset($result['dbJournal']) || !is_array($result['dbJournal'])) {
+            $db_journal = reprint_push_lab_db_journal_summary(20, true);
+            $result['dbJournal'] = $db_journal;
+            $storage_guard = reprint_push_lab_rest_db_journal_storage_guard($db_journal);
+            if (is_array($storage_guard)) {
+                $result['storageGuard'] = $storage_guard;
+            }
+        }
         $result['responseSchemaVersion'] = 1;
         $result['auth'] = reprint_push_lab_rest_auth_evidence($request);
         $result['signedRequest'] = reprint_push_lab_rest_signed_request_evidence($request);
