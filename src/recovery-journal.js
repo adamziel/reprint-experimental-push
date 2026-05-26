@@ -217,6 +217,13 @@ export function openProductionRecoveryJournal(filePathOrOptions, options = {}) {
       },
     );
   }
+  assertProductionClaimIdentityMatchesWriterLease({
+    claimId,
+    writerLease,
+    filePath,
+    ownsRemoteArtifact,
+    remoteArtifactPath,
+  });
 
   const persistedArtifactRefs = persistedProductionArtifactRefs(filePath);
   if (persistedArtifactRefs.invalidReason) {
@@ -730,6 +737,40 @@ function normalizeProductionArtifactRefs(artifactRefs, journalPath, remoteArtifa
     journal: Object.hasOwn(writerArtifactRefs, 'journal') ? writerArtifactRefs.journal : journalPath,
     remote: Object.hasOwn(writerArtifactRefs, 'remote') ? writerArtifactRefs.remote : remoteArtifactPath,
   };
+}
+
+function assertProductionClaimIdentityMatchesWriterLease({
+  claimId,
+  writerLease,
+  filePath,
+  ownsRemoteArtifact,
+  remoteArtifactPath,
+}) {
+  if (
+    typeof claimId === 'string'
+    && claimId.length > 0
+    && isValidProductionWriterLease(writerLease)
+    && writerLease.id !== claimId
+  ) {
+    throw new UnsupportedProductionRecoveryJournalError(
+      'Production recovery journal support requires claimId to match writerLease.id.',
+      {
+        kind: 'production-recovery-journal',
+        productionAdapter: true,
+        supportedSurface: 'production-recovery-journal-adapter',
+        restartReadable: true,
+        ownsJournal: true,
+        ownsRemoteArtifact,
+        writerLease,
+        journalPath: filePath,
+        artifactRefs: Object.freeze({
+          journal: filePath,
+          remote: remoteArtifactPath,
+        }),
+        schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+      },
+    );
+  }
 }
 
 function persistedProductionArtifactRefs(journalPath) {

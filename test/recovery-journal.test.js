@@ -450,6 +450,23 @@ test('production recovery journal adapter fails closed when writerLease epoch is
   });
 });
 
+test('production recovery journal adapter fails closed when claimId and writerLease identity diverge', () => {
+  const filePath = tempJournalPath();
+
+  assert.throws(() => {
+    openProductionRecoveryJournal(filePath, {
+      truncate: true,
+      now: fixedNow,
+      claimId: 'claim-1',
+      writerLease: { id: 'lease-1' },
+    });
+  }, {
+    name: 'UnsupportedProductionRecoveryJournalError',
+    code: 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL',
+    message: 'Production recovery journal support requires claimId to match writerLease.id.',
+  });
+});
+
 test('production recovery journal adapter validates inputs before touching the journal file', () => {
   const filePath = 'relative-journal.jsonl';
   const remoteArtifactPath = `${filePath}.remote`;
@@ -693,6 +710,47 @@ test('production recovery journal consumption fails closed without an explicit c
   }, {
     name: 'UnsupportedProductionRecoveryJournalError',
     code: 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL',
+  });
+});
+
+test('production recovery journal consumption fails closed when claimId and writerLease identity diverge', () => {
+  const filePath = tempJournalPath();
+  const remote = baseSite();
+  const plan = planFor(baseSite(), localSite(), remote);
+  const remoteArtifactPath = `${filePath}.remote`;
+  const claimId = 'claim-opened';
+  const artifactRefs = {
+    journal: filePath,
+    remote: remoteArtifactPath,
+  };
+  const journal = openProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs,
+    claimId,
+  });
+  appendRecoveryClaimOpened(journal, {
+    plan,
+    current: remote,
+    claimId,
+    artifactRefs,
+  });
+  journal.close();
+
+  assert.throws(() => {
+    consumeProductionRecoveryJournal({
+      filePath,
+      plan,
+      current: remote,
+      artifactRefs,
+      claimId,
+      writerLease: { id: 'lease-mismatch' },
+    });
+  }, {
+    name: 'UnsupportedProductionRecoveryJournalError',
+    code: 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL',
+    message: 'Production recovery journal support requires claimId to match writerLease.id.',
   });
 });
 
