@@ -39,22 +39,22 @@ The project is **not releasable as a production WordPress push path**.
 - `origin/lane/cycle-20260525-keep-busy-loop-2/no-data-loss-recovery` -> `63e01a49`
 - `origin/lane/cycle-20260525-mainwindows-2349/critic` -> `fa0dc8a0`
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `999ff0d8`
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `2fee0d53`
-- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `5ed83449`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `8187bbbd`
+- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `a2f65d64`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `2af1ddda`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `c0b30d13`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `b2838f3b`
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` -> `0ca7b35d`
 - `origin/lane/cycle-20260525-mainwindows-2357/no-data-loss-invariants-graph-proof` -> `98c0ce26`
 - `origin/lane/cycle-20260525-restart-2340/feedback-supervisor` -> `ef3d911e`
 - `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration` -> `7efe180b`
 - `origin/lane/critic` -> `443dacd6`
-- `origin/lane/fast-paths` -> `d4abfce3`
+- `origin/lane/fast-paths` -> `a38af8a9`
 - `origin/lane/feedback-supervisor` -> `ee7069e6`
 - `origin/lane/independent-auditor` -> `6351130f`
 - `origin/lane/no-data-loss-invariants` -> `0247563b`
 - `origin/lane/no-data-loss-recovery` -> `9e077c10`
 - `origin/lane/progress-publisher` -> `7695e1f9`
-- `origin/lane/reliable-executor` -> `ebfbdaeb`
+- `origin/lane/reliable-executor` -> `07fdd8bf`
 - `origin/lane/same-plan-wordpress-graph-create` -> `8dea1ca3`
 - `origin/main` -> `56063f13`
 
