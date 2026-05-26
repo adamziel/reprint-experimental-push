@@ -2448,6 +2448,64 @@ test('production auth/session lifecycle summary fails closed when direct preserv
   );
 });
 
+test('production auth/session lifecycle summary fails closed when direct observations metadata is not an array', () => {
+  assert.deepEqual(
+    evaluateProductionAuthSessionLifecycleSummary({
+      issued: {
+        step: 'preflight',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+      },
+      read: {
+        step: 'journal',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+        preserved: true,
+      },
+      observations: {
+        step: 'journal',
+      },
+    }),
+    {
+      ok: false,
+      required: 'preserved read',
+      observed: 'invalid-observations',
+    },
+  );
+});
+
+test('production auth/session lifecycle summary fails closed when direct observations include non-object entries', () => {
+  assert.deepEqual(
+    evaluateProductionAuthSessionLifecycleSummary({
+      issued: {
+        step: 'preflight',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+      },
+      read: {
+        step: 'journal',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+        preserved: true,
+      },
+      observations: ['invalid-entry'],
+    }),
+    {
+      ok: false,
+      required: 'preserved read',
+      observed: 'invalid-observation',
+    },
+  );
+});
+
 test('production auth/session lifecycle summary fails closed when direct preserved-read cleanup aliases are string values', () => {
   assert.deepEqual(
     evaluateProductionAuthSessionLifecycleSummary({

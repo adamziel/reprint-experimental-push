@@ -81,6 +81,14 @@ export function evaluateProductionAuthSessionLifecycleSummary(summary, now = Dat
     };
   }
 
+  if (summary.observations !== undefined && !Array.isArray(summary.observations)) {
+    return {
+      ok: false,
+      required: 'preserved read',
+      observed: 'invalid-observations',
+    };
+  }
+
   const issuedObservation = summary.issued;
   if (!issuedObservation || typeof issuedObservation !== 'object') {
     return {
@@ -206,7 +214,11 @@ export function evaluateProductionAuthSessionLifecycleSummary(summary, now = Dat
 
   for (const observation of observations) {
     if (!observation || typeof observation !== 'object') {
-      continue;
+      return {
+        ok: false,
+        required: 'preserved read',
+        observed: 'invalid-observation',
+      };
     }
 
     if (observation.step === null || observation.step === undefined || observation.step === '') {
