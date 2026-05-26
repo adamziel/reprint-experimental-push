@@ -885,11 +885,12 @@ function reprint_push_lab_db_journal_checked_boundary_contract_is_coherent($jour
 
     $claim = $journal['claim'] ?? null;
     $claim_stale_rejected_matches = !is_array($claim)
+        || !array_key_exists('staleClaimRejected', $claim)
+        || ($claim['staleClaimRejected'] ?? null) !== true
         || (
-            array_key_exists('staleClaimRejected', $claim)
-            && ($claim['staleClaimRejected'] ?? null) === ($writer_lease['staleClaimRejected'] ?? null)
-            && ($claim['staleClaimRejected'] ?? null) === ($lease_fence['staleClaimRejected'] ?? null)
-            && ($claim['staleClaimRejected'] ?? null) === ($lease_fence_writer_lease['staleClaimRejected'] ?? null)
+            ($writer_lease['staleClaimRejected'] ?? null) === true
+            && ($lease_fence['staleClaimRejected'] ?? null) === true
+            && ($lease_fence_writer_lease['staleClaimRejected'] ?? null) === true
         );
 
     return ($ownership['productionAdapter'] ?? null) === ($writer_lease['storageGuard'] ?? null)

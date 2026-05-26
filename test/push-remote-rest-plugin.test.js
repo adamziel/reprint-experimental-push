@@ -3243,6 +3243,71 @@ test('checked authenticated apply evidence fails closed on checked storage guard
   });
 });
 
+test('checked authenticated apply evidence preserves accepted checked durable ownership after historical stale-claim rejection proof', { skip: !hasPhp }, () => {
+  const result = runAttachCheckedDbJournalContract(
+    {
+      ok: true,
+      dbJournal: {
+        acceptedOnCheckedBoundary: true,
+        scope: 'packaged production journal scope',
+        claim: {
+          status: 'active',
+          activeClaimKeyHash: 'claim-hash-03',
+          activeClaimSequence: 44,
+          activeClaimEvent: 'idempotency-opened',
+          idempotencyKeyHash: 'idem-hash-01',
+          requestHash: 'request-hash-01',
+          staleClaimRejected: false,
+        },
+        ownership: {
+          ownsJournal: true,
+          restartReadable: true,
+          productionAdapter: 'wpdb-single-statement-cas',
+        },
+        writerLease: {
+          strategy: 'claim-fenced-single-writer',
+          claimKeyUnique: true,
+          fsyncEvidence: true,
+          storageGuard: 'wpdb-single-statement-cas',
+          monotonicSequence: true,
+          restartReadable: true,
+          staleClaimRejected: true,
+        },
+        leaseFence: {
+          boundary: 'wpdb-single-statement-cas',
+          claimKeyUnique: true,
+          fsyncEvidence: true,
+          monotonicSequence: true,
+          restartReadable: true,
+          staleClaimRejected: true,
+          writerLease: {
+            strategy: 'claim-fenced-single-writer',
+            claimKeyUnique: true,
+            fsyncEvidence: true,
+            storageGuard: 'wpdb-single-statement-cas',
+            monotonicSequence: true,
+            restartReadable: true,
+            staleClaimRejected: true,
+          },
+        },
+        storageGuard: {
+          boundary: 'wpdb-single-statement-cas',
+          operation: 'update',
+          outcome: 'applied',
+        },
+      },
+    },
+    {},
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.dbJournal.acceptedOnCheckedBoundary, true);
+  assert.equal(parsed.dbJournal.claim.staleClaimRejected, false);
+  assert.equal(parsed.dbJournal.writerLease.staleClaimRejected, true);
+  assert.equal(parsed.dbJournal.leaseFence.staleClaimRejected, true);
+});
+
 test('authenticated apply finalization upgrades checked failure journal evidence and preserves signed auth metadata', { skip: !hasPhp }, () => {
   const result = runFinalizeAuthenticatedApplyResult(
     {
