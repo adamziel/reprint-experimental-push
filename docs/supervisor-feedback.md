@@ -1,9 +1,29 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-26 15:20 CEST
+Last updated: 2026-05-26 15:30 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-26 15:30 CEST - Lane Retarget Complete
+
+- Going well: the active panes were retargeted to fresh lane-owned worktrees,
+  so the contaminated progress branches are no longer the live workspace.
+- Not going well: the release gate is still closed at `0/4`, and the public
+  surfaces already point at `e82e3b1af126f62688f617a3fb4cc0baeb698d57`
+  without a new gate movement.
+- Progress change: this is a workspace recovery update, not a product
+  milestone; the next meaningful movement still has to come from reliable or
+  recovery code on the checked release path.
+- Next nudge: keep `reliable-executor` on the production auth/session or
+  durable-journal boundary, keep `progress-publisher` quiet unless the visible
+  head drifts, and leave critic/auditor verdicts narrow.
+
+| Lane | Nudge |
+| --- | --- |
+| Reliable executor | Move to the next checked release-path dependency, not another proof-field surface. |
+| Progress publisher | Refresh only if the public head drifts from `e82e3b1af126f62688f617a3fb4cc0baeb698d57`. |
+| Audit and critic | Keep the verdict at `0/4` unless production-backed lifecycle or durable ownership is proven. |
 
 ## 2026-05-26 15:20 CEST - Reliable Head Advanced, Gate Still Closed
 
