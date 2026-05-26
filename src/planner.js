@@ -224,6 +224,7 @@ export function createPushPlan({ base, local, remote, now = new Date() }) {
         mutation.pluginOwnedResource = {
           pluginOwner: owner,
           driver: support.driver,
+          table: support.table,
           policySource: support.policySource,
           supportsDelete: support.supportsDelete,
           driverEvidence: support.driverEvidence,
@@ -333,8 +334,7 @@ function buildPluginOwnedResourcePolicy({ base, local, remote, intents }) {
       }
 
       const supported = candidates.find((entry) =>
-        SUPPORTED_PLUGIN_DATA_DRIVERS.has(entry.driver)
-        && pluginOwnedPolicyEntryMatchesResource(entry, resource, owner));
+        pluginOwnedPolicyEntryMatchesResource(entry, resource, owner));
       if (!supported) {
         return {
           supported: false,
@@ -365,6 +365,7 @@ function buildPluginOwnedResourcePolicy({ base, local, remote, intents }) {
         return {
           supported: true,
           driver: supported.driver,
+          table: pluginOwnedDriverTable(supported),
           policySource: supported.source,
           supportsDelete: false,
           driverEvidence,
@@ -374,6 +375,7 @@ function buildPluginOwnedResourcePolicy({ base, local, remote, intents }) {
       return {
         supported: true,
         driver: supported.driver,
+        table: pluginOwnedDriverTable(supported),
         policySource: supported.source,
         supportsDelete: supported.supportsDelete === true,
       };
@@ -435,6 +437,7 @@ function normalizePluginOwnedPolicyEntry(entry, source) {
     resourceKey: entry.resourceKey || entry.key || entry.resource?.key || null,
     pluginOwner: entry.pluginOwner || entry.owner || entry.plugin || null,
     driver: entry.driver || entry.supportedDriver || entry.resourceDriver || null,
+    table: entry.table || entry.driverTable || entry.resourceTable || entry.resource?.table || null,
     supportsDelete: entry.supportsDelete === true || entry.delete === true || entry.allowDelete === true,
     source,
   };
@@ -446,8 +449,8 @@ function pluginOwnedPolicyEntryMatchesResource(entry, resource, owner) {
   }
 
   if (entry.driver !== 'fixture-forms-lab-table') {
-    const expectedTable = PLUGIN_DATA_DRIVER_TABLES.get(entry.driver);
-    return resource.type === 'row' && resource.table === expectedTable;
+    const expectedTable = pluginOwnedDriverTable(entry);
+    return resource.type === 'row' && expectedTable !== null && resource.table === expectedTable;
   }
 
   return resource.type === 'row'
@@ -455,6 +458,19 @@ function pluginOwnedPolicyEntryMatchesResource(entry, resource, owner) {
     && /^id:\d+$/.test(resource.id)
     && owner === 'forms'
     && entry.pluginOwner === 'forms';
+}
+
+function pluginOwnedDriverTable(entry) {
+  if (!entry || typeof entry !== 'object') {
+    return null;
+  }
+  if (typeof entry.table === 'string' && entry.table.length > 0) {
+    return entry.table;
+  }
+  if (SUPPORTED_PLUGIN_DATA_DRIVERS.has(entry.driver)) {
+    return PLUGIN_DATA_DRIVER_TABLES.get(entry.driver) || null;
+  }
+  return null;
 }
 
 function fixtureFormsLabTableDriverEvidence({ resource, owner, base, remote }) {

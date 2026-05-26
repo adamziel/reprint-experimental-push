@@ -232,6 +232,7 @@ function pluginOwnedOwner(value) {
 }
 
 function isSupportedPluginOwnedMutation(remote, mutation, owner, driver, plannedValue) {
+  const driverTable = mutation.pluginOwnedResource?.table || null;
   if (driver === 'wp-option') {
     return mutation.resource?.type === 'row' && mutation.resource.table === 'wp_options';
   }
@@ -252,6 +253,9 @@ function isSupportedPluginOwnedMutation(remote, mutation, owner, driver, planned
       && plannedValue !== ABSENT
       && mutation.action !== 'delete'
       && validFixtureFormsLabTableEvidence(mutation.pluginOwnedResource?.driverEvidence, remote);
+  }
+  if (driver && driverTable) {
+    return mutation.resource?.type === 'row' && mutation.resource.table === driverTable;
   }
   return false;
 }
@@ -422,7 +426,7 @@ function validateJournalMatchesPlan(journal, plan) {
 }
 
 function journalValueEvidence(mutation, value) {
-  if (mutation.pluginOwnedResource?.driver === 'fixture-forms-lab-table') {
+  if (shouldRedactPluginOwnedDriverValue(mutation)) {
     return {
       redacted: true,
       reason: 'fixture-plugin-owned-resource',
@@ -969,23 +973,35 @@ function recoveryBlocked(remote, plan, journal, reason, details = {}) {
 function sanitizeRecoveryRemote(remote, plan) {
   const sanitized = deepClone(remote);
   for (const mutation of plan.mutations || []) {
-    if (mutation.pluginOwnedResource?.driver !== 'fixture-forms-lab-table') {
+    if (!shouldRedactPluginOwnedDriverValue(mutation)) {
       continue;
     }
-    if (mutation.resource?.type !== 'row' || mutation.resource.table !== 'wp_reprint_push_forms_lab') {
+    if (mutation.resource?.type !== 'row') {
       continue;
     }
-    const row = sanitized.db?.wp_reprint_push_forms_lab?.[mutation.resource.id];
+    const table = mutation.resource.table;
+    const row = sanitized.db?.[table]?.[mutation.resource.id];
     if (!row || typeof row !== 'object') {
       continue;
     }
-    sanitized.db.wp_reprint_push_forms_lab[mutation.resource.id] = {
+    sanitized.db[table][mutation.resource.id] = {
       __redacted: true,
       resourceKey: mutation.resourceKey,
       hash: resourceHash(remote, mutation.resource),
     };
   }
   return sanitized;
+}
+
+function shouldRedactPluginOwnedDriverValue(mutation) {
+  if (mutation.pluginOwnedResource?.driver === 'fixture-forms-lab-table') {
+    return true;
+  }
+  const table = mutation.pluginOwnedResource?.table || null;
+  return mutation.resource?.type === 'row'
+    && typeof table === 'string'
+    && table.length > 0
+    && !['wp_options', 'wp_postmeta', 'wp_termmeta', 'wp_usermeta'].includes(table);
 }
 
 function validatePreconditions(remote, plan) {

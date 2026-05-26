@@ -88,8 +88,8 @@ function pluginResource(name) {
   return { type: 'plugin', name, key: `plugin:${name}` };
 }
 
-function allowedPluginOwnedResource(resourceKey, pluginOwner, driver = 'wp-option') {
-  return { pluginOwner, resourceKey, driver };
+function allowedPluginOwnedResource(resourceKey, pluginOwner, driver = 'wp-option', extra = {}) {
+  return { pluginOwner, resourceKey, driver, ...extra };
 }
 
 function pluginOwnedResourcePolicy(...allowedResources) {
@@ -714,6 +714,38 @@ test('blocks unknown plugin-owned custom table rows without leaking values', () 
   assert.equal(blocker.resourceKey, resourceKey);
   assert.equal(blockerJson.includes('base-private-entry'), false);
   assert.equal(blockerJson.includes('local-private-entry'), false);
+});
+
+test('allows arbitrary plugin-owned custom table rows with explicit driver table policy', () => {
+  const resourceKey = 'row:["wp_forms_entries","entry_id:9"]';
+  const base = baseSite();
+  base.db.wp_forms_entries = {
+    'entry_id:9': {
+      entry_id: 9,
+      payload: { mode: 'base' },
+      updated_marker: 'base',
+      __pluginOwner: 'forms',
+    },
+  };
+  const local = JSON.parse(JSON.stringify(base));
+  local.db.wp_forms_entries['entry_id:9'].payload.mode = 'local';
+  local.meta = {
+    pushPolicy: pluginOwnedResourcePolicy(
+      allowedPluginOwnedResource(resourceKey, 'forms', 'fixture-custom-table', {
+        table: 'wp_forms_entries',
+      }),
+    ),
+  };
+  const remote = JSON.parse(JSON.stringify(base));
+
+  const plan = planFor(base, local, remote);
+  assert.equal(plan.status, 'ready');
+  const mutation = mutationFor(plan, resourceKey);
+  assert.equal(mutation.pluginOwnedResource.driver, 'fixture-custom-table');
+  assert.equal(mutation.pluginOwnedResource.table, 'wp_forms_entries');
+
+  const applied = applyPlan(JSON.parse(JSON.stringify(remote)), plan);
+  assert.equal(applied.site.db.wp_forms_entries['entry_id:9'].payload.mode, 'local');
 });
 
 test('fixture forms lab table requires exact driver and active fixture plugin evidence', () => {

@@ -62,8 +62,8 @@ function reprint_push_export_snapshot(): array
 
     reprint_push_export_fixture_postmeta($snapshot);
     reprint_push_export_fixture_plugin_metadata($snapshot);
-    reprint_push_export_fixture_custom_table($snapshot);
-    reprint_push_add_fixture_plugin_owned_policy($snapshot);
+    reprint_push_export_plugin_owned_row_driver_tables($snapshot);
+    reprint_push_add_plugin_owned_policy($snapshot);
 
     $fixture_root = WP_CONTENT_DIR . '/uploads/reprint-push';
     if (is_dir($fixture_root)) {
@@ -72,10 +72,12 @@ function reprint_push_export_snapshot(): array
 
     ksort($snapshot['files']);
     ksort($snapshot['plugins']);
-    ksort($snapshot['db']['wp_posts']);
-    ksort($snapshot['db']['wp_options']);
-    ksort($snapshot['db']['wp_postmeta']);
-    ksort($snapshot['db']['wp_reprint_push_forms_lab']);
+    foreach ($snapshot['db'] as $table => $rows) {
+        if (is_array($rows)) {
+            ksort($snapshot['db'][$table]);
+        }
+    }
+    ksort($snapshot['db']);
 
     return $snapshot;
 }
@@ -128,7 +130,27 @@ function reprint_push_export_fixture_plugin_metadata(array &$snapshot): void
     }
 }
 
+function reprint_push_export_plugin_owned_row_driver_tables(array &$snapshot): void
+{
+    foreach (reprint_push_plugin_owned_row_drivers() as $driver) {
+        $export_callback = $driver['exportRowsCallback'] ?? null;
+        if (!is_callable($export_callback)) {
+            continue;
+        }
+        $table = (string) ($driver['table'] ?? '');
+        if ($table !== '' && !array_key_exists($table, $snapshot['db'])) {
+            $snapshot['db'][$table] = [];
+        }
+        $export_callback($snapshot, $driver);
+    }
+}
+
 function reprint_push_export_fixture_custom_table(array &$snapshot): void
+{
+    reprint_push_export_forms_lab_driver_rows($snapshot, reprint_push_default_forms_lab_driver());
+}
+
+function reprint_push_export_forms_lab_driver_rows(array &$snapshot, array $driver): void
 {
     global $wpdb;
 
@@ -138,6 +160,11 @@ function reprint_push_export_fixture_custom_table(array &$snapshot): void
         return;
     }
 
+    $table = (string) ($driver['table'] ?? 'wp_reprint_push_forms_lab');
+    if (!isset($snapshot['db'][$table]) || !is_array($snapshot['db'][$table])) {
+        $snapshot['db'][$table] = [];
+    }
+
     $rows = $wpdb->get_results(
         "SELECT id, form_slug, payload_json, updated_marker FROM {$table_name} ORDER BY id ASC",
         ARRAY_A
@@ -145,19 +172,19 @@ function reprint_push_export_fixture_custom_table(array &$snapshot): void
 
     foreach ($rows as $row) {
         $payload = json_decode((string) $row['payload_json'], true);
-        $snapshot['db']['wp_reprint_push_forms_lab']['id:' . (int) $row['id']] = [
+        $snapshot['db'][$table]['id:' . (int) $row['id']] = [
             'id' => (int) $row['id'],
             'form_slug' => (string) $row['form_slug'],
             'payload' => json_last_error() === JSON_ERROR_NONE
                 ? reprint_push_normalize_snapshot_value($payload)
                 : (string) $row['payload_json'],
             'updated_marker' => (string) $row['updated_marker'],
-            '__pluginOwner' => 'forms',
+            '__pluginOwner' => (string) ($driver['pluginOwner'] ?? 'forms'),
         ];
     }
 }
 
-function reprint_push_add_fixture_plugin_owned_policy(array &$snapshot): void
+function reprint_push_add_plugin_owned_policy(array &$snapshot): void
 {
     $allowed_resources = [];
     foreach (array_keys($snapshot['db']['wp_options']) as $row_id) {
@@ -179,14 +206,15 @@ function reprint_push_add_fixture_plugin_owned_policy(array &$snapshot): void
             'driver' => 'wp-postmeta',
         ];
     }
-    foreach (array_keys($snapshot['db']['wp_reprint_push_forms_lab']) as $row_id) {
-        reprint_push_forms_lab_row_id($row_id);
-        $allowed_resources[] = [
-            'resourceKey' => 'row:' . wp_json_encode(['wp_reprint_push_forms_lab', $row_id], JSON_UNESCAPED_SLASHES),
-            'pluginOwner' => 'forms',
-            'driver' => 'fixture-forms-lab-table',
-            'supportsDelete' => false,
-        ];
+
+    foreach (reprint_push_plugin_owned_row_drivers() as $driver) {
+        $table = (string) ($driver['table'] ?? '');
+        if ($table === '' || !isset($snapshot['db'][$table]) || !is_array($snapshot['db'][$table])) {
+            continue;
+        }
+        foreach (array_keys($snapshot['db'][$table]) as $row_id) {
+            $allowed_resources[] = reprint_push_plugin_owned_driver_allowed_resource($driver, $row_id);
+        }
     }
 
     usort($allowed_resources, static function (array $left, array $right): int {
@@ -196,6 +224,11 @@ function reprint_push_add_fixture_plugin_owned_policy(array &$snapshot): void
     $snapshot['meta']['pluginOwnedResources'] = [
         'allowedResources' => $allowed_resources,
     ];
+}
+
+function reprint_push_add_fixture_plugin_owned_policy(array &$snapshot): void
+{
+    reprint_push_add_plugin_owned_policy($snapshot);
 }
 
 function reprint_push_export_fixture_files(array &$snapshot, string $root, string $relative_root): void
@@ -1039,6 +1072,11 @@ function reprint_push_assert_supported_apply_resource(array $resource): void
             reprint_push_forms_lab_row_id($id);
             return;
         }
+        $driver = reprint_push_plugin_owned_row_driver_for_table($table);
+        if (is_array($driver)) {
+            reprint_push_assert_plugin_owned_driver_row_id($driver, $id);
+            return;
+        }
         throw new RuntimeException('Unsupported apply table: ' . $table);
     }
     throw new RuntimeException('Unsupported apply resource type: ' . (string) $type);
@@ -1092,6 +1130,15 @@ function reprint_push_apply_row_resource(string $table, string $id, bool $is_del
     }
     if ($table === 'wp_reprint_push_forms_lab') {
         reprint_push_apply_forms_lab_row($id, $is_delete, $value);
+        return;
+    }
+    $driver = reprint_push_plugin_owned_row_driver_for_table($table);
+    if (is_array($driver)) {
+        $apply_callback = $driver['applyRowCallback'] ?? null;
+        if (!is_callable($apply_callback)) {
+            throw new RuntimeException('Plugin-owned driver is missing applyRowCallback for table: ' . $table);
+        }
+        $apply_callback($id, $is_delete, $value, $driver);
         return;
     }
     throw new RuntimeException('Unsupported table: ' . $table);
@@ -1244,7 +1291,7 @@ function reprint_push_update_fixture_postmeta(string $id, int $post_id, string $
     update_post_meta($post_id, $meta_key, $value['meta_value']);
 }
 
-function reprint_push_apply_forms_lab_row(string $id, bool $is_delete, $value): void
+function reprint_push_apply_forms_lab_row(string $id, bool $is_delete, $value, ?array $driver = null): void
 {
     global $wpdb;
 
@@ -1418,6 +1465,99 @@ function reprint_push_forms_lab_table_name(): string
         throw new RuntimeException('Unsupported WordPress table prefix for fixture forms lab table.');
     }
     return $prefix . 'reprint_push_forms_lab';
+}
+
+function reprint_push_default_forms_lab_driver(): array
+{
+    return [
+        'driver' => 'fixture-forms-lab-table',
+        'table' => 'wp_reprint_push_forms_lab',
+        'pluginOwner' => 'forms',
+        'supportsDelete' => false,
+        'exportRowsCallback' => 'reprint_push_export_forms_lab_driver_rows',
+        'applyRowCallback' => 'reprint_push_apply_forms_lab_row',
+        'validateMutationCallback' => 'reprint_push_validate_forms_lab_driver_mutation',
+    ];
+}
+
+function reprint_push_plugin_owned_row_drivers(): array
+{
+    static $drivers = null;
+    if ($drivers !== null) {
+        return $drivers;
+    }
+
+    $drivers = [
+        'fixture-forms-lab-table' => reprint_push_default_forms_lab_driver(),
+    ];
+    if (function_exists('apply_filters')) {
+        $drivers = apply_filters('reprint_push_plugin_owned_row_drivers', $drivers);
+    }
+    if (!is_array($drivers)) {
+        $drivers = [];
+    }
+
+    $normalized = [];
+    foreach ($drivers as $name => $driver) {
+        if (!is_array($driver)) {
+            continue;
+        }
+        $driver_name = (string) ($driver['driver'] ?? $name);
+        $table = (string) ($driver['table'] ?? '');
+        if ($driver_name === '' || $table === '') {
+            continue;
+        }
+        $normalized[$driver_name] = [
+            'driver' => $driver_name,
+            'table' => $table,
+            'pluginOwner' => (string) ($driver['pluginOwner'] ?? ''),
+            'supportsDelete' => !empty($driver['supportsDelete']),
+            'exportRowsCallback' => $driver['exportRowsCallback'] ?? null,
+            'applyRowCallback' => $driver['applyRowCallback'] ?? null,
+            'validateMutationCallback' => $driver['validateMutationCallback'] ?? null,
+        ];
+    }
+
+    $drivers = $normalized;
+    return $drivers;
+}
+
+function reprint_push_plugin_owned_row_driver(string $driver): ?array
+{
+    $drivers = reprint_push_plugin_owned_row_drivers();
+    return $drivers[$driver] ?? null;
+}
+
+function reprint_push_plugin_owned_row_driver_for_table(string $table): ?array
+{
+    foreach (reprint_push_plugin_owned_row_drivers() as $driver) {
+        if (($driver['table'] ?? null) === $table) {
+            return $driver;
+        }
+    }
+    return null;
+}
+
+function reprint_push_plugin_owned_driver_allowed_resource(array $driver, string $row_id): array
+{
+    return [
+        'resourceKey' => 'row:' . wp_json_encode([(string) $driver['table'], $row_id], JSON_UNESCAPED_SLASHES),
+        'pluginOwner' => (string) ($driver['pluginOwner'] ?? ''),
+        'driver' => (string) ($driver['driver'] ?? ''),
+        'table' => (string) ($driver['table'] ?? ''),
+        'supportsDelete' => !empty($driver['supportsDelete']),
+    ];
+}
+
+function reprint_push_assert_plugin_owned_driver_row_id(array $driver, string $id): void
+{
+    if (($driver['driver'] ?? null) === 'fixture-forms-lab-table') {
+        reprint_push_forms_lab_row_id($id);
+        return;
+    }
+    if ($id === '') {
+        throw new RuntimeException('Plugin-owned driver row id must not be empty.');
+    }
 }
 
 function reprint_push_allowed_plugin_option_names(): array
@@ -1811,16 +1951,6 @@ function reprint_push_assert_supported_plugin_owned_mutation(array $mutation, ar
 
     $policy = $mutation['pluginOwnedResource'] ?? null;
     $driver = is_array($policy) ? (string) ($policy['driver'] ?? '') : '';
-    if ($driver === 'fixture-forms-lab-table'
-        && (string) $owner === 'forms'
-        && (string) ($resource['table'] ?? '') === 'wp_reprint_push_forms_lab'
-        && preg_match('/^id:[1-9]\d*$/', (string) ($resource['id'] ?? ''))
-        && empty($mutation['value']['absent'])
-        && reprint_push_valid_fixture_forms_lab_driver_evidence($policy['driverEvidence'] ?? null, $snapshot)
-    ) {
-        return;
-    }
-
     if ($driver === 'wp-option' && (string) ($resource['table'] ?? '') === 'wp_options') {
         return;
     }
@@ -1834,7 +1964,31 @@ function reprint_push_assert_supported_plugin_owned_mutation(array $mutation, ar
         return;
     }
 
+    $driver_definition = reprint_push_plugin_owned_row_driver($driver);
+    if (is_array($driver_definition)) {
+        $matches_driver = (string) ($resource['table'] ?? '') === (string) ($driver_definition['table'] ?? '')
+            && (string) $owner === (string) ($driver_definition['pluginOwner'] ?? '');
+        if ($matches_driver && !empty($mutation['value']['absent']) && empty($driver_definition['supportsDelete'])) {
+            throw new RuntimeException('Plugin-owned mutation driver does not support deletes for ' . (string) ($mutation['resourceKey'] ?? 'unknown'));
+        }
+        $validate_callback = $driver_definition['validateMutationCallback'] ?? null;
+        if ($matches_driver && (!is_callable($validate_callback) || $validate_callback($mutation, $snapshot, $driver_definition) === true)) {
+            return;
+        }
+    }
+
     throw new RuntimeException('Unsupported plugin-owned mutation driver for ' . (string) ($mutation['resourceKey'] ?? 'unknown'));
+}
+
+function reprint_push_validate_forms_lab_driver_mutation(array $mutation, array $snapshot, array $driver): bool
+{
+    $resource = $mutation['resource'] ?? [];
+    return (string) ($driver['pluginOwner'] ?? '') === 'forms'
+        && (string) ($driver['table'] ?? '') === 'wp_reprint_push_forms_lab'
+        && (string) ($resource['table'] ?? '') === 'wp_reprint_push_forms_lab'
+        && preg_match('/^id:[1-9]\d*$/', (string) ($resource['id'] ?? ''))
+        && empty($mutation['value']['absent'])
+        && reprint_push_valid_fixture_forms_lab_driver_evidence(($mutation['pluginOwnedResource']['driverEvidence'] ?? null), $snapshot);
 }
 
 function reprint_push_valid_fixture_forms_lab_driver_evidence($evidence, array $snapshot): bool
