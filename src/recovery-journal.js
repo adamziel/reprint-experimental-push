@@ -103,7 +103,7 @@ export function createUnsupportedProductionRecoveryJournal(reason = 'Production 
 }
 
 export function openProductionRecoveryJournal(filePath, options = {}) {
-  const claimId = options.claimId || options.claim?.id || null;
+  const claimId = readOwnRecoveryClaimId(options);
   const claimHash = claimId ? recoveryClaimHash(claimId) : null;
   const ownsRemoteArtifact = Object.hasOwn(options, 'ownsRemoteArtifact')
     ? options.ownsRemoteArtifact === true
@@ -314,7 +314,7 @@ export function openRecoveryJournal(filePath, options = {}) {
 
   return new RecoveryJournalWriter(filePath, fd, nextSequence, {
     now: options.now,
-    claimId: options.claimId || options.claim?.id || null,
+    claimId: readOwnRecoveryClaimId(options),
   });
 }
 
@@ -420,6 +420,22 @@ export function appendJournalCompleted(journal, {
     observedHash: digest(current),
     artifactRefs,
   });
+}
+
+function readOwnRecoveryClaimId(options) {
+  if (Object.hasOwn(options, 'claimId')) {
+    return options.claimId || null;
+  }
+
+  if (
+    Object.hasOwn(options, 'claim')
+    && isStrictPlainObject(options.claim)
+    && Object.hasOwn(options.claim, 'id')
+  ) {
+    return options.claim.id || null;
+  }
+
+  return null;
 }
 
 export function readRecoveryJournal(filePath) {

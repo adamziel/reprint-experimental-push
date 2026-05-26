@@ -361,6 +361,24 @@ test('production recovery journal adapter fails closed when remote ownership is 
   });
 });
 
+test('production recovery journal adapter ignores prototype-inherited claim identity', () => {
+  const filePath = tempJournalPath();
+  const options = {
+    truncate: true,
+    now: fixedNow,
+    writerLease: { id: 'lease-1' },
+  };
+  Object.setPrototypeOf(options, {
+    claimId: 'claim-from-prototype',
+  });
+
+  const journal = openProductionRecoveryJournal(filePath, options);
+
+  assert.equal(journal.claimHash, null);
+  assert.equal(journal.inspect().claimHash, null);
+  journal.close();
+});
+
 test('production recovery journal adapter accepts canonical remote artifact ownership metadata', () => {
   const filePath = tempJournalPath();
   const remoteArtifactPath = `${filePath}.remote`;
