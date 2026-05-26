@@ -23554,6 +23554,67 @@ test('blocks a local post parent reference owned by an existing attachment even 
   assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
 });
 
+test('blocks a local post parent reference owned by an existing attachment even when unrelated remote attachment noise exists', () => {
+  const attachmentResourceKey = 'row:["wp_posts","ID:3"]';
+  const parentResourceKey = 'row:["wp_posts","ID:4"]';
+  const base = baseSite();
+  const local = baseSite();
+  const remote = baseSite();
+
+  base.db.wp_posts['ID:3'] = {
+    ID: 3,
+    post_title: 'Existing attachment child',
+    post_content: 'base-private-existing-attachment-child-body',
+    post_status: 'inherit',
+    post_type: 'attachment',
+  };
+  local.db.wp_posts['ID:3'] = {
+    ...base.db.wp_posts['ID:3'],
+    post_parent: 4,
+  };
+  remote.db.wp_posts['ID:3'] = {
+    ...base.db.wp_posts['ID:3'],
+  };
+  local.db.wp_posts['ID:4'] = {
+    ID: 4,
+    post_title: 'Local parent post',
+    post_content: 'local-private-parent-body',
+    post_status: 'publish',
+  };
+  remote.db.wp_posts['ID:8'] = {
+    ID: 8,
+    post_title: 'Remote attachment noise',
+    post_content: 'remote-attachment-body',
+    post_status: 'inherit',
+    post_type: 'attachment',
+  };
+
+  const plan = planFor(base, local, remote);
+  const attachmentMutation = mutationFor(plan, attachmentResourceKey);
+  const parentMutation = mutationFor(plan, parentResourceKey);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === attachmentResourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(attachmentMutation.changeKind, 'update');
+  assert.equal(parentMutation.changeKind, 'create');
+  assert.equal(blocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(blocker.references[0].relationshipType, 'post-parent');
+  assert.equal(blocker.references[0].targetResourceKey, parentResourceKey);
+  assert.equal(attachmentMutation.dependsOnMutationIds, undefined);
+  assert.equal(attachmentMutation.wordpressGraphReferences[0].relationshipType, 'post-parent');
+  assert.equal(attachmentMutation.wordpressGraphReferences[0].targetResourceKey, parentResourceKey);
+  assert.equal(
+    JSON.stringify(attachmentMutation.wordpressGraphReferences[0]).includes('base-private-existing-attachment-child-body'),
+    false,
+  );
+  assert.equal(
+    JSON.stringify(attachmentMutation.wordpressGraphReferences[0]).includes('local-private-parent-body'),
+    false,
+  );
+  assert.equal(JSON.stringify(plan).includes('remote-attachment-body'), false);
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
+});
+
 test('blocks an existing attachment parent reference when the same-plan post target is itself blocked by a revision parent', () => {
   const attachmentResourceKey = 'row:["wp_posts","ID:2"]';
   const revisionResourceKey = 'row:["wp_posts","ID:3"]';
