@@ -3380,7 +3380,7 @@ test('authenticated db journal finalization preserves checked journal evidence a
   });
 });
 
-test('checked recovery inspect evidence preserves conflicting accepted inline contract anchors instead of silently normalizing them', { skip: !hasPhp }, () => {
+test('checked recovery inspect evidence fails closed on conflicting accepted inline storage-guard anchors instead of silently normalizing them', { skip: !hasPhp }, () => {
   const result = runAttachCheckedRecoveryJournalEvidence(
     {
       recovery: {
@@ -3506,7 +3506,7 @@ test('checked recovery inspect evidence preserves conflicting accepted inline co
           status: 'ok',
           scope: 'checked live production-shaped recovery inspect journal evidence; not local Playground fixture only',
         },
-        acceptedOnCheckedBoundary: true,
+        acceptedOnCheckedBoundary: false,
         scope: 'checked live production-shaped journal surface; not local Playground fixture only',
         claim: {
           status: 'stale-claim-rejected',
@@ -3576,7 +3576,7 @@ test('checked recovery inspect evidence preserves conflicting accepted inline co
   });
 });
 
-test('checked db journal attachment preserves conflicting accepted inline storage-guard evidence instead of silently normalizing it', { skip: !hasPhp }, () => {
+test('checked db journal attachment fails closed on conflicting accepted inline storage-guard evidence instead of silently normalizing it', { skip: !hasPhp }, () => {
   const result = runAttachCheckedDbJournalContract(
     {
       ok: false,
@@ -3694,7 +3694,7 @@ test('checked db journal attachment preserves conflicting accepted inline storag
       event: 'apply-rejected',
       sequence: 18,
       scope: 'checked live production-shaped journal surface; not local Playground fixture only',
-      acceptedOnCheckedBoundary: true,
+      acceptedOnCheckedBoundary: false,
       claim: {
         status: 'stale-claim-rejected',
         activeClaimKeyHash: 'retry-claim-hash-02',

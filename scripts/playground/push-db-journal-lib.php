@@ -802,6 +802,44 @@ function reprint_push_lab_db_journal_lease_fence_contract_matches($lease_fence):
         && reprint_push_lab_db_journal_writer_lease_contract_matches($lease_fence['writerLease'] ?? null);
 }
 
+function reprint_push_lab_db_journal_storage_guard_contract_matches($storage_guard): bool
+{
+    return is_array($storage_guard)
+        && reprint_push_lab_db_journal_non_empty_string($storage_guard['boundary'] ?? null)
+        && reprint_push_lab_db_journal_non_empty_string($storage_guard['operation'] ?? null)
+        && reprint_push_lab_db_journal_non_empty_string($storage_guard['outcome'] ?? null);
+}
+
+function reprint_push_lab_db_journal_checked_boundary_storage_guard_is_coherent($journal): bool
+{
+    if (!is_array($journal) || !array_key_exists('storageGuard', $journal)) {
+        return true;
+    }
+
+    $storage_guard = $journal['storageGuard'] ?? null;
+    if (!reprint_push_lab_db_journal_storage_guard_contract_matches($storage_guard)) {
+        return false;
+    }
+
+    $ownership = $journal['ownership'] ?? null;
+    $writer_lease = $journal['writerLease'] ?? null;
+    $lease_fence = $journal['leaseFence'] ?? null;
+    $lease_fence_writer_lease = is_array($lease_fence) ? ($lease_fence['writerLease'] ?? null) : null;
+    if (
+        !is_array($ownership)
+        || !is_array($writer_lease)
+        || !is_array($lease_fence)
+        || !is_array($lease_fence_writer_lease)
+    ) {
+        return false;
+    }
+
+    return ($storage_guard['boundary'] ?? null) === ($ownership['productionAdapter'] ?? null)
+        && ($storage_guard['boundary'] ?? null) === ($writer_lease['storageGuard'] ?? null)
+        && ($storage_guard['boundary'] ?? null) === ($lease_fence['boundary'] ?? null)
+        && ($storage_guard['boundary'] ?? null) === ($lease_fence_writer_lease['storageGuard'] ?? null);
+}
+
 function reprint_push_lab_db_journal_checked_boundary_contract_is_coherent($journal): bool
 {
     if (!is_array($journal)) {
@@ -857,7 +895,8 @@ function reprint_push_lab_db_journal_checked_boundary_contract_matches($journal)
     return reprint_push_lab_db_journal_ownership_contract_matches($journal['ownership'] ?? null)
         && reprint_push_lab_db_journal_writer_lease_contract_matches($journal['writerLease'] ?? null)
         && reprint_push_lab_db_journal_lease_fence_contract_matches($journal['leaseFence'] ?? null)
-        && reprint_push_lab_db_journal_checked_boundary_contract_is_coherent($journal);
+        && reprint_push_lab_db_journal_checked_boundary_contract_is_coherent($journal)
+        && reprint_push_lab_db_journal_checked_boundary_storage_guard_is_coherent($journal);
 }
 
 function reprint_push_lab_db_journal_non_empty_string($value): bool
