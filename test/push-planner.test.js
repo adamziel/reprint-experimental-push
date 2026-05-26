@@ -11602,6 +11602,61 @@ test('blocks plugin-owned rows with missing driver metadata while preserving rem
   assert.equal(blockerJson.includes('local-advanced'), false);
 });
 
+test('blocks plugin-owned rows with missing driver metadata while preserving a matching independent file type swap and remote-only plugin removals', () => {
+  const resourceKey = 'row:["wp_forms_custom","id:9"]';
+  const base = baseSite();
+  base.files['wp-content/uploads/cover'] = 'base cover bytes';
+  base.db.wp_forms_custom = {
+    'id:9': {
+      id: 9,
+      __pluginOwner: 'forms',
+      payload: 'base plugin-owned custom-table payload',
+    },
+  };
+
+  const local = baseSite();
+  local.files['wp-content/uploads/cover'] = { type: 'directory' };
+  local.db.wp_forms_custom = {
+    'id:9': {
+      id: 9,
+      __pluginOwner: 'forms',
+      payload: 'local plugin-owned custom-table payload',
+    },
+  };
+  local.meta = {
+    pushPolicy: pluginOwnedResourcePolicy({
+      resourceKey,
+      pluginOwner: 'forms',
+    }),
+  };
+
+  const remote = baseSite();
+  remote.files['wp-content/uploads/cover'] = 'base cover bytes';
+  remote.db.wp_forms_custom = JSON.parse(JSON.stringify(base.db.wp_forms_custom));
+  delete remote.plugins.forms;
+  delete remote.files['wp-content/plugins/forms/forms.php'];
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  const typeSwapMutation = mutationFor(plan, 'file:wp-content/uploads/cover');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 1);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(plan.conflicts.length, 0);
+  assert.equal(blocker.class, 'missing-plugin-driver');
+  assert.equal(blocker.pluginOwner, 'forms');
+  assert.equal(blocker.resourceKind, 'custom-table');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(typeSwapMutation.action, 'put');
+  assert.equal(typeSwapMutation.changeKind, 'type-change');
+  assert.equal(planJson.includes('base plugin-owned custom-table payload'), false);
+  assert.equal(planJson.includes('local plugin-owned custom-table payload'), false);
+  assert.equal(Object.hasOwn(remote.plugins, 'forms'), false);
+  assert.equal(Object.hasOwn(remote.files, 'wp-content/plugins/forms/forms.php'), false);
+});
+
 test('blocks plugin-owned deletes with missing driver metadata while preserving matching independent delete, restore, and remote-only plugin drift', () => {
   const ownedResourceKey = 'row:["wp_options","option_name:forms_settings"]';
   const restoredResourceKey = 'row:["wp_options","option_name:blogname"]';
