@@ -2295,9 +2295,7 @@ function unsupportedTermmetaResourceSupport({ resource, baseValue, localValue, r
   return {
     supported: false,
     className: 'unsupported-termmeta-resource',
-    reason: termReference
-      ? `WordPress graph mutation ${resource.key} is created in the same plan as a term relationship target that depends on it, and identity rewriting is not yet supported.`
-      : 'Term meta graph resources are not yet supported by the planner.',
+    reason: 'Term meta graph resources are not yet supported by the planner.',
   };
 }
 
