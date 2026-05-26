@@ -6,10 +6,10 @@ linked implementation artifacts.
 
 ## 2026-05-26 - Current Supervisor Snapshot
 
-- Status: `21818064` is the live reliable head and the latest
+- Status: `0b8026f3b0db9b2207e51c7bac65d3b4ec053f30` is the live reliable head and the latest
   support-side release-verifier evidence.
-- Trend: public status needed a freshness refresh; the live head advanced, but
-  the gate posture remains conservative.
+- Trend: public status needed a freshness refresh; the live head advanced again,
+  but the gate posture remains conservative.
 - Blocker: this is still support evidence, not production-backed auth/session
   lifecycle or durable-journal ownership on the release boundary.
 - Next nudge: reliable executor should move to the next gate dependency:
@@ -18,7 +18,8 @@ linked implementation artifacts.
 - Public page: [progress.html](../progress.html) shows a visible last-updated
   date and keeps the supervisor view short.
 - Feedback-lane verification after checking the live head: `git ls-remote`
-  now reports `21818064` for `lane/reliable-executor`, while the public page
+  now reports `0b8026f3b0db9b2207e51c7bac65d3b4ec053f30` for
+  `lane/reliable-executor`, while the public page
   needed a freshness update.
 
 <details>
