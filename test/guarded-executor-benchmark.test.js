@@ -143,6 +143,11 @@ test('guarded executor benchmark moves buffers and row payloads through durable 
     report.claims.productionThroughputDetails.atomicGroup.productionRowBatchExecutorVisibleAndStorageReceiptsVisible,
     false,
   );
+  assert.equal(
+    report.claims.productionThroughputDetails.atomicGroup
+      .productionRowBatchExecutorVisibleAndStorageReceiptsVisibleAndMeasured,
+    false,
+  );
   assert.equal(report.throughput.productionThroughput, 'not-claimed');
 });
 
@@ -781,6 +786,10 @@ test('guarded benchmark blocks row-batch executor visibility without visible mea
     true,
   );
   assert.equal(
+    details.atomicGroup.productionRowBatchExecutorVisibleAndStorageReceiptsVisibleAndMeasured,
+    true,
+  );
+  assert.equal(
     blockers.includes('production-row-batch-executor-visible-without-parallelism-limits'),
     true,
   );
@@ -823,6 +832,10 @@ test('guarded benchmark details fail closed when storage and row-batch capabilit
   assert.equal(details.atomicGroup.productionRowBatchExecutorMeasured, false);
   assert.equal(details.productionStorageReceiptsVisibleAndAtomicCommitVisibleAndMeasured, false);
   assert.equal(details.atomicGroup.productionRowBatchExecutorVisibleAndStorageReceiptsVisible, true);
+  assert.equal(
+    details.atomicGroup.productionRowBatchExecutorVisibleAndStorageReceiptsVisibleAndMeasured,
+    false,
+  );
 });
 
 test('guarded benchmark accepts visible canonical parallelism caps for row-batch proof without precomputed claim details', () => {
@@ -856,6 +869,10 @@ test('guarded benchmark accepts visible canonical parallelism caps for row-batch
   assert.equal(
     blockers.includes('production-row-batch-executor-visible-without-parallelism-limits'),
     false,
+  );
+  assert.equal(
+    details.atomicGroup.productionRowBatchExecutorVisibleAndStorageReceiptsVisibleAndMeasured,
+    true,
   );
 });
 

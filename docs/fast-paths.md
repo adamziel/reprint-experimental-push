@@ -1810,6 +1810,10 @@ that visibility bit.
 The same gate also fails closed if storage receipts appear visible without a
 matching measurement, so a forged receipt summary cannot masquerade as
 production evidence.
+The same throughput details now keep the combined
+`productionRowBatchExecutorVisibleAndStorageReceiptsVisibleAndMeasured` bit
+fail-closed too, so a visible row-batch plus storage-receipt pair does not look
+production-ready unless both measurements are present.
 The claim gate also fails closed if atomic-group commit evidence is present
 without a ready required group record, so a staged or optional group cannot
 masquerade as a production atomic commit.
