@@ -3572,6 +3572,54 @@ test('blocks _menu_item_object_id taxonomy metadata from referencing a same-plan
   assert.equal(JSON.stringify(blocker).includes('local-shared-menu-taxonomy-term'), false);
 });
 
+test('blocks _menu_item_object_id taxonomy metadata from referencing a same-plan nav_menu term even when no term taxonomy row is present', () => {
+  const resourceKey = 'row:["wp_postmeta","meta_id:478"]';
+  const targetResourceKey = 'row:["wp_terms","term_id:8"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_terms = {
+    'term_id:8': {
+      term_id: 8,
+      name: 'Local nav menu object term',
+      slug: 'local-nav-menu-object-term',
+    },
+  };
+  local.db.wp_postmeta = {
+    'meta_id:478': {
+      meta_id: 478,
+      post_id: 1,
+      meta_key: '_menu_item_object_id',
+      meta_value: 8,
+    },
+    'meta_id:479': {
+      meta_id: 479,
+      post_id: 1,
+      meta_key: '_menu_item_type',
+      meta_value: 'taxonomy',
+    },
+    'meta_id:480': {
+      meta_id: 480,
+      post_id: 1,
+      meta_key: '_menu_item_object',
+      meta_value: 'nav_menu',
+    },
+  };
+
+  const plan = planFor(base, local, baseSite());
+  const termMutation = mutationFor(plan, targetResourceKey);
+  const postmetaMutation = mutationFor(plan, resourceKey);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(termMutation.changeKind, 'create');
+  assert.equal(postmetaMutation, undefined);
+  assert.ok(blocker);
+  assert.equal(blocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(blocker.surface, 'nav_menu');
+  assert.equal(JSON.stringify(blocker).includes('local-nav-menu-object-term'), false);
+  assert.throws(() => applyPlan(baseSite(), plan), /Refusing to apply/);
+});
+
 test('blocks menu item parent metadata owned by an attachment even when it targets a same-plan post', () => {
   const resourceKey = 'row:["wp_postmeta","meta_id:48"]';
   const attachmentResourceKey = 'row:["wp_posts","ID:2"]';

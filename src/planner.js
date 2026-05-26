@@ -1154,6 +1154,18 @@ function wordpressGraphIdentitySupport({
         }
       }
     }
+    if (
+      isMenuItemObjectIdMetaKey(localValue.meta_key)
+      && menuItemObjectTargetTable(localValue, local) === 'terms'
+      && menuItemObjectTaxonomySlug(localValue, local) === 'nav_menu'
+    ) {
+      return {
+        supported: false,
+        className: 'unsupported-wordpress-graph-surface',
+        surface: 'nav_menu',
+        reason: `WordPress graph mutation ${resource.key} references a navigation menu term through menu item taxonomy metadata and must stay blocked.`,
+      };
+    }
   }
 
   if (resource.table === 'wp_usermeta') {
@@ -1810,9 +1822,12 @@ function isValidSamePlanWordPressGraphTarget(
           || ownerValue.post_type === 'nav_menu_item'
           || ownerValue.post_type === 'wp_navigation'
           || ownerValue.post_type === 'revision')
-      ) {
+        ) {
         return false;
       }
+    }
+    if (menuItemObjectTaxonomySlug(sourceValue, local) === 'nav_menu') {
+      return false;
     }
     if (!targetValue || typeof targetValue !== 'object') {
       return false;
@@ -2206,6 +2221,21 @@ function menuItemObjectTargetTable(value, local) {
   }
   const menuItemType = findPostmetaValueByOwnerAndKey(local, ownerId, '_menu_item_type');
   return menuItemType === 'taxonomy' ? 'terms' : 'posts';
+}
+
+function menuItemObjectTaxonomySlug(value, local) {
+  if (!value || typeof value !== 'object') {
+    return null;
+  }
+  const ownerId = normalizePositiveInteger(value.post_id);
+  if (ownerId == null) {
+    return null;
+  }
+  const menuItemType = findPostmetaValueByOwnerAndKey(local, ownerId, '_menu_item_type');
+  if (menuItemType !== 'taxonomy') {
+    return null;
+  }
+  return findPostmetaValueByOwnerAndKey(local, ownerId, '_menu_item_object');
 }
 
 function findPostmetaValueByOwnerAndKey(snapshot, ownerId, metaKey) {
