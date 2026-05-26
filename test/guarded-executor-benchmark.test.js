@@ -7671,3 +7671,147 @@ test('guarded benchmark keeps receipt-cursor measured visibility details false w
     false,
   );
 });
+
+test('guarded benchmark carries direct aligned queue-slack proof blockers into rollout summaries under visible production capability evidence', () => {
+  const report = smallBenchmark();
+  const mutated = clone(report);
+
+  mutated.executorCapabilities.productionAtomicCommit = 'production-atomic-group-commit';
+  mutated.executorCapabilities.fileReceipts = 'production-storage-receipts';
+  mutated.executorCapabilities.rowApply = 'production-batched-compare-and-swap';
+  mutated.evidence.parallelism.parallelismLimitsMeasured = true;
+  mutated.evidence.parallelism.parallelismLimitsVisible = true;
+  mutated.evidence.parallelism.parallelismLimits = {
+    chunkUpload: 4,
+    fileHashing: 2,
+    dbBatchPerTable: 2,
+  };
+  mutated.evidence.atomicGroup.productionAtomicCommitMeasured = true;
+  mutated.evidence.atomicGroup.productionAtomicCommitVisible = true;
+  mutated.evidence.atomicGroup.productionAtomicGroupMetadataVisible = true;
+  mutated.evidence.atomicGroup.productionStorageReceiptsMeasured = true;
+  mutated.evidence.atomicGroup.productionStorageReceiptsVisible = true;
+  mutated.evidence.atomicGroup.productionRowBatchExecutorMeasured = true;
+  mutated.evidence.atomicGroup.productionRowBatchExecutorVisible = true;
+  mutated.evidence.backpressure.queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack = false;
+
+  const details = productionThroughputDetails(mutated);
+  const blockers = productionThroughputBlockers(mutated);
+
+  assert.deepEqual(details.productionCapabilityRolloutSummary, [
+    {
+      surface: 'chunk-upload-concurrency',
+      status: 'blocked',
+      measured: false,
+      visible: false,
+      blockerRefs: [
+        'backpressure-evidence-incomplete',
+        'queue-memory-ceiling-does-not-match-queue-budget',
+        'queue-pause-without-measured-and-aligned-receipt-cursor-queue-slack-proof',
+        'queue-budget-visible-and-memory-ceiling-visible-without-aligned-receipt-cursor-queue-slack-proof',
+        'queue-budget-visible-and-queue-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof',
+        'memory-ceiling-and-queue-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof',
+        'queue-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof',
+      ],
+    },
+    {
+      surface: 'file-hashing-concurrency',
+      status: 'blocked',
+      measured: false,
+      visible: false,
+      blockerRefs: [
+        'backpressure-evidence-incomplete',
+        'queue-memory-ceiling-does-not-match-queue-budget',
+        'queue-pause-without-measured-and-aligned-receipt-cursor-queue-slack-proof',
+        'queue-budget-visible-and-memory-ceiling-visible-without-aligned-receipt-cursor-queue-slack-proof',
+        'queue-budget-visible-and-queue-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof',
+        'memory-ceiling-and-queue-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof',
+        'queue-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof',
+      ],
+    },
+    {
+      surface: 'row-batch-concurrency',
+      status: 'blocked',
+      measured: false,
+      visible: false,
+      blockerRefs: [
+        'backpressure-evidence-incomplete',
+        'queue-memory-ceiling-does-not-match-queue-budget',
+        'queue-pause-without-measured-and-aligned-receipt-cursor-queue-slack-proof',
+        'queue-budget-visible-and-memory-ceiling-visible-without-aligned-receipt-cursor-queue-slack-proof',
+        'queue-budget-visible-and-queue-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof',
+        'memory-ceiling-and-queue-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof',
+        'queue-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof',
+      ],
+    },
+  ]);
+  assert.ok(blockers.includes('queue-pause-without-measured-and-aligned-receipt-cursor-queue-slack-proof'));
+  assert.ok(blockers.includes('queue-budget-visible-and-memory-ceiling-visible-without-aligned-receipt-cursor-queue-slack-proof'));
+  assert.ok(blockers.includes('queue-budget-visible-and-queue-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof'));
+  assert.ok(blockers.includes('memory-ceiling-and-queue-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof'));
+  assert.ok(blockers.includes('queue-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof'));
+});
+
+test('guarded benchmark carries direct aligned backpressure proof blockers into rollout summaries under visible production capability evidence', () => {
+  const report = smallBenchmark();
+  const mutated = clone(report);
+
+  mutated.executorCapabilities.productionAtomicCommit = 'production-atomic-group-commit';
+  mutated.executorCapabilities.fileReceipts = 'production-storage-receipts';
+  mutated.executorCapabilities.rowApply = 'production-batched-compare-and-swap';
+  mutated.evidence.parallelism.parallelismLimitsMeasured = true;
+  mutated.evidence.parallelism.parallelismLimitsVisible = true;
+  mutated.evidence.parallelism.parallelismLimits = {
+    chunkUpload: 4,
+    fileHashing: 2,
+    dbBatchPerTable: 2,
+  };
+  mutated.evidence.atomicGroup.productionAtomicCommitMeasured = true;
+  mutated.evidence.atomicGroup.productionAtomicCommitVisible = true;
+  mutated.evidence.atomicGroup.productionAtomicGroupMetadataVisible = true;
+  mutated.evidence.atomicGroup.productionStorageReceiptsMeasured = true;
+  mutated.evidence.atomicGroup.productionStorageReceiptsVisible = true;
+  mutated.evidence.atomicGroup.productionRowBatchExecutorMeasured = true;
+  mutated.evidence.atomicGroup.productionRowBatchExecutorVisible = true;
+  mutated.evidence.backpressure.queuePauseHasMeasuredAndAlignedReceiptCursorBackpressure = false;
+
+  const details = productionThroughputDetails(mutated);
+  const blockers = productionThroughputBlockers(mutated);
+
+  assert.deepEqual(details.productionCapabilityRolloutSummary, [
+    {
+      surface: 'chunk-upload-concurrency',
+      status: 'blocked',
+      measured: false,
+      visible: false,
+      blockerRefs: [
+        'backpressure-evidence-incomplete',
+        'queue-memory-ceiling-does-not-match-queue-budget',
+        'queue-pause-without-measured-and-aligned-receipt-cursor-backpressure-proof',
+      ],
+    },
+    {
+      surface: 'file-hashing-concurrency',
+      status: 'blocked',
+      measured: false,
+      visible: false,
+      blockerRefs: [
+        'backpressure-evidence-incomplete',
+        'queue-memory-ceiling-does-not-match-queue-budget',
+        'queue-pause-without-measured-and-aligned-receipt-cursor-backpressure-proof',
+      ],
+    },
+    {
+      surface: 'row-batch-concurrency',
+      status: 'blocked',
+      measured: false,
+      visible: false,
+      blockerRefs: [
+        'backpressure-evidence-incomplete',
+        'queue-memory-ceiling-does-not-match-queue-budget',
+        'queue-pause-without-measured-and-aligned-receipt-cursor-backpressure-proof',
+      ],
+    },
+  ]);
+  assert.ok(blockers.includes('queue-pause-without-measured-and-aligned-receipt-cursor-backpressure-proof'));
+});
