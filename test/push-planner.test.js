@@ -22027,6 +22027,136 @@ test('prioritizes featured image attachment blocker wording while carrying bound
   assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin changes */');
 });
 
+test('prioritizes post meta attachment blocker wording while carrying bounded post meta, featured image, post parent, and term relationship references for a same-plan created attachment identity', () => {
+  const attachmentResourceKey = 'row:["wp_posts","ID:188"]';
+  const attachmentMetaResourceKey = 'row:["wp_postmeta","meta_id:188"]';
+  const featuredImageResourceKey = 'row:["wp_postmeta","meta_id:189"]';
+  const childPostResourceKey = 'row:["wp_posts","ID:189"]';
+  const relationshipResourceKey = 'row:["wp_term_relationships","object_id:188,term_taxonomy_id:5"]';
+
+  const base = baseSite();
+  base.db.wp_posts['ID:1'].post_title = 'Base shared attachment dependency title';
+  base.db.wp_terms = {
+    'term_id:5': {
+      term_id: 5,
+      name: 'base attachment dependency term',
+      slug: 'base-attachment-dependency-term',
+    },
+  };
+  base.db.wp_term_taxonomy = {
+    'term_taxonomy_id:5': {
+      term_taxonomy_id: 5,
+      term_id: 5,
+      taxonomy: 'category',
+      description: 'base attachment dependency taxonomy',
+      parent: 0,
+    },
+  };
+  base.db.wp_postmeta = {};
+  base.db.wp_term_relationships = {};
+
+  const local = baseSite();
+  local.db.wp_posts['ID:1'].post_title = 'Shared attachment dependency title';
+  local.db.wp_terms = JSON.parse(JSON.stringify(base.db.wp_terms));
+  local.db.wp_term_taxonomy = JSON.parse(JSON.stringify(base.db.wp_term_taxonomy));
+  local.db.wp_posts['ID:188'] = {
+    ID: 188,
+    post_title: 'Local same-plan attachment target',
+    post_content: 'Local same-plan attachment body',
+    post_status: 'inherit',
+    post_type: 'attachment',
+  };
+  local.db.wp_posts['ID:189'] = {
+    ID: 189,
+    post_title: 'Local child post referencing same-plan attachment',
+    post_content: 'Local child post attachment body',
+    post_status: 'publish',
+    post_parent: 188,
+  };
+  local.db.wp_postmeta = {
+    'meta_id:188': {
+      meta_id: 188,
+      post_id: 188,
+      meta_key: '_local_attachment_note',
+      meta_value: 'Local same-plan attachment note',
+    },
+    'meta_id:189': {
+      meta_id: 189,
+      post_id: 1,
+      meta_key: '_thumbnail_id',
+      meta_value: 188,
+    },
+  };
+  local.db.wp_term_relationships = {
+    'object_id:188,term_taxonomy_id:5': {
+      object_id: 188,
+      term_taxonomy_id: 5,
+      term_order: 1,
+      note: 'Local same-plan attachment relationship note',
+    },
+  };
+
+  const remote = baseSite();
+  remote.db.wp_posts['ID:1'].post_title = 'Shared attachment dependency title';
+  remote.db.wp_terms = JSON.parse(JSON.stringify(base.db.wp_terms));
+  remote.db.wp_term_taxonomy = JSON.parse(JSON.stringify(base.db.wp_term_taxonomy));
+  remote.db.wp_postmeta = {};
+  remote.db.wp_term_relationships = {};
+  remote.plugins.forms.description = 'remote-only plugin changes';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin changes */';
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === attachmentResourceKey);
+  const attachmentMetaBlocker = plan.blockers.find((entry) => entry.resourceKey === attachmentMetaResourceKey);
+  const featuredImageBlocker = plan.blockers.find((entry) => entry.resourceKey === featuredImageResourceKey);
+  const matchingEdit = decisionFor(plan, 'row:["wp_posts","ID:1"]');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, attachmentResourceKey), undefined);
+  assert.equal(decisionFor(plan, attachmentMetaResourceKey), undefined);
+  assert.equal(decisionFor(plan, featuredImageResourceKey), undefined);
+  assert.equal(decisionFor(plan, childPostResourceKey), undefined);
+  assert.equal(decisionFor(plan, relationshipResourceKey), undefined);
+  assert.equal(blocker.class, 'unsupported-attachment-resource');
+  assert.equal(blocker.resourceKey, attachmentResourceKey);
+  assert.equal(
+    blocker.reason,
+    'WordPress graph mutation row:["wp_posts","ID:188"] is created in the same plan as a post meta attachment target that depends on it, and identity rewriting is not yet supported.',
+  );
+  assert.deepEqual(
+    blocker.references.map((reference) => reference.relationshipType),
+    ['postmeta-post', 'featured-image-attachment', 'post-parent', 'term-relationship-object'],
+  );
+  assert.deepEqual(
+    blocker.references.map((reference) => reference.sourceResourceKey),
+    [
+      attachmentMetaResourceKey,
+      featuredImageResourceKey,
+      childPostResourceKey,
+      relationshipResourceKey,
+    ],
+  );
+  assert.equal(blocker.references.every((reference) => reference.targetResourceKey === attachmentResourceKey), true);
+  assert.equal(attachmentMetaBlocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(featuredImageBlocker.class, 'unsupported-attachment-resource');
+  assert.equal(matchingEdit.decision, 'already-in-sync');
+  assert.equal(matchingEdit.change.localChange, 'update');
+  assert.equal(matchingEdit.change.remoteChange, 'update');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('Local same-plan attachment target'), false);
+  assert.equal(planJson.includes('Local same-plan attachment body'), false);
+  assert.equal(planJson.includes('Local same-plan attachment note'), false);
+  assert.equal(planJson.includes('Local child post referencing same-plan attachment'), false);
+  assert.equal(planJson.includes('Local same-plan attachment relationship note'), false);
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin changes');
+  assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin changes */');
+});
+
 test('orders same-plan attachment dependency references deterministically within the same priority bucket', () => {
   const attachmentResourceKey = 'row:["wp_posts","ID:98"]';
   const firstFeaturedImageResourceKey = 'row:["wp_postmeta","meta_id:97"]';
