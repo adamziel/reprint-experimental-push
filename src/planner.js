@@ -539,12 +539,18 @@ function buildPluginOwnedResourcePolicy({ base, local, remote, intents }) {
         SUPPORTED_PLUGIN_DATA_DRIVERS.has(entry.driver)
         && pluginOwnedPolicyEntryMatchesResource(entry, resource, owner));
       if (!supported) {
+        const unsupportedCustomTable = withDriver.driver !== 'fixture-forms-lab-table'
+          && resource.type === 'row'
+          && typeof resource.table === 'string'
+          && !PLUGIN_DATA_DRIVER_TABLES.has(withDriver.driver);
         return {
           supported: false,
           className: 'unsupported-plugin-owned-resource',
           driver: withDriver.driver,
           policySource: withDriver.source,
-          reason: 'Plugin-owned resource driver does not match the resource type or table.',
+          reason: unsupportedCustomTable
+            ? 'Plugin-owned custom tables are not yet supported by the planner.'
+            : 'Plugin-owned resource driver does not match the resource type or table.',
         };
       }
 
