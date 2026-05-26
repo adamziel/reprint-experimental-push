@@ -18677,6 +18677,65 @@ test('blocks unsupported hard-link special file entries while preserving remote-
   assert.equal(remote.plugins.forms.description, 'remote-only plugin drift');
 });
 
+test('blocks unsupported hard-link special file entries while preserving a matching independent edit and remote-only plugin changes', () => {
+  const resourceKey = 'file:wp-content/uploads/hardlink';
+  const base = baseSite();
+  base.files['wp-content/uploads/hardlink'] = { type: 'hardlink', inode: 4242 };
+  base.db.wp_posts['ID:46'] = {
+    ID: 46,
+    post_title: 'Base hard-link post',
+    post_content: 'Base hard-link post content',
+    post_status: 'publish',
+    post_type: 'post',
+  };
+
+  const local = baseSite();
+  local.files['wp-content/uploads/hardlink'] = { type: 'hardlink', inode: 1337 };
+  local.db.wp_posts['ID:46'] = {
+    ID: 46,
+    post_title: 'Base hard-link post',
+    post_content: 'Local hard-link post content',
+    post_status: 'publish',
+    post_type: 'post',
+  };
+
+  const remote = baseSite();
+  remote.files['wp-content/uploads/hardlink'] = JSON.parse(JSON.stringify(base.files['wp-content/uploads/hardlink']));
+  remote.db.wp_posts['ID:46'] = {
+    ID: 46,
+    post_title: 'Base hard-link post',
+    post_content: 'Local hard-link post content',
+    post_status: 'publish',
+    post_type: 'post',
+  };
+  remote.plugins.forms.description = 'remote-only plugin changes';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin changes */';
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers[0];
+  const postDecision = decisionFor(plan, 'row:["wp_posts","ID:46"]');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(plan.conflicts.length, 0);
+  assert.equal(blocker.class, 'unsupported-special-file-resource');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.reason, 'Special file entries are not yet supported by the planner.');
+  assert.equal(postDecision.decision, 'already-in-sync');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('1337'), false);
+  assert.equal(planJson.includes('4242'), false);
+  assert.equal(planJson.includes('Local hard-link post content'), false);
+  assert.equal(planJson.includes('Base hard-link post content'), false);
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin changes');
+  assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin changes */');
+});
+
 test('blocks unsupported device special file entries while preserving remote-only plugin drift', () => {
   const resourceKey = 'file:wp-content/uploads/device';
   const base = baseSite();
