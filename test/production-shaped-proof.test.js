@@ -126,6 +126,33 @@ function spawnBoundedSync(command, args, options, label) {
   return proof;
 }
 
+function logBoundedSpawnProofFailure(command, args, proof) {
+  const commandLabel = `${command} ${args.join(' ')}`;
+  if (proof.error) {
+    process.stderr.write(
+      `${commandLabel} failed with ${proof.error.code || proof.error.name}: ${proof.error.message}\nstdout:\n${proof.stdout ?? ''}\nstderr:\n${proof.stderr ?? ''}\n`,
+    );
+    return;
+  }
+  if (proof.signal) {
+    process.stderr.write(
+      `${commandLabel} terminated by ${proof.signal}\nstdout:\n${proof.stdout ?? ''}\nstderr:\n${proof.stderr ?? ''}\n`,
+    );
+    return;
+  }
+  if (proof.status === null) {
+    process.stderr.write(
+      `${commandLabel} exited without a status\nstdout:\n${proof.stdout ?? ''}\nstderr:\n${proof.stderr ?? ''}\n`,
+    );
+    return;
+  }
+  if (proof.status !== 0) {
+    process.stderr.write(
+      `${commandLabel} exited with ${proof.status}\nstdout:\n${proof.stdout ?? ''}\nstderr:\n${proof.stderr ?? ''}\n`,
+    );
+  }
+}
+
 function formatSpawnFailure(prefix, proof) {
   const detailParts = [
     proof.error?.name ?? 'Error',
@@ -744,23 +771,7 @@ function stopParentProcesses(child, signal) {
       timeout: 2_000,
       killSignal: 'SIGKILL',
     });
-    if (proof.error) {
-      process.stderr.write(
-        `${command} ${args.join(' ')} failed with ${proof.error.code || proof.error.name}: ${proof.error.message}\n`,
-      );
-      continue;
-    }
-    if (proof.signal) {
-      process.stderr.write(
-        `${command} ${args.join(' ')} terminated by ${proof.signal}\nstdout:\n${proof.stdout ?? ''}\nstderr:\n${proof.stderr ?? ''}\n`,
-      );
-      continue;
-    }
-    if (proof.status !== 0) {
-      process.stderr.write(
-        `${command} ${args.join(' ')} exited with ${proof.status}\nstdout:\n${proof.stdout ?? ''}\nstderr:\n${proof.stderr ?? ''}\n`,
-      );
-    }
+    logBoundedSpawnProofFailure(command, args, proof);
   }
 }
 
