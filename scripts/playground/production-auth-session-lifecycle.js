@@ -365,6 +365,11 @@ export function evaluateProductionAuthSessionLifecycleSummary(summary, now = Dat
     }
   }
 
+  const mismatchedReadObservation = resolveMismatchedSummaryReadObservation(readObservation, observations);
+  if (mismatchedReadObservation) {
+    return mismatchedReadObservation;
+  }
+
   return {
     ok: true,
     required: 'production-auth-session lifecycle',
@@ -648,6 +653,47 @@ function resolveMismatchedSummaryObservationSession(summary, issuedSessionId) {
   return null;
 }
 
+function resolveMismatchedSummaryReadObservation(readObservation, observations) {
+  if (!readObservation || !Array.isArray(observations) || observations.length === 0) {
+    return null;
+  }
+
+  const lastObservedRead = [...observations]
+    .reverse()
+    .find((observation) => observation && typeof observation === 'object' && isAuthSessionReadStep(observation.step));
+  if (!lastObservedRead) {
+    return null;
+  }
+
+  const readSessionId = normalizeAuthSessionObservationId(readObservation.id);
+  const lastObservedReadSessionId = normalizeAuthSessionObservationId(lastObservedRead.id);
+  if (readSessionId && lastObservedReadSessionId && readSessionId !== lastObservedReadSessionId) {
+    return {
+      ok: false,
+      required: 'preserved read',
+      observed: 'rotated',
+    };
+  }
+
+  if (readObservation.step !== lastObservedRead.step) {
+    return {
+      ok: false,
+      required: 'preserved read',
+      observed: normalizeAuthSessionObservationStep(lastObservedRead.step),
+    };
+  }
+
+  if (!authSessionObservationEquals(readObservation, lastObservedRead)) {
+    return {
+      ok: false,
+      required: 'preserved read',
+      observed: 'stale-read-summary',
+    };
+  }
+
+  return null;
+}
+
 function resolveInvalidIssuedAuthSessionObservation(observation) {
   if (!observation || typeof observation !== 'object') {
     return null;
@@ -710,6 +756,23 @@ function resolveInvalidReadLifecycleOutcome(observation, required) {
   }
 
   return null;
+}
+
+function authSessionObservationEquals(left, right) {
+  return normalizeAuthSessionObservationId(left?.id) === normalizeAuthSessionObservationId(right?.id)
+    && normalizeAuthSessionObservationField(left?.type) === normalizeAuthSessionObservationField(right?.type)
+    && normalizeAuthSessionObservationField(left?.status) === normalizeAuthSessionObservationField(right?.status)
+    && normalizeAuthSessionObservationField(left?.expiresAt) === normalizeAuthSessionObservationField(right?.expiresAt)
+    && normalizeAuthSessionObservationStep(left?.step) === normalizeAuthSessionObservationStep(right?.step)
+    && normalizeLifecycleBoolean(left?.expired) === normalizeLifecycleBoolean(right?.expired)
+    && normalizeLifecycleBoolean(left?.revoked) === normalizeLifecycleBoolean(right?.revoked)
+    && normalizeLifecycleBoolean(left?.rotated) === normalizeLifecycleBoolean(right?.rotated)
+    && normalizeLifecycleBoolean(left?.preserved) === normalizeLifecycleBoolean(right?.preserved)
+    && normalizeLifecycleBoolean(left?.cleanedUp ?? left?.cleanup) === normalizeLifecycleBoolean(right?.cleanedUp ?? right?.cleanup);
+}
+
+function normalizeLifecycleBoolean(value) {
+  return value === true;
 }
 
 function summaryObservationCarriesExpectedFlag(field, observation) {
