@@ -22,7 +22,7 @@ const proofSubprocessTimeoutMs = 45_000;
 const proofSubprocessKillSignal = 'SIGTERM';
 const liveProofSubprocessTimeoutMs = 9_000;
 const liveProofSubprocessKillSignal = 'SIGKILL';
-const liveProofInnerTimeoutMs = Math.max(1_000, Math.min(3_000, liveProofSubprocessTimeoutMs - 5_000));
+const liveProofInnerTimeoutMs = Math.max(1_000, Math.min(2_000, liveProofSubprocessTimeoutMs - 5_000));
 const liveProofLaunchTimeoutMs = Math.max(1_000, Math.min(liveProofInnerTimeoutMs, liveProofSubprocessTimeoutMs - 6_000));
 const releaseVerifySlowPathTimeoutMs = 9_000;
 const releaseVerifySlowPathInnerTimeoutMs = Math.max(1_000, Math.min(5_000, releaseVerifySlowPathTimeoutMs - 2_000));
@@ -90,18 +90,7 @@ function spawnReleaseVerifyBounded(command, args, options, label) {
     killSignal,
   };
   const proof = spawnSync(command, args, boundedOptions);
-  if (proof.error || proof.signal || proof.status === null) {
-    stopAllPlaygroundChildrenSync();
-    reportBoundedSpawnFailure(proof, command, args);
-    if (proof.error) {
-      const timeoutNote = proof.error.code === 'ETIMEDOUT' && boundedOptions.timeout ? ` after ${boundedOptions.timeout}ms` : '';
-      throw new Error(formatSpawnFailure(`${label} failed${timeoutNote}`, proof));
-    }
-    if (proof.signal) {
-      throw new Error(formatSpawnFailure(`${label} terminated by ${proof.signal}${boundedOptions.timeout ? ` after ${boundedOptions.timeout}ms` : ''}`, proof));
-    }
-    throw new Error(formatSpawnFailure(`${label} exited without a status`, proof));
-  }
+  assertBoundedSpawnProof(proof, command, args, label, boundedOptions.timeout);
   return proof;
 }
 
@@ -183,32 +172,21 @@ function liveProofSpawnOptions(timeout, killSignal = liveProofSubprocessKillSign
 function assertReleaseVerifyProof(proof, label, timeoutMs) {
   if (proof.error) {
     stopAllPlaygroundChildrenSync();
+    reportSpawnFailure(proof);
     const timeoutNote = proof.error.code === 'ETIMEDOUT' && timeoutMs ? ` after ${timeoutMs}ms` : '';
-    const detailParts = [
-      proof.error.name ?? 'Error',
-      proof.error.code ? `code=${proof.error.code}` : null,
-      proof.error.errno ? `errno=${proof.error.errno}` : null,
-      proof.killed ? 'killed=true' : null,
-      proof.status !== null ? `status=${proof.status}` : null,
-      proof.signal ? `signal=${proof.signal}` : null,
-    ].filter(Boolean);
-    assert.fail(
-      `${label} exposed a spawn error${timeoutNote} with ${detailParts.join(' ')}: ${proof.error.message}\nstdout:\n${proof.stdout ?? ''}\nstderr:\n${proof.stderr ?? ''}`,
-    );
+    assert.fail(formatSpawnFailure(`${label} failed${timeoutNote} with explicit spawn error handling`, proof));
   }
 
   if (proof.signal) {
     stopAllPlaygroundChildrenSync();
-    assert.fail(
-      `${label} terminated by ${proof.signal}\nstdout:\n${proof.stdout ?? ''}\nstderr:\n${proof.stderr ?? ''}`,
-    );
+    reportSpawnFailure(proof);
+    assert.fail(formatSpawnFailure(`${label} terminated by ${proof.signal}${timeoutMs ? ` after ${timeoutMs}ms` : ''} with explicit spawn signal handling`, proof));
   }
 
   if (proof.status === null) {
     stopAllPlaygroundChildrenSync();
-    assert.fail(
-      `${label} exited without a status\nstdout:\n${proof.stdout ?? ''}\nstderr:\n${proof.stderr ?? ''}`,
-    );
+    reportSpawnFailure(proof);
+    assert.fail(`${label} exited without a status with explicit spawn status handling\nstdout:\n${proof.stdout ?? ''}\nstderr:\n${proof.stderr ?? ''}`);
   }
 }
 
@@ -275,25 +253,27 @@ function spawnBoundedSync(command, args, options, label) {
     killSignal: options.killSignal ?? 'SIGKILL',
   };
   const proof = spawnSync(command, args, boundedOptions);
-  const timeoutNote = boundedOptions.timeout ? ` after ${boundedOptions.timeout}ms` : '';
-  const detailedFailure = (reason) => formatSpawnFailure(`${label} ${reason}${timeoutNote} with bounded spawn handling`, proof);
+  assertBoundedSpawnProof(proof, command, args, label, boundedOptions.timeout);
+  return proof;
+}
+
+function assertBoundedSpawnProof(proof, command, args, label, timeoutMs) {
+  if (!proof.error && !proof.signal && proof.status !== null) {
+    return;
+  }
+
+  stopAllPlaygroundChildrenSync();
+  reportBoundedSpawnFailure(proof, command, args);
+  const timeoutNote = timeoutMs ? ` after ${timeoutMs}ms` : '';
+  const failureLabel = `${label} with bounded spawn handling`;
 
   if (proof.error) {
-    stopAllPlaygroundChildrenSync();
-    reportBoundedSpawnFailure(proof, command, args);
-    throw new Error(detailedFailure('failed'));
+    throw new Error(formatSpawnFailure(`${failureLabel} failed${proof.error.code === 'ETIMEDOUT' ? timeoutNote : ''}`, proof));
   }
   if (proof.signal) {
-    stopAllPlaygroundChildrenSync();
-    reportBoundedSpawnFailure(proof, command, args);
-    throw new Error(detailedFailure(`terminated by ${proof.signal}`));
+    throw new Error(formatSpawnFailure(`${failureLabel} terminated by ${proof.signal}${timeoutNote}`, proof));
   }
-  if (proof.status === null) {
-    stopAllPlaygroundChildrenSync();
-    reportBoundedSpawnFailure(proof, command, args);
-    throw new Error(detailedFailure('exited without a status'));
-  }
-  return proof;
+  throw new Error(formatSpawnFailure(`${failureLabel} exited without a status`, proof));
 }
 
 function spawnReleaseVerifySlowPathBounded(env = {}, options = {}) {
@@ -431,6 +411,22 @@ function formatSpawnFailure(prefix, proof) {
   return `${prefix} with ${detailParts.join(' ')}: ${proof.error?.message ?? 'unknown error'}\nstdout:\n${proof.stdout ?? ''}\nstderr:\n${proof.stderr ?? ''}`;
 }
 
+function assertReleaseVerifySpawnProof(proof, label, timeoutMs) {
+  if (proof.error) {
+    reportSpawnFailure(proof);
+    const timeoutNote = proof.error.code === 'ETIMEDOUT' && timeoutMs ? ` after ${timeoutMs}ms` : '';
+    throw new Error(formatSpawnFailure(`${label} failed${timeoutNote} with explicit spawn error handling`, proof));
+  }
+  if (proof.signal) {
+    reportSpawnFailure(proof);
+    throw new Error(formatSpawnFailure(`${label} terminated by ${proof.signal}${timeoutMs ? ` after ${timeoutMs}ms` : ''} with explicit spawn signal handling`, proof));
+  }
+  if (proof.status === null) {
+    reportSpawnFailure(proof);
+    throw new Error(`${label} exited without a status with explicit spawn status handling\nstdout:\n${proof.stdout ?? ''}\nstderr:\n${proof.stderr ?? ''}`);
+  }
+}
+
 function describeSpawnProof(proof) {
   return JSON.stringify(
     {
@@ -549,6 +545,7 @@ test('production-shaped release verify command fails closed when production dura
     boundedLiveReleaseVerifyOptions({ timeout: Math.max(1_000, Math.min(releaseVerifySlowPathTimeoutMs, liveProofInnerTimeoutMs)) }),
     'durable journal release verify',
   );
+  assertReleaseVerifySpawnProof(proof, 'durable journal release verify', liveProofInnerTimeoutMs);
   assert.equal(proof.status, 1, proof.stderr);
   assert.match(proof.stdout, /"code": "PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED"/);
 });
@@ -566,6 +563,7 @@ test('production-shaped release verify command fails closed when production auth
     boundedLiveReleaseVerifyOptions({ timeout: Math.max(1_000, Math.min(releaseVerifySlowPathTimeoutMs, liveProofInnerTimeoutMs)) }),
     'auth/session release verify',
   );
+  assertReleaseVerifySpawnProof(proof, 'auth/session release verify', liveProofInnerTimeoutMs);
   assert.equal(proof.status, 1, proof.stderr);
   assert.match(proof.stdout, /"ok": false/);
   assert.match(
@@ -622,6 +620,7 @@ maybeTest('production-shaped release proof runs the live preflight branch agains
         REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD: liveCredentials.password,
       },
     }, 'live release proof');
+    assertReleaseVerifySpawnProof(proof, 'live release proof', liveProofInnerTimeoutMs);
     assert.equal(proof.status, 0, proof.stderr);
     assert.match(proof.stdout, /"releaseProof": \{\s*"status": 0,\s*"code": "LIVE_PREFLIGHT_OK"\s*\}/);
     assert.match(proof.stdout, /"sourceUrl": "http:\/\/127\.0\.0\.1:\d+"/);
@@ -643,6 +642,7 @@ maybeTest('production-shaped release verify command runs the live protocol branc
       boundedLiveReleaseVerifyOptions({ timeout: liveProofInnerTimeoutMs }),
       'live release verify',
     );
+    assertReleaseVerifySpawnProof(proof, 'live release verify', liveProofInnerTimeoutMs);
     assert.equal(proof.status, 0, proof.stderr);
     assert.match(proof.stdout, /"ok": true/);
     assert.match(proof.stdout, /"sourceUrl": "http:\/\/127\.0\.0\.1:\d+"/);
@@ -729,6 +729,7 @@ test('production-shaped release verify command reports the checked retained-sour
       killSignal: proofSubprocessKillSignal,
     },
   );
+  assertReleaseVerifySpawnProof(proof, 'retained-source release verify', releaseVerifySlowPathTimeoutMs);
   assertLiveReleaseVerifyProof(proof, 'retained-source release verify', releaseVerifySlowPathTimeoutMs);
   assert.equal(proof.status, 1, proof.stderr);
   assert.match(proof.stdout, /"releaseProof": \{/);
