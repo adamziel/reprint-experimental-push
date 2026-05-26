@@ -2011,7 +2011,9 @@ export function productionThroughputDetails(report) {
     && productionStorageReceiptsVisible
     && productionRowBatchExecutorMeasured
     && productionStorageReceiptsMeasured
-    && parallelismLimitsVisibleAndMeasured;
+    && productionAtomicGroupMetadataVisible
+    && productionAtomicCommitVisible
+    && parallelismLimitsVisible;
   const parallelismLimitsVisibleAndCanonical =
     parallelismLimitsVisibleOnReport
     && parallelismLimitsMeasuredOnReport

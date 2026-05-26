@@ -1062,6 +1062,35 @@ test('guarded benchmark blocks row-batch executor visibility when storage-receip
   assert.equal(blockers.includes('production-row-batch-executor-without-storage-receipts'), true);
 });
 
+test('guarded benchmark keeps paired row-batch and storage detail hidden when atomic-group metadata is hidden', () => {
+  const report = smallBenchmark();
+  const tampered = clone(report);
+
+  tampered.executorCapabilities.fileReceipts = 'production-storage-receipts';
+  tampered.executorCapabilities.rowApply = 'production-batched-compare-and-swap';
+  tampered.evidence.atomicGroup.productionStorageReceiptsMeasured = true;
+  tampered.evidence.atomicGroup.productionStorageReceiptsVisible = true;
+  tampered.evidence.atomicGroup.productionRowBatchExecutorMeasured = true;
+  tampered.evidence.atomicGroup.productionRowBatchExecutorVisible = true;
+  tampered.evidence.atomicGroup.productionAtomicCommitMeasured = true;
+  tampered.evidence.atomicGroup.productionAtomicCommitVisible = true;
+  tampered.evidence.atomicGroup.productionAtomicGroupMetadataVisible = false;
+  tampered.evidence.parallelism.parallelismLimitsVisible = true;
+  tampered.evidence.parallelism.parallelismLimitsMeasured = true;
+
+  const details = productionThroughputDetails(tampered);
+  const blockers = productionThroughputBlockers(tampered);
+
+  assert.equal(
+    details.atomicGroup.productionRowBatchExecutorVisibleAndStorageReceiptsVisibleAndMeasured,
+    false,
+  );
+  assert.equal(
+    blockers.includes('production-storage-receipts-and-row-batch-visible-without-atomic-group-metadata'),
+    true,
+  );
+});
+
 test('guarded benchmark blocks paired storage-receipts and row-batch visibility when atomic-group metadata is hidden', () => {
   const report = smallBenchmark();
   const tampered = clone(report);
@@ -1099,6 +1128,35 @@ test('guarded benchmark blocks row-batch executor and storage-receipts paired vi
     true,
   );
   assert.equal(blockers.includes('production-row-batch-executor-without-atomic-commit'), true);
+});
+
+test('guarded benchmark keeps paired row-batch and storage detail hidden when atomic-commit visibility is hidden', () => {
+  const report = smallBenchmark();
+  const tampered = clone(report);
+
+  tampered.executorCapabilities.fileReceipts = 'production-storage-receipts';
+  tampered.executorCapabilities.rowApply = 'production-batched-compare-and-swap';
+  tampered.evidence.atomicGroup.productionStorageReceiptsMeasured = true;
+  tampered.evidence.atomicGroup.productionStorageReceiptsVisible = true;
+  tampered.evidence.atomicGroup.productionRowBatchExecutorMeasured = true;
+  tampered.evidence.atomicGroup.productionRowBatchExecutorVisible = true;
+  tampered.evidence.atomicGroup.productionAtomicCommitMeasured = true;
+  tampered.evidence.atomicGroup.productionAtomicCommitVisible = false;
+  tampered.evidence.atomicGroup.productionAtomicGroupMetadataVisible = true;
+  tampered.evidence.parallelism.parallelismLimitsVisible = true;
+  tampered.evidence.parallelism.parallelismLimitsMeasured = true;
+
+  const details = productionThroughputDetails(tampered);
+  const blockers = productionThroughputBlockers(tampered);
+
+  assert.equal(
+    details.atomicGroup.productionRowBatchExecutorVisibleAndStorageReceiptsVisibleAndMeasured,
+    false,
+  );
+  assert.equal(
+    blockers.includes('production-row-batch-executor-visible-and-storage-receipts-visible-without-atomic-commit'),
+    true,
+  );
 });
 
 test('guarded benchmark blocks forged atomic-group metadata visibility without a measurement', () => {
@@ -1962,6 +2020,34 @@ test('guarded benchmark details fail closed when visible measured parallelism ca
     true,
   );
   assert.equal(blockers.includes('production-parallelism-limits-not-measured'), true);
+});
+
+test('guarded benchmark keeps paired row-batch and storage detail hidden when parallelism caps are noncanonical', () => {
+  const report = smallBenchmark();
+  const tampered = clone(report);
+
+  tampered.executorCapabilities.fileReceipts = 'production-storage-receipts';
+  tampered.executorCapabilities.rowApply = 'production-batched-compare-and-swap';
+  tampered.evidence.atomicGroup.productionStorageReceiptsMeasured = true;
+  tampered.evidence.atomicGroup.productionStorageReceiptsVisible = true;
+  tampered.evidence.atomicGroup.productionRowBatchExecutorMeasured = true;
+  tampered.evidence.atomicGroup.productionRowBatchExecutorVisible = true;
+  tampered.evidence.atomicGroup.productionAtomicCommitMeasured = true;
+  tampered.evidence.atomicGroup.productionAtomicCommitVisible = true;
+  tampered.evidence.atomicGroup.productionAtomicGroupMetadataVisible = true;
+  tampered.evidence.parallelism.parallelismLimitsVisible = true;
+  tampered.evidence.parallelism.parallelismLimitsMeasured = true;
+  tampered.evidence.parallelism.parallelismLimits.chunkUpload = 3;
+
+  const details = productionThroughputDetails(tampered);
+  const blockers = productionThroughputBlockers(tampered);
+
+  assert.equal(
+    details.atomicGroup.productionRowBatchExecutorVisibleAndStorageReceiptsVisibleAndMeasured,
+    false,
+  );
+  assert.equal(blockers.includes('production-parallelism-limits-visible-without-canonical'), true);
+  assert.equal(blockers.includes('production-row-batch-executor-visible-without-parallelism-limits'), true);
 });
 
 test('guarded benchmark blocks atomic-commit visibility when the metadata surface is hidden', () => {
