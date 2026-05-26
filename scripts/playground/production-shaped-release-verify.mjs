@@ -118,6 +118,10 @@ if (liveSourceUrl && (!username || !applicationPassword)) {
             observed: 'missing-production-credentials',
             verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
           },
+          liveAuthSessionSource: {
+            ...liveAuthSessionSourceBlocker,
+            observed: 'missing-production-credentials',
+          },
         },
         protocolExtension,
         preflight: {
@@ -443,6 +447,10 @@ if (requireProductionAuthSession) {
           firstRemainingProductionBoundary: 'auth/session lifecycle and durable journal semantics',
           status: 'unimplemented',
           verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+          liveAuthSessionSource: {
+            ...liveAuthSessionSourceBlocker,
+            observed: 'missing-live-source',
+          },
           durableJournal: {
             storageLeaseFence: 'production durable journal storage, lease, and fencing are not yet proven beyond the retained Playground journal path',
             verdict: 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED',
