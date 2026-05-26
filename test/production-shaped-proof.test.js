@@ -4462,6 +4462,165 @@ test('shared lab waitForServer accepts a ready snapshot even while /wp-json/ sti
   assert.equal(snapshotCalls, 1);
 });
 
+test('shared lab waitForServer fails closed when snapshot is terminal while /wp-json/ still reports startup-shaped 502s', async () => {
+  let indexCalls = 0;
+  let snapshotCalls = 0;
+  const server = createServer((request, response) => {
+    if (request.url === '/wp-json/') {
+      indexCalls += 1;
+      response.statusCode = 502;
+      response.setHeader('content-type', 'text/html; charset=utf-8');
+      response.end('<!doctype html><html><body>WordPress is not ready yet</body></html>');
+      return;
+    }
+
+    if (request.url === '/wp-json/reprint-push-lab/v1/snapshot') {
+      snapshotCalls += 1;
+      response.statusCode = 500;
+      response.setHeader('content-type', 'application/json; charset=utf-8');
+      response.end(JSON.stringify({
+        ok: false,
+        code: 'snapshot_terminal_failure',
+        message: 'snapshot storage failed',
+      }));
+      return;
+    }
+
+    response.statusCode = 404;
+    response.end('not found');
+  });
+
+  await new Promise((resolve, reject) => {
+    server.listen(0, '127.0.0.1', (error) => {
+      if (error) {
+        reject(error);
+        return;
+      }
+      resolve();
+    });
+  });
+
+  const address = server.address();
+  assert.ok(address && typeof address === 'object' && typeof address.port === 'number');
+
+  try {
+    await assert.rejects(
+      waitForServer(
+        {
+          exitCode: null,
+          signalCode: null,
+          pid: null,
+          kill() {
+            this.exitCode = 1;
+            return true;
+          },
+        },
+        `http://127.0.0.1:${address.port}`,
+        () => '',
+      ),
+      (error) => {
+        assert.match(error.message, /Playground lab snapshot returned a terminal readiness failure/);
+        assert.equal(error.context?.childPid ?? null, null);
+        return true;
+      },
+    );
+  } finally {
+    await new Promise((resolve, reject) => {
+      server.close((error) => {
+        if (error) {
+          reject(error);
+          return;
+        }
+        resolve();
+      });
+    });
+  }
+
+  assert.equal(indexCalls, 1);
+  assert.equal(snapshotCalls, 1);
+});
+
+test('shared lab waitForServer fails closed when snapshot is terminal while /wp-json/ still reports startup-shaped no-route failures', async () => {
+  let indexCalls = 0;
+  let snapshotCalls = 0;
+  const server = createServer((request, response) => {
+    if (request.url === '/wp-json/') {
+      indexCalls += 1;
+      response.statusCode = 404;
+      response.setHeader('content-type', 'application/json; charset=utf-8');
+      response.end(JSON.stringify({
+        code: 'rest_no_route',
+        message: 'No route was found matching the URL and request method.',
+      }));
+      return;
+    }
+
+    if (request.url === '/wp-json/reprint-push-lab/v1/snapshot') {
+      snapshotCalls += 1;
+      response.statusCode = 500;
+      response.setHeader('content-type', 'application/json; charset=utf-8');
+      response.end(JSON.stringify({
+        ok: false,
+        code: 'snapshot_terminal_failure',
+        message: 'snapshot storage failed',
+      }));
+      return;
+    }
+
+    response.statusCode = 404;
+    response.end('not found');
+  });
+
+  await new Promise((resolve, reject) => {
+    server.listen(0, '127.0.0.1', (error) => {
+      if (error) {
+        reject(error);
+        return;
+      }
+      resolve();
+    });
+  });
+
+  const address = server.address();
+  assert.ok(address && typeof address === 'object' && typeof address.port === 'number');
+
+  try {
+    await assert.rejects(
+      waitForServer(
+        {
+          exitCode: null,
+          signalCode: null,
+          pid: null,
+          kill() {
+            this.exitCode = 1;
+            return true;
+          },
+        },
+        `http://127.0.0.1:${address.port}`,
+        () => '',
+      ),
+      (error) => {
+        assert.match(error.message, /Playground lab snapshot returned a terminal readiness failure/);
+        assert.equal(error.context?.childPid ?? null, null);
+        return true;
+      },
+    );
+  } finally {
+    await new Promise((resolve, reject) => {
+      server.close((error) => {
+        if (error) {
+          reject(error);
+          return;
+        }
+        resolve();
+      });
+    });
+  }
+
+  assert.equal(indexCalls, 1);
+  assert.equal(snapshotCalls, 1);
+});
+
 test('live Playground proof helpers keep lab readiness probes child-aware', () => {
   const liveSources = [
     readFileSync(
