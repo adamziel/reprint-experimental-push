@@ -470,18 +470,38 @@ test('production recovery journal consumer rejects hidden open options', () => {
 
 test('checked durable journal boundary stays closed until stale-claim rejection is proven on the lease fence', () => {
   const baseContract = {
+    acceptedOnCheckedBoundary: true,
     scope: 'checked live production-shaped journal surface; not local Playground fixture only',
     ownership: {
       ownsJournal: true,
       restartReadable: true,
       productionAdapter: 'wpdb-single-statement-cas',
     },
-    leaseFence: {
-      boundary: 'wpdb-single-statement-cas',
+    writerLease: {
+      strategy: 'claim-fenced-single-writer',
       claimKeyUnique: true,
+      fsyncEvidence: true,
+      storageGuard: 'wpdb-single-statement-cas',
       monotonicSequence: true,
       restartReadable: true,
       staleClaimRejected: false,
+    },
+    leaseFence: {
+      boundary: 'wpdb-single-statement-cas',
+      claimKeyUnique: true,
+      fsyncEvidence: true,
+      monotonicSequence: true,
+      restartReadable: true,
+      staleClaimRejected: false,
+      writerLease: {
+        strategy: 'claim-fenced-single-writer',
+        claimKeyUnique: true,
+        fsyncEvidence: true,
+        storageGuard: 'wpdb-single-statement-cas',
+        monotonicSequence: true,
+        restartReadable: true,
+        staleClaimRejected: false,
+      },
     },
   };
 
@@ -489,11 +509,76 @@ test('checked durable journal boundary stays closed until stale-claim rejection 
   assert.equal(
     checkedDurableJournalBoundarySatisfied({
       ...baseContract,
+      writerLease: {
+        ...baseContract.writerLease,
+        staleClaimRejected: true,
+      },
       leaseFence: {
         ...baseContract.leaseFence,
         staleClaimRejected: true,
+        writerLease: {
+          ...baseContract.leaseFence.writerLease,
+          staleClaimRejected: true,
+        },
       },
     }),
     true,
+  );
+  assert.equal(
+    checkedDurableJournalBoundarySatisfied({
+      ...baseContract,
+      acceptedOnCheckedBoundary: false,
+      writerLease: {
+        ...baseContract.writerLease,
+        staleClaimRejected: true,
+      },
+      leaseFence: {
+        ...baseContract.leaseFence,
+        staleClaimRejected: true,
+        writerLease: {
+          ...baseContract.leaseFence.writerLease,
+          staleClaimRejected: true,
+        },
+      },
+    }),
+    false,
+  );
+  assert.equal(
+    checkedDurableJournalBoundarySatisfied({
+      ...baseContract,
+      writerLease: {
+        ...baseContract.writerLease,
+        staleClaimRejected: true,
+      },
+      leaseFence: {
+        ...baseContract.leaseFence,
+        staleClaimRejected: true,
+        fsyncEvidence: false,
+        writerLease: {
+          ...baseContract.leaseFence.writerLease,
+          staleClaimRejected: true,
+        },
+      },
+    }),
+    false,
+  );
+  assert.equal(
+    checkedDurableJournalBoundarySatisfied({
+      ...baseContract,
+      writerLease: {
+        ...baseContract.writerLease,
+        staleClaimRejected: true,
+      },
+      leaseFence: {
+        ...baseContract.leaseFence,
+        staleClaimRejected: true,
+        writerLease: {
+          ...baseContract.leaseFence.writerLease,
+          staleClaimRejected: true,
+          storageGuard: 'filesystem-compare-rename',
+        },
+      },
+    }),
+    false,
   );
 });

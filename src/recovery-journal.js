@@ -77,15 +77,52 @@ export function openRecoveryJournal(filePath, options = {}) {
 }
 
 export function checkedDurableJournalBoundarySatisfied(dbJournal) {
+  const writerLease = dbJournal?.writerLease;
+  const nestedWriterLease = dbJournal?.leaseFence?.writerLease;
   return /(packaged production plugin|checked live production-shaped) journal surface/i.test(dbJournal?.scope || '')
+    && dbJournal?.acceptedOnCheckedBoundary === true
     && dbJournal?.ownership?.ownsJournal === true
     && dbJournal?.ownership?.restartReadable === true
     && dbJournal?.ownership?.productionAdapter === 'wpdb-single-statement-cas'
+    && writerLeaseContractMatches(writerLease)
+    && writerLeaseContractMatches(nestedWriterLease)
+    && writerLeaseContractsAgree(writerLease, nestedWriterLease)
     && dbJournal?.leaseFence?.boundary === 'wpdb-single-statement-cas'
     && dbJournal?.leaseFence?.claimKeyUnique === true
+    && dbJournal?.leaseFence?.fsyncEvidence === true
     && dbJournal?.leaseFence?.monotonicSequence === true
     && dbJournal?.leaseFence?.restartReadable === true
     && dbJournal?.leaseFence?.staleClaimRejected === true;
+}
+
+function writerLeaseContractMatches(candidate) {
+  return typeof candidate?.strategy === 'string'
+    && candidate.strategy.length > 0
+    && candidate?.claimKeyUnique === true
+    && candidate?.fsyncEvidence === true
+    && typeof candidate?.storageGuard === 'string'
+    && candidate.storageGuard.length > 0
+    && candidate?.monotonicSequence === true
+    && candidate?.restartReadable === true
+    && candidate?.staleClaimRejected === true;
+}
+
+function writerLeaseContractsAgree(writerLease, nestedWriterLease) {
+  for (const key of [
+    'strategy',
+    'claimKeyUnique',
+    'fsyncEvidence',
+    'storageGuard',
+    'monotonicSequence',
+    'restartReadable',
+    'staleClaimRejected',
+  ]) {
+    if (writerLease?.[key] !== nestedWriterLease?.[key]) {
+      return false;
+    }
+  }
+
+  return true;
 }
 
 export function openProductionRecoveryJournal(options) {
