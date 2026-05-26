@@ -338,22 +338,10 @@ export function packagedProductionPluginRetryableRouteProbeWhileIndexProbeTimedO
     && indexProbe?.timedOut === true;
 }
 
-export function packagedProductionPluginClassifyTimeoutFallbackStartup(
+export function packagedProductionPluginClassifyBoundedStartup(
   routeProbe,
   indexProbe,
 ) {
-  if (
-    packagedProductionPluginRetryableRouteProbeWhileIndexProbeTimedOut(
-      routeProbe,
-      indexProbe,
-    )
-  ) {
-    return {
-      kind: 'retryable-route-index-timeout',
-      indexProbeTimedOut: true,
-    };
-  }
-
   if (
     packagedProductionPluginRouteRetryableWhileWordPressStarting(
       routeProbe?.status,
@@ -383,6 +371,45 @@ export function packagedProductionPluginClassifyTimeoutFallbackStartup(
   }
 
   if (
+    routeProbe?.retryable === true
+    && indexProbe
+    && indexProbe.timedOut !== true
+    && !packagedProductionPluginReadinessBodyRetryable(
+      indexProbe.status,
+      indexProbe.body || '',
+    )
+  ) {
+    return {
+      kind: 'retryable-route-index-terminal',
+      indexTerminal: true,
+    };
+  }
+
+  return null;
+}
+
+export function packagedProductionPluginClassifyTimeoutFallbackStartup(
+  routeProbe,
+  indexProbe,
+) {
+  if (
+    packagedProductionPluginRetryableRouteProbeWhileIndexProbeTimedOut(
+      routeProbe,
+      indexProbe,
+    )
+  ) {
+    return {
+      kind: 'retryable-route-index-timeout',
+      indexProbeTimedOut: true,
+    };
+  }
+
+  const boundedStartup = packagedProductionPluginClassifyBoundedStartup(routeProbe, indexProbe);
+  if (boundedStartup) {
+    return boundedStartup;
+  }
+
+  if (
     packagedProductionPluginTimedOutRouteProbeWhileWordPressStarting(
       routeProbe,
       indexProbe?.status,
@@ -405,21 +432,6 @@ export function packagedProductionPluginClassifyTimeoutFallbackStartup(
     return {
       kind: 'timed-out-route-packaged-route-starting',
       packagedRouteStartup: true,
-    };
-  }
-
-  if (
-    routeProbe?.retryable === true
-    && indexProbe
-    && indexProbe.timedOut !== true
-    && !packagedProductionPluginReadinessBodyRetryable(
-      indexProbe.status,
-      indexProbe.body || '',
-    )
-  ) {
-    return {
-      kind: 'retryable-route-index-terminal',
-      indexTerminal: true,
     };
   }
 

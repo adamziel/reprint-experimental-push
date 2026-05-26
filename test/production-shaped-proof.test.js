@@ -32,6 +32,7 @@ import {
   labSnapshotRetryable,
 } from '../scripts/playground/lab-playground-readiness.js';
 import {
+  packagedProductionPluginClassifyBoundedStartup,
   packagedProductionPluginClassifyTimeoutFallbackStartup,
   packagedProductionPluginMaxConsecutiveNotReadyProbes,
   packagedProductionPluginNextNotReadyProbeCount,
@@ -2433,6 +2434,17 @@ test('packaged readiness timeout fallback classifies global WordPress versus pac
 
 test('packaged readiness timeout fallback classifier distinguishes terminal index failures', () => {
   assert.deepEqual(
+    packagedProductionPluginClassifyBoundedStartup(
+      { retryable: true, status: 503, body: 'WordPress is not ready yet' },
+      { status: 500, body: 'Internal Server Error' },
+    ),
+    {
+      kind: 'retryable-route-index-terminal',
+      indexTerminal: true,
+    },
+  );
+
+  assert.deepEqual(
     packagedProductionPluginClassifyTimeoutFallbackStartup(
       { retryable: true, status: 503, body: 'WordPress is not ready yet' },
       { status: 500, body: 'Internal Server Error' },
@@ -2490,6 +2502,14 @@ test('packaged smoke readiness helper fails closed on non-retryable route respon
   assert.match(
     helperSource,
     /packagedProductionPluginResetRouteNotReadyProbeCounts\(\s*notReadyProbeCounts,\s*'preflight',\s*\);\s*throw new Error\(\s*`Packaged production plugin preflight returned a terminal readiness failure at \$\{baseUrl\}/s,
+  );
+  assert.match(
+    helperSource,
+    /snapshot stayed startup-shaped while \/wp-json\/ returned a terminal readiness failure HTTP \$\{indexProbe\.status\} after \$\{snapshotNotReadyProbeCount\} consecutive response/s,
+  );
+  assert.match(
+    helperSource,
+    /preflight stayed startup-shaped while \/wp-json\/ returned a terminal readiness failure HTTP \$\{indexProbe\.status\} after \$\{preflightNotReadyProbeCount\} consecutive response/s,
   );
 });
 

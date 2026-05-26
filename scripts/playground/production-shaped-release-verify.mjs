@@ -32,6 +32,7 @@ import {
   labSnapshotRetryable,
 } from './lab-playground-readiness.js';
 import {
+  packagedProductionPluginClassifyBoundedStartup,
   packagedProductionPluginClassifyTimeoutFallbackStartup,
   packagedProductionPluginMaxConsecutiveNotReadyProbes,
   packagedProductionPluginReadinessBodyRetryable,
@@ -1388,14 +1389,15 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
           ) {
             const indexProbe = await fetchPackagedWordPressIndexProbe(baseUrl, child);
             lastProbes.push(indexProbe);
-            if (
-              packagedProductionPluginRouteRetryableWhileWordPressStarting(
-                snapshot.status,
-                snapshotText,
-                indexProbe.status,
-                indexProbe.body,
-              )
-            ) {
+            const startupBranch = packagedProductionPluginClassifyBoundedStartup(
+              {
+                retryable: true,
+                status: snapshot.status,
+                body: snapshotText,
+              },
+              indexProbe,
+            );
+            if (startupBranch?.kind === 'retryable-route-wordpress-starting') {
               await throwPlaygroundReadinessFailure(
                 child,
                 `Packaged production plugin snapshot stayed startup-shaped while /wp-json/ kept reporting global WordPress startup HTTP ${indexProbe.status} for ${snapshotNotReadyProbeCount} consecutive response${snapshotNotReadyProbeCount === 1 ? '' : 's'} (limit ${maxPackagedStartupNotReadyProbeCount})`,
@@ -1410,14 +1412,7 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
                 },
               );
             }
-            if (
-              packagedProductionPluginRouteRetryableWhilePackagedRouteStarting(
-                snapshot.status,
-                snapshotText,
-                indexProbe.status,
-                indexProbe.body,
-              )
-            ) {
+            if (startupBranch?.kind === 'retryable-route-packaged-route-starting') {
               if (
                 packagedProductionPluginPackagedRouteStartupLimitReached(
                   snapshotNotReadyProbeCount,
@@ -1438,6 +1433,21 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
                   },
                 );
               }
+            }
+            if (startupBranch?.kind === 'retryable-route-index-terminal') {
+              await throwPlaygroundReadinessFailure(
+                child,
+                `Packaged production plugin snapshot stayed startup-shaped while /wp-json/ returned a terminal readiness failure HTTP ${indexProbe.status} after ${snapshotNotReadyProbeCount} consecutive response${snapshotNotReadyProbeCount === 1 ? '' : 's'} (limit ${maxPackagedStartupNotReadyProbeCount})`,
+                lastError,
+                lastProbes,
+                getOutput(),
+                {
+                  childPid: child.pid ?? null,
+                  packagedProductionPlugin: true,
+                  indexTerminal: true,
+                  snapshotNotReadyProbeCount,
+                },
+              );
             }
             await throwPlaygroundReadinessFailure(
               child,
@@ -1513,14 +1523,15 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
           ) {
             const indexProbe = await fetchPackagedWordPressIndexProbe(baseUrl, child);
             lastProbes.push(indexProbe);
-            if (
-              packagedProductionPluginRouteRetryableWhileWordPressStarting(
-                snapshot.status,
-                snapshotText,
-                indexProbe.status,
-                indexProbe.body,
-              )
-            ) {
+            const startupBranch = packagedProductionPluginClassifyBoundedStartup(
+              {
+                retryable: true,
+                status: snapshot.status,
+                body: snapshotText,
+              },
+              indexProbe,
+            );
+            if (startupBranch?.kind === 'retryable-route-wordpress-starting') {
               await throwPlaygroundReadinessFailure(
                 child,
                 `Packaged production plugin snapshot stayed startup-shaped while /wp-json/ kept reporting global WordPress startup HTTP ${indexProbe.status} for ${snapshotNotReadyProbeCount} consecutive response${snapshotNotReadyProbeCount === 1 ? '' : 's'} (limit ${maxPackagedStartupNotReadyProbeCount})`,
@@ -1535,14 +1546,7 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
                 },
               );
             }
-            if (
-              packagedProductionPluginRouteRetryableWhilePackagedRouteStarting(
-                snapshot.status,
-                snapshotText,
-                indexProbe.status,
-                indexProbe.body,
-              )
-            ) {
+            if (startupBranch?.kind === 'retryable-route-packaged-route-starting') {
               if (
                 packagedProductionPluginPackagedRouteStartupLimitReached(
                   snapshotNotReadyProbeCount,
@@ -1563,6 +1567,21 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
                   },
                 );
               }
+            }
+            if (startupBranch?.kind === 'retryable-route-index-terminal') {
+              await throwPlaygroundReadinessFailure(
+                child,
+                `Packaged production plugin snapshot stayed startup-shaped while /wp-json/ returned a terminal readiness failure HTTP ${indexProbe.status} after ${snapshotNotReadyProbeCount} consecutive response${snapshotNotReadyProbeCount === 1 ? '' : 's'} (limit ${maxPackagedStartupNotReadyProbeCount})`,
+                lastError,
+                lastProbes,
+                getOutput(),
+                {
+                  childPid: child.pid ?? null,
+                  packagedProductionPlugin: true,
+                  indexTerminal: true,
+                  snapshotNotReadyProbeCount,
+                },
+              );
             }
             await throwPlaygroundReadinessFailure(
               child,
@@ -1636,14 +1655,15 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
           ) {
             const indexProbe = await fetchPackagedWordPressIndexProbe(baseUrl, child);
             lastProbes.push(indexProbe);
-            if (
-              packagedProductionPluginRouteRetryableWhileWordPressStarting(
-                preflight.status,
-                preflightText,
-                indexProbe.status,
-                indexProbe.body,
-              )
-            ) {
+            const startupBranch = packagedProductionPluginClassifyBoundedStartup(
+              {
+                retryable: true,
+                status: preflight.status,
+                body: preflightText,
+              },
+              indexProbe,
+            );
+            if (startupBranch?.kind === 'retryable-route-wordpress-starting') {
               await throwPlaygroundReadinessFailure(
                 child,
                 `Packaged production plugin preflight stayed startup-shaped while /wp-json/ kept reporting global WordPress startup HTTP ${indexProbe.status} for ${preflightNotReadyProbeCount} consecutive response${preflightNotReadyProbeCount === 1 ? '' : 's'} (limit ${maxPackagedStartupNotReadyProbeCount})`,
@@ -1658,14 +1678,7 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
                 },
               );
             }
-            if (
-              packagedProductionPluginRouteRetryableWhilePackagedRouteStarting(
-                preflight.status,
-                preflightText,
-                indexProbe.status,
-                indexProbe.body,
-              )
-            ) {
+            if (startupBranch?.kind === 'retryable-route-packaged-route-starting') {
               if (
                 packagedProductionPluginPackagedRouteStartupLimitReached(
                   preflightNotReadyProbeCount,
@@ -1686,6 +1699,21 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
                   },
                 );
               }
+            }
+            if (startupBranch?.kind === 'retryable-route-index-terminal') {
+              await throwPlaygroundReadinessFailure(
+                child,
+                `Packaged production plugin preflight stayed startup-shaped while /wp-json/ returned a terminal readiness failure HTTP ${indexProbe.status} after ${preflightNotReadyProbeCount} consecutive response${preflightNotReadyProbeCount === 1 ? '' : 's'} (limit ${maxPackagedStartupNotReadyProbeCount})`,
+                lastError,
+                lastProbes,
+                getOutput(),
+                {
+                  childPid: child.pid ?? null,
+                  packagedProductionPlugin: true,
+                  indexTerminal: true,
+                  preflightNotReadyProbeCount,
+                },
+              );
             }
             await throwPlaygroundReadinessFailure(
               child,
@@ -1740,14 +1768,15 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
         ) {
           const indexProbe = await fetchPackagedWordPressIndexProbe(baseUrl, child);
           lastProbes.push(indexProbe);
-          if (
-            packagedProductionPluginRouteRetryableWhileWordPressStarting(
-              preflight.status,
-              preflightText,
-              indexProbe.status,
-              indexProbe.body,
-            )
-          ) {
+          const startupBranch = packagedProductionPluginClassifyBoundedStartup(
+            {
+              retryable: true,
+              status: preflight.status,
+              body: preflightText,
+            },
+            indexProbe,
+          );
+          if (startupBranch?.kind === 'retryable-route-wordpress-starting') {
             await throwPlaygroundReadinessFailure(
               child,
               `Packaged production plugin preflight stayed startup-shaped while /wp-json/ kept reporting global WordPress startup HTTP ${indexProbe.status} for ${preflightNotReadyProbeCount} consecutive response${preflightNotReadyProbeCount === 1 ? '' : 's'} (limit ${maxPackagedStartupNotReadyProbeCount})`,
@@ -1762,14 +1791,7 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
               },
             );
           }
-          if (
-            packagedProductionPluginRouteRetryableWhilePackagedRouteStarting(
-              preflight.status,
-              preflightText,
-              indexProbe.status,
-              indexProbe.body,
-            )
-          ) {
+          if (startupBranch?.kind === 'retryable-route-packaged-route-starting') {
             if (
               packagedProductionPluginPackagedRouteStartupLimitReached(
                 preflightNotReadyProbeCount,
@@ -1786,10 +1808,25 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
                     childPid: child.pid ?? null,
                     packagedProductionPlugin: true,
                     packagedRouteStartup: true,
-                    preflightNotReadyProbeCount,
-                  },
-                );
+                  preflightNotReadyProbeCount,
+                },
+              );
             }
+          }
+          if (startupBranch?.kind === 'retryable-route-index-terminal') {
+            await throwPlaygroundReadinessFailure(
+              child,
+              `Packaged production plugin preflight stayed startup-shaped while /wp-json/ returned a terminal readiness failure HTTP ${indexProbe.status} after ${preflightNotReadyProbeCount} consecutive response${preflightNotReadyProbeCount === 1 ? '' : 's'} (limit ${maxPackagedStartupNotReadyProbeCount})`,
+              lastError,
+              lastProbes,
+              getOutput(),
+              {
+                childPid: child.pid ?? null,
+                packagedProductionPlugin: true,
+                indexTerminal: true,
+                preflightNotReadyProbeCount,
+              },
+            );
           }
           await throwPlaygroundReadinessFailure(
             child,
