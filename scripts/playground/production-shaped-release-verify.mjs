@@ -1120,6 +1120,7 @@ function runProductionRecoveryJournalProof({ plan, current, artifactRefs = {} })
       path: journalPath,
       checked: [journalPath],
       artifactRefs,
+      productionAdapter: 'openProductionRecoveryJournal',
       claimId: activeClaimId,
       ownsJournal: true,
       restartReadable: persisted.integrity.status === 'ok',
