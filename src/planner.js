@@ -264,6 +264,28 @@ export function createPushPlan({ base, local, remote, now = new Date() }) {
         continue;
       }
 
+      const termTaxonomySupport = unsupportedTermTaxonomyResourceSupport({
+        resource,
+        baseValue,
+        localValue,
+        remoteValue,
+        local,
+        remote,
+      });
+      if (!termTaxonomySupport.supported) {
+        addUnsupportedTermTaxonomyResourceBlocker(plan, {
+          resource,
+          support: termTaxonomySupport,
+          baseValue,
+          localValue,
+          remoteValue,
+          baseHash,
+          localHash,
+          remoteHash,
+        });
+        continue;
+      }
+
       const guidSupport = unsupportedGuidResourceSupport({
         resource,
         baseValue,
@@ -1175,6 +1197,20 @@ function wordpressGraphIdentitySupport({
       id: normalizePositiveInteger(localValue.post_parent),
     });
     const localPostParentTarget = getResource(local, postParentTarget);
+    if (localPostParentTarget?.post_type === 'attachment' && getResource(remote, postParentTarget) === ABSENT) {
+      return {
+        supported: false,
+        className: 'unsupported-attachment-resource',
+        reason: 'Attachment graph resources are not yet supported by the planner.',
+      };
+    }
+    if (['wp_navigation', 'nav_menu_item'].includes(localPostParentTarget?.post_type) && getResource(remote, postParentTarget) === ABSENT) {
+      return {
+        supported: false,
+        className: 'unsupported-navigation-resource',
+        reason: 'Navigation and menu graph resources are not yet supported by the planner.',
+      };
+    }
     if (localPostParentTarget?.post_type === 'revision' && getResource(remote, postParentTarget) === ABSENT) {
       return {
         supported: false,
@@ -1874,6 +1910,37 @@ function addUnsupportedTermmetaResourceBlocker(plan, {
   });
 }
 
+function addUnsupportedTermTaxonomyResourceBlocker(plan, {
+  resource,
+  support,
+  baseValue,
+  localValue,
+  remoteValue,
+  baseHash,
+  localHash,
+  remoteHash,
+}) {
+  plan.blockers.push({
+    id: `blocker-unsupported-term-taxonomy-resource-${plan.blockers.length + 1}`,
+    class: support.className || 'unsupported-term-taxonomy-resource',
+    resource,
+    resourceKey: resource.key,
+    reason: support.reason || `Term taxonomy graph resource ${resource.key} is not yet supported by the planner.`,
+    baseHash,
+    localHash,
+    remoteHash,
+    change: changeEvidence(
+      resource,
+      baseValue,
+      localValue,
+      remoteValue,
+      baseHash,
+      localHash,
+      remoteHash,
+    ),
+  });
+}
+
 function addUnsupportedCommentsUsersResourceBlocker(plan, {
   resource,
   support,
@@ -2112,6 +2179,34 @@ function unsupportedTermmetaResourceSupport({ resource, baseValue, localValue, r
     supported: false,
     className: 'unsupported-termmeta-resource',
     reason: 'Term meta graph resources are not yet supported by the planner.',
+  };
+}
+
+function unsupportedTermTaxonomyResourceSupport({ resource, baseValue, localValue, remoteValue, local, remote }) {
+  if (resource.type !== 'row' || resource.table !== 'wp_term_taxonomy') {
+    return { supported: true };
+  }
+
+  const candidate = localValue !== ABSENT ? localValue : (baseValue !== ABSENT ? baseValue : remoteValue);
+  if (!candidate || candidate === ABSENT) {
+    return { supported: true };
+  }
+
+  const references = wordpressGraphReferences(resource, candidate);
+  const samePlanCreatedTermReferences = references.filter((reference) => (
+    (reference.relationshipType === 'term-taxonomy-term' || reference.relationshipType === 'term-taxonomy-parent')
+    && getResource(remote, reference.targetResource) === ABSENT
+    && getResource(local, reference.targetResource) !== ABSENT
+  ));
+
+  if (samePlanCreatedTermReferences.length === 0) {
+    return { supported: true };
+  }
+
+  return {
+    supported: false,
+    className: 'unsupported-term-taxonomy-resource',
+    reason: 'Term taxonomy graph resources are not yet supported by the planner.',
   };
 }
 
