@@ -632,6 +632,48 @@ test('production recovery journal descriptor fails closed on divergent lease epo
   });
 });
 
+test('production recovery journal descriptor fails closed on unsupported schema versions', () => {
+  const writer = {
+    kind: 'production-recovery-journal',
+    productionAdapter: true,
+    supportedSurface: 'production-recovery-journal-adapter',
+    restartReadable: true,
+    ownsJournal: true,
+    ownsRemoteArtifact: true,
+    leaseFence: { id: 'lease-shared', epoch: 3 },
+    writerLease: { id: 'lease-shared', epoch: 3 },
+    journalPath: '/var/lib/reprint/recovery.jsonl',
+    artifactRefs: {
+      journal: '/var/lib/reprint/recovery.jsonl',
+      remote: '/var/lib/reprint/recovery-remote.jsonl',
+    },
+    schemaVersion: 2,
+  };
+
+  const descriptor = describeProductionRecoveryJournal(writer);
+
+  assert.deepEqual(descriptor, {
+    kind: 'production-recovery-journal',
+    productionAdapter: true,
+    supportedSurface: 'production-recovery-journal-adapter',
+    restartReadable: true,
+    ownsJournal: true,
+    ownsRemoteArtifact: true,
+    leaseFence: { id: 'lease-shared', epoch: 3 },
+    writerLease: { id: 'lease-shared', epoch: 3 },
+    journalPath: '/var/lib/reprint/recovery.jsonl',
+    artifactRefs: {
+      journal: '/var/lib/reprint/recovery.jsonl',
+      remote: '/var/lib/reprint/recovery-remote.jsonl',
+    },
+    schemaVersion: null,
+  });
+
+  writer.schemaVersion = '1';
+
+  assert.equal(describeProductionRecoveryJournal(writer).schemaVersion, null);
+});
+
 test('production recovery journal adapter reopens with a new claim and rejects stale fenced writers', () => {
   const filePath = tempJournalPath();
   const remote = baseSite();

@@ -750,6 +750,7 @@ export function describeProductionRecoveryJournal(writer) {
     artifactRefs,
     schemaVersion: Object.hasOwn(writer, 'schemaVersion')
       && !hasHiddenOwnStringProperty(writer, 'schemaVersion')
+      && writer.schemaVersion === RECOVERY_JOURNAL_SCHEMA_VERSION
       ? writer.schemaVersion
       : null,
   });
