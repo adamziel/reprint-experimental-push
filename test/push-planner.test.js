@@ -28716,6 +28716,101 @@ test('production durable journal claims fail closed when restart inspection omit
   assert.equal(events.length, 0);
 });
 
+test('production durable journal claims fail closed when restart inspection hides writerLease behind a non-enumerable key', () => {
+  const events = [];
+  const claimHash = digest({ recoveryJournalClaim: 'hidden-inspected-writer-lease' });
+  const hiddenWriterLease = {};
+  Object.defineProperty(hiddenWriterLease, 'id', {
+    value: 'hidden-inspected-writer-lease',
+    enumerable: true,
+    configurable: true,
+    writable: true,
+  });
+  Object.defineProperty(hiddenWriterLease, 'epoch', {
+    value: 1,
+    enumerable: true,
+    configurable: true,
+    writable: true,
+  });
+  const writer = {
+    kind: 'production-recovery-journal',
+    productionAdapter: true,
+    supportedSurface: 'production-recovery-journal-adapter',
+    restartReadable: true,
+    ownsJournal: true,
+    ownsRemoteArtifact: false,
+    journalPath: '/var/lib/reprint/recovery.jsonl',
+    artifactRefs: {
+      journal: '/var/lib/reprint/recovery.jsonl',
+      remote: null,
+    },
+    schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+    writerLease: { id: 'hidden-inspected-writer-lease', epoch: 1 },
+    leaseFence: { id: 'hidden-inspected-writer-lease', epoch: 1 },
+    claimHash,
+    appendEvent(type, payload) {
+      events.push({ type, payload });
+      return { sequence: events.length, type, payload };
+    },
+    flush() {},
+    close() {},
+    inspect() {
+      const inspected = {
+        kind: 'production-recovery-journal',
+        productionAdapter: true,
+        supportedSurface: 'production-recovery-journal-adapter',
+        restartReadable: true,
+        ownsJournal: true,
+        ownsRemoteArtifact: false,
+        leaseFence: { id: 'hidden-inspected-writer-lease', epoch: 1 },
+        claimHash,
+        journalPath: '/var/lib/reprint/recovery.jsonl',
+        filePath: '/var/lib/reprint/recovery.jsonl',
+        schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+        artifactRefs: {
+          journal: '/var/lib/reprint/recovery.jsonl',
+          remote: null,
+        },
+        records: [{
+          sequence: 1,
+          type: 'recovery-claim-opened',
+          claimHash,
+          claimLease: { id: 'hidden-inspected-writer-lease', epoch: 1 },
+          fsync: { requested: true },
+        }],
+      };
+      Object.defineProperty(inspected, 'writerLease', {
+        value: hiddenWriterLease,
+        enumerable: false,
+        configurable: true,
+        writable: true,
+      });
+      return inspected;
+    },
+    assertCurrentClaim() {},
+  };
+  const plan = planFor(baseSite(), baseSite(), {
+    ...baseSite(),
+    db: {
+      ...baseSite().db,
+      wp_options: {
+        ...baseSite().db.wp_options,
+        'option_name:blogname': { option_name: 'blogname', option_value: 'New Site' },
+      },
+    },
+  });
+
+  const error = captureError(() => applyPlan(baseSite(), plan, {
+    requireProductionDurableJournal: true,
+    durableJournal: writer,
+  }));
+
+  assert.equal(error.code, 'PRODUCTION_DURABLE_JOURNAL_UNSUPPORTED');
+  assert.ok(error.details.missingDependency.includes('restart-readable recovery inspection'));
+  assert.ok(error.details.missingDependency.includes('fencing or lease ownership for the journal writer'));
+  assert.equal(events.length, 0);
+});
+
 test('production durable journal claims fail closed when restart inspection advertises a different fenced lease epoch than the writer', () => {
   const events = [];
   const claimHash = digest({ recoveryJournalClaim: 'lease-epoch' });
@@ -28861,6 +28956,101 @@ test('production durable journal claims fail closed when restart inspection omit
   }));
 
   assert.equal(error.code, 'PRODUCTION_DURABLE_JOURNAL_UNSUPPORTED');
+  assert.ok(error.details.missingDependency.includes('fencing or lease ownership for the journal writer'));
+  assert.equal(events.length, 0);
+});
+
+test('production durable journal claims fail closed when restart inspection hides leaseFence behind a non-enumerable key', () => {
+  const events = [];
+  const claimHash = digest({ recoveryJournalClaim: 'hidden-inspected-lease-fence' });
+  const hiddenLeaseFence = {};
+  Object.defineProperty(hiddenLeaseFence, 'id', {
+    value: 'hidden-inspected-lease-fence',
+    enumerable: true,
+    configurable: true,
+    writable: true,
+  });
+  Object.defineProperty(hiddenLeaseFence, 'epoch', {
+    value: 1,
+    enumerable: true,
+    configurable: true,
+    writable: true,
+  });
+  const writer = {
+    kind: 'production-recovery-journal',
+    productionAdapter: true,
+    supportedSurface: 'production-recovery-journal-adapter',
+    restartReadable: true,
+    ownsJournal: true,
+    ownsRemoteArtifact: false,
+    journalPath: '/var/lib/reprint/recovery.jsonl',
+    artifactRefs: {
+      journal: '/var/lib/reprint/recovery.jsonl',
+      remote: null,
+    },
+    schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+    writerLease: { id: 'hidden-inspected-lease-fence', epoch: 1 },
+    leaseFence: { id: 'hidden-inspected-lease-fence', epoch: 1 },
+    claimHash,
+    appendEvent(type, payload) {
+      events.push({ type, payload });
+      return { sequence: events.length, type, payload };
+    },
+    flush() {},
+    close() {},
+    inspect() {
+      const inspected = {
+        kind: 'production-recovery-journal',
+        productionAdapter: true,
+        supportedSurface: 'production-recovery-journal-adapter',
+        restartReadable: true,
+        ownsJournal: true,
+        ownsRemoteArtifact: false,
+        writerLease: { id: 'hidden-inspected-lease-fence', epoch: 1 },
+        claimHash,
+        journalPath: '/var/lib/reprint/recovery.jsonl',
+        filePath: '/var/lib/reprint/recovery.jsonl',
+        schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+        artifactRefs: {
+          journal: '/var/lib/reprint/recovery.jsonl',
+          remote: null,
+        },
+        records: [{
+          sequence: 1,
+          type: 'recovery-claim-opened',
+          claimHash,
+          claimLease: { id: 'hidden-inspected-lease-fence', epoch: 1 },
+          fsync: { requested: true },
+        }],
+      };
+      Object.defineProperty(inspected, 'leaseFence', {
+        value: hiddenLeaseFence,
+        enumerable: false,
+        configurable: true,
+        writable: true,
+      });
+      return inspected;
+    },
+    assertCurrentClaim() {},
+  };
+  const plan = planFor(baseSite(), baseSite(), {
+    ...baseSite(),
+    db: {
+      ...baseSite().db,
+      wp_options: {
+        ...baseSite().db.wp_options,
+        'option_name:blogname': { option_name: 'blogname', option_value: 'New Site' },
+      },
+    },
+  });
+
+  const error = captureError(() => applyPlan(baseSite(), plan, {
+    requireProductionDurableJournal: true,
+    durableJournal: writer,
+  }));
+
+  assert.equal(error.code, 'PRODUCTION_DURABLE_JOURNAL_UNSUPPORTED');
+  assert.ok(error.details.missingDependency.includes('restart-readable recovery inspection'));
   assert.ok(error.details.missingDependency.includes('fencing or lease ownership for the journal writer'));
   assert.equal(events.length, 0);
 });

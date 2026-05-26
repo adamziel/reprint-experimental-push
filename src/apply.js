@@ -787,6 +787,9 @@ export function productionRecoverySupportReport(writer) {
   ) {
     addMissingDependency('restart-readable recovery inspection');
   } else {
+    if (hasHiddenOwnStringKeys(inspected)) {
+      addMissingDependency('restart-readable recovery inspection');
+    }
     if (!Object.hasOwn(inspected, 'schemaVersion') || typeof inspected.schemaVersion !== 'number' || inspected.schemaVersion !== writer.schemaVersion) {
       addMissingDependency('restart-readable recovery journal schema');
     }
@@ -1115,7 +1118,7 @@ export function productionRecoverySupportReport(writer) {
   }
   if (
     hasValidProductionLeaseIdentity(writer?.writerLease)
-    && openedInspectionRecords
+    && (openedInspectionRecords || claimInspectionRecords)
     && (
       !Object.hasOwn(inspected ?? {}, 'writerLease')
       || !hasValidProductionLeaseIdentity(inspected.writerLease)
@@ -1125,7 +1128,7 @@ export function productionRecoverySupportReport(writer) {
   }
   if (
     hasValidProductionLeaseIdentity(writer?.leaseFence)
-    && openedInspectionRecords
+    && (openedInspectionRecords || claimInspectionRecords)
     && (
       !Object.hasOwn(inspected ?? {}, 'leaseFence')
       || !hasValidProductionLeaseIdentity(inspected.leaseFence)
@@ -1150,6 +1153,13 @@ export function productionRecoverySupportReport(writer) {
     hasValidProductionLeaseIdentity(writer?.leaseFence)
     && Object.hasOwn(inspected ?? {}, 'leaseFence')
     && !productionLeaseIdentitiesMatch(inspected.leaseFence, writer.leaseFence)
+  ) {
+    addMissingDependency('fencing or lease ownership for the journal writer');
+  }
+  if (
+    hasHiddenOwnStringProperty(inspected, 'writerLease')
+    || hasHiddenOwnStringProperty(inspected, 'leaseFence')
+    || hasHiddenOwnStringProperty(inspected, 'claimHash')
   ) {
     addMissingDependency('fencing or lease ownership for the journal writer');
   }
@@ -2916,6 +2926,15 @@ function hasHiddenOwnStringKeys(value) {
   }
 
   return Object.values(Object.getOwnPropertyDescriptors(value)).some((descriptor) => descriptor.enumerable !== true);
+}
+
+function hasHiddenOwnStringProperty(value, property) {
+  if (!value || typeof value !== 'object' || typeof property !== 'string') {
+    return false;
+  }
+
+  const descriptor = Object.getOwnPropertyDescriptor(value, property);
+  return descriptor !== undefined && descriptor.enumerable !== true;
 }
 
 function hasOnlyDenseOwnArrayIndexes(value) {
