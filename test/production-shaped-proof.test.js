@@ -999,6 +999,30 @@ test('production-shaped release verify request state carries explicit direct cre
   );
 });
 
+test('production-shaped release verify does not mix partial explicit direct credentials with fallback auth defaults before source override', () => {
+  assert.deepEqual(
+    resolveAuthSessionRequestState(
+      {
+        liveSourceUrl: 'http://127.0.0.1:9090',
+        username: 'trusted-runtime-username',
+        applicationPassword: '',
+        fallbackUsername: 'reprint_push_admin',
+        fallbackApplicationPassword: 'reprint-push-admin-app-password',
+      },
+      null,
+    ),
+    {
+      liveSourceUrl: 'http://127.0.0.1:9090',
+      username: 'trusted-runtime-username',
+      applicationPassword: '',
+      credentials: {
+        username: 'trusted-runtime-username',
+        password: '',
+      },
+    },
+  );
+});
+
 test('production-shaped release verify lets a required production auth/session source override explicit direct credentials', () => {
   const source = {
     ok: true,
