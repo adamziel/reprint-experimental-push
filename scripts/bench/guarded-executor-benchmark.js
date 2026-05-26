@@ -1250,9 +1250,18 @@ export function productionThroughputDetails(report) {
   const receiptCursorMemoryHeadroomVisible =
     report.evidence.backpressure?.receiptCursorMemoryHeadroomVisible === true;
   const receiptCursorQueueSlackVisibleAndMemoryHeadroomVisible =
-    receiptCursorQueueSlackVisible && receiptCursorMemoryHeadroomVisible;
+    receiptCursorQueueSlackVisible
+    && receiptCursorMemoryHeadroomVisible
+    && queueBudgetVisible
+    && receiptCursorMemoryCeilingVisible
+    && queueHeadroomVisible
+    && queueHeadroomMeasured;
   const receiptCursorMemoryHeadroomVisibleAndQueueBudgetVisible =
-    receiptCursorMemoryHeadroomVisible && queueBudgetVisible;
+    receiptCursorMemoryHeadroomVisible
+    && queueBudgetVisible
+    && receiptCursorMemoryCeilingVisible
+    && queueHeadroomVisible
+    && queueHeadroomMeasured;
   const queueHeadroomVisibleAndMeasured =
     queueHeadroomVisible && queueHeadroomMeasured;
   const queueBudgetVisibleAndMemoryCeilingVisibleAndMeasured =

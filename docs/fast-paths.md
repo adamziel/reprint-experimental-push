@@ -182,6 +182,11 @@ Current executable gate:
   headroom visibility appears without the queue-headroom measurement bit, so a
   partial pause-footprint surface cannot still look visible-and-measured from
   the slack or headroom bytes alone.
+- The same paired queue-slack plus memory-headroom and memory-headroom plus
+  queue-budget detail surfaces now also fail closed when queue-headroom
+  measurement, queue-budget visibility, memory-ceiling visibility, or queue-
+  headroom visibility is hidden, so partial paused-backpressure pairs cannot
+  still look complete from raw visibility flags alone.
 - The same details also fail closed when queue headroom is visible and
   measured but the aligned receipt-cursor slack proof bit is hidden, so a
   forged headroom surface cannot look complete without the bounded pause proof
