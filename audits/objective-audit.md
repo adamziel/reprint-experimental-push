@@ -39,10 +39,10 @@ The project is **not releasable as a production WordPress push path**.
 - `origin/lane/cycle-20260525-keep-busy-loop-2/no-data-loss-recovery` -> `63e01a49`
 - `origin/lane/cycle-20260525-mainwindows-2349/critic` -> `fa0dc8a0`
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `51d203fc`
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `ee7069e6`
-- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `40652574`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `135ef855`
+- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `884a52f6`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `91424e5b`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `a84b14ce`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `6982ee4f`
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` -> `c4103594`
 - `origin/lane/cycle-20260525-mainwindows-2357/no-data-loss-invariants-graph-proof` -> `98c0ce26`
 - `origin/lane/cycle-20260525-restart-2340/feedback-supervisor` -> `ef3d911e`
@@ -51,7 +51,7 @@ The project is **not releasable as a production WordPress push path**.
 - `origin/lane/fast-paths` -> `8c5c2ccb`
 - `origin/lane/feedback-supervisor` -> `ee7069e6`
 - `origin/lane/independent-auditor` -> `6351130f`
-- `origin/lane/no-data-loss-invariants` -> `1d6bf421`
+- `origin/lane/no-data-loss-invariants` -> `829e8e78`
 - `origin/lane/no-data-loss-recovery` -> `91424e5b`
 - `origin/lane/progress-publisher` -> `7695e1f9`
 - `origin/lane/reliable-executor` -> `d6f65f9a`
@@ -74,6 +74,9 @@ but it did not change the release conclusion:
   boundary or any production-backed source mutation.
 - `origin/lane/no-data-loss-invariants` now records `0d3a148f`, adding
   custom-table sibling proof. It still does not prove the live release
+  boundary or any production-backed source mutation.
+- `origin/lane/no-data-loss-invariants` now records `829e8e78`, adding
+  attachment-parent sibling proof. It still does not prove the live release
   boundary or any production-backed source mutation.
 - `origin/lane/no-data-loss-invariants` now records `1d6bf421`, adding hard-
   link sibling proof. It still does not prove the live release boundary or any
@@ -219,7 +222,7 @@ These tests are still lab-bound. They mostly prove carefully controlled fixtures
 6. Reliability assertions often count events rather than prove every hash transition.
 7. Auth is lab-auth, not production-auth.
 8. Plugin safety is intentionally hard-coded.
-9. The strongest unsupported production-slice gap is still the boundary coverage for menu/navigation, serialized block references, comments/users, and plugin-owned custom tables. The current proof in [`test/push-planner.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/independent-auditor/test/push-planner.test.js) is refusal-backed for plugin-owned resources, not live-boundary proof for those graph surfaces. The newer same-plan graph proof at `a719e09c` strengthens the fail-closed side for revision posts, menu/navigation posts, serialized blocks, and thumbnail parent references, and the newer same-plan post-parent/post proof at `22ac71bb` narrows unsupported graph edges, but none produce live source mutation evidence.
+9. The strongest unsupported production-slice gap is still the boundary coverage for menu/navigation, serialized block references, comments/users, and plugin-owned custom tables. The current proof in [`test/push-planner.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/independent-auditor/test/push-planner.test.js) is refusal-backed for plugin-owned resources, not live-boundary proof for those graph surfaces. The newer same-plan graph proof at `a719e09c` strengthens the fail-closed side for revision posts, menu/navigation posts, serialized blocks, and thumbnail parent references, the newer same-plan post-parent/post proof at `22ac71bb` narrows unsupported graph edges, and the attachment-parent sibling proof at `829e8e78` extends that fail-closed coverage to attachment parents, but none produce live source mutation evidence.
 10. The repository script surface still lacks a checked-in `verify`, `verify:release`, or `release` command in [`package.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/independent-auditor/package.json:10), even though it does expose a broad `test:playground` family for lab smokes. There is still no enforced live-source gate that could own the verdict even if the missing proof appeared. The planner tests in [`test/push-planner.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/independent-auditor/test/push-planner.test.js:131) remain strong fixture evidence, but they still stop at local/remote simulation rather than the live release boundary. The exact missing command is a checked entrypoint that runs the live-source preflight, aborts on stale or unsupported boundaries, and exits non-zero before any apply step when the unsupported surface set is hit.
 11. Speed has no measured evidence.
 

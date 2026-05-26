@@ -1,4 +1,4 @@
-Refreshed the objective audit snapshot for the newest fast-paths head. The verdict stays at `0/4`; this is still lab evidence, not live-source production proof.
+Refreshed the objective audit snapshot for the newest remote heads. The verdict stays at `0/4`; the newest proof is still fail-closed sibling coverage and freshness updates, not live-source production proof.
 
 Changed files
 - [`audits/objective-audit.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/independent-auditor/audits/objective-audit.md)
@@ -6,16 +6,15 @@ Changed files
 
 Commands run
 - `sed -n '1,260p' audits/objective-audit.md`
-- `git for-each-ref --sort=-committerdate --format='%(refname:short) %(objectname:short) %(committerdate:iso8601) %(subject)' refs/remotes/origin/lane | head -n 30`
+- `git for-each-ref --sort=-committerdate --format='%(refname:short) %(objectname:short) %(committerdate:iso8601) %(subject)' refs/remotes/origin/lane | head -n 20`
 - `git status --short --branch`
-- `git diff -- audits/objective-audit.md`
-- `sed -n '1,220p' .lane-output/final.md`
+- `git diff -- audits/objective-audit.md .lane-output/final.md`
 
 Push result
-- Pending
+- Not pushed this turn
 
 Worktree status
-- `lane/cycle-20260525-mainwindows-2349/independent-auditor...origin/main [ahead 1491, behind 308]`
+- `lane/cycle-20260525-mainwindows-2349/independent-auditor...origin/main [ahead 1494, behind 311]`
 - Modified tracked files: `audits/objective-audit.md`, `.lane-output/final.md`
 
 Next supervisor nudge
