@@ -1213,49 +1213,20 @@ export function productionRecoverySupportReport(writer) {
   }
   if (
     (openedInspectionRecords || claimInspectionRecords)
-    && (
-      !Object.hasOwn(inspected ?? {}, 'leaseFence')
-      || inspected.leaseFence?.claimKeyUnique !== true
-      || typeof inspected.leaseFence?.storageGuard !== 'string'
-      || inspected.leaseFence.storageGuard.length === 0
-    )
+    && !inspectedWriterLeaseContractSupportsLeaseFence(inspected)
   ) {
     addMissingDependency('fencing or lease ownership for the journal writer');
-  }
-  if (
-    (openedInspectionRecords || claimInspectionRecords)
-    && (
-      !Object.hasOwn(inspected ?? {}, 'leaseFence')
-      || inspected.leaseFence?.fsyncEvidence !== true
-    )
-  ) {
     addMissingDependency('stable-storage flush or fsync semantics');
+    addMissingDependency('journal-readable inspection records with sequence and type');
+    addMissingDependency('restart-readable recovery journal adapter');
   }
   if (
-    hasStaleClaimRejectionEvidence(inspected?.records)
-    && (
-      !Object.hasOwn(inspected ?? {}, 'leaseFence')
-      || inspected.leaseFence?.staleClaimRejected !== true
-    )
+    (openedInspectionRecords || claimInspectionRecords)
+    && !inspectedLeaseFenceContractSupportsLeaseFence(inspected)
   ) {
     addMissingDependency('fencing or lease ownership for the journal writer');
-  }
-  if (
-    (openedInspectionRecords || claimInspectionRecords)
-    && (
-      !Object.hasOwn(inspected ?? {}, 'leaseFence')
-      || inspected.leaseFence?.monotonicSequence !== true
-    )
-  ) {
+    addMissingDependency('stable-storage flush or fsync semantics');
     addMissingDependency('journal-readable inspection records with sequence and type');
-  }
-  if (
-    (openedInspectionRecords || claimInspectionRecords)
-    && (
-      !Object.hasOwn(inspected ?? {}, 'leaseFence')
-      || inspected.leaseFence?.restartReadable !== true
-    )
-  ) {
     addMissingDependency('restart-readable recovery journal adapter');
   }
   if (
@@ -1317,6 +1288,98 @@ function productionRecoveryArtifactRefs(writer, inspected) {
       ? hasHiddenOwnStringKeys(inspectedArtifactRefs)
       : false,
   };
+}
+
+function inspectedWriterLeaseContractSupportsLeaseFence(inspected) {
+  return hasValidLeaseFenceWriterContract(inspected?.writerLeaseContract)
+    && inspected?.writerLeaseContract.claimKeyUnique === true
+    && inspected.writerLeaseContract.fsyncEvidence === true
+    && typeof inspected.writerLeaseContract.storageGuard === 'string'
+    && inspected.writerLeaseContract.storageGuard.length > 0
+    && inspected.writerLeaseContract.monotonicSequence === true
+    && inspected.writerLeaseContract.restartReadable === true
+    && (
+      !hasStaleClaimRejectionEvidence(inspected?.records)
+      || inspected.writerLeaseContract.staleClaimRejected === true
+    );
+}
+
+function inspectedLeaseFenceContractSupportsLeaseFence(inspected) {
+  return hasValidLeaseFenceEnvelopeContract(inspected?.leaseFenceContract)
+    && inspected.leaseFenceContract.claimKeyUnique === true
+    && inspected.leaseFenceContract.fsyncEvidence === true
+    && typeof inspected.leaseFenceContract.boundary === 'string'
+    && inspected.leaseFenceContract.boundary.length > 0
+    && inspected.leaseFenceContract.storageGuard === inspected.leaseFenceContract.boundary
+    && inspected.leaseFenceContract.monotonicSequence === true
+    && inspected.leaseFenceContract.restartReadable === true
+    && (
+      !hasStaleClaimRejectionEvidence(inspected?.records)
+      || inspected.leaseFenceContract.staleClaimRejected === true
+    )
+    && inspectedWriterLeaseContractsMatch(
+      inspected.leaseFenceContract.writerLease,
+      inspected.writerLeaseContract,
+    );
+}
+
+function hasValidLeaseFenceWriterContract(candidate) {
+  return isStrictPlainObject(candidate)
+    && !hasHiddenOwnStringKeys(candidate)
+    && Reflect.ownKeys(candidate).every((key) => [
+      'strategy',
+      'claimKeyUnique',
+      'fsyncEvidence',
+      'storageGuard',
+      'monotonicSequence',
+      'restartReadable',
+      'staleClaimRejected',
+    ].includes(key))
+    && candidate.strategy === 'claim-fenced-single-writer'
+    && typeof candidate.storageGuard === 'string'
+    && candidate.storageGuard.length > 0
+    && typeof candidate.claimKeyUnique === 'boolean'
+    && typeof candidate.fsyncEvidence === 'boolean'
+    && typeof candidate.monotonicSequence === 'boolean'
+    && typeof candidate.restartReadable === 'boolean'
+    && typeof candidate.staleClaimRejected === 'boolean';
+}
+
+function hasValidLeaseFenceEnvelopeContract(candidate) {
+  return isStrictPlainObject(candidate)
+    && !hasHiddenOwnStringKeys(candidate)
+    && Reflect.ownKeys(candidate).every((key) => [
+      'boundary',
+      'claimKeyUnique',
+      'storageGuard',
+      'fsyncEvidence',
+      'monotonicSequence',
+      'restartReadable',
+      'staleClaimRejected',
+      'writerLease',
+    ].includes(key))
+    && typeof candidate.boundary === 'string'
+    && candidate.boundary.length > 0
+    && typeof candidate.storageGuard === 'string'
+    && candidate.storageGuard.length > 0
+    && typeof candidate.claimKeyUnique === 'boolean'
+    && typeof candidate.fsyncEvidence === 'boolean'
+    && typeof candidate.monotonicSequence === 'boolean'
+    && typeof candidate.restartReadable === 'boolean'
+    && typeof candidate.staleClaimRejected === 'boolean'
+    && hasValidLeaseFenceWriterContract(candidate.writerLease);
+}
+
+function inspectedWriterLeaseContractsMatch(left, right) {
+  return hasValidLeaseFenceWriterContract(left)
+    && hasValidLeaseFenceWriterContract(right)
+    && left.strategy === right.strategy
+    && left.claimKeyUnique === right.claimKeyUnique
+    && left.fsyncEvidence === right.fsyncEvidence
+    && left.storageGuard === right.storageGuard
+    && left.monotonicSequence === right.monotonicSequence
+    && left.restartReadable === right.restartReadable
+    && left.staleClaimRejected === right.staleClaimRejected;
 }
 
 function closeUnsupportedProductionRecoveryWriter(writer) {
