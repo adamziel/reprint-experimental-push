@@ -4926,6 +4926,15 @@ test('safe fast paths retain all gate proofs and stay non-rejectable', () => {
   );
   assert.ok(
     model.safeFastPaths.some((fastPath) =>
+      fastPath.allowedShortcut === 'compress-canonical-per-kind-budget-summaries-and-reuse-queue-headroom-to-size-bounded-release-bundle-resume' &&
+      fastPath.guardrails.includes('queue-headroom-stays-advisory-and-bounded') &&
+      fastPath.gateProofs.skip.includes('recorded queue headroom stays advisory') &&
+      fastPath.gateProofs.recovery.includes('compressed budget summaries, queue headroom, and later durable receipts')
+    ),
+    'compressed budget summaries and queue headroom stay planning-only for bounded release-bundle resume work',
+  );
+  assert.ok(
+    model.safeFastPaths.some((fastPath) =>
       fastPath.allowedShortcut === 'reuse-canonical-per-kind-budgets-and-cached-release-manifest-cursor-to-size-bounded-release-bundle-retry-windows' &&
       fastPath.visibilityBoundary === 'planning-only-for-release-bundle-retry-windows' &&
       fastPath.guardrails.includes('cached-release-manifest-cursor-remains-planning-evidence-only') &&

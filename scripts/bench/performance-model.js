@@ -709,6 +709,27 @@ export const SAFE_FAST_PATHS = Object.freeze([
     publishesStagedDataEarly: false,
   },
   {
+    area: 'compression',
+    reduces: ['wire-bytes', 'planning-round-trips', 'duplicate-budget-recomputation'],
+    allowedShortcut: 'compress-canonical-per-kind-budget-summaries-and-reuse-queue-headroom-to-size-bounded-release-bundle-resume',
+    guardrails: [
+      'budget-summaries-stay-planning-evidence-only',
+      'queue-headroom-stays-advisory-and-bounded',
+      'release-bundle-resume-revalidates-before-write',
+    ],
+    gateProofs: {
+      skip: 'compressed per-kind budget summaries can shorten release-bundle resume planning while recorded queue headroom stays advisory',
+      live: 'each later release-bundle write still rechecks its own live resource precondition before visibility changes',
+      group: 'budget-summary compression and queue-headroom reuse only narrow planning inside the same planned release bundle and never widen the atomic-group barrier',
+      recovery: 'compressed budget summaries, queue headroom, and later durable receipts still classify pause, retry, or crash without guessing which owner advanced',
+    },
+    visibilityBoundary: 'planning-only-budget-summary',
+    failureEvidence: 'compressed per-kind budget summary plus bounded queue-headroom evidence and later durable receipts',
+    bypassesLivePreconditions: false,
+    splitsAtomicGroup: false,
+    publishesStagedDataEarly: false,
+  },
+  {
     area: 'backpressure',
     reduces: ['idle-time', 'planning-round-trips', 'duplicate-budget-recomputation'],
     allowedShortcut: 'reuse-receipt-cursor-queue-headroom-and-journal-lag-to-size-bounded-release-bundle-replay-windows',
