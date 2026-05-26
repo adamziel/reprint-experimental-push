@@ -4703,6 +4703,56 @@ test('stale recovery claim fences the durable journal before opening the plan', 
   assert.deepEqual(journal.events, []);
 });
 
+test('unsupported production recovery writers are marked closed even when cleanup throws', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  const remote = baseSite();
+  const plan = planFor(base, local, remote);
+  const writer = {
+    kind: 'production-recovery-journal',
+    productionAdapter: true,
+    supportedSurface: 'production-recovery-journal-adapter',
+    ownsJournal: true,
+    ownsRemoteArtifact: false,
+    restartReadable: true,
+    journalPath: '/tmp/reprint-recovery-journal.jsonl',
+    schemaVersion: 1,
+    artifactRefs: {
+      journal: '/tmp/reprint-recovery-journal.jsonl',
+    },
+    appendEvent() {
+      throw new Error('unsupported');
+    },
+    inspect() {
+      return {
+        filePath: '/tmp/reprint-recovery-journal.jsonl',
+        schemaVersion: 1,
+        records: [],
+        artifactRefs: {
+          journal: '/tmp/reprint-recovery-journal.jsonl',
+        },
+      };
+    },
+    assertCurrentClaim() {
+      return true;
+    },
+    flush() {},
+    close() {
+      throw new Error('cleanup failed');
+    },
+  };
+
+  assert.throws(
+    () => applyPlan(remote, plan, {
+      durableJournal: writer,
+      requireProductionDurableJournal: true,
+    }),
+    (error) => error instanceof PushPlanError && error.code === 'PRODUCTION_DURABLE_JOURNAL_UNSUPPORTED',
+  );
+  assert.equal(isDurableJournalClosed(writer), true);
+});
+
 test('replaying a completed plan does not duplicate inserts or reapply stale local data', () => {
   const base = baseSite();
   const local = baseSite();

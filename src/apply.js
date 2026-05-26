@@ -935,9 +935,10 @@ function closeUnsupportedProductionRecoveryWriter(writer) {
 
   try {
     writer.close();
-    markDurableJournalClosed(writer);
   } catch {
     // Unsupported writers are still fail-closed if cleanup fails.
+  } finally {
+    markDurableJournalClosed(writer);
   }
 }
 
