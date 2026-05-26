@@ -21385,6 +21385,114 @@ test('prioritizes featured image attachment blocker wording while carrying bound
   assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin changes */');
 });
 
+test('orders same-plan attachment dependency references deterministically within the same priority bucket', () => {
+  const attachmentResourceKey = 'row:["wp_posts","ID:98"]';
+  const firstFeaturedImageResourceKey = 'row:["wp_postmeta","meta_id:97"]';
+  const secondFeaturedImageResourceKey = 'row:["wp_postmeta","meta_id:98"]';
+  const childPostResourceKey = 'row:["wp_posts","ID:99"]';
+
+  const base = baseSite();
+  base.db.wp_posts['ID:1'].post_title = 'Base shared attachment ordering title';
+  base.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_title: 'Base shared attachment ordering sibling title',
+    post_content: 'Base shared attachment ordering sibling body',
+    post_status: 'publish',
+  };
+  base.db.wp_postmeta = {};
+
+  const local = baseSite();
+  local.db.wp_posts['ID:1'].post_title = 'Shared attachment ordering title';
+  local.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_title: 'Shared attachment ordering sibling title',
+    post_content: 'Shared attachment ordering sibling body',
+    post_status: 'publish',
+  };
+  local.db.wp_posts['ID:98'] = {
+    ID: 98,
+    post_title: 'Local same-plan attachment ordering target',
+    post_content: 'Local same-plan attachment ordering body',
+    post_status: 'inherit',
+    post_type: 'attachment',
+  };
+  local.db.wp_posts['ID:99'] = {
+    ID: 99,
+    post_title: 'Local child post attachment ordering reference',
+    post_content: 'Local child post attachment ordering body',
+    post_status: 'publish',
+    post_parent: 98,
+  };
+  local.db.wp_postmeta = {
+    'meta_id:98': {
+      meta_id: 98,
+      post_id: 2,
+      meta_key: '_thumbnail_id',
+      meta_value: 98,
+    },
+    'meta_id:97': {
+      meta_id: 97,
+      post_id: 1,
+      meta_key: '_thumbnail_id',
+      meta_value: 98,
+    },
+  };
+
+  const remote = baseSite();
+  remote.db.wp_posts['ID:1'].post_title = 'Shared attachment ordering title';
+  remote.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_title: 'Shared attachment ordering sibling title',
+    post_content: 'Shared attachment ordering sibling body',
+    post_status: 'publish',
+  };
+  remote.db.wp_postmeta = {};
+  remote.plugins.forms.description = 'remote-only plugin attachment ordering drift';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin attachment ordering drift */';
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === attachmentResourceKey);
+  const matchingEdit = decisionFor(plan, 'row:["wp_posts","ID:1"]');
+  const matchingSiblingEdit = decisionFor(plan, 'row:["wp_posts","ID:2"]');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, attachmentResourceKey), undefined);
+  assert.equal(decisionFor(plan, firstFeaturedImageResourceKey), undefined);
+  assert.equal(decisionFor(plan, secondFeaturedImageResourceKey), undefined);
+  assert.equal(decisionFor(plan, childPostResourceKey), undefined);
+  assert.equal(blocker.class, 'unsupported-attachment-resource');
+  assert.equal(blocker.resourceKey, attachmentResourceKey);
+  assert.equal(
+    blocker.reason,
+    'WordPress graph mutation row:["wp_posts","ID:98"] is created in the same plan as a featured image attachment target that depends on it, and identity rewriting is not yet supported.',
+  );
+  assert.deepEqual(
+    blocker.references.map((reference) => reference.relationshipType),
+    ['featured-image-attachment', 'featured-image-attachment', 'post-parent'],
+  );
+  assert.deepEqual(
+    blocker.references.map((reference) => reference.sourceResourceKey),
+    [firstFeaturedImageResourceKey, secondFeaturedImageResourceKey, childPostResourceKey],
+  );
+  assert.equal(blocker.references.every((reference) => reference.targetResourceKey === attachmentResourceKey), true);
+  assert.equal(matchingEdit.decision, 'already-in-sync');
+  assert.equal(matchingSiblingEdit.decision, 'already-in-sync');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('Local same-plan attachment ordering target'), false);
+  assert.equal(planJson.includes('Local same-plan attachment ordering body'), false);
+  assert.equal(planJson.includes('Local child post attachment ordering reference'), false);
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin attachment ordering drift');
+  assert.equal(
+    remote.files['wp-content/plugins/forms/forms.php'],
+    '<?php /* remote-only plugin attachment ordering drift */',
+  );
+});
+
 test('blocks local navigation graph resources while preserving remote-only plugin drift', () => {
   const resourceKey = 'row:["wp_posts","ID:42"]';
   const base = baseSite();
