@@ -969,6 +969,7 @@ function reprint_push_lab_db_journal_checked_boundary_contract_matches($journal)
         : null;
 
     return ($journal['schemaVersion'] ?? null) === 1
+        && ($journal['acceptedOnCheckedBoundary'] ?? null) === true
         && reprint_push_lab_db_journal_checked_boundary_scope_matches($journal['scope'] ?? null)
         && reprint_push_lab_db_journal_claim_contract_matches($journal['claim'] ?? null)
         && reprint_push_lab_db_journal_ownership_contract_matches($journal['ownership'] ?? null)
