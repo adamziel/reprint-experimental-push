@@ -1,20 +1,22 @@
 # Critic Verdict
 
-Current reliable head: `75668b81a33078611be1b8bb1f2e09da159ece10`
-(`Pin trusted scopes in journal client fixtures`).
+Current reliable head: `0292f8ea31a1d1576f04b29594186c20906f035d`
+(`Require live db journal release boundary`).
 
 Verdict: `0/4`
 
 Reason:
 
-- This head is useful fixture hardening in the authenticated client tests, but
-  it still does not prove the production-owned boundary the gate is waiting
-  for.
+- This head is material checked-boundary hardening: the live release verifier
+  now requires the live `/db-journal` surface itself to satisfy the durable
+  journal boundary before it reports `LIVE_RELEASE_BOUNDARY_OK`.
 - The missing primitive remains production-backed auth/session and
-  durable-journal ownership on the checked release path, not just trusted
-  fixture scope pinning or packaged smoke hardening.
-- Because that production boundary is still not proven directly, the
-  supervised release gate remains closed at `0/4`.
+  durable-journal ownership on a releasable production source boundary, not
+  just a production-shaped checked Playground route.
+- Because the proof is still constrained to the checked verifier surface, the
+  supervised release gate remains closed at `0/4`, but the old
+  recovery-inspect-only durable-journal objection is no longer the right next
+  target.
 
 Next owner / command:
 
@@ -23,6 +25,6 @@ Next owner / command:
   `scripts/playground/push-remote-rest-plugin.php`,
   `src/recovery-journal.js`, and `src/authenticated-http-push-client.js` with
   `timeout 180s npm run verify:release`, but the next needed proof is the
-  exact production-owned auth/session and durable-journal primitive consumed
-  by that checked path, or a precise handoff naming the missing API/file/owner
-  if it still cannot be wired.
+  production-backed auth/session lifecycle depth on the checked release path
+  or an exact handoff showing why the now-live `/db-journal` durable boundary
+  still cannot be treated as production-owned release evidence.
