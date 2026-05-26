@@ -21249,6 +21249,76 @@ test('blocks an existing term taxonomy row when its same-plan term target is cla
   assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
 });
 
+test('blocks an existing term taxonomy row when its same-plan term target is claimed by a nav menu taxonomy and unrelated remote attachment noise exists', () => {
+  const termResourceKey = 'row:["wp_terms","term_id:7"]';
+  const navMenuTaxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:10"]';
+  const taxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:9"]';
+  const base = baseSite();
+  const local = baseSite();
+  const remote = baseSite();
+  base.db.wp_term_taxonomy = {
+    'term_taxonomy_id:9': {
+      term_taxonomy_id: 9,
+      term_id: 0,
+      taxonomy: 'category',
+      description: 'Base taxonomy description',
+      parent: 0,
+      count: 0,
+    },
+  };
+  remote.db.wp_term_taxonomy = {
+    'term_taxonomy_id:9': {
+      ...base.db.wp_term_taxonomy['term_taxonomy_id:9'],
+    },
+  };
+  remote.db.wp_posts['ID:21'] = {
+    ID: 21,
+    post_title: 'Remote unrelated attachment',
+    post_content: 'remote-private-existing-taxonomy-noise-body',
+    post_status: 'inherit',
+    post_type: 'attachment',
+  };
+  local.db.wp_terms = {
+    'term_id:7': {
+      term_id: 7,
+      name: 'Local blocked existing taxonomy term',
+      slug: 'local-blocked-existing-taxonomy-term',
+    },
+  };
+  local.db.wp_term_taxonomy = {
+    'term_taxonomy_id:9': {
+      ...base.db.wp_term_taxonomy['term_taxonomy_id:9'],
+      term_id: 7,
+    },
+    'term_taxonomy_id:10': {
+      term_taxonomy_id: 10,
+      term_id: 7,
+      taxonomy: 'nav_menu',
+      description: '',
+      parent: 0,
+      count: 0,
+    },
+  };
+
+  const plan = planFor(base, local, remote);
+  const termMutation = mutationFor(plan, termResourceKey);
+  const taxonomyMutation = mutationFor(plan, taxonomyResourceKey);
+  const navMenuTaxonomyMutation = mutationFor(plan, navMenuTaxonomyResourceKey);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === taxonomyResourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(termMutation.changeKind, 'create');
+  assert.equal(taxonomyMutation.changeKind, 'update');
+  assert.equal(navMenuTaxonomyMutation, undefined);
+  assert.equal(blocker.class, 'missing-wordpress-graph-dependency');
+  assert.equal(blocker.references[0].relationshipType, 'term-taxonomy-term');
+  assert.equal(blocker.references[0].targetResourceKey, termResourceKey);
+  assert.equal(taxonomyMutation.dependsOnMutationIds, undefined);
+  assert.equal(JSON.stringify(blocker).includes('Local blocked existing taxonomy term'), false);
+  assert.equal(JSON.stringify(blocker).includes('remote-private-existing-taxonomy-noise-body'), false);
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
+});
+
 test('blocks an existing term taxonomy row when its same-plan parent term target is claimed by a nav menu taxonomy', () => {
   const termResourceKey = 'row:["wp_terms","term_id:7"]';
   const navMenuTaxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:10"]';
