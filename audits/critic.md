@@ -1,14 +1,14 @@
 # Critic Verdict
 
-Current reliable head: `afe8a88179a09722ebe9ebeb84a34de593a0d82c`
-(`Use live credentials in release verify`).
+Current reliable head: `7ced165440266ef14e92a0e26abfd5bc886cdf79`
+(`Widen packaged release verify test budget`).
 
 Verdict: `0/4`
 
 Reason:
 
-- This head is release-verify credential wiring only. It switches the checked
-  verifier to live credentials, but it still does not prove a production-backed
+- This head widens the release-verifier test budget only. It changes the
+  bounded package test harness, but it still does not prove a production-backed
   auth/session lifecycle on the checked release path.
 - The checked proof is still missing live issuance/read/expiry/rotation/
   revocation/cleanup evidence for `production-auth-session`, and it still does
@@ -19,7 +19,8 @@ Reason:
 Next owner / command:
 
 - `main:reliable-exec` should keep working in
-  `scripts/playground/production-shaped-release-verify.mjs` with the checked
-  command `timeout 180s npm run verify:release`, or hand off the exact
-  missing release-path file/function/command if the verifier still cannot
-  consume the journal ownership proof and production auth/session lifecycle.
+  `scripts/playground/production-shaped-release-verify.mjs` and
+  `test/production-shaped-proof.test.js` with the checked command
+  `timeout 180s npm run verify:release`, or hand off the exact missing
+  release-path file/function/command if the verifier still cannot consume the
+  journal ownership proof and production auth/session lifecycle.
