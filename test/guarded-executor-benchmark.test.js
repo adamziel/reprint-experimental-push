@@ -110,6 +110,7 @@ test('guarded benchmark refuses production throughput claims until production ga
   assert.equal(report.claims.productionThroughputDetails.backpressureConsistency.receiptCursorHeadroomMatchesQueueHeadroom, true);
   assert.equal(report.claims.productionThroughputDetails.backpressureConsistency.receiptCursorHeadroomCoveredByQueueBudget, true);
   assert.equal(report.claims.productionThroughputDetails.backpressureConsistency.receiptCursorBackpressureBytes, 512 * 1024);
+  assert.equal(report.claims.productionThroughputDetails.backpressureConsistency.receiptCursorBackpressureWithinQueueHeadroom, true);
   assert.equal(report.claims.productionThroughputDetails.backpressure.producerQueueBounded, true);
   assert.equal(report.claims.productionThroughputDetails.receiptCursorWindowBytes, 512 * 1024);
   assert.equal(report.claims.productionThroughputDetails.receiptCursorIsTerminalChunk, true);
@@ -359,6 +360,10 @@ test('production claim gate fails closed if benchmark evidence is tampered', () 
     productionThroughputDetails(mismatchedQueueCursor).backpressureConsistency.receiptCursorBackpressureBytes,
     0,
   );
+  assert.equal(
+    productionThroughputDetails(mismatchedQueueCursor).backpressureConsistency.receiptCursorBackpressureWithinQueueHeadroom,
+    true,
+  );
 
   const mismatchedQueueHeadroom = clone(report);
   mismatchedQueueHeadroom.evidence.backpressure.queueHeadroomBytes = 0;
@@ -426,6 +431,22 @@ test('production claim gate fails closed if benchmark evidence is tampered', () 
   assert.equal(
     productionThroughputDetails(missingQueueHeadroom).backpressureConsistency.receiptCursorHeadroomCoveredByQueueBudget,
     false,
+  );
+
+  const oversizedBackpressureCursor = clone(report);
+  oversizedBackpressureCursor.evidence.backpressure.receiptCursorBytes =
+    oversizedBackpressureCursor.evidence.backpressure.queueHeadroomBytes + 1;
+  assert.equal(
+    productionThroughputDetails(oversizedBackpressureCursor).backpressureConsistency.receiptCursorMatchesBackpressure,
+    false,
+  );
+  assert.equal(
+    productionThroughputDetails(oversizedBackpressureCursor).backpressureConsistency.receiptCursorBackpressureWithinQueueHeadroom,
+    false,
+  );
+  assert.equal(
+    productionThroughputBlockers(oversizedBackpressureCursor).includes('receipt-cursor-backpressure-mismatch'),
+    true,
   );
 
   const oversizedChunkWindow = clone(report);

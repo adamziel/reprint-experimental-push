@@ -322,6 +322,10 @@ export function productionThroughputDetails(report) {
     Number.isFinite(receiptCursorMemoryHeadroomBytes)
     && Number.isFinite(receiptCursorQueueHeadroomBytes)
     && receiptCursorMemoryHeadroomBytes === receiptCursorQueueHeadroomBytes;
+  const receiptCursorBackpressureWithinQueueHeadroom =
+    Number.isFinite(receiptCursorBackpressureBytes)
+    && Number.isFinite(receiptCursorQueueHeadroomBytes)
+    && receiptCursorBackpressureBytes <= receiptCursorQueueHeadroomBytes;
   const receiptCursorHeadroomCoveredByQueueBudget =
     Number.isFinite(receiptCursorMemoryHeadroomBytes)
     && Number.isFinite(receiptCursorQueueHeadroomBytes)
@@ -373,6 +377,7 @@ export function productionThroughputDetails(report) {
     receiptCursorHeadroomBytes: receiptCursorMemoryHeadroomBytes,
     receiptCursorHeadroomMatchesQueueHeadroom,
     receiptCursorBackpressureBytes,
+    receiptCursorBackpressureWithinQueueHeadroom,
     receiptCursorHeadroomWithinQueueBudget,
     backpressureConsistency: {
       queueBudgetMatchesResourceCeiling,
@@ -381,6 +386,7 @@ export function productionThroughputDetails(report) {
       receiptCursorWithinQueueBudget: report.evidence.backpressure?.receiptCursorWithinQueueBudget ?? false,
       receiptCursorMatchesBackpressure,
       receiptCursorHeadroomMatchesQueueHeadroom,
+      receiptCursorBackpressureWithinQueueHeadroom,
       receiptCursorHeadroomCoveredByQueueBudget,
       receiptCursorHeadroomWithinQueueBudget,
       receiptCursorBackpressureBytes,

@@ -67,6 +67,9 @@ Current executable gate:
 - The report now also exposes whether receipt-cursor headroom is covered by
   the queue budget, so the cursor audit can fail closed even when the exact
   headroom values drift apart.
+- The report now also exposes whether the receipt-cursor backpressure bytes
+  stay within the remaining queue headroom, so a tampered cursor cannot look
+  safe just because the queue budget still exists.
 - The report now also exposes a `backpressureConsistency` summary for queue
   budget, receipt cursor, and headroom alignment so tampering shows up as a
   named evidence mismatch rather than a silent detail drift.
