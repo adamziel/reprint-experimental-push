@@ -234,6 +234,20 @@ export function productionThroughputBlockers(report) {
     blockers.push('queue-headroom-backpressure-mismatch');
   }
   if (
+    Number.isFinite(report.evidence.backpressure?.queueHeadroomBytes)
+    && Number.isFinite(report.evidence.chunkReceipts.resumeCursor?.sizeBytes)
+    && Number.isFinite(report.resourceLimits?.memoryCeilingBytes)
+  ) {
+    const expectedReceiptCursorMemoryHeadroom =
+      report.resourceLimits.memoryCeilingBytes - report.evidence.chunkReceipts.resumeCursor.sizeBytes;
+    if (
+      expectedReceiptCursorMemoryHeadroom
+        !== report.evidence.backpressure.queueHeadroomBytes
+    ) {
+      blockers.push('receipt-cursor-headroom-mismatch');
+    }
+  }
+  if (
     report.evidence.backpressure?.receiptCursorBytes !== null
     && report.evidence.backpressure?.receiptCursorBytes !== report.evidence.chunkReceipts.resumeCursor?.sizeBytes
   ) {
@@ -301,6 +315,7 @@ export function productionThroughputDetails(report) {
     receiptCursorWithinQueueBudget: report.evidence.backpressure?.receiptCursorWithinQueueBudget ?? false,
     receiptCursor: report.evidence.chunkReceipts.resumeCursor,
     receiptCursorConsistency: report.evidence.chunkReceipts.cursorConsistency,
+    receiptCursorHeadroomBytes: receiptCursorMemoryHeadroomBytes,
     recovery: report.evidence.recovery,
     atomicGroup: report.evidence.atomicGroup,
     blockers: productionThroughputBlockers(report),

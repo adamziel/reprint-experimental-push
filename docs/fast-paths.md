@@ -55,6 +55,9 @@ Current executable gate:
 - The production-throughput gate also fails closed if the recorded receipt
   cursor no longer fits the bounded queue budget, so the backpressure evidence
   stays aligned with the replayable cursor state.
+- The report now also cross-checks receipt-cursor memory headroom against queue
+  headroom so a tampered buffer budget cannot make the production claim look
+  consistent when the recorded cursor and queue view disagree.
 - The report `results` payload also carries explicit failure-probe details for
   the pre-commit and partial-commit probes, including inspection status,
   journal path, remote-unchanged classification, and journal record types so a
