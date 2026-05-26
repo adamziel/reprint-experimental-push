@@ -908,7 +908,7 @@ test('production-shaped authenticated push fails closed when a preserved product
     assert.equal(summary.ok, false);
     assert.equal(summary.code, 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED');
     assert.deepEqual(summary.authSession, {
-      required: 'authenticated identity continuity',
+      required: 'authenticated identity match',
       observed: 'different-user',
       verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
     });
@@ -917,13 +917,75 @@ test('production-shaped authenticated push fails closed when a preserved product
       status: 'unimplemented',
       verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
       authSession: {
-        required: 'authenticated identity continuity',
+        required: 'authenticated identity match',
         observed: 'different-user',
         verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
       },
     });
     assert.equal(seen.length, 3);
     assert.ok(seen.some(({ url }) => url.includes('/dry-run')));
+  } finally {
+    global.fetch = originalFetch;
+  }
+});
+
+test('production-shaped authenticated push fails closed when preflight mints a production auth session for the wrong authenticated identity', async () => {
+  const originalFetch = global.fetch;
+  const seen = [];
+  global.fetch = async (url, options) => {
+    seen.push({ url: String(url), options });
+    if (String(url).includes('/preflight')) {
+      return new Response(JSON.stringify({
+        ok: true,
+        auth: {
+          identity: { userLogin: 'different-user' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
+        },
+        session: { id: 'psh_01j00000000000000000000000' },
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+    throw new Error(`unexpected fetch to ${url}`);
+  };
+
+  try {
+    const summary = await runAuthenticatedHttpPush({
+      sourceUrl: 'http://127.0.0.1:8080',
+      base: { resources: [] },
+      local: { resources: [] },
+      username: credential.username,
+      applicationPassword: credential.password,
+      idempotencyKey: 'idem-01-preflight-identity-mismatch',
+      routeProfile: 'production-shaped',
+      requireProductionAuthSession: true,
+    });
+
+    assert.equal(summary.ok, false);
+    assert.equal(summary.code, 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED');
+    assert.deepEqual(summary.authSession, {
+      required: 'authenticated identity match',
+      observed: 'different-user',
+      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+    });
+    assert.deepEqual(summary.boundary, {
+      firstRemainingProductionBoundary: 'auth/session lifecycle and durable journal semantics',
+      status: 'unimplemented',
+      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+      authSession: {
+        required: 'authenticated identity match',
+        observed: 'different-user',
+        verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+      },
+    });
+    assert.equal(seen.length, 1);
+    assert.match(seen[0].url, /\/wp-json\/reprint\/v1\/push\/preflight$/);
   } finally {
     global.fetch = originalFetch;
   }

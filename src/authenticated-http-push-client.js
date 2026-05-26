@@ -214,6 +214,24 @@ export async function runAuthenticatedHttpPush({
     };
     return summary;
   }
+  const preflightIdentityMismatch = requireProductionAuthSession
+    ? resolveProductionAuthSessionIdentityMismatch(resolvedSource.username, preflight)
+    : null;
+  if (preflightIdentityMismatch) {
+    summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
+    summary.authSession = {
+      required: 'authenticated identity match',
+      observed: preflightIdentityMismatch,
+      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+    };
+    summary.boundary = {
+      firstRemainingProductionBoundary: 'auth/session lifecycle and durable journal semantics',
+      status: 'unimplemented',
+      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+      authSession: summary.authSession,
+    };
+    return summary;
+  }
   if (requireProductionAuthSession && hasProductionAuthSessionRevocationDrift(preflight)) {
     summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
     summary.authSession = {
@@ -339,6 +357,24 @@ export async function runAuthenticatedHttpPush({
     summary.authSession = {
       required: 'authenticated identity',
       observed: 'missing-user-login',
+      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+    };
+    summary.boundary = {
+      firstRemainingProductionBoundary: 'auth/session lifecycle and durable journal semantics',
+      status: 'unimplemented',
+      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+      authSession: summary.authSession,
+    };
+    return summary;
+  }
+  const dryRunIdentityMismatch = requireProductionAuthSession
+    ? resolveProductionAuthSessionIdentityMismatch(resolvedSource.username, dryRun)
+    : null;
+  if (dryRunIdentityMismatch) {
+    summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
+    summary.authSession = {
+      required: 'authenticated identity match',
+      observed: dryRunIdentityMismatch,
       verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
     };
     summary.boundary = {
@@ -487,6 +523,24 @@ export async function runAuthenticatedHttpPush({
     };
     return summary;
   }
+  const applyIdentityMismatch = requireProductionAuthSession
+    ? resolveProductionAuthSessionIdentityMismatch(resolvedSource.username, apply)
+    : null;
+  if (applyIdentityMismatch) {
+    summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
+    summary.authSession = {
+      required: 'authenticated identity match',
+      observed: applyIdentityMismatch,
+      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+    };
+    summary.boundary = {
+      firstRemainingProductionBoundary: 'auth/session lifecycle and durable journal semantics',
+      status: 'unimplemented',
+      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+      authSession: summary.authSession,
+    };
+    return summary;
+  }
   const applyIdentityContinuityDrift = requireProductionAuthSession
     ? resolveProductionAuthSessionIdentityContinuityDrift(preflightAuthEnvelope, apply)
     : null;
@@ -593,6 +647,24 @@ export async function runAuthenticatedHttpPush({
     summary.authSession = {
       required: 'authenticated identity',
       observed: 'missing-user-login',
+      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+    };
+    summary.boundary = {
+      firstRemainingProductionBoundary: 'auth/session lifecycle and durable journal semantics',
+      status: 'unimplemented',
+      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+      authSession: summary.authSession,
+    };
+    return summary;
+  }
+  const recoveryInspectIdentityMismatch = requireProductionAuthSession
+    ? resolveProductionAuthSessionIdentityMismatch(resolvedSource.username, recoveryInspect)
+    : null;
+  if (recoveryInspectIdentityMismatch) {
+    summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
+    summary.authSession = {
+      required: 'authenticated identity match',
+      observed: recoveryInspectIdentityMismatch,
       verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
     };
     summary.boundary = {
@@ -760,6 +832,24 @@ export async function runAuthenticatedHttpPush({
     };
     return summary;
   }
+  const replayIdentityMismatch = requireProductionAuthSession
+    ? resolveProductionAuthSessionIdentityMismatch(resolvedSource.username, replay)
+    : null;
+  if (replayIdentityMismatch) {
+    summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
+    summary.authSession = {
+      required: 'authenticated identity match',
+      observed: replayIdentityMismatch,
+      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+    };
+    summary.boundary = {
+      firstRemainingProductionBoundary: 'auth/session lifecycle and durable journal semantics',
+      status: 'unimplemented',
+      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+      authSession: summary.authSession,
+    };
+    return summary;
+  }
   const replayIdentityContinuityDrift = requireProductionAuthSession
     ? resolveProductionAuthSessionIdentityContinuityDrift(preflightAuthEnvelope, replay)
     : null;
@@ -871,6 +961,24 @@ export async function runAuthenticatedHttpPush({
     summary.authSession = {
       required: 'authenticated identity',
       observed: 'missing-user-login',
+      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+    };
+    summary.boundary = {
+      firstRemainingProductionBoundary: 'auth/session lifecycle and durable journal semantics',
+      status: 'unimplemented',
+      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+      authSession: summary.authSession,
+    };
+    return summary;
+  }
+  const dbJournalIdentityMismatch = requireProductionAuthSession
+    ? resolveProductionAuthSessionIdentityMismatch(resolvedSource.username, dbJournal)
+    : null;
+  if (dbJournalIdentityMismatch) {
+    summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
+    summary.authSession = {
+      required: 'authenticated identity match',
+      observed: dbJournalIdentityMismatch,
       verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
     };
     summary.boundary = {
@@ -1591,6 +1699,29 @@ function hasMissingProductionAuthSessionIdentity(response) {
   }
 
   return !response?.body?.auth?.identity?.userLogin;
+}
+
+function resolveProductionAuthSessionIdentityMismatch(expectedUserLogin, response) {
+  const requiredUserLogin = typeof expectedUserLogin === 'string'
+    ? expectedUserLogin.trim()
+    : '';
+  if (!requiredUserLogin) {
+    return null;
+  }
+
+  const session = response?.body?.auth?.session;
+  if (session?.type !== 'production-auth-session') {
+    return null;
+  }
+
+  const observedUserLogin = typeof response?.body?.auth?.identity?.userLogin === 'string'
+    ? response.body.auth.identity.userLogin.trim()
+    : '';
+  if (!observedUserLogin || observedUserLogin === requiredUserLogin) {
+    return null;
+  }
+
+  return observedUserLogin;
 }
 
 function resolveProductionAuthSessionIdentityContinuityDrift(expected, response) {
