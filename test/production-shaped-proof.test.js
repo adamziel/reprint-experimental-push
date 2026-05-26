@@ -20,7 +20,7 @@ const liveCredentials = {
 };
 const proofSubprocessTimeoutMs = 45_000;
 const proofSubprocessKillSignal = 'SIGTERM';
-const liveProofSubprocessTimeoutMs = 20_000;
+const liveProofSubprocessTimeoutMs = 12_000;
 const releaseVerifySlowPathTimeoutMs = 12_000;
 const liveReleaseVerifyTimeoutMs = liveProofSubprocessTimeoutMs;
 const proofSubprocessOptions = {
@@ -30,23 +30,24 @@ const proofSubprocessOptions = {
   maxBuffer: 1024 * 1024 * 20,
 };
 
+function stopAllPlaygroundChildrenSync() {}
+
 function spawnReleaseVerify(env = {}, timeout = proofSubprocessTimeoutMs) {
-  const spawnOptions = {
-    cwd: repoRoot,
-    timeout,
-    killSignal: proofSubprocessKillSignal,
-    encoding: 'utf8',
-    maxBuffer: 1024 * 1024 * 20,
-    shell: false,
-    env: {
-      ...process.env,
-      ...env,
-    },
-  };
   const proof = spawnSync(
     process.execPath,
     ['scripts/playground/production-shaped-release-verify.mjs'],
-    spawnOptions,
+    {
+      cwd: repoRoot,
+      timeout,
+      killSignal: proofSubprocessKillSignal,
+      encoding: 'utf8',
+      maxBuffer: 1024 * 1024 * 20,
+      shell: false,
+      env: {
+        ...process.env,
+        ...env,
+      },
+    },
   );
   if (proof.error) {
     stopAllPlaygroundChildrenSync();
@@ -75,8 +76,47 @@ function spawnReleaseVerify(env = {}, timeout = proofSubprocessTimeoutMs) {
   return proof;
 }
 
+function spawnReleaseVerifyBounded(command, args, options, label) {
+  const proof = spawnSync(command, args, options);
+
+  if (proof.error) {
+    stopAllPlaygroundChildrenSync();
+    process.stderr.write(`${describeSpawnProof(proof)}\n`);
+    const timeoutNote = proof.error.code === 'ETIMEDOUT' && options.timeout ? ` after ${options.timeout}ms` : '';
+    throw new Error(formatSpawnFailure(`${label} failed${timeoutNote}`, proof));
+  }
+  if (proof.signal) {
+    stopAllPlaygroundChildrenSync();
+    process.stderr.write(`${describeSpawnProof(proof)}\n`);
+    throw new Error(formatSpawnFailure(`${label} terminated by ${proof.signal}${options.timeout ? ` after ${options.timeout}ms` : ''}`, proof));
+  }
+  if (proof.status === null) {
+    stopAllPlaygroundChildrenSync();
+    process.stderr.write(`${describeSpawnProof(proof)}\n`);
+    throw new Error(formatSpawnFailure(`${label} exited without a status`, proof));
+  }
+
+  return proof;
+}
+
 function spawnLiveReleaseVerify(env = {}) {
-  return spawnReleaseVerify(env, liveReleaseVerifyTimeoutMs);
+  return spawnReleaseVerifyBounded(
+    process.execPath,
+    ['scripts/playground/production-shaped-release-verify.mjs'],
+    {
+      cwd: repoRoot,
+      timeout: liveReleaseVerifyTimeoutMs,
+      killSignal: proofSubprocessKillSignal,
+      encoding: 'utf8',
+      maxBuffer: 1024 * 1024 * 20,
+      shell: false,
+      env: {
+        ...process.env,
+        ...env,
+      },
+    },
+    'live release verify',
+  );
 }
 
 function assertReleaseVerifyProof(proof, label) {
@@ -123,15 +163,19 @@ function spawnBoundedSync(command, args, options, label) {
   const proof = spawnSync(command, args, options);
 
   if (proof.error) {
+    stopAllPlaygroundChildrenSync();
     process.stderr.write(`${describeSpawnProof(proof)}\n`);
     const timeoutNote = proof.error.code === 'ETIMEDOUT' && options.timeout ? ` after ${options.timeout}ms` : '';
     throw new Error(formatSpawnFailure(`${label} failed${timeoutNote}`, proof));
   }
   if (proof.signal) {
+    stopAllPlaygroundChildrenSync();
     process.stderr.write(`${describeSpawnProof(proof)}\n`);
     throw new Error(formatSpawnFailure(`${label} terminated by ${proof.signal}${options.timeout ? ` after ${options.timeout}ms` : ''}`, proof));
   }
   if (proof.status === null) {
+    stopAllPlaygroundChildrenSync();
+    process.stderr.write(`${describeSpawnProof(proof)}\n`);
     throw new Error(formatSpawnFailure(`${label} exited without a status`, proof));
   }
 
@@ -828,14 +872,16 @@ function stopParentProcesses(child, signal) {
     ['pkill', [signalFlag, '-P', String(child.pid)]],
     ['kill', [signalFlag, String(child.pid)]],
   ]) {
-    const proof = spawnSync(command, args, {
+    const proof = spawnBoundedSync(command, args, {
       cwd: repoRoot,
       env: process.env,
       encoding: 'utf8',
       timeout: 2_000,
       killSignal: 'SIGKILL',
-    });
-    logBoundedSpawnProofFailure(command, args, proof);
+    }, `process cleanup ${command}`);
+    if (proof.status !== 0) {
+      logBoundedSpawnProofFailure(command, args, proof);
+    }
   }
 }
 
