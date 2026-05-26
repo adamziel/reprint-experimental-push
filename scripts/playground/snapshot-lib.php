@@ -214,6 +214,7 @@ function reprint_push_add_plugin_owned_policy(array &$snapshot): void
             continue;
         }
         foreach (array_keys($snapshot['db'][$table]) as $row_id) {
+            reprint_push_assert_plugin_owned_driver_row_id($driver, (string) $row_id);
             $allowed_resources[] = reprint_push_plugin_owned_driver_allowed_resource($driver, $row_id);
         }
     }

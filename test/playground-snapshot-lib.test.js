@@ -104,6 +104,41 @@ function runDriverRegistryCheck(drivers) {
   });
 }
 
+function runPluginOwnedPolicyCheck(snapshot, drivers) {
+  return spawnSync('php', [
+    '-r',
+    [
+      'function fixture_export_rows() {}',
+      'function fixture_apply_row() {}',
+      'function fixture_validate_mutation() {}',
+      'function apply_filters($tag, $value) {',
+      '  if ($tag === "reprint_push_plugin_owned_row_drivers") {',
+      '    return json_decode($GLOBALS["argv"][3], true);',
+      '  }',
+      '  return $value;',
+      '}',
+      'function wp_json_encode($value, $flags = 0, $depth = 512) {',
+      '  return json_encode($value, $flags, $depth);',
+      '}',
+      'require $argv[1];',
+      '$snapshot = json_decode($argv[2], true);',
+      'try {',
+      '  reprint_push_add_plugin_owned_policy($snapshot);',
+      '  fwrite(STDOUT, json_encode($snapshot["meta"]["pluginOwnedResources"]["allowedResources"] ?? []));',
+      '} catch (Throwable $error) {',
+      '  fwrite(STDERR, $error->getMessage());',
+      '  exit(2);',
+      '}',
+    ].join(' '),
+    snapshotLib,
+    JSON.stringify(snapshot),
+    JSON.stringify(drivers),
+  ], {
+    cwd: repoRoot,
+    encoding: 'utf8',
+  });
+}
+
 test('snapshot apply gate allows only named lab plugin resources', { skip: !hasPhp }, () => {
   assertSupported({ type: 'plugin', name: 'reprint-push-forms-fixture' });
   assertSupported({ type: 'plugin', name: 'reprint-push-atomic-dependency-fixture' });
@@ -356,6 +391,78 @@ test('snapshot apply gate rejects empty arbitrary plugin driver row ids', { skip
       type: 'row',
       table: 'wp_reprint_push_driver_fixture',
       id: '',
+    },
+    {
+      'fixture-driver': {
+        driver: 'fixture-driver',
+        table: 'wp_reprint_push_driver_fixture',
+        pluginOwner: 'driver-fixture',
+        exportRowsCallback: 'fixture_export_rows',
+        applyRowCallback: 'fixture_apply_row',
+        validateMutationCallback: 'fixture_validate_mutation',
+      },
+    },
+  );
+
+  assert.equal(result.status, 2);
+  assert.match(result.stderr, /row id must not be empty/i);
+});
+
+test('snapshot plugin-owned policy exposes arbitrary registered driver rows', { skip: !hasPhp }, () => {
+  const result = runPluginOwnedPolicyCheck(
+    {
+      meta: {},
+      db: {
+        wp_options: {},
+        wp_postmeta: {},
+        wp_reprint_push_driver_fixture: {
+          'entry_id:9': {
+            entry_id: 9,
+            payload: { ok: true },
+            __pluginOwner: 'driver-fixture',
+          },
+        },
+      },
+    },
+    {
+      'fixture-driver': {
+        driver: 'fixture-driver',
+        table: 'wp_reprint_push_driver_fixture',
+        pluginOwner: 'driver-fixture',
+        supportsDelete: true,
+        exportRowsCallback: 'fixture_export_rows',
+        applyRowCallback: 'fixture_apply_row',
+        validateMutationCallback: 'fixture_validate_mutation',
+      },
+    },
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  assert.deepEqual(JSON.parse(result.stdout), [
+    {
+      resourceKey: 'row:["wp_reprint_push_driver_fixture","entry_id:9"]',
+      pluginOwner: 'driver-fixture',
+      driver: 'fixture-driver',
+      table: 'wp_reprint_push_driver_fixture',
+      supportsDelete: true,
+    },
+  ]);
+});
+
+test('snapshot plugin-owned policy rejects malformed arbitrary driver row ids', { skip: !hasPhp }, () => {
+  const result = runPluginOwnedPolicyCheck(
+    {
+      meta: {},
+      db: {
+        wp_options: {},
+        wp_postmeta: {},
+        wp_reprint_push_driver_fixture: {
+          '': {
+            payload: { ok: true },
+            __pluginOwner: 'driver-fixture',
+          },
+        },
+      },
     },
     {
       'fixture-driver': {
