@@ -134,6 +134,10 @@ test('guarded benchmark refuses production throughput claims until production ga
     report.claims.productionThroughputDetails.backpressureConsistency.queuePauseHasMeasuredReceiptCursorQueueSlack,
     true,
   );
+  assert.equal(
+    report.claims.productionThroughputDetails.backpressureConsistency.queuePauseHasMeasuredAndAlignedReceiptCursorBackpressure,
+    true,
+  );
   assert.equal(report.claims.productionThroughputDetails.backpressureConsistency.receiptCursorWithinQueueBudget, true);
   assert.equal(report.claims.productionThroughputDetails.backpressureConsistency.receiptCursorMatchesBackpressure, true);
   assert.equal(report.claims.productionThroughputDetails.backpressureConsistency.receiptCursorHeadroomWithinQueueBudget, true);
@@ -527,6 +531,15 @@ test('production claim gate fails closed if benchmark evidence is tampered', () 
   assert.equal(
     productionThroughputDetails(pausedWithoutMeasuredBackpressure).backpressureConsistency.queuePauseHasMeasuredReceiptCursorBackpressure,
     false,
+  );
+  assert.equal(
+    productionThroughputDetails(pausedWithoutMeasuredBackpressure).backpressureConsistency.queuePauseHasMeasuredAndAlignedReceiptCursorBackpressure,
+    false,
+  );
+  assert.ok(
+    productionThroughputBlockers(pausedWithoutMeasuredBackpressure).includes(
+      'queue-pause-without-measured-and-aligned-receipt-cursor-backpressure',
+    ),
   );
 
   const mismatchedQueueBudget = clone(report);

@@ -285,6 +285,15 @@ export function productionThroughputBlockers(report) {
   ) {
     blockers.push('queue-pause-without-measured-receipt-cursor-queue-slack');
   }
+  if (
+    report.evidence.backpressure?.queuePausedBeforeOverflow === true
+    && (
+      report.evidence.backpressure?.queuePauseHasMeasuredReceiptCursorBackpressure !== true
+      || report.evidence.backpressure?.queuePauseHasMeasuredReceiptCursorQueueSlack !== true
+    )
+  ) {
+    blockers.push('queue-pause-without-measured-and-aligned-receipt-cursor-backpressure');
+  }
   if (report.evidence.backpressure?.receiptCursorQueueSlackBytes == null) {
     blockers.push('receipt-cursor-queue-slack-not-measured');
   }
@@ -638,6 +647,12 @@ export function productionThroughputDetails(report) {
   const queuePauseHasMeasuredReceiptCursorBackpressure =
     report.evidence.backpressure?.queuePausedBeforeOverflow !== true
     || receiptCursorBackpressureMeasured;
+  const queuePauseHasMeasuredAndAlignedReceiptCursorBackpressure =
+    report.evidence.backpressure?.queuePausedBeforeOverflow !== true
+    || (
+      queuePauseHasMeasuredReceiptCursorBackpressure
+      && queuePauseHasMeasuredReceiptCursorQueueSlack
+    );
   const receiptCursorMemoryHeadroomMatchesResourceHeadroom =
     receiptCursorWithinMemoryCeiling
     && receiptCursorMemoryHeadroomBytes === receiptCursorMemoryCeilingBytes - receiptCursorWindowBytes;
@@ -692,6 +707,7 @@ export function productionThroughputDetails(report) {
     queuePauseHasMeasuredReceiptCursorBackpressure,
     queuePauseHasMeasuredReceiptCursorQueueSlack,
     queuePauseHasBackpressureAlignedReceiptCursorQueueSlack,
+    queuePauseHasMeasuredAndAlignedReceiptCursorBackpressure,
     receiptCursorQueueSlackBytes,
     receiptCursorQueueSlackPositive,
     receiptCursorQueueSlackMatchesBackpressure,
@@ -740,6 +756,7 @@ export function productionThroughputDetails(report) {
       queuePauseHasMeasuredReceiptCursorBackpressure,
       queuePauseHasMeasuredReceiptCursorQueueSlack,
       queuePauseHasBackpressureAlignedReceiptCursorQueueSlack,
+      queuePauseHasMeasuredAndAlignedReceiptCursorBackpressure,
       receiptCursorQueueSlackBytes,
       receiptCursorQueueSlackPositive,
       receiptCursorQueueSlackMatchesBackpressure,
