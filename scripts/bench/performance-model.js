@@ -3261,6 +3261,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     rejectedGate: 'recovery',
     violates: ['remote-index-planning-only', 'compression', 'parallelism-limits', 'backpressure', 'row-preconditions', 'plugin-preconditions', 'atomic-groups', 'durable-progress'],
   },
+  {
+    id: 'cached-receipt-cursor-skips-backpressure-pause-after-retry',
+    proposal: 'use a cached receipt cursor to skip the backpressure pause after a retry',
+    rejectedBecause: 'a cached receipt cursor can help resume planning, but it cannot prove the queue stayed bounded, the pause happened before overflow, or the journal trail is still durable enough to recover without guessing',
+    rejectedGate: 'recovery',
+    violates: ['backpressure', 'chunk-receipts', 'durable-progress'],
+  },
 ]);
 
 export function buildBenchmarkModel(overrides = {}) {
