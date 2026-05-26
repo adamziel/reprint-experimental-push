@@ -1777,12 +1777,25 @@ function summarizeDbJournal(response) {
 }
 
 export function dbJournalProofIsAcceptable(dbJournal, options = {}) {
-  return dbJournal?.applyCommitted === true
+  return dbJournalScopeIsTrusted(dbJournal?.scope)
+    && dbJournal?.applyCommitted === true
     && dbJournal?.idempotencyOpened > 0
     && dbJournal?.mutationApplied > 0
     && dbJournalStorageGuardIsTrusted(dbJournal?.storageGuard)
     && dbJournalOwnershipIsTrusted(dbJournal?.ownership)
     && dbJournalLeaseFenceIsTrusted(dbJournal?.leaseFence, options);
+}
+
+function dbJournalScopeIsTrusted(scope) {
+  if (typeof scope !== 'string' || scope.trim().length === 0) {
+    return false;
+  }
+
+  if (/(^|; )local Playground fixture only|^fixture-scoped|not production durability/i.test(scope)) {
+    return false;
+  }
+
+  return /production|checked|packaged|not local Playground fixture only/i.test(scope);
 }
 
 function dbJournalStorageGuardIsTrusted(storageGuard) {

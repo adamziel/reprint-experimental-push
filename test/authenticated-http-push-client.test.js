@@ -87,6 +87,7 @@ test('authenticated push client allows production-shaped ipv6 loopback runtime p
 
 test('db journal proof requires stale claim rejection when explicitly requested', () => {
   const proof = {
+    scope: 'checked live production-shaped journal surface; not local Playground fixture only',
     applyCommitted: true,
     idempotencyOpened: 1,
     mutationApplied: 1,
@@ -119,6 +120,34 @@ test('db journal proof requires stale claim rejection when explicitly requested'
     dbJournalProofIsAcceptable(proof, { requireStaleClaimRejected: true }),
     true,
   );
+});
+
+test('db journal proof fails closed for fixture-scoped checked contracts', () => {
+  const proof = {
+    scope: 'local Playground fixture only; not production durability',
+    applyCommitted: true,
+    idempotencyOpened: 1,
+    mutationApplied: 1,
+    storageGuard: {
+      boundary: 'wpdb-single-statement-cas',
+      operation: 'update',
+      outcome: 'applied',
+    },
+    ownership: {
+      ownsJournal: true,
+      restartReadable: true,
+      productionAdapter: 'wpdb-single-statement-cas',
+    },
+    leaseFence: {
+      boundary: 'wpdb-single-statement-cas',
+      claimKeyUnique: true,
+      monotonicSequence: true,
+      restartReadable: true,
+      staleClaimRejected: true,
+    },
+  };
+
+  assert.equal(dbJournalProofIsAcceptable(proof), false);
 });
 
 test('authenticated push client fails closed for missing production-shaped credentials', () => {
