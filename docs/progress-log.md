@@ -4,6 +4,28 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-05-26 - Public Status Audit 15:23:54
+
+<a id="2026-05-26-public-status-audit-152354"></a>
+
+- Refreshed [progress.html](../progress.html) to the current `date` output
+  (`2026-05-26 15:23:54 CEST`) so the visible progress page names
+  `e82e3b1af126f62688f617a3fb4cc0baeb698d57` as the current reliable head and
+  keeps release gates at `0/4`. The first screen stays concise: auth-session
+  source consumption is now the visible reliable-head evidence, while
+  recovery-claim fencing remains visible as supporting evidence and
+  production WordPress auth/session lifecycle plus durable journal storage
+  with lease/fencing remain pending.
+- `e82e3b1af126f62688f617a3fb4cc0baeb698d57` is the current reliable head:
+  `Consume packaged auth session source on release verify`. Supporting
+  restart-cycle evidence still includes `9d0279a3`, `b725b2d3`, `b9aebe71`,
+  `134d0401`, `4e13d882`, `63dd27cc`, and `9208c2da` for the explicit
+  recovery claim fencing, production auth/session boundary, no-data-loss,
+  recovery, critique, fast-path bounds, and objective-audit freshness.
+- Evidence trail: [progress.html](../progress.html),
+  [objective audit](../audits/objective-audit.md),
+  [release-gate checklist](../progress.html#proof-gates).
+
 ## 2026-05-26 - Public Status Audit 12:16:26
 
 <a id="2026-05-26-public-status-audit-121626"></a>
