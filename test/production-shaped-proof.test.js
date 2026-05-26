@@ -837,6 +837,23 @@ test('auth-session source command builder preserves shell-sensitive credential c
   });
 });
 
+test('auth-session source loader fails closed when the source command times out', () => {
+  const source = loadAuthSessionSource(
+    `${process.execPath} -e "setTimeout(() => process.stdout.write('{}'), 250)"`,
+    {
+      ...process.env,
+      NODE_NO_WARNINGS: '1',
+    },
+    repoRoot,
+    {
+      timeout: 50,
+    },
+  );
+
+  assert.equal(source.ok, false);
+  assert.match(source.error, /ETIMEDOUT|timed out/i);
+});
+
 test('production-shaped release proof emits the exact gate output when no live source is supplied', () => {
   const proof = spawnBoundedSync(process.execPath, ['scripts/playground/production-shaped-release-proof.mjs'], {
     cwd: repoRoot,

@@ -1,11 +1,21 @@
 import { spawnSync } from 'node:child_process';
 
-export function loadAuthSessionSource(command, baseEnv = process.env, cwd = process.cwd()) {
+export const defaultAuthSessionSourceTimeoutMs = 5_000;
+
+export function loadAuthSessionSource(
+  command,
+  baseEnv = process.env,
+  cwd = process.cwd(),
+  options = {},
+) {
+  const timeout = normalizeAuthSessionSourceTimeout(options.timeout);
   const result = spawnSync(command, {
     cwd,
     shell: true,
     encoding: 'utf8',
     maxBuffer: 1024 * 1024 * 2,
+    timeout,
+    killSignal: options.killSignal ?? 'SIGTERM',
     env: {
       ...baseEnv,
       NODE_NO_WARNINGS: '1',
@@ -97,4 +107,12 @@ function normalizeAuthSessionSourceField(value) {
   }
 
   return String(value).trim();
+}
+
+function normalizeAuthSessionSourceTimeout(timeout) {
+  if (!Number.isFinite(timeout)) {
+    return defaultAuthSessionSourceTimeoutMs;
+  }
+
+  return Math.max(1, Math.trunc(timeout));
 }
