@@ -1406,6 +1406,9 @@ test('production claim gate fails closed if benchmark evidence is tampered', () 
       'queue-pause-without-terminal-receipt-cursor',
     ),
   );
+  assert.ok(
+    productionThroughputBlockers(nonTerminalPausedQueue).includes('receipt-cursor-not-terminal'),
+  );
   assert.equal(
     productionThroughputDetails(nonTerminalPausedQueue).receiptCursorIsTerminalChunk,
     false,

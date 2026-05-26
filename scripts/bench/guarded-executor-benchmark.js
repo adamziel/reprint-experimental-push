@@ -283,6 +283,9 @@ export function productionThroughputBlockers(report) {
   ) {
     blockers.push('queue-pause-without-terminal-receipt-cursor');
   }
+  if (report.evidence.chunkReceipts.cursorConsistency?.canResumeFromCursor !== true) {
+    blockers.push('receipt-cursor-not-terminal');
+  }
   if (
     report.evidence.backpressure?.queuePausedBeforeOverflow === true
     && report.evidence.backpressure?.receiptCursorBackpressureMeasured !== true
