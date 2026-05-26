@@ -725,6 +725,56 @@ test('production recovery journal adapter reopens with a new claim and rejects s
   reopened.close();
 });
 
+test('production recovery journal adapter fails closed when a fenced reopen upgrades an unfenced persisted claim lease', () => {
+  const filePath = tempJournalPath();
+  const remoteArtifactPath = `${filePath}.remote`;
+  const remote = baseSite();
+  const plan = planFor(baseSite(), localSite(), remote);
+  const journal = openProductionRecoveryJournal(filePath, {
+    truncate: true,
+    now: fixedNow,
+    claimId: 'claim-legacy',
+    writerLease: { id: 'claim-legacy' },
+    ownsRemoteArtifact: true,
+    remoteArtifactPath,
+  });
+
+  appendRecoveryClaimOpened(journal, {
+    plan,
+    current: remote,
+    claimId: 'claim-legacy',
+    artifactRefs: {
+      journal: filePath,
+      remote: remoteArtifactPath,
+    },
+  });
+  journal.appendEvent('journal-opened', {
+    planId: plan.id,
+    state: 'opened',
+    observedHash: 'snapshot-hash-only',
+    artifactRefs: {
+      journal: filePath,
+      remote: remoteArtifactPath,
+    },
+  });
+  journal.close();
+
+  assert.throws(() => {
+    openProductionRecoveryJournal(filePath, {
+      truncate: false,
+      now: fixedNow,
+      claimId: 'claim-legacy',
+      writerLease: { id: 'claim-legacy', epoch: 7 },
+      ownsRemoteArtifact: true,
+      remoteArtifactPath,
+    });
+  }, {
+    name: 'UnsupportedProductionRecoveryJournalError',
+    code: 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL',
+    message: 'Production recovery journal support requires reopening with the persisted fenced writer lease.',
+  });
+});
+
 test('production recovery journal adapter fails closed when no explicit fenced writer lease is provided', () => {
   const filePath = tempJournalPath();
 

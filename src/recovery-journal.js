@@ -1419,7 +1419,10 @@ function assertPersistedProductionClaimLeaseMatchesWriterLease({
     return;
   }
   if (!Object.hasOwn(claim.activeClaimLease, 'epoch')) {
-    if (claim.type !== 'stale-claim-advanced') {
+    if (
+      !Object.hasOwn(writerLease, 'epoch')
+      && claim.type !== 'stale-claim-advanced'
+    ) {
       return;
     }
     throw new UnsupportedProductionRecoveryJournalError(
