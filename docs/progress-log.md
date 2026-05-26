@@ -4,13 +4,13 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
-## 2026-05-26 - Public Status Audit 10:54:14
+## 2026-05-26 - Public Status Audit 10:59:03
 
-<a id="2026-05-26-public-status-audit-105414"></a>
+<a id="2026-05-26-public-status-audit-105903"></a>
 
-- Freshness update plus reliable-head correction: `e7be9812` remains the
-  newest reliable-executor head, and the public page stays aligned with that
-  wording for the current supervision cycle.
+- Freshness update plus reliable-head correction: `9ff7b997` is now the newest
+  reliable-executor head, replacing the stale `e7be9812` wording on the public
+  page.
 - Gate posture remains conservative at `0/4`; no implementation verdict
   changed.
 - Latest blocker summary remains the same: real WordPress executor/auth and
