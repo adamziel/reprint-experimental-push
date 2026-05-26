@@ -304,6 +304,11 @@ test('production-shaped authenticated push fails closed when production auth ses
 
     assert.equal(summary.ok, false);
     assert.equal(summary.code, 'AUTH_SESSION_LIFECYCLE_DRIFT');
+    assert.deepEqual(summary.authSession, {
+      required: 'production-auth-session',
+      observed: 'production-auth-session',
+      verdict: 'AUTH_SESSION_LIFECYCLE_DRIFT',
+    });
     assert.deepEqual(summary.boundary, {
       firstRemainingProductionBoundary: 'auth/session lifecycle and durable journal semantics',
       status: 'unimplemented',
@@ -464,6 +469,11 @@ test('production-shaped authenticated push exposes the durable journal boundary 
 
     assert.equal(summary.ok, false);
     assert.equal(summary.code, 'AUTH_SESSION_LIFECYCLE_DRIFT');
+    assert.deepEqual(summary.authSession, {
+      required: 'application-password-basic',
+      observed: 'missing',
+      verdict: 'AUTH_SESSION_LIFECYCLE_DRIFT',
+    });
     assert.deepEqual(summary.boundary, {
       firstRemainingProductionBoundary: 'auth/session lifecycle and durable journal semantics',
       status: 'unimplemented',
@@ -592,6 +602,11 @@ test('production-shaped authenticated push fails closed when recovery inspect dr
         verdict: 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED',
         phase: 'recovery-inspect',
       },
+    });
+    assert.deepEqual(summary.authSession, {
+      required: 'production-auth-session',
+      observed: 'application-password-basic',
+      verdict: 'AUTH_SESSION_LIFECYCLE_DRIFT',
     });
     assert.equal(seen.length, 5);
     assert.ok(seen.some(({ url }) => url.includes('/recovery/inspect')));
@@ -817,6 +832,11 @@ test('production-shaped authenticated push fails closed when recovery inspect om
     assert.equal(summary.ok, false);
     assert.equal(summary.code, 'AUTH_SESSION_LIFECYCLE_DRIFT');
     assert.equal(summary.recoveryInspect.authUser, undefined);
+    assert.deepEqual(summary.authSession, {
+      required: 'production-auth-session',
+      observed: 'missing',
+      verdict: 'AUTH_SESSION_LIFECYCLE_DRIFT',
+    });
     assert.equal(summary.boundary.durableJournal.phase, 'recovery-inspect');
     assert.equal(seen.length, 5);
   } finally {
@@ -2534,7 +2554,11 @@ test('production-shaped authenticated push fails closed when replay changes the 
 
     assert.equal(summary.ok, false);
     assert.equal(summary.code, 'AUTH_SESSION_LIFECYCLE_DRIFT');
-    assert.equal(summary.code, 'AUTH_SESSION_LIFECYCLE_DRIFT');
+    assert.deepEqual(summary.authSession, {
+      required: 'production-auth-session',
+      observed: 'production-auth-session',
+      verdict: 'AUTH_SESSION_LIFECYCLE_DRIFT',
+    });
     assert.ok(!seen.some(({ url }) => url.includes('/db-journal')));
     assert.ok(seen.some(({ url }) => url.includes('/apply')));
   } finally {
@@ -3003,7 +3027,11 @@ test('production-shaped authenticated push fails closed when replay changes the 
 
     assert.equal(summary.ok, false);
     assert.equal(summary.code, 'AUTH_SESSION_LIFECYCLE_DRIFT');
-    assert.equal(summary.code, 'AUTH_SESSION_LIFECYCLE_DRIFT');
+    assert.deepEqual(summary.authSession, {
+      required: 'production-auth-session',
+      observed: 'missing',
+      verdict: 'AUTH_SESSION_LIFECYCLE_DRIFT',
+    });
     assert.ok(seen.some(({ url }) => url.includes('/apply')));
   } finally {
     global.fetch = originalFetch;
