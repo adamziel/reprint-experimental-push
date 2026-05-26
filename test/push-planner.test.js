@@ -17577,7 +17577,10 @@ test('blocks local term-relationship object references to a same-plan created po
   assert.equal(evidence.resolutionPolicy, 'preserve-remote-wordpress-graph-and-stop');
   assert.equal(graphBlocker.class, 'unsupported-revision-resource');
   assert.equal(graphBlocker.resourceKey, targetResourceKey);
-  assert.equal(graphBlocker.reason, 'Revision graph resources are not yet supported by the planner.');
+  assert.equal(
+    graphBlocker.reason,
+    'WordPress graph mutation row:["wp_posts","ID:7"] is created in the same plan as a revision identity that depends on it, and identity rewriting is not yet supported.',
+  );
   assert.equal(reference.relationshipKey, 'wp_term_relationships.object_id');
   assert.equal(reference.relationshipType, 'term-relationship-object');
   assert.equal(reference.sourceResourceKey, resourceKey);
@@ -18383,7 +18386,10 @@ test('blocks local term-relationship object references to a same-plan created re
   assert.equal(relationshipBlocker.resolutionPolicy, 'preserve-remote-wordpress-graph-and-stop');
   assert.equal(graphBlocker.class, 'unsupported-revision-resource');
   assert.equal(graphBlocker.resourceKey, targetResourceKey);
-  assert.equal(graphBlocker.reason, 'Revision graph resources are not yet supported by the planner.');
+  assert.equal(
+    graphBlocker.reason,
+    'WordPress graph mutation row:["wp_posts","ID:7"] is created in the same plan as a revision identity that depends on it, and identity rewriting is not yet supported.',
+  );
   assert.equal(reference.relationshipKey, 'wp_term_relationships.object_id');
   assert.equal(reference.relationshipType, 'term-relationship-object');
   assert.equal(reference.sourceResourceKey, resourceKey);
