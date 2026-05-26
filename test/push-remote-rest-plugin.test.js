@@ -160,6 +160,94 @@ function runAttachCheckedDbJournalContract(result, checkedSummary, injectIfMissi
   });
 }
 
+function runFinalizeAuthenticatedApplyResult(result, authEvidence, signedRequestEvidence) {
+  return spawnSync('php', [
+    '-r',
+    [
+      'define("ABSPATH", dirname($argv[1]));',
+      'function add_filter(...$args) {}',
+      'function add_action(...$args) {}',
+      'function register_rest_route(...$args) {}',
+      'class WP_REST_Server { const CREATABLE = "POST"; const READABLE = "GET"; }',
+      'class WP_REST_Response {',
+      '  private $data;',
+      '  public function __construct($data = null, $status = null) { $this->data = $data; }',
+      '  public function get_data() { return $this->data; }',
+      '  public function set_data($data) { $this->data = $data; }',
+      '}',
+      'class WP_REST_Request {}',
+      'require $argv[1];',
+      '$result = json_decode($argv[2], true);',
+      '$authEvidence = json_decode($argv[3], true);',
+      '$signedRequestEvidence = json_decode($argv[4], true);',
+      '$checkedSummary = json_decode($argv[5], true);',
+      'echo json_encode(reprint_push_lab_rest_finalize_authenticated_apply_result(',
+      '  $result,',
+      '  $authEvidence,',
+      '  $signedRequestEvidence,',
+      '  $checkedSummary',
+      '));',
+    ].join(' '),
+    pluginFile,
+    JSON.stringify(result),
+    JSON.stringify(authEvidence),
+    JSON.stringify(signedRequestEvidence),
+    JSON.stringify({
+      acceptedOnCheckedBoundary: true,
+      scope: 'checked live production-shaped journal surface; not local Playground fixture only',
+      ownership: {
+        ownsJournal: true,
+        restartReadable: true,
+        productionAdapter: 'wpdb-single-statement-cas',
+      },
+      writerLease: {
+        strategy: 'claim-fenced-single-writer',
+        claimKeyUnique: true,
+        fsyncEvidence: true,
+        storageGuard: 'wpdb-single-statement-cas',
+        monotonicSequence: true,
+        restartReadable: true,
+        staleClaimRejected: false,
+      },
+      leaseFence: {
+        boundary: 'wpdb-single-statement-cas',
+        claimKeyUnique: true,
+        fsyncEvidence: true,
+        monotonicSequence: true,
+        restartReadable: true,
+        staleClaimRejected: false,
+        writerLease: {
+          strategy: 'claim-fenced-single-writer',
+          claimKeyUnique: true,
+          fsyncEvidence: true,
+          storageGuard: 'wpdb-single-statement-cas',
+          monotonicSequence: true,
+          restartReadable: true,
+          staleClaimRejected: false,
+        },
+      },
+      latestRows: [
+        {
+          event: 'apply-rejected',
+          result: {
+            storageGuard: {
+              boundary: 'wpdb-single-statement-cas',
+              operation: 'compare-and-swap',
+              outcome: 'precondition-failed',
+            },
+          },
+        },
+      ],
+      eventSummaries: [
+        { event: 'apply-rejected', count: 1, latestId: 18 },
+      ],
+    }),
+  ], {
+    cwd: repoRoot,
+    encoding: 'utf8',
+  });
+}
+
 function runWriterLeaseContract({
   staleClaimRejected,
   claimKeyUnique = true,
@@ -697,6 +785,163 @@ test('checked authenticated apply evidence is upgraded to the authoritative db j
       boundary: 'wpdb-single-statement-cas',
       operation: 'update',
       outcome: 'applied',
+    },
+  });
+});
+
+test('authenticated apply finalization upgrades checked failure journal evidence and preserves signed auth metadata', { skip: !hasPhp }, () => {
+  const result = runFinalizeAuthenticatedApplyResult(
+    {
+      ok: false,
+      code: 'PRECONDITION_FAILED',
+      message: 'Apply failed on a checked production-shaped boundary.',
+      dbJournal: {
+        event: 'apply-rejected',
+        sequence: 18,
+        scope: 'local Playground fixture only',
+      },
+      storageGuard: {
+        boundary: 'local-fixture-write',
+        operation: 'append',
+        outcome: 'fixture-only',
+      },
+    },
+    {
+      schemaVersion: 1,
+      scope: 'reprint-push-lab:authenticated-http-push',
+      identity: {
+        userId: 1,
+        userLogin: 'push-admin',
+        roles: ['administrator'],
+        capabilities: {
+          manage_options: true,
+        },
+      },
+      session: {
+        id: 'signed-session-token',
+        type: 'production-auth-session',
+        status: 'active',
+        revoked: false,
+        cleanedUp: false,
+        expiresAt: '2026-05-26T20:00:00Z',
+        playgroundFallback: false,
+      },
+    },
+    {
+      schemaVersion: 1,
+      contentHash: 'abc123',
+      timestamp: '2026-05-26T20:00:00Z',
+      nonceHash: 'def456',
+      sessionHash: 'ghi789',
+      signingKeyHash: 'jkl012',
+      cleanup: {
+        deletedExpiredTotal: 0,
+      },
+      request: {
+        method: 'POST',
+        path: '/wp-json/reprint/v1/push/apply',
+      },
+    },
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  assert.deepEqual(JSON.parse(result.stdout), {
+    ok: false,
+    code: 'PRECONDITION_FAILED',
+    message: 'Apply failed on a checked production-shaped boundary.',
+    dbJournal: {
+      event: 'apply-rejected',
+      sequence: 18,
+      scope: 'checked live production-shaped journal surface; not local Playground fixture only',
+      acceptedOnCheckedBoundary: true,
+      ownership: {
+        ownsJournal: true,
+        restartReadable: true,
+        productionAdapter: 'wpdb-single-statement-cas',
+      },
+      writerLease: {
+        strategy: 'claim-fenced-single-writer',
+        claimKeyUnique: true,
+        fsyncEvidence: true,
+        storageGuard: 'wpdb-single-statement-cas',
+        monotonicSequence: true,
+        restartReadable: true,
+        staleClaimRejected: false,
+      },
+      leaseFence: {
+        boundary: 'wpdb-single-statement-cas',
+        claimKeyUnique: true,
+        fsyncEvidence: true,
+        monotonicSequence: true,
+        restartReadable: true,
+        staleClaimRejected: false,
+        writerLease: {
+          strategy: 'claim-fenced-single-writer',
+          claimKeyUnique: true,
+          fsyncEvidence: true,
+          storageGuard: 'wpdb-single-statement-cas',
+          monotonicSequence: true,
+          restartReadable: true,
+          staleClaimRejected: false,
+        },
+      },
+      latestRows: [
+        {
+          event: 'apply-rejected',
+          result: {
+            storageGuard: {
+              boundary: 'wpdb-single-statement-cas',
+              operation: 'compare-and-swap',
+              outcome: 'precondition-failed',
+            },
+          },
+        },
+      ],
+      eventSummaries: [
+        { event: 'apply-rejected', count: 1, latestId: 18 },
+      ],
+    },
+    storageGuard: {
+      boundary: 'wpdb-single-statement-cas',
+      operation: 'compare-and-swap',
+      outcome: 'precondition-failed',
+    },
+    responseSchemaVersion: 1,
+    auth: {
+      schemaVersion: 1,
+      scope: 'reprint-push-lab:authenticated-http-push',
+      identity: {
+        userId: 1,
+        userLogin: 'push-admin',
+        roles: ['administrator'],
+        capabilities: {
+          manage_options: true,
+        },
+      },
+      session: {
+        id: 'signed-session-token',
+        type: 'production-auth-session',
+        status: 'active',
+        revoked: false,
+        cleanedUp: false,
+        expiresAt: '2026-05-26T20:00:00Z',
+        playgroundFallback: false,
+      },
+    },
+    signedRequest: {
+      schemaVersion: 1,
+      contentHash: 'abc123',
+      timestamp: '2026-05-26T20:00:00Z',
+      nonceHash: 'def456',
+      sessionHash: 'ghi789',
+      signingKeyHash: 'jkl012',
+      cleanup: {
+        deletedExpiredTotal: 0,
+      },
+      request: {
+        method: 'POST',
+        path: '/wp-json/reprint/v1/push/apply',
+      },
     },
   });
 });
