@@ -23654,7 +23654,7 @@ test('production durable journal claims fail closed when ownsRemoteArtifact is t
   assert.ok(error.details.missingDependency.includes('restart-readable recovery remote artifact references'));
 });
 
-test('production durable journal claims fail closed when remote artifact references are malformed', () => {
+test('production durable journal claims fail closed when remote artifact references are malformed objects', () => {
   const writer = {
     kind: 'production-recovery-journal',
     productionAdapter: true,
@@ -23706,7 +23706,63 @@ test('production durable journal claims fail closed when remote artifact referen
     'supported production recovery journal adapter surface',
     'restart-readable recovery remote artifact references',
     'restart-readable remote recovery artifact ownership',
+    'fencing or lease ownership for the journal writer',
   ]);
+});
+
+test('production durable journal claims fail closed when remote artifact references are malformed strings and non-strings', () => {
+  const writer = {
+    kind: 'production-recovery-journal',
+    productionAdapter: true,
+    supportedSurface: 'production-recovery-journal-adapter',
+    ownsJournal: true,
+    ownsRemoteArtifact: true,
+    restartReadable: true,
+    journalPath: '/var/lib/reprint/recovery.jsonl',
+    artifactRefs: {
+      journal: '/var/lib/reprint/recovery.jsonl',
+      remote: 42,
+    },
+    schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+    nextSequence: 1,
+    appendEvent(type, payload) {
+      this.nextSequence += 1;
+      return { sequence: this.nextSequence - 1, type, payload };
+    },
+    flush() {},
+    close() {},
+    inspect() {
+      return {
+        filePath: '/var/lib/reprint/recovery.jsonl',
+        schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+        artifactRefs: {
+          journal: '/var/lib/reprint/recovery.jsonl',
+          remote: 42,
+        },
+        records: [{ sequence: 1, type: 'journal-opened' }],
+      };
+    },
+    assertCurrentClaim() {},
+  };
+  const plan = planFor(baseSite(), baseSite(), {
+    ...baseSite(),
+    db: {
+      ...baseSite().db,
+      wp_options: {
+        ...baseSite().db.wp_options,
+        'option_name:blogname': { option_name: 'blogname', option_value: 'New Site' },
+      },
+    },
+  });
+  const error = captureError(() => applyPlan(baseSite(), plan, {
+    requireProductionDurableJournal: true,
+    durableJournal: writer,
+  }));
+
+  assert.equal(error.code, 'PRODUCTION_DURABLE_JOURNAL_UNSUPPORTED');
+  assert.ok(error.details.missingDependency.includes('restart-readable recovery remote artifact references'));
+  assert.ok(error.details.missingDependency.includes('restart-readable remote recovery artifact ownership'));
+  assert.ok(error.details.missingDependency.includes('fencing or lease ownership for the journal writer'));
 });
 
 test('production durable journal claims fail closed when supported surface is inherited through the prototype', () => {
