@@ -9,6 +9,7 @@ import {
   assertJournalRecordHasNoRawValues,
   createUnsupportedProductionRecoveryJournal,
   openPlanRecoveryJournal,
+  openProductionRecoveryJournal,
   openRecoveryJournal,
   readRecoveryJournal,
 } from '../src/recovery-journal.js';
@@ -153,6 +154,42 @@ test('unsupported production recovery journal stub fails closed on every operati
       code: 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL',
     });
   }
+});
+
+test('production recovery journal adapter is restart-readable and release-path compatible', () => {
+  const filePath = tempJournalPath();
+  const remote = baseSite();
+  const plan = planFor(baseSite(), localSite(), remote);
+  const journal = openProductionRecoveryJournal(filePath, {
+    truncate: true,
+    now: fixedNow,
+    writerLease: { id: 'lease-1' },
+  });
+
+  assert.equal(journal.kind, 'production-recovery-journal');
+  assert.equal(journal.productionAdapter, true);
+  assert.equal(journal.supportedSurface, 'production-recovery-journal-adapter');
+  assert.equal(journal.restartReadable, true);
+  assert.equal(journal.ownsJournal, true);
+  assert.equal(journal.journalPath, filePath);
+  assert.equal(journal.schemaVersion, 1);
+  assert.deepEqual(journal.artifactRefs, { journal: filePath, remote: null });
+
+  journal.flush();
+  journal.assertCurrentClaim('production-recovery-journal');
+  journal.appendEvent('journal-opened', {
+    planId: plan.id,
+    state: 'opened',
+    observedHash: 'snapshot-hash-only',
+    artifactRefs: { journal: filePath },
+  });
+  journal.close();
+
+  const inspected = journal.inspect();
+  assert.equal(inspected.filePath, filePath);
+  assert.equal(inspected.schemaVersion, 1);
+  assert.equal(inspected.records.at(-1).type, 'journal-opened');
+  assert.deepEqual(inspected.artifactRefs, { journal: filePath });
 });
 
 test('restart inspection classifies fail-before mutation journal as old remote', () => {

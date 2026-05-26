@@ -102,6 +102,58 @@ export function createUnsupportedProductionRecoveryJournal(reason = 'Production 
   });
 }
 
+export function openProductionRecoveryJournal(filePath, options = {}) {
+  const journal = openRecoveryJournal(filePath, {
+    truncate: options.truncate,
+    now: options.now,
+    claimId: options.claimId || options.claim?.id || null,
+  });
+  const writerLease = Object.hasOwn(options, 'writerLease') ? options.writerLease : { filePath };
+
+  return Object.freeze({
+    kind: 'production-recovery-journal',
+    productionAdapter: true,
+    supportedSurface: 'production-recovery-journal-adapter',
+    restartReadable: true,
+    ownsJournal: true,
+    ownsRemoteArtifact: Boolean(options.ownsRemoteArtifact),
+    writerLease,
+    journalPath: journal.filePath,
+    artifactRefs: Object.freeze({
+      journal: journal.filePath,
+      remote: Object.hasOwn(options, 'remoteArtifactPath') && typeof options.remoteArtifactPath === 'string'
+        ? options.remoteArtifactPath
+        : null,
+    }),
+    schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+    appendEvent(type, payload) {
+      return journal.appendEvent(type, payload);
+    },
+    inspect() {
+      const artifactRefs = {
+        journal: journal.filePath,
+      };
+      if (Object.hasOwn(options, 'remoteArtifactPath') && typeof options.remoteArtifactPath === 'string') {
+        artifactRefs.remote = options.remoteArtifactPath;
+      }
+      return {
+        ...readRecoveryJournal(journal.filePath),
+        schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+        artifactRefs,
+      };
+    },
+    assertCurrentClaim(eventType) {
+      return journal.assertCurrentClaim(eventType);
+    },
+    flush() {
+      return journal.flush?.() || undefined;
+    },
+    close() {
+      journal.close();
+    },
+  });
+}
+
 export function openRecoveryJournal(filePath, options = {}) {
   const flags = options.truncate ? 'w+' : 'a+';
   fs.mkdirSync(path.dirname(filePath), { recursive: true });
@@ -435,6 +487,12 @@ class RecoveryJournalWriter {
     if (!this.closed) {
       fs.closeSync(this.fd);
       this.closed = true;
+    }
+  }
+
+  flush() {
+    if (!this.closed) {
+      fs.fsyncSync(this.fd);
     }
   }
 }

@@ -22,6 +22,7 @@ import {
   RECOVERY_JOURNAL_SCHEMA_VERSION,
   createUnsupportedProductionRecoveryJournal,
   openRecoveryJournal,
+  openProductionRecoveryJournal,
   readRecoveryJournal,
 } from '../src/recovery-journal.js';
 import { inspectRecoveryJournal } from '../src/recovery-inspect.js';
@@ -26565,6 +26566,38 @@ test('production durable journal claims fail closed when inspected artifactRefs.
   assert.equal(error.code, 'PRODUCTION_DURABLE_JOURNAL_UNSUPPORTED');
   assert.ok(error.details.missingDependency.includes('restart-readable recovery remote artifact references'));
   assert.equal(events.some((event) => event.type === 'journal-completed'), false);
+});
+
+test('production durable journal adapter satisfies the release-path support probe', () => {
+  const plan = planFor(baseSite(), baseSite(), baseSite());
+  const durableJournalPath = tempRecoveryJournalPath();
+  const remoteArtifactPath = `${durableJournalPath}.remote`;
+  const durableJournal = openProductionRecoveryJournal(durableJournalPath, {
+    truncate: true,
+    now: fixedNow,
+    ownsRemoteArtifact: true,
+    remoteArtifactPath,
+    writerLease: { id: 'lease-1' },
+  });
+  durableJournal.appendEvent('journal-opened', {
+    planId: plan.id,
+    state: 'opened',
+    observedHash: 'snapshot-hash-only',
+    artifactRefs: {
+      journal: durableJournalPath,
+      remote: remoteArtifactPath,
+    },
+  });
+
+  const completed = applyPlan(baseSite(), plan, {
+    durableJournal,
+    requireProductionDurableJournal: true,
+  });
+
+  assert.equal(completed.recoveryState.status, 'fully-updated-remote');
+  assert.equal(completed.recoveryState.artifacts.journal.status, 'completed');
+  assert.equal(completed.recoveryState.artifacts.remote, undefined);
+  durableJournal.close();
 });
 
 test('production durable journal claims fail closed when artifactRefs.remote is explicitly undefined', () => {
