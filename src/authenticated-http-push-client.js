@@ -181,6 +181,7 @@ export async function runAuthenticatedHttpPush({
     return summary;
   }
   summary.remoteSnapshot = summarizeSnapshot(remoteSnapshot, local);
+  summary.remoteSnapshotObject = remoteSnapshot.body.snapshot;
 
   const plan = createPushPlan({
     base,
@@ -188,6 +189,7 @@ export async function runAuthenticatedHttpPush({
     remote: remoteSnapshot.body.snapshot,
     now,
   });
+  summary.planObject = plan;
   summary.plan = summarizePlan(plan);
 
   if (plan.status !== 'ready') {
@@ -369,6 +371,7 @@ export async function runAuthenticatedHttpPush({
 
   const afterApply = await client.get('/snapshot');
   summary.after = summarizeSnapshot(afterApply, local);
+  summary.afterObject = afterApply.body.snapshot;
   const dbJournal = await client.get('/db-journal?limit=80');
   summary.dbJournal = summarizeDbJournal(dbJournal);
   summary.authSessionLifecycle = {

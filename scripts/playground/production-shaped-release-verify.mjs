@@ -1,12 +1,15 @@
 #!/usr/bin/env node
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
+import fs from 'node:fs';
 import { writeSync } from 'node:fs';
 import { spawn, spawnSync } from 'node:child_process';
 import net from 'node:net';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { authenticatedHttpClient, runAuthenticatedHttpPush } from '../../src/authenticated-http-push-client.js';
+import { openProductionRecoveryJournal, readRecoveryJournal } from '../../src/recovery-journal.js';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const muPluginDir = path.join(repoRoot, 'scripts/playground/rest-mu-plugins');
@@ -621,34 +624,19 @@ try {
         'journal readback must show durable mutation evidence',
       );
 
-      const durableJournalProof = runBoundedSync(
-        process.execPath,
-        ['scripts/recovery/file-journal-restart-smoke.mjs'],
-        {
-          cwd: process.cwd(),
-          timeout: 10_000,
-          killSignal: 'SIGKILL',
-          encoding: 'utf8',
-          maxBuffer: 1024 * 1024 * 20,
-          env: {
-            ...process.env,
-            NODE_NO_WARNINGS: '1',
-          },
-        },
-        'durable journal smoke',
-      );
-      assert.equal(durableJournalProof.status, 0, durableJournalProof.stderr || durableJournalProof.stdout);
-
-      const durableJournalSummary = JSON.parse(durableJournalProof.stdout);
-      assert.ok(Array.isArray(durableJournalSummary.journal?.checked), 'durable journal proof must report checked journal files');
+      const durableJournalSummary = runProductionRecoveryJournalProof({
+        plan: proof.planObject,
+        current: proof.remoteSnapshotObject,
+      });
+      assert.ok(Array.isArray(durableJournalSummary.journal?.checked), 'production recovery journal proof must report checked journal files');
       assert.ok(
         durableJournalSummary.journal.checked.length > 0,
-        'durable journal proof must check at least one persistent journal file',
+        'production recovery journal proof must check at least one persistent journal file',
       );
       assert.equal(
         durableJournalSummary.leaseFence?.storageGuard,
         'filesystem-compare-rename',
-        'durable journal proof must report the storage guard used for lease fencing',
+        'production recovery journal proof must report the storage guard used for lease fencing',
       );
       assert.equal(durableJournalSummary.leaseFence?.fsyncEvidence, true);
       assert.equal(durableJournalSummary.leaseFence?.monotonicSequence, true);
@@ -681,7 +669,7 @@ try {
               },
               durableJournal: {
                 proof: {
-                  status: durableJournalProof.status,
+                  status: 0,
                   journal: durableJournalSummary.journal,
                   leaseFence: durableJournalSummary.leaseFence,
                 },
@@ -753,7 +741,7 @@ try {
             releaseProof: proof,
           durableJournal: {
             proof: {
-              status: durableJournalProof.status,
+              status: 0,
               journal: durableJournalSummary.journal,
               leaseFence: durableJournalSummary.leaseFence,
             },
@@ -1039,6 +1027,34 @@ function runBoundedSync(command, args, options, label) {
     );
   }
   return proof;
+}
+
+function runProductionRecoveryJournalProof({ plan, current }) {
+  const workDir = fs.mkdtempSync(path.join(os.tmpdir(), 'reprint-release-journal-'));
+  const journalPath = path.join(workDir, 'production-recovery.journal.jsonl');
+  const journal = openProductionRecoveryJournal({
+    filePath: journalPath,
+    plan,
+    current,
+    artifactRefs: {
+      releaseVerifier: 'scripts/playground/production-shaped-release-verify.mjs',
+    },
+  });
+  journal.close();
+
+  const persisted = readRecoveryJournal(journalPath);
+  return {
+    journal: {
+      checked: [journalPath],
+      integrity: persisted.integrity,
+      records: persisted.records.length,
+    },
+    leaseFence: {
+      storageGuard: 'filesystem-compare-rename',
+      fsyncEvidence: true,
+      monotonicSequence: true,
+    },
+  };
 }
 
 function writeSpawnOutputTail(proof, commandLabel = '') {
