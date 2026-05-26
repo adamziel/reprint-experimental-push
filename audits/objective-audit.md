@@ -4,11 +4,11 @@
 
 The project is **not releasable as a production WordPress push path**.
 
-- Fresh remote heads at audit time, checked on 2026-05-26 08:33:37 CEST (+0200):
-- Fresh production-side lane heads re-polled at 2026-05-26 08:33:37 CEST (+0200):
+- Fresh remote heads at audit time, checked on 2026-05-26 08:34:55 CEST (+0200):
+- Fresh production-side lane heads re-polled at 2026-05-26 08:34:55 CEST (+0200):
 
 - `origin/lane/critic` -> `567743c2`
-- `origin/lane/no-data-loss-invariants` -> `5f2ad934`
+- `origin/lane/no-data-loss-invariants` -> `b17a5edb`
 - `origin/lane/no-data-loss-recovery` -> `9e077c10`
 - `origin/lane/reliable-executor` -> `ba04b670`
 
@@ -593,3 +593,106 @@ Before any production no-data-loss push claim, the project needs these direct pr
 
 Until these gates exist, public documentation should keep the claim scoped to:
 **lab evidence for push safety invariants, not production-safe live WordPress push.**
+- `origin/lane/reliable-executor` -> `ba04b670`
+- `origin/lane/no-data-loss-invariants` -> `b17a5edb`
+
+- These heads still do not change the release verdict. They remain fail-closed support evidence, not production-backed auth/session lifecycle, durable journal ownership on the release path, or a live production mutation boundary.
+
+- `origin/lane/cycle-20260525-mainwindows-2349/critic` -> `e413f7a8`
+- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `ad7d82a4`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `c57f8610`
+- `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-invariants` -> `1242dacd`
+- `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `fac13be4`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-publisher` -> `e6d254ed`
+- `origin/lane/cycle-20260524-fast-supervised-accountability/feedback-supervisor` -> `662b7a2a`
+- `origin/lane/cycle-20260524-fast-supervised-accountability/same-plan-graph` -> `0669f87b`
+- `origin/lane/cycle-20260524-production-hardening/feedback-supervisor` -> `dd29b572`
+- `origin/lane/cycle-20260525-keep-busy-1/feedback-supervisor` -> `b68019cd`
+- `origin/lane/cycle-20260525-keep-busy-11/feedback-supervisor` -> `3d16266f`
+- `origin/lane/cycle-20260525-keep-busy-13/feedback-supervisor` -> `be89b6ce`
+- `origin/lane/cycle-20260525-keep-busy-15/feedback-supervisor` -> `1eed9c27`
+- `origin/lane/cycle-20260525-keep-busy-18/feedback-supervisor` -> `031d83e6`
+- `origin/lane/cycle-20260525-keep-busy-3/critic` -> `3b5e24cd`
+- `origin/lane/cycle-20260525-keep-busy-3/feedback-supervisor` -> `f1dfc82e`
+- `origin/lane/cycle-20260525-keep-busy-4/feedback-supervisor` -> `2f445b0b`
+- `origin/lane/cycle-20260525-keep-busy-6/feedback-supervisor` -> `8326e456`
+- `origin/lane/cycle-20260525-keep-busy-8/feedback-supervisor` -> `2843a33a`
+- `origin/lane/cycle-20260525-keep-busy-long-1/critic` -> `ffe646ab`
+- `origin/lane/cycle-20260525-keep-busy-long-1/fast-paths` -> `ea464a32`
+- `origin/lane/cycle-20260525-keep-busy-long-1/feedback-supervisor` -> `9850e4ad`
+- `origin/lane/cycle-20260525-keep-busy-long-1/reliable-executor` -> `9e7847e4`
+- `origin/lane/cycle-20260525-keep-busy-long-2/independent-auditor` -> `d803a87d`
+- `origin/lane/cycle-20260525-keep-busy-long-2/no-data-loss-recovery` -> `312e727e`
+- `origin/lane/cycle-20260525-keep-busy-loop-1/feedback-supervisor` -> `c609be10`
+- `origin/lane/cycle-20260525-keep-busy-loop-1/no-data-loss-invariants` -> `55058b6a`
+- `origin/lane/cycle-20260525-keep-busy-loop-1/reliable-executor` -> `929598e7`
+- `origin/lane/cycle-20260525-keep-busy-loop-2/critic` -> `92422ea0`
+- `origin/lane/cycle-20260525-keep-busy-loop-2/independent-auditor` -> `1d6cb6fd`
+- `origin/lane/cycle-20260525-keep-busy-loop-2/no-data-loss-recovery` -> `63e01a49`
+- `origin/lane/cycle-20260525-mainwindows-2349/critic` -> `fe4edb00`
+- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `c0512cd0`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `4ee4d877`
+- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `641a1e3d`
+- `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `09b55454`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `ce5250a5`
+- `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` -> `0ca7b35d`
+- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `d2288227`
+- `origin/lane/cycle-20260525-mainwindows-2349/same-plan-wordpress-graph-create` -> `65a40803`
+- `origin/lane/cycle-20260525-mainwindows-2357/no-data-loss-invariants-graph-proof` -> `98c0ce26`
+- `origin/lane/cycle-20260525-restart-2340/feedback-supervisor` -> `ef3d911e`
+- `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration` -> `8cfc4f6c`
+- `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration` -> `c55aab49`
+- `origin/lane/critic` -> `e5130a9e`
+- `origin/lane/fast-paths` -> `8c5c2ccb`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `a6359b91`
+- `origin/lane/independent-auditor` -> `25a543ff`
+- `origin/lane/no-data-loss-invariants` -> `bce3664d`
+- `origin/lane/no-data-loss-recovery` -> `9e077c10`
+- `origin/lane/progress-publisher` -> `7695e1f9`
+- `origin/lane/reliable-executor` -> `a279d99b`
+- `origin/lane/same-plan-wordpress-graph-create` -> `8dea1ca3`
+
+Fresh remote heads added since the last audit snapshot:
+
+- `origin/lane/critic` -> `5f2bc189`
+- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `3ad13b72`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `d1722494`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `8361a057`
+- `origin/lane/no-data-loss-recovery` -> `f2803ceb`
+- `origin/lane/no-data-loss-invariants` -> `bb2ccb8a`
+- `origin/lane/reliable-executor` -> `0b8e4340`
+- `origin/lane/reliable-executor` -> `ba04b670`
+- `origin/lane/no-data-loss-invariants` -> `b17a5edb`
+
+Fresh remote heads added after the prior audit note:
+
+- `origin/lane/reliable-executor` -> `cb2d2165`
+- `origin/lane/reliable-executor` -> `a279d99b`
+- `origin/lane/no-data-loss-recovery` -> `d3494e40`
+- `origin/lane/no-data-loss-invariants` -> `b3561bd2`
+
+Fresh remote heads re-polled after the last audit note:
+
+- `origin/lane/reliable-executor` -> `66033fe3`
+- `origin/lane/no-data-loss-recovery` -> `89b98ce5`
+- `origin/lane/no-data-loss-invariants` -> `bce3664d`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `a1c474fb`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `462b8b16`
+- `origin/lane/cycle-20260525-mainwindows-2349/reliable-executor` -> `66033fe3`
+- `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-invariants` -> `bce3664d`
+- `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `89b98ce5`
+- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `b9890ae9`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `462b8b16`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `a1c474fb`
+- `origin/lane/reliable-executor` -> `1a169e1f`
+- `origin/lane/no-data-loss-invariants` -> `eff8b208`
+- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `364cb1ae`
+- `origin/lane/reliable-executor` -> `b45bfc17`
+- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `8184e6c3`
+- `origin/lane/reliable-executor` -> `39385d74`
+- `origin/lane/no-data-loss-invariants` -> `bb2ccb8a`
+- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `280a008e`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `aacc02a2`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `269de396`
+- `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `c52e932a`
+- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `c9354cf9`
