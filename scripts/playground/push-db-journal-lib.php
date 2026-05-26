@@ -738,10 +738,15 @@ function reprint_push_lab_db_journal_claim_contract_matches($claim): bool
 
     $status = $claim['status'] ?? null;
     $stale_claim_rejected = $claim['staleClaimRejected'] ?? null;
+    $active_claim_event = $claim['activeClaimEvent'] ?? null;
     $status_matches_stale_claim = (
         ($status === 'active' && $stale_claim_rejected === false)
         || ($status === 'stale-claim-rejected' && $stale_claim_rejected === true)
     );
+    $event_matches_stale_claim = is_string($active_claim_event)
+        && $active_claim_event !== ''
+        && !($stale_claim_rejected === false && $active_claim_event === 'stale-claim-rejected')
+        && !($stale_claim_rejected === true && $active_claim_event === 'idempotency-opened');
 
     $has_previous_claim_identity = reprint_push_lab_db_journal_non_empty_string($claim['previousClaimKeyHash'] ?? null)
         || reprint_push_lab_db_journal_is_positive_int($claim['previousClaimSequence'] ?? null)
@@ -750,9 +755,9 @@ function reprint_push_lab_db_journal_claim_contract_matches($claim): bool
         || reprint_push_lab_db_journal_non_empty_string($claim['abandonedEvent'] ?? null);
 
     return $status_matches_stale_claim
+        && $event_matches_stale_claim
         && reprint_push_lab_db_journal_non_empty_string($claim['activeClaimKeyHash'] ?? null)
         && reprint_push_lab_db_journal_is_positive_int($claim['activeClaimSequence'] ?? null)
-        && reprint_push_lab_db_journal_non_empty_string($claim['activeClaimEvent'] ?? null)
         && reprint_push_lab_db_journal_non_empty_string($claim['idempotencyKeyHash'] ?? null)
         && reprint_push_lab_db_journal_non_empty_string($claim['requestHash'] ?? null)
         && is_bool($stale_claim_rejected)
