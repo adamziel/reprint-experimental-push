@@ -4271,6 +4271,108 @@ test('allows an existing _menu_item_object_id taxonomy metadata row to retarget 
   assert.equal(result.site.db.wp_posts['ID:21'].post_type, 'revision');
 });
 
+test('allows an existing _menu_item_object_id taxonomy metadata row to retarget to a term created by the same plan even when an unrelated remote wp_navigation post exists', () => {
+  const resourceKey = 'row:["wp_postmeta","meta_id:462"]';
+  const targetResourceKey = 'row:["wp_terms","term_id:7"]';
+  const base = baseSite();
+  const local = baseSite();
+  const remote = baseSite();
+  base.db.wp_postmeta = {
+    'meta_id:462': {
+      meta_id: 462,
+      post_id: 1,
+      meta_key: '_menu_item_object_id',
+      meta_value: 1,
+    },
+    'meta_id:463': {
+      meta_id: 463,
+      post_id: 1,
+      meta_key: '_menu_item_type',
+      meta_value: 'taxonomy',
+    },
+    'meta_id:464': {
+      meta_id: 464,
+      post_id: 1,
+      meta_key: '_menu_item_object',
+      meta_value: 'category',
+    },
+  };
+  remote.db.wp_postmeta = {
+    'meta_id:462': {
+      ...base.db.wp_postmeta['meta_id:462'],
+    },
+    'meta_id:463': {
+      ...base.db.wp_postmeta['meta_id:463'],
+    },
+    'meta_id:464': {
+      ...base.db.wp_postmeta['meta_id:464'],
+    },
+  };
+  remote.db.wp_posts = {
+    ...remote.db.wp_posts,
+    'ID:21': {
+      ID: 21,
+      post_title: 'Remote navigation noise',
+      post_content: 'remote-navigation-noise-body',
+      post_status: 'publish',
+      post_type: 'wp_navigation',
+    },
+  };
+  local.db.wp_terms = {
+    'term_id:7': {
+      term_id: 7,
+      name: 'Local menu taxonomy term',
+      slug: 'local-menu-taxonomy-term',
+    },
+  };
+  local.db.wp_postmeta = {
+    'meta_id:462': {
+      meta_id: 462,
+      post_id: 1,
+      meta_key: '_menu_item_object_id',
+      meta_value: 7,
+    },
+    'meta_id:463': {
+      meta_id: 463,
+      post_id: 1,
+      meta_key: '_menu_item_type',
+      meta_value: 'taxonomy',
+    },
+    'meta_id:464': {
+      meta_id: 464,
+      post_id: 1,
+      meta_key: '_menu_item_object',
+      meta_value: 'category',
+    },
+  };
+
+  const plan = planFor(base, local, remote);
+  const targetMutation = mutationFor(plan, targetResourceKey);
+  const postmetaMutation = mutationFor(plan, resourceKey);
+  const reference = postmetaMutation.wordpressGraphReferences.find((entry) => entry.relationshipType === 'menu-item-object-term');
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.blockers, 0);
+  assert.equal(targetMutation.changeKind, 'create');
+  assert.equal(postmetaMutation.changeKind, 'update');
+  assert.ok(
+    plan.mutations.indexOf(targetMutation) < plan.mutations.indexOf(postmetaMutation),
+    'target term create must be ordered before dependent existing menu item object metadata',
+  );
+  assert.deepEqual(postmetaMutation.dependsOnMutationIds, [targetMutation.id]);
+  assert.equal(reference.resolutionPolicy, 'same-plan-local-create');
+  assert.equal(reference.relationshipKey, 'wp_postmeta.meta_value');
+  assert.equal(reference.relationshipType, 'menu-item-object-term');
+  assert.equal(reference.targetResourceKey, targetResourceKey);
+  assert.equal(JSON.stringify(reference).includes('Local menu taxonomy term'), false);
+  assert.equal(JSON.stringify(reference).includes('remote-navigation-noise-body'), false);
+
+  const result = applyPlan(remote, plan);
+  assert.equal(result.site.db.wp_terms['term_id:7'].name, 'Local menu taxonomy term');
+  assert.equal(result.site.db.wp_postmeta['meta_id:462'].meta_value, 7);
+  assert.equal(result.site.db.wp_posts['ID:21'].post_type, 'wp_navigation');
+});
+
 test('blocks _menu_item_object_id taxonomy metadata owned by an attachment even when it targets a same-plan term', () => {
   const resourceKey = 'row:["wp_postmeta","meta_id:462"]';
   const ownerResourceKey = 'row:["wp_posts","ID:1"]';
