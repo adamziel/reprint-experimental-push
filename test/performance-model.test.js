@@ -489,6 +489,16 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
     model.safeFastPaths.some(
       (fastPath) =>
         fastPath.area === 'parallelism-limits' &&
+        fastPath.allowedShortcut === 'reuse-canonical-per-kind-budgets-to-size-bounded-row-batch-fanout' &&
+        fastPath.guardrails.includes('row-batch-fanout-stays-planning-only-and-revalidated-before-write') &&
+        fastPath.gateProofs.skip.includes('bounded row-batch fanout on a retry'),
+    ),
+    'canonical per-kind budgets can size bounded row-batch fanout without weakening the live compare',
+  );
+  assert.ok(
+    model.safeFastPaths.some(
+      (fastPath) =>
+        fastPath.area === 'parallelism-limits' &&
         fastPath.allowedShortcut === 'reuse-canonical-per-kind-budgets-to-size-bounded-release-bundle-resume' &&
         fastPath.guardrails.includes('release-bundle-resume-stays-planning-only') &&
         fastPath.gateProofs.recovery.includes('the release-bundle staging record still classify pause, retry, or crash'),
