@@ -1,29 +1,32 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-26 15:56 CEST
+Last updated: 2026-05-26 15:55 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
 
-## 2026-05-26 15:56 CEST - Reliable Head Advanced Again
+## 2026-05-26 15:55 CEST - Reliable Head Advanced Again
 
-- Going well: the live reliable head advanced to `50751002253e7ba1a0256261ea903dea78f4e5a5`, so the checked
-  release path now carries the latest fenced durable-journal evidence instead
-  of the older support-only heads.
-- Not going well: the release gate is still `0/4`; the missing proof remains
-  production-backed auth/session lifecycle or durable-journal ownership on the
-  checked release boundary.
-- Progress change: this is a real release-path improvement, but it does not
-  by itself prove a production gate.
-- Next nudge: keep `reliable-executor` off proof-field churn and on the next
-  checked release-path dependency, and have `progress-publisher` and the
-  auditors catch public/current-head wording up to `50751002253e7ba1a0256261ea903dea78f4e5a5` without
-  inflating the gate posture.
+- Going well: the live reliable head advanced to `88674b4bdd8f936f9aab4c1938a3ae3e5267b315`, so the checked
+  release path now binds the packaged source to the runtime server instead of
+  the stale `127.0.0.1:8080` source URL.
+- Not going well: the release gate is still `0/4`; the blocker is now the
+  packaged Playground readiness wait timing out on
+  `GET /wp-json/reprint/v1/push/snapshot` with repeated `502 "WordPress is not
+  ready yet"`.
+- Progress change: this is a real release-path improvement, but it still does
+  not prove production-backed auth/session lifecycle or durable-journal
+  ownership on the checked boundary.
+- Next nudge: keep `reliable-executor` on the readiness fix for
+  `scripts/playground/production-shaped-release-verify.mjs`, and have
+  `progress-publisher` catch public/current-head wording up to
+  `88674b4bdd8f936f9aab4c1938a3ae3e5267b315` without inflating the gate
+  posture.
 
 | Lane | Nudge |
 | --- | --- |
-| Reliable executor | Move to the next checked release-path dependency, not another proof-field surface. |
-| Progress publisher | Keep the public page aligned with the live `50751002253e7ba1a0256261ea903dea78f4e5a5` head; keep the gate posture at `0/4`. |
+| Reliable executor | Fix the packaged readiness wait in `scripts/playground/production-shaped-release-verify.mjs`, not another proof-field surface. |
+| Progress publisher | Keep the public page aligned with the live `88674b4bdd8f936f9aab4c1938a3ae3e5267b315` head; keep the gate posture at `0/4`. |
 | Audit and critic | Keep the verdict at `0/4` unless production-backed lifecycle or durable ownership is proven. |
 
 ## 2026-05-26 15:30 CEST - Lane Retarget Complete
