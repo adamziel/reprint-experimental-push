@@ -671,6 +671,28 @@ test('guarded benchmark blocks staged-disk headroom visibility when the aligned 
   );
 });
 
+test('guarded benchmark keeps staged-disk post-pause visibility fail closed when queue-budget visibility is hidden', () => {
+  const report = smallBenchmark();
+  const tampered = clone(report);
+
+  tampered.evidence.backpressure.queueBudgetVisible = false;
+
+  const details = productionThroughputDetails(tampered);
+  const blockers = productionThroughputBlockers(tampered);
+
+  assert.equal(details.stagingDiskHeadroomVisibleAndMeasured, true);
+  assert.equal(details.receiptCursorPauseFootprintVisible, false);
+  assert.equal(details.stagingDiskHeadroomVisibleAndMeasuredAfterPause, false);
+  assert.equal(
+    details.backpressureConsistency.stagingDiskHeadroomVisibleAndMeasuredAfterPause,
+    false,
+  );
+  assert.equal(
+    blockers.includes('staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint'),
+    true,
+  );
+});
+
 test('guarded benchmark blocks staged-disk headroom evidence outside the plan reserve', () => {
   const report = smallBenchmark();
   const tampered = clone(report);

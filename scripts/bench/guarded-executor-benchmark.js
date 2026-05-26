@@ -842,6 +842,22 @@ export function productionThroughputBlockers(report) {
     blockers.push('staging-disk-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof');
   }
   if (
+    report.evidence.backpressure?.stagingDiskHeadroomVisible === true
+    && (
+      report.evidence.backpressure?.receiptCursorPauseFootprintComplete !== true
+      || report.evidence.backpressure?.queueBudgetVisible !== true
+      || report.evidence.backpressure?.queueHeadroomVisible !== true
+      || report.evidence.backpressure?.receiptCursorMemoryCeilingVisible !== true
+      || report.evidence.backpressure?.receiptCursorMemoryCeilingMatchesQueueBudgetVisible !== true
+      || receiptCursorQueueSlackVisible !== true
+      || receiptCursorMemoryHeadroomVisible !== true
+      || report.evidence.backpressure?.queueHeadroomMeasured !== true
+      || report.evidence.backpressure?.queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack !== true
+    )
+  ) {
+    blockers.push('staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint');
+  }
+  if (
     report.evidence.backpressure?.stagingDiskHeadroomMeasured === true
     && report.evidence.backpressure?.stagingDiskHeadroomWithinPlanReserve !== true
   ) {
@@ -1579,11 +1595,6 @@ export function productionThroughputDetails(report) {
     queueHeadroomVisible
     && queueHeadroomMeasured
     && queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack;
-  const stagingDiskHeadroomVisibleAndMeasuredAfterPause =
-    stagingDiskHeadroomVisible
-    && stagingDiskHeadroomMeasured
-    && stagingDiskHeadroomWithinPlanReserve
-    && queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack;
   const receiptCursorQueueSlackVisibleAndMeasured =
     receiptCursorQueueSlackVisible
     && receiptCursorQueueSlackMeasured
@@ -1610,6 +1621,11 @@ export function productionThroughputDetails(report) {
     && receiptCursorMemoryHeadroomVisible
     && queueHeadroomMeasured
     && queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack;
+  const stagingDiskHeadroomVisibleAndMeasuredAfterPause =
+    stagingDiskHeadroomVisible
+    && stagingDiskHeadroomMeasured
+    && stagingDiskHeadroomWithinPlanReserve
+    && receiptCursorPauseFootprintVisible;
   const queueBudgetVisibleAndMemoryCeilingVisibleAndMeasured =
     queueBudgetVisible
     && receiptCursorMemoryCeilingVisible
