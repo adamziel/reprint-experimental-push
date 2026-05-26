@@ -3380,6 +3380,14 @@ test('safe fast paths retain all gate proofs and stay non-rejectable', () => {
   );
   assert.ok(
     model.safeFastPaths.some((fastPath) =>
+      fastPath.allowedShortcut === 'pause-upstream-producers-when-staging-disk-headroom-falls-below-plan-reserve' &&
+      fastPath.gateProofs.skip.includes('staging-disk headroom drops below the plan reserve') &&
+      fastPath.guardrails.includes('pause-happens-before-overflow-or-spill-failure') &&
+      fastPath.failureEvidence.includes('staging-disk reserve')
+    ),
+  );
+  assert.ok(
+    model.safeFastPaths.some((fastPath) =>
       fastPath.allowedShortcut === 'compress-durable-receipt-logs-with-stable-receipt-keys' &&
       fastPath.gateProofs.recovery.includes('exact chunk, row, or group state')
     ),

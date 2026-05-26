@@ -689,6 +689,26 @@ export const SAFE_FAST_PATHS = Object.freeze([
   },
   {
     area: 'backpressure',
+    reduces: ['overflow-thrash', 'duplicate-retry-work', 'failed-spill-write-time'],
+    allowedShortcut: 'pause-upstream-producers-when-staging-disk-headroom-falls-below-plan-reserve',
+    guardrails: [
+      'staging-disk-reserve-is-plan-scoped-and-bounded',
+      'pause-happens-before-overflow-or-spill-failure',
+    ],
+    gateProofs: {
+      skip: 'the executor can pause earlier when staging-disk headroom drops below the plan reserve, which avoids retrying writes that would fail under pressure',
+      live: 'the pause does not change any live compare at the storage boundary; it only stops new staging before overflow',
+      group: 'the reserve keeps mixed staging work inside the same plan budget and never widens an atomic-group boundary',
+      recovery: 'the plan-scoped reserve is advisory and durable receipts still classify whether the pause happened before or after any staged bytes landed',
+    },
+    visibilityBoundary: 'backpressure-only-before-overflow',
+    failureEvidence: 'plan-scoped staging-disk reserve plus bounded queue and journal pressure records',
+    bypassesLivePreconditions: false,
+    splitsAtomicGroup: false,
+    publishesStagedDataEarly: false,
+  },
+  {
+    area: 'backpressure',
     reduces: ['fsync-count', 'idle-time', 'duplicate-recovery-writes'],
     allowedShortcut: 'batch-durable-receipt-flushes-within-bounded-journal-lag',
     guardrails: [
