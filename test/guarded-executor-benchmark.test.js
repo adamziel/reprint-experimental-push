@@ -427,6 +427,19 @@ test('production claim gate fails closed if benchmark evidence is tampered', () 
     false,
   );
 
+  const pausedWithoutMeasuredBackpressure = clone(report);
+  pausedWithoutMeasuredBackpressure.evidence.backpressure.receiptCursorBytes = null;
+  pausedWithoutMeasuredBackpressure.evidence.backpressure.queuePausedBeforeOverflow = true;
+  assert.ok(
+    productionThroughputBlockers(pausedWithoutMeasuredBackpressure).includes(
+      'queue-pause-without-measured-receipt-cursor-backpressure',
+    ),
+  );
+  assert.equal(
+    productionThroughputDetails(pausedWithoutMeasuredBackpressure).backpressureConsistency.queuePauseHasMeasuredReceiptCursorBackpressure,
+    false,
+  );
+
   const mismatchedQueueBudget = clone(report);
   mismatchedQueueBudget.evidence.backpressure.queueBudgetBytes -= 1024;
   assert.ok(
