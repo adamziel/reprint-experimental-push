@@ -2152,6 +2152,49 @@ test('blocks a directory delete that would hide a live remote descendant while p
   assert.equal(JSON.stringify(remote), remoteBefore);
 });
 
+test('blocks a directory delete that would hide a live remote descendant while preserving a matching independent file create and remote-only plugin drift', () => {
+  const base = baseSite();
+  base.files['wp-content/uploads/gallery'] = { type: 'directory' };
+  base.files['wp-content/uploads/gallery/base-only.txt'] = 'base descendant bytes';
+
+  const local = JSON.parse(JSON.stringify(base));
+  delete local.files['wp-content/uploads/gallery'];
+  local.files['about-new.php'] = '<?php echo "shared create";';
+
+  const remote = JSON.parse(JSON.stringify(base));
+  remote.files['wp-content/uploads/gallery/remote-only.txt'] = 'remote descendant bytes';
+  remote.files['about-new.php'] = '<?php echo "shared create";';
+  remote.plugins.forms.description = 'remote-only plugin drift';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin drift */';
+  const remoteBefore = JSON.stringify(remote);
+
+  const plan = planFor(base, local, remote);
+  const conflict = plan.conflicts[0];
+  const createDecision = decisionFor(plan, 'file:about-new.php');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const conflictJson = JSON.stringify(conflict);
+
+  assert.equal(plan.status, 'conflict');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, 'file:wp-content/uploads/gallery'), undefined);
+  assert.equal(createDecision.decision, 'already-in-sync');
+  assert.equal(createDecision.change.localChange, 'create');
+  assert.equal(createDecision.change.remoteChange, 'create');
+  assert.equal(conflict.class, 'file-topology-conflict');
+  assert.equal(conflict.resourceKey, 'file:wp-content/uploads/gallery');
+  assert.equal(conflict.relatedResourceKey.startsWith('file:wp-content/uploads/gallery/'), true);
+  assert.equal(conflict.change.localChange, 'delete');
+  assert.equal(conflict.relatedChange.remoteChange, 'unchanged');
+  assert.equal(conflictJson.includes('remote descendant bytes'), false);
+  assert.equal(conflictJson.includes('base descendant bytes'), false);
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assertEveryMutationHasLiveRemotePrecondition(plan);
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
+  assert.equal(JSON.stringify(remote), remoteBefore);
+});
+
 test('blocks a directory delete that would hide a live remote descendant while preserving matching independent delete and remote-only plugin drift', () => {
   const base = baseSite();
   base.files['wp-content/uploads/gallery'] = { type: 'directory' };
