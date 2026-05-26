@@ -208,6 +208,25 @@ test('guarded benchmark blocks staging-disk headroom claims when the reserve no 
   assert.equal(blockers.includes('backpressure-evidence-incomplete'), true);
 });
 
+test('guarded benchmark fails closed when staging-disk reserve evidence disappears', () => {
+  const report = smallBenchmark();
+  const tampered = clone(report);
+
+  tampered.evidence.backpressure.stagingDiskReserveBytes = null;
+
+  const details = productionThroughputDetails(tampered);
+  const blockers = productionThroughputBlockers(tampered);
+
+  assert.equal(details.stagingDiskReservePositive, false);
+  assert.equal(details.stagingDiskReserveMatchesChunkWindow, false);
+  assert.equal(details.stagingDiskHeadroomWithinPlanReserve, false);
+  assert.equal(details.stagingDiskHeadroomVisibleAndMeasured, false);
+  assert.equal(details.backpressureConsistency.stagingDiskReservePositive, false);
+  assert.equal(blockers.includes('missing-staging-disk-reserve-evidence'), true);
+  assert.equal(blockers.includes('staging-disk-reserve-not-aligned-to-chunk-window'), false);
+  assert.equal(blockers.includes('backpressure-evidence-incomplete'), true);
+});
+
 test('guarded benchmark exposes the bounded release-bundle retry-window fast path as planning-only', () => {
   const fastPath = findSafeFastPathByShortcut(
     'compress-canonical-per-kind-budget-summaries-to-size-bounded-release-bundle-retry-windows',
