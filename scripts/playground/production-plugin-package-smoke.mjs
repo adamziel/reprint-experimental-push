@@ -141,6 +141,12 @@ try {
     assert.equal(dbJournalSchema.status, 200);
     assert.equal(dbJournalSchema.body.ok, true);
     assert.match(dbJournalSchema.body.dbJournalSchema.scope, /packaged production plugin journal surface/i);
+    assert.equal(dbJournalSchema.body.dbJournalSchema.acceptedOnCheckedBoundary, true);
+    assert.deepEqual(dbJournalSchema.body.dbJournalSchema.ownership, {
+      ownsJournal: true,
+      restartReadable: true,
+      productionAdapter: 'wpdb-single-statement-cas',
+    });
 
     const dbJournal = await requestJson(
       server.baseUrl,
@@ -152,6 +158,12 @@ try {
     assert.equal(dbJournal.status, 200);
     assert.equal(dbJournal.body.ok, true);
     assert.match(dbJournal.body.dbJournal.scope, /packaged production plugin journal surface/i);
+    assert.equal(dbJournal.body.dbJournal.acceptedOnCheckedBoundary, true);
+    assert.deepEqual(dbJournal.body.dbJournal.ownership, {
+      ownsJournal: true,
+      restartReadable: true,
+      productionAdapter: 'wpdb-single-statement-cas',
+    });
 
     const result = runCli([
       'push-authenticated',

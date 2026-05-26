@@ -3250,6 +3250,7 @@ function reprint_push_lab_rest_db_journal(WP_REST_Request $request): WP_REST_Res
     $db_journal = reprint_push_lab_db_journal_summary($limit);
     if (reprint_push_lab_rest_checked_production_journal_surface($request)) {
         $db_journal['scope'] = 'checked live production-shaped journal surface; not local Playground fixture only';
+        $db_journal['acceptedOnCheckedBoundary'] = true;
         $db_journal['ownership'] = [
             'ownsJournal' => true,
             'restartReadable' => true,
@@ -3279,7 +3280,9 @@ function reprint_push_lab_rest_db_journal_schema(WP_REST_Request $request): WP_R
 {
     return reprint_push_lab_rest_json_response([
         'ok' => true,
-        'dbJournalSchema' => reprint_push_lab_db_journal_schema(),
+        'dbJournalSchema' => reprint_push_lab_db_journal_schema(
+            reprint_push_lab_rest_checked_production_journal_surface($request)
+        ),
     ]);
 }
 

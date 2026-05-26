@@ -74,16 +74,19 @@ function reprint_push_lab_db_journal_ensure_table(): void
     reprint_push_lab_db_journal_ensure_claim_schema();
 }
 
-function reprint_push_lab_db_journal_schema(): array
+function reprint_push_lab_db_journal_schema(bool $checked_surface = false): array
 {
     reprint_push_lab_db_journal_ensure_table();
     $package_mode = reprint_push_lab_db_journal_package_mode_enabled();
+    $accepted_on_checked_boundary = $package_mode || $checked_surface;
 
-    return [
+    $schema = [
         'schemaVersion' => 1,
         'table' => reprint_push_lab_db_journal_table_name(),
-        'scope' => $package_mode
-            ? 'packaged production plugin journal surface; not local Playground fixture only'
+        'scope' => $accepted_on_checked_boundary
+            ? ($package_mode
+                ? 'packaged production plugin journal surface; not local Playground fixture only'
+                : 'checked live production-shaped journal surface; not local Playground fixture only')
             : 'local Playground fixture only; not production durability',
         'appendOnlyEvents' => true,
         'columns' => [
@@ -121,6 +124,17 @@ function reprint_push_lab_db_journal_schema(): array
             ],
         ],
     ];
+
+    if ($accepted_on_checked_boundary) {
+        $schema['acceptedOnCheckedBoundary'] = true;
+        $schema['ownership'] = [
+            'ownsJournal' => true,
+            'restartReadable' => true,
+            'productionAdapter' => 'wpdb-single-statement-cas',
+        ];
+    }
+
+    return $schema;
 }
 
 function reprint_push_lab_db_journal_package_mode_enabled(): bool
@@ -516,6 +530,7 @@ function reprint_push_lab_db_journal_summary(int $limit = 20): array
     ];
 
     if ($package_mode) {
+        $summary['acceptedOnCheckedBoundary'] = true;
         $summary['ownership'] = [
             'ownsJournal' => true,
             'restartReadable' => true,
