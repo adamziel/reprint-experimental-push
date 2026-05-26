@@ -875,7 +875,11 @@ function hasCompleteBackpressureEvidence(report) {
     && receiptCursorMemoryHeadroomBytes > 0;
   const queuePauseHasMeasuredReceiptCursorQueueSlack =
     report.evidence.backpressure?.queuePausedBeforeOverflow !== true
-    || (Number.isFinite(receiptCursorQueueSlackBytes) && receiptCursorQueueSlackBytes > 0);
+    || (
+      Number.isFinite(receiptCursorQueueSlackBytes)
+      && receiptCursorQueueSlackBytes > 0
+      && report.evidence.backpressure?.queuePauseHasMeasuredReceiptCursorQueueSlack === true
+    );
   const queuePauseHasMeasuredReceiptCursorBackpressure =
     report.evidence.backpressure?.queuePausedBeforeOverflow !== true
     || (

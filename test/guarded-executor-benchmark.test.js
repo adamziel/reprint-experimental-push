@@ -1280,3 +1280,16 @@ test('guarded benchmark fails closed when the buffered queue budget drifts from 
     report.claims.productionThroughput.blockers.includes('queue-budget-does-not-match-resource-ceiling'),
   );
 });
+
+test('guarded benchmark treats missing measured queue-slack proof as incomplete backpressure evidence', () => {
+  const report = smallBenchmark();
+  const mutated = clone(report);
+
+  mutated.evidence.backpressure.queuePauseHasMeasuredReceiptCursorQueueSlack = false;
+
+  const details = productionThroughputDetails(mutated);
+  const blockers = productionThroughputBlockers(mutated);
+
+  assert.equal(details.backpressureEvidenceComplete, false);
+  assert.ok(blockers.includes('queue-pause-without-measured-receipt-cursor-queue-slack-proof'));
+});
