@@ -118,6 +118,9 @@ Current executable gate:
   plugin-install retry window, but only as planning evidence while durable row
   receipts, metadata staging records, and the guarded finalize record still
   decide recovery.
+- The same details also let measured queue headroom size a bounded
+  large-upload retry window, but only as planning evidence while durable chunk
+  receipts and the guarded publish record still decide recovery.
 - The same details also let compressed per-kind budget summaries size the next
   bounded plugin-update retry window, but only as planning evidence while
   durable receipts, dependency-graph records, and the guarded finalize record

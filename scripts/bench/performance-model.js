@@ -1860,6 +1860,26 @@ export const SAFE_FAST_PATHS = Object.freeze([
   },
   {
     area: 'backpressure',
+    reduces: ['duplicate-large-upload-retry-window-sizing', 'planning-round-trips'],
+    allowedShortcut: 'reuse-measured-queue-headroom-to-size-bounded-large-upload-retry-windows',
+    guardrails: [
+      'queue-headroom-stays-planning-evidence-only',
+      'large-upload-retry-window-revalidates-before-write',
+    ],
+    gateProofs: {
+      skip: 'measured queue headroom can size the next bounded large-upload retry window without rescanning the same planning data',
+      live: 'the later large upload still rechecks the live remote resource hash before visibility changes',
+      group: 'the retry window only narrows staging concurrency and never widens the atomic-group barrier',
+      recovery: 'durable chunk receipts and the guarded publish record still classify pause, retry, or crash',
+    },
+    visibilityBoundary: 'planning-only-for-large-upload-retry-windows',
+    failureEvidence: 'measured queue headroom plus large-upload retry window and guarded publish record',
+    bypassesLivePreconditions: false,
+    splitsAtomicGroup: false,
+    publishesStagedDataEarly: false,
+  },
+  {
+    area: 'backpressure',
     reduces: ['duplicate-plugin-install-retry-window-sizing', 'planning-round-trips'],
     allowedShortcut: 'reuse-measured-queue-headroom-to-size-bounded-plugin-install-retry-windows',
     guardrails: [
