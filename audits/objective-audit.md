@@ -136,6 +136,10 @@ The newest visible heads continue that same pattern:
   authenticated HTTP client path, not production-backed auth/session
   lifecycle, canonical response schema, live production replay, or durable
   journal ownership on the release path.
+- `origin/lane/reliable-executor` now records `5059ff69`, tightening replay
+  canonical response checks. This is still support-side replay validation, not
+  production-backed auth/session lifecycle, live production replay, or durable
+  journal ownership on the release path.
 - `origin/lane/reliable-executor` now records `dadb8f13`, failing closed on
   auth drift before journal reads. This is still client-side fail-closed
   behavior, not production-backed auth/session lifecycle, live production
@@ -199,6 +203,9 @@ but it did not change the release conclusion:
   lifecycle on the release path.
 - `origin/lane/no-data-loss-recovery` now records `89b98ce5`, hardening replay
   journal isolation. It still does not prove production-backed journal
+  ownership or restart-readable durable artifacts.
+- `origin/lane/no-data-loss-recovery` now records `7ec46c0c`, failing closed
+  on inherited appendEvent. It still does not prove production-backed journal
   ownership or restart-readable durable artifacts.
 - `origin/lane/no-data-loss-invariants` now records `bce3664d`, blocking post
   author graph drift. It still does not prove the live release boundary or any
