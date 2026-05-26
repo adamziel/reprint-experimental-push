@@ -1,4 +1,4 @@
-Classified `35687102` as product-side auth session cleanup and revocation tracking with no release-gate movement. It improves the client-side lifecycle trace, but it still does not prove the checked production route boundary or production durable-journal semantics, so the verdict remains `0/4`.
+Classified `3568710293ad698b0ba3573ed162c16740520bf4` as product-side auth session cleanup and revocation tracking with no release-gate movement. It improves the client-side lifecycle trace, but it still does not prove the checked production route boundary or production durable-journal semantics, so the verdict remains `0/4`.
 
 Changed files:
 - [audits/objective-audit.md](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/independent-auditor/audits/objective-audit.md)
