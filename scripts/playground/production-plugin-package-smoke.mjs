@@ -8,6 +8,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createHmac } from 'node:crypto';
 import { digest } from '../../src/stable-json.js';
+import { productionPluginPackageSource } from '../../src/authenticated-http-push-client.js';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const cliPath = path.join(repoRoot, 'bin/reprint-push-lab.js');
@@ -57,11 +58,9 @@ try {
   fs.writeFileSync(localPath, `${JSON.stringify(packageLocalSnapshot, null, 2)}\n`);
 
   const summary = {
-    package: {
-      plugin: 'reprint-push/reprint-push.php',
-      mountedAs: '/wordpress/wp-content/plugins/reprint-push',
-      copiedFiles: fs.readdirSync(path.join(pluginDir, 'includes')).sort(),
-    },
+    package: productionPluginPackageSource({
+      copiedFiles: fs.readdirSync(path.join(pluginDir, 'includes')),
+    }),
     routes: {},
     cli: {},
     final: {},
@@ -155,6 +154,7 @@ try {
       labNamespaceDisabled: labRoute.status === 404,
       profile: preflight.body.routeProfile.profile,
       authBootstrapDisabled: true,
+      sourceCommand: summary.package.sourceCommand,
       unprovisionedAlternateStatus: unprovisionedAlternatePreflight.status,
       unscopedApplicationPasswordStatus: unscopedPreflight.status,
       credentialScope: preflight.body.auth.session.credentialScope,
@@ -164,6 +164,7 @@ try {
         noncesDeleted: preflight.body.sessionStore.cleanup.nonceOptions.deletedExpired,
       },
     };
+    assert.equal(summary.package.sourceCommand, 'npm run test:playground:production-plugin-package');
     summary.cli = {
       ok: result.ok,
       namespace: result.source.namespace,
