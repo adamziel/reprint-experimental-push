@@ -65,6 +65,7 @@ const driverGuardServerBlueprintPath = path.join(tmpDir, 'remote-base-with-drive
 const driverDeleteSnapshotBlueprintPath = path.join(tmpDir, 'remote-base-with-driver-fixture-delete-snapshot.blueprint.json');
 const driverDeleteServerBlueprintPath = path.join(tmpDir, 'remote-base-with-driver-fixture-delete-server.blueprint.json');
 const driverMissingExportServerBlueprintPath = path.join(tmpDir, 'remote-base-with-driver-fixture-missing-export-server.blueprint.json');
+const driverMissingApplyServerBlueprintPath = path.join(tmpDir, 'remote-base-with-driver-fixture-missing-apply-server.blueprint.json');
 const basePath = path.join(tmpDir, 'base.json');
 const localPath = path.join(tmpDir, 'local.json');
 
@@ -88,6 +89,11 @@ try {
     activatePackagedPlugin: true,
     provisionAuth: true,
     omitExportRowsCallback: true,
+  });
+  writeDriverFixtureBlueprint(path.join(repoRoot, fixtures.base), driverMissingApplyServerBlueprintPath, {
+    activatePackagedPlugin: true,
+    provisionAuth: true,
+    omitApplyRowCallback: true,
   });
   fs.writeFileSync(basePath, `${JSON.stringify(snapshots.base, null, 2)}\n`);
   fs.writeFileSync(localPath, `${JSON.stringify(packageLocalSnapshot, null, 2)}\n`);
@@ -121,6 +127,7 @@ try {
     driverReceiptPlanBindingGuard: {},
     driverReceiptRotatedCredentialGuard: {},
     driverExportGuard: {},
+    driverApplyGuard: {},
     final: {},
   };
 
@@ -751,6 +758,94 @@ try {
     };
   });
 
+  await withPlaygroundServer('production-plugin-driver-missing-apply-guard', driverMissingApplyServerBlueprintPath, pluginDir, async (server) => {
+    const client = authenticatedHttpClient({
+      sourceUrl: server.baseUrl,
+      credential: credentials,
+      routeProfile: 'production-shaped',
+    });
+    const preflight = await client.signedGet('/preflight');
+    assert.equal(preflight.status, 200);
+    assert.equal(preflight.body?.ok, true);
+    const session = preflight.body?.session?.id;
+    assert.equal(typeof session, 'string');
+    assert.ok(session.length > 0, 'signed preflight did not return a session id for the missing apply callback guard');
+
+    const remoteSnapshot = await client.get('/snapshot');
+    assert.equal(remoteSnapshot.status, 200);
+    assert.equal(remoteSnapshot.body?.ok, true);
+
+    const updatePlan = createPushPlan({
+      base: driverGuardBaseSnapshot,
+      local: driverLocalUpdateSnapshot,
+      remote: remoteSnapshot.body.snapshot,
+      now: new Date('2026-05-26T18:13:00.000Z'),
+    });
+    assert.equal(updatePlan.status, 'ready');
+    assert.equal(updatePlan.mutations.length, 1);
+    assert.equal(updatePlan.mutations[0].resourceKey, driverFixture.resourceKey);
+    assert.equal(updatePlan.mutations[0].action, 'put');
+
+    const updateDryRun = await client.signedPost(
+      '/dry-run',
+      { plan: updatePlan },
+      {
+        session,
+        idempotencyKey: 'production-plugin-driver-missing-apply-dry-run',
+      },
+    );
+    assert.equal(updateDryRun.status, 200);
+    assert.equal(updateDryRun.body?.ok, true);
+    assert.ok(updateDryRun.body?.receipt?.receiptHash, 'missing-apply driver dry-run did not produce a receipt');
+
+    const updateApply = await client.signedPost(
+      '/apply',
+      {
+        plan: updatePlan,
+        receipt: updateDryRun.body.receipt,
+      },
+      {
+        session,
+        idempotencyKey: 'production-plugin-driver-missing-apply-apply',
+      },
+    );
+    assert.equal(updateApply.status, 500);
+    assert.equal(updateApply.body?.ok, false);
+    assert.equal(updateApply.body?.code, 'PUSH_PROTOCOL_ERROR');
+    assert.match(
+      updateApply.body?.message || '',
+      /missing applyRowCallback for table: wp_reprint_push_driver_fixture/i,
+      'packaged apply route did not fail closed on a malformed arbitrary plugin-owned driver apply registration',
+    );
+
+    const afterRejectedApply = await client.get('/snapshot');
+    assert.equal(afterRejectedApply.status, 200);
+    assert.equal(afterRejectedApply.body?.ok, true);
+    assert.equal(
+      afterRejectedApply.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1']?.updated_marker,
+      'base',
+      'packaged apply route mutated the arbitrary driver row despite the missing apply callback',
+    );
+    assert.deepEqual(
+      afterRejectedApply.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1']?.payload,
+      {
+        owner: driverFixture.pluginOwner,
+        mode: 'base',
+        version: 1,
+      },
+      'packaged apply route changed the arbitrary driver payload despite the missing apply callback',
+    );
+
+    summary.driverApplyGuard = {
+      resourceKey: driverFixture.resourceKey,
+      dryRunAccepted: updateDryRun.body?.ok === true,
+      applyRejectedCode: updateApply.body?.code,
+      applyRejectedMessage: updateApply.body?.message,
+      rowRetainedAfterReject: afterRejectedApply.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1'] !== undefined,
+      updatedMarkerAfterReject: afterRejectedApply.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1']?.updated_marker,
+    };
+  });
+
   console.log(JSON.stringify(summary, null, 2));
 } finally {
   fs.rmSync(tmpDir, { recursive: true, force: true });
@@ -852,6 +947,7 @@ function writeDriverFixtureBlueprint(
     provisionAuth = false,
     supportsDelete = false,
     omitExportRowsCallback = false,
+    omitApplyRowCallback = false,
   } = {},
 ) {
   const blueprint = JSON.parse(fs.readFileSync(sourceBlueprintPath, 'utf8'));
@@ -860,7 +956,11 @@ function writeDriverFixtureBlueprint(
     title: 'Reprint Push Driver Fixture Package Guard',
     description: 'Remote base fixture with packaged Reprint Push plus an arbitrary plugin-owned row driver fixture.',
   };
-  const pluginCodeBase64 = Buffer.from(driverFixturePluginPhp({ supportsDelete, omitExportRowsCallback }), 'utf8').toString('base64');
+  const pluginCodeBase64 = Buffer.from(driverFixturePluginPhp({
+    supportsDelete,
+    omitExportRowsCallback,
+    omitApplyRowCallback,
+  }), 'utf8').toString('base64');
   blueprint.steps.push({
     step: 'runPHP',
     code: [
@@ -924,10 +1024,13 @@ function writeDriverFixtureBlueprint(
   fs.writeFileSync(targetBlueprintPath, `${JSON.stringify(blueprint, null, 2)}\n`);
 }
 
-function driverFixturePluginPhp({ supportsDelete, omitExportRowsCallback = false }) {
+function driverFixturePluginPhp({ supportsDelete, omitExportRowsCallback = false, omitApplyRowCallback = false }) {
   const exportRowsCallback = omitExportRowsCallback
     ? ''
     : "        'exportRowsCallback' => 'reprint_push_driver_fixture_export_rows',\n";
+  const applyRowCallback = omitApplyRowCallback
+    ? ''
+    : "        'applyRowCallback' => 'reprint_push_driver_fixture_apply_row',\n";
   return `<?php
 /*
 Plugin Name: Reprint Push Driver Fixture
@@ -941,7 +1044,7 @@ add_filter('reprint_push_plugin_owned_row_drivers', static function (array $driv
         'table' => '${driverFixture.table}',
         'pluginOwner' => '${driverFixture.pluginOwner}',
         'supportsDelete' => ${supportsDelete ? 'true' : 'false'},
-${exportRowsCallback}        'applyRowCallback' => 'reprint_push_driver_fixture_apply_row',
+${exportRowsCallback}${applyRowCallback}
         'validateMutationCallback' => 'reprint_push_driver_fixture_validate_mutation',
     ];
     return $drivers;
