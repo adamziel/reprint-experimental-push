@@ -11,6 +11,7 @@ const muPluginDir = path.join(repoRoot, 'scripts/playground/rest-mu-plugins');
 const serverStartupTimeoutMs = 6_000;
 const playgroundServerTimeoutMs = 8;
 const serverFetchTimeoutMs = 3_000;
+const playgroundStopTimeoutMs = 3_000;
 const runLivePlaygroundTopologyTests = process.env.REPRINT_RUN_PLAYGROUND_LIVE_TESTS === '1';
 const packageJson = JSON.parse(readFileSync(path.join(repoRoot, 'package.json'), 'utf8'));
 const liveCredentials = {
@@ -42,12 +43,27 @@ function spawnReleaseVerify(env = {}, timeout = proofSubprocessTimeoutMs) {
       ...env,
     },
   };
-  return spawnBoundedSync(
+  const proof = spawnSync(
     process.execPath,
     ['scripts/playground/production-shaped-release-verify.mjs'],
     spawnOptions,
-    'production-shaped release verify',
   );
+  if (proof.error) {
+    const timeoutNote = proof.error.code === 'ETIMEDOUT' && timeout ? ` after ${timeout}ms` : '';
+    throw new Error(formatSpawnFailure(`production-shaped release verify failed${timeoutNote}`, proof));
+  }
+  if (proof.signal) {
+    throw new Error(
+      formatSpawnFailure(
+        `production-shaped release verify terminated by ${proof.signal}${timeout ? ` after ${timeout}ms` : ''}`,
+        proof,
+      ),
+    );
+  }
+  if (proof.status === null) {
+    throw new Error(formatSpawnFailure('production-shaped release verify exited without a status', proof));
+  }
+  return proof;
 }
 
 function assertReleaseVerifyProof(proof, label) {
@@ -202,17 +218,20 @@ test('production-shaped live preflight smoke fails fast when the live source or 
 });
 
 test('production-shaped release verify command fails closed when production durable journal ownership is explicitly required', () => {
-  const proof = spawnReleaseVerify({
-    REPRINT_PUSH_SOURCE_URL: '',
-    REPRINT_PUSH_REMOTE_URL: '',
-    REPRINT_PUSH_USERNAME: '',
-    REPRINT_PUSH_APPLICATION_PASSWORD: '',
-    REPRINT_PUSH_LAB_AUTH_ADMIN_USER: '',
-    REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD: '',
-    REPRINT_PUSH_SIGNING_SECRET: '',
-    REPRINT_PUSH_REQUIRE_PRODUCTION_DURABLE_JOURNAL: '1',
-    NODE_NO_WARNINGS: '1',
-  }, releaseVerifySlowPathTimeoutMs);
+  const proof = spawnReleaseVerify(
+    {
+      REPRINT_PUSH_SOURCE_URL: '',
+      REPRINT_PUSH_REMOTE_URL: '',
+      REPRINT_PUSH_USERNAME: '',
+      REPRINT_PUSH_APPLICATION_PASSWORD: '',
+      REPRINT_PUSH_LAB_AUTH_ADMIN_USER: '',
+      REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD: '',
+      REPRINT_PUSH_SIGNING_SECRET: '',
+      REPRINT_PUSH_REQUIRE_PRODUCTION_DURABLE_JOURNAL: '1',
+      NODE_NO_WARNINGS: '1',
+    },
+    releaseVerifySlowPathTimeoutMs,
+  );
 
   assertReleaseVerifyProof(proof, 'durable journal release verify');
   assert.equal(proof.status, 1, proof.stderr);
@@ -220,14 +239,17 @@ test('production-shaped release verify command fails closed when production dura
 });
 
 test('production-shaped release verify command fails closed when production auth/session lifecycle is explicitly required', () => {
-  const proof = spawnReleaseVerify({
-    REPRINT_PUSH_SOURCE_URL: 'http://127.0.0.1:1',
-    REPRINT_PUSH_REMOTE_URL: 'http://127.0.0.1:1',
-    REPRINT_PUSH_LAB_AUTH_ADMIN_USER: liveCredentials.username,
-    REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD: liveCredentials.password,
-    REPRINT_PUSH_REQUIRE_PRODUCTION_AUTH_SESSION: '1',
-    NODE_NO_WARNINGS: '1',
-  }, releaseVerifySlowPathTimeoutMs);
+  const proof = spawnReleaseVerify(
+    {
+      REPRINT_PUSH_SOURCE_URL: 'http://127.0.0.1:1',
+      REPRINT_PUSH_REMOTE_URL: 'http://127.0.0.1:1',
+      REPRINT_PUSH_LAB_AUTH_ADMIN_USER: liveCredentials.username,
+      REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD: liveCredentials.password,
+      REPRINT_PUSH_REQUIRE_PRODUCTION_AUTH_SESSION: '1',
+      NODE_NO_WARNINGS: '1',
+    },
+    releaseVerifySlowPathTimeoutMs,
+  );
 
   assertReleaseVerifyProof(proof, 'auth/session release verify');
   assert.equal(proof.status, 1, proof.stderr);
@@ -334,14 +356,17 @@ maybeTest('production-shaped release verify command runs the live protocol branc
 
 maybeTest('production-shaped release verify command fails closed when remote drift appears after the authenticated snapshot', () => {
   return withPlaygroundServer('remote-base', path.join(repoRoot, 'fixtures/playground/remote-base.blueprint.json'), async (remoteServer) => {
-    const proof = spawnReleaseVerify({
-      REPRINT_PUSH_SOURCE_URL: remoteServer.baseUrl,
-      REPRINT_PUSH_REMOTE_URL: remoteServer.baseUrl,
-      REPRINT_PUSH_LAB_AUTH_ADMIN_USER: liveCredentials.username,
-      REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD: liveCredentials.password,
-      REPRINT_PUSH_LAB_DRIFT_AFTER_SNAPSHOT: 'post-title',
-      NODE_NO_WARNINGS: '1',
-    }, liveProofSubprocessTimeoutMs);
+    const proof = spawnReleaseVerify(
+      {
+        REPRINT_PUSH_SOURCE_URL: remoteServer.baseUrl,
+        REPRINT_PUSH_REMOTE_URL: remoteServer.baseUrl,
+        REPRINT_PUSH_LAB_AUTH_ADMIN_USER: liveCredentials.username,
+        REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD: liveCredentials.password,
+        REPRINT_PUSH_LAB_DRIFT_AFTER_SNAPSHOT: 'post-title',
+        NODE_NO_WARNINGS: '1',
+      },
+      liveProofSubprocessTimeoutMs,
+    );
     assertLiveReleaseVerifyProof(proof, 'drift release verify', liveProofSubprocessTimeoutMs);
     assert.equal(proof.status, 1, proof.stderr);
     assert.match(proof.stdout, /"ok": false/);
@@ -374,16 +399,19 @@ test('production-shaped apply revalidation smoke fails closed on mid-apply drift
 });
 
 test('production-shaped release verify command reports the checked retained-source proof summary', () => {
-  const proof = spawnReleaseVerify({
-    REPRINT_PUSH_SOURCE_URL: '',
-    REPRINT_PUSH_REMOTE_URL: '',
-    REPRINT_PUSH_LAB_AUTH_ADMIN_USER: '',
-    REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD: '',
-    REPRINT_PUSH_USERNAME: '',
-    REPRINT_PUSH_APPLICATION_PASSWORD: '',
-    REPRINT_PUSH_SIGNING_SECRET: '',
-    NODE_NO_WARNINGS: '1',
-  }, releaseVerifySlowPathTimeoutMs);
+  const proof = spawnReleaseVerify(
+    {
+      REPRINT_PUSH_SOURCE_URL: '',
+      REPRINT_PUSH_REMOTE_URL: '',
+      REPRINT_PUSH_LAB_AUTH_ADMIN_USER: '',
+      REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD: '',
+      REPRINT_PUSH_USERNAME: '',
+      REPRINT_PUSH_APPLICATION_PASSWORD: '',
+      REPRINT_PUSH_SIGNING_SECRET: '',
+      NODE_NO_WARNINGS: '1',
+    },
+    releaseVerifySlowPathTimeoutMs,
+  );
   assertLiveReleaseVerifyProof(proof, 'retained-source release verify', releaseVerifySlowPathTimeoutMs);
   assert.equal(proof.status, 1, proof.stderr);
   assert.match(proof.stdout, /"releaseProof": \{/);
@@ -498,7 +526,6 @@ async function startPlaygroundServer(name, blueprintPath) {
     {
       cwd: repoRoot,
       env: process.env,
-      detached: true,
       stdio: ['ignore', 'pipe', 'pipe'],
     },
   );
@@ -515,7 +542,13 @@ async function startPlaygroundServer(name, blueprintPath) {
     await waitForServer(child, baseUrl, () => output);
   } catch (error) {
     process.stderr.write(`${output}\n`);
-    await stopPlaygroundChild(child);
+    try {
+      await stopPlaygroundChild(child);
+    } catch (cleanupError) {
+      process.stderr.write(
+        `${cleanupError instanceof Error ? cleanupError.message : String(cleanupError)}\n`,
+      );
+    }
     throw error;
   }
 
@@ -587,7 +620,13 @@ async function waitForServer(child, baseUrl, getLogs) {
   const probeText = lastProbes.length ? `\nProbe trail: ${JSON.stringify(lastProbes.slice(-4), null, 2)}` : '';
   const failureText = `Timed out waiting for Playground server at ${baseUrl}: ${lastError?.message || 'unknown'}${probeText}\n${getLogs()}`;
   process.stderr.write(`${failureText}\n`);
-  await stopPlaygroundChild(child);
+  try {
+    await stopPlaygroundChild(child);
+  } catch (cleanupError) {
+    process.stderr.write(
+      `${cleanupError instanceof Error ? cleanupError.message : String(cleanupError)}\n`,
+    );
+  }
   throw new Error(failureText);
 }
 
@@ -625,12 +664,26 @@ async function stopPlaygroundChild(child) {
     return;
   }
   stopProcessGroup(child, 'SIGTERM');
+  stopParentProcesses(child, 'SIGTERM');
   try {
-    await waitForExit(child, 12_000);
+    await waitForExit(child, playgroundStopTimeoutMs);
   } catch (error) {
     stopProcessGroup(child, 'SIGKILL');
-    await waitForExit(child, 12_000);
-    throw error;
+    stopParentProcesses(child, 'SIGKILL');
+    try {
+      await waitForExit(child, playgroundStopTimeoutMs);
+    } catch {
+      process.stderr.write('Playground server did not exit after SIGKILL\n');
+      if (typeof child.pid === 'number') {
+        process.stderr.write(`Playground child pid still active: ${child.pid}\n`);
+      }
+    }
+    if (error instanceof Error) {
+      process.stderr.write(`${error.message}\n`);
+    }
+    if (child.exitCode === null) {
+      throw new Error(`Playground server did not exit cleanly after SIGKILL`);
+    }
   }
 }
 
@@ -638,12 +691,49 @@ function stopProcessGroup(child, signal) {
   if (typeof child.pid === 'number') {
     try {
       process.kill(-child.pid, signal);
-      return;
     } catch {
       // Fall back to the wrapper PID if the process group is already gone.
     }
+    try {
+      process.kill(child.pid, signal);
+      return;
+    } catch {
+      // Fall back to the child.kill() path below if the PID is already gone.
+    }
   }
   child.kill(signal);
+}
+
+function stopParentProcesses(child, signal) {
+  if (typeof child.pid !== 'number') {
+    return;
+  }
+  try {
+    const signalFlag = signal === 'SIGKILL' ? '-KILL' : '-TERM';
+    spawnSync('pkill', [signalFlag, '-g', String(child.pid)], {
+      cwd: repoRoot,
+      env: process.env,
+      encoding: 'utf8',
+      timeout: 2_000,
+      killSignal: 'SIGKILL',
+    });
+    spawnSync('pkill', [signalFlag, '-P', String(child.pid)], {
+      cwd: repoRoot,
+      env: process.env,
+      encoding: 'utf8',
+      timeout: 2_000,
+      killSignal: 'SIGKILL',
+    });
+    spawnSync('kill', [signalFlag, String(child.pid)], {
+      cwd: repoRoot,
+      env: process.env,
+      encoding: 'utf8',
+      timeout: 2_000,
+      killSignal: 'SIGKILL',
+    });
+  } catch {
+    // Best effort only.
+  }
 }
 
 async function findLocalPort() {

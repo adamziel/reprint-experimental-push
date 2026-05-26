@@ -9,7 +9,7 @@ import { authenticatedHttpClient, runAuthenticatedHttpPush } from '../../src/aut
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const muPluginDir = path.join(repoRoot, 'scripts/playground/rest-mu-plugins');
-const serverStartupTimeoutMs = 1_200;
+const serverStartupTimeoutMs = 900;
 const serverFetchTimeoutMs = 900;
 const credentials = {
   username: 'reprint_push_admin',
@@ -818,7 +818,7 @@ async function startPlaygroundServer(name, blueprintPath) {
 
     const child = spawn(
       'timeout',
-      ['--preserve-status', '--kill-after=1s', '8s', 'npx', ...args],
+      ['--preserve-status', '--kill-after=1s', '6s', 'npx', ...args],
       {
         cwd: repoRoot,
         env: process.env,
@@ -968,6 +968,7 @@ function runBoundedSync(command, args, options, label) {
     );
   }
   if (proof.status === null) {
+    stopAllPlaygroundChildrenSync();
     throw new Error(
       `${label} exited without a status\nstdout:\n${proof.stdout ?? ''}\nstderr:\n${proof.stderr ?? ''}`,
     );
@@ -992,7 +993,7 @@ async function waitForServer(child, baseUrl, getLogs) {
         lastProbes,
         getLogs(),
       );
-      process.stderr.write(`${message}\n`);
+      writePlaygroundFailure(message, lastProbes, getLogs(), lastError);
       await stopSpawnedServer(child);
       await waitForExit(child, 2_000).catch(() => {});
       throw new Error(message);
@@ -1054,10 +1055,24 @@ async function waitForServer(child, baseUrl, getLogs) {
     lastProbes,
     getLogs(),
   );
-  process.stderr.write(`${diagnostic}\n`);
+  writePlaygroundFailure(diagnostic, lastProbes, getLogs(), lastError);
   await stopSpawnedServer(child);
   await waitForExit(child, 2_000).catch(() => {});
   throw new Error(diagnostic);
+}
+
+function writePlaygroundFailure(message, lastProbes, logs, lastError) {
+  const summary = {
+    message,
+    lastProbe: lastProbes.at(-1) ?? null,
+    lastError: lastError?.message ?? null,
+  };
+  process.stderr.write(`${message}\n`);
+  process.stderr.write(`${JSON.stringify(summary)}\n`);
+  process.stdout.write(`${JSON.stringify(summary)}\n`);
+  if (logs) {
+    process.stderr.write(`${logs}\n`);
+  }
 }
 
 function formatPlaygroundStartupFailure(prefix, lastError, lastProbes, logs) {
