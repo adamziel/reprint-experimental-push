@@ -1550,6 +1550,22 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
     'queue budget, memory ceiling, and queue headroom still cannot bypass the durable replay trail after a retry',
   );
   assert.equal(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'cached-receipt-cursor-queue-budget-memory-ceiling-and-queue-slack-skips-backpressure-pause-after-retry')?.rejectedGate,
+    'recovery',
+  );
+  assert.ok(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'cached-receipt-cursor-queue-budget-memory-ceiling-and-queue-slack-skips-backpressure-pause-after-retry')?.violates.includes('backpressure'),
+    'queue budget, memory ceiling, and queue slack still cannot bypass the backpressure pause boundary',
+  );
+  assert.ok(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'cached-receipt-cursor-queue-budget-memory-ceiling-and-queue-slack-skips-backpressure-pause-after-retry')?.violates.includes('chunk-receipts'),
+    'queue budget, memory ceiling, and queue slack still cannot replace durable chunk-receipt ordering after a retry',
+  );
+  assert.ok(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'cached-receipt-cursor-queue-budget-memory-ceiling-and-queue-slack-skips-backpressure-pause-after-retry')?.violates.includes('durable-progress'),
+    'queue budget, memory ceiling, and queue slack still cannot bypass the durable replay trail after a retry',
+  );
+  assert.equal(
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'cached-receipt-cursor-and-journal-lag-skips-backpressure-pause-after-retry')?.rejectedGate,
     'recovery',
   );
@@ -3000,6 +3016,10 @@ test('unsafe shortcuts stay rejected when they would bypass live preconditions o
     (fastPath) =>
       fastPath.id === 'cached-receipt-cursor-queue-budget-memory-ceiling-and-queue-headroom-skips-backpressure-pause-after-retry',
   );
+  const skipBudgetMemoryAndQueueSlackPause = model.rejectedFastPaths.find(
+    (fastPath) =>
+      fastPath.id === 'cached-receipt-cursor-queue-budget-memory-ceiling-and-queue-slack-skips-backpressure-pause-after-retry',
+  );
 
   assert.ok(skipMemoryHeadroomCommit, 'receipt cursor memory headroom cannot authorize commit');
   assert.equal(skipMemoryHeadroomCommit.rejectedGate, 'recovery');
@@ -3030,6 +3050,12 @@ test('unsafe shortcuts stay rejected when they would bypass live preconditions o
   assert.ok(skipBudgetMemoryAndHeadroomPause.violates.includes('backpressure'));
   assert.ok(skipBudgetMemoryAndHeadroomPause.violates.includes('chunk-receipts'));
   assert.ok(skipBudgetMemoryAndHeadroomPause.violates.includes('durable-progress'));
+
+  assert.ok(skipBudgetMemoryAndQueueSlackPause, 'queue budget, memory ceiling, and queue slack cannot skip the backpressure pause after a retry');
+  assert.equal(skipBudgetMemoryAndQueueSlackPause.rejectedGate, 'recovery');
+  assert.ok(skipBudgetMemoryAndQueueSlackPause.violates.includes('backpressure'));
+  assert.ok(skipBudgetMemoryAndQueueSlackPause.violates.includes('chunk-receipts'));
+  assert.ok(skipBudgetMemoryAndQueueSlackPause.violates.includes('durable-progress'));
 });
 
 test('fast-path fixture isolates the release-safety benchmark shape', () => {
