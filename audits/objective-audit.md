@@ -54,7 +54,7 @@ The project is **not releasable as a production WordPress push path**.
 - `origin/lane/no-data-loss-invariants` -> `c271a83b`
 - `origin/lane/no-data-loss-recovery` -> `91424e5b`
 - `origin/lane/progress-publisher` -> `7695e1f9`
-- `origin/lane/reliable-executor` -> `c7fc237d`
+- `origin/lane/reliable-executor` -> `d6f65f9a`
 - `origin/lane/same-plan-wordpress-graph-create` -> `52be8d87`
 - `origin/main` -> `56063f13`
 
@@ -65,9 +65,10 @@ real source-site mutation boundary. The release gates still stay `0/4`.
 Fresh lane proof since the last audit pass improved the local evidence floor,
 but it did not change the release conclusion:
 
-- `origin/lane/reliable-executor` now records `f58b9566`, clarifying the
-  durable-journal release boundary again, but still not proving production
-  auth/session lifecycle or a live-source mutation boundary.
+- `origin/lane/reliable-executor` now records `d6f65f9a`, adding a fail-closed
+  expired-session check in the packaging smoke and the REST plugin, but still
+  not proving production auth/session lifecycle or a live-source mutation
+  boundary.
 - `origin/lane/no-data-loss-invariants` now records `c271a83b`, adding
   term-relationship identity sibling proof again, but still not proving the
   live release boundary or any production-backed source mutation.
