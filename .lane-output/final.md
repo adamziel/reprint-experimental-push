@@ -1,10 +1,10 @@
-`a4b9c689c565b42e79cd835ec060a9b7e1fc605a` stays `0/4`.
+`5b1ee960b54344fafa06bf0b8ff4440c7fa79c62` stays `0/4`.
 
-Audit time: 2026-05-26 16:52:52 CEST (+0200)
+Audit time: 2026-05-26 18:00:44 CEST (+0200)
 
 Current verdict:
-- The checked release verifier now unblocks packaged production snapshot loading for the remote-base push-session path, but it still does not prove production-backed auth/session lifecycle on the live `verify:release` boundary.
-- It still does not establish production durable-journal ownership or restart-readable production storage semantics.
+- The checked release verifier now adds stale-claim rejection evidence on the recovery-journal surface, but it still does not prove production-backed auth/session lifecycle on the live `verify:release` boundary.
+- It still does not establish production durable-journal ownership or restart-readable production storage semantics on the live release path.
 - The next gate owner remains `reliable-executor`.
 
 Changed files:
@@ -19,11 +19,11 @@ Commands run:
 - `git ls-remote origin refs/heads/lane/reliable-executor`
 - `sed -n '1,240p' audits/objective-audit.md`
 - `date '+%Y-%m-%d %H:%M:%S %Z (%z)'`
-- `git show --stat --summary --oneline --no-patch a4b9c689c565b42e79cd835ec060a9b7e1fc605a`
-- `git show --unified=40 a4b9c689c565b42e79cd835ec060a9b7e1fc605a -- scripts/playground/production-shaped-release-verify.mjs test/production-shaped-proof.test.js`
+- `git show --stat --summary --oneline --no-patch 5b1ee960b54344fafa06bf0b8ff4440c7fa79c62`
+- `git show --unified=40 5b1ee960b54344fafa06bf0b8ff4440c7fa79c62 -- scripts/playground/production-shaped-release-verify.mjs test/recovery-journal.test.js test/production-shaped-proof.test.js src/recovery-journal.js`
 
 Push result:
-- Not yet pushed.
+- Not pushed; audit-only lane.
 
 Worktree status:
 - Dirty with local audit updates pending commit.
