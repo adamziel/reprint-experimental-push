@@ -826,7 +826,8 @@ function durableJournalInspectArtifactRefs(inspected) {
 function isCanonicalAbsolutePath(filePath) {
   return typeof filePath === 'string'
     && path.isAbsolute(filePath)
-    && path.resolve(filePath) === filePath;
+    && path.resolve(filePath) === filePath
+    && !/[?#]/.test(filePath);
 }
 
 function durableJournalInspectPath(inspected) {
