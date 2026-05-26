@@ -20326,6 +20326,46 @@ test('blocks unsupported special file entries while preserving remote-only plugi
   assert.equal(remote.plugins.forms.description, 'remote-only plugin drift');
 });
 
+test('blocks unsupported mode-encoded special file entries while preserving remote-only plugin changes', () => {
+  const resourceKey = 'file:wp-content/uploads/mode-symlink';
+  const base = baseSite();
+  base.files['wp-content/uploads/mode-symlink'] = {
+    mode: 0o120777,
+    target: '../shared/target',
+  };
+
+  const local = baseSite();
+  local.files['wp-content/uploads/mode-symlink'] = {
+    mode: 0o120777,
+    target: '../shared/other-target',
+  };
+
+  const remote = baseSite();
+  remote.files['wp-content/uploads/mode-symlink'] = JSON.parse(JSON.stringify(base.files['wp-content/uploads/mode-symlink']));
+  remote.plugins.forms.description = 'remote-only plugin changes';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin changes */';
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers[0];
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(plan.conflicts.length, 0);
+  assert.equal(blocker.class, 'unsupported-special-file-resource');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.reason, 'Special file entries are not yet supported by the planner.');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('../shared/other-target'), false);
+  assert.equal(planJson.includes('../shared/target'), false);
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin changes');
+  assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin changes */');
+});
+
 test('blocks deletion of unsupported special file entries while preserving remote-only plugin removals', () => {
   const resourceKey = 'file:wp-content/uploads/reparse-point';
   const base = baseSite();

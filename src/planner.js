@@ -2480,9 +2480,24 @@ function isUnsupportedSpecialFileValue(value) {
     'hardlink',
     'hard-link',
   ]);
+  const specialModeMasks = new Set([
+    0o120000, // symlink
+    0o060000, // block device
+    0o020000, // character device
+    0o010000, // named pipe / fifo
+    0o140000, // socket
+    0o100000, // regular file, kept only for explicit negative checks
+  ]);
 
   if (typeof value?.type === 'string' && specialTypes.has(value.type)) {
     return true;
+  }
+
+  if (typeof value?.mode === 'number') {
+    const fileType = value.mode & 0o170000;
+    if (specialModeMasks.has(fileType) && fileType !== 0o100000) {
+      return true;
+    }
   }
 
   return Boolean(value?.target) || Boolean(value?.linkTarget) || Boolean(value?.inode);
