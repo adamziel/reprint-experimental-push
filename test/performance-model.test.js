@@ -431,6 +431,18 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
     'recovery',
   );
   assert.equal(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-chunk-receipts-skips-large-upload-resume-after-pause')?.rejectedGate,
+    'recovery',
+  );
+  assert.ok(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-chunk-receipts-skips-large-upload-resume-after-pause')?.violates.includes('backpressure'),
+    'cached chunk receipts still cannot bypass resume-time backpressure checks after a pause',
+  );
+  assert.ok(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-chunk-receipts-skips-large-upload-resume-after-pause')?.violates.includes('atomic-file-publish'),
+    'cached chunk receipts still cannot bypass the guarded publish barrier after a pause',
+  );
+  assert.equal(
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'cached-receipt-cursor-skips-backpressure-pause-after-retry')?.rejectedGate,
     'recovery',
   );
