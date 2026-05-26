@@ -637,6 +637,23 @@ test('production claim gate fails closed if benchmark evidence is tampered', () 
     ),
   );
 
+  const zeroQueueSlack = clone(report);
+  zeroQueueSlack.evidence.backpressure.receiptCursorQueueSlackBytes = 0;
+  zeroQueueSlack.evidence.backpressure.queuePausedBeforeOverflow = true;
+  assert.ok(
+    productionThroughputBlockers(zeroQueueSlack).includes(
+      'receipt-cursor-queue-slack-not-positive',
+    ),
+  );
+  assert.equal(
+    productionThroughputDetails(zeroQueueSlack).backpressureConsistency.receiptCursorQueueSlackPositive,
+    false,
+  );
+  assert.equal(
+    productionThroughputDetails(zeroQueueSlack).backpressureConsistency.queuePauseHasMeasuredReceiptCursorQueueSlack,
+    false,
+  );
+
   const oversizedQueueHeadroomSlack = clone(report);
   oversizedQueueHeadroomSlack.evidence.backpressure.receiptCursorQueueSlackBytes =
     oversizedQueueHeadroomSlack.evidence.backpressure.queueHeadroomBytes + 1;
@@ -963,25 +980,25 @@ test('production claim gate fails closed if benchmark evidence is tampered', () 
     false,
   );
 
-  const zeroQueueSlack = clone(report);
-  zeroQueueSlack.evidence.backpressure.receiptCursorQueueSlackBytes = 0;
+  const zeroQueueSlackEvidence = clone(report);
+  zeroQueueSlackEvidence.evidence.backpressure.receiptCursorQueueSlackBytes = 0;
   assert.equal(
-    productionThroughputDetails(zeroQueueSlack).backpressureConsistency.receiptCursorQueueSlackWithinQueueBudget,
+    productionThroughputDetails(zeroQueueSlackEvidence).backpressureConsistency.receiptCursorQueueSlackWithinQueueBudget,
     false,
   );
   assert.equal(
-    productionThroughputDetails(zeroQueueSlack).backpressureConsistency.queuePauseHasMeasuredReceiptCursorQueueSlack,
+    productionThroughputDetails(zeroQueueSlackEvidence).backpressureConsistency.queuePauseHasMeasuredReceiptCursorQueueSlack,
     false,
   );
   assert.equal(
-    productionThroughputDetails(zeroQueueSlack).backpressureConsistency.backpressureEvidenceComplete,
+    productionThroughputDetails(zeroQueueSlackEvidence).backpressureConsistency.backpressureEvidenceComplete,
     false,
   );
   assert.ok(
-    productionThroughputBlockers(zeroQueueSlack).includes('receipt-cursor-queue-slack-not-positive'),
+    productionThroughputBlockers(zeroQueueSlackEvidence).includes('receipt-cursor-queue-slack-not-positive'),
   );
   assert.ok(
-    productionThroughputBlockers(zeroQueueSlack).includes(
+    productionThroughputBlockers(zeroQueueSlackEvidence).includes(
       'queue-pause-without-consistent-receipt-cursor-slack',
     ),
   );

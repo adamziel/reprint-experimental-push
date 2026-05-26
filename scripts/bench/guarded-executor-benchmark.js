@@ -599,7 +599,7 @@ export function productionThroughputDetails(report) {
   const receiptCursorMemoryHeadroomPositiveVisible = receiptCursorMemoryHeadroomPositive;
   const queuePauseHasMeasuredReceiptCursorQueueSlack =
     report.evidence.backpressure?.queuePausedBeforeOverflow !== true
-    || (receiptCursorQueueSlackMeasured && receiptCursorQueueSlackWithinQueueBudget);
+    || (receiptCursorQueueSlackPositive && receiptCursorQueueSlackWithinQueueBudget);
   const queuePauseHasBackpressureAlignedReceiptCursorQueueSlack =
     report.evidence.backpressure?.queuePausedBeforeOverflow !== true
     || (
