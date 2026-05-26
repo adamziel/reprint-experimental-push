@@ -220,6 +220,9 @@ export function productionThroughputBlockers(report) {
   if (report.evidence.backpressure?.receiptCursorWithinQueueBudget !== true) {
     blockers.push('receipt-cursor-exceeds-queue-budget');
   }
+  if (report.evidence.backpressure?.receiptCursorBackpressureWithinQueueHeadroom !== true) {
+    blockers.push('receipt-cursor-exceeds-queue-headroom');
+  }
   if (report.evidence.backpressure?.queuePausedBeforeOverflow !== true) {
     blockers.push('queue-did-not-pause-before-overflow');
   }

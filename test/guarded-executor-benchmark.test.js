@@ -342,6 +342,19 @@ test('production claim gate fails closed if benchmark evidence is tampered', () 
     ),
   );
 
+  const oversizedBackpressureHeadroom = clone(report);
+  oversizedBackpressureHeadroom.evidence.backpressure.receiptCursorBytes =
+    oversizedBackpressureHeadroom.evidence.backpressure.queueHeadroomBytes + 1;
+  assert.ok(
+    productionThroughputBlockers(oversizedBackpressureHeadroom).includes(
+      'receipt-cursor-exceeds-queue-headroom',
+    ),
+  );
+  assert.equal(
+    productionThroughputDetails(oversizedBackpressureHeadroom).backpressureConsistency.receiptCursorBackpressureWithinQueueHeadroom,
+    false,
+  );
+
   const missingQueueBudget = clone(report);
   missingQueueBudget.evidence.backpressure.queueBudgetBytes = 0;
   assert.ok(
