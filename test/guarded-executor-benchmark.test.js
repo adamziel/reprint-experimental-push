@@ -116,6 +116,7 @@ test('guarded benchmark refuses production throughput claims until production ga
   assert.equal(report.claims.productionThroughputDetails.receiptCursorWithinMemoryCeiling, true);
   assert.equal(report.claims.productionThroughputDetails.receiptCursorMemoryHeadroomBytes, 31.5 * 1024 * 1024);
   assert.equal(report.claims.productionThroughputDetails.receiptCursorHeadroomMatchesResourceHeadroom, true);
+  assert.equal(report.claims.productionThroughputDetails.receiptCursorHeadroomCoveredByQueueBudget, true);
   assert.equal(report.claims.productionThroughputDetails.receiptCursorHeadroomBytes, 31.5 * 1024 * 1024);
   assert.equal(report.claims.productionThroughputDetails.receiptCursorHeadroomMatchesQueueHeadroom, true);
   assert.equal(report.claims.productionThroughputDetails.receiptCursorWithinQueueBudget, true);
@@ -415,6 +416,10 @@ test('production claim gate fails closed if benchmark evidence is tampered', () 
   );
   assert.equal(
     productionThroughputDetails(missingQueueHeadroom).backpressureConsistency.queueHeadroomMatchesResourceHeadroom,
+    false,
+  );
+  assert.equal(
+    productionThroughputDetails(missingQueueHeadroom).receiptCursorHeadroomCoveredByQueueBudget,
     false,
   );
 

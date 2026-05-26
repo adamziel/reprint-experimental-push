@@ -64,6 +64,9 @@ Current executable gate:
 - The report now also exposes whether the receipt-cursor headroom and queue
   headroom match, so the bounded backpressure proof can be audited directly
   without changing the claim gate.
+- The report now also exposes whether receipt-cursor headroom is covered by
+  the queue budget, so the cursor audit can fail closed even when the exact
+  headroom values drift apart.
 - The report now also exposes a `backpressureConsistency` summary for queue
   budget, receipt cursor, and headroom alignment so tampering shows up as a
   named evidence mismatch rather than a silent detail drift.
