@@ -40,9 +40,9 @@ The project is **not releasable as a production WordPress push path**.
 - `origin/lane/cycle-20260525-mainwindows-2349/critic` -> `fa0dc8a0`
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `79aa3e50`
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `4e2ecdeb`
-- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `3c6c8d8b`
+- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `13f38539`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `b5a70bfa`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `3bb4e35a`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `07f534be`
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` -> `9e05da5e`
 - `origin/lane/cycle-20260525-mainwindows-2357/no-data-loss-invariants-graph-proof` -> `98c0ce26`
 - `origin/lane/cycle-20260525-restart-2340/feedback-supervisor` -> `ef3d911e`
@@ -51,10 +51,10 @@ The project is **not releasable as a production WordPress push path**.
 - `origin/lane/fast-paths` -> `8c5c2ccb`
 - `origin/lane/feedback-supervisor` -> `f386dfa6`
 - `origin/lane/independent-auditor` -> `6351130f`
-- `origin/lane/no-data-loss-invariants` -> `6fe9cbdb`
+- `origin/lane/no-data-loss-invariants` -> `b87a0447`
 - `origin/lane/no-data-loss-recovery` -> `9e077c10`
 - `origin/lane/progress-publisher` -> `7695e1f9`
-- `origin/lane/reliable-executor` -> `9415449e`
+- `origin/lane/reliable-executor` -> `76e90151`
 - `origin/lane/same-plan-wordpress-graph-create` -> `0d2178e9`
 - `origin/main` -> `56063f13`
 
@@ -65,16 +65,17 @@ real source-site mutation boundary. The release gates still stay `0/4`.
 Fresh lane proof since the last audit pass improved the local evidence floor,
 but it did not change the release conclusion:
 
-- `origin/lane/reliable-executor` now records `9415449e`, tightening release
-  verify subprocess handling again, but still not proving production
+- `origin/lane/reliable-executor` now records `76e90151`, tightening release
+  verify timeouts again, but still not proving production
   auth/session lifecycle or a live-source mutation boundary.
-- `origin/lane/no-data-loss-invariants` now records `6fe9cbdb`, adding a
-  comment-post graph blocker proof to the unsupported-surface boundary set.
+- `origin/lane/no-data-loss-invariants` now records `b87a0447`, adding a
+  serialized-block change blocker proof to the unsupported-surface boundary
+  set.
 - `origin/lane/progress-publisher` now records `7695e1f9`, refreshing public
   progress freshness only.
 - `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration`
   now records `29fff11d`, adding featured-image attachment drift proof only.
-- `origin/lane/independent-auditor` now records `6351130f`. This refreshes the
+- `origin/lane/independent-auditor` now records `13f38539`. This refreshes the
   audit snapshot only and does not change the
   release boundary.
 - `origin/lane/fast-paths` now records `8c5c2ccb`, tightening success-claim
