@@ -1,25 +1,25 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-26 15:44 CEST
+Last updated: 2026-05-26 15:45 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
 
-## 2026-05-26 15:44 CEST - Reliable Head Advanced Again
+## 2026-05-26 15:45 CEST - Reliable Head Advanced Again
 
-- Going well: the live reliable head advanced to `325950822499a32663371ed99a487d3faa0e0d4c`, so the checked
-  release path is still moving instead of stalling on support-only evidence.
+- Going well: the live reliable head advanced to `325950822499a32663371ed99a487d3faa0e0d4c`, while the checked
+  release path still keeps moving instead of stalling on support-only evidence.
 - Not going well: the release gate is still `0/4`, and production-backed
   auth/session lifecycle or durable-ownership proof is still missing.
-- Progress change: the release-path head moved again, but gate posture did not.
+- Progress change: the release-path head moved again, but gate posture did not; the public page still names `e82e3b1af126f62688f617a3fb4cc0baeb698d57`.
 - Next nudge: keep `reliable-executor` on the next checked release-path
-  dependency, and have `progress-publisher` refresh the public page if it
-  still names an older reliable head.
+  dependency, and have `progress-publisher` refresh the public page because
+  it is still stale.
 
 | Lane | Nudge |
 | --- | --- |
 | Reliable executor | Move to the next checked release-path dependency, not another proof-field surface. |
-| Progress publisher | Refresh if the public page still names an older reliable head; keep the gate posture at `0/4`. |
+| Progress publisher | Refresh the public page because it still names `e82e3b1af126f62688f617a3fb4cc0baeb698d57`; keep the gate posture at `0/4`. |
 | Audit and critic | Keep the verdict at `0/4` unless production-backed lifecycle or durable ownership is proven. |
 
 ## 2026-05-26 15:30 CEST - Lane Retarget Complete
