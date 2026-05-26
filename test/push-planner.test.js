@@ -37137,6 +37137,40 @@ test('blocks local post GUID changes while preserving a matching independent edi
   assert.equal(remote.files['wp-content/plugins/forms/forms.php'], undefined);
 });
 
+test('blocks local post GUID changes while preserving a matching independent delete and remote-only plugin changes', () => {
+  const base = baseSite();
+  base.db.wp_posts['ID:1'].guid = 'https://example.test/?p=1';
+  base.db.wp_posts['ID:31'] = {
+    ID: 31,
+    post_title: 'Base delete target',
+    post_status: 'draft',
+  };
+
+  const local = baseSite();
+  local.db.wp_posts['ID:1'].guid = 'https://example.test/?p=1-updated';
+  delete local.db.wp_posts['ID:31'];
+
+  const remote = baseSite();
+  delete remote.db.wp_posts['ID:31'];
+  remote.plugins.forms.description = 'remote-only plugin change';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin change */';
+
+  const plan = planFor(base, local, remote);
+  const deleteDecision = decisionFor(plan, 'row:["wp_posts","ID:31"]');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+
+  assert.equal(plan.status, 'conflict');
+  assert.equal(deleteDecision.decision, 'already-in-sync');
+  assert.equal(deleteDecision.change.localChange, 'delete');
+  assert.equal(deleteDecision.change.remoteChange, 'delete');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(remote.db.wp_posts['ID:31'], undefined);
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin change');
+  assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin change */');
+});
+
 test('blocks local post GUID changes while preserving a matching independent file type swap and remote-only plugin removals', () => {
   const base = baseSite();
   base.db.wp_posts['ID:1'].guid = 'https://example.test/?p=1';
