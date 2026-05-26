@@ -137,13 +137,12 @@ export function applyPlan(remote, plan, options = {}) {
       previousJournalState = observedState.status;
       if (observedState.status === 'fully-updated-remote') {
         const completedJournal = completeObservedJournal(journal, plan);
-        const recoveryState = {
-          status: 'fully-updated-remote',
-          reason: 'Journal replay observed every planned mutation already present.',
-          artifacts: {
-            journal: completedJournal,
-          },
-        };
+        const recoveryState = fullyUpdatedRecoveryState(
+          remote,
+          plan,
+          completedJournal,
+          'Journal replay observed every planned mutation already present.',
+        );
         try {
           assertRecoveryStateEnvelope(recoveryState);
           recordDurableReplay(durableJournal, remote, plan, recoveryState, completedJournal);
@@ -267,13 +266,12 @@ export function applyPlan(remote, plan, options = {}) {
       site: commitResult.site,
       appliedMutations: commitResult.appliedMutations,
       journal: commitResult.journal,
-      recoveryState: {
-        status: 'fully-updated-remote',
-        reason: 'All planned mutations were committed.',
-        artifacts: {
-          journal: deepClone(commitResult.journal),
-        },
-      },
+      recoveryState: fullyUpdatedRecoveryState(
+        remote,
+        plan,
+        commitResult.journal,
+        'All planned mutations were committed.',
+      ),
     };
   } finally {
     if (shouldCloseDurableJournal && !isDurableJournalClosed(durableJournal)) {
