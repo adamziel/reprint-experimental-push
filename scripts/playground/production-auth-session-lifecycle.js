@@ -99,6 +99,30 @@ export function evaluateProductionAuthSessionLifecycleSummary(summary, now = Dat
     };
   }
 
+  if (summary.rotated) {
+    return {
+      ok: false,
+      required: 'preserved read',
+      observed: 'rotated',
+    };
+  }
+
+  if (summary.revoked || summary.cleanedUp) {
+    return {
+      ok: false,
+      required: 'unrevoked',
+      observed: summary.revoked ? 'revoked' : 'cleaned-up',
+    };
+  }
+
+  if (summary.expired) {
+    return {
+      ok: false,
+      required: 'unexpired',
+      observed: summary.expired.expiresAt || 'expired',
+    };
+  }
+
   return {
     ok: true,
     required: 'production-auth-session lifecycle',
