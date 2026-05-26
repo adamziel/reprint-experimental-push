@@ -1,5 +1,28 @@
 # Critic Audit
 
+## 2026-05-26 13:15:53 CEST (+0200)
+
+No gate movement. `2a0eb671` exposes production recovery journal inspection in `src/recovery-journal.js` and the release verifier, but it still stays on release-path surface evidence rather than a production-backed auth/session lifecycle or a fully consumed durable-journal claim on the checked release command. The verdict stays `0/4`.
+
+Changed files:
+- [`audits/critic.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/critic/audits/critic.md)
+
+Commands run:
+- `date '+%Y-%m-%d %H:%M:%S %Z (%z)'`
+- `git ls-remote origin refs/heads/lane/reliable-executor`
+- `git show --stat --oneline --no-renames 2a0eb6711b078d6dd0d1df59d35bdf36830753fe --`
+- `git show --no-renames --format=medium 2a0eb6711b078d6dd0d1df59d35bdf36830753fe -- src/recovery-journal.js scripts/playground/production-shaped-release-verify.mjs`
+
+Push result:
+- Not attempted
+
+Worktree status:
+- Modified tracked files: `audits/critic.md`, `.lane-output/final.md`
+- Branch: `lane/cycle-20260525-mainwindows-2349/critic...origin/main [ahead 1636, behind 677]`
+
+Next supervisor nudge:
+- Keep critic narrow and only reclassify again when `reliable-executor` lands checked-path production-backed auth/session lifecycle, durable-journal ownership, or preserved-remote retry proof.
+
 ## 2026-05-26 13:13:43 CEST (+0200)
 
 No gate movement. `35687102` records auth-session cleanup and revocation observations in `src/authenticated-http-push-client.js` and `test/authenticated-http-push-client.test.js`, but it still stays on client-side lifecycle tracing rather than the checked release path. It does not prove a production-backed auth/session lifecycle on the checked release path or durable-journal ownership consumed by the checked release command. The verdict stays `0/4`.
