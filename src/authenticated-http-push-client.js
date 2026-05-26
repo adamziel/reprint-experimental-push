@@ -699,6 +699,7 @@ function isReplayEquivalent(applyResponse, replayResponse) {
     && applyBody.auth?.session?.id === replayBody.auth?.session?.id
     && applyBody.auth?.session?.type === replayBody.auth?.session?.type
     && applyBody.auth?.session?.status === replayBody.auth?.session?.status
+    && applyBody.auth?.session?.expiresAt === replayBody.auth?.session?.expiresAt
     && applyBody.signedRequest?.signed === replayBody.signedRequest?.signed
     && applyBody.signedRequest?.schemaVersion === replayBody.signedRequest?.schemaVersion
     && applyBody.signedRequest?.contentHash === replayBody.signedRequest?.contentHash
