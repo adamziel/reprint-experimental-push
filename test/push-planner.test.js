@@ -10929,6 +10929,49 @@ test('blocks unknown plugin-owned custom table rows while preserving matching in
   assert.equal(pluginFileDecision.decision, 'keep-remote');
 });
 
+test('blocks unknown plugin-owned custom table rows while preserving matching independent delete, edit, and remote-only plugin changes', () => {
+  const resourceKey = 'row:["wp_forms_entries","entry_id:9"]';
+  const base = baseSite();
+  base.files['about.php'] = '<?php echo "base about";';
+  base.db.wp_forms_entries = {
+    'entry_id:9': { entry_id: 9, payload: 'base-private-entry', __pluginOwner: 'forms' },
+  };
+  const local = baseSite();
+  delete local.files['index.php'];
+  local.files['about.php'] = '<?php echo "shared about";';
+  local.db.wp_forms_entries = {
+    'entry_id:9': { entry_id: 9, payload: 'local-private-entry', __pluginOwner: 'forms' },
+  };
+  const remote = baseSite();
+  delete remote.files['index.php'];
+  remote.files['about.php'] = '<?php echo "shared about";';
+  remote.db.wp_forms_entries = {
+    'entry_id:9': { entry_id: 9, payload: 'base-private-entry', __pluginOwner: 'forms' },
+  };
+  remote.plugins.forms.description = 'remote-only plugin changes';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin changes */';
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers[0];
+  const deleteDecision = decisionFor(plan, 'file:index.php');
+  const editDecision = decisionFor(plan, 'file:about.php');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const blockerJson = JSON.stringify(blocker);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(blocker.class, 'unsupported-plugin-owned-resource');
+  assert.equal(blocker.pluginOwner, 'forms');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blockerJson.includes('base-private-entry'), false);
+  assert.equal(blockerJson.includes('local-private-entry'), false);
+  assert.equal(deleteDecision.decision, 'already-in-sync');
+  assert.equal(editDecision.decision, 'already-in-sync');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+});
+
 test('blocks forged generic drivers on unknown plugin-owned custom table rows while preserving matching independent edits and remote-only plugin drift', () => {
   const resourceKey = 'row:["wp_forms_entries","entry_id:9"]';
   const base = baseSite();
