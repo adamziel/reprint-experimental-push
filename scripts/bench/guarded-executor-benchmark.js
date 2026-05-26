@@ -153,6 +153,23 @@ export function productionThroughputBlockers(report) {
   const blockers = [];
   const backpressureEvidenceComplete = hasCompleteBackpressureEvidence(report);
   const parallelismLimits = report.evidence.parallelism?.parallelismLimits ?? null;
+  const parallelismLimitsMeasured =
+    report.evidence.parallelism?.parallelismLimitsMeasured === true;
+  const parallelismLimitsVisibleOnReport =
+    report.evidence.parallelism?.parallelismLimitsVisible === true;
+  const parallelismLimitsIntegral =
+    Number.isInteger(parallelismLimits?.chunkUpload)
+    && Number.isInteger(parallelismLimits?.fileHashing)
+    && Number.isInteger(parallelismLimits?.dbBatchPerTable);
+  const parallelismLimitsCanonical =
+    parallelismLimits?.chunkUpload === DEFAULT_LIMITS.maxUploadConcurrency
+    && parallelismLimits?.fileHashing === DEFAULT_LIMITS.maxHashConcurrency
+    && parallelismLimits?.dbBatchPerTable === DEFAULT_LIMITS.maxDbConcurrencyPerTable;
+  const parallelismLimitsVisible =
+    parallelismLimitsVisibleOnReport
+    && parallelismLimitsMeasured
+    && parallelismLimitsIntegral
+    && parallelismLimitsCanonical;
   const receiptCursorBackpressureBytes = report.evidence.backpressure?.receiptCursorBytes ?? null;
   const receiptCursorQueueSlackBytes = report.evidence.backpressure?.receiptCursorQueueSlackBytes ?? null;
   const receiptCursorQueueBudgetBytes = report.evidence.backpressure?.queueBudgetBytes ?? null;
@@ -324,7 +341,7 @@ export function productionThroughputBlockers(report) {
     parallelismLimits?.chunkUpload === DEFAULT_LIMITS.maxUploadConcurrency
     && parallelismLimits?.fileHashing === DEFAULT_LIMITS.maxHashConcurrency
     && parallelismLimits?.dbBatchPerTable === DEFAULT_LIMITS.maxDbConcurrencyPerTable
-    && report.claims?.productionThroughputDetails?.parallelismLimitsVisible !== true
+    && parallelismLimitsVisible !== true
   ) {
     blockers.push('production-parallelism-limits-not-visible');
   }
@@ -1039,7 +1056,7 @@ export function productionThroughputBlockers(report) {
   }
   if (
     report.evidence.atomicGroup.productionRowBatchExecutorVisible === true
-    && report.claims?.productionThroughputDetails?.parallelismLimitsVisible !== true
+    && parallelismLimitsVisible !== true
   ) {
     blockers.push('production-row-batch-executor-visible-without-parallelism-limits');
   }

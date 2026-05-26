@@ -700,6 +700,40 @@ test('guarded benchmark blocks row-batch executor visibility without visible mea
   assert.equal(blockers.includes('production-parallelism-limits-not-visible'), true);
 });
 
+test('guarded benchmark accepts visible canonical parallelism caps for row-batch proof without precomputed claim details', () => {
+  const report = smallBenchmark();
+  const tampered = clone(report);
+
+  tampered.executorCapabilities.productionAtomicCommit = 'production-atomic-group-commit';
+  tampered.executorCapabilities.fileReceipts = 'production-storage-receipts';
+  tampered.executorCapabilities.rowApply = 'production-batched-compare-and-swap';
+  tampered.evidence.atomicGroup.productionAtomicCommitMeasured = true;
+  tampered.evidence.atomicGroup.productionAtomicCommitVisible = true;
+  tampered.evidence.atomicGroup.productionAtomicGroupMetadataVisible = true;
+  tampered.evidence.atomicGroup.productionStorageReceiptsMeasured = true;
+  tampered.evidence.atomicGroup.productionStorageReceiptsVisible = true;
+  tampered.evidence.atomicGroup.productionRowBatchExecutorMeasured = true;
+  tampered.evidence.atomicGroup.productionRowBatchExecutorVisible = true;
+  tampered.evidence.parallelism.parallelismLimitsMeasured = true;
+  tampered.evidence.parallelism.parallelismLimitsVisible = true;
+  tampered.evidence.parallelism.parallelismLimits = {
+    chunkUpload: 4,
+    fileHashing: 2,
+    dbBatchPerTable: 2,
+  };
+  delete tampered.claims.productionThroughputDetails;
+
+  const details = productionThroughputDetails(tampered);
+  const blockers = productionThroughputBlockers(tampered);
+
+  assert.equal(details.parallelismLimitsVisible, true);
+  assert.equal(blockers.includes('production-parallelism-limits-not-visible'), false);
+  assert.equal(
+    blockers.includes('production-row-batch-executor-visible-without-parallelism-limits'),
+    false,
+  );
+});
+
 test('fast-path fixture rejects cached chunk hashes from skipping window sizing after a pause', () => {
   const fixture = buildFastPathFixture();
   const rejected = fixture.rejectedFastPaths.find(
