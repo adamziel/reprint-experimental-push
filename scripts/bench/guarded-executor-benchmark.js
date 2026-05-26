@@ -961,6 +961,7 @@ export function productionThroughputDetails(report) {
     receiptCursorMemoryHeadroomBytes,
     receiptCursorMemoryHeadroomPositive: receiptCursorMemoryHeadroomPositiveVisible,
     receiptCursorMemoryCeilingMatchesQueueBudget,
+    queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack,
     successInspectionClaimStatus,
     successInspectionClaimReason,
     successInspectionClaimRecognized,
