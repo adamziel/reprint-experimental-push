@@ -27382,12 +27382,23 @@ test('production durable journal adapter satisfies the release-path support prob
   const plan = planFor(baseSite(), baseSite(), baseSite());
   const durableJournalPath = tempRecoveryJournalPath();
   const remoteArtifactPath = `${durableJournalPath}.remote`;
+  const claimId = 'claim-release-support-probe';
   const durableJournal = openProductionRecoveryJournal(durableJournalPath, {
     truncate: true,
     now: fixedNow,
+    claimId,
     ownsRemoteArtifact: true,
     remoteArtifactPath,
     writerLease: { id: 'lease-1' },
+  });
+  appendRecoveryClaimOpened(durableJournal, {
+    plan,
+    current: baseSite(),
+    claimId,
+    artifactRefs: {
+      journal: durableJournalPath,
+      remote: remoteArtifactPath,
+    },
   });
   durableJournal.appendEvent('journal-opened', {
     planId: plan.id,
@@ -27408,6 +27419,10 @@ test('production durable journal adapter satisfies the release-path support prob
   assert.equal(completed.recoveryState.artifacts.journal.status, 'completed');
   assert.equal(completed.recoveryState.artifacts.remote, undefined);
   const persisted = readRecoveryJournal(durableJournalPath);
+  assert.equal(
+    persisted.records.some((record) => record.type === 'recovery-claim-opened'),
+    true,
+  );
   assert.equal(
     persisted.records.find((record) => record.type === 'recovery-state').artifactRefs.remote,
     remoteArtifactPath,
