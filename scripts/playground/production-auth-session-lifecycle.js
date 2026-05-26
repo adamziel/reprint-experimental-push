@@ -407,47 +407,6 @@ function hasTraceBackedPostPreflightReadObservation(observations, issuedIndex) {
   return false;
 }
 
-function resolveMismatchedSummaryPreservedObservation(preservedObservation, observations) {
-  if (!preservedObservation || !Array.isArray(observations) || observations.length === 0) {
-    return null;
-  }
-
-  const observedPreserved = observations.find((observation) =>
-    observation
-    && typeof observation === 'object'
-    && isAuthSessionReadStep(observation.step)
-    && observation.preserved === true);
-  if (!observedPreserved) {
-    return {
-      ok: false,
-      required: 'preserved read',
-      observed: 'stale-preserved-summary',
-    };
-  }
-
-  for (const field of ['step', 'id', 'type', 'status', 'expiresAt', 'authUser']) {
-    const expected = preservedObservation?.[field] ?? null;
-    const observed = observedPreserved?.[field] ?? null;
-    if (expected !== observed) {
-      return {
-        ok: false,
-        required: 'preserved read',
-        observed: 'stale-preserved-summary',
-      };
-    }
-  }
-
-  if (Boolean(preservedObservation?.preserved) !== true) {
-    return {
-      ok: false,
-      required: 'preserved read',
-      observed: 'stale-preserved-summary',
-    };
-  }
-
-  return null;
-}
-
 function resolveAuthSessionIdentitySummary(observation) {
   if (!observation || typeof observation !== 'object') {
     return { missing: true, value: '' };
@@ -483,4 +442,352 @@ function resolveInvalidProductionAuthSessionLifecycleFlag(session) {
   }
 
   return null;
+}
+
+function resolveInvalidAuthSessionSummaryFlag(summary) {
+  if (!summary || typeof summary !== 'object') {
+    return null;
+  }
+
+  if (summary.cleanup !== undefined && summary.cleanup !== null && typeof summary.cleanup !== 'boolean') {
+    return 'cleanup';
+  }
+
+  const summaryObservationFields = ['expired', 'revoked', 'cleanedUp', 'rotated', 'preserved'];
+  for (const field of summaryObservationFields) {
+    const value = summary[field];
+    if (value !== undefined && value !== null && (typeof value !== 'object' || Array.isArray(value))) {
+      return field;
+    }
+  }
+
+  return null;
+}
+
+function resolveInvalidAuthSessionSummaryObservationField(summary) {
+  if (!summary || typeof summary !== 'object') {
+    return null;
+  }
+
+  const summaryObservationFields = ['expired', 'revoked', 'cleanedUp', 'rotated', 'preserved'];
+  for (const field of summaryObservationFields) {
+    const observation = summary[field];
+    if (!observation || typeof observation !== 'object' || Array.isArray(observation)) {
+      continue;
+    }
+
+    const normalizedStep = normalizeAuthSessionObservationStep(observation.step);
+    if (normalizedStep === 'missing') {
+      return {
+        ok: false,
+        required: 'preserved read',
+        observed: 'missing-phase',
+      };
+    }
+
+    if (normalizedStep === 'invalid-step') {
+      return {
+        ok: false,
+        required: 'preserved read',
+        observed: 'invalid-step',
+      };
+    }
+
+    const invalidLifecycleFlag = resolveInvalidAuthSessionLifecycleFlag(observation);
+    if (invalidLifecycleFlag) {
+      return {
+        ok: false,
+        required: 'boolean lifecycle flags',
+        observed: `invalid-${invalidLifecycleFlag}`,
+      };
+    }
+
+    const invalidIdentityField = resolveInvalidAuthSessionIdentityField(observation);
+    if (invalidIdentityField) {
+      return {
+        ok: false,
+        required: 'string lifecycle fields',
+        observed: `invalid-${invalidIdentityField}`,
+      };
+    }
+
+    if (!summaryObservationCarriesExpectedFlag(field, observation)) {
+      return {
+        ok: false,
+        required: 'boolean lifecycle flags',
+        observed: `invalid-${field}`,
+      };
+    }
+
+    if (
+      !summaryObservationStepMatchesMarker(field, observation.step)
+      && !summaryMarkerMatchesDirectReadLifecycleOutcome(summary, field, observation)
+    ) {
+      return {
+        ok: false,
+        required: 'preserved read',
+        observed: normalizeAuthSessionObservationStep(observation.step),
+      };
+    }
+
+    if (field === 'preserved') {
+      const invalidPreservedLifecycleOutcome = resolveInvalidReadLifecycleOutcome(
+        observation,
+        'preserved read',
+      );
+      if (invalidPreservedLifecycleOutcome) {
+        return invalidPreservedLifecycleOutcome;
+      }
+    }
+  }
+
+  return null;
+}
+
+function resolveMismatchedSummaryObservationSession(summary, issuedSessionId) {
+  if (!summary || typeof summary !== 'object' || !issuedSessionId) {
+    return null;
+  }
+
+  const summaryObservationFields = ['expired', 'revoked', 'cleanedUp', 'rotated', 'preserved'];
+  for (const field of summaryObservationFields) {
+    const observation = summary[field];
+    if (!observation || typeof observation !== 'object' || Array.isArray(observation)) {
+      continue;
+    }
+
+    const observationSessionId = normalizeAuthSessionObservationId(observation.id);
+    if (observationSessionId && observationSessionId !== issuedSessionId) {
+      return {
+        ok: false,
+        required: 'preserved read',
+        observed: 'rotated',
+      };
+    }
+  }
+
+  return null;
+}
+
+function resolveMismatchedSummaryReadObservation(readObservation, observations) {
+  if (!readObservation || !Array.isArray(observations) || observations.length === 0) {
+    return null;
+  }
+
+  const lastObservedRead = [...observations]
+    .reverse()
+    .find((observation) => observation && typeof observation === 'object' && isAuthSessionReadStep(observation.step));
+  if (!lastObservedRead) {
+    return null;
+  }
+
+  const readSessionId = normalizeAuthSessionObservationId(readObservation.id);
+  const lastObservedReadSessionId = normalizeAuthSessionObservationId(lastObservedRead.id);
+  if (readSessionId && lastObservedReadSessionId && readSessionId !== lastObservedReadSessionId) {
+    return {
+      ok: false,
+      required: 'preserved read',
+      observed: 'rotated',
+    };
+  }
+
+  if (readObservation.step !== lastObservedRead.step) {
+    return {
+      ok: false,
+      required: 'preserved read',
+      observed: normalizeAuthSessionObservationStep(lastObservedRead.step),
+    };
+  }
+
+  if (!authSessionObservationEquals(readObservation, lastObservedRead)) {
+    return {
+      ok: false,
+      required: 'preserved read',
+      observed: 'stale-read-summary',
+    };
+  }
+
+  return null;
+}
+
+function resolveMismatchedSummaryIssuedObservation(issuedObservation, observations) {
+  if (!issuedObservation || !Array.isArray(observations) || observations.length === 0) {
+    return null;
+  }
+
+  const observedIssued = observations.find((observation) =>
+    observation && typeof observation === 'object' && observation.step === 'preflight');
+  if (!observedIssued) {
+    return null;
+  }
+
+  if (!authSessionObservationEquals(issuedObservation, observedIssued)) {
+    return {
+      ok: false,
+      required: 'issued preflight',
+      observed: 'stale-issued-summary',
+    };
+  }
+
+  return null;
+}
+
+function resolveMismatchedSummaryPreservedObservation(preservedObservation, observations) {
+  if (!preservedObservation || !Array.isArray(observations) || observations.length === 0) {
+    return null;
+  }
+
+  const observedPreserved = observations.find((observation) =>
+    observation
+    && typeof observation === 'object'
+    && isAuthSessionReadStep(observation.step)
+    && observation.preserved === true);
+  if (!observedPreserved) {
+    return {
+      ok: false,
+      required: 'preserved read',
+      observed: 'stale-preserved-summary',
+    };
+  }
+
+  if (!authSessionObservationEquals(preservedObservation, observedPreserved)) {
+    return {
+      ok: false,
+      required: 'preserved read',
+      observed: 'stale-preserved-summary',
+    };
+  }
+
+  return null;
+}
+
+function resolveInvalidIssuedAuthSessionObservation(observation) {
+  if (!observation || typeof observation !== 'object') {
+    return null;
+  }
+
+  if (observation.preserved === true) {
+    return {
+      ok: false,
+      required: 'issued preflight',
+      observed: 'preserved',
+    };
+  }
+
+  return resolveInvalidReadLifecycleOutcome(observation, 'issued preflight');
+}
+
+function resolveInvalidReadAuthSessionObservation(observation) {
+  if (!observation || typeof observation !== 'object') {
+    return null;
+  }
+
+  return resolveInvalidReadLifecycleOutcome(observation, 'preserved read');
+}
+
+function resolveInvalidReadLifecycleOutcome(observation, required) {
+  if (!observation || typeof observation !== 'object') {
+    return null;
+  }
+
+  if (observation.expired === true) {
+    return {
+      ok: false,
+      required: 'unexpired',
+      observed: 'expired',
+    };
+  }
+
+  if (observation.revoked === true) {
+    return {
+      ok: false,
+      required: 'unrevoked',
+      observed: 'revoked',
+    };
+  }
+
+  if (observation.cleanedUp === true || observation.cleanup === true) {
+    return {
+      ok: false,
+      required: 'unrevoked',
+      observed: 'cleaned-up',
+    };
+  }
+
+  if (observation.rotated === true) {
+    return {
+      ok: false,
+      required,
+      observed: 'rotated',
+    };
+  }
+
+  return null;
+}
+
+function authSessionObservationEquals(left, right) {
+  return normalizeAuthSessionObservationId(left?.id) === normalizeAuthSessionObservationId(right?.id)
+    && normalizeAuthSessionObservationField(left?.type) === normalizeAuthSessionObservationField(right?.type)
+    && normalizeAuthSessionObservationField(left?.status) === normalizeAuthSessionObservationField(right?.status)
+    && normalizeAuthSessionObservationField(left?.expiresAt) === normalizeAuthSessionObservationField(right?.expiresAt)
+    && normalizeAuthSessionObservationStep(left?.step) === normalizeAuthSessionObservationStep(right?.step)
+    && normalizeLifecycleBoolean(left?.expired) === normalizeLifecycleBoolean(right?.expired)
+    && normalizeLifecycleBoolean(left?.revoked) === normalizeLifecycleBoolean(right?.revoked)
+    && normalizeLifecycleBoolean(left?.rotated) === normalizeLifecycleBoolean(right?.rotated)
+    && normalizeLifecycleBoolean(left?.preserved) === normalizeLifecycleBoolean(right?.preserved)
+    && normalizeLifecycleBoolean(left?.cleanedUp ?? left?.cleanup) === normalizeLifecycleBoolean(right?.cleanedUp ?? right?.cleanup);
+}
+
+function normalizeLifecycleBoolean(value) {
+  return value === true;
+}
+
+function summaryObservationCarriesExpectedFlag(field, observation) {
+  switch (field) {
+    case 'expired':
+      return observation.expired === true;
+    case 'revoked':
+      return observation.revoked === true;
+    case 'cleanedUp':
+      return observation.cleanedUp === true || observation.cleanup === true;
+    case 'rotated':
+      return observation.rotated === true;
+    case 'preserved':
+      return observation.preserved === true;
+    default:
+      return true;
+  }
+}
+
+function summaryObservationStepMatchesMarker(field, step) {
+  switch (field) {
+    case 'expired':
+    case 'revoked':
+    case 'rotated':
+    case 'preserved':
+      return isAuthSessionReadStep(step);
+    case 'cleanedUp':
+      return step === 'cleanup';
+    default:
+      return true;
+  }
+}
+
+function summaryMarkerMatchesDirectReadLifecycleOutcome(summary, field, observation) {
+  if (field !== 'cleanedUp') {
+    return false;
+  }
+
+  const directRead = summary?.read;
+  if (!directRead || typeof directRead !== 'object' || Array.isArray(directRead)) {
+    return false;
+  }
+
+  if (directRead.cleanedUp !== true && directRead.cleanup !== true) {
+    return false;
+  }
+
+  const directReadSessionId = normalizeAuthSessionObservationId(directRead.id);
+  const observationSessionId = normalizeAuthSessionObservationId(observation?.id);
+  return !directReadSessionId || !observationSessionId || directReadSessionId === observationSessionId;
 }
