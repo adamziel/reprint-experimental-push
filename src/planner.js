@@ -3322,6 +3322,7 @@ function addUnsupportedCommentsUsersResourceBlocker(plan, {
   localHash,
   remoteHash,
 }) {
+  const references = boundEvidenceList(support.references || [], 3);
   plan.blockers.push({
     id: `blocker-unsupported-comments-users-resource-${plan.blockers.length + 1}`,
     class: support.className || 'unsupported-comments-users-resource',
@@ -3330,7 +3331,8 @@ function addUnsupportedCommentsUsersResourceBlocker(plan, {
     resourceKey: resource.key,
     reason: support.reason || `Comments and users graph resource ${resource.key} is not yet supported by the planner.`,
     unsupportedState: support.unsupportedState || null,
-    references: support.references || [],
+    references,
+    referencesTruncated: Boolean((support.references || []).length > references.length),
     baseHash,
     localHash,
     remoteHash,

@@ -30240,7 +30240,7 @@ test('prioritizes comment-user blocker wording while carrying bounded comment, u
   assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin changes */');
 });
 
-test('orders same-plan user dependency references deterministically within the same priority bucket', () => {
+test('prioritizes comment-user blocker wording while truncating lower-priority same-plan user dependency references', () => {
   const resourceKey = 'row:["wp_users","ID:24"]';
   const base = baseSite();
   base.db.wp_posts['ID:1'].post_title = 'Base shared ordered user dependency post';
@@ -30347,15 +30347,13 @@ test('orders same-plan user dependency references deterministically within the s
   assert.equal(blocker.resourceKey, resourceKey);
   assert.equal(blocker.unsupportedState, 'same-plan-reference');
   assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_users","ID:24"] is created in the same plan as a comment user identity that depends on it, and identity rewriting is not yet supported.');
+  assert.equal(blocker.referencesTruncated, true);
   assert.deepEqual(
     blocker.references.map((reference) => [reference.relationshipType, reference.sourceResourceKey]),
     [
       ['comment-user', 'row:["wp_comments","comment_ID:24"]'],
       ['comment-user', 'row:["wp_comments","comment_ID:25"]'],
       ['usermeta-user', 'row:["wp_usermeta","umeta_id:24"]'],
-      ['usermeta-user', 'row:["wp_usermeta","umeta_id:25"]'],
-      ['post-author', 'row:["wp_posts","ID:24"]'],
-      ['post-author', 'row:["wp_posts","ID:26"]'],
     ],
   );
   assert.equal(blocker.references.every((reference) => reference.targetResourceKey === resourceKey), true);
