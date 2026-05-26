@@ -459,6 +459,7 @@ function hasCompleteBackpressureEvidence(report) {
     && report.evidence.backpressure?.queuePausedBeforeOverflow === true
     && report.evidence.backpressure?.receiptCursorWithinQueueBudget === true
     && receiptCursorBackpressureBytes === receiptCursorWindowBytes
+    && receiptCursorBackpressureBytes <= receiptCursorQueueBudgetBytes
     && receiptCursorQueueHeadroomBytes === receiptCursorQueueBudgetBytes - report.shape.chunkSizeBytes
     && receiptCursorQueueHeadroomBytes >= receiptCursorBackpressureBytes
   );

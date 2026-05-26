@@ -417,6 +417,10 @@ test('production claim gate fails closed if benchmark evidence is tampered', () 
     productionThroughputDetails(mismatchedQueueBudget).queueBudgetMatchesResourceCeiling,
     false,
   );
+  assert.equal(
+    productionThroughputDetails(mismatchedQueueBudget).backpressureConsistency.backpressureEvidenceComplete,
+    false,
+  );
 
   const mismatchedQueueCursor = clone(report);
   mismatchedQueueCursor.evidence.backpressure.receiptCursorBytes = 0;
