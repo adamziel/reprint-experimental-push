@@ -39,10 +39,10 @@ The project is **not releasable as a production WordPress push path**.
 - `origin/lane/cycle-20260525-keep-busy-loop-2/no-data-loss-recovery` -> `63e01a49`
 - `origin/lane/cycle-20260525-mainwindows-2349/critic` -> `fa0dc8a0`
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `863075c1`
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `b4eeed32`
-- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `f1599fb2`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `90bdf7b0`
+- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `76920d18`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `435f2d1e`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `10b2de77`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `76830624`
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` -> `c4103594`
 - `origin/lane/cycle-20260525-mainwindows-2357/no-data-loss-invariants-graph-proof` -> `98c0ce26`
 - `origin/lane/cycle-20260525-restart-2340/feedback-supervisor` -> `ef3d911e`
@@ -52,10 +52,10 @@ The project is **not releasable as a production WordPress push path**.
 - `origin/lane/feedback-supervisor` -> `ca91c444`
 - `origin/lane/independent-auditor` -> `e6337246`
 - `origin/lane/no-data-loss-invariants` -> `5e63d72d`
-- `origin/lane/no-data-loss-recovery` -> `435f2d1e`
+- `origin/lane/no-data-loss-recovery` -> `9e077c10`
 - `origin/lane/progress-publisher` -> `7695e1f9`
 - `origin/lane/reliable-executor` -> `f58b9566`
-- `origin/lane/same-plan-wordpress-graph-create` -> `0d2178e9`
+- `origin/lane/same-plan-wordpress-graph-create` -> `52be8d87`
 - `origin/main` -> `56063f13`
 
 The current remote state still adds no production-backed auth/session
@@ -71,30 +71,30 @@ but it did not change the release conclusion:
 - `origin/lane/no-data-loss-invariants` now records `5e63d72d`, adding
   navigation-parent blocker proof again, but still not proving the live
   release boundary or any production-backed source mutation.
-- `origin/lane/progress-publisher` now records `10b2de77`, refreshing public
+- `origin/lane/progress-publisher` now records `7695e1f9`, refreshing public
   progress freshness only.
 - `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration`
   now records `0b33a5f9`, adding plugin-owned delete-guard coverage only.
-- `origin/lane/independent-auditor` now records `e6337246`. This refreshes the
+- `origin/lane/independent-auditor` now records `76920d18`. This refreshes the
   audit snapshot only and does not change the release boundary.
-- `origin/lane/fast-paths` now records `863075c1`, tightening guarded
+- `origin/lane/fast-paths` now records `7098b26d`, tightening guarded
   benchmark and pause-reporting evidence checks only.
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` now
-  records `435f2d1e`, tightening blocked recovery validation. It still does
+  records `9e077c10`, tightening blocked recovery validation. It still does
   not add production-backed journal ownership or replay proof.
-- `origin/lane/feedback-supervisor` now records `b4eeed32`, refreshing the
+- `origin/lane/feedback-supervisor` now records `90bdf7b0`, refreshing the
   supervisor progress surface only.
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now records
-  `b4eeed32`, refreshing the public progress freshness only.
+  `90bdf7b0`, refreshing the public progress freshness only.
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` now records
-  `863075c1`, tightening pause detail reporting only.
+  `7098b26d`, tightening pause detail reporting only.
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` now records
   `c4103594`, hardening live proof cleanup and timeouts only.
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now records
-  `838793db`, refreshing the public progress freshness only.
-- `origin/lane/no-data-loss-recovery` now records `435f2d1e`, tightening
+  `76830624`, refreshing the public progress freshness only.
+- `origin/lane/no-data-loss-recovery` now records `9e077c10`, tightening
   unsupported recovery journal boundaries only.
-- `origin/lane/same-plan-wordpress-graph-create` now records `0d2178e9`,
+- `origin/lane/same-plan-wordpress-graph-create` now records `52be8d87`,
   hardening revision graph references only.
 
 Those changes strengthen the lab evidence for protocol safety and no-loss
