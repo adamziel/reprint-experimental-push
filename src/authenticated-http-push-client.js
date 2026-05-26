@@ -281,10 +281,14 @@ export async function runAuthenticatedHttpPush({
     && !replayAuthEnvelopeDrift
     && dbJournal.status === 200
     && dbJournal.body?.ok === true
+    && dbJournalProofIsAcceptable(summary.dbJournal)
     && summary.after?.finalMatchesLocal === true;
   if (!summary.ok) {
     const replayIdempotency = replay.body?.idempotency;
     const authEnvelopeDrift = applyAuthEnvelopeDrift || replayAuthEnvelopeDrift;
+    const journalProofFailed = dbJournal.status === 200
+      && dbJournal.body?.ok === true
+      && !dbJournalProofIsAcceptable(summary.dbJournal);
     const replayEquivalenceFailed = replay.status === 200
       && replay.body?.ok === true
       && replayIdempotency
@@ -297,6 +301,8 @@ export async function runAuthenticatedHttpPush({
       ? 'AUTH_SESSION_LIFECYCLE_DRIFT'
       : replayEquivalenceFailed
       ? 'REPLAY_NOT_EQUIVALENT'
+      : journalProofFailed
+        ? 'DURABLE_JOURNAL_NOT_PROVEN'
       : (replayIdempotency?.replayed !== true || replayIdempotency?.freshMutationWork !== false)
         ? 'REPLAY_NOT_IDEMPOTENT'
         : apply.body?.code
@@ -304,7 +310,9 @@ export async function runAuthenticatedHttpPush({
           || replay.body?.code
           || dbJournal.body?.code
           || 'APPLY_FAILED';
-    setDurableJournalBoundary(summary, dbJournal.status === 200 ? (replay.status === 200 ? 'replay' : 'apply') : 'journal-inspect');
+    setDurableJournalBoundary(summary, dbJournal.status === 200
+      ? (journalProofFailed ? 'journal-inspect' : (replay.status === 200 ? 'replay' : 'apply'))
+      : 'journal-inspect');
   }
   return summary;
 }
@@ -456,6 +464,12 @@ function summarizeDbJournal(response) {
     mutationApplied: rows.filter((entry) => entry.event === 'mutation-applied').length,
     idempotencyOpened: rows.filter((entry) => entry.event === 'idempotency-opened').length,
   };
+}
+
+function dbJournalProofIsAcceptable(dbJournal) {
+  return dbJournal?.applyCommitted === true
+    && dbJournal?.idempotencyOpened > 0
+    && dbJournal?.mutationApplied > 0;
 }
 
 function summarizeRecoveryInspect(response) {
