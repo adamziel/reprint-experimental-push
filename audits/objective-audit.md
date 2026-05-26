@@ -49,11 +49,11 @@ The project is **not releasable as a production WordPress push path**.
 - `origin/lane/cycle-20260525-mainwindows-2349/same-plan-wordpress-graph-create` -> `af493c80`
 - `origin/lane/cycle-20260525-mainwindows-2357/no-data-loss-invariants-graph-proof` -> `98c0ce26`
 - `origin/lane/cycle-20260525-restart-2340/feedback-supervisor` -> `ef3d911e`
-- `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration` -> `7efe180b`
 - `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration` -> `8cfc4f6c`
+- `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration` -> `c55aab49`
 - `origin/lane/critic` -> `e5130a9e`
 - `origin/lane/fast-paths` -> `8c5c2ccb`
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `f2d32e1d`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `922aad26`
 - `origin/lane/independent-auditor` -> `b36665ef`
 - `origin/lane/no-data-loss-invariants` -> `30040cee`
 - `origin/lane/no-data-loss-recovery` -> `9e077c10`
@@ -65,12 +65,12 @@ Fresh visibility-lane heads moved, but they still only refresh public status sur
 
 - Since the last audit pass, the visible progress lanes advanced again:
   `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` ->
-  `1cdca21b` and `origin/lane/cycle-20260525-mainwindows-2349/progress-followup`
-  -> `93f15c4d`. That changes the freshness surface, not the release gate.
+  `922aad26` and `origin/lane/cycle-20260525-mainwindows-2349/progress-followup`
+  -> `2df3b253`. That changes the freshness surface, not the release gate.
 - The current public-refresh branch heads remain:
   `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` ->
-  `1cdca21b` and `origin/lane/cycle-20260525-mainwindows-2349/progress-followup`
-  -> `93f15c4d`.
+  `922aad26` and `origin/lane/cycle-20260525-mainwindows-2349/progress-followup`
+  -> `2df3b253`.
 - `origin/lane/reliable-executor` -> `c1943da1`
 - `origin/lane/no-data-loss-invariants` -> `30040cee`
 - `origin/lane/no-data-loss-recovery` -> `2af1ddda`
