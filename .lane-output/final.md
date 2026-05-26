@@ -6,17 +6,17 @@ Changed files:
 - [`.lane-output/final.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/independent-auditor/.lane-output/final.md)
 
 What changed:
-- Updated the stale remote-head snapshot for `origin/lane/critic`,
-  `origin/lane/cycle-20260525-mainwindows-2349/progress-followup`, and
-  `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration`.
-- Kept the unsupported-slice wording closed: the new integration proof still
-  only strengthens blocker coverage and does not prove live source mutation.
+- Updated the stale remote-head snapshot for `origin/lane/independent-auditor`,
+  `origin/lane/fast-paths`, `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor`,
+  and `origin/lane/cycle-20260525-mainwindows-2349/progress-followup`.
+- Kept the unsupported-slice wording closed: the newer lane heads still only
+  strengthen fail-closed boundaries and do not prove live source mutation.
 
 Commands run:
 - `git status --short --branch`
 - `git for-each-ref --format='%(refname:short) %(objectname:short) %(committerdate:iso8601) %(subject)' refs/remotes/origin/lane | sort | tail -n 60`
 - `sed -n '1,320p' audits/objective-audit.md`
-- `git diff -- audits/objective-audit.md`
+- `git diff -- audits/objective-audit.md .lane-output/final.md`
 - `git status --short --branch`
 
 Push result:
@@ -51,7 +51,7 @@ Push result:
 Worktree status:
 - Branch: `lane/cycle-20260525-mainwindows-2349/independent-auditor`
 - Status: dirty tracked files in `audits/objective-audit.md` and `.lane-output/final.md`
-- Remote comparison: `ahead 1297, behind 204` relative to `origin/main`
+- Remote comparison: `ahead 1356, behind 223` relative to `origin/main`
 
 Next supervisor nudge:
 1. Re-poll only when a lane lands new proof that changes the live production release boundary; the current audit still holds the same `0/4` gate posture.

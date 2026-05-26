@@ -7,19 +7,19 @@ The project is **not releasable as a production WordPress push path**.
 Fresh remote heads at audit time, checked on May 26, 2026:
 
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `0959a5ac`
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `9351cd78`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `02bccfa1`
 - `origin/lane/reliable-executor` -> `b8d91776`
 - `origin/lane/no-data-loss-invariants` -> `9c70eba6`
 - `origin/lane/no-data-loss-recovery` -> `4372167e`
-- `origin/lane/fast-paths` -> `cd0fddad`
+- `origin/lane/fast-paths` -> `74b44338`
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `0959a5ac`
-- `origin/lane/independent-auditor` -> `5abd1f65`
+- `origin/lane/independent-auditor` -> `5bcc0ded`
 - `origin/lane/critic` -> `cba0890b`
 - `origin/lane/progress-publisher` -> `7695e1f9`
 - `origin/lane/cycle-20260525-mainwindows-2349/critic` -> `cba0890b`
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `d6bf78a8`
-- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `5c0b8477`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `7805be01`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `02bccfa1`
+- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `74b44338`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `ab654424`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `4372167e`
 - `origin/lane/same-plan-wordpress-graph-create` -> `09e6706d`
 - `origin/lane/cycle-20260525-mainwindows-2349/same-plan-wordpress-graph-create` -> `09e6706d`
@@ -70,9 +70,9 @@ but it did not change the release conclusion:
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now
   refreshes supervisor progress visibility at `b4c790d5`.
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now
-  records the latest progress freshness handoff at `3a9de43f`.
+  records the latest progress freshness handoff at `ab654424`.
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` now refreshes the audit snapshot at
-  `5abd1f65`.
+  `5bcc0ded`.
 - `origin/lane/critic` now refreshes the critic handoff at `cba0890b`.
 - `origin/lane/progress-publisher` now refreshes the public progress evidence
   at `7695e1f9`.
