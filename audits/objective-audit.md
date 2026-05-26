@@ -4,9 +4,9 @@
 
 The project is **not releasable as a production WordPress push path**.
 
-- Audit time: 2026-05-26 15:19:30 CEST (+0200)
+- Audit time: 2026-05-26 15:36:43 CEST (+0200)
 - Fresh remote heads re-polled at audit time:
-  - `origin/lane/reliable-executor` -> `e82e3b1af126f62688f617a3fb4cc0baeb698d57` (`Consume packaged auth session source on release verify`)
+  - `origin/lane/reliable-executor` -> `325950822499a32663371ed99a487d3faa0e0d4c` (`Tighten release verifier startup diagnostics`)
   - `origin/lane/no-data-loss-recovery` -> `0a28d046`
   - `origin/lane/critic` -> `dc091bcc`
   - `origin/lane/progress-publisher` -> `349eea68`

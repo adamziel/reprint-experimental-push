@@ -1,30 +1,36 @@
-`e82e3b1af126f62688f617a3fb4cc0baeb698d57` stays `0/4`.
+`325950822499a32663371ed99a487d3faa0e0d4c` stays `0/4`.
 
-Audit time: 2026-05-26 15:19:30 CEST (+0200)
+Audit time: 2026-05-26 15:36:43 CEST (+0200)
 
 Current verdict:
-- `e82e3b1af126f62688f617a3fb4cc0baeb698d57` prefers packaged auth session source wiring on the release verifier test surface.
-- It shows the checked release path can consume packaged source evidence more directly.
-- It does not prove production-backed auth/session lifecycle on the live `verify:release` boundary.
-- It does not establish production durable-journal ownership or restart-readable production storage semantics.
+- The checked release verifier has clearer release-path startup diagnostics, but it still does not prove production-backed auth/session lifecycle on the live `verify:release` boundary.
+- It still does not establish production durable-journal ownership or restart-readable production storage semantics.
+- The next gate owner remains `reliable-executor`.
 
 Changed files:
 - [`audits/objective-audit.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/independent-auditor-current-20260526-1424/audits/objective-audit.md)
-- [`audits/current-head-e82e3b1.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/independent-auditor-current-20260526-1424/audits/current-head-e82e3b1.md)
 - [`.lane-output/final.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/independent-auditor-current-20260526-1424/.lane-output/final.md)
 
 Commands run:
+- `git status --short --branch`
+- `find .. -name AGENTS.md -o -path '*/supervision/README.md' -o -path '*/supervision/lanes/*' -o -path '*/.lane-output/final*.md' | sort`
+- `sed -n '1,220p' .lane-output/final.md`
+- `sed -n '1,220p' supervision/README.md`
+- `sed -n '1,220p' supervision/lanes/independent-auditor.md`
 - `date '+%Y-%m-%d %H:%M:%S %Z (%z)'`
 - `git ls-remote origin refs/heads/lane/reliable-executor`
-- `sed -n '1,220p' .lane-output/final.md`
-- `sed -n '1,220p' audits/current-head-e82e3b1.md`
+- `find . -path './audits/*' -o -path './.lane-output/*' | sort`
 - `sed -n '1,220p' audits/objective-audit.md`
+- `grep -n 'e82e3b1\\|3259508\\|Audit time\\|Fresh remote heads' audits/objective-audit.md`
+- `git log --oneline -1 325950822499a32663371ed99a487d3faa0e0d4c`
+- `sed -n '1,120p' audits/objective-audit.md`
 
 Push result:
-- Pending commit and push.
+- Not pushed yet
 
 Worktree status:
-- Dirty: [`.lane-output/final.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/independent-auditor-current-20260526-1424/.lane-output/final.md)
+- Dirty: [`audits/objective-audit.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/independent-auditor-current-20260526-1424/audits/objective-audit.md), [`.lane-output/final.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/independent-auditor-current-20260526-1424/.lane-output/final.md)
+- Branch: `lane/cycle-20260525-mainwindows-2349/independent-auditor-current-20260526-1424...origin/lane/independent-auditor [ahead 2]`
 
 Next supervisor nudge:
-- Keep the verdict at `0/4`; `ac41777479f04355b0017e77c2107d89dd66c01a` is support evidence only, and the next gate owner remains `reliable-executor`.
+- Keep the verdict at `0/4`; the release gate is still blocked on production-backed auth/session lifecycle or durable-journal semantics on the checked release path.
