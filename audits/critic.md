@@ -1,14 +1,15 @@
 # Critic Verdict
 
-Current reliable head: `b80e6321b4411775af6e74614f414b60d33d9173`
-(`current release-executor head`).
+Current reliable head: `0463f4f39ac1e6e11d612cce97744fb9dbee3d0b`
+(`Fail closed on malformed auth lifecycle flags`).
 
 Verdict: `0/4`
 
 Reason:
 
-- This head still does not prove a production-backed auth/session lifecycle on
-  the checked release path.
+- This head is narrower auth-session hardening only. It fails closed on
+  malformed lifecycle flags, but it still does not prove a production-backed
+  auth/session lifecycle on the checked release path.
 - The checked proof is still missing live issuance/read/expiry/rotation/
   revocation/cleanup evidence for `production-auth-session`, and it still does
   not establish production durable-journal ownership/restart semantics
