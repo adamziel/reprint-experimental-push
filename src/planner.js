@@ -3179,6 +3179,7 @@ function addUnsupportedAttachmentResourceBlocker(plan, {
   localHash,
   remoteHash,
 }) {
+  const references = boundEvidenceList(support.references || [], 3);
   plan.blockers.push({
     id: `blocker-unsupported-attachment-resource-${plan.blockers.length + 1}`,
     class: support.className || 'unsupported-attachment-resource',
@@ -3199,7 +3200,8 @@ function addUnsupportedAttachmentResourceBlocker(plan, {
       localHash,
       remoteHash,
     ),
-    references: support.references || [],
+    references,
+    referencesTruncated: Boolean((support.references || []).length > references.length),
   });
 }
 
@@ -3213,6 +3215,7 @@ function addUnsupportedRevisionResourceBlocker(plan, {
   localHash,
   remoteHash,
 }) {
+  const references = boundEvidenceList(support.references || [], 3);
   plan.blockers.push({
     id: `blocker-unsupported-revision-resource-${plan.blockers.length + 1}`,
     class: support.className || 'unsupported-revision-resource',
@@ -3233,7 +3236,8 @@ function addUnsupportedRevisionResourceBlocker(plan, {
       localHash,
       remoteHash,
     ),
-    references: support.references || [],
+    references,
+    referencesTruncated: Boolean((support.references || []).length > references.length),
   });
 }
 
@@ -3280,6 +3284,7 @@ function addUnsupportedTermTaxonomyResourceBlocker(plan, {
   localHash,
   remoteHash,
 }) {
+  const references = boundEvidenceList(support.references || [], 3);
   plan.blockers.push({
     id: `blocker-unsupported-term-taxonomy-resource-${plan.blockers.length + 1}`,
     class: support.className || 'unsupported-term-taxonomy-resource',
@@ -3291,7 +3296,8 @@ function addUnsupportedTermTaxonomyResourceBlocker(plan, {
     baseHash,
     localHash,
     remoteHash,
-    references: support.references || [],
+    references,
+    referencesTruncated: Boolean((support.references || []).length > references.length),
     change: changeEvidence(
       resource,
       baseValue,

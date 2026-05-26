@@ -22658,7 +22658,7 @@ test('prioritizes post meta attachment blocker wording while carrying bounded po
   );
   assert.deepEqual(
     blocker.references.map((reference) => reference.relationshipType),
-    ['postmeta-post', 'featured-image-attachment', 'post-parent', 'term-relationship-object'],
+    ['postmeta-post', 'featured-image-attachment', 'post-parent'],
   );
   assert.deepEqual(
     blocker.references.map((reference) => reference.sourceResourceKey),
@@ -22666,9 +22666,9 @@ test('prioritizes post meta attachment blocker wording while carrying bounded po
       attachmentMetaResourceKey,
       featuredImageResourceKey,
       childPostResourceKey,
-      relationshipResourceKey,
     ],
   );
+  assert.equal(blocker.referencesTruncated, true);
   assert.equal(blocker.references.every((reference) => reference.targetResourceKey === attachmentResourceKey), true);
   assert.equal(attachmentMetaBlocker.class, 'stale-wordpress-graph-identity');
   assert.equal(featuredImageBlocker.class, 'unsupported-attachment-resource');
