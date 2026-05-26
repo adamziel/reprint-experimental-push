@@ -56,6 +56,7 @@ const liveCredentials = {
   password: 'reprint-push-admin-app-password',
 };
 const proofSubprocessTimeoutMs = 30_000;
+const packagedProofSubprocessTimeoutMs = 45_000;
 const proofSubprocessKillSignal = 'SIGTERM';
 const liveProofSubprocessTimeoutMs = 15_000;
 const liveProofSubprocessKillSignal = 'SIGKILL';
@@ -67,6 +68,10 @@ const liveProofLaunchTimeoutMs = Math.max(1_000, Math.min(7_000, liveProofSubpro
 // local-edited Playground startup path to use its full bounded readiness
 // window, so the focused subprocess proof needs a matching inner budget.
 const releaseVerifyInnerTimeoutMs = Math.max(1_000, Math.min(24_000, proofSubprocessTimeoutMs - 6_000));
+const packagedReleaseVerifyInnerTimeoutMs = Math.max(
+  1_000,
+  Math.min(36_000, packagedProofSubprocessTimeoutMs - 6_000),
+);
 const releaseVerifySlowPathTimeoutMs = 15_000;
 const releaseVerifySlowPathInnerTimeoutMs = Math.max(1_000, Math.min(6_000, releaseVerifySlowPathTimeoutMs - 6_000));
 const proofSubprocessOptions = {
@@ -345,8 +350,7 @@ function spawnBoundedReleaseVerify(command, args, env, options = {}, label = 're
 }
 
 function spawnProductionShapedReleaseVerifySync(env, options = {}, label = 'production-shaped release verify') {
-  const timeoutCeiling = Math.max(1_000, liveProofSubprocessTimeoutMs - 2_000);
-  const timeout = Math.max(1_000, Math.min(options.timeout ?? releaseVerifyInnerTimeoutMs, timeoutCeiling));
+  const timeout = resolveProductionShapedReleaseVerifySyncTimeout(env, options.timeout);
   const killSignal = options.killSignal ?? proofSubprocessKillSignal;
   const proof = spawnBoundedReleaseVerify(
     process.execPath,
@@ -359,6 +363,19 @@ function spawnProductionShapedReleaseVerifySync(env, options = {}, label = 'prod
     label,
   );
   return proof;
+}
+
+function requiresPackagedReleaseVerifyBudget(env = {}) {
+  return env.REPRINT_PUSH_REQUIRE_PRODUCTION_AUTH_SESSION === '1'
+    || env.REPRINT_PUSH_PACKAGED_PRODUCTION_PLUGIN === '1';
+}
+
+function resolveProductionShapedReleaseVerifySyncTimeout(env = {}, requestedTimeout) {
+  const packagedProof = requiresPackagedReleaseVerifyBudget(env);
+  const timeoutBudgetMs = packagedProof ? packagedProofSubprocessTimeoutMs : liveProofSubprocessTimeoutMs;
+  const defaultTimeoutMs = packagedProof ? packagedReleaseVerifyInnerTimeoutMs : releaseVerifyInnerTimeoutMs;
+  const timeoutCeiling = Math.max(1_000, timeoutBudgetMs - 2_000);
+  return Math.max(1_000, Math.min(requestedTimeout ?? defaultTimeoutMs, timeoutCeiling));
 }
 
 function assertBoundedSpawnProof(proof, command, args, label, timeoutMs) {
@@ -819,6 +836,30 @@ test('production-shaped release verify keeps fixture bootstrap credentials separ
     username: 'custom-live-user',
     applicationPassword: 'custom-live-password',
   });
+});
+
+test('production-shaped release verify sync timeout widens for packaged proofs', () => {
+  assert.equal(
+    resolveProductionShapedReleaseVerifySyncTimeout({
+      REPRINT_PUSH_REQUIRE_PRODUCTION_AUTH_SESSION: '1',
+    }),
+    packagedReleaseVerifyInnerTimeoutMs,
+  );
+  assert.equal(
+    resolveProductionShapedReleaseVerifySyncTimeout(
+      { REPRINT_PUSH_PACKAGED_PRODUCTION_PLUGIN: '1' },
+      packagedProofSubprocessTimeoutMs + 5_000,
+    ),
+    packagedProofSubprocessTimeoutMs - 2_000,
+  );
+});
+
+test('production-shaped release verify sync timeout stays on the live budget without packaged proof requirements', () => {
+  assert.equal(resolveProductionShapedReleaseVerifySyncTimeout({}), liveProofSubprocessTimeoutMs - 2_000);
+  assert.equal(
+    resolveProductionShapedReleaseVerifySyncTimeout({}, liveProofSubprocessTimeoutMs + 5_000),
+    liveProofSubprocessTimeoutMs - 2_000,
+  );
 });
 
 test('auth-session source command builder emits a shell-safe node snippet', () => {
@@ -2792,12 +2833,12 @@ maybeTest('production-shaped release verify command consumes the packaged produc
         NODE_NO_WARNINGS: '1',
       },
       {
-        timeout: releaseVerifyInnerTimeoutMs,
+        timeout: packagedReleaseVerifyInnerTimeoutMs,
         killSignal: liveProofSubprocessKillSignal,
       },
       'packaged auth/session source release verify',
     );
-    assertSpawnCompletedWithoutSpawnError(proof, 'packaged auth/session source release verify', releaseVerifyInnerTimeoutMs);
+    assertSpawnCompletedWithoutSpawnError(proof, 'packaged auth/session source release verify', packagedReleaseVerifyInnerTimeoutMs);
     assert.equal(proof.status, 0, proof.stderr);
     assert.match(
       proof.stdout,
@@ -2828,12 +2869,12 @@ maybeTest('production-shaped release verify reports trusted recovery journal sta
       NODE_NO_WARNINGS: '1',
     },
     {
-      timeout: releaseVerifyInnerTimeoutMs,
+      timeout: packagedReleaseVerifyInnerTimeoutMs,
       killSignal: liveProofSubprocessKillSignal,
     },
     'packaged recovery journal release verify',
   );
-  assertSpawnCompletedWithoutSpawnError(proof, 'packaged recovery journal release verify', releaseVerifyInnerTimeoutMs);
+  assertSpawnCompletedWithoutSpawnError(proof, 'packaged recovery journal release verify', packagedReleaseVerifyInnerTimeoutMs);
   assert.equal(proof.status, 0, proof.stderr);
   assert.match(proof.stdout, /"recoveryInspect": \{[\s\S]*"journalState": "ok"/);
   assert.match(proof.stdout, /"durableJournal": \{[\s\S]*"staleClaimRejected": true/);
