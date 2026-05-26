@@ -102,11 +102,11 @@ export function resolveAuthSessionSourceCredentials({
 }
 
 function normalizeAuthSessionSourceField(value) {
-  if (value === null || value === undefined) {
+  if (typeof value !== 'string') {
     return '';
   }
 
-  return String(value).trim();
+  return value.trim();
 }
 
 function normalizeAuthSessionSourceTimeout(timeout) {
