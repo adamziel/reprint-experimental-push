@@ -1480,6 +1480,10 @@ Rejected fast paths stay rejected even when they look fast on paper:
   finalize after a pause, and cached row-batch receipts cannot skip
   release-bundle commit after a pause, because neither shortcut proves the live
   row preconditions or the atomic-group barrier survived failure.
+- A compressed remote index plus a cached release manifest and batched receipt
+  flushes cannot skip release-bundle planning after a pause, because planning
+  evidence and fsync savings do not turn into apply authorization or prove the
+  dependent files and rows survived failure.
 
 The common failure mode across these rejections is the same: the shortcut
 removes either a live precondition check, a durable receipt, or the atomic

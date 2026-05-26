@@ -1523,6 +1523,15 @@ test('unsafe shortcuts stay rejected when they would bypass live preconditions o
   assert.equal(skipReleaseCommit.rejectedGate, 'group');
   assert.ok(skipReleaseCommit.violates.includes('atomic-groups'));
   assert.ok(skipReleaseCommit.violates.includes('database-row-batching'));
+
+  const skipReleasePlanning = model.rejectedFastPaths.find(
+    (fastPath) => fastPath.id === 'compressed-remote-index-and-cached-release-manifest-and-batched-receipt-flush-skips-release-bundle-planning-after-pause',
+  );
+
+  assert.ok(skipReleasePlanning, 'release-bundle planning shortcut is modeled as a rejected fast path');
+  assert.equal(skipReleasePlanning.rejectedGate, 'skip');
+  assert.ok(skipReleasePlanning.violates.includes('remote-indexes'));
+  assert.ok(skipReleasePlanning.violates.includes('plugin-preconditions'));
 });
 
 test('fast-path fixture isolates the release-safety benchmark shape', () => {
@@ -1587,6 +1596,14 @@ test('fast-path fixture isolates the release-safety benchmark shape', () => {
       fastPath.rejectedGate === 'group' &&
       fastPath.violates.includes('backpressure') &&
       fastPath.violates.includes('atomic-groups')
+    ),
+  );
+  assert.ok(
+    fixture.rejectedFastPaths.some((fastPath) =>
+      fastPath.id === 'compressed-remote-index-and-cached-release-manifest-and-batched-receipt-flush-skips-release-bundle-planning-after-pause' &&
+      fastPath.rejectedGate === 'skip' &&
+      fastPath.violates.includes('remote-indexes') &&
+      fastPath.violates.includes('plugin-preconditions')
     ),
   );
   assert.ok(

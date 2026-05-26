@@ -3065,6 +3065,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['remote-indexes', 'remote-index-planning-only', 'compression', 'plugin-preconditions', 'row-preconditions', 'durable-progress'],
   },
   {
+    id: 'compressed-remote-index-and-cached-release-manifest-and-batched-receipt-flush-skips-release-bundle-planning-after-pause',
+    proposal: 'use a compressed remote index plus a cached release manifest and batched receipt flushes to skip release-bundle planning after a pause',
+    rejectedBecause: 'planning evidence, a cached release manifest, and batched receipt flushes can reduce replay cost, but they cannot turn planning data into apply authorization or prove the dependent files and rows survived failure',
+    rejectedGate: 'skip',
+    violates: ['remote-indexes', 'remote-index-planning-only', 'compression', 'backpressure', 'plugin-preconditions', 'row-preconditions', 'durable-progress'],
+  },
+  {
     id: 'compressed-remote-index-and-batched-row-receipts-skips-release-bundle-commit',
     proposal: 'use a compressed remote index plus batched row receipts to skip the release-bundle commit barrier',
     rejectedBecause: 'planning evidence and batched row receipts can reduce replay cost, but they cannot prove the dependent plugin files, row batches, and atomic-group commit survived failure',
