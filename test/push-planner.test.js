@@ -525,6 +525,58 @@ test('blocks unknown plugin-owned custom tables while preserving a matching inde
   assert.equal(pluginFileDecision.decision, 'keep-remote');
 });
 
+test('blocks deletion of unknown plugin-owned custom tables while preserving a matching independent edit and remote-only plugin drift', () => {
+  const resourceKey = 'row:["wp_custom_shadow","shadow_id:9"]';
+  const base = baseSite();
+  base.db.wp_custom_shadow = {
+    'shadow_id:9': {
+      shadow_id: 9,
+      shadow_name: 'base shadow',
+      __pluginOwner: 'forms',
+    },
+  };
+
+  const local = baseSite();
+  local.db.wp_custom_shadow = {
+    'shadow_id:9': {
+      shadow_id: 9,
+      shadow_name: 'base shadow',
+      __pluginOwner: 'forms',
+    },
+  };
+  delete local.db.wp_custom_shadow['shadow_id:9'];
+  local.db.wp_posts['ID:1'].post_title = 'Shared title';
+
+  const remote = baseSite();
+  remote.db.wp_custom_shadow = {
+    'shadow_id:9': {
+      shadow_id: 9,
+      shadow_name: 'base shadow',
+      __pluginOwner: 'forms',
+    },
+  };
+  remote.db.wp_posts['ID:1'].post_title = 'Shared title';
+  remote.plugins.forms.description = 'remote-only plugin drift';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin drift */';
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  const matchingEdit = decisionFor(plan, 'row:["wp_posts","ID:1"]');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(blocker.class, 'unsupported-plugin-owned-resource');
+  assert.equal(blocker.resourceKind, 'custom-table');
+  assert.equal(
+    blocker.reason,
+    'Plugin-owned custom tables, including deletes, are not yet supported by the planner.',
+  );
+  assert.equal(matchingEdit.decision, 'already-in-sync');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+});
+
 test('blocks plugin-owned custom table deletes while preserving a matching independent edit and remote-only plugin removals', () => {
   const resourceKey = 'row:["wp_custom_lanes","lane_id:7"]';
   const base = baseSite();
