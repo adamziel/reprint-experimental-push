@@ -7818,6 +7818,61 @@ test('blocks a local term relationship object owned by a wp_navigation post even
   );
 });
 
+test('blocks a local term relationship object owned by a nav_menu_item post even when it targets a same-plan term taxonomy', () => {
+  const navMenuItemResourceKey = 'row:["wp_posts","ID:3"]';
+  const taxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:9"]';
+  const relationshipResourceKey = 'row:["wp_term_relationships","object_id:3|term_taxonomy_id:9"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_posts['ID:3'] = {
+    ID: 3,
+    post_title: 'Local nav menu item relationship owner',
+    post_content: 'local-private-nav-menu-item-relationship-owner-body',
+    post_status: 'publish',
+    post_type: 'nav_menu_item',
+  };
+  local.db.wp_terms = {
+    'term_id:7': {
+      term_id: 7,
+      name: 'Local taxonomy term',
+      slug: 'local-taxonomy-term',
+    },
+  };
+  local.db.wp_term_taxonomy = {
+    'term_taxonomy_id:9': {
+      term_taxonomy_id: 9,
+      term_id: 7,
+      taxonomy: 'category',
+      description: '',
+      parent: 0,
+      count: 0,
+    },
+  };
+  local.db.wp_term_relationships = {
+    'object_id:3|term_taxonomy_id:9': {
+      object_id: 3,
+      term_taxonomy_id: 9,
+      term_order: 0,
+    },
+  };
+
+  const plan = planFor(base, local, baseSite());
+  const navMenuItemMutation = mutationFor(plan, navMenuItemResourceKey);
+  const taxonomyMutation = mutationFor(plan, taxonomyResourceKey);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === relationshipResourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(navMenuItemMutation, undefined);
+  assert.equal(taxonomyMutation.changeKind, 'create');
+  assert.equal(blocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(blocker.surface, 'nav_menu_item');
+  assert.equal(blocker.resourceKey, relationshipResourceKey);
+  assert.equal(
+    JSON.stringify(blocker).includes('local-private-nav-menu-item-relationship-owner-body'),
+    false,
+  );
+});
+
 test('blocks a local term relationship object from targeting a same-plan attachment', () => {
   const postResourceKey = 'row:["wp_posts","ID:3"]';
   const attachmentResourceKey = 'row:["wp_posts","ID:4"]';
