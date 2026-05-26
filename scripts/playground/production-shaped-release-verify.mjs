@@ -999,8 +999,10 @@ function runBoundedSync(command, args, options, label) {
   const proof = spawnSync(command, args, boundedOptions);
   if (proof.error || proof.signal || proof.status === null || proof.status !== 0) {
     stopAllPlaygroundChildrenSync();
+    const commandLabel = `${command} ${args.join(' ')}`;
     process.stderr.write(`${describeSpawnProof(proof)}\n`);
-    writeSpawnOutputTail(proof, `${command} ${args.join(' ')}`);
+    process.stdout.write(`${describeSpawnProof(proof)}\n`);
+    writeSpawnOutputTail(proof, commandLabel);
   }
   if (proof.error) {
     const timeoutNote = proof.error.code === 'ETIMEDOUT' && boundedOptions.timeout ? ` after ${boundedOptions.timeout}ms` : '';
