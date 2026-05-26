@@ -573,6 +573,51 @@ test('guarded benchmark exposes queue-slack commit authorization shortcuts as re
   );
 });
 
+test('guarded benchmark exposes parallel atomic-group commit shortcuts as rejected', () => {
+  const fastPath = findRejectedFastPathById(
+    'parallelize-atomic-group-commit',
+  );
+
+  assert.ok(fastPath);
+  assert.equal(fastPath.rejectedGate, 'group');
+  assert.match(fastPath.proposal, /atomic group commits in parallel/);
+  assert.match(fastPath.rejectedBecause, /single visibility point/);
+  assert.deepEqual(
+    fastPath.violates,
+    ['atomic-groups', 'visibility-boundary'],
+  );
+});
+
+test('guarded benchmark exposes parallel db-batch visibility shortcuts across groups as rejected', () => {
+  const fastPath = findRejectedFastPathById(
+    'parallelize-db-batch-visibility-across-groups',
+  );
+
+  assert.ok(fastPath);
+  assert.equal(fastPath.rejectedGate, 'group');
+  assert.match(fastPath.proposal, /database batches from different atomic groups in parallel/);
+  assert.match(fastPath.rejectedBecause, /group-owned commit barrier/);
+  assert.deepEqual(
+    fastPath.violates,
+    ['atomic-groups', 'row-preconditions', 'visibility-boundary'],
+  );
+});
+
+test('guarded benchmark exposes parallel chunk visibility shortcuts across groups as rejected', () => {
+  const fastPath = findRejectedFastPathById(
+    'parallelize-chunk-visibility-across-groups',
+  );
+
+  assert.ok(fastPath);
+  assert.equal(fastPath.rejectedGate, 'group');
+  assert.match(fastPath.proposal, /chunk uploads from different atomic groups become visible/);
+  assert.match(fastPath.rejectedBecause, /owning group barrier/);
+  assert.deepEqual(
+    fastPath.violates,
+    ['atomic-groups', 'chunk-receipts', 'visibility-boundary'],
+  );
+});
+
 test('guarded benchmark blocks row-batch executor claims when the measured surface is not visible', () => {
   const report = smallBenchmark();
   const tampered = clone(report);
