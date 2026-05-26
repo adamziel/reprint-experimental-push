@@ -170,6 +170,13 @@ export function evaluateProductionAuthSessionLifecycleSummary(summary, now = Dat
   }
 
   const readAuthUser = resolveAuthSessionIdentitySummary(readObservation);
+  if (!issuedAuthUser.missing && readAuthUser.missing) {
+    return {
+      ok: false,
+      required: 'authenticated identity continuity',
+      observed: 'missing-user-login',
+    };
+  }
   if (!issuedAuthUser.missing && !readAuthUser.missing && readAuthUser.value !== issuedAuthUser.value) {
     return {
       ok: false,
@@ -256,6 +263,13 @@ export function evaluateProductionAuthSessionLifecycleSummary(summary, now = Dat
     }
 
     const observationAuthUser = resolveAuthSessionIdentitySummary(observation);
+    if (!issuedAuthUser.missing && observationAuthUser.missing) {
+      return {
+        ok: false,
+        required: 'authenticated identity continuity',
+        observed: 'missing-user-login',
+      };
+    }
     if (!issuedAuthUser.missing && !observationAuthUser.missing
       && observationAuthUser.value !== issuedAuthUser.value) {
       return {
