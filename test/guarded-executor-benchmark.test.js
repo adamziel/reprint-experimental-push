@@ -2349,6 +2349,80 @@ test('guarded benchmark details fail closed when visible measured parallelism ca
   assert.equal(blockers.includes('production-parallelism-limits-not-measured'), true);
 });
 
+test('guarded benchmark keeps rollout summaries pinned to visible-without-positive parallelism blockers', () => {
+  const report = smallBenchmark();
+  const tampered = clone(report);
+
+  tampered.executorCapabilities.productionAtomicCommit = 'production-atomic-group-commit';
+  tampered.executorCapabilities.fileReceipts = 'production-storage-receipts';
+  tampered.executorCapabilities.rowApply = 'production-batched-compare-and-swap';
+  tampered.evidence.parallelism.parallelismLimitsVisible = true;
+  tampered.evidence.parallelism.parallelismLimitsMeasured = true;
+  tampered.evidence.parallelism.parallelismLimits.dbBatchPerTable = 0;
+  tampered.evidence.atomicGroup.productionAtomicCommitMeasured = true;
+  tampered.evidence.atomicGroup.productionAtomicCommitVisible = true;
+  tampered.evidence.atomicGroup.productionAtomicGroupMetadataVisible = true;
+  tampered.evidence.atomicGroup.productionStorageReceiptsMeasured = true;
+  tampered.evidence.atomicGroup.productionStorageReceiptsVisible = true;
+  tampered.evidence.atomicGroup.productionRowBatchExecutorMeasured = true;
+  tampered.evidence.atomicGroup.productionRowBatchExecutorVisible = true;
+
+  const details = productionThroughputDetails(tampered);
+
+  assert.deepEqual(
+    details.productionCapabilityRolloutSummary.find(
+      (entry) => entry.surface === 'chunk-upload-concurrency',
+    ),
+    {
+      surface: 'chunk-upload-concurrency',
+      status: 'blocked',
+      measured: false,
+      visible: false,
+      blockerRefs: [
+        'production-parallelism-limits-not-measured',
+        'production-parallelism-limits-not-canonical',
+        'production-parallelism-limits-visible-without-positive',
+        'production-parallelism-limits-visible-without-canonical',
+      ],
+    },
+  );
+  assert.deepEqual(
+    details.productionCapabilityRolloutSummary.find(
+      (entry) => entry.surface === 'file-hashing-concurrency',
+    ),
+    {
+      surface: 'file-hashing-concurrency',
+      status: 'blocked',
+      measured: false,
+      visible: false,
+      blockerRefs: [
+        'production-parallelism-limits-not-measured',
+        'production-parallelism-limits-not-canonical',
+        'production-parallelism-limits-visible-without-positive',
+        'production-parallelism-limits-visible-without-canonical',
+      ],
+    },
+  );
+  assert.deepEqual(
+    details.productionCapabilityRolloutSummary.find(
+      (entry) => entry.surface === 'row-batch-concurrency',
+    ),
+    {
+      surface: 'row-batch-concurrency',
+      status: 'blocked',
+      measured: true,
+      visible: false,
+      blockerRefs: [
+        'production-parallelism-limits-not-measured',
+        'production-parallelism-limits-not-canonical',
+        'production-parallelism-limits-visible-without-positive',
+        'production-parallelism-limits-visible-without-canonical',
+        'production-row-batch-executor-visible-without-parallelism-limits',
+      ],
+    },
+  );
+});
+
 test('guarded benchmark keeps paired row-batch and storage detail hidden when parallelism caps are noncanonical', () => {
   const report = smallBenchmark();
   const tampered = clone(report);
