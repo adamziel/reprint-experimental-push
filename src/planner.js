@@ -2128,6 +2128,7 @@ function addUnsupportedRevisionResourceBlocker(plan, {
   plan.blockers.push({
     id: `blocker-unsupported-revision-resource-${plan.blockers.length + 1}`,
     class: support.className || 'unsupported-revision-resource',
+    resourceKind: 'revision',
     resource,
     resourceKey: resource.key,
     reason: support.reason || `Revision graph resource ${resource.key} is not yet supported by the planner.`,

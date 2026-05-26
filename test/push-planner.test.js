@@ -13247,7 +13247,7 @@ test('blocks local post-parent references to a same-plan created revision while 
   assert.equal(independentEdit.change.remoteChange, 'update');
   assert.equal(blocker.class, 'unsupported-revision-resource');
   assert.equal(blocker.resourceKey, resourceKey);
-  assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_posts","ID:45"] is created in the same plan as a revision identity that depends on it, and identity rewriting is not yet supported.');
+  assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_posts","ID:43"] is created in the same plan as a revision identity that depends on it, and identity rewriting is not yet supported.');
   assert.equal(planJson.includes('Local revision title'), false);
   assert.equal(planJson.includes('Local revision body'), false);
   assert.equal(remote.plugins.forms.description, 'remote-only plugin drift');
@@ -19036,8 +19036,9 @@ test('blocks local revision graph resources while preserving remote-only plugin 
   assert.equal(mutationFor(plan, resourceKey), undefined);
   assert.equal(plan.conflicts.length, 0);
   assert.equal(blocker.class, 'unsupported-revision-resource');
+  assert.equal(blocker.resourceKind, 'revision');
   assert.equal(blocker.resourceKey, resourceKey);
-  assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_posts","ID:45"] is created in the same plan as a revision identity that depends on it, and identity rewriting is not yet supported.');
+  assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_posts","ID:43"] is created in the same plan as a revision identity that depends on it, and identity rewriting is not yet supported.');
   assert.equal(pluginDecision.decision, 'keep-remote');
   assert.equal(planJson.includes('Local revision content'), false);
   assert.equal(planJson.includes('Base revision content'), false);
@@ -19139,7 +19140,7 @@ test('blocks local revision graph resources while preserving a matching independ
   assert.equal(plan.conflicts.length, 0);
   assert.equal(blocker.class, 'unsupported-revision-resource');
   assert.equal(blocker.resourceKey, resourceKey);
-  assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_posts","ID:45"] is created in the same plan as a revision identity that depends on it, and identity rewriting is not yet supported.');
+  assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_posts","ID:44"] is created in the same plan as a revision identity that depends on it, and identity rewriting is not yet supported.');
   assert.equal(matchingEdit.decision, 'already-in-sync');
   assert.equal(pluginDecision.decision, 'keep-remote');
   assert.equal(pluginFileDecision.decision, 'keep-remote');
