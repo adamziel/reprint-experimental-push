@@ -16611,6 +16611,71 @@ test('blocks local same-plan created comment user identity while preserving remo
   assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin drift */');
 });
 
+test('blocks local same-plan created comment user identity while preserving a matching independent edit and remote-only plugin changes', () => {
+  const resourceKey = 'row:["wp_comments","comment_ID:20"]';
+  const targetResourceKey = 'row:["wp_users","ID:9"]';
+  const base = baseSite();
+  base.db.wp_comments = {
+    'comment_ID:20': {
+      comment_ID: 20,
+      comment_post_ID: 1,
+      user_id: 9,
+      comment_content: 'Base user-linked comment content',
+    },
+  };
+  base.db.wp_posts['ID:1'].post_title = 'Base matching post title';
+
+  const local = baseSite();
+  local.db.wp_posts['ID:1'].post_title = 'Shared matching post title';
+  local.db.wp_comments = {
+    'comment_ID:20': {
+      comment_ID: 20,
+      comment_post_ID: 1,
+      user_id: 9,
+      comment_content: 'Local user-linked comment content',
+    },
+  };
+  local.db.wp_users = {
+    'ID:9': {
+      ID: 9,
+      user_login: 'local-same-plan-user-edit',
+      user_email: 'local-edit@example.com',
+    },
+  };
+
+  const remote = baseSite();
+  remote.db.wp_comments = JSON.parse(JSON.stringify(base.db.wp_comments));
+  remote.db.wp_posts['ID:1'].post_title = 'Shared matching post title';
+  remote.plugins.forms.description = 'remote-only plugin changes';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin changes */';
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === targetResourceKey);
+  const matchingEdit = decisionFor(plan, 'row:["wp_posts","ID:1"]');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, targetResourceKey), undefined);
+  assert.equal(decisionFor(plan, resourceKey), undefined);
+  assert.equal(plan.conflicts.length, 0);
+  assert.equal(blocker.class, 'unsupported-comments-users-resource');
+  assert.equal(blocker.resourceKey, targetResourceKey);
+  assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_users","ID:9"] is created in the same plan as a comment user identity that depends on it, and identity rewriting is not yet supported.');
+  assert.equal(matchingEdit.decision, 'already-in-sync');
+  assert.equal(matchingEdit.change.localChange, 'update');
+  assert.equal(matchingEdit.change.remoteChange, 'update');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('Local user-linked comment content'), false);
+  assert.equal(planJson.includes('Base user-linked comment content'), false);
+  assert.equal(planJson.includes('local-same-plan-user-edit'), false);
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin changes');
+  assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin changes */');
+});
+
 test('blocks local same-plan created user meta identity while preserving remote-only plugin drift', () => {
   const resourceKey = 'row:["wp_usermeta","umeta_id:77"]';
   const base = baseSite();
