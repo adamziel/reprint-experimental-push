@@ -24259,6 +24259,24 @@ test('recovery states fail closed when the artifact envelope is inherited from t
   assert.match(error.message, /Recovery state must be old-remote, fully-updated-remote, or blocked-recovery\./);
 });
 
+test('recovery states fail closed when remoteHash is inherited from the prototype', () => {
+  const recovery = Object.create({
+    remoteHash: 'a'.repeat(64),
+  });
+  recovery.status = 'old-remote';
+  recovery.planId = 'plan-123';
+  recovery.reason = 'prototype-hidden remote hash';
+  recovery.artifacts = {
+    journal: { schemaVersion: 1 },
+  };
+
+  assert.equal(isAcceptableRecoveryState(recovery), false);
+  const error = captureError(() => assertRecoveryStateEnvelope(recovery));
+
+  assert.equal(error.code, 'RECOVERY_STATE_INVALID');
+  assert.match(error.message, /Recovery state must be old-remote, fully-updated-remote, or blocked-recovery\./);
+});
+
 test('recovery states fail closed when reason is inherited from the prototype', () => {
   const recovery = Object.create({
     reason: 'prototype-hidden reason',

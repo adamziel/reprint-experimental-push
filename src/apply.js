@@ -45,6 +45,14 @@ export function isAcceptableRecoveryState(recoveryState) {
     return false;
   }
 
+  if (!Object.hasOwn(recoveryState, 'remoteHash')) {
+    return false;
+  }
+
+  if (typeof recoveryState.remoteHash !== 'string' || !/^[a-f0-9]{64}$/.test(recoveryState.remoteHash)) {
+    return false;
+  }
+
   if (recoveryState.status !== 'blocked-recovery') {
     return Boolean(
       Object.hasOwn(recoveryState, 'artifacts')
@@ -1866,6 +1874,27 @@ function validateRecoveryStateEnvelopeKeys(recoveryState) {
       {
         status: recoveryState.status,
         planId: recoveryState.planId,
+      },
+    );
+  }
+  if (!Object.hasOwn(recoveryState, 'remoteHash')) {
+    throw new PushPlanError(
+      'RECOVERY_STATE_INVALID',
+      'Recovery state must carry an own remote hash.',
+      {
+        status: recoveryState.status,
+        planId: recoveryState.planId,
+      },
+    );
+  }
+  if (typeof recoveryState.remoteHash !== 'string' || !/^[a-f0-9]{64}$/.test(recoveryState.remoteHash)) {
+    throw new PushPlanError(
+      'RECOVERY_STATE_INVALID',
+      'Recovery state must carry a valid remote hash.',
+      {
+        status: recoveryState.status,
+        planId: recoveryState.planId,
+        remoteHash: recoveryState.remoteHash,
       },
     );
   }
