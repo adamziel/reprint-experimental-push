@@ -3841,3 +3841,37 @@ test('guarded benchmark keeps memory-headroom and queue-budget visibility pair f
     false,
   );
 });
+
+test('guarded benchmark keeps receipt-cursor measured visibility details false when the aligned queue-slack proof is hidden', () => {
+  const report = smallBenchmark();
+  const mutated = clone(report);
+
+  mutated.evidence.backpressure.queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack = false;
+
+  const details = productionThroughputDetails(mutated);
+
+  assert.equal(details.queueHeadroomVisible, true);
+  assert.equal(details.queueHeadroomMeasured, true);
+  assert.equal(details.receiptCursorQueueSlackVisible, true);
+  assert.equal(details.receiptCursorMemoryHeadroomVisible, true);
+  assert.equal(details.receiptCursorMemoryCeilingVisible, true);
+  assert.equal(details.queueHeadroomVisibleAndQueueSlackMeasured, false);
+  assert.equal(details.backpressureConsistency.queueHeadroomVisibleAndQueueSlackMeasured, false);
+  assert.equal(details.queueHeadroomVisibleAndQueueSlackVisibleAndMeasured, false);
+  assert.equal(
+    details.backpressureConsistency.queueHeadroomVisibleAndQueueSlackVisibleAndMeasured,
+    false,
+  );
+  assert.equal(details.receiptCursorQueueSlackVisibleAndMeasured, false);
+  assert.equal(details.backpressureConsistency.receiptCursorQueueSlackVisibleAndMeasured, false);
+  assert.equal(details.receiptCursorMemoryHeadroomVisibleAndMeasured, false);
+  assert.equal(
+    details.backpressureConsistency.receiptCursorMemoryHeadroomVisibleAndMeasured,
+    false,
+  );
+  assert.equal(details.receiptCursorMemoryCeilingVisibleAndMeasured, false);
+  assert.equal(
+    details.backpressureConsistency.receiptCursorMemoryCeilingVisibleAndMeasured,
+    false,
+  );
+});

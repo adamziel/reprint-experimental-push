@@ -1356,18 +1356,6 @@ export function productionThroughputDetails(report) {
     && receiptCursorQueueSlackBytes <= receiptCursorMemoryCeilingBytes;
   const receiptCursorQueueSlackMeasured =
     Number.isFinite(receiptCursorQueueSlackBytes);
-  const receiptCursorQueueSlackVisibleAndMeasured =
-    receiptCursorQueueSlackVisible
-    && receiptCursorQueueSlackMeasured
-    && queueHeadroomMeasured;
-  const queueHeadroomVisibleAndQueueSlackMeasured =
-    queueHeadroomVisible && receiptCursorQueueSlackMeasured;
-  const queueHeadroomVisibleAndQueueSlackVisibleAndMeasured =
-    queueHeadroomVisible
-    && queueHeadroomMeasured
-    && receiptCursorQueueSlackVisible
-    && receiptCursorQueueSlackPositive
-    && receiptCursorQueueSlackMeasured;
   const receiptCursorQueueSlackWithinQueueBudget =
     Number.isFinite(receiptCursorQueueSlackBytes)
     && Number.isFinite(receiptCursorQueueBudgetBytes)
@@ -1543,6 +1531,22 @@ export function productionThroughputDetails(report) {
     queueHeadroomVisible
     && queueHeadroomMeasured
     && queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack;
+  const receiptCursorQueueSlackVisibleAndMeasured =
+    receiptCursorQueueSlackVisible
+    && receiptCursorQueueSlackMeasured
+    && queueHeadroomMeasured
+    && queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack;
+  const queueHeadroomVisibleAndQueueSlackMeasured =
+    queueHeadroomVisible
+    && receiptCursorQueueSlackMeasured
+    && queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack;
+  const queueHeadroomVisibleAndQueueSlackVisibleAndMeasured =
+    queueHeadroomVisible
+    && queueHeadroomMeasured
+    && receiptCursorQueueSlackVisible
+    && receiptCursorQueueSlackPositive
+    && receiptCursorQueueSlackMeasured
+    && queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack;
   const receiptCursorPauseFootprintVisible =
     receiptCursorPauseFootprintComplete
     && queueBudgetVisible
@@ -1609,12 +1613,14 @@ export function productionThroughputDetails(report) {
   const receiptCursorMemoryHeadroomVisibleAndMeasured =
     receiptCursorMemoryHeadroomVisible
     && Number.isFinite(receiptCursorMemoryHeadroomBytes)
-    && queueHeadroomMeasured;
+    && queueHeadroomMeasured
+    && queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack;
   const receiptCursorMemoryCeilingVisibleAndMeasured =
     receiptCursorMemoryCeilingVisible
     && queueBudgetVisible
     && queueHeadroomVisible
-    && queueHeadroomMeasured;
+    && queueHeadroomMeasured
+    && queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack;
   const journalSuccessRecordTypes = report.evidence.journal?.successRecordTypes ?? [];
   const journalSuccessReceiptKinds = journalSuccessRecordTypes.map((recordType) => receiptKindForRecordType(recordType));
   const journalSuccessReceiptKindLedger = summarizeReceiptKinds(journalSuccessReceiptKinds);
