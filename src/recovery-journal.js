@@ -688,6 +688,13 @@ function persistedProductionArtifactRefs(journalPath) {
       Object.hasOwn(artifactRefs, 'journal')
       && !isCanonicalAbsolutePath(artifactRefs.journal)
     ) {
+      if (artifactRefs.journal === null) {
+        return {
+          journal: null,
+          remote: null,
+          invalidReason: 'Production recovery journal persistence cleared an owned journal artifact path.',
+        };
+      }
       return {
         journal: null,
         remote: null,
