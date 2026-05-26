@@ -342,6 +342,43 @@ test('keeps remote-only changes and does not overwrite them', () => {
   assert.equal(result.site.db.wp_posts['ID:1'].post_title, 'Remote editorial update');
 });
 
+test('keeps remote-only plugin removals while preserving an independent delete and matching file type swap', () => {
+  const base = baseSite();
+  base.files['about.php'] = '<?php echo "base about";';
+
+  const local = baseSite();
+  delete local.files['index.php'];
+  local.files['about.php'] = { type: 'directory' };
+
+  const remote = baseSite();
+  remote.files['about.php'] = { type: 'directory' };
+  delete remote.plugins.forms;
+  delete remote.files['wp-content/plugins/forms/forms.php'];
+
+  const plan = planFor(base, local, remote);
+  const deleteMutation = mutationFor(plan, 'file:index.php');
+  const matchingTypeSwap = decisionFor(plan, 'file:about.php');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.mutations, 1);
+  assert.equal(deleteMutation.action, 'delete');
+  assert.equal(deleteMutation.changeKind, 'delete');
+  assert.equal(matchingTypeSwap.decision, 'already-in-sync');
+  assert.equal(matchingTypeSwap.change.localChange, 'type-change');
+  assert.equal(matchingTypeSwap.change.remoteChange, 'type-change');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assertEveryMutationHasLiveRemotePrecondition(plan);
+
+  const completed = applyPlan(remote, plan);
+  assert.equal(Object.hasOwn(completed.site.files, 'index.php'), false);
+  assert.equal(completed.site.files['about.php'].type, 'directory');
+  assert.equal(Object.hasOwn(completed.site.plugins, 'forms'), false);
+  assert.equal(Object.hasOwn(completed.site.files, 'wp-content/plugins/forms/forms.php'), false);
+});
+
 test('combines non-overlapping local and remote changes', () => {
   const base = baseSite();
   const local = baseSite();
