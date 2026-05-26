@@ -113,7 +113,7 @@ function runReleaseVerifySync(env, timeout, killSignal, label) {
     label,
   );
   if (proof.error || proof.signal || proof.status === null) {
-    failReleaseVerifySpawnProof(proof, command, args);
+    failReleaseVerifySpawnProof(proof, command, args, label, timeout);
   }
   assertReleaseVerifyProof(proof, label, timeout);
   return proof;
@@ -162,7 +162,7 @@ function spawnProductionShapedReleaseVerifyCommand(env, options, label) {
     label,
   );
   if (proof.error || proof.signal || proof.status === null) {
-    failReleaseVerifySpawnProof(proof, command, args);
+    failReleaseVerifySpawnProof(proof, command, args, label, timeout);
   }
   assertReleaseVerifyProof(proof, label, timeout);
   return proof;
@@ -276,8 +276,9 @@ function failBoundedSpawnProof(proof, command, args) {
   writeSpawnOutputTail(proof, `${command} ${args.join(' ')}`);
 }
 
-function failReleaseVerifySpawnProof(proof, command, args) {
+function failReleaseVerifySpawnProof(proof, command, args, label = 'release verify', timeoutMs = null) {
   failBoundedSpawnProof(proof, command, args);
+  assertReleaseVerifySpawnFailure(proof, label, timeoutMs);
 }
 
 function assertBoundedSpawnProof(proof, command, args, label, timeoutMs) {
@@ -297,6 +298,19 @@ function assertBoundedSpawnProof(proof, command, args, label, timeoutMs) {
     throw new Error(formatSpawnFailure(`${failureLabel} terminated by ${proof.signal}${timeoutNote}`, proof));
   }
   throw new Error(formatSpawnFailure(`${failureLabel} exited without a status`, proof));
+}
+
+function assertReleaseVerifySpawnFailure(proof, label, timeoutMs) {
+  stopAllPlaygroundChildrenSync();
+  reportSpawnFailure(proof);
+  const timeoutNote = proof.error?.code === 'ETIMEDOUT' && timeoutMs ? ` after ${timeoutMs}ms` : '';
+  if (proof.error) {
+    throw new Error(formatSpawnFailure(`${label} failed${timeoutNote} with explicit spawn error handling`, proof));
+  }
+  if (proof.signal) {
+    throw new Error(formatSpawnFailure(`${label} terminated by ${proof.signal}${timeoutMs ? ` after ${timeoutMs}ms` : ''} with explicit spawn signal handling`, proof));
+  }
+  throw new Error(`${label} exited without a status with explicit spawn status handling\nstdout:\n${proof.stdout ?? ''}\nstderr:\n${proof.stderr ?? ''}`);
 }
 
 function spawnReleaseVerifySlowPathBounded(env = {}, options = {}) {
