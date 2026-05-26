@@ -7,7 +7,7 @@ The project is **not releasable as a production WordPress push path**.
 Fresh remote heads at audit time, checked on May 26, 2026:
 
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `0959a5ac`
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `d6bf78a8`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `b4c790d5`
 - `origin/lane/reliable-executor` -> `b8d91776`
 - `origin/lane/no-data-loss-invariants` -> `9c70eba6`
 - `origin/lane/no-data-loss-recovery` -> `4372167e`
@@ -19,7 +19,7 @@ Fresh remote heads at audit time, checked on May 26, 2026:
 - `origin/lane/cycle-20260525-mainwindows-2349/critic` -> `cba0890b`
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `d6bf78a8`
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `5c0b8477`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `a42574d7`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `3a9de43f`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `4372167e`
 - `origin/lane/same-plan-wordpress-graph-create` -> `09e6706d`
 - `origin/lane/cycle-20260525-mainwindows-2349/same-plan-wordpress-graph-create` -> `09e6706d`
@@ -68,9 +68,9 @@ but it did not change the release conclusion:
   cursor headroom rejection at `0959a5ac`, which is still boundary plumbing
   rather than measured speed proof.
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now
-  refreshes supervisor progress visibility at `d6bf78a8`.
+  refreshes supervisor progress visibility at `b4c790d5`.
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now
-  records the latest progress freshness handoff at `42a65068`.
+  records the latest progress freshness handoff at `3a9de43f`.
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` now refreshes the audit snapshot at
   `5abd1f65`.
 - `origin/lane/critic` now refreshes the critic handoff at `cba0890b`.
