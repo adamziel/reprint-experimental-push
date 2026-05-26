@@ -6,6 +6,8 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { authenticatedHttpClient, runAuthenticatedHttpPush } from '../../src/authenticated-http-push-client.js';
 import {
+  labMaxConsecutiveNotReadyProbes,
+  labNotReadyProbeLimitReached,
   labReadinessBodyRetryable,
   labReadinessErrorRetryable,
   labNextTimeoutProbeCount,
@@ -21,6 +23,8 @@ const serverFetchTimeoutMs = 3_000;
 const readinessProbeIntervalMs = 500;
 const readinessFailureBodyLimit = 500;
 const maxConsecutiveTimeoutProbes = 4;
+const maxReadinessProbes = Math.max(10, Math.ceil(serverStartupTimeoutMs / readinessProbeIntervalMs));
+const maxNotReadyReadinessProbes = Math.max(labMaxConsecutiveNotReadyProbes, maxReadinessProbes);
 const credentials = {
   username: 'reprint_push_admin',
   password: 'reprint-push-admin-app-password',
@@ -194,6 +198,8 @@ async function stopPlaygroundServer(server) {
 async function waitForServer(child, baseUrl, getLogs) {
   const deadline = Date.now() + serverStartupTimeoutMs;
   let lastError = null;
+  let notReadyProbeCount = 0;
+  let readinessProbeCount = 0;
   let timeoutProbeCount = 0;
   while (Date.now() < deadline) {
     if (child.exitCode !== null || child.signalCode !== null) {
@@ -206,8 +212,11 @@ async function waitForServer(child, baseUrl, getLogs) {
       const { response, bodyText: responseBody } = await fetchTextWithTimeout(`${baseUrl}/wp-json/`, {
         headers: { connection: 'close' },
       }, serverFetchTimeoutMs, child);
+      readinessProbeCount += 1;
       timeoutProbeCount = 0;
-      if (response.status === 200) {
+      const readinessRetryable = labReadinessBodyRetryable(response.status, responseBody);
+      if (response.status === 200 && !readinessRetryable) {
+        notReadyProbeCount = 0;
         const { response: snapshot, bodyText: snapshotBody } = await fetchTextWithTimeout(`${baseUrl}/wp-json/reprint-push-lab/v1/snapshot`, {
           headers: {
             Authorization: `Basic ${Buffer.from(`${credentials.username}:${credentials.password}`).toString('base64')}`,
@@ -250,6 +259,60 @@ async function waitForServer(child, baseUrl, getLogs) {
         );
       }
       lastError = new Error(`HTTP ${response.status}: ${responseBody.slice(0, readinessFailureBodyLimit)}`);
+      if (readinessRetryable) {
+        const { response: snapshot, bodyText: snapshotBody } = await fetchTextWithTimeout(`${baseUrl}/wp-json/reprint-push-lab/v1/snapshot`, {
+          headers: {
+            Authorization: `Basic ${Buffer.from(`${credentials.username}:${credentials.password}`).toString('base64')}`,
+            connection: 'close',
+          },
+        }, serverFetchTimeoutMs, child);
+        timeoutProbeCount = 0;
+        let snapshotJson = null;
+        try {
+          snapshotJson = JSON.parse(snapshotBody);
+        } catch (error) {
+          if (!labReadinessBodyRetryable(snapshot.status, snapshotBody)) {
+            throw new Error(
+              `Playground lab snapshot returned an invalid readiness body at ${baseUrl}: `
+              + `${snapshotBody.slice(0, readinessFailureBodyLimit)}\n${getLogs()}`,
+              { cause: error },
+            );
+          }
+        }
+        if (snapshotJson !== null) {
+          if (labSnapshotReady({
+            status: snapshot.status,
+            body: snapshotJson,
+          })) {
+            return;
+          }
+          if (!labSnapshotRetryable({
+            status: snapshot.status,
+            body: snapshotJson,
+          })) {
+            throw new Error(
+              `Playground lab snapshot returned a terminal readiness failure at ${baseUrl}: `
+              + `${snapshotBody.slice(0, readinessFailureBodyLimit)}\n${getLogs()}`,
+            );
+          }
+        }
+        notReadyProbeCount += 1;
+        if (labNotReadyProbeLimitReached(notReadyProbeCount, maxNotReadyReadinessProbes)) {
+          throw new Error(
+            `Playground server reported the bounded readiness failure ${response.status} after ${readinessProbeCount} /wp-json/ probes `
+            + `(${notReadyProbeCount} consecutive not-ready response${notReadyProbeCount === 1 ? '' : 's'}; `
+            + `limit ${maxNotReadyReadinessProbes}) at ${baseUrl}: ${lastError?.message ?? 'unknown'}\n${getLogs()}`,
+          );
+        }
+      } else {
+        notReadyProbeCount = 0;
+        if (response.status !== 200 && readinessProbeCount >= maxReadinessProbes) {
+          throw new Error(
+            `Playground server stayed in readiness response ${response.status} after ${readinessProbeCount} /wp-json/ probes at ${baseUrl}: `
+            + `${lastError?.message ?? 'unknown'}\n${getLogs()}`,
+          );
+        }
+      }
     } catch (error) {
       if (!labReadinessErrorRetryable(error)) {
         throw error;
