@@ -85,6 +85,13 @@ Fresh remote heads re-polled after the last audit note:
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `364cb1ae`
 - `origin/lane/reliable-executor` -> `b45bfc17`
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `8184e6c3`
+- `origin/lane/reliable-executor` -> `39385d74`
+- `origin/lane/no-data-loss-invariants` -> `bb2ccb8a`
+- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `280a008e`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `aacc02a2`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `269de396`
+- `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `c52e932a`
+- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `c9354cf9`
 
 These heads are still fail-closed support evidence and freshness work. They
 improve unsupported-surface blocking and public visibility, but they still do
@@ -112,6 +119,28 @@ The newest visible heads continue that same pattern:
   or a live-source mutation boundary.
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` now
   records `8184e6c3`, refreshing audit freshness only. It still does not
+  change the release verdict.
+- `origin/lane/reliable-executor` now records `39385d74`, tightening replay
+  and recovery failure codes. It still does not prove production auth/session
+  lifecycle or a live-source mutation boundary.
+- `origin/lane/no-data-loss-invariants` now records `bb2ccb8a`, hardening
+  same-plan user identity references. It still does not prove the live
+  release boundary or any production-backed source mutation.
+- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` now records
+  `280a008e`, tightening storage receipt visibility. It still does not prove
+  a production speed claim.
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now
+  records `aacc02a2`, refreshing progress visibility only. It still does not
+  change the release verdict.
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now records
+  `269de396`, refreshing public progress freshness only. It still does not add
+  production-backed gate movement.
+- `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` now
+  records `c52e932a`, failing closed on inherited restart readability. It
+  still does not prove production-backed journal ownership or restart-readable
+  durable artifacts.
+- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` now
+  records `c9354cf9`, refreshing audit freshness only. It still does not
   change the release verdict.
 
 Fresh lane proof since the last audit pass improved the local evidence floor,
