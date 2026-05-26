@@ -4,19 +4,19 @@
 
 The project is **not releasable as a production WordPress push path**.
 
-Fresh remote heads at audit time, checked on May 26, 2026:
+- Fresh remote heads at audit time, checked on May 26, 2026:
 
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `10467f73`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `eeb35e80`
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `540b8b24`
-- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `de494dd9`
+- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `dfd8bb3c`
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `016801a5`
-- `origin/lane/reliable-executor` -> `290b4d5e`
+- `origin/lane/reliable-executor` -> `5912fc94`
 - `origin/lane/no-data-loss-invariants` -> `eec3620e`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `d121c210`
 - `origin/lane/no-data-loss-recovery` -> `aec5d04b`
 - `origin/lane/cycle-20260525-mainwindows-2349/critic` -> `fa0dc8a0`
 - `origin/lane/critic` -> `5b61693d`
-- `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration` -> `efd20c08`
+- `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration` -> `d388db27`
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` -> `db36753e`
 - `origin/lane/same-plan-wordpress-graph-create` -> `0d2178e9`
 - `origin/lane/progress-publisher` -> `7695e1f9`
@@ -32,7 +32,7 @@ Fresh lane proof since the last audit pass improved the local evidence floor,
 but it did not change the release conclusion:
 
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now records
-  `10467f73`, refreshing public progress freshness only.
+  `eeb35e80`, refreshing public progress freshness only.
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now records
   `540b8b24`, refreshing the supervisor progress surface only.
 - `origin/lane/reliable-executor` now records `290b4d5e`, hardening
@@ -43,10 +43,10 @@ but it did not change the release conclusion:
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` now
   records `d121c210`, failing closed on inspected remote artifact refs. It
   still does not add production-backed journal ownership or replay proof.
-- `origin/lane/independent-auditor` now records `de494dd9`. This refreshes the
+- `origin/lane/independent-auditor` now records `dfd8bb3c`. This refreshes the
   audit snapshot only and does not change the release boundary.
 - `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration`
-  now records `efd20c08`, adding attachment-parent invariants proof only.
+  now records `d388db27`, adding nav menu parent reference blocking only.
 
 Those changes strengthen the lab evidence for protocol safety and no-loss
 planning, but they still do not prove the production-backed push path.
