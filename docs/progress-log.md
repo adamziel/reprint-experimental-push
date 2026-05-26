@@ -9,44 +9,12 @@ linked implementation artifacts.
 <a id="2026-05-26-public-status-audit-152230"></a>
 
 - Refreshed [progress.html](../progress.html) to the current `date` output
-  (`2026-05-26 15:24:30 CEST`) and kept
-  `e82e3b1af126f62688f617a3fb4cc0baeb698d57` as the current reliable head on
-  the public page, replacing the older
-  `e82e3b1af126f62688f617a3fb4cc0baeb698d57` wording in the visible
-  current-head rows.
-- `e82e3b1af126f62688f617a3fb4cc0baeb698d57` remains support-side evidence;
-  the release gate stays at `0/4` because production-backed auth/session
-  lifecycle and durable journal ownership with lease/fencing remain blocked.
-- Evidence trail: [progress.html](../progress.html),
-  [objective audit](../audits/objective-audit.md),
-  [release-gate checklist](../progress.html#proof-gates).
-
-## 2026-05-26 - Public Status Audit 15:16:28
-
-<a id="2026-05-26-public-status-audit-151628"></a>
-
-- Refreshed [progress.html](../progress.html) to the current `date` output
-  (`2026-05-26 15:16:28 CEST`) and kept
-  `e82e3b1af126f62688f617a3fb4cc0baeb698d57` as the current reliable head on
-  the public page.
-- `e82e3b1af126f62688f617a3fb4cc0baeb698d57` remains support-side evidence;
-  the release gate stays at `0/4` because production-backed auth/session
-  lifecycle and durable journal ownership with lease/fencing remain blocked.
-- Evidence trail: [progress.html](../progress.html),
-  [objective audit](../audits/objective-audit.md),
-  [release-gate checklist](../progress.html#proof-gates).
-
-## 2026-05-26 - Public Status Audit 15:14:21
-
-<a id="2026-05-26-public-status-audit-151421"></a>
-
-- Refreshed [progress.html](../progress.html) to the current `date` output
-  (`2026-05-26 15:14:21 CEST`) and kept
-  `cdea46fdb51cb46d56def6147e6dd815cb3b2757` as the current reliable head on
-  the public page.
-- `cdea46fdb51cb46d56def6147e6dd815cb3b2757` remains support-side evidence;
-  the release gate stays at `0/4` because production-backed auth/session
-  lifecycle and durable journal ownership with lease/fencing remain blocked.
+  (`2026-05-26 15:25:42 CEST`) after the reliable head advanced to
+  `e82e3b1af126f62688f617a3fb4cc0baeb698d57`.
+- `e82e3b1af126f62688f617a3fb4cc0baeb698d57` is now the current
+  reliable-executor head and the newest release-surface evidence on the public
+  page: the checked release verifier consumes the packaged auth session source
+  on the release path. Release gates remain `0/4`.
 - Evidence trail: [progress.html](../progress.html),
   [objective audit](../audits/objective-audit.md),
   [release-gate checklist](../progress.html#proof-gates).
@@ -5839,15 +5807,12 @@ linked implementation artifacts.
 
 - Refreshed [progress.html](../progress.html) to the current `date` output
   (`2026-05-26 00:25:18 CEST`) after the reliable executor lane moved to
-  `c99b19d0`. The first screen stays concise: evidence progressed, release
-  gates remain `0/4`, and production WordPress auth/session lifecycle plus
-  durable journal storage with lease/fencing remain pending.
-- `c99b19d0` is the newest release-surface evidence because it fixes the
-  release proof failure branches. `b725b2d3` remains the explicit production
-  auth/session release-boundary evidence; `b9aebe71` and `134d0401` still
-  cover supporting no-data-loss and recovery proof; `4e13d882`, `63dd27cc`,
-  and `9208c2da` remain the latest critique, fast-path, and audit freshness
-  support.
+  (`2026-05-26 15:25:42 CEST`) after the reliable head advanced to
+  `e82e3b1af126f62688f617a3fb4cc0baeb698d57`.
+- `e82e3b1af126f62688f617a3fb4cc0baeb698d57` is now the current
+  reliable-executor head and the newest release-surface evidence on the public
+  page: the checked release verifier consumes the packaged auth session source
+  on the release path. Release gates remain `0/4`.
 - Evidence trail: [progress.html](../progress.html),
   [objective audit](../audits/objective-audit.md),
   [release-gate checklist](../progress.html#proof-gates).
@@ -12819,8 +12784,22 @@ Newest entries stay short and link back to the evidence trail.
   and arbitrary plugin drivers remain unproven.
 - Next nudge: keep production gates blocked until a worker proves production
   auth/session/journal internals and graph identity mapping.
-- Public page: [progress.html](../progress.html) carries the visible update
+- Public page: [progress.html](../progress.html) shows a visible last-updated
   date and keeps details behind links.
+- Status: `e82e3b1af126f62688f617a3fb4cc0baeb698d57` is the live reliable head and the current
+  latest support-side auth/session source evidence.
+- Trend: the public progress branch is still behind the live head and needs a
+  freshness refresh; the current reliable-head wording should stay aligned and the gate posture remains conservative.
+- Blocker: this is still support evidence, not production-backed auth/session
+  lifecycle or durable-journal ownership on the release boundary.
+- Next nudge: `progress-publisher` should refresh the public page to the live
+  reliable head, and reliable executor should move to the next gate
+  dependency: production auth/session lifecycle, durable journal ownership, or
+  a concrete blocking command naming the missing primitive.
+- Feedback-lane verification after checking the live head: `git ls-remote`
+  reports `e82e3b1af126f62688f617a3fb4cc0baeb698d57` for
+  `lane/reliable-executor`, and the public page should keep that current head
+  wording in sync with the auth/session source evidence.
 
 <details>
 <summary>Earlier progress entries</summary>
