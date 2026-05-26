@@ -5,6 +5,7 @@ const packagedProductionPluginWordPressNotReadyPattern = /WordPress is not ready
 const packagedProductionPluginRouteNotReadyPattern = /No route was found matching the URL and request method\.?/i;
 const packagedProductionPluginWordPressNotReadyCodePattern = /wordpress_not_ready/i;
 const packagedProductionPluginRouteNotReadyCodePattern = /rest_no_route/i;
+const packagedProductionPluginLabAuthRequiredCodePattern = /reprint_push_lab_auth_required/i;
 
 function packagedProductionPluginFindMessage(value, visited = new Set()) {
   if (value == null) {
@@ -117,6 +118,16 @@ function packagedProductionPluginResponseCode(response) {
   return packagedProductionPluginFindCode(response?.body);
 }
 
+function packagedProductionPluginLabAuthRequiredResponse(response) {
+  return packagedProductionPluginLabAuthRequiredCodePattern.test(
+    packagedProductionPluginResponseCode(response),
+  )
+    || (
+      typeof response?.body === 'string'
+      && packagedProductionPluginLabAuthRequiredCodePattern.test(response.body)
+    );
+}
+
 function packagedProductionPluginWordPressNotReadyResponse(response) {
   return packagedProductionPluginWordPressNotReadyCodePattern.test(
     packagedProductionPluginResponseCode(response),
@@ -176,12 +187,29 @@ export function packagedProductionPluginPreflightReady(preflight) {
     && evaluateProductionAuthSessionLifecycle(preflight.body?.auth?.session).ok;
 }
 
-export function packagedProductionPluginPreflightRetryable(preflight) {
+export function packagedProductionPluginPreflightRetryable(preflight, context = {}) {
   if (packagedProductionPluginWordPressNotReadyResponse(preflight)) {
     return true;
   }
 
   if (packagedProductionPluginRouteNotReady(preflight)) {
+    return true;
+  }
+
+  if (
+    packagedProductionPluginLabAuthRequiredResponse(preflight)
+    && (
+      context.packagedStartup === true
+      || packagedProductionPluginReadinessBodyRetryable(
+        context.indexProbe?.status,
+        context.indexProbe?.body || '',
+      )
+      || packagedProductionPluginReadinessBodyRetryable(
+        context.snapshotProbe?.status,
+        context.snapshotProbe?.body || '',
+      )
+    )
+  ) {
     return true;
   }
 

@@ -1109,6 +1109,57 @@ test('packaged production plugin readiness helper retries only startup-shaped pa
     false,
   );
   assert.equal(
+    packagedProductionPluginPreflightRetryable(
+      {
+        status: 401,
+        body: {
+          code: 'reprint_push_lab_auth_required',
+          message: 'Authenticated push routes require WordPress Application Password basic auth.',
+        },
+      },
+      {
+        packagedStartup: true,
+      },
+    ),
+    true,
+  );
+  assert.equal(
+    packagedProductionPluginPreflightRetryable(
+      {
+        status: 401,
+        body: {
+          code: 'reprint_push_lab_auth_required',
+          message: 'Authenticated push routes require WordPress Application Password basic auth.',
+        },
+      },
+      {
+        indexProbe: {
+          status: 503,
+          body: 'WordPress is not ready yet',
+        },
+      },
+    ),
+    true,
+  );
+  assert.equal(
+    packagedProductionPluginPreflightRetryable(
+      {
+        status: 401,
+        body: {
+          code: 'reprint_push_lab_auth_required',
+          message: 'Authenticated push routes require WordPress Application Password basic auth.',
+        },
+      },
+      {
+        snapshotProbe: {
+          status: 502,
+          body: 'WordPress is not ready yet',
+        },
+      },
+    ),
+    true,
+  );
+  assert.equal(
     packagedProductionPluginSnapshotRetryable({
       status: 401,
       body: {
@@ -2623,6 +2674,14 @@ test('packaged snapshot readiness helper enforces the bounded classifier before 
   assert.match(
     verifierBranch,
     /if \(\s*preflightProbe\.retryable\s*&&\s*packagedProductionPluginNotReadyProbeLimitReached\(\s*snapshotNotReadyProbeCount,\s*maxPackagedStartupNotReadyProbeCount,\s*\)\s*\)\s*\{[\s\S]*?fetchPackagedWordPressIndexProbe\(baseUrl, child\)[\s\S]*?globalWordPressStartup:\s*true[\s\S]*?packagedRouteStartup:\s*true[\s\S]*?indexTerminal:\s*true[\s\S]*?maxNotReadyProbeCount:\s*maxPackagedStartupNotReadyProbeCount/s,
+  );
+  assert.match(
+    smokeSource,
+    /preflightProbe\.retryable = packagedProductionPluginPreflightRetryable\(\s*\{ status: preflightProbe\.status, body: preflightProbe\.body \},\s*\{ indexProbe \},\s*\);/s,
+  );
+  assert.match(
+    verifierSource,
+    /preflightProbe\.retryable = packagedProductionPluginPreflightRetryable\(\s*\{ status: preflightProbe\.status, body: preflightProbe\.body \},\s*\{ indexProbe \},\s*\);/s,
   );
 });
 

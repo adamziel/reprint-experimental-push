@@ -951,7 +951,10 @@ async function waitForServer(child, baseUrl, logs) {
       }
 
       lastError = new Error(`Production plugin package preflight readiness HTTP ${preflightResponse.status}`);
-      if (packagedProductionPluginPreflightRetryable({ status: preflightResponse.status, body: preflightBody })) {
+      if (packagedProductionPluginPreflightRetryable(
+        { status: preflightResponse.status, body: preflightBody },
+        { packagedStartup: true },
+      )) {
         if (
           packagedProductionPluginNotReadyProbeLimitReached(
             preflightNotReadyProbeCount,
@@ -1341,6 +1344,13 @@ async function fetchPackagedTimeoutFallbackProbes(baseUrl, child = null) {
   const indexProbe = await fetchPackagedWordPressIndexProbe(baseUrl, child).catch((error) =>
     buildPackagedTimeoutFallbackProbe('/wp-json/', error),
   );
+  if (preflightProbe && preflightProbe.ready !== true) {
+    preflightProbe.retryable = packagedProductionPluginPreflightRetryable(
+      { status: preflightProbe.status, body: preflightProbe.body },
+      { indexProbe },
+    );
+    preflightProbe.terminal = !preflightProbe.retryable;
+  }
   return { preflightProbe, indexProbe };
 }
 
