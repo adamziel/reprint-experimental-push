@@ -3,14 +3,14 @@ Changed files:
 - [`.lane-output/final.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/critic/.lane-output/final.md)
 
 What changed:
-- Reclassified the current reliable head as `0b8026f3b0db9b2207e51c7bac65d3b4ec053f30` from `git ls-remote`.
-- Kept the verdict at `0/4` because the commit retains production recovery claim identity, but it still does not prove a production-backed auth/session lifecycle or a closed durable-journal ownership boundary on the checked release path.
+- Reclassified the current reliable head as `6beb5ed7c74509094d831bc4247541c4b684feae` from `git ls-remote`.
+- Kept the verdict at `0/4` because the commit only cleans up the release journal temp directory and still does not prove a production-backed auth/session lifecycle or a closed durable-journal ownership boundary on the checked release path.
 
 Commands run:
 - `date '+%Y-%m-%d %H:%M:%S %Z (%z)'`
 - `git ls-remote origin refs/heads/lane/reliable-executor`
-- `git show --stat --summary --oneline --no-patch 0b8026f3b0db9b2207e51c7bac65d3b4ec053f30`
-- `git show --unified=40 0b8026f3b0db9b2207e51c7bac65d3b4ec053f30 -- src/recovery-journal.js`
+- `git show --stat --summary --oneline --no-patch 6beb5ed7c74509094d831bc4247541c4b684feae`
+- `git show --unified=80 6beb5ed7c74509094d831bc4247541c4b684feae -- scripts/playground/production-shaped-release-verify.mjs test/production-shaped-proof.test.js`
 - `git diff --check -- audits/critic.md .lane-output/final.md`
 - `git status --short --branch`
 
