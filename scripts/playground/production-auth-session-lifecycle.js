@@ -153,12 +153,8 @@ export function evaluateProductionAuthSessionLifecycleSummary(summary, now = Dat
     return readLifecycle;
   }
 
-  const issuedSessionId = typeof summary.issued?.id === 'string' && summary.issued.id.trim()
-    ? summary.issued.id
-    : null;
-  const readSessionId = typeof readObservation.id === 'string' && readObservation.id.trim()
-    ? readObservation.id
-    : null;
+  const issuedSessionId = normalizeAuthSessionObservationId(summary.issued?.id);
+  const readSessionId = normalizeAuthSessionObservationId(readObservation.id);
   if (!issuedSessionId || !readSessionId || issuedSessionId !== readSessionId) {
     return {
       ok: false,
@@ -212,9 +208,7 @@ export function evaluateProductionAuthSessionLifecycleSummary(summary, now = Dat
       };
     }
 
-    const observationSessionId = typeof observation.id === 'string' && observation.id.trim()
-      ? observation.id
-      : null;
+    const observationSessionId = normalizeAuthSessionObservationId(observation.id);
     if (
       observation.step !== 'preflight'
       && isAuthSessionReadStep(observation.step)
@@ -338,4 +332,21 @@ function isAuthSessionReadStep(step) {
     || step === 'apply'
     || step === 'replay'
     || step === 'journal';
+}
+
+function normalizeAuthSessionObservationId(id) {
+  if (typeof id !== 'string') {
+    return null;
+  }
+
+  const normalized = id.trim();
+  if (
+    !normalized
+    || normalized !== id
+    || /[\u0000-\u001f\u007f]/.test(normalized)
+  ) {
+    return null;
+  }
+
+  return normalized;
 }
