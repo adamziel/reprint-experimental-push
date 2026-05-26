@@ -618,6 +618,51 @@ test('guarded benchmark exposes parallel chunk visibility shortcuts across group
   );
 });
 
+test('guarded benchmark exposes unbounded plugin-install finalize shortcuts as rejected', () => {
+  const fastPath = findRejectedFastPathById(
+    'unbounded-parallel-plugin-install-finalize',
+  );
+
+  assert.ok(fastPath);
+  assert.equal(fastPath.rejectedGate, 'group');
+  assert.match(fastPath.proposal, /plugin install finalize work/i);
+  assert.match(fastPath.rejectedBecause, /backpressure and commit ordering/i);
+  assert.deepEqual(
+    fastPath.violates,
+    ['atomic-groups', 'backpressure', 'durable-progress'],
+  );
+});
+
+test('guarded benchmark exposes unbounded upload parallelism shortcuts as rejected', () => {
+  const fastPath = findRejectedFastPathById(
+    'compressed-remote-index-and-unbounded-upload-parallelism-skips-backpressure',
+  );
+
+  assert.ok(fastPath);
+  assert.equal(fastPath.rejectedGate, 'recovery');
+  assert.match(fastPath.proposal, /compressed remote index/i);
+  assert.match(fastPath.rejectedBecause, /receipt and journal order/i);
+  assert.deepEqual(
+    fastPath.violates,
+    ['remote-index-planning-only', 'compression', 'backpressure', 'chunk-receipts', 'durable-progress'],
+  );
+});
+
+test('guarded benchmark exposes parallel chunk-send backpressure shortcuts as rejected', () => {
+  const fastPath = findRejectedFastPathById(
+    'compressed-remote-index-and-parallel-chunk-sends-skips-backpressure',
+  );
+
+  assert.ok(fastPath);
+  assert.equal(fastPath.rejectedGate, 'recovery');
+  assert.match(fastPath.proposal, /parallel chunk sends/i);
+  assert.match(fastPath.rejectedBecause, /bounded queue order, complete chunk receipts, and journal evidence/i);
+  assert.deepEqual(
+    fastPath.violates,
+    ['remote-index-planning-only', 'compression', 'parallelism-limits', 'backpressure', 'chunk-receipts', 'atomic-file-publish', 'durable-progress'],
+  );
+});
+
 test('guarded benchmark blocks row-batch executor claims when the measured surface is not visible', () => {
   const report = smallBenchmark();
   const tampered = clone(report);
