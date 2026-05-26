@@ -61,7 +61,7 @@ The project is **not releasable as a production WordPress push path**.
 - `origin/lane/progress-publisher` -> `7695e1f9`
 - `origin/lane/reliable-executor` -> `f1783e10`
 - `origin/lane/same-plan-wordpress-graph-create` -> `8dea1ca3`
-- `origin/main` -> `56063f13`
+- `origin/main` -> `2c8d52cb`
 
 The current remote state still adds no production-backed auth/session
 lifecycle or durable journal ownership/lease/fencing/replay path proving a
