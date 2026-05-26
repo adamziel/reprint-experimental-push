@@ -215,11 +215,17 @@ export function openProductionRecoveryJournal(filePath, options = {}) {
     inspect() {
       const artifactRefs = {
         journal: journal.filePath,
+        remote: remoteArtifactPath,
       };
-      if (remoteArtifactPath !== null) {
-        artifactRefs.remote = remoteArtifactPath;
-      }
       return {
+        kind: 'production-recovery-journal',
+        productionAdapter: true,
+        supportedSurface: 'production-recovery-journal-adapter',
+        restartReadable: true,
+        ownsJournal: true,
+        ownsRemoteArtifact,
+        writerLease,
+        journalPath: journal.filePath,
         ...readRecoveryJournal(journal.filePath),
         schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
         artifactRefs,

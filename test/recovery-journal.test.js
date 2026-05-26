@@ -186,10 +186,18 @@ test('production recovery journal adapter is restart-readable and release-path c
   journal.close();
 
   const inspected = journal.inspect();
+  assert.equal(inspected.kind, 'production-recovery-journal');
+  assert.equal(inspected.productionAdapter, true);
+  assert.equal(inspected.supportedSurface, 'production-recovery-journal-adapter');
+  assert.equal(inspected.restartReadable, true);
+  assert.equal(inspected.ownsJournal, true);
+  assert.equal(inspected.ownsRemoteArtifact, false);
+  assert.equal(inspected.writerLease.id, 'lease-1');
+  assert.equal(inspected.journalPath, filePath);
   assert.equal(inspected.filePath, filePath);
   assert.equal(inspected.schemaVersion, 1);
   assert.equal(inspected.records.at(-1).type, 'journal-opened');
-  assert.deepEqual(inspected.artifactRefs, { journal: filePath });
+  assert.deepEqual(inspected.artifactRefs, { journal: filePath, remote: null });
 });
 
 test('production recovery journal adapter fails closed when no explicit fenced writer lease is provided', () => {
@@ -270,6 +278,7 @@ test('production recovery journal adapter accepts canonical remote artifact owne
   assert.deepEqual(journal.artifactRefs, { journal: filePath, remote: remoteArtifactPath });
 
   const inspected = journal.inspect();
+  assert.equal(inspected.ownsRemoteArtifact, true);
   assert.deepEqual(inspected.artifactRefs, { journal: filePath, remote: remoteArtifactPath });
 
   journal.close();
