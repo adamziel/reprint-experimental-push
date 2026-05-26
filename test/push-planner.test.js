@@ -16495,6 +16495,7 @@ test('blocks local term-taxonomy rows that reference same-plan created term iden
 
   const plan = planFor(base, local, remote);
   const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  const references = blocker.references;
   const planJson = JSON.stringify(plan);
 
   assert.equal(plan.status, 'blocked');
@@ -16505,6 +16506,17 @@ test('blocks local term-taxonomy rows that reference same-plan created term iden
   assert.equal(blocker.class, 'unsupported-term-taxonomy-resource');
   assert.equal(blocker.resourceKey, resourceKey);
   assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_term_taxonomy","term_taxonomy_id:5"] is created in the same plan as a parent term identity that depends on it, and identity rewriting is not yet supported.');
+  assert.deepEqual(
+    references.map((reference) => reference.relationshipType).sort(),
+    ['term-taxonomy-parent', 'term-taxonomy-term'],
+  );
+  assert.deepEqual(
+    references.map((reference) => reference.targetResourceKey).sort(),
+    [parentResourceKey, termResourceKey].sort(),
+  );
+  assert.equal(references.every((reference) => reference.sourceResourceKey === resourceKey), true);
+  assert.equal(references.every((reference) => reference.targetChange.remote.state === 'absent'), true);
+  assert.equal(references.every((reference) => reference.targetChange.local.state === 'present'), true);
   assert.equal(planJson.includes('Local same-plan term'), false);
   assert.equal(planJson.includes('Local same-plan parent term'), false);
   assert.equal(planJson.includes('local-same-plan-term'), false);

@@ -789,6 +789,8 @@ export function createPushPlan({ base, local, remote, now = new Date() }) {
         baseValue,
         localValue,
         remoteValue,
+        resources,
+        base,
         local,
         remote,
       });
@@ -1179,6 +1181,8 @@ export function createPushPlan({ base, local, remote, now = new Date() }) {
         baseValue,
         localValue,
         remoteValue,
+        resources,
+        base,
         local,
         remote,
       });
@@ -3719,7 +3723,7 @@ function unsupportedTermmetaResourceSupport({ resource, baseValue, localValue, r
   };
 }
 
-function unsupportedTermTaxonomyResourceSupport({ resource, baseValue, localValue, remoteValue, local, remote }) {
+function unsupportedTermTaxonomyResourceSupport({ resource, baseValue, localValue, remoteValue, resources, base, local, remote }) {
   if (resource.type !== 'row' || resource.table !== 'wp_term_taxonomy') {
     return { supported: true };
   }
@@ -3738,10 +3742,12 @@ function unsupportedTermTaxonomyResourceSupport({ resource, baseValue, localValu
   }
 
   const references = wordpressGraphReferences(resource, candidate);
-  const samePlanCreatedTermReferences = references.filter((reference) => (
+  const referenceEvidence = references.map((reference) =>
+    wordpressGraphReferenceEvidence(reference, resources, base, local, remote));
+  const samePlanCreatedTermReferences = referenceEvidence.filter((reference) => (
     (reference.relationshipType === 'term-taxonomy-term' || reference.relationshipType === 'term-taxonomy-parent')
-    && getResource(remote, reference.targetResource) === ABSENT
-    && getResource(local, reference.targetResource) !== ABSENT
+    && reference.targetChange.remote.state === 'absent'
+    && reference.targetChange.local.state === 'present'
   ));
   const unsupportedState = samePlanCreatedTermReferences.length > 0
     ? 'same-plan-reference'
