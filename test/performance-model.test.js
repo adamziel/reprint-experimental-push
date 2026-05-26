@@ -568,6 +568,18 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
     'receipt-cursor headroom still cannot bypass the backpressure pause boundary',
   );
   assert.equal(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'cached-receipt-cursor-queue-headroom-and-memory-headroom-skips-backpressure-pause-after-retry')?.rejectedGate,
+    'recovery',
+  );
+  assert.ok(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'cached-receipt-cursor-queue-headroom-and-memory-headroom-skips-backpressure-pause-after-retry')?.violates.includes('backpressure'),
+    'queue headroom plus memory headroom still cannot bypass the backpressure pause boundary',
+  );
+  assert.ok(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'cached-receipt-cursor-queue-headroom-and-memory-headroom-skips-backpressure-pause-after-retry')?.violates.includes('atomic-groups'),
+    'queue headroom plus memory headroom still cannot bypass the atomic-group boundary',
+  );
+  assert.equal(
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'cached-receipt-cursor-and-queue-budget-match-skips-backpressure-pause-after-retry')?.rejectedGate,
     'recovery',
   );
