@@ -212,6 +212,14 @@ export function evaluateProductionAuthSessionLifecycleSummary(summary, now = Dat
       continue;
     }
 
+    if (observation.step === null || observation.step === undefined || observation.step === '') {
+      return {
+        ok: false,
+        required: 'preserved read',
+        observed: 'missing-phase',
+      };
+    }
+
     const observationSessionId = typeof observation.id === 'string' && observation.id.trim()
       ? observation.id
       : null;
