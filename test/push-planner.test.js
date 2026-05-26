@@ -24389,6 +24389,65 @@ test('blocks remote-only serialized block drift while preserving matching indepe
   assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin drift */');
 });
 
+test('blocks converged serialized block drift while preserving a matching independent edit and remote-only plugin changes', () => {
+  const resourceKey = 'row:["wp_posts","ID:60"]';
+  const base = baseSite();
+  base.db.wp_posts['ID:60'] = {
+    ID: 60,
+    post_title: 'Base converged block post',
+    post_content: '<!-- wp:paragraph -->Base converged block content<!-- /wp:paragraph -->',
+    post_status: 'publish',
+    post_type: 'post',
+  };
+  base.db.wp_posts['ID:1'].post_title = 'Base converged shared title';
+
+  const local = baseSite();
+  local.db.wp_posts['ID:60'] = {
+    ID: 60,
+    post_title: 'Converged block post',
+    post_content: '<!-- wp:paragraph -->Converged block content<!-- /wp:paragraph -->',
+    post_status: 'publish',
+    post_type: 'post',
+  };
+  local.db.wp_posts['ID:1'].post_title = 'Shared converged title';
+
+  const remote = baseSite();
+  remote.db.wp_posts['ID:60'] = {
+    ID: 60,
+    post_title: 'Converged block post',
+    post_content: '<!-- wp:paragraph -->Converged block content<!-- /wp:paragraph -->',
+    post_status: 'publish',
+    post_type: 'post',
+  };
+  remote.db.wp_posts['ID:1'].post_title = 'Shared converged title';
+  remote.plugins.forms.description = 'remote-only plugin changes';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin changes */';
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  const matchingEdit = decisionFor(plan, 'row:["wp_posts","ID:1"]');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const blockerJson = JSON.stringify(blocker);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(decisionFor(plan, resourceKey), undefined);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(plan.conflicts.length, 0);
+  assert.equal(blocker.class, 'unsupported-serialized-blocks-resource');
+  assert.equal(blocker.resourceKind, 'serialized-blocks');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.reason, 'Serialized block references are not yet supported by the planner.');
+  assert.equal(blockerJson.includes('Converged block content'), false);
+  assert.equal(blockerJson.includes('Base converged block content'), false);
+  assert.equal(matchingEdit.decision, 'already-in-sync');
+  assert.equal(matchingEdit.change.localChange, 'update');
+  assert.equal(matchingEdit.change.remoteChange, 'update');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+});
+
 test('blocks same-plan created serialized block references while preserving a matching independent edit and remote-only plugin changes', () => {
   const resourceKey = 'row:["wp_posts","ID:61"]';
   const base = baseSite();
