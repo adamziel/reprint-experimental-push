@@ -2029,26 +2029,14 @@ test('production auth/session lifecycle trace summary does not treat preflight a
       revoked: false,
       cleanedUp: false,
       rotated: false,
-      preserved: true,
+      preserved: false,
     },
     read: null,
     expired: null,
     revoked: null,
     cleanedUp: null,
     rotated: null,
-    preserved: {
-      step: 'preflight',
-      id: 'session-01',
-      type: 'production-auth-session',
-      status: 'active',
-      expiresAt: '2099-01-01T00:00:00Z',
-      invalidLifecycleFlag: null,
-      expired: false,
-      revoked: false,
-      cleanedUp: false,
-      rotated: false,
-      preserved: true,
-    },
+    preserved: null,
     observations: [
       {
         step: 'preflight',
@@ -2061,7 +2049,7 @@ test('production auth/session lifecycle trace summary does not treat preflight a
         revoked: false,
         cleanedUp: false,
         rotated: false,
-        preserved: true,
+        preserved: false,
       },
     ],
   });
@@ -4013,6 +4001,110 @@ test('production auth/session lifecycle summary fails closed when top-level mark
       ok: false,
       required: 'preserved read',
       observed: 'journal',
+    },
+  );
+});
+
+test('production auth/session lifecycle summary fails closed when a top-level preserved marker carries contradictory lifecycle outcomes', () => {
+  assert.deepEqual(
+    evaluateProductionAuthSessionLifecycleSummary({
+      issued: {
+        step: 'preflight',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+      },
+      read: {
+        step: 'journal',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+        preserved: true,
+      },
+      preserved: {
+        step: 'journal',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+        preserved: true,
+        rotated: true,
+      },
+    }),
+    {
+      ok: false,
+      required: 'preserved read',
+      observed: 'rotated',
+    },
+  );
+
+  assert.deepEqual(
+    evaluateProductionAuthSessionLifecycleSummary({
+      issued: {
+        step: 'preflight',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+      },
+      read: {
+        step: 'journal',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+        preserved: true,
+      },
+      preserved: {
+        step: 'journal',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+        preserved: true,
+        expired: true,
+      },
+    }),
+    {
+      ok: false,
+      required: 'unexpired',
+      observed: 'expired',
+    },
+  );
+
+  assert.deepEqual(
+    evaluateProductionAuthSessionLifecycleSummary({
+      issued: {
+        step: 'preflight',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+      },
+      read: {
+        step: 'journal',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+        preserved: true,
+      },
+      preserved: {
+        step: 'journal',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+        preserved: true,
+        cleanup: true,
+      },
+    }),
+    {
+      ok: false,
+      required: 'unrevoked',
+      observed: 'cleaned-up',
     },
   );
 });

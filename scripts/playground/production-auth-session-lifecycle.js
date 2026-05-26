@@ -405,7 +405,7 @@ export function summarizeProductionAuthSessionLifecycleTrace(trace) {
       revoked: entry.revoked === true,
       cleanedUp: entry.cleanedUp === true || entry.cleanup === true,
       rotated: entry.rotated === true,
-      preserved: entry.preserved === true,
+      preserved: isAuthSessionReadStep(entry.step) && entry.preserved === true,
     };
   });
   const readObservation = [...observations]
@@ -598,12 +598,25 @@ function resolveInvalidAuthSessionSummaryObservationField(summary) {
       };
     }
 
-    if (!summaryObservationStepMatchesMarker(field, observation.step)) {
+    if (
+      !summaryObservationStepMatchesMarker(field, observation.step)
+      && !summaryMarkerMatchesDirectReadLifecycleOutcome(summary, field, observation)
+    ) {
       return {
         ok: false,
         required: 'preserved read',
         observed: normalizeAuthSessionObservationStep(observation.step),
       };
+    }
+
+    if (field === 'preserved') {
+      const invalidPreservedLifecycleOutcome = resolveInvalidReadLifecycleOutcome(
+        observation,
+        'preserved read',
+      );
+      if (invalidPreservedLifecycleOutcome) {
+        return invalidPreservedLifecycleOutcome;
+      }
     }
   }
 
@@ -728,4 +741,23 @@ function summaryObservationStepMatchesMarker(field, step) {
     default:
       return true;
   }
+}
+
+function summaryMarkerMatchesDirectReadLifecycleOutcome(summary, field, observation) {
+  if (field !== 'cleanedUp') {
+    return false;
+  }
+
+  const directRead = summary?.read;
+  if (!directRead || typeof directRead !== 'object' || Array.isArray(directRead)) {
+    return false;
+  }
+
+  if (directRead.cleanedUp !== true && directRead.cleanup !== true) {
+    return false;
+  }
+
+  const directReadSessionId = normalizeAuthSessionObservationId(directRead.id);
+  const observationSessionId = normalizeAuthSessionObservationId(observation?.id);
+  return !directReadSessionId || !observationSessionId || directReadSessionId === observationSessionId;
 }
