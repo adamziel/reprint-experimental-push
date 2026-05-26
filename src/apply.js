@@ -2745,9 +2745,24 @@ function isStrictPlainObject(value) {
 
 function hasOnlyDenseOwnArrayIndexes(value) {
   const ownKeys = Reflect.ownKeys(value ?? {});
-  return ownKeys.length === value.length + 1
-    && ownKeys.includes('length')
-    && ownKeys.filter((key) => typeof key === 'string' && /^\d+$/.test(key)).length === value.length;
+  if (ownKeys.length !== value.length + 1 || !ownKeys.includes('length')) {
+    return false;
+  }
+
+  for (let index = 0; index < value.length; index += 1) {
+    if (!Object.hasOwn(value, String(index))) {
+      return false;
+    }
+  }
+
+  return ownKeys.every((key) => {
+    if (key === 'length') {
+      return true;
+    }
+    return typeof key === 'string'
+      && /^(0|[1-9]\d*)$/.test(key)
+      && Number(key) < value.length;
+  });
 }
 
 function sanitizeRecoveryRemote(remote, plan) {
