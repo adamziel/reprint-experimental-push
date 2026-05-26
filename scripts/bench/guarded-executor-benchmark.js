@@ -602,6 +602,12 @@ export function productionThroughputBlockers(report) {
     blockers.push('queue-headroom-not-visible');
   }
   if (
+    report.evidence.backpressure?.queueHeadroomVisible === true
+    && report.evidence.backpressure?.queueHeadroomMeasured !== true
+  ) {
+    blockers.push('queue-headroom-visible-without-measurement');
+  }
+  if (
     report.evidence.backpressure?.queuePausedBeforeOverflow === true
     && report.evidence.backpressure?.receiptCursorMemoryCeilingVisible !== true
   ) {
