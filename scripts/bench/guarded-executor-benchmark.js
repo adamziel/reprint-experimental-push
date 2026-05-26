@@ -1114,7 +1114,8 @@ export function productionThroughputDetails(report) {
   const queuePauseHasBackpressureAlignedReceiptCursorQueueSlack =
     report.evidence.backpressure?.queuePausedBeforeOverflow !== true
     || (
-      Number.isFinite(receiptCursorQueueSlackBytes)
+      queueHeadroomMeasured
+      && Number.isFinite(receiptCursorQueueSlackBytes)
       && Number.isFinite(receiptCursorQueueBudgetBytes)
       && Number.isFinite(receiptCursorBackpressureBytes)
       && receiptCursorQueueSlackBytes === receiptCursorQueueBudgetBytes - receiptCursorBackpressureBytes
@@ -1238,7 +1239,8 @@ export function productionThroughputDetails(report) {
   const queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack =
     report.evidence.backpressure?.queuePausedBeforeOverflow !== true
     || (
-      queuePauseHasMeasuredReceiptCursorQueueSlack
+      queueHeadroomMeasured
+      && queuePauseHasMeasuredReceiptCursorQueueSlack
       && queuePauseHasBackpressureAlignedReceiptCursorQueueSlack
       && receiptCursorQueueSlackMatchesBackpressure
       && receiptCursorQueueSlackMatchesMemoryHeadroom

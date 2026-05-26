@@ -2348,3 +2348,19 @@ test('guarded benchmark treats missing measured queue-headroom proof as incomple
   assert.equal(details.backpressureConsistency.backpressureEvidenceComplete, false);
   assert.ok(blockers.includes('queue-pause-without-measured-queue-headroom-proof'));
 });
+
+test('guarded benchmark keeps aligned paused queue-slack details false when queue-headroom measurement is missing', () => {
+  const report = smallBenchmark();
+  const mutated = clone(report);
+
+  mutated.evidence.backpressure.queuePausedBeforeOverflow = true;
+  mutated.evidence.backpressure.queueHeadroomMeasured = false;
+  mutated.evidence.backpressure.queuePauseHasMeasuredReceiptCursorQueueSlack = true;
+  mutated.evidence.backpressure.queuePauseHasBackpressureAlignedReceiptCursorQueueSlack = true;
+  mutated.evidence.backpressure.queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack = true;
+
+  const details = productionThroughputDetails(mutated);
+
+  assert.equal(details.queuePauseHasBackpressureAlignedReceiptCursorQueueSlack, false);
+  assert.equal(details.queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack, false);
+});
