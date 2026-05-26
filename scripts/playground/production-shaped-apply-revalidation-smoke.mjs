@@ -9,7 +9,10 @@ import { createPushPlan } from '../../src/planner.js';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const muPluginDir = path.join(repoRoot, 'scripts/playground/rest-mu-plugins');
-const serverStartupTimeoutMs = 120_000;
+const serverStartupTimeoutMs = 8_000;
+const serverFetchTimeoutMs = 2_000;
+const playgroundServerTimeoutMs = 29;
+const requestTimeoutMs = 2_000;
 const credentials = {
   username: 'reprint_push_admin',
   password: 'reprint-push-admin-app-password',
@@ -32,6 +35,7 @@ await withPlaygroundServer('remote-base', remoteBlueprint, async (remoteServer) 
       sourceUrl: remoteServer.baseUrl,
       credential: credentials,
       routeProfile: 'production-shaped',
+      requestTimeoutMs,
     });
 
     const preflight = await client.signedGet('/preflight');
@@ -53,12 +57,14 @@ await withPlaygroundServer('remote-base', remoteBlueprint, async (remoteServer) 
     const session = preflight.body.session.id;
     const idempotencyKey = 'production-shaped-apply-revalidation-smoke-001';
 
+    process.stderr.write('apply-revalidation: dry-run /dry-run\n');
     const dryRun = await client.signedPost('/dry-run', { plan }, { session, idempotencyKey });
     assert.equal(dryRun.status, 200);
     assert.equal(dryRun.body.ok, true);
     assert.equal(dryRun.body.mode, 'dry-run');
     assert.ok(dryRun.body.receipt?.receiptHash, 'dry-run receipt hash missing');
 
+    process.stderr.write('apply-revalidation: apply /apply\n');
     const apply = await client.signedPost('/apply', {
       plan,
       receipt: dryRun.body.receipt,
@@ -78,6 +84,7 @@ await withPlaygroundServer('remote-base', remoteBlueprint, async (remoteServer) 
     assert.equal(apply.body.recovery?.required, true);
     assert.equal(apply.body.recovery?.state, 'blocked-recovery');
 
+    process.stderr.write('apply-revalidation: recovery inspect /recovery/inspect\n');
     const recoveryInspect = await client.signedPost('/recovery/inspect', {
       plan,
       receipt: dryRun.body.receipt,
@@ -183,11 +190,16 @@ async function startPlaygroundServer(name, blueprintPath) {
     'quiet',
   ];
 
-  const child = spawn('npx', args, {
-    cwd: repoRoot,
-    env: process.env,
-    stdio: ['ignore', 'pipe', 'pipe'],
-  });
+  const child = spawn(
+    'timeout',
+    ['--preserve-status', '--kill-after=1s', `${playgroundServerTimeoutMs}s`, 'npx', ...args],
+    {
+      cwd: repoRoot,
+      env: process.env,
+      detached: true,
+      stdio: ['ignore', 'pipe', 'pipe'],
+    },
+  );
 
   let output = '';
   child.stdout.on('data', (chunk) => {
@@ -197,34 +209,112 @@ async function startPlaygroundServer(name, blueprintPath) {
     output += chunk;
   });
 
-  await waitForServer(child, baseUrl, () => output);
+  try {
+    await waitForServer(child, baseUrl, () => output);
+  } catch (error) {
+    process.stderr.write(`${output}\n`);
+    await stopPlaygroundChild(child);
+    throw error;
+  }
   return { name, baseUrl, port, child };
 }
 
 async function stopPlaygroundServer(server) {
-  if (server.child.exitCode !== null) {
+  await stopPlaygroundChild(server.child);
+}
+
+async function stopPlaygroundChild(child) {
+  if (child.exitCode !== null) {
     return;
   }
-  server.child.kill('SIGTERM');
-  await waitForExit(server.child, 12_000);
+  child.kill('SIGTERM');
+  try {
+    await waitForExit(child, 2_000);
+    return;
+  } catch {
+    child.kill('SIGKILL');
+    await waitForExit(child, 2_000);
+  }
 }
 
 async function waitForServer(child, baseUrl, getLogs) {
   const deadline = Date.now() + serverStartupTimeoutMs;
+  let lastError = null;
+  const lastProbes = [];
+  let consecutiveIndex502s = 0;
+  let nextHeartbeat = Date.now();
   while (Date.now() < deadline) {
     if (child.exitCode !== null) {
       throw new Error(`Playground server exited early with ${child.exitCode}\n${getLogs()}`);
     }
+    if (Date.now() >= nextHeartbeat) {
+      process.stderr.write(`apply-revalidation: waiting for Playground at ${baseUrl}\n`);
+      nextHeartbeat = Date.now() + 2_000;
+    }
     try {
-      const response = await fetch(`${baseUrl}/wp-json/`);
+      process.stderr.write('apply-revalidation: probe /wp-json/\n');
+      const response = await fetchWithTimeout(`${baseUrl}/wp-json/`, {
+        headers: { connection: 'close' },
+      });
+      const responseBody = await response.clone().text().catch(() => '');
+      lastProbes.push({
+        route: '/wp-json/',
+        status: response.status,
+        ok: response.ok,
+        body: responseBody.slice(0, 500),
+      });
       if (response.status === 200) {
+        consecutiveIndex502s = 0;
         await response.arrayBuffer();
+        const snapshot = await fetchWithTimeout(`${baseUrl}/wp-json/reprint-push-lab/v1/snapshot`, {
+          headers: {
+            Authorization: `Basic ${Buffer.from(`${credentials.username}:${credentials.password}`).toString('base64')}`,
+            connection: 'close',
+          },
+        });
+        const snapshotBody = await snapshot.clone().text().catch(() => '');
+        lastProbes.push({
+        route: '/wp-json/reprint-push-lab/v1/snapshot',
+        status: snapshot.status,
+        ok: snapshot.ok,
+        body: snapshotBody.slice(0, 500),
+      });
+      process.stderr.write(`apply-revalidation: snapshot probe HTTP ${snapshot.status}\n`);
+      if (snapshot.status === 200) {
+        await snapshot.arrayBuffer();
         return;
       }
-    } catch {}
+      lastError = new Error(`Playground lab snapshot readiness HTTP ${snapshot.status}`);
+      } else {
+        lastError = new Error(`Playground index readiness HTTP ${response.status}`);
+        if (response.status === 502) {
+          consecutiveIndex502s += 1;
+        } else {
+          consecutiveIndex502s = 0;
+        }
+      }
+      if (consecutiveIndex502s >= 4) {
+        break;
+      }
+    } catch (error) {
+      lastError = error;
+      process.stderr.write(`apply-revalidation: readiness probe error ${error.message}\n`);
+      consecutiveIndex502s = 0;
+    }
     await new Promise((resolve) => setTimeout(resolve, 500));
   }
-  throw new Error(`Timed out waiting for Playground server at ${baseUrl}\n${getLogs()}`);
+  const probeText = lastProbes.length ? `\nProbe trail: ${JSON.stringify(lastProbes.slice(-4), null, 2)}` : '';
+  throw new Error(`Timed out waiting for Playground server at ${baseUrl}: ${lastError?.message || 'unknown'}${probeText}\n${getLogs()}`);
+}
+
+async function fetchWithTimeout(url, init = {}) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(new Error(`Timed out fetching ${url}`)), serverFetchTimeoutMs);
+  try {
+    return await fetch(url, { ...init, signal: controller.signal });
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 async function waitForExit(child, timeoutMs) {
@@ -235,7 +325,9 @@ async function waitForExit(child, timeoutMs) {
     }
     await new Promise((resolve) => setTimeout(resolve, 100));
   }
-  child.kill('SIGKILL');
+  if (child.exitCode !== null) {
+    return;
+  }
   while (child.exitCode === null) {
     await new Promise((resolve) => setTimeout(resolve, 100));
   }

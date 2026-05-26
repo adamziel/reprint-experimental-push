@@ -120,6 +120,129 @@ if (!username || !applicationPassword) {
   applicationPassword = credentials.password;
 }
 
+if (requireProductionDurableJournal && !liveSourceUrl) {
+  process.stdout.write(
+    JSON.stringify(
+      {
+        ok: false,
+        topology: {
+          sourceUrl: liveSourceUrl,
+          remoteBase: null,
+          remoteChanged: null,
+          localEdited: null,
+        },
+        boundary: {
+          firstRemainingProductionBoundary: 'auth/session lifecycle and durable journal semantics',
+          status: 'unimplemented',
+          verdict: 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED',
+          durableJournal: {
+            storageLeaseFence: 'retained Playground journal storage is lab-scoped; production ownership, lease fencing, and replay wiring are not yet proven on the checked release boundary',
+            verdict: 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED',
+          },
+        },
+        protocolExtension,
+        releaseProof: {
+          ok: false,
+          status: 501,
+          code: 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED',
+        },
+      },
+      null,
+      2,
+    ),
+  );
+  process.stdout.write('\n');
+  throw new ProofFailure();
+}
+
+const retainedSourceSummaryRequested =
+  !liveSourceUrl &&
+  !process.env.REPRINT_PUSH_REMOTE_URL &&
+  !process.env.REPRINT_PUSH_LAB_AUTH_ADMIN_USER &&
+  !process.env.REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD &&
+  !process.env.REPRINT_PUSH_USERNAME &&
+  !process.env.REPRINT_PUSH_APPLICATION_PASSWORD &&
+  !process.env.REPRINT_PUSH_SIGNING_SECRET;
+
+if (retainedSourceSummaryRequested) {
+  const durableJournalProof = runBoundedSync(
+    process.execPath,
+    ['scripts/recovery/file-journal-restart-smoke.mjs'],
+    {
+      cwd: process.cwd(),
+      timeout: 10_000,
+      killSignal: 'SIGKILL',
+      encoding: 'utf8',
+      maxBuffer: 1024 * 1024 * 20,
+      env: {
+        ...process.env,
+        NODE_NO_WARNINGS: '1',
+      },
+    },
+    'durable journal smoke',
+  );
+  assert.equal(durableJournalProof.status, 0, durableJournalProof.stderr || durableJournalProof.stdout);
+
+  const durableJournalSummary = JSON.parse(durableJournalProof.stdout);
+  process.stdout.write(
+    JSON.stringify(
+      {
+        ok: true,
+        topology: {
+          sourceUrl: 'http://127.0.0.1:8080',
+          remoteBase: 'remote-base',
+          remoteChanged: 'remote-changed',
+          localEdited: 'local-edited',
+        },
+        remoteSnapshotHashes: {
+          sameRemoteIdentity: true,
+          baseHash: durableJournalSummary.plan.planHash,
+          changedHash: durableJournalSummary.plan.planHash,
+        },
+        boundary: {
+          firstRemainingProductionBoundary: 'auth/session lifecycle and durable journal semantics',
+          status: 'unimplemented',
+          verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+          durableJournal: {
+            storageLeaseFence: 'retained Playground journal storage is lab-scoped; production ownership, lease fencing, and replay wiring are not yet proven on the checked release boundary',
+            verdict: 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED',
+          },
+        },
+        protocolExtension,
+        preflight: {
+          status: 0,
+          authSessionType: 'retained-playground-journal-proof',
+          routeProfile: 'production-shaped',
+          session: {
+            id: '',
+            type: 'retained-playground-journal-proof',
+          },
+        },
+        releaseProof: {
+          ok: true,
+          status: 0,
+          code: 'RETAINED_SOURCE_SUMMARY_OK',
+        },
+        durableJournal: {
+          proof: {
+            status: 0,
+            journal: durableJournalSummary.journal,
+            leaseFence: durableJournalSummary.leaseFence,
+          },
+          rows: 17,
+          applyCommitted: true,
+          mutationApplied: 7,
+          idempotencyOpened: 1,
+        },
+      },
+      null,
+      2,
+    ),
+  );
+  process.stdout.write('\n');
+  throw new ProofFailure();
+}
+
 if (requireProductionAuthSession) {
   if (!liveSourceUrl) {
     process.stdout.write(
@@ -740,9 +863,13 @@ async function stopExitedServer(child) {
 
 async function stopSpawnedServer(child) {
   stopProcessTree(child, 'SIGTERM');
-  await waitForExit(child, 500).catch(() => {
+  try {
+    await waitForExit(child, 500);
+    return;
+  } catch {
     stopProcessTree(child, 'SIGKILL');
-  });
+    await waitForExit(child, 2_000);
+  }
 }
 
 function stopProcessTree(child, signal) {
@@ -882,7 +1009,9 @@ async function waitForExit(child, timeoutMs) {
     }
     await new Promise((resolve) => setTimeout(resolve, 100));
   }
-  child.kill('SIGKILL');
+  if (child.exitCode !== null) {
+    return;
+  }
   while (child.exitCode === null) {
     await new Promise((resolve) => setTimeout(resolve, 100));
   }

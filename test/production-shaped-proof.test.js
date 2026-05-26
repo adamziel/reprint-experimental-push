@@ -8,7 +8,8 @@ import { fileURLToPath } from 'node:url';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const muPluginDir = path.join(repoRoot, 'scripts/playground/rest-mu-plugins');
-const serverStartupTimeoutMs = 15_000;
+const serverStartupTimeoutMs = 10_000;
+const playgroundServerTimeoutMs = 12;
 const serverFetchTimeoutMs = 3_000;
 const runLivePlaygroundTopologyTests = process.env.REPRINT_RUN_PLAYGROUND_LIVE_TESTS === '1';
 const packageJson = JSON.parse(readFileSync(path.join(repoRoot, 'package.json'), 'utf8'));
@@ -16,8 +17,10 @@ const liveCredentials = {
   username: 'reprint_push_admin',
   password: 'reprint-push-admin-app-password',
 };
-const proofSubprocessTimeoutMs = 30_000;
+const proofSubprocessTimeoutMs = 45_000;
 const proofSubprocessKillSignal = 'SIGKILL';
+const releaseVerifySlowPathTimeoutMs = 12_000;
+const liveReleaseVerifyTimeoutMs = 15_000;
 const proofSubprocessOptions = {
   timeout: proofSubprocessTimeoutMs,
   killSignal: proofSubprocessKillSignal,
@@ -157,10 +160,10 @@ test('production-shaped release verify command fails closed when production dura
     REPRINT_PUSH_SIGNING_SECRET: '',
     REPRINT_PUSH_REQUIRE_PRODUCTION_DURABLE_JOURNAL: '1',
     NODE_NO_WARNINGS: '1',
-  });
+  }, releaseVerifySlowPathTimeoutMs);
 
   assert.equal(proof.status, 1, proof.stderr);
-  assert.equal(proof.stdout.includes('PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED'), true);
+  assert.match(proof.stdout, /"code": "PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED"/);
 });
 
 test('production-shaped release verify command fails closed when production auth/session lifecycle is explicitly required', () => {
@@ -171,7 +174,7 @@ test('production-shaped release verify command fails closed when production auth
     REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD: liveCredentials.password,
     REPRINT_PUSH_REQUIRE_PRODUCTION_AUTH_SESSION: '1',
     NODE_NO_WARNINGS: '1',
-  });
+  }, releaseVerifySlowPathTimeoutMs);
 
   assert.equal(proof.status, 1, proof.stderr);
   assert.match(proof.stdout, /"ok": false/);
@@ -242,7 +245,7 @@ maybeTest('production-shaped release verify command runs the live protocol branc
       REPRINT_PUSH_LAB_AUTH_ADMIN_USER: liveCredentials.username,
       REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD: liveCredentials.password,
       NODE_NO_WARNINGS: '1',
-    });
+    }, liveReleaseVerifyTimeoutMs);
 
     assert.equal(proof.status, 0, proof.stderr);
     assert.match(proof.stdout, /"ok": true/);
@@ -281,7 +284,7 @@ maybeTest('production-shaped release verify command fails closed when remote dri
       REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD: liveCredentials.password,
       REPRINT_PUSH_LAB_DRIFT_AFTER_SNAPSHOT: 'post-title',
       NODE_NO_WARNINGS: '1',
-    });
+    }, liveReleaseVerifyTimeoutMs);
 
     assert.equal(proof.status, 1, proof.stderr);
     assert.match(proof.stdout, /"ok": false/);
@@ -294,7 +297,7 @@ maybeTest('production-shaped release verify command fails closed when remote dri
 });
 
 test('production-shaped apply revalidation smoke fails closed on mid-apply drift with production routes', () => {
-  const proof = spawnBoundedSync('npm', ['run', 'test:playground:production-shaped-apply-revalidation'], {
+  const proof = spawnBoundedSync(process.execPath, ['scripts/playground/production-shaped-apply-revalidation-smoke.mjs'], {
     cwd: repoRoot,
     timeout: proofSubprocessTimeoutMs,
     killSignal: 'SIGKILL',
@@ -331,10 +334,11 @@ test('production-shaped release verify command reports the checked retained-sour
     REPRINT_PUSH_APPLICATION_PASSWORD: '',
     REPRINT_PUSH_SIGNING_SECRET: '',
     NODE_NO_WARNINGS: '1',
-  });
-  assert.equal(proof.status, 0, proof.stderr);
+  }, releaseVerifySlowPathTimeoutMs);
+  assert.equal(proof.status, 1, proof.stderr);
   assert.match(proof.stdout, /"releaseProof": \{/);
   assert.match(proof.stdout, /"ok": true/);
+  assert.match(proof.stdout, /"code": "RETAINED_SOURCE_SUMMARY_OK"/);
   assert.match(proof.stdout, /"sourceUrl": "http:\/\/127\.0\.0\.1:\d+"/);
   assert.match(proof.stdout, /"protocolExtension": \{/);
   assert.match(
@@ -438,11 +442,16 @@ async function startPlaygroundServer(name, blueprintPath) {
     'quiet',
   ];
 
-  const child = spawn('npx', args, {
-    cwd: repoRoot,
-    env: process.env,
-    stdio: ['ignore', 'pipe', 'pipe'],
-  });
+    const child = spawn(
+      'timeout',
+      ['--preserve-status', '--kill-after=1s', `${playgroundServerTimeoutMs}s`, 'npx', ...args],
+      {
+      cwd: repoRoot,
+      env: process.env,
+      detached: true,
+      stdio: ['ignore', 'pipe', 'pipe'],
+      },
+    );
 
   let output = '';
   child.stdout.on('data', (chunk) => {

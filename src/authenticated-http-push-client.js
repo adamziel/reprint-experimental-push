@@ -182,19 +182,24 @@ export async function runAuthenticatedHttpPush({
   return summary;
 }
 
-export function authenticatedHttpClient({ sourceUrl, credential, routeProfile = 'lab-authenticated' }) {
+export function authenticatedHttpClient({
+  sourceUrl,
+  credential,
+  routeProfile = 'lab-authenticated',
+  requestTimeoutMs = 10_000,
+}) {
   const baseUrl = normalizeBaseUrl(sourceUrl);
   const profile = resolveRouteProfile(routeProfile);
 
   return {
     get(pathSuffix) {
-      return requestJson(baseUrl, 'GET', `${profile.namespacePath}${pathSuffix}`, undefined, authHeaders(credential));
+      return requestJson(baseUrl, 'GET', `${profile.namespacePath}${pathSuffix}`, undefined, authHeaders(credential), requestTimeoutMs);
     },
     post(pathSuffix, body, headers = {}) {
       return requestJson(baseUrl, 'POST', `${profile.namespacePath}${pathSuffix}`, body, {
         ...authHeaders(credential),
         ...headers,
-      });
+      }, requestTimeoutMs);
     },
     signedGet(pathSuffix, options = {}) {
       const pathname = `${profile.namespacePath}${pathSuffix}`;
@@ -204,6 +209,7 @@ export function authenticatedHttpClient({ sourceUrl, credential, routeProfile = 
         pathname,
         undefined,
         signedRequestHeaders(credential, 'GET', pathname, '', options),
+        requestTimeoutMs,
       );
     },
     signedPost(pathSuffix, body, options = {}) {
@@ -215,6 +221,7 @@ export function authenticatedHttpClient({ sourceUrl, credential, routeProfile = 
         pathname,
         rawBody,
         signedRequestHeaders(credential, 'POST', pathname, rawBody, options),
+        requestTimeoutMs,
       );
     },
   };
@@ -310,23 +317,24 @@ function summarizeDbJournal(response) {
   };
 }
 
-async function requestJson(baseUrl, method, pathname, body = undefined, headers = {}) {
+async function requestJson(baseUrl, method, pathname, body = undefined, headers = {}, requestTimeoutMs = 10_000) {
   return requestJsonRaw(
     baseUrl,
     method,
     pathname,
     body === undefined ? undefined : JSON.stringify(body),
     headers,
+    requestTimeoutMs,
   );
 }
 
-async function requestJsonRaw(baseUrl, method, pathname, rawBody = undefined, headers = {}) {
+async function requestJsonRaw(baseUrl, method, pathname, rawBody = undefined, headers = {}, requestTimeoutMs = 10_000) {
   const retryable = isRetryableReadOnlyGet(baseUrl, method, pathname, headers);
   const attempts = retryable ? transientFetchAttempts : 1;
   let lastError;
   for (let attempt = 1; attempt <= attempts; attempt++) {
     try {
-      return await requestJsonRawOnce(baseUrl, method, pathname, rawBody, headers);
+      return await requestJsonRawOnce(baseUrl, method, pathname, rawBody, headers, requestTimeoutMs);
     } catch (error) {
       lastError = error;
       if (!retryable || !isTransientFetchError(error) || attempt === attempts) {
@@ -338,14 +346,14 @@ async function requestJsonRaw(baseUrl, method, pathname, rawBody = undefined, he
   throw lastError;
 }
 
-async function requestJsonRawOnce(baseUrl, method, pathname, rawBody = undefined, headers = {}) {
+async function requestJsonRawOnce(baseUrl, method, pathname, rawBody = undefined, headers = {}, requestTimeoutMs = 10_000) {
   const requestHeaders = rawBody === undefined
     ? withConnectionClose(headers)
     : withConnectionClose({
       'content-type': 'application/json',
       ...headers,
     });
-  const timeoutSignal = AbortSignal.timeout(10_000);
+  const timeoutSignal = AbortSignal.timeout(requestTimeoutMs);
   const response = await fetch(new URL(pathname, baseUrl), {
     method,
     headers: requestHeaders,
