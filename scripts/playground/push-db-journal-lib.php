@@ -543,7 +543,10 @@ function reprint_push_lab_db_journal_summary(int $limit = 20, bool $checked_surf
     ];
 
     if ($accepted_on_checked_boundary) {
-        $stale_claim_rejected = reprint_push_lab_db_journal_has_stale_claim_rejection_evidence($summary['latestRows']);
+        $stale_claim_rejected = reprint_push_lab_db_journal_has_stale_claim_rejection_evidence(
+            $summary['latestRows'],
+            $summary['eventSummaries']
+        );
         $writer_lease = reprint_push_lab_db_journal_writer_lease_contract($stale_claim_rejected);
         $summary['acceptedOnCheckedBoundary'] = true;
         $summary['ownership'] = [
@@ -616,8 +619,21 @@ function reprint_push_lab_db_journal_rows_are_monotonic(array $rows): bool
     return true;
 }
 
-function reprint_push_lab_db_journal_has_stale_claim_rejection_evidence(array $rows): bool
+function reprint_push_lab_db_journal_has_stale_claim_rejection_evidence(
+    array $rows,
+    array $event_summaries = []
+): bool
 {
+    foreach ($event_summaries as $summary) {
+        if (!is_array($summary)) {
+            continue;
+        }
+        $event = (string) ($summary['event'] ?? '');
+        if ($event === 'stale-claim-retry-started' || $event === 'stale-claim-retry-in-progress') {
+            return true;
+        }
+    }
+
     foreach ($rows as $row) {
         if (!is_array($row)) {
             continue;

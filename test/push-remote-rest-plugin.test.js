@@ -70,6 +70,36 @@ function runStorageGuardMerge(storageGuard, checkedStorageGuard, preferChecked =
   });
 }
 
+function runHasStaleClaimRejectionEvidence(rows, eventSummaries = []) {
+  return spawnSync('php', [
+    '-r',
+    [
+      'define("ABSPATH", dirname($argv[1]));',
+      'function add_filter(...$args) {}',
+      'function add_action(...$args) {}',
+      'function register_rest_route(...$args) {}',
+      'class WP_REST_Server { const CREATABLE = "POST"; const READABLE = "GET"; }',
+      'class WP_REST_Response {',
+      '  private $data;',
+      '  public function __construct($data = null, $status = null) { $this->data = $data; }',
+      '  public function get_data() { return $this->data; }',
+      '  public function set_data($data) { $this->data = $data; }',
+      '}',
+      'class WP_REST_Request {}',
+      'require $argv[1];',
+      '$rows = json_decode($argv[2], true);',
+      '$eventSummaries = json_decode($argv[3], true);',
+      'echo json_encode(reprint_push_lab_db_journal_has_stale_claim_rejection_evidence($rows, $eventSummaries));',
+    ].join(' '),
+    pluginFile,
+    JSON.stringify(rows),
+    JSON.stringify(eventSummaries),
+  ], {
+    cwd: repoRoot,
+    encoding: 'utf8',
+  });
+}
+
 test('checked db journal merge fills nested ownership and lease fence gaps', { skip: !hasPhp }, () => {
   const result = runMerge(
     {
@@ -155,6 +185,24 @@ test('checked db journal merge fills nested ownership and lease fence gaps', { s
       staleClaimRejected: false,
     },
   });
+});
+
+test('db journal stale-claim evidence stays visible when only event summaries retain the retry rows', { skip: !hasPhp }, () => {
+  const result = runHasStaleClaimRejectionEvidence(
+    [
+      { event: 'idempotency-opened' },
+      { event: 'apply-started' },
+      { event: 'mutation-applied' },
+      { event: 'apply-committed' },
+    ],
+    [
+      { event: 'apply-committed', count: 3, latestId: 24 },
+      { event: 'stale-claim-retry-started', count: 1, latestId: 20 },
+    ],
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(JSON.parse(result.stdout), true);
 });
 
 test('checked db journal merge preserves more specific inline values', { skip: !hasPhp }, () => {
