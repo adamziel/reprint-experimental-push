@@ -631,12 +631,16 @@ function buildPluginOwnedResourcePolicy({ base, local, remote, intents }) {
         entry.resourceKey === resource.key && entry.pluginOwner === owner);
 
       if (candidates.length === 0) {
+        const customTable = resource.type === 'row'
+          && typeof resource.table === 'string'
+          && !PLUGIN_DATA_DRIVER_TABLE_NAMES.has(resource.table);
         return {
           supported: false,
           className: 'unsupported-plugin-owned-resource',
-          resourceKind: resource.type === 'row' && typeof resource.table === 'string' && !PLUGIN_DATA_DRIVER_TABLE_NAMES.has(resource.table)
-            ? 'custom-table'
-            : null,
+          resourceKind: customTable ? 'custom-table' : null,
+          reason: customTable
+            ? 'Plugin-owned custom tables are not yet supported by the planner.'
+            : 'Plugin-owned resource has no explicit driver metadata and cannot be applied safely.',
         };
       }
 

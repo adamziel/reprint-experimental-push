@@ -11711,6 +11711,50 @@ test('blocks plugin-owned rows with missing driver metadata while preserving a m
   assert.equal(Object.hasOwn(remote.files, 'wp-content/plugins/forms/forms.php'), false);
 });
 
+test('blocks plugin-owned custom tables with missing policy candidates while preserving remote-only plugin drift', () => {
+  const resourceKey = 'row:["wp_forms_custom","id:11"]';
+  const base = baseSite();
+  base.db.wp_forms_custom = {
+    'id:11': {
+      id: 11,
+      __pluginOwner: 'forms',
+      payload: 'base custom-table payload',
+    },
+  };
+
+  const local = baseSite();
+  local.db.wp_forms_custom = {
+    'id:11': {
+      id: 11,
+      __pluginOwner: 'forms',
+      payload: 'local custom-table payload',
+    },
+  };
+
+  const remote = baseSite();
+  remote.db.wp_forms_custom = JSON.parse(JSON.stringify(base.db.wp_forms_custom));
+  remote.plugins.seo = { version: '1.0.0', active: true, description: 'remote-only plugin drift' };
+  remote.files['wp-content/plugins/seo/seo.php'] = '<?php /* remote-only plugin drift */';
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  const pluginDecision = decisionFor(plan, 'plugin:seo');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/seo/seo.php');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(blocker.class, 'unsupported-plugin-owned-resource');
+  assert.equal(blocker.resourceKind, 'custom-table');
+  assert.equal(blocker.reason, 'Plugin-owned custom tables are not yet supported by the planner.');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('local custom-table payload'), false);
+  assert.equal(planJson.includes('remote-only plugin drift'), false);
+  assert.equal(remote.plugins.seo.description, 'remote-only plugin drift');
+  assert.equal(remote.files['wp-content/plugins/seo/seo.php'], '<?php /* remote-only plugin drift */');
+});
+
 test('blocks plugin-owned deletes with missing driver metadata while preserving matching independent delete, restore, and remote-only plugin drift', () => {
   const ownedResourceKey = 'row:["wp_options","option_name:forms_settings"]';
   const restoredResourceKey = 'row:["wp_options","option_name:blogname"]';
