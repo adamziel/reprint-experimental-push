@@ -1044,6 +1044,9 @@ function normalizeAuthSessionLifecycleHistoryStatus(observation) {
   if (observation?.revoked) {
     return 'revoked';
   }
+  if (observation?.cleanedUp) {
+    return 'cleaned-up';
+  }
 
   return observation?.status || null;
 }

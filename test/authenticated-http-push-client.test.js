@@ -1461,6 +1461,7 @@ test('production-shaped authenticated push records revoked and cleaned-up auth s
     ]);
     assert.equal(summary.authSessionLifecycle.dryRun.status, 'active');
     assert.equal(summary.authSessionLifecycle.dryRun.revoked, true);
+    assert.equal(summary.authSessionLifecycle.apply.status, 'active');
     assert.equal(summary.authSessionLifecycle.apply.cleanedUp, true);
     assert.equal(summary.authSessionLifecycle.replay.cleanedUp, true);
     assert.deepEqual(summary.authSessionLifecycle.revoked, {
@@ -1479,7 +1480,7 @@ test('production-shaped authenticated push records revoked and cleaned-up auth s
       step: 'apply',
       id: 'psh_01j00000000000000000000000',
       type: 'production-auth-session',
-      status: 'active',
+      status: 'cleaned-up',
       expiresAt: '2030-01-01T00:00:00Z',
       expired: false,
       revoked: false,
@@ -1519,6 +1520,7 @@ test('production-shaped authenticated push records revoked and cleaned-up auth s
     assert.equal(summary.authSessionLifecycleSummary.revoked?.step, 'dry-run');
     assert.equal(summary.authSessionLifecycleSummary.revoked?.revoked, true);
     assert.equal(summary.authSessionLifecycleSummary.cleanedUp?.step, 'apply');
+    assert.equal(summary.authSessionLifecycleSummary.cleanedUp?.status, 'cleaned-up');
     assert.equal(summary.authSessionLifecycleSummary.cleanedUp?.cleanedUp, true);
     assert.equal(summary.authSessionLifecycleSummary.preserved?.step, 'dry-run');
     assert.equal(summary.authSessionLifecycleSummary.preserved?.preserved, true);
