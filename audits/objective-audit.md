@@ -50,7 +50,7 @@ The project is **not releasable as a production WordPress push path**.
 - `origin/lane/critic` -> `443dacd6`
 - `origin/lane/fast-paths` -> `761d1c03`
 - `origin/lane/feedback-supervisor` -> `8af2c127`
-- `origin/lane/independent-auditor` -> `f46b424b`
+- `origin/lane/independent-auditor` -> `fad9b731`
 - `origin/lane/no-data-loss-invariants` -> `c271a83b`
 - `origin/lane/no-data-loss-recovery` -> `91424e5b`
 - `origin/lane/progress-publisher` -> `7695e1f9`
@@ -76,7 +76,7 @@ but it did not change the release conclusion:
   progress freshness only.
 - `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration`
   now records `0b33a5f9`, adding plugin-owned delete-guard coverage only.
-- `origin/lane/independent-auditor` now records `6351130f`. This refreshes the
+- `origin/lane/independent-auditor` now records `fad9b731`. This refreshes the
   audit snapshot only and does not change the release boundary.
 - `origin/lane/fast-paths` now records `8c5c2ccb`, tightening guarded
   benchmark and pause-reporting evidence checks only.
