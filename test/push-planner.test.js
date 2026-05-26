@@ -23359,6 +23359,7 @@ test('blocks unsupported special file aliases while preserving remote-only plugi
     ['block-device', { inode: 7101 }, { inode: 9101 }],
     ['character', { major: 1, minor: 9 }, { major: 1, minor: 3 }],
     ['char-device', { major: 2, minor: 7 }, { major: 2, minor: 11 }],
+    ['junction', { target: '../shared/junction-target' }, { target: '../shared/local-junction-target' }],
     ['named-pipe', { mode: '0600' }, { mode: '0644' }],
   ];
 
@@ -23399,6 +23400,7 @@ test('blocks unsupported special file aliases while preserving a matching indepe
     ['block-device', { inode: 7201 }, { inode: 9201 }],
     ['character', { major: 3, minor: 4 }, { major: 3, minor: 8 }],
     ['char-device', { major: 5, minor: 2 }, { major: 5, minor: 6 }],
+    ['junction', { target: '../shared/junction-target' }, { target: '../shared/local-junction-target' }],
     ['named-pipe', { mode: '0600' }, { mode: '0644' }],
   ];
 
