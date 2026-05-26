@@ -777,15 +777,16 @@ function durableJournalInspectRecords(inspected) {
     && typeof inspected === 'object'
     && typeof inspected.schemaVersion === 'number'
     && Array.isArray(inspected.records),
-  ) && inspected.records.every((record) =>
+  ) && inspected.records.length > 0
+  && inspected.records.every((record) =>
     record
     && typeof record === 'object'
     && Number.isInteger(record.sequence)
     && typeof record.type === 'string',
   ) && inspected.records.every((record, index, records) => (
     index === 0
-      ? record.sequence > 0
-      : record.sequence > records[index - 1].sequence
+      ? record.sequence === 1
+      : record.sequence === records[index - 1].sequence + 1
   ));
 }
 
