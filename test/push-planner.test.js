@@ -8655,7 +8655,7 @@ test('allows a local post parent reference to a same-plan post even when an unre
   assert.equal(JSON.stringify(reference).includes('local-private-child-body'), false);
 });
 
-test('blocks a local post parent reference owned by an attachment even when it targets a same-plan post', () => {
+test('allows a local post parent reference owned by an attachment even when it targets a same-plan post', () => {
   const attachmentResourceKey = 'row:["wp_posts","ID:3"]';
   const parentResourceKey = 'row:["wp_posts","ID:4"]';
   const base = baseSite();
@@ -8680,15 +8680,16 @@ test('blocks a local post parent reference owned by an attachment even when it t
   const parentMutation = mutationFor(plan, parentResourceKey);
   const blocker = plan.blockers.find((entry) => entry.resourceKey === attachmentResourceKey);
 
-  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.status, 'ready');
   assert.equal(attachmentMutation.changeKind, 'create');
   assert.equal(parentMutation.changeKind, 'create');
-  assert.equal(blocker.class, 'missing-wordpress-graph-dependency');
-  assert.equal(blocker.references[0].relationshipType, 'post-parent');
-  assert.equal(blocker.references[0].targetResourceKey, parentResourceKey);
-  assert.equal(JSON.stringify(blocker).includes('local-private-attachment-child-body'), false);
-  assert.equal(JSON.stringify(blocker).includes('local-private-parent-body'), false);
-  assert.throws(() => applyPlan(baseSite(), plan), /Refusing to apply/);
+  assert.equal(blocker, undefined);
+  assert.deepEqual(attachmentMutation.dependsOnMutationIds, [parentMutation.id]);
+  assert.equal(attachmentMutation.wordpressGraphReferences[0].relationshipType, 'post-parent');
+  assert.equal(attachmentMutation.wordpressGraphReferences[0].targetResourceKey, parentResourceKey);
+  assert.equal(JSON.stringify(attachmentMutation.wordpressGraphReferences[0]).includes('local-private-attachment-child-body'), false);
+  assert.equal(JSON.stringify(attachmentMutation.wordpressGraphReferences[0]).includes('local-private-parent-body'), false);
+  assert.doesNotThrow(() => applyPlan(baseSite(), plan));
 });
 
 test('blocks an atomic plugin install when dependencies are absent', () => {
