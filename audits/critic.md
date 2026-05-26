@@ -1,20 +1,20 @@
 # Critic Verdict
 
-Current reliable head: `3c4448380a87b1d63dfa3624751381061828031f`
-(`Cache release verifier blueprint snapshots`).
+Current reliable head: `17a0a150f6212ee5dc6a39fe832ddad266d8e070`
+(`Accept packaged durable journal proof`).
 
 Verdict: `0/4`
 
 Reason:
 
-- This head caches blueprint snapshots for the checked release verifier, which
-  is useful harness/support work, but it still does not prove production-backed
-  auth/session lifecycle, durable journal ownership, or preserved-remote retry
-  on the real release boundary.
+- This head accepts a packaged durable-journal proof inside the checked release
+  verifier, which is real release-path progress, but it still does not prove
+  production-backed auth/session lifecycle, production durable-journal
+  ownership, or preserved-remote retry on the live release boundary.
 - The remaining blocker is still a checked release-path proof, not another
-  support refinement. The release verifier needs one exact failing or passing
-  boundary command that crosses production-backed auth/session or
-  durable-journal semantics before any gate can move.
+  proof-field surface. The verifier needs one exact failing or passing boundary
+  command that crosses production-backed auth/session or durable-journal
+  semantics before any gate can move.
 
 Next owner / command:
 
