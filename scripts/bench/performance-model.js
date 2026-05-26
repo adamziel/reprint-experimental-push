@@ -3148,6 +3148,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['remote-index-planning-only', 'compression', 'file-hashing', 'chunk-receipts', 'durable-progress', 'atomic-file-publish'],
   },
   {
+    id: 'compress-already-compressed-payloads-to-skip-the-canonical-hash',
+    proposal: 'compress already-compressed payloads to skip the canonical hash and treat transport encoding as the content identity',
+    rejectedBecause: 'already-compressed payloads can skip recompression, but transport encoding still does not prove content identity or replace the canonical uncompressed hash used for conflict detection',
+    rejectedGate: 'compression',
+    violates: ['compression', 'file-hashing', 'live-preconditions'],
+  },
+  {
     id: 'compressed-remote-index-and-cached-source-identity-skips-live-revalidation-after-pause',
     proposal: 'use a compressed remote index plus cached source identity to skip live revalidation after a pause',
     rejectedBecause: 'planning evidence and cached source identity can reduce lookup work, but they cannot prove the live remote resource still matches, which chunk acknowledgements survived the pause, or that the guarded publish barrier survived failure',

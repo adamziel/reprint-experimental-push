@@ -2069,6 +2069,15 @@ test('fast-path fixture isolates the release-safety benchmark shape', () => {
       fastPath.violates.includes('atomic-groups')
     ),
   );
+  assert.ok(
+    fixture.rejectedFastPaths.some((fastPath) =>
+      fastPath.id === 'compress-already-compressed-payloads-to-skip-the-canonical-hash' &&
+      fastPath.rejectedGate === 'compression' &&
+      fastPath.violates.includes('compression') &&
+      fastPath.violates.includes('file-hashing') &&
+      fastPath.violates.includes('live-preconditions')
+    ),
+  );
   for (const area of [
     'file-hashing',
     'chunk-upload',
