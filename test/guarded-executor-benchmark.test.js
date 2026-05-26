@@ -283,6 +283,36 @@ test('guarded benchmark exposes queue budget, memory ceiling, and queue headroom
   );
 });
 
+test('guarded benchmark exposes receipt-cursor-only pause shortcuts as rejected', () => {
+  const fastPath = findRejectedFastPathById(
+    'cached-receipt-cursor-skips-backpressure-pause-after-retry',
+  );
+
+  assert.ok(fastPath);
+  assert.equal(fastPath.rejectedGate, 'recovery');
+  assert.match(fastPath.proposal, /cached receipt cursor/);
+  assert.match(fastPath.rejectedBecause, /queue stayed bounded/);
+  assert.deepEqual(
+    fastPath.violates,
+    ['backpressure', 'chunk-receipts', 'durable-progress'],
+  );
+});
+
+test('guarded benchmark exposes queue-headroom and memory-headroom pause shortcuts as rejected', () => {
+  const fastPath = findRejectedFastPathById(
+    'cached-receipt-cursor-queue-headroom-and-memory-headroom-skips-backpressure-pause-after-retry',
+  );
+
+  assert.ok(fastPath);
+  assert.equal(fastPath.rejectedGate, 'recovery');
+  assert.match(fastPath.proposal, /queue headroom and memory headroom/);
+  assert.match(fastPath.rejectedBecause, /ordered raw receipts survived the retry/);
+  assert.deepEqual(
+    fastPath.violates,
+    ['backpressure', 'chunk-receipts', 'durable-progress', 'atomic-groups'],
+  );
+});
+
 test('guarded benchmark exposes queue-budget-match pause shortcuts as rejected', () => {
   const fastPath = findRejectedFastPathById(
     'cached-receipt-cursor-and-queue-budget-match-skips-backpressure-pause-after-retry',
@@ -292,6 +322,21 @@ test('guarded benchmark exposes queue-budget-match pause shortcuts as rejected',
   assert.equal(fastPath.rejectedGate, 'recovery');
   assert.match(fastPath.proposal, /queue-budget match/);
   assert.match(fastPath.rejectedBecause, /journal trail is durable enough to recover/);
+  assert.deepEqual(
+    fastPath.violates,
+    ['backpressure', 'chunk-receipts', 'durable-progress'],
+  );
+});
+
+test('guarded benchmark exposes queue-budget, memory-ceiling, and queue-slack pause shortcuts as rejected', () => {
+  const fastPath = findRejectedFastPathById(
+    'cached-receipt-cursor-queue-budget-memory-ceiling-and-queue-slack-skips-backpressure-pause-after-retry',
+  );
+
+  assert.ok(fastPath);
+  assert.equal(fastPath.rejectedGate, 'recovery');
+  assert.match(fastPath.proposal, /queue budget, memory ceiling, and queue slack/);
+  assert.match(fastPath.rejectedBecause, /durable ordered receipt trail/);
   assert.deepEqual(
     fastPath.violates,
     ['backpressure', 'chunk-receipts', 'durable-progress'],
