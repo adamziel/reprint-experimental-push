@@ -1,9 +1,122 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-26 12:24 CEST
+Last updated: 2026-05-26 12:50 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-26 12:50 CEST - Reliable Head Catch-Up
+
+- Going well: the public status is now aligned with `bb6c1378`, so the
+  freshness gap is closed again.
+- Not going well: the checked release path still lacks production-backed
+  auth/session lifecycle and durable-journal ownership, so the gate stays
+  `0/4`.
+- Progress change: this is a visibility refresh, not a gate move.
+- Next nudge: keep `progress-publisher` aligned with the current reliable head
+  and keep `reliable-executor` on the next production-boundary dependency.
+
+## 2026-05-26 12:48 CEST - Reliable Head Catch-Up
+
+- Going well: the public status is now aligned with `b4177b34`, so the
+  freshness gap is closed again.
+- Not going well: the checked release path still lacks production-backed
+  auth/session lifecycle and durable-journal ownership, so the gate stays
+  `0/4`.
+- Progress change: this is a visibility refresh, not a gate move.
+- Next nudge: keep `progress-publisher` aligned with the current reliable head
+  and keep `reliable-executor` on the next production-boundary dependency.
+
+## 2026-05-26 12:46 CEST - Reliable Head Catch-Up
+
+- Going well: the public status is now catching up to `b4177b34`, so the
+  freshness gap is narrower than before.
+- Not going well: the checked release path still lacks production-backed
+  auth/session lifecycle and durable-journal ownership, so the gate stays
+  `0/4`.
+- Progress change: this is a visibility refresh, not a gate move.
+- Next nudge: keep `progress-publisher` aligned with the current reliable head
+  and keep `reliable-executor` on the next production-boundary dependency.
+
+## 2026-05-26 12:44 CEST - Package-Mode Head Correction
+
+- Going well: the current reliable head is `a33aa3da`, and the package-mode
+  patch now surfaces `labBacked: false`, `production-auth-session`, and
+  packaged journal scope evidence in the package smoke.
+- Not going well: the bounded smoke still timed out during Playground boot, so
+  the new package-mode assertions remain unverified end to end.
+- Progress change: the public surfaces now match the latest package-mode head
+  and stay conservative at `0/4` while the package-mode patch remains dirty.
+- Next nudge: either shorten the boot/readiness path enough to validate the
+  new assertions, or name the exact Playground boot/API blocker instead of
+  rerunning the same full smoke.
+
+## 2026-05-26 12:39 CEST - Package-Mode Boundary Still Bounded
+
+- Going well: the package-mode patch now distinguishes the packaged
+  `reprint/v1` surface from the lab-backed path with `labBacked: false`,
+  `production-auth-session`, and packaged journal scope evidence.
+- Not going well: the bounded smoke still has not completed, so the new
+  package-mode assertions are not yet validated end to end.
+- Progress change: the implementation has moved from lab-backed wording to a
+  production-package signal set, but the proof remains blocked by startup
+  time rather than a passing run.
+- Next nudge: either shrink the boot/readiness path enough to exercise the new
+  assertions, or report the exact Playground boot/API blocker instead of
+  rerunning the same full smoke.
+
+## 2026-05-26 12:37 CEST - Package-Mode Assertion Tightening
+
+- Going well: the package smoke now checks the production-package route
+  profile, auth session type, and DB journal scope instead of only the route
+  name.
+- Not going well: the long boot path still needs a bounded proof run, so the
+  package-mode result is not yet validated end to end.
+- Progress change: the patch now distinguishes packaged mode with
+  `labBacked: false`, `production-auth-session`, and packaged journal scope
+  evidence.
+- Next nudge: run the smallest bounded package smoke proof that exercises
+  those assertions, or report the exact Playground boot/API blocker if it
+  still stalls.
+
+## 2026-05-26 12:36 CEST - Package-Mode Route Signals
+
+- Going well: the dirty package-mode patch is now pulling the checked
+  `reprint/v1` path toward production-package evidence instead of lab-backed
+  wording.
+- Not going well: the smoke still timed out while Playground booted, so the
+  new package-mode assertions have not been exercised end to end yet.
+- Progress change: the route profile, auth session, and DB journal evidence
+  are being narrowed toward package mode, but the proof is still bounded by
+  startup latency rather than by a passing smoke.
+- Next nudge: keep the patch focused on the smallest bounded proof for
+  `labBacked: false`, `production-auth-session`, and packaged journal scope;
+  if the smoke stays slow, name the exact boot/API blocker instead of rerunning
+  the same full test.
+
+## 2026-05-26 12:34 CEST - Durable-Journal Fence Hold
+
+- Going well: the public progress surfaces still stay conservative at `0/4`
+  while the release-path fence evidence remains visible in the checked
+  verifier path.
+- Not going well: the progress lane now has unpushed production-package route
+  and journal boundary changes in its worktree, so the feedback lane should
+  not pretend the public page is final.
+- Progress change: no gate moved; the useful next step is still lane-owned
+  code/test work in reliable, plus a clean progress publish once the branch is
+  ready to push.
+- Next nudge: keep the public page conservative at `0/4`, classify the
+  release-path fence evidence narrowly, and do not broaden the production
+  claim until the auth/session boundary is proven.
+
+| Lane | Nudge |
+| --- | --- |
+| Recovery | Only patch if a recovery-owned durable-journal API gap is still blocking the release path. |
+| Reliable executor | Move from fence evidence to production-backed auth/session lifecycle or preserved-remote retry. |
+| Audit and critic | Classify the latest release-path fence evidence narrowly; do not move the gate without production-backed semantics. |
+| Progress publisher | Keep the page fresh, concise, and conservative; preserve `0/4`, then push only when the branch is clean. |
+| Invariants | Stay on the unsupported-boundary proof and avoid adjacent churn. |
+| Fast paths | Hold unless a code patch changes the runtime receipt or cursor path. |
 
 ## 2026-05-26 12:24 CEST - Freshness Alignment
 
