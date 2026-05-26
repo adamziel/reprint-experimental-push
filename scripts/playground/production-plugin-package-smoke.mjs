@@ -82,6 +82,7 @@ try {
   writeDriverFixtureBlueprint(path.join(repoRoot, fixtures.base), driverGuardServerBlueprintPath, {
     activatePackagedPlugin: true,
     provisionAuth: true,
+    enableCredentialRevocationRoute: true,
   });
   writeDriverFixtureBlueprint(path.join(repoRoot, fixtures.base), driverDeleteSnapshotBlueprintPath, {
     supportsDelete: true,
@@ -162,6 +163,7 @@ try {
     driverReceiptExpiryGuard: {},
     driverReceiptPlanBindingGuard: {},
     driverReceiptRotatedCredentialGuard: {},
+    driverReceiptRevokedCredentialGuard: {},
     driverExportGuard: {},
     driverApplyGuard: {},
     driverValidateGuard: {},
@@ -282,7 +284,12 @@ try {
     };
   });
 
-  await withPlaygroundServer('production-plugin-driver-delete-guard', driverGuardServerBlueprintPath, pluginDir, async (server) => {
+  await withPlaygroundServer(
+    'production-plugin-driver-delete-guard',
+    driverGuardServerBlueprintPath,
+    pluginDir,
+    { authBootstrap: false },
+    async (server) => {
     const client = authenticatedHttpClient({
       sourceUrl: server.baseUrl,
       credential: credentials,
@@ -692,6 +699,63 @@ try {
       rowRetainedAfterReject: afterRotatedCredentialReject.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1'] !== undefined,
       updatedMarkerAfterReject: afterRotatedCredentialReject.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1']?.updated_marker,
     };
+
+    const revokedCredentialUuid = preflight.body?.auth?.session?.applicationPasswordUuid;
+    assert.equal(typeof revokedCredentialUuid, 'string');
+    assert.ok(revokedCredentialUuid.length > 0, 'packaged signed preflight did not return an application password uuid to revoke');
+    const revokeResponse = await requestJson(
+      server.baseUrl,
+      'DELETE',
+      `/wp-json/reprint-push-driver-fixture/v1/revoke-application-password/${encodeURIComponent(revokedCredentialUuid)}`,
+      undefined,
+      authHeaders(rotatedCredentials),
+    );
+    assert.equal(revokeResponse.status, 200);
+    assert.equal(revokeResponse.body?.deleted, true);
+    assert.equal(revokeResponse.body?.previous?.uuid, revokedCredentialUuid);
+
+    const revokedCredentialApply = await client.signedPost(
+      '/apply',
+      {
+        plan: updatePlan,
+        receipt: updateDryRun.body.receipt,
+      },
+      {
+        session,
+        idempotencyKey: 'production-plugin-driver-revoked-credential-apply',
+      },
+    );
+    assert.equal(revokedCredentialApply.status, 401);
+    assert.equal(revokedCredentialApply.body?.code, 'reprint_push_lab_auth_required');
+
+    const afterRevokedCredentialReject = await rotatedClient.get('/snapshot');
+    assert.equal(afterRevokedCredentialReject.status, 200);
+    assert.equal(afterRevokedCredentialReject.body?.ok, true);
+    assert.equal(
+      afterRevokedCredentialReject.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1']?.updated_marker,
+      'local-update',
+      'revoked-credential packaged apply still mutated the remote snapshot',
+    );
+    assert.deepEqual(
+      afterRevokedCredentialReject.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1']?.payload,
+      {
+        owner: driverFixture.pluginOwner,
+        mode: 'local-update',
+        version: 2,
+      },
+      'revoked-credential packaged apply changed the arbitrary driver payload',
+    );
+
+    summary.driverReceiptRevokedCredentialGuard = {
+      resourceKey: driverFixture.resourceKey,
+      revokedCredentialUuid,
+      rotatedCredentialUsedForRevocation: rotatedPreflight.body?.auth?.session?.applicationPasswordUuid,
+      revokeDeleted: revokeResponse.body?.deleted === true,
+      applyRejectedCode: revokedCredentialApply.body?.code,
+      applyRejectedMessage: revokedCredentialApply.body?.message,
+      rowRetainedAfterReject: afterRevokedCredentialReject.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1'] !== undefined,
+      updatedMarkerAfterReject: afterRevokedCredentialReject.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1']?.updated_marker,
+    };
   });
 
   await withPlaygroundServer('production-plugin-driver-delete-apply', driverDeleteServerBlueprintPath, pluginDir, async (server) => {
@@ -1048,6 +1112,7 @@ function writeDriverFixtureBlueprint(
   {
     activatePackagedPlugin = false,
     provisionAuth = false,
+    enableCredentialRevocationRoute = false,
     supportsDelete = false,
     omitExportRowsCallback = false,
     omitApplyRowCallback = false,
@@ -1065,6 +1130,7 @@ function writeDriverFixtureBlueprint(
     description: 'Remote base fixture with packaged Reprint Push plus an arbitrary plugin-owned row driver fixture.',
   };
   const pluginCodeBase64 = Buffer.from(driverFixturePluginPhp({
+    enableCredentialRevocationRoute,
     supportsDelete,
     omitExportRowsCallback,
     omitApplyRowCallback,
@@ -1138,6 +1204,7 @@ function writeDriverFixtureBlueprint(
 }
 
 function driverFixturePluginPhp({
+  enableCredentialRevocationRoute = false,
   supportsDelete,
   omitExportRowsCallback = false,
   omitApplyRowCallback = false,
@@ -1163,6 +1230,15 @@ Plugin Name: Reprint Push Driver Fixture
 Description: Fixture plugin for packaged plugin-owned row driver guard coverage.
 Version: 0.0.1
 */
+
+${enableCredentialRevocationRoute ? `add_action('rest_api_init', static function (): void {
+    register_rest_route('reprint-push-driver-fixture/v1', '/revoke-application-password/(?P<uuid>[A-Za-z0-9-]+)', [
+        'methods' => WP_REST_Server::DELETABLE,
+        'permission_callback' => 'reprint_push_lab_rest_authenticated_permission',
+        'callback' => 'reprint_push_driver_fixture_revoke_application_password',
+    ]);
+});
+` : ''}
 
 add_filter('reprint_push_plugin_owned_row_drivers', static function (array $drivers): array {
     $drivers['${driverFixture.driver}'] = [
@@ -1197,6 +1273,41 @@ function reprint_push_driver_fixture_table_name(): string {
     global $wpdb;
     return $wpdb->prefix . 'reprint_push_driver_fixture';
 }
+
+${enableCredentialRevocationRoute ? `function reprint_push_driver_fixture_revoke_application_password(WP_REST_Request $request): WP_REST_Response {
+    $uuid = (string) $request['uuid'];
+    $user = wp_get_current_user();
+    $user_id = (int) ($user->ID ?? 0);
+    if ($user_id < 1) {
+        return new WP_REST_Response([
+            'deleted' => false,
+            'code' => 'reprint_push_driver_fixture_user_missing',
+        ], 401);
+    }
+
+    $items = get_user_meta($user_id, '_application_passwords', true);
+    $items = is_array($items) ? array_values($items) : [];
+    $previous = null;
+    $remaining = [];
+    foreach ($items as $item) {
+        if (is_array($item) && (string) ($item['uuid'] ?? '') === $uuid) {
+            $previous = $item;
+            continue;
+        }
+        $remaining[] = $item;
+    }
+    update_user_meta($user_id, '_application_passwords', $remaining);
+
+    return new WP_REST_Response([
+        'deleted' => is_array($previous),
+        'previous' => is_array($previous) ? [
+            'uuid' => (string) ($previous['uuid'] ?? ''),
+            'app_id' => (string) ($previous['app_id'] ?? ''),
+            'name' => (string) ($previous['name'] ?? ''),
+        ] : null,
+    ], is_array($previous) ? 200 : 404);
+}
+` : ''}
 
 function reprint_push_driver_fixture_export_rows(array &$snapshot, array $driver): void {
     global $wpdb;
@@ -1348,8 +1459,10 @@ function exportSnapshot(name, blueprintPath) {
   );
 }
 
-async function withPlaygroundServer(name, blueprintPath, mountedPluginDir, run) {
-  const server = await startPlaygroundServer(name, blueprintPath, mountedPluginDir);
+async function withPlaygroundServer(name, blueprintPath, mountedPluginDir, optionsOrRun, maybeRun) {
+  const options = typeof optionsOrRun === 'function' ? {} : (optionsOrRun ?? {});
+  const run = typeof optionsOrRun === 'function' ? optionsOrRun : maybeRun;
+  const server = await startPlaygroundServer(name, blueprintPath, mountedPluginDir, options);
   try {
     await run(server);
   } finally {
@@ -1357,7 +1470,7 @@ async function withPlaygroundServer(name, blueprintPath, mountedPluginDir, run) 
   }
 }
 
-async function startPlaygroundServer(name, blueprintPath, mountedPluginDir) {
+async function startPlaygroundServer(name, blueprintPath, mountedPluginDir, { authBootstrap = true } = {}) {
   const port = await findLocalPort();
   const baseUrl = `http://127.0.0.1:${port}`;
   const logs = [];
@@ -1381,7 +1494,7 @@ async function startPlaygroundServer(name, blueprintPath, mountedPluginDir) {
     cwd: repoRoot,
     env: {
       ...process.env,
-      REPRINT_PUSH_LAB_AUTH_BOOTSTRAP: '1',
+      REPRINT_PUSH_LAB_AUTH_BOOTSTRAP: authBootstrap ? '1' : '0',
       REPRINT_PUSH_LAB_AUTH_ADMIN_USER: credentials.username,
       REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD: credentials.password,
       NODE_OPTIONS: appendNodeOption(process.env.NODE_OPTIONS, localhostListenPreloadOption()),
