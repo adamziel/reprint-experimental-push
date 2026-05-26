@@ -886,6 +886,30 @@ export function createPushPlan({ base, local, remote, now = new Date() }) {
           });
           continue;
         }
+        const ownerContextSupport = pluginOwnedOwnerContextSupport({
+          resource,
+          owner,
+          resources,
+          base,
+          local,
+          remote,
+          intents,
+          intentByResource,
+        });
+        if (!ownerContextSupport.supported) {
+          addPluginContextBlocker(plan, {
+            resource,
+            owner,
+            support: ownerContextSupport,
+            baseValue,
+            localValue,
+            remoteValue,
+            baseHash,
+            localHash,
+            remoteHash,
+          });
+          continue;
+        }
       }
 
       const navigationSupport = unsupportedNavigationResourceSupport({
