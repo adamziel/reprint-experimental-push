@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const muPluginDir = path.join(repoRoot, 'scripts/playground/rest-mu-plugins');
-const serverStartupTimeoutMs = 45_000;
+const serverStartupTimeoutMs = 18_000;
 const serverFetchTimeoutMs = 3_000;
 const runLivePlaygroundTopologyTests = process.env.REPRINT_RUN_PLAYGROUND_LIVE_TESTS === '1';
 const packageJson = JSON.parse(readFileSync(path.join(repoRoot, 'package.json'), 'utf8'));
@@ -16,9 +16,9 @@ const liveCredentials = {
   username: 'reprint_push_admin',
   password: 'reprint-push-admin-app-password',
 };
-const proofSubprocessTimeoutMs = 90_000;
+const proofSubprocessTimeoutMs = 45_000;
 
-function spawnReleaseVerify(env = {}, timeout = 90_000) {
+function spawnReleaseVerify(env = {}, timeout = 45_000) {
   return spawnBoundedSync(process.execPath, ['scripts/playground/production-shaped-release-verify.mjs'], {
     cwd: repoRoot,
     timeout,
@@ -468,7 +468,7 @@ async function startPlaygroundServer(name, blueprintPath) {
   try {
     await waitForServer(child, baseUrl, () => output);
   } catch (error) {
-    await stopExitedServer(child);
+    await stopPlaygroundChild(child);
     throw error;
   }
 
@@ -476,11 +476,7 @@ async function startPlaygroundServer(name, blueprintPath) {
 }
 
 async function stopPlaygroundServer(server) {
-  if (server.child.exitCode !== null) {
-    return;
-  }
-  server.child.kill('SIGTERM');
-  await waitForExit(server.child, 12_000);
+  await stopPlaygroundChild(server.child);
 }
 
 async function waitForServer(child, baseUrl, getLogs) {
@@ -531,7 +527,9 @@ async function waitForServer(child, baseUrl, getLogs) {
     await new Promise((resolve) => setTimeout(resolve, 500));
   }
   const probeText = lastProbes.length ? `\nProbe trail: ${JSON.stringify(lastProbes.slice(-4), null, 2)}` : '';
-  throw new Error(`Timed out waiting for Playground server at ${baseUrl}: ${lastError?.message || 'unknown'}${probeText}\n${getLogs()}`);
+  const failureText = `Timed out waiting for Playground server at ${baseUrl}: ${lastError?.message || 'unknown'}${probeText}\n${getLogs()}`;
+  process.stderr.write(`${failureText}\n`);
+  throw new Error(failureText);
 }
 
 async function fetchWithTimeout(url, init = {}) {
@@ -556,6 +554,14 @@ async function waitForExit(child, timeoutMs) {
   while (child.exitCode === null) {
     await new Promise((resolve) => setTimeout(resolve, 100));
   }
+}
+
+async function stopPlaygroundChild(child) {
+  if (child.exitCode !== null) {
+    return;
+  }
+  child.kill('SIGTERM');
+  await waitForExit(child, 12_000);
 }
 
 async function findLocalPort() {

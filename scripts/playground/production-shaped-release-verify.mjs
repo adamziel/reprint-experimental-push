@@ -9,7 +9,7 @@ import { authenticatedHttpClient, runAuthenticatedHttpPush } from '../../src/aut
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const muPluginDir = path.join(repoRoot, 'scripts/playground/rest-mu-plugins');
-const serverStartupTimeoutMs = 20_000;
+const serverStartupTimeoutMs = 5_000;
 const serverFetchTimeoutMs = 3_000;
 const credentials = {
   username: 'reprint_push_admin',
@@ -448,7 +448,7 @@ try {
 
       const durableJournalProof = spawnSync(process.execPath, ['scripts/recovery/file-journal-restart-smoke.mjs'], {
         cwd: process.cwd(),
-        timeout: 30_000,
+        timeout: 20_000,
         killSignal: 'SIGKILL',
         encoding: 'utf8',
         maxBuffer: 1024 * 1024 * 20,
@@ -459,17 +459,17 @@ try {
       });
       if (durableJournalProof.error) {
         throw new Error(
-          `durable journal smoke failed with ${durableJournalProof.error.name ?? 'Error'}: ${durableJournalProof.error.message}\n${durableJournalProof.stdout}${durableJournalProof.stderr}`,
+          `durable journal smoke failed with ${durableJournalProof.error.name ?? 'Error'}: ${durableJournalProof.error.message}\nstdout:\n${durableJournalProof.stdout ?? ''}\nstderr:\n${durableJournalProof.stderr ?? ''}`,
         );
       }
       if (durableJournalProof.signal) {
         throw new Error(
-          `durable journal smoke terminated by ${durableJournalProof.signal}\n${durableJournalProof.stdout}${durableJournalProof.stderr}`,
+          `durable journal smoke terminated by ${durableJournalProof.signal}\nstdout:\n${durableJournalProof.stdout ?? ''}\nstderr:\n${durableJournalProof.stderr ?? ''}`,
         );
       }
       if (durableJournalProof.status === null) {
         throw new Error(
-          `durable journal smoke exited without a status\n${durableJournalProof.stdout}${durableJournalProof.stderr}`,
+          `durable journal smoke exited without a status\nstdout:\n${durableJournalProof.stdout ?? ''}\nstderr:\n${durableJournalProof.stderr ?? ''}`,
         );
       }
       assert.equal(durableJournalProof.status, 0, durableJournalProof.stderr || durableJournalProof.stdout);
@@ -666,7 +666,7 @@ try {
 }
 
 async function startPlaygroundServer(name, blueprintPath) {
-  for (let attempt = 1; attempt <= 8; attempt += 1) {
+  for (let attempt = 1; attempt <= 3; attempt += 1) {
     const port = await findLocalPort();
     const baseUrl = `http://127.0.0.1:${port}`;
     const args = [
@@ -709,7 +709,7 @@ async function startPlaygroundServer(name, blueprintPath) {
     } catch (error) {
       const logs = `${output}\n${error instanceof Error ? error.message : String(error)}`;
       await stopExitedServer(child);
-      if (!/EADDRINUSE/i.test(logs) || attempt === 8) {
+      if (!/EADDRINUSE/i.test(logs) || attempt === 3) {
         throw error;
       }
     }
