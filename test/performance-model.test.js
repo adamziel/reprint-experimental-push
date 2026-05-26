@@ -501,6 +501,18 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
     'parallel chunk sends still need durable chunk receipts after a pause',
   );
   assert.equal(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-unbounded-hash-fanout-skips-large-upload-backpressure')?.rejectedGate,
+    'recovery',
+  );
+  assert.ok(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-unbounded-hash-fanout-skips-large-upload-backpressure')?.violates.includes('parallelism-limits'),
+    'unbounded hash fanout still cannot bypass the parallelism budget',
+  );
+  assert.ok(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-unbounded-hash-fanout-skips-large-upload-backpressure')?.violates.includes('backpressure'),
+    'unbounded hash fanout still cannot bypass large-upload backpressure',
+  );
+  assert.equal(
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-file-hash-skips-parallel-chunk-send-publish-after-pause')?.rejectedGate,
     'recovery',
   );
@@ -1244,6 +1256,22 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
   assert.equal(
     model.safeFastPaths.find((fastPath) => fastPath.allowedShortcut === 'reuse-remote-index-cursor-to-skip-unchanged-file-hash-planning')?.visibilityBoundary,
     'planning-only-before-file-publish',
+  );
+  assert.equal(
+    model.safeFastPaths.find((fastPath) => fastPath.allowedShortcut === 'skip-local-rehash-on-fingerprint-plus-previous-strong-digest')?.failureEvidence,
+    'cached digest, file fingerprint, and plan resource hash',
+  );
+  assert.equal(
+    model.safeFastPaths.find((fastPath) => fastPath.allowedShortcut === 'skip-local-rehash-on-fingerprint-plus-previous-strong-digest')?.visibilityBoundary,
+    'compare-and-swap-file-publish',
+  );
+  assert.equal(
+    model.safeFastPaths.find((fastPath) => fastPath.allowedShortcut === 'skip-local-rehash-on-fingerprint-plus-previous-strong-digest')?.gateProofs.skip,
+    'local fingerprint matches a cache entry that includes the previous strong digest',
+  );
+  assert.ok(
+    model.safeFastPaths.find((fastPath) => fastPath.allowedShortcut === 'skip-local-rehash-on-fingerprint-plus-previous-strong-digest')?.guardrails.includes('apply-uses-live-remote-resource-hash'),
+    'file-hashing shortcut keeps the live publish compare in place',
   );
   assert.equal(
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-row-preconditions')?.rejectedGate,
