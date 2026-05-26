@@ -6,22 +6,22 @@ The project is **not releasable as a production WordPress push path**.
 
 Fresh remote heads at audit time, checked on May 26, 2026:
 
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `0c7fde18`
-- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `3a889b5e`
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `1cad4d4c`
-- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `51234763`
-- `origin/lane/no-data-loss-invariants` -> `0773203b`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `c60766d8`
+- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `c7588efb`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `9bcc2207`
+- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `52ff4f8e`
+- `origin/lane/no-data-loss-invariants` -> `ddea2d1d`
 - `origin/lane/cycle-20260525-mainwindows-2349/critic` -> `fa0dc8a0`
 - `origin/lane/critic` -> `5b61693d`
-- `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `9f8f1eed`
+- `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `aec5d04b`
 - `origin/lane/reliable-executor` -> `8019706f`
 - `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration` -> `efd20c08`
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` -> `db36753e`
 - `origin/lane/same-plan-wordpress-graph-create` -> `0d2178e9`
 - `origin/lane/progress-publisher` -> `7695e1f9`
-- `origin/lane/independent-auditor` -> `6351130f`
-- `origin/lane/no-data-loss-recovery` -> `47b675c0`
-- `origin/lane/fast-paths` -> `cd0fddad`
+- `origin/lane/independent-auditor` -> `c7588efb`
+- `origin/lane/no-data-loss-recovery` -> `aec5d04b`
+- `origin/lane/fast-paths` -> `52ff4f8e`
 - `origin/lane/cycle-20260525-mainwindows-2357/no-data-loss-invariants-graph-proof` -> `98c0ce26`
 - `origin/main` -> `e55864f4`
 
@@ -102,7 +102,7 @@ but it did not change the release conclusion:
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` now
   records `47b675c0`, reconciling recovery lane state without
   proving production-backed durability.
-- `origin/lane/independent-auditor` now records `1b3fdc70`. This refreshes the
+- `origin/lane/independent-auditor` now records `c7588efb`. This refreshes the
   audit snapshot only and does not change the release boundary.
 
 Those changes strengthen the lab evidence for protocol safety and no-loss
