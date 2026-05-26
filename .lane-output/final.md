@@ -1,4 +1,4 @@
-Checked the current objective audit and the freshest visible remote lane heads at 2026-05-26 08:01:06 CEST (+0200). The new heads stay in fail-closed support/freshness lanes, so the release verdict remains `0/4`.
+Checked the current objective audit and the freshest visible remote lane heads at 2026-05-26 08:02:04 CEST (+0200). The new heads stay in fail-closed support/freshness lanes, so the release verdict remains `0/4`.
 
 Changed files:
 - [`.lane-output/final.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/independent-auditor/.lane-output/final.md)
@@ -9,6 +9,7 @@ Commands run:
 - `sed -n '1,260p' audits/objective-audit.md`
 - `git status --short --branch && git rev-parse --short HEAD && git for-each-ref --format='%(refname:short) %(objectname:short) %(committerdate:iso8601) %(subject)' refs/remotes/origin/lane | sort | tail -n 20`
 - `git diff -- audits/objective-audit.md`
+- `git for-each-ref --format='%(refname:short) %(objectname:short) %(committerdate:iso8601) %(subject)' refs/remotes/origin/lane | sort | tail -n 30`
 - `git status --short --branch`
 
 Push result:

@@ -4,7 +4,7 @@
 
 The project is **not releasable as a production WordPress push path**.
 
-- Fresh remote heads at audit time, checked on 2026-05-26 08:00:00 CEST (+0200):
+- Fresh remote heads at audit time, checked on 2026-05-26 08:02:04 CEST (+0200):
 
 - `origin/lane/cycle-20260524-auth-graph-hardening/critic` -> `e413f7a8`
 - `origin/lane/cycle-20260524-auth-graph-hardening/fast-paths` -> `ad7d82a4`
@@ -80,6 +80,9 @@ Fresh remote heads re-polled after the last audit note:
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `b9890ae9`
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `462b8b16`
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `a1c474fb`
+- `origin/lane/reliable-executor` -> `1a169e1f`
+- `origin/lane/no-data-loss-invariants` -> `eff8b208`
+- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `364cb1ae`
 
 These heads are still fail-closed support evidence and freshness work. They
 improve unsupported-surface blocking and public visibility, but they still do
@@ -90,6 +93,18 @@ remain `0/4`.
 The latest reliable-executor and invariants heads only add push/idempotency
 and termmeta same-plan hardening. They are still fail-closed support work, not
 evidence of a live production mutation boundary.
+
+The newest visible heads continue that same pattern:
+
+- `origin/lane/reliable-executor` now records `1a169e1f`, failing closed on
+  replay mutation work. It still does not prove production auth/session
+  lifecycle or a live-source mutation boundary.
+- `origin/lane/no-data-loss-invariants` now records `eff8b208`, blocking user
+  meta graph identity drift. It still does not prove the live release
+  boundary or any production-backed source mutation.
+- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` now records
+  `364cb1ae`, reusing planning-only parallelism budget evidence. It still does
+  not prove a production speed claim.
 
 Fresh lane proof since the last audit pass improved the local evidence floor,
 but it did not change the release conclusion:
