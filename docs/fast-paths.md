@@ -74,6 +74,9 @@ Current executable gate:
 - The report now also fails closed when the recorded receipt-cursor
   backpressure exceeds the queue budget, so a tampered backpressure record
   cannot hide behind a still-valid headroom calculation.
+- The report now also exposes whether the pause state had measured
+  receipt-cursor backpressure, so a paused sender cannot masquerade as bounded
+  evidence without an actual measurement.
 - The report now also blocks when receipt-cursor headroom no longer fits inside
   the queue budget, so the claim gate fails closed on a budget drift instead of
   relying only on a derived detail.
