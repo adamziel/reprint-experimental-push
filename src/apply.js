@@ -723,7 +723,7 @@ function productionRecoverySupportReport(writer) {
   ) {
     addMissingDependency('restart-readable recovery inspection');
   } else {
-    if (typeof inspected?.schemaVersion !== 'number' || inspected.schemaVersion !== writer.schemaVersion) {
+    if (!Object.hasOwn(inspected, 'schemaVersion') || typeof inspected.schemaVersion !== 'number' || inspected.schemaVersion !== writer.schemaVersion) {
       addMissingDependency('restart-readable recovery journal schema');
     }
     if (!durableJournalInspectSurface(inspected)) {
@@ -912,7 +912,7 @@ function productionRecoverySupportReport(writer) {
   } else if (!isCanonicalAbsolutePath(writer.journalPath)) {
     addMissingDependency('absolute restart-readable recovery journal path');
   }
-  if (typeof writer?.schemaVersion !== 'number' || writer.schemaVersion !== JOURNAL_SCHEMA_VERSION) {
+  if (!Object.hasOwn(writer ?? {}, 'schemaVersion') || typeof writer.schemaVersion !== 'number' || writer.schemaVersion !== JOURNAL_SCHEMA_VERSION) {
     addMissingDependency('restart-readable recovery journal schema');
   }
   if (
