@@ -278,6 +278,22 @@ export function productionThroughputBlockers(report) {
   }
   if (
     report.evidence.backpressure?.queuePausedBeforeOverflow === true
+    && Number.isFinite(report.evidence.backpressure?.queueHeadroomBytes)
+    && report.evidence.backpressure.queueHeadroomBytes <= 0
+  ) {
+    blockers.push('queue-pause-without-positive-queue-headroom');
+  }
+  if (
+    report.evidence.backpressure?.queuePausedBeforeOverflow === true
+    && Number.isFinite(report.evidence.backpressure?.receiptCursorQueueSlackBytes)
+    && Number.isFinite(report.evidence.backpressure?.queueHeadroomBytes)
+    && report.evidence.backpressure.receiptCursorQueueSlackBytes
+      > report.evidence.backpressure.queueHeadroomBytes
+  ) {
+    blockers.push('queue-pause-without-queue-headroom-safe-receipt-cursor-slack');
+  }
+  if (
+    report.evidence.backpressure?.queuePausedBeforeOverflow === true
     && report.evidence.backpressure?.queuePauseHasBackpressureAlignedReceiptCursorQueueSlack !== true
   ) {
     blockers.push('queue-pause-without-backpressure-aligned-receipt-cursor-queue-slack');
@@ -539,6 +555,10 @@ export function productionThroughputDetails(report) {
     && Number.isFinite(receiptCursorQueueBudgetBytes)
     && receiptCursorQueueSlackBytes > 0
     && receiptCursorQueueSlackBytes <= receiptCursorQueueBudgetBytes;
+  const receiptCursorQueueSlackWithinQueueHeadroom =
+    Number.isFinite(receiptCursorQueueSlackBytes)
+    && Number.isFinite(receiptCursorQueueHeadroomBytes)
+    && receiptCursorQueueSlackBytes <= receiptCursorQueueHeadroomBytes;
   const receiptCursorQueueSlackWithinResourceHeadroom =
     Number.isFinite(receiptCursorQueueSlackBytes)
     && Number.isFinite(receiptCursorMemoryCeilingBytes)
@@ -644,6 +664,7 @@ export function productionThroughputDetails(report) {
     receiptCursorQueueSlackWithinMemoryCeiling,
     receiptCursorQueueSlackMeasured,
     receiptCursorQueueSlackWithinQueueBudget,
+    receiptCursorQueueSlackWithinQueueHeadroom,
     receiptCursorMemoryHeadroomWithinQueueBudget,
     receiptCursorMemoryHeadroomBytes,
     receiptCursorMemoryHeadroomPositive: receiptCursorMemoryHeadroomPositiveVisible,
@@ -689,6 +710,7 @@ export function productionThroughputDetails(report) {
       receiptCursorQueueSlackWithinMemoryCeiling,
       receiptCursorQueueSlackMeasured,
       receiptCursorQueueSlackWithinQueueBudget,
+      receiptCursorQueueSlackWithinQueueHeadroom,
       receiptCursorMemoryHeadroomWithinQueueBudget,
       receiptCursorMemoryHeadroomBytes,
       receiptCursorMemoryHeadroomPositive: receiptCursorMemoryHeadroomPositiveVisible,

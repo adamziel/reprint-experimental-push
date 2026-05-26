@@ -142,6 +142,7 @@ test('guarded benchmark refuses production throughput claims until production ga
   assert.equal(report.claims.productionThroughputDetails.backpressureConsistency.receiptCursorQueueSlackMatchesMemoryHeadroom, true);
   assert.equal(report.claims.productionThroughputDetails.backpressureConsistency.receiptCursorQueueSlackMatchesResourceHeadroom, true);
   assert.equal(report.claims.productionThroughputDetails.backpressureConsistency.receiptCursorQueueSlackWithinResourceHeadroom, true);
+  assert.equal(report.claims.productionThroughputDetails.backpressureConsistency.receiptCursorQueueSlackWithinQueueHeadroom, true);
   assert.equal(report.claims.productionThroughputDetails.backpressureConsistency.receiptCursorQueueSlackWithinMemoryCeiling, true);
   assert.equal(report.claims.productionThroughputDetails.backpressureConsistency.receiptCursorQueueSlackMeasured, true);
   assert.equal(report.claims.productionThroughputDetails.backpressureConsistency.receiptCursorQueueSlackWithinQueueBudget, true);
@@ -570,6 +571,10 @@ test('production claim gate fails closed if benchmark evidence is tampered', () 
     false,
   );
   assert.equal(
+    productionThroughputDetails(mismatchedQueueSlack).backpressureConsistency.receiptCursorQueueSlackWithinQueueHeadroom,
+    false,
+  );
+  assert.equal(
     productionThroughputDetails(mismatchedQueueSlack).backpressureConsistency.receiptCursorQueueSlackWithinMemoryCeiling,
     true,
   );
@@ -581,6 +586,19 @@ test('production claim gate fails closed if benchmark evidence is tampered', () 
     productionThroughputBlockers(mismatchedQueueSlack).includes(
       'queue-pause-without-backpressure-aligned-receipt-cursor-queue-slack',
     ),
+  );
+
+  const oversizedQueueHeadroomSlack = clone(report);
+  oversizedQueueHeadroomSlack.evidence.backpressure.receiptCursorQueueSlackBytes =
+    oversizedQueueHeadroomSlack.evidence.backpressure.queueHeadroomBytes + 1;
+  assert.ok(
+    productionThroughputBlockers(oversizedQueueHeadroomSlack).includes(
+      'queue-pause-without-queue-headroom-safe-receipt-cursor-slack',
+    ),
+  );
+  assert.equal(
+    productionThroughputDetails(oversizedQueueHeadroomSlack).backpressureConsistency.receiptCursorQueueSlackWithinQueueHeadroom,
+    false,
   );
 
   const missingQueueSlack = clone(report);
@@ -952,7 +970,26 @@ test('production claim gate fails closed if benchmark evidence is tampered', () 
     productionThroughputBlockers(zeroQueueHeadroom).includes('queue-headroom-not-positive'),
   );
   assert.equal(
+    productionThroughputBlockers(zeroQueueHeadroom).includes(
+      'queue-pause-without-positive-queue-headroom',
+    ),
+    true,
+  );
+  assert.equal(
     productionThroughputDetails(zeroQueueHeadroom).backpressureConsistency.backpressureEvidenceComplete,
+    false,
+  );
+
+  const pausedWithZeroQueueHeadroom = clone(report);
+  pausedWithZeroQueueHeadroom.evidence.backpressure.queueHeadroomBytes = 0;
+  pausedWithZeroQueueHeadroom.evidence.backpressure.queuePausedBeforeOverflow = true;
+  assert.ok(
+    productionThroughputBlockers(pausedWithZeroQueueHeadroom).includes(
+      'queue-pause-without-positive-queue-headroom',
+    ),
+  );
+  assert.equal(
+    productionThroughputDetails(pausedWithZeroQueueHeadroom).backpressureConsistency.queueHeadroomPositive,
     false,
   );
 

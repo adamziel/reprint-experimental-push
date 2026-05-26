@@ -58,6 +58,9 @@ Current executable gate:
 - The production-throughput gate also fails closed if the queue never paused
   before overflow, so a runaway sender cannot masquerade as bounded
   backpressure evidence.
+- The production-throughput gate also fails closed if a paused queue reports
+  zero or negative headroom, so a stalled sender cannot masquerade as bounded
+  backpressure evidence.
 - The production-throughput gate also fails closed if a paused sender never
   measured receipt-cursor queue slack, so the pause evidence cannot stand in
   for the companion slack measurement.
