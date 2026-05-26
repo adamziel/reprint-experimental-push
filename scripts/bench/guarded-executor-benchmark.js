@@ -2024,6 +2024,20 @@ export function productionThroughputDetails(report) {
     parallelismLimitsVisibleOnReport
     && parallelismLimitsMeasuredOnReport
     && parallelismLimitsCanonical;
+  const productionCapabilityRolloutSummary = summarizeProductionCapabilityRollout({
+    blockers,
+    parallelismLimitsMeasuredOnReport,
+    parallelismLimitsVisible,
+    parallelismLimitsCanonical,
+    backpressureEvidenceComplete,
+    productionStorageReceiptsMeasured,
+    productionStorageReceiptsVisible,
+    productionAtomicCommitMeasured,
+    productionAtomicCommitVisible,
+    productionRowBatchExecutorMeasured,
+    productionRowBatchExecutorVisible,
+    productionAtomicGroupMetadataVisibleAndMeasured,
+  });
   const wordpressGraphIdentityPostmetaReferencesMatch =
     Number.isFinite(report.evidence.wordpressGraphIdentity?.postmetaReferences)
     && Number.isFinite(report.shape?.rowCount)
@@ -2318,6 +2332,7 @@ export function productionThroughputDetails(report) {
     blockers,
     rejectedFastPaths,
     rejectedFastPathGateSummary,
+    productionCapabilityRolloutSummary,
   };
 }
 
@@ -2336,6 +2351,89 @@ function summarizeRejectedFastPathGates(rejectedFastPaths) {
   return [...counts.entries()]
     .sort(([leftGate], [rightGate]) => leftGate.localeCompare(rightGate))
     .map(([rejectedGate, count]) => ({ rejectedGate, count }));
+}
+
+function summarizeProductionCapabilityRollout({
+  blockers,
+  parallelismLimitsMeasuredOnReport,
+  parallelismLimitsVisible,
+  parallelismLimitsCanonical,
+  backpressureEvidenceComplete,
+  productionStorageReceiptsMeasured,
+  productionStorageReceiptsVisible,
+  productionAtomicCommitMeasured,
+  productionAtomicCommitVisible,
+  productionRowBatchExecutorMeasured,
+  productionRowBatchExecutorVisible,
+  productionAtomicGroupMetadataVisibleAndMeasured,
+}) {
+  const blockerSet = new Set(blockers);
+  const entry = (surface, measured, visible, blockerRefs) => {
+    const presentBlockers = blockerRefs.filter((blocker) => blockerSet.has(blocker));
+    return {
+      surface,
+      status: measured && visible && presentBlockers.length === 0 ? 'ready' : 'blocked',
+      measured,
+      visible,
+      blockerRefs: presentBlockers,
+    };
+  };
+
+  return [
+    entry(
+      'chunk-upload-concurrency',
+      parallelismLimitsMeasuredOnReport
+        && parallelismLimitsCanonical
+        && backpressureEvidenceComplete
+        && productionStorageReceiptsMeasured,
+      parallelismLimitsVisible
+        && productionStorageReceiptsMeasured
+        && productionStorageReceiptsVisible,
+      [
+        'production-parallelism-limits-not-measured',
+        'production-parallelism-limits-not-integral',
+        'production-parallelism-limits-not-canonical',
+        'production-parallelism-limits-not-visible',
+        'production-storage-receipts-not-measured',
+        'production-storage-receipts-not-visible',
+      ],
+    ),
+    entry(
+      'file-hashing-concurrency',
+      parallelismLimitsMeasuredOnReport && parallelismLimitsCanonical,
+      parallelismLimitsVisible,
+      [
+        'production-parallelism-limits-not-measured',
+        'production-parallelism-limits-not-integral',
+        'production-parallelism-limits-not-canonical',
+        'production-parallelism-limits-not-visible',
+      ],
+    ),
+    entry(
+      'row-batch-concurrency',
+      productionAtomicCommitMeasured
+        && productionStorageReceiptsMeasured
+        && productionRowBatchExecutorMeasured,
+      productionAtomicCommitVisible
+        && productionAtomicCommitMeasured
+        && productionStorageReceiptsVisible
+        && productionStorageReceiptsMeasured
+        && productionRowBatchExecutorVisible
+        && productionRowBatchExecutorMeasured
+        && productionAtomicGroupMetadataVisibleAndMeasured
+        && parallelismLimitsVisible,
+      [
+        'production-atomic-group-commit-not-measured',
+        'production-atomic-group-commit-not-visible',
+        'production-storage-receipts-not-measured',
+        'production-storage-receipts-not-visible',
+        'production-row-batch-executor-not-measured',
+        'production-row-batch-executor-not-visible',
+        'production-row-batch-executor-measured-not-proven',
+        'production-row-batch-executor-visible-without-parallelism-limits',
+      ],
+    ),
+  ];
 }
 
 function hasCompleteBackpressureEvidence(report) {

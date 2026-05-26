@@ -233,6 +233,37 @@ test('guarded executor benchmark keeps large-site rollout proof bounded and name
       blockerRefs: ['production-capability-measurement-not-aligned'],
     },
   ];
+  const expectedProductionCapabilityRolloutSummary = [
+    {
+      surface: 'chunk-upload-concurrency',
+      status: 'blocked',
+      measured: false,
+      visible: false,
+      blockerRefs: [
+        'production-parallelism-limits-not-visible',
+        'production-storage-receipts-not-measured',
+      ],
+    },
+    {
+      surface: 'file-hashing-concurrency',
+      status: 'blocked',
+      measured: true,
+      visible: false,
+      blockerRefs: ['production-parallelism-limits-not-visible'],
+    },
+    {
+      surface: 'row-batch-concurrency',
+      status: 'blocked',
+      measured: false,
+      visible: false,
+      blockerRefs: [
+        'production-atomic-group-commit-not-measured',
+        'production-storage-receipts-not-measured',
+        'production-row-batch-executor-not-measured',
+        'production-row-batch-executor-measured-not-proven',
+      ],
+    },
+  ];
 
   assert.equal(report.shape.fileBytes, 32 * 1024 * 1024);
   assert.equal(report.shape.chunkSizeBytes, 8 * 1024 * 1024);
@@ -278,6 +309,10 @@ test('guarded executor benchmark keeps large-site rollout proof bounded and name
     })),
     expectedRejectedFastPaths,
   );
+  assert.deepEqual(
+    report.claims.productionThroughputDetails.productionCapabilityRolloutSummary,
+    expectedProductionCapabilityRolloutSummary,
+  );
   assert.ok(
     !report.claims.productionThroughput.blockers.includes('backpressure-evidence-incomplete'),
   );
@@ -286,6 +321,48 @@ test('guarded executor benchmark keeps large-site rollout proof bounded and name
       'queue-pause-without-resource-headroom-safe-receipt-cursor-slack',
     ),
   );
+});
+
+test('guarded benchmark keeps rollout capability summary blocked when row-batch visibility bits appear without measurements', () => {
+  const report = smallBenchmark();
+  const tampered = clone(report);
+
+  tampered.evidence.parallelism.parallelismLimitsVisible = true;
+  tampered.evidence.atomicGroup.productionAtomicCommitVisible = true;
+  tampered.evidence.atomicGroup.productionAtomicGroupMetadataVisible = true;
+  tampered.evidence.atomicGroup.productionStorageReceiptsVisible = true;
+  tampered.evidence.atomicGroup.productionRowBatchExecutorVisible = true;
+
+  const details = productionThroughputDetails(tampered);
+
+  assert.deepEqual(details.productionCapabilityRolloutSummary, [
+    {
+      surface: 'chunk-upload-concurrency',
+      status: 'blocked',
+      measured: false,
+      visible: false,
+      blockerRefs: ['production-storage-receipts-not-measured'],
+    },
+    {
+      surface: 'file-hashing-concurrency',
+      status: 'ready',
+      measured: true,
+      visible: true,
+      blockerRefs: [],
+    },
+    {
+      surface: 'row-batch-concurrency',
+      status: 'blocked',
+      measured: false,
+      visible: false,
+      blockerRefs: [
+        'production-atomic-group-commit-not-measured',
+        'production-storage-receipts-not-measured',
+        'production-row-batch-executor-not-measured',
+        'production-row-batch-executor-measured-not-proven',
+      ],
+    },
+  ]);
 });
 
 test('guarded benchmark blocks staging-disk headroom claims when the reserve no longer matches the chunk window', () => {
