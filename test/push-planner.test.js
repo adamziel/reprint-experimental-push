@@ -22573,6 +22573,104 @@ test('blocks an existing term relationship object reference when the same-plan p
   assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
 });
 
+test('blocks an existing term relationship object reference when the same-plan post target is itself blocked by an attachment parent', () => {
+  const existingPostResourceKey = 'row:["wp_posts","ID:3"]';
+  const attachmentResourceKey = 'row:["wp_posts","ID:5"]';
+  const samePlanPostResourceKey = 'row:["wp_posts","ID:4"]';
+  const relationshipResourceKey = 'row:["wp_term_relationships","object_id:4|term_taxonomy_id:9"]';
+  const base = baseSite();
+  const local = baseSite();
+  const remote = baseSite();
+
+  base.db.wp_posts['ID:3'] = {
+    ID: 3,
+    post_title: 'Existing tagged post',
+    post_content: 'base-private-existing-tagged-post-body',
+    post_status: 'publish',
+  };
+  local.db.wp_posts['ID:3'] = {
+    ...base.db.wp_posts['ID:3'],
+  };
+  remote.db.wp_posts['ID:3'] = {
+    ...base.db.wp_posts['ID:3'],
+  };
+  base.db.wp_term_taxonomy = {
+    'term_taxonomy_id:9': {
+      term_taxonomy_id: 9,
+      term_id: 7,
+      taxonomy: 'category',
+      description: '',
+      parent: 0,
+      count: 1,
+    },
+  };
+  local.db.wp_term_taxonomy = {
+    'term_taxonomy_id:9': {
+      ...base.db.wp_term_taxonomy['term_taxonomy_id:9'],
+    },
+  };
+  remote.db.wp_term_taxonomy = {
+    'term_taxonomy_id:9': {
+      ...base.db.wp_term_taxonomy['term_taxonomy_id:9'],
+    },
+  };
+  base.db.wp_term_relationships = {
+    'object_id:3|term_taxonomy_id:9': {
+      object_id: 3,
+      term_taxonomy_id: 9,
+      term_order: 0,
+    },
+  };
+  local.db.wp_term_relationships = {
+    'object_id:4|term_taxonomy_id:9': {
+      object_id: 4,
+      term_taxonomy_id: 9,
+      term_order: 0,
+    },
+  };
+  remote.db.wp_term_relationships = {
+    'object_id:3|term_taxonomy_id:9': {
+      ...base.db.wp_term_relationships['object_id:3|term_taxonomy_id:9'],
+    },
+  };
+  local.db.wp_posts['ID:4'] = {
+    ID: 4,
+    post_title: 'Local retagged post',
+    post_content: 'local-private-retagged-post-body',
+    post_status: 'publish',
+    post_parent: 5,
+  };
+  local.db.wp_posts['ID:5'] = {
+    ID: 5,
+    post_title: 'Local attachment parent',
+    post_content: 'local-private-attachment-parent-body',
+    post_status: 'inherit',
+    post_type: 'attachment',
+  };
+
+  const plan = planFor(base, local, remote);
+  const samePlanPostMutation = mutationFor(plan, samePlanPostResourceKey);
+  const relationshipMutation = mutationFor(plan, relationshipResourceKey);
+  const blockedPostBlocker = plan.blockers.find((entry) => entry.resourceKey === samePlanPostResourceKey);
+  const relationshipBlocker = plan.blockers.find((entry) => entry.resourceKey === relationshipResourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(mutationFor(plan, existingPostResourceKey), undefined);
+  assert.equal(mutationFor(plan, attachmentResourceKey).changeKind, 'create');
+  assert.equal(samePlanPostMutation.changeKind, 'create');
+  assert.equal(blockedPostBlocker.class, 'missing-wordpress-graph-dependency');
+  assert.equal(blockedPostBlocker.references[0].relationshipType, 'post-parent');
+  assert.equal(blockedPostBlocker.references[0].targetResourceKey, attachmentResourceKey);
+  assert.equal(relationshipMutation.changeKind, 'create');
+  assert.equal(relationshipMutation.dependsOnMutationIds, undefined);
+  assert.equal(relationshipBlocker.class, 'missing-wordpress-graph-dependency');
+  assert.equal(relationshipBlocker.references[0].relationshipType, 'term-relationship-object');
+  assert.equal(relationshipBlocker.references[0].targetResourceKey, samePlanPostResourceKey);
+  assert.equal(JSON.stringify(relationshipBlocker).includes('local-private-attachment-parent-body'), false);
+  assert.equal(JSON.stringify(relationshipBlocker).includes('local-private-retagged-post-body'), false);
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
+});
+
 test('blocks an existing term relationship object reference when the same-plan post target is itself blocked by an attachment parent even when unrelated remote attachment noise exists', () => {
   const existingPostResourceKey = 'row:["wp_posts","ID:3"]';
   const attachmentResourceKey = 'row:["wp_posts","ID:5"]';
@@ -22903,6 +23001,79 @@ test('blocks a local term relationship object reference when the same-plan post 
   assert.equal(relationshipBlocker.references[0].targetResourceKey, blockedPostResourceKey);
   assert.equal(relationshipMutation.dependsOnMutationIds, undefined);
   assert.equal(JSON.stringify(relationshipBlocker).includes('local-private-nav-menu-item-parent-body'), false);
+  assert.equal(JSON.stringify(relationshipBlocker).includes('local-private-blocked-tagged-post-body'), false);
+  assert.throws(() => applyPlan(baseSite(), plan), /Refusing to apply/);
+});
+
+test('blocks a local term relationship object reference when the same-plan post target is itself blocked by an attachment parent', () => {
+  const attachmentResourceKey = 'row:["wp_posts","ID:2"]';
+  const blockedPostResourceKey = 'row:["wp_posts","ID:3"]';
+  const termResourceKey = 'row:["wp_terms","term_id:7"]';
+  const taxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:9"]';
+  const relationshipResourceKey = 'row:["wp_term_relationships","object_id:3|term_taxonomy_id:9"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_title: 'Local attachment parent',
+    post_content: 'local-private-attachment-parent-body',
+    post_status: 'inherit',
+    post_type: 'attachment',
+  };
+  local.db.wp_posts['ID:3'] = {
+    ID: 3,
+    post_title: 'Blocked tagged post',
+    post_content: 'local-private-blocked-tagged-post-body',
+    post_status: 'publish',
+    post_parent: 2,
+  };
+  local.db.wp_terms = {
+    'term_id:7': {
+      term_id: 7,
+      name: 'Local relationship term',
+      slug: 'local-relationship-term',
+    },
+  };
+  local.db.wp_term_taxonomy = {
+    'term_taxonomy_id:9': {
+      term_taxonomy_id: 9,
+      term_id: 7,
+      taxonomy: 'category',
+      description: '',
+      parent: 0,
+      count: 0,
+    },
+  };
+  local.db.wp_term_relationships = {
+    'object_id:3|term_taxonomy_id:9': {
+      object_id: 3,
+      term_taxonomy_id: 9,
+      term_order: 0,
+    },
+  };
+
+  const plan = planFor(base, local, baseSite());
+  const blockedPostMutation = mutationFor(plan, blockedPostResourceKey);
+  const termMutation = mutationFor(plan, termResourceKey);
+  const taxonomyMutation = mutationFor(plan, taxonomyResourceKey);
+  const relationshipMutation = mutationFor(plan, relationshipResourceKey);
+  const blockedPostBlocker = plan.blockers.find((entry) => entry.resourceKey === blockedPostResourceKey);
+  const relationshipBlocker = plan.blockers.find((entry) => entry.resourceKey === relationshipResourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(mutationFor(plan, attachmentResourceKey).changeKind, 'create');
+  assert.equal(blockedPostMutation.changeKind, 'create');
+  assert.equal(termMutation.changeKind, 'create');
+  assert.equal(taxonomyMutation.changeKind, 'create');
+  assert.equal(relationshipMutation.changeKind, 'create');
+  assert.equal(blockedPostBlocker.class, 'missing-wordpress-graph-dependency');
+  assert.equal(blockedPostBlocker.references[0].relationshipType, 'post-parent');
+  assert.equal(blockedPostBlocker.references[0].targetResourceKey, attachmentResourceKey);
+  assert.equal(relationshipBlocker.class, 'missing-wordpress-graph-dependency');
+  assert.equal(relationshipBlocker.references[0].relationshipType, 'term-relationship-object');
+  assert.equal(relationshipBlocker.references[0].targetResourceKey, blockedPostResourceKey);
+  assert.equal(relationshipMutation.dependsOnMutationIds, undefined);
+  assert.equal(JSON.stringify(relationshipBlocker).includes('local-private-attachment-parent-body'), false);
   assert.equal(JSON.stringify(relationshipBlocker).includes('local-private-blocked-tagged-post-body'), false);
   assert.throws(() => applyPlan(baseSite(), plan), /Refusing to apply/);
 });
