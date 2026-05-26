@@ -1004,10 +1004,14 @@ test('production recovery journal reopen fails closed when the persisted consume
       ownsRemoteArtifact: true,
       remoteArtifactPath,
     });
-  }, {
-    name: 'UnsupportedProductionRecoveryJournalError',
-    code: 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL',
-    message: 'Production recovery journal support requires reopening with the persisted consumed claim identity.',
+  }, (error) => {
+    assert.equal(error?.name, 'UnsupportedProductionRecoveryJournalError');
+    assert.equal(error?.code, 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL');
+    assert.equal(
+      error?.message,
+      'Production recovery journal persistence is corrupt or truncated.',
+    );
+    return true;
   });
 });
 
@@ -1058,10 +1062,14 @@ test('production recovery journal reopen fails closed when the persisted consume
       ownsRemoteArtifact: true,
       remoteArtifactPath,
     });
-  }, {
-    name: 'UnsupportedProductionRecoveryJournalError',
-    code: 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL',
-    message: 'Production recovery journal support requires reopening with the persisted consumed claim identity.',
+  }, (error) => {
+    assert.equal(error?.name, 'UnsupportedProductionRecoveryJournalError');
+    assert.equal(error?.code, 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL');
+    assert.equal(
+      error?.message,
+      'Production recovery journal persistence is corrupt or truncated.',
+    );
+    return true;
   });
 });
 
@@ -1412,6 +1420,138 @@ test('production recovery journal reopen fails closed when the persisted consume
     name: 'UnsupportedProductionRecoveryJournalError',
     code: 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL',
     message: 'Production recovery journal support requires reopening with the persisted consumed claim identity.',
+  });
+});
+
+test('production recovery journal reopen fails closed when the persisted consumed claim hash is inherited instead of owned', () => {
+  const filePath = tempJournalPath();
+  const remote = baseSite();
+  const plan = planFor(baseSite(), localSite(), remote);
+  const claimId = 'claim-consumed-inherited-hash';
+  const writerLease = { id: claimId, epoch: 4 };
+  const remoteArtifactPath = `${filePath}.remote`;
+  const artifactRefs = {
+    journal: filePath,
+    remote: remoteArtifactPath,
+  };
+  const journal = openProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs,
+    claimId,
+    writerLease,
+  });
+  appendRecoveryClaimOpened(journal, {
+    plan,
+    current: remote,
+    claimId,
+    artifactRefs,
+  });
+  journal.close();
+
+  consumeProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs,
+    writerLease,
+  });
+
+  const persisted = readRecoveryJournal(filePath);
+  const consumedRecord = persisted.records.at(-1);
+  const inheritedConsumedRecord = Object.create({
+    claimHash: consumedRecord.claimHash,
+  });
+  inheritedConsumedRecord.schemaVersion = consumedRecord.schemaVersion;
+  inheritedConsumedRecord.sequence = consumedRecord.sequence;
+  inheritedConsumedRecord.type = consumedRecord.type;
+  inheritedConsumedRecord.timestamp = consumedRecord.timestamp;
+  inheritedConsumedRecord.claimLease = consumedRecord.claimLease;
+  inheritedConsumedRecord.artifactRefs = consumedRecord.artifactRefs;
+  inheritedConsumedRecord.fsync = consumedRecord.fsync;
+  persisted.records[persisted.records.length - 1] = inheritedConsumedRecord;
+  fs.writeFileSync(filePath, `${persisted.records.map((record) => JSON.stringify(record)).join('\n')}\n`);
+
+  assert.throws(() => {
+    openProductionRecoveryJournal(filePath, {
+      claimId,
+      writerLease,
+      ownsRemoteArtifact: true,
+      remoteArtifactPath,
+    });
+  }, {
+    name: 'UnsupportedProductionRecoveryJournalError',
+    code: 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL',
+    message: 'Production recovery journal support requires reopening with the persisted consumed claim identity.',
+  });
+});
+
+test('production recovery journal reopen fails closed when the persisted consumed claim sequence is inherited instead of owned', () => {
+  const filePath = tempJournalPath();
+  const remote = baseSite();
+  const plan = planFor(baseSite(), localSite(), remote);
+  const claimId = 'claim-consumed-inherited-sequence';
+  const writerLease = { id: claimId, epoch: 4 };
+  const remoteArtifactPath = `${filePath}.remote`;
+  const artifactRefs = {
+    journal: filePath,
+    remote: remoteArtifactPath,
+  };
+  const journal = openProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs,
+    claimId,
+    writerLease,
+  });
+  appendRecoveryClaimOpened(journal, {
+    plan,
+    current: remote,
+    claimId,
+    artifactRefs,
+  });
+  journal.close();
+
+  consumeProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs,
+    writerLease,
+  });
+
+  const persisted = readRecoveryJournal(filePath);
+  const consumedRecord = persisted.records.at(-1);
+  const inheritedConsumedRecord = Object.create({
+    sequence: consumedRecord.sequence,
+  });
+  inheritedConsumedRecord.schemaVersion = consumedRecord.schemaVersion;
+  inheritedConsumedRecord.type = consumedRecord.type;
+  inheritedConsumedRecord.timestamp = consumedRecord.timestamp;
+  inheritedConsumedRecord.claimHash = consumedRecord.claimHash;
+  inheritedConsumedRecord.claimLease = consumedRecord.claimLease;
+  inheritedConsumedRecord.artifactRefs = consumedRecord.artifactRefs;
+  inheritedConsumedRecord.fsync = consumedRecord.fsync;
+  persisted.records[persisted.records.length - 1] = inheritedConsumedRecord;
+  fs.writeFileSync(filePath, `${persisted.records.map((record) => JSON.stringify(record)).join('\n')}\n`);
+
+  assert.throws(() => {
+    openProductionRecoveryJournal(filePath, {
+      claimId,
+      writerLease,
+      ownsRemoteArtifact: true,
+      remoteArtifactPath,
+    });
+  }, (error) => {
+    assert.equal(error?.name, 'UnsupportedProductionRecoveryJournalError');
+    assert.equal(error?.code, 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL');
+    assert.equal(
+      error?.message,
+      'Production recovery journal persistence is corrupt or truncated.',
+    );
+    return true;
   });
 });
 
