@@ -4,6 +4,8 @@ import { digest } from './stable-json.js';
 import { deserializeResourceValue, resourceHash } from './resources.js';
 
 export const RECOVERY_JOURNAL_SCHEMA_VERSION = 1;
+const CHECKED_DURABLE_JOURNAL_SCOPE_PATTERN =
+  /^(?:packaged production journal scope|checked live production-shaped journal surface; not local Playground fixture only)$/i;
 
 const CLAIM_STATE_EVENT_TYPES = new Set([
   'recovery-claim-opened',
@@ -52,7 +54,7 @@ function hasStaleClaimRejectionEvidence(records) {
 }
 
 export function checkedDurableJournalBoundarySatisfied(dbJournal) {
-  return /(packaged production plugin|checked live production-shaped) journal surface/i.test(dbJournal?.scope || '')
+  return CHECKED_DURABLE_JOURNAL_SCOPE_PATTERN.test(dbJournal?.scope || '')
     && dbJournal?.ownership?.ownsJournal === true
     && dbJournal?.ownership?.restartReadable === true
     && dbJournal?.ownership?.productionAdapter === 'wpdb-single-statement-cas'

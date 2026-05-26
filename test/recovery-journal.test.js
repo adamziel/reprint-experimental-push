@@ -1886,6 +1886,46 @@ test('checked durable journal boundary stays closed until stale-claim rejection 
   );
 });
 
+test('checked durable journal boundary accepts the packaged production journal scope', () => {
+  const packagedContract = {
+    scope: 'packaged production journal scope',
+    ownership: {
+      ownsJournal: true,
+      restartReadable: true,
+      productionAdapter: 'wpdb-single-statement-cas',
+    },
+    leaseFence: {
+      boundary: 'wpdb-single-statement-cas',
+      claimKeyUnique: true,
+      monotonicSequence: true,
+      restartReadable: true,
+      staleClaimRejected: true,
+    },
+  };
+
+  assert.equal(checkedDurableJournalBoundarySatisfied(packagedContract), true);
+});
+
+test('checked durable journal boundary rejects nearby stale scope wording', () => {
+  const staleScopeContract = {
+    scope: 'packaged production plugin journal surface',
+    ownership: {
+      ownsJournal: true,
+      restartReadable: true,
+      productionAdapter: 'wpdb-single-statement-cas',
+    },
+    leaseFence: {
+      boundary: 'wpdb-single-statement-cas',
+      claimKeyUnique: true,
+      monotonicSequence: true,
+      restartReadable: true,
+      staleClaimRejected: true,
+    },
+  };
+
+  assert.equal(checkedDurableJournalBoundarySatisfied(staleScopeContract), false);
+});
+
 test('production recovery journal compatibility overload fails closed when the consumed journal artifact ref diverges from the owned path', () => {
   const filePath = tempJournalPath();
   const remote = baseSite();
