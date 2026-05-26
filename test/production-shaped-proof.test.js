@@ -69,7 +69,7 @@ function stopAllPlaygroundChildrenSync() {
 }
 
 function spawnReleaseVerify(env = {}, options = {}) {
-  const timeout = options.timeout ?? proofSubprocessTimeoutMs;
+  const timeout = Math.max(1_000, Math.min(options.timeout ?? proofSubprocessTimeoutMs, releaseVerifyInnerTimeoutMs));
   const killSignal = options.killSignal ?? proofSubprocessKillSignal;
   const proof = spawnReleaseVerifySync(
     process.execPath,
@@ -88,10 +88,15 @@ function spawnReleaseVerify(env = {}, options = {}) {
 }
 
 function runReleaseVerifySync(env, timeout, killSignal, label) {
-  const proof = spawnReleaseVerifySync(process.execPath, ['scripts/playground/production-shaped-release-verify.mjs'], env, {
-    timeout,
-    killSignal,
-  });
+  const proof = spawnReleaseVerifySync(
+    process.execPath,
+    ['scripts/playground/production-shaped-release-verify.mjs'],
+    env,
+    {
+      timeout: Math.max(1_000, Math.min(timeout, releaseVerifyInnerTimeoutMs)),
+      killSignal,
+    },
+  );
   assertReleaseVerifyProof(proof, label, timeout);
   return proof;
 }
@@ -121,7 +126,7 @@ function spawnProductionShapedReleaseVerify(env, options, label) {
 }
 
 function spawnProductionShapedReleaseVerifyCommand(env, options, label) {
-  const timeout = options.timeout ?? releaseVerifyInnerTimeoutMs;
+  const timeout = Math.max(1_000, Math.min(options.timeout ?? releaseVerifyInnerTimeoutMs, releaseVerifyInnerTimeoutMs));
   const proof = spawnReleaseVerifySync(process.execPath, ['scripts/playground/production-shaped-release-verify.mjs'], env, {
     timeout,
     killSignal: options.killSignal ?? proofSubprocessKillSignal,
@@ -252,7 +257,7 @@ function failReleaseVerifySpawnProof(proof, command, args, label = 'release veri
 }
 
 function spawnReleaseVerifySync(command, args, env, options = {}) {
-  const timeout = options.timeout ?? proofSubprocessTimeoutMs;
+  const timeout = Math.max(1_000, Math.min(options.timeout ?? releaseVerifyInnerTimeoutMs, proofSubprocessTimeoutMs));
   const killSignal = options.killSignal ?? proofSubprocessKillSignal;
   const proof = spawnBoundedReleaseVerify(command, args, env, {
     timeout,
