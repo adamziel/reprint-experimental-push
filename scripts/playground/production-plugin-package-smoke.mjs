@@ -13,6 +13,8 @@ import {
   resolveAuthSessionSourceCredentials,
 } from './auth-session-source.js';
 import {
+  packagedProductionPluginMaxConsecutiveNotReadyProbes,
+  packagedProductionPluginNextNotReadyProbeCount,
   packagedProductionPluginPreflightTerminal,
   packagedProductionPluginPreflightReady,
   packagedProductionPluginPreflightRetryable,
@@ -440,6 +442,7 @@ async function waitForServer(child, baseUrl, logs) {
   const deadline = Date.now() + serverStartupTimeoutMs;
   let lastError = null;
   let lastProbe = null;
+  let notReadyProbeCount = 0;
 
   while (Date.now() < deadline) {
     if (child.exitCode !== null) {
@@ -455,6 +458,11 @@ async function waitForServer(child, baseUrl, logs) {
         },
       });
       const snapshotText = await snapshotResponse.text();
+      notReadyProbeCount = packagedProductionPluginNextNotReadyProbeCount(
+        notReadyProbeCount,
+        snapshotResponse.status,
+        snapshotText,
+      );
       lastProbe = {
         route: '/wp-json/reprint/v1/push/snapshot',
         status: snapshotResponse.status,
@@ -477,9 +485,16 @@ async function waitForServer(child, baseUrl, logs) {
       if (!packagedProductionPluginServerReady({ snapshot: { status: snapshotResponse.status, body: snapshotBody } })) {
         lastError = new Error(`Production plugin package snapshot readiness HTTP ${snapshotResponse.status}`);
         if (packagedProductionPluginSnapshotRetryable({ status: snapshotResponse.status, body: snapshotBody })) {
+          if (notReadyProbeCount >= packagedProductionPluginMaxConsecutiveNotReadyProbes) {
+            throw new Error(
+              `Packaged production plugin snapshot hit the bounded readiness failure after ${notReadyProbeCount} consecutive startup-shaped response${notReadyProbeCount === 1 ? '' : 's'} (limit ${packagedProductionPluginMaxConsecutiveNotReadyProbes})\n`
+              + `${snapshotText.slice(0, readinessFailureBodyLimit)}\n${logs.join('')}`,
+            );
+          }
           await sleep(500);
           continue;
         }
+        notReadyProbeCount = 0;
         if (packagedProductionPluginSnapshotTerminal({ status: snapshotResponse.status, body: snapshotBody })) {
           throw new Error(
             `Packaged production plugin snapshot returned a terminal readiness failure at ${baseUrl}\n`
@@ -495,6 +510,11 @@ async function waitForServer(child, baseUrl, logs) {
           },
         });
         const preflightText = await preflightResponse.text();
+        notReadyProbeCount = packagedProductionPluginNextNotReadyProbeCount(
+          notReadyProbeCount,
+          preflightResponse.status,
+          preflightText,
+        );
         lastProbe = {
           route: '/wp-json/reprint/v1/push/preflight',
           status: preflightResponse.status,
@@ -515,14 +535,22 @@ async function waitForServer(child, baseUrl, logs) {
         }
 
         if (packagedProductionPluginPreflightReady({ status: preflightResponse.status, body: preflightBody })) {
+          notReadyProbeCount = 0;
           return;
         }
 
         lastError = new Error(`Production plugin package preflight readiness HTTP ${preflightResponse.status}`);
         if (packagedProductionPluginPreflightRetryable({ status: preflightResponse.status, body: preflightBody })) {
+          if (notReadyProbeCount >= packagedProductionPluginMaxConsecutiveNotReadyProbes) {
+            throw new Error(
+              `Packaged production plugin preflight hit the bounded readiness failure after ${notReadyProbeCount} consecutive startup-shaped response${notReadyProbeCount === 1 ? '' : 's'} (limit ${packagedProductionPluginMaxConsecutiveNotReadyProbes})\n`
+              + `${preflightText.slice(0, readinessFailureBodyLimit)}\n${logs.join('')}`,
+            );
+          }
           await sleep(500);
           continue;
         }
+        notReadyProbeCount = 0;
         if (packagedProductionPluginPreflightTerminal({ status: preflightResponse.status, body: preflightBody })) {
           throw new Error(
             `Packaged production plugin preflight returned a terminal readiness failure at ${baseUrl}\n`

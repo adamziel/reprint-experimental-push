@@ -1,5 +1,7 @@
 import { evaluateProductionAuthSessionLifecycle } from './production-auth-session-lifecycle.js';
 
+export const packagedProductionPluginMaxConsecutiveNotReadyProbes = 4;
+
 function packagedProductionPluginRouteProfileReady(routeProfile) {
   return routeProfile?.profile === 'production-shaped'
     && routeProfile?.restNamespace === 'reprint/v1'
@@ -75,9 +77,19 @@ export function packagedProductionPluginReadinessErrorRetryable(error) {
   return !(error && typeof error === 'object' && error.isPlaygroundReadinessFailure === true);
 }
 
+export function packagedProductionPluginReadinessWordPressNotReady(status, bodyText = '') {
+  return status === 502 && /WordPress is not ready yet/i.test(bodyText);
+}
+
+export function packagedProductionPluginNextNotReadyProbeCount(currentCount, status, bodyText = '') {
+  return packagedProductionPluginReadinessWordPressNotReady(status, bodyText)
+    ? currentCount + 1
+    : 0;
+}
+
 export function packagedProductionPluginReadinessBodyRetryable(status, bodyText = '') {
   return (
-    (status === 502 && /WordPress is not ready yet/i.test(bodyText))
+    packagedProductionPluginReadinessWordPressNotReady(status, bodyText)
     || (status === 404 && /No route was found matching the URL and request method\./i.test(bodyText))
   );
 }

@@ -27,6 +27,8 @@ import {
   labSnapshotRetryable,
 } from '../scripts/playground/lab-playground-readiness.js';
 import {
+  packagedProductionPluginMaxConsecutiveNotReadyProbes,
+  packagedProductionPluginNextNotReadyProbeCount,
   packagedProductionPluginPreflightTerminal,
   packagedProductionPluginReadinessBodyRetryable,
   packagedProductionPluginReadinessErrorRetryable,
@@ -1197,6 +1199,38 @@ test('packaged production plugin readiness helper does not retry terminal readin
       '<!doctype html><html><body>unauthorized packaged route</body></html>',
     ),
     false,
+  );
+  assert.equal(
+    packagedProductionPluginNextNotReadyProbeCount(
+      0,
+      502,
+      '<!doctype html><html><body>WordPress is not ready yet</body></html>',
+    ),
+    1,
+  );
+  assert.equal(
+    packagedProductionPluginNextNotReadyProbeCount(
+      packagedProductionPluginMaxConsecutiveNotReadyProbes - 1,
+      502,
+      '<!doctype html><html><body>WordPress is not ready yet</body></html>',
+    ),
+    packagedProductionPluginMaxConsecutiveNotReadyProbes,
+  );
+  assert.equal(
+    packagedProductionPluginNextNotReadyProbeCount(
+      3,
+      404,
+      '<!doctype html><html><body>No route was found matching the URL and request method.</body></html>',
+    ),
+    0,
+  );
+  assert.equal(
+    packagedProductionPluginNextNotReadyProbeCount(
+      3,
+      200,
+      '{\"ok\":true}',
+    ),
+    0,
   );
   assert.equal(packagedProductionPluginReadinessErrorRetryable(new Error('transient fetch failure')), true);
   assert.equal(
