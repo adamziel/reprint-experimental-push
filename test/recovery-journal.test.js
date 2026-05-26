@@ -418,6 +418,26 @@ test('production recovery journal descriptor fails closed on non-enumerable top-
   });
 });
 
+test('production recovery journal descriptor rejects a non-enumerable kind marker', () => {
+  const writer = {};
+  Object.defineProperties(writer, {
+    kind: {
+      value: 'production-recovery-journal',
+      enumerable: false,
+    },
+    productionAdapter: {
+      value: true,
+      enumerable: true,
+    },
+    supportedSurface: {
+      value: 'production-recovery-journal-adapter',
+      enumerable: true,
+    },
+  });
+
+  assert.equal(describeProductionRecoveryJournal(writer), null);
+});
+
 test('production recovery journal descriptor fails closed on non-canonical ownership paths and divergent lease ids', () => {
   const writer = {
     kind: 'production-recovery-journal',

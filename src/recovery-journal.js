@@ -670,6 +670,7 @@ export function describeProductionRecoveryJournal(writer) {
   if (
     !writer
     || !Object.hasOwn(writer, 'kind')
+    || hasHiddenOwnStringProperty(writer, 'kind')
     || writer.kind !== 'production-recovery-journal'
   ) {
     return null;
