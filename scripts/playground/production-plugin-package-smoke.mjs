@@ -7,6 +7,8 @@ import net from 'node:net';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createHmac } from 'node:crypto';
+import { createPushPlan, deepClone } from '../../src/planner.js';
+import { authenticatedHttpClient } from '../../src/authenticated-http-push-client.js';
 import { digest } from '../../src/stable-json.js';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
@@ -34,6 +36,12 @@ const fixtures = {
   base: 'fixtures/playground/remote-base.blueprint.json',
   local: 'fixtures/playground/local-edited.blueprint.json',
 };
+const driverFixture = {
+  driver: 'fixture-arbitrary-plugin-table',
+  table: 'wp_reprint_push_driver_fixture',
+  pluginOwner: 'driver-fixture',
+  resourceKey: 'row:["wp_reprint_push_driver_fixture","entry_id:1"]',
+};
 
 const snapshots = Object.fromEntries(
   Object.entries(fixtures).map(([name, fixture]) => [
@@ -47,14 +55,21 @@ const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'reprint-production-plugin-
 const packageRoot = path.join(tmpDir, 'package');
 const pluginDir = path.join(packageRoot, 'reprint-push');
 const blueprintPath = path.join(tmpDir, 'remote-base-with-reprint-push-plugin.blueprint.json');
+const driverSnapshotBlueprintPath = path.join(tmpDir, 'remote-base-with-driver-fixture-snapshot.blueprint.json');
+const driverServerBlueprintPath = path.join(tmpDir, 'remote-base-with-driver-fixture-server.blueprint.json');
 const basePath = path.join(tmpDir, 'base.json');
 const localPath = path.join(tmpDir, 'local.json');
 
 try {
   buildPluginPackage(pluginDir);
   writeActivationBlueprint(path.join(repoRoot, fixtures.base), blueprintPath);
+  writeDriverFixtureBlueprint(path.join(repoRoot, fixtures.base), driverSnapshotBlueprintPath);
+  writeDriverFixtureBlueprint(path.join(repoRoot, fixtures.base), driverServerBlueprintPath, { activatePackagedPlugin: true, provisionAuth: true });
   fs.writeFileSync(basePath, `${JSON.stringify(snapshots.base, null, 2)}\n`);
   fs.writeFileSync(localPath, `${JSON.stringify(packageLocalSnapshot, null, 2)}\n`);
+  const driverBaseSnapshot = exportSnapshot('driver-fixture-base', driverSnapshotBlueprintPath);
+  const driverLocalDeleteSnapshot = deepClone(driverBaseSnapshot);
+  delete driverLocalDeleteSnapshot.db?.[driverFixture.table]?.['entry_id:1'];
 
   const summary = {
     package: {
@@ -64,6 +79,7 @@ try {
     },
     routes: {},
     cli: {},
+    driverDeleteGuard: {},
     final: {},
   };
 
@@ -176,6 +192,101 @@ try {
     };
   });
 
+  await withPlaygroundServer('production-plugin-driver-delete-guard', driverServerBlueprintPath, pluginDir, async (server) => {
+    const client = authenticatedHttpClient({
+      sourceUrl: server.baseUrl,
+      credential: credentials,
+      routeProfile: 'production-shaped',
+    });
+    const preflight = await client.signedGet('/preflight');
+    assert.equal(preflight.status, 200);
+    assert.equal(preflight.body?.ok, true);
+    const session = preflight.body?.session?.id;
+    assert.equal(typeof session, 'string');
+    assert.ok(session.length > 0, 'signed preflight did not return a session id');
+
+    const remoteSnapshot = await client.get('/snapshot');
+    assert.equal(remoteSnapshot.status, 200);
+    assert.equal(remoteSnapshot.body?.ok, true);
+    const allowedEntry = remoteSnapshot.body.snapshot?.meta?.pluginOwnedResources?.allowedResources?.find?.(
+      (entry) => entry?.resourceKey === driverFixture.resourceKey,
+    );
+    assert.ok(allowedEntry, 'packaged snapshot did not expose the arbitrary plugin-owned driver policy');
+    assert.equal(allowedEntry.driver, driverFixture.driver);
+    assert.equal(allowedEntry.table, driverFixture.table);
+    assert.equal(allowedEntry.pluginOwner, driverFixture.pluginOwner);
+    assert.equal(allowedEntry.supportsDelete, false);
+
+    const forgedRemote = deepClone(remoteSnapshot.body.snapshot);
+    const forgedAllowedEntry = forgedRemote.meta.pluginOwnedResources.allowedResources.find(
+      (entry) => entry?.resourceKey === driverFixture.resourceKey,
+    );
+    forgedAllowedEntry.supportsDelete = true;
+    forgedAllowedEntry.allowDelete = true;
+
+    const forgedDeletePlan = createPushPlan({
+      base: driverBaseSnapshot,
+      local: driverLocalDeleteSnapshot,
+      remote: forgedRemote,
+      now: new Date('2026-05-26T18:10:00.000Z'),
+    });
+    assert.equal(forgedDeletePlan.status, 'ready');
+    assert.equal(forgedDeletePlan.mutations.length, 1);
+    assert.equal(forgedDeletePlan.mutations[0].resourceKey, driverFixture.resourceKey);
+    assert.equal(forgedDeletePlan.mutations[0].action, 'delete');
+    assert.equal(forgedDeletePlan.mutations[0].pluginOwnedResource?.supportsDelete, true);
+
+    const dryRun = await client.signedPost(
+      '/dry-run',
+      { plan: forgedDeletePlan },
+      {
+        session,
+        idempotencyKey: 'production-plugin-driver-delete-dry-run',
+      },
+    );
+    assert.equal(dryRun.status, 200);
+    assert.equal(dryRun.body?.ok, true);
+    assert.ok(dryRun.body?.receipt?.receiptHash, 'forged delete dry-run did not produce a receipt');
+
+    const apply = await client.signedPost(
+      '/apply',
+      {
+        plan: forgedDeletePlan,
+        receipt: dryRun.body.receipt,
+      },
+      {
+        session,
+        idempotencyKey: 'production-plugin-driver-delete-apply',
+      },
+    );
+    assert.equal(apply.status, 200);
+    assert.equal(apply.body?.ok, false);
+    assert.equal(apply.body?.code, 'PUSH_PROTOCOL_ERROR');
+    assert.match(
+      apply.body?.message || '',
+      /does not support deletes/,
+      'packaged apply route did not reject the forged driver delete',
+    );
+
+    const afterRejectedApply = await client.get('/snapshot');
+    assert.equal(afterRejectedApply.status, 200);
+    assert.equal(afterRejectedApply.body?.ok, true);
+    assert.equal(
+      afterRejectedApply.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1']?.updated_marker,
+      'base',
+      'rejected packaged driver delete still mutated the remote snapshot',
+    );
+
+    summary.driverDeleteGuard = {
+      resourceKey: driverFixture.resourceKey,
+      remoteSupportsDelete: allowedEntry.supportsDelete,
+      forgedPlanAcceptedByDryRun: dryRun.body?.ok === true,
+      applyRejectedCode: apply.body?.code,
+      applyRejectedMessage: apply.body?.message,
+      rowRetainedAfterReject: afterRejectedApply.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1'] !== undefined,
+    };
+  });
+
   console.log(JSON.stringify(summary, null, 2));
 } finally {
   fs.rmSync(tmpDir, { recursive: true, force: true });
@@ -267,6 +378,159 @@ function writeActivationBlueprint(sourceBlueprintPath, targetBlueprintPath) {
     ].join(' '),
   });
   fs.writeFileSync(targetBlueprintPath, `${JSON.stringify(blueprint, null, 2)}\n`);
+}
+
+function writeDriverFixtureBlueprint(
+  sourceBlueprintPath,
+  targetBlueprintPath,
+  {
+    activatePackagedPlugin = false,
+    provisionAuth = false,
+  } = {},
+) {
+  const blueprint = JSON.parse(fs.readFileSync(sourceBlueprintPath, 'utf8'));
+  blueprint.meta = {
+    ...blueprint.meta,
+    title: 'Reprint Push Driver Fixture Package Guard',
+    description: 'Remote base fixture with packaged Reprint Push plus an arbitrary plugin-owned row driver fixture.',
+  };
+  const pluginCodeBase64 = Buffer.from(driverFixturePluginPhp({ supportsDelete: false }), 'utf8').toString('base64');
+  blueprint.steps.push({
+    step: 'runPHP',
+    code: [
+      '<?php',
+      "require_once '/wordpress/wp-load.php';",
+      '$plugin_dir = WP_PLUGIN_DIR . \'/driver-fixture\';',
+      'wp_mkdir_p($plugin_dir);',
+      '$plugin_file = $plugin_dir . \'/driver-fixture.php\';',
+      `file_put_contents($plugin_file, base64_decode('${pluginCodeBase64}'));`,
+      "require_once ABSPATH . 'wp-admin/includes/plugin.php';",
+      "$result = activate_plugin('driver-fixture/driver-fixture.php');",
+      'if (is_wp_error($result)) { throw new RuntimeException($result->get_error_message()); }',
+      'global $wpdb;',
+      '$table = $wpdb->prefix . \'reprint_push_driver_fixture\';',
+      '$wpdb->query(\'CREATE TABLE \' . $table . \' (entry_id bigint(20) unsigned NOT NULL, payload_json longtext NOT NULL, updated_marker varchar(32) NOT NULL, PRIMARY KEY (entry_id)) \' . $wpdb->get_charset_collate());',
+      '$payload = wp_json_encode(array(\'owner\' => \'driver-fixture\', \'mode\' => \'base\', \'version\' => 1));',
+      '$wpdb->replace($table, array(\'entry_id\' => 1, \'payload_json\' => $payload, \'updated_marker\' => \'base\'), array(\'%d\', \'%s\', \'%s\'));',
+    ].join(' '),
+  });
+  if (activatePackagedPlugin) {
+    blueprint.steps.push({
+      step: 'runPHP',
+      code: [
+        '<?php',
+        "require_once '/wordpress/wp-load.php';",
+        "require_once ABSPATH . 'wp-admin/includes/plugin.php';",
+        "$result = activate_plugin('reprint-push/reprint-push.php');",
+        'if (is_wp_error($result)) { throw new RuntimeException($result->get_error_message()); }',
+      ].join(' '),
+    });
+  }
+  if (provisionAuth) {
+    blueprint.steps.push({
+      step: 'runPHP',
+      code: [
+        '<?php',
+        "require_once '/wordpress/wp-load.php';",
+        '$result = reprint_push_lab_rest_provision_push_application_password(array(\'login\' => \'reprint_push_admin\', \'appPassword\' => \'reprint-push-admin-app-password\', \'role\' => \'administrator\', \'slug\' => \'primary-admin\', \'name\' => \'Reprint Push Package Smoke\', \'createUser\' => true, \'updateRole\' => true));',
+        'if (empty($result[\'ok\'])) { throw new RuntimeException((string) ($result[\'message\'] ?? \'push credential provisioning failed\')); }',
+      ].join(' '),
+    });
+  }
+  fs.writeFileSync(targetBlueprintPath, `${JSON.stringify(blueprint, null, 2)}\n`);
+}
+
+function driverFixturePluginPhp({ supportsDelete }) {
+  return `<?php
+/*
+Plugin Name: Reprint Push Driver Fixture
+Description: Fixture plugin for packaged plugin-owned row driver guard coverage.
+Version: 0.0.1
+*/
+
+add_filter('reprint_push_plugin_owned_row_drivers', static function (array $drivers): array {
+    $drivers['${driverFixture.driver}'] = [
+        'driver' => '${driverFixture.driver}',
+        'table' => '${driverFixture.table}',
+        'pluginOwner' => '${driverFixture.pluginOwner}',
+        'supportsDelete' => ${supportsDelete ? 'true' : 'false'},
+        'exportRowsCallback' => 'reprint_push_driver_fixture_export_rows',
+        'applyRowCallback' => 'reprint_push_driver_fixture_apply_row',
+    ];
+    return $drivers;
+});
+
+function reprint_push_driver_fixture_table_name(): string {
+    global $wpdb;
+    return $wpdb->prefix . 'reprint_push_driver_fixture';
+}
+
+function reprint_push_driver_fixture_export_rows(array &$snapshot, array $driver): void {
+    global $wpdb;
+    $table_name = reprint_push_driver_fixture_table_name();
+    $exists = $wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $table_name));
+    if ($exists !== $table_name) {
+        return;
+    }
+    $table = (string) ($driver['table'] ?? '');
+    if ($table === '') {
+        return;
+    }
+    if (!isset($snapshot['db'][$table]) || !is_array($snapshot['db'][$table])) {
+        $snapshot['db'][$table] = [];
+    }
+    $rows = $wpdb->get_results("SELECT entry_id, payload_json, updated_marker FROM {$table_name} ORDER BY entry_id ASC", ARRAY_A);
+    foreach ($rows as $row) {
+        $payload = json_decode((string) $row['payload_json'], true);
+        $snapshot['db'][$table]['entry_id:' . (int) $row['entry_id']] = [
+            'entry_id' => (int) $row['entry_id'],
+            'payload' => json_last_error() === JSON_ERROR_NONE ? reprint_push_normalize_snapshot_value($payload) : (string) $row['payload_json'],
+            'updated_marker' => (string) $row['updated_marker'],
+            '__pluginOwner' => '${driverFixture.pluginOwner}',
+        ];
+    }
+}
+
+function reprint_push_driver_fixture_apply_row(string $id, bool $is_delete, $value, array $driver): void {
+    global $wpdb;
+    if (!preg_match('/^entry_id:([1-9]\\d*)$/', $id, $matches)) {
+        throw new RuntimeException('Unsupported driver fixture row id: ' . $id);
+    }
+    $entry_id = (int) $matches[1];
+    $table_name = reprint_push_driver_fixture_table_name();
+    $wpdb->query('CREATE TABLE IF NOT EXISTS ' . $table_name . ' (entry_id bigint(20) unsigned NOT NULL, payload_json longtext NOT NULL, updated_marker varchar(32) NOT NULL, PRIMARY KEY (entry_id)) ' . $wpdb->get_charset_collate());
+    if ($is_delete) {
+        $wpdb->delete($table_name, ['entry_id' => $entry_id], ['%d']);
+        return;
+    }
+    if (!is_array($value) || (int) ($value['entry_id'] ?? 0) !== $entry_id) {
+        throw new RuntimeException('Driver fixture payload does not match row id: ' . $id);
+    }
+    if ((string) ($value['__pluginOwner'] ?? '') !== '${driverFixture.pluginOwner}') {
+        throw new RuntimeException('Driver fixture payload owner does not match registered driver: ' . $id);
+    }
+    if (!is_array($value['payload'] ?? null) || array_is_list($value['payload'])) {
+        throw new RuntimeException('Driver fixture payload must include an object payload: ' . $id);
+    }
+    $payload_json = wp_json_encode(reprint_push_normalize_snapshot_value($value['payload']));
+    if (!is_string($payload_json)) {
+        throw new RuntimeException('Could not encode driver fixture payload: ' . $id);
+    }
+    $updated_marker = (string) ($value['updated_marker'] ?? '');
+    if (!preg_match('/^[a-z0-9_-]{1,32}$/', $updated_marker)) {
+        throw new RuntimeException('Unsupported driver fixture updated_marker: ' . $updated_marker);
+    }
+    $sql = $wpdb->prepare(
+        'INSERT INTO ' . $table_name . ' (entry_id, payload_json, updated_marker) VALUES (%d, %s, %s) ON DUPLICATE KEY UPDATE payload_json = VALUES(payload_json), updated_marker = VALUES(updated_marker)',
+        $entry_id,
+        $payload_json,
+        $updated_marker
+    );
+    if ($wpdb->query($sql) === false) {
+        throw new RuntimeException('Could not apply driver fixture row: ' . $wpdb->last_error);
+    }
+}
+`;
 }
 
 function runCli(args, { expectStatus = 0 } = {}) {
