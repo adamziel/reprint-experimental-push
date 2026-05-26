@@ -2808,7 +2808,23 @@ test('allows a local termmeta reference to a same-plan term even when an unrelat
   assert.equal(plan.summary.mutations, 2);
   assert.equal(blocker, undefined);
   assert.equal(mutation.changeKind, 'create');
+  assert.equal(plan.summary.graphDependencies, 1);
+  assert.deepEqual(plan.graphDependencies, [
+    {
+      sourceMutationId: mutation.id,
+      sourceResourceKey: resourceKey,
+      relationshipKey: 'wp_termmeta.term_id',
+      relationshipType: 'termmeta-term',
+      targetMutationId: mutationFor(plan, targetResourceKey).id,
+      targetResourceKey,
+      resolutionPolicy: 'same-plan-local-create',
+      source: 'same-plan-local-create',
+      targetLocalHash: mutationFor(plan, targetResourceKey).localHash,
+    },
+  ]);
   assert.equal(reference.resolutionPolicy, 'same-plan-local-create');
+  assert.equal(reference.relationshipKey, 'wp_termmeta.term_id');
+  assert.equal(reference.relationshipType, 'termmeta-term');
   assert.equal(reference.targetResourceKey, targetResourceKey);
   assert.equal(reference.targetRemoteHash.length, 64);
   assert.equal(JSON.stringify(plan).includes('remote-attachment-body'), false);
@@ -9679,7 +9695,23 @@ test('allows an existing _thumbnail_id row to retarget to an attachment created 
     'attachment create must be ordered before dependent existing thumbnail metadata update',
   );
   assert.deepEqual(postmetaMutation.dependsOnMutationIds, [attachmentMutation.id]);
+  assert.equal(plan.summary.graphDependencies, 1);
+  assert.deepEqual(plan.graphDependencies, [
+    {
+      sourceMutationId: postmetaMutation.id,
+      sourceResourceKey: postmetaResourceKey,
+      relationshipKey: 'wp_postmeta.meta_value',
+      relationshipType: 'featured-image-attachment',
+      targetMutationId: attachmentMutation.id,
+      targetResourceKey: attachmentResourceKey,
+      resolutionPolicy: 'same-plan-local-create',
+      source: 'same-plan-local-create',
+      targetLocalHash: attachmentMutation.localHash,
+    },
+  ]);
   assert.equal(reference.resolutionPolicy, 'same-plan-local-create');
+  assert.equal(reference.relationshipKey, 'wp_postmeta.meta_value');
+  assert.equal(reference.relationshipType, 'featured-image-attachment');
   assert.equal(reference.targetResourceKey, attachmentResourceKey);
   assert.equal(
     JSON.stringify(reference).includes('local-private-retargeted-thumbnail-attachment-body'),
