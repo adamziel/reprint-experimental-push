@@ -7323,6 +7323,61 @@ test('blocks a local attachment parent reference when the same-plan attachment t
   );
 });
 
+test('blocks a local thumbnail reference when the same-plan attachment target is itself blocked by a revision parent', () => {
+  const revisionResourceKey = 'row:["wp_posts","ID:2"]';
+  const targetAttachmentResourceKey = 'row:["wp_posts","ID:3"]';
+  const postmetaResourceKey = 'row:["wp_postmeta","meta_id:45"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_title: 'Local revision parent',
+    post_content: 'local-private-revision-parent-body',
+    post_type: 'revision',
+  };
+  local.db.wp_posts['ID:3'] = {
+    ID: 3,
+    post_title: 'Local blocked attachment target',
+    post_content: 'local-private-blocked-attachment-target-body',
+    post_status: 'inherit',
+    post_type: 'attachment',
+    post_parent: 2,
+  };
+  local.db.wp_postmeta = {
+    'meta_id:45': {
+      meta_id: 45,
+      post_id: 1,
+      meta_key: '_thumbnail_id',
+      meta_value: 3,
+    },
+  };
+
+  const plan = planFor(base, local, baseSite());
+  const targetAttachmentBlocker = plan.blockers.find((entry) => entry.resourceKey === targetAttachmentResourceKey);
+  const postmetaBlocker = plan.blockers.find((entry) => entry.resourceKey === postmetaResourceKey);
+  const postmetaMutation = mutationFor(plan, postmetaResourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(mutationFor(plan, revisionResourceKey), undefined);
+  assert.equal(mutationFor(plan, targetAttachmentResourceKey).changeKind, 'create');
+  assert.equal(postmetaMutation.changeKind, 'create');
+  assert.equal(targetAttachmentBlocker.class, 'missing-wordpress-graph-dependency');
+  assert.equal(targetAttachmentBlocker.references[0].relationshipType, 'post-parent');
+  assert.equal(targetAttachmentBlocker.references[0].targetResourceKey, revisionResourceKey);
+  assert.equal(postmetaBlocker.class, 'missing-wordpress-graph-dependency');
+  assert.equal(postmetaBlocker.references[0].relationshipType, 'featured-image-attachment');
+  assert.equal(postmetaBlocker.references[0].targetResourceKey, targetAttachmentResourceKey);
+  assert.equal(postmetaMutation.dependsOnMutationIds, undefined);
+  assert.equal(
+    JSON.stringify(postmetaBlocker).includes('local-private-blocked-attachment-target-body'),
+    false,
+  );
+  assert.equal(
+    JSON.stringify(postmetaBlocker).includes('local-private-revision-parent-body'),
+    false,
+  );
+});
+
 test('blocks a local attachment parent reference to a same-plan wp_navigation post', () => {
   const navigationResourceKey = 'row:["wp_posts","ID:2"]';
   const attachmentResourceKey = 'row:["wp_posts","ID:3"]';
