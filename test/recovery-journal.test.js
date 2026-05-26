@@ -845,6 +845,60 @@ test('production recovery journal compatibility overload fails closed without an
   });
 });
 
+test('production recovery journal compatibility overload fails closed when claimId hides behind a non-enumerable key', () => {
+  const filePath = tempJournalPath();
+  const remote = baseSite();
+  const plan = planFor(baseSite(), localSite(), remote);
+
+  const options = {
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs: {
+      journal: filePath,
+    },
+  };
+  Object.defineProperty(options, 'claimId', {
+    value: 'claim-hidden-compat-claim',
+    enumerable: false,
+  });
+
+  assert.throws(() => {
+    openProductionRecoveryJournal(options);
+  }, {
+    name: 'UnsupportedProductionRecoveryJournalError',
+    code: 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL',
+    message: 'Production recovery journal compatibility overload requires enumerable top-level options.',
+  });
+});
+
+test('production recovery journal compatibility overload fails closed when writerLease hides behind a non-enumerable key', () => {
+  const filePath = tempJournalPath();
+  const remote = baseSite();
+  const plan = planFor(baseSite(), localSite(), remote);
+
+  const options = {
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs: {
+      journal: filePath,
+    },
+  };
+  Object.defineProperty(options, 'writerLease', {
+    value: { id: 'claim-hidden-compat-writer' },
+    enumerable: false,
+  });
+
+  assert.throws(() => {
+    openProductionRecoveryJournal(options);
+  }, {
+    name: 'UnsupportedProductionRecoveryJournalError',
+    code: 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL',
+    message: 'Production recovery journal compatibility overload requires enumerable top-level options.',
+  });
+});
+
 test('production recovery journal consumption fails closed without an explicit claimId or writerLease', () => {
   const filePath = tempJournalPath();
   const remote = baseSite();
@@ -1092,6 +1146,58 @@ test('production recovery journal consumption fails closed when compatibility ov
   }, {
     name: 'UnsupportedProductionRecoveryJournalError',
     code: 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL',
+  });
+});
+
+test('production recovery journal consumption fails closed when remote ownership inputs hide behind non-enumerable compatibility-overload keys', () => {
+  const filePath = tempJournalPath();
+  const remote = baseSite();
+  const plan = planFor(baseSite(), localSite(), remote);
+  const remoteArtifactPath = `${filePath}.remote`;
+  const claimId = 'claim-hidden-compat-remote-consume';
+  const artifactRefs = {
+    journal: filePath,
+    remote: remoteArtifactPath,
+  };
+  const journal = openProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs,
+    claimId,
+  });
+  appendRecoveryClaimOpened(journal, {
+    plan,
+    current: remote,
+    claimId,
+    artifactRefs,
+  });
+  journal.close();
+
+  const consumeOptions = {
+    filePath,
+    plan,
+    current: remote,
+    claimId,
+    artifactRefs: {
+      journal: filePath,
+    },
+  };
+  Object.defineProperty(consumeOptions, 'ownsRemoteArtifact', {
+    value: true,
+    enumerable: false,
+  });
+  Object.defineProperty(consumeOptions, 'remoteArtifactPath', {
+    value: remoteArtifactPath,
+    enumerable: false,
+  });
+
+  assert.throws(() => {
+    consumeProductionRecoveryJournal(consumeOptions);
+  }, {
+    name: 'UnsupportedProductionRecoveryJournalError',
+    code: 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL',
+    message: 'Production recovery journal compatibility overload requires enumerable top-level options.',
   });
 });
 

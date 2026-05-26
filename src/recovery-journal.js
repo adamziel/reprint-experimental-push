@@ -647,6 +647,25 @@ function normalizeProductionRecoveryJournalOptions(filePathOrOptions, options = 
       || Object.hasOwn(filePathOrOptions, 'artifactRefs')
     )
   ) {
+    if (hasHiddenOwnStringKeys(filePathOrOptions)) {
+      throw new UnsupportedProductionRecoveryJournalError(
+        'Production recovery journal compatibility overload requires enumerable top-level options.',
+        {
+          kind: 'production-recovery-journal',
+          productionAdapter: true,
+          supportedSurface: 'production-recovery-journal-adapter',
+          restartReadable: false,
+          ownsJournal: false,
+          ownsRemoteArtifact: false,
+          journalPath: typeof filePathOrOptions.filePath === 'string' ? filePathOrOptions.filePath : null,
+          artifactRefs: Object.freeze({
+            journal: null,
+            remote: null,
+          }),
+          schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+        },
+      );
+    }
     const legacyOptions = { ...filePathOrOptions };
     if (Object.hasOwn(legacyOptions, 'artifactRefs') && !isStrictPlainObject(legacyOptions.artifactRefs)) {
       throw new UnsupportedProductionRecoveryJournalError(
