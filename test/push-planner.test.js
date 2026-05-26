@@ -6114,7 +6114,7 @@ test('allows term taxonomy and relationships to reference same-plan terms and po
   const termResourceKey = 'row:["wp_terms","term_id:7"]';
   const taxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:9"]';
   const postResourceKey = 'row:["wp_posts","ID:3"]';
-  const relationshipResourceKey = 'row:["wp_term_relationships","object_id:3|term_taxonomy_id:9"]';
+  const relationshipResourceKey = 'row:["wp_term_relationships","object_id:4|term_taxonomy_id:9"]';
   const base = baseSite();
   const local = baseSite();
   local.db.wp_terms = {
@@ -6844,7 +6844,7 @@ test('allows a term relationship taxonomy reference to a term taxonomy created b
   const postResourceKey = 'row:["wp_posts","ID:3"]';
   const termResourceKey = 'row:["wp_terms","term_id:7"]';
   const taxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:9"]';
-  const relationshipResourceKey = 'row:["wp_term_relationships","object_id:3|term_taxonomy_id:9"]';
+  const relationshipResourceKey = 'row:["wp_term_relationships","object_id:4|term_taxonomy_id:9"]';
   const base = baseSite();
   const local = baseSite();
   local.db.wp_posts['ID:3'] = {
@@ -7192,6 +7192,74 @@ test('blocks a local term relationship object reference owned by an attachment e
   assert.equal(JSON.stringify(blocker).includes('local-private-attachment-relationship-owner-body'), false);
   assert.equal(JSON.stringify(blocker).includes('local-private-tagged-post-body'), false);
   assert.throws(() => applyPlan(baseSite(), plan), /Refusing to apply/);
+});
+
+test('blocks a local term relationship object from targeting a same-plan attachment', () => {
+  const postResourceKey = 'row:["wp_posts","ID:3"]';
+  const attachmentResourceKey = 'row:["wp_posts","ID:4"]';
+  const termResourceKey = 'row:["wp_terms","term_id:7"]';
+  const taxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:9"]';
+  const relationshipResourceKey = 'row:["wp_term_relationships","object_id:4|term_taxonomy_id:9"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_posts['ID:3'] = {
+    ID: 3,
+    post_title: 'Local taxonomy object post',
+    post_content: 'local-private-taxonomy-object-body',
+    post_status: 'publish',
+  };
+  local.db.wp_posts['ID:4'] = {
+    ID: 4,
+    post_title: 'Local relationship attachment',
+    post_content: 'local-private-relationship-attachment-body',
+    post_status: 'inherit',
+    post_type: 'attachment',
+  };
+  local.db.wp_terms = {
+    'term_id:7': {
+      term_id: 7,
+      name: 'Local relationship term',
+      slug: 'local-relationship-term',
+    },
+  };
+  local.db.wp_term_taxonomy = {
+    'term_taxonomy_id:9': {
+      term_taxonomy_id: 9,
+      term_id: 7,
+      taxonomy: 'category',
+      description: '',
+      parent: 0,
+      count: 0,
+    },
+  };
+  local.db.wp_term_relationships = {
+    'object_id:4|term_taxonomy_id:9': {
+      object_id: 4,
+      term_taxonomy_id: 9,
+      term_order: 0,
+    },
+  };
+
+  const plan = planFor(base, local, baseSite());
+  const postMutation = mutationFor(plan, postResourceKey);
+  const attachmentMutation = mutationFor(plan, attachmentResourceKey);
+  const termMutation = mutationFor(plan, termResourceKey);
+  const taxonomyMutation = mutationFor(plan, taxonomyResourceKey);
+  const relationshipMutation = mutationFor(plan, relationshipResourceKey);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === relationshipResourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(postMutation.changeKind, 'create');
+  assert.equal(attachmentMutation.changeKind, 'create');
+  assert.equal(termMutation.changeKind, 'create');
+  assert.equal(taxonomyMutation.changeKind, 'create');
+  assert.equal(relationshipMutation, undefined);
+  assert.ok(blocker);
+  assert.equal(blocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(blocker.surface, 'attachment');
+  assert.equal(blocker.resourceKey, relationshipResourceKey);
+  assert.match(blocker.reason, /outside the supported release-candidate slice/);
+  assert.equal(JSON.stringify(blocker).includes('local-private-relationship-attachment-body'), false);
 });
 
 test('blocks a local term relationship object reference owned by a revision even when it targets a same-plan post', () => {
