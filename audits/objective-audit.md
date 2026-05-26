@@ -8,7 +8,7 @@ Fresh remote heads at audit time, checked on May 26, 2026:
 
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `d702c908`
 - `origin/lane/reliable-executor` -> `27c9bdd0`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `e02107dc`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `54c3b972`
 - `origin/lane/same-plan-wordpress-graph-create` -> `0d2178e9`
 - `origin/lane/no-data-loss-recovery` -> `9dc4a1f8`
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `f574ab87`
@@ -23,7 +23,8 @@ Fresh remote heads at audit time, checked on May 26, 2026:
 - `origin/lane/cycle-20260525-mainwindows-2349/same-plan-wordpress-graph-create` -> `0d2178e9`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-invariants` -> `b5c81374`
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `d702c908`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `e02107dc`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `54c3b972`
+- `origin/lane/no-data-loss-recovery` -> `47b675c0`
 - `origin/lane/cycle-20260525-mainwindows-2357/no-data-loss-invariants-graph-proof` -> `98c0ce26`
 - `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration` -> `a3a900d7`
 - `origin/main` -> `e55864f4`
@@ -58,7 +59,7 @@ but it did not change the release conclusion:
   coverage, which strengthens the fail-closed boundary but still does not
   prove live source mutation on unsupported surfaces.
 - `origin/lane/no-data-loss-recovery` now lands a large recovery-contract and
-  durable-journal documentation bundle at `9dc4a1f8`. It materially expands
+  durable-journal documentation bundle at `47b675c0`. It materially expands
   the recovery boundary notes, but the evidence is still documentation- and
   fixture-bound rather than production-backed journal ownership or replay
   proof.
