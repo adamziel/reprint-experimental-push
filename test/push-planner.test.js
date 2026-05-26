@@ -16473,6 +16473,7 @@ test('blocks local term-taxonomy parent references to a same-plan created term w
   const plan = planFor(base, local, remote);
   const taxonomyBlocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
   const parentTermBlocker = plan.blockers.find((entry) => entry.resourceKey === targetResourceKey);
+  const reference = taxonomyBlocker.references[0];
   const planJson = JSON.stringify(plan);
 
   assert.equal(plan.status, 'blocked');
@@ -16483,6 +16484,10 @@ test('blocks local term-taxonomy parent references to a same-plan created term w
   assert.equal(taxonomyBlocker.class, 'unsupported-term-taxonomy-resource');
   assert.equal(taxonomyBlocker.resourceKey, resourceKey);
   assert.equal(taxonomyBlocker.reason, 'WordPress graph mutation row:["wp_term_taxonomy","term_taxonomy_id:5"] is created in the same plan as a parent term identity that depends on it, and identity rewriting is not yet supported.');
+  assert.equal(reference.relationshipKey, 'wp_term_taxonomy.parent');
+  assert.equal(reference.relationshipType, 'term-taxonomy-parent');
+  assert.equal(reference.sourceResourceKey, resourceKey);
+  assert.equal(reference.targetResourceKey, targetResourceKey);
   assert.equal(parentTermBlocker.class, 'stale-wordpress-graph-identity');
   assert.equal(parentTermBlocker.resourceKey, targetResourceKey);
   assert.equal(parentTermBlocker.reason, 'WordPress graph mutation row:["wp_terms","term_id:9"] is created in the same plan as a relationship that depends on it, and identity rewriting is not yet supported.');

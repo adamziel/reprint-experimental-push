@@ -2217,6 +2217,7 @@ function addUnsupportedTermTaxonomyResourceBlocker(plan, {
     baseHash,
     localHash,
     remoteHash,
+    references: support.references || [],
     change: changeEvidence(
       resource,
       baseValue,
@@ -2582,6 +2583,7 @@ function unsupportedTermTaxonomyResourceSupport({ resource, baseValue, localValu
     reason: samePlanCreatedTermReferences.some((reference) => reference.relationshipType === 'term-taxonomy-parent')
       ? `WordPress graph mutation ${resource.key} is created in the same plan as a parent term identity that depends on it, and identity rewriting is not yet supported.`
       : 'Term taxonomy graph resources are not yet supported by the planner.',
+    references: samePlanCreatedTermReferences,
   };
 }
 
