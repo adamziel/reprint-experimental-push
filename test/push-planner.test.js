@@ -11993,6 +11993,50 @@ test('blocks plugin-owned rows with missing driver metadata while preserving rem
   assert.equal(blockerJson.includes('local-advanced'), false);
 });
 
+test('blocks converged plugin-owned rows with missing driver metadata while preserving a matching independent edit and remote-only plugin changes', () => {
+  const resourceKey = 'row:["wp_options","option_name:forms_settings"]';
+  const base = baseSite();
+  base.files['about.php'] = '<?php echo "base about";';
+  base.db.wp_options['option_name:forms_settings'].option_value.mode = 'base mode';
+
+  const local = baseSite();
+  local.files['about.php'] = '<?php echo "shared about";';
+  local.db.wp_options['option_name:forms_settings'].option_value.mode = 'shared converged mode';
+  local.meta = {
+    pushPolicy: pluginOwnedResourcePolicy({
+      resourceKey,
+      pluginOwner: 'forms',
+    }),
+  };
+
+  const remote = baseSite();
+  remote.files['about.php'] = '<?php echo "shared about";';
+  remote.db.wp_options['option_name:forms_settings'].option_value.mode = 'shared converged mode';
+  remote.plugins.seo = { version: '1.0.0', active: true, description: 'remote-only plugin changes' };
+  remote.files['wp-content/plugins/seo/seo.php'] = '<?php /* remote-only plugin changes */';
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  const editDecision = decisionFor(plan, 'file:about.php');
+  const pluginDecision = decisionFor(plan, 'plugin:seo');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/seo/seo.php');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(editDecision.decision, 'already-in-sync');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(blocker.class, 'missing-plugin-driver');
+  assert.equal(blocker.pluginOwner, 'forms');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.unsupportedState, 'converged-drift');
+  assert.equal(planJson.includes('base mode'), false);
+  assert.equal(planJson.includes('shared converged mode'), false);
+  assert.equal(planJson.includes('remote-only plugin changes'), false);
+});
+
 test('blocks plugin-owned rows with missing driver metadata while preserving a matching independent file type swap and remote-only plugin removals', () => {
   const resourceKey = 'row:["wp_forms_custom","id:9"]';
   const base = baseSite();
