@@ -4,12 +4,13 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
-## 2026-05-26 - Public Status Audit 10:47:01
+## 2026-05-26 - Public Status Audit 10:48:50
 
-<a id="2026-05-26-public-status-audit-104701"></a>
+<a id="2026-05-26-public-status-audit-104850"></a>
 
-- Freshness update only: the public page timestamp and newest-audit link were
-  refreshed to the active supervision cycle.
+- Freshness update plus summary correction: the public page now points the
+  summary text at the 10:48:50 audit refresh, keeping the visible head wording
+  aligned with the newest reliable-executor head `0f36d838`.
 - Gate posture remains conservative at `0/4`; no implementation verdict
   changed.
 - Latest blocker summary remains the same: real WordPress executor/auth and
