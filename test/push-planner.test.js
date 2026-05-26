@@ -14135,6 +14135,55 @@ test('blocks local attachment graph resources while preserving a matching indepe
   assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin changes */');
 });
 
+test('blocks steady unsupported attachment rows before they can be treated as already in sync while preserving remote-only plugin changes', () => {
+  const resourceKey = 'row:["wp_posts","ID:8"]';
+  const base = baseSite();
+  base.files['about.php'] = '<?php echo "base about";';
+  base.db.wp_posts['ID:8'] = {
+    ID: 8,
+    post_title: 'Base steady attachment title',
+    post_content: 'Base steady attachment body',
+    post_type: 'attachment',
+    post_status: 'inherit',
+  };
+
+  const local = baseSite();
+  local.files['about.php'] = '<?php echo "shared about";';
+  local.db.wp_posts['ID:8'] = JSON.parse(JSON.stringify(base.db.wp_posts['ID:8']));
+
+  const remote = baseSite();
+  remote.files['about.php'] = '<?php echo "shared about";';
+  remote.db.wp_posts['ID:8'] = JSON.parse(JSON.stringify(base.db.wp_posts['ID:8']));
+  remote.plugins.forms.description = 'remote-only plugin changes';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin changes */';
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  const matchingEdit = decisionFor(plan, 'file:about.php');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(decisionFor(plan, resourceKey), undefined);
+  assert.equal(blocker.class, 'unsupported-attachment-resource');
+  assert.equal(blocker.resourceKind, 'attachment');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.unsupportedState, 'steady-unsupported');
+  assert.equal(blocker.reason, 'Attachment graph resources are not yet supported by the planner.');
+  assert.equal(matchingEdit.decision, 'already-in-sync');
+  assert.equal(matchingEdit.change.localChange, 'update');
+  assert.equal(matchingEdit.change.remoteChange, 'update');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('Base steady attachment title'), false);
+  assert.equal(planJson.includes('Base steady attachment body'), false);
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin changes');
+  assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin changes */');
+});
+
 test('blocks local featured-image references when the remote deleted the referenced post', () => {
   const resourceKey = 'row:["wp_postmeta","meta_id:46"]';
   const targetResourceKey = 'row:["wp_posts","ID:2"]';
@@ -22825,6 +22874,55 @@ test('blocks local revision graph resources while preserving remote-only plugin 
   assert.equal(planJson.includes('Local revision content'), false);
   assert.equal(planJson.includes('Base revision content'), false);
   assert.equal(remote.plugins.forms.description, 'remote-only plugin drift');
+});
+
+test('blocks steady unsupported revision rows before they can be treated as already in sync while preserving remote-only plugin changes', () => {
+  const resourceKey = 'row:["wp_posts","ID:43"]';
+  const base = baseSite();
+  base.files['about.php'] = '<?php echo "base about";';
+  base.db.wp_posts['ID:43'] = {
+    ID: 43,
+    post_title: 'Base steady revision title',
+    post_content: 'Base steady revision body',
+    post_status: 'inherit',
+    post_type: 'revision',
+  };
+
+  const local = baseSite();
+  local.files['about.php'] = '<?php echo "shared about";';
+  local.db.wp_posts['ID:43'] = JSON.parse(JSON.stringify(base.db.wp_posts['ID:43']));
+
+  const remote = baseSite();
+  remote.files['about.php'] = '<?php echo "shared about";';
+  remote.db.wp_posts['ID:43'] = JSON.parse(JSON.stringify(base.db.wp_posts['ID:43']));
+  remote.plugins.forms.description = 'remote-only plugin changes';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin changes */';
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  const matchingEdit = decisionFor(plan, 'file:about.php');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(decisionFor(plan, resourceKey), undefined);
+  assert.equal(blocker.class, 'unsupported-revision-resource');
+  assert.equal(blocker.resourceKind, 'revision');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.unsupportedState, 'steady-unsupported');
+  assert.equal(blocker.reason, 'Revision graph resources are not yet supported by the planner.');
+  assert.equal(matchingEdit.decision, 'already-in-sync');
+  assert.equal(matchingEdit.change.localChange, 'update');
+  assert.equal(matchingEdit.change.remoteChange, 'update');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('Base steady revision title'), false);
+  assert.equal(planJson.includes('Base steady revision body'), false);
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin changes');
+  assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin changes */');
 });
 
 test('blocks local revision graph resources while preserving remote-only plugin removals', () => {

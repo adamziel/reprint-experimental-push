@@ -220,6 +220,50 @@ export function createPushPlan({ base, local, remote, now = new Date() }) {
         continue;
       }
 
+      const steadyAttachmentSupport = unsupportedAttachmentResourceSupport({
+        resource,
+        baseValue,
+        localValue,
+        remoteValue,
+        resources,
+        base,
+        local,
+        remote,
+      });
+      if (!steadyAttachmentSupport.supported) {
+        addUnsupportedAttachmentResourceBlocker(plan, {
+          resource,
+          support: steadyAttachmentSupport,
+          baseValue,
+          localValue,
+          remoteValue,
+          baseHash,
+          localHash,
+          remoteHash,
+        });
+        continue;
+      }
+
+      const steadyRevisionSupport = unsupportedRevisionResourceSupport({
+        resource,
+        baseValue,
+        localValue,
+        remoteValue,
+      });
+      if (!steadyRevisionSupport.supported) {
+        addUnsupportedRevisionResourceBlocker(plan, {
+          resource,
+          support: steadyRevisionSupport,
+          baseValue,
+          localValue,
+          remoteValue,
+          baseHash,
+          localHash,
+          remoteHash,
+        });
+        continue;
+      }
+
       const steadyNavigationSupport = unsupportedNavigationResourceSupport({
         resource,
         baseValue,
@@ -3454,26 +3498,15 @@ function unsupportedAttachmentResourceSupport({ resource, baseValue, localValue,
   const references = wordpressGraphReferences(resource, candidate);
   const referenceEvidence = references.map((reference) =>
     wordpressGraphReferenceEvidence(reference, resources, base, local, remote));
-  const remoteOnlyDrift = (
-    stableStringify(localValue) === stableStringify(baseValue)
-    && stableStringify(remoteValue) !== stableStringify(baseValue)
-  );
-  const convergedDrift = (
-    localValue !== ABSENT
-    && remoteValue !== ABSENT
-    && stableStringify(localValue) === stableStringify(remoteValue)
-    && stableStringify(localValue) !== stableStringify(baseValue)
-  );
   return {
     supported: false,
     className: 'unsupported-attachment-resource',
-    unsupportedState: localValue === ABSENT
-      ? 'delete'
-      : convergedDrift
-        ? 'converged-drift'
-        : remoteOnlyDrift
-          ? 'remote-only-drift'
-          : 'local-or-divergent-drift',
+    unsupportedState: classifyUnsupportedDriftState({
+      baseValue,
+      localValue,
+      remoteValue,
+      allowSteadyUnsupported: true,
+    }),
     reason: 'Attachment graph resources are not yet supported by the planner.',
     references: referenceEvidence,
   };
@@ -3490,17 +3523,6 @@ function unsupportedRevisionResourceSupport({ resource, baseValue, localValue, r
   }
 
   const samePlanCreatedRevision = localValue !== ABSENT && baseValue === ABSENT && remoteValue === ABSENT;
-  const remoteOnlyDrift = (
-    stableStringify(localValue) === stableStringify(baseValue)
-    && stableStringify(remoteValue) !== stableStringify(baseValue)
-  );
-  const convergedDrift = (
-    localValue !== ABSENT
-    && remoteValue !== ABSENT
-    && stableStringify(localValue) === stableStringify(remoteValue)
-    && stableStringify(localValue) !== stableStringify(baseValue)
-  );
-
   return {
     supported: false,
     className: 'unsupported-revision-resource',
@@ -3508,11 +3530,12 @@ function unsupportedRevisionResourceSupport({ resource, baseValue, localValue, r
       ? 'delete'
       : samePlanCreatedRevision
         ? 'same-plan-reference'
-        : convergedDrift
-          ? 'converged-drift'
-          : remoteOnlyDrift
-            ? 'remote-only-drift'
-            : 'local-or-divergent-drift',
+        : classifyUnsupportedDriftState({
+          baseValue,
+          localValue,
+          remoteValue,
+          allowSteadyUnsupported: true,
+        }),
     reason: samePlanCreatedRevision
       ? `WordPress graph mutation ${resource.key} is created in the same plan as a revision identity that depends on it, and identity rewriting is not yet supported.`
       : localValue === ABSENT
