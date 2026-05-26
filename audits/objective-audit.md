@@ -6,31 +6,31 @@ The project is **not releasable as a production WordPress push path**.
 
 Fresh remote heads at audit time, checked on May 26, 2026:
 
-- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `5c41dfa7`
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `44ad21a7`
+- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `38532801`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `4a9b19e0`
 - `origin/lane/reliable-executor` -> `ffdc0a9b`
 - `origin/lane/no-data-loss-invariants` -> `9c70eba6`
 - `origin/lane/no-data-loss-recovery` -> `4372167e`
-- `origin/lane/fast-paths` -> `da311d3c`
-- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `da311d3c`
+- `origin/lane/fast-paths` -> `cd0fddad`
+- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `38532801`
 - `origin/lane/independent-auditor` -> `dabd35e2`
 - `origin/lane/critic` -> `6828861f`
 - `origin/lane/progress-publisher` -> `7695e1f9`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `5566c5c3`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `d9379e28`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `4372167e`
 - `origin/lane/cycle-20260525-mainwindows-2349/critic` -> `3b9a9c46`
 - `origin/lane/same-plan-wordpress-graph-create` -> `09e6706d`
 - `origin/lane/cycle-20260525-mainwindows-2349/same-plan-wordpress-graph-create` -> `09e6706d`
 - `origin/lane/cycle-20260525-mainwindows-2349/same-plan-wordpress-graph-create` -> `e9cbf9d4`
 - `origin/lane/cycle-20260525-mainwindows-2357/no-data-loss-invariants-graph-proof` -> `98c0ce26`
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `44ad21a7`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `5566c5c3`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `4a9b19e0`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `d9379e28`
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` -> `5f256171`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-invariants` -> `9c70eba6`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `4372167e`
-- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `da311d3c`
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `87564df0`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `5566c5c3`
+- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `38532801`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `4a9b19e0`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `d9379e28`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `4372167e`
 - `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration` -> `a3a900d7`
 - `origin/main` -> `e55864f4`
@@ -63,12 +63,12 @@ but it did not change the release conclusion:
   `cd0fddad`. That is still a fail-closed implementation improvement, not
   production release proof.
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` now tightens the
-  backpressure queue budget guard at `5c41dfa7`, which is still boundary
+  backpressure queue budget guard at `38532801`, which is still boundary
   plumbing rather than measured speed proof.
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now
-  refreshes supervisor progress visibility at `44ad21a7`.
+  refreshes supervisor progress visibility at `4a9b19e0`.
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now
-  records the latest progress freshness handoff at `5566c5c3`.
+  records the latest progress freshness handoff at `d9379e28`.
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` now refreshes the audit snapshot at
   `dabd35e2`.
 - `origin/lane/critic` now refreshes the critic handoff at `6828861f`.
@@ -80,7 +80,7 @@ but it did not change the release conclusion:
   fails closed on artifact ref drift at `4372167e`, but still does not add
   production-backed journal ownership or replay proof.
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` now tightens the
-  backpressure queue budget guard at `5c41dfa7`.
+  backpressure queue budget guard at `38532801`.
 - `origin/lane/same-plan-wordpress-graph-create` now blocks unsupported graph
   surfaces at `7bf5d421`, including revision posts, menu/navigation posts,
   serialized blocks, thumbnail parent references, and other same-plan graph
