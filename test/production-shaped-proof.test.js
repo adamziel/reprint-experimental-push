@@ -3490,6 +3490,71 @@ test('production auth/session lifecycle summary fails closed when top-level summ
       observed: 'invalid-id',
     },
   );
+
+  assert.deepEqual(
+    evaluateProductionAuthSessionLifecycleSummary({
+      issued: {
+        step: 'preflight',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+      },
+      read: {
+        step: 'journal',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+        preserved: true,
+      },
+      rotated: {
+        step: ['journal'],
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+        rotated: true,
+      },
+    }),
+    {
+      ok: false,
+      required: 'preserved read',
+      observed: 'invalid-step',
+    },
+  );
+
+  assert.deepEqual(
+    evaluateProductionAuthSessionLifecycleSummary({
+      issued: {
+        step: 'preflight',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+      },
+      read: {
+        step: 'journal',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+        preserved: true,
+      },
+      revoked: {
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'revoked',
+        expiresAt: '2099-01-01T00:00:00Z',
+        revoked: true,
+      },
+    }),
+    {
+      ok: false,
+      required: 'preserved read',
+      observed: 'missing-phase',
+    },
+  );
 });
 
 test('production auth/session lifecycle summary fails closed when an intermediate preserved-read cleanup alias is a string value', () => {

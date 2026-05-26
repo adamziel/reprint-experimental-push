@@ -528,6 +528,23 @@ function resolveInvalidAuthSessionSummaryObservationField(summary) {
       continue;
     }
 
+    const normalizedStep = normalizeAuthSessionObservationStep(observation.step);
+    if (normalizedStep === 'missing') {
+      return {
+        ok: false,
+        required: 'preserved read',
+        observed: 'missing-phase',
+      };
+    }
+
+    if (normalizedStep === 'invalid-step') {
+      return {
+        ok: false,
+        required: 'preserved read',
+        observed: 'invalid-step',
+      };
+    }
+
     const invalidLifecycleFlag = resolveInvalidAuthSessionLifecycleFlag(observation);
     if (invalidLifecycleFlag) {
       return {
