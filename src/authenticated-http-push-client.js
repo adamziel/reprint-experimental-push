@@ -508,7 +508,7 @@ export async function runAuthenticatedHttpPush({
       observed: applySessionPreservationDrift,
       verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
     };
-    setDurableJournalBoundary(summary, 'apply');
+    setProductionAuthSessionBoundary(summary);
     return summary;
   }
   if (hasExpiredAuthSession(apply)) {
@@ -518,7 +518,7 @@ export async function runAuthenticatedHttpPush({
       observed: apply.body?.auth?.session?.expiresAt || 'missing',
       verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
     };
-    setDurableJournalBoundary(summary, 'apply');
+    setProductionAuthSessionBoundary(summary);
     return summary;
   }
   const applyAuthSessionDrift = requireProductionAuthSession && (
@@ -534,7 +534,7 @@ export async function runAuthenticatedHttpPush({
       observed: apply.body?.auth?.session?.type || 'missing',
       verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
     };
-    setDurableJournalBoundary(summary, 'apply');
+    setProductionAuthSessionBoundary(summary);
     return summary;
   }
 
@@ -624,7 +624,7 @@ export async function runAuthenticatedHttpPush({
       observed: recoveryInspectSessionPreservationDrift,
       verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
     };
-    setDurableJournalBoundary(summary, 'recovery-inspect');
+    setProductionAuthSessionBoundary(summary);
     return summary;
   }
   if (hasExpiredAuthSession(recoveryInspect)) {
@@ -634,7 +634,7 @@ export async function runAuthenticatedHttpPush({
       observed: recoveryInspect.body?.auth?.session?.expiresAt || 'missing',
       verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
     };
-    setDurableJournalBoundary(summary, 'recovery-inspect');
+    setProductionAuthSessionBoundary(summary);
     return summary;
   }
   if (recoveryInspectAuthSessionDrift) {
@@ -644,7 +644,7 @@ export async function runAuthenticatedHttpPush({
       observed: recoveryInspect.body?.auth?.session?.type || 'missing',
       verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
     };
-    setDurableJournalBoundary(summary, 'recovery-inspect');
+    setProductionAuthSessionBoundary(summary);
     return summary;
   }
   const recoveryInspectAuthEnvelopeDrift = hasAuthEnvelopeDrift(preflightAuthEnvelope, recoveryInspect);
@@ -720,7 +720,7 @@ export async function runAuthenticatedHttpPush({
       observed: replay.body?.auth?.session?.type || 'missing',
       verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
     };
-    setDurableJournalBoundary(summary, 'replay');
+    setProductionAuthSessionBoundary(summary);
     return summary;
   }
   if (requireProductionAuthSession && hasProductionAuthSessionRevocationDrift(replay)) {
@@ -781,7 +781,7 @@ export async function runAuthenticatedHttpPush({
       observed: replaySessionPreservationDrift,
       verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
     };
-    setDurableJournalBoundary(summary, 'replay');
+    setProductionAuthSessionBoundary(summary);
     return summary;
   }
   if (hasExpiredAuthSession(replay)) {
@@ -791,7 +791,7 @@ export async function runAuthenticatedHttpPush({
       observed: replay.body?.auth?.session?.expiresAt || 'missing',
       verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
     };
-    setDurableJournalBoundary(summary, 'replay');
+    setProductionAuthSessionBoundary(summary);
     return summary;
   }
 
@@ -899,7 +899,7 @@ export async function runAuthenticatedHttpPush({
       observed: dbJournalSessionPreservationDrift,
       verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
     };
-    setDurableJournalBoundary(summary, 'journal-inspect');
+    setProductionAuthSessionBoundary(summary);
     return summary;
   }
   if (hasExpiredAuthSession(dbJournal)) {
@@ -909,7 +909,7 @@ export async function runAuthenticatedHttpPush({
       observed: dbJournal.body?.auth?.session?.expiresAt || 'missing',
       verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
     };
-    setDurableJournalBoundary(summary, 'journal-inspect');
+    setProductionAuthSessionBoundary(summary);
     return summary;
   }
   if (dbJournalAuthSessionDrift) {
@@ -919,7 +919,7 @@ export async function runAuthenticatedHttpPush({
       observed: dbJournal.body?.auth?.session?.type || 'missing',
       verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
     };
-    setDurableJournalBoundary(summary, 'journal-inspect');
+    setProductionAuthSessionBoundary(summary);
     return summary;
   }
   const dbJournalAuthEnvelopeDrift = hasAuthEnvelopeDrift(preflightAuthEnvelope, dbJournal);
@@ -1604,6 +1604,23 @@ function hasProductionAuthSessionExpiryDrift(response) {
 
 function hasExpiredAuthSession(response) {
   return isExpiredSession(response?.body?.auth?.session);
+}
+
+function setProductionAuthSessionBoundary(summary) {
+  if (summary.boundary) {
+    return;
+  }
+
+  summary.boundary = {
+    firstRemainingProductionBoundary: 'auth/session lifecycle and durable journal semantics',
+    status: 'unimplemented',
+    verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+    authSession: summary.authSession || {
+      required: 'production-auth-session',
+      observed: 'missing',
+      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+    },
+  };
 }
 
 function hasProductionAuthSessionRevocationDrift(response) {
