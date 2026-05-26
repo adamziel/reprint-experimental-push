@@ -4,6 +4,46 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-05-26 - Public Status Audit 22:23:10
+
+<a id="2026-05-26-public-status-audit-222310"></a>
+
+- Refreshed [progress.html](../progress.html) to the current `date` output
+  (`2026-05-26 22:23:10 CEST`) and kept
+  `ae9f558da5bd76c5168bc3f92326e5c441ae8af1` as the current
+  reliable-executor head on the public page and current latest checked
+  release-path support evidence. The visible current-head rows stay aligned on
+  that head, and the newest-audit link now points at this refresh.
+- `ae9f558da5bd76c5168bc3f92326e5c441ae8af1` remains support-side evidence;
+  the release gate stays at `0/4` because production-backed auth/session
+  lifecycle and durable journal ownership with lease/fencing remain blocked.
+- The checked release-path fencing evidence still includes
+  `staleClaimRejected: true`, but that still does not move a gate until the
+  production boundary is proven.
+- Evidence trail: [progress.html](../progress.html),
+  [objective audit](../audits/objective-audit.md),
+  [release-gate checklist](../progress.html#proof-gates).
+
+## 2026-05-26 - Public Status Audit 22:21:35
+
+<a id="2026-05-26-public-status-audit-222135"></a>
+
+- Refreshed [progress.html](../progress.html) to the current `date` output
+  (`2026-05-26 22:21:35 CEST`) and kept
+  `ae9f558da5bd76c5168bc3f92326e5c441ae8af1` as the current
+  reliable-executor head on the public page and current latest checked
+  release-path support evidence. The visible current-head rows stay aligned on
+  that head, and the newest-audit link now points at this refresh.
+- `ae9f558da5bd76c5168bc3f92326e5c441ae8af1` remains support-side evidence;
+  the release gate stays at `0/4` because production-backed auth/session
+  lifecycle and durable journal ownership with lease/fencing remain blocked.
+- The checked release-path fencing evidence still includes
+  `staleClaimRejected: true`, but that still does not move a gate until the
+  production boundary is proven.
+- Evidence trail: [progress.html](../progress.html),
+  [objective audit](../audits/objective-audit.md),
+  [release-gate checklist](../progress.html#proof-gates).
+
 ## 2026-05-26 - Public Status Audit 22:20:20
 
 <a id="2026-05-26-public-status-audit-222020"></a>
