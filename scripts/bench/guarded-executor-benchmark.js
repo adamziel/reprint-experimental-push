@@ -357,6 +357,17 @@ export function productionThroughputBlockers(report) {
   }
   if (
     report.evidence.parallelism?.parallelismLimitsVisible === true
+    && report.evidence.parallelism?.parallelismLimitsMeasured === true
+    && (
+      !Number.isInteger(report.evidence.parallelism?.parallelismLimits?.chunkUpload)
+      || !Number.isInteger(report.evidence.parallelism?.parallelismLimits?.fileHashing)
+      || !Number.isInteger(report.evidence.parallelism?.parallelismLimits?.dbBatchPerTable)
+    )
+  ) {
+    blockers.push('production-parallelism-limits-visible-without-integral');
+  }
+  if (
+    report.evidence.parallelism?.parallelismLimitsVisible === true
     && (
       report.evidence.parallelism?.parallelismLimits?.chunkUpload !== DEFAULT_LIMITS.maxUploadConcurrency
       || report.evidence.parallelism?.parallelismLimits?.fileHashing !== DEFAULT_LIMITS.maxHashConcurrency
@@ -1569,7 +1580,8 @@ export function productionThroughputDetails(report) {
     && parallelismLimitsCanonical;
   const parallelismLimitsVisibleAndMeasured =
     parallelismLimitsVisibleOnReport
-    && parallelismLimitsMeasuredOnReport;
+    && parallelismLimitsMeasuredOnReport
+    && parallelismLimitsIntegral;
   const parallelismLimitsVisibleAndCanonical =
     parallelismLimitsVisibleOnReport
     && parallelismLimitsCanonical;

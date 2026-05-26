@@ -237,6 +237,9 @@ Current executable gate:
 - The same details also expose and require an explicit parallelism-measurement
   bit, so surfaced concurrency limits cannot look visible without a measured
   report surface behind them.
+- The same details also fail closed if surfaced parallelism limits are visible
+  and measured but not integral, so fractional concurrency caps cannot look
+  like a complete production-boundary limit surface.
 - The same details also keep memory headroom advisory for bounded replay
   sizing only; they do not turn a cached receipt cursor into authority to
   skip an atomic-group commit after pause, including release-bundle retries.
