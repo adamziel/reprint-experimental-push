@@ -663,6 +663,16 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
     model.safeFastPaths.some(
       (fastPath) =>
         fastPath.area === 'compression' &&
+        fastPath.allowedShortcut === 'compress-canonical-per-kind-budget-summaries-to-size-bounded-plugin-update-retry-windows' &&
+        fastPath.guardrails.includes('plugin-update-retry-window-revalidates-before-write') &&
+        fastPath.gateProofs.recovery.includes('dependency graph records'),
+    ),
+    'compressed budget summaries can size plugin-update retry windows without widening the visibility boundary',
+  );
+  assert.ok(
+    model.safeFastPaths.some(
+      (fastPath) =>
+        fastPath.area === 'compression' &&
         fastPath.allowedShortcut === 'compress-canonical-per-kind-budget-summaries-to-size-bounded-plugin-install-fanout' &&
         fastPath.guardrails.includes('plugin-install-fanout-revalidates-before-write') &&
         fastPath.gateProofs.skip.includes('plugin-install fanout planning without recomputing the same canonical limits') &&

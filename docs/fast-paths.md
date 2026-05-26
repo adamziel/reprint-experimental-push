@@ -81,6 +81,10 @@ Current executable gate:
   plugin-install retry window, but only as planning evidence while durable row
   receipts, metadata staging records, and the guarded finalize record still
   decide recovery.
+- The same details also let compressed per-kind budget summaries size the next
+  bounded plugin-update retry window, but only as planning evidence while
+  durable receipts, dependency-graph records, and the guarded finalize record
+  still decide recovery.
 - The same details also let the receipt cursor reuse the aligned queue budget
   and memory ceiling for bounded replay sizing, but only as planning evidence
   with the live write preconditions and journal records still deciding
@@ -359,6 +363,7 @@ Current executable gate:
 | Database row batching | Run bounded row-batch parallelism within one atomic group and per-table concurrency budget so large plugin installs and updates can overlap independent batches without widening visibility. | Parallel batches still need their own row preconditions, batch receipts, and group-staging record. The atomic-group barrier stays fixed. |
 | Database row batching | Reuse a recorded dependency graph and remote index cursor to pre-size bounded plugin-update batches so rescans do not repeat unchanged dependency shape. | The dependency graph is planning evidence only. It cannot skip row preconditions, widen the batch past its row budget, or move the atomic-group barrier. |
 | Database row batching | Compress remote-index listings and reuse the cursor to pre-size bounded plugin-update batches so rescans move fewer bytes before the live compare. | Compression is transport-only. The compressed listing still cannot skip row preconditions, batch receipts, or the atomic-group barrier. |
+| Compression | Compress canonical per-kind budget summaries to size bounded plugin-update retry windows so repeat planning moves fewer bytes before the live compare. | Compression stays planning-only. The compressed summary cannot authorize writes, widen the atomic-group barrier, or replace later durable receipts. |
 | Database row batching | Reuse a remote-index cursor and dependency graph to pre-size bounded plugin-install batches so rescans do not repeat unchanged dependency shape. | The index cursor is planning evidence only. It cannot skip row preconditions, widen the batch past its row budget, or move the atomic-group barrier. |
 | Database row batching | Compress remote-index listings and reuse the cursor to pre-size bounded plugin-install batches so rescans move fewer bytes before the live compare. | Compression is transport-only. The compressed listing still cannot skip row preconditions, batch receipts, or the atomic-group barrier. |
 | Compression | Compress canonical per-kind budget summaries to size bounded plugin-install retry windows so repeat planning moves fewer bytes before the live compare. | Compression stays planning-only. The compressed summary cannot authorize writes, widen the atomic-group barrier, or replace later durable receipts. |
