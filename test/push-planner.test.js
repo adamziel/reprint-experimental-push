@@ -22739,6 +22739,40 @@ test('blocks unsupported special file aliases while preserving remote-only plugi
   }
 });
 
+test('blocks unsupported gitlink special file entries while preserving remote-only plugin removals', () => {
+  const resourceKey = 'file:wp-content/uploads/gitlink';
+  const base = baseSite();
+  base.files['wp-content/uploads/gitlink'] = { type: 'gitlink', gitdir: '.git/modules/uploads/gitlink' };
+
+  const local = baseSite();
+  local.files['wp-content/uploads/gitlink'] = { type: 'gitlink', gitdir: '.git/modules/uploads/local-gitlink' };
+
+  const remote = baseSite();
+  remote.files['wp-content/uploads/gitlink'] = JSON.parse(JSON.stringify(base.files['wp-content/uploads/gitlink']));
+  delete remote.plugins.forms;
+  delete remote.files['wp-content/plugins/forms/forms.php'];
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers[0];
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(plan.conflicts.length, 0);
+  assert.equal(blocker.class, 'unsupported-special-file-resource');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.reason, 'Special file entries are not yet supported by the planner.');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('.git/modules/uploads/local-gitlink'), false);
+  assert.equal(planJson.includes('.git/modules/uploads/gitlink'), false);
+  assert.equal(remote.plugins.forms, undefined);
+  assert.equal(remote.files['wp-content/plugins/forms/forms.php'], undefined);
+});
+
 test('blocks unsupported reparse-point special file entries while preserving remote-only plugin changes', () => {
   const resourceKey = 'file:wp-content/uploads/reparse-point';
   const base = baseSite();
