@@ -53,21 +53,6 @@ const driverFixture = {
   pluginOwner: 'driver-fixture',
   resourceKey: 'row:["wp_reprint_push_driver_fixture","entry_id:1"]',
 };
-const malformedDriverGuardServerOptions = {
-  readyPath: '/wp-json/',
-  readyHeaders: {},
-  readyOk: (response) => response.status === 200 && response.body?.namespaces?.includes?.('reprint/v1'),
-};
-
-logSmokeStage('prepare-base-snapshots', formatSelectedScenarioNames(selectedScenarios));
-const snapshots = Object.fromEntries(
-  Object.entries(fixtures).map(([name, fixture]) => [
-    name,
-    exportSnapshotWithStage(name, path.join(repoRoot, fixture)),
-  ]),
-);
-const packageLocalSnapshot = withoutUnmappedGraphPostmeta(snapshots.local);
-
 const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'reprint-production-plugin-package-'));
 const packageRoot = path.join(tmpDir, 'package');
 const pluginDir = path.join(packageRoot, 'reprint-push');
@@ -84,12 +69,181 @@ const driverMissingPluginOwnerServerBlueprintPath = path.join(tmpDir, 'remote-ba
 const driverMissingTableServerBlueprintPath = path.join(tmpDir, 'remote-base-with-driver-fixture-missing-table-server.blueprint.json');
 const driverDuplicateNameServerBlueprintPath = path.join(tmpDir, 'remote-base-with-driver-fixture-duplicate-name-server.blueprint.json');
 const driverDuplicateTableServerBlueprintPath = path.join(tmpDir, 'remote-base-with-driver-fixture-duplicate-table-server.blueprint.json');
+const packagedDriverRegistryGuardScriptPath = path.join(tmpDir, 'packaged-driver-registry-guards.php');
 const basePath = path.join(tmpDir, 'base.json');
 const localPath = path.join(tmpDir, 'local.json');
 
 logSmokeStage('start', formatSelectedScenarioNames(selectedScenarios));
 
 try {
+  fs.writeFileSync(packagedDriverRegistryGuardScriptPath, `<?php
+if (!defined('ABSPATH')) {
+    require_once '/wordpress/wp-load.php';
+}
+
+if (!function_exists('reprint_push_export_snapshot')) {
+    require_once '/wordpress/wp-content/plugins/reprint-push/includes/snapshot-lib.php';
+}
+
+function reprint_push_packaged_driver_guard_export_rows(array &$snapshot, array $driver): void {}
+function reprint_push_packaged_driver_guard_apply_row(string $id, bool $is_delete, $value, array $driver): void {}
+function reprint_push_packaged_driver_guard_validate_mutation(array $mutation, array $snapshot, array $driver): bool { return true; }
+
+function reprint_push_packaged_driver_guard_capture(callable $builder): array {
+    remove_all_filters('reprint_push_plugin_owned_row_drivers');
+    add_filter('reprint_push_plugin_owned_row_drivers', $builder);
+    try {
+        reprint_push_plugin_owned_row_drivers();
+        return [
+            'ok' => true,
+            'error' => null,
+        ];
+    } catch (Throwable $error) {
+        return [
+            'ok' => false,
+            'error' => [
+                'class' => get_class($error),
+                'message' => $error->getMessage(),
+            ],
+        ];
+    } finally {
+        remove_all_filters('reprint_push_plugin_owned_row_drivers');
+    }
+}
+
+$driver_name = '${driverFixture.driver}';
+$driver_table = '${driverFixture.table}';
+$plugin_owner = '${driverFixture.pluginOwner}';
+
+$scenarios = [];
+$scenarios['driver-missing-export-guard'] = static function (array $drivers) use ($driver_name, $driver_table, $plugin_owner): array {
+    $drivers[$driver_name] = [
+        'driver' => $driver_name,
+        'table' => $driver_table,
+        'pluginOwner' => $plugin_owner,
+        'supportsDelete' => false,
+        'applyRowCallback' => 'reprint_push_packaged_driver_guard_apply_row',
+        'validateMutationCallback' => 'reprint_push_packaged_driver_guard_validate_mutation',
+    ];
+    return $drivers;
+};
+$scenarios['driver-missing-apply-guard'] = static function (array $drivers) use ($driver_name, $driver_table, $plugin_owner): array {
+    $drivers[$driver_name] = [
+        'driver' => $driver_name,
+        'table' => $driver_table,
+        'pluginOwner' => $plugin_owner,
+        'supportsDelete' => false,
+        'exportRowsCallback' => 'reprint_push_packaged_driver_guard_export_rows',
+        'validateMutationCallback' => 'reprint_push_packaged_driver_guard_validate_mutation',
+    ];
+    return $drivers;
+};
+$scenarios['driver-missing-validate-guard'] = static function (array $drivers) use ($driver_name, $driver_table, $plugin_owner): array {
+    $drivers[$driver_name] = [
+        'driver' => $driver_name,
+        'table' => $driver_table,
+        'pluginOwner' => $plugin_owner,
+        'supportsDelete' => false,
+        'exportRowsCallback' => 'reprint_push_packaged_driver_guard_export_rows',
+        'applyRowCallback' => 'reprint_push_packaged_driver_guard_apply_row',
+    ];
+    return $drivers;
+};
+$scenarios['driver-missing-name-guard'] = static function (array $drivers) use ($driver_table, $plugin_owner): array {
+    $drivers['${driverFixture.driver}'] = [
+        'driver' => '',
+        'table' => $driver_table,
+        'pluginOwner' => $plugin_owner,
+        'supportsDelete' => false,
+        'exportRowsCallback' => 'reprint_push_packaged_driver_guard_export_rows',
+        'applyRowCallback' => 'reprint_push_packaged_driver_guard_apply_row',
+        'validateMutationCallback' => 'reprint_push_packaged_driver_guard_validate_mutation',
+    ];
+    return $drivers;
+};
+$scenarios['driver-missing-plugin-owner-guard'] = static function (array $drivers) use ($driver_name, $driver_table): array {
+    $drivers[$driver_name] = [
+        'driver' => $driver_name,
+        'table' => $driver_table,
+        'supportsDelete' => false,
+        'exportRowsCallback' => 'reprint_push_packaged_driver_guard_export_rows',
+        'applyRowCallback' => 'reprint_push_packaged_driver_guard_apply_row',
+        'validateMutationCallback' => 'reprint_push_packaged_driver_guard_validate_mutation',
+    ];
+    return $drivers;
+};
+$scenarios['driver-missing-table-guard'] = static function (array $drivers) use ($driver_name, $plugin_owner): array {
+    $drivers[$driver_name] = [
+        'driver' => $driver_name,
+        'pluginOwner' => $plugin_owner,
+        'supportsDelete' => false,
+        'exportRowsCallback' => 'reprint_push_packaged_driver_guard_export_rows',
+        'applyRowCallback' => 'reprint_push_packaged_driver_guard_apply_row',
+        'validateMutationCallback' => 'reprint_push_packaged_driver_guard_validate_mutation',
+    ];
+    return $drivers;
+};
+$scenarios['driver-duplicate-name-guard'] = static function (array $drivers) use ($driver_name, $driver_table, $plugin_owner): array {
+    $drivers[$driver_name] = [
+        'driver' => $driver_name,
+        'table' => $driver_table,
+        'pluginOwner' => $plugin_owner,
+        'supportsDelete' => false,
+        'exportRowsCallback' => 'reprint_push_packaged_driver_guard_export_rows',
+        'applyRowCallback' => 'reprint_push_packaged_driver_guard_apply_row',
+        'validateMutationCallback' => 'reprint_push_packaged_driver_guard_validate_mutation',
+    ];
+    $drivers[$driver_name . '-duplicate'] = [
+        'driver' => $driver_name,
+        'table' => $driver_table . '_duplicate',
+        'pluginOwner' => $plugin_owner,
+        'supportsDelete' => false,
+        'exportRowsCallback' => 'reprint_push_packaged_driver_guard_export_rows',
+        'applyRowCallback' => 'reprint_push_packaged_driver_guard_apply_row',
+        'validateMutationCallback' => 'reprint_push_packaged_driver_guard_validate_mutation',
+    ];
+    return $drivers;
+};
+$scenarios['driver-duplicate-table-guard'] = static function (array $drivers) use ($driver_name, $driver_table, $plugin_owner): array {
+    $drivers[$driver_name] = [
+        'driver' => $driver_name,
+        'table' => $driver_table,
+        'pluginOwner' => $plugin_owner,
+        'supportsDelete' => false,
+        'exportRowsCallback' => 'reprint_push_packaged_driver_guard_export_rows',
+        'applyRowCallback' => 'reprint_push_packaged_driver_guard_apply_row',
+        'validateMutationCallback' => 'reprint_push_packaged_driver_guard_validate_mutation',
+    ];
+    $drivers[$driver_name . '-same-table'] = [
+        'driver' => $driver_name . '-same-table',
+        'table' => $driver_table,
+        'pluginOwner' => $plugin_owner,
+        'supportsDelete' => false,
+        'exportRowsCallback' => 'reprint_push_packaged_driver_guard_export_rows',
+        'applyRowCallback' => 'reprint_push_packaged_driver_guard_apply_row',
+        'validateMutationCallback' => 'reprint_push_packaged_driver_guard_validate_mutation',
+    ];
+    return $drivers;
+};
+
+$selected = isset($argv[1]) ? trim((string) $argv[1]) : '';
+$results = [];
+if ($selected !== '') {
+    if (!array_key_exists($selected, $scenarios)) {
+        fwrite(STDERR, 'Unknown packaged driver registry guard scenario: ' . $selected . PHP_EOL);
+        exit(1);
+    }
+    $results[$selected] = reprint_push_packaged_driver_guard_capture($scenarios[$selected]);
+} else {
+    foreach ($scenarios as $name => $scenario) {
+        $results[$name] = reprint_push_packaged_driver_guard_capture($scenario);
+    }
+}
+
+echo "REPRINT_PUSH_DRIVER_GUARD_JSON_BEGIN\\n";
+echo json_encode($results, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\\n";
+echo "REPRINT_PUSH_DRIVER_GUARD_JSON_END\\n";
+`);
   logSmokeStage('build-plugin-package', pluginDir);
   buildPluginPackage(pluginDir);
   logSmokeStage('write-blueprints');
@@ -168,9 +322,14 @@ try {
       duplicateTable: true,
     });
   }
-  logSmokeStage('export-base-snapshots');
-  fs.writeFileSync(basePath, `${JSON.stringify(snapshots.base, null, 2)}\n`);
-  fs.writeFileSync(localPath, `${JSON.stringify(packageLocalSnapshot, null, 2)}\n`);
+  const packageSnapshots = shouldRunAnyScenario(['core-package-routes'])
+    ? preparePackageSnapshots()
+    : null;
+  if (packageSnapshots) {
+    logSmokeStage('export-base-snapshots');
+    fs.writeFileSync(basePath, `${JSON.stringify(packageSnapshots.base, null, 2)}\n`);
+    fs.writeFileSync(localPath, `${JSON.stringify(packageSnapshots.local, null, 2)}\n`);
+  }
   const driverGuardBaseSnapshot = shouldRunAnyScenario(['driver-receipt-guards'])
     ? exportSnapshotWithStage('driver-fixture-guard-base', driverGuardSnapshotBlueprintPath)
     : null;
@@ -304,7 +463,7 @@ try {
     );
     assert.equal(after.status, 200);
     assert.equal(after.body.ok, true);
-    assertVisibleSurfaceEqual(after.body.snapshot, packageLocalSnapshot, 'packaged plugin final source');
+    assertVisibleSurfaceEqual(after.body.snapshot, packageSnapshots.local, 'packaged plugin final source');
 
     summary.routes = {
       namespace: preflight.body.routeProfile.restNamespace,
@@ -897,20 +1056,8 @@ try {
   });
 
   await runScenario('driver-missing-export-guard', async () => {
-    await withPlaygroundServer(
-      'production-plugin-driver-missing-export-guard',
-      driverMissingExportServerBlueprintPath,
-      pluginDir,
-      malformedDriverGuardServerOptions,
-      async (server) => {
-    const malformedSnapshot = await requestText(
-      server.baseUrl,
-      'GET',
-      '/wp-json/reprint/v1/push/snapshot',
-      undefined,
-      authHeaders(),
-    );
-    assertPackagedDriverFatalResponse(
+    const malformedSnapshot = runPackagedDriverRegistryGuard('driver-missing-export-guard', pluginDir);
+    assertPackagedDriverFatalExport(
       malformedSnapshot,
       /missing exportRowsCallback for driver: fixture-arbitrary-plugin-table/i,
       'packaged snapshot did not fail closed on a malformed arbitrary plugin-owned driver export registration',
@@ -918,28 +1065,14 @@ try {
 
     summary.driverExportGuard = {
       resourceKey: driverFixture.resourceKey,
-      status: malformedSnapshot.status,
-      missingExportRowsCallback: /missing exportRowsCallback for driver: fixture-arbitrary-plugin-table/i.test(malformedSnapshot.text),
+      exportFailed: malformedSnapshot.ok === false,
+      missingExportRowsCallback: /missing exportRowsCallback for driver: fixture-arbitrary-plugin-table/i.test(malformedSnapshot.error?.message || ''),
     };
-      },
-    );
   });
 
   await runScenario('driver-missing-apply-guard', async () => {
-    await withPlaygroundServer(
-      'production-plugin-driver-missing-apply-guard',
-      driverMissingApplyServerBlueprintPath,
-      pluginDir,
-      malformedDriverGuardServerOptions,
-      async (server) => {
-    const malformedSnapshot = await requestText(
-      server.baseUrl,
-      'GET',
-      '/wp-json/reprint/v1/push/snapshot',
-      undefined,
-      authHeaders(),
-    );
-    assertPackagedDriverFatalResponse(
+    const malformedSnapshot = runPackagedDriverRegistryGuard('driver-missing-apply-guard', pluginDir);
+    assertPackagedDriverFatalExport(
       malformedSnapshot,
       /missing applyRowCallback for driver: fixture-arbitrary-plugin-table/i,
       'packaged snapshot did not fail closed on a malformed arbitrary plugin-owned driver apply registration',
@@ -947,28 +1080,14 @@ try {
 
     summary.driverApplyGuard = {
       resourceKey: driverFixture.resourceKey,
-      status: malformedSnapshot.status,
-      missingApplyRowCallback: /missing applyRowCallback for driver: fixture-arbitrary-plugin-table/i.test(malformedSnapshot.text),
+      exportFailed: malformedSnapshot.ok === false,
+      missingApplyRowCallback: /missing applyRowCallback for driver: fixture-arbitrary-plugin-table/i.test(malformedSnapshot.error?.message || ''),
     };
-      },
-    );
   });
 
   await runScenario('driver-missing-validate-guard', async () => {
-    await withPlaygroundServer(
-      'production-plugin-driver-missing-validate-guard',
-      driverMissingValidateServerBlueprintPath,
-      pluginDir,
-      malformedDriverGuardServerOptions,
-      async (server) => {
-    const malformedSnapshot = await requestText(
-      server.baseUrl,
-      'GET',
-      '/wp-json/reprint/v1/push/snapshot',
-      undefined,
-      authHeaders(),
-    );
-    assertPackagedDriverFatalResponse(
+    const malformedSnapshot = runPackagedDriverRegistryGuard('driver-missing-validate-guard', pluginDir);
+    assertPackagedDriverFatalExport(
       malformedSnapshot,
       /missing validateMutationCallback for driver: fixture-arbitrary-plugin-table/i,
       'packaged snapshot did not fail closed on a malformed arbitrary plugin-owned driver validate registration',
@@ -976,157 +1095,100 @@ try {
 
     summary.driverValidateGuard = {
       resourceKey: driverFixture.resourceKey,
-      status: malformedSnapshot.status,
-      missingValidateMutationCallback: /missing validateMutationCallback for driver: fixture-arbitrary-plugin-table/i.test(malformedSnapshot.text),
+      exportFailed: malformedSnapshot.ok === false,
+      missingValidateMutationCallback: /missing validateMutationCallback for driver: fixture-arbitrary-plugin-table/i.test(malformedSnapshot.error?.message || ''),
     };
-      },
-    );
   });
 
   await runScenario('driver-missing-name-guard', async () => {
-    await withPlaygroundServer(
-      'production-plugin-driver-missing-name-guard',
-      driverMissingNameServerBlueprintPath,
-      pluginDir,
-      malformedDriverGuardServerOptions,
-      async (server) => {
-    const malformedSnapshot = await requestText(
-      server.baseUrl,
-      'GET',
-      '/wp-json/reprint/v1/push/snapshot',
-      undefined,
-      authHeaders(),
-    );
-    assertPackagedDriverFatalResponse(
+    const malformedSnapshot = runPackagedDriverRegistryGuard('driver-missing-name-guard', pluginDir);
+    assertPackagedDriverFatalExport(
       malformedSnapshot,
       /missing driver name for table: wp_reprint_push_driver_fixture/i,
       'packaged snapshot did not fail closed on a plugin-owned driver registration without a driver name',
     );
 
     summary.driverMissingNameGuard = {
-      status: malformedSnapshot.status,
-      missingDriverName: /missing driver name for table: wp_reprint_push_driver_fixture/i.test(malformedSnapshot.text),
+      exportFailed: malformedSnapshot.ok === false,
+      missingDriverName: /missing driver name for table: wp_reprint_push_driver_fixture/i.test(malformedSnapshot.error?.message || ''),
     };
-      },
-    );
   });
 
   await runScenario('driver-missing-plugin-owner-guard', async () => {
-    await withPlaygroundServer(
-      'production-plugin-driver-missing-plugin-owner-guard',
-      driverMissingPluginOwnerServerBlueprintPath,
-      pluginDir,
-      malformedDriverGuardServerOptions,
-      async (server) => {
-    const malformedSnapshot = await requestText(
-      server.baseUrl,
-      'GET',
-      '/wp-json/reprint/v1/push/snapshot',
-      undefined,
-      authHeaders(),
-    );
-    assertPackagedDriverFatalResponse(
+    const malformedSnapshot = runPackagedDriverRegistryGuard('driver-missing-plugin-owner-guard', pluginDir);
+    assertPackagedDriverFatalExport(
       malformedSnapshot,
       /missing pluginOwner for driver: fixture-arbitrary-plugin-table/i,
       'packaged snapshot did not fail closed on a plugin-owned driver registration without pluginOwner',
     );
 
     summary.driverPluginOwnerGuard = {
-      status: malformedSnapshot.status,
-      missingPluginOwner: /missing pluginOwner for driver: fixture-arbitrary-plugin-table/i.test(malformedSnapshot.text),
+      exportFailed: malformedSnapshot.ok === false,
+      missingPluginOwner: /missing pluginOwner for driver: fixture-arbitrary-plugin-table/i.test(malformedSnapshot.error?.message || ''),
     };
-      },
-    );
   });
 
   await runScenario('driver-missing-table-guard', async () => {
-    await withPlaygroundServer(
-      'production-plugin-driver-missing-table-guard',
-      driverMissingTableServerBlueprintPath,
-      pluginDir,
-      malformedDriverGuardServerOptions,
-      async (server) => {
-    const malformedSnapshot = await requestText(
-      server.baseUrl,
-      'GET',
-      '/wp-json/reprint/v1/push/snapshot',
-      undefined,
-      authHeaders(),
-    );
-    assertPackagedDriverFatalResponse(
+    const malformedSnapshot = runPackagedDriverRegistryGuard('driver-missing-table-guard', pluginDir);
+    assertPackagedDriverFatalExport(
       malformedSnapshot,
       /missing table for driver: fixture-arbitrary-plugin-table/i,
       'packaged snapshot did not fail closed on a plugin-owned driver registration without table',
     );
 
     summary.driverMissingTableGuard = {
-      status: malformedSnapshot.status,
-      missingTable: /missing table for driver: fixture-arbitrary-plugin-table/i.test(malformedSnapshot.text),
+      exportFailed: malformedSnapshot.ok === false,
+      missingTable: /missing table for driver: fixture-arbitrary-plugin-table/i.test(malformedSnapshot.error?.message || ''),
     };
-      },
-    );
   });
 
   await runScenario('driver-duplicate-name-guard', async () => {
-    await withPlaygroundServer(
-      'production-plugin-driver-duplicate-name-guard',
-      driverDuplicateNameServerBlueprintPath,
-      pluginDir,
-      malformedDriverGuardServerOptions,
-      async (server) => {
-    const malformedSnapshot = await requestText(
-      server.baseUrl,
-      'GET',
-      '/wp-json/reprint/v1/push/snapshot',
-      undefined,
-      authHeaders(),
-    );
-    assertPackagedDriverFatalResponse(
+    const malformedSnapshot = runPackagedDriverRegistryGuard('driver-duplicate-name-guard', pluginDir);
+    assertPackagedDriverFatalExport(
       malformedSnapshot,
       /duplicate driver name: fixture-arbitrary-plugin-table/i,
       'packaged snapshot did not fail closed on duplicate plugin-owned driver names',
     );
 
     summary.driverDuplicateNameGuard = {
-      status: malformedSnapshot.status,
-      duplicateDriverName: /duplicate driver name: fixture-arbitrary-plugin-table/i.test(malformedSnapshot.text),
+      exportFailed: malformedSnapshot.ok === false,
+      duplicateDriverName: /duplicate driver name: fixture-arbitrary-plugin-table/i.test(malformedSnapshot.error?.message || ''),
     };
-      },
-    );
   });
 
   await runScenario('driver-duplicate-table-guard', async () => {
-    await withPlaygroundServer(
-      'production-plugin-driver-duplicate-table-guard',
-      driverDuplicateTableServerBlueprintPath,
-      pluginDir,
-      malformedDriverGuardServerOptions,
-      async (server) => {
-    const malformedSnapshot = await requestText(
-      server.baseUrl,
-      'GET',
-      '/wp-json/reprint/v1/push/snapshot',
-      undefined,
-      authHeaders(),
-    );
-    assertPackagedDriverFatalResponse(
+    const malformedSnapshot = runPackagedDriverRegistryGuard('driver-duplicate-table-guard', pluginDir);
+    assertPackagedDriverFatalExport(
       malformedSnapshot,
       /duplicate table mapping for table: wp_reprint_push_driver_fixture/i,
       'packaged snapshot did not fail closed on duplicate plugin-owned driver table mappings',
     );
 
     summary.driverDuplicateTableGuard = {
-      status: malformedSnapshot.status,
-      duplicateTable: /duplicate table mapping for table: wp_reprint_push_driver_fixture/i.test(malformedSnapshot.text),
+      exportFailed: malformedSnapshot.ok === false,
+      duplicateTable: /duplicate table mapping for table: wp_reprint_push_driver_fixture/i.test(malformedSnapshot.error?.message || ''),
     };
-      },
-    );
   });
 
   summary.pluginDriverProof = buildProductionPluginPackageProofSummary(summary, { selectedScenarios });
   console.log(JSON.stringify(summary, null, 2));
 } finally {
   fs.rmSync(tmpDir, { recursive: true, force: true });
+}
+
+function preparePackageSnapshots() {
+  logSmokeStage('prepare-base-snapshots', formatSelectedScenarioNames(selectedScenarios));
+  const snapshots = Object.fromEntries(
+    Object.entries(fixtures).map(([name, fixture]) => [
+      name,
+      exportSnapshotWithStage(name, path.join(repoRoot, fixture)),
+    ]),
+  );
+
+  return {
+    base: snapshots.base,
+    local: withoutUnmappedGraphPostmeta(snapshots.local),
+  };
 }
 
 function buildPluginPackage(targetDir) {
@@ -1192,6 +1254,41 @@ function exportSnapshotWithStage(name, blueprintPath) {
   const snapshot = exportSnapshot(name, blueprintPath);
   logSmokeStage('export-snapshot:ok', name);
   return snapshot;
+}
+
+function runPackagedDriverRegistryGuard(scenarioName, mountedPluginDir) {
+  const result = spawnSync('npx', [
+    '--yes',
+    '@wp-playground/cli@latest',
+    'php',
+    '--blueprint',
+    blueprintPath,
+    '--mount',
+    `${mountedPluginDir}:/wordpress/wp-content/plugins/reprint-push`,
+    '--mount',
+    `${tmpDir}:/tmp/reprint-production-plugin-package`,
+    '--verbosity',
+    'quiet',
+    '--',
+    '/tmp/reprint-production-plugin-package/packaged-driver-registry-guards.php',
+    scenarioName,
+  ], {
+    cwd: repoRoot,
+    encoding: 'utf8',
+    maxBuffer: 1024 * 1024 * 20,
+  });
+
+  if (result.status !== 0) {
+    throw new Error(`Packaged driver registry guard export failed for ${scenarioName}\nSTDOUT:\n${result.stdout}\nSTDERR:\n${result.stderr}`);
+  }
+
+  const guardResults = parseMarkedJson(
+    result.stdout,
+    'REPRINT_PUSH_DRIVER_GUARD_JSON_BEGIN',
+    'REPRINT_PUSH_DRIVER_GUARD_JSON_END',
+    `Packaged driver guard markers missing\nSTDOUT:\n${result.stdout}\nSTDERR:\n${result.stderr}`,
+  );
+  return guardResults[scenarioName];
 }
 
 function formatSelectedScenarioNames(selected) {
@@ -1784,37 +1881,10 @@ async function requestJson(baseUrl, method, pathname, body = undefined, headers 
   throw lastError;
 }
 
-async function requestText(baseUrl, method, pathname, body = undefined, headers = {}) {
-  const requestHeaders = body === undefined ? {
-    connection: 'close',
-    ...headers,
-  } : {
-    'content-type': 'application/json',
-    connection: 'close',
-    ...headers,
-  };
-  const response = await fetch(`${baseUrl}${pathname}`, {
-    method,
-    headers: requestHeaders,
-    body: body === undefined ? undefined : JSON.stringify(body),
-  });
-  return {
-    status: response.status,
-    text: await response.text(),
-  };
-}
-
-function assertPackagedDriverFatalResponse(response, expectedPattern, message) {
-  assert.ok(
-    response.status === 200 || response.status === 500,
-    `expected packaged malformed driver response to fail closed with HTTP 200 or 500, got ${response.status}`,
-  );
-  assert.match(
-    response.text,
-    /Fatal error|Uncaught RuntimeException/i,
-    `expected packaged malformed driver response to include a PHP fatal, got HTTP ${response.status}`,
-  );
-  assert.match(response.text, expectedPattern, message);
+function assertPackagedDriverFatalExport(result, expectedPattern, message) {
+  assert.equal(result?.ok, false, 'expected packaged snapshot export to fail closed');
+  assert.equal(result?.error?.class, 'RuntimeException');
+  assert.match(result?.error?.message || '', expectedPattern, message);
 }
 
 async function requestJsonOnce(baseUrl, method, pathname, body = undefined, headers = {}) {
