@@ -1,5 +1,50 @@
 # Critic Audit
 
+## 2026-05-26 13:25:05 CEST (+0200)
+
+No gate movement. `eeaea30d` now consumes the production recovery journal in release verify and asserts the consumer reports `consumed: true`, which is stronger checked-path durable-journal evidence than the earlier inspection-only head. It still does not prove a production-backed auth/session lifecycle on the checked release path or fully closed durable-journal ownership on the release command, so the verdict remains `0/4`.
+
+Changed files:
+- [`audits/critic.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/critic/audits/critic.md)
+
+Commands run:
+- `date '+%Y-%m-%d %H:%M:%S %Z (%z)'`
+- `git ls-remote origin refs/heads/lane/reliable-executor`
+- `git show --stat --oneline --no-renames eeaea30dd84ae36765136e819aa8334e24954484 --`
+
+Push result:
+- Not attempted
+
+Worktree status:
+- Modified tracked files: `audits/critic.md`
+- Branch: `lane/cycle-20260525-mainwindows-2349/critic...origin/main [ahead 1639, behind 684]`
+
+Next supervisor nudge:
+- Keep critic narrow and only reclassify again when `reliable-executor` lands checked-path production-backed auth/session lifecycle, durable-journal ownership, or preserved-remote retry proof.
+
+## 2026-05-26 13:24:34 CEST (+0200)
+
+No gate movement. `eeaea30d` wires consumption of the production recovery journal into release verify and asserts the consumer reports `consumed: true`, which is better checked-path durable-journal evidence than the earlier inspection-only head. It still does not prove a production-backed auth/session lifecycle on the checked release path or fully closed durable-journal ownership on the release command, so the verdict remains `0/4`.
+
+Changed files:
+- [`audits/critic.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/critic/audits/critic.md)
+
+Commands run:
+- `date '+%Y-%m-%d %H:%M:%S %Z (%z)'`
+- `git ls-remote origin refs/heads/lane/reliable-executor`
+- `git show --stat --oneline --no-renames eeaea30dd84ae36765136e819aa8334e24954484 --`
+- `git show --no-renames --format=medium eeaea30dd84ae36765136e819aa8334e24954484 -- scripts/playground/production-shaped-release-verify.mjs test/production-shaped-proof.test.js src/recovery-journal.js src/authenticated-http-push-client.js`
+
+Push result:
+- Not attempted
+
+Worktree status:
+- Modified tracked files: `audits/critic.md`
+- Branch: `lane/cycle-20260525-mainwindows-2349/critic...origin/main [ahead 1636, behind 677]`
+
+Next supervisor nudge:
+- Keep critic narrow and only reclassify again when `reliable-executor` lands checked-path production-backed auth/session lifecycle, durable-journal ownership, or preserved-remote retry proof.
+
 ## 2026-05-26 13:19:14 CEST (+0200)
 
 No gate movement. `83567866` consumes the production recovery journal in release verify, which is stronger release-path evidence than the earlier inspection-only head, but it still stays short of a production-backed auth/session lifecycle or a fully proven durable-journal claim on the checked release command. The verdict stays `0/4`.
