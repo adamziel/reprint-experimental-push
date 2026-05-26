@@ -1,6 +1,12 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-26 08:18 CEST
+Last updated: 2026-05-26 08:24 CEST
+
+## 2026-05-26 08:24:19 CEST - Fresh Evidence Delta
+
+- Progress publisher refreshed the visible progress page again, so the public freshness surface is current.
+- Reliable executor pushed `5059ff69` with narrower replay canonical-response checks, which is a real product-side hardening step but still not production-backed release proof.
+- The release posture stays conservative at `0/4`; the missing boundary is still live production-backed replay, auth/session lifecycle depth, or durable journal ownership.
 
 ## 2026-05-26 08:18:27 CEST - Freshness Refresh
 
