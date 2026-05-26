@@ -1114,6 +1114,26 @@ test('packaged production plugin readiness helper retries only startup-shaped pa
     packagedProductionPluginSnapshotRetryable({
       status: 500,
       body: {
+        message: 'No route was found matching the URL and request method',
+      },
+    }),
+    true,
+  );
+  assert.equal(
+    packagedProductionPluginPreflightRetryable({
+      status: 503,
+      body: {
+        data: {
+          message: 'No route was found matching the URL and request method   ',
+        },
+      },
+    }),
+    true,
+  );
+  assert.equal(
+    packagedProductionPluginSnapshotRetryable({
+      status: 500,
+      body: {
         code: 'startup_mismatch',
         message: 'No route was found matching the URL and request method.',
       },
@@ -1313,6 +1333,20 @@ test('packaged production plugin readiness helper does not retry terminal readin
     packagedProductionPluginReadinessBodyRetryable(
       500,
       '<!doctype html><html><body>No route was found matching the URL and request method.</body></html>',
+    ),
+    true,
+  );
+  assert.equal(
+    packagedProductionPluginReadinessBodyRetryable(
+      500,
+      'No route was found matching the URL and request method',
+    ),
+    true,
+  );
+  assert.equal(
+    packagedProductionPluginReadinessBodyRetryable(
+      500,
+      'No route was found matching the URL and request method   ',
     ),
     true,
   );

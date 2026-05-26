@@ -1,6 +1,8 @@
 import { evaluateProductionAuthSessionLifecycle } from './production-auth-session-lifecycle.js';
 
 export const packagedProductionPluginMaxConsecutiveNotReadyProbes = 4;
+const packagedProductionPluginWordPressNotReadyPattern = /WordPress is not ready yet/i;
+const packagedProductionPluginRouteNotReadyPattern = /No route was found matching the URL and request method\.?/i;
 
 function packagedProductionPluginResponseMessage(response) {
   if (typeof response?.body === 'string') {
@@ -28,7 +30,7 @@ function packagedProductionPluginWordPressNotReadyResponse(response) {
 
 function packagedProductionPluginRouteNotReadyBody(response) {
   return response?.body?.code === 'rest_no_route'
-    || /No route was found matching the URL and request method\./i.test(
+    || packagedProductionPluginRouteNotReadyPattern.test(
       packagedProductionPluginResponseMessage(response),
     );
 }
@@ -109,7 +111,7 @@ export function packagedProductionPluginReadinessErrorRetryable(error) {
 }
 
 export function packagedProductionPluginReadinessWordPressNotReady(status, bodyText = '') {
-  return /WordPress is not ready yet/i.test(bodyText);
+  return packagedProductionPluginWordPressNotReadyPattern.test(bodyText);
 }
 
 export function packagedProductionPluginNextNotReadyProbeCount(currentCount, status, bodyText = '') {
@@ -125,7 +127,7 @@ export function packagedProductionPluginNotReadyProbeLimitReached(currentCount) 
 export function packagedProductionPluginReadinessBodyRetryable(status, bodyText = '') {
   return (
     packagedProductionPluginReadinessWordPressNotReady(status, bodyText)
-    || /No route was found matching the URL and request method\./i.test(bodyText)
+    || packagedProductionPluginRouteNotReadyPattern.test(bodyText)
   );
 }
 
