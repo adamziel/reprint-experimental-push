@@ -44,6 +44,7 @@ export function createPushPlan({ base, local, remote, now = new Date() }) {
       conflicts: 0,
       blockers: 0,
       atomicGroups: 0,
+      graphDependencies: 0,
     },
     mutations: [],
     preconditions: [],
@@ -51,6 +52,7 @@ export function createPushPlan({ base, local, remote, now = new Date() }) {
     conflicts: [],
     blockers: [],
     atomicGroups: [],
+    graphDependencies: [],
   };
 
   const resources = enumerateResources(base, local, remote);
@@ -1020,6 +1022,9 @@ export function createPushPlan({ base, local, remote, now = new Date() }) {
         change,
         atomicGroupId: intentByResource.get(resource.key) || null,
       };
+      if (Array.isArray(graphIdentitySupport.references) && graphIdentitySupport.references.length > 0) {
+        mutation.wordpressGraphReferences = graphIdentitySupport.references;
+      }
       if (isPluginOwnedDataResource(resource, owner)) {
         const support = pluginOwnedResourcePolicy.supportFor(resource, owner);
         mutation.pluginOwnedResource = {
@@ -1426,6 +1431,7 @@ export function createPushPlan({ base, local, remote, now = new Date() }) {
     });
   }
 
+  finalizeWordPressGraphDependencies(plan, local, remote);
   addFileTopologyConflicts(plan, resources, base, local, remote);
   plan.atomicGroups = intents.map((intent) => buildAtomicGroup(intent, plan, base, remote));
   const existingBlockerIds = new Set(plan.blockers.map((blocker) => blocker.id));
@@ -1442,6 +1448,7 @@ export function createPushPlan({ base, local, remote, now = new Date() }) {
   plan.summary.conflicts = plan.conflicts.length;
   plan.summary.blockers = plan.blockers.length;
   plan.summary.atomicGroups = plan.atomicGroups.length;
+  plan.summary.graphDependencies = plan.graphDependencies.length;
   plan.status = plan.conflicts.length > 0
     ? 'conflict'
     : plan.blockers.length > 0
@@ -2161,21 +2168,13 @@ function wordpressGraphIdentitySupport({
 
   const referenceEvidence = references.map((reference) =>
     wordpressGraphReferenceEvidence(reference, resources, base, local, remote));
-  if (resource.table === 'wp_termmeta') {
-    const samePlanCreatedTermReferences = referenceEvidence
+  const samePlanGraphReferences = resource.table === 'wp_termmeta'
+    ? referenceEvidence
       .filter((reference) =>
         reference.relationshipType === 'termmeta-term'
-        && reference.targetChange.remote.state === 'absent'
-        && reference.targetChange.local.state === 'present');
-
-    if (samePlanCreatedTermReferences.length > 0) {
-      return {
-        supported: false,
-        className: 'unsupported-termmeta-resource',
-        reason: 'Term meta graph resources are not yet supported by the planner.',
-      };
-    }
-  }
+        && isSamePlanWordPressGraphCreate(reference))
+      .map((reference) => samePlanWordPressGraphReferenceEvidence(reference))
+    : [];
   if (resource.table === 'wp_postmeta') {
     const samePlanCreatedRevisionReferences = referenceEvidence.find((reference) =>
       reference.relationshipType === 'postmeta-post'
@@ -2314,7 +2313,12 @@ function wordpressGraphIdentitySupport({
     .filter((reference) => isUnsafeWordPressGraphReference(reference));
 
   if (unsafeReferences.length === 0) {
-    return { supported: true };
+    return samePlanGraphReferences.length > 0
+      ? {
+        supported: true,
+        references: samePlanGraphReferences,
+      }
+      : { supported: true };
   }
 
   const unsafePostParentReference = unsafeReferences.find((reference) =>
@@ -2364,6 +2368,10 @@ function wordpressGraphIdentitySupport({
 }
 
 function isUnsafeWordPressGraphReference(reference) {
+  if (isSamePlanWordPressGraphCreate(reference)) {
+    return false;
+  }
+
   if (reference.targetChange.remote.state !== 'present') {
     return true;
   }
@@ -2373,6 +2381,233 @@ function isUnsafeWordPressGraphReference(reference) {
   }
 
   return reference.targetLocalHash !== reference.targetRemoteHash;
+}
+
+function isSamePlanWordPressGraphCreate(reference) {
+  return reference.targetChange.base.state === 'absent'
+    && reference.targetChange.local.state === 'present'
+    && reference.targetChange.remote.state === 'absent'
+    && reference.targetChange.localChange === 'create'
+    && reference.targetChange.remoteChange === 'unchanged';
+}
+
+function samePlanWordPressGraphReferenceEvidence(reference) {
+  return {
+    relationshipKey: reference.relationshipKey,
+    relationshipType: reference.relationshipType,
+    sourceResourceKey: reference.sourceResourceKey,
+    sourceTable: reference.sourceTable,
+    sourceRowId: reference.sourceRowId,
+    targetResource: reference.targetResource,
+    targetResourceKey: reference.targetResourceKey,
+    targetTable: reference.targetTable,
+    targetId: reference.targetId,
+    targetBaseHash: reference.targetBaseHash,
+    targetLocalHash: reference.targetLocalHash,
+    targetRemoteHash: reference.targetRemoteHash,
+    targetChange: reference.targetChange,
+    resolutionPolicy: 'same-plan-local-create',
+    dependency: {
+      source: 'same-plan-local-create',
+      targetResourceKey: reference.targetResourceKey,
+      targetLocalHash: reference.targetLocalHash,
+    },
+  };
+}
+
+function finalizeWordPressGraphDependencies(plan, local, remote) {
+  const mutationByResourceKey = new Map(
+    plan.mutations.map((mutation) => [mutation.resourceKey, mutation]),
+  );
+  const blockedTargetResourceKeys = new Set(
+    plan.blockers
+      .map((blocker) => blocker?.resourceKey)
+      .filter(Boolean),
+  );
+  let blockerIndex = plan.blockers.length + 1;
+
+  for (const mutation of plan.mutations) {
+    const references = Array.isArray(mutation.wordpressGraphReferences)
+      ? mutation.wordpressGraphReferences
+      : [];
+    if (references.length === 0) {
+      continue;
+    }
+
+    const dependencyIds = new Set();
+    let mutationBlocked = false;
+    for (const reference of references) {
+      if (reference.resolutionPolicy !== 'same-plan-local-create') {
+        continue;
+      }
+
+      const targetMutation = mutationByResourceKey.get(reference.targetResourceKey);
+      if (
+        !isValidSamePlanWordPressGraphTarget(
+          targetMutation,
+          reference,
+          mutationByResourceKey,
+          remote,
+          blockedTargetResourceKeys,
+        )
+      ) {
+        plan.blockers.push({
+          id: `blocker-wordpress-graph-dependency-${blockerIndex++}`,
+          class: 'missing-wordpress-graph-dependency',
+          resource: mutation.resource,
+          resourceKey: mutation.resourceKey,
+          reason: `WordPress graph mutation ${mutation.resourceKey} references a same-plan target without a matching supported target create mutation.`,
+          resolutionPolicy: 'preserve-remote-wordpress-graph-and-stop',
+          references: [reference],
+        });
+        blockedTargetResourceKeys.add(mutation.resourceKey);
+        delete mutation.dependsOnMutationIds;
+        mutationBlocked = true;
+        break;
+      }
+
+      reference.dependency = {
+        ...reference.dependency,
+        targetMutationId: targetMutation.id,
+        targetResourceKey: targetMutation.resourceKey,
+        targetLocalHash: targetMutation.localHash,
+      };
+      dependencyIds.add(targetMutation.id);
+    }
+
+    if (mutationBlocked) {
+      continue;
+    }
+
+    if (dependencyIds.size > 0) {
+      mutation.dependsOnMutationIds = [...dependencyIds];
+    } else {
+      delete mutation.dependsOnMutationIds;
+    }
+  }
+
+  plan.mutations = orderMutationsByDependencies(plan.mutations);
+  plan.graphDependencies = collectWordPressGraphDependencies(plan);
+}
+
+function isValidSamePlanWordPressGraphTarget(
+  targetMutation,
+  reference,
+  mutationByResourceKey,
+  remote,
+  blockedTargetResourceKeys,
+) {
+  if (
+    !targetMutation
+    || targetMutation.action !== 'put'
+    || targetMutation.changeKind !== 'create'
+    || targetMutation.resourceKey !== reference.targetResourceKey
+    || targetMutation.localHash !== reference.targetLocalHash
+    || blockedTargetResourceKeys.has(targetMutation.resourceKey)
+  ) {
+    return false;
+  }
+
+  if (
+    reference.relationshipType !== 'termmeta-term'
+    || reference.sourceTable !== 'wp_termmeta'
+    || targetMutation.resource?.type !== 'row'
+    || targetMutation.resource.table !== 'wp_terms'
+  ) {
+    return false;
+  }
+
+  const targetValue = deserializeResourceValue(targetMutation.value);
+  if (!targetValue || typeof targetValue !== 'object') {
+    return false;
+  }
+
+  const ownerTermTaxonomy = [...mutationByResourceKey.values()].find((candidate) => {
+    if (candidate.resource?.type !== 'row' || candidate.resource.table !== 'wp_term_taxonomy') {
+      return false;
+    }
+    const candidateValue = deserializeResourceValue(candidate.value);
+    return candidateValue
+      && typeof candidateValue === 'object'
+      && normalizePositiveInteger(candidateValue.term_id) === normalizePositiveInteger(targetValue.term_id)
+      && candidateValue.taxonomy === 'nav_menu';
+  });
+  const remoteTermTaxonomy = [...(remote?.db?.wp_term_taxonomy ? Object.values(remote.db.wp_term_taxonomy) : [])]
+    .find((candidate) => normalizePositiveInteger(candidate?.term_id) === normalizePositiveInteger(targetValue.term_id)
+      && candidate?.taxonomy === 'nav_menu');
+  if (ownerTermTaxonomy || remoteTermTaxonomy) {
+    return false;
+  }
+
+  return true;
+}
+
+function orderMutationsByDependencies(mutations) {
+  const mutationById = new Map(mutations.map((mutation) => [mutation.id, mutation]));
+  const remaining = new Set(mutations.map((mutation) => mutation.id));
+  const ordered = [];
+
+  while (remaining.size > 0) {
+    let progressed = false;
+    for (const mutation of mutations) {
+      if (!remaining.has(mutation.id)) {
+        continue;
+      }
+      const dependencies = (mutation.dependsOnMutationIds || [])
+        .filter((dependencyId) => mutationById.has(dependencyId));
+      if (dependencies.some((dependencyId) => remaining.has(dependencyId))) {
+        continue;
+      }
+      ordered.push(mutation);
+      remaining.delete(mutation.id);
+      progressed = true;
+    }
+    if (!progressed) {
+      return mutations;
+    }
+  }
+
+  return ordered;
+}
+
+function collectWordPressGraphDependencies(plan) {
+  const mutationById = new Map(
+    (Array.isArray(plan.mutations) ? plan.mutations : [])
+      .map((mutation) => [mutation.id, mutation]),
+  );
+  const dependencies = [];
+
+  for (const mutation of Array.isArray(plan.mutations) ? plan.mutations : []) {
+    const references = Array.isArray(mutation.wordpressGraphReferences)
+      ? mutation.wordpressGraphReferences
+      : [];
+    for (const reference of references) {
+      const dependency = reference?.dependency;
+      if (
+        reference?.resolutionPolicy !== 'same-plan-local-create'
+        || !dependency
+        || dependency.source !== 'same-plan-local-create'
+        || typeof dependency.targetMutationId !== 'string'
+        || !mutationById.has(dependency.targetMutationId)
+      ) {
+        continue;
+      }
+
+      dependencies.push({
+        sourceMutationId: mutation.id,
+        sourceResourceKey: mutation.resourceKey,
+        relationshipKey: reference.relationshipKey,
+        relationshipType: reference.relationshipType,
+        targetMutationId: dependency.targetMutationId,
+        targetResourceKey: dependency.targetResourceKey,
+        resolutionPolicy: reference.resolutionPolicy,
+        source: dependency.source,
+        targetLocalHash: dependency.targetLocalHash,
+      });
+    }
+  }
+
+  return dependencies;
 }
 
 function wordpressGraphReferences(resource, value) {
@@ -2598,6 +2833,12 @@ function samePlanCreatedGraphIdentitySupport({ resource, resources, base, local,
 
     for (const reference of wordpressGraphReferences(sourceResource, sourceLocalValue)) {
       if (reference.targetResourceKey !== resource.key) {
+        continue;
+      }
+      if (
+        resource.table === 'wp_terms'
+        && reference.relationshipType === 'termmeta-term'
+      ) {
         continue;
       }
       const evidence = wordpressGraphReferenceEvidence(reference, resources, base, local, remote);
@@ -3900,6 +4141,24 @@ function unsupportedTermmetaResourceSupport({ resource, baseValue, localValue, r
     reference.relationshipType === 'termmeta-term'
     && reference.targetChange.remote.state === 'absent'
     && reference.targetChange.local.state === 'present');
+  if (termReference) {
+    const targetTermId = normalizePositiveInteger(termReference.targetId);
+    const localNavMenuTaxonomy = [...(local?.db?.wp_term_taxonomy ? Object.values(local.db.wp_term_taxonomy) : [])]
+      .find((entry) => normalizePositiveInteger(entry?.term_id) === targetTermId && entry?.taxonomy === 'nav_menu');
+    const remoteNavMenuTaxonomy = [...(remote?.db?.wp_term_taxonomy ? Object.values(remote.db.wp_term_taxonomy) : [])]
+      .find((entry) => normalizePositiveInteger(entry?.term_id) === targetTermId && entry?.taxonomy === 'nav_menu');
+    if (localNavMenuTaxonomy || remoteNavMenuTaxonomy) {
+      return {
+        supported: false,
+        className: 'unsupported-navigation-resource',
+        unsupportedState: 'same-plan-reference',
+        reason: 'Navigation and menu graph resources are not yet supported by the planner.',
+        references: [termReference],
+      };
+    }
+
+    return { supported: true };
+  }
   const unsupportedState = termReference
     ? 'same-plan-reference'
     : classifyUnsupportedDriftState({
@@ -3913,10 +4172,8 @@ function unsupportedTermmetaResourceSupport({ resource, baseValue, localValue, r
     supported: false,
     className: 'unsupported-termmeta-resource',
     unsupportedState,
-    reason: termReference
-      ? `WordPress graph mutation ${resource.key} is created in the same plan as a term identity that depends on it, and identity rewriting is not yet supported.`
-      : 'Term meta graph resources are not yet supported by the planner.',
-    references: termReference ? [termReference] : referenceEvidence,
+    reason: 'Term meta graph resources are not yet supported by the planner.',
+    references: referenceEvidence,
   };
 }
 
