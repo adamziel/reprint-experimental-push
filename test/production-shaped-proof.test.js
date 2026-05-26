@@ -225,6 +225,14 @@ function spawnBoundedSync(command, args, options, label) {
   const proof = spawnSync(command, args, boundedOptions);
   if (proof.error || proof.signal || proof.status === null) {
     failBoundedSpawnProof(proof, command, args);
+    const timeoutNote = proof.error?.code === 'ETIMEDOUT' && boundedOptions.timeout ? ` after ${boundedOptions.timeout}ms` : '';
+    if (proof.error) {
+      throw new Error(formatSpawnFailure(`${label} failed${timeoutNote} with explicit spawn error handling`, proof));
+    }
+    if (proof.signal) {
+      throw new Error(formatSpawnFailure(`${label} terminated by ${proof.signal}${boundedOptions.timeout ? ` after ${boundedOptions.timeout}ms` : ''} with explicit spawn signal handling`, proof));
+    }
+    throw new Error(`${label} exited without a status with explicit spawn status handling\nstdout:\n${proof.stdout ?? ''}\nstderr:\n${proof.stderr ?? ''}`);
   }
   assertBoundedSpawnProof(proof, command, args, label, boundedOptions.timeout);
   return proof;
