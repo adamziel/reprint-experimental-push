@@ -21149,6 +21149,7 @@ test('blocks local serialized block references while preserving remote-only plug
   assert.equal(mutationFor(plan, resourceKey), undefined);
   assert.equal(plan.conflicts.length, 0);
   assert.equal(blocker.class, 'unsupported-serialized-blocks-resource');
+  assert.equal(blocker.resourceKind, 'serialized-blocks');
   assert.equal(blocker.resourceKey, resourceKey);
   assert.equal(blocker.reason, 'Serialized block references are not yet supported by the planner.');
   assert.equal(pluginDecision.decision, 'keep-remote');

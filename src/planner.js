@@ -2346,6 +2346,7 @@ function addUnsupportedSerializedBlocksBlocker(plan, {
   plan.blockers.push({
     id: `blocker-unsupported-serialized-blocks-resource-${plan.blockers.length + 1}`,
     class: support.className || 'unsupported-serialized-blocks-resource',
+    resourceKind: 'serialized-blocks',
     resource,
     resourceKey: resource.key,
     reason: support.reason || `Serialized block references in ${resource.key} are not yet supported by the planner.`,
