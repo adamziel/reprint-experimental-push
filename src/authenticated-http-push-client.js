@@ -991,18 +991,23 @@ function summarizeAuthSessionLifecycleHistory(history) {
   }
 
   const observations = history.filter((entry) => entry && typeof entry === 'object');
-  const issued = history.find((entry) => entry.step === 'preflight') || history[0];
-  const read = history[history.length - 1];
   return {
-    issued,
-    read,
+    issued: observations.find((entry) => entry.step === 'preflight') || null,
+    read: [...observations].reverse().find((entry) => isAuthSessionReadStep(entry.step)) || null,
     expired: observations.find((entry) => entry.expired) || null,
     revoked: observations.find((entry) => entry.revoked) || null,
     cleanedUp: observations.find((entry) => entry.cleanedUp) || null,
     rotated: observations.find((entry) => entry.rotated) || null,
-    preserved: [...observations].reverse().find((entry) => entry.preserved) || null,
+    preserved: observations.find((entry) => entry.preserved) || null,
     observations,
   };
+}
+
+function isAuthSessionReadStep(step) {
+  return step === 'dry-run'
+    || step === 'apply'
+    || step === 'replay'
+    || step === 'journal';
 }
 
 function summarizeSnapshot(response, local) {
