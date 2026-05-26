@@ -27348,6 +27348,38 @@ test('production durable journal adapter satisfies the release-path support prob
   durableJournal.close();
 });
 
+test('production durable journal support fails closed when restart inspection reports blocked journal integrity', () => {
+  const plan = planFor(baseSite(), baseSite(), baseSite());
+  const durableJournalPath = tempRecoveryJournalPath();
+  const remoteArtifactPath = `${durableJournalPath}.remote`;
+  const durableJournal = openProductionRecoveryJournal(durableJournalPath, {
+    truncate: true,
+    now: fixedNow,
+    ownsRemoteArtifact: true,
+    remoteArtifactPath,
+    writerLease: { id: 'lease-corrupt' },
+  });
+  durableJournal.appendEvent('journal-opened', {
+    planId: plan.id,
+    state: 'opened',
+    observedHash: 'snapshot-hash-only',
+    artifactRefs: {
+      journal: durableJournalPath,
+      remote: remoteArtifactPath,
+    },
+  });
+  fs.appendFileSync(durableJournalPath, '{"schemaVersion":1');
+
+  const error = captureError(() => applyPlan(baseSite(), plan, {
+    durableJournal,
+    requireProductionDurableJournal: true,
+  }));
+
+  assert.equal(error.code, 'PRODUCTION_DURABLE_JOURNAL_UNSUPPORTED');
+  assert.ok(error.details.missingDependency.includes('restart-readable recovery inspection'));
+  durableJournal.close();
+});
+
 test('production durable journal adapter preserves remote artifact ownership on blocked recovery', () => {
   const base = baseSite();
   const local = baseSite();

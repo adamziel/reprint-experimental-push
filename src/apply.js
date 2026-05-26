@@ -686,9 +686,7 @@ export function productionRecoverySupportReport(writer) {
   const missingDependency = [];
   const inspected = inspectProductionRecoveryJournal(writer);
   const inspectedJournalPath = durableJournalInspectPath(inspected);
-  const inspectionErrorMessage = inspected && typeof inspected === 'object' && typeof inspected.error?.message === 'string'
-    ? inspected.error.message
-    : null;
+  const inspectionErrorMessage = productionRecoveryInspectionErrorMessage(inspected);
   const inspectedClaimState = durableJournalInspectRecords(inspected)
     ? classifyRecoveryJournalClaims(inspected.records)
     : null;
@@ -1017,7 +1015,7 @@ export function productionRecoverySupportReport(writer) {
   if (inspectedClaimState?.status === 'blocked') {
     addMissingDependency('fencing or lease ownership for the journal writer');
   }
-  if (Object.hasOwn(writer ?? {}, 'claimHash')) {
+  if (Object.hasOwn(writer ?? {}, 'claimHash') && writer.claimHash !== null) {
     if (
       typeof writer.claimHash !== 'string'
       || !/^[a-f0-9]{64}$/.test(writer.claimHash)
@@ -1143,6 +1141,28 @@ function inspectProductionRecoveryJournal(writer) {
   } catch (error) {
     return { error };
   }
+}
+
+function productionRecoveryInspectionErrorMessage(inspected) {
+  if (!inspected || typeof inspected !== 'object') {
+    return null;
+  }
+  if (typeof inspected.error?.message === 'string') {
+    return inspected.error.message;
+  }
+  const integrity = inspected.integrity;
+  if (
+    integrity
+    && typeof integrity === 'object'
+    && Object.hasOwn(integrity, 'status')
+    && integrity.status !== 'ok'
+  ) {
+    const reason = typeof integrity.reason === 'string' && integrity.reason.length > 0
+      ? `: ${integrity.reason}`
+      : '';
+    return `Recovery journal integrity is ${integrity.status}${reason}`;
+  }
+  return null;
 }
 
 function durableJournalInspectSurface(inspected) {
