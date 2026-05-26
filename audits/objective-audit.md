@@ -6,19 +6,19 @@ The project is **not releasable as a production WordPress push path**.
 
 - Fresh remote heads at audit time, checked on May 26, 2026:
 
-- `origin/lane/reliable-executor` -> `8e9683b3`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `0f8caf2a`
+- `origin/lane/no-data-loss-invariants` -> `261b4d06`
+- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `dd8f6dc3`
+- `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `97a12cab`
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `a04aceed`
-- `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration` -> `7800a2a4`
-- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `6b6d4e00`
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `063b991c`
-- `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `e8e3224e`
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `701ecad9`
+- `origin/lane/reliable-executor` -> `8e9683b3`
+- `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration` -> `29fff11d`
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` -> `9e05da5e`
-- `origin/lane/no-data-loss-invariants` -> `8596e3be`
-- `origin/lane/no-data-loss-recovery` -> `9e077c10`
 - `origin/lane/critic` -> `443dacd6`
 - `origin/lane/cycle-20260525-mainwindows-2349/critic` -> `fa0dc8a0`
 - `origin/lane/progress-publisher` -> `7695e1f9`
+- `origin/lane/no-data-loss-recovery` -> `9e077c10`
 - `origin/lane/same-plan-wordpress-graph-create` -> `0d2178e9`
 - `origin/lane/cycle-20260525-mainwindows-2357/no-data-loss-invariants-graph-proof` -> `98c0ce26`
 - `origin/main` -> `56063f13`
@@ -30,25 +30,25 @@ real source-site mutation boundary. The release gates still stay `0/4`.
 Fresh lane proof since the last audit pass improved the local evidence floor,
 but it did not change the release conclusion:
 
-- `origin/lane/reliable-executor` now records `8e9683b3`, tightening production-
-  shaped proof timeout handling again, but still not proving production
-  auth/session lifecycle or a live-source mutation boundary.
+- `origin/lane/reliable-executor` now records `8e9683b3`, tightening release-
+  verify subprocess bounds again, but still not proving production auth/session
+  lifecycle or a live-source mutation boundary.
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now records
   `a04aceed`, refreshing public progress freshness only.
 - `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration`
-  now records `7800a2a4`, adding postmeta post-identity proof only.
+  now records `29fff11d`, adding featured-image attachment drift proof only.
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` now records
-  `6c9e7d36`. This refreshes the audit snapshot only and does not change the
+  `dd8f6dc3`. This refreshes the audit snapshot only and does not change the
   release boundary.
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` now records
-  `063b991c`, exposing memory ceiling queue budget proof only.
-- `origin/lane/no-data-loss-invariants` now records `8596e3be`, adding special-
-  file descendant delete guarding only.
+  `063b991c`, tightening queue headroom proof only.
+- `origin/lane/no-data-loss-invariants` now records `261b4d06`, adding
+  revision-linked postmeta blocker proof only.
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` now
-  records `e8e3224e`, tightening recovery artifact path fencing. It still does
-  not add production-backed journal ownership or replay proof.
+  records `97a12cab`, tightening recovery artifact fencing. It still does not
+  add production-backed journal ownership or replay proof.
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now records
-  `701ecad9`, refreshing the supervisor progress surface only.
+  `0f8caf2a`, refreshing the supervisor progress surface only.
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` now records
   `9e05da5e`, hardening live proof cleanup and timeouts only.
 
