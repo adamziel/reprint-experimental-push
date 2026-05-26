@@ -67,8 +67,10 @@ Fresh visibility-lane heads moved, but they still only refresh public status sur
   `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` ->
   `1cdca21b` and `origin/lane/cycle-20260525-mainwindows-2349/progress-followup`
   -> `f34c148f`. That changes the freshness surface, not the release gate.
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `f2d32e1d`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `3769f63a`
+- The current public-refresh branch heads remain:
+  `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` ->
+  `1cdca21b` and `origin/lane/cycle-20260525-mainwindows-2349/progress-followup`
+  -> `f34c148f`.
 - `origin/lane/reliable-executor` -> `c1943da1`
 - `origin/lane/no-data-loss-invariants` -> `30040cee`
 - `origin/lane/no-data-loss-recovery` -> `2af1ddda`
