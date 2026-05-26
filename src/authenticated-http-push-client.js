@@ -192,6 +192,11 @@ export async function runAuthenticatedHttpPush({
   });
   summary.recoveryInspect = summarizeResponse(recoveryInspect);
   summary.recoveryInspect.recovery = summarizeRecoveryInspect(recoveryInspect);
+  if (recoveryInspect.status !== 200 || recoveryInspect.body?.ok !== true) {
+    summary.code = recoveryInspect.body?.code || 'RECOVERY_INSPECT_FAILED';
+    setDurableJournalBoundary(summary, 'recovery-inspect');
+    return summary;
+  }
   if (summary.recoveryInspect.recovery?.state === 'blocked-recovery') {
     summary.code = recoveryInspect.body?.code || 'RECOVERY_INSPECT_BLOCKED';
     setDurableJournalBoundary(summary, 'recovery-inspect');
@@ -224,11 +229,21 @@ export async function runAuthenticatedHttpPush({
     && dbJournal.body?.ok === true
     && summary.after?.finalMatchesLocal === true;
   if (!summary.ok) {
-    summary.code = apply.body?.code
-      || recoveryInspect.body?.code
-      || replay.body?.code
-      || dbJournal.body?.code
-      || 'APPLY_FAILED';
+    const replayIdempotency = replay.body?.idempotency;
+    const replayIdempotencyFailed = replay.status === 200
+      && replay.body?.ok === true
+      && replayIdempotency
+      && (
+        replayIdempotency?.replayed !== true
+        || replayIdempotency?.freshMutationWork !== false
+      );
+    summary.code = replayIdempotencyFailed
+      ? 'REPLAY_NOT_IDEMPOTENT'
+      : apply.body?.code
+        || recoveryInspect.body?.code
+        || replay.body?.code
+        || dbJournal.body?.code
+        || 'APPLY_FAILED';
     setDurableJournalBoundary(summary, dbJournal.status === 200 ? (replay.status === 200 ? 'replay' : 'apply') : 'journal-inspect');
   }
   return summary;

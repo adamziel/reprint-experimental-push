@@ -500,7 +500,7 @@ test('production-shaped authenticated push fails closed when replay reopens fres
     });
 
     assert.equal(summary.ok, false);
-    assert.equal(summary.code, 'APPLY_FAILED');
+    assert.equal(summary.code, 'REPLAY_NOT_IDEMPOTENT');
     assert.deepEqual(summary.replay.idempotency, {
       replayed: true,
       freshMutationWork: true,
