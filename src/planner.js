@@ -300,7 +300,7 @@ export function createPushPlan({ base, local, remote, now = new Date() }) {
     });
   }
 
-  finalizeWordPressGraphDependencies(plan, local);
+  finalizeWordPressGraphDependencies(plan, local, remote);
   addFileTopologyConflicts(plan, resources, base, local, remote);
   plan.atomicGroups = intents.map((intent) => buildAtomicGroup(intent, plan, base, remote));
   const existingBlockerIds = new Set(plan.blockers.map((blocker) => blocker.id));
@@ -1232,7 +1232,7 @@ function samePlanWordPressGraphReferenceEvidence(reference) {
   };
 }
 
-function finalizeWordPressGraphDependencies(plan, local) {
+function finalizeWordPressGraphDependencies(plan, local, remote) {
   const mutationByResourceKey = new Map(
     plan.mutations.map((mutation) => [mutation.resourceKey, mutation]),
   );
@@ -1251,7 +1251,7 @@ function finalizeWordPressGraphDependencies(plan, local) {
       }
 
       const targetMutation = mutationByResourceKey.get(reference.targetResourceKey);
-      if (!isValidSamePlanWordPressGraphTarget(targetMutation, reference, mutation, mutationByResourceKey, local)) {
+      if (!isValidSamePlanWordPressGraphTarget(targetMutation, reference, mutation, mutationByResourceKey, local, remote)) {
         plan.blockers.push({
           id: `blocker-wordpress-graph-dependency-${blockerIndex++}`,
           class: 'missing-wordpress-graph-dependency',
@@ -1294,7 +1294,7 @@ function finalizeWordPressGraphDependencies(plan, local) {
   plan.mutations = orderMutationsByDependencies(plan.mutations);
 }
 
-function isValidSamePlanWordPressGraphTarget(targetMutation, reference, sourceMutation, mutationByResourceKey, local) {
+function isValidSamePlanWordPressGraphTarget(targetMutation, reference, sourceMutation, mutationByResourceKey, local, remote) {
   if (
     !targetMutation
     || targetMutation.action !== 'put'
@@ -1434,7 +1434,10 @@ function isValidSamePlanWordPressGraphTarget(targetMutation, reference, sourceMu
         && normalizePositiveInteger(candidateValue.term_id) === normalizePositiveInteger(targetValue.term_id)
         && candidateValue.taxonomy === 'nav_menu';
     });
-    if (ownerTermTaxonomy) {
+    const remoteTermTaxonomy = [...(remote?.db?.wp_term_taxonomy ? Object.values(remote.db.wp_term_taxonomy) : [])]
+      .find((candidate) => normalizePositiveInteger(candidate?.term_id) === normalizePositiveInteger(targetValue.term_id)
+        && candidate?.taxonomy === 'nav_menu');
+    if (ownerTermTaxonomy || remoteTermTaxonomy) {
       return false;
     }
   }
@@ -1460,10 +1463,20 @@ function isValidSamePlanWordPressGraphTarget(targetMutation, reference, sourceMu
     const targetTaxonomyValue = [...(local?.db?.wp_term_taxonomy ? Object.values(local.db.wp_term_taxonomy) : [])]
       .find((candidate) => normalizePositiveInteger(candidate?.term_id) === normalizePositiveInteger(targetValue.term_id)
         && candidate?.taxonomy === 'nav_menu');
+    const remoteTaxonomyValue = [...(remote?.db?.wp_term_taxonomy ? Object.values(remote.db.wp_term_taxonomy) : [])]
+      .find((candidate) => normalizePositiveInteger(candidate?.term_id) === normalizePositiveInteger(targetValue.term_id)
+        && candidate?.taxonomy === 'nav_menu');
     if (
       targetTaxonomyValue
       && typeof targetTaxonomyValue === 'object'
       && targetTaxonomyValue.taxonomy === 'nav_menu'
+    ) {
+      return false;
+    }
+    if (
+      remoteTaxonomyValue
+      && typeof remoteTaxonomyValue === 'object'
+      && remoteTaxonomyValue.taxonomy === 'nav_menu'
     ) {
       return false;
     }
@@ -1484,10 +1497,20 @@ function isValidSamePlanWordPressGraphTarget(targetMutation, reference, sourceMu
     const targetTaxonomyValue = [...(local?.db?.wp_term_taxonomy ? Object.values(local.db.wp_term_taxonomy) : [])]
       .find((candidate) => normalizePositiveInteger(candidate?.term_id) === normalizePositiveInteger(targetValue.term_id)
         && candidate?.taxonomy === 'nav_menu');
+    const remoteTaxonomyValue = [...(remote?.db?.wp_term_taxonomy ? Object.values(remote.db.wp_term_taxonomy) : [])]
+      .find((candidate) => normalizePositiveInteger(candidate?.term_id) === normalizePositiveInteger(targetValue.term_id)
+        && candidate?.taxonomy === 'nav_menu');
     if (
       targetTaxonomyValue
       && typeof targetTaxonomyValue === 'object'
       && targetTaxonomyValue.taxonomy === 'nav_menu'
+    ) {
+      return false;
+    }
+    if (
+      remoteTaxonomyValue
+      && typeof remoteTaxonomyValue === 'object'
+      && remoteTaxonomyValue.taxonomy === 'nav_menu'
     ) {
       return false;
     }

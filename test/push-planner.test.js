@@ -137,7 +137,7 @@ test('plans and applies local changes when remote still matches the pull base', 
   const plan = planFor(base, local, baseSite());
 
   assert.equal(plan.status, 'ready');
-  assert.equal(plan.summary.mutations, 2);
+  assert.equal(plan.summary.mutations, 1);
   const result = applyPlan(baseSite(), plan);
   assert.equal(result.site.files['index.php'], '<?php echo "local";');
   assert.equal(result.site.db.wp_posts['ID:1'].post_title, 'Local title');
@@ -1319,6 +1319,55 @@ test('blocks local postmeta references to stale remote-created post identity', (
   assert.equal(remote.db.wp_posts['ID:2'].post_title, 'remote-private-post-title');
 });
 
+test('allows a local postmeta reference to a same-plan post through the generic postmeta-post edge', () => {
+  const resourceKey = 'row:["wp_postmeta","meta_id:46"]';
+  const targetResourceKey = 'row:["wp_posts","ID:2"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_title: 'Local generic target post',
+    post_content: 'local-private-generic-target-body',
+    post_status: 'publish',
+  };
+  local.db.wp_postmeta = {
+    'meta_id:46': {
+      meta_id: 46,
+      post_id: 2,
+      meta_key: '_local_graph_note',
+      meta_value: 'local-private-generic-meta-payload',
+    },
+  };
+
+  const plan = planFor(base, local, baseSite());
+  const targetMutation = mutationFor(plan, targetResourceKey);
+  const postmetaMutation = mutationFor(plan, resourceKey);
+  const reference = postmetaMutation.wordpressGraphReferences.find((entry) => entry.relationshipType === 'postmeta-post');
+  const referenceJson = JSON.stringify(reference);
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.blockers, 0);
+  assert.equal(targetMutation.changeKind, 'create');
+  assert.equal(postmetaMutation.changeKind, 'create');
+  assert.ok(
+    plan.mutations.indexOf(targetMutation) < plan.mutations.indexOf(postmetaMutation),
+    'target post create must be ordered before dependent generic postmeta',
+  );
+  assert.deepEqual(postmetaMutation.dependsOnMutationIds, [targetMutation.id]);
+  assert.equal(reference.resolutionPolicy, 'same-plan-local-create');
+  assert.equal(reference.relationshipKey, 'wp_postmeta.post_id');
+  assert.equal(reference.relationshipType, 'postmeta-post');
+  assert.equal(reference.targetResourceKey, targetResourceKey);
+  assert.equal(reference.dependency.targetMutationId, targetMutation.id);
+  assert.equal(reference.dependency.targetLocalHash, targetMutation.localHash);
+  assert.equal(referenceJson.includes('local-private-generic-target-body'), false);
+  assert.equal(referenceJson.includes('local-private-generic-meta-payload'), false);
+
+  const result = applyPlan(baseSite(), plan);
+  assert.equal(result.site.db.wp_posts['ID:2'].post_title, 'Local generic target post');
+  assert.equal(result.site.db.wp_postmeta['meta_id:46'].post_id, 2);
+});
+
 test('blocks a term taxonomy parent reference to stale remote-created term identity', () => {
   const resourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:9"]';
   const targetResourceKey = 'row:["wp_terms","term_id:7"]';
@@ -1372,6 +1421,58 @@ test('blocks a term taxonomy parent reference to stale remote-created term ident
   assert.equal(planJson.includes('remote-private-term-name'), false);
   assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
   assert.equal(remote.db.wp_terms['term_id:7'].name, 'remote-private-term-name');
+});
+
+test('blocks a term taxonomy parent reference to a same-plan term when the term is already used by a remote nav menu taxonomy', () => {
+  const resourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:9"]';
+  const targetResourceKey = 'row:["wp_terms","term_id:7"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_terms = {
+    'term_id:7': {
+      term_id: 7,
+      name: 'local-private-term-name',
+      slug: 'local-private-term-slug',
+    },
+  };
+  local.db.wp_term_taxonomy = {
+    'term_taxonomy_id:9': {
+      term_taxonomy_id: 9,
+      term_id: 7,
+      taxonomy: 'category',
+      description: '',
+      parent: 7,
+      count: 0,
+    },
+  };
+  const remote = baseSite();
+  remote.db.wp_term_taxonomy = {
+    'term_taxonomy_id:20': {
+      term_taxonomy_id: 20,
+      term_id: 7,
+      taxonomy: 'nav_menu',
+      description: '',
+      parent: 0,
+      count: 0,
+    },
+  };
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers[0];
+  const blockerTypes = plan.blockers.flatMap((entry) => entry.references.map((reference) => reference.relationshipType));
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 2);
+  assert.equal(mutationFor(plan, resourceKey).changeKind, 'create');
+  assert.equal(decisionFor(plan, targetResourceKey), undefined);
+  assert.equal(blocker.class, 'missing-wordpress-graph-dependency');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.resolutionPolicy, 'preserve-remote-wordpress-graph-and-stop');
+  assert.deepEqual(blockerTypes.sort(), ['term-taxonomy-parent', 'term-taxonomy-term']);
+  assert.equal(plan.blockers.length, 2);
+  assert.equal(JSON.stringify(plan.blockers).includes('local-private-term-name'), false);
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
+  assert.equal(remote.db.wp_term_taxonomy['term_taxonomy_id:20'].taxonomy, 'nav_menu');
 });
 
 test('blocks local termmeta references to stale remote-created term identity', () => {
@@ -1497,12 +1598,57 @@ test('blocks attachment-owned postmeta references to a same-plan post', () => {
   const blocker = plan.blockers[0];
 
   assert.equal(plan.status, 'blocked');
-  assert.equal(plan.summary.mutations, 2);
+  assert.equal(plan.summary.mutations, 1);
   assert.equal(blocker.class, 'unsupported-wordpress-graph-surface');
   assert.equal(blocker.resourceKey, resourceKey);
   assert.equal(blocker.surface, 'attachment');
   assert.equal(
     JSON.stringify(blocker).includes('local-private-attachment-note'),
+    false,
+  );
+  assert.throws(() => applyPlan(baseSite(), plan), /Refusing to apply/);
+});
+
+test('blocks revision-owned postmeta references to a same-plan attachment', () => {
+  const resourceKey = 'row:["wp_postmeta","meta_id:47"]';
+  const attachmentResourceKey = 'row:["wp_posts","ID:2"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_posts['ID:5'] = {
+    ID: 5,
+    post_title: 'Local revision owner',
+    post_content: 'local-private-revision-owner-body',
+    post_status: 'inherit',
+    post_type: 'revision',
+  };
+  local.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_title: 'Local attachment target',
+    post_content: 'local-private-attachment-target-body',
+    post_status: 'inherit',
+    post_type: 'attachment',
+  };
+  local.db.wp_postmeta = {
+    'meta_id:47': {
+      meta_id: 47,
+      post_id: 5,
+      meta_key: 'revision-note',
+      meta_value: 'local-private-revision-note',
+    },
+  };
+
+  const plan = planFor(base, local, baseSite());
+  const attachmentMutation = mutationFor(plan, attachmentResourceKey);
+  const blocker = plan.blockers[0];
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 1);
+  assert.equal(attachmentMutation.changeKind, 'create');
+  assert.equal(blocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.surface, 'revision');
+  assert.equal(
+    JSON.stringify(blocker).includes('local-private-revision-note'),
     false,
   );
   assert.throws(() => applyPlan(baseSite(), plan), /Refusing to apply/);
@@ -1530,14 +1676,136 @@ test('blocks a local postmeta reference to a same-plan navigation post', () => {
   };
 
   const plan = planFor(base, local, baseSite());
+  const targetMutation = mutationFor(plan, targetResourceKey);
   const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
 
   assert.equal(plan.status, 'blocked');
-  assert.equal(mutationFor(plan, targetResourceKey), undefined);
+  assert.equal(targetMutation.changeKind, 'create');
   assert.equal(mutationFor(plan, resourceKey), undefined);
   assert.equal(blocker.class, 'unsupported-wordpress-graph-surface');
   assert.equal(blocker.surface, 'wp_navigation');
   assert.equal(JSON.stringify(blocker).includes('local-private-nav-note'), false);
+  assert.throws(() => applyPlan(baseSite(), plan), /Refusing to apply/);
+});
+
+test('blocks a local postmeta reference owned by a wp_navigation post even when it targets a same-plan attachment', () => {
+  const resourceKey = 'row:["wp_postmeta","meta_id:50"]';
+  const targetResourceKey = 'row:["wp_posts","ID:6"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_posts['ID:4'] = {
+    ID: 4,
+    post_title: 'Local navigation owner',
+    post_content: 'local-private-navigation-owner-body',
+    post_status: 'publish',
+    post_type: 'wp_navigation',
+  };
+  local.db.wp_posts['ID:6'] = {
+    ID: 6,
+    post_title: 'Local attachment target',
+    post_content: 'local-private-attachment-target-body',
+    post_status: 'inherit',
+    post_type: 'attachment',
+  };
+  local.db.wp_postmeta = {
+    'meta_id:50': {
+      meta_id: 50,
+      post_id: 4,
+      meta_key: 'navigation-note',
+      meta_value: 6,
+    },
+  };
+
+  const plan = planFor(base, local, baseSite());
+  const targetMutation = mutationFor(plan, targetResourceKey);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 1);
+  assert.equal(targetMutation.changeKind, 'create');
+  assert.equal(blocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(blocker.surface, 'wp_navigation');
+  assert.equal(JSON.stringify(blocker).includes('local-private-navigation-owner-body'), false);
+  assert.equal(JSON.stringify(blocker).includes('local-private-attachment-target-body'), false);
+  assert.throws(() => applyPlan(baseSite(), plan), /Refusing to apply/);
+});
+
+test('blocks a local postmeta reference owned by a wp_navigation post even when it targets a same-plan revision', () => {
+  const resourceKey = 'row:["wp_postmeta","meta_id:51"]';
+  const targetResourceKey = 'row:["wp_posts","ID:14"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_posts['ID:13'] = {
+    ID: 13,
+    post_title: 'Local navigation owner',
+    post_content: 'local-private-navigation-owner-body',
+    post_status: 'publish',
+    post_type: 'wp_navigation',
+  };
+  local.db.wp_posts['ID:14'] = {
+    ID: 14,
+    post_title: 'Local revision target',
+    post_content: 'local-private-revision-target-body',
+    post_status: 'inherit',
+    post_type: 'revision',
+  };
+  local.db.wp_postmeta = {
+    'meta_id:51': {
+      meta_id: 51,
+      post_id: 13,
+      meta_key: 'navigation-note',
+      meta_value: 14,
+    },
+  };
+
+  const plan = planFor(base, local, baseSite());
+  const targetMutation = mutationFor(plan, targetResourceKey);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(targetMutation, undefined);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(blocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(blocker.surface, 'wp_navigation');
+  assert.equal(JSON.stringify(blocker).includes('local-private-navigation-owner-body'), false);
+  assert.equal(JSON.stringify(blocker).includes('local-private-revision-target-body'), false);
+  assert.throws(() => applyPlan(baseSite(), plan), /Refusing to apply/);
+});
+
+test('allows a local postmeta reference to a same-plan revision', () => {
+  const resourceKey = 'row:["wp_postmeta","meta_id:52"]';
+  const targetResourceKey = 'row:["wp_posts","ID:5"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_posts['ID:5'] = {
+    ID: 5,
+    post_title: 'Local revision target',
+    post_content: 'local-private-revision-target-body',
+    post_status: 'inherit',
+    post_type: 'revision',
+  };
+  local.db.wp_postmeta = {
+    'meta_id:52': {
+      meta_id: 52,
+      post_id: 1,
+      meta_key: 'revision-note',
+      meta_value: 5,
+    },
+  };
+
+  const plan = planFor(base, local, baseSite());
+  const postmetaMutation = mutationFor(plan, resourceKey);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === targetResourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(postmetaMutation.changeKind, 'create');
+  assert.equal(mutationFor(plan, targetResourceKey), undefined);
+  assert.ok(blocker);
+  assert.equal(blocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(blocker.surface, 'revision');
+  assert.equal(JSON.stringify(blocker).includes('local-private-revision-target-body'), false);
+  assert.equal(JSON.stringify(blocker).includes('revision-note'), false);
   assert.throws(() => applyPlan(baseSite(), plan), /Refusing to apply/);
 });
 
@@ -1569,10 +1837,11 @@ test('blocks revision-owned thumbnail metadata from referencing a same-plan post
   };
 
   const plan = planFor(base, local, baseSite());
+  const targetMutation = mutationFor(plan, targetResourceKey);
   const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
 
   assert.equal(plan.status, 'blocked');
-  assert.notEqual(mutationFor(plan, targetResourceKey), undefined);
+  assert.equal(targetMutation.changeKind, 'create');
   assert.equal(mutationFor(plan, resourceKey), undefined);
   assert.equal(blocker.class, 'unsupported-wordpress-graph-surface');
   assert.equal(blocker.surface, 'revision');
@@ -1610,10 +1879,11 @@ test('blocks revision-owned thumbnail metadata from referencing a same-plan atta
   };
 
   const plan = planFor(base, local, baseSite());
+  const targetMutation = mutationFor(plan, targetResourceKey);
   const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
 
   assert.equal(plan.status, 'blocked');
-  assert.notEqual(mutationFor(plan, targetResourceKey), undefined);
+  assert.equal(targetMutation.changeKind, 'create');
   assert.equal(mutationFor(plan, resourceKey), undefined);
   assert.equal(blocker.class, 'unsupported-wordpress-graph-surface');
   assert.equal(blocker.surface, 'revision');
@@ -1650,15 +1920,99 @@ test('blocks revision-owned menu item parent metadata from referencing a same-pl
   };
 
   const plan = planFor(base, local, baseSite());
+  const targetMutation = mutationFor(plan, targetResourceKey);
   const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
 
   assert.equal(plan.status, 'blocked');
-  assert.notEqual(mutationFor(plan, targetResourceKey), undefined);
+  assert.equal(targetMutation.changeKind, 'create');
   assert.equal(mutationFor(plan, resourceKey), undefined);
   assert.equal(blocker.class, 'unsupported-wordpress-graph-surface');
   assert.equal(blocker.surface, 'revision');
   assert.equal(JSON.stringify(blocker).includes('local-private-revision-owner-body'), false);
   assert.equal(JSON.stringify(blocker).includes('local-private-target-post-body'), false);
+  assert.throws(() => applyPlan(baseSite(), plan), /Refusing to apply/);
+});
+
+test('blocks revision-owned menu item parent metadata from referencing a same-plan attachment', () => {
+  const resourceKey = 'row:["wp_postmeta","meta_id:51"]';
+  const targetResourceKey = 'row:["wp_posts","ID:14"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_posts['ID:13'] = {
+    ID: 13,
+    post_title: 'Local revision owner',
+    post_content: 'local-private-revision-owner-body',
+    post_status: 'inherit',
+    post_type: 'revision',
+  };
+  local.db.wp_posts['ID:14'] = {
+    ID: 14,
+    post_title: 'Local target attachment',
+    post_content: 'local-private-target-attachment-body',
+    post_status: 'inherit',
+    post_type: 'attachment',
+  };
+  local.db.wp_postmeta = {
+    'meta_id:51': {
+      meta_id: 51,
+      post_id: 13,
+      meta_key: 'menu_item_parent',
+      meta_value: 14,
+    },
+  };
+
+  const plan = planFor(base, local, baseSite());
+  const targetMutation = mutationFor(plan, targetResourceKey);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(targetMutation.changeKind, 'create');
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(blocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(blocker.surface, 'revision');
+  assert.equal(JSON.stringify(blocker).includes('local-private-revision-owner-body'), false);
+  assert.equal(JSON.stringify(blocker).includes('local-private-target-attachment-body'), false);
+  assert.throws(() => applyPlan(baseSite(), plan), /Refusing to apply/);
+});
+
+test('blocks revision-owned menu item parent metadata from referencing a same-plan wp_navigation post', () => {
+  const resourceKey = 'row:["wp_postmeta","meta_id:54"]';
+  const targetResourceKey = 'row:["wp_posts","ID:14"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_posts['ID:13'] = {
+    ID: 13,
+    post_title: 'Local revision owner',
+    post_content: 'local-private-revision-owner-body',
+    post_status: 'inherit',
+    post_type: 'revision',
+  };
+  local.db.wp_posts['ID:14'] = {
+    ID: 14,
+    post_title: 'Local navigation target',
+    post_content: 'local-private-navigation-target-body',
+    post_status: 'publish',
+    post_type: 'wp_navigation',
+  };
+  local.db.wp_postmeta = {
+    'meta_id:54': {
+      meta_id: 54,
+      post_id: 13,
+      meta_key: 'menu_item_parent',
+      meta_value: 14,
+    },
+  };
+
+  const plan = planFor(base, local, baseSite());
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(mutationFor(plan, targetResourceKey), undefined);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(blocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(blocker.surface, 'revision');
+  assert.equal(JSON.stringify(blocker).includes('local-private-revision-owner-body'), false);
+  assert.equal(JSON.stringify(blocker).includes('local-private-navigation-target-body'), false);
   assert.throws(() => applyPlan(baseSite(), plan), /Refusing to apply/);
 });
 
@@ -1686,7 +2040,7 @@ test('allows local postmeta references to a post created by the same plan', () =
   const plan = planFor(base, local, remote);
   const targetMutation = mutationFor(plan, targetResourceKey);
   const postmetaMutation = mutationFor(plan, resourceKey);
-  const reference = postmetaMutation.wordpressGraphReferences[0];
+  const reference = postmetaMutation.wordpressGraphReferences.find((entry) => entry.relationshipType === 'menu-item-parent-post');
   const referenceJson = JSON.stringify(reference);
 
   assert.equal(plan.status, 'ready');
@@ -1759,7 +2113,7 @@ test('allows local menu item parent metadata to reference a post created by the 
   const plan = planFor(base, local, remote);
   const targetMutation = mutationFor(plan, targetResourceKey);
   const postmetaMutation = mutationFor(plan, resourceKey);
-  const reference = postmetaMutation.wordpressGraphReferences[0];
+  const reference = postmetaMutation.wordpressGraphReferences.find((entry) => entry.relationshipType === 'menu-item-parent-post');
 
   assert.equal(plan.status, 'ready');
   assert.equal(plan.summary.blockers, 0);
@@ -1916,6 +2270,142 @@ test('allows menu item parent metadata to reference a same-plan post', () => {
   assert.equal(result.site.db.wp_postmeta['meta_id:49'].meta_value, 2);
 });
 
+test('allows menu item parent metadata to reference a same-plan post even when a remote navigation post exists', () => {
+  const resourceKey = 'row:["wp_postmeta","meta_id:50"]';
+  const parentResourceKey = 'row:["wp_posts","ID:2"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_title: 'Local menu parent target',
+    post_content: 'local-private-menu-parent-target-body',
+    post_status: 'publish',
+  };
+  local.db.wp_postmeta = {
+    'meta_id:50': {
+      meta_id: 50,
+      post_id: 1,
+      meta_key: 'menu_item_parent',
+      meta_value: 2,
+    },
+  };
+  const remote = baseSite();
+  remote.db.wp_posts['ID:9'] = {
+    ID: 9,
+    post_title: 'Remote navigation post',
+    post_content: 'remote-navigation-body',
+    post_status: 'publish',
+    post_type: 'wp_navigation',
+  };
+
+  const plan = planFor(base, local, remote);
+  const targetMutation = mutationFor(plan, parentResourceKey);
+  const postmetaMutation = mutationFor(plan, resourceKey);
+  const reference = postmetaMutation.wordpressGraphReferences[0];
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.blockers, 0);
+  assert.equal(targetMutation.changeKind, 'create');
+  assert.equal(postmetaMutation.changeKind, 'create');
+  assert.ok(
+    plan.mutations.indexOf(targetMutation) < plan.mutations.indexOf(postmetaMutation),
+    'target post create must be ordered before dependent menu item metadata',
+  );
+  assert.deepEqual(postmetaMutation.dependsOnMutationIds, [targetMutation.id]);
+  assert.equal(reference.resolutionPolicy, 'same-plan-local-create');
+  assert.equal(reference.relationshipKey, 'wp_postmeta.meta_value');
+  assert.equal(reference.relationshipType, 'menu-item-parent-post');
+  assert.equal(reference.targetResourceKey, parentResourceKey);
+  assert.equal(reference.targetChange.localChange, 'create');
+  assert.equal(reference.targetChange.remoteChange, 'unchanged');
+  assert.equal(JSON.stringify(reference).includes('remote-navigation-body'), false);
+
+  const result = applyPlan(baseSite(), plan);
+  assert.equal(result.site.db.wp_posts['ID:2'].post_title, 'Local menu parent target');
+  assert.equal(result.site.db.wp_postmeta['meta_id:50'].meta_value, 2);
+});
+
+test('blocks menu item parent metadata owned by an attachment even when it targets a same-plan attachment', () => {
+  const resourceKey = 'row:["wp_postmeta","meta_id:50"]';
+  const attachmentResourceKey = 'row:["wp_posts","ID:2"]';
+  const targetResourceKey = 'row:["wp_posts","ID:3"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_title: 'Local attachment owner',
+    post_content: 'local-private-attachment-owner-body',
+    post_status: 'inherit',
+    post_type: 'attachment',
+  };
+  local.db.wp_posts['ID:3'] = {
+    ID: 3,
+    post_title: 'Local attachment target',
+    post_content: 'local-private-attachment-target-body',
+    post_status: 'inherit',
+    post_type: 'attachment',
+  };
+  local.db.wp_postmeta = {
+    'meta_id:50': {
+      meta_id: 50,
+      post_id: 2,
+      meta_key: 'menu_item_parent',
+      meta_value: 3,
+    },
+  };
+
+  const plan = planFor(base, local, baseSite());
+  const attachmentMutation = mutationFor(plan, attachmentResourceKey);
+  const targetMutation = mutationFor(plan, targetResourceKey);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 2);
+  assert.equal(attachmentMutation.changeKind, 'create');
+  assert.equal(targetMutation.changeKind, 'create');
+  assert.equal(blocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(blocker.surface, 'attachment');
+  assert.equal(JSON.stringify(blocker).includes('local-private-attachment-owner-body'), false);
+  assert.equal(JSON.stringify(blocker).includes('local-private-attachment-target-body'), false);
+});
+
+test('blocks menu item parent metadata from referencing a same-plan revision', () => {
+  const resourceKey = 'row:["wp_postmeta","meta_id:52"]';
+  const revisionResourceKey = 'row:["wp_posts","ID:5"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_posts['ID:5'] = {
+    ID: 5,
+    post_title: 'Local revision target',
+    post_content: 'local-private-revision-target-body',
+    post_type: 'revision',
+  };
+  local.db.wp_postmeta = {
+    'meta_id:52': {
+      meta_id: 52,
+      post_id: 1,
+      meta_key: 'menu_item_parent',
+      meta_value: 5,
+    },
+  };
+
+  const plan = planFor(base, local, baseSite());
+  const revisionMutation = mutationFor(plan, revisionResourceKey);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 2);
+  assert.equal(revisionMutation, undefined);
+  assert.ok(blocker);
+  assert.equal(blocker.class, 'missing-wordpress-graph-dependency');
+  assert.equal(blocker.references[0].relationshipType, 'menu-item-parent-post');
+  assert.equal(blocker.references[0].targetResourceKey, revisionResourceKey);
+  assert.equal(
+    JSON.stringify(blocker).includes('local-private-revision-target-body'),
+    false,
+  );
+});
+
 test('allows a local post to reference a parent post created by the same plan', () => {
   const parentResourceKey = 'row:["wp_posts","ID:2"]';
   const childResourceKey = 'row:["wp_posts","ID:3"]';
@@ -1965,6 +2455,108 @@ test('allows a local post to reference a parent post created by the same plan', 
   assert.equal(result.site.db.wp_posts['ID:3'].post_parent, 2);
 });
 
+test('allows a local attachment to reference a parent post created by the same plan even when a remote navigation post exists', () => {
+  const parentResourceKey = 'row:["wp_posts","ID:2"]';
+  const attachmentResourceKey = 'row:["wp_posts","ID:3"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_title: 'Local parent post',
+    post_content: 'local-private-parent-body',
+    post_status: 'publish',
+  };
+  local.db.wp_posts['ID:3'] = {
+    ID: 3,
+    post_title: 'Local attachment',
+    post_content: 'local-private-attachment-body',
+    post_status: 'inherit',
+    post_type: 'attachment',
+    post_parent: 2,
+  };
+  const remote = baseSite();
+  remote.db.wp_posts['ID:9'] = {
+    ID: 9,
+    post_title: 'Remote navigation post',
+    post_content: 'remote-navigation-body',
+    post_status: 'publish',
+    post_type: 'wp_navigation',
+  };
+
+  const plan = planFor(base, local, remote);
+  const parentMutation = mutationFor(plan, parentResourceKey);
+  const attachmentMutation = mutationFor(plan, attachmentResourceKey);
+  const reference = attachmentMutation.wordpressGraphReferences.find((entry) => entry.relationshipType === 'post-parent');
+  const referenceJson = JSON.stringify(reference);
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.blockers, 0);
+  assert.equal(parentMutation.changeKind, 'create');
+  assert.equal(attachmentMutation.changeKind, 'create');
+  assert.ok(
+    plan.mutations.indexOf(parentMutation) < plan.mutations.indexOf(attachmentMutation),
+    'parent post create must be ordered before dependent attachment',
+  );
+  assert.deepEqual(attachmentMutation.dependsOnMutationIds, [parentMutation.id]);
+  assert.equal(reference.resolutionPolicy, 'same-plan-local-create');
+  assert.equal(reference.relationshipKey, 'wp_posts.post_parent');
+  assert.equal(reference.relationshipType, 'post-parent');
+  assert.equal(reference.targetResourceKey, parentResourceKey);
+  assert.equal(referenceJson.includes('local-private-parent-body'), false);
+  assert.equal(referenceJson.includes('remote-navigation-body'), false);
+});
+
+test('allows a local page parent reference to a same-plan post even when a remote navigation post exists', () => {
+  const parentResourceKey = 'row:["wp_posts","ID:2"]';
+  const pageResourceKey = 'row:["wp_posts","ID:3"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_title: 'Local parent post',
+    post_content: 'local-private-parent-body',
+    post_status: 'publish',
+  };
+  local.db.wp_posts['ID:3'] = {
+    ID: 3,
+    post_title: 'Local page child',
+    post_content: 'local-private-page-body',
+    post_status: 'publish',
+    post_parent: 2,
+  };
+  const remote = baseSite();
+  remote.db.wp_posts['ID:9'] = {
+    ID: 9,
+    post_title: 'Remote navigation post',
+    post_content: 'remote-navigation-body',
+    post_status: 'publish',
+    post_type: 'wp_navigation',
+  };
+
+  const plan = planFor(base, local, remote);
+  const parentMutation = mutationFor(plan, parentResourceKey);
+  const pageMutation = mutationFor(plan, pageResourceKey);
+  const reference = pageMutation.wordpressGraphReferences.find((entry) => entry.relationshipType === 'post-parent');
+  const referenceJson = JSON.stringify(reference);
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.blockers, 0);
+  assert.equal(parentMutation.changeKind, 'create');
+  assert.equal(pageMutation.changeKind, 'create');
+  assert.ok(
+    plan.mutations.indexOf(parentMutation) < plan.mutations.indexOf(pageMutation),
+    'parent post create must be ordered before dependent page',
+  );
+  assert.deepEqual(pageMutation.dependsOnMutationIds, [parentMutation.id]);
+  assert.equal(reference.resolutionPolicy, 'same-plan-local-create');
+  assert.equal(reference.relationshipKey, 'wp_posts.post_parent');
+  assert.equal(reference.relationshipType, 'post-parent');
+  assert.equal(reference.targetResourceKey, parentResourceKey);
+  assert.equal(referenceJson.includes('local-private-parent-body'), false);
+  assert.equal(referenceJson.includes('local-private-page-body'), false);
+  assert.equal(referenceJson.includes('remote-navigation-body'), false);
+});
+
 test('allows a local thumbnail reference to an attachment created by the same plan', () => {
   const attachmentResourceKey = 'row:["wp_posts","ID:2"]';
   const postmetaResourceKey = 'row:["wp_postmeta","meta_id:45"]';
@@ -1990,7 +2582,7 @@ test('allows a local thumbnail reference to an attachment created by the same pl
   const plan = planFor(base, local, remote);
   const attachmentMutation = mutationFor(plan, attachmentResourceKey);
   const postmetaMutation = mutationFor(plan, postmetaResourceKey);
-  const reference = postmetaMutation.wordpressGraphReferences[0];
+  const reference = postmetaMutation.wordpressGraphReferences.find((entry) => entry.relationshipType === 'featured-image-attachment');
   const referenceJson = JSON.stringify(reference);
 
   assert.equal(plan.status, 'ready');
@@ -2013,6 +2605,640 @@ test('allows a local thumbnail reference to an attachment created by the same pl
   const result = applyPlan(remote, plan);
   assert.equal(result.site.db.wp_posts['ID:2'].post_type, 'attachment');
   assert.equal(result.site.db.wp_postmeta['meta_id:45'].meta_value, 2);
+});
+
+test('allows a local thumbnail reference owned by a same-plan post to an attachment created by the same plan', () => {
+  const postResourceKey = 'row:["wp_posts","ID:3"]';
+  const attachmentResourceKey = 'row:["wp_posts","ID:2"]';
+  const postmetaResourceKey = 'row:["wp_postmeta","meta_id:45"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_posts['ID:3'] = {
+    ID: 3,
+    post_title: 'Local thumbnail owner post',
+    post_content: 'local-private-thumbnail-owner-body',
+    post_status: 'publish',
+  };
+  local.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_title: 'Local attachment',
+    post_content: 'local-private-thumbnail-attachment-body',
+    post_status: 'inherit',
+    post_type: 'attachment',
+  };
+  local.db.wp_postmeta = {
+    'meta_id:45': {
+      meta_id: 45,
+      post_id: 3,
+      meta_key: '_thumbnail_id',
+      meta_value: 2,
+    },
+  };
+  const remote = baseSite();
+
+  const plan = planFor(base, local, remote);
+  const postMutation = mutationFor(plan, postResourceKey);
+  const attachmentMutation = mutationFor(plan, attachmentResourceKey);
+  const postmetaMutation = mutationFor(plan, postmetaResourceKey);
+  const reference = postmetaMutation.wordpressGraphReferences.find((entry) => entry.relationshipType === 'featured-image-attachment');
+  const referenceJson = JSON.stringify(reference);
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.blockers, 0);
+  assert.equal(postMutation.changeKind, 'create');
+  assert.equal(attachmentMutation.changeKind, 'create');
+  assert.equal(postmetaMutation.changeKind, 'create');
+  assert.ok(
+    plan.mutations.indexOf(postMutation) < plan.mutations.indexOf(postmetaMutation),
+    'thumbnail owner post create must be ordered before dependent thumbnail metadata',
+  );
+  assert.ok(
+    plan.mutations.indexOf(attachmentMutation) < plan.mutations.indexOf(postmetaMutation),
+    'attachment create must be ordered before dependent thumbnail metadata',
+  );
+  assert.deepEqual(postmetaMutation.dependsOnMutationIds.sort(), [attachmentMutation.id, postMutation.id].sort());
+  assert.equal(reference.resolutionPolicy, 'same-plan-local-create');
+  assert.equal(reference.relationshipKey, 'wp_postmeta.meta_value');
+  assert.equal(reference.relationshipType, 'featured-image-attachment');
+  assert.equal(reference.targetResourceKey, attachmentResourceKey);
+  assert.equal(referenceJson.includes('local-private-thumbnail-owner-body'), false);
+  assert.equal(referenceJson.includes('local-private-thumbnail-attachment-body'), false);
+
+  const result = applyPlan(remote, plan);
+  assert.equal(result.site.db.wp_posts['ID:3'].post_title, 'Local thumbnail owner post');
+  assert.equal(result.site.db.wp_posts['ID:2'].post_type, 'attachment');
+  assert.equal(result.site.db.wp_postmeta['meta_id:45'].meta_value, 2);
+});
+
+test('allows a local post, attachment, and thumbnail graph to resolve in the same plan', () => {
+  const parentResourceKey = 'row:["wp_posts","ID:3"]';
+  const attachmentResourceKey = 'row:["wp_posts","ID:2"]';
+  const postmetaResourceKey = 'row:["wp_postmeta","meta_id:45"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_posts['ID:3'] = {
+    ID: 3,
+    post_title: 'Local attachment parent post',
+    post_content: 'local-private-attachment-parent-post-body',
+    post_status: 'publish',
+  };
+  local.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_title: 'Local attachment',
+    post_content: 'local-private-attachment-body',
+    post_status: 'inherit',
+    post_type: 'attachment',
+    post_parent: 3,
+  };
+  local.db.wp_postmeta = {
+    'meta_id:45': {
+      meta_id: 45,
+      post_id: 3,
+      meta_key: '_thumbnail_id',
+      meta_value: 2,
+    },
+  };
+
+  const plan = planFor(base, local, baseSite());
+  const parentMutation = mutationFor(plan, parentResourceKey);
+  const attachmentMutation = mutationFor(plan, attachmentResourceKey);
+  const postmetaMutation = mutationFor(plan, postmetaResourceKey);
+  const parentReference = attachmentMutation.wordpressGraphReferences.find((entry) => entry.relationshipType === 'post-parent');
+  const thumbnailReference = postmetaMutation.wordpressGraphReferences.find((entry) => entry.relationshipType === 'featured-image-attachment');
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.blockers, 0);
+  assert.equal(parentMutation.changeKind, 'create');
+  assert.equal(attachmentMutation.changeKind, 'create');
+  assert.equal(postmetaMutation.changeKind, 'create');
+  assert.ok(
+    plan.mutations.indexOf(parentMutation) < plan.mutations.indexOf(attachmentMutation),
+    'parent post create must be ordered before dependent attachment',
+  );
+  assert.ok(
+    plan.mutations.indexOf(attachmentMutation) < plan.mutations.indexOf(postmetaMutation),
+    'attachment create must be ordered before dependent thumbnail metadata',
+  );
+  assert.deepEqual(attachmentMutation.dependsOnMutationIds, [parentMutation.id]);
+  assert.deepEqual(postmetaMutation.dependsOnMutationIds.sort(), [attachmentMutation.id, parentMutation.id].sort());
+  assert.equal(parentReference.resolutionPolicy, 'same-plan-local-create');
+  assert.equal(parentReference.relationshipKey, 'wp_posts.post_parent');
+  assert.equal(parentReference.relationshipType, 'post-parent');
+  assert.equal(parentReference.targetResourceKey, parentResourceKey);
+  assert.equal(thumbnailReference.resolutionPolicy, 'same-plan-local-create');
+  assert.equal(thumbnailReference.relationshipKey, 'wp_postmeta.meta_value');
+  assert.equal(thumbnailReference.relationshipType, 'featured-image-attachment');
+  assert.equal(thumbnailReference.targetResourceKey, attachmentResourceKey);
+  assert.equal(thumbnailReference.dependency.targetMutationId, attachmentMutation.id);
+  assert.equal(thumbnailReference.dependency.targetLocalHash, attachmentMutation.localHash);
+  assert.equal(
+    JSON.stringify(parentReference).includes('local-private-attachment-parent-post-body'),
+    false,
+  );
+  assert.equal(JSON.stringify(thumbnailReference).includes('local-private-attachment-body'), false);
+
+  const result = applyPlan(baseSite(), plan);
+  assert.equal(result.site.db.wp_posts['ID:3'].post_title, 'Local attachment parent post');
+  assert.equal(result.site.db.wp_posts['ID:2'].post_parent, 3);
+  assert.equal(result.site.db.wp_postmeta['meta_id:45'].meta_value, 2);
+});
+
+test('allows a local thumbnail reference owned by a same-plan post to an attachment created by the same plan even when a remote navigation post exists', () => {
+  const postResourceKey = 'row:["wp_posts","ID:3"]';
+  const attachmentResourceKey = 'row:["wp_posts","ID:2"]';
+  const postmetaResourceKey = 'row:["wp_postmeta","meta_id:45"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_posts['ID:3'] = {
+    ID: 3,
+    post_title: 'Local thumbnail owner post',
+    post_content: 'local-private-thumbnail-owner-body',
+    post_status: 'publish',
+  };
+  local.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_title: 'Local attachment',
+    post_content: 'local-private-thumbnail-attachment-body',
+    post_status: 'inherit',
+    post_type: 'attachment',
+  };
+  local.db.wp_postmeta = {
+    'meta_id:45': {
+      meta_id: 45,
+      post_id: 3,
+      meta_key: '_thumbnail_id',
+      meta_value: 2,
+    },
+  };
+  const remote = baseSite();
+  remote.db.wp_posts['ID:9'] = {
+    ID: 9,
+    post_title: 'Remote navigation post',
+    post_content: 'remote-navigation-body',
+    post_status: 'publish',
+    post_type: 'wp_navigation',
+  };
+
+  const plan = planFor(base, local, remote);
+  const postMutation = mutationFor(plan, postResourceKey);
+  const attachmentMutation = mutationFor(plan, attachmentResourceKey);
+  const postmetaMutation = mutationFor(plan, postmetaResourceKey);
+  const reference = postmetaMutation.wordpressGraphReferences.find((entry) => entry.relationshipType === 'featured-image-attachment');
+  const referenceJson = JSON.stringify(reference);
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.blockers, 0);
+  assert.equal(postMutation.changeKind, 'create');
+  assert.equal(attachmentMutation.changeKind, 'create');
+  assert.equal(postmetaMutation.changeKind, 'create');
+  assert.ok(
+    plan.mutations.indexOf(postMutation) < plan.mutations.indexOf(postmetaMutation),
+    'thumbnail owner post create must be ordered before dependent thumbnail metadata',
+  );
+  assert.ok(
+    plan.mutations.indexOf(attachmentMutation) < plan.mutations.indexOf(postmetaMutation),
+    'attachment create must be ordered before dependent thumbnail metadata',
+  );
+  assert.deepEqual(postmetaMutation.dependsOnMutationIds.sort(), [attachmentMutation.id, postMutation.id].sort());
+  assert.equal(reference.resolutionPolicy, 'same-plan-local-create');
+  assert.equal(reference.relationshipKey, 'wp_postmeta.meta_value');
+  assert.equal(reference.relationshipType, 'featured-image-attachment');
+  assert.equal(reference.targetResourceKey, attachmentResourceKey);
+  assert.equal(referenceJson.includes('local-private-thumbnail-owner-body'), false);
+  assert.equal(referenceJson.includes('local-private-thumbnail-attachment-body'), false);
+  assert.equal(referenceJson.includes('remote-navigation-body'), false);
+});
+
+test('blocks a local thumbnail reference from an attachment to a same-plan attachment', () => {
+  const sourceAttachmentResourceKey = 'row:["wp_posts","ID:1"]';
+  const targetAttachmentResourceKey = 'row:["wp_posts","ID:2"]';
+  const postmetaResourceKey = 'row:["wp_postmeta","meta_id:45"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_posts['ID:1'] = {
+    ID: 1,
+    post_title: 'Local source attachment',
+    post_content: 'local-private-source-attachment-body',
+    post_status: 'inherit',
+    post_type: 'attachment',
+  };
+  local.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_title: 'Local target attachment',
+    post_content: 'local-private-target-attachment-body',
+    post_status: 'inherit',
+    post_type: 'attachment',
+  };
+  local.db.wp_postmeta = {
+    'meta_id:45': {
+      meta_id: 45,
+      post_id: 1,
+      meta_key: '_thumbnail_id',
+      meta_value: 2,
+    },
+  };
+  const remote = baseSite();
+
+  const plan = planFor(base, local, remote);
+  const sourceAttachmentMutation = mutationFor(plan, sourceAttachmentResourceKey);
+  const targetAttachmentMutation = mutationFor(plan, targetAttachmentResourceKey);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === postmetaResourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 2);
+  assert.equal(sourceAttachmentMutation.changeKind, 'update');
+  assert.equal(targetAttachmentMutation.changeKind, 'create');
+  assert.equal(blocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(blocker.resourceKey, postmetaResourceKey);
+  assert.equal(blocker.surface, 'attachment');
+  assert.equal(
+    JSON.stringify(blocker).includes('local-private-source-attachment-body'),
+    false,
+  );
+  assert.equal(
+    JSON.stringify(blocker).includes('local-private-target-attachment-body'),
+    false,
+  );
+});
+
+test('blocks a local thumbnail reference from an attachment to a same-plan post', () => {
+  const sourceAttachmentResourceKey = 'row:["wp_posts","ID:1"]';
+  const targetPostResourceKey = 'row:["wp_posts","ID:3"]';
+  const postmetaResourceKey = 'row:["wp_postmeta","meta_id:45"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_posts['ID:1'] = {
+    ID: 1,
+    post_title: 'Local source attachment',
+    post_content: 'local-private-source-attachment-body',
+    post_status: 'inherit',
+    post_type: 'attachment',
+  };
+  local.db.wp_posts['ID:3'] = {
+    ID: 3,
+    post_title: 'Local target post',
+    post_content: 'local-private-target-post-body',
+    post_status: 'publish',
+  };
+  local.db.wp_postmeta = {
+    'meta_id:45': {
+      meta_id: 45,
+      post_id: 1,
+      meta_key: '_thumbnail_id',
+      meta_value: 3,
+    },
+  };
+
+  const plan = planFor(base, local, baseSite());
+  const sourceAttachmentMutation = mutationFor(plan, sourceAttachmentResourceKey);
+  const targetPostMutation = mutationFor(plan, targetPostResourceKey);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === postmetaResourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 2);
+  assert.equal(sourceAttachmentMutation.changeKind, 'update');
+  assert.equal(targetPostMutation.changeKind, 'create');
+  assert.equal(blocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(blocker.resourceKey, postmetaResourceKey);
+  assert.equal(blocker.surface, 'attachment');
+  assert.equal(
+    JSON.stringify(blocker).includes('local-private-source-attachment-body'),
+    false,
+  );
+  assert.equal(
+    JSON.stringify(blocker).includes('local-private-target-post-body'),
+    false,
+  );
+});
+
+test('blocks menu item parent metadata from referencing a same-plan wp_navigation post', () => {
+  const navigationResourceKey = 'row:["wp_posts","ID:2"]';
+  const postmetaResourceKey = 'row:["wp_postmeta","meta_id:46"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_title: 'Local navigation target',
+    post_content: 'local-private-navigation-target-body',
+    post_status: 'inherit',
+    post_type: 'wp_navigation',
+  };
+  local.db.wp_postmeta = {
+    'meta_id:46': {
+      meta_id: 46,
+      post_id: 1,
+      meta_key: 'menu_item_parent',
+      meta_value: 2,
+    },
+  };
+  const remote = baseSite();
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === postmetaResourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 2);
+  assert.equal(mutationFor(plan, navigationResourceKey), undefined);
+  assert.equal(mutationFor(plan, postmetaResourceKey).changeKind, 'create');
+  assert.equal(blocker.class, 'missing-wordpress-graph-dependency');
+  assert.equal(blocker.references[0].relationshipType, 'menu-item-parent-post');
+  assert.equal(blocker.references[0].targetResourceKey, navigationResourceKey);
+  assert.equal(
+    JSON.stringify(blocker).includes('local-private-navigation-target-body'),
+    false,
+  );
+});
+
+test('blocks menu item parent metadata from referencing a same-plan nav_menu_item post', () => {
+  const navigationResourceKey = 'row:["wp_posts","ID:2"]';
+  const postmetaResourceKey = 'row:["wp_postmeta","meta_id:50"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_title: 'Local navigation item target',
+    post_content: 'local-private-navigation-item-target-body',
+    post_status: 'publish',
+    post_type: 'nav_menu_item',
+  };
+  local.db.wp_postmeta = {
+    'meta_id:50': {
+      meta_id: 50,
+      post_id: 1,
+      meta_key: 'menu_item_parent',
+      meta_value: 2,
+    },
+  };
+  const remote = baseSite();
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === postmetaResourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 3);
+  assert.equal(mutationFor(plan, navigationResourceKey), undefined);
+  assert.equal(mutationFor(plan, postmetaResourceKey).changeKind, 'create');
+  assert.equal(blocker.class, 'missing-wordpress-graph-dependency');
+  assert.equal(blocker.references[0].relationshipType, 'menu-item-parent-post');
+  assert.equal(blocker.references[0].targetResourceKey, navigationResourceKey);
+  assert.equal(
+    JSON.stringify(blocker).includes('local-private-navigation-item-target-body'),
+    false,
+  );
+});
+
+test('blocks menu item parent metadata from a regular post when it targets a same-plan attachment', () => {
+  const sourcePostResourceKey = 'row:["wp_posts","ID:2"]';
+  const targetAttachmentResourceKey = 'row:["wp_posts","ID:3"]';
+  const postmetaResourceKey = 'row:["wp_postmeta","meta_id:51"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_title: 'Local source post',
+    post_content: 'local-private-source-post-body',
+    post_status: 'publish',
+    post_type: 'post',
+  };
+  local.db.wp_posts['ID:3'] = {
+    ID: 3,
+    post_title: 'Local attachment target',
+    post_content: 'local-private-attachment-target-body',
+    post_status: 'inherit',
+    post_type: 'attachment',
+  };
+  local.db.wp_postmeta = {
+    'meta_id:51': {
+      meta_id: 51,
+      post_id: 2,
+      meta_key: 'menu_item_parent',
+      meta_value: 3,
+    },
+  };
+  const remote = baseSite();
+
+  const plan = planFor(base, local, remote);
+  const sourceMutation = mutationFor(plan, sourcePostResourceKey);
+  const targetMutation = mutationFor(plan, targetAttachmentResourceKey);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === postmetaResourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 3);
+  assert.equal(sourceMutation.changeKind, 'create');
+  assert.equal(targetMutation.changeKind, 'create');
+  assert.equal(mutationFor(plan, postmetaResourceKey).changeKind, 'create');
+  assert.equal(blocker.class, 'missing-wordpress-graph-dependency');
+  assert.equal(blocker.resolutionPolicy, 'preserve-remote-wordpress-graph-and-stop');
+  assert.equal(blocker.references[0].relationshipType, 'menu-item-parent-post');
+  assert.equal(blocker.references[0].targetResourceKey, targetAttachmentResourceKey);
+  assert.equal(
+    JSON.stringify(blocker).includes('local-private-source-post-body'),
+    false,
+  );
+  assert.equal(
+    JSON.stringify(blocker).includes('local-private-attachment-target-body'),
+    false,
+  );
+});
+
+test('blocks menu item parent metadata from a regular post when it targets a same-plan wp_navigation post', () => {
+  const sourcePostResourceKey = 'row:["wp_posts","ID:2"]';
+  const targetNavigationResourceKey = 'row:["wp_posts","ID:4"]';
+  const postmetaResourceKey = 'row:["wp_postmeta","meta_id:55"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_title: 'Local source post',
+    post_content: 'local-private-source-post-body',
+    post_status: 'publish',
+    post_type: 'post',
+  };
+  local.db.wp_posts['ID:4'] = {
+    ID: 4,
+    post_title: 'Local navigation target',
+    post_content: 'local-private-navigation-target-body',
+    post_status: 'publish',
+    post_type: 'wp_navigation',
+  };
+  local.db.wp_postmeta = {
+    'meta_id:55': {
+      meta_id: 55,
+      post_id: 2,
+      meta_key: 'menu_item_parent',
+      meta_value: 4,
+    },
+  };
+  const remote = baseSite();
+
+  const plan = planFor(base, local, remote);
+  const sourceMutation = mutationFor(plan, sourcePostResourceKey);
+  const targetMutation = mutationFor(plan, targetNavigationResourceKey);
+  const targetBlocker = plan.blockers.find((entry) => entry.resourceKey === targetNavigationResourceKey);
+  const postmetaBlocker = plan.blockers.find((entry) => entry.resourceKey === postmetaResourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 2);
+  assert.equal(sourceMutation.changeKind, 'create');
+  assert.equal(targetMutation, undefined);
+  assert.equal(postmetaBlocker.class, 'missing-wordpress-graph-dependency');
+  assert.equal(postmetaBlocker.references[0].relationshipType, 'menu-item-parent-post');
+  assert.equal(postmetaBlocker.references[0].targetResourceKey, targetNavigationResourceKey);
+  assert.equal(targetBlocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(targetBlocker.surface, 'wp_navigation');
+  assert.equal(
+    JSON.stringify(postmetaBlocker).includes('local-private-source-post-body'),
+    false,
+  );
+  assert.equal(
+    JSON.stringify(postmetaBlocker).includes('local-private-navigation-target-body'),
+    false,
+  );
+  assert.equal(
+    JSON.stringify(targetBlocker).includes('local-private-navigation-target-body'),
+    false,
+  );
+  assert.throws(() => applyPlan(baseSite(), plan), /Refusing to apply/);
+});
+
+test('blocks menu item parent metadata from referencing a same-plan attachment even after same-plan graph hardening', () => {
+  const resourceKey = 'row:["wp_postmeta","meta_id:53"]';
+  const attachmentResourceKey = 'row:["wp_posts","ID:2"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_title: 'Local attachment target',
+    post_content: 'local-private-attachment-target-body',
+    post_status: 'inherit',
+    post_type: 'attachment',
+  };
+  local.db.wp_postmeta = {
+    'meta_id:53': {
+      meta_id: 53,
+      post_id: 1,
+      meta_key: 'menu_item_parent',
+      meta_value: 2,
+    },
+  };
+
+  const plan = planFor(base, local, baseSite());
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 2);
+  assert.equal(mutationFor(plan, resourceKey).changeKind, 'create');
+  assert.equal(mutationFor(plan, attachmentResourceKey).changeKind, 'create');
+  assert.equal(blocker.class, 'missing-wordpress-graph-dependency');
+  assert.equal(blocker.references[0].relationshipType, 'menu-item-parent-post');
+  assert.equal(blocker.references[0].targetResourceKey, attachmentResourceKey);
+  assert.equal(
+    JSON.stringify(blocker).includes('local-private-attachment-target-body'),
+    false,
+  );
+});
+
+test('allows menu item parent metadata from a regular post to a same-plan post', () => {
+  const sourcePostResourceKey = 'row:["wp_posts","ID:2"]';
+  const targetPostResourceKey = 'row:["wp_posts","ID:3"]';
+  const postmetaResourceKey = 'row:["wp_postmeta","meta_id:56"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_title: 'Local menu item owner',
+    post_content: 'local-private-menu-item-owner-body',
+    post_status: 'publish',
+  };
+  local.db.wp_posts['ID:3'] = {
+    ID: 3,
+    post_title: 'Local menu parent target',
+    post_content: 'local-private-menu-parent-target-body',
+    post_status: 'publish',
+  };
+  local.db.wp_postmeta = {
+    'meta_id:56': {
+      meta_id: 56,
+      post_id: 2,
+      meta_key: 'menu_item_parent',
+      meta_value: 3,
+    },
+  };
+  const remote = baseSite();
+
+  const plan = planFor(base, local, remote);
+  const sourceMutation = mutationFor(plan, sourcePostResourceKey);
+  const targetMutation = mutationFor(plan, targetPostResourceKey);
+  const postmetaMutation = mutationFor(plan, postmetaResourceKey);
+  const reference = postmetaMutation.wordpressGraphReferences.find((entry) => entry.relationshipType === 'menu-item-parent-post');
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.blockers, 0);
+  assert.equal(sourceMutation.changeKind, 'create');
+  assert.equal(targetMutation.changeKind, 'create');
+  assert.equal(postmetaMutation.changeKind, 'create');
+  assert.deepEqual(postmetaMutation.dependsOnMutationIds, [sourceMutation.id, targetMutation.id]);
+  assert.equal(reference.resolutionPolicy, 'same-plan-local-create');
+  assert.equal(reference.relationshipKey, 'wp_postmeta.meta_value');
+  assert.equal(reference.relationshipType, 'menu-item-parent-post');
+  assert.equal(reference.targetResourceKey, targetPostResourceKey);
+  assert.equal(JSON.stringify(reference).includes('local-private-menu-item-owner-body'), false);
+  assert.equal(JSON.stringify(reference).includes('local-private-menu-parent-target-body'), false);
+
+  const result = applyPlan(remote, plan);
+  assert.equal(result.site.db.wp_posts['ID:2'].post_title, 'Local menu item owner');
+  assert.equal(result.site.db.wp_posts['ID:3'].post_title, 'Local menu parent target');
+  assert.equal(result.site.db.wp_postmeta['meta_id:56'].meta_value, 3);
+});
+
+test('blocks menu item parent metadata owned by an attachment even when it targets a same-plan post', () => {
+  const resourceKey = 'row:["wp_postmeta","meta_id:54"]';
+  const attachmentResourceKey = 'row:["wp_posts","ID:2"]';
+  const targetResourceKey = 'row:["wp_posts","ID:3"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_title: 'Local attachment owner',
+    post_content: 'local-private-attachment-owner-body',
+    post_status: 'inherit',
+    post_type: 'attachment',
+  };
+  local.db.wp_posts['ID:3'] = {
+    ID: 3,
+    post_title: 'Local menu parent target',
+    post_content: 'local-private-menu-parent-target-body',
+    post_status: 'publish',
+  };
+  local.db.wp_postmeta = {
+    'meta_id:54': {
+      meta_id: 54,
+      post_id: 2,
+      meta_key: 'menu_item_parent',
+      meta_value: 3,
+    },
+  };
+
+  const plan = planFor(base, local, baseSite());
+  const attachmentMutation = mutationFor(plan, attachmentResourceKey);
+  const targetMutation = mutationFor(plan, targetResourceKey);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 2);
+  assert.equal(attachmentMutation.changeKind, 'create');
+  assert.equal(targetMutation.changeKind, 'create');
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(blocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(blocker.surface, 'attachment');
+  assert.equal(
+    JSON.stringify(blocker).includes('local-private-attachment-owner-body'),
+    false,
+  );
+  assert.equal(
+    JSON.stringify(blocker).includes('local-private-menu-parent-target-body'),
+    false,
+  );
 });
 
 test('blocks a local thumbnail reference to a same-plan non-attachment post', () => {
@@ -2041,7 +3267,7 @@ test('blocks a local thumbnail reference to a same-plan non-attachment post', ()
   const blocker = plan.blockers.find((entry) => entry.resourceKey === postmetaResourceKey);
 
   assert.equal(plan.status, 'blocked');
-  assert.equal(plan.summary.mutations, 2);
+  assert.equal(plan.summary.mutations, 1);
   assert.equal(blocker.class, 'missing-wordpress-graph-dependency');
   assert.equal(blocker.resolutionPolicy, 'preserve-remote-wordpress-graph-and-stop');
   assert.equal(blocker.references[0].relationshipType, 'featured-image-attachment');
@@ -2049,6 +3275,46 @@ test('blocks a local thumbnail reference to a same-plan non-attachment post', ()
   assert.equal(blocker.references[0].targetChange.local.state, 'present');
   assert.equal(
     JSON.stringify(blocker).includes('local-private-post-body'),
+    false,
+  );
+});
+
+test('blocks a local thumbnail reference to a same-plan revision', () => {
+  const targetResourceKey = 'row:["wp_posts","ID:2"]';
+  const postmetaResourceKey = 'row:["wp_postmeta","meta_id:45"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_title: 'Local revision target',
+    post_content: 'local-private-revision-target-body',
+    post_status: 'inherit',
+    post_type: 'revision',
+  };
+  local.db.wp_postmeta = {
+    'meta_id:45': {
+      meta_id: 45,
+      post_id: 1,
+      meta_key: '_thumbnail_id',
+      meta_value: 2,
+    },
+  };
+  const remote = baseSite();
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === postmetaResourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 1);
+  assert.equal(mutationFor(plan, targetResourceKey), undefined);
+  assert.equal(mutationFor(plan, postmetaResourceKey).changeKind, 'create');
+  assert.equal(blocker.class, 'missing-wordpress-graph-dependency');
+  assert.equal(blocker.resolutionPolicy, 'preserve-remote-wordpress-graph-and-stop');
+  assert.equal(blocker.references[0].relationshipType, 'featured-image-attachment');
+  assert.equal(blocker.references[0].targetResourceKey, targetResourceKey);
+  assert.equal(blocker.references[0].targetChange.local.state, 'present');
+  assert.equal(
+    JSON.stringify(blocker).includes('local-private-revision-target-body'),
     false,
   );
 });
@@ -2087,6 +3353,8 @@ test('blocks a local thumbnail reference from an attachment to a same-plan attac
 
   assert.equal(plan.status, 'blocked');
   assert.equal(plan.summary.mutations, 2);
+  assert.notEqual(mutationFor(plan, targetResourceKey), undefined);
+  assert.equal(mutationFor(plan, postmetaResourceKey), undefined);
   assert.equal(blocker.class, 'unsupported-wordpress-graph-surface');
   assert.equal(blocker.surface, 'attachment');
   assert.equal(
@@ -2145,6 +3413,97 @@ test('blocks a local thumbnail reference from an attachment to a same-plan non-a
   );
 });
 
+test('blocks a local thumbnail reference from an attachment to a same-plan revision', () => {
+  const targetResourceKey = 'row:["wp_posts","ID:5"]';
+  const postmetaResourceKey = 'row:["wp_postmeta","meta_id:48"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_title: 'Local attachment source',
+    post_content: 'local-private-attachment-source-body',
+    post_status: 'inherit',
+    post_type: 'attachment',
+  };
+  local.db.wp_posts['ID:5'] = {
+    ID: 5,
+    post_title: 'Local revision target',
+    post_content: 'local-private-revision-target-body',
+    post_status: 'inherit',
+    post_type: 'revision',
+  };
+  local.db.wp_postmeta = {
+    'meta_id:48': {
+      meta_id: 48,
+      post_id: 2,
+      meta_key: '_thumbnail_id',
+      meta_value: 5,
+    },
+  };
+  const remote = baseSite();
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === postmetaResourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 2);
+  assert.equal(blocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(blocker.surface, 'attachment');
+  assert.equal(
+    JSON.stringify(blocker).includes('local-private-attachment-source-body'),
+    false,
+  );
+  assert.equal(
+    JSON.stringify(blocker).includes('local-private-revision-target-body'),
+    false,
+  );
+});
+
+test('blocks a local thumbnail reference to a same-plan wp_navigation post', () => {
+  const navigationResourceKey = 'row:["wp_posts","ID:5"]';
+  const postmetaResourceKey = 'row:["wp_postmeta","meta_id:49"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_title: 'Local thumbnail post',
+    post_content: 'local-private-thumbnail-post-body',
+    post_status: 'publish',
+  };
+  local.db.wp_posts['ID:5'] = {
+    ID: 5,
+    post_title: 'Local navigation target',
+    post_content: 'local-private-navigation-target-body',
+    post_status: 'publish',
+    post_type: 'wp_navigation',
+  };
+  local.db.wp_postmeta = {
+    'meta_id:49': {
+      meta_id: 49,
+      post_id: 2,
+      meta_key: '_thumbnail_id',
+      meta_value: 5,
+    },
+  };
+  const remote = baseSite();
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === postmetaResourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 2);
+  assert.equal(mutationFor(plan, navigationResourceKey), undefined);
+  assert.equal(blocker.class, 'missing-wordpress-graph-dependency');
+  assert.equal(
+    JSON.stringify(blocker).includes('local-private-thumbnail-post-body'),
+    false,
+  );
+  assert.equal(
+    JSON.stringify(blocker).includes('local-private-navigation-target-body'),
+    false,
+  );
+});
+
 test('blocks a local thumbnail reference owned by a navigation post even when it targets a same-plan attachment', () => {
   const sourceResourceKey = 'row:["wp_posts","ID:2"]';
   const targetResourceKey = 'row:["wp_posts","ID:4"]';
@@ -2180,7 +3539,7 @@ test('blocks a local thumbnail reference owned by a navigation post even when it
   const blocker = plan.blockers.find((entry) => entry.resourceKey === sourceResourceKey);
 
   assert.equal(plan.status, 'blocked');
-  assert.equal(plan.summary.mutations, 1);
+  assert.equal(plan.summary.mutations, 2);
   assert.equal(mutationFor(plan, sourceResourceKey), undefined);
   assert.equal(targetMutation.changeKind, 'create');
   assert.equal(blocker.class, 'unsupported-wordpress-graph-surface');
@@ -2246,7 +3605,7 @@ test('allows a local attachment to reference a parent post created by the same p
   assert.equal(result.site.db.wp_posts['ID:3'].post_type, 'attachment');
 });
 
-test('blocks a local non-attachment post parent reference to a same-plan attachment', () => {
+test('blocks a local page parent reference to a same-plan attachment', () => {
   const attachmentResourceKey = 'row:["wp_posts","ID:2"]';
   const postResourceKey = 'row:["wp_posts","ID:3"]';
   const base = baseSite();
@@ -2327,6 +3686,133 @@ test('blocks a local non-attachment post parent reference to a same-plan revisio
   );
 });
 
+test('blocks a local non-attachment post parent reference to a same-plan wp_navigation post', () => {
+  const navigationResourceKey = 'row:["wp_posts","ID:2"]';
+  const postResourceKey = 'row:["wp_posts","ID:3"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_title: 'Local navigation parent',
+    post_content: 'local-private-navigation-parent-body',
+    post_type: 'wp_navigation',
+    post_status: 'publish',
+  };
+  local.db.wp_posts['ID:3'] = {
+    ID: 3,
+    post_title: 'Local page child',
+    post_content: 'local-private-page-child-body',
+    post_status: 'publish',
+    post_parent: 2,
+  };
+  const remote = baseSite();
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === postResourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 1);
+  assert.equal(mutationFor(plan, navigationResourceKey), undefined);
+  assert.equal(mutationFor(plan, postResourceKey).changeKind, 'create');
+  assert.equal(blocker.class, 'missing-wordpress-graph-dependency');
+  assert.equal(blocker.references[0].relationshipType, 'post-parent');
+  assert.equal(blocker.references[0].targetResourceKey, navigationResourceKey);
+  assert.equal(
+    JSON.stringify(blocker).includes('local-private-navigation-parent-body'),
+    false,
+  );
+  assert.equal(
+    JSON.stringify(blocker).includes('local-private-page-child-body'),
+    false,
+  );
+});
+
+test('blocks a local non-attachment post parent reference to a same-plan attachment', () => {
+  const attachmentResourceKey = 'row:["wp_posts","ID:2"]';
+  const postResourceKey = 'row:["wp_posts","ID:3"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_title: 'Local attachment parent',
+    post_content: 'local-private-attachment-parent-body',
+    post_status: 'inherit',
+    post_type: 'attachment',
+  };
+  local.db.wp_posts['ID:3'] = {
+    ID: 3,
+    post_title: 'Local child post',
+    post_content: 'local-private-child-post-body',
+    post_status: 'publish',
+    post_parent: 2,
+  };
+  const remote = baseSite();
+
+  const plan = planFor(base, local, remote);
+  const attachmentMutation = mutationFor(plan, attachmentResourceKey);
+  const postMutation = mutationFor(plan, postResourceKey);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === postResourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 2);
+  assert.equal(attachmentMutation.changeKind, 'create');
+  assert.equal(postMutation.changeKind, 'create');
+  assert.equal(blocker.class, 'missing-wordpress-graph-dependency');
+  assert.equal(blocker.resolutionPolicy, 'preserve-remote-wordpress-graph-and-stop');
+  assert.equal(blocker.references[0].relationshipType, 'post-parent');
+  assert.equal(blocker.references[0].targetResourceKey, attachmentResourceKey);
+  assert.equal(
+    JSON.stringify(blocker).includes('local-private-attachment-parent-body'),
+    false,
+  );
+  assert.equal(
+    JSON.stringify(blocker).includes('local-private-child-post-body'),
+    false,
+  );
+});
+
+test('blocks a local attachment parent reference to a same-plan wp_navigation post', () => {
+  const navigationResourceKey = 'row:["wp_posts","ID:2"]';
+  const attachmentResourceKey = 'row:["wp_posts","ID:3"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_title: 'Local navigation parent',
+    post_content: 'local-private-navigation-parent-body',
+    post_type: 'wp_navigation',
+    post_status: 'publish',
+  };
+  local.db.wp_posts['ID:3'] = {
+    ID: 3,
+    post_title: 'Local attachment child',
+    post_content: 'local-private-attachment-child-body',
+    post_status: 'inherit',
+    post_type: 'attachment',
+    post_parent: 2,
+  };
+  const remote = baseSite();
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === attachmentResourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 1);
+  assert.equal(mutationFor(plan, navigationResourceKey), undefined);
+  assert.equal(mutationFor(plan, attachmentResourceKey).changeKind, 'create');
+  assert.equal(blocker.class, 'missing-wordpress-graph-dependency');
+  assert.equal(blocker.references[0].relationshipType, 'post-parent');
+  assert.equal(blocker.references[0].targetResourceKey, navigationResourceKey);
+  assert.equal(
+    JSON.stringify(blocker).includes('local-private-navigation-parent-body'),
+    false,
+  );
+  assert.equal(
+    JSON.stringify(blocker).includes('local-private-attachment-child-body'),
+    false,
+  );
+});
+
 test('blocks a local postmeta reference to a same-plan attachment when it is not thumbnail metadata', () => {
   const resourceKey = 'row:["wp_postmeta","meta_id:46"]';
   const attachmentResourceKey = 'row:["wp_posts","ID:2"]';
@@ -2358,6 +3844,91 @@ test('blocks a local postmeta reference to a same-plan attachment when it is not
   assert.equal(blocker.surface, 'attachment');
   assert.equal(
     JSON.stringify(blocker).includes('local-private-attachment-note'),
+    false,
+  );
+  assert.throws(() => applyPlan(baseSite(), plan), /Refusing to apply/);
+});
+
+test('blocks attachment-owned postmeta references to a same-plan attachment', () => {
+  const resourceKey = 'row:["wp_postmeta","meta_id:47"]';
+  const attachmentResourceKey = 'row:["wp_posts","ID:3"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_title: 'Local attachment owner',
+    post_content: 'local-private-attachment-owner-body',
+    post_status: 'inherit',
+    post_type: 'attachment',
+  };
+  local.db.wp_posts['ID:3'] = {
+    ID: 3,
+    post_title: 'Local target attachment',
+    post_content: 'local-private-target-attachment-body',
+    post_status: 'inherit',
+    post_type: 'attachment',
+  };
+  local.db.wp_postmeta = {
+    'meta_id:47': {
+      meta_id: 47,
+      post_id: 2,
+      meta_key: 'attachment-note',
+      meta_value: 'local-private-attachment-note',
+    },
+  };
+
+  const plan = planFor(base, local, baseSite());
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(mutationFor(plan, attachmentResourceKey).changeKind, 'create');
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(blocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(blocker.surface, 'attachment');
+  assert.equal(
+    JSON.stringify(blocker).includes('local-private-attachment-owner-body'),
+    false,
+  );
+  assert.equal(
+    JSON.stringify(blocker).includes('local-private-target-attachment-body'),
+    false,
+  );
+  assert.throws(() => applyPlan(baseSite(), plan), /Refusing to apply/);
+});
+
+test('blocks a local postmeta reference to a same-plan wp_navigation post', () => {
+  const resourceKey = 'row:["wp_postmeta","meta_id:48"]';
+  const navigationResourceKey = 'row:["wp_posts","ID:2"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_title: 'Local navigation target',
+    post_content: 'local-private-navigation-target-body',
+    post_status: 'publish',
+    post_type: 'wp_navigation',
+  };
+  local.db.wp_postmeta = {
+    'meta_id:48': {
+      meta_id: 48,
+      post_id: 1,
+      meta_key: 'navigation-note',
+      meta_value: 'local-private-navigation-note',
+    },
+  };
+
+  const plan = planFor(base, local, baseSite());
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === navigationResourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 1);
+  assert.equal(mutationFor(plan, navigationResourceKey), undefined);
+  assert.equal(mutationFor(plan, resourceKey).changeKind, 'create');
+  assert.equal(blocker.resourceKey, navigationResourceKey);
+  assert.equal(blocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(blocker.surface, 'wp_navigation');
+  assert.equal(
+    JSON.stringify(blocker).includes('local-private-navigation-note'),
     false,
   );
   assert.throws(() => applyPlan(baseSite(), plan), /Refusing to apply/);
@@ -2457,6 +4028,101 @@ test('blocks menu item parent metadata owned by a wp_navigation post even when i
   assert.equal(JSON.stringify(blocker).includes('local-private-menu-parent-target-body'), false);
 });
 
+test('blocks menu item parent metadata owned by a nav_menu_item post even when it targets a same-plan post', () => {
+  const resourceKey = 'row:["wp_postmeta","meta_id:51"]';
+  const navigationResourceKey = 'row:["wp_posts","ID:4"]';
+  const targetResourceKey = 'row:["wp_posts","ID:5"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_posts['ID:4'] = {
+    ID: 4,
+    post_title: 'Local nav_menu_item owner',
+    post_content: 'local-private-nav-menu-item-owner-body',
+    post_status: 'publish',
+    post_type: 'nav_menu_item',
+  };
+  local.db.wp_posts['ID:5'] = {
+    ID: 5,
+    post_title: 'Local menu parent target',
+    post_content: 'local-private-menu-parent-target-body',
+    post_status: 'publish',
+  };
+  local.db.wp_postmeta = {
+    'meta_id:51': {
+      meta_id: 51,
+      post_id: 4,
+      meta_key: 'menu_item_parent',
+      meta_value: 5,
+    },
+  };
+  const remote = baseSite();
+
+  const plan = planFor(base, local, remote);
+  const navigationMutation = mutationFor(plan, navigationResourceKey);
+  const targetMutation = mutationFor(plan, targetResourceKey);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 1);
+  assert.equal(navigationMutation, undefined);
+  assert.equal(targetMutation.changeKind, 'create');
+  assert.equal(blocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(blocker.surface, 'nav_menu_item');
+  assert.equal(
+    JSON.stringify(blocker).includes('local-private-nav-menu-item-owner-body'),
+    false,
+  );
+  assert.equal(JSON.stringify(blocker).includes('local-private-menu-parent-target-body'), false);
+});
+
+test('blocks menu item parent metadata owned by a wp_navigation post even when it targets a same-plan attachment', () => {
+  const resourceKey = 'row:["wp_postmeta","meta_id:52"]';
+  const navigationResourceKey = 'row:["wp_posts","ID:4"]';
+  const targetResourceKey = 'row:["wp_posts","ID:5"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_posts['ID:4'] = {
+    ID: 4,
+    post_title: 'Local wp_navigation owner',
+    post_content: 'local-private-wp-navigation-owner-body',
+    post_status: 'publish',
+    post_type: 'wp_navigation',
+  };
+  local.db.wp_posts['ID:5'] = {
+    ID: 5,
+    post_title: 'Local attachment target',
+    post_content: 'local-private-attachment-target-body',
+    post_status: 'inherit',
+    post_type: 'attachment',
+  };
+  local.db.wp_postmeta = {
+    'meta_id:52': {
+      meta_id: 52,
+      post_id: 4,
+      meta_key: 'menu_item_parent',
+      meta_value: 5,
+    },
+  };
+  const remote = baseSite();
+
+  const plan = planFor(base, local, remote);
+  const navigationMutation = mutationFor(plan, navigationResourceKey);
+  const targetMutation = mutationFor(plan, targetResourceKey);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 1);
+  assert.equal(navigationMutation, undefined);
+  assert.equal(targetMutation.changeKind, 'create');
+  assert.equal(blocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(blocker.surface, 'wp_navigation');
+  assert.equal(
+    JSON.stringify(blocker).includes('local-private-wp-navigation-owner-body'),
+    false,
+  );
+  assert.equal(JSON.stringify(blocker).includes('local-private-attachment-target-body'), false);
+});
+
 test('allows a local thumbnail reference to a same-plan attachment after postmeta hardening', () => {
   const attachmentResourceKey = 'row:["wp_posts","ID:2"]';
   const postmetaResourceKey = 'row:["wp_postmeta","meta_id:47"]';
@@ -2491,6 +4157,168 @@ test('allows a local thumbnail reference to a same-plan attachment after postmet
   assert.equal(reference.resolutionPolicy, 'same-plan-local-create');
   assert.equal(reference.relationshipType, 'featured-image-attachment');
   assert.equal(reference.targetResourceKey, attachmentResourceKey);
+});
+
+test('allows a local thumbnail reference to a same-plan attachment even when a remote navigation post exists', () => {
+  const attachmentResourceKey = 'row:["wp_posts","ID:2"]';
+  const postmetaResourceKey = 'row:["wp_postmeta","meta_id:47"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_title: 'Local attachment',
+    post_content: 'local-private-attachment-body',
+    post_status: 'inherit',
+    post_type: 'attachment',
+  };
+  local.db.wp_postmeta = {
+    'meta_id:47': {
+      meta_id: 47,
+      post_id: 1,
+      meta_key: '_thumbnail_id',
+      meta_value: 2,
+    },
+  };
+  const remote = baseSite();
+  remote.db.wp_posts['ID:5'] = {
+    ID: 5,
+    post_title: 'Remote navigation post',
+    post_content: 'remote-navigation-body',
+    post_status: 'publish',
+    post_type: 'wp_navigation',
+  };
+
+  const plan = planFor(base, local, remote);
+  const attachmentMutation = mutationFor(plan, attachmentResourceKey);
+  const postmetaMutation = mutationFor(plan, postmetaResourceKey);
+  const reference = postmetaMutation.wordpressGraphReferences[0];
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.blockers, 0);
+  assert.equal(attachmentMutation.changeKind, 'create');
+  assert.equal(postmetaMutation.changeKind, 'create');
+  assert.deepEqual(postmetaMutation.dependsOnMutationIds, [attachmentMutation.id]);
+  assert.equal(reference.resolutionPolicy, 'same-plan-local-create');
+  assert.equal(reference.relationshipType, 'featured-image-attachment');
+  assert.equal(reference.targetResourceKey, attachmentResourceKey);
+  assert.equal(JSON.stringify(reference).includes('remote-navigation-body'), false);
+});
+
+test('allows a local attachment parent and thumbnail graph to resolve in the same plan', () => {
+  const postResourceKey = 'row:["wp_posts","ID:1"]';
+  const attachmentResourceKey = 'row:["wp_posts","ID:2"]';
+  const postmetaResourceKey = 'row:["wp_postmeta","meta_id:47"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_posts['ID:1'] = {
+    ID: 1,
+    post_title: 'Local parent post',
+    post_content: 'local-private-parent-post-body',
+    post_status: 'publish',
+  };
+  local.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_title: 'Local attachment child',
+    post_content: 'local-private-attachment-child-body',
+    post_status: 'inherit',
+    post_type: 'attachment',
+    post_parent: 1,
+  };
+  local.db.wp_postmeta = {
+    'meta_id:47': {
+      meta_id: 47,
+      post_id: 1,
+      meta_key: '_thumbnail_id',
+      meta_value: 2,
+    },
+  };
+
+  const plan = planFor(base, local, baseSite());
+  const postMutation = mutationFor(plan, postResourceKey);
+  const attachmentMutation = mutationFor(plan, attachmentResourceKey);
+  const postmetaMutation = mutationFor(plan, postmetaResourceKey);
+  const thumbnailReference = postmetaMutation.wordpressGraphReferences.find((entry) => entry.relationshipType === 'featured-image-attachment');
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.blockers, 0);
+  assert.equal(postMutation.changeKind, 'create');
+  assert.equal(attachmentMutation.changeKind, 'create');
+  assert.equal(postmetaMutation.changeKind, 'create');
+  assert.ok(
+    plan.mutations.indexOf(postMutation) < plan.mutations.indexOf(attachmentMutation),
+    'parent post create must be ordered before dependent attachment',
+  );
+  assert.ok(
+    plan.mutations.indexOf(postMutation) < plan.mutations.indexOf(postmetaMutation),
+    'parent post create must be ordered before dependent thumbnail metadata',
+  );
+  assert.ok(
+    plan.mutations.indexOf(attachmentMutation) < plan.mutations.indexOf(postmetaMutation),
+    'attachment create must be ordered before dependent thumbnail metadata',
+  );
+  assert.deepEqual(attachmentMutation.dependsOnMutationIds, [postMutation.id]);
+  assert.deepEqual(postmetaMutation.dependsOnMutationIds.sort(), [postMutation.id, attachmentMutation.id].sort());
+  assert.equal(thumbnailReference.resolutionPolicy, 'same-plan-local-create');
+  assert.equal(thumbnailReference.relationshipType, 'featured-image-attachment');
+  assert.equal(thumbnailReference.targetResourceKey, attachmentResourceKey);
+  assert.equal(JSON.stringify(thumbnailReference).includes('local-private-parent-post-body'), false);
+  assert.equal(JSON.stringify(thumbnailReference).includes('local-private-attachment-child-body'), false);
+
+  const result = applyPlan(baseSite(), plan);
+  assert.equal(result.site.db.wp_posts['ID:1'].post_title, 'Local parent post');
+  assert.equal(result.site.db.wp_posts['ID:2'].post_parent, 1);
+  assert.equal(result.site.db.wp_postmeta['meta_id:47'].meta_value, 2);
+});
+
+test('blocks a local thumbnail reference owned by an attachment even when it targets a same-plan attachment', () => {
+  const sourceAttachmentResourceKey = 'row:["wp_posts","ID:1"]';
+  const targetAttachmentResourceKey = 'row:["wp_posts","ID:2"]';
+  const postmetaResourceKey = 'row:["wp_postmeta","meta_id:48"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_posts['ID:1'] = {
+    ID: 1,
+    post_title: 'Local source attachment',
+    post_content: 'local-private-source-attachment-body',
+    post_status: 'inherit',
+    post_type: 'attachment',
+  };
+  local.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_title: 'Local target attachment',
+    post_content: 'local-private-target-attachment-body',
+    post_status: 'inherit',
+    post_type: 'attachment',
+  };
+  local.db.wp_postmeta = {
+    'meta_id:48': {
+      meta_id: 48,
+      post_id: 1,
+      meta_key: '_thumbnail_id',
+      meta_value: 2,
+    },
+  };
+
+  const plan = planFor(base, local, baseSite());
+  const sourceAttachmentMutation = mutationFor(plan, sourceAttachmentResourceKey);
+  const targetAttachmentMutation = mutationFor(plan, targetAttachmentResourceKey);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === postmetaResourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 2);
+  assert.equal(sourceAttachmentMutation.changeKind, 'update');
+  assert.equal(targetAttachmentMutation.changeKind, 'create');
+  assert.equal(blocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(blocker.surface, 'attachment');
+  assert.equal(
+    JSON.stringify(blocker).includes('local-private-source-attachment-body'),
+    false,
+  );
+  assert.equal(
+    JSON.stringify(blocker).includes('local-private-target-attachment-body'),
+    false,
+  );
+  assert.throws(() => applyPlan(baseSite(), plan), /Refusing to apply/);
 });
 
 test('blocks a local attachment parent reference to a same-plan attachment', () => {
@@ -2581,6 +4409,259 @@ test('allows a local attachment parent reference to a same-plan post', () => {
   const result = applyPlan(remote, plan);
   assert.equal(result.site.db.wp_posts['ID:2'].post_title, 'Local parent post');
   assert.equal(result.site.db.wp_posts['ID:3'].post_parent, 2);
+});
+
+test('allows a local attachment parent reference to a same-plan post even when a remote navigation post exists', () => {
+  const targetResourceKey = 'row:["wp_posts","ID:2"]';
+  const attachmentResourceKey = 'row:["wp_posts","ID:3"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_title: 'Local parent post',
+    post_content: 'local-private-parent-post-body',
+    post_status: 'publish',
+  };
+  local.db.wp_posts['ID:3'] = {
+    ID: 3,
+    post_title: 'Local attachment child',
+    post_content: 'local-private-attachment-child-body',
+    post_status: 'inherit',
+    post_type: 'attachment',
+    post_parent: 2,
+  };
+  const remote = baseSite();
+  remote.db.wp_posts['ID:5'] = {
+    ID: 5,
+    post_title: 'Remote navigation post',
+    post_content: 'remote-navigation-body',
+    post_status: 'publish',
+    post_type: 'wp_navigation',
+  };
+
+  const plan = planFor(base, local, remote);
+  const targetMutation = mutationFor(plan, targetResourceKey);
+  const attachmentMutation = mutationFor(plan, attachmentResourceKey);
+  const reference = attachmentMutation.wordpressGraphReferences[0];
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.blockers, 0);
+  assert.equal(targetMutation.changeKind, 'create');
+  assert.equal(attachmentMutation.changeKind, 'create');
+  assert.deepEqual(attachmentMutation.dependsOnMutationIds, [targetMutation.id]);
+  assert.equal(reference.resolutionPolicy, 'same-plan-local-create');
+  assert.equal(reference.relationshipKey, 'wp_posts.post_parent');
+  assert.equal(reference.relationshipType, 'post-parent');
+  assert.equal(reference.targetResourceKey, targetResourceKey);
+  assert.equal(
+    JSON.stringify(reference).includes('remote-navigation-body'),
+    false,
+  );
+
+  const result = applyPlan(remote, plan);
+  assert.equal(result.site.db.wp_posts['ID:2'].post_title, 'Local parent post');
+  assert.equal(result.site.db.wp_posts['ID:3'].post_parent, 2);
+  assert.equal(result.site.db.wp_posts['ID:5'].post_type, 'wp_navigation');
+});
+
+test('blocks a local post parent reference to a same-plan attachment', () => {
+  const parentResourceKey = 'row:["wp_posts","ID:2"]';
+  const childResourceKey = 'row:["wp_posts","ID:3"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_title: 'Local attachment parent',
+    post_content: 'local-private-attachment-parent-body',
+    post_status: 'inherit',
+    post_type: 'attachment',
+  };
+  local.db.wp_posts['ID:3'] = {
+    ID: 3,
+    post_title: 'Local child post',
+    post_content: 'local-private-child-body',
+    post_status: 'publish',
+    post_parent: 2,
+  };
+
+  const plan = planFor(base, local, baseSite());
+  const parentMutation = mutationFor(plan, parentResourceKey);
+  const childMutation = mutationFor(plan, childResourceKey);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === childResourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 2);
+  assert.equal(parentMutation.changeKind, 'create');
+  assert.equal(childMutation.changeKind, 'create');
+  assert.equal(blocker.class, 'missing-wordpress-graph-dependency');
+  assert.equal(blocker.references[0].relationshipType, 'post-parent');
+  assert.equal(blocker.references[0].targetResourceKey, parentResourceKey);
+  assert.equal(
+    JSON.stringify(blocker).includes('local-private-attachment-parent-body'),
+    false,
+  );
+  assert.equal(
+    JSON.stringify(blocker).includes('local-private-child-body'),
+    false,
+  );
+});
+
+test('blocks a local attachment parent reference to a same-plan revision', () => {
+  const revisionResourceKey = 'row:["wp_posts","ID:2"]';
+  const attachmentResourceKey = 'row:["wp_posts","ID:3"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_title: 'Local revision parent',
+    post_content: 'local-private-revision-parent-body',
+    post_type: 'revision',
+  };
+  local.db.wp_posts['ID:3'] = {
+    ID: 3,
+    post_title: 'Local attachment child',
+    post_content: 'local-private-attachment-child-body',
+    post_status: 'inherit',
+    post_type: 'attachment',
+    post_parent: 2,
+  };
+  const remote = baseSite();
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === attachmentResourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 1);
+  assert.equal(mutationFor(plan, revisionResourceKey), undefined);
+  assert.equal(mutationFor(plan, attachmentResourceKey).changeKind, 'create');
+  assert.equal(blocker.class, 'missing-wordpress-graph-dependency');
+  assert.equal(blocker.references[0].relationshipType, 'post-parent');
+  assert.equal(blocker.references[0].targetResourceKey, revisionResourceKey);
+  assert.equal(
+    JSON.stringify(blocker).includes('local-private-revision-parent-body'),
+    false,
+  );
+  assert.equal(
+    JSON.stringify(blocker).includes('local-private-attachment-child-body'),
+    false,
+  );
+});
+
+test('blocks a local attachment parent reference to a same-plan wp_navigation post', () => {
+  const navigationResourceKey = 'row:["wp_posts","ID:2"]';
+  const attachmentResourceKey = 'row:["wp_posts","ID:3"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_title: 'Local navigation parent',
+    post_content: 'local-private-navigation-parent-body',
+    post_status: 'publish',
+    post_type: 'wp_navigation',
+  };
+  local.db.wp_posts['ID:3'] = {
+    ID: 3,
+    post_title: 'Local attachment child',
+    post_content: 'local-private-attachment-child-body',
+    post_status: 'inherit',
+    post_type: 'attachment',
+    post_parent: 2,
+  };
+  const remote = baseSite();
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === attachmentResourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 1);
+  assert.equal(mutationFor(plan, navigationResourceKey), undefined);
+  assert.equal(mutationFor(plan, attachmentResourceKey).changeKind, 'create');
+  assert.equal(blocker.class, 'missing-wordpress-graph-dependency');
+  assert.equal(blocker.references[0].relationshipType, 'post-parent');
+  assert.equal(blocker.references[0].targetResourceKey, navigationResourceKey);
+  assert.equal(
+    JSON.stringify(blocker).includes('local-private-navigation-parent-body'),
+    false,
+  );
+  assert.equal(
+    JSON.stringify(blocker).includes('local-private-attachment-child-body'),
+    false,
+  );
+  assert.throws(() => applyPlan(baseSite(), plan), /Refusing to apply/);
+});
+
+test('blocks a local post parent reference to a same-plan wp_navigation post', () => {
+  const navigationResourceKey = 'row:["wp_posts","ID:4"]';
+  const postResourceKey = 'row:["wp_posts","ID:5"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_posts['ID:4'] = {
+    ID: 4,
+    post_title: 'Local navigation target',
+    post_content: 'local-private-navigation-target-body',
+    post_status: 'publish',
+    post_type: 'wp_navigation',
+  };
+  local.db.wp_posts['ID:5'] = {
+    ID: 5,
+    post_title: 'Local post child',
+    post_content: 'local-private-post-child-body',
+    post_status: 'publish',
+    post_parent: 4,
+  };
+
+  const plan = planFor(base, local, baseSite());
+  const navigationBlocker = plan.blockers.find((entry) => entry.resourceKey === navigationResourceKey);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === postResourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 1);
+  assert.equal(mutationFor(plan, navigationResourceKey), undefined);
+  assert.equal(mutationFor(plan, postResourceKey).changeKind, 'create');
+  assert.equal(navigationBlocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(navigationBlocker.surface, 'wp_navigation');
+  assert.equal(blocker.class, 'missing-wordpress-graph-dependency');
+  assert.equal(blocker.references[0].relationshipType, 'post-parent');
+  assert.equal(blocker.references[0].targetResourceKey, navigationResourceKey);
+  assert.equal(JSON.stringify(blocker).includes('local-private-navigation-target-body'), false);
+  assert.equal(JSON.stringify(blocker).includes('local-private-post-child-body'), false);
+  assert.throws(() => applyPlan(baseSite(), plan), /Refusing to apply/);
+});
+
+test('blocks a local post parent reference to a same-plan attachment', () => {
+  const attachmentResourceKey = 'row:["wp_posts","ID:6"]';
+  const postResourceKey = 'row:["wp_posts","ID:7"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_posts['ID:6'] = {
+    ID: 6,
+    post_title: 'Local attachment parent',
+    post_content: 'local-private-attachment-parent-body',
+    post_status: 'inherit',
+    post_type: 'attachment',
+  };
+  local.db.wp_posts['ID:7'] = {
+    ID: 7,
+    post_title: 'Local post child',
+    post_content: 'local-private-post-child-body',
+    post_status: 'publish',
+    post_parent: 6,
+  };
+
+  const plan = planFor(base, local, baseSite());
+  const attachmentBlocker = plan.blockers.find((entry) => entry.resourceKey === attachmentResourceKey);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === postResourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 2);
+  assert.equal(mutationFor(plan, attachmentResourceKey).changeKind, 'create');
+  assert.equal(mutationFor(plan, postResourceKey).changeKind, 'create');
+  assert.equal(attachmentBlocker, undefined);
+  assert.equal(blocker.class, 'missing-wordpress-graph-dependency');
+  assert.equal(blocker.references[0].relationshipType, 'post-parent');
+  assert.equal(blocker.references[0].targetResourceKey, attachmentResourceKey);
+  assert.equal(JSON.stringify(blocker).includes('local-private-attachment-parent-body'), false);
+  assert.equal(JSON.stringify(blocker).includes('local-private-post-child-body'), false);
 });
 
 test('allows term taxonomy and relationships to reference same-plan terms and posts', () => {
@@ -2736,6 +4817,152 @@ test('allows a term taxonomy parent to reference a term created by the same plan
   assert.equal(result.site.db.wp_term_taxonomy['term_taxonomy_id:9'].parent, 7);
 });
 
+test('allows a term taxonomy parent to reference a term created by the same plan even when a remote nav menu taxonomy exists', () => {
+  const parentTermResourceKey = 'row:["wp_terms","term_id:7"]';
+  const childTaxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:9"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_terms = {
+    'term_id:7': {
+      term_id: 7,
+      name: 'Local parent term',
+      slug: 'local-parent-term',
+    },
+  };
+  local.db.wp_term_taxonomy = {
+    'term_taxonomy_id:9': {
+      term_taxonomy_id: 9,
+      term_id: 7,
+      taxonomy: 'category',
+      description: '',
+      parent: 7,
+      count: 0,
+    },
+  };
+  const remote = baseSite();
+  remote.db.wp_terms = {
+    'term_id:21': {
+      term_id: 21,
+      name: 'Remote navigation term',
+      slug: 'remote-navigation-term',
+    },
+  };
+  remote.db.wp_term_taxonomy = {
+    'term_taxonomy_id:10': {
+      term_taxonomy_id: 10,
+      term_id: 21,
+      taxonomy: 'nav_menu',
+      description: '',
+      parent: 0,
+      count: 0,
+    },
+  };
+
+  const plan = planFor(base, local, remote);
+  const termMutation = mutationFor(plan, parentTermResourceKey);
+  const taxonomyMutation = mutationFor(plan, childTaxonomyResourceKey);
+  const reference = taxonomyMutation.wordpressGraphReferences.find((entry) => entry.relationshipType === 'term-taxonomy-parent');
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.blockers, 0);
+  assert.equal(termMutation.changeKind, 'create');
+  assert.equal(taxonomyMutation.changeKind, 'create');
+  assert.equal(reference.resolutionPolicy, 'same-plan-local-create');
+  assert.equal(reference.relationshipKey, 'wp_term_taxonomy.parent');
+  assert.equal(reference.relationshipType, 'term-taxonomy-parent');
+  assert.equal(reference.targetResourceKey, parentTermResourceKey);
+  assert.equal(
+    JSON.stringify(reference).includes('remote-navigation-term'),
+    false,
+  );
+});
+
+test('allows a term taxonomy to reference its same-plan term through the term relationship edge', () => {
+  const termResourceKey = 'row:["wp_terms","term_id:7"]';
+  const taxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:9"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_terms = {
+    'term_id:7': {
+      term_id: 7,
+      name: 'Local taxonomy term',
+      slug: 'local-taxonomy-term',
+    },
+  };
+  local.db.wp_term_taxonomy = {
+    'term_taxonomy_id:9': {
+      term_taxonomy_id: 9,
+      term_id: 7,
+      taxonomy: 'category',
+      description: '',
+      parent: 0,
+      count: 0,
+    },
+  };
+
+  const plan = planFor(base, local, baseSite());
+  const termMutation = mutationFor(plan, termResourceKey);
+  const taxonomyMutation = mutationFor(plan, taxonomyResourceKey);
+  const reference = taxonomyMutation.wordpressGraphReferences.find((entry) => entry.relationshipType === 'term-taxonomy-term');
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.blockers, 0);
+  assert.equal(termMutation.changeKind, 'create');
+  assert.equal(taxonomyMutation.changeKind, 'create');
+  assert.deepEqual(taxonomyMutation.dependsOnMutationIds, [termMutation.id]);
+  assert.equal(reference.resolutionPolicy, 'same-plan-local-create');
+  assert.equal(reference.relationshipKey, 'wp_term_taxonomy.term_id');
+  assert.equal(reference.relationshipType, 'term-taxonomy-term');
+  assert.equal(reference.targetResourceKey, termResourceKey);
+});
+
+test('blocks a term taxonomy parent reference when the same-plan target term also has a nav menu taxonomy row', () => {
+  const parentTermResourceKey = 'row:["wp_terms","term_id:7"]';
+  const childTaxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:9"]';
+  const navMenuTaxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:10"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_terms = {
+    'term_id:7': {
+      term_id: 7,
+      name: 'Local navigation term',
+      slug: 'local-navigation-term',
+    },
+  };
+  local.db.wp_term_taxonomy = {
+    'term_taxonomy_id:9': {
+      term_taxonomy_id: 9,
+      term_id: 7,
+      taxonomy: 'category',
+      description: '',
+      parent: 7,
+      count: 0,
+    },
+    'term_taxonomy_id:10': {
+      term_taxonomy_id: 10,
+      term_id: 7,
+      taxonomy: 'nav_menu',
+      description: '',
+      parent: 0,
+      count: 0,
+    },
+  };
+
+  const plan = planFor(base, local, baseSite());
+  const termMutation = mutationFor(plan, parentTermResourceKey);
+  const taxonomyMutation = mutationFor(plan, childTaxonomyResourceKey);
+  const navMenuTaxonomyMutation = mutationFor(plan, navMenuTaxonomyResourceKey);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === navMenuTaxonomyResourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(termMutation.changeKind, 'create');
+  assert.equal(taxonomyMutation.changeKind, 'create');
+  assert.equal(navMenuTaxonomyMutation, undefined);
+  assert.equal(blocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(blocker.surface, 'nav_menu');
+  assert.equal(JSON.stringify(blocker).includes('local-navigation-term'), false);
+});
+
 test('allows a term taxonomy term reference to a term created by the same plan', () => {
   const termResourceKey = 'row:["wp_terms","term_id:7"]';
   const taxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:9"]';
@@ -2790,6 +5017,64 @@ test('allows a term taxonomy term reference to a term created by the same plan',
   assert.equal(result.site.db.wp_term_taxonomy['term_taxonomy_id:9'].term_id, 7);
 });
 
+test('allows a term taxonomy term reference to a term created by the same plan even when a remote nav menu taxonomy exists', () => {
+  const termResourceKey = 'row:["wp_terms","term_id:7"]';
+  const taxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:9"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_terms = {
+    'term_id:7': {
+      term_id: 7,
+      name: 'Local taxonomy term',
+      slug: 'local-taxonomy-term',
+    },
+  };
+  local.db.wp_term_taxonomy = {
+    'term_taxonomy_id:9': {
+      term_taxonomy_id: 9,
+      term_id: 7,
+      taxonomy: 'category',
+      description: '',
+      parent: 0,
+      count: 0,
+    },
+  };
+  const remote = baseSite();
+  remote.db.wp_terms = {
+    'term_id:21': {
+      term_id: 21,
+      name: 'Remote navigation term',
+      slug: 'remote-navigation-term',
+    },
+  };
+  remote.db.wp_term_taxonomy = {
+    'term_taxonomy_id:10': {
+      term_taxonomy_id: 10,
+      term_id: 21,
+      taxonomy: 'nav_menu',
+      description: '',
+      parent: 0,
+      count: 0,
+    },
+  };
+
+  const plan = planFor(base, local, remote);
+  const termMutation = mutationFor(plan, termResourceKey);
+  const taxonomyMutation = mutationFor(plan, taxonomyResourceKey);
+  const reference = taxonomyMutation.wordpressGraphReferences.find((entry) => entry.relationshipType === 'term-taxonomy-term');
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.blockers, 0);
+  assert.equal(termMutation.changeKind, 'create');
+  assert.equal(taxonomyMutation.changeKind, 'create');
+  assert.deepEqual(taxonomyMutation.dependsOnMutationIds, [termMutation.id]);
+  assert.equal(reference.resolutionPolicy, 'same-plan-local-create');
+  assert.equal(reference.relationshipKey, 'wp_term_taxonomy.term_id');
+  assert.equal(reference.relationshipType, 'term-taxonomy-term');
+  assert.equal(reference.targetResourceKey, termResourceKey);
+  assert.equal(JSON.stringify(reference).includes('remote-navigation-term'), false);
+});
+
 test('blocks a local term taxonomy term reference when the same-plan term belongs to a nav menu taxonomy', () => {
   const termResourceKey = 'row:["wp_terms","term_id:7"]';
   const taxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:9"]';
@@ -2826,6 +5111,46 @@ test('blocks a local term taxonomy term reference when the same-plan term belong
   assert.equal(blocker.surface, 'nav_menu');
   assert.equal(
     JSON.stringify(blocker).includes('local-navigation-term'),
+    false,
+  );
+});
+
+test('blocks a local term taxonomy parent reference when the same-plan term belongs to a nav menu taxonomy', () => {
+  const termResourceKey = 'row:["wp_terms","term_id:7"]';
+  const taxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:9"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_terms = {
+    'term_id:7': {
+      term_id: 7,
+      name: 'Local navigation parent term',
+      slug: 'local-navigation-parent-term',
+    },
+  };
+  local.db.wp_term_taxonomy = {
+    'term_taxonomy_id:9': {
+      term_taxonomy_id: 9,
+      term_id: 7,
+      taxonomy: 'nav_menu',
+      description: '',
+      parent: 7,
+      count: 0,
+    },
+  };
+  const remote = baseSite();
+
+  const plan = planFor(base, local, remote);
+  const termMutation = mutationFor(plan, termResourceKey);
+  const taxonomyMutation = mutationFor(plan, taxonomyResourceKey);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === taxonomyResourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(termMutation.changeKind, 'create');
+  assert.equal(taxonomyMutation, undefined);
+  assert.equal(blocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(blocker.surface, 'nav_menu');
+  assert.equal(
+    JSON.stringify(blocker).includes('local-navigation-parent-term'),
     false,
   );
 });
@@ -2889,6 +5214,163 @@ test('allows a term relationship taxonomy reference to a term taxonomy created b
   assert.equal(JSON.stringify(reference).includes('local-private-taxonomy-object-body'), false);
   assert.equal(JSON.stringify(reference).includes('local-relationship-term'), false);
   assert.equal(JSON.stringify(reference).includes('Local taxonomy object post'), false);
+});
+
+test('allows a local term relationship object reference to a same-plan post even when a remote navigation post exists', () => {
+  const postResourceKey = 'row:["wp_posts","ID:3"]';
+  const termResourceKey = 'row:["wp_terms","term_id:7"]';
+  const taxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:9"]';
+  const relationshipResourceKey = 'row:["wp_term_relationships","object_id:3|term_taxonomy_id:9"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_posts['ID:3'] = {
+    ID: 3,
+    post_title: 'Local taxonomy object post',
+    post_content: 'local-private-taxonomy-object-body',
+    post_status: 'publish',
+  };
+  local.db.wp_terms = {
+    'term_id:7': {
+      term_id: 7,
+      name: 'Local relationship term',
+      slug: 'local-relationship-term',
+    },
+  };
+  local.db.wp_term_taxonomy = {
+    'term_taxonomy_id:9': {
+      term_taxonomy_id: 9,
+      term_id: 7,
+      taxonomy: 'category',
+      description: '',
+      parent: 0,
+      count: 0,
+    },
+  };
+  local.db.wp_term_relationships = {
+    'object_id:3|term_taxonomy_id:9': {
+      object_id: 3,
+      term_taxonomy_id: 9,
+      term_order: 0,
+    },
+  };
+  const remote = baseSite();
+  remote.db.wp_posts['ID:9'] = {
+    ID: 9,
+    post_title: 'Remote navigation post',
+    post_content: 'remote-navigation-body',
+    post_status: 'publish',
+    post_type: 'wp_navigation',
+  };
+
+  const plan = planFor(base, local, remote);
+  const postMutation = mutationFor(plan, postResourceKey);
+  const termMutation = mutationFor(plan, termResourceKey);
+  const taxonomyMutation = mutationFor(plan, taxonomyResourceKey);
+  const relationshipMutation = mutationFor(plan, relationshipResourceKey);
+  const reference = relationshipMutation.wordpressGraphReferences.find((entry) => entry.relationshipType === 'term-relationship-object');
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.blockers, 0);
+  assert.equal(postMutation.changeKind, 'create');
+  assert.equal(termMutation.changeKind, 'create');
+  assert.equal(taxonomyMutation.changeKind, 'create');
+  assert.equal(relationshipMutation.changeKind, 'create');
+  assert.ok(
+    plan.mutations.indexOf(postMutation) < plan.mutations.indexOf(relationshipMutation),
+    'owning post create must be ordered before dependent term relationship',
+  );
+  assert.ok(
+    plan.mutations.indexOf(taxonomyMutation) < plan.mutations.indexOf(relationshipMutation),
+    'term taxonomy create must be ordered before dependent term relationship',
+  );
+  assert.deepEqual(relationshipMutation.dependsOnMutationIds.sort(), [postMutation.id, taxonomyMutation.id].sort());
+  assert.equal(reference.resolutionPolicy, 'same-plan-local-create');
+  assert.equal(reference.relationshipKey, 'wp_term_relationships.object_id');
+  assert.equal(reference.relationshipType, 'term-relationship-object');
+  assert.equal(reference.targetResourceKey, postResourceKey);
+  assert.equal(JSON.stringify(reference).includes('local-private-taxonomy-object-body'), false);
+  assert.equal(JSON.stringify(reference).includes('remote-navigation-body'), false);
+});
+
+test('allows a local term relationship taxonomy reference to a same-plan term taxonomy even when a remote nav menu taxonomy exists', () => {
+  const postResourceKey = 'row:["wp_posts","ID:3"]';
+  const termResourceKey = 'row:["wp_terms","term_id:7"]';
+  const taxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:9"]';
+  const relationshipResourceKey = 'row:["wp_term_relationships","object_id:3|term_taxonomy_id:9"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_posts['ID:3'] = {
+    ID: 3,
+    post_title: 'Local taxonomy object post',
+    post_content: 'local-private-taxonomy-object-body',
+    post_status: 'publish',
+  };
+  local.db.wp_terms = {
+    'term_id:7': {
+      term_id: 7,
+      name: 'Local relationship term',
+      slug: 'local-relationship-term',
+    },
+  };
+  local.db.wp_term_taxonomy = {
+    'term_taxonomy_id:9': {
+      term_taxonomy_id: 9,
+      term_id: 7,
+      taxonomy: 'category',
+      description: '',
+      parent: 0,
+      count: 0,
+    },
+  };
+  local.db.wp_term_relationships = {
+    'object_id:3|term_taxonomy_id:9': {
+      object_id: 3,
+      term_taxonomy_id: 9,
+      term_order: 0,
+    },
+  };
+  const remote = baseSite();
+  remote.db.wp_terms = {
+    'term_id:21': {
+      term_id: 21,
+      name: 'Remote navigation term',
+      slug: 'remote-navigation-term',
+    },
+  };
+  remote.db.wp_term_taxonomy = {
+    'term_taxonomy_id:10': {
+      term_taxonomy_id: 10,
+      term_id: 21,
+      taxonomy: 'nav_menu',
+      description: '',
+      parent: 0,
+      count: 0,
+    },
+  };
+
+  const plan = planFor(base, local, remote);
+  const postMutation = mutationFor(plan, postResourceKey);
+  const termMutation = mutationFor(plan, termResourceKey);
+  const taxonomyMutation = mutationFor(plan, taxonomyResourceKey);
+  const relationshipMutation = mutationFor(plan, relationshipResourceKey);
+  const reference = relationshipMutation.wordpressGraphReferences.find((entry) => entry.relationshipType === 'term-relationship-taxonomy');
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.blockers, 0);
+  assert.equal(postMutation.changeKind, 'create');
+  assert.equal(termMutation.changeKind, 'create');
+  assert.equal(taxonomyMutation.changeKind, 'create');
+  assert.equal(relationshipMutation.changeKind, 'create');
+  assert.ok(
+    plan.mutations.indexOf(taxonomyMutation) < plan.mutations.indexOf(relationshipMutation),
+    'term taxonomy create must be ordered before dependent term relationship',
+  );
+  assert.deepEqual(relationshipMutation.dependsOnMutationIds.sort(), [postMutation.id, taxonomyMutation.id].sort());
+  assert.equal(reference.resolutionPolicy, 'same-plan-local-create');
+  assert.equal(reference.relationshipKey, 'wp_term_relationships.term_taxonomy_id');
+  assert.equal(reference.relationshipType, 'term-relationship-taxonomy');
+  assert.equal(reference.targetResourceKey, taxonomyResourceKey);
+  assert.equal(JSON.stringify(reference).includes('remote-navigation-term'), false);
 });
 
 test('blocks a local term relationship when the same-plan term taxonomy is a nav menu', () => {
@@ -2995,6 +5477,63 @@ test('allows local termmeta references to a term created by the same plan', () =
   const result = applyPlan(remote, plan);
   assert.equal(result.site.db.wp_terms['term_id:7'].name, 'Local tagged term');
   assert.equal(result.site.db.wp_termmeta['meta_id:12'].term_id, 7);
+});
+
+test('allows local termmeta references to a term created by the same plan even when a navigation menu taxonomy is blocked elsewhere', () => {
+  const termResourceKey = 'row:["wp_terms","term_id:7"]';
+  const blockedTaxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:9"]';
+  const termmetaResourceKey = 'row:["wp_termmeta","meta_id:12"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_terms = {
+    'term_id:7': {
+      term_id: 7,
+      name: 'Local tagged term',
+      slug: 'local-tagged-term',
+    },
+    'term_id:9': {
+      term_id: 9,
+      name: 'Local navigation term',
+      slug: 'local-navigation-term',
+    },
+  };
+  local.db.wp_term_taxonomy = {
+    'term_taxonomy_id:9': {
+      term_taxonomy_id: 9,
+      term_id: 9,
+      taxonomy: 'nav_menu',
+      description: '',
+      parent: 0,
+      count: 0,
+    },
+  };
+  local.db.wp_termmeta = {
+    'meta_id:12': {
+      meta_id: 12,
+      term_id: 7,
+      meta_key: 'term-note',
+      meta_value: 'Local term note',
+    },
+  };
+  const remote = baseSite();
+
+  const plan = planFor(base, local, remote);
+  const termMutation = mutationFor(plan, termResourceKey);
+  const blockedTaxonomyMutation = mutationFor(plan, blockedTaxonomyResourceKey);
+  const blockedTaxonomy = plan.blockers.find((entry) => entry.resourceKey === blockedTaxonomyResourceKey);
+  const termmetaMutation = mutationFor(plan, termmetaResourceKey);
+  const reference = termmetaMutation.wordpressGraphReferences[0];
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(termMutation.changeKind, 'create');
+  assert.equal(blockedTaxonomyMutation, undefined);
+  assert.equal(blockedTaxonomy.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(blockedTaxonomy.surface, 'nav_menu');
+  assert.equal(termmetaMutation.changeKind, 'create');
+  assert.equal(reference.resolutionPolicy, 'same-plan-local-create');
+  assert.equal(reference.relationshipKey, 'wp_termmeta.term_id');
+  assert.equal(reference.relationshipType, 'termmeta-term');
+  assert.equal(reference.targetResourceKey, termResourceKey);
 });
 
 test('blocks local termmeta for a term that belongs to a same-plan nav menu taxonomy', () => {
@@ -3176,6 +5715,66 @@ test('blocks a local term relationship owned by an attachment even when it targe
   );
 });
 
+test('blocks a local term relationship owned by an attachment even when it targets a same-plan term taxonomy', () => {
+  const attachmentPostResourceKey = 'row:["wp_posts","ID:3"]';
+  const termResourceKey = 'row:["wp_terms","term_id:7"]';
+  const taxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:9"]';
+  const relationshipResourceKey = 'row:["wp_term_relationships","object_id:3|term_taxonomy_id:9"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_posts['ID:3'] = {
+    ID: 3,
+    post_title: 'Local attachment post',
+    post_content: 'local-private-attachment-post-body',
+    post_status: 'inherit',
+    post_type: 'attachment',
+  };
+  local.db.wp_terms = {
+    'term_id:7': {
+      term_id: 7,
+      name: 'Local taxonomy term',
+      slug: 'local-taxonomy-term',
+    },
+  };
+  local.db.wp_term_taxonomy = {
+    'term_taxonomy_id:9': {
+      term_taxonomy_id: 9,
+      term_id: 7,
+      taxonomy: 'category',
+      description: '',
+      parent: 0,
+      count: 0,
+    },
+  };
+  local.db.wp_term_relationships = {
+    'object_id:3|term_taxonomy_id:9': {
+      object_id: 3,
+      term_taxonomy_id: 9,
+      term_order: 0,
+    },
+  };
+  const remote = baseSite();
+
+  const plan = planFor(base, local, remote);
+  const attachmentMutation = mutationFor(plan, attachmentPostResourceKey);
+  const termMutation = mutationFor(plan, termResourceKey);
+  const taxonomyMutation = mutationFor(plan, taxonomyResourceKey);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === relationshipResourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 3);
+  assert.equal(attachmentMutation.changeKind, 'create');
+  assert.equal(termMutation.changeKind, 'create');
+  assert.equal(taxonomyMutation.changeKind, 'create');
+  assert.equal(mutationFor(plan, relationshipResourceKey), undefined);
+  assert.equal(blocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(blocker.surface, 'attachment');
+  assert.equal(
+    JSON.stringify(blocker).includes('local-private-attachment-post-body'),
+    false,
+  );
+});
+
 test('blocks a local term relationship owned by a navigation post even when it targets a same-plan post', () => {
   const navigationPostResourceKey = 'row:["wp_posts","ID:3"]';
   const taggedPostResourceKey = 'row:["wp_posts","ID:4"]';
@@ -3315,6 +5914,130 @@ test('blocks a local term relationship owned by a revision even when it targets 
   );
 });
 
+test('blocks a local term relationship owned by a wp_navigation post even when it targets a same-plan term taxonomy', () => {
+  const navigationPostResourceKey = 'row:["wp_posts","ID:6"]';
+  const taxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:9"]';
+  const relationshipResourceKey = 'row:["wp_term_relationships","object_id:6|term_taxonomy_id:9"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_posts['ID:6'] = {
+    ID: 6,
+    post_title: 'Local navigation term post',
+    post_content: 'local-private-navigation-term-post-body',
+    post_status: 'publish',
+    post_type: 'wp_navigation',
+  };
+  local.db.wp_terms = {
+    'term_id:7': {
+      term_id: 7,
+      name: 'Local term for navigation',
+      slug: 'local-term-for-navigation',
+    },
+  };
+  local.db.wp_term_taxonomy = {
+    'term_taxonomy_id:9': {
+      term_taxonomy_id: 9,
+      term_id: 7,
+      taxonomy: 'category',
+      description: '',
+      parent: 0,
+      count: 0,
+    },
+  };
+  local.db.wp_term_relationships = {
+    'object_id:6|term_taxonomy_id:9': {
+      object_id: 6,
+      term_taxonomy_id: 9,
+      term_order: 0,
+    },
+  };
+  const remote = baseSite();
+
+  const plan = planFor(base, local, remote);
+  const navigationMutation = mutationFor(plan, navigationPostResourceKey);
+  const taxonomyMutation = mutationFor(plan, taxonomyResourceKey);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === relationshipResourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 2);
+  assert.equal(navigationMutation, undefined);
+  assert.equal(taxonomyMutation.changeKind, 'create');
+  assert.equal(blocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(blocker.surface, 'wp_navigation');
+  assert.equal(
+    JSON.stringify(blocker).includes('local-private-navigation-term-post-body'),
+    false,
+  );
+});
+
+test('allows a local term relationship to a same-plan term taxonomy when the owning post is also created by the same plan', () => {
+  const postResourceKey = 'row:["wp_posts","ID:6"]';
+  const termResourceKey = 'row:["wp_terms","term_id:7"]';
+  const taxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:9"]';
+  const relationshipResourceKey = 'row:["wp_term_relationships","object_id:6|term_taxonomy_id:9"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_posts['ID:6'] = {
+    ID: 6,
+    post_title: 'Local tagged post',
+    post_content: 'local-private-tagged-post-body',
+    post_status: 'publish',
+  };
+  local.db.wp_terms = {
+    'term_id:7': {
+      term_id: 7,
+      name: 'Local taxonomy term',
+      slug: 'local-taxonomy-term',
+    },
+  };
+  local.db.wp_term_taxonomy = {
+    'term_taxonomy_id:9': {
+      term_taxonomy_id: 9,
+      term_id: 7,
+      taxonomy: 'category',
+      description: '',
+      parent: 0,
+      count: 0,
+    },
+  };
+  local.db.wp_term_relationships = {
+    'object_id:6|term_taxonomy_id:9': {
+      object_id: 6,
+      term_taxonomy_id: 9,
+      term_order: 0,
+    },
+  };
+  const remote = baseSite();
+
+  const plan = planFor(base, local, remote);
+  const postMutation = mutationFor(plan, postResourceKey);
+  const termMutation = mutationFor(plan, termResourceKey);
+  const taxonomyMutation = mutationFor(plan, taxonomyResourceKey);
+  const relationshipMutation = mutationFor(plan, relationshipResourceKey);
+  const reference = relationshipMutation.wordpressGraphReferences.find((entry) => entry.relationshipType === 'term-relationship-taxonomy');
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.blockers, 0);
+  assert.equal(postMutation.changeKind, 'create');
+  assert.equal(termMutation.changeKind, 'create');
+  assert.equal(taxonomyMutation.changeKind, 'create');
+  assert.equal(relationshipMutation.changeKind, 'create');
+  assert.ok(
+    plan.mutations.indexOf(postMutation) < plan.mutations.indexOf(relationshipMutation),
+    'owning post create must be ordered before dependent term relationship',
+  );
+  assert.ok(
+    plan.mutations.indexOf(taxonomyMutation) < plan.mutations.indexOf(relationshipMutation),
+    'term taxonomy create must be ordered before dependent term relationship',
+  );
+  assert.deepEqual(relationshipMutation.dependsOnMutationIds.sort(), [postMutation.id, taxonomyMutation.id].sort());
+  assert.equal(reference.resolutionPolicy, 'same-plan-local-create');
+  assert.equal(reference.relationshipKey, 'wp_term_relationships.term_taxonomy_id');
+  assert.equal(reference.relationshipType, 'term-relationship-taxonomy');
+  assert.equal(reference.targetResourceKey, taxonomyResourceKey);
+  assert.equal(JSON.stringify(reference).includes('local-private-tagged-post-body'), false);
+});
+
 test('allows a local termmeta reference to a term created by the same plan even when a navigation post exists remotely', () => {
   const termmetaResourceKey = 'row:["wp_termmeta","meta_id:12"]';
   const base = baseSite();
@@ -3369,6 +6092,312 @@ test('allows a local termmeta reference to a term created by the same plan even 
   assert.equal(reference.relationshipKey, 'wp_termmeta.term_id');
   assert.equal(reference.relationshipType, 'termmeta-term');
   assert.equal(reference.targetResourceKey, 'row:["wp_terms","term_id:5"]');
+});
+
+test('blocks a local termmeta reference to a same-plan term when the term is also used by a nav menu taxonomy', () => {
+  const termmetaResourceKey = 'row:["wp_termmeta","meta_id:13"]';
+  const taxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:9"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_terms = {
+    'term_id:5': {
+      term_id: 5,
+      name: 'Local navigation menu term',
+      slug: 'local-navigation-menu-term',
+    },
+  };
+  local.db.wp_term_taxonomy = {
+    'term_taxonomy_id:9': {
+      term_taxonomy_id: 9,
+      term_id: 5,
+      taxonomy: 'nav_menu',
+      description: '',
+      parent: 0,
+      count: 0,
+    },
+  };
+  local.db.wp_termmeta = {
+    'meta_id:13': {
+      meta_id: 13,
+      term_id: 5,
+      meta_key: 'term-note',
+      meta_value: 'local-private-navigation-term-note',
+    },
+  };
+
+  const plan = planFor(base, local, baseSite());
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === termmetaResourceKey);
+  const termMutation = mutationFor(plan, 'row:["wp_terms","term_id:5"]');
+  const taxonomyMutation = mutationFor(plan, taxonomyResourceKey);
+  const termmetaMutation = mutationFor(plan, termmetaResourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(termMutation.changeKind, 'create');
+  assert.equal(taxonomyMutation, undefined);
+  assert.equal(termmetaMutation, undefined);
+  assert.equal(blocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(blocker.surface, 'nav_menu');
+  assert.equal(JSON.stringify(blocker).includes('local-private-navigation-term-note'), false);
+  assert.throws(() => applyPlan(baseSite(), plan), /Refusing to apply/);
+});
+
+test('blocks a local termmeta reference to a same-plan term when a remote nav menu taxonomy already uses the term', () => {
+  const termmetaResourceKey = 'row:["wp_termmeta","meta_id:14"]';
+  const termResourceKey = 'row:["wp_terms","term_id:5"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_terms = {
+    'term_id:5': {
+      term_id: 5,
+      name: 'Local shared term',
+      slug: 'local-shared-term',
+    },
+  };
+  local.db.wp_termmeta = {
+    'meta_id:14': {
+      meta_id: 14,
+      term_id: 5,
+      meta_key: 'term-note',
+      meta_value: 'local-private-shared-term-note',
+    },
+  };
+  const remote = baseSite();
+  remote.db.wp_term_taxonomy = {
+    'term_taxonomy_id:20': {
+      term_taxonomy_id: 20,
+      term_id: 5,
+      taxonomy: 'nav_menu',
+      description: '',
+      parent: 0,
+      count: 0,
+    },
+  };
+
+  const plan = planFor(base, local, remote);
+  const termMutation = mutationFor(plan, termResourceKey);
+  const termmetaMutation = mutationFor(plan, termmetaResourceKey);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === termmetaResourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(termMutation.changeKind, 'create');
+  assert.equal(termmetaMutation.changeKind, 'create');
+  assert.equal(blocker.class, 'missing-wordpress-graph-dependency');
+  assert.equal(blocker.references[0].relationshipType, 'termmeta-term');
+  assert.equal(blocker.references[0].targetResourceKey, termResourceKey);
+  assert.equal(JSON.stringify(blocker).includes('local-private-shared-term-note'), false);
+  assert.throws(() => applyPlan(baseSite(), plan), /Refusing to apply/);
+});
+
+test('blocks a local term taxonomy reference to a same-plan term when a remote nav menu taxonomy already uses the term', () => {
+  const termResourceKey = 'row:["wp_terms","term_id:5"]';
+  const taxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:9"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_terms = {
+    'term_id:5': {
+      term_id: 5,
+      name: 'Local shared term',
+      slug: 'local-shared-term',
+    },
+  };
+  local.db.wp_term_taxonomy = {
+    'term_taxonomy_id:9': {
+      term_taxonomy_id: 9,
+      term_id: 5,
+      taxonomy: 'category',
+      description: '',
+      parent: 0,
+      count: 0,
+    },
+  };
+  const remote = baseSite();
+  remote.db.wp_term_taxonomy = {
+    'term_taxonomy_id:20': {
+      term_taxonomy_id: 20,
+      term_id: 5,
+      taxonomy: 'nav_menu',
+      description: '',
+      parent: 0,
+      count: 0,
+    },
+  };
+
+  const plan = planFor(base, local, remote);
+  const termMutation = mutationFor(plan, termResourceKey);
+  const taxonomyMutation = mutationFor(plan, taxonomyResourceKey);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === taxonomyResourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(termMutation.changeKind, 'create');
+  assert.equal(taxonomyMutation.changeKind, 'create');
+  assert.equal(blocker.class, 'missing-wordpress-graph-dependency');
+  assert.equal(blocker.references[0].relationshipType, 'term-taxonomy-term');
+  assert.equal(blocker.references[0].targetResourceKey, termResourceKey);
+  assert.equal(JSON.stringify(blocker).includes('local-shared-term'), false);
+  assert.throws(() => applyPlan(baseSite(), plan), /Refusing to apply/);
+});
+
+test('allows a local termmeta reference to a same-plan term while a separate same-plan term relationship is also created', () => {
+  const termResourceKey = 'row:["wp_terms","term_id:7"]';
+  const taxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:9"]';
+  const relationshipResourceKey = 'row:["wp_term_relationships","object_id:3|term_taxonomy_id:9"]';
+  const termmetaResourceKey = 'row:["wp_termmeta","meta_id:12"]';
+  const postResourceKey = 'row:["wp_posts","ID:3"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_terms = {
+    'term_id:7': {
+      term_id: 7,
+      name: 'Local shared term',
+      slug: 'local-shared-term',
+    },
+  };
+  local.db.wp_term_taxonomy = {
+    'term_taxonomy_id:9': {
+      term_taxonomy_id: 9,
+      term_id: 7,
+      taxonomy: 'category',
+      description: '',
+      parent: 0,
+      count: 0,
+    },
+  };
+  local.db.wp_posts['ID:3'] = {
+    ID: 3,
+    post_title: 'Local tagged post',
+    post_content: 'local-private-tagged-post-body',
+    post_status: 'publish',
+  };
+  local.db.wp_term_relationships = {
+    'object_id:3|term_taxonomy_id:9': {
+      object_id: 3,
+      term_taxonomy_id: 9,
+      term_order: 0,
+    },
+  };
+  local.db.wp_termmeta = {
+    'meta_id:12': {
+      meta_id: 12,
+      term_id: 7,
+      meta_key: 'term-note',
+      meta_value: 'local-private-term-note',
+    },
+  };
+
+  const plan = planFor(base, local, baseSite());
+  const termMutation = mutationFor(plan, termResourceKey);
+  const taxonomyMutation = mutationFor(plan, taxonomyResourceKey);
+  const relationshipMutation = mutationFor(plan, relationshipResourceKey);
+  const termmetaMutation = mutationFor(plan, termmetaResourceKey);
+  const reference = termmetaMutation.wordpressGraphReferences[0];
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.blockers, 0);
+  assert.equal(termMutation.changeKind, 'create');
+  assert.equal(taxonomyMutation.changeKind, 'create');
+  assert.equal(relationshipMutation.changeKind, 'create');
+  assert.equal(termmetaMutation.changeKind, 'create');
+  assert.ok(
+    plan.mutations.indexOf(termMutation) < plan.mutations.indexOf(taxonomyMutation),
+    'term create must be ordered before dependent taxonomy',
+  );
+  assert.ok(
+    plan.mutations.indexOf(taxonomyMutation) < plan.mutations.indexOf(relationshipMutation),
+    'taxonomy create must be ordered before dependent relationship',
+  );
+  assert.deepEqual(termmetaMutation.dependsOnMutationIds, [termMutation.id]);
+  assert.equal(reference.resolutionPolicy, 'same-plan-local-create');
+  assert.equal(reference.relationshipKey, 'wp_termmeta.term_id');
+  assert.equal(reference.relationshipType, 'termmeta-term');
+  assert.equal(reference.targetResourceKey, termResourceKey);
+  assert.equal(JSON.stringify(reference).includes('local-private-term-note'), false);
+});
+
+test('allows a local termmeta reference to a same-plan term while a separate same-plan term relationship is also created and an unrelated remote nav menu taxonomy exists', () => {
+  const termResourceKey = 'row:["wp_terms","term_id:7"]';
+  const taxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:9"]';
+  const relationshipResourceKey = 'row:["wp_term_relationships","object_id:3|term_taxonomy_id:9"]';
+  const termmetaResourceKey = 'row:["wp_termmeta","meta_id:12"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_terms = {
+    'term_id:7': {
+      term_id: 7,
+      name: 'Local shared term',
+      slug: 'local-shared-term',
+    },
+  };
+  local.db.wp_term_taxonomy = {
+    'term_taxonomy_id:9': {
+      term_taxonomy_id: 9,
+      term_id: 7,
+      taxonomy: 'category',
+      description: '',
+      parent: 0,
+      count: 0,
+    },
+  };
+  local.db.wp_posts['ID:3'] = {
+    ID: 3,
+    post_title: 'Local tagged post',
+    post_content: 'local-private-tagged-post-body',
+    post_status: 'publish',
+  };
+  local.db.wp_term_relationships = {
+    'object_id:3|term_taxonomy_id:9': {
+      object_id: 3,
+      term_taxonomy_id: 9,
+      term_order: 0,
+    },
+  };
+  local.db.wp_termmeta = {
+    'meta_id:12': {
+      meta_id: 12,
+      term_id: 7,
+      meta_key: 'term-note',
+      meta_value: 'local-private-term-note',
+    },
+  };
+  const remote = baseSite();
+  remote.db.wp_term_taxonomy = {
+    'term_taxonomy_id:20': {
+      term_taxonomy_id: 20,
+      term_id: 21,
+      taxonomy: 'nav_menu',
+      description: '',
+      parent: 0,
+      count: 0,
+    },
+  };
+
+  const plan = planFor(base, local, remote);
+  const termMutation = mutationFor(plan, termResourceKey);
+  const taxonomyMutation = mutationFor(plan, taxonomyResourceKey);
+  const relationshipMutation = mutationFor(plan, relationshipResourceKey);
+  const termmetaMutation = mutationFor(plan, termmetaResourceKey);
+  const reference = termmetaMutation.wordpressGraphReferences[0];
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.blockers, 0);
+  assert.equal(termMutation.changeKind, 'create');
+  assert.equal(taxonomyMutation.changeKind, 'create');
+  assert.equal(relationshipMutation.changeKind, 'create');
+  assert.equal(termmetaMutation.changeKind, 'create');
+  assert.ok(
+    plan.mutations.indexOf(termMutation) < plan.mutations.indexOf(taxonomyMutation),
+    'term create must be ordered before dependent taxonomy',
+  );
+  assert.ok(
+    plan.mutations.indexOf(taxonomyMutation) < plan.mutations.indexOf(relationshipMutation),
+    'taxonomy create must be ordered before dependent relationship',
+  );
+  assert.deepEqual(termmetaMutation.dependsOnMutationIds, [termMutation.id]);
+  assert.equal(reference.resolutionPolicy, 'same-plan-local-create');
+  assert.equal(reference.relationshipKey, 'wp_termmeta.term_id');
+  assert.equal(reference.relationshipType, 'termmeta-term');
+  assert.equal(reference.targetResourceKey, termResourceKey);
+  assert.equal(JSON.stringify(reference).includes('local-private-term-note'), false);
+  assert.equal(JSON.stringify(reference).includes('local-private-tagged-post-body'), false);
 });
 
 test('blocks an atomic plugin install when dependencies are absent', () => {
