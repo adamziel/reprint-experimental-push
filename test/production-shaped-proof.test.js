@@ -110,9 +110,11 @@ function spawnReleaseVerifyBounded(command, args, options, label) {
 }
 
 function runReleaseVerifySync(env, timeout, killSignal, label) {
+  const command = process.execPath;
+  const args = ['scripts/playground/production-shaped-release-verify.mjs'];
   const proof = spawnReleaseVerifyBounded(
-    process.execPath,
-    ['scripts/playground/production-shaped-release-verify.mjs'],
+    command,
+    args,
     {
       cwd: repoRoot,
       timeout,
@@ -123,6 +125,7 @@ function runReleaseVerifySync(env, timeout, killSignal, label) {
     },
     label,
   );
+  assertSpawnCompletedWithoutSpawnError(proof, label, timeout);
   assertReleaseVerifyProof(proof, label);
   return proof;
 }
@@ -181,17 +184,17 @@ function assertLiveReleaseVerifyProof(proof, label, timeoutMs) {
     stopAllPlaygroundChildrenSync();
     reportSpawnFailure(proof);
     const timeoutNote = proof.error.code === 'ETIMEDOUT' && timeoutMs ? ` after ${timeoutMs}ms` : '';
-    assert.fail(formatSpawnFailure(`${label} failed${timeoutNote}`, proof));
+    assert.fail(formatSpawnFailure(`${label} failed${timeoutNote} with explicit spawn error handling`, proof));
   }
   if (proof.signal) {
     stopAllPlaygroundChildrenSync();
     reportSpawnFailure(proof);
-    assert.fail(formatSpawnFailure(`${label} terminated by ${proof.signal}${timeoutMs ? ` after ${timeoutMs}ms` : ''}`, proof));
+    assert.fail(formatSpawnFailure(`${label} terminated by ${proof.signal}${timeoutMs ? ` after ${timeoutMs}ms` : ''} with explicit spawn signal handling`, proof));
   }
   if (proof.status === null) {
     stopAllPlaygroundChildrenSync();
     reportSpawnFailure(proof);
-    assert.fail(`${label} exited without a status\nstdout:\n${proof.stdout ?? ''}\nstderr:\n${proof.stderr ?? ''}`);
+    assert.fail(`${label} exited without a status with explicit spawn status handling\nstdout:\n${proof.stdout ?? ''}\nstderr:\n${proof.stderr ?? ''}`);
   }
 }
 
@@ -200,17 +203,17 @@ function assertSpawnCompletedWithoutSpawnError(proof, label, timeoutMs) {
     stopAllPlaygroundChildrenSync();
     reportSpawnFailure(proof);
     const timeoutNote = proof.error.code === 'ETIMEDOUT' && timeoutMs ? ` after ${timeoutMs}ms` : '';
-    throw new Error(formatSpawnFailure(`${label} failed${timeoutNote}`, proof));
+    throw new Error(formatSpawnFailure(`${label} failed${timeoutNote} with explicit spawn error handling`, proof));
   }
   if (proof.signal) {
     stopAllPlaygroundChildrenSync();
     reportSpawnFailure(proof);
-    throw new Error(formatSpawnFailure(`${label} terminated by ${proof.signal}${timeoutMs ? ` after ${timeoutMs}ms` : ''}`, proof));
+    throw new Error(formatSpawnFailure(`${label} terminated by ${proof.signal}${timeoutMs ? ` after ${timeoutMs}ms` : ''} with explicit spawn signal handling`, proof));
   }
   if (proof.status === null) {
     stopAllPlaygroundChildrenSync();
     reportSpawnFailure(proof);
-    throw new Error(`${label} exited without a status\nstdout:\n${proof.stdout ?? ''}\nstderr:\n${proof.stderr ?? ''}`);
+    throw new Error(`${label} exited without a status with explicit spawn status handling\nstdout:\n${proof.stdout ?? ''}\nstderr:\n${proof.stderr ?? ''}`);
   }
 }
 
@@ -220,14 +223,14 @@ function assertSpawnTerminationProof(proof, label, timeoutMs) {
     reportSpawnFailure(proof);
     if (proof.error) {
       const timeoutNote = proof.error.code === 'ETIMEDOUT' && timeoutMs ? ` after ${timeoutMs}ms` : '';
-      throw new Error(formatSpawnFailure(`${label} failed${timeoutNote}`, proof));
+      throw new Error(formatSpawnFailure(`${label} failed${timeoutNote} with explicit spawn error handling`, proof));
     }
-    throw new Error(formatSpawnFailure(`${label} terminated by ${proof.signal}${timeoutMs ? ` after ${timeoutMs}ms` : ''}`, proof));
+    throw new Error(formatSpawnFailure(`${label} terminated by ${proof.signal}${timeoutMs ? ` after ${timeoutMs}ms` : ''} with explicit spawn signal handling`, proof));
   }
   if (proof.status === null) {
     stopAllPlaygroundChildrenSync();
     reportSpawnFailure(proof);
-    throw new Error(`${label} exited without a status\nstdout:\n${proof.stdout ?? ''}\nstderr:\n${proof.stderr ?? ''}`);
+    throw new Error(`${label} exited without a status with explicit spawn status handling\nstdout:\n${proof.stdout ?? ''}\nstderr:\n${proof.stderr ?? ''}`);
   }
 }
 
@@ -244,17 +247,17 @@ function spawnBoundedSync(command, args, options, label) {
     stopAllPlaygroundChildrenSync();
     reportBoundedSpawnFailure(proof, command, args);
     const timeoutNote = proof.error.code === 'ETIMEDOUT' && boundedOptions.timeout ? ` after ${boundedOptions.timeout}ms` : '';
-    throw new Error(formatSpawnFailure(`${label} failed${timeoutNote}`, proof));
+    throw new Error(formatSpawnFailure(`${label} failed${timeoutNote} with bounded spawn error handling`, proof));
   }
   if (proof.signal) {
     stopAllPlaygroundChildrenSync();
     reportBoundedSpawnFailure(proof, command, args);
-    throw new Error(formatSpawnFailure(`${label} terminated by ${proof.signal}${boundedOptions.timeout ? ` after ${boundedOptions.timeout}ms` : ''}`, proof));
+    throw new Error(formatSpawnFailure(`${label} terminated by ${proof.signal}${boundedOptions.timeout ? ` after ${boundedOptions.timeout}ms` : ''} with bounded spawn signal handling`, proof));
   }
   if (proof.status === null) {
     stopAllPlaygroundChildrenSync();
     reportBoundedSpawnFailure(proof, command, args);
-    throw new Error(formatSpawnFailure(`${label} exited without a status`, proof));
+    throw new Error(formatSpawnFailure(`${label} exited without a status with bounded spawn status handling`, proof));
   }
   return proof;
 }
@@ -286,12 +289,6 @@ function spawnVerifiedReleaseVerify(env, timeout, label) {
     timeout,
     killSignal: proofSubprocessKillSignal,
   });
-  if (proof.error || proof.signal || proof.status === null) {
-    stopAllPlaygroundChildrenSync();
-    reportSpawnFailure(proof);
-  }
-  assertSpawnTerminationProof(proof, label, timeout);
-  assertSpawnCompletedWithoutSpawnError(proof, label, timeout);
   assertReleaseVerifyProof(proof, label);
   return proof;
 }
@@ -706,17 +703,6 @@ test('production-shaped release verify command reports the checked retained-sour
       killSignal: proofSubprocessKillSignal,
     },
   );
-  if (proof.error) {
-    stopAllPlaygroundChildrenSync();
-    reportSpawnFailure(proof);
-    const timeoutNote = proof.error.code === 'ETIMEDOUT' && releaseVerifySlowPathTimeoutMs ? ` after ${releaseVerifySlowPathTimeoutMs}ms` : '';
-    throw new Error(formatSpawnFailure(`retained-source release verify failed${timeoutNote}`, proof));
-  }
-  if (proof.signal) {
-    stopAllPlaygroundChildrenSync();
-    reportSpawnFailure(proof);
-    throw new Error(formatSpawnFailure(`retained-source release verify terminated by ${proof.signal}${releaseVerifySlowPathTimeoutMs ? ` after ${releaseVerifySlowPathTimeoutMs}ms` : ''}`, proof));
-  }
   assertLiveReleaseVerifyProof(proof, 'retained-source release verify', releaseVerifySlowPathTimeoutMs);
   assert.equal(proof.status, 1, proof.stderr);
   assert.match(proof.stdout, /"releaseProof": \{/);
