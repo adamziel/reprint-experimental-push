@@ -690,7 +690,7 @@ test('production-shaped release verify synthesizes the packaged production auth/
     username: 'reprint_push_admin',
     applicationPassword: 'reprint-push-admin-app-password',
   });
-  assert.equal(sourceCommand, expectedSourceCommand);
+  assert.equal(sourceCommand, `REPRINT_PUSH_PACKAGED_PRODUCTION_PLUGIN=1 ${expectedSourceCommand}`);
 });
 
 test('production-shaped release verify consumes the packaged production auth/session source command on the checked release path', () => {
@@ -701,11 +701,14 @@ test('production-shaped release verify consumes the packaged production auth/ses
     applicationPassword: 'reprint-push-admin-app-password',
   });
 
-  assert.equal(packagedSource.command, buildAuthSessionSourceCommand({
-    sourceUrl,
-    username: 'reprint_push_admin',
-    applicationPassword: 'reprint-push-admin-app-password',
-  }));
+  assert.equal(
+    packagedSource.command,
+    `REPRINT_PUSH_PACKAGED_PRODUCTION_PLUGIN=1 ${buildAuthSessionSourceCommand({
+      sourceUrl,
+      username: 'reprint_push_admin',
+      applicationPassword: 'reprint-push-admin-app-password',
+    })}`,
+  );
   assert.deepEqual(packagedSource.source, {
     ok: true,
     sourceUrl,
@@ -722,7 +725,7 @@ test('packaged production plugin source command preserves an explicit command ov
     applicationPassword: 'reprint-push-admin-app-password',
     authSessionSourceCommand: 'custom-source-command',
   });
-  assert.equal(sourceCommand, 'custom-source-command');
+  assert.equal(sourceCommand, 'REPRINT_PUSH_PACKAGED_PRODUCTION_PLUGIN=1 custom-source-command');
 });
 
 test('production-shaped release verify prefers the consumed production auth/session source over stale env credentials', () => {
@@ -853,7 +856,7 @@ test('packaged production plugin auth/session source helper resolves and loads t
     applicationPassword: 'reprint-push-admin-app-password',
   });
 
-  assert.equal(packaged.command, expectedCommand);
+  assert.equal(packaged.command, `REPRINT_PUSH_PACKAGED_PRODUCTION_PLUGIN=1 ${expectedCommand}`);
   assert.deepEqual(packaged.source, {
     ok: true,
     sourceUrl: 'http://127.0.0.1:8080',
@@ -876,6 +879,11 @@ maybeTest('production-shaped release verify command consumes the packaged produc
         REPRINT_PUSH_REMOTE_URL: remoteServer.baseUrl,
         REPRINT_PUSH_USERNAME: 'stale-lab-username',
         REPRINT_PUSH_APPLICATION_PASSWORD: 'stale-lab-password',
+        REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND: buildAuthSessionSourceCommand({
+          sourceUrl: remoteServer.baseUrl,
+          username: liveCredentials.username,
+          applicationPassword: liveCredentials.password,
+        }),
         REPRINT_PUSH_REQUIRE_PRODUCTION_AUTH_SESSION: '1',
         NODE_NO_WARNINGS: '1',
       },
@@ -889,9 +897,7 @@ maybeTest('production-shaped release verify command consumes the packaged produc
     assert.equal(proof.status, 0, proof.stderr);
     assert.match(
       proof.stdout,
-      new RegExp(
-        `"authSessionSource": \\{\\s*"command": ${JSON.stringify(expectedSourceCommand)},\\s*"ok": true,\\s*"sourceUrl": "http:\\/\\/127\\.0\\.0\\.1:\\d+"`,
-      ),
+      new RegExp(`"authSessionSource": \\{\\s*"command": ${JSON.stringify(expectedSourceCommand)},\\s*"ok": true,\\s*"sourceUrl": "http:\\/\\/127\\.0\\.0\\.1:\\d+"`),
     );
     assert.match(proof.stdout, /"liveAuthSessionSource": \{[\s\S]*"requiredCommand": "REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND"/);
   });

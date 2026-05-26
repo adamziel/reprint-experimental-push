@@ -65,7 +65,6 @@ if (authSessionSource?.ok) {
 
 if (
   requireProductionAuthSession &&
-  !authSessionSourceCommand &&
   liveSourceUrl &&
   credentials.username &&
   credentials.password
@@ -74,6 +73,7 @@ if (
     sourceUrl: liveSourceUrl,
     username: credentials.username,
     applicationPassword: credentials.password,
+    authSessionSourceCommand,
   });
   authSessionSourceCommand = packagedAuthSessionSource.command;
   authSessionSource = packagedAuthSessionSource.source;

@@ -7,12 +7,14 @@ export function resolvePackagedProductionPluginSourceCommand({
   applicationPassword,
   authSessionSourceCommand = '',
 }) {
-  return resolveAuthSessionSourceCommand({
+  const command = resolveAuthSessionSourceCommand({
     sourceUrl,
     username,
     applicationPassword,
     authSessionSourceCommand,
   });
+
+  return `REPRINT_PUSH_PACKAGED_PRODUCTION_PLUGIN=1 ${command}`;
 }
 
 export function resolvePackagedProductionPluginAuthSessionSource({
