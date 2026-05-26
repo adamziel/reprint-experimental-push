@@ -1215,6 +1215,17 @@ export function productionRecoverySupportReport(writer) {
     (openedInspectionRecords || claimInspectionRecords)
     && (
       !Object.hasOwn(inspected ?? {}, 'leaseFence')
+      || inspected.leaseFence?.claimKeyUnique !== true
+      || typeof inspected.leaseFence?.storageGuard !== 'string'
+      || inspected.leaseFence.storageGuard.length === 0
+    )
+  ) {
+    addMissingDependency('fencing or lease ownership for the journal writer');
+  }
+  if (
+    (openedInspectionRecords || claimInspectionRecords)
+    && (
+      !Object.hasOwn(inspected ?? {}, 'leaseFence')
       || inspected.leaseFence?.fsyncEvidence !== true
     )
   ) {
@@ -1228,6 +1239,24 @@ export function productionRecoverySupportReport(writer) {
     )
   ) {
     addMissingDependency('fencing or lease ownership for the journal writer');
+  }
+  if (
+    (openedInspectionRecords || claimInspectionRecords)
+    && (
+      !Object.hasOwn(inspected ?? {}, 'leaseFence')
+      || inspected.leaseFence?.monotonicSequence !== true
+    )
+  ) {
+    addMissingDependency('journal-readable inspection records with sequence and type');
+  }
+  if (
+    (openedInspectionRecords || claimInspectionRecords)
+    && (
+      !Object.hasOwn(inspected ?? {}, 'leaseFence')
+      || inspected.leaseFence?.restartReadable !== true
+    )
+  ) {
+    addMissingDependency('restart-readable recovery journal adapter');
   }
   if (
     hasHiddenOwnStringProperty(inspected, 'writerLease')

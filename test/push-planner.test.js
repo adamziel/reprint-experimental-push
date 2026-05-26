@@ -21463,6 +21463,100 @@ test('production recovery support report fails closed when stale-claim rejection
   assert.ok(report.missingDependency.includes('fencing or lease ownership for the journal writer'));
 });
 
+test('production recovery support report fails closed when the persisted lease fence omits the checked lease contract fields', () => {
+  const claimId = 'claim-missing-lease-contract-fields';
+  const previousClaimId = 'claim-missing-lease-contract-fields-previous';
+  const claimHash = digest({ recoveryJournalClaim: claimId });
+  const previousClaimHash = digest({ recoveryJournalClaim: previousClaimId });
+  const report = productionRecoverySupportReport({
+    kind: 'production-recovery-journal',
+    productionAdapter: true,
+    supportedSurface: 'production-recovery-journal-adapter',
+    restartReadable: true,
+    ownsJournal: true,
+    ownsRemoteArtifact: false,
+    claimHash,
+    writerLease: { id: claimId, epoch: 2 },
+    leaseFence: { id: claimId, epoch: 2 },
+    journalPath: '/var/lib/reprint/recovery.jsonl',
+    artifactRefs: {
+      journal: '/var/lib/reprint/recovery.jsonl',
+      remote: null,
+    },
+    schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+    appendEvent() {
+      return null;
+    },
+    flush() {},
+    close() {},
+    inspect() {
+      return {
+        filePath: '/var/lib/reprint/recovery.jsonl',
+        schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+        artifactRefs: {
+          journal: '/var/lib/reprint/recovery.jsonl',
+          remote: null,
+        },
+        writerLease: { id: claimId, epoch: 2 },
+        leaseFence: {
+          id: claimId,
+          epoch: 2,
+          fsyncEvidence: true,
+          staleClaimRejected: true,
+        },
+        records: [
+          {
+            sequence: 1,
+            type: 'recovery-claim-opened',
+            claimHash: previousClaimHash,
+            claimLease: { id: previousClaimId, epoch: 1 },
+            artifactRefs: {
+              journal: '/var/lib/reprint/recovery.jsonl',
+            },
+            fsync: { requested: true },
+          },
+          {
+            sequence: 2,
+            type: 'stale-claim-rejected',
+            claimHash: previousClaimHash,
+            previousClaimHash,
+            claimLease: { id: previousClaimId, epoch: 1 },
+            artifactRefs: {
+              journal: '/var/lib/reprint/recovery.jsonl',
+            },
+            fsync: { requested: true },
+          },
+          {
+            sequence: 3,
+            type: 'stale-claim-advanced',
+            claimHash,
+            previousClaimHash,
+            claimLease: { id: claimId, epoch: 2 },
+            artifactRefs: {
+              journal: '/var/lib/reprint/recovery.jsonl',
+            },
+            fsync: { requested: true },
+          },
+          {
+            sequence: 4,
+            type: 'journal-opened',
+            artifactRefs: {
+              journal: '/var/lib/reprint/recovery.jsonl',
+            },
+            fsync: { requested: true },
+          },
+        ],
+      };
+    },
+    assertCurrentClaim() {},
+  });
+
+  assert.equal(report.supported, false);
+  assert.ok(report.missingDependency.includes('fencing or lease ownership for the journal writer'));
+  assert.ok(report.missingDependency.includes('journal-readable inspection records with sequence and type'));
+  assert.ok(report.missingDependency.includes('restart-readable recovery journal adapter'));
+});
+
 test('production recovery support report fails closed when the first persisted claim record is stale-claim-advanced before journal-retry-opened', () => {
   const claimId = 'claim-retry-opened';
   const previousClaimId = 'claim-retry-opened-previous';
