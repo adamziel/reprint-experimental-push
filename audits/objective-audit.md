@@ -11,15 +11,15 @@ Fresh remote heads at audit time, checked on May 26, 2026:
 - `origin/lane/no-data-loss-recovery` -> `95092fcd`
 - `origin/lane/fast-paths` -> `a6ee1f74`
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `974171d0`
-- `origin/lane/independent-auditor` -> `93ec5762`
+- `origin/lane/independent-auditor` -> `5abd1f65`
 - `origin/lane/critic` -> `f8591f9d`
 - `origin/lane/progress-publisher` -> `7695e1f9`
 - `origin/lane/same-plan-wordpress-graph-create` -> `69f27361`
 - `origin/lane/cycle-20260525-mainwindows-2349/same-plan-wordpress-graph-create` -> `fc8308c4`
 - `origin/lane/cycle-20260525-mainwindows-2349/same-plan-wordpress-graph-create` -> `e9cbf9d4`
 - `origin/lane/cycle-20260525-mainwindows-2357/no-data-loss-invariants-graph-proof` -> `98c0ce26`
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `efc0551b`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `38c3aa72`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `25e5f592`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `50d75f8b`
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` -> `5f256171`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-invariants` -> `4335ce8b`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `95092fcd`
@@ -63,11 +63,11 @@ but it did not change the release conclusion:
 - `origin/lane/progress-publisher` now refreshes the public progress evidence
   at `7695e1f9`.
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` now refreshes the audit snapshot at
-  `93ec5762`.
+  `5abd1f65`.
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now
-  refreshes the supervisor evidence snapshot at `efc0551b`.
+  refreshes the supervisor evidence snapshot at `25e5f592`.
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now
-  records the latest progress freshness handoff at `38c3aa72`.
+  records the latest progress freshness handoff at `50d75f8b`.
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` now
   hardens the live proof timeout diagnostics at `5f256171`.
 - `origin/lane/same-plan-wordpress-graph-create` now blocks unsupported graph
