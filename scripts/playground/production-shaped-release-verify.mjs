@@ -1889,6 +1889,22 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
                 lastTimeoutFallbackProbes,
               );
             }
+            if (startupBranch?.kind === 'retryable-route-index-terminal') {
+              lastError = error;
+              await throwPlaygroundReadinessFailure(
+                child,
+                `Packaged production plugin preflight stayed startup-shaped while /wp-json/ returned a terminal readiness failure HTTP ${indexProbe?.status ?? 0} after the snapshot probe timed out at ${baseUrl}`,
+                lastError,
+                lastProbes,
+                getOutput(),
+                {
+                  childPid: child.pid ?? null,
+                  packagedProductionPlugin: true,
+                  indexTerminal: true,
+                },
+                lastTimeoutFallbackProbes,
+              );
+            }
             lastError = error;
             timeoutProbeCount = 0;
             await sleepUnlessChildExit(readinessProbeIntervalMs, child);
@@ -1942,6 +1958,22 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
                   childPid: child.pid ?? null,
                   packagedProductionPlugin: true,
                   packagedRouteStartup: true,
+                },
+                lastTimeoutFallbackProbes,
+              );
+            }
+            if (startupBranch?.kind === 'timed-out-route-index-terminal') {
+              lastError = error;
+              await throwPlaygroundReadinessFailure(
+                child,
+                `Packaged production plugin preflight probe timed out while /wp-json/ returned a terminal readiness failure HTTP ${indexProbe.status} after the snapshot probe timed out at ${baseUrl}`,
+                lastError,
+                lastProbes,
+                getOutput(),
+                {
+                  childPid: child.pid ?? null,
+                  packagedProductionPlugin: true,
+                  indexTerminal: true,
                 },
                 lastTimeoutFallbackProbes,
               );

@@ -408,5 +408,35 @@ export function packagedProductionPluginClassifyTimeoutFallbackStartup(
     };
   }
 
+  if (
+    routeProbe?.retryable === true
+    && indexProbe
+    && indexProbe.timedOut !== true
+    && !packagedProductionPluginReadinessBodyRetryable(
+      indexProbe.status,
+      indexProbe.body || '',
+    )
+  ) {
+    return {
+      kind: 'retryable-route-index-terminal',
+      indexTerminal: true,
+    };
+  }
+
+  if (
+    routeProbe?.timedOut === true
+    && indexProbe
+    && indexProbe.timedOut !== true
+    && !packagedProductionPluginReadinessBodyRetryable(
+      indexProbe.status,
+      indexProbe.body || '',
+    )
+  ) {
+    return {
+      kind: 'timed-out-route-index-terminal',
+      indexTerminal: true,
+    };
+  }
+
   return null;
 }

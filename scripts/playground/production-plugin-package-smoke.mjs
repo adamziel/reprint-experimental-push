@@ -984,6 +984,17 @@ async function waitForServer(child, baseUrl, logs) {
                 ),
               );
             }
+            if (startupBranch?.kind === 'retryable-route-index-terminal') {
+              throw new Error(
+                formatPackagedReadinessFailure(
+                  `Packaged production plugin preflight stayed startup-shaped while /wp-json/ returned a terminal readiness failure HTTP ${indexProbe?.status ?? 0} after the snapshot probe timed out at ${baseUrl}`,
+                  error,
+                  lastProbes,
+                  logs,
+                  lastTimeoutFallbackProbes,
+                ),
+              );
+            }
             lastError = error;
             timeoutProbeCount = 0;
             await sleepUnlessChildExit(readinessProbeIntervalMs, child);
@@ -1020,6 +1031,17 @@ async function waitForServer(child, baseUrl, logs) {
               throw new Error(
                 formatPackagedReadinessFailure(
                   `Packaged production plugin preflight probe timed out after global WordPress startup HTTP ${indexProbe.status} while the snapshot probe timed out at ${baseUrl}`,
+                  error,
+                  lastProbes,
+                  logs,
+                  lastTimeoutFallbackProbes,
+                ),
+              );
+            }
+            if (startupBranch?.kind === 'timed-out-route-index-terminal') {
+              throw new Error(
+                formatPackagedReadinessFailure(
+                  `Packaged production plugin preflight probe timed out while /wp-json/ returned a terminal readiness failure HTTP ${indexProbe.status} after the snapshot probe timed out at ${baseUrl}`,
                   error,
                   lastProbes,
                   logs,

@@ -2389,7 +2389,15 @@ test('packaged readiness timeout fallback classifies global WordPress versus pac
   );
   assert.match(
     smokeSource,
+    /preflight stayed startup-shaped while \/wp-json\/ returned a terminal readiness failure HTTP \$\{indexProbe\?\.status \?\? 0\} after the snapshot probe timed out/,
+  );
+  assert.match(
+    smokeSource,
     /preflight probe timed out after global WordPress startup HTTP \$\{indexProbe\.status\} while the snapshot probe timed out/,
+  );
+  assert.match(
+    smokeSource,
+    /preflight probe timed out while \/wp-json\/ returned a terminal readiness failure HTTP \$\{indexProbe\.status\} after the snapshot probe timed out/,
   );
   assert.match(
     verifierSource,
@@ -2409,10 +2417,42 @@ test('packaged readiness timeout fallback classifies global WordPress versus pac
   );
   assert.match(
     verifierSource,
+    /preflight stayed startup-shaped while \/wp-json\/ returned a terminal readiness failure HTTP \$\{indexProbe\?\.status \?\? 0\} after the snapshot probe timed out[\s\S]*?indexTerminal:\s*true/s,
+  );
+  assert.match(
+    verifierSource,
     /preflight probe timed out after global WordPress startup HTTP \$\{indexProbe\.status\} while the snapshot probe timed out[\s\S]*?packagedRouteStartup:\s*true/s,
+  );
+  assert.match(
+    verifierSource,
+    /preflight probe timed out while \/wp-json\/ returned a terminal readiness failure HTTP \$\{indexProbe\.status\} after the snapshot probe timed out[\s\S]*?indexTerminal:\s*true/s,
   );
   assert.match(smokeSource, /packagedProductionPluginClassifyTimeoutFallbackStartup\(/);
   assert.match(verifierSource, /packagedProductionPluginClassifyTimeoutFallbackStartup\(/);
+});
+
+test('packaged readiness timeout fallback classifier distinguishes terminal index failures', () => {
+  assert.deepEqual(
+    packagedProductionPluginClassifyTimeoutFallbackStartup(
+      { retryable: true, status: 503, body: 'WordPress is not ready yet' },
+      { status: 500, body: 'Internal Server Error' },
+    ),
+    {
+      kind: 'retryable-route-index-terminal',
+      indexTerminal: true,
+    },
+  );
+
+  assert.deepEqual(
+    packagedProductionPluginClassifyTimeoutFallbackStartup(
+      { timedOut: true },
+      { status: 500, body: 'Internal Server Error' },
+    ),
+    {
+      kind: 'timed-out-route-index-terminal',
+      indexTerminal: true,
+    },
+  );
 });
 
 test('packaged readiness helpers treat signed preflight as the bootstrap authority before terminal snapshot auth failures', () => {
