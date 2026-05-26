@@ -1057,6 +1057,7 @@ function closeUnsupportedProductionRecoveryWriter(writer) {
 function shouldCloseOwnedDurableJournal(writer) {
   return Boolean(
     writer
+    && Object.hasOwn(writer, 'kind')
     && writer.kind === 'production-recovery-journal'
     && Object.hasOwn(writer, 'ownsJournal')
     && writer.ownsJournal === true

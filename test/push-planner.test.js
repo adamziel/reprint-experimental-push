@@ -27058,6 +27058,28 @@ test('closes an owned production recovery journal writer only when close is owne
   assert.equal(isDurableJournalClosed(writer), true);
 });
 
+test('skips closing an owned production recovery journal writer when kind is inherited through the prototype', () => {
+  let closeCalls = 0;
+  const writer = {
+    productionAdapter: true,
+    supportedSurface: 'production-recovery-journal-adapter',
+    ownsJournal: true,
+    ownsRemoteArtifact: true,
+    close() {
+      closeCalls += 1;
+    },
+  };
+
+  Object.setPrototypeOf(writer, {
+    kind: 'production-recovery-journal',
+  });
+
+  closeOwnedDurableJournal(writer);
+
+  assert.equal(closeCalls, 0);
+  assert.equal(isDurableJournalClosed(writer), true);
+});
+
 test('skips closing a writer that is not an owned production recovery journal', () => {
   let closeCalls = 0;
   const writer = {
