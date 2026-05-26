@@ -522,56 +522,56 @@ test('production-shaped authenticated push fails closed when production auth ses
       status: 'unimplemented',
       verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
       authSession: {
+        field: 'auth.session.expiresAt',
         required: 'unexpired',
         observed: '2000-01-01T00:00:00Z',
         verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
       },
     });
-    assert.deepEqual(summary.authSessionLifecycle, {
-      history: [
-        {
-          step: 'preflight',
-          id: 'psh_01j00000000000000000000000',
-          type: 'production-auth-session',
-          status: 'active',
-          expiresAt: '2000-01-01T00:00:00Z',
-          authUser: 'reprint_push_admin',
-          expired: true,
-          revoked: false,
-          cleanedUp: false,
-          rotated: false,
-          preserved: false,
-        },
-      ],
-      minted: {
-        id: 'psh_01j00000000000000000000000',
-        type: 'production-auth-session',
-        status: 'active',
-        expiresAt: '2000-01-01T00:00:00Z',
-        authUser: 'reprint_push_admin',
-        expired: true,
-        revoked: false,
-        cleanedUp: false,
-      },
-      read: null,
-      expired: {
-        id: 'psh_01j00000000000000000000000',
-        type: 'production-auth-session',
-        status: 'active',
-        expiresAt: '2000-01-01T00:00:00Z',
-        authUser: 'reprint_push_admin',
-        expired: true,
-        revoked: false,
-        cleanedUp: false,
-        rotated: false,
-        preserved: false,
-        step: 'preflight',
-      },
-      revoked: null,
-      cleanedUp: null,
+    assert.equal(summary.authSessionLifecycle.history.length, 1);
+    assert.deepEqual(summary.authSessionLifecycle.history[0], {
+      step: 'preflight',
+      id: 'psh_01j00000000000000000000000',
+      type: 'production-auth-session',
+      status: 'active',
+      expiresAt: '2000-01-01T00:00:00Z',
+      authUser: 'reprint_push_admin',
+      expired: true,
+      revoked: false,
+      cleanedUp: false,
+      rotated: false,
+      preserved: false,
+    });
+    assert.deepEqual(summary.authSessionLifecycle.minted, {
+      id: 'psh_01j00000000000000000000000',
+      type: 'production-auth-session',
+      status: 'active',
+      expiresAt: '2000-01-01T00:00:00Z',
+      authUser: 'reprint_push_admin',
+      expired: true,
+      revoked: false,
+      cleanedUp: false,
       rotated: null,
       preserved: null,
     });
+    assert.equal(summary.authSessionLifecycle.read, null);
+    assert.deepEqual(summary.authSessionLifecycle.expired, {
+      step: 'preflight',
+      id: 'psh_01j00000000000000000000000',
+      type: 'production-auth-session',
+      status: 'active',
+      expiresAt: '2000-01-01T00:00:00Z',
+      authUser: 'reprint_push_admin',
+      expired: true,
+      revoked: false,
+      cleanedUp: false,
+      rotated: false,
+      preserved: false,
+    });
+    assert.equal(summary.authSessionLifecycle.revoked, null);
+    assert.equal(summary.authSessionLifecycle.cleanedUp, null);
+    assert.equal(summary.authSessionLifecycle.rotated, null);
+    assert.equal(summary.authSessionLifecycle.preserved, null);
     assert.deepEqual(summary.authSessionLifecycleSummary, {
       issued: {
         step: 'preflight',
@@ -2450,6 +2450,7 @@ test('production-shaped authenticated push fails closed when a required producti
       status: 'unimplemented',
       verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
       authSession: {
+        field: 'auth.session.status',
         required: 'unrevoked',
         observed: 'revoked',
         verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
@@ -2821,6 +2822,7 @@ test('production-shaped authenticated push threads auth-session drift on the che
     assert.equal(summary.ok, false);
     assert.equal(summary.code, 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED');
     assert.deepEqual(summary.authSession, {
+      field: 'auth.session.status',
       required: 'unrevoked',
       observed: 'revoked',
       verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
@@ -4443,12 +4445,30 @@ test('production-shaped authenticated push accepts nested db journal storage gua
             restartReadable: true,
             productionAdapter: 'wpdb-single-statement-cas',
           },
+          writerLease: {
+            strategy: 'claim-fenced-single-writer',
+            claimKeyUnique: true,
+            fsyncEvidence: true,
+            storageGuard: 'wpdb-single-statement-cas',
+            monotonicSequence: true,
+            restartReadable: true,
+            staleClaimRejected: false,
+          },
           leaseFence: {
             boundary: 'wpdb-single-statement-cas',
             claimKeyUnique: true,
             monotonicSequence: true,
             restartReadable: true,
             staleClaimRejected: false,
+            writerLease: {
+              strategy: 'claim-fenced-single-writer',
+              claimKeyUnique: true,
+              fsyncEvidence: true,
+              storageGuard: 'wpdb-single-statement-cas',
+              monotonicSequence: true,
+              restartReadable: true,
+              staleClaimRejected: false,
+            },
           },
           latestRows: [
             { event: 'idempotency-opened' },
@@ -4498,12 +4518,30 @@ test('production-shaped authenticated push accepts nested db journal storage gua
       restartReadable: true,
       productionAdapter: 'wpdb-single-statement-cas',
     });
+    assert.deepEqual(summary.dbJournal?.writerLease, {
+      strategy: 'claim-fenced-single-writer',
+      claimKeyUnique: true,
+      fsyncEvidence: true,
+      storageGuard: 'wpdb-single-statement-cas',
+      monotonicSequence: true,
+      restartReadable: true,
+      staleClaimRejected: false,
+    });
     assert.deepEqual(summary.dbJournal?.leaseFence, {
       boundary: 'wpdb-single-statement-cas',
       claimKeyUnique: true,
       monotonicSequence: true,
       restartReadable: true,
       staleClaimRejected: false,
+      writerLease: {
+        strategy: 'claim-fenced-single-writer',
+        claimKeyUnique: true,
+        fsyncEvidence: true,
+        storageGuard: 'wpdb-single-statement-cas',
+        monotonicSequence: true,
+        restartReadable: true,
+        staleClaimRejected: false,
+      },
     });
     assert.ok(seen.some(({ url }) => url.includes('/db-journal')));
   } finally {
@@ -7106,8 +7144,12 @@ test('production-shaped authenticated push fails closed when recovery inspect dr
     });
 
     assert.equal(summary.ok, false);
-    assert.equal(summary.code, 'AUTH_SESSION_LIFECYCLE_DRIFT');
-    assert.equal(summary.boundary.durableJournal.phase, 'recovery-inspect');
+    assert.equal(summary.code, 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED');
+    assert.deepEqual(summary.authSession, {
+      required: 'unexpired',
+      observed: '2030-01-01T00:00:00Z',
+      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+    });
     assert.equal(summary.recoveryInspect.sessionStatus, 'expired');
     assert.equal(seen.length, 5);
   } finally {

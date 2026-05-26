@@ -1766,6 +1766,7 @@ function summarizeDbJournal(response) {
     idempotencyOpened: rows.filter((entry) => entry.event === 'idempotency-opened').length,
     storageGuard,
     ownership: summarizeDbJournalOwnership(response.body?.dbJournal),
+    writerLease: summarizeDbJournalWriterLease(response.body?.dbJournal?.writerLease),
     leaseFence: summarizeDbJournalLeaseFence(response.body?.dbJournal),
     authUser: response.body?.auth?.identity?.userLogin,
     authSessionId: response.body?.auth?.session?.id,
@@ -1860,6 +1861,23 @@ function summarizeDbJournalLeaseFence(dbJournal) {
     monotonicSequence: leaseFence.monotonicSequence === true,
     restartReadable: leaseFence.restartReadable === true,
     staleClaimRejected: leaseFence.staleClaimRejected === true,
+    writerLease: summarizeDbJournalWriterLease(leaseFence.writerLease),
+  };
+}
+
+function summarizeDbJournalWriterLease(writerLease) {
+  if (!writerLease || typeof writerLease !== 'object') {
+    return undefined;
+  }
+
+  return {
+    strategy: writerLease.strategy || null,
+    claimKeyUnique: writerLease.claimKeyUnique === true,
+    fsyncEvidence: writerLease.fsyncEvidence === true,
+    storageGuard: writerLease.storageGuard || null,
+    monotonicSequence: writerLease.monotonicSequence === true,
+    restartReadable: writerLease.restartReadable === true,
+    staleClaimRejected: writerLease.staleClaimRejected === true,
   };
 }
 

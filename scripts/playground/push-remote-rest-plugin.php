@@ -3297,18 +3297,30 @@ function reprint_push_lab_rest_db_journal(WP_REST_Request $request): WP_REST_Res
     $limit = max(1, min(500, (int) $request->get_param('limit')));
     $db_journal = reprint_push_lab_db_journal_summary($limit);
     if (reprint_push_lab_rest_checked_production_journal_surface($request)) {
+        $claim_key_unique = reprint_push_lab_db_journal_has_claim_key_unique_index();
+        $monotonic_sequence = reprint_push_lab_db_journal_rows_are_monotonic($db_journal['latestRows'] ?? []);
+        $stale_claim_rejected = reprint_push_lab_db_journal_has_stale_claim_rejection_evidence($db_journal['latestRows'] ?? []);
+        $writer_lease = reprint_push_lab_db_journal_writer_lease_contract(
+            $stale_claim_rejected,
+            $claim_key_unique,
+            $monotonic_sequence,
+            true
+        );
         $db_journal['scope'] = 'checked live production-shaped journal surface; not local Playground fixture only';
         $db_journal['ownership'] = [
             'ownsJournal' => true,
             'restartReadable' => true,
             'productionAdapter' => 'wpdb-single-statement-cas',
         ];
+        $db_journal['writerLease'] = $writer_lease;
         $db_journal['leaseFence'] = [
             'boundary' => 'wpdb-single-statement-cas',
-            'claimKeyUnique' => reprint_push_lab_db_journal_has_claim_key_unique_index(),
-            'monotonicSequence' => reprint_push_lab_db_journal_rows_are_monotonic($db_journal['latestRows'] ?? []),
+            'claimKeyUnique' => $claim_key_unique,
+            'fsyncEvidence' => true,
+            'monotonicSequence' => $monotonic_sequence,
             'restartReadable' => true,
-            'staleClaimRejected' => reprint_push_lab_db_journal_has_stale_claim_rejection_evidence($db_journal['latestRows'] ?? []),
+            'staleClaimRejected' => $stale_claim_rejected,
+            'writerLease' => $writer_lease,
         ];
     }
     $result = [
