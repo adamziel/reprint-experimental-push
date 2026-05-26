@@ -2,7 +2,7 @@ The objective audit stays closed at `0/4`.
 
 Checked evidence:
 - `git status --short --branch` showed only one dirty tracked file before the handoff update: `audits/objective-audit.md`.
-- Fresh remote heads now include `origin/lane/no-data-loss-invariants -> cda3a1c3`, `origin/lane/reliable-executor -> f1783e10`, `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor -> f0aa666e`, and `origin/lane/cycle-20260525-mainwindows-2349/progress-followup -> f0e71e00`.
+- Fresh remote heads now include `origin/lane/no-data-loss-invariants -> cda3a1c3`, `origin/lane/reliable-executor -> f1783e10`, `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor -> f0aa666e`, `origin/lane/cycle-20260525-mainwindows-2349/progress-followup -> 590d1a95`, and `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor -> e6df4e7e`.
 - The audit file was refreshed to match those heads, but the evidence still does not prove production-backed auth/session lifecycle, durable journal ownership/replay/fencing, or a live-source mutation boundary.
 
 Changed files:

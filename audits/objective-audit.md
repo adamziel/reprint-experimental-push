@@ -43,10 +43,10 @@ The project is **not releasable as a production WordPress push path**.
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `8a7f4edd`
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `c86ece15`
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `f0aa666e`
-- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `f9f3fca0`
+- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `e6df4e7e`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `2af1ddda`
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `ea8694c3`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `f0e71e00`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `590d1a95`
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` -> `0ca7b35d`
 - `origin/lane/cycle-20260525-mainwindows-2349/same-plan-wordpress-graph-create` -> `af493c80`
 - `origin/lane/cycle-20260525-mainwindows-2357/no-data-loss-invariants-graph-proof` -> `98c0ce26`
@@ -56,7 +56,7 @@ The project is **not releasable as a production WordPress push path**.
 - `origin/lane/critic` -> `443dacd6`
 - `origin/lane/fast-paths` -> `8c5c2ccb`
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `3b52ea58`
-- `origin/lane/independent-auditor` -> `f9f3fca0`
+- `origin/lane/independent-auditor` -> `e6df4e7e`
 - `origin/lane/no-data-loss-invariants` -> `cda3a1c3`
 - `origin/lane/no-data-loss-recovery` -> `2af1ddda`
 - `origin/lane/progress-publisher` -> `7695e1f9`
