@@ -65,15 +65,26 @@ export function openProductionRecoveryJournal({
   truncate = true,
   claimId = null,
 }) {
-  return openPlanRecoveryJournal({
+  const journal = openPlanRecoveryJournal({
     filePath,
     plan,
     current,
     artifactRefs,
     now,
     truncate,
-    claimId,
   });
+
+  if (claimId) {
+    appendRecoveryClaimOpened(journal, {
+      plan,
+      current,
+      claimId,
+      artifactRefs,
+      reason: 'Production recovery journal claim opened.',
+    });
+  }
+
+  return journal;
 }
 
 export function openPlanRecoveryJournal({

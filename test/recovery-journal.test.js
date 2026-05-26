@@ -9,6 +9,7 @@ import {
   appendMutationObserved,
   assertJournalRecordHasNoRawValues,
   RecoveryJournalClaimStaleError,
+  openProductionRecoveryJournal,
   openPlanRecoveryJournal,
   openRecoveryJournal,
   readRecoveryJournal,
@@ -273,4 +274,30 @@ test('file-backed journal fences out stale claims on restart', () => {
   );
 
   reopened.close();
+});
+
+test('production recovery journal wrapper writes a restart-readable claim-fenced journal', () => {
+  const filePath = tempJournalPath();
+  const remote = baseSite();
+  const plan = planFor(baseSite(), localSite(), remote);
+  const journal = openProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs: {
+      releaseProof: 'artifact://release-proof-1',
+    },
+    now: fixedNow,
+    claimId: 'production-claim-01',
+  });
+
+  journal.close();
+
+  const restarted = readRecoveryJournal(filePath);
+  assert.equal(restarted.integrity.status, 'ok');
+  assert.equal(restarted.records[0].type, 'journal-opened');
+  assert.equal(restarted.records[0].artifactRefs.releaseProof, 'artifact://release-proof-1');
+  assert.equal(restarted.records.some((record) => record.type === 'recovery-claim-opened'), true);
+  assert.equal(restarted.records.at(-1).type, 'recovery-claim-opened');
+  assert.equal(restarted.records.at(-1).claimHash.length, 64);
 });
