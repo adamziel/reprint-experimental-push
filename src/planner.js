@@ -277,6 +277,10 @@ export function createPushPlan({ base, local, remote, now = new Date() }) {
         baseValue,
         localValue,
         remoteValue,
+        resources,
+        base,
+        local,
+        remote,
       });
       if (!attachmentSupport.supported) {
         addUnsupportedAttachmentResourceBlocker(plan, {
@@ -1465,6 +1469,7 @@ function wordpressGraphIdentitySupport({
       supported: false,
       className: 'unsupported-attachment-resource',
       reason: 'Attachment graph resources are not yet supported by the planner.',
+      references: unsupportedAttachmentReferences,
     };
   }
 
@@ -2184,6 +2189,7 @@ function addUnsupportedAttachmentResourceBlocker(plan, {
       localHash,
       remoteHash,
     ),
+    references: support.references || [],
   });
 }
 
@@ -2564,7 +2570,7 @@ function unsupportedNavigationResourceSupport({ resource, baseValue, localValue,
   };
 }
 
-function unsupportedAttachmentResourceSupport({ resource, baseValue, localValue, remoteValue }) {
+function unsupportedAttachmentResourceSupport({ resource, baseValue, localValue, remoteValue, resources, base, local, remote }) {
   if (resource.type !== 'row' || resource.table !== 'wp_posts') {
     return { supported: true };
   }
@@ -2576,17 +2582,25 @@ function unsupportedAttachmentResourceSupport({ resource, baseValue, localValue,
 
   const samePlanCreatedAttachment = localValue !== ABSENT && baseValue === ABSENT && remoteValue === ABSENT;
   if (samePlanCreatedAttachment) {
+    const references = wordpressGraphReferences(resource, candidate);
+    const referenceEvidence = references.map((reference) =>
+      wordpressGraphReferenceEvidence(reference, resources, base, local, remote));
     return {
       supported: false,
       className: 'unsupported-attachment-resource',
       reason: 'Attachment graph resources are not yet supported by the planner.',
+      references: referenceEvidence,
     };
   }
 
+  const references = wordpressGraphReferences(resource, candidate);
+  const referenceEvidence = references.map((reference) =>
+    wordpressGraphReferenceEvidence(reference, resources, base, local, remote));
   return {
     supported: false,
     className: 'unsupported-attachment-resource',
     reason: 'Attachment graph resources are not yet supported by the planner.',
+    references: referenceEvidence,
   };
 }
 

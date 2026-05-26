@@ -20610,6 +20610,9 @@ test('blocks local featured-image attachment references that point at a live att
   assert.equal(blocker.class, 'unsupported-attachment-resource');
   assert.equal(blocker.resourceKey, resourceKey);
   assert.equal(blocker.reason, 'Attachment graph resources are not yet supported by the planner.');
+  assert.equal(blocker.references.length, 1);
+  assert.equal(blocker.references[0].relationshipType, 'featured-image-attachment');
+  assert.equal(blocker.references[0].targetResourceKey, 'row:["wp_posts","ID:8"]');
   assert.equal(pluginDecision.decision, 'keep-remote');
   assert.equal(pluginFileDecision.decision, 'keep-remote');
   assert.equal(planJson.includes('Local attachment target'), false);
