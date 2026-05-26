@@ -186,6 +186,21 @@ export async function runAuthenticatedHttpPush({
     };
     return summary;
   }
+  if (requireProductionAuthSession && hasMissingProductionAuthSessionIdentity(preflight)) {
+    summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
+    summary.authSession = {
+      required: 'authenticated identity',
+      observed: 'missing-user-login',
+      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+    };
+    summary.boundary = {
+      firstRemainingProductionBoundary: 'auth/session lifecycle and durable journal semantics',
+      status: 'unimplemented',
+      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+      authSession: summary.authSession,
+    };
+    return summary;
+  }
   if (requireProductionAuthSession && hasProductionAuthSessionRevocationDrift(preflight)) {
     summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
     summary.authSession = {
@@ -294,6 +309,21 @@ export async function runAuthenticatedHttpPush({
     };
     return summary;
   }
+  if (requireProductionAuthSession && hasMissingProductionAuthSessionIdentity(dryRun)) {
+    summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
+    summary.authSession = {
+      required: 'authenticated identity',
+      observed: 'missing-user-login',
+      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+    };
+    summary.boundary = {
+      firstRemainingProductionBoundary: 'auth/session lifecycle and durable journal semantics',
+      status: 'unimplemented',
+      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+      authSession: summary.authSession,
+    };
+    return summary;
+  }
   const dryRunSessionPreservationDrift = requireProductionAuthSession
     ? resolveProductionAuthSessionPreservationDrift(preflightAuthEnvelope, dryRun)
     : null;
@@ -382,6 +412,21 @@ export async function runAuthenticatedHttpPush({
     };
     return summary;
   }
+  if (requireProductionAuthSession && hasMissingProductionAuthSessionIdentity(apply)) {
+    summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
+    summary.authSession = {
+      required: 'authenticated identity',
+      observed: 'missing-user-login',
+      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+    };
+    summary.boundary = {
+      firstRemainingProductionBoundary: 'auth/session lifecycle and durable journal semantics',
+      status: 'unimplemented',
+      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+      authSession: summary.authSession,
+    };
+    return summary;
+  }
   const applySessionPreservationDrift = requireProductionAuthSession
     ? resolveProductionAuthSessionPreservationDrift(preflightAuthEnvelope, apply)
     : null;
@@ -449,6 +494,21 @@ export async function runAuthenticatedHttpPush({
     summary.authSession = {
       required: 'unrevoked',
       observed: recoveryInspect.body?.auth?.session?.revoked ? 'revoked' : 'cleaned-up',
+      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+    };
+    summary.boundary = {
+      firstRemainingProductionBoundary: 'auth/session lifecycle and durable journal semantics',
+      status: 'unimplemented',
+      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+      authSession: summary.authSession,
+    };
+    return summary;
+  }
+  if (requireProductionAuthSession && hasMissingProductionAuthSessionIdentity(recoveryInspect)) {
+    summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
+    summary.authSession = {
+      required: 'authenticated identity',
+      observed: 'missing-user-login',
       verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
     };
     summary.boundary = {
@@ -577,6 +637,21 @@ export async function runAuthenticatedHttpPush({
     };
     return summary;
   }
+  if (requireProductionAuthSession && hasMissingProductionAuthSessionIdentity(replay)) {
+    summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
+    summary.authSession = {
+      required: 'authenticated identity',
+      observed: 'missing-user-login',
+      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+    };
+    summary.boundary = {
+      firstRemainingProductionBoundary: 'auth/session lifecycle and durable journal semantics',
+      status: 'unimplemented',
+      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+      authSession: summary.authSession,
+    };
+    return summary;
+  }
   const replaySessionPreservationDrift = requireProductionAuthSession
     ? resolveProductionAuthSessionPreservationDrift(preflightAuthEnvelope, replay)
     : null;
@@ -629,6 +704,21 @@ export async function runAuthenticatedHttpPush({
     summary.authSession = {
       required: 'unrevoked',
       observed: dbJournal.body?.auth?.session?.revoked ? 'revoked' : 'cleaned-up',
+      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+    };
+    summary.boundary = {
+      firstRemainingProductionBoundary: 'auth/session lifecycle and durable journal semantics',
+      status: 'unimplemented',
+      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+      authSession: summary.authSession,
+    };
+    return summary;
+  }
+  if (requireProductionAuthSession && hasMissingProductionAuthSessionIdentity(dbJournal)) {
+    summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
+    summary.authSession = {
+      required: 'authenticated identity',
+      observed: 'missing-user-login',
       verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
     };
     summary.boundary = {
@@ -1285,6 +1375,15 @@ function hasProductionAuthSessionTypeDrift(response) {
 
 function hasProductionAuthSessionStatusDrift(response) {
   return response?.body?.auth?.session?.status !== 'active';
+}
+
+function hasMissingProductionAuthSessionIdentity(response) {
+  const session = response?.body?.auth?.session;
+  if (session?.type !== 'production-auth-session') {
+    return false;
+  }
+
+  return !response?.body?.auth?.identity?.userLogin;
 }
 
 function hasMissingProductionAuthSessionExpiry(response) {
