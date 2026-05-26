@@ -49,11 +49,13 @@ function spawnReleaseVerify(env = {}, timeout = proofSubprocessTimeoutMs) {
     spawnOptions,
   );
   if (proof.error) {
+    stopAllPlaygroundChildrenSync();
     process.stderr.write(`${describeSpawnProof(proof)}\n`);
     const timeoutNote = proof.error.code === 'ETIMEDOUT' && timeout ? ` after ${timeout}ms` : '';
     throw new Error(formatSpawnFailure(`production-shaped release verify failed${timeoutNote}`, proof));
   }
   if (proof.signal) {
+    stopAllPlaygroundChildrenSync();
     process.stderr.write(`${describeSpawnProof(proof)}\n`);
     const detail = describeSpawnProof(proof);
     throw new Error(
@@ -64,6 +66,7 @@ function spawnReleaseVerify(env = {}, timeout = proofSubprocessTimeoutMs) {
     );
   }
   if (proof.status === null) {
+    stopAllPlaygroundChildrenSync();
     process.stderr.write(`${describeSpawnProof(proof)}\n`);
     throw new Error(
       `${formatSpawnFailure('production-shaped release verify exited without a status', proof)}\n${describeSpawnProof(proof)}`,
@@ -622,8 +625,19 @@ async function waitForServer(child, baseUrl, getLogs) {
   const lastProbes = [];
   let consecutiveIndex502s = 0;
   while (Date.now() < deadline) {
-    if (child.exitCode !== null) {
-      throw new Error(`Playground server exited early with ${child.exitCode}\n${getLogs()}`);
+    if (child.exitCode !== null || child.signalCode !== null) {
+      const exitLabel =
+        child.exitCode !== null ? `exited early with ${child.exitCode}` : `terminated by ${child.signalCode}`;
+      const failureText = formatPlaygroundStartupFailure(
+        `Playground server ${exitLabel}`,
+        lastError,
+        lastProbes,
+        getLogs(),
+      );
+      writePlaygroundFailure(failureText, lastProbes, getLogs(), lastError);
+      await stopPlaygroundChild(child);
+      await waitForExit(child, 2_000).catch(() => {});
+      throw new Error(failureText);
     }
     try {
       const response = await fetchWithTimeout(`${baseUrl}/wp-json/`, {
@@ -636,6 +650,9 @@ async function waitForServer(child, baseUrl, getLogs) {
         ok: response.ok,
         body: responseBody.slice(0, 500),
       });
+      process.stderr.write(
+        `Playground probe ${baseUrl}/wp-json/ -> ${response.status} ${responseBody.slice(0, 160).replace(/\s+/g, ' ').trim()}\n`,
+      );
       if (response.status === 200) {
         consecutiveIndex502s = 0;
         await response.arrayBuffer();
@@ -652,6 +669,9 @@ async function waitForServer(child, baseUrl, getLogs) {
           ok: snapshot.ok,
           body: snapshotBody.slice(0, 500),
         });
+        process.stderr.write(
+          `Playground probe ${baseUrl}/wp-json/reprint-push-lab/v1/snapshot -> ${snapshot.status} ${snapshotBody.slice(0, 160).replace(/\s+/g, ' ').trim()}\n`,
+        );
         if (snapshot.status === 200) {
           await snapshot.arrayBuffer();
           return;
@@ -659,13 +679,9 @@ async function waitForServer(child, baseUrl, getLogs) {
         lastError = new Error(`Playground lab snapshot readiness HTTP ${snapshot.status}`);
       } else {
         lastError = new Error(`Playground index readiness HTTP ${response.status}`);
-        if (response.status === 502) {
-          consecutiveIndex502s += 1;
-        } else {
-          consecutiveIndex502s = 0;
-        }
+        consecutiveIndex502s = response.status === 502 ? consecutiveIndex502s + 1 : 0;
       }
-      if (consecutiveIndex502s >= 4) {
+      if (consecutiveIndex502s >= 1) {
         break;
       }
     } catch (error) {
@@ -674,9 +690,13 @@ async function waitForServer(child, baseUrl, getLogs) {
     }
     await new Promise((resolve) => setTimeout(resolve, 500));
   }
-  const probeText = lastProbes.length ? `\nProbe trail: ${JSON.stringify(lastProbes.slice(-4), null, 2)}` : '';
-  const failureText = `Timed out waiting for Playground server at ${baseUrl}: ${lastError?.message || 'unknown'}${probeText}\n${getLogs()}`;
-  process.stderr.write(`${failureText}\n`);
+  const failureText = formatPlaygroundStartupFailure(
+    `Timed out waiting for Playground server at ${baseUrl}`,
+    lastError,
+    lastProbes,
+    getLogs(),
+  );
+  writePlaygroundFailure(failureText, lastProbes, getLogs(), lastError);
   try {
     await stopPlaygroundChild(child);
   } catch (cleanupError) {
@@ -685,6 +705,41 @@ async function waitForServer(child, baseUrl, getLogs) {
     );
   }
   throw new Error(failureText);
+}
+
+function writePlaygroundFailure(message, lastProbes, logs, lastError) {
+  const summary = {
+    message,
+    lastProbe: lastProbes.at(-1) ?? null,
+    lastError: lastError?.message ?? null,
+  };
+  process.stderr.write(`${message}\n`);
+  process.stderr.write(`${JSON.stringify(summary)}\n`);
+  process.stdout.write(`${JSON.stringify(summary)}\n`);
+  if (logs) {
+    process.stderr.write(`${logs}\n`);
+  }
+}
+
+function formatPlaygroundStartupFailure(prefix, lastError, lastProbes, logs) {
+  const probeText = lastProbes.length
+    ? `\nProbe trail: ${JSON.stringify(lastProbes.slice(-4), null, 2)}`
+    : '';
+  const lastProbe = lastProbes.at(-1);
+  const lastProbeText = lastProbe
+    ? `\nLast probe: ${JSON.stringify(
+        {
+          route: lastProbe.route,
+          status: lastProbe.status,
+          ok: lastProbe.ok,
+          body: lastProbe.body,
+        },
+        null,
+        2,
+      )}`
+    : '';
+  const errorText = lastError?.message || 'unknown';
+  return `${prefix}: ${errorText}${probeText}${lastProbeText}\n${logs}`;
 }
 
 async function fetchWithTimeout(url, init = {}) {
