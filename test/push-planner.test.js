@@ -14195,6 +14195,83 @@ test('blocks local term-taxonomy term references to a same-plan created term ide
   assert.equal(remote.plugins.forms.description, 'remote-only plugin drift');
 });
 
+test('blocks local term-taxonomy term references to a same-plan created term identity while preserving a matching independent edit and remote-only plugin changes', () => {
+  const resourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:5"]';
+  const targetResourceKey = 'row:["wp_terms","term_id:9"]';
+  const base = baseSite();
+  base.db.wp_posts['ID:1'].post_title = 'Base post title';
+  base.db.wp_terms = {
+    'term_id:4': {
+      term_id: 4,
+      name: 'Base shared term',
+      slug: 'base-shared-term',
+    },
+  };
+  base.db.wp_term_taxonomy = {
+    'term_taxonomy_id:5': {
+      term_taxonomy_id: 5,
+      term_id: 4,
+      taxonomy: 'category',
+      parent: 0,
+      description: 'base term taxonomy description',
+    },
+  };
+
+  const local = baseSite();
+  local.db.wp_posts['ID:1'].post_title = 'Shared post title';
+  local.db.wp_terms = {
+    'term_id:4': {
+      term_id: 4,
+      name: 'Base shared term',
+      slug: 'base-shared-term',
+    },
+    'term_id:9': {
+      term_id: 9,
+      name: 'Local same-plan term',
+      slug: 'local-same-plan-term',
+    },
+  };
+  local.db.wp_term_taxonomy = {
+    'term_taxonomy_id:5': {
+      term_taxonomy_id: 5,
+      term_id: 9,
+      taxonomy: 'category',
+      parent: 4,
+      description: 'local term taxonomy description',
+    },
+  };
+
+  const remote = baseSite();
+  remote.db.wp_posts['ID:1'].post_title = 'Shared post title';
+  remote.db.wp_terms = JSON.parse(JSON.stringify(base.db.wp_terms));
+  remote.db.wp_term_taxonomy = JSON.parse(JSON.stringify(base.db.wp_term_taxonomy));
+  remote.plugins.forms.description = 'remote-only plugin change';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin change */';
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  const matchingEdit = decisionFor(plan, 'row:["wp_posts","ID:1"]');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(decisionFor(plan, targetResourceKey), undefined);
+  assert.equal(plan.conflicts.length, 0);
+  assert.equal(blocker.class, 'unsupported-term-taxonomy-resource');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.reason, 'Term taxonomy graph resources are not yet supported by the planner.');
+  assert.equal(matchingEdit.decision, 'already-in-sync');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('Local same-plan term'), false);
+  assert.equal(planJson.includes('local term taxonomy description'), false);
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin change');
+  assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin change */');
+});
+
 test('blocks local term-taxonomy rows that reference same-plan created term identities through both term and parent while preserving remote-only plugin drift', () => {
   const resourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:5"]';
   const termResourceKey = 'row:["wp_terms","term_id:9"]';
@@ -15506,6 +15583,58 @@ test('blocks local nav menu item parent references to a same-plan created menu i
   assert.equal(planJson.includes('Local same-plan menu item content'), false);
   assert.equal(planJson.includes('remote-only plugin drift'), false);
   assert.equal(remote.plugins.forms.description, 'remote-only plugin drift');
+});
+
+test('blocks local nav menu item parent references to a same-plan created menu item while preserving remote-only plugin changes', () => {
+  const resourceKey = 'row:["wp_posts","ID:49"]';
+  const targetResourceKey = 'row:["wp_posts","ID:50"]';
+  const base = baseSite();
+  base.db.wp_posts['ID:49'] = {
+    ID: 49,
+    post_title: 'Base child menu item change',
+    post_content: 'Base child menu item content change',
+    post_status: 'publish',
+    post_type: 'nav_menu_item',
+    menu_item_parent: 0,
+  };
+
+  const local = baseSite();
+  local.db.wp_posts['ID:49'] = {
+    ID: 49,
+    post_title: 'Local child menu item change',
+    post_content: 'Local child menu item content change',
+    post_status: 'publish',
+    post_type: 'nav_menu_item',
+    menu_item_parent: 50,
+  };
+  local.db.wp_posts['ID:50'] = {
+    ID: 50,
+    post_title: 'Local same-plan menu item change',
+    post_content: 'Local same-plan menu item content change',
+    post_status: 'publish',
+    post_type: 'nav_menu_item',
+  };
+
+  const remote = baseSite();
+  remote.db.wp_posts['ID:49'] = JSON.parse(JSON.stringify(base.db.wp_posts['ID:49']));
+  remote.plugins.forms.description = 'remote-only plugin change';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin change */';
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === targetResourceKey);
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(decisionFor(plan, targetResourceKey), undefined);
+  assert.equal(plan.conflicts.length, 0);
+  assert.equal(blocker.class, 'unsupported-navigation-resource');
+  assert.equal(blocker.resourceKey, targetResourceKey);
+  assert.equal(blocker.reason, 'Navigation and menu graph resources are not yet supported by the planner.');
+  assert.equal(planJson.includes('Local same-plan menu item content change'), false);
+  assert.equal(planJson.includes('remote-only plugin change'), false);
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin change');
 });
 
 test('blocks local menu item parent references to a same-plan created wp navigation while preserving remote-only plugin drift', () => {
