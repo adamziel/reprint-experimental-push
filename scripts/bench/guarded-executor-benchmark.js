@@ -616,6 +616,12 @@ function hasCompleteBackpressureEvidence(report) {
   const receiptCursorMemoryHeadroomBytes = report.evidence.backpressure?.receiptCursorMemoryHeadroomBytes ?? null;
   const receiptCursorWindowBytes = report.evidence.chunkReceipts.resumeCursor?.sizeBytes ?? null;
   const receiptCursorMemoryCeilingBytes = report.resourceLimits?.memoryCeilingBytes ?? null;
+  const receiptCursorQueueHeadroomPositive =
+    Number.isFinite(receiptCursorQueueHeadroomBytes)
+    && receiptCursorQueueHeadroomBytes > 0;
+  const receiptCursorMemoryHeadroomPositive =
+    Number.isFinite(receiptCursorMemoryHeadroomBytes)
+    && receiptCursorMemoryHeadroomBytes > 0;
   const receiptCursorBackpressureWithinResourceHeadroom =
     Number.isFinite(receiptCursorBackpressureBytes)
     && Number.isFinite(receiptCursorMemoryCeilingBytes)
@@ -631,10 +637,8 @@ function hasCompleteBackpressureEvidence(report) {
     Number.isFinite(receiptCursorBackpressureBytes)
     && Number.isFinite(receiptCursorQueueBudgetBytes)
     && receiptCursorQueueBudgetBytes > 0
-    && Number.isFinite(receiptCursorQueueHeadroomBytes)
-    && receiptCursorQueueHeadroomBytes > 0
-    && Number.isFinite(receiptCursorMemoryHeadroomBytes)
-    && receiptCursorMemoryHeadroomBytes > 0
+    && receiptCursorQueueHeadroomPositive
+    && receiptCursorMemoryHeadroomPositive
     && Number.isFinite(receiptCursorMemoryCeilingBytes)
     && queueHeadroomWithinResourceCeiling
     && receiptCursorMemoryHeadroomBytes === receiptCursorMemoryCeilingBytes - receiptCursorWindowBytes
