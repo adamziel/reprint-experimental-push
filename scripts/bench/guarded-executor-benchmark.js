@@ -1274,6 +1274,7 @@ export function productionThroughputDetails(report) {
   const queueBudgetVisibleAndMemoryCeilingVisibleAndMeasured =
     queueBudgetVisible
     && receiptCursorMemoryCeilingVisible
+    && queueHeadroomVisible
     && queueHeadroomMeasured;
   const queueBudgetVisibleAndQueueHeadroomMeasured =
     queueBudgetVisible && queueHeadroomMeasured;

@@ -224,6 +224,9 @@ Current executable gate:
   appears while the queue-budget or queue-headroom visibility bit is hidden,
   so a partial pause boundary cannot still look visible-and-measured from the
   ceiling probe alone.
+- The same queue-budget plus memory-ceiling detail now also fails closed when
+  queue-headroom visibility is hidden, so the paired pause-boundary surface
+  cannot still look measured from the raw ceiling and budget bits alone.
 - The same details also fail closed if memory-ceiling visibility appears
   without queue-budget visibility, so the backpressure visibility boundary
   stays symmetric.
