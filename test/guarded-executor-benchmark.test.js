@@ -919,6 +919,19 @@ test('production claim gate fails closed if benchmark evidence is tampered', () 
     ),
   );
 
+  const overBudgetQueueSlack = clone(report);
+  overBudgetQueueSlack.evidence.backpressure.receiptCursorQueueSlackBytes =
+    overBudgetQueueSlack.evidence.backpressure.queueBudgetBytes + 1;
+  assert.ok(
+    productionThroughputBlockers(overBudgetQueueSlack).includes(
+      'receipt-cursor-queue-slack-exceeds-queue-budget',
+    ),
+  );
+  assert.equal(
+    productionThroughputDetails(overBudgetQueueSlack).backpressureConsistency.receiptCursorQueueSlackWithinQueueBudget,
+    false,
+  );
+
   const zeroBackpressure = clone(report);
   zeroBackpressure.evidence.backpressure.receiptCursorBytes = 0;
   assert.ok(

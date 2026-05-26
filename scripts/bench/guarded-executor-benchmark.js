@@ -293,6 +293,13 @@ export function productionThroughputBlockers(report) {
     blockers.push('queue-pause-without-backpressure-aligned-receipt-cursor-slack');
   }
   if (
+    Number.isFinite(report.evidence.backpressure?.receiptCursorQueueSlackBytes)
+    && Number.isFinite(report.evidence.backpressure?.queueBudgetBytes)
+    && report.evidence.backpressure.receiptCursorQueueSlackBytes > report.evidence.backpressure.queueBudgetBytes
+  ) {
+    blockers.push('receipt-cursor-queue-slack-exceeds-queue-budget');
+  }
+  if (
     report.evidence.backpressure?.queuePausedBeforeOverflow === true
     && report.evidence.backpressure?.receiptCursorQueueSlackBytes != null
     && report.evidence.backpressure.receiptCursorQueueSlackWithinMemoryCeiling !== true
