@@ -30,6 +30,10 @@ const credentials = {
 };
 const requireProductionDurableJournal = process.env.REPRINT_PUSH_REQUIRE_PRODUCTION_DURABLE_JOURNAL === '1';
 const requireProductionAuthSession = process.env.REPRINT_PUSH_REQUIRE_PRODUCTION_AUTH_SESSION === '1';
+const liveAuthSessionSourceBlocker = {
+  requiredCommand: 'REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND',
+  verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+};
 
 class ProofFailure extends Error {
   constructor() {
@@ -321,12 +325,16 @@ if (requireProductionAuthSession) {
               storageLeaseFence: 'production durable journal storage, lease, and fencing are not yet proven beyond the retained Playground journal path',
               verdict: 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED',
             },
-            authSession: {
-              required: 'production-auth-session',
-              observed: 'missing-live-source',
-              verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
-            },
+          authSession: {
+            required: 'production-auth-session',
+            observed: 'missing-live-source',
+            verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
           },
+          liveAuthSessionSource: {
+            ...liveAuthSessionSourceBlocker,
+            observed: 'missing-live-source',
+          },
+        },
           protocolExtension,
           preflight: {
             status: 0,
@@ -385,6 +393,11 @@ if (requireProductionAuthSession) {
               observed: 'unreachable-live-source',
               verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
             },
+            liveAuthSessionSource: {
+              ...liveAuthSessionSourceBlocker,
+              observed: 'unreachable-live-source',
+              error: error instanceof Error ? error.message : String(error),
+            },
             liveSource: {
               url: liveSourceUrl,
               verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
@@ -438,6 +451,10 @@ if (requireProductionAuthSession) {
             required: 'production-auth-session',
             observed: preflight.body.auth.session.type,
             verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+          },
+          liveAuthSessionSource: {
+            ...liveAuthSessionSourceBlocker,
+            observed: preflight.body.auth.session.type,
           },
         },
         protocolExtension,
@@ -589,6 +606,10 @@ try {
                   required: 'production-auth-session',
                   observed: preflight.body.auth.session.type,
                   verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+                },
+                liveAuthSessionSource: {
+                  ...liveAuthSessionSourceBlocker,
+                  observed: preflight.body.auth.session.type,
                 },
               },
               protocolExtension,
