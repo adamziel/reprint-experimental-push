@@ -26,6 +26,7 @@ class ProofFailure extends Error {
 }
 
 let topLevelError = null;
+const activePlaygroundChildren = new Set();
 
 try {
 
@@ -823,6 +824,7 @@ async function startPlaygroundServer(name, blueprintPath) {
         stdio: ['ignore', 'pipe', 'pipe'],
       },
     );
+    activePlaygroundChildren.add(child);
 
     let output = '';
     child.stdout.on('data', (chunk) => {
@@ -841,6 +843,9 @@ async function startPlaygroundServer(name, blueprintPath) {
       if (!/EADDRINUSE/i.test(logs) || attempt === 3) {
         throw error;
       }
+    }
+    finally {
+      activePlaygroundChildren.delete(child);
     }
   }
 
@@ -869,6 +874,12 @@ async function stopSpawnedServer(child) {
   } catch {
     stopProcessTree(child, 'SIGKILL');
     await waitForExit(child, 2_000);
+  }
+}
+
+function stopAllPlaygroundChildren() {
+  for (const child of activePlaygroundChildren) {
+    stopProcessTree(child, 'SIGTERM');
   }
 }
 
@@ -1045,6 +1056,7 @@ function isPortFree(port) {
 } catch (error) {
   topLevelError = error;
 } finally {
+  stopAllPlaygroundChildren();
   if (topLevelError && !(topLevelError instanceof ProofFailure)) {
     throw topLevelError;
   }

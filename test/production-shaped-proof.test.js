@@ -78,22 +78,10 @@ function spawnBoundedSync(command, args, options, label) {
 
   if (proof.error) {
     const timeoutNote = proof.error.code === 'ETIMEDOUT' && options.timeout ? ` after ${options.timeout}ms` : '';
-    const detailParts = [
-      proof.error.name ?? 'Error',
-      proof.error.code ? `code=${proof.error.code}` : null,
-      proof.error.errno ? `errno=${proof.error.errno}` : null,
-      proof.killed ? 'killed=true' : null,
-      proof.status !== null ? `status=${proof.status}` : null,
-      proof.signal ? `signal=${proof.signal}` : null,
-    ].filter(Boolean);
-    assert.fail(
-      `${label} failed${timeoutNote} with ${detailParts.join(' ')}: ${proof.error.message}\nstdout:\n${proof.stdout ?? ''}\nstderr:\n${proof.stderr ?? ''}`,
-    );
+    throw new Error(formatSpawnFailure(`${label} failed${timeoutNote}`, proof));
   }
   if (proof.signal) {
-    assert.fail(
-      `${label} terminated by ${proof.signal}${options.timeout ? ` after ${options.timeout}ms` : ''}\nstdout:\n${proof.stdout ?? ''}\nstderr:\n${proof.stderr ?? ''}`,
-    );
+    throw new Error(formatSpawnFailure(`${label} terminated by ${proof.signal}${options.timeout ? ` after ${options.timeout}ms` : ''}`, proof));
   }
   if (proof.status === null) {
     assert.fail(
@@ -102,6 +90,18 @@ function spawnBoundedSync(command, args, options, label) {
   }
 
   return proof;
+}
+
+function formatSpawnFailure(prefix, proof) {
+  const detailParts = [
+    proof.error?.name ?? 'Error',
+    proof.error?.code ? `code=${proof.error.code}` : null,
+    proof.error?.errno ? `errno=${proof.error.errno}` : null,
+    proof.killed ? 'killed=true' : null,
+    proof.status !== null ? `status=${proof.status}` : null,
+    proof.signal ? `signal=${proof.signal}` : null,
+  ].filter(Boolean);
+  return `${prefix} with ${detailParts.join(' ')}: ${proof.error?.message ?? 'unknown error'}\nstdout:\n${proof.stdout ?? ''}\nstderr:\n${proof.stderr ?? ''}`;
 }
 
 test('production-shaped proof wrapper emits the checked proof summary and exact missing-secret gate', () => {
@@ -603,7 +603,13 @@ async function stopPlaygroundChild(child) {
     return;
   }
   child.kill('SIGTERM');
-  await waitForExit(child, 12_000);
+  try {
+    await waitForExit(child, 12_000);
+  } catch (error) {
+    child.kill('SIGKILL');
+    await waitForExit(child, 12_000);
+    throw error;
+  }
 }
 
 async function findLocalPort() {
