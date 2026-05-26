@@ -4,7 +4,13 @@ import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { ACCEPTABLE_RECOVERY_STATES, applyPlan, isAcceptableRecoveryState, PushPlanError } from '../src/apply.js';
+import {
+  ACCEPTABLE_RECOVERY_STATES,
+  applyPlan,
+  isAcceptableRecoveryState,
+  PushPlanError,
+  validateRecoveryArtifacts,
+} from '../src/apply.js';
 import { createPushPlan } from '../src/planner.js';
 import {
   appendRecoveryClaimOpened,
@@ -2305,7 +2311,8 @@ test('completed replay remains inert for a matching remote and blocks drift with
   local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
 
   const plan = planFor(base, local, baseSite());
-  const durableJournal = openRecoveryJournal(tempRecoveryJournalPath(), { truncate: true, now: fixedNow });
+  const completedJournalPath = tempRecoveryJournalPath();
+  const durableJournal = openRecoveryJournal(completedJournalPath, { truncate: true, now: fixedNow });
   const completed = applyPlan(baseSite(), plan, { durableJournal });
   durableJournal.close();
 
@@ -2321,13 +2328,25 @@ test('completed replay remains inert for a matching remote and blocks drift with
 
   const driftedRemote = JSON.parse(JSON.stringify(completed.site));
   driftedRemote.files['index.php'] = '<?php echo "drifted";';
-  const driftError = captureError(() => applyPlan(driftedRemote, plan, { journal: completed.journal }));
+  const replayJournalPath = tempRecoveryJournalPath();
+  const replayJournal = openRecoveryJournal(replayJournalPath, { truncate: true, now: fixedNow });
+  const driftError = captureError(() =>
+    applyPlan(driftedRemote, plan, {
+      durableJournal: replayJournal,
+      journal: completed.journal,
+    }),
+  );
+  replayJournal.close();
 
   assert.ok(driftError instanceof PushPlanError);
   assert.equal(driftError.code, 'RECOVERY_BLOCKED');
   assertRecoveryStateArtifacts(driftError.details.recovery, 'blocked-recovery');
   assert.ok(driftError.details.recovery.artifacts.journal, 'stale replay must keep journal artifacts');
   assert.ok(driftError.details.recovery.artifacts.remote, 'stale replay must keep remote artifacts');
+  const persistedBlockedRecovery = readRecoveryJournal(replayJournalPath).records.find(
+    (record) => record.type === 'recovery-state' && record.state === 'blocked-recovery',
+  );
+  assert.match(persistedBlockedRecovery.artifactRefs.remote, /^[a-f0-9]{64}$/);
 });
 
 test('durable recovery matrix keeps the three failure boundaries old-remote and a completed replay fully-updated', () => {
@@ -17651,6 +17670,20 @@ test('approved recovery states are limited to the durable old, updated, and bloc
     status: 'blocked-recovery',
     artifacts: { journal: { status: 'blocked' } },
   }), false);
+});
+
+test('non-blocked recovery artifacts fail closed when a remote artifact leaks into the envelope', () => {
+  assert.throws(
+    () => validateRecoveryArtifacts({
+      status: 'old-remote',
+      planId: 'plan-1',
+      artifacts: {
+        journal: { status: 'opened' },
+        remote: { files: {} },
+      },
+    }),
+    /must not expose remote artifacts/,
+  );
 });
 
 test('durable recovery stays within the approved old-remote, fully-updated-remote, or blocked-recovery envelopes', () => {

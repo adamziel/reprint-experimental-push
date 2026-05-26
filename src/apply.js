@@ -910,12 +910,22 @@ function recordDurableRecoveryState(writer, current, plan, recoveryState) {
   if (!writer) {
     return;
   }
+
+  const artifactRefs = recoveryState.status === 'blocked-recovery'
+    ? {
+        journal: typeof writer?.journalPath === 'string' ? writer.journalPath : null,
+        remote: recoveryState.artifacts?.remote ? digest(recoveryState.artifacts.remote) : null,
+      }
+    : {
+        journal: typeof writer?.journalPath === 'string' ? writer.journalPath : null,
+      };
+
   appendDurableEvent(writer, 'recovery-state', {
     planId: plan.id,
     state: recoveryState.status,
     reason: recoveryState.reason,
     observedHash: digest(current),
-    artifactRefs: {},
+    artifactRefs,
   });
 }
 
@@ -1278,7 +1288,7 @@ function recoveryState(status, remote, plan, journal, reason, details = {}) {
   return recovery;
 }
 
-function validateRecoveryArtifacts(recovery) {
+export function validateRecoveryArtifacts(recovery) {
   if (recovery.status === 'blocked-recovery') {
     if (!recovery.artifacts?.journal || !recovery.artifacts?.remote) {
       throw new PushPlanError(
@@ -1305,7 +1315,14 @@ function validateRecoveryArtifacts(recovery) {
   }
 
   if (recovery.artifacts.remote !== undefined) {
-    delete recovery.artifacts.remote;
+    throw new PushPlanError(
+      'RECOVERY_ARTIFACTS_INVALID',
+      'Non-blocked recovery states must not expose remote artifacts.',
+      {
+        status: recovery.status,
+        planId: recovery.planId,
+      },
+    );
   }
 }
 
