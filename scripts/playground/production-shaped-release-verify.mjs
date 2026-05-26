@@ -791,7 +791,7 @@ try {
 }
 
 async function startPlaygroundServer(name, blueprintPath) {
-  for (let attempt = 1; attempt <= 1; attempt += 1) {
+  for (let attempt = 1; attempt <= 3; attempt += 1) {
     const port = await findLocalPort();
     const baseUrl = `http://127.0.0.1:${port}`;
     const args = [
@@ -971,6 +971,9 @@ async function waitForServer(child, baseUrl, getLogs) {
         ok: response.ok,
         body: responseBody.slice(0, 500),
       });
+      process.stderr.write(
+        `Playground probe ${baseUrl}/wp-json/ -> ${response.status} ${responseBody.slice(0, 160).replace(/\s+/g, ' ').trim()}\n`,
+      );
       if (response.status === 200) {
         consecutiveIndex502s = 0;
         await response.arrayBuffer();
@@ -987,6 +990,9 @@ async function waitForServer(child, baseUrl, getLogs) {
           ok: snapshot.ok,
           body: snapshotBody.slice(0, 500),
         });
+        process.stderr.write(
+          `Playground probe ${baseUrl}/wp-json/reprint-push-lab/v1/snapshot -> ${snapshot.status} ${snapshotBody.slice(0, 160).replace(/\s+/g, ' ').trim()}\n`,
+        );
         if (snapshot.status === 200) {
           await snapshot.arrayBuffer();
           return;
