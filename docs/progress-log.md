@@ -19,6 +19,20 @@ linked implementation artifacts.
   route/profile/session/journal evidence at `a33aa3da` is material but still
   below a gate movement.
 
+## 2026-05-26 - Public Status Audit 12:46:17
+
+<a id="2026-05-26-public-status-audit-124617"></a>
+
+- Freshness update plus reliable-head correction: `c23d67cb` is the current
+  reliable-executor head on the public page, and the visible status now points
+  at this 12:46:17 audit refresh.
+- Gate posture remains conservative at `0/4`; no implementation verdict
+  changed.
+- Latest blocker summary remains the same: production-backed auth/session
+  lifecycle on the checked release path and fenced durable journal ownership
+  still block any production push claim, while `c23d67cb` is support-only
+  package-smoke startup bounding and does not move a release gate.
+
 ## 2026-05-26 - Public Status Audit 12:40:00
 
 <a id="2026-05-26-public-status-audit-124000"></a>
