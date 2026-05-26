@@ -1,9 +1,22 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-26 13:15 CEST
+Last updated: 2026-05-26 13:18 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-26 13:18 CEST - Reliable Head Catch-Up
+
+- Going well: `2a0eb6711b078d6dd0d1df59d35bdf36830753fe` is still the current
+  reliable head, so the public status stays aligned with the latest checked
+  release evidence.
+- Not going well: the checked release path still lacks production-backed
+  auth/session lifecycle and durable-journal ownership, so the gate stays
+  `0/4`.
+- Progress change: this is a freshness update only; no gate moved.
+- Next nudge: keep `progress-publisher` conservative and current, and keep
+  `reliable-executor` on the next production-boundary proof: durable-journal
+  consumption, live release-path lifecycle, or preserved-remote retry.
 
 ## 2026-05-26 13:15 CEST - Reliable Head Catch-Up
 
