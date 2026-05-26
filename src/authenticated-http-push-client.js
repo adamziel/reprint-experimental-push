@@ -262,6 +262,16 @@ export async function runAuthenticatedHttpPush({
     setDurableJournalBoundary(summary, 'apply');
     return summary;
   }
+  if (hasExpiredAuthSession(apply)) {
+    summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
+    summary.authSession = {
+      required: 'unexpired',
+      observed: apply.body?.auth?.session?.expiresAt || 'missing',
+      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+    };
+    setDurableJournalBoundary(summary, 'apply');
+    return summary;
+  }
   const applyAuthSessionDrift = requireProductionAuthSession && (
     hasProductionAuthSessionTypeDrift(apply)
     || hasProductionAuthSessionStatusDrift(apply)
@@ -298,6 +308,16 @@ export async function runAuthenticatedHttpPush({
   );
   if (recoveryInspect.status !== 200 || recoveryInspect.body?.ok !== true) {
     summary.code = recoveryInspect.body?.code || 'RECOVERY_INSPECT_FAILED';
+    setDurableJournalBoundary(summary, 'recovery-inspect');
+    return summary;
+  }
+  if (hasExpiredAuthSession(recoveryInspect)) {
+    summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
+    summary.authSession = {
+      required: 'unexpired',
+      observed: recoveryInspect.body?.auth?.session?.expiresAt || 'missing',
+      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+    };
     setDurableJournalBoundary(summary, 'recovery-inspect');
     return summary;
   }
@@ -383,6 +403,16 @@ export async function runAuthenticatedHttpPush({
     setDurableJournalBoundary(summary, 'replay');
     return summary;
   }
+  if (hasExpiredAuthSession(replay)) {
+    summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
+    summary.authSession = {
+      required: 'unexpired',
+      observed: replay.body?.auth?.session?.expiresAt || 'missing',
+      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+    };
+    setDurableJournalBoundary(summary, 'replay');
+    return summary;
+  }
 
   const afterApply = await client.get('/snapshot');
   summary.after = summarizeSnapshot(afterApply, local);
@@ -400,6 +430,16 @@ export async function runAuthenticatedHttpPush({
   );
   if (dbJournal.status !== 200 || dbJournal.body?.ok !== true) {
     summary.code = dbJournal.body?.code || 'DURABLE_JOURNAL_NOT_PROVEN';
+    setDurableJournalBoundary(summary, 'journal-inspect');
+    return summary;
+  }
+  if (hasExpiredAuthSession(dbJournal)) {
+    summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
+    summary.authSession = {
+      required: 'unexpired',
+      observed: dbJournal.body?.auth?.session?.expiresAt || 'missing',
+      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+    };
     setDurableJournalBoundary(summary, 'journal-inspect');
     return summary;
   }
@@ -756,6 +796,10 @@ function hasProductionAuthSessionStatusDrift(response) {
 }
 
 function hasProductionAuthSessionExpiryDrift(response) {
+  return isExpiredSession(response?.body?.auth?.session);
+}
+
+function hasExpiredAuthSession(response) {
   return isExpiredSession(response?.body?.auth?.session);
 }
 
