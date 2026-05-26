@@ -12380,6 +12380,82 @@ test('blocks a local term relationship object reference when the same-plan post 
   assert.throws(() => applyPlan(baseSite(), plan), /Refusing to apply/);
 });
 
+test('blocks a local term relationship object reference when the same-plan post target is itself blocked by a wp_navigation parent', () => {
+  const navigationResourceKey = 'row:["wp_posts","ID:2"]';
+  const blockedPostResourceKey = 'row:["wp_posts","ID:3"]';
+  const termResourceKey = 'row:["wp_terms","term_id:7"]';
+  const taxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:9"]';
+  const relationshipResourceKey = 'row:["wp_term_relationships","object_id:3|term_taxonomy_id:9"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_title: 'Local navigation parent',
+    post_content: 'local-private-navigation-parent-body',
+    post_status: 'publish',
+    post_type: 'wp_navigation',
+  };
+  local.db.wp_posts['ID:3'] = {
+    ID: 3,
+    post_title: 'Blocked tagged post',
+    post_content: 'local-private-blocked-tagged-post-body',
+    post_status: 'publish',
+    post_parent: 2,
+  };
+  local.db.wp_terms = {
+    'term_id:7': {
+      term_id: 7,
+      name: 'Local relationship term',
+      slug: 'local-relationship-term',
+    },
+  };
+  local.db.wp_term_taxonomy = {
+    'term_taxonomy_id:9': {
+      term_taxonomy_id: 9,
+      term_id: 7,
+      taxonomy: 'category',
+      description: '',
+      parent: 0,
+      count: 0,
+    },
+  };
+  local.db.wp_term_relationships = {
+    'object_id:3|term_taxonomy_id:9': {
+      object_id: 3,
+      term_taxonomy_id: 9,
+      term_order: 0,
+    },
+  };
+
+  const plan = planFor(base, local, baseSite());
+  const blockedPostMutation = mutationFor(plan, blockedPostResourceKey);
+  const termMutation = mutationFor(plan, termResourceKey);
+  const taxonomyMutation = mutationFor(plan, taxonomyResourceKey);
+  const relationshipMutation = mutationFor(plan, relationshipResourceKey);
+  const navigationBlocker = plan.blockers.find((entry) => entry.resourceKey === navigationResourceKey);
+  const blockedPostBlocker = plan.blockers.find((entry) => entry.resourceKey === blockedPostResourceKey);
+  const relationshipBlocker = plan.blockers.find((entry) => entry.resourceKey === relationshipResourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(mutationFor(plan, navigationResourceKey), undefined);
+  assert.equal(blockedPostMutation.changeKind, 'create');
+  assert.equal(termMutation.changeKind, 'create');
+  assert.equal(taxonomyMutation.changeKind, 'create');
+  assert.equal(relationshipMutation.changeKind, 'create');
+  assert.equal(navigationBlocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(navigationBlocker.surface, 'wp_navigation');
+  assert.equal(blockedPostBlocker.class, 'missing-wordpress-graph-dependency');
+  assert.equal(blockedPostBlocker.references[0].relationshipType, 'post-parent');
+  assert.equal(blockedPostBlocker.references[0].targetResourceKey, navigationResourceKey);
+  assert.equal(relationshipBlocker.class, 'missing-wordpress-graph-dependency');
+  assert.equal(relationshipBlocker.references[0].relationshipType, 'term-relationship-object');
+  assert.equal(relationshipBlocker.references[0].targetResourceKey, blockedPostResourceKey);
+  assert.equal(relationshipMutation.dependsOnMutationIds, undefined);
+  assert.equal(JSON.stringify(relationshipBlocker).includes('local-private-navigation-parent-body'), false);
+  assert.equal(JSON.stringify(relationshipBlocker).includes('local-private-blocked-tagged-post-body'), false);
+  assert.throws(() => applyPlan(baseSite(), plan), /Refusing to apply/);
+});
+
 test('blocks a local term relationship object reference owned by an attachment even when it targets a same-plan post', () => {
   const attachmentResourceKey = 'row:["wp_posts","ID:3"]';
   const postResourceKey = 'row:["wp_posts","ID:4"]';
@@ -16068,6 +16144,62 @@ test('blocks a local post parent reference when the same-plan post target is its
   assert.equal(childBlocker.references[0].relationshipType, 'post-parent');
   assert.equal(childBlocker.references[0].targetResourceKey, blockedParentResourceKey);
   assert.equal(JSON.stringify(childBlocker).includes('local-private-revision-parent-body'), false);
+  assert.equal(JSON.stringify(childBlocker).includes('local-private-blocked-parent-body'), false);
+  assert.equal(JSON.stringify(childBlocker).includes('local-private-child-body'), false);
+  assert.throws(() => applyPlan(baseSite(), plan), /Refusing to apply/);
+});
+
+test('blocks a local post parent reference when the same-plan post target is itself blocked by a wp_navigation parent', () => {
+  const navigationResourceKey = 'row:["wp_posts","ID:2"]';
+  const blockedParentResourceKey = 'row:["wp_posts","ID:3"]';
+  const childResourceKey = 'row:["wp_posts","ID:4"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_type: 'wp_navigation',
+    post_title: 'Local navigation parent',
+    post_content: 'local-private-navigation-parent-body',
+    post_status: 'publish',
+  };
+  local.db.wp_posts['ID:3'] = {
+    ID: 3,
+    post_type: 'post',
+    post_title: 'Blocked same-plan parent post',
+    post_content: 'local-private-blocked-parent-body',
+    post_status: 'publish',
+    post_parent: 2,
+  };
+  local.db.wp_posts['ID:4'] = {
+    ID: 4,
+    post_type: 'page',
+    post_title: 'Dependent child page',
+    post_content: 'local-private-child-body',
+    post_status: 'publish',
+    post_parent: 3,
+  };
+
+  const plan = planFor(base, local, baseSite());
+  const navigationMutation = mutationFor(plan, navigationResourceKey);
+  const blockedParentMutation = mutationFor(plan, blockedParentResourceKey);
+  const childMutation = mutationFor(plan, childResourceKey);
+  const navigationBlocker = plan.blockers.find((entry) => entry.resourceKey === navigationResourceKey);
+  const blockedParentBlocker = plan.blockers.find((entry) => entry.resourceKey === blockedParentResourceKey);
+  const childBlocker = plan.blockers.find((entry) => entry.resourceKey === childResourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(navigationMutation, undefined);
+  assert.equal(blockedParentMutation.changeKind, 'create');
+  assert.equal(childMutation.changeKind, 'create');
+  assert.equal(navigationBlocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(navigationBlocker.surface, 'wp_navigation');
+  assert.equal(blockedParentBlocker.class, 'missing-wordpress-graph-dependency');
+  assert.equal(blockedParentBlocker.references[0].relationshipType, 'post-parent');
+  assert.equal(blockedParentBlocker.references[0].targetResourceKey, navigationResourceKey);
+  assert.equal(childBlocker.class, 'missing-wordpress-graph-dependency');
+  assert.equal(childBlocker.references[0].relationshipType, 'post-parent');
+  assert.equal(childBlocker.references[0].targetResourceKey, blockedParentResourceKey);
+  assert.equal(JSON.stringify(childBlocker).includes('local-private-navigation-parent-body'), false);
   assert.equal(JSON.stringify(childBlocker).includes('local-private-blocked-parent-body'), false);
   assert.equal(JSON.stringify(childBlocker).includes('local-private-child-body'), false);
   assert.throws(() => applyPlan(baseSite(), plan), /Refusing to apply/);
