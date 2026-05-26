@@ -38,11 +38,11 @@ The project is **not releasable as a production WordPress push path**.
 - `origin/lane/cycle-20260525-keep-busy-loop-2/independent-auditor` -> `1d6cb6fd`
 - `origin/lane/cycle-20260525-keep-busy-loop-2/no-data-loss-recovery` -> `63e01a49`
 - `origin/lane/cycle-20260525-mainwindows-2349/critic` -> `fa0dc8a0`
-- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `8b9a76c5`
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `23adb4d7`
+- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `999ff0d8`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `bfe116c7`
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `432f82a9`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `2af1ddda`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `94502462`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `3718bfa4`
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` -> `0ca7b35d`
 - `origin/lane/cycle-20260525-mainwindows-2357/no-data-loss-invariants-graph-proof` -> `98c0ce26`
 - `origin/lane/cycle-20260525-restart-2340/feedback-supervisor` -> `ef3d911e`
@@ -54,7 +54,7 @@ The project is **not releasable as a production WordPress push path**.
 - `origin/lane/no-data-loss-invariants` -> `0247563b`
 - `origin/lane/no-data-loss-recovery` -> `9e077c10`
 - `origin/lane/progress-publisher` -> `7695e1f9`
-- `origin/lane/reliable-executor` -> `a0f51a6f`
+- `origin/lane/reliable-executor` -> `d96a6c3a`
 - `origin/lane/same-plan-wordpress-graph-create` -> `8dea1ca3`
 - `origin/main` -> `56063f13`
 
@@ -65,9 +65,9 @@ real source-site mutation boundary. The release gates still stay `0/4`.
 Fresh lane proof since the last audit pass improved the local evidence floor,
 but it did not change the release conclusion:
 
-- `origin/lane/reliable-executor` now records `a0f51a6f`, hardening live
-  release verify timeout handling, but it still does not prove production
-  auth/session lifecycle or a live-source mutation boundary.
+- `origin/lane/reliable-executor` now records `d96a6c3a`, hardening live proof
+  failure summaries, but it still does not prove production auth/session
+  lifecycle or a live-source mutation boundary.
 - `origin/lane/reliable-executor` now records `3676a5ad`, tightening the
   Playground startup readiness window. It still does not prove production
   auth/session lifecycle or a live-source mutation boundary.
@@ -103,10 +103,14 @@ but it did not change the release conclusion:
   lifecycle or a live-source mutation boundary.
 - `origin/lane/fast-paths` now records `8c5c2ccb`, tightening backpressure
   evidence checks only.
+- `origin/lane/fast-paths` now records `999ff0d8`, adding chunk digest resume
+  rejection. It still does not prove a production speed claim.
 - `origin/lane/feedback-supervisor` now records `ee7069e6`, refreshing the
   supervisor progress surface only.
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now records
+  `bfe116c7`, refreshing progress visibility only.
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now records
-  `94502462`, refreshing the public progress freshness only.
+  `3718bfa4`, refreshing the public progress freshness only.
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` now records
   `432f82a9`, refreshing the audit snapshot only and not changing the release
   boundary.
@@ -121,7 +125,7 @@ but it did not change the release conclusion:
 - `origin/lane/progress-publisher` now records `7695e1f9`, refreshing public
   progress freshness only.
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now records
-  `3d9725ea`, refreshing the public progress freshness only.
+  `d3849769`, refreshing the public progress freshness only.
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now records
   `37c0f126`, refreshing the public progress freshness only.
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now records
