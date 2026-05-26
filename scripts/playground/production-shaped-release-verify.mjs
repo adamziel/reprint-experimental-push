@@ -1300,6 +1300,7 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
   const deadline = Date.now() + packagedServerStartupTimeoutMs;
   let lastError = null;
   const lastProbes = [];
+  let lastTimeoutFallbackProbes = null;
   let notReadyProbeCounts = { snapshot: 0, preflight: 0 };
   let timeoutProbeCount = 0;
   while (Date.now() < deadline) {
@@ -1312,8 +1313,9 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
         lastProbes,
         getOutput(),
         { childPid: child.pid ?? null, packagedProductionPlugin: true },
+        lastTimeoutFallbackProbes,
       );
-      writePlaygroundFailure(message, lastProbes, getOutput(), lastError);
+      writePlaygroundFailure(message, lastProbes, getOutput(), lastError, lastTimeoutFallbackProbes);
       await stopSpawnedServer(child);
       throw new Error(message);
     }
@@ -1802,6 +1804,7 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
       }
       if (packagedProductionPluginReadinessProbeTimedOut(error)) {
         const { preflightProbe, indexProbe } = await fetchPackagedTimeoutFallbackProbes(baseUrl, child);
+        lastTimeoutFallbackProbes = { preflightProbe, indexProbe };
         if (preflightProbe) {
           lastProbes.push(preflightProbe);
           if (preflightProbe.ready) {
@@ -1825,6 +1828,7 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
                 childPid: child.pid ?? null,
                 packagedProductionPlugin: true,
               },
+              lastTimeoutFallbackProbes,
             );
           }
         }
@@ -1856,6 +1860,7 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
             timeoutProbeCount,
             maxTimeoutProbeCount: packagedProductionPluginMaxConsecutiveNotReadyProbes,
           },
+          lastTimeoutFallbackProbes,
         );
       }
     }
@@ -1871,6 +1876,7 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
       childPid: child.pid ?? null,
       packagedProductionPlugin: true,
     },
+    lastTimeoutFallbackProbes,
   );
 }
 
@@ -2775,7 +2781,7 @@ function hmacHex(key, data) {
   return createHmac('sha256', key).update(data, 'utf8').digest('hex');
 }
 
-function writePlaygroundFailure(message, lastProbes, logs, lastError) {
+function writePlaygroundFailure(message, lastProbes, logs, lastError, lastTimeoutFallbackProbes = null) {
   const lastProbe = lastProbes.at(-1) ?? null;
   const lastRouteStatusBody = lastProbe
     ? {
@@ -2790,6 +2796,7 @@ function writePlaygroundFailure(message, lastProbes, logs, lastError) {
     lastProbeSummary: lastRouteStatusBody,
     lastRouteStatusBody,
     lastError: lastError?.message ?? null,
+    lastTimeoutFallbackProbes,
   };
   const flatLastProbe = lastProbe
     ? `\nLast route/status/body: ${JSON.stringify(
@@ -2811,9 +2818,24 @@ function writePlaygroundFailure(message, lastProbes, logs, lastError) {
   }
 }
 
-async function throwPlaygroundReadinessFailure(child, prefix, lastError, lastProbes, logs, context = {}) {
-  const diagnostic = formatPlaygroundStartupFailure(prefix, lastError, lastProbes, logs, context);
-  writePlaygroundFailure(diagnostic, lastProbes, logs, lastError);
+async function throwPlaygroundReadinessFailure(
+  child,
+  prefix,
+  lastError,
+  lastProbes,
+  logs,
+  context = {},
+  lastTimeoutFallbackProbes = null,
+) {
+  const diagnostic = formatPlaygroundStartupFailure(
+    prefix,
+    lastError,
+    lastProbes,
+    logs,
+    context,
+    lastTimeoutFallbackProbes,
+  );
+  writePlaygroundFailure(diagnostic, lastProbes, logs, lastError, lastTimeoutFallbackProbes);
   await stopSpawnedServer(child);
   const finalError = new Error(diagnostic);
   finalError.isPlaygroundReadinessFailure = true;
@@ -2827,10 +2849,18 @@ async function throwPlaygroundReadinessFailure(child, prefix, lastError, lastPro
     }
     : null;
   finalError.context = context;
+  finalError.lastTimeoutFallbackProbes = lastTimeoutFallbackProbes;
   throw finalError;
 }
 
-function formatPlaygroundStartupFailure(prefix, lastError, lastProbes, logs, context = {}) {
+function formatPlaygroundStartupFailure(
+  prefix,
+  lastError,
+  lastProbes,
+  logs,
+  context = {},
+  lastTimeoutFallbackProbes = null,
+) {
   const probeText = lastProbes.length
     ? `\nProbe trail: ${JSON.stringify(lastProbes.slice(-4), null, 2)}`
     : '';
@@ -2862,7 +2892,10 @@ function formatPlaygroundStartupFailure(prefix, lastError, lastProbes, logs, con
   const contextText = Object.keys(context).length
     ? `\nContext: ${JSON.stringify(context, null, 2)}`
     : '';
-  return `${prefix}: ${errorText}${probeText}${lastProbeText}${routeStatusBodyText}${contextText}\n${logs}`;
+  const timeoutFallbackText = lastTimeoutFallbackProbes?.preflightProbe || lastTimeoutFallbackProbes?.indexProbe
+    ? `\nTimeout fallback probes: ${JSON.stringify(lastTimeoutFallbackProbes, null, 2)}`
+    : '';
+  return `${prefix}: ${errorText}${probeText}${lastProbeText}${routeStatusBodyText}${timeoutFallbackText}${contextText}\n${logs}`;
 }
 
 async function fetchWithTimeout(url, init = {}, timeoutMs = serverFetchTimeoutMs, child = null) {

@@ -2028,6 +2028,23 @@ test('packaged production plugin smoke readiness helper preserves timeout fallba
   assert.match(helperSource, /describePackagedReadinessFailure\(\s*lastProbes\.at\(-1\) \?\? null,\s*lastTimeoutFallbackProbes,\s*lastProbes,\s*\)/);
 });
 
+test('packaged release verifier readiness helper preserves timeout fallback probe details', () => {
+  const verifierSource = readFileSync(
+    path.join(repoRoot, 'scripts/playground/production-shaped-release-verify.mjs'),
+    'utf8',
+  );
+  const start = verifierSource.indexOf('async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) {');
+  assert.notEqual(start, -1, 'expected packaged verifier readiness helper in verifier source');
+  const end = verifierSource.indexOf('async function fetchPackagedPreflightProbe(', start);
+  assert.notEqual(end, -1, 'expected packaged verifier readiness helper boundary in verifier source');
+  const helperSource = verifierSource.slice(start, end);
+
+  assert.match(helperSource, /let lastTimeoutFallbackProbes = null;/);
+  assert.match(helperSource, /lastTimeoutFallbackProbes = \{ preflightProbe, indexProbe \};/);
+  assert.match(helperSource, /lastTimeoutFallbackProbes,\s*\);/);
+  assert.match(verifierSource, /Timeout fallback probes: \$\{JSON\.stringify\(lastTimeoutFallbackProbes, null, 2\)\}/);
+});
+
 test('packaged production plugin smoke readiness helper preserves bounded readiness probe history', () => {
   const smokeSource = readFileSync(
     path.join(repoRoot, 'scripts/playground/production-plugin-package-smoke.mjs'),
@@ -2201,7 +2218,7 @@ test('packaged readiness helpers treat signed preflight as the bootstrap authori
   );
 
   for (const source of [smokeSource, verifierSource]) {
-    assert.match(source, /const preflightProbe = await fetchPackagedPreflightProbe\(baseUrl, child\);\s*(?:lastProbes\.push\(preflightProbe\)|lastProbe = preflightProbe);\s*if \(preflightProbe\.ready\) \{\s*return;\s*\}\s*if \(preflightProbe\.retryable\) \{\s*await sleepUnlessChildExit\(readinessProbeIntervalMs, child\);\s*continue;\s*\}\s*if \(\s*packagedProductionPluginSnapshotRetryable/s);
+    assert.match(source, /const preflightProbe = await fetchPackagedPreflightProbe\(baseUrl, child\);[\s\S]*?if \(preflightProbe\.ready\) \{\s*return;\s*\}[\s\S]*?if \(preflightProbe\.retryable\) \{[\s\S]*?await sleepUnlessChildExit\(readinessProbeIntervalMs, child\);\s*continue;\s*\}[\s\S]*?packagedProductionPluginSnapshotRetryable/s);
   }
 });
 
