@@ -732,6 +732,14 @@ maybeTest('production-shaped release verify command runs the live protocol branc
       proof.stdout,
       /"leaseFence": \{\s*"storageGuard": "filesystem-compare-rename",\s*"fsyncEvidence": true,\s*"monotonicSequence": true\s*\}/,
     );
+    assert.match(
+      proof.stdout,
+      /"authSessionLifecycle": \{\s*"minted": \{\s*"id": "[^"]+",\s*"type": "application-password-basic",\s*"status": "active",\s*"expiresAt": "[^"]+",\s*"expired": false\s*\},\s*"read": \{\s*"id": "[^"]+",\s*"type": "application-password-basic",\s*"status": "active",\s*"expiresAt": "[^"]+",\s*"expired": false\s*\}/,
+    );
+    assert.match(
+      proof.stdout,
+      /"authSessionLifecycleTrace": \[\s*\{\s*"step": "preflight",\s*"id": "[^"]+",\s*"type": "application-password-basic",\s*"status": "active",\s*"expiresAt": "[^"]+",\s*"expired": false,\s*"rotated": false,\s*"preserved": false\s*\}/,
+    );
     assert.match(proof.stdout, /"releaseProof": \{\s*"ok": false,\s*"mode": "apply"/);
     assert.match(proof.stdout, /"replayEquivalence": \{\s*"equivalent": true,\s*"mismatches": \[\]\s*\}/);
     assert.match(proof.stdout, /"preflight": \{\s*"status": 200,\s*"ok": true,\s*"mode": "preflight"/);
