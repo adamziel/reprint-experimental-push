@@ -57,6 +57,9 @@ the atomic-group barrier.
 It also includes a receipt-cursor plus staging-disk-headroom shortcut for
 post-pause journal batching, so the recovery planner can trim flush timing
 without weakening live preconditions or the atomic-group barrier.
+It also includes measured parallelism caps plus canonical per-kind budgets for
+bounded plugin-install fanout, so the planner can skip repeat fanout sizing
+without turning concurrency limits into mutation authority.
 It also includes a cached release-manifest digest plus cursor shortcut for
 release-bundle fanout, so the planner can trim repeat fanout scans without
 changing the guarded release boundary.

@@ -692,6 +692,16 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
     model.safeFastPaths.some(
       (fastPath) =>
         fastPath.area === 'parallelism-limits' &&
+        fastPath.allowedShortcut === 'reuse-measured-parallelism-caps-and-canonical-per-kind-budgets-to-size-bounded-plugin-install-fanout' &&
+        fastPath.guardrails.includes('measured-parallelism-caps-stay-planning-evidence-only') &&
+        fastPath.gateProofs.skip.includes('measured parallelism caps and canonical per-kind budgets to avoid recomputing plugin-install fanout'),
+    ),
+    'measured parallelism caps can size plugin-install fanout without weakening the live compare',
+  );
+  assert.ok(
+    model.safeFastPaths.some(
+      (fastPath) =>
+        fastPath.area === 'parallelism-limits' &&
         fastPath.allowedShortcut === 'reuse-canonical-per-kind-budgets-to-size-bounded-release-bundle-resume' &&
         fastPath.guardrails.includes('release-bundle-resume-stays-planning-only') &&
         fastPath.gateProofs.recovery.includes('the release-bundle staging record still classify pause, retry, or crash'),
