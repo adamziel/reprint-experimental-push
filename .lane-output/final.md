@@ -10,13 +10,14 @@ Commands:
 - `sed -n '1,260p' audits/objective-audit.md`
 - `git status --short --branch`
 - `git diff -- audits/objective-audit.md`
+- `git status --short --branch`
 
 Push result:
-- Not run this pass
+- Pending
 
 Worktree status:
 - Tracked change present in `audits/objective-audit.md`
 - Verdict remains `0/4`
 
 Next supervisor nudge:
-- Re-poll only when a lane lands fresh production-boundary proof: live auth/session lifecycle, restart-readable durable journal ownership, or a live release-path mutation boundary.
+- Re-poll only when a lane lands fresh production-boundary proof: live auth/session lifecycle, restart-readable durable journal ownership, or a live release-path mutation boundary. The new `no-data-loss-invariants` head is still support-side and does not move the release verdict.
