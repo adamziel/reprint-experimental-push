@@ -1082,6 +1082,10 @@ test('guarded benchmark keeps paired row-batch and storage detail hidden when at
   const blockers = productionThroughputBlockers(tampered);
 
   assert.equal(
+    details.atomicGroup.productionRowBatchExecutorVisibleAndStorageReceiptsVisible,
+    false,
+  );
+  assert.equal(
     details.atomicGroup.productionRowBatchExecutorVisibleAndStorageReceiptsVisibleAndMeasured,
     false,
   );
@@ -1149,6 +1153,10 @@ test('guarded benchmark keeps paired row-batch and storage detail hidden when at
   const details = productionThroughputDetails(tampered);
   const blockers = productionThroughputBlockers(tampered);
 
+  assert.equal(
+    details.atomicGroup.productionRowBatchExecutorVisibleAndStorageReceiptsVisible,
+    false,
+  );
   assert.equal(
     details.atomicGroup.productionRowBatchExecutorVisibleAndStorageReceiptsVisibleAndMeasured,
     false,
@@ -2244,9 +2252,31 @@ test('guarded benchmark details fail closed when storage and row-batch capabilit
   assert.equal(details.atomicGroup.productionStorageReceiptsMeasured, false);
   assert.equal(details.atomicGroup.productionRowBatchExecutorMeasured, false);
   assert.equal(details.productionStorageReceiptsVisibleAndAtomicCommitVisibleAndMeasured, false);
-  assert.equal(details.atomicGroup.productionRowBatchExecutorVisibleAndStorageReceiptsVisible, true);
+  assert.equal(
+    details.atomicGroup.productionStorageReceiptsVisibleAndAtomicGroupMetadataVisible,
+    false,
+  );
+  assert.equal(details.atomicGroup.productionRowBatchExecutorVisibleAndStorageReceiptsVisible, false);
   assert.equal(
     details.atomicGroup.productionRowBatchExecutorVisibleAndStorageReceiptsVisibleAndMeasured,
+    false,
+  );
+});
+
+test('guarded benchmark keeps storage-receipts and atomic-group metadata visible detail hidden when atomic-commit visibility is hidden', () => {
+  const report = smallBenchmark();
+  const tampered = clone(report);
+
+  tampered.evidence.atomicGroup.productionStorageReceiptsMeasured = true;
+  tampered.evidence.atomicGroup.productionStorageReceiptsVisible = true;
+  tampered.evidence.atomicGroup.productionAtomicCommitMeasured = true;
+  tampered.evidence.atomicGroup.productionAtomicCommitVisible = false;
+  tampered.evidence.atomicGroup.productionAtomicGroupMetadataVisible = true;
+
+  const details = productionThroughputDetails(tampered);
+
+  assert.equal(
+    details.atomicGroup.productionStorageReceiptsVisibleAndAtomicGroupMetadataVisible,
     false,
   );
 });
