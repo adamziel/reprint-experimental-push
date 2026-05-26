@@ -191,6 +191,12 @@ export async function runAuthenticatedHttpPush({
     idempotencyKey,
   });
   summary.recoveryInspect = summarizeResponse(recoveryInspect);
+  summary.recoveryInspect.recovery = summarizeRecoveryInspect(recoveryInspect);
+  if (summary.recoveryInspect.recovery?.state === 'blocked-recovery') {
+    summary.code = recoveryInspect.body?.code || 'RECOVERY_INSPECT_BLOCKED';
+    setDurableJournalBoundary(summary, 'recovery-inspect');
+    return summary;
+  }
 
   const replay = await client.signedPost('/apply', {
     plan,
@@ -366,6 +372,24 @@ function summarizeDbJournal(response) {
     applyCommitted: rows.some((entry) => entry.event === 'apply-committed'),
     mutationApplied: rows.filter((entry) => entry.event === 'mutation-applied').length,
     idempotencyOpened: rows.filter((entry) => entry.event === 'idempotency-opened').length,
+  };
+}
+
+function summarizeRecoveryInspect(response) {
+  const recovery = response.body?.recovery;
+  if (!recovery || typeof recovery !== 'object') {
+    return undefined;
+  }
+
+  return {
+    state: recovery.state,
+    counts: recovery.counts ? {
+      old: recovery.counts.old,
+      new: recovery.counts.new,
+      blockedUnknown: recovery.counts.blockedUnknown,
+      total: recovery.counts.total,
+    } : undefined,
+    journalState: recovery.journal?.integrity?.status,
   };
 }
 
