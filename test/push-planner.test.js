@@ -25709,6 +25709,92 @@ test('blocked recovery artifacts fail closed when a nested remote artifact hides
   assert.match(error.message, /must not hide unsupported symbol keys inside preserved artifacts/);
 });
 
+test('non-blocked recovery artifacts fail closed when journal entries hide unsupported symbol keys on the array container', () => {
+  const hiddenKey = Symbol('hidden');
+  const entries = [{ mutationId: 'mut-1', status: 'applied' }];
+  entries[hiddenKey] = { status: 'hidden' };
+  const recovery = {
+    status: 'fully-updated-remote',
+    planId: 'plan-hidden-entries-array-symbol',
+    reason: 'completed replay artifact',
+    remoteHash: 'a'.repeat(64),
+    artifacts: {
+      journal: {
+        schemaVersion: 1,
+        id: 'journal-plan-hidden-entries-array-symbol',
+        planId: 'plan-hidden-entries-array-symbol',
+        status: 'completed',
+        entries,
+      },
+    },
+  };
+
+  const error = captureError(() => assertRecoveryStateEnvelope(recovery));
+
+  assert.equal(error.code, 'RECOVERY_ARTIFACTS_INVALID');
+  assert.match(error.message, /must not hide preserved artifacts inside sparse or non-canonical arrays/);
+});
+
+test('non-blocked recovery artifacts fail closed when journal entries hide non-enumerable metadata on the array container', () => {
+  const entries = [{ mutationId: 'mut-1', status: 'applied' }];
+  Object.defineProperty(entries, 'hidden', {
+    value: { status: 'hidden' },
+    enumerable: false,
+  });
+  const recovery = {
+    status: 'old-remote',
+    planId: 'plan-hidden-entries-array-string',
+    reason: 'old remote with hidden entries metadata',
+    remoteHash: 'a'.repeat(64),
+    artifacts: {
+      journal: {
+        schemaVersion: 1,
+        id: 'journal-plan-hidden-entries-array-string',
+        planId: 'plan-hidden-entries-array-string',
+        status: 'opened',
+        entries,
+      },
+    },
+  };
+
+  const error = captureError(() => assertRecoveryStateEnvelope(recovery));
+
+  assert.equal(error.code, 'RECOVERY_ARTIFACTS_INVALID');
+  assert.match(error.message, /must not hide preserved artifacts inside sparse or non-canonical arrays/);
+});
+
+test('blocked recovery artifacts fail closed when nested journal entry arrays are sparse', () => {
+  const entries = [];
+  entries[1] = { mutationId: 'mut-2', status: 'applied' };
+  const recovery = {
+    status: 'blocked-recovery',
+    planId: 'plan-sparse-entries-array',
+    reason: 'sparse journal entries artifact',
+    remoteHash: 'a'.repeat(64),
+    driftedResources: ['file:index.php'],
+    artifacts: {
+      journal: {
+        schemaVersion: 1,
+        id: 'journal-plan-sparse-entries-array',
+        planId: 'plan-sparse-entries-array',
+        status: 'completed',
+        entries,
+      },
+      remote: {
+        schemaVersion: 1,
+        db: {
+          wp_options: {},
+        },
+      },
+    },
+  };
+
+  const error = captureError(() => assertRecoveryStateEnvelope(recovery));
+
+  assert.equal(error.code, 'RECOVERY_ARTIFACTS_INVALID');
+  assert.match(error.message, /must not hide preserved artifacts inside sparse or non-canonical arrays/);
+});
+
 test('blocked recovery artifacts are insulated from later remote mutation', () => {
   const base = baseSite();
   const local = baseSite();

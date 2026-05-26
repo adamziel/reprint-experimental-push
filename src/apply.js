@@ -2384,6 +2384,18 @@ export function validateRecoveryArtifacts(recovery) {
     );
   }
 
+  if (hasNestedNonCanonicalArrayShape(recovery.artifacts)) {
+    throw new PushPlanError(
+      'RECOVERY_ARTIFACTS_INVALID',
+      'Recovery states must not hide preserved artifacts inside sparse or non-canonical arrays.',
+      {
+        status: recovery.status,
+        planId: recovery.planId,
+        artifactKeys,
+      },
+    );
+  }
+
   if (recovery.status === 'blocked-recovery') {
     if (artifactKeys.some((key) => typeof key === 'symbol' || (key !== 'journal' && key !== 'remote'))) {
       throw new PushPlanError(
@@ -2611,6 +2623,33 @@ function hasNestedHiddenOwnStringKeys(value, seen = new Set()) {
   return false;
 }
 
+function hasNestedNonCanonicalArrayShape(value, seen = new Set()) {
+  if (!value || typeof value !== 'object' || seen.has(value)) {
+    return false;
+  }
+
+  seen.add(value);
+
+  if (Array.isArray(value)) {
+    if (Object.getPrototypeOf(value) !== Array.prototype || !hasOnlyDenseEnumerableArrayIndexes(value)) {
+      return true;
+    }
+
+    return value.some((nested) => hasNestedNonCanonicalArrayShape(nested, seen));
+  }
+
+  if (!isPlainObject(value)) {
+    return false;
+  }
+
+  return Reflect.ownKeys(value).some((key) => {
+    if (typeof key === 'symbol') {
+      return false;
+    }
+    return hasNestedNonCanonicalArrayShape(value[key], seen);
+  });
+}
+
 function validateRecoveryStateEnvelopeKeys(recoveryState) {
   if (!isStrictPlainObject(recoveryState)) {
     throw new PushPlanError(
@@ -2808,6 +2847,20 @@ function hasOnlyDenseOwnArrayIndexes(value) {
       && /^(0|[1-9]\d*)$/.test(key)
       && Number(key) < value.length;
   });
+}
+
+function hasOnlyDenseEnumerableArrayIndexes(value) {
+  if (!hasOnlyDenseOwnArrayIndexes(value)) {
+    return false;
+  }
+
+  for (let index = 0; index < value.length; index += 1) {
+    if (Object.getOwnPropertyDescriptor(value, String(index))?.enumerable !== true) {
+      return false;
+    }
+  }
+
+  return true;
 }
 
 function hasOnlyUniqueNonEmptyStrings(value) {
