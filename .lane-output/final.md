@@ -1,9 +1,9 @@
 Critic lane handoff:
 
-- I rechecked `audits/critic.md` and the newest adjacent lane handoffs.
-- The verdict is still flat: the release claim remains bounded, not production-grade.
-- The evidence delta is narrower now, not broader. `progress-publisher` refreshed the public progress surface, `independent-auditor` pushed an updated objective audit, `no-data-loss-recovery` added a fail-closed journal-path mismatch regression, and `no-data-loss-invariants` added a fail-closed attachment graph edge, but none of that closes live auth/session lifecycle, durable journal ownership with lease/fencing, preserved-remote retry, exact replay equivalence, or broad graph/plugin coverage.
-- The only useful move from this lane remains to wait for a real proof delta from `reliable-executor`, `no-data-loss-recovery`, or `no-data-loss-invariants` rather than churn the status surface.
+- Rechecked `audits/critic.md`, the current lane handoff, and the freshest `.lane-output/final*.md` evidence.
+- Verdict is unchanged: the release-verifier path is still lab-shaped, despite the concrete `502 WordPress is not ready yet` startup failure trail.
+- The release blockers are still the same: no production auth/session lifecycle, no durable journal ownership with lease/fencing, no preserved-remote retry proof, and no exact replay-equivalence proof on the real push path.
+- No audit edit was warranted because there was no material evidence delta; this pass only refreshed the lane handoff to match the current state.
 
 Changed files:
 - [`.lane-output/final.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/critic/.lane-output/final.md)
@@ -12,15 +12,14 @@ Commands run:
 - `git status --short --branch`
 - `sed -n '1,260p' audits/critic.md`
 - `sed -n '1,260p' .lane-output/final.md`
-- `for d in ../reliable-executor/.lane-output ../no-data-loss-recovery/.lane-output ../no-data-loss-invariants/.lane-output; do latest=$(ls -1t "$d"/final*.md 2>/dev/null | head -n 1); printf '%s\n' "$latest"; [ -n "$latest" ] && sed -n '1,120p' "$latest" | head -n 20; printf '\n---\n'; done`
-- `git diff -- .lane-output/final.md`
+- `find .lane-output -maxdepth 1 -name 'final*.md' -type f -printf '%T@ %f\n' | sort -nr | head -n 8`
 
 Push result:
 - No push attempted
 
 Worktree status:
-- `## lane/cycle-20260525-mainwindows-2349/critic...origin/main [ahead 1551, behind 210]`
 - Dirty tracked file: [`.lane-output/final.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/critic/.lane-output/final.md)
+- Branch: `lane/cycle-20260525-mainwindows-2349/critic...origin/main [ahead 1553, behind 218]`
 
 Next supervisor nudge:
-- Re-poll `reliable-executor` only after it lands a concrete new proof delta or a fail-closed path that changes the release gate; otherwise keep critic parked and avoid another status-only loop.
+- Re-audit `reliable-executor` only when it lands a concrete proof delta that changes the live release boundary, not for more status churn.
