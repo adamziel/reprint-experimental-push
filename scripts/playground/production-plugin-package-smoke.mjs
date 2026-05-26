@@ -11,25 +11,14 @@ import { createPushPlan } from '../../src/planner.js';
 import { authenticatedHttpClient } from '../../src/authenticated-http-push-client.js';
 import { deepClone, digest } from '../../src/stable-json.js';
 import { buildProductionPluginPackageProofSummary } from './production-plugin-package-proof-summary.js';
+import { parseProductionPluginPackageSelectedScenarios } from './production-plugin-package-scenarios.js';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const cliPath = path.join(repoRoot, 'bin/reprint-push-lab.js');
 const serverStartupTimeoutMs = 120_000;
 const transientFetchRetryDelayMs = 250;
 const transientFetchAttempts = 4;
-const scenarioGroups = {
-  'driver-registration-guards': [
-    'driver-missing-export-guard',
-    'driver-missing-apply-guard',
-    'driver-missing-validate-guard',
-    'driver-missing-name-guard',
-    'driver-missing-plugin-owner-guard',
-    'driver-missing-table-guard',
-    'driver-duplicate-name-guard',
-    'driver-duplicate-table-guard',
-  ],
-};
-const selectedScenarios = parseSelectedScenarios(
+const selectedScenarios = parseProductionPluginPackageSelectedScenarios(
   process.argv.slice(2),
   process.env.REPRINT_PUSH_PACKAGE_SMOKE_SCENARIO,
 );
@@ -1120,23 +1109,6 @@ function buildPluginPackage(targetDir) {
       path.join(includesDir, file),
     );
   }
-}
-
-function parseSelectedScenarios(argv, envValue) {
-  const explicitArg = argv.find((arg) => arg.startsWith('--scenario='));
-  const rawValue = explicitArg ? explicitArg.slice('--scenario='.length) : envValue;
-  if (!rawValue) {
-    return null;
-  }
-  const names = rawValue
-    .split(',')
-    .map((name) => name.trim())
-    .filter(Boolean)
-    .flatMap((name) => scenarioGroups[name] ?? [name]);
-  if (names.length === 0) {
-    return null;
-  }
-  return new Set(names);
 }
 
 function shouldRunScenario(name) {
