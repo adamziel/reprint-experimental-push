@@ -6475,6 +6475,85 @@ test('blocks _menu_item_object_id taxonomy metadata owned by an existing nav_men
   );
 });
 
+test('blocks _menu_item_object_id taxonomy metadata owned by an existing nav_menu_item post even when it targets a same-plan term and unrelated remote attachment noise exists', () => {
+  const resourceKey = 'row:["wp_postmeta","meta_id:498"]';
+  const targetResourceKey = 'row:["wp_terms","term_id:7"]';
+  const base = baseSite();
+  base.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_title: 'Existing nav menu item owner',
+    post_content: 'base-private-existing-nav-menu-item-owner-body',
+    post_status: 'publish',
+    post_type: 'nav_menu_item',
+  };
+  const local = baseSite();
+  local.db.wp_posts['ID:2'] = {
+    ...base.db.wp_posts['ID:2'],
+  };
+  local.db.wp_terms = {
+    'term_id:7': {
+      term_id: 7,
+      name: 'Local menu object term',
+      slug: 'local-menu-object-term',
+    },
+  };
+  local.db.wp_postmeta = {
+    'meta_id:498': {
+      meta_id: 498,
+      post_id: 2,
+      meta_key: '_menu_item_object_id',
+      meta_value: 7,
+    },
+    'meta_id:499': {
+      meta_id: 499,
+      post_id: 2,
+      meta_key: '_menu_item_type',
+      meta_value: 'taxonomy',
+    },
+    'meta_id:500': {
+      meta_id: 500,
+      post_id: 2,
+      meta_key: '_menu_item_object',
+      meta_value: 'category',
+    },
+  };
+  const remote = baseSite();
+  remote.db.wp_posts['ID:2'] = {
+    ...base.db.wp_posts['ID:2'],
+  };
+  remote.db.wp_posts['ID:9'] = {
+    ID: 9,
+    post_title: 'Remote unrelated attachment',
+    post_content: 'remote-private-unrelated-attachment-body',
+    post_status: 'inherit',
+    post_type: 'attachment',
+  };
+
+  const plan = planFor(base, local, remote);
+  const targetMutation = mutationFor(plan, targetResourceKey);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.ok(plan.summary.mutations > 0);
+  assert.equal(targetMutation.changeKind, 'create');
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.ok(blocker);
+  assert.equal(blocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(blocker.surface, 'nav_menu_item');
+  assert.equal(
+    JSON.stringify(blocker).includes('base-private-existing-nav-menu-item-owner-body'),
+    false,
+  );
+  assert.equal(
+    JSON.stringify(blocker).includes('local-menu-object-term'),
+    false,
+  );
+  assert.equal(
+    JSON.stringify(blocker).includes('remote-private-unrelated-attachment-body'),
+    false,
+  );
+});
+
 test('blocks menu item parent metadata owned by an attachment even when it targets a same-plan post', () => {
   const resourceKey = 'row:["wp_postmeta","meta_id:48"]';
   const attachmentResourceKey = 'row:["wp_posts","ID:2"]';
