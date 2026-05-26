@@ -12481,6 +12481,71 @@ test('blocks a local term relationship when its same-plan category taxonomy targ
   assert.throws(() => applyPlan(baseSite(), plan), /Refusing to apply/);
 });
 
+test('blocks a local termmeta reference when its same-plan term is claimed by a nav menu taxonomy and a sibling category taxonomy depends on the same blocked term', () => {
+  const termResourceKey = 'row:["wp_terms","term_id:7"]';
+  const navMenuTaxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:9"]';
+  const categoryTaxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:10"]';
+  const termmetaResourceKey = 'row:["wp_termmeta","meta_id:12"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_terms = {
+    'term_id:7': {
+      term_id: 7,
+      name: 'Local shared term',
+      slug: 'local-shared-term',
+    },
+  };
+  local.db.wp_term_taxonomy = {
+    'term_taxonomy_id:9': {
+      term_taxonomy_id: 9,
+      term_id: 7,
+      taxonomy: 'nav_menu',
+      description: '',
+      parent: 0,
+      count: 0,
+    },
+    'term_taxonomy_id:10': {
+      term_taxonomy_id: 10,
+      term_id: 7,
+      taxonomy: 'category',
+      description: '',
+      parent: 0,
+      count: 0,
+    },
+  };
+  local.db.wp_termmeta = {
+    'meta_id:12': {
+      meta_id: 12,
+      term_id: 7,
+      meta_key: 'term-note',
+      meta_value: 'local-private-term-note',
+    },
+  };
+
+  const plan = planFor(base, local, baseSite());
+  const termMutation = mutationFor(plan, termResourceKey);
+  const categoryTaxonomyMutation = mutationFor(plan, categoryTaxonomyResourceKey);
+  const termmetaMutation = mutationFor(plan, termmetaResourceKey);
+  const navMenuTaxonomyBlocker = plan.blockers.find((entry) => entry.resourceKey === navMenuTaxonomyResourceKey);
+  const categoryTaxonomyBlocker = plan.blockers.find((entry) => entry.resourceKey === categoryTaxonomyResourceKey);
+  const termmetaBlocker = plan.blockers.find((entry) => entry.resourceKey === termmetaResourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(termMutation.changeKind, 'create');
+  assert.equal(categoryTaxonomyMutation.changeKind, 'create');
+  assert.equal(termmetaMutation, undefined);
+  assert.equal(navMenuTaxonomyBlocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(navMenuTaxonomyBlocker.surface, 'nav_menu');
+  assert.equal(categoryTaxonomyBlocker.class, 'missing-wordpress-graph-dependency');
+  assert.equal(categoryTaxonomyBlocker.references[0].relationshipType, 'term-taxonomy-term');
+  assert.equal(categoryTaxonomyBlocker.references[0].targetResourceKey, termResourceKey);
+  assert.equal(termmetaBlocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(termmetaBlocker.surface, 'nav_menu');
+  assert.equal(JSON.stringify(termmetaBlocker).includes('local-private-term-note'), false);
+  assert.equal(JSON.stringify(termmetaBlocker).includes('local-shared-term'), false);
+  assert.throws(() => applyPlan(baseSite(), plan), /Refusing to apply/);
+});
+
 test('allows a local termmeta reference to a same-plan term while a separate same-plan term relationship is also created', () => {
   const termResourceKey = 'row:["wp_terms","term_id:7"]';
   const taxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:9"]';
