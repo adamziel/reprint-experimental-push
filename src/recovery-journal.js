@@ -1455,6 +1455,7 @@ export function classifyRecoveryJournalClaims(records) {
     };
   }
 
+  let previousActiveClaimHash = null;
   for (const record of claimRecords) {
     if (!Object.hasOwn(record, 'claimHash')) {
       return blockedClaimState(record, 'Recovery claim record is missing an explicit claim hash.');
@@ -1481,6 +1482,13 @@ export function classifyRecoveryJournalClaims(records) {
       return blockedClaimState(record, 'Advanced stale-claim record must advance to a different active claim hash.');
     }
     if (
+      record.type === 'stale-claim-advanced'
+      && previousActiveClaimHash !== null
+      && record.previousClaimHash !== previousActiveClaimHash
+    ) {
+      return blockedClaimState(record, 'Advanced stale-claim record must chain from the immediately previous active claim hash.');
+    }
+    if (
       !Object.hasOwn(record, 'claimLease')
       && typeof record.claimLease !== 'undefined'
     ) {
@@ -1499,6 +1507,8 @@ export function classifyRecoveryJournalClaims(records) {
     ) {
       return blockedClaimState(record, 'Recovery claim record claim lease must match the persisted active claim hash.');
     }
+
+    previousActiveClaimHash = record.claimHash;
   }
 
   const latest = claimRecords.at(-1);
