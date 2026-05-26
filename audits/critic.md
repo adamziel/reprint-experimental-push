@@ -1,16 +1,16 @@
 # Critic Verdict
 
-Current reliable head: `2928549f37a38f4e39b913b75e5ec04021c120e0`
-(`Finish checked auth summary merge`).
+Current reliable head: `a630f67e325c863b9a83cadfbf0fcd441b282b0e`
+(`Accept packaged readiness timeout fallbacks`).
 
 Verdict: `0/4`
 
 Reason:
 
-- This head merges checked auth-session summary handling into the lifecycle
-  helper and expands the auth-session test surface, but it still reads as
-  support-side lifecycle/summarization hardening rather than a production
-  gate crossing.
+- This head accepts packaged readiness timeout fallbacks in the release
+  verifier so the checked path can keep probing through timeout-shaped
+  readiness stalls, but it still reads as harness-side release-verify
+  hardening rather than a production gate crossing.
 - The checked release path still lacks live production auth/session
   issuance/read/expiry/rotation/revocation/cleanup evidence, and it still does
   not prove production durable-journal ownership with restart-readable replay
