@@ -899,6 +899,76 @@ test('production recovery journal compatibility overload fails closed when write
   });
 });
 
+test('production recovery journal support fails closed when claimId hides behind a non-enumerable second-argument key', () => {
+  const filePath = tempJournalPath();
+
+  const options = {
+    truncate: true,
+    now: fixedNow,
+  };
+  Object.defineProperty(options, 'claimId', {
+    value: 'claim-hidden-second-arg-claim',
+    enumerable: false,
+  });
+  Object.defineProperty(options, 'writerLease', {
+    value: { id: 'claim-hidden-second-arg-claim' },
+    enumerable: true,
+  });
+
+  assert.throws(() => {
+    openProductionRecoveryJournal(filePath, options);
+  }, {
+    name: 'UnsupportedProductionRecoveryJournalError',
+    code: 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL',
+    message: 'Production recovery journal support requires enumerable top-level options.',
+  });
+});
+
+test('production recovery journal support fails closed when writerLease hides behind a non-enumerable second-argument key', () => {
+  const filePath = tempJournalPath();
+
+  const options = {
+    truncate: true,
+    now: fixedNow,
+    claimId: 'claim-hidden-second-arg-writer',
+  };
+  Object.defineProperty(options, 'writerLease', {
+    value: { id: 'claim-hidden-second-arg-writer' },
+    enumerable: false,
+  });
+
+  assert.throws(() => {
+    openProductionRecoveryJournal(filePath, options);
+  }, {
+    name: 'UnsupportedProductionRecoveryJournalError',
+    code: 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL',
+    message: 'Production recovery journal support requires enumerable top-level options.',
+  });
+});
+
+test('production recovery journal support fails closed when artifactRefs hides behind a non-enumerable second-argument key', () => {
+  const filePath = tempJournalPath();
+
+  const options = {
+    truncate: true,
+    now: fixedNow,
+    claimId: 'claim-hidden-second-arg-artifact-refs',
+    writerLease: { id: 'claim-hidden-second-arg-artifact-refs' },
+  };
+  Object.defineProperty(options, 'artifactRefs', {
+    value: { journal: filePath },
+    enumerable: false,
+  });
+
+  assert.throws(() => {
+    openProductionRecoveryJournal(filePath, options);
+  }, {
+    name: 'UnsupportedProductionRecoveryJournalError',
+    code: 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL',
+    message: 'Production recovery journal support requires enumerable top-level options.',
+  });
+});
+
 test('production recovery journal consumption fails closed without an explicit claimId or writerLease', () => {
   const filePath = tempJournalPath();
   const remote = baseSite();

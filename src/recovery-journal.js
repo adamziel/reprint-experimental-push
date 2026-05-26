@@ -798,6 +798,26 @@ function normalizeProductionRecoveryJournalOptions(filePathOrOptions, options = 
     };
   }
 
+  if (options && typeof options === 'object' && hasHiddenOwnStringKeys(options)) {
+    throw new UnsupportedProductionRecoveryJournalError(
+      'Production recovery journal support requires enumerable top-level options.',
+      {
+        kind: 'production-recovery-journal',
+        productionAdapter: true,
+        supportedSurface: 'production-recovery-journal-adapter',
+        restartReadable: false,
+        ownsJournal: false,
+        ownsRemoteArtifact: false,
+        journalPath: typeof filePathOrOptions === 'string' ? filePathOrOptions : null,
+        artifactRefs: Object.freeze({
+          journal: null,
+          remote: null,
+        }),
+        schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+      },
+    );
+  }
+
   return {
     ...options,
     filePath: filePathOrOptions,
