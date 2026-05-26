@@ -99,6 +99,7 @@ export async function runAuthenticatedHttpPush({
     userLogin: preflight.body.auth?.identity?.userLogin,
     sessionId: preflight.body.auth?.session?.id,
     sessionType: preflight.body.auth?.session?.type,
+    sessionStatus: preflight.body.auth?.session?.status,
   };
   if (preflight.body.auth?.session?.id && preflight.body.auth.session.id !== session) {
     summary.code = 'PREFLIGHT_SESSION_MISMATCH';
@@ -432,6 +433,7 @@ function summarizeResponse(response) {
     authUser: body.auth?.identity?.userLogin,
     authSessionId: body.auth?.session?.id,
     sessionType: body.auth?.session?.type,
+    sessionStatus: body.auth?.session?.status,
     signed: body.signedRequest?.signed === true,
     signedRequest: body.signedRequest ? {
       schemaVersion: body.signedRequest.schemaVersion,
@@ -553,7 +555,8 @@ function hasAuthEnvelopeDrift(expected, response) {
   }
   return body.auth?.identity?.userLogin !== expected.userLogin
     || body.auth?.session?.id !== expected.sessionId
-    || body.auth?.session?.type !== expected.sessionType;
+    || body.auth?.session?.type !== expected.sessionType
+    || body.auth?.session?.status !== expected.sessionStatus;
 }
 
 function hasProductionAuthSessionTypeDrift(response) {
