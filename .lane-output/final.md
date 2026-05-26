@@ -2,10 +2,11 @@
 
 ## Result
 
-I added a new planning-only fast path for compressing plan-scoped chunk receipt
-ledgers to size bounded retry windows. It stays fail-closed because live
-preconditions still guard publish, atomic groups stay intact, and recovery
-still depends on durable chunk receipts plus the guarded publish record.
+I added a new planning-only fast path for compressing canonical per-kind budget
+summaries to size bounded release-bundle retry windows. It stays fail-closed
+because live preconditions still guard writes, atomic groups stay intact, and
+recovery still depends on durable receipts plus the release-bundle staging
+record.
 
 ## Changed Files
 
@@ -28,7 +29,7 @@ Result:
 
 ## Push Result
 
-- Pending.
+- Pending commit and push.
 
 ## Worktree Status
 

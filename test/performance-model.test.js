@@ -117,6 +117,16 @@ test('benchmark model covers large uploads and plugin installs', () => {
   assert.ok(
     model.safeFastPaths.some(
       (fastPath) =>
+        fastPath.area === 'compression' &&
+        fastPath.allowedShortcut === 'compress-canonical-per-kind-budget-summaries-to-size-bounded-release-bundle-retry-windows' &&
+        fastPath.guardrails.includes('release-bundle-retry-window-revalidates-before-write') &&
+        fastPath.gateProofs.recovery.includes('release-bundle staging record'),
+    ),
+    'compressed per-kind budget summaries can size release-bundle retry windows without weakening recovery evidence',
+  );
+  assert.ok(
+    model.safeFastPaths.some(
+      (fastPath) =>
         fastPath.area === 'remote-indexes' &&
         fastPath.allowedShortcut === 'reuse-cached-release-manifest-digest-to-size-bounded-release-bundle-fanout' &&
         fastPath.guardrails.includes('cached-release-manifest-remains-planning-evidence-only') &&
