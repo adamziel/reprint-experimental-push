@@ -3096,6 +3096,83 @@ test('production-shaped authenticated push records preserved-remote retry on pre
   }
 });
 
+test('production-shaped authenticated push fails closed when a preserved remote snapshot exhausts transient retries', async () => {
+  const originalFetch = global.fetch;
+  const seen = [];
+  let snapshotAttempts = 0;
+  global.fetch = async (url, options) => {
+    seen.push({ url: String(url), options });
+    const pathname = String(url);
+    if (pathname.includes('/preflight')) {
+      return new Response(JSON.stringify({
+        ok: true,
+        auth: {
+          identity: { userLogin: 'reprint_push_admin' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
+        },
+        session: { id: 'psh_01j00000000000000000000000' },
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+    if (pathname.includes('/snapshot')) {
+      snapshotAttempts += 1;
+      throw Object.assign(new TypeError('socket closed'), { cause: { code: 'ECONNRESET' } });
+    }
+    throw new Error(`unexpected fetch to ${url}`);
+  };
+
+  try {
+    const summary = await runAuthenticatedHttpPush({
+      sourceUrl: 'http://127.0.0.1:8080',
+      base: { resources: [] },
+      local: { resources: [] },
+      username: credential.username,
+      applicationPassword: credential.password,
+      idempotencyKey: 'idem-01-snapshot-retry-exhausted',
+      routeProfile: 'production-shaped',
+      requireProductionAuthSession: true,
+    });
+
+    assert.equal(summary.ok, false);
+    assert.equal(summary.code, 'SNAPSHOT_FAILED');
+    assert.equal(summary.retryAttempts, 4);
+    assert.equal(snapshotAttempts, 4);
+    assert.deepEqual(summary.remoteSnapshot, {
+      status: 0,
+      ok: false,
+      retryAttempts: 4,
+      code: 'ECONNRESET',
+      error: 'socket closed',
+      transportFailure: true,
+      request: {
+        method: 'GET',
+        pathname: '/wp-json/reprint/v1/push/snapshot',
+        retryable: true,
+      },
+    });
+    assert.deepEqual(summary.boundary, {
+      firstRemainingProductionBoundary: 'auth/session lifecycle and durable journal semantics',
+      status: 'unimplemented',
+      verdict: 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED',
+      durableJournal: {
+        storageLeaseFence: 'retained Playground journal storage is lab-scoped; production ownership, lease fencing, and replay wiring are not yet proven on the checked release boundary',
+        verdict: 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED',
+        phase: 'snapshot',
+      },
+    });
+    assert.equal(seen.filter(({ url }) => url.includes('/snapshot')).length, 4);
+  } finally {
+    global.fetch = originalFetch;
+  }
+});
+
 test('production-shaped authenticated push fails closed when production auth session is minted without status', async () => {
   const originalFetch = global.fetch;
   const seen = [];

@@ -105,7 +105,13 @@ export async function runAuthenticatedHttpPush({
     retryAttempts: 1,
   };
 
-  const preflight = await client.signedGet('/preflight', { retryable: true });
+  let preflight;
+  try {
+    preflight = await client.signedGet('/preflight', { retryable: true });
+  } catch (error) {
+    captureTransportFailure(summary, 'preflight', error, 'PREFLIGHT_FAILED', 'preflight');
+    return summary;
+  }
   summary.preflight = summarizeResponse(preflight);
   updateRetryAttempts(summary, summary.preflight);
   if (preflight.status !== 200 || preflight.body?.ok !== true) {
@@ -254,7 +260,13 @@ export async function runAuthenticatedHttpPush({
     ? `reprint_push_lab_auth_session_drift=${encodeURIComponent(labAuthSessionDrift)}`
     : '';
   const withAuthSessionDrift = (pathname) => appendQueryParam(pathname, authSessionDriftQuery);
-  const remoteSnapshot = await client.get(snapshotPath);
+  let remoteSnapshot;
+  try {
+    remoteSnapshot = await client.get(snapshotPath);
+  } catch (error) {
+    captureTransportFailure(summary, 'remoteSnapshot', error, 'SNAPSHOT_FAILED', 'snapshot');
+    return summary;
+  }
   if (remoteSnapshot.status !== 200 || remoteSnapshot.body?.ok !== true) {
     summary.code = remoteSnapshot.body?.code || 'SNAPSHOT_FAILED';
     summary.snapshot = summarizeResponse(remoteSnapshot);
@@ -281,10 +293,16 @@ export async function runAuthenticatedHttpPush({
     return summary;
   }
 
-  const dryRun = await client.signedPost(withAuthSessionDrift('/dry-run'), { plan }, {
-    session,
-    idempotencyKey,
-  });
+  let dryRun;
+  try {
+    dryRun = await client.signedPost(withAuthSessionDrift('/dry-run'), { plan }, {
+      session,
+      idempotencyKey,
+    });
+  } catch (error) {
+    captureTransportFailure(summary, 'dryRun', error, 'DRY_RUN_FAILED', 'dry-run');
+    return summary;
+  }
   summary.dryRun = summarizeResponse(dryRun);
   updateRetryAttempts(summary, summary.dryRun);
   recordAuthSessionLifecycle(summary, 'dry-run', dryRun.body?.auth?.session);
@@ -367,7 +385,13 @@ export async function runAuthenticatedHttpPush({
   }
 
   if (dryRunOnly) {
-    const afterDryRun = await client.get('/snapshot');
+    let afterDryRun;
+    try {
+      afterDryRun = await client.get('/snapshot');
+    } catch (error) {
+      captureTransportFailure(summary, 'after', error, 'SNAPSHOT_FAILED', 'dry-run');
+      return summary;
+    }
     summary.after = summarizeSnapshot(afterDryRun, local);
     updateRetryAttempts(summary, summary.after);
     summary.ok = afterDryRun.status === 200 && afterDryRun.body?.ok === true;
@@ -387,10 +411,16 @@ export async function runAuthenticatedHttpPush({
 
   let apply = null;
   if (simulateStaleClaimRetry) {
-    const staleClaimAttempt = await client.signedPost(withAuthSessionDrift('/apply'), applyPayload, {
-      session,
-      idempotencyKey,
-    });
+    let staleClaimAttempt;
+    try {
+      staleClaimAttempt = await client.signedPost(withAuthSessionDrift('/apply'), applyPayload, {
+        session,
+        idempotencyKey,
+      });
+    } catch (error) {
+      captureTransportFailure(summary, 'apply', error, 'APPLY_FAILED', 'apply');
+      return summary;
+    }
     summary.staleClaimRetry = {
       abandoned: summarizeResponse(staleClaimAttempt),
     };
@@ -403,10 +433,15 @@ export async function runAuthenticatedHttpPush({
     }
   }
 
-  apply = await client.signedPost(withAuthSessionDrift('/apply'), applyPayload, {
-    session,
-    idempotencyKey,
-  });
+  try {
+    apply = await client.signedPost(withAuthSessionDrift('/apply'), applyPayload, {
+      session,
+      idempotencyKey,
+    });
+  } catch (error) {
+    captureTransportFailure(summary, 'apply', error, 'APPLY_FAILED', 'apply');
+    return summary;
+  }
   summary.apply = summarizeResponse(apply);
   updateRetryAttempts(summary, summary.apply);
   recordAuthSessionLifecycle(summary, 'apply', apply.body?.auth?.session);
@@ -503,13 +538,19 @@ export async function runAuthenticatedHttpPush({
     return summary;
   }
 
-  const recoveryInspect = await client.signedPost(withAuthSessionDrift('/recovery/inspect'), {
-    plan,
-    receipt: dryRun.body.receipt,
-  }, {
-    session,
-    idempotencyKey,
-  });
+  let recoveryInspect;
+  try {
+    recoveryInspect = await client.signedPost(withAuthSessionDrift('/recovery/inspect'), {
+      plan,
+      receipt: dryRun.body.receipt,
+    }, {
+      session,
+      idempotencyKey,
+    });
+  } catch (error) {
+    captureTransportFailure(summary, 'recoveryInspect', error, 'RECOVERY_INSPECT_FAILED', 'recovery-inspect');
+    return summary;
+  }
   summary.recoveryInspect = summarizeResponse(recoveryInspect);
   updateRetryAttempts(summary, summary.recoveryInspect);
   recordAuthSessionLifecycle(summary, 'recovery-inspect', recoveryInspect.body?.auth?.session);
@@ -633,10 +674,16 @@ export async function runAuthenticatedHttpPush({
     return summary;
   }
 
-  const replay = await client.signedPost(withAuthSessionDrift('/apply'), applyPayload, {
-    session,
-    idempotencyKey,
-  });
+  let replay;
+  try {
+    replay = await client.signedPost(withAuthSessionDrift('/apply'), applyPayload, {
+      session,
+      idempotencyKey,
+    });
+  } catch (error) {
+    captureTransportFailure(summary, 'replay', error, 'REPLAY_FAILED', 'replay');
+    return summary;
+  }
   summary.replay = summarizeResponse(replay);
   updateRetryAttempts(summary, summary.replay);
   recordAuthSessionLifecycle(summary, 'replay', replay.body?.auth?.session);
@@ -748,15 +795,27 @@ export async function runAuthenticatedHttpPush({
     return summary;
   }
 
-  const afterApply = await client.get('/snapshot');
+  let afterApply;
+  try {
+    afterApply = await client.get('/snapshot');
+  } catch (error) {
+    captureTransportFailure(summary, 'after', error, 'SNAPSHOT_FAILED', 'replay');
+    return summary;
+  }
   summary.after = summarizeSnapshot(afterApply, local);
   updateRetryAttempts(summary, summary.after);
   summary.afterObject = afterApply.body.snapshot;
-  const dbJournal = await client.signedGet(withAuthSessionDrift('/db-journal?limit=80'), {
-    session,
-    idempotencyKey,
-    retryable: true,
-  });
+  let dbJournal;
+  try {
+    dbJournal = await client.signedGet(withAuthSessionDrift('/db-journal?limit=80'), {
+      session,
+      idempotencyKey,
+      retryable: true,
+    });
+  } catch (error) {
+    captureTransportFailure(summary, 'dbJournal', error, 'DURABLE_JOURNAL_NOT_PROVEN', 'journal-inspect');
+    return summary;
+  }
   summary.dbJournal = summarizeDbJournal(dbJournal);
   updateRetryAttempts(summary, summary.dbJournal);
   recordAuthSessionLifecycle(summary, 'journal', dbJournal.body?.auth?.session);
@@ -1092,12 +1151,36 @@ function summarizeResponse(response) {
   };
 }
 
+function summarizeTransportFailure(error) {
+  return {
+    status: 0,
+    ok: false,
+    retryAttempts: typeof error?.retryAttempts === 'number' ? error.retryAttempts : 1,
+    code: error?.cause?.code || error?.code || 'FETCH_FAILED',
+    error: error instanceof Error ? error.message : String(error),
+    transportFailure: true,
+    request: error?.request ? {
+      method: error.request.method || null,
+      pathname: error.request.pathname || null,
+      retryable: error.request.retryable === true,
+    } : undefined,
+  };
+}
+
 function updateRetryAttempts(summary, responseSummary) {
   if (!responseSummary || typeof responseSummary.retryAttempts !== 'number') {
     return;
   }
 
   summary.retryAttempts = Math.max(summary.retryAttempts || 1, responseSummary.retryAttempts);
+}
+
+function captureTransportFailure(summary, field, error, code, phase) {
+  const failure = summarizeTransportFailure(error);
+  summary[field] = failure;
+  updateRetryAttempts(summary, failure);
+  summary.code = code;
+  setDurableJournalBoundary(summary, phase);
 }
 
 function summarizeAuthSessionLifecycle(session) {
@@ -1584,7 +1667,12 @@ async function requestJsonRaw(baseUrl, method, pathname, rawBody = undefined, he
     } catch (error) {
       lastError = error;
       if (!retryable || !isTransientFetchError(error) || attempt === attempts) {
-        throw error;
+        throw decorateRequestError(error, {
+          method,
+          pathname,
+          retryable,
+          retryAttempts: attempt,
+        });
       }
       await sleep(transientFetchRetryDelayMs * attempt);
     }
@@ -1683,6 +1771,19 @@ function isTransientFetchError(error) {
     || code === 'EPIPE'
     || code === 'ETIMEDOUT'
   );
+}
+
+function decorateRequestError(error, request) {
+  if (!error || typeof error !== 'object') {
+    return Object.assign(new Error(String(error)), request ? {
+      request,
+      retryAttempts: request.retryAttempts,
+    } : {});
+  }
+
+  error.request = request;
+  error.retryAttempts = request?.retryAttempts || error.retryAttempts || 1;
+  return error;
 }
 
 function sleep(ms) {
