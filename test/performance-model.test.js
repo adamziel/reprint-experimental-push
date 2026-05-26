@@ -101,6 +101,17 @@ test('benchmark model covers large uploads and plugin installs', () => {
   assert.ok(
     model.safeFastPaths.some(
       (fastPath) =>
+        fastPath.area === 'parallelism-limits' &&
+        fastPath.allowedShortcut === 'reuse-measured-db-parallelism-caps-and-canonical-row-digests-to-size-bounded-plugin-update-row-batches' &&
+        fastPath.guardrails.includes('canonical-row-digests-stay-plan-scoped-and-revalidated-before-write') &&
+        fastPath.gateProofs.skip.includes('canonical row digests') &&
+        fastPath.gateProofs.recovery.includes('batch receipts still classify pause, retry, or crash'),
+    ),
+    'measured DB parallelism caps can size plugin-update row batches with canonical row digests without weakening recovery evidence',
+  );
+  assert.ok(
+    model.safeFastPaths.some(
+      (fastPath) =>
         fastPath.area === 'database-row-batching' &&
         fastPath.allowedShortcut === 'compress-planning-row-batch-manifests-and-reuse-canonical-row-digests-to-size-bounded-plugin-update-batches' &&
         fastPath.guardrails.includes('compressed-manifest-remains-planning-evidence-only') &&

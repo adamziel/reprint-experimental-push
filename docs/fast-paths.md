@@ -61,6 +61,10 @@ It also includes parallel independent owner index scans plus a cached
 release-manifest cursor for release-bundle fanout, so bounded fanout planning
 can skip duplicate scans without changing the live compare or the atomic-group
 barrier.
+It also includes measured database parallelism caps plus canonical row digests
+for plugin-update row batches, so bounded update planning can trim duplicate
+digest recomputation without changing the live compare or the atomic-group
+barrier.
 It also includes a compressed per-kind budget summary plus bounded queue
 headroom for release-bundle resume windows, so the planner can trim duplicate
 retry sizing without turning advisory backpressure into mutation authority.
@@ -482,6 +486,7 @@ Current executable gate:
 | Database row batching | Compress remote-index listings and reuse the cursor to pre-size bounded plugin-install batches so rescans move fewer bytes before the live compare. | Compression is transport-only. The compressed listing still cannot skip row preconditions, batch receipts, or the atomic-group barrier. |
 | Compression | Compress canonical per-kind budget summaries to size bounded plugin-install retry windows so repeat planning moves fewer bytes before the live compare. | Compression stays planning-only. The compressed summary cannot authorize writes, widen the atomic-group barrier, or replace later durable receipts. |
 | Parallelism limits | Reuse canonical per-kind budgets to size bounded row-batch fanout so plugin installs and updates can avoid recomputing the same concurrency shape on a retry. | The budgets stay planning evidence only. Each later row batch still rechecks its live compare, and the atomic-group barrier stays fixed. |
+| Parallelism limits | Reuse measured database parallelism caps and canonical row digests to size bounded plugin-update row batches so retries can avoid recomputing the same update fanout shape. | The measured caps and row digests stay planning evidence only. Each later row still rechecks its live compare, and the atomic-group barrier stays fixed. |
 | Parallelism limits | Reuse canonical per-kind budgets to size bounded release-bundle resume work so retries can reuse the same concurrency shape before the live compare. | The budgets stay planning evidence only. The resumed release bundle still cannot authorize writes, widen the atomic-group barrier, or replace later durable receipts. |
 | Compression | Compress canonical per-kind budget summaries and reuse a cached release-manifest digest to size bounded release-bundle resume work so retries can reuse the same planning shape before the live compare. | Compression stays planning-only. The compressed summary and cached manifest digest cannot authorize writes, widen the atomic-group barrier, or replace later durable receipts. |
 | Parallelism limits | Reuse measured memory headroom and a cached release-manifest cursor to size bounded release-bundle retry windows so retry planning can reuse the same concurrency shape without widening visibility. | The measured headroom and cursor stay planning evidence only. The release bundle still revalidates live file and row preconditions, and durable receipts plus the guarded release record still decide recovery. |
