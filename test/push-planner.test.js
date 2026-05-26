@@ -28285,6 +28285,105 @@ test('allows a local post parent reference to a same-plan post even when an unre
   assert.equal(JSON.stringify(reference).includes('local-private-child-body'), false);
 });
 
+test('allows a local post parent reference to a same-plan post even when an unrelated remote revision exists', () => {
+  const parentResourceKey = 'row:["wp_posts","ID:4"]';
+  const childResourceKey = 'row:["wp_posts","ID:3"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_posts['ID:3'] = {
+    ID: 3,
+    post_title: 'Local child post',
+    post_content: 'local-private-child-body',
+    post_status: 'publish',
+    post_parent: 4,
+  };
+  local.db.wp_posts['ID:4'] = {
+    ID: 4,
+    post_title: 'Local parent post',
+    post_content: 'local-private-parent-body',
+    post_status: 'publish',
+  };
+  const remote = baseSite();
+  remote.db.wp_posts['ID:8'] = {
+    ID: 8,
+    post_title: 'Remote revision',
+    post_content: 'remote-revision-body',
+    post_status: 'inherit',
+    post_type: 'revision',
+    post_parent: 1,
+  };
+
+  const plan = planFor(base, local, remote);
+  const parentMutation = mutationFor(plan, parentResourceKey);
+  const childMutation = mutationFor(plan, childResourceKey);
+  const reference = childMutation.wordpressGraphReferences[0];
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.blockers, 0);
+  assert.equal(parentMutation.changeKind, 'create');
+  assert.equal(childMutation.changeKind, 'create');
+  assert.ok(
+    plan.mutations.indexOf(parentMutation) < plan.mutations.indexOf(childMutation),
+    'parent create must be ordered before dependent child',
+  );
+  assert.deepEqual(childMutation.dependsOnMutationIds, [parentMutation.id]);
+  assert.equal(reference.resolutionPolicy, 'same-plan-local-create');
+  assert.equal(reference.relationshipKey, 'wp_posts.post_parent');
+  assert.equal(reference.relationshipType, 'post-parent');
+  assert.equal(reference.targetResourceKey, parentResourceKey);
+  assert.equal(JSON.stringify(reference).includes('remote-revision-body'), false);
+  assert.equal(JSON.stringify(reference).includes('local-private-child-body'), false);
+});
+
+test('allows a local post parent reference to a same-plan post even when an unrelated remote wp_navigation post exists', () => {
+  const parentResourceKey = 'row:["wp_posts","ID:4"]';
+  const childResourceKey = 'row:["wp_posts","ID:3"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_posts['ID:3'] = {
+    ID: 3,
+    post_title: 'Local child post',
+    post_content: 'local-private-child-body',
+    post_status: 'publish',
+    post_parent: 4,
+  };
+  local.db.wp_posts['ID:4'] = {
+    ID: 4,
+    post_title: 'Local parent post',
+    post_content: 'local-private-parent-body',
+    post_status: 'publish',
+  };
+  const remote = baseSite();
+  remote.db.wp_posts['ID:8'] = {
+    ID: 8,
+    post_title: 'Remote navigation',
+    post_content: 'remote-navigation-body',
+    post_status: 'publish',
+    post_type: 'wp_navigation',
+  };
+
+  const plan = planFor(base, local, remote);
+  const parentMutation = mutationFor(plan, parentResourceKey);
+  const childMutation = mutationFor(plan, childResourceKey);
+  const reference = childMutation.wordpressGraphReferences[0];
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.blockers, 0);
+  assert.equal(parentMutation.changeKind, 'create');
+  assert.equal(childMutation.changeKind, 'create');
+  assert.ok(
+    plan.mutations.indexOf(parentMutation) < plan.mutations.indexOf(childMutation),
+    'parent create must be ordered before dependent child',
+  );
+  assert.deepEqual(childMutation.dependsOnMutationIds, [parentMutation.id]);
+  assert.equal(reference.resolutionPolicy, 'same-plan-local-create');
+  assert.equal(reference.relationshipKey, 'wp_posts.post_parent');
+  assert.equal(reference.relationshipType, 'post-parent');
+  assert.equal(reference.targetResourceKey, parentResourceKey);
+  assert.equal(JSON.stringify(reference).includes('remote-navigation-body'), false);
+  assert.equal(JSON.stringify(reference).includes('local-private-child-body'), false);
+});
+
 test('blocks a local post parent reference when the same-plan post target is itself blocked by a revision parent', () => {
   const revisionResourceKey = 'row:["wp_posts","ID:2"]';
   const blockedParentResourceKey = 'row:["wp_posts","ID:3"]';
