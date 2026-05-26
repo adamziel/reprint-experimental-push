@@ -301,6 +301,7 @@ export function productionThroughputClaim(report) {
 
 export function productionThroughputDetails(report) {
   const receiptCursorWindowBytes = report.evidence.chunkReceipts.resumeCursor?.sizeBytes ?? null;
+  const receiptCursorBackpressureBytes = report.evidence.backpressure?.receiptCursorBytes ?? null;
   const receiptCursorIsTerminalChunk =
     report.evidence.chunkReceipts.cursorConsistency?.canResumeFromCursor === true
     && report.evidence.chunkReceipts.resumeCursor?.chunkIndex
@@ -336,8 +337,8 @@ export function productionThroughputDetails(report) {
       === report.evidence.backpressure.queueBudgetBytes - report.shape.chunkSizeBytes
     && report.evidence.backpressure.queueBudgetBytes === report.resourceLimits.maxBufferedUploadBytes;
   const receiptCursorMatchesBackpressure =
-    report.evidence.backpressure?.receiptCursorBytes !== null
-    && report.evidence.backpressure?.receiptCursorBytes === receiptCursorWindowBytes;
+    receiptCursorBackpressureBytes !== null
+    && receiptCursorBackpressureBytes === receiptCursorWindowBytes;
   return {
     shape: {
       fileBytes: report.shape.fileBytes,
@@ -365,11 +366,13 @@ export function productionThroughputDetails(report) {
     receiptCursorConsistency: report.evidence.chunkReceipts.cursorConsistency,
     receiptCursorHeadroomBytes: receiptCursorMemoryHeadroomBytes,
     receiptCursorHeadroomMatchesQueueHeadroom,
+    receiptCursorBackpressureBytes,
     backpressureConsistency: {
       queueBudgetMatchesResourceCeiling,
       queueHeadroomMatchesResourceHeadroom,
       receiptCursorMatchesBackpressure,
       receiptCursorHeadroomMatchesQueueHeadroom,
+      receiptCursorBackpressureBytes,
     },
     recovery: report.evidence.recovery,
     atomicGroup: report.evidence.atomicGroup,
