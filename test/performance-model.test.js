@@ -5374,6 +5374,28 @@ test('production throughput details expose fail-closed receipt cursor and queue 
   assert.equal(details.backpressureConsistency.queueHeadroomVisibleAndQueueSlackVisibleAndMeasured, true);
 });
 
+test('guarded executor benchmark carries raw receipt-cursor backpressure evidence without bogus happy-path blockers', () => {
+  const report = runGuardedExecutorBenchmark({ profile: 'ci' });
+  const blockers = productionThroughputBlockers(report);
+
+  assert.equal(report.evidence.backpressure.receiptCursorBackpressureMeasured, true);
+  assert.equal(report.evidence.backpressure.receiptCursorBackpressureWithinQueueHeadroom, true);
+  assert.equal(report.evidence.backpressure.receiptCursorBackpressureWithinResourceHeadroom, true);
+  assert.equal(report.evidence.backpressure.receiptCursorQueueSlackMeasured, true);
+  assert.equal(report.evidence.backpressure.receiptCursorQueueSlackWithinMemoryCeiling, true);
+  assert.equal(report.evidence.backpressure.receiptCursorHeadroomCoveredByQueueBudget, true);
+  assert.equal(report.evidence.backpressure.receiptCursorMemoryHeadroomWithinQueueBudget, true);
+  assert.equal(report.evidence.backpressure.queueHeadroomWithinResourceCeiling, true);
+  assert.ok(!blockers.includes('receipt-cursor-exceeds-queue-headroom'));
+  assert.ok(!blockers.includes('queue-pause-without-measured-receipt-cursor-backpressure'));
+  assert.ok(!blockers.includes('queue-pause-without-resource-headroom-safe-receipt-cursor-backpressure'));
+  assert.ok(!blockers.includes('queue-pause-without-consistent-measured-and-aligned-receipt-cursor-queue-slack'));
+  assert.ok(!blockers.includes('queue-pause-without-memory-safe-receipt-cursor-slack'));
+  assert.ok(!blockers.includes('queue-headroom-exceeds-resource-ceiling'));
+  assert.ok(!blockers.includes('receipt-cursor-headroom-not-covered-by-queue-budget'));
+  assert.ok(!blockers.includes('receipt-cursor-memory-headroom-not-covered-by-queue-budget'));
+});
+
 test('production throughput details fail closed when queue headroom visibility disappears from the pause boundary', () => {
   const report = runGuardedExecutorBenchmark({ profile: 'ci' });
 

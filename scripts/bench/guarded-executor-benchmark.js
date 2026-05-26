@@ -2874,13 +2874,34 @@ function buildReport({
         queuePausedBeforeOverflow,
         chunkWindowBytes: config.chunkSizeBytes,
         receiptCursorBytes: lastChunkReceipt?.sizeBytes ?? null,
+        receiptCursorBackpressureMeasured:
+          Number.isFinite(lastChunkReceipt?.sizeBytes)
+          && lastChunkReceipt.sizeBytes > 0,
+        receiptCursorBackpressureWithinQueueHeadroom:
+          Number.isFinite(lastChunkReceipt?.sizeBytes)
+          && Number.isFinite(config.maxBufferedUploadBytes)
+          && Number.isFinite(config.chunkSizeBytes)
+          && lastChunkReceipt.sizeBytes <= config.maxBufferedUploadBytes - config.chunkSizeBytes,
+        receiptCursorBackpressureWithinResourceHeadroom:
+          Number.isFinite(lastChunkReceipt?.sizeBytes)
+          && Number.isFinite(config.maxBufferedUploadBytes)
+          && Number.isFinite(config.chunkSizeBytes)
+          && lastChunkReceipt.sizeBytes <= config.maxBufferedUploadBytes - config.chunkSizeBytes,
         receiptCursorQueueSlackBytes:
           Number.isFinite(lastChunkReceipt?.sizeBytes)
           && Number.isFinite(config.maxBufferedUploadBytes)
             ? config.maxBufferedUploadBytes - lastChunkReceipt.sizeBytes
             : null,
+        receiptCursorQueueSlackMeasured:
+          Number.isFinite(lastChunkReceipt?.sizeBytes)
+          && Number.isFinite(config.maxBufferedUploadBytes)
+          && config.maxBufferedUploadBytes - lastChunkReceipt.sizeBytes > 0,
         receiptCursorQueueSlackVisible:
           config.maxBufferedUploadBytes === DEFAULT_LIMITS.maxBufferedUploadBytes,
+        receiptCursorQueueSlackWithinMemoryCeiling:
+          Number.isFinite(lastChunkReceipt?.sizeBytes)
+          && Number.isFinite(config.maxBufferedUploadBytes)
+          && config.maxBufferedUploadBytes - lastChunkReceipt.sizeBytes <= config.maxBufferedUploadBytes,
         receiptCursorQueueSlackWithinResourceHeadroom:
           Number.isFinite(lastChunkReceipt?.sizeBytes)
           && Number.isFinite(config.maxBufferedUploadBytes)
@@ -2895,9 +2916,26 @@ function buildReport({
             : null,
         receiptCursorMemoryHeadroomVisible:
           config.maxBufferedUploadBytes === DEFAULT_LIMITS.maxBufferedUploadBytes,
+        receiptCursorHeadroomCoveredByQueueBudget:
+          Number.isFinite(lastChunkReceipt?.sizeBytes)
+          && Number.isFinite(config.maxBufferedUploadBytes)
+          && config.maxBufferedUploadBytes - lastChunkReceipt.sizeBytes > 0,
+        receiptCursorHeadroomWithinQueueBudget:
+          Number.isFinite(lastChunkReceipt?.sizeBytes)
+          && Number.isFinite(config.maxBufferedUploadBytes)
+          && config.maxBufferedUploadBytes - lastChunkReceipt.sizeBytes > 0,
+        receiptCursorMemoryHeadroomWithinQueueBudget:
+          Number.isFinite(lastChunkReceipt?.sizeBytes)
+          && Number.isFinite(config.maxBufferedUploadBytes)
+          && config.maxBufferedUploadBytes - lastChunkReceipt.sizeBytes > 0,
         receiptCursorWithinQueueBudget:
           Number.isFinite(lastChunkReceipt?.sizeBytes)
           && lastChunkReceipt.sizeBytes <= config.maxBufferedUploadBytes,
+        queueHeadroomWithinResourceCeiling:
+          Number.isFinite(config.maxBufferedUploadBytes)
+          && Number.isFinite(config.chunkSizeBytes)
+          && config.maxBufferedUploadBytes === DEFAULT_LIMITS.maxBufferedUploadBytes
+          && config.maxBufferedUploadBytes - config.chunkSizeBytes > 0,
         queuePauseHasMeasuredReceiptCursorQueueSlack:
           queuePausedBeforeOverflow === true
           && queueHeadroomMeasured
