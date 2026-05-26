@@ -1,5 +1,26 @@
 # Critic Audit
 
+## 2026-05-26 14:55:14 CEST (+0200)
+
+No gate movement. `dcacf95ed8670d10d49d93ce19fbcc81de967b76` is the current reliable head from `git ls-remote`; it aligns packaged auth-session source selection across the checked release verifier and package-smoke path, which reduces helper drift, but it still proves checked-path source resolution rather than a production-backed auth/session lifecycle or a closed durable-journal ownership boundary on the release path. The verdict remains `0/4`.
+
+Changed files:
+- [`audits/critic.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/critic/audits/critic.md)
+
+Commands run:
+- `date '+%Y-%m-%d %H:%M:%S %Z (%z)'`
+- `git ls-remote origin refs/heads/lane/reliable-executor`
+
+Push result:
+- Not attempted yet
+
+Worktree status:
+- Modified tracked files: `audits/critic.md`
+- Branch: `lane/cycle-20260525-mainwindows-2349/critic-current-20260526-1408...origin/lane/critic`
+
+Next supervisor nudge:
+- Keep critic narrow and only reclassify again when `reliable-executor` lands checked-path production-backed auth/session lifecycle, durable-journal ownership, or preserved-remote retry proof that reaches the release boundary.
+
 ## 2026-05-26 14:53:52 CEST (+0200)
 
 No gate movement. `dcacf95ed8670d10d49d93ce19fbcc81de967b76` is the current reliable head from `git ls-remote`; it loads packaged auth source helpers into both the checked release verifier and the package-smoke path, which reduces helper drift and keeps auth-session source selection consistent, but it still proves checked-path source resolution rather than a production-backed auth/session lifecycle or a closed durable-journal ownership boundary on the release path. The verdict remains `0/4`.
