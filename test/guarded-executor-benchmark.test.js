@@ -260,6 +260,14 @@ test('guarded benchmark refuses production throughput claims until production ga
   const tamperedLedger = clone(report);
   tamperedLedger.evidence.journal.successReceiptKindLedgerComplete = false;
   assert.ok(productionThroughputBlockers(tamperedLedger).includes('receipt-ledger-kind-summary-not-proven'));
+
+  const tamperedQueueSlackSummary = clone(report);
+  tamperedQueueSlackSummary.evidence.backpressure.queuePauseHasMeasuredReceiptCursorQueueSlack = false;
+  assert.ok(
+    productionThroughputBlockers(tamperedQueueSlackSummary).includes(
+      'queue-pause-without-measured-receipt-cursor-queue-slack',
+    ),
+  );
   assert.equal(report.results.preCommitFailure.remoteUnchanged, true);
   assert.equal(report.results.partialFailure.remoteUnchanged, false);
   assert.equal(report.results.successInspection.status, 'fully-updated-remote');

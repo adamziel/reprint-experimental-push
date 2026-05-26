@@ -110,6 +110,9 @@ Current executable gate:
 - The report now also exposes whether the pause state had measured
   receipt-cursor backpressure, so a paused sender cannot masquerade as bounded
   evidence without an actual measurement.
+- The report now also fails closed if a paused queue does not explicitly prove
+  measured receipt-cursor queue slack, so a partial pause summary cannot stand
+  in for the aligned backpressure evidence.
 - The report now also blocks when receipt-cursor headroom no longer fits inside
   the queue budget, so the claim gate fails closed on a budget drift instead of
   relying only on a derived detail.

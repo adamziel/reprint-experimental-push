@@ -272,6 +272,12 @@ export function productionThroughputBlockers(report) {
   ) {
     blockers.push('queue-pause-without-measured-receipt-cursor-backpressure');
   }
+  if (
+    report.evidence.backpressure?.queuePausedBeforeOverflow === true
+    && report.evidence.backpressure?.queuePauseHasMeasuredReceiptCursorQueueSlack !== true
+  ) {
+    blockers.push('queue-pause-without-measured-receipt-cursor-queue-slack');
+  }
   if (report.evidence.backpressure?.receiptCursorQueueSlackBytes == null) {
     blockers.push('receipt-cursor-queue-slack-not-measured');
   }
