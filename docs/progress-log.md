@@ -25,6 +25,27 @@ linked implementation artifacts.
   [objective audit](../audits/objective-audit.md),
   [release-gate checklist](../progress.html#proof-gates).
 
+## 2026-05-26 - Public Status Audit 21:37:24
+
+<a id="2026-05-26-public-status-audit-213724"></a>
+
+- Refreshed [progress.html](../progress.html) to the current `date` output
+  (`2026-05-26 21:37:24 CEST`) and kept
+  `ab020198f934bd15265617be4a845065ddf7d991` as the current
+  reliable-executor head on the public page and current latest checked
+  release-path support evidence. The visible current-head rows stay aligned on
+  that head, and the stale `2bc538a5f573eeb79b1615cefea9f608c53fc73d`
+  display was corrected forward in this audit refresh.
+- `ab020198f934bd15265617be4a845065ddf7d991` remains support-side evidence;
+  the release gate stays at `0/4` because production-backed auth/session
+  lifecycle and durable journal ownership with lease/fencing remain blocked.
+- The checked release-path fencing evidence still includes
+  `staleClaimRejected: true`, but that still does not move a gate until the
+  production boundary is proven.
+- Evidence trail: [progress.html](../progress.html),
+  [objective audit](../audits/objective-audit.md),
+  [release-gate checklist](../progress.html#proof-gates).
+
 ## 2026-05-26 - Public Status Audit 21:28:12
 
 <a id="2026-05-26-public-status-audit-212812"></a>
