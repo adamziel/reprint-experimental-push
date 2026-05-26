@@ -4,12 +4,12 @@
 
 The project is **not releasable as a production WordPress push path**.
 
-- Fresh remote heads at audit time, checked on 2026-05-26 08:28:38 CEST (+0200):
-- Fresh production-side lane heads re-polled at 2026-05-26 08:28:38 CEST (+0200):
+- Fresh remote heads at audit time, checked on 2026-05-26 08:29:26 CEST (+0200):
+- Fresh production-side lane heads re-polled at 2026-05-26 08:29:26 CEST (+0200):
 
 - `origin/lane/critic` -> `567743c2`
-- `origin/lane/no-data-loss-invariants` -> `d75b1315`
-- `origin/lane/no-data-loss-recovery` -> `baa005fd`
+- `origin/lane/no-data-loss-invariants` -> `7e29df2c`
+- `origin/lane/no-data-loss-recovery` -> `9e077c10`
 - `origin/lane/reliable-executor` -> `5622e975`
 
 - These heads still do not change the release verdict. They remain fail-closed support evidence, not production-backed auth/session lifecycle, durable journal ownership on the release path, or a live production mutation boundary.
@@ -118,13 +118,13 @@ change the release verdict:
   inspect auth drift. This is still support-side auth-envelope and recovery
   validation, not production-backed auth/session lifecycle, live production
   replay, or durable journal ownership on the release path.
-- `origin/lane/no-data-loss-recovery` now records `baa005fd`, failing closed
-  on hidden recovery artifact metadata. This is still fail-closed support
-  evidence, not restart-readable durable journal ownership on the release
-  path.
-- `origin/lane/no-data-loss-invariants` now records `d75b1315`, failing closed
-  on conflicting plugin drivers. This is still unsupported-surface blocking,
-  not production-backed source mutation proof.
+- `origin/lane/no-data-loss-recovery` now records `9e077c10`, tightening
+  durable recovery remote ownership fencing. This is still fail-closed
+  support evidence, not restart-readable durable journal ownership on the
+  release path.
+- `origin/lane/no-data-loss-invariants` now records `7e29df2c`, classifying
+  legacy links blockers. This is still unsupported-surface blocking, not
+  production-backed source mutation proof.
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now
   records `bd95dc7c`, refreshing progress visibility only. It still does not
   change the release verdict.
