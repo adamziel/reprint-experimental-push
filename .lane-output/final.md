@@ -13,7 +13,7 @@ Commands:
 - `rg -n "Last updated|Public Status Audit|Gate status: 0/4|latest audit|newest-audit|blocker summary" progress.html docs/progress-log.md`
 
 Push result:
-- Pending commit and push after verification.
+- Not pushed in this pass.
 
 Worktree status:
 - Dirty with the freshness-only edits above
