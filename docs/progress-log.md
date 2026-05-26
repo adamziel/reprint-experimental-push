@@ -4,6 +4,21 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-05-26 - Public Status Audit 14:45:00
+
+<a id="2026-05-26-public-status-audit-144500"></a>
+
+- Refreshed [progress.html](../progress.html) to the current `date` output
+  (`2026-05-26 14:45:00 CEST`) and promoted `8a85d1da2b89b98a014fd24a1556940be2a5151e` as the current
+  reliable head on the public page for auth source precedence initialization.
+- `8a85d1da2b89b98a014fd24a1556940be2a5151e` keeps auth source precedence
+  initialization on the checked release path; the release gate stays at `0/4`
+  because production-backed auth/session lifecycle and durable journal ownership
+  with lease/fencing remain blocked.
+- Evidence trail: [progress.html](../progress.html),
+  [objective audit](../audits/objective-audit.md),
+  [release-gate checklist](../progress.html#proof-gates).
+
 ## 2026-05-26 - Public Status Audit 14:34:55
 
 <a id="2026-05-26-public-status-audit-143455"></a>
