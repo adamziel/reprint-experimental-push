@@ -25508,6 +25508,11 @@ test('blocks local same-plan created user identity while preserving a matching i
   assert.equal(blocker.class, 'unsupported-comments-users-resource');
   assert.equal(blocker.resourceKey, resourceKey);
   assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_users","ID:12"] is created in the same plan as a user meta identity that depends on it, and identity rewriting is not yet supported.');
+  const reference = blocker.references[0];
+  assert.equal(reference.relationshipKey, 'wp_usermeta.user_id');
+  assert.equal(reference.relationshipType, 'usermeta-user');
+  assert.equal(reference.sourceResourceKey, 'row:["wp_usermeta","umeta_id:12"]');
+  assert.equal(reference.targetResourceKey, resourceKey);
   assert.equal(matchingEdit.decision, 'already-in-sync');
   assert.equal(matchingEdit.change.localChange, 'update');
   assert.equal(matchingEdit.change.remoteChange, 'update');
@@ -25516,6 +25521,96 @@ test('blocks local same-plan created user identity while preserving a matching i
   assert.equal(planJson.includes('Local dependent nickname'), false);
   assert.equal(planJson.includes('Base dependent nickname'), false);
   assert.equal(planJson.includes('local-dependent-user'), false);
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin changes');
+  assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin changes */');
+});
+
+test('carries bounded comment and usermeta references for a same-plan created user identity while preserving a matching independent edit and remote-only plugin changes', () => {
+  const resourceKey = 'row:["wp_users","ID:19"]';
+  const base = baseSite();
+  base.db.wp_posts['ID:1'].post_title = 'Base shared user dependency post';
+  base.db.wp_comments = {
+    'comment_ID:29': {
+      comment_ID: 29,
+      comment_post_ID: 1,
+      user_id: 19,
+      comment_content: 'Base dependent comment content',
+    },
+  };
+  base.db.wp_usermeta = {
+    'umeta_id:29': {
+      umeta_id: 29,
+      user_id: 19,
+      meta_key: 'nickname',
+      meta_value: 'Base dependent nickname',
+    },
+  };
+
+  const local = baseSite();
+  local.db.wp_posts['ID:1'].post_title = 'Shared user dependency post';
+  local.db.wp_users = {
+    'ID:19': {
+      ID: 19,
+      user_login: 'local-multi-dependent-user',
+      user_email: 'local-multi-dependent@example.test',
+    },
+  };
+  local.db.wp_comments = {
+    'comment_ID:29': {
+      comment_ID: 29,
+      comment_post_ID: 1,
+      user_id: 19,
+      comment_content: 'Local dependent comment content',
+    },
+  };
+  local.db.wp_usermeta = {
+    'umeta_id:29': {
+      umeta_id: 29,
+      user_id: 19,
+      meta_key: 'nickname',
+      meta_value: 'Local dependent nickname',
+    },
+  };
+
+  const remote = baseSite();
+  remote.db.wp_posts['ID:1'].post_title = 'Shared user dependency post';
+  remote.db.wp_comments = JSON.parse(JSON.stringify(base.db.wp_comments));
+  remote.db.wp_usermeta = JSON.parse(JSON.stringify(base.db.wp_usermeta));
+  remote.plugins.forms.description = 'remote-only plugin changes';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin changes */';
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  const references = blocker.references;
+  const matchingEdit = decisionFor(plan, 'row:["wp_posts","ID:1"]');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(plan.conflicts.length, 0);
+  assert.equal(blocker.class, 'unsupported-comments-users-resource');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_users","ID:19"] is created in the same plan as a comment user identity that depends on it, and identity rewriting is not yet supported.');
+  assert.deepEqual(
+    references.map((reference) => reference.relationshipType).sort(),
+    ['comment-user', 'usermeta-user'],
+  );
+  assert.deepEqual(
+    references.map((reference) => reference.sourceResourceKey).sort(),
+    ['row:["wp_comments","comment_ID:29"]', 'row:["wp_usermeta","umeta_id:29"]'],
+  );
+  assert.equal(references.every((reference) => reference.targetResourceKey === resourceKey), true);
+  assert.equal(matchingEdit.decision, 'already-in-sync');
+  assert.equal(matchingEdit.change.localChange, 'update');
+  assert.equal(matchingEdit.change.remoteChange, 'update');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('Local dependent comment content'), false);
+  assert.equal(planJson.includes('Local dependent nickname'), false);
+  assert.equal(planJson.includes('local-multi-dependent-user'), false);
   assert.equal(remote.plugins.forms.description, 'remote-only plugin changes');
   assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin changes */');
 });
@@ -25550,6 +25645,7 @@ test('blocks local post-author references to a same-plan created user identity w
 
   const plan = planFor(base, local, remote);
   const blocker = plan.blockers.find((entry) => entry.resourceKey === targetResourceKey);
+  const reference = blocker.references[0];
   const matchingEdit = decisionFor(plan, 'row:["wp_posts","ID:1"]');
   const planJson = JSON.stringify(plan);
 
@@ -25559,7 +25655,13 @@ test('blocks local post-author references to a same-plan created user identity w
   assert.equal(decisionFor(plan, targetResourceKey), undefined);
   assert.equal(blocker.class, 'unsupported-comments-users-resource');
   assert.equal(blocker.resourceKey, targetResourceKey);
-  assert.equal(blocker.reason, 'User graph resources are not yet supported by the planner.');
+  assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_users","ID:12"] is created in the same plan as a post author identity that depends on it, and identity rewriting is not yet supported.');
+  assert.equal(reference.relationshipKey, 'wp_posts.post_author');
+  assert.equal(reference.relationshipType, 'post-author');
+  assert.equal(reference.sourceResourceKey, resourceKey);
+  assert.equal(reference.targetResourceKey, targetResourceKey);
+  assert.equal(reference.targetChange.remote.state, 'absent');
+  assert.equal(reference.targetChange.local.state, 'present');
   assert.equal(matchingEdit.decision, 'already-in-sync');
   assert.equal(matchingEdit.change.localChange, 'update');
   assert.equal(matchingEdit.change.remoteChange, 'update');
@@ -25600,6 +25702,7 @@ test('blocks local post-author references to a same-plan created user identity w
 
   const plan = planFor(base, local, remote);
   const userBlocker = plan.blockers.find((entry) => entry.resourceKey === targetResourceKey);
+  const reference = userBlocker.references[0];
   const typeSwapDecision = decisionFor(plan, 'file:wp-content/uploads/cover');
   const planJson = JSON.stringify(plan);
 
@@ -25611,7 +25714,13 @@ test('blocks local post-author references to a same-plan created user identity w
   assert.equal(typeSwapDecision.change.remoteChange, 'type-change');
   assert.equal(userBlocker.class, 'unsupported-comments-users-resource');
   assert.equal(userBlocker.resourceKey, targetResourceKey);
-  assert.equal(userBlocker.reason, 'User graph resources are not yet supported by the planner.');
+  assert.equal(userBlocker.reason, 'WordPress graph mutation row:["wp_users","ID:12"] is created in the same plan as a post author identity that depends on it, and identity rewriting is not yet supported.');
+  assert.equal(reference.relationshipKey, 'wp_posts.post_author');
+  assert.equal(reference.relationshipType, 'post-author');
+  assert.equal(reference.sourceResourceKey, resourceKey);
+  assert.equal(reference.targetResourceKey, targetResourceKey);
+  assert.equal(reference.targetChange.remote.state, 'absent');
+  assert.equal(reference.targetChange.local.state, 'present');
   assert.equal(planJson.includes('Local post authored by same-plan user'), false);
   assert.equal(planJson.includes('Local post authored by same-plan user content'), false);
   assert.equal(planJson.includes('local-post-author'), false);

@@ -3812,6 +3812,7 @@ function unsupportedCommentsUsersResourceSupport({ resource, baseValue, localVal
         (
           reference.relationshipType === 'comment-user'
           || reference.relationshipType === 'usermeta-user'
+          || reference.relationshipType === 'post-author'
         )
         && reference.targetChange.remote.state === 'absent'
         && reference.targetChange.local.state === 'present');
@@ -3824,8 +3825,10 @@ function unsupportedCommentsUsersResourceSupport({ resource, baseValue, localVal
         unsupportedState: 'same-plan-reference',
         reason: userReference.relationshipType === 'comment-user'
           ? `WordPress graph mutation ${resource.key} is created in the same plan as a comment user identity that depends on it, and identity rewriting is not yet supported.`
-          : `WordPress graph mutation ${resource.key} is created in the same plan as a user meta identity that depends on it, and identity rewriting is not yet supported.`,
-        references: [userReference],
+          : userReference.relationshipType === 'usermeta-user'
+            ? `WordPress graph mutation ${resource.key} is created in the same plan as a user meta identity that depends on it, and identity rewriting is not yet supported.`
+            : `WordPress graph mutation ${resource.key} is created in the same plan as a post author identity that depends on it, and identity rewriting is not yet supported.`,
+        references: inboundUserReferences,
       };
     }
   }
