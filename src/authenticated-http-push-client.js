@@ -111,6 +111,7 @@ export async function runAuthenticatedHttpPush({
       return `${url.pathname}${url.search}`;
     })()
     : '';
+  let requireCleanupEvidenceContinuity = false;
 
   let preflight;
   try {
@@ -310,6 +311,7 @@ export async function runAuthenticatedHttpPush({
     };
     return summary;
   }
+  requireCleanupEvidenceContinuity = hasValidProductionAuthSessionCleanupEvidence(preflight);
 
   const snapshotPath = labDriftAfterSnapshot
     ? `/snapshot?reprint_push_lab_drift_after_snapshot=${encodeURIComponent(labDriftAfterSnapshot)}`
@@ -398,6 +400,17 @@ export async function runAuthenticatedHttpPush({
     setProductionAuthSessionBoundary(summary);
     return summary;
   }
+  if (requireProductionAuthSession && requireCleanupEvidenceContinuity && isMissingProductionAuthSessionCleanupEvidence(dryRun)) {
+    summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
+    summary.authSession = {
+      required: 'cleanup evidence continuity',
+      observed: 'missing-session-store-cleanup',
+      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+    };
+    setProductionAuthSessionBoundary(summary);
+    return summary;
+  }
+  requireCleanupEvidenceContinuity = requireCleanupEvidenceContinuity || hasValidProductionAuthSessionCleanupEvidence(dryRun);
   if (requireProductionAuthSession && hasMissingProductionAuthSessionIdentity(dryRun)) {
     summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
     summary.authSession = {
@@ -567,6 +580,17 @@ export async function runAuthenticatedHttpPush({
     setProductionAuthSessionBoundary(summary);
     return summary;
   }
+  if (requireProductionAuthSession && requireCleanupEvidenceContinuity && isMissingProductionAuthSessionCleanupEvidence(apply)) {
+    summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
+    summary.authSession = {
+      required: 'cleanup evidence continuity',
+      observed: 'missing-session-store-cleanup',
+      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+    };
+    setProductionAuthSessionBoundary(summary);
+    return summary;
+  }
+  requireCleanupEvidenceContinuity = requireCleanupEvidenceContinuity || hasValidProductionAuthSessionCleanupEvidence(apply);
   if (requireProductionAuthSession && hasMissingProductionAuthSessionIdentity(apply)) {
     summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
     summary.authSession = {
@@ -714,6 +738,22 @@ export async function runAuthenticatedHttpPush({
     setProductionAuthSessionBoundary(summary);
     return summary;
   }
+  if (
+    requireProductionAuthSession
+    && requireCleanupEvidenceContinuity
+    && isMissingProductionAuthSessionCleanupEvidence(recoveryInspect)
+  ) {
+    summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
+    summary.authSession = {
+      required: 'cleanup evidence continuity',
+      observed: 'missing-session-store-cleanup',
+      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+    };
+    setProductionAuthSessionBoundary(summary);
+    return summary;
+  }
+  requireCleanupEvidenceContinuity = requireCleanupEvidenceContinuity
+    || hasValidProductionAuthSessionCleanupEvidence(recoveryInspect);
   if (requireProductionAuthSession && hasMissingProductionAuthSessionIdentity(recoveryInspect)) {
     summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
     summary.authSession = {
@@ -902,6 +942,17 @@ export async function runAuthenticatedHttpPush({
     setProductionAuthSessionBoundary(summary);
     return summary;
   }
+  if (requireProductionAuthSession && requireCleanupEvidenceContinuity && isMissingProductionAuthSessionCleanupEvidence(replay)) {
+    summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
+    summary.authSession = {
+      required: 'cleanup evidence continuity',
+      observed: 'missing-session-store-cleanup',
+      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+    };
+    setProductionAuthSessionBoundary(summary);
+    return summary;
+  }
+  requireCleanupEvidenceContinuity = requireCleanupEvidenceContinuity || hasValidProductionAuthSessionCleanupEvidence(replay);
   if (requireProductionAuthSession && hasMissingProductionAuthSessionIdentity(replay)) {
     summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
     summary.authSession = {
@@ -1062,6 +1113,17 @@ export async function runAuthenticatedHttpPush({
     setProductionAuthSessionBoundary(summary);
     return summary;
   }
+  if (requireProductionAuthSession && requireCleanupEvidenceContinuity && isMissingProductionAuthSessionCleanupEvidence(dbJournal)) {
+    summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
+    summary.authSession = {
+      required: 'cleanup evidence continuity',
+      observed: 'missing-session-store-cleanup',
+      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+    };
+    setProductionAuthSessionBoundary(summary);
+    return summary;
+  }
+  requireCleanupEvidenceContinuity = requireCleanupEvidenceContinuity || hasValidProductionAuthSessionCleanupEvidence(dbJournal);
   if (requireProductionAuthSession && hasMissingProductionAuthSessionIdentity(dbJournal)) {
     summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
     summary.authSession = {
@@ -1909,6 +1971,25 @@ function resolveProductionAuthSessionCleanupEvidenceDrift(response) {
   }
 
   return null;
+}
+
+function hasValidProductionAuthSessionCleanupEvidence(response) {
+  const session = response?.body?.auth?.session;
+  if (session?.type !== 'production-auth-session') {
+    return false;
+  }
+
+  return Boolean(response?.body?.sessionStore?.cleanup)
+    && resolveProductionAuthSessionCleanupEvidenceDrift(response) === null;
+}
+
+function isMissingProductionAuthSessionCleanupEvidence(response) {
+  const session = response?.body?.auth?.session;
+  if (session?.type !== 'production-auth-session') {
+    return false;
+  }
+
+  return !response?.body?.sessionStore?.cleanup;
 }
 
 function hasMissingProductionAuthSessionExpiry(response) {
