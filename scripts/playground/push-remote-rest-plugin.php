@@ -580,7 +580,7 @@ function reprint_push_lab_rest_attach_checked_recovery_journal_evidence(
 
     if ($existing_integrity === []) {
         $result['recovery']['journal']['integrity'] = $checked_integrity;
-        return $result;
+        $existing_integrity = $checked_integrity;
     }
 
     foreach (['schemaVersion', 'status'] as $key) {
