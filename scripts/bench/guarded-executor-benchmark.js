@@ -162,7 +162,12 @@ export function productionThroughputBlockers(report) {
   const receiptCursorQueueBudgetBytes = report.evidence.backpressure?.queueBudgetBytes ?? null;
   const receiptCursorQueueHeadroomBytes = report.evidence.backpressure?.queueHeadroomBytes ?? null;
   const receiptCursorMemoryHeadroomBytes = report.evidence.backpressure?.receiptCursorMemoryHeadroomBytes ?? null;
+  const receiptCursorMemoryCeilingBytes = report.resourceLimits?.memoryCeilingBytes ?? null;
   const receiptCursorWindowBytes = report.evidence.chunkReceipts.resumeCursor?.sizeBytes ?? null;
+  const receiptCursorMemoryCeilingVisible =
+    Number.isFinite(receiptCursorMemoryCeilingBytes)
+    && Number.isFinite(receiptCursorQueueBudgetBytes)
+    && receiptCursorMemoryCeilingBytes === receiptCursorQueueBudgetBytes;
   const backpressureAlignment = {
     aligned:
       Number.isFinite(receiptCursorBackpressureBytes)
@@ -433,6 +438,9 @@ export function productionThroughputBlockers(report) {
     && report.evidence.backpressure?.receiptCursorMemoryCeilingMatchesQueueBudget !== true
   ) {
     blockers.push('queue-pause-without-memory-ceiling-matching-queue-budget-proof');
+  }
+  if (receiptCursorMemoryCeilingVisible !== true) {
+    blockers.push('queue-memory-ceiling-does-not-match-queue-budget');
   }
   if (
     report.evidence.backpressure?.queuePausedBeforeOverflow === true
@@ -731,6 +739,10 @@ export function productionThroughputDetails(report) {
   const receiptCursorMemoryHeadroomBytes = report.evidence.backpressure?.receiptCursorMemoryHeadroomBytes ?? null;
   const receiptCursorMemoryCeilingBytes = report.resourceLimits?.memoryCeilingBytes ?? null;
   const receiptCursorQueueBudgetBytes = report.evidence.backpressure?.queueBudgetBytes ?? null;
+  const receiptCursorMemoryCeilingVisible =
+    Number.isFinite(receiptCursorMemoryCeilingBytes)
+    && Number.isFinite(receiptCursorQueueBudgetBytes)
+    && receiptCursorMemoryCeilingBytes === receiptCursorQueueBudgetBytes;
   const receiptCursorQueueHeadroomBytes = report.evidence.backpressure?.queueHeadroomBytes ?? null;
   const receiptCursorQueueSlackBytes = report.evidence.backpressure?.receiptCursorQueueSlackBytes ?? null;
   const receiptCursorQueueHeadroomPositive =
@@ -1040,6 +1052,7 @@ export function productionThroughputDetails(report) {
     receiptCursorMemoryHeadroomPositive: receiptCursorMemoryHeadroomPositiveVisible,
     receiptCursorMemoryCeilingMatchesQueueBudget,
     receiptCursorMemoryCeilingMatchesQueueBudgetVisible,
+    receiptCursorMemoryCeilingVisible,
     queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack,
     successInspectionClaimStatus,
     successInspectionClaimReason,
@@ -1109,6 +1122,7 @@ export function productionThroughputDetails(report) {
       receiptCursorMemoryHeadroomPositive: receiptCursorMemoryHeadroomPositiveVisible,
       receiptCursorMemoryCeilingMatchesQueueBudget,
       receiptCursorMemoryCeilingMatchesQueueBudgetVisible,
+      receiptCursorMemoryCeilingVisible,
       successInspectionClaimStatus,
       successInspectionClaimReason,
       successInspectionClaimRecognized,

@@ -202,6 +202,7 @@ test('guarded benchmark refuses production throughput claims until production ga
   assert.equal(report.claims.productionThroughputDetails.receiptCursorWithinMemoryCeiling, true);
   assert.equal(report.claims.productionThroughputDetails.receiptCursorMemoryHeadroomBytes, 31.5 * 1024 * 1024);
   assert.equal(report.claims.productionThroughputDetails.receiptCursorMemoryCeilingBytes, 32 * 1024 * 1024);
+  assert.equal(report.claims.productionThroughputDetails.receiptCursorMemoryCeilingVisible, true);
   assert.equal(report.claims.productionThroughputDetails.backpressureConsistency.receiptCursorMemoryHeadroomPositive, true);
   assert.equal(report.claims.productionThroughputDetails.receiptCursorHeadroomMatchesResourceHeadroom, true);
   assert.equal(report.claims.productionThroughputDetails.receiptCursorMemoryHeadroomWithinResourceHeadroom, true);
@@ -350,6 +351,14 @@ test('guarded benchmark refuses production throughput claims until production ga
   assert.equal(
     productionThroughputDetails(fractionalParallelismLimits).parallelismLimitsIntegral,
     true,
+  );
+
+  const mismatchedCeilingAndBudget = clone(report);
+  mismatchedCeilingAndBudget.evidence.backpressure.queueBudgetBytes = 31 * 1024 * 1024;
+  assert.ok(
+    productionThroughputBlockers(mismatchedCeilingAndBudget).includes(
+      'queue-memory-ceiling-does-not-match-queue-budget',
+    ),
   );
   assert.equal(report.results.preCommitFailure.remoteUnchanged, true);
   assert.equal(report.results.partialFailure.remoteUnchanged, false);
