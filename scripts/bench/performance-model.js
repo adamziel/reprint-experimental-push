@@ -869,6 +869,26 @@ export const SAFE_FAST_PATHS = Object.freeze([
     publishesStagedDataEarly: false,
   },
   {
+    area: 'parallelism-limits',
+    reduces: ['planning-round-trips', 'duplicate-budget-recomputation', 'retry-window-recomputation'],
+    allowedShortcut: 'reuse-canonical-per-kind-budgets-and-cached-release-manifest-cursor-to-size-bounded-release-bundle-retry-windows',
+    guardrails: [
+      'cached-release-manifest-cursor-remains-planning-evidence-only',
+      'per-kind-budgets-stay-canonical-and-revalidated-before-write',
+    ],
+    gateProofs: {
+      skip: 'the planner can reuse canonical per-kind budgets together with a cached release-manifest cursor to trim repeat planning scans while sizing the next bounded release-bundle retry window',
+      live: 'the eventual release still revalidates live file and row preconditions before anything becomes visible',
+      group: 'the cached cursor and canonical budgets only narrow planning inside the same planned release bundle and never widen the atomic-group barrier',
+      recovery: 'the cached cursor and canonical budgets are advisory; durable receipts and the guarded release record still classify pause, retry, or crash',
+    },
+    visibilityBoundary: 'planning-only-for-release-bundle-retry-windows',
+    failureEvidence: 'cached release-manifest cursor plus canonical per-kind budgets and guarded release record',
+    bypassesLivePreconditions: false,
+    splitsAtomicGroup: false,
+    publishesStagedDataEarly: false,
+  },
+  {
     area: 'remote-indexes',
     reduces: ['planning-round-trips', 'idle-time'],
     allowedShortcut: 'parallelize-independent-owner-index-scans-to-size-bounded-batches',

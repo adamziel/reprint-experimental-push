@@ -195,6 +195,17 @@ test('benchmark model covers large uploads and plugin installs', () => {
     'cached release-manifest cursors can size retry windows without weakening release recovery evidence',
   );
   assert.ok(
+    model.safeFastPaths.some(
+      (fastPath) =>
+        fastPath.allowedShortcut === 'reuse-canonical-per-kind-budgets-and-cached-release-manifest-cursor-to-size-bounded-release-bundle-retry-windows' &&
+        fastPath.guardrails.includes('cached-release-manifest-cursor-remains-planning-evidence-only') &&
+        fastPath.guardrails.includes('per-kind-budgets-stay-canonical-and-revalidated-before-write') &&
+        fastPath.gateProofs.skip.includes('canonical per-kind budgets together with a cached release-manifest cursor') &&
+        fastPath.gateProofs.recovery.includes('guarded release record'),
+    ),
+    'canonical budgets and a cached release-manifest cursor can size retry windows without weakening release recovery evidence',
+  );
+  assert.ok(
     pluginInstall.actions.some((action) => action.type === 'db-batch-parallelism'),
     'plugin install includes bounded row-batch parallelism',
   );
@@ -4445,6 +4456,16 @@ test('safe fast paths retain all gate proofs and stay non-rejectable', () => {
       fastPath.gateProofs.recovery.includes('durable receipts and the group staging record still classify pause, retry, or crash')
     ),
     'canonical per-kind budget reuse stays planning-only and fails closed on resume',
+  );
+  assert.ok(
+    model.safeFastPaths.some((fastPath) =>
+      fastPath.allowedShortcut === 'reuse-canonical-per-kind-budgets-and-cached-release-manifest-cursor-to-size-bounded-release-bundle-retry-windows' &&
+      fastPath.visibilityBoundary === 'planning-only-for-release-bundle-retry-windows' &&
+      fastPath.guardrails.includes('cached-release-manifest-cursor-remains-planning-evidence-only') &&
+      fastPath.gateProofs.live.includes('live file and row preconditions') &&
+      fastPath.failureEvidence.includes('canonical per-kind budgets')
+    ),
+    'cached release-manifest cursors and canonical budgets stay planning-only for release-bundle retries',
   );
   assert.ok(
     model.safeFastPaths.some((fastPath) =>
