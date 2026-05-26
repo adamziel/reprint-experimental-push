@@ -1,21 +1,22 @@
-Critic lane pass at 2026-05-26 08:20:18 CEST (+0200): no material evidence delta, so the audit stayed unchanged.
+Critic lane pass at 2026-05-26 08:24:03 CEST (+0200): the replay blocker wording was tightened for the newest reliable-executor canonical-response check, but the production verdict stayed blocked.
 
 Evidence checked:
-- `git status --short --branch`
-- `sed -n '1,260p' audits/critic.md`
-- `sed -n '1,220p' .lane-output/final.md`
+- `date '+%Y-%m-%d %H:%M:%S %Z (%z)'`
+- `git log --oneline --decorate -n 8 origin/lane/reliable-executor`
+- `sed -n '1,240p' audits/critic.md`
+- `git diff -- audits/critic.md .lane-output/final.md`
 
-Why nothing changed:
-- The current critic boundary is already captured in `audits/critic.md`.
-- The latest reliable-executor evidence still does not move the gate from lab-shaped replay/auth hardening to a live production replay proof, durable journal ownership proof, or production auth/session lifecycle proof.
-- Reopening the same boundary would only add churn without changing the verdict.
+Why it changed:
+- `origin/lane/reliable-executor` now includes `5059ff69` (`Tighten replay canonical response checks`), which is a real replay-boundary delta worth reflecting in the audit.
+- The new check narrows the replay-risk wording, but it still stops short of exact replay equivalence or a live production auth/session and durable-journal proof.
+- The verdict remains blocked because the release claim still depends on production-side evidence, not more status churn.
 
 Push result:
 - Not attempted
 
 Worktree status:
-- `lane/cycle-20260525-mainwindows-2349/critic...origin/main [ahead 1583, behind 484]`
-- Dirty tracked files remain: `.lane-output/final.md`
+- `lane/cycle-20260525-mainwindows-2349/critic...origin/main [ahead 1584, behind 486]`
+- Dirty tracked file: `.lane-output/final.md`
 
 Next supervisor nudge:
-- Re-poll `reliable-executor` only when it lands product-side proof that changes the blocker set, especially exact replay-equivalence evidence, a production-backed mutation path, or durable journal ownership. The current patch remains narrower, but still not a release gate.
+- Re-poll `reliable-executor` only when it lands product-side proof that changes the blocker set, especially exact replay-equivalence evidence, a production-backed mutation path, or durable journal ownership.
