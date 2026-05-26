@@ -561,6 +561,7 @@ export function consumeProductionRecoveryJournal(options) {
   journal.close();
 
   const records = Array.isArray(inspection.records) ? inspection.records : [];
+  const consumedClaim = summarizeConsumedClaimRecord(records);
   const staleClaimRejected = hasStaleClaimRejectionEvidence(records);
   const consumed = records.some((record) => record.type === 'recovery-journal-consumed');
   const monotonicSequence = records.every((record, index) => record?.sequence === index + 1);
@@ -593,6 +594,7 @@ export function consumeProductionRecoveryJournal(options) {
       leaseFence,
       writerLeaseContract: leaseFenceContract,
       leaseFenceContract: leaseFenceEnvelope,
+      consumedClaim,
       schemaVersion: inspection.schemaVersion ?? null,
       integrity: inspection.integrity,
       records: records.length,
@@ -1970,6 +1972,23 @@ function claimLeasePayloadForJournal(journal, claimId) {
     return freezeProductionWriterLease(journal.writerLease);
   }
   return { id: claimId };
+}
+
+function summarizeConsumedClaimRecord(records) {
+  const consumedRecord = [...records].reverse().find((record) => record?.type === 'recovery-journal-consumed');
+  if (!consumedRecord) {
+    return null;
+  }
+
+  return Object.freeze({
+    sequence: Number.isInteger(consumedRecord.sequence) ? consumedRecord.sequence : null,
+    claimHash: typeof consumedRecord.claimHash === 'string' && CLAIM_HASH_PATTERN.test(consumedRecord.claimHash)
+      ? consumedRecord.claimHash
+      : null,
+    claimLease: isValidProductionWriterLease(consumedRecord.claimLease)
+      ? freezeProductionWriterLease(consumedRecord.claimLease)
+      : null,
+  });
 }
 
 function plannedTargetPayload({ plan, mutation, current }) {

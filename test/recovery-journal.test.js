@@ -850,6 +850,11 @@ test('production recovery journal compatibility overload supports reliable relea
   assert.deepEqual(inspection.journal.checked, [filePath]);
   assert.deepEqual(inspection.journal.writerLease, { id: claimId });
   assert.deepEqual(inspection.journal.leaseFence, { id: claimId });
+  assert.deepEqual(inspection.journal.consumedClaim, {
+    sequence: 2,
+    claimHash: recoveryClaimHash(claimId),
+    claimLease: { id: claimId },
+  });
   assert.deepEqual(inspection.journal.writerLeaseContract, {
     strategy: 'claim-fenced-single-writer',
     claimKeyUnique: true,
@@ -945,6 +950,11 @@ test('production recovery journal consumption derives claim identity from the fe
   assert.equal(inspection.journal.claimHash, recoveryClaimHash(claimId));
   assert.deepEqual(inspection.journal.writerLease, writerLease);
   assert.deepEqual(inspection.journal.leaseFence, writerLease);
+  assert.deepEqual(inspection.journal.consumedClaim, {
+    sequence: 2,
+    claimHash: recoveryClaimHash(claimId),
+    claimLease: writerLease,
+  });
 
   const persisted = readRecoveryJournal(filePath);
   const consumedRecord = persisted.records.at(-1);
