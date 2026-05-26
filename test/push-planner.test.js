@@ -23215,6 +23215,23 @@ test('recovery artifacts fail closed when the artifact envelope is not a plain o
   assert.deepEqual(error.details.artifactKeys, null);
 });
 
+test('recovery states fail closed when the artifact envelope is inherited from the prototype', () => {
+  const recovery = Object.create({
+    artifacts: {
+      journal: { schemaVersion: 1 },
+    },
+  });
+  recovery.status = 'old-remote';
+  recovery.planId = 'plan-123';
+  recovery.reason = 'prototype-hidden artifacts';
+  recovery.remoteHash = 'a'.repeat(64);
+
+  const error = captureError(() => assertRecoveryStateEnvelope(recovery));
+
+  assert.equal(error.code, 'RECOVERY_STATE_INVALID');
+  assert.match(error.message, /must carry an own artifact envelope/);
+});
+
 test('production durable journal claims fail closed when remote artifact references are empty strings', () => {
   const writer = {
     kind: 'production-recovery-journal',

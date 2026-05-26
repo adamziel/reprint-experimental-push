@@ -1664,6 +1664,17 @@ function validateRecoveryStateEnvelopeKeys(recoveryState) {
     ? ['status', 'reason', 'remoteHash', 'planId', 'artifacts', 'driftedResources']
     : ['status', 'reason', 'remoteHash', 'planId', 'artifacts'];
 
+  if (!Object.hasOwn(recoveryState, 'artifacts')) {
+    throw new PushPlanError(
+      'RECOVERY_STATE_INVALID',
+      'Recovery state must carry an own artifact envelope.',
+      {
+        status: recoveryState.status,
+        planId: recoveryState.planId,
+      },
+    );
+  }
+
   const unexpectedKeys = Reflect.ownKeys(recoveryState).filter((key) => typeof key === 'symbol' || !allowedKeys.includes(key));
   if (unexpectedKeys.length === 0) {
     return;
