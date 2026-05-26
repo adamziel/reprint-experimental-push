@@ -1040,7 +1040,7 @@ function wordpressGraphIdentitySupport({
 
   if (
     resource.table === 'wp_postmeta'
-    && localValue.meta_key === 'menu_item_parent'
+    && isMenuItemParentMetaKey(localValue.meta_key)
   ) {
     const ownerId = normalizePositiveInteger(localValue.post_id);
     if (ownerId != null) {
@@ -1667,7 +1667,7 @@ function isValidSamePlanWordPressGraphTarget(targetMutation, reference, sourceMu
     if (
       sourceValue
       && typeof sourceValue === 'object'
-      && sourceValue.meta_key !== 'menu_item_parent'
+      && !isMenuItemParentMetaKey(sourceValue.meta_key)
     ) {
       return false;
     }
@@ -1878,7 +1878,7 @@ function wordpressGraphReferences(resource, value) {
       targetTable: 'posts',
       targetId: value.post_id,
     });
-    if (value.meta_key === 'menu_item_parent') {
+    if (isMenuItemParentMetaKey(value.meta_key)) {
       addReference({
         field: 'meta_value',
         relationshipType: 'menu-item-parent-post',
@@ -2058,6 +2058,10 @@ function wordpressGraphPrimaryIdField(suffix) {
     return 'term_taxonomy_id';
   }
   return 'id';
+}
+
+function isMenuItemParentMetaKey(metaKey) {
+  return metaKey === 'menu_item_parent' || metaKey === '_menu_item_menu_item_parent';
 }
 
 function normalizePositiveInteger(value) {

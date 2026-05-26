@@ -3062,6 +3062,51 @@ test('allows local menu item parent metadata to reference a post created by the 
   assert.equal(result.site.db.wp_postmeta['meta_id:46'].meta_value, 2);
 });
 
+test('allows local _menu_item_menu_item_parent metadata to reference a post created by the same plan', () => {
+  const resourceKey = 'row:["wp_postmeta","meta_id:460"]';
+  const targetResourceKey = 'row:["wp_posts","ID:2"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_title: 'Local parent post',
+    post_content: 'local-private-parent-body',
+    post_status: 'publish',
+  };
+  local.db.wp_postmeta = {
+    'meta_id:460': {
+      meta_id: 460,
+      post_id: 1,
+      meta_key: '_menu_item_menu_item_parent',
+      meta_value: 2,
+    },
+  };
+  const remote = baseSite();
+
+  const plan = planFor(base, local, remote);
+  const targetMutation = mutationFor(plan, targetResourceKey);
+  const postmetaMutation = mutationFor(plan, resourceKey);
+  const reference = postmetaMutation.wordpressGraphReferences.find((entry) => entry.relationshipType === 'menu-item-parent-post');
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.blockers, 0);
+  assert.equal(targetMutation.changeKind, 'create');
+  assert.equal(postmetaMutation.changeKind, 'create');
+  assert.ok(
+    plan.mutations.indexOf(targetMutation) < plan.mutations.indexOf(postmetaMutation),
+    'target post create must be ordered before dependent menu item metadata',
+  );
+  assert.deepEqual(postmetaMutation.dependsOnMutationIds, [targetMutation.id]);
+  assert.equal(reference.resolutionPolicy, 'same-plan-local-create');
+  assert.equal(reference.relationshipKey, 'wp_postmeta.meta_value');
+  assert.equal(reference.relationshipType, 'menu-item-parent-post');
+  assert.equal(reference.targetResourceKey, targetResourceKey);
+
+  const result = applyPlan(remote, plan);
+  assert.equal(result.site.db.wp_posts['ID:2'].post_title, 'Local parent post');
+  assert.equal(result.site.db.wp_postmeta['meta_id:460'].meta_value, 2);
+});
+
 test('allows local menu item parent metadata to reference a post created by the same plan even when a remote nav menu taxonomy exists', () => {
   const resourceKey = 'row:["wp_postmeta","meta_id:46"]';
   const targetResourceKey = 'row:["wp_posts","ID:2"]';
@@ -3191,6 +3236,47 @@ test('blocks menu item parent metadata from referencing a same-plan attachment',
   assert.ok(plan.summary.mutations > 0);
   assert.equal(mutationFor(plan, resourceKey).changeKind, 'create');
   assert.equal(mutationFor(plan, attachmentResourceKey).changeKind, 'create');
+  assert.equal(blocker.class, 'missing-wordpress-graph-dependency');
+  assert.equal(blocker.resourceKey, resourceKey);
+  const reference = blocker.references[0];
+  assert.equal(reference.relationshipType, 'menu-item-parent-post');
+  assert.equal(reference.targetResourceKey, attachmentResourceKey);
+  assert.equal(
+    JSON.stringify(blocker).includes('local-private-attachment-target-body'),
+    false,
+  );
+  assert.throws(() => applyPlan(baseSite(), plan), /Refusing to apply/);
+});
+
+test('blocks _menu_item_menu_item_parent metadata from referencing a same-plan attachment', () => {
+  const resourceKey = 'row:["wp_postmeta","meta_id:470"]';
+  const attachmentResourceKey = 'row:["wp_posts","ID:2"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_title: 'Local attachment target',
+    post_content: 'local-private-attachment-target-body',
+    post_status: 'inherit',
+    post_type: 'attachment',
+  };
+  local.db.wp_postmeta = {
+    'meta_id:470': {
+      meta_id: 470,
+      post_id: 1,
+      meta_key: '_menu_item_menu_item_parent',
+      meta_value: 2,
+    },
+  };
+
+  const plan = planFor(base, local, baseSite());
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.ok(plan.summary.mutations > 0);
+  assert.equal(mutationFor(plan, resourceKey).changeKind, 'create');
+  assert.equal(mutationFor(plan, attachmentResourceKey).changeKind, 'create');
+  assert.ok(blocker);
   assert.equal(blocker.class, 'missing-wordpress-graph-dependency');
   assert.equal(blocker.resourceKey, resourceKey);
   const reference = blocker.references[0];
