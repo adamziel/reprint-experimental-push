@@ -1055,6 +1055,13 @@ test('packaged production plugin readiness helper does not retry terminal readin
   );
   assert.equal(
     packagedProductionPluginReadinessBodyRetryable(
+      404,
+      '<!doctype html><html><body>No route was found matching the URL and request method.</body></html>',
+    ),
+    true,
+  );
+  assert.equal(
+    packagedProductionPluginReadinessBodyRetryable(
       200,
       '<!doctype html><html><body>fatal startup mismatch</body></html>',
     ),

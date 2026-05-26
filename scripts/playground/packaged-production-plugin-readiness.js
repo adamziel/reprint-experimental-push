@@ -59,5 +59,8 @@ export function packagedProductionPluginReadinessErrorRetryable(error) {
 }
 
 export function packagedProductionPluginReadinessBodyRetryable(status, bodyText = '') {
-  return status === 502 && /WordPress is not ready yet/i.test(bodyText);
+  return (
+    (status === 502 && /WordPress is not ready yet/i.test(bodyText))
+    || (status === 404 && /No route was found matching the URL and request method\./i.test(bodyText))
+  );
 }
