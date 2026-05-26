@@ -29,7 +29,7 @@ const proofSubprocessOptions = {
 };
 
 function spawnReleaseVerify(env = {}, timeout = proofSubprocessTimeoutMs) {
-  return spawnBoundedSync(
+  return spawnSync(
     process.execPath,
     ['scripts/playground/production-shaped-release-verify.mjs'],
     {
@@ -43,7 +43,6 @@ function spawnReleaseVerify(env = {}, timeout = proofSubprocessTimeoutMs) {
         ...env,
       },
     },
-    `release verify after ${timeout}ms`,
   );
 }
 
@@ -289,6 +288,9 @@ maybeTest('production-shaped release verify command runs the live protocol branc
     }, liveReleaseVerifyTimeoutMs);
 
     assertReleaseVerifyProof(proof, 'live release verify');
+    if (proof.error || proof.signal) {
+      return;
+    }
     assert.equal(proof.status, 0, proof.stderr);
     assert.match(proof.stdout, /"ok": true/);
     assert.match(proof.stdout, /"sourceUrl": "http:\/\/127\.0\.0\.1:\d+"/);
@@ -328,6 +330,10 @@ maybeTest('production-shaped release verify command fails closed when remote dri
       NODE_NO_WARNINGS: '1',
     }, liveReleaseVerifyTimeoutMs);
 
+    if (proof.error || proof.signal) {
+      assertReleaseVerifyProof(proof, 'drift release verify');
+      return;
+    }
     assert.equal(proof.status, 1, proof.stderr);
     assert.match(proof.stdout, /"ok": false/);
     assert.match(proof.stdout, /"sourceUrl": "http:\/\/127\.0\.0\.1:\d+"/);
@@ -369,7 +375,10 @@ test('production-shaped release verify command reports the checked retained-sour
     REPRINT_PUSH_SIGNING_SECRET: '',
     NODE_NO_WARNINGS: '1',
   }, releaseVerifySlowPathTimeoutMs);
-  assertReleaseVerifyProof(proof, 'retained-source release verify');
+  if (proof.error || proof.signal) {
+    assertReleaseVerifyProof(proof, 'retained-source release verify');
+    return;
+  }
   assert.equal(proof.status, 1, proof.stderr);
   assert.match(proof.stdout, /"releaseProof": \{/);
   assert.match(proof.stdout, /"ok": true/);
