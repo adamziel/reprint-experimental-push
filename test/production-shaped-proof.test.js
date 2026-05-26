@@ -21,6 +21,7 @@ const liveCredentials = {
 const proofSubprocessTimeoutMs = 45_000;
 const proofSubprocessKillSignal = 'SIGTERM';
 const liveProofSubprocessTimeoutMs = 9_000;
+const liveProofSubprocessKillSignal = 'SIGKILL';
 const releaseVerifySlowPathTimeoutMs = 9_000;
 const liveReleaseVerifyTimeoutMs = liveProofSubprocessTimeoutMs;
 const proofSubprocessOptions = {
@@ -38,7 +39,7 @@ const releaseVerifyProofSubprocessOptions = {
 };
 const releaseVerifyLiveSubprocessOptions = {
   timeout: liveReleaseVerifyTimeoutMs,
-  killSignal: proofSubprocessKillSignal,
+  killSignal: liveProofSubprocessKillSignal,
   encoding: 'utf8',
   maxBuffer: 1024 * 1024 * 20,
   shell: false,
@@ -82,20 +83,20 @@ function spawnReleaseVerifyBounded(command, args, options, label) {
   const proof = spawnSync(command, args, options);
 
   if (proof.error) {
-    stopAllPlaygroundChildrenSync();
-    process.stderr.write(`${describeSpawnProof(proof)}\n`);
+    reportSpawnFailure(proof);
     const timeoutNote = proof.error.code === 'ETIMEDOUT' && options.timeout ? ` after ${options.timeout}ms` : '';
     throw new Error(formatSpawnFailure(`${label} failed${timeoutNote}`, proof));
   }
   if (proof.signal) {
-    stopAllPlaygroundChildrenSync();
-    process.stderr.write(`${describeSpawnProof(proof)}\n`);
+    reportSpawnFailure(proof);
     throw new Error(formatSpawnFailure(`${label} terminated by ${proof.signal}${options.timeout ? ` after ${options.timeout}ms` : ''}`, proof));
   }
   if (proof.status === null) {
-    stopAllPlaygroundChildrenSync();
-    process.stderr.write(`${describeSpawnProof(proof)}\n`);
+    reportSpawnFailure(proof);
     throw new Error(formatSpawnFailure(`${label} exited without a status`, proof));
+  }
+  if (proof.status !== 0) {
+    process.stderr.write(`${describeSpawnProof(proof)}\n`);
   }
 
   return proof;
@@ -120,8 +121,7 @@ function spawnLiveReleaseVerify(env = {}, timeout = liveProofSubprocessTimeoutMs
 
 function assertReleaseVerifyProof(proof, label) {
   if (proof.error) {
-    stopAllPlaygroundChildrenSync();
-    process.stderr.write(`${describeSpawnProof(proof)}\n`);
+    reportSpawnFailure(proof);
     const detailParts = [
       proof.error.name ?? 'Error',
       proof.error.code ? `code=${proof.error.code}` : null,
@@ -136,16 +136,14 @@ function assertReleaseVerifyProof(proof, label) {
   }
 
   if (proof.signal) {
-    stopAllPlaygroundChildrenSync();
-    process.stderr.write(`${describeSpawnProof(proof)}\n`);
+    reportSpawnFailure(proof);
     assert.fail(
       `${label} terminated by ${proof.signal}\nstdout:\n${proof.stdout ?? ''}\nstderr:\n${proof.stderr ?? ''}`,
     );
   }
 
   if (proof.status === null) {
-    stopAllPlaygroundChildrenSync();
-    process.stderr.write(`${describeSpawnProof(proof)}\n`);
+    reportSpawnFailure(proof);
     assert.fail(
       `${label} exited without a status\nstdout:\n${proof.stdout ?? ''}\nstderr:\n${proof.stderr ?? ''}`,
     );
@@ -154,19 +152,16 @@ function assertReleaseVerifyProof(proof, label) {
 
 function assertLiveReleaseVerifyProof(proof, label, timeoutMs) {
   if (proof.error) {
-    stopAllPlaygroundChildrenSync();
-    process.stderr.write(`${describeSpawnProof(proof)}\n`);
+    reportSpawnFailure(proof);
     const timeoutNote = proof.error.code === 'ETIMEDOUT' && timeoutMs ? ` after ${timeoutMs}ms` : '';
     assert.fail(formatSpawnFailure(`${label} failed${timeoutNote}`, proof));
   }
   if (proof.signal) {
-    stopAllPlaygroundChildrenSync();
-    process.stderr.write(`${describeSpawnProof(proof)}\n`);
+    reportSpawnFailure(proof);
     assert.fail(formatSpawnFailure(`${label} terminated by ${proof.signal}${timeoutMs ? ` after ${timeoutMs}ms` : ''}`, proof));
   }
   if (proof.status === null) {
-    stopAllPlaygroundChildrenSync();
-    process.stderr.write(`${describeSpawnProof(proof)}\n`);
+    reportSpawnFailure(proof);
     assert.fail(`${label} exited without a status\nstdout:\n${proof.stdout ?? ''}\nstderr:\n${proof.stderr ?? ''}`);
   }
   assertReleaseVerifyProof(proof, label);
@@ -220,6 +215,11 @@ function logBoundedSpawnProofFailure(command, args, proof) {
       `${commandLabel} exited with ${proof.status}\nstdout:\n${proof.stdout ?? ''}\nstderr:\n${proof.stderr ?? ''}\n`,
     );
   }
+}
+
+function reportSpawnFailure(proof) {
+  stopAllPlaygroundChildrenSync();
+  process.stderr.write(`${describeSpawnProof(proof)}\n`);
 }
 
 function formatSpawnFailure(prefix, proof) {
