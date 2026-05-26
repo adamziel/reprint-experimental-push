@@ -418,6 +418,16 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
   assert.ok(
     model.safeFastPaths.some(
       (fastPath) =>
+        fastPath.area === 'parallelism-limits' &&
+        fastPath.allowedShortcut === 'reuse-canonical-per-kind-budgets-to-size-bounded-release-bundle-resume' &&
+        fastPath.guardrails.includes('release-bundle-resume-stays-planning-only') &&
+        fastPath.gateProofs.recovery.includes('the release-bundle staging record still classify pause, retry, or crash'),
+    ),
+    'canonical per-kind budgets can size release-bundle resume work without widening the visibility boundary',
+  );
+  assert.ok(
+    model.safeFastPaths.some(
+      (fastPath) =>
         fastPath.area === 'backpressure' &&
         fastPath.allowedShortcut === 'flush-upload-and-row-receipts-in-separate-kind-scoped-journal-batches' &&
         fastPath.guardrails.includes('kind-scoped-receipt-batches-stay-ordered') &&

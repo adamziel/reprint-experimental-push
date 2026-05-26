@@ -488,6 +488,26 @@ export const SAFE_FAST_PATHS = Object.freeze([
     publishesStagedDataEarly: false,
   },
   {
+    area: 'parallelism-limits',
+    reduces: ['idle-time', 'planning-round-trips', 'duplicate-budget-recomputation'],
+    allowedShortcut: 'reuse-canonical-per-kind-budgets-to-size-bounded-release-bundle-resume',
+    guardrails: [
+      'release-bundle-resume-stays-planning-only',
+      'per-kind-budgets-stay-canonical-and-revalidated-before-write',
+    ],
+    gateProofs: {
+      skip: 'the planner can reuse canonical per-kind budgets to avoid recomputing release-bundle fanout on a retry',
+      live: 'each later release-bundle write still rechecks its own live resource precondition before visibility changes',
+      group: 'budget reuse only narrows planning inside the same planned release bundle and never merges coupled owners',
+      recovery: 'the reused budgets are advisory; durable receipts and the release-bundle staging record still classify pause, retry, or crash',
+    },
+    visibilityBoundary: 'planning-only-budget-resume',
+    failureEvidence: 'canonical per-kind budget summary plus release-bundle staging record and later durable receipts',
+    bypassesLivePreconditions: false,
+    splitsAtomicGroup: false,
+    publishesStagedDataEarly: false,
+  },
+  {
     area: 'remote-indexes',
     reduces: ['remote-body-fetches', 'planning-round-trips'],
     allowedShortcut: 'plan-from-indexed-strong-hash-listing',
