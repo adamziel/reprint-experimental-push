@@ -690,9 +690,11 @@ function assertProductionDurableJournalSupport(options, writer) {
 export function productionRecoverySupportReport(writer) {
   const missingDependency = [];
   const inspected = inspectProductionRecoveryJournal(writer);
+  const openedInspectionRecords = durableJournalInspectRecords(inspected);
+  const claimInspectionRecords = durableJournalInspectClaimRecords(inspected);
   const inspectedJournalPath = durableJournalInspectPath(inspected);
   const inspectionErrorMessage = productionRecoveryInspectionErrorMessage(inspected);
-  const inspectedClaimState = durableJournalInspectRecords(inspected)
+  const inspectedClaimState = (openedInspectionRecords || claimInspectionRecords)
     ? classifyRecoveryJournalClaims(inspected.records)
     : null;
   const persistedArtifactRefs = durableJournalPersistedArtifactRefs(inspected);
@@ -1085,6 +1087,7 @@ export function productionRecoverySupportReport(writer) {
   }
   if (
     hasValidProductionLeaseIdentity(writer?.writerLease)
+    && openedInspectionRecords
     && (
       !Object.hasOwn(inspected ?? {}, 'writerLease')
       || !hasValidProductionLeaseIdentity(inspected.writerLease)
@@ -1094,6 +1097,7 @@ export function productionRecoverySupportReport(writer) {
   }
   if (
     hasValidProductionLeaseIdentity(writer?.leaseFence)
+    && openedInspectionRecords
     && (
       !Object.hasOwn(inspected ?? {}, 'leaseFence')
       || !hasValidProductionLeaseIdentity(inspected.leaseFence)
@@ -1121,7 +1125,13 @@ export function productionRecoverySupportReport(writer) {
   ) {
     addMissingDependency('fencing or lease ownership for the journal writer');
   }
-  if (writer && typeof writer.inspect === 'function' && !inspectionErrorMessage && !durableJournalInspectRecords(inspected)) {
+  if (
+    writer
+    && typeof writer.inspect === 'function'
+    && !inspectionErrorMessage
+    && !openedInspectionRecords
+    && !claimInspectionRecords
+  ) {
     addMissingDependency('journal-readable inspection records with sequence and type');
   }
 
@@ -1326,6 +1336,9 @@ function durableJournalPersistedArtifactRefs(inspected) {
     }
     const hasAnyArtifactRefKeys = Reflect.ownKeys(artifactRefs).length > 0;
     if (!hasAnyArtifactRefKeys) {
+      if (!recordRequiresPersistedArtifactRefs(record)) {
+        continue;
+      }
       return { hasRecords: true, journal: null, remote: null, invalidReason: 'missing journal artifact ref' };
     }
     if (Reflect.ownKeys(artifactRefs).some((key) => key !== 'journal' && key !== 'remote')) {
@@ -1523,6 +1536,47 @@ function durableJournalInspectRecords(inspected) {
     .slice(0, durableOpenedIndex)
     .every((record) => CLAIM_FENCE_RECORD_TYPES.has(record.type))
   && !claimFenceAfterOpened;
+}
+
+function durableJournalInspectClaimRecords(inspected) {
+  const records = inspected?.records;
+  const recordsOwnKeys = Reflect.ownKeys(records ?? {});
+  const numericKeys = recordsOwnKeys.filter((key) => typeof key === 'string' && /^\d+$/.test(key));
+  return Boolean(
+    isStrictPlainObject(inspected)
+    && Object.hasOwn(inspected, 'schemaVersion')
+    && typeof inspected.schemaVersion === 'number'
+    && Object.hasOwn(inspected, 'records')
+    && Array.isArray(records),
+  ) && !recordsOwnKeys.some((key) => typeof key === 'symbol')
+  && recordsOwnKeys.every((key) => (
+    key === 'length'
+    || (typeof key === 'string' && /^\d+$/.test(key))
+  ))
+  && records.length > 0
+  && numericKeys.length === records.length
+  && records.every((record) => isStrictPlainObject(record))
+  && Object.hasOwn(records[0], 'sequence')
+  && Object.hasOwn(records[0], 'type')
+  && records[0].sequence === 1
+  && CLAIM_FENCE_RECORD_TYPES.has(records[0].type)
+  && records.every((record) =>
+    record
+    && typeof record === 'object'
+    && !Reflect.ownKeys(record).some((key) => typeof key === 'symbol')
+    && Object.hasOwn(record, 'sequence')
+    && Object.hasOwn(record, 'type')
+    && Number.isInteger(record.sequence)
+    && typeof record.type === 'string'
+    && record.type.trim().length > 0
+    && record.type.trim() === record.type
+    && RECOVERY_JOURNAL_RECORD_TYPE_PATTERN.test(record.type)
+    && CLAIM_FENCE_RECORD_TYPES.has(record.type)
+  ) && records.every((record, index, recordsList) => (
+    index === 0
+      ? record.sequence === 1
+      : record.sequence === recordsList[index - 1].sequence + 1
+  ));
 }
 
 function recordRequiresPersistedArtifactRefs(record) {

@@ -20744,6 +20744,45 @@ test('production recovery support report accepts a fenced restart-readable journ
   assert.equal(report.inspectionErrorMessage, null);
 });
 
+test('production recovery support report accepts a fenced claim before apply opens the journal body', () => {
+  const filePath = tempRecoveryJournalPath();
+  const remoteArtifactPath = `${path.dirname(filePath)}/pre-open-remote.jsonl`;
+  const claimId = 'claim-pre-open-support-report';
+  const journal = openProductionRecoveryJournal(filePath, {
+    truncate: true,
+    now: fixedNow,
+    claimId,
+    writerLease: { id: claimId },
+    ownsRemoteArtifact: true,
+    remoteArtifactPath,
+  });
+  appendRecoveryClaimOpened(journal, {
+    plan: { id: 'plan-pre-open-support-report' },
+    current: baseSite(),
+    claimId,
+    artifactRefs: {
+      journal: filePath,
+      remote: remoteArtifactPath,
+    },
+  });
+  journal.close();
+
+  const reopened = openProductionRecoveryJournal(filePath, {
+    claimId,
+    writerLease: { id: claimId },
+    ownsRemoteArtifact: true,
+    remoteArtifactPath,
+  });
+  const report = productionRecoverySupportReport(reopened);
+  reopened.close();
+
+  assert.equal(report.supported, true);
+  assert.deepEqual(report.missingDependency, []);
+  assert.equal(report.inspectedJournalPath, filePath);
+  assert.equal(report.writerJournalPath, filePath);
+  assert.equal(report.inspectionErrorMessage, null);
+});
+
 test('production recovery support report fails closed when a reopen introduces unpersisted remote artifact ownership', () => {
   const filePath = tempRecoveryJournalPath();
   const introducedRemoteArtifactPath = `${path.dirname(filePath)}/introduced-remote.jsonl`;
