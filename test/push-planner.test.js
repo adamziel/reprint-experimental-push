@@ -24163,6 +24163,28 @@ test('recovery artifacts fail closed when the artifact envelope is not a plain o
   assert.deepEqual(error.details.artifactKeys, null);
 });
 
+test('recovery artifacts fail closed when a non-blocked remote artifact is inherited from the prototype', () => {
+  const hiddenRemote = { schemaVersion: 1 };
+  Object.prototype.remote = hiddenRemote;
+  try {
+    const recovery = {
+      status: 'old-remote',
+      planId: 'plan-123',
+      reason: 'prototype-hidden remote',
+      artifacts: {
+        journal: { schemaVersion: 1 },
+      },
+    };
+
+    const error = captureError(() => assertRecoveryStateEnvelope(recovery));
+
+    assert.equal(error.code, 'RECOVERY_ARTIFACTS_INVALID');
+    assert.match(error.message, /must not carry an own remote artifact key/);
+  } finally {
+    delete Object.prototype.remote;
+  }
+});
+
 test('recovery states fail closed when the artifact envelope is inherited from the prototype', () => {
   const recovery = Object.create({
     artifacts: {

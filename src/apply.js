@@ -1740,7 +1740,7 @@ export function validateRecoveryArtifacts(recovery) {
       },
     );
   }
-  if (Object.hasOwn(recovery.artifacts, 'remote')) {
+  if ('remote' in recovery.artifacts) {
     throw new PushPlanError(
       'RECOVERY_ARTIFACTS_INVALID',
       'Non-blocked recovery states must not carry an own remote artifact key.',
