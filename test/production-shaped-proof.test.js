@@ -38,8 +38,8 @@ import {
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const muPluginDir = path.join(repoRoot, 'scripts/playground/rest-mu-plugins');
-const serverStartupTimeoutMs = 1_500;
-const playgroundServerTimeoutMs = 8;
+const serverStartupTimeoutMs = 30_000;
+const playgroundServerTimeoutMs = 40;
 const serverFetchTimeoutMs = 3_000;
 const playgroundStopTimeoutMs = 3_000;
 const runLivePlaygroundTopologyTests = process.env.REPRINT_RUN_PLAYGROUND_LIVE_TESTS === '1';
@@ -49,7 +49,7 @@ const liveCredentials = {
   username: 'reprint_push_admin',
   password: 'reprint-push-admin-app-password',
 };
-const proofSubprocessTimeoutMs = 30_000;
+const proofSubprocessTimeoutMs = 45_000;
 const proofSubprocessKillSignal = 'SIGTERM';
 const liveProofSubprocessTimeoutMs = 15_000;
 const liveProofSubprocessKillSignal = 'SIGKILL';
@@ -60,9 +60,10 @@ const liveProofLaunchTimeoutMs = Math.max(1_000, Math.min(7_000, liveProofSubpro
 // The checked release verifier now allows the shared remote-changed and
 // local-edited Playground startup path to use its full bounded readiness
 // window, so the focused subprocess proof needs a matching inner budget.
-const releaseVerifyInnerTimeoutMs = Math.max(1_000, Math.min(24_000, proofSubprocessTimeoutMs - 6_000));
+const releaseVerifyInnerTimeoutMs = Math.max(1_000, Math.min(36_000, proofSubprocessTimeoutMs - 6_000));
 const releaseVerifySlowPathTimeoutMs = 15_000;
 const releaseVerifySlowPathInnerTimeoutMs = Math.max(1_000, Math.min(6_000, releaseVerifySlowPathTimeoutMs - 6_000));
+const maxNotReadyReadinessProbes = Math.max(4, Math.ceil(serverStartupTimeoutMs / 500));
 const proofSubprocessOptions = {
   timeout: proofSubprocessTimeoutMs,
   killSignal: proofSubprocessKillSignal,
@@ -1515,7 +1516,7 @@ async function waitForServer(child, baseUrl, getLogs) {
   const deadline = Date.now() + serverStartupTimeoutMs;
   let lastError = null;
   const lastProbes = [];
-  let consecutiveIndex502s = 0;
+  let notReadyProbeCount = 0;
   while (Date.now() < deadline) {
     if (child.exitCode !== null || child.signalCode !== null) {
       const exitLabel =
@@ -1577,14 +1578,20 @@ async function waitForServer(child, baseUrl, getLogs) {
         lastError = new Error(`Playground lab snapshot readiness HTTP ${snapshot.status}`);
       } else {
         lastError = new Error(`Playground index readiness HTTP ${response.status}`);
-        consecutiveIndex502s = response.status === 502 ? consecutiveIndex502s + 1 : 0;
-      }
-      if (consecutiveIndex502s >= 1) {
-        break;
+        const readinessHint = response.status === 502 && responseBody.includes('WordPress is not ready yet');
+        if (readinessHint) {
+          notReadyProbeCount += 1;
+          if (notReadyProbeCount >= maxNotReadyReadinessProbes) {
+            break;
+          }
+          await new Promise((resolve) => setTimeout(resolve, 500));
+          continue;
+        }
+        notReadyProbeCount = 0;
       }
     } catch (error) {
       lastError = error;
-      consecutiveIndex502s = 0;
+      notReadyProbeCount = 0;
     }
     await new Promise((resolve) => setTimeout(resolve, 500));
   }
