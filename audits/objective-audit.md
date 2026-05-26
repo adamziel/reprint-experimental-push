@@ -7,11 +7,11 @@ The project is **not releasable as a production WordPress push path**.
 Fresh remote heads at audit time, checked on May 26, 2026:
 
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `4411cbd7`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `ca8f14fa`
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `34b083c4`
-- `origin/lane/independent-auditor` -> `dc0be79b`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `e1cabd23`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `a8b5e451`
+- `origin/lane/independent-auditor` -> `0c9d4712`
 - `origin/lane/reliable-executor` -> `66339fdc`
-- `origin/lane/no-data-loss-invariants` -> `67597696`
+- `origin/lane/no-data-loss-invariants` -> `2f92065d`
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` -> `db36753e`
 - `origin/lane/critic` -> `49af85aa`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `1214c397`
@@ -81,9 +81,12 @@ but it did not change the release conclusion:
   featured image removal proof. That remains fail-closed boundary evidence,
   not a live production mutation proof.
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` advances to
-  `ca8f14fa`, and `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor`
-  advances to `34b083c4`; both are freshness updates only and do not move the
+  `e1cabd23`, and `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor`
+  advances to `a8b5e451`; both are freshness updates only and do not move the
   live production release boundary.
+- `origin/lane/no-data-loss-invariants` now advances to `2f92065d`, adding
+  termmeta removal proof. That remains fail-closed boundary evidence, not a
+  live production mutation proof.
 
 Those changes strengthen the lab evidence for protocol safety and no-loss
 planning, but they still do not prove the production-backed push path.
@@ -184,7 +187,7 @@ These tests are still lab-bound. They mostly prove carefully controlled fixtures
 6. Reliability assertions often count events rather than prove every hash transition.
 7. Auth is lab-auth, not production-auth.
 8. Plugin safety is intentionally hard-coded.
-9. The strongest unsupported production-slice gap is still the boundary coverage for menu/navigation, serialized block references, comments/users, and plugin-owned custom tables. The current proof in [`test/push-planner.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/independent-auditor/test/push-planner.test.js) is refusal-backed for plugin-owned resources, not live-boundary proof for those graph surfaces. The newer same-plan graph proof at `a719e09c` strengthens the fail-closed side for revision posts, menu/navigation posts, serialized blocks, and thumbnail parent references, but none produce live source mutation evidence.
+9. The strongest unsupported production-slice gap is still the boundary coverage for menu/navigation, serialized block references, comments/users, and plugin-owned custom tables. The current proof in [`test/push-planner.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/independent-auditor/test/push-planner.test.js) is refusal-backed for plugin-owned resources, not live-boundary proof for those graph surfaces. The newer same-plan graph proof at `a719e09c` strengthens the fail-closed side for revision posts, menu/navigation posts, serialized blocks, and thumbnail parent references, and the newer termmeta proof at `2f92065d` narrows one more unsupported graph edge, but none produce live source mutation evidence.
 10. The repository script surface still lacks a checked-in `verify`, `verify:release`, or `release` command in [`package.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/independent-auditor/package.json:10), so there is still no enforced live-source gate that could own the verdict even if the missing proof appeared. The planner tests in [`test/push-planner.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/independent-auditor/test/push-planner.test.js:131) remain strong fixture evidence, but they still stop at local/remote simulation rather than the live release boundary. The exact missing command is a checked entrypoint that runs the live-source preflight, aborts on stale or unsupported boundaries, and exits non-zero before any apply step when the unsupported surface set is hit.
 11. Speed has no measured evidence.
 
