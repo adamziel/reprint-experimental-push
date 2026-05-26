@@ -2372,6 +2372,18 @@ export function validateRecoveryArtifacts(recovery) {
   }
   const artifactKeys = Reflect.ownKeys(recovery.artifacts);
 
+  if (hasNestedHiddenOwnStringKeys(recovery.artifacts)) {
+    throw new PushPlanError(
+      'RECOVERY_ARTIFACTS_INVALID',
+      'Recovery states must not hide preserved artifacts behind non-enumerable string keys.',
+      {
+        status: recovery.status,
+        planId: recovery.planId,
+        artifactKeys,
+      },
+    );
+  }
+
   if (recovery.status === 'blocked-recovery') {
     if (artifactKeys.some((key) => typeof key === 'symbol' || (key !== 'journal' && key !== 'remote'))) {
       throw new PushPlanError(
@@ -2577,6 +2589,26 @@ function hasNestedSymbolOwnKeys(value, seen = new Set()) {
     const nested = value[key];
     return isPlainObject(nested) && hasNestedSymbolOwnKeys(nested, seen);
   });
+}
+
+function hasNestedHiddenOwnStringKeys(value, seen = new Set()) {
+  if (!isPlainObject(value) || seen.has(value)) {
+    return false;
+  }
+
+  seen.add(value);
+
+  for (const [key, descriptor] of Object.entries(Object.getOwnPropertyDescriptors(value))) {
+    if (descriptor.enumerable !== true) {
+      return true;
+    }
+    const nested = value[key];
+    if (isPlainObject(nested) && hasNestedHiddenOwnStringKeys(nested, seen)) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 function validateRecoveryStateEnvelopeKeys(recoveryState) {

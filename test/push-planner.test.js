@@ -1851,6 +1851,56 @@ test('rejects recovery states that hide symbol-keyed artifact metadata', () => {
   );
 });
 
+test('rejects non-blocked recovery states that hide the journal artifact behind a non-enumerable key', () => {
+  const artifacts = {};
+  Object.defineProperty(artifacts, 'journal', {
+    value: { status: 'completed' },
+    enumerable: false,
+    configurable: true,
+    writable: true,
+  });
+
+  const recoveryState = {
+    status: 'old-remote',
+    reason: 'Hidden journal artifact keys should not be accepted.',
+    remoteHash: 'a'.repeat(64),
+    planId: 'plan-hidden-journal-artifact',
+    artifacts,
+  };
+
+  assert.throws(
+    () => assertRecoveryStateEnvelope(recoveryState),
+    (error) => error.code === 'RECOVERY_ARTIFACTS_INVALID',
+  );
+});
+
+test('rejects blocked recovery states that hide non-enumerable nested artifact metadata', () => {
+  const journal = { status: 'completed' };
+  Object.defineProperty(journal, 'hidden', {
+    value: 'unsupported',
+    enumerable: false,
+    configurable: true,
+    writable: true,
+  });
+
+  const recoveryState = {
+    status: 'blocked-recovery',
+    reason: 'Hidden nested artifact metadata should not be accepted.',
+    remoteHash: 'a'.repeat(64),
+    planId: 'plan-hidden-nested-artifact',
+    driftedResources: ['row:["wp_options","option_name:blogname"]'],
+    artifacts: {
+      journal,
+      remote: { status: 'blocked' },
+    },
+  };
+
+  assert.throws(
+    () => assertRecoveryStateEnvelope(recoveryState),
+    (error) => error.code === 'RECOVERY_ARTIFACTS_INVALID',
+  );
+});
+
 test('rejects blocked recovery states that reuse the same journal and remote artifact object', () => {
   const sharedArtifact = {
     status: 'blocked',
