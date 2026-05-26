@@ -231,6 +231,10 @@ Current executable gate:
 - The same queue-budget plus memory-ceiling detail now also fails closed when
   queue-headroom visibility is hidden, so the paired pause-boundary surface
   cannot still look measured from the raw ceiling and budget bits alone.
+- The same queue-budget plus memory-ceiling detail now also fails closed when
+  the explicit memory-ceiling-match visibility bit is hidden, so the paired
+  pause-boundary summary cannot still look measured from the raw ceiling and
+  budget bits alone.
 - The same details also fail closed if memory-ceiling visibility appears
   without queue-budget visibility, so the backpressure visibility boundary
   stays symmetric.

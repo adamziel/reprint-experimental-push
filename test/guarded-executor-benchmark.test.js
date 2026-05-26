@@ -367,9 +367,13 @@ test('guarded benchmark blocks forged memory-ceiling match visibility without a 
   const details = productionThroughputDetails(tampered);
   const blockers = productionThroughputBlockers(tampered);
 
-  assert.equal(details.queueBudgetVisibleAndMemoryCeilingVisibleAndMeasured, true);
+  assert.equal(details.queueBudgetVisibleAndMemoryCeilingVisibleAndMeasured, false);
   assert.equal(details.receiptCursorMemoryCeilingVisibleAndQueueBudgetVisible, true);
   assert.equal(details.receiptCursorMemoryCeilingMatchesQueueBudgetVisible, false);
+  assert.equal(
+    details.backpressureConsistency.queueBudgetVisibleAndMemoryCeilingVisibleAndMeasured,
+    false,
+  );
   assert.equal(details.backpressureConsistency.receiptCursorMemoryCeilingMatchesQueueBudgetVisible, false);
   assert.equal(details.backpressureConsistency.backpressureEvidenceComplete, false);
   assert.equal(blockers.includes('queue-budget-visible-without-memory-ceiling-match-visibility'), true);

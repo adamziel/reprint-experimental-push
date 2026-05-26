@@ -1281,6 +1281,8 @@ export function productionThroughputDetails(report) {
   const queueBudgetVisibleAndMemoryCeilingVisibleAndMeasured =
     queueBudgetVisible
     && receiptCursorMemoryCeilingVisible
+    && report.evidence.backpressure?.receiptCursorMemoryCeilingMatchesQueueBudget === true
+    && report.evidence.backpressure?.receiptCursorMemoryCeilingMatchesQueueBudgetVisible === true
     && queueHeadroomVisible
     && queueHeadroomMeasured;
   const queueBudgetVisibleAndQueueHeadroomMeasured =
