@@ -19,6 +19,7 @@ const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'reprint-plugin-driver-regi
 const baseBlueprintPath = path.join(tmpDir, 'base.blueprint.json');
 const localBlueprintPath = path.join(tmpDir, 'local.blueprint.json');
 const malformedValidateBlueprintPath = path.join(tmpDir, 'missing-validate.blueprint.json');
+const missingPluginOwnerBlueprintPath = path.join(tmpDir, 'missing-plugin-owner.blueprint.json');
 const duplicateDriverNameBlueprintPath = path.join(tmpDir, 'duplicate-driver-name.blueprint.json');
 const duplicateTableBlueprintPath = path.join(tmpDir, 'duplicate-driver-table.blueprint.json');
 const repoTmpDir = path.join(repoRoot, '.tmp');
@@ -39,6 +40,11 @@ try {
     payloadMode: 'base',
     updatedMarker: 'base',
     omitValidateMutationCallback: true,
+  });
+  writeBlueprint(missingPluginOwnerBlueprintPath, {
+    payloadMode: 'base',
+    updatedMarker: 'base',
+    omitPluginOwner: true,
   });
   writeBlueprint(duplicateDriverNameBlueprintPath, {
     payloadMode: 'base',
@@ -103,6 +109,14 @@ try {
     /duplicate table mapping for table: wp_reprint_push_driver_fixture/i,
   );
 
+  const missingPluginOwnerExport = exportSnapshotFailure('missing-plugin-owner', missingPluginOwnerBlueprintPath);
+  assert.equal(missingPluginOwnerExport.ok, false);
+  assert.equal(missingPluginOwnerExport.error?.class, 'RuntimeException');
+  assert.match(
+    missingPluginOwnerExport.error?.message || '',
+    /missing pluginOwner for driver: fixture-arbitrary-plugin-table/i,
+  );
+
   const deleteBase = protocolApply.after;
   const deleteLocal = JSON.parse(JSON.stringify(deleteBase));
   delete deleteLocal.db[driverTable]['entry_id:1'];
@@ -140,6 +154,7 @@ try {
     updateVerified: protocolApply.verified,
     deleteVerified: protocolDelete.verified,
     malformedValidateGuard: malformedApply.error?.class,
+    missingPluginOwnerGuard: missingPluginOwnerExport.error?.class,
     duplicateDriverNameGuard: duplicateDriverNameExport.error?.class,
     duplicateTableGuard: duplicateTableExport.error?.class,
   }, null, 2));
@@ -155,6 +170,7 @@ function writeBlueprint(
     payloadMode,
     updatedMarker,
     omitValidateMutationCallback = false,
+    omitPluginOwner = false,
     duplicateDriverName = false,
     duplicateTable = false,
   },
@@ -171,7 +187,7 @@ add_filter('reprint_push_plugin_owned_row_drivers', static function (array $driv
     $drivers['${driverName}'] = [
         'driver' => '${driverName}',
         'table' => '${driverTable}',
-        'pluginOwner' => '${pluginOwner}',
+${omitPluginOwner ? '' : `        'pluginOwner' => '${pluginOwner}',`}
         'supportsDelete' => true,
         'exportRowsCallback' => 'reprint_push_driver_fixture_export_rows',
         'applyRowCallback' => 'reprint_push_driver_fixture_apply_row',

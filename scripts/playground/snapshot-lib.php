@@ -1506,8 +1506,12 @@ function reprint_push_plugin_owned_row_drivers(): array
         }
         $driver_name = (string) ($driver['driver'] ?? $name);
         $table = (string) ($driver['table'] ?? '');
+        $plugin_owner = (string) ($driver['pluginOwner'] ?? '');
         if ($driver_name === '' || $table === '') {
             continue;
+        }
+        if ($plugin_owner === '') {
+            throw new RuntimeException('Plugin-owned driver registry is missing pluginOwner for driver: ' . $driver_name);
         }
         if (array_key_exists($driver_name, $normalized)) {
             throw new RuntimeException('Plugin-owned driver registry defines duplicate driver name: ' . $driver_name);
@@ -1522,7 +1526,7 @@ function reprint_push_plugin_owned_row_drivers(): array
         $normalized[$driver_name] = [
             'driver' => $driver_name,
             'table' => $table,
-            'pluginOwner' => (string) ($driver['pluginOwner'] ?? ''),
+            'pluginOwner' => $plugin_owner,
             'supportsDelete' => !empty($driver['supportsDelete']),
             'exportRowsCallback' => $driver['exportRowsCallback'] ?? null,
             'applyRowCallback' => $driver['applyRowCallback'] ?? null,

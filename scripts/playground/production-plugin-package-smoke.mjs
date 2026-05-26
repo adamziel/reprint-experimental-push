@@ -67,6 +67,7 @@ const driverDeleteServerBlueprintPath = path.join(tmpDir, 'remote-base-with-driv
 const driverMissingExportServerBlueprintPath = path.join(tmpDir, 'remote-base-with-driver-fixture-missing-export-server.blueprint.json');
 const driverMissingApplyServerBlueprintPath = path.join(tmpDir, 'remote-base-with-driver-fixture-missing-apply-server.blueprint.json');
 const driverMissingValidateServerBlueprintPath = path.join(tmpDir, 'remote-base-with-driver-fixture-missing-validate-server.blueprint.json');
+const driverMissingPluginOwnerServerBlueprintPath = path.join(tmpDir, 'remote-base-with-driver-fixture-missing-plugin-owner-server.blueprint.json');
 const driverDuplicateNameServerBlueprintPath = path.join(tmpDir, 'remote-base-with-driver-fixture-duplicate-name-server.blueprint.json');
 const driverDuplicateTableServerBlueprintPath = path.join(tmpDir, 'remote-base-with-driver-fixture-duplicate-table-server.blueprint.json');
 const basePath = path.join(tmpDir, 'base.json');
@@ -102,6 +103,11 @@ try {
     activatePackagedPlugin: true,
     provisionAuth: true,
     omitValidateMutationCallback: true,
+  });
+  writeDriverFixtureBlueprint(path.join(repoRoot, fixtures.base), driverMissingPluginOwnerServerBlueprintPath, {
+    activatePackagedPlugin: true,
+    provisionAuth: true,
+    omitPluginOwner: true,
   });
   writeDriverFixtureBlueprint(path.join(repoRoot, fixtures.base), driverDuplicateNameServerBlueprintPath, {
     activatePackagedPlugin: true,
@@ -147,6 +153,7 @@ try {
     driverExportGuard: {},
     driverApplyGuard: {},
     driverValidateGuard: {},
+    driverPluginOwnerGuard: {},
     driverDuplicateNameGuard: {},
     driverDuplicateTableGuard: {},
     final: {},
@@ -939,6 +946,27 @@ try {
     };
   });
 
+  await withPlaygroundServer('production-plugin-driver-missing-plugin-owner-guard', driverMissingPluginOwnerServerBlueprintPath, pluginDir, async (server) => {
+    const malformedSnapshot = await requestText(
+      server.baseUrl,
+      'GET',
+      '/wp-json/reprint/v1/push/snapshot',
+      undefined,
+      authHeaders(),
+    );
+    assert.equal(malformedSnapshot.status, 500);
+    assert.match(
+      malformedSnapshot.text,
+      /missing pluginOwner for driver: fixture-arbitrary-plugin-table/i,
+      'packaged snapshot did not fail closed on a plugin-owned driver registration without pluginOwner',
+    );
+
+    summary.driverPluginOwnerGuard = {
+      status: malformedSnapshot.status,
+      missingPluginOwner: /missing pluginOwner for driver: fixture-arbitrary-plugin-table/i.test(malformedSnapshot.text),
+    };
+  });
+
   await withPlaygroundServer('production-plugin-driver-duplicate-name-guard', driverDuplicateNameServerBlueprintPath, pluginDir, async (server) => {
     const malformedSnapshot = await requestText(
       server.baseUrl,
@@ -1084,6 +1112,7 @@ function writeDriverFixtureBlueprint(
     omitExportRowsCallback = false,
     omitApplyRowCallback = false,
     omitValidateMutationCallback = false,
+    omitPluginOwner = false,
     duplicateDriverName = false,
     duplicateTable = false,
   } = {},
@@ -1099,6 +1128,7 @@ function writeDriverFixtureBlueprint(
     omitExportRowsCallback,
     omitApplyRowCallback,
     omitValidateMutationCallback,
+    omitPluginOwner,
     duplicateDriverName,
     duplicateTable,
   }), 'utf8').toString('base64');
@@ -1170,6 +1200,7 @@ function driverFixturePluginPhp({
   omitExportRowsCallback = false,
   omitApplyRowCallback = false,
   omitValidateMutationCallback = false,
+  omitPluginOwner = false,
   duplicateDriverName = false,
   duplicateTable = false,
 }) {
@@ -1193,7 +1224,7 @@ add_filter('reprint_push_plugin_owned_row_drivers', static function (array $driv
     $drivers['${driverFixture.driver}'] = [
         'driver' => '${driverFixture.driver}',
         'table' => '${driverFixture.table}',
-        'pluginOwner' => '${driverFixture.pluginOwner}',
+${omitPluginOwner ? '' : `        'pluginOwner' => '${driverFixture.pluginOwner}',`}
         'supportsDelete' => ${supportsDelete ? 'true' : 'false'},
 ${exportRowsCallback}${applyRowCallback}${validateMutationCallback}
     ];
