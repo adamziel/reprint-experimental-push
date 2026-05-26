@@ -8,9 +8,9 @@ Fresh remote heads at audit time, checked on May 26, 2026:
 
 - `origin/lane/critic` -> `49af85aa`
 - `origin/lane/independent-auditor` -> `b5de749b`
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `df13d928`
-- `origin/lane/reliable-executor` -> `ec45b13a`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `cfe04bb2`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `94bbd319`
+- `origin/lane/reliable-executor` -> `9f745466`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `7e7fdeba`
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `56add9f8`
 - `origin/lane/no-data-loss-recovery` -> `1214c397`
 - `origin/lane/same-plan-wordpress-graph-create` -> `0d2178e9`
@@ -18,15 +18,15 @@ Fresh remote heads at audit time, checked on May 26, 2026:
 - `origin/lane/fast-paths` -> `cd0fddad`
 - `origin/lane/progress-publisher` -> `7695e1f9`
 - `origin/lane/cycle-20260525-mainwindows-2349/critic` -> `49af85aa`
-- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `b5de749b`
+- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `626aa833`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `e84ce6e9`
 - `origin/lane/cycle-20260525-mainwindows-2349/same-plan-wordpress-graph-create` -> `0d2178e9`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-invariants` -> `b5c81374`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `e84ce6e9`
-- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `b122ae5c`
+- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `56add9f8`
 - `origin/lane/cycle-20260525-mainwindows-2357/no-data-loss-invariants-graph-proof` -> `98c0ce26`
 - `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration` -> `a3a900d7`
-- `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` -> `aa743242`
+- `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` -> `2ad5af24`
 - `origin/main` -> `e55864f4`
 
 The current remote state still adds no production-backed auth/session
