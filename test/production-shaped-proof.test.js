@@ -124,6 +124,7 @@ function spawnLiveReleaseVerify(env = {}, timeout = liveProofSubprocessTimeoutMs
 
 function assertReleaseVerifyProof(proof, label) {
   if (proof.error) {
+    stopAllPlaygroundChildrenSync();
     reportSpawnFailure(proof);
     const detailParts = [
       proof.error.name ?? 'Error',
@@ -139,6 +140,7 @@ function assertReleaseVerifyProof(proof, label) {
   }
 
   if (proof.signal) {
+    stopAllPlaygroundChildrenSync();
     reportSpawnFailure(proof);
     assert.fail(
       `${label} terminated by ${proof.signal}\nstdout:\n${proof.stdout ?? ''}\nstderr:\n${proof.stderr ?? ''}`,
@@ -146,6 +148,7 @@ function assertReleaseVerifyProof(proof, label) {
   }
 
   if (proof.status === null) {
+    stopAllPlaygroundChildrenSync();
     reportSpawnFailure(proof);
     assert.fail(
       `${label} exited without a status\nstdout:\n${proof.stdout ?? ''}\nstderr:\n${proof.stderr ?? ''}`,
