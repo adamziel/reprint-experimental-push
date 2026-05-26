@@ -51,10 +51,10 @@ The project is **not releasable as a production WordPress push path**.
 - `origin/lane/fast-paths` -> `8c5c2ccb`
 - `origin/lane/feedback-supervisor` -> `ee7069e6`
 - `origin/lane/independent-auditor` -> `6351130f`
-- `origin/lane/no-data-loss-invariants` -> `5c4cb015`
+- `origin/lane/no-data-loss-invariants` -> `ad23992d`
 - `origin/lane/no-data-loss-recovery` -> `2af1ddda`
 - `origin/lane/progress-publisher` -> `7695e1f9`
-- `origin/lane/reliable-executor` -> `0e20f204`
+- `origin/lane/reliable-executor` -> `83fed4d3`
 - `origin/lane/same-plan-wordpress-graph-create` -> `f53e607f`
 - `origin/main` -> `56063f13`
 
@@ -65,9 +65,12 @@ real source-site mutation boundary. The release gates still stay `0/4`.
 Fresh lane proof since the last audit pass improved the local evidence floor,
 but it did not change the release conclusion:
 
-- `origin/lane/reliable-executor` now records `0e20f204`, hardening proof
-  cleanup on live failures, but still not proving production auth/session
-  lifecycle or a live-source mutation boundary.
+- `origin/lane/reliable-executor` now records `83fed4d3`, tightening the
+  Playground startup readiness window. It still does not prove production
+  auth/session lifecycle or a live-source mutation boundary.
+- `origin/lane/no-data-loss-invariants` now records `ad23992d`, adding nav
+  menu item parent proof. It still does not prove the live release boundary
+  or any production-backed source mutation.
 - `origin/lane/no-data-loss-invariants` now records `5c4cb015`, adding
   revision parent-removal proof. It still does not prove the live release
   boundary or any production-backed source mutation.
