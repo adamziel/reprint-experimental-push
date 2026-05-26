@@ -674,7 +674,7 @@ function productionRecoverySupportReport(writer) {
   if (writer?.productionAdapter !== true) {
     addMissingDependency('explicit production recovery adapter marker');
   }
-  if (writer?.ownsJournal !== true) {
+  if (!Object.hasOwn(writer ?? {}, 'ownsJournal') || writer.ownsJournal !== true) {
     addMissingDependency('explicit journal ownership fencing');
   }
   if (typeof writer?.flush !== 'function') {
@@ -899,6 +899,7 @@ function shouldCloseOwnedDurableJournal(writer) {
   return Boolean(
     writer
     && writer.kind === 'production-recovery-journal'
+    && Object.hasOwn(writer, 'ownsJournal')
     && writer.ownsJournal === true
     && typeof writer.close === 'function',
   );
