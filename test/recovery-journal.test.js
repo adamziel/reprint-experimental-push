@@ -619,6 +619,21 @@ test('checked durable journal boundary stays closed until stale-claim rejection 
   const baseContract = {
     acceptedOnCheckedBoundary: true,
     scope: 'checked live production-shaped journal surface; not local Playground fixture only',
+    claim: {
+      status: 'stale-claim-rejected',
+      activeClaimKeyHash: 'retry-claim-hash-02',
+      activeClaimSequence: 20,
+      activeClaimEvent: 'stale-claim-retry-started',
+      idempotencyKeyHash: 'idempotency-hash-01',
+      requestHash: 'request-hash-01',
+      staleClaimRejected: true,
+      abandonedSequence: 18,
+      abandonedEvent: 'stale-claim-abandoned',
+      previousStartedSequence: 12,
+      previousClaimSequence: 11,
+      previousClaimKeyHash: 'retry-claim-hash-01',
+      previousClaimEvent: 'idempotency-opened',
+    },
     ownership: {
       ownsJournal: true,
       restartReadable: true,
@@ -670,6 +685,28 @@ test('checked durable journal boundary stays closed until stale-claim rejection 
       },
     }),
     true,
+  );
+  assert.equal(
+    checkedDurableJournalBoundarySatisfied({
+      ...baseContract,
+      claim: {
+        ...baseContract.claim,
+        activeClaimEvent: '',
+      },
+      writerLease: {
+        ...baseContract.writerLease,
+        staleClaimRejected: true,
+      },
+      leaseFence: {
+        ...baseContract.leaseFence,
+        staleClaimRejected: true,
+        writerLease: {
+          ...baseContract.leaseFence.writerLease,
+          staleClaimRejected: true,
+        },
+      },
+    }),
+    false,
   );
   assert.equal(
     checkedDurableJournalBoundarySatisfied({

@@ -1027,6 +1027,7 @@ function dbJournalCheckedBoundaryContractIsPresent(dbJournal) {
     && dbJournal?.ownership?.restartReadable === true
     && typeof dbJournal?.ownership?.productionAdapter === 'string'
     && dbJournal.ownership.productionAdapter.length > 0
+    && dbJournalClaimContractIsPresent(dbJournal?.claim)
     && dbJournalWriterLeaseContractsArePresent(dbJournal)
     && typeof dbJournal?.leaseFence?.boundary === 'string'
     && dbJournal.leaseFence.boundary.length > 0
@@ -1034,6 +1035,37 @@ function dbJournalCheckedBoundaryContractIsPresent(dbJournal) {
     && dbJournal?.leaseFence?.fsyncEvidence === true
     && dbJournal?.leaseFence?.monotonicSequence === true
     && dbJournal?.leaseFence?.restartReadable === true;
+}
+
+function dbJournalClaimContractIsPresent(claim) {
+  if (!claim || typeof claim !== 'object') {
+    return false;
+  }
+
+  const hasPreviousClaimIdentity = hasNonEmptyString(claim.previousClaimKeyHash)
+    || Number.isInteger(claim.previousClaimSequence)
+    || hasNonEmptyString(claim.previousClaimEvent);
+  const hasAbandonedClaimIdentity = Number.isInteger(claim.abandonedSequence)
+    || hasNonEmptyString(claim.abandonedEvent);
+
+  return hasNonEmptyString(claim.status)
+    && hasNonEmptyString(claim.activeClaimKeyHash)
+    && Number.isInteger(claim.activeClaimSequence)
+    && hasNonEmptyString(claim.activeClaimEvent)
+    && hasNonEmptyString(claim.idempotencyKeyHash)
+    && hasNonEmptyString(claim.requestHash)
+    && typeof claim.staleClaimRejected === 'boolean'
+    && (!hasPreviousClaimIdentity || (
+      hasNonEmptyString(claim.previousClaimKeyHash)
+      && Number.isInteger(claim.previousClaimSequence)
+      && hasNonEmptyString(claim.previousClaimEvent)
+    ))
+    && (!hasAbandonedClaimIdentity || (
+      Number.isInteger(claim.abandonedSequence)
+      && hasNonEmptyString(claim.abandonedEvent)
+    ))
+    && (!Number.isInteger(claim.previousStartedSequence) || hasPreviousClaimIdentity)
+    && (claim.staleClaimRejected !== true || hasPreviousClaimIdentity);
 }
 
 function dbJournalWriterLeaseContractsArePresent(dbJournal) {
@@ -1177,6 +1209,10 @@ function summarizeDbJournalClaim(dbJournal) {
   }
 
   return summary;
+}
+
+function hasNonEmptyString(value) {
+  return typeof value === 'string' && value.length > 0;
 }
 
 function summarizeDbJournalLeaseFence(dbJournal) {

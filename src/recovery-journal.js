@@ -93,11 +93,47 @@ export function checkedDurableJournalBoundarySatisfied(dbJournal) {
     && writerLease?.storageGuard === leaseFenceBoundary
     && nestedWriterLease?.storageGuard === leaseFenceBoundary
     && productionAdapter === leaseFenceBoundary
+    && durableJournalClaimContractMatches(dbJournal?.claim)
     && dbJournal?.leaseFence?.claimKeyUnique === true
     && dbJournal?.leaseFence?.fsyncEvidence === true
     && dbJournal?.leaseFence?.monotonicSequence === true
     && dbJournal?.leaseFence?.restartReadable === true
     && dbJournal?.leaseFence?.staleClaimRejected === true;
+}
+
+function durableJournalClaimContractMatches(claim) {
+  if (!claim || typeof claim !== 'object') {
+    return false;
+  }
+
+  const hasPreviousClaimIdentity = hasNonEmptyString(claim.previousClaimKeyHash)
+    || Number.isInteger(claim.previousClaimSequence)
+    || hasNonEmptyString(claim.previousClaimEvent);
+  const hasAbandonedClaimIdentity = Number.isInteger(claim.abandonedSequence)
+    || hasNonEmptyString(claim.abandonedEvent);
+
+  return hasNonEmptyString(claim.status)
+    && hasNonEmptyString(claim.activeClaimKeyHash)
+    && Number.isInteger(claim.activeClaimSequence)
+    && hasNonEmptyString(claim.activeClaimEvent)
+    && hasNonEmptyString(claim.idempotencyKeyHash)
+    && hasNonEmptyString(claim.requestHash)
+    && typeof claim.staleClaimRejected === 'boolean'
+    && (!hasPreviousClaimIdentity || (
+      hasNonEmptyString(claim.previousClaimKeyHash)
+      && Number.isInteger(claim.previousClaimSequence)
+      && hasNonEmptyString(claim.previousClaimEvent)
+    ))
+    && (!hasAbandonedClaimIdentity || (
+      Number.isInteger(claim.abandonedSequence)
+      && hasNonEmptyString(claim.abandonedEvent)
+    ))
+    && (!Number.isInteger(claim.previousStartedSequence) || hasPreviousClaimIdentity)
+    && (claim.staleClaimRejected !== true || hasPreviousClaimIdentity);
+}
+
+function hasNonEmptyString(value) {
+  return typeof value === 'string' && value.length > 0;
 }
 
 function writerLeaseContractMatches(candidate) {
