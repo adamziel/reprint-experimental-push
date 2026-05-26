@@ -16539,6 +16539,65 @@ test('blocks local termmeta deletes while preserving remote-only plugin removals
   assert.equal(Object.hasOwn(remote.files, 'wp-content/plugins/forms/forms.php'), false);
 });
 
+test('blocks steady unsupported term meta rows before they can be treated as already in sync while preserving remote-only plugin changes', () => {
+  const resourceKey = 'row:["wp_termmeta","meta_id:88"]';
+  const base = baseSite();
+  base.db.wp_terms = {
+    'term_id:22': {
+      term_id: 22,
+      name: 'Steady unsupported term meta term',
+      slug: 'steady-unsupported-term-meta-term',
+    },
+  };
+  base.db.wp_termmeta = {
+    'meta_id:88': {
+      meta_id: 88,
+      term_id: 22,
+      meta_key: 'term-label',
+      meta_value: 'Steady unsupported term meta value',
+    },
+  };
+  base.db.wp_posts['ID:1'].post_title = 'Base steady unsupported term meta shared title';
+
+  const local = baseSite();
+  local.db.wp_terms = JSON.parse(JSON.stringify(base.db.wp_terms));
+  local.db.wp_termmeta = JSON.parse(JSON.stringify(base.db.wp_termmeta));
+  local.db.wp_posts['ID:1'].post_title = 'Shared steady unsupported term meta title';
+
+  const remote = baseSite();
+  remote.db.wp_terms = JSON.parse(JSON.stringify(base.db.wp_terms));
+  remote.db.wp_termmeta = JSON.parse(JSON.stringify(base.db.wp_termmeta));
+  remote.db.wp_posts['ID:1'].post_title = 'Shared steady unsupported term meta title';
+  remote.plugins.forms.description = 'remote-only plugin changes';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin changes */';
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  const matchingEdit = decisionFor(plan, 'row:["wp_posts","ID:1"]');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(decisionFor(plan, resourceKey), undefined);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(plan.conflicts.length, 0);
+  assert.equal(blocker.class, 'unsupported-termmeta-resource');
+  assert.equal(blocker.resourceKind, 'term-meta');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.unsupportedState, 'steady-unsupported');
+  assert.equal(blocker.reason, 'Term meta graph resources are not yet supported by the planner.');
+  assert.equal(matchingEdit.decision, 'already-in-sync');
+  assert.equal(matchingEdit.change.localChange, 'update');
+  assert.equal(matchingEdit.change.remoteChange, 'update');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('Steady unsupported term meta value'), false);
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin changes');
+  assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin changes */');
+});
+
 test('blocks local termmeta references to a same-plan created term identity while preserving a matching independent edit', () => {
   const resourceKey = 'row:["wp_termmeta","meta_id:8"]';
   const targetResourceKey = 'row:["wp_terms","term_id:9"]';

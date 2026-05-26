@@ -174,6 +174,30 @@ export function createPushPlan({ base, local, remote, now = new Date() }) {
         continue;
       }
 
+      const steadyTermmetaSupport = unsupportedTermmetaResourceSupport({
+        resource,
+        baseValue,
+        localValue,
+        remoteValue,
+        resources,
+        base,
+        local,
+        remote,
+      });
+      if (!steadyTermmetaSupport.supported) {
+        addUnsupportedTermmetaResourceBlocker(plan, {
+          resource,
+          support: steadyTermmetaSupport,
+          baseValue,
+          localValue,
+          remoteValue,
+          baseHash,
+          localHash,
+          remoteHash,
+        });
+        continue;
+      }
+
       const steadyTermTaxonomySupport = unsupportedTermTaxonomyResourceSupport({
         resource,
         baseValue,
@@ -3465,17 +3489,19 @@ function unsupportedTermmetaResourceSupport({ resource, baseValue, localValue, r
     reference.relationshipType === 'termmeta-term'
     && reference.targetChange.remote.state === 'absent'
     && reference.targetChange.local.state === 'present');
+  const unsupportedState = termReference
+    ? 'same-plan-reference'
+    : classifyUnsupportedDriftState({
+      baseValue,
+      localValue,
+      remoteValue,
+      allowSteadyUnsupported: true,
+    });
 
   return {
     supported: false,
     className: 'unsupported-termmeta-resource',
-    unsupportedState: termReference
-      ? 'same-plan-reference'
-      : convergedDrift
-        ? 'converged-drift'
-        : remoteOnlyDrift
-          ? 'remote-only-drift'
-          : 'local-or-divergent-drift',
+    unsupportedState,
     reason: termReference
       ? `WordPress graph mutation ${resource.key} is created in the same plan as a term identity that depends on it, and identity rewriting is not yet supported.`
       : 'Term meta graph resources are not yet supported by the planner.',
