@@ -1210,7 +1210,9 @@ export function productionThroughputDetails(report) {
     && Number.isFinite(receiptCursorMemoryCeilingBytes)
     && report.evidence.backpressure?.receiptCursorMemoryCeilingMatchesQueueBudget === true
     && receiptCursorQueueBudgetBytes === receiptCursorMemoryCeilingBytes;
-  const receiptCursorMemoryCeilingMatchesQueueBudgetVisible = receiptCursorMemoryCeilingMatchesQueueBudget;
+  const receiptCursorMemoryCeilingMatchesQueueBudgetVisible =
+    receiptCursorMemoryCeilingMatchesQueueBudget
+    && report.evidence.backpressure?.receiptCursorMemoryCeilingMatchesQueueBudgetVisible === true;
   const backpressureAlignment = {
     queueBudgetBytes: receiptCursorQueueBudgetBytes,
     queueHeadroomBytes: receiptCursorQueueHeadroomBytes,
@@ -1727,6 +1729,9 @@ function hasCompleteBackpressureEvidence(report) {
   const receiptCursorMemoryCeilingMatchesQueueBudget =
     Number.isFinite(receiptCursorQueueBudgetBytes)
     && report.evidence.backpressure?.receiptCursorMemoryCeilingMatchesQueueBudget === true;
+  const receiptCursorMemoryCeilingMatchesQueueBudgetVisible =
+    receiptCursorMemoryCeilingMatchesQueueBudget
+    && report.evidence.backpressure?.receiptCursorMemoryCeilingMatchesQueueBudgetVisible === true;
   const queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack =
     report.evidence.backpressure?.queuePausedBeforeOverflow === true
     && (
@@ -1770,6 +1775,7 @@ function hasCompleteBackpressureEvidence(report) {
     && queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack
     && queuePauseHasBackpressureAlignedReceiptCursorQueueSlack
     && receiptCursorMemoryCeilingMatchesQueueBudget
+    && receiptCursorMemoryCeilingMatchesQueueBudgetVisible
     && receiptCursorQueueSlackWithinResourceHeadroom
     && receiptCursorQueueSlackBytes === receiptCursorMemoryHeadroomBytes
     && receiptCursorQueueHeadroomBytes === receiptCursorQueueBudgetBytes - report.shape.chunkSizeBytes
@@ -2340,6 +2346,8 @@ function buildReport({
           && config.maxBufferedUploadBytes - lastChunkReceipt.sizeBytes
             === config.maxBufferedUploadBytes - config.chunkSizeBytes,
         receiptCursorMemoryCeilingMatchesQueueBudget:
+          config.maxBufferedUploadBytes === DEFAULT_LIMITS.maxBufferedUploadBytes,
+        receiptCursorMemoryCeilingMatchesQueueBudgetVisible:
           config.maxBufferedUploadBytes === DEFAULT_LIMITS.maxBufferedUploadBytes,
         receiptCursorMemoryCeilingVisible:
           config.maxBufferedUploadBytes === DEFAULT_LIMITS.maxBufferedUploadBytes,

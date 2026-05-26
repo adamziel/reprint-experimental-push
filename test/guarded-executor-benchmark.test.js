@@ -337,6 +337,9 @@ test('guarded benchmark blocks forged memory-ceiling match visibility without a 
 
   assert.equal(details.queueBudgetVisibleAndMemoryCeilingVisibleAndMeasured, true);
   assert.equal(details.receiptCursorMemoryCeilingVisibleAndQueueBudgetVisible, true);
+  assert.equal(details.receiptCursorMemoryCeilingMatchesQueueBudgetVisible, false);
+  assert.equal(details.backpressureConsistency.receiptCursorMemoryCeilingMatchesQueueBudgetVisible, false);
+  assert.equal(details.backpressureConsistency.backpressureEvidenceComplete, false);
   assert.equal(blockers.includes('queue-budget-visible-without-memory-ceiling-match-visibility'), true);
 });
 
