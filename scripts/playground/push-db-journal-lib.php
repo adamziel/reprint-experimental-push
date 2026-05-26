@@ -686,14 +686,21 @@ function reprint_push_lab_db_journal_claim_summary(
         return [];
     }
 
+    $scoped_stale_claim_rejected = $stale_claim_rejected
+        && (
+            is_array($latest_abandoned_row)
+            || (is_array($previous_claim_row) && $previous_claim_row !== [])
+            || (string) ($latest_claim_row['event'] ?? '') === 'stale-claim-rejected'
+        );
+
     $summary = [
-        'status' => $stale_claim_rejected ? 'stale-claim-rejected' : 'active',
+        'status' => $scoped_stale_claim_rejected ? 'stale-claim-rejected' : 'active',
         'activeClaimKeyHash' => $active_claim_key_hash,
         'activeClaimSequence' => (int) ($latest_claim_row['sequence'] ?? 0),
         'activeClaimEvent' => (string) ($latest_claim_row['event'] ?? ''),
         'idempotencyKeyHash' => (string) ($latest_claim_row['idempotencyKeyHash'] ?? ''),
         'requestHash' => (string) ($latest_claim_row['requestHash'] ?? ''),
-        'staleClaimRejected' => $stale_claim_rejected,
+        'staleClaimRejected' => $scoped_stale_claim_rejected,
     ];
 
     if (is_array($latest_abandoned_row)) {

@@ -1936,6 +1936,32 @@ test('db journal claim summary preserves active and previous claim identity for 
   });
 });
 
+test('db journal claim summary ignores unrelated journal-wide stale evidence without stale claim lineage', { skip: !hasPhp }, () => {
+  const result = runDbJournalClaimSummary(
+    {
+      sequence: 20,
+      event: 'idempotency-opened',
+      idempotencyKeyHash: 'idempotency-hash-02',
+      requestHash: 'request-hash-02',
+      claimKeyHash: 'retry-claim-hash-02',
+    },
+    null,
+    null,
+    true,
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  assert.deepEqual(JSON.parse(result.stdout), {
+    status: 'active',
+    activeClaimKeyHash: 'retry-claim-hash-02',
+    activeClaimSequence: 20,
+    activeClaimEvent: 'idempotency-opened',
+    idempotencyKeyHash: 'idempotency-hash-02',
+    requestHash: 'request-hash-02',
+    staleClaimRejected: false,
+  });
+});
+
 test('checked authenticated apply evidence is upgraded to the authoritative db journal contract', { skip: !hasPhp }, () => {
   const checkedSummary = {
     acceptedOnCheckedBoundary: true,
