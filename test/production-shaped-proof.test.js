@@ -2503,6 +2503,18 @@ test('packaged readiness helper builds consistent preflight terminal context', (
   );
 });
 
+test('packaged production plugin smoke preserves timeout fallback probes when legacy failure calls pass them in the context slot', () => {
+  const smokeSource = readFileSync(
+    path.join(repoRoot, 'scripts/playground/production-plugin-package-smoke.mjs'),
+    'utf8',
+  );
+
+  assert.match(
+    smokeSource,
+    /lastTimeoutFallbackProbes === null[\s\S]*'preflightProbe' in context \|\| 'indexProbe' in context[\s\S]*lastTimeoutFallbackProbes = context;[\s\S]*context = null;/,
+  );
+});
+
 test('packaged readiness timeout fallback classifier distinguishes terminal index failures', () => {
   assert.deepEqual(
     packagedProductionPluginClassifyBoundedStartup(

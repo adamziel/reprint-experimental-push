@@ -1215,6 +1215,18 @@ function formatPackagedReadinessFailure(
   context = null,
   lastTimeoutFallbackProbes = null,
 ) {
+  // Older readiness branches passed timeout fallback probes as the fifth
+  // argument. Preserve those diagnostics instead of misreporting them as
+  // generic context.
+  if (
+    lastTimeoutFallbackProbes === null
+    && context
+    && typeof context === 'object'
+    && ('preflightProbe' in context || 'indexProbe' in context)
+  ) {
+    lastTimeoutFallbackProbes = context;
+    context = null;
+  }
   const details = describePackagedReadinessFailure(
     lastProbes.at(-1) ?? null,
     lastTimeoutFallbackProbes,
