@@ -86,8 +86,12 @@ const driverDuplicateTableServerBlueprintPath = path.join(tmpDir, 'remote-base-w
 const basePath = path.join(tmpDir, 'base.json');
 const localPath = path.join(tmpDir, 'local.json');
 
+logSmokeStage('start', formatSelectedScenarioNames(selectedScenarios));
+
 try {
+  logSmokeStage('build-plugin-package', pluginDir);
   buildPluginPackage(pluginDir);
+  logSmokeStage('write-blueprints');
   writeActivationBlueprint(path.join(repoRoot, fixtures.base), blueprintPath);
   writeDriverFixtureBlueprint(path.join(repoRoot, fixtures.base), driverGuardSnapshotBlueprintPath);
   writeDriverFixtureBlueprint(path.join(repoRoot, fixtures.base), driverGuardServerBlueprintPath, {
@@ -143,6 +147,7 @@ try {
     provisionAuth: true,
     duplicateTable: true,
   });
+  logSmokeStage('export-base-snapshots');
   fs.writeFileSync(basePath, `${JSON.stringify(snapshots.base, null, 2)}\n`);
   fs.writeFileSync(localPath, `${JSON.stringify(packageLocalSnapshot, null, 2)}\n`);
   const driverGuardBaseSnapshot = exportSnapshot('driver-fixture-guard-base', driverGuardSnapshotBlueprintPath);
@@ -186,7 +191,7 @@ try {
     final: {},
   };
 
-  if (shouldRunScenario('core-package-routes')) {
+  await runScenario('core-package-routes', async () => {
     await withPlaygroundServer('production-plugin-package', blueprintPath, pluginDir, async (server) => {
     const index = await requestJson(server.baseUrl, 'GET', '/wp-json/');
     assert.equal(index.status, 200);
@@ -295,9 +300,9 @@ try {
       visibleSurfaceHash: digest(visibleSurface(after.body.snapshot)),
     };
     });
-  }
+  });
 
-  if (shouldRunScenario('driver-receipt-guards')) {
+  await runScenario('driver-receipt-guards', async () => {
     await withPlaygroundServer(
       'production-plugin-driver-delete-guard',
       driverGuardServerBlueprintPath,
@@ -772,9 +777,9 @@ try {
     };
       },
     );
-  }
+  });
 
-  if (shouldRunScenario('driver-delete-apply')) {
+  await runScenario('driver-delete-apply', async () => {
     await withPlaygroundServer('production-plugin-driver-delete-apply', driverDeleteServerBlueprintPath, pluginDir, async (server) => {
     const client = authenticatedHttpClient({
       sourceUrl: server.baseUrl,
@@ -858,9 +863,9 @@ try {
       deletedAfterApply: afterDeleteApply.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1'] === undefined,
     };
     });
-  }
+  });
 
-  if (shouldRunScenario('driver-missing-export-guard')) {
+  await runScenario('driver-missing-export-guard', async () => {
     await withPlaygroundServer(
       'production-plugin-driver-missing-export-guard',
       driverMissingExportServerBlueprintPath,
@@ -887,9 +892,9 @@ try {
     };
       },
     );
-  }
+  });
 
-  if (shouldRunScenario('driver-missing-apply-guard')) {
+  await runScenario('driver-missing-apply-guard', async () => {
     await withPlaygroundServer(
       'production-plugin-driver-missing-apply-guard',
       driverMissingApplyServerBlueprintPath,
@@ -916,9 +921,9 @@ try {
     };
       },
     );
-  }
+  });
 
-  if (shouldRunScenario('driver-missing-validate-guard')) {
+  await runScenario('driver-missing-validate-guard', async () => {
     await withPlaygroundServer(
       'production-plugin-driver-missing-validate-guard',
       driverMissingValidateServerBlueprintPath,
@@ -945,9 +950,9 @@ try {
     };
       },
     );
-  }
+  });
 
-  if (shouldRunScenario('driver-missing-name-guard')) {
+  await runScenario('driver-missing-name-guard', async () => {
     await withPlaygroundServer(
       'production-plugin-driver-missing-name-guard',
       driverMissingNameServerBlueprintPath,
@@ -973,9 +978,9 @@ try {
     };
       },
     );
-  }
+  });
 
-  if (shouldRunScenario('driver-missing-plugin-owner-guard')) {
+  await runScenario('driver-missing-plugin-owner-guard', async () => {
     await withPlaygroundServer(
       'production-plugin-driver-missing-plugin-owner-guard',
       driverMissingPluginOwnerServerBlueprintPath,
@@ -1001,9 +1006,9 @@ try {
     };
       },
     );
-  }
+  });
 
-  if (shouldRunScenario('driver-missing-table-guard')) {
+  await runScenario('driver-missing-table-guard', async () => {
     await withPlaygroundServer(
       'production-plugin-driver-missing-table-guard',
       driverMissingTableServerBlueprintPath,
@@ -1029,9 +1034,9 @@ try {
     };
       },
     );
-  }
+  });
 
-  if (shouldRunScenario('driver-duplicate-name-guard')) {
+  await runScenario('driver-duplicate-name-guard', async () => {
     await withPlaygroundServer(
       'production-plugin-driver-duplicate-name-guard',
       driverDuplicateNameServerBlueprintPath,
@@ -1057,9 +1062,9 @@ try {
     };
       },
     );
-  }
+  });
 
-  if (shouldRunScenario('driver-duplicate-table-guard')) {
+  await runScenario('driver-duplicate-table-guard', async () => {
     await withPlaygroundServer(
       'production-plugin-driver-duplicate-table-guard',
       driverDuplicateTableServerBlueprintPath,
@@ -1085,7 +1090,7 @@ try {
     };
       },
     );
-  }
+  });
 
   summary.pluginDriverProof = buildProductionPluginPackageProofSummary(summary, { selectedScenarios });
   console.log(JSON.stringify(summary, null, 2));
@@ -1113,6 +1118,45 @@ function buildPluginPackage(targetDir) {
 
 function shouldRunScenario(name) {
   return selectedScenarios === null || selectedScenarios.has(name);
+}
+
+async function runScenario(name, run) {
+  if (!shouldRunScenario(name)) {
+    return;
+  }
+
+  const startedAt = Date.now();
+  console.error(`[plugin-driver-scenario:start] ${name}`);
+  try {
+    await run();
+    console.error(
+      `[plugin-driver-scenario:ok] ${name} ${Date.now() - startedAt}ms`,
+    );
+  } catch (error) {
+    console.error(
+      `[plugin-driver-scenario:fail] ${name} ${Date.now() - startedAt}ms ${formatScenarioError(error)}`,
+    );
+    throw error;
+  }
+}
+
+function formatScenarioError(error) {
+  if (error instanceof Error) {
+    return error.stack ?? error.message;
+  }
+  return String(error);
+}
+
+function logSmokeStage(stage, detail = '') {
+  const suffix = detail ? ` ${detail}` : '';
+  console.error(`[plugin-driver-smoke:${stage}]${suffix}`);
+}
+
+function formatSelectedScenarioNames(selected) {
+  if (selected === null) {
+    return 'all-scenarios';
+  }
+  return Array.from(selected).sort().join(',');
 }
 
 function withoutUnmappedGraphPostmeta(snapshot) {
