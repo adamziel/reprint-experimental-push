@@ -320,6 +320,21 @@ export function productionThroughputBlockers(report) {
   ) {
     blockers.push('receipt-cursor-queue-slack-headroom-mismatch');
   }
+  if (
+    Number.isFinite(report.evidence.backpressure?.receiptCursorQueueSlackBytes)
+    && Number.isFinite(report.resourceLimits?.memoryCeilingBytes)
+    && Number.isFinite(report.evidence.chunkReceipts.resumeCursor?.sizeBytes)
+    && report.evidence.backpressure.receiptCursorQueueSlackBytes
+      !== report.resourceLimits.memoryCeilingBytes - report.evidence.chunkReceipts.resumeCursor.sizeBytes
+  ) {
+    blockers.push('receipt-cursor-queue-slack-resource-headroom-mismatch');
+  }
+  if (
+    report.evidence.backpressure?.queuePausedBeforeOverflow === true
+    && !Number.isFinite(report.evidence.backpressure?.receiptCursorQueueSlackBytes)
+  ) {
+    blockers.push('receipt-cursor-queue-slack-not-measured');
+  }
   if (report.evidence.backpressure?.receiptCursorHeadroomWithinQueueBudget !== true) {
     blockers.push('receipt-cursor-headroom-not-covered-by-queue-budget');
   }
@@ -419,6 +434,13 @@ export function productionThroughputDetails(report) {
     Number.isFinite(receiptCursorQueueSlackBytes)
     && Number.isFinite(receiptCursorQueueHeadroomBytes)
     && receiptCursorQueueSlackBytes === receiptCursorQueueHeadroomBytes;
+  const receiptCursorQueueSlackMatchesResourceHeadroom =
+    Number.isFinite(receiptCursorQueueSlackBytes)
+    && Number.isFinite(receiptCursorMemoryCeilingBytes)
+    && Number.isFinite(receiptCursorWindowBytes)
+    && receiptCursorQueueSlackBytes === receiptCursorMemoryCeilingBytes - receiptCursorWindowBytes;
+  const receiptCursorQueueSlackMeasured =
+    Number.isFinite(receiptCursorQueueSlackBytes);
   const receiptCursorHeadroomCoveredByQueueBudget =
     Number.isFinite(receiptCursorMemoryHeadroomBytes)
     && Number.isFinite(receiptCursorQueueHeadroomBytes)
@@ -492,6 +514,8 @@ export function productionThroughputDetails(report) {
     receiptCursorQueueSlackMatchesBackpressure,
     receiptCursorQueueSlackMatchesMemoryHeadroom,
     receiptCursorQueueSlackMatchesQueueHeadroom,
+    receiptCursorQueueSlackMatchesResourceHeadroom,
+    receiptCursorQueueSlackMeasured,
     receiptCursorMemoryHeadroomBytes,
     receiptCursorMemoryHeadroomMatchesResourceHeadroom,
     receiptCursorMatchesBackpressure,
@@ -525,6 +549,8 @@ export function productionThroughputDetails(report) {
       receiptCursorQueueSlackMatchesBackpressure,
       receiptCursorQueueSlackMatchesMemoryHeadroom,
       receiptCursorQueueSlackMatchesQueueHeadroom,
+      receiptCursorQueueSlackMatchesResourceHeadroom,
+      receiptCursorQueueSlackMeasured,
       receiptCursorMemoryHeadroomBytes,
       receiptCursorMemoryHeadroomMatchesResourceHeadroom,
       receiptCursorBackpressureWithinResourceHeadroom,

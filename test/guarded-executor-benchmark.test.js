@@ -128,6 +128,8 @@ test('guarded benchmark refuses production throughput claims until production ga
   assert.equal(report.claims.productionThroughputDetails.backpressureConsistency.receiptCursorQueueSlackBytes, 31.5 * 1024 * 1024);
   assert.equal(report.claims.productionThroughputDetails.backpressureConsistency.receiptCursorQueueSlackMatchesBackpressure, true);
   assert.equal(report.claims.productionThroughputDetails.backpressureConsistency.receiptCursorQueueSlackMatchesMemoryHeadroom, true);
+  assert.equal(report.claims.productionThroughputDetails.backpressureConsistency.receiptCursorQueueSlackMatchesResourceHeadroom, true);
+  assert.equal(report.claims.productionThroughputDetails.backpressureConsistency.receiptCursorQueueSlackMeasured, true);
   assert.equal(report.claims.productionThroughputDetails.backpressureConsistency.receiptCursorBackpressureWithinQueueBudget, true);
   assert.equal(
     report.claims.productionThroughputDetails.backpressureConsistency.receiptCursorBackpressureWithinResourceHeadroom,
@@ -517,6 +519,31 @@ test('production claim gate fails closed if benchmark evidence is tampered', () 
   assert.equal(
     productionThroughputDetails(mismatchedQueueSlack).backpressureConsistency.receiptCursorQueueSlackMatchesQueueHeadroom,
     false,
+  );
+  assert.equal(
+    productionThroughputDetails(mismatchedQueueSlack).backpressureConsistency.receiptCursorQueueSlackMatchesResourceHeadroom,
+    false,
+  );
+
+  const missingQueueSlack = clone(report);
+  delete missingQueueSlack.evidence.backpressure.receiptCursorQueueSlackBytes;
+  assert.ok(
+    productionThroughputBlockers(missingQueueSlack).includes(
+      'receipt-cursor-queue-slack-not-measured',
+    ),
+  );
+  assert.equal(
+    productionThroughputDetails(missingQueueSlack).backpressureConsistency.receiptCursorQueueSlackMeasured,
+    false,
+  );
+  assert.equal(
+    productionThroughputDetails(missingQueueSlack).backpressureConsistency.backpressureEvidenceComplete,
+    false,
+  );
+  assert.ok(
+    productionThroughputBlockers(mismatchedQueueSlack).includes(
+      'receipt-cursor-queue-slack-resource-headroom-mismatch',
+    ),
   );
 
   const mismatchedQueueSlackHeadroom = clone(report);
