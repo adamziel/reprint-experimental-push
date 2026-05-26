@@ -2823,7 +2823,7 @@ test('production-shaped release verify tracks distinct cached blueprint snapshot
   assert.equal(remoteFixture.files['wp-content/uploads/reprint-push/remote-only.txt'], 'remote-only upload content');
 });
 
-test('shared lab waitForServer retries startup-shaped /wp-json/ HTTP 200 bodies before probing snapshot', async () => {
+test('shared lab waitForServer probes snapshot even when /wp-json/ returns a startup-shaped HTTP 200 body', async () => {
   let indexCalls = 0;
   let snapshotCalls = 0;
   const server = createServer((request, response) => {
@@ -2887,7 +2887,7 @@ test('shared lab waitForServer retries startup-shaped /wp-json/ HTTP 200 bodies 
     });
   }
 
-  assert.equal(indexCalls, 2);
+  assert.equal(indexCalls, 1);
   assert.equal(snapshotCalls, 1);
 });
 
@@ -3012,6 +3012,12 @@ test('shared lab waitForServer tolerates more than four startup-shaped /wp-json/
 
     if (request.url === '/wp-json/reprint-push-lab/v1/snapshot') {
       snapshotCalls += 1;
+      if (indexCalls < readyAfterIndexCalls) {
+        response.statusCode = 502;
+        response.setHeader('content-type', 'text/html; charset=utf-8');
+        response.end('<!doctype html><html><body>WordPress is not ready yet</body></html>');
+        return;
+      }
       response.statusCode = 200;
       response.setHeader('content-type', 'application/json; charset=utf-8');
       response.end(JSON.stringify({ ok: true, snapshot: {} }));
@@ -3058,6 +3064,69 @@ test('shared lab waitForServer tolerates more than four startup-shaped /wp-json/
   }
 
   assert.equal(indexCalls, readyAfterIndexCalls);
+  assert.equal(snapshotCalls, readyAfterIndexCalls);
+});
+
+test('shared lab waitForServer accepts a ready snapshot even while /wp-json/ still reports startup-shaped 502s', async () => {
+  let indexCalls = 0;
+  let snapshotCalls = 0;
+  const server = createServer((request, response) => {
+    if (request.url === '/wp-json/') {
+      indexCalls += 1;
+      response.statusCode = 502;
+      response.setHeader('content-type', 'text/html; charset=utf-8');
+      response.end('<!doctype html><html><body>WordPress is not ready yet</body></html>');
+      return;
+    }
+
+    if (request.url === '/wp-json/reprint-push-lab/v1/snapshot') {
+      snapshotCalls += 1;
+      response.statusCode = 200;
+      response.setHeader('content-type', 'application/json; charset=utf-8');
+      response.end(JSON.stringify({ ok: true, snapshot: { source: 'ready-before-index' } }));
+      return;
+    }
+
+    response.statusCode = 404;
+    response.end('not found');
+  });
+
+  await new Promise((resolve, reject) => {
+    server.listen(0, '127.0.0.1', (error) => {
+      if (error) {
+        reject(error);
+        return;
+      }
+      resolve();
+    });
+  });
+
+  const address = server.address();
+  assert.ok(address && typeof address === 'object' && typeof address.port === 'number');
+
+  try {
+    await waitForServer(
+      {
+        exitCode: null,
+        signalCode: null,
+        pid: null,
+      },
+      `http://127.0.0.1:${address.port}`,
+      () => '',
+    );
+  } finally {
+    await new Promise((resolve, reject) => {
+      server.close((error) => {
+        if (error) {
+          reject(error);
+          return;
+        }
+        resolve();
+      });
+    });
+  }
+
+  assert.equal(indexCalls, 1);
   assert.equal(snapshotCalls, 1);
 });
 
@@ -3289,6 +3358,63 @@ async function waitForServer(child, baseUrl, getLogs) {
         );
         const readinessProbeCount = lastProbes.filter((probe) => probe.route === '/wp-json/').length;
         if (readinessRetryable) {
+          const snapshot = await fetchWithTimeout(`${baseUrl}/wp-json/reprint-push-lab/v1/snapshot`, {
+            headers: {
+              Authorization: `Basic ${Buffer.from(`${liveCredentials.username}:${liveCredentials.password}`).toString('base64')}`,
+              connection: 'close',
+            },
+          });
+          const snapshotBody = await snapshot.clone().text().catch(() => '');
+          lastProbes.push({
+            route: '/wp-json/reprint-push-lab/v1/snapshot',
+            status: snapshot.status,
+            ok: snapshot.ok,
+            body: snapshotBody.slice(0, 500),
+          });
+          process.stderr.write(
+            `Playground probe ${baseUrl}/wp-json/reprint-push-lab/v1/snapshot -> ${snapshot.status} ${snapshotBody.slice(0, 160).replace(/\s+/g, ' ').trim()}\n`,
+          );
+          let snapshotJson = null;
+          try {
+            snapshotJson = JSON.parse(snapshotBody);
+          } catch (error) {
+            if (!labReadinessBodyRetryable(snapshot.status, snapshotBody)) {
+              lastError = error;
+              await throwPlaygroundReadinessFailure(
+                child,
+                `Playground lab snapshot returned an invalid readiness body at ${baseUrl}`,
+                lastError,
+                lastProbes,
+                getLogs(),
+                { childPid: child.pid ?? null },
+              );
+            }
+          }
+          if (snapshotJson !== null) {
+            if (labSnapshotReady({
+              status: snapshot.status,
+              body: snapshotJson,
+            })) {
+              await snapshot.arrayBuffer();
+              return;
+            }
+            if (!labSnapshotRetryable({
+              status: snapshot.status,
+              body: snapshotJson,
+            })) {
+              lastError = new Error(
+                `Playground lab snapshot readiness HTTP ${snapshot.status}; ${describeLastProbe(lastProbes.at(-1))}`,
+              );
+              await throwPlaygroundReadinessFailure(
+                child,
+                `Playground lab snapshot returned a terminal readiness failure at ${baseUrl}`,
+                lastError,
+                lastProbes,
+                getLogs(),
+                { childPid: child.pid ?? null },
+              );
+            }
+          }
           notReadyProbeCount += 1;
           if (labNotReadyProbeLimitReached(notReadyProbeCount, maxNotReadyReadinessProbes)) {
             await throwPlaygroundReadinessFailure(

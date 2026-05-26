@@ -2437,6 +2437,63 @@ async function waitForServer(child, baseUrl, getLogs) {
         );
         const readinessProbeCount = lastProbes.filter((probe) => probe.route === '/wp-json/').length;
         if (readinessRetryable) {
+          const { response: snapshot, bodyText: snapshotBody } = await fetchTextWithTimeout(`${baseUrl}/wp-json/reprint-push-lab/v1/snapshot`, {
+            headers: {
+              Authorization: `Basic ${Buffer.from(`${credentials.username}:${credentials.password}`).toString('base64')}`,
+              connection: 'close',
+            },
+          }, serverFetchTimeoutMs, child);
+          timeoutProbeCount = 0;
+          const snapshotPreview = snapshotBody.slice(0, 500);
+          lastProbes.push({
+            route: '/wp-json/reprint-push-lab/v1/snapshot',
+            status: snapshot.status,
+            ok: snapshot.ok,
+            body: snapshotPreview,
+          });
+          process.stderr.write(
+            `Playground probe ${baseUrl}/wp-json/reprint-push-lab/v1/snapshot -> ${snapshot.status} ${snapshotPreview.slice(0, 160).replace(/\s+/g, ' ').trim()}\n`,
+          );
+          let snapshotJson = null;
+          try {
+            snapshotJson = JSON.parse(snapshotBody);
+          } catch (error) {
+            if (!labReadinessBodyRetryable(snapshot.status, snapshotBody)) {
+              lastError = error;
+              await throwPlaygroundReadinessFailure(
+                child,
+                `Playground lab snapshot returned an invalid readiness body at ${baseUrl}`,
+                lastError,
+                lastProbes,
+                getLogs(),
+                { childPid: child.pid ?? null },
+              );
+            }
+          }
+          if (snapshotJson !== null) {
+            if (labSnapshotReady({
+              status: snapshot.status,
+              body: snapshotJson,
+            })) {
+              return;
+            }
+            if (!labSnapshotRetryable({
+              status: snapshot.status,
+              body: snapshotJson,
+            })) {
+              lastError = new Error(
+                `Playground lab snapshot readiness HTTP ${snapshot.status}; ${describeLastProbe(lastProbes.at(-1))}`,
+              );
+              await throwPlaygroundReadinessFailure(
+                child,
+                `Playground lab snapshot returned a terminal readiness failure at ${baseUrl}`,
+                lastError,
+                lastProbes,
+                getLogs(),
+                { childPid: child.pid ?? null },
+              );
+            }
+          }
           notReadyProbeCount += 1;
           if (labNotReadyProbeLimitReached(notReadyProbeCount, maxNotReadyReadinessProbes)) {
             await throwPlaygroundReadinessFailure(
