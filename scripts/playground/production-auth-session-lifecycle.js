@@ -98,6 +98,29 @@ export function evaluateProductionAuthSessionLifecycleSummary(summary, now = Dat
     return issuedLifecycle;
   }
 
+  const observations = Array.isArray(summary.observations) ? summary.observations : [];
+  if (observations.length > 0) {
+    const issuedIndex = observations.findIndex((observation) =>
+      observation
+      && typeof observation === 'object'
+      && observation.step === 'preflight',
+    );
+    if (issuedIndex > 0) {
+      for (const observation of observations.slice(0, issuedIndex)) {
+        if (!observation || typeof observation !== 'object') {
+          continue;
+        }
+        if (isAuthSessionReadStep(observation.step)) {
+          return {
+            ok: false,
+            required: 'issued preflight',
+            observed: observation.step || 'out-of-order',
+          };
+        }
+      }
+    }
+  }
+
   const readObservation = summary.read;
   if (!readObservation || typeof readObservation !== 'object') {
     return {
@@ -158,7 +181,7 @@ export function evaluateProductionAuthSessionLifecycleSummary(summary, now = Dat
     };
   }
 
-  for (const observation of Array.isArray(summary.observations) ? summary.observations : []) {
+  for (const observation of observations) {
     if (!observation || typeof observation !== 'object') {
       continue;
     }
@@ -235,4 +258,11 @@ export function summarizeProductionAuthSessionLifecycleTrace(trace) {
     preserved: observations.find((entry) => entry.preserved) ?? null,
     observations,
   };
+}
+
+function isAuthSessionReadStep(step) {
+  return step === 'dry-run'
+    || step === 'apply'
+    || step === 'replay'
+    || step === 'journal';
 }
