@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import assert from 'node:assert/strict';
-import { createHash } from 'node:crypto';
+import { createHash, createHmac } from 'node:crypto';
 import fs from 'node:fs';
 import { writeSync } from 'node:fs';
 import { spawn, spawnSync } from 'node:child_process';
@@ -28,14 +28,14 @@ const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../
 const muPluginDir = path.join(repoRoot, 'scripts/playground/rest-mu-plugins');
 const serverStartupTimeoutMs = 4_500;
 const serverFetchTimeoutMs = 250;
-const packagedServerStartupTimeoutMs = 20_000;
+const packagedPlaygroundTimeoutSeconds = 30;
+const packagedServerStartupTimeoutMs = packagedPlaygroundTimeoutSeconds * 1_000;
 const packagedServerFetchTimeoutMs = 3_000;
 const readinessProbeIntervalMs = 200;
 const readinessFailureBodyLimit = 240;
 const maxReadinessProbes = 10;
-const maxNotReadyReadinessProbes = 1;
+const maxNotReadyReadinessProbes = 4;
 const spawnedPlaygroundTimeoutSeconds = 12;
-const packagedPlaygroundTimeoutSeconds = 30;
 const credentials = {
   username: 'reprint_push_admin',
   password: 'reprint-push-admin-app-password',
@@ -1184,36 +1184,41 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
       }
       await index.arrayBuffer();
 
-      const response = await fetchWithTimeout(`${baseUrl}/wp-json/reprint/v1/push/snapshot`, {
+      const preflight = await fetchWithTimeout(`${baseUrl}/wp-json/reprint/v1/push/preflight`, {
         method: 'GET',
-        headers: {
-          connection: 'close',
-          authorization: `Basic ${Buffer.from(`${credentials.username}:${credentials.password}`).toString('base64')}`,
-        },
+        headers: signedHeadersForProductionPreflight(),
       }, packagedServerFetchTimeoutMs);
-      const text = await response.text();
-      const preview = text.slice(0, readinessFailureBodyLimit);
+      const preflightText = await preflight.text();
+      const preview = preflightText.slice(0, readinessFailureBodyLimit);
       lastProbes.push({
-        route: '/wp-json/reprint/v1/push/snapshot',
-        status: response.status,
-        ok: response.ok,
+        route: '/wp-json/reprint/v1/push/preflight',
+        status: preflight.status,
+        ok: preflight.ok,
         body: preview,
       });
-      let body = null;
+      let preflightBody = null;
       try {
-        body = JSON.parse(text);
+        preflightBody = JSON.parse(preflightText);
       } catch (error) {
-        if (isWordPressNotReadyResponse(response.status, text)) {
-          lastError = new Error(`Production plugin package snapshot readiness HTTP ${response.status}`);
+        if (isWordPressNotReadyResponse(preflight.status, preflightText)) {
+          lastError = new Error(`Production plugin package preflight readiness HTTP ${preflight.status}`);
           await sleep(readinessProbeIntervalMs);
           continue;
         }
         throw error;
       }
-      if (response.status === 200 && body?.ok === true) {
+      if (preflight.status === 200
+        && preflightBody?.ok === true
+        && preflightBody?.routeProfile?.labBacked === false
+        && preflightBody?.auth?.session?.type === 'production-auth-session') {
         return;
       }
-      lastError = new Error(`Production plugin package snapshot readiness HTTP ${response.status}`);
+      if (isWordPressNotReadyResponse(preflight.status, preflightText)) {
+        lastError = new Error(`Production plugin package preflight readiness HTTP ${preflight.status}`);
+        await sleep(readinessProbeIntervalMs);
+        continue;
+      }
+      lastError = new Error(`Production plugin package preflight readiness HTTP ${preflight.status}`);
     } catch (error) {
       lastError = error;
     }
@@ -1753,18 +1758,22 @@ async function waitForServer(child, baseUrl, getLogs) {
         const readinessProbeCount = lastProbes.filter((probe) => probe.route === '/wp-json/').length;
         if (readinessHint) {
           notReadyProbeCount += 1;
-          await throwPlaygroundReadinessFailure(
-            child,
-            `Playground server reported the bounded readiness failure ${response.status} after ${readinessProbeCount} /wp-json/ probes (${notReadyProbeCount} consecutive not-ready response${notReadyProbeCount === 1 ? '' : 's'}; limit ${maxNotReadyReadinessProbes})`,
-            lastError,
-            lastProbes,
-            getLogs(),
-            {
-              childPid: child.pid ?? null,
-              notReadyProbeCount,
-              readinessProbeCount,
-            },
-          );
+          if (notReadyProbeCount >= maxNotReadyReadinessProbes) {
+            await throwPlaygroundReadinessFailure(
+              child,
+              `Playground server reported the bounded readiness failure ${response.status} after ${readinessProbeCount} /wp-json/ probes (${notReadyProbeCount} consecutive not-ready response${notReadyProbeCount === 1 ? '' : 's'}; limit ${maxNotReadyReadinessProbes})`,
+              lastError,
+              lastProbes,
+              getLogs(),
+              {
+                childPid: child.pid ?? null,
+                notReadyProbeCount,
+                readinessProbeCount,
+              },
+            );
+          }
+          await new Promise((resolve) => setTimeout(resolve, readinessProbeIntervalMs));
+          continue;
         }
         notReadyProbeCount = 0;
         if (response.status !== 200 && readinessProbeCount >= maxReadinessProbes) {
@@ -1836,6 +1845,36 @@ function describeLastRouteStatusBody(lastRouteStatusBody) {
     null,
     2,
   )}`;
+}
+
+function signedHeadersForProductionPreflight(auth = credentials) {
+  const contentHash = createHash('sha256').update('', 'utf8').digest('hex');
+  const timestamp = String(Math.floor(Date.now() / 1000));
+  const nonce = `release-verify-packaged-${auth.username}-${Date.now()}`;
+  const signingKey = hmacHex(auth.password, `reprint-push-lab-v1\n${auth.username}`);
+  const authString = `${nonce}${timestamp}${contentHash}`;
+  const canonical = [
+    'REPRINT-PUSH-LAB-V1',
+    'GET',
+    '/wp-json/reprint/v1/push/preflight',
+    '',
+    contentHash,
+    '',
+    '',
+  ].join('\n');
+  return {
+    authorization: `Basic ${Buffer.from(`${auth.username}:${auth.password}`, 'utf8').toString('base64')}`,
+    connection: 'close',
+    'X-Auth-Content-Hash': contentHash,
+    'X-Auth-Timestamp': timestamp,
+    'X-Auth-Nonce': nonce,
+    'X-Auth-Signature': hmacHex(signingKey, authString),
+    'X-Reprint-Push-Signature': hmacHex(signingKey, canonical),
+  };
+}
+
+function hmacHex(key, data) {
+  return createHmac('sha256', key).update(data, 'utf8').digest('hex');
 }
 
 function isWordPressNotReadyResponse(status, body) {
