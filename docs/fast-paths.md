@@ -1497,6 +1497,9 @@ atomic-group evidence record and in the throughput details. The claim gate
 keeps that bit fail-closed: row-batch executor evidence must be present, and
 it must match the row-apply capability before the production throughput claim
 can advance.
+The same gate also fails closed if the row-batch visibility bit is forged
+without the matching measurement, so a hidden or stale measurement cannot
+masquerade as a production-bounded batch executor.
 The same atomic-group record now also exposes `productionStorageReceiptsVisible`,
 and the claim gate fails closed if storage-receipt evidence is claimed without
 that visibility bit.

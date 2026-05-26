@@ -770,6 +770,12 @@ export function productionThroughputBlockers(report) {
   ) {
     blockers.push('production-storage-receipts-not-visible');
   }
+  if (
+    report.evidence.atomicGroup.productionStorageReceiptsVisible === true
+    && report.evidence.atomicGroup.productionStorageReceiptsMeasured !== true
+  ) {
+    blockers.push('production-storage-receipts-visible-without-measurement');
+  }
   if (report.executorCapabilities.rowApply !== 'production-batched-compare-and-swap') {
     blockers.push('production-row-batch-executor-not-measured');
   }
@@ -787,6 +793,12 @@ export function productionThroughputBlockers(report) {
     && report.evidence.atomicGroup.productionRowBatchExecutorVisible !== true
   ) {
     blockers.push('production-row-batch-executor-not-visible');
+  }
+  if (
+    report.evidence.atomicGroup.productionRowBatchExecutorVisible === true
+    && report.evidence.atomicGroup.productionRowBatchExecutorMeasured !== true
+  ) {
+    blockers.push('production-row-batch-executor-visible-without-measurement');
   }
   return blockers;
 }
