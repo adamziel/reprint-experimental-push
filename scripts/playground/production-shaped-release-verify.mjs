@@ -1265,9 +1265,11 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
   let lastError = null;
   const lastProbes = [];
   while (Date.now() < deadline) {
-    if (child.exitCode !== null) {
+    if (child.exitCode !== null || child.signalCode !== null) {
+      const exitLabel =
+        child.exitCode !== null ? `exited early with ${child.exitCode}` : `terminated by ${child.signalCode}`;
       const message = formatPlaygroundStartupFailure(
-        `Packaged Playground server exited early with ${child.exitCode}`,
+        `Packaged Playground server ${exitLabel}`,
         lastError,
         lastProbes,
         getOutput(),
@@ -1371,7 +1373,7 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
 }
 
 async function stopExitedServer(child) {
-  if (child.exitCode !== null) {
+  if (child.exitCode !== null || child.signalCode !== null) {
     return;
   }
   await stopSpawnedServer(child);
