@@ -1,24 +1,28 @@
 # Fast Paths Handoff
 
-Timestamp: 2026-05-26 22:19:58 CEST (+0200)
+Timestamp: 2026-05-26 22:43:24 CEST (+0200)
 
 Changed files:
+- [scripts/bench/guarded-executor-benchmark.js](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/fast-paths-clean-20260526-1530/scripts/bench/guarded-executor-benchmark.js)
 - [test/guarded-executor-benchmark.test.js](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/fast-paths-clean-20260526-1530/test/guarded-executor-benchmark.test.js)
 
 Result:
-- Added a `guardedLarge` benchmark helper and a focused large-site rollout-proof regression.
-- The new proof pins the modeled 32 MiB / 256-row large-site profile to bounded queue budget, queue headroom, and receipt-cursor slack evidence.
-- It also asserts that the remaining rollout blockers are explicit release-boundary blockers (`production-atomic-group-commit-not-measured`, `production-storage-receipts-not-measured`, `production-row-batch-executor-not-measured`) rather than hidden backpressure failures.
+- Hardened the remaining plain atomic visibility pairs so they fail closed when the atomic visibility chain is broken instead of trusting forged raw bits.
+- `productionStorageReceiptsVisibleAndAtomicGroupMetadataVisible` now also requires atomic-commit visibility.
+- `productionRowBatchExecutorVisibleAndStorageReceiptsVisible` now also requires atomic-group metadata and atomic-commit visibility.
+- Added focused regressions for hidden metadata, hidden atomic-commit visibility, and hidden evidence-bit scenarios.
 
 Commands:
-- `timeout 60s node --test --test-name-pattern='guarded executor benchmark keeps large-site rollout proof bounded and names explicit remaining blockers' test/guarded-executor-benchmark.test.js`
+- `timeout 60s node --test --test-name-pattern='guarded benchmark keeps paired row-batch and storage detail hidden when atomic-group metadata is hidden|guarded benchmark keeps paired row-batch and storage detail hidden when atomic-commit visibility is hidden|guarded benchmark details fail closed when storage and row-batch capabilities are present but evidence bits are hidden|guarded benchmark keeps storage-receipts and atomic-group metadata visible detail hidden when atomic-commit visibility is hidden' test/guarded-executor-benchmark.test.js`
 - `git diff --check`
+- `git commit -m "Fail closed on hidden atomic visibility pairs"`
+- `git push origin HEAD:lane/fast-paths`
 
 Push result:
-- Pushed `d4c5839bbc858e4cab4e9a904baa3e0d541e4983` to `origin/lane/fast-paths`
+- Pushed `db2f61f8` to `origin/lane/fast-paths`
 
 Worktree status:
 - Clean tracked worktree on `lane/fast-paths`
 
 Next supervisor nudge:
-- Keep fast-path work on executable large-site/runtime proof edges instead of docs-only churn. The next bounded fast-path gap is a lane-owned benchmark/report invariant that proves rollout-safe receipt/cursor or batching behavior at scale without weakening the same recovery and atomic-group blockers.
+- Keep `main:fast-paths` on any remaining rollout-detail summaries that can still look safe from partial visibility alone, especially atomic-group or backpressure pair surfaces that have a stricter measured variant but still accept forged prerequisite bits.
