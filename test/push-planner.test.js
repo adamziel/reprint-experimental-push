@@ -19354,6 +19354,70 @@ test('blocks local comments and users graph resources while preserving remote-on
   assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin change */');
 });
 
+test('blocks local comment-post references to a same-plan created post identity while preserving a matching independent edit and remote-only plugin changes', () => {
+  const resourceKey = 'row:["wp_comments","comment_ID:27"]';
+  const targetResourceKey = 'row:["wp_posts","ID:87"]';
+  const base = baseSite();
+  base.db.wp_comments = {
+    'comment_ID:27': {
+      comment_ID: 27,
+      comment_post_ID: 7,
+      comment_content: 'Base comment content',
+      comment_approved: '1',
+    },
+  };
+  base.db.wp_posts['ID:1'].post_title = 'Base post title';
+
+  const local = baseSite();
+  local.db.wp_comments = {
+    'comment_ID:27': {
+      comment_ID: 27,
+      comment_post_ID: 87,
+      comment_content: 'Local comment content',
+      comment_approved: '1',
+    },
+  };
+  local.db.wp_posts['ID:87'] = {
+    ID: 87,
+    post_title: 'Local same-plan post parent',
+    post_content: 'Local same-plan post parent body',
+    post_status: 'publish',
+    post_type: 'post',
+  };
+  local.db.wp_posts['ID:1'].post_title = 'Local post title';
+
+  const remote = baseSite();
+  remote.db.wp_comments = JSON.parse(JSON.stringify(base.db.wp_comments));
+  remote.db.wp_posts['ID:1'].post_title = 'Remote editorial update';
+  remote.plugins.forms.description = 'remote-only plugin change';
+
+  const plan = planFor(base, local, remote);
+  const conflict = plan.conflicts[0];
+  const blockers = plan.blockers;
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'conflict');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(decisionFor(plan, targetResourceKey), undefined);
+  assert.equal(blockers.length, 2);
+  assert.equal(plan.conflicts.length, 1);
+  assert.equal(blockers[0].class, 'unsupported-comments-users-resource');
+  assert.equal(blockers[0].resourceKey, resourceKey);
+  assert.equal(blockers[0].reason, 'WordPress graph mutation row:["wp_comments","comment_ID:27"] is created in the same plan as a comment post identity that depends on it, and identity rewriting is not yet supported.');
+  assert.equal(blockers[1].class, 'stale-wordpress-graph-identity');
+  assert.equal(blockers[1].resourceKey, targetResourceKey);
+  assert.equal(blockers[1].reason, 'WordPress graph mutation row:["wp_posts","ID:87"] is created in the same plan as a relationship that depends on it, and identity rewriting is not yet supported.');
+  assert.equal(conflict.class, 'row-conflict');
+  assert.equal(conflict.resourceKey, 'row:["wp_posts","ID:1"]');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('Local same-plan post parent'), false);
+  assert.equal(planJson.includes('Local comment content'), false);
+  assert.equal(remote.db.wp_posts['ID:1'].post_title, 'Remote editorial update');
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin change');
+});
+
 test('blocks local menu item parent references to a same-plan created nav menu item while preserving remote-only plugin drift', () => {
   const resourceKey = 'row:["wp_posts","ID:49"]';
   const targetResourceKey = 'row:["wp_posts","ID:13"]';
