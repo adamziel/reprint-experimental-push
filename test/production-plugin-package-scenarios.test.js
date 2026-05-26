@@ -92,3 +92,24 @@ test('scenario parser rejects unknown plugin-driver smoke scenarios', () => {
     /Unknown production plugin package smoke scenario: typo-guard/,
   );
 });
+
+test('scenario resolver maps driver-guard-only mode to the bounded receipt guard scenario', () => {
+  const resolved = resolveProductionPluginPackageScenarios(
+    [],
+    undefined,
+    'driver-guard-only',
+  );
+
+  assert.deepEqual(resolved.requestedScenarios, ['driver-receipt-guards']);
+  assert.deepEqual(
+    Array.from(resolved.selectedScenarios).sort(),
+    ['driver-receipt-guards'],
+  );
+});
+
+test('scenario resolver rejects unknown plugin-driver smoke modes', () => {
+  assert.throws(
+    () => resolveProductionPluginPackageScenarios([], undefined, 'unknown-mode'),
+    /Unknown production plugin package smoke mode: unknown-mode/,
+  );
+});

@@ -21,6 +21,7 @@ const transientFetchAttempts = 4;
 const { requestedScenarios, selectedScenarios } = resolveProductionPluginPackageScenarios(
   process.argv.slice(2),
   process.env.REPRINT_PUSH_PACKAGE_SMOKE_SCENARIO,
+  process.env.REPRINT_PUSH_PACKAGE_SMOKE_MODE,
 );
 
 const credentials = {

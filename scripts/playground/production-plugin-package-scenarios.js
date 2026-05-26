@@ -53,9 +53,24 @@ const knownScenarioNames = new Set([
   ...Object.keys(scenarioGroups),
 ]);
 
-export function resolveProductionPluginPackageScenarios(argv, envValue) {
+function resolveScenarioMode(modeValue) {
+  if (!modeValue) {
+    return null;
+  }
+  if (modeValue === 'driver-guard-only') {
+    return 'driver-receipt-guards';
+  }
+  throw new Error(
+    `Unknown production plugin package smoke mode: ${modeValue}`,
+  );
+}
+
+export function resolveProductionPluginPackageScenarios(argv, envValue, modeValue) {
   const explicitArg = argv.find((arg) => arg.startsWith('--scenario='));
-  const rawValue = explicitArg ? explicitArg.slice('--scenario='.length) : envValue;
+  const modeScenario = resolveScenarioMode(modeValue);
+  const rawValue = explicitArg
+    ? explicitArg.slice('--scenario='.length)
+    : envValue ?? modeScenario;
   if (!rawValue) {
     return {
       requestedScenarios: null,
