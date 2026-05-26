@@ -2,28 +2,25 @@
 
 ## Result
 
-I added a small bounded evidence surface to the guarded benchmark so the successful recovery path is summarized alongside the existing failure probes.
+I added one narrow coverage check for planning-only resume sizing with canonical per-kind budgets, keeping the fast-path model fail-closed on retry.
 
 ## What Changed
 
-- [`scripts/bench/guarded-executor-benchmark.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/fast-paths/scripts/bench/guarded-executor-benchmark.js)
-- [`test/guarded-executor-benchmark.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/fast-paths/test/guarded-executor-benchmark.test.js)
+- [`test/performance-model.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/fast-paths/test/performance-model.test.js)
 
 ## Change Summary
 
-- `results.successInspection` now carries the success probe status, reason, counts, and recovery claim summary from the benchmark run.
-- The focused test now checks that the success inspection summary reports `fully-updated-remote` with the expected counts.
+- The fast-path coverage now explicitly asserts that `reuse-canonical-per-kind-budgets-for-planning-only-resume-sizing` stays advisory, keeps its canonical budget guardrails, and still classifies pause/retry/crash through durable receipts and the group staging record.
 
 ## Verification
 
 Commands run:
 
-- `timeout 40s node --test test/guarded-executor-benchmark.test.js`
+- `timeout 40s node --test test/performance-model.test.js`
 
 Result:
 
-- The focused benchmark test suite passed: `3/3` subtests green.
-- The blocked production-throughput claim still fails closed.
+- The focused benchmark suite passed: `20/20` subtests green.
 
 ## Push Result
 
@@ -32,9 +29,9 @@ Result:
 ## Worktree Status
 
 - Branch: `lane/cycle-20260525-mainwindows-2349/fast-paths`
-- Current lane relation: `ahead 628, behind 198` relative to `origin/main`
-- Working tree: dirty with the two lane-owned edits above.
+- Current lane relation: `ahead 908, behind 614` relative to `origin/main`
+- Working tree: dirty until the new test and handoff are committed
 
 ## Next Supervisor Nudge
 
-- Keep the fast-path release gate closed until the reliable lane lands production atomic-group commit, storage receipts, and row-batch executor evidence. The next useful step here is another small bounded diagnostics or backpressure refinement that does not broaden the production claim.
+- Keep the fast-path gate closed until the reliable lane lands production atomic-group commit, storage receipts, and row-batch executor evidence. If this lane gets another pass, the next useful change is only a genuinely new fail-closed fast-path edge, not another status refresh.

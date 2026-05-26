@@ -4148,6 +4148,16 @@ test('safe fast paths retain all gate proofs and stay non-rejectable', () => {
   );
   assert.ok(
     model.safeFastPaths.some((fastPath) =>
+      fastPath.allowedShortcut === 'reuse-canonical-per-kind-budgets-for-planning-only-resume-sizing' &&
+      fastPath.guardrails.includes('per-kind-budgets-stay-canonical') &&
+      fastPath.guardrails.includes('resume-sizing-stays-planning-only-and-revalidated-before-write') &&
+      fastPath.gateProofs.skip.includes('avoid recomputing fan-out on a retry') &&
+      fastPath.gateProofs.recovery.includes('durable receipts and the group staging record still classify pause, retry, or crash')
+    ),
+    'canonical per-kind budget reuse stays planning-only and fails closed on resume',
+  );
+  assert.ok(
+    model.safeFastPaths.some((fastPath) =>
       fastPath.allowedShortcut === 'batch-durable-receipt-flushes-within-bounded-journal-lag' &&
       fastPath.gateProofs.group.includes('atomic group owns the visibility boundary')
     ),
