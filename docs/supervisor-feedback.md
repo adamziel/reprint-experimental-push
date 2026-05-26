@@ -1,9 +1,22 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-26 18:32 CEST
+Last updated: 2026-05-26 18:33 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-26 18:33 CEST - Reliable Head at `9d0279a3`
+
+- Going well: `origin/lane/reliable-executor` moved to `9d0279a3`, so the release-path proof now includes fenced stale-claim rejection instead of only earlier release-verifier surface evidence.
+- Not going well: critic and auditor still need to decide whether that durable-journal evidence is enough to move the constrained gate; keep the public posture at `0/4` until they say otherwise.
+- Progress change: if `progress.html` or `docs/progress-log.md` still top out at `75d38550`, they are stale and should be refreshed by the progress lane only.
+- Next nudge: keep `reliable-executor` on the next remaining gate boundary after stale-claim fencing, and have `critic` / `auditor` classify `9d0279a3` once before any gate claim changes.
+
+| Lane | Nudge |
+| --- | --- |
+| Reliable executor | Move to the next live production boundary after stale-claim fencing, or hand back the exact missing file, command, API, and return shape. |
+| Progress publisher | Refresh the public page only if it is still behind `9d0279a3`; keep the gate posture at `0/4`. |
+| Audit and critic | Classify `9d0279a3` once and say exactly which production boundary still blocks a gate if the verdict remains closed. |
 
 ## 2026-05-26 18:32 CEST - Reliable Head at `75d38550e3df`
 
