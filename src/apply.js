@@ -255,7 +255,7 @@ export function applyPlan(remote, plan, options = {}) {
         status: 'fully-updated-remote',
         reason: 'All planned mutations were committed.',
         artifacts: {
-          journal: commitResult.journal,
+          journal: deepClone(commitResult.journal),
         },
       },
     };
@@ -1479,12 +1479,17 @@ function recoveryState(status, remote, plan, journal, reason, details = {}) {
   if (status !== 'blocked-recovery') {
     recovery.artifacts = {
       ...(recovery.artifacts || {}),
-      journal,
+      journal: deepClone(recovery.artifacts?.journal || journal),
     };
     delete recovery.artifacts.remote;
     validateRecoveryArtifacts(recovery);
     return recovery;
   }
+
+  recovery.artifacts = {
+    journal: deepClone(recovery.artifacts?.journal || journal),
+    remote: deepClone(recovery.artifacts?.remote),
+  };
 
   validateRecoveryArtifacts(recovery);
   return recovery;

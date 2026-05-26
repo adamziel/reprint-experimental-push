@@ -23245,6 +23245,27 @@ test('blocked recovery artifacts are insulated from later remote mutation', () =
   assert.equal(error.details.recovery.artifacts.remote.db.wp_posts['ID:1'].post_title, 'Remote recovery title');
 });
 
+test('recovery artifacts are insulated from later journal mutation after replay', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local recovery title";';
+  const plan = planFor(base, local, baseSite());
+  const completed = applyPlan(baseSite(), plan);
+
+  completed.journal.entries[0].status = 'tampered-after-replay';
+  completed.journal.entries.push({
+    mutationId: 'mut-999',
+    resourceKey: 'file:index.php',
+    status: 'tampered',
+  });
+
+  assert.equal(completed.recoveryState.status, 'fully-updated-remote');
+  assert.equal(completed.recoveryState.artifacts.journal.status, 'completed');
+  assert.equal(completed.recoveryState.artifacts.journal.entries[0].status, 'applied');
+  assert.equal(completed.recoveryState.artifacts.journal.entries.some((entry) => entry.status === 'tampered-after-replay'), false);
+  assert.equal(completed.recoveryState.artifacts.journal.entries.some((entry) => entry.status === 'tampered'), false);
+});
+
 test('recovery artifacts fail closed when the artifact envelope is not a plain object', () => {
   const recovery = {
     status: 'blocked-recovery',
