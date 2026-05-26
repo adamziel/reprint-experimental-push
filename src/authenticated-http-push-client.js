@@ -932,9 +932,9 @@ function summarizeAuthSessionLifecycleHistory(history) {
     revoked: observations.find((entry) => entry.revoked) || null,
     cleanedUp: observations.find((entry) => entry.cleanedUp) || null,
     rotated: observations.find((entry) => entry.rotated) || null,
-    preserved: [...observations]
-      .reverse()
-      .find((entry) => isAuthSessionReadStep(entry.step) && entry.preserved === true) || null,
+    preserved: observations.find(
+      (entry) => isAuthSessionReadStep(entry.step) && entry.preserved === true,
+    ) || null,
     observations,
   };
 }
