@@ -7,10 +7,10 @@ The project is **not releasable as a production WordPress push path**.
 Fresh remote heads at audit time, checked on May 26, 2026:
 
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `f5df48d6`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `e86dd5e6`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `1d2735e6`
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `5f6f5c8c`
-- `origin/lane/independent-auditor` -> `56a52af3`
-- `origin/lane/reliable-executor` -> `36b69f82`
+- `origin/lane/independent-auditor` -> `6351130f`
+- `origin/lane/reliable-executor` -> `440a6965`
 - `origin/lane/no-data-loss-invariants` -> `2f92065d`
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` -> `db36753e`
 - `origin/lane/critic` -> `49af85aa`
@@ -39,14 +39,17 @@ but it did not change the release conclusion:
   `f5df48d6`, tightening paused-slack safety. This remains fail-closed
   boundary work, not release-grade live-source evidence.
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now records
-  `e86dd5e6`, refreshing the public progress freshness surface only.
+  `1d2735e6`, refreshing the public progress freshness surface only.
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now
   records `7b4dda17`, also a freshness-only update.
-- `origin/lane/independent-auditor` now records `c38dda9d`, which refreshes
+- `origin/lane/independent-auditor` now records `6351130f`, which refreshes
   the audit snapshot but does not change the release boundary.
 - `origin/lane/reliable-executor` now advances to `36b69f82`, which hardens
   authenticated push mutations but still does not prove a production-backed
   source mutation boundary.
+- `origin/lane/reliable-executor` now advances to `440a6965`, which further
+  hardens release verify spawn handling but still does not prove a
+  production-backed source mutation boundary.
 - `origin/lane/no-data-loss-invariants` now tightens navigation blocker proof
   at `1f6ab914`. A separate cycle-branch proof at `98c0ce26`
   extends that blocker coverage to missing graph identity references, and the
@@ -87,6 +90,8 @@ but it did not change the release conclusion:
 - `origin/lane/no-data-loss-invariants` now advances to `2f92065d`, adding
   termmeta removal proof. That remains fail-closed boundary evidence, not a
   live production mutation proof.
+- `origin/lane/independent-auditor` now records `6351130f`. This refreshes
+  the audit snapshot only and does not change the release boundary.
 
 Those changes strengthen the lab evidence for protocol safety and no-loss
 planning, but they still do not prove the production-backed push path.
@@ -155,6 +160,9 @@ The release requirements implied by that objective are:
 `npm test` passed during this audit:
 
 - 89 passing tests.
+- No new test run was performed this pass; the audit change was limited to
+  refreshing the remote-head snapshot and re-checking the current evidence
+  surface.
 - Planner no-overwrite invariants for simplified JSON snapshots, including deletion preconditions, delete/update conflicts, directory-descendant topology conflicts, and file type swap conflicts.
 - Plugin-owned resource blocking, stale owner-plugin context blocking, and the exact forms lab driver checks in the JavaScript model.
 - Atomic dependency metadata and forged-plan rejection in the model executor.
