@@ -9405,6 +9405,69 @@ test('blocks plugin-owned option deletions without explicit delete opt-in', () =
   assert.throws(() => applyPlan(baseSite(), plan), /Refusing to apply/);
 });
 
+test('blocks plugin-owned option deletions without explicit delete opt-in while preserving matching independent edits and remote-only plugin drift', () => {
+  const resourceKey = 'row:["wp_options","option_name:forms_settings"]';
+  const base = baseSite();
+  base.files['about.php'] = '<?php echo "base about";';
+  base.files['wp-content/uploads/gallery/photo.txt'] = 'base gallery bytes';
+  base.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Base post title', post_status: 'publish' };
+
+  const local = baseSite();
+  delete local.db.wp_options['option_name:forms_settings'];
+  local.files['about.php'] = '<?php echo "shared about";';
+  local.files['wp-content/uploads/gallery/photo.txt'] = { type: 'image', path: 'wp-content/uploads/gallery/photo.txt', name: 'photo.txt', mimeType: 'image/png' };
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Shared post title', post_status: 'publish' };
+  local.meta = {
+    pushPolicy: pluginOwnedResourcePolicy(
+      allowedPluginOwnedResource(resourceKey, 'forms', 'wp-option'),
+    ),
+  };
+
+  const remote = baseSite();
+  remote.files['about.php'] = '<?php echo "shared about";';
+  remote.files['wp-content/uploads/gallery/photo.txt'] = {
+    type: 'image',
+    path: 'wp-content/uploads/gallery/photo.txt',
+    name: 'photo.txt',
+    mimeType: 'image/png',
+  };
+  remote.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Shared post title', post_status: 'publish' };
+  remote.plugins.seo = { version: '1.0.0', active: true, description: 'remote-only plugin drift' };
+  remote.files['wp-content/plugins/seo/seo.php'] = '<?php /* remote-only plugin drift */';
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers[0];
+  const matchingFileEdit = decisionFor(plan, 'file:about.php');
+  const matchingFileTypeSwap = decisionFor(plan, 'file:wp-content/uploads/gallery/photo.txt');
+  const matchingRowEdit = decisionFor(plan, 'row:["wp_posts","ID:2"]');
+  const remoteOnlyPluginDecision = decisionFor(plan, 'plugin:seo');
+  const remoteOnlyPluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/seo/seo.php');
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(blocker.class, 'unsupported-plugin-owned-resource');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.pluginOwner, 'forms');
+  assert.match(blocker.reason, /delete mutations/);
+  assert.equal(matchingFileEdit.decision, 'already-in-sync');
+  assert.equal(matchingFileEdit.change.localChange, 'update');
+  assert.equal(matchingFileEdit.change.remoteChange, 'update');
+  assert.equal(matchingFileTypeSwap.decision, 'already-in-sync');
+  assert.equal(matchingFileTypeSwap.change.localChange, 'type-change');
+  assert.equal(matchingFileTypeSwap.change.remoteChange, 'type-change');
+  assert.equal(matchingRowEdit.decision, 'already-in-sync');
+  assert.equal(matchingRowEdit.change.localChange, 'update');
+  assert.equal(matchingRowEdit.change.remoteChange, 'update');
+  assert.equal(remoteOnlyPluginDecision.decision, 'keep-remote');
+  assert.equal(remoteOnlyPluginFileDecision.decision, 'keep-remote');
+  assert.equal(JSON.stringify(plan).includes('remote-only plugin drift'), false);
+  assert.equal(JSON.stringify(plan).includes('Shared post title'), false);
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
+  assert.equal(remote.plugins.seo.description, 'remote-only plugin drift');
+  assert.equal(remote.files['wp-content/plugins/seo/seo.php'], '<?php /* remote-only plugin drift */');
+});
+
 test('applies an allowed plugin-owned option delete only behind a live precondition while preserving matching independent edits and remote-only plugin drift on another plugin', () => {
   const resourceKey = 'row:["wp_options","option_name:forms_settings"]';
   const base = baseSite();
