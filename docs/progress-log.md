@@ -4,6 +4,20 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-05-26 - Public Status Audit 12:27:41
+
+<a id="2026-05-26-public-status-audit-122741"></a>
+
+- Freshness update plus reliable-head confirmation: `fc2de1bd` is the current
+  reliable-executor head on the public page, and the visible status now points
+  at this 12:27:41 audit refresh.
+- Gate posture remains conservative at `0/4`; no implementation verdict
+  changed.
+- Latest blocker summary remains the same: production-backed auth/session
+  lifecycle on the checked release path and fenced durable journal ownership
+  still block any production push claim, while the preserved-remote retry proof
+  (`retryAttempts`) remains evidence but not a gate movement.
+
 ## 2026-05-26 - Public Status Audit 12:25:58
 
 <a id="2026-05-26-public-status-audit-122558"></a>
