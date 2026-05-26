@@ -8,17 +8,16 @@ Commands run
 - `sed -n '1,260p' audits/objective-audit.md`
 - `git fetch origin --prune`
 - `git for-each-ref --sort=-committerdate --format='%(refname:short) %(objectname:short) %(committerdate:iso8601) %(subject)' refs/remotes/origin/lane | head -n 20`
-- `scripts/supervision/status.sh`
-- `scripts/supervision/accountability.sh`
 - `git diff -- audits/objective-audit.md`
 - `git status --short --branch`
-- `sed -n '1,120p' .lane-output/final.md`
+- `git add audits/objective-audit.md && git commit -m "Refresh audit heads" && git push origin HEAD:lane/independent-auditor && git status --short --branch`
 
 Push result
-- pending
+- Pushed successfully to `origin/lane/independent-auditor`
+- New commit: `594f3e64`
 
 Worktree status
-- Branch: `lane/cycle-20260525-mainwindows-2349/independent-auditor...origin/main [ahead 1380, behind 231]`
+- Branch: `lane/cycle-20260525-mainwindows-2349/independent-auditor...origin/main [ahead 1382, behind 231]`
 - Tracked files changed: `audits/objective-audit.md`, `.lane-output/final.md`
 
 Next supervisor nudge
