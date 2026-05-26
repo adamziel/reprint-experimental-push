@@ -13,7 +13,7 @@ Fresh remote heads at audit time, checked on May 26, 2026:
 - `origin/lane/no-data-loss-recovery` -> `4372167e`
 - `origin/lane/fast-paths` -> `cd0fddad`
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `596c7b31`
-- `origin/lane/independent-auditor` -> `52b257aa`
+- `origin/lane/independent-auditor` -> `5abd1f65`
 - `origin/lane/critic` -> `6828861f`
 - `origin/lane/progress-publisher` -> `7695e1f9`
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `327eb7ee`
