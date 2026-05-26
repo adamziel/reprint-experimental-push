@@ -7,10 +7,10 @@ The project is **not releasable as a production WordPress push path**.
 Fresh remote heads at audit time, checked on May 26, 2026:
 
 - `origin/lane/critic` -> `49af85aa`
-- `origin/lane/independent-auditor` -> `43bef106`
+- `origin/lane/independent-auditor` -> `626aa833`
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `839007d1`
 - `origin/lane/reliable-executor` -> `ec45b13a`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `a2f433e2`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `33c372cf`
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `b122ae5c`
 - `origin/lane/no-data-loss-recovery` -> `1214c397`
 - `origin/lane/same-plan-wordpress-graph-create` -> `0d2178e9`
@@ -18,7 +18,7 @@ Fresh remote heads at audit time, checked on May 26, 2026:
 - `origin/lane/fast-paths` -> `cd0fddad`
 - `origin/lane/progress-publisher` -> `7695e1f9`
 - `origin/lane/cycle-20260525-mainwindows-2349/critic` -> `49af85aa`
-- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `43bef106`
+- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `626aa833`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `e84ce6e9`
 - `origin/lane/cycle-20260525-mainwindows-2349/same-plan-wordpress-graph-create` -> `0d2178e9`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-invariants` -> `b5c81374`
