@@ -4,7 +4,7 @@
 
 The project is **not releasable as a production WordPress push path**.
 
-- Fresh remote heads at audit time, checked on 2026-05-26 07:33:30 CEST (+0200):
+- Fresh remote heads at audit time, checked on 2026-05-26 07:34:57 CEST (+0200):
 
 - `origin/lane/cycle-20260524-auth-graph-hardening/critic` -> `e413f7a8`
 - `origin/lane/cycle-20260524-auth-graph-hardening/fast-paths` -> `ad7d82a4`
@@ -55,10 +55,10 @@ The project is **not releasable as a production WordPress push path**.
 - `origin/lane/fast-paths` -> `8c5c2ccb`
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `a6359b91`
 - `origin/lane/independent-auditor` -> `876e1156`
-- `origin/lane/no-data-loss-invariants` -> `71e60796`
+- `origin/lane/no-data-loss-invariants` -> `d87858d7`
 - `origin/lane/no-data-loss-recovery` -> `0ff46819`
 - `origin/lane/progress-publisher` -> `7695e1f9`
-- `origin/lane/reliable-executor` -> `d14c9fef`
+- `origin/lane/reliable-executor` -> `5c75c43b`
 - `origin/lane/same-plan-wordpress-graph-create` -> `8dea1ca3`
 
 Fresh visibility-lane and invariants heads moved again, but they still do not change the release gate:
@@ -71,14 +71,18 @@ Fresh visibility-lane and invariants heads moved again, but they still do not ch
 `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` ->
 `a6359b91` and `origin/lane/cycle-20260525-mainwindows-2349/progress-followup`
 -> `6705f663`.
-- `origin/lane/reliable-executor` -> `0e8ebb86`
-- `origin/lane/no-data-loss-invariants` -> `71e60796`
+- `origin/lane/reliable-executor` -> `5c75c43b`
+- `origin/lane/no-data-loss-invariants` -> `d87858d7`
 - `origin/lane/no-data-loss-recovery` -> `0ff46819`
 - `origin/main` -> `2c8d52cb`
 
 The current remote state still adds no production-backed auth/session
 lifecycle or durable journal ownership/lease/fencing/replay path proving a
 real source-site mutation boundary. The release gates still stay `0/4`.
+
+The latest reliable-executor and invariants heads only add push/idempotency
+and termmeta same-plan hardening. They are still fail-closed support work, not
+evidence of a live production mutation boundary.
 
 Fresh lane proof since the last audit pass improved the local evidence floor,
 but it did not change the release conclusion:
