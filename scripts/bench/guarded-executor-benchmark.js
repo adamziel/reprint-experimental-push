@@ -274,7 +274,10 @@ export function productionThroughputBlockers(report) {
   ) {
     blockers.push('receipt-cursor-backpressure-mismatch');
   }
-  if (!Number.isFinite(report.evidence.backpressure?.receiptCursorBytes)) {
+  if (
+    !Number.isFinite(report.evidence.backpressure?.receiptCursorBytes)
+    || report.evidence.backpressure.receiptCursorBytes <= 0
+  ) {
     blockers.push('receipt-cursor-backpressure-not-measured');
   }
   if (!report.evidence.atomicGroup.productionAtomicCommitMeasured) {
@@ -349,7 +352,9 @@ export function productionThroughputDetails(report) {
   const receiptCursorMatchesBackpressure =
     receiptCursorBackpressureBytes !== null
     && receiptCursorBackpressureBytes === receiptCursorWindowBytes;
-  const receiptCursorBackpressureMeasured = Number.isFinite(receiptCursorBackpressureBytes);
+  const receiptCursorBackpressureMeasured =
+    Number.isFinite(receiptCursorBackpressureBytes)
+    && receiptCursorBackpressureBytes > 0;
   const productionAtomicCommitMeasured = report.executorCapabilities.productionAtomicCommit === 'production-atomic-group-commit';
   const productionRowBatchExecutorMeasured = report.executorCapabilities.rowApply === 'production-batched-compare-and-swap';
   return {
