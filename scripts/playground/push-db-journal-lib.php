@@ -762,6 +762,50 @@ function reprint_push_lab_db_journal_claim_contract_matches($claim): bool
         && (($claim['staleClaimRejected'] ?? false) !== true || $has_previous_claim_identity);
 }
 
+function reprint_push_lab_db_journal_ownership_contract_matches($ownership): bool
+{
+    return is_array($ownership)
+        && is_bool($ownership['ownsJournal'] ?? null)
+        && ($ownership['ownsJournal'] ?? false) === true
+        && is_bool($ownership['restartReadable'] ?? null)
+        && reprint_push_lab_db_journal_non_empty_string($ownership['productionAdapter'] ?? null);
+}
+
+function reprint_push_lab_db_journal_writer_lease_contract_matches($writer_lease): bool
+{
+    return is_array($writer_lease)
+        && reprint_push_lab_db_journal_non_empty_string($writer_lease['strategy'] ?? null)
+        && is_bool($writer_lease['claimKeyUnique'] ?? null)
+        && is_bool($writer_lease['fsyncEvidence'] ?? null)
+        && reprint_push_lab_db_journal_non_empty_string($writer_lease['storageGuard'] ?? null)
+        && is_bool($writer_lease['monotonicSequence'] ?? null)
+        && is_bool($writer_lease['restartReadable'] ?? null)
+        && is_bool($writer_lease['staleClaimRejected'] ?? null);
+}
+
+function reprint_push_lab_db_journal_lease_fence_contract_matches($lease_fence): bool
+{
+    return is_array($lease_fence)
+        && reprint_push_lab_db_journal_non_empty_string($lease_fence['boundary'] ?? null)
+        && is_bool($lease_fence['claimKeyUnique'] ?? null)
+        && is_bool($lease_fence['fsyncEvidence'] ?? null)
+        && is_bool($lease_fence['monotonicSequence'] ?? null)
+        && is_bool($lease_fence['restartReadable'] ?? null)
+        && is_bool($lease_fence['staleClaimRejected'] ?? null)
+        && reprint_push_lab_db_journal_writer_lease_contract_matches($lease_fence['writerLease'] ?? null);
+}
+
+function reprint_push_lab_db_journal_checked_boundary_contract_matches($journal): bool
+{
+    if (!is_array($journal)) {
+        return false;
+    }
+
+    return reprint_push_lab_db_journal_ownership_contract_matches($journal['ownership'] ?? null)
+        && reprint_push_lab_db_journal_writer_lease_contract_matches($journal['writerLease'] ?? null)
+        && reprint_push_lab_db_journal_lease_fence_contract_matches($journal['leaseFence'] ?? null);
+}
+
 function reprint_push_lab_db_journal_non_empty_string($value): bool
 {
     return is_string($value) && $value !== '';

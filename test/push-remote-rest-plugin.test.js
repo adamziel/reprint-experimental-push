@@ -1787,6 +1787,58 @@ test('checked recovery inspect evidence fails closed on partial checked journal 
   });
 });
 
+test('checked recovery inspect evidence fails closed on partial checked writer-lease contracts', { skip: !hasPhp }, () => {
+  const result = runAttachCheckedRecoveryJournalEvidence(
+    {
+      recovery: {
+        status: 'blocked-recovery',
+      },
+    },
+    true,
+    false,
+    {
+      acceptedOnCheckedBoundary: true,
+      scope: 'checked live production-shaped journal surface; not local Playground fixture only',
+      ownership: {
+        ownsJournal: true,
+        restartReadable: true,
+        productionAdapter: 'wpdb-single-statement-cas',
+      },
+      writerLease: {
+        strategy: 'claim-fenced-single-writer',
+        claimKeyUnique: true,
+        fsyncEvidence: true,
+        monotonicSequence: true,
+        restartReadable: true,
+        staleClaimRejected: true,
+      },
+      leaseFence: {
+        boundary: 'wpdb-single-statement-cas',
+        claimKeyUnique: true,
+        fsyncEvidence: true,
+        monotonicSequence: true,
+        restartReadable: true,
+        staleClaimRejected: true,
+        writerLease: {
+          strategy: 'claim-fenced-single-writer',
+          claimKeyUnique: true,
+          fsyncEvidence: true,
+          storageGuard: 'wpdb-single-statement-cas',
+          monotonicSequence: true,
+          restartReadable: true,
+          staleClaimRejected: true,
+        },
+      },
+    },
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.recovery.journal.acceptedOnCheckedBoundary, false);
+  assert.equal(parsed.recovery.journal.writerLease.storageGuard, undefined);
+  assert.equal(parsed.recovery.journal.leaseFence.writerLease.storageGuard, 'wpdb-single-statement-cas');
+});
+
 test('checked recovery inspect evidence fails closed on conflicting checked journal claim lineage', { skip: !hasPhp }, () => {
   const result = runAttachCheckedRecoveryJournalEvidence(
     {
@@ -2543,6 +2595,72 @@ test('checked authenticated apply evidence fails closed on accepted checked jour
       outcome: 'applied',
     },
   });
+});
+
+test('checked authenticated apply evidence fails closed on accepted checked journal summaries that still omit writer-lease storage evidence', { skip: !hasPhp }, () => {
+  const checkedSummary = {
+    acceptedOnCheckedBoundary: true,
+    scope: 'packaged production journal scope',
+    claim: {
+      status: 'stale-claim-rejected',
+      activeClaimKeyHash: 'authoritative-claim-hash-02',
+      activeClaimSequence: 33,
+      activeClaimEvent: 'stale-claim-rejected',
+      idempotencyKeyHash: 'idem-hash-01',
+      requestHash: 'request-hash-01',
+      staleClaimRejected: true,
+      previousClaimKeyHash: 'retry-claim-hash-01',
+      previousClaimSequence: 18,
+      previousClaimEvent: 'idempotency-opened',
+    },
+    ownership: {
+      ownsJournal: true,
+      restartReadable: true,
+      productionAdapter: 'wpdb-single-statement-cas',
+    },
+    writerLease: {
+      strategy: 'claim-fenced-single-writer',
+      claimKeyUnique: true,
+      fsyncEvidence: true,
+      monotonicSequence: true,
+      restartReadable: true,
+      staleClaimRejected: true,
+    },
+    leaseFence: {
+      boundary: 'wpdb-single-statement-cas',
+      claimKeyUnique: true,
+      fsyncEvidence: true,
+      monotonicSequence: true,
+      restartReadable: true,
+      staleClaimRejected: true,
+      writerLease: {
+        strategy: 'claim-fenced-single-writer',
+        claimKeyUnique: true,
+        fsyncEvidence: true,
+        storageGuard: 'wpdb-single-statement-cas',
+        monotonicSequence: true,
+        restartReadable: true,
+        staleClaimRejected: true,
+      },
+    },
+  };
+  const result = runAttachCheckedDbJournalContract(
+    {
+      ok: true,
+      dbJournal: {
+        event: 'apply-replayed',
+        sequence: 15,
+        scope: 'local Playground fixture only',
+      },
+    },
+    checkedSummary,
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.dbJournal.acceptedOnCheckedBoundary, false);
+  assert.equal(parsed.dbJournal.writerLease.storageGuard, undefined);
+  assert.equal(parsed.dbJournal.leaseFence.writerLease.storageGuard, 'wpdb-single-statement-cas');
 });
 
 test('authenticated apply finalization upgrades checked failure journal evidence and preserves signed auth metadata', { skip: !hasPhp }, () => {

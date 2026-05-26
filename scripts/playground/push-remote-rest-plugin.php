@@ -856,6 +856,11 @@ function reprint_push_lab_rest_fail_closed_checked_db_journal_acceptance(
         return $db_journal;
     }
 
+    if (!reprint_push_lab_db_journal_checked_boundary_contract_matches($db_journal)) {
+        $db_journal['acceptedOnCheckedBoundary'] = false;
+        return $db_journal;
+    }
+
     if (!reprint_push_lab_db_journal_claim_contract_matches($db_journal['claim'] ?? null)) {
         $db_journal['acceptedOnCheckedBoundary'] = false;
         return $db_journal;
@@ -881,6 +886,11 @@ function reprint_push_lab_rest_fail_closed_checked_recovery_journal_acceptance(
 ): array
 {
     if (($journal['acceptedOnCheckedBoundary'] ?? false) !== true) {
+        return $journal;
+    }
+
+    if (!reprint_push_lab_db_journal_checked_boundary_contract_matches($journal)) {
+        $journal['acceptedOnCheckedBoundary'] = false;
         return $journal;
     }
 
