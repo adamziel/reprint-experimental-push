@@ -18142,7 +18142,24 @@ test('recovery states fail closed when plan identity and remote hash are inherit
   const error = captureError(() => assertRecoveryStateEnvelope(recovery));
 
   assert.equal(error.code, 'RECOVERY_STATE_INVALID');
-  assert.match(error.message, /own plan identifier/);
+  assert.match(error.message, /Recovery state must be old-remote, fully-updated-remote, or blocked-recovery\./);
+});
+
+test('recovery states fail closed when plan identifiers are not non-empty strings', () => {
+  const recovery = {
+    status: 'fully-updated-remote',
+    reason: 'Invalid plan identifiers should not be accepted.',
+    planId: 42,
+    remoteHash: 'a'.repeat(64),
+    artifacts: {
+      journal: { status: 'completed' },
+    },
+  };
+
+  const error = captureError(() => assertRecoveryStateEnvelope(recovery));
+
+  assert.equal(error.code, 'RECOVERY_STATE_INVALID');
+  assert.match(error.message, /valid plan identifier/);
 });
 
 test('non-blocked recovery artifacts fail closed when the envelope is not a plain object', () => {

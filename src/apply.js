@@ -1905,6 +1905,16 @@ function validateRecoveryStateEnvelopeKeys(recoveryState) {
       },
     );
   }
+  if (typeof recoveryState.planId !== 'string' || recoveryState.planId.length === 0) {
+    throw new PushPlanError(
+      'RECOVERY_STATE_INVALID',
+      'Recovery state must carry a valid plan identifier.',
+      {
+        status: recoveryState.status,
+        planId: recoveryState.planId,
+      },
+    );
+  }
   if (!Object.hasOwn(recoveryState, 'artifacts')) {
     throw new PushPlanError(
       'RECOVERY_STATE_INVALID',
