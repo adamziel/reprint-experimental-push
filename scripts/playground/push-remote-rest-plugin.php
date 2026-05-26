@@ -544,6 +544,10 @@ function reprint_push_lab_rest_authenticated_recovery_inspect(WP_REST_Request $r
 
 function reprint_push_lab_rest_merge_checked_db_journal_contract(array $db_journal, array $checked_summary): array
 {
+    $upgrade_scope = array_key_exists('scope', $checked_summary)
+        && reprint_push_lab_rest_should_upgrade_checked_db_journal_scope($db_journal, $checked_summary);
+    $upgrade_acceptance = reprint_push_lab_rest_should_upgrade_checked_boundary_acceptance($db_journal, $checked_summary);
+
     foreach ([
         'schemaVersion',
         'table',
@@ -560,11 +564,11 @@ function reprint_push_lab_rest_merge_checked_db_journal_contract(array $db_journ
         }
     }
 
-    if (array_key_exists('scope', $checked_summary) && reprint_push_lab_rest_should_upgrade_checked_db_journal_scope($db_journal, $checked_summary)) {
+    if ($upgrade_scope) {
         $db_journal['scope'] = $checked_summary['scope'];
     }
 
-    if (reprint_push_lab_rest_should_upgrade_checked_boundary_acceptance($db_journal, $checked_summary)) {
+    if ($upgrade_acceptance) {
         $db_journal['acceptedOnCheckedBoundary'] = true;
     }
 
@@ -576,7 +580,11 @@ function reprint_push_lab_rest_merge_checked_db_journal_contract(array $db_journ
             ? $checked_summary[$nested_key]
             : [];
         if ($existing !== [] || $checked !== []) {
-            $db_journal[$nested_key] = reprint_push_lab_rest_merge_checked_contract_fields($existing, $checked);
+            $db_journal[$nested_key] = reprint_push_lab_rest_merge_checked_contract_fields(
+                $existing,
+                $checked,
+                $upgrade_scope || $upgrade_acceptance
+            );
         }
     }
 
@@ -637,12 +645,17 @@ function reprint_push_lab_rest_should_upgrade_checked_boundary_acceptance(array 
         || $db_journal['acceptedOnCheckedBoundary'] !== true;
 }
 
-function reprint_push_lab_rest_merge_checked_contract_fields(array $existing, array $checked): array
+function reprint_push_lab_rest_merge_checked_contract_fields(array $existing, array $checked, bool $prefer_checked = false): array
 {
     $merged = $existing;
 
     foreach ($checked as $key => $value) {
-        if (!array_key_exists($key, $merged) || $merged[$key] === null || $merged[$key] === '') {
+        if (
+            !array_key_exists($key, $merged)
+            || $merged[$key] === null
+            || $merged[$key] === ''
+            || ($prefer_checked && $merged[$key] !== $value)
+        ) {
             $merged[$key] = $value;
         }
     }

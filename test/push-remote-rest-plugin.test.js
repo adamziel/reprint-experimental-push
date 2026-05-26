@@ -188,6 +188,58 @@ test('checked db journal merge upgrades stale checked-boundary acceptance and fi
   });
 });
 
+test('checked db journal merge replaces stale nested checked-boundary booleans when the inline contract was not accepted yet', { skip: !hasPhp }, () => {
+  const result = runMerge(
+    {
+      acceptedOnCheckedBoundary: false,
+      ownership: {
+        ownsJournal: true,
+        restartReadable: false,
+        productionAdapter: 'stale-inline-adapter',
+      },
+      leaseFence: {
+        boundary: 'stale-inline-boundary',
+        claimKeyUnique: false,
+        monotonicSequence: false,
+        restartReadable: false,
+        staleClaimRejected: false,
+      },
+    },
+    {
+      acceptedOnCheckedBoundary: true,
+      ownership: {
+        ownsJournal: true,
+        restartReadable: true,
+        productionAdapter: 'wpdb-single-statement-cas',
+      },
+      leaseFence: {
+        boundary: 'wpdb-single-statement-cas',
+        claimKeyUnique: true,
+        monotonicSequence: true,
+        restartReadable: true,
+        staleClaimRejected: true,
+      },
+    },
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  assert.deepEqual(JSON.parse(result.stdout), {
+    acceptedOnCheckedBoundary: true,
+    ownership: {
+      ownsJournal: true,
+      restartReadable: true,
+      productionAdapter: 'wpdb-single-statement-cas',
+    },
+    leaseFence: {
+      boundary: 'wpdb-single-statement-cas',
+      claimKeyUnique: true,
+      monotonicSequence: true,
+      restartReadable: true,
+      staleClaimRejected: true,
+    },
+  });
+});
+
 test('checked db journal merge upgrades stale inline scope on checked boundaries', { skip: !hasPhp }, () => {
   const result = runMerge(
     {
@@ -204,6 +256,61 @@ test('checked db journal merge upgrades stale inline scope on checked boundaries
         monotonicSequence: true,
         restartReadable: true,
         staleClaimRejected: true,
+      },
+    },
+    {
+      acceptedOnCheckedBoundary: true,
+      scope: 'checked live production-shaped journal surface; not local Playground fixture only',
+      ownership: {
+        ownsJournal: true,
+        restartReadable: true,
+        productionAdapter: 'wpdb-single-statement-cas',
+      },
+      leaseFence: {
+        boundary: 'wpdb-single-statement-cas',
+        claimKeyUnique: true,
+        monotonicSequence: true,
+        restartReadable: true,
+        staleClaimRejected: true,
+      },
+    },
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  assert.deepEqual(JSON.parse(result.stdout), {
+    scope: 'checked live production-shaped journal surface; not local Playground fixture only',
+    acceptedOnCheckedBoundary: true,
+    ownership: {
+      ownsJournal: true,
+      restartReadable: true,
+      productionAdapter: 'wpdb-single-statement-cas',
+    },
+    leaseFence: {
+      boundary: 'wpdb-single-statement-cas',
+      claimKeyUnique: true,
+      monotonicSequence: true,
+      restartReadable: true,
+      staleClaimRejected: true,
+    },
+  });
+});
+
+test('checked db journal merge replaces stale nested checked-boundary values when the inline scope still claims a local fixture', { skip: !hasPhp }, () => {
+  const result = runMerge(
+    {
+      scope: 'local Playground fixture only; not production durability',
+      acceptedOnCheckedBoundary: true,
+      ownership: {
+        ownsJournal: true,
+        restartReadable: false,
+        productionAdapter: 'stale-inline-adapter',
+      },
+      leaseFence: {
+        boundary: 'stale-inline-boundary',
+        claimKeyUnique: false,
+        monotonicSequence: false,
+        restartReadable: false,
+        staleClaimRejected: false,
       },
     },
     {
