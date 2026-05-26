@@ -39,10 +39,10 @@ The project is **not releasable as a production WordPress push path**.
 - `origin/lane/cycle-20260525-keep-busy-loop-2/no-data-loss-recovery` -> `63e01a49`
 - `origin/lane/cycle-20260525-mainwindows-2349/critic` -> `fa0dc8a0`
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `761d1c03`
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `8af2c127`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `3d9725ea`
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `f46b424b`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `91424e5b`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `4ff9207c`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `37c0f126`
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` -> `c4103594`
 - `origin/lane/cycle-20260525-mainwindows-2357/no-data-loss-invariants-graph-proof` -> `98c0ce26`
 - `origin/lane/cycle-20260525-restart-2340/feedback-supervisor` -> `ef3d911e`
@@ -51,7 +51,7 @@ The project is **not releasable as a production WordPress push path**.
 - `origin/lane/fast-paths` -> `761d1c03`
 - `origin/lane/feedback-supervisor` -> `8af2c127`
 - `origin/lane/independent-auditor` -> `fad9b731`
-- `origin/lane/no-data-loss-invariants` -> `c271a83b`
+- `origin/lane/no-data-loss-invariants` -> `6b5fd23e`
 - `origin/lane/no-data-loss-recovery` -> `91424e5b`
 - `origin/lane/progress-publisher` -> `7695e1f9`
 - `origin/lane/reliable-executor` -> `d6f65f9a`
@@ -69,11 +69,21 @@ but it did not change the release conclusion:
   expired-session check in the packaging smoke and the REST plugin, but still
   not proving production auth/session lifecycle or a live-source mutation
   boundary.
+- `origin/lane/no-data-loss-invariants` now records `6b5fd23e`, adding
+  comments/users sibling proof. It still does not prove the live release
+  boundary or any production-backed source mutation.
 - `origin/lane/no-data-loss-invariants` now records `b5e199f0`, adding special
   file sibling proof again, but still not proving the live release boundary or
   any production-backed source mutation.
+- `origin/lane/no-data-loss-invariants` now records `47223e20`, adding GUID
+  removal sibling proof. It still does not prove the live release boundary or
+  any production-backed source mutation.
 - `origin/lane/progress-publisher` now records `7695e1f9`, refreshing public
   progress freshness only.
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now records
+  `3d9725ea`, refreshing the public progress freshness only.
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now records
+  `37c0f126`, refreshing the public progress freshness only.
 - `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration`
   now records `0b33a5f9`, adding plugin-owned delete-guard coverage only.
 - `origin/lane/independent-auditor` now records `fad9b731`. This refreshes the
