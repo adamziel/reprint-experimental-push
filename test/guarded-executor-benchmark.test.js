@@ -405,6 +405,19 @@ test('guarded benchmark blocks forged storage-receipts and atomic-commit paired 
   assert.equal(blockers.includes('production-storage-receipts-without-atomic-commit'), false);
 });
 
+test('guarded benchmark blocks storage-receipts visibility without measurement', () => {
+  const report = smallBenchmark();
+  const tampered = clone(report);
+
+  tampered.evidence.atomicGroup.productionStorageReceiptsMeasured = false;
+  tampered.evidence.atomicGroup.productionStorageReceiptsVisible = true;
+
+  const blockers = productionThroughputBlockers(tampered);
+
+  assert.equal(blockers.includes('production-storage-receipts-visible-without-measurement'), true);
+  assert.equal(blockers.includes('production-storage-receipts-not-visible'), false);
+});
+
 test('guarded benchmark blocks storage-receipts and atomic-commit paired visibility when metadata is hidden', () => {
   const report = smallBenchmark();
   const tampered = clone(report);
