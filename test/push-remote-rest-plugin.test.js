@@ -205,6 +205,24 @@ test('db journal stale-claim evidence stays visible when only event summaries re
   assert.equal(JSON.parse(result.stdout), true);
 });
 
+test('db journal stale-claim evidence stays visible when only event summaries retain the abandoned row', { skip: !hasPhp }, () => {
+  const result = runHasStaleClaimRejectionEvidence(
+    [
+      { event: 'idempotency-opened' },
+      { event: 'apply-started' },
+      { event: 'mutation-applied' },
+      { event: 'apply-committed' },
+    ],
+    [
+      { event: 'apply-committed', count: 3, latestId: 24 },
+      { event: 'stale-claim-abandoned', count: 1, latestId: 18 },
+    ],
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(JSON.parse(result.stdout), true);
+});
+
 test('checked db journal merge preserves more specific inline values', { skip: !hasPhp }, () => {
   const result = runMerge(
     {

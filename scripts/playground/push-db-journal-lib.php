@@ -629,7 +629,11 @@ function reprint_push_lab_db_journal_has_stale_claim_rejection_evidence(
             continue;
         }
         $event = (string) ($summary['event'] ?? '');
-        if ($event === 'stale-claim-retry-started' || $event === 'stale-claim-retry-in-progress') {
+        if (
+            $event === 'stale-claim-abandoned'
+            || $event === 'stale-claim-retry-started'
+            || $event === 'stale-claim-retry-in-progress'
+        ) {
             return true;
         }
     }
@@ -639,7 +643,11 @@ function reprint_push_lab_db_journal_has_stale_claim_rejection_evidence(
             continue;
         }
         $event = (string) ($row['event'] ?? '');
-        if ($event === 'stale-claim-retry-started' || $event === 'stale-claim-retry-in-progress') {
+        if (
+            $event === 'stale-claim-abandoned'
+            || $event === 'stale-claim-retry-started'
+            || $event === 'stale-claim-retry-in-progress'
+        ) {
             return true;
         }
     }
