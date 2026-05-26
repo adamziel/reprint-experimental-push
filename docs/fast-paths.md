@@ -107,6 +107,7 @@ Current executable gate:
 | Backpressure | Compress planning evidence and batch already-produced raw receipts within the journal lag budget so replay moves fewer bytes without changing the raw receipt set. | Planning compression stays transport-only. Raw receipt order and keys still decide replay, and the live precondition and atomic-group barrier stay fixed. |
 | Backpressure | Compress durable receipt logs after they have been recorded, then reuse the original receipt keys for bounded replay. | Receipt compression is recovery-only. It cannot authorize apply, widen the queue, or replace the live precondition or atomic-group barrier. |
 | Backpressure | Batch durable chunk, row, or group receipt flushes within a bounded journal lag so fsync work amortizes without changing the raw receipt set. | Batching may delay flushes, but it cannot drop raw receipts, cross an atomic-group boundary, or claim completion before durable evidence exists. |
+| Backpressure | Batch chunk, row, or group receipts by kind within the journal budget while preserving raw key order. | Kind-scoped batching only reduces flush overhead. It cannot change the live precondition, merge owners, or reorder replay evidence. |
 
 Concrete failure modes stay rejected even when the throughput gain looks tempting:
 

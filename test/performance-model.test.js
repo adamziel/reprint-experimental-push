@@ -274,6 +274,16 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
     'compressed planning evidence can batch raw receipts without widening visibility',
   );
   assert.ok(
+    model.safeFastPaths.some(
+      (fastPath) =>
+        fastPath.allowedShortcut === 'batch-kind-scoped-receipts-with-ordered-raw-keys' &&
+        fastPath.area === 'backpressure' &&
+        fastPath.visibilityBoundary === 'kind-scoped-journal-flush-only' &&
+        fastPath.failureEvidence === 'kind-scoped receipt flush batch plus ordered raw durable receipt keys',
+    ),
+    'kind-scoped receipt batches can stay fail-closed while preserving raw order',
+  );
+  assert.ok(
     model.rejectedFastPaths.every((fastPath) =>
       typeof fastPath.rejectedGate === 'string' &&
       Array.isArray(fastPath.violates) &&
