@@ -73,6 +73,7 @@ const serverFetchTimeoutMs = 1_000;
 const packagedPlaygroundTimeoutSeconds = 45;
 const packagedServerStartupTimeoutMs = packagedPlaygroundTimeoutSeconds * 1_000;
 const packagedServerFetchTimeoutMs = 3_000;
+const packagedSnapshotExportTimeoutMs = 45_000;
 const maxReadinessProbes = Math.max(10, Math.ceil(serverStartupTimeoutMs / readinessProbeIntervalMs));
 const maxNotReadyReadinessProbes = Math.max(labMaxConsecutiveNotReadyProbes, maxReadinessProbes);
 const maxPackagedStartupNotReadyProbeCount = Math.max(
@@ -2347,7 +2348,17 @@ function exportSnapshotFromBlueprint(name, blueprintPath) {
     cwd: repoRoot,
     encoding: 'utf8',
     maxBuffer: 1024 * 1024 * 20,
+    timeout: packagedSnapshotExportTimeoutMs,
+    killSignal: 'SIGTERM',
   });
+  if (result.error) {
+    const timeoutNote = result.error.code === 'ETIMEDOUT'
+      ? ` after ${packagedSnapshotExportTimeoutMs}ms`
+      : '';
+    throw new Error(
+      `Playground snapshot export failed for ${name}${timeoutNote}\nSTDOUT:\n${result.stdout}\nSTDERR:\n${result.stderr}\n${result.error.message}`,
+    );
+  }
   if (result.status !== 0) {
     throw new Error(`Playground snapshot export failed for ${name}\nSTDOUT:\n${result.stdout}\nSTDERR:\n${result.stderr}`);
   }

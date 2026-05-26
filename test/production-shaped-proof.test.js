@@ -3017,6 +3017,26 @@ test('production-shaped release verify reuses the tracked remote-base blueprint 
   );
 });
 
+test('production-shaped release verify bounds fallback packaged blueprint snapshot exports', () => {
+  const verifierSource = readFileSync(
+    path.join(repoRoot, 'scripts/playground/production-shaped-release-verify.mjs'),
+    'utf8',
+  );
+
+  assert.match(
+    verifierSource,
+    /const packagedSnapshotExportTimeoutMs = 45_000;/,
+  );
+  assert.match(
+    verifierSource,
+    /timeout: packagedSnapshotExportTimeoutMs,\s*killSignal: 'SIGTERM',/s,
+  );
+  assert.match(
+    verifierSource,
+    /Playground snapshot export failed for \$\{name\}\$\{timeoutNote\}\\nSTDOUT:\\n\$\{result\.stdout\}\\nSTDERR:\\n\$\{result\.stderr\}\\n\$\{result\.error\.message\}/,
+  );
+});
+
 test('packaged production plugin smoke derives the tracked fixture name from the blueprint path', () => {
   const smokeSource = readFileSync(
     path.join(repoRoot, 'scripts/playground/production-plugin-package-smoke.mjs'),
