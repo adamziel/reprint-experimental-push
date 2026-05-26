@@ -606,6 +606,17 @@ test('production claim gate fails closed if benchmark evidence is tampered', () 
     ),
   );
 
+  const visibleStorageReceiptWithoutAtomicGroupMetadata = clone(report);
+  visibleStorageReceiptWithoutAtomicGroupMetadata.evidence.atomicGroup.productionAtomicCommitMeasured = true;
+  visibleStorageReceiptWithoutAtomicGroupMetadata.evidence.atomicGroup.productionAtomicGroupMetadataVisible = false;
+  visibleStorageReceiptWithoutAtomicGroupMetadata.evidence.atomicGroup.productionStorageReceiptsMeasured = true;
+  visibleStorageReceiptWithoutAtomicGroupMetadata.evidence.atomicGroup.productionStorageReceiptsVisible = true;
+  assert.ok(
+    productionThroughputBlockers(visibleStorageReceiptWithoutAtomicGroupMetadata).includes(
+      'production-storage-receipts-without-atomic-group-metadata',
+    ),
+  );
+
   const mismatchedRowBatchExecutorEvidence = clone(report);
   mismatchedRowBatchExecutorEvidence.evidence.atomicGroup.productionRowBatchExecutorMeasured = true;
   assert.ok(

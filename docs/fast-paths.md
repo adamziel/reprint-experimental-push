@@ -74,6 +74,9 @@ Current executable gate:
     still gates the mutation;
   - queue budgeting may bound retries only when the memory ceiling, queue
     budget, and pause footprint all remain aligned;
+  - storage-receipt visibility is only acceptable when the atomic-group
+    metadata surface is visible too, so a forged visibility bit cannot stand in
+    for the production commit boundary;
   - production storage receipts, atomic-group commit proof, and row-batch
     executor proof remain blocked until they are measured on the live surface.
 - The same details now also surface the atomic-group metadata visibility bit on
