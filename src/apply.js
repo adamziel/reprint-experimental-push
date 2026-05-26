@@ -655,6 +655,13 @@ function productionRecoverySupportReport(writer) {
   if (writer?.artifactRefs !== undefined) {
     if (!writer.artifactRefs || typeof writer.artifactRefs !== 'object' || !writer.artifactRefs.journal) {
       addMissingDependency('restart-readable recovery artifact references');
+    } else if (
+      typeof writer.artifactRefs.journal === 'string'
+      && typeof writer.journalPath === 'string'
+      && path.isAbsolute(writer.artifactRefs.journal)
+      && writer.artifactRefs.journal !== writer.journalPath
+    ) {
+      addMissingDependency('restart-readable recovery artifact references');
     }
   }
   if (typeof writer?.journalPath !== 'string' || writer.journalPath.length === 0) {
