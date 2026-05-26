@@ -325,6 +325,16 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
   assert.ok(
     model.safeFastPaths.some(
       (fastPath) =>
+        fastPath.allowedShortcut === 'skip-unchanged-local-file-rehash-with-fingerprint-and-previous-digest' &&
+        fastPath.area === 'file-hashing' &&
+        fastPath.guardrails.includes('local-fingerprint-must-match-a-cache-entry-with-a-strong-digest') &&
+        fastPath.gateProofs.live.includes('guarded publish step still compares the live remote resource hash'),
+    ),
+    'file hashing can skip unchanged local rehashes only when a cached strong digest proves the fingerprint match',
+  );
+  assert.ok(
+    model.safeFastPaths.some(
+      (fastPath) =>
         fastPath.allowedShortcut === 'compress-durable-receipt-logs-and-reuse-stable-receipt-keys-for-bounded-replay' &&
         fastPath.area === 'backpressure' &&
         fastPath.visibilityBoundary === 'recovery-evidence-only' &&

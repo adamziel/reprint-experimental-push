@@ -308,6 +308,26 @@ export const SAFE_FAST_PATHS = Object.freeze([
     publishesStagedDataEarly: false,
   },
   {
+    area: 'file-hashing',
+    reduces: ['duplicate-local-hash-work', 'idle-time'],
+    allowedShortcut: 'skip-unchanged-local-file-rehash-with-fingerprint-and-previous-digest',
+    guardrails: [
+      'local-fingerprint-must-match-a-cache-entry-with-a-strong-digest',
+      'live-publish-still-revalidates-the-remote-resource-hash',
+    ],
+    gateProofs: {
+      skip: 'a local file can skip duplicate rehashing only when its fingerprint matches a cache entry that already stores the previous strong digest',
+      live: 'the guarded publish step still compares the live remote resource hash before visibility changes',
+      group: 'fingerprint reuse stays within one file boundary and never widens an atomic group',
+      recovery: 'the cached digest is resume evidence only; durable chunk receipts and the publish record still classify pause, retry, or crash',
+    },
+    visibilityBoundary: 'compare-and-swap-file-publish',
+    failureEvidence: 'local fingerprint plus previous strong digest and guarded file-publish record',
+    bypassesLivePreconditions: false,
+    splitsAtomicGroup: false,
+    publishesStagedDataEarly: false,
+  },
+  {
     area: 'chunk-upload',
     reduces: ['idle-time', 'planning-round-trips', 'duplicate-body-transfer'],
     allowedShortcut: 'reuse-remote-index-cursor-to-size-bounded-chunk-windows',
