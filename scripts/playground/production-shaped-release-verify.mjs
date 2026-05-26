@@ -14,7 +14,10 @@ import {
   loadAuthSessionSource,
   resolveAuthSessionSourceCredentials,
 } from './auth-session-source.js';
-import { evaluateProductionAuthSessionLifecycle } from './production-auth-session-lifecycle.js';
+import {
+  evaluateProductionAuthSessionLifecycle,
+  evaluateProductionAuthSessionLifecycleSummary,
+} from './production-auth-session-lifecycle.js';
 import {
   bindPackagedProductionPluginRuntimeSource,
   isPackagedProductionPluginSourceCommand,
@@ -889,6 +892,94 @@ try {
         changedFixture: remoteChangedSnapshot.meta?.fixture,
       };
       const authSessionLifecycleSummary = summarizeAuthSessionLifecycle(proof.authSessionLifecycleTrace);
+      const checkedAuthSessionLifecycle = evaluateProductionAuthSessionLifecycleSummary(authSessionLifecycleSummary);
+      if (!checkedAuthSessionLifecycle.ok) {
+        process.stdout.write(
+          JSON.stringify(
+            {
+              ok: false,
+              topology: {
+                sourceUrl: liveSourceUrl,
+                remoteBase: remoteServer.baseUrl,
+                remoteChanged: 'remote-changed',
+                localEdited: 'local-edited',
+              },
+              remoteSnapshotHashes: {
+                sameRemoteIdentity: true,
+                baseHash: liveDrift.baseHash,
+                changedHash: liveDrift.changedHash,
+              },
+              drift: labDriftAfterSnapshot ? {
+                mode: labDriftAfterSnapshot,
+                sameRemoteIdentity: true,
+                changedHash: liveDrift.changedHash,
+              } : {
+                sameRemoteIdentity: true,
+              },
+              liveDrift,
+              boundary: {
+                firstRemainingProductionBoundary: 'auth/session lifecycle on the checked live release path',
+                status: 'unimplemented',
+                verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+                authSession: {
+                  required: checkedAuthSessionLifecycle.required,
+                  observed: checkedAuthSessionLifecycle.observed,
+                  verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+                },
+                durableJournal: {
+                  storageLeaseFence: 'production durable journal storage, lease, and fencing are not yet proven beyond the retained Playground journal path',
+                  verdict: 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED',
+                },
+              },
+              protocolExtension,
+              preflight: {
+                status: preflight.status,
+                authSessionType: preflight.body.auth.session.type,
+                routeProfile: preflight.body.routeProfile,
+                session: {
+                  id: preflight.body.session.id,
+                  type: preflight.body.session.type,
+                },
+              },
+              releaseProof: {
+                ok: false,
+                status: 409,
+                code: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+                mode: proof.mode,
+                retryAttempts: proof.retryAttempts,
+              },
+              authSessionSource: summarizeAuthSessionSource(authSessionSourceCommand, authSessionSource),
+              authSessionLifecycle: proof.authSessionLifecycle,
+              authSessionLifecycleTrace: proof.authSessionLifecycleTrace,
+              authSessionLifecycleSummary,
+              replayEquivalence: proof.replayEquivalence,
+              durableJournal: {
+                proof: {
+                  status: 0,
+                  journal: durableJournalSummary.journal,
+                  leaseFence: {
+                    ...durableJournalSummary.leaseFence,
+                    staleClaimRejected: durableJournalSummary.journal.staleClaimRejected,
+                  },
+                },
+                rows: proof.dbJournal.rows,
+                applyCommitted: proof.dbJournal.applyCommitted,
+                mutationApplied: proof.dbJournal.mutationApplied,
+                idempotencyOpened: proof.dbJournal.idempotencyOpened,
+                scope: proof.dbJournal.scope || null,
+                ownership: proof.dbJournal.ownership || null,
+                liveLeaseFence: proof.dbJournal.leaseFence || null,
+                checkedAccepted: checkedDurableJournalAccepted,
+              },
+            },
+            null,
+            2,
+          ),
+        );
+        process.stdout.write('\n');
+        throw new ProofFailure();
+      }
+
       if (!checkedDurableJournalAccepted) {
         process.stdout.write(
           JSON.stringify(
@@ -918,8 +1009,8 @@ try {
                 status: 'unimplemented',
                 verdict: 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED',
                 authSession: {
-                  required: 'production-auth-session lifecycle',
-                  observed: 'active-unexpired-preserved',
+                  required: checkedAuthSessionLifecycle.required,
+                  observed: checkedAuthSessionLifecycle.observed,
                   verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_PROVEN',
                 },
                 durableJournal: {
@@ -981,8 +1072,8 @@ try {
         status: 'checked',
         verdict: packagedSourceFixture ? 'PACKAGED_RELEASE_BOUNDARY_OK' : 'LIVE_RELEASE_BOUNDARY_OK',
         authSession: {
-          required: 'production-auth-session lifecycle',
-          observed: 'active-unexpired-preserved',
+          required: checkedAuthSessionLifecycle.required,
+          observed: checkedAuthSessionLifecycle.observed,
           verdict: packagedSourceFixture ? 'PACKAGED_RELEASE_BOUNDARY_OK' : 'LIVE_RELEASE_BOUNDARY_OK',
         },
         durableJournal: {

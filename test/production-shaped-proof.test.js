@@ -27,6 +27,7 @@ import {
 } from '../scripts/playground/packaged-production-plugin-readiness.js';
 import {
   evaluateProductionAuthSessionLifecycle,
+  evaluateProductionAuthSessionLifecycleSummary,
   isExpiredAuthSession,
 } from '../scripts/playground/production-auth-session-lifecycle.js';
 import {
@@ -1008,6 +1009,79 @@ test('production auth/session lifecycle helper treats invalid or past expiry as 
   assert.equal(
     isExpiredAuthSession({ expiresAt: '2099-01-01T00:00:00Z' }, new Date('2000-01-01T00:00:01Z')),
     false,
+  );
+});
+
+test('production auth/session lifecycle summary helper requires a preserved active read', () => {
+  assert.deepEqual(
+    evaluateProductionAuthSessionLifecycleSummary({
+      issued: {
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+      },
+      read: {
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+        preserved: true,
+      },
+    }),
+    {
+      ok: true,
+      required: 'production-auth-session lifecycle',
+      observed: 'active-unexpired-preserved',
+    },
+  );
+
+  assert.deepEqual(
+    evaluateProductionAuthSessionLifecycleSummary({
+      issued: {
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+      },
+      read: {
+        id: 'session-02',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+        rotated: true,
+        preserved: false,
+      },
+    }),
+    {
+      ok: false,
+      required: 'preserved read',
+      observed: 'rotated',
+    },
+  );
+
+  assert.deepEqual(
+    evaluateProductionAuthSessionLifecycleSummary({
+      issued: {
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+      },
+      read: {
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+        cleanedUp: true,
+        preserved: true,
+      },
+    }),
+    {
+      ok: false,
+      required: 'unrevoked',
+      observed: 'cleaned-up',
+    },
   );
 });
 

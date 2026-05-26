@@ -62,3 +62,46 @@ export function evaluateProductionAuthSessionLifecycle(session, now = Date.now()
     observed: observedType,
   };
 }
+
+export function evaluateProductionAuthSessionLifecycleSummary(summary, now = Date.now()) {
+  if (!summary || typeof summary !== 'object') {
+    return {
+      ok: false,
+      required: 'preserved read',
+      observed: 'missing',
+    };
+  }
+
+  const issuedLifecycle = evaluateProductionAuthSessionLifecycle(summary.issued, now);
+  if (!issuedLifecycle.ok) {
+    return issuedLifecycle;
+  }
+
+  const readObservation = summary.read;
+  if (!readObservation || typeof readObservation !== 'object') {
+    return {
+      ok: false,
+      required: 'preserved read',
+      observed: 'missing',
+    };
+  }
+
+  const readLifecycle = evaluateProductionAuthSessionLifecycle(readObservation, now);
+  if (!readLifecycle.ok) {
+    return readLifecycle;
+  }
+
+  if (readObservation.preserved !== true) {
+    return {
+      ok: false,
+      required: 'preserved read',
+      observed: readObservation.rotated ? 'rotated' : 'unpreserved',
+    };
+  }
+
+  return {
+    ok: true,
+    required: 'production-auth-session lifecycle',
+    observed: 'active-unexpired-preserved',
+  };
+}
