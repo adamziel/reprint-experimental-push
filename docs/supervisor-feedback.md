@@ -1,29 +1,25 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-26 15:41 CEST
+Last updated: 2026-05-26 15:43 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
 
-## 2026-05-26 15:41 CEST - Reliable Head Advanced Again, Public Page Still Lags
+## 2026-05-26 15:43 CEST - Reliable Head Advanced Again
 
 - Going well: the live reliable head advanced to `325950822499a32663371ed99a487d3faa0e0d4c`, so the checked
-  release path is still moving instead of stalling on the prior support-only
-  head, and `progress-publisher` has also advanced to
-  `0f9e5a6e9f2b6205f2e9c52e3b10dd6f31683515`.
+  release path is still moving instead of stalling on support-only evidence.
 - Not going well: the release gate is still `0/4`, and production-backed
   auth/session lifecycle or durable-ownership proof is still missing.
-- Progress change: the release-path head moved again, but the public page is
-  still behind and the gate has not moved.
+- Progress change: the release-path head moved again, but gate posture did not.
 - Next nudge: keep `reliable-executor` on the next checked release-path
-  dependency, and have `progress-publisher` refresh the page because it still
-  names `e82e3b1af126f62688f617a3fb4cc0baeb698d57` instead of the live
-  `325950822499a32663371ed99a487d3faa0e0d4c` head.
+  dependency, and have `progress-publisher` refresh the public page if it
+  still names an older reliable head.
 
 | Lane | Nudge |
 | --- | --- |
 | Reliable executor | Move to the next checked release-path dependency, not another proof-field surface. |
-| Progress publisher | Refresh now: the page still names `e82e3b1af126f62688f617a3fb4cc0baeb698d57` even though the live head is `325950822499a32663371ed99a487d3faa0e0d4c`. |
+| Progress publisher | Refresh if the public page still names an older reliable head; keep the gate posture at `0/4`. |
 | Audit and critic | Keep the verdict at `0/4` unless production-backed lifecycle or durable ownership is proven. |
 
 ## 2026-05-26 15:30 CEST - Lane Retarget Complete
