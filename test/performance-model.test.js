@@ -185,6 +185,17 @@ test('benchmark model covers large uploads and plugin installs', () => {
     largeUpload.backpressure.queueBudgetBytes === DEFAULT_LIMITS.maxBufferedUploadBytes,
     'large upload keeps backpressure memory and queue budgets aligned',
   );
+  assert.deepEqual(
+    largeUpload.backpressure.replaySizing,
+    {
+      receiptCursor: 'advisory-receipt-cursor',
+      memoryCeilingBytes: DEFAULT_LIMITS.maxBufferedUploadBytes,
+      queueBudgetBytes: DEFAULT_LIMITS.maxBufferedUploadBytes,
+      queueBudgetMatchesMemoryCeiling: true,
+      boundedReplayWindowBytes: DEFAULT_LIMITS.maxBufferedUploadBytes,
+    },
+    'large upload exposes a bounded replay-sizing summary for cursor and memory-ceiling alignment',
+  );
   assert.ok(
     pluginInstall.actions.some(
       (action) =>
