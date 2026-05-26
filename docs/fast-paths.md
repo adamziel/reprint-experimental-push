@@ -390,6 +390,9 @@ fails in a different way:
 - Backpressure cannot collapse journal flushes into a summary that loses the raw
   chunk, row, or group receipts, because recovery still needs the original
   evidence to classify a partial failure.
+- Backpressure can batch mixed durable receipts only when the flush keeps raw
+  receipt order and exact keys, because the journal batch is still recovery
+  evidence rather than commit authority.
 - Compressed receipt logs cannot authorize apply or recovery on their own,
   because raw receipt keys, request hashes, and commit records are still what
   distinguish "already committed" from "only staged" after a crash.

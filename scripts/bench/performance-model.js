@@ -669,6 +669,26 @@ export const SAFE_FAST_PATHS = Object.freeze([
   },
   {
     area: 'backpressure',
+    reduces: ['fsync-count', 'queue-drain-time', 'duplicate-recovery-writes'],
+    allowedShortcut: 'batch-mixed-durable-receipts-while-preserving-raw-order',
+    guardrails: [
+      'journal-batches-retain-raw-receipt-order',
+      'flush-never-crosses-an-atomic-group-commit',
+    ],
+    gateProofs: {
+      skip: 'mixed chunk, row, and group receipts can be flushed together when the batch keeps their raw order and exact keys',
+      live: 'the underlying storage-boundary write still keeps the same live preconditions for each chunk, row, or group member',
+      group: 'receipt batching only changes when journal data is flushed, not which atomic group owns the visibility boundary',
+      recovery: 'batched journal records still keep the exact ordered receipt keys needed to classify a crash, retry, or pause',
+    },
+    visibilityBoundary: 'journal-flush-only',
+    failureEvidence: 'batched journal record plus ordered raw durable receipts',
+    bypassesLivePreconditions: false,
+    splitsAtomicGroup: false,
+    publishesStagedDataEarly: false,
+  },
+  {
+    area: 'backpressure',
     reduces: ['memory-pressure', 'idle-time', 'queue-drain-time'],
     allowedShortcut: 'treat-drained-upload-buffer-as-publish-ready',
     guardrails: [

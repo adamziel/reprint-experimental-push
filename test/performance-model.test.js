@@ -1280,6 +1280,14 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
     'batched journal record plus raw durable receipts',
   );
   assert.equal(
+    model.safeFastPaths.find((fastPath) => fastPath.allowedShortcut === 'batch-mixed-durable-receipts-while-preserving-raw-order')?.visibilityBoundary,
+    'journal-flush-only',
+  );
+  assert.equal(
+    model.safeFastPaths.find((fastPath) => fastPath.allowedShortcut === 'batch-mixed-durable-receipts-while-preserving-raw-order')?.failureEvidence,
+    'batched journal record plus ordered raw durable receipts',
+  );
+  assert.equal(
     model.safeFastPaths.find((fastPath) => fastPath.allowedShortcut === 'compress-durable-receipt-logs-with-stable-receipt-keys')?.failureEvidence,
     'compressed receipt log plus original durable receipt key',
   );
