@@ -468,7 +468,7 @@ async function waitForServer(child, baseUrl, logs) {
           connection: 'close',
           ...authHeaders(),
         },
-      }, readinessProbeFetchTimeoutMs);
+      }, readinessProbeFetchTimeoutMs, child);
       const snapshotText = await snapshotResponse.text();
       timeoutProbeCount = 0;
       notReadyProbeCounts = packagedProductionPluginNextRouteNotReadyProbeCounts(
@@ -490,7 +490,7 @@ async function waitForServer(child, baseUrl, logs) {
         if (packagedProductionPluginReadinessBodyRetryable(snapshotResponse.status, snapshotText)) {
           lastError = new Error(`Production plugin package snapshot readiness HTTP ${snapshotResponse.status}`);
           if (packagedProductionPluginNotReadyProbeLimitReached(snapshotNotReadyProbeCount)) {
-            const indexProbe = await fetchPackagedWordPressIndexProbe(baseUrl);
+            const indexProbe = await fetchPackagedWordPressIndexProbe(baseUrl, child);
             lastProbe = indexProbe;
             if (
               packagedProductionPluginRouteRetryableWhileWordPressStarting(
@@ -542,7 +542,7 @@ async function waitForServer(child, baseUrl, logs) {
         lastError = new Error(`Production plugin package snapshot readiness HTTP ${snapshotResponse.status}`);
         if (packagedProductionPluginSnapshotRetryable({ status: snapshotResponse.status, body: snapshotBody })) {
           if (packagedProductionPluginNotReadyProbeLimitReached(snapshotNotReadyProbeCount)) {
-            const indexProbe = await fetchPackagedWordPressIndexProbe(baseUrl);
+            const indexProbe = await fetchPackagedWordPressIndexProbe(baseUrl, child);
             lastProbe = indexProbe;
             if (
               packagedProductionPluginRouteRetryableWhileWordPressStarting(
@@ -602,7 +602,7 @@ async function waitForServer(child, baseUrl, logs) {
             connection: 'close',
             ...signedHeadersForPreflight(),
           },
-        }, readinessProbeFetchTimeoutMs);
+        }, readinessProbeFetchTimeoutMs, child);
         const preflightText = await preflightResponse.text();
         timeoutProbeCount = 0;
         notReadyProbeCounts = packagedProductionPluginNextRouteNotReadyProbeCounts(
@@ -624,7 +624,7 @@ async function waitForServer(child, baseUrl, logs) {
           if (packagedProductionPluginReadinessBodyRetryable(preflightResponse.status, preflightText)) {
             lastError = new Error(`Production plugin package preflight readiness HTTP ${preflightResponse.status}`);
             if (packagedProductionPluginNotReadyProbeLimitReached(preflightNotReadyProbeCount)) {
-              const indexProbe = await fetchPackagedWordPressIndexProbe(baseUrl);
+              const indexProbe = await fetchPackagedWordPressIndexProbe(baseUrl, child);
               lastProbe = indexProbe;
               if (
                 packagedProductionPluginRouteRetryableWhileWordPressStarting(
@@ -683,7 +683,7 @@ async function waitForServer(child, baseUrl, logs) {
         lastError = new Error(`Production plugin package preflight readiness HTTP ${preflightResponse.status}`);
         if (packagedProductionPluginPreflightRetryable({ status: preflightResponse.status, body: preflightBody })) {
           if (packagedProductionPluginNotReadyProbeLimitReached(preflightNotReadyProbeCount)) {
-            const indexProbe = await fetchPackagedWordPressIndexProbe(baseUrl);
+            const indexProbe = await fetchPackagedWordPressIndexProbe(baseUrl, child);
             lastProbe = indexProbe;
             if (
               packagedProductionPluginRouteRetryableWhileWordPressStarting(
@@ -765,13 +765,13 @@ async function waitForServer(child, baseUrl, logs) {
   throw new Error(`Timed out waiting for Playground server at ${baseUrl}: ${lastError?.message || 'unknown'}${lastResponse}\n${logs.join('')}`);
 }
 
-async function fetchPackagedWordPressIndexProbe(baseUrl) {
+async function fetchPackagedWordPressIndexProbe(baseUrl, child = null) {
   const response = await fetchWithTimeout(`${baseUrl}/wp-json/`, {
     method: 'GET',
     headers: {
       connection: 'close',
     },
-  }, readinessProbeFetchTimeoutMs);
+  }, readinessProbeFetchTimeoutMs, child);
   const bodyText = await response.text();
   return {
     route: '/wp-json/',
@@ -780,14 +780,47 @@ async function fetchPackagedWordPressIndexProbe(baseUrl) {
   };
 }
 
-async function fetchWithTimeout(url, init = {}, timeoutMs = readinessProbeFetchTimeoutMs) {
+async function fetchWithTimeout(url, init = {}, timeoutMs = readinessProbeFetchTimeoutMs, child = null) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(new Error(`Timed out fetching ${url}`)), timeoutMs);
+  const childExitWatcher = createChildExitWatcher(child, url, controller);
   try {
     return await fetch(url, { ...init, signal: controller.signal });
   } finally {
     clearTimeout(timeout);
+    childExitWatcher?.cleanup();
   }
+}
+
+function createChildExitWatcher(child, url, controller) {
+  if (!child) {
+    return null;
+  }
+
+  const failForExit = () => {
+    const exitLabel = child.exitCode !== null
+      ? `exited with ${child.exitCode}`
+      : child.signalCode !== null
+        ? `terminated by ${child.signalCode}`
+        : 'terminated unexpectedly';
+    const error = new Error(`Playground child ${exitLabel} while fetching ${url}`);
+    error.isPlaygroundReadinessFailure = true;
+    controller.abort(error);
+  };
+
+  if (child.exitCode !== null || child.signalCode !== null) {
+    failForExit();
+    return { cleanup() {} };
+  }
+
+  const onExit = () => failForExit();
+  const cleanup = () => {
+    child.off('exit', onExit);
+    child.off('close', onExit);
+  };
+  child.once('exit', onExit);
+  child.once('close', onExit);
+  return { cleanup };
 }
 
 async function stopPlaygroundServer(server) {

@@ -1897,12 +1897,30 @@ test('packaged production plugin smoke readiness helper fails fast on signaled c
   );
   const start = smokeSource.indexOf('async function waitForServer(child, baseUrl, logs) {');
   assert.notEqual(start, -1, 'expected packaged smoke readiness helper in smoke source');
-  const end = smokeSource.indexOf('async function fetchPackagedWordPressIndexProbe(baseUrl) {', start);
+  const end = smokeSource.indexOf('async function fetchPackagedWordPressIndexProbe(', start);
   assert.notEqual(end, -1, 'expected packaged smoke readiness helper boundary in smoke source');
   const helperSource = smokeSource.slice(start, end);
 
   assert.match(helperSource, /child\.exitCode !== null \|\| child\.signalCode !== null/);
   assert.match(helperSource, /terminated by \$\{child\.signalCode\}/);
+});
+
+test('packaged readiness fetch helpers abort probe fetches when the Playground child exits mid-probe', () => {
+  const smokeSource = readFileSync(
+    path.join(repoRoot, 'scripts/playground/production-plugin-package-smoke.mjs'),
+    'utf8',
+  );
+  const verifierSource = readFileSync(
+    path.join(repoRoot, 'scripts/playground/production-shaped-release-verify.mjs'),
+    'utf8',
+  );
+
+  for (const source of [smokeSource, verifierSource]) {
+    assert.match(source, /fetchWithTimeout\([^)]*child = null\)/);
+    assert.match(source, /createChildExitWatcher\(child, url, controller\)/);
+    assert.match(source, /error\.isPlaygroundReadinessFailure = true/);
+    assert.match(source, /fetchPackagedWordPressIndexProbe\(baseUrl, child\)/);
+  }
 });
 
 test('lab Playground readiness helper rejects malformed ready responses and retries only startup-shaped failures', () => {
