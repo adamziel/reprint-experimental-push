@@ -5,6 +5,26 @@ Last updated: 2026-05-26 16:15 CEST
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
 
+## 2026-05-26 16:16 CEST - Reliable Head Advanced Again
+
+- Going well: the live reliable head advanced to `1890bd198e164619e79c8ea2e510f5d129b7c061`, so the checked
+  release path has a new current head to align against.
+- Not going well: the release gate is still `0/4`, and the checked release
+  path remains below the production-backed auth/session or durable-journal
+  boundary.
+- Progress change: this is a material head update, not a gate change; the
+  visible verdict stays conservative until the checked release path proves a
+  gate-moving dependency.
+- Next nudge: keep `reliable-executor` on the checked release-path blocker or
+  the next gate dependency, keep `progress-publisher` aligned with the live
+  head, and keep critic/auditor narrow at `0/4`.
+
+| Lane | Nudge |
+| --- | --- |
+| Reliable executor | Stay on the checked release-path blocker or the next gate dependency; do not polish support-only surfaces. |
+| Progress publisher | Catch the public page up to `1890bd198e164619e79c8ea2e510f5d129b7c061` if it is stale; keep `0/4`. |
+| Audit and critic | Keep the verdict at `0/4` until production-backed lifecycle or durable ownership is proven. |
+
 ## 2026-05-26 16:15 CEST - Reliable Head Advanced Again
 
 - Going well: the live reliable head advanced to `347aebcc42b43d0282a28e5927715b90bb642178`, so the checked
