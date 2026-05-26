@@ -178,6 +178,44 @@ test('plugin-owned driver registry rejects whitespace-only driver names', { skip
   );
 });
 
+test('plugin-owned driver registry rejects whitespace-only table names', { skip: !hasPhp }, () => {
+  const result = runDriverRegistryCheck({
+    'fixture-driver': {
+      driver: 'fixture-driver',
+      table: '   ',
+      pluginOwner: 'driver-fixture',
+      exportRowsCallback: 'fixture_export_rows',
+      applyRowCallback: 'fixture_apply_row',
+      validateMutationCallback: 'fixture_validate_mutation',
+    },
+  });
+
+  assert.equal(result.status, 2);
+  assert.match(
+    result.stderr,
+    /missing table for driver: fixture-driver/,
+  );
+});
+
+test('plugin-owned driver registry rejects whitespace-only plugin owners', { skip: !hasPhp }, () => {
+  const result = runDriverRegistryCheck({
+    'fixture-driver': {
+      driver: 'fixture-driver',
+      table: 'wp_reprint_push_driver_fixture',
+      pluginOwner: '   ',
+      exportRowsCallback: 'fixture_export_rows',
+      applyRowCallback: 'fixture_apply_row',
+      validateMutationCallback: 'fixture_validate_mutation',
+    },
+  });
+
+  assert.equal(result.status, 2);
+  assert.match(
+    result.stderr,
+    /missing pluginOwner for driver: fixture-driver/,
+  );
+});
+
 test('plugin-owned driver registry rejects missing export callback', { skip: !hasPhp }, () => {
   const result = runDriverRegistryCheck({
     'fixture-driver': {
@@ -232,6 +270,60 @@ test('plugin-owned driver registry rejects missing validate callback', { skip: !
   assert.match(
     result.stderr,
     /missing validateMutationCallback for driver: fixture-driver/,
+  );
+});
+
+test('plugin-owned driver registry rejects duplicate driver names', { skip: !hasPhp }, () => {
+  const result = runDriverRegistryCheck({
+    'fixture-driver': {
+      driver: 'fixture-driver',
+      table: 'wp_reprint_push_driver_fixture',
+      pluginOwner: 'driver-fixture',
+      exportRowsCallback: 'fixture_export_rows',
+      applyRowCallback: 'fixture_apply_row',
+      validateMutationCallback: 'fixture_validate_mutation',
+    },
+    'fixture-driver-duplicate': {
+      driver: 'fixture-driver',
+      table: 'wp_reprint_push_driver_fixture_duplicate',
+      pluginOwner: 'driver-fixture',
+      exportRowsCallback: 'fixture_export_rows',
+      applyRowCallback: 'fixture_apply_row',
+      validateMutationCallback: 'fixture_validate_mutation',
+    },
+  });
+
+  assert.equal(result.status, 2);
+  assert.match(
+    result.stderr,
+    /duplicate driver name: fixture-driver/,
+  );
+});
+
+test('plugin-owned driver registry rejects duplicate table mappings', { skip: !hasPhp }, () => {
+  const result = runDriverRegistryCheck({
+    'fixture-driver': {
+      driver: 'fixture-driver',
+      table: 'wp_reprint_push_driver_fixture',
+      pluginOwner: 'driver-fixture',
+      exportRowsCallback: 'fixture_export_rows',
+      applyRowCallback: 'fixture_apply_row',
+      validateMutationCallback: 'fixture_validate_mutation',
+    },
+    'fixture-driver-same-table': {
+      driver: 'fixture-driver-same-table',
+      table: 'wp_reprint_push_driver_fixture',
+      pluginOwner: 'driver-fixture',
+      exportRowsCallback: 'fixture_export_rows',
+      applyRowCallback: 'fixture_apply_row',
+      validateMutationCallback: 'fixture_validate_mutation',
+    },
+  });
+
+  assert.equal(result.status, 2);
+  assert.match(
+    result.stderr,
+    /duplicate table mapping for table: wp_reprint_push_driver_fixture/,
   );
 });
 
