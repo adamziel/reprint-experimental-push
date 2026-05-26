@@ -68,6 +68,9 @@ without weakening live preconditions or the atomic-group barrier.
 It also includes measured parallelism caps plus canonical per-kind budgets for
 bounded plugin-install fanout, so the planner can skip repeat fanout sizing
 without turning concurrency limits into mutation authority.
+It also includes measured database parallelism caps plus canonical per-kind
+budgets for bounded plugin-update row batches, so the planner can skip repeat
+row-batch sizing without turning concurrency limits into mutation authority.
 It also includes compressed remote-index listings plus a cursor for bounded
 plugin-install retry windows, so retry sizing can skip duplicate remote-index
 scans without weakening live preconditions or the atomic-group barrier.

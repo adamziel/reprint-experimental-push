@@ -588,6 +588,26 @@ export const SAFE_FAST_PATHS = Object.freeze([
     publishesStagedDataEarly: false,
   },
   {
+    area: 'parallelism-limits',
+    reduces: ['idle-time', 'head-of-line-blocking', 'duplicate-budget-recomputation'],
+    allowedShortcut: 'reuse-measured-db-parallelism-caps-and-canonical-per-kind-budgets-to-size-bounded-plugin-update-row-batches',
+    guardrails: [
+      'measured-db-parallelism-caps-stay-planning-evidence-only',
+      'per-kind-budgets-stay-canonical-and-revalidated-before-write',
+    ],
+    gateProofs: {
+      skip: 'the planner can reuse measured database parallelism caps and canonical per-kind budgets to avoid recomputing plugin-update row-batch fanout on a retry',
+      live: 'each later plugin-update row still rechecks its live compare at the storage boundary before visibility changes',
+      group: 'budget reuse only narrows planning inside the same planned atomic group and never merges coupled plugin owners',
+      recovery: 'the measured caps, budget record, and batch receipts still classify pause, retry, or crash',
+    },
+    visibilityBoundary: 'planning-only-budget-resume',
+    failureEvidence: 'measured db parallelism caps plus canonical per-kind budget summary and plugin-update batch receipts',
+    bypassesLivePreconditions: false,
+    splitsAtomicGroup: false,
+    publishesStagedDataEarly: false,
+  },
+  {
     area: 'compression',
     reduces: ['wire-bytes', 'planning-round-trips', 'duplicate-budget-recomputation'],
     allowedShortcut: 'compress-canonical-per-kind-budget-summaries-to-size-bounded-release-bundle-retry-windows',

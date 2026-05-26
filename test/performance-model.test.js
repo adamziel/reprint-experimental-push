@@ -702,6 +702,17 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
     model.safeFastPaths.some(
       (fastPath) =>
         fastPath.area === 'parallelism-limits' &&
+        fastPath.allowedShortcut === 'reuse-measured-db-parallelism-caps-and-canonical-per-kind-budgets-to-size-bounded-plugin-update-row-batches' &&
+        fastPath.guardrails.includes('measured-db-parallelism-caps-stay-planning-evidence-only') &&
+        fastPath.gateProofs.skip.includes('plugin-update row-batch fanout') &&
+        fastPath.gateProofs.recovery.includes('the measured caps, budget record, and batch receipts still classify pause, retry, or crash'),
+    ),
+    'measured db parallelism caps can size plugin-update row batches without weakening recovery evidence',
+  );
+  assert.ok(
+    model.safeFastPaths.some(
+      (fastPath) =>
+        fastPath.area === 'parallelism-limits' &&
         fastPath.allowedShortcut === 'reuse-canonical-per-kind-budgets-to-size-bounded-release-bundle-resume' &&
         fastPath.guardrails.includes('release-bundle-resume-stays-planning-only') &&
         fastPath.gateProofs.recovery.includes('the release-bundle staging record still classify pause, retry, or crash'),
