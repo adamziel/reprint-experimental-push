@@ -6,26 +6,25 @@ Changed files:
 - [`.lane-output/final.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/independent-auditor/.lane-output/final.md)
 
 What changed:
-- Updated the stale remote-head snapshot for `origin/lane/critic`,
-  `origin/lane/same-plan-wordpress-graph-create`,
-  `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor`,
-  `origin/lane/cycle-20260525-mainwindows-2349/progress-followup`,
-  `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery`, and
-  `origin/main`.
-- Kept the blocker classification unchanged because the live production
-  boundary is still unproven.
+- Updated the stale remote-head snapshot for `origin/lane/no-data-loss-recovery`,
+  `origin/lane/fast-paths`, `origin/lane/cycle-20260525-mainwindows-2349/fast-paths`,
+  `origin/lane/critic`, `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor`,
+  and `origin/lane/cycle-20260525-mainwindows-2349/progress-followup`.
+- Tightened the unsupported-slice wording to keep the live-source release gate
+  closed until the actual production boundary changes.
 
 Commands run:
 - `git status --short --branch`
 - `git for-each-ref --format='%(refname:short) %(objectname:short) %(committerdate:iso8601) %(subject)' refs/remotes/origin/lane | sort`
 - `sed -n '1,320p' audits/objective-audit.md`
 - `git diff -- audits/objective-audit.md`
+- `git status --short --branch`
 
 Push result:
 - Pending
 
 Worktree status:
-- Branch: `lane/cycle-20260525-mainwindows-2349/independent-auditor...origin/main [ahead 1300, behind 207]`
+- Branch: `lane/cycle-20260525-mainwindows-2349/independent-auditor...origin/main [ahead 1301, behind 207]`
 - Tracked files are dirty only from this audit refresh
 
 Next supervisor nudge:

@@ -8,18 +8,18 @@ Fresh remote heads at audit time, checked on May 26, 2026:
 
 - `origin/lane/reliable-executor` -> `0c4fd10f`
 - `origin/lane/no-data-loss-invariants` -> `4335ce8b`
-- `origin/lane/no-data-loss-recovery` -> `95092fcd`
-- `origin/lane/fast-paths` -> `a6ee1f74`
-- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `974171d0`
+- `origin/lane/no-data-loss-recovery` -> `47b675c0`
+- `origin/lane/fast-paths` -> `9be664b2`
+- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `c0f7aa92`
 - `origin/lane/independent-auditor` -> `5abd1f65`
-- `origin/lane/critic` -> `d54e8cda`
+- `origin/lane/critic` -> `f8591f9d`
 - `origin/lane/progress-publisher` -> `7695e1f9`
 - `origin/lane/same-plan-wordpress-graph-create` -> `fc8308c4`
 - `origin/lane/cycle-20260525-mainwindows-2349/same-plan-wordpress-graph-create` -> `fc8308c4`
 - `origin/lane/cycle-20260525-mainwindows-2349/same-plan-wordpress-graph-create` -> `e9cbf9d4`
 - `origin/lane/cycle-20260525-mainwindows-2357/no-data-loss-invariants-graph-proof` -> `98c0ce26`
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `ce869a4e`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `22a5f366`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `bb2742a6`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `3cbd731a`
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` -> `5f256171`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-invariants` -> `4335ce8b`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `93340006`
@@ -184,7 +184,7 @@ These tests are still lab-bound. They mostly prove carefully controlled fixtures
 6. Reliability assertions often count events rather than prove every hash transition.
 7. Auth is lab-auth, not production-auth.
 8. Plugin safety is intentionally hard-coded.
-9. The strongest unsupported production-slice gap is still the boundary coverage for menu/navigation, serialized block references, comments/users, and plugin-owned custom tables. The current proof in [`test/push-planner.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/independent-auditor/test/push-planner.test.js) is refusal-backed for plugin-owned resources, not live-boundary proof for those graph surfaces. The newer same-plan graph proof at `69f27361` strengthens the fail-closed side for revision posts, menu/navigation posts, serialized blocks, and thumbnail parent references, and the integration proof at `295dc72a` adds a post-parent conflict case, but neither produces live source mutation evidence.
+9. The strongest unsupported production-slice gap is still the boundary coverage for menu/navigation, serialized block references, comments/users, and plugin-owned custom tables. The current proof in [`test/push-planner.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/independent-auditor/test/push-planner.test.js) is refusal-backed for plugin-owned resources, not live-boundary proof for those graph surfaces. The newer same-plan graph proof at `69f27361` strengthens the fail-closed side for revision posts, menu/navigation posts, serialized blocks, and thumbnail parent references, the cycle-scoped proof at `e9cbf9d4` tightens thumbnail-guard handling further, and the integration proof at `295dc72a` adds a post-parent conflict case, but none produce live source mutation evidence.
 9. The strongest unsupported production-slice gap is still the boundary coverage for menu/navigation, serialized block references, comments/users, and plugin-owned custom tables. The current proof in [`test/push-planner.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/independent-auditor/test/push-planner.test.js) is refusal-backed for plugin-owned resources, not live-boundary proof for those graph surfaces. The newer same-plan graph proof at `69f27361` strengthens the fail-closed side for revision posts, menu/navigation posts, serialized blocks, and thumbnail parent references, the cycle-scoped proof at `e9cbf9d4` tightens thumbnail-guard handling further, and the integration proof at `295dc72a` adds a post-parent conflict case, but none produce live source mutation evidence.
 10. The repository script surface still lacks a checked-in `verify`, `verify:release`, or `release` command in [`package.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/independent-auditor/package.json:10), so there is still no enforced live-source gate that could own the verdict even if the missing proof appeared. The planner tests in [`test/push-planner.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/independent-auditor/test/push-planner.test.js:131) remain strong fixture evidence, but they still stop at local/remote simulation rather than the live release boundary. The exact missing command is a checked entrypoint that runs the live-source preflight, aborts on stale or unsupported boundaries, and exits non-zero before any apply step when the unsupported surface set is hit.
 11. Speed has no measured evidence.
