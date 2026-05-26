@@ -8200,6 +8200,71 @@ test('allows an existing post row to retarget its parent reference to a same-pla
   assert.equal(result.site.db.wp_posts['ID:3'].post_parent, 2);
 });
 
+test('allows an existing post row to retarget its parent reference to a same-plan post create even when an unrelated remote attachment exists', () => {
+  const parentResourceKey = 'row:["wp_posts","ID:2"]';
+  const childResourceKey = 'row:["wp_posts","ID:3"]';
+  const base = baseSite();
+  base.db.wp_posts['ID:3'] = {
+    ID: 3,
+    post_title: 'Existing child post',
+    post_content: 'base-private-existing-child-body',
+    post_status: 'draft',
+    post_parent: 0,
+  };
+  const local = baseSite();
+  local.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_title: 'Local parent post',
+    post_content: 'local-private-parent-body',
+    post_status: 'publish',
+  };
+  local.db.wp_posts['ID:3'] = {
+    ...base.db.wp_posts['ID:3'],
+    post_parent: 2,
+  };
+  const remote = baseSite();
+  remote.db.wp_posts['ID:3'] = {
+    ...base.db.wp_posts['ID:3'],
+  };
+  remote.db.wp_posts['ID:21'] = {
+    ID: 21,
+    post_title: 'Remote attachment noise',
+    post_content: 'remote-attachment-noise-body',
+    post_status: 'inherit',
+    post_type: 'attachment',
+  };
+
+  const plan = planFor(base, local, remote);
+  const parentMutation = mutationFor(plan, parentResourceKey);
+  const childMutation = mutationFor(plan, childResourceKey);
+  const reference = childMutation.wordpressGraphReferences.find((entry) => entry.relationshipType === 'post-parent');
+  const referenceJson = JSON.stringify(reference);
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.blockers, 0);
+  assert.equal(parentMutation.changeKind, 'create');
+  assert.equal(childMutation.changeKind, 'update');
+  assert.ok(
+    plan.mutations.indexOf(parentMutation) < plan.mutations.indexOf(childMutation),
+    'parent post create must be ordered before dependent existing child post update',
+  );
+  assert.deepEqual(childMutation.dependsOnMutationIds, [parentMutation.id]);
+  assert.equal(reference.resolutionPolicy, 'same-plan-local-create');
+  assert.equal(reference.relationshipKey, 'wp_posts.post_parent');
+  assert.equal(reference.relationshipType, 'post-parent');
+  assert.equal(reference.targetResourceKey, parentResourceKey);
+  assert.equal(reference.dependency.targetMutationId, parentMutation.id);
+  assert.equal(reference.dependency.targetLocalHash, parentMutation.localHash);
+  assert.equal(referenceJson.includes('base-private-existing-child-body'), false);
+  assert.equal(referenceJson.includes('local-private-parent-body'), false);
+  assert.equal(referenceJson.includes('remote-attachment-noise-body'), false);
+
+  const result = applyPlan(remote, plan);
+  assert.equal(result.site.db.wp_posts['ID:2'].post_title, 'Local parent post');
+  assert.equal(result.site.db.wp_posts['ID:3'].post_parent, 2);
+  assert.equal(result.site.db.wp_posts['ID:21'].post_type, 'attachment');
+});
+
 test('allows a local thumbnail reference to an attachment created by the same plan', () => {
   const attachmentResourceKey = 'row:["wp_posts","ID:2"]';
   const postmetaResourceKey = 'row:["wp_postmeta","meta_id:45"]';
