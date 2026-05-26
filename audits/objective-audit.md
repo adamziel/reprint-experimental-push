@@ -7,7 +7,7 @@ The project is **not releasable as a production WordPress push path**.
 Fresh remote heads at audit time, checked on May 26, 2026:
 
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `0959a5ac`
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `b4c790d5`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `9351cd78`
 - `origin/lane/reliable-executor` -> `b8d91776`
 - `origin/lane/no-data-loss-invariants` -> `9c70eba6`
 - `origin/lane/no-data-loss-recovery` -> `4372167e`
@@ -19,20 +19,20 @@ Fresh remote heads at audit time, checked on May 26, 2026:
 - `origin/lane/cycle-20260525-mainwindows-2349/critic` -> `cba0890b`
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `d6bf78a8`
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `5c0b8477`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `3a9de43f`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `7805be01`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `4372167e`
 - `origin/lane/same-plan-wordpress-graph-create` -> `09e6706d`
 - `origin/lane/cycle-20260525-mainwindows-2349/same-plan-wordpress-graph-create` -> `09e6706d`
 - `origin/lane/cycle-20260525-mainwindows-2349/same-plan-wordpress-graph-create` -> `e9cbf9d4`
 - `origin/lane/cycle-20260525-mainwindows-2357/no-data-loss-invariants-graph-proof` -> `98c0ce26`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `a42574d7`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `7805be01`
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` -> `5f256171`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-invariants` -> `9c70eba6`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `4372167e`
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `5c0b8477`
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `5c0b8477`
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `d6bf78a8`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `a42574d7`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `9351cd78`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `7805be01`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `4372167e`
 - `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration` -> `a3a900d7`
 - `origin/main` -> `e55864f4`
