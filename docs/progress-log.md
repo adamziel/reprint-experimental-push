@@ -4,6 +4,15 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+# 2026-05-26 - Fresh Evidence Delta 10:44:28
+
+<a id="2026-05-26-fresh-evidence-delta-104428"></a>
+
+- Reliable's newest readiness fast-fail patch is `0f36d838`, which now fails immediately on the first `/wp-json/` `502` body containing `WordPress is not ready yet` through the bounded route/status/body diagnostic path.
+- This is better bounded failure evidence, but it still does not cross the outer release-verifier boundary.
+- The release gate posture remains `0/4`.
+- Evidence trail: [supervisor feedback](supervisor-feedback.md).
+
 # 2026-05-26 - Fresh Evidence Delta 10:43:21
 
 <a id="2026-05-26-fresh-evidence-delta-104321"></a>
