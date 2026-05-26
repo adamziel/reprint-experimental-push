@@ -42,6 +42,7 @@ export function evaluateProductionAuthSessionLifecycle(session, now = Date.now()
   const revoked = session?.revoked === true || session?.status === 'revoked';
   const cleanedUp = session?.cleanedUp === true || session?.cleanup === true || session?.status === 'cleaned-up';
   const rotated = session?.rotated === true || session?.status === 'rotated';
+  const expired = session?.expired === true || session?.status === 'expired' || isExpiredAuthSession(session, now);
 
   if (observedType !== 'production-auth-session') {
     return {
@@ -67,6 +68,14 @@ export function evaluateProductionAuthSessionLifecycle(session, now = Date.now()
     };
   }
 
+  if (expired) {
+    return {
+      ok: false,
+      required: 'unexpired',
+      observed: observedStatus === 'expired' ? 'expired' : observedExpiresAt,
+    };
+  }
+
   if (observedStatus !== 'active') {
     return {
       ok: false,
@@ -75,7 +84,7 @@ export function evaluateProductionAuthSessionLifecycle(session, now = Date.now()
     };
   }
 
-  if (!session?.expiresAt || isExpiredAuthSession(session, now)) {
+  if (!session?.expiresAt) {
     return {
       ok: false,
       required: 'unexpired',
@@ -461,7 +470,7 @@ export function summarizeProductionAuthSessionLifecycleTrace(trace) {
       status: entry.status ?? null,
       expiresAt: entry.expiresAt ?? null,
       invalidLifecycleFlag: resolveInvalidAuthSessionLifecycleFlag(entry),
-      expired: entry.expired === true,
+      expired: entry.expired === true || entry.status === 'expired',
       revoked: entry.revoked === true || entry.status === 'revoked',
       cleanedUp: entry.cleanedUp === true || entry.cleanup === true || entry.status === 'cleaned-up',
       rotated: entry.rotated === true || entry.status === 'rotated',

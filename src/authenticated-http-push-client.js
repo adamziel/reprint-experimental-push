@@ -979,7 +979,7 @@ function summarizeAuthSessionLifecycle(session) {
     type: session.type || null,
     status: session.status || null,
     expiresAt: session.expiresAt || null,
-    expired: isExpiredSession(session),
+    expired: session.status === 'expired' || isExpiredSession(session),
     revoked: session.revoked === true || session.status === 'revoked',
     cleanedUp: session.cleanedUp === true || session.cleanup === true || session.status === 'cleaned-up',
     rotated: session.rotated === true || session.status === 'rotated'
@@ -1528,6 +1528,14 @@ function resolveObservedProductionAuthSessionLifecycleDrift(response) {
     };
   }
 
+  if (session?.status === 'expired' || isExpiredSession(session)) {
+    return {
+      field: session?.status === 'expired' ? 'auth.session.status' : 'auth.session.expiresAt',
+      required: 'unexpired',
+      observed: session?.status === 'expired' ? 'expired' : (session?.expiresAt || 'missing'),
+    };
+  }
+
   if (session?.status !== 'active') {
     return {
       field: 'auth.session.status',
@@ -1536,7 +1544,7 @@ function resolveObservedProductionAuthSessionLifecycleDrift(response) {
     };
   }
 
-  if (!session?.expiresAt || isExpiredSession(session)) {
+  if (!session?.expiresAt) {
     return {
       field: 'auth.session.expiresAt',
       required: 'unexpired',
@@ -1632,6 +1640,15 @@ function describeRequiredProductionAuthSession(response) {
     };
   }
 
+  if (session?.status === 'expired' || isExpiredSession(session)) {
+    return {
+      field: session?.status === 'expired' ? 'auth.session.status' : 'auth.session.expiresAt',
+      required: 'unexpired',
+      observed: session?.status === 'expired' ? 'expired' : (session?.expiresAt || 'missing'),
+      verdict,
+    };
+  }
+
   if (session?.status !== 'active') {
     return {
       field: 'auth.session.status',
@@ -1641,7 +1658,7 @@ function describeRequiredProductionAuthSession(response) {
     };
   }
 
-  if (!session?.expiresAt || isExpiredSession(session)) {
+  if (!session?.expiresAt) {
     return {
       field: 'auth.session.expiresAt',
       required: 'unexpired',
@@ -1752,6 +1769,9 @@ function normalizeProductionAuthSessionIdentityField(value) {
 function isExpiredSession(session) {
   if (!session || typeof session !== 'object') {
     return false;
+  }
+  if (session.status === 'expired') {
+    return true;
   }
   const expiresAt = session.expiresAt;
   if (!expiresAt) {
