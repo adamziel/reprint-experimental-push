@@ -1327,7 +1327,9 @@ export function productionThroughputDetails(report) {
   const queueHeadroomVisibleAndMeasured =
     queueHeadroomVisible && queueHeadroomMeasured;
   const stagingDiskHeadroomVisibleAndMeasured =
-    stagingDiskHeadroomVisible && stagingDiskHeadroomMeasured;
+    stagingDiskHeadroomVisible
+    && stagingDiskHeadroomMeasured
+    && stagingDiskHeadroomWithinPlanReserve;
   const queueBudgetVisibleAndQueueHeadroomMeasured =
     queueBudgetVisible && queueHeadroomMeasured;
   const receiptCursorMemoryHeadroomPositive =

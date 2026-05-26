@@ -681,6 +681,8 @@ test('guarded benchmark blocks staged-disk headroom evidence outside the plan re
   const blockers = productionThroughputBlockers(tampered);
 
   assert.equal(details.stagingDiskHeadroomWithinPlanReserve, false);
+  assert.equal(details.stagingDiskHeadroomVisibleAndMeasured, false);
+  assert.equal(details.backpressureConsistency.stagingDiskHeadroomVisibleAndMeasured, false);
   assert.equal(details.stagingDiskHeadroomVisibleAndMeasuredAfterPause, false);
   assert.equal(
     details.backpressureConsistency.stagingDiskHeadroomWithinPlanReserve,

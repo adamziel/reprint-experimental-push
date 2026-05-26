@@ -168,6 +168,9 @@ Current executable gate:
 - The same details also keep staging-disk reserve headroom explicit for
   post-pause journal batching, so a forged disk-budget shortcut cannot look
   complete without the paused receipt-cursor proof that makes it safe.
+- The same staged-disk visible-and-measured summary now also fails closed when
+  the plan-reserve proof is missing, so a forged disk-budget surface cannot
+  still look complete from raw visibility and byte counts alone.
 - The same details also let a compressed pause-footprint summary size the next
   bounded replay window, but only as planning evidence while the cached
   receipt cursor, journal lag, and durable journal records still decide
