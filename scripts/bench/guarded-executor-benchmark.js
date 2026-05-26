@@ -316,6 +316,12 @@ export function productionThroughputBlockers(report) {
   ) {
     blockers.push('queue-pause-without-measured-and-aligned-receipt-cursor-queue-slack-proof');
   }
+  if (
+    report.evidence.backpressure?.queuePausedBeforeOverflow === true
+    && report.evidence.backpressure?.queuePauseHasBackpressureAlignedReceiptCursorQueueSlack !== true
+  ) {
+    blockers.push('queue-pause-without-backpressure-aligned-receipt-cursor-queue-slack-proof');
+  }
   if (report.evidence.backpressure?.receiptCursorQueueSlackBytes == null) {
     blockers.push('receipt-cursor-queue-slack-not-measured');
   }
@@ -808,6 +814,7 @@ export function productionThroughputDetails(report) {
       receiptCursorBackpressureMeasured,
       queuePauseHasMeasuredReceiptCursorBackpressure,
       ...pausedQueueSlackEvidence,
+      queuePauseHasBackpressureAlignedReceiptCursorQueueSlack,
       queuePauseHasMeasuredAndAlignedReceiptCursorBackpressure,
       receiptCursorQueueSlackBytes,
       receiptCursorQueueSlackPositive,

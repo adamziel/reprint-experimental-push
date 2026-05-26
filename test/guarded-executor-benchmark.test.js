@@ -140,6 +140,10 @@ test('guarded benchmark refuses production throughput claims until production ga
     true,
   );
   assert.equal(
+    report.claims.productionThroughputDetails.backpressureConsistency.queuePauseHasBackpressureAlignedReceiptCursorQueueSlack,
+    true,
+  );
+  assert.equal(
     report.claims.productionThroughputDetails.backpressureConsistency.queuePauseHasMeasuredAndAlignedReceiptCursorBackpressure,
     true,
   );
@@ -750,15 +754,24 @@ test('production claim gate fails closed if benchmark evidence is tampered', () 
 
   const spoofedQueueSlackAlignment = clone(report);
   spoofedQueueSlackAlignment.evidence.backpressure.receiptCursorQueueSlackBytes = null;
-  spoofedQueueSlackAlignment.evidence.backpressure.queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack = true;
+  spoofedQueueSlackAlignment.evidence.backpressure.queuePauseHasBackpressureAlignedReceiptCursorQueueSlack = false;
   assert.ok(
     productionThroughputBlockers(spoofedQueueSlackAlignment).includes(
-      'queue-pause-without-measured-receipt-cursor-queue-slack',
+      'queue-pause-without-backpressure-aligned-receipt-cursor-queue-slack-proof',
     ),
   );
   assert.equal(
     productionThroughputDetails(spoofedQueueSlackAlignment).backpressureConsistency.queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack,
     false,
+  );
+  assert.equal(
+    productionThroughputDetails(spoofedQueueSlackAlignment).backpressureConsistency.queuePauseHasBackpressureAlignedReceiptCursorQueueSlack,
+    false,
+  );
+  assert.ok(
+    productionThroughputBlockers(spoofedQueueSlackAlignment).includes(
+      'queue-pause-without-backpressure-aligned-receipt-cursor-queue-slack-proof',
+    ),
   );
 
   const spoofedBackpressureAlignment = clone(report);

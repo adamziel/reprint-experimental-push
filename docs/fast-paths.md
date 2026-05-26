@@ -77,6 +77,9 @@ Current executable gate:
 - The production-throughput gate also fails closed if the explicit measured-
   and-aligned backpressure bit is missing, so a paused record cannot look
   complete when the backpressure proof itself is absent.
+- The production-throughput gate also fails closed if the explicit
+  backpressure-aligned queue-slack bit is missing, so a paused record cannot
+  look complete when the slack alignment proof itself is absent.
 - The production-throughput gate also fails closed if paused queue slack no
   longer fits the measured resource headroom, so a slack record cannot be
   reused when the resource ceiling and chunk window no longer match.
