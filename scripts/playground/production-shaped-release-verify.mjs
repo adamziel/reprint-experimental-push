@@ -27,6 +27,8 @@ class ProofFailure extends Error {
 
 let topLevelError = null;
 const activePlaygroundChildren = new Set();
+let stopAllPlaygroundChildren = async () => {};
+let stopAllPlaygroundChildrenSync = () => {};
 
 try {
 
@@ -878,7 +880,7 @@ async function stopSpawnedServer(child) {
   }
 }
 
-async function stopAllPlaygroundChildren() {
+stopAllPlaygroundChildren = async function stopAllPlaygroundChildren() {
   for (const child of activePlaygroundChildren) {
     try {
       await stopSpawnedServer(child);
@@ -886,7 +888,14 @@ async function stopAllPlaygroundChildren() {
       stopProcessTree(child, 'SIGKILL');
     }
   }
-}
+};
+
+stopAllPlaygroundChildrenSync = function stopAllPlaygroundChildrenSync() {
+  for (const child of activePlaygroundChildren) {
+    stopProcessTree(child, 'SIGTERM');
+    stopProcessTree(child, 'SIGKILL');
+  }
+};
 
 function stopProcessTree(child, signal) {
   try {
@@ -897,6 +906,24 @@ function stopProcessTree(child, signal) {
   } catch {}
   child.kill(signal);
 }
+
+function installProcessCleanup() {
+  const cleanup = () => {
+    stopAllPlaygroundChildrenSync();
+  };
+
+  process.on('SIGINT', () => {
+    cleanup();
+    process.exit(130);
+  });
+  process.on('SIGTERM', () => {
+    cleanup();
+    process.exit(143);
+  });
+  process.on('exit', cleanup);
+}
+
+installProcessCleanup();
 
 async function exportSnapshot(name, baseUrl) {
   const response = await fetch(`${baseUrl}/wp-json/reprint-push-lab/v1/snapshot`, {
