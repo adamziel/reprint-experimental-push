@@ -6,14 +6,16 @@ linked implementation artifacts.
 
 ## 2026-05-26 - Release Journal Smoke Refresh
 
-- Last update: 2026-05-26 11:13 CEST.
-- Status: `origin/lane/reliable-executor` now points at `5fd9dfb4` as the
-  current reliable head for the release-journal smoke, and the public progress
-  page has been aligned to that head.
-- New proof: the release-journal smoke is now the visible current reliable-head
-  evidence on the public page, while the tracked gates remain at `0/4`.
-- Trend: progress freshness improved, but the release gate posture did not move.
-- Supervision: the visible page now names `5fd9dfb4` as the current reliable
+- Last update: 2026-05-26 11:58 CEST.
+- Status: `origin/lane/reliable-executor` now points at `fd425b41` as the
+  current reliable head for the release-verifier journal-ownership proof, and
+  the public progress page has been aligned to that head.
+- New proof: the release verifier now exposes journal ownership, restart
+  readability, artifact refs, and lease-fence fields on the checked path,
+  while the tracked gates remain at `0/4`.
+- Trend: release-path visibility improved, but the production gate posture did
+  not move.
+- Supervision: the visible page now names `fd425b41` as the current reliable
   head, keeps the conservative gate posture, and links the detailed evidence
   instead of repeating stale head wording.
 - Blocker: production auth/session lifecycle, durable storage, leases/fencing,
@@ -21,8 +23,9 @@ linked implementation artifacts.
   arbitrary plugin drivers remain unproven.
 - Next nudge: keep the next proof tied to the audit decision and the next
   production-boundary evidence.
-- Public page: [progress.html](../progress.html) now names `5fd9dfb4` as the
-  current reliable head and keeps the detailed release-journal evidence linked.
+- Public page: [progress.html](../progress.html) now names `fd425b41` as the
+  current reliable head and keeps the detailed release-verifier evidence
+  linked.
 
 ## 2026-05-25 - Current Supervisor Snapshot
 
