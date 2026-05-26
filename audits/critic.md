@@ -1,15 +1,15 @@
 # Critic Verdict
 
-Current reliable head: `7c3daccde3ed2739bb055bb0912f530bd08ad16d`
-(`Fail closed on auth session history rotation`).
+Current reliable head: `12c0c812e430e879e3dd40316a3a988f5b0d4857`
+(`Fail closed on invalid auth session sources`).
 
 Verdict: `0/4`
 
 Reason:
 
-- This head tightens checked auth/session lifecycle handling by failing closed
-  on history rotation, but it still does not prove a production-backed
-  lifecycle on the release path.
+- This head tightens checked auth/session source validation by failing closed
+  on invalid sources, but it still does not prove a production-backed lifecycle
+  on the release path.
 - The checked proof is still missing live issuance/read/expiry/rotation/
   revocation/cleanup evidence for `production-auth-session`, and it still does
   not establish stricter durable-journal ownership/restart semantics on the
