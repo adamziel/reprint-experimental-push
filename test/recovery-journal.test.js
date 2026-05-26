@@ -1970,6 +1970,205 @@ test('production recovery journal reopen fails closed when a later persisted cla
   });
 });
 
+test('production recovery journal reopen fails closed when a later persisted claim reopen sequence is inherited instead of owned', () => {
+  const filePath = tempJournalPath();
+  const remote = baseSite();
+  const plan = planFor(baseSite(), localSite(), remote);
+  const claimId = 'claim-consumed-reopened-sequence-inherited';
+  const writerLease = { id: claimId, epoch: 4 };
+  const remoteArtifactPath = `${filePath}.remote`;
+  const artifactRefs = {
+    journal: filePath,
+    remote: remoteArtifactPath,
+  };
+  const journal = openProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs,
+    claimId,
+    writerLease,
+  });
+  appendRecoveryClaimOpened(journal, {
+    plan,
+    current: remote,
+    claimId,
+    artifactRefs,
+  });
+  journal.close();
+
+  consumeProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs,
+    writerLease,
+  });
+
+  const persisted = readRecoveryJournal(filePath);
+  const laterReopen = Object.create({
+    sequence: 3,
+  });
+  laterReopen.schemaVersion = persisted.records[0].schemaVersion;
+  laterReopen.type = 'recovery-claim-opened';
+  laterReopen.claimHash = recoveryClaimHash(claimId);
+  laterReopen.claimLease = writerLease;
+  laterReopen.planId = plan.id;
+  laterReopen.state = 'opened';
+  laterReopen.observedHash = 'snapshot-hash-only';
+  laterReopen.artifactRefs = artifactRefs;
+  laterReopen.fsync = { requested: true };
+  persisted.records.push(laterReopen);
+  fs.writeFileSync(filePath, `${persisted.records.map((record) => JSON.stringify(record)).join('\n')}\n`);
+
+  assert.throws(() => {
+    openProductionRecoveryJournal(filePath, {
+      claimId,
+      writerLease,
+      ownsRemoteArtifact: true,
+      remoteArtifactPath,
+    });
+  }, (error) => {
+    assert.equal(error?.name, 'UnsupportedProductionRecoveryJournalError');
+    assert.equal(error?.code, 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL');
+    assert.equal(
+      error?.message,
+      'Production recovery journal persistence is corrupt or truncated.',
+    );
+    return true;
+  });
+});
+
+test('production recovery journal reopen fails closed when a later persisted claim reopen hash is inherited instead of owned', () => {
+  const filePath = tempJournalPath();
+  const remote = baseSite();
+  const plan = planFor(baseSite(), localSite(), remote);
+  const claimId = 'claim-consumed-reopened-hash-inherited';
+  const writerLease = { id: claimId, epoch: 4 };
+  const remoteArtifactPath = `${filePath}.remote`;
+  const artifactRefs = {
+    journal: filePath,
+    remote: remoteArtifactPath,
+  };
+  const journal = openProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs,
+    claimId,
+    writerLease,
+  });
+  appendRecoveryClaimOpened(journal, {
+    plan,
+    current: remote,
+    claimId,
+    artifactRefs,
+  });
+  journal.close();
+
+  consumeProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs,
+    writerLease,
+  });
+
+  const persisted = readRecoveryJournal(filePath);
+  const laterReopen = Object.create({
+    claimHash: recoveryClaimHash(claimId),
+  });
+  laterReopen.schemaVersion = persisted.records[0].schemaVersion;
+  laterReopen.sequence = 3;
+  laterReopen.type = 'recovery-claim-opened';
+  laterReopen.claimLease = writerLease;
+  laterReopen.planId = plan.id;
+  laterReopen.state = 'opened';
+  laterReopen.observedHash = 'snapshot-hash-only';
+  laterReopen.artifactRefs = artifactRefs;
+  laterReopen.fsync = { requested: true };
+  persisted.records.push(laterReopen);
+  fs.writeFileSync(filePath, `${persisted.records.map((record) => JSON.stringify(record)).join('\n')}\n`);
+
+  assert.throws(() => {
+    openProductionRecoveryJournal(filePath, {
+      claimId,
+      writerLease,
+      ownsRemoteArtifact: true,
+      remoteArtifactPath,
+    });
+  }, {
+    name: 'UnsupportedProductionRecoveryJournalError',
+    code: 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL',
+    message: 'Production recovery journal support requires reopening with the persisted consumed claim identity.',
+  });
+});
+
+test('production recovery journal reopen fails closed when a later persisted claim reopen lease is inherited instead of owned', () => {
+  const filePath = tempJournalPath();
+  const remote = baseSite();
+  const plan = planFor(baseSite(), localSite(), remote);
+  const claimId = 'claim-consumed-reopened-lease-inherited';
+  const writerLease = { id: claimId, epoch: 4 };
+  const remoteArtifactPath = `${filePath}.remote`;
+  const artifactRefs = {
+    journal: filePath,
+    remote: remoteArtifactPath,
+  };
+  const journal = openProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs,
+    claimId,
+    writerLease,
+  });
+  appendRecoveryClaimOpened(journal, {
+    plan,
+    current: remote,
+    claimId,
+    artifactRefs,
+  });
+  journal.close();
+
+  consumeProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs,
+    writerLease,
+  });
+
+  const persisted = readRecoveryJournal(filePath);
+  const laterReopen = Object.create({
+    claimLease: writerLease,
+  });
+  laterReopen.schemaVersion = persisted.records[0].schemaVersion;
+  laterReopen.sequence = 3;
+  laterReopen.type = 'recovery-claim-opened';
+  laterReopen.claimHash = recoveryClaimHash(claimId);
+  laterReopen.planId = plan.id;
+  laterReopen.state = 'opened';
+  laterReopen.observedHash = 'snapshot-hash-only';
+  laterReopen.artifactRefs = artifactRefs;
+  laterReopen.fsync = { requested: true };
+  persisted.records.push(laterReopen);
+  fs.writeFileSync(filePath, `${persisted.records.map((record) => JSON.stringify(record)).join('\n')}\n`);
+
+  assert.throws(() => {
+    openProductionRecoveryJournal(filePath, {
+      claimId,
+      writerLease,
+      ownsRemoteArtifact: true,
+      remoteArtifactPath,
+    });
+  }, {
+    name: 'UnsupportedProductionRecoveryJournalError',
+    code: 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL',
+    message: 'Production recovery journal support requires reopening with the persisted consumed claim identity.',
+  });
+});
+
 test('production recovery journal reopen fails closed when a later persisted claim reopen uses a non-positive sequence identity', () => {
   const filePath = tempJournalPath();
   const remote = baseSite();
