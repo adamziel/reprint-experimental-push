@@ -1,9 +1,9 @@
-`e3a0be0e6f2310bb5f51ddc947c124e245cf61ff` stays `0/4`.
+`a4b9c689c565b42e79cd835ec060a9b7e1fc605a` stays `0/4`.
 
-Audit time: 2026-05-26 16:36:39 CEST (+0200)
+Audit time: 2026-05-26 16:52:52 CEST (+0200)
 
 Current verdict:
-- The checked release verifier now trims Playground topology and loopback port handling, but it still does not prove production-backed auth/session lifecycle on the live `verify:release` boundary.
+- The checked release verifier now unblocks packaged production snapshot loading for the remote-base push-session path, but it still does not prove production-backed auth/session lifecycle on the live `verify:release` boundary.
 - It still does not establish production durable-journal ownership or restart-readable production storage semantics.
 - The next gate owner remains `reliable-executor`.
 
@@ -13,17 +13,14 @@ Changed files:
 
 Commands run:
 - `git status --short --branch`
-- `git ls-remote origin refs/heads/lane/reliable-executor`
-- `find . -path '*/.lane-output/final*.md' -o -path './supervision/README.md' -o -path './AGENTS.md' | sort`
 - `sed -n '1,220p' supervision/README.md`
-- `sed -n '1,220p' .lane-output/final.md`
-- `sed -n '1,220p' .lane-output/final-loop-20260526-161522.md`
-- `sed -n '1,220p' audits/objective-audit.md`
-- `find supervision/lanes -maxdepth 1 -type f | sort | xargs -r -n 1 basename`
-- `git show --stat --summary --oneline --no-patch 1890bd198e164619e79c8ea2e510f5d129b7c061`
-- `git show --stat --summary --format=fuller 1890bd198e164619e79c8ea2e510f5d129b7c061 --`
+- `ls -1 supervision/lanes 2>/dev/null | sort && for f in supervision/lanes/*; do [ -f "$f" ] && echo "--- $f" && sed -n '1,220p' "$f"; done`
+- `for f in .lane-output/final*.md; do :; done; latest=$(ls -1 .lane-output/final*.md | sort | tail -n 3); for f in $latest; do echo "--- $f"; sed -n '1,220p' "$f"; done`
+- `git ls-remote origin refs/heads/lane/reliable-executor`
+- `sed -n '1,240p' audits/objective-audit.md`
 - `date '+%Y-%m-%d %H:%M:%S %Z (%z)'`
-- `git rev-parse --abbrev-ref HEAD`
+- `git show --stat --summary --oneline --no-patch a4b9c689c565b42e79cd835ec060a9b7e1fc605a`
+- `git show --unified=40 a4b9c689c565b42e79cd835ec060a9b7e1fc605a -- scripts/playground/production-shaped-release-verify.mjs test/production-shaped-proof.test.js`
 
 Push result:
 - Not yet pushed.
