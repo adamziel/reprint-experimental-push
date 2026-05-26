@@ -20,3 +20,20 @@ export function buildAuthSessionSourceCommand({
 function escapeShellSingleQuotedString(value) {
   return String(value).replace(/'/g, `'\\''`);
 }
+
+export function resolveAuthSessionSourceCommand({
+  sourceUrl,
+  username,
+  applicationPassword,
+  authSessionSourceCommand = '',
+}) {
+  if (authSessionSourceCommand) {
+    return authSessionSourceCommand;
+  }
+
+  return buildAuthSessionSourceCommand({
+    sourceUrl,
+    username,
+    applicationPassword,
+  });
+}

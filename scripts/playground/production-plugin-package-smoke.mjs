@@ -12,7 +12,7 @@ import {
   loadAuthSessionSource,
   resolveAuthSessionSourceCredentials,
 } from './auth-session-source.js';
-import { buildAuthSessionSourceCommand } from './auth-session-source-command.js';
+import { resolveAuthSessionSourceCommand } from './auth-session-source-command.js';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const cliPath = path.join(repoRoot, 'bin/reprint-push-lab.js');
@@ -28,6 +28,12 @@ const authSessionSourceCommand = process.env.REPRINT_PUSH_AUTH_SESSION_SOURCE_CO
 const authSessionSource = authSessionSourceCommand ? loadAuthSessionSource(authSessionSourceCommand) : null;
 const resolvedCredentials = resolveAuthSessionSourceCredentials(credentials, authSessionSource, {
   preferSource: true,
+});
+const packagedAuthSessionSourceCommand = resolveAuthSessionSourceCommand({
+  sourceUrl: resolvedCredentials.liveSourceUrl || '',
+  username: resolvedCredentials.username,
+  applicationPassword: resolvedCredentials.applicationPassword,
+  authSessionSourceCommand,
 });
 
 const alternateCredentials = {
@@ -205,11 +211,7 @@ try {
       applied: result.apply.applied,
       applyCommitted: result.dbJournal.applyCommitted,
       authSessionSource: {
-        command: authSessionSourceCommand || buildAuthSessionSourceCommand({
-          sourceUrl: resolvedCredentials.liveSourceUrl || server.baseUrl,
-          username: resolvedCredentials.username,
-          applicationPassword: resolvedCredentials.applicationPassword,
-        }),
+        command: packagedAuthSessionSourceCommand,
         ok: Boolean(authSessionSource?.ok),
       },
     };
