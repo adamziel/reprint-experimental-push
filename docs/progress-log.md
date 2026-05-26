@@ -3,12 +3,12 @@
 This log records evidence present in this repository. Public status should use
 release gates and named evidence gaps rather than stale percentage estimates.
 
-# 2026-05-27 - Public Status Audit 01:49:39
+# 2026-05-27 - Public Status Audit 01:50:51
 
-<a id="2026-05-27-public-status-audit-014939"></a>
+<a id="2026-05-27-public-status-audit-015051"></a>
 
 - Refreshed [progress.html](../progress.html) to keep the current reliable
-  head `75668b81a33078611be1b8bb1f2e09da159ece10` visible on the public
+  head `0292f8ea31a1d1576f04b29594186c20906f035d` visible on the public
   status surface for the active supervision cycle.
 - Release gates remain `0/4`. The live checked release boundary still reaches
   `LIVE_RELEASE_BOUNDARY_OK`, but the classifier-named blocker remains
