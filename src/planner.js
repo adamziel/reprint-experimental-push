@@ -1434,6 +1434,24 @@ function isValidSamePlanWordPressGraphTarget(targetMutation, reference, sourceMu
     ) {
       return false;
     }
+    if (normalizePositiveInteger(sourceValue.object_id) != null) {
+      const ownerMutation = mutationByResourceKey.get(
+        `row:${JSON.stringify(['wp_posts', `ID:${normalizePositiveInteger(sourceValue.object_id)}`])}`,
+      );
+      const ownerValue = ownerMutation ? deserializeResourceValue(ownerMutation.value) : null;
+      if (
+        ownerValue
+        && typeof ownerValue === 'object'
+        && (
+          ownerValue.post_type === 'attachment'
+          || ownerValue.post_type === 'revision'
+          || ownerValue.post_type === 'nav_menu_item'
+          || ownerValue.post_type === 'wp_navigation'
+        )
+      ) {
+        return false;
+      }
+    }
     if (targetValue.taxonomy === 'nav_menu') {
       return false;
     }
