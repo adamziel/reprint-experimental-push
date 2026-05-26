@@ -1,11 +1,11 @@
 # no-data-loss-invariants handoff
 
 Timestamp:
-- `2026-05-26 17:49:12 CEST (+0200)`
+- `2026-05-26 18:04:15 CEST (+0200)`
 
 Current lane evidence:
-- The planner now emits the specific `comment post target` stale-identity reason when a same-plan `wp_comments.comment_post_ID` reference points at a locally created post row.
-- The blocker still preserves matching independent edits as `already-in-sync`, preserves unrelated remote-only plugin drift as `keep-remote`, and keeps raw comment/post payloads out of blocker evidence.
+- The planner now emits specific same-plan attachment target reasons instead of the generic attachment blocker text when a locally created attachment is blocked by `featured-image-attachment`, `post-parent`, or `term-relationship-object` inbound references.
+- The bounded attachment blocker evidence still preserves the exact inbound reference edge and still keeps matching independent edits and remote-only plugin drift/removals out of the blocked payload.
 
 Changed files:
 - [`src/planner.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/no-data-loss-invariants-clean-20260526-1530/src/planner.js)
@@ -13,9 +13,10 @@ Changed files:
 - [`.lane-output/final.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/no-data-loss-invariants-clean-20260526-1530/.lane-output/final.md)
 
 Commands run:
-- `git diff --check`
-- `timeout 120s node --test test/push-planner.test.js --test-name-pattern='blocks local comments graph references to a same-plan created post identity'`
-- `timeout 30s node --input-type=module <<'EOF' ... createPushPlan(...) ... EOF`
+- `node --check src/planner.js`
+- `node --check test/push-planner.test.js`
+- `timeout 90s node --test --test-name-pattern='blocks local term-relationship object references to a same-plan created attachment identity while preserving a matching independent edit and remote-only plugin changes|blocks local featured image references to a same-plan created attachment identity while preserving a matching independent edit and remote-only plugin changes|blocks local post-parent attachment references when the attachment is created in the same plan while preserving remote-only plugin drift' test/push-planner.test.js`
+- `git diff --check -- src/planner.js test/push-planner.test.js`
 - `git status --short --branch`
 
 Push result:
@@ -24,7 +25,6 @@ Push result:
 Worktree status:
 - Dirty tracked state limited to the three lane-owned files above.
 - Branch: `lane/cycle-20260525-mainwindows-2349/ndl-invariants-clean-20260526-1530`
-- `HEAD`: `c8b9c4c6`
 
 Next supervisor nudge:
-- If another same-plan WordPress graph blocker still falls back to the generic `relationship that depends on it` reason, route it here for the same explicit fail-closed reason tightening; otherwise keep this lane on unsupported planner surfaces that can still under-report blocker context.
+- The next useful invariants edge is another unsupported same-plan family whose target blocker still preserves bounded references but under-reports the exact dependency type, or any new ready-plan leak surfaced by reliable or same-plan graph work.

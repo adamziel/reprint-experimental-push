@@ -3578,6 +3578,14 @@ function unsupportedAttachmentResourceSupport({ resource, baseValue, localValue,
           || reference.relationshipType === 'post-parent'
           || reference.relationshipType === 'term-relationship-object'
         ));
+    const samePlanAttachmentReason = inboundReferences.some((reference) =>
+      reference.relationshipType === 'featured-image-attachment')
+      ? `WordPress graph mutation ${resource.key} is created in the same plan as a featured image attachment target that depends on it, and identity rewriting is not yet supported.`
+      : inboundReferences.some((reference) => reference.relationshipType === 'post-parent')
+        ? `WordPress graph mutation ${resource.key} is created in the same plan as a post parent attachment target that depends on it, and identity rewriting is not yet supported.`
+        : inboundReferences.some((reference) => reference.relationshipType === 'term-relationship-object')
+          ? `WordPress graph mutation ${resource.key} is created in the same plan as a term relationship attachment target that depends on it, and identity rewriting is not yet supported.`
+          : 'Attachment graph resources are not yet supported by the planner.';
     const references = inboundReferences.length > 0
       ? inboundReferences
       : wordpressGraphReferences(resource, candidate).map((reference) =>
@@ -3586,7 +3594,7 @@ function unsupportedAttachmentResourceSupport({ resource, baseValue, localValue,
       supported: false,
       className: 'unsupported-attachment-resource',
       unsupportedState: 'same-plan-reference',
-      reason: 'Attachment graph resources are not yet supported by the planner.',
+      reason: samePlanAttachmentReason,
       references,
     };
   }
