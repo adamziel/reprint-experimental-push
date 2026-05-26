@@ -306,6 +306,14 @@ export function productionThroughputBlockers(report) {
   ) {
     blockers.push('receipt-cursor-queue-slack-mismatch');
   }
+  if (
+    Number.isFinite(report.evidence.backpressure?.receiptCursorQueueSlackBytes)
+    && Number.isFinite(report.evidence.backpressure?.queueHeadroomBytes)
+    && report.evidence.backpressure.receiptCursorQueueSlackBytes
+      !== report.evidence.backpressure.queueHeadroomBytes
+  ) {
+    blockers.push('receipt-cursor-queue-slack-headroom-mismatch');
+  }
   if (report.evidence.backpressure?.receiptCursorHeadroomWithinQueueBudget !== true) {
     blockers.push('receipt-cursor-headroom-not-covered-by-queue-budget');
   }
@@ -401,6 +409,10 @@ export function productionThroughputDetails(report) {
     Number.isFinite(receiptCursorQueueSlackBytes)
     && Number.isFinite(receiptCursorMemoryHeadroomBytes)
     && receiptCursorQueueSlackBytes === receiptCursorMemoryHeadroomBytes;
+  const receiptCursorQueueSlackMatchesQueueHeadroom =
+    Number.isFinite(receiptCursorQueueSlackBytes)
+    && Number.isFinite(receiptCursorQueueHeadroomBytes)
+    && receiptCursorQueueSlackBytes === receiptCursorQueueHeadroomBytes;
   const receiptCursorHeadroomCoveredByQueueBudget =
     Number.isFinite(receiptCursorMemoryHeadroomBytes)
     && Number.isFinite(receiptCursorQueueHeadroomBytes)
@@ -469,6 +481,7 @@ export function productionThroughputDetails(report) {
     receiptCursorQueueSlackBytes,
     receiptCursorQueueSlackMatchesBackpressure,
     receiptCursorQueueSlackMatchesMemoryHeadroom,
+    receiptCursorQueueSlackMatchesQueueHeadroom,
     receiptCursorMemoryHeadroomBytes,
     receiptCursorMemoryHeadroomMatchesResourceHeadroom,
     receiptCursorMatchesBackpressure,
@@ -500,6 +513,7 @@ export function productionThroughputDetails(report) {
       receiptCursorQueueSlackBytes,
       receiptCursorQueueSlackMatchesBackpressure,
       receiptCursorQueueSlackMatchesMemoryHeadroom,
+      receiptCursorQueueSlackMatchesQueueHeadroom,
       receiptCursorMemoryHeadroomBytes,
       receiptCursorMemoryHeadroomMatchesResourceHeadroom,
       receiptCursorBackpressureWithinResourceHeadroom,
