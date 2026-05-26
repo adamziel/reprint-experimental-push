@@ -17318,6 +17318,109 @@ test('prioritizes term identity blocker wording while carrying bounded term-taxo
   assert.equal(planJson.includes('local termmeta note'), false);
 });
 
+test('orders same-plan term dependency references deterministically within the same priority bucket', () => {
+  const termResourceKey = 'row:["wp_terms","term_id:19"]';
+  const earlyTaxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:7"]';
+  const lateTaxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:8"]';
+  const termmetaResourceKey = 'row:["wp_termmeta","meta_id:8"]';
+
+  const base = baseSite();
+  base.db.wp_term_taxonomy = {
+    'term_taxonomy_id:7': {
+      term_taxonomy_id: 7,
+      term_id: 2,
+      taxonomy: 'category',
+      parent: 0,
+      description: 'Base early ordered parent taxonomy',
+    },
+    'term_taxonomy_id:8': {
+      term_taxonomy_id: 8,
+      term_id: 3,
+      taxonomy: 'category',
+      parent: 0,
+      description: 'Base late ordered parent taxonomy',
+    },
+  };
+  base.db.wp_posts['ID:1'].post_title = 'Base shared ordered term identity title';
+
+  const local = baseSite();
+  local.db.wp_terms = {
+    'term_id:19': {
+      term_id: 19,
+      name: 'Local ordered same-plan term',
+      slug: 'local-ordered-same-plan-term',
+    },
+  };
+  local.db.wp_term_taxonomy = {
+    'term_taxonomy_id:8': {
+      term_taxonomy_id: 8,
+      term_id: 3,
+      taxonomy: 'category',
+      parent: 19,
+      description: 'Local late ordered parent taxonomy',
+    },
+    'term_taxonomy_id:7': {
+      term_taxonomy_id: 7,
+      term_id: 2,
+      taxonomy: 'category',
+      parent: 19,
+      description: 'Local early ordered parent taxonomy',
+    },
+  };
+  local.db.wp_termmeta = {
+    'meta_id:8': {
+      meta_id: 8,
+      term_id: 19,
+      meta_key: 'ordered-term-label',
+      meta_value: 'local ordered termmeta value',
+      note: 'local ordered termmeta note',
+    },
+  };
+  local.db.wp_posts['ID:1'].post_title = 'Shared ordered term identity title';
+
+  const remote = baseSite();
+  remote.db.wp_term_taxonomy = JSON.parse(JSON.stringify(base.db.wp_term_taxonomy));
+  remote.db.wp_posts['ID:1'].post_title = 'Shared ordered term identity title';
+  remote.plugins.forms.description = 'remote-only plugin drift';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin drift */';
+
+  const plan = planFor(base, local, remote);
+  const termBlocker = plan.blockers.find((entry) => entry.resourceKey === termResourceKey);
+  const termmetaBlocker = plan.blockers.find((entry) => entry.resourceKey === termmetaResourceKey);
+  const matchingEdit = decisionFor(plan, 'row:["wp_posts","ID:1"]');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, termResourceKey), undefined);
+  assert.equal(termBlocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(termBlocker.resourceKey, termResourceKey);
+  assert.equal(termBlocker.resolutionPolicy, 'preserve-remote-wordpress-graph-and-stop');
+  assert.equal(
+    termBlocker.reason,
+    'WordPress graph mutation row:["wp_terms","term_id:19"] is created in the same plan as a parent term identity that depends on it, and identity rewriting is not yet supported.',
+  );
+  assert.deepEqual(
+    termBlocker.references.map((reference) => reference.relationshipType),
+    ['term-taxonomy-parent', 'term-taxonomy-parent', 'termmeta-term'],
+  );
+  assert.deepEqual(
+    termBlocker.references.map((reference) => reference.sourceResourceKey),
+    [earlyTaxonomyResourceKey, lateTaxonomyResourceKey, termmetaResourceKey],
+  );
+  assert.equal(termmetaBlocker.class, 'unsupported-termmeta-resource');
+  assert.equal(matchingEdit.decision, 'already-in-sync');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('Local ordered same-plan term'), false);
+  assert.equal(planJson.includes('local-ordered-same-plan-term'), false);
+  assert.equal(planJson.includes('Local early ordered parent taxonomy'), false);
+  assert.equal(planJson.includes('Local late ordered parent taxonomy'), false);
+  assert.equal(planJson.includes('local ordered termmeta note'), false);
+});
+
 test('prioritizes parent term taxonomy blocker wording while carrying bounded parent and term references for a same-plan created term taxonomy identity', () => {
   const taxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:5"]';
   const termResourceKey = 'row:["wp_terms","term_id:9"]';
