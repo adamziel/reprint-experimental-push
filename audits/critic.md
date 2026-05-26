@@ -1,20 +1,19 @@
 # Critic Verdict
 
-Current reliable head: `17a0a150f6212ee5dc6a39fe832ddad266d8e070`
-(`Accept packaged durable journal proof`).
+Current reliable head: `ee09af547498924af794519d1513fef479333302`
+(`Tighten production auth session lifecycle proof`).
 
 Verdict: `0/4`
 
 Reason:
 
-- This head accepts a packaged durable-journal proof inside the checked release
-  verifier, which is real release-path progress, but it still does not prove
-  production-backed auth/session lifecycle, production durable-journal
-  ownership, or preserved-remote retry on the live release boundary.
-- The remaining blocker is still a checked release-path proof, not another
-  proof-field surface. The verifier needs one exact failing or passing boundary
-  command that crosses production-backed auth/session or durable-journal
-  semantics before any gate can move.
+- This head tightens the checked release verifier's auth/session evidence by
+  surfacing a production-auth-session id and expiry on the packaged boundary,
+  and it expands the lifecycle drift coverage in the client tests.
+- It still does not prove a production-backed auth/session lifecycle on the
+  checked release boundary, nor production durable-journal ownership or
+  preserved-remote retry. The gate remains closed until a checked command
+  actually crosses one of those boundaries.
 
 Next owner / command:
 
