@@ -11,13 +11,13 @@ linked implementation artifacts.
 - Refreshed [progress.html](../progress.html) to the current `date` output
   (`2026-05-26 12:13:19 CEST`) so the visible page stays fresh to the current
   supervision cycle. The headline, trend, audit note, and release-gate proof
-  item now name `9d0279a3` as the current reliable head and describe the
-  fenced stale-claim proof with `staleClaimRejected: true`, while release
-  gates remain `0/4`.
-- `9d0279a3` is the current reliable head for the public lane surface; the
-  release verifier now shows stale-claim fencing on the recovery path, but
-  production WordPress auth/session lifecycle and durable journal semantics
-  remain blocked.
+  item now name `77da166e` as the current reliable head and describe the
+  surfaced auth-session source evidence for `REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND`,
+  while release gates remain `0/4`.
+- `77da166e` is the current reliable head for the public lane surface; the
+  release verifier now shows auth-session source evidence on the recovery
+  path, but production WordPress auth/session lifecycle and durable journal
+  semantics remain blocked.
 - Evidence trail: [progress.html](../progress.html),
   [objective audit](../audits/objective-audit.md),
   [release-gate checklist](../progress.html#proof-gates).
