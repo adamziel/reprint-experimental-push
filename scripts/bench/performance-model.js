@@ -3423,6 +3423,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['remote-indexes', 'remote-index-planning-only', 'compression', 'backpressure', 'plugin-preconditions', 'row-preconditions', 'durable-progress'],
   },
   {
+    id: 'compressed-remote-index-and-cached-release-cursor-skips-release-bundle-commit-after-pause',
+    proposal: 'use a compressed remote index plus a cached release cursor to skip the release-bundle commit barrier after a pause',
+    rejectedBecause: 'planning evidence and a cached release cursor can reduce replay cost, but they cannot prove the dependent plugin files, row batches, or atomic-group commit survived the pause',
+    rejectedGate: 'recovery',
+    violates: ['remote-index-planning-only', 'compression', 'atomic-groups', 'plugin-preconditions', 'row-preconditions', 'durable-progress'],
+  },
+  {
     id: 'compressed-remote-index-and-batched-row-receipts-skips-release-bundle-commit',
     proposal: 'use a compressed remote index plus batched row receipts to skip the release-bundle commit barrier',
     rejectedBecause: 'planning evidence and batched row receipts can reduce replay cost, but they cannot prove the dependent plugin files, row batches, and atomic-group commit survived failure',

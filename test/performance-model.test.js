@@ -1997,6 +1997,9 @@ test('unsafe shortcuts stay rejected when they would bypass live preconditions o
   const skipReleasePlanning = model.rejectedFastPaths.find(
     (fastPath) => fastPath.id === 'compressed-remote-index-and-cached-release-manifest-and-batched-receipt-flush-skips-release-bundle-planning-after-pause',
   );
+  const skipReleaseCursor = model.rejectedFastPaths.find(
+    (fastPath) => fastPath.id === 'compressed-remote-index-and-cached-release-cursor-skips-release-bundle-commit-after-pause',
+  );
   const skipCompressedPauseReplay = model.rejectedFastPaths.find(
     (fastPath) => fastPath.id === 'compressed-receipt-log-skip-pause-recovery',
   );
@@ -2005,6 +2008,11 @@ test('unsafe shortcuts stay rejected when they would bypass live preconditions o
   assert.equal(skipReleasePlanning.rejectedGate, 'skip');
   assert.ok(skipReleasePlanning.violates.includes('remote-indexes'));
   assert.ok(skipReleasePlanning.violates.includes('plugin-preconditions'));
+
+  assert.ok(skipReleaseCursor, 'cached release cursor shortcut is modeled as a rejected fast path');
+  assert.equal(skipReleaseCursor.rejectedGate, 'recovery');
+  assert.ok(skipReleaseCursor.violates.includes('atomic-groups'));
+  assert.ok(skipReleaseCursor.violates.includes('plugin-preconditions'));
 
   assert.ok(skipCompressedPauseReplay, 'compressed receipt logs cannot skip paused recovery');
   assert.equal(skipCompressedPauseReplay.rejectedGate, 'recovery');
