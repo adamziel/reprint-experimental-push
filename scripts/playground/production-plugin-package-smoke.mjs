@@ -16,7 +16,22 @@ const cliPath = path.join(repoRoot, 'bin/reprint-push-lab.js');
 const serverStartupTimeoutMs = 120_000;
 const transientFetchRetryDelayMs = 250;
 const transientFetchAttempts = 4;
-const selectedScenario = parseSelectedScenario(process.argv.slice(2), process.env.REPRINT_PUSH_PACKAGE_SMOKE_SCENARIO);
+const scenarioGroups = {
+  'driver-registration-guards': [
+    'driver-missing-export-guard',
+    'driver-missing-apply-guard',
+    'driver-missing-validate-guard',
+    'driver-missing-name-guard',
+    'driver-missing-plugin-owner-guard',
+    'driver-missing-table-guard',
+    'driver-duplicate-name-guard',
+    'driver-duplicate-table-guard',
+  ],
+};
+const selectedScenarios = parseSelectedScenarios(
+  process.argv.slice(2),
+  process.env.REPRINT_PUSH_PACKAGE_SMOKE_SCENARIO,
+);
 
 const credentials = {
   username: 'reprint_push_admin',
@@ -47,6 +62,11 @@ const driverFixture = {
   table: 'wp_reprint_push_driver_fixture',
   pluginOwner: 'driver-fixture',
   resourceKey: 'row:["wp_reprint_push_driver_fixture","entry_id:1"]',
+};
+const malformedDriverGuardServerOptions = {
+  readyPath: '/wp-json/',
+  readyHeaders: {},
+  readyOk: (response) => response.status === 200 && response.body?.namespaces?.includes?.('reprint/v1'),
 };
 
 const snapshots = Object.fromEntries(
@@ -851,7 +871,12 @@ try {
   }
 
   if (shouldRunScenario('driver-missing-export-guard')) {
-    await withPlaygroundServer('production-plugin-driver-missing-export-guard', driverMissingExportServerBlueprintPath, pluginDir, async (server) => {
+    await withPlaygroundServer(
+      'production-plugin-driver-missing-export-guard',
+      driverMissingExportServerBlueprintPath,
+      pluginDir,
+      malformedDriverGuardServerOptions,
+      async (server) => {
     const malformedSnapshot = await requestText(
       server.baseUrl,
       'GET',
@@ -859,9 +884,8 @@ try {
       undefined,
       authHeaders(),
     );
-    assert.equal(malformedSnapshot.status, 500);
-    assert.match(
-      malformedSnapshot.text,
+    assertPackagedDriverFatalResponse(
+      malformedSnapshot,
       /missing exportRowsCallback for driver: fixture-arbitrary-plugin-table/i,
       'packaged snapshot did not fail closed on a malformed arbitrary plugin-owned driver export registration',
     );
@@ -871,11 +895,17 @@ try {
       status: malformedSnapshot.status,
       missingExportRowsCallback: /missing exportRowsCallback for driver: fixture-arbitrary-plugin-table/i.test(malformedSnapshot.text),
     };
-    });
+      },
+    );
   }
 
   if (shouldRunScenario('driver-missing-apply-guard')) {
-    await withPlaygroundServer('production-plugin-driver-missing-apply-guard', driverMissingApplyServerBlueprintPath, pluginDir, async (server) => {
+    await withPlaygroundServer(
+      'production-plugin-driver-missing-apply-guard',
+      driverMissingApplyServerBlueprintPath,
+      pluginDir,
+      malformedDriverGuardServerOptions,
+      async (server) => {
     const malformedSnapshot = await requestText(
       server.baseUrl,
       'GET',
@@ -883,9 +913,8 @@ try {
       undefined,
       authHeaders(),
     );
-    assert.equal(malformedSnapshot.status, 500);
-    assert.match(
-      malformedSnapshot.text,
+    assertPackagedDriverFatalResponse(
+      malformedSnapshot,
       /missing applyRowCallback for driver: fixture-arbitrary-plugin-table/i,
       'packaged snapshot did not fail closed on a malformed arbitrary plugin-owned driver apply registration',
     );
@@ -895,11 +924,17 @@ try {
       status: malformedSnapshot.status,
       missingApplyRowCallback: /missing applyRowCallback for driver: fixture-arbitrary-plugin-table/i.test(malformedSnapshot.text),
     };
-    });
+      },
+    );
   }
 
   if (shouldRunScenario('driver-missing-validate-guard')) {
-    await withPlaygroundServer('production-plugin-driver-missing-validate-guard', driverMissingValidateServerBlueprintPath, pluginDir, async (server) => {
+    await withPlaygroundServer(
+      'production-plugin-driver-missing-validate-guard',
+      driverMissingValidateServerBlueprintPath,
+      pluginDir,
+      malformedDriverGuardServerOptions,
+      async (server) => {
     const malformedSnapshot = await requestText(
       server.baseUrl,
       'GET',
@@ -907,9 +942,8 @@ try {
       undefined,
       authHeaders(),
     );
-    assert.equal(malformedSnapshot.status, 500);
-    assert.match(
-      malformedSnapshot.text,
+    assertPackagedDriverFatalResponse(
+      malformedSnapshot,
       /missing validateMutationCallback for driver: fixture-arbitrary-plugin-table/i,
       'packaged snapshot did not fail closed on a malformed arbitrary plugin-owned driver validate registration',
     );
@@ -919,11 +953,17 @@ try {
       status: malformedSnapshot.status,
       missingValidateMutationCallback: /missing validateMutationCallback for driver: fixture-arbitrary-plugin-table/i.test(malformedSnapshot.text),
     };
-    });
+      },
+    );
   }
 
   if (shouldRunScenario('driver-missing-name-guard')) {
-    await withPlaygroundServer('production-plugin-driver-missing-name-guard', driverMissingNameServerBlueprintPath, pluginDir, async (server) => {
+    await withPlaygroundServer(
+      'production-plugin-driver-missing-name-guard',
+      driverMissingNameServerBlueprintPath,
+      pluginDir,
+      malformedDriverGuardServerOptions,
+      async (server) => {
     const malformedSnapshot = await requestText(
       server.baseUrl,
       'GET',
@@ -931,9 +971,8 @@ try {
       undefined,
       authHeaders(),
     );
-    assert.equal(malformedSnapshot.status, 500);
-    assert.match(
-      malformedSnapshot.text,
+    assertPackagedDriverFatalResponse(
+      malformedSnapshot,
       /missing driver name for table: wp_reprint_push_driver_fixture/i,
       'packaged snapshot did not fail closed on a plugin-owned driver registration without a driver name',
     );
@@ -942,11 +981,17 @@ try {
       status: malformedSnapshot.status,
       missingDriverName: /missing driver name for table: wp_reprint_push_driver_fixture/i.test(malformedSnapshot.text),
     };
-    });
+      },
+    );
   }
 
   if (shouldRunScenario('driver-missing-plugin-owner-guard')) {
-    await withPlaygroundServer('production-plugin-driver-missing-plugin-owner-guard', driverMissingPluginOwnerServerBlueprintPath, pluginDir, async (server) => {
+    await withPlaygroundServer(
+      'production-plugin-driver-missing-plugin-owner-guard',
+      driverMissingPluginOwnerServerBlueprintPath,
+      pluginDir,
+      malformedDriverGuardServerOptions,
+      async (server) => {
     const malformedSnapshot = await requestText(
       server.baseUrl,
       'GET',
@@ -954,9 +999,8 @@ try {
       undefined,
       authHeaders(),
     );
-    assert.equal(malformedSnapshot.status, 500);
-    assert.match(
-      malformedSnapshot.text,
+    assertPackagedDriverFatalResponse(
+      malformedSnapshot,
       /missing pluginOwner for driver: fixture-arbitrary-plugin-table/i,
       'packaged snapshot did not fail closed on a plugin-owned driver registration without pluginOwner',
     );
@@ -965,11 +1009,17 @@ try {
       status: malformedSnapshot.status,
       missingPluginOwner: /missing pluginOwner for driver: fixture-arbitrary-plugin-table/i.test(malformedSnapshot.text),
     };
-    });
+      },
+    );
   }
 
   if (shouldRunScenario('driver-missing-table-guard')) {
-    await withPlaygroundServer('production-plugin-driver-missing-table-guard', driverMissingTableServerBlueprintPath, pluginDir, async (server) => {
+    await withPlaygroundServer(
+      'production-plugin-driver-missing-table-guard',
+      driverMissingTableServerBlueprintPath,
+      pluginDir,
+      malformedDriverGuardServerOptions,
+      async (server) => {
     const malformedSnapshot = await requestText(
       server.baseUrl,
       'GET',
@@ -977,9 +1027,8 @@ try {
       undefined,
       authHeaders(),
     );
-    assert.equal(malformedSnapshot.status, 500);
-    assert.match(
-      malformedSnapshot.text,
+    assertPackagedDriverFatalResponse(
+      malformedSnapshot,
       /missing table for driver: fixture-arbitrary-plugin-table/i,
       'packaged snapshot did not fail closed on a plugin-owned driver registration without table',
     );
@@ -988,11 +1037,17 @@ try {
       status: malformedSnapshot.status,
       missingTable: /missing table for driver: fixture-arbitrary-plugin-table/i.test(malformedSnapshot.text),
     };
-    });
+      },
+    );
   }
 
   if (shouldRunScenario('driver-duplicate-name-guard')) {
-    await withPlaygroundServer('production-plugin-driver-duplicate-name-guard', driverDuplicateNameServerBlueprintPath, pluginDir, async (server) => {
+    await withPlaygroundServer(
+      'production-plugin-driver-duplicate-name-guard',
+      driverDuplicateNameServerBlueprintPath,
+      pluginDir,
+      malformedDriverGuardServerOptions,
+      async (server) => {
     const malformedSnapshot = await requestText(
       server.baseUrl,
       'GET',
@@ -1000,9 +1055,8 @@ try {
       undefined,
       authHeaders(),
     );
-    assert.equal(malformedSnapshot.status, 500);
-    assert.match(
-      malformedSnapshot.text,
+    assertPackagedDriverFatalResponse(
+      malformedSnapshot,
       /duplicate driver name: fixture-arbitrary-plugin-table/i,
       'packaged snapshot did not fail closed on duplicate plugin-owned driver names',
     );
@@ -1011,11 +1065,17 @@ try {
       status: malformedSnapshot.status,
       duplicateDriverName: /duplicate driver name: fixture-arbitrary-plugin-table/i.test(malformedSnapshot.text),
     };
-    });
+      },
+    );
   }
 
   if (shouldRunScenario('driver-duplicate-table-guard')) {
-    await withPlaygroundServer('production-plugin-driver-duplicate-table-guard', driverDuplicateTableServerBlueprintPath, pluginDir, async (server) => {
+    await withPlaygroundServer(
+      'production-plugin-driver-duplicate-table-guard',
+      driverDuplicateTableServerBlueprintPath,
+      pluginDir,
+      malformedDriverGuardServerOptions,
+      async (server) => {
     const malformedSnapshot = await requestText(
       server.baseUrl,
       'GET',
@@ -1023,9 +1083,8 @@ try {
       undefined,
       authHeaders(),
     );
-    assert.equal(malformedSnapshot.status, 500);
-    assert.match(
-      malformedSnapshot.text,
+    assertPackagedDriverFatalResponse(
+      malformedSnapshot,
       /duplicate table mapping for table: wp_reprint_push_driver_fixture/i,
       'packaged snapshot did not fail closed on duplicate plugin-owned driver table mappings',
     );
@@ -1034,7 +1093,8 @@ try {
       status: malformedSnapshot.status,
       duplicateTable: /duplicate table mapping for table: wp_reprint_push_driver_fixture/i.test(malformedSnapshot.text),
     };
-    });
+      },
+    );
   }
 
   console.log(JSON.stringify(summary, null, 2));
@@ -1060,17 +1120,25 @@ function buildPluginPackage(targetDir) {
   }
 }
 
-function parseSelectedScenario(argv, envValue) {
+function parseSelectedScenarios(argv, envValue) {
   const explicitArg = argv.find((arg) => arg.startsWith('--scenario='));
-  const scenario = explicitArg ? explicitArg.slice('--scenario='.length) : envValue;
-  if (!scenario) {
+  const rawValue = explicitArg ? explicitArg.slice('--scenario='.length) : envValue;
+  if (!rawValue) {
     return null;
   }
-  return scenario.trim() || null;
+  const names = rawValue
+    .split(',')
+    .map((name) => name.trim())
+    .filter(Boolean)
+    .flatMap((name) => scenarioGroups[name] ?? [name]);
+  if (names.length === 0) {
+    return null;
+  }
+  return new Set(names);
 }
 
 function shouldRunScenario(name) {
-  return selectedScenario === null || selectedScenario === name;
+  return selectedScenarios === null || selectedScenarios.has(name);
 }
 
 function withoutUnmappedGraphPostmeta(snapshot) {
@@ -1507,7 +1575,17 @@ async function withPlaygroundServer(name, blueprintPath, mountedPluginDir, optio
   }
 }
 
-async function startPlaygroundServer(name, blueprintPath, mountedPluginDir, { authBootstrap = true } = {}) {
+async function startPlaygroundServer(
+  name,
+  blueprintPath,
+  mountedPluginDir,
+  {
+    authBootstrap = true,
+    readyPath = '/wp-json/reprint/v1/push/snapshot',
+    readyHeaders = null,
+    readyOk = null,
+  } = {},
+) {
   const port = await findLocalPort();
   const baseUrl = `http://127.0.0.1:${port}`;
   const logs = [];
@@ -1545,7 +1623,11 @@ async function startPlaygroundServer(name, blueprintPath, mountedPluginDir, { au
   child.stderr.on('data', (chunk) => pushLog(logs, chunk));
 
   try {
-    await waitForServer(child, baseUrl, logs);
+    await waitForServer(child, baseUrl, logs, {
+      readyPath,
+      readyHeaders: readyHeaders ?? authHeaders(),
+      readyOk: readyOk ?? ((response) => response.status === 200 && response.body?.ok === true),
+    });
   } catch (error) {
     await stopChildProcess(child);
     throw error;
@@ -1554,7 +1636,7 @@ async function startPlaygroundServer(name, blueprintPath, mountedPluginDir, { au
   return { name, port, baseUrl, child, logs };
 }
 
-async function waitForServer(child, baseUrl, logs) {
+async function waitForServer(child, baseUrl, logs, { readyPath, readyHeaders, readyOk }) {
   const deadline = Date.now() + serverStartupTimeoutMs;
   let lastError = null;
 
@@ -1567,15 +1649,15 @@ async function waitForServer(child, baseUrl, logs) {
       const response = await requestJson(
         baseUrl,
         'GET',
-        '/wp-json/reprint/v1/push/snapshot',
+        readyPath,
         undefined,
-        authHeaders(),
+        readyHeaders,
         { attempts: 2 },
       );
-      if (response.status === 200 && response.body?.ok === true) {
+      if (readyOk(response)) {
         return;
       }
-      lastError = new Error(`Production plugin package snapshot readiness HTTP ${response.status}`);
+      lastError = new Error(`Playground readiness probe ${readyPath} returned HTTP ${response.status}`);
     } catch (error) {
       lastError = error;
     }
@@ -1658,6 +1740,19 @@ async function requestText(baseUrl, method, pathname, body = undefined, headers 
     status: response.status,
     text: await response.text(),
   };
+}
+
+function assertPackagedDriverFatalResponse(response, expectedPattern, message) {
+  assert.ok(
+    response.status === 200 || response.status === 500,
+    `expected packaged malformed driver response to fail closed with HTTP 200 or 500, got ${response.status}`,
+  );
+  assert.match(
+    response.text,
+    /Fatal error|Uncaught RuntimeException/i,
+    `expected packaged malformed driver response to include a PHP fatal, got HTTP ${response.status}`,
+  );
+  assert.match(response.text, expectedPattern, message);
 }
 
 async function requestJsonOnce(baseUrl, method, pathname, body = undefined, headers = {}) {
