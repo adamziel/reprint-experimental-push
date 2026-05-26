@@ -366,6 +366,27 @@ export function createPushPlan({ base, local, remote, now = new Date() }) {
         continue;
       }
 
+      const samePlanCreateSupport = samePlanCreatedGraphIdentitySupport({
+        resource,
+        resources,
+        base,
+        local,
+        remote,
+      });
+      if (!samePlanCreateSupport.supported) {
+        addWordPressGraphIdentityBlocker(plan, {
+          resource,
+          support: samePlanCreateSupport,
+          baseValue,
+          localValue,
+          remoteValue,
+          baseHash,
+          localHash,
+          remoteHash,
+        });
+        continue;
+      }
+
       const mutation = {
         id: `mutation-${plan.mutations.length + 1}`,
         resource,
@@ -1130,17 +1151,62 @@ function wordpressGraphIdentitySupport({
     return { supported: true };
   }
 
-  const unsupportedAttachmentReferences = references
-    .map((reference) => wordpressGraphReferenceEvidence(reference, resources, base, local, remote))
-    .filter((reference) => reference.relationshipType === 'featured-image-attachment')
-    .filter((reference) => reference.targetChange.targetResource?.table === 'wp_posts')
-    .filter((reference) => getResource(remote, reference.targetChange.targetResource)?.post_type === 'attachment');
+  const referenceEvidence = references.map((reference) =>
+    wordpressGraphReferenceEvidence(reference, resources, base, local, remote));
+  if (resource.table === 'wp_posts' && normalizePositiveInteger(localValue.post_parent) != null) {
+    const postParentTarget = wordpressGraphTargetResource({
+      sourceTable: resource.table,
+      targetSuffix: 'posts',
+      id: normalizePositiveInteger(localValue.post_parent),
+    });
+    const localPostParentTarget = getResource(local, postParentTarget);
+    if (localPostParentTarget?.post_type === 'revision' && getResource(remote, postParentTarget) === ABSENT) {
+      return {
+        supported: false,
+        className: 'unsupported-revision-resource',
+        reason: 'Revision graph resources are not yet supported by the planner.',
+      };
+    }
+  }
+  const unsupportedAttachmentReferences = referenceEvidence
+    .filter((reference) =>
+      reference.relationshipType === 'featured-image-attachment'
+      || (
+        reference.relationshipType === 'post-parent'
+        && reference.targetChange.targetResource?.table === 'wp_posts'
+        && getResource(remote, reference.targetChange.targetResource)?.post_type === 'attachment'
+      )
+      || (
+        reference.targetChange.remote.state === 'absent'
+        && reference.targetChange.local.state === 'present'
+        && reference.targetChange.local.value?.post_type === 'attachment'
+      ));
 
   if (unsupportedAttachmentReferences.length > 0) {
     return {
       supported: false,
       className: 'unsupported-attachment-resource',
       reason: 'Attachment graph resources are not yet supported by the planner.',
+    };
+  }
+
+  const unsupportedRevisionReferences = referenceEvidence
+    .filter((reference) =>
+      reference.relationshipType === 'post-parent'
+      && reference.targetChange.targetResource?.table === 'wp_posts'
+      && (
+        getResource(remote, reference.targetChange.targetResource)?.post_type === 'revision'
+        || (
+          reference.targetChange.remote.state === 'absent'
+          && getResource(local, reference.targetChange.targetResource)?.post_type === 'revision'
+        )
+      ));
+
+  if (unsupportedRevisionReferences.length > 0) {
+    return {
+      supported: false,
+      className: 'unsupported-revision-resource',
+      reason: 'Revision graph resources are not yet supported by the planner.',
     };
   }
 
@@ -1304,6 +1370,68 @@ function wordpressGraphReferenceEvidence(reference, resources, base, local, remo
       targetRemoteHash,
     ),
   };
+}
+
+function samePlanCreatedGraphIdentitySupport({ resource, resources, base, local, remote }) {
+  const localValue = getResource(local, resource);
+  const baseValue = getResource(base, resource);
+  const remoteValue = getResource(remote, resource);
+
+  if (localValue === ABSENT || resource.type !== 'row') {
+    return { supported: true };
+  }
+
+  if (resourceHash(base, resource) !== resourceHash(remote, resource)) {
+    return { supported: true };
+  }
+
+  const inboundReferences = [];
+  for (const sourceResource of resources) {
+    if (!isWordPressGraphReferenceResource(sourceResource)) {
+      continue;
+    }
+    const sourceLocalValue = getResource(local, sourceResource);
+    if (sourceLocalValue === ABSENT) {
+      continue;
+    }
+    if (resourceHash(base, sourceResource) === resourceHash(local, sourceResource)) {
+      continue;
+    }
+
+    for (const reference of wordpressGraphReferences(sourceResource, sourceLocalValue)) {
+      if (reference.targetResourceKey !== resource.key) {
+        continue;
+      }
+      const evidence = wordpressGraphReferenceEvidence(reference, resources, base, local, remote);
+      if (evidence.targetChange.remote.state === 'absent') {
+        inboundReferences.push(evidence);
+      }
+    }
+  }
+
+  if (inboundReferences.length === 0) {
+    return { supported: true };
+  }
+
+  return {
+    supported: false,
+    className: 'stale-wordpress-graph-identity',
+    reason: `WordPress graph mutation ${resource.key} is created in the same plan as a relationship that depends on it, and identity rewriting is not yet supported.`,
+    references: inboundReferences,
+  };
+}
+
+function isWordPressGraphReferenceResource(resource) {
+  if (resource.type !== 'row') {
+    return false;
+  }
+  return [
+    'wp_posts',
+    'wp_postmeta',
+    'wp_term_relationships',
+    'wp_term_taxonomy',
+    'wp_termmeta',
+  ].includes(resource.table);
 }
 
 function wordpressGraphTargetResource({ sourceTable, targetSuffix, id }) {
