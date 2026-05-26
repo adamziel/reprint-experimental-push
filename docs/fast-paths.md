@@ -97,6 +97,9 @@ It also includes a compressed row-batch manifest plus canonical row-digest
 shortcut for plugin-install batches, so repeat batch sizing can skip duplicate
 planning work without weakening row preconditions or the atomic-group
 barrier.
+It also includes measured DB parallelism caps plus canonical row-digests for
+plugin-install row batches, so the planner can skip duplicate fanout sizing
+without turning concurrency limits into mutation authority.
 It also includes a compressed per-kind budget summary plus planned
 dependency-graph shortcut for plugin-install fanout, so repeat fanout sizing
 can skip duplicate planning work without weakening live revalidation or the

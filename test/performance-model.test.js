@@ -91,6 +91,17 @@ test('benchmark model covers large uploads and plugin installs', () => {
     model.safeFastPaths.some(
       (fastPath) =>
         fastPath.area === 'database-row-batching' &&
+        fastPath.allowedShortcut === 'reuse-measured-db-parallelism-caps-and-canonical-row-digests-to-size-bounded-plugin-install-row-batches' &&
+        fastPath.guardrails.includes('measured-db-parallelism-caps-stay-planning-evidence-only') &&
+        fastPath.gateProofs.skip.includes('the planner can reuse measured DB parallelism caps and canonical row digests') &&
+        fastPath.gateProofs.recovery.includes('the measured caps, canonical row digests, and batch receipts still classify retry, pause, or crash'),
+    ),
+    'measured DB parallelism caps can size plugin-install row batches without weakening recovery evidence',
+  );
+  assert.ok(
+    model.safeFastPaths.some(
+      (fastPath) =>
+        fastPath.area === 'database-row-batching' &&
         fastPath.allowedShortcut === 'compress-planning-row-batch-manifests-and-reuse-canonical-row-digests-to-size-bounded-plugin-update-batches' &&
         fastPath.guardrails.includes('compressed-manifest-remains-planning-evidence-only') &&
         fastPath.gateProofs.skip.includes('canonical row digests can trim repeat planning work') &&

@@ -1437,6 +1437,26 @@ export const SAFE_FAST_PATHS = Object.freeze([
     publishesStagedDataEarly: false,
   },
   {
+    area: 'database-row-batching',
+    reduces: ['round-trips-for-planning', 'duplicate-budget-recomputation', 'head-of-line-blocking'],
+    allowedShortcut: 'reuse-measured-db-parallelism-caps-and-canonical-row-digests-to-size-bounded-plugin-install-row-batches',
+    guardrails: [
+      'measured-db-parallelism-caps-stay-planning-evidence-only',
+      'canonical-row-digests-stay-plan-scoped-and-revalidated-before-write',
+    ],
+    gateProofs: {
+      skip: 'the planner can reuse measured DB parallelism caps and canonical row digests to avoid recomputing plugin-install row-batch fanout on a retry, and each row still keeps its own precondition',
+      live: 'every row in the batch still rechecks its live compare at the storage boundary before visibility changes',
+      group: 'the measured caps and canonical digests only narrow planning work inside the same atomic group and never widen visibility across owners',
+      recovery: 'the measured caps, canonical row digests, and batch receipts still classify retry, pause, or crash without guessing',
+    },
+    visibilityBoundary: 'planning-only-until-batch-commit',
+    failureEvidence: 'measured db parallelism caps, canonical row digests, and batch idempotency key',
+    bypassesLivePreconditions: false,
+    splitsAtomicGroup: false,
+    publishesStagedDataEarly: false,
+  },
+  {
     area: 'compression',
     reduces: ['wire-bytes', 'staging-io-for-text-payloads'],
     allowedShortcut: 'compress-transport-frames-with-canonical-uncompressed-digest',
