@@ -70,6 +70,8 @@ Fresh visibility-lane heads moved, but they still only refresh public status sur
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `af0ef2d9`
 - `origin/lane/reliable-executor` -> `79f31269`
 - `origin/lane/reliable-executor` -> `b368a170`
+- `origin/lane/reliable-executor` -> `2c240aa7`
+- `origin/lane/reliable-executor` -> `3606228b`
 - `origin/lane/no-data-loss-invariants` -> `270c7406`
 - `origin/lane/no-data-loss-invariants` -> `62b4acb0`
 - `origin/lane/no-data-loss-recovery` -> `2af1ddda`
@@ -93,6 +95,15 @@ but it did not change the release conclusion:
   a live-source mutation boundary.
 - `origin/lane/reliable-executor` now records `b368a170`, hardening live proof
   startup failure output. It still does not prove production auth/session
+  lifecycle or a live-source mutation boundary.
+- `origin/lane/reliable-executor` now records `2c240aa7`, tightening release
+  verifier proof bounds. It still does not prove production auth/session
+  lifecycle or a live-source mutation boundary.
+- `origin/lane/reliable-executor` now records `3606228b`, failing closed on
+  missing production client credentials. It still does not prove production
+  auth/session lifecycle or a live-source mutation boundary.
+- `origin/lane/reliable-executor` now records `fa1d0e0e`, clarifying blocked
+  production surfaces. It still does not prove production auth/session
   lifecycle or a live-source mutation boundary.
 - `origin/lane/no-data-loss-invariants` now records `62b4acb0`, adding a
   termmeta unsupported-boundary proof. It still does not prove the live
