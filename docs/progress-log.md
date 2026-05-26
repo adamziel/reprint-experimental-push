@@ -4,9 +4,26 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
-## 2026-05-26 - Freshness Refresh 08:54:01
+## 2026-05-26 - Fresh Evidence Delta 08:57:41
 
-<a id="2026-05-26-freshness-refresh-085401"></a>
+<a id="2026-05-26-fresh-evidence-delta-085741"></a>
+
+- Reliable executor pushed `5b3240fb`, adding fail-closed durable journal readback auth handling on the production-shaped path.
+- This improves the product-side boundary but still does not prove production release readiness.
+- Release gates remain `0/4`. The missing boundary is still live production-backed replay, auth/session lifecycle depth, or durable journal ownership.
+- Evidence trail: [reliable-executor handoff](../reliable-executor/.lane-output/final-loop-20260526-085502.md), [supervisor feedback](supervisor-feedback.md).
+
+## 2026-05-26 - Freshness Refresh 08:56:48
+
+<a id="2026-05-26-freshness-refresh-085648"></a>
+
+- Refreshed [progress.html](../progress.html) so the visible last-updated date stays aligned with the live supervision clock.
+- This remains a visibility-only update. The release gate posture stays `0/4`.
+- Evidence trail: [progress.html](../progress.html), [supervisor feedback](supervisor-feedback.md).
+
+## 2026-05-26 - Freshness Refresh 08:55:12
+
+<a id="2026-05-26-freshness-refresh-085512"></a>
 
 - Refreshed [progress.html](../progress.html) so the visible last-updated date stays aligned with the live supervision clock.
 - This remains a visibility-only update. The release gate posture stays `0/4`.

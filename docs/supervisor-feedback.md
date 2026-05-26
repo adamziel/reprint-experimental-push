@@ -1,10 +1,21 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-26 08:54 CEST
+Last updated: 2026-05-26 08:57 CEST
 
-## 2026-05-26 08:54:01 CEST - Freshness Refresh
+## 2026-05-26 08:57:41 CEST - Fresh Evidence Delta
 
-- The visible progress page was a couple of minutes behind the lane clock, so I refreshed the owned freshness surfaces to the current stamp.
+- Reliable executor pushed `5b3240fb` with a fail-closed durable journal readback auth check, which is a real production-side hardening step.
+- The visible release boundary is still closed: replay, auth/session lifecycle depth, live production-backed replay, and durable journal ownership remain incomplete.
+- The release posture stays conservative at `0/4`; the next nudge is to keep moving product-side code, not to re-audit the same auth boundary.
+
+## 2026-05-26 08:56:48 CEST - Freshness Refresh
+
+- The public progress surface was drifting behind the live supervision clock again, so I refreshed the owned visibility surfaces to the current stamp.
+- The release posture stays conservative at `0/4`; no new proof landed.
+
+## 2026-05-26 08:55:12 CEST - Freshness Refresh
+
+- The public progress surface was a minute behind the supervision clock, so I refreshed the owned visibility surfaces to the current stamp.
 - The release posture stays conservative at `0/4`; no new proof landed.
 
 ## 2026-05-26 08:52:18 CEST - Freshness Refresh
