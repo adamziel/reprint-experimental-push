@@ -3774,7 +3774,9 @@ function unsupportedAttachmentResourceSupport({ resource, baseValue, localValue,
       remoteValue,
       allowSteadyUnsupported: true,
     }),
-    reason: 'Attachment graph resources are not yet supported by the planner.',
+    reason: localValue === ABSENT
+      ? 'Attachment graph resource deletes are not yet supported by the planner.'
+      : 'Attachment graph resources are not yet supported by the planner.',
     references: referenceEvidence,
   };
 }
