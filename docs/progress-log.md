@@ -4,6 +4,15 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-05-26 - Fresh Evidence Delta 11:05:01
+
+<a id="2026-05-26-fresh-evidence-delta-110501"></a>
+
+- Reliable's newest release-path journal evidence is `5fd9dfb4`, which supersedes `9ff7b997` as the current reliable head and adds `openProductionRecoveryJournal()` wiring into the release smoke.
+- This is stronger release-path journal evidence, but it still does not prove the gate can move on its own.
+- The release gate posture remains `0/4`.
+- Evidence trail: [supervisor feedback](supervisor-feedback.md).
+
 ## 2026-05-26 - Freshness Refresh 11:02:44
 
 <a id="2026-05-26-freshness-refresh-110244"></a>
