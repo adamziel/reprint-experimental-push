@@ -5,7 +5,7 @@ Changed files:
 - [`docs/progress-log.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/progress-publisher/docs/progress-log.md)
 
 Commands:
-- `date '+%Y-%m-%d %H:%M:%S %Z'`
+- `date '+%Y-%m-%d %H:%M:%S %Z (%z)'`
 - `sed -n '1,80p' docs/progress-log.md`
 - `sed -n '490,545p' progress.html`
 - `git diff -- progress.html docs/progress-log.md .lane-output/final.md`
