@@ -1,8 +1,6 @@
 # Critic Audit
 
-## 2026-05-26 13:02:16 CEST (+0200)
-
-No gate movement. `3a64aef6` is the current reliable head: it fails closed on revoked production auth sessions in the client/test path, but it still stops short of proving a production-backed auth/session lifecycle on the checked release path or durable-journal ownership consumed by the checked release command. The verdict stays `0/4`.
+No gate movement. `fd7d3a54` is the current reliable head: it adds production recovery journal claim tracking and restart-readable coverage, but it still stays on the local recovery-journal surface. It does not prove a production-backed auth/session lifecycle on the checked release path or durable-journal ownership consumed by the checked release command. The verdict stays `0/4`.
 
 Changed files:
 - [`audits/critic.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/critic/audits/critic.md)
@@ -11,8 +9,8 @@ Changed files:
 Commands run:
 - `date '+%Y-%m-%d %H:%M:%S %Z (%z)'`
 - `git ls-remote origin refs/heads/lane/reliable-executor`
-- `git show --stat --oneline --no-renames 3a64aef6773c3c82ad3a5b91a6ea0ca53c3942fb --`
-- `git show --no-renames --format=medium 3a64aef6773c3c82ad3a5b91a6ea0ca53c3942fb -- scripts/playground/production-shaped-release-verify.mjs test/production-shaped-proof.test.js`
+- `git show --stat --oneline --no-renames fd7d3a540996d51a459d9358126a3cb3e4a59a2e --`
+- `git show --no-renames --format=medium fd7d3a540996d51a459d9358126a3cb3e4a59a2e -- scripts/playground/production-shaped-release-verify.mjs test/production-shaped-proof.test.js src/recovery-journal.js test/recovery-journal.test.js`
 - `sed -n '1,220p' AGENTS.md`
 - `sed -n '1,220p' supervision/README.md`
 - `sed -n '1,220p' supervision/lanes/critic.md`
