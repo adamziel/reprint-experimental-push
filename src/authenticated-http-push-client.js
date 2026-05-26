@@ -642,6 +642,9 @@ export function authenticatedHttpClient({
         rawBody,
         signedRequestHeaders(credential, 'POST', pathname, rawBody, options),
         requestTimeoutMs,
+        {
+          retryable: options.retryable === true || options.idempotencyKey !== undefined,
+        },
       );
     },
   };
