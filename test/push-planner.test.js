@@ -20672,6 +20672,80 @@ test('blocks local same-plan created comment meta identity while preserving remo
   assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin changes */');
 });
 
+test('blocks local same-plan created comment meta identity while preserving a matching independent delete and remote-only plugin removals', () => {
+  const resourceKey = 'row:["wp_commentmeta","meta_id:48"]';
+  const targetResourceKey = 'row:["wp_comments","comment_ID:28"]';
+  const targetFileKey = 'file:index.php';
+  const base = baseSite();
+  base.db.wp_commentmeta = {
+    'meta_id:48': {
+      meta_id: 48,
+      comment_id: 28,
+      meta_key: 'note',
+      meta_value: 'Base same-plan delete comment meta',
+    },
+  };
+
+  const local = baseSite();
+  delete local.files['index.php'];
+  local.db.wp_commentmeta = {
+    'meta_id:48': {
+      meta_id: 48,
+      comment_id: 28,
+      meta_key: 'note',
+      meta_value: 'Local same-plan delete comment meta',
+    },
+  };
+  local.db.wp_comments = {
+    'comment_ID:28': {
+      comment_ID: 28,
+      comment_post_ID: 1,
+      comment_content: 'Local same-plan delete comment',
+    },
+  };
+
+  const remote = baseSite();
+  remote.db.wp_commentmeta = JSON.parse(JSON.stringify(base.db.wp_commentmeta));
+  delete remote.plugins.forms;
+  delete remote.files['wp-content/plugins/forms/forms.php'];
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  const targetBlocker = plan.blockers.find((entry) => entry.resourceKey === targetResourceKey);
+  const deleteMutation = mutationFor(plan, targetFileKey);
+  const reference = blocker.references[0];
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 1);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(decisionFor(plan, targetResourceKey), undefined);
+  assert.equal(plan.conflicts.length, 0);
+  assert.equal(blocker.class, 'unsupported-commentmeta-resource');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_commentmeta","meta_id:48"] is created in the same plan as a comment identity that depends on it, and identity rewriting is not yet supported.');
+  assert.equal(blocker.referencesTruncated, false);
+  assert.equal(reference.relationshipKey, 'wp_commentmeta.comment_id');
+  assert.equal(reference.relationshipType, 'commentmeta-comment');
+  assert.equal(reference.targetResourceKey, targetResourceKey);
+  assert.equal(reference.targetChange.remote.state, 'absent');
+  assert.equal(reference.targetChange.local.state, 'present');
+  assert.equal(targetBlocker.class, 'unsupported-comments-users-resource');
+  assert.equal(targetBlocker.resourceKey, targetResourceKey);
+  assert.equal(targetBlocker.reason, 'WordPress graph mutation row:["wp_comments","comment_ID:28"] is created in the same plan as a comment meta identity that depends on it, and identity rewriting is not yet supported.');
+  assert.equal(targetBlocker.references[0].relationshipType, 'commentmeta-comment');
+  assert.equal(targetBlocker.references[0].sourceResourceKey, resourceKey);
+  assert.equal(deleteMutation.action, 'delete');
+  assert.equal(deleteMutation.changeKind, 'delete');
+  assert.equal(deleteMutation.change.localChange, 'delete');
+  assert.equal(deleteMutation.change.remoteChange, 'unchanged');
+  assert.equal(planJson.includes('Local same-plan delete comment meta'), false);
+  assert.equal(planJson.includes('Base same-plan delete comment meta'), false);
+  assert.equal(planJson.includes('Local same-plan delete comment'), false);
+  assert.equal(Object.hasOwn(remote.plugins, 'forms'), false);
+  assert.equal(Object.hasOwn(remote.files, 'wp-content/plugins/forms/forms.php'), false);
+});
+
 test('prioritizes parent comment blocker wording while carrying bounded comment parent and comment meta references for a same-plan created comment identity', () => {
   const parentResourceKey = 'row:["wp_comments","comment_ID:52"]';
   const childResourceKey = 'row:["wp_comments","comment_ID:51"]';
