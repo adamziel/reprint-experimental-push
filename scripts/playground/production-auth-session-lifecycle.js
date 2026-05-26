@@ -223,6 +223,17 @@ export function evaluateProductionAuthSessionLifecycleSummary(summary, now = Dat
     const observationSessionId = typeof observation.id === 'string' && observation.id.trim()
       ? observation.id
       : null;
+    if (
+      observation.step !== 'preflight'
+      && isAuthSessionReadStep(observation.step)
+      && !observationSessionId
+    ) {
+      return {
+        ok: false,
+        required: 'preserved read',
+        observed: 'rotated',
+      };
+    }
     if (observationSessionId && observationSessionId !== issuedSessionId) {
       return {
         ok: false,
