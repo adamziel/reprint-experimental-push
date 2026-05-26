@@ -1130,6 +1130,20 @@ function wordpressGraphIdentitySupport({
     return { supported: true };
   }
 
+  const unsupportedAttachmentReferences = references
+    .map((reference) => wordpressGraphReferenceEvidence(reference, resources, base, local, remote))
+    .filter((reference) => reference.relationshipType === 'featured-image-attachment')
+    .filter((reference) => reference.targetChange.targetResource?.table === 'wp_posts')
+    .filter((reference) => getResource(remote, reference.targetChange.targetResource)?.post_type === 'attachment');
+
+  if (unsupportedAttachmentReferences.length > 0) {
+    return {
+      supported: false,
+      className: 'unsupported-attachment-resource',
+      reason: 'Attachment graph resources are not yet supported by the planner.',
+    };
+  }
+
   const unsafeReferences = references
     .map((reference) => wordpressGraphReferenceEvidence(reference, resources, base, local, remote))
     .filter(Boolean)
