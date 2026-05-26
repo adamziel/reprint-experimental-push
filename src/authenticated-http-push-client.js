@@ -209,6 +209,11 @@ export async function runAuthenticatedHttpPush({
     idempotencyKey,
   });
   summary.apply = summarizeResponse(apply);
+  if (apply.status !== 200 || apply.body?.ok !== true) {
+    summary.code = apply.body?.code || 'APPLY_FAILED';
+    setDurableJournalBoundary(summary, 'apply');
+    return summary;
+  }
   const applyAuthSessionDrift = requireProductionAuthSession && (
     hasProductionAuthSessionTypeDrift(apply)
     || hasProductionAuthSessionStatusDrift(apply)
@@ -272,9 +277,7 @@ export async function runAuthenticatedHttpPush({
     summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
     summary.authSession = {
       required: 'production-auth-session',
-      observed: applyAuthSessionDrift
-        ? apply.body?.auth?.session?.type || 'missing'
-        : recoveryInspect.body?.auth?.session?.type || 'missing',
+      observed: recoveryInspect.body?.auth?.session?.type || 'missing',
       verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
     };
     setDurableJournalBoundary(summary, 'recovery-inspect');
