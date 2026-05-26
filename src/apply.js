@@ -84,6 +84,7 @@ export function isAcceptableRecoveryState(recoveryState) {
     && Array.isArray(recoveryState.driftedResources)
     && recoveryState.driftedResources.length > 0
     && hasOnlyDenseOwnArrayIndexes(recoveryState.driftedResources)
+    && hasOnlyUniqueNonEmptyStrings(recoveryState.driftedResources)
     && recoveryState.driftedResources.every((resourceKey) => typeof resourceKey === 'string' && resourceKey.length > 0)
     && recoveryState.artifacts.journal !== recoveryState.artifacts.remote,
   );
@@ -2679,6 +2680,7 @@ function validateRecoveryStateEnvelopeKeys(recoveryState) {
       !Array.isArray(recoveryState.driftedResources)
       || recoveryState.driftedResources.length === 0
       || !hasOnlyDenseOwnArrayIndexes(recoveryState.driftedResources)
+      || !hasOnlyUniqueNonEmptyStrings(recoveryState.driftedResources)
       || recoveryState.driftedResources.some((resourceKey) => typeof resourceKey !== 'string' || resourceKey.length === 0)
     ) {
       throw new PushPlanError(
@@ -2763,6 +2765,17 @@ function hasOnlyDenseOwnArrayIndexes(value) {
       && /^(0|[1-9]\d*)$/.test(key)
       && Number(key) < value.length;
   });
+}
+
+function hasOnlyUniqueNonEmptyStrings(value) {
+  const seen = new Set();
+  for (const entry of value) {
+    if (typeof entry !== 'string' || entry.length === 0 || seen.has(entry)) {
+      return false;
+    }
+    seen.add(entry);
+  }
+  return true;
 }
 
 function sanitizeRecoveryRemote(remote, plan) {

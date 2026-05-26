@@ -25958,6 +25958,41 @@ test('blocked recovery states fail closed when driftedResources uses non-canonic
   assert.match(error.message, /Blocked recovery states must carry a non-empty list of drifted resource keys\./);
 });
 
+test('blocked recovery states are not acceptable when driftedResources repeats a resource key', () => {
+  const recovery = {
+    status: 'blocked-recovery',
+    planId: 'plan-drifted-resources-duplicate-entry',
+    reason: 'duplicate drifted resources',
+    remoteHash: 'a'.repeat(64),
+    driftedResources: ['file:index.php', 'file:index.php'],
+    artifacts: {
+      journal: { status: 'completed' },
+      remote: baseSite(),
+    },
+  };
+
+  assert.equal(isAcceptableRecoveryState(recovery), false);
+});
+
+test('blocked recovery states fail closed when driftedResources repeats a resource key', () => {
+  const recovery = {
+    status: 'blocked-recovery',
+    planId: 'plan-drifted-resources-duplicate-entry',
+    reason: 'duplicate drifted resources',
+    remoteHash: 'a'.repeat(64),
+    driftedResources: ['file:index.php', 'file:index.php'],
+    artifacts: {
+      journal: { status: 'completed' },
+      remote: baseSite(),
+    },
+  };
+
+  const error = captureError(() => assertRecoveryStateEnvelope(recovery));
+
+  assert.equal(error.code, 'RECOVERY_STATE_INVALID');
+  assert.match(error.message, /Blocked recovery states must carry a non-empty list of drifted resource keys\./);
+});
+
 test('production durable journal claims fail closed when remote artifact references are empty strings', () => {
   const writer = {
     kind: 'production-recovery-journal',
