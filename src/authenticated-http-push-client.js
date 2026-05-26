@@ -219,6 +219,11 @@ export async function runAuthenticatedHttpPush({
   const replayEquivalent = isReplayEquivalent(apply, replay);
   const applyAuthEnvelopeDrift = hasAuthEnvelopeDrift(preflightAuthEnvelope, apply);
   const replayAuthEnvelopeDrift = hasAuthEnvelopeDrift(preflightAuthEnvelope, replay);
+  if (applyAuthEnvelopeDrift || replayAuthEnvelopeDrift) {
+    summary.code = 'AUTH_SESSION_LIFECYCLE_DRIFT';
+    setDurableJournalBoundary(summary, 'replay');
+    return summary;
+  }
 
   const afterApply = await client.get('/snapshot');
   summary.after = summarizeSnapshot(afterApply, local);
@@ -444,7 +449,11 @@ function isReplayEquivalent(applyResponse, replayResponse) {
     && applyBody.auth?.identity?.userLogin === replayBody.auth?.identity?.userLogin
     && applyBody.auth?.session?.id === replayBody.auth?.session?.id
     && applyBody.auth?.session?.type === replayBody.auth?.session?.type
-    && applyBody.signedRequest?.signed === replayBody.signedRequest?.signed;
+    && applyBody.signedRequest?.signed === replayBody.signedRequest?.signed
+    && applyBody.idempotency?.replayed === replayBody.idempotency?.replayed
+    && applyBody.idempotency?.freshMutationWork === replayBody.idempotency?.freshMutationWork
+    && applyBody.idempotency?.status === replayBody.idempotency?.status
+    && applyBody.idempotency?.conflict === replayBody.idempotency?.conflict;
 }
 
 function hasAuthEnvelopeDrift(expected, response) {
