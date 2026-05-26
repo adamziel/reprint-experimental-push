@@ -138,5 +138,5 @@ export function packagedProductionPluginRouteRetryableWhileWordPressStarting(
   indexBodyText = '',
 ) {
   return packagedProductionPluginReadinessBodyRetryable(routeStatus, routeBodyText)
-    && packagedProductionPluginReadinessWordPressNotReady(indexStatus, indexBodyText);
+    && packagedProductionPluginReadinessBodyRetryable(indexStatus, indexBodyText);
 }

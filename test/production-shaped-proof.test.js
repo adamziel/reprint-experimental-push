@@ -1471,6 +1471,24 @@ test('packaged production plugin readiness helper does not retry terminal readin
     packagedProductionPluginRouteRetryableWhileWordPressStarting(
       502,
       '<!doctype html><html><body>WordPress is not ready yet</body></html>',
+      404,
+      '<!doctype html><html><body>No route was found matching the URL and request method.</body></html>',
+    ),
+    true,
+  );
+  assert.equal(
+    packagedProductionPluginRouteRetryableWhileWordPressStarting(
+      404,
+      '<!doctype html><html><body>No route was found matching the URL and request method.</body></html>',
+      500,
+      'No route was found matching the URL and request method',
+    ),
+    true,
+  );
+  assert.equal(
+    packagedProductionPluginRouteRetryableWhileWordPressStarting(
+      502,
+      '<!doctype html><html><body>WordPress is not ready yet</body></html>',
       200,
       '{\"namespaces\":[\"reprint/v1\"]}',
     ),
