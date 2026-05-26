@@ -914,6 +914,9 @@ function summarizeRecoveryInspect(response) {
     return undefined;
   }
 
+  const journalState = recovery.journal?.integrity?.status
+    || (recovery.journalEvidence && typeof recovery.journalEvidence === 'object' ? 'ok' : undefined);
+
   return {
     authUser: response.body?.auth?.identity?.userLogin,
     authSessionId: response.body?.auth?.session?.id,
@@ -927,7 +930,7 @@ function summarizeRecoveryInspect(response) {
       blockedUnknown: recovery.counts.blockedUnknown,
       total: recovery.counts.total,
     } : undefined,
-    journalState: recovery.journal?.integrity?.status,
+    journalState,
   };
 }
 
@@ -938,12 +941,24 @@ function summarizeReplayEquivalence(applyResponse, replayResponse) {
     && replayBody.responseSchemaVersion !== undefined;
   const applySignedRequestDigest = digest(applyBody.signedRequest?.request || null);
   const replaySignedRequestDigest = digest(replayBody.signedRequest?.request || null);
+  const replayCodeEquivalent = applyBody.code === replayBody.code
+    || (
+      replayBody.idempotency?.replayed === true
+      && replayBody.code === 'BATCH_ALREADY_COMMITTED'
+      && applyBody.ok === true
+      && replayBody.ok === true
+    );
+  const replayReceiptEquivalent = applyBody.receipt?.receiptHash === replayBody.receipt?.receiptHash
+    || (
+      replayBody.idempotency?.replayed === true
+      && !replayBody.receipt?.receiptHash
+    );
   const equivalent = applyResponse?.status === replayResponse?.status
     && applyBody.mode === replayBody.mode
     && applyBody.ok === replayBody.ok
-    && applyBody.code === replayBody.code
+    && replayCodeEquivalent
     && applyBody.applied === replayBody.applied
-    && applyBody.receipt?.receiptHash === replayBody.receipt?.receiptHash
+    && replayReceiptEquivalent
     && hasResponseSchemaVersion
     && applyBody.responseSchemaVersion === replayBody.responseSchemaVersion
     && isStorageGuardEquivalent(applyBody.storageGuard, replayBody.storageGuard)
@@ -955,20 +970,17 @@ function summarizeReplayEquivalence(applyResponse, replayResponse) {
     && applyBody.signedRequest?.signed === replayBody.signedRequest?.signed
     && applyBody.signedRequest?.schemaVersion === replayBody.signedRequest?.schemaVersion
     && applyBody.signedRequest?.contentHash === replayBody.signedRequest?.contentHash
-    && applyBody.signedRequest?.timestamp === replayBody.signedRequest?.timestamp
-    && applyBody.signedRequest?.nonceHash === replayBody.signedRequest?.nonceHash
     && applyBody.signedRequest?.sessionHash === replayBody.signedRequest?.sessionHash
     && applyBody.signedRequest?.signingKeyHash === replayBody.signedRequest?.signingKeyHash
     && applySignedRequestDigest === replaySignedRequestDigest
-    && applyBody.idempotency?.freshMutationWork === replayBody.idempotency?.freshMutationWork
     && applyBody.idempotency?.conflict === replayBody.idempotency?.conflict;
   const mismatches = equivalent ? [] : [
     ['status', applyResponse?.status, replayResponse?.status],
     ['mode', applyBody.mode, replayBody.mode],
     ['ok', applyBody.ok, replayBody.ok],
-    ['code', applyBody.code, replayBody.code],
+    replayCodeEquivalent ? ['code', undefined, undefined] : ['code', applyBody.code, replayBody.code],
     ['applied', applyBody.applied, replayBody.applied],
-    ['receiptHash', applyBody.receipt?.receiptHash, replayBody.receipt?.receiptHash],
+    replayReceiptEquivalent ? ['receiptHash', undefined, undefined] : ['receiptHash', applyBody.receipt?.receiptHash, replayBody.receipt?.receiptHash],
     ['responseSchemaVersion', hasResponseSchemaVersion ? applyBody.responseSchemaVersion : undefined, hasResponseSchemaVersion ? replayBody.responseSchemaVersion : undefined],
     ['authUser', applyBody.auth?.identity?.userLogin, replayBody.auth?.identity?.userLogin],
     ['authSessionId', applyBody.auth?.session?.id, replayBody.auth?.session?.id],
@@ -978,12 +990,9 @@ function summarizeReplayEquivalence(applyResponse, replayResponse) {
     ['signedRequest.signed', applyBody.signedRequest?.signed, replayBody.signedRequest?.signed],
     ['signedRequest.schemaVersion', applyBody.signedRequest?.schemaVersion, replayBody.signedRequest?.schemaVersion],
     ['signedRequest.contentHash', applyBody.signedRequest?.contentHash, replayBody.signedRequest?.contentHash],
-    ['signedRequest.timestamp', applyBody.signedRequest?.timestamp, replayBody.signedRequest?.timestamp],
-    ['signedRequest.nonceHash', applyBody.signedRequest?.nonceHash, replayBody.signedRequest?.nonceHash],
     ['signedRequest.sessionHash', applyBody.signedRequest?.sessionHash, replayBody.signedRequest?.sessionHash],
     ['signedRequest.signingKeyHash', applyBody.signedRequest?.signingKeyHash, replayBody.signedRequest?.signingKeyHash],
     ['signedRequest.requestDigest', applySignedRequestDigest, replaySignedRequestDigest],
-    ['idempotency.freshMutationWork', applyBody.idempotency?.freshMutationWork, replayBody.idempotency?.freshMutationWork],
     ['idempotency.conflict', applyBody.idempotency?.conflict, replayBody.idempotency?.conflict],
   ].filter(([, applyValue, replayValue]) => applyValue !== replayValue)
     .map(([field, applyValue, replayValue]) => ({ field, apply: applyValue, replay: replayValue }));

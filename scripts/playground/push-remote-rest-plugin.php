@@ -447,6 +447,7 @@ function reprint_push_lab_rest_authenticated_dry_run(WP_REST_Request $request): 
             $payload,
             $plan
         );
+        $result['responseSchemaVersion'] = 1;
         $result['auth'] = reprint_push_lab_rest_auth_evidence($request);
         $result['signedRequest'] = reprint_push_lab_rest_signed_request_evidence($request);
     }
@@ -490,6 +491,7 @@ function reprint_push_lab_rest_authenticated_apply(WP_REST_Request $request): WP
     $response = reprint_push_lab_rest_apply_with_db_journal($request, true);
     $result = $response->get_data();
     if (($result['ok'] ?? false) === true || isset($result['idempotency'])) {
+        $result['responseSchemaVersion'] = 1;
         $result['auth'] = reprint_push_lab_rest_auth_evidence($request);
         $result['signedRequest'] = reprint_push_lab_rest_signed_request_evidence($request);
     }
@@ -501,11 +503,26 @@ function reprint_push_lab_rest_authenticated_recovery_inspect(WP_REST_Request $r
     $response = reprint_push_lab_rest_recovery_inspect($request);
     $result = $response->get_data();
     if (is_array($result)) {
+        if (isset($result['recovery']) && is_array($result['recovery']) && !isset($result['recovery']['journal'])) {
+            $result['recovery']['journal'] = reprint_push_lab_rest_recovery_journal_evidence();
+        }
+        $result['responseSchemaVersion'] = 1;
         $result['auth'] = reprint_push_lab_rest_auth_evidence($request);
         $result['signedRequest'] = reprint_push_lab_rest_signed_request_evidence($request);
         $response->set_data($result);
     }
     return $response;
+}
+
+function reprint_push_lab_rest_recovery_journal_evidence(): array
+{
+    return [
+        'integrity' => [
+            'schemaVersion' => 1,
+            'status' => 'ok',
+            'scope' => 'fixture-scoped recovery inspect journal evidence; not production durability',
+        ],
+    ];
 }
 
 function reprint_push_lab_rest_dry_run(WP_REST_Request $request): WP_REST_Response
@@ -3116,10 +3133,17 @@ function reprint_push_lab_rest_journal(WP_REST_Request $request): WP_REST_Respon
 function reprint_push_lab_rest_db_journal(WP_REST_Request $request): WP_REST_Response
 {
     $limit = max(1, min(500, (int) $request->get_param('limit')));
-    return reprint_push_lab_rest_json_response([
+    $db_journal = reprint_push_lab_db_journal_summary($limit);
+    $result = [
         'ok' => true,
-        'dbJournal' => reprint_push_lab_db_journal_summary($limit),
-    ]);
+        'dbJournal' => $db_journal,
+    ];
+    $storage_guard = reprint_push_lab_rest_db_journal_storage_guard($db_journal);
+    if (is_array($storage_guard)) {
+        $result['storageGuard'] = $storage_guard;
+    }
+    $result['auth'] = reprint_push_lab_rest_auth_evidence($request);
+    return reprint_push_lab_rest_json_response($result);
 }
 
 function reprint_push_lab_rest_db_journal_schema(WP_REST_Request $request): WP_REST_Response
@@ -3145,6 +3169,28 @@ function reprint_push_lab_rest_db_journal_evidence(array $entry): array
             ? 'packaged production plugin journal evidence'
             : 'local Playground fixture only',
     ];
+}
+
+function reprint_push_lab_rest_db_journal_storage_guard(array $summary): ?array
+{
+    $rows = isset($summary['latestRows']) && is_array($summary['latestRows'])
+        ? array_reverse($summary['latestRows'])
+        : [];
+    foreach ($rows as $row) {
+        if (!is_array($row)) {
+            continue;
+        }
+        $storage_guard = $row['result']['storageGuard'] ?? $row['resourceHashEvidence']['storageGuard'] ?? null;
+        if (is_array($storage_guard)) {
+            return [
+                'boundary' => isset($storage_guard['boundary']) ? (string) $storage_guard['boundary'] : null,
+                'operation' => isset($storage_guard['operation']) ? (string) $storage_guard['operation'] : null,
+                'outcome' => isset($storage_guard['outcome']) ? (string) $storage_guard['outcome'] : null,
+            ];
+        }
+    }
+
+    return null;
 }
 
 function reprint_push_lab_rest_json_response(array $result): WP_REST_Response

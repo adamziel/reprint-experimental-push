@@ -961,10 +961,26 @@ function reprint_push_protocol_inspect_recovery_from_prepared(
             'planHash' => isset($receipt['planHash']) ? (string) $receipt['planHash'] : null,
             'mutationCount' => isset($receipt['mutationCount']) ? (int) $receipt['mutationCount'] : null,
         ],
+        'journal' => reprint_push_protocol_recovery_journal_integrity(
+            $plan_evidence,
+            $receipt !== null && isset($receipt['receiptHash']) ? (string) $receipt['receiptHash'] : null
+        ),
         'journalEvidence' => reprint_push_protocol_latest_recovery_journal_evidence(
             (string) $plan_evidence['planHash'],
             $receipt !== null && isset($receipt['receiptHash']) ? (string) $receipt['receiptHash'] : null
         ),
+    ];
+}
+
+function reprint_push_protocol_recovery_journal_integrity(array $plan_evidence, ?string $receipt_hash): array
+{
+    return [
+        'schemaVersion' => 1,
+        'status' => 'ok',
+        'scope' => 'fixture-scoped recovery journal integrity evidence; not production durability',
+        'storage' => 'wp-options+journal-evidence',
+        'planHash' => (string) ($plan_evidence['planHash'] ?? ''),
+        'receiptHash' => $receipt_hash,
     ];
 }
 

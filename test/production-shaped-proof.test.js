@@ -922,6 +922,24 @@ maybeTest('production-shaped release verify command consumes the packaged produc
   });
 });
 
+maybeTest('production-shaped release verify reports trusted recovery journal state on the packaged checked path', async () => {
+  const proof = spawnProductionShapedReleaseVerifySync(
+    {
+      ...process.env,
+      REPRINT_PUSH_REQUIRE_PRODUCTION_AUTH_SESSION: '1',
+      NODE_NO_WARNINGS: '1',
+    },
+    {
+      timeout: releaseVerifyInnerTimeoutMs,
+      killSignal: liveProofSubprocessKillSignal,
+    },
+    'packaged recovery journal release verify',
+  );
+  assertSpawnCompletedWithoutSpawnError(proof, 'packaged recovery journal release verify', releaseVerifyInnerTimeoutMs);
+  assert.equal(proof.status, 0, proof.stderr);
+  assert.match(proof.stdout, /"recoveryInspect": \{[\s\S]*"journalState": "ok"/);
+});
+
 maybeTest('production-shaped release proof runs the live preflight branch against a local Playground source', async () => {
   await withPlaygroundServer('remote-base', path.join(repoRoot, 'fixtures/playground/remote-base.blueprint.json'), async (remoteServer) => {
     const proof = spawnProductionShapedReleaseVerifySync(
