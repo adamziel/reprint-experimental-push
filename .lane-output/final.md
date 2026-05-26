@@ -1,7 +1,7 @@
 The objective audit remains closed at `0/4`.
 
 Checked evidence:
-- `audits/objective-audit.md` was refreshed with the latest remote heads, including `origin/lane/independent-auditor -> f9f3fca0`, `origin/lane/no-data-loss-recovery -> 2af1ddda`, and `origin/lane/no-data-loss-invariants -> 09ab2491`.
+- `audits/objective-audit.md` was refreshed with the latest visible visibility-lane heads, including `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor -> 3b52ea58` and `origin/lane/cycle-20260525-mainwindows-2349/progress-followup -> 2c9ca073`, while the release verdict stayed closed.
 - The verdict did not change because the evidence still lacks production-backed auth/session lifecycle, durable journal ownership/replay/fencing, and a live-source mutation boundary.
 - The fresh lane heads improve local proof quality, but they remain lab/release-surface evidence rather than production-backed release gates.
 

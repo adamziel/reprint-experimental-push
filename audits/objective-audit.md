@@ -42,9 +42,11 @@ The project is **not releasable as a production WordPress push path**.
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `d7813094`
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `8a7f4edd`
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `c86ece15`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `3b52ea58`
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `f9f3fca0`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `2af1ddda`
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `ea8694c3`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `2c9ca073`
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` -> `0ca7b35d`
 - `origin/lane/cycle-20260525-mainwindows-2349/same-plan-wordpress-graph-create` -> `af493c80`
 - `origin/lane/cycle-20260525-mainwindows-2357/no-data-loss-invariants-graph-proof` -> `98c0ce26`
@@ -60,6 +62,11 @@ The project is **not releasable as a production WordPress push path**.
 - `origin/lane/progress-publisher` -> `7695e1f9`
 - `origin/lane/reliable-executor` -> `f1783e10`
 - `origin/lane/same-plan-wordpress-graph-create` -> `8dea1ca3`
+
+Fresh visibility-lane heads moved, but they still only refresh public status surfaces:
+
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `3b52ea58`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `2c9ca073`
 - `origin/main` -> `2c8d52cb`
 
 The current remote state still adds no production-backed auth/session
