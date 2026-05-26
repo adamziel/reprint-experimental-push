@@ -376,7 +376,7 @@ export function evaluateProductionAuthSessionLifecycleSummary(summary, now = Dat
 
   const mismatchedCleanedUpObservation = resolveMismatchedSummaryLifecycleMarkerObservation(
     'cleanedUp',
-    summary.cleanedUp ?? summary.cleanup,
+    resolveSummaryCleanedUpObservation(summary),
     observations,
   );
   if (mismatchedCleanedUpObservation) {
@@ -579,7 +579,12 @@ function resolveInvalidAuthSessionSummaryFlag(summary) {
     return null;
   }
 
-  if (summary.cleanup !== undefined && summary.cleanup !== null && typeof summary.cleanup !== 'boolean') {
+  if (
+    summary.cleanup !== undefined
+    && summary.cleanup !== null
+    && typeof summary.cleanup !== 'boolean'
+    && (typeof summary.cleanup !== 'object' || Array.isArray(summary.cleanup))
+  ) {
     return 'cleanup';
   }
 
@@ -599,9 +604,7 @@ function resolveInvalidAuthSessionSummaryObservationField(summary) {
     return null;
   }
 
-  const summaryObservationFields = ['expired', 'revoked', 'cleanedUp', 'rotated', 'preserved'];
-  for (const field of summaryObservationFields) {
-    const observation = summary[field];
+  for (const [field, observation] of getSummaryObservationEntries(summary)) {
     if (!observation || typeof observation !== 'object' || Array.isArray(observation)) {
       continue;
     }
@@ -679,9 +682,7 @@ function resolveMismatchedSummaryObservationSession(summary, issuedSessionId) {
     return null;
   }
 
-  const summaryObservationFields = ['expired', 'revoked', 'cleanedUp', 'rotated', 'preserved'];
-  for (const field of summaryObservationFields) {
-    const observation = summary[field];
+  for (const [field, observation] of getSummaryObservationEntries(summary)) {
     if (!observation || typeof observation !== 'object' || Array.isArray(observation)) {
       continue;
     }
@@ -792,7 +793,13 @@ function resolveMismatchedSummaryPreservedObservation(preservedObservation, obse
 }
 
 function resolveMismatchedSummaryLifecycleMarkerObservation(field, markerObservation, observations) {
-  if (!markerObservation || !Array.isArray(observations) || observations.length === 0) {
+  if (
+    !markerObservation
+    || typeof markerObservation !== 'object'
+    || Array.isArray(markerObservation)
+    || !Array.isArray(observations)
+    || observations.length === 0
+  ) {
     return null;
   }
 
@@ -916,6 +923,32 @@ function summaryObservationCarriesExpectedFlag(field, observation) {
     default:
       return true;
   }
+}
+
+function getSummaryObservationEntries(summary) {
+  return [
+    ['expired', summary?.expired],
+    ['revoked', summary?.revoked],
+    ['cleanedUp', resolveSummaryCleanedUpObservation(summary)],
+    ['rotated', summary?.rotated],
+    ['preserved', summary?.preserved],
+  ];
+}
+
+function resolveSummaryCleanedUpObservation(summary) {
+  if (!summary || typeof summary !== 'object') {
+    return null;
+  }
+
+  if (summary.cleanedUp && typeof summary.cleanedUp === 'object' && !Array.isArray(summary.cleanedUp)) {
+    return summary.cleanedUp;
+  }
+
+  if (summary.cleanup && typeof summary.cleanup === 'object' && !Array.isArray(summary.cleanup)) {
+    return summary.cleanup;
+  }
+
+  return null;
 }
 
 function summaryObservationStepMatchesMarker(field, step) {

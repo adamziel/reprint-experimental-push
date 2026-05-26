@@ -4611,6 +4611,66 @@ test('production auth/session lifecycle summary fails closed when a direct summa
   );
 });
 
+test('production auth/session lifecycle summary fails closed when a direct cleanup alias observation is present with matching observed cleanup', () => {
+  assert.deepEqual(
+    evaluateProductionAuthSessionLifecycleSummary({
+      issued: {
+        step: 'preflight',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+      },
+      read: {
+        step: 'journal',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+        preserved: true,
+      },
+      cleanup: {
+        step: 'cleanup',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+        cleanup: true,
+      },
+      observations: [
+        {
+          step: 'preflight',
+          id: 'session-01',
+          type: 'production-auth-session',
+          status: 'active',
+          expiresAt: '2099-01-01T00:00:00Z',
+        },
+        {
+          step: 'journal',
+          id: 'session-01',
+          type: 'production-auth-session',
+          status: 'active',
+          expiresAt: '2099-01-01T00:00:00Z',
+          preserved: true,
+        },
+        {
+          step: 'cleanup',
+          id: 'session-01',
+          type: 'production-auth-session',
+          status: 'active',
+          expiresAt: '2099-01-01T00:00:00Z',
+          cleanup: true,
+        },
+      ],
+    }),
+    {
+      ok: false,
+      required: 'unrevoked',
+      observed: 'cleaned-up',
+    },
+  );
+});
+
 test('production auth/session lifecycle summary fails closed when preserved-read session ids contain only trimmed matches', () => {
   const summary = summarizeProductionAuthSessionLifecycleTrace([
     {
@@ -4721,6 +4781,60 @@ test('production auth/session lifecycle summary fails closed when a preserved re
       ok: false,
       required: 'unrevoked',
       observed: 'cleaned-up',
+    },
+  );
+});
+
+test('production auth/session lifecycle summary fails closed when a direct cleanup alias observation is stale against the observed trace', () => {
+  const summary = {
+    issued: {
+      step: 'preflight',
+      id: 'session-01',
+      type: 'production-auth-session',
+      status: 'active',
+      expiresAt: '2099-01-01T00:00:00Z',
+    },
+    read: {
+      step: 'journal',
+      id: 'session-01',
+      type: 'production-auth-session',
+      status: 'active',
+      expiresAt: '2099-01-01T00:00:00Z',
+      preserved: true,
+    },
+    cleanup: {
+      step: 'cleanup',
+      id: 'session-01',
+      type: 'production-auth-session',
+      status: 'active',
+      expiresAt: '2098-01-01T00:00:00Z',
+      cleanup: true,
+    },
+    observations: [
+      {
+        step: 'preflight',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+      },
+      {
+        step: 'journal',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+        preserved: true,
+      },
+    ],
+  };
+
+  assert.deepEqual(
+    evaluateProductionAuthSessionLifecycleSummary(summary),
+    {
+      ok: false,
+      required: 'unrevoked',
+      observed: 'stale-cleaned-up-summary',
     },
   );
 });
