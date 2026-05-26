@@ -1548,7 +1548,8 @@ export function productionThroughputDetails(report) {
     && receiptCursorQueueSlackBytes === receiptCursorQueueBudgetBytes - receiptCursorBackpressureBytes
     && receiptCursorQueueSlackBytes === receiptCursorMemoryHeadroomBytes;
   const receiptCursorPauseFootprintComplete =
-    receiptCursorPauseFootprintMeasuredComplete
+    report.evidence.backpressure?.queuePausedBeforeOverflow === true
+    && receiptCursorPauseFootprintMeasuredComplete
     && report.evidence.backpressure?.receiptCursorPauseFootprintComplete === true;
   const queueBudgetMatchesResourceCeiling =
     Number.isFinite(receiptCursorQueueBudgetBytes)

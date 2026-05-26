@@ -487,6 +487,10 @@ Current executable gate:
   its queue-budget, queue-headroom, memory-ceiling, queue-slack, or
   memory-headroom visibility bits are hidden, so a partial paused-backpressure
   surface cannot still look fully visible from the measured bytes alone.
+- The same derived pause-footprint and staged-disk-after-pause summaries now
+  also stay hidden when the sender never actually paused before overflow, so
+  stale receipt-cursor bytes cannot masquerade as bounded pause evidence after
+  a no-pause run.
 - The production-throughput gate now also fails closed when the pause-footprint
   summary says complete but the measured-and-aligned queue-slack proof bit is
   missing, so a tampered summary cannot reuse raw footprint numbers without

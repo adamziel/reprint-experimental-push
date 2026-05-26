@@ -732,6 +732,22 @@ test('guarded benchmark keeps staged-disk post-pause visibility fail closed when
   );
 });
 
+test('guarded benchmark keeps pause-footprint and staged-disk-after-pause details hidden when the queue never paused', () => {
+  const report = smallBenchmark();
+  const tampered = clone(report);
+
+  tampered.evidence.backpressure.queuePausedBeforeOverflow = false;
+
+  const details = productionThroughputDetails(tampered);
+  const blockers = productionThroughputBlockers(tampered);
+
+  assert.equal(details.receiptCursorPauseFootprintComplete, false);
+  assert.equal(details.receiptCursorPauseFootprintVisible, false);
+  assert.equal(details.stagingDiskHeadroomVisibleAndMeasuredAfterPause, false);
+  assert.equal(details.backpressureConsistency.queuePausedBeforeOverflow, false);
+  assert.equal(blockers.includes('queue-did-not-pause-before-overflow'), true);
+});
+
 test('guarded benchmark blocks staged-disk headroom evidence outside the plan reserve', () => {
   const report = smallBenchmark();
   const tampered = clone(report);
@@ -2160,15 +2176,16 @@ test('production claim gate fails closed if benchmark evidence is tampered', () 
 
   const missingQueuePause = clone(report);
   missingQueuePause.evidence.backpressure.queuePausedBeforeOverflow = false;
+  const missingQueuePauseDetails = productionThroughputDetails(missingQueuePause);
   assert.ok(
     productionThroughputBlockers(missingQueuePause).includes(
       'queue-did-not-pause-before-overflow',
     ),
   );
-  assert.equal(
-    productionThroughputDetails(missingQueuePause).backpressureConsistency.queuePausedBeforeOverflow,
-    false,
-  );
+  assert.equal(missingQueuePauseDetails.receiptCursorPauseFootprintComplete, false);
+  assert.equal(missingQueuePauseDetails.receiptCursorPauseFootprintVisible, false);
+  assert.equal(missingQueuePauseDetails.stagingDiskHeadroomVisibleAndMeasuredAfterPause, false);
+  assert.equal(missingQueuePauseDetails.backpressureConsistency.queuePausedBeforeOverflow, false);
 
   const slackWithoutQueuePause = clone(report);
   slackWithoutQueuePause.evidence.backpressure.queuePausedBeforeOverflow = false;
