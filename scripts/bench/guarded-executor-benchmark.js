@@ -865,6 +865,9 @@ function hasCompleteBackpressureEvidence(report) {
   const queuePauseHasMeasuredReceiptCursorQueueSlack =
     report.evidence.backpressure?.queuePausedBeforeOverflow !== true
     || (Number.isFinite(receiptCursorQueueSlackBytes) && receiptCursorQueueSlackBytes > 0);
+  const queuePauseHasMeasuredReceiptCursorBackpressure =
+    report.evidence.backpressure?.queuePausedBeforeOverflow !== true
+    || (Number.isFinite(receiptCursorBackpressureBytes) && receiptCursorBackpressureBytes > 0);
   const queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack =
     report.evidence.backpressure?.queuePausedBeforeOverflow !== true
     || (
@@ -899,6 +902,7 @@ function hasCompleteBackpressureEvidence(report) {
     && report.evidence.backpressure?.queuePausedBeforeOverflow === true
     && report.evidence.backpressure?.receiptCursorWithinQueueBudget === true
     && queuePauseHasMeasuredReceiptCursorQueueSlack
+    && queuePauseHasMeasuredReceiptCursorBackpressure
     && receiptCursorBackpressureBytes === receiptCursorWindowBytes
     && receiptCursorBackpressureBytes <= receiptCursorQueueBudgetBytes
     && receiptCursorQueueSlackBytes === receiptCursorQueueBudgetBytes - receiptCursorBackpressureBytes
