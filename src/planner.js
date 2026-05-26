@@ -1028,7 +1028,7 @@ function wordpressGraphIdentitySupport({
     };
   }
 
-  const references = wordpressGraphReferences(resource, localValue);
+  const references = wordpressGraphReferences(resource, localValue, local);
   if (references.length === 0) {
     return { supported: true };
   }
@@ -1752,6 +1752,57 @@ function isValidSamePlanWordPressGraphTarget(targetMutation, reference, sourceMu
     }
   }
 
+  if (
+    reference.relationshipType === 'menu-item-object-term'
+    && sourceMutation?.resource?.type === 'row'
+    && sourceMutation?.resource?.table === 'wp_postmeta'
+    && targetMutation.resource.type === 'row'
+    && targetMutation.resource.table === 'wp_terms'
+  ) {
+    const sourceValue = deserializeResourceValue(sourceMutation.value);
+    const targetValue = deserializeResourceValue(targetMutation.value);
+    if (
+      sourceValue
+      && typeof sourceValue === 'object'
+      && !isMenuItemObjectIdMetaKey(sourceValue.meta_key)
+    ) {
+      return false;
+    }
+    if (
+      sourceValue
+      && typeof sourceValue === 'object'
+      && normalizePositiveInteger(sourceValue.post_id) != null
+    ) {
+      const ownerMutation = mutationByResourceKey.get(
+        `row:${JSON.stringify(['wp_posts', `ID:${normalizePositiveInteger(sourceValue.post_id)}`])}`,
+      );
+      const ownerValue = ownerMutation ? deserializeResourceValue(ownerMutation.value) : null;
+      if (
+        ownerValue
+        && typeof ownerValue === 'object'
+        && (ownerValue.post_type === 'attachment'
+          || ownerValue.post_type === 'nav_menu_item'
+          || ownerValue.post_type === 'wp_navigation'
+          || ownerValue.post_type === 'revision')
+      ) {
+        return false;
+      }
+    }
+    if (!targetValue || typeof targetValue !== 'object') {
+      return false;
+    }
+
+    const localNavMenuTaxonomy = [...(local?.db?.wp_term_taxonomy ? Object.values(local.db.wp_term_taxonomy) : [])]
+      .find((candidate) => normalizePositiveInteger(candidate?.term_id) === normalizePositiveInteger(targetValue.term_id)
+        && candidate?.taxonomy === 'nav_menu');
+    const remoteNavMenuTaxonomy = [...(remote?.db?.wp_term_taxonomy ? Object.values(remote.db.wp_term_taxonomy) : [])]
+      .find((candidate) => normalizePositiveInteger(candidate?.term_id) === normalizePositiveInteger(targetValue.term_id)
+        && candidate?.taxonomy === 'nav_menu');
+    if (localNavMenuTaxonomy || remoteNavMenuTaxonomy) {
+      return false;
+    }
+  }
+
   return true;
 }
 
@@ -1868,7 +1919,7 @@ function orderMutationsByDependencies(mutations) {
   return ordered;
 }
 
-function wordpressGraphReferences(resource, value) {
+function wordpressGraphReferences(resource, value, local = null) {
   const suffix = wordpressGraphTableSuffix(resource.table);
   if (!suffix || !value || typeof value !== 'object') {
     return [];
@@ -1929,10 +1980,11 @@ function wordpressGraphReferences(resource, value) {
       });
     }
     if (isMenuItemObjectIdMetaKey(value.meta_key)) {
+      const targetTable = menuItemObjectTargetTable(value, local);
       addReference({
         field: 'meta_value',
-        relationshipType: 'menu-item-object-post',
-        targetTable: 'posts',
+        relationshipType: targetTable === 'terms' ? 'menu-item-object-term' : 'menu-item-object-post',
+        targetTable,
         targetId: value.meta_value,
       });
     }
@@ -2116,6 +2168,28 @@ function isMenuItemParentMetaKey(metaKey) {
 
 function isMenuItemObjectIdMetaKey(metaKey) {
   return metaKey === '_menu_item_object_id';
+}
+
+function menuItemObjectTargetTable(value, local) {
+  if (!value || typeof value !== 'object') {
+    return 'posts';
+  }
+  const ownerId = normalizePositiveInteger(value.post_id);
+  if (ownerId == null) {
+    return 'posts';
+  }
+  const menuItemType = findPostmetaValueByOwnerAndKey(local, ownerId, '_menu_item_type');
+  return menuItemType === 'taxonomy' ? 'terms' : 'posts';
+}
+
+function findPostmetaValueByOwnerAndKey(snapshot, ownerId, metaKey) {
+  if (ownerId == null || !snapshot?.db?.wp_postmeta) {
+    return null;
+  }
+  const row = Object.values(snapshot.db.wp_postmeta).find((candidate) =>
+    normalizePositiveInteger(candidate?.post_id) === ownerId
+      && candidate?.meta_key === metaKey);
+  return row && typeof row === 'object' ? row.meta_value ?? null : null;
 }
 
 function normalizePositiveInteger(value) {
