@@ -133,6 +133,17 @@ test('benchmark model covers large uploads and plugin installs', () => {
   assert.ok(
     model.safeFastPaths.some(
       (fastPath) =>
+        fastPath.area === 'chunk-upload' &&
+        fastPath.allowedShortcut === 'compress-plan-scoped-chunk-receipt-ledgers-to-size-bounded-large-upload-resume' &&
+        fastPath.guardrails.includes('compressed-receipt-ledger-remains-planning-evidence-only') &&
+        fastPath.gateProofs.skip.includes('compressed plan-scoped chunk receipt ledgers can trim repeat large-upload resume scans') &&
+        fastPath.gateProofs.recovery.includes('durable chunk receipts and the guarded publish record still classify pause, retry, or crash'),
+    ),
+    'compressed chunk receipt ledgers can size large-upload resume without weakening recovery evidence',
+  );
+  assert.ok(
+    model.safeFastPaths.some(
+      (fastPath) =>
         fastPath.area === 'backpressure' &&
         fastPath.allowedShortcut === 'reuse-receipt-cursor-queue-slack-and-memory-ceiling-to-size-bounded-replay' &&
         fastPath.guardrails.includes('queue-slack-and-memory-ceiling-stay-aligned') &&

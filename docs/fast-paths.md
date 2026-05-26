@@ -68,6 +68,9 @@ without weakening live preconditions or the atomic-group barrier.
 It also includes compressed remote-index listings plus chunk receipts for
 large-upload resume windows, so the planner can trim repeat resume scans
 without weakening the live compare or durable recovery evidence.
+It also includes compressed plan-scoped chunk receipt ledgers for large-upload
+resume windows, so the planner can trim repeat receipt scans without
+weakening the live compare or durable recovery evidence.
 It also includes measured parallelism caps plus canonical per-kind budgets for
 bounded plugin-install fanout, so the planner can skip repeat fanout sizing
 without turning concurrency limits into mutation authority.

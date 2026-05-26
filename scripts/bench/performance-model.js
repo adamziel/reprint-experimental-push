@@ -229,6 +229,26 @@ export const SAFE_FAST_PATHS = Object.freeze([
   {
     area: 'chunk-upload',
     reduces: ['planning-round-trips', 'duplicate-body-transfer', 'idle-time'],
+    allowedShortcut: 'compress-plan-scoped-chunk-receipt-ledgers-to-size-bounded-large-upload-resume',
+    guardrails: [
+      'compressed-receipt-ledger-remains-planning-evidence-only',
+      'live-publish-still-compares-the-remote-resource-hash',
+    ],
+    gateProofs: {
+      skip: 'compressed plan-scoped chunk receipt ledgers can trim repeat large-upload resume scans without rescanning acknowledged chunks',
+      live: 'the final publish still compares the live remote resource hash before any staged bytes become visible',
+      group: 'ledger compression stays inside one file boundary and never widens an atomic group',
+      recovery: 'compressed receipt evidence stays advisory while durable chunk receipts and the guarded publish record still classify pause, retry, or crash',
+    },
+    visibilityBoundary: 'planning-only-with-compressed-receipt-ledger',
+    failureEvidence: 'compressed chunk receipt ledger plus bounded large-upload receipt set and guarded file-publish record',
+    bypassesLivePreconditions: false,
+    splitsAtomicGroup: false,
+    publishesStagedDataEarly: false,
+  },
+  {
+    area: 'chunk-upload',
+    reduces: ['planning-round-trips', 'duplicate-body-transfer', 'idle-time'],
     allowedShortcut: 'reuse-plan-scoped-chunk-receipts-to-resume-bounded-windowing',
     guardrails: [
       'chunk-receipts-are-plan-scoped-and-durable',
