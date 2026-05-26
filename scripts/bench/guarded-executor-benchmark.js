@@ -231,6 +231,15 @@ export function productionThroughputClaim(report) {
 }
 
 export function productionThroughputDetails(report) {
+  const receiptCursorWindowBytes = report.evidence.chunkReceipts.resumeCursor?.sizeBytes ?? null;
+  const receiptCursorIsTerminalChunk =
+    report.evidence.chunkReceipts.cursorConsistency?.canResumeFromCursor === true
+    && report.evidence.chunkReceipts.resumeCursor?.chunkIndex
+      === report.evidence.chunkReceipts.resumeCursor?.chunkCount - 1;
+  const receiptCursorWithinMemoryCeiling =
+    Number.isFinite(receiptCursorWindowBytes)
+    && Number.isFinite(report.resourceLimits?.memoryCeilingBytes)
+    && receiptCursorWindowBytes <= report.resourceLimits.memoryCeilingBytes;
   return {
     shape: {
       fileBytes: report.shape.fileBytes,
@@ -243,6 +252,9 @@ export function productionThroughputDetails(report) {
     executorCapabilities: report.executorCapabilities,
     resourceLimits: report.resourceLimits,
     chunkWindowWithinMemoryCeiling: report.evidence.resourceLimits.chunkWindowWithinMemoryCeiling,
+    receiptCursorWindowBytes,
+    receiptCursorIsTerminalChunk,
+    receiptCursorWithinMemoryCeiling,
     receiptCursor: report.evidence.chunkReceipts.resumeCursor,
     receiptCursorConsistency: report.evidence.chunkReceipts.cursorConsistency,
     recovery: report.evidence.recovery,

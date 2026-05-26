@@ -94,6 +94,9 @@ test('guarded benchmark refuses production throughput claims until production ga
     32 * 1024 * 1024,
   );
   assert.equal(report.claims.productionThroughputDetails.chunkWindowWithinMemoryCeiling, true);
+  assert.equal(report.claims.productionThroughputDetails.receiptCursorWindowBytes, 512 * 1024);
+  assert.equal(report.claims.productionThroughputDetails.receiptCursorIsTerminalChunk, true);
+  assert.equal(report.claims.productionThroughputDetails.receiptCursorWithinMemoryCeiling, true);
   assert.equal(
     report.claims.productionThroughputDetails.receiptCursor.resourceKey,
     'file:wp-content/uploads/2026/05/catalog-export.bin',
@@ -167,6 +170,7 @@ test('guarded benchmark refuses production throughput claims until production ga
       && error.details.throughput.productionThroughput === 'not-claimed'
       && error.details.executorCapabilities.fileReceipts === 'lab-file-journal-receipts'
       && error.details.resourceLimits.memoryCeilingBytes === 32 * 1024 * 1024
+      && error.details.productionThroughputDetails.receiptCursorWithinMemoryCeiling === true
       && error.details.receiptCursor.chunkIndex === report.shape.chunkCount - 1
       && error.details.productionThroughputDetails.blockers.includes('production-storage-receipts-not-measured')
       && error.details.productionThroughputDetails.executorCapabilities.rowApply === 'per-row-apply-model'
