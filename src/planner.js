@@ -444,6 +444,23 @@ export function createPushPlan({ base, local, remote, now = new Date() }) {
     }
 
     if (localHash === remoteHash) {
+      if (isPluginOwnedDataResource(resource, owner)) {
+        const support = pluginOwnedResourcePolicy.supportFor(resource, owner);
+        if (!support.supported) {
+          addPluginOwnedResourceBlocker(plan, {
+            resource,
+            owner,
+            support,
+            baseValue,
+            localValue,
+            remoteValue,
+            baseHash,
+            localHash,
+            remoteHash,
+          });
+          continue;
+        }
+      }
       plan.decisions.push({
         id: `decision-${plan.decisions.length + 1}`,
         resource,
