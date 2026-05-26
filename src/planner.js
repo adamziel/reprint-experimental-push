@@ -1334,6 +1334,14 @@ function wordpressGraphReferences(resource, value) {
       targetTable: 'posts',
       targetId: value.post_parent,
     });
+    if (value.post_type === 'nav_menu_item') {
+      addReference({
+        field: 'menu_item_parent',
+        relationshipType: 'menu-item-parent',
+        targetTable: 'posts',
+        targetId: value.menu_item_parent,
+      });
+    }
   }
 
   if (suffix === 'comments') {
