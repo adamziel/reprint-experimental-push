@@ -1,15 +1,18 @@
 # Critic Verdict
 
-Current reliable head: `8e8e6f25916c2a11ee9d6e6e4235616d85e0da39`
-(`Accept packaged durable journal proof`).
+Current reliable head: `5b1ee960b54344fafa06bf0b8ff4440c7fa79c62`
+(`Record stale claim rejection evidence`).
 
 Verdict: `0/4`
 
 Reason:
 
-- This head accepts packaged durable-journal proof on the release verifier,
-  but it is still support-side evidence rather than a production-backed
-  auth/session lifecycle proof on the checked release boundary.
+- This head persists restart-readable `stale-claim-rejected` evidence and the
+  checked consumer surface reports `staleClaimRejected: true`, which is real
+  recovery-journal progress.
+- It is still support-side evidence rather than a production-backed
+  auth/session lifecycle proof on the checked release boundary, so the gate
+  remains closed.
 - The missing gate after this commit is production-backed auth/session
   issuance/read/expiry/rotation/revocation/cleanup in `verify:release`.
 

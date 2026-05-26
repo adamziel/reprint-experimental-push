@@ -3,8 +3,8 @@ Changed files:
 - [`.lane-output/final.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/critic-clean-20260526-1530/.lane-output/final.md)
 
 What changed:
-- Reclassified the current reliable head as `8e8e6f25916c2a11ee9d6e6e4235616d85e0da39` from `git ls-remote`.
-- Kept the verdict at `0/4` because packaged durable-journal proof is still release-verifier support work, but it still does not prove production-backed auth/session lifecycle on the checked release boundary.
+- Reclassified the current reliable head as `5b1ee960b54344fafa06bf0b8ff4440c7fa79c62` from `git ls-remote`.
+- Kept the verdict at `0/4` because restart-readable stale-claim rejection evidence is still release-verifier support work, but it still does not prove production-backed auth/session lifecycle on the checked release boundary.
 - The missing gate after this commit is production-backed auth/session issuance/read/expiry/rotation/revocation/cleanup in `verify:release`.
 
 Commands run:
