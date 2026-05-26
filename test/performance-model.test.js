@@ -262,6 +262,16 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
     ),
     'kind-scoped receipt flushing stays fail-closed within the backpressure budget',
   );
+  assert.ok(
+    model.safeFastPaths.some(
+      (fastPath) =>
+        fastPath.area === 'backpressure' &&
+        fastPath.allowedShortcut === 'keep-kind-scoped-receipt-ledgers-within-the-memory-ceiling' &&
+        fastPath.guardrails.includes('receipt-ledgers-stay-plan-scoped-and-kind-scoped') &&
+        fastPath.gateProofs.recovery.includes('ordered raw receipt keys and journal records'),
+    ),
+    'bounded kind-scoped receipt ledgers stay fail-closed inside the memory ceiling',
+  );
   assert.deepEqual(
     FAST_PATH_GATES.map((gate) => gate.id),
     ['skip', 'live', 'group', 'recovery'],

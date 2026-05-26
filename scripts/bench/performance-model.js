@@ -809,6 +809,26 @@ export const SAFE_FAST_PATHS = Object.freeze([
   },
   {
     area: 'backpressure',
+    reduces: ['memory-pressure', 'fsync-count', 'queue-drain-time'],
+    allowedShortcut: 'keep-kind-scoped-receipt-ledgers-within-the-memory-ceiling',
+    guardrails: [
+      'receipt-ledgers-stay-plan-scoped-and-kind-scoped',
+      'flushes-still-preserve-raw-receipt-order',
+    ],
+    gateProofs: {
+      skip: 'bounded receipt ledgers can retain the exact chunk, row, or group keys needed for a retry without re-reading the whole journal trail',
+      live: 'ledger compression never authorizes a new write; the storage-boundary live precondition still decides visibility',
+      group: 'kind-scoped ledgers only reduce replay and flush overhead inside the same atomic-group boundary and never merge owners',
+      recovery: 'the bounded ledger keeps ordered raw receipt keys and journal records so pause, retry, or crash classification stays explicit',
+    },
+    visibilityBoundary: 'kind-scoped-memory-and-journal-flush-only',
+    failureEvidence: 'bounded kind-scoped receipt ledger plus ordered raw durable receipt keys',
+    bypassesLivePreconditions: false,
+    splitsAtomicGroup: false,
+    publishesStagedDataEarly: false,
+  },
+  {
+    area: 'backpressure',
     reduces: ['memory-pressure', 'idle-time', 'queue-drain-time'],
     allowedShortcut: 'treat-drained-upload-buffer-as-publish-ready',
     guardrails: [

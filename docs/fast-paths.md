@@ -114,6 +114,7 @@ Current executable gate:
 | Backpressure | Batch durable chunk, row, or group receipt flushes within a bounded journal lag so fsync work amortizes without changing the raw receipt set. | Batching may delay flushes, but it cannot drop raw receipts, cross an atomic-group boundary, or claim completion before durable evidence exists. |
 | Backpressure | Batch chunk, row, or group receipts by kind within the journal budget while preserving raw key order. | Kind-scoped batching only reduces flush overhead. It cannot change the live precondition, merge owners, or reorder replay evidence. |
 | Backpressure | Flush upload and row receipts in separate kind-scoped journal batches so journal work amortizes without changing the raw receipt set. | Kind-scoped flushing only changes journal timing. It cannot cross an atomic-group boundary or replace the live precondition. |
+| Backpressure | Keep kind-scoped receipt ledgers within the memory ceiling so retry and replay can reuse ordered raw keys without rereading the whole journal trail. | The bounded ledger is recovery evidence only. It cannot authorize apply, merge owners, or change the live precondition. |
 
 Concrete failure modes stay rejected even when the throughput gain looks tempting:
 
