@@ -819,6 +819,17 @@ export async function runAuthenticatedHttpPush({
   summary.dbJournal = summarizeDbJournal(dbJournal);
   updateRetryAttempts(summary, summary.dbJournal);
   recordAuthSessionLifecycle(summary, 'journal', dbJournal.body?.auth?.session);
+  if (simulatePreservedRemoteRetryPath && (summary.retryAttempts || 1) < 2) {
+    summary.code = 'PRESERVED_REMOTE_RETRY_REQUIRED';
+    summary.replayAndRetry = {
+      required: simulatePreservedRemoteRetryPath,
+      observed: 'missing-transient-retry',
+      retryAttempts: summary.retryAttempts || 1,
+      verdict: 'PRESERVED_REMOTE_RETRY_REQUIRED',
+    };
+    setReplayAndRetryBoundary(summary);
+    return summary;
+  }
   const dbJournalAuthSessionDrift = requireProductionAuthSession && (
     hasProductionAuthSessionTypeDrift(dbJournal)
     || hasProductionAuthSessionStatusDrift(dbJournal)
@@ -1628,6 +1639,27 @@ function setDurableJournalBoundary(summary, phase) {
       storageLeaseFence: 'retained Playground journal storage is lab-scoped; production ownership, lease fencing, and replay wiring are not yet proven on the checked release boundary',
       verdict: 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED',
       phase,
+    },
+  };
+}
+
+function setReplayAndRetryBoundary(summary) {
+  if (summary.boundary) {
+    return;
+  }
+
+  summary.boundary = {
+    firstRemainingProductionBoundary: 'replay and preserved-remote retry on the checked release path',
+    status: 'unimplemented',
+    verdict: 'PRESERVED_REMOTE_RETRY_REQUIRED',
+    replayAndRetry: summary.replayAndRetry || {
+      required: 'preserved-remote retry',
+      observed: 'missing-transient-retry',
+      verdict: 'PRESERVED_REMOTE_RETRY_REQUIRED',
+    },
+    durableJournal: {
+      storageLeaseFence: 'production durable journal storage, lease fencing, and replay wiring are not yet proven on the checked release boundary',
+      verdict: 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED',
     },
   };
 }
