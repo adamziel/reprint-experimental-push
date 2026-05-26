@@ -4,6 +4,27 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+# 2026-05-26 - Public Status Audit 18:47:09
+
+<a id="2026-05-26-public-status-audit-184709"></a>
+
+- Refreshed [progress.html](../progress.html) to the current `date` output
+  (`2026-05-26 18:47:09 CEST`) and kept
+  `5dc2e4f7ada97859ca7bd54c55ae08f49e4b8a31` as the current reliable head on
+  the public page and current latest checked release-path support evidence.
+  The visible current-head rows stay aligned on that head, and the stale
+  `54469c8dc006553191b9f3528f432ae44bdea65c` display remains corrected
+  forward in this audit refresh.
+- `5dc2e4f7ada97859ca7bd54c55ae08f49e4b8a31` remains support-side evidence;
+  the release gate stays at `0/4` because production-backed auth/session
+  lifecycle and durable journal ownership with lease/fencing remain blocked.
+- The checked release-path fencing evidence still includes
+  `staleClaimRejected: true`, but that still does not move a gate until the
+  production boundary is proven.
+- Evidence trail: [progress.html](../progress.html),
+  [objective audit](../audits/objective-audit.md),
+  [release-gate checklist](../progress.html#proof-gates).
+
 # 2026-05-26 - Public Status Audit 18:45:45
 
 <a id="2026-05-26-public-status-audit-184545"></a>
