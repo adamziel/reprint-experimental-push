@@ -18898,6 +18898,7 @@ test('blocks local post-parent references to a same-plan created wp navigation w
   const blocker = plan.blockers.find((entry) => entry.resourceKey === targetResourceKey)
     ?? plan.blockers.find((entry) => entry.resourceKey === resourceKey);
   assert.ok(blocker);
+  const reference = blocker.references[0];
   const planJson = JSON.stringify(plan);
 
   assert.equal(plan.status, 'blocked');
@@ -18908,6 +18909,10 @@ test('blocks local post-parent references to a same-plan created wp navigation w
   assert.equal(blocker.class, 'unsupported-navigation-resource');
   assert.equal(blocker.resourceKey, targetResourceKey);
   assert.equal(blocker.reason, 'Navigation and menu graph resources are not yet supported by the planner.');
+  assert.equal(reference.relationshipType, 'post-parent');
+  assert.equal(reference.relationshipKey, 'wp_posts.post_parent');
+  assert.equal(reference.sourceResourceKey, resourceKey);
+  assert.equal(reference.targetResourceKey, targetResourceKey);
   assert.equal(planJson.includes('Local same-plan wp navigation'), false);
   assert.equal(planJson.includes('Local child post content'), false);
   assert.equal(remote.plugins.forms.description, 'remote-only plugin drift');
