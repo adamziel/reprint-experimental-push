@@ -3353,6 +3353,41 @@ test('blocks a local post parent reference to a same-plan attachment when no rem
   assert.equal(JSON.stringify(blocker).includes('local-private-post-child-body'), false);
 });
 
+test('blocks a local page parent reference to a same-plan attachment when no remote navigation post exists', () => {
+  const attachmentResourceKey = 'row:["wp_posts","ID:2"]';
+  const childResourceKey = 'row:["wp_posts","ID:3"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_title: 'Local attachment target',
+    post_content: 'local-private-attachment-target-body',
+    post_status: 'inherit',
+    post_type: 'attachment',
+  };
+  local.db.wp_posts['ID:3'] = {
+    ID: 3,
+    post_title: 'Local page child',
+    post_content: 'local-private-page-child-body',
+    post_status: 'publish',
+    post_type: 'page',
+    post_parent: 2,
+  };
+
+  const plan = planFor(base, local, baseSite());
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === childResourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 2);
+  assert.equal(mutationFor(plan, attachmentResourceKey).changeKind, 'create');
+  assert.equal(mutationFor(plan, childResourceKey).changeKind, 'create');
+  assert.equal(blocker.class, 'missing-wordpress-graph-dependency');
+  assert.equal(blocker.references[0].relationshipType, 'post-parent');
+  assert.equal(blocker.references[0].targetResourceKey, attachmentResourceKey);
+  assert.equal(JSON.stringify(blocker).includes('local-private-attachment-target-body'), false);
+  assert.equal(JSON.stringify(blocker).includes('local-private-page-child-body'), false);
+});
+
 test('allows a local page parent reference to a same-plan post even when a remote navigation post exists', () => {
   const parentResourceKey = 'row:["wp_posts","ID:2"]';
   const pageResourceKey = 'row:["wp_posts","ID:3"]';
