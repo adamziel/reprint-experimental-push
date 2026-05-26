@@ -2631,6 +2631,9 @@ function samePlanCreatedGraphIdentitySupport({ resource, resources, base, local,
   const termTaxonomyTermInboundReference = orderedInboundReferences.find((reference) =>
     reference.relationshipType === 'term-taxonomy-term'
     && reference.targetResource?.table === 'wp_terms');
+  const termmetaTermInboundReference = orderedInboundReferences.find((reference) =>
+    reference.relationshipType === 'termmeta-term'
+    && reference.targetResource?.table === 'wp_terms');
   const revisionInboundReference = orderedInboundReferences.find((reference) =>
     reference.relationshipType === 'term-relationship-object'
     && reference.targetResource?.table === 'wp_posts'
@@ -2673,6 +2676,8 @@ function samePlanCreatedGraphIdentitySupport({ resource, resources, base, local,
     reason = `WordPress graph mutation ${resource.key} is created in the same plan as a parent term identity that depends on it, and identity rewriting is not yet supported.`;
   } else if (termTaxonomyTermInboundReference) {
     reason = `WordPress graph mutation ${resource.key} is created in the same plan as a term identity that depends on it, and identity rewriting is not yet supported.`;
+  } else if (termmetaTermInboundReference) {
+    reason = `WordPress graph mutation ${resource.key} is created in the same plan as a term meta target that depends on it, and identity rewriting is not yet supported.`;
   } else if (revisionInboundReference) {
     reason = `WordPress graph mutation ${resource.key} is created in the same plan as a term relationship revision target that depends on it, and identity rewriting is not yet supported.`;
   } else if (postParentInboundReference) {

@@ -16822,6 +16822,11 @@ test('blocks local termmeta references to a same-plan created term identity whil
   assert.equal(mutationFor(plan, resourceKey), undefined);
   assert.equal(decisionFor(plan, targetResourceKey), undefined);
   assert.equal(termmetaBlocker.class, 'unsupported-termmeta-resource');
+  assert.equal(termBlocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(termBlocker.reason, `WordPress graph mutation ${targetResourceKey} is created in the same plan as a term meta target that depends on it, and identity rewriting is not yet supported.`);
+  assert.equal(reference.relationshipType, 'termmeta-term');
+  assert.equal(reference.sourceResourceKey, resourceKey);
+  assert.equal(reference.targetResourceKey, targetResourceKey);
   assert.equal(planJson.includes('Local same-plan term'), false);
   assert.equal(planJson.includes('local-same-plan-term'), false);
   assert.equal(planJson.includes('local termmeta note'), false);
