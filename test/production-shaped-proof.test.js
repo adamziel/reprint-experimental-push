@@ -29,6 +29,7 @@ import {
 import {
   packagedProductionPluginMaxConsecutiveNotReadyProbes,
   packagedProductionPluginNextNotReadyProbeCount,
+  packagedProductionPluginNotReadyProbeLimitReached,
   packagedProductionPluginPreflightTerminal,
   packagedProductionPluginReadinessBodyRetryable,
   packagedProductionPluginReadinessErrorRetryable,
@@ -1232,6 +1233,18 @@ test('packaged production plugin readiness helper does not retry terminal readin
       '{\"ok\":true}',
     ),
     0,
+  );
+  assert.equal(
+    packagedProductionPluginNotReadyProbeLimitReached(
+      packagedProductionPluginMaxConsecutiveNotReadyProbes - 1,
+    ),
+    false,
+  );
+  assert.equal(
+    packagedProductionPluginNotReadyProbeLimitReached(
+      packagedProductionPluginMaxConsecutiveNotReadyProbes,
+    ),
+    true,
   );
   assert.equal(packagedProductionPluginReadinessErrorRetryable(new Error('transient fetch failure')), true);
   assert.equal(

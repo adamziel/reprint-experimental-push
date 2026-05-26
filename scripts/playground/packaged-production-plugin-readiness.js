@@ -87,6 +87,10 @@ export function packagedProductionPluginNextNotReadyProbeCount(currentCount, sta
     : 0;
 }
 
+export function packagedProductionPluginNotReadyProbeLimitReached(currentCount) {
+  return currentCount >= packagedProductionPluginMaxConsecutiveNotReadyProbes;
+}
+
 export function packagedProductionPluginReadinessBodyRetryable(status, bodyText = '') {
   return (
     packagedProductionPluginReadinessWordPressNotReady(status, bodyText)
