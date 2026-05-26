@@ -660,6 +660,9 @@ function productionRecoverySupportReport(writer) {
   const writerJournalArtifactRef = typeof writer?.artifactRefs?.journal === 'string'
     ? writer.artifactRefs.journal
     : null;
+  const writerRemoteArtifactRef = typeof writer?.artifactRefs?.remote === 'string'
+    ? writer.artifactRefs.remote
+    : null;
   if (!writer?.artifactRefs || typeof writer.artifactRefs !== 'object' || !writer.artifactRefs.journal) {
     addMissingDependency('restart-readable recovery artifact references');
   } else if (
@@ -694,6 +697,9 @@ function productionRecoverySupportReport(writer) {
     && writerJournalArtifactRef !== inspectedJournalPath
   ) {
     addMissingDependency('restart-readable recovery artifact references');
+  }
+  if (writerRemoteArtifactRef) {
+    addMissingDependency('restart-readable recovery remote artifact references');
   }
   if (typeof writer?.journalPath !== 'string' || writer.journalPath.length === 0) {
     addMissingDependency('owned restart-readable recovery journal path');
