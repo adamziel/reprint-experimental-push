@@ -1,9 +1,50 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-26 12:56 CEST
+Last updated: 2026-05-26 13:02 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-26 13:02 CEST - Reliable Head Catch-Up
+
+- Going well: `35687102` is now the current reliable head, so the public
+  status is back in sync with the latest auth-session cleanup/revocation
+  evidence.
+- Not going well: the checked release path still lacks production-backed
+  auth/session lifecycle and durable-journal ownership, so the gate stays
+  `0/4`.
+- Progress change: this is a freshness update only; no gate moved.
+- Next nudge: keep `progress-publisher` conservative and keep
+  `reliable-executor` on the next production-boundary proof: durable-journal
+  consumption, live release-path lifecycle, or preserved-remote retry.
+
+## 2026-05-26 13:00 CEST - Reliable Head Catch-Up
+
+- Going well: `f091d30c` adds more auth-session cleanup and revocation
+  evidence in the reliable lane, so the product-side proof is still moving
+  forward.
+- Not going well: the checked release path still lacks production-backed
+  auth/session lifecycle and durable-journal ownership, so the gate stays
+  `0/4`.
+- Progress change: this is another evidence update, not a gate move.
+- Next nudge: keep `progress-publisher` conservative if the public page lags,
+  and keep `reliable-executor` on the next production-boundary proof:
+  durable-journal consumption, live release-path lifecycle, or preserved-
+  remote retry.
+
+## 2026-05-26 12:59 CEST - Auth Cleanup/Revoke Head
+
+- Going well: `f091d30c` adds more concrete auth-session lifecycle evidence in
+  the reliable lane, with the package-mode route/auth/journal checks still
+  moving in a bounded direction.
+- Not going well: the evidence still stops short of the checked release path's
+  production-backed auth/session lifecycle and durable-journal ownership, so
+  the gate stays `0/4`.
+- Progress change: this is a product-side evidence update, not a gate move.
+- Next nudge: keep `progress-publisher` conservative if the public page is
+  stale, and keep `reliable-executor` on the next production-boundary proof:
+  durable-journal consumption, live release-path lifecycle, or preserved-remote
+  retry.
 
 ## 2026-05-26 12:56 CEST - Reliable Head Catch-Up
 
