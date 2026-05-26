@@ -115,11 +115,12 @@ export function buildProductionPluginPackageProofSummary(
   const normalizedRequestedScenarios = requestedScenarios === null
     ? null
     : Array.from(new Set(requestedScenarios));
+  const requestedBundleAliases = normalizedRequestedScenarios === null
+    ? 'all'
+    : normalizedRequestedScenarios.filter((scenario) => Object.hasOwn(scenarioGroups, scenario));
   const requestedBundles = normalizedRequestedScenarios === null
     ? 'all'
-    : normalizedRequestedScenarios
-      .filter((scenario) => Object.hasOwn(scenarioGroups, scenario))
-      .map((bundleName) => toBundleKey(bundleName));
+    : requestedBundleAliases.map((bundleName) => toBundleKey(bundleName));
   const requestedConcreteScenarios = normalizedRequestedScenarios === null
     ? 'all'
     : normalizedRequestedScenarios.filter((scenario) => !Object.hasOwn(scenarioGroups, scenario));
@@ -143,6 +144,8 @@ export function buildProductionPluginPackageProofSummary(
   const failedRequestedBundles = [];
   const passedRequestedConcreteScenarios = [];
   const failedRequestedConcreteScenarios = [];
+  const passedRequestedScenarios = [];
+  const failedRequestedScenarios = [];
   let checkedBundleCount = 0;
   let passedBundleCount = 0;
   let failedBundleCount = 0;
@@ -200,14 +203,21 @@ export function buildProductionPluginPackageProofSummary(
       passedBundles.push(bundleKey);
       if (requestedBundleSet?.has(bundleKey)) {
         passedRequestedBundles.push(bundleKey);
+        passedRequestedScenarios.push(bundleName);
       }
     } else if (selected) {
       failedBundles.push(bundleKey);
       failedBundleCount += 1;
       if (requestedBundleSet?.has(bundleKey)) {
         failedRequestedBundles.push(bundleKey);
+        failedRequestedScenarios.push(bundleName);
       }
     }
+  }
+
+  if (requestedConcreteScenarios !== 'all') {
+    passedRequestedScenarios.push(...passedRequestedConcreteScenarios);
+    failedRequestedScenarios.push(...failedRequestedConcreteScenarios);
   }
 
   return {
@@ -224,6 +234,12 @@ export function buildProductionPluginPackageProofSummary(
     requestedScenarios: normalizedRequestedScenarios === null ? 'all' : normalizedRequestedScenarios.slice(),
     requestedBundles,
     requestedConcreteScenarios,
+    passedRequestedScenarios: normalizedRequestedScenarios === null
+      ? 'all'
+      : passedRequestedScenarios.sort(),
+    failedRequestedScenarios: normalizedRequestedScenarios === null
+      ? 'all'
+      : failedRequestedScenarios.sort(),
     passedRequestedBundles: requestedBundles === 'all'
       ? 'all'
       : passedRequestedBundles.sort(),
