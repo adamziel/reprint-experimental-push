@@ -5,7 +5,7 @@ Changed files:
 - [`.lane-output/final.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/independent-auditor/.lane-output/final.md)
 
 What changed:
-- Updated the stale remote-head snapshot for `origin/lane/cycle-20260525-mainwindows-2349/fast-paths`, `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor`, `origin/lane/cycle-20260525-mainwindows-2349/progress-followup`, and `origin/lane/independent-auditor`.
+- Updated the stale remote-head snapshot for `origin/lane/cycle-20260525-mainwindows-2349/fast-paths`, `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor`, and `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor`.
 - Kept the unsupported-slice wording closed: the newer lane heads still only strengthen fail-closed boundaries and do not prove live source mutation.
 
 Commands run:
