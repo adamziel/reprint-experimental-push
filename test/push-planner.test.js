@@ -12366,6 +12366,56 @@ test('blocks local postmeta references to a same-plan created post identity whil
   assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin drift */');
 });
 
+test('blocks local postmeta references to a same-plan created attachment identity while preserving remote-only plugin removals', () => {
+  const resourceKey = 'row:["wp_postmeta","meta_id:50"]';
+  const targetResourceKey = 'row:["wp_posts","ID:50"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_posts['ID:50'] = {
+    ID: 50,
+    post_title: 'local-created attachment target',
+    post_content: 'local-created attachment body',
+    post_type: 'attachment',
+    post_status: 'inherit',
+  };
+  local.db.wp_postmeta = {
+    'meta_id:50': {
+      meta_id: 50,
+      post_id: 50,
+      meta_key: '_local_attachment_note',
+      meta_value: 'local-private-attachment-meta-payload',
+    },
+  };
+
+  const remote = baseSite();
+  delete remote.plugins.forms;
+  delete remote.files['wp-content/plugins/forms/forms.php'];
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers[0];
+  const reference = blocker.references[0];
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(decisionFor(plan, targetResourceKey), undefined);
+  assert.equal(blocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.resolutionPolicy, 'preserve-remote-wordpress-graph-and-stop');
+  assert.equal(reference.relationshipKey, 'wp_postmeta.post_id');
+  assert.equal(reference.relationshipType, 'postmeta-post');
+  assert.equal(reference.sourceResourceKey, resourceKey);
+  assert.equal(reference.targetResourceKey, targetResourceKey);
+  assert.equal(reference.targetChange.remote.state, 'absent');
+  assert.equal(reference.targetRemoteHash.length, 64);
+  assert.equal(planJson.includes('local-created attachment target'), false);
+  assert.equal(planJson.includes('local-created attachment body'), false);
+  assert.equal(planJson.includes('local-private-attachment-meta-payload'), false);
+  assert.equal(Object.hasOwn(remote.plugins, 'forms'), false);
+  assert.equal(Object.hasOwn(remote.files, 'wp-content/plugins/forms/forms.php'), false);
+});
+
 test('blocks local featured-image references when the remote deleted the referenced post', () => {
   const resourceKey = 'row:["wp_postmeta","meta_id:46"]';
   const targetResourceKey = 'row:["wp_posts","ID:2"]';
