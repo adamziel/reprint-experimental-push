@@ -38,14 +38,14 @@ The project is **not releasable as a production WordPress push path**.
 - `origin/lane/cycle-20260525-keep-busy-loop-2/independent-auditor` -> `1d6cb6fd`
 - `origin/lane/cycle-20260525-keep-busy-loop-2/no-data-loss-recovery` -> `63e01a49`
 - `origin/lane/cycle-20260525-mainwindows-2349/critic` -> `fa0dc8a0`
-- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `999ff0d8`
+- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `83ec561e`
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `d7813094`
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `8a7f4edd`
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `2271b3e8`
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `8cd234a9`
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `0ac76c38`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `2af1ddda`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `06f2aec2`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `f52fbf67`
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` -> `0ca7b35d`
 - `origin/lane/cycle-20260525-mainwindows-2357/no-data-loss-invariants-graph-proof` -> `98c0ce26`
 - `origin/lane/cycle-20260525-restart-2340/feedback-supervisor` -> `ef3d911e`
@@ -79,11 +79,11 @@ but it did not change the release conclusion:
   records `541a7e5f`, refreshing supervisor freshness only. It still does not
   change the release verdict.
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now records
-  `25e1aff2`, refreshing public progress timestamp only. It still does not add
+  `f52fbf67`, refreshing public progress freshness only. It still does not add
   production-backed gate movement.
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` now records
-  `d7813094`, tightening backpressure headroom checks only. It still does not
-  prove a production speed claim.
+  `83ec561e`, tightening parallelism limit proof only. It still does not prove
+  a production speed claim.
 - `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration`
   now records `8cfc4f6c`, tightening termmeta graph hardening only. It still
   does not prove the live release boundary or any production-backed source
@@ -92,7 +92,7 @@ but it did not change the release conclusion:
   `2271b3e8`, refreshing progress visibility only. It still does not change
   the release verdict.
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now records
-  `06f2aec2`, refreshing public progress freshness only. It still does not add
+  `f52fbf67`, refreshing public progress freshness only. It still does not add
   production-backed gate movement.
 - `origin/lane/reliable-executor` now records `41ea37b9`, hardening Playground startup timeout handling. It still does not prove production auth/session lifecycle or a live-source mutation boundary.
 - `origin/lane/reliable-executor` now records `ff94457a`, failing closed on unsupported production origins. It still does not prove production auth/session lifecycle or a live-source mutation boundary.
