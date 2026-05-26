@@ -1541,7 +1541,8 @@ export function productionThroughputDetails(report) {
     && Number.isFinite(receiptCursorQueueHeadroomBytes)
     && Number.isFinite(report.resourceLimits?.maxBufferedUploadBytes)
     && receiptCursorQueueBudgetBytes === report.resourceLimits.maxBufferedUploadBytes
-    && receiptCursorQueueHeadroomBytes === receiptCursorQueueBudgetBytes - report.shape.chunkSizeBytes;
+    && receiptCursorQueueHeadroomBytes === receiptCursorQueueBudgetBytes - report.shape.chunkSizeBytes
+    && report.evidence.backpressure?.queueHeadroomWithinResourceCeiling === true;
   const queueHeadroomMatchesMemoryHeadroom =
     Number.isFinite(receiptCursorQueueHeadroomBytes)
     && Number.isFinite(receiptCursorMemoryHeadroomBytes)
@@ -2611,7 +2612,8 @@ function hasCompleteBackpressureEvidence(report) {
     && Number.isFinite(receiptCursorQueueHeadroomBytes)
     && Number.isFinite(receiptCursorMemoryCeilingBytes)
     && receiptCursorQueueBudgetBytes === receiptCursorMemoryCeilingBytes
-    && receiptCursorQueueHeadroomBytes === receiptCursorQueueBudgetBytes - report.shape.chunkSizeBytes;
+    && receiptCursorQueueHeadroomBytes === receiptCursorQueueBudgetBytes - report.shape.chunkSizeBytes
+    && report.evidence.backpressure?.queueHeadroomWithinResourceCeiling === true;
   const stagingDiskHeadroomMeasured =
     Number.isFinite(stagingDiskHeadroomBytes)
     && stagingDiskHeadroomBytes > 0;
