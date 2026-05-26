@@ -354,7 +354,9 @@ export async function runAuthenticatedHttpPush({
   summary.replay = summarizeResponse(replay);
   recordAuthSessionLifecycle(summary, 'replay', replay.body?.auth?.session);
   summary.replay.responseSchemaVersion = replay.body?.responseSchemaVersion;
-  const replayEquivalent = isReplayEquivalent(apply, replay);
+  const replayEquivalence = summarizeReplayEquivalence(apply, replay);
+  summary.replayEquivalence = replayEquivalence;
+  const replayEquivalent = replayEquivalence.equivalent;
   const applyAuthEnvelopeDrift = hasAuthEnvelopeDrift(preflightAuthEnvelope, apply);
   const replayAuthEnvelopeDrift = hasAuthEnvelopeDrift(preflightAuthEnvelope, replay);
   const replayAuthSessionDrift = requireProductionAuthSession && (
@@ -746,14 +748,14 @@ function summarizeRecoveryInspect(response) {
   };
 }
 
-function isReplayEquivalent(applyResponse, replayResponse) {
+function summarizeReplayEquivalence(applyResponse, replayResponse) {
   const applyBody = applyResponse?.body || {};
   const replayBody = replayResponse?.body || {};
   const hasResponseSchemaVersion = applyBody.responseSchemaVersion !== undefined
     && replayBody.responseSchemaVersion !== undefined;
   const applySignedRequestDigest = digest(applyBody.signedRequest?.request || null);
   const replaySignedRequestDigest = digest(replayBody.signedRequest?.request || null);
-  return applyResponse?.status === replayResponse?.status
+  const equivalent = applyResponse?.status === replayResponse?.status
     && applyBody.mode === replayBody.mode
     && applyBody.ok === replayBody.ok
     && applyBody.code === replayBody.code
@@ -777,6 +779,47 @@ function isReplayEquivalent(applyResponse, replayResponse) {
     && applySignedRequestDigest === replaySignedRequestDigest
     && applyBody.idempotency?.freshMutationWork === replayBody.idempotency?.freshMutationWork
     && applyBody.idempotency?.conflict === replayBody.idempotency?.conflict;
+  const mismatches = equivalent ? [] : [
+    ['status', applyResponse?.status, replayResponse?.status],
+    ['mode', applyBody.mode, replayBody.mode],
+    ['ok', applyBody.ok, replayBody.ok],
+    ['code', applyBody.code, replayBody.code],
+    ['applied', applyBody.applied, replayBody.applied],
+    ['receiptHash', applyBody.receipt?.receiptHash, replayBody.receipt?.receiptHash],
+    ['responseSchemaVersion', hasResponseSchemaVersion ? applyBody.responseSchemaVersion : undefined, hasResponseSchemaVersion ? replayBody.responseSchemaVersion : undefined],
+    ['authUser', applyBody.auth?.identity?.userLogin, replayBody.auth?.identity?.userLogin],
+    ['authSessionId', applyBody.auth?.session?.id, replayBody.auth?.session?.id],
+    ['authSessionType', applyBody.auth?.session?.type, replayBody.auth?.session?.type],
+    ['authSessionStatus', applyBody.auth?.session?.status, replayBody.auth?.session?.status],
+    ['authSessionExpiresAt', applyBody.auth?.session?.expiresAt, replayBody.auth?.session?.expiresAt],
+    ['signedRequest.signed', applyBody.signedRequest?.signed, replayBody.signedRequest?.signed],
+    ['signedRequest.schemaVersion', applyBody.signedRequest?.schemaVersion, replayBody.signedRequest?.schemaVersion],
+    ['signedRequest.contentHash', applyBody.signedRequest?.contentHash, replayBody.signedRequest?.contentHash],
+    ['signedRequest.timestamp', applyBody.signedRequest?.timestamp, replayBody.signedRequest?.timestamp],
+    ['signedRequest.nonceHash', applyBody.signedRequest?.nonceHash, replayBody.signedRequest?.nonceHash],
+    ['signedRequest.sessionHash', applyBody.signedRequest?.sessionHash, replayBody.signedRequest?.sessionHash],
+    ['signedRequest.signingKeyHash', applyBody.signedRequest?.signingKeyHash, replayBody.signedRequest?.signingKeyHash],
+    ['signedRequest.requestDigest', applySignedRequestDigest, replaySignedRequestDigest],
+    ['idempotency.freshMutationWork', applyBody.idempotency?.freshMutationWork, replayBody.idempotency?.freshMutationWork],
+    ['idempotency.conflict', applyBody.idempotency?.conflict, replayBody.idempotency?.conflict],
+  ].filter(([, applyValue, replayValue]) => applyValue !== replayValue)
+    .map(([field, applyValue, replayValue]) => ({ field, apply: applyValue, replay: replayValue }));
+  return {
+    equivalent,
+    mismatches,
+  };
+}
+
+function summarizeStorageGuard(storageGuard) {
+  if (!storageGuard) {
+    return null;
+  }
+
+  return {
+    boundary: storageGuard.boundary || null,
+    operation: storageGuard.operation || null,
+    outcome: storageGuard.outcome || null,
+  };
 }
 
 function isStorageGuardEquivalent(applyStorageGuard, replayStorageGuard) {

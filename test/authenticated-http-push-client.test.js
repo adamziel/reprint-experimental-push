@@ -1565,6 +1565,8 @@ test('production-shaped authenticated push fails closed when recovery inspect re
 
     assert.equal(summary.ok, false);
     assert.equal(summary.code, 'REPLAY_NOT_EQUIVALENT');
+    assert.equal(summary.replayEquivalence?.equivalent, false);
+    assert.ok(Array.isArray(summary.replayEquivalence?.mismatches));
     assert.deepEqual(summary.boundary, {
       firstRemainingProductionBoundary: 'auth/session lifecycle and durable journal semantics',
       status: 'unimplemented',
@@ -1824,6 +1826,7 @@ test('production-shaped authenticated push fails closed when replay changes the 
 
     assert.equal(summary.ok, false);
     assert.equal(summary.code, 'REPLAY_NOT_EQUIVALENT');
+    assert.equal(summary.replayEquivalence?.equivalent, false);
     assert.equal(summary.boundary.durableJournal.phase, 'replay');
     assert.equal(seen.length, 8);
   } finally {
@@ -2175,6 +2178,7 @@ test('production-shaped authenticated push fails closed when db journal readback
 
     assert.equal(summary.ok, false);
     assert.equal(summary.code, 'REPLAY_NOT_EQUIVALENT');
+    assert.equal(summary.replayEquivalence?.equivalent, false);
     assert.equal(summary.dbJournal?.storageGuard, undefined);
     assert.equal(summary.boundary.durableJournal.phase, 'journal-inspect');
     assert.equal(seen.length, 8);
