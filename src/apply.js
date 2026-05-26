@@ -615,29 +615,45 @@ function assertProductionDurableJournalSupport(options, writer) {
 
 function productionRecoverySupportReport(writer) {
   const missingDependency = [];
+  const addMissingDependency = (item) => {
+    if (!missingDependency.includes(item)) {
+      missingDependency.push(item);
+    }
+  };
 
   if (writer?.kind !== 'production-recovery-journal') {
-    missingDependency.push('production recovery journal adapter marker');
+    addMissingDependency('production recovery journal adapter marker');
   }
   if (writer?.ownsJournal !== true) {
-    missingDependency.push('explicit journal ownership fencing');
+    addMissingDependency('explicit journal ownership fencing');
   }
   if (typeof writer?.flush !== 'function') {
-    missingDependency.push('stable-storage flush or fsync semantics');
+    addMissingDependency('stable-storage flush or fsync semantics');
   }
   if (typeof writer?.close !== 'function') {
-    missingDependency.push('durable writer cleanup');
+    addMissingDependency('durable writer cleanup');
   }
   if (typeof writer?.inspect !== 'function') {
-    missingDependency.push('restart-readable recovery inspection');
+    addMissingDependency('restart-readable recovery inspection');
   } else if (!durableJournalInspectSurface(writer)) {
-    missingDependency.push('restart-readable recovery artifact location');
+    addMissingDependency('restart-readable recovery artifact location');
+  }
+  if (typeof writer?.journalPath !== 'string' || writer.journalPath.length === 0) {
+    addMissingDependency('owned restart-readable recovery journal path');
+  } else {
+    const inspectedJournalPath = durableJournalInspectPath(writer);
+    if (inspectedJournalPath !== writer.journalPath) {
+      addMissingDependency('restart-readable recovery artifact location');
+    }
+  }
+  if (typeof writer?.schemaVersion !== 'number' || writer.schemaVersion !== JOURNAL_SCHEMA_VERSION) {
+    addMissingDependency('restart-readable recovery journal schema');
   }
   if (typeof writer?.assertCurrentClaim !== 'function') {
-    missingDependency.push('fencing or lease ownership for the journal writer');
+    addMissingDependency('fencing or lease ownership for the journal writer');
   }
   if (writer && typeof writer.inspect === 'function' && !durableJournalInspectRecords(writer)) {
-    missingDependency.push('journal-readable inspection records with sequence and type');
+    addMissingDependency('journal-readable inspection records with sequence and type');
   }
 
   return {
@@ -653,6 +669,7 @@ function durableJournalInspectSurface(writer) {
       inspected
       && typeof inspected === 'object'
       && typeof inspected.filePath === 'string'
+      && typeof inspected.schemaVersion === 'number'
       && Array.isArray(inspected.records),
     ) && inspected.records.every((record) =>
       record
@@ -665,12 +682,24 @@ function durableJournalInspectSurface(writer) {
   }
 }
 
+function durableJournalInspectPath(writer) {
+  try {
+    const inspected = writer.inspect();
+    return inspected && typeof inspected === 'object' && typeof inspected.filePath === 'string'
+      ? inspected.filePath
+      : null;
+  } catch (error) {
+    return null;
+  }
+}
+
 function durableJournalInspectRecords(writer) {
   try {
     const inspected = writer.inspect();
     return Boolean(
       inspected
       && typeof inspected === 'object'
+      && typeof inspected.schemaVersion === 'number'
       && Array.isArray(inspected.records),
     ) && inspected.records.every((record) =>
       record
