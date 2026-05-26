@@ -74,6 +74,18 @@ function assertReleaseVerifyProof(proof, label) {
   }
 }
 
+function assertLiveReleaseVerifyProof(proof, label, timeoutMs) {
+  if (proof.error) {
+    const timeoutNote = proof.error.code === 'ETIMEDOUT' && timeoutMs ? ` after ${timeoutMs}ms` : '';
+    assert.fail(formatSpawnFailure(`${label} failed${timeoutNote}`, proof));
+  }
+  if (proof.signal) {
+    assert.fail(formatSpawnFailure(`${label} terminated by ${proof.signal}${timeoutMs ? ` after ${timeoutMs}ms` : ''}`, proof));
+  }
+  assert.notEqual(proof.status, null, `${label} exited without a status\nstdout:\n${proof.stdout ?? ''}\nstderr:\n${proof.stderr ?? ''}`);
+  assertReleaseVerifyProof(proof, label);
+}
+
 function spawnBoundedSync(command, args, options, label) {
   const proof = spawnSync(command, args, options);
 
@@ -286,16 +298,7 @@ maybeTest('production-shaped release verify command runs the live protocol branc
       REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD: liveCredentials.password,
       NODE_NO_WARNINGS: '1',
     }, liveReleaseVerifyTimeoutMs);
-
-    if (proof.error) {
-      const timeoutNote = proof.error.code === 'ETIMEDOUT' && liveReleaseVerifyTimeoutMs ? ` after ${liveReleaseVerifyTimeoutMs}ms` : '';
-      assert.fail(formatSpawnFailure(`live release verify failed${timeoutNote}`, proof));
-    }
-    if (proof.signal) {
-      assert.fail(formatSpawnFailure(`live release verify terminated by ${proof.signal}${liveReleaseVerifyTimeoutMs ? ` after ${liveReleaseVerifyTimeoutMs}ms` : ''}`, proof));
-    }
-    assert.notEqual(proof.status, null, `live release verify exited without a status\nstdout:\n${proof.stdout ?? ''}\nstderr:\n${proof.stderr ?? ''}`);
-    assertReleaseVerifyProof(proof, 'live release verify');
+    assertLiveReleaseVerifyProof(proof, 'live release verify', liveReleaseVerifyTimeoutMs);
     assert.equal(proof.status, 0, proof.stderr);
     assert.match(proof.stdout, /"ok": true/);
     assert.match(proof.stdout, /"sourceUrl": "http:\/\/127\.0\.0\.1:\d+"/);
@@ -334,16 +337,7 @@ maybeTest('production-shaped release verify command fails closed when remote dri
       REPRINT_PUSH_LAB_DRIFT_AFTER_SNAPSHOT: 'post-title',
       NODE_NO_WARNINGS: '1',
     }, liveReleaseVerifyTimeoutMs);
-
-    if (proof.error) {
-      const timeoutNote = proof.error.code === 'ETIMEDOUT' && liveReleaseVerifyTimeoutMs ? ` after ${liveReleaseVerifyTimeoutMs}ms` : '';
-      assert.fail(formatSpawnFailure(`drift release verify failed${timeoutNote}`, proof));
-    }
-    if (proof.signal) {
-      assert.fail(formatSpawnFailure(`drift release verify terminated by ${proof.signal}${liveReleaseVerifyTimeoutMs ? ` after ${liveReleaseVerifyTimeoutMs}ms` : ''}`, proof));
-    }
-    assert.notEqual(proof.status, null, `drift release verify exited without a status\nstdout:\n${proof.stdout ?? ''}\nstderr:\n${proof.stderr ?? ''}`);
-    assertReleaseVerifyProof(proof, 'drift release verify');
+    assertLiveReleaseVerifyProof(proof, 'drift release verify', liveReleaseVerifyTimeoutMs);
     assert.equal(proof.status, 1, proof.stderr);
     assert.match(proof.stdout, /"ok": false/);
     assert.match(proof.stdout, /"sourceUrl": "http:\/\/127\.0\.0\.1:\d+"/);
@@ -385,10 +379,7 @@ test('production-shaped release verify command reports the checked retained-sour
     REPRINT_PUSH_SIGNING_SECRET: '',
     NODE_NO_WARNINGS: '1',
   }, releaseVerifySlowPathTimeoutMs);
-  if (proof.error || proof.signal) {
-    assertReleaseVerifyProof(proof, 'retained-source release verify');
-    return;
-  }
+  assertLiveReleaseVerifyProof(proof, 'retained-source release verify', releaseVerifySlowPathTimeoutMs);
   assert.equal(proof.status, 1, proof.stderr);
   assert.match(proof.stdout, /"releaseProof": \{/);
   assert.match(proof.stdout, /"ok": true/);
