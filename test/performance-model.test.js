@@ -4076,6 +4076,8 @@ test('production throughput details expose fail-closed receipt cursor and queue 
     details.queueHeadroomBytes,
     details.backpressure.queueHeadroomBytes,
   );
+  assert.equal(details.queueBudgetVisibleAndQueueHeadroomMeasured, true);
+  assert.equal(details.backpressureConsistency.queueBudgetVisibleAndQueueHeadroomMeasured, true);
 });
 
 test('failure injection boundaries include every durable transition in the benchmark shape', () => {
