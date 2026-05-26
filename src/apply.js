@@ -1232,7 +1232,7 @@ function inspectProductionRecoveryJournal(writer) {
 }
 
 function productionRecoveryInspectionErrorMessage(inspected) {
-  if (!inspected || typeof inspected !== 'object') {
+  if (!isStrictPlainObject(inspected)) {
     return null;
   }
   if (typeof inspected.error?.message === 'string') {
@@ -1255,8 +1255,7 @@ function productionRecoveryInspectionErrorMessage(inspected) {
 
 function durableJournalInspectSurface(inspected) {
   return Boolean(
-    inspected
-    && typeof inspected === 'object'
+    isStrictPlainObject(inspected)
     && Object.hasOwn(inspected, 'filePath')
     && isCanonicalAbsolutePath(inspected.filePath)
     && Object.hasOwn(inspected, 'schemaVersion')
@@ -1266,8 +1265,7 @@ function durableJournalInspectSurface(inspected) {
 
 function durableJournalInspectArtifactRefs(inspected) {
   return Boolean(
-    inspected
-    && typeof inspected === 'object'
+    isStrictPlainObject(inspected)
     && Object.hasOwn(inspected, 'artifactRefs')
     && isStrictPlainObject(inspected.artifactRefs)
     && Object.hasOwn(inspected.artifactRefs, 'journal')
@@ -1432,8 +1430,7 @@ function productionLeaseIdentitiesMatch(left, right) {
 }
 
 function durableJournalInspectPath(inspected) {
-  return inspected
-    && typeof inspected === 'object'
+  return isStrictPlainObject(inspected)
     && Object.hasOwn(inspected, 'filePath')
     && typeof inspected.filePath === 'string'
     ? inspected.filePath
@@ -1442,8 +1439,7 @@ function durableJournalInspectPath(inspected) {
 
 function durableJournalInspectRecords(inspected) {
   return Boolean(
-    inspected
-    && typeof inspected === 'object'
+    isStrictPlainObject(inspected)
     && Object.hasOwn(inspected, 'schemaVersion')
     && typeof inspected.schemaVersion === 'number'
     && Object.hasOwn(inspected, 'records')

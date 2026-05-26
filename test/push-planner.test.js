@@ -30115,6 +30115,60 @@ test('production durable journal claims fail closed when inspected records are i
   assert.equal(events.some((event) => event.type === 'journal-completed'), false);
 });
 
+test('production durable journal claims fail closed when restart inspection uses an array envelope', () => {
+  const filePath = tempRecoveryJournalPath();
+  const remoteArtifactPath = `${filePath}.remote`;
+  const remote = baseSite();
+  const plan = planFor(baseSite(), baseSite(), {
+    ...baseSite(),
+    db: {
+      ...baseSite().db,
+      wp_options: {
+        ...baseSite().db.wp_options,
+        'option_name:blogname': { option_name: 'blogname', option_value: 'New Site' },
+      },
+    },
+  });
+  const productionWriter = openProductionRecoveryJournal(filePath, {
+    truncate: true,
+    now: fixedNow,
+    claimId: 'claim-array-envelope',
+    writerLease: { id: 'claim-array-envelope', epoch: 5 },
+    ownsRemoteArtifact: true,
+    remoteArtifactPath,
+  });
+  appendRecoveryClaimOpened(productionWriter, {
+    plan,
+    current: remote,
+    claimId: 'claim-array-envelope',
+    artifactRefs: { journal: filePath, remote: remoteArtifactPath },
+  });
+  productionWriter.appendEvent('journal-opened', {
+    planId: plan.id,
+    state: 'opened',
+    observedHash: 'snapshot-hash-only',
+    artifactRefs: { journal: filePath, remote: remoteArtifactPath },
+  });
+
+  const inspected = [];
+  Object.assign(inspected, productionWriter.inspect());
+  const writer = Object.assign({}, productionWriter, {
+    inspect() {
+      return inspected;
+    },
+  });
+
+  const error = captureError(() => applyPlan(baseSite(), plan, {
+    requireProductionDurableJournal: true,
+    durableJournal: writer,
+  }));
+
+  assert.equal(error.code, 'PRODUCTION_DURABLE_JOURNAL_UNSUPPORTED');
+  assert.ok(error.details.missingDependency.includes('restart-readable recovery artifact location'));
+  assert.ok(error.details.missingDependency.includes('restart-readable recovery artifact references'));
+  assert.ok(error.details.missingDependency.includes('journal-readable inspection records with sequence and type'));
+});
+
 test('production durable journal claims fail closed when persisted inspected artifact refs are array-shaped', () => {
   const events = [];
   const writer = {
