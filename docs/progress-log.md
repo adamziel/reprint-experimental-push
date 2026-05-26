@@ -4,6 +4,21 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-05-26 - Public Status Audit 12:42:17
+
+<a id="2026-05-26-public-status-audit-124217"></a>
+
+- Freshness update plus reliable-head confirmation: `a33aa3da` is the current
+  reliable-executor head on the public page, and the visible status now points
+  at this 12:42:17 audit refresh.
+- Gate posture remains conservative at `0/4`; no implementation verdict
+  changed.
+- Latest blocker summary remains the same: production-backed auth/session
+  lifecycle on the checked release path and fenced durable journal ownership
+  still block any production push claim, while the packaged `reprint/v1`
+  route/profile/session/journal evidence at `a33aa3da` is material but still
+  below a gate movement.
+
 ## 2026-05-26 - Public Status Audit 12:40:00
 
 <a id="2026-05-26-public-status-audit-124000"></a>
