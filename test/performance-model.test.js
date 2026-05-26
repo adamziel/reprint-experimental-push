@@ -5271,6 +5271,8 @@ test('production throughput details fail closed when aligned queue-slack proof d
   assert.equal(details.queueBudgetVisibleAndMemoryCeilingVisible, false);
   assert.equal(details.queueBudgetVisibleAndQueueHeadroomVisible, false);
   assert.equal(details.receiptCursorMemoryCeilingVisibleAndQueueBudgetVisible, false);
+  assert.equal(details.receiptCursorMemoryCeilingVisibleAndQueueHeadroomVisible, false);
+  assert.equal(details.receiptCursorMemoryCeilingVisibleAndQueueHeadroomVisibleAndSafe, false);
   assert.equal(details.queueHeadroomVisibleAndQueueSlackMeasured, false);
   assert.equal(details.queueHeadroomVisibleAndQueueSlackVisibleAndMeasured, false);
   assert.equal(details.receiptCursorQueueSlackVisibleAndMeasured, false);
@@ -5279,6 +5281,14 @@ test('production throughput details fail closed when aligned queue-slack proof d
   assert.equal(details.backpressureConsistency.queueBudgetVisibleAndMemoryCeilingVisible, false);
   assert.equal(details.backpressureConsistency.queueBudgetVisibleAndQueueHeadroomVisible, false);
   assert.equal(details.backpressureConsistency.receiptCursorMemoryCeilingVisibleAndQueueBudgetVisible, false);
+  assert.equal(
+    details.backpressureConsistency.receiptCursorMemoryCeilingVisibleAndQueueHeadroomVisible,
+    false,
+  );
+  assert.equal(
+    details.backpressureConsistency.receiptCursorMemoryCeilingVisibleAndQueueHeadroomVisibleAndSafe,
+    false,
+  );
   assert.equal(details.backpressureConsistency.queueHeadroomVisibleAndQueueSlackMeasured, false);
   assert.equal(
     details.backpressureConsistency.queueHeadroomVisibleAndQueueSlackVisibleAndMeasured,
@@ -5299,6 +5309,11 @@ test('production throughput details fail closed when aligned queue-slack proof d
   assert.ok(
     blockers.includes(
       'queue-budget-visible-and-queue-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof',
+    ),
+  );
+  assert.ok(
+    blockers.includes(
+      'memory-ceiling-and-queue-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof',
     ),
   );
 });
