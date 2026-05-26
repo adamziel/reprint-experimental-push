@@ -10,7 +10,7 @@ The project is **not releasable as a production WordPress push path**.
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `6b1e3669`
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `3ba3fba5`
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `5d0487a3`
-- `origin/lane/reliable-executor` -> `5991bec7`
+- `origin/lane/reliable-executor` -> `39ded935`
 - `origin/lane/no-data-loss-invariants` -> `d388db27`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `9e077c10`
 - `origin/lane/no-data-loss-recovery` -> `aec5d04b`
@@ -40,9 +40,9 @@ but it did not change the release conclusion:
   release boundary.
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` now records
   `5d0487a3`, tightening guarded executor headroom detail only.
-- `origin/lane/reliable-executor` now records `5991bec7`, tightening release
-  proof timeout logging and child cleanup, but still not proving production
-  auth/session lifecycle or a live-source mutation boundary.
+- `origin/lane/reliable-executor` now records `39ded935`, tightening release
+  proof timeout logging and child cleanup again, but still not proving
+  production auth/session lifecycle or a live-source mutation boundary.
 - `origin/lane/no-data-loss-invariants` now records `d388db27`, adding nav menu
   parent reference blocking only.
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` now
