@@ -1438,23 +1438,31 @@ function durableJournalInspectPath(inspected) {
 }
 
 function durableJournalInspectRecords(inspected) {
+  const records = inspected?.records;
+  const recordsOwnKeys = Reflect.ownKeys(records ?? {});
+  const numericKeys = recordsOwnKeys.filter((key) => typeof key === 'string' && /^\d+$/.test(key));
   return Boolean(
     isStrictPlainObject(inspected)
     && Object.hasOwn(inspected, 'schemaVersion')
     && typeof inspected.schemaVersion === 'number'
     && Object.hasOwn(inspected, 'records')
-    && Array.isArray(inspected.records),
-  ) && !Reflect.ownKeys(inspected.records).some((key) => typeof key === 'symbol')
-  && inspected.records.length > 0
-  && inspected.records.every((record) => isStrictPlainObject(record))
-  && Object.hasOwn(inspected.records[0], 'sequence')
-  && Object.hasOwn(inspected.records[0], 'type')
-  && inspected.records[0].sequence === 1
+    && Array.isArray(records),
+  ) && !recordsOwnKeys.some((key) => typeof key === 'symbol')
+  && recordsOwnKeys.every((key) => (
+    key === 'length'
+    || (typeof key === 'string' && /^\d+$/.test(key))
+  ))
+  && records.length > 0
+  && numericKeys.length === records.length
+  && records.every((record) => isStrictPlainObject(record))
+  && Object.hasOwn(records[0], 'sequence')
+  && Object.hasOwn(records[0], 'type')
+  && records[0].sequence === 1
   && (
-    inspected.records[0].type === 'journal-opened'
-    || CLAIM_FENCE_RECORD_TYPES.has(inspected.records[0].type)
+    records[0].type === 'journal-opened'
+    || CLAIM_FENCE_RECORD_TYPES.has(records[0].type)
   )
-  && inspected.records.every((record) =>
+  && records.every((record) =>
     record
     && typeof record === 'object'
     && !Reflect.ownKeys(record).some((key) => typeof key === 'symbol')
@@ -1462,10 +1470,10 @@ function durableJournalInspectRecords(inspected) {
     && Object.hasOwn(record, 'type')
     && Number.isInteger(record.sequence)
     && typeof record.type === 'string',
-  ) && inspected.records.every((record, index, records) => (
+  ) && records.every((record, index, recordsList) => (
     index === 0
       ? record.sequence === 1
-      : record.sequence === records[index - 1].sequence + 1
+      : record.sequence === recordsList[index - 1].sequence + 1
   ));
 }
 
