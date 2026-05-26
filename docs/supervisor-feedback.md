@@ -1,10 +1,10 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-26 10:36 CEST
+Last updated: 2026-05-26 10:38 CEST
 
-## 2026-05-26 10:36:39 CEST - Fresh Evidence Delta
+## 2026-05-26 10:38:37 CEST - Fresh Evidence Delta
 
-- Recovery's `351b6bbd` adapter work is still valid evidence, and reliable's newest readiness diagnostic patch is `e725e749`, which fixes the readiness failure so it is not swallowed by the broad `waitForServer()` retry catch.
+- Recovery's `351b6bbd` adapter work is still valid evidence, and reliable's newest readiness fast-fail patch is `0f36d838`, which makes the release verifier fail immediately on the first `/wp-json/` `502` body containing `WordPress is not ready yet` through the bounded route/status/body diagnostic path.
 - The gate is still closed because the new readiness behavior has not yet been proven past the outer release-verifier boundary.
 - The release posture stays conservative at `0/4`.
 

@@ -4,12 +4,12 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
-# 2026-05-26 - Fresh Evidence Delta 10:36:39
+# 2026-05-26 - Fresh Evidence Delta 10:38:37
 
-<a id="2026-05-26-fresh-evidence-delta-103639"></a>
+<a id="2026-05-26-fresh-evidence-delta-103837"></a>
 
 - Recovery's `351b6bbd` production recovery journal adapter remains the newest durable-journal proof on record.
-- Reliable's newest readiness diagnostic patch is `e725e749`, which fixes the readiness failure so it is not swallowed by the broad `waitForServer()` retry catch and should now surface bounded route/status/body diagnostics instead of stalling the outer wrapper.
+- Reliable's newest readiness fast-fail patch is `0f36d838`, which makes the release verifier fail immediately on the first `/wp-json/` `502` body containing `WordPress is not ready yet` through the bounded route/status/body diagnostic path.
 - This is still release-gate neutral until the bounded verifier proves the new readiness behavior past the outer boundary. The release gate posture remains `0/4`.
 - Evidence trail: [supervisor feedback](supervisor-feedback.md).
 
