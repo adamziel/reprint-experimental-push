@@ -1,24 +1,22 @@
-Updated the audit snapshot for the new `no-data-loss-recovery` head `351b6bbd` and kept the verdict at `0/4`.
+Refreshed the objective audit for the newest lane heads and kept the verdict at `0/4`.
 
 Changed files:
-- [`audits/objective-audit.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/independent-auditor/audits/objective-audit.md)
-- [`.lane-output/final.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/independent-auditor/.lane-output/final.md)
+- `audits/objective-audit.md`
+- `.lane-output/final.md`
 
 Commands:
 - `date '+%Y-%m-%d %H:%M:%S %Z (%z)'`
 - `sed -n '1,260p' audits/objective-audit.md`
-- `git show --stat --summary --oneline --no-renames origin/lane/no-data-loss-recovery --`
-- `git show --no-renames --format=medium origin/lane/no-data-loss-recovery -- src/recovery-journal.js test/recovery-journal.test.js test/push-planner.test.js`
-- `rg -n "verify:release|release-verify|production-shaped-release-verify|release path" package.json scripts test src audits -g '!node_modules'`
-- `sed -n '1,220p' package.json`
+- `git for-each-ref --sort=-committerdate --format='%(refname:short) %(objectname:short) %(committerdate:iso8601) %(subject)' refs/remotes/origin/lane | sed -n '1,20p'`
 - `git status --short --branch`
 
 Push result:
-- Not attempted yet
+- Not attempted; auditor lane is classification-only for this pass.
 
 Worktree status:
-- Tracked change present in `audits/objective-audit.md`
+- Dirty only in `audits/objective-audit.md` and `.lane-output/final.md`
+- Branch: `lane/cycle-20260525-mainwindows-2349/independent-auditor`
 - Verdict remains `0/4`
 
 Next supervisor nudge:
-- Re-poll only when a lane lands fresh production-boundary proof: live auth/session lifecycle, restart-readable durable journal ownership consumed by the live release path, or a live release-path mutation boundary. `351b6bbd` is stronger adapter evidence, but it still does not wire `openProductionRecoveryJournal()` into `verify:release`.
+- Re-poll only when a lane lands fresh production-boundary proof: live auth/session lifecycle, restart-readable durable journal ownership consumed by the live release path, or a live release-path mutation boundary. The newest heads are still support-side freshness or hardening, not the missing release-path consumer proof. The next concrete dependency is `reliable-executor` wiring `openProductionRecoveryJournal()` into `npm run verify:release` or the equivalent server-side release verifier.
