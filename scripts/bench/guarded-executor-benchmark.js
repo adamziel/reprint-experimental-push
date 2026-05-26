@@ -816,6 +816,27 @@ export function productionThroughputBlockers(report) {
   }
   if (
     report.evidence.backpressure?.queueBudgetVisible === true
+    && report.evidence.backpressure?.receiptCursorMemoryCeilingVisible === true
+    && report.evidence.backpressure?.queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack !== true
+  ) {
+    blockers.push('queue-budget-visible-and-memory-ceiling-visible-without-aligned-receipt-cursor-queue-slack-proof');
+  }
+  if (
+    report.evidence.backpressure?.queueBudgetVisible === true
+    && report.evidence.backpressure?.queueHeadroomVisible === true
+    && report.evidence.backpressure?.queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack !== true
+  ) {
+    blockers.push('queue-budget-visible-and-queue-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof');
+  }
+  if (
+    report.evidence.backpressure?.receiptCursorMemoryCeilingVisible === true
+    && report.evidence.backpressure?.queueHeadroomVisible === true
+    && report.evidence.backpressure?.queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack !== true
+  ) {
+    blockers.push('memory-ceiling-and-queue-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof');
+  }
+  if (
+    report.evidence.backpressure?.queueBudgetVisible === true
     && report.evidence.backpressure?.queueHeadroomVisible === true
     && report.evidence.backpressure?.queueHeadroomMeasured !== true
   ) {
@@ -1278,24 +1299,8 @@ export function productionThroughputDetails(report) {
     && queueHeadroomMeasured;
   const queueHeadroomVisibleAndMeasured =
     queueHeadroomVisible && queueHeadroomMeasured;
-  const queueBudgetVisibleAndMemoryCeilingVisibleAndMeasured =
-    queueBudgetVisible
-    && receiptCursorMemoryCeilingVisible
-    && report.evidence.backpressure?.receiptCursorMemoryCeilingMatchesQueueBudget === true
-    && report.evidence.backpressure?.receiptCursorMemoryCeilingMatchesQueueBudgetVisible === true
-    && queueHeadroomVisible
-    && queueHeadroomMeasured;
   const queueBudgetVisibleAndQueueHeadroomMeasured =
     queueBudgetVisible && queueHeadroomMeasured;
-  const queueBudgetVisibleAndQueueHeadroomVisibleAndMeasured =
-    queueBudgetVisible && queueHeadroomVisible && queueHeadroomMeasured;
-  const receiptCursorMemoryCeilingVisibleAndQueueHeadroomVisible =
-    receiptCursorMemoryCeilingVisible
-    && queueBudgetVisible
-    && queueHeadroomVisible
-    && queueHeadroomMeasured
-    && receiptCursorQueueSlackVisible
-    && receiptCursorMemoryHeadroomVisible;
   const receiptCursorMemoryHeadroomPositive =
     Number.isFinite(receiptCursorMemoryHeadroomBytes)
     && receiptCursorMemoryHeadroomBytes > 0;
@@ -1327,9 +1332,6 @@ export function productionThroughputDetails(report) {
     && Number.isFinite(receiptCursorMemoryCeilingBytes)
     && Number.isFinite(receiptCursorWindowBytes)
     && receiptCursorBackpressureBytes <= receiptCursorMemoryCeilingBytes - receiptCursorWindowBytes;
-  const receiptCursorMemoryCeilingVisibleAndQueueHeadroomVisibleAndSafe =
-    receiptCursorMemoryCeilingVisibleAndQueueHeadroomVisible
-    && receiptCursorBackpressureWithinResourceHeadroom;
   const queueHeadroomWithinResourceCeiling =
     Number.isFinite(receiptCursorQueueBudgetBytes)
     && Number.isFinite(receiptCursorQueueHeadroomBytes)
@@ -1564,6 +1566,30 @@ export function productionThroughputDetails(report) {
     queueHeadroomVisible
     && queueHeadroomMeasured
     && queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack;
+  const queueBudgetVisibleAndMemoryCeilingVisibleAndMeasured =
+    queueBudgetVisible
+    && receiptCursorMemoryCeilingVisible
+    && report.evidence.backpressure?.receiptCursorMemoryCeilingMatchesQueueBudget === true
+    && report.evidence.backpressure?.receiptCursorMemoryCeilingMatchesQueueBudgetVisible === true
+    && queueHeadroomVisible
+    && queueHeadroomMeasured
+    && queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack;
+  const queueBudgetVisibleAndQueueHeadroomVisibleAndMeasured =
+    queueBudgetVisible
+    && queueHeadroomVisible
+    && queueHeadroomMeasured
+    && queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack;
+  const receiptCursorMemoryCeilingVisibleAndQueueHeadroomVisible =
+    receiptCursorMemoryCeilingVisible
+    && queueBudgetVisible
+    && queueHeadroomVisible
+    && queueHeadroomMeasured
+    && receiptCursorQueueSlackVisible
+    && receiptCursorMemoryHeadroomVisible
+    && queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack;
+  const receiptCursorMemoryCeilingVisibleAndQueueHeadroomVisibleAndSafe =
+    receiptCursorMemoryCeilingVisibleAndQueueHeadroomVisible
+    && receiptCursorBackpressureWithinResourceHeadroom;
   const pausedQueueSlackEvidence = {
     queuePauseHasMeasuredReceiptCursorQueueSlack,
     queuePauseHasBackpressureAlignedReceiptCursorQueueSlack,

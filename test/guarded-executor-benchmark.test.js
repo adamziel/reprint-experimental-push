@@ -610,6 +610,73 @@ test('guarded benchmark blocks queue-headroom visibility when the aligned slack 
   );
 });
 
+test('guarded benchmark blocks paired queue-budget and memory-ceiling detail when the aligned slack proof is hidden', () => {
+  const report = smallBenchmark();
+  const tampered = clone(report);
+
+  tampered.evidence.backpressure.queueBudgetVisible = true;
+  tampered.evidence.backpressure.receiptCursorMemoryCeilingVisible = true;
+  tampered.evidence.backpressure.queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack = false;
+
+  const details = productionThroughputDetails(tampered);
+  const blockers = productionThroughputBlockers(tampered);
+
+  assert.equal(details.queueBudgetVisibleAndMemoryCeilingVisibleAndMeasured, false);
+  assert.equal(
+    details.backpressureConsistency.queueBudgetVisibleAndMemoryCeilingVisibleAndMeasured,
+    false,
+  );
+  assert.equal(
+    blockers.includes('queue-budget-visible-and-memory-ceiling-visible-without-aligned-receipt-cursor-queue-slack-proof'),
+    true,
+  );
+});
+
+test('guarded benchmark blocks paired queue-budget and queue-headroom detail when the aligned slack proof is hidden', () => {
+  const report = smallBenchmark();
+  const tampered = clone(report);
+
+  tampered.evidence.backpressure.queueBudgetVisible = true;
+  tampered.evidence.backpressure.queueHeadroomVisible = true;
+  tampered.evidence.backpressure.queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack = false;
+
+  const details = productionThroughputDetails(tampered);
+  const blockers = productionThroughputBlockers(tampered);
+
+  assert.equal(details.queueBudgetVisibleAndQueueHeadroomVisibleAndMeasured, false);
+  assert.equal(
+    details.backpressureConsistency.queueBudgetVisibleAndQueueHeadroomVisibleAndMeasured,
+    false,
+  );
+  assert.equal(
+    blockers.includes('queue-budget-visible-and-queue-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof'),
+    true,
+  );
+});
+
+test('guarded benchmark blocks paired memory-ceiling and queue-headroom detail when the aligned slack proof is hidden', () => {
+  const report = smallBenchmark();
+  const tampered = clone(report);
+
+  tampered.evidence.backpressure.receiptCursorMemoryCeilingVisible = true;
+  tampered.evidence.backpressure.queueHeadroomVisible = true;
+  tampered.evidence.backpressure.queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack = false;
+
+  const details = productionThroughputDetails(tampered);
+  const blockers = productionThroughputBlockers(tampered);
+
+  assert.equal(details.receiptCursorMemoryCeilingVisibleAndQueueHeadroomVisible, false);
+  assert.equal(details.receiptCursorMemoryCeilingVisibleAndQueueHeadroomVisibleAndSafe, false);
+  assert.equal(
+    details.backpressureConsistency.receiptCursorMemoryCeilingVisibleAndQueueHeadroomVisible,
+    false,
+  );
+  assert.equal(
+    blockers.includes('memory-ceiling-and-queue-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof'),
+    true,
+  );
+});
+
 test('guarded benchmark blocks paired memory-ceiling and queue-headroom visibility when the headroom probe is hidden', () => {
   const report = smallBenchmark();
   const tampered = clone(report);

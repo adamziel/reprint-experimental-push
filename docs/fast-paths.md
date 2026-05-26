@@ -192,6 +192,11 @@ Current executable gate:
   measured but the aligned receipt-cursor slack proof bit is hidden, so a
   forged headroom surface cannot look complete without the bounded pause proof
   that makes it safe.
+- The same paired queue-budget plus memory-ceiling, queue-budget plus
+  queue-headroom, and memory-ceiling plus queue-headroom detail surfaces now
+  also fail closed when the aligned receipt-cursor slack proof bit is hidden,
+  so partial pause-boundary pairs cannot still look measured from raw
+  visibility alone.
 - The same details also expose whether the measured memory ceiling still
   matches the queue budget, so a tampered headroom summary cannot drift away
   from the recorded backpressure budget.
