@@ -4,7 +4,7 @@
 
 The project is **not releasable as a production WordPress push path**.
 
-- Fresh remote heads at audit time, checked on 2026-05-26 07:54:56 CEST (+0200):
+- Fresh remote heads at audit time, checked on 2026-05-26 07:56:35 CEST (+0200):
 
 - `origin/lane/cycle-20260524-auth-graph-hardening/critic` -> `e413f7a8`
 - `origin/lane/cycle-20260524-auth-graph-hardening/fast-paths` -> `ad7d82a4`
@@ -44,6 +44,7 @@ The project is **not releasable as a production WordPress push path**.
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `537c2465`
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `b9c0fdcb`
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` -> `0ca7b35d`
+- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `d2288227`
 - `origin/lane/cycle-20260525-mainwindows-2349/same-plan-wordpress-graph-create` -> `65a40803`
 - `origin/lane/cycle-20260525-mainwindows-2357/no-data-loss-invariants-graph-proof` -> `98c0ce26`
 - `origin/lane/cycle-20260525-restart-2340/feedback-supervisor` -> `ef3d911e`
@@ -58,6 +59,11 @@ The project is **not releasable as a production WordPress push path**.
 - `origin/lane/progress-publisher` -> `7695e1f9`
 - `origin/lane/reliable-executor` -> `5d163dd7`
 - `origin/lane/same-plan-wordpress-graph-create` -> `8dea1ca3`
+
+Fresh remote heads added after the prior audit note:
+
+- `origin/lane/reliable-executor` -> `cb2d2165`
+- `origin/lane/no-data-loss-recovery` -> `d3494e40`
 
 Fresh remote heads re-polled after the last audit note:
 
@@ -79,6 +85,13 @@ evidence of a live production mutation boundary.
 
 Fresh lane proof since the last audit pass improved the local evidence floor,
 but it did not change the release conclusion:
+
+- `origin/lane/reliable-executor` now records `cb2d2165`, surfacing an auth
+  session boundary. It still does not prove production auth/session lifecycle
+  on the release path.
+- `origin/lane/no-data-loss-recovery` now records `d3494e40`, failing closed
+  on inherited journal ownership. It still does not prove production-backed
+  journal ownership or restart-readable durable artifacts.
 
 - `origin/lane/reliable-executor` now records `bbf04945`, hardening durable journal ownership. It still does not prove production auth/session lifecycle or a live-source mutation boundary.
 - `origin/lane/cycle-20260525-mainwindows-2349/same-plan-wordpress-graph-create` now records `65a40803`, tightening same-plan attachment rules. It still does not prove the live release boundary or any production-backed source mutation.
