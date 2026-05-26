@@ -38,12 +38,12 @@ The project is **not releasable as a production WordPress push path**.
 - `origin/lane/cycle-20260525-keep-busy-loop-2/independent-auditor` -> `1d6cb6fd`
 - `origin/lane/cycle-20260525-keep-busy-loop-2/no-data-loss-recovery` -> `63e01a49`
 - `origin/lane/cycle-20260525-mainwindows-2349/critic` -> `fa0dc8a0`
-- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `51d203fc`
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `c43e1a77`
-- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `cbf65165`
+- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `8b9a76c5`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `23adb4d7`
+- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `432f82a9`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `2af1ddda`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `0f47e1c0`
-- `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` -> `2d7ed103`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `94502462`
+- `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` -> `0ca7b35d`
 - `origin/lane/cycle-20260525-mainwindows-2357/no-data-loss-invariants-graph-proof` -> `98c0ce26`
 - `origin/lane/cycle-20260525-restart-2340/feedback-supervisor` -> `ef3d911e`
 - `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration` -> `0b33a5f9`
@@ -54,8 +54,8 @@ The project is **not releasable as a production WordPress push path**.
 - `origin/lane/no-data-loss-invariants` -> `0247563b`
 - `origin/lane/no-data-loss-recovery` -> `9e077c10`
 - `origin/lane/progress-publisher` -> `7695e1f9`
-- `origin/lane/reliable-executor` -> `3676a5ad`
-- `origin/lane/same-plan-wordpress-graph-create` -> `f53e607f`
+- `origin/lane/reliable-executor` -> `a0f51a6f`
+- `origin/lane/same-plan-wordpress-graph-create` -> `8dea1ca3`
 - `origin/main` -> `56063f13`
 
 The current remote state still adds no production-backed auth/session
@@ -65,8 +65,14 @@ real source-site mutation boundary. The release gates still stay `0/4`.
 Fresh lane proof since the last audit pass improved the local evidence floor,
 but it did not change the release conclusion:
 
+- `origin/lane/reliable-executor` now records `a0f51a6f`, hardening live
+  release verify timeout handling, but it still does not prove production
+  auth/session lifecycle or a live-source mutation boundary.
 - `origin/lane/reliable-executor` now records `3676a5ad`, tightening the
   Playground startup readiness window. It still does not prove production
+  auth/session lifecycle or a live-source mutation boundary.
+- `origin/lane/reliable-executor` now records `ac7c6459`, hardening failure
+  reporting around the live proof wrapper. It still does not prove production
   auth/session lifecycle or a live-source mutation boundary.
 - `origin/lane/reliable-executor` now records `e282b5fc`, hardening live proof
   subprocess cleanup on failure, but it still does not prove production
@@ -100,9 +106,9 @@ but it did not change the release conclusion:
 - `origin/lane/feedback-supervisor` now records `ee7069e6`, refreshing the
   supervisor progress surface only.
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now records
-  `57ce0bd3`, refreshing the public progress freshness only.
+  `94502462`, refreshing the public progress freshness only.
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` now records
-  `cbf65165`, refreshing the audit snapshot only and not changing the release
+  `432f82a9`, refreshing the audit snapshot only and not changing the release
   boundary.
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now records
   `0f47e1c0`, refreshing the public progress freshness only.
@@ -135,6 +141,8 @@ but it did not change the release conclusion:
   hardening revision graph references only.
 - `origin/lane/same-plan-wordpress-graph-create` now records `f53e607f`,
   tightening same-plan graph guards only.
+- `origin/lane/same-plan-wordpress-graph-create` now records `8dea1ca3`,
+  blocking attachment parent chains on the same-plan boundary only.
 
 Those changes strengthen the lab evidence for protocol safety and no-loss
 planning, but they still do not prove the production-backed push path.
