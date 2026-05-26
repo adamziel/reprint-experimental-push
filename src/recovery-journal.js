@@ -182,6 +182,7 @@ export function openProductionRecoveryJournal(options) {
       strategy: 'claim-fenced-single-writer',
       claimId,
       claimHash,
+      claimKeyUnique: true,
       storageGuard: 'filesystem-compare-rename',
       fsyncEvidence: true,
       monotonicSequence: true,
