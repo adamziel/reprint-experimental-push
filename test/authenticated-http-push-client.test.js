@@ -3625,7 +3625,6 @@ test('production-shaped authenticated push fails closed when recovery inspect dr
       },
     });
     assert.deepEqual(summary.authSession, {
-      field: 'auth.session.type',
       required: 'production-auth-session',
       observed: 'application-password-basic',
       verdict: 'AUTH_SESSION_LIFECYCLE_DRIFT',
@@ -5605,7 +5604,7 @@ test('production-shaped authenticated push fails closed when recovery inspect re
   }
 });
 
-test('production-shaped authenticated push fails closed when dry-run drifts from the minted auth envelope', async () => {
+test('production-shaped authenticated push fails closed when dry-run drops the production auth session type', async () => {
   const originalFetch = global.fetch;
   const seen = [];
   global.fetch = async (url, options) => {
@@ -5672,15 +5671,22 @@ test('production-shaped authenticated push fails closed when dry-run drifts from
     });
 
     assert.equal(summary.ok, false);
-    assert.equal(summary.code, 'AUTH_SESSION_LIFECYCLE_DRIFT');
+    assert.equal(summary.code, 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED');
+    assert.deepEqual(summary.authSession, {
+      field: 'auth.session.type',
+      required: 'production-auth-session',
+      observed: 'application-password-basic',
+      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+    });
     assert.deepEqual(summary.boundary, {
       firstRemainingProductionBoundary: 'auth/session lifecycle and durable journal semantics',
       status: 'unimplemented',
-      verdict: 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED',
-      durableJournal: {
-        storageLeaseFence: 'retained Playground journal storage is lab-scoped; production ownership, lease fencing, and replay wiring are not yet proven on the checked release boundary',
-        verdict: 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED',
-        phase: 'dry-run',
+      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+      authSession: {
+        field: 'auth.session.type',
+        required: 'production-auth-session',
+        observed: 'application-password-basic',
+        verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
       },
     });
     assert.equal(seen.length, 3);
