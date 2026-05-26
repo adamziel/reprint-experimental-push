@@ -152,7 +152,7 @@ try {
     assert.equal(preflight.body.routeProfile.profile, 'production-shaped');
     assert.equal(preflight.body.routeProfile.restNamespace, 'reprint/v1');
     assert.equal(preflight.body.routeProfile.labBacked, false);
-    assert.match(preflight.body.routeProfile.warning, /packaged production deployment mode/i);
+    assert.match(preflight.body.routeProfile.warning, /production deployment mode rather than the local Playground lab harness/i);
     assert.equal(preflight.body.auth.session.credentialScope, 'reprint-push-lab:authenticated-http-push');
     assert.equal(preflight.body.auth.session.credentialType, 'push-application-password');
     assert.equal(preflight.body.auth.session.type, 'production-auth-session');
@@ -505,6 +505,17 @@ async function waitForServer(child, baseUrl, logs) {
       } catch (error) {
         if (packagedProductionPluginReadinessBodyRetryable(snapshotResponse.status, snapshotText)) {
           lastError = new Error(`Production plugin package snapshot readiness HTTP ${snapshotResponse.status}`);
+          const preflightProbe = await fetchPackagedPreflightProbe(baseUrl, child);
+          lastProbe = preflightProbe;
+          if (preflightProbe.ready) {
+            return;
+          }
+          if (preflightProbe.terminal) {
+            throw new Error(
+              `Packaged production plugin preflight became terminal while snapshot still reported startup-shaped readiness at ${baseUrl}\n`
+              + `${preflightProbe.body}\n${logs.join('')}`,
+            );
+          }
           if (
             packagedProductionPluginNotReadyProbeLimitReached(
               snapshotNotReadyProbeCount,
@@ -562,6 +573,17 @@ async function waitForServer(child, baseUrl, logs) {
       if (!packagedProductionPluginServerReady({ snapshot: { status: snapshotResponse.status, body: snapshotBody } })) {
         lastError = new Error(`Production plugin package snapshot readiness HTTP ${snapshotResponse.status}`);
         if (packagedProductionPluginSnapshotRetryable({ status: snapshotResponse.status, body: snapshotBody })) {
+          const preflightProbe = await fetchPackagedPreflightProbe(baseUrl, child);
+          lastProbe = preflightProbe;
+          if (preflightProbe.ready) {
+            return;
+          }
+          if (preflightProbe.terminal) {
+            throw new Error(
+              `Packaged production plugin preflight became terminal while snapshot still reported startup-shaped readiness at ${baseUrl}\n`
+              + `${preflightProbe.body}\n${logs.join('')}`,
+            );
+          }
           if (
             packagedProductionPluginNotReadyProbeLimitReached(
               snapshotNotReadyProbeCount,
@@ -812,6 +834,41 @@ async function fetchPackagedWordPressIndexProbe(baseUrl, child = null) {
     status: response.status,
     body: bodyText.slice(0, readinessFailureBodyLimit),
   };
+}
+
+async function fetchPackagedPreflightProbe(baseUrl, child = null) {
+  const { response, bodyText } = await fetchTextWithTimeout(`${baseUrl}/wp-json/reprint/v1/push/preflight`, {
+    method: 'GET',
+    headers: {
+      connection: 'close',
+      ...signedHeadersForPreflight(),
+    },
+  }, readinessProbeFetchTimeoutMs, child);
+
+  let body = null;
+  try {
+    body = JSON.parse(bodyText);
+  } catch {}
+
+  const probe = {
+    route: '/wp-json/reprint/v1/push/preflight',
+    status: response.status,
+    body: bodyText.slice(0, readinessFailureBodyLimit),
+    ready: false,
+    retryable: false,
+    terminal: false,
+  };
+
+  if (body !== null) {
+    probe.ready = packagedProductionPluginPreflightReady({ status: response.status, body });
+    probe.retryable = packagedProductionPluginPreflightRetryable({ status: response.status, body });
+    probe.terminal = !probe.ready && !probe.retryable;
+    return probe;
+  }
+
+  probe.retryable = packagedProductionPluginReadinessBodyRetryable(response.status, bodyText);
+  probe.terminal = !probe.retryable;
+  return probe;
 }
 
 async function fetchTextWithTimeout(url, init = {}, timeoutMs = readinessProbeFetchTimeoutMs, child = null) {

@@ -2053,6 +2053,23 @@ test('packaged readiness helpers reset snapshot startup counters before signed p
   }
 });
 
+test('packaged readiness helpers can accept signed preflight readiness before snapshot settles', () => {
+  const smokeSource = readFileSync(
+    path.join(repoRoot, 'scripts/playground/production-plugin-package-smoke.mjs'),
+    'utf8',
+  );
+  const verifierSource = readFileSync(
+    path.join(repoRoot, 'scripts/playground/production-shaped-release-verify.mjs'),
+    'utf8',
+  );
+
+  for (const source of [smokeSource, verifierSource]) {
+    assert.match(source, /const preflightProbe = await fetchPackagedPreflightProbe\(baseUrl, child\);/);
+    assert.match(source, /if \(preflightProbe\.ready\) \{\s*return;\s*\}/);
+    assert.match(source, /preflight became terminal while snapshot still reported startup-shaped readiness/);
+  }
+});
+
 test('packaged smoke readiness helper fails closed on non-retryable route responses without waiting for classifier-specific terminal flags', () => {
   const smokeSource = readFileSync(
     path.join(repoRoot, 'scripts/playground/production-plugin-package-smoke.mjs'),

@@ -1345,6 +1345,24 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
       } catch (error) {
         if (packagedProductionPluginReadinessBodyRetryable(snapshot.status, snapshotText)) {
           lastError = new Error(`Production plugin package snapshot readiness HTTP ${snapshot.status}`);
+          const preflightProbe = await fetchPackagedPreflightProbe(baseUrl, child);
+          lastProbes.push(preflightProbe);
+          if (preflightProbe.ready) {
+            return;
+          }
+          if (preflightProbe.terminal) {
+            await throwPlaygroundReadinessFailure(
+              child,
+              `Packaged production plugin preflight became terminal while snapshot still reported startup-shaped readiness at ${baseUrl}`,
+              lastError,
+              lastProbes,
+              getOutput(),
+              {
+                childPid: child.pid ?? null,
+                packagedProductionPlugin: true,
+              },
+            );
+          }
           if (
             packagedProductionPluginNotReadyProbeLimitReached(
               snapshotNotReadyProbeCount,
@@ -1445,6 +1463,24 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
             body: snapshotBody,
           })
         ) {
+          const preflightProbe = await fetchPackagedPreflightProbe(baseUrl, child);
+          lastProbes.push(preflightProbe);
+          if (preflightProbe.ready) {
+            return;
+          }
+          if (preflightProbe.terminal) {
+            await throwPlaygroundReadinessFailure(
+              child,
+              `Packaged production plugin preflight became terminal while snapshot still reported startup-shaped readiness at ${baseUrl}`,
+              lastError,
+              lastProbes,
+              getOutput(),
+              {
+                childPid: child.pid ?? null,
+                packagedProductionPlugin: true,
+              },
+            );
+          }
           if (
             packagedProductionPluginNotReadyProbeLimitReached(
               snapshotNotReadyProbeCount,
@@ -1806,6 +1842,42 @@ async function fetchPackagedWordPressIndexProbe(baseUrl, child = null) {
     ok: response.ok,
     body: bodyText.slice(0, readinessFailureBodyLimit),
   };
+}
+
+async function fetchPackagedPreflightProbe(baseUrl, child = null) {
+  const { response, bodyText } = await fetchTextWithTimeout(`${baseUrl}/wp-json/reprint/v1/push/preflight`, {
+    method: 'GET',
+    headers: {
+      connection: 'close',
+      ...signedHeadersForPreflight(),
+    },
+  }, packagedServerFetchTimeoutMs, child);
+
+  let body = null;
+  try {
+    body = JSON.parse(bodyText);
+  } catch {}
+
+  const probe = {
+    route: '/wp-json/reprint/v1/push/preflight',
+    status: response.status,
+    ok: response.ok,
+    body: bodyText.slice(0, readinessFailureBodyLimit),
+    ready: false,
+    retryable: false,
+    terminal: false,
+  };
+
+  if (body !== null) {
+    probe.ready = packagedProductionPluginPreflightReady({ status: response.status, body });
+    probe.retryable = packagedProductionPluginPreflightRetryable({ status: response.status, body });
+    probe.terminal = !probe.ready && !probe.retryable;
+    return probe;
+  }
+
+  probe.retryable = packagedProductionPluginReadinessBodyRetryable(response.status, bodyText);
+  probe.terminal = !probe.retryable;
+  return probe;
 }
 
 async function fetchTextWithTimeout(url, init = {}, timeoutMs = serverFetchTimeoutMs, child = null) {
