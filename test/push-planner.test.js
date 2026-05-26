@@ -21935,6 +21935,47 @@ test('blocks an atomic bundle with an incompatible plugin dependency version ran
   assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
 });
 
+test('blocks an atomic bundle with an unsupported plugin dependency version range', () => {
+  const base = baseSite();
+  base.plugins[atomicDependencyPlugin] = { version: '2.1.0', active: true };
+
+  const local = baseSite();
+  local.plugins[atomicDependencyPlugin] = { version: '2.1.0', active: true };
+  local.db.wp_options['option_name:reprint_push_atomic_fixture_data'] = {
+    option_name: 'reprint_push_atomic_fixture_data',
+    option_value: { mode: 'local' },
+    __pluginOwner: atomicDependentPlugin,
+  };
+  local.pushIntents = [
+    {
+      id: 'update-atomic-dependent-fixture',
+      kind: 'plugin-data-update',
+      requireAtomic: true,
+      resources: ['row:["wp_options","option_name:reprint_push_atomic_fixture_data"]'],
+      dependencies: {
+        plugins: [{ name: atomicDependencyPlugin, versionRange: '>=3.0.0 <4.0.0' }],
+      },
+      resourcePolicy: pluginOwnedResourcePolicy(
+        allowedPluginOwnedResource(
+          'row:["wp_options","option_name:reprint_push_atomic_fixture_data"]',
+          atomicDependentPlugin,
+        ),
+      ),
+    },
+  ];
+
+  const remote = baseSite();
+  remote.plugins[atomicDependencyPlugin] = { version: '2.1.0', active: true };
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers[0];
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(blocker.class, 'incompatible-plugin-dependency-version-range');
+  assert.match(blocker.reason, />=3\.0\.0 <4\.0\.0/);
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
+});
+
 test('blocks an atomic bundle when dependency hash metadata does not match remote', () => {
   const base = baseSite();
   base.plugins[atomicDependencyPlugin] = { version: '2.1.0', active: true };
