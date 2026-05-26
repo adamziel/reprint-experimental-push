@@ -299,6 +299,14 @@ test('production claim gate fails closed if benchmark evidence is tampered', () 
     productionThroughputBlockers(brokenWindowEvidence).includes('chunk-window-exceeds-memory-ceiling'),
   );
 
+  const oversizedQueueCursor = clone(report);
+  oversizedQueueCursor.evidence.backpressure.receiptCursorWithinQueueBudget = false;
+  assert.ok(
+    productionThroughputBlockers(oversizedQueueCursor).includes(
+      'receipt-cursor-exceeds-queue-budget',
+    ),
+  );
+
   const oversizedChunkWindow = clone(report);
   oversizedChunkWindow.shape.chunkSizeBytes = oversizedChunkWindow.resourceLimits.maxBufferedUploadBytes + 1;
   assert.ok(

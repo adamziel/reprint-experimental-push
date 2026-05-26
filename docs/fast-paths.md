@@ -52,6 +52,9 @@ Current executable gate:
 - The same details now expose receipt-cursor headroom against the measured
   memory ceiling so a cursor-sized resume proof stays fail-closed instead of
   inferring safety from the raw cursor alone.
+- The production-throughput gate also fails closed if the recorded receipt
+  cursor no longer fits the bounded queue budget, so the backpressure evidence
+  stays aligned with the replayable cursor state.
 - The report `results` payload also carries explicit failure-probe details for
   the pre-commit and partial-commit probes, including inspection status,
   journal path, remote-unchanged classification, and journal record types so a

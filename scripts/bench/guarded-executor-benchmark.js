@@ -216,6 +216,9 @@ export function productionThroughputBlockers(report) {
   ) {
     blockers.push('chunk-window-exceeds-memory-ceiling');
   }
+  if (report.evidence.backpressure?.receiptCursorWithinQueueBudget !== true) {
+    blockers.push('receipt-cursor-exceeds-queue-budget');
+  }
   if (!report.evidence.atomicGroup.productionAtomicCommitMeasured) {
     blockers.push('production-atomic-group-commit-not-measured');
   }
