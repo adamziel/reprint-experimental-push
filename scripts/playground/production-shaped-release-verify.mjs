@@ -1347,7 +1347,7 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
               lastError = new Error(
                 `Production plugin package snapshot readiness still waiting on global WordPress startup HTTP ${indexProbe.status}`,
               );
-              await sleep(readinessProbeIntervalMs);
+              await sleepUnlessChildExit(readinessProbeIntervalMs, child);
               continue;
             }
             if (
@@ -1386,7 +1386,7 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
               },
             );
           }
-          await sleep(readinessProbeIntervalMs);
+          await sleepUnlessChildExit(readinessProbeIntervalMs, child);
           continue;
         }
         lastError = error;
@@ -1433,7 +1433,7 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
               lastError = new Error(
                 `Production plugin package snapshot readiness still waiting on global WordPress startup HTTP ${indexProbe.status}`,
               );
-              await sleep(readinessProbeIntervalMs);
+              await sleepUnlessChildExit(readinessProbeIntervalMs, child);
               continue;
             }
             if (
@@ -1472,7 +1472,7 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
               },
             );
           }
-          await sleep(readinessProbeIntervalMs);
+          await sleepUnlessChildExit(readinessProbeIntervalMs, child);
           continue;
         }
         notReadyProbeCounts = packagedProductionPluginResetRouteNotReadyProbeCounts(
@@ -1536,7 +1536,7 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
               lastError = new Error(
                 `Production plugin package preflight readiness still waiting on global WordPress startup HTTP ${indexProbe.status}`,
               );
-              await sleep(readinessProbeIntervalMs);
+              await sleepUnlessChildExit(readinessProbeIntervalMs, child);
               continue;
             }
             if (
@@ -1575,7 +1575,7 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
               },
             );
           }
-          await sleep(readinessProbeIntervalMs);
+          await sleepUnlessChildExit(readinessProbeIntervalMs, child);
           continue;
         }
         lastError = error;
@@ -1624,7 +1624,7 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
             lastError = new Error(
               `Production plugin package preflight readiness still waiting on global WordPress startup HTTP ${indexProbe.status}`,
             );
-            await sleep(readinessProbeIntervalMs);
+            await sleepUnlessChildExit(readinessProbeIntervalMs, child);
             continue;
           }
           if (
@@ -1663,7 +1663,7 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
             },
           );
         }
-        await sleep(readinessProbeIntervalMs);
+        await sleepUnlessChildExit(readinessProbeIntervalMs, child);
         continue;
       }
       notReadyProbeCounts = packagedProductionPluginResetRouteNotReadyProbeCounts(
@@ -1706,7 +1706,7 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
         );
       }
     }
-    await sleep(readinessProbeIntervalMs);
+    await sleepUnlessChildExit(readinessProbeIntervalMs, child);
   }
   await throwPlaygroundReadinessFailure(
     child,
@@ -2144,6 +2144,33 @@ function resolveReleaseBoundary(proof) {
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function sleepUnlessChildExit(ms, child) {
+  if (!child || child.exitCode !== null || child.signalCode !== null) {
+    return Promise.resolve();
+  }
+
+  return new Promise((resolve) => {
+    const timer = setTimeout(() => {
+      cleanup();
+      resolve();
+    }, ms);
+
+    const onExit = () => {
+      cleanup();
+      resolve();
+    };
+
+    const cleanup = () => {
+      clearTimeout(timer);
+      child.off('exit', onExit);
+      child.off('close', onExit);
+    };
+
+    child.once('exit', onExit);
+    child.once('close', onExit);
+  });
 }
 
 function appendNodeOption(existing, option) {

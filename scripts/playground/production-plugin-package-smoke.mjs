@@ -507,7 +507,7 @@ async function waitForServer(child, baseUrl, logs) {
               lastError = new Error(
                 `Production plugin package snapshot readiness still waiting on global WordPress startup HTTP ${indexProbe.status}`,
               );
-              await sleep(500);
+              await sleepUnlessChildExit(500, child);
               continue;
             }
             if (
@@ -530,7 +530,7 @@ async function waitForServer(child, baseUrl, logs) {
               + `${snapshotText.slice(0, readinessFailureBodyLimit)}\n${logs.join('')}`,
             );
           }
-          await sleep(500);
+          await sleepUnlessChildExit(500, child);
           continue;
         }
         throw new Error(
@@ -559,7 +559,7 @@ async function waitForServer(child, baseUrl, logs) {
               lastError = new Error(
                 `Production plugin package snapshot readiness still waiting on global WordPress startup HTTP ${indexProbe.status}`,
               );
-              await sleep(500);
+              await sleepUnlessChildExit(500, child);
               continue;
             }
             if (
@@ -582,7 +582,7 @@ async function waitForServer(child, baseUrl, logs) {
               + `${snapshotText.slice(0, readinessFailureBodyLimit)}\n${logs.join('')}`,
             );
           }
-          await sleep(500);
+          await sleepUnlessChildExit(500, child);
           continue;
         }
         notReadyProbeCounts = packagedProductionPluginResetRouteNotReadyProbeCounts(
@@ -641,7 +641,7 @@ async function waitForServer(child, baseUrl, logs) {
                 lastError = new Error(
                   `Production plugin package preflight readiness still waiting on global WordPress startup HTTP ${indexProbe.status}`,
                 );
-                await sleep(500);
+                await sleepUnlessChildExit(500, child);
                 continue;
               }
               if (
@@ -664,7 +664,7 @@ async function waitForServer(child, baseUrl, logs) {
                 + `${preflightText.slice(0, readinessFailureBodyLimit)}\n${logs.join('')}`,
               );
             }
-            await sleep(500);
+            await sleepUnlessChildExit(500, child);
             continue;
           }
           throw new Error(
@@ -700,7 +700,7 @@ async function waitForServer(child, baseUrl, logs) {
               lastError = new Error(
                 `Production plugin package preflight readiness still waiting on global WordPress startup HTTP ${indexProbe.status}`,
               );
-              await sleep(500);
+                await sleepUnlessChildExit(500, child);
               continue;
             }
             if (
@@ -723,7 +723,7 @@ async function waitForServer(child, baseUrl, logs) {
               + `${preflightText.slice(0, readinessFailureBodyLimit)}\n${logs.join('')}`,
             );
           }
-          await sleep(500);
+            await sleepUnlessChildExit(500, child);
           continue;
         }
         notReadyProbeCounts = packagedProductionPluginResetRouteNotReadyProbeCounts(
@@ -756,7 +756,7 @@ async function waitForServer(child, baseUrl, logs) {
       }
     }
 
-    await sleep(500);
+      await sleepUnlessChildExit(500, child);
   }
 
   const lastResponse = lastProbe === null
@@ -1036,6 +1036,33 @@ function pushLog(logs, chunk) {
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function sleepUnlessChildExit(ms, child) {
+  if (!child || child.exitCode !== null || child.signalCode !== null) {
+    return Promise.resolve();
+  }
+
+  return new Promise((resolve) => {
+    const timer = setTimeout(() => {
+      cleanup();
+      resolve();
+    }, ms);
+
+    const onExit = () => {
+      cleanup();
+      resolve();
+    };
+
+    const cleanup = () => {
+      clearTimeout(timer);
+      child.off('exit', onExit);
+      child.off('close', onExit);
+    };
+
+    child.once('exit', onExit);
+    child.once('close', onExit);
+  });
 }
 
 function parseMarkedJson(stdout, begin, end, missingMessage) {

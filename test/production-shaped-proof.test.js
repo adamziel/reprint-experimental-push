@@ -1923,6 +1923,24 @@ test('packaged readiness fetch helpers abort probe fetches when the Playground c
   }
 });
 
+test('packaged readiness helpers do not sleep through child exits between probes', () => {
+  const smokeSource = readFileSync(
+    path.join(repoRoot, 'scripts/playground/production-plugin-package-smoke.mjs'),
+    'utf8',
+  );
+  const verifierSource = readFileSync(
+    path.join(repoRoot, 'scripts/playground/production-shaped-release-verify.mjs'),
+    'utf8',
+  );
+
+  for (const source of [smokeSource, verifierSource]) {
+    assert.match(source, /await sleepUnlessChildExit\(.*child\)/);
+    assert.match(source, /function sleepUnlessChildExit\(ms, child\)/);
+    assert.match(source, /child\.once\('exit', onExit\)/);
+    assert.match(source, /child\.once\('close', onExit\)/);
+  }
+});
+
 test('lab Playground readiness helper rejects malformed ready responses and retries only startup-shaped failures', () => {
   const readySnapshot = {
     status: 200,
