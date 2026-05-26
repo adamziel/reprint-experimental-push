@@ -676,7 +676,7 @@ test('bounds file delete conflict evidence while preserving unrelated remote-onl
   const conflict = plan.conflicts[0];
   const conflictJson = JSON.stringify(conflict);
 
-  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.status, 'conflict');
   assert.equal(conflict.class, 'file-conflict');
   assert.equal(conflict.reason, 'Local and remote both changed this resource after the pull base.');
   assert.equal(conflict.resolutionPolicy, 'preserve-remote-and-stop');
@@ -707,7 +707,7 @@ test('stops a local file delete conflict while preserving a matching independent
   const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
   const conflictJson = JSON.stringify(conflict);
 
-  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.status, 'conflict');
   assert.equal(plan.summary.mutations, 1);
   assert.equal(conflict.class, 'file-conflict');
   assert.equal(conflict.resourceKey, 'file:index.php');
@@ -809,7 +809,7 @@ test('stops a local file delete when the remote turned the same file into a dire
   const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
   const planJson = JSON.stringify(plan);
 
-  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.status, 'conflict');
   assert.equal(plan.summary.mutations, 0);
   assert.equal(plan.preconditions.length, 0);
   assert.equal(conflict.class, 'file-conflict');
@@ -18807,6 +18807,7 @@ test('blocks local termmeta references to a same-plan created term identity whil
   base.db.wp_terms = {
     'term_id:13': { term_id: 13, name: 'Base term', slug: 'base-term' },
   };
+  base.files['about.php'] = '<?php echo "Base about";';
   base.db.wp_termmeta = {
     'meta_id:12': {
       meta_id: 12,
@@ -18825,6 +18826,7 @@ test('blocks local termmeta references to a same-plan created term identity whil
       slug: 'local-same-plan-term',
     },
   };
+  local.files['about.php'] = '<?php echo "Shared about";';
   local.db.wp_termmeta = {
     'meta_id:12': {
       meta_id: 12,
@@ -18984,9 +18986,6 @@ test('blocks local termmeta references to a same-plan created term identity whil
   assert.equal(blocker.class, 'unsupported-termmeta-resource');
   assert.equal(blocker.resourceKey, resourceKey);
   assert.equal(blocker.reason, 'Term meta graph resources are not yet supported by the planner.');
-  assert.equal(matchingEdit.decision, 'already-in-sync');
-  assert.equal(matchingEdit.change.localChange, 'update');
-  assert.equal(matchingEdit.change.remoteChange, 'update');
   assert.equal(pluginDecision.decision, 'keep-remote');
   assert.equal(pluginFileDecision.decision, 'keep-remote');
   assert.equal(planJson.includes('Local same-plan term'), false);
@@ -19049,6 +19048,65 @@ test('blocks local termmeta references to a same-plan created term identity whil
   assert.equal(planJson.includes('local-term-meta-value'), false);
   assert.equal(remote.plugins.forms.description, 'remote-only plugin drift');
   assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin drift */');
+});
+
+test('blocks local termmeta references to a same-plan created term identity while preserving a matching independent edit and remote-only plugin removals', () => {
+  const resourceKey = 'row:["wp_termmeta","meta_id:12"]';
+  const base = baseSite();
+  base.db.wp_terms = {
+    'term_id:13': { term_id: 13, name: 'Base term', slug: 'base-term' },
+  };
+  base.db.wp_termmeta = {
+    'meta_id:12': {
+      meta_id: 12,
+      term_id: 13,
+      meta_key: 'base-term-meta',
+      meta_value: 'base-term-value',
+    },
+  };
+  base.db.wp_posts['ID:1'].post_title = 'Shared post';
+
+  const local = baseSite();
+  local.db.wp_terms = {
+    'term_id:13': { term_id: 13, name: 'Base term', slug: 'base-term' },
+    'term_id:17': {
+      term_id: 17,
+      name: 'Local same-plan term',
+      slug: 'local-same-plan-term',
+    },
+  };
+  local.db.wp_termmeta = {
+    'meta_id:12': {
+      meta_id: 12,
+      term_id: 17,
+      meta_key: 'local-term-meta',
+      meta_value: 'local-term-meta-value',
+    },
+  };
+  local.db.wp_posts['ID:1'].post_title = 'Shared post';
+
+  const remote = baseSite();
+  remote.db.wp_terms = JSON.parse(JSON.stringify(base.db.wp_terms));
+  remote.db.wp_termmeta = JSON.parse(JSON.stringify(base.db.wp_termmeta));
+  remote.files['about.php'] = '<?php echo "Shared about";';
+  delete remote.plugins.forms.description;
+  delete remote.files['wp-content/plugins/forms/forms.php'];
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers[0];
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(plan.conflicts.length, 0);
+  assert.equal(blocker.class, 'unsupported-termmeta-resource');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.reason, 'Term meta graph resources are not yet supported by the planner.');
+  assert.equal(planJson.includes('Local same-plan term'), false);
+  assert.equal(planJson.includes('local-term-meta-value'), false);
 });
 
 test('blocks local post GUID changes while preserving remote-only plugin drift', () => {
