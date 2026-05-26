@@ -6,20 +6,20 @@ linked implementation artifacts.
 
 ## 2026-05-26 - Release Journal Smoke Update
 
-- Last update: 2026-05-26 11:11 CEST.
-- Current reliable head: `5fd9dfb4` (`Wire production recovery journal into release smoke`).
-- New proof: `openProductionRecoveryJournal()` is wired into
-  `scripts/recovery/file-journal-restart-smoke.mjs`, and the focused
-  `test:recovery:file-journal` plus `verify:release` checks passed for the
-  release-journal smoke.
-- Trend: release-journal evidence improved, but the release gate remains closed
-  at `0/4` pending production auth/session and durable storage proof.
-- Audit note: the current head is `5fd9dfb4`; older head references in history
+- Last update: 2026-05-26 11:58 CEST.
+- Current reliable head: `998e856f` (`Surface replay equivalence in release verify`).
+- New proof: the checked release verifier now surfaces top-level
+  `replayEquivalence` evidence, and the focused release-proof test passed under
+  `timeout 90s`.
+- Trend: release-verify visibility improved, but the release gate remains
+  closed at `0/4` because production auth/session lifecycle and durable journal
+  ownership are still blocked.
+- Audit note: the current head is `998e856f`; older head references in history
   are historical only and should not be published as current.
 - Next nudge: keep the next proof tied to the audit decision and the next
-  production-boundary release-journal or auth/session evidence.
+  production-boundary auth/session, journal, or replay evidence.
 - Public page: [progress.html](../progress.html) now reflects the current head
-  and the smoke boundary in the visible summary.
+  and the replay-equivalence boundary in the visible summary.
 
 ## 2026-05-25 - Current Supervisor Snapshot
 
