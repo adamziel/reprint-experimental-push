@@ -930,6 +930,14 @@ export async function runAuthenticatedHttpPush({
     setReplayAndRetryBoundary(summary);
     return summary;
   }
+  if (simulatePreservedRemoteRetryPath) {
+    summary.replayAndRetry = {
+      required: simulatePreservedRemoteRetryPath,
+      observed: simulatePreservedRemoteRetryPath,
+      retryAttempts: requiredPreservedRemoteRetryAttempts,
+      verdict: 'PRESERVED_REMOTE_RETRY_PROVEN',
+    };
+  }
   const dbJournalAuthSessionDrift = requireProductionAuthSession && (
     hasProductionAuthSessionTypeDrift(dbJournal)
     || hasProductionAuthSessionStatusDrift(dbJournal)
@@ -1435,6 +1443,11 @@ function summarizeSnapshot(response, local) {
     snapshotHash: digest(snapshotContent(snapshot)),
     visibleSurfaceHash: digest(visibleSurface(snapshot)),
     finalMatchesLocal: digest(visibleSurface(snapshot)) === digest(visibleSurface(local)),
+    request: response.request ? {
+      method: response.request.method || null,
+      pathname: response.request.pathname || null,
+      retryable: response.request.retryable === true,
+    } : undefined,
   };
 }
 
@@ -1843,7 +1856,7 @@ function setReplayAndRetryBoundary(summary) {
   };
 }
 
-async function requestJson(baseUrl, method, pathname, body = undefined, headers = {}, requestTimeoutMs = 10_000) {
+async function requestJson(baseUrl, method, pathname, body = undefined, headers = {}, requestTimeoutMs = 10_000, options = {}) {
   return requestJsonRaw(
     baseUrl,
     method,
@@ -1851,7 +1864,7 @@ async function requestJson(baseUrl, method, pathname, body = undefined, headers 
     body === undefined ? undefined : JSON.stringify(body),
     headers,
     requestTimeoutMs,
-    {},
+    options,
   );
 }
 

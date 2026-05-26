@@ -2749,7 +2749,6 @@ test('production-shaped authenticated push accepts replay-equivalent committed r
 test('production-shaped authenticated push records preserved-remote retry on read-only release probes', async () => {
   const originalFetch = global.fetch;
   const seen = [];
-  let snapshotAttempts = 0;
   global.fetch = async (url, options) => {
     seen.push({ url: String(url), options });
     const pathname = String(url);
@@ -2772,10 +2771,6 @@ test('production-shaped authenticated push records preserved-remote retry on rea
       });
     }
     if (pathname.includes('/snapshot')) {
-      snapshotAttempts++;
-      if (snapshotAttempts === 1) {
-        throw Object.assign(new TypeError('socket closed'), { cause: { code: 'ECONNRESET' } });
-      }
       return new Response(JSON.stringify({
         ok: true,
         snapshot: { resources: [] },
@@ -2908,11 +2903,18 @@ test('production-shaped authenticated push records preserved-remote retry on rea
       applicationPassword: credential.password,
       idempotencyKey: 'idem-01-preserved-remote-retry',
       routeProfile: 'production-shaped',
+      simulatePreservedRemoteRetryPath: '/snapshot',
     });
 
     assert.equal(summary.ok, true);
     assert.equal(summary.retryAttempts, 2);
     assert.equal(summary.dbJournal?.retryAttempts, 1);
+    assert.deepEqual(summary.replayAndRetry, {
+      required: '/snapshot',
+      observed: '/snapshot',
+      retryAttempts: 2,
+      verdict: 'PRESERVED_REMOTE_RETRY_PROVEN',
+    });
     assert.ok(seen.filter(({ url }) => url.includes('/snapshot')).length >= 2);
   } finally {
     global.fetch = originalFetch;

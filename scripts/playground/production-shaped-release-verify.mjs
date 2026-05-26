@@ -709,7 +709,9 @@ try {
         dryRunOnly: false,
         requireProductionAuthSession: true,
         simulateStaleClaimRetry: packagedSourceFixture !== null,
-        simulatePreservedRemoteRetryPath: packagedSourceFixture ? '/snapshot' : '',
+        // Require preserved-read retry proof on the checked snapshot surface
+        // regardless of whether the source is packaged or direct.
+        simulatePreservedRemoteRetryPath: '/snapshot',
         authSessionSource,
         labDriftAfterSnapshot,
         labAuthSessionDrift,

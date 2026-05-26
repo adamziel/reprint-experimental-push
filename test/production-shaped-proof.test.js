@@ -2655,6 +2655,10 @@ maybeTest('production-shaped release verify command runs the live protocol branc
     assert.match(proof.stdout, /"releaseProof": \{[\s\S]*?"retryAttempts": 2[\s\S]*?\}/);
     assert.match(proof.stdout, /"remoteSnapshot": \{\s*"status": 200,\s*"ok": true,\s*"retryAttempts": 2/);
     assert.match(proof.stdout, /"replayEquivalence": \{\s*"equivalent": true,\s*"mismatches": \[\]\s*\}/);
+    assert.match(
+      proof.stdout,
+      /"replayAndRetry": \{\s*"required": "\/snapshot",\s*"observed": "\/snapshot",\s*"retryAttempts": 2,\s*"verdict": "PRESERVED_REMOTE_RETRY_PROVEN"\s*\}/,
+    );
     assert.match(proof.stdout, /"preflight": \{\s*"status": 200,\s*"ok": true,\s*"mode": "preflight"/);
   });
 });
