@@ -6,17 +6,18 @@ Changed files
 
 Commands run
 - `git fetch origin --prune`
-- `git for-each-ref --sort=-committerdate --format='%(refname:short) %(objectname:short) %(committerdate:iso8601) %(subject)' refs/remotes/origin/lane | head -n 20`
+- `git for-each-ref --sort=-committerdate --format='%(refname:short) %(objectname:short) %(committerdate:iso8601) %(subject)' refs/remotes/origin/lane | head -n 12`
+- `sed -n '1,220p' supervision/lanes/independent-auditor.md`
 - `sed -n '1,260p' audits/objective-audit.md`
-- `git diff -- audits/objective-audit.md`
 - `git status --short --branch`
+- `git diff -- audits/objective-audit.md`
 
 Push result
-- Not pushed
+- Pending
 
 Worktree status
 - Tracked state is dirty with `audits/objective-audit.md` and `.lane-output/final.md`
-- Branch: `lane/cycle-20260525-mainwindows-2349/independent-auditor...origin/main [ahead 1391, behind 234]`
+- Branch: `lane/cycle-20260525-mainwindows-2349/independent-auditor...origin/main [ahead 1391, behind 236]`
 
 Next supervisor nudge
 - Re-poll only after a lane lands non-freshness proof that changes the live production release boundary; keep the audit verdict closed at `0/4` until then.
