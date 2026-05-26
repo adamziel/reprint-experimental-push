@@ -1,15 +1,15 @@
 # Critic Verdict
 
-Current reliable head: `4039fca9bff629d4fccdaf9540a82606d7f79c6c`
-(`Surface live auth session before journal gate`).
+Current reliable head: `54469c8dc006553191b9f3528f432ae44bdea65c`
+(`Fail closed on auth session history drift`).
 
 Verdict: `0/4`
 
 Reason:
 
-- This head moves the checked release verifier further along the live
-  auth/session boundary on the release path, but it still does not prove a
-  production-backed lifecycle.
+- This head tightens checked auth/session lifecycle handling by failing closed
+  on preserved-session history drift, but it still does not prove a
+  production-backed lifecycle on the release path.
 - The checked proof is still missing live issuance/read/expiry/rotation/
   revocation/cleanup evidence for `production-auth-session`, and it still does
   not establish stricter durable-journal ownership/restart semantics on the
