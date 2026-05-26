@@ -1302,7 +1302,10 @@ export function productionThroughputDetails(report) {
   const queueHeadroomVisibleAndQueueSlackMeasured =
     queueHeadroomVisible && receiptCursorQueueSlackMeasured;
   const queueHeadroomVisibleAndQueueSlackVisibleAndMeasured =
-    queueHeadroomVisible && receiptCursorQueueSlackPositive && receiptCursorQueueSlackMeasured;
+    queueHeadroomVisible
+    && receiptCursorQueueSlackVisible
+    && receiptCursorQueueSlackPositive
+    && receiptCursorQueueSlackMeasured;
   const receiptCursorQueueSlackWithinQueueBudget =
     Number.isFinite(receiptCursorQueueSlackBytes)
     && Number.isFinite(receiptCursorQueueBudgetBytes)
