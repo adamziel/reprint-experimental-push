@@ -1787,6 +1787,107 @@ test('checked recovery inspect evidence fails closed on partial checked journal 
   });
 });
 
+test('checked recovery inspect evidence fails closed on conflicting checked journal claim lineage', { skip: !hasPhp }, () => {
+  const result = runAttachCheckedRecoveryJournalEvidence(
+    {
+      ok: true,
+      recovery: {
+        journal: {
+          integrity: {
+            schemaVersion: 1,
+            status: 'ok',
+            scope: 'checked live production-shaped recovery inspect journal evidence; not local Playground fixture only',
+          },
+          acceptedOnCheckedBoundary: true,
+          scope: 'checked live production-shaped journal surface; not local Playground fixture only',
+          claim: {
+            status: 'stale-claim-rejected',
+            activeClaimKeyHash: 'inline-claim-hash-01',
+            activeClaimSequence: 28,
+            activeClaimEvent: 'stale-claim-retry-started',
+            idempotencyKeyHash: 'idem-hash-inline',
+            requestHash: 'request-hash-inline',
+            staleClaimRejected: true,
+            previousClaimKeyHash: 'inline-prev-claim-hash-00',
+            previousClaimSequence: 19,
+            previousClaimEvent: 'idempotency-opened',
+          },
+          ownership: {
+            ownsJournal: true,
+            restartReadable: true,
+            productionAdapter: 'wpdb-single-statement-cas',
+          },
+        },
+      },
+    },
+    true,
+    false,
+    {
+      acceptedOnCheckedBoundary: true,
+      scope: 'checked live production-shaped journal surface; not local Playground fixture only',
+      claim: {
+        status: 'stale-claim-rejected',
+        activeClaimKeyHash: 'authoritative-claim-hash-02',
+        activeClaimSequence: 33,
+        activeClaimEvent: 'stale-claim-rejected',
+        idempotencyKeyHash: 'idem-hash-01',
+        requestHash: 'request-hash-01',
+        staleClaimRejected: true,
+        previousClaimKeyHash: 'retry-claim-hash-01',
+        previousClaimSequence: 18,
+        previousClaimEvent: 'idempotency-opened',
+      },
+      ownership: {
+        ownsJournal: true,
+        restartReadable: true,
+        productionAdapter: 'wpdb-single-statement-cas',
+      },
+      writerLease: {
+        strategy: 'claim-fenced-single-writer',
+        claimKeyUnique: true,
+        fsyncEvidence: true,
+        storageGuard: 'wpdb-single-statement-cas',
+        monotonicSequence: true,
+        restartReadable: true,
+        staleClaimRejected: true,
+      },
+      leaseFence: {
+        boundary: 'wpdb-single-statement-cas',
+        claimKeyUnique: true,
+        fsyncEvidence: true,
+        monotonicSequence: true,
+        restartReadable: true,
+        staleClaimRejected: true,
+        writerLease: {
+          strategy: 'claim-fenced-single-writer',
+          claimKeyUnique: true,
+          fsyncEvidence: true,
+          storageGuard: 'wpdb-single-statement-cas',
+          monotonicSequence: true,
+          restartReadable: true,
+          staleClaimRejected: true,
+        },
+      },
+    },
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.recovery.journal.acceptedOnCheckedBoundary, false);
+  assert.deepEqual(parsed.recovery.journal.claim, {
+    status: 'stale-claim-rejected',
+    activeClaimKeyHash: 'authoritative-claim-hash-02',
+    activeClaimSequence: 33,
+    activeClaimEvent: 'stale-claim-rejected',
+    idempotencyKeyHash: 'idem-hash-01',
+    requestHash: 'request-hash-01',
+    staleClaimRejected: true,
+    previousClaimKeyHash: 'retry-claim-hash-01',
+    previousClaimSequence: 18,
+    previousClaimEvent: 'idempotency-opened',
+  });
+});
+
 test('checked recovery inspect evidence fills nested checked counters and summary arrays from the authoritative db journal summary', { skip: !hasPhp }, () => {
   const result = runAttachCheckedRecoveryJournalEvidence(
     {
@@ -3295,6 +3396,98 @@ test('checked db journal attachment preserves conflicting accepted inline storag
       operation: 'compare-and-swap',
       outcome: 'precondition-failed',
     },
+  });
+});
+
+test('checked db journal attachment fails closed on conflicting checked claim lineage', { skip: !hasPhp }, () => {
+  const result = runAttachCheckedDbJournalContract(
+    {
+      ok: true,
+      dbJournal: {
+        scope: 'checked live production-shaped journal surface; not local Playground fixture only',
+        acceptedOnCheckedBoundary: true,
+        claim: {
+          status: 'stale-claim-rejected',
+          activeClaimKeyHash: 'inline-claim-hash-01',
+          activeClaimSequence: 28,
+          activeClaimEvent: 'stale-claim-retry-started',
+          idempotencyKeyHash: 'idem-hash-inline',
+          requestHash: 'request-hash-inline',
+          staleClaimRejected: true,
+          previousClaimKeyHash: 'inline-prev-claim-hash-00',
+          previousClaimSequence: 19,
+          previousClaimEvent: 'idempotency-opened',
+        },
+        ownership: {
+          ownsJournal: true,
+          restartReadable: true,
+          productionAdapter: 'wpdb-single-statement-cas',
+        },
+      },
+    },
+    {
+      acceptedOnCheckedBoundary: true,
+      scope: 'checked live production-shaped journal surface; not local Playground fixture only',
+      claim: {
+        status: 'stale-claim-rejected',
+        activeClaimKeyHash: 'authoritative-claim-hash-02',
+        activeClaimSequence: 33,
+        activeClaimEvent: 'stale-claim-rejected',
+        idempotencyKeyHash: 'idem-hash-01',
+        requestHash: 'request-hash-01',
+        staleClaimRejected: true,
+        previousClaimKeyHash: 'retry-claim-hash-01',
+        previousClaimSequence: 18,
+        previousClaimEvent: 'idempotency-opened',
+      },
+      ownership: {
+        ownsJournal: true,
+        restartReadable: true,
+        productionAdapter: 'wpdb-single-statement-cas',
+      },
+      writerLease: {
+        strategy: 'claim-fenced-single-writer',
+        claimKeyUnique: true,
+        fsyncEvidence: true,
+        storageGuard: 'wpdb-single-statement-cas',
+        monotonicSequence: true,
+        restartReadable: true,
+        staleClaimRejected: true,
+      },
+      leaseFence: {
+        boundary: 'wpdb-single-statement-cas',
+        claimKeyUnique: true,
+        fsyncEvidence: true,
+        monotonicSequence: true,
+        restartReadable: true,
+        staleClaimRejected: true,
+        writerLease: {
+          strategy: 'claim-fenced-single-writer',
+          claimKeyUnique: true,
+          fsyncEvidence: true,
+          storageGuard: 'wpdb-single-statement-cas',
+          monotonicSequence: true,
+          restartReadable: true,
+          staleClaimRejected: true,
+        },
+      },
+    },
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.dbJournal.acceptedOnCheckedBoundary, false);
+  assert.deepEqual(parsed.dbJournal.claim, {
+    status: 'stale-claim-rejected',
+    activeClaimKeyHash: 'authoritative-claim-hash-02',
+    activeClaimSequence: 33,
+    activeClaimEvent: 'stale-claim-rejected',
+    idempotencyKeyHash: 'idem-hash-01',
+    requestHash: 'request-hash-01',
+    staleClaimRejected: true,
+    previousClaimKeyHash: 'retry-claim-hash-01',
+    previousClaimSequence: 18,
+    previousClaimEvent: 'idempotency-opened',
   });
 });
 

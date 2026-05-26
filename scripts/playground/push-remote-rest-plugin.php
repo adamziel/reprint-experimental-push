@@ -614,12 +614,17 @@ function reprint_push_lab_rest_attach_checked_recovery_journal_evidence(
     $checked_db_journal = is_array($checked_db_journal)
         ? $checked_db_journal
         : reprint_push_lab_db_journal_checked_boundary_contract($checked_surface);
+    $premerge_checked_claim = isset($result['recovery']['journal']['claim']) && is_array($result['recovery']['journal']['claim'])
+        ? $result['recovery']['journal']['claim']
+        : null;
     $result['recovery']['journal'] = reprint_push_lab_rest_merge_checked_recovery_journal_contract(
         $result['recovery']['journal'],
         $checked_db_journal
     );
     $result['recovery']['journal'] = reprint_push_lab_rest_fail_closed_checked_recovery_journal_acceptance(
-        $result['recovery']['journal']
+        $result['recovery']['journal'],
+        $checked_db_journal,
+        $premerge_checked_claim
     );
     return $result;
 }
@@ -767,6 +772,9 @@ function reprint_push_lab_rest_attach_checked_db_journal_contract(
             $result['dbJournal'] = $db_journal;
         }
     } else {
+        $premerge_checked_claim = isset($result['dbJournal']['claim']) && is_array($result['dbJournal']['claim'])
+            ? $result['dbJournal']['claim']
+            : null;
         $upgrade_checked_storage_guard = reprint_push_lab_rest_should_upgrade_checked_db_journal_scope(
             $result['dbJournal'],
             $db_journal
@@ -800,7 +808,9 @@ function reprint_push_lab_rest_attach_checked_db_journal_contract(
     }
     if (isset($result['dbJournal']) && is_array($result['dbJournal'])) {
         $result['dbJournal'] = reprint_push_lab_rest_fail_closed_checked_db_journal_acceptance(
-            $result['dbJournal']
+            $result['dbJournal'],
+            $db_journal,
+            $premerge_checked_claim ?? null
         );
     }
     if (is_array($storage_guard)) {
@@ -824,7 +834,23 @@ function reprint_push_lab_rest_attach_checked_db_journal_contract(
     return $result;
 }
 
-function reprint_push_lab_rest_fail_closed_checked_db_journal_acceptance(array $db_journal): array
+function reprint_push_lab_rest_checked_claim_contract_conflicts($existing_claim, $checked_claim): bool
+{
+    if (
+        !reprint_push_lab_db_journal_claim_contract_matches($existing_claim)
+        || !reprint_push_lab_db_journal_claim_contract_matches($checked_claim)
+    ) {
+        return false;
+    }
+
+    return reprint_push_stable_json($existing_claim) !== reprint_push_stable_json($checked_claim);
+}
+
+function reprint_push_lab_rest_fail_closed_checked_db_journal_acceptance(
+    array $db_journal,
+    ?array $checked_summary = null,
+    ?array $premerge_claim = null
+): array
 {
     if (($db_journal['acceptedOnCheckedBoundary'] ?? false) !== true) {
         return $db_journal;
@@ -832,18 +858,44 @@ function reprint_push_lab_rest_fail_closed_checked_db_journal_acceptance(array $
 
     if (!reprint_push_lab_db_journal_claim_contract_matches($db_journal['claim'] ?? null)) {
         $db_journal['acceptedOnCheckedBoundary'] = false;
+        return $db_journal;
+    }
+
+    if (
+        is_array($checked_summary)
+        && reprint_push_lab_rest_checked_claim_contract_conflicts(
+            $premerge_claim,
+            $checked_summary['claim'] ?? null
+        )
+    ) {
+        $db_journal['acceptedOnCheckedBoundary'] = false;
     }
 
     return $db_journal;
 }
 
-function reprint_push_lab_rest_fail_closed_checked_recovery_journal_acceptance(array $journal): array
+function reprint_push_lab_rest_fail_closed_checked_recovery_journal_acceptance(
+    array $journal,
+    ?array $checked_summary = null,
+    ?array $premerge_claim = null
+): array
 {
     if (($journal['acceptedOnCheckedBoundary'] ?? false) !== true) {
         return $journal;
     }
 
     if (array_key_exists('claim', $journal) && !reprint_push_lab_db_journal_claim_contract_matches($journal['claim'])) {
+        $journal['acceptedOnCheckedBoundary'] = false;
+        return $journal;
+    }
+
+    if (
+        is_array($checked_summary)
+        && reprint_push_lab_rest_checked_claim_contract_conflicts(
+            $premerge_claim,
+            $checked_summary['claim'] ?? null
+        )
+    ) {
         $journal['acceptedOnCheckedBoundary'] = false;
     }
 
