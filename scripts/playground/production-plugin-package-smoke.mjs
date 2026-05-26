@@ -8,6 +8,8 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createHmac } from 'node:crypto';
 import { digest } from '../../src/stable-json.js';
+import { packagedProductionPluginSource } from './packaged-production-plugin-source.mjs';
+import { runAuthenticatedHttpPush } from '../../src/authenticated-http-push-client.js';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const cliPath = path.join(repoRoot, 'bin/reprint-push-lab.js');
@@ -55,10 +57,11 @@ try {
   writeActivationBlueprint(path.join(repoRoot, fixtures.base), blueprintPath);
   fs.writeFileSync(basePath, `${JSON.stringify(snapshots.base, null, 2)}\n`);
   fs.writeFileSync(localPath, `${JSON.stringify(packageLocalSnapshot, null, 2)}\n`);
+  const packageSource = packagedProductionPluginSource(repoRoot);
 
   const summary = {
     package: {
-      plugin: 'reprint-push/reprint-push.php',
+      ...packageSource,
       mountedAs: '/wordpress/wp-content/plugins/reprint-push',
       copiedFiles: fs.readdirSync(path.join(pluginDir, 'includes')).sort(),
     },
@@ -112,27 +115,23 @@ try {
     assert.equal(preflight.body.auth.session.credentialType, 'push-application-password');
     assertSignedStoreCleanup(preflight.body.sessionStore?.cleanup);
 
-    const result = runCli([
-      'push-authenticated',
-      '--base',
-      basePath,
-      '--local',
-      localPath,
-      '--source-url',
-      server.baseUrl,
-      '--username',
-      credentials.username,
-      '--application-password',
-      credentials.password,
-      '--idempotency-key',
-      'production-plugin-package-apply',
-      '--route-profile',
-      'production-shaped',
-    ]);
+    const result = await runAuthenticatedHttpPush({
+      base: JSON.parse(fs.readFileSync(basePath, 'utf8')),
+      local: JSON.parse(fs.readFileSync(localPath, 'utf8')),
+      sourceUrl: server.baseUrl,
+      username: credentials.username,
+      applicationPassword: credentials.password,
+      idempotencyKey: 'production-plugin-package-apply',
+      routeProfile: 'production-shaped',
+      sourceDescriptor: packageSource,
+    });
 
     assert.equal(result.ok, true);
     assert.equal(result.source.namespace, 'reprint/v1');
     assert.equal(result.source.routePrefix, '/push');
+    assert.equal(result.source.packageSource, 'packaged-production-plugin');
+    assert.equal(result.source.labBacked, false);
+    assert.match(result.source.sourceCommand, /REPRINT_PUSH_DISABLE_LAB_ROUTES=1/);
     assert.equal(result.apply.status, 200);
     assert.equal(result.apply.applied, result.plan.mutations);
     assert.equal(result.apply.idempotency.freshMutationWork, true);
@@ -155,6 +154,7 @@ try {
       labNamespaceDisabled: labRoute.status === 404,
       profile: preflight.body.routeProfile.profile,
       authBootstrapDisabled: true,
+      packageSource: packageSource.packageSource,
       unprovisionedAlternateStatus: unprovisionedAlternatePreflight.status,
       unscopedApplicationPasswordStatus: unscopedPreflight.status,
       credentialScope: preflight.body.auth.session.credentialScope,
@@ -173,6 +173,9 @@ try {
     summary.final = {
       finalMatchesLocal: result.after.finalMatchesLocal,
       visibleSurfaceHash: digest(visibleSurface(after.body.snapshot)),
+      packageSource: result.source.packageSource,
+      sourceCommand: result.source.sourceCommand,
+      labBacked: result.source.labBacked,
     };
   });
 

@@ -41,6 +41,7 @@ export async function runAuthenticatedHttpPush({
   applicationPassword,
   idempotencyKey,
   routeProfile = 'lab-authenticated',
+  sourceDescriptor = null,
   dryRunOnly = false,
   labDriftAfterSnapshot = '',
   now = new Date(),
@@ -70,6 +71,7 @@ export async function runAuthenticatedHttpPush({
       routePrefix: profile.routePrefix,
       routeProfile: profile.name,
       labBacked: true,
+      ...resolveSourceDescriptor(sourceDescriptor),
     },
     idempotencyKeyHash: digest(idempotencyKey),
     preflight: null,
@@ -154,6 +156,28 @@ export async function runAuthenticatedHttpPush({
     summary.code = apply.body?.code || 'APPLY_FAILED';
   }
   return summary;
+}
+
+export function resolveSourceDescriptor(sourceDescriptor) {
+  if (!sourceDescriptor) {
+    return {};
+  }
+
+  const descriptor = typeof sourceDescriptor === 'string'
+    ? { packageSource: sourceDescriptor }
+    : sourceDescriptor;
+
+  const labBacked = descriptor.labBacked !== undefined
+    ? Boolean(descriptor.labBacked)
+    : descriptor.packageSource === 'packaged-production-plugin'
+      ? false
+      : true;
+
+  return {
+    packageSource: descriptor.packageSource || null,
+    sourceCommand: descriptor.sourceCommand || null,
+    labBacked,
+  };
 }
 
 export function authenticatedHttpClient({ sourceUrl, credential, routeProfile = 'lab-authenticated' }) {
