@@ -14537,7 +14537,7 @@ test('blocks local post-parent references to a missing live remote post identity
   assert.equal(blocker.class, 'stale-wordpress-graph-identity');
   assert.equal(blocker.resourceKey, resourceKey);
   assert.equal(blocker.resolutionPolicy, 'preserve-remote-wordpress-graph-and-stop');
-  assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_posts","ID:10"] references graph identities without proven identity mapping or reference rewriting.');
+  assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_posts","ID:10"] references a post parent identity without proven identity mapping or reference rewriting.');
   assert.equal(reference.relationshipKey, 'wp_posts.post_parent');
   assert.equal(reference.relationshipType, 'post-parent');
   assert.equal(reference.sourceResourceKey, resourceKey);
@@ -14632,7 +14632,7 @@ test('blocks local post-parent references to a same-plan created post identity w
   assert.equal(decisionFor(plan, targetResourceKey), undefined);
   assert.equal(blocker.class, 'stale-wordpress-graph-identity');
   assert.equal(blocker.resourceKey, resourceKey);
-  assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_posts","ID:10"] references graph identities without proven identity mapping or reference rewriting.');
+  assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_posts","ID:10"] references a post parent identity without proven identity mapping or reference rewriting.');
   assert.equal(blocker.resolutionPolicy, 'preserve-remote-wordpress-graph-and-stop');
   assert.equal(reference.relationshipKey, 'wp_posts.post_parent');
   assert.equal(reference.relationshipType, 'post-parent');
@@ -19463,7 +19463,7 @@ test('blocks local same-plan created post author identity while preserving remot
   assert.equal(plan.conflicts.length, 0);
   assert.equal(blocker.class, 'stale-wordpress-graph-identity');
   assert.equal(blocker.resourceKey, resourceKey);
-  assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_posts","ID:42"] references graph identities without proven identity mapping or reference rewriting.');
+  assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_posts","ID:42"] references a post author identity without proven identity mapping or reference rewriting.');
   assert.equal(planJson.includes('Local authored post content'), false);
   assert.equal(planJson.includes('Base authored post content'), false);
   assert.equal(planJson.includes('local-same-plan-author'), false);
@@ -19515,7 +19515,7 @@ test('blocks local same-plan created post author identity while preserving a mat
   assert.equal(plan.conflicts.length, 0);
   assert.equal(blocker.class, 'stale-wordpress-graph-identity');
   assert.equal(blocker.resourceKey, resourceKey);
-  assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_posts","ID:42"] references graph identities without proven identity mapping or reference rewriting.');
+  assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_posts","ID:42"] references a post author identity without proven identity mapping or reference rewriting.');
   assert.equal(planJson.includes('Local authored post edit content'), false);
   assert.equal(planJson.includes('Base authored post content'), false);
   assert.equal(planJson.includes('local-same-plan-author-edit'), false);
@@ -19575,7 +19575,7 @@ test('blocks local same-plan created post author identity while preserving a mat
   assert.equal(plan.conflicts.length, 0);
   assert.equal(blocker.class, 'stale-wordpress-graph-identity');
   assert.equal(blocker.resourceKey, resourceKey);
-  assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_posts","ID:42"] references graph identities without proven identity mapping or reference rewriting.');
+  assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_posts","ID:42"] references a post author identity without proven identity mapping or reference rewriting.');
   assert.equal(typeSwapDecision.decision, 'already-in-sync');
   assert.equal(typeSwapDecision.change.localChange, 'type-change');
   assert.equal(typeSwapDecision.change.remoteChange, 'type-change');
@@ -19692,7 +19692,7 @@ test('blocks local same-plan created post author identity while preserving a mat
   assert.equal(plan.conflicts.length, 0);
   assert.equal(blocker.class, 'stale-wordpress-graph-identity');
   assert.equal(blocker.resourceKey, resourceKey);
-  assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_posts","ID:42"] references graph identities without proven identity mapping or reference rewriting.');
+  assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_posts","ID:42"] references a post author identity without proven identity mapping or reference rewriting.');
   assert.equal(typeSwapDecision.decision, 'already-in-sync');
   assert.equal(typeSwapDecision.change.localChange, 'type-change');
   assert.equal(typeSwapDecision.change.remoteChange, 'type-change');
@@ -24077,7 +24077,7 @@ test('blocks local post-parent references to a same-plan created post while pres
   assert.equal(plan.conflicts.length, 0);
   assert.equal(blocker.class, 'stale-wordpress-graph-identity');
   assert.equal(blocker.resourceKey, resourceKey);
-  assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_posts","ID:46"] references graph identities without proven identity mapping or reference rewriting.');
+  assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_posts","ID:46"] references a post parent identity without proven identity mapping or reference rewriting.');
   assert.equal(planJson.includes('Local same-plan post content'), false);
   assert.equal(planJson.includes('remote-only plugin drift'), false);
   assert.equal(remote.plugins.forms.description, 'remote-only plugin drift');

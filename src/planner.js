@@ -2309,10 +2309,48 @@ function wordpressGraphIdentitySupport({
     return { supported: true };
   }
 
+  const unsafePostParentReference = unsafeReferences.find((reference) =>
+    reference.relationshipType === 'post-parent'
+    && reference.targetResource?.table === 'wp_posts');
+  const unsafeCommentPostReference = unsafeReferences.find((reference) =>
+    reference.relationshipType === 'comment-post'
+    && reference.targetResource?.table === 'wp_posts');
+  const unsafeTermRelationshipPostReference = unsafeReferences.find((reference) =>
+    reference.relationshipType === 'term-relationship-object'
+    && reference.targetResource?.table === 'wp_posts');
+  const unsafePostAuthorReference = unsafeReferences.find((reference) =>
+    reference.relationshipType === 'post-author'
+    && reference.targetResource?.table === 'wp_users');
+  const unsafeFeaturedImageReference = unsafeReferences.find((reference) =>
+    reference.relationshipType === 'featured-image-attachment'
+    && reference.targetResource?.table === 'wp_posts');
+  const unsafeCommentUserReference = unsafeReferences.find((reference) =>
+    reference.relationshipType === 'comment-user'
+    && reference.targetResource?.table === 'wp_users');
+  const unsafeTermmetaTermReference = unsafeReferences.find((reference) =>
+    reference.relationshipType === 'termmeta-term'
+    && reference.targetResource?.table === 'wp_terms');
+  let reason = `WordPress graph mutation ${resource.key} references graph identities without proven identity mapping or reference rewriting.`;
+  if (unsafePostParentReference) {
+    reason = `WordPress graph mutation ${resource.key} references a post parent identity without proven identity mapping or reference rewriting.`;
+  } else if (unsafeCommentPostReference) {
+    reason = `WordPress graph mutation ${resource.key} references a comment post identity without proven identity mapping or reference rewriting.`;
+  } else if (unsafeTermRelationshipPostReference) {
+    reason = `WordPress graph mutation ${resource.key} references a term relationship post identity without proven identity mapping or reference rewriting.`;
+  } else if (unsafePostAuthorReference) {
+    reason = `WordPress graph mutation ${resource.key} references a post author identity without proven identity mapping or reference rewriting.`;
+  } else if (unsafeFeaturedImageReference) {
+    reason = `WordPress graph mutation ${resource.key} references a featured image attachment identity without proven identity mapping or reference rewriting.`;
+  } else if (unsafeCommentUserReference) {
+    reason = `WordPress graph mutation ${resource.key} references a comment user identity without proven identity mapping or reference rewriting.`;
+  } else if (unsafeTermmetaTermReference) {
+    reason = `WordPress graph mutation ${resource.key} references a term meta term identity without proven identity mapping or reference rewriting.`;
+  }
+
   return {
     supported: false,
     className: 'stale-wordpress-graph-identity',
-    reason: `WordPress graph mutation ${resource.key} references graph identities without proven identity mapping or reference rewriting.`,
+    reason,
     references: unsafeReferences,
   };
 }
