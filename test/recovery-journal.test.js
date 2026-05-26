@@ -301,6 +301,7 @@ test('production recovery journal wrapper writes a restart-readable claim-fenced
   });
   assert.equal(inspection.journal.productionAdapter, 'openProductionRecoveryJournal');
   assert.equal(inspection.journal.ownsJournal, true);
+  assert.equal(inspection.journal.consumed, false);
   assert.equal(inspection.journal.restartReadable, true);
   assert.equal(inspection.journal.schemaVersion, 1);
   assert.equal(inspection.leaseFence.staleClaimRejected, false);
@@ -332,6 +333,7 @@ test('checked release path consumes the production recovery journal inspection s
 
   assert.equal(inspection.journal.productionAdapter, 'openProductionRecoveryJournal');
   assert.equal(inspection.journal.ownsJournal, true);
+  assert.equal(inspection.journal.consumed, true);
   assert.equal(inspection.journal.restartReadable, true);
   assert.equal(inspection.journal.staleClaimRejected, false);
   assert.equal(inspection.leaseFence.storageGuard, 'filesystem-compare-rename');

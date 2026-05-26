@@ -1104,6 +1104,7 @@ function runProductionRecoveryJournalProof({ plan, current, artifactRefs = {} })
   assert.equal(inspection.consumed, true, 'production recovery journal consumer must report consumption');
   assert.equal(inspection.journal.productionAdapter, 'openProductionRecoveryJournal');
   assert.equal(inspection.journal.ownsJournal, true);
+  assert.equal(inspection.journal.consumed, true);
   assert.equal(inspection.journal.restartReadable, true);
 
   const staleClaimId = `${activeClaimId}-stale`;

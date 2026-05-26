@@ -99,6 +99,7 @@ export function openProductionRecoveryJournal({
         productionAdapter: 'openProductionRecoveryJournal',
         claimId,
         ownsJournal: true,
+        consumed: persisted.records.some((record) => record.type === 'recovery-journal-consumed'),
         restartReadable: persisted.integrity.status === 'ok',
         schemaVersion: persisted.records[0]?.schemaVersion ?? null,
         integrity: persisted.integrity,
