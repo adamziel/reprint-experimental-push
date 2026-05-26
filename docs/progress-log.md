@@ -6,26 +6,27 @@ linked implementation artifacts.
 
 ## 2026-05-26 - Release Journal Smoke Refresh
 
-- Last update: 2026-05-26 11:58 CEST.
-- Status: `origin/lane/reliable-executor` now points at `fd425b41` as the
-  current reliable head for the release-verifier journal-ownership proof, and
-  the public progress page has been aligned to that head.
-- New proof: the release verifier now exposes journal ownership, restart
-  readability, artifact refs, and lease-fence fields on the checked path,
-  while the tracked gates remain at `0/4`.
+- Last update: 2026-05-26 12:01 CEST.
+- Status: `origin/lane/reliable-executor` now points at `581f142f` as the
+  current reliable product head for the release-verifier auth/session and
+  journal-ownership proof, while the branch tip also carries off-lane progress
+  churn that is not counted as product evidence.
+- New proof: the release verifier now exposes auth-session lifecycle fields,
+  journal ownership, restart readability, artifact refs, and lease-fence
+  fields on the checked path, while the tracked gates remain at `0/4`.
 - Trend: release-path visibility improved, but the production gate posture did
   not move.
-- Supervision: the visible page now names `fd425b41` as the current reliable
-  head, keeps the conservative gate posture, and links the detailed evidence
-  instead of repeating stale head wording.
+- Supervision: the visible page now names `581f142f` as the current reliable
+  product head, keeps the conservative gate posture, and links the detailed
+  evidence instead of repeating stale head wording.
 - Blocker: production auth/session lifecycle, durable storage, leases/fencing,
   full graph identity mapping, Docker/full Playground integration, and
   arbitrary plugin drivers remain unproven.
 - Next nudge: keep the next proof tied to the audit decision and the next
   production-boundary evidence.
-- Public page: [progress.html](../progress.html) now names `fd425b41` as the
-  current reliable head and keeps the detailed release-verifier evidence
-  linked.
+- Public page: [progress.html](../progress.html) now names `581f142f` as the
+  current reliable product head and keeps the detailed release-verifier
+  evidence linked.
 
 ## 2026-05-25 - Current Supervisor Snapshot
 
