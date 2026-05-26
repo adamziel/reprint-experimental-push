@@ -8,7 +8,7 @@ The project is **not releasable as a production WordPress push path**.
 
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `44545922`
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `ffd3832f`
-- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `9bb1add2`
+- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `8fe6450d`
 - `origin/lane/fast-paths` -> `8c5c2ccb`
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `44fd27f9`
 - `origin/lane/reliable-executor` -> `39ded935`
@@ -32,11 +32,11 @@ Fresh lane proof since the last audit pass improved the local evidence floor,
 but it did not change the release conclusion:
 
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now records
-  `44545922`, refreshing public progress freshness only.
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` still
-  records `ffd3832f`, refreshing the supervisor progress surface only.
+  `5f7885e7`, refreshing public progress freshness only.
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now records
+  `40e9cccb`, refreshing the supervisor progress surface only.
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` now records
-  `9bb1add2`. This refreshes the audit snapshot only and does not change the
+  `8fe6450d`. This refreshes the audit snapshot only and does not change the
   release boundary.
 - `origin/lane/fast-paths` now records `8c5c2ccb`, tightening backpressure
   evidence checks only.
