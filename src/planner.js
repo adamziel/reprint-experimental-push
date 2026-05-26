@@ -1467,6 +1467,12 @@ function wordpressGraphReferences(resource, value) {
       targetTable: 'posts',
       targetId: value.comment_post_ID,
     });
+    addReference({
+      field: 'user_id',
+      relationshipType: 'comment-user',
+      targetTable: 'users',
+      targetId: value.user_id,
+    });
   }
 
   if (suffix === 'postmeta') {
@@ -2472,6 +2478,12 @@ function unsupportedCommentsUsersResourceSupport({ resource, baseValue, localVal
         && reference.targetResource?.table === 'wp_posts'
         && getResource(remote, reference.targetResource) === ABSENT
         && getResource(local, reference.targetResource) !== ABSENT
+      )
+      || (
+        reference.relationshipType === 'comment-user'
+        && reference.targetResource?.table === 'wp_users'
+        && getResource(remote, reference.targetResource) === ABSENT
+        && getResource(local, reference.targetResource) !== ABSENT
       ));
 
     if (commentGraphReference) {
@@ -2480,7 +2492,9 @@ function unsupportedCommentsUsersResourceSupport({ resource, baseValue, localVal
         className: 'unsupported-comments-users-resource',
         reason: commentGraphReference.relationshipType === 'comment-parent'
           ? `WordPress graph mutation ${resource.key} is created in the same plan as a parent comment identity that depends on it, and identity rewriting is not yet supported.`
-          : `WordPress graph mutation ${resource.key} is created in the same plan as a comment post identity that depends on it, and identity rewriting is not yet supported.`,
+          : commentGraphReference.relationshipType === 'comment-post'
+            ? `WordPress graph mutation ${resource.key} is created in the same plan as a comment post identity that depends on it, and identity rewriting is not yet supported.`
+            : `WordPress graph mutation ${resource.key} is created in the same plan as a comment user identity that depends on it, and identity rewriting is not yet supported.`,
       };
     }
   }
