@@ -368,6 +368,43 @@ test('blocks a local post author reference to a same-plan user', () => {
   assert.equal(JSON.stringify(blocker).includes('local-author'), false);
 });
 
+test('blocks a local post author reference to a same-plan user even when an unrelated remote attachment exists', () => {
+  const base = baseSite();
+  const local = baseSite();
+  const remote = baseSite();
+
+  local.db.wp_users = {
+    'ID:2': {
+      ID: 2,
+      user_login: 'local-author',
+    },
+  };
+  local.db.wp_posts['ID:3'] = {
+    ID: 3,
+    post_title: 'Local authored post',
+    post_status: 'publish',
+    post_author: 2,
+  };
+  remote.db.wp_posts['ID:9'] = {
+    ID: 9,
+    post_title: 'Remote attachment noise',
+    post_content: 'remote-attachment-body',
+    post_status: 'inherit',
+    post_type: 'attachment',
+  };
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === 'row:["wp_posts","ID:3"]');
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(blocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(blocker.references[0].relationshipType, 'post-author-user');
+  assert.equal(blocker.references[0].targetResourceKey, 'row:["wp_users","id:2"]');
+  assert.match(blocker.reason, /graph identities without proven identity mapping or reference rewriting/);
+  assert.equal(JSON.stringify(blocker).includes('local-author'), false);
+  assert.equal(JSON.stringify(blocker).includes('remote-attachment-body'), false);
+});
+
 test('blocks a local commentmeta reference owned by a same-plan comment', () => {
   const base = baseSite();
   const local = baseSite();
