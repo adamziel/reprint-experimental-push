@@ -147,7 +147,10 @@ export function consumeProductionRecoveryJournal({
 
   const inspection = journal.inspect();
   journal.close();
-  return inspection;
+  return {
+    ...inspection,
+    consumed: true,
+  };
 }
 
 export function openPlanRecoveryJournal({

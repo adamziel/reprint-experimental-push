@@ -1091,6 +1091,18 @@ function runProductionRecoveryJournalProof({ plan, current, artifactRefs = {} })
   });
   journal.close();
 
+  const inspection = consumeProductionRecoveryJournal({
+    filePath: journalPath,
+    plan,
+    current,
+    artifactRefs,
+    claimId: activeClaimId,
+  });
+  assert.equal(inspection.consumed, true, 'production recovery journal consumer must report consumption');
+  assert.equal(inspection.journal.productionAdapter, 'openProductionRecoveryJournal');
+  assert.equal(inspection.journal.ownsJournal, true);
+  assert.equal(inspection.journal.restartReadable, true);
+
   const staleClaimId = `${activeClaimId}-stale`;
   const staleJournal = openProductionRecoveryJournal({
     filePath: journalPath,
@@ -1114,13 +1126,6 @@ function runProductionRecoveryJournalProof({ plan, current, artifactRefs = {} })
     staleJournal.close();
   }
 
-  const inspection = consumeProductionRecoveryJournal({
-    filePath: journalPath,
-    plan,
-    current,
-    artifactRefs,
-    claimId: activeClaimId,
-  });
   return {
     journal: {
       ...inspection.journal,
@@ -1130,6 +1135,7 @@ function runProductionRecoveryJournalProof({ plan, current, artifactRefs = {} })
       ...inspection.leaseFence,
       staleClaimRejected,
     },
+    consumed: inspection.consumed,
   };
 }
 
