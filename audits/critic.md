@@ -1,5 +1,27 @@
 # Critic Audit
 
+## 2026-05-26 15:35:07 CEST (+0200)
+
+No gate movement. `325950822499a32663371ed99a487d3faa0e0d4c` is the current reliable head from `git ls-remote`; it tightens release-verifier startup diagnostics in `scripts/playground/production-shaped-release-verify.mjs`, which makes the checked failure path clearer, but it still proves harness diagnostics rather than a production-backed auth/session lifecycle or a closed durable-journal ownership boundary on the release path. The verdict remains `0/4`.
+
+Changed files:
+- [`audits/critic.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/critic/audits/critic.md)
+
+Commands run:
+- `date '+%Y-%m-%d %H:%M:%S %Z (%z)'`
+- `git ls-remote origin refs/heads/lane/reliable-executor`
+- `git show --stat --oneline --no-renames --summary 325950822499a32663371ed99a487d3faa0e0d4c --`
+
+Push result:
+- Not attempted
+
+Worktree status:
+- Modified tracked files: `audits/critic.md`
+- Branch: `lane/cycle-20260525-mainwindows-2349/critic-current-20260526-1408...origin/lane/critic`
+
+Next supervisor nudge:
+- Keep critic narrow and only reclassify again when `reliable-executor` lands checked-path production-backed auth/session lifecycle, durable-journal ownership, or preserved-remote retry proof that reaches the release boundary.
+
 ## 2026-05-26 15:20:31 CEST (+0200)
 
 No gate movement. `e82e3b1af126f62688f617a3fb4cc0baeb698d57` is the current reliable head from `git ls-remote`; it consumes the packaged auth session source on the checked release-verify path, which keeps release-side source selection aligned, but it still proves packaged source consumption rather than a production-backed auth/session lifecycle or a closed durable-journal ownership boundary on the release path. The verdict remains `0/4`.
