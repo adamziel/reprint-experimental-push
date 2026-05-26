@@ -55,6 +55,9 @@ Current executable gate:
 - The same details now also let compressed remote-index listings size the next
   bounded chunk window, but only as planning evidence with durable chunk
   receipts and the guarded publish record still deciding recovery.
+- The same details now also let a compressed release manifest size the next
+  bounded release-bundle fanout, but only as planning evidence with later
+  durable receipts still deciding pause or crash.
 - The same details also carry the explicit queue-headroom measurement bit, so a
   paused sender cannot look bounded when the headroom probe itself is missing.
 - The same details also expose whether queue headroom is visible on the raw

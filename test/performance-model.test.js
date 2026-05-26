@@ -4167,6 +4167,14 @@ test('safe fast paths retain all gate proofs and stay non-rejectable', () => {
   );
   assert.ok(
     model.safeFastPaths.some((fastPath) =>
+      fastPath.allowedShortcut === 'compress-release-manifest-and-reuse-cursor-to-size-bounded-release-bundle-fanout' &&
+      fastPath.gateProofs.skip.includes('compressed release manifest') &&
+      fastPath.gateProofs.recovery.includes('later durable receipts still classify pause or crash')
+    ),
+    'compressed release-manifest fanout stays planning-only and still needs later durable receipts',
+  );
+  assert.ok(
+    model.safeFastPaths.some((fastPath) =>
       fastPath.allowedShortcut === 'reuse-canonical-per-kind-budgets-for-planning-only-resume-sizing' &&
       fastPath.guardrails.includes('per-kind-budgets-stay-canonical') &&
       fastPath.guardrails.includes('resume-sizing-stays-planning-only-and-revalidated-before-write') &&
