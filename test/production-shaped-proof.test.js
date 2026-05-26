@@ -1128,6 +1128,23 @@ test('production auth/session lifecycle helper treats invalid or past expiry as 
   );
 });
 
+test('production auth/session lifecycle helper fails closed on string-valued cleanup aliases', () => {
+  assert.deepEqual(
+    evaluateProductionAuthSessionLifecycle({
+      id: 'psh_01j00000000000000000000000',
+      type: 'production-auth-session',
+      status: 'active',
+      expiresAt: '2099-01-01T00:00:00Z',
+      cleanup: 'true',
+    }),
+    {
+      ok: false,
+      required: 'boolean lifecycle flags',
+      observed: 'invalid-cleanup',
+    },
+  );
+});
+
 test('production auth/session lifecycle summary helper requires a preserved active read', () => {
   assert.deepEqual(
     evaluateProductionAuthSessionLifecycleSummary({
@@ -2427,6 +2444,34 @@ test('production auth/session lifecycle summary fails closed when direct preserv
       ok: false,
       required: 'boolean lifecycle flags',
       observed: 'invalid-preserved',
+    },
+  );
+});
+
+test('production auth/session lifecycle summary fails closed when direct preserved-read cleanup aliases are string values', () => {
+  assert.deepEqual(
+    evaluateProductionAuthSessionLifecycleSummary({
+      issued: {
+        step: 'preflight',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+      },
+      read: {
+        step: 'journal',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+        preserved: true,
+        cleanup: 'true',
+      },
+    }),
+    {
+      ok: false,
+      required: 'boolean lifecycle flags',
+      observed: 'invalid-cleanup',
     },
   );
 });

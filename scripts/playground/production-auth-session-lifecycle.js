@@ -371,7 +371,7 @@ function resolveInvalidAuthSessionLifecycleFlag(observation) {
     return observation.invalidLifecycleFlag;
   }
 
-  const lifecycleFlags = ['expired', 'revoked', 'cleanedUp', 'rotated', 'preserved'];
+  const lifecycleFlags = ['expired', 'revoked', 'cleanedUp', 'cleanup', 'rotated', 'preserved'];
   for (const flag of lifecycleFlags) {
     const value = observation[flag];
     if (value !== undefined && value !== null && typeof value !== 'boolean') {
