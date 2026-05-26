@@ -32,9 +32,11 @@ import {
   packagedProductionPluginReadinessBodyRetryable,
   packagedProductionPluginReadinessErrorRetryable,
   packagedProductionPluginNextRouteNotReadyProbeCounts,
+  packagedProductionPluginNextTimeoutProbeCount,
   packagedProductionPluginNotReadyProbeLimitReached,
   packagedProductionPluginPreflightReady,
   packagedProductionPluginPreflightRetryable,
+  packagedProductionPluginReadinessProbeTimedOut,
   packagedProductionPluginResetRouteNotReadyProbeCounts,
   packagedProductionPluginRouteRetryableWhilePackagedRouteStarting,
   packagedProductionPluginRouteRetryableWhileWordPressStarting,
@@ -1281,6 +1283,7 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
   let lastError = null;
   const lastProbes = [];
   let notReadyProbeCounts = { snapshot: 0, preflight: 0 };
+  let timeoutProbeCount = 0;
   while (Date.now() < deadline) {
     if (child.exitCode !== null || child.signalCode !== null) {
       const exitLabel =
@@ -1304,6 +1307,7 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
         },
       }, packagedServerFetchTimeoutMs);
       const snapshotText = await snapshot.text();
+      timeoutProbeCount = 0;
       const snapshotPreview = snapshotText.slice(0, readinessFailureBodyLimit);
       notReadyProbeCounts = packagedProductionPluginNextRouteNotReadyProbeCounts(
         notReadyProbeCounts,
@@ -1476,6 +1480,7 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
         headers: signedHeadersForProductionPreflight(),
       }, packagedServerFetchTimeoutMs);
       const preflightText = await preflight.text();
+      timeoutProbeCount = 0;
       const preview = preflightText.slice(0, readinessFailureBodyLimit);
       notReadyProbeCounts = packagedProductionPluginNextRouteNotReadyProbeCounts(
         notReadyProbeCounts,
@@ -1648,6 +1653,25 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
         throw error;
       }
       lastError = error;
+      timeoutProbeCount = packagedProductionPluginNextTimeoutProbeCount(timeoutProbeCount, error);
+      if (
+        packagedProductionPluginReadinessProbeTimedOut(error)
+        && packagedProductionPluginNotReadyProbeLimitReached(timeoutProbeCount)
+      ) {
+        await throwPlaygroundReadinessFailure(
+          child,
+          `Packaged Playground server hit ${timeoutProbeCount} consecutive readiness probe timeout${timeoutProbeCount === 1 ? '' : 's'}`,
+          lastError,
+          lastProbes,
+          getOutput(),
+          {
+            childPid: child.pid ?? null,
+            packagedProductionPlugin: true,
+            timeoutProbeCount,
+            maxTimeoutProbeCount: packagedProductionPluginMaxConsecutiveNotReadyProbes,
+          },
+        );
+      }
     }
     await sleep(readinessProbeIntervalMs);
   }

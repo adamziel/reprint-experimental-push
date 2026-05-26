@@ -211,6 +211,15 @@ export function packagedProductionPluginReadinessErrorRetryable(error) {
   return !(error && typeof error === 'object' && error.isPlaygroundReadinessFailure === true);
 }
 
+export function packagedProductionPluginReadinessProbeTimedOut(error) {
+  return Boolean(
+    error
+    && typeof error === 'object'
+    && typeof error.message === 'string'
+    && error.message.includes('Timed out fetching '),
+  );
+}
+
 export function packagedProductionPluginReadinessWordPressNotReady(status, bodyText = '') {
   return packagedProductionPluginWordPressNotReadyPattern.test(bodyText);
 }
@@ -223,6 +232,12 @@ export function packagedProductionPluginNextNotReadyProbeCount(currentCount, sta
 
 export function packagedProductionPluginNotReadyProbeLimitReached(currentCount) {
   return currentCount >= packagedProductionPluginMaxConsecutiveNotReadyProbes;
+}
+
+export function packagedProductionPluginNextTimeoutProbeCount(currentCount, error) {
+  return packagedProductionPluginReadinessProbeTimedOut(error)
+    ? currentCount + 1
+    : 0;
 }
 
 export function packagedProductionPluginNextRouteNotReadyProbeCounts(

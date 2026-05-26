@@ -31,10 +31,12 @@ import {
   packagedProductionPluginMaxConsecutiveNotReadyProbes,
   packagedProductionPluginNextNotReadyProbeCount,
   packagedProductionPluginNextRouteNotReadyProbeCounts,
+  packagedProductionPluginNextTimeoutProbeCount,
   packagedProductionPluginNotReadyProbeLimitReached,
   packagedProductionPluginPreflightTerminal,
   packagedProductionPluginReadinessBodyRetryable,
   packagedProductionPluginReadinessErrorRetryable,
+  packagedProductionPluginReadinessProbeTimedOut,
   packagedProductionPluginPreflightReady,
   packagedProductionPluginPreflightRetryable,
   packagedProductionPluginResetRouteNotReadyProbeCounts,
@@ -1700,6 +1702,37 @@ test('packaged production plugin readiness helper does not retry terminal readin
       isPlaygroundReadinessFailure: true,
     }),
     false,
+  );
+  assert.equal(
+    packagedProductionPluginReadinessProbeTimedOut(
+      new Error('Timed out fetching http://127.0.0.1:9400/wp-json/reprint/v1/push/snapshot'),
+    ),
+    true,
+  );
+  assert.equal(
+    packagedProductionPluginReadinessProbeTimedOut(new Error('transient fetch failure')),
+    false,
+  );
+  assert.equal(
+    packagedProductionPluginNextTimeoutProbeCount(
+      0,
+      new Error('Timed out fetching http://127.0.0.1:9400/wp-json/reprint/v1/push/snapshot'),
+    ),
+    1,
+  );
+  assert.equal(
+    packagedProductionPluginNextTimeoutProbeCount(
+      packagedProductionPluginMaxConsecutiveNotReadyProbes - 1,
+      new Error('Timed out fetching http://127.0.0.1:9400/wp-json/'),
+    ),
+    packagedProductionPluginMaxConsecutiveNotReadyProbes,
+  );
+  assert.equal(
+    packagedProductionPluginNextTimeoutProbeCount(
+      3,
+      new Error('socket hang up'),
+    ),
+    0,
   );
   assert.equal(
     packagedProductionPluginRouteRetryableWhileWordPressStarting(

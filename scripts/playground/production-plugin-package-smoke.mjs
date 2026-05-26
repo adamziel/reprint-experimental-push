@@ -15,12 +15,14 @@ import {
 import {
   packagedProductionPluginMaxConsecutiveNotReadyProbes,
   packagedProductionPluginNextRouteNotReadyProbeCounts,
+  packagedProductionPluginNextTimeoutProbeCount,
   packagedProductionPluginNotReadyProbeLimitReached,
   packagedProductionPluginPreflightTerminal,
   packagedProductionPluginPreflightReady,
   packagedProductionPluginPreflightRetryable,
   packagedProductionPluginReadinessBodyRetryable,
   packagedProductionPluginReadinessErrorRetryable,
+  packagedProductionPluginReadinessProbeTimedOut,
   packagedProductionPluginResetRouteNotReadyProbeCounts,
   packagedProductionPluginRouteRetryableWhilePackagedRouteStarting,
   packagedProductionPluginRouteRetryableWhileWordPressStarting,
@@ -448,6 +450,7 @@ async function waitForServer(child, baseUrl, logs) {
   let lastError = null;
   let lastProbe = null;
   let notReadyProbeCounts = { snapshot: 0, preflight: 0 };
+  let timeoutProbeCount = 0;
 
   while (Date.now() < deadline) {
     if (child.exitCode !== null) {
@@ -463,6 +466,7 @@ async function waitForServer(child, baseUrl, logs) {
         },
       }, readinessProbeFetchTimeoutMs);
       const snapshotText = await snapshotResponse.text();
+      timeoutProbeCount = 0;
       notReadyProbeCounts = packagedProductionPluginNextRouteNotReadyProbeCounts(
         notReadyProbeCounts,
         'snapshot',
@@ -594,6 +598,7 @@ async function waitForServer(child, baseUrl, logs) {
           },
         }, readinessProbeFetchTimeoutMs);
         const preflightText = await preflightResponse.text();
+        timeoutProbeCount = 0;
         notReadyProbeCounts = packagedProductionPluginNextRouteNotReadyProbeCounts(
           notReadyProbeCounts,
           'preflight',
@@ -729,6 +734,18 @@ async function waitForServer(child, baseUrl, logs) {
         throw error;
       }
       lastError = error;
+      timeoutProbeCount = packagedProductionPluginNextTimeoutProbeCount(timeoutProbeCount, error);
+      if (
+        packagedProductionPluginReadinessProbeTimedOut(error)
+        && packagedProductionPluginNotReadyProbeLimitReached(timeoutProbeCount)
+      ) {
+        const lastResponse = lastProbe === null
+          ? ''
+          : `\nLast readiness probe route: ${lastProbe.route}\nLast readiness probe status: ${lastProbe.status}\nLast readiness probe body: ${JSON.stringify(lastProbe.body, null, 2)}`;
+        throw new Error(
+          `Packaged production plugin readiness hit ${timeoutProbeCount} consecutive probe timeout${timeoutProbeCount === 1 ? '' : 's'}${lastResponse}\n${logs.join('')}`,
+        );
+      }
     }
 
     await sleep(500);
