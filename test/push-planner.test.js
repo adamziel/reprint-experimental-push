@@ -21134,92 +21134,116 @@ test('production recovery support report fails closed when the persisted claim o
   assert.ok(report.missingDependency.includes('fencing or lease ownership for the journal writer'));
 });
 
-test('production recovery support report accepts stale-claim fencing records before journal-opened', () => {
-  const filePath = tempRecoveryJournalPath();
-  const remoteArtifactPath = `${path.dirname(filePath)}/remote.jsonl`;
-  const journal = openProductionRecoveryJournal(filePath, {
-    truncate: true,
-    now: fixedNow,
-    claimId: 'claim-2',
-    writerLease: { id: 'claim-2' },
-    ownsRemoteArtifact: true,
-    remoteArtifactPath,
-  });
-
-  appendStaleClaimAdvanced(journal, {
-    plan: { id: 'plan-2' },
-    current: baseSite(),
-    previousClaimId: 'claim-1',
-    claimId: 'claim-2',
-    staleThresholdMs: 5000,
-    previousClaimAgeMs: 7000,
+test('production recovery support report fails closed when the first persisted claim record is stale-claim-advanced before journal-opened', () => {
+  const claimId = 'claim-2';
+  const previousClaimId = 'claim-1';
+  const claimHash = digest({ recoveryJournalClaim: claimId });
+  const previousClaimHash = digest({ recoveryJournalClaim: previousClaimId });
+  const report = productionRecoverySupportReport({
+    kind: 'production-recovery-journal',
+    productionAdapter: true,
+    supportedSurface: 'production-recovery-journal-adapter',
+    restartReadable: true,
+    ownsJournal: true,
+    ownsRemoteArtifact: false,
+    claimHash,
+    writerLease: { id: claimId },
+    leaseFence: { id: claimId },
+    journalPath: '/var/lib/reprint/recovery.jsonl',
     artifactRefs: {
-      journal: filePath,
-      remote: remoteArtifactPath,
+      journal: '/var/lib/reprint/recovery.jsonl',
+      remote: null,
     },
-  });
-  journal.appendEvent('journal-opened', {
-    planId: 'plan-2',
-    state: 'opened',
-    observedHash: 'snapshot-hash-only',
-    artifactRefs: {
-      journal: filePath,
-      remote: remoteArtifactPath,
+    schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+    appendEvent() {
+      return null;
     },
+    flush() {},
+    close() {},
+    inspect() {
+      return {
+        filePath: '/var/lib/reprint/recovery.jsonl',
+        schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+        artifactRefs: {
+          journal: '/var/lib/reprint/recovery.jsonl',
+          remote: null,
+        },
+        records: [
+          {
+            sequence: 1,
+            type: 'stale-claim-advanced',
+            claimHash,
+            previousClaimHash,
+            claimLease: { id: claimId },
+          },
+          {
+            sequence: 2,
+            type: 'journal-opened',
+          },
+        ],
+      };
+    },
+    assertCurrentClaim() {},
   });
-  journal.close();
 
-  const report = productionRecoverySupportReport(journal);
-
-  assert.equal(report.supported, true);
-  assert.deepEqual(report.missingDependency, []);
-  assert.equal(report.inspectedJournalPath, filePath);
-  assert.equal(report.writerJournalPath, filePath);
-  assert.equal(report.inspectionErrorMessage, null);
+  assert.equal(report.supported, false);
+  assert.ok(report.missingDependency.includes('fencing or lease ownership for the journal writer'));
 });
 
-test('production recovery support report accepts stale-claim fencing records before journal-retry-opened', () => {
-  const filePath = tempRecoveryJournalPath();
-  const remoteArtifactPath = `${path.dirname(filePath)}/remote.jsonl`;
-  const journal = openProductionRecoveryJournal(filePath, {
-    truncate: true,
-    now: fixedNow,
-    claimId: 'claim-retry-opened',
-    writerLease: { id: 'claim-retry-opened' },
-    ownsRemoteArtifact: true,
-    remoteArtifactPath,
-  });
-
-  appendStaleClaimAdvanced(journal, {
-    plan: { id: 'plan-retry-opened' },
-    current: baseSite(),
-    previousClaimId: 'claim-retry-opened-previous',
-    claimId: 'claim-retry-opened',
-    staleThresholdMs: 5000,
-    previousClaimAgeMs: 7000,
+test('production recovery support report fails closed when the first persisted claim record is stale-claim-advanced before journal-retry-opened', () => {
+  const claimId = 'claim-retry-opened';
+  const previousClaimId = 'claim-retry-opened-previous';
+  const claimHash = digest({ recoveryJournalClaim: claimId });
+  const previousClaimHash = digest({ recoveryJournalClaim: previousClaimId });
+  const report = productionRecoverySupportReport({
+    kind: 'production-recovery-journal',
+    productionAdapter: true,
+    supportedSurface: 'production-recovery-journal-adapter',
+    restartReadable: true,
+    ownsJournal: true,
+    ownsRemoteArtifact: false,
+    claimHash,
+    writerLease: { id: claimId },
+    leaseFence: { id: claimId },
+    journalPath: '/var/lib/reprint/recovery.jsonl',
     artifactRefs: {
-      journal: filePath,
-      remote: remoteArtifactPath,
+      journal: '/var/lib/reprint/recovery.jsonl',
+      remote: null,
     },
-  });
-  journal.appendEvent('journal-retry-opened', {
-    planId: 'plan-retry-opened',
-    state: 'retrying-old-remote',
-    observedHash: 'snapshot-hash-only',
-    artifactRefs: {
-      journal: filePath,
-      remote: remoteArtifactPath,
+    schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+    appendEvent() {
+      return null;
     },
+    flush() {},
+    close() {},
+    inspect() {
+      return {
+        filePath: '/var/lib/reprint/recovery.jsonl',
+        schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+        artifactRefs: {
+          journal: '/var/lib/reprint/recovery.jsonl',
+          remote: null,
+        },
+        records: [
+          {
+            sequence: 1,
+            type: 'stale-claim-advanced',
+            claimHash,
+            previousClaimHash,
+            claimLease: { id: claimId },
+          },
+          {
+            sequence: 2,
+            type: 'journal-retry-opened',
+          },
+        ],
+      };
+    },
+    assertCurrentClaim() {},
   });
-  journal.close();
 
-  const report = productionRecoverySupportReport(journal);
-
-  assert.equal(report.supported, true);
-  assert.deepEqual(report.missingDependency, []);
-  assert.equal(report.inspectedJournalPath, filePath);
-  assert.equal(report.writerJournalPath, filePath);
-  assert.equal(report.inspectionErrorMessage, null);
+  assert.equal(report.supported, false);
+  assert.ok(report.missingDependency.includes('fencing or lease ownership for the journal writer'));
 });
 
 test('production recovery support report fails closed when a persisted claim boundary omits artifact refs', () => {
