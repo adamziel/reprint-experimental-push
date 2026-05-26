@@ -12,16 +12,17 @@ Commands run:
 
 Evidence checked:
 - `origin/lane/reliable-executor` -> `0c4fd10f`
-- `origin/lane/no-data-loss-invariants` -> `41fba8ae`
+- `origin/lane/no-data-loss-invariants` -> `04927056`
 - `origin/lane/no-data-loss-recovery` -> `47b675c0`
-- `origin/lane/fast-paths` -> `af79456d`
+- `origin/lane/fast-paths` -> `3ef373f4`
 - `origin/lane/critic` -> `e986a490`
 - `origin/lane/progress-publisher` -> `7695e1f9`
-- `origin/lane/independent-auditor` -> `5624aefd`
+- `origin/lane/independent-auditor` -> `814b43dd`
 - `origin/lane/same-plan-wordpress-graph-create` -> `69f27361`
 - `origin/lane/cycle-20260525-mainwindows-2349/same-plan-wordpress-graph-create` -> `e9cbf9d4`
 - `origin/lane/cycle-20260525-mainwindows-2357/no-data-loss-invariants-graph-proof` -> `98c0ce26`
 - `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration` -> `295dc72a`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `eb0f9a90`
 - `origin/main` -> `4b7b47a6`
 - `package.json` still omits `verify`, `verify:release`, and `release`
 
