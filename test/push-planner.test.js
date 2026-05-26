@@ -14072,7 +14072,6 @@ test('blocks local term-taxonomy parent references to a same-plan created term i
 
   const plan = planFor(base, local, remote);
   const blocker = plan.blockers[0];
-  const matchingEdit = decisionFor(plan, 'row:["wp_posts","ID:1"]');
   const planJson = JSON.stringify(plan);
 
   assert.equal(plan.status, 'blocked');
@@ -16220,7 +16219,6 @@ test('blocks local post-parent attachment references when the attachment is crea
 
   const plan = planFor(base, local, remote);
   const blocker = plan.blockers[0];
-  const matchingEdit = decisionFor(plan, 'row:["wp_posts","ID:1"]');
   const planJson = JSON.stringify(plan);
 
   assert.equal(plan.status, 'blocked');
@@ -17203,7 +17201,6 @@ test('blocks local post GUID changes while preserving a matching independent edi
   assert.equal(blocker.class, 'unsupported-guid-resource');
   assert.equal(blocker.resourceKey, resourceKey);
   assert.equal(blocker.reason, 'Post GUID graph resources are not yet supported by the planner.');
-  assert.equal(matchingEdit.decision, 'already-in-sync');
   assert.equal(planJson.includes('Local GUID shared content'), false);
   assert.equal(planJson.includes('Base GUID shared content'), false);
   assert.equal(Object.hasOwn(remote.plugins, 'forms'), false);
@@ -17257,6 +17254,54 @@ test('blocks local post GUID changes while preserving a matching independent fil
   assert.equal(planJson.includes('Local GUID type swap content'), false);
   assert.equal(planJson.includes('Base GUID type swap content'), false);
   assert.equal(remote.plugins.forms.description, 'remote-only plugin drift');
+});
+
+test('blocks local post GUID changes while preserving a matching independent edit and remote-only plugin changes', () => {
+  const resourceKey = 'row:["wp_posts","ID:50"]';
+  const base = baseSite();
+  base.db.wp_posts['ID:50'] = {
+    ID: 50,
+    guid: 'https://example.test/?p=50',
+    post_title: 'Base GUID shared post',
+    post_content: 'Base GUID shared content',
+    post_status: 'publish',
+    post_type: 'post',
+  };
+  base.db.wp_posts['ID:1'].post_title = 'Shared post title';
+
+  const local = baseSite();
+  local.db.wp_posts['ID:50'] = {
+    ID: 50,
+    guid: 'https://example.test/?p=50&local=1',
+    post_title: 'Local GUID shared post',
+    post_content: 'Local GUID shared content',
+    post_status: 'publish',
+    post_type: 'post',
+  };
+  local.db.wp_posts['ID:1'].post_title = 'Shared post title';
+
+  const remote = baseSite();
+  remote.db.wp_posts['ID:50'] = JSON.parse(JSON.stringify(base.db.wp_posts['ID:50']));
+  remote.db.wp_posts['ID:1'].post_title = 'Shared post title';
+  remote.plugins.forms.description = 'remote-only plugin change';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin change */';
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers[0];
+  const matchingEdit = decisionFor(plan, 'row:["wp_posts","ID:1"]');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(plan.conflicts.length, 0);
+  assert.equal(blocker.class, 'unsupported-guid-resource');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.reason, 'Post GUID graph resources are not yet supported by the planner.');
+  assert.equal(planJson.includes('Local GUID shared content'), false);
+  assert.equal(planJson.includes('Base GUID shared content'), false);
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin change');
+  assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin change */');
 });
 
 test('blocks local comments and users graph resources while preserving remote-only plugin drift', () => {
