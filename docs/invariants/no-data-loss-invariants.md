@@ -216,6 +216,10 @@ This note captures the planner boundary in plain language.
   matching independent edit is already in sync and remote-only plugin
   removals are present; the matching edit stays `already-in-sync`, the plugin
   removals stay `keep-remote`, and the graph blocker evidence stays bounded.
+- A same-plan-created fifo-like special file must still stop even when a
+  matching independent edit is already in sync and remote-only plugin
+  removals are present; the matching edit stays `already-in-sync`, the plugin
+  removals stay `keep-remote`, and the graph blocker evidence stays bounded.
 - A local serialized block reference must still stop when unrelated
   remote-only plugin changes are present; the serialized-block blocker stays
   bounded and the plugin changes stay `keep-remote`.
