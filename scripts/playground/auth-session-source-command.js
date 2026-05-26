@@ -4,6 +4,10 @@ export function buildAuthSessionSourceCommand({
   username,
   applicationPassword,
 }) {
+  const normalizedNodePath = normalizeAuthSessionSourceCommandField(nodePath);
+  if (!normalizedNodePath) {
+    throw new Error('Missing nodePath for auth-session source command');
+  }
   const normalizedSourceUrl = normalizeAuthSessionSourceCommandField(sourceUrl);
   if (!normalizedSourceUrl) {
     throw new Error('Missing sourceUrl for auth-session source command');
@@ -21,7 +25,7 @@ export function buildAuthSessionSourceCommand({
     `REPRINT_PUSH_SOURCE_COMMAND_SOURCE_URL=${escapeShellEnvValue(normalizedSourceUrl)}`,
     `REPRINT_PUSH_SOURCE_COMMAND_USERNAME=${escapeShellEnvValue(normalizedUsername)}`,
     `REPRINT_PUSH_SOURCE_COMMAND_APPLICATION_PASSWORD=${escapeShellEnvValue(normalizedApplicationPassword)}`,
-    `${nodePath} -e ${escapeShellEnvValue('process.stdout.write(JSON.stringify({sourceUrl: process.env.REPRINT_PUSH_SOURCE_COMMAND_SOURCE_URL, username: process.env.REPRINT_PUSH_SOURCE_COMMAND_USERNAME, applicationPassword: process.env.REPRINT_PUSH_SOURCE_COMMAND_APPLICATION_PASSWORD}))')}`,
+    `${escapeShellEnvValue(normalizedNodePath)} -e ${escapeShellEnvValue('process.stdout.write(JSON.stringify({sourceUrl: process.env.REPRINT_PUSH_SOURCE_COMMAND_SOURCE_URL, username: process.env.REPRINT_PUSH_SOURCE_COMMAND_USERNAME, applicationPassword: process.env.REPRINT_PUSH_SOURCE_COMMAND_APPLICATION_PASSWORD}))')}`,
   ].join(' ');
 }
 

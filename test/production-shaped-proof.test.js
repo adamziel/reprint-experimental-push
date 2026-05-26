@@ -915,7 +915,7 @@ test('auth-session source command builder emits a shell-safe node snippet', () =
 
   assert.equal(
     command,
-    "REPRINT_PUSH_SOURCE_COMMAND_SOURCE_URL='http://127.0.0.1:8080/path?label=owner'\\''s' REPRINT_PUSH_SOURCE_COMMAND_USERNAME='reprint_push_owner'\\''oops' REPRINT_PUSH_SOURCE_COMMAND_APPLICATION_PASSWORD='p@ss'\\''word' /opt/node/bin/node -e 'process.stdout.write(JSON.stringify({sourceUrl: process.env.REPRINT_PUSH_SOURCE_COMMAND_SOURCE_URL, username: process.env.REPRINT_PUSH_SOURCE_COMMAND_USERNAME, applicationPassword: process.env.REPRINT_PUSH_SOURCE_COMMAND_APPLICATION_PASSWORD}))'",
+    "REPRINT_PUSH_SOURCE_COMMAND_SOURCE_URL='http://127.0.0.1:8080/path?label=owner'\\''s' REPRINT_PUSH_SOURCE_COMMAND_USERNAME='reprint_push_owner'\\''oops' REPRINT_PUSH_SOURCE_COMMAND_APPLICATION_PASSWORD='p@ss'\\''word' '/opt/node/bin/node' -e 'process.stdout.write(JSON.stringify({sourceUrl: process.env.REPRINT_PUSH_SOURCE_COMMAND_SOURCE_URL, username: process.env.REPRINT_PUSH_SOURCE_COMMAND_USERNAME, applicationPassword: process.env.REPRINT_PUSH_SOURCE_COMMAND_APPLICATION_PASSWORD}))'",
   );
 });
 
@@ -943,6 +943,26 @@ test('auth-session source command builder preserves shell-sensitive credential c
 });
 
 test('auth-session source command builder fails closed when required fields contain surrounding whitespace or control characters', () => {
+  assert.throws(
+    () => buildAuthSessionSourceCommand({
+      nodePath: ' /opt/node/bin/node ',
+      sourceUrl: 'http://127.0.0.1:8080',
+      username: 'reprint_push_admin',
+      applicationPassword: 'reprint-push-admin-app-password',
+    }),
+    /Missing nodePath/,
+  );
+
+  assert.throws(
+    () => buildAuthSessionSourceCommand({
+      nodePath: '/opt/node/bin/node\u0000',
+      sourceUrl: 'http://127.0.0.1:8080',
+      username: 'reprint_push_admin',
+      applicationPassword: 'reprint-push-admin-app-password',
+    }),
+    /Missing nodePath/,
+  );
+
   assert.throws(
     () => buildAuthSessionSourceCommand({
       sourceUrl: ' http://127.0.0.1:8080 ',
