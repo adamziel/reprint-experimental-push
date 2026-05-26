@@ -184,6 +184,13 @@ export function productionThroughputBlockers(report) {
   if (report.evidence.journal?.successReceiptKindLedgerComplete !== true) {
     blockers.push('receipt-ledger-kind-summary-not-proven');
   }
+  if (
+    !Array.isArray(report.evidence.journal?.successReceiptKindLedger)
+    || report.evidence.journal.successReceiptKindLedger.length !== report.evidence.journal.successRecords
+    || report.evidence.journal.successReceiptKindLedger.some((entry) => !entry || typeof entry.kind !== 'string' || entry.kind.length === 0)
+  ) {
+    blockers.push('receipt-ledger-kind-summary-mismatch');
+  }
   if (!report.evidence.redaction.durableJournalsContainNoRawValues) {
     blockers.push('durable-journal-redaction-not-proven');
   }

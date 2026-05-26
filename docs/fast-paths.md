@@ -83,6 +83,9 @@ Current executable gate:
 - The production-throughput gate also fails closed if the success journal no
   longer keeps receipt flushes grouped by kind, so journal lag savings cannot
   hide interleaved recovery evidence.
+- The production-throughput gate also fails closed if the success receipt-kind
+  ledger no longer matches the recorded success count, so a truncated journal
+  summary cannot masquerade as complete recovery evidence.
 - The report now also fails closed if receipt-cursor queue slack is missing on
   any path, so the benchmark cannot quietly accept an under-instrumented
   backpressure record.
