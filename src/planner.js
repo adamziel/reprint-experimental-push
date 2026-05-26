@@ -3969,9 +3969,12 @@ function unsupportedTermTaxonomyResourceSupport({ resource, baseValue, localValu
     ['term-taxonomy-parent', 0],
     ['term-taxonomy-term', 1],
   ]), left, right));
+  const samePlanReferences = [
+    ...samePlanCreatedTermReferences,
+    ...samePlanCreatedTaxonomyRelationshipReferences,
+  ];
   const unsupportedState = (
-    samePlanCreatedTermReferences.length > 0
-    || samePlanCreatedTaxonomyRelationshipReferences.length > 0
+    samePlanReferences.length > 0
   )
     ? 'same-plan-reference'
     : classifyUnsupportedDriftState({
@@ -3992,9 +3995,7 @@ function unsupportedTermTaxonomyResourceSupport({ resource, baseValue, localValu
         : samePlanCreatedTaxonomyRelationshipReferences.length > 0
           ? `WordPress graph mutation ${resource.key} is created in the same plan as a term relationship taxonomy target that depends on it, and identity rewriting is not yet supported.`
           : 'Term taxonomy graph resources are not yet supported by the planner.',
-    references: samePlanCreatedTermReferences.length > 0
-      ? samePlanCreatedTermReferences
-      : samePlanCreatedTaxonomyRelationshipReferences,
+    references: samePlanReferences,
   };
 }
 

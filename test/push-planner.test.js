@@ -17883,6 +17883,105 @@ test('prioritizes parent term taxonomy blocker wording while carrying bounded pa
   assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin drift */');
 });
 
+test('prioritizes parent term taxonomy blocker wording while carrying bounded parent, term, and relationship references for a same-plan created term taxonomy identity', () => {
+  const taxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:5"]';
+  const termResourceKey = 'row:["wp_terms","term_id:9"]';
+  const parentTermResourceKey = 'row:["wp_terms","term_id:10"]';
+  const relationshipResourceKey = 'row:["wp_term_relationships","object_id:7,term_taxonomy_id:5"]';
+  const base = baseSite();
+  base.db.wp_posts['ID:1'].post_title = 'Shared term taxonomy dependency post';
+  base.db.wp_posts['ID:7'] = {
+    ID: 7,
+    post_title: 'Base relationship post',
+    post_status: 'publish',
+  };
+  base.db.wp_terms = {};
+  base.db.wp_term_taxonomy = {};
+  base.db.wp_term_relationships = {};
+
+  const local = baseSite();
+  local.db.wp_terms = {
+    'term_id:9': {
+      term_id: 9,
+      name: 'Local same-plan taxonomy term',
+      slug: 'local-same-plan-taxonomy-term',
+    },
+    'term_id:10': {
+      term_id: 10,
+      name: 'Local same-plan taxonomy parent',
+      slug: 'local-same-plan-taxonomy-parent',
+    },
+  };
+  local.db.wp_posts['ID:1'].post_title = 'Shared term taxonomy dependency post';
+  local.db.wp_posts['ID:7'] = JSON.parse(JSON.stringify(base.db.wp_posts['ID:7']));
+  local.db.wp_term_taxonomy = {
+    'term_taxonomy_id:5': {
+      term_taxonomy_id: 5,
+      term_id: 9,
+      taxonomy: 'category',
+      parent: 10,
+      description: 'local same-plan term taxonomy description',
+    },
+  };
+  local.db.wp_term_relationships = {
+    'object_id:7,term_taxonomy_id:5': {
+      object_id: 7,
+      term_taxonomy_id: 5,
+      term_order: 0,
+      note: 'local relationship note',
+    },
+  };
+
+  const remote = baseSite();
+  remote.db.wp_terms = {};
+  remote.db.wp_posts['ID:1'].post_title = 'Shared term taxonomy dependency post';
+  remote.db.wp_posts['ID:7'] = JSON.parse(JSON.stringify(base.db.wp_posts['ID:7']));
+  remote.db.wp_term_taxonomy = {};
+  remote.db.wp_term_relationships = {};
+  remote.plugins.forms.description = 'remote-only plugin drift';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin drift */';
+
+  const plan = planFor(base, local, remote);
+  const taxonomyBlocker = plan.blockers.find((entry) => entry.resourceKey === taxonomyResourceKey);
+  const termBlocker = plan.blockers.find((entry) => entry.resourceKey === termResourceKey);
+  const parentTermBlocker = plan.blockers.find((entry) => entry.resourceKey === parentTermResourceKey);
+  const relationshipBlocker = plan.blockers.find((entry) => entry.resourceKey === relationshipResourceKey);
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, taxonomyResourceKey), undefined);
+  assert.equal(decisionFor(plan, taxonomyResourceKey), undefined);
+  assert.equal(taxonomyBlocker.class, 'unsupported-term-taxonomy-resource');
+  assert.equal(taxonomyBlocker.resourceKey, taxonomyResourceKey);
+  assert.equal(taxonomyBlocker.unsupportedState, 'same-plan-reference');
+  assert.equal(
+    taxonomyBlocker.reason,
+    'WordPress graph mutation row:["wp_term_taxonomy","term_taxonomy_id:5"] is created in the same plan as a parent term identity that depends on it, and identity rewriting is not yet supported.',
+  );
+  assert.deepEqual(
+    taxonomyBlocker.references.map((reference) => [reference.relationshipType, reference.sourceResourceKey]),
+    [
+      ['term-taxonomy-parent', taxonomyResourceKey],
+      ['term-taxonomy-term', taxonomyResourceKey],
+      ['term-relationship-taxonomy', relationshipResourceKey],
+    ],
+  );
+  assert.equal(parentTermBlocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(termBlocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(relationshipBlocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('Local same-plan taxonomy term'), false);
+  assert.equal(planJson.includes('Local same-plan taxonomy parent'), false);
+  assert.equal(planJson.includes('local same-plan term taxonomy description'), false);
+  assert.equal(planJson.includes('local relationship note'), false);
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin drift');
+  assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin drift */');
+});
+
 test('blocks local term-relationship references to a same-plan created term-taxonomy identity while preserving remote-only plugin drift', () => {
   const resourceKey = 'row:["wp_term_relationships","object_id:7,term_taxonomy_id:5"]';
   const targetResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:5"]';
