@@ -5684,6 +5684,21 @@ test('production throughput details fail closed when receipt-cursor backpressure
   assert.ok(blockers.includes('receipt-cursor-backpressure-exceeds-queue-budget'));
 });
 
+test('production throughput details fail closed when receipt-cursor queue slack exceeds the queue budget', () => {
+  const report = runGuardedExecutorBenchmark({ profile: 'ci' });
+  const oversizedQueueSlack = structuredClone(report);
+
+  oversizedQueueSlack.evidence.backpressure.receiptCursorQueueSlackBytes =
+    oversizedQueueSlack.evidence.backpressure.queueBudgetBytes + 1;
+
+  const details = productionThroughputDetails(oversizedQueueSlack);
+  const blockers = productionThroughputBlockers(oversizedQueueSlack);
+
+  assert.equal(details.backpressureConsistency.receiptCursorQueueSlackWithinQueueBudget, false);
+  assert.equal(details.backpressureConsistency.backpressureEvidenceComplete, false);
+  assert.ok(blockers.includes('receipt-cursor-queue-slack-exceeds-queue-budget'));
+});
+
 test('production throughput blocks malformed parallelism limits before faster execution can be claimed', () => {
   const report = runGuardedExecutorBenchmark({
     profile: 'ci',
