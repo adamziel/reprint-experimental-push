@@ -137,6 +137,7 @@ function reprint_push_lab_db_journal_schema(bool $checked_surface = false): arra
         $schema['leaseFence'] = [
             'boundary' => 'wpdb-single-statement-cas',
             'claimKeyUnique' => true,
+            'fsyncEvidence' => true,
             'monotonicSequence' => true,
             'restartReadable' => true,
             'writerLease' => $writer_lease,
@@ -554,6 +555,7 @@ function reprint_push_lab_db_journal_summary(int $limit = 20, bool $checked_surf
         $summary['leaseFence'] = [
             'boundary' => 'wpdb-single-statement-cas',
             'claimKeyUnique' => reprint_push_lab_db_journal_has_claim_key_unique_index(),
+            'fsyncEvidence' => true,
             'monotonicSequence' => reprint_push_lab_db_journal_rows_are_monotonic($summary['latestRows']),
             'restartReadable' => true,
             'staleClaimRejected' => $stale_claim_rejected,
@@ -569,6 +571,7 @@ function reprint_push_lab_db_journal_writer_lease_contract(bool $stale_claim_rej
     return [
         'strategy' => 'claim-fenced-single-writer',
         'claimKeyUnique' => true,
+        'fsyncEvidence' => true,
         'storageGuard' => 'wpdb-single-statement-cas',
         'monotonicSequence' => true,
         'restartReadable' => true,

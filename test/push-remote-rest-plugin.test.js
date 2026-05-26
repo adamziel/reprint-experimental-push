@@ -94,6 +94,7 @@ test('checked db journal merge fills nested ownership and lease fence gaps', { s
       writerLease: {
         strategy: 'claim-fenced-single-writer',
         claimKeyUnique: true,
+        fsyncEvidence: true,
         storageGuard: 'wpdb-single-statement-cas',
         monotonicSequence: true,
         restartReadable: true,
@@ -102,11 +103,13 @@ test('checked db journal merge fills nested ownership and lease fence gaps', { s
       leaseFence: {
         boundary: 'wpdb-single-statement-cas',
         claimKeyUnique: true,
+        fsyncEvidence: true,
         monotonicSequence: true,
         restartReadable: true,
         writerLease: {
           strategy: 'claim-fenced-single-writer',
           claimKeyUnique: true,
+          fsyncEvidence: true,
           storageGuard: 'wpdb-single-statement-cas',
           monotonicSequence: true,
           restartReadable: true,
@@ -128,6 +131,7 @@ test('checked db journal merge fills nested ownership and lease fence gaps', { s
     writerLease: {
       strategy: 'claim-fenced-single-writer',
       claimKeyUnique: true,
+      fsyncEvidence: true,
       storageGuard: 'wpdb-single-statement-cas',
       monotonicSequence: true,
       restartReadable: true,
@@ -136,11 +140,13 @@ test('checked db journal merge fills nested ownership and lease fence gaps', { s
     leaseFence: {
       boundary: 'wpdb-single-statement-cas',
       claimKeyUnique: true,
+      fsyncEvidence: true,
       monotonicSequence: true,
       restartReadable: true,
       writerLease: {
         strategy: 'claim-fenced-single-writer',
         claimKeyUnique: true,
+        fsyncEvidence: true,
         storageGuard: 'wpdb-single-statement-cas',
         monotonicSequence: true,
         restartReadable: true,
@@ -891,11 +897,13 @@ test('checked db journal merge upgrades nested writer lease evidence when the au
       leaseFence: {
         boundary: 'wpdb-single-statement-cas',
         claimKeyUnique: true,
+        fsyncEvidence: true,
         monotonicSequence: true,
         restartReadable: true,
         writerLease: {
           strategy: 'claim-fenced-single-writer',
           claimKeyUnique: true,
+          fsyncEvidence: true,
           storageGuard: 'wpdb-single-statement-cas',
           monotonicSequence: true,
           restartReadable: true,
@@ -913,11 +921,13 @@ test('checked db journal merge upgrades nested writer lease evidence when the au
     leaseFence: {
       boundary: 'wpdb-single-statement-cas',
       claimKeyUnique: true,
+      fsyncEvidence: true,
       monotonicSequence: true,
       restartReadable: true,
       writerLease: {
         strategy: 'claim-fenced-single-writer',
         claimKeyUnique: true,
+        fsyncEvidence: true,
         storageGuard: 'wpdb-single-statement-cas',
         monotonicSequence: true,
         restartReadable: true,

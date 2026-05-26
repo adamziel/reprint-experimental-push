@@ -49,6 +49,7 @@ await withPlaygroundServer('remote-base', path.join(repoRoot, 'fixtures/playgrou
     assert.deepEqual(preflight.body.journal.dbJournal.leaseFence, {
       boundary: 'wpdb-single-statement-cas',
       claimKeyUnique: true,
+      fsyncEvidence: true,
       monotonicSequence: true,
       restartReadable: true,
     });
@@ -90,6 +91,7 @@ await withPlaygroundServer('remote-base', path.join(repoRoot, 'fixtures/playgrou
     assert.deepEqual(proof.recoveryInspect?.dbJournal?.leaseFence, {
       boundary: 'wpdb-single-statement-cas',
       claimKeyUnique: true,
+      fsyncEvidence: true,
       monotonicSequence: true,
       restartReadable: true,
       staleClaimRejected: false,
@@ -103,6 +105,7 @@ await withPlaygroundServer('remote-base', path.join(repoRoot, 'fixtures/playgrou
     assert.deepEqual(proof.dbJournal?.leaseFence, {
       boundary: 'wpdb-single-statement-cas',
       claimKeyUnique: true,
+      fsyncEvidence: true,
       monotonicSequence: true,
       restartReadable: true,
       staleClaimRejected: false,

@@ -2369,6 +2369,7 @@ test('production-shaped authenticated push accepts nested db journal storage gua
     assert.deepEqual(summary.dbJournal?.leaseFence, {
       boundary: 'wpdb-single-statement-cas',
       claimKeyUnique: true,
+      fsyncEvidence: false,
       monotonicSequence: true,
       restartReadable: true,
       staleClaimRejected: false,
@@ -6674,6 +6675,7 @@ test('production-shaped authenticated push accepts checked durable journal proof
           writerLease: {
             strategy: 'claim-fenced-single-writer',
             claimKeyUnique: true,
+            fsyncEvidence: true,
             storageGuard: 'wpdb-single-statement-cas',
             monotonicSequence: true,
             restartReadable: true,
@@ -6682,11 +6684,13 @@ test('production-shaped authenticated push accepts checked durable journal proof
           leaseFence: {
             boundary: 'wpdb-single-statement-cas',
             claimKeyUnique: true,
+            fsyncEvidence: true,
             monotonicSequence: true,
             restartReadable: true,
             writerLease: {
               strategy: 'claim-fenced-single-writer',
               claimKeyUnique: true,
+              fsyncEvidence: true,
               storageGuard: 'wpdb-single-statement-cas',
               monotonicSequence: true,
               restartReadable: true,
@@ -6787,6 +6791,7 @@ test('production-shaped authenticated push accepts checked durable journal proof
       writerLease: {
         strategy: 'claim-fenced-single-writer',
         claimKeyUnique: true,
+        fsyncEvidence: true,
         storageGuard: 'wpdb-single-statement-cas',
         monotonicSequence: true,
         restartReadable: true,
@@ -6795,6 +6800,7 @@ test('production-shaped authenticated push accepts checked durable journal proof
       leaseFence: {
         boundary: 'wpdb-single-statement-cas',
         claimKeyUnique: true,
+        fsyncEvidence: true,
         monotonicSequence: true,
         restartReadable: true,
         staleClaimRejected: false,
@@ -6813,6 +6819,7 @@ test('production-shaped authenticated push accepts checked durable journal proof
     assert.deepEqual(summary.dbJournal?.writerLease, {
       strategy: 'claim-fenced-single-writer',
       claimKeyUnique: true,
+      fsyncEvidence: true,
       storageGuard: 'wpdb-single-statement-cas',
       monotonicSequence: true,
       restartReadable: true,
@@ -6821,6 +6828,7 @@ test('production-shaped authenticated push accepts checked durable journal proof
     assert.deepEqual(summary.dbJournal?.leaseFence, {
       boundary: 'wpdb-single-statement-cas',
       claimKeyUnique: true,
+      fsyncEvidence: true,
       monotonicSequence: true,
       restartReadable: true,
       staleClaimRejected: false,
@@ -6987,6 +6995,7 @@ test('production-shaped authenticated push falls back to db-journal when checked
           writerLease: {
             strategy: 'claim-fenced-single-writer',
             claimKeyUnique: true,
+            fsyncEvidence: true,
             storageGuard: 'wpdb-single-statement-cas',
             monotonicSequence: true,
             restartReadable: true,
@@ -6995,6 +7004,7 @@ test('production-shaped authenticated push falls back to db-journal when checked
           leaseFence: {
             boundary: 'wpdb-single-statement-cas',
             claimKeyUnique: true,
+            fsyncEvidence: true,
             monotonicSequence: true,
             restartReadable: true,
             staleClaimRejected: false,
@@ -7044,6 +7054,7 @@ test('production-shaped authenticated push falls back to db-journal when checked
     assert.deepEqual(summary.dbJournal?.writerLease, {
       strategy: 'claim-fenced-single-writer',
       claimKeyUnique: true,
+      fsyncEvidence: true,
       storageGuard: 'wpdb-single-statement-cas',
       monotonicSequence: true,
       restartReadable: true,
@@ -7143,6 +7154,7 @@ test('production-shaped authenticated push prefers checked nested storage guard 
           writerLease: {
             strategy: 'claim-fenced-single-writer',
             claimKeyUnique: true,
+            fsyncEvidence: true,
             storageGuard: 'wpdb-single-statement-cas',
             monotonicSequence: true,
             restartReadable: true,
@@ -7151,6 +7163,7 @@ test('production-shaped authenticated push prefers checked nested storage guard 
           leaseFence: {
             boundary: 'wpdb-single-statement-cas',
             claimKeyUnique: true,
+            fsyncEvidence: true,
             monotonicSequence: true,
             restartReadable: true,
             staleClaimRejected: false,

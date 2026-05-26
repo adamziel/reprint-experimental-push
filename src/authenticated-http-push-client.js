@@ -1024,6 +1024,7 @@ function dbJournalCheckedBoundaryContractIsPresent(dbJournal) {
     && typeof dbJournal?.leaseFence?.boundary === 'string'
     && dbJournal.leaseFence.boundary.length > 0
     && dbJournal?.leaseFence?.claimKeyUnique === true
+    && dbJournal?.leaseFence?.fsyncEvidence === true
     && dbJournal?.leaseFence?.monotonicSequence === true
     && dbJournal?.leaseFence?.restartReadable === true;
 }
@@ -1040,6 +1041,7 @@ function dbJournalWriterLeaseContractIsPresent(dbJournal) {
   return typeof candidate?.strategy === 'string'
     && candidate.strategy.length > 0
     && candidate?.claimKeyUnique === true
+    && candidate?.fsyncEvidence === true
     && typeof candidate?.storageGuard === 'string'
     && candidate.storageGuard.length > 0
     && candidate?.monotonicSequence === true
@@ -1122,6 +1124,7 @@ function summarizeDbJournalLeaseFence(dbJournal) {
   return {
     boundary: leaseFence.boundary || null,
     claimKeyUnique: leaseFence.claimKeyUnique === true,
+    fsyncEvidence: leaseFence.fsyncEvidence === true,
     monotonicSequence: leaseFence.monotonicSequence === true,
     restartReadable: leaseFence.restartReadable === true,
     staleClaimRejected: leaseFence.staleClaimRejected === true,
@@ -1143,6 +1146,7 @@ function summarizeDbJournalWriterLease(dbJournal) {
   return {
     strategy: candidate.strategy || null,
     claimKeyUnique: candidate.claimKeyUnique === true,
+    fsyncEvidence: candidate.fsyncEvidence === true,
     storageGuard: candidate.storageGuard || null,
     monotonicSequence: candidate.monotonicSequence === true,
     restartReadable: candidate.restartReadable === true,

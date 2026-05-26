@@ -150,6 +150,7 @@ try {
     assert.deepEqual(dbJournalSchema.body.dbJournalSchema.leaseFence, {
       boundary: 'wpdb-single-statement-cas',
       claimKeyUnique: true,
+      fsyncEvidence: true,
       monotonicSequence: true,
       restartReadable: true,
     });
@@ -173,6 +174,7 @@ try {
     assert.deepEqual(dbJournal.body.dbJournal.leaseFence, {
       boundary: 'wpdb-single-statement-cas',
       claimKeyUnique: true,
+      fsyncEvidence: true,
       monotonicSequence: true,
       restartReadable: true,
       staleClaimRejected: false,
