@@ -11286,6 +11286,54 @@ test('blocks comments graph resources while preserving matching independent edit
   assert.equal(remote.plugins.forms.description, 'remote-only plugin drift');
 });
 
+test('blocks comments graph resources while preserving a matching independent file type swap and remote-only plugin removals', () => {
+  const resourceKey = 'row:["wp_comments","comment_ID:12"]';
+  const base = baseSite();
+  base.files['wp-content/uploads/gallery'] = { type: 'directory' };
+  base.db.wp_comments = {
+    'comment_ID:12': {
+      comment_ID: 12,
+      comment_post_ID: 1,
+      comment_parent: 0,
+      comment_content: 'Base comment',
+    },
+  };
+
+  const local = baseSite();
+  local.files['wp-content/uploads/gallery'] = 'shared replacement file';
+  local.db.wp_comments = {
+    'comment_ID:12': {
+      comment_ID: 12,
+      comment_post_ID: 1,
+      comment_parent: 0,
+      comment_content: 'Local comment',
+    },
+  };
+
+  const remote = baseSite();
+  remote.files['wp-content/uploads/gallery'] = 'shared replacement file';
+  remote.db.wp_comments = JSON.parse(JSON.stringify(base.db.wp_comments));
+  delete remote.plugins.forms;
+  delete remote.files['wp-content/plugins/forms/forms.php'];
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  const typeSwapDecision = decisionFor(plan, 'file:wp-content/uploads/gallery');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(blocker.class, 'unsupported-comments-users-resource');
+  assert.equal(blocker.reason, 'Comments graph resources are not yet supported by the planner.');
+  assert.equal(typeSwapDecision.decision, 'already-in-sync');
+  assert.equal(typeSwapDecision.change.localChange, 'type-change');
+  assert.equal(typeSwapDecision.change.remoteChange, 'type-change');
+  assert.equal(planJson.includes('Local comment'), false);
+  assert.equal(planJson.includes('Base comment'), false);
+  assert.equal(Object.hasOwn(remote.plugins, 'forms'), false);
+  assert.equal(Object.hasOwn(remote.files, 'wp-content/plugins/forms/forms.php'), false);
+});
+
 test('blocks unknown plugin-owned custom table rows while preserving remote-only plugin removals', () => {
   const resourceKey = 'row:["wp_forms_entries","entry_id:9"]';
   const base = baseSite();
