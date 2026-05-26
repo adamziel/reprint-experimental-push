@@ -8,10 +8,10 @@ Fresh remote heads at audit time, checked on May 26, 2026:
 
 - `origin/lane/reliable-executor` -> `0c4fd10f`
 - `origin/lane/no-data-loss-invariants` -> `9c70eba6`
-- `origin/lane/no-data-loss-recovery` -> `1d0146b5`
+- `origin/lane/no-data-loss-recovery` -> `47b675c0`
 - `origin/lane/fast-paths` -> `9be664b2`
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `ff2131c3`
-- `origin/lane/independent-auditor` -> `985f6801`
+- `origin/lane/independent-auditor` -> `5abd1f65`
 - `origin/lane/critic` -> `68569c0b`
 - `origin/lane/progress-publisher` -> `7695e1f9`
 - `origin/lane/same-plan-wordpress-graph-create` -> `7bf5d421`
@@ -49,7 +49,7 @@ but it did not change the release conclusion:
   coverage, which strengthens the fail-closed boundary but still does not
   prove live source mutation on unsupported surfaces.
 - `origin/lane/no-data-loss-recovery` now tightens the durable journal
-  production gate at `a546a36b` while preserving the earlier recovery
+  production gate at `47b675c0` while preserving the earlier recovery
   evidence.
   `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` now
   fences journal path mismatches at `1d0146b5`, but it still does not add
@@ -64,7 +64,7 @@ but it did not change the release conclusion:
 - `origin/lane/progress-publisher` now refreshes the public progress evidence
   at `7695e1f9`.
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` now refreshes the audit snapshot at
-  `6b343dd6`.
+  `5abd1f65`.
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now
   refreshes the supervisor evidence snapshot at `08e327b7`.
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now
