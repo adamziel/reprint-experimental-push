@@ -1338,6 +1338,9 @@ function durableJournalPersistedArtifactRefs(inspected) {
         return { journal: null, remote: null, invalidReason: 'missing journal artifact ref' };
       }
       persistedJournalPath = artifactRefs.journal;
+      if (persistedRemoteArtifactPath === persistedJournalPath) {
+        return { journal: null, remote: null, invalidReason: 'invalid remote artifact ref' };
+      }
     } else if (
       Object.hasOwn(artifactRefs, 'journal')
       && isCanonicalAbsolutePath(artifactRefs.journal)
@@ -1363,8 +1366,10 @@ function durableJournalPersistedArtifactRefs(inspected) {
       Object.hasOwn(artifactRefs, 'remote')
       && isCanonicalAbsolutePath(artifactRefs.remote)
       && artifactRefs.remote !== artifactRefs.journal
-      && artifactRefs.remote !== persistedJournalPath
     ) {
+      if (artifactRefs.remote === persistedJournalPath) {
+        return { journal: null, remote: null, invalidReason: 'invalid remote artifact ref' };
+      }
       if (sawRecordWithoutRemoteArtifactRef) {
         return { journal: null, remote: null, invalidReason: 'missing remote artifact ref' };
       }
