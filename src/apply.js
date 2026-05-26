@@ -901,6 +901,14 @@ export function productionRecoverySupportReport(writer) {
   ) {
     addMissingDependency('restart-readable recovery artifact references');
   }
+  if (!persistedArtifactRefs.invalidReason && persistedArtifactRefs.journal) {
+    if (writerJournalArtifactRef && writerJournalArtifactRef !== persistedArtifactRefs.journal) {
+      addMissingDependency('restart-readable recovery artifact references');
+    }
+    if (inspectedJournalPath && inspectedJournalPath !== persistedArtifactRefs.journal) {
+      addMissingDependency('restart-readable recovery artifact references');
+    }
+  }
   if (
     isStrictPlainObject(writer?.artifactRefs)
     && Object.hasOwn(writer.artifactRefs, 'remote')
@@ -1305,6 +1313,12 @@ function durableJournalPersistedArtifactRefs(inspected) {
       && isCanonicalAbsolutePath(artifactRefs.journal)
     ) {
       persistedJournalPath = artifactRefs.journal;
+    } else if (
+      Object.hasOwn(artifactRefs, 'journal')
+      && isCanonicalAbsolutePath(artifactRefs.journal)
+      && persistedJournalPath !== artifactRefs.journal
+    ) {
+      return { journal: null, remote: null, invalidReason: 'rewritten journal artifact ref' };
     }
     if (
       Object.hasOwn(artifactRefs, 'remote')
