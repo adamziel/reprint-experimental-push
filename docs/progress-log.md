@@ -4,6 +4,24 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-05-26 - Public Status Audit 12:12:25
+
+<a id="2026-05-26-public-status-audit-121225"></a>
+
+- Refreshed [progress.html](../progress.html) to the current `date` output
+  (`2026-05-26 12:12:25 CEST`) so the visible page stays fresh to the current
+  supervision cycle. The headline, trend, audit note, and release-gate proof
+  item now name `9d0279a3` as the current reliable head and describe the
+  fenced stale-claim proof with `staleClaimRejected: true`, while release
+  gates remain `0/4`.
+- `9d0279a3` is the current reliable head for the public lane surface; the
+  release verifier now shows stale-claim fencing on the recovery path, but
+  production WordPress auth/session lifecycle and durable journal semantics
+  remain blocked.
+- Evidence trail: [progress.html](../progress.html),
+  [objective audit](../audits/objective-audit.md),
+  [release-gate checklist](../progress.html#proof-gates).
+
 ## 2026-05-26 - Public Status Audit 12:05:08
 
 <a id="2026-05-26-public-status-audit-120508"></a>
