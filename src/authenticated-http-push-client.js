@@ -1259,8 +1259,18 @@ function resolveObservedProductionAuthSessionLifecycleDrift(response) {
   const invalidLifecycleFlag = resolveInvalidProductionAuthSessionLifecycleFlag(session);
   if (invalidLifecycleFlag) {
     return {
+      field: `auth.session.${invalidLifecycleFlag}`,
       required: 'boolean lifecycle flags',
       observed: `invalid-${invalidLifecycleFlag}`,
+    };
+  }
+
+  const invalidIdentityField = resolveInvalidProductionAuthSessionIdentityField(session);
+  if (invalidIdentityField) {
+    return {
+      field: `auth.session.${invalidIdentityField.field}`,
+      required: 'string lifecycle fields',
+      observed: `invalid-${invalidIdentityField.label}`,
     };
   }
 
@@ -1335,6 +1345,16 @@ function describeRequiredProductionAuthSession(response) {
       field: `auth.session.${invalidLifecycleFlag}`,
       required: 'boolean lifecycle flags',
       observed: `invalid-${invalidLifecycleFlag}`,
+      verdict,
+    };
+  }
+
+  const invalidIdentityField = resolveInvalidProductionAuthSessionIdentityField(session);
+  if (invalidIdentityField) {
+    return {
+      field: `auth.session.${invalidIdentityField.field}`,
+      required: 'string lifecycle fields',
+      observed: `invalid-${invalidIdentityField.label}`,
       verdict,
     };
   }
@@ -1418,6 +1438,48 @@ function hasProductionAuthSessionRevocationDrift(response) {
     return false;
   }
   return session.revoked === true || session.status === 'revoked' || session.cleanedUp === true || session.cleanup === true;
+}
+
+function resolveInvalidProductionAuthSessionIdentityField(session) {
+  if (!session || typeof session !== 'object') {
+    return null;
+  }
+
+  const fieldChecks = [
+    ['id', 'id', normalizeProductionAuthSessionIdentityField(session.id)],
+    ['type', 'type', normalizeProductionAuthSessionIdentityField(session.type)],
+    ['status', 'status', normalizeProductionAuthSessionIdentityField(session.status)],
+    ['expiresAt', 'expires-at', normalizeProductionAuthSessionIdentityField(session.expiresAt)],
+  ];
+
+  for (const [field, label, normalized] of fieldChecks) {
+    const value = session[field];
+    if (value !== undefined && value !== null && !normalized) {
+      return {
+        field,
+        label,
+      };
+    }
+  }
+
+  return null;
+}
+
+function normalizeProductionAuthSessionIdentityField(value) {
+  if (typeof value !== 'string') {
+    return null;
+  }
+
+  const normalized = value.trim();
+  if (
+    !normalized
+    || normalized !== value
+    || /[\u0000-\u001f\u007f]/.test(normalized)
+  ) {
+    return null;
+  }
+
+  return normalized;
 }
 
 function isExpiredSession(session) {
