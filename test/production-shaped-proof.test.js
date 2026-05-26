@@ -1875,6 +1875,21 @@ test('packaged production plugin readiness helper does not retry terminal readin
   );
 });
 
+test('packaged release verifier readiness helper uses the provided output collector in wedged packaged-route failures', () => {
+  const verifierSource = readFileSync(
+    path.join(repoRoot, 'scripts/playground/production-shaped-release-verify.mjs'),
+    'utf8',
+  );
+  const start = verifierSource.indexOf('async function waitForPackagedProductionPluginServer(');
+  assert.notEqual(start, -1, 'expected packaged readiness helper in release verifier source');
+  const end = verifierSource.indexOf('async function fetchPackagedWordPressIndexProbe(', start);
+  assert.notEqual(end, -1, 'expected packaged readiness helper boundary in release verifier source');
+  const helperSource = verifierSource.slice(start, end);
+
+  assert.match(helperSource, /getOutput\(\)/);
+  assert.doesNotMatch(helperSource, /getLogs\(\)/);
+});
+
 test('lab Playground readiness helper rejects malformed ready responses and retries only startup-shaped failures', () => {
   const readySnapshot = {
     status: 200,

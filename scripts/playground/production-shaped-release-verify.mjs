@@ -1364,7 +1364,7 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
                   `Packaged production plugin snapshot stayed startup-shaped after global WordPress startup HTTP ${indexProbe.status} for ${snapshotNotReadyProbeCount} consecutive response${snapshotNotReadyProbeCount === 1 ? '' : 's'} (limit ${packagedProductionPluginMaxConsecutiveNotReadyProbes})`,
                   lastError,
                   lastProbes,
-                  getLogs(),
+                  getOutput(),
                   {
                     childPid: child.pid ?? null,
                     snapshotNotReadyProbeCount,
@@ -1450,7 +1450,7 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
                   `Packaged production plugin snapshot stayed startup-shaped after global WordPress startup HTTP ${indexProbe.status} for ${snapshotNotReadyProbeCount} consecutive response${snapshotNotReadyProbeCount === 1 ? '' : 's'} (limit ${packagedProductionPluginMaxConsecutiveNotReadyProbes})`,
                   lastError,
                   lastProbes,
-                  getLogs(),
+                  getOutput(),
                   {
                     childPid: child.pid ?? null,
                     snapshotNotReadyProbeCount,
@@ -1553,7 +1553,7 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
                   `Packaged production plugin preflight stayed startup-shaped after global WordPress startup HTTP ${indexProbe.status} for ${preflightNotReadyProbeCount} consecutive response${preflightNotReadyProbeCount === 1 ? '' : 's'} (limit ${packagedProductionPluginMaxConsecutiveNotReadyProbes})`,
                   lastError,
                   lastProbes,
-                  getLogs(),
+                  getOutput(),
                   {
                     childPid: child.pid ?? null,
                     preflightNotReadyProbeCount,
@@ -1641,7 +1641,7 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
                 `Packaged production plugin preflight stayed startup-shaped after global WordPress startup HTTP ${indexProbe.status} for ${preflightNotReadyProbeCount} consecutive response${preflightNotReadyProbeCount === 1 ? '' : 's'} (limit ${packagedProductionPluginMaxConsecutiveNotReadyProbes})`,
                 lastError,
                 lastProbes,
-                getLogs(),
+                getOutput(),
                 {
                   childPid: child.pid ?? null,
                   preflightNotReadyProbeCount,
