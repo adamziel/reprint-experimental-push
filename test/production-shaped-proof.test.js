@@ -29,12 +29,14 @@ import {
 import {
   packagedProductionPluginMaxConsecutiveNotReadyProbes,
   packagedProductionPluginNextNotReadyProbeCount,
+  packagedProductionPluginNextRouteNotReadyProbeCounts,
   packagedProductionPluginNotReadyProbeLimitReached,
   packagedProductionPluginPreflightTerminal,
   packagedProductionPluginReadinessBodyRetryable,
   packagedProductionPluginReadinessErrorRetryable,
   packagedProductionPluginPreflightReady,
   packagedProductionPluginPreflightRetryable,
+  packagedProductionPluginResetRouteNotReadyProbeCounts,
   packagedProductionPluginRouteRetryableWhileWordPressStarting,
   packagedProductionPluginServerReady,
   packagedProductionPluginSnapshotReady,
@@ -1446,6 +1448,33 @@ test('packaged production plugin readiness helper does not retry terminal readin
     ),
     true,
   );
+  let routeProbeCounts = { snapshot: 0, preflight: 0 };
+  routeProbeCounts = packagedProductionPluginNextRouteNotReadyProbeCounts(
+    routeProbeCounts,
+    'snapshot',
+    502,
+    '<!doctype html><html><body>WordPress is not ready yet</body></html>',
+  );
+  assert.deepEqual(routeProbeCounts, { snapshot: 1, preflight: 0 });
+  routeProbeCounts = packagedProductionPluginNextRouteNotReadyProbeCounts(
+    routeProbeCounts,
+    'preflight',
+    404,
+    '<!doctype html><html><body>No route was found matching the URL and request method.</body></html>',
+  );
+  assert.deepEqual(routeProbeCounts, { snapshot: 1, preflight: 1 });
+  routeProbeCounts = packagedProductionPluginNextRouteNotReadyProbeCounts(
+    routeProbeCounts,
+    'snapshot',
+    200,
+    '{"ok":true}',
+  );
+  assert.deepEqual(routeProbeCounts, { snapshot: 0, preflight: 1 });
+  routeProbeCounts = packagedProductionPluginResetRouteNotReadyProbeCounts(
+    routeProbeCounts,
+    'preflight',
+  );
+  assert.deepEqual(routeProbeCounts, { snapshot: 0, preflight: 0 });
   assert.equal(packagedProductionPluginReadinessErrorRetryable(new Error('transient fetch failure')), true);
   assert.equal(
     packagedProductionPluginReadinessErrorRetryable({

@@ -152,6 +152,37 @@ export function packagedProductionPluginNotReadyProbeLimitReached(currentCount) 
   return currentCount >= packagedProductionPluginMaxConsecutiveNotReadyProbes;
 }
 
+export function packagedProductionPluginNextRouteNotReadyProbeCounts(
+  currentCounts,
+  routeKey,
+  status,
+  bodyText = '',
+) {
+  return {
+    snapshot: routeKey === 'snapshot'
+      ? packagedProductionPluginNextNotReadyProbeCount(currentCounts?.snapshot ?? 0, status, bodyText)
+      : (currentCounts?.snapshot ?? 0),
+    preflight: routeKey === 'preflight'
+      ? packagedProductionPluginNextNotReadyProbeCount(currentCounts?.preflight ?? 0, status, bodyText)
+      : (currentCounts?.preflight ?? 0),
+  };
+}
+
+export function packagedProductionPluginResetRouteNotReadyProbeCounts(currentCounts, ...routeKeys) {
+  const nextCounts = {
+    snapshot: currentCounts?.snapshot ?? 0,
+    preflight: currentCounts?.preflight ?? 0,
+  };
+
+  for (const routeKey of routeKeys) {
+    if (routeKey === 'snapshot' || routeKey === 'preflight') {
+      nextCounts[routeKey] = 0;
+    }
+  }
+
+  return nextCounts;
+}
+
 export function packagedProductionPluginReadinessBodyRetryable(status, bodyText = '') {
   return (
     packagedProductionPluginReadinessWordPressNotReady(status, bodyText)
