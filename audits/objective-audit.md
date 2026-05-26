@@ -6,13 +6,13 @@ The project is **not releasable as a production WordPress push path**.
 
 - Fresh remote heads at audit time, checked on May 26, 2026:
 
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `0f8caf2a`
-- `origin/lane/no-data-loss-invariants` -> `261b4d06`
-- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `dd8f6dc3`
-- `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `97a12cab`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `a04aceed`
-- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `063b991c`
-- `origin/lane/reliable-executor` -> `8e9683b3`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `685ac0ce`
+- `origin/lane/no-data-loss-invariants` -> `7f30d8fd`
+- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `738ea8f1`
+- `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `556aaba7`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `67244d29`
+- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `97856562`
+- `origin/lane/reliable-executor` -> `52a31c04`
 - `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration` -> `29fff11d`
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` -> `9e05da5e`
 - `origin/lane/critic` -> `443dacd6`
@@ -30,27 +30,31 @@ real source-site mutation boundary. The release gates still stay `0/4`.
 Fresh lane proof since the last audit pass improved the local evidence floor,
 but it did not change the release conclusion:
 
-- `origin/lane/reliable-executor` now records `8e9683b3`, tightening release-
-  verify subprocess bounds again, but still not proving production auth/session
-  lifecycle or a live-source mutation boundary.
+- `origin/lane/reliable-executor` now records `52a31c04`, tightening live proof
+  cleanup again, but still not proving production auth/session lifecycle or a
+  live-source mutation boundary.
+- `origin/lane/no-data-loss-invariants` now records `7f30d8fd`, adding a
+  comment-post graph blocker proof to the unsupported-surface boundary set.
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now records
-  `a04aceed`, refreshing public progress freshness only.
+  `67244d29`, refreshing public progress freshness only.
 - `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration`
   now records `29fff11d`, adding featured-image attachment drift proof only.
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` now records
-  `dd8f6dc3`. This refreshes the audit snapshot only and does not change the
+  `738ea8f1`. This refreshes the audit snapshot only and does not change the
   release boundary.
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` now records
-  `063b991c`, tightening queue headroom proof only.
-- `origin/lane/no-data-loss-invariants` now records `261b4d06`, adding
-  revision-linked postmeta blocker proof only.
+  `97856562`, tightening memory headroom proof only.
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` now
-  records `97a12cab`, tightening recovery artifact fencing. It still does not
-  add production-backed journal ownership or replay proof.
+  records `556aaba7`, tightening remote recovery URL suffix fencing. It still
+  does not add production-backed journal ownership or replay proof.
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now records
-  `0f8caf2a`, refreshing the supervisor progress surface only.
+  `685ac0ce`, refreshing the supervisor progress surface only.
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` now records
   `9e05da5e`, hardening live proof cleanup and timeouts only.
+- `origin/lane/no-data-loss-recovery` now records `9e077c10`, tightening
+  durable recovery remote-ownership fencing only.
+- `origin/lane/same-plan-wordpress-graph-create` now records `0d2178e9`,
+  hardening revision graph references only.
 
 Those changes strengthen the lab evidence for protocol safety and no-loss
 planning, but they still do not prove the production-backed push path.
