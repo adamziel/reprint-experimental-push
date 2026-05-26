@@ -208,6 +208,9 @@ Current executable gate:
 - The details surface now also exposes whether those parallelism caps are
   canonical, so the audit view can reject a forged integral summary without
   recomputing the guard from hidden defaults.
+- The same details now also expose whether the caps are both measured and
+  canonical, so a tampered parallelism summary cannot look complete when the
+  measurement bit or the default concurrency shape is missing.
 - The details surface now also exposes whether storage-receipts and
   atomic-commit visibility are both measured, so the audit view can reject a
   forged paired visibility summary without trusting the raw surface alone.
