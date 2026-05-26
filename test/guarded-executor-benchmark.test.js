@@ -2438,8 +2438,11 @@ test('guarded benchmark treats queue-budget visibility without queue-headroom me
   mutated.evidence.backpressure.queueBudgetVisible = true;
   mutated.evidence.backpressure.queueHeadroomMeasured = false;
 
+  const details = productionThroughputDetails(mutated);
   const blockers = productionThroughputBlockers(mutated);
 
+  assert.equal(details.queueBudgetVisibleAndQueueHeadroomMeasured, false);
+  assert.equal(details.backpressureConsistency.queueBudgetVisibleAndQueueHeadroomMeasured, false);
   assert.ok(blockers.includes('queue-budget-visible-without-queue-headroom-measurement'));
 });
 

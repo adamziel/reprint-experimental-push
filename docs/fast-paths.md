@@ -1764,6 +1764,9 @@ group barrier that keeps coupled work visible together.
   acknowledgements survived or preserve journal order for recovery.
 - Backpressure is rejected whenever it drops receipts, treats an empty queue as
   completion, or lets a drained buffer bypass the guarded publish barrier.
+- Backpressure is also rejected when queue-budget visibility appears without a
+  measured queue-headroom probe, because a visible budget does not prove the
+  paused sender actually measured the boundary it claims to respect.
 - Cached receipt cursor headroom is rejected when it tries to skip the live
   file compare before publish, because replay sizing does not replace the live
   precondition or the guarded publish barrier.
