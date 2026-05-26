@@ -825,6 +825,9 @@ export function productionThroughputDetails(report) {
   const successInspectionClaimReasonProven =
     successInspectionClaimStatus !== 'blocked'
     || (typeof successInspectionClaimReason === 'string' && successInspectionClaimReason.trim().length > 0);
+  const successInspectionClaimReasonTrimmed =
+    typeof successInspectionClaimReason === 'string'
+    && successInspectionClaimReason.trim().length > 0;
   const successInspectionClaimMatchesInspectionStatus =
     successInspectionClaimRecognized
     && (
@@ -974,6 +977,7 @@ export function productionThroughputDetails(report) {
     successInspectionClaimReason,
     successInspectionClaimRecognized,
     successInspectionClaimReasonProven,
+    successInspectionClaimReasonTrimmed,
     successInspectionClaimMatchesInspectionStatus,
     successInspectionClaimCanonical,
     successInspectionClaimReasonCanonical,

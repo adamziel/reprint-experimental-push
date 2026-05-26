@@ -1527,6 +1527,19 @@ test('production claim gate fails closed if benchmark evidence is tampered', () 
     productionThroughputDetails(noneStatusWithReason).successInspectionClaimReasonCanonical,
     false,
   );
+
+  const blockedReasonWithWhitespace = clone(report);
+  blockedReasonWithWhitespace.results.successInspection.claim.status = 'blocked';
+  blockedReasonWithWhitespace.results.successInspection.claim.reason = '   ';
+  assert.ok(
+    productionThroughputBlockers(blockedReasonWithWhitespace).includes(
+      'success-inspection-claim-reason-not-proven',
+    ),
+  );
+  assert.equal(
+    productionThroughputDetails(blockedReasonWithWhitespace).successInspectionClaimReasonTrimmed,
+    false,
+  );
 });
 
 test('guarded benchmark fails closed when the buffered queue budget drifts from the default ceiling', () => {
