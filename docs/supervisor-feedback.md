@@ -1,21 +1,21 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-26 17:14 CEST
+Last updated: 2026-05-26 17:18 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
 
-## 2026-05-26 17:17 CEST - Public Page Stale at `ea74b2bd`
+## 2026-05-26 17:18 CEST - Public Page Stale at `3c444838`
 
 - Going well: the live reliable head has advanced to `1506e6679a5a8816aa39d8c7005379303529113c`.
-- Not going well: the visible public progress surface is still naming `ea74b2bdc01574dce1380641171497338df62883`, so the freshness gap is now a publication mismatch rather than a code blocker.
+- Not going well: the visible public progress surface is still naming `3c4448380a87b1d63dfa3624751381061828031f`, so the freshness gap is now a publication mismatch rather than a code blocker.
 - Progress change: gate posture is still `0/4`; this is a status correction only, not a release-gate move.
 - Next nudge: have `progress-publisher` catch `progress.html` and `docs/progress-log.md` up to the live head if they are stale, while `reliable-executor` keeps working the shared `waitForServer()` readiness boundary.
 
 | Lane | Nudge |
 | --- | --- |
 | Reliable executor | Keep focusing on the shared `waitForServer()` readiness boundary; do not switch back to proof-field polish. |
-| Progress publisher | Refresh the public page to `1506e6679a5a8816aa39d8c7005379303529113c` if it still shows `ea74b2bdc01574dce1380641171497338df62883`; keep `0/4`. |
+| Progress publisher | Refresh the public page to `1506e6679a5a8816aa39d8c7005379303529113c` if it still shows `3c4448380a87b1d63dfa3624751381061828031f`; keep `0/4`. |
 | Audit and critic | Keep the verdict at `0/4` until production-backed lifecycle or durable ownership is proven. |
 
 ## 2026-05-26 17:14 CEST - Reliable Head Advanced to `1506e667`
