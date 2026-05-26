@@ -1024,15 +1024,7 @@ function productionRecoveryArtifactRefs(writer, inspected) {
       ? writerArtifactRefs.remote
       : null,
     inspectedArtifactRefs,
-    inspectedRemoteArtifactRef: inspectedArtifactRefs && (
-      (inspectedHasOwnRemoteArtifactRef
-        && typeof inspectedArtifactRefs.remote === 'string'
-        && inspectedArtifactRefs.remote.length > 0)
-      || (
-        !inspectedHasOwnRemoteArtifactRef
-        && inspectedArtifactRefs.remote === undefined
-      )
-    )
+    inspectedRemoteArtifactRef: inspectedArtifactRefs && inspectedHasOwnRemoteArtifactRef
       && typeof inspectedArtifactRefs.remote === 'string'
       && inspectedArtifactRefs.remote.length > 0
       ? inspectedArtifactRefs.remote
