@@ -3914,7 +3914,14 @@ function unsupportedTermTaxonomyResourceSupport({ resource, baseValue, localValu
     (reference.relationshipType === 'term-taxonomy-term' || reference.relationshipType === 'term-taxonomy-parent')
     && reference.targetChange.remote.state === 'absent'
     && reference.targetChange.local.state === 'present'
-  ));
+  )).sort((left, right) => {
+    const priority = new Map([
+      ['term-taxonomy-parent', 0],
+      ['term-taxonomy-term', 1],
+    ]);
+    return (priority.get(left.relationshipType) ?? Number.MAX_SAFE_INTEGER)
+      - (priority.get(right.relationshipType) ?? Number.MAX_SAFE_INTEGER);
+  });
   const unsupportedState = samePlanCreatedTermReferences.length > 0
     ? 'same-plan-reference'
     : classifyUnsupportedDriftState({

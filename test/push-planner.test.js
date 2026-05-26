@@ -16603,12 +16603,12 @@ test('blocks local term-taxonomy rows that reference same-plan created term iden
   assert.equal(blocker.resourceKey, resourceKey);
   assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_term_taxonomy","term_taxonomy_id:5"] is created in the same plan as a parent term identity that depends on it, and identity rewriting is not yet supported.');
   assert.deepEqual(
-    references.map((reference) => reference.relationshipType).sort(),
+    references.map((reference) => reference.relationshipType),
     ['term-taxonomy-parent', 'term-taxonomy-term'],
   );
   assert.deepEqual(
-    references.map((reference) => reference.targetResourceKey).sort(),
-    [parentResourceKey, termResourceKey].sort(),
+    references.map((reference) => reference.targetResourceKey),
+    [parentResourceKey, termResourceKey],
   );
   assert.equal(references.every((reference) => reference.sourceResourceKey === resourceKey), true);
   assert.equal(references.every((reference) => reference.targetChange.remote.state === 'absent'), true);
