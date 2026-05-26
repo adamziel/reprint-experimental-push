@@ -2566,6 +2566,8 @@ function summarizeProductionCapabilityRollout({
       parallelismLimitsMeasuredOnReport
         && parallelismLimitsCanonical
         && productionAtomicCommitMeasured
+        && productionAtomicCommitVisible
+        && productionAtomicGroupMetadataVisibleAndMeasured
         && queueBudgetMatchesResourceCeiling
         && backpressureEvidenceComplete
         && productionStorageReceiptsMeasured

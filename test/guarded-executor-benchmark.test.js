@@ -2728,9 +2728,11 @@ test('guarded benchmark keeps row-batch rollout summary pinned to atomic-group m
     {
       surface: 'row-batch-concurrency',
       status: 'blocked',
-      measured: true,
+      measured: false,
       visible: false,
       blockerRefs: [
+        'backpressure-evidence-incomplete',
+        'queue-memory-ceiling-does-not-match-queue-budget',
         'production-atomic-group-metadata-not-visible',
         'production-atomic-group-commit-visible-without-metadata',
         'production-storage-receipts-without-atomic-group-metadata',
@@ -2768,9 +2770,11 @@ test('guarded benchmark keeps row-batch rollout summary pinned to hidden atomic-
     {
       surface: 'row-batch-concurrency',
       status: 'blocked',
-      measured: true,
+      measured: false,
       visible: false,
       blockerRefs: [
+        'backpressure-evidence-incomplete',
+        'queue-memory-ceiling-does-not-match-queue-budget',
         'production-atomic-group-commit-not-visible',
         'production-atomic-group-metadata-visible-without-atomic-commit',
         'production-storage-receipts-without-atomic-commit',
