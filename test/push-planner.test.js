@@ -31849,6 +31849,7 @@ test('blocks plugin-owned deletes when a matching independent edit, file type sw
   const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
   const matchingEdit = decisionFor(plan, 'file:about.php');
   const matchingTypeSwap = decisionFor(plan, 'file:wp-content/uploads/gallery/photo.txt');
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
 
   assert.equal(plan.status, 'blocked');
   assert.equal(plan.summary.mutations, 0);
@@ -31858,10 +31859,11 @@ test('blocks plugin-owned deletes when a matching independent edit, file type sw
   assert.equal(matchingEdit.decision, 'already-in-sync');
   assert.equal(matchingTypeSwap.decision, 'already-in-sync');
 
-  assert.equal(plan.blockers[0].class, 'stale-plugin-owner-context');
-  assert.equal(plan.blockers[0].resourceKey, resourceKey);
-  assert.equal(plan.blockers[0].ownerContext.some((entry) => entry.resourceKey === 'plugin:forms'), true);
-  assert.equal(plan.blockers[0].ownerContext.some((entry) => entry.resourceKey === 'file:wp-content/plugins/forms/forms.php'), true);
+  assert.equal(blocker.class, 'stale-plugin-owner-context');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.unsupportedState, 'delete');
+  assert.equal(blocker.ownerContext.some((entry) => entry.resourceKey === 'plugin:forms'), true);
+  assert.equal(blocker.ownerContext.some((entry) => entry.resourceKey === 'file:wp-content/plugins/forms/forms.php'), true);
   assert.equal(JSON.stringify(plan.blockers).includes('remote-only plugin drift'), false);
 });
 
