@@ -202,6 +202,11 @@ export async function runAuthenticatedHttpPush({
     setDurableJournalBoundary(summary, 'recovery-inspect');
     return summary;
   }
+  if (!summary.recoveryInspect.recovery || summary.recoveryInspect.recovery.journalState !== 'ok') {
+    summary.code = 'RECOVERY_INSPECT_JOURNAL_UNTRUSTED';
+    setDurableJournalBoundary(summary, 'recovery-inspect');
+    return summary;
+  }
   if (summary.recoveryInspect.recovery?.state === 'blocked-recovery') {
     summary.code = recoveryInspect.body?.code || 'RECOVERY_INSPECT_BLOCKED';
     setDurableJournalBoundary(summary, 'recovery-inspect');
