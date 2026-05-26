@@ -2,12 +2,23 @@ import { evaluateProductionAuthSessionLifecycle } from './production-auth-sessio
 
 export const packagedProductionPluginMaxConsecutiveNotReadyProbes = 4;
 
+function packagedProductionPluginResponseMessage(response) {
+  return typeof response?.body?.message === 'string' ? response.body.message : '';
+}
+
 function packagedProductionPluginWordPressNotReadyResponse(response) {
-  return response?.body?.code === 'wordpress_not_ready';
+  return response?.body?.code === 'wordpress_not_ready'
+    || packagedProductionPluginReadinessWordPressNotReady(
+      response?.status,
+      packagedProductionPluginResponseMessage(response),
+    );
 }
 
 function packagedProductionPluginRouteNotReadyBody(response) {
-  return response?.body?.code === 'rest_no_route';
+  return response?.body?.code === 'rest_no_route'
+    || /No route was found matching the URL and request method\./i.test(
+      packagedProductionPluginResponseMessage(response),
+    );
 }
 
 function packagedProductionPluginRouteProfileReady(routeProfile) {
