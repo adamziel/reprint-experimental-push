@@ -1,4 +1,4 @@
-import { ABSENT, deepClone } from './stable-json.js';
+import { ABSENT, deepClone, stableStringify } from './stable-json.js';
 import {
   deserializeResourceValue,
   enumerateResources,
@@ -2845,15 +2845,21 @@ function unsupportedTermTaxonomyResourceSupport({ resource, baseValue, localValu
     && getResource(remote, reference.targetResource) === ABSENT
     && getResource(local, reference.targetResource) !== ABSENT
   ));
+  const remoteOnlyDrift = (
+    stableStringify(localValue) === stableStringify(baseValue)
+    && stableStringify(remoteValue) !== stableStringify(baseValue)
+  );
 
-  if (samePlanCreatedTermReferences.length === 0) {
+  if (samePlanCreatedTermReferences.length === 0 && !remoteOnlyDrift) {
     return { supported: true };
   }
 
   return {
     supported: false,
     className: 'unsupported-term-taxonomy-resource',
-    reason: samePlanCreatedTermReferences.some((reference) => reference.relationshipType === 'term-taxonomy-parent')
+    reason: remoteOnlyDrift
+      ? 'Term taxonomy graph resources are not yet supported by the planner.'
+      : samePlanCreatedTermReferences.some((reference) => reference.relationshipType === 'term-taxonomy-parent')
       ? `WordPress graph mutation ${resource.key} is created in the same plan as a parent term identity that depends on it, and identity rewriting is not yet supported.`
       : 'Term taxonomy graph resources are not yet supported by the planner.',
     references: samePlanCreatedTermReferences,

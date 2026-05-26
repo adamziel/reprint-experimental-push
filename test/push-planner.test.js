@@ -17921,6 +17921,76 @@ test('blocks remote-only termmeta drift while preserving a matching independent 
   assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin changes */');
 });
 
+test('blocks remote-only term taxonomy drift while preserving a matching independent edit and remote-only plugin changes', () => {
+  const resourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:85"]';
+  const base = baseSite();
+  base.db.wp_terms = {
+    'term_id:19': {
+      term_id: 19,
+      name: 'Base remote-only taxonomy term',
+      slug: 'base-remote-only-taxonomy-term',
+    },
+  };
+  base.db.wp_term_taxonomy = {
+    'term_taxonomy_id:85': {
+      term_taxonomy_id: 85,
+      term_id: 19,
+      taxonomy: 'category',
+      description: 'Base remote-only term taxonomy description',
+      parent: 0,
+      count: 1,
+    },
+  };
+  base.db.wp_posts['ID:1'].post_title = 'Base remote-only term taxonomy shared title';
+
+  const local = baseSite();
+  local.db.wp_terms = JSON.parse(JSON.stringify(base.db.wp_terms));
+  local.db.wp_term_taxonomy = JSON.parse(JSON.stringify(base.db.wp_term_taxonomy));
+  local.db.wp_posts['ID:1'].post_title = 'Shared remote-only term taxonomy title';
+
+  const remote = baseSite();
+  remote.db.wp_terms = JSON.parse(JSON.stringify(base.db.wp_terms));
+  remote.db.wp_term_taxonomy = {
+    'term_taxonomy_id:85': {
+      term_taxonomy_id: 85,
+      term_id: 19,
+      taxonomy: 'category',
+      description: 'Remote-only term taxonomy description',
+      parent: 0,
+      count: 4,
+    },
+  };
+  remote.db.wp_posts['ID:1'].post_title = 'Shared remote-only term taxonomy title';
+  remote.plugins.forms.description = 'remote-only plugin changes';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin changes */';
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  const matchingEdit = decisionFor(plan, 'row:["wp_posts","ID:1"]');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(decisionFor(plan, resourceKey), undefined);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(plan.conflicts.length, 0);
+  assert.equal(blocker.class, 'unsupported-term-taxonomy-resource');
+  assert.equal(blocker.resourceKind, 'term-taxonomy');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.reason, 'Term taxonomy graph resources are not yet supported by the planner.');
+  assert.equal(matchingEdit.decision, 'already-in-sync');
+  assert.equal(matchingEdit.change.localChange, 'update');
+  assert.equal(matchingEdit.change.remoteChange, 'update');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('Remote-only term taxonomy description'), false);
+  assert.equal(planJson.includes('Base remote-only term taxonomy description'), false);
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin changes');
+  assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin changes */');
+});
+
 test('blocks local same-plan created user meta identity while preserving a matching independent file type swap and remote-only plugin changes', () => {
   const resourceKey = 'row:["wp_usermeta","umeta_id:79"]';
   const targetFileKey = 'file:wp-content/uploads/cover';
