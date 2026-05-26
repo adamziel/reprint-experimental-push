@@ -1570,6 +1570,18 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
     'queue slack and journal lag still cannot bypass the backpressure pause boundary',
   );
   assert.equal(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'cached-receipt-cursor-staging-disk-headroom-and-journal-lag-skips-post-pause-replay')?.rejectedGate,
+    'recovery',
+  );
+  assert.ok(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'cached-receipt-cursor-staging-disk-headroom-and-journal-lag-skips-post-pause-replay')?.violates.includes('chunk-receipts'),
+    'staging-disk headroom and journal lag still cannot replace durable receipt ordering after a pause',
+  );
+  assert.ok(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'cached-receipt-cursor-staging-disk-headroom-and-journal-lag-skips-post-pause-replay')?.violates.includes('durable-progress'),
+    'staging-disk headroom and journal lag still cannot bypass post-pause replay durability',
+  );
+  assert.equal(
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'cached-receipt-cursor-memory-headroom-skips-atomic-group-commit-after-pause')?.rejectedGate,
     'recovery',
   );
@@ -1628,6 +1640,18 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
   assert.ok(
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'cached-receipt-cursor-and-staging-disk-headroom-skips-release-bundle-commit-after-pause')?.violates.includes('durable-progress'),
     'staging-disk headroom still cannot bypass durable recovery evidence for release bundles',
+  );
+  assert.equal(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'cached-receipt-cursor-staging-disk-headroom-and-journal-lag-skips-release-bundle-commit-after-pause')?.rejectedGate,
+    'recovery',
+  );
+  assert.ok(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'cached-receipt-cursor-staging-disk-headroom-and-journal-lag-skips-release-bundle-commit-after-pause')?.violates.includes('atomic-groups'),
+    'staging-disk headroom and journal lag still cannot bypass the release-bundle atomic-group barrier',
+  );
+  assert.ok(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'cached-receipt-cursor-staging-disk-headroom-and-journal-lag-skips-release-bundle-commit-after-pause')?.violates.includes('live-preconditions'),
+    'staging-disk headroom and journal lag still cannot replace release-bundle live preconditions after a pause',
   );
   assert.equal(
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-chunk-hashes-skips-large-upload-window-sizing-after-pause')?.rejectedGate,
@@ -2950,6 +2974,12 @@ test('unsafe shortcuts stay rejected when they would bypass live preconditions o
   const skipQueueHeadroomCommit = model.rejectedFastPaths.find(
     (fastPath) => fastPath.id === 'cached-receipt-cursor-queue-headroom-authorizes-atomic-group-commit-after-retry',
   );
+  const skipStagingDiskReplay = model.rejectedFastPaths.find(
+    (fastPath) => fastPath.id === 'cached-receipt-cursor-staging-disk-headroom-and-journal-lag-skips-post-pause-replay',
+  );
+  const skipStagingDiskReleaseCommit = model.rejectedFastPaths.find(
+    (fastPath) => fastPath.id === 'cached-receipt-cursor-staging-disk-headroom-and-journal-lag-skips-release-bundle-commit-after-pause',
+  );
 
   assert.ok(skipMemoryHeadroomCommit, 'receipt cursor memory headroom cannot authorize commit');
   assert.equal(skipMemoryHeadroomCommit.rejectedGate, 'recovery');
@@ -2964,6 +2994,16 @@ test('unsafe shortcuts stay rejected when they would bypass live preconditions o
   assert.ok(skipQueueHeadroomCommit.violates.includes('atomic-groups'));
   assert.ok(skipQueueHeadroomCommit.violates.includes('live-preconditions'));
   assert.ok(skipQueueHeadroomCommit.violates.includes('durable-progress'));
+
+  assert.ok(skipStagingDiskReplay, 'staging-disk headroom and journal lag cannot skip post-pause replay');
+  assert.equal(skipStagingDiskReplay.rejectedGate, 'recovery');
+  assert.ok(skipStagingDiskReplay.violates.includes('chunk-receipts'));
+  assert.ok(skipStagingDiskReplay.violates.includes('durable-progress'));
+
+  assert.ok(skipStagingDiskReleaseCommit, 'staging-disk headroom and journal lag cannot skip release-bundle commit after a pause');
+  assert.equal(skipStagingDiskReleaseCommit.rejectedGate, 'recovery');
+  assert.ok(skipStagingDiskReleaseCommit.violates.includes('atomic-groups'));
+  assert.ok(skipStagingDiskReleaseCommit.violates.includes('live-preconditions'));
 });
 
 test('fast-path fixture isolates the release-safety benchmark shape', () => {

@@ -5095,6 +5095,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['backpressure', 'chunk-receipts', 'durable-progress'],
   },
   {
+    id: 'cached-receipt-cursor-staging-disk-headroom-and-journal-lag-skips-post-pause-replay',
+    proposal: 'use a cached receipt cursor plus staging-disk headroom and journal lag to skip post-pause replay',
+    rejectedBecause: 'staging-disk headroom and journal lag can size the next bounded journal batch, but they still cannot prove the paused sender preserved the ordered raw receipts or durable replay evidence without guessing which acknowledgements survived',
+    rejectedGate: 'recovery',
+    violates: ['backpressure', 'chunk-receipts', 'durable-progress'],
+  },
+  {
     id: 'cached-receipt-cursor-memory-headroom-skips-atomic-group-commit-after-pause',
     proposal: 'use a cached receipt cursor plus memory headroom to skip an atomic-group commit after a pause',
     rejectedBecause: 'memory headroom can size the next bounded replay, but it cannot prove the paused group preserved its live row preconditions, receipt order, or atomic-group barrier after interruption',
@@ -5119,6 +5126,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     id: 'cached-receipt-cursor-and-staging-disk-headroom-skips-release-bundle-commit-after-pause',
     proposal: 'use a cached receipt cursor plus staging-disk headroom to skip a release-bundle commit after a pause',
     rejectedBecause: 'staging-disk headroom can size the next bounded journal batch, but it cannot prove the release bundle preserved its atomic-group barrier, live compare, or durable journal trail after interruption',
+    rejectedGate: 'recovery',
+    violates: ['backpressure', 'atomic-groups', 'durable-progress', 'live-preconditions'],
+  },
+  {
+    id: 'cached-receipt-cursor-staging-disk-headroom-and-journal-lag-skips-release-bundle-commit-after-pause',
+    proposal: 'use a cached receipt cursor plus staging-disk headroom and journal lag to skip a release-bundle commit after a pause',
+    rejectedBecause: 'staging-disk headroom and journal lag can trim the next bounded journal batch, but they still cannot prove the release bundle preserved its atomic-group barrier, live compare, or durable journal trail after interruption',
     rejectedGate: 'recovery',
     violates: ['backpressure', 'atomic-groups', 'durable-progress', 'live-preconditions'],
   },
