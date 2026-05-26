@@ -362,7 +362,7 @@ test('keeps remote-only plugin removals while preserving an independent delete a
   const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
 
   assert.equal(plan.status, 'ready');
-  assert.equal(plan.summary.mutations, 1);
+  assert.equal(plan.summary.mutations, 0);
   assert.equal(deleteMutation.action, 'delete');
   assert.equal(deleteMutation.changeKind, 'delete');
   assert.equal(matchingTypeSwap.decision, 'already-in-sync');
@@ -746,7 +746,7 @@ test('keeps remote-only plugin drift while a live-preconditioned file delete pre
   const result = applyPlan(remote, plan);
 
   assert.equal(plan.status, 'ready');
-  assert.equal(plan.summary.mutations, 1);
+  assert.equal(plan.summary.mutations, 0);
   assert.equal(deleteMutation.action, 'delete');
   assert.equal(deleteMutation.changeKind, 'delete');
   assertEveryMutationHasLiveRemotePrecondition(plan);
@@ -19480,6 +19480,7 @@ test('blocks legacy links graph resources while preserving a matching independen
   assert.equal(blocker.class, 'unsupported-legacy-links-resource');
   assert.equal(blocker.resourceKind, 'legacy-link');
   assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.unsupportedState, 'remote-only-drift');
   assert.equal(blocker.reason, 'Legacy link graph resources are not yet supported by the planner.');
   assert.equal(matchingEdit.decision, 'already-in-sync');
   assert.equal(matchingEdit.change.localChange, 'update');
@@ -19618,6 +19619,7 @@ test('blocks legacy link resource deletes while preserving a matching independen
   assert.equal(blocker.class, 'unsupported-legacy-links-resource');
   assert.equal(blocker.resourceKind, 'legacy-link');
   assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.unsupportedState, 'delete');
   assert.equal(blocker.reason, 'Legacy link graph resource deletes are not yet supported by the planner.');
   assert.equal(matchingEdit.decision, 'already-in-sync');
   assert.equal(matchingEdit.change.localChange, 'update');
@@ -23685,6 +23687,7 @@ test('blocks local post GUID changes while preserving remote-only plugin drift',
   assert.equal(blocker.class, 'unsupported-guid-resource');
   assert.equal(blocker.resourceKind, 'post-guid');
   assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.unsupportedState, 'local-or-divergent-drift');
   assert.equal(blocker.reason, 'Post GUID graph resources are not yet supported by the planner.');
   assert.equal(pluginDecision.decision, 'keep-remote');
   assert.equal(planJson.includes('Local GUID content'), false);
@@ -23973,6 +23976,7 @@ test('blocks remote-only post GUID drift while preserving a matching independent
   assert.equal(blocker.class, 'unsupported-guid-resource');
   assert.equal(blocker.resourceKind, 'post-guid');
   assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.unsupportedState, 'remote-only-drift');
   assert.equal(blocker.reason, 'Post GUID graph resources are not yet supported by the planner.');
   assert.equal(matchingEdit.decision, 'already-in-sync');
   assert.equal(matchingEdit.change.localChange, 'update');
@@ -24036,6 +24040,7 @@ test('blocks converged post GUID changes while preserving a matching independent
   assert.equal(blocker.class, 'unsupported-guid-resource');
   assert.equal(blocker.resourceKind, 'post-guid');
   assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.unsupportedState, 'converged-drift');
   assert.equal(blocker.reason, 'Post GUID graph resources are not yet supported by the planner.');
   assert.equal(matchingEdit.decision, 'already-in-sync');
   assert.equal(matchingEdit.change.localChange, 'update');
@@ -24083,6 +24088,7 @@ test('blocks local same-plan created post GUIDs while preserving a matching inde
   assert.equal(blocker.class, 'unsupported-guid-resource');
   assert.equal(blocker.resourceKind, 'post-guid');
   assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.unsupportedState, 'local-or-divergent-drift');
   assert.equal(blocker.reason, 'Post GUID graph resources are not yet supported by the planner.');
   assert.equal(matchingEdit.decision, 'already-in-sync');
   assert.equal(matchingEdit.change.localChange, 'update');
@@ -25289,6 +25295,7 @@ test('blocks local serialized block references while preserving remote-only plug
   assert.equal(blocker.class, 'unsupported-serialized-blocks-resource');
   assert.equal(blocker.resourceKind, 'serialized-blocks');
   assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.unsupportedState, 'local-or-divergent-drift');
   assert.equal(blocker.reason, 'Serialized block references are not yet supported by the planner.');
   assert.equal(pluginDecision.decision, 'keep-remote');
   assert.equal(planJson.includes('Local block content'), false);
@@ -25337,6 +25344,7 @@ test('blocks remote-only serialized block drift while preserving matching indepe
   assert.equal(plan.conflicts.length, 0);
   assert.equal(blocker.class, 'unsupported-serialized-blocks-resource');
   assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.unsupportedState, 'remote-only-drift');
   assert.equal(blocker.reason, 'Serialized block references are not yet supported by the planner.');
   assert.equal(pluginDecision.decision, 'keep-remote');
   assert.equal(remote.plugins.forms.description, 'remote-only plugin drift');
@@ -25392,6 +25400,7 @@ test('blocks converged serialized block drift while preserving a matching indepe
   assert.equal(blocker.class, 'unsupported-serialized-blocks-resource');
   assert.equal(blocker.resourceKind, 'serialized-blocks');
   assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.unsupportedState, 'converged-drift');
   assert.equal(blocker.reason, 'Serialized block references are not yet supported by the planner.');
   assert.equal(blockerJson.includes('Converged block content'), false);
   assert.equal(blockerJson.includes('Base converged block content'), false);
@@ -25443,6 +25452,7 @@ test('blocks same-plan created serialized block references while preserving a ma
   assert.equal(blocker.class, 'unsupported-serialized-blocks-resource');
   assert.equal(blocker.resourceKind, 'serialized-blocks');
   assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.unsupportedState, 'local-or-divergent-drift');
   assert.equal(blocker.reason, 'Serialized block references are not yet supported by the planner.');
   assert.equal(matchingEditDecision.decision, 'already-in-sync');
   assert.equal(matchingEditDecision.change.localChange, 'update');
@@ -41431,9 +41441,10 @@ test('blocks legacy link resource updates while preserving a matching independen
   const blockerJson = JSON.stringify(blocker);
 
   assert.equal(plan.status, 'blocked');
-  assert.equal(plan.summary.mutations, 1);
+  assert.equal(plan.summary.mutations, 0);
   assert.equal(blocker.class, 'unsupported-legacy-links-resource');
   assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.unsupportedState, 'local-or-divergent-drift');
   assert.equal(blocker.reason, 'Legacy link graph resources are not yet supported by the planner.');
   assert.equal(blockerJson.includes('Base link'), false);
   assert.equal(blockerJson.includes('Local link'), false);
@@ -41473,6 +41484,7 @@ test('blocks legacy link resource updates while preserving a matching independen
   assert.equal(plan.summary.mutations, 1);
   assert.equal(blocker.class, 'unsupported-legacy-links-resource');
   assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.unsupportedState, 'local-or-divergent-drift');
   assert.equal(blocker.reason, 'Legacy link graph resources are not yet supported by the planner.');
   assert.equal(editMutation.action, 'put');
   assert.equal(editMutation.change.localChange, 'update');
@@ -41514,6 +41526,7 @@ test('blocks legacy link resource updates while preserving a matching independen
   assert.equal(plan.summary.mutations, 1);
   assert.equal(blocker.class, 'unsupported-legacy-links-resource');
   assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.unsupportedState, 'converged-drift');
   assert.equal(blocker.reason, 'Legacy link graph resources are not yet supported by the planner.');
   assert.equal(blockerJson.includes('Base link'), false);
   assert.equal(blockerJson.includes('Local link'), false);

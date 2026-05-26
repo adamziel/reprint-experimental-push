@@ -2969,6 +2969,7 @@ function addUnsupportedLegacyLinksResourceBlocker(plan, {
     resourceKind: 'legacy-link',
     resource,
     resourceKey: resource.key,
+    unsupportedState: support.unsupportedState || null,
     reason: support.reason || `Legacy link resource ${resource.key} is not yet supported by the planner.`,
     baseHash,
     localHash,
@@ -3001,6 +3002,7 @@ function addUnsupportedGuidResourceBlocker(plan, {
     resourceKind: 'post-guid',
     resource,
     resourceKey: resource.key,
+    unsupportedState: support.unsupportedState || null,
     reason: support.reason || `Post GUID resource ${resource.key} is not yet supported by the planner.`,
     baseHash,
     localHash,
@@ -3033,6 +3035,7 @@ function addUnsupportedSerializedBlocksBlocker(plan, {
     resourceKind: 'serialized-blocks',
     resource,
     resourceKey: resource.key,
+    unsupportedState: support.unsupportedState || null,
     reason: support.reason || `Serialized block references in ${resource.key} are not yet supported by the planner.`,
     baseHash,
     localHash,
@@ -3406,6 +3409,16 @@ function unsupportedGuidResourceSupport({ resource, baseValue, localValue, remot
     && remoteGuid !== ''
     && (baseValue === ABSENT || baseGuid == null || baseGuid === '' || remoteGuid !== baseGuid)
   );
+  const remoteOnlyDrift = (
+    stableStringify(localValue) === stableStringify(baseValue)
+    && stableStringify(remoteValue) !== stableStringify(baseValue)
+  );
+  const convergedDrift = (
+    localValue !== ABSENT
+    && remoteValue !== ABSENT
+    && stableStringify(localValue) === stableStringify(remoteValue)
+    && stableStringify(localValue) !== stableStringify(baseValue)
+  );
   if (
     !candidate
     || candidate === ABSENT
@@ -3422,6 +3435,11 @@ function unsupportedGuidResourceSupport({ resource, baseValue, localValue, remot
   return {
     supported: false,
     className: 'unsupported-guid-resource',
+    unsupportedState: convergedDrift
+      ? 'converged-drift'
+      : remoteOnlyDrift
+        ? 'remote-only-drift'
+        : 'local-or-divergent-drift',
     reason: 'Post GUID graph resources are not yet supported by the planner.',
   };
 }
@@ -3652,17 +3670,33 @@ function unsupportedLegacyLinksResourceSupport({ resource, baseValue, localValue
   }
 
   const candidate = localValue !== ABSENT ? localValue : (baseValue !== ABSENT ? baseValue : remoteValue);
+  const remoteOnlyDrift = (
+    stableStringify(localValue) === stableStringify(baseValue)
+    && stableStringify(remoteValue) !== stableStringify(baseValue)
+  );
+  const convergedDrift = (
+    localValue !== ABSENT
+    && remoteValue !== ABSENT
+    && stableStringify(localValue) === stableStringify(remoteValue)
+    && stableStringify(localValue) !== stableStringify(baseValue)
+  );
   if (candidate && candidate !== ABSENT) {
     if (localValue === ABSENT) {
       return {
         supported: false,
         className: 'unsupported-legacy-links-resource',
+        unsupportedState: 'delete',
         reason: 'Legacy link graph resource deletes are not yet supported by the planner.',
       };
     }
     return {
       supported: false,
       className: 'unsupported-legacy-links-resource',
+      unsupportedState: convergedDrift
+        ? 'converged-drift'
+        : remoteOnlyDrift
+          ? 'remote-only-drift'
+          : 'local-or-divergent-drift',
       reason: 'Legacy link graph resources are not yet supported by the planner.',
     };
   }
@@ -3684,9 +3718,25 @@ function unsupportedSerializedBlocksSupport({ resource, baseValue, localValue, r
     return { supported: true };
   }
 
+  const remoteOnlyDrift = (
+    stableStringify(localValue) === stableStringify(baseValue)
+    && stableStringify(remoteValue) !== stableStringify(baseValue)
+  );
+  const convergedDrift = (
+    localValue !== ABSENT
+    && remoteValue !== ABSENT
+    && stableStringify(localValue) === stableStringify(remoteValue)
+    && stableStringify(localValue) !== stableStringify(baseValue)
+  );
+
   return {
     supported: false,
     className: 'unsupported-serialized-blocks-resource',
+    unsupportedState: convergedDrift
+      ? 'converged-drift'
+      : remoteOnlyDrift
+        ? 'remote-only-drift'
+        : 'local-or-divergent-drift',
     reason: 'Serialized block references are not yet supported by the planner.',
   };
 }
