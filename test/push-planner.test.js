@@ -14621,6 +14621,7 @@ test('blocks local post-parent references to a same-plan created post identity w
   const plan = planFor(base, local, remote);
   const blocker = plan.blockers[0];
   assert.ok(blocker);
+  const reference = blocker.references[0];
   const pluginDecision = decisionFor(plan, 'plugin:forms');
   const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
   const planJson = JSON.stringify(plan);
@@ -14631,6 +14632,7 @@ test('blocks local post-parent references to a same-plan created post identity w
   assert.equal(decisionFor(plan, targetResourceKey), undefined);
   assert.equal(blocker.class, 'stale-wordpress-graph-identity');
   assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_posts","ID:10"] references graph identities without proven identity mapping or reference rewriting.');
   assert.equal(blocker.resolutionPolicy, 'preserve-remote-wordpress-graph-and-stop');
   assert.equal(reference.relationshipKey, 'wp_posts.post_parent');
   assert.equal(reference.relationshipType, 'post-parent');
@@ -21672,7 +21674,9 @@ test('blocks local comment-post references to a same-plan created post identity 
   assert.equal(blockers[0].reason, 'WordPress graph mutation row:["wp_comments","comment_ID:27"] is created in the same plan as a comment post identity that depends on it, and identity rewriting is not yet supported.');
   assert.equal(blockers[1].class, 'stale-wordpress-graph-identity');
   assert.equal(blockers[1].resourceKey, targetResourceKey);
-  assert.equal(blockers[1].reason, 'WordPress graph mutation row:["wp_posts","ID:87"] is created in the same plan as a relationship that depends on it, and identity rewriting is not yet supported.');
+  assert.equal(blockers[1].reason, 'WordPress graph mutation row:["wp_posts","ID:87"] is created in the same plan as a comment post target that depends on it, and identity rewriting is not yet supported.');
+  assert.equal(blockers[1].references[0].relationshipType, 'comment-post');
+  assert.equal(blockers[1].references[0].sourceResourceKey, resourceKey);
   assert.equal(conflict.class, 'row-conflict');
   assert.equal(conflict.resourceKey, 'row:["wp_posts","ID:1"]');
   assert.equal(pluginDecision.decision, 'keep-remote');
@@ -25830,7 +25834,9 @@ test('blocks local comments graph references to a same-plan created post identit
   assert.equal(plan.conflicts.length, 0);
   assert.equal(blocker.class, 'stale-wordpress-graph-identity');
   assert.equal(blocker.resourceKey, targetResourceKey);
-  assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_posts","ID:19"] is created in the same plan as a relationship that depends on it, and identity rewriting is not yet supported.');
+  assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_posts","ID:19"] is created in the same plan as a comment post target that depends on it, and identity rewriting is not yet supported.');
+  assert.equal(blocker.references[0].relationshipType, 'comment-post');
+  assert.equal(blocker.references[0].sourceResourceKey, resourceKey);
   assert.equal(planJson.includes('Local comment removal content'), false);
   assert.equal(planJson.includes('Base comment removal content'), false);
   assert.equal(planJson.includes('Local removal post content'), false);
