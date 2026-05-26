@@ -392,6 +392,13 @@ export function packagedProductionPluginClassifyTimeoutFallbackStartup(
   routeProbe,
   indexProbe,
 ) {
+  if (routeProbe?.timedOut === true && indexProbe?.timedOut === true) {
+    return {
+      kind: 'timed-out-route-index-timeout',
+      indexProbeTimedOut: true,
+    };
+  }
+
   if (
     packagedProductionPluginRetryableRouteProbeWhileIndexProbeTimedOut(
       routeProbe,

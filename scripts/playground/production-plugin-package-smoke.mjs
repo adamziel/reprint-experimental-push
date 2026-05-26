@@ -1048,6 +1048,17 @@ async function waitForServer(child, baseUrl, logs) {
                 ),
               );
             }
+            if (startupBranch?.kind === 'timed-out-route-index-timeout') {
+              throw new Error(
+                formatPackagedReadinessFailure(
+                  `Packaged production plugin preflight probe timed out while /wp-json/ also timed out after the snapshot probe timed out at ${baseUrl}`,
+                  error,
+                  lastProbes,
+                  logs,
+                  lastTimeoutFallbackProbes,
+                ),
+              );
+            }
             if (startupBranch?.kind === 'timed-out-route-packaged-route-starting') {
               throw new Error(
                 formatPackagedReadinessFailure(

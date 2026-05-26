@@ -1682,6 +1682,16 @@ test('packaged production plugin timeout fallback classification separates start
   assert.deepEqual(
     packagedProductionPluginClassifyTimeoutFallbackStartup(
       { timedOut: true },
+      { timedOut: true },
+    ),
+    {
+      kind: 'timed-out-route-index-timeout',
+      indexProbeTimedOut: true,
+    },
+  );
+  assert.deepEqual(
+    packagedProductionPluginClassifyTimeoutFallbackStartup(
+      { timedOut: true },
       { status: 503, body: 'WordPress is not ready yet' },
     ),
     {
@@ -2401,6 +2411,10 @@ test('packaged readiness timeout fallback classifies global WordPress versus pac
     /preflight probe timed out while \/wp-json\/ returned a terminal readiness failure HTTP \$\{indexProbe\.status\} after the snapshot probe timed out/,
   );
   assert.match(
+    smokeSource,
+    /preflight probe timed out while \/wp-json\/ also timed out after the snapshot probe timed out/,
+  );
+  assert.match(
     verifierSource,
     /preflight stayed startup-shaped while \/wp-json\/ kept reporting global WordPress startup HTTP \$\{indexProbe[\s\S]*?after the snapshot probe timed out[\s\S]*?globalWordPressStartup:\s*true/s,
   );
@@ -2419,6 +2433,10 @@ test('packaged readiness timeout fallback classifies global WordPress versus pac
   assert.match(
     verifierSource,
     /preflight stayed startup-shaped while \/wp-json\/ returned a terminal readiness failure HTTP \$\{indexProbe\?\.status \?\? 0\} after the snapshot probe timed out[\s\S]*?indexTerminal:\s*true/s,
+  );
+  assert.match(
+    verifierSource,
+    /preflight probe timed out while \/wp-json\/ also timed out after the snapshot probe timed out[\s\S]*?indexProbeTimedOut:\s*true/s,
   );
   assert.match(
     verifierSource,

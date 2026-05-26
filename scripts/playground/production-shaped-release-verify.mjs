@@ -1983,6 +1983,22 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
                 lastTimeoutFallbackProbes,
               );
             }
+            if (startupBranch?.kind === 'timed-out-route-index-timeout') {
+              lastError = error;
+              await throwPlaygroundReadinessFailure(
+                child,
+                `Packaged production plugin preflight probe timed out while /wp-json/ also timed out after the snapshot probe timed out at ${baseUrl}`,
+                lastError,
+                lastProbes,
+                getOutput(),
+                {
+                  childPid: child.pid ?? null,
+                  packagedProductionPlugin: true,
+                  indexProbeTimedOut: true,
+                },
+                lastTimeoutFallbackProbes,
+              );
+            }
             if (startupBranch?.kind === 'timed-out-route-packaged-route-starting') {
               lastError = error;
               await throwPlaygroundReadinessFailure(
