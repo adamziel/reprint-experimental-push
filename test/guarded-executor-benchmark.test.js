@@ -9,8 +9,11 @@ import {
   productionThroughputDetails,
   runGuardedExecutorBenchmark,
 } from '../scripts/bench/guarded-executor-benchmark.js';
-import { buildFastPathFixture } from '../scripts/bench/performance-model.js';
-import { findSafeFastPathByShortcut } from '../scripts/bench/performance-model.js';
+import {
+  buildFastPathFixture,
+  findRejectedFastPathById,
+  findSafeFastPathByShortcut,
+} from '../scripts/bench/performance-model.js';
 
 const fixedNow = new Date('2026-05-24T00:00:00.000Z');
 
@@ -263,6 +266,36 @@ test('guarded benchmark exposes measured queue headroom and canonical budgets as
   assert.match(fastPath.gateProofs.skip, /measured queue headroom together with canonical per-kind budgets/);
   assert.match(fastPath.gateProofs.group, /never merges coupled plugin owners/);
   assert.match(fastPath.gateProofs.recovery, /durable receipts and the group staging record/);
+});
+
+test('guarded benchmark exposes queue budget, memory ceiling, and queue headroom retry shortcuts as rejected', () => {
+  const fastPath = findRejectedFastPathById(
+    'cached-receipt-cursor-queue-budget-memory-ceiling-and-queue-headroom-skips-backpressure-pause-after-retry',
+  );
+
+  assert.ok(fastPath);
+  assert.equal(fastPath.rejectedGate, 'recovery');
+  assert.match(fastPath.proposal, /queue budget, memory ceiling, and queue headroom/);
+  assert.match(fastPath.rejectedBecause, /ordered raw receipts/);
+  assert.deepEqual(
+    fastPath.violates,
+    ['backpressure', 'chunk-receipts', 'durable-progress'],
+  );
+});
+
+test('guarded benchmark exposes staging-disk headroom and journal lag replay shortcuts as rejected', () => {
+  const fastPath = findRejectedFastPathById(
+    'cached-receipt-cursor-staging-disk-headroom-and-journal-lag-skips-post-pause-replay',
+  );
+
+  assert.ok(fastPath);
+  assert.equal(fastPath.rejectedGate, 'recovery');
+  assert.match(fastPath.proposal, /staging-disk headroom and journal lag/);
+  assert.match(fastPath.rejectedBecause, /durable replay evidence/);
+  assert.deepEqual(
+    fastPath.violates,
+    ['backpressure', 'chunk-receipts', 'durable-progress'],
+  );
 });
 
 test('guarded benchmark blocks row-batch executor claims when the measured surface is not visible', () => {
