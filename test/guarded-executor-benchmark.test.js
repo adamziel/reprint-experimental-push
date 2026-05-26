@@ -233,6 +233,38 @@ test('guarded benchmark exposes recorded remote-index chunk-window sizing as pla
   assert.match(fastPath.gateProofs.recovery, /chunk receipts/);
 });
 
+test('guarded benchmark exposes bounded post-pause journal batching as advisory backpressure planning only', () => {
+  const fastPath = findSafeFastPathByShortcut(
+    'reuse-receipt-cursor-and-staging-disk-headroom-to-size-bounded-journal-batches-after-pause',
+  );
+
+  assert.ok(fastPath);
+  assert.equal(fastPath.area, 'backpressure');
+  assert.equal(fastPath.visibilityBoundary, 'kind-scoped-memory-and-journal-planning-only');
+  assert.equal(fastPath.bypassesLivePreconditions, false);
+  assert.equal(fastPath.splitsAtomicGroup, false);
+  assert.equal(fastPath.publishesStagedDataEarly, false);
+  assert.match(fastPath.gateProofs.skip, /receipt cursor can size the next bounded journal batch after a pause/);
+  assert.match(fastPath.gateProofs.live, /same live preconditions/);
+  assert.match(fastPath.gateProofs.recovery, /staging-disk headroom, and journal records/);
+});
+
+test('guarded benchmark exposes measured queue headroom and canonical budgets as bounded replay planning only', () => {
+  const fastPath = findSafeFastPathByShortcut(
+    'reuse-measured-queue-headroom-and-canonical-per-kind-budgets-to-size-bounded-plugin-update-replay-windows',
+  );
+
+  assert.ok(fastPath);
+  assert.equal(fastPath.area, 'backpressure');
+  assert.equal(fastPath.visibilityBoundary, 'planning-only-budget-resume');
+  assert.equal(fastPath.bypassesLivePreconditions, false);
+  assert.equal(fastPath.splitsAtomicGroup, false);
+  assert.equal(fastPath.publishesStagedDataEarly, false);
+  assert.match(fastPath.gateProofs.skip, /measured queue headroom together with canonical per-kind budgets/);
+  assert.match(fastPath.gateProofs.group, /never merges coupled plugin owners/);
+  assert.match(fastPath.gateProofs.recovery, /durable receipts and the group staging record/);
+});
+
 test('guarded benchmark blocks row-batch executor claims when the measured surface is not visible', () => {
   const report = smallBenchmark();
   const tampered = clone(report);
