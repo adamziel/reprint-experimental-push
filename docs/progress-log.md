@@ -4,27 +4,26 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
-## 2026-05-26 - Release Journal Smoke Refresh
+## 2026-05-26 - Durable Journal Fencing Refresh
 
-- Last update: 2026-05-26 12:01 CEST.
-- Status: `origin/lane/reliable-executor` now points at `581f142f` as the
-  current reliable product head for the release-verifier auth/session and
-  journal-ownership proof, while the branch tip also carries off-lane progress
-  churn that is not counted as product evidence.
-- New proof: the release verifier now exposes auth-session lifecycle fields,
-  journal ownership, restart readability, artifact refs, and lease-fence
-  fields on the checked path, while the tracked gates remain at `0/4`.
-- Trend: release-path visibility improved, but the production gate posture did
-  not move.
-- Supervision: the visible page now names `581f142f` as the current reliable
+- Last update: 2026-05-26 12:11 CEST.
+- Status: `origin/lane/reliable-executor` now points at `9d0279a3` as the
+  current reliable product head for the durable-journal claim-fencing proof,
+  while older heads such as `c7a6432d` remain superseded historical evidence.
+- New proof: the release verifier now carries `staleClaimRejected: true`, and
+  the journal test rejects stale claims after restart on the checked path,
+  while the tracked gates remain at `0/4`.
+- Trend: durable-claim fencing visibility improved, but the production gate
+  posture did not move.
+- Supervision: the visible page now names `9d0279a3` as the current reliable
   product head, keeps the conservative gate posture, and links the detailed
-  evidence instead of repeating stale head wording.
-- Blocker: production auth/session lifecycle, durable storage, leases/fencing,
-  full graph identity mapping, Docker/full Playground integration, and
-  arbitrary plugin drivers remain unproven.
+  evidence without repeating the lead paragraph.
+- Blocker: production auth/session lifecycle, durable storage semantics,
+  leases/fencing, full graph identity mapping, Docker/full Playground
+  integration, and arbitrary plugin drivers remain unproven.
 - Next nudge: keep the next proof tied to the audit decision and the next
   production-boundary evidence.
-- Public page: [progress.html](../progress.html) now names `581f142f` as the
+- Public page: [progress.html](../progress.html) now names `9d0279a3` as the
   current reliable product head and keeps the detailed release-verifier
   evidence linked.
 
