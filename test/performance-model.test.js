@@ -568,6 +568,17 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
   assert.ok(
     model.safeFastPaths.some(
       (fastPath) =>
+        fastPath.area === 'backpressure' &&
+        fastPath.allowedShortcut === 'reuse-measured-queue-headroom-to-size-bounded-chunk-upload-retry-windows' &&
+        fastPath.guardrails.includes('queue-headroom-stays-planning-evidence-only') &&
+        fastPath.gateProofs.skip.includes('measured queue headroom can size the next bounded chunk-upload retry window') &&
+        fastPath.gateProofs.recovery.includes('durable chunk receipts and the guarded publish record still classify pause, retry, or crash'),
+    ),
+    'measured queue headroom can size chunk-upload retry windows without weakening publish or recovery gates',
+  );
+  assert.ok(
+    model.safeFastPaths.some(
+      (fastPath) =>
         fastPath.area === 'compression' &&
         fastPath.allowedShortcut === 'compress-canonical-per-kind-budget-summaries-to-size-bounded-plugin-install-fanout' &&
         fastPath.guardrails.includes('plugin-install-fanout-revalidates-before-write') &&

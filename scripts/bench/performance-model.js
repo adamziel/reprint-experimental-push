@@ -1452,6 +1452,26 @@ export const SAFE_FAST_PATHS = Object.freeze([
     publishesStagedDataEarly: false,
   },
   {
+    area: 'backpressure',
+    reduces: ['duplicate-chunk-retry-window-sizing', 'planning-round-trips'],
+    allowedShortcut: 'reuse-measured-queue-headroom-to-size-bounded-chunk-upload-retry-windows',
+    guardrails: [
+      'queue-headroom-stays-planning-evidence-only',
+      'retry-window-revalidates-before-write',
+    ],
+    gateProofs: {
+      skip: 'measured queue headroom can size the next bounded chunk-upload retry window without rescanning the same planning data',
+      live: 'the later file publish still rechecks the live remote resource hash before visibility changes',
+      group: 'the retry window only narrows staging concurrency and never widens the atomic-group barrier',
+      recovery: 'durable chunk receipts and the guarded publish record still classify pause, retry, or crash',
+    },
+    visibilityBoundary: 'planning-only-for-chunk-upload-retry-windows',
+    failureEvidence: 'measured queue headroom plus chunk retry window and guarded publish record',
+    bypassesLivePreconditions: false,
+    splitsAtomicGroup: false,
+    publishesStagedDataEarly: false,
+  },
+  {
     area: 'compression',
     reduces: ['wire-bytes', 'planning-round-trips', 'duplicate-budget-recomputation'],
     allowedShortcut: 'compress-canonical-per-kind-budget-summaries-for-bounded-resume-planning',
