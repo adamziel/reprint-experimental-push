@@ -1,4 +1,10 @@
-# 2026-05-26 - Public Status Audit 11:25:15
+# Progress Log
+
+This log records evidence present in this repository. Percentages must remain
+conservative until they are backed by executable tests, integration runs, or
+linked implementation artifacts.
+
+## 2026-05-26 - Public Status Audit 11:25:15
 
 <a id="2026-05-26-public-status-audit-112515"></a>
 
@@ -13,7 +19,7 @@
 
 ---
 
-# 2026-05-26 - Public Status Audit 11:24:33
+## 2026-05-26 - Public Status Audit 11:24:33
 
 <a id="2026-05-26-public-status-audit-112433"></a>
 
@@ -27,12 +33,6 @@
   durable journal ownership still block any production push claim.
 
 ---
-
-# Progress Log
-
-This log records evidence present in this repository. Percentages must remain
-conservative until they are backed by executable tests, integration runs, or
-linked implementation artifacts.
 
 ## 2026-05-26 - Public Status Audit 11:23:22
 
