@@ -324,6 +324,24 @@ export async function runAuthenticatedHttpPush({
     };
     return summary;
   }
+  const dryRunIdentityContinuityDrift = requireProductionAuthSession
+    ? resolveProductionAuthSessionIdentityContinuityDrift(preflightAuthEnvelope, dryRun)
+    : null;
+  if (dryRunIdentityContinuityDrift) {
+    summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
+    summary.authSession = {
+      required: 'authenticated identity continuity',
+      observed: dryRunIdentityContinuityDrift,
+      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+    };
+    summary.boundary = {
+      firstRemainingProductionBoundary: 'auth/session lifecycle and durable journal semantics',
+      status: 'unimplemented',
+      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+      authSession: summary.authSession,
+    };
+    return summary;
+  }
   const dryRunSessionPreservationDrift = requireProductionAuthSession
     ? resolveProductionAuthSessionPreservationDrift(preflightAuthEnvelope, dryRun)
     : null;
@@ -427,6 +445,24 @@ export async function runAuthenticatedHttpPush({
     };
     return summary;
   }
+  const applyIdentityContinuityDrift = requireProductionAuthSession
+    ? resolveProductionAuthSessionIdentityContinuityDrift(preflightAuthEnvelope, apply)
+    : null;
+  if (applyIdentityContinuityDrift) {
+    summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
+    summary.authSession = {
+      required: 'authenticated identity continuity',
+      observed: applyIdentityContinuityDrift,
+      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+    };
+    summary.boundary = {
+      firstRemainingProductionBoundary: 'auth/session lifecycle and durable journal semantics',
+      status: 'unimplemented',
+      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+      authSession: summary.authSession,
+    };
+    return summary;
+  }
   const applySessionPreservationDrift = requireProductionAuthSession
     ? resolveProductionAuthSessionPreservationDrift(preflightAuthEnvelope, apply)
     : null;
@@ -509,6 +545,24 @@ export async function runAuthenticatedHttpPush({
     summary.authSession = {
       required: 'authenticated identity',
       observed: 'missing-user-login',
+      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+    };
+    summary.boundary = {
+      firstRemainingProductionBoundary: 'auth/session lifecycle and durable journal semantics',
+      status: 'unimplemented',
+      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+      authSession: summary.authSession,
+    };
+    return summary;
+  }
+  const recoveryInspectIdentityContinuityDrift = requireProductionAuthSession
+    ? resolveProductionAuthSessionIdentityContinuityDrift(preflightAuthEnvelope, recoveryInspect)
+    : null;
+  if (recoveryInspectIdentityContinuityDrift) {
+    summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
+    summary.authSession = {
+      required: 'authenticated identity continuity',
+      observed: recoveryInspectIdentityContinuityDrift,
       verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
     };
     summary.boundary = {
@@ -652,6 +706,24 @@ export async function runAuthenticatedHttpPush({
     };
     return summary;
   }
+  const replayIdentityContinuityDrift = requireProductionAuthSession
+    ? resolveProductionAuthSessionIdentityContinuityDrift(preflightAuthEnvelope, replay)
+    : null;
+  if (replayIdentityContinuityDrift) {
+    summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
+    summary.authSession = {
+      required: 'authenticated identity continuity',
+      observed: replayIdentityContinuityDrift,
+      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+    };
+    summary.boundary = {
+      firstRemainingProductionBoundary: 'auth/session lifecycle and durable journal semantics',
+      status: 'unimplemented',
+      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+      authSession: summary.authSession,
+    };
+    return summary;
+  }
   const replaySessionPreservationDrift = requireProductionAuthSession
     ? resolveProductionAuthSessionPreservationDrift(preflightAuthEnvelope, replay)
     : null;
@@ -719,6 +791,24 @@ export async function runAuthenticatedHttpPush({
     summary.authSession = {
       required: 'authenticated identity',
       observed: 'missing-user-login',
+      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+    };
+    summary.boundary = {
+      firstRemainingProductionBoundary: 'auth/session lifecycle and durable journal semantics',
+      status: 'unimplemented',
+      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+      authSession: summary.authSession,
+    };
+    return summary;
+  }
+  const dbJournalIdentityContinuityDrift = requireProductionAuthSession
+    ? resolveProductionAuthSessionIdentityContinuityDrift(preflightAuthEnvelope, dbJournal)
+    : null;
+  if (dbJournalIdentityContinuityDrift) {
+    summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
+    summary.authSession = {
+      required: 'authenticated identity continuity',
+      observed: dbJournalIdentityContinuityDrift,
       verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
     };
     summary.boundary = {
@@ -1384,6 +1474,29 @@ function hasMissingProductionAuthSessionIdentity(response) {
   }
 
   return !response?.body?.auth?.identity?.userLogin;
+}
+
+function resolveProductionAuthSessionIdentityContinuityDrift(expected, response) {
+  const expectedUserLogin = typeof expected?.userLogin === 'string'
+    ? expected.userLogin.trim()
+    : '';
+  if (!expectedUserLogin) {
+    return null;
+  }
+
+  const session = response?.body?.auth?.session;
+  if (session?.type !== 'production-auth-session') {
+    return null;
+  }
+
+  const observedUserLogin = typeof response?.body?.auth?.identity?.userLogin === 'string'
+    ? response.body.auth.identity.userLogin.trim()
+    : '';
+  if (!observedUserLogin || observedUserLogin === expectedUserLogin) {
+    return null;
+  }
+
+  return observedUserLogin;
 }
 
 function hasMissingProductionAuthSessionExpiry(response) {
