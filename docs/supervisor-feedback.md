@@ -1,6 +1,12 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-26 10:44 CEST
+Last updated: 2026-05-26 10:46 CEST
+
+## 2026-05-26 10:46:23 CEST - Fresh Evidence Delta
+
+- Reliable's newest readiness fast-fail patch is `0f36d838`, which now fails immediately on the first `/wp-json/` `502` body containing `WordPress is not ready yet` through the bounded route/status/body diagnostic path.
+- This is cleaner failure evidence, but it still does not cross the outer release-verifier boundary, so the gate remains closed.
+- The release posture stays conservative at `0/4`.
 
 ## 2026-05-26 10:44:28 CEST - Fresh Evidence Delta
 
