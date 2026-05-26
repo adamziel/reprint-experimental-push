@@ -359,6 +359,44 @@ export function evaluateProductionAuthSessionLifecycleSummary(summary, now = Dat
   };
 }
 
+export function evaluateCheckedReleaseAuthSessionLifecycleSummary(summary, now = Date.now()) {
+  const lifecycle = evaluateProductionAuthSessionLifecycleSummary(summary, now);
+  if (!lifecycle.ok) {
+    return lifecycle;
+  }
+
+  const releaseBoundaryRead = summary?.read;
+  if (!releaseBoundaryRead || typeof releaseBoundaryRead !== 'object') {
+    return {
+      ok: false,
+      required: 'release-boundary preserved read',
+      observed: 'missing',
+    };
+  }
+
+  if (releaseBoundaryRead.step !== 'replay' && releaseBoundaryRead.step !== 'journal') {
+    return {
+      ok: false,
+      required: 'release-boundary preserved read',
+      observed: releaseBoundaryRead.step || 'missing',
+    };
+  }
+
+  if (releaseBoundaryRead.preserved !== true) {
+    return {
+      ok: false,
+      required: 'release-boundary preserved read',
+      observed: releaseBoundaryRead.rotated ? 'rotated' : 'unpreserved',
+    };
+  }
+
+  return {
+    ok: true,
+    required: 'checked release production-auth-session lifecycle',
+    observed: releaseBoundaryRead.step,
+  };
+}
+
 export function summarizeProductionAuthSessionLifecycleTrace(trace) {
   if (!Array.isArray(trace) || trace.length === 0) {
     return null;

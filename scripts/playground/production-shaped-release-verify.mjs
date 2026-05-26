@@ -23,6 +23,7 @@ import {
   resolveReleaseVerifyCredentials,
 } from './release-verify-credentials.js';
 import {
+  evaluateCheckedReleaseAuthSessionLifecycleSummary,
   evaluateProductionAuthSessionLifecycle,
   evaluateProductionAuthSessionLifecycleSummary,
   summarizeProductionAuthSessionLifecycleTrace,
@@ -1058,7 +1059,7 @@ try {
       const authSessionLifecycleSummary =
         proof.authSessionLifecycleSummary
         || summarizeProductionAuthSessionLifecycleTrace(proof.authSessionLifecycleTrace);
-      const checkedAuthSessionLifecycle = evaluateProductionAuthSessionLifecycleSummary(authSessionLifecycleSummary);
+      const checkedAuthSessionLifecycle = evaluateCheckedReleaseAuthSessionLifecycleSummary(authSessionLifecycleSummary);
       if (!checkedAuthSessionLifecycle.ok) {
         process.stdout.write(
           JSON.stringify(

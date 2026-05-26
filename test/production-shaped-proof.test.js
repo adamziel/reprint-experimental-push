@@ -44,6 +44,7 @@ import {
   packagedProductionPluginSnapshotReady,
 } from '../scripts/playground/packaged-production-plugin-readiness.js';
 import {
+  evaluateCheckedReleaseAuthSessionLifecycleSummary,
   evaluateProductionAuthSessionLifecycle,
   evaluateProductionAuthSessionLifecycleSummary,
   isExpiredAuthSession,
@@ -2299,6 +2300,175 @@ test('production auth/session lifecycle summary helper requires a preserved acti
   );
 });
 
+test('checked release auth/session lifecycle helper requires replay or journal boundary preservation', () => {
+  assert.deepEqual(
+    evaluateCheckedReleaseAuthSessionLifecycleSummary({
+      issued: {
+        step: 'preflight',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+        authUser: 'reprint_push_admin',
+        expired: false,
+        revoked: false,
+        cleanedUp: false,
+        rotated: false,
+        preserved: false,
+      },
+      read: {
+        step: 'dry-run',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+        authUser: 'reprint_push_admin',
+        expired: false,
+        revoked: false,
+        cleanedUp: false,
+        rotated: false,
+        preserved: true,
+      },
+      preserved: {
+        step: 'dry-run',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+        authUser: 'reprint_push_admin',
+        expired: false,
+        revoked: false,
+        cleanedUp: false,
+        rotated: false,
+        preserved: true,
+      },
+      observations: [
+        {
+          step: 'preflight',
+          id: 'session-01',
+          type: 'production-auth-session',
+          status: 'active',
+          expiresAt: '2099-01-01T00:00:00Z',
+          authUser: 'reprint_push_admin',
+          expired: false,
+          revoked: false,
+          cleanedUp: false,
+          rotated: false,
+          preserved: false,
+        },
+        {
+          step: 'dry-run',
+          id: 'session-01',
+          type: 'production-auth-session',
+          status: 'active',
+          expiresAt: '2099-01-01T00:00:00Z',
+          authUser: 'reprint_push_admin',
+          expired: false,
+          revoked: false,
+          cleanedUp: false,
+          rotated: false,
+          preserved: true,
+        },
+      ],
+    }),
+    {
+      ok: false,
+      required: 'release-boundary preserved read',
+      observed: 'dry-run',
+    },
+  );
+
+  assert.deepEqual(
+    evaluateCheckedReleaseAuthSessionLifecycleSummary({
+      issued: {
+        step: 'preflight',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+        authUser: 'reprint_push_admin',
+        expired: false,
+        revoked: false,
+        cleanedUp: false,
+        rotated: false,
+        preserved: false,
+      },
+      read: {
+        step: 'journal',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+        authUser: 'reprint_push_admin',
+        expired: false,
+        revoked: false,
+        cleanedUp: false,
+        rotated: false,
+        preserved: true,
+      },
+      preserved: {
+        step: 'dry-run',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+        authUser: 'reprint_push_admin',
+        expired: false,
+        revoked: false,
+        cleanedUp: false,
+        rotated: false,
+        preserved: true,
+      },
+      observations: [
+        {
+          step: 'preflight',
+          id: 'session-01',
+          type: 'production-auth-session',
+          status: 'active',
+          expiresAt: '2099-01-01T00:00:00Z',
+          authUser: 'reprint_push_admin',
+          expired: false,
+          revoked: false,
+          cleanedUp: false,
+          rotated: false,
+          preserved: false,
+        },
+        {
+          step: 'dry-run',
+          id: 'session-01',
+          type: 'production-auth-session',
+          status: 'active',
+          expiresAt: '2099-01-01T00:00:00Z',
+          authUser: 'reprint_push_admin',
+          expired: false,
+          revoked: false,
+          cleanedUp: false,
+          rotated: false,
+          preserved: true,
+        },
+        {
+          step: 'journal',
+          id: 'session-01',
+          type: 'production-auth-session',
+          status: 'active',
+          expiresAt: '2099-01-01T00:00:00Z',
+          authUser: 'reprint_push_admin',
+          expired: false,
+          revoked: false,
+          cleanedUp: false,
+          rotated: false,
+          preserved: true,
+        },
+      ],
+    }),
+    {
+      ok: true,
+      required: 'checked release production-auth-session lifecycle',
+      observed: 'journal',
+    },
+  );
+});
+
 test('production auth/session lifecycle summary fails closed on authenticated identity continuity drift', () => {
   assert.deepEqual(
     evaluateProductionAuthSessionLifecycleSummary({
@@ -3573,7 +3743,7 @@ maybeTest('production-shaped release verify command runs the live protocol branc
     );
     assert.match(
       proof.stdout,
-      /"authSessionLifecycleSummary": \{\s*"issued": \{\s*"step": "preflight",\s*"id": "[^"]+",\s*"type": "production-auth-session",\s*"status": "active",\s*"expiresAt": "[^"]+",\s*"authUser": "[^"]+",\s*"expired": false,\s*"revoked": false,\s*"cleanedUp": false,\s*"rotated": false,\s*"preserved": false\s*\},\s*"read": \{\s*"step": "(journal|replay|apply|dry-run)",\s*"id": "[^"]+",\s*"type": "production-auth-session",\s*"status": "active",\s*"expiresAt": "[^"]+",\s*"authUser": "[^"]+",\s*"expired": false,\s*"revoked": false,\s*"cleanedUp": false,\s*"rotated": false,\s*"preserved": true\s*\}/,
+      /"authSessionLifecycleSummary": \{\s*"issued": \{\s*"step": "preflight",\s*"id": "[^"]+",\s*"type": "production-auth-session",\s*"status": "active",\s*"expiresAt": "[^"]+",\s*"authUser": "[^"]+",\s*"expired": false,\s*"revoked": false,\s*"cleanedUp": false,\s*"rotated": false,\s*"preserved": false\s*\},\s*"read": \{\s*"step": "(journal|replay)",\s*"id": "[^"]+",\s*"type": "production-auth-session",\s*"status": "active",\s*"expiresAt": "[^"]+",\s*"authUser": "[^"]+",\s*"expired": false,\s*"revoked": false,\s*"cleanedUp": false,\s*"rotated": false,\s*"preserved": true\s*\}/,
     );
     assert.match(
       proof.stdout,
