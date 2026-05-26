@@ -61,6 +61,9 @@ Current executable gate:
   visible on the raw backpressure evidence surface, so the audit view can
   reject a queue-budget drift without reconstructing the bit from derived
   details alone.
+- The raw backpressure evidence now also carries a pause-footprint completeness
+  bit, and the production-throughput gate fails closed if a paused sender does
+  not prove that footprint directly on the evidence surface.
 - The production-throughput gate also fails closed if the recorded receipt
   cursor no longer fits the bounded queue budget, so the backpressure evidence
   stays aligned with the replayable cursor state.

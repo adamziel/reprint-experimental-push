@@ -71,6 +71,7 @@ test('guarded executor benchmark moves buffers and row payloads through durable 
   assert.equal(report.evidence.backpressure.queuePausedBeforeOverflow, true);
   assert.equal(report.evidence.backpressure.receiptCursorWithinQueueBudget, true);
   assert.equal(report.evidence.backpressure.backpressureEvidenceComplete, true);
+  assert.equal(report.evidence.backpressure.receiptCursorPauseFootprintComplete, true);
   assert.equal(report.evidence.backpressure.receiptCursorQueueSlackBytes, 31.5 * 1024 * 1024);
   assert.equal(report.evidence.backpressure.receiptCursorMemoryHeadroomBytes, 31.5 * 1024 * 1024);
   assert.equal(report.evidence.backpressure.queueHeadroomBytes, 31.5 * 1024 * 1024);
@@ -427,7 +428,7 @@ test('guarded benchmark refuses production throughput claims until production ga
   incompletePauseFootprint.evidence.backpressure.receiptCursorPauseFootprintComplete = false;
   assert.ok(
     productionThroughputBlockers(incompletePauseFootprint).includes(
-      'queue-pause-without-complete-receipt-cursor-pause-footprint',
+      'queue-pause-footprint-not-proven',
     ),
   );
   assert.equal(report.results.preCommitFailure.remoteUnchanged, true);

@@ -341,6 +341,12 @@ export function productionThroughputBlockers(report) {
   if (report.evidence.backpressure?.receiptCursorBackpressureWithinQueueHeadroom !== true) {
     blockers.push('receipt-cursor-exceeds-queue-headroom');
   }
+  if (
+    report.evidence.backpressure?.queuePausedBeforeOverflow === true
+    && report.evidence.backpressure?.receiptCursorPauseFootprintComplete !== true
+  ) {
+    blockers.push('queue-pause-footprint-not-proven');
+  }
   if (report.evidence.backpressure?.queuePausedBeforeOverflow !== true) {
     blockers.push('queue-did-not-pause-before-overflow');
   }
@@ -1887,6 +1893,15 @@ function buildReport({
           config.maxBufferedUploadBytes === DEFAULT_LIMITS.maxBufferedUploadBytes,
         receiptCursorMemoryCeilingVisible:
           config.maxBufferedUploadBytes === DEFAULT_LIMITS.maxBufferedUploadBytes,
+        receiptCursorPauseFootprintComplete:
+          queuePausedBeforeOverflow === true
+          && Number.isFinite(lastChunkReceipt?.sizeBytes)
+          && Number.isFinite(config.maxBufferedUploadBytes)
+          && Number.isFinite(config.chunkSizeBytes)
+          && config.maxBufferedUploadBytes === DEFAULT_LIMITS.maxBufferedUploadBytes
+          && config.maxBufferedUploadBytes - lastChunkReceipt.sizeBytes > 0
+          && config.maxBufferedUploadBytes - lastChunkReceipt.sizeBytes
+            === config.maxBufferedUploadBytes - config.chunkSizeBytes,
         queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack:
           queuePausedBeforeOverflow === true
           && Number.isFinite(lastChunkReceipt?.sizeBytes)
