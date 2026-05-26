@@ -18335,6 +18335,80 @@ test('blocks an existing term-taxonomy row when its same-plan term belongs to a 
   assert.equal(remote.plugins.forms.description, 'remote-only plugin drift');
 });
 
+test('blocks an existing term-taxonomy row when its same-plan term belongs to a nav menu taxonomy while preserving a matching independent delete and remote-only plugin removals', () => {
+  const termResourceKey = 'row:["wp_terms","term_id:9"]';
+  const taxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:5"]';
+  const navMenuTaxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:8"]';
+  const matchingDeleteResourceKey = 'row:["wp_posts","ID:1"]';
+  const base = baseSite();
+  base.db.wp_term_taxonomy = {
+    'term_taxonomy_id:5': {
+      term_taxonomy_id: 5,
+      term_id: 9,
+      taxonomy: 'category',
+      parent: 0,
+      description: 'base term taxonomy description',
+    },
+  };
+
+  const local = baseSite();
+  local.db.wp_terms = {
+    'term_id:9': {
+      term_id: 9,
+      name: 'Local nav menu taxonomy term',
+      slug: 'local-nav-menu-taxonomy-term',
+    },
+  };
+  local.db.wp_term_taxonomy = {
+    'term_taxonomy_id:5': {
+      term_taxonomy_id: 5,
+      term_id: 9,
+      taxonomy: 'category',
+      parent: 0,
+      description: 'local term taxonomy description',
+    },
+    'term_taxonomy_id:8': {
+      term_taxonomy_id: 8,
+      term_id: 9,
+      taxonomy: 'nav_menu',
+      parent: 0,
+      description: 'local nav menu taxonomy description',
+    },
+  };
+  delete local.db.wp_posts['ID:1'];
+
+  const remote = baseSite();
+  remote.db.wp_term_taxonomy = JSON.parse(JSON.stringify(base.db.wp_term_taxonomy));
+  delete remote.db.wp_posts['ID:1'];
+  delete remote.plugins.forms;
+  delete remote.files['wp-content/plugins/forms/forms.php'];
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === taxonomyResourceKey);
+  const navMenuBlocker = plan.blockers.find((entry) => entry.resourceKey === navMenuTaxonomyResourceKey);
+  const matchingDelete = decisionFor(plan, matchingDeleteResourceKey);
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(mutationFor(plan, taxonomyResourceKey), undefined);
+  assert.equal(decisionFor(plan, termResourceKey), undefined);
+  assert.equal(matchingDelete.decision, 'already-in-sync');
+  assert.equal(matchingDelete.change.localChange, 'delete');
+  assert.equal(matchingDelete.change.remoteChange, 'delete');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(blocker.class, 'unsupported-navigation-resource');
+  assert.equal(blocker.resourceKey, taxonomyResourceKey);
+  assert.equal(blocker.unsupportedState, 'same-plan-reference');
+  assert.equal(blocker.reason, 'Navigation and menu graph resources are not yet supported by the planner.');
+  assert.equal(navMenuBlocker.class, 'unsupported-navigation-resource');
+  assert.equal(planJson.includes('Local nav menu taxonomy term'), false);
+  assert.equal(planJson.includes('local nav menu taxonomy description'), false);
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
+});
+
 test('allows an existing term-taxonomy row to reference same-plan created term identities through both term and parent while preserving remote-only plugin drift', () => {
   const resourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:5"]';
   const termResourceKey = 'row:["wp_terms","term_id:9"]';
