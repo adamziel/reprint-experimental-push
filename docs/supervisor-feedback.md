@@ -1,9 +1,22 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-26 17:18 CEST
+Last updated: 2026-05-26 17:19 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-26 17:19 CEST - Public Page Still Behind `1506e667`
+
+- Going well: the live reliable head is still `1506e6679a5a8816aa39d8c7005379303529113c`, and the checked release-path work is moving forward.
+- Not going well: `progress-live` says the public deployment is lagging while `origin/main` builds, so the visible page is behind the live head rather than the other way around.
+- Progress change: gates remain `0/4`; this is a freshness/blocker update, not a gate move.
+- Next nudge: keep `reliable-executor` on the shared release-path proof and let `progress-publisher`/`progress-live` refresh the public page only when the build catches up and the visible head matches.
+
+| Lane | Nudge |
+| --- | --- |
+| Reliable executor | Continue the product/test push toward production-backed auth/session lifecycle or durable journal ownership; do not backslide into proof-field polish. |
+| Progress publisher | Refresh the public page only after `origin/main` catches up, and keep the visible reliable head aligned with `1506e6679a5a8816aa39d8c7005379303529113c`. |
+| Audit and critic | Keep the verdict at `0/4`; classify the new head once, then stop until gate evidence changes. |
 
 ## 2026-05-26 17:18 CEST - Public Page Stale at `3c444838`
 
