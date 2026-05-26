@@ -1280,6 +1280,9 @@ test('production claim gate fails closed if benchmark evidence is tampered', () 
     productionThroughputBlockers(oversizedBackpressureCursor).includes('receipt-cursor-backpressure-mismatch'),
     true,
   );
+  assert.ok(
+    productionThroughputBlockers(oversizedBackpressureCursor).includes('receipt-cursor-exceeds-queue-headroom'),
+  );
 
   const backpressureExceedsQueueBudget = clone(report);
   backpressureExceedsQueueBudget.evidence.backpressure.receiptCursorBytes =
