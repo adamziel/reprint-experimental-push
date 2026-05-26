@@ -1106,6 +1106,10 @@ function summarizeRecoveryInspect(response) {
 
   const journalState = recovery.journal?.integrity?.status
     || (recovery.journalEvidence && typeof recovery.journalEvidence === 'object' ? 'ok' : undefined);
+  const dbJournal = summarizeDbJournalBody(response.body, {
+    status: response.status,
+    retryAttempts: response.retryAttempts || 1,
+  });
 
   return {
     authUser: response.body?.auth?.identity?.userLogin,
@@ -1121,6 +1125,7 @@ function summarizeRecoveryInspect(response) {
       total: recovery.counts.total,
     } : undefined,
     journalState,
+    dbJournal,
   };
 }
 

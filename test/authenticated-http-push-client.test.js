@@ -3574,6 +3574,7 @@ test('production-shaped authenticated push surfaces recovery session status in t
     assert.equal(summary.ok, false);
     assert.equal(summary.recoveryInspect.sessionStatus, 'active');
     assert.equal(summary.recoveryInspect.recovery.journalState, 'ok');
+    assert.equal(summary.recoveryInspect.recovery.dbJournal, undefined);
   } finally {
     global.fetch = originalFetch;
   }
@@ -4416,6 +4417,7 @@ test('production-shaped authenticated push fails closed when recovery inspect re
       total: 1,
     });
     assert.equal(summary.recoveryInspect.recovery.journalState, 'ok');
+    assert.equal(summary.recoveryInspect.recovery.dbJournal, undefined);
     assert.equal(summary.recoveryInspect.authUser, 'reprint_push_admin');
     assert.equal(summary.recoveryInspect.authSessionId, 'psh_01j00000000000000000000000');
     assert.equal(summary.recoveryInspect.sessionType, 'production-auth-session');
@@ -6746,6 +6748,39 @@ test('production-shaped authenticated push accepts checked durable journal proof
     });
 
     assert.equal(summary.ok, true);
+    assert.deepEqual(summary.recoveryInspect.recovery.dbJournal, {
+      status: 200,
+      ok: true,
+      retryAttempts: 1,
+      scope: 'packaged production plugin journal surface; not local Playground fixture only',
+      acceptedOnCheckedBoundary: true,
+      rows: 3,
+      applyCommitted: true,
+      mutationApplied: 1,
+      idempotencyOpened: 1,
+      storageGuard: {
+        boundary: 'wpdb-single-statement-cas',
+        operation: 'update',
+        outcome: 'applied',
+      },
+      ownership: {
+        ownsJournal: true,
+        restartReadable: true,
+        productionAdapter: 'wpdb-single-statement-cas',
+      },
+      leaseFence: {
+        boundary: 'wpdb-single-statement-cas',
+        claimKeyUnique: true,
+        monotonicSequence: true,
+        restartReadable: true,
+        staleClaimRejected: false,
+      },
+      authUser: 'reprint_push_admin',
+      authSessionId: 'psh_01j00000000000000000000000',
+      sessionType: 'production-auth-session',
+      sessionStatus: 'active',
+      sessionExpiresAt: '2030-01-01T00:00:00Z',
+    });
     assert.deepEqual(summary.dbJournal?.ownership, {
       ownsJournal: true,
       restartReadable: true,
