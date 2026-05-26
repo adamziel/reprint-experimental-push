@@ -219,6 +219,12 @@ export function productionThroughputBlockers(report) {
   if (report.evidence.backpressure?.receiptCursorWithinQueueBudget !== true) {
     blockers.push('receipt-cursor-exceeds-queue-budget');
   }
+  if (
+    report.evidence.backpressure?.receiptCursorBytes !== null
+    && report.evidence.backpressure?.receiptCursorBytes !== report.evidence.chunkReceipts.resumeCursor?.sizeBytes
+  ) {
+    blockers.push('receipt-cursor-backpressure-mismatch');
+  }
   if (!report.evidence.atomicGroup.productionAtomicCommitMeasured) {
     blockers.push('production-atomic-group-commit-not-measured');
   }
@@ -277,6 +283,7 @@ export function productionThroughputDetails(report) {
     receiptCursorMemoryHeadroomBytes,
     queueHeadroomBytes: report.evidence.backpressure?.queueHeadroomBytes ?? null,
     queuePausedBeforeOverflow: report.evidence.backpressure?.queuePausedBeforeOverflow ?? false,
+    receiptCursorWithinQueueBudget: report.evidence.backpressure?.receiptCursorWithinQueueBudget ?? false,
     receiptCursor: report.evidence.chunkReceipts.resumeCursor,
     receiptCursorConsistency: report.evidence.chunkReceipts.cursorConsistency,
     recovery: report.evidence.recovery,

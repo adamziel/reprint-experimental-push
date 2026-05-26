@@ -106,6 +106,7 @@ test('guarded benchmark refuses production throughput claims until production ga
   assert.equal(report.claims.productionThroughputDetails.receiptCursorMatchesChunkWindow, true);
   assert.equal(report.claims.productionThroughputDetails.receiptCursorWithinMemoryCeiling, true);
   assert.equal(report.claims.productionThroughputDetails.receiptCursorMemoryHeadroomBytes, 31.5 * 1024 * 1024);
+  assert.equal(report.claims.productionThroughputDetails.receiptCursorWithinQueueBudget, true);
   assert.equal(
     report.claims.productionThroughputDetails.receiptCursor.resourceKey,
     'file:wp-content/uploads/2026/05/catalog-export.bin',
@@ -304,6 +305,14 @@ test('production claim gate fails closed if benchmark evidence is tampered', () 
   assert.ok(
     productionThroughputBlockers(oversizedQueueCursor).includes(
       'receipt-cursor-exceeds-queue-budget',
+    ),
+  );
+
+  const mismatchedQueueCursor = clone(report);
+  mismatchedQueueCursor.evidence.backpressure.receiptCursorBytes = 0;
+  assert.ok(
+    productionThroughputBlockers(mismatchedQueueCursor).includes(
+      'receipt-cursor-backpressure-mismatch',
     ),
   );
 
