@@ -468,15 +468,22 @@ test('production recovery journal compatibility overload supports reliable relea
   });
 
   assert.equal(inspection.consumed, true);
+  assert.equal(inspection.journal.kind, 'production-recovery-journal');
   assert.equal(inspection.journal.productionAdapter, 'openProductionRecoveryJournal');
+  assert.equal(inspection.journal.supportedSurface, 'production-recovery-journal-adapter');
   assert.equal(inspection.journal.ownsJournal, true);
+  assert.equal(inspection.journal.ownsRemoteArtifact, true);
   assert.equal(inspection.journal.consumed, true);
   assert.equal(inspection.journal.restartReadable, true);
+  assert.equal(inspection.journal.journalPath, filePath);
   assert.deepEqual(inspection.journal.artifactRefs, artifactRefs);
   assert.deepEqual(inspection.journal.checked, [filePath]);
+  assert.deepEqual(inspection.journal.writerLease, { id: claimId });
+  assert.deepEqual(inspection.journal.leaseFence, { id: claimId });
   assert.equal(inspection.leaseFence.storageGuard, 'filesystem-compare-rename');
   assert.equal(inspection.leaseFence.fsyncEvidence, true);
   assert.equal(inspection.leaseFence.monotonicSequence, true);
+  assert.equal(inspection.leaseFence.staleClaimRejected, false);
 
   const staleJournal = openProductionRecoveryJournal({
     filePath,

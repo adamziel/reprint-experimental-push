@@ -285,6 +285,10 @@ export function consumeProductionRecoveryJournal(options) {
     current,
     claimId = null,
   } = normalized;
+  const writerLease = Object.hasOwn(normalized, 'writerLease')
+    ? freezeProductionWriterLease(normalized.writerLease)
+    : null;
+  const leaseFence = freezeProductionWriterLease(writerLease);
   const artifactRefs = normalizeProductionArtifactRefs(
     normalized.artifactRefs,
     filePath,
@@ -318,15 +322,21 @@ export function consumeProductionRecoveryJournal(options) {
 
   return {
     journal: {
+      kind: 'production-recovery-journal',
       path: filePath,
+      journalPath: filePath,
       checked: [filePath],
       artifactRefs,
       productionAdapter: 'openProductionRecoveryJournal',
+      supportedSurface: 'production-recovery-journal-adapter',
       claimId,
       ownsJournal: true,
+      ownsRemoteArtifact: normalized.ownsRemoteArtifact === true,
       claimHash: claimId ? recoveryClaimHash(claimId) : null,
       consumed,
       restartReadable: inspection.integrity?.status === 'ok',
+      writerLease,
+      leaseFence,
       schemaVersion: inspection.schemaVersion ?? null,
       integrity: inspection.integrity,
       records: records.length,
