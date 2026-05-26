@@ -227,6 +227,10 @@ This note captures the planner boundary in plain language.
   unsupported, even if unrelated remote-only plugin changes are present; the
   comments blocker evidence stays bounded and the plugin changes stay
   `keep-remote`.
+- A local comments row must still stop when a same-plan-created comment
+  parent is present, even if unrelated remote-only plugin drift is present;
+  the comments blocker evidence stays bounded and the plugin drift stays
+  `keep-remote`.
 - A mixed ready plan must still fail closed when one mutation loses its live
   remote precondition, even if a matching independent edit and a file type
   swap remain safe in the same plan; the remote stays unchanged and the

@@ -14818,6 +14818,58 @@ test('blocks local same-plan created post identity when a comment references it 
   assert.equal(remote.plugins.forms.description, 'remote-only plugin drift');
 });
 
+test('blocks local same-plan created comment parent identity while preserving remote-only plugin drift', () => {
+  const resourceKey = 'row:["wp_comments","comment_ID:18"]';
+  const targetResourceKey = 'row:["wp_comments","comment_ID:19"]';
+  const base = baseSite();
+  base.db.wp_comments = {
+    'comment_ID:18': {
+      comment_ID: 18,
+      comment_post_ID: 1,
+      comment_parent: 19,
+      comment_content: 'Base child comment content',
+    },
+  };
+
+  const local = baseSite();
+  local.db.wp_comments = {
+    'comment_ID:18': {
+      comment_ID: 18,
+      comment_post_ID: 1,
+      comment_parent: 19,
+      comment_content: 'Local child comment content',
+    },
+  };
+  local.db.wp_comments['comment_ID:19'] = {
+    comment_ID: 19,
+    comment_post_ID: 1,
+    comment_parent: 0,
+    comment_content: 'Local same-plan parent comment',
+  };
+
+  const remote = baseSite();
+  remote.db.wp_comments = JSON.parse(JSON.stringify(base.db.wp_comments));
+  remote.plugins.forms.description = 'remote-only plugin drift';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin drift */';
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(decisionFor(plan, targetResourceKey), undefined);
+  assert.equal(plan.conflicts.length, 0);
+  assert.equal(blocker.class, 'unsupported-comments-users-resource');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.reason, 'Comments graph resources are not yet supported by the planner.');
+  assert.equal(planJson.includes('Local child comment content'), false);
+  assert.equal(planJson.includes('Base child comment content'), false);
+  assert.equal(planJson.includes('Local same-plan parent comment'), false);
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin drift');
+});
+
 test('blocks local term-relationship object references when the live remote post identity disappears while preserving remote-only plugin drift', () => {
   const resourceKey = 'row:["wp_term_relationships","object_id:7,term_taxonomy_id:5"]';
   const targetResourceKey = 'row:["wp_posts","ID:7"]';
