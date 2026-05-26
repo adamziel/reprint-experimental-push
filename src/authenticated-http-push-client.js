@@ -645,13 +645,17 @@ export async function runAuthenticatedHttpPush({
     && dbJournal.status === 200
     && dbJournal.body?.ok === true
     && dbJournalProofIsAcceptable(summary.dbJournal)
+    && dbJournalCheckedBoundaryContractIsPresent(summary.dbJournal)
     && summary.after?.finalMatchesLocal === true;
   if (!summary.ok) {
     const replayIdempotency = replay.body?.idempotency;
     const authEnvelopeDrift = applyAuthEnvelopeDrift || replayAuthEnvelopeDrift;
     const journalProofFailed = dbJournal.status === 200
       && dbJournal.body?.ok === true
-      && !dbJournalProofIsAcceptable(summary.dbJournal);
+      && (
+        !dbJournalProofIsAcceptable(summary.dbJournal)
+        || !dbJournalCheckedBoundaryContractIsPresent(summary.dbJournal)
+      );
     const replayEquivalenceFailed = replay.status === 200
       && replay.body?.ok === true
       && replayIdempotency
