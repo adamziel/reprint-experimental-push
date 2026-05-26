@@ -107,6 +107,11 @@ export function evaluateProductionAuthSessionLifecycleSummary(summary, now = Dat
     };
   }
 
+  const invalidSummaryObservationField = resolveInvalidAuthSessionSummaryObservationField(summary);
+  if (invalidSummaryObservationField) {
+    return invalidSummaryObservationField;
+  }
+
   const issuedObservation = summary.issued;
   if (!issuedObservation || typeof issuedObservation !== 'object' || Array.isArray(issuedObservation)) {
     return {
@@ -505,6 +510,40 @@ function resolveInvalidAuthSessionSummaryFlag(summary) {
     const value = summary[field];
     if (value !== undefined && value !== null && (typeof value !== 'object' || Array.isArray(value))) {
       return field;
+    }
+  }
+
+  return null;
+}
+
+function resolveInvalidAuthSessionSummaryObservationField(summary) {
+  if (!summary || typeof summary !== 'object') {
+    return null;
+  }
+
+  const summaryObservationFields = ['expired', 'revoked', 'cleanedUp', 'rotated', 'preserved'];
+  for (const field of summaryObservationFields) {
+    const observation = summary[field];
+    if (!observation || typeof observation !== 'object' || Array.isArray(observation)) {
+      continue;
+    }
+
+    const invalidLifecycleFlag = resolveInvalidAuthSessionLifecycleFlag(observation);
+    if (invalidLifecycleFlag) {
+      return {
+        ok: false,
+        required: 'boolean lifecycle flags',
+        observed: `invalid-${invalidLifecycleFlag}`,
+      };
+    }
+
+    const invalidIdentityField = resolveInvalidAuthSessionIdentityField(observation);
+    if (invalidIdentityField) {
+      return {
+        ok: false,
+        required: 'string lifecycle fields',
+        observed: `invalid-${invalidIdentityField}`,
+      };
     }
   }
 
