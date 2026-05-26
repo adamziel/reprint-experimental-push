@@ -2965,6 +2965,77 @@ test('production auth/session lifecycle summary fails closed when the trace reis
     },
   );
 });
+
+test('production auth/session lifecycle summary fails closed when direct preserved summary carries stale lifecycle fields', () => {
+  const summary = {
+    issued: {
+      step: 'preflight',
+      id: 'session-01',
+      type: 'production-auth-session',
+      status: 'active',
+      expiresAt: '2099-01-01T00:00:00Z',
+    },
+    read: {
+      step: 'journal',
+      id: 'session-01',
+      type: 'production-auth-session',
+      status: 'active',
+      expiresAt: '2099-01-01T00:00:00Z',
+      preserved: true,
+    },
+    preserved: {
+      step: 'apply',
+      id: 'session-01',
+      type: 'production-auth-session',
+      status: 'active',
+      expiresAt: '2098-01-01T00:00:00Z',
+      preserved: true,
+    },
+    observations: [
+      {
+        step: 'preflight',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+        preserved: false,
+      },
+      {
+        step: 'dry-run',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+        preserved: true,
+      },
+      {
+        step: 'apply',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+        preserved: true,
+      },
+      {
+        step: 'journal',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+        preserved: true,
+      },
+    ],
+  };
+
+  assert.deepEqual(
+    evaluateProductionAuthSessionLifecycleSummary(summary),
+    {
+      ok: false,
+      required: 'preserved read',
+      observed: 'stale-preserved-summary',
+    },
+  );
+});
 maybeTest('production-shaped release verify command consumes the packaged production auth/session source command when production auth/session is required', async () => {
   await withPlaygroundServer('remote-base', path.join(repoRoot, 'fixtures/playground/remote-base.blueprint.json'), async (remoteServer) => {
     const expectedSourceCommand = resolvePackagedProductionPluginSourceCommand({

@@ -319,6 +319,14 @@ export function evaluateProductionAuthSessionLifecycleSummary(summary, now = Dat
     }
   }
 
+  const mismatchedPreservedObservation = resolveMismatchedSummaryPreservedObservation(
+    summary.preserved,
+    observations,
+  );
+  if (mismatchedPreservedObservation) {
+    return mismatchedPreservedObservation;
+  }
+
   if (issuedAuthUser.missing) {
     return {
       ok: false,
@@ -397,6 +405,47 @@ function hasTraceBackedPostPreflightReadObservation(observations, issuedIndex) {
   }
 
   return false;
+}
+
+function resolveMismatchedSummaryPreservedObservation(preservedObservation, observations) {
+  if (!preservedObservation || !Array.isArray(observations) || observations.length === 0) {
+    return null;
+  }
+
+  const observedPreserved = observations.find((observation) =>
+    observation
+    && typeof observation === 'object'
+    && isAuthSessionReadStep(observation.step)
+    && observation.preserved === true);
+  if (!observedPreserved) {
+    return {
+      ok: false,
+      required: 'preserved read',
+      observed: 'stale-preserved-summary',
+    };
+  }
+
+  for (const field of ['step', 'id', 'type', 'status', 'expiresAt', 'authUser']) {
+    const expected = preservedObservation?.[field] ?? null;
+    const observed = observedPreserved?.[field] ?? null;
+    if (expected !== observed) {
+      return {
+        ok: false,
+        required: 'preserved read',
+        observed: 'stale-preserved-summary',
+      };
+    }
+  }
+
+  if (Boolean(preservedObservation?.preserved) !== true) {
+    return {
+      ok: false,
+      required: 'preserved read',
+      observed: 'stale-preserved-summary',
+    };
+  }
+
+  return null;
 }
 
 function resolveAuthSessionIdentitySummary(observation) {

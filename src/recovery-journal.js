@@ -42,6 +42,16 @@ function hasStaleClaimRejectionEvidence(records) {
   );
 }
 
+function assertAllowedOptionKeys(options, allowedKeys, operationName) {
+  const providedOptions = options && typeof options === 'object' ? options : {};
+  const unexpectedKeys = Object.keys(providedOptions).filter((key) => !allowedKeys.has(key));
+  if (unexpectedKeys.length > 0) {
+    throw new Error(
+      `${operationName} received unsupported option keys: ${unexpectedKeys.sort().join(', ')}`,
+    );
+  }
+}
+
 export function openRecoveryJournal(filePath, options = {}) {
   const flags = options.truncate ? 'w+' : 'a+';
   fs.mkdirSync(path.dirname(filePath), { recursive: true });
@@ -66,15 +76,33 @@ export function openRecoveryJournal(filePath, options = {}) {
   });
 }
 
-export function openProductionRecoveryJournal({
-  filePath,
-  plan,
-  current,
-  artifactRefs = {},
-  now,
-  truncate = true,
-  claimId = null,
-}) {
+export function checkedDurableJournalBoundarySatisfied(dbJournal) {
+  return /(packaged production plugin|checked live production-shaped) journal surface/i.test(dbJournal?.scope || '')
+    && dbJournal?.ownership?.ownsJournal === true
+    && dbJournal?.ownership?.restartReadable === true
+    && dbJournal?.ownership?.productionAdapter === 'wpdb-single-statement-cas'
+    && dbJournal?.leaseFence?.boundary === 'wpdb-single-statement-cas'
+    && dbJournal?.leaseFence?.claimKeyUnique === true
+    && dbJournal?.leaseFence?.monotonicSequence === true
+    && dbJournal?.leaseFence?.restartReadable === true
+    && dbJournal?.leaseFence?.staleClaimRejected === true;
+}
+
+export function openProductionRecoveryJournal(options) {
+  assertAllowedOptionKeys(
+    options,
+    new Set(['filePath', 'plan', 'current', 'artifactRefs', 'now', 'truncate', 'claimId']),
+    'openProductionRecoveryJournal()',
+  );
+  const {
+    filePath,
+    plan,
+    current,
+    artifactRefs = {},
+    now,
+    truncate = true,
+    claimId = null,
+  } = options;
   const journal = openPlanRecoveryJournal({
     filePath,
     plan,
@@ -133,13 +161,19 @@ export function openProductionRecoveryJournal({
   return journal;
 }
 
-export function consumeProductionRecoveryJournal({
-  filePath,
-  plan,
-  current,
-  artifactRefs = {},
-  claimId = null,
-}) {
+export function consumeProductionRecoveryJournal(options) {
+  assertAllowedOptionKeys(
+    options,
+    new Set(['filePath', 'plan', 'current', 'artifactRefs', 'claimId']),
+    'consumeProductionRecoveryJournal()',
+  );
+  const {
+    filePath,
+    plan,
+    current,
+    artifactRefs = {},
+    claimId = null,
+  } = options;
   const journal = openProductionRecoveryJournal({
     filePath,
     plan,

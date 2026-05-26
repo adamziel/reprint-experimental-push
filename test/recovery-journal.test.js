@@ -8,6 +8,7 @@ import {
   appendRecoveryClaimOpened,
   appendMutationObserved,
   assertJournalRecordHasNoRawValues,
+  checkedDurableJournalBoundarySatisfied,
   recoveryClaimHash,
   RecoveryJournalClaimStaleError,
   consumeProductionRecoveryJournal,
@@ -386,4 +387,90 @@ test('checked release path consumes the production recovery journal inspection s
   assert.equal(inspection.journal.staleClaimRejected, true);
   assert.equal(inspection.leaseFence.storageGuard, 'filesystem-compare-rename');
   assert.equal(inspection.leaseFence.staleClaimRejected, true);
+});
+
+test('production recovery journal wrapper rejects hidden open options', () => {
+  const filePath = tempJournalPath();
+  const remote = baseSite();
+  const plan = planFor(baseSite(), localSite(), remote);
+
+  assert.throws(
+    () => openProductionRecoveryJournal({
+      filePath,
+      plan,
+      current: remote,
+      artifactRefs: {
+        releaseProof: 'artifact://release-proof-1',
+      },
+      claimId: 'production-claim-01',
+      claim: {
+        id: 'shadow-claim',
+      },
+    }),
+    /openProductionRecoveryJournal\(\) received unsupported option keys: claim/,
+  );
+
+  assert.equal(fs.existsSync(filePath), false);
+});
+
+test('production recovery journal consumer rejects hidden open options', () => {
+  const filePath = tempJournalPath();
+  const remote = baseSite();
+  const plan = planFor(baseSite(), localSite(), remote);
+  const claimId = 'production-claim-consumer-01';
+
+  const journal = openProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs: {
+      releaseProof: 'artifact://release-proof-1',
+    },
+    claimId,
+  });
+  journal.close();
+
+  assert.throws(
+    () => consumeProductionRecoveryJournal({
+      filePath,
+      plan,
+      current: remote,
+      artifactRefs: {
+        releaseProof: 'artifact://release-proof-1',
+      },
+      claimId,
+      truncate: false,
+    }),
+    /consumeProductionRecoveryJournal\(\) received unsupported option keys: truncate/,
+  );
+});
+
+test('checked durable journal boundary stays closed until stale-claim rejection is proven on the lease fence', () => {
+  const baseContract = {
+    scope: 'checked live production-shaped journal surface; not local Playground fixture only',
+    ownership: {
+      ownsJournal: true,
+      restartReadable: true,
+      productionAdapter: 'wpdb-single-statement-cas',
+    },
+    leaseFence: {
+      boundary: 'wpdb-single-statement-cas',
+      claimKeyUnique: true,
+      monotonicSequence: true,
+      restartReadable: true,
+      staleClaimRejected: false,
+    },
+  };
+
+  assert.equal(checkedDurableJournalBoundarySatisfied(baseContract), false);
+  assert.equal(
+    checkedDurableJournalBoundarySatisfied({
+      ...baseContract,
+      leaseFence: {
+        ...baseContract.leaseFence,
+        staleClaimRejected: true,
+      },
+    }),
+    true,
+  );
 });

@@ -50,6 +50,7 @@ import {
 import { loadBlueprintSnapshotFixture } from './blueprint-snapshot-fixture.js';
 import {
   appendRecoveryClaimOpened,
+  checkedDurableJournalBoundarySatisfied,
   consumeProductionRecoveryJournal,
   openProductionRecoveryJournal,
 } from '../../src/recovery-journal.js';
@@ -918,9 +919,9 @@ try {
       );
       assert.equal(durableJournalSummary.leaseFence?.fsyncEvidence, true);
       assert.equal(durableJournalSummary.leaseFence?.monotonicSequence, true);
-      const checkedDurableJournalAccepted = dbJournalProofIsAcceptable(proof.dbJournal, {
-        requireStaleClaimRejected: packagedSourceFixture !== null,
-      });
+      const checkedDurableJournalAccepted = packagedSourceFixture !== null
+        ? checkedDurableJournalBoundarySatisfied(proof.dbJournal)
+        : dbJournalProofIsAcceptable(proof.dbJournal);
 
       if (requireProductionDurableJournal && !checkedDurableJournalAccepted) {
         process.stdout.write(
