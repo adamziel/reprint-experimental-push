@@ -997,10 +997,14 @@ export function productionRecoverySupportReport(writer) {
   }
   if (
     !Object.hasOwn(writer ?? {}, 'writerLease')
-    || !isStrictPlainObject(writer.writerLease)
-    || !Object.hasOwn(writer.writerLease, 'id')
-    || typeof writer.writerLease.id !== 'string'
-    || writer.writerLease.id.trim().length === 0
+    || !hasValidProductionLeaseIdentity(writer.writerLease)
+  ) {
+    addMissingDependency('fencing or lease ownership for the journal writer');
+  }
+  if (
+    !Object.hasOwn(writer ?? {}, 'leaseFence')
+    || !hasValidProductionLeaseIdentity(writer.leaseFence)
+    || writer.leaseFence.id !== writer.writerLease.id
   ) {
     addMissingDependency('fencing or lease ownership for the journal writer');
   }
@@ -1156,6 +1160,13 @@ function isCanonicalAbsolutePath(filePath) {
     && path.isAbsolute(filePath)
     && path.resolve(filePath) === filePath
     && !/[?#]/.test(filePath);
+}
+
+function hasValidProductionLeaseIdentity(value) {
+  return isStrictPlainObject(value)
+    && Object.hasOwn(value, 'id')
+    && typeof value.id === 'string'
+    && value.id.trim().length > 0;
 }
 
 function durableJournalInspectPath(inspected) {
