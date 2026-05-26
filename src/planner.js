@@ -1185,8 +1185,9 @@ function wordpressGraphIdentitySupport({
     if (ownerId != null) {
       const navMenuTaxonomy = resources.find((candidate) => candidate.type === 'row'
         && candidate.table === 'wp_term_taxonomy'
-        && normalizePositiveInteger(getResource(local, candidate)?.term_id) === ownerId
-        && getResource(local, candidate)?.taxonomy === 'nav_menu');
+        && [base, local, remote].some((snapshot) =>
+          normalizePositiveInteger(getResource(snapshot, candidate)?.term_id) === ownerId
+            && getResource(snapshot, candidate)?.taxonomy === 'nav_menu'));
       if (navMenuTaxonomy) {
         return {
           supported: false,

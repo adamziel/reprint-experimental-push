@@ -2234,7 +2234,6 @@ test('blocks local termmeta references to stale remote-created term identity', (
 
 test('blocks a local termmeta reference to a same-plan term when a remote nav menu taxonomy exists', () => {
   const resourceKey = 'row:["wp_termmeta","meta_id:12"]';
-  const targetResourceKey = 'row:["wp_terms","term_id:7"]';
   const base = baseSite();
   const local = baseSite();
   local.db.wp_terms = {
@@ -2266,23 +2265,15 @@ test('blocks a local termmeta reference to a same-plan term when a remote nav me
 
   const plan = planFor(base, local, remote);
   const blocker = plan.blockers[0];
-  const reference = blocker.references[0];
   const blockerJson = JSON.stringify(blocker);
 
   assert.equal(plan.status, 'blocked');
-  assert.equal(plan.summary.mutations, 2);
-  assert.equal(mutationFor(plan, resourceKey).changeKind, 'create');
-  assert.equal(mutationFor(plan, targetResourceKey).changeKind, 'create');
-  assert.equal(decisionFor(plan, targetResourceKey), undefined);
-  assert.equal(blocker.class, 'missing-wordpress-graph-dependency');
+  assert.equal(plan.summary.mutations, 1);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(mutationFor(plan, 'row:["wp_terms","term_id:7"]').changeKind, 'create');
+  assert.equal(blocker.class, 'unsupported-wordpress-graph-surface');
   assert.equal(blocker.resourceKey, resourceKey);
-  assert.equal(blocker.resolutionPolicy, 'preserve-remote-wordpress-graph-and-stop');
-  assert.equal(reference.relationshipKey, 'wp_termmeta.term_id');
-  assert.equal(reference.relationshipType, 'termmeta-term');
-  assert.equal(reference.sourceResourceKey, resourceKey);
-  assert.equal(reference.targetResourceKey, targetResourceKey);
-  assert.equal(reference.targetChange.remoteChange, 'unchanged');
-  assert.equal(reference.targetRemoteHash.length, 64);
+  assert.equal(blocker.surface, 'nav_menu');
   assert.equal(blockerJson.includes('local-private-termmeta-value'), false);
 });
 
@@ -10722,10 +10713,9 @@ test('blocks a local termmeta reference to a same-plan term when a remote nav me
 
   assert.equal(plan.status, 'blocked');
   assert.equal(termMutation.changeKind, 'create');
-  assert.equal(termmetaMutation.changeKind, 'create');
-  assert.equal(blocker.class, 'missing-wordpress-graph-dependency');
-  assert.equal(blocker.references[0].relationshipType, 'termmeta-term');
-  assert.equal(blocker.references[0].targetResourceKey, termResourceKey);
+  assert.equal(termmetaMutation, undefined);
+  assert.equal(blocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(blocker.surface, 'nav_menu');
   assert.equal(JSON.stringify(blocker).includes('local-private-shared-term-note'), false);
   assert.throws(() => applyPlan(baseSite(), plan), /Refusing to apply/);
 });
