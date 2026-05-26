@@ -90,6 +90,10 @@ function spawnReleaseVerifyBounded(command, args, options, label) {
     killSignal,
   };
   const proof = spawnSync(command, args, boundedOptions);
+  if (proof.error || proof.signal || proof.status === null) {
+    stopAllPlaygroundChildrenSync();
+    reportBoundedSpawnFailure(proof, command, args);
+  }
   assertBoundedSpawnProof(proof, command, args, label, boundedOptions.timeout);
   return proof;
 }
@@ -253,6 +257,10 @@ function spawnBoundedSync(command, args, options, label) {
     killSignal: options.killSignal ?? 'SIGKILL',
   };
   const proof = spawnSync(command, args, boundedOptions);
+  if (proof.error || proof.signal || proof.status === null) {
+    stopAllPlaygroundChildrenSync();
+    reportBoundedSpawnFailure(proof, command, args);
+  }
   assertBoundedSpawnProof(proof, command, args, label, boundedOptions.timeout);
   return proof;
 }
