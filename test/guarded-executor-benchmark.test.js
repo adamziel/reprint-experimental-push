@@ -182,6 +182,7 @@ test('guarded benchmark refuses production throughput claims until production ga
   assert.equal(report.claims.productionThroughputDetails.receiptCursorMemoryCeilingBytes, 32 * 1024 * 1024);
   assert.equal(report.claims.productionThroughputDetails.backpressureConsistency.receiptCursorMemoryHeadroomPositive, true);
   assert.equal(report.claims.productionThroughputDetails.receiptCursorHeadroomMatchesResourceHeadroom, true);
+  assert.equal(report.claims.productionThroughputDetails.receiptCursorMemoryHeadroomWithinResourceHeadroom, true);
   assert.equal(report.claims.productionThroughputDetails.receiptCursorHeadroomCoveredByQueueBudget, true);
   assert.equal(report.claims.productionThroughputDetails.receiptCursorHeadroomBytes, 31.5 * 1024 * 1024);
   assert.equal(report.claims.productionThroughputDetails.receiptCursorHeadroomMatchesQueueHeadroom, true);

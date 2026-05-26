@@ -699,6 +699,11 @@ export function productionThroughputDetails(report) {
   const receiptCursorMemoryHeadroomMatchesResourceHeadroom =
     receiptCursorWithinMemoryCeiling
     && receiptCursorMemoryHeadroomBytes === receiptCursorMemoryCeilingBytes - receiptCursorWindowBytes;
+  const receiptCursorMemoryHeadroomWithinResourceHeadroom =
+    Number.isFinite(receiptCursorMemoryHeadroomBytes)
+    && Number.isFinite(receiptCursorMemoryCeilingBytes)
+    && Number.isFinite(receiptCursorWindowBytes)
+    && receiptCursorMemoryHeadroomBytes <= receiptCursorMemoryCeilingBytes - receiptCursorWindowBytes;
   const journalSuccessRecordTypes = report.evidence.journal?.successRecordTypes ?? [];
   const journalSuccessReceiptKinds = journalSuccessRecordTypes.map((recordType) => receiptKindForRecordType(recordType));
   const journalSuccessReceiptKindLedger = summarizeReceiptKinds(journalSuccessReceiptKinds);
@@ -769,6 +774,7 @@ export function productionThroughputDetails(report) {
     receiptCursorMemoryHeadroomBytes,
     receiptCursorMemoryHeadroomPositive: receiptCursorMemoryHeadroomPositiveVisible,
     receiptCursorMemoryHeadroomMatchesResourceHeadroom,
+    receiptCursorMemoryHeadroomWithinResourceHeadroom,
     receiptCursorMatchesBackpressure,
     receiptCursorBackpressureWithinResourceHeadroom,
     receiptCursorBackpressureWithinQueueBudget,
@@ -819,6 +825,7 @@ export function productionThroughputDetails(report) {
       receiptCursorMemoryHeadroomBytes,
       receiptCursorMemoryHeadroomPositive: receiptCursorMemoryHeadroomPositiveVisible,
       receiptCursorMemoryHeadroomMatchesResourceHeadroom,
+      receiptCursorMemoryHeadroomWithinResourceHeadroom,
       receiptCursorBackpressureWithinResourceHeadroom,
       receiptCursorBackpressureWithinQueueBudget,
       backpressureEvidenceComplete,
