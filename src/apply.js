@@ -597,16 +597,8 @@ function assertProductionDurableJournalSupport(options, writer) {
     return;
   }
 
-  if (
-    writer
-    && writer.kind === 'production-recovery-journal'
-    && writer.ownsJournal === true
-    && typeof writer.flush === 'function'
-    && typeof writer.close === 'function'
-    && typeof writer.inspect === 'function'
-    && typeof writer.assertCurrentClaim === 'function'
-    && durableJournalInspectSurface(writer)
-  ) {
+  const missingDependency = productionRecoveryMissingDependencies(writer);
+  if (missingDependency.length === 0) {
     return;
   }
 
@@ -615,16 +607,38 @@ function assertProductionDurableJournalSupport(options, writer) {
     'Production durable journal recovery is not available in this worktree.',
     {
       supportedSurface: 'production-recovery-journal-adapter',
-      missingDependency: [
-        'append-only persisted journal storage',
-        'restart-readable recovery inspection',
-        'explicit journal ownership fencing',
-        'fencing or lease ownership for the journal writer',
-        'stable-storage flush or fsync semantics',
-      ],
+      missingDependency,
       requiresDurableJournal: true,
     },
   );
+}
+
+function productionRecoveryMissingDependencies(writer) {
+  const missingDependency = [];
+
+  if (writer?.kind !== 'production-recovery-journal') {
+    missingDependency.push('production recovery journal adapter marker');
+  }
+  if (writer?.ownsJournal !== true) {
+    missingDependency.push('explicit journal ownership fencing');
+  }
+  if (typeof writer?.flush !== 'function') {
+    missingDependency.push('stable-storage flush or fsync semantics');
+  }
+  if (typeof writer?.close !== 'function') {
+    missingDependency.push('durable writer cleanup');
+  }
+  if (typeof writer?.inspect !== 'function') {
+    missingDependency.push('restart-readable recovery inspection');
+  }
+  if (typeof writer?.assertCurrentClaim !== 'function') {
+    missingDependency.push('fencing or lease ownership for the journal writer');
+  }
+  if (writer && typeof writer.inspect === 'function' && !durableJournalInspectSurface(writer)) {
+    missingDependency.push('journal-readable inspection records with sequence and type');
+  }
+
+  return missingDependency;
 }
 
 function durableJournalInspectSurface(writer) {

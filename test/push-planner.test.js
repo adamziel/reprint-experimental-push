@@ -19695,11 +19695,46 @@ test('production durable journal claims fail closed without a restart-readable w
   const error = captureError(() => applyPlan(baseSite(), plan, { requireProductionDurableJournal: true }));
   assert.equal(error.code, 'PRODUCTION_DURABLE_JOURNAL_UNSUPPORTED');
   assert.deepEqual(error.details.missingDependency, [
-    'append-only persisted journal storage',
-    'restart-readable recovery inspection',
+    'production recovery journal adapter marker',
     'explicit journal ownership fencing',
-    'fencing or lease ownership for the journal writer',
     'stable-storage flush or fsync semantics',
+    'durable writer cleanup',
+    'restart-readable recovery inspection',
+    'fencing or lease ownership for the journal writer',
+  ]);
+});
+
+test('production durable journal claims report the exact missing durability pieces for a partial writer', () => {
+  const writer = {
+    kind: 'production-recovery-journal',
+    ownsJournal: true,
+    nextSequence: 1,
+    appendEvent(type, payload) {
+      this.nextSequence += 1;
+      return { sequence: this.nextSequence - 1, type, payload };
+    },
+    flush() {},
+    close() {},
+    assertCurrentClaim() {},
+  };
+  const plan = planFor(baseSite(), baseSite(), {
+    ...baseSite(),
+    db: {
+      ...baseSite().db,
+      wp_options: {
+        ...baseSite().db.wp_options,
+        'option_name:blogname': { option_name: 'blogname', option_value: 'New Site' },
+      },
+    },
+  });
+  const error = captureError(() => applyPlan(baseSite(), plan, {
+    requireProductionDurableJournal: true,
+    durableJournal: writer,
+  }));
+
+  assert.equal(error.code, 'PRODUCTION_DURABLE_JOURNAL_UNSUPPORTED');
+  assert.deepEqual(error.details.missingDependency, [
+    'restart-readable recovery inspection',
   ]);
 });
 
