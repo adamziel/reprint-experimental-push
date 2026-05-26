@@ -24811,6 +24811,147 @@ test('prioritizes comment-post blocker wording while carrying bounded comment-po
   assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin drift */');
 });
 
+test('prioritizes post-parent blocker wording while truncating lower-priority comment, term-relationship, and postmeta references for a same-plan created post identity', () => {
+  const targetResourceKey = 'row:["wp_posts","ID:94"]';
+  const childPostResourceKey = 'row:["wp_posts","ID:95"]';
+  const commentResourceKey = 'row:["wp_comments","comment_ID:42"]';
+  const relationshipResourceKey = 'row:["wp_term_relationships","object_id:94,term_taxonomy_id:5"]';
+  const metaResourceKey = 'row:["wp_postmeta","meta_id:20"]';
+  const base = baseSite();
+  base.db.wp_posts['ID:1'].post_title = 'Base shared truncated post dependency title';
+  base.db.wp_comments = {
+    'comment_ID:42': {
+      comment_ID: 42,
+      comment_post_ID: 7,
+      comment_content: 'Base truncated dependent comment',
+      comment_approved: '1',
+    },
+  };
+  base.db.wp_postmeta = {
+    'meta_id:20': {
+      meta_id: 20,
+      post_id: 7,
+      meta_key: '_truncated_dependency_note',
+      meta_value: 'Base truncated dependency meta',
+    },
+  };
+  base.db.wp_terms = {
+    'term_id:2': { term_id: 2, name: 'Base truncated term', slug: 'base-truncated-term' },
+  };
+  base.db.wp_term_taxonomy = {
+    'term_taxonomy_id:5': {
+      term_taxonomy_id: 5,
+      term_id: 2,
+      taxonomy: 'category',
+      description: 'base truncated taxonomy',
+      parent: 0,
+    },
+  };
+  base.db.wp_term_relationships = {};
+
+  const local = baseSite();
+  local.db.wp_posts['ID:1'].post_title = 'Shared truncated post dependency title';
+  local.db.wp_posts['ID:94'] = {
+    ID: 94,
+    post_title: 'Local truncated same-plan post identity',
+    post_content: 'Local truncated same-plan post body',
+    post_status: 'publish',
+    post_type: 'post',
+  };
+  local.db.wp_posts['ID:95'] = {
+    ID: 95,
+    post_title: 'Local child post for truncated evidence',
+    post_content: 'Local child post for truncated evidence body',
+    post_status: 'publish',
+    post_type: 'post',
+    post_parent: 94,
+  };
+  local.db.wp_comments = {
+    'comment_ID:42': {
+      comment_ID: 42,
+      comment_post_ID: 94,
+      comment_content: 'Local truncated dependent comment',
+      comment_approved: '1',
+    },
+  };
+  local.db.wp_postmeta = {
+    'meta_id:20': {
+      meta_id: 20,
+      post_id: 94,
+      meta_key: '_truncated_dependency_note',
+      meta_value: 'Local truncated dependency meta',
+    },
+  };
+  local.db.wp_terms = JSON.parse(JSON.stringify(base.db.wp_terms));
+  local.db.wp_term_taxonomy = JSON.parse(JSON.stringify(base.db.wp_term_taxonomy));
+  local.db.wp_term_relationships = {
+    'object_id:94,term_taxonomy_id:5': {
+      object_id: 94,
+      term_taxonomy_id: 5,
+      term_order: 1,
+      note: 'Local truncated dependency relationship',
+    },
+  };
+
+  const remote = baseSite();
+  remote.db.wp_posts['ID:1'].post_title = 'Shared truncated post dependency title';
+  remote.db.wp_comments = JSON.parse(JSON.stringify(base.db.wp_comments));
+  remote.db.wp_postmeta = JSON.parse(JSON.stringify(base.db.wp_postmeta));
+  remote.db.wp_terms = JSON.parse(JSON.stringify(base.db.wp_terms));
+  remote.db.wp_term_taxonomy = JSON.parse(JSON.stringify(base.db.wp_term_taxonomy));
+  remote.db.wp_term_relationships = {};
+  remote.plugins.forms.description = 'remote-only plugin drift';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin drift */';
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === targetResourceKey);
+  const childPostBlocker = plan.blockers.find((entry) => entry.resourceKey === childPostResourceKey);
+  const commentBlocker = plan.blockers.find((entry) => entry.resourceKey === commentResourceKey);
+  const relationshipBlocker = plan.blockers.find((entry) => entry.resourceKey === relationshipResourceKey);
+  const metaBlocker = plan.blockers.find((entry) => entry.resourceKey === metaResourceKey);
+  const matchingEdit = decisionFor(plan, 'row:["wp_posts","ID:1"]');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, targetResourceKey), undefined);
+  assert.equal(decisionFor(plan, targetResourceKey), undefined);
+  assert.equal(blocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(
+    blocker.reason,
+    'WordPress graph mutation row:["wp_posts","ID:94"] is created in the same plan as a post parent target that depends on it, and identity rewriting is not yet supported.',
+  );
+  assert.deepEqual(
+    blocker.references.map((reference) => [reference.relationshipType, reference.sourceResourceKey]),
+    [
+      ['post-parent', childPostResourceKey],
+      ['comment-post', commentResourceKey],
+      ['term-relationship-object', relationshipResourceKey],
+    ],
+  );
+  assert.equal(blocker.referencesTruncated, true);
+  assert.equal(childPostBlocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(commentBlocker.class, 'unsupported-comments-users-resource');
+  assert.equal(relationshipBlocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(metaBlocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(matchingEdit.decision, 'already-in-sync');
+  assert.equal(matchingEdit.change.localChange, 'update');
+  assert.equal(matchingEdit.change.remoteChange, 'update');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('Local truncated same-plan post identity'), false);
+  assert.equal(planJson.includes('Local truncated same-plan post body'), false);
+  assert.equal(planJson.includes('Local child post for truncated evidence'), false);
+  assert.equal(planJson.includes('Local child post for truncated evidence body'), false);
+  assert.equal(planJson.includes('Local truncated dependent comment'), false);
+  assert.equal(planJson.includes('Local truncated dependency meta'), false);
+  assert.equal(planJson.includes('Local truncated dependency relationship'), false);
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin drift');
+  assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin drift */');
+});
+
 test('blocks local menu item parent references to a same-plan created nav menu item while preserving remote-only plugin drift', () => {
   const resourceKey = 'row:["wp_posts","ID:49"]';
   const targetResourceKey = 'row:["wp_posts","ID:13"]';

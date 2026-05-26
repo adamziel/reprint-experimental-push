@@ -2622,90 +2622,10 @@ function samePlanCreatedGraphIdentitySupport({ resource, resources, base, local,
       || left.relationshipKey.localeCompare(right.relationshipKey);
   });
 
-  const termTaxonomyInboundReference = orderedInboundReferences.find((reference) =>
-    reference.relationshipType === 'term-relationship-taxonomy'
-    && reference.targetResource?.table === 'wp_term_taxonomy');
-  const termTaxonomyParentInboundReference = orderedInboundReferences.find((reference) =>
-    reference.relationshipType === 'term-taxonomy-parent'
-    && reference.targetResource?.table === 'wp_terms');
-  const termTaxonomyTermInboundReference = orderedInboundReferences.find((reference) =>
-    reference.relationshipType === 'term-taxonomy-term'
-    && reference.targetResource?.table === 'wp_terms');
-  const termmetaTermInboundReference = orderedInboundReferences.find((reference) =>
-    reference.relationshipType === 'termmeta-term'
-    && reference.targetResource?.table === 'wp_terms');
-  const revisionInboundReference = orderedInboundReferences.find((reference) =>
-    reference.relationshipType === 'term-relationship-object'
-    && reference.targetResource?.table === 'wp_posts'
-    && getResource(local, reference.targetResource)?.post_type === 'revision');
-  const postParentInboundReference = orderedInboundReferences.find((reference) =>
-    reference.relationshipType === 'post-parent'
-    && reference.targetResource?.table === 'wp_posts');
-  const commentPostInboundReference = orderedInboundReferences.find((reference) =>
-    reference.relationshipType === 'comment-post'
-    && reference.targetResource?.table === 'wp_posts');
-  const postInboundReference = orderedInboundReferences.find((reference) =>
-    reference.relationshipType === 'term-relationship-object'
-    && reference.targetResource?.table === 'wp_posts');
-  const postmetaPostInboundReference = orderedInboundReferences.find((reference) =>
-    reference.relationshipType === 'postmeta-post'
-    && reference.targetResource?.table === 'wp_posts');
-  const postAuthorInboundReference = orderedInboundReferences.find((reference) =>
-    reference.relationshipType === 'post-author'
-    && reference.targetResource?.table === 'wp_users');
-  const attachmentInboundReference = orderedInboundReferences.find((reference) =>
-    reference.relationshipType === 'featured-image-attachment'
-    && reference.targetResource?.table === 'wp_posts'
-    && getResource(local, reference.targetResource)?.post_type === 'attachment');
-  const commentParentInboundReference = orderedInboundReferences.find((reference) =>
-    reference.relationshipType === 'comment-parent'
-    && reference.targetResource?.table === 'wp_comments');
-  const commentUserInboundReference = orderedInboundReferences.find((reference) =>
-    reference.relationshipType === 'comment-user'
-    && reference.targetResource?.table === 'wp_users');
-  const commentmetaCommentInboundReference = orderedInboundReferences.find((reference) =>
-    reference.relationshipType === 'commentmeta-comment'
-    && reference.targetResource?.table === 'wp_comments');
-  const usermetaUserInboundReference = orderedInboundReferences.find((reference) =>
-    reference.relationshipType === 'usermeta-user'
-    && reference.targetResource?.table === 'wp_users');
-  let reason = `WordPress graph mutation ${resource.key} is created in the same plan as a relationship that depends on it, and identity rewriting is not yet supported.`;
-  if (termTaxonomyInboundReference) {
-    reason = `WordPress graph mutation ${resource.key} is created in the same plan as a term relationship taxonomy target that depends on it, and identity rewriting is not yet supported.`;
-  } else if (termTaxonomyParentInboundReference) {
-    reason = `WordPress graph mutation ${resource.key} is created in the same plan as a parent term identity that depends on it, and identity rewriting is not yet supported.`;
-  } else if (termTaxonomyTermInboundReference) {
-    reason = `WordPress graph mutation ${resource.key} is created in the same plan as a term identity that depends on it, and identity rewriting is not yet supported.`;
-  } else if (termmetaTermInboundReference) {
-    reason = `WordPress graph mutation ${resource.key} is created in the same plan as a term meta target that depends on it, and identity rewriting is not yet supported.`;
-  } else if (revisionInboundReference) {
-    reason = `WordPress graph mutation ${resource.key} is created in the same plan as a term relationship revision target that depends on it, and identity rewriting is not yet supported.`;
-  } else if (postParentInboundReference) {
-    reason = `WordPress graph mutation ${resource.key} is created in the same plan as a post parent target that depends on it, and identity rewriting is not yet supported.`;
-  } else if (commentPostInboundReference) {
-    reason = `WordPress graph mutation ${resource.key} is created in the same plan as a comment post target that depends on it, and identity rewriting is not yet supported.`;
-  } else if (postInboundReference) {
-    reason = `WordPress graph mutation ${resource.key} is created in the same plan as a term relationship post target that depends on it, and identity rewriting is not yet supported.`;
-  } else if (postmetaPostInboundReference) {
-    reason = `WordPress graph mutation ${resource.key} is created in the same plan as a post meta target that depends on it, and identity rewriting is not yet supported.`;
-  } else if (postAuthorInboundReference) {
-    reason = `WordPress graph mutation ${resource.key} is created in the same plan as a post author target that depends on it, and identity rewriting is not yet supported.`;
-  } else if (attachmentInboundReference) {
-    reason = `WordPress graph mutation ${resource.key} is created in the same plan as a featured image attachment target that depends on it, and identity rewriting is not yet supported.`;
-  } else if (commentParentInboundReference) {
-    reason = `WordPress graph mutation ${resource.key} is created in the same plan as a comment parent target that depends on it, and identity rewriting is not yet supported.`;
-  } else if (commentUserInboundReference) {
-    reason = `WordPress graph mutation ${resource.key} is created in the same plan as a comment user target that depends on it, and identity rewriting is not yet supported.`;
-  } else if (commentmetaCommentInboundReference) {
-    reason = `WordPress graph mutation ${resource.key} is created in the same plan as a comment meta target that depends on it, and identity rewriting is not yet supported.`;
-  } else if (usermetaUserInboundReference) {
-    reason = `WordPress graph mutation ${resource.key} is created in the same plan as a user meta target that depends on it, and identity rewriting is not yet supported.`;
-  }
-
   return {
     supported: false,
     className: 'stale-wordpress-graph-identity',
-    reason,
+    reason: samePlanCreatedGraphIdentityReason(resource, orderedInboundReferences[0]),
     references: orderedInboundReferences,
   };
 }
@@ -2770,6 +2690,77 @@ function samePlanCreatedGraphIdentityReferencePriority(reference) {
     return 13;
   }
   return Number.MAX_SAFE_INTEGER;
+}
+
+function samePlanCreatedGraphIdentityReason(resource, reference) {
+  if (!reference) {
+    return `WordPress graph mutation ${resource.key} is created in the same plan as a relationship that depends on it, and identity rewriting is not yet supported.`;
+  }
+
+  if (reference.relationshipType === 'term-relationship-taxonomy'
+    && reference.targetResource?.table === 'wp_term_taxonomy') {
+    return `WordPress graph mutation ${resource.key} is created in the same plan as a term relationship taxonomy target that depends on it, and identity rewriting is not yet supported.`;
+  }
+  if (reference.relationshipType === 'term-taxonomy-parent'
+    && reference.targetResource?.table === 'wp_terms') {
+    return `WordPress graph mutation ${resource.key} is created in the same plan as a parent term identity that depends on it, and identity rewriting is not yet supported.`;
+  }
+  if (reference.relationshipType === 'term-taxonomy-term'
+    && reference.targetResource?.table === 'wp_terms') {
+    return `WordPress graph mutation ${resource.key} is created in the same plan as a term identity that depends on it, and identity rewriting is not yet supported.`;
+  }
+  if (reference.relationshipType === 'termmeta-term'
+    && reference.targetResource?.table === 'wp_terms') {
+    return `WordPress graph mutation ${resource.key} is created in the same plan as a term meta target that depends on it, and identity rewriting is not yet supported.`;
+  }
+  if (reference.relationshipType === 'term-relationship-object'
+    && reference.targetResource?.table === 'wp_posts'
+    && reference.targetChange.local.value?.post_type === 'revision') {
+    return `WordPress graph mutation ${resource.key} is created in the same plan as a term relationship revision target that depends on it, and identity rewriting is not yet supported.`;
+  }
+  if (reference.relationshipType === 'post-parent'
+    && reference.targetResource?.table === 'wp_posts') {
+    return `WordPress graph mutation ${resource.key} is created in the same plan as a post parent target that depends on it, and identity rewriting is not yet supported.`;
+  }
+  if (reference.relationshipType === 'comment-post'
+    && reference.targetResource?.table === 'wp_posts') {
+    return `WordPress graph mutation ${resource.key} is created in the same plan as a comment post target that depends on it, and identity rewriting is not yet supported.`;
+  }
+  if (reference.relationshipType === 'term-relationship-object'
+    && reference.targetResource?.table === 'wp_posts') {
+    return `WordPress graph mutation ${resource.key} is created in the same plan as a term relationship post target that depends on it, and identity rewriting is not yet supported.`;
+  }
+  if (reference.relationshipType === 'postmeta-post'
+    && reference.targetResource?.table === 'wp_posts') {
+    return `WordPress graph mutation ${resource.key} is created in the same plan as a post meta target that depends on it, and identity rewriting is not yet supported.`;
+  }
+  if (reference.relationshipType === 'post-author'
+    && reference.targetResource?.table === 'wp_users') {
+    return `WordPress graph mutation ${resource.key} is created in the same plan as a post author target that depends on it, and identity rewriting is not yet supported.`;
+  }
+  if (reference.relationshipType === 'featured-image-attachment'
+    && reference.targetResource?.table === 'wp_posts'
+    && reference.targetChange.local.value?.post_type === 'attachment') {
+    return `WordPress graph mutation ${resource.key} is created in the same plan as a featured image attachment target that depends on it, and identity rewriting is not yet supported.`;
+  }
+  if (reference.relationshipType === 'comment-parent'
+    && reference.targetResource?.table === 'wp_comments') {
+    return `WordPress graph mutation ${resource.key} is created in the same plan as a comment parent target that depends on it, and identity rewriting is not yet supported.`;
+  }
+  if (reference.relationshipType === 'comment-user'
+    && reference.targetResource?.table === 'wp_users') {
+    return `WordPress graph mutation ${resource.key} is created in the same plan as a comment user target that depends on it, and identity rewriting is not yet supported.`;
+  }
+  if (reference.relationshipType === 'commentmeta-comment'
+    && reference.targetResource?.table === 'wp_comments') {
+    return `WordPress graph mutation ${resource.key} is created in the same plan as a comment meta target that depends on it, and identity rewriting is not yet supported.`;
+  }
+  if (reference.relationshipType === 'usermeta-user'
+    && reference.targetResource?.table === 'wp_users') {
+    return `WordPress graph mutation ${resource.key} is created in the same plan as a user meta target that depends on it, and identity rewriting is not yet supported.`;
+  }
+
+  return `WordPress graph mutation ${resource.key} is created in the same plan as a relationship that depends on it, and identity rewriting is not yet supported.`;
 }
 
 function isWordPressGraphReferenceResource(resource) {
