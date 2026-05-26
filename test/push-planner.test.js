@@ -25486,6 +25486,48 @@ test('blocks a file delete that would hide a live remote special-file descendant
   assert.equal(remote.plugins.forms.description, 'remote-only plugin changes');
 });
 
+test('blocks a file delete that would hide a live remote special-file descendant while preserving a matching independent delete and remote-only plugin drift', () => {
+  const base = baseSite();
+  base.files['wp-content/uploads/archive'] = 'base archive file';
+  base.files['wp-content/uploads/archive/socket'] = { type: 'socket', linkTarget: '/tmp/archive-socket' };
+  base.db.wp_posts['ID:7'] = { ID: 7, post_title: 'Base post 7', post_status: 'publish' };
+
+  const local = baseSite();
+  delete local.files['wp-content/uploads/archive'];
+  delete local.files['wp-content/uploads/archive/socket'];
+  delete local.db.wp_posts['ID:7'];
+
+  const remote = JSON.parse(JSON.stringify(base));
+  remote.files['wp-content/uploads/archive/socket'] = { type: 'socket', linkTarget: '/tmp/live-archive-socket' };
+  delete remote.db.wp_posts['ID:7'];
+  remote.plugins.forms.description = 'remote-only plugin drift';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin drift */';
+
+  const plan = planFor(base, local, remote);
+  const evidence = plan.conflicts[0] || plan.blockers[0];
+  const deleteDecision = decisionFor(plan, 'row:["wp_posts","ID:7"]');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const evidenceJson = JSON.stringify(evidence);
+
+  assert.equal(plan.status, 'conflict');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, 'file:wp-content/uploads/archive'), undefined);
+  assert.equal(deleteDecision.decision, 'already-in-sync');
+  assert.equal(deleteDecision.change.localChange, 'delete');
+  assert.equal(deleteDecision.change.remoteChange, 'delete');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(evidence.class, 'file-topology-conflict');
+  assert.equal(evidence.resourceKey, 'file:wp-content/uploads/archive');
+  assert.equal(evidenceJson.includes('/tmp/archive-socket'), false);
+  assert.equal(evidenceJson.includes('/tmp/live-archive-socket'), false);
+  assert.equal(evidenceJson.includes('remote-only plugin drift'), false);
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
+  assert.equal(remote.files['wp-content/uploads/archive/socket'].linkTarget, '/tmp/live-archive-socket');
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin drift');
+});
+
 test('blocks a file delete that would hide a live remote descendant while preserving matching independent delete, edit, type swap, and remote-only plugin drift', () => {
   const base = baseSite();
   base.files['wp-content/uploads/gallery'] = 'base gallery file';
