@@ -1,3 +1,5 @@
+export const labMaxConsecutiveNotReadyProbes = 4;
+
 const labWordPressNotReadyPattern = /WordPress is not ready yet/i;
 const labRouteNotReadyPattern = /No route was found matching the URL and request method\.?/i;
 const labWordPressNotReadyCodePattern = /wordpress_not_ready/i;
@@ -156,6 +158,10 @@ export function labNextTimeoutProbeCount(currentCount, error) {
   return labReadinessProbeTimedOut(error)
     ? currentCount + 1
     : 0;
+}
+
+export function labNotReadyProbeLimitReached(currentCount) {
+  return currentCount >= labMaxConsecutiveNotReadyProbes;
 }
 
 export function labReadinessBodyRetryable(status, bodyText = '') {

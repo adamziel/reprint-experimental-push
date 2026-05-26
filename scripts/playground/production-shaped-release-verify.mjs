@@ -22,8 +22,10 @@ import {
   resolvePackagedProductionPluginAuthSessionSource,
 } from './packaged-production-plugin-source-command.js';
 import {
+  labMaxConsecutiveNotReadyProbes,
   labReadinessBodyRetryable,
   labReadinessErrorRetryable,
+  labNotReadyProbeLimitReached,
   labNextTimeoutProbeCount,
   labReadinessProbeTimedOut,
   labSnapshotReady,
@@ -66,7 +68,7 @@ const packagedPlaygroundTimeoutSeconds = 30;
 const packagedServerStartupTimeoutMs = packagedPlaygroundTimeoutSeconds * 1_000;
 const packagedServerFetchTimeoutMs = 3_000;
 const maxReadinessProbes = Math.max(10, Math.ceil(serverStartupTimeoutMs / readinessProbeIntervalMs));
-const maxNotReadyReadinessProbes = Math.max(4, Math.ceil(serverStartupTimeoutMs / readinessProbeIntervalMs));
+const maxNotReadyReadinessProbes = labMaxConsecutiveNotReadyProbes;
 const credentials = {
   username: 'reprint_push_admin',
   password: 'reprint-push-admin-app-password',
@@ -2391,7 +2393,7 @@ async function waitForServer(child, baseUrl, getLogs) {
         const readinessProbeCount = lastProbes.filter((probe) => probe.route === '/wp-json/').length;
         if (readinessRetryable) {
           notReadyProbeCount += 1;
-          if (notReadyProbeCount >= maxNotReadyReadinessProbes) {
+          if (labNotReadyProbeLimitReached(notReadyProbeCount)) {
             await throwPlaygroundReadinessFailure(
               child,
               `Playground server reported the bounded readiness failure ${response.status} after ${readinessProbeCount} /wp-json/ probes (${notReadyProbeCount} consecutive not-ready response${notReadyProbeCount === 1 ? '' : 's'}; limit ${maxNotReadyReadinessProbes})`,
@@ -2429,7 +2431,7 @@ async function waitForServer(child, baseUrl, getLogs) {
       }
       lastError = error;
       timeoutProbeCount = labNextTimeoutProbeCount(timeoutProbeCount, error);
-      if (labReadinessProbeTimedOut(error) && timeoutProbeCount >= maxNotReadyReadinessProbes) {
+      if (labReadinessProbeTimedOut(error) && labNotReadyProbeLimitReached(timeoutProbeCount)) {
         await throwPlaygroundReadinessFailure(
           child,
           `Playground server hit ${timeoutProbeCount} consecutive readiness probe timeout${timeoutProbeCount === 1 ? '' : 's'}`,

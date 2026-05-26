@@ -22,8 +22,10 @@ import {
   resolvePackagedProductionPluginSourceCommand,
 } from '../scripts/playground/packaged-production-plugin-source-command.js';
 import {
+  labMaxConsecutiveNotReadyProbes,
   labReadinessBodyRetryable,
   labReadinessErrorRetryable,
+  labNotReadyProbeLimitReached,
   labNextTimeoutProbeCount,
   labReadinessProbeTimedOut,
   labSnapshotReady,
@@ -89,7 +91,7 @@ const releaseVerifyInnerTimeoutMs = Math.max(1_000, Math.min(36_000, proofSubpro
 const releaseVerifySlowPathTimeoutMs = 15_000;
 const releaseVerifySlowPathInnerTimeoutMs = Math.max(1_000, Math.min(6_000, releaseVerifySlowPathTimeoutMs - 6_000));
 const maxReadinessProbes = Math.max(10, Math.ceil(serverStartupTimeoutMs / readinessProbeIntervalMs));
-const maxNotReadyReadinessProbes = Math.max(4, Math.ceil(serverStartupTimeoutMs / 500));
+const maxNotReadyReadinessProbes = labMaxConsecutiveNotReadyProbes;
 const proofSubprocessOptions = {
   timeout: proofSubprocessTimeoutMs,
   killSignal: proofSubprocessKillSignal,
@@ -2854,6 +2856,7 @@ test('shared lab waitForServer retries startup-shaped /wp-json/ HTTP 200 bodies 
 });
 
 test('shared lab readiness helpers track consecutive timeout probes', () => {
+  assert.equal(labMaxConsecutiveNotReadyProbes, 4);
   assert.equal(
     labReadinessProbeTimedOut(
       new Error('Timed out fetching http://127.0.0.1:9400/wp-json/'),
@@ -2878,6 +2881,8 @@ test('shared lab readiness helpers track consecutive timeout probes', () => {
     ),
     0,
   );
+  assert.equal(labNotReadyProbeLimitReached(labMaxConsecutiveNotReadyProbes - 1), false);
+  assert.equal(labNotReadyProbeLimitReached(labMaxConsecutiveNotReadyProbes), true);
 });
 
 test('shared lab waitForServer keeps index and snapshot body reads child-aware', () => {
@@ -2904,7 +2909,9 @@ test('shared lab waitForServer keeps index and snapshot body reads child-aware',
   assert.match(sharedWaitSource, /timeoutProbeCount = 0;\s*const responsePreview = responseBody\.slice/);
   assert.match(sharedWaitSource, /timeoutProbeCount = 0;\s*const snapshotPreview = snapshotBody\.slice/);
   assert.match(sharedWaitSource, /timeoutProbeCount = labNextTimeoutProbeCount\(timeoutProbeCount, error\);/);
-  assert.match(sharedWaitSource, /if \(labReadinessProbeTimedOut\(error\) && timeoutProbeCount >= maxNotReadyReadinessProbes\)/);
+  assert.match(verifierSource, /const maxNotReadyReadinessProbes = labMaxConsecutiveNotReadyProbes;/);
+  assert.match(sharedWaitSource, /if \(labReadinessProbeTimedOut\(error\) && labNotReadyProbeLimitReached\(timeoutProbeCount\)\)/);
+  assert.match(sharedWaitSource, /if \(labNotReadyProbeLimitReached\(notReadyProbeCount\)\)/);
   assert.match(sharedWaitSource, /await sleepUnlessChildExit\(readinessProbeIntervalMs, child\)/);
   assert.doesNotMatch(sharedWaitSource, /await response\.arrayBuffer\(\)/);
   assert.doesNotMatch(sharedWaitSource, /await snapshot\.arrayBuffer\(\)/);
