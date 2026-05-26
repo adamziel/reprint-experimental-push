@@ -112,6 +112,7 @@ try {
     driverUpdateValidationGuard: {},
     driverReceiptIdentityGuard: {},
     driverReceiptExpiryGuard: {},
+    driverReceiptPlanBindingGuard: {},
     driverReceiptRotatedCredentialGuard: {},
     final: {},
   };
@@ -290,6 +291,31 @@ try {
     assert.equal(updateApply.body?.ok, true);
     assert.equal(updateApply.body?.applied, 1);
 
+    const tamperedPlan = deepClone(updatePlan);
+    tamperedPlan.mutations[0].value.value.payload.mode = 'forged-update';
+    tamperedPlan.mutations[0].value.value.payload.version = 999;
+    tamperedPlan.mutations[0].value.value.updated_marker = 'forged-update';
+
+    const tamperedPlanApply = await client.signedPost(
+      '/apply',
+      {
+        plan: tamperedPlan,
+        receipt: updateDryRun.body.receipt,
+      },
+      {
+        session,
+        idempotencyKey: 'production-plugin-driver-plan-mismatch-apply',
+      },
+    );
+    assert.equal(tamperedPlanApply.status, 409);
+    assert.equal(tamperedPlanApply.body?.ok, false);
+    assert.equal(tamperedPlanApply.body?.code, 'AUTH_RECEIPT_MISMATCH');
+    assert.match(
+      tamperedPlanApply.body?.message || '',
+      /request binding|supplied apply plan|receipt/i,
+      'packaged apply did not reject the tampered arbitrary driver plan',
+    );
+
     const afterUpdateApply = await client.get('/snapshot');
     assert.equal(afterUpdateApply.status, 200);
     assert.equal(afterUpdateApply.body?.ok, true);
@@ -372,6 +398,16 @@ try {
       applied: updateApply.body?.applied,
       updatedMarkerAfterApply: afterUpdateApply.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1']?.updated_marker,
       payloadModeAfterApply: afterUpdateApply.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1']?.payload?.mode,
+    };
+    summary.driverReceiptPlanBindingGuard = {
+      resourceKey: driverFixture.resourceKey,
+      tamperedMode: tamperedPlan.mutations[0].value.value.payload.mode,
+      tamperedVersion: tamperedPlan.mutations[0].value.value.payload.version,
+      applyRejectedCode: tamperedPlanApply.body?.code,
+      applyRejectedMessage: tamperedPlanApply.body?.message,
+      rowRetainedAfterReject: afterUpdateApply.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1'] !== undefined,
+      payloadModeAfterReject: afterUpdateApply.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1']?.payload?.mode,
+      updatedMarkerAfterReject: afterUpdateApply.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1']?.updated_marker,
     };
     summary.driverDeleteGuard = {
       resourceKey: driverFixture.resourceKey,
