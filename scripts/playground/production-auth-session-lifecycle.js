@@ -188,6 +188,11 @@ export function evaluateProductionAuthSessionLifecycleSummary(summary, now = Dat
         observed: 'reissued',
       };
     }
+
+    const mismatchedIssuedObservation = resolveMismatchedSummaryIssuedObservation(issuedObservation, observations);
+    if (mismatchedIssuedObservation) {
+      return mismatchedIssuedObservation;
+    }
   }
 
   const readObservation = summary.read;
@@ -688,6 +693,28 @@ function resolveMismatchedSummaryReadObservation(readObservation, observations) 
       ok: false,
       required: 'preserved read',
       observed: 'stale-read-summary',
+    };
+  }
+
+  return null;
+}
+
+function resolveMismatchedSummaryIssuedObservation(issuedObservation, observations) {
+  if (!issuedObservation || !Array.isArray(observations) || observations.length === 0) {
+    return null;
+  }
+
+  const observedIssued = observations.find((observation) =>
+    observation && typeof observation === 'object' && observation.step === 'preflight');
+  if (!observedIssued) {
+    return null;
+  }
+
+  if (!authSessionObservationEquals(issuedObservation, observedIssued)) {
+    return {
+      ok: false,
+      required: 'issued preflight',
+      observed: 'stale-issued-summary',
     };
   }
 
