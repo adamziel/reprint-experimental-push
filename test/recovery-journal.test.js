@@ -9,6 +9,7 @@ import {
   appendMutationObserved,
   assertJournalRecordHasNoRawValues,
   RecoveryJournalClaimStaleError,
+  consumeProductionRecoveryJournal,
   openProductionRecoveryJournal,
   openPlanRecoveryJournal,
   openRecoveryJournal,
@@ -313,4 +314,26 @@ test('production recovery journal wrapper writes a restart-readable claim-fenced
   assert.equal(restarted.records.some((record) => record.type === 'recovery-claim-opened'), true);
   assert.equal(restarted.records.at(-1).type, 'recovery-claim-opened');
   assert.equal(restarted.records.at(-1).claimHash.length, 64);
+});
+
+test('checked release path consumes the production recovery journal inspection surface', () => {
+  const filePath = tempJournalPath();
+  const remote = baseSite();
+  const plan = planFor(baseSite(), localSite(), remote);
+  const inspection = consumeProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs: {
+      releaseProof: 'artifact://release-proof-1',
+    },
+    claimId: 'production-claim-consumer-01',
+  });
+
+  assert.equal(inspection.journal.productionAdapter, 'openProductionRecoveryJournal');
+  assert.equal(inspection.journal.ownsJournal, true);
+  assert.equal(inspection.journal.restartReadable, true);
+  assert.equal(inspection.journal.staleClaimRejected, false);
+  assert.equal(inspection.leaseFence.storageGuard, 'filesystem-compare-rename');
+  assert.equal(inspection.leaseFence.staleClaimRejected, false);
 });

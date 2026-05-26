@@ -117,6 +117,39 @@ export function openProductionRecoveryJournal({
   return journal;
 }
 
+export function consumeProductionRecoveryJournal({
+  filePath,
+  plan,
+  current,
+  artifactRefs = {},
+  claimId = null,
+}) {
+  const journal = openProductionRecoveryJournal({
+    filePath,
+    plan,
+    current,
+    artifactRefs,
+    truncate: false,
+    claimId,
+  });
+
+  try {
+    journal.appendEvent('recovery-journal-consumed', {
+      planId: plan.id,
+      state: 'consumed',
+      observedHash: digest(current),
+      artifactRefs,
+    });
+  } catch (error) {
+    journal.close();
+    throw error;
+  }
+
+  const inspection = journal.inspect();
+  journal.close();
+  return inspection;
+}
+
 export function openPlanRecoveryJournal({
   filePath,
   plan,

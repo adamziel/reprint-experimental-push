@@ -11,6 +11,7 @@ import { fileURLToPath } from 'node:url';
 import { authenticatedHttpClient, runAuthenticatedHttpPush } from '../../src/authenticated-http-push-client.js';
 import {
   appendRecoveryClaimOpened,
+  consumeProductionRecoveryJournal,
   openProductionRecoveryJournal,
 } from '../../src/recovery-journal.js';
 
@@ -1113,7 +1114,13 @@ function runProductionRecoveryJournalProof({ plan, current, artifactRefs = {} })
     staleJournal.close();
   }
 
-  const inspection = journal.inspect();
+  const inspection = consumeProductionRecoveryJournal({
+    filePath: journalPath,
+    plan,
+    current,
+    artifactRefs,
+    claimId: activeClaimId,
+  });
   return {
     journal: {
       ...inspection.journal,
