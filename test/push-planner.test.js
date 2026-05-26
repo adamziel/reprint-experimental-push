@@ -19414,6 +19414,36 @@ test('blocks unsupported special file entries while preserving remote-only plugi
   assert.equal(remote.plugins.forms.description, 'remote-only plugin drift');
 });
 
+test('blocks deletion of unsupported special file entries while preserving remote-only plugin removals', () => {
+  const resourceKey = 'file:wp-content/uploads/reparse-point';
+  const base = baseSite();
+  base.files['wp-content/uploads/reparse-point'] = {
+    type: 'reparse-point',
+    linkTarget: '../shared/reparse-target',
+  };
+
+  const local = baseSite();
+  delete local.files['wp-content/uploads/reparse-point'];
+
+  const remote = baseSite();
+  remote.files['wp-content/uploads/reparse-point'] = JSON.parse(JSON.stringify(base.files['wp-content/uploads/reparse-point']));
+  delete remote.plugins.forms;
+  delete remote.files['wp-content/plugins/forms/forms.php'];
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(plan.conflicts.length, 0);
+  assert.equal(blocker.class, 'unsupported-special-file-resource');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.reason, 'Special file entries are not yet supported by the planner.');
+  assert.equal(remote.plugins.forms, undefined);
+  assert.equal(remote.files['wp-content/plugins/forms/forms.php'], undefined);
+});
+
 test('blocks unsupported special file entries while preserving a matching independent edit and remote-only plugin removals', () => {
   const resourceKey = 'file:wp-content/uploads/symlink';
   const base = baseSite();
