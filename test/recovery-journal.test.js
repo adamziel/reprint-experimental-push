@@ -771,6 +771,46 @@ test('production recovery journal consumption fails closed when claimId and writ
   });
 });
 
+test('production recovery journal consumption fails closed when the persisted lease epoch diverges from the fenced writer', () => {
+  const filePath = tempJournalPath();
+  const remote = baseSite();
+  const plan = planFor(baseSite(), localSite(), remote);
+  const claimId = 'claim-epoch-mismatch';
+  const artifactRefs = {
+    journal: filePath,
+  };
+  const journal = openProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs,
+    claimId,
+    writerLease: { id: claimId, epoch: 2 },
+  });
+  appendRecoveryClaimOpened(journal, {
+    plan,
+    current: remote,
+    claimId,
+    artifactRefs,
+  });
+  journal.close();
+
+  assert.throws(() => {
+    consumeProductionRecoveryJournal({
+      filePath,
+      plan,
+      current: remote,
+      artifactRefs,
+      claimId,
+      writerLease: { id: claimId, epoch: 3 },
+    });
+  }, {
+    name: 'RecoveryJournalClaimStaleError',
+    code: 'RECOVERY_CLAIM_STALE',
+    message: 'Recovery journal lease fence was superseded before this fenced writer could append.',
+  });
+});
+
 test('production recovery journal compatibility overload fails closed when artifact refs are inherited through the prototype', () => {
   const filePath = tempJournalPath();
   const remote = baseSite();

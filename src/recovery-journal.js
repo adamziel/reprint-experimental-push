@@ -304,6 +304,35 @@ export function openProductionRecoveryJournal(filePathOrOptions, options = {}) {
     claimId,
   });
   const leaseFence = freezeProductionWriterLease(writerLease);
+  const assertProductionWriterLeaseCurrent = (eventType) => {
+    if (
+      !CLAIM_EVENT_TYPES.has(eventType)
+      && writerLease
+      && Object.hasOwn(writerLease, 'epoch')
+    ) {
+      const persisted = readRecoveryJournal(journal.filePath);
+      if (persisted.integrity.status !== 'ok') {
+        throw new Error(`Refusing to append to invalid recovery journal: ${persisted.integrity.reason}`);
+      }
+      const claim = classifyRecoveryJournalClaims(persisted.records);
+      if (!productionLeaseIdentitiesMatch(claim.activeClaimLease, writerLease)) {
+        throw new RecoveryJournalClaimStaleError(
+          'Recovery journal lease fence was superseded before this fenced writer could append.',
+          {
+            filePath: journal.filePath,
+            eventType,
+            staleClaimHash: claimHash,
+            activeClaimHash: claim.activeClaimHash,
+            activeClaimLease: claim.activeClaimLease,
+            writerLease,
+            activeClaimSequence: claim.sequence,
+            activeClaimType: claim.type,
+            reason: claim.reason || null,
+          },
+        );
+      }
+    }
+  };
 
   return Object.freeze({
     kind: 'production-recovery-journal',
@@ -322,6 +351,7 @@ export function openProductionRecoveryJournal(filePathOrOptions, options = {}) {
     }),
     schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
     appendEvent(type, payload) {
+      assertProductionWriterLeaseCurrent(type);
       return journal.appendEvent(type, payload);
     },
     inspect() {
@@ -346,6 +376,7 @@ export function openProductionRecoveryJournal(filePathOrOptions, options = {}) {
       };
     },
     assertCurrentClaim(eventType) {
+      assertProductionWriterLeaseCurrent(eventType);
       return journal.assertCurrentClaim(eventType);
     },
     flush() {
@@ -972,6 +1003,7 @@ export function appendRecoveryClaimOpened(journal, {
     planId: plan.id,
     state: 'active',
     claimHash: recoveryClaimHash(claimId),
+    claimLease: claimLeasePayloadForJournal(journal, claimId),
     observedHash: digest(current),
     staleThresholdMs: normalizeOptionalNonNegativeInteger(staleThresholdMs),
     reason,
@@ -994,6 +1026,7 @@ export function appendStaleClaimAdvanced(journal, {
     state: 'advanced',
     previousClaimHash: recoveryClaimHash(previousClaimId),
     claimHash: recoveryClaimHash(claimId),
+    claimLease: claimLeasePayloadForJournal(journal, claimId),
     observedHash: digest(current),
     staleThresholdMs: normalizeOptionalNonNegativeInteger(staleThresholdMs),
     previousClaimAgeMs: normalizeOptionalNonNegativeInteger(previousClaimAgeMs),
@@ -1129,6 +1162,7 @@ export function classifyRecoveryJournalClaims(records) {
     return {
       status: 'none',
       activeClaimHash: null,
+      activeClaimLease: null,
       previousClaimHash: null,
       sequence: null,
       type: null,
@@ -1151,12 +1185,28 @@ export function classifyRecoveryJournalClaims(records) {
     ) {
       return blockedClaimState(record, 'Advanced stale-claim record must advance to a different active claim hash.');
     }
+    if (
+      Object.hasOwn(record, 'claimLease')
+      && !isValidProductionWriterLease(record.claimLease)
+    ) {
+      return blockedClaimState(record, 'Recovery claim record has an invalid persisted lease identity.');
+    }
+    if (
+      Object.hasOwn(record, 'claimLease')
+      && isValidProductionWriterLease(record.claimLease)
+      && record.claimHash !== recoveryClaimHash(record.claimLease.id)
+    ) {
+      return blockedClaimState(record, 'Recovery claim record claim lease must match the persisted active claim hash.');
+    }
   }
 
   const latest = claimRecords.at(-1);
   return {
     status: latest.type === 'stale-claim-advanced' ? 'advanced' : 'active',
     activeClaimHash: latest.claimHash,
+    activeClaimLease: isValidProductionWriterLease(latest.claimLease)
+      ? freezeProductionWriterLease(latest.claimLease)
+      : null,
     previousClaimHash: latest.previousClaimHash || null,
     sequence: latest.sequence,
     type: latest.type,
@@ -1259,11 +1309,25 @@ function blockedClaimState(record, reason) {
   return {
     status: 'blocked',
     activeClaimHash: record.claimHash || null,
+    activeClaimLease: isValidProductionWriterLease(record.claimLease)
+      ? freezeProductionWriterLease(record.claimLease)
+      : null,
     previousClaimHash: record.previousClaimHash || null,
     sequence: record.sequence || null,
     type: record.type || null,
     reason,
   };
+}
+
+function claimLeasePayloadForJournal(journal, claimId) {
+  if (
+    journal
+    && isValidProductionWriterLease(journal.writerLease)
+    && journal.writerLease.id === claimId
+  ) {
+    return freezeProductionWriterLease(journal.writerLease);
+  }
+  return { id: claimId };
 }
 
 function plannedTargetPayload({ plan, mutation, current }) {

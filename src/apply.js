@@ -1026,6 +1026,13 @@ export function productionRecoverySupportReport(writer) {
   ) {
     addMissingDependency('fencing or lease ownership for the journal writer');
   }
+  if (
+    hasValidProductionLeaseIdentity(writer?.writerLease)
+    && Object.hasOwn(writer.writerLease, 'epoch')
+    && !productionLeaseIdentitiesMatch(inspectedClaimState?.activeClaimLease, writer.writerLease)
+  ) {
+    addMissingDependency('fencing or lease ownership for the journal writer');
+  }
   if (writer && typeof writer.inspect === 'function' && !inspectionErrorMessage && !durableJournalInspectRecords(inspected)) {
     addMissingDependency('journal-readable inspection records with sequence and type');
   }
