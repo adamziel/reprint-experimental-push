@@ -22,6 +22,10 @@ const FIXTURE_PLUGIN_OWNED_ROW_DEPENDENCIES = new Map([
 ]);
 const CLOSED_DURABLE_JOURNAL = Symbol('closed-durable-journal');
 const CLOSED_DURABLE_JOURNALS = new WeakSet();
+const CLAIM_FENCE_RECORD_TYPES = new Set([
+  'recovery-claim-opened',
+  'stale-claim-advanced',
+]);
 export const ACCEPTABLE_RECOVERY_STATES = Object.freeze([
   'old-remote',
   'fully-updated-remote',
@@ -1175,7 +1179,10 @@ function durableJournalInspectRecords(inspected) {
   && Object.hasOwn(inspected.records[0], 'sequence')
   && Object.hasOwn(inspected.records[0], 'type')
   && inspected.records[0].sequence === 1
-  && inspected.records[0].type === 'journal-opened'
+  && (
+    inspected.records[0].type === 'journal-opened'
+    || CLAIM_FENCE_RECORD_TYPES.has(inspected.records[0].type)
+  )
   && inspected.records.every((record) =>
     record
     && typeof record === 'object'

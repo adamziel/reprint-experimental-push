@@ -20647,13 +20647,94 @@ test('production recovery support report exposes the remaining release-path bloc
 
   const report = productionRecoverySupportReport(journal);
 
-  assert.equal(report.supported, false);
-  assert.deepEqual(report.missingDependency, [
-    'journal-readable inspection records with sequence and type',
-  ]);
+  assert.equal(report.supported, true);
+  assert.deepEqual(report.missingDependency, []);
   assert.equal(report.inspectedJournalPath, filePath);
   assert.equal(report.writerJournalPath, filePath);
   assert.equal(report.inspectionErrorMessage, null);
+});
+
+test('production recovery support report accepts stale-claim fencing records before journal-opened', () => {
+  const filePath = tempRecoveryJournalPath();
+  const remoteArtifactPath = `${path.dirname(filePath)}/remote.jsonl`;
+  const journal = openProductionRecoveryJournal(filePath, {
+    truncate: true,
+    now: fixedNow,
+    claimId: 'claim-2',
+    writerLease: { id: 'lease-2' },
+    ownsRemoteArtifact: true,
+    remoteArtifactPath,
+  });
+
+  appendStaleClaimAdvanced(journal, {
+    plan: { id: 'plan-2' },
+    current: baseSite(),
+    previousClaimId: 'claim-1',
+    claimId: 'claim-2',
+    staleThresholdMs: 5000,
+    previousClaimAgeMs: 7000,
+    artifactRefs: {
+      journal: filePath,
+      remote: remoteArtifactPath,
+    },
+  });
+  journal.appendEvent('journal-opened', {
+    planId: 'plan-2',
+    state: 'opened',
+    observedHash: 'snapshot-hash-only',
+    artifactRefs: {
+      journal: filePath,
+      remote: remoteArtifactPath,
+    },
+  });
+  journal.close();
+
+  const report = productionRecoverySupportReport(journal);
+
+  assert.equal(report.supported, true);
+  assert.deepEqual(report.missingDependency, []);
+  assert.equal(report.inspectedJournalPath, filePath);
+  assert.equal(report.writerJournalPath, filePath);
+  assert.equal(report.inspectionErrorMessage, null);
+});
+
+test('production durable journal support accepts a fenced claim before apply opens the journal body', () => {
+  const base = baseSite();
+  const local = structuredClone(base);
+  local.db.wp_options['option_name:blogname'] = {
+    option_name: 'blogname',
+    option_value: 'Local Site',
+  };
+  const remote = structuredClone(base);
+  const plan = planFor(base, local, remote);
+  const filePath = tempRecoveryJournalPath();
+  const remoteArtifactPath = `${path.dirname(filePath)}/remote.jsonl`;
+  const journal = openProductionRecoveryJournal(filePath, {
+    truncate: true,
+    now: fixedNow,
+    claimId: 'claim-pre-apply',
+    writerLease: { id: 'lease-pre-apply' },
+    ownsRemoteArtifact: true,
+    remoteArtifactPath,
+  });
+
+  appendRecoveryClaimOpened(journal, {
+    plan,
+    current: remote,
+    claimId: 'claim-pre-apply',
+    artifactRefs: {
+      journal: filePath,
+      remote: remoteArtifactPath,
+    },
+  });
+
+  const result = applyPlan(remote, plan, {
+    durableJournal: journal,
+    requireProductionDurableJournal: true,
+  });
+
+  assert.equal(result.recoveryState.status, 'fully-updated-remote');
+  journal.close();
 });
 
 test('production durable journal claims fail closed when artifactRefs are inherited through the prototype', () => {
