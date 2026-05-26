@@ -774,6 +774,14 @@ function productionRecoverySupportReport(writer) {
     addMissingDependency('restart-readable recovery remote artifact references');
   }
   if (
+    isStrictPlainObject(writer?.artifactRefs)
+    && Object.hasOwn(writer.artifactRefs, 'remote')
+    && writer.artifactRefs.remote === undefined
+    && 'remote' in writer.artifactRefs
+  ) {
+    addMissingDependency('restart-readable recovery remote artifact references');
+  }
+  if (
     isStrictPlainObject(inspectedArtifactRefs)
     && Reflect.ownKeys(inspectedArtifactRefs).some((key) => key !== 'journal' && key !== 'remote')
   ) {
