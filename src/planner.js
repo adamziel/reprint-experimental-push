@@ -2594,34 +2594,37 @@ function samePlanCreatedGraphIdentitySupport({ resource, resources, base, local,
   const usermetaUserInboundReference = inboundReferences.find((reference) =>
     reference.relationshipType === 'usermeta-user'
     && reference.targetResource?.table === 'wp_users');
+  let reason = `WordPress graph mutation ${resource.key} is created in the same plan as a relationship that depends on it, and identity rewriting is not yet supported.`;
+  if (termTaxonomyInboundReference) {
+    reason = `WordPress graph mutation ${resource.key} is created in the same plan as a term relationship taxonomy target that depends on it, and identity rewriting is not yet supported.`;
+  } else if (termTaxonomyParentInboundReference) {
+    reason = `WordPress graph mutation ${resource.key} is created in the same plan as a parent term identity that depends on it, and identity rewriting is not yet supported.`;
+  } else if (revisionInboundReference) {
+    reason = `WordPress graph mutation ${resource.key} is created in the same plan as a term relationship revision target that depends on it, and identity rewriting is not yet supported.`;
+  } else if (postParentInboundReference) {
+    reason = `WordPress graph mutation ${resource.key} is created in the same plan as a post parent target that depends on it, and identity rewriting is not yet supported.`;
+  } else if (commentPostInboundReference) {
+    reason = `WordPress graph mutation ${resource.key} is created in the same plan as a comment post target that depends on it, and identity rewriting is not yet supported.`;
+  } else if (postInboundReference) {
+    reason = `WordPress graph mutation ${resource.key} is created in the same plan as a term relationship post target that depends on it, and identity rewriting is not yet supported.`;
+  } else if (postAuthorInboundReference) {
+    reason = `WordPress graph mutation ${resource.key} is created in the same plan as a post author target that depends on it, and identity rewriting is not yet supported.`;
+  } else if (attachmentInboundReference) {
+    reason = `WordPress graph mutation ${resource.key} is created in the same plan as a featured image attachment target that depends on it, and identity rewriting is not yet supported.`;
+  } else if (commentParentInboundReference) {
+    reason = `WordPress graph mutation ${resource.key} is created in the same plan as a comment parent target that depends on it, and identity rewriting is not yet supported.`;
+  } else if (commentUserInboundReference) {
+    reason = `WordPress graph mutation ${resource.key} is created in the same plan as a comment user target that depends on it, and identity rewriting is not yet supported.`;
+  } else if (commentmetaCommentInboundReference) {
+    reason = `WordPress graph mutation ${resource.key} is created in the same plan as a comment meta target that depends on it, and identity rewriting is not yet supported.`;
+  } else if (usermetaUserInboundReference) {
+    reason = `WordPress graph mutation ${resource.key} is created in the same plan as a user meta target that depends on it, and identity rewriting is not yet supported.`;
+  }
+
   return {
     supported: false,
     className: 'stale-wordpress-graph-identity',
-    reason: termTaxonomyInboundReference
-      ? `WordPress graph mutation ${resource.key} is created in the same plan as a term relationship taxonomy target that depends on it, and identity rewriting is not yet supported.`
-      : termTaxonomyParentInboundReference
-        ? `WordPress graph mutation ${resource.key} is created in the same plan as a parent term identity that depends on it, and identity rewriting is not yet supported.`
-      : revisionInboundReference
-        ? `WordPress graph mutation ${resource.key} is created in the same plan as a term relationship revision target that depends on it, and identity rewriting is not yet supported.`
-      : postParentInboundReference
-        ? `WordPress graph mutation ${resource.key} is created in the same plan as a post parent target that depends on it, and identity rewriting is not yet supported.`
-        : commentPostInboundReference
-          ? `WordPress graph mutation ${resource.key} is created in the same plan as a comment post target that depends on it, and identity rewriting is not yet supported.`
-      : postInboundReference
-          ? `WordPress graph mutation ${resource.key} is created in the same plan as a term relationship post target that depends on it, and identity rewriting is not yet supported.`
-          : postAuthorInboundReference
-            ? `WordPress graph mutation ${resource.key} is created in the same plan as a post author target that depends on it, and identity rewriting is not yet supported.`
-            : attachmentInboundReference
-              ? `WordPress graph mutation ${resource.key} is created in the same plan as a featured image attachment target that depends on it, and identity rewriting is not yet supported.`
-              : commentParentInboundReference
-                ? `WordPress graph mutation ${resource.key} is created in the same plan as a comment parent target that depends on it, and identity rewriting is not yet supported.`
-              : commentUserInboundReference
-                ? `WordPress graph mutation ${resource.key} is created in the same plan as a comment user target that depends on it, and identity rewriting is not yet supported.`
-                : commentmetaCommentInboundReference
-                  ? `WordPress graph mutation ${resource.key} is created in the same plan as a comment meta target that depends on it, and identity rewriting is not yet supported.`
-                : usermetaUserInboundReference
-                  ? `WordPress graph mutation ${resource.key} is created in the same plan as a user meta target that depends on it, and identity rewriting is not yet supported.`
-                  : `WordPress graph mutation ${resource.key} is created in the same plan as a relationship that depends on it, and identity rewriting is not yet supported.`,
+    reason,
     references: inboundReferences,
   };
 }

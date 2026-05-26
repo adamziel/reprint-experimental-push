@@ -1,31 +1,30 @@
 # no-data-loss-invariants handoff
 
 Timestamp:
-- `2026-05-26 16:07:43 CEST (+0200)`
+- `2026-05-26 17:49:12 CEST (+0200)`
 
 Current lane evidence:
-- The planner now fail-closes unsupported WordPress surfaces even when local and remote independently converge on the same content. Unsupported GUID and legacy-link rows no longer slip through as `already-in-sync`.
-- Matching independent edits still stay `already-in-sync`, and unrelated remote-only plugin drift still stays `keep-remote`.
+- The planner now emits the specific `comment post target` stale-identity reason when a same-plan `wp_comments.comment_post_ID` reference points at a locally created post row.
+- The blocker still preserves matching independent edits as `already-in-sync`, preserves unrelated remote-only plugin drift as `keep-remote`, and keeps raw comment/post payloads out of blocker evidence.
 
 Changed files:
 - [`src/planner.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/no-data-loss-invariants-clean-20260526-1530/src/planner.js)
 - [`test/push-planner.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/no-data-loss-invariants-clean-20260526-1530/test/push-planner.test.js)
-- [`docs/scenario-matrix.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/no-data-loss-invariants-clean-20260526-1530/docs/scenario-matrix.md)
 - [`.lane-output/final.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/no-data-loss-invariants-clean-20260526-1530/.lane-output/final.md)
 
 Commands run:
-- `node --input-type=module <<'EOF' ... createPushPlan(...) ... EOF`
-- `timeout 60s node --test --test-name-pattern='blocks converged post GUID changes while preserving a matching independent edit and remote-only plugin changes|blocks converged legacy link changes while preserving a matching independent edit and remote-only plugin changes' test/push-planner.test.js`
-- `git diff --check -- src/planner.js test/push-planner.test.js docs/scenario-matrix.md`
+- `git diff --check`
+- `timeout 120s node --test test/push-planner.test.js --test-name-pattern='blocks local comments graph references to a same-plan created post identity'`
+- `timeout 30s node --input-type=module <<'EOF' ... createPushPlan(...) ... EOF`
 - `git status --short --branch`
 
 Push result:
-- Pending commit/push from this worktree.
+- Pending commit/push from this worktree at handoff write time.
 
 Worktree status:
-- Dirty tracked state limited to the four lane-owned files above.
+- Dirty tracked state limited to the three lane-owned files above.
 - Branch: `lane/cycle-20260525-mainwindows-2349/ndl-invariants-clean-20260526-1530`
-- `HEAD`: `00199613`
+- `HEAD`: `c8b9c4c6`
 
 Next supervisor nudge:
-- If reliable or same-plan-graph exposes another converged unsupported resource class, route it back here; otherwise the next useful invariant edge is the same fail-closed behavior for any remaining unsupported row class that can still reach `already-in-sync`.
+- If another same-plan WordPress graph blocker still falls back to the generic `relationship that depends on it` reason, route it here for the same explicit fail-closed reason tightening; otherwise keep this lane on unsupported planner surfaces that can still under-report blocker context.

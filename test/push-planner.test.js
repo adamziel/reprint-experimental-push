@@ -17634,7 +17634,7 @@ test('blocks local same-plan created post identity when a comment references it 
   assert.equal(plan.conflicts.length, 0);
   assert.equal(blocker.class, 'stale-wordpress-graph-identity');
   assert.equal(blocker.resourceKey, targetResourceKey);
-  assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_posts","ID:17"] is created in the same plan as a relationship that depends on it, and identity rewriting is not yet supported.');
+  assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_posts","ID:17"] is created in the same plan as a comment post target that depends on it, and identity rewriting is not yet supported.');
   assert.equal(reference.relationshipKey, 'wp_comments.comment_post_ID');
   assert.equal(reference.relationshipType, 'comment-post');
   assert.equal(reference.sourceResourceKey, resourceKey);
@@ -25958,7 +25958,7 @@ test('blocks local comments graph references to a same-plan created post identit
   assert.equal(plan.conflicts.length, 0);
   assert.equal(blocker.class, 'stale-wordpress-graph-identity');
   assert.equal(blocker.resourceKey, targetResourceKey);
-  assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_posts","ID:17"] is created in the same plan as a relationship that depends on it, and identity rewriting is not yet supported.');
+  assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_posts","ID:17"] is created in the same plan as a comment post target that depends on it, and identity rewriting is not yet supported.');
   assert.equal(independentEditDecision.decision, 'already-in-sync');
   assert.equal(independentEditDecision.change.localChange, 'update');
   assert.equal(independentEditDecision.change.remoteChange, 'update');
@@ -26128,7 +26128,7 @@ test('blocks local comments graph references to a same-plan created post identit
   assert.equal(plan.conflicts.length, 0);
   assert.equal(blocker.class, 'stale-wordpress-graph-identity');
   assert.equal(blocker.resourceKey, targetResourceKey);
-  assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_posts","ID:17"] is created in the same plan as a relationship that depends on it, and identity rewriting is not yet supported.');
+  assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_posts","ID:17"] is created in the same plan as a comment post target that depends on it, and identity rewriting is not yet supported.');
   assert.equal(independentEditDecision.decision, 'already-in-sync');
   assert.equal(independentEditDecision.change.localChange, 'update');
   assert.equal(independentEditDecision.change.remoteChange, 'update');
