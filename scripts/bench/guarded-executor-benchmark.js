@@ -264,6 +264,19 @@ export function productionThroughputBlockers(report) {
     blockers.push('receipt-cursor-queue-slack-not-measured');
   }
   if (
+    report.evidence.backpressure?.queuePausedBeforeOverflow === true
+    && (
+      report.evidence.backpressure?.receiptCursorQueueSlackBytes == null
+      || report.evidence.backpressure?.receiptCursorQueueSlackBytes <= 0
+      || report.evidence.backpressure?.receiptCursorQueueSlackBytes
+        !== report.evidence.backpressure?.queueHeadroomBytes
+      || report.evidence.backpressure?.receiptCursorQueueSlackBytes
+        !== report.evidence.backpressure?.receiptCursorMemoryHeadroomBytes
+    )
+  ) {
+    blockers.push('queue-pause-without-consistent-receipt-cursor-slack');
+  }
+  if (
     Number.isFinite(report.evidence.backpressure?.receiptCursorQueueSlackBytes)
     && report.evidence.backpressure.receiptCursorQueueSlackBytes <= 0
   ) {

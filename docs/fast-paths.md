@@ -61,6 +61,10 @@ Current executable gate:
 - The production-throughput gate also fails closed if a paused sender never
   measured receipt-cursor queue slack, so the pause evidence cannot stand in
   for the companion slack measurement.
+- The production-throughput gate also fails closed if a paused sender reports
+  queue slack that does not match the resource headroom and queue headroom
+  records, so a partial pause record cannot masquerade as bounded backpressure
+  evidence.
 - The report now also fails closed if receipt-cursor queue slack is missing on
   any path, so the benchmark cannot quietly accept an under-instrumented
   backpressure record.
