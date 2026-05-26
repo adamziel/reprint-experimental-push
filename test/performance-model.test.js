@@ -68,6 +68,16 @@ test('benchmark model covers large uploads and plugin installs', () => {
     model.safeFastPaths.some(
       (fastPath) =>
         fastPath.area === 'remote-indexes' &&
+        fastPath.allowedShortcut === 'compress-owner-partition-index-scans-and-reuse-cursor-to-size-bounded-plugin-install-fanout' &&
+        fastPath.guardrails.includes('bounded-plugin-install-fanout-stays-within-per-site-and-per-kind-budgets') &&
+        fastPath.gateProofs.skip.includes('bounded plugin-install fanout before the live compare'),
+    ),
+    'compressed owner-partition scans can size plugin-install fanout without weakening the live compare',
+  );
+  assert.ok(
+    model.safeFastPaths.some(
+      (fastPath) =>
+        fastPath.area === 'remote-indexes' &&
         fastPath.allowedShortcut === 'compress-owner-partition-index-scans-and-reuse-cursor-to-size-bounded-release-bundle-fanout' &&
         fastPath.guardrails.includes('bounded-release-bundle-fanout-stays-within-per-site-and-per-kind-budgets') &&
         fastPath.gateProofs.skip.includes('bounded release-bundle fanout before the live compare'),
