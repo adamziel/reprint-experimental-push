@@ -736,19 +736,26 @@ function reprint_push_lab_db_journal_claim_contract_matches($claim): bool
         return false;
     }
 
+    $status = $claim['status'] ?? null;
+    $stale_claim_rejected = $claim['staleClaimRejected'] ?? null;
+    $status_matches_stale_claim = (
+        ($status === 'active' && $stale_claim_rejected === false)
+        || ($status === 'stale-claim-rejected' && $stale_claim_rejected === true)
+    );
+
     $has_previous_claim_identity = reprint_push_lab_db_journal_non_empty_string($claim['previousClaimKeyHash'] ?? null)
         || reprint_push_lab_db_journal_is_positive_int($claim['previousClaimSequence'] ?? null)
         || reprint_push_lab_db_journal_non_empty_string($claim['previousClaimEvent'] ?? null);
     $has_abandoned_claim_identity = reprint_push_lab_db_journal_is_positive_int($claim['abandonedSequence'] ?? null)
         || reprint_push_lab_db_journal_non_empty_string($claim['abandonedEvent'] ?? null);
 
-    return reprint_push_lab_db_journal_non_empty_string($claim['status'] ?? null)
+    return $status_matches_stale_claim
         && reprint_push_lab_db_journal_non_empty_string($claim['activeClaimKeyHash'] ?? null)
         && reprint_push_lab_db_journal_is_positive_int($claim['activeClaimSequence'] ?? null)
         && reprint_push_lab_db_journal_non_empty_string($claim['activeClaimEvent'] ?? null)
         && reprint_push_lab_db_journal_non_empty_string($claim['idempotencyKeyHash'] ?? null)
         && reprint_push_lab_db_journal_non_empty_string($claim['requestHash'] ?? null)
-        && is_bool($claim['staleClaimRejected'] ?? null)
+        && is_bool($stale_claim_rejected)
         && (!$has_previous_claim_identity || (
             reprint_push_lab_db_journal_non_empty_string($claim['previousClaimKeyHash'] ?? null)
             && reprint_push_lab_db_journal_is_positive_int($claim['previousClaimSequence'] ?? null)
@@ -814,6 +821,15 @@ function reprint_push_lab_db_journal_checked_boundary_contract_is_coherent($jour
         return false;
     }
 
+    $claim = $journal['claim'] ?? null;
+    $claim_stale_rejected_matches = !is_array($claim)
+        || (
+            array_key_exists('staleClaimRejected', $claim)
+            && ($claim['staleClaimRejected'] ?? null) === ($writer_lease['staleClaimRejected'] ?? null)
+            && ($claim['staleClaimRejected'] ?? null) === ($lease_fence['staleClaimRejected'] ?? null)
+            && ($claim['staleClaimRejected'] ?? null) === ($lease_fence_writer_lease['staleClaimRejected'] ?? null)
+        );
+
     return ($ownership['productionAdapter'] ?? null) === ($writer_lease['storageGuard'] ?? null)
         && ($ownership['productionAdapter'] ?? null) === ($lease_fence['boundary'] ?? null)
         && ($ownership['restartReadable'] ?? null) === ($writer_lease['restartReadable'] ?? null)
@@ -828,7 +844,8 @@ function reprint_push_lab_db_journal_checked_boundary_contract_is_coherent($jour
         && ($writer_lease['monotonicSequence'] ?? null) === ($lease_fence_writer_lease['monotonicSequence'] ?? null)
         && ($writer_lease['restartReadable'] ?? null) === ($lease_fence_writer_lease['restartReadable'] ?? null)
         && ($writer_lease['staleClaimRejected'] ?? null) === ($lease_fence['staleClaimRejected'] ?? null)
-        && ($writer_lease['staleClaimRejected'] ?? null) === ($lease_fence_writer_lease['staleClaimRejected'] ?? null);
+        && ($writer_lease['staleClaimRejected'] ?? null) === ($lease_fence_writer_lease['staleClaimRejected'] ?? null)
+        && $claim_stale_rejected_matches;
 }
 
 function reprint_push_lab_db_journal_checked_boundary_contract_matches($journal): bool
