@@ -523,10 +523,22 @@ test('guarded benchmark keeps chunk-upload rollout visibility hidden when backpr
   const tampered = clone(report);
 
   tampered.executorCapabilities.fileReceipts = 'production-storage-receipts';
+  tampered.executorCapabilities.productionAtomicCommit = 'production-atomic-group-commit';
+  tampered.executorCapabilities.rowApply = 'production-batched-compare-and-swap';
   tampered.evidence.parallelism.parallelismLimitsVisible = true;
   tampered.evidence.parallelism.parallelismLimitsMeasured = true;
+  tampered.evidence.parallelism.parallelismLimits = {
+    chunkUpload: 4,
+    fileHashing: 2,
+    dbBatchPerTable: 2,
+  };
+  tampered.evidence.atomicGroup.productionAtomicCommitMeasured = true;
+  tampered.evidence.atomicGroup.productionAtomicCommitVisible = true;
+  tampered.evidence.atomicGroup.productionAtomicGroupMetadataVisible = true;
   tampered.evidence.atomicGroup.productionStorageReceiptsMeasured = true;
   tampered.evidence.atomicGroup.productionStorageReceiptsVisible = true;
+  tampered.evidence.atomicGroup.productionRowBatchExecutorMeasured = true;
+  tampered.evidence.atomicGroup.productionRowBatchExecutorVisible = true;
   tampered.evidence.backpressure.receiptCursorBytes = null;
 
   const details = productionThroughputDetails(tampered);
@@ -540,11 +552,108 @@ test('guarded benchmark keeps chunk-upload rollout visibility hidden when backpr
     status: 'blocked',
     measured: false,
     visible: false,
-    blockerRefs: ['backpressure-evidence-incomplete'],
+    blockerRefs: [
+      'backpressure-evidence-incomplete',
+      'queue-memory-ceiling-does-not-match-queue-budget',
+      'queue-pause-without-resource-headroom-safe-receipt-cursor-backpressure',
+      'queue-pause-without-resource-headroom-safe-receipt-cursor-slack',
+      'queue-pause-without-consistent-receipt-cursor-slack',
+      'queue-pause-without-backpressure-aligned-receipt-cursor-queue-slack',
+      'queue-pause-without-memory-safe-receipt-cursor-slack',
+      'receipt-cursor-backpressure-not-measured',
+    ],
   });
   assert.equal(details.parallelismLimitsVisibleAndMeasured, true);
   assert.equal(blockers.includes('backpressure-evidence-incomplete'), true);
   assert.equal(blockers.includes('receipt-cursor-backpressure-not-measured'), true);
+});
+
+test('guarded benchmark carries direct receipt-cursor queue-slack measurement blockers into rollout summaries under visible production capability evidence', () => {
+  const report = smallBenchmark();
+  const mutated = clone(report);
+
+  mutated.executorCapabilities.productionAtomicCommit = 'production-atomic-group-commit';
+  mutated.executorCapabilities.fileReceipts = 'production-storage-receipts';
+  mutated.executorCapabilities.rowApply = 'production-batched-compare-and-swap';
+  mutated.evidence.parallelism.parallelismLimitsMeasured = true;
+  mutated.evidence.parallelism.parallelismLimitsVisible = true;
+  mutated.evidence.parallelism.parallelismLimits = {
+    chunkUpload: 4,
+    fileHashing: 2,
+    dbBatchPerTable: 2,
+  };
+  mutated.evidence.atomicGroup.productionAtomicCommitMeasured = true;
+  mutated.evidence.atomicGroup.productionAtomicCommitVisible = true;
+  mutated.evidence.atomicGroup.productionAtomicGroupMetadataVisible = true;
+  mutated.evidence.atomicGroup.productionStorageReceiptsMeasured = true;
+  mutated.evidence.atomicGroup.productionStorageReceiptsVisible = true;
+  mutated.evidence.atomicGroup.productionRowBatchExecutorMeasured = true;
+  mutated.evidence.atomicGroup.productionRowBatchExecutorVisible = true;
+  mutated.evidence.backpressure.receiptCursorQueueSlackBytes = null;
+
+  const details = productionThroughputDetails(mutated);
+  const blockers = productionThroughputBlockers(mutated);
+
+  assert.deepEqual(details.productionCapabilityRolloutSummary, [
+    {
+      surface: 'chunk-upload-concurrency',
+      status: 'blocked',
+      measured: false,
+      visible: false,
+      blockerRefs: [
+        'backpressure-evidence-incomplete',
+        'queue-memory-ceiling-does-not-match-queue-budget',
+        'queue-pause-without-measured-receipt-cursor-queue-slack',
+        'queue-pause-without-resource-headroom-safe-receipt-cursor-backpressure',
+        'queue-pause-without-resource-headroom-safe-receipt-cursor-slack',
+        'queue-pause-without-consistent-receipt-cursor-slack',
+        'queue-pause-without-backpressure-aligned-receipt-cursor-queue-slack',
+        'receipt-cursor-queue-slack-not-measured',
+        'receipt-cursor-queue-slack-visible-without-measurement',
+      ],
+    },
+    {
+      surface: 'file-hashing-concurrency',
+      status: 'blocked',
+      measured: false,
+      visible: false,
+      blockerRefs: [
+        'backpressure-evidence-incomplete',
+        'queue-memory-ceiling-does-not-match-queue-budget',
+        'queue-pause-without-measured-receipt-cursor-queue-slack',
+        'queue-pause-without-resource-headroom-safe-receipt-cursor-backpressure',
+        'queue-pause-without-resource-headroom-safe-receipt-cursor-slack',
+        'queue-pause-without-consistent-receipt-cursor-slack',
+        'queue-pause-without-backpressure-aligned-receipt-cursor-queue-slack',
+        'receipt-cursor-queue-slack-not-measured',
+        'receipt-cursor-queue-slack-visible-without-measurement',
+      ],
+    },
+    {
+      surface: 'row-batch-concurrency',
+      status: 'blocked',
+      measured: false,
+      visible: false,
+      blockerRefs: [
+        'backpressure-evidence-incomplete',
+        'queue-memory-ceiling-does-not-match-queue-budget',
+        'queue-pause-without-measured-receipt-cursor-queue-slack',
+        'queue-pause-without-resource-headroom-safe-receipt-cursor-backpressure',
+        'queue-pause-without-resource-headroom-safe-receipt-cursor-slack',
+        'queue-pause-without-consistent-receipt-cursor-slack',
+        'queue-pause-without-backpressure-aligned-receipt-cursor-queue-slack',
+        'receipt-cursor-queue-slack-not-measured',
+        'receipt-cursor-queue-slack-visible-without-measurement',
+      ],
+    },
+  ]);
+  assert.ok(blockers.includes('queue-pause-without-measured-receipt-cursor-queue-slack'));
+  assert.ok(blockers.includes('queue-pause-without-resource-headroom-safe-receipt-cursor-backpressure'));
+  assert.ok(blockers.includes('queue-pause-without-resource-headroom-safe-receipt-cursor-slack'));
+  assert.ok(blockers.includes('queue-pause-without-consistent-receipt-cursor-slack'));
+  assert.ok(blockers.includes('queue-pause-without-backpressure-aligned-receipt-cursor-queue-slack'));
+  assert.ok(blockers.includes('receipt-cursor-queue-slack-not-measured'));
+  assert.ok(blockers.includes('receipt-cursor-queue-slack-visible-without-measurement'));
 });
 
 test('guarded benchmark keeps rollout summaries pinned to hidden storage-receipts visibility blockers', () => {
