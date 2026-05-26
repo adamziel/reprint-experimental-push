@@ -235,6 +235,11 @@ export async function runAuthenticatedHttpPush({
   const recoveryInspectAuthEnvelopeDrift = hasAuthEnvelopeDrift(preflightAuthEnvelope, recoveryInspect);
   if (recoveryInspectAuthEnvelopeDrift) {
     summary.code = 'AUTH_SESSION_LIFECYCLE_DRIFT';
+    summary.authSession = {
+      required: preflightAuthEnvelope.sessionType || 'auth-session',
+      observed: recoveryInspect.body?.auth?.session?.type || 'missing',
+      verdict: 'AUTH_SESSION_LIFECYCLE_DRIFT',
+    };
     setDurableJournalBoundary(summary, 'recovery-inspect');
     return summary;
   }
@@ -333,6 +338,11 @@ export async function runAuthenticatedHttpPush({
   const dbJournalAuthEnvelopeDrift = hasAuthEnvelopeDrift(preflightAuthEnvelope, dbJournal);
   if (dbJournalAuthEnvelopeDrift) {
     summary.code = 'AUTH_SESSION_LIFECYCLE_DRIFT';
+    summary.authSession = {
+      required: preflightAuthEnvelope.sessionType || 'auth-session',
+      observed: dbJournal.body?.auth?.session?.type || 'missing',
+      verdict: 'AUTH_SESSION_LIFECYCLE_DRIFT',
+    };
     setDurableJournalBoundary(summary, 'journal-inspect');
     return summary;
   }
