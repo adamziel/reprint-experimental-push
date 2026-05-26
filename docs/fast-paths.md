@@ -1947,10 +1947,10 @@ The same throughput details now keep the combined
 `productionRowBatchExecutorVisibleAndStorageReceiptsVisibleAndMeasured` bit
 fail-closed too, so a visible row-batch plus storage-receipt pair does not look
 production-ready unless both measurements are present.
-The row-batch rollout summary also stays `measured: false` unless the atomic
-commit is still visible and the atomic-group metadata remains visibly measured,
-so a half-proven group barrier cannot masquerade as a production-safe row-batch
-concurrency surface.
+The chunk-upload and row-batch rollout summaries also stay `measured: false`
+unless the atomic commit is still visible and the atomic-group metadata remains
+visibly measured, so a half-proven group barrier cannot masquerade as a
+production-safe concurrency surface.
 The claim gate also fails closed if atomic-group commit evidence is present
 without a ready required group record, so a staged or optional group cannot
 masquerade as a production atomic commit.
