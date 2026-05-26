@@ -2169,17 +2169,22 @@ function wordpressGraphIdentitySupport({
   const baseValue = getResource(base, resource);
   const referenceEvidence = references.map((reference) =>
     wordpressGraphReferenceEvidence(reference, resources, base, local, remote));
-  const samePlanGraphReferences = resource.table === 'wp_termmeta'
-    ? referenceEvidence
-      .filter((reference) =>
-        isSupportedSamePlanTermmetaReference({
-          baseValue,
-          reference,
-          local,
-          remote,
-        }))
-      .map((reference) => samePlanWordPressGraphReferenceEvidence(reference))
-    : [];
+  const samePlanGraphReferences = referenceEvidence
+    .filter((reference) =>
+      isSupportedSamePlanTermmetaReference({
+        baseValue,
+        reference,
+        local,
+        remote,
+      })
+      || isSupportedSamePlanTermTaxonomyReference({
+        baseValue,
+        localValue,
+        reference,
+        local,
+        remote,
+      }))
+    .map((reference) => samePlanWordPressGraphReferenceEvidence(reference));
   if (resource.table === 'wp_postmeta') {
     const samePlanCreatedRevisionReferences = referenceEvidence.find((reference) =>
       reference.relationshipType === 'postmeta-post'
@@ -2447,6 +2452,42 @@ function isSupportedSamePlanTermmetaReference({
   return !localNavMenuTaxonomy && !remoteNavMenuTaxonomy;
 }
 
+function isSupportedSamePlanTermTaxonomyReference({
+  baseValue,
+  localValue,
+  reference,
+  local,
+  remote,
+}) {
+  if (
+    baseValue === ABSENT
+    || localValue === ABSENT
+    || reference.relationshipType !== 'term-taxonomy-term'
+    || !isSamePlanWordPressGraphCreate(reference)
+  ) {
+    return false;
+  }
+
+  const targetTermId = normalizeWordPressGraphReferenceTargetIntegerId(reference);
+  if (
+    targetTermId == null
+    || normalizePositiveInteger(baseValue?.term_id) !== targetTermId
+    || normalizePositiveInteger(localValue?.term_id) !== targetTermId
+  ) {
+    return false;
+  }
+
+  const localNavMenuTaxonomy = [...(local?.db?.wp_term_taxonomy ? Object.values(local.db.wp_term_taxonomy) : [])]
+    .find((entry) => normalizePositiveInteger(entry?.term_id) === targetTermId && entry?.taxonomy === 'nav_menu');
+  const remoteNavMenuTaxonomy = [...(remote?.db?.wp_term_taxonomy ? Object.values(remote.db.wp_term_taxonomy) : [])]
+    .find((entry) => normalizePositiveInteger(entry?.term_id) === targetTermId && entry?.taxonomy === 'nav_menu');
+
+  return !localNavMenuTaxonomy
+    && !remoteNavMenuTaxonomy
+    && localValue?.taxonomy !== 'nav_menu'
+    && baseValue?.taxonomy !== 'nav_menu';
+}
+
 function finalizeWordPressGraphDependencies(plan, local, remote) {
   const mutationByResourceKey = new Map(
     plan.mutations.map((mutation) => [mutation.resourceKey, mutation]),
@@ -2541,11 +2582,20 @@ function isValidSamePlanWordPressGraphTarget(
   }
 
   if (
-    reference.relationshipType !== 'termmeta-term'
-    || reference.sourceTable !== 'wp_termmeta'
-    || targetMutation.resource?.type !== 'row'
+    targetMutation.resource?.type !== 'row'
     || targetMutation.resource.table !== 'wp_terms'
   ) {
+    return false;
+  }
+
+  const supportedReference = (
+    reference.relationshipType === 'termmeta-term'
+    && reference.sourceTable === 'wp_termmeta'
+  ) || (
+    reference.relationshipType === 'term-taxonomy-term'
+    && reference.sourceTable === 'wp_term_taxonomy'
+  );
+  if (!supportedReference) {
     return false;
   }
 
@@ -2880,6 +2930,35 @@ function samePlanCreatedGraphIdentitySupport({ resource, resources, base, local,
       ) {
         continue;
       }
+      if (
+        resource.table === 'wp_terms'
+        && sourceResource.table === 'wp_term_taxonomy'
+        && isSupportedSamePlanTermTaxonomyReference({
+          baseValue: getResource(base, sourceResource),
+          localValue: sourceLocalValue,
+          reference: evidence,
+          local,
+          remote,
+        })
+        && !wordpressGraphReferences(sourceResource, sourceLocalValue)
+          .map((sourceReference) =>
+            wordpressGraphReferenceEvidence(sourceReference, resources, base, local, remote))
+          .some((sourceReferenceEvidence) =>
+            sourceReferenceEvidence.targetChange.remote.state === 'absent'
+            && sourceReferenceEvidence.targetChange.local.state === 'present'
+            && (
+              sourceReferenceEvidence.relationshipType !== 'term-taxonomy-term'
+              || !isSupportedSamePlanTermTaxonomyReference({
+                baseValue: getResource(base, sourceResource),
+                localValue: sourceLocalValue,
+                reference: sourceReferenceEvidence,
+                local,
+                remote,
+              })
+            ))
+      ) {
+        continue;
+      }
       if (evidence.targetChange.remote.state === 'absent') {
         inboundReferences.push(evidence);
       }
@@ -3113,6 +3192,21 @@ function normalizePositiveInteger(value) {
   }
   if (typeof value === 'string' && /^[1-9]\d*$/.test(value)) {
     return Number.parseInt(value, 10);
+  }
+  return null;
+}
+
+function normalizeWordPressGraphReferenceTargetIntegerId(reference) {
+  const directId = normalizePositiveInteger(reference?.targetId);
+  if (directId != null) {
+    return directId;
+  }
+  const rowId = reference?.targetResource?.id;
+  if (typeof rowId === 'string') {
+    const match = rowId.match(/:(\d+)$/);
+    if (match) {
+      return normalizePositiveInteger(match[1]);
+    }
   }
   return null;
 }
@@ -4290,6 +4384,44 @@ function unsupportedTermTaxonomyResourceSupport({ resource, baseValue, localValu
     ...samePlanCreatedTermReferences,
     ...samePlanCreatedTaxonomyRelationshipReferences,
   ];
+  const navMenuSamePlanTermReference = samePlanCreatedTermReferences.find((reference) => {
+    if (reference.relationshipType !== 'term-taxonomy-term') {
+      return false;
+    }
+    const targetTermId = normalizeWordPressGraphReferenceTargetIntegerId(reference);
+    if (targetTermId == null) {
+      return false;
+    }
+    const localNavMenuTaxonomy = [...(local?.db?.wp_term_taxonomy ? Object.values(local.db.wp_term_taxonomy) : [])]
+      .find((entry) => normalizePositiveInteger(entry?.term_id) === targetTermId && entry?.taxonomy === 'nav_menu');
+    const remoteNavMenuTaxonomy = [...(remote?.db?.wp_term_taxonomy ? Object.values(remote.db.wp_term_taxonomy) : [])]
+      .find((entry) => normalizePositiveInteger(entry?.term_id) === targetTermId && entry?.taxonomy === 'nav_menu');
+    return Boolean(localNavMenuTaxonomy || remoteNavMenuTaxonomy || candidate?.taxonomy === 'nav_menu' || baseValue?.taxonomy === 'nav_menu');
+  });
+  if (navMenuSamePlanTermReference) {
+    return {
+      supported: false,
+      className: 'unsupported-navigation-resource',
+      unsupportedState: 'same-plan-reference',
+      reason: 'Navigation and menu graph resources are not yet supported by the planner.',
+      references: [navMenuSamePlanTermReference],
+    };
+  }
+  const supportedSamePlanTermReferences = samePlanCreatedTermReferences.filter((reference) =>
+    isSupportedSamePlanTermTaxonomyReference({
+      baseValue,
+      localValue,
+      reference,
+      local,
+      remote,
+    }));
+  if (
+    samePlanReferences.length > 0
+    && supportedSamePlanTermReferences.length === samePlanCreatedTermReferences.length
+    && samePlanCreatedTaxonomyRelationshipReferences.length === 0
+  ) {
+    return { supported: true };
+  }
   const unsupportedState = (
     samePlanReferences.length > 0
   )

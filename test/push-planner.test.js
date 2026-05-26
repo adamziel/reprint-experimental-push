@@ -16316,7 +16316,7 @@ test('blocks local term-taxonomy parent references to a missing live remote term
   assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin drift */');
 });
 
-test('blocks local term-taxonomy parent references to a same-plan created term identity while preserving remote-only plugin drift', () => {
+test('allows existing term-taxonomy updates to depend on a same-plan term create while preserving remote-only plugin drift', () => {
   const resourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:5"]';
   const targetResourceKey = 'row:["wp_terms","term_id:9"]';
   const base = baseSite();
@@ -16356,20 +16356,18 @@ test('blocks local term-taxonomy parent references to a same-plan created term i
   remote.plugins.forms.description = 'remote-only plugin drift';
 
   const plan = planFor(base, local, remote);
-  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
-  const planJson = JSON.stringify(plan);
+  const termMutation = mutationFor(plan, targetResourceKey);
+  const taxonomyMutation = mutationFor(plan, resourceKey);
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
 
-  assert.equal(plan.status, 'blocked');
-  assert.equal(plan.summary.mutations, 0);
-  assert.equal(mutationFor(plan, resourceKey), undefined);
-  assert.equal(decisionFor(plan, targetResourceKey), undefined);
-  assert.equal(blocker.class, 'unsupported-term-taxonomy-resource');
-  assert.equal(blocker.resourceKind, 'term-taxonomy');
-  assert.equal(blocker.resourceKey, resourceKey);
-  assert.equal(blocker.unsupportedState, 'same-plan-reference');
-  assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_term_taxonomy","term_taxonomy_id:5"] is created in the same plan as a term identity that depends on it, and identity rewriting is not yet supported.');
-  assert.equal(planJson.includes('Local same-plan parent term'), false);
-  assert.equal(planJson.includes('local-same-plan-parent-term'), false);
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.blockers, 0);
+  assert.equal(termMutation.changeKind, 'create');
+  assert.equal(taxonomyMutation.changeKind, 'update');
+  assert.deepEqual(taxonomyMutation.dependsOnMutationIds, [termMutation.id]);
+  assert.equal(plan.graphDependencies.length, 1);
+  assert.equal(plan.graphDependencies[0].relationshipType, 'term-taxonomy-term');
+  assert.equal(pluginDecision.decision, 'keep-remote');
   assert.equal(remote.plugins.forms.description, 'remote-only plugin drift');
 });
 
@@ -16896,7 +16894,7 @@ test('blocks local term-taxonomy term references to a same-plan created term ide
   assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin change */');
 });
 
-test('blocks local pure term-taxonomy term references to a same-plan created term identity with explicit term evidence', () => {
+test('allows an existing term-taxonomy row to reference a term created by the same plan', () => {
   const resourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:5"]';
   const targetResourceKey = 'row:["wp_terms","term_id:9"]';
   const base = baseSite();
@@ -16934,33 +16932,111 @@ test('blocks local pure term-taxonomy term references to a same-plan created ter
   remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin drift */';
 
   const plan = planFor(base, local, remote);
-  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
-  const reference = blocker.references[0];
+  const termMutation = mutationFor(plan, targetResourceKey);
+  const taxonomyMutation = mutationFor(plan, resourceKey);
+  const reference = taxonomyMutation.wordpressGraphReferences[0];
   const pluginDecision = decisionFor(plan, 'plugin:forms');
   const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
-  const planJson = JSON.stringify(plan);
 
-  assert.equal(plan.status, 'blocked');
-  assert.equal(plan.summary.mutations, 0);
-  assert.equal(mutationFor(plan, resourceKey), undefined);
-  assert.equal(decisionFor(plan, targetResourceKey), undefined);
-  assert.equal(blocker.class, 'unsupported-term-taxonomy-resource');
-  assert.equal(blocker.resourceKey, resourceKey);
-  assert.equal(
-    blocker.reason,
-    'WordPress graph mutation row:["wp_term_taxonomy","term_taxonomy_id:5"] is created in the same plan as a term identity that depends on it, and identity rewriting is not yet supported.',
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.blockers, 0);
+  assert.equal(termMutation.changeKind, 'create');
+  assert.equal(taxonomyMutation.changeKind, 'update');
+  assert.ok(
+    plan.mutations.indexOf(termMutation) < plan.mutations.indexOf(taxonomyMutation),
+    'term create must be ordered before dependent existing term-taxonomy update',
   );
+  assert.deepEqual(taxonomyMutation.dependsOnMutationIds, [termMutation.id]);
+  assert.equal(plan.summary.graphDependencies, 1);
+  assert.deepEqual(plan.graphDependencies, [
+    {
+      sourceMutationId: taxonomyMutation.id,
+      sourceResourceKey: resourceKey,
+      relationshipKey: 'wp_term_taxonomy.term_id',
+      relationshipType: 'term-taxonomy-term',
+      targetMutationId: termMutation.id,
+      targetResourceKey,
+      resolutionPolicy: 'same-plan-local-create',
+      source: 'same-plan-local-create',
+      targetLocalHash: termMutation.localHash,
+    },
+  ]);
   assert.equal(reference.relationshipKey, 'wp_term_taxonomy.term_id');
   assert.equal(reference.relationshipType, 'term-taxonomy-term');
   assert.equal(reference.sourceResourceKey, resourceKey);
   assert.equal(reference.targetResourceKey, targetResourceKey);
+  assert.equal(reference.resolutionPolicy, 'same-plan-local-create');
   assert.equal(pluginDecision.decision, 'keep-remote');
   assert.equal(pluginFileDecision.decision, 'keep-remote');
-  assert.equal(planJson.includes('Local same-plan term'), false);
-  assert.equal(planJson.includes('local-same-plan-term'), false);
-  assert.equal(planJson.includes('local term taxonomy description'), false);
   assert.equal(remote.plugins.forms.description, 'remote-only plugin drift');
   assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin drift */');
+
+  const result = applyPlan(remote, plan);
+  assert.equal(result.site.db.wp_terms['term_id:9'].name, 'Local same-plan term');
+  assert.equal(result.site.db.wp_term_taxonomy['term_taxonomy_id:5'].term_id, 9);
+  assert.equal(result.site.db.wp_term_taxonomy['term_taxonomy_id:5'].description, 'local term taxonomy description');
+});
+
+test('blocks an existing term-taxonomy row when its same-plan term belongs to a nav menu taxonomy', () => {
+  const termResourceKey = 'row:["wp_terms","term_id:9"]';
+  const taxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:5"]';
+  const navMenuTaxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:8"]';
+  const base = baseSite();
+  base.db.wp_term_taxonomy = {
+    'term_taxonomy_id:5': {
+      term_taxonomy_id: 5,
+      term_id: 9,
+      taxonomy: 'category',
+      parent: 0,
+      description: 'base term taxonomy description',
+    },
+  };
+
+  const local = baseSite();
+  local.db.wp_terms = {
+    'term_id:9': {
+      term_id: 9,
+      name: 'Local nav menu taxonomy term',
+      slug: 'local-nav-menu-taxonomy-term',
+    },
+  };
+  local.db.wp_term_taxonomy = {
+    'term_taxonomy_id:5': {
+      term_taxonomy_id: 5,
+      term_id: 9,
+      taxonomy: 'category',
+      parent: 0,
+      description: 'local term taxonomy description',
+    },
+    'term_taxonomy_id:8': {
+      term_taxonomy_id: 8,
+      term_id: 9,
+      taxonomy: 'nav_menu',
+      parent: 0,
+      description: 'local nav menu taxonomy description',
+    },
+  };
+
+  const remote = baseSite();
+  remote.db.wp_term_taxonomy = JSON.parse(JSON.stringify(base.db.wp_term_taxonomy));
+  remote.plugins.forms.description = 'remote-only plugin drift';
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === taxonomyResourceKey);
+  const navMenuBlocker = plan.blockers.find((entry) => entry.resourceKey === navMenuTaxonomyResourceKey);
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(mutationFor(plan, taxonomyResourceKey), undefined);
+  assert.equal(decisionFor(plan, termResourceKey), undefined);
+  assert.equal(blocker.class, 'unsupported-navigation-resource');
+  assert.equal(blocker.resourceKey, taxonomyResourceKey);
+  assert.equal(blocker.unsupportedState, 'same-plan-reference');
+  assert.equal(blocker.reason, 'Navigation and menu graph resources are not yet supported by the planner.');
+  assert.equal(navMenuBlocker.class, 'unsupported-navigation-resource');
+  assert.equal(planJson.includes('Local nav menu taxonomy term'), false);
+  assert.equal(planJson.includes('local nav menu taxonomy description'), false);
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin drift');
 });
 
 test('blocks local term-taxonomy rows that reference same-plan created term identities through both term and parent while preserving remote-only plugin drift', () => {
@@ -17686,7 +17762,7 @@ test('prioritizes term identity blocker wording while carrying bounded term-taxo
     termBlocker.references.map((reference) => reference.sourceResourceKey),
     [taxonomyResourceKey, termmetaResourceKey],
   );
-  assert.equal(taxonomyBlocker.class, 'unsupported-term-taxonomy-resource');
+  assert.equal(taxonomyBlocker.class, 'unsupported-navigation-resource');
   assert.equal(termmetaBlocker.class, 'unsupported-termmeta-resource');
   assert.equal(matchingEdit.decision, 'already-in-sync');
   assert.equal(pluginDecision.decision, 'keep-remote');
@@ -17858,7 +17934,7 @@ test('prioritizes parent term taxonomy blocker wording while carrying bounded pa
   assert.equal(plan.summary.mutations, 0);
   assert.equal(mutationFor(plan, taxonomyResourceKey), undefined);
   assert.equal(decisionFor(plan, taxonomyResourceKey), undefined);
-  assert.equal(taxonomyBlocker.class, 'unsupported-term-taxonomy-resource');
+  assert.equal(taxonomyBlocker.class, 'unsupported-navigation-resource');
   assert.equal(taxonomyBlocker.resourceKey, taxonomyResourceKey);
   assert.equal(
     taxonomyBlocker.reason,
@@ -48218,7 +48294,7 @@ test('blocks an existing termmeta row when its same-plan term belongs to a nav m
   assert.equal(termMutation, undefined);
   assert.equal(taxonomyMutation, undefined);
   assert.equal(termmetaMutation.changeKind, 'update');
-  assert.equal(taxonomyBlocker.class, 'unsupported-term-taxonomy-resource');
+  assert.equal(taxonomyBlocker.class, 'unsupported-navigation-resource');
   assert.equal(termBlocker.class, 'stale-wordpress-graph-identity');
   assert.equal(blocker.class, 'missing-wordpress-graph-dependency');
   assert.equal(
