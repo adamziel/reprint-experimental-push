@@ -49,8 +49,15 @@ function spawnBoundedSync(command, args, options, label) {
 
   if (proof.error) {
     const timeoutNote = proof.error.code === 'ETIMEDOUT' && options.timeout ? ` after ${options.timeout}ms` : '';
+    const detailParts = [
+      proof.error.name ?? 'Error',
+      proof.error.code ? `code=${proof.error.code}` : null,
+      proof.error.errno ? `errno=${proof.error.errno}` : null,
+      proof.status !== null ? `status=${proof.status}` : null,
+      proof.signal ? `signal=${proof.signal}` : null,
+    ].filter(Boolean);
     assert.fail(
-      `${label} failed${timeoutNote} with ${proof.error.name ?? 'Error'}: ${proof.error.message}\nstdout:\n${proof.stdout ?? ''}\nstderr:\n${proof.stderr ?? ''}`,
+      `${label} failed${timeoutNote} with ${detailParts.join(' ')}: ${proof.error.message}\nstdout:\n${proof.stdout ?? ''}\nstderr:\n${proof.stderr ?? ''}`,
     );
   }
   if (proof.signal) {
