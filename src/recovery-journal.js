@@ -32,6 +32,52 @@ export class RecoveryJournalClaimStaleError extends Error {
   }
 }
 
+export class UnsupportedProductionRecoveryJournalError extends Error {
+  constructor(message, details = {}) {
+    super(message);
+    this.name = 'UnsupportedProductionRecoveryJournalError';
+    this.code = 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL';
+    this.details = details;
+  }
+}
+
+export function createUnsupportedProductionRecoveryJournal(reason = 'Production recovery journal support is not available in this worktree.') {
+  const details = {
+    reason,
+    kind: 'production-recovery-journal',
+    productionAdapter: true,
+    ownsJournal: false,
+    journalPath: null,
+    schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+  };
+
+  const throwUnsupported = (method) => {
+    throw new UnsupportedProductionRecoveryJournalError(reason, {
+      ...details,
+      method,
+    });
+  };
+
+  return Object.freeze({
+    ...details,
+    appendEvent() {
+      return throwUnsupported('appendEvent');
+    },
+    inspect() {
+      return throwUnsupported('inspect');
+    },
+    assertCurrentClaim() {
+      return throwUnsupported('assertCurrentClaim');
+    },
+    flush() {
+      return throwUnsupported('flush');
+    },
+    close() {
+      return throwUnsupported('close');
+    },
+  });
+}
+
 export function openRecoveryJournal(filePath, options = {}) {
   const flags = options.truncate ? 'w+' : 'a+';
   fs.mkdirSync(path.dirname(filePath), { recursive: true });

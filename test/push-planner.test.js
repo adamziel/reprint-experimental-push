@@ -11,6 +11,7 @@ import {
   appendStaleClaimAdvanced,
   assertJournalRecordHasNoRawValues,
   RECOVERY_JOURNAL_SCHEMA_VERSION,
+  createUnsupportedProductionRecoveryJournal,
   openRecoveryJournal,
   readRecoveryJournal,
 } from '../src/recovery-journal.js';
@@ -19767,6 +19768,35 @@ test('production durable journal claims fail closed without a restart-readable w
     'restart-readable recovery journal schema',
     'fencing or lease ownership for the journal writer',
   ]);
+});
+
+test('unsupported production recovery journal adapters stay fail closed by default', () => {
+  const plan = planFor(baseSite(), baseSite(), {
+    ...baseSite(),
+    db: {
+      ...baseSite().db,
+      wp_options: {
+        ...baseSite().db.wp_options,
+        'option_name:blogname': { option_name: 'blogname', option_value: 'New Site' },
+      },
+    },
+  });
+  const journal = createUnsupportedProductionRecoveryJournal();
+
+  assert.equal(plan.status, 'ready');
+  assert.throws(
+    () => journal.appendEvent('journal-opened', {}),
+    /Production recovery journal support is not available/,
+  );
+
+  const error = captureError(() => applyPlan(baseSite(), plan, {
+    requireProductionDurableJournal: true,
+    durableJournal: journal,
+  }));
+
+  assert.equal(error.code, 'PRODUCTION_DURABLE_JOURNAL_UNSUPPORTED');
+  assert.ok(error.details.missingDependency.includes('restart-readable recovery inspection'));
+  assert.ok(error.details.missingDependency.includes('owned restart-readable recovery journal path'));
 });
 
 test('production durable journal claims report the exact missing durability pieces for a partial writer', () => {
