@@ -2240,11 +2240,7 @@ function resolveObservedProductionAuthSessionLifecycleDrift(response) {
     || session?.status === 'cleaned-up'
   ) {
     return {
-      field: session?.revoked === true || session?.status === 'revoked'
-        ? 'auth.session.status'
-        : session?.cleanedUp === true || session?.status === 'cleaned-up'
-          ? 'auth.session.cleanedUp'
-          : 'auth.session.cleanup',
+      field: resolveProductionAuthSessionUnrevokedField(session),
       required: 'unrevoked',
       observed: session?.revoked === true || session?.status === 'revoked' ? 'revoked' : 'cleaned-up',
     };
@@ -2324,13 +2320,8 @@ function setProductionAuthSessionBoundary(summary) {
 
 function describeRequiredUnrevokedProductionAuthSession(response) {
   const session = response?.body?.auth?.session;
-  const cleanedUp = session?.cleanedUp === true || session?.cleanup === true || session?.status === 'cleaned-up';
   return {
-    field: session?.revoked === true || session?.status === 'revoked'
-      ? 'auth.session.status'
-      : cleanedUp && (session?.cleanedUp === true || session?.status === 'cleaned-up')
-        ? 'auth.session.cleanedUp'
-        : 'auth.session.cleanup',
+    field: resolveProductionAuthSessionUnrevokedField(session),
     required: 'unrevoked',
     observed: session?.revoked === true || session?.status === 'revoked'
       ? 'revoked'
@@ -2339,6 +2330,21 @@ function describeRequiredUnrevokedProductionAuthSession(response) {
   };
 }
 
+function resolveProductionAuthSessionUnrevokedField(session) {
+  if (session?.revoked === true || session?.status === 'revoked') {
+    return 'auth.session.status';
+  }
+
+  if (session?.status === 'cleaned-up') {
+    return 'auth.session.status';
+  }
+
+  if (session?.cleanedUp === true) {
+    return 'auth.session.cleanedUp';
+  }
+
+  return 'auth.session.cleanup';
+}
 function hasProductionAuthSessionRevocationDrift(response) {
   const session = response?.body?.auth?.session;
   if (!session || typeof session !== 'object') {
