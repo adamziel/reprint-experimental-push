@@ -1516,6 +1516,18 @@ function reprint_push_plugin_owned_row_drivers(): array
         if ($plugin_owner === '') {
             throw new RuntimeException('Plugin-owned driver registry is missing pluginOwner for driver: ' . $driver_name);
         }
+        $export_rows_callback = $driver['exportRowsCallback'] ?? null;
+        if (!is_callable($export_rows_callback)) {
+            throw new RuntimeException('Plugin-owned driver registry is missing exportRowsCallback for driver: ' . $driver_name);
+        }
+        $apply_row_callback = $driver['applyRowCallback'] ?? null;
+        if (!is_callable($apply_row_callback)) {
+            throw new RuntimeException('Plugin-owned driver registry is missing applyRowCallback for driver: ' . $driver_name);
+        }
+        $validate_mutation_callback = $driver['validateMutationCallback'] ?? null;
+        if (!is_callable($validate_mutation_callback)) {
+            throw new RuntimeException('Plugin-owned driver registry is missing validateMutationCallback for driver: ' . $driver_name);
+        }
         if (array_key_exists($driver_name, $normalized)) {
             throw new RuntimeException('Plugin-owned driver registry defines duplicate driver name: ' . $driver_name);
         }
@@ -1531,9 +1543,9 @@ function reprint_push_plugin_owned_row_drivers(): array
             'table' => $table,
             'pluginOwner' => $plugin_owner,
             'supportsDelete' => !empty($driver['supportsDelete']),
-            'exportRowsCallback' => $driver['exportRowsCallback'] ?? null,
-            'applyRowCallback' => $driver['applyRowCallback'] ?? null,
-            'validateMutationCallback' => $driver['validateMutationCallback'] ?? null,
+            'exportRowsCallback' => $export_rows_callback,
+            'applyRowCallback' => $apply_row_callback,
+            'validateMutationCallback' => $validate_mutation_callback,
         ];
         $drivers_by_table[$table] = $driver_name;
     }

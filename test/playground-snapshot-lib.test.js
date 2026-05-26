@@ -46,6 +46,9 @@ function runDriverRegistryCheck(drivers) {
   return spawnSync('php', [
     '-r',
     [
+      'function fixture_export_rows() {}',
+      'function fixture_apply_row() {}',
+      'function fixture_validate_mutation() {}',
       'function apply_filters($tag, $value) {',
       '  if ($tag === "reprint_push_plugin_owned_row_drivers") {',
       '    return json_decode($GLOBALS["argv"][2], true);',
@@ -140,5 +143,62 @@ test('plugin-owned driver registry rejects whitespace-only driver names', { skip
   assert.match(
     result.stderr,
     /missing driver name for table: wp_reprint_push_driver_fixture/,
+  );
+});
+
+test('plugin-owned driver registry rejects missing export callback', { skip: !hasPhp }, () => {
+  const result = runDriverRegistryCheck({
+    'fixture-driver': {
+      driver: 'fixture-driver',
+      table: 'wp_reprint_push_driver_fixture',
+      pluginOwner: 'driver-fixture',
+      exportRowsCallback: null,
+      applyRowCallback: 'fixture_apply_row',
+      validateMutationCallback: 'fixture_validate_mutation',
+    },
+  });
+
+  assert.equal(result.status, 2);
+  assert.match(
+    result.stderr,
+    /missing exportRowsCallback for driver: fixture-driver/,
+  );
+});
+
+test('plugin-owned driver registry rejects missing apply callback', { skip: !hasPhp }, () => {
+  const result = runDriverRegistryCheck({
+    'fixture-driver': {
+      driver: 'fixture-driver',
+      table: 'wp_reprint_push_driver_fixture',
+      pluginOwner: 'driver-fixture',
+      exportRowsCallback: 'fixture_export_rows',
+      applyRowCallback: null,
+      validateMutationCallback: 'fixture_validate_mutation',
+    },
+  });
+
+  assert.equal(result.status, 2);
+  assert.match(
+    result.stderr,
+    /missing applyRowCallback for driver: fixture-driver/,
+  );
+});
+
+test('plugin-owned driver registry rejects missing validate callback', { skip: !hasPhp }, () => {
+  const result = runDriverRegistryCheck({
+    'fixture-driver': {
+      driver: 'fixture-driver',
+      table: 'wp_reprint_push_driver_fixture',
+      pluginOwner: 'driver-fixture',
+      exportRowsCallback: 'fixture_export_rows',
+      applyRowCallback: 'fixture_apply_row',
+      validateMutationCallback: null,
+    },
+  });
+
+  assert.equal(result.status, 2);
+  assert.match(
+    result.stderr,
+    /missing validateMutationCallback for driver: fixture-driver/,
   );
 });

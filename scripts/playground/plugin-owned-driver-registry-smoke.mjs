@@ -18,6 +18,8 @@ const resourceKey = `row:["${driverTable}","entry_id:1"]`;
 const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'reprint-plugin-driver-registry-'));
 const baseBlueprintPath = path.join(tmpDir, 'base.blueprint.json');
 const localBlueprintPath = path.join(tmpDir, 'local.blueprint.json');
+const missingExportBlueprintPath = path.join(tmpDir, 'missing-export.blueprint.json');
+const missingApplyBlueprintPath = path.join(tmpDir, 'missing-apply.blueprint.json');
 const malformedValidateBlueprintPath = path.join(tmpDir, 'missing-validate.blueprint.json');
 const missingDriverNameBlueprintPath = path.join(tmpDir, 'missing-driver-name.blueprint.json');
 const missingPluginOwnerBlueprintPath = path.join(tmpDir, 'missing-plugin-owner.blueprint.json');
@@ -37,6 +39,16 @@ try {
   writeBlueprint(localBlueprintPath, {
     payloadMode: 'local-edited',
     updatedMarker: 'local',
+  });
+  writeBlueprint(missingExportBlueprintPath, {
+    payloadMode: 'base',
+    updatedMarker: 'base',
+    omitExportRowsCallback: true,
+  });
+  writeBlueprint(missingApplyBlueprintPath, {
+    payloadMode: 'base',
+    updatedMarker: 'base',
+    omitApplyRowCallback: true,
   });
   writeBlueprint(malformedValidateBlueprintPath, {
     payloadMode: 'base',
@@ -97,11 +109,27 @@ try {
   assert.deepEqual(protocolApply.verified, [resourceKey]);
   assert.equal(protocolApply.after.db[driverTable]['entry_id:1'].payload.mode, 'local-edited');
 
-  const malformedApply = applyPlanToBase(malformedValidateBlueprintPath, planPath, { expectStatus: 1 });
-  assert.equal(malformedApply.ok, false);
-  assert.equal(malformedApply.error?.class, 'RuntimeException');
+  const missingExportRowsExport = exportSnapshotFailure('missing-export', missingExportBlueprintPath);
+  assert.equal(missingExportRowsExport.ok, false);
+  assert.equal(missingExportRowsExport.error?.class, 'RuntimeException');
   assert.match(
-    malformedApply.error?.message || '',
+    missingExportRowsExport.error?.message || '',
+    /missing exportRowsCallback for driver: fixture-arbitrary-plugin-table/i,
+  );
+
+  const missingApplyRowExport = exportSnapshotFailure('missing-apply', missingApplyBlueprintPath);
+  assert.equal(missingApplyRowExport.ok, false);
+  assert.equal(missingApplyRowExport.error?.class, 'RuntimeException');
+  assert.match(
+    missingApplyRowExport.error?.message || '',
+    /missing applyRowCallback for driver: fixture-arbitrary-plugin-table/i,
+  );
+
+  const malformedValidateExport = exportSnapshotFailure('missing-validate', malformedValidateBlueprintPath);
+  assert.equal(malformedValidateExport.ok, false);
+  assert.equal(malformedValidateExport.error?.class, 'RuntimeException');
+  assert.match(
+    malformedValidateExport.error?.message || '',
     /missing validateMutationCallback for driver: fixture-arbitrary-plugin-table/i,
   );
 
@@ -181,7 +209,9 @@ try {
     applied: protocolApply.applied + protocolDelete.applied,
     updateVerified: protocolApply.verified,
     deleteVerified: protocolDelete.verified,
-    malformedValidateGuard: malformedApply.error?.class,
+    missingExportRowsGuard: missingExportRowsExport.error?.class,
+    missingApplyRowGuard: missingApplyRowExport.error?.class,
+    malformedValidateGuard: malformedValidateExport.error?.class,
     missingDriverNameGuard: missingDriverNameExport.error?.class,
     missingPluginOwnerGuard: missingPluginOwnerExport.error?.class,
     missingTableGuard: missingTableExport.error?.class,
@@ -199,6 +229,8 @@ function writeBlueprint(
   {
     payloadMode,
     updatedMarker,
+    omitExportRowsCallback = false,
+    omitApplyRowCallback = false,
     omitValidateMutationCallback = false,
     blankDriverName = false,
     omitPluginOwner = false,
@@ -221,8 +253,8 @@ add_filter('reprint_push_plugin_owned_row_drivers', static function (array $driv
 ${omitTable ? '' : `        'table' => '${driverTable}',`}
 ${omitPluginOwner ? '' : `        'pluginOwner' => '${pluginOwner}',`}
         'supportsDelete' => true,
-        'exportRowsCallback' => 'reprint_push_driver_fixture_export_rows',
-        'applyRowCallback' => 'reprint_push_driver_fixture_apply_row',
+${omitExportRowsCallback ? '' : "        'exportRowsCallback' => 'reprint_push_driver_fixture_export_rows',"}
+${omitApplyRowCallback ? '' : "        'applyRowCallback' => 'reprint_push_driver_fixture_apply_row',"}
 ${omitValidateMutationCallback ? '' : "        'validateMutationCallback' => 'reprint_push_driver_fixture_validate_mutation',"}
     ];
 ${duplicateDriverName ? `    $drivers['${driverName}-duplicate'] = [

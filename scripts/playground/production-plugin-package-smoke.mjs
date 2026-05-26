@@ -789,174 +789,58 @@ try {
     assert.equal(malformedSnapshot.status, 500);
     assert.match(
       malformedSnapshot.text,
-      /missing exportRowsCallback for table: wp_reprint_push_driver_fixture/i,
+      /missing exportRowsCallback for driver: fixture-arbitrary-plugin-table/i,
       'packaged snapshot did not fail closed on a malformed arbitrary plugin-owned driver export registration',
     );
 
     summary.driverExportGuard = {
       resourceKey: driverFixture.resourceKey,
       status: malformedSnapshot.status,
-      missingExportRowsCallback: /missing exportRowsCallback for table: wp_reprint_push_driver_fixture/i.test(malformedSnapshot.text),
+      missingExportRowsCallback: /missing exportRowsCallback for driver: fixture-arbitrary-plugin-table/i.test(malformedSnapshot.text),
     };
   });
 
   await withPlaygroundServer('production-plugin-driver-missing-apply-guard', driverMissingApplyServerBlueprintPath, pluginDir, async (server) => {
-    const client = authenticatedHttpClient({
-      sourceUrl: server.baseUrl,
-      credential: credentials,
-      routeProfile: 'production-shaped',
-    });
-    const preflight = await client.signedGet('/preflight');
-    assert.equal(preflight.status, 200);
-    assert.equal(preflight.body?.ok, true);
-    const session = preflight.body?.session?.id;
-    assert.equal(typeof session, 'string');
-    assert.ok(session.length > 0, 'signed preflight did not return a session id for the missing apply callback guard');
-
-    const remoteSnapshot = await client.get('/snapshot');
-    assert.equal(remoteSnapshot.status, 200);
-    assert.equal(remoteSnapshot.body?.ok, true);
-
-    const updatePlan = createPushPlan({
-      base: driverGuardBaseSnapshot,
-      local: driverLocalUpdateSnapshot,
-      remote: remoteSnapshot.body.snapshot,
-      now: new Date('2026-05-26T18:13:00.000Z'),
-    });
-    assert.equal(updatePlan.status, 'ready');
-    assert.equal(updatePlan.mutations.length, 1);
-    assert.equal(updatePlan.mutations[0].resourceKey, driverFixture.resourceKey);
-    assert.equal(updatePlan.mutations[0].action, 'put');
-
-    const updateDryRun = await client.signedPost(
-      '/dry-run',
-      { plan: updatePlan },
-      {
-        session,
-        idempotencyKey: 'production-plugin-driver-missing-apply-dry-run',
-      },
+    const malformedSnapshot = await requestText(
+      server.baseUrl,
+      'GET',
+      '/wp-json/reprint/v1/push/snapshot',
+      undefined,
+      authHeaders(),
     );
-    assert.equal(updateDryRun.status, 200);
-    assert.equal(updateDryRun.body?.ok, true);
-    assert.ok(updateDryRun.body?.receipt?.receiptHash, 'missing-apply driver dry-run did not produce a receipt');
-
-    const updateApply = await client.signedPost(
-      '/apply',
-      {
-        plan: updatePlan,
-        receipt: updateDryRun.body.receipt,
-      },
-      {
-        session,
-        idempotencyKey: 'production-plugin-driver-missing-apply-apply',
-      },
-    );
-    assert.equal(updateApply.status, 500);
-    assert.equal(updateApply.body?.ok, false);
-    assert.equal(updateApply.body?.code, 'PUSH_PROTOCOL_ERROR');
+    assert.equal(malformedSnapshot.status, 500);
     assert.match(
-      updateApply.body?.message || '',
-      /missing applyRowCallback for table: wp_reprint_push_driver_fixture/i,
-      'packaged apply route did not fail closed on a malformed arbitrary plugin-owned driver apply registration',
-    );
-
-    const afterRejectedApply = await client.get('/snapshot');
-    assert.equal(afterRejectedApply.status, 200);
-    assert.equal(afterRejectedApply.body?.ok, true);
-    assert.equal(
-      afterRejectedApply.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1']?.updated_marker,
-      'base',
-      'packaged apply route mutated the arbitrary driver row despite the missing apply callback',
-    );
-    assert.deepEqual(
-      afterRejectedApply.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1']?.payload,
-      {
-        owner: driverFixture.pluginOwner,
-        mode: 'base',
-        version: 1,
-      },
-      'packaged apply route changed the arbitrary driver payload despite the missing apply callback',
+      malformedSnapshot.text,
+      /missing applyRowCallback for driver: fixture-arbitrary-plugin-table/i,
+      'packaged snapshot did not fail closed on a malformed arbitrary plugin-owned driver apply registration',
     );
 
     summary.driverApplyGuard = {
       resourceKey: driverFixture.resourceKey,
-      dryRunAccepted: updateDryRun.body?.ok === true,
-      applyRejectedCode: updateApply.body?.code,
-      applyRejectedMessage: updateApply.body?.message,
-      rowRetainedAfterReject: afterRejectedApply.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1'] !== undefined,
-      updatedMarkerAfterReject: afterRejectedApply.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1']?.updated_marker,
+      status: malformedSnapshot.status,
+      missingApplyRowCallback: /missing applyRowCallback for driver: fixture-arbitrary-plugin-table/i.test(malformedSnapshot.text),
     };
   });
 
   await withPlaygroundServer('production-plugin-driver-missing-validate-guard', driverMissingValidateServerBlueprintPath, pluginDir, async (server) => {
-    const client = authenticatedHttpClient({
-      sourceUrl: server.baseUrl,
-      credential: credentials,
-      routeProfile: 'production-shaped',
-    });
-    const preflight = await client.signedGet('/preflight');
-    assert.equal(preflight.status, 200);
-    assert.equal(preflight.body?.ok, true);
-    const session = preflight.body?.session?.id;
-    assert.equal(typeof session, 'string');
-    assert.ok(session.length > 0, 'signed preflight did not return a session id for the missing validate callback guard');
-
-    const remoteSnapshot = await client.get('/snapshot');
-    assert.equal(remoteSnapshot.status, 200);
-    assert.equal(remoteSnapshot.body?.ok, true);
-
-    const updatePlan = createPushPlan({
-      base: driverGuardBaseSnapshot,
-      local: driverLocalUpdateSnapshot,
-      remote: remoteSnapshot.body.snapshot,
-      now: new Date('2026-05-26T18:14:00.000Z'),
-    });
-    assert.equal(updatePlan.status, 'ready');
-    assert.equal(updatePlan.mutations.length, 1);
-    assert.equal(updatePlan.mutations[0].resourceKey, driverFixture.resourceKey);
-    assert.equal(updatePlan.mutations[0].action, 'put');
-
-    const updateDryRun = await client.signedPost(
-      '/dry-run',
-      { plan: updatePlan },
-      {
-        session,
-        idempotencyKey: 'production-plugin-driver-missing-validate-dry-run',
-      },
+    const malformedSnapshot = await requestText(
+      server.baseUrl,
+      'GET',
+      '/wp-json/reprint/v1/push/snapshot',
+      undefined,
+      authHeaders(),
     );
-    assert.equal(updateDryRun.status, 500);
-    assert.equal(updateDryRun.body?.ok, false);
-    assert.equal(updateDryRun.body?.code, 'PUSH_PROTOCOL_ERROR');
+    assert.equal(malformedSnapshot.status, 500);
     assert.match(
-      updateDryRun.body?.message || '',
+      malformedSnapshot.text,
       /missing validateMutationCallback for driver: fixture-arbitrary-plugin-table/i,
-      'packaged dry-run route did not fail closed on a malformed arbitrary plugin-owned driver validate registration',
-    );
-
-    const afterRejectedDryRun = await client.get('/snapshot');
-    assert.equal(afterRejectedDryRun.status, 200);
-    assert.equal(afterRejectedDryRun.body?.ok, true);
-    assert.equal(
-      afterRejectedDryRun.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1']?.updated_marker,
-      'base',
-      'packaged dry-run route mutated the arbitrary driver row despite the missing validate callback',
-    );
-    assert.deepEqual(
-      afterRejectedDryRun.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1']?.payload,
-      {
-        owner: driverFixture.pluginOwner,
-        mode: 'base',
-        version: 1,
-      },
-      'packaged dry-run route changed the arbitrary driver payload despite the missing validate callback',
+      'packaged snapshot did not fail closed on a malformed arbitrary plugin-owned driver validate registration',
     );
 
     summary.driverValidateGuard = {
       resourceKey: driverFixture.resourceKey,
-      dryRunRejectedCode: updateDryRun.body?.code,
-      dryRunRejectedMessage: updateDryRun.body?.message,
-      rowRetainedAfterReject: afterRejectedDryRun.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1'] !== undefined,
-      updatedMarkerAfterReject: afterRejectedDryRun.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1']?.updated_marker,
+      status: malformedSnapshot.status,
+      missingValidateMutationCallback: /missing validateMutationCallback for driver: fixture-arbitrary-plugin-table/i.test(malformedSnapshot.text),
     };
   });
 
