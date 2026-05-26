@@ -219,6 +219,30 @@ export function openProductionRecoveryJournal(filePathOrOptions, options = {}) {
   }
 
   const persistedArtifactRefs = persistedProductionArtifactRefs(filePath);
+  if (persistedArtifactRefs.invalidReason) {
+    throw new UnsupportedProductionRecoveryJournalError(
+      persistedArtifactRefs.invalidReason,
+      {
+        kind: 'production-recovery-journal',
+        productionAdapter: true,
+        supportedSurface: 'production-recovery-journal-adapter',
+        restartReadable: true,
+        ownsJournal: true,
+        ownsRemoteArtifact,
+        writerLease,
+        journalPath: filePath,
+        artifactRefs: Object.freeze({
+          journal: filePath,
+          remote: remoteArtifactPath,
+        }),
+        persistedArtifactRefs: Object.freeze({
+          journal: persistedArtifactRefs.journal,
+          remote: persistedArtifactRefs.remote,
+        }),
+        schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+      },
+    );
+  }
   if (
     persistedArtifactRefs.remote !== null
     && remoteArtifactPath !== persistedArtifactRefs.remote
@@ -540,6 +564,29 @@ function normalizeProductionRecoveryJournalOptions(filePathOrOptions, options = 
 function normalizeProductionArtifactRefs(artifactRefs, journalPath, remoteArtifactPath = null) {
   const writerArtifactRefs = isStrictPlainObject(artifactRefs) ? artifactRefs : {};
   const persistedArtifactRefs = persistedProductionArtifactRefs(journalPath);
+  if (persistedArtifactRefs.invalidReason) {
+    throw new UnsupportedProductionRecoveryJournalError(
+      persistedArtifactRefs.invalidReason,
+      {
+        kind: 'production-recovery-journal',
+        productionAdapter: true,
+        supportedSurface: 'production-recovery-journal-adapter',
+        restartReadable: true,
+        ownsJournal: true,
+        ownsRemoteArtifact: remoteArtifactPath !== null,
+        journalPath,
+        artifactRefs: Object.freeze({
+          journal: Object.hasOwn(writerArtifactRefs, 'journal') ? writerArtifactRefs.journal : journalPath,
+          remote: Object.hasOwn(writerArtifactRefs, 'remote') ? writerArtifactRefs.remote : remoteArtifactPath,
+        }),
+        persistedArtifactRefs: Object.freeze({
+          journal: persistedArtifactRefs.journal,
+          remote: persistedArtifactRefs.remote,
+        }),
+        schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+      },
+    );
+  }
   if (
     persistedArtifactRefs.remote !== null
     && remoteArtifactPath !== persistedArtifactRefs.remote
@@ -625,7 +672,7 @@ function normalizeProductionArtifactRefs(artifactRefs, journalPath, remoteArtifa
 function persistedProductionArtifactRefs(journalPath) {
   const persisted = readRecoveryJournal(journalPath);
   if (persisted.integrity?.status !== 'ok') {
-    return { journal: null, remote: null };
+    return { journal: null, remote: null, invalidReason: null };
   }
 
   let persistedJournalPath = null;
@@ -635,6 +682,36 @@ function persistedProductionArtifactRefs(journalPath) {
     const artifactRefs = persisted.records[index]?.artifactRefs;
     if (!isStrictPlainObject(artifactRefs)) {
       continue;
+    }
+
+    if (
+      Object.hasOwn(artifactRefs, 'journal')
+      && !isCanonicalAbsolutePath(artifactRefs.journal)
+    ) {
+      return {
+        journal: null,
+        remote: null,
+        invalidReason: 'Production recovery journal persistence includes an invalid owned journal artifact path.',
+      };
+    }
+    if (Object.hasOwn(artifactRefs, 'remote')) {
+      if (artifactRefs.remote === null) {
+        return {
+          journal: null,
+          remote: null,
+          invalidReason: 'Production recovery journal persistence cleared an owned remote artifact path.',
+        };
+      }
+      if (
+        !isCanonicalAbsolutePath(artifactRefs.remote)
+        || artifactRefs.remote === artifactRefs.journal
+      ) {
+        return {
+          journal: null,
+          remote: null,
+          invalidReason: 'Production recovery journal persistence includes an invalid owned remote artifact path.',
+        };
+      }
     }
 
     if (
@@ -661,6 +738,7 @@ function persistedProductionArtifactRefs(journalPath) {
   return {
     journal: persistedJournalPath,
     remote: persistedRemoteArtifactPath,
+    invalidReason: null,
   };
 }
 
