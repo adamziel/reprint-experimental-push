@@ -6,12 +6,12 @@ The project is **not releasable as a production WordPress push path**.
 
 - Fresh remote heads at audit time, checked on May 26, 2026:
 
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `eeb35e80`
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `540b8b24`
-- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `dfd8bb3c`
-- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `016801a5`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `d1b13506`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `936e7987`
+- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `6379a697`
+- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `94def865`
 - `origin/lane/reliable-executor` -> `5912fc94`
-- `origin/lane/no-data-loss-invariants` -> `eec3620e`
+- `origin/lane/no-data-loss-invariants` -> `d388db27`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `d121c210`
 - `origin/lane/no-data-loss-recovery` -> `aec5d04b`
 - `origin/lane/cycle-20260525-mainwindows-2349/critic` -> `fa0dc8a0`
@@ -32,19 +32,19 @@ Fresh lane proof since the last audit pass improved the local evidence floor,
 but it did not change the release conclusion:
 
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now records
-  `eeb35e80`, refreshing public progress freshness only.
+  `d1b13506`, refreshing public progress freshness only.
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now records
-  `540b8b24`, refreshing the supervisor progress surface only.
-- `origin/lane/reliable-executor` now records `290b4d5e`, hardening
-  Playground startup failure reporting and child cleanup only.
-- `origin/lane/no-data-loss-invariants` now records `eec3620e`, adding termmeta
-  preservation proofs. That remains fail-closed boundary work, not live source
-  mutation proof.
+  `936e7987`, refreshing the supervisor progress surface only.
+- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` now records
+  `6379a697`. This refreshes the audit snapshot only and does not change the
+  release boundary.
+- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` now records
+  `94def865`, tightening graph identity proof only.
+- `origin/lane/no-data-loss-invariants` now records `d388db27`, adding nav menu
+  parent reference blocking only.
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` now
   records `d121c210`, failing closed on inspected remote artifact refs. It
   still does not add production-backed journal ownership or replay proof.
-- `origin/lane/independent-auditor` now records `dfd8bb3c`. This refreshes the
-  audit snapshot only and does not change the release boundary.
 - `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration`
   now records `d388db27`, adding nav menu parent reference blocking only.
 
