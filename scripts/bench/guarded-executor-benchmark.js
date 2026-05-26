@@ -683,6 +683,16 @@ export function productionThroughputDetails(report) {
     && Number.isFinite(receiptCursorMemoryCeilingBytes)
     && report.evidence.backpressure?.receiptCursorMemoryCeilingMatchesQueueBudget === true
     && receiptCursorQueueBudgetBytes === receiptCursorMemoryCeilingBytes;
+  const successInspectionClaimStatus = report.results.successInspection?.claim?.status ?? null;
+  const successInspectionClaimReason = report.results.successInspection?.claim?.reason ?? null;
+  const successInspectionClaimMatchesInspectionStatus =
+    successInspectionClaimStatus === 'none'
+    || successInspectionClaimStatus === 'active'
+    || successInspectionClaimStatus === 'advanced'
+    || (
+      successInspectionClaimStatus === 'blocked'
+      && report.evidence.recovery.successInspectionStatus !== 'fully-updated-remote'
+    );
   const receiptCursorHeadroomMatchesResourceHeadroom =
     receiptCursorWithinMemoryCeiling
     && receiptCursorMemoryHeadroomBytes === receiptCursorMemoryCeilingBytes - receiptCursorWindowBytes;
@@ -809,6 +819,9 @@ export function productionThroughputDetails(report) {
     receiptCursorMemoryHeadroomBytes,
     receiptCursorMemoryHeadroomPositive: receiptCursorMemoryHeadroomPositiveVisible,
     receiptCursorMemoryCeilingMatchesQueueBudget,
+    successInspectionClaimStatus,
+    successInspectionClaimReason,
+    successInspectionClaimMatchesInspectionStatus,
     receiptCursorMemoryHeadroomMatchesResourceHeadroom,
     receiptCursorMemoryHeadroomWithinResourceHeadroom,
     receiptCursorMatchesBackpressure,
@@ -863,6 +876,9 @@ export function productionThroughputDetails(report) {
       receiptCursorMemoryHeadroomBytes,
       receiptCursorMemoryHeadroomPositive: receiptCursorMemoryHeadroomPositiveVisible,
       receiptCursorMemoryCeilingMatchesQueueBudget,
+      successInspectionClaimStatus,
+      successInspectionClaimReason,
+      successInspectionClaimMatchesInspectionStatus,
       receiptCursorMemoryHeadroomMatchesResourceHeadroom,
       receiptCursorMemoryHeadroomWithinResourceHeadroom,
       receiptCursorBackpressureWithinResourceHeadroom,

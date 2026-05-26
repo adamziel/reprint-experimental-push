@@ -113,6 +113,9 @@ Current executable gate:
 - The production-throughput gate also fails closed if the success receipt-kind
   ledger no longer matches the recorded success count, so a truncated journal
   summary cannot masquerade as complete recovery evidence.
+- The report now also exposes the success inspection claim status and keeps it
+  aligned with the recorded inspection summary, so a tampered recovery claim
+  cannot drift away from the replayed success result.
 - The report now also fails closed if receipt-cursor queue slack is missing on
   any path, so the benchmark cannot quietly accept an under-instrumented
   backpressure record.

@@ -293,6 +293,9 @@ test('guarded benchmark refuses production throughput claims until production ga
   assert.equal(report.results.successInspection.status, 'fully-updated-remote');
   assert.equal(report.results.successInspection.reason, 'Every planned target currently matches its journaled after hash.');
   assert.equal(report.results.successInspection.counts.new, report.shape.mutations);
+  assert.equal(report.claims.productionThroughputDetails.successInspectionClaimStatus, 'none');
+  assert.equal(report.claims.productionThroughputDetails.successInspectionClaimReason, null);
+  assert.equal(report.claims.productionThroughputDetails.successInspectionClaimMatchesInspectionStatus, true);
   assert.equal(report.results.preCommitFailure.inspectionStatus, 'old-remote');
   assert.equal(report.results.partialFailure.inspectionStatus, 'blocked-recovery');
   assert.ok(Array.isArray(report.results.preCommitFailure.journalRecordTypes));
@@ -576,6 +579,22 @@ test('production claim gate fails closed if benchmark evidence is tampered', () 
   assert.equal(
     productionThroughputDetails(mismatchedQueueBudget).backpressureConsistency.backpressureEvidenceComplete,
     false,
+  );
+
+  const tamperedSuccessInspectionClaim = clone(report);
+  tamperedSuccessInspectionClaim.results.successInspection.claim = {
+    status: 'blocked',
+    reason: 'tampered',
+    counts: tamperedSuccessInspectionClaim.results.successInspection.counts,
+    claim: null,
+  };
+  assert.equal(
+    productionThroughputDetails(tamperedSuccessInspectionClaim).successInspectionClaimMatchesInspectionStatus,
+    false,
+  );
+  assert.equal(
+    productionThroughputDetails(tamperedSuccessInspectionClaim).successInspectionClaimStatus,
+    'blocked',
   );
 
   const mismatchedQueueCursor = clone(report);
