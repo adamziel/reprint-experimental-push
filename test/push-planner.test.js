@@ -9623,6 +9623,95 @@ test('allows an existing post row to retarget its parent reference to a same-pla
   assert.equal(result.site.db.wp_posts['ID:21'].post_type, 'wp_navigation');
 });
 
+test('allows an existing post row to retarget its parent reference to a same-plan post create even when a navigation menu taxonomy is blocked elsewhere', () => {
+  const parentResourceKey = 'row:["wp_posts","ID:2"]';
+  const childResourceKey = 'row:["wp_posts","ID:3"]';
+  const blockedTaxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:9"]';
+  const base = baseSite();
+  base.db.wp_posts['ID:3'] = {
+    ID: 3,
+    post_title: 'Existing child post',
+    post_content: 'base-private-existing-child-body',
+    post_status: 'draft',
+    post_parent: 0,
+  };
+  const local = baseSite();
+  local.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_title: 'Local parent post',
+    post_content: 'local-private-parent-body',
+    post_status: 'publish',
+  };
+  local.db.wp_posts['ID:3'] = {
+    ...base.db.wp_posts['ID:3'],
+    post_parent: 2,
+  };
+  local.db.wp_terms = {
+    'term_id:9': {
+      term_id: 9,
+      name: 'Local blocked elsewhere navigation term',
+      slug: 'local-blocked-elsewhere-navigation-term',
+    },
+  };
+  local.db.wp_term_taxonomy = {
+    'term_taxonomy_id:9': {
+      term_taxonomy_id: 9,
+      term_id: 9,
+      taxonomy: 'nav_menu',
+      description: '',
+      parent: 0,
+      count: 0,
+    },
+  };
+  const remote = baseSite();
+  remote.db.wp_posts['ID:3'] = {
+    ...base.db.wp_posts['ID:3'],
+  };
+
+  const plan = planFor(base, local, remote);
+  const parentMutation = mutationFor(plan, parentResourceKey);
+  const childMutation = mutationFor(plan, childResourceKey);
+  const blockedTaxonomyMutation = mutationFor(plan, blockedTaxonomyResourceKey);
+  const blockedTaxonomy = plan.blockers.find((entry) => entry.resourceKey === blockedTaxonomyResourceKey);
+  const reference = childMutation.wordpressGraphReferences.find((entry) => entry.relationshipType === 'post-parent');
+  const referenceJson = JSON.stringify(reference);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(parentMutation.changeKind, 'create');
+  assert.equal(childMutation.changeKind, 'update');
+  assert.equal(blockedTaxonomyMutation, undefined);
+  assert.equal(blockedTaxonomy.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(blockedTaxonomy.surface, 'nav_menu');
+  assert.ok(
+    plan.mutations.indexOf(parentMutation) < plan.mutations.indexOf(childMutation),
+    'parent post create must be ordered before dependent existing child post update',
+  );
+  assert.deepEqual(childMutation.dependsOnMutationIds, [parentMutation.id]);
+  assert.equal(plan.summary.graphDependencies, 1);
+  assert.deepEqual(plan.graphDependencies, [
+    {
+      sourceMutationId: childMutation.id,
+      sourceResourceKey: childResourceKey,
+      relationshipKey: 'wp_posts.post_parent',
+      relationshipType: 'post-parent',
+      targetMutationId: parentMutation.id,
+      targetResourceKey: parentResourceKey,
+      resolutionPolicy: 'same-plan-local-create',
+      source: 'same-plan-local-create',
+      targetLocalHash: parentMutation.localHash,
+    },
+  ]);
+  assert.equal(reference.resolutionPolicy, 'same-plan-local-create');
+  assert.equal(reference.relationshipKey, 'wp_posts.post_parent');
+  assert.equal(reference.relationshipType, 'post-parent');
+  assert.equal(reference.targetResourceKey, parentResourceKey);
+  assert.equal(reference.dependency.targetMutationId, parentMutation.id);
+  assert.equal(reference.dependency.targetLocalHash, parentMutation.localHash);
+  assert.equal(referenceJson.includes('base-private-existing-child-body'), false);
+  assert.equal(referenceJson.includes('local-private-parent-body'), false);
+  assert.equal(referenceJson.includes('Local blocked elsewhere navigation term'), false);
+});
+
 test('allows a local thumbnail reference to an attachment created by the same plan', () => {
   const attachmentResourceKey = 'row:["wp_posts","ID:2"]';
   const postmetaResourceKey = 'row:["wp_postmeta","meta_id:45"]';
