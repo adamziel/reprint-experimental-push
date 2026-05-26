@@ -716,34 +716,34 @@ function productionRecoverySupportReport(writer) {
   ) {
     addMissingDependency('restart-readable recovery remote artifact references');
   }
-  if (
-    durableJournalInspectArtifactRefs(inspected)
+  const inspectedRemoteArtifactRef = durableJournalInspectArtifactRefs(inspected)
     && typeof inspected.artifactRefs.remote === 'string'
     && inspected.artifactRefs.remote.length > 0
-  ) {
-    addMissingDependency('restart-readable recovery remote artifact references');
-    if (!isCanonicalAbsolutePath(inspected.artifactRefs.remote)) {
-      addMissingDependency('restart-readable recovery remote artifact references');
-    }
-  }
+    ? inspected.artifactRefs.remote
+    : null;
   if (
     writerRemoteArtifactRef
-    || (durableJournalInspectArtifactRefs(inspected) && typeof inspected.artifactRefs.remote === 'string' && inspected.artifactRefs.remote.length > 0)
+    || inspectedRemoteArtifactRef
   ) {
     if (writer?.ownsRemoteArtifact !== true) {
       addMissingDependency('restart-readable remote recovery artifact ownership');
     }
   }
   if (writerRemoteArtifactRef) {
-    addMissingDependency('restart-readable recovery remote artifact references');
     if (!isCanonicalAbsolutePath(writerRemoteArtifactRef)) {
       addMissingDependency('restart-readable recovery remote artifact references');
     }
-    if (!durableJournalInspectArtifactRefs(inspected) || typeof inspected.artifactRefs.remote !== 'string') {
+    if (!inspectedRemoteArtifactRef) {
       addMissingDependency('restart-readable recovery remote artifact references');
-    } else if (inspected.artifactRefs.remote !== writerRemoteArtifactRef) {
+    } else if (inspectedRemoteArtifactRef !== writerRemoteArtifactRef) {
       addMissingDependency('restart-readable recovery remote artifact references');
     }
+  }
+  if (inspectedRemoteArtifactRef && !isCanonicalAbsolutePath(inspectedRemoteArtifactRef)) {
+    addMissingDependency('restart-readable recovery remote artifact references');
+  }
+  if (inspectedRemoteArtifactRef && writerRemoteArtifactRef && inspectedRemoteArtifactRef !== writerRemoteArtifactRef) {
+    addMissingDependency('restart-readable recovery remote artifact references');
   }
   if (typeof writer?.journalPath !== 'string' || writer.journalPath.length === 0) {
     addMissingDependency('owned restart-readable recovery journal path');
