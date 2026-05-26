@@ -42,6 +42,7 @@ const transientFetchAttempts = 4;
 const credentials = {
   username: 'reprint_push_admin',
   password: 'reprint-push-admin-app-password',
+  applicationPassword: 'reprint-push-admin-app-password',
 };
 const authSessionSourceCommand = process.env.REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND || '';
 const authSessionSource = authSessionSourceCommand ? loadAuthSessionSource(authSessionSourceCommand) : null;
@@ -49,7 +50,7 @@ const resolvedCredentials = resolveAuthSessionSourceCredentials(credentials, aut
   preferSource: true,
 });
 const packagedAuthSessionSourceCommand = resolvePackagedProductionPluginSourceCommand({
-  sourceUrl: resolvedCredentials.liveSourceUrl || '',
+  sourceUrl: resolvedCredentials.liveSourceUrl || 'http://127.0.0.1:8080',
   username: resolvedCredentials.username,
   applicationPassword: resolvedCredentials.applicationPassword,
   authSessionSourceCommand,

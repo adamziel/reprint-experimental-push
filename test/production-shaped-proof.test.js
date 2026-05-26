@@ -735,6 +735,18 @@ test('production-shaped release verify synthesizes the packaged production auth/
   assert.equal(sourceCommand, `REPRINT_PUSH_PACKAGED_PRODUCTION_PLUGIN=1 ${expectedSourceCommand}`);
 });
 
+test('production plugin package smoke synthesizes a packaged source command before the runtime server URL is known', () => {
+  const smokeSource = readFileSync(
+    path.join(repoRoot, 'scripts/playground/production-plugin-package-smoke.mjs'),
+    'utf8',
+  );
+
+  assert.match(
+    smokeSource,
+    /sourceUrl:\s*resolvedCredentials\.liveSourceUrl\s*\|\|\s*'http:\/\/127\.0\.0\.1:8080'/,
+  );
+});
+
 test('production-shaped release verify consumes the packaged production auth/session source command on the checked release path', () => {
   const sourceUrl = 'http://127.0.0.1:8080';
   const packagedSource = resolvePackagedProductionPluginAuthSessionSource({
