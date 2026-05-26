@@ -5863,7 +5863,21 @@ test('guarded benchmark treats missing measured backpressure proof as incomplete
   const details = productionThroughputDetails(mutated);
   const blockers = productionThroughputBlockers(mutated);
 
+  assert.equal(details.receiptCursorPauseFootprintComplete, false);
+  assert.equal(details.receiptCursorQueueSlackMatchesBackpressure, false);
+  assert.equal(details.receiptCursorQueueSlackMatchesMemoryHeadroom, false);
+  assert.equal(details.receiptCursorQueueSlackMatchesResourceHeadroom, false);
+  assert.equal(details.receiptCursorQueueSlackWithinMemoryCeiling, false);
+  assert.equal(details.receiptCursorQueueSlackWithinQueueBudget, false);
+  assert.equal(details.receiptCursorQueueSlackWithinResourceHeadroom, false);
   assert.equal(details.backpressureConsistency.backpressureEvidenceComplete, false);
+  assert.equal(details.backpressureConsistency.receiptCursorPauseFootprintComplete, false);
+  assert.equal(details.backpressureConsistency.receiptCursorQueueSlackMatchesBackpressure, false);
+  assert.equal(details.backpressureConsistency.receiptCursorQueueSlackMatchesMemoryHeadroom, false);
+  assert.equal(details.backpressureConsistency.receiptCursorQueueSlackMatchesResourceHeadroom, false);
+  assert.equal(details.backpressureConsistency.receiptCursorQueueSlackWithinMemoryCeiling, false);
+  assert.equal(details.backpressureConsistency.receiptCursorQueueSlackWithinQueueBudget, false);
+  assert.equal(details.backpressureConsistency.receiptCursorQueueSlackWithinResourceHeadroom, false);
   assert.ok(blockers.includes('queue-pause-without-measured-receipt-cursor-backpressure-proof'));
 });
 
