@@ -216,6 +216,17 @@ test('benchmark model covers large uploads and plugin installs', () => {
     'canonical budgets and a cached release-manifest cursor can size retry windows without weakening release recovery evidence',
   );
   assert.ok(
+    model.safeFastPaths.some(
+      (fastPath) =>
+        fastPath.allowedShortcut === 'compress-canonical-per-kind-budget-summaries-and-reuse-cached-release-manifest-cursor-to-size-bounded-release-bundle-retry-windows' &&
+        fastPath.guardrails.includes('cached-release-manifest-cursor-remains-planning-evidence-only') &&
+        fastPath.guardrails.includes('budget-summaries-stay-planning-evidence-only') &&
+        fastPath.gateProofs.skip.includes('compressed per-kind budget summaries can reuse a cached release-manifest cursor') &&
+        fastPath.gateProofs.recovery.includes('guarded release record'),
+    ),
+    'compressed budget summaries and a cached release-manifest cursor can size retry windows without weakening release recovery evidence',
+  );
+  assert.ok(
     pluginInstall.actions.some((action) => action.type === 'db-batch-parallelism'),
     'plugin install includes bounded row-batch parallelism',
   );
