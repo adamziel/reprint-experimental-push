@@ -1189,6 +1189,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['compression', 'backpressure', 'durable-progress'],
   },
   {
+    id: 'compressed-planning-cursor-drops-raw-receipt-order',
+    proposal: 'treat a compressed planning cursor as enough proof to drop raw receipt order during replay',
+    rejectedBecause: 'planning evidence can shorten lookup work, but it cannot replace the ordered raw receipts needed to classify pause, retry, or crash',
+    rejectedGate: 'recovery',
+    violates: ['compression', 'backpressure', 'durable-progress'],
+  },
+  {
     id: 'index-and-compressed-queue-completes-apply',
     proposal: 'treat a fresh remote index plus a drained compressed queue as proof that apply is complete',
     rejectedBecause: 'planning evidence and queue compression can reduce work, but they cannot prove the live mutation or its receipts survived failure',

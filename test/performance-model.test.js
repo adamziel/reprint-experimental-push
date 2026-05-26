@@ -772,6 +772,18 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-chunk-digests-skips-large-upload-backpressure-after-pause')?.violates.includes('backpressure'),
   );
   assert.equal(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-planning-cursor-drops-raw-receipt-order')?.rejectedGate,
+    'recovery',
+  );
+  assert.ok(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-planning-cursor-drops-raw-receipt-order')?.violates.includes('backpressure'),
+    'compressed planning cursors still cannot discard ordered raw receipts during replay',
+  );
+  assert.ok(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-planning-cursor-drops-raw-receipt-order')?.violates.includes('durable-progress'),
+    'compressed planning cursors still cannot replace durable replay evidence',
+  );
+  assert.equal(
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-row-receipts-skips-plugin-update-finalize-after-pause')?.rejectedGate,
     'group',
   );
