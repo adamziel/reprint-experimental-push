@@ -190,11 +190,20 @@ export function productionThroughputBlockers(report) {
   if (!report.evidence.recovery.successReplayInspectable) {
     blockers.push('missing-success-recovery-evidence');
   }
+  if (report.evidence.recovery.successInspectionStatus !== 'fully-updated-remote') {
+    blockers.push('success-recovery-status-mismatch');
+  }
   if (!report.evidence.recovery.preCommitFailureInspectable) {
     blockers.push('missing-pre-commit-recovery-evidence');
   }
+  if (report.evidence.recovery.preCommitFailureInspectionStatus !== 'old-remote') {
+    blockers.push('pre-commit-recovery-status-mismatch');
+  }
   if (!report.evidence.recovery.partialCommitBlocksRecovery) {
     blockers.push('missing-partial-commit-recovery-evidence');
+  }
+  if (report.evidence.recovery.partialCommitInspectionStatus !== 'blocked-recovery') {
+    blockers.push('partial-commit-recovery-status-mismatch');
   }
   if (!report.evidence.atomicGroup.preCommitFailureLeavesRemoteUnchanged) {
     blockers.push('atomic-group-pre-commit-visibility-not-proven');
@@ -285,6 +294,9 @@ export function productionThroughputBlockers(report) {
   }
   if (report.executorCapabilities.fileReceipts !== 'production-storage-receipts') {
     blockers.push('production-storage-receipts-not-measured');
+  }
+  if (report.executorCapabilities.productionAtomicCommit !== 'production-atomic-group-commit') {
+    blockers.push('production-atomic-group-commit-not-measured');
   }
   if (report.executorCapabilities.rowApply !== 'production-batched-compare-and-swap') {
     blockers.push('production-row-batch-executor-not-measured');

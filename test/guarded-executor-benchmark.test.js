@@ -242,6 +242,39 @@ test('production claim gate fails closed if benchmark evidence is tampered', () 
     productionThroughputBlockers(missingRecovery).includes('missing-partial-commit-recovery-evidence'),
   );
 
+  const mismatchedAtomicCommitCapability = clone(report);
+  mismatchedAtomicCommitCapability.executorCapabilities.productionAtomicCommit =
+    'unsupported-atomic-commit';
+  assert.ok(
+    productionThroughputBlockers(mismatchedAtomicCommitCapability).includes(
+      'production-atomic-group-commit-not-measured',
+    ),
+  );
+
+  const mismatchedSuccessRecoveryStatus = clone(report);
+  mismatchedSuccessRecoveryStatus.evidence.recovery.successInspectionStatus = 'blocked-recovery';
+  assert.ok(
+    productionThroughputBlockers(mismatchedSuccessRecoveryStatus).includes(
+      'success-recovery-status-mismatch',
+    ),
+  );
+
+  const mismatchedPreCommitRecoveryStatus = clone(report);
+  mismatchedPreCommitRecoveryStatus.evidence.recovery.preCommitFailureInspectionStatus = 'blocked-recovery';
+  assert.ok(
+    productionThroughputBlockers(mismatchedPreCommitRecoveryStatus).includes(
+      'pre-commit-recovery-status-mismatch',
+    ),
+  );
+
+  const mismatchedPartialRecoveryStatus = clone(report);
+  mismatchedPartialRecoveryStatus.evidence.recovery.partialCommitInspectionStatus = 'old-remote';
+  assert.ok(
+    productionThroughputBlockers(mismatchedPartialRecoveryStatus).includes(
+      'partial-commit-recovery-status-mismatch',
+    ),
+  );
+
   const missingCursorHeadroom = clone(report);
   missingCursorHeadroom.evidence.chunkReceipts.resumeCursor.sizeBytes =
     missingCursorHeadroom.resourceLimits.memoryCeilingBytes + 1;
