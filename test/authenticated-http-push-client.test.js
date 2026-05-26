@@ -12,6 +12,8 @@ const credential = {
   password: 'reprint-push-admin-app-password',
 };
 
+const trustedDbJournalScope = 'checked live production-shaped journal surface; not local Playground fixture only';
+
 test('authenticated push client requires an explicit session and idempotency key for mutating requests', () => {
   const client = authenticatedHttpClient({
     sourceUrl: 'http://127.0.0.1:8080',
@@ -87,7 +89,7 @@ test('authenticated push client allows production-shaped ipv6 loopback runtime p
 
 test('db journal proof requires stale claim rejection when explicitly requested', () => {
   const proof = {
-    scope: 'checked live production-shaped journal surface; not local Playground fixture only',
+    scope: trustedDbJournalScope,
     applyCommitted: true,
     idempotencyOpened: 1,
     mutationApplied: 1,
@@ -3702,6 +3704,7 @@ test('production-shaped authenticated push accepts replay-equivalent signed requ
           },
         },
         dbJournal: {
+          scope: trustedDbJournalScope,
           latestRows: [
             { event: 'idempotency-opened' },
             { event: 'mutation-applied' },
@@ -3842,6 +3845,7 @@ test('production-shaped authenticated push accepts replay-equivalent committed r
           },
         },
         dbJournal: {
+          scope: trustedDbJournalScope,
           latestRows: [
             { event: 'idempotency-opened' },
             { event: 'mutation-applied' },
@@ -4104,6 +4108,7 @@ test('production-shaped authenticated push records preserved-remote retry on rea
           },
         },
         dbJournal: {
+          scope: trustedDbJournalScope,
           latestRows: [
             { event: 'idempotency-opened' },
             { event: 'mutation-applied' },
@@ -4289,6 +4294,7 @@ test('production-shaped authenticated push fails closed when preserved-remote re
           },
         },
         dbJournal: {
+          scope: trustedDbJournalScope,
           latestRows: [
             { event: 'idempotency-opened' },
             { event: 'mutation-applied' },
@@ -4712,6 +4718,7 @@ test('production-shaped authenticated push records preserved-remote retry on pre
           },
         },
         dbJournal: {
+          scope: trustedDbJournalScope,
           latestRows: [
             { event: 'idempotency-opened' },
             { event: 'mutation-applied' },
@@ -4895,6 +4902,7 @@ test('production-shaped authenticated push fails closed when a different read re
           },
         },
         dbJournal: {
+          scope: trustedDbJournalScope,
           latestRows: [
             { event: 'idempotency-opened' },
             { event: 'mutation-applied' },
@@ -6160,6 +6168,7 @@ test('production-shaped authenticated push fails closed when replay changes the 
           },
         },
         dbJournal: {
+          scope: trustedDbJournalScope,
           latestRows: [
             { event: 'idempotency-opened' },
             { event: 'mutation-applied' },
@@ -6452,6 +6461,7 @@ test('production-shaped authenticated push fails closed when db journal readback
           },
         },
         dbJournal: {
+          scope: trustedDbJournalScope,
           latestRows: [
             { event: 'idempotency-opened' },
             { event: 'mutation-applied' },
@@ -6615,6 +6625,7 @@ test('production-shaped authenticated push fails closed when db journal readback
           },
         },
         dbJournal: {
+          scope: trustedDbJournalScope,
           latestRows: [
             { event: 'idempotency-opened' },
             { event: 'mutation-applied' },
@@ -6770,6 +6781,7 @@ test('production-shaped authenticated push fails closed when db journal readback
       return new Response(JSON.stringify({
         ok: true,
         dbJournal: {
+          scope: trustedDbJournalScope,
           latestRows: [
             { event: 'idempotency-opened' },
             { event: 'mutation-applied' },
