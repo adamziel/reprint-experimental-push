@@ -1660,6 +1660,11 @@ function hasNestedSymbolOwnKeys(value, seen = new Set()) {
     return true;
   }
 
+  const prototype = Object.getPrototypeOf(value);
+  if (prototype && Reflect.ownKeys(prototype).some((key) => typeof key === 'symbol')) {
+    return true;
+  }
+
   return Reflect.ownKeys(value).some((key) => {
     if (typeof key === 'symbol') {
       return true;
