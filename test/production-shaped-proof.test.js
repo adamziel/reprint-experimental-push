@@ -38,6 +38,7 @@ import {
   packagedProductionPluginPreflightReady,
   packagedProductionPluginPreflightRetryable,
   packagedProductionPluginResetRouteNotReadyProbeCounts,
+  packagedProductionPluginRouteRetryableWhilePackagedRouteStarting,
   packagedProductionPluginRouteRetryableWhileWordPressStarting,
   packagedProductionPluginServerReady,
   packagedProductionPluginSnapshotReady,
@@ -1758,6 +1759,42 @@ test('packaged production plugin readiness helper does not retry terminal readin
     packagedProductionPluginRouteRetryableWhileWordPressStarting(
       502,
       '<!doctype html><html><body>WordPress is not ready yet</body></html>',
+      200,
+      '{\"namespaces\":[\"reprint/v1\"]}',
+    ),
+    false,
+  );
+  assert.equal(
+    packagedProductionPluginRouteRetryableWhilePackagedRouteStarting(
+      502,
+      '<!doctype html><html><body>WordPress is not ready yet</body></html>',
+      200,
+      '{\"namespaces\":[\"reprint/v1\"]}',
+    ),
+    true,
+  );
+  assert.equal(
+    packagedProductionPluginRouteRetryableWhilePackagedRouteStarting(
+      404,
+      '<!doctype html><html><body>No route was found matching the URL and request method.</body></html>',
+      200,
+      '{\"namespaces\":[\"reprint/v1\"]}',
+    ),
+    true,
+  );
+  assert.equal(
+    packagedProductionPluginRouteRetryableWhilePackagedRouteStarting(
+      502,
+      '<!doctype html><html><body>WordPress is not ready yet</body></html>',
+      502,
+      '<!doctype html><html><body>WordPress is not ready yet</body></html>',
+    ),
+    false,
+  );
+  assert.equal(
+    packagedProductionPluginRouteRetryableWhilePackagedRouteStarting(
+      401,
+      '<!doctype html><html><body>unauthorized packaged route</body></html>',
       200,
       '{\"namespaces\":[\"reprint/v1\"]}',
     ),

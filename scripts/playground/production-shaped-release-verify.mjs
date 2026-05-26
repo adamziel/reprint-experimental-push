@@ -36,6 +36,7 @@ import {
   packagedProductionPluginPreflightReady,
   packagedProductionPluginPreflightRetryable,
   packagedProductionPluginResetRouteNotReadyProbeCounts,
+  packagedProductionPluginRouteRetryableWhilePackagedRouteStarting,
   packagedProductionPluginRouteRetryableWhileWordPressStarting,
   packagedProductionPluginServerReady,
   packagedProductionPluginSnapshotRetryable,
@@ -1344,6 +1345,20 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
               await sleep(readinessProbeIntervalMs);
               continue;
             }
+            if (
+              packagedProductionPluginRouteRetryableWhilePackagedRouteStarting(
+                snapshot.status,
+                snapshotText,
+                indexProbe.status,
+                indexProbe.body,
+              )
+            ) {
+              lastError = new Error(
+                `Production plugin package snapshot route is still warming after global WordPress startup HTTP ${indexProbe.status}`,
+              );
+              await sleep(readinessProbeIntervalMs);
+              continue;
+            }
             await throwPlaygroundReadinessFailure(
               child,
               `Packaged Playground server reported the bounded readiness failure ${snapshot.status} after ${snapshotNotReadyProbeCount} consecutive startup-shaped snapshot response${snapshotNotReadyProbeCount === 1 ? '' : 's'} (limit ${packagedProductionPluginMaxConsecutiveNotReadyProbes})`,
@@ -1404,6 +1419,20 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
               );
               lastError = new Error(
                 `Production plugin package snapshot readiness still waiting on global WordPress startup HTTP ${indexProbe.status}`,
+              );
+              await sleep(readinessProbeIntervalMs);
+              continue;
+            }
+            if (
+              packagedProductionPluginRouteRetryableWhilePackagedRouteStarting(
+                snapshot.status,
+                snapshotText,
+                indexProbe.status,
+                indexProbe.body,
+              )
+            ) {
+              lastError = new Error(
+                `Production plugin package snapshot route is still warming after global WordPress startup HTTP ${indexProbe.status}`,
               );
               await sleep(readinessProbeIntervalMs);
               continue;
@@ -1488,6 +1517,20 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
               await sleep(readinessProbeIntervalMs);
               continue;
             }
+            if (
+              packagedProductionPluginRouteRetryableWhilePackagedRouteStarting(
+                preflight.status,
+                preflightText,
+                indexProbe.status,
+                indexProbe.body,
+              )
+            ) {
+              lastError = new Error(
+                `Production plugin package preflight route is still warming after global WordPress startup HTTP ${indexProbe.status}`,
+              );
+              await sleep(readinessProbeIntervalMs);
+              continue;
+            }
             await throwPlaygroundReadinessFailure(
               child,
               `Packaged Playground server reported the bounded readiness failure ${preflight.status} after ${preflightNotReadyProbeCount} consecutive startup-shaped preflight response${preflightNotReadyProbeCount === 1 ? '' : 's'} (limit ${packagedProductionPluginMaxConsecutiveNotReadyProbes})`,
@@ -1550,6 +1593,20 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
             );
             lastError = new Error(
               `Production plugin package preflight readiness still waiting on global WordPress startup HTTP ${indexProbe.status}`,
+            );
+            await sleep(readinessProbeIntervalMs);
+            continue;
+          }
+          if (
+            packagedProductionPluginRouteRetryableWhilePackagedRouteStarting(
+              preflight.status,
+              preflightText,
+              indexProbe.status,
+              indexProbe.body,
+            )
+          ) {
+            lastError = new Error(
+              `Production plugin package preflight route is still warming after global WordPress startup HTTP ${indexProbe.status}`,
             );
             await sleep(readinessProbeIntervalMs);
             continue;

@@ -274,3 +274,13 @@ export function packagedProductionPluginRouteRetryableWhileWordPressStarting(
   return packagedProductionPluginReadinessBodyRetryable(routeStatus, routeBodyText)
     && packagedProductionPluginReadinessBodyRetryable(indexStatus, indexBodyText);
 }
+
+export function packagedProductionPluginRouteRetryableWhilePackagedRouteStarting(
+  routeStatus,
+  routeBodyText = '',
+  indexStatus,
+  indexBodyText = '',
+) {
+  return packagedProductionPluginReadinessBodyRetryable(routeStatus, routeBodyText)
+    && !packagedProductionPluginReadinessBodyRetryable(indexStatus, indexBodyText);
+}
