@@ -1,15 +1,15 @@
 # Critic Verdict
 
-Current reliable head: `23e0ddbed805f76a7b1a887c744497a59792c825`
-(`Require auth session identity continuity`).
+Current reliable head: `fd615755e210ce34d3fcf45fa83444422025f9e0`
+(`Fail closed on preserved read retry exhaustion`).
 
 Verdict: `0/4`
 
 Reason:
 
-- This head tightens checked auth/session identity continuity on the release
-  verifier path, but it still does not prove a production-backed lifecycle on
-  the release path.
+- This head tightens the release verifier by failing closed when preserved
+  read retries are exhausted, but it still does not prove a production-backed
+  lifecycle on the release path.
 - The checked proof is still missing live issuance/read/expiry/rotation/
   revocation/cleanup evidence for `production-auth-session`, and it still does
   not establish stricter durable-journal ownership/restart semantics on the
