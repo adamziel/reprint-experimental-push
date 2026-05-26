@@ -4,7 +4,7 @@
 
 The project is **not releasable as a production WordPress push path**.
 
-- Audit time: 2026-05-26 09:40:06 CEST (+0200)
+- Audit time: 2026-05-26 09:41:18 CEST (+0200)
 - Fresh remote heads re-polled at audit time:
   - `origin/lane/no-data-loss-invariants` -> `ad57d11a`
   - `origin/lane/reliable-executor` -> `35532d06`
