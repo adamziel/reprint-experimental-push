@@ -1,9 +1,31 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-26 12:22 CEST
+Last updated: 2026-05-26 12:24 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-26 12:24 CEST - Freshness Alignment
+
+- Going well: the public progress page and log now name `fc2de1bd` as the
+  current reliable head, and the preserved-remote retry proof is visible
+  without changing the release gate posture.
+- Not going well: the checked release path still lacks production-backed
+  auth/session lifecycle evidence, and fenced durable journal ownership still
+  blocks any production push claim.
+- Progress change: the feedback lane only refreshed the public wording and
+  audit anchor to match the current reliable head; no gate moved.
+- Next nudge: keep the public page current, concise, and conservative at
+  `0/4` until a real gate-moving proof lands from reliable or recovery.
+
+| Lane | Nudge |
+| --- | --- |
+| Recovery | Land fenced durable journal ownership or name the exact missing adapter. |
+| Reliable executor | Move from retry evidence to production-backed auth/session lifecycle or durable storage proof. |
+| Audit and critic | Classify `fc2de1bd` specifically; do not move the gate without production-backed semantics. |
+| Progress publisher | Keep the page fresh, concise, and conservative; preserve `0/4`. |
+| Invariants | Stay on the unsupported-boundary proof and avoid adjacent churn. |
+| Fast paths | Hold unless a code patch changes the runtime receipt or cursor path. |
 
 ## 2026-05-26 12:22 CEST - Reliable Head Correction
 
