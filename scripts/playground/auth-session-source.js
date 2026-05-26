@@ -54,6 +54,12 @@ export function loadAuthSessionSource(
       error: 'Auth session source command must return sourceUrl',
     };
   }
+  if (!isSupportedAuthSessionSourceUrl(sourceUrl)) {
+    return {
+      ok: false,
+      error: 'Auth session source command must return a supported local sourceUrl',
+    };
+  }
 
   const username = normalizeAuthSessionSourceField(parsed.username);
   if (!username) {
@@ -131,4 +137,29 @@ function normalizeAuthSessionSourceTimeout(timeout) {
   }
 
   return Math.max(1, Math.trunc(timeout));
+}
+
+function isSupportedAuthSessionSourceUrl(sourceUrl) {
+  let parsed;
+  try {
+    parsed = new URL(sourceUrl);
+  } catch {
+    return false;
+  }
+
+  if (parsed.protocol === 'http:' && isLoopbackHost(parsed.hostname)) {
+    return true;
+  }
+  if (parsed.protocol === 'https:' && parsed.hostname === 'localhost') {
+    return true;
+  }
+
+  return false;
+}
+
+function isLoopbackHost(hostname) {
+  return hostname === 'localhost'
+    || hostname === '127.0.0.1'
+    || hostname === '::1'
+    || hostname.startsWith('127.');
 }
