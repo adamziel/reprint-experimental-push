@@ -49,3 +49,7 @@ export function packagedProductionPluginServerReady({ snapshot, preflight = null
 
   return packagedProductionPluginPreflightReady(preflight);
 }
+
+export function packagedProductionPluginReadinessErrorRetryable(error) {
+  return !(error && typeof error === 'object' && error.isPlaygroundReadinessFailure === true);
+}

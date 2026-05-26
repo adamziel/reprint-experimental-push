@@ -22,6 +22,7 @@ import {
   resolvePackagedProductionPluginAuthSessionSource,
 } from './packaged-production-plugin-source-command.js';
 import {
+  packagedProductionPluginReadinessErrorRetryable,
   packagedProductionPluginPreflightReady,
   packagedProductionPluginPreflightRetryable,
   packagedProductionPluginServerReady,
@@ -1388,6 +1389,9 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
         },
       );
     } catch (error) {
+      if (!packagedProductionPluginReadinessErrorRetryable(error)) {
+        throw error;
+      }
       lastError = error;
     }
     await sleep(readinessProbeIntervalMs);

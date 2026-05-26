@@ -21,6 +21,7 @@ import {
   resolvePackagedProductionPluginSourceCommand,
 } from '../scripts/playground/packaged-production-plugin-source-command.js';
 import {
+  packagedProductionPluginReadinessErrorRetryable,
   packagedProductionPluginPreflightReady,
   packagedProductionPluginPreflightRetryable,
   packagedProductionPluginServerReady,
@@ -1017,6 +1018,16 @@ test('packaged production plugin readiness helper retries only startup-shaped pa
   );
   assert.equal(
     packagedProductionPluginPreflightRetryable(strictReadyPreflight),
+    false,
+  );
+});
+
+test('packaged production plugin readiness helper does not retry terminal readiness failures', () => {
+  assert.equal(packagedProductionPluginReadinessErrorRetryable(new Error('transient fetch failure')), true);
+  assert.equal(
+    packagedProductionPluginReadinessErrorRetryable({
+      isPlaygroundReadinessFailure: true,
+    }),
     false,
   );
 });
