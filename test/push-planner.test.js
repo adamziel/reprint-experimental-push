@@ -18144,7 +18144,9 @@ test('blocks local same-plan created comment meta identity while preserving remo
   assert.equal(reference.targetChange.local.state, 'present');
   assert.equal(targetBlocker.class, 'unsupported-comments-users-resource');
   assert.equal(targetBlocker.resourceKey, targetResourceKey);
-  assert.equal(targetBlocker.reason, 'Comments graph resources are not yet supported by the planner.');
+  assert.equal(targetBlocker.reason, 'WordPress graph mutation row:["wp_comments","comment_ID:22"] is created in the same plan as a comment meta identity that depends on it, and identity rewriting is not yet supported.');
+  assert.equal(targetBlocker.references[0].relationshipType, 'commentmeta-comment');
+  assert.equal(targetBlocker.references[0].sourceResourceKey, resourceKey);
   assert.equal(planJson.includes('Local same-plan comment meta'), false);
   assert.equal(planJson.includes('Base same-plan comment meta'), false);
   assert.equal(planJson.includes('Local same-plan comment'), false);
@@ -26070,13 +26072,103 @@ test('blocks local comments graph references to a same-plan created parent comme
   assert.equal(plan.conflicts.length, 0);
   assert.equal(blocker.class, 'unsupported-comments-users-resource');
   assert.equal(blocker.resourceKey, targetResourceKey);
-  assert.equal(blocker.reason, 'Comments graph resources are not yet supported by the planner.');
+  assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_comments","comment_ID:15"] is created in the same plan as a parent comment identity that depends on it, and identity rewriting is not yet supported.');
+  assert.equal(blocker.references[0].relationshipType, 'comment-parent');
+  assert.equal(blocker.references[0].sourceResourceKey, resourceKey);
   assert.equal(pluginDecision.decision, 'keep-remote');
   assert.equal(pluginFileDecision.decision, 'keep-remote');
   assert.equal(planJson.includes('Local parent comment content'), false);
   assert.equal(planJson.includes('Base child comment content'), false);
   assert.equal(remote.plugins.forms.description, 'remote-only plugin drift');
   assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin drift */');
+});
+
+test('carries bounded parent-comment and commentmeta references for a same-plan created comment identity while preserving a matching independent edit and remote-only plugin changes', () => {
+  const resourceKey = 'row:["wp_comments","comment_ID:31"]';
+  const base = baseSite();
+  base.db.wp_posts['ID:1'].post_title = 'Base shared comment target title';
+  base.db.wp_comments = {
+    'comment_ID:30': {
+      comment_ID: 30,
+      comment_post_ID: 1,
+      comment_parent: 31,
+      comment_content: 'Base dependent child comment',
+    },
+  };
+  base.db.wp_commentmeta = {
+    'meta_id:31': {
+      meta_id: 31,
+      comment_id: 31,
+      meta_key: 'note',
+      meta_value: 'Base dependent comment meta',
+    },
+  };
+
+  const local = baseSite();
+  local.db.wp_posts['ID:1'].post_title = 'Shared comment target title';
+  local.db.wp_comments = {
+    'comment_ID:30': {
+      comment_ID: 30,
+      comment_post_ID: 1,
+      comment_parent: 31,
+      comment_content: 'Local dependent child comment',
+    },
+    'comment_ID:31': {
+      comment_ID: 31,
+      comment_post_ID: 1,
+      comment_parent: 0,
+      comment_content: 'Local same-plan target comment',
+    },
+  };
+  local.db.wp_commentmeta = {
+    'meta_id:31': {
+      meta_id: 31,
+      comment_id: 31,
+      meta_key: 'note',
+      meta_value: 'Local dependent comment meta',
+    },
+  };
+
+  const remote = baseSite();
+  remote.db.wp_posts['ID:1'].post_title = 'Shared comment target title';
+  remote.db.wp_comments = JSON.parse(JSON.stringify(base.db.wp_comments));
+  remote.db.wp_commentmeta = JSON.parse(JSON.stringify(base.db.wp_commentmeta));
+  remote.plugins.forms.description = 'remote-only plugin changes';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin changes */';
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  const matchingEdit = decisionFor(plan, 'row:["wp_posts","ID:1"]');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(plan.conflicts.length, 0);
+  assert.equal(blocker.class, 'unsupported-comments-users-resource');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_comments","comment_ID:31"] is created in the same plan as a parent comment identity that depends on it, and identity rewriting is not yet supported.');
+  assert.deepEqual(
+    blocker.references.map((reference) => reference.relationshipType).sort(),
+    ['comment-parent', 'commentmeta-comment'],
+  );
+  assert.deepEqual(
+    blocker.references.map((reference) => reference.sourceResourceKey).sort(),
+    ['row:["wp_commentmeta","meta_id:31"]', 'row:["wp_comments","comment_ID:30"]'],
+  );
+  assert.equal(blocker.references.every((reference) => reference.targetResourceKey === resourceKey), true);
+  assert.equal(matchingEdit.decision, 'already-in-sync');
+  assert.equal(matchingEdit.change.localChange, 'update');
+  assert.equal(matchingEdit.change.remoteChange, 'update');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('Local dependent child comment'), false);
+  assert.equal(planJson.includes('Local dependent comment meta'), false);
+  assert.equal(planJson.includes('Local same-plan target comment'), false);
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin changes');
+  assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin changes */');
 });
 
 test('blocks local comments graph references to a same-plan created post identity while preserving a matching independent edit and remote-only plugin removals', () => {

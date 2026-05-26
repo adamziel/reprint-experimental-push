@@ -3808,6 +3808,41 @@ function unsupportedCommentsUsersResourceSupport({ resource, baseValue, localVal
         references: [commentGraphReference],
       };
     }
+
+    const inboundCommentReferences = resources
+      .filter((sourceResource) => sourceResource.type === 'row')
+      .flatMap((sourceResource) => {
+        const sourceLocalValue = getResource(local, sourceResource);
+        if (sourceLocalValue === ABSENT) {
+          return [];
+        }
+        return wordpressGraphReferences(sourceResource, sourceLocalValue)
+          .filter((reference) => reference.targetResourceKey === resource.key)
+          .map((reference) =>
+            wordpressGraphReferenceEvidence(reference, resources, base, local, remote));
+      })
+      .filter((reference) =>
+        (
+          reference.relationshipType === 'comment-parent'
+          || reference.relationshipType === 'commentmeta-comment'
+        )
+        && reference.targetChange.remote.state === 'absent'
+        && reference.targetChange.local.state === 'present');
+
+    if (inboundCommentReferences.length > 0) {
+      const commentReference = inboundCommentReferences.find((reference) =>
+        reference.relationshipType === 'comment-parent')
+        || inboundCommentReferences[0];
+      return {
+        supported: false,
+        className: 'unsupported-comments-users-resource',
+        unsupportedState: 'same-plan-reference',
+        reason: commentReference.relationshipType === 'comment-parent'
+          ? `WordPress graph mutation ${resource.key} is created in the same plan as a parent comment identity that depends on it, and identity rewriting is not yet supported.`
+          : `WordPress graph mutation ${resource.key} is created in the same plan as a comment meta identity that depends on it, and identity rewriting is not yet supported.`,
+        references: inboundCommentReferences,
+      };
+    }
   }
 
   if (resource.table === 'wp_users') {
