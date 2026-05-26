@@ -8,7 +8,7 @@ linked implementation artifacts.
 
 <a id="2026-05-26-freshness-refresh-105403"></a>
 
-- Refreshed [progress.html](../progress.html) so the visible last-updated date stays aligned with the live supervision clock, and kept the reliable head reference at `e7be9812`.
+- Refreshed [progress.html](../progress.html) so the visible last-updated date stays aligned with the live supervision clock, and kept the reliable head reference at `9ff7b997`.
 - This remains a visibility-only update. The release gate posture stays `0/4`.
 - Evidence trail: [progress.html](../progress.html), [supervisor feedback](supervisor-feedback.md).
 
@@ -16,7 +16,7 @@ linked implementation artifacts.
 
 <a id="2026-05-26-freshness-refresh-105213"></a>
 
-- Refreshed [progress.html](../progress.html) so the visible last-updated date stays aligned with the live supervision clock, and kept the reliable head reference at `e7be9812`.
+- Refreshed [progress.html](../progress.html) so the visible last-updated date stays aligned with the live supervision clock, and kept the reliable head reference at `9ff7b997`.
 - This remains a visibility-only update. The release gate posture stays `0/4`.
 - Evidence trail: [progress.html](../progress.html), [supervisor feedback](supervisor-feedback.md).
 
@@ -24,7 +24,7 @@ linked implementation artifacts.
 
 <a id="2026-05-26-freshness-refresh-105054"></a>
 
-- Refreshed [progress.html](../progress.html) so the visible last-updated date stays aligned with the live supervision clock, and corrected the reliable head reference to `e7be9812`.
+- Refreshed [progress.html](../progress.html) so the visible last-updated date stays aligned with the live supervision clock, and corrected the reliable head reference to `9ff7b997`.
 - This remains a visibility-only update. The release gate posture stays `0/4`.
 - Evidence trail: [progress.html](../progress.html), [supervisor feedback](supervisor-feedback.md).
 

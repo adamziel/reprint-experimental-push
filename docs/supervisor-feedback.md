@@ -4,17 +4,17 @@ Last updated: 2026-05-26 10:54 CEST
 
 ## 2026-05-26 10:54:03 CEST - Freshness Refresh
 
-- The public progress surface was a minute behind the live supervision clock, so I refreshed the owned visibility surfaces and kept the reliable head at `e7be9812`.
+- The public progress surface was a minute behind the live supervision clock, so I refreshed the owned visibility surfaces and kept the reliable head at `9ff7b997`.
 - The release posture stays conservative at `0/4`; no new proof landed.
 
 ## 2026-05-26 10:52:13 CEST - Freshness Refresh
 
-- The public progress surface had drifted behind the live supervision clock again, so I refreshed the owned visibility surfaces to the current stamp and kept the reliable head at `e7be9812`.
+- The public progress surface had drifted behind the live supervision clock again, so I refreshed the owned visibility surfaces to the current stamp and kept the reliable head at `9ff7b997`.
 - The release posture stays conservative at `0/4`; no new proof landed.
 
 ## 2026-05-26 10:50:54 CEST - Freshness Refresh
 
-- The public progress surface was behind the live supervision clock and still named `0f36d838` as current, so I refreshed the owned visibility surfaces to the current stamp and corrected the reliable head to `e7be9812`.
+- The public progress surface was behind the live supervision clock and still named `0f36d838` as current, so I refreshed the owned visibility surfaces to the current stamp and corrected the reliable head to `9ff7b997`.
 - The release posture stays conservative at `0/4`; no new proof landed.
 
 ## 2026-05-26 10:47:32 CEST - Fresh Evidence Delta
