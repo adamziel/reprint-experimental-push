@@ -48,14 +48,14 @@ The project is **not releasable as a production WordPress push path**.
 - `origin/lane/cycle-20260525-restart-2340/feedback-supervisor` -> `ef3d911e`
 - `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration` -> `0b33a5f9`
 - `origin/lane/critic` -> `443dacd6`
-- `origin/lane/fast-paths` -> `761d1c03`
+- `origin/lane/fast-paths` -> `fdf30894`
 - `origin/lane/feedback-supervisor` -> `8af2c127`
 - `origin/lane/independent-auditor` -> `fad9b731`
-- `origin/lane/no-data-loss-invariants` -> `6b5fd23e`
+- `origin/lane/no-data-loss-invariants` -> `0d3a148f`
 - `origin/lane/no-data-loss-recovery` -> `91424e5b`
 - `origin/lane/progress-publisher` -> `7695e1f9`
 - `origin/lane/reliable-executor` -> `d6f65f9a`
-- `origin/lane/same-plan-wordpress-graph-create` -> `52be8d87`
+- `origin/lane/same-plan-wordpress-graph-create` -> `f53e607f`
 - `origin/main` -> `56063f13`
 
 The current remote state still adds no production-backed auth/session
@@ -71,6 +71,9 @@ but it did not change the release conclusion:
   boundary.
 - `origin/lane/no-data-loss-invariants` now records `6b5fd23e`, adding
   comments/users sibling proof. It still does not prove the live release
+  boundary or any production-backed source mutation.
+- `origin/lane/no-data-loss-invariants` now records `0d3a148f`, adding
+  custom-table sibling proof. It still does not prove the live release
   boundary or any production-backed source mutation.
 - `origin/lane/no-data-loss-invariants` now records `b5e199f0`, adding special
   file sibling proof again, but still not proving the live release boundary or
@@ -88,7 +91,7 @@ but it did not change the release conclusion:
   now records `0b33a5f9`, adding plugin-owned delete-guard coverage only.
 - `origin/lane/independent-auditor` now records `fad9b731`. This refreshes the
   audit snapshot only and does not change the release boundary.
-- `origin/lane/fast-paths` now records `8c5c2ccb`, tightening guarded
+- `origin/lane/fast-paths` now records `fdf30894`, tightening guarded
   benchmark and pause-reporting evidence checks only.
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` now
   records `9e077c10`, tightening blocked recovery validation. It still does
@@ -107,6 +110,8 @@ but it did not change the release conclusion:
   unsupported recovery journal boundaries only.
 - `origin/lane/same-plan-wordpress-graph-create` now records `52be8d87`,
   hardening revision graph references only.
+- `origin/lane/same-plan-wordpress-graph-create` now records `f53e607f`,
+  tightening same-plan graph guards only.
 
 Those changes strengthen the lab evidence for protocol safety and no-loss
 planning, but they still do not prove the production-backed push path.
