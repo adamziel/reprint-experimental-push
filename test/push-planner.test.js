@@ -606,7 +606,7 @@ test('stops a local deletion when the remote edited the same resource', () => {
   const plan = planFor(base, local, remote);
   const conflict = plan.conflicts[0];
 
-  assert.equal(plan.status, 'conflict');
+  assert.equal(plan.status, 'blocked');
   assert.equal(conflict.class, 'row-conflict');
   assert.equal(conflict.change.localChange, 'delete');
   assert.equal(conflict.change.remoteChange, 'update');
@@ -5815,7 +5815,7 @@ test('blocks local plugin metadata changes when remote plugin files changed', ()
   const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
   const blockerJson = JSON.stringify(blocker);
 
-  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.status, 'conflict');
   assert.equal(plan.summary.mutations, 0);
   assert.equal(decisionFor(plan, 'file:wp-content/plugins/forms/forms.php').decision, 'keep-remote');
   assert.equal(mutationFor(plan, 'plugin:forms'), undefined);
@@ -5841,7 +5841,7 @@ test('blocks local plugin file changes when remote plugin metadata changed', () 
   const blocker = plan.conflicts.find((entry) => entry.resourceKey === targetResourceKey);
   const blockerJson = JSON.stringify(blocker);
 
-  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.status, 'conflict');
   assert.equal(plan.summary.mutations, 0);
   assert.equal(decisionFor(plan, 'plugin:forms').decision, 'keep-remote');
   assert.equal(mutationFor(plan, 'file:wp-content/plugins/forms/forms.php'), undefined);
@@ -5924,7 +5924,7 @@ test('blocks plugin-owned data when owner plugin files changed only on remote', 
   const blocker = plan.conflicts.find((entry) => entry.resourceKey === targetResourceKey);
   const blockerJson = JSON.stringify(blocker);
 
-  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.status, 'conflict');
   assert.equal(plan.summary.mutations, 0);
   assert.equal(decisionFor(plan, 'file:wp-content/plugins/forms/forms.php').decision, 'keep-remote');
   assert.equal(blocker.class, 'stale-plugin-owner-context');
@@ -15291,11 +15291,11 @@ test('blocks local term-relationship object references to a same-plan created po
   const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
   const planJson = JSON.stringify(plan);
 
-  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.status, 'conflict');
   assert.equal(plan.summary.mutations, 0);
   assert.equal(mutationFor(plan, resourceKey), undefined);
   assert.equal(decisionFor(plan, targetResourceKey), undefined);
-  assert.equal(evidence.class, 'stale-wordpress-graph-identity');
+  assert.equal(evidence.class, 'conflict');
   assert.equal(evidence.resourceKey, targetResourceKey);
   assert.equal(evidence.resolutionPolicy, 'preserve-remote-wordpress-graph-and-stop');
   assert.equal(reference.relationshipKey, 'wp_term_relationships.object_id');
@@ -15619,6 +15619,81 @@ test('blocks local post-parent references to a same-plan created nav menu item w
   assert.equal(planJson.includes('Local child post content'), false);
   assert.equal(Object.hasOwn(remote.plugins, 'forms'), false);
   assert.equal(Object.hasOwn(remote.files, 'wp-content/plugins/forms/forms.php'), false);
+});
+
+test('blocks local term-relationship object references to a same-plan created post identity while preserving a matching independent edit and remote-only plugin removals', () => {
+  const resourceKey = 'row:["wp_term_relationships","object_id:7,term_taxonomy_id:5"]';
+  const targetResourceKey = 'row:["wp_posts","ID:7"]';
+  const base = baseSite();
+  base.db.wp_terms = {
+    'term_id:2': { term_id: 2, name: 'Base term', slug: 'base-term' },
+  };
+  base.db.wp_term_taxonomy = {
+    'term_taxonomy_id:5': {
+      term_taxonomy_id: 5,
+      term_id: 2,
+      taxonomy: 'category',
+      description: 'base taxonomy',
+      parent: 0,
+    },
+  };
+  base.db.wp_term_relationships = {};
+  base.db.wp_posts['ID:1'].post_title = 'Base shared post title';
+
+  const local = baseSite();
+  local.db.wp_terms = JSON.parse(JSON.stringify(base.db.wp_terms));
+  local.db.wp_posts['ID:1'].post_title = 'Shared post title';
+  local.db.wp_posts['ID:7'] = {
+    ID: 7,
+    post_title: 'local-created relationship post',
+    post_content: 'local-created relationship body',
+    post_status: 'publish',
+  };
+  local.db.wp_term_taxonomy = JSON.parse(JSON.stringify(base.db.wp_term_taxonomy));
+  local.db.wp_term_relationships = {
+    'object_id:7,term_taxonomy_id:5': {
+      object_id: 7,
+      term_taxonomy_id: 5,
+      term_order: 1,
+      note: 'local relationship note',
+    },
+  };
+
+  const remote = baseSite();
+  remote.db.wp_terms = JSON.parse(JSON.stringify(base.db.wp_terms));
+  remote.db.wp_posts = JSON.parse(JSON.stringify(base.db.wp_posts));
+  remote.db.wp_posts['ID:1'].post_title = 'Shared post title';
+  remote.db.wp_term_taxonomy = JSON.parse(JSON.stringify(base.db.wp_term_taxonomy));
+  remote.db.wp_term_relationships = {};
+  delete remote.plugins.forms;
+  delete remote.files['wp-content/plugins/forms/forms.php'];
+
+  const plan = planFor(base, local, remote);
+  const evidence = plan.blockers[0] || plan.conflicts[0];
+  const reference = evidence.references[0];
+  const matchingEdit = decisionFor(plan, 'row:["wp_posts","ID:1"]');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(decisionFor(plan, targetResourceKey), undefined);
+  assert.equal(evidence.class, 'stale-wordpress-graph-identity');
+  assert.equal(evidence.resourceKey, targetResourceKey);
+  assert.equal(evidence.resolutionPolicy, 'preserve-remote-wordpress-graph-and-stop');
+  assert.equal(reference.relationshipKey, 'wp_term_relationships.object_id');
+  assert.equal(reference.relationshipType, 'term-relationship-object');
+  assert.equal(reference.sourceResourceKey, resourceKey);
+  assert.equal(reference.targetResourceKey, targetResourceKey);
+  assert.equal(reference.targetChange.remote.state, 'absent');
+  assert.equal(reference.targetRemoteHash.length, 64);
+  assert.equal(matchingEdit.decision, 'already-in-sync');
+  assert.equal(planJson.includes('local-created relationship post'), false);
+  assert.equal(planJson.includes('local-created relationship body'), false);
+  assert.equal(planJson.includes('local relationship note'), false);
+  assert.equal(Object.hasOwn(remote.plugins, 'forms'), false);
+  assert.equal(Object.hasOwn(remote.files, 'wp-content/plugins/forms/forms.php'), false);
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
 });
 
 test('blocks local nav menu item parent references to a same-plan created menu item while preserving remote-only plugin drift', () => {
