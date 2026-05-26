@@ -1,5 +1,28 @@
 # Critic Audit
 
+## 2026-05-26 13:55:27 CEST (+0200)
+
+No gate movement. `77da166e031a32700ddaf388bde378e1c58b0f63` is the current reliable head from `git ls-remote`; it surfaces consumed auth-session source evidence on the checked release verifier path, including a focused test that the release verify command records the source command output, but it still proves source ingestion rather than a production-backed auth/session lifecycle or closed durable-journal ownership on the release path. The verdict remains `0/4`.
+
+Changed files:
+- [`audits/critic.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/critic/audits/critic.md)
+
+Commands run:
+- `date '+%Y-%m-%d %H:%M:%S %Z (%z)'`
+- `git ls-remote origin refs/heads/lane/reliable-executor`
+- `git show --stat --oneline --no-renames 77da166e031a32700ddaf388bde378e1c58b0f63 --`
+- `git show --no-renames --format=medium 77da166e031a32700ddaf388bde378e1c58b0f63 -- scripts/playground/production-shaped-release-verify.mjs test/production-shaped-proof.test.js`
+
+Push result:
+- Not attempted
+
+Worktree status:
+- Modified tracked files: `audits/critic.md`, `.lane-output/final.md`
+- Branch: `lane/cycle-20260525-mainwindows-2349/critic...origin/main [ahead 1647, behind 699]`
+
+Next supervisor nudge:
+- Keep critic narrow and only reclassify again when `reliable-executor` lands checked-path production-backed auth/session lifecycle, durable-journal ownership, or preserved-remote retry proof that reaches the release boundary.
+
 ## 2026-05-26 13:53:25 CEST (+0200)
 
 No gate movement. `ce3a12fe08af607109172986b634446d6b015d78` is still the current reliable head from `git ls-remote`; it consumes `REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND` on the checked release verifier path and adds a focused test for loading that source, but it still proves command ingestion rather than a production-backed auth/session lifecycle or closed durable-journal ownership on the release path. The verdict remains `0/4`.
