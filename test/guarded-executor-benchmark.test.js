@@ -2964,6 +2964,52 @@ test('production claim gate fails closed if benchmark evidence is tampered', () 
     productionThroughputDetails(queueHeadroomBeyondResourceCeiling).backpressureConsistency.queueHeadroomWithinResourceCeiling,
     false,
   );
+  assert.equal(
+    productionThroughputDetails(queueHeadroomBeyondResourceCeiling).queueHeadroomVisibleAndMeasuredAndAligned,
+    false,
+  );
+  assert.equal(
+    productionThroughputDetails(queueHeadroomBeyondResourceCeiling).queueBudgetVisibleAndMemoryCeilingVisibleAndMeasured,
+    false,
+  );
+  assert.equal(
+    productionThroughputDetails(queueHeadroomBeyondResourceCeiling).queueBudgetVisibleAndQueueHeadroomVisibleAndMeasured,
+    false,
+  );
+  assert.equal(
+    productionThroughputDetails(queueHeadroomBeyondResourceCeiling).receiptCursorPauseFootprintVisible,
+    false,
+  );
+  assert.equal(
+    productionThroughputDetails(queueHeadroomBeyondResourceCeiling)
+      .receiptCursorMemoryCeilingVisibleAndQueueHeadroomVisibleAndSafe,
+    false,
+  );
+  assert.equal(
+    productionThroughputDetails(queueHeadroomBeyondResourceCeiling).backpressureConsistency
+      .queueHeadroomVisibleAndMeasuredAndAligned,
+    false,
+  );
+  assert.equal(
+    productionThroughputDetails(queueHeadroomBeyondResourceCeiling).backpressureConsistency
+      .queueBudgetVisibleAndMemoryCeilingVisibleAndMeasured,
+    false,
+  );
+  assert.equal(
+    productionThroughputDetails(queueHeadroomBeyondResourceCeiling).backpressureConsistency
+      .queueBudgetVisibleAndQueueHeadroomVisibleAndMeasured,
+    false,
+  );
+  assert.equal(
+    productionThroughputDetails(queueHeadroomBeyondResourceCeiling).backpressureConsistency
+      .receiptCursorPauseFootprintVisible,
+    false,
+  );
+  assert.equal(
+    productionThroughputDetails(queueHeadroomBeyondResourceCeiling).backpressureConsistency
+      .receiptCursorMemoryCeilingVisibleAndQueueHeadroomVisibleAndSafe,
+    false,
+  );
 
   const hiddenQueueHeadroom = clone(report);
   hiddenQueueHeadroom.evidence.backpressure.queueHeadroomVisible = false;
