@@ -1,12 +1,12 @@
-Refined the critic audit to reflect the newest recovery hardening without changing the production verdict.
+Refined the critic audit to reflect the newest readiness failure and durable-journal boundary tightening without changing the production verdict.
 
 Changed files:
 - [`audits/critic.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/critic/audits/critic.md)
 - [`.lane-output/final.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/critic/.lane-output/final.md)
 
 What changed:
-- Noted that recovery now fail-closes malformed artifact envelopes before symbol-key inspection.
-- Added the narrower nested symbol-key leakage boundary in preserved recovery artifacts.
+- Noted that the live release verifier now exposes a concrete `HTTP 502` / `WordPress is not ready yet` readiness trail instead of hanging silently.
+- Added that the newer production durable-journal guard is surfacing fixture mismatches rather than a live backend proof.
 - Kept the blocker set unchanged: production auth/session lifecycle, durable journal ownership, preserved-remote retry, and exact replay equivalence are still unproven.
 
 Evidence checked:
