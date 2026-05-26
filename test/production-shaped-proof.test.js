@@ -292,7 +292,7 @@ function spawnBoundedReleaseVerify(command, args, env, options = {}, label = 're
 }
 
 function spawnProductionShapedReleaseVerifySync(env, options = {}, label = 'production-shaped release verify') {
-  const timeout = options.timeout ?? releaseVerifyInnerTimeoutMs;
+  const timeout = Math.max(1_000, Math.min(options.timeout ?? releaseVerifyInnerTimeoutMs, liveProofSubprocessTimeoutMs));
   const killSignal = options.killSignal ?? proofSubprocessKillSignal;
   const proof = spawnBoundedReleaseVerify(
     process.execPath,
@@ -926,6 +926,7 @@ async function startPlaygroundServer(name, blueprintPath) {
         `${cleanupError instanceof Error ? cleanupError.message : String(cleanupError)}\n`,
       );
     }
+    activePlaygroundChildren.delete(child);
     throw error;
   }
 
