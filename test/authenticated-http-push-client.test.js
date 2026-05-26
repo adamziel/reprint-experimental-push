@@ -109,6 +109,45 @@ test('authenticated push client signs mutating requests when session and idempot
   }
 });
 
+test('authenticated push client accepts packaged production auth/session ids for mutating requests', async () => {
+  const originalFetch = global.fetch;
+  const seen = [];
+  global.fetch = async (url, options) => {
+    seen.push({ url: String(url), options });
+    return new Response(JSON.stringify({ ok: true }), {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+    });
+  };
+
+  try {
+    const client = authenticatedHttpClient({
+      sourceUrl: 'http://127.0.0.1:8080',
+      credential,
+      routeProfile: 'production-shaped',
+      requestTimeoutMs: 1_000,
+    });
+
+    const packagedSessionId = '-R2jo6X1bZ1_avkAxWHdCABlhgB6gufgoL-3B6U4r-E';
+    const proof = await client.signedPost('/dry-run', { plan: { id: 'plan-01' } }, {
+      session: packagedSessionId,
+      idempotencyKey: 'idem-packaged-01',
+    });
+
+    assert.equal(proof.status, 200);
+    assert.deepEqual(proof.body, { ok: true });
+    assert.equal(seen.length, 1);
+    const headerEntries = Object.entries(seen[0].options.headers).reduce((acc, [key, value]) => {
+      acc[key.toLowerCase()] = value;
+      return acc;
+    }, {});
+    assert.equal(headerEntries['x-reprint-push-session'], packagedSessionId);
+    assert.equal(headerEntries['x-reprint-push-idempotency-key'], 'idem-packaged-01');
+  } finally {
+    global.fetch = originalFetch;
+  }
+});
+
 test('authenticated push client retries idempotent signed posts after a transient transport failure', async () => {
   const originalFetch = global.fetch;
   const seen = [];

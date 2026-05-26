@@ -498,7 +498,14 @@ function reprint_push_lab_rest_authenticated_apply(WP_REST_Request $request): WP
 
 function reprint_push_lab_rest_authenticated_recovery_inspect(WP_REST_Request $request): WP_REST_Response
 {
-    return reprint_push_lab_rest_recovery_inspect($request);
+    $response = reprint_push_lab_rest_recovery_inspect($request);
+    $result = $response->get_data();
+    if (is_array($result)) {
+        $result['auth'] = reprint_push_lab_rest_auth_evidence($request);
+        $result['signedRequest'] = reprint_push_lab_rest_signed_request_evidence($request);
+        $response->set_data($result);
+    }
+    return $response;
 }
 
 function reprint_push_lab_rest_dry_run(WP_REST_Request $request): WP_REST_Response

@@ -1284,7 +1284,7 @@ function assertMutatingRequestOptions(pathname, options) {
   if (options.session === undefined || options.session === '') {
     throw new Error(`Missing push session for mutating request: ${pathname}`);
   }
-  if (!/^psh_[A-Za-z0-9_-]{8,}$/.test(options.session)) {
+  if (!isValidPushSession(options.session)) {
     throw new Error(`Invalid push session for mutating request: ${pathname}`);
   }
   if (options.idempotencyKey === undefined || options.idempotencyKey === '') {
@@ -1293,6 +1293,11 @@ function assertMutatingRequestOptions(pathname, options) {
   if (typeof options.idempotencyKey !== 'string' || options.idempotencyKey.trim() !== options.idempotencyKey || !/^\S+$/.test(options.idempotencyKey)) {
     throw new Error(`Invalid push idempotencyKey for mutating request: ${pathname}`);
   }
+}
+
+function isValidPushSession(session) {
+  return /^psh_[A-Za-z0-9_-]{8,}$/.test(session)
+    || /^[A-Za-z0-9_-]{32,160}$/.test(session);
 }
 
 function hmacHex(key, data) {

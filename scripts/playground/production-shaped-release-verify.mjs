@@ -625,7 +625,7 @@ try {
       assert.equal(preflight.body.ok, true);
 
       const remoteBaseSnapshot = packagedSourceFixture
-        ? exportSnapshotFromBlueprint('remote-base', packagedSourceFixture.blueprintPath)
+        ? await exportProductionSnapshot('remote-base', liveSourceUrl)
         : await exportSnapshot('remote-base', liveSourceUrl);
       const proof = await runAuthenticatedHttpPush({
         sourceUrl: liveSourceUrl,
@@ -1316,6 +1316,19 @@ async function exportSnapshot(name, baseUrl) {
   const response = await fetch(`${baseUrl}/wp-json/reprint-push-lab/v1/snapshot`, {
     headers: {
       Authorization: `Basic ${Buffer.from(`${credentials.username}:${credentials.password}`).toString('base64')}`,
+    },
+  });
+  assert.equal(response.status, 200, `${name} snapshot HTTP ${response.status}`);
+  const body = await response.json();
+  assert.equal(body.ok, true, `${name} snapshot body not ok`);
+  return body.snapshot;
+}
+
+async function exportProductionSnapshot(name, baseUrl) {
+  const response = await fetch(`${baseUrl}/wp-json/reprint/v1/push/snapshot`, {
+    headers: {
+      ...authHeaders(),
+      connection: 'close',
     },
   });
   assert.equal(response.status, 200, `${name} snapshot HTTP ${response.status}`);
