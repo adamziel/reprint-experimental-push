@@ -5978,6 +5978,74 @@ test('allows local _menu_item_object_id taxonomy metadata to reference a term cr
   assert.equal(result.site.db.wp_postmeta['meta_id:462'].meta_value, 7);
 });
 
+test('allows local _menu_item_object_id taxonomy metadata to reference a term created by the same plan even when an unrelated remote nav_menu_item post exists', () => {
+  const resourceKey = 'row:["wp_postmeta","meta_id:462"]';
+  const targetResourceKey = 'row:["wp_terms","term_id:7"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_terms = {
+    'term_id:7': {
+      term_id: 7,
+      name: 'Local menu taxonomy term',
+      slug: 'local-menu-taxonomy-term',
+    },
+  };
+  local.db.wp_postmeta = {
+    'meta_id:462': {
+      meta_id: 462,
+      post_id: 1,
+      meta_key: '_menu_item_object_id',
+      meta_value: 7,
+    },
+    'meta_id:463': {
+      meta_id: 463,
+      post_id: 1,
+      meta_key: '_menu_item_type',
+      meta_value: 'taxonomy',
+    },
+    'meta_id:464': {
+      meta_id: 464,
+      post_id: 1,
+      meta_key: '_menu_item_object',
+      meta_value: 'category',
+    },
+  };
+  const remote = baseSite();
+  remote.db.wp_posts['ID:9'] = {
+    ID: 9,
+    post_title: 'Remote menu item',
+    post_content: 'remote-menu-item-body',
+    post_status: 'publish',
+    post_type: 'nav_menu_item',
+  };
+
+  const plan = planFor(base, local, remote);
+  const targetMutation = mutationFor(plan, targetResourceKey);
+  const postmetaMutation = mutationFor(plan, resourceKey);
+  const reference = postmetaMutation.wordpressGraphReferences.find((entry) => entry.relationshipType === 'menu-item-object-term');
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.blockers, 0);
+  assert.equal(targetMutation.changeKind, 'create');
+  assert.equal(postmetaMutation.changeKind, 'create');
+  assert.ok(
+    plan.mutations.indexOf(targetMutation) < plan.mutations.indexOf(postmetaMutation),
+    'target term create must be ordered before dependent menu item object metadata',
+  );
+  assert.deepEqual(postmetaMutation.dependsOnMutationIds, [targetMutation.id]);
+  assert.equal(reference.resolutionPolicy, 'same-plan-local-create');
+  assert.equal(reference.relationshipKey, 'wp_postmeta.meta_value');
+  assert.equal(reference.relationshipType, 'menu-item-object-term');
+  assert.equal(reference.targetResourceKey, targetResourceKey);
+  assert.equal(JSON.stringify(reference).includes('Local menu taxonomy term'), false);
+  assert.equal(JSON.stringify(reference).includes('remote-menu-item-body'), false);
+
+  const result = applyPlan(remote, plan);
+  assert.equal(result.site.db.wp_terms['term_id:7'].name, 'Local menu taxonomy term');
+  assert.equal(result.site.db.wp_postmeta['meta_id:462'].meta_value, 7);
+  assert.equal(result.site.db.wp_posts['ID:9'].post_type, 'nav_menu_item');
+});
+
 test('allows local menu item parent metadata to reference a post created by the same plan even when a remote nav menu taxonomy exists', () => {
   const resourceKey = 'row:["wp_postmeta","meta_id:46"]';
   const targetResourceKey = 'row:["wp_posts","ID:2"]';
