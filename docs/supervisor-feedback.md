@@ -1,9 +1,31 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-26 11:33 CEST
+Last updated: 2026-05-26 11:36 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-26 11:36 CEST - Freshness Alignment
+
+- Going well: the public progress page and log now name `5abb12dc` as the
+  current reliable-executor head, and the visible status still keeps gates at
+  `0/4`.
+- Not going well: the remaining release proof still needs live WordPress
+  auth/session lifecycle evidence, plus durable journal ownership with lease
+  and fencing, before any production push claim is valid.
+- Progress change: the feedback lane only refreshed the public wording and
+  audit anchor; no gate moved.
+- Next nudge: keep the public page concise, current, and conservative until a
+  real gate-moving proof lands from reliable or recovery.
+
+| Lane | Nudge |
+| --- | --- |
+| Invariants | Keep the unsupported-boundary proof focused on same-plan graph safety. |
+| Recovery | Land fenced durable journal ownership or name the exact missing adapter. |
+| Reliable executor | Move from fail-closed session hardening to live auth/session lifecycle proof. |
+| Fast paths | Hold until a code patch changes the runtime receipt or cursor path. |
+| Audit and critic | Classify only evidence that changes a gate or blocker. |
+| Progress publisher | Keep the public page current, concise, and conservative at `0/4`. |
 
 ## 2026-05-26 11:33 CEST - Freshness Alignment
 
