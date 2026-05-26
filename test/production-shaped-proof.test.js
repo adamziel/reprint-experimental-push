@@ -18,13 +18,13 @@ const liveCredentials = {
   username: 'reprint_push_admin',
   password: 'reprint-push-admin-app-password',
 };
-const proofSubprocessTimeoutMs = 45_000;
+const proofSubprocessTimeoutMs = 30_000;
 const proofSubprocessKillSignal = 'SIGTERM';
 const liveProofSubprocessTimeoutMs = 9_000;
 const liveProofSubprocessKillSignal = 'SIGKILL';
 const liveProofInnerTimeoutMs = Math.max(1_000, Math.min(2_000, liveProofSubprocessTimeoutMs - 5_000));
 const liveProofLaunchTimeoutMs = Math.max(1_000, Math.min(liveProofInnerTimeoutMs, liveProofSubprocessTimeoutMs - 6_000));
-const releaseVerifyInnerTimeoutMs = Math.max(1_000, Math.min(20_000, proofSubprocessTimeoutMs - 5_000));
+const releaseVerifyInnerTimeoutMs = Math.max(1_000, Math.min(12_000, proofSubprocessTimeoutMs - 5_000));
 const releaseVerifySlowPathTimeoutMs = 9_000;
 const releaseVerifySlowPathInnerTimeoutMs = Math.max(1_000, Math.min(5_000, releaseVerifySlowPathTimeoutMs - 2_000));
 const proofSubprocessOptions = {
