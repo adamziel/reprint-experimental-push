@@ -9,8 +9,8 @@ import { authenticatedHttpClient, runAuthenticatedHttpPush } from '../../src/aut
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const muPluginDir = path.join(repoRoot, 'scripts/playground/rest-mu-plugins');
-const serverStartupTimeoutMs = 5_000;
-const serverFetchTimeoutMs = 300;
+const serverStartupTimeoutMs = 4_000;
+const serverFetchTimeoutMs = 250;
 const credentials = {
   username: 'reprint_push_admin',
   password: 'reprint-push-admin-app-password',

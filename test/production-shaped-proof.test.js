@@ -118,7 +118,7 @@ function spawnLiveReleaseVerify(env = {}, options = {}) {
   const timeout = options.timeout ?? liveProofSubprocessTimeoutMs;
   const boundedTimeout = Math.max(1_000, Math.min(timeout, liveProofInnerTimeoutMs));
   const killSignal = options.killSignal ?? liveProofSubprocessKillSignal;
-  const proof = spawnSync(
+  return spawnReleaseVerifyBounded(
     process.execPath,
     ['scripts/playground/production-shaped-release-verify.mjs'],
     {
@@ -133,23 +133,8 @@ function spawnLiveReleaseVerify(env = {}, options = {}) {
         ...env,
       },
     },
+    'live release verify',
   );
-  if (proof.error || proof.signal || proof.status === null || proof.status !== 0) {
-    stopAllPlaygroundChildrenSync();
-    reportBoundedSpawnFailure(proof, process.execPath, ['scripts/playground/production-shaped-release-verify.mjs']);
-    if (proof.error) {
-      const timeoutNote = proof.error.code === 'ETIMEDOUT' && boundedTimeout ? ` after ${boundedTimeout}ms` : '';
-      throw new Error(formatSpawnFailure(`live release verify failed${timeoutNote}`, proof));
-    }
-    if (proof.signal) {
-      throw new Error(formatSpawnFailure(`live release verify terminated by ${proof.signal}${boundedTimeout ? ` after ${boundedTimeout}ms` : ''}`, proof));
-    }
-    if (proof.status === null) {
-      throw new Error(formatSpawnFailure('live release verify exited without a status', proof));
-    }
-    throw new Error(formatSpawnFailure('live release verify failed with non-zero status', proof));
-  }
-  return proof;
 }
 
 function assertReleaseVerifyProof(proof, label) {
