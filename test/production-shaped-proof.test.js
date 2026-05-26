@@ -90,13 +90,13 @@ function spawnReleaseVerifyBounded(command, args, options, label) {
   return proof;
 }
 
-function spawnLiveReleaseVerify(env = {}) {
+function spawnLiveReleaseVerify(env = {}, timeout = liveProofSubprocessTimeoutMs) {
   return spawnReleaseVerifyBounded(
     process.execPath,
     ['scripts/playground/production-shaped-release-verify.mjs'],
     {
       cwd: repoRoot,
-      timeout: liveReleaseVerifyTimeoutMs,
+      timeout,
       killSignal: proofSubprocessKillSignal,
       encoding: 'utf8',
       maxBuffer: 1024 * 1024 * 20,
@@ -126,12 +126,14 @@ function assertReleaseVerifyProof(proof, label) {
   }
 
   if (proof.signal) {
+    stopAllPlaygroundChildrenSync();
     assert.fail(
       `${label} terminated by ${proof.signal}\nstdout:\n${proof.stdout ?? ''}\nstderr:\n${proof.stderr ?? ''}`,
     );
   }
 
   if (proof.status === null) {
+    stopAllPlaygroundChildrenSync();
     assert.fail(
       `${label} exited without a status\nstdout:\n${proof.stdout ?? ''}\nstderr:\n${proof.stderr ?? ''}`,
     );
@@ -140,13 +142,21 @@ function assertReleaseVerifyProof(proof, label) {
 
 function assertLiveReleaseVerifyProof(proof, label, timeoutMs) {
   if (proof.error) {
+    stopAllPlaygroundChildrenSync();
+    process.stderr.write(`${describeSpawnProof(proof)}\n`);
     const timeoutNote = proof.error.code === 'ETIMEDOUT' && timeoutMs ? ` after ${timeoutMs}ms` : '';
     assert.fail(formatSpawnFailure(`${label} failed${timeoutNote}`, proof));
   }
   if (proof.signal) {
+    stopAllPlaygroundChildrenSync();
+    process.stderr.write(`${describeSpawnProof(proof)}\n`);
     assert.fail(formatSpawnFailure(`${label} terminated by ${proof.signal}${timeoutMs ? ` after ${timeoutMs}ms` : ''}`, proof));
   }
-  assert.notEqual(proof.status, null, `${label} exited without a status\nstdout:\n${proof.stdout ?? ''}\nstderr:\n${proof.stderr ?? ''}`);
+  if (proof.status === null) {
+    stopAllPlaygroundChildrenSync();
+    process.stderr.write(`${describeSpawnProof(proof)}\n`);
+    assert.fail(`${label} exited without a status\nstdout:\n${proof.stdout ?? ''}\nstderr:\n${proof.stderr ?? ''}`);
+  }
   assertReleaseVerifyProof(proof, label);
 }
 
@@ -420,6 +430,7 @@ maybeTest('production-shaped release verify command runs the live protocol branc
         REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD: liveCredentials.password,
         NODE_NO_WARNINGS: '1',
       },
+      liveProofSubprocessTimeoutMs,
     );
     process.stderr.write(`${describeSpawnProof(proof)}\n`);
     assertLiveReleaseVerifyProof(proof, 'live release verify', liveReleaseVerifyTimeoutMs);
@@ -462,6 +473,7 @@ maybeTest('production-shaped release verify command fails closed when remote dri
         REPRINT_PUSH_LAB_DRIFT_AFTER_SNAPSHOT: 'post-title',
         NODE_NO_WARNINGS: '1',
       },
+      liveProofSubprocessTimeoutMs,
     );
     process.stderr.write(`${describeSpawnProof(proof)}\n`);
     assertLiveReleaseVerifyProof(proof, 'drift release verify', liveProofSubprocessTimeoutMs);
