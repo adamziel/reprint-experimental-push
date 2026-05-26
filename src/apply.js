@@ -733,6 +733,9 @@ function productionRecoverySupportReport(writer) {
     if (!isCanonicalAbsolutePath(writerRemoteArtifactRef)) {
       addMissingDependency('restart-readable recovery remote artifact references');
     }
+    if (writerJournalArtifactRef && writerRemoteArtifactRef === writerJournalArtifactRef) {
+      addMissingDependency('restart-readable recovery remote artifact references');
+    }
     if (!inspectedRemoteArtifactRef) {
       addMissingDependency('restart-readable recovery remote artifact references');
     } else if (inspectedRemoteArtifactRef !== writerRemoteArtifactRef) {
@@ -740,6 +743,9 @@ function productionRecoverySupportReport(writer) {
     }
   }
   if (inspectedRemoteArtifactRef && !isCanonicalAbsolutePath(inspectedRemoteArtifactRef)) {
+    addMissingDependency('restart-readable recovery remote artifact references');
+  }
+  if (inspectedRemoteArtifactRef && inspectedRemoteArtifactRef === inspectedJournalPath) {
     addMissingDependency('restart-readable recovery remote artifact references');
   }
   if (inspectedRemoteArtifactRef && writerRemoteArtifactRef && inspectedRemoteArtifactRef !== writerRemoteArtifactRef) {
