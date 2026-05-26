@@ -83,19 +83,17 @@ function spawnReleaseVerify(env = {}, options = {}) {
 function spawnReleaseVerifyBounded(command, args, options, label) {
   const timeout = options.timeout ?? releaseVerifyInnerTimeoutMs;
   const killSignal = options.killSignal ?? proofSubprocessKillSignal;
-  const boundedOptions = {
-    shell: false,
-    cwd: repoRoot,
-    ...options,
-    timeout,
-    killSignal,
-  };
-  const proof = spawnSync(command, args, boundedOptions);
-  if (proof.error || proof.signal || proof.status === null) {
-    failBoundedSpawnProof(proof, command, args);
-  }
-  assertBoundedSpawnProof(proof, command, args, label, boundedOptions.timeout);
-  return proof;
+  return spawnBoundedSync(
+    command,
+    args,
+    {
+      cwd: repoRoot,
+      ...options,
+      timeout,
+      killSignal,
+    },
+    label,
+  );
 }
 
 function runReleaseVerifySync(env, timeout, killSignal, label) {
