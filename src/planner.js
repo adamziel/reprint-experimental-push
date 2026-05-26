@@ -1705,6 +1705,56 @@ function isValidSamePlanWordPressGraphTarget(targetMutation, reference, sourceMu
     }
   }
 
+  if (
+    reference.relationshipType === 'menu-item-object-post'
+    && sourceMutation?.resource?.type === 'row'
+    && sourceMutation?.resource?.table === 'wp_postmeta'
+    && targetMutation.resource.type === 'row'
+    && targetMutation.resource.table === 'wp_posts'
+  ) {
+    const sourceValue = deserializeResourceValue(sourceMutation.value);
+    const targetValue = deserializeResourceValue(targetMutation.value);
+    if (
+      sourceValue
+      && typeof sourceValue === 'object'
+      && !isMenuItemObjectIdMetaKey(sourceValue.meta_key)
+    ) {
+      return false;
+    }
+    if (
+      sourceValue
+      && typeof sourceValue === 'object'
+      && normalizePositiveInteger(sourceValue.post_id) != null
+    ) {
+      const ownerMutation = mutationByResourceKey.get(
+        `row:${JSON.stringify(['wp_posts', `ID:${normalizePositiveInteger(sourceValue.post_id)}`])}`,
+      );
+      const ownerValue = ownerMutation ? deserializeResourceValue(ownerMutation.value) : null;
+      if (
+        ownerValue
+        && typeof ownerValue === 'object'
+        && (ownerValue.post_type === 'attachment'
+          || ownerValue.post_type === 'nav_menu_item'
+          || ownerValue.post_type === 'wp_navigation'
+          || ownerValue.post_type === 'revision')
+      ) {
+        return false;
+      }
+    }
+    if (
+      targetValue
+      && typeof targetValue === 'object'
+      && (
+        targetValue.post_type === 'attachment'
+        || targetValue.post_type === 'nav_menu_item'
+        || targetValue.post_type === 'wp_navigation'
+        || targetValue.post_type === 'revision'
+      )
+    ) {
+      return false;
+    }
+  }
+
   return true;
 }
 
@@ -1886,6 +1936,14 @@ function wordpressGraphReferences(resource, value) {
         targetId: value.meta_value,
       });
     }
+    if (isMenuItemObjectIdMetaKey(value.meta_key)) {
+      addReference({
+        field: 'meta_value',
+        relationshipType: 'menu-item-object-post',
+        targetTable: 'posts',
+        targetId: value.meta_value,
+      });
+    }
     if (value.meta_key === '_thumbnail_id') {
       addReference({
         field: 'meta_value',
@@ -2062,6 +2120,10 @@ function wordpressGraphPrimaryIdField(suffix) {
 
 function isMenuItemParentMetaKey(metaKey) {
   return metaKey === 'menu_item_parent' || metaKey === '_menu_item_menu_item_parent';
+}
+
+function isMenuItemObjectIdMetaKey(metaKey) {
+  return metaKey === '_menu_item_object_id';
 }
 
 function normalizePositiveInteger(value) {
