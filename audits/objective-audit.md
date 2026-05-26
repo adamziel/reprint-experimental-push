@@ -8,12 +8,12 @@ Fresh remote heads at audit time, checked on May 26, 2026:
 
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `5598d25b`
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `30ae7487`
-- `origin/lane/reliable-executor` -> `ffdc0a9b`
+- `origin/lane/reliable-executor` -> `b8d91776`
 - `origin/lane/no-data-loss-invariants` -> `9c70eba6`
 - `origin/lane/no-data-loss-recovery` -> `4372167e`
 - `origin/lane/fast-paths` -> `cd0fddad`
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `5598d25b`
-- `origin/lane/independent-auditor` -> `5abd1f65`
+- `origin/lane/independent-auditor` -> `599ec3db`
 - `origin/lane/critic` -> `6828861f`
 - `origin/lane/progress-publisher` -> `7695e1f9`
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `994e60a5`
@@ -44,7 +44,7 @@ Fresh lane proof since the last audit pass improved the local evidence floor,
 but it did not change the release conclusion:
 
 - `origin/lane/reliable-executor` now tightens production-proof subprocess
-  bounds at `ffdc0a9b`. That is useful harness hardening, but the live proof
+  bounds at `b8d91776`. That is useful harness hardening, but the live proof
   path is still lab-backed and the verdict does not move.
 - `origin/lane/no-data-loss-invariants` now tightens graph blockers at
   `9c70eba6`. A separate cycle-branch proof at `98c0ce26`
@@ -71,7 +71,7 @@ but it did not change the release conclusion:
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now
   records the latest progress freshness handoff at `d9379e28`.
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` now refreshes the audit snapshot at
-  `5abd1f65`.
+  `599ec3db`.
 - `origin/lane/critic` now refreshes the critic handoff at `6828861f`.
 - `origin/lane/progress-publisher` now refreshes the public progress evidence
   at `7695e1f9`.
