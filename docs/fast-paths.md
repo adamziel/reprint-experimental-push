@@ -63,6 +63,9 @@ Current executable gate:
 - The same details also expose whether queue headroom is visible on the raw
   backpressure surface, so a paused sender cannot hide the headroom bit and
   still look auditable.
+- The same details also keep the memory-ceiling and queue-budget match visible
+  together, so a tampered ceiling surface cannot look complete without the
+  corresponding queue-budget match.
 - The same details also fail closed when queue headroom is visible but not
   measured, so a forged visibility bit cannot masquerade as bounded
   backpressure evidence.

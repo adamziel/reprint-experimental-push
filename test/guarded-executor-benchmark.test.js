@@ -290,6 +290,22 @@ test('guarded benchmark blocks forged memory-ceiling visibility without queue-bu
   assert.equal(blockers.includes('queue-budget-visible-without-memory-ceiling-visibility'), false);
 });
 
+test('guarded benchmark blocks forged memory-ceiling match visibility without a matching queue-budget surface', () => {
+  const report = smallBenchmark();
+  const tampered = clone(report);
+
+  tampered.evidence.backpressure.queueBudgetVisible = true;
+  tampered.evidence.backpressure.receiptCursorMemoryCeilingVisible = true;
+  tampered.evidence.backpressure.receiptCursorMemoryCeilingMatchesQueueBudgetVisible = false;
+
+  const details = productionThroughputDetails(tampered);
+  const blockers = productionThroughputBlockers(tampered);
+
+  assert.equal(details.queueBudgetVisibleAndMemoryCeilingVisibleAndMeasured, true);
+  assert.equal(details.receiptCursorMemoryCeilingVisibleAndQueueBudgetVisible, true);
+  assert.equal(blockers.includes('queue-budget-visible-without-memory-ceiling-match-visibility'), true);
+});
+
 test('guarded benchmark blocks memory-ceiling visibility when queue-headroom visibility is hidden', () => {
   const report = smallBenchmark();
   const tampered = clone(report);
