@@ -87,6 +87,7 @@ export async function runAuthenticatedHttpPush({
   summary.preflight = summarizeResponse(preflight);
   if (preflight.status !== 200 || preflight.body?.ok !== true) {
     summary.code = preflight.body?.code || 'PREFLIGHT_FAILED';
+    setDurableJournalBoundary(summary, 'preflight');
     return summary;
   }
   const session = preflight.body.session?.id;
@@ -117,6 +118,7 @@ export async function runAuthenticatedHttpPush({
   if (remoteSnapshot.status !== 200 || remoteSnapshot.body?.ok !== true) {
     summary.code = remoteSnapshot.body?.code || 'SNAPSHOT_FAILED';
     summary.snapshot = summarizeResponse(remoteSnapshot);
+    setDurableJournalBoundary(summary, 'snapshot');
     return summary;
   }
   summary.remoteSnapshot = summarizeSnapshot(remoteSnapshot, local);
@@ -132,6 +134,7 @@ export async function runAuthenticatedHttpPush({
   if (plan.status !== 'ready') {
     summary.code = 'PLAN_NOT_READY_LOCALLY';
     summary.ok = false;
+    setDurableJournalBoundary(summary, 'plan');
     return summary;
   }
 
@@ -142,6 +145,7 @@ export async function runAuthenticatedHttpPush({
   summary.dryRun = summarizeResponse(dryRun);
   if (dryRun.status !== 200 || dryRun.body?.ok !== true || !dryRun.body?.receipt) {
     summary.code = dryRun.body?.code || 'DRY_RUN_FAILED';
+    setDurableJournalBoundary(summary, 'dry-run');
     return summary;
   }
 
@@ -149,6 +153,9 @@ export async function runAuthenticatedHttpPush({
     const afterDryRun = await client.get('/snapshot');
     summary.after = summarizeSnapshot(afterDryRun, local);
     summary.ok = afterDryRun.status === 200 && afterDryRun.body?.ok === true;
+    if (!summary.ok) {
+      setDurableJournalBoundary(summary, 'dry-run');
+    }
     return summary;
   }
 
@@ -194,6 +201,7 @@ export async function runAuthenticatedHttpPush({
     && summary.after?.finalMatchesLocal === true;
   if (!summary.ok) {
     summary.code = apply.body?.code || recoveryInspect.body?.code || replay.body?.code || 'APPLY_FAILED';
+    setDurableJournalBoundary(summary, 'apply');
   }
   return summary;
 }
@@ -343,6 +351,23 @@ function summarizeDbJournal(response) {
     applyCommitted: rows.some((entry) => entry.event === 'apply-committed'),
     mutationApplied: rows.filter((entry) => entry.event === 'mutation-applied').length,
     idempotencyOpened: rows.filter((entry) => entry.event === 'idempotency-opened').length,
+  };
+}
+
+function setDurableJournalBoundary(summary, phase) {
+  if (summary.boundary) {
+    return;
+  }
+
+  summary.boundary = {
+    firstRemainingProductionBoundary: 'auth/session lifecycle and durable journal semantics',
+    status: 'unimplemented',
+    verdict: 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED',
+    durableJournal: {
+      storageLeaseFence: 'retained Playground journal storage is lab-scoped; production ownership, lease fencing, and replay wiring are not yet proven on the checked release boundary',
+      verdict: 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED',
+      phase,
+    },
   };
 }
 
