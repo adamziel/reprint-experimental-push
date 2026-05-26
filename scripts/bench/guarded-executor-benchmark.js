@@ -1036,6 +1036,15 @@ export function productionThroughputBlockers(report) {
     blockers.push('receipt-cursor-queue-slack-resource-headroom-mismatch');
   }
   if (
+    Number.isFinite(report.evidence.backpressure?.receiptCursorMemoryHeadroomBytes)
+    && Number.isFinite(report.resourceLimits?.memoryCeilingBytes)
+    && Number.isFinite(report.evidence.chunkReceipts.resumeCursor?.sizeBytes)
+    && report.evidence.backpressure.receiptCursorMemoryHeadroomBytes
+      !== report.resourceLimits.memoryCeilingBytes - report.evidence.chunkReceipts.resumeCursor.sizeBytes
+  ) {
+    blockers.push('receipt-cursor-memory-headroom-resource-headroom-mismatch');
+  }
+  if (
     report.evidence.backpressure?.queuePausedBeforeOverflow === true
     && !Number.isFinite(report.evidence.backpressure?.receiptCursorQueueSlackBytes)
   ) {

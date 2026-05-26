@@ -554,6 +554,9 @@ Current executable gate:
 - The report now also exposes whether the receipt cursor's memory headroom
   matches the measured resource ceiling, so the cursor audit can be read
   directly without recomputing that relationship from separate fields.
+- The report now also fails closed when that receipt-cursor memory headroom no
+  longer matches the measured resource headroom, so a forged headroom byte
+  count cannot still look safe just because it stays below the ceiling.
 - The report now also exposes an explicit memory-ceiling-versus-queue-budget
   proof bit for paused backpressure, so the paused-queue proof does not rely
   only on a derived detail.

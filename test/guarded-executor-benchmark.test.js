@@ -2677,6 +2677,30 @@ test('production claim gate fails closed if benchmark evidence is tampered', () 
     false,
   );
 
+  const mismatchedMemoryResourceHeadroom = clone(report);
+  mismatchedMemoryResourceHeadroom.evidence.backpressure.receiptCursorMemoryHeadroomBytes -= 1;
+  assert.ok(
+    productionThroughputBlockers(mismatchedMemoryResourceHeadroom).includes(
+      'receipt-cursor-memory-headroom-resource-headroom-mismatch',
+    ),
+  );
+  assert.equal(
+    productionThroughputDetails(mismatchedMemoryResourceHeadroom).receiptCursorMemoryHeadroomWithinResourceHeadroom,
+    true,
+  );
+  assert.equal(
+    productionThroughputDetails(mismatchedMemoryResourceHeadroom).receiptCursorMemoryHeadroomMatchesResourceHeadroom,
+    false,
+  );
+  assert.equal(
+    productionThroughputDetails(mismatchedMemoryResourceHeadroom).backpressureConsistency.receiptCursorMemoryHeadroomMatchesResourceHeadroom,
+    false,
+  );
+  assert.equal(
+    productionThroughputDetails(mismatchedMemoryResourceHeadroom).backpressureConsistency.backpressureEvidenceComplete,
+    false,
+  );
+
   const zeroQueueCursor = clone(report);
   zeroQueueCursor.evidence.backpressure.receiptCursorBytes = 0;
   assert.ok(
