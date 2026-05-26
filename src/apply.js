@@ -1262,8 +1262,16 @@ export function productionRecoverySupportReport(writer) {
     consumedClaim
     && inspectedClaimState?.status !== 'none'
     && (
+      consumedClaim.sequence < inspectedClaimState.sequence
+      || (
+        inspectedClaimState.activeClaimHash === consumedClaim.claimHash
+        && productionLeaseIdentitiesMatch(consumedClaim.claimLease, inspectedClaimState.activeClaimLease)
+        && consumedClaim.sequence !== inspectedClaimState.sequence
+      )
+      || (
       consumedClaim.claimHash !== inspectedClaimState.activeClaimHash
       || !productionLeaseIdentitiesMatch(consumedClaim.claimLease, inspectedClaimState.activeClaimLease)
+      )
     )
   ) {
     addMissingDependency('fencing or lease ownership for the journal writer');

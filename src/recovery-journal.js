@@ -1274,11 +1274,17 @@ function assertPersistedConsumedClaimMatchesWriterLease({
   }
 
   const consumedClaim = summarizeConsumedClaimRecord(persisted.records);
+  const claim = classifyRecoveryJournalClaims(persisted.records);
   const expectedClaimHash = typeof claimId === 'string' && claimId.length > 0
     ? recoveryClaimHash(claimId)
     : null;
   if (
     consumedClaim === null
+    || (
+      Number.isInteger(claim.sequence)
+      && Number.isInteger(consumedClaim.sequence)
+      && claim.sequence > consumedClaim.sequence
+    )
     || !productionLeaseIdentitiesMatch(consumedClaim.claimLease, writerLease)
     || consumedClaim.claimHash !== expectedClaimHash
   ) {
