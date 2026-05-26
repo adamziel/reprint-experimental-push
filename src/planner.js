@@ -2628,6 +2628,9 @@ function samePlanCreatedGraphIdentitySupport({ resource, resources, base, local,
   const termTaxonomyParentInboundReference = orderedInboundReferences.find((reference) =>
     reference.relationshipType === 'term-taxonomy-parent'
     && reference.targetResource?.table === 'wp_terms');
+  const termTaxonomyTermInboundReference = orderedInboundReferences.find((reference) =>
+    reference.relationshipType === 'term-taxonomy-term'
+    && reference.targetResource?.table === 'wp_terms');
   const revisionInboundReference = orderedInboundReferences.find((reference) =>
     reference.relationshipType === 'term-relationship-object'
     && reference.targetResource?.table === 'wp_posts'
@@ -2668,6 +2671,8 @@ function samePlanCreatedGraphIdentitySupport({ resource, resources, base, local,
     reason = `WordPress graph mutation ${resource.key} is created in the same plan as a term relationship taxonomy target that depends on it, and identity rewriting is not yet supported.`;
   } else if (termTaxonomyParentInboundReference) {
     reason = `WordPress graph mutation ${resource.key} is created in the same plan as a parent term identity that depends on it, and identity rewriting is not yet supported.`;
+  } else if (termTaxonomyTermInboundReference) {
+    reason = `WordPress graph mutation ${resource.key} is created in the same plan as a term identity that depends on it, and identity rewriting is not yet supported.`;
   } else if (revisionInboundReference) {
     reason = `WordPress graph mutation ${resource.key} is created in the same plan as a term relationship revision target that depends on it, and identity rewriting is not yet supported.`;
   } else if (postParentInboundReference) {
@@ -2709,51 +2714,55 @@ function samePlanCreatedGraphIdentityReferencePriority(reference) {
     && reference.targetResource?.table === 'wp_terms') {
     return 1;
   }
+  if (reference.relationshipType === 'term-taxonomy-term'
+    && reference.targetResource?.table === 'wp_terms') {
+    return 2;
+  }
   if (reference.relationshipType === 'term-relationship-object'
     && reference.targetResource?.table === 'wp_posts'
     && reference.targetChange.local.value?.post_type === 'revision') {
-    return 2;
+    return 3;
   }
   if (reference.relationshipType === 'post-parent'
     && reference.targetResource?.table === 'wp_posts') {
-    return 3;
+    return 4;
   }
   if (reference.relationshipType === 'comment-post'
     && reference.targetResource?.table === 'wp_posts') {
-    return 4;
+    return 5;
   }
   if (reference.relationshipType === 'term-relationship-object'
     && reference.targetResource?.table === 'wp_posts') {
-    return 5;
+    return 6;
   }
   if (reference.relationshipType === 'postmeta-post'
     && reference.targetResource?.table === 'wp_posts') {
-    return 6;
+    return 7;
   }
   if (reference.relationshipType === 'post-author'
     && reference.targetResource?.table === 'wp_users') {
-    return 7;
+    return 8;
   }
   if (reference.relationshipType === 'featured-image-attachment'
     && reference.targetResource?.table === 'wp_posts'
     && reference.targetChange.local.value?.post_type === 'attachment') {
-    return 8;
+    return 9;
   }
   if (reference.relationshipType === 'comment-parent'
     && reference.targetResource?.table === 'wp_comments') {
-    return 9;
+    return 10;
   }
   if (reference.relationshipType === 'comment-user'
     && reference.targetResource?.table === 'wp_users') {
-    return 10;
+    return 11;
   }
   if (reference.relationshipType === 'commentmeta-comment'
     && reference.targetResource?.table === 'wp_comments') {
-    return 11;
+    return 12;
   }
   if (reference.relationshipType === 'usermeta-user'
     && reference.targetResource?.table === 'wp_users') {
-    return 12;
+    return 13;
   }
   return Number.MAX_SAFE_INTEGER;
 }

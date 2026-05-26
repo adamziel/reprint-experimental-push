@@ -17215,6 +17215,104 @@ test('blocks local termmeta references to a same-plan created term identity whil
   assert.equal(Object.hasOwn(remote.files, 'wp-content/plugins/forms/forms.php'), false);
 });
 
+test('prioritizes term identity blocker wording while carrying bounded term-taxonomy and termmeta references for a same-plan created term identity', () => {
+  const termResourceKey = 'row:["wp_terms","term_id:9"]';
+  const taxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:5"]';
+  const termmetaResourceKey = 'row:["wp_termmeta","meta_id:8"]';
+  const base = baseSite();
+  base.db.wp_term_taxonomy = {
+    'term_taxonomy_id:5': {
+      term_taxonomy_id: 5,
+      term_id: 2,
+      taxonomy: 'category',
+      parent: 0,
+      description: 'base term taxonomy description',
+    },
+  };
+  base.db.wp_termmeta = {
+    'meta_id:8': {
+      meta_id: 8,
+      term_id: 2,
+      meta_key: 'term-label',
+      meta_value: 'base termmeta value',
+      note: 'base termmeta note',
+    },
+  };
+
+  const local = baseSite();
+  local.db.wp_terms = {
+    'term_id:9': {
+      term_id: 9,
+      name: 'Local same-plan term identity',
+      slug: 'local-same-plan-term-identity',
+    },
+  };
+  local.db.wp_term_taxonomy = {
+    'term_taxonomy_id:5': {
+      term_taxonomy_id: 5,
+      term_id: 9,
+      taxonomy: 'category',
+      parent: 0,
+      description: 'local term taxonomy description',
+    },
+  };
+  local.db.wp_termmeta = {
+    'meta_id:8': {
+      meta_id: 8,
+      term_id: 9,
+      meta_key: 'term-label',
+      meta_value: 'local termmeta value',
+      note: 'local termmeta note',
+    },
+  };
+  local.db.wp_posts['ID:1'].post_title = 'Shared term identity dependency post';
+
+  const remote = baseSite();
+  remote.db.wp_term_taxonomy = JSON.parse(JSON.stringify(base.db.wp_term_taxonomy));
+  remote.db.wp_termmeta = JSON.parse(JSON.stringify(base.db.wp_termmeta));
+  remote.db.wp_posts['ID:1'].post_title = 'Shared term identity dependency post';
+  remote.plugins.forms.description = 'remote-only plugin changes';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin changes */';
+
+  const plan = planFor(base, local, remote);
+  const termBlocker = plan.blockers.find((entry) => entry.resourceKey === termResourceKey);
+  const taxonomyBlocker = plan.blockers.find((entry) => entry.resourceKey === taxonomyResourceKey);
+  const termmetaBlocker = plan.blockers.find((entry) => entry.resourceKey === termmetaResourceKey);
+  const matchingEdit = decisionFor(plan, 'row:["wp_posts","ID:1"]');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, termResourceKey), undefined);
+  assert.equal(decisionFor(plan, termResourceKey), undefined);
+  assert.equal(termBlocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(termBlocker.resourceKey, termResourceKey);
+  assert.equal(termBlocker.resolutionPolicy, 'preserve-remote-wordpress-graph-and-stop');
+  assert.equal(
+    termBlocker.reason,
+    'WordPress graph mutation row:["wp_terms","term_id:9"] is created in the same plan as a term identity that depends on it, and identity rewriting is not yet supported.',
+  );
+  assert.deepEqual(
+    termBlocker.references.map((reference) => reference.relationshipType),
+    ['term-taxonomy-term', 'termmeta-term'],
+  );
+  assert.deepEqual(
+    termBlocker.references.map((reference) => reference.sourceResourceKey),
+    [taxonomyResourceKey, termmetaResourceKey],
+  );
+  assert.equal(taxonomyBlocker.class, 'unsupported-term-taxonomy-resource');
+  assert.equal(termmetaBlocker.class, 'unsupported-termmeta-resource');
+  assert.equal(matchingEdit.decision, 'already-in-sync');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('Local same-plan term identity'), false);
+  assert.equal(planJson.includes('local-same-plan-term-identity'), false);
+  assert.equal(planJson.includes('local term taxonomy description'), false);
+  assert.equal(planJson.includes('local termmeta note'), false);
+});
+
 test('blocks local term-relationship references to a same-plan created term-taxonomy identity while preserving remote-only plugin drift', () => {
   const resourceKey = 'row:["wp_term_relationships","object_id:7,term_taxonomy_id:5"]';
   const targetResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:5"]';
