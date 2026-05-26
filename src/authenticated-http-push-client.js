@@ -211,6 +211,7 @@ export async function runAuthenticatedHttpPush({
     idempotencyKey,
   });
   summary.replay = summarizeResponse(replay);
+  const replayEquivalent = isReplayEquivalent(apply, replay);
 
   const afterApply = await client.get('/snapshot');
   summary.after = summarizeSnapshot(afterApply, local);
@@ -225,25 +226,29 @@ export async function runAuthenticatedHttpPush({
     && replay.body?.ok === true
     && replay.body?.idempotency?.replayed === true
     && replay.body?.idempotency?.freshMutationWork === false
+    && replayEquivalent
     && dbJournal.status === 200
     && dbJournal.body?.ok === true
     && summary.after?.finalMatchesLocal === true;
   if (!summary.ok) {
     const replayIdempotency = replay.body?.idempotency;
-    const replayIdempotencyFailed = replay.status === 200
+    const replayEquivalenceFailed = replay.status === 200
       && replay.body?.ok === true
       && replayIdempotency
       && (
         replayIdempotency?.replayed !== true
         || replayIdempotency?.freshMutationWork !== false
+        || !replayEquivalent
       );
-    summary.code = replayIdempotencyFailed
-      ? 'REPLAY_NOT_IDEMPOTENT'
-      : apply.body?.code
-        || recoveryInspect.body?.code
-        || replay.body?.code
-        || dbJournal.body?.code
-        || 'APPLY_FAILED';
+    summary.code = replayEquivalenceFailed
+      ? 'REPLAY_NOT_EQUIVALENT'
+      : (replayIdempotency?.replayed !== true || replayIdempotency?.freshMutationWork !== false)
+        ? 'REPLAY_NOT_IDEMPOTENT'
+        : apply.body?.code
+          || recoveryInspect.body?.code
+          || replay.body?.code
+          || dbJournal.body?.code
+          || 'APPLY_FAILED';
     setDurableJournalBoundary(summary, dbJournal.status === 200 ? (replay.status === 200 ? 'replay' : 'apply') : 'journal-inspect');
   }
   return summary;
@@ -413,6 +418,16 @@ function summarizeRecoveryInspect(response) {
     } : undefined,
     journalState: recovery.journal?.integrity?.status,
   };
+}
+
+function isReplayEquivalent(applyResponse, replayResponse) {
+  const applyBody = applyResponse?.body || {};
+  const replayBody = replayResponse?.body || {};
+  return applyResponse?.status === replayResponse?.status
+    && applyBody.ok === replayBody.ok
+    && applyBody.code === replayBody.code
+    && applyBody.applied === replayBody.applied
+    && applyBody.receipt?.receiptHash === replayBody.receipt?.receiptHash;
 }
 
 function setDurableJournalBoundary(summary, phase) {
