@@ -1282,6 +1282,11 @@ export function productionThroughputDetails(report) {
     productionStorageReceiptsVisible && productionAtomicGroupMetadataVisible;
   const productionStorageReceiptsVisibleAndAtomicCommitVisible =
     productionStorageReceiptsVisible && productionAtomicCommitVisible;
+  const productionStorageReceiptsVisibleAndAtomicCommitVisibleAndMeasured =
+    productionStorageReceiptsVisible
+    && productionAtomicCommitVisible
+    && productionStorageReceiptsMeasured
+    && productionAtomicCommitMeasured;
   const productionRowBatchExecutorVisibleAndStorageReceiptsVisible =
     productionRowBatchExecutorVisible && productionStorageReceiptsVisible;
   const productionRowBatchExecutorVisibleAndAtomicCommitVisible =
@@ -1427,6 +1432,7 @@ export function productionThroughputDetails(report) {
     productionStorageReceiptsVisible,
     productionStorageReceiptsVisibleAndAtomicGroupMetadataVisible,
     productionStorageReceiptsVisibleAndAtomicCommitVisible,
+    productionStorageReceiptsVisibleAndAtomicCommitVisibleAndMeasured,
     productionRowBatchExecutorVisibleAndStorageReceiptsVisible,
     productionRowBatchExecutorVisibleAndAtomicCommitVisible,
     productionAtomicGroupMetadataProven,
@@ -1542,6 +1548,7 @@ export function productionThroughputDetails(report) {
       productionStorageReceiptsMeasured,
       productionStorageReceiptsVisibleAndAtomicGroupMetadataVisible,
       productionStorageReceiptsVisibleAndAtomicCommitVisible,
+      productionStorageReceiptsVisibleAndAtomicCommitVisibleAndMeasured,
       productionRowBatchExecutorMeasured,
       productionRowBatchExecutorVisibleAndStorageReceiptsVisible,
       productionRowBatchExecutorVisibleAndAtomicCommitVisible,
@@ -1549,6 +1556,7 @@ export function productionThroughputDetails(report) {
       productionAtomicGroupMetadataProven,
       productionStorageReceiptsVisible,
       productionStorageReceiptsVisibleAndAtomicCommitVisible,
+      productionStorageReceiptsVisibleAndAtomicCommitVisibleAndMeasured,
       productionRowBatchExecutorVisible,
       parallelismLimits,
       parallelismLimitsVisible: parallelismLimitsVisibleOnReport,

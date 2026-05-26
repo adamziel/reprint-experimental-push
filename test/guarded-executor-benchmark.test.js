@@ -308,8 +308,10 @@ test('guarded benchmark blocks storage-receipts and atomic-commit paired visibil
   tampered.evidence.atomicGroup.productionAtomicCommitVisible = true;
   tampered.evidence.atomicGroup.productionAtomicGroupMetadataVisible = false;
 
+  const details = productionThroughputDetails(tampered);
   const blockers = productionThroughputBlockers(tampered);
 
+  assert.equal(details.productionStorageReceiptsVisibleAndAtomicCommitVisibleAndMeasured, false);
   assert.equal(
     blockers.includes('production-storage-receipts-visible-and-atomic-commit-visible-without-metadata'),
     true,
