@@ -6,33 +6,33 @@ The project is **not releasable as a production WordPress push path**.
 
 Fresh remote heads at audit time, checked on May 26, 2026:
 
-- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `bbc110d0`
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `44771ed8`
+- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `0959a5ac`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `d6bf78a8`
 - `origin/lane/reliable-executor` -> `b8d91776`
 - `origin/lane/no-data-loss-invariants` -> `9c70eba6`
 - `origin/lane/no-data-loss-recovery` -> `4372167e`
 - `origin/lane/fast-paths` -> `cd0fddad`
-- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `bbc110d0`
-- `origin/lane/independent-auditor` -> `70d069fa`
+- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `0959a5ac`
+- `origin/lane/independent-auditor` -> `5abd1f65`
 - `origin/lane/critic` -> `cba0890b`
 - `origin/lane/progress-publisher` -> `7695e1f9`
 - `origin/lane/cycle-20260525-mainwindows-2349/critic` -> `cba0890b`
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `44771ed8`
-- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `bbc110d0`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `6056fc03`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `d6bf78a8`
+- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `0959a5ac`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `42a65068`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `4372167e`
 - `origin/lane/same-plan-wordpress-graph-create` -> `09e6706d`
 - `origin/lane/cycle-20260525-mainwindows-2349/same-plan-wordpress-graph-create` -> `09e6706d`
 - `origin/lane/cycle-20260525-mainwindows-2349/same-plan-wordpress-graph-create` -> `e9cbf9d4`
 - `origin/lane/cycle-20260525-mainwindows-2357/no-data-loss-invariants-graph-proof` -> `98c0ce26`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `6056fc03`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `42a65068`
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` -> `5f256171`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-invariants` -> `9c70eba6`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `4372167e`
-- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `bbc110d0`
-- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `bbc110d0`
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `44771ed8`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `6056fc03`
+- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `0959a5ac`
+- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `0959a5ac`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `d6bf78a8`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `42a65068`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `4372167e`
 - `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration` -> `a3a900d7`
 - `origin/main` -> `e55864f4`
@@ -65,14 +65,14 @@ but it did not change the release conclusion:
   `cd0fddad`. That is still a fail-closed implementation improvement, not
   production release proof.
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` now adds receipt
-  cursor headroom rejection at `bbc110d0`, which is still boundary plumbing
+  cursor headroom rejection at `0959a5ac`, which is still boundary plumbing
   rather than measured speed proof.
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now
-  refreshes supervisor progress visibility at `44771ed8`.
+  refreshes supervisor progress visibility at `d6bf78a8`.
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now
-  records the latest progress freshness handoff at `6056fc03`.
+  records the latest progress freshness handoff at `42a65068`.
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` now refreshes the audit snapshot at
-  `6b0303dd`.
+  `5abd1f65`.
 - `origin/lane/critic` now refreshes the critic handoff at `cba0890b`.
 - `origin/lane/progress-publisher` now refreshes the public progress evidence
   at `7695e1f9`.
@@ -82,7 +82,7 @@ but it did not change the release conclusion:
   fails closed on artifact ref drift at `4372167e`, but still does not add
   production-backed journal ownership or replay proof.
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` now adds receipt
-  cursor headroom rejection at `bbc110d0`.
+  cursor headroom rejection at `0959a5ac`.
 - `origin/lane/same-plan-wordpress-graph-create` now blocks unsupported graph
   surfaces at `7bf5d421`, including revision posts, menu/navigation posts,
   serialized blocks, thumbnail parent references, and other same-plan graph
