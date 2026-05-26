@@ -442,10 +442,12 @@ function isReplayEquivalent(applyResponse, replayResponse) {
   const applyBody = applyResponse?.body || {};
   const replayBody = replayResponse?.body || {};
   return applyResponse?.status === replayResponse?.status
+    && applyBody.mode === replayBody.mode
     && applyBody.ok === replayBody.ok
     && applyBody.code === replayBody.code
     && applyBody.applied === replayBody.applied
     && applyBody.receipt?.receiptHash === replayBody.receipt?.receiptHash
+    && isStorageGuardEquivalent(applyBody.storageGuard, replayBody.storageGuard)
     && applyBody.auth?.identity?.userLogin === replayBody.auth?.identity?.userLogin
     && applyBody.auth?.session?.id === replayBody.auth?.session?.id
     && applyBody.auth?.session?.type === replayBody.auth?.session?.type
@@ -454,6 +456,12 @@ function isReplayEquivalent(applyResponse, replayResponse) {
     && applyBody.idempotency?.freshMutationWork === replayBody.idempotency?.freshMutationWork
     && applyBody.idempotency?.status === replayBody.idempotency?.status
     && applyBody.idempotency?.conflict === replayBody.idempotency?.conflict;
+}
+
+function isStorageGuardEquivalent(applyStorageGuard, replayStorageGuard) {
+  return applyStorageGuard?.boundary === replayStorageGuard?.boundary
+    && applyStorageGuard?.operation === replayStorageGuard?.operation
+    && applyStorageGuard?.outcome === replayStorageGuard?.outcome;
 }
 
 function hasAuthEnvelopeDrift(expected, response) {
