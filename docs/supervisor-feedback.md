@@ -1,9 +1,25 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-26 16:05 CEST
+Last updated: 2026-05-26 16:11 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-26 16:11 CEST - Progress Correction Needed
+
+- Going well: the live reliable head is still `ea74b2bdc01574dce1380641171497338df62883`, so the checked
+  release path remains on the same material blocker boundary.
+- Not going well: the public progress surface was reported with stale `998e856f` current-head wording, so the
+  visible page needs a correction back to `ea74b2bdc01574dce1380641171497338df62883`.
+- Progress change: this is a public-status correction only; the gate posture stays `0/4`.
+- Next nudge: have `progress-publisher` fix the visible current-head text in `progress.html` and
+  `docs/progress-log.md`, then let `progress-live` promote only the corrected page.
+
+| Lane | Nudge |
+| --- | --- |
+| Progress publisher | Correct the visible current-head wording back to `ea74b2bdc01574dce1380641171497338df62883` and keep `0/4`. |
+| Progress live | Promote only the corrected page; do not publish stale head text. |
+| Audit and critic | Keep the verdict at `0/4` unless the checked release boundary proves production-backed lifecycle or durable ownership. |
 
 ## 2026-05-26 16:05 CEST - Reliable Head Advanced Past Packaged Readiness
 
