@@ -200,9 +200,22 @@ This note captures the planner boundary in plain language.
   plugin removals are present; the matching edit stays `already-in-sync`,
   the plugin removals stay `keep-remote`, and the graph blocker evidence
   stays bounded.
+- A same-plan-created `wp_termmeta` reference to a new term must still stop
+  even when a matching independent edit is already in sync and remote-only
+  plugin removals are present; the matching edit stays `already-in-sync`,
+  the plugin removals stay `keep-remote`, and the graph blocker evidence
+  stays bounded.
+- A same-plan-created socket-like special file must still stop even when a
+  matching independent edit is already in sync and remote-only plugin
+  removals are present; the matching edit stays `already-in-sync`, the plugin
+  removals stay `keep-remote`, and the graph blocker evidence stays bounded.
 - A local comments row must still stop when comments graph resources are
   unsupported, even if unrelated remote-only plugin drift is present; the
   comments blocker evidence stays bounded and the plugin drift stays
+  `keep-remote`.
+- A local comments row must still stop when comments graph resources are
+  unsupported, even if unrelated remote-only plugin changes are present; the
+  comments blocker evidence stays bounded and the plugin changes stay
   `keep-remote`.
 - A mixed ready plan must still fail closed when one mutation loses its live
   remote precondition, even if a matching independent edit and a file type

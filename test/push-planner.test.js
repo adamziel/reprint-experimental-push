@@ -14402,6 +14402,78 @@ test('blocks local termmeta references to a same-plan created term identity whil
   assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin change */');
 });
 
+test('blocks local termmeta references to a same-plan created term identity while preserving a matching independent edit and remote-only plugin removals', () => {
+  const resourceKey = 'row:["wp_termmeta","meta_id:8"]';
+  const targetResourceKey = 'row:["wp_terms","term_id:9"]';
+  const base = baseSite();
+  base.db.wp_termmeta = {
+    'meta_id:8': {
+      meta_id: 8,
+      term_id: 9,
+      meta_key: 'term-label',
+      meta_value: 'base termmeta value',
+      note: 'base termmeta note',
+    },
+  };
+
+  const local = baseSite();
+  local.db.wp_posts['ID:1'].post_title = 'Local independent edit';
+  local.db.wp_terms = {
+    'term_id:9': {
+      term_id: 9,
+      name: 'Local same-plan term',
+      slug: 'local-same-plan-term',
+    },
+  };
+  local.db.wp_termmeta = {
+    'meta_id:8': {
+      meta_id: 8,
+      term_id: 9,
+      meta_key: 'term-label',
+      meta_value: 'local termmeta value',
+      note: 'local termmeta note',
+    },
+  };
+
+  const remote = baseSite();
+  remote.db.wp_termmeta = JSON.parse(JSON.stringify(base.db.wp_termmeta));
+  remote.db.wp_posts['ID:1'].post_title = 'Local independent edit';
+  delete remote.plugins.forms;
+  delete remote.files['wp-content/plugins/forms/forms.php'];
+
+  const plan = planFor(base, local, remote);
+  const termmetaBlocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  const termBlocker = plan.blockers.find((entry) => entry.resourceKey === targetResourceKey);
+  const independentEdit = decisionFor(plan, 'row:["wp_posts","ID:1"]');
+  const reference = termBlocker.references[0];
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(decisionFor(plan, targetResourceKey), undefined);
+  assert.equal(termmetaBlocker.class, 'unsupported-termmeta-resource');
+  assert.equal(termmetaBlocker.resourceKey, resourceKey);
+  assert.equal(termmetaBlocker.reason, 'Term meta graph resources are not yet supported by the planner.');
+  assert.equal(termBlocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(termBlocker.resourceKey, targetResourceKey);
+  assert.equal(termBlocker.resolutionPolicy, 'preserve-remote-wordpress-graph-and-stop');
+  assert.equal(reference.relationshipKey, 'wp_termmeta.term_id');
+  assert.equal(reference.relationshipType, 'termmeta-term');
+  assert.equal(reference.sourceResourceKey, resourceKey);
+  assert.equal(reference.targetResourceKey, targetResourceKey);
+  assert.equal(reference.targetChange.remote.state, 'absent');
+  assert.equal(reference.targetRemoteHash.length, 64);
+  assert.equal(independentEdit.decision, 'already-in-sync');
+  assert.equal(independentEdit.change.localChange, 'update');
+  assert.equal(independentEdit.change.remoteChange, 'update');
+  assert.equal(planJson.includes('Local same-plan term'), false);
+  assert.equal(planJson.includes('local-same-plan-term'), false);
+  assert.equal(planJson.includes('local termmeta note'), false);
+  assert.equal(Object.hasOwn(remote.plugins, 'forms'), false);
+  assert.equal(Object.hasOwn(remote.files, 'wp-content/plugins/forms/forms.php'), false);
+});
+
 test('blocks local termmeta references to a same-plan created term identity while preserving remote-only plugin removals', () => {
   const resourceKey = 'row:["wp_termmeta","meta_id:8"]';
   const targetResourceKey = 'row:["wp_terms","term_id:9"]';
@@ -14592,6 +14664,52 @@ test('blocks local comments and users graph resources while preserving remote-on
   assert.equal(planJson.includes('Base comment'), false);
   assert.equal(Object.hasOwn(remote.plugins, 'forms'), false);
   assert.equal(Object.hasOwn(remote.files, 'wp-content/plugins/forms/forms.php'), false);
+});
+
+test('blocks local comments and users graph resources while preserving remote-only plugin changes', () => {
+  const resourceKey = 'row:["wp_comments","comment_ID:14"]';
+  const base = baseSite();
+  base.db.wp_comments = {
+    'comment_ID:14': {
+      comment_ID: 14,
+      comment_post_ID: 1,
+      comment_author: 'Base commenter',
+      comment_content: 'Base comment content',
+    },
+  };
+
+  const local = baseSite();
+  local.db.wp_comments = {
+    'comment_ID:14': {
+      comment_ID: 14,
+      comment_post_ID: 1,
+      comment_author: 'Local commenter',
+      comment_content: 'Local comment content',
+    },
+  };
+
+  const remote = baseSite();
+  remote.db.wp_comments = JSON.parse(JSON.stringify(base.db.wp_comments));
+  remote.plugins.forms.description = 'remote-only plugin change';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin change */';
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(plan.conflicts.length, 0);
+  assert.equal(blocker.class, 'unsupported-comments-users-resource');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.reason, 'Comments graph resources are not yet supported by the planner.');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('Local comment content'), false);
+  assert.equal(planJson.includes('Base comment content'), false);
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin change');
+  assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin change */');
 });
 
 test('blocks local comments graph resources while preserving remote-only plugin drift', () => {
@@ -16985,6 +17103,65 @@ test('blocks unsupported special file entries while preserving remote-only plugi
   assert.equal(remote.plugins.forms.description, 'remote-only plugin drift');
 });
 
+test('blocks unsupported special file entries while preserving a matching independent edit and remote-only plugin removals', () => {
+  const resourceKey = 'file:wp-content/uploads/symlink';
+  const base = baseSite();
+  base.files['wp-content/uploads/symlink'] = { type: 'symlink', target: '../shared/target' };
+  base.db.wp_posts['ID:44'] = {
+    ID: 44,
+    post_title: 'Base matched post',
+    post_content: 'Base matched post content',
+    post_status: 'publish',
+    post_type: 'post',
+  };
+
+  const local = baseSite();
+  local.files['wp-content/uploads/symlink'] = { type: 'symlink', target: '../shared/other-target' };
+  local.db.wp_posts['ID:44'] = {
+    ID: 44,
+    post_title: 'Base matched post',
+    post_content: 'Local matched post content',
+    post_status: 'publish',
+    post_type: 'post',
+  };
+
+  const remote = baseSite();
+  remote.files['wp-content/uploads/symlink'] = JSON.parse(JSON.stringify(base.files['wp-content/uploads/symlink']));
+  remote.db.wp_posts['ID:44'] = {
+    ID: 44,
+    post_title: 'Base matched post',
+    post_content: 'Local matched post content',
+    post_status: 'publish',
+    post_type: 'post',
+  };
+  delete remote.plugins.forms;
+  delete remote.files['wp-content/plugins/forms/forms.php'];
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers[0];
+  const postDecision = decisionFor(plan, 'row:["wp_posts","ID:44"]');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(plan.conflicts.length, 0);
+  assert.equal(blocker.class, 'unsupported-special-file-resource');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.reason, 'Special file entries are not yet supported by the planner.');
+  assert.equal(postDecision.decision, 'already-in-sync');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('../shared/other-target'), false);
+  assert.equal(planJson.includes('../shared/target'), false);
+  assert.equal(planJson.includes('Local matched post content'), false);
+  assert.equal(planJson.includes('Base matched post content'), false);
+  assert.equal(remote.plugins.forms, undefined);
+  assert.equal(remote.files['wp-content/plugins/forms/forms.php'], undefined);
+});
+
 test('blocks unsupported socket-like special file entries while preserving remote-only plugin drift', () => {
   const resourceKey = 'file:wp-content/uploads/socket';
   const base = baseSite();
@@ -17013,6 +17190,65 @@ test('blocks unsupported socket-like special file entries while preserving remot
   assert.equal(planJson.includes('/tmp/other-socket'), false);
   assert.equal(planJson.includes('/tmp/socket'), false);
   assert.equal(remote.plugins.forms.description, 'remote-only plugin drift');
+});
+
+test('blocks unsupported socket-like special file entries while preserving a matching independent edit and remote-only plugin removals', () => {
+  const resourceKey = 'file:wp-content/uploads/socket';
+  const base = baseSite();
+  base.files['wp-content/uploads/socket'] = { type: 'socket', linkTarget: '/tmp/socket' };
+  base.db.wp_posts['ID:45'] = {
+    ID: 45,
+    post_title: 'Base socket post',
+    post_content: 'Base socket post content',
+    post_status: 'publish',
+    post_type: 'post',
+  };
+
+  const local = baseSite();
+  local.files['wp-content/uploads/socket'] = { type: 'socket', linkTarget: '/tmp/local-socket' };
+  local.db.wp_posts['ID:45'] = {
+    ID: 45,
+    post_title: 'Base socket post',
+    post_content: 'Local socket post content',
+    post_status: 'publish',
+    post_type: 'post',
+  };
+
+  const remote = baseSite();
+  remote.files['wp-content/uploads/socket'] = JSON.parse(JSON.stringify(base.files['wp-content/uploads/socket']));
+  remote.db.wp_posts['ID:45'] = {
+    ID: 45,
+    post_title: 'Base socket post',
+    post_content: 'Local socket post content',
+    post_status: 'publish',
+    post_type: 'post',
+  };
+  delete remote.plugins.forms;
+  delete remote.files['wp-content/plugins/forms/forms.php'];
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers[0];
+  const postDecision = decisionFor(plan, 'row:["wp_posts","ID:45"]');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(plan.conflicts.length, 0);
+  assert.equal(blocker.class, 'unsupported-special-file-resource');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.reason, 'Special file entries are not yet supported by the planner.');
+  assert.equal(postDecision.decision, 'already-in-sync');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('/tmp/local-socket'), false);
+  assert.equal(planJson.includes('/tmp/socket'), false);
+  assert.equal(planJson.includes('Local socket post content'), false);
+  assert.equal(planJson.includes('Base socket post content'), false);
+  assert.equal(remote.plugins.forms, undefined);
+  assert.equal(remote.files['wp-content/plugins/forms/forms.php'], undefined);
 });
 
 test('blocks unsupported hard-link special file entries while preserving remote-only plugin drift', () => {
