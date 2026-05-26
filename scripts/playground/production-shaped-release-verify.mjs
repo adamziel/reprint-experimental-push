@@ -1103,11 +1103,14 @@ async function waitForServer(child, baseUrl, getLogs) {
       });
       const responseBody = await response.clone().text().catch(() => '');
       const responsePreview = responseBody.slice(0, readinessFailureBodyLimit);
-      lastProbes.push({
+      const lastRouteStatusBody = {
         route: '/wp-json/',
         status: response.status,
-        ok: response.ok,
         body: responsePreview,
+      };
+      lastProbes.push({
+        ...lastRouteStatusBody,
+        ok: response.ok,
       });
       process.stderr.write(
         `Playground probe ${baseUrl}/wp-json/ -> ${response.status} ${responsePreview.slice(0, 160).replace(/\s+/g, ' ').trim()}\n`,
@@ -1143,7 +1146,7 @@ async function waitForServer(child, baseUrl, getLogs) {
         const readinessHint = isWordPressNotReadyResponse(response.status, responseBody)
           ? 'WordPress is not ready yet'
           : null;
-        const routeSummary = describeLastProbe(lastProbes.at(-1));
+        const routeSummary = describeLastRouteStatusBody(lastRouteStatusBody);
         lastError = new Error(
           readinessHint
             ? `Playground index readiness HTTP 502: ${readinessHint}; ${routeSummary}`
@@ -1201,11 +1204,19 @@ function describeLastProbe(probe) {
   if (!probe) {
     return 'route/status/body: unavailable';
   }
+  return describeLastRouteStatusBody({
+    route: probe.route ?? null,
+    status: probe.status ?? null,
+    body: probe.body ?? null,
+  });
+}
+
+function describeLastRouteStatusBody(lastRouteStatusBody) {
   return `route/status/body: ${JSON.stringify(
     {
-      route: probe.route ?? null,
-      status: probe.status ?? null,
-      body: probe.body ?? null,
+      route: lastRouteStatusBody?.route ?? null,
+      status: lastRouteStatusBody?.status ?? null,
+      body: lastRouteStatusBody?.body ?? null,
     },
     null,
     2,
