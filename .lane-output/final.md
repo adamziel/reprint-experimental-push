@@ -17,7 +17,7 @@ Push result:
 
 Worktree status:
 - Modified tracked files: `audits/critic.md`, `.lane-output/final.md`
-- Branch: `lane/cycle-20260525-mainwindows-2349/critic...origin/main [ahead 1647, behind 699]`
+- Branch: `lane/cycle-20260525-mainwindows-2349/critic-current-20260526-1408...origin/lane/critic`
 
 Next supervisor nudge:
 - Keep critic narrow and only reclassify again when `reliable-executor` lands checked-path production-backed auth/session lifecycle, durable-journal ownership, or preserved-remote retry proof that reaches the release boundary.
