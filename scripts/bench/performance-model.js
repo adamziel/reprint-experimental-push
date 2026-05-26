@@ -789,6 +789,26 @@ export const SAFE_FAST_PATHS = Object.freeze([
   },
   {
     area: 'backpressure',
+    reduces: ['fsync-count', 'queue-drain-time'],
+    allowedShortcut: 'flush-upload-and-row-receipts-in-separate-kind-scoped-journal-batches',
+    guardrails: [
+      'kind-scoped-receipt-batches-stay-ordered',
+      'flush-never-crosses-an-atomic-group-commit',
+    ],
+    gateProofs: {
+      skip: 'chunk and row receipts can be flushed in bounded batches by kind without skipping any receipt that already exists',
+      live: 'the underlying storage-boundary write still keeps the same live preconditions for each receipt-producing mutation',
+      group: 'kind-scoped receipt flushing only changes journal timing and never moves an atomic-group boundary',
+      recovery: 'ordered raw receipt keys and journal records still classify pause, retry, or crash without guessing which receipts survived',
+    },
+    visibilityBoundary: 'kind-scoped-journal-flush-only',
+    failureEvidence: 'kind-scoped receipt batch plus ordered raw durable receipt keys',
+    bypassesLivePreconditions: false,
+    splitsAtomicGroup: false,
+    publishesStagedDataEarly: false,
+  },
+  {
+    area: 'backpressure',
     reduces: ['memory-pressure', 'idle-time', 'queue-drain-time'],
     allowedShortcut: 'treat-drained-upload-buffer-as-publish-ready',
     guardrails: [

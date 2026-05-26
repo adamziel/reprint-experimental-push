@@ -252,6 +252,16 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
     ),
     'partitioned planning stays fail-closed within the parallelism budget',
   );
+  assert.ok(
+    model.safeFastPaths.some(
+      (fastPath) =>
+        fastPath.area === 'backpressure' &&
+        fastPath.allowedShortcut === 'flush-upload-and-row-receipts-in-separate-kind-scoped-journal-batches' &&
+        fastPath.guardrails.includes('kind-scoped-receipt-batches-stay-ordered') &&
+        fastPath.gateProofs.recovery.includes('ordered raw receipt keys and journal records still classify pause, retry, or crash'),
+    ),
+    'kind-scoped receipt flushing stays fail-closed within the backpressure budget',
+  );
   assert.deepEqual(
     FAST_PATH_GATES.map((gate) => gate.id),
     ['skip', 'live', 'group', 'recovery'],
