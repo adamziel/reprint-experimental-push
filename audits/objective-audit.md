@@ -4,9 +4,9 @@
 
 The project is **not releasable as a production WordPress push path**.
 
-- Audit time: 2026-05-26 12:40:03 CEST (+0200)
+- Audit time: 2026-05-26 12:41:32 CEST (+0200)
 - Fresh remote heads re-polled at audit time:
-  - `origin/lane/reliable-executor` -> `c23d67cb` (package-smoke startup bounded; no release-gate movement)
+  - `origin/lane/reliable-executor` -> `a33aa3da` (packaged `reprint/v1` surfaces no longer report the same lab-only mode, but this is still package-smoke evidence, not the checked release boundary)
   - `origin/lane/no-data-loss-recovery` -> `351b6bbd`
   - `origin/lane/critic` -> `8fd327e5`
   - `origin/lane/progress-publisher` -> `99c2bc2a`
@@ -16,7 +16,7 @@ The project is **not releasable as a production WordPress push path**.
 
 | Requirement | Current proof | Missing proof | Verdict impact |
 | --- | --- | --- | --- |
-| Production-backed auth/session lifecycle | `c23d67cb` only bounds package-smoke startup, so it still does not change the checked release boundary. Earlier heads `a33aa3da`, `a3393194`, `9d0279a3`, `fd425b41`, `998e856f`, `fc2de1bd`, `e0c3fcf8`, `91419223`, `72b3ddce`, `10903372`, `4bc94c99`, `5abb12dc`, and `26cfdfe0` remain support-side replay/auth hardening. The checked release verifier still reports `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED`, so the gate does not move. | Live production-backed issuance, read, expiry, rotation, revocation, replay rejection, and cleanup on the checked release path. | Blocked |
+| Production-backed auth/session lifecycle | `a33aa3da` is the current package-mode evidence: packaged `reprint/v1` route/profile/session/journal surfaces no longer report the same lab-only mode, but that still stays inside package-smoke evidence and does not change the checked release boundary. Earlier heads `a3393194`, `9d0279a3`, `fd425b41`, `998e856f`, `fc2de1bd`, `e0c3fcf8`, `91419223`, `72b3ddce`, `10903372`, `4bc94c99`, `5abb12dc`, and `26cfdfe0` remain support-side replay/auth hardening. The checked release verifier still reports `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED`, so the gate does not move. | Live production-backed issuance, read, expiry, rotation, revocation, replay rejection, and cleanup on the checked release path. | Blocked |
 | Durable journal ownership | `9d0279a3` is recovery-claim fencing evidence on the release verifier path only. `fd425b41` makes journal ownership proof visible in the release verifier, `351b6bbd` adds a restart-readable recovery journal adapter, `5fd9dfb4`/`1c8a658b` wire recovery evidence into release smoke and release verify, and `fc2de1bd` adds retry telemetry without changing the checked release-path storage boundary. The release path still lacks production durable-journal semantics and a production-backed consumer that closes the checked boundary. | Restart-readable durable journal ownership with production artifacts on the release path and a live `verify:release` consumer that satisfies production durable-journal storage semantics. | Blocked |
 | Live mutation boundary | `no-data-loss-invariants` continues unsupported-surface blocking, but still no live production mutation boundary proof. | A live production mutation boundary proving source changes are safe. | Blocked |
 | Production speed claim | Visibility and support-path proof only. | A release-grade production speed proof tied to the real push path. | Blocked |
