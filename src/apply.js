@@ -1036,7 +1036,6 @@ export function productionRecoverySupportReport(writer) {
   }
   if (
     hasValidProductionLeaseIdentity(writer?.writerLease)
-    && Object.hasOwn(writer.writerLease, 'epoch')
     && !productionLeaseIdentitiesMatch(inspectedClaimState?.activeClaimLease, writer.writerLease)
   ) {
     addMissingDependency('fencing or lease ownership for the journal writer');
