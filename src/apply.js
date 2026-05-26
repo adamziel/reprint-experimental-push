@@ -805,7 +805,20 @@ export function productionRecoverySupportReport(writer) {
   ) {
     addMissingDependency('durable journal append ownership fencing');
   }
-  const { writerJournalArtifactRef, writerRemoteArtifactRef, inspectedArtifactRefs, inspectedRemoteArtifactRef } = artifactRefs;
+  const {
+    writerJournalArtifactRef,
+    writerRemoteArtifactRef,
+    inspectedArtifactRefs,
+    inspectedRemoteArtifactRef,
+    writerArtifactRefsHiddenOwnKeys,
+    inspectedArtifactRefsHiddenOwnKeys,
+  } = artifactRefs;
+  if (writerArtifactRefsHiddenOwnKeys) {
+    addMissingDependency('restart-readable recovery artifact references');
+    if (Object.hasOwn(writer?.artifactRefs ?? {}, 'remote')) {
+      addMissingDependency('restart-readable recovery remote artifact references');
+    }
+  }
   if (
     isStrictPlainObject(writer?.artifactRefs)
     && Reflect.ownKeys(writer.artifactRefs).some((key) => key !== 'journal' && key !== 'remote')
@@ -839,6 +852,12 @@ export function productionRecoverySupportReport(writer) {
     && Reflect.ownKeys(inspectedArtifactRefs).some((key) => key !== 'journal' && key !== 'remote')
   ) {
     addMissingDependency('restart-readable recovery artifact references');
+  }
+  if (inspectedArtifactRefsHiddenOwnKeys) {
+    addMissingDependency('restart-readable recovery artifact references');
+    if (Object.hasOwn(inspectedArtifactRefs ?? {}, 'remote')) {
+      addMissingDependency('restart-readable recovery remote artifact references');
+    }
   }
   if (
     isStrictPlainObject(inspectedArtifactRefs)
@@ -1179,6 +1198,12 @@ function productionRecoveryArtifactRefs(writer, inspected) {
       && inspectedArtifactRefs.remote.length > 0
       ? inspectedArtifactRefs.remote
       : null,
+    writerArtifactRefsHiddenOwnKeys: writerArtifactRefs
+      ? hasHiddenOwnStringKeys(writerArtifactRefs)
+      : false,
+    inspectedArtifactRefsHiddenOwnKeys: inspectedArtifactRefs
+      ? hasHiddenOwnStringKeys(inspectedArtifactRefs)
+      : false,
   };
 }
 
@@ -1309,6 +1334,7 @@ function durableJournalInspectArtifactRefs(inspected) {
     isStrictPlainObject(inspected)
     && Object.hasOwn(inspected, 'artifactRefs')
     && isStrictPlainObject(inspected.artifactRefs)
+    && !hasHiddenOwnStringKeys(inspected.artifactRefs)
     && Object.hasOwn(inspected.artifactRefs, 'journal')
     && typeof inspected.artifactRefs.journal === 'string'
   );
@@ -1341,6 +1367,9 @@ function durableJournalPersistedArtifactRefs(inspected) {
     }
     const artifactRefs = record.artifactRefs;
     if (!isStrictPlainObject(artifactRefs)) {
+      return { hasRecords: true, journal: null, remote: null, invalidReason: 'invalid artifact ref keys' };
+    }
+    if (hasHiddenOwnStringKeys(artifactRefs)) {
       return { hasRecords: true, journal: null, remote: null, invalidReason: 'invalid artifact ref keys' };
     }
     const hasAnyArtifactRefKeys = Reflect.ownKeys(artifactRefs).length > 0;
