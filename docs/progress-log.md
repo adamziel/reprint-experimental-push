@@ -8,7 +8,7 @@ linked implementation artifacts.
 
 <a id="2026-05-26-public-status-audit-124217"></a>
 
-- Freshness update plus reliable-head confirmation: `a33aa3da` is the current
+- Freshness update plus reliable-head confirmation: `c23d67cb` is the current
   reliable-executor head on the public page, and the visible status now points
   at this 12:42:17 audit refresh.
 - Gate posture remains conservative at `0/4`; no implementation verdict
@@ -16,7 +16,7 @@ linked implementation artifacts.
 - Latest blocker summary remains the same: production-backed auth/session
   lifecycle on the checked release path and fenced durable journal ownership
   still block any production push claim, while the packaged `reprint/v1`
-  route/profile/session/journal evidence at `a33aa3da` is material but still
+  route/profile/session/journal evidence at `c23d67cb` is material but still
   below a gate movement.
 
 ## 2026-05-26 - Public Status Audit 12:46:17
@@ -37,7 +37,7 @@ linked implementation artifacts.
 
 <a id="2026-05-26-public-status-audit-124000"></a>
 
-- Freshness update plus reliable-head confirmation: `a33aa3da` is the current
+- Freshness update plus reliable-head confirmation: `c23d67cb` is the current
   reliable-executor head on the public page, and the visible status now points
   at this 12:40:00 audit refresh.
 - Gate posture remains conservative at `0/4`; no implementation verdict
@@ -45,7 +45,7 @@ linked implementation artifacts.
 - Latest blocker summary remains the same: production-backed auth/session
   lifecycle on the checked release path and fenced durable journal ownership
   still block any production push claim, while the packaged `reprint/v1`
-  route/profile/session/journal evidence at `a33aa3da` is material but still
+  route/profile/session/journal evidence at `c23d67cb` is material but still
   below a gate movement.
 
 ## 2026-05-26 - Public Status Audit 12:33:49
