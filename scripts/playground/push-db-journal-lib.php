@@ -928,12 +928,26 @@ function reprint_push_lab_db_journal_checked_boundary_contract_matches($journal)
     }
 
     return ($journal['schemaVersion'] ?? null) === 1
+        && reprint_push_lab_db_journal_checked_boundary_scope_matches($journal['scope'] ?? null)
         && reprint_push_lab_db_journal_claim_contract_matches($journal['claim'] ?? null)
         && reprint_push_lab_db_journal_ownership_contract_matches($journal['ownership'] ?? null)
         && reprint_push_lab_db_journal_writer_lease_contract_matches($journal['writerLease'] ?? null)
         && reprint_push_lab_db_journal_lease_fence_contract_matches($journal['leaseFence'] ?? null)
         && reprint_push_lab_db_journal_checked_boundary_contract_is_coherent($journal)
         && reprint_push_lab_db_journal_checked_boundary_storage_guard_is_coherent($journal);
+}
+
+function reprint_push_lab_db_journal_checked_boundary_scope_matches($scope): bool
+{
+    if (!is_string($scope) || $scope === '') {
+        return false;
+    }
+
+    if (preg_match('/(^|; )local Playground fixture only|^fixture-scoped|not production durability/i', $scope) === 1) {
+        return false;
+    }
+
+    return preg_match('/production|checked|packaged|not local Playground fixture only/i', $scope) === 1;
 }
 
 function reprint_push_lab_db_journal_non_empty_string($value): bool

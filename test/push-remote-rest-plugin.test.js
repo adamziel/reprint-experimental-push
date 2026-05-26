@@ -1884,6 +1884,79 @@ test('checked recovery inspect evidence fails closed on partial checked writer-l
   assert.equal(parsed.recovery.journal.leaseFence.writerLease.storageGuard, 'wpdb-single-statement-cas');
 });
 
+test('checked recovery inspect evidence fails closed when accepted checked summaries still claim fixture scope', { skip: !hasPhp }, () => {
+  const result = runAttachCheckedRecoveryJournalEvidence(
+    {
+      recovery: {
+        status: 'blocked-recovery',
+      },
+    },
+    true,
+    false,
+    {
+      acceptedOnCheckedBoundary: true,
+      scope: 'local Playground fixture only; not production durability',
+      schemaVersion: 1,
+      claim: {
+        status: 'stale-claim-rejected',
+        activeClaimKeyHash: 'authoritative-claim-hash-02',
+        activeClaimSequence: 33,
+        activeClaimEvent: 'stale-claim-rejected',
+        idempotencyKeyHash: 'idem-hash-01',
+        requestHash: 'request-hash-01',
+        staleClaimRejected: true,
+        abandonedSequence: 24,
+        abandonedEvent: 'stale-claim-abandoned',
+        previousStartedSequence: 19,
+        previousClaimKeyHash: 'retry-claim-hash-01',
+        previousClaimSequence: 18,
+        previousClaimEvent: 'idempotency-opened',
+      },
+      ownership: {
+        ownsJournal: true,
+        restartReadable: true,
+        productionAdapter: 'wpdb-single-statement-cas',
+      },
+      writerLease: {
+        strategy: 'claim-fenced-single-writer',
+        claimKeyUnique: true,
+        fsyncEvidence: true,
+        storageGuard: 'wpdb-single-statement-cas',
+        monotonicSequence: true,
+        restartReadable: true,
+        staleClaimRejected: true,
+      },
+      leaseFence: {
+        boundary: 'wpdb-single-statement-cas',
+        claimKeyUnique: true,
+        fsyncEvidence: true,
+        monotonicSequence: true,
+        restartReadable: true,
+        staleClaimRejected: true,
+        writerLease: {
+          strategy: 'claim-fenced-single-writer',
+          claimKeyUnique: true,
+          fsyncEvidence: true,
+          storageGuard: 'wpdb-single-statement-cas',
+          monotonicSequence: true,
+          restartReadable: true,
+          staleClaimRejected: true,
+        },
+      },
+      storageGuard: {
+        boundary: 'wpdb-single-statement-cas',
+        operation: 'update',
+        outcome: 'applied',
+      },
+    },
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.recovery.journal.acceptedOnCheckedBoundary, false);
+  assert.equal(parsed.recovery.journal.scope, 'local Playground fixture only; not production durability');
+});
+
 test('checked recovery inspect evidence fails closed when accepted checked summaries still omit claim identity entirely', { skip: !hasPhp }, () => {
   const result = runAttachCheckedRecoveryJournalEvidence(
     {
@@ -3175,6 +3248,76 @@ test('checked authenticated apply evidence fails closed on accepted checked jour
   assert.equal(parsed.dbJournal.acceptedOnCheckedBoundary, false);
   assert.equal(parsed.dbJournal.schemaVersion, undefined);
   assert.equal(parsed.dbJournal.storageGuard, undefined);
+});
+
+test('checked authenticated apply evidence fails closed when accepted checked journal summaries still claim fixture scope', { skip: !hasPhp }, () => {
+  const result = runAttachCheckedDbJournalContract(
+    {
+      ok: true,
+      dbJournal: {
+        acceptedOnCheckedBoundary: true,
+        scope: 'local Playground fixture only; not production durability',
+        schemaVersion: 1,
+        claim: {
+          status: 'stale-claim-rejected',
+          activeClaimKeyHash: 'authoritative-claim-hash-02',
+          activeClaimSequence: 33,
+          activeClaimEvent: 'stale-claim-rejected',
+          idempotencyKeyHash: 'idem-hash-01',
+          requestHash: 'request-hash-01',
+          staleClaimRejected: true,
+          abandonedSequence: 24,
+          abandonedEvent: 'stale-claim-abandoned',
+          previousStartedSequence: 19,
+          previousClaimKeyHash: 'retry-claim-hash-01',
+          previousClaimSequence: 18,
+          previousClaimEvent: 'idempotency-opened',
+        },
+        ownership: {
+          ownsJournal: true,
+          restartReadable: true,
+          productionAdapter: 'wpdb-single-statement-cas',
+        },
+        writerLease: {
+          strategy: 'claim-fenced-single-writer',
+          claimKeyUnique: true,
+          fsyncEvidence: true,
+          storageGuard: 'wpdb-single-statement-cas',
+          monotonicSequence: true,
+          restartReadable: true,
+          staleClaimRejected: true,
+        },
+        leaseFence: {
+          boundary: 'wpdb-single-statement-cas',
+          claimKeyUnique: true,
+          fsyncEvidence: true,
+          monotonicSequence: true,
+          restartReadable: true,
+          staleClaimRejected: true,
+          writerLease: {
+            strategy: 'claim-fenced-single-writer',
+            claimKeyUnique: true,
+            fsyncEvidence: true,
+            storageGuard: 'wpdb-single-statement-cas',
+            monotonicSequence: true,
+            restartReadable: true,
+            staleClaimRejected: true,
+          },
+        },
+        storageGuard: {
+          boundary: 'wpdb-single-statement-cas',
+          operation: 'update',
+          outcome: 'applied',
+        },
+      },
+    },
+    {},
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.dbJournal.acceptedOnCheckedBoundary, false);
+  assert.equal(parsed.dbJournal.scope, 'local Playground fixture only; not production durability');
 });
 
 test('checked authenticated apply evidence fails closed on conflicting checked writer-lease storage guards', { skip: !hasPhp }, () => {
