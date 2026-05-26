@@ -1986,6 +1986,8 @@ test('stale recovery claim fences an old worker before target mutation', () => {
   assert.equal(inspection.status, 'blocked-recovery');
   assert.deepEqual(inspection.counts, { old: 1, new: 0, blockedUnknown: 1 });
   assert.equal(inspection.claim.status, 'advanced');
+  assert.equal(inspection.claim.activeClaimId, workerBClaim);
+  assert.equal(inspection.claim.previousClaimId, workerAClaim);
   assert.equal(inspection.claim.staleThresholdMs, staleThresholdMs);
   assert.equal(inspection.claim.previousClaimAgeMs, previousClaimAgeMs);
   for (const record of persisted.records) {

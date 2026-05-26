@@ -195,12 +195,14 @@ export function openProductionRecoveryJournal(options) {
   journal.schemaVersion = RECOVERY_JOURNAL_SCHEMA_VERSION;
   journal.inspect = function inspectProductionRecoveryJournal() {
     const persisted = readRecoveryJournal(filePath);
-    const claimHash = claimId ? recoveryClaimHash(claimId) : null;
+    const claim = classifyRecoveryJournalClaims(persisted.records);
+    const persistedClaimId = claim.activeClaimId || claimId;
+    const claimHash = persistedClaimId ? recoveryClaimHash(persistedClaimId) : null;
     const restartReadable = persisted.integrity.status === 'ok';
     const staleClaimRejected = hasStaleClaimRejectionEvidence(persisted.records);
     const writerLease = {
       strategy: 'claim-fenced-single-writer',
-      claimId,
+      claimId: persistedClaimId,
       claimHash,
       claimKeyUnique: true,
       storageGuard: 'filesystem-compare-rename',
@@ -215,7 +217,7 @@ export function openProductionRecoveryJournal(options) {
         checked: [filePath],
         artifactRefs: { ...artifactRefs },
         productionAdapter: 'openProductionRecoveryJournal',
-        claimId,
+        claimId: persistedClaimId,
         ownsJournal: true,
         claimHash,
         consumed: persisted.records.some((record) => record.type === 'recovery-journal-consumed'),
@@ -356,6 +358,7 @@ export function appendRecoveryClaimOpened(journal, {
   return journal.appendEvent('recovery-claim-opened', {
     planId: plan.id,
     state: 'active',
+    claimId,
     claimHash: nextClaimHash,
     observedHash: digest(current),
     staleThresholdMs: normalizeOptionalNonNegativeInteger(staleThresholdMs),
@@ -377,7 +380,9 @@ export function appendStaleClaimAdvanced(journal, {
   return journal.appendEvent('stale-claim-advanced', {
     planId: plan.id,
     state: 'advanced',
+    previousClaimId,
     previousClaimHash: recoveryClaimHash(previousClaimId),
+    claimId,
     claimHash: recoveryClaimHash(claimId),
     observedHash: digest(current),
     staleThresholdMs: normalizeOptionalNonNegativeInteger(staleThresholdMs),
@@ -535,7 +540,9 @@ export function classifyRecoveryJournalClaims(records) {
   const latest = claimRecords.at(-1);
   return {
     status: latest.type === 'stale-claim-advanced' ? 'advanced' : 'active',
+    activeClaimId: latest.claimId || null,
     activeClaimHash: latest.claimHash,
+    previousClaimId: latest.previousClaimId || null,
     previousClaimHash: latest.previousClaimHash || null,
     sequence: latest.sequence,
     type: latest.type,
@@ -633,7 +640,9 @@ class RecoveryJournalWriter {
 function blockedClaimState(record, reason) {
   return {
     status: 'blocked',
+    activeClaimId: record.claimId || null,
     activeClaimHash: record.claimHash || null,
+    previousClaimId: record.previousClaimId || null,
     previousClaimHash: record.previousClaimHash || null,
     sequence: record.sequence || null,
     type: record.type || null,

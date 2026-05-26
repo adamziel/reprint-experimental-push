@@ -332,6 +332,7 @@ test('production recovery journal wrapper writes a restart-readable claim-fenced
   assert.equal(restarted.records[0].artifactRefs.releaseProof, 'artifact://release-proof-1');
   assert.equal(restarted.records.filter((record) => record.type === 'recovery-claim-opened').length, 1);
   assert.equal(restarted.records.at(-1).type, 'recovery-claim-opened');
+  assert.equal(restarted.records.at(-1).claimId, 'production-claim-01');
   assert.equal(restarted.records.at(-1).claimHash.length, 64);
 
   assert.throws(
