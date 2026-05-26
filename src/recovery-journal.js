@@ -675,27 +675,44 @@ export function describeProductionRecoveryJournal(writer) {
     return null;
   }
 
-  const productionAdapter = Object.hasOwn(writer, 'productionAdapter') && writer.productionAdapter === true;
+  const productionAdapter = Object.hasOwn(writer, 'productionAdapter')
+    && !hasHiddenOwnStringProperty(writer, 'productionAdapter')
+    && writer.productionAdapter === true;
   const supportedSurface = Object.hasOwn(writer, 'supportedSurface')
+    && !hasHiddenOwnStringProperty(writer, 'supportedSurface')
     && writer.supportedSurface === 'production-recovery-journal-adapter'
     ? writer.supportedSurface
     : null;
-  const restartReadable = Object.hasOwn(writer, 'restartReadable') && writer.restartReadable === true;
-  const ownsJournal = Object.hasOwn(writer, 'ownsJournal') && writer.ownsJournal === true;
-  const claimsRemoteArtifactOwnership = Object.hasOwn(writer, 'ownsRemoteArtifact') && writer.ownsRemoteArtifact === true;
-  const journalPath = Object.hasOwn(writer, 'journalPath') && isCanonicalAbsolutePath(writer.journalPath)
+  const restartReadable = Object.hasOwn(writer, 'restartReadable')
+    && !hasHiddenOwnStringProperty(writer, 'restartReadable')
+    && writer.restartReadable === true;
+  const ownsJournal = Object.hasOwn(writer, 'ownsJournal')
+    && !hasHiddenOwnStringProperty(writer, 'ownsJournal')
+    && writer.ownsJournal === true;
+  const claimsRemoteArtifactOwnership = Object.hasOwn(writer, 'ownsRemoteArtifact')
+    && !hasHiddenOwnStringProperty(writer, 'ownsRemoteArtifact')
+    && writer.ownsRemoteArtifact === true;
+  const journalPath = Object.hasOwn(writer, 'journalPath')
+    && !hasHiddenOwnStringProperty(writer, 'journalPath')
+    && isCanonicalAbsolutePath(writer.journalPath)
     ? writer.journalPath
     : null;
-  const writerLease = Object.hasOwn(writer, 'writerLease') && isValidProductionWriterLease(writer.writerLease)
+  const writerLease = Object.hasOwn(writer, 'writerLease')
+    && !hasHiddenOwnStringProperty(writer, 'writerLease')
+    && isValidProductionWriterLease(writer.writerLease)
     ? Object.freeze({ ...writer.writerLease })
     : null;
-  const rawLeaseFence = Object.hasOwn(writer, 'leaseFence') && isValidProductionWriterLease(writer.leaseFence)
+  const rawLeaseFence = Object.hasOwn(writer, 'leaseFence')
+    && !hasHiddenOwnStringProperty(writer, 'leaseFence')
+    && isValidProductionWriterLease(writer.leaseFence)
     ? writer.leaseFence
     : null;
   const leaseFence = rawLeaseFence && writerLease && productionLeaseIdentitiesMatch(rawLeaseFence, writerLease)
     ? Object.freeze({ ...rawLeaseFence })
     : null;
-  const rawArtifactRefs = Object.hasOwn(writer, 'artifactRefs') && isStrictPlainObject(writer.artifactRefs)
+  const rawArtifactRefs = Object.hasOwn(writer, 'artifactRefs')
+    && !hasHiddenOwnStringProperty(writer, 'artifactRefs')
+    && isStrictPlainObject(writer.artifactRefs)
     ? writer.artifactRefs
     : null;
   const artifactRefs = Object.freeze({
@@ -728,7 +745,10 @@ export function describeProductionRecoveryJournal(writer) {
     writerLease,
     journalPath,
     artifactRefs,
-    schemaVersion: Object.hasOwn(writer, 'schemaVersion') ? writer.schemaVersion : null,
+    schemaVersion: Object.hasOwn(writer, 'schemaVersion')
+      && !hasHiddenOwnStringProperty(writer, 'schemaVersion')
+      ? writer.schemaVersion
+      : null,
   });
 }
 
@@ -1747,6 +1767,15 @@ function hasHiddenOwnStringKeys(value) {
     const descriptor = Object.getOwnPropertyDescriptor(value, key);
     return descriptor?.enumerable === false;
   });
+}
+
+function hasHiddenOwnStringProperty(value, property) {
+  if (!value || typeof value !== 'object' || typeof property !== 'string') {
+    return false;
+  }
+
+  const descriptor = Object.getOwnPropertyDescriptor(value, property);
+  return descriptor !== undefined && descriptor.enumerable === false;
 }
 
 function freezeProductionWriterLease(writerLease) {

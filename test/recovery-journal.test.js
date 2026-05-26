@@ -351,6 +351,73 @@ test('production recovery journal descriptor fails closed on prototype-inherited
   });
 });
 
+test('production recovery journal descriptor fails closed on non-enumerable top-level marker and lease fields', () => {
+  const writer = {
+    kind: 'production-recovery-journal',
+  };
+  Object.defineProperties(writer, {
+    productionAdapter: {
+      value: true,
+      enumerable: false,
+    },
+    supportedSurface: {
+      value: 'production-recovery-journal-adapter',
+      enumerable: false,
+    },
+    restartReadable: {
+      value: true,
+      enumerable: false,
+    },
+    ownsJournal: {
+      value: true,
+      enumerable: false,
+    },
+    ownsRemoteArtifact: {
+      value: true,
+      enumerable: false,
+    },
+    leaseFence: {
+      value: { id: 'lease-hidden', epoch: 4 },
+      enumerable: false,
+    },
+    writerLease: {
+      value: { id: 'lease-hidden', epoch: 4 },
+      enumerable: false,
+    },
+    journalPath: {
+      value: '/var/lib/reprint/recovery.jsonl',
+      enumerable: false,
+    },
+    artifactRefs: {
+      value: {
+        journal: '/var/lib/reprint/recovery.jsonl',
+        remote: '/var/lib/reprint/recovery-remote.jsonl',
+      },
+      enumerable: false,
+    },
+    schemaVersion: {
+      value: 1,
+      enumerable: false,
+    },
+  });
+
+  const descriptor = describeProductionRecoveryJournal(writer);
+
+  assert.deepEqual(descriptor, {
+    kind: 'production-recovery-journal',
+    productionAdapter: false,
+    supportedSurface: null,
+    restartReadable: false,
+    ownsJournal: false,
+    ownsRemoteArtifact: false,
+    leaseFence: null,
+    writerLease: null,
+    journalPath: null,
+    artifactRefs: { journal: null, remote: null },
+    schemaVersion: null,
+  });
+});
+
 test('production recovery journal descriptor fails closed on non-canonical ownership paths and divergent lease ids', () => {
   const writer = {
     kind: 'production-recovery-journal',
