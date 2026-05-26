@@ -12,7 +12,7 @@ import { digest } from '../../src/stable-json.js';
 import {
   appendJournalCompleted,
   appendMutationObserved,
-  openPlanRecoveryJournal,
+  openProductionRecoveryJournal,
   readRecoveryJournal,
 } from '../../src/recovery-journal.js';
 import { inspectRecoveryJournal } from '../../src/recovery-inspect.js';
@@ -67,7 +67,7 @@ async function scenarioFailBeforeMutation() {
   const journalPath = path.join(workDir, 'fail-before-mutation.journal.jsonl');
   const remote = clone(fixture.base);
   const before = digest(remote);
-  const journal = openPlanRecoveryJournal({
+  const journal = openProductionRecoveryJournal({
     filePath: journalPath,
     plan,
     current: remote,
@@ -102,7 +102,7 @@ async function scenarioFailBeforeMutation() {
 async function scenarioFailAfter2() {
   const journalPath = path.join(workDir, 'fail-after-2.journal.jsonl');
   const remote = clone(fixture.base);
-  const journal = openPlanRecoveryJournal({
+  const journal = openProductionRecoveryJournal({
     filePath: journalPath,
     plan,
     current: remote,
@@ -165,7 +165,7 @@ async function scenarioFailAfter2() {
 async function scenarioCompletedReplay() {
   const journalPath = path.join(workDir, 'completed-replay.journal.jsonl');
   const remote = clone(fixture.base);
-  const journal = openPlanRecoveryJournal({
+  const journal = openProductionRecoveryJournal({
     filePath: journalPath,
     plan,
     current: remote,
@@ -207,7 +207,7 @@ async function scenarioCompletedReplay() {
 async function scenarioDrift() {
   const journalPath = path.join(workDir, 'drift.journal.jsonl');
   const remote = clone(fixture.base);
-  const journal = openPlanRecoveryJournal({
+  const journal = openProductionRecoveryJournal({
     filePath: journalPath,
     plan,
     current: remote,

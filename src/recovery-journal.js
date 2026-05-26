@@ -56,6 +56,24 @@ export function openRecoveryJournal(filePath, options = {}) {
   });
 }
 
+export function openProductionRecoveryJournal({
+  filePath,
+  plan,
+  current,
+  artifactRefs = {},
+  now,
+  truncate = true,
+}) {
+  return openPlanRecoveryJournal({
+    filePath,
+    plan,
+    current,
+    artifactRefs,
+    now,
+    truncate,
+  });
+}
+
 export function openPlanRecoveryJournal({
   filePath,
   plan,
