@@ -76,6 +76,7 @@ Fresh visibility-lane heads moved, but they still only refresh public status sur
 - `origin/lane/no-data-loss-invariants` -> `270c7406`
 - `origin/lane/no-data-loss-invariants` -> `62b4acb0`
 - `origin/lane/no-data-loss-invariants` -> `aa4f9c83`
+- `origin/lane/no-data-loss-invariants` -> `58e8b8a2`
 - `origin/lane/no-data-loss-recovery` -> `2af1ddda`
 - `origin/main` -> `2c8d52cb`
 
@@ -116,6 +117,9 @@ but it did not change the release conclusion:
 - `origin/lane/no-data-loss-invariants` now records `aa4f9c83`, adding a post
   GUID boundary proof. It still does not prove the live release boundary or
   any production-backed source mutation.
+- `origin/lane/no-data-loss-invariants` now records `58e8b8a2`, adding special
+  file swap boundary proof. It still does not prove the live release boundary
+  or any production-backed source mutation.
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now
   records `b03ee033`, refreshing supervisor freshness only. It still does not
   change the release verdict.

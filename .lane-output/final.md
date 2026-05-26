@@ -2,7 +2,7 @@ The objective audit stays closed at `0/4` after re-checking the visible lane hea
 
 Checked evidence:
 - `git status --short --branch` still shows the branch ahead/behind the remote and the tracked dirty files are `.lane-output/final.md` and `audits/objective-audit.md`.
-- The newest relevant heads now include `origin/lane/reliable-executor -> 6dc56a5d`, while `origin/lane/no-data-loss-invariants -> aa4f9c83`, `origin/lane/no-data-loss-recovery -> 2af1ddda`, and the visibility-lane refreshes remain non-release proof.
+- The newest relevant heads now include `origin/lane/reliable-executor -> 6dc56a5d`, while `origin/lane/no-data-loss-invariants -> 58e8b8a2`, `origin/lane/no-data-loss-recovery -> 2af1ddda`, and the visibility-lane refreshes remain non-release proof.
 - The release blocker is unchanged: the audit still does not prove production-backed auth/session lifecycle, durable journal ownership/lease/fencing/replay, or a live-source mutation boundary.
 
 Changed files:
