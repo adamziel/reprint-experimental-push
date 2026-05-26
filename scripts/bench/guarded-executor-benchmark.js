@@ -303,6 +303,12 @@ export function productionThroughputBlockers(report) {
   }
   if (
     report.evidence.backpressure?.queuePausedBeforeOverflow === true
+    && report.evidence.backpressure?.queuePauseHasMeasuredReceiptCursorBackpressure !== true
+  ) {
+    blockers.push('queue-pause-without-measured-receipt-cursor-backpressure-proof');
+  }
+  if (
+    report.evidence.backpressure?.queuePausedBeforeOverflow === true
     && (
       report.evidence.backpressure?.queuePauseHasMeasuredReceiptCursorBackpressure !== true
       || report.evidence.backpressure?.queuePauseHasMeasuredReceiptCursorQueueSlack !== true
@@ -559,6 +565,12 @@ export function productionThroughputBlockers(report) {
   ) {
     blockers.push('success-inspection-claim-reason-not-proven');
   }
+  if (
+    report.results?.successInspection?.claim?.status === 'blocked'
+    && report.evidence.recovery.successInspectionStatus === 'fully-updated-remote'
+  ) {
+    blockers.push('success-inspection-claim-status-mismatch');
+  }
   if (report.executorCapabilities.fileReceipts !== 'production-storage-receipts') {
     blockers.push('production-storage-receipts-not-measured');
   }
@@ -609,6 +621,7 @@ export function productionThroughputDetails(report) {
     Number.isFinite(receiptCursorWindowBytes)
     && Number.isFinite(receiptCursorMemoryCeilingBytes)
     && receiptCursorWindowBytes <= receiptCursorMemoryCeilingBytes;
+  const queueHeadroomMeasured = report.evidence.backpressure?.queueHeadroomMeasured === true;
   const receiptCursorHeadroomMatchesQueueHeadroom =
     Number.isFinite(receiptCursorMemoryHeadroomBytes)
     && Number.isFinite(receiptCursorQueueHeadroomBytes)
@@ -678,7 +691,11 @@ export function productionThroughputDetails(report) {
   const receiptCursorMemoryHeadroomPositiveVisible = receiptCursorMemoryHeadroomPositive;
   const queuePauseHasMeasuredReceiptCursorQueueSlack =
     report.evidence.backpressure?.queuePausedBeforeOverflow !== true
-    || (receiptCursorQueueSlackPositive && receiptCursorQueueSlackWithinQueueBudget);
+    || (
+      queueHeadroomMeasured
+      && receiptCursorQueueSlackPositive
+      && receiptCursorQueueSlackWithinQueueBudget
+    );
   const queuePauseHasBackpressureAlignedReceiptCursorQueueSlack =
     report.evidence.backpressure?.queuePausedBeforeOverflow !== true
     || (
@@ -937,20 +954,23 @@ function hasCompleteBackpressureEvidence(report) {
   const receiptCursorQueueHeadroomPositive =
     Number.isFinite(receiptCursorQueueHeadroomBytes)
     && receiptCursorQueueHeadroomBytes > 0;
+  const queueHeadroomMeasured = report.evidence.backpressure?.queueHeadroomMeasured === true;
   const receiptCursorMemoryHeadroomPositive =
     Number.isFinite(receiptCursorMemoryHeadroomBytes)
     && receiptCursorMemoryHeadroomBytes > 0;
   const queuePauseHasMeasuredReceiptCursorQueueSlack =
     report.evidence.backpressure?.queuePausedBeforeOverflow !== true
     || (
-      Number.isFinite(receiptCursorQueueSlackBytes)
+      queueHeadroomMeasured
+      && Number.isFinite(receiptCursorQueueSlackBytes)
       && receiptCursorQueueSlackBytes > 0
       && report.evidence.backpressure?.queuePauseHasMeasuredReceiptCursorQueueSlack === true
     );
   const queuePauseHasMeasuredReceiptCursorBackpressure =
     report.evidence.backpressure?.queuePausedBeforeOverflow !== true
     || (
-      Number.isFinite(receiptCursorBackpressureBytes)
+      queueHeadroomMeasured
+      && Number.isFinite(receiptCursorBackpressureBytes)
       && receiptCursorBackpressureBytes > 0
       && report.evidence.backpressure?.queuePauseHasMeasuredReceiptCursorBackpressure === true
     );
@@ -1380,6 +1400,10 @@ function buildReport({
     preCommitFailure.durableJournalHasNoRawValues,
     partialFailure.durableJournalHasNoRawValues,
   ].every(Boolean);
+  const queueHeadroomMeasured =
+    Number.isFinite(config.maxBufferedUploadBytes)
+    && Number.isFinite(config.chunkSizeBytes)
+    && config.maxBufferedUploadBytes - config.chunkSizeBytes > 0;
 
   return {
     schemaVersion: 1,
@@ -1491,10 +1515,7 @@ function buildReport({
         producerQueueBounded: true,
         queueBudgetBytes: config.maxBufferedUploadBytes,
         queueHeadroomBytes: config.maxBufferedUploadBytes - config.chunkSizeBytes,
-        queueHeadroomMeasured:
-          Number.isFinite(config.maxBufferedUploadBytes)
-          && Number.isFinite(config.chunkSizeBytes)
-          && config.maxBufferedUploadBytes - config.chunkSizeBytes > 0,
+        queueHeadroomMeasured,
         queueBudgetMatchesResourceCeiling:
           config.maxBufferedUploadBytes === DEFAULT_LIMITS.maxBufferedUploadBytes,
         queuePausedBeforeOverflow: config.chunkSizeBytes <= config.maxBufferedUploadBytes,
@@ -1523,14 +1544,16 @@ function buildReport({
         queuePauseHasMeasuredReceiptCursorQueueSlack:
           config.chunkSizeBytes > config.maxBufferedUploadBytes
           || (
-            Number.isFinite(lastChunkReceipt?.sizeBytes)
+            queueHeadroomMeasured
+            && Number.isFinite(lastChunkReceipt?.sizeBytes)
             && Number.isFinite(config.maxBufferedUploadBytes)
             && config.maxBufferedUploadBytes - lastChunkReceipt.sizeBytes > 0
           ),
         queuePauseHasMeasuredReceiptCursorBackpressure:
           config.chunkSizeBytes > config.maxBufferedUploadBytes
           || (
-            Number.isFinite(lastChunkReceipt?.sizeBytes)
+            queueHeadroomMeasured
+            && Number.isFinite(lastChunkReceipt?.sizeBytes)
             && Number.isFinite(config.maxBufferedUploadBytes)
             && lastChunkReceipt.sizeBytes > 0
           ),

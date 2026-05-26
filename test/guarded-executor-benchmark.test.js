@@ -425,6 +425,18 @@ test('production claim gate fails closed if benchmark evidence is tampered', () 
     false,
   );
 
+  const contradictoryBlockedSuccessClaim = clone(report);
+  contradictoryBlockedSuccessClaim.results.successInspection.claim = {
+    ...contradictoryBlockedSuccessClaim.results.successInspection.claim,
+    status: 'blocked',
+    reason: 'blocked by local override',
+  };
+  assert.ok(
+    productionThroughputBlockers(contradictoryBlockedSuccessClaim).includes(
+      'success-inspection-claim-status-mismatch',
+    ),
+  );
+
   const missingCursorHeadroom = clone(report);
   missingCursorHeadroom.evidence.chunkReceipts.resumeCursor.sizeBytes =
     missingCursorHeadroom.resourceLimits.memoryCeilingBytes + 1;
@@ -588,6 +600,22 @@ test('production claim gate fails closed if benchmark evidence is tampered', () 
   assert.equal(
     productionThroughputDetails(slackWithoutQueuePause).backpressureConsistency.receiptCursorQueueSlackMeasured,
     true,
+  );
+
+  const unmeasuredQueueHeadroom = clone(report);
+  unmeasuredQueueHeadroom.evidence.backpressure.queueHeadroomMeasured = false;
+  assert.ok(
+    productionThroughputBlockers(unmeasuredQueueHeadroom).includes(
+      'queue-pause-without-measured-queue-headroom-proof',
+    ),
+  );
+  assert.equal(
+    productionThroughputDetails(unmeasuredQueueHeadroom).backpressureConsistency.queueHeadroomMeasured,
+    false,
+  );
+  assert.equal(
+    productionThroughputDetails(unmeasuredQueueHeadroom).backpressureConsistency.queuePauseHasMeasuredReceiptCursorQueueSlack,
+    false,
   );
 
   const pausedWithoutMeasuredBackpressure = clone(report);
@@ -1401,4 +1429,17 @@ test('guarded benchmark treats missing measured queue-slack proof as incomplete 
 
   assert.equal(details.backpressureEvidenceComplete, false);
   assert.ok(blockers.includes('queue-pause-without-measured-receipt-cursor-queue-slack-proof'));
+});
+
+test('guarded benchmark treats missing measured backpressure proof as incomplete backpressure evidence', () => {
+  const report = smallBenchmark();
+  const mutated = clone(report);
+
+  mutated.evidence.backpressure.queuePauseHasMeasuredReceiptCursorBackpressure = false;
+
+  const details = productionThroughputDetails(mutated);
+  const blockers = productionThroughputBlockers(mutated);
+
+  assert.equal(details.backpressureConsistency.backpressureEvidenceComplete, false);
+  assert.ok(blockers.includes('queue-pause-without-measured-receipt-cursor-backpressure-proof'));
 });
