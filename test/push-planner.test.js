@@ -17589,6 +17589,184 @@ test('blocks local same-plan created comment user identity while preserving a ma
   assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin changes */');
 });
 
+test('blocks local comment meta graph resources while preserving a matching independent edit and remote-only plugin drift', () => {
+  const resourceKey = 'row:["wp_commentmeta","meta_id:41"]';
+  const base = baseSite();
+  base.db.wp_commentmeta = {
+    'meta_id:41': {
+      meta_id: 41,
+      comment_id: 20,
+      meta_key: 'note',
+      meta_value: 'Base comment meta',
+    },
+  };
+  base.db.wp_comments = {
+    'comment_ID:20': {
+      comment_ID: 20,
+      comment_post_ID: 1,
+      comment_content: 'Base referenced comment',
+    },
+  };
+  base.db.wp_posts['ID:1'].post_title = 'Base shared post title';
+
+  const local = baseSite();
+  local.db.wp_commentmeta = {
+    'meta_id:41': {
+      meta_id: 41,
+      comment_id: 20,
+      meta_key: 'note',
+      meta_value: 'Local comment meta',
+    },
+  };
+  local.db.wp_comments = JSON.parse(JSON.stringify(base.db.wp_comments));
+  local.db.wp_posts['ID:1'].post_title = 'Shared post title';
+
+  const remote = baseSite();
+  remote.db.wp_commentmeta = JSON.parse(JSON.stringify(base.db.wp_commentmeta));
+  remote.db.wp_comments = JSON.parse(JSON.stringify(base.db.wp_comments));
+  remote.db.wp_posts['ID:1'].post_title = 'Shared post title';
+  remote.plugins.forms.description = 'remote-only plugin drift';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin drift */';
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  const matchingEdit = decisionFor(plan, 'row:["wp_posts","ID:1"]');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(plan.conflicts.length, 0);
+  assert.equal(blocker.class, 'unsupported-commentmeta-resource');
+  assert.equal(blocker.resourceKind, 'comment-meta');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.reason, 'Comment meta graph resources are not yet supported by the planner.');
+  assert.equal(matchingEdit.decision, 'already-in-sync');
+  assert.equal(matchingEdit.change.localChange, 'update');
+  assert.equal(matchingEdit.change.remoteChange, 'update');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('Local comment meta'), false);
+  assert.equal(planJson.includes('Base comment meta'), false);
+  assert.equal(planJson.includes('Base referenced comment'), false);
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin drift');
+  assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin drift */');
+});
+
+test('blocks comment meta deletes while preserving a matching independent edit and remote-only plugin removals', () => {
+  const resourceKey = 'row:["wp_commentmeta","meta_id:42"]';
+  const base = baseSite();
+  base.db.wp_commentmeta = {
+    'meta_id:42': {
+      meta_id: 42,
+      comment_id: 21,
+      meta_key: 'note',
+      meta_value: 'Base delete comment meta',
+    },
+  };
+  base.db.wp_comments = {
+    'comment_ID:21': {
+      comment_ID: 21,
+      comment_post_ID: 1,
+      comment_content: 'Base delete referenced comment',
+    },
+  };
+  base.db.wp_posts['ID:1'].post_title = 'Base delete post title';
+
+  const local = baseSite();
+  local.db.wp_commentmeta = JSON.parse(JSON.stringify(base.db.wp_commentmeta));
+  local.db.wp_comments = JSON.parse(JSON.stringify(base.db.wp_comments));
+  delete local.db.wp_commentmeta['meta_id:42'];
+  local.db.wp_posts['ID:1'].post_title = 'Shared delete post title';
+
+  const remote = baseSite();
+  remote.db.wp_commentmeta = JSON.parse(JSON.stringify(base.db.wp_commentmeta));
+  remote.db.wp_comments = JSON.parse(JSON.stringify(base.db.wp_comments));
+  remote.db.wp_posts['ID:1'].post_title = 'Shared delete post title';
+  delete remote.plugins.forms;
+  delete remote.files['wp-content/plugins/forms/forms.php'];
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  const matchingEdit = decisionFor(plan, 'row:["wp_posts","ID:1"]');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(plan.conflicts.length, 0);
+  assert.equal(blocker.class, 'unsupported-commentmeta-resource');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.reason, 'Comment meta graph resource deletes are not yet supported by the planner.');
+  assert.equal(matchingEdit.decision, 'already-in-sync');
+  assert.equal(matchingEdit.change.localChange, 'update');
+  assert.equal(matchingEdit.change.remoteChange, 'update');
+  assert.equal(planJson.includes('Base delete comment meta'), false);
+  assert.equal(planJson.includes('Base delete referenced comment'), false);
+  assert.equal(Object.hasOwn(remote.plugins, 'forms'), false);
+  assert.equal(Object.hasOwn(remote.files, 'wp-content/plugins/forms/forms.php'), false);
+});
+
+test('blocks local same-plan created comment meta identity while preserving remote-only plugin changes', () => {
+  const resourceKey = 'row:["wp_commentmeta","meta_id:43"]';
+  const targetResourceKey = 'row:["wp_comments","comment_ID:22"]';
+  const base = baseSite();
+  base.db.wp_commentmeta = {
+    'meta_id:43': {
+      meta_id: 43,
+      comment_id: 22,
+      meta_key: 'note',
+      meta_value: 'Base same-plan comment meta',
+    },
+  };
+
+  const local = baseSite();
+  local.db.wp_commentmeta = {
+    'meta_id:43': {
+      meta_id: 43,
+      comment_id: 22,
+      meta_key: 'note',
+      meta_value: 'Local same-plan comment meta',
+    },
+  };
+  local.db.wp_comments = {
+    'comment_ID:22': {
+      comment_ID: 22,
+      comment_post_ID: 1,
+      comment_content: 'Local same-plan comment',
+    },
+  };
+
+  const remote = baseSite();
+  remote.db.wp_commentmeta = JSON.parse(JSON.stringify(base.db.wp_commentmeta));
+  remote.plugins.forms.description = 'remote-only plugin changes';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin changes */';
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  const targetBlocker = plan.blockers.find((entry) => entry.resourceKey === targetResourceKey);
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(decisionFor(plan, targetResourceKey), undefined);
+  assert.equal(plan.conflicts.length, 0);
+  assert.equal(blocker.class, 'unsupported-commentmeta-resource');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_commentmeta","meta_id:43"] is created in the same plan as a comment identity that depends on it, and identity rewriting is not yet supported.');
+  assert.equal(targetBlocker.class, 'unsupported-comments-users-resource');
+  assert.equal(targetBlocker.resourceKey, targetResourceKey);
+  assert.equal(targetBlocker.reason, 'Comments graph resources are not yet supported by the planner.');
+  assert.equal(planJson.includes('Local same-plan comment meta'), false);
+  assert.equal(planJson.includes('Base same-plan comment meta'), false);
+  assert.equal(planJson.includes('Local same-plan comment'), false);
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin changes');
+  assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin changes */');
+});
+
 test('blocks local same-plan created user meta identity while preserving remote-only plugin drift', () => {
   const resourceKey = 'row:["wp_usermeta","umeta_id:77"]';
   const base = baseSite();

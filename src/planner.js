@@ -264,6 +264,30 @@ export function createPushPlan({ base, local, remote, now = new Date() }) {
         continue;
       }
 
+      const remoteCommentmetaSupport = unsupportedCommentmetaResourceSupport({
+        resource,
+        baseValue,
+        localValue,
+        remoteValue,
+        resources,
+        base,
+        local,
+        remote,
+      });
+      if (!remoteCommentmetaSupport.supported) {
+        addUnsupportedCommentmetaResourceBlocker(plan, {
+          resource,
+          support: remoteCommentmetaSupport,
+          baseValue,
+          localValue,
+          remoteValue,
+          baseHash,
+          localHash,
+          remoteHash,
+        });
+        continue;
+      }
+
       const remoteUsermetaSupport = unsupportedUsermetaResourceSupport({
         resource,
         baseValue,
@@ -578,6 +602,30 @@ export function createPushPlan({ base, local, remote, now = new Date() }) {
         addUnsupportedCommentsUsersResourceBlocker(plan, {
           resource,
           support: commentsUsersSupport,
+          baseValue,
+          localValue,
+          remoteValue,
+          baseHash,
+          localHash,
+          remoteHash,
+        });
+        continue;
+      }
+
+      const commentmetaSupport = unsupportedCommentmetaResourceSupport({
+        resource,
+        baseValue,
+        localValue,
+        remoteValue,
+        resources,
+        base,
+        local,
+        remote,
+      });
+      if (!commentmetaSupport.supported) {
+        addUnsupportedCommentmetaResourceBlocker(plan, {
+          resource,
+          support: commentmetaSupport,
           baseValue,
           localValue,
           remoteValue,
@@ -916,6 +964,30 @@ export function createPushPlan({ base, local, remote, now = new Date() }) {
         addUnsupportedCommentsUsersResourceBlocker(plan, {
           resource,
           support: commentsUsersSupport,
+          baseValue,
+          localValue,
+          remoteValue,
+          baseHash,
+          localHash,
+          remoteHash,
+        });
+        continue;
+      }
+
+      const commentmetaSupport = unsupportedCommentmetaResourceSupport({
+        resource,
+        baseValue,
+        localValue,
+        remoteValue,
+        resources,
+        base,
+        local,
+        remote,
+      });
+      if (!commentmetaSupport.supported) {
+        addUnsupportedCommentmetaResourceBlocker(plan, {
+          resource,
+          support: commentmetaSupport,
           baseValue,
           localValue,
           remoteValue,
@@ -1784,6 +1856,7 @@ function isPluginOwnedDataResource(resource, owner) {
 }
 
 const WORDPRESS_GRAPH_TABLE_SUFFIXES = [
+  'commentmeta',
   'comments',
   'term_relationships',
   'term_taxonomy',
@@ -2064,6 +2137,15 @@ function wordpressGraphReferences(resource, value) {
     });
   }
 
+  if (suffix === 'commentmeta') {
+    addReference({
+      field: 'comment_id',
+      relationshipType: 'commentmeta-comment',
+      targetTable: 'comments',
+      targetId: value.comment_id,
+    });
+  }
+
   if (suffix === 'postmeta') {
     addReference({
       field: 'post_id',
@@ -2234,6 +2316,9 @@ function samePlanCreatedGraphIdentitySupport({ resource, resources, base, local,
   const commentUserInboundReference = inboundReferences.find((reference) =>
     reference.relationshipType === 'comment-user'
     && reference.targetResource?.table === 'wp_users');
+  const commentmetaCommentInboundReference = inboundReferences.find((reference) =>
+    reference.relationshipType === 'commentmeta-comment'
+    && reference.targetResource?.table === 'wp_comments');
   const usermetaUserInboundReference = inboundReferences.find((reference) =>
     reference.relationshipType === 'usermeta-user'
     && reference.targetResource?.table === 'wp_users');
@@ -2256,6 +2341,8 @@ function samePlanCreatedGraphIdentitySupport({ resource, resources, base, local,
                 ? `WordPress graph mutation ${resource.key} is created in the same plan as a comment parent target that depends on it, and identity rewriting is not yet supported.`
               : commentUserInboundReference
                 ? `WordPress graph mutation ${resource.key} is created in the same plan as a comment user target that depends on it, and identity rewriting is not yet supported.`
+                : commentmetaCommentInboundReference
+                  ? `WordPress graph mutation ${resource.key} is created in the same plan as a comment meta target that depends on it, and identity rewriting is not yet supported.`
                 : usermetaUserInboundReference
                   ? `WordPress graph mutation ${resource.key} is created in the same plan as a user meta target that depends on it, and identity rewriting is not yet supported.`
                   : `WordPress graph mutation ${resource.key} is created in the same plan as a relationship that depends on it, and identity rewriting is not yet supported.`,
@@ -2268,6 +2355,7 @@ function isWordPressGraphReferenceResource(resource) {
     return false;
   }
   return [
+    'wp_commentmeta',
     'wp_comments',
     'wp_posts',
     'wp_postmeta',
@@ -2308,6 +2396,9 @@ function wordpressGraphPrimaryIdField(suffix) {
   }
   if (suffix === 'comments') {
     return 'comment_ID';
+  }
+  if (suffix === 'commentmeta') {
+    return 'meta_id';
   }
   if (suffix === 'users') {
     return 'ID';
@@ -2775,6 +2866,39 @@ function addUnsupportedCommentsUsersResourceBlocker(plan, {
     resource,
     resourceKey: resource.key,
     reason: support.reason || `Comments and users graph resource ${resource.key} is not yet supported by the planner.`,
+    unsupportedState: support.unsupportedState || null,
+    baseHash,
+    localHash,
+    remoteHash,
+    change: changeEvidence(
+      resource,
+      baseValue,
+      localValue,
+      remoteValue,
+      baseHash,
+      localHash,
+      remoteHash,
+    ),
+  });
+}
+
+function addUnsupportedCommentmetaResourceBlocker(plan, {
+  resource,
+  support,
+  baseValue,
+  localValue,
+  remoteValue,
+  baseHash,
+  localHash,
+  remoteHash,
+}) {
+  plan.blockers.push({
+    id: `blocker-unsupported-commentmeta-resource-${plan.blockers.length + 1}`,
+    class: support.className || 'unsupported-commentmeta-resource',
+    resourceKind: 'comment-meta',
+    resource,
+    resourceKey: resource.key,
+    reason: support.reason || `Comment meta resource ${resource.key} is not yet supported by the planner.`,
     unsupportedState: support.unsupportedState || null,
     baseHash,
     localHash,
@@ -3305,6 +3429,63 @@ function unsupportedCommentsUsersResourceSupport({ resource, baseValue, localVal
     reason: resource.table === 'wp_users'
       ? 'User graph resources are not yet supported by the planner.'
       : 'Comments graph resources are not yet supported by the planner.',
+  };
+}
+
+function unsupportedCommentmetaResourceSupport({ resource, baseValue, localValue, remoteValue, resources, base, local, remote }) {
+  if (resource.type !== 'row' || resource.table !== 'wp_commentmeta') {
+    return { supported: true };
+  }
+
+  const candidate = localValue !== ABSENT ? localValue : (baseValue !== ABSENT ? baseValue : remoteValue);
+  if (!candidate || candidate === ABSENT) {
+    return { supported: true };
+  }
+  const remoteOnlyDrift = (
+    stableStringify(localValue) === stableStringify(baseValue)
+    && stableStringify(remoteValue) !== stableStringify(baseValue)
+  );
+  const convergedDrift = (
+    localValue !== ABSENT
+    && remoteValue !== ABSENT
+    && stableStringify(localValue) === stableStringify(remoteValue)
+    && stableStringify(localValue) !== stableStringify(baseValue)
+  );
+
+  if (localValue === ABSENT) {
+    return {
+      supported: false,
+      className: 'unsupported-commentmeta-resource',
+      unsupportedState: 'delete',
+      reason: 'Comment meta graph resource deletes are not yet supported by the planner.',
+    };
+  }
+
+  const references = wordpressGraphReferences(resource, candidate);
+  const commentGraphReference = references.find((reference) =>
+    reference.relationshipType === 'commentmeta-comment'
+    && reference.targetResource?.table === 'wp_comments'
+    && getResource(remote, reference.targetResource) === ABSENT
+    && getResource(local, reference.targetResource) !== ABSENT);
+
+  if (commentGraphReference) {
+    return {
+      supported: false,
+      className: 'unsupported-commentmeta-resource',
+      unsupportedState: 'same-plan-reference',
+      reason: `WordPress graph mutation ${resource.key} is created in the same plan as a comment identity that depends on it, and identity rewriting is not yet supported.`,
+    };
+  }
+
+  return {
+    supported: false,
+    className: 'unsupported-commentmeta-resource',
+    unsupportedState: convergedDrift
+      ? 'converged-drift'
+      : remoteOnlyDrift
+        ? 'remote-only-drift'
+        : 'local-or-divergent-drift',
+    reason: 'Comment meta graph resources are not yet supported by the planner.',
   };
 }
 
