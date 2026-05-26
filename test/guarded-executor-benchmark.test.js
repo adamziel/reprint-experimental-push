@@ -2413,10 +2413,15 @@ test('guarded benchmark refuses production throughput claims until production ga
       'queue-pause-without-measured-and-aligned-receipt-cursor-backpressure-proof',
     ),
   );
+  assert.equal(missingAlignedBackpressureDetails.receiptCursorPauseFootprintBaseComplete, true);
   assert.equal(missingAlignedBackpressureDetails.receiptCursorPauseFootprintComplete, false);
   assert.equal(missingAlignedBackpressureDetails.receiptCursorPauseFootprintVisible, false);
   assert.equal(missingAlignedBackpressureDetails.queueHeadroomVisibleAndMeasured, false);
   assert.equal(missingAlignedBackpressureDetails.queueHeadroomVisibleAndMeasuredAndAligned, false);
+  assert.equal(
+    missingAlignedBackpressureDetails.backpressureConsistency.receiptCursorPauseFootprintBaseComplete,
+    true,
+  );
 
   const missingBackpressureAlignedSlackProof = clone(report);
   missingBackpressureAlignedSlackProof.evidence.backpressure.queuePauseHasBackpressureAlignedReceiptCursorQueueSlack = false;
