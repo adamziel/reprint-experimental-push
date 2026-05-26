@@ -718,6 +718,22 @@ test('production auth/session source loader fails closed when required fields ar
   });
 });
 
+test('production auth/session source loader fails closed when required fields contain control characters', () => {
+  const source = loadAuthSessionSource(
+    `${process.execPath} -e "process.stdout.write(JSON.stringify({sourceUrl:'http://127.0.0.1:8080/\\npath', username:'reprint_push_admin', applicationPassword:'secret-value'}))"`,
+    {
+      ...process.env,
+      NODE_NO_WARNINGS: '1',
+    },
+    repoRoot,
+  );
+
+  assert.deepEqual(source, {
+    ok: false,
+    error: 'Auth session source command must return sourceUrl',
+  });
+});
+
 test('production-shaped release verify synthesizes the packaged production auth/session source command on the checked release path', () => {
   const expectedSourceCommand = buildAuthSessionSourceCommand({
     sourceUrl: 'http://127.0.0.1:8080',

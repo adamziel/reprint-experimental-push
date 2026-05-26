@@ -106,7 +106,12 @@ function normalizeAuthSessionSourceField(value) {
     return '';
   }
 
-  return value.trim();
+  const normalized = value.trim();
+  if (!normalized || /[\u0000-\u001f\u007f]/.test(normalized)) {
+    return '';
+  }
+
+  return normalized;
 }
 
 function normalizeAuthSessionSourceTimeout(timeout) {
