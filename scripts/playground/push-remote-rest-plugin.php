@@ -541,8 +541,6 @@ function reprint_push_lab_rest_merge_checked_db_journal_contract(array $db_journ
 {
     foreach ([
         'acceptedOnCheckedBoundary',
-        'ownership',
-        'leaseFence',
         'scope',
         'rowCount',
         'latestRows',
@@ -551,6 +549,18 @@ function reprint_push_lab_rest_merge_checked_db_journal_contract(array $db_journ
     ] as $key) {
         if (!array_key_exists($key, $db_journal) && array_key_exists($key, $checked_summary)) {
             $db_journal[$key] = $checked_summary[$key];
+        }
+    }
+
+    foreach (['ownership', 'leaseFence'] as $nested_key) {
+        $existing = isset($db_journal[$nested_key]) && is_array($db_journal[$nested_key])
+            ? $db_journal[$nested_key]
+            : [];
+        $checked = isset($checked_summary[$nested_key]) && is_array($checked_summary[$nested_key])
+            ? $checked_summary[$nested_key]
+            : [];
+        if ($existing !== [] || $checked !== []) {
+            $db_journal[$nested_key] = array_merge($checked, $existing);
         }
     }
 
