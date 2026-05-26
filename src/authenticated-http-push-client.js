@@ -2198,6 +2198,9 @@ function resolveInvalidProductionAuthSessionLifecycleFlag(session) {
     ['revoked', session.revoked],
     ['cleanedUp', session.cleanedUp],
     ['cleanup', session.cleanup],
+    ['expired', session.expired],
+    ['rotated', session.rotated],
+    ['preserved', session.preserved],
   ];
 
   for (const [name, value] of lifecycleFlags) {

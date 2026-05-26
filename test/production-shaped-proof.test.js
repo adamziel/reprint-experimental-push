@@ -1124,6 +1124,21 @@ test('production auth/session lifecycle helper fails closed on malformed lifecyc
       observed: 'invalid-cleanup',
     },
   );
+
+  assert.deepEqual(
+    evaluateProductionAuthSessionLifecycle({
+      id: 'psh_01j00000000000000000000000',
+      type: 'production-auth-session',
+      status: 'active',
+      expiresAt: '2099-01-01T00:00:00Z',
+      preserved: 'yes',
+    }),
+    {
+      ok: false,
+      required: 'boolean lifecycle flags',
+      observed: 'invalid-preserved',
+    },
+  );
 });
 
 test('production auth/session lifecycle summary helper requires a preserved active read', () => {
