@@ -425,6 +425,15 @@ test('guarded benchmark refuses production throughput claims until production ga
     ),
   );
 
+  const hiddenStorageReceipts = clone(report);
+  hiddenStorageReceipts.evidence.atomicGroup.productionRowBatchExecutorVisible = true;
+  hiddenStorageReceipts.evidence.atomicGroup.productionStorageReceiptsVisible = false;
+  assert.ok(
+    productionThroughputBlockers(hiddenStorageReceipts).includes(
+      'production-row-batch-executor-without-storage-receipts',
+    ),
+  );
+
   const tamperedQueueSlackSummary = clone(report);
   tamperedQueueSlackSummary.evidence.backpressure.receiptCursorQueueSlackBytes = null;
   assert.ok(

@@ -844,6 +844,12 @@ export function productionThroughputBlockers(report) {
   ) {
     blockers.push('production-row-batch-executor-without-atomic-group-metadata');
   }
+  if (
+    report.evidence.atomicGroup.productionRowBatchExecutorVisible === true
+    && report.evidence.atomicGroup.productionStorageReceiptsVisible !== true
+  ) {
+    blockers.push('production-row-batch-executor-without-storage-receipts');
+  }
   return blockers;
 }
 
