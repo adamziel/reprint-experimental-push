@@ -6,12 +6,12 @@ The project is **not releasable as a production WordPress push path**.
 
 - Fresh remote heads at audit time, checked on May 26, 2026:
 
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `08f4e466`
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `81d35989`
-- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `46952948`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `09c26162`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `7c843eba`
+- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `14c76694`
 - `origin/lane/fast-paths` -> `8c5c2ccb`
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `4ba8fb91`
-- `origin/lane/reliable-executor` -> `1b709fb3`
+- `origin/lane/reliable-executor` -> `7a0e3337`
 - `origin/lane/no-data-loss-invariants` -> `f99d6eed`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `76dc8545`
 - `origin/lane/no-data-loss-recovery` -> `9e077c10`
@@ -32,15 +32,15 @@ Fresh lane proof since the last audit pass improved the local evidence floor,
 but it did not change the release conclusion:
 
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now records
-  `59b2a2ca`, refreshing public progress freshness only.
+  `09c26162`, refreshing public progress freshness only.
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now records
-  `81d35989`, refreshing the supervisor progress surface only.
+  `7c843eba`, refreshing the supervisor progress surface only.
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` now records
-  `3eca170d`. This refreshes the audit snapshot only and does not change the
+  `14c76694`. This refreshes the audit snapshot only and does not change the
   release boundary.
 - `origin/lane/fast-paths` now records `8c5c2ccb`, tightening backpressure
   evidence checks only.
-- `origin/lane/reliable-executor` now records `1b709fb3`, tightening release
+- `origin/lane/reliable-executor` now records `7a0e3337`, tightening release
   proof timeout logging and child cleanup again, but still not proving
   production auth/session lifecycle or a live-source mutation boundary.
 - `origin/lane/no-data-loss-invariants` now records `f99d6eed`, adding special-
