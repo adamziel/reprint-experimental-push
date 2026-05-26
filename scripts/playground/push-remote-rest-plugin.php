@@ -2779,6 +2779,9 @@ function reprint_push_lab_rest_auth_evidence(WP_REST_Request $request): array
         if (($lifecycle_drift['mode'] ?? '') === 'playground-fallback') {
             $production_session_playground_fallback = true;
         }
+        if (($lifecycle_drift['mode'] ?? '') === 'playground-fallback-invalid') {
+            $production_session_playground_fallback = ['lab-fallback'];
+        }
         if (($lifecycle_drift['mode'] ?? '') === 'warning') {
             $production_session_warning = 'Lab-only Playground Basic bootstrap fallback; not production authentication.';
         }
@@ -2849,7 +2852,7 @@ function reprint_push_lab_rest_auth_session_lifecycle_drift(WP_REST_Request $req
         return null;
     }
 
-    if (!in_array($drift_mode, ['revoked', 'cleaned-up', 'expired', 'rotated', 'playground-fallback', 'warning', 'warning-invalid'], true)) {
+    if (!in_array($drift_mode, ['revoked', 'cleaned-up', 'expired', 'rotated', 'playground-fallback', 'playground-fallback-invalid', 'warning', 'warning-invalid'], true)) {
         return null;
     }
 
