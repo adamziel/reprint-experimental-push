@@ -905,6 +905,7 @@ export function productionRecoverySupportReport(writer) {
   if (
     isStrictPlainObject(writer?.artifactRefs)
     && Object.hasOwn(writer.artifactRefs, 'remote')
+    && writer.artifactRefs.remote !== null
     && (
       typeof writer.artifactRefs.remote !== 'string'
       || writer.artifactRefs.remote.length === 0
@@ -915,6 +916,7 @@ export function productionRecoverySupportReport(writer) {
   if (
     isStrictPlainObject(inspectedArtifactRefs)
     && Object.hasOwn(inspectedArtifactRefs, 'remote')
+    && inspectedArtifactRefs.remote !== null
     && (
       typeof inspectedArtifactRefs.remote !== 'string'
       || inspectedArtifactRefs.remote.length === 0

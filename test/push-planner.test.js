@@ -20654,6 +20654,41 @@ test('production recovery support report exposes the remaining release-path bloc
   assert.equal(report.inspectionErrorMessage, null);
 });
 
+test('production recovery support report accepts a fenced restart-readable journal without remote artifact ownership', () => {
+  const filePath = tempRecoveryJournalPath();
+  const journal = openProductionRecoveryJournal(filePath, {
+    truncate: true,
+    now: fixedNow,
+    claimId: 'claim-no-remote-artifact',
+    writerLease: { id: 'lease-no-remote-artifact' },
+  });
+  appendRecoveryClaimOpened(journal, {
+    plan: { id: 'plan-no-remote-artifact' },
+    current: baseSite(),
+    claimId: 'claim-no-remote-artifact',
+    artifactRefs: {
+      journal: filePath,
+    },
+  });
+  journal.appendEvent('journal-opened', {
+    planId: 'plan-no-remote-artifact',
+    state: 'opened',
+    observedHash: 'snapshot-hash-only',
+    artifactRefs: {
+      journal: filePath,
+    },
+  });
+  journal.close();
+
+  const report = productionRecoverySupportReport(journal);
+
+  assert.equal(report.supported, true);
+  assert.deepEqual(report.missingDependency, []);
+  assert.equal(report.inspectedJournalPath, filePath);
+  assert.equal(report.writerJournalPath, filePath);
+  assert.equal(report.inspectionErrorMessage, null);
+});
+
 test('production recovery support report accepts stale-claim fencing records before journal-opened', () => {
   const filePath = tempRecoveryJournalPath();
   const remoteArtifactPath = `${path.dirname(filePath)}/remote.jsonl`;
@@ -20774,6 +20809,41 @@ test('production durable journal support accepts a fenced claim before apply ope
     artifactRefs: {
       journal: filePath,
       remote: remoteArtifactPath,
+    },
+  });
+
+  const result = applyPlan(remote, plan, {
+    durableJournal: journal,
+    requireProductionDurableJournal: true,
+  });
+
+  assert.equal(result.recoveryState.status, 'fully-updated-remote');
+  journal.close();
+});
+
+test('production durable journal support accepts a fenced claim without remote artifact ownership', () => {
+  const base = baseSite();
+  const local = structuredClone(base);
+  local.db.wp_options['option_name:blogname'] = {
+    option_name: 'blogname',
+    option_value: 'Local Site',
+  };
+  const remote = structuredClone(base);
+  const plan = planFor(base, local, remote);
+  const filePath = tempRecoveryJournalPath();
+  const journal = openProductionRecoveryJournal(filePath, {
+    truncate: true,
+    now: fixedNow,
+    claimId: 'claim-pre-apply-no-remote-artifact',
+    writerLease: { id: 'lease-pre-apply-no-remote-artifact' },
+  });
+
+  appendRecoveryClaimOpened(journal, {
+    plan,
+    current: remote,
+    claimId: 'claim-pre-apply-no-remote-artifact',
+    artifactRefs: {
+      journal: filePath,
     },
   });
 
