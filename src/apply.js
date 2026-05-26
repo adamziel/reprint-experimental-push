@@ -1795,11 +1795,17 @@ function recordDurableRecoveryState(writer, current, plan, recoveryState, suppor
   const blockedClaimState = blockedInspection?.records
     ? classifyRecoveryJournalClaims(blockedInspection.records)
     : null;
-  const writerHasValidLeaseIdentity = hasValidProductionLeaseIdentity(writer?.writerLease);
-  const writerHasValidLeaseFence = hasValidProductionLeaseIdentity(writer?.leaseFence)
+  const writerHasOwnLeaseIdentity = Object.hasOwn(writer ?? {}, 'writerLease');
+  const writerHasOwnLeaseFence = Object.hasOwn(writer ?? {}, 'leaseFence');
+  const writerHasOwnClaimHash = Object.hasOwn(writer ?? {}, 'claimHash');
+  const writerHasValidLeaseIdentity = writerHasOwnLeaseIdentity
+    && hasValidProductionLeaseIdentity(writer?.writerLease);
+  const writerHasValidLeaseFence = writerHasOwnLeaseFence
+    && hasValidProductionLeaseIdentity(writer?.leaseFence)
     && writerHasValidLeaseIdentity
     && productionLeaseIdentitiesMatch(writer.leaseFence, writer.writerLease);
-  const writerHasValidClaimHash = typeof writer?.claimHash === 'string'
+  const writerHasValidClaimHash = writerHasOwnClaimHash
+    && typeof writer?.claimHash === 'string'
     && /^[a-f0-9]{64}$/.test(writer.claimHash);
   const writerClaimHashMatchesLease = writerHasValidLeaseIdentity
     && writerHasValidClaimHash
