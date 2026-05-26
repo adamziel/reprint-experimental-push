@@ -6,18 +6,18 @@ The project is **not releasable as a production WordPress push path**.
 
 Fresh remote heads at audit time, checked on May 26, 2026:
 
-- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `40d5aa1a`
+- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `cc689f61`
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `e91685f1`
 - `origin/lane/reliable-executor` -> `b8d91776`
 - `origin/lane/no-data-loss-invariants` -> `c718a4af`
 - `origin/lane/no-data-loss-recovery` -> `47b675c0`
 - `origin/lane/fast-paths` -> `cd0fddad`
-- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `d70fc061`
+- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `27d0c72e`
 - `origin/lane/critic` -> `cba0890b`
 - `origin/lane/progress-publisher` -> `7695e1f9`
 - `origin/lane/cycle-20260525-mainwindows-2349/critic` -> `cba0890b`
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `e91685f1`
-- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `40d5aa1a`
+- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `cc689f61`
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `fec1770b`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `4372167e`
 - `origin/lane/same-plan-wordpress-graph-create` -> `a719e09c`
@@ -36,6 +36,12 @@ but it did not change the release conclusion:
 - `origin/lane/reliable-executor` now tightens production-proof subprocess
   bounds at `b8d91776`. That is useful harness hardening, but the live proof
   path is still lab-backed and the verdict does not move.
+- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` has advanced to
+  `cc689f61`, which continues the fail-closed headroom mismatch tightening.
+  It is still not release-grade live-source evidence.
+- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` has
+  advanced to `27d0c72e`, refreshing the audit snapshot. That updates the
+  evidence surface but does not change the release boundary.
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` now tightens queue
   headroom evidence at `40d5aa1a`, and `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor`
   now refreshes the progress visibility handoff at `b49f66db`. These are both
