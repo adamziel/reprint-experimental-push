@@ -730,6 +730,48 @@ function reprint_push_lab_db_journal_claim_summary(
     return $summary;
 }
 
+function reprint_push_lab_db_journal_claim_contract_matches($claim): bool
+{
+    if (!is_array($claim)) {
+        return false;
+    }
+
+    $has_previous_claim_identity = reprint_push_lab_db_journal_non_empty_string($claim['previousClaimKeyHash'] ?? null)
+        || reprint_push_lab_db_journal_is_positive_int($claim['previousClaimSequence'] ?? null)
+        || reprint_push_lab_db_journal_non_empty_string($claim['previousClaimEvent'] ?? null);
+    $has_abandoned_claim_identity = reprint_push_lab_db_journal_is_positive_int($claim['abandonedSequence'] ?? null)
+        || reprint_push_lab_db_journal_non_empty_string($claim['abandonedEvent'] ?? null);
+
+    return reprint_push_lab_db_journal_non_empty_string($claim['status'] ?? null)
+        && reprint_push_lab_db_journal_non_empty_string($claim['activeClaimKeyHash'] ?? null)
+        && reprint_push_lab_db_journal_is_positive_int($claim['activeClaimSequence'] ?? null)
+        && reprint_push_lab_db_journal_non_empty_string($claim['activeClaimEvent'] ?? null)
+        && reprint_push_lab_db_journal_non_empty_string($claim['idempotencyKeyHash'] ?? null)
+        && reprint_push_lab_db_journal_non_empty_string($claim['requestHash'] ?? null)
+        && is_bool($claim['staleClaimRejected'] ?? null)
+        && (!$has_previous_claim_identity || (
+            reprint_push_lab_db_journal_non_empty_string($claim['previousClaimKeyHash'] ?? null)
+            && reprint_push_lab_db_journal_is_positive_int($claim['previousClaimSequence'] ?? null)
+            && reprint_push_lab_db_journal_non_empty_string($claim['previousClaimEvent'] ?? null)
+        ))
+        && (!$has_abandoned_claim_identity || (
+            reprint_push_lab_db_journal_is_positive_int($claim['abandonedSequence'] ?? null)
+            && reprint_push_lab_db_journal_non_empty_string($claim['abandonedEvent'] ?? null)
+        ))
+        && (!reprint_push_lab_db_journal_is_positive_int($claim['previousStartedSequence'] ?? null) || $has_previous_claim_identity)
+        && (($claim['staleClaimRejected'] ?? false) !== true || $has_previous_claim_identity);
+}
+
+function reprint_push_lab_db_journal_non_empty_string($value): bool
+{
+    return is_string($value) && $value !== '';
+}
+
+function reprint_push_lab_db_journal_is_positive_int($value): bool
+{
+    return is_int($value) && $value > 0;
+}
+
 function reprint_push_lab_db_journal_event_count(array $event_summaries, string $event): int
 {
     foreach ($event_summaries as $event_summary) {

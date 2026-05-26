@@ -795,6 +795,11 @@ function reprint_push_lab_rest_attach_checked_db_journal_contract(
             );
         }
     }
+    if (isset($result['dbJournal']) && is_array($result['dbJournal'])) {
+        $result['dbJournal'] = reprint_push_lab_rest_fail_closed_checked_db_journal_acceptance(
+            $result['dbJournal']
+        );
+    }
     if (is_array($storage_guard)) {
         $prefer_checked_storage_guard = $upgrade_checked_storage_guard
             || reprint_push_lab_rest_should_prefer_authoritative_checked_storage_guard(
@@ -814,6 +819,19 @@ function reprint_push_lab_rest_attach_checked_db_journal_contract(
     }
 
     return $result;
+}
+
+function reprint_push_lab_rest_fail_closed_checked_db_journal_acceptance(array $db_journal): array
+{
+    if (($db_journal['acceptedOnCheckedBoundary'] ?? false) !== true) {
+        return $db_journal;
+    }
+
+    if (!reprint_push_lab_db_journal_claim_contract_matches($db_journal['claim'] ?? null)) {
+        $db_journal['acceptedOnCheckedBoundary'] = false;
+    }
+
+    return $db_journal;
 }
 
 function reprint_push_lab_rest_merge_checked_db_journal_contract(array $db_journal, array $checked_summary): array

@@ -290,6 +290,15 @@ function runFinalizeAuthenticatedApplyResult(result, authEvidence, signedRequest
     JSON.stringify({
       acceptedOnCheckedBoundary: true,
       scope: 'checked live production-shaped journal surface; not local Playground fixture only',
+      claim: {
+        status: 'active',
+        activeClaimKeyHash: 'claim-hash-01',
+        activeClaimSequence: 18,
+        activeClaimEvent: 'idempotency-opened',
+        idempotencyKeyHash: 'idem-hash-01',
+        requestHash: 'request-hash-01',
+        staleClaimRejected: false,
+      },
       ownership: {
         ownsJournal: true,
         restartReadable: true,
@@ -378,6 +387,15 @@ function runFinalizeAuthenticatedJournalResult(result, authEvidence, signedReque
     JSON.stringify({
       scope: 'checked live production-shaped journal surface; not local Playground fixture only',
       acceptedOnCheckedBoundary: true,
+      claim: {
+        status: 'active',
+        activeClaimKeyHash: 'claim-hash-01',
+        activeClaimSequence: 18,
+        activeClaimEvent: 'idempotency-opened',
+        idempotencyKeyHash: 'idem-hash-01',
+        requestHash: 'request-hash-01',
+        staleClaimRejected: false,
+      },
       ownership: {
         ownsJournal: true,
         restartReadable: true,
@@ -1468,6 +1486,18 @@ test('checked recovery inspect evidence still merges the checked durable journal
     {
       acceptedOnCheckedBoundary: true,
       scope: 'checked live production-shaped journal surface; not local Playground fixture only',
+      claim: {
+        status: 'stale-claim-rejected',
+        activeClaimKeyHash: 'retry-claim-hash-02',
+        activeClaimSequence: 33,
+        activeClaimEvent: 'stale-claim-rejected',
+        idempotencyKeyHash: 'idem-hash-01',
+        requestHash: 'request-hash-01',
+        staleClaimRejected: true,
+        previousClaimKeyHash: 'retry-claim-hash-01',
+        previousClaimSequence: 18,
+        previousClaimEvent: 'idempotency-opened',
+      },
       ownership: {
         ownsJournal: true,
         restartReadable: true,
@@ -1533,6 +1563,18 @@ test('checked recovery inspect evidence still merges the checked durable journal
         receiptHash: 'receipt-hash-456',
         acceptedOnCheckedBoundary: true,
         scope: 'checked live production-shaped journal surface; not local Playground fixture only',
+        claim: {
+          status: 'stale-claim-rejected',
+          activeClaimKeyHash: 'retry-claim-hash-02',
+          activeClaimSequence: 33,
+          activeClaimEvent: 'stale-claim-rejected',
+          idempotencyKeyHash: 'idem-hash-01',
+          requestHash: 'request-hash-01',
+          staleClaimRejected: true,
+          previousClaimKeyHash: 'retry-claim-hash-01',
+          previousClaimSequence: 18,
+          previousClaimEvent: 'idempotency-opened',
+        },
         latestRows: [
           {
             event: 'stale-claim-rejected',
@@ -1966,6 +2008,15 @@ test('checked authenticated apply evidence is upgraded to the authoritative db j
   const checkedSummary = {
     acceptedOnCheckedBoundary: true,
     scope: 'packaged production journal scope',
+    claim: {
+      status: 'active',
+      activeClaimKeyHash: 'claim-hash-01',
+      activeClaimSequence: 14,
+      activeClaimEvent: 'idempotency-opened',
+      idempotencyKeyHash: 'idem-hash-01',
+      requestHash: 'request-hash-01',
+      staleClaimRejected: false,
+    },
     ownership: {
       ownsJournal: true,
       restartReadable: true,
@@ -2038,6 +2089,15 @@ test('checked authenticated apply evidence is upgraded to the authoritative db j
       sequence: 15,
       scope: 'packaged production journal scope',
       acceptedOnCheckedBoundary: true,
+      claim: {
+        status: 'active',
+        activeClaimKeyHash: 'claim-hash-01',
+        activeClaimSequence: 14,
+        activeClaimEvent: 'idempotency-opened',
+        idempotencyKeyHash: 'idem-hash-01',
+        requestHash: 'request-hash-01',
+        staleClaimRejected: false,
+      },
       ownership: {
         ownsJournal: true,
         restartReadable: true,
@@ -2083,6 +2143,136 @@ test('checked authenticated apply evidence is upgraded to the authoritative db j
       ],
       eventSummaries: [
         { event: 'apply-committed', count: 1, latestId: 14 },
+      ],
+      storageGuard: {
+        boundary: 'wpdb-single-statement-cas',
+        operation: 'update',
+        outcome: 'applied',
+      },
+    },
+    storageGuard: {
+      boundary: 'wpdb-single-statement-cas',
+      operation: 'update',
+      outcome: 'applied',
+    },
+  });
+});
+
+test('checked authenticated apply evidence fails closed on accepted checked journal summaries that still omit claim identity', { skip: !hasPhp }, () => {
+  const checkedSummary = {
+    acceptedOnCheckedBoundary: true,
+    scope: 'packaged production journal scope',
+    ownership: {
+      ownsJournal: true,
+      restartReadable: true,
+      productionAdapter: 'wpdb-single-statement-cas',
+    },
+    writerLease: {
+      strategy: 'claim-fenced-single-writer',
+      claimKeyUnique: true,
+      fsyncEvidence: true,
+      storageGuard: 'wpdb-single-statement-cas',
+      monotonicSequence: true,
+      restartReadable: true,
+      staleClaimRejected: true,
+    },
+    leaseFence: {
+      boundary: 'wpdb-single-statement-cas',
+      claimKeyUnique: true,
+      fsyncEvidence: true,
+      monotonicSequence: true,
+      restartReadable: true,
+      staleClaimRejected: true,
+      writerLease: {
+        strategy: 'claim-fenced-single-writer',
+        claimKeyUnique: true,
+        fsyncEvidence: true,
+        storageGuard: 'wpdb-single-statement-cas',
+        monotonicSequence: true,
+        restartReadable: true,
+        staleClaimRejected: true,
+      },
+    },
+    latestRows: [
+      {
+        event: 'apply-committed',
+        result: {
+          storageGuard: {
+            boundary: 'wpdb-single-statement-cas',
+            operation: 'update',
+            outcome: 'applied',
+          },
+        },
+      },
+    ],
+  };
+  const result = runAttachCheckedDbJournalContract(
+    {
+      ok: true,
+      dbJournal: {
+        event: 'apply-replayed',
+        sequence: 15,
+        scope: 'local Playground fixture only',
+      },
+      storageGuard: {
+        boundary: 'local-fixture-write',
+        operation: 'append',
+        outcome: 'fixture-only',
+      },
+    },
+    checkedSummary,
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  assert.deepEqual(JSON.parse(result.stdout), {
+    ok: true,
+    dbJournal: {
+      event: 'apply-replayed',
+      sequence: 15,
+      scope: 'packaged production journal scope',
+      acceptedOnCheckedBoundary: false,
+      ownership: {
+        ownsJournal: true,
+        restartReadable: true,
+        productionAdapter: 'wpdb-single-statement-cas',
+      },
+      writerLease: {
+        strategy: 'claim-fenced-single-writer',
+        claimKeyUnique: true,
+        fsyncEvidence: true,
+        storageGuard: 'wpdb-single-statement-cas',
+        monotonicSequence: true,
+        restartReadable: true,
+        staleClaimRejected: true,
+      },
+      leaseFence: {
+        boundary: 'wpdb-single-statement-cas',
+        claimKeyUnique: true,
+        fsyncEvidence: true,
+        monotonicSequence: true,
+        restartReadable: true,
+        staleClaimRejected: true,
+        writerLease: {
+          strategy: 'claim-fenced-single-writer',
+          claimKeyUnique: true,
+          fsyncEvidence: true,
+          storageGuard: 'wpdb-single-statement-cas',
+          monotonicSequence: true,
+          restartReadable: true,
+          staleClaimRejected: true,
+        },
+      },
+      latestRows: [
+        {
+          event: 'apply-committed',
+          result: {
+            storageGuard: {
+              boundary: 'wpdb-single-statement-cas',
+              operation: 'update',
+              outcome: 'applied',
+            },
+          },
+        },
       ],
       storageGuard: {
         boundary: 'wpdb-single-statement-cas',
@@ -2163,6 +2353,15 @@ test('authenticated apply finalization upgrades checked failure journal evidence
       sequence: 18,
       scope: 'checked live production-shaped journal surface; not local Playground fixture only',
       acceptedOnCheckedBoundary: true,
+      claim: {
+        status: 'active',
+        activeClaimKeyHash: 'claim-hash-01',
+        activeClaimSequence: 18,
+        activeClaimEvent: 'idempotency-opened',
+        idempotencyKeyHash: 'idem-hash-01',
+        requestHash: 'request-hash-01',
+        staleClaimRejected: false,
+      },
       ownership: {
         ownsJournal: true,
         restartReadable: true,
@@ -2313,6 +2512,15 @@ test('authenticated apply finalization injects checked db journal contract when 
     dbJournal: {
       acceptedOnCheckedBoundary: true,
       scope: 'checked live production-shaped journal surface; not local Playground fixture only',
+      claim: {
+        status: 'active',
+        activeClaimKeyHash: 'claim-hash-01',
+        activeClaimSequence: 18,
+        activeClaimEvent: 'idempotency-opened',
+        idempotencyKeyHash: 'idem-hash-01',
+        requestHash: 'request-hash-01',
+        staleClaimRejected: false,
+      },
       ownership: {
         ownsJournal: true,
         restartReadable: true,
@@ -2480,6 +2688,15 @@ test('authenticated db journal finalization preserves checked journal evidence a
     dbJournal: {
       scope: 'checked live production-shaped journal surface; not local Playground fixture only',
       acceptedOnCheckedBoundary: true,
+      claim: {
+        status: 'active',
+        activeClaimKeyHash: 'claim-hash-01',
+        activeClaimSequence: 18,
+        activeClaimEvent: 'idempotency-opened',
+        idempotencyKeyHash: 'idem-hash-01',
+        requestHash: 'request-hash-01',
+        staleClaimRejected: false,
+      },
       ownership: {
         ownsJournal: true,
         restartReadable: true,
@@ -2594,6 +2811,18 @@ test('checked recovery inspect evidence preserves conflicting accepted inline co
     {
       acceptedOnCheckedBoundary: true,
       scope: 'checked live production-shaped journal surface; not local Playground fixture only',
+      claim: {
+        status: 'stale-claim-rejected',
+        activeClaimKeyHash: 'retry-claim-hash-02',
+        activeClaimSequence: 33,
+        activeClaimEvent: 'stale-claim-rejected',
+        idempotencyKeyHash: 'idem-hash-01',
+        requestHash: 'request-hash-01',
+        staleClaimRejected: true,
+        previousClaimKeyHash: 'retry-claim-hash-01',
+        previousClaimSequence: 18,
+        previousClaimEvent: 'idempotency-opened',
+      },
       ownership: {
         ownsJournal: true,
         restartReadable: true,
@@ -2760,6 +2989,18 @@ test('checked db journal attachment preserves conflicting accepted inline storag
     {
       acceptedOnCheckedBoundary: true,
       scope: 'checked live production-shaped journal surface; not local Playground fixture only',
+      claim: {
+        status: 'stale-claim-rejected',
+        activeClaimKeyHash: 'retry-claim-hash-02',
+        activeClaimSequence: 33,
+        activeClaimEvent: 'stale-claim-rejected',
+        idempotencyKeyHash: 'idem-hash-01',
+        requestHash: 'request-hash-01',
+        staleClaimRejected: true,
+        previousClaimKeyHash: 'retry-claim-hash-01',
+        previousClaimSequence: 18,
+        previousClaimEvent: 'idempotency-opened',
+      },
       ownership: {
         ownsJournal: true,
         restartReadable: true,
@@ -2817,6 +3058,18 @@ test('checked db journal attachment preserves conflicting accepted inline storag
       sequence: 18,
       scope: 'checked live production-shaped journal surface; not local Playground fixture only',
       acceptedOnCheckedBoundary: true,
+      claim: {
+        status: 'stale-claim-rejected',
+        activeClaimKeyHash: 'retry-claim-hash-02',
+        activeClaimSequence: 33,
+        activeClaimEvent: 'stale-claim-rejected',
+        idempotencyKeyHash: 'idem-hash-01',
+        requestHash: 'request-hash-01',
+        staleClaimRejected: true,
+        previousClaimKeyHash: 'retry-claim-hash-01',
+        previousClaimSequence: 18,
+        previousClaimEvent: 'idempotency-opened',
+      },
       ownership: {
         ownsJournal: true,
         restartReadable: true,
