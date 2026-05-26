@@ -335,7 +335,8 @@ export function productionThroughputDetails(report) {
     Number.isFinite(receiptCursorMemoryHeadroomBytes)
     && Number.isFinite(receiptCursorQueueHeadroomBytes)
     && receiptCursorMemoryHeadroomBytes <= receiptCursorQueueHeadroomBytes;
-  const receiptCursorHeadroomWithinQueueBudget = receiptCursorHeadroomCoveredByQueueBudget;
+  const receiptCursorHeadroomWithinQueueBudget =
+    receiptCursorHeadroomCoveredByQueueBudget && receiptCursorHeadroomMatchesQueueHeadroom;
   const receiptCursorHeadroomMatchesResourceHeadroom =
     receiptCursorWithinMemoryCeiling
     && receiptCursorMemoryHeadroomBytes === receiptCursorMemoryCeilingBytes - receiptCursorWindowBytes;
