@@ -562,6 +562,10 @@ function reprint_push_lab_rest_merge_checked_db_journal_contract(array $db_journ
         && reprint_push_lab_rest_should_upgrade_checked_db_journal_scope($db_journal, $checked_summary);
     $upgrade_acceptance = reprint_push_lab_rest_should_upgrade_checked_boundary_acceptance($db_journal, $checked_summary);
     $prefer_checked_top_level = $upgrade_scope || $upgrade_acceptance;
+    $prefer_authoritative_checked_nested = reprint_push_lab_rest_checked_boundary_contract_is_authoritative(
+        $db_journal,
+        $checked_summary
+    );
 
     foreach ([
         'schemaVersion',
@@ -612,7 +616,8 @@ function reprint_push_lab_rest_merge_checked_db_journal_contract(array $db_journ
             $db_journal[$nested_key] = reprint_push_lab_rest_merge_checked_contract_fields(
                 $existing,
                 $checked,
-                $upgrade_scope || $upgrade_acceptance
+                $upgrade_scope || $upgrade_acceptance,
+                $prefer_authoritative_checked_nested
             );
         }
     }
@@ -694,7 +699,18 @@ function reprint_push_lab_rest_should_upgrade_checked_boundary_acceptance(array 
         || $db_journal['acceptedOnCheckedBoundary'] !== true;
 }
 
-function reprint_push_lab_rest_merge_checked_contract_fields(array $existing, array $checked, bool $prefer_checked = false): array
+function reprint_push_lab_rest_checked_boundary_contract_is_authoritative(array $db_journal, array $checked_summary): bool
+{
+    return ($checked_summary['acceptedOnCheckedBoundary'] ?? false) === true
+        && ($db_journal['acceptedOnCheckedBoundary'] ?? false) === true;
+}
+
+function reprint_push_lab_rest_merge_checked_contract_fields(
+    array $existing,
+    array $checked,
+    bool $prefer_checked = false,
+    bool $prefer_authoritative_checked = false
+): array
 {
     $merged = $existing;
 
@@ -704,12 +720,76 @@ function reprint_push_lab_rest_merge_checked_contract_fields(array $existing, ar
             || $merged[$key] === null
             || $merged[$key] === ''
             || ($prefer_checked && $merged[$key] !== $value)
+            || (
+                $prefer_authoritative_checked
+                && reprint_push_lab_rest_should_prefer_authoritative_checked_nested_contract_field(
+                    $merged,
+                    $checked,
+                    $key
+                )
+            )
         ) {
             $merged[$key] = $value;
         }
     }
 
     return $merged;
+}
+
+function reprint_push_lab_rest_should_prefer_authoritative_checked_nested_contract_field(
+    array $existing_fields,
+    array $checked_fields,
+    string $key
+): bool
+{
+    if (!array_key_exists($key, $existing_fields) || !array_key_exists($key, $checked_fields)) {
+        return false;
+    }
+
+    $existing = $existing_fields[$key];
+    $checked = $checked_fields[$key];
+    if ($existing === $checked) {
+        return false;
+    }
+
+    if (is_bool($existing) && is_bool($checked)) {
+        return $existing === false
+            && $checked === true
+            && reprint_push_lab_rest_checked_nested_contract_anchor_matches($existing_fields, $checked_fields);
+    }
+
+    if (is_string($existing) && is_string($checked) && $checked !== '') {
+        return preg_match('/fixture|local-playground|local-fixture|playground/i', $existing) === 1;
+    }
+
+    return false;
+}
+
+function reprint_push_lab_rest_checked_nested_contract_anchor_matches(array $existing_fields, array $checked_fields): bool
+{
+    foreach (['productionAdapter', 'boundary'] as $anchor_key) {
+        if (!array_key_exists($anchor_key, $existing_fields) || !array_key_exists($anchor_key, $checked_fields)) {
+            continue;
+        }
+
+        $existing = is_string($existing_fields[$anchor_key]) ? $existing_fields[$anchor_key] : '';
+        $checked = is_string($checked_fields[$anchor_key]) ? $checked_fields[$anchor_key] : '';
+        if ($existing === '' || $checked === '') {
+            continue;
+        }
+
+        if ($existing === $checked) {
+            return true;
+        }
+
+        if (preg_match('/fixture|local-playground|local-fixture|playground/i', $existing) === 1) {
+            return true;
+        }
+
+        return false;
+    }
+
+    return true;
 }
 
 function reprint_push_lab_rest_merge_checked_storage_guard(
