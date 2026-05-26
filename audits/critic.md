@@ -1,15 +1,15 @@
 # Critic Verdict
 
-Current reliable head: `0dabb6b78d87ff946f08343749d27e1176fabff3`
-(`Fail closed on cleaned-up auth session status`).
+Current reliable head: `f17c6912cad937ff95617d613d999068c7e9bd71`
+(`Pin preserved remote retry in release verify`).
 
 Verdict: `0/4`
 
 Reason:
 
-- This head hardens cleaned-up auth-session status handling by failing closed
-  after session cleanup/revocation, but it is still support-side lifecycle
-  hardening rather than a checked production boundary crossing.
+- This head pins preserved-remote retry into `verify:release`, which makes the
+  checked entrypoint more constrained, but it is still release-path support
+  evidence rather than a checked production boundary crossing.
 - The checked release path still lacks live production auth/session
   issuance/read/expiry/rotation/revocation/cleanup evidence, and it still does
   not prove production durable-journal ownership with restart-readable replay
