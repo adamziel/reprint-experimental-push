@@ -3501,6 +3501,17 @@ function unsupportedCommentsUsersResourceSupport({ resource, baseValue, localVal
     && stableStringify(localValue) !== stableStringify(baseValue)
   );
 
+  if (localValue === ABSENT) {
+    return {
+      supported: false,
+      className: 'unsupported-comments-users-resource',
+      unsupportedState: 'delete',
+      reason: resource.table === 'wp_users'
+        ? 'User graph resource deletes are not yet supported by the planner.'
+        : 'Comments graph resource deletes are not yet supported by the planner.',
+    };
+  }
+
   if (resource.table === 'wp_comments') {
     const references = wordpressGraphReferences(resource, candidate);
     const commentGraphReference = references.find((reference) =>
@@ -3574,13 +3585,11 @@ function unsupportedCommentsUsersResourceSupport({ resource, baseValue, localVal
   return {
     supported: false,
     className: 'unsupported-comments-users-resource',
-    unsupportedState: localValue === ABSENT
-      ? 'delete'
-      : convergedDrift
-        ? 'converged-drift'
-        : remoteOnlyDrift
-          ? 'remote-only-drift'
-          : 'local-or-divergent-drift',
+    unsupportedState: convergedDrift
+      ? 'converged-drift'
+      : remoteOnlyDrift
+        ? 'remote-only-drift'
+        : 'local-or-divergent-drift',
     reason: resource.table === 'wp_users'
       ? 'User graph resources are not yet supported by the planner.'
       : 'Comments graph resources are not yet supported by the planner.',

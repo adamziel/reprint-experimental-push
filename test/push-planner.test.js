@@ -17227,6 +17227,56 @@ test('blocks local comments graph resources while preserving remote-only plugin 
   assert.equal(remote.plugins.forms.description, 'remote-only plugin drift');
 });
 
+test('blocks comment deletes while preserving a matching independent edit and remote-only plugin drift', () => {
+  const resourceKey = 'row:["wp_comments","comment_ID:12"]';
+  const base = baseSite();
+  base.db.wp_comments = {
+    'comment_ID:12': {
+      comment_ID: 12,
+      comment_post_ID: 1,
+      comment_author: 'Base commenter',
+      comment_content: 'Base comment content',
+    },
+  };
+  base.db.wp_posts['ID:1'].post_title = 'Base shared post title';
+
+  const local = baseSite();
+  local.db.wp_comments = JSON.parse(JSON.stringify(base.db.wp_comments));
+  delete local.db.wp_comments['comment_ID:12'];
+  local.db.wp_posts['ID:1'].post_title = 'Shared post title';
+
+  const remote = baseSite();
+  remote.db.wp_comments = JSON.parse(JSON.stringify(base.db.wp_comments));
+  remote.db.wp_posts['ID:1'].post_title = 'Shared post title';
+  remote.plugins.forms.description = 'remote-only plugin drift';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin drift */';
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  const matchingEdit = decisionFor(plan, 'row:[\"wp_posts\",\"ID:1\"]');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(plan.conflicts.length, 0);
+  assert.equal(blocker.class, 'unsupported-comments-users-resource');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.unsupportedState, 'delete');
+  assert.equal(blocker.reason, 'Comments graph resource deletes are not yet supported by the planner.');
+  assert.equal(matchingEdit.decision, 'already-in-sync');
+  assert.equal(matchingEdit.change.localChange, 'update');
+  assert.equal(matchingEdit.change.remoteChange, 'update');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('Base comment content'), false);
+  assert.equal(planJson.includes('Shared post title'), false);
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin drift');
+  assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin drift */');
+});
+
 test('blocks local same-plan created post identity when a comment references it while preserving remote-only plugin drift', () => {
   const resourceKey = 'row:["wp_comments","comment_ID:13"]';
   const targetResourceKey = 'row:["wp_posts","ID:17"]';
@@ -24447,6 +24497,55 @@ test('blocks local users graph resources while preserving remote-only plugin dri
   assert.equal(planJson.includes('local-user'), false);
   assert.equal(planJson.includes('base-user'), false);
   assert.equal(remote.plugins.forms.description, 'remote-only plugin drift');
+});
+
+test('blocks user deletes while preserving a matching independent edit and remote-only plugin removals', () => {
+  const resourceKey = 'row:["wp_users","ID:7"]';
+  const base = baseSite();
+  base.db.wp_users = {
+    'ID:7': {
+      ID: 7,
+      user_login: 'base-user',
+      user_email: 'base@example.test',
+    },
+  };
+  base.db.wp_posts['ID:1'].post_title = 'Base shared post title';
+
+  const local = baseSite();
+  local.db.wp_users = JSON.parse(JSON.stringify(base.db.wp_users));
+  delete local.db.wp_users['ID:7'];
+  local.db.wp_posts['ID:1'].post_title = 'Shared post title';
+
+  const remote = baseSite();
+  remote.db.wp_users = JSON.parse(JSON.stringify(base.db.wp_users));
+  remote.db.wp_posts['ID:1'].post_title = 'Shared post title';
+  delete remote.plugins.forms;
+  delete remote.files['wp-content/plugins/forms/forms.php'];
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  const matchingEdit = decisionFor(plan, 'row:[\"wp_posts\",\"ID:1\"]');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(plan.conflicts.length, 0);
+  assert.equal(blocker.class, 'unsupported-comments-users-resource');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.unsupportedState, 'delete');
+  assert.equal(blocker.reason, 'User graph resource deletes are not yet supported by the planner.');
+  assert.equal(matchingEdit.decision, 'already-in-sync');
+  assert.equal(matchingEdit.change.localChange, 'update');
+  assert.equal(matchingEdit.change.remoteChange, 'update');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('base-user'), false);
+  assert.equal(planJson.includes('Shared post title'), false);
+  assert.equal(Object.hasOwn(remote.plugins, 'forms'), false);
+  assert.equal(Object.hasOwn(remote.files, 'wp-content/plugins/forms/forms.php'), false);
 });
 
 test('blocks local users graph resources while preserving remote-only plugin removals', () => {
