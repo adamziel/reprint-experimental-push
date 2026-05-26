@@ -1,26 +1,22 @@
-2026-05-26 08:51:27 CEST (+0200)
+2026-05-26 10:32:46 CEST (+0200)
 
 Changed files:
-- [`src/authenticated-http-push-client.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/reliable-executor/src/authenticated-http-push-client.js)
-- [`test/authenticated-http-push-client.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/reliable-executor/test/authenticated-http-push-client.test.js)
+- [`scripts/playground/production-shaped-release-verify.mjs`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/reliable-executor/scripts/playground/production-shaped-release-verify.mjs)
 - [`.lane-output/final.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/reliable-executor/.lane-output/final.md)
 
-What changed:
-- Added `sessionStatus` to the auth-envelope drift comparison so replay/recovery proof now fails closed when session status changes, not just id/type.
-- Exposed `sessionStatus` in the generic response summary so the release proof can observe the status transition directly.
-- Added a focused regression proving `recovery/inspect` with an `expired` session status is rejected on the production-shaped path.
-
 Commands run:
-- `timeout 90s node --test test/authenticated-http-push-client.test.js`
+- `node --check scripts/playground/production-shaped-release-verify.mjs`
+- `timeout 40s node --test test/production-shaped-proof.test.js --test-name-pattern='release verify'`
 
-Verification result:
-- Focused unit slice passed: `32` tests, `0` failures.
+Result:
+- The readiness boundary patch is now bounded: `/wp-json/` 502 `"WordPress is not ready yet"` is classified as a readiness hint, the last probe route/status/body is attached to the thrown error, and the spawned Playground child is stopped before the outer wrapper can kill it.
+- The targeted release-verifier slice passed `13/13` tests with `5` skips and `0` failures.
 
 Push result:
-- Not pushed yet in this pass.
+- Not pushed yet.
 
 Worktree status:
-- Dirty tracked state before commit: `src/authenticated-http-push-client.js`, `test/authenticated-http-push-client.test.js`, and this handoff file.
+- Dirty before commit: `scripts/playground/production-shaped-release-verify.mjs`, `.lane-output/final.md`
 
 Next supervisor nudge:
-- Commit and push this product-side auth/session hardening, then move to the next smallest production gap only if it is not another replay/auth/session duplicate.
+- Commit and push the readiness-harness fix, then keep the next pass on product-side proof only if a fresh release boundary can now be exercised beyond startup readiness.

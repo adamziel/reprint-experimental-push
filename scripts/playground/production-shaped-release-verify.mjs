@@ -9,8 +9,13 @@ import { authenticatedHttpClient, runAuthenticatedHttpPush } from '../../src/aut
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const muPluginDir = path.join(repoRoot, 'scripts/playground/rest-mu-plugins');
-const serverStartupTimeoutMs = 3_000;
+const serverStartupTimeoutMs = 6_000;
 const serverFetchTimeoutMs = 250;
+const readinessProbeIntervalMs = 200;
+const readinessFailureBodyLimit = 240;
+const maxReadinessProbes = 10;
+const maxNotReadyReadinessProbes = 2;
+const spawnedPlaygroundTimeoutSeconds = 12;
 const credentials = {
   username: 'reprint_push_admin',
   password: 'reprint-push-admin-app-password',
@@ -851,7 +856,7 @@ async function startPlaygroundServer(name, blueprintPath) {
 
     const child = spawn(
       'timeout',
-      ['--preserve-status', '--kill-after=1s', '5s', 'npx', ...args],
+      ['--preserve-status', '--kill-after=1s', `${spawnedPlaygroundTimeoutSeconds}s`, 'npx', ...args],
       {
         cwd: repoRoot,
         env: process.env,
@@ -1076,7 +1081,7 @@ async function waitForServer(child, baseUrl, getLogs) {
   const deadline = Date.now() + serverStartupTimeoutMs;
   let lastError = null;
   const lastProbes = [];
-  let consecutiveIndex502s = 0;
+  let notReadyProbeCount = 0;
   while (Date.now() < deadline) {
     if (child.exitCode !== null || child.signalCode !== null) {
       const exitLabel =
@@ -1096,17 +1101,18 @@ async function waitForServer(child, baseUrl, getLogs) {
         headers: { connection: 'close' },
       });
       const responseBody = await response.clone().text().catch(() => '');
+      const responsePreview = responseBody.slice(0, readinessFailureBodyLimit);
       lastProbes.push({
         route: '/wp-json/',
         status: response.status,
         ok: response.ok,
-        body: responseBody.slice(0, 500),
+        body: responsePreview,
       });
       process.stderr.write(
-        `Playground probe ${baseUrl}/wp-json/ -> ${response.status} ${responseBody.slice(0, 160).replace(/\s+/g, ' ').trim()}\n`,
+        `Playground probe ${baseUrl}/wp-json/ -> ${response.status} ${responsePreview.slice(0, 160).replace(/\s+/g, ' ').trim()}\n`,
       );
       if (response.status === 200) {
-        consecutiveIndex502s = 0;
+        notReadyProbeCount = 0;
         await response.arrayBuffer();
         const snapshot = await fetchWithTimeout(`${baseUrl}/wp-json/reprint-push-lab/v1/snapshot`, {
           headers: {
@@ -1115,42 +1121,102 @@ async function waitForServer(child, baseUrl, getLogs) {
           },
         });
         const snapshotBody = await snapshot.clone().text().catch(() => '');
+        const snapshotPreview = snapshotBody.slice(0, 500);
         lastProbes.push({
           route: '/wp-json/reprint-push-lab/v1/snapshot',
           status: snapshot.status,
           ok: snapshot.ok,
-          body: snapshotBody.slice(0, 500),
+          body: snapshotPreview,
         });
         process.stderr.write(
-          `Playground probe ${baseUrl}/wp-json/reprint-push-lab/v1/snapshot -> ${snapshot.status} ${snapshotBody.slice(0, 160).replace(/\s+/g, ' ').trim()}\n`,
+          `Playground probe ${baseUrl}/wp-json/reprint-push-lab/v1/snapshot -> ${snapshot.status} ${snapshotPreview.slice(0, 160).replace(/\s+/g, ' ').trim()}\n`,
         );
         if (snapshot.status === 200) {
           await snapshot.arrayBuffer();
           return;
         }
-        lastError = new Error(`Playground lab snapshot readiness HTTP ${snapshot.status}`);
+        lastError = new Error(
+          `Playground lab snapshot readiness HTTP ${snapshot.status}; ${describeLastProbe(lastProbes.at(-1))}`,
+        );
       } else {
-        lastError = new Error(`Playground index readiness HTTP ${response.status}`);
-        consecutiveIndex502s = response.status === 502 ? consecutiveIndex502s + 1 : 0;
-      }
-      if (consecutiveIndex502s >= 1) {
-        break;
+        const readinessHint = isWordPressNotReadyResponse(response.status, responseBody)
+          ? 'WordPress is not ready yet'
+          : null;
+        const routeSummary = describeLastProbe(lastProbes.at(-1));
+        lastError = new Error(
+          readinessHint
+            ? `Playground index readiness HTTP 502: ${readinessHint}; ${routeSummary}`
+            : `Playground index readiness HTTP ${response.status}; ${routeSummary}`,
+        );
+        const readinessProbeCount = lastProbes.filter((probe) => probe.route === '/wp-json/').length;
+        const readinessWaitBudgetMs = deadline - Date.now();
+        if (readinessHint) {
+          notReadyProbeCount += 1;
+        } else {
+          notReadyProbeCount = 0;
+        }
+        if (
+          readinessHint &&
+          (notReadyProbeCount >= maxNotReadyReadinessProbes || readinessWaitBudgetMs <= readinessProbeIntervalMs)
+        ) {
+          throwPlaygroundReadinessFailure(
+            child,
+            `Playground server stayed in readiness response ${response.status} after ${readinessProbeCount} /wp-json/ probes (${notReadyProbeCount} consecutive not-ready responses)`,
+            lastError,
+            lastProbes,
+            getLogs(),
+          );
+        }
+        if (!readinessHint && response.status !== 200 && readinessProbeCount >= maxReadinessProbes) {
+          throwPlaygroundReadinessFailure(
+            child,
+            `Playground server stayed in readiness response ${response.status} after ${readinessProbeCount} /wp-json/ probes`,
+            lastError,
+            lastProbes,
+            getLogs(),
+          );
+        }
       }
     } catch (error) {
       lastError = error;
-      consecutiveIndex502s = 0;
     }
-    await new Promise((resolve) => setTimeout(resolve, 250));
+    await new Promise((resolve) => setTimeout(resolve, readinessProbeIntervalMs));
   }
-  const diagnostic = formatPlaygroundStartupFailure(
+  if (lastProbes.length > 0 || lastError) {
+    await throwPlaygroundReadinessFailure(
+      child,
+      `Timed out waiting for Playground server at ${baseUrl}`,
+      lastError,
+      lastProbes,
+      getLogs(),
+    );
+  }
+  throwPlaygroundReadinessFailure(
+    child,
     `Timed out waiting for Playground server at ${baseUrl}`,
     lastError,
     lastProbes,
     getLogs(),
   );
-  writePlaygroundFailure(diagnostic, lastProbes, getLogs(), lastError);
-  await stopSpawnedServer(child);
-  throw new Error(diagnostic);
+}
+
+function describeLastProbe(probe) {
+  if (!probe) {
+    return 'route/status/body: unavailable';
+  }
+  return `route/status/body: ${JSON.stringify(
+    {
+      route: probe.route ?? null,
+      status: probe.status ?? null,
+      body: probe.body ?? null,
+    },
+    null,
+    2,
+  )}`;
+}
+
+function isWordPressNotReadyResponse(status, body) {
+  return status === 502 && /WordPress is not ready yet/i.test(body);
 }
 
 function writePlaygroundFailure(message, lastProbes, logs, lastError) {
@@ -1189,6 +1255,23 @@ function writePlaygroundFailure(message, lastProbes, logs, lastError) {
   }
 }
 
+async function throwPlaygroundReadinessFailure(child, prefix, lastError, lastProbes, logs) {
+  const diagnostic = formatPlaygroundStartupFailure(prefix, lastError, lastProbes, logs);
+  writePlaygroundFailure(diagnostic, lastProbes, logs, lastError);
+  await stopSpawnedServer(child);
+  const finalError = new Error(diagnostic);
+  finalError.cause = lastError ?? null;
+  finalError.lastProbe = lastProbes.at(-1) ?? null;
+  finalError.lastRouteStatusBody = finalError.lastProbe
+    ? {
+        route: finalError.lastProbe.route ?? null,
+        status: finalError.lastProbe.status ?? null,
+        body: finalError.lastProbe.body ?? null,
+      }
+    : null;
+  throw finalError;
+}
+
 function formatPlaygroundStartupFailure(prefix, lastError, lastProbes, logs) {
   const probeText = lastProbes.length
     ? `\nProbe trail: ${JSON.stringify(lastProbes.slice(-4), null, 2)}`
@@ -1207,7 +1290,18 @@ function formatPlaygroundStartupFailure(prefix, lastError, lastProbes, logs) {
       )}`
     : '';
   const errorText = lastError?.message || 'unknown';
-  return `${prefix}: ${errorText}${probeText}${lastProbeText}\n${logs}`;
+  const routeStatusBodyText = lastProbe
+    ? `\nLast route/status/body: ${JSON.stringify(
+        {
+          route: lastProbe.route ?? null,
+          status: lastProbe.status ?? null,
+          body: lastProbe.body ?? null,
+        },
+        null,
+        2,
+      )}`
+    : '';
+  return `${prefix}: ${errorText}${probeText}${lastProbeText}${routeStatusBodyText}\n${logs}`;
 }
 
 async function fetchWithTimeout(url, init = {}) {
