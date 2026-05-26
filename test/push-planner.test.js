@@ -24221,6 +24221,27 @@ test('blocked recovery artifacts fail closed when the journal artifact hides uns
   assert.match(error.message, /must not hide unsupported symbol keys inside preserved artifacts/);
 });
 
+test('blocked recovery artifacts fail closed when the remote artifact is inherited through the prototype', () => {
+  const hiddenRemote = { schemaVersion: 1 };
+  Object.prototype.remote = hiddenRemote;
+  try {
+    const recovery = {
+      status: 'blocked-recovery',
+      planId: 'plan-123',
+      artifacts: {
+        journal: { schemaVersion: 1 },
+      },
+    };
+
+    const error = captureError(() => validateRecoveryArtifacts(recovery));
+
+    assert.equal(error.code, 'RECOVERY_ARTIFACTS_INVALID');
+    assert.match(error.message, /must preserve an own remote artifact/);
+  } finally {
+    delete Object.prototype.remote;
+  }
+});
+
 test('blocked recovery artifacts fail closed when nested prototype symbol keys are hidden', () => {
   const hiddenKey = Symbol('hidden');
   Object.prototype[hiddenKey] = 'hidden';

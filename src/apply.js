@@ -1708,6 +1708,17 @@ export function validateRecoveryArtifacts(recovery) {
         },
       );
     }
+    if (!Object.hasOwn(recovery.artifacts, 'remote')) {
+      throw new PushPlanError(
+        'RECOVERY_ARTIFACTS_INVALID',
+        'Blocked recovery states must preserve an own remote artifact.',
+        {
+          status: recovery.status,
+          planId: recovery.planId,
+          artifactKeys,
+        },
+      );
+    }
     if (isRecoveryEnvelopeArtifact(recovery.artifacts.journal)) {
       throw new PushPlanError(
         'RECOVERY_ARTIFACTS_INVALID',
