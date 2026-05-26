@@ -473,6 +473,57 @@ test('blocks plugin-owned custom tables while preserving a matching independent 
   assert.equal(pluginFileDecision.decision, 'keep-remote');
 });
 
+test('blocks plugin-owned custom table deletes while preserving a matching independent edit and remote-only plugin removals', () => {
+  const resourceKey = 'row:["wp_custom_lanes","lane_id:7"]';
+  const base = baseSite();
+  base.db.wp_custom_lanes = {
+    'lane_id:7': {
+      lane_id: 7,
+      lane_name: 'base lane',
+      __pluginOwner: 'forms',
+    },
+  };
+
+  const local = baseSite();
+  local.db.wp_custom_lanes = {
+    'lane_id:7': {
+      lane_id: 7,
+      lane_name: 'base lane',
+      __pluginOwner: 'forms',
+    },
+  };
+  delete local.db.wp_custom_lanes['lane_id:7'];
+  local.db.wp_posts['ID:1'].post_title = 'Shared title';
+
+  const remote = baseSite();
+  remote.db.wp_custom_lanes = {
+    'lane_id:7': {
+      lane_id: 7,
+      lane_name: 'base lane',
+      __pluginOwner: 'forms',
+    },
+  };
+  remote.db.wp_posts['ID:1'].post_title = 'Shared title';
+  delete remote.plugins.forms;
+  delete remote.files['wp-content/plugins/forms/forms.php'];
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  const matchingEdit = decisionFor(plan, 'row:["wp_posts","ID:1"]');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(blocker.class, 'unsupported-plugin-owned-resource');
+  assert.equal(
+    blocker.reason,
+    'Plugin-owned resource row:["wp_custom_lanes","lane_id:7"] is not covered by a supported resource driver policy for plugin forms.',
+  );
+  assert.equal(matchingEdit.decision, 'already-in-sync');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+});
+
 test('keeps remote-only plugin drift while a live-preconditioned file delete preserves a matching independent edit and matching independent type swap', () => {
   const base = baseSite();
   base.files['about.php'] = '<?php echo "base about";';
