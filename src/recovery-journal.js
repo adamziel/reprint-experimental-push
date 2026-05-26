@@ -2054,7 +2054,7 @@ function summarizeConsumedClaimRecord(records) {
   ) {
     return null;
   }
-  if (!Number.isInteger(consumedRecord.sequence)) {
+  if (!Number.isInteger(consumedRecord.sequence) || consumedRecord.sequence < 1) {
     return null;
   }
   if (typeof consumedRecord.claimHash !== 'string' || !CLAIM_HASH_PATTERN.test(consumedRecord.claimHash)) {

@@ -1171,7 +1171,7 @@ test('production recovery journal reopen fails closed when the persisted consume
     assert.equal(error?.code, 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL');
     assert.equal(
       error?.message,
-      'Production recovery journal persistence is corrupt or truncated.',
+      'Production recovery journal support requires reopening with the persisted consumed claim identity.',
     );
     return true;
   });

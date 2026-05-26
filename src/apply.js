@@ -1450,7 +1450,7 @@ function consumedRecoveryClaimSummary(records) {
   ) {
     return null;
   }
-  if (!Number.isInteger(consumedRecord.sequence)) {
+  if (!Number.isInteger(consumedRecord.sequence) || consumedRecord.sequence < 1) {
     return null;
   }
   if (
