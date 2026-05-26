@@ -3250,6 +3250,44 @@ test('guarded benchmark treats receipt-cursor memory-headroom visibility without
   assert.ok(blockers.includes('receipt-cursor-memory-headroom-visible-without-measurement'));
 });
 
+test('guarded benchmark treats receipt-cursor queue-slack visibility without queue-headroom measurement as incomplete backpressure evidence', () => {
+  const report = smallBenchmark();
+  const mutated = clone(report);
+
+  mutated.evidence.backpressure.receiptCursorQueueSlackVisible = true;
+  mutated.evidence.backpressure.queueHeadroomMeasured = false;
+
+  const details = productionThroughputDetails(mutated);
+  const blockers = productionThroughputBlockers(mutated);
+
+  assert.equal(details.receiptCursorQueueSlackVisible, true);
+  assert.equal(details.receiptCursorQueueSlackVisibleAndMeasured, false);
+  assert.equal(
+    details.backpressureConsistency.receiptCursorQueueSlackVisibleAndMeasured,
+    false,
+  );
+  assert.ok(blockers.includes('receipt-cursor-queue-slack-visible-without-queue-headroom-measurement'));
+});
+
+test('guarded benchmark treats receipt-cursor memory-headroom visibility without queue-headroom measurement as incomplete backpressure evidence', () => {
+  const report = smallBenchmark();
+  const mutated = clone(report);
+
+  mutated.evidence.backpressure.receiptCursorMemoryHeadroomVisible = true;
+  mutated.evidence.backpressure.queueHeadroomMeasured = false;
+
+  const details = productionThroughputDetails(mutated);
+  const blockers = productionThroughputBlockers(mutated);
+
+  assert.equal(details.receiptCursorMemoryHeadroomVisible, true);
+  assert.equal(details.receiptCursorMemoryHeadroomVisibleAndMeasured, false);
+  assert.equal(
+    details.backpressureConsistency.receiptCursorMemoryHeadroomVisibleAndMeasured,
+    false,
+  );
+  assert.ok(blockers.includes('receipt-cursor-memory-headroom-visible-without-queue-headroom-measurement'));
+});
+
 test('guarded benchmark treats memory-ceiling and queue-headroom visibility without queue-budget visibility as incomplete backpressure evidence', () => {
   const report = smallBenchmark();
   const mutated = clone(report);

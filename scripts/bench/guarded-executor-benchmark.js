@@ -828,6 +828,12 @@ export function productionThroughputBlockers(report) {
   }
   if (
     receiptCursorQueueSlackVisible === true
+    && report.evidence.backpressure?.queueHeadroomMeasured !== true
+  ) {
+    blockers.push('receipt-cursor-queue-slack-visible-without-queue-headroom-measurement');
+  }
+  if (
+    receiptCursorQueueSlackVisible === true
     && receiptCursorMemoryHeadroomVisible !== true
   ) {
     blockers.push('receipt-cursor-queue-slack-visible-without-memory-headroom-visibility');
@@ -849,6 +855,12 @@ export function productionThroughputBlockers(report) {
     && report.evidence.backpressure?.queueHeadroomVisible !== true
   ) {
     blockers.push('receipt-cursor-memory-headroom-visible-without-queue-headroom-visibility');
+  }
+  if (
+    receiptCursorMemoryHeadroomVisible === true
+    && report.evidence.backpressure?.queueHeadroomMeasured !== true
+  ) {
+    blockers.push('receipt-cursor-memory-headroom-visible-without-queue-headroom-measurement');
   }
   if (
     receiptCursorMemoryHeadroomVisible === true
@@ -1326,7 +1338,9 @@ export function productionThroughputDetails(report) {
   const receiptCursorQueueSlackMeasured =
     Number.isFinite(receiptCursorQueueSlackBytes);
   const receiptCursorQueueSlackVisibleAndMeasured =
-    receiptCursorQueueSlackVisible && receiptCursorQueueSlackMeasured;
+    receiptCursorQueueSlackVisible
+    && receiptCursorQueueSlackMeasured
+    && queueHeadroomMeasured;
   const queueHeadroomVisibleAndQueueSlackMeasured =
     queueHeadroomVisible && receiptCursorQueueSlackMeasured;
   const queueHeadroomVisibleAndQueueSlackVisibleAndMeasured =
@@ -1524,7 +1538,9 @@ export function productionThroughputDetails(report) {
     && Number.isFinite(receiptCursorWindowBytes)
     && receiptCursorMemoryHeadroomBytes <= receiptCursorMemoryCeilingBytes - receiptCursorWindowBytes;
   const receiptCursorMemoryHeadroomVisibleAndMeasured =
-    receiptCursorMemoryHeadroomVisible && Number.isFinite(receiptCursorMemoryHeadroomBytes);
+    receiptCursorMemoryHeadroomVisible
+    && Number.isFinite(receiptCursorMemoryHeadroomBytes)
+    && queueHeadroomMeasured;
   const receiptCursorMemoryCeilingVisibleAndMeasured =
     receiptCursorMemoryCeilingVisible
     && queueBudgetVisible
