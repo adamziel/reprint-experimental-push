@@ -4,7 +4,7 @@
 
 The project is **not releasable as a production WordPress push path**.
 
-- Audit time: 2026-05-26 11:07:11 CEST (+0200)
+- Audit time: 2026-05-26 11:08:57 CEST (+0200)
 - Fresh remote heads re-polled at audit time:
   - `origin/lane/reliable-executor` -> `5fd9dfb4`
   - `origin/lane/no-data-loss-invariants` -> `475a7373`
@@ -25,7 +25,7 @@ The project is **not releasable as a production WordPress push path**.
 
 ## Release Blockers
 
-1. `reliable-executor` now has tighter auth-session drift handling in `5271f45f`, a durable-journal ownership fail-closed head in `a63dfc93`, `949477de` exposing auth session lifecycle evidence in summaries, `e725e749` making readiness failure propagation bounded, `795349aa` failing fast on readiness `502`s with a bounded release-verifier path, `e7be9812` switching readiness failure writes to synchronous stderr/stdout emission and bounded route/status/body diagnostics, and `5fd9dfb4` wiring the recovery journal helper into release smoke. These are stronger support and smoke-path signals, but they still do not establish production-backed auth/session lifecycle, canonical replay on a live source, or a restart-readable durable journal adapter on the release path. `5fd9dfb4` is the current reliable head.
+1. `reliable-executor` now has tighter auth-session drift handling in `5271f45f`, a durable-journal ownership fail-closed head in `a63dfc93`, `949477de` exposing auth session lifecycle evidence in summaries, `e725e749` making readiness failure propagation bounded, `795349aa` failing fast on readiness `502`s with a bounded release-verifier path, `e7be9812` switching readiness failure writes to synchronous stderr/stdout emission and bounded route/status/body diagnostics, and `5fd9dfb4` wiring the recovery journal helper into release smoke. That is support-side release-journal smoke only; it does not establish production-backed auth/session lifecycle, canonical replay on a live source, or a restart-readable durable journal adapter on the release path. `5fd9dfb4` is the current reliable head.
 2. `no-data-loss-recovery` now exposes a production recovery journal adapter in `351b6bbd`, and `7ec504b7` tightens writer-lease fail-closed behavior, with `5fd9dfb4` consuming the helper in release smoke. However, the only live release-boundary evidence is still a smoke path and focused probe, not `verify:release` consuming the adapter. The exact next owner is `reliable-executor`, and the exact command surface is `scripts/playground/production-shaped-release-verify.mjs` behind `npm run verify:release`.
 3. `reliable-executor` advanced the readiness harness in `e725e749`, `795349aa`, and `e7be9812` so the readiness failure now fails fast with bounded route/status/body diagnostics and synchronous reporting instead of hanging, and `5fd9dfb4` adds the release smoke handoff to the recovery journal helper. That is still a readiness/smoke boundary, not live release-proof past readiness, so no downstream release-boundary evidence can count yet. `5fd9dfb4` is the current reliable head.
 4. `no-data-loss-invariants` now shows additional unsupported-surface blocking, but `19c32bb9`, `5f5a2f8a`, `6cd23be4`, `3998cb83`, `7400e3eb`, `eed6af9f`, `63baa64d`, `c1cc6e93`, `ad57d11a`, `93a4a4eb`, `8b6c8bca`, `3f5e4919`, `60d398ba`, `22ac2d21`, `56fd6a3a`, `7d614106`, `38e14784`, `b12d7401`, `ff1c8e35`, `5e76166e`, `10cb1368`, and `e884c34d` still do not prove the live production mutation boundary.
