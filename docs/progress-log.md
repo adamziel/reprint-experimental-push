@@ -15,6 +15,17 @@ linked implementation artifacts.
   readiness result, and durable journal ownership remains unproved.
 - No new release gate was claimed; this is a freshness update only.
 
+## 2026-05-26 - Public Status Audit 02:13:31
+
+<a id="2026-05-26-public-status-audit-021331"></a>
+
+- Refreshed [progress.html](../progress.html) so the public page stays current
+  for the active supervision cycle. The conservative `0/4` posture stays
+  unchanged.
+- The blocker summary stays the same: live release proof still needs a concrete
+  readiness result, and durable journal ownership remains unproved.
+- No new release gate was claimed; this is a freshness update only.
+
 # 2026-05-26 - Public Status Audit 02:11:09
 
 <a id="2026-05-26-public-status-audit-021109"></a>
