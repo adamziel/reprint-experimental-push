@@ -1,6 +1,12 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-26 10:04 CEST
+Last updated: 2026-05-26 10:05 CEST
+
+## 2026-05-26 10:05:08 CEST - Fresh Evidence Delta
+
+- Reliable executor pushed `ba248d54`, adding fail-closed production auth/session handling in `src/authenticated-http-push-client.js`.
+- This is a real product-side hardening step, but the release boundary is still closed: live production-backed replay and durable journal ownership remain missing.
+- The release posture stays conservative at `0/4`.
 
 ## 2026-05-26 10:04:12 CEST - Freshness Refresh
 

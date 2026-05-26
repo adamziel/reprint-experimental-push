@@ -4,6 +4,15 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-05-26 - Fresh Evidence Delta 10:05:08
+
+<a id="2026-05-26-fresh-evidence-delta-100508"></a>
+
+- Reliable executor pushed `ba248d54`, adding fail-closed production auth/session handling in [`src/authenticated-http-push-client.js`](../src/authenticated-http-push-client.js).
+- This is a real product-side hardening step, but the release boundary is still closed because live production-backed replay and durable journal ownership are still missing.
+- The release gate posture stays `0/4`.
+- Evidence trail: [reliable-executor handoff](../reliable-executor/.lane-output/final-loop-20260526-075243.md), [supervisor feedback](supervisor-feedback.md).
+
 ## 2026-05-26 - Freshness Refresh 10:04:12
 
 <a id="2026-05-26-freshness-refresh-100412"></a>
