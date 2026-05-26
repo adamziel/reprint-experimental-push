@@ -1005,6 +1005,8 @@ function summarizeAuthSessionLifecycle(session) {
 
   const invalidLifecycleFlag = resolveInvalidProductionAuthSessionLifecycleFlag(session);
   const invalidIdentityField = resolveInvalidProductionAuthSessionIdentityField(session);
+  const unrevokedObservation = resolveProductionAuthSessionUnrevokedObservation(session);
+  const expiredObservation = resolveProductionAuthSessionExpiredObservation(session);
 
   return {
     id: session.id || null,
@@ -1013,9 +1015,17 @@ function summarizeAuthSessionLifecycle(session) {
     expiresAt: session.expiresAt || null,
     ...(invalidLifecycleFlag ? { invalidLifecycleFlag } : {}),
     ...(invalidIdentityField?.label ? { invalidIdentityField: invalidIdentityField.label } : {}),
+    ...(unrevokedObservation?.field ? { unrevokedField: unrevokedObservation.field } : {}),
+    ...(expiredObservation?.field ? { expiredField: expiredObservation.field } : {}),
+    ...(session.rotated === true || session.status === 'rotated'
+      ? {
+        rotatedField: session.rotated === true ? 'auth.session.rotated' : 'auth.session.status',
+      }
+      : {}),
     expired: session.status === 'expired' || isExpiredSession(session),
     revoked: session.revoked === true || session.status === 'revoked',
     cleanedUp: session.cleanedUp === true || session.cleanup === true || session.status === 'cleaned-up',
+    cleanup: session.cleanup === true ? true : session.cleanup === false ? false : null,
     rotated: session.rotated === true || session.status === 'rotated'
       ? true
       : session.rotated === false
@@ -1072,7 +1082,7 @@ function recordAuthSessionLifecycle(summary, step, session) {
     step,
     id: observation?.id || null,
     type: observation?.type || null,
-    status: normalizeAuthSessionLifecycleHistoryStatus(observation),
+    status: observation?.status || null,
     expiresAt: observation?.expiresAt || null,
     ...(typeof observation?.invalidLifecycleFlag === 'string' && observation.invalidLifecycleFlag
       ? { invalidLifecycleFlag: observation.invalidLifecycleFlag }
@@ -1080,9 +1090,19 @@ function recordAuthSessionLifecycle(summary, step, session) {
     ...(typeof observation?.invalidIdentityField === 'string' && observation.invalidIdentityField
       ? { invalidIdentityField: observation.invalidIdentityField }
       : {}),
+    ...(typeof observation?.unrevokedField === 'string' && observation.unrevokedField
+      ? { unrevokedField: observation.unrevokedField }
+      : {}),
+    ...(typeof observation?.expiredField === 'string' && observation.expiredField
+      ? { expiredField: observation.expiredField }
+      : {}),
+    ...(typeof observation?.rotatedField === 'string' && observation.rotatedField
+      ? { rotatedField: observation.rotatedField }
+      : {}),
     expired: Boolean(observation?.expired),
     revoked: Boolean(observation?.revoked),
     cleanedUp: Boolean(observation?.cleanedUp),
+    cleanup: observation?.cleanup === true,
     rotated: lifecycle.rotated,
     preserved: lifecycle.preserved,
     ...(observation?.playgroundFallback === true ? { playgroundFallback: true } : {}),
@@ -1104,9 +1124,19 @@ function recordAuthSessionLifecycle(summary, step, session) {
       ...(typeof observation?.invalidIdentityField === 'string' && observation.invalidIdentityField
         ? { invalidIdentityField: observation.invalidIdentityField }
         : {}),
+      ...(typeof observation?.unrevokedField === 'string' && observation.unrevokedField
+        ? { unrevokedField: observation.unrevokedField }
+        : {}),
+      ...(typeof observation?.expiredField === 'string' && observation.expiredField
+        ? { expiredField: observation.expiredField }
+        : {}),
+      ...(typeof observation?.rotatedField === 'string' && observation.rotatedField
+        ? { rotatedField: observation.rotatedField }
+        : {}),
       expired: Boolean(observation?.expired),
       revoked: Boolean(observation?.revoked),
       cleanedUp: Boolean(observation?.cleanedUp),
+      cleanup: observation?.cleanup === true,
       rotated: lifecycle.rotated,
       preserved: lifecycle.preserved,
       ...(observation?.playgroundFallback === true ? { playgroundFallback: true } : {}),
@@ -1158,17 +1188,6 @@ function summarizeAuthSessionLifecycleHistory(history) {
     ) || null,
     observations,
   };
-}
-
-function normalizeAuthSessionLifecycleHistoryStatus(observation) {
-  if (observation?.revoked) {
-    return 'revoked';
-  }
-  if (observation?.cleanedUp) {
-    return 'cleaned-up';
-  }
-
-  return observation?.status || null;
 }
 
 function resolveRequiredProductionAuthSessionSummary(summary) {
@@ -1848,11 +1867,15 @@ function resolveProductionAuthSessionUnrevokedField(session) {
     return 'auth.session.status';
   }
 
+  if (session?.cleanup === true) {
+    return 'auth.session.cleanup';
+  }
+
   if (session?.cleanedUp === true) {
     return 'auth.session.cleanedUp';
   }
 
-  return 'auth.session.cleanup';
+  return 'auth.session.cleanedUp';
 }
 
 function resolveProductionAuthSessionExpiredObservation(session) {

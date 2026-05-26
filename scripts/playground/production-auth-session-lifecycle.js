@@ -68,7 +68,7 @@ export function evaluateProductionAuthSessionLifecycle(session, now = Date.now()
   if (revoked || cleanedUp) {
     return {
       ok: false,
-      field: resolveProductionAuthSessionUnrevokedField(session),
+      field: normalizeAuthSessionObservationField(session?.unrevokedField) || resolveProductionAuthSessionUnrevokedField(session),
       required: 'unrevoked',
       observed: revoked ? 'revoked' : 'cleaned-up',
     };
@@ -596,11 +596,15 @@ function resolveProductionAuthSessionUnrevokedField(observation) {
     return 'auth.session.status';
   }
 
+  if (observation?.cleanup === true) {
+    return 'auth.session.cleanup';
+  }
+
   if (observation?.cleanedUp === true) {
     return 'auth.session.cleanedUp';
   }
 
-  return 'auth.session.cleanup';
+  return 'auth.session.cleanedUp';
 }
 
 function resolveProductionAuthSessionExpiredField(observation) {
