@@ -1055,6 +1055,12 @@ test('packaged production plugin readiness helper retries only startup-shaped pa
   assert.equal(
     packagedProductionPluginServerReady({
       snapshot: readySnapshot,
+    }),
+    true,
+  );
+  assert.equal(
+    packagedProductionPluginServerReady({
+      snapshot: readySnapshot,
       preflight: notReadyPreflight,
     }),
     false,
