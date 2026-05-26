@@ -2736,6 +2736,7 @@ function addUnsupportedAttachmentResourceBlocker(plan, {
     resourceKind: 'attachment',
     resource,
     resourceKey: resource.key,
+    unsupportedState: support.unsupportedState || null,
     reason: support.reason || `Attachment graph resource ${resource.key} is not yet supported by the planner.`,
     baseHash,
     localHash,
@@ -3204,6 +3205,7 @@ function unsupportedAttachmentResourceSupport({ resource, baseValue, localValue,
     return {
       supported: false,
       className: 'unsupported-attachment-resource',
+      unsupportedState: 'same-plan-reference',
       reason: 'Attachment graph resources are not yet supported by the planner.',
       references: referenceEvidence,
     };
@@ -3212,9 +3214,26 @@ function unsupportedAttachmentResourceSupport({ resource, baseValue, localValue,
   const references = wordpressGraphReferences(resource, candidate);
   const referenceEvidence = references.map((reference) =>
     wordpressGraphReferenceEvidence(reference, resources, base, local, remote));
+  const remoteOnlyDrift = (
+    stableStringify(localValue) === stableStringify(baseValue)
+    && stableStringify(remoteValue) !== stableStringify(baseValue)
+  );
+  const convergedDrift = (
+    localValue !== ABSENT
+    && remoteValue !== ABSENT
+    && stableStringify(localValue) === stableStringify(remoteValue)
+    && stableStringify(localValue) !== stableStringify(baseValue)
+  );
   return {
     supported: false,
     className: 'unsupported-attachment-resource',
+    unsupportedState: localValue === ABSENT
+      ? 'delete'
+      : convergedDrift
+        ? 'converged-drift'
+        : remoteOnlyDrift
+          ? 'remote-only-drift'
+          : 'local-or-divergent-drift',
     reason: 'Attachment graph resources are not yet supported by the planner.',
     references: referenceEvidence,
   };

@@ -13993,6 +13993,7 @@ test('blocks local attachment graph resources while preserving a matching indepe
   assert.equal(blocker.class, 'unsupported-attachment-resource');
   assert.equal(blocker.resourceKind, 'attachment');
   assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.unsupportedState, 'same-plan-reference');
   assert.equal(blocker.reason, 'Attachment graph resources are not yet supported by the planner.');
   assert.equal(matchingEdit.decision, 'already-in-sync');
   assert.equal(matchingEdit.change.localChange, 'update');
@@ -14145,6 +14146,7 @@ test('flags local featured-image attachment references as a conflict when the li
   assert.equal(mutationFor(plan, resourceKey), undefined);
   assert.equal(blocker.class, 'unsupported-attachment-resource');
   assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.unsupportedState, 'delete');
   assert.equal(blocker.reason, 'Attachment graph resources are not yet supported by the planner.');
   assert.equal(plan.conflicts.length, 1);
   assert.equal(pluginDecision.decision, 'keep-remote');
@@ -21619,6 +21621,7 @@ test('blocks remote-only attachment drift while preserving a matching independen
   assert.equal(plan.conflicts.length, 0);
   assert.equal(blocker.class, 'unsupported-attachment-resource');
   assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.unsupportedState, 'remote-only-drift');
   assert.equal(blocker.reason, 'Attachment graph resources are not yet supported by the planner.');
   assert.equal(matchingEdit.decision, 'already-in-sync');
   assert.equal(matchingEdit.change.localChange, 'update');
@@ -21627,6 +21630,61 @@ test('blocks remote-only attachment drift while preserving a matching independen
   assert.equal(pluginFileDecision.decision, 'keep-remote');
   assert.equal(planJson.includes('Remote-only attachment drift content'), false);
   assert.equal(planJson.includes('Base remote-only attachment content'), false);
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin changes');
+  assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin changes */');
+});
+
+test('blocks converged attachment drift while preserving a matching independent edit and remote-only plugin changes', () => {
+  const resourceKey = 'row:["wp_posts","ID:45"]';
+  const base = baseSite();
+  base.db.wp_posts['ID:45'] = {
+    ID: 45,
+    post_title: 'Base converged attachment',
+    post_content: 'Base converged attachment content',
+    post_status: 'inherit',
+    post_type: 'attachment',
+  };
+  base.db.wp_posts['ID:1'].post_title = 'Base shared attachment row';
+
+  const local = baseSite();
+  local.db.wp_posts['ID:45'] = {
+    ID: 45,
+    post_title: 'Converged attachment drift',
+    post_content: 'Converged attachment drift content',
+    post_status: 'inherit',
+    post_type: 'attachment',
+  };
+  local.db.wp_posts['ID:1'].post_title = 'Shared attachment row';
+
+  const remote = baseSite();
+  remote.db.wp_posts['ID:45'] = JSON.parse(JSON.stringify(local.db.wp_posts['ID:45']));
+  remote.db.wp_posts['ID:1'].post_title = 'Shared attachment row';
+  remote.plugins.forms.description = 'remote-only plugin changes';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin changes */';
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.class === 'unsupported-attachment-resource' && entry.resourceKey === resourceKey);
+  const matchingEdit = decisionFor(plan, 'row:["wp_posts","ID:1"]');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(decisionFor(plan, resourceKey), undefined);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(plan.conflicts.length, 0);
+  assert.equal(blocker.class, 'unsupported-attachment-resource');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.unsupportedState, 'converged-drift');
+  assert.equal(blocker.reason, 'Attachment graph resources are not yet supported by the planner.');
+  assert.equal(matchingEdit.decision, 'already-in-sync');
+  assert.equal(matchingEdit.change.localChange, 'update');
+  assert.equal(matchingEdit.change.remoteChange, 'update');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('Converged attachment drift content'), false);
+  assert.equal(planJson.includes('Base converged attachment content'), false);
   assert.equal(remote.plugins.forms.description, 'remote-only plugin changes');
   assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin changes */');
 });
