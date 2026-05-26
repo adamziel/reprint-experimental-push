@@ -3523,7 +3523,15 @@ function unsupportedNavigationResourceSupport({ resource, baseValue, localValue,
 
   const samePlanNavigationReferences = inboundReferences.filter((reference) =>
     reference.targetChange.remote.state === 'absent'
-    && reference.targetChange.local.state === 'present');
+    && reference.targetChange.local.state === 'present')
+    .sort((left, right) => {
+      const priority = new Map([
+        ['menu-item-parent', 0],
+        ['post-parent', 1],
+      ]);
+      return (priority.get(left.relationshipType) ?? Number.MAX_SAFE_INTEGER)
+        - (priority.get(right.relationshipType) ?? Number.MAX_SAFE_INTEGER);
+    });
   const navigationReference = samePlanNavigationReferences[0];
   const samePlanNavigationReason = samePlanNavigationReferences.some((reference) => reference.relationshipType === 'menu-item-parent')
     ? `WordPress graph mutation ${resource.key} is created in the same plan as a menu item parent target that depends on it, and identity rewriting is not yet supported.`

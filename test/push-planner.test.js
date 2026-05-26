@@ -21947,7 +21947,7 @@ test('blocks local post-parent references to a same-plan created wp navigation w
   assert.equal(Object.hasOwn(remote.plugins, 'forms'), false);
 });
 
-test('carries bounded menu-item and post-parent references for a same-plan created wp navigation while preserving a matching independent edit and remote-only plugin changes', () => {
+test('prioritizes menu-item-parent navigation blocker wording while carrying bounded menu-item and post-parent references for a same-plan created wp navigation', () => {
   const navigationResourceKey = 'row:["wp_posts","ID:56"]';
   const menuItemResourceKey = 'row:["wp_posts","ID:55"]';
   const postResourceKey = 'row:["wp_posts","ID:57"]';
@@ -22008,16 +22008,14 @@ test('carries bounded menu-item and post-parent references for a same-plan creat
   const conflict = plan.conflicts[0];
   const pluginDecision = decisionFor(plan, 'plugin:forms');
   const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
-  const references = navigationBlocker.references
-    .map((reference) => ({
-      relationshipKey: reference.relationshipKey,
-      relationshipType: reference.relationshipType,
-      sourceResourceKey: reference.sourceResourceKey,
-      targetResourceKey: reference.targetResourceKey,
-      remoteState: reference.targetChange.remote.state,
-      localState: reference.targetChange.local.state,
-    }))
-    .sort((left, right) => left.relationshipKey.localeCompare(right.relationshipKey));
+  const references = navigationBlocker.references.map((reference) => ({
+    relationshipKey: reference.relationshipKey,
+    relationshipType: reference.relationshipType,
+    sourceResourceKey: reference.sourceResourceKey,
+    targetResourceKey: reference.targetResourceKey,
+    remoteState: reference.targetChange.remote.state,
+    localState: reference.targetChange.local.state,
+  }));
   const planJson = JSON.stringify(plan);
 
   assert.equal(plan.status, 'conflict');
