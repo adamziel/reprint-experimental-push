@@ -6804,6 +6804,192 @@ test('production-shaped authenticated push accepts checked durable journal proof
   }
 });
 
+test('production-shaped authenticated push prefers checked nested storage guard over stale fixture-style top-level recovery inspect evidence', async () => {
+  const originalFetch = global.fetch;
+  const seen = [];
+  let applyCount = 0;
+  const credential = {
+    username: 'reprint_push_admin',
+    password: 'app-password-01',
+  };
+  global.fetch = async (url, options) => {
+    seen.push({ url: String(url), options });
+    const pathname = String(url);
+    if (pathname.includes('/preflight')) {
+      return new Response(JSON.stringify({
+        ok: true,
+        auth: {
+          identity: { userLogin: 'reprint_push_admin' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
+        },
+        session: {
+          id: 'psh_01j00000000000000000000000',
+          expiresAt: '2030-01-01T00:00:00Z',
+        },
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+    if (pathname.includes('/snapshot')) {
+      return new Response(JSON.stringify({
+        ok: true,
+        snapshot: { resources: [] },
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+    if (pathname.includes('/dry-run')) {
+      return new Response(JSON.stringify({
+        ok: true,
+        receipt: { receiptHash: 'receipt-01' },
+        auth: {
+          identity: { userLogin: 'reprint_push_admin' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
+        },
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+    if (pathname.includes('/recovery/inspect')) {
+      return new Response(JSON.stringify({
+        ok: true,
+        auth: {
+          identity: { userLogin: 'reprint_push_admin' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
+        },
+        recovery: {
+          state: 'available',
+          counts: { old: 0, new: 1, blockedUnknown: 0, total: 1 },
+          journal: { integrity: { status: 'ok' } },
+        },
+        dbJournal: {
+          scope: 'packaged production plugin journal surface; not local Playground fixture only',
+          acceptedOnCheckedBoundary: true,
+          ownership: {
+            ownsJournal: true,
+            restartReadable: true,
+            productionAdapter: 'wpdb-single-statement-cas',
+          },
+          leaseFence: {
+            boundary: 'wpdb-single-statement-cas',
+            claimKeyUnique: true,
+            monotonicSequence: true,
+            restartReadable: true,
+            staleClaimRejected: false,
+          },
+          latestRows: [
+            {
+              event: 'idempotency-opened',
+              result: {
+                storageGuard: {
+                  boundary: 'wpdb-single-statement-cas',
+                  operation: 'update',
+                  outcome: 'applied',
+                },
+              },
+            },
+            { event: 'mutation-applied' },
+            { event: 'apply-committed' },
+          ],
+        },
+        storageGuard: {
+          boundary: 'local-playground-write',
+          operation: 'playground-append',
+          outcome: 'fixture-only',
+        },
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+    if (pathname.includes('/apply')) {
+      applyCount += 1;
+      return new Response(JSON.stringify({
+        ok: true,
+        mode: 'apply',
+        applied: 0,
+        receipt: { receiptHash: 'receipt-01' },
+        responseSchemaVersion: 1,
+        auth: {
+          identity: { userLogin: 'reprint_push_admin' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
+        },
+        signedRequest: {
+          signed: true,
+          schemaVersion: 1,
+          contentHash: 'content-hash-01',
+          sessionHash: 'session-hash-01',
+          signingKeyHash: 'signing-key-hash-01',
+          request: { method: 'POST', path: '/wp-json/reprint/v1/push/apply' },
+        },
+        idempotency: {
+          replayed: applyCount > 1,
+          freshMutationWork: applyCount === 1,
+          conflict: false,
+        },
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+    if (pathname.includes('/db-journal')) {
+      throw new Error(`unexpected db-journal fetch to ${url}`);
+    }
+    throw new Error(`unexpected fetch to ${url}`);
+  };
+
+  try {
+    const summary = await runAuthenticatedHttpPush({
+      sourceUrl: 'http://127.0.0.1:8080',
+      base: { resources: [] },
+      local: { resources: [] },
+      username: credential.username,
+      applicationPassword: credential.password,
+      idempotencyKey: 'idem-inline-recovery-proof-02',
+      routeProfile: 'production-shaped',
+      requireProductionAuthSession: true,
+    });
+
+    assert.equal(summary.ok, true);
+    assert.deepEqual(summary.recoveryInspect.recovery.dbJournal.storageGuard, {
+      boundary: 'wpdb-single-statement-cas',
+      operation: 'update',
+      outcome: 'applied',
+    });
+    assert.deepEqual(summary.dbJournal?.storageGuard, {
+      boundary: 'wpdb-single-statement-cas',
+      operation: 'update',
+      outcome: 'applied',
+    });
+    assert.ok(!seen.some(({ url }) => url.includes('/db-journal?limit=80')));
+  } finally {
+    global.fetch = originalFetch;
+  }
+});
+
 test('production-shaped authenticated push fails closed when durable journal readback omits the auth envelope after apply', async () => {
   const originalFetch = global.fetch;
   const seen = [];

@@ -1037,13 +1037,10 @@ function dbJournalStorageGuardIsTrusted(storageGuard) {
 
 function summarizeDbJournalStorageGuard(body) {
   const directStorageGuard = sanitizeStorageGuard(body?.storageGuard);
-  if (directStorageGuard) {
-    return directStorageGuard;
-  }
-
   const rows = Array.isArray(body?.dbJournal?.latestRows)
     ? [...body.dbJournal.latestRows].reverse()
     : [];
+  let nestedCandidate;
   for (const row of rows) {
     const nestedStorageGuard = sanitizeStorageGuard(
       row?.result?.storageGuard
@@ -1051,8 +1048,33 @@ function summarizeDbJournalStorageGuard(body) {
       || row?.resourceHashEvidence?.mutation?.storageGuard,
     );
     if (nestedStorageGuard) {
-      return nestedStorageGuard;
+      if (
+        body?.dbJournal?.acceptedOnCheckedBoundary === true
+        && dbJournalStorageGuardIsTrusted(nestedStorageGuard)
+      ) {
+        nestedCandidate = nestedStorageGuard;
+        break;
+      }
+      if (!nestedCandidate) {
+        nestedCandidate = nestedStorageGuard;
+      }
     }
+  }
+
+  if (directStorageGuard) {
+    if (
+      body?.dbJournal?.acceptedOnCheckedBoundary === true
+      && nestedCandidate
+      && storageGuardLooksFixtureScoped(directStorageGuard)
+      && dbJournalStorageGuardIsTrusted(nestedCandidate)
+    ) {
+      return nestedCandidate;
+    }
+    return directStorageGuard;
+  }
+
+  if (nestedCandidate) {
+    return nestedCandidate;
   }
 
   return undefined;
@@ -1096,6 +1118,14 @@ function sanitizeStorageGuard(storageGuard) {
     operation: storageGuard.operation,
     outcome: storageGuard.outcome,
   };
+}
+
+function storageGuardLooksFixtureScoped(storageGuard) {
+  return ['boundary', 'operation', 'outcome'].some((key) => {
+    const value = storageGuard?.[key];
+    return typeof value === 'string'
+      && /fixture|local-playground|playground/i.test(value);
+  });
 }
 
 function summarizeRecoveryInspect(response) {
