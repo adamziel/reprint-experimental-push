@@ -562,12 +562,34 @@ function normalizeProductionRecoveryJournalOptions(filePathOrOptions, options = 
     const remoteArtifactPath = legacyArtifactRefs && Object.hasOwn(legacyArtifactRefs, 'remote')
       ? legacyArtifactRefs.remote
       : null;
-    const derivedWriterLease = Object.hasOwn(legacyOptions, 'writerLease')
-      ? legacyOptions.writerLease
-      : { id: legacyOptions.claimId || legacyOptions.plan?.id || legacyOptions.filePath || 'production-recovery-journal' };
+    const hasExplicitWriterLease = Object.hasOwn(legacyOptions, 'writerLease');
+    const hasExplicitClaimId = Object.hasOwn(legacyOptions, 'claimId')
+      && typeof legacyOptions.claimId === 'string'
+      && legacyOptions.claimId.trim().length > 0;
+    if (!hasExplicitWriterLease && !hasExplicitClaimId) {
+      throw new UnsupportedProductionRecoveryJournalError(
+        'Production recovery journal compatibility overload requires an explicit claimId or writerLease.',
+        {
+          kind: 'production-recovery-journal',
+          productionAdapter: true,
+          supportedSurface: 'production-recovery-journal-adapter',
+          restartReadable: false,
+          ownsJournal: false,
+          ownsRemoteArtifact: remoteArtifactPath !== null,
+          journalPath: typeof legacyOptions.filePath === 'string' ? legacyOptions.filePath : null,
+          artifactRefs: Object.freeze({
+            journal: null,
+            remote: null,
+          }),
+          schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+        },
+      );
+    }
     return {
       ...legacyOptions,
-      writerLease: derivedWriterLease,
+      writerLease: hasExplicitWriterLease
+        ? legacyOptions.writerLease
+        : { id: legacyOptions.claimId },
       ownsRemoteArtifact: remoteArtifactPath !== null && remoteArtifactPath !== undefined && remoteArtifactPath !== '',
       remoteArtifactPath,
     };
