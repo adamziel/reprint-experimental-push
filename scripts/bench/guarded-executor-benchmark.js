@@ -680,6 +680,12 @@ export function productionThroughputBlockers(report) {
     blockers.push('memory-ceiling-match-visible-without-memory-ceiling-visibility');
   }
   if (
+    report.evidence.backpressure?.receiptCursorMemoryCeilingMatchesQueueBudgetVisible === true
+    && report.evidence.backpressure?.queueHeadroomVisible !== true
+  ) {
+    blockers.push('memory-ceiling-match-visible-without-queue-headroom-visibility');
+  }
+  if (
     report.evidence.backpressure?.receiptCursorMemoryCeilingVisible === true
     && report.evidence.backpressure?.queueBudgetVisible !== true
   ) {
@@ -1317,6 +1323,7 @@ export function productionThroughputDetails(report) {
     receiptCursorMemoryCeilingMatchesQueueBudget
     && receiptCursorMemoryCeilingVisible
     && queueBudgetVisible
+    && queueHeadroomVisible
     && report.evidence.backpressure?.receiptCursorMemoryCeilingMatchesQueueBudgetVisible === true;
   const backpressureAlignment = {
     queueBudgetBytes: receiptCursorQueueBudgetBytes,
@@ -1858,6 +1865,7 @@ function hasCompleteBackpressureEvidence(report) {
     receiptCursorMemoryCeilingMatchesQueueBudget
     && report.evidence.backpressure?.receiptCursorMemoryCeilingVisible === true
     && report.evidence.backpressure?.queueBudgetVisible === true
+    && report.evidence.backpressure?.queueHeadroomVisible === true
     && report.evidence.backpressure?.receiptCursorMemoryCeilingMatchesQueueBudgetVisible === true;
   const queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack =
     report.evidence.backpressure?.queuePausedBeforeOverflow === true
