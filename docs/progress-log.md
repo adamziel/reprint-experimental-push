@@ -4,6 +4,24 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-05-26 - Public Status Audit 11:11:13
+
+<a id="2026-05-26-public-status-audit-111113"></a>
+
+- Refreshed [progress.html](../progress.html) to the current `date` output
+  (`2026-05-26 11:11:13 CEST`) so the visible page stays internally
+  consistent. The headline, trend, audit note, and release-gate proof item all
+  name `5fd9dfb4` as the current reliable head and describe the release-journal
+  smoke via `openProductionRecoveryJournal()`, while release gates remain
+  `0/4`.
+- `5fd9dfb4` remains the newest reliable head for the public lane surface; the
+  supporting no-data-loss and recovery evidence stays visible, but no gate
+  movement is claimed until the critic and auditor accept a production-boundary
+  change.
+- Evidence trail: [progress.html](../progress.html),
+  [objective audit](../audits/objective-audit.md),
+  [release-gate checklist](../progress.html#proof-gates).
+
 ## 2026-05-26 - Public Status Audit 11:09:28
 
 <a id="2026-05-26-public-status-audit-110928"></a>
