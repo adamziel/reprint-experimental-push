@@ -645,6 +645,13 @@ export function productionThroughputBlockers(report) {
     blockers.push('queue-headroom-visible-without-queue-budget-visibility');
   }
   if (
+    report.evidence.backpressure?.receiptCursorMemoryCeilingVisible === true
+    && report.evidence.backpressure?.queueBudgetVisible !== true
+    && report.evidence.backpressure?.queueHeadroomVisible === true
+  ) {
+    blockers.push('memory-ceiling-and-queue-headroom-visible-without-queue-budget-visibility');
+  }
+  if (
     !Number.isFinite(report.evidence.backpressure?.queueHeadroomBytes)
     || report.evidence.backpressure.queueHeadroomBytes < 0
   ) {
@@ -1018,7 +1025,7 @@ export function productionThroughputDetails(report) {
     report.evidence.backpressure?.queueHeadroomVisible === true;
   const queueHeadroomMeasured = report.evidence.backpressure?.queueHeadroomMeasured === true;
   const receiptCursorMemoryCeilingVisibleAndQueueHeadroomVisible =
-    receiptCursorMemoryCeilingVisible && queueHeadroomVisible && queueHeadroomMeasured;
+    receiptCursorMemoryCeilingVisible && queueBudgetVisible && queueHeadroomVisible && queueHeadroomMeasured;
   const receiptCursorMemoryHeadroomPositive =
     Number.isFinite(receiptCursorMemoryHeadroomBytes)
     && receiptCursorMemoryHeadroomBytes > 0;
