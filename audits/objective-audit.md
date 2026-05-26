@@ -8,16 +8,16 @@ Fresh remote heads at audit time, checked on May 26, 2026:
 
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `cc689f61`
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `e91685f1`
-- `origin/lane/reliable-executor` -> `b8d91776`
-- `origin/lane/no-data-loss-invariants` -> `c718a4af`
+- `origin/lane/reliable-executor` -> `d9cf1544`
+- `origin/lane/no-data-loss-invariants` -> `b5c81374`
 - `origin/lane/no-data-loss-recovery` -> `47b675c0`
 - `origin/lane/fast-paths` -> `cd0fddad`
-- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `27d0c72e`
+- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `66a38fe2`
 - `origin/lane/critic` -> `cba0890b`
 - `origin/lane/progress-publisher` -> `7695e1f9`
 - `origin/lane/cycle-20260525-mainwindows-2349/critic` -> `cba0890b`
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `e91685f1`
-- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `cc689f61`
+- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `c5db1aac`
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `fec1770b`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `4372167e`
 - `origin/lane/same-plan-wordpress-graph-create` -> `a719e09c`
@@ -33,21 +33,21 @@ real source-site mutation boundary. The release gates still stay `0/4`.
 Fresh lane proof since the last audit pass improved the local evidence floor,
 but it did not change the release conclusion:
 
-- `origin/lane/reliable-executor` now tightens production-proof subprocess
-  bounds at `b8d91776`. That is useful harness hardening, but the live proof
-  path is still lab-backed and the verdict does not move.
+- `origin/lane/reliable-executor` now tightens live proof failure reporting at
+  `d9cf1544`. That improves the wrapper boundary, but the live proof path is
+  still lab-backed and the verdict does not move.
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` has advanced to
   `cc689f61`, which continues the fail-closed headroom mismatch tightening.
   It is still not release-grade live-source evidence.
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` has
-  advanced to `27d0c72e`, refreshing the audit snapshot. That updates the
+  advanced to `66a38fe2`, refreshing the audit snapshot. That updates the
   evidence surface but does not change the release boundary.
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` now tightens queue
-  headroom evidence at `40d5aa1a`, and `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor`
-  now refreshes the progress visibility handoff at `b49f66db`. These are both
+  headroom evidence at `c5db1aac`, and `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor`
+  now refreshes the progress visibility handoff at `e91685f1`. These are both
   freshness or fail-closed updates, not release-grade live-source evidence.
-- `origin/lane/no-data-loss-invariants` now tightens revision-parent graph
-  blocking at `c718a4af`. A separate cycle-branch proof at `98c0ce26`
+- `origin/lane/no-data-loss-invariants` now tightens navigation blocker proof
+  at `b5c81374`. A separate cycle-branch proof at `98c0ce26`
   extends that blocker coverage to missing graph identity references, and the
   same-plan graph lane at `a719e09c` now blocks unsupported graph surfaces
   including revision posts, menu/navigation posts, serialized blocks, and
