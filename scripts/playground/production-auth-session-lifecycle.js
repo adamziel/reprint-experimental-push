@@ -81,6 +81,15 @@ export function evaluateProductionAuthSessionLifecycleSummary(summary, now = Dat
     };
   }
 
+  const invalidSummaryFlag = resolveInvalidAuthSessionSummaryFlag(summary);
+  if (invalidSummaryFlag) {
+    return {
+      ok: false,
+      required: 'boolean lifecycle flags',
+      observed: `invalid-${invalidSummaryFlag}`,
+    };
+  }
+
   if (summary.observations !== undefined && !Array.isArray(summary.observations)) {
     return {
       ok: false,
@@ -388,6 +397,26 @@ function resolveInvalidAuthSessionLifecycleFlag(observation) {
     const value = observation[flag];
     if (value !== undefined && value !== null && typeof value !== 'boolean') {
       return flag;
+    }
+  }
+
+  return null;
+}
+
+function resolveInvalidAuthSessionSummaryFlag(summary) {
+  if (!summary || typeof summary !== 'object') {
+    return null;
+  }
+
+  if (summary.cleanup !== undefined && summary.cleanup !== null && typeof summary.cleanup !== 'boolean') {
+    return 'cleanup';
+  }
+
+  const summaryObservationFields = ['expired', 'revoked', 'cleanedUp', 'rotated', 'preserved'];
+  for (const field of summaryObservationFields) {
+    const value = summary[field];
+    if (value !== undefined && value !== null && (typeof value !== 'object' || Array.isArray(value))) {
+      return field;
     }
   }
 
