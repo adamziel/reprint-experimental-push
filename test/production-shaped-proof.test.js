@@ -22,8 +22,10 @@ import {
 } from '../scripts/playground/packaged-production-plugin-source-command.js';
 import {
   packagedProductionPluginPreflightReady,
+  packagedProductionPluginPreflightRetryable,
   packagedProductionPluginServerReady,
   packagedProductionPluginSnapshotReady,
+  packagedProductionPluginSnapshotRetryable,
 } from '../scripts/playground/packaged-production-plugin-readiness.js';
 import {
   evaluateProductionAuthSessionLifecycle,
@@ -902,6 +904,8 @@ test('packaged production plugin readiness helper waits for signed preflight rea
 
   assert.equal(packagedProductionPluginSnapshotReady(readySnapshot), true);
   assert.equal(packagedProductionPluginPreflightReady(strictReadyPreflight), true);
+  assert.equal(packagedProductionPluginSnapshotRetryable(notReadyPreflight), true);
+  assert.equal(packagedProductionPluginPreflightRetryable(notReadyPreflight), true);
   assert.equal(
     packagedProductionPluginServerReady({
       snapshot: readySnapshot,
@@ -926,6 +930,67 @@ test('packaged production plugin readiness helper waits for signed preflight rea
       },
       preflight: strictReadyPreflight,
     }),
+    false,
+  );
+  assert.equal(
+    packagedProductionPluginPreflightRetryable({
+      status: 401,
+      body: {
+        code: 'reprint_push_lab_auth_required',
+        message: 'Authenticated push routes require WordPress Application Password basic auth.',
+      },
+    }),
+    false,
+  );
+  assert.equal(
+    packagedProductionPluginSnapshotRetryable({
+      status: 401,
+      body: {
+        code: 'reprint_push_lab_auth_required',
+      },
+    }),
+    false,
+  );
+  assert.equal(
+    packagedProductionPluginPreflightRetryable({
+      status: 200,
+      body: {
+        ok: true,
+        routeProfile: {
+          labBacked: true,
+        },
+        auth: {
+          session: {
+            type: 'lab-signed-push-session',
+            status: 'active',
+            expiresAt: '2099-01-01T00:00:00Z',
+          },
+        },
+      },
+    }),
+    true,
+  );
+  assert.equal(
+    packagedProductionPluginPreflightRetryable({
+      status: 200,
+      body: {
+        ok: true,
+        routeProfile: {
+          labBacked: false,
+        },
+        auth: {
+          session: {
+            type: 'production-auth-session',
+            status: 'revoked',
+            expiresAt: '2099-01-01T00:00:00Z',
+          },
+        },
+      },
+    }),
+    true,
+  );
+  assert.equal(
+    packagedProductionPluginPreflightRetryable(strictReadyPreflight),
     false,
   );
 });

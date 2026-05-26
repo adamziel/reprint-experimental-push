@@ -23,7 +23,9 @@ import {
 } from './packaged-production-plugin-source-command.js';
 import {
   packagedProductionPluginPreflightReady,
+  packagedProductionPluginPreflightRetryable,
   packagedProductionPluginServerReady,
+  packagedProductionPluginSnapshotRetryable,
 } from './packaged-production-plugin-readiness.js';
 import { loadBlueprintSnapshotFixture } from './blueprint-snapshot-fixture.js';
 import {
@@ -1312,12 +1314,27 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
         },
       })) {
         lastError = new Error(`Production plugin package snapshot readiness HTTP ${snapshot.status}`);
-        if (isWordPressNotReadyResponse(snapshot.status, snapshotText)) {
+        if (
+          isWordPressNotReadyResponse(snapshot.status, snapshotText)
+          || packagedProductionPluginSnapshotRetryable({
+            status: snapshot.status,
+            body: snapshotBody,
+          })
+        ) {
           await sleep(readinessProbeIntervalMs);
           continue;
         }
-        await sleep(readinessProbeIntervalMs);
-        continue;
+        await throwPlaygroundReadinessFailure(
+          child,
+          `Packaged Playground snapshot returned a terminal readiness failure at ${baseUrl}`,
+          lastError,
+          lastProbes,
+          getOutput(),
+          {
+            childPid: child.pid ?? null,
+            packagedProductionPlugin: true,
+          },
+        );
       }
 
       const preflight = await fetchWithTimeout(`${baseUrl}/wp-json/reprint/v1/push/preflight`, {
@@ -1352,8 +1369,24 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
         return;
       }
       lastError = new Error(`Production plugin package preflight readiness HTTP ${preflight.status}`);
-      await sleep(readinessProbeIntervalMs);
-      continue;
+      if (packagedProductionPluginPreflightRetryable({
+        status: preflight.status,
+        body: preflightBody,
+      })) {
+        await sleep(readinessProbeIntervalMs);
+        continue;
+      }
+      await throwPlaygroundReadinessFailure(
+        child,
+        `Packaged Playground signed preflight returned a terminal readiness failure at ${baseUrl}`,
+        lastError,
+        lastProbes,
+        getOutput(),
+        {
+          childPid: child.pid ?? null,
+          packagedProductionPlugin: true,
+        },
+      );
     } catch (error) {
       lastError = error;
     }
