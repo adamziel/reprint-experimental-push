@@ -1607,16 +1607,23 @@ function recordDurableRecoveryState(writer, current, plan, recoveryState) {
     && recoveryState.status === 'blocked-recovery'
     && (
       !writerRemoteArtifactRef
+      || supportReport?.missingDependency.includes('restart-readable remote recovery artifact ownership')
       || supportReport?.missingDependency.includes('restart-readable recovery remote artifact references')
     )
   ) {
+    const missingDependency = supportReport?.missingDependency.includes('restart-readable remote recovery artifact ownership')
+      ? ['restart-readable remote recovery artifact ownership']
+      : ['restart-readable recovery remote artifact references'];
+    const causeMessage = missingDependency[0] === 'restart-readable remote recovery artifact ownership'
+      ? 'Production durable journal lost its distinct restart-readable remote artifact reference ownership before recording blocked recovery state.'
+      : 'Production durable journal lost its distinct restart-readable remote artifact reference before recording blocked recovery state.';
     throw new PushPlanError(
       'JOURNAL_WRITER_INVALID',
-      'Production durable journal lost its distinct restart-readable remote artifact reference before recording blocked recovery state.',
+      causeMessage,
       {
         eventType: 'recovery-state',
-        causeMessage: 'Production durable journal lost its distinct restart-readable remote artifact reference before recording blocked recovery state.',
-        missingDependency: ['restart-readable recovery remote artifact references'],
+        causeMessage,
+        missingDependency,
       },
     );
   }
