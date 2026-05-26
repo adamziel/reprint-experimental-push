@@ -6,31 +6,32 @@ The project is **not releasable as a production WordPress push path**.
 
 Fresh remote heads at audit time, checked on May 26, 2026:
 
-- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `38532801`
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `4a9b19e0`
+- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `e88851d8`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `c13ccd13`
 - `origin/lane/reliable-executor` -> `ffdc0a9b`
 - `origin/lane/no-data-loss-invariants` -> `9c70eba6`
 - `origin/lane/no-data-loss-recovery` -> `4372167e`
 - `origin/lane/fast-paths` -> `cd0fddad`
-- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `38532801`
-- `origin/lane/independent-auditor` -> `dabd35e2`
+- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `e88851d8`
+- `origin/lane/independent-auditor` -> `77868df5`
 - `origin/lane/critic` -> `6828861f`
 - `origin/lane/progress-publisher` -> `7695e1f9`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `d9379e28`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `ffb4e32a`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `4372167e`
 - `origin/lane/cycle-20260525-mainwindows-2349/critic` -> `3b9a9c46`
 - `origin/lane/same-plan-wordpress-graph-create` -> `09e6706d`
 - `origin/lane/cycle-20260525-mainwindows-2349/same-plan-wordpress-graph-create` -> `09e6706d`
 - `origin/lane/cycle-20260525-mainwindows-2349/same-plan-wordpress-graph-create` -> `e9cbf9d4`
 - `origin/lane/cycle-20260525-mainwindows-2357/no-data-loss-invariants-graph-proof` -> `98c0ce26`
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `4a9b19e0`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `d9379e28`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `c13ccd13`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `ffb4e32a`
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` -> `5f256171`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-invariants` -> `9c70eba6`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `4372167e`
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `38532801`
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `4a9b19e0`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `d9379e28`
+- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `e88851d8`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `c13ccd13`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `fffb4e32a`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `4372167e`
 - `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration` -> `a3a900d7`
 - `origin/main` -> `e55864f4`
