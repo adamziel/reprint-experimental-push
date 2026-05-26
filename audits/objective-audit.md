@@ -42,11 +42,11 @@ The project is **not releasable as a production WordPress push path**.
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `d7813094`
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `8a7f4edd`
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `c86ece15`
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `3b52ea58`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `f0aa666e`
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `f9f3fca0`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `2af1ddda`
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `ea8694c3`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `2c9ca073`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `f0e71e00`
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` -> `0ca7b35d`
 - `origin/lane/cycle-20260525-mainwindows-2349/same-plan-wordpress-graph-create` -> `af493c80`
 - `origin/lane/cycle-20260525-mainwindows-2357/no-data-loss-invariants-graph-proof` -> `98c0ce26`
@@ -55,9 +55,9 @@ The project is **not releasable as a production WordPress push path**.
 - `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration` -> `8cfc4f6c`
 - `origin/lane/critic` -> `443dacd6`
 - `origin/lane/fast-paths` -> `8c5c2ccb`
-- `origin/lane/feedback-supervisor` -> `2a67a6b8`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `3b52ea58`
 - `origin/lane/independent-auditor` -> `f9f3fca0`
-- `origin/lane/no-data-loss-invariants` -> `09ab2491`
+- `origin/lane/no-data-loss-invariants` -> `cda3a1c3`
 - `origin/lane/no-data-loss-recovery` -> `2af1ddda`
 - `origin/lane/progress-publisher` -> `7695e1f9`
 - `origin/lane/reliable-executor` -> `f1783e10`
@@ -65,8 +65,8 @@ The project is **not releasable as a production WordPress push path**.
 
 Fresh visibility-lane heads moved, but they still only refresh public status surfaces:
 
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `3b52ea58`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `2c9ca073`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `f0aa666e`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `f0e71e00`
 - `origin/main` -> `2c8d52cb`
 
 The current remote state still adds no production-backed auth/session
@@ -119,9 +119,9 @@ but it did not change the release conclusion:
   verify helper bounds and keeping the live proof wrapper fail-closed. It still
   does not prove production auth/session lifecycle or a live-source mutation
   boundary.
-- `origin/lane/no-data-loss-invariants` now records `09ab2491`, adding a
-  GUID blocker proof. It still does not prove the live release boundary or any
-  production-backed source mutation.
+- `origin/lane/no-data-loss-invariants` now records `cda3a1c3`, adding an
+  unsupported plugin version range proof. It still does not prove the live
+  release boundary or any production-backed source mutation.
 - `origin/lane/no-data-loss-invariants` now records `57a487a8`, adding a
   special-file delete blocker proof. It still does not prove the live release
   boundary or any production-backed source mutation.
@@ -159,12 +159,12 @@ but it did not change the release conclusion:
   commit shortcuts only.
 - `origin/lane/fast-paths` now records `999ff0d8`, adding chunk digest resume
   rejection. It still does not prove a production speed claim.
-- `origin/lane/feedback-supervisor` now records `2a67a6b8`, refreshing the
-  supervisor progress surface only.
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now records
-  `2fee0d53`, refreshing progress visibility only.
+  `3b52ea58`, refreshing the supervisor progress surface only.
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now records
+  `3b52ea58`, refreshing progress visibility only.
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now records
-  `e627b0ec`, refreshing public progress freshness only. It still does not
+  `e3ffb5ed`, refreshing public progress freshness only. It still does not
   add production-backed gate movement.
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` now records
   `0ac76c38`, refreshing the audit snapshot only and not changing the release
@@ -193,9 +193,9 @@ but it did not change the release conclusion:
 - `origin/lane/progress-publisher` now records `7695e1f9`, refreshing public
   progress freshness only.
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now records
-  `2fee0d53`, refreshing the public progress freshness only.
+  `3b52ea58`, refreshing the public progress freshness only.
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now records
-  `e627b0ec`, refreshing the public progress freshness only.
+  `e3ffb5ed`, refreshing the public progress freshness only.
 - `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration`
   now records `7efe180b`, adding revision postmeta removal proof only.
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` now
