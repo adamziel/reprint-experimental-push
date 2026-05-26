@@ -19702,6 +19702,32 @@ test('production durable journal claims fail closed without a restart-readable w
   ]);
 });
 
+test('production durable journal support checks close an invalid writer before failing closed', () => {
+  let closed = 0;
+  const writer = {
+    close() {
+      closed += 1;
+    },
+  };
+  const plan = planFor(baseSite(), baseSite(), {
+    ...baseSite(),
+    db: {
+      ...baseSite().db,
+      wp_options: {
+        ...baseSite().db.wp_options,
+        'option_name:blogname': { option_name: 'blogname', option_value: 'New Site' },
+      },
+    },
+  });
+  const error = captureError(() => applyPlan(baseSite(), plan, {
+    requireProductionDurableJournal: true,
+    durableJournal: writer,
+  }));
+
+  assert.equal(error.code, 'JOURNAL_WRITER_INVALID');
+  assert.equal(closed, 1);
+});
+
 test('production durable journal claims fail closed when the writer cannot inspect restart state', () => {
   const writer = {
     nextSequence: 1,

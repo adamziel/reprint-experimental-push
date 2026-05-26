@@ -66,10 +66,11 @@ export function applyPlan(remote, plan, options = {}) {
   validateSupportedPluginOwnedMutations(remote, plan);
   validateAtomicGroupDependencyPlan(remote, plan);
 
-  const durableJournal = getDurableJournalWriter(options);
-  assertProductionDurableJournalSupport(options, durableJournal);
-  let failure = null;
+  const durableJournalInput = options.durableJournal || options.recoveryJournal || null;
+  let durableJournal = null;
   try {
+    durableJournal = getDurableJournalWriter(options);
+    assertProductionDurableJournalSupport(options, durableJournal);
     const hasPreviousJournal = Boolean(options.journal);
     let previousJournalState = null;
     let journal = prepareJournal(remote, plan, options.journal);
@@ -238,13 +239,11 @@ export function applyPlan(remote, plan, options = {}) {
         },
       },
     };
-  } catch (error) {
-    failure = error;
-    throw error;
   } finally {
-    if (durableJournal && typeof durableJournal.close === 'function') {
+    const writerToClose = durableJournal || durableJournalInput;
+    if (writerToClose && typeof writerToClose.close === 'function') {
       try {
-        durableJournal.close();
+        writerToClose.close();
       } catch {
         // Failure cleanup should not mask the original apply error.
       }
