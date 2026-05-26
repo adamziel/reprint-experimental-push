@@ -174,6 +174,9 @@ Current executable gate:
 - The details surface now also exposes whether storage-receipts and
   atomic-commit visibility are both measured, so the audit view can reject a
   forged paired visibility summary without trusting the raw surface alone.
+- The details surface now also fails closed when atomic-group metadata is
+  visible but storage-receipts measurement is hidden, so metadata visibility
+  cannot drift ahead of the measured storage boundary.
 - The details surface now also exposes whether visible parallelism caps are
   both visible and canonical, so the audit view can reject a drifted limit
   summary without reconstructing the visible bit from the rest of the

@@ -819,6 +819,12 @@ export function productionThroughputBlockers(report) {
     blockers.push('production-atomic-group-metadata-visible-without-atomic-commit');
   }
   if (
+    report.evidence.atomicGroup.productionAtomicGroupMetadataVisible === true
+    && report.evidence.atomicGroup.productionStorageReceiptsMeasured !== true
+  ) {
+    blockers.push('production-atomic-group-metadata-visible-without-storage-receipts-measurement');
+  }
+  if (
     report.evidence.atomicGroup.productionAtomicCommitVisible === true
     && report.evidence.atomicGroup.productionAtomicGroupMetadataVisible !== true
   ) {
