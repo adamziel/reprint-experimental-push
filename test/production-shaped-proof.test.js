@@ -2531,6 +2531,36 @@ test('packaged smoke readiness helper fails closed on non-retryable route respon
   );
 });
 
+test('packaged snapshot readiness helper enforces the bounded classifier before retryable preflight loops continue', () => {
+  const smokeSource = readFileSync(
+    path.join(repoRoot, 'scripts/playground/production-plugin-package-smoke.mjs'),
+    'utf8',
+  );
+  const smokeStart = smokeSource.indexOf('if (!packagedProductionPluginServerReady({ snapshot: { status: snapshotResponse.status, body: snapshotBody } })) {');
+  assert.notEqual(smokeStart, -1, 'expected packaged smoke snapshot readiness branch');
+  const smokeEnd = smokeSource.indexOf('notReadyProbeCounts = packagedProductionPluginResetRouteNotReadyProbeCounts(', smokeStart);
+  assert.notEqual(smokeEnd, -1, 'expected packaged smoke snapshot readiness branch boundary');
+  const smokeBranch = smokeSource.slice(smokeStart, smokeEnd);
+  assert.match(
+    smokeBranch,
+    /if \(\s*preflightProbe\.retryable\s*&&\s*packagedProductionPluginNotReadyProbeLimitReached\(\s*snapshotNotReadyProbeCount,\s*maxPackagedStartupNotReadyProbeCount,\s*\)\s*\)\s*\{[\s\S]*?fetchPackagedWordPressIndexProbe\(baseUrl, child\)[\s\S]*?retryable-route-wordpress-starting[\s\S]*?retryable-route-packaged-route-starting[\s\S]*?retryable-route-index-terminal[\s\S]*?Packaged production plugin snapshot hit the bounded readiness failure/s,
+  );
+
+  const verifierSource = readFileSync(
+    path.join(repoRoot, 'scripts/playground/production-shaped-release-verify.mjs'),
+    'utf8',
+  );
+  const verifierStart = verifierSource.indexOf('if (!packagedProductionPluginServerReady({');
+  assert.notEqual(verifierStart, -1, 'expected packaged verifier snapshot readiness branch');
+  const verifierEnd = verifierSource.indexOf('notReadyProbeCounts = packagedProductionPluginResetRouteNotReadyProbeCounts(', verifierStart);
+  assert.notEqual(verifierEnd, -1, 'expected packaged verifier snapshot readiness branch boundary');
+  const verifierBranch = verifierSource.slice(verifierStart, verifierEnd);
+  assert.match(
+    verifierBranch,
+    /if \(\s*preflightProbe\.retryable\s*&&\s*packagedProductionPluginNotReadyProbeLimitReached\(\s*snapshotNotReadyProbeCount,\s*maxPackagedStartupNotReadyProbeCount,\s*\)\s*\)\s*\{[\s\S]*?fetchPackagedWordPressIndexProbe\(baseUrl, child\)[\s\S]*?globalWordPressStartup:\s*true[\s\S]*?packagedRouteStartup:\s*true[\s\S]*?indexTerminal:\s*true[\s\S]*?maxNotReadyProbeCount:\s*maxPackagedStartupNotReadyProbeCount/s,
+  );
+});
+
 test('lab Playground readiness helper rejects malformed ready responses and retries only startup-shaped failures', () => {
   const readySnapshot = {
     status: 200,

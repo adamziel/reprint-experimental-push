@@ -1492,16 +1492,99 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
         if (preflightProbe.ready) {
           return;
         }
-        if (preflightProbe.retryable) {
-          await sleepUnlessChildExit(readinessProbeIntervalMs, child);
-          continue;
-        }
         if (
           packagedProductionPluginSnapshotRetryable({
             status: snapshot.status,
             body: snapshotBody,
           })
         ) {
+          if (
+            preflightProbe.retryable
+            && packagedProductionPluginNotReadyProbeLimitReached(
+              snapshotNotReadyProbeCount,
+              maxPackagedStartupNotReadyProbeCount,
+            )
+          ) {
+            const indexProbe = await fetchPackagedWordPressIndexProbe(baseUrl, child);
+            lastProbes.push(indexProbe);
+            const startupBranch = packagedProductionPluginClassifyBoundedStartup(
+              {
+                retryable: true,
+                status: snapshot.status,
+                body: snapshotText,
+              },
+              indexProbe,
+            );
+            if (startupBranch?.kind === 'retryable-route-wordpress-starting') {
+              await throwPlaygroundReadinessFailure(
+                child,
+                `Packaged production plugin snapshot stayed startup-shaped while /wp-json/ kept reporting global WordPress startup HTTP ${indexProbe.status} for ${snapshotNotReadyProbeCount} consecutive response${snapshotNotReadyProbeCount === 1 ? '' : 's'} (limit ${maxPackagedStartupNotReadyProbeCount})`,
+                lastError,
+                lastProbes,
+                getOutput(),
+                {
+                  childPid: child.pid ?? null,
+                  packagedProductionPlugin: true,
+                  snapshotNotReadyProbeCount,
+                  globalWordPressStartup: true,
+                },
+              );
+            }
+            if (startupBranch?.kind === 'retryable-route-packaged-route-starting') {
+              if (
+                packagedProductionPluginPackagedRouteStartupLimitReached(
+                  snapshotNotReadyProbeCount,
+                  maxPackagedStartupNotReadyProbeCount,
+                )
+              ) {
+                await throwPlaygroundReadinessFailure(
+                  child,
+                  `Packaged production plugin snapshot stayed startup-shaped after global WordPress startup HTTP ${indexProbe.status} for ${snapshotNotReadyProbeCount} consecutive response${snapshotNotReadyProbeCount === 1 ? '' : 's'} (limit ${maxPackagedStartupNotReadyProbeCount})`,
+                  lastError,
+                  lastProbes,
+                  getOutput(),
+                  {
+                    childPid: child.pid ?? null,
+                    packagedProductionPlugin: true,
+                    packagedRouteStartup: true,
+                    snapshotNotReadyProbeCount,
+                  },
+                );
+              }
+            }
+            if (startupBranch?.kind === 'retryable-route-index-terminal') {
+              await throwPlaygroundReadinessFailure(
+                child,
+                `Packaged production plugin snapshot stayed startup-shaped while /wp-json/ returned a terminal readiness failure HTTP ${indexProbe.status} after ${snapshotNotReadyProbeCount} consecutive response${snapshotNotReadyProbeCount === 1 ? '' : 's'} (limit ${maxPackagedStartupNotReadyProbeCount})`,
+                lastError,
+                lastProbes,
+                getOutput(),
+                {
+                  childPid: child.pid ?? null,
+                  packagedProductionPlugin: true,
+                  indexTerminal: true,
+                  snapshotNotReadyProbeCount,
+                },
+              );
+            }
+            await throwPlaygroundReadinessFailure(
+              child,
+              `Packaged Playground server reported the bounded readiness failure ${snapshot.status} after ${snapshotNotReadyProbeCount} consecutive startup-shaped snapshot response${snapshotNotReadyProbeCount === 1 ? '' : 's'} (limit ${maxPackagedStartupNotReadyProbeCount})`,
+              lastError,
+              lastProbes,
+              getOutput(),
+              {
+                childPid: child.pid ?? null,
+                packagedProductionPlugin: true,
+                notReadyProbeCount: snapshotNotReadyProbeCount,
+                maxNotReadyProbeCount: maxPackagedStartupNotReadyProbeCount,
+              },
+            );
+          }
+          if (preflightProbe.retryable) {
+            await sleepUnlessChildExit(readinessProbeIntervalMs, child);
+            continue;
+          }
           if (preflightProbe.terminal) {
             await throwPlaygroundReadinessFailure(
               child,
