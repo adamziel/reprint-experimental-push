@@ -23,10 +23,10 @@ export function loadAuthSessionSource(
   });
 
   if (result.error || result.status !== 0 || result.signal) {
-    const errorMessage = result.error?.message || result.stderr || result.stdout || `exit ${result.status ?? 'null'}`;
+    const errorMessage = describeAuthSessionSourceCommandFailure(result, timeout);
     return {
       ok: false,
-      error: String(errorMessage).trim(),
+      error: errorMessage,
     };
   }
 
@@ -36,7 +36,7 @@ export function loadAuthSessionSource(
   } catch (error) {
     return {
       ok: false,
-      error: error instanceof Error ? error.message : String(error),
+      error: `Auth session source command must return valid JSON: ${error instanceof Error ? error.message : String(error)}`,
     };
   }
 
@@ -83,6 +83,38 @@ export function loadAuthSessionSource(
     username,
     applicationPassword,
   };
+}
+
+function describeAuthSessionSourceCommandFailure(result, timeout) {
+  if (result.error?.code === 'ETIMEDOUT') {
+    return `Auth session source command timed out after ${timeout}ms`;
+  }
+
+  if (result.signal) {
+    return `Auth session source command terminated by ${result.signal}`;
+  }
+
+  if (result.status !== 0 && result.status !== null) {
+    const detail = normalizeAuthSessionSourceCommandFailureDetail(result.stderr || result.stdout);
+    return detail
+      ? `Auth session source command exited with status ${result.status}: ${detail}`
+      : `Auth session source command exited with status ${result.status}`;
+  }
+
+  if (result.error instanceof Error) {
+    return result.error.message.trim();
+  }
+
+  const detail = normalizeAuthSessionSourceCommandFailureDetail(result.stderr || result.stdout);
+  return detail || `Auth session source command failed after ${timeout}ms`;
+}
+
+function normalizeAuthSessionSourceCommandFailureDetail(value) {
+  if (typeof value !== 'string') {
+    return '';
+  }
+
+  return value.trim();
 }
 
 export function resolveAuthSessionSourceCredentials({

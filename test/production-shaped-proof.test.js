@@ -1592,8 +1592,56 @@ test('auth-session source loader fails closed when the source command times out'
     },
   );
 
+  assert.deepEqual(source, {
+    ok: false,
+    error: 'Auth session source command timed out after 50ms',
+  });
+});
+
+test('auth-session source loader fails closed when the source command exits non-zero', () => {
+  const source = loadAuthSessionSource(
+    `${process.execPath} -e "process.stderr.write('boom\\n'); process.exit(23)"`,
+    {
+      ...process.env,
+      NODE_NO_WARNINGS: '1',
+    },
+    repoRoot,
+  );
+
+  assert.deepEqual(source, {
+    ok: false,
+    error: 'Auth session source command exited with status 23: boom',
+  });
+});
+
+test('auth-session source loader fails closed when the source command returns invalid JSON', () => {
+  const source = loadAuthSessionSource(
+    `${process.execPath} -e "process.stdout.write('not-json')"`,
+    {
+      ...process.env,
+      NODE_NO_WARNINGS: '1',
+    },
+    repoRoot,
+  );
+
   assert.equal(source.ok, false);
-  assert.match(source.error, /ETIMEDOUT|timed out/i);
+  assert.match(source.error, /^Auth session source command must return valid JSON:/);
+});
+
+test('auth-session source loader fails closed when the source command returns a non-object JSON payload', () => {
+  const source = loadAuthSessionSource(
+    `${process.execPath} -e "process.stdout.write(JSON.stringify(['not-an-object']))"`,
+    {
+      ...process.env,
+      NODE_NO_WARNINGS: '1',
+    },
+    repoRoot,
+  );
+
+  assert.deepEqual(source, {
+    ok: false,
+    error: 'Auth session source command must return a JSON object',
+  });
 });
 
 test('production-shaped release proof emits the exact gate output when no live source is supplied', () => {
