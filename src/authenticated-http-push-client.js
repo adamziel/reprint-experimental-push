@@ -1176,6 +1176,7 @@ function describeAuthEnvelopeDrift(expected, response) {
   const body = response?.body || {};
   if (!body.auth) {
     return {
+      field: 'auth',
       required: expected.sessionType || 'auth-session',
       observed: 'missing',
       verdict: 'AUTH_SESSION_LIFECYCLE_DRIFT',
@@ -1185,6 +1186,7 @@ function describeAuthEnvelopeDrift(expected, response) {
   const observedUserLogin = body.auth?.identity?.userLogin || 'missing';
   if (observedUserLogin !== expected.userLogin) {
     return {
+      field: 'auth.identity.userLogin',
       required: expected.userLogin || 'auth-user',
       observed: observedUserLogin,
       verdict: 'AUTH_SESSION_LIFECYCLE_DRIFT',
@@ -1194,6 +1196,7 @@ function describeAuthEnvelopeDrift(expected, response) {
   const observedSessionId = body.auth?.session?.id || 'missing';
   if (observedSessionId !== expected.sessionId) {
     return {
+      field: 'auth.session.id',
       required: expected.sessionId || 'auth-session',
       observed: observedSessionId,
       verdict: 'AUTH_SESSION_LIFECYCLE_DRIFT',
@@ -1203,6 +1206,7 @@ function describeAuthEnvelopeDrift(expected, response) {
   const observedSessionType = body.auth?.session?.type || 'missing';
   if (observedSessionType !== expected.sessionType) {
     return {
+      field: 'auth.session.type',
       required: expected.sessionType || 'auth-session',
       observed: observedSessionType,
       verdict: 'AUTH_SESSION_LIFECYCLE_DRIFT',
@@ -1212,6 +1216,7 @@ function describeAuthEnvelopeDrift(expected, response) {
   const observedSessionStatus = body.auth?.session?.status || 'missing';
   if (observedSessionStatus !== expected.sessionStatus) {
     return {
+      field: 'auth.session.status',
       required: expected.sessionStatus || 'auth-session-status',
       observed: observedSessionStatus,
       verdict: 'AUTH_SESSION_LIFECYCLE_DRIFT',
@@ -1221,6 +1226,7 @@ function describeAuthEnvelopeDrift(expected, response) {
   const observedSessionExpiresAt = body.auth?.session?.expiresAt || 'missing';
   if (observedSessionExpiresAt !== expected.sessionExpiresAt) {
     return {
+      field: 'auth.session.expiresAt',
       required: expected.sessionExpiresAt || 'auth-session-expiry',
       observed: observedSessionExpiresAt,
       verdict: 'AUTH_SESSION_LIFECYCLE_DRIFT',
