@@ -42,6 +42,38 @@ function runSupportCheck(resource) {
   });
 }
 
+function runSupportCheckWithDrivers(resource, drivers) {
+  return spawnSync('php', [
+    '-r',
+    [
+      'function fixture_export_rows() {}',
+      'function fixture_apply_row() {}',
+      'function fixture_validate_mutation() {}',
+      'function apply_filters($tag, $value) {',
+      '  if ($tag === "reprint_push_plugin_owned_row_drivers") {',
+      '    return json_decode($GLOBALS["argv"][3], true);',
+      '  }',
+      '  return $value;',
+      '}',
+      'require $argv[1];',
+      '$resource = json_decode($argv[2], true);',
+      'try {',
+      'reprint_push_assert_supported_apply_resource($resource);',
+      'echo "supported";',
+      '} catch (Throwable $error) {',
+      'fwrite(STDERR, $error->getMessage());',
+      'exit(2);',
+      '}',
+    ].join(' '),
+    snapshotLib,
+    JSON.stringify(resource),
+    JSON.stringify(drivers),
+  ], {
+    cwd: repoRoot,
+    encoding: 'utf8',
+  });
+}
+
 function runDriverRegistryCheck(drivers) {
   return spawnSync('php', [
     '-r',
@@ -201,4 +233,50 @@ test('plugin-owned driver registry rejects missing validate callback', { skip: !
     result.stderr,
     /missing validateMutationCallback for driver: fixture-driver/,
   );
+});
+
+test('snapshot apply gate allows arbitrary registered plugin driver rows', { skip: !hasPhp }, () => {
+  const result = runSupportCheckWithDrivers(
+    {
+      type: 'row',
+      table: 'wp_reprint_push_driver_fixture',
+      id: 'entry_id:9',
+    },
+    {
+      'fixture-driver': {
+        driver: 'fixture-driver',
+        table: 'wp_reprint_push_driver_fixture',
+        pluginOwner: 'driver-fixture',
+        exportRowsCallback: 'fixture_export_rows',
+        applyRowCallback: 'fixture_apply_row',
+        validateMutationCallback: 'fixture_validate_mutation',
+      },
+    },
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(result.stdout, 'supported');
+});
+
+test('snapshot apply gate rejects empty arbitrary plugin driver row ids', { skip: !hasPhp }, () => {
+  const result = runSupportCheckWithDrivers(
+    {
+      type: 'row',
+      table: 'wp_reprint_push_driver_fixture',
+      id: '',
+    },
+    {
+      'fixture-driver': {
+        driver: 'fixture-driver',
+        table: 'wp_reprint_push_driver_fixture',
+        pluginOwner: 'driver-fixture',
+        exportRowsCallback: 'fixture_export_rows',
+        applyRowCallback: 'fixture_apply_row',
+        validateMutationCallback: 'fixture_validate_mutation',
+      },
+    },
+  );
+
+  assert.equal(result.status, 2);
+  assert.match(result.stderr, /row id must not be empty/i);
 });
