@@ -106,6 +106,11 @@ function durableJournalClaimContractMatches(claim) {
     return false;
   }
 
+  const requiresConsumedRetryLineage = claim.staleClaimRejected === true
+    && (
+      claim.activeClaimEvent === 'stale-claim-retry-started'
+      || claim.activeClaimEvent === 'stale-claim-retry-in-progress'
+    );
   const hasPreviousClaimIdentity = hasNonEmptyString(claim.previousClaimKeyHash)
     || Number.isInteger(claim.previousClaimSequence)
     || hasNonEmptyString(claim.previousClaimEvent);
@@ -129,7 +134,15 @@ function durableJournalClaimContractMatches(claim) {
       && hasNonEmptyString(claim.abandonedEvent)
     ))
     && (!Number.isInteger(claim.previousStartedSequence) || hasPreviousClaimIdentity)
-    && (claim.staleClaimRejected !== true || hasPreviousClaimIdentity);
+    && (claim.staleClaimRejected !== true || hasPreviousClaimIdentity)
+    && (!requiresConsumedRetryLineage || (
+      Number.isInteger(claim.previousStartedSequence)
+      && Number.isInteger(claim.abandonedSequence)
+      && hasNonEmptyString(claim.abandonedEvent)
+      && hasNonEmptyString(claim.previousClaimKeyHash)
+      && Number.isInteger(claim.previousClaimSequence)
+      && hasNonEmptyString(claim.previousClaimEvent)
+    ));
 }
 
 function hasNonEmptyString(value) {

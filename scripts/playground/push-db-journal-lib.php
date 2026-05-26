@@ -747,6 +747,11 @@ function reprint_push_lab_db_journal_claim_contract_matches($claim): bool
         && $active_claim_event !== ''
         && !($stale_claim_rejected === false && $active_claim_event === 'stale-claim-rejected')
         && !($stale_claim_rejected === true && $active_claim_event === 'idempotency-opened');
+    $requires_consumed_retry_lineage = $stale_claim_rejected === true
+        && (
+            $active_claim_event === 'stale-claim-retry-started'
+            || $active_claim_event === 'stale-claim-retry-in-progress'
+        );
 
     $has_previous_claim_identity = reprint_push_lab_db_journal_non_empty_string($claim['previousClaimKeyHash'] ?? null)
         || reprint_push_lab_db_journal_is_positive_int($claim['previousClaimSequence'] ?? null)
@@ -771,7 +776,15 @@ function reprint_push_lab_db_journal_claim_contract_matches($claim): bool
             && reprint_push_lab_db_journal_non_empty_string($claim['abandonedEvent'] ?? null)
         ))
         && (!reprint_push_lab_db_journal_is_positive_int($claim['previousStartedSequence'] ?? null) || $has_previous_claim_identity)
-        && (($claim['staleClaimRejected'] ?? false) !== true || $has_previous_claim_identity);
+        && (($claim['staleClaimRejected'] ?? false) !== true || $has_previous_claim_identity)
+        && (!$requires_consumed_retry_lineage || (
+            reprint_push_lab_db_journal_is_positive_int($claim['previousStartedSequence'] ?? null)
+            && reprint_push_lab_db_journal_is_positive_int($claim['abandonedSequence'] ?? null)
+            && reprint_push_lab_db_journal_non_empty_string($claim['abandonedEvent'] ?? null)
+            && reprint_push_lab_db_journal_non_empty_string($claim['previousClaimKeyHash'] ?? null)
+            && reprint_push_lab_db_journal_is_positive_int($claim['previousClaimSequence'] ?? null)
+            && reprint_push_lab_db_journal_non_empty_string($claim['previousClaimEvent'] ?? null)
+        ));
 }
 
 function reprint_push_lab_db_journal_ownership_contract_matches($ownership): bool
