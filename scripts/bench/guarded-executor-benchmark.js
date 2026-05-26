@@ -2120,6 +2120,7 @@ export function productionThroughputDetails(report) {
     parallelismLimitsVisible,
     parallelismLimitsCanonical,
     backpressureEvidenceComplete,
+    queueBudgetMatchesResourceCeiling,
     productionStorageReceiptsMeasured,
     productionStorageReceiptsVisible,
     productionAtomicCommitMeasured,
@@ -2451,6 +2452,7 @@ function summarizeProductionCapabilityRollout({
   parallelismLimitsVisible,
   parallelismLimitsCanonical,
   backpressureEvidenceComplete,
+  queueBudgetMatchesResourceCeiling,
   productionStorageReceiptsMeasured,
   productionStorageReceiptsVisible,
   productionAtomicCommitMeasured,
@@ -2475,12 +2477,14 @@ function summarizeProductionCapabilityRollout({
     entry(
       'chunk-upload-concurrency',
       parallelismLimitsMeasuredOnReport
+        && queueBudgetMatchesResourceCeiling
         && parallelismLimitsCanonical
         && backpressureEvidenceComplete
         && productionStorageReceiptsMeasured
         && productionAtomicCommitMeasured
         && productionAtomicGroupMetadataVisibleAndMeasured,
       parallelismLimitsVisible
+        && queueBudgetMatchesResourceCeiling
         && backpressureEvidenceComplete
         && productionStorageReceiptsMeasured
         && productionStorageReceiptsVisible
@@ -2488,6 +2492,7 @@ function summarizeProductionCapabilityRollout({
         && productionAtomicGroupMetadataVisibleAndMeasured,
       [
         'backpressure-evidence-incomplete',
+        'queue-budget-does-not-match-resource-ceiling',
         'production-parallelism-limits-not-measured',
         'production-parallelism-limits-not-integral',
         'production-parallelism-limits-not-canonical',
@@ -2514,9 +2519,12 @@ function summarizeProductionCapabilityRollout({
     ),
     entry(
       'file-hashing-concurrency',
-      parallelismLimitsMeasuredOnReport && parallelismLimitsCanonical,
-      parallelismLimitsVisible,
+      parallelismLimitsMeasuredOnReport
+        && parallelismLimitsCanonical
+        && queueBudgetMatchesResourceCeiling,
+      parallelismLimitsVisible && queueBudgetMatchesResourceCeiling,
       [
+        'queue-budget-does-not-match-resource-ceiling',
         'production-parallelism-limits-not-measured',
         'production-parallelism-limits-not-integral',
         'production-parallelism-limits-not-canonical',
@@ -2530,10 +2538,12 @@ function summarizeProductionCapabilityRollout({
     entry(
       'row-batch-concurrency',
       productionAtomicCommitMeasured
+        && queueBudgetMatchesResourceCeiling
         && productionStorageReceiptsMeasured
         && productionRowBatchExecutorMeasured,
       productionAtomicCommitVisible
         && productionAtomicCommitMeasured
+        && queueBudgetMatchesResourceCeiling
         && productionStorageReceiptsVisible
         && productionStorageReceiptsMeasured
         && productionRowBatchExecutorVisible
@@ -2541,6 +2551,7 @@ function summarizeProductionCapabilityRollout({
         && productionAtomicGroupMetadataVisibleAndMeasured
         && parallelismLimitsVisible,
       [
+        'queue-budget-does-not-match-resource-ceiling',
         'production-atomic-group-commit-not-measured',
         'production-atomic-group-commit-not-visible',
         'production-atomic-group-commit-visible-without-measurement',
