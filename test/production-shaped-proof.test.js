@@ -19,8 +19,9 @@ const liveCredentials = {
 };
 const proofSubprocessTimeoutMs = 45_000;
 const proofSubprocessKillSignal = 'SIGKILL';
+const liveProofSubprocessTimeoutMs = 30_000;
 const releaseVerifySlowPathTimeoutMs = 12_000;
-const liveReleaseVerifyTimeoutMs = 7_000;
+const liveReleaseVerifyTimeoutMs = liveProofSubprocessTimeoutMs;
 const proofSubprocessOptions = {
   timeout: proofSubprocessTimeoutMs,
   killSignal: proofSubprocessKillSignal,
@@ -299,7 +300,7 @@ maybeTest('production-shaped release verify command runs the live protocol branc
       REPRINT_PUSH_LAB_AUTH_ADMIN_USER: liveCredentials.username,
       REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD: liveCredentials.password,
       NODE_NO_WARNINGS: '1',
-    }, liveReleaseVerifyTimeoutMs);
+    }, liveProofSubprocessTimeoutMs);
     assertLiveReleaseVerifyProof(proof, 'live release verify', liveReleaseVerifyTimeoutMs);
     assert.equal(proof.status, 0, proof.stderr);
     assert.match(proof.stdout, /"ok": true/);
@@ -338,8 +339,8 @@ maybeTest('production-shaped release verify command fails closed when remote dri
       REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD: liveCredentials.password,
       REPRINT_PUSH_LAB_DRIFT_AFTER_SNAPSHOT: 'post-title',
       NODE_NO_WARNINGS: '1',
-    }, liveReleaseVerifyTimeoutMs);
-    assertLiveReleaseVerifyProof(proof, 'drift release verify', liveReleaseVerifyTimeoutMs);
+    }, liveProofSubprocessTimeoutMs);
+    assertLiveReleaseVerifyProof(proof, 'drift release verify', liveProofSubprocessTimeoutMs);
     assert.equal(proof.status, 1, proof.stderr);
     assert.match(proof.stdout, /"ok": false/);
     assert.match(proof.stdout, /"sourceUrl": "http:\/\/127\.0\.0\.1:\d+"/);

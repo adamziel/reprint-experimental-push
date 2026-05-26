@@ -9,8 +9,8 @@ import { authenticatedHttpClient, runAuthenticatedHttpPush } from '../../src/aut
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const muPluginDir = path.join(repoRoot, 'scripts/playground/rest-mu-plugins');
-const serverStartupTimeoutMs = 1_500;
-const serverFetchTimeoutMs = 1_000;
+const serverStartupTimeoutMs = 1_200;
+const serverFetchTimeoutMs = 900;
 const credentials = {
   username: 'reprint_push_admin',
   password: 'reprint-push-admin-app-password',
@@ -846,8 +846,7 @@ async function startPlaygroundServer(name, blueprintPath) {
       if (!/EADDRINUSE/i.test(logs) || attempt === 3) {
         throw error;
       }
-    }
-    finally {
+    } finally {
       activePlaygroundChildren.delete(child);
     }
   }
@@ -985,7 +984,10 @@ async function waitForServer(child, baseUrl, getLogs) {
   let consecutiveIndex502s = 0;
   while (Date.now() < deadline) {
     if (child.exitCode !== null) {
-      throw new Error(`Playground server exited early with ${child.exitCode}\n${getLogs()}`);
+      const logs = getLogs();
+      const message = `Playground server exited early with ${child.exitCode}\n${logs}`;
+      process.stderr.write(`${message}\n`);
+      throw new Error(message);
     }
     try {
       const response = await fetchWithTimeout(`${baseUrl}/wp-json/`, {
