@@ -4058,7 +4058,16 @@ function unsupportedCommentsUsersResourceSupport({ resource, baseValue, localVal
           && reference.targetResource?.table === 'wp_users'
           && reference.targetChange.remote.state === 'absent'
           && reference.targetChange.local.state === 'present'
-        ));
+        ))
+      .sort((left, right) => {
+        const priority = new Map([
+          ['comment-parent', 0],
+          ['comment-post', 1],
+          ['comment-user', 2],
+        ]);
+        return (priority.get(left.relationshipType) ?? Number.MAX_SAFE_INTEGER)
+          - (priority.get(right.relationshipType) ?? Number.MAX_SAFE_INTEGER);
+      });
 
     if (commentGraphReferences.length > 0) {
       return {
