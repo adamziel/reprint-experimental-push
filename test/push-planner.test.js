@@ -24220,7 +24220,7 @@ test('blocked recovery states fail closed when drifted resources are inherited t
   const error = captureError(() => assertRecoveryStateEnvelope(recovery));
 
   assert.equal(error.code, 'RECOVERY_STATE_INVALID');
-  assert.match(error.message, /Recovery state must be old-remote, fully-updated-remote, or blocked-recovery\./);
+  assert.match(error.message, /Recovery state must carry an own remote hash\./);
 });
 
 test('blocked recovery states are not acceptable without own drifted resources', () => {
@@ -24238,7 +24238,7 @@ test('blocked recovery states are not acceptable without own drifted resources',
   const error = captureError(() => assertRecoveryStateEnvelope(recovery));
 
   assert.equal(error.code, 'RECOVERY_STATE_INVALID');
-  assert.match(error.message, /Recovery state must be old-remote, fully-updated-remote, or blocked-recovery\./);
+  assert.match(error.message, /Recovery state must carry an own remote hash\./);
 });
 
 test('blocked recovery artifacts fail closed when the envelope hides unsupported symbol keys', () => {
@@ -24484,7 +24484,7 @@ test('recovery states fail closed when remoteHash is inherited from the prototyp
   const error = captureError(() => assertRecoveryStateEnvelope(recovery));
 
   assert.equal(error.code, 'RECOVERY_STATE_INVALID');
-  assert.match(error.message, /Recovery state must be old-remote, fully-updated-remote, or blocked-recovery\./);
+  assert.match(error.message, /Recovery state must carry an own remote hash\./);
 });
 
 test('recovery states fail closed when reason is inherited from the prototype', () => {
@@ -24500,7 +24500,24 @@ test('recovery states fail closed when reason is inherited from the prototype', 
   const error = captureError(() => assertRecoveryStateEnvelope(recovery));
 
   assert.equal(error.code, 'RECOVERY_STATE_INVALID');
-  assert.match(error.message, /Recovery state must be old-remote, fully-updated-remote, or blocked-recovery\./);
+  assert.match(error.message, /Recovery state must carry an own reason\./);
+});
+
+test('recovery states fail closed when reason is an empty own string', () => {
+  const recovery = {
+    status: 'old-remote',
+    planId: 'plan-123',
+    reason: '',
+    remoteHash: 'a'.repeat(64),
+    artifacts: {
+      journal: { schemaVersion: 1 },
+    },
+  };
+
+  const error = captureError(() => assertRecoveryStateEnvelope(recovery));
+
+  assert.equal(error.code, 'RECOVERY_STATE_INVALID');
+  assert.match(error.message, /Recovery state must carry a valid reason\./);
 });
 
 test('production durable journal claims fail closed when remote artifact references are empty strings', () => {
@@ -24554,8 +24571,8 @@ test('production durable journal claims fail closed when remote artifact referen
   assert.equal(error.code, 'PRODUCTION_DURABLE_JOURNAL_UNSUPPORTED');
   assert.deepEqual(error.details.missingDependency, [
     'restart-readable recovery journal adapter',
-    'restart-readable remote recovery artifact ownership',
     'restart-readable recovery remote artifact references',
+    'restart-readable remote recovery artifact ownership',
     'fencing or lease ownership for the journal writer',
   ]);
 });

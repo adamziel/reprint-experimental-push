@@ -1943,6 +1943,26 @@ function validateRecoveryStateEnvelopeKeys(recoveryState) {
       },
     );
   }
+  if (!Object.hasOwn(recoveryState, 'reason')) {
+    throw new PushPlanError(
+      'RECOVERY_STATE_INVALID',
+      'Recovery state must carry an own reason.',
+      {
+        status: recoveryState.status,
+        planId: recoveryState.planId,
+      },
+    );
+  }
+  if (typeof recoveryState.reason !== 'string' || recoveryState.reason.length === 0) {
+    throw new PushPlanError(
+      'RECOVERY_STATE_INVALID',
+      'Recovery state must carry a valid reason.',
+      {
+        status: recoveryState.status,
+        planId: recoveryState.planId,
+      },
+    );
+  }
   if (!Object.hasOwn(recoveryState, 'artifacts')) {
     throw new PushPlanError(
       'RECOVERY_STATE_INVALID',
