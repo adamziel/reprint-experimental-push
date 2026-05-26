@@ -14051,6 +14051,148 @@ test('blocks local termmeta references to a same-plan created term identity whil
   assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin change */');
 });
 
+test('blocks local termmeta references to a same-plan created term identity while preserving a matching independent edit', () => {
+  const resourceKey = 'row:["wp_termmeta","meta_id:8"]';
+  const targetResourceKey = 'row:["wp_terms","term_id:9"]';
+  const base = baseSite();
+  base.db.wp_termmeta = {
+    'meta_id:8': {
+      meta_id: 8,
+      term_id: 9,
+      meta_key: 'term-label',
+      meta_value: 'base termmeta value',
+      note: 'base termmeta note',
+    },
+  };
+
+  const local = baseSite();
+  local.db.wp_terms = {
+    'term_id:9': {
+      term_id: 9,
+      name: 'Local same-plan term',
+      slug: 'local-same-plan-term',
+    },
+  };
+  local.db.wp_termmeta = {
+    'meta_id:8': {
+      meta_id: 8,
+      term_id: 9,
+      meta_key: 'term-label',
+      meta_value: 'local termmeta value',
+      note: 'local termmeta note',
+    },
+  };
+  local.db.wp_posts['ID:1'].post_title = 'Local independent edit';
+
+  const remote = baseSite();
+  remote.db.wp_termmeta = JSON.parse(JSON.stringify(base.db.wp_termmeta));
+  remote.db.wp_posts['ID:1'].post_title = 'Local independent edit';
+
+  const plan = planFor(base, local, remote);
+  const termmetaBlocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  const termBlocker = plan.blockers.find((entry) => entry.resourceKey === targetResourceKey);
+  const independentEdit = decisionFor(plan, 'row:["wp_posts","ID:1"]');
+  const reference = termBlocker.references[0];
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(decisionFor(plan, targetResourceKey), undefined);
+  assert.equal(termmetaBlocker.class, 'unsupported-termmeta-resource');
+  assert.equal(termmetaBlocker.resourceKey, resourceKey);
+  assert.equal(termmetaBlocker.reason, 'Term meta graph resources are not yet supported by the planner.');
+  assert.equal(termBlocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(termBlocker.resourceKey, targetResourceKey);
+  assert.equal(termBlocker.resolutionPolicy, 'preserve-remote-wordpress-graph-and-stop');
+  assert.equal(reference.relationshipKey, 'wp_termmeta.term_id');
+  assert.equal(reference.relationshipType, 'termmeta-term');
+  assert.equal(reference.sourceResourceKey, resourceKey);
+  assert.equal(reference.targetResourceKey, targetResourceKey);
+  assert.equal(reference.targetChange.remote.state, 'absent');
+  assert.equal(reference.targetRemoteHash.length, 64);
+  assert.equal(independentEdit.decision, 'already-in-sync');
+  assert.equal(independentEdit.change.localChange, 'update');
+  assert.equal(independentEdit.change.remoteChange, 'update');
+  assert.equal(planJson.includes('local termmeta value'), false);
+  assert.equal(planJson.includes('local termmeta note'), false);
+  assert.equal(planJson.includes('Local same-plan term'), false);
+  assert.equal(planJson.includes('local-same-plan-term'), false);
+});
+
+test('blocks local termmeta references to a same-plan created term identity while preserving a matching independent edit and remote-only plugin changes', () => {
+  const resourceKey = 'row:["wp_termmeta","meta_id:8"]';
+  const targetResourceKey = 'row:["wp_terms","term_id:9"]';
+  const base = baseSite();
+  base.db.wp_termmeta = {
+    'meta_id:8': {
+      meta_id: 8,
+      term_id: 9,
+      meta_key: 'term-label',
+      meta_value: 'base termmeta value',
+      note: 'base termmeta note',
+    },
+  };
+
+  const local = baseSite();
+  local.db.wp_terms = {
+    'term_id:9': {
+      term_id: 9,
+      name: 'Local same-plan term',
+      slug: 'local-same-plan-term',
+    },
+  };
+  local.db.wp_termmeta = {
+    'meta_id:8': {
+      meta_id: 8,
+      term_id: 9,
+      meta_key: 'term-label',
+      meta_value: 'local termmeta value',
+      note: 'local termmeta note',
+    },
+  };
+  local.db.wp_posts['ID:1'].post_title = 'Local independent edit';
+
+  const remote = baseSite();
+  remote.db.wp_termmeta = JSON.parse(JSON.stringify(base.db.wp_termmeta));
+  remote.db.wp_posts['ID:1'].post_title = 'Local independent edit';
+  remote.plugins.forms.description = 'remote-only plugin change';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin change */';
+
+  const plan = planFor(base, local, remote);
+  const termmetaBlocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  const termBlocker = plan.blockers.find((entry) => entry.resourceKey === targetResourceKey);
+  const independentEdit = decisionFor(plan, 'row:["wp_posts","ID:1"]');
+  const reference = termBlocker.references[0];
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(decisionFor(plan, targetResourceKey), undefined);
+  assert.equal(termmetaBlocker.class, 'unsupported-termmeta-resource');
+  assert.equal(termmetaBlocker.resourceKey, resourceKey);
+  assert.equal(termmetaBlocker.reason, 'Term meta graph resources are not yet supported by the planner.');
+  assert.equal(termBlocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(termBlocker.resourceKey, targetResourceKey);
+  assert.equal(termBlocker.resolutionPolicy, 'preserve-remote-wordpress-graph-and-stop');
+  assert.equal(reference.relationshipKey, 'wp_termmeta.term_id');
+  assert.equal(reference.relationshipType, 'termmeta-term');
+  assert.equal(reference.sourceResourceKey, resourceKey);
+  assert.equal(reference.targetResourceKey, targetResourceKey);
+  assert.equal(reference.targetChange.remote.state, 'absent');
+  assert.equal(reference.targetRemoteHash.length, 64);
+  assert.equal(independentEdit.decision, 'already-in-sync');
+  assert.equal(independentEdit.change.localChange, 'update');
+  assert.equal(independentEdit.change.remoteChange, 'update');
+  assert.equal(planJson.includes('local termmeta value'), false);
+  assert.equal(planJson.includes('local termmeta note'), false);
+  assert.equal(planJson.includes('Local same-plan term'), false);
+  assert.equal(planJson.includes('local-same-plan-term'), false);
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin change');
+  assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin change */');
+});
+
 test('blocks local termmeta references to a same-plan created term identity while preserving remote-only plugin removals', () => {
   const resourceKey = 'row:["wp_termmeta","meta_id:8"]';
   const targetResourceKey = 'row:["wp_terms","term_id:9"]';
