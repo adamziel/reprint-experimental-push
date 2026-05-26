@@ -20104,6 +20104,48 @@ test('production durable journal claims allow a restart-oriented writer contract
   assert.ok(events.some((event) => event.type === 'journal-opened'));
 });
 
+test('production durable journal support probes restart inspection only once', () => {
+  let inspectCalls = 0;
+  const writer = {
+    kind: 'production-recovery-journal',
+    ownsJournal: true,
+    journalPath: '/var/lib/reprint/recovery.jsonl',
+    schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+    appendEvent() {
+      return { sequence: 1, type: 'journal-opened' };
+    },
+    flush() {},
+    close() {},
+    inspect() {
+      inspectCalls += 1;
+      return {
+        filePath: '/var/lib/reprint/recovery.jsonl',
+        schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+        records: [{ sequence: 1, type: 'journal-opened' }],
+      };
+    },
+    assertCurrentClaim() {},
+  };
+  const plan = planFor(baseSite(), baseSite(), {
+    ...baseSite(),
+    db: {
+      ...baseSite().db,
+      wp_options: {
+        ...baseSite().db.wp_options,
+        'option_name:blogname': { option_name: 'blogname', option_value: 'New Site' },
+      },
+    },
+  });
+
+  const result = applyPlan(baseSite(), plan, {
+    requireProductionDurableJournal: true,
+    durableJournal: writer,
+  });
+
+  assert.equal(result.recoveryState.status, 'fully-updated-remote');
+  assert.equal(inspectCalls, 1);
+});
+
 test('closes a durable journal writer when apply fails before commit', () => {
   const events = [];
   let closed = 0;

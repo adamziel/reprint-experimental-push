@@ -620,6 +620,7 @@ function productionRecoverySupportReport(writer) {
       missingDependency.push(item);
     }
   };
+  const inspected = inspectProductionRecoveryJournal(writer);
 
   if (writer?.kind !== 'production-recovery-journal') {
     addMissingDependency('production recovery journal adapter marker');
@@ -635,13 +636,13 @@ function productionRecoverySupportReport(writer) {
   }
   if (typeof writer?.inspect !== 'function') {
     addMissingDependency('restart-readable recovery inspection');
-  } else if (!durableJournalInspectSurface(writer)) {
+  } else if (!durableJournalInspectSurface(inspected)) {
     addMissingDependency('restart-readable recovery artifact location');
   }
   if (typeof writer?.journalPath !== 'string' || writer.journalPath.length === 0) {
     addMissingDependency('owned restart-readable recovery journal path');
   } else {
-    const inspectedJournalPath = durableJournalInspectPath(writer);
+    const inspectedJournalPath = durableJournalInspectPath(inspected);
     if (inspectedJournalPath !== writer.journalPath) {
       addMissingDependency('restart-readable recovery artifact location');
     }
@@ -652,7 +653,7 @@ function productionRecoverySupportReport(writer) {
   if (typeof writer?.assertCurrentClaim !== 'function') {
     addMissingDependency('fencing or lease ownership for the journal writer');
   }
-  if (writer && typeof writer.inspect === 'function' && !durableJournalInspectRecords(writer)) {
+  if (writer && typeof writer.inspect === 'function' && !durableJournalInspectRecords(inspected)) {
     addMissingDependency('journal-readable inspection records with sequence and type');
   }
 
@@ -662,54 +663,50 @@ function productionRecoverySupportReport(writer) {
   };
 }
 
-function durableJournalInspectSurface(writer) {
-  try {
-    const inspected = writer.inspect();
-    return Boolean(
-      inspected
-      && typeof inspected === 'object'
-      && typeof inspected.filePath === 'string'
-      && typeof inspected.schemaVersion === 'number'
-      && Array.isArray(inspected.records),
-    ) && inspected.records.every((record) =>
-      record
-      && typeof record === 'object'
-      && Number.isInteger(record.sequence)
-      && typeof record.type === 'string',
-    );
-  } catch (error) {
-    return false;
+function inspectProductionRecoveryJournal(writer) {
+  if (!writer || typeof writer.inspect !== 'function') {
+    return null;
   }
-}
-
-function durableJournalInspectPath(writer) {
   try {
-    const inspected = writer.inspect();
-    return inspected && typeof inspected === 'object' && typeof inspected.filePath === 'string'
-      ? inspected.filePath
-      : null;
+    return writer.inspect();
   } catch (error) {
     return null;
   }
 }
 
-function durableJournalInspectRecords(writer) {
-  try {
-    const inspected = writer.inspect();
-    return Boolean(
-      inspected
-      && typeof inspected === 'object'
-      && typeof inspected.schemaVersion === 'number'
-      && Array.isArray(inspected.records),
-    ) && inspected.records.every((record) =>
-      record
-      && typeof record === 'object'
-      && Number.isInteger(record.sequence)
-      && typeof record.type === 'string',
-    );
-  } catch (error) {
-    return false;
-  }
+function durableJournalInspectSurface(inspected) {
+  return Boolean(
+    inspected
+    && typeof inspected === 'object'
+    && typeof inspected.filePath === 'string'
+    && typeof inspected.schemaVersion === 'number'
+    && Array.isArray(inspected.records),
+  ) && inspected.records.every((record) =>
+    record
+    && typeof record === 'object'
+    && Number.isInteger(record.sequence)
+    && typeof record.type === 'string',
+  );
+}
+
+function durableJournalInspectPath(inspected) {
+  return inspected && typeof inspected === 'object' && typeof inspected.filePath === 'string'
+    ? inspected.filePath
+    : null;
+}
+
+function durableJournalInspectRecords(inspected) {
+  return Boolean(
+    inspected
+    && typeof inspected === 'object'
+    && typeof inspected.schemaVersion === 'number'
+    && Array.isArray(inspected.records),
+  ) && inspected.records.every((record) =>
+    record
+    && typeof record === 'object'
+    && Number.isInteger(record.sequence)
+    && typeof record.type === 'string',
+  );
 }
 
 function recordDurablePlanOpened(writer, remote, plan, options = {}) {
