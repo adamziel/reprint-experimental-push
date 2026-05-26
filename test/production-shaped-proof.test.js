@@ -631,6 +631,10 @@ test('production-shaped release verify command fails closed when production auth
   );
   assert.match(
     proof.stdout,
+    /"gateDependencies": \{\s*"productionAuthSession": "production-backed auth\/session issuance, read, expiry, rotation, revocation, and cleanup on the checked release path",\s*"durableJournal": "production durable journal storage with lease fencing, restart-readable artifacts, and release-path consumption",\s*"replayAndRetry": "checked live replay equivalence plus preserved-remote retry on the release verifier path"\s*\}/,
+  );
+  assert.match(
+    proof.stdout,
     /"releaseProof": \{\s*"ok": false,\s*"status": 409,\s*"code": "PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED"\s*\}/,
   );
 });
@@ -724,6 +728,10 @@ maybeTest('production-shaped release verify command runs the live protocol branc
     assert.match(proof.stdout, /"boundary": \{/);
     assert.match(proof.stdout, /"firstRemainingProductionBoundary": "auth\/session lifecycle and durable journal semantics"/);
     assert.match(proof.stdout, /"verdict": "PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED"/);
+    assert.match(
+      proof.stdout,
+      /"gateDependencies": \{\s*"productionAuthSession": "production-backed auth\/session issuance, read, expiry, rotation, revocation, and cleanup on the checked release path",\s*"durableJournal": "production durable journal storage with lease fencing, restart-readable artifacts, and release-path consumption",\s*"replayAndRetry": "checked live replay equivalence plus preserved-remote retry on the release verifier path"\s*\}/,
+    );
     assert.match(proof.stdout, /"releaseProof": \{\s*"ok": false,\s*"status": 409,\s*"code": "PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED"\s*\}/);
     assert.match(proof.stdout, /"durableJournal": \{\s*"proof": \{\s*"status": 0,\s*"journal": \{/);
     assert.match(proof.stdout, /"ownsJournal": true/);

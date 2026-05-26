@@ -62,6 +62,14 @@ const protocolExtension = {
     recoveryInspect: 'classifies recovery before any repair mutation begins',
     recoveryMutate: 'requires inspect plus fresh live evidence and the same HMAC floor as apply',
   },
+  gateDependencies: {
+    productionAuthSession:
+      'production-backed auth/session issuance, read, expiry, rotation, revocation, and cleanup on the checked release path',
+    durableJournal:
+      'production durable journal storage with lease fencing, restart-readable artifacts, and release-path consumption',
+    replayAndRetry:
+      'checked live replay equivalence plus preserved-remote retry on the release verifier path',
+  },
   topology: {
     remoteBase: 'remote-base',
     localEdited: 'local-edited',
