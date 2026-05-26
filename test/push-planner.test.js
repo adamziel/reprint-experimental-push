@@ -810,6 +810,45 @@ test('allows arbitrary plugin-owned custom table deletes with explicit driver de
   assert.equal(applied.site.db.wp_forms_entries['entry_id:9'], undefined);
 });
 
+test('prefers local plugin-owned delete policy over stale base policy for arbitrary custom tables', () => {
+  const resourceKey = 'row:["wp_forms_entries","entry_id:9"]';
+  const base = baseSite();
+  base.db.wp_forms_entries = {
+    'entry_id:9': {
+      entry_id: 9,
+      payload: { mode: 'base' },
+      updated_marker: 'base',
+      __pluginOwner: 'forms',
+    },
+  };
+  base.meta = {
+    pushPolicy: pluginOwnedResourcePolicy(
+      allowedPluginOwnedResource(resourceKey, 'forms', 'fixture-custom-table', {
+        table: 'wp_forms_entries',
+        supportsDelete: false,
+      }),
+    ),
+  };
+  const local = JSON.parse(JSON.stringify(base));
+  delete local.db.wp_forms_entries['entry_id:9'];
+  local.meta = {
+    pushPolicy: pluginOwnedResourcePolicy(
+      allowedPluginOwnedResource(resourceKey, 'forms', 'fixture-custom-table', {
+        table: 'wp_forms_entries',
+        supportsDelete: true,
+      }),
+    ),
+  };
+  const remote = JSON.parse(JSON.stringify(base));
+
+  const plan = planFor(base, local, remote);
+  assert.equal(plan.status, 'ready');
+  const mutation = mutationFor(plan, resourceKey);
+  assert.equal(mutation.action, 'delete');
+  assert.equal(mutation.pluginOwnedResource.driver, 'fixture-custom-table');
+  assert.equal(mutation.pluginOwnedResource.supportsDelete, true);
+});
+
 test('fixture forms lab table requires exact driver and active fixture plugin evidence', () => {
   const resourceKey = 'row:["wp_reprint_push_forms_lab","id:1"]';
   const base = baseSite();

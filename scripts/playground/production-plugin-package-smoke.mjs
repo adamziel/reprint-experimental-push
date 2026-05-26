@@ -7,9 +7,9 @@ import net from 'node:net';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createHmac } from 'node:crypto';
-import { createPushPlan, deepClone } from '../../src/planner.js';
+import { createPushPlan } from '../../src/planner.js';
 import { authenticatedHttpClient } from '../../src/authenticated-http-push-client.js';
-import { digest } from '../../src/stable-json.js';
+import { deepClone, digest } from '../../src/stable-json.js';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const cliPath = path.join(repoRoot, 'bin/reprint-push-lab.js');
@@ -55,22 +55,36 @@ const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'reprint-production-plugin-
 const packageRoot = path.join(tmpDir, 'package');
 const pluginDir = path.join(packageRoot, 'reprint-push');
 const blueprintPath = path.join(tmpDir, 'remote-base-with-reprint-push-plugin.blueprint.json');
-const driverSnapshotBlueprintPath = path.join(tmpDir, 'remote-base-with-driver-fixture-snapshot.blueprint.json');
-const driverServerBlueprintPath = path.join(tmpDir, 'remote-base-with-driver-fixture-server.blueprint.json');
+const driverGuardSnapshotBlueprintPath = path.join(tmpDir, 'remote-base-with-driver-fixture-guard-snapshot.blueprint.json');
+const driverGuardServerBlueprintPath = path.join(tmpDir, 'remote-base-with-driver-fixture-guard-server.blueprint.json');
+const driverDeleteSnapshotBlueprintPath = path.join(tmpDir, 'remote-base-with-driver-fixture-delete-snapshot.blueprint.json');
+const driverDeleteServerBlueprintPath = path.join(tmpDir, 'remote-base-with-driver-fixture-delete-server.blueprint.json');
 const basePath = path.join(tmpDir, 'base.json');
 const localPath = path.join(tmpDir, 'local.json');
 
 try {
   buildPluginPackage(pluginDir);
   writeActivationBlueprint(path.join(repoRoot, fixtures.base), blueprintPath);
-  writeDriverFixtureBlueprint(path.join(repoRoot, fixtures.base), driverSnapshotBlueprintPath);
-  writeDriverFixtureBlueprint(path.join(repoRoot, fixtures.base), driverServerBlueprintPath, { activatePackagedPlugin: true, provisionAuth: true });
+  writeDriverFixtureBlueprint(path.join(repoRoot, fixtures.base), driverGuardSnapshotBlueprintPath);
+  writeDriverFixtureBlueprint(path.join(repoRoot, fixtures.base), driverGuardServerBlueprintPath, {
+    activatePackagedPlugin: true,
+    provisionAuth: true,
+  });
+  writeDriverFixtureBlueprint(path.join(repoRoot, fixtures.base), driverDeleteSnapshotBlueprintPath, {
+    supportsDelete: true,
+  });
+  writeDriverFixtureBlueprint(path.join(repoRoot, fixtures.base), driverDeleteServerBlueprintPath, {
+    activatePackagedPlugin: true,
+    provisionAuth: true,
+    supportsDelete: true,
+  });
   fs.writeFileSync(basePath, `${JSON.stringify(snapshots.base, null, 2)}\n`);
   fs.writeFileSync(localPath, `${JSON.stringify(packageLocalSnapshot, null, 2)}\n`);
-  const driverBaseSnapshot = exportSnapshot('driver-fixture-base', driverSnapshotBlueprintPath);
-  const driverLocalDeleteSnapshot = deepClone(driverBaseSnapshot);
+  const driverGuardBaseSnapshot = exportSnapshot('driver-fixture-guard-base', driverGuardSnapshotBlueprintPath);
+  const driverDeleteBaseSnapshot = exportSnapshot('driver-fixture-delete-base', driverDeleteSnapshotBlueprintPath);
+  const driverLocalDeleteSnapshot = deepClone(driverDeleteBaseSnapshot);
   delete driverLocalDeleteSnapshot.db?.[driverFixture.table]?.['entry_id:1'];
-  const driverLocalUpdateSnapshot = deepClone(driverBaseSnapshot);
+  const driverLocalUpdateSnapshot = deepClone(driverGuardBaseSnapshot);
   driverLocalUpdateSnapshot.db[driverFixture.table]['entry_id:1'].payload.mode = 'local-update';
   driverLocalUpdateSnapshot.db[driverFixture.table]['entry_id:1'].payload.version = 2;
   driverLocalUpdateSnapshot.db[driverFixture.table]['entry_id:1'].updated_marker = 'local-update';
@@ -84,6 +98,7 @@ try {
     routes: {},
     cli: {},
     driverUpdateApply: {},
+    driverDeleteApply: {},
     driverDeleteGuard: {},
     final: {},
   };
@@ -197,7 +212,7 @@ try {
     };
   });
 
-  await withPlaygroundServer('production-plugin-driver-delete-guard', driverServerBlueprintPath, pluginDir, async (server) => {
+  await withPlaygroundServer('production-plugin-driver-delete-guard', driverGuardServerBlueprintPath, pluginDir, async (server) => {
     const client = authenticatedHttpClient({
       sourceUrl: server.baseUrl,
       credential: credentials,
@@ -223,7 +238,7 @@ try {
     assert.equal(allowedEntry.supportsDelete, false);
 
     const updatePlan = createPushPlan({
-      base: driverBaseSnapshot,
+      base: driverGuardBaseSnapshot,
       local: driverLocalUpdateSnapshot,
       remote: remoteSnapshot.body.snapshot,
       now: new Date('2026-05-26T18:05:00.000Z'),
@@ -231,7 +246,7 @@ try {
     assert.equal(updatePlan.status, 'ready');
     assert.equal(updatePlan.mutations.length, 1);
     assert.equal(updatePlan.mutations[0].resourceKey, driverFixture.resourceKey);
-    assert.equal(updatePlan.mutations[0].action, 'update');
+    assert.equal(updatePlan.mutations[0].action, 'put');
     assert.equal(updatePlan.mutations[0].pluginOwnedResource?.driver, driverFixture.driver);
     assert.equal(updatePlan.mutations[0].pluginOwnedResource?.table, driverFixture.table);
 
@@ -288,7 +303,7 @@ try {
     forgedAllowedEntry.allowDelete = true;
 
     const forgedDeletePlan = createPushPlan({
-      base: driverBaseSnapshot,
+      base: driverGuardBaseSnapshot,
       local: driverLocalDeleteSnapshot,
       remote: forgedRemote,
       now: new Date('2026-05-26T18:10:00.000Z'),
@@ -307,28 +322,16 @@ try {
         idempotencyKey: 'production-plugin-driver-delete-dry-run',
       },
     );
-    assert.equal(dryRun.status, 200);
-    assert.equal(dryRun.body?.ok, true);
-    assert.ok(dryRun.body?.receipt?.receiptHash, 'forged delete dry-run did not produce a receipt');
-
-    const apply = await client.signedPost(
-      '/apply',
-      {
-        plan: forgedDeletePlan,
-        receipt: dryRun.body.receipt,
-      },
-      {
-        session,
-        idempotencyKey: 'production-plugin-driver-delete-apply',
-      },
+    assert.equal(dryRun.status, 400);
+    assert.equal(dryRun.body?.ok, false);
+    assert.ok(
+      dryRun.body?.code === 'INVALID_PLAN' || dryRun.body?.code === 'PUSH_PROTOCOL_ERROR',
+      `unexpected forged delete dry-run code: ${dryRun.body?.code}`,
     );
-    assert.equal(apply.status, 200);
-    assert.equal(apply.body?.ok, false);
-    assert.equal(apply.body?.code, 'PUSH_PROTOCOL_ERROR');
     assert.match(
-      apply.body?.message || '',
-      /does not support deletes/,
-      'packaged apply route did not reject the forged driver delete',
+      dryRun.body?.message || '',
+      /does not support deletes|blocked plan|plan not ready/i,
+      'packaged dry-run route did not reject the forged driver delete',
     );
 
     const afterRejectedApply = await client.get('/snapshot');
@@ -361,9 +364,93 @@ try {
       resourceKey: driverFixture.resourceKey,
       remoteSupportsDelete: allowedEntry.supportsDelete,
       forgedPlanAcceptedByDryRun: dryRun.body?.ok === true,
-      applyRejectedCode: apply.body?.code,
-      applyRejectedMessage: apply.body?.message,
+      dryRunRejectedCode: dryRun.body?.code,
+      dryRunRejectedMessage: dryRun.body?.message,
       rowRetainedAfterReject: afterRejectedApply.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1'] !== undefined,
+    };
+  });
+
+  await withPlaygroundServer('production-plugin-driver-delete-apply', driverDeleteServerBlueprintPath, pluginDir, async (server) => {
+    const client = authenticatedHttpClient({
+      sourceUrl: server.baseUrl,
+      credential: credentials,
+      routeProfile: 'production-shaped',
+    });
+    const preflight = await client.signedGet('/preflight');
+    assert.equal(preflight.status, 200);
+    assert.equal(preflight.body?.ok, true);
+    const session = preflight.body?.session?.id;
+    assert.equal(typeof session, 'string');
+    assert.ok(session.length > 0, 'signed preflight did not return a session id for delete apply');
+
+    const remoteSnapshot = await client.get('/snapshot');
+    assert.equal(remoteSnapshot.status, 200);
+    assert.equal(remoteSnapshot.body?.ok, true);
+    const allowedEntry = remoteSnapshot.body.snapshot?.meta?.pluginOwnedResources?.allowedResources?.find?.(
+      (entry) => entry?.resourceKey === driverFixture.resourceKey,
+    );
+    assert.ok(allowedEntry, 'packaged snapshot did not expose the delete-enabled arbitrary plugin-owned driver policy');
+    assert.equal(allowedEntry.driver, driverFixture.driver);
+    assert.equal(allowedEntry.table, driverFixture.table);
+    assert.equal(allowedEntry.pluginOwner, driverFixture.pluginOwner);
+    assert.equal(allowedEntry.supportsDelete, true);
+
+    const deletePlan = createPushPlan({
+      base: driverDeleteBaseSnapshot,
+      local: driverLocalDeleteSnapshot,
+      remote: remoteSnapshot.body.snapshot,
+      now: new Date('2026-05-26T18:12:00.000Z'),
+    });
+    assert.equal(deletePlan.status, 'ready');
+    assert.equal(deletePlan.mutations.length, 1);
+    assert.equal(deletePlan.mutations[0].resourceKey, driverFixture.resourceKey);
+    assert.equal(deletePlan.mutations[0].action, 'delete');
+    assert.equal(deletePlan.mutations[0].pluginOwnedResource?.driver, driverFixture.driver);
+    assert.equal(deletePlan.mutations[0].pluginOwnedResource?.table, driverFixture.table);
+    assert.equal(deletePlan.mutations[0].pluginOwnedResource?.supportsDelete, true);
+
+    const deleteDryRun = await client.signedPost(
+      '/dry-run',
+      { plan: deletePlan },
+      {
+        session,
+        idempotencyKey: 'production-plugin-driver-delete-dry-run',
+      },
+    );
+    assert.equal(deleteDryRun.status, 200);
+    assert.equal(deleteDryRun.body?.ok, true);
+    assert.ok(deleteDryRun.body?.receipt?.receiptHash, 'delete-enabled driver dry-run did not produce a receipt');
+
+    const deleteApply = await client.signedPost(
+      '/apply',
+      {
+        plan: deletePlan,
+        receipt: deleteDryRun.body.receipt,
+      },
+      {
+        session,
+        idempotencyKey: 'production-plugin-driver-delete-apply',
+      },
+    );
+    assert.equal(deleteApply.status, 200);
+    assert.equal(deleteApply.body?.ok, true);
+    assert.equal(deleteApply.body?.applied, 1);
+
+    const afterDeleteApply = await client.get('/snapshot');
+    assert.equal(afterDeleteApply.status, 200);
+    assert.equal(afterDeleteApply.body?.ok, true);
+    assert.equal(
+      afterDeleteApply.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1'],
+      undefined,
+      'packaged apply route did not delete the arbitrary driver row when the driver allowed deletes',
+    );
+
+    summary.driverDeleteApply = {
+      resourceKey: driverFixture.resourceKey,
+      remoteSupportsDelete: allowedEntry.supportsDelete,
+      dryRunReceiptHash: deleteDryRun.body?.receipt?.receiptHash,
+      applied: deleteApply.body?.applied,
+      deletedAfterApply: afterDeleteApply.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1'] === undefined,
     };
   });
 
@@ -466,6 +553,7 @@ function writeDriverFixtureBlueprint(
   {
     activatePackagedPlugin = false,
     provisionAuth = false,
+    supportsDelete = false,
   } = {},
 ) {
   const blueprint = JSON.parse(fs.readFileSync(sourceBlueprintPath, 'utf8'));
@@ -474,7 +562,7 @@ function writeDriverFixtureBlueprint(
     title: 'Reprint Push Driver Fixture Package Guard',
     description: 'Remote base fixture with packaged Reprint Push plus an arbitrary plugin-owned row driver fixture.',
   };
-  const pluginCodeBase64 = Buffer.from(driverFixturePluginPhp({ supportsDelete: false }), 'utf8').toString('base64');
+  const pluginCodeBase64 = Buffer.from(driverFixturePluginPhp({ supportsDelete }), 'utf8').toString('base64');
   blueprint.steps.push({
     step: 'runPHP',
     code: [

@@ -306,10 +306,10 @@ function mapIntentsByResource(intents) {
 
 function buildPluginOwnedResourcePolicy({ base, local, remote, intents }) {
   const entries = [
-    ...pluginOwnedPolicyEntriesFromSnapshot(base, 'base-snapshot'),
+    ...intents.flatMap((intent) => pluginOwnedPolicyEntriesFromIntent(intent)),
     ...pluginOwnedPolicyEntriesFromSnapshot(local, 'local-snapshot'),
     ...pluginOwnedPolicyEntriesFromSnapshot(remote, 'remote-snapshot'),
-    ...intents.flatMap((intent) => pluginOwnedPolicyEntriesFromIntent(intent)),
+    ...pluginOwnedPolicyEntriesFromSnapshot(base, 'base-snapshot'),
   ];
 
   return {
