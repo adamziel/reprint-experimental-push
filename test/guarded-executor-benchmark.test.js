@@ -90,6 +90,10 @@ test('guarded executor benchmark moves buffers and row payloads through durable 
     report.evidence.atomicGroup.productionStorageReceiptsMeasured,
     report.claims.productionThroughputDetails.atomicGroup.productionStorageReceiptsMeasured,
   );
+  assert.equal(
+    report.evidence.atomicGroup.productionRowBatchExecutorMeasured,
+    report.claims.productionThroughputDetails.atomicGroup.productionRowBatchExecutorMeasured,
+  );
   assert.equal(report.throughput.productionThroughput, 'not-claimed');
 });
 
@@ -260,6 +264,10 @@ test('guarded benchmark refuses production throughput claims until production ga
   assert.equal(
     report.claims.productionThroughputDetails.blockers.includes('production-parallelism-limits-not-integral'),
     false,
+  );
+  assert.equal(
+    report.claims.productionThroughputDetails.blockers.includes('production-row-batch-executor-measured-not-proven'),
+    true,
   );
   assert.equal(
     report.claims.productionThroughputDetails.atomicGroup.preCommitFailureLeavesRemoteUnchanged,
@@ -454,6 +462,14 @@ test('production claim gate fails closed if benchmark evidence is tampered', () 
   assert.ok(
     productionThroughputBlockers(mismatchedStorageReceiptEvidence).includes(
       'production-storage-receipts-evidence-not-aligned',
+    ),
+  );
+
+  const mismatchedRowBatchExecutorEvidence = clone(report);
+  mismatchedRowBatchExecutorEvidence.evidence.atomicGroup.productionRowBatchExecutorMeasured = true;
+  assert.ok(
+    productionThroughputBlockers(mismatchedRowBatchExecutorEvidence).includes(
+      'production-row-batch-executor-evidence-not-aligned',
     ),
   );
 

@@ -1462,6 +1462,12 @@ unless the production claim gate passes. The current gate blocks with:
   guarded per-row apply, but there is no measured production batch
   compare-and-swap executor yet.
 
+The report now also surfaces `productionRowBatchExecutorMeasured` on the
+atomic-group evidence record and in the throughput details. The claim gate
+keeps that bit fail-closed: row-batch executor evidence must be present, and
+it must match the row-apply capability before the production throughput claim
+can advance.
+
 That means the measured evidence is useful for guarded-executor cost and safety
 shape, not production throughput. It also remains deliberately narrow on
 WordPress graph identity: the report records stable post targets under
@@ -1486,6 +1492,11 @@ The model exposes three contract lists that tests should keep current:
 - `rejectedFastPaths` records proposals that are not allowed because they
   bypass preconditions, split atomic groups, publish staged data early, confuse
   canonical hashes with transport encoding, or lose durable progress evidence.
+
+One current rejected fast path in the benchmark surface is "production row
+batch executor without measured evidence." It is rejected because a row-apply
+implementation can still be only per-row guarded apply, and throughput claims
+must not treat that as measured production batching.
   Each rejection names the broken gate so precondition bypasses and atomic group
   splits stay visible in benchmark review.
 - The bench fixture now ships a narrower `large-upload-and-plugin-install-recovery-evidence`

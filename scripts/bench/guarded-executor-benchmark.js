@@ -721,6 +721,15 @@ export function productionThroughputBlockers(report) {
   if (report.executorCapabilities.rowApply !== 'production-batched-compare-and-swap') {
     blockers.push('production-row-batch-executor-not-measured');
   }
+  if (
+    report.evidence.atomicGroup.productionRowBatchExecutorMeasured
+    !== (report.executorCapabilities.rowApply === 'production-batched-compare-and-swap')
+  ) {
+    blockers.push('production-row-batch-executor-evidence-not-aligned');
+  }
+  if (!report.evidence.atomicGroup.productionRowBatchExecutorMeasured) {
+    blockers.push('production-row-batch-executor-measured-not-proven');
+  }
   return blockers;
 }
 
@@ -1147,6 +1156,7 @@ export function productionThroughputDetails(report) {
       ...report.evidence.atomicGroup,
       productionAtomicCommitMeasured,
       productionStorageReceiptsMeasured,
+      productionRowBatchExecutorMeasured,
     },
     blockers: productionThroughputBlockers(report),
   };
@@ -1633,6 +1643,7 @@ function buildReport({
   const queuePausedBeforeOverflow = config.chunkSizeBytes <= config.maxBufferedUploadBytes;
   const productionAtomicCommitMeasured = false;
   const productionStorageReceiptsMeasured = false;
+  const productionRowBatchExecutorMeasured = false;
 
   return {
     schemaVersion: 1,
@@ -1735,6 +1746,7 @@ function buildReport({
         partialCommitStatus: partialFailure.inspectionStatus,
         productionAtomicCommitMeasured,
         productionStorageReceiptsMeasured,
+        productionRowBatchExecutorMeasured,
       },
       resourceLimits: {
         memoryCeilingBytes: config.maxBufferedUploadBytes,
