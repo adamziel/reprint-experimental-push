@@ -203,6 +203,8 @@ export function createPushPlan({ base, local, remote, now = new Date() }) {
         baseValue,
         localValue,
         remoteValue,
+        resources,
+        base,
         local,
         remote,
       });
@@ -437,6 +439,8 @@ export function createPushPlan({ base, local, remote, now = new Date() }) {
         baseValue,
         localValue,
         remoteValue,
+        resources,
+        base,
         local,
         remote,
       });
@@ -3589,7 +3593,16 @@ function unsupportedAttachmentResourceSupport({ resource, baseValue, localValue,
           reference.relationshipType === 'featured-image-attachment'
           || reference.relationshipType === 'post-parent'
           || reference.relationshipType === 'term-relationship-object'
-        ));
+        ))
+      .sort((left, right) => {
+        const priority = new Map([
+          ['featured-image-attachment', 0],
+          ['post-parent', 1],
+          ['term-relationship-object', 2],
+        ]);
+        return (priority.get(left.relationshipType) ?? Number.MAX_SAFE_INTEGER)
+          - (priority.get(right.relationshipType) ?? Number.MAX_SAFE_INTEGER);
+      });
     const samePlanAttachmentReason = inboundReferences.some((reference) =>
       reference.relationshipType === 'featured-image-attachment')
       ? `WordPress graph mutation ${resource.key} is created in the same plan as a featured image attachment target that depends on it, and identity rewriting is not yet supported.`
