@@ -248,6 +248,60 @@ function runFinalizeAuthenticatedApplyResult(result, authEvidence, signedRequest
   });
 }
 
+function runFinalizeAuthenticatedJournalResult(result, authEvidence, signedRequestEvidence) {
+  return spawnSync('php', [
+    '-r',
+    [
+      'define("ABSPATH", dirname($argv[1]));',
+      'function add_filter(...$args) {}',
+      'function add_action(...$args) {}',
+      'function register_rest_route(...$args) {}',
+      'class WP_REST_Server { const CREATABLE = "POST"; const READABLE = "GET"; }',
+      'class WP_REST_Response {',
+      '  private $data;',
+      '  public function __construct($data = null, $status = null) { $this->data = $data; }',
+      '  public function get_data() { return $this->data; }',
+      '  public function set_data($data) { $this->data = $data; }',
+      '}',
+      'class WP_REST_Request {}',
+      'require $argv[1];',
+      '$result = json_decode($argv[2], true);',
+      '$authEvidence = json_decode($argv[3], true);',
+      '$signedRequestEvidence = json_decode($argv[4], true);',
+      '$checkedSummary = json_decode($argv[5], true);',
+      'echo json_encode(reprint_push_lab_rest_finalize_authenticated_journal_result(',
+      '  $result,',
+      '  $authEvidence,',
+      '  $signedRequestEvidence,',
+      '  $checkedSummary',
+      '));',
+    ].join(' '),
+    pluginFile,
+    JSON.stringify(result),
+    JSON.stringify(authEvidence),
+    JSON.stringify(signedRequestEvidence),
+    JSON.stringify({
+      scope: 'checked live production-shaped journal surface; not local Playground fixture only',
+      acceptedOnCheckedBoundary: true,
+      ownership: {
+        ownsJournal: true,
+        restartReadable: true,
+        productionAdapter: 'wpdb-single-statement-cas',
+      },
+      leaseFence: {
+        boundary: 'wpdb-single-statement-cas',
+        claimKeyUnique: true,
+        monotonicSequence: true,
+        restartReadable: true,
+        staleClaimRejected: false,
+      },
+    }),
+  ], {
+    cwd: repoRoot,
+    encoding: 'utf8',
+  });
+}
+
 function runWriterLeaseContract({
   staleClaimRejected,
   claimKeyUnique = true,
@@ -941,6 +995,134 @@ test('authenticated apply finalization upgrades checked failure journal evidence
       request: {
         method: 'POST',
         path: '/wp-json/reprint/v1/push/apply',
+      },
+    },
+  });
+});
+
+test('authenticated db journal finalization preserves checked journal evidence and adds signed auth metadata', { skip: !hasPhp }, () => {
+  const result = runFinalizeAuthenticatedJournalResult(
+    {
+      ok: true,
+      dbJournal: {
+        scope: 'checked live production-shaped journal surface; not local Playground fixture only',
+        acceptedOnCheckedBoundary: true,
+        ownership: {
+          ownsJournal: true,
+          restartReadable: true,
+          productionAdapter: 'wpdb-single-statement-cas',
+        },
+        leaseFence: {
+          boundary: 'wpdb-single-statement-cas',
+          claimKeyUnique: true,
+          monotonicSequence: true,
+          restartReadable: true,
+          staleClaimRejected: false,
+        },
+      },
+      storageGuard: {
+        boundary: 'wpdb-single-statement-cas',
+        operation: 'compare-and-swap',
+        outcome: 'committed',
+      },
+    },
+    {
+      schemaVersion: 1,
+      scope: 'reprint-push-lab:authenticated-http-push',
+      identity: {
+        userId: 1,
+        userLogin: 'push-admin',
+        roles: ['administrator'],
+        capabilities: {
+          manage_options: true,
+        },
+      },
+      session: {
+        id: 'signed-session-token',
+        type: 'production-auth-session',
+        status: 'active',
+        revoked: false,
+        cleanedUp: false,
+        expiresAt: '2026-05-26T20:00:00Z',
+        playgroundFallback: false,
+      },
+    },
+    {
+      schemaVersion: 1,
+      contentHash: 'abc123',
+      timestamp: '2026-05-26T20:00:00Z',
+      nonceHash: 'def456',
+      sessionHash: 'ghi789',
+      signingKeyHash: 'jkl012',
+      cleanup: {
+        deletedExpiredTotal: 0,
+      },
+      request: {
+        method: 'GET',
+        path: '/wp-json/reprint/v1/push/db-journal',
+      },
+    },
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  assert.deepEqual(JSON.parse(result.stdout), {
+    ok: true,
+    dbJournal: {
+      scope: 'checked live production-shaped journal surface; not local Playground fixture only',
+      acceptedOnCheckedBoundary: true,
+      ownership: {
+        ownsJournal: true,
+        restartReadable: true,
+        productionAdapter: 'wpdb-single-statement-cas',
+      },
+      leaseFence: {
+        boundary: 'wpdb-single-statement-cas',
+        claimKeyUnique: true,
+        monotonicSequence: true,
+        restartReadable: true,
+        staleClaimRejected: false,
+      },
+    },
+    storageGuard: {
+      boundary: 'wpdb-single-statement-cas',
+      operation: 'compare-and-swap',
+      outcome: 'committed',
+    },
+    responseSchemaVersion: 1,
+    auth: {
+      schemaVersion: 1,
+      scope: 'reprint-push-lab:authenticated-http-push',
+      identity: {
+        userId: 1,
+        userLogin: 'push-admin',
+        roles: ['administrator'],
+        capabilities: {
+          manage_options: true,
+        },
+      },
+      session: {
+        id: 'signed-session-token',
+        type: 'production-auth-session',
+        status: 'active',
+        revoked: false,
+        cleanedUp: false,
+        expiresAt: '2026-05-26T20:00:00Z',
+        playgroundFallback: false,
+      },
+    },
+    signedRequest: {
+      schemaVersion: 1,
+      contentHash: 'abc123',
+      timestamp: '2026-05-26T20:00:00Z',
+      nonceHash: 'def456',
+      sessionHash: 'ghi789',
+      signingKeyHash: 'jkl012',
+      cleanup: {
+        deletedExpiredTotal: 0,
+      },
+      request: {
+        method: 'GET',
+        path: '/wp-json/reprint/v1/push/db-journal',
       },
     },
   });

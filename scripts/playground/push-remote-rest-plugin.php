@@ -516,6 +516,19 @@ function reprint_push_lab_rest_finalize_authenticated_apply_result(
     return $result;
 }
 
+function reprint_push_lab_rest_finalize_authenticated_journal_result(
+    array $result,
+    array $auth_evidence,
+    array $signed_request_evidence,
+    ?array $checked_db_journal = null
+): array {
+    $result = reprint_push_lab_rest_attach_checked_db_journal_contract($result, false, $checked_db_journal);
+    $result['responseSchemaVersion'] = 1;
+    $result['auth'] = $auth_evidence;
+    $result['signedRequest'] = $signed_request_evidence;
+    return $result;
+}
+
 function reprint_push_lab_rest_authenticated_recovery_inspect(WP_REST_Request $request): WP_REST_Response
 {
     $signature_error = reprint_push_lab_rest_require_signed_request($request, 'recovery-inspect');
@@ -954,7 +967,11 @@ function reprint_push_lab_rest_authenticated_db_journal(WP_REST_Request $request
     $response = reprint_push_lab_rest_db_journal($request);
     $result = $response->get_data();
     if (is_array($result)) {
-        $result['signedRequest'] = reprint_push_lab_rest_signed_request_evidence($request);
+        $result = reprint_push_lab_rest_finalize_authenticated_journal_result(
+            $result,
+            reprint_push_lab_rest_auth_evidence($request),
+            reprint_push_lab_rest_signed_request_evidence($request)
+        );
         $response->set_data($result);
     }
     return $response;
