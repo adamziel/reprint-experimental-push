@@ -290,6 +290,14 @@ export function productionThroughputBlockers(report) {
     blockers.push('production-parallelism-limits-not-canonical');
   }
   if (
+    parallelismLimits?.chunkUpload === DEFAULT_LIMITS.maxUploadConcurrency
+    && parallelismLimits?.fileHashing === DEFAULT_LIMITS.maxHashConcurrency
+    && parallelismLimits?.dbBatchPerTable === DEFAULT_LIMITS.maxDbConcurrencyPerTable
+    && report.claims?.productionThroughputDetails?.parallelismLimitsVisible !== true
+  ) {
+    blockers.push('production-parallelism-limits-not-visible');
+  }
+  if (
     !Number.isFinite(report.resourceLimits?.memoryCeilingBytes)
     || !Number.isFinite(report.evidence.chunkReceipts.resumeCursor?.sizeBytes)
     || report.evidence.chunkReceipts.resumeCursor.sizeBytes > report.resourceLimits.memoryCeilingBytes
