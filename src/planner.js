@@ -2160,6 +2160,7 @@ function addUnsupportedTermmetaResourceBlocker(plan, {
   plan.blockers.push({
     id: `blocker-unsupported-termmeta-resource-${plan.blockers.length + 1}`,
     class: support.className || 'unsupported-termmeta-resource',
+    resourceKind: 'term-meta',
     resource,
     resourceKey: resource.key,
     reason: support.reason || `Term meta graph resource ${resource.key} is not yet supported by the planner.`,
@@ -2191,6 +2192,7 @@ function addUnsupportedTermTaxonomyResourceBlocker(plan, {
   plan.blockers.push({
     id: `blocker-unsupported-term-taxonomy-resource-${plan.blockers.length + 1}`,
     class: support.className || 'unsupported-term-taxonomy-resource',
+    resourceKind: 'term-taxonomy',
     resource,
     resourceKey: resource.key,
     reason: support.reason || `Term taxonomy graph resource ${resource.key} is not yet supported by the planner.`,
