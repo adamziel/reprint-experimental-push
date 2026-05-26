@@ -14768,6 +14768,57 @@ test('blocks local post-parent references to a same-plan created revision while 
   assert.equal(Object.hasOwn(remote.files, 'wp-content/plugins/forms/forms.php'), false);
 });
 
+test('blocks local post-parent references to a same-plan created post while preserving remote-only plugin drift', () => {
+  const resourceKey = 'row:["wp_posts","ID:46"]';
+  const targetResourceKey = 'row:["wp_posts","ID:47"]';
+  const base = baseSite();
+  base.db.wp_posts['ID:46'] = {
+    ID: 46,
+    post_title: 'Base child post',
+    post_content: 'Base child post content',
+    post_status: 'publish',
+    post_parent: 0,
+    post_type: 'post',
+  };
+
+  const local = baseSite();
+  local.db.wp_posts['ID:46'] = {
+    ID: 46,
+    post_title: 'Local child post',
+    post_content: 'Local child post content',
+    post_status: 'publish',
+    post_parent: 47,
+    post_type: 'post',
+  };
+  local.db.wp_posts['ID:47'] = {
+    ID: 47,
+    post_title: 'Local same-plan post',
+    post_content: 'Local same-plan post content',
+    post_status: 'publish',
+    post_type: 'post',
+  };
+
+  const remote = baseSite();
+  remote.db.wp_posts['ID:46'] = JSON.parse(JSON.stringify(base.db.wp_posts['ID:46']));
+  remote.plugins.forms.description = 'remote-only plugin drift';
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers[0];
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(decisionFor(plan, targetResourceKey), undefined);
+  assert.equal(plan.conflicts.length, 0);
+  assert.equal(blocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_posts","ID:46"] references graph identities without proven identity mapping or reference rewriting.');
+  assert.equal(planJson.includes('Local same-plan post content'), false);
+  assert.equal(planJson.includes('remote-only plugin drift'), false);
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin drift');
+});
+
 test('blocks local termmeta graph resources while preserving remote-only plugin drift', () => {
   const resourceKey = 'row:["wp_termmeta","meta_id:8"]';
   const base = baseSite();
