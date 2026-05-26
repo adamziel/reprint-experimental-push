@@ -5173,6 +5173,74 @@ test('allows a local thumbnail reference from a page to a same-plan attachment',
   assert.equal(result.site.db.wp_postmeta['meta_id:52'].meta_value, 3);
 });
 
+test('allows a local thumbnail reference from a page to a same-plan attachment even when the attachment is also created with a same-plan parent post', () => {
+  const sourcePageResourceKey = 'row:["wp_posts","ID:2"]';
+  const parentPostResourceKey = 'row:["wp_posts","ID:4"]';
+  const targetAttachmentResourceKey = 'row:["wp_posts","ID:3"]';
+  const postmetaResourceKey = 'row:["wp_postmeta","meta_id:53"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_title: 'Local page source',
+    post_content: 'local-private-page-source-body',
+    post_status: 'publish',
+    post_type: 'page',
+  };
+  local.db.wp_posts['ID:3'] = {
+    ID: 3,
+    post_title: 'Local attachment target',
+    post_content: 'local-private-page-thumbnail-target-body',
+    post_status: 'inherit',
+    post_type: 'attachment',
+    post_parent: 4,
+  };
+  local.db.wp_posts['ID:4'] = {
+    ID: 4,
+    post_title: 'Local attachment parent',
+    post_content: 'local-private-attachment-parent-body',
+    post_status: 'publish',
+  };
+  local.db.wp_postmeta = {
+    'meta_id:53': {
+      meta_id: 53,
+      post_id: 2,
+      meta_key: '_thumbnail_id',
+      meta_value: 3,
+    },
+  };
+
+  const plan = planFor(base, local, baseSite());
+  const sourcePageMutation = mutationFor(plan, sourcePageResourceKey);
+  const parentPostMutation = mutationFor(plan, parentPostResourceKey);
+  const targetAttachmentMutation = mutationFor(plan, targetAttachmentResourceKey);
+  const postmetaMutation = mutationFor(plan, postmetaResourceKey);
+  const reference = postmetaMutation.wordpressGraphReferences.find((entry) => entry.relationshipType === 'featured-image-attachment');
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === postmetaResourceKey);
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.blockers, 0);
+  assert.equal(sourcePageMutation.changeKind, 'create');
+  assert.equal(parentPostMutation.changeKind, 'create');
+  assert.equal(targetAttachmentMutation.changeKind, 'create');
+  assert.equal(postmetaMutation.changeKind, 'create');
+  assert.ok(plan.mutations.indexOf(parentPostMutation) < plan.mutations.indexOf(targetAttachmentMutation));
+  assert.ok(plan.mutations.indexOf(targetAttachmentMutation) < plan.mutations.indexOf(postmetaMutation));
+  assert.deepEqual(postmetaMutation.dependsOnMutationIds.sort(), [sourcePageMutation.id, targetAttachmentMutation.id].sort());
+  assert.equal(reference.resolutionPolicy, 'same-plan-local-create');
+  assert.equal(reference.relationshipKey, 'wp_postmeta.meta_value');
+  assert.equal(reference.relationshipType, 'featured-image-attachment');
+  assert.equal(reference.targetResourceKey, targetAttachmentResourceKey);
+  assert.equal(JSON.stringify(reference).includes('local-private-page-source-body'), false);
+  assert.equal(JSON.stringify(reference).includes('local-private-page-thumbnail-target-body'), false);
+  assert.equal(JSON.stringify(reference).includes('local-private-attachment-parent-body'), false);
+  assert.equal(blocker, undefined);
+
+  const result = applyPlan(baseSite(), plan);
+  assert.equal(result.site.db.wp_posts['ID:3'].post_parent, 4);
+  assert.equal(result.site.db.wp_postmeta['meta_id:53'].meta_value, 3);
+});
+
 test('blocks a local non-attachment post parent reference to a same-plan revision', () => {
   const revisionResourceKey = 'row:["wp_posts","ID:2"]';
   const postResourceKey = 'row:["wp_posts","ID:3"]';
