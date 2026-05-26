@@ -123,6 +123,20 @@ test('guarded executor benchmark moves buffers and row payloads through durable 
   assert.equal(report.throughput.productionThroughput, 'not-claimed');
 });
 
+test('guarded benchmark blocks row-batch executor claims when the measured surface is not visible', () => {
+  const report = smallBenchmark();
+  const tampered = clone(report);
+
+  tampered.executorCapabilities.rowApply = 'production-batched-compare-and-swap';
+  tampered.evidence.atomicGroup.productionRowBatchExecutorMeasured = true;
+  tampered.evidence.atomicGroup.productionRowBatchExecutorVisible = false;
+
+  const blockers = productionThroughputBlockers(tampered);
+
+  assert.equal(blockers.includes('production-row-batch-executor-not-visible'), true);
+  assert.equal(blockers.includes('production-row-batch-executor-measured-not-proven'), false);
+});
+
 test('guarded benchmark refuses production throughput claims until production gaps are measured', () => {
   const report = smallBenchmark();
 
