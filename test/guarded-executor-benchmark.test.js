@@ -283,6 +283,51 @@ test('guarded benchmark exposes queue budget, memory ceiling, and queue headroom
   );
 });
 
+test('guarded benchmark exposes queue-budget-match pause shortcuts as rejected', () => {
+  const fastPath = findRejectedFastPathById(
+    'cached-receipt-cursor-and-queue-budget-match-skips-backpressure-pause-after-retry',
+  );
+
+  assert.ok(fastPath);
+  assert.equal(fastPath.rejectedGate, 'recovery');
+  assert.match(fastPath.proposal, /queue-budget match/);
+  assert.match(fastPath.rejectedBecause, /journal trail is durable enough to recover/);
+  assert.deepEqual(
+    fastPath.violates,
+    ['backpressure', 'chunk-receipts', 'durable-progress'],
+  );
+});
+
+test('guarded benchmark exposes queue-budget-match replay shortcuts as rejected', () => {
+  const fastPath = findRejectedFastPathById(
+    'cached-receipt-cursor-and-queue-budget-match-skips-backpressure-replay-after-retry',
+  );
+
+  assert.ok(fastPath);
+  assert.equal(fastPath.rejectedGate, 'recovery');
+  assert.match(fastPath.proposal, /skip backpressure replay after a retry/);
+  assert.match(fastPath.rejectedBecause, /raw receipt order/);
+  assert.deepEqual(
+    fastPath.violates,
+    ['backpressure', 'chunk-receipts', 'durable-progress'],
+  );
+});
+
+test('guarded benchmark exposes queue-slack and journal-lag pause shortcuts as rejected', () => {
+  const fastPath = findRejectedFastPathById(
+    'cached-receipt-cursor-queue-slack-and-journal-lag-skips-backpressure-pause-after-retry',
+  );
+
+  assert.ok(fastPath);
+  assert.equal(fastPath.rejectedGate, 'recovery');
+  assert.match(fastPath.proposal, /queue slack and journal lag/);
+  assert.match(fastPath.rejectedBecause, /ordered raw receipts survived the retry/);
+  assert.deepEqual(
+    fastPath.violates,
+    ['backpressure', 'chunk-receipts', 'durable-progress'],
+  );
+});
+
 test('guarded benchmark exposes staging-disk headroom and journal lag replay shortcuts as rejected', () => {
   const fastPath = findRejectedFastPathById(
     'cached-receipt-cursor-staging-disk-headroom-and-journal-lag-skips-post-pause-replay',
