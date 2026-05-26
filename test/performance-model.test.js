@@ -5275,6 +5275,8 @@ test('production throughput details fail closed when receipt-cursor memory-headr
   assert.equal(details.receiptCursorMemoryHeadroomVisibleAndMeasured, false);
   assert.equal(details.receiptCursorQueueSlackVisibleAndMemoryHeadroomVisible, false);
   assert.equal(details.receiptCursorMemoryHeadroomVisibleAndQueueBudgetVisible, false);
+  assert.equal(details.receiptCursorMemoryCeilingVisibleAndQueueHeadroomVisible, false);
+  assert.equal(details.receiptCursorMemoryCeilingVisibleAndQueueHeadroomVisibleAndSafe, false);
   assert.equal(details.queueHeadroomVisibleAndMemoryHeadroomVisible, false);
   assert.equal(details.backpressureConsistency.receiptCursorPauseFootprintVisible, false);
   assert.equal(details.backpressureConsistency.receiptCursorMemoryHeadroomVisible, false);
@@ -5285,6 +5287,14 @@ test('production throughput details fail closed when receipt-cursor memory-headr
   );
   assert.equal(
     details.backpressureConsistency.receiptCursorMemoryHeadroomVisibleAndQueueBudgetVisible,
+    false,
+  );
+  assert.equal(
+    details.backpressureConsistency.receiptCursorMemoryCeilingVisibleAndQueueHeadroomVisible,
+    false,
+  );
+  assert.equal(
+    details.backpressureConsistency.receiptCursorMemoryCeilingVisibleAndQueueHeadroomVisibleAndSafe,
     false,
   );
   assert.equal(
@@ -5309,6 +5319,8 @@ test('production throughput details fail closed when receipt-cursor queue-slack 
   assert.equal(details.receiptCursorQueueSlackVisibleAndMeasured, false);
   assert.equal(details.receiptCursorQueueSlackVisibleAndMemoryHeadroomVisible, false);
   assert.equal(details.receiptCursorMemoryHeadroomVisibleAndQueueBudgetVisible, false);
+  assert.equal(details.receiptCursorMemoryCeilingVisibleAndQueueHeadroomVisible, false);
+  assert.equal(details.receiptCursorMemoryCeilingVisibleAndQueueHeadroomVisibleAndSafe, false);
   assert.equal(details.queueHeadroomVisibleAndQueueSlackMeasured, true);
   assert.equal(details.queueHeadroomVisibleAndQueueSlackVisibleAndMeasured, false);
   assert.equal(details.backpressureConsistency.receiptCursorPauseFootprintVisible, false);
@@ -5320,6 +5332,14 @@ test('production throughput details fail closed when receipt-cursor queue-slack 
   );
   assert.equal(
     details.backpressureConsistency.receiptCursorMemoryHeadroomVisibleAndQueueBudgetVisible,
+    false,
+  );
+  assert.equal(
+    details.backpressureConsistency.receiptCursorMemoryCeilingVisibleAndQueueHeadroomVisible,
+    false,
+  );
+  assert.equal(
+    details.backpressureConsistency.receiptCursorMemoryCeilingVisibleAndQueueHeadroomVisibleAndSafe,
     false,
   );
   assert.equal(details.backpressureConsistency.queueHeadroomVisibleAndQueueSlackMeasured, true);
