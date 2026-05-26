@@ -219,6 +219,10 @@ Current executable gate:
 - The same details also fail closed if receipt-cursor memory headroom is
   visible while queue headroom is hidden, so a partial pause-footprint summary
   cannot look complete when the paired bounded-backpressure surface is absent.
+- The same details also fail closed if receipt-cursor memory headroom is
+  visible while receipt-cursor queue slack is hidden, so a partial pause-
+  footprint summary cannot surface its headroom proof without the paired
+  bounded-slack evidence that makes the pause auditable.
 - The same details also expose and require an explicit parallelism-measurement
   bit, so surfaced concurrency limits cannot look visible without a measured
   report surface behind them.

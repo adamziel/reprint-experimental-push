@@ -793,6 +793,12 @@ export function productionThroughputBlockers(report) {
     blockers.push('receipt-cursor-memory-headroom-visible-without-queue-headroom-visibility');
   }
   if (
+    receiptCursorMemoryHeadroomVisible === true
+    && receiptCursorQueueSlackVisible !== true
+  ) {
+    blockers.push('receipt-cursor-memory-headroom-visible-without-queue-slack-visibility');
+  }
+  if (
     report.evidence.backpressure?.queuePausedBeforeOverflow === true
     && report.evidence.backpressure?.receiptCursorMemoryCeilingVisible !== true
   ) {
@@ -1897,6 +1903,8 @@ function hasCompleteBackpressureEvidence(report) {
     && queuePauseHasBackpressureAlignedReceiptCursorQueueSlack
     && receiptCursorMemoryCeilingMatchesQueueBudget
     && receiptCursorMemoryCeilingMatchesQueueBudgetVisible
+    && report.evidence.backpressure?.receiptCursorQueueSlackVisible === true
+    && report.evidence.backpressure?.receiptCursorMemoryHeadroomVisible === true
     && receiptCursorQueueSlackWithinResourceHeadroom
     && receiptCursorQueueSlackBytes === receiptCursorMemoryHeadroomBytes
     && receiptCursorQueueHeadroomBytes === receiptCursorQueueBudgetBytes - report.shape.chunkSizeBytes
