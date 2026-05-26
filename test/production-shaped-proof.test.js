@@ -21,6 +21,12 @@ import {
   resolvePackagedProductionPluginSourceCommand,
 } from '../scripts/playground/packaged-production-plugin-source-command.js';
 import {
+  labReadinessBodyRetryable,
+  labReadinessErrorRetryable,
+  labSnapshotReady,
+  labSnapshotRetryable,
+} from '../scripts/playground/lab-playground-readiness.js';
+import {
   packagedProductionPluginReadinessBodyRetryable,
   packagedProductionPluginReadinessErrorRetryable,
   packagedProductionPluginPreflightReady,
@@ -1083,6 +1089,83 @@ test('packaged production plugin readiness helper does not retry terminal readin
   );
 });
 
+test('lab Playground readiness helper rejects malformed ready responses and retries only startup-shaped failures', () => {
+  const readySnapshot = {
+    status: 200,
+    body: {
+      ok: true,
+      snapshot: {},
+    },
+  };
+
+  assert.equal(labSnapshotReady(readySnapshot), true);
+  assert.equal(
+    labSnapshotReady({
+      status: 200,
+      body: {
+        ok: true,
+      },
+    }),
+    false,
+  );
+  assert.equal(
+    labSnapshotRetryable({
+      status: 502,
+      body: {
+        code: 'wordpress_not_ready',
+      },
+    }),
+    true,
+  );
+  assert.equal(
+    labSnapshotRetryable({
+      status: 404,
+      body: {
+        code: 'rest_no_route',
+        message: 'No route was found matching the URL and request method.',
+      },
+    }),
+    true,
+  );
+  assert.equal(
+    labSnapshotRetryable({
+      status: 401,
+      body: {
+        code: 'reprint_push_lab_auth_required',
+      },
+    }),
+    false,
+  );
+  assert.equal(
+    labReadinessBodyRetryable(
+      502,
+      '<!doctype html><html><body>WordPress is not ready yet</body></html>',
+    ),
+    true,
+  );
+  assert.equal(
+    labReadinessBodyRetryable(
+      404,
+      '<!doctype html><html><body>No route was found matching the URL and request method.</body></html>',
+    ),
+    true,
+  );
+  assert.equal(
+    labReadinessBodyRetryable(
+      200,
+      '<!doctype html><html><body>snapshot route returned broken html</body></html>',
+    ),
+    false,
+  );
+  assert.equal(labReadinessErrorRetryable(new Error('transient fetch failure')), true);
+  assert.equal(
+    labReadinessErrorRetryable({
+      isPlaygroundReadinessFailure: true,
+    }),
+    false,
+  );
+});
+
 test('packaged production plugin runtime source binding replaces the stale command source URL', () => {
   const bound = bindPackagedProductionPluginRuntimeSource({
     sourceUrl: 'http://127.0.0.1:8080',
@@ -1642,12 +1725,51 @@ async function waitForServer(child, baseUrl, getLogs) {
         process.stderr.write(
           `Playground probe ${baseUrl}/wp-json/reprint-push-lab/v1/snapshot -> ${snapshot.status} ${snapshotBody.slice(0, 160).replace(/\s+/g, ' ').trim()}\n`,
         );
-        if (snapshot.status === 200) {
+        let snapshotJson = null;
+        try {
+          snapshotJson = JSON.parse(snapshotBody);
+        } catch (error) {
+          if (labReadinessBodyRetryable(snapshot.status, snapshotBody)) {
+            lastError = new Error(
+              `Playground lab snapshot readiness HTTP ${snapshot.status}; ${describeLastProbe(lastProbes.at(-1))}`,
+            );
+            await new Promise((resolve) => setTimeout(resolve, readinessProbeIntervalMs));
+            continue;
+          }
+          lastError = error;
+          await throwPlaygroundReadinessFailure(
+            child,
+            `Playground lab snapshot returned an invalid readiness body at ${baseUrl}`,
+            lastError,
+            lastProbes,
+            getLogs(),
+            { childPid: child.pid ?? null },
+          );
+        }
+        if (labSnapshotReady({
+          status: snapshot.status,
+          body: snapshotJson,
+        })) {
           await snapshot.arrayBuffer();
           return;
         }
         lastError = new Error(
           `Playground lab snapshot readiness HTTP ${snapshot.status}; ${describeLastProbe(lastProbes.at(-1))}`,
+        );
+        if (labSnapshotRetryable({
+          status: snapshot.status,
+          body: snapshotJson,
+        })) {
+          await new Promise((resolve) => setTimeout(resolve, readinessProbeIntervalMs));
+          continue;
+        }
+        await throwPlaygroundReadinessFailure(
+          child,
+          `Playground lab snapshot returned a terminal readiness failure at ${baseUrl}`,
+          lastError,
+          lastProbes,
+          getLogs(),
+          { childPid: child.pid ?? null },
         );
       } else {
         const readinessHint = isWordPressNotReadyResponse(response.status, responseBody)
@@ -1695,7 +1817,7 @@ async function waitForServer(child, baseUrl, getLogs) {
         }
       }
     } catch (error) {
-      if (error && typeof error === 'object' && error.isPlaygroundReadinessFailure) {
+      if (!labReadinessErrorRetryable(error)) {
         throw error;
       }
       lastError = error;
