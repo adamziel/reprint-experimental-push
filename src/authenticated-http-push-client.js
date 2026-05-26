@@ -686,6 +686,8 @@ function isReplayEquivalent(applyResponse, replayResponse) {
   const replayBody = replayResponse?.body || {};
   const hasResponseSchemaVersion = applyBody.responseSchemaVersion !== undefined
     && replayBody.responseSchemaVersion !== undefined;
+  const applySignedRequestDigest = digest(applyBody.signedRequest?.request || null);
+  const replaySignedRequestDigest = digest(replayBody.signedRequest?.request || null);
   return applyResponse?.status === replayResponse?.status
     && applyBody.mode === replayBody.mode
     && applyBody.ok === replayBody.ok
@@ -707,10 +709,8 @@ function isReplayEquivalent(applyResponse, replayResponse) {
     && applyBody.signedRequest?.nonceHash === replayBody.signedRequest?.nonceHash
     && applyBody.signedRequest?.sessionHash === replayBody.signedRequest?.sessionHash
     && applyBody.signedRequest?.signingKeyHash === replayBody.signedRequest?.signingKeyHash
-    && JSON.stringify(applyBody.signedRequest?.request || null) === JSON.stringify(replayBody.signedRequest?.request || null)
-    && applyBody.idempotency?.replayed === replayBody.idempotency?.replayed
+    && applySignedRequestDigest === replaySignedRequestDigest
     && applyBody.idempotency?.freshMutationWork === replayBody.idempotency?.freshMutationWork
-    && applyBody.idempotency?.status === replayBody.idempotency?.status
     && applyBody.idempotency?.conflict === replayBody.idempotency?.conflict;
 }
 
