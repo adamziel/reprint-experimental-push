@@ -20,6 +20,7 @@ import {
   packagedProductionPluginPreflightRetryable,
   packagedProductionPluginReadinessBodyRetryable,
   packagedProductionPluginReadinessErrorRetryable,
+  packagedProductionPluginRouteRetryableWhileWordPressStarting,
   packagedProductionPluginServerReady,
   packagedProductionPluginSnapshotTerminal,
   packagedProductionPluginSnapshotRetryable,
@@ -486,6 +487,23 @@ async function waitForServer(child, baseUrl, logs) {
         lastError = new Error(`Production plugin package snapshot readiness HTTP ${snapshotResponse.status}`);
         if (packagedProductionPluginSnapshotRetryable({ status: snapshotResponse.status, body: snapshotBody })) {
           if (notReadyProbeCount >= packagedProductionPluginMaxConsecutiveNotReadyProbes) {
+            const indexProbe = await fetchPackagedWordPressIndexProbe(baseUrl);
+            lastProbe = indexProbe;
+            if (
+              packagedProductionPluginRouteRetryableWhileWordPressStarting(
+                snapshotResponse.status,
+                snapshotText,
+                indexProbe.status,
+                indexProbe.body,
+              )
+            ) {
+              notReadyProbeCount = 0;
+              lastError = new Error(
+                `Production plugin package snapshot readiness still waiting on global WordPress startup HTTP ${indexProbe.status}`,
+              );
+              await sleep(500);
+              continue;
+            }
             throw new Error(
               `Packaged production plugin snapshot hit the bounded readiness failure after ${notReadyProbeCount} consecutive startup-shaped response${notReadyProbeCount === 1 ? '' : 's'} (limit ${packagedProductionPluginMaxConsecutiveNotReadyProbes})\n`
               + `${snapshotText.slice(0, readinessFailureBodyLimit)}\n${logs.join('')}`,
@@ -542,6 +560,23 @@ async function waitForServer(child, baseUrl, logs) {
         lastError = new Error(`Production plugin package preflight readiness HTTP ${preflightResponse.status}`);
         if (packagedProductionPluginPreflightRetryable({ status: preflightResponse.status, body: preflightBody })) {
           if (notReadyProbeCount >= packagedProductionPluginMaxConsecutiveNotReadyProbes) {
+            const indexProbe = await fetchPackagedWordPressIndexProbe(baseUrl);
+            lastProbe = indexProbe;
+            if (
+              packagedProductionPluginRouteRetryableWhileWordPressStarting(
+                preflightResponse.status,
+                preflightText,
+                indexProbe.status,
+                indexProbe.body,
+              )
+            ) {
+              notReadyProbeCount = 0;
+              lastError = new Error(
+                `Production plugin package preflight readiness still waiting on global WordPress startup HTTP ${indexProbe.status}`,
+              );
+              await sleep(500);
+              continue;
+            }
             throw new Error(
               `Packaged production plugin preflight hit the bounded readiness failure after ${notReadyProbeCount} consecutive startup-shaped response${notReadyProbeCount === 1 ? '' : 's'} (limit ${packagedProductionPluginMaxConsecutiveNotReadyProbes})\n`
               + `${preflightText.slice(0, readinessFailureBodyLimit)}\n${logs.join('')}`,
@@ -572,6 +607,21 @@ async function waitForServer(child, baseUrl, logs) {
     ? ''
     : `\nLast readiness probe route: ${lastProbe.route}\nLast readiness probe status: ${lastProbe.status}\nLast readiness probe body: ${JSON.stringify(lastProbe.body, null, 2)}`;
   throw new Error(`Timed out waiting for Playground server at ${baseUrl}: ${lastError?.message || 'unknown'}${lastResponse}\n${logs.join('')}`);
+}
+
+async function fetchPackagedWordPressIndexProbe(baseUrl) {
+  const response = await fetch(`${baseUrl}/wp-json/`, {
+    method: 'GET',
+    headers: {
+      connection: 'close',
+    },
+  });
+  const bodyText = await response.text();
+  return {
+    route: '/wp-json/',
+    status: response.status,
+    body: bodyText.slice(0, readinessFailureBodyLimit),
+  };
 }
 
 async function stopPlaygroundServer(server) {
