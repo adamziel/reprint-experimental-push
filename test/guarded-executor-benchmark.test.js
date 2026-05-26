@@ -786,6 +786,10 @@ test('production claim gate fails closed if benchmark evidence is tampered', () 
   assert.ok(
     productionThroughputBlockers(missingParallelismLimits).includes('production-parallelism-limits-not-measured'),
   );
+  assert.equal(
+    productionThroughputDetails(missingParallelismLimits).parallelismLimitsVisible,
+    false,
+  );
 
   const invalidParallelismLimits = clone(report);
   invalidParallelismLimits.claims.productionThroughputDetails.parallelismLimits.dbBatchPerTable = 0;

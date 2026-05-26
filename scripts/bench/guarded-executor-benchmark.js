@@ -1111,6 +1111,8 @@ export function productionThroughputDetails(report) {
     fileHashing: DEFAULT_LIMITS.maxHashConcurrency,
     dbBatchPerTable: DEFAULT_LIMITS.maxDbConcurrencyPerTable,
   };
+  const parallelismLimitsVisibleOnReport =
+    report.evidence.parallelism?.parallelismLimitsVisible === true;
   const parallelismLimitsIntegral =
     Number.isInteger(parallelismLimits.chunkUpload)
     && Number.isInteger(parallelismLimits.fileHashing)
@@ -1119,7 +1121,10 @@ export function productionThroughputDetails(report) {
     parallelismLimits.chunkUpload === DEFAULT_LIMITS.maxUploadConcurrency
     && parallelismLimits.fileHashing === DEFAULT_LIMITS.maxHashConcurrency
     && parallelismLimits.dbBatchPerTable === DEFAULT_LIMITS.maxDbConcurrencyPerTable;
-  const parallelismLimitsVisible = parallelismLimitsIntegral && parallelismLimitsCanonical;
+  const parallelismLimitsVisible =
+    parallelismLimitsVisibleOnReport
+    && parallelismLimitsIntegral
+    && parallelismLimitsCanonical;
   const wordpressGraphIdentityPostmetaReferencesMatch =
     Number.isFinite(report.evidence.wordpressGraphIdentity?.postmetaReferences)
     && Number.isFinite(report.shape?.rowCount)
@@ -1215,6 +1220,7 @@ export function productionThroughputDetails(report) {
     productionStorageReceiptsVisible,
     productionAtomicGroupMetadataProven,
     parallelismLimits,
+    parallelismLimitsVisible: parallelismLimitsVisibleOnReport,
     parallelismLimitsIntegral,
     parallelismLimitsCanonical,
     parallelismLimitsVisible,
@@ -1289,6 +1295,7 @@ export function productionThroughputDetails(report) {
       productionRowBatchExecutorMeasured,
       productionAtomicGroupMetadataProven,
       parallelismLimits,
+      parallelismLimitsVisible: parallelismLimitsVisibleOnReport,
       parallelismLimitsIntegral,
       parallelismLimitsCanonical,
       parallelismLimitsVisible,
@@ -1306,6 +1313,12 @@ export function productionThroughputDetails(report) {
       productionAtomicGroupMetadataProven,
       productionStorageReceiptsVisible,
       productionRowBatchExecutorVisible,
+      parallelismLimits: {
+        chunkUpload: DEFAULT_LIMITS.maxUploadConcurrency,
+        fileHashing: DEFAULT_LIMITS.maxHashConcurrency,
+        dbBatchPerTable: DEFAULT_LIMITS.maxDbConcurrencyPerTable,
+      },
+      parallelismLimitsVisible: true,
     },
     blockers: productionThroughputBlockers(report),
   };
@@ -1907,6 +1920,14 @@ function buildReport({
         productionAtomicGroupMetadataVisible,
         productionStorageReceiptsVisible,
         productionRowBatchExecutorVisible,
+      },
+      parallelism: {
+        parallelismLimits: {
+          chunkUpload: DEFAULT_LIMITS.maxUploadConcurrency,
+          fileHashing: DEFAULT_LIMITS.maxHashConcurrency,
+          dbBatchPerTable: DEFAULT_LIMITS.maxDbConcurrencyPerTable,
+        },
+        parallelismLimitsVisible: true,
       },
       resourceLimits: {
         memoryCeilingBytes: config.maxBufferedUploadBytes,
