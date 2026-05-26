@@ -4,13 +4,13 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
-## 2026-05-26 - Fresh Evidence Delta 08:10:11
+## 2026-05-26 - Freshness Refresh 08:10:47
 
-<a id="2026-05-26-fresh-evidence-delta-081011"></a>
+<a id="2026-05-26-freshness-refresh-081047"></a>
 
-- Reliable executor pushed `221d8876` (`Tighten replay equivalence checks`), which narrows the replay proof to stable-field equivalence.
-- This does not move the release gate. The remaining production boundary still needs canonical response schema, live production-backed replay, auth/session lifecycle, preserved-remote retry, and durable journal ownership.
-- Release posture remains `0/4`.
+- Refreshed [progress.html](../progress.html) so the visible last-updated date stays aligned with the live supervision clock.
+- This remains a visibility-only update. The release gate posture stays `0/4`.
+- Evidence trail: [progress.html](../progress.html), [supervisor feedback](supervisor-feedback.md).
 
 ## 2026-05-26 - Freshness Refresh 08:09:27
 
