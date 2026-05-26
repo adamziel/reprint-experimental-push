@@ -618,6 +618,61 @@ test('blocks a local comment parent reference owned by a same-plan comment even 
   assert.equal(JSON.stringify(childBlocker).includes('remote-attachment-body'), false);
 });
 
+test('blocks an existing comment parent retarget to a same-plan comment even when an unrelated remote attachment exists', () => {
+  const base = baseSite();
+  const local = baseSite();
+  const remote = baseSite();
+
+  base.db.wp_comments = {
+    'comment_ID:1': {
+      comment_ID: 1,
+      comment_post_ID: 1,
+      comment_parent: 0,
+      comment_author: 'Existing child comment',
+      comment_content: 'base-private-existing-child-comment-body',
+    },
+  };
+  local.db.wp_comments = {
+    ...base.db.wp_comments,
+    'comment_ID:1': {
+      ...base.db.wp_comments['comment_ID:1'],
+      comment_parent: 2,
+    },
+    'comment_ID:2': {
+      comment_ID: 2,
+      comment_post_ID: 1,
+      comment_author: 'Local parent comment',
+      comment_content: 'local-private-parent-comment-body',
+    },
+  };
+  remote.db.wp_comments = {
+    ...base.db.wp_comments,
+  };
+  remote.db.wp_posts['ID:21'] = {
+    ID: 21,
+    post_title: 'Remote attachment noise',
+    post_content: 'remote-attachment-body',
+    post_status: 'inherit',
+    post_type: 'attachment',
+  };
+
+  const plan = planFor(base, local, remote);
+  const childBlocker = plan.blockers.find((blocker) => blocker.resourceKey === 'row:["wp_comments","comment_ID:1"]');
+  const parentBlocker = plan.blockers.find((blocker) => blocker.resourceKey === 'row:["wp_comments","comment_ID:2"]');
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(mutationFor(plan, 'row:["wp_comments","comment_ID:1"]'), undefined);
+  assert.equal(mutationFor(plan, 'row:["wp_comments","comment_ID:2"]'), undefined);
+  assert.equal(childBlocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(childBlocker.surface, 'comments');
+  assert.equal(parentBlocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(parentBlocker.surface, 'comments');
+  assert.match(childBlocker.reason, /outside the supported release-candidate slice/);
+  assert.equal(JSON.stringify(childBlocker).includes('base-private-existing-child-comment-body'), false);
+  assert.equal(JSON.stringify(childBlocker).includes('local-private-parent-comment-body'), false);
+  assert.equal(JSON.stringify(childBlocker).includes('remote-attachment-body'), false);
+});
+
 test('blocks unsupported menu and navigation post graph surfaces in the release-candidate slice', () => {
   const base = baseSite();
   const local = baseSite();
