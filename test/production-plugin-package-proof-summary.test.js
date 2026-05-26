@@ -90,6 +90,21 @@ test('plugin-driver proof summary reports full packaged guard coverage', () => {
   assert.equal(summary.skippedBundleCount, 0);
   assert.equal(summary.requestedScenarios, 'all');
   assert.equal(summary.requestedBundles, 'all');
+  assert.equal(summary.checkedScenarios, 'all');
+  assert.deepEqual(summary.passedScenarios, [
+    'core-package-routes',
+    'driver-delete-apply',
+    'driver-duplicate-name-guard',
+    'driver-duplicate-table-guard',
+    'driver-missing-apply-guard',
+    'driver-missing-export-guard',
+    'driver-missing-name-guard',
+    'driver-missing-plugin-owner-guard',
+    'driver-missing-table-guard',
+    'driver-missing-validate-guard',
+    'driver-receipt-guards',
+  ]);
+  assert.deepEqual(summary.failedScenarios, []);
   assert.equal(summary.checkedBundles, 'all');
   assert.deepEqual(summary.passedBundles, [
     'driverCallbackGuards',
@@ -222,6 +237,29 @@ test('plugin-driver proof summary marks unselected scenarios as skipped', () => 
   assert.equal(summary.skippedBundleCount, 3);
   assert.deepEqual(summary.requestedScenarios, ['driver-verifier-guards']);
   assert.deepEqual(summary.requestedBundles, ['driverVerifierGuards']);
+  assert.deepEqual(summary.checkedScenarios, [
+    'driver-duplicate-name-guard',
+    'driver-duplicate-table-guard',
+    'driver-missing-apply-guard',
+    'driver-missing-export-guard',
+    'driver-missing-name-guard',
+    'driver-missing-plugin-owner-guard',
+    'driver-missing-table-guard',
+    'driver-missing-validate-guard',
+    'driver-receipt-guards',
+  ]);
+  assert.deepEqual(summary.passedScenarios, [
+    'driver-duplicate-name-guard',
+    'driver-duplicate-table-guard',
+    'driver-missing-apply-guard',
+    'driver-missing-export-guard',
+    'driver-missing-name-guard',
+    'driver-missing-plugin-owner-guard',
+    'driver-missing-table-guard',
+    'driver-missing-validate-guard',
+    'driver-receipt-guards',
+  ]);
+  assert.deepEqual(summary.failedScenarios, []);
   assert.deepEqual(summary.checkedBundles, ['driverVerifierGuards']);
   assert.deepEqual(summary.passedBundles, ['driverVerifierGuards']);
   assert.deepEqual(summary.failedBundles, []);
@@ -332,6 +370,28 @@ test('plugin-driver proof summary fails requested bundle verdict when a requeste
   assert.equal(summary.passedBundleCount, 0);
   assert.equal(summary.failedBundleCount, 1);
   assert.equal(summary.skippedBundleCount, 3);
+  assert.deepEqual(summary.checkedScenarios, [
+    'driver-duplicate-name-guard',
+    'driver-duplicate-table-guard',
+    'driver-missing-apply-guard',
+    'driver-missing-export-guard',
+    'driver-missing-name-guard',
+    'driver-missing-plugin-owner-guard',
+    'driver-missing-table-guard',
+    'driver-missing-validate-guard',
+    'driver-receipt-guards',
+  ]);
+  assert.deepEqual(summary.passedScenarios, [
+    'driver-duplicate-name-guard',
+    'driver-duplicate-table-guard',
+    'driver-missing-apply-guard',
+    'driver-missing-export-guard',
+    'driver-missing-name-guard',
+    'driver-missing-plugin-owner-guard',
+    'driver-missing-table-guard',
+    'driver-receipt-guards',
+  ]);
+  assert.deepEqual(summary.failedScenarios, ['driver-missing-validate-guard']);
   assert.deepEqual(summary.checkedBundles, ['driverVerifierGuards']);
   assert.deepEqual(summary.passedBundles, []);
   assert.deepEqual(summary.failedBundles, ['driverVerifierGuards']);

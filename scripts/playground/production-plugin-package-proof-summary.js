@@ -117,6 +117,9 @@ export function buildProductionPluginPackageProofSummary(
   const checkedBundles = [];
   const passedBundles = [];
   const failedBundles = [];
+  const checkedScenarios = [];
+  const passedScenarios = [];
+  const failedScenarios = [];
   let checkedBundleCount = 0;
   let passedBundleCount = 0;
   let failedBundleCount = 0;
@@ -134,8 +137,12 @@ export function buildProductionPluginPackageProofSummary(
     scenarioResults[definition.key] = status;
     if (selected) {
       checkedScenarioCount += 1;
+      checkedScenarios.push(definition.scenario);
       if (passed) {
         passedScenarioCount += 1;
+        passedScenarios.push(definition.scenario);
+      } else {
+        failedScenarios.push(definition.scenario);
       }
     } else {
       skippedScenarioCount += 1;
@@ -184,6 +191,9 @@ export function buildProductionPluginPackageProofSummary(
     skippedBundleCount,
     requestedScenarios: requestedScenarios === null ? 'all' : requestedScenarios.slice(),
     requestedBundles,
+    checkedScenarios: requestedScenarios === null && selectedScenarios === null ? 'all' : checkedScenarios.sort(),
+    passedScenarios: passedScenarios.sort(),
+    failedScenarios: failedScenarios.sort(),
     checkedBundles: requestedScenarios === null && selectedScenarios === null ? 'all' : checkedBundles.sort(),
     passedBundles: passedBundles.sort(),
     failedBundles: failedBundles.sort(),
