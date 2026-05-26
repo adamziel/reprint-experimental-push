@@ -141,6 +141,15 @@ export function evaluateProductionAuthSessionLifecycleSummary(summary, now = Dat
         observed: 'reissued',
       };
     }
+
+    const hasSubsequentObservation = hasTraceBackedPostPreflightObservation(observations, issuedIndex);
+    if (!hasSubsequentObservation) {
+      return {
+        ok: false,
+        required: 'preserved read',
+        observed: 'missing',
+      };
+    }
   }
 
   const readObservation = summary.read;
@@ -348,6 +357,17 @@ function isAuthSessionReadStep(step) {
     || step === 'recovery-inspect'
     || step === 'replay'
     || step === 'journal';
+}
+
+function hasTraceBackedPostPreflightObservation(observations, issuedIndex) {
+  for (let index = observations.length - 1; index > issuedIndex; index -= 1) {
+    const observation = observations[index];
+    if (observation && typeof observation === 'object') {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 function resolveAuthSessionIdentitySummary(observation) {

@@ -1593,6 +1593,44 @@ test('production auth/session lifecycle summary helper requires a preserved acti
         type: 'production-auth-session',
         status: 'active',
         expiresAt: '2099-01-01T00:00:00Z',
+        authUser: 'reprint_push_admin',
+      },
+      read: {
+        step: 'apply',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+        authUser: 'reprint_push_admin',
+        preserved: true,
+      },
+      observations: [
+        {
+          step: 'preflight',
+          id: 'session-01',
+          type: 'production-auth-session',
+          status: 'active',
+          expiresAt: '2099-01-01T00:00:00Z',
+          authUser: 'reprint_push_admin',
+          preserved: false,
+          rotated: false,
+        },
+      ],
+    }),
+    {
+      ok: false,
+      required: 'preserved read',
+      observed: 'missing',
+    },
+  );
+
+  assert.deepEqual(
+    evaluateProductionAuthSessionLifecycleSummary({
+      issued: {
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
       },
       read: {
         step: 'apply',
