@@ -254,6 +254,21 @@ test('guarded benchmark blocks forged queue-budget visibility without memory-cei
   );
 });
 
+test('guarded benchmark blocks forged queue-budget and queue-headroom visibility without a measurement', () => {
+  const report = smallBenchmark();
+  const tampered = clone(report);
+
+  tampered.evidence.backpressure.queueBudgetVisible = true;
+  tampered.evidence.backpressure.queueHeadroomVisible = true;
+  tampered.evidence.backpressure.queueHeadroomMeasured = false;
+
+  const details = productionThroughputDetails(tampered);
+  const blockers = productionThroughputBlockers(tampered);
+
+  assert.equal(details.queueBudgetVisibleAndQueueHeadroomVisibleAndMeasured, false);
+  assert.equal(blockers.includes('queue-budget-visible-without-queue-headroom-measurement'), true);
+});
+
 test('guarded benchmark blocks forged memory-ceiling visibility without queue-budget visibility', () => {
   const report = smallBenchmark();
   const tampered = clone(report);
