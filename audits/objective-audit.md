@@ -4,7 +4,7 @@
 
 The project is **not releasable as a production WordPress push path**.
 
-- Fresh remote heads at audit time, checked on 2026-05-26 07:37:53 CEST (+0200):
+- Fresh remote heads at audit time, checked on 2026-05-26 07:38:36 CEST (+0200):
 
 - `origin/lane/cycle-20260524-auth-graph-hardening/critic` -> `e413f7a8`
 - `origin/lane/cycle-20260524-auth-graph-hardening/fast-paths` -> `ad7d82a4`
@@ -41,12 +41,12 @@ The project is **not releasable as a production WordPress push path**.
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `4bed4db3`
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `d7813094`
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `8a7f4edd`
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `a6359b91`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `7c75aead`
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `8e3f0289`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `f641b166`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `d36faa9f`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `b053cd37`
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` -> `0ca7b35d`
-- `origin/lane/cycle-20260525-mainwindows-2349/same-plan-wordpress-graph-create` -> `af493c80`
+- `origin/lane/cycle-20260525-mainwindows-2349/same-plan-wordpress-graph-create` -> `65a40803`
 - `origin/lane/cycle-20260525-mainwindows-2357/no-data-loss-invariants-graph-proof` -> `98c0ce26`
 - `origin/lane/cycle-20260525-restart-2340/feedback-supervisor` -> `ef3d911e`
 - `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration` -> `8cfc4f6c`
@@ -65,12 +65,12 @@ Fresh visibility-lane and invariants heads moved again, but they still do not ch
 
 - Since the last audit pass, the visible progress lanes advanced again:
 `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` ->
-`a6359b91` and `origin/lane/cycle-20260525-mainwindows-2349/progress-followup`
--> `516e58ea`. That changes the freshness surface, not the release gate.
+`7c75aead` and `origin/lane/cycle-20260525-mainwindows-2349/progress-followup`
+-> `b053cd37`. That changes the freshness surface, not the release gate.
 - The current public-refresh branch heads remain:
 `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` ->
-`a6359b91` and `origin/lane/cycle-20260525-mainwindows-2349/progress-followup`
--> `d36faa9f`.
+`7c75aead` and `origin/lane/cycle-20260525-mainwindows-2349/progress-followup`
+-> `b053cd37`.
 - `origin/lane/reliable-executor` -> `34e9c7c1`
 - `origin/lane/no-data-loss-invariants` -> `f7501d92`
 - `origin/lane/no-data-loss-recovery` -> `6d08dd6c`
@@ -88,6 +88,7 @@ Fresh lane proof since the last audit pass improved the local evidence floor,
 but it did not change the release conclusion:
 
 - `origin/lane/reliable-executor` now records `34e9c7c1`, hardening durable journal ownership. It still does not prove production auth/session lifecycle or a live-source mutation boundary.
+- `origin/lane/cycle-20260525-mainwindows-2349/same-plan-wordpress-graph-create` now records `65a40803`, tightening same-plan attachment rules. It still does not prove the live release boundary or any production-backed source mutation.
 - `origin/lane/reliable-executor` now records `0a6de039`, hardening bounded
   release-verify spawn handling. It still does not prove production
   auth/session lifecycle or a live-source mutation boundary.
