@@ -3759,6 +3759,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['backpressure', 'chunk-receipts', 'durable-progress'],
   },
   {
+    id: 'canonical-per-kind-budgets-and-cached-receipt-cursor-skips-backpressure-pause-after-retry',
+    proposal: 'use canonical per-kind budgets plus a cached receipt cursor to skip the backpressure pause after a retry',
+    rejectedBecause: 'canonical per-kind budgets can size the next bounded queue, but they still cannot prove the pause happened before overflow or that the durable receipt trail survived the retry without guessing which receipts remained valid',
+    rejectedGate: 'recovery',
+    violates: ['parallelism-limits', 'backpressure', 'chunk-receipts', 'durable-progress'],
+  },
+  {
     id: 'cached-receipt-cursor-queue-headroom-and-journal-lag-skips-backpressure-pause-after-retry',
     proposal: 'use a cached receipt cursor plus queue headroom and journal lag to skip the backpressure pause after a retry',
     rejectedBecause: 'queue headroom and journal lag can shorten replay planning, but they still cannot prove the pause happened before overflow or that the ordered raw receipts survived the retry without guessing which bytes were durable',

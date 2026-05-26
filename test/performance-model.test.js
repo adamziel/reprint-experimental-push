@@ -719,6 +719,14 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
     'journal lag still cannot bypass the backpressure pause boundary',
   );
   assert.equal(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'canonical-per-kind-budgets-and-cached-receipt-cursor-skips-backpressure-pause-after-retry')?.rejectedGate,
+    'recovery',
+  );
+  assert.ok(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'canonical-per-kind-budgets-and-cached-receipt-cursor-skips-backpressure-pause-after-retry')?.violates.includes('parallelism-limits'),
+    'canonical per-kind budgets still cannot bypass the backpressure pause boundary',
+  );
+  assert.equal(
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'cached-receipt-cursor-queue-headroom-and-journal-lag-skips-backpressure-pause-after-retry')?.rejectedGate,
     'recovery',
   );
