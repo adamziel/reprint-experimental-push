@@ -634,6 +634,9 @@ function buildPluginOwnedResourcePolicy({ base, local, remote, intents }) {
         return {
           supported: false,
           className: 'unsupported-plugin-owned-resource',
+          resourceKind: resource.type === 'row' && typeof resource.table === 'string' && !PLUGIN_DATA_DRIVER_TABLE_NAMES.has(resource.table)
+            ? 'custom-table'
+            : null,
         };
       }
 

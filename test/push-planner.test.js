@@ -11145,6 +11145,7 @@ test('blocks unknown plugin-owned custom table rows without leaking values', () 
   assert.equal(plan.summary.mutations, 0);
   assert.equal(blocker.class, 'unsupported-plugin-owned-resource');
   assert.equal(blocker.pluginOwner, 'forms');
+  assert.equal(blocker.resourceKind, 'custom-table');
   assert.equal(blocker.resourceKey, resourceKey);
   assert.equal(blockerJson.includes('base-private-entry'), false);
   assert.equal(blockerJson.includes('local-private-entry'), false);
