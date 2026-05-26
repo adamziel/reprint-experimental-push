@@ -41,6 +41,7 @@ import {
   packagedProductionPluginPreflightReady,
   packagedProductionPluginReadinessBodyRetryable,
   packagedProductionPluginReadinessErrorRetryable,
+  packagedProductionPluginReadinessProbeTimedOut,
   packagedProductionPluginRestIndexReady,
   packagedProductionPluginRestIndexRetryable,
   packagedProductionPluginResetRouteNotReadyProbeCounts,
@@ -1632,6 +1633,44 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
       }
       throw lastError;
     } catch (error) {
+      if (packagedProductionPluginReadinessProbeTimedOut(error)) {
+        const { preflightProbe, indexProbe } = await fetchPackagedTimeoutFallbackProbes(baseUrl);
+        if (preflightProbe) {
+          lastProbes.push(preflightProbe);
+          if (preflightProbe.ready) {
+            return;
+          }
+          if (preflightProbe.retryable) {
+            lastError = error;
+            timeoutProbeCount = 0;
+            await sleep(readinessProbeIntervalMs);
+            continue;
+          }
+          if (preflightProbe.terminal) {
+            lastError = error;
+            await throwPlaygroundReadinessFailure(
+              child,
+              `Packaged production plugin preflight became terminal while the snapshot probe timed out at ${baseUrl}`,
+              lastError,
+              lastProbes,
+              getOutput(),
+              {
+                childPid: child.pid ?? null,
+                packagedProductionPlugin: true,
+              },
+            );
+          }
+        }
+        if (indexProbe) {
+          lastProbes.push(indexProbe);
+        }
+        if (packagedProductionPluginReadinessBodyRetryable(indexProbe?.status, indexProbe?.body || '')) {
+          lastError = error;
+          timeoutProbeCount = 0;
+          await sleep(readinessProbeIntervalMs);
+          continue;
+        }
+      }
       lastError = error;
       timeoutProbeCount = packagedProductionPluginNextTimeoutProbeCount(timeoutProbeCount, error);
       if (packagedProductionPluginNotReadyProbeLimitReached(timeoutProbeCount)) {
@@ -1654,6 +1693,83 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
       packagedProductionPlugin: true,
     },
   );
+}
+
+async function fetchPackagedWordPressIndexProbe(baseUrl) {
+  const response = await fetchWithTimeout(`${baseUrl}/wp-json/`, {
+    headers: { connection: 'close' },
+  }, packagedServerFetchTimeoutMs);
+  const bodyText = await response.text();
+  return {
+    route: '/wp-json/',
+    status: response.status,
+    ok: response.ok,
+    body: bodyText.slice(0, readinessFailureBodyLimit),
+  };
+}
+
+async function fetchPackagedPreflightProbe(baseUrl) {
+  const response = await fetchWithTimeout(`${baseUrl}/wp-json/reprint/v1/push/preflight`, {
+    method: 'GET',
+    headers: {
+      connection: 'close',
+      ...signedHeadersForProductionPreflight(),
+    },
+  }, packagedServerFetchTimeoutMs);
+  const bodyText = await response.text();
+
+  let body = null;
+  try {
+    body = JSON.parse(bodyText);
+  } catch {}
+
+  const probe = {
+    route: '/wp-json/reprint/v1/push/preflight',
+    status: response.status,
+    ok: response.ok,
+    body: bodyText.slice(0, readinessFailureBodyLimit),
+    ready: false,
+    retryable: false,
+    terminal: false,
+  };
+
+  if (body !== null) {
+    probe.ready = packagedProductionPluginPreflightReady({ status: response.status, body });
+    probe.retryable = packagedProductionPluginPreflightRetryable({ status: response.status, body });
+    probe.terminal = !probe.ready && !probe.retryable;
+    return probe;
+  }
+
+  probe.retryable = packagedProductionPluginReadinessBodyRetryable(response.status, bodyText);
+  probe.terminal = !probe.retryable;
+  return probe;
+}
+
+async function fetchPackagedTimeoutFallbackProbes(baseUrl) {
+  const preflightProbe = await fetchPackagedPreflightProbe(baseUrl).catch((error) =>
+    buildPackagedTimeoutFallbackProbe('/wp-json/reprint/v1/push/preflight', error),
+  );
+  const indexProbe = await fetchPackagedWordPressIndexProbe(baseUrl).catch((error) =>
+    buildPackagedTimeoutFallbackProbe('/wp-json/', error),
+  );
+  return { preflightProbe, indexProbe };
+}
+
+function buildPackagedTimeoutFallbackProbe(route, error) {
+  if (!packagedProductionPluginReadinessProbeTimedOut(error)) {
+    throw error;
+  }
+
+  return {
+    route,
+    status: 0,
+    ok: false,
+    body: String(error?.message || error).slice(0, readinessFailureBodyLimit),
+    ready: false,
+    retryable: false,
+    terminal: false,
+    timedOut: true,
+  };
 }
 
 async function stopExitedServer(child) {

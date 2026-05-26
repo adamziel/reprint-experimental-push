@@ -1243,6 +1243,33 @@ test('packaged production plugin readiness helper bounds repeated not-ready prob
   assert.equal(packagedProductionPluginReadinessErrorRetryable(readinessFailure), false);
 });
 
+test('packaged production plugin readiness helper falls back to signed preflight and index probes after snapshot timeouts', () => {
+  const verifierSource = readFileSync(
+    path.join(repoRoot, 'scripts/playground/production-shaped-release-verify.mjs'),
+    'utf8',
+  );
+
+  assert.match(
+    verifierSource,
+    /if \(packagedProductionPluginReadinessProbeTimedOut\(error\)\) \{\s*const \{ preflightProbe, indexProbe \} = await fetchPackagedTimeoutFallbackProbes\(baseUrl\);/s,
+  );
+  assert.match(verifierSource, /if \(preflightProbe\.ready\) \{\s*return;\s*\}/);
+  assert.match(verifierSource, /if \(preflightProbe\.retryable\) \{\s*lastError = error;\s*timeoutProbeCount = 0;\s*await sleep\(readinessProbeIntervalMs\);\s*continue;\s*\}/s);
+  assert.match(verifierSource, /if \(packagedProductionPluginReadinessBodyRetryable\(indexProbe\?\.status, indexProbe\?\.body \|\| ''\)\) \{\s*lastError = error;\s*timeoutProbeCount = 0;\s*await sleep\(readinessProbeIntervalMs\);\s*continue;\s*\}/s);
+});
+
+test('packaged production plugin readiness helper fails closed when timeout fallback preflight becomes terminal', () => {
+  const verifierSource = readFileSync(
+    path.join(repoRoot, 'scripts/playground/production-shaped-release-verify.mjs'),
+    'utf8',
+  );
+
+  assert.match(verifierSource, /Packaged production plugin preflight became terminal while the snapshot probe timed out/);
+  assert.match(verifierSource, /async function fetchPackagedTimeoutFallbackProbes\(baseUrl\)/);
+  assert.match(verifierSource, /function buildPackagedTimeoutFallbackProbe\(route, error\)/);
+  assert.match(verifierSource, /if \(!packagedProductionPluginReadinessProbeTimedOut\(error\)\) \{\s*throw error;\s*\}/s);
+});
+
 test('packaged production plugin runtime source binding replaces the stale command source URL', () => {
   const bound = bindPackagedProductionPluginRuntimeSource({
     sourceUrl: 'http://127.0.0.1:8080',
