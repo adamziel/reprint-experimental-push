@@ -1408,6 +1408,10 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
     'canonical digest plus encoded payload digest',
   );
   assert.equal(
+    model.safeFastPaths.find((fastPath) => fastPath.allowedShortcut === 'compress-transport-frames-with-canonical-uncompressed-digest')?.visibilityBoundary,
+    'transport-only',
+  );
+  assert.equal(
     model.safeFastPaths.find((fastPath) => fastPath.allowedShortcut === 'run-independent-staging-work-within-per-site-and-per-kind-budgets')?.visibilityBoundary,
     'atomic-group-commit-barrier',
   );
