@@ -310,6 +310,13 @@ export function productionThroughputDetails(report) {
     Number.isFinite(report.evidence.backpressure?.queueBudgetBytes)
     && Number.isFinite(report.resourceLimits?.maxBufferedUploadBytes)
     && report.evidence.backpressure.queueBudgetBytes === report.resourceLimits.maxBufferedUploadBytes;
+  const queueHeadroomMatchesResourceHeadroom =
+    Number.isFinite(report.evidence.backpressure?.queueBudgetBytes)
+    && Number.isFinite(report.evidence.backpressure?.queueHeadroomBytes)
+    && Number.isFinite(report.resourceLimits?.maxBufferedUploadBytes)
+    && report.evidence.backpressure.queueHeadroomBytes
+      === report.evidence.backpressure.queueBudgetBytes - report.shape.chunkSizeBytes
+    && report.evidence.backpressure.queueBudgetBytes === report.resourceLimits.maxBufferedUploadBytes;
   const receiptCursorMatchesBackpressure =
     report.evidence.backpressure?.receiptCursorBytes !== null
     && report.evidence.backpressure?.receiptCursorBytes === receiptCursorWindowBytes;
@@ -341,6 +348,7 @@ export function productionThroughputDetails(report) {
     receiptCursorHeadroomMatchesQueueHeadroom,
     backpressureConsistency: {
       queueBudgetMatchesResourceCeiling,
+      queueHeadroomMatchesResourceHeadroom,
       receiptCursorMatchesBackpressure,
       receiptCursorHeadroomMatchesQueueHeadroom,
     },

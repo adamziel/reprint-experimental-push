@@ -67,6 +67,9 @@ Current executable gate:
 - The report now also exposes a `backpressureConsistency` summary for queue
   budget, receipt cursor, and headroom alignment so tampering shows up as a
   named evidence mismatch rather than a silent detail drift.
+- The same summary now also cross-checks queue headroom against the measured
+  resource ceiling, so a forged queue budget cannot leave the backpressure
+  proof looking internally consistent.
 - The report now also rejects a backpressure budget that does not match the
   measured resource ceiling, so a copied budget cannot make the proof look
   stronger than the actual ceiling.
