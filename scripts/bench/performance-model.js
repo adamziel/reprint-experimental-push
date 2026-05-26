@@ -1197,6 +1197,27 @@ export const SAFE_FAST_PATHS = Object.freeze([
   {
     area: 'parallelism-limits',
     reduces: ['planning-round-trips', 'retry-window-recomputation', 'idle-time'],
+    allowedShortcut: 'reuse-memory-headroom-and-cached-release-manifest-digest-to-size-bounded-release-bundle-retry-windows',
+    guardrails: [
+      'memory-headroom-stays-planning-evidence-only',
+      'cached-release-manifest-digest-remains-planning-evidence-only',
+      'release-bundle-retry-window-revalidates-before-write',
+    ],
+    gateProofs: {
+      skip: 'the planner can reuse measured memory headroom together with a cached release-manifest digest to trim repeat planning scans while sizing the next bounded release-bundle retry window',
+      live: 'the eventual release still revalidates live file and row preconditions before anything becomes visible',
+      group: 'the cached digest and memory headroom only narrow planning inside the same planned release bundle and never widen the atomic-group barrier',
+      recovery: 'the measured headroom and cached digest are advisory; durable receipts and the guarded release record still classify pause, retry, or crash',
+    },
+    visibilityBoundary: 'planning-only-for-release-bundle-retry-windows',
+    failureEvidence: 'measured memory headroom plus cached release-manifest digest and guarded release record',
+    bypassesLivePreconditions: false,
+    splitsAtomicGroup: false,
+    publishesStagedDataEarly: false,
+  },
+  {
+    area: 'parallelism-limits',
+    reduces: ['planning-round-trips', 'retry-window-recomputation', 'idle-time'],
     allowedShortcut: 'parallelize-independent-owner-index-scans-and-reuse-cached-release-manifest-cursor-to-size-bounded-release-bundle-fanout',
     guardrails: [
       'independent-owner-scans-stay-planning-only',

@@ -54,6 +54,9 @@ It also includes a compressed per-kind budget summary plus a planned
 dependency-graph shortcut for release-bundle retry windows, so bounded retry
 planning can reuse known fan-out shape without changing the live compare or
 the atomic-group barrier.
+It also includes measured memory headroom plus a cached release-manifest digest
+for release-bundle retry windows, so bounded retry planning can trim duplicate
+scan work without changing the live compare or the atomic-group barrier.
 It also includes parallel independent owner index scans plus a cached
 release-manifest cursor for release-bundle fanout, so bounded fanout planning
 can skip duplicate scans without changing the live compare or the atomic-group
