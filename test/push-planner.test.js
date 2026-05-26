@@ -14414,8 +14414,8 @@ test('blocks local term-taxonomy parent references to a same-plan created term i
 
   const plan = planFor(base, local, remote);
   const blocker = plan.blockers[0];
-  const planJson = JSON.stringify(plan);
   const matchingEdit = decisionFor(plan, 'row:["wp_posts","ID:1"]');
+  const planJson = JSON.stringify(plan);
 
   assert.equal(plan.status, 'blocked');
   assert.equal(plan.summary.mutations, 0);
@@ -16261,6 +16261,7 @@ test('blocks local post-parent references to a same-plan created nav menu item w
 
   const plan = planFor(base, local, remote);
   const blocker = plan.blockers[0];
+  const matchingEdit = decisionFor(plan, 'row:["wp_posts","ID:1"]');
   const planJson = JSON.stringify(plan);
 
   assert.equal(plan.status, 'blocked');
@@ -16271,6 +16272,9 @@ test('blocks local post-parent references to a same-plan created nav menu item w
   assert.equal(blocker.class, 'unsupported-navigation-resource');
   assert.equal(blocker.resourceKey, targetResourceKey);
   assert.equal(blocker.reason, 'Navigation and menu graph resources are not yet supported by the planner.');
+  assert.equal(matchingEdit.decision, 'already-in-sync');
+  assert.equal(matchingEdit.change.localChange, 'update');
+  assert.equal(matchingEdit.change.remoteChange, 'update');
   assert.equal(planJson.includes('Local same-plan nav menu item'), false);
   assert.equal(planJson.includes('Local child post content'), false);
   assert.equal(remote.plugins.forms.description, 'remote-only plugin drift');
@@ -17468,6 +17472,7 @@ test('blocks local featured-image attachment references when the attachment is c
 
   const plan = planFor(base, local, remote);
   const blocker = plan.blockers[0];
+  const matchingEdit = decisionFor(plan, 'row:["wp_posts","ID:1"]');
   const planJson = JSON.stringify(plan);
 
   assert.equal(plan.status, 'blocked');
@@ -17477,6 +17482,9 @@ test('blocks local featured-image attachment references when the attachment is c
   assert.equal(blocker.class, 'unsupported-attachment-resource');
   assert.equal(blocker.resourceKey, resourceKey);
   assert.equal(blocker.reason, 'Attachment graph resources are not yet supported by the planner.');
+  assert.equal(matchingEdit.decision, 'already-in-sync');
+  assert.equal(matchingEdit.change.localChange, 'update');
+  assert.equal(matchingEdit.change.remoteChange, 'update');
   assert.equal(planJson.includes('Local same-plan attachment'), false);
   assert.equal(planJson.includes('base same-plan featured image note'), false);
   assert.equal(remote.plugins.forms.description, 'remote-only plugin drift');
@@ -17494,6 +17502,7 @@ test('blocks local post-parent attachment references when the attachment is crea
     post_parent: 0,
     post_type: 'post',
   };
+  base.db.wp_posts['ID:1'].post_title = 'Base shared post title';
 
   const local = baseSite();
   local.db.wp_posts['ID:46'] = {
@@ -17511,13 +17520,16 @@ test('blocks local post-parent attachment references when the attachment is crea
     post_status: 'inherit',
     post_type: 'attachment',
   };
+  local.db.wp_posts['ID:1'].post_title = 'Shared post title';
 
   const remote = baseSite();
   remote.db.wp_posts['ID:46'] = JSON.parse(JSON.stringify(base.db.wp_posts['ID:46']));
+  remote.db.wp_posts['ID:1'].post_title = 'Shared post title';
   remote.plugins.forms.description = 'remote-only plugin drift';
 
   const plan = planFor(base, local, remote);
   const blocker = plan.blockers[0];
+  const matchingEdit = decisionFor(plan, 'row:["wp_posts","ID:1"]');
   const planJson = JSON.stringify(plan);
 
   assert.equal(plan.status, 'blocked');
@@ -17528,6 +17540,9 @@ test('blocks local post-parent attachment references when the attachment is crea
   assert.equal(blocker.class, 'unsupported-attachment-resource');
   assert.equal(blocker.resourceKey, resourceKey);
   assert.equal(blocker.reason, 'Attachment graph resources are not yet supported by the planner.');
+  assert.equal(matchingEdit.decision, 'already-in-sync');
+  assert.equal(matchingEdit.change.localChange, 'update');
+  assert.equal(matchingEdit.change.remoteChange, 'update');
   assert.equal(planJson.includes('Local same-plan attachment'), false);
   assert.equal(planJson.includes('Local child post content'), false);
   assert.equal(remote.plugins.forms.description, 'remote-only plugin drift');
@@ -17573,6 +17588,7 @@ test('blocks local post-parent attachment references when the attachment is crea
 
   const plan = planFor(base, local, remote);
   const blocker = plan.blockers[0];
+  const matchingEdit = decisionFor(plan, 'row:["wp_posts","ID:1"]');
   const planJson = JSON.stringify(plan);
 
   assert.equal(plan.status, 'blocked');
