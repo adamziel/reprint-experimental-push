@@ -778,6 +778,14 @@ test('production plugin package smoke leaves one expired signed session for pref
   );
 
   assert.ok(
+    smokeSource.includes('$past = 1;'),
+    'expected packaged smoke blueprint to use a fixed expired timestamp for cleanup seeds',
+  );
+  assert.ok(
+    smokeSource.includes('$future = 2147483647;'),
+    'expected packaged smoke blueprint to use a fixed future timestamp for retained signed artifacts',
+  );
+  assert.ok(
     smokeSource.includes("$cleanup_expired_session_id = str_repeat('e', 64);")
     || smokeSource.includes("$cleanup_expired_session_id = str_repeat(\\'e\\', 64);"),
     'expected packaged smoke blueprint to seed an untouched expired session for cleanup',
@@ -785,6 +793,26 @@ test('production plugin package smoke leaves one expired signed session for pref
   assert.ok(
     smokeSource.includes("add_option('reprint_push_lab_signed_session_' . hash('sha256', $cleanup_expired_session_id), array('schemaVersion'=>1,'expiresAtUnix'=>$past,'fixture'=>'cleanup-expired-session'), '', 'no');"),
     'expected packaged smoke blueprint to leave one expired signed session for preflight cleanup',
+  );
+});
+
+test('production plugin package smoke signs packaged journal inspect requests with the preflight session', () => {
+  const smokeSource = readFileSync(
+    path.join(repoRoot, 'scripts/playground/production-plugin-package-smoke.mjs'),
+    'utf8',
+  );
+
+  assert.match(
+    smokeSource,
+    /signedHeadersForRequest\('GET',\s*'\/wp-json\/reprint\/v1\/push\/db-journal\?limit=1',\s*\{\s*session:\s*preflight\.body\.session\.id,\s*idempotencyKey:\s*'production-plugin-package-journal-inspect',/,
+  );
+  assert.match(
+    smokeSource,
+    /headers\['X-Reprint-Push-Session'\] = session;/,
+  );
+  assert.match(
+    smokeSource,
+    /headers\['X-Reprint-Push-Idempotency-Key'\] = idempotencyKey;/,
   );
 });
 
