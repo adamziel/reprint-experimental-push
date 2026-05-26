@@ -2703,6 +2703,7 @@ function addUnsupportedNavigationResourceBlocker(plan, {
     resource,
     resourceKey: resource.key,
     reason: support.reason || `Navigation and menu graph resource ${resource.key} is not yet supported by the planner.`,
+    unsupportedState: support.unsupportedState || null,
     baseHash,
     localHash,
     remoteHash,
@@ -3156,10 +3157,29 @@ function unsupportedNavigationResourceSupport({ resource, baseValue, localValue,
     reference.relationshipType === 'menu-item-parent'
     || reference.relationshipType === 'post-parent'
   ));
+  const remoteOnlyDrift = (
+    stableStringify(localValue) === stableStringify(baseValue)
+    && stableStringify(remoteValue) !== stableStringify(baseValue)
+  );
+  const convergedDrift = (
+    localValue !== ABSENT
+    && remoteValue !== ABSENT
+    && stableStringify(localValue) === stableStringify(remoteValue)
+    && stableStringify(localValue) !== stableStringify(baseValue)
+  );
 
   return {
     supported: false,
     className: 'unsupported-navigation-resource',
+    unsupportedState: localValue === ABSENT
+      ? 'delete'
+      : navigationReference
+        ? 'same-plan-reference'
+        : convergedDrift
+          ? 'converged-drift'
+          : remoteOnlyDrift
+            ? 'remote-only-drift'
+            : 'local-or-divergent-drift',
     reason: 'Navigation and menu graph resources are not yet supported by the planner.',
     references: navigationReference ? [navigationReference] : [],
   };
