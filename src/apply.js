@@ -694,6 +694,7 @@ export function productionRecoverySupportReport(writer) {
   const inspectionErrorMessage = inspected && typeof inspected === 'object' && typeof inspected.error?.message === 'string'
     ? inspected.error.message
     : null;
+  const inspectedClaim = durableJournalInspectClaim(inspected);
   const artifactRefs = productionRecoveryArtifactRefs(writer, inspected);
   const addMissingDependency = (item) => {
     if (!missingDependency.includes(item)) {
@@ -1049,6 +1050,7 @@ export function productionRecoverySupportReport(writer) {
     inspectedJournalPath,
     writerJournalPath: typeof writer?.journalPath === 'string' ? writer.journalPath : null,
     inspectionErrorMessage,
+    inspectedClaim,
   };
 }
 
@@ -1217,6 +1219,31 @@ function durableJournalInspectRecords(inspected) {
       ? record.sequence === 1
       : record.sequence === records[index - 1].sequence + 1
   ));
+}
+
+function durableJournalInspectClaim(inspected) {
+  if (!inspected || typeof inspected !== 'object' || !isStrictPlainObject(inspected.claim)) {
+    return null;
+  }
+
+  const claim = {};
+  if (Object.hasOwn(inspected.claim, 'status')) {
+    claim.status = inspected.claim.status;
+  }
+  if (Object.hasOwn(inspected.claim, 'activeClaimHash')) {
+    claim.activeClaimHash = inspected.claim.activeClaimHash;
+  }
+  if (Object.hasOwn(inspected.claim, 'previousClaimHash')) {
+    claim.previousClaimHash = inspected.claim.previousClaimHash;
+  }
+  if (Object.hasOwn(inspected.claim, 'sequence')) {
+    claim.sequence = inspected.claim.sequence;
+  }
+  if (Object.hasOwn(inspected.claim, 'type')) {
+    claim.type = inspected.claim.type;
+  }
+
+  return Object.keys(claim).length > 0 ? claim : null;
 }
 
 function recordDurablePlanOpened(writer, remote, plan, options = {}) {

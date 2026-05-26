@@ -247,6 +247,13 @@ test('production recovery support report exposes the release-path dependency sur
   assert.equal(supportedReport.supported, false);
   assert.equal(supportedReport.inspectedJournalPath, filePath);
   assert.equal(supportedReport.writerJournalPath, filePath);
+  assert.deepEqual(supportedReport.inspectedClaim, {
+    status: 'none',
+    activeClaimHash: null,
+    previousClaimHash: null,
+    sequence: null,
+    type: null,
+  });
   assert.ok(supportedReport.missingDependency.includes('restart-readable recovery remote artifact references'));
   assert.ok(supportedReport.missingDependency.includes('journal-readable inspection records with sequence and type'));
   journal.close();
