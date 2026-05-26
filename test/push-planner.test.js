@@ -4642,6 +4642,61 @@ test('blocks _menu_item_object_id metadata owned by an existing revision even wh
   );
 });
 
+test('blocks _menu_item_object_id metadata owned by an existing wp_navigation post even when it targets a same-plan post', () => {
+  const resourceKey = 'row:["wp_postmeta","meta_id:489"]';
+  const targetResourceKey = 'row:["wp_posts","ID:3"]';
+  const base = baseSite();
+  base.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_title: 'Existing wp_navigation owner',
+    post_content: 'base-private-existing-wp-navigation-owner-body',
+    post_status: 'publish',
+    post_type: 'wp_navigation',
+  };
+  const local = baseSite();
+  local.db.wp_posts['ID:2'] = {
+    ...base.db.wp_posts['ID:2'],
+  };
+  local.db.wp_posts['ID:3'] = {
+    ID: 3,
+    post_title: 'Local menu object post target',
+    post_content: 'local-private-menu-object-post-target-body',
+    post_status: 'publish',
+  };
+  local.db.wp_postmeta = {
+    'meta_id:489': {
+      meta_id: 489,
+      post_id: 2,
+      meta_key: '_menu_item_object_id',
+      meta_value: 3,
+    },
+  };
+  const remote = baseSite();
+  remote.db.wp_posts['ID:2'] = {
+    ...base.db.wp_posts['ID:2'],
+  };
+
+  const plan = planFor(base, local, remote);
+  const targetMutation = mutationFor(plan, targetResourceKey);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.ok(plan.summary.mutations > 0);
+  assert.equal(targetMutation.changeKind, 'create');
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.ok(blocker);
+  assert.equal(blocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(blocker.surface, 'wp_navigation');
+  assert.equal(
+    JSON.stringify(blocker).includes('base-private-existing-wp-navigation-owner-body'),
+    false,
+  );
+  assert.equal(
+    JSON.stringify(blocker).includes('local-private-menu-object-post-target-body'),
+    false,
+  );
+});
+
 test('blocks _menu_item_object_id taxonomy metadata owned by an attachment even when it targets a same-plan term', () => {
   const resourceKey = 'row:["wp_postmeta","meta_id:482"]';
   const attachmentResourceKey = 'row:["wp_posts","ID:2"]';
@@ -7702,6 +7757,64 @@ test('blocks _menu_item_menu_item_parent metadata owned by an existing revision 
   assert.equal(blocker.surface, 'revision');
   assert.equal(
     JSON.stringify(blocker).includes('base-private-existing-revision-alias-owner-body'),
+    false,
+  );
+  assert.equal(
+    JSON.stringify(blocker).includes('local-private-alias-menu-parent-target-body'),
+    false,
+  );
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
+});
+
+test('blocks menu item parent metadata owned by an existing wp_navigation post even when it targets a same-plan post', () => {
+  const resourceKey = 'row:["wp_postmeta","meta_id:506"]';
+  const navigationResourceKey = 'row:["wp_posts","ID:4"]';
+  const targetResourceKey = 'row:["wp_posts","ID:5"]';
+  const base = baseSite();
+  const local = baseSite();
+  const remote = baseSite();
+
+  base.db.wp_posts['ID:4'] = {
+    ID: 4,
+    post_title: 'Existing wp_navigation alias owner',
+    post_content: 'base-private-existing-wp-navigation-alias-owner-body',
+    post_status: 'publish',
+    post_type: 'wp_navigation',
+  };
+  local.db.wp_posts['ID:4'] = {
+    ...base.db.wp_posts['ID:4'],
+  };
+  remote.db.wp_posts['ID:4'] = {
+    ...base.db.wp_posts['ID:4'],
+  };
+  local.db.wp_posts['ID:5'] = {
+    ID: 5,
+    post_title: 'Local alias menu parent target',
+    post_content: 'local-private-alias-menu-parent-target-body',
+    post_status: 'publish',
+  };
+  local.db.wp_postmeta = {
+    'meta_id:506': {
+      meta_id: 506,
+      post_id: 4,
+      meta_key: 'menu_item_parent',
+      meta_value: 5,
+    },
+  };
+
+  const plan = planFor(base, local, remote);
+  const navigationMutation = mutationFor(plan, navigationResourceKey);
+  const targetMutation = mutationFor(plan, targetResourceKey);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(navigationMutation, undefined);
+  assert.equal(targetMutation.changeKind, 'create');
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(blocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(blocker.surface, 'wp_navigation');
+  assert.equal(
+    JSON.stringify(blocker).includes('base-private-existing-wp-navigation-alias-owner-body'),
     false,
   );
   assert.equal(
