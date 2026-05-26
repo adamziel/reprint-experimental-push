@@ -2563,7 +2563,9 @@ function summarizeProductionCapabilityRollout({
     ),
     entry(
       'row-batch-concurrency',
-      productionAtomicCommitMeasured
+      parallelismLimitsMeasuredOnReport
+        && parallelismLimitsCanonical
+        && productionAtomicCommitMeasured
         && queueBudgetMatchesResourceCeiling
         && backpressureEvidenceComplete
         && productionStorageReceiptsMeasured

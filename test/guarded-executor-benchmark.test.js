@@ -2504,7 +2504,7 @@ test('guarded benchmark keeps rollout summaries pinned to visible-without-positi
     {
       surface: 'row-batch-concurrency',
       status: 'blocked',
-      measured: true,
+      measured: false,
       visible: false,
       blockerRefs: [
         'production-parallelism-limits-not-measured',
@@ -2558,6 +2558,7 @@ test('guarded benchmark keeps rollout summaries pinned to non-integral paralleli
       visible: false,
       blockerRefs: [
         'backpressure-evidence-incomplete',
+        'queue-memory-ceiling-does-not-match-queue-budget',
         'production-parallelism-limits-not-integral',
         'production-parallelism-limits-not-canonical',
         'production-parallelism-limits-visible-without-integral',
@@ -2575,6 +2576,8 @@ test('guarded benchmark keeps rollout summaries pinned to non-integral paralleli
       measured: false,
       visible: false,
       blockerRefs: [
+        'backpressure-evidence-incomplete',
+        'queue-memory-ceiling-does-not-match-queue-budget',
         'production-parallelism-limits-not-integral',
         'production-parallelism-limits-not-canonical',
         'production-parallelism-limits-visible-without-integral',
@@ -2589,9 +2592,11 @@ test('guarded benchmark keeps rollout summaries pinned to non-integral paralleli
     {
       surface: 'row-batch-concurrency',
       status: 'blocked',
-      measured: true,
+      measured: false,
       visible: false,
       blockerRefs: [
+        'backpressure-evidence-incomplete',
+        'queue-memory-ceiling-does-not-match-queue-budget',
         'production-parallelism-limits-not-integral',
         'production-parallelism-limits-not-canonical',
         'production-parallelism-limits-visible-without-integral',
