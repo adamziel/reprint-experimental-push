@@ -954,6 +954,12 @@ function productionRecoverySupportReport(writer) {
       addMissingDependency('fencing or lease ownership for the journal writer');
     }
   }
+  if (
+    !Object.hasOwn(writer ?? {}, 'writerLease')
+    && writer?.writerLease != null
+  ) {
+    addMissingDependency('fencing or lease ownership for the journal writer');
+  }
   if (writer && typeof writer.inspect === 'function' && !inspectionErrorMessage && !durableJournalInspectRecords(inspected)) {
     addMissingDependency('journal-readable inspection records with sequence and type');
   }

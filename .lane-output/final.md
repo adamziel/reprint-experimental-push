@@ -1,7 +1,7 @@
 Recovery ownership hardening pass:
 
-- Added a fail-closed guard so production recovery journal `schemaVersion` must be an owned property, not inherited through the prototype.
-- Added a regression proving inherited `schemaVersion` now fails closed with `PRODUCTION_DURABLE_JOURNAL_UNSUPPORTED`.
+- Added a fail-closed guard so `writerLease` must be an owned property on production recovery journal writers, not inherited through the prototype.
+- Added a regression proving inherited `writerLease` now fails closed with `PRODUCTION_DURABLE_JOURNAL_UNSUPPORTED`.
 
 Changed files:
 
@@ -11,11 +11,11 @@ Changed files:
 
 Commands:
 
-- `timeout 60s node --test --test-name-pattern='production durable journal claims fail closed when schemaVersion is inherited through the prototype|production durable journal claims fail closed when journalPath is inherited through the prototype|production durable journal claims fail closed when productionAdapter is inherited through the prototype|production durable journal claims fail closed when the adapter kind is inherited through the prototype' test/push-planner.test.js`
+- `timeout 60s node --test --test-name-pattern='writerLease is inherited through the prototype|ownsRemoteArtifact is inherited through the prototype|artifact refs use a null prototype' test/push-planner.test.js`
 
 Verification:
 
-- Focused slice passed `4/4`.
+- Focused slice passed `3/3`.
 
 Push result:
 
@@ -28,5 +28,5 @@ Worktree status:
 
 Next supervisor nudge:
 
-1. Commit the schemaVersion ownership hardening and try a normal push.
+1. Commit the lease-ownership hardening and try a normal push.
 2. If push is blocked by divergence, keep the commit intact and hand off the exact non-destructive push blocker.
