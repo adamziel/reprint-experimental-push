@@ -357,6 +357,7 @@ function summarizeResponse(response) {
     applied: body.applied,
     receiptHash: body.receipt?.receiptHash,
     authUser: body.auth?.identity?.userLogin,
+    authSessionId: body.auth?.session?.id,
     sessionType: body.auth?.session?.type,
     signed: body.signedRequest?.signed === true,
     idempotency: body.idempotency ? {
@@ -429,6 +430,7 @@ function isReplayEquivalent(applyResponse, replayResponse) {
     && applyBody.applied === replayBody.applied
     && applyBody.receipt?.receiptHash === replayBody.receipt?.receiptHash
     && applyBody.auth?.identity?.userLogin === replayBody.auth?.identity?.userLogin
+    && applyBody.auth?.session?.id === replayBody.auth?.session?.id
     && applyBody.auth?.session?.type === replayBody.auth?.session?.type
     && applyBody.signedRequest?.signed === replayBody.signedRequest?.signed;
 }
