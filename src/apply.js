@@ -648,59 +648,54 @@ function productionRecoverySupportReport(writer) {
     }
     if (!durableJournalInspectSurface(inspected)) {
       addMissingDependency('restart-readable recovery artifact location');
-    } else if (!path.isAbsolute(inspected.filePath)) {
+    } else if (!isCanonicalAbsolutePath(inspected.filePath)) {
       addMissingDependency('restart-readable recovery artifact location');
     }
     if (inspectedJournalPath !== writer.journalPath) {
       addMissingDependency('restart-readable recovery artifact location');
     }
   }
-  if (writer?.artifactRefs !== undefined) {
-    const writerJournalArtifactRef = typeof writer.artifactRefs?.journal === 'string'
-      ? writer.artifactRefs.journal
-      : null;
-    if (!writer.artifactRefs || typeof writer.artifactRefs !== 'object' || !writer.artifactRefs.journal) {
-      addMissingDependency('restart-readable recovery artifact references');
-    } else if (
-      typeof writer.artifactRefs.journal !== 'string'
-      || !path.isAbsolute(writer.artifactRefs.journal)
-      || (
-        typeof writer.journalPath === 'string'
-        && writer.artifactRefs.journal !== writer.journalPath
-      )
-    ) {
-      addMissingDependency('restart-readable recovery artifact references');
-    }
-    if (!durableJournalInspectArtifactRefs(inspected)) {
-      addMissingDependency('restart-readable recovery artifact references');
-    } else if (
-      typeof inspected.artifactRefs.journal !== 'string'
-      || !path.isAbsolute(inspected.artifactRefs.journal)
-      || (
-        writerJournalArtifactRef
-        && inspected.artifactRefs.journal !== writerJournalArtifactRef
-      )
-      || (
-        inspectedJournalPath
-        && inspected.artifactRefs.journal !== inspectedJournalPath
-      )
-    ) {
-      addMissingDependency('restart-readable recovery artifact references');
-    }
-    if (
-      writerJournalArtifactRef
-      && inspectedJournalPath
-      && writerJournalArtifactRef !== inspectedJournalPath
-    ) {
-      addMissingDependency('restart-readable recovery artifact references');
-    }
+  const writerJournalArtifactRef = typeof writer?.artifactRefs?.journal === 'string'
+    ? writer.artifactRefs.journal
+    : null;
+  if (!writer?.artifactRefs || typeof writer.artifactRefs !== 'object' || !writer.artifactRefs.journal) {
+    addMissingDependency('restart-readable recovery artifact references');
+  } else if (
+    typeof writer.artifactRefs.journal !== 'string'
+    || !isCanonicalAbsolutePath(writer.artifactRefs.journal)
+    || (
+      typeof writer.journalPath === 'string'
+      && writer.artifactRefs.journal !== writer.journalPath
+    )
+  ) {
+    addMissingDependency('restart-readable recovery artifact references');
   }
-  if (durableJournalInspectArtifactRefs(inspected) && writer?.artifactRefs === undefined) {
+  if (!durableJournalInspectArtifactRefs(inspected)) {
+    addMissingDependency('restart-readable recovery artifact references');
+  } else if (
+    typeof inspected.artifactRefs.journal !== 'string'
+    || !isCanonicalAbsolutePath(inspected.artifactRefs.journal)
+    || (
+      writerJournalArtifactRef
+      && inspected.artifactRefs.journal !== writerJournalArtifactRef
+    )
+    || (
+      inspectedJournalPath
+      && inspected.artifactRefs.journal !== inspectedJournalPath
+    )
+  ) {
+    addMissingDependency('restart-readable recovery artifact references');
+  }
+  if (
+    writerJournalArtifactRef
+    && inspectedJournalPath
+    && writerJournalArtifactRef !== inspectedJournalPath
+  ) {
     addMissingDependency('restart-readable recovery artifact references');
   }
   if (typeof writer?.journalPath !== 'string' || writer.journalPath.length === 0) {
     addMissingDependency('owned restart-readable recovery journal path');
-  } else if (!path.isAbsolute(writer.journalPath)) {
+  } else if (!isCanonicalAbsolutePath(writer.journalPath)) {
     addMissingDependency('absolute restart-readable recovery journal path');
   }
   if (typeof writer?.schemaVersion !== 'number' || writer.schemaVersion !== JOURNAL_SCHEMA_VERSION) {
@@ -762,6 +757,12 @@ function durableJournalInspectArtifactRefs(inspected) {
     && typeof inspected.artifactRefs === 'object'
     && typeof inspected.artifactRefs.journal === 'string'
   );
+}
+
+function isCanonicalAbsolutePath(filePath) {
+  return typeof filePath === 'string'
+    && path.isAbsolute(filePath)
+    && path.resolve(filePath) === filePath;
 }
 
 function durableJournalInspectPath(inspected) {
