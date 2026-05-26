@@ -93,3 +93,13 @@ export function packagedProductionPluginReadinessBodyRetryable(status, bodyText 
     || (status === 404 && /No route was found matching the URL and request method\./i.test(bodyText))
   );
 }
+
+export function packagedProductionPluginRouteRetryableWhileWordPressStarting(
+  routeStatus,
+  routeBodyText = '',
+  indexStatus,
+  indexBodyText = '',
+) {
+  return packagedProductionPluginReadinessBodyRetryable(routeStatus, routeBodyText)
+    && packagedProductionPluginReadinessWordPressNotReady(indexStatus, indexBodyText);
+}

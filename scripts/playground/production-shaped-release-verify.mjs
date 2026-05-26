@@ -34,6 +34,7 @@ import {
   packagedProductionPluginNextNotReadyProbeCount,
   packagedProductionPluginPreflightReady,
   packagedProductionPluginPreflightRetryable,
+  packagedProductionPluginRouteRetryableWhileWordPressStarting,
   packagedProductionPluginServerReady,
   packagedProductionPluginSnapshotRetryable,
 } from './packaged-production-plugin-readiness.js';
@@ -1348,6 +1349,23 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
           })
         ) {
           if (notReadyProbeCount >= packagedProductionPluginMaxConsecutiveNotReadyProbes) {
+            const indexProbe = await fetchPackagedWordPressIndexProbe(baseUrl);
+            lastProbes.push(indexProbe);
+            if (
+              packagedProductionPluginRouteRetryableWhileWordPressStarting(
+                snapshot.status,
+                snapshotText,
+                indexProbe.status,
+                indexProbe.body,
+              )
+            ) {
+              notReadyProbeCount = 0;
+              lastError = new Error(
+                `Production plugin package snapshot readiness still waiting on global WordPress startup HTTP ${indexProbe.status}`,
+              );
+              await sleep(readinessProbeIntervalMs);
+              continue;
+            }
             await throwPlaygroundReadinessFailure(
               child,
               `Packaged Playground server reported the bounded readiness failure ${snapshot.status} after ${notReadyProbeCount} consecutive startup-shaped snapshot response${notReadyProbeCount === 1 ? '' : 's'} (limit ${packagedProductionPluginMaxConsecutiveNotReadyProbes})`,
@@ -1431,6 +1449,23 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
         body: preflightBody,
       })) {
         if (notReadyProbeCount >= packagedProductionPluginMaxConsecutiveNotReadyProbes) {
+          const indexProbe = await fetchPackagedWordPressIndexProbe(baseUrl);
+          lastProbes.push(indexProbe);
+          if (
+            packagedProductionPluginRouteRetryableWhileWordPressStarting(
+              preflight.status,
+              preflightText,
+              indexProbe.status,
+              indexProbe.body,
+            )
+          ) {
+            notReadyProbeCount = 0;
+            lastError = new Error(
+              `Production plugin package preflight readiness still waiting on global WordPress startup HTTP ${indexProbe.status}`,
+            );
+            await sleep(readinessProbeIntervalMs);
+            continue;
+          }
           await throwPlaygroundReadinessFailure(
             child,
             `Packaged Playground server reported the bounded readiness failure ${preflight.status} after ${notReadyProbeCount} consecutive startup-shaped preflight response${notReadyProbeCount === 1 ? '' : 's'} (limit ${packagedProductionPluginMaxConsecutiveNotReadyProbes})`,
@@ -1479,6 +1514,19 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
       packagedProductionPlugin: true,
     },
   );
+}
+
+async function fetchPackagedWordPressIndexProbe(baseUrl) {
+  const response = await fetchWithTimeout(`${baseUrl}/wp-json/`, {
+    headers: { connection: 'close' },
+  }, packagedServerFetchTimeoutMs);
+  const bodyText = await response.text();
+  return {
+    route: '/wp-json/',
+    status: response.status,
+    ok: response.ok,
+    body: bodyText.slice(0, readinessFailureBodyLimit),
+  };
 }
 
 async function stopExitedServer(child) {
