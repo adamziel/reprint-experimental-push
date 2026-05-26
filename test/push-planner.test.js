@@ -27885,6 +27885,111 @@ test('carries bounded parent-comment and commentmeta references for a same-plan 
   assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin changes */');
 });
 
+test('orders same-plan comment dependency references deterministically within the same priority bucket', () => {
+  const resourceKey = 'row:["wp_comments","comment_ID:41"]';
+  const base = baseSite();
+  base.db.wp_posts['ID:1'].post_title = 'Base ordered comment target title';
+  base.db.wp_comments = {
+    'comment_ID:40': {
+      comment_ID: 40,
+      comment_post_ID: 1,
+      comment_parent: 41,
+      comment_content: 'Base first ordered child comment',
+    },
+    'comment_ID:42': {
+      comment_ID: 42,
+      comment_post_ID: 1,
+      comment_parent: 41,
+      comment_content: 'Base second ordered child comment',
+    },
+  };
+  base.db.wp_commentmeta = {
+    'meta_id:41': {
+      meta_id: 41,
+      comment_id: 41,
+      meta_key: 'note',
+      meta_value: 'Base ordered comment meta',
+    },
+  };
+
+  const local = baseSite();
+  local.db.wp_posts['ID:1'].post_title = 'Shared ordered comment target title';
+  local.db.wp_comments = {
+    'comment_ID:40': {
+      comment_ID: 40,
+      comment_post_ID: 1,
+      comment_parent: 41,
+      comment_content: 'Local first ordered child comment',
+    },
+    'comment_ID:41': {
+      comment_ID: 41,
+      comment_post_ID: 1,
+      comment_parent: 0,
+      comment_content: 'Local same-plan ordered target comment',
+    },
+    'comment_ID:42': {
+      comment_ID: 42,
+      comment_post_ID: 1,
+      comment_parent: 41,
+      comment_content: 'Local second ordered child comment',
+    },
+  };
+  local.db.wp_commentmeta = {
+    'meta_id:41': {
+      meta_id: 41,
+      comment_id: 41,
+      meta_key: 'note',
+      meta_value: 'Local ordered comment meta',
+    },
+  };
+
+  const remote = baseSite();
+  remote.db.wp_posts['ID:1'].post_title = 'Shared ordered comment target title';
+  remote.db.wp_comments = JSON.parse(JSON.stringify(base.db.wp_comments));
+  remote.db.wp_commentmeta = JSON.parse(JSON.stringify(base.db.wp_commentmeta));
+  remote.plugins.forms.description = 'remote-only plugin changes';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin changes */';
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  const matchingEdit = decisionFor(plan, 'row:["wp_posts","ID:1"]');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(plan.conflicts.length, 0);
+  assert.equal(blocker.class, 'unsupported-comments-users-resource');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_comments","comment_ID:41"] is created in the same plan as a parent comment identity that depends on it, and identity rewriting is not yet supported.');
+  assert.deepEqual(
+    blocker.references.map((reference) => reference.relationshipType),
+    ['comment-parent', 'comment-parent', 'commentmeta-comment'],
+  );
+  assert.deepEqual(
+    blocker.references.map((reference) => reference.sourceResourceKey),
+    [
+      'row:["wp_comments","comment_ID:40"]',
+      'row:["wp_comments","comment_ID:42"]',
+      'row:["wp_commentmeta","meta_id:41"]',
+    ],
+  );
+  assert.equal(blocker.references.every((reference) => reference.targetResourceKey === resourceKey), true);
+  assert.equal(matchingEdit.decision, 'already-in-sync');
+  assert.equal(matchingEdit.change.localChange, 'update');
+  assert.equal(matchingEdit.change.remoteChange, 'update');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('Local first ordered child comment'), false);
+  assert.equal(planJson.includes('Local second ordered child comment'), false);
+  assert.equal(planJson.includes('Local same-plan ordered target comment'), false);
+  assert.equal(planJson.includes('Local ordered comment meta'), false);
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin changes');
+  assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin changes */');
+});
+
 test('blocks local comments graph references to a same-plan created post identity while preserving a matching independent edit and remote-only plugin removals', () => {
   const resourceKey = 'row:["wp_comments","comment_ID:13"]';
   const targetResourceKey = 'row:["wp_posts","ID:17"]';
