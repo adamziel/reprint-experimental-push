@@ -339,6 +339,42 @@ test('blocks a local usermeta reference owned by a same-plan user', () => {
   assert.equal(JSON.stringify(usermetaBlocker).includes('remote-attachment-body'), false);
 });
 
+test('blocks a local commentmeta reference owned by a same-plan comment', () => {
+  const base = baseSite();
+  const local = baseSite();
+  const remote = baseSite();
+
+  local.db.wp_comments = {
+    'comment_ID:1': {
+      comment_ID: 1,
+      comment_post_ID: 1,
+      comment_author: 'Local comment',
+      comment_content: 'local-private-comment-body',
+    },
+  };
+  local.db.wp_commentmeta = {
+    'meta_id:9': {
+      meta_id: 9,
+      comment_id: 1,
+      meta_key: 'comment-note',
+      meta_value: 'local-private-comment-meta',
+    },
+  };
+
+  const plan = planFor(base, local, remote);
+  const commentBlocker = plan.blockers.find((blocker) => blocker.resourceKey === 'row:["wp_comments","comment_ID:1"]');
+  const commentmetaBlocker = plan.blockers.find((blocker) => blocker.resourceKey === 'row:["wp_commentmeta","meta_id:9"]');
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(commentBlocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(commentBlocker.surface, 'comments');
+  assert.equal(commentmetaBlocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(commentmetaBlocker.surface, 'comments');
+  assert.match(commentmetaBlocker.reason, /outside the supported release-candidate slice/);
+  assert.equal(JSON.stringify(commentmetaBlocker).includes('local-private-comment-meta'), false);
+  assert.equal(JSON.stringify(commentmetaBlocker).includes('local-private-comment-body'), false);
+});
+
 test('blocks unsupported menu and navigation post graph surfaces in the release-candidate slice', () => {
   const base = baseSite();
   const local = baseSite();

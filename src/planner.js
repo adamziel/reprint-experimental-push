@@ -1019,6 +1019,15 @@ function wordpressGraphIdentitySupport({
     return { supported: true };
   }
 
+  if (resource.table === 'wp_commentmeta') {
+    return {
+      supported: false,
+      className: 'unsupported-wordpress-graph-surface',
+      surface: 'comments',
+      reason: `WordPress graph mutation ${resource.key} owned by a comment is outside the supported release-candidate slice and must stay blocked.`,
+    };
+  }
+
   const references = wordpressGraphReferences(resource, localValue);
   if (references.length === 0) {
     return { supported: true };
