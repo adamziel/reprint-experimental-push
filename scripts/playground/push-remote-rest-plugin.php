@@ -148,7 +148,7 @@ function reprint_push_lab_rest_register_routes(): void
 
         register_rest_route(REPRINT_PUSH_LAB_REST_NAMESPACE, '/authenticated/db-journal', [
             'methods' => WP_REST_Server::READABLE,
-            'callback' => 'reprint_push_lab_rest_db_journal',
+            'callback' => 'reprint_push_lab_rest_authenticated_db_journal',
             'permission_callback' => 'reprint_push_lab_rest_authenticated_permission',
             'args' => [
                 'limit' => [
@@ -215,7 +215,7 @@ function reprint_push_lab_rest_register_routes(): void
 
     register_rest_route(REPRINT_PUSH_PRODUCTION_SHAPED_REST_NAMESPACE, '/push/db-journal', [
         'methods' => WP_REST_Server::READABLE,
-        'callback' => 'reprint_push_lab_rest_db_journal',
+        'callback' => 'reprint_push_lab_rest_authenticated_db_journal',
         'permission_callback' => 'reprint_push_lab_rest_authenticated_permission',
         'args' => [
             'limit' => [
@@ -504,6 +504,11 @@ function reprint_push_lab_rest_authenticated_apply(WP_REST_Request $request): WP
 
 function reprint_push_lab_rest_authenticated_recovery_inspect(WP_REST_Request $request): WP_REST_Response
 {
+    $signature_error = reprint_push_lab_rest_require_signed_request($request, 'recovery-inspect');
+    if ($signature_error instanceof WP_REST_Response) {
+        return $signature_error;
+    }
+
     $response = reprint_push_lab_rest_recovery_inspect($request);
     $result = $response->get_data();
     if (is_array($result)) {
@@ -512,6 +517,22 @@ function reprint_push_lab_rest_authenticated_recovery_inspect(WP_REST_Request $r
         }
         $result['responseSchemaVersion'] = 1;
         $result['auth'] = reprint_push_lab_rest_auth_evidence($request);
+        $result['signedRequest'] = reprint_push_lab_rest_signed_request_evidence($request);
+        $response->set_data($result);
+    }
+    return $response;
+}
+
+function reprint_push_lab_rest_authenticated_db_journal(WP_REST_Request $request): WP_REST_Response
+{
+    $signature_error = reprint_push_lab_rest_require_signed_request($request, 'journal-inspect');
+    if ($signature_error instanceof WP_REST_Response) {
+        return $signature_error;
+    }
+
+    $response = reprint_push_lab_rest_db_journal($request);
+    $result = $response->get_data();
+    if (is_array($result)) {
         $result['signedRequest'] = reprint_push_lab_rest_signed_request_evidence($request);
         $response->set_data($result);
     }
@@ -1929,14 +1950,14 @@ function reprint_push_lab_rest_verify_signed_request(WP_REST_Request $request, s
         if ($session_id === '') {
             return reprint_push_lab_rest_signature_failure(
                 'SIGNED_SESSION_REQUIRED',
-                'X-Reprint-Push-Session is required for signed dry-run and apply requests.',
+                'X-Reprint-Push-Session is required for signed dry-run, apply, recovery inspect, and journal inspect requests.',
                 401
             );
         }
         if ($idempotency_key === '') {
             return reprint_push_lab_rest_signature_failure(
                 'MISSING_IDEMPOTENCY_KEY',
-                'X-Reprint-Push-Idempotency-Key is required for signed dry-run and apply requests.',
+                'X-Reprint-Push-Idempotency-Key is required for signed dry-run, apply, recovery inspect, and journal inspect requests.',
                 400
             );
         }

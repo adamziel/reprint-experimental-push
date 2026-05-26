@@ -515,7 +515,11 @@ export async function runAuthenticatedHttpPush({
   summary.after = summarizeSnapshot(afterApply, local);
   updateRetryAttempts(summary, summary.after);
   summary.afterObject = afterApply.body.snapshot;
-  const dbJournal = await client.get('/db-journal?limit=80');
+  const dbJournal = await client.signedGet('/db-journal?limit=80', {
+    session,
+    idempotencyKey,
+    retryable: true,
+  });
   summary.dbJournal = summarizeDbJournal(dbJournal);
   updateRetryAttempts(summary, summary.dbJournal);
   recordAuthSessionLifecycle(summary, 'journal', dbJournal.body?.auth?.session);
