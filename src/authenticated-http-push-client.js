@@ -487,11 +487,7 @@ export async function runAuthenticatedHttpPush({
   const recoveryInspectAuthEnvelopeDrift = describeAuthEnvelopeDrift(preflightAuthEnvelope, recoveryInspect);
   if (recoveryInspectAuthEnvelopeDrift) {
     summary.code = 'AUTH_SESSION_LIFECYCLE_DRIFT';
-    summary.authSession = {
-      required: preflightAuthEnvelope.sessionType || 'auth-session',
-      observed: recoveryInspect.body?.auth?.session?.type || 'missing',
-      verdict: 'AUTH_SESSION_LIFECYCLE_DRIFT',
-    };
+    summary.authSession = recoveryInspectAuthEnvelopeDrift;
     setDurableJournalBoundary(summary, 'recovery-inspect');
     return summary;
   }
