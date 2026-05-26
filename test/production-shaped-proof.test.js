@@ -1077,6 +1077,42 @@ test('packaged production plugin readiness helper retries only startup-shaped pa
   assert.equal(
     packagedProductionPluginSnapshotRetryable({
       status: 500,
+      body: 'WordPress is not ready yet',
+    }),
+    true,
+  );
+  assert.equal(
+    packagedProductionPluginPreflightRetryable({
+      status: 503,
+      body: 'WordPress is not ready yet',
+    }),
+    true,
+  );
+  assert.equal(
+    packagedProductionPluginSnapshotRetryable({
+      status: 500,
+      body: {
+        data: {
+          message: 'WordPress is not ready yet',
+        },
+      },
+    }),
+    true,
+  );
+  assert.equal(
+    packagedProductionPluginPreflightRetryable({
+      status: 503,
+      body: {
+        data: {
+          message: 'No route was found matching the URL and request method.',
+        },
+      },
+    }),
+    true,
+  );
+  assert.equal(
+    packagedProductionPluginSnapshotRetryable({
+      status: 500,
       body: {
         code: 'startup_mismatch',
         message: 'No route was found matching the URL and request method.',

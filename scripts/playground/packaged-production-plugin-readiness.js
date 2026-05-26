@@ -3,7 +3,19 @@ import { evaluateProductionAuthSessionLifecycle } from './production-auth-sessio
 export const packagedProductionPluginMaxConsecutiveNotReadyProbes = 4;
 
 function packagedProductionPluginResponseMessage(response) {
-  return typeof response?.body?.message === 'string' ? response.body.message : '';
+  if (typeof response?.body === 'string') {
+    return response.body;
+  }
+
+  if (typeof response?.body?.message === 'string') {
+    return response.body.message;
+  }
+
+  if (typeof response?.body?.data?.message === 'string') {
+    return response.body.data.message;
+  }
+
+  return '';
 }
 
 function packagedProductionPluginWordPressNotReadyResponse(response) {
