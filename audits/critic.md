@@ -1,15 +1,15 @@
 # Critic Verdict
 
-Current reliable head: `ee09af547498924af794519d1513fef479333302`
-(`Tighten production auth session lifecycle proof`).
+Current reliable head: `1c7b1eedb063acabd18756aa218380456c5384e1`
+(`Require active packaged auth session in release verify`).
 
 Verdict: `0/4`
 
 Reason:
 
-- This head tightens the checked release verifier's auth/session evidence by
-  surfacing a production-auth-session id and expiry on the packaged boundary,
-  and it expands the lifecycle drift coverage in the client tests.
+- This head tightens the checked release verifier by requiring an active
+  packaged auth session before the release proof proceeds, and it extends the
+  proof/test coverage around that lifecycle.
 - It still does not prove a production-backed auth/session lifecycle on the
   checked release boundary, nor production durable-journal ownership or
   preserved-remote retry. The gate remains closed until a checked command
