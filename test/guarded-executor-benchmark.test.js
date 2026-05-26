@@ -256,6 +256,19 @@ test('guarded benchmark blocks memory-ceiling visibility when queue-headroom vis
   assert.equal(blockers.includes('queue-headroom-visible-without-queue-budget-visibility'), false);
 });
 
+test('guarded benchmark blocks paired memory-ceiling and queue-headroom visibility when the headroom probe is hidden', () => {
+  const report = smallBenchmark();
+  const tampered = clone(report);
+
+  tampered.evidence.backpressure.queueHeadroomMeasured = false;
+  tampered.evidence.backpressure.queueHeadroomVisible = true;
+  tampered.evidence.backpressure.receiptCursorMemoryCeilingVisible = true;
+
+  const details = productionThroughputDetails(tampered);
+
+  assert.equal(details.receiptCursorMemoryCeilingVisibleAndQueueHeadroomVisible, false);
+});
+
 test('guarded benchmark blocks atomic-group metadata visibility when the atomic commit is hidden', () => {
   const report = smallBenchmark();
   const tampered = clone(report);

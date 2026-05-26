@@ -1016,8 +1016,9 @@ export function productionThroughputDetails(report) {
     report.evidence.backpressure?.queueBudgetVisible === true;
   const queueHeadroomVisible =
     report.evidence.backpressure?.queueHeadroomVisible === true;
+  const queueHeadroomMeasured = report.evidence.backpressure?.queueHeadroomMeasured === true;
   const receiptCursorMemoryCeilingVisibleAndQueueHeadroomVisible =
-    receiptCursorMemoryCeilingVisible && queueHeadroomVisible;
+    receiptCursorMemoryCeilingVisible && queueHeadroomVisible && queueHeadroomMeasured;
   const receiptCursorMemoryHeadroomPositive =
     Number.isFinite(receiptCursorMemoryHeadroomBytes)
     && receiptCursorMemoryHeadroomBytes > 0;
@@ -1036,7 +1037,6 @@ export function productionThroughputDetails(report) {
     Number.isFinite(receiptCursorWindowBytes)
     && Number.isFinite(receiptCursorMemoryCeilingBytes)
     && receiptCursorWindowBytes <= receiptCursorMemoryCeilingBytes;
-  const queueHeadroomMeasured = report.evidence.backpressure?.queueHeadroomMeasured === true;
   const receiptCursorHeadroomMatchesQueueHeadroom =
     Number.isFinite(receiptCursorMemoryHeadroomBytes)
     && Number.isFinite(receiptCursorQueueHeadroomBytes)
