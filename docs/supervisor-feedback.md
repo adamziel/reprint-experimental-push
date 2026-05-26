@@ -1,31 +1,31 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-24 21:47 CEST
+Last updated: 2026-05-26 14:13 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
 
-## 2026-05-24 - Current Nudge
+## 2026-05-26 - Current Nudge
 
-- Going well: `70` Node tests pass, no-server Playground plan/apply/protocol
-  passed in the feedback lane, and invariants, recovery, protocol, fast-path,
-  audit, and critic lanes all sharpened lab/model gates.
-- Not going well: production readiness is flat. The repo still lacks a
-  production endpoint, credential binding, nonce cleanup, durable audit,
-  storage guard, and general plugin driver proof.
-- Progress change: lab/model evidence moved up; production evidence did not.
-- Next nudge: reliable executor should run one production-shaped route slice
-  end to end with guarded DB/file writes, journal/recovery inspect, replay, and
-  different-body conflict refusal.
+- Going well: `77da166e` is now the live reliable head, and it adds checked
+  release-verifier auth-session source evidence.
+- Not going well: the release gate is still `0/4`; this is support evidence,
+  not production-backed auth/session lifecycle or durable-journal ownership.
+- Progress change: the public surfaces are stale against the live reliable
+  head and need a single freshness refresh.
+- Next nudge: reliable executor should move to the next gate dependency:
+  production auth/session lifecycle on the checked release path, durable
+  journal ownership, or a concrete blocker command that names the missing
+  primitive.
 
 | Lane | Change | Next nudge |
 | --- | --- | --- |
 | Invariants | Up in lab | Prove real WordPress graph identity and drift handling. |
 | Recovery | Up in lab | Prove production DB journal durability and crash boundaries. |
-| Reliable executor | Up in contract | Build the first production-shaped route slice. |
+| Reliable executor | Up in support evidence | Move to production auth/session lifecycle or durable ownership. |
 | Fast paths | Up in model | Run a large-site benchmark with receipts and resume cursors. |
-| Audit and critic | Up | Re-audit the first executable production-shaped mutation slice. |
-| Progress publisher | Synced | Keep Pages aligned and concise. |
+| Audit and critic | Up | Re-audit the new live reliable head only if the gate changes. |
+| Progress publisher | Stale | Refresh the public page to `77da166e` and keep `0/4`. |
 
 <details>
 <summary>Earlier feedback entries</summary>

@@ -4,20 +4,22 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
-## 2026-05-24 - Current Supervisor Snapshot
+## 2026-05-26 - Current Supervisor Snapshot
 
-- Status: `70` Node tests pass; Playground and CLI lab evidence remains linked.
-- Trend: lab/model confidence improved; production readiness is still flat.
-- Blocker: no production Reprint endpoint, auth binding, durable journal,
-  storage guard, or general plugin driver proof has landed.
-- Next nudge: reliable executor should prove one production-shaped route slice:
-  preflight, dry-run receipt, guarded DB/file writes, journal/recovery inspect,
-  replay, and different-body conflict refusal.
+- Status: `77da166e` is the live reliable head and adds auth-session source
+  evidence on the checked release verifier.
+- Trend: public status is stale; the live head advanced, but the gate posture
+  remains conservative.
+- Blocker: this is still support evidence, not production-backed auth/session
+  lifecycle or durable-journal ownership on the release boundary.
+- Next nudge: reliable executor should move to the next gate dependency:
+  production auth/session lifecycle, durable journal ownership, or a concrete
+  blocking command naming the missing primitive.
 - Public page: [progress.html](../progress.html) shows a visible last-updated
   date and keeps the supervisor view short.
-- Feedback-lane verification after rebasing onto current `origin/main` passed:
-  `npm test` reported 70 tests, `npm run test:playground` passed plan, apply,
-  and protocol legs, and the local `progress.html` evidence links resolved.
+- Feedback-lane verification after checking the live head: `git ls-remote`
+  now reports `77da166e` for `lane/reliable-executor`, while the public page
+  still needed a freshness update.
 
 <details>
 <summary>Earlier progress entries</summary>
