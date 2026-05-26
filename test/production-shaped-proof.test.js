@@ -2332,11 +2332,33 @@ test('packaged readiness helpers fall back to signed preflight and index probes 
   );
 
   for (const source of [smokeSource, verifierSource]) {
-    assert.match(source, /if \(packagedProductionPluginReadinessProbeTimedOut\(error\)\) \{\s*const \{ preflightProbe, indexProbe \} = await fetchPackagedTimeoutFallbackProbes\(baseUrl, child\);/s);
+    assert.match(source, /if \(packagedProductionPluginReadinessProbeTimedOut\(error\)\) \{[\s\S]*?const \{ preflightProbe, indexProbe \} = await fetchPackagedTimeoutFallbackProbes\(baseUrl, child\);/s);
     assert.match(source, /if \(preflightProbe\.ready\) \{\s*return;\s*\}/);
     assert.match(source, /packagedProductionPluginReadinessBodyRetryable\(indexProbe\?\.status, indexProbe\?\.body \|\| ''\)/);
     assert.match(source, /timeoutProbeCount = 0;\s*await sleepUnlessChildExit\(readinessProbeIntervalMs, child\);\s*continue;/);
   }
+});
+
+test('packaged readiness helpers emit phase breadcrumbs before bounded startup failures', () => {
+  const smokeSource = readFileSync(
+    path.join(repoRoot, 'scripts/playground/production-plugin-package-smoke.mjs'),
+    'utf8',
+  );
+  const verifierSource = readFileSync(
+    path.join(repoRoot, 'scripts/playground/production-shaped-release-verify.mjs'),
+    'utf8',
+  );
+
+  assert.match(smokeSource, /probing packaged snapshot readiness at \$\{baseUrl\}/);
+  assert.match(smokeSource, /snapshot is still startup-shaped; probing signed preflight readiness at \$\{baseUrl\}/);
+  assert.match(smokeSource, /snapshot responded; probing signed preflight readiness at \$\{baseUrl\}/);
+  assert.match(smokeSource, /snapshot probe timed out; falling back to signed preflight and \/wp-json\/ readiness probes at \$\{baseUrl\}/);
+
+  assert.match(verifierSource, /\[production-shaped-release-verify\] \$\{message\}\\n/);
+  assert.match(verifierSource, /probing packaged snapshot readiness at \$\{baseUrl\}/);
+  assert.match(verifierSource, /snapshot is still startup-shaped; probing signed preflight readiness at \$\{baseUrl\}/);
+  assert.match(verifierSource, /snapshot responded; probing signed preflight readiness at \$\{baseUrl\}/);
+  assert.match(verifierSource, /snapshot probe timed out; falling back to signed preflight and \/wp-json\/ readiness probes at \$\{baseUrl\}/);
 });
 
 test('packaged readiness timeout fallback classifies global WordPress versus packaged-route startup', () => {

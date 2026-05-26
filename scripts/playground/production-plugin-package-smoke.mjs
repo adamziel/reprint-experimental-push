@@ -505,6 +505,14 @@ async function waitForServer(child, baseUrl, logs) {
   let lastTimeoutFallbackProbes = null;
   let notReadyProbeCounts = { snapshot: 0, preflight: 0 };
   let timeoutProbeCount = 0;
+  const readinessPhases = new Set();
+  const noteReadinessPhase = (phase, message) => {
+    if (readinessPhases.has(phase)) {
+      return;
+    }
+    readinessPhases.add(phase);
+    writeStageProgress(message);
+  };
 
   while (Date.now() < deadline) {
     if (child.exitCode !== null || child.signalCode !== null) {
@@ -523,6 +531,7 @@ async function waitForServer(child, baseUrl, logs) {
     }
 
     try {
+      noteReadinessPhase('snapshot', `probing packaged snapshot readiness at ${baseUrl}`);
       const { response: snapshotResponse, bodyText: snapshotText } = await fetchTextWithTimeout(`${baseUrl}/wp-json/reprint/v1/push/snapshot`, {
         method: 'GET',
         headers: {
@@ -550,6 +559,7 @@ async function waitForServer(child, baseUrl, logs) {
       } catch (error) {
         if (packagedProductionPluginReadinessBodyRetryable(snapshotResponse.status, snapshotText)) {
           lastError = new Error(`Production plugin package snapshot readiness HTTP ${snapshotResponse.status}`);
+          noteReadinessPhase('preflight-fallback', `snapshot is still startup-shaped; probing signed preflight readiness at ${baseUrl}`);
           const preflightProbe = await fetchPackagedPreflightProbe(baseUrl, child);
           lastProbe = preflightProbe;
           lastProbes.push(preflightProbe);
@@ -639,6 +649,7 @@ async function waitForServer(child, baseUrl, logs) {
 
       if (!packagedProductionPluginServerReady({ snapshot: { status: snapshotResponse.status, body: snapshotBody } })) {
         lastError = new Error(`Production plugin package snapshot readiness HTTP ${snapshotResponse.status}`);
+        noteReadinessPhase('preflight-fallback', `snapshot is still startup-shaped; probing signed preflight readiness at ${baseUrl}`);
         const preflightProbe = await fetchPackagedPreflightProbe(baseUrl, child);
         lastProbe = preflightProbe;
         lastProbes.push(preflightProbe);
@@ -740,6 +751,7 @@ async function waitForServer(child, baseUrl, logs) {
         notReadyProbeCounts,
         'snapshot',
       );
+      noteReadinessPhase('preflight', `snapshot responded; probing signed preflight readiness at ${baseUrl}`);
       const { response: preflightResponse, bodyText: preflightText } = await fetchTextWithTimeout(`${baseUrl}/wp-json/reprint/v1/push/preflight`, {
         method: 'GET',
         headers: {
@@ -925,6 +937,7 @@ async function waitForServer(child, baseUrl, logs) {
         throw error;
       }
       if (packagedProductionPluginReadinessProbeTimedOut(error)) {
+        noteReadinessPhase('timeout-fallback', `snapshot probe timed out; falling back to signed preflight and /wp-json/ readiness probes at ${baseUrl}`);
         const { preflightProbe, indexProbe } = await fetchPackagedTimeoutFallbackProbes(baseUrl, child);
         lastTimeoutFallbackProbes = { preflightProbe, indexProbe };
         if (preflightProbe) {
