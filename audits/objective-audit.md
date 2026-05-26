@@ -8,7 +8,7 @@ Fresh remote heads at audit time, checked on May 26, 2026:
 
 - `origin/lane/reliable-executor` -> `0c4fd10f`
 - `origin/lane/no-data-loss-invariants` -> `9c70eba6`
-- `origin/lane/no-data-loss-recovery` -> `47b675c0`
+- `origin/lane/no-data-loss-recovery` -> `a546a36b`
 - `origin/lane/fast-paths` -> `9be664b2`
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `ff2131c3`
 - `origin/lane/independent-auditor` -> `6b343dd6`
@@ -19,7 +19,7 @@ Fresh remote heads at audit time, checked on May 26, 2026:
 - `origin/lane/cycle-20260525-mainwindows-2349/same-plan-wordpress-graph-create` -> `e9cbf9d4`
 - `origin/lane/cycle-20260525-mainwindows-2357/no-data-loss-invariants-graph-proof` -> `98c0ce26`
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `08e327b7`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `67de1e9f`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `eafb7f6d`
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` -> `5f256171`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-invariants` -> `9c70eba6`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `ba49bb8d`
@@ -49,7 +49,7 @@ but it did not change the release conclusion:
   coverage, which strengthens the fail-closed boundary but still does not
   prove live source mutation on unsupported surfaces.
 - `origin/lane/no-data-loss-recovery` now tightens the durable journal
-  production gate at `47b675c0` while preserving the earlier recovery
+  production gate at `a546a36b` while preserving the earlier recovery
   evidence.
   `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` now
   tightens the durable journal cleanup gate at `ba49bb8d`, but it still does
@@ -68,7 +68,7 @@ but it did not change the release conclusion:
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now
   refreshes the supervisor evidence snapshot at `08e327b7`.
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now
-  records the latest progress freshness handoff at `67de1e9f`.
+  records the latest progress freshness handoff at `eafb7f6d`.
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` now
   hardens the live proof timeout diagnostics at `5f256171`.
 - `origin/lane/same-plan-wordpress-graph-create` now blocks unsupported graph
