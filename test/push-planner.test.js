@@ -12680,9 +12680,8 @@ test('blocks local term-relationship references when the live remote taxonomy id
   assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin drift */');
 });
 
-test('blocks local termmeta references when the live remote term identity disappears while preserving remote-only plugin drift', () => {
+test('blocks local termmeta graph resources while preserving remote-only plugin drift in a stale-term scenario', () => {
   const resourceKey = 'row:["wp_termmeta","meta_id:8"]';
-  const targetResourceKey = 'row:["wp_terms","term_id:2"]';
   const base = baseSite();
   base.db.wp_terms = {
     'term_id:2': { term_id: 2, name: 'Base term', slug: 'base-term' },
@@ -12715,7 +12714,6 @@ test('blocks local termmeta references when the live remote term identity disapp
 
   const plan = planFor(base, local, remote);
   const blocker = plan.blockers[0];
-  const reference = blocker.references[0];
   const pluginDecision = decisionFor(plan, 'plugin:forms');
   const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
   const planJson = JSON.stringify(plan);
@@ -12723,23 +12721,15 @@ test('blocks local termmeta references when the live remote term identity disapp
   assert.equal(plan.status, 'blocked');
   assert.equal(plan.summary.mutations, 0);
   assert.equal(mutationFor(plan, resourceKey), undefined);
-  assert.equal(decisionFor(plan, targetResourceKey).decision, 'keep-remote');
-  assert.equal(blocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(plan.conflicts.length, 0);
+  assert.equal(blocker.class, 'unsupported-termmeta-resource');
   assert.equal(blocker.resourceKey, resourceKey);
-  assert.equal(blocker.resolutionPolicy, 'preserve-remote-wordpress-graph-and-stop');
-  assert.equal(reference.relationshipKey, 'wp_termmeta.term_id');
-  assert.equal(reference.relationshipType, 'termmeta-term');
-  assert.equal(reference.sourceResourceKey, resourceKey);
-  assert.equal(reference.targetResourceKey, targetResourceKey);
-  assert.equal(reference.targetChange.remote.state, 'absent');
-  assert.equal(reference.targetRemoteHash.length, 64);
+  assert.equal(blocker.reason, 'Term meta graph resources are not yet supported by the planner.');
   assert.equal(pluginDecision.decision, 'keep-remote');
   assert.equal(pluginFileDecision.decision, 'keep-remote');
   assert.equal(planJson.includes('local term meta note'), false);
   assert.equal(planJson.includes('base term meta note'), false);
   assert.equal(planJson.includes('Base term'), false);
-  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
-  assert.equal(remote.db.wp_terms['term_id:2'], undefined);
   assert.equal(remote.plugins.forms.description, 'remote-only plugin drift');
 });
 
@@ -13131,6 +13121,55 @@ test('blocks local revision graph resources while preserving remote-only plugin 
   assert.equal(remote.plugins.forms.description, 'remote-only plugin drift');
 });
 
+test('blocks local termmeta graph resources while preserving remote-only plugin drift', () => {
+  const resourceKey = 'row:["wp_termmeta","meta_id:8"]';
+  const base = baseSite();
+  base.db.wp_terms = {
+    'term_id:3': { term_id: 3, name: 'Base term', slug: 'base-term' },
+  };
+  base.db.wp_termmeta = {
+    'meta_id:8': {
+      meta_id: 8,
+      term_id: 3,
+      meta_key: 'base-term-meta',
+      meta_value: 'base-term-value',
+    },
+  };
+
+  const local = baseSite();
+  local.db.wp_terms = JSON.parse(JSON.stringify(base.db.wp_terms));
+  local.db.wp_termmeta = {
+    'meta_id:8': {
+      meta_id: 8,
+      term_id: 3,
+      meta_key: 'local-term-meta',
+      meta_value: 'local-term-value',
+    },
+  };
+
+  const remote = baseSite();
+  remote.db.wp_terms = JSON.parse(JSON.stringify(base.db.wp_terms));
+  remote.db.wp_termmeta = JSON.parse(JSON.stringify(base.db.wp_termmeta));
+  remote.plugins.forms.description = 'remote-only plugin drift';
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers[0];
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(plan.conflicts.length, 0);
+  assert.equal(blocker.class, 'unsupported-termmeta-resource');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.reason, 'Term meta graph resources are not yet supported by the planner.');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('local-term-meta'), false);
+  assert.equal(planJson.includes('base-term-meta'), false);
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin drift');
+});
+
 test('blocks local post GUID changes while preserving remote-only plugin drift', () => {
   const resourceKey = 'row:["wp_posts","ID:46"]';
   const base = baseSite();
@@ -13212,7 +13251,7 @@ test('blocks local comments and users graph resources while preserving remote-on
   assert.equal(plan.conflicts.length, 0);
   assert.equal(blocker.class, 'unsupported-comments-users-resource');
   assert.equal(blocker.resourceKey, resourceKey);
-  assert.equal(blocker.reason, 'Comments and users graph resources are not yet supported by the planner.');
+  assert.equal(blocker.reason, 'Comments graph resources are not yet supported by the planner.');
   assert.equal(pluginDecision.decision, 'keep-remote');
   assert.equal(planJson.includes('Local comment content'), false);
   assert.equal(planJson.includes('Base comment content'), false);

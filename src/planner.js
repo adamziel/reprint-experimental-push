@@ -244,6 +244,26 @@ export function createPushPlan({ base, local, remote, now = new Date() }) {
         continue;
       }
 
+      const termmetaSupport = unsupportedTermmetaResourceSupport({
+        resource,
+        baseValue,
+        localValue,
+        remoteValue,
+      });
+      if (!termmetaSupport.supported) {
+        addUnsupportedTermmetaResourceBlocker(plan, {
+          resource,
+          support: termmetaSupport,
+          baseValue,
+          localValue,
+          remoteValue,
+          baseHash,
+          localHash,
+          remoteHash,
+        });
+        continue;
+      }
+
       const guidSupport = unsupportedGuidResourceSupport({
         resource,
         baseValue,
@@ -1666,6 +1686,37 @@ function addUnsupportedRevisionResourceBlocker(plan, {
   });
 }
 
+function addUnsupportedTermmetaResourceBlocker(plan, {
+  resource,
+  support,
+  baseValue,
+  localValue,
+  remoteValue,
+  baseHash,
+  localHash,
+  remoteHash,
+}) {
+  plan.blockers.push({
+    id: `blocker-unsupported-termmeta-resource-${plan.blockers.length + 1}`,
+    class: support.className || 'unsupported-termmeta-resource',
+    resource,
+    resourceKey: resource.key,
+    reason: support.reason || `Term meta graph resource ${resource.key} is not yet supported by the planner.`,
+    baseHash,
+    localHash,
+    remoteHash,
+    change: changeEvidence(
+      resource,
+      baseValue,
+      localValue,
+      remoteValue,
+      baseHash,
+      localHash,
+      remoteHash,
+    ),
+  });
+}
+
 function addUnsupportedCommentsUsersResourceBlocker(plan, {
   resource,
   support,
@@ -1887,6 +1938,23 @@ function unsupportedRevisionResourceSupport({ resource, baseValue, localValue, r
     supported: false,
     className: 'unsupported-revision-resource',
     reason: 'Revision graph resources are not yet supported by the planner.',
+  };
+}
+
+function unsupportedTermmetaResourceSupport({ resource, baseValue, localValue, remoteValue }) {
+  if (resource.type !== 'row' || resource.table !== 'wp_termmeta') {
+    return { supported: true };
+  }
+
+  const candidate = localValue !== ABSENT ? localValue : (baseValue !== ABSENT ? baseValue : remoteValue);
+  if (!candidate || candidate === ABSENT) {
+    return { supported: true };
+  }
+
+  return {
+    supported: false,
+    className: 'unsupported-termmeta-resource',
+    reason: 'Term meta graph resources are not yet supported by the planner.',
   };
 }
 
