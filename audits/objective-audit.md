@@ -73,6 +73,12 @@ but it did not change the release conclusion:
 - `origin/lane/reliable-executor` now records `97eaa4df`, hardening durable
   journal ownership. It still does not prove production auth/session
   lifecycle or a live-source mutation boundary.
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now
+  records `541a7e5f`, refreshing supervisor freshness only. It still does not
+  change the release verdict.
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now records
+  `25e1aff2`, refreshing public progress timestamp only. It still does not add
+  production-backed gate movement.
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` now records
   `d7813094`, tightening backpressure headroom checks only. It still does not
   prove a production speed claim.
