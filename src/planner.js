@@ -1607,6 +1607,10 @@ function samePlanCreatedGraphIdentitySupport({ resource, resources, base, local,
   const termTaxonomyInboundReference = inboundReferences.find((reference) =>
     reference.relationshipType === 'term-relationship-taxonomy'
     && reference.targetResource?.table === 'wp_term_taxonomy');
+  const revisionInboundReference = inboundReferences.find((reference) =>
+    reference.relationshipType === 'term-relationship-object'
+    && reference.targetResource?.table === 'wp_posts'
+    && getResource(local, reference.targetResource)?.post_type === 'revision');
   const postInboundReference = inboundReferences.find((reference) =>
     reference.relationshipType === 'term-relationship-object'
     && reference.targetResource?.table === 'wp_posts');
@@ -1616,6 +1620,8 @@ function samePlanCreatedGraphIdentitySupport({ resource, resources, base, local,
     className: 'stale-wordpress-graph-identity',
     reason: termTaxonomyInboundReference
       ? `WordPress graph mutation ${resource.key} is created in the same plan as a term relationship taxonomy target that depends on it, and identity rewriting is not yet supported.`
+      : revisionInboundReference
+        ? `WordPress graph mutation ${resource.key} is created in the same plan as a term relationship revision target that depends on it, and identity rewriting is not yet supported.`
       : postInboundReference
         ? `WordPress graph mutation ${resource.key} is created in the same plan as a term relationship post target that depends on it, and identity rewriting is not yet supported.`
       : `WordPress graph mutation ${resource.key} is created in the same plan as a relationship that depends on it, and identity rewriting is not yet supported.`,
