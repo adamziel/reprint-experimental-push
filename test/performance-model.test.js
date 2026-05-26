@@ -242,6 +242,16 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
     ),
     'mixed bundle fanout stays fail-closed within the parallelism budget',
   );
+  assert.ok(
+    model.safeFastPaths.some(
+      (fastPath) =>
+        fastPath.area === 'parallelism-limits' &&
+        fastPath.allowedShortcut === 'run-partitioned-index-and-hash-planning-within-per-site-budgets' &&
+        fastPath.guardrails.includes('partitioned-planning-stays-within-per-site-and-per-kind-budgets') &&
+        fastPath.gateProofs.live.includes('each later mutation still rechecks its own live resource precondition'),
+    ),
+    'partitioned planning stays fail-closed within the parallelism budget',
+  );
   assert.deepEqual(
     FAST_PATH_GATES.map((gate) => gate.id),
     ['skip', 'live', 'group', 'recovery'],

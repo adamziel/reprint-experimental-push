@@ -388,6 +388,26 @@ export const SAFE_FAST_PATHS = Object.freeze([
     publishesStagedDataEarly: false,
   },
   {
+    area: 'parallelism-limits',
+    reduces: ['idle-time', 'head-of-line-blocking', 'duplicate-planning-work'],
+    allowedShortcut: 'run-partitioned-index-and-hash-planning-within-per-site-budgets',
+    guardrails: [
+      'partitioned-planning-stays-within-per-site-and-per-kind-budgets',
+      'planning-cursors-stay-advisory-and-revalidated-before-write',
+    ],
+    gateProofs: {
+      skip: 'independent owner-partition index scans and bounded hash planning may overlap so long as they only produce advisory planning evidence for the next live compare',
+      live: 'each later mutation still rechecks its own live resource precondition at the storage boundary before visibility changes',
+      group: 'partitioned planning can only overlap staging inside the same planned bundle and never merges coupled owners or moves the commit barrier',
+      recovery: 'the partitioned planning cursors, strong hashes, and later receipts still classify pause or crash without guessing which owner advanced',
+    },
+    visibilityBoundary: 'planning-only-with-site-budgets',
+    failureEvidence: 'owner-partitioned planning cursor plus strong-hash listing and later durable receipts',
+    bypassesLivePreconditions: false,
+    splitsAtomicGroup: false,
+    publishesStagedDataEarly: false,
+  },
+  {
     area: 'remote-indexes',
     reduces: ['remote-body-fetches', 'planning-round-trips'],
     allowedShortcut: 'plan-from-indexed-strong-hash-listing',
