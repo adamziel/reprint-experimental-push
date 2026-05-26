@@ -200,7 +200,7 @@ export function productionThroughputBlockers(report) {
   const receiptCursorQueueBudgetBytes = report.evidence.backpressure?.queueBudgetBytes ?? null;
   const receiptCursorQueueHeadroomBytes = report.evidence.backpressure?.queueHeadroomBytes ?? null;
   const receiptCursorMemoryHeadroomBytes = report.evidence.backpressure?.receiptCursorMemoryHeadroomBytes ?? null;
-  const receiptCursorMemoryCeilingBytes = report.resourceLimits?.memoryCeilingBytes ?? null;
+  const receiptCursorMemoryCeilingBytes = report.evidence.backpressure?.receiptCursorMemoryCeilingBytes ?? null;
   const receiptCursorWindowBytes = report.evidence.chunkReceipts.resumeCursor?.sizeBytes ?? null;
   const receiptCursorQueueSlackVisible =
     report.evidence.backpressure?.receiptCursorQueueSlackVisible === true;
@@ -1462,7 +1462,7 @@ export function productionThroughputDetails(report) {
   const receiptCursorWindowBytes = report.evidence.chunkReceipts.resumeCursor?.sizeBytes ?? null;
   const receiptCursorBackpressureBytes = report.evidence.backpressure?.receiptCursorBytes ?? null;
   const receiptCursorMemoryHeadroomBytes = report.evidence.backpressure?.receiptCursorMemoryHeadroomBytes ?? null;
-  const receiptCursorMemoryCeilingBytes = report.resourceLimits?.memoryCeilingBytes ?? null;
+  const receiptCursorMemoryCeilingBytes = report.evidence.backpressure?.receiptCursorMemoryCeilingBytes ?? null;
   const receiptCursorQueueBudgetBytes = report.evidence.backpressure?.queueBudgetBytes ?? null;
   const stagingDiskHeadroomBytes = report.evidence.backpressure?.stagingDiskHeadroomBytes ?? null;
   const stagingDiskReserveBytes = report.evidence.backpressure?.stagingDiskReserveBytes ?? null;
@@ -2590,7 +2590,7 @@ function hasCompleteBackpressureEvidence(report) {
   const stagingDiskReserveBytes = report.evidence.backpressure?.stagingDiskReserveBytes ?? null;
   const receiptCursorMemoryHeadroomBytes = report.evidence.backpressure?.receiptCursorMemoryHeadroomBytes ?? null;
   const receiptCursorWindowBytes = report.evidence.chunkReceipts.resumeCursor?.sizeBytes ?? null;
-  const receiptCursorMemoryCeilingBytes = report.resourceLimits?.memoryCeilingBytes ?? null;
+  const receiptCursorMemoryCeilingBytes = report.evidence.backpressure?.receiptCursorMemoryCeilingBytes ?? null;
   const maxStagingDiskBytes = report.resourceLimits?.maxStagingDiskBytes ?? null;
   const backpressureAlignment = {
     queueBudgetBytes: receiptCursorQueueBudgetBytes,
@@ -2645,7 +2645,8 @@ function hasCompleteBackpressureEvidence(report) {
   const receiptCursorMemoryCeilingMatchesQueueBudget =
     Number.isFinite(receiptCursorQueueBudgetBytes)
     && Number.isFinite(receiptCursorMemoryCeilingBytes)
-    && report.evidence.backpressure?.receiptCursorMemoryCeilingMatchesQueueBudget === true;
+    && report.evidence.backpressure?.receiptCursorMemoryCeilingMatchesQueueBudget === true
+    && receiptCursorQueueBudgetBytes === receiptCursorMemoryCeilingBytes;
   const receiptCursorMemoryCeilingMatchesQueueBudgetVisible =
     receiptCursorMemoryCeilingMatchesQueueBudget
     && report.evidence.backpressure?.receiptCursorMemoryCeilingVisible === true
