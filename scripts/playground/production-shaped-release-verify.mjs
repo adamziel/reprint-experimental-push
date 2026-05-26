@@ -27,16 +27,19 @@ import {
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const muPluginDir = path.join(repoRoot, 'scripts/playground/rest-mu-plugins');
-const serverStartupTimeoutMs = 4_500;
+const readinessProbeIntervalMs = 200;
+const readinessFailureBodyLimit = 240;
+// The release verifier starts remote-base, remote-changed, and local-edited in
+// sequence, so the shared readiness helper needs a longer bounded window than
+// the earlier single-server smoke path.
+const serverStartupTimeoutMs = 20_000;
 const serverFetchTimeoutMs = 250;
 const packagedPlaygroundTimeoutSeconds = 30;
 const packagedServerStartupTimeoutMs = packagedPlaygroundTimeoutSeconds * 1_000;
 const packagedServerFetchTimeoutMs = 3_000;
-const readinessProbeIntervalMs = 200;
-const readinessFailureBodyLimit = 240;
-const maxReadinessProbes = 10;
-const maxNotReadyReadinessProbes = 4;
-const spawnedPlaygroundTimeoutSeconds = 12;
+const maxReadinessProbes = Math.max(10, Math.ceil(serverStartupTimeoutMs / readinessProbeIntervalMs));
+const maxNotReadyReadinessProbes = Math.max(4, Math.ceil(serverStartupTimeoutMs / readinessProbeIntervalMs));
+const spawnedPlaygroundTimeoutSeconds = 30;
 const credentials = {
   username: 'reprint_push_admin',
   password: 'reprint-push-admin-app-password',

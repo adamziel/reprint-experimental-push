@@ -42,7 +42,10 @@ const liveProofInnerTimeoutMs = Math.max(1_000, Math.min(3_000, liveProofSubproc
 // Give the verifier enough time to reach its own bounded readiness failure and
 // emit probe diagnostics before the outer subprocess timeout can kill it.
 const liveProofLaunchTimeoutMs = Math.max(1_000, Math.min(7_000, liveProofSubprocessTimeoutMs - 4_000));
-const releaseVerifyInnerTimeoutMs = Math.max(1_000, Math.min(12_000, proofSubprocessTimeoutMs - 6_000));
+// The checked release verifier now allows the shared remote-changed and
+// local-edited Playground startup path to use its full bounded readiness
+// window, so the focused subprocess proof needs a matching inner budget.
+const releaseVerifyInnerTimeoutMs = Math.max(1_000, Math.min(24_000, proofSubprocessTimeoutMs - 6_000));
 const releaseVerifySlowPathTimeoutMs = 15_000;
 const releaseVerifySlowPathInnerTimeoutMs = Math.max(1_000, Math.min(6_000, releaseVerifySlowPathTimeoutMs - 6_000));
 const proofSubprocessOptions = {
