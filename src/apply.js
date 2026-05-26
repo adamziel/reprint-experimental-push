@@ -1303,6 +1303,22 @@ function recordDurableRecoveryState(writer, current, plan, recoveryState) {
   };
   const writerRemoteArtifactRef = durableJournalArtifactRemoteRef(writer);
 
+  if (
+    writer?.kind === 'production-recovery-journal'
+    && recoveryState.status === 'blocked-recovery'
+    && !writerRemoteArtifactRef
+  ) {
+    throw new PushPlanError(
+      'JOURNAL_WRITER_INVALID',
+      'Production durable journal lost its restart-readable remote artifact reference before recording blocked recovery state.',
+      {
+        eventType: 'recovery-state',
+        causeMessage: 'Production durable journal lost its restart-readable remote artifact reference before recording blocked recovery state.',
+        missingDependency: ['restart-readable recovery remote artifact references'],
+      },
+    );
+  }
+
   if (writerRemoteArtifactRef) {
     artifactRefs.remote = writerRemoteArtifactRef;
   } else if (recoveryState.status === 'blocked-recovery') {
@@ -1494,13 +1510,14 @@ function commitStagedSite(remote, staged, plan, journal, options, durableJournal
 
     if (options.failDuringCommitAtMutation === appliedMutations) {
       const blockedJournal = markJournalStatus(committedJournal, 'blocked');
+      let durableJournalError = null;
       try {
         recordDurableRecoveryState(durableJournal, committed, plan, {
           status: 'blocked-recovery',
           reason: `Injected failure while committing mutation ${mutation.id}.`,
         });
-      } catch {
-        // The in-memory blocked artifact below still classifies the partial remote.
+      } catch (error) {
+        durableJournalError = durableJournalFailureDetails(error);
       }
       return {
         failure: recoveryBlocked(
@@ -1511,6 +1528,7 @@ function commitStagedSite(remote, staged, plan, journal, options, durableJournal
           {
             code: 'INJECTED_FAILURE_DURING_COMMIT',
             mutationId: mutation.id,
+            ...recoveryStateDurableWriteDetails(durableJournalError),
           },
         ),
       };
