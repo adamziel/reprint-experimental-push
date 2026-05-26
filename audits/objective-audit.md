@@ -39,10 +39,10 @@ The project is **not releasable as a production WordPress push path**.
 - `origin/lane/cycle-20260525-keep-busy-loop-2/no-data-loss-recovery` -> `63e01a49`
 - `origin/lane/cycle-20260525-mainwindows-2349/critic` -> `fa0dc8a0`
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `999ff0d8`
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `8187bbbd`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `5118572a`
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `0ac76c38`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `2af1ddda`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `e627b0ec`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `ee9d4e2d`
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` -> `0ca7b35d`
 - `origin/lane/cycle-20260525-mainwindows-2357/no-data-loss-invariants-graph-proof` -> `98c0ce26`
 - `origin/lane/cycle-20260525-restart-2340/feedback-supervisor` -> `ef3d911e`
@@ -68,6 +68,12 @@ but it did not change the release conclusion:
 - `origin/lane/reliable-executor` now records `03cf6917`, hardening bounded
   release-verify spawn handling. It still does not prove production
   auth/session lifecycle or a live-source mutation boundary.
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now records
+  `5118572a`, refreshing progress visibility only. It still does not change
+  the release verdict.
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now records
+  `ee9d4e2d`, refreshing the public progress freshness only. It still does not
+  add production-backed gate movement.
 - `origin/lane/reliable-executor` now records `41ea37b9`, hardening Playground startup timeout handling. It still does not prove production auth/session lifecycle or a live-source mutation boundary.
 - `origin/lane/reliable-executor` now records `ff94457a`, failing closed on unsupported production origins. It still does not prove production auth/session lifecycle or a live-source mutation boundary.
 - `origin/lane/reliable-executor` now records `5a2e50a9`, hardening live proof
