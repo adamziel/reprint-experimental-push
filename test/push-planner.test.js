@@ -4752,6 +4752,230 @@ test('blocks _menu_item_object_id metadata owned by an existing nav_menu_item po
   );
 });
 
+test('blocks _menu_item_object_id metadata owned by an existing attachment even when it targets a same-plan attachment', () => {
+  const resourceKey = 'row:["wp_postmeta","meta_id:4981"]';
+  const targetResourceKey = 'row:["wp_posts","ID:3"]';
+  const base = baseSite();
+  base.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_title: 'Existing attachment owner',
+    post_content: 'base-private-existing-attachment-owner-body',
+    post_status: 'inherit',
+    post_type: 'attachment',
+  };
+  const local = baseSite();
+  local.db.wp_posts['ID:2'] = {
+    ...base.db.wp_posts['ID:2'],
+  };
+  local.db.wp_posts['ID:3'] = {
+    ID: 3,
+    post_title: 'Local menu object attachment target',
+    post_content: 'local-private-menu-object-attachment-target-body',
+    post_status: 'inherit',
+    post_type: 'attachment',
+  };
+  local.db.wp_postmeta = {
+    'meta_id:4981': {
+      meta_id: 4981,
+      post_id: 2,
+      meta_key: '_menu_item_object_id',
+      meta_value: 3,
+    },
+  };
+  const remote = baseSite();
+  remote.db.wp_posts['ID:2'] = {
+    ...base.db.wp_posts['ID:2'],
+  };
+
+  const plan = planFor(base, local, remote);
+  const targetMutation = mutationFor(plan, targetResourceKey);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.ok(plan.summary.mutations > 0);
+  assert.equal(targetMutation.changeKind, 'create');
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.ok(blocker);
+  assert.equal(blocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(blocker.surface, 'attachment');
+  assert.equal(
+    JSON.stringify(blocker).includes('base-private-existing-attachment-owner-body'),
+    false,
+  );
+  assert.equal(
+    JSON.stringify(blocker).includes('local-private-menu-object-attachment-target-body'),
+    false,
+  );
+});
+
+test('blocks _menu_item_object_id metadata owned by an existing revision even when it targets a same-plan attachment', () => {
+  const resourceKey = 'row:["wp_postmeta","meta_id:4982"]';
+  const targetResourceKey = 'row:["wp_posts","ID:3"]';
+  const base = baseSite();
+  base.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_title: 'Existing revision owner',
+    post_content: 'base-private-existing-revision-owner-body',
+    post_status: 'inherit',
+    post_type: 'revision',
+  };
+  const local = baseSite();
+  local.db.wp_posts['ID:2'] = {
+    ...base.db.wp_posts['ID:2'],
+  };
+  local.db.wp_posts['ID:3'] = {
+    ID: 3,
+    post_title: 'Local menu object attachment target',
+    post_content: 'local-private-menu-object-attachment-target-body',
+    post_status: 'inherit',
+    post_type: 'attachment',
+  };
+  local.db.wp_postmeta = {
+    'meta_id:4982': {
+      meta_id: 4982,
+      post_id: 2,
+      meta_key: '_menu_item_object_id',
+      meta_value: 3,
+    },
+  };
+  const remote = baseSite();
+  remote.db.wp_posts['ID:2'] = {
+    ...base.db.wp_posts['ID:2'],
+  };
+
+  const plan = planFor(base, local, remote);
+  const targetMutation = mutationFor(plan, targetResourceKey);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.ok(plan.summary.mutations > 0);
+  assert.equal(targetMutation.changeKind, 'create');
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.ok(blocker);
+  assert.equal(blocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(blocker.surface, 'revision');
+  assert.equal(
+    JSON.stringify(blocker).includes('base-private-existing-revision-owner-body'),
+    false,
+  );
+  assert.equal(
+    JSON.stringify(blocker).includes('local-private-menu-object-attachment-target-body'),
+    false,
+  );
+});
+
+test('blocks _menu_item_object_id metadata owned by an existing wp_navigation post even when it targets a same-plan attachment', () => {
+  const resourceKey = 'row:["wp_postmeta","meta_id:4983"]';
+  const targetResourceKey = 'row:["wp_posts","ID:3"]';
+  const base = baseSite();
+  base.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_title: 'Existing wp_navigation owner',
+    post_content: 'base-private-existing-wp-navigation-owner-body',
+    post_status: 'publish',
+    post_type: 'wp_navigation',
+  };
+  const local = baseSite();
+  local.db.wp_posts['ID:2'] = {
+    ...base.db.wp_posts['ID:2'],
+  };
+  local.db.wp_posts['ID:3'] = {
+    ID: 3,
+    post_title: 'Local menu object attachment target',
+    post_content: 'local-private-menu-object-attachment-target-body',
+    post_status: 'inherit',
+    post_type: 'attachment',
+  };
+  local.db.wp_postmeta = {
+    'meta_id:4983': {
+      meta_id: 4983,
+      post_id: 2,
+      meta_key: '_menu_item_object_id',
+      meta_value: 3,
+    },
+  };
+  const remote = baseSite();
+  remote.db.wp_posts['ID:2'] = {
+    ...base.db.wp_posts['ID:2'],
+  };
+
+  const plan = planFor(base, local, remote);
+  const targetMutation = mutationFor(plan, targetResourceKey);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.ok(plan.summary.mutations > 0);
+  assert.equal(targetMutation.changeKind, 'create');
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.ok(blocker);
+  assert.equal(blocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(blocker.surface, 'wp_navigation');
+  assert.equal(
+    JSON.stringify(blocker).includes('base-private-existing-wp-navigation-owner-body'),
+    false,
+  );
+  assert.equal(
+    JSON.stringify(blocker).includes('local-private-menu-object-attachment-target-body'),
+    false,
+  );
+});
+
+test('blocks _menu_item_object_id metadata owned by an existing nav_menu_item post even when it targets a same-plan attachment', () => {
+  const resourceKey = 'row:["wp_postmeta","meta_id:4984"]';
+  const targetResourceKey = 'row:["wp_posts","ID:3"]';
+  const base = baseSite();
+  base.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_title: 'Existing nav_menu_item owner',
+    post_content: 'base-private-existing-nav-menu-item-owner-body',
+    post_status: 'publish',
+    post_type: 'nav_menu_item',
+  };
+  const local = baseSite();
+  local.db.wp_posts['ID:2'] = {
+    ...base.db.wp_posts['ID:2'],
+  };
+  local.db.wp_posts['ID:3'] = {
+    ID: 3,
+    post_title: 'Local menu object attachment target',
+    post_content: 'local-private-menu-object-attachment-target-body',
+    post_status: 'inherit',
+    post_type: 'attachment',
+  };
+  local.db.wp_postmeta = {
+    'meta_id:4984': {
+      meta_id: 4984,
+      post_id: 2,
+      meta_key: '_menu_item_object_id',
+      meta_value: 3,
+    },
+  };
+  const remote = baseSite();
+  remote.db.wp_posts['ID:2'] = {
+    ...base.db.wp_posts['ID:2'],
+  };
+
+  const plan = planFor(base, local, remote);
+  const targetMutation = mutationFor(plan, targetResourceKey);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.ok(plan.summary.mutations > 0);
+  assert.equal(targetMutation.changeKind, 'create');
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.ok(blocker);
+  assert.equal(blocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(blocker.surface, 'nav_menu_item');
+  assert.equal(
+    JSON.stringify(blocker).includes('base-private-existing-nav-menu-item-owner-body'),
+    false,
+  );
+  assert.equal(
+    JSON.stringify(blocker).includes('local-private-menu-object-attachment-target-body'),
+    false,
+  );
+});
+
 test('blocks _menu_item_object_id taxonomy metadata owned by an attachment even when it targets a same-plan term', () => {
   const resourceKey = 'row:["wp_postmeta","meta_id:482"]';
   const attachmentResourceKey = 'row:["wp_posts","ID:2"]';
