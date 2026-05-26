@@ -1160,6 +1160,42 @@ test('packaged production plugin readiness helper retries only startup-shaped pa
     true,
   );
   assert.equal(
+    packagedProductionPluginPreflightRetryable(
+      {
+        status: 401,
+        body: {
+          code: 'reprint_push_lab_auth_required',
+          message: 'Authenticated push routes require WordPress Application Password basic auth.',
+        },
+      },
+      {
+        indexProbe: {
+          status: 404,
+          body: 'Notice: startup wrapper\n{"details":{"error_code":"rest_no_route"}}',
+        },
+      },
+    ),
+    true,
+  );
+  assert.equal(
+    packagedProductionPluginPreflightRetryable(
+      {
+        status: 401,
+        body: {
+          code: 'reprint_push_lab_auth_required',
+          message: 'Authenticated push routes require WordPress Application Password basic auth.',
+        },
+      },
+      {
+        snapshotProbe: {
+          status: 404,
+          body: 'Notice: startup wrapper\n{"details":{"error_code":"rest_no_route"}}',
+        },
+      },
+    ),
+    true,
+  );
+  assert.equal(
     packagedProductionPluginSnapshotRetryable({
       status: 401,
       body: {
