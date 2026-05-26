@@ -6838,6 +6838,11 @@ test('guarded benchmark keeps rollout summaries pinned when raw queue-headroom b
         'backpressure-evidence-incomplete',
         'queue-memory-ceiling-does-not-match-queue-budget',
         'queue-headroom-exceeds-resource-ceiling',
+        'queue-headroom-memory-headroom-mismatch',
+        'receipt-cursor-headroom-mismatch',
+        'receipt-cursor-headroom-not-covered-by-queue-budget',
+        'receipt-cursor-memory-headroom-not-covered-by-queue-budget',
+        'receipt-cursor-queue-slack-headroom-mismatch',
       ],
     },
     {
@@ -6849,6 +6854,11 @@ test('guarded benchmark keeps rollout summaries pinned when raw queue-headroom b
         'backpressure-evidence-incomplete',
         'queue-memory-ceiling-does-not-match-queue-budget',
         'queue-headroom-exceeds-resource-ceiling',
+        'queue-headroom-memory-headroom-mismatch',
+        'receipt-cursor-headroom-mismatch',
+        'receipt-cursor-headroom-not-covered-by-queue-budget',
+        'receipt-cursor-memory-headroom-not-covered-by-queue-budget',
+        'receipt-cursor-queue-slack-headroom-mismatch',
       ],
     },
     {
@@ -6860,10 +6870,20 @@ test('guarded benchmark keeps rollout summaries pinned when raw queue-headroom b
         'backpressure-evidence-incomplete',
         'queue-memory-ceiling-does-not-match-queue-budget',
         'queue-headroom-exceeds-resource-ceiling',
+        'queue-headroom-memory-headroom-mismatch',
+        'receipt-cursor-headroom-mismatch',
+        'receipt-cursor-headroom-not-covered-by-queue-budget',
+        'receipt-cursor-memory-headroom-not-covered-by-queue-budget',
+        'receipt-cursor-queue-slack-headroom-mismatch',
       ],
     },
   ]);
   assert.ok(blockers.includes('queue-headroom-exceeds-resource-ceiling'));
+  assert.ok(blockers.includes('queue-headroom-memory-headroom-mismatch'));
+  assert.ok(blockers.includes('receipt-cursor-headroom-mismatch'));
+  assert.ok(blockers.includes('receipt-cursor-headroom-not-covered-by-queue-budget'));
+  assert.ok(blockers.includes('receipt-cursor-memory-headroom-not-covered-by-queue-budget'));
+  assert.ok(blockers.includes('receipt-cursor-queue-slack-headroom-mismatch'));
   assert.ok(blockers.includes('backpressure-evidence-incomplete'));
 });
 
@@ -6904,6 +6924,11 @@ test('guarded benchmark keeps rollout summaries pinned when raw memory-ceiling b
       blockerRefs: [
         'backpressure-evidence-incomplete',
         'queue-memory-ceiling-does-not-match-queue-budget',
+        'queue-headroom-memory-headroom-mismatch',
+        'receipt-cursor-headroom-not-covered-by-queue-budget',
+        'receipt-cursor-memory-headroom-not-covered-by-queue-budget',
+        'receipt-cursor-memory-headroom-resource-headroom-mismatch',
+        'receipt-cursor-queue-slack-mismatch',
       ],
     },
     {
@@ -6914,6 +6939,11 @@ test('guarded benchmark keeps rollout summaries pinned when raw memory-ceiling b
       blockerRefs: [
         'backpressure-evidence-incomplete',
         'queue-memory-ceiling-does-not-match-queue-budget',
+        'queue-headroom-memory-headroom-mismatch',
+        'receipt-cursor-headroom-not-covered-by-queue-budget',
+        'receipt-cursor-memory-headroom-not-covered-by-queue-budget',
+        'receipt-cursor-memory-headroom-resource-headroom-mismatch',
+        'receipt-cursor-queue-slack-mismatch',
       ],
     },
     {
@@ -6924,6 +6954,11 @@ test('guarded benchmark keeps rollout summaries pinned when raw memory-ceiling b
       blockerRefs: [
         'backpressure-evidence-incomplete',
         'queue-memory-ceiling-does-not-match-queue-budget',
+        'queue-headroom-memory-headroom-mismatch',
+        'receipt-cursor-headroom-not-covered-by-queue-budget',
+        'receipt-cursor-memory-headroom-not-covered-by-queue-budget',
+        'receipt-cursor-memory-headroom-resource-headroom-mismatch',
+        'receipt-cursor-queue-slack-mismatch',
       ],
     },
   ]);
@@ -7222,6 +7257,11 @@ test('guarded benchmark keeps rollout summaries pinned when raw memory-headroom 
       blockerRefs: [
         'backpressure-evidence-incomplete',
         'queue-memory-ceiling-does-not-match-queue-budget',
+        'queue-headroom-memory-headroom-mismatch',
+        'receipt-cursor-headroom-not-covered-by-queue-budget',
+        'receipt-cursor-memory-headroom-not-covered-by-queue-budget',
+        'receipt-cursor-memory-headroom-resource-headroom-mismatch',
+        'receipt-cursor-queue-slack-mismatch',
       ],
     },
     {
@@ -7232,6 +7272,11 @@ test('guarded benchmark keeps rollout summaries pinned when raw memory-headroom 
       blockerRefs: [
         'backpressure-evidence-incomplete',
         'queue-memory-ceiling-does-not-match-queue-budget',
+        'queue-headroom-memory-headroom-mismatch',
+        'receipt-cursor-headroom-not-covered-by-queue-budget',
+        'receipt-cursor-memory-headroom-not-covered-by-queue-budget',
+        'receipt-cursor-memory-headroom-resource-headroom-mismatch',
+        'receipt-cursor-queue-slack-mismatch',
       ],
     },
     {
@@ -7242,11 +7287,19 @@ test('guarded benchmark keeps rollout summaries pinned when raw memory-headroom 
       blockerRefs: [
         'backpressure-evidence-incomplete',
         'queue-memory-ceiling-does-not-match-queue-budget',
+        'queue-headroom-memory-headroom-mismatch',
+        'receipt-cursor-headroom-not-covered-by-queue-budget',
+        'receipt-cursor-memory-headroom-not-covered-by-queue-budget',
+        'receipt-cursor-memory-headroom-resource-headroom-mismatch',
+        'receipt-cursor-queue-slack-mismatch',
       ],
     },
   ]);
   assert.ok(blockers.includes('queue-headroom-memory-headroom-mismatch'));
+  assert.ok(blockers.includes('receipt-cursor-headroom-not-covered-by-queue-budget'));
   assert.ok(blockers.includes('receipt-cursor-memory-headroom-not-covered-by-queue-budget'));
+  assert.ok(blockers.includes('receipt-cursor-memory-headroom-resource-headroom-mismatch'));
+  assert.ok(blockers.includes('receipt-cursor-queue-slack-mismatch'));
   assert.ok(blockers.includes('backpressure-evidence-incomplete'));
 });
 
