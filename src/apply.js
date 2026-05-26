@@ -608,6 +608,8 @@ function assertProductionDurableJournalSupport(options, writer) {
     {
       supportedSurface: 'production-recovery-journal-adapter',
       missingDependency: supportReport.missingDependency,
+      inspectedJournalPath: supportReport.inspectedJournalPath,
+      writerJournalPath: supportReport.writerJournalPath,
       requiresDurableJournal: true,
     },
   );
@@ -615,12 +617,13 @@ function assertProductionDurableJournalSupport(options, writer) {
 
 function productionRecoverySupportReport(writer) {
   const missingDependency = [];
+  const inspected = inspectProductionRecoveryJournal(writer);
+  const inspectedJournalPath = durableJournalInspectPath(inspected);
   const addMissingDependency = (item) => {
     if (!missingDependency.includes(item)) {
       missingDependency.push(item);
     }
   };
-  const inspected = inspectProductionRecoveryJournal(writer);
 
   if (writer?.kind !== 'production-recovery-journal') {
     addMissingDependency('production recovery journal adapter marker');
@@ -642,7 +645,6 @@ function productionRecoverySupportReport(writer) {
   if (typeof writer?.journalPath !== 'string' || writer.journalPath.length === 0) {
     addMissingDependency('owned restart-readable recovery journal path');
   } else {
-    const inspectedJournalPath = durableJournalInspectPath(inspected);
     if (inspectedJournalPath !== writer.journalPath) {
       addMissingDependency('restart-readable recovery artifact location');
     }
@@ -660,6 +662,8 @@ function productionRecoverySupportReport(writer) {
   return {
     supported: missingDependency.length === 0,
     missingDependency,
+    inspectedJournalPath,
+    writerJournalPath: typeof writer?.journalPath === 'string' ? writer.journalPath : null,
   };
 }
 

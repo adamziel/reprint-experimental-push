@@ -19873,6 +19873,8 @@ test('production durable journal claims fail closed when restart inspection poin
   assert.deepEqual(error.details.missingDependency, [
     'restart-readable recovery artifact location',
   ]);
+  assert.equal(error.details.inspectedJournalPath, '/var/lib/reprint/other-recovery.jsonl');
+  assert.equal(error.details.writerJournalPath, '/var/lib/reprint/recovery.jsonl');
 });
 
 test('production durable journal support checks close an invalid writer before failing closed', () => {
