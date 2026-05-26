@@ -1,9 +1,22 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-26 17:49 CEST
+Last updated: 2026-05-26 17:53 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-26 17:53 CEST - Reliable Head Advanced to `8e8e6f25916c`
+
+- Going well: the live reliable head advanced again to `8e8e6f25916c2a11ee9d6e6e4235616d85e0da39`, so the checked release path is still moving.
+- Not going well: the gate posture is still `0/4`, and the checked release boundary remains the blocker instead of a gate move.
+- Progress change: this is a fresh head update, not a gate move; critic and auditor should classify the new head once, then stop until the checked boundary changes.
+- Next nudge: keep `reliable-executor` on the checked release-path proof, and let `progress-publisher` refresh the public page only if it still lags the live head.
+
+| Lane | Nudge |
+| --- | --- |
+| Reliable executor | Continue the product/test push toward the checked release boundary; do not backslide into proof-field polish. |
+| Progress publisher | Refresh the public page only if it still lags `8e8e6f25916c2a11ee9d6e6e4235616d85e0da39`; keep the gate posture at `0/4`. |
+| Audit and critic | Classify the new head once and keep the verdict at `0/4` unless the checked release boundary proves a gate. |
 
 ## 2026-05-26 17:49 CEST - Reliable Head Advanced to `c7bd9cb9`
 
