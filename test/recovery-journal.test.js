@@ -9,6 +9,7 @@ import {
   appendRecoveryClaimOpened,
   appendStaleClaimAdvanced,
   assertJournalRecordHasNoRawValues,
+  checkedDurableJournalBoundarySatisfied,
   consumeProductionRecoveryJournal,
   createUnsupportedProductionRecoveryJournal,
   describeProductionRecoveryJournal,
@@ -1738,6 +1739,74 @@ test('production recovery journal consumption surfaces stale claim advancement a
   assert.equal(inspection.leaseFence.monotonicSequence, true);
 });
 
+test('production recovery journal records stale-claim rejection evidence before a stale writer can reopen the active claim', () => {
+  const filePath = tempJournalPath();
+  const remote = baseSite();
+  const plan = planFor(baseSite(), localSite(), remote);
+  const artifactRefs = {
+    journal: filePath,
+  };
+
+  const activeJournal = openProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs,
+    claimId: 'claim-active',
+  });
+  appendRecoveryClaimOpened(activeJournal, {
+    plan,
+    current: remote,
+    claimId: 'claim-active',
+    artifactRefs,
+  });
+  activeJournal.close();
+
+  const staleJournal = openProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs,
+    truncate: false,
+    claimId: 'claim-stale',
+  });
+
+  assert.throws(() => {
+    appendRecoveryClaimOpened(staleJournal, {
+      plan,
+      current: remote,
+      claimId: 'claim-stale',
+      artifactRefs,
+    });
+  }, {
+    name: 'RecoveryJournalClaimStaleError',
+    code: 'RECOVERY_CLAIM_STALE',
+    message: 'Recovery journal claim was superseded before this production claim could open.',
+  });
+  staleJournal.close();
+
+  const inspection = consumeProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs,
+    claimId: 'claim-active',
+  });
+
+  assert.equal(inspection.consumed, true);
+  assert.equal(inspection.journal.staleClaimRejected, true);
+  assert.equal(inspection.leaseFence.staleClaimRejected, true);
+
+  const persisted = readRecoveryJournal(filePath);
+  assert.equal(
+    persisted.records.some((record) => record.type === 'stale-claim-rejected'),
+    true,
+  );
+  const rejection = persisted.records.findLast((record) => record.type === 'stale-claim-rejected');
+  assert.equal(rejection.claimHash, recoveryClaimHash('claim-stale'));
+  assert.equal(rejection.previousClaimHash, recoveryClaimHash('claim-active'));
+});
+
 test('production recovery journal consumption fails closed when stale claim advancement reuses the same claim hash', () => {
   const filePath = tempJournalPath();
   const remote = baseSite();
@@ -1785,6 +1854,36 @@ test('production recovery journal consumption fails closed when stale claim adva
     code: 'RECOVERY_CLAIM_STALE',
     message: 'Recovery journal claim was superseded before this fenced writer could append.',
   });
+});
+
+test('checked durable journal boundary stays closed until stale-claim rejection is proven on the lease fence', () => {
+  const baseContract = {
+    scope: 'checked live production-shaped journal surface; not local Playground fixture only',
+    ownership: {
+      ownsJournal: true,
+      restartReadable: true,
+      productionAdapter: 'wpdb-single-statement-cas',
+    },
+    leaseFence: {
+      boundary: 'wpdb-single-statement-cas',
+      claimKeyUnique: true,
+      monotonicSequence: true,
+      restartReadable: true,
+      staleClaimRejected: false,
+    },
+  };
+
+  assert.equal(checkedDurableJournalBoundarySatisfied(baseContract), false);
+  assert.equal(
+    checkedDurableJournalBoundarySatisfied({
+      ...baseContract,
+      leaseFence: {
+        ...baseContract.leaseFence,
+        staleClaimRejected: true,
+      },
+    }),
+    true,
+  );
 });
 
 test('production recovery journal compatibility overload fails closed when the consumed journal artifact ref diverges from the owned path', () => {

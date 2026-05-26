@@ -5,9 +5,13 @@ import { deserializeResourceValue, resourceHash } from './resources.js';
 
 export const RECOVERY_JOURNAL_SCHEMA_VERSION = 1;
 
-const CLAIM_EVENT_TYPES = new Set([
+const CLAIM_STATE_EVENT_TYPES = new Set([
   'recovery-claim-opened',
   'stale-claim-advanced',
+]);
+const CLAIM_APPEND_EVENT_TYPES = new Set([
+  ...CLAIM_STATE_EVENT_TYPES,
+  'stale-claim-rejected',
 ]);
 const CLAIM_HASH_PATTERN = /^[a-f0-9]{64}$/;
 
@@ -39,6 +43,24 @@ export class UnsupportedProductionRecoveryJournalError extends Error {
     this.code = 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL';
     this.details = details;
   }
+}
+
+function hasStaleClaimRejectionEvidence(records) {
+  return (Array.isArray(records) ? records : []).some(
+    (record) => record.type === 'stale-claim-advanced' || record.type === 'stale-claim-rejected',
+  );
+}
+
+export function checkedDurableJournalBoundarySatisfied(dbJournal) {
+  return /(packaged production plugin|checked live production-shaped) journal surface/i.test(dbJournal?.scope || '')
+    && dbJournal?.ownership?.ownsJournal === true
+    && dbJournal?.ownership?.restartReadable === true
+    && dbJournal?.ownership?.productionAdapter === 'wpdb-single-statement-cas'
+    && dbJournal?.leaseFence?.boundary === 'wpdb-single-statement-cas'
+    && dbJournal?.leaseFence?.claimKeyUnique === true
+    && dbJournal?.leaseFence?.monotonicSequence === true
+    && dbJournal?.leaseFence?.restartReadable === true
+    && dbJournal?.leaseFence?.staleClaimRejected === true;
 }
 
 export function createUnsupportedProductionRecoveryJournal(reason = 'Production recovery journal support is not available in this worktree.') {
@@ -361,7 +383,7 @@ export function openProductionRecoveryJournal(filePathOrOptions, options = {}) {
   const leaseFence = freezeProductionWriterLease(writerLease);
   const assertProductionWriterLeaseCurrent = (eventType) => {
     if (
-      !CLAIM_EVENT_TYPES.has(eventType)
+      !CLAIM_APPEND_EVENT_TYPES.has(eventType)
       && writerLease
       && Object.hasOwn(writerLease, 'epoch')
     ) {
@@ -482,7 +504,7 @@ export function consumeProductionRecoveryJournal(options) {
   journal.close();
 
   const records = Array.isArray(inspection.records) ? inspection.records : [];
-  const staleClaimRejected = records.some((record) => record.type === 'stale-claim-advanced');
+  const staleClaimRejected = hasStaleClaimRejectionEvidence(records);
   const consumed = records.some((record) => record.type === 'recovery-journal-consumed');
   const monotonicSequence = records.every((record, index) => record?.sequence === index + 1);
 
@@ -1451,10 +1473,44 @@ export function appendRecoveryClaimOpened(journal, {
   artifactRefs = {},
   reason = 'Recovery claim opened.',
 }) {
+  const journalPath = typeof journal?.filePath === 'string' ? journal.filePath : journal?.journalPath;
+  const nextClaimHash = recoveryClaimHash(claimId);
+  const persisted = readRecoveryJournal(journalPath);
+  if (persisted.integrity.status !== 'ok') {
+    throw new Error(`Refusing to append to invalid recovery journal: ${persisted.integrity.reason}`);
+  }
+  const claim = classifyRecoveryJournalClaims(persisted.records);
+  if (claim.status !== 'none' && claim.activeClaimHash !== nextClaimHash) {
+    journal.appendEvent('stale-claim-rejected', {
+      planId: plan.id,
+      state: 'rejected',
+      claimHash: nextClaimHash,
+      claimLease: claimLeasePayloadForJournal(journal, claimId),
+      previousClaimHash: claim.activeClaimHash,
+      observedHash: digest(current),
+      staleThresholdMs: normalizeOptionalNonNegativeInteger(staleThresholdMs),
+      reason,
+      artifactRefs,
+    });
+    throw new RecoveryJournalClaimStaleError(
+      'Recovery journal claim was superseded before this production claim could open.',
+      {
+        filePath: journalPath,
+        eventType: 'recovery-claim-opened',
+        staleClaimHash: nextClaimHash,
+        activeClaimHash: claim.activeClaimHash,
+        activeClaimLease: claim.activeClaimLease,
+        activeClaimSequence: claim.sequence,
+        activeClaimType: claim.type,
+        reason: claim.reason || null,
+      },
+    );
+  }
+
   return journal.appendEvent('recovery-claim-opened', {
     planId: plan.id,
     state: 'active',
-    claimHash: recoveryClaimHash(claimId),
+    claimHash: nextClaimHash,
     claimLease: claimLeasePayloadForJournal(journal, claimId),
     observedHash: digest(current),
     staleThresholdMs: normalizeOptionalNonNegativeInteger(staleThresholdMs),
@@ -1609,7 +1665,7 @@ export function assertJournalRecordHasNoRawValues(record) {
 
 export function classifyRecoveryJournalClaims(records) {
   const claimRecords = (Array.isArray(records) ? records : [])
-    .filter((record) => CLAIM_EVENT_TYPES.has(record.type));
+    .filter((record) => CLAIM_STATE_EVENT_TYPES.has(record.type));
   if (claimRecords.length === 0) {
     return {
       status: 'none',
@@ -1735,7 +1791,7 @@ class RecoveryJournalWriter {
   }
 
   assertCurrentClaim(eventType = 'journal-append') {
-    if (!this.claimHash || CLAIM_EVENT_TYPES.has(eventType)) {
+    if (!this.claimHash || CLAIM_APPEND_EVENT_TYPES.has(eventType)) {
       return;
     }
 
