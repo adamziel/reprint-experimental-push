@@ -9,12 +9,12 @@ import { authenticatedHttpClient, runAuthenticatedHttpPush } from '../../src/aut
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const muPluginDir = path.join(repoRoot, 'scripts/playground/rest-mu-plugins');
-const serverStartupTimeoutMs = 6_000;
+const serverStartupTimeoutMs = 4_500;
 const serverFetchTimeoutMs = 250;
 const readinessProbeIntervalMs = 200;
 const readinessFailureBodyLimit = 240;
 const maxReadinessProbes = 10;
-const maxNotReadyReadinessProbes = 2;
+const maxNotReadyReadinessProbes = 1;
 const spawnedPlaygroundTimeoutSeconds = 12;
 const credentials = {
   username: 'reprint_push_admin',
@@ -1153,7 +1153,7 @@ async function waitForServer(child, baseUrl, getLogs) {
           notReadyProbeCount += 1;
           throwPlaygroundReadinessFailure(
             child,
-            `Playground server stayed in readiness response ${response.status} after ${readinessProbeCount} /wp-json/ probes (${notReadyProbeCount} consecutive not-ready responses)`,
+            `Playground server stayed in readiness response ${response.status} after ${readinessProbeCount} /wp-json/ probes (${notReadyProbeCount} consecutive not-ready response${notReadyProbeCount === 1 ? '' : 's'})`,
             lastError,
             lastProbes,
             getLogs(),
