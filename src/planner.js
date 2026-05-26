@@ -1919,14 +1919,7 @@ function isBlockedSamePlanWordPressGraphSource(sourceMutation, reference, mutati
     if (sourceMutation?.resource?.type !== 'row' || sourceMutation?.resource?.table !== 'wp_posts') {
       return false;
     }
-    if (sourceMutation.action !== 'put' || sourceMutation.changeKind === 'create') {
-      return false;
-    }
-    const sourceValue = deserializeResourceValue(sourceMutation.value);
-    if (!sourceValue || typeof sourceValue !== 'object') {
-      return false;
-    }
-    return sourceValue.post_type === 'attachment';
+    return false;
   }
 
   if (reference.relationshipType === 'term-relationship-object') {
