@@ -179,6 +179,9 @@ Current executable gate:
 - The report now also fails closed when a blocked success inspection claim
   has only whitespace reason text, so a placeholder explanation cannot look
   concrete.
+- The report now also fails closed when a non-blocked success inspection claim
+  still carries reason text, so an active or advanced claim cannot reuse
+  stale explanation text from a blocked state.
 - The report now also fails closed when a blocked success inspection claim
   contradicts the recorded recovery status, so a tampered claim state cannot
   drift away from the inspected remote result.

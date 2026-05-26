@@ -335,6 +335,21 @@ test('guarded benchmark blocks forged atomic-commit visibility without a measure
   assert.equal(blockers.includes('production-atomic-group-commit-not-visible'), false);
 });
 
+test('guarded benchmark blocks non-blocked success inspection claims that still carry a reason', () => {
+  const report = smallBenchmark();
+  const tampered = clone(report);
+
+  tampered.results.successInspection.claim.status = 'active';
+  tampered.results.successInspection.claim.reason = 'still in progress';
+
+  const details = productionThroughputDetails(tampered);
+  const blockers = productionThroughputBlockers(tampered);
+
+  assert.equal(details.successInspectionClaimReasonCanonical, false);
+  assert.equal(blockers.includes('success-inspection-claim-reason-not-empty'), true);
+  assert.equal(blockers.includes('success-inspection-claim-reason-not-canonical'), false);
+});
+
 test('guarded benchmark blocks parallelism visibility without a measurement', () => {
   const report = smallBenchmark();
   const tampered = clone(report);

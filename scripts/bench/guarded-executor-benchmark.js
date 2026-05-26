@@ -864,6 +864,12 @@ export function productionThroughputBlockers(report) {
     blockers.push('success-inspection-claim-reason-not-canonical');
   }
   if (
+    report.results?.successInspection?.claim?.status !== 'blocked'
+    && report.results?.successInspection?.claim?.reason != null
+  ) {
+    blockers.push('success-inspection-claim-reason-not-empty');
+  }
+  if (
     Number.isFinite(report.results?.successInspection?.counts?.new)
     && Number.isFinite(report.shape?.mutations)
     && report.results.successInspection.counts.new !== report.shape.mutations
@@ -1170,7 +1176,7 @@ export function productionThroughputDetails(report) {
     || successInspectionClaimStatus == null
     || successInspectionClaimStatus === 'none';
   const successInspectionClaimReasonCanonical =
-    successInspectionClaimStatus !== 'none'
+    successInspectionClaimStatus === 'blocked'
     || successInspectionClaimReason == null;
   const successInspectionCountsNewMatchesMutations =
     Number.isFinite(report.results.successInspection?.counts?.new)
