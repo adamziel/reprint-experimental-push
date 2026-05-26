@@ -1339,34 +1339,13 @@ function isValidSamePlanWordPressGraphTarget(targetMutation, reference, sourceMu
       return false;
     }
     if (
-      sourceValue
-      && typeof sourceValue === 'object'
-      && sourceValue.post_type === 'attachment'
-      && targetValue
-      && typeof targetValue === 'object'
-      && targetValue.post_type === 'attachment'
-    ) {
-      return false;
-    }
-    if (
       targetValue
       && typeof targetValue === 'object'
       && (
-        targetValue.post_type === 'attachment'
-        || targetValue.post_type === 'nav_menu_item'
+        targetValue.post_type === 'nav_menu_item'
         || targetValue.post_type === 'wp_navigation'
         || targetValue.post_type === 'revision'
       )
-    ) {
-      return false;
-    }
-    if (
-      sourceValue
-      && typeof sourceValue === 'object'
-      && sourceValue.post_type === 'attachment'
-      && targetValue
-      && typeof targetValue === 'object'
-      && targetValue.post_type === 'attachment'
     ) {
       return false;
     }
@@ -1557,7 +1536,14 @@ function isValidSamePlanWordPressGraphTarget(targetMutation, reference, sourceMu
         `row:${JSON.stringify(['wp_posts', `ID:${normalizePositiveInteger(sourceValue.post_id)}`])}`,
       );
       const ownerValue = ownerMutation ? deserializeResourceValue(ownerMutation.value) : null;
-      if (ownerValue && typeof ownerValue === 'object' && ownerValue.post_type === 'revision') {
+      if (
+        ownerValue
+        && typeof ownerValue === 'object'
+        && (
+          ownerValue.post_type === 'attachment'
+          || ownerValue.post_type === 'revision'
+        )
+      ) {
         return false;
       }
     }
