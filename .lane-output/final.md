@@ -1,35 +1,36 @@
-Critic lane pass at 2026-05-26 10:23:13 CEST (+0200): I reclassified the latest recovery-journal adapter proof `351b6bbd` (`Add production recovery journal adapter`) alongside the latest reliable-executor auth/session evidence `949477de` (`Expose auth session lifecycle evidence`).
+Critic lane classification: the release gate is still blocked.
 
-`351b6bbd` is real progress because it adds `openProductionRecoveryJournal()`, restart-readable `inspect()`, production adapter metadata, `flush()`, and a focused `requireProductionDurableJournal` probe. `949477de` is also real progress because it extends the auth envelope drift check with `sessionStatus`, surfaces that status in the response summary, and rejects an expired session on the production-shaped path.
+Fresh evidence changed the reliable head, but not the verdict. `reliable-executor` now treats `0f36d838` (`Fail fast on readiness 502s`) as the current reliable head, superseding `e725e749`, `27ad6f6f`, and stale references to `0c4fd10f`. The readiness boundary in `scripts/playground/production-shaped-release-verify.mjs` is still the exact blocker: `waitForServer()` on `/wp-json/` must either reach the real ready signal or fail with bounded route/status/body diagnostics that reach the handoff.
 
-Neither head crosses the release boundary yet. Both are still support-side until the release path actually consumes the recovery adapter or a live production-backed auth/session consumer. The exact owner for that next integration is `reliable-executor`, and the bounded proof command after wiring remains `timeout 180s node --test test/production-shaped-proof.test.js`.
+Exact blocker:
+- `scripts/playground/production-shaped-release-verify.mjs`
+- `waitForServer()` readiness handling around the `/wp-json/` `502` / `WordPress is not ready yet` failure
+- missing live consumer wiring in `verify:release` for `openProductionRecoveryJournal()`
 
-Verdict: still blocked for release-gate movement. The narrow reason remains that the current evidence proves adapter availability and client-side fail-closed behavior, not a live production boundary wired into `verify:release`.
+Bounded command to run after wiring:
+- `timeout 180s node --test test/production-shaped-proof.test.js`
 
 Changed files:
 - [`audits/critic.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/critic/audits/critic.md)
 - [`.lane-output/final.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/critic/.lane-output/final.md)
 
 Commands run:
-- `date '+%Y-%m-%d %H:%M:%S %Z (%z)'`
-- `sed -n '1,220p' AGENTS.md`
+- `find .. -maxdepth 3 -name AGENTS.md -o -name README.md -path '*/supervision/*' -o -name 'final*.md' -path '*/.lane-output/*'`
+- `find . -maxdepth 3 -type d | sort | sed -n '1,200p'`
 - `sed -n '1,220p' supervision/README.md`
-- `sed -n '1,220p' supervision/lanes/critic.md`
-- `sed -n '1,260p' .lane-output/final-mainwindows-round-20260525-2357.md`
-- `sed -n '1,260p' .lane-output/final-recovery-20260526-071520.md`
-- `sed -n '1,260p' .lane-output/final-watchdog-20260526-002640.md`
-- `sed -n '1,260p' .lane-output/final.md`
+- `find supervision/lanes -maxdepth 1 -type f | sort | xargs -r -n 1 sh -c 'echo "--- $1"; sed -n "1,220p" "$1"' sh`
+- `git status --short --branch`
+- `sed -n '1,240p' .lane-output/final-loop-20260526-102753.md`
+- `sed -n '1,240p' .lane-output/final-loop-20260526-101124.md`
+- `sed -n '1,240p' .lane-output/final.md`
 - `sed -n '1,260p' audits/critic.md`
-- `git log --oneline --decorate -n 6 origin/lane/reliable-executor`
-- `git log --oneline --decorate -n 6 origin/lane/no-data-loss-recovery`
 
 Push result:
-- Not attempted this pass.
+- Not attempted.
 
 Worktree status:
-- `M audits/critic.md`
-- `M .lane-output/final.md`
-- Branch: `lane/cycle-20260525-mainwindows-2349/critic...origin/main [ahead 1598, behind 597]`
+- Branch: `lane/cycle-20260525-mainwindows-2349/critic...origin/main [ahead 1600, behind 604]`
+- Dirty tracked file: `.lane-output/final.md`
 
 Next supervisor nudge:
-- Ask `reliable-executor` to wire `openProductionRecoveryJournal()` into the release verifier or report the exact missing file/API if that consumer surface does not exist; do not count another adapter-only or timestamp-only update as release proof.
+- Keep `reliable-executor` on the exact missing `verify:release` consumer surface for `openProductionRecoveryJournal()`, or name the missing file/API boundary if that surface does not exist.
