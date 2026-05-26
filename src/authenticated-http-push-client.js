@@ -202,6 +202,9 @@ export async function runAuthenticatedHttpPush({
     setDurableJournalBoundary(summary, 'recovery-inspect');
     return summary;
   }
+  const recoveryInspectAuthEnvelopeDrift = recoveryInspect.body?.auth
+    ? hasAuthEnvelopeDrift(preflightAuthEnvelope, recoveryInspect)
+    : false;
   if (!summary.recoveryInspect.recovery || summary.recoveryInspect.recovery.journalState !== 'ok') {
     summary.code = 'RECOVERY_INSPECT_JOURNAL_UNTRUSTED';
     setDurableJournalBoundary(summary, 'recovery-inspect');
@@ -224,7 +227,7 @@ export async function runAuthenticatedHttpPush({
   const replayEquivalent = isReplayEquivalent(apply, replay);
   const applyAuthEnvelopeDrift = hasAuthEnvelopeDrift(preflightAuthEnvelope, apply);
   const replayAuthEnvelopeDrift = hasAuthEnvelopeDrift(preflightAuthEnvelope, replay);
-  if (applyAuthEnvelopeDrift || replayAuthEnvelopeDrift) {
+  if (applyAuthEnvelopeDrift || recoveryInspectAuthEnvelopeDrift || replayAuthEnvelopeDrift) {
     summary.code = 'AUTH_SESSION_LIFECYCLE_DRIFT';
     setDurableJournalBoundary(summary, 'replay');
     return summary;
@@ -245,6 +248,7 @@ export async function runAuthenticatedHttpPush({
     && replay.body?.idempotency?.freshMutationWork === false
     && replayEquivalent
     && !applyAuthEnvelopeDrift
+    && !recoveryInspectAuthEnvelopeDrift
     && !replayAuthEnvelopeDrift
     && dbJournal.status === 200
     && dbJournal.body?.ok === true
