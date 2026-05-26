@@ -49962,9 +49962,10 @@ test('blocks an existing termmeta row when its same-plan term belongs to a nav m
   const blocker = plan.blockers.find((entry) => entry.resourceKey === termmetaResourceKey);
 
   assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
   assert.equal(termMutation, undefined);
   assert.equal(taxonomyMutation, undefined);
-  assert.equal(termmetaMutation.changeKind, 'update');
+  assert.equal(termmetaMutation, undefined);
   assert.equal(taxonomyBlocker.class, 'unsupported-navigation-resource');
   assert.equal(termBlocker.class, 'stale-wordpress-graph-identity');
   assert.equal(blocker.class, 'missing-wordpress-graph-dependency');
@@ -50042,9 +50043,10 @@ test('blocks an existing termmeta row when its same-plan term belongs to a nav m
   const blockerJson = JSON.stringify(blocker);
 
   assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
   assert.equal(termMutation, undefined);
   assert.equal(taxonomyMutation, undefined);
-  assert.equal(termmetaMutation.changeKind, 'update');
+  assert.equal(termmetaMutation, undefined);
   assert.equal(matchingDelete.decision, 'already-in-sync');
   assert.equal(matchingDelete.change.localChange, 'delete');
   assert.equal(matchingDelete.change.remoteChange, 'delete');
@@ -50127,9 +50129,10 @@ test('blocks an existing termmeta row when its same-plan term belongs to a nav m
   const blockerJson = JSON.stringify(blocker);
 
   assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
   assert.equal(termMutation, undefined);
   assert.equal(taxonomyMutation, undefined);
-  assert.equal(termmetaMutation.changeKind, 'update');
+  assert.equal(termmetaMutation, undefined);
   assert.equal(matchingTypeSwap.decision, 'already-in-sync');
   assert.equal(matchingTypeSwap.change.localChange, 'type-change');
   assert.equal(matchingTypeSwap.change.remoteChange, 'type-change');

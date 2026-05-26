@@ -2813,6 +2813,7 @@ function finalizeWordPressGraphDependencies(plan, local, remote) {
       .map((blocker) => blocker?.resourceKey)
       .filter(Boolean),
   );
+  const blockedMutationIds = new Set();
   let blockerIndex = plan.blockers.length + 1;
 
   for (const mutation of plan.mutations) {
@@ -2850,6 +2851,7 @@ function finalizeWordPressGraphDependencies(plan, local, remote) {
           references: [reference],
         });
         blockedTargetResourceKeys.add(mutation.resourceKey);
+        blockedMutationIds.add(mutation.id);
         delete mutation.dependsOnMutationIds;
         mutationBlocked = true;
         break;
@@ -2873,6 +2875,13 @@ function finalizeWordPressGraphDependencies(plan, local, remote) {
     } else {
       delete mutation.dependsOnMutationIds;
     }
+  }
+
+  if (blockedMutationIds.size > 0) {
+    plan.mutations = plan.mutations.filter((mutation) => !blockedMutationIds.has(mutation.id));
+    plan.preconditions = plan.preconditions.filter(
+      (precondition) => !blockedMutationIds.has(precondition.mutationId),
+    );
   }
 
   plan.mutations = orderMutationsByDependencies(plan.mutations);
