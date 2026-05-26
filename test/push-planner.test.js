@@ -34067,3 +34067,30 @@ test('blocks local post GUID changes while preserving a matching independent edi
   assert.equal(remote.plugins.forms, undefined);
   assert.equal(remote.files['wp-content/plugins/forms/forms.php'], undefined);
 });
+
+test('blocks local post GUID changes while preserving a matching independent file type swap and remote-only plugin removals', () => {
+  const base = baseSite();
+  base.db.wp_posts['ID:1'].guid = 'https://example.test/?p=1';
+  base.files['wp-content/uploads/cover'] = 'base file bytes';
+
+  const local = baseSite();
+  local.db.wp_posts['ID:1'].guid = 'https://example.test/?p=1-updated';
+  local.files['wp-content/uploads/cover'] = { type: 'directory' };
+
+  const remote = baseSite();
+  remote.files['wp-content/uploads/cover'] = { type: 'directory' };
+  delete remote.plugins.forms;
+  delete remote.files['wp-content/plugins/forms/forms.php'];
+
+  const plan = planFor(base, local, remote);
+  const fileDecision = decisionFor(plan, 'file:wp-content/uploads/cover');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+
+  assert.equal(plan.status, 'conflict');
+  assert.equal(fileDecision.decision, 'already-in-sync');
+  assert.equal(fileDecision.change.localChange, 'type-change');
+  assert.equal(fileDecision.change.remoteChange, 'type-change');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+});
