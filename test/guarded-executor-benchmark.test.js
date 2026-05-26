@@ -91,7 +91,9 @@ test('guarded executor benchmark moves buffers and row payloads through durable 
     report.claims.productionThroughputDetails.backpressureAlignment.receiptCursorQueueSlackBytes,
     31.5 * 1024 * 1024,
   );
-  assert.equal(report.claims.productionThroughputDetails.parallelismLimitsVisible, true);
+  assert.equal(report.evidence.parallelism.parallelismLimitsMeasured, true);
+  assert.equal(report.evidence.parallelism.parallelismLimitsVisible, false);
+  assert.equal(report.claims.productionThroughputDetails.parallelismLimitsVisible, false);
   assert.equal(report.evidence.recovery.successInspectionStatus, 'fully-updated-remote');
   assert.equal(report.evidence.recovery.preCommitFailureInspectionStatus, 'old-remote');
   assert.equal(report.evidence.recovery.partialCommitInspectionStatus, 'blocked-recovery');
@@ -345,7 +347,7 @@ test('guarded benchmark refuses production throughput claims until production ga
   assert.equal(report.claims.productionThroughputDetails.parallelismLimitsMeasured, true);
   assert.equal(report.claims.productionThroughputDetails.parallelismLimitsIntegral, true);
   assert.equal(report.claims.productionThroughputDetails.parallelismLimitsCanonical, true);
-  assert.equal(report.claims.productionThroughputDetails.parallelismLimitsVisible, true);
+  assert.equal(report.claims.productionThroughputDetails.parallelismLimitsVisible, false);
   assert.equal(report.claims.productionThroughputDetails.receiptCursorPauseFootprintComplete, true);
   assert.equal(
     report.claims.productionThroughputDetails.blockers.includes('production-memory-ceiling-not-measured'),
@@ -878,6 +880,8 @@ test('production claim gate fails closed if benchmark evidence is tampered', () 
   );
 
   const visibleParallelismLimitsWithoutMeasurement = clone(report);
+  visibleParallelismLimitsWithoutMeasurement.claims.productionThroughputDetails.parallelismLimitsVisible = true;
+  visibleParallelismLimitsWithoutMeasurement.evidence.parallelism.parallelismLimitsVisible = true;
   visibleParallelismLimitsWithoutMeasurement.evidence.parallelism.parallelismLimitsMeasured = false;
   assert.ok(
     productionThroughputBlockers(visibleParallelismLimitsWithoutMeasurement).includes(

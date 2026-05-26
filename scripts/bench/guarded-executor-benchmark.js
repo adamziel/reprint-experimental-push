@@ -2002,7 +2002,7 @@ function buildReport({
           dbBatchPerTable: DEFAULT_LIMITS.maxDbConcurrencyPerTable,
         },
         parallelismLimitsMeasured: true,
-        parallelismLimitsVisible: true,
+        parallelismLimitsVisible: false,
       },
       resourceLimits: {
         memoryCeilingBytes: config.maxBufferedUploadBytes,
