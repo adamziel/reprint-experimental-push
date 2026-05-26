@@ -2767,12 +2767,20 @@ function reprint_push_lab_rest_auth_evidence(WP_REST_Request $request): array
     $session_expires_at = is_array($auth)
         ? ($production_session ? ($signature['session']['expiresAt'] ?? null) : ($auth['expiresAt'] ?? null))
         : null;
+    $production_session_playground_fallback = false;
+    $production_session_warning = null;
     if ($production_session && is_array($lifecycle_drift)) {
         if (($lifecycle_drift['mode'] ?? '') === 'expired') {
             $session_expires_at = gmdate('Y-m-d\\TH:i:s\\Z', time() - 60);
         }
         if (($lifecycle_drift['mode'] ?? '') === 'rotated' && !empty($session_id)) {
             $session_id .= '-rotated';
+        }
+        if (($lifecycle_drift['mode'] ?? '') === 'playground-fallback') {
+            $production_session_playground_fallback = true;
+        }
+        if (($lifecycle_drift['mode'] ?? '') === 'warning') {
+            $production_session_warning = 'Lab-only Playground Basic bootstrap fallback; not production authentication.';
         }
     }
     $session_revoked = is_array($auth) ? (bool) ($auth['revoked'] ?? false) : false;
@@ -2807,10 +2815,12 @@ function reprint_push_lab_rest_auth_evidence(WP_REST_Request $request): array
             'cleanedUp' => $session_cleaned_up,
             'expiresAt' => $session_expires_at,
             'playgroundFallback' => is_array($auth)
-                ? ($production_session ? false : (bool) ($auth['playgroundFallback'] ?? false))
+                ? ($production_session ? $production_session_playground_fallback : (bool) ($auth['playgroundFallback'] ?? false))
                 : false,
-            'warning' => is_array($auth) && !$production_session && isset($auth['warning'])
-                ? (string) $auth['warning']
+            'warning' => is_array($auth)
+                ? ($production_session
+                    ? $production_session_warning
+                    : (isset($auth['warning']) ? (string) $auth['warning'] : null))
                 : null,
         ],
     ];
@@ -2836,7 +2846,7 @@ function reprint_push_lab_rest_auth_session_lifecycle_drift(WP_REST_Request $req
         return null;
     }
 
-    if (!in_array($drift_mode, ['revoked', 'cleaned-up', 'expired', 'rotated'], true)) {
+    if (!in_array($drift_mode, ['revoked', 'cleaned-up', 'expired', 'rotated', 'playground-fallback', 'warning'], true)) {
         return null;
     }
 
