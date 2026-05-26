@@ -6,24 +6,24 @@ The project is **not releasable as a production WordPress push path**.
 
 Fresh remote heads at audit time, checked on May 26, 2026:
 
-- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `09e9b3b0`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `2c61e3bb`
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `2f1a9be4`
+- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `b069d46c`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `3dcd9321`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `7b4dda17`
 - `origin/lane/independent-auditor` -> `6351130f`
-- `origin/lane/reliable-executor` -> `66339fdc`
+- `origin/lane/reliable-executor` -> `1820de31`
 - `origin/lane/no-data-loss-invariants` -> `2f92065d`
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` -> `db36753e`
 - `origin/lane/critic` -> `49af85aa`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `1214c397`
 - `origin/lane/same-plan-wordpress-graph-create` -> `0d2178e9`
 - `origin/lane/no-data-loss-recovery` -> `1214c397`
-- `origin/lane/fast-paths` -> `09e9b3b0`
+- `origin/lane/fast-paths` -> `b069d46c`
 - `origin/lane/progress-publisher` -> `7695e1f9`
 - `origin/lane/cycle-20260525-mainwindows-2349/critic` -> `49af85aa`
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `c38dda9d`
 - `origin/lane/cycle-20260525-mainwindows-2349/same-plan-wordpress-graph-create` -> `0d2178e9`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-invariants` -> `67597696`
-- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `09e9b3b0`
+- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `b069d46c`
 - `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration` -> `a3a900d7`
 - `origin/lane/cycle-20260525-mainwindows-2357/no-data-loss-invariants-graph-proof` -> `98c0ce26`
 - `origin/main` -> `e55864f4`
@@ -36,17 +36,17 @@ Fresh lane proof since the last audit pass improved the local evidence floor,
 but it did not change the release conclusion:
 
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` now advances to
-  `09e9b3b0`, tightening paused-slack safety. This remains fail-closed
+  `b069d46c`, tightening paused-slack safety. This remains fail-closed
   boundary work, not release-grade live-source evidence.
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now records
-  `2c61e3bb`, refreshing the public progress freshness surface only.
+  `3dcd9321`, refreshing the public progress freshness surface only.
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now
-  records `2f1a9be4`, also a freshness-only update.
+  records `7b4dda17`, also a freshness-only update.
 - `origin/lane/independent-auditor` now records `c38dda9d`, which refreshes
   the audit snapshot but does not change the release boundary.
-- `origin/lane/reliable-executor` now advances to `66339fdc`, which still
-  hardens the release-verify startup boundary rather than production-backed
-  source mutation proof.
+- `origin/lane/reliable-executor` now advances to `1820de31`, which hardens
+  authenticated push mutations but still does not prove a production-backed
+  source mutation boundary.
 - `origin/lane/no-data-loss-invariants` now tightens navigation blocker proof
   at `1f6ab914`. A separate cycle-branch proof at `98c0ce26`
   extends that blocker coverage to missing graph identity references, and the
