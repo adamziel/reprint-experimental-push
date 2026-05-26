@@ -1,6 +1,7 @@
 import { createHash, createHmac, randomBytes } from 'node:crypto';
 import { createPushPlan } from './planner.js';
 import { digest } from './stable-json.js';
+import { evaluateProductionAuthSessionLifecycleSummary } from '../scripts/playground/production-auth-session-lifecycle.js';
 
 const routeProfiles = {
   'lab-authenticated': {
@@ -312,6 +313,15 @@ export async function runAuthenticatedHttpPush({
     setDurableJournalBoundary(summary, 'dry-run');
     return summary;
   }
+  const dryRunLifecycleSummaryDrift = requireProductionAuthSession
+    ? resolveRequiredProductionAuthSessionSummary(summary)
+    : null;
+  if (dryRunLifecycleSummaryDrift) {
+    summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
+    summary.authSession = dryRunLifecycleSummaryDrift;
+    setAuthSessionBoundary(summary, summary.authSession);
+    return summary;
+  }
 
   if (dryRunOnly) {
     const afterDryRun = await client.get('/snapshot');
@@ -405,6 +415,15 @@ export async function runAuthenticatedHttpPush({
     setAuthSessionBoundary(summary, summary.authSession);
     return summary;
   }
+  const applyLifecycleSummaryDrift = requireProductionAuthSession
+    ? resolveRequiredProductionAuthSessionSummary(summary)
+    : null;
+  if (applyLifecycleSummaryDrift) {
+    summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
+    summary.authSession = applyLifecycleSummaryDrift;
+    setAuthSessionBoundary(summary, summary.authSession);
+    return summary;
+  }
 
   const recoveryInspect = await client.signedPost(withAuthSessionDrift('/recovery/inspect'), {
     plan,
@@ -474,6 +493,15 @@ export async function runAuthenticatedHttpPush({
       verdict: 'AUTH_SESSION_LIFECYCLE_DRIFT',
     };
     setDurableJournalBoundary(summary, 'recovery-inspect');
+    return summary;
+  }
+  const recoveryInspectLifecycleSummaryDrift = requireProductionAuthSession
+    ? resolveRequiredProductionAuthSessionSummary(summary)
+    : null;
+  if (recoveryInspectLifecycleSummaryDrift) {
+    summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
+    summary.authSession = recoveryInspectLifecycleSummaryDrift;
+    setAuthSessionBoundary(summary, summary.authSession);
     return summary;
   }
   if (!summary.recoveryInspect.recovery || summary.recoveryInspect.recovery.journalState !== 'ok') {
@@ -556,6 +584,15 @@ export async function runAuthenticatedHttpPush({
     setDurableJournalBoundary(summary, 'replay');
     return summary;
   }
+  const replayLifecycleSummaryDrift = requireProductionAuthSession
+    ? resolveRequiredProductionAuthSessionSummary(summary)
+    : null;
+  if (replayLifecycleSummaryDrift) {
+    summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
+    summary.authSession = replayLifecycleSummaryDrift;
+    setAuthSessionBoundary(summary, summary.authSession);
+    return summary;
+  }
 
   const afterApply = await client.get('/snapshot');
   summary.after = summarizeSnapshot(afterApply, local);
@@ -622,6 +659,15 @@ export async function runAuthenticatedHttpPush({
     summary.code = 'AUTH_SESSION_LIFECYCLE_DRIFT';
     summary.authSession = dbJournalAuthEnvelopeDrift;
     setDurableJournalBoundary(summary, 'journal-inspect');
+    return summary;
+  }
+  const dbJournalLifecycleSummaryDrift = requireProductionAuthSession
+    ? resolveRequiredProductionAuthSessionSummary(summary)
+    : null;
+  if (dbJournalLifecycleSummaryDrift) {
+    summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
+    summary.authSession = dbJournalLifecycleSummaryDrift;
+    setAuthSessionBoundary(summary, summary.authSession);
     return summary;
   }
 
@@ -874,6 +920,8 @@ function summarizeAuthSessionLifecycle(session) {
     expired: isExpiredSession(session),
     revoked: session.revoked === true || session.status === 'revoked',
     cleanedUp: session.cleanedUp === true || session.cleanup === true,
+    rotated: session.rotated === true ? true : session.rotated === false ? false : null,
+    preserved: session.preserved === true ? true : session.preserved === false ? false : null,
   };
 }
 
@@ -883,19 +931,33 @@ function recordAuthSessionLifecycle(summary, step, session) {
   const previous = trace.length > 0 ? trace[trace.length - 1] : null;
   const previousSessionId = normalizeProductionAuthSessionIdentityField(previous?.id);
   const observationSessionId = normalizeProductionAuthSessionIdentityField(observation?.id);
-  const lifecycle = {
-    step,
-    ...observation,
-    rotated: Boolean(
+  const readStep = isAuthSessionReadStep(step);
+  const rotated = Boolean(
+    observation?.rotated === true
+    || (
       previousSessionId
       && observationSessionId
       && previousSessionId !== observationSessionId
-    ),
-    preserved: Boolean(
-      previousSessionId
-      && observationSessionId
-      && previousSessionId === observationSessionId
-    ),
+    )
+  );
+  const preserved = Boolean(
+    readStep
+    && !rotated
+    && observation?.preserved !== false
+    && (
+      observation?.preserved === true
+      || (
+        previousSessionId
+        && observationSessionId
+        && previousSessionId === observationSessionId
+      )
+    )
+  );
+  const lifecycle = {
+    step,
+    ...observation,
+    rotated,
+    preserved,
     revoked: Boolean(observation?.revoked),
     cleanedUp: Boolean(observation?.cleanedUp),
   };
@@ -921,7 +983,15 @@ function recordAuthSessionLifecycle(summary, step, session) {
   );
   const lifecycleSummary = summary.authSessionLifecycleSummary || {};
   if (step === 'preflight') {
-    summary.authSessionLifecycle.minted = observation;
+    summary.authSessionLifecycle.minted = {
+      id: observation?.id || null,
+      type: observation?.type || null,
+      status: observation?.status || null,
+      expiresAt: observation?.expiresAt || null,
+      expired: Boolean(observation?.expired),
+      revoked: Boolean(observation?.revoked),
+      cleanedUp: Boolean(observation?.cleanedUp),
+    };
     summary.authSessionLifecycle.read = null;
     summary.authSessionLifecycle.expired = lifecycleSummary.expired || null;
     summary.authSessionLifecycle.revoked = lifecycleSummary.revoked || null;
@@ -937,8 +1007,8 @@ function recordAuthSessionLifecycle(summary, step, session) {
       ? 'recoveryInspect'
       : step === 'journal'
         ? 'journal'
-        : step] = observation;
-  summary.authSessionLifecycle.read = observation;
+        : step] = lifecycle;
+  summary.authSessionLifecycle.read = lifecycle;
   summary.authSessionLifecycle.expired = lifecycleSummary.expired || null;
   summary.authSessionLifecycle.revoked = lifecycleSummary.revoked || null;
   summary.authSessionLifecycle.cleanedUp = lifecycleSummary.cleanedUp || null;
@@ -967,6 +1037,24 @@ function summarizeAuthSessionLifecycleHistory(history) {
       (entry) => isAuthSessionReadStep(entry.step) && entry.preserved === true,
     ) || null,
     observations,
+  };
+}
+
+function resolveRequiredProductionAuthSessionSummary(summary) {
+  const lifecycleSummary = summary?.authSessionLifecycleSummary;
+  if (!lifecycleSummary) {
+    return null;
+  }
+
+  const observedLifecycle = evaluateProductionAuthSessionLifecycleSummary(lifecycleSummary);
+  if (observedLifecycle.ok) {
+    return null;
+  }
+
+  return {
+    required: observedLifecycle.required,
+    observed: observedLifecycle.observed,
+    verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
   };
 }
 
