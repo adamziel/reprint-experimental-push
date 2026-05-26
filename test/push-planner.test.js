@@ -19715,6 +19715,9 @@ test('production durable journal claims report the exact missing durability piec
     },
     flush() {},
     close() {},
+    inspect() {
+      return { records: [{ sequence: 1, type: 'journal-opened' }] };
+    },
     assertCurrentClaim() {},
   };
   const plan = planFor(baseSite(), baseSite(), {
@@ -19734,7 +19737,46 @@ test('production durable journal claims report the exact missing durability piec
 
   assert.equal(error.code, 'PRODUCTION_DURABLE_JOURNAL_UNSUPPORTED');
   assert.deepEqual(error.details.missingDependency, [
-    'restart-readable recovery inspection',
+    'restart-readable recovery artifact location',
+  ]);
+});
+
+test('production durable journal claims fail closed when restart inspection lacks a journal location', () => {
+  const writer = {
+    kind: 'production-recovery-journal',
+    ownsJournal: true,
+    nextSequence: 1,
+    appendEvent(type, payload) {
+      this.nextSequence += 1;
+      return { sequence: this.nextSequence - 1, type, payload };
+    },
+    flush() {},
+    close() {},
+    inspect() {
+      return {
+        records: [{ sequence: 1, type: 'journal-opened' }],
+      };
+    },
+    assertCurrentClaim() {},
+  };
+  const plan = planFor(baseSite(), baseSite(), {
+    ...baseSite(),
+    db: {
+      ...baseSite().db,
+      wp_options: {
+        ...baseSite().db.wp_options,
+        'option_name:blogname': { option_name: 'blogname', option_value: 'New Site' },
+      },
+    },
+  });
+  const error = captureError(() => applyPlan(baseSite(), plan, {
+    requireProductionDurableJournal: true,
+    durableJournal: writer,
+  }));
+
+  assert.equal(error.code, 'PRODUCTION_DURABLE_JOURNAL_UNSUPPORTED');
+  assert.deepEqual(error.details.missingDependency, [
+    'restart-readable recovery artifact location',
   ]);
 });
 
@@ -19896,7 +19938,10 @@ test('production durable journal claims fail closed without an explicit producti
     flush() {},
     close() {},
     inspect() {
-      return { records: [{ sequence: 1, type: 'journal-opened' }] };
+      return {
+        filePath: '/var/lib/reprint/recovery.jsonl',
+        records: [{ sequence: 1, type: 'journal-opened' }],
+      };
     },
     assertCurrentClaim() {},
   };
@@ -19933,7 +19978,10 @@ test('production durable journal claims allow a restart-oriented writer contract
     flush() {},
     close() {},
     inspect() {
-      return { records: events.slice() };
+      return {
+        filePath: '/var/lib/reprint/recovery.jsonl',
+        records: events.slice(),
+      };
     },
     assertCurrentClaim() {},
   };
@@ -19975,7 +20023,10 @@ test('closes a durable journal writer when apply fails before commit', () => {
       closed += 1;
     },
     inspect() {
-      return { records: events.slice() };
+      return {
+        filePath: '/var/lib/reprint/recovery.jsonl',
+        records: events.slice(),
+      };
     },
     assertCurrentClaim() {},
   };
@@ -20011,7 +20062,10 @@ test('closes a durable journal writer after a successful apply', () => {
       closed += 1;
     },
     inspect() {
-      return { records: events.slice() };
+      return {
+        filePath: '/var/lib/reprint/recovery.jsonl',
+        records: events.slice(),
+      };
     },
     assertCurrentClaim() {},
   };

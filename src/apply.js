@@ -630,11 +630,13 @@ function productionRecoveryMissingDependencies(writer) {
   }
   if (typeof writer?.inspect !== 'function') {
     missingDependency.push('restart-readable recovery inspection');
+  } else if (!durableJournalInspectSurface(writer)) {
+    missingDependency.push('restart-readable recovery artifact location');
   }
   if (typeof writer?.assertCurrentClaim !== 'function') {
     missingDependency.push('fencing or lease ownership for the journal writer');
   }
-  if (writer && typeof writer.inspect === 'function' && !durableJournalInspectSurface(writer)) {
+  if (writer && typeof writer.inspect === 'function' && !durableJournalInspectRecords(writer)) {
     missingDependency.push('journal-readable inspection records with sequence and type');
   }
 
@@ -642,6 +644,25 @@ function productionRecoveryMissingDependencies(writer) {
 }
 
 function durableJournalInspectSurface(writer) {
+  try {
+    const inspected = writer.inspect();
+    return Boolean(
+      inspected
+      && typeof inspected === 'object'
+      && typeof inspected.filePath === 'string'
+      && Array.isArray(inspected.records),
+    ) && inspected.records.every((record) =>
+      record
+      && typeof record === 'object'
+      && Number.isInteger(record.sequence)
+      && typeof record.type === 'string',
+    );
+  } catch (error) {
+    return false;
+  }
+}
+
+function durableJournalInspectRecords(writer) {
   try {
     const inspected = writer.inspect();
     return Boolean(
