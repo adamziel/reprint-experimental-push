@@ -701,10 +701,10 @@ function productionRecoverySupportReport(writer) {
   if (!Object.hasOwn(writer ?? {}, 'ownsJournal') || writer.ownsJournal !== true) {
     addMissingDependency('explicit journal ownership fencing');
   }
-  if (typeof writer?.flush !== 'function') {
+  if (!Object.hasOwn(writer ?? {}, 'flush') || typeof writer.flush !== 'function') {
     addMissingDependency('stable-storage flush or fsync semantics');
   }
-  if (typeof writer?.close !== 'function') {
+  if (!Object.hasOwn(writer ?? {}, 'close') || typeof writer.close !== 'function') {
     addMissingDependency('durable writer cleanup');
   }
   if (
