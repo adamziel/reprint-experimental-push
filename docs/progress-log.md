@@ -4,6 +4,36 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-05-26 - Public Status Audit 14:48:04
+
+<a id="2026-05-26-public-status-audit-144804"></a>
+
+- Refreshed [progress.html](../progress.html) to the current `date` output
+  (`2026-05-26 14:48:04 CEST`) and promoted `0f4df01bef956123c08e4b33c94d347484222347` as the current
+  reliable head on the public page for packaged auth source command resolution.
+- `0f4df01bef956123c08e4b33c94d347484222347` keeps packaged auth source
+  command resolution on the checked release path; the release gate stays at
+  `0/4` because production-backed auth/session lifecycle and durable journal
+  ownership with lease/fencing remain blocked.
+- Evidence trail: [progress.html](../progress.html),
+  [objective audit](../audits/objective-audit.md),
+  [release-gate checklist](../progress.html#proof-gates).
+
+## 2026-05-26 - Public Status Audit 14:50:45
+
+<a id="2026-05-26-public-status-audit-145045"></a>
+
+- Refreshed [progress.html](../progress.html) to the current `date` output
+  (`2026-05-26 14:50:45 CEST`) and promoted `e81775cac4ffcc185f511176bafb1ff62bb8c4be` as the current
+  reliable head on the public page for packaged auth source command resolution.
+- `e81775cac4ffcc185f511176bafb1ff62bb8c4be` keeps packaged auth source
+  command resolution on the checked release path; the release gate stays at
+  `0/4` because production-backed auth/session lifecycle and durable journal
+  ownership with lease/fencing remain blocked.
+- Evidence trail: [progress.html](../progress.html),
+  [objective audit](../audits/objective-audit.md),
+  [release-gate checklist](../progress.html#proof-gates).
+
 ## 2026-05-26 - Public Status Audit 14:45:00
 
 <a id="2026-05-26-public-status-audit-144500"></a>
