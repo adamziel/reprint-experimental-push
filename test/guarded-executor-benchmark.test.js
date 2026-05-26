@@ -2517,6 +2517,56 @@ test('guarded benchmark keeps rollout summaries pinned to visible-without-positi
   );
 });
 
+test('guarded benchmark keeps row-batch rollout summary pinned to non-integral parallelism blockers', () => {
+  const report = smallBenchmark();
+  const tampered = clone(report);
+
+  tampered.executorCapabilities.productionAtomicCommit = 'production-atomic-group-commit';
+  tampered.executorCapabilities.fileReceipts = 'production-storage-receipts';
+  tampered.executorCapabilities.rowApply = 'production-batched-compare-and-swap';
+  tampered.evidence.parallelism.parallelismLimitsVisible = true;
+  tampered.evidence.parallelism.parallelismLimitsMeasured = true;
+  tampered.evidence.parallelism.parallelismLimits.dbBatchPerTable = 4.5;
+  tampered.evidence.atomicGroup.productionAtomicCommitMeasured = true;
+  tampered.evidence.atomicGroup.productionAtomicCommitVisible = true;
+  tampered.evidence.atomicGroup.productionAtomicGroupMetadataVisible = true;
+  tampered.evidence.atomicGroup.productionStorageReceiptsMeasured = true;
+  tampered.evidence.atomicGroup.productionStorageReceiptsVisible = true;
+  tampered.evidence.atomicGroup.productionRowBatchExecutorMeasured = true;
+  tampered.evidence.atomicGroup.productionRowBatchExecutorVisible = true;
+
+  const details = productionThroughputDetails(tampered);
+
+  assert.equal(details.parallelismLimitsIntegral, false);
+  assert.equal(details.parallelismLimitsVisible, false);
+  assert.equal(
+    details.atomicGroup.productionRowBatchExecutorVisibleAndStorageReceiptsVisibleAndMeasured,
+    false,
+  );
+  assert.equal(
+    details.backpressureConsistency.productionRowBatchExecutorVisibleAndStorageReceiptsVisibleAndMeasured,
+    false,
+  );
+  assert.deepEqual(
+    details.productionCapabilityRolloutSummary.find(
+      (entry) => entry.surface === 'row-batch-concurrency',
+    ),
+    {
+      surface: 'row-batch-concurrency',
+      status: 'blocked',
+      measured: true,
+      visible: false,
+      blockerRefs: [
+        'production-parallelism-limits-not-integral',
+        'production-parallelism-limits-not-canonical',
+        'production-parallelism-limits-visible-without-integral',
+        'production-parallelism-limits-visible-without-canonical',
+        'production-row-batch-executor-visible-without-parallelism-limits',
+      ],
+    },
+  );
+});
+
 test('guarded benchmark keeps paired row-batch and storage detail hidden when parallelism caps are noncanonical', () => {
   const report = smallBenchmark();
   const tampered = clone(report);
