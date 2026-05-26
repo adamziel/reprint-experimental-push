@@ -1028,6 +1028,14 @@ export function productionRecoverySupportReport(writer) {
   }
   if (
     hasValidProductionLeaseIdentity(writer?.writerLease)
+    && typeof writer?.claimHash === 'string'
+    && /^[a-f0-9]{64}$/.test(writer.claimHash)
+    && writer.claimHash !== digest({ recoveryJournalClaim: writer.writerLease.id })
+  ) {
+    addMissingDependency('fencing or lease ownership for the journal writer');
+  }
+  if (
+    hasValidProductionLeaseIdentity(writer?.writerLease)
     && Object.hasOwn(writer.writerLease, 'epoch')
     && !productionLeaseIdentitiesMatch(inspectedClaimState?.activeClaimLease, writer.writerLease)
   ) {
