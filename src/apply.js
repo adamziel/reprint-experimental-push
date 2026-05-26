@@ -255,7 +255,9 @@ function isSupportedPluginOwnedMutation(remote, mutation, owner, driver, planned
       && validFixtureFormsLabTableEvidence(mutation.pluginOwnedResource?.driverEvidence, remote);
   }
   if (driver && driverTable) {
-    return mutation.resource?.type === 'row' && mutation.resource.table === driverTable;
+    return mutation.resource?.type === 'row'
+      && mutation.resource.table === driverTable
+      && (mutation.action !== 'delete' || mutation.pluginOwnedResource?.supportsDelete === true);
   }
   return false;
 }

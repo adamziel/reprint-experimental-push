@@ -20,6 +20,7 @@ const baseBlueprintPath = path.join(tmpDir, 'base.blueprint.json');
 const localBlueprintPath = path.join(tmpDir, 'local.blueprint.json');
 const repoTmpDir = path.join(repoRoot, '.tmp');
 const planPath = path.join(repoTmpDir, `plugin-driver-registry-plan-${process.pid}.json`);
+const deletePlanPath = path.join(repoTmpDir, `plugin-driver-registry-delete-plan-${process.pid}.json`);
 
 try {
   fs.mkdirSync(repoTmpDir, { recursive: true });
@@ -60,16 +61,47 @@ try {
   assert.deepEqual(protocolApply.verified, [resourceKey]);
   assert.equal(protocolApply.after.db[driverTable]['entry_id:1'].payload.mode, 'local-edited');
 
+  const deleteBase = protocolApply.after;
+  const deleteLocal = JSON.parse(JSON.stringify(deleteBase));
+  delete deleteLocal.db[driverTable]['entry_id:1'];
+  const deleteRemote = JSON.parse(JSON.stringify(deleteBase));
+  const deletePlan = createPushPlan({
+    base: deleteBase,
+    local: deleteLocal,
+    remote: deleteRemote,
+    now: new Date('2026-05-26T18:05:00.000Z'),
+  });
+
+  assert.equal(deletePlan.status, 'ready');
+  assert.deepEqual(deletePlan.mutations.map((mutation) => mutation.resourceKey), [resourceKey]);
+  assert.equal(deletePlan.mutations[0].action, 'delete');
+  assert.equal(deletePlan.mutations[0].pluginOwnedResource.driver, driverName);
+  assert.equal(deletePlan.mutations[0].pluginOwnedResource.table, driverTable);
+  assert.equal(deletePlan.mutations[0].pluginOwnedResource.supportsDelete, true);
+
+  const modelDelete = applyPlan(JSON.parse(JSON.stringify(deleteRemote)), deletePlan);
+  assert.equal(modelDelete.appliedMutations, 1);
+  assert.equal(modelDelete.site.db[driverTable]['entry_id:1'], undefined);
+
+  fs.writeFileSync(deletePlanPath, `${JSON.stringify(deletePlan, null, 2)}\n`);
+  const protocolDelete = applyPlanToBase(localBlueprintPath, deletePlanPath);
+  assert.equal(protocolDelete.ok, true);
+  assert.equal(protocolDelete.applied, 1);
+  assert.deepEqual(protocolDelete.verified, [resourceKey]);
+  assert.equal(protocolDelete.after.db[driverTable]['entry_id:1'], undefined);
+
   console.log(JSON.stringify({
     status: plan.status,
     driver: plan.mutations[0].pluginOwnedResource.driver,
     table: plan.mutations[0].pluginOwnedResource.table,
-    applied: protocolApply.applied,
-    verified: protocolApply.verified,
+    applied: protocolApply.applied + protocolDelete.applied,
+    updateVerified: protocolApply.verified,
+    deleteVerified: protocolDelete.verified,
   }, null, 2));
 } finally {
   fs.rmSync(tmpDir, { recursive: true, force: true });
   fs.rmSync(planPath, { force: true });
+  fs.rmSync(deletePlanPath, { force: true });
 }
 
 function writeBlueprint(targetPath, { payloadMode, updatedMarker }) {

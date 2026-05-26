@@ -748,6 +748,68 @@ test('allows arbitrary plugin-owned custom table rows with explicit driver table
   assert.equal(applied.site.db.wp_forms_entries['entry_id:9'].payload.mode, 'local');
 });
 
+test('blocks arbitrary plugin-owned custom table deletes without driver delete opt-in', () => {
+  const resourceKey = 'row:["wp_forms_entries","entry_id:9"]';
+  const base = baseSite();
+  base.db.wp_forms_entries = {
+    'entry_id:9': {
+      entry_id: 9,
+      payload: { mode: 'base' },
+      updated_marker: 'base',
+      __pluginOwner: 'forms',
+    },
+  };
+  const local = JSON.parse(JSON.stringify(base));
+  delete local.db.wp_forms_entries['entry_id:9'];
+  local.meta = {
+    pushPolicy: pluginOwnedResourcePolicy(
+      allowedPluginOwnedResource(resourceKey, 'forms', 'fixture-custom-table', {
+        table: 'wp_forms_entries',
+      }),
+    ),
+  };
+
+  const plan = planFor(base, local, JSON.parse(JSON.stringify(base)));
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.blockers[0].class, 'unsupported-plugin-owned-resource');
+  assert.equal(plan.blockers[0].resourceKey, resourceKey);
+});
+
+test('allows arbitrary plugin-owned custom table deletes with explicit driver delete opt-in', () => {
+  const resourceKey = 'row:["wp_forms_entries","entry_id:9"]';
+  const base = baseSite();
+  base.db.wp_forms_entries = {
+    'entry_id:9': {
+      entry_id: 9,
+      payload: { mode: 'base' },
+      updated_marker: 'base',
+      __pluginOwner: 'forms',
+    },
+  };
+  const local = JSON.parse(JSON.stringify(base));
+  delete local.db.wp_forms_entries['entry_id:9'];
+  local.meta = {
+    pushPolicy: pluginOwnedResourcePolicy(
+      allowedPluginOwnedResource(resourceKey, 'forms', 'fixture-custom-table', {
+        table: 'wp_forms_entries',
+        supportsDelete: true,
+      }),
+    ),
+  };
+  const remote = JSON.parse(JSON.stringify(base));
+
+  const plan = planFor(base, local, remote);
+  assert.equal(plan.status, 'ready');
+  const mutation = mutationFor(plan, resourceKey);
+  assert.equal(mutation.action, 'delete');
+  assert.equal(mutation.pluginOwnedResource.driver, 'fixture-custom-table');
+  assert.equal(mutation.pluginOwnedResource.table, 'wp_forms_entries');
+  assert.equal(mutation.pluginOwnedResource.supportsDelete, true);
+
+  const applied = applyPlan(JSON.parse(JSON.stringify(remote)), plan);
+  assert.equal(applied.site.db.wp_forms_entries['entry_id:9'], undefined);
+});
+
 test('fixture forms lab table requires exact driver and active fixture plugin evidence', () => {
   const resourceKey = 'row:["wp_reprint_push_forms_lab","id:1"]';
   const base = baseSite();
@@ -875,6 +937,42 @@ test('executor rejects forged ready custom table plans without valid fixture dri
   assert.ok(stalePluginError instanceof PushPlanError);
   assert.equal(stalePluginError.code, 'UNSUPPORTED_PLUGIN_OWNED_RESOURCE');
   assert.equal(JSON.stringify(stalePluginRemote), stalePluginBefore);
+});
+
+test('executor rejects forged ready arbitrary custom table delete plans without delete opt-in', () => {
+  const resourceKey = 'row:["wp_forms_entries","entry_id:9"]';
+  const base = baseSite();
+  base.db.wp_forms_entries = {
+    'entry_id:9': {
+      entry_id: 9,
+      payload: { mode: 'base-secret' },
+      updated_marker: 'base',
+      __pluginOwner: 'forms',
+    },
+  };
+  const local = JSON.parse(JSON.stringify(base));
+  delete local.db.wp_forms_entries['entry_id:9'];
+  local.meta = {
+    pushPolicy: pluginOwnedResourcePolicy(
+      allowedPluginOwnedResource(resourceKey, 'forms', 'fixture-custom-table', {
+        table: 'wp_forms_entries',
+        supportsDelete: true,
+      }),
+    ),
+  };
+
+  const ready = planFor(base, local, JSON.parse(JSON.stringify(base)));
+  const forged = tamperReadyPlan(ready, (plan) => {
+    mutationFor(plan, resourceKey).pluginOwnedResource.supportsDelete = false;
+  });
+  const remote = JSON.parse(JSON.stringify(base));
+  const before = JSON.stringify(remote);
+  const error = captureError(() => applyPlan(remote, forged));
+
+  assert.ok(error instanceof PushPlanError);
+  assert.equal(error.code, 'UNSUPPORTED_PLUGIN_OWNED_RESOURCE');
+  assert.equal(JSON.stringify(remote), before);
+  assert.equal(JSON.stringify(error.details).includes('base-secret'), false);
 });
 
 test('fixture forms lab table journal redacts raw payload values', () => {
