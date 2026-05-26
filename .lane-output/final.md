@@ -9,10 +9,6 @@ What changed:
 Commands run:
 - `date '+%Y-%m-%d %H:%M:%S %Z (%z)'`
 - `git ls-remote origin refs/heads/lane/reliable-executor`
-- `git show --stat --summary --oneline --no-patch 6beb5ed7c74509094d831bc4247541c4b684feae`
-- `git show --unified=80 6beb5ed7c74509094d831bc4247541c4b684feae -- scripts/playground/production-shaped-release-verify.mjs test/production-shaped-proof.test.js`
-- `git diff --check -- audits/critic.md .lane-output/final.md`
-- `git status --short --branch`
 
 Push result:
 - Not attempted yet
