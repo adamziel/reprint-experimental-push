@@ -3855,9 +3855,9 @@ function unsupportedCommentsUsersResourceSupport({ resource, baseValue, localVal
 
   if (resource.table === 'wp_comments') {
     const references = wordpressGraphReferences(resource, candidate);
-    const commentGraphReference = references
+    const commentGraphReferences = references
       .map((reference) => wordpressGraphReferenceEvidence(reference, resources, base, local, remote))
-      .find((reference) =>
+      .filter((reference) =>
         (
           reference.relationshipType === 'comment-parent'
           && reference.targetResource?.table === 'wp_comments'
@@ -3877,17 +3877,17 @@ function unsupportedCommentsUsersResourceSupport({ resource, baseValue, localVal
           && reference.targetChange.local.state === 'present'
         ));
 
-    if (commentGraphReference) {
+    if (commentGraphReferences.length > 0) {
       return {
         supported: false,
         className: 'unsupported-comments-users-resource',
         unsupportedState: 'same-plan-reference',
-        reason: commentGraphReference.relationshipType === 'comment-parent'
+        reason: commentGraphReferences.some((reference) => reference.relationshipType === 'comment-parent')
           ? `WordPress graph mutation ${resource.key} is created in the same plan as a parent comment identity that depends on it, and identity rewriting is not yet supported.`
-          : commentGraphReference.relationshipType === 'comment-post'
-          ? `WordPress graph mutation ${resource.key} is created in the same plan as a comment post identity that depends on it, and identity rewriting is not yet supported.`
+          : commentGraphReferences.some((reference) => reference.relationshipType === 'comment-post')
+            ? `WordPress graph mutation ${resource.key} is created in the same plan as a comment post identity that depends on it, and identity rewriting is not yet supported.`
             : `WordPress graph mutation ${resource.key} is created in the same plan as a comment user identity that depends on it, and identity rewriting is not yet supported.`,
-        references: [commentGraphReference],
+        references: commentGraphReferences,
       };
     }
 
