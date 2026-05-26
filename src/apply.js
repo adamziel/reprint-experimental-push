@@ -83,6 +83,8 @@ export function isAcceptableRecoveryState(recoveryState) {
     && Object.hasOwn(recoveryState, 'driftedResources')
     && Array.isArray(recoveryState.driftedResources)
     && recoveryState.driftedResources.length > 0
+    && Reflect.ownKeys(recoveryState.driftedResources).filter((key) => typeof key === 'string' && /^\d+$/.test(key)).length
+      === recoveryState.driftedResources.length
     && recoveryState.driftedResources.every((resourceKey) => typeof resourceKey === 'string' && resourceKey.length > 0)
     && recoveryState.artifacts.journal !== recoveryState.artifacts.remote,
   );
@@ -2677,6 +2679,8 @@ function validateRecoveryStateEnvelopeKeys(recoveryState) {
     if (
       !Array.isArray(recoveryState.driftedResources)
       || recoveryState.driftedResources.length === 0
+      || Reflect.ownKeys(recoveryState.driftedResources).filter((key) => typeof key === 'string' && /^\d+$/.test(key)).length
+        !== recoveryState.driftedResources.length
       || recoveryState.driftedResources.some((resourceKey) => typeof resourceKey !== 'string' || resourceKey.length === 0)
     ) {
       throw new PushPlanError(

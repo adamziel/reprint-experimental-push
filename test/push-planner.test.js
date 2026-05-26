@@ -25842,6 +25842,41 @@ test('blocked recovery states fail closed when driftedResources is inherited fro
   assert.match(error.message, /Blocked recovery states must carry own drifted resources\./);
 });
 
+test('blocked recovery states are not acceptable when driftedResources is sparse', () => {
+  const recovery = {
+    status: 'blocked-recovery',
+    planId: 'plan-sparse-drifted-resources',
+    reason: 'sparse drifted resources',
+    remoteHash: 'a'.repeat(64),
+    driftedResources: Array(1),
+    artifacts: {
+      journal: { status: 'completed' },
+      remote: baseSite(),
+    },
+  };
+
+  assert.equal(isAcceptableRecoveryState(recovery), false);
+});
+
+test('blocked recovery states fail closed when driftedResources is sparse', () => {
+  const recovery = {
+    status: 'blocked-recovery',
+    planId: 'plan-sparse-drifted-resources',
+    reason: 'sparse drifted resources',
+    remoteHash: 'a'.repeat(64),
+    driftedResources: Array(1),
+    artifacts: {
+      journal: { status: 'completed' },
+      remote: baseSite(),
+    },
+  };
+
+  const error = captureError(() => assertRecoveryStateEnvelope(recovery));
+
+  assert.equal(error.code, 'RECOVERY_STATE_INVALID');
+  assert.match(error.message, /Blocked recovery states must carry a non-empty list of drifted resource keys\./);
+});
+
 test('production durable journal claims fail closed when remote artifact references are empty strings', () => {
   const writer = {
     kind: 'production-recovery-journal',
