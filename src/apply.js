@@ -729,8 +729,14 @@ function productionRecoverySupportReport(writer) {
       addMissingDependency('restart-readable remote recovery artifact ownership');
     }
   }
+  if (inspectedRemoteArtifactRef && !writerRemoteArtifactRef) {
+    addMissingDependency('restart-readable recovery remote artifact references');
+  }
   if (writerRemoteArtifactRef) {
     if (!isCanonicalAbsolutePath(writerRemoteArtifactRef)) {
+      addMissingDependency('restart-readable recovery remote artifact references');
+    }
+    if (writer?.journalPath && writerRemoteArtifactRef === writer.journalPath) {
       addMissingDependency('restart-readable recovery remote artifact references');
     }
     if (writerJournalArtifactRef && writerRemoteArtifactRef === writerJournalArtifactRef) {
