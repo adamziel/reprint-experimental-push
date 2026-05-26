@@ -1553,6 +1553,26 @@ export const SAFE_FAST_PATHS = Object.freeze([
     publishesStagedDataEarly: false,
   },
   {
+    area: 'backpressure',
+    reduces: ['duplicate-plugin-install-retry-window-sizing', 'planning-round-trips'],
+    allowedShortcut: 'reuse-measured-queue-headroom-to-size-bounded-plugin-install-retry-windows',
+    guardrails: [
+      'queue-headroom-stays-planning-evidence-only',
+      'plugin-install-retry-window-revalidates-before-write',
+    ],
+    gateProofs: {
+      skip: 'measured queue headroom can size the next bounded plugin-install retry window without rescanning the same planning data',
+      live: 'the later plugin-install write still rechecks the live resource precondition before visibility changes',
+      group: 'the retry window only narrows staging concurrency and never widens the atomic-group barrier',
+      recovery: 'durable row receipts, metadata staging records, and the guarded finalize record still classify pause, retry, or crash',
+    },
+    visibilityBoundary: 'planning-only-for-plugin-install-retry-windows',
+    failureEvidence: 'measured queue headroom plus plugin-install retry window and guarded finalize record',
+    bypassesLivePreconditions: false,
+    splitsAtomicGroup: false,
+    publishesStagedDataEarly: false,
+  },
+  {
     area: 'compression',
     reduces: ['wire-bytes', 'planning-round-trips', 'duplicate-budget-recomputation'],
     allowedShortcut: 'compress-canonical-per-kind-budget-summaries-for-bounded-resume-planning',

@@ -609,6 +609,16 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
   assert.ok(
     model.safeFastPaths.some(
       (fastPath) =>
+        fastPath.area === 'backpressure' &&
+        fastPath.allowedShortcut === 'reuse-measured-queue-headroom-to-size-bounded-plugin-install-retry-windows' &&
+        fastPath.guardrails.includes('plugin-install-retry-window-revalidates-before-write') &&
+        fastPath.gateProofs.recovery.includes('metadata staging records'),
+    ),
+    'measured queue headroom can size plugin-install retry windows without weakening finalize or recovery gates',
+  );
+  assert.ok(
+    model.safeFastPaths.some(
+      (fastPath) =>
         fastPath.area === 'compression' &&
         fastPath.allowedShortcut === 'compress-canonical-per-kind-budget-summaries-to-size-bounded-plugin-install-fanout' &&
         fastPath.guardrails.includes('plugin-install-fanout-revalidates-before-write') &&
