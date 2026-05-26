@@ -4015,9 +4015,15 @@ function unsupportedCommentsUsersResourceSupport({ resource, baseValue, localVal
         && reference.targetChange.local.state === 'present');
 
     if (inboundCommentReferences.length > 0) {
-      const commentReference = inboundCommentReferences.find((reference) =>
-        reference.relationshipType === 'comment-parent')
-        || inboundCommentReferences[0];
+      const orderedInboundCommentReferences = inboundCommentReferences.slice().sort((left, right) => {
+        const priority = new Map([
+          ['comment-parent', 0],
+          ['commentmeta-comment', 1],
+        ]);
+        return (priority.get(left.relationshipType) ?? Number.MAX_SAFE_INTEGER)
+          - (priority.get(right.relationshipType) ?? Number.MAX_SAFE_INTEGER);
+      });
+      const commentReference = orderedInboundCommentReferences[0];
       return {
         supported: false,
         className: 'unsupported-comments-users-resource',
@@ -4025,7 +4031,7 @@ function unsupportedCommentsUsersResourceSupport({ resource, baseValue, localVal
         reason: commentReference.relationshipType === 'comment-parent'
           ? `WordPress graph mutation ${resource.key} is created in the same plan as a parent comment identity that depends on it, and identity rewriting is not yet supported.`
           : `WordPress graph mutation ${resource.key} is created in the same plan as a comment meta identity that depends on it, and identity rewriting is not yet supported.`,
-        references: inboundCommentReferences,
+        references: orderedInboundCommentReferences,
       };
     }
   }

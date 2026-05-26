@@ -26917,11 +26917,19 @@ test('carries bounded parent-comment and commentmeta references for a same-plan 
   assert.equal(blocker.resourceKey, resourceKey);
   assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_comments","comment_ID:31"] is created in the same plan as a parent comment identity that depends on it, and identity rewriting is not yet supported.');
   assert.deepEqual(
-    blocker.references.map((reference) => reference.relationshipType).sort(),
+    blocker.references.map((reference) => reference.relationshipType),
     ['comment-parent', 'commentmeta-comment'],
   );
   assert.deepEqual(
-    blocker.references.map((reference) => reference.sourceResourceKey).sort(),
+    blocker.references.map((reference) => reference.sourceResourceKey),
+    ['row:["wp_comments","comment_ID:30"]', 'row:["wp_commentmeta","meta_id:31"]'],
+  );
+  assert.deepEqual(
+    blocker.references.map((reference) => reference.relationshipType).slice().sort(),
+    ['comment-parent', 'commentmeta-comment'],
+  );
+  assert.deepEqual(
+    blocker.references.map((reference) => reference.sourceResourceKey).slice().sort(),
     ['row:["wp_commentmeta","meta_id:31"]', 'row:["wp_comments","comment_ID:30"]'],
   );
   assert.equal(blocker.references.every((reference) => reference.targetResourceKey === resourceKey), true);
