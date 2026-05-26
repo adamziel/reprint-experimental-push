@@ -647,6 +647,7 @@ try {
         dryRunOnly: false,
         requireProductionAuthSession: true,
         simulateStaleClaimRetry: packagedSourceFixture !== null,
+        simulatePreservedRemoteRetryPath: packagedSourceFixture ? '/snapshot' : '',
         authSessionSource,
         labDriftAfterSnapshot,
         now: new Date('2026-05-25T10:12:00.000Z'),

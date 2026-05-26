@@ -46,6 +46,7 @@ export async function runAuthenticatedHttpPush({
   labDriftAfterSnapshot = '',
   requireProductionAuthSession = false,
   simulateStaleClaimRetry = false,
+  simulatePreservedRemoteRetryPath = '',
   authSessionSource = null,
   now = new Date(),
 }) {
@@ -73,7 +74,12 @@ export async function runAuthenticatedHttpPush({
     password: resolvedSource.applicationPassword,
   };
   const profile = resolveRouteProfile(routeProfile);
-  const client = authenticatedHttpClient({ sourceUrl: resolvedSource.sourceUrl, credential, routeProfile: profile.name });
+  const client = authenticatedHttpClient({
+    sourceUrl: resolvedSource.sourceUrl,
+    credential,
+    routeProfile: profile.name,
+    simulatePreservedRemoteRetryPath,
+  });
   const summary = {
     ok: false,
     mode: dryRunOnly ? 'dry-run' : 'apply',
@@ -678,15 +684,31 @@ export function authenticatedHttpClient({
   credential,
   routeProfile = 'lab-authenticated',
   requestTimeoutMs = 10_000,
+  simulatePreservedRemoteRetryPath = '',
 }) {
   const baseUrl = normalizeBaseUrl(sourceUrl);
   const profile = resolveRouteProfile(routeProfile);
   assertSupportedSourceUrlForRouteProfile(baseUrl, profile);
   assertSupportedCredentialForRouteProfile(credential, profile);
+  const maybeSimulateTransientReadFailure = createTransientReadFailureProbe(
+    baseUrl,
+    profile.namespacePath,
+    simulatePreservedRemoteRetryPath,
+  );
 
   return {
     get(pathSuffix) {
-      return requestJson(baseUrl, 'GET', `${profile.namespacePath}${pathSuffix}`, undefined, authHeaders(credential), requestTimeoutMs);
+      return requestJson(
+        baseUrl,
+        'GET',
+        `${profile.namespacePath}${pathSuffix}`,
+        undefined,
+        authHeaders(credential),
+        requestTimeoutMs,
+        {
+          beforeAttempt: maybeSimulateTransientReadFailure,
+        },
+      );
     },
     post(pathSuffix, body, headers = {}) {
       return requestJson(baseUrl, 'POST', `${profile.namespacePath}${pathSuffix}`, body, {
@@ -703,7 +725,10 @@ export function authenticatedHttpClient({
         undefined,
         signedRequestHeaders(credential, 'GET', pathname, '', options),
         requestTimeoutMs,
-        { retryable: options.retryable === true },
+        {
+          retryable: options.retryable === true,
+          beforeAttempt: maybeSimulateTransientReadFailure,
+        },
       );
     },
     signedPost(pathSuffix, body, options = {}) {
@@ -1209,6 +1234,7 @@ async function requestJson(baseUrl, method, pathname, body = undefined, headers 
     body === undefined ? undefined : JSON.stringify(body),
     headers,
     requestTimeoutMs,
+    {},
   );
 }
 
@@ -1218,6 +1244,14 @@ async function requestJsonRaw(baseUrl, method, pathname, rawBody = undefined, he
   let lastError;
   for (let attempt = 1; attempt <= attempts; attempt++) {
     try {
+      if (typeof options.beforeAttempt === 'function') {
+        options.beforeAttempt({
+          baseUrl,
+          method,
+          pathname,
+          attempt,
+        });
+      }
       const response = await requestJsonRawOnce(baseUrl, method, pathname, rawBody, headers, requestTimeoutMs);
       return {
         ...response,
@@ -1290,6 +1324,28 @@ function withConnectionClose(headers) {
   return {
     connection: 'close',
     ...headers,
+  };
+}
+
+function createTransientReadFailureProbe(baseUrl, namespacePath, pathSuffix) {
+  if (!pathSuffix) {
+    return null;
+  }
+
+  const targetPath = new URL(`${namespacePath}${pathSuffix}`, baseUrl).pathname;
+  let pending = true;
+  return ({ method, pathname, attempt }) => {
+    if (!pending || method !== 'GET' || attempt !== 1) {
+      return;
+    }
+    const requestPath = new URL(pathname, baseUrl).pathname;
+    if (requestPath !== targetPath) {
+      return;
+    }
+    pending = false;
+    throw Object.assign(new TypeError(`simulated transient read failure for ${requestPath}`), {
+      cause: { code: 'ECONNRESET' },
+    });
   };
 }
 
