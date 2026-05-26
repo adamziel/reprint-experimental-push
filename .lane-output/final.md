@@ -1,4 +1,4 @@
-Updated the objective audit with the latest remote heads and kept the verdict at `0/4`.
+Updated the audit snapshot to the latest remote heads and kept the verdict at `0/4`.
 
 Changed files:
 - [`audits/objective-audit.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/independent-auditor/audits/objective-audit.md)
@@ -8,16 +8,15 @@ Commands:
 - `date '+%Y-%m-%d %H:%M:%S %Z (%z)'`
 - `git fetch origin --prune && git for-each-ref --sort=-committerdate --format='%(refname:short) %(objectname:short) %(committerdate:iso8601) %(subject)' refs/remotes/origin/lane/{reliable-executor,no-data-loss-recovery,no-data-loss-invariants,critic,progress-publisher,feedback-supervisor}`
 - `sed -n '1,260p' audits/objective-audit.md`
-- `git diff -- audits/objective-audit.md`
 - `git status --short --branch`
+- `git diff -- audits/objective-audit.md`
 
 Push result:
 - Pending
 
 Worktree status:
-- `audits/objective-audit.md` now reflects `origin/lane/no-data-loss-invariants` at `63baa64d`
+- Clean tracked state expected after commit
 - Verdict remains `0/4`
-- Working tree still has the lane-owned audit and handoff edits
 
 Next supervisor nudge:
-1. Re-poll only when a lane lands fresh production-boundary proof: live auth/session lifecycle, restart-readable durable journal ownership, or a live release-path mutation boundary.
+- Re-poll only when a lane lands fresh production-boundary proof: live auth/session lifecycle, restart-readable durable journal ownership, or a live release-path mutation boundary.
