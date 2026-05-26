@@ -23268,6 +23268,55 @@ test('blocks local post-author references to a same-plan created user identity w
   assert.equal(Object.hasOwn(remote.files, 'wp-content/plugins/forms/forms.php'), false);
 });
 
+test('blocks local post-author references to a same-plan created user identity while preserving a matching independent file type swap and remote-only plugin removals', () => {
+  const resourceKey = 'row:["wp_posts","ID:13"]';
+  const targetResourceKey = 'row:["wp_users","ID:12"]';
+  const base = baseSite();
+  base.files['wp-content/uploads/cover'] = 'Base cover bytes';
+
+  const local = baseSite();
+  local.files['wp-content/uploads/cover'] = { type: 'directory' };
+  local.db.wp_users = {
+    'ID:12': {
+      ID: 12,
+      user_login: 'local-post-author',
+      user_email: 'local-post-author@example.test',
+    },
+  };
+  local.db.wp_posts['ID:13'] = {
+    ID: 13,
+    post_title: 'Local post authored by same-plan user',
+    post_content: 'Local post authored by same-plan user content',
+    post_status: 'publish',
+    post_author: 12,
+  };
+
+  const remote = baseSite();
+  remote.files['wp-content/uploads/cover'] = { type: 'directory' };
+  delete remote.plugins.forms;
+  delete remote.files['wp-content/plugins/forms/forms.php'];
+
+  const plan = planFor(base, local, remote);
+  const userBlocker = plan.blockers.find((entry) => entry.resourceKey === targetResourceKey);
+  const typeSwapDecision = decisionFor(plan, 'file:wp-content/uploads/cover');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(typeSwapDecision.decision, 'already-in-sync');
+  assert.equal(typeSwapDecision.change.localChange, 'type-change');
+  assert.equal(typeSwapDecision.change.remoteChange, 'type-change');
+  assert.equal(userBlocker.class, 'unsupported-comments-users-resource');
+  assert.equal(userBlocker.resourceKey, targetResourceKey);
+  assert.equal(userBlocker.reason, 'User graph resources are not yet supported by the planner.');
+  assert.equal(planJson.includes('Local post authored by same-plan user'), false);
+  assert.equal(planJson.includes('Local post authored by same-plan user content'), false);
+  assert.equal(planJson.includes('local-post-author'), false);
+  assert.equal(Object.hasOwn(remote.plugins, 'forms'), false);
+  assert.equal(Object.hasOwn(remote.files, 'wp-content/plugins/forms/forms.php'), false);
+});
+
 test('blocks local comments graph references to a same-plan created post identity while preserving a matching independent edit and remote-only plugin changes', () => {
   const resourceKey = 'row:["wp_comments","comment_ID:13"]';
   const targetResourceKey = 'row:["wp_posts","ID:17"]';
