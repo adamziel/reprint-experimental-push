@@ -1,5 +1,28 @@
 # Critic Audit
 
+## 2026-05-26 14:20:28 CEST (+0200)
+
+No gate movement. `21818064ecf416ba195b9c2da8eca96287812fc7` is the current reliable head from `git ls-remote`; it fixes auth source precedence initialization in the release verifier so a live auth-session source wins over stale environment credentials, which is a real correctness improvement, but it still only proves verifier initialization and source precedence rather than a production-backed auth/session lifecycle or closed durable-journal ownership on the release path. The verdict remains `0/4`.
+
+Changed files:
+- [`audits/critic.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/critic/audits/critic.md)
+
+Commands run:
+- `date '+%Y-%m-%d %H:%M:%S %Z (%z)'`
+- `git ls-remote origin refs/heads/lane/reliable-executor`
+- `git show --stat --summary --oneline --decorate=short 21818064ecf416ba195b9c2da8eca96287812fc7`
+- `git show --no-renames --format=medium --unified=40 21818064ecf416ba195b9c2da8eca96287812fc7 -- scripts/playground/production-shaped-release-verify.mjs test/production-shaped-proof.test.js src/authenticated-http-push-client.js src/recovery-journal.js scripts/playground/push-remote-rest-plugin.php scripts/playground/push-db-journal-lib.php`
+
+Push result:
+- Not attempted
+
+Worktree status:
+- Modified tracked files: `audits/critic.md`, `.lane-output/final.md`
+- Branch: `lane/cycle-20260525-mainwindows-2349/critic-current-20260526-1408...origin/lane/critic`
+
+Next supervisor nudge:
+- Keep critic narrow and only reclassify again when `reliable-executor` lands checked-path production-backed auth/session lifecycle, durable-journal ownership, or preserved-remote retry proof that reaches the release boundary.
+
 ## 2026-05-26 14:18:55 CEST (+0200)
 
 No gate movement. `21818064ecf416ba195b9c2da8eca96287812fc7` is the current reliable head from `git ls-remote`; it fixes auth source precedence initialization in the release verifier so a live auth-session source wins over stale environment credentials, which is a correctness improvement, but it still only proves verifier initialization/source precedence rather than a production-backed auth/session lifecycle or closed durable-journal ownership on the release path. The verdict remains `0/4`.
