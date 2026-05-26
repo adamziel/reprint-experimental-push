@@ -366,22 +366,27 @@ export function summarizeProductionAuthSessionLifecycleTrace(trace) {
 
   const observations = trace
     .filter((entry) => entry && typeof entry === 'object')
-    .map((entry) => ({
-      step: entry.step ?? null,
-      id: entry.id ?? null,
-      type: entry.type ?? null,
-      status: entry.status ?? null,
-      expiresAt: entry.expiresAt ?? null,
-      ...(typeof entry.authUser === 'string' && entry.authUser.trim()
-        ? { authUser: entry.authUser.trim() }
-        : {}),
-      invalidLifecycleFlag: resolveInvalidAuthSessionLifecycleFlag(entry),
-      expired: entry.expired === true || entry.status === 'expired',
-      revoked: entry.revoked === true || entry.status === 'revoked',
-      cleanedUp: entry.cleanedUp === true || entry.cleanup === true || entry.status === 'cleaned-up',
-      rotated: entry.rotated === true || entry.status === 'rotated',
-      preserved: isAuthSessionReadStep(entry.step) && entry.preserved === true,
-    }));
+    .map((entry) => {
+      const invalidLifecycleFlag = resolveInvalidAuthSessionLifecycleFlag(entry);
+      return {
+        step: entry.step ?? null,
+        id: entry.id ?? null,
+        type: entry.type ?? null,
+        status: entry.status ?? null,
+        expiresAt: entry.expiresAt ?? null,
+        ...(typeof entry.authUser === 'string' && entry.authUser.trim()
+          ? { authUser: entry.authUser.trim() }
+          : {}),
+        ...(invalidLifecycleFlag
+          ? { invalidLifecycleFlag }
+          : {}),
+        expired: entry.expired === true || entry.status === 'expired',
+        revoked: entry.revoked === true || entry.status === 'revoked',
+        cleanedUp: entry.cleanedUp === true || entry.cleanup === true || entry.status === 'cleaned-up',
+        rotated: entry.rotated === true || entry.status === 'rotated',
+        preserved: isAuthSessionReadStep(entry.step) && entry.preserved === true,
+      };
+    });
   const readObservation = [...observations]
     .reverse()
     .find((entry) => entry.step === 'journal'
