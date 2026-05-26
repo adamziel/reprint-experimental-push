@@ -541,7 +541,6 @@ function reprint_push_lab_rest_merge_checked_db_journal_contract(array $db_journ
 {
     foreach ([
         'acceptedOnCheckedBoundary',
-        'scope',
         'rowCount',
         'latestRows',
         'eventSummaries',
@@ -550,6 +549,10 @@ function reprint_push_lab_rest_merge_checked_db_journal_contract(array $db_journ
         if (!array_key_exists($key, $db_journal) && array_key_exists($key, $checked_summary)) {
             $db_journal[$key] = $checked_summary[$key];
         }
+    }
+
+    if (array_key_exists('scope', $checked_summary) && reprint_push_lab_rest_should_upgrade_checked_db_journal_scope($db_journal, $checked_summary)) {
+        $db_journal['scope'] = $checked_summary['scope'];
     }
 
     foreach (['ownership', 'leaseFence'] as $nested_key) {
@@ -565,6 +568,24 @@ function reprint_push_lab_rest_merge_checked_db_journal_contract(array $db_journ
     }
 
     return $db_journal;
+}
+
+function reprint_push_lab_rest_should_upgrade_checked_db_journal_scope(array $db_journal, array $checked_summary): bool
+{
+    if (!array_key_exists('scope', $db_journal)) {
+        return true;
+    }
+
+    if (($checked_summary['acceptedOnCheckedBoundary'] ?? false) !== true) {
+        return false;
+    }
+
+    $existing_scope = is_string($db_journal['scope']) ? $db_journal['scope'] : '';
+    if ($existing_scope === '') {
+        return true;
+    }
+
+    return preg_match('/local Playground fixture only|not production durability/i', $existing_scope) === 1;
 }
 
 function reprint_push_lab_rest_authenticated_db_journal(WP_REST_Request $request): WP_REST_Response

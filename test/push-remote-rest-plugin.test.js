@@ -135,3 +135,58 @@ test('checked db journal merge preserves more specific inline values', { skip: !
     },
   });
 });
+
+test('checked db journal merge upgrades stale inline scope on checked boundaries', { skip: !hasPhp }, () => {
+  const result = runMerge(
+    {
+      scope: 'local Playground fixture only',
+      acceptedOnCheckedBoundary: true,
+      ownership: {
+        ownsJournal: true,
+        restartReadable: true,
+        productionAdapter: 'wpdb-single-statement-cas',
+      },
+      leaseFence: {
+        boundary: 'wpdb-single-statement-cas',
+        claimKeyUnique: true,
+        monotonicSequence: true,
+        restartReadable: true,
+        staleClaimRejected: true,
+      },
+    },
+    {
+      acceptedOnCheckedBoundary: true,
+      scope: 'checked live production-shaped journal surface; not local Playground fixture only',
+      ownership: {
+        ownsJournal: true,
+        restartReadable: true,
+        productionAdapter: 'wpdb-single-statement-cas',
+      },
+      leaseFence: {
+        boundary: 'wpdb-single-statement-cas',
+        claimKeyUnique: true,
+        monotonicSequence: true,
+        restartReadable: true,
+        staleClaimRejected: true,
+      },
+    },
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  assert.deepEqual(JSON.parse(result.stdout), {
+    scope: 'checked live production-shaped journal surface; not local Playground fixture only',
+    acceptedOnCheckedBoundary: true,
+    ownership: {
+      ownsJournal: true,
+      restartReadable: true,
+      productionAdapter: 'wpdb-single-statement-cas',
+    },
+    leaseFence: {
+      boundary: 'wpdb-single-statement-cas',
+      claimKeyUnique: true,
+      monotonicSequence: true,
+      restartReadable: true,
+      staleClaimRejected: true,
+    },
+  });
+});
