@@ -832,7 +832,10 @@ function productionRecoverySupportReport(writer) {
   if (typeof writer?.schemaVersion !== 'number' || writer.schemaVersion !== JOURNAL_SCHEMA_VERSION) {
     addMissingDependency('restart-readable recovery journal schema');
   }
-  if (typeof writer?.assertCurrentClaim !== 'function') {
+  if (
+    !Object.hasOwn(writer ?? {}, 'assertCurrentClaim')
+    || typeof writer.assertCurrentClaim !== 'function'
+  ) {
     addMissingDependency('fencing or lease ownership for the journal writer');
   } else {
     try {

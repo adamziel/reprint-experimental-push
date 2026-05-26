@@ -1,31 +1,33 @@
-Tightened the production recovery support probe so it fail-closes inherited surface claims instead of trusting prototype properties, and kept the recovery-envelope validator stricter about explicit own `status`/`reason` markers before it treats an artifact as a nested recovery envelope.
+Recovery hardening pass:
 
-Follow-up:
-- Adjusted the nearby fail-closed expectations to the new dependency order.
-- Added a regression that proves a production durable journal writer with inherited `supportedSurface` / `restartReadable` claims is rejected.
-- Re-ran the focused production recovery slice; it passed 4/4 with the outer timeout in place.
+- Required an explicit own `assertCurrentClaim` on production recovery journal writers before the support probe will treat them as fenced/leased.
+- Added a regression that fails closed when claim fencing is inherited through the prototype instead of owned directly.
+- Re-ran a focused proof slice with an outer timeout; it passed.
 
 Changed files:
+
 - [`src/apply.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/no-data-loss-recovery/src/apply.js)
 - [`test/push-planner.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/no-data-loss-recovery/test/push-planner.test.js)
 - [`.lane-output/final.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/no-data-loss-recovery/.lane-output/final.md)
 
 Commands:
-- `timeout 60s node --test --test-name-pattern 'production durable journal claims fail closed when supported surface is inherited through the prototype|production durable journal claims fail closed when remote artifact references are malformed|production durable journal claims fail closed when restart inspection artifact references are array-shaped|production durable journal claims fail closed when remote artifact references are empty strings' test/push-planner.test.js`
-- `git status --short`
-- `git diff --stat`
-- `date '+%Y-%m-%d %H:%M:%S %Z (%z)'`
+
+- `timeout 60s node --test --test-name-pattern 'claim fencing is inherited through the prototype|inspection data is advertised through the prototype|restart inspection only once' test/push-planner.test.js`
 
 Verification:
-- Focused recovery slice passed `4/4`.
+
+- Focused slice passed `3/3`.
 
 Push result:
+
 - Not pushed yet.
 
 Worktree status:
+
 - Dirty tracked files: `src/apply.js`, `test/push-planner.test.js`, `.lane-output/final.md`
-- Branch remains ahead/behind relative to `origin/main`.
+- Branch is `ahead 694, behind 258` relative to `origin/main`
 
 Next supervisor nudge:
-1. Commit and push the coherent recovery hardening if no further expectation drift appears.
-2. If the upstream divergence matters for integration, handle it with a non-destructive merge/rebase plan in a separate pass.
+
+1. Commit this recovery-ownership hardening and try a normal push.
+2. If push is blocked by divergence, keep the commit intact and hand off the exact non-destructive merge/rebase command needed next.
