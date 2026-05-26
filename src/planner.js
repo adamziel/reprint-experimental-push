@@ -1197,6 +1197,21 @@ function wordpressGraphIdentitySupport({
       };
     }
   }
+  if (resource.table === 'wp_posts' && localValue.post_type === 'nav_menu_item') {
+    const menuItemParentReference = referenceEvidence.find((reference) =>
+      reference.relationshipType === 'menu-item-parent'
+      && reference.targetChange.targetResource?.table === 'wp_posts'
+      && ['wp_navigation', 'nav_menu_item'].includes(reference.targetChange.local.value?.post_type)
+      && reference.targetChange.remote.state === 'absent');
+
+    if (menuItemParentReference) {
+      return {
+        supported: false,
+        className: 'unsupported-navigation-resource',
+        reason: 'Navigation and menu graph resources are not yet supported by the planner.',
+      };
+    }
+  }
   if (resource.table === 'wp_posts' && normalizePositiveInteger(localValue.post_parent) != null) {
     const postParentTarget = wordpressGraphTargetResource({
       sourceTable: resource.table,

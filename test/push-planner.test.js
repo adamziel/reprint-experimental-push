@@ -12393,7 +12393,6 @@ test('blocks local postmeta references to a same-plan created attachment identit
 
   const plan = planFor(base, local, remote);
   const blocker = plan.blockers[0];
-  const reference = blocker.references[0];
   const planJson = JSON.stringify(plan);
 
   assert.equal(plan.status, 'blocked');
@@ -13077,6 +13076,7 @@ test('blocks local post-parent references to a live attachment identity while pr
 
   const plan = planFor(base, local, remote);
   const blocker = plan.blockers[0];
+  const reference = blocker.references[0];
   const planJson = JSON.stringify(plan);
 
   assert.equal(plan.status, 'blocked');
@@ -14370,6 +14370,7 @@ test('blocks local comments and users graph resources while preserving remote-on
 
   const plan = planFor(base, local, remote);
   const blocker = plan.blockers[0];
+  const reference = blocker.references[0];
   const planJson = JSON.stringify(plan);
 
   assert.equal(plan.status, 'blocked');
@@ -14830,6 +14831,7 @@ test('blocks local post-parent references to a same-plan created nav menu item w
 
   const plan = planFor(base, local, remote);
   const blocker = plan.blockers[0];
+  const reference = blocker.references[0];
   const planJson = JSON.stringify(plan);
 
   assert.equal(plan.status, 'blocked');
@@ -14844,6 +14846,57 @@ test('blocks local post-parent references to a same-plan created nav menu item w
   assert.equal(planJson.includes('Local child post content'), false);
   assert.equal(Object.hasOwn(remote.plugins, 'forms'), false);
   assert.equal(Object.hasOwn(remote.files, 'wp-content/plugins/forms/forms.php'), false);
+});
+
+test('blocks local nav menu item parent references to a same-plan created menu item while preserving remote-only plugin drift', () => {
+  const resourceKey = 'row:["wp_posts","ID:49"]';
+  const targetResourceKey = 'row:["wp_posts","ID:50"]';
+  const base = baseSite();
+  base.db.wp_posts['ID:49'] = {
+    ID: 49,
+    post_title: 'Base child menu item',
+    post_content: 'Base child menu item content',
+    post_status: 'publish',
+    post_type: 'nav_menu_item',
+    menu_item_parent: 0,
+  };
+
+  const local = baseSite();
+  local.db.wp_posts['ID:49'] = {
+    ID: 49,
+    post_title: 'Local child menu item',
+    post_content: 'Local child menu item content',
+    post_status: 'publish',
+    post_type: 'nav_menu_item',
+    menu_item_parent: 50,
+  };
+  local.db.wp_posts['ID:50'] = {
+    ID: 50,
+    post_title: 'Local same-plan menu item',
+    post_content: 'Local same-plan menu item content',
+    post_status: 'publish',
+    post_type: 'nav_menu_item',
+  };
+
+  const remote = baseSite();
+  remote.db.wp_posts['ID:49'] = JSON.parse(JSON.stringify(base.db.wp_posts['ID:49']));
+  remote.plugins.forms.description = 'remote-only plugin drift';
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers[0];
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(decisionFor(plan, targetResourceKey), undefined);
+  assert.equal(plan.conflicts.length, 0);
+  assert.equal(blocker.class, 'unsupported-navigation-resource');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.reason, 'Navigation and menu graph resources are not yet supported by the planner.');
+  assert.equal(planJson.includes('Local same-plan menu item content'), false);
+  assert.equal(planJson.includes('remote-only plugin drift'), false);
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin drift');
 });
 
 test('blocks local post-parent references to a same-plan created wp navigation while preserving remote-only plugin drift', () => {
@@ -14882,6 +14935,7 @@ test('blocks local post-parent references to a same-plan created wp navigation w
 
   const plan = planFor(base, local, remote);
   const blocker = plan.blockers[0];
+  const reference = blocker.references[0];
   const planJson = JSON.stringify(plan);
 
   assert.equal(plan.status, 'blocked');
@@ -14933,6 +14987,7 @@ test('blocks local post-parent references to a same-plan created wp navigation w
 
   const plan = planFor(base, local, remote);
   const blocker = plan.blockers[0];
+  const reference = blocker.references[0];
   const planJson = JSON.stringify(plan);
 
   assert.equal(plan.status, 'blocked');
@@ -15038,6 +15093,7 @@ test('blocks local post-parent references to a same-plan created wp navigation w
 
   const plan = planFor(base, local, remote);
   const blocker = plan.blockers[0];
+  const reference = blocker.references[0];
   const planJson = JSON.stringify(plan);
 
   assert.equal(plan.status, 'blocked');
@@ -15168,7 +15224,8 @@ test('blocks local attachment graph resources while preserving remote-only plugi
   delete remote.files['wp-content/plugins/forms/forms.php'];
 
   const plan = planFor(base, local, remote);
-  const blocker = plan.blockers[0];
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  const reference = blocker.references[0];
   const planJson = JSON.stringify(plan);
 
   assert.equal(plan.status, 'blocked');
@@ -15587,9 +15644,63 @@ test('blocks local post-parent references to a same-plan created revision while 
   const remote = baseSite();
   remote.db.wp_posts['ID:46'] = JSON.parse(JSON.stringify(base.db.wp_posts['ID:46']));
   remote.plugins.forms.description = 'remote-only plugin drift';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin drift */';
 
   const plan = planFor(base, local, remote);
   const blocker = plan.blockers[0];
+  const reference = blocker.references[0];
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(decisionFor(plan, targetResourceKey), undefined);
+  assert.equal(plan.conflicts.length, 0);
+  assert.equal(blocker.class, 'unsupported-revision-resource');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.reason, 'Revision graph resources are not yet supported by the planner.');
+  assert.equal(planJson.includes('Local revision target content'), false);
+  assert.equal(planJson.includes('remote-only plugin drift'), false);
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin drift');
+  assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin drift */');
+});
+
+test('blocks local post-parent references to a same-plan created revision while preserving remote-only plugin drift', () => {
+  const resourceKey = 'row:["wp_posts","ID:46"]';
+  const targetResourceKey = 'row:["wp_posts","ID:47"]';
+  const base = baseSite();
+  base.db.wp_posts['ID:46'] = {
+    ID: 46,
+    post_title: 'Base child post',
+    post_content: 'Base child post content',
+    post_status: 'publish',
+    post_parent: 0,
+    post_type: 'post',
+  };
+
+  const local = baseSite();
+  local.db.wp_posts['ID:46'] = {
+    ID: 46,
+    post_title: 'Local child post',
+    post_content: 'Local child post content',
+    post_status: 'publish',
+    post_parent: 47,
+    post_type: 'post',
+  };
+  local.db.wp_posts['ID:47'] = {
+    ID: 47,
+    post_title: 'Local revision target',
+    post_content: 'Local revision target content',
+    post_status: 'inherit',
+    post_type: 'revision',
+  };
+
+  const remote = baseSite();
+  remote.db.wp_posts['ID:46'] = JSON.parse(JSON.stringify(base.db.wp_posts['ID:46']));
+  remote.plugins.forms.description = 'remote-only plugin drift';
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
   const planJson = JSON.stringify(plan);
 
   assert.equal(plan.status, 'blocked');
@@ -15651,7 +15762,11 @@ test('blocks local post-parent references to a same-plan created revision while 
   assert.equal(plan.conflicts.length, 0);
   assert.equal(blocker.class, 'unsupported-revision-resource');
   assert.equal(blocker.resourceKey, resourceKey);
-  assert.equal(blocker.reason, 'Revision graph resources are not yet supported by the planner.');
+  assert.equal(blocker.reason, 'Revision graph references are not yet supported by the planner.');
+  assert.equal(blocker.references[0].relationshipKey, 'wp_posts.post_parent');
+  assert.equal(blocker.references[0].relationshipType, 'post-parent');
+  assert.equal(blocker.references[0].sourceResourceKey, resourceKey);
+  assert.equal(blocker.references[0].targetResourceKey, targetResourceKey);
   assert.equal(planJson.includes('Local revision removal target content'), false);
   assert.equal(Object.hasOwn(remote.plugins, 'forms'), false);
   assert.equal(Object.hasOwn(remote.files, 'wp-content/plugins/forms/forms.php'), false);
