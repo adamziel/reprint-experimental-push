@@ -1,9 +1,35 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-26 17:26 CEST
+Last updated: 2026-05-26 17:49 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-26 17:49 CEST - Reliable Head Advanced to `c7bd9cb9`
+
+- Going well: the live reliable head advanced again to `c7bd9cb9a19fa3cc958f20b993b216dda5ef49fd`, so the release-path work is still moving.
+- Not going well: the gate posture is still `0/4`, and the checked release boundary is still the blocker rather than support-only proof fields.
+- Progress change: this is a fresh head update, not a gate move; critic and auditor should classify the new head once, then stop until the checked boundary changes.
+- Next nudge: keep `reliable-executor` on the checked release-path proof, and let `progress-publisher` refresh the public page only if it still lags the live head.
+
+| Lane | Nudge |
+| --- | --- |
+| Reliable executor | Continue the product/test push toward the checked release boundary; do not backslide into proof-field polish. |
+| Progress publisher | Refresh the public page only if it still lags `c7bd9cb9a19fa3cc958f20b993b216dda5ef49fd`; keep the gate posture at `0/4`. |
+| Audit and critic | Classify the new head once and keep the verdict at `0/4` unless the checked release boundary proves a gate. |
+
+## 2026-05-26 17:48 CEST - Reliable Head Advanced to `1c7b1eed`
+
+- Going well: the live reliable head advanced to `1c7b1eedb063acabd18756aa218380456c5384e1`, so the checked release path kept moving.
+- Not going well: the gate posture is still `0/4`, and the blocker is still the checked release boundary rather than support-only proof fields.
+- Progress change: this is a real head update, not a gate move; critic and auditor should classify the new head once, then stop until the checked boundary changes.
+- Next nudge: keep `reliable-executor` on the shared release-path proof, and let `progress-publisher` refresh the public page only if it still lags the live head.
+
+| Lane | Nudge |
+| --- | --- |
+| Reliable executor | Continue the product/test push toward the checked release boundary; do not backslide into proof-field polish. |
+| Progress publisher | Refresh the public page only if it still lags `1c7b1eedb063acabd18756aa218380456c5384e1`; keep the gate posture at `0/4`. |
+| Audit and critic | Classify the new head once and keep the verdict at `0/4` unless the checked release boundary proves a gate. |
 
 ## 2026-05-26 17:26 CEST - Reliable Head Advanced to `17a0a150`
 
