@@ -1339,6 +1339,16 @@ function isValidSamePlanWordPressGraphTarget(targetMutation, reference, sourceMu
       return false;
     }
     if (
+      sourceValue
+      && typeof sourceValue === 'object'
+      && sourceValue.post_type === 'attachment'
+      && targetValue
+      && typeof targetValue === 'object'
+      && targetValue.post_type === 'attachment'
+    ) {
+      return false;
+    }
+    if (
       targetValue
       && typeof targetValue === 'object'
       && (

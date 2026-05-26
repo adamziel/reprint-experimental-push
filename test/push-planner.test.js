@@ -2600,6 +2600,58 @@ test('allows a local attachment to reference a parent post created by the same p
   assert.equal(referenceJson.includes('remote-navigation-body'), false);
 });
 
+test('blocks a local attachment parent reference to a same-plan attachment even when a remote navigation post exists', () => {
+  const parentResourceKey = 'row:["wp_posts","ID:2"]';
+  const attachmentResourceKey = 'row:["wp_posts","ID:3"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_title: 'Local attachment parent',
+    post_content: 'local-private-attachment-parent-body',
+    post_status: 'inherit',
+    post_type: 'attachment',
+  };
+  local.db.wp_posts['ID:3'] = {
+    ID: 3,
+    post_title: 'Local attachment child',
+    post_content: 'local-private-attachment-child-body',
+    post_status: 'inherit',
+    post_type: 'attachment',
+    post_parent: 2,
+  };
+  const remote = baseSite();
+  remote.db.wp_posts['ID:5'] = {
+    ID: 5,
+    post_title: 'Remote navigation post',
+    post_content: 'remote-navigation-body',
+    post_status: 'publish',
+    post_type: 'wp_navigation',
+  };
+
+  const plan = planFor(base, local, remote);
+  const parentMutation = mutationFor(plan, parentResourceKey);
+  const attachmentMutation = mutationFor(plan, attachmentResourceKey);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === attachmentResourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(parentMutation.changeKind, 'create');
+  assert.equal(attachmentMutation.changeKind, 'create');
+  assert.equal(blocker.class, 'missing-wordpress-graph-dependency');
+  assert.equal(blocker.references[0].relationshipType, 'post-parent');
+  assert.equal(blocker.references[0].targetResourceKey, parentResourceKey);
+  assert.equal(JSON.stringify(blocker).includes('remote-navigation-body'), false);
+  assert.equal(
+    JSON.stringify(blocker).includes('local-private-attachment-parent-body'),
+    false,
+  );
+  assert.equal(
+    JSON.stringify(blocker).includes('local-private-attachment-child-body'),
+    false,
+  );
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
+});
+
 test('allows a local page parent reference to a same-plan post even when a remote navigation post exists', () => {
   const parentResourceKey = 'row:["wp_posts","ID:2"]';
   const pageResourceKey = 'row:["wp_posts","ID:3"]';
@@ -3905,6 +3957,62 @@ test('blocks a local attachment parent reference to a same-plan wp_navigation po
     JSON.stringify(blocker).includes('local-private-attachment-child-body'),
     false,
   );
+});
+
+test('blocks a local attachment parent reference to a same-plan attachment even when a remote nav menu taxonomy exists', () => {
+  const parentResourceKey = 'row:["wp_posts","ID:2"]';
+  const attachmentResourceKey = 'row:["wp_posts","ID:3"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_title: 'Local attachment parent',
+    post_content: 'local-private-attachment-parent-body',
+    post_status: 'inherit',
+    post_type: 'attachment',
+  };
+  local.db.wp_posts['ID:3'] = {
+    ID: 3,
+    post_title: 'Local attachment child',
+    post_content: 'local-private-attachment-child-body',
+    post_status: 'inherit',
+    post_type: 'attachment',
+    post_parent: 2,
+  };
+  const remote = baseSite();
+  remote.db.wp_term_taxonomy = {
+    'term_taxonomy_id:20': {
+      term_taxonomy_id: 20,
+      term_id: 20,
+      taxonomy: 'nav_menu',
+      description: 'Remote navigation menu taxonomy',
+      parent: 0,
+      count: 1,
+    },
+  };
+
+  const plan = planFor(base, local, remote);
+  const parentMutation = mutationFor(plan, parentResourceKey);
+  const attachmentMutation = mutationFor(plan, attachmentResourceKey);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === attachmentResourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 2);
+  assert.equal(parentMutation.changeKind, 'create');
+  assert.equal(attachmentMutation.changeKind, 'create');
+  assert.equal(blocker.class, 'missing-wordpress-graph-dependency');
+  assert.equal(blocker.references[0].relationshipType, 'post-parent');
+  assert.equal(blocker.references[0].targetResourceKey, parentResourceKey);
+  assert.equal(JSON.stringify(blocker).includes('Remote navigation menu taxonomy'), false);
+  assert.equal(
+    JSON.stringify(blocker).includes('local-private-attachment-parent-body'),
+    false,
+  );
+  assert.equal(
+    JSON.stringify(blocker).includes('local-private-attachment-child-body'),
+    false,
+  );
+  assert.throws(() => applyPlan(baseSite(), plan), /Refusing to apply/);
 });
 
 test('blocks a local postmeta reference to a same-plan attachment when it is not thumbnail metadata', () => {
