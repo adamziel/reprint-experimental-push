@@ -1,22 +1,22 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-26 15:51 CEST
+Last updated: 2026-05-26 15:53 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
 
-## 2026-05-26 15:51 CEST - Public Status Refreshed
+## 2026-05-26 15:53 CEST - Public Status Refreshed
 
-- Going well: the live reliable head advanced to `88674b4bdd8f936f9aab4c1938a3ae3e5267b315`, so the checked
-  release path is still moving instead of stalling on the same support-surface
-  commit.
-- Not going well: the release gate is still `0/4`, and the missing proof is
-  still production-backed auth/session lifecycle or durable-journal ownership.
-- Progress change: public status now names the new live head and stays
-  conservative at `0/4`.
+- Going well: the live reliable head is still advancing on the checked
+  release path, and public status can stay aligned with
+  `88674b4bdd8f936f9aab4c1938a3ae3e5267b315` instead of drifting stale.
+- Not going well: the release gate is still `0/4`; the missing proof remains
+  production-backed auth/session lifecycle or durable-journal ownership.
+- Progress change: the public surface stays conservative while naming the live
+  head and the unchanged gate posture.
 - Next nudge: keep `reliable-executor` on the next checked release-path
-  dependency, and keep `progress-publisher` aligned with the live
-  `88674b4bdd8f936f9aab4c1938a3ae3e5267b315` head while gates stay at `0/4`.
+  dependency, and keep `progress-publisher` aligned with
+  `88674b4bdd8f936f9aab4c1938a3ae3e5267b315` while gates stay at `0/4`.
 
 | Lane | Nudge |
 | --- | --- |
