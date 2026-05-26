@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { spawn, spawnSync } from 'node:child_process';
+import { createServer } from 'node:http';
 import net from 'node:net';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -2071,6 +2072,20 @@ test('lab Playground readiness helper rejects malformed ready responses and retr
   assert.equal(
     labReadinessBodyRetryable(
       200,
+      '<!doctype html><html><body>WordPress is not ready yet</body></html>',
+    ),
+    true,
+  );
+  assert.equal(
+    labReadinessBodyRetryable(
+      200,
+      'Warning: startup wrapper\n{"error":{"code":"wordpress_not_ready"}}',
+    ),
+    true,
+  );
+  assert.equal(
+    labReadinessBodyRetryable(
+      200,
       '<!doctype html><html><body>snapshot route returned broken html</body></html>',
     ),
     false,
@@ -2506,6 +2521,74 @@ test('production-shaped release verify tracks distinct cached blueprint snapshot
   assert.equal(remoteFixture.files['wp-content/uploads/reprint-push/remote-only.txt'], 'remote-only upload content');
 });
 
+test('shared lab waitForServer retries startup-shaped /wp-json/ HTTP 200 bodies before probing snapshot', async () => {
+  let indexCalls = 0;
+  let snapshotCalls = 0;
+  const server = createServer((request, response) => {
+    if (request.url === '/wp-json/') {
+      indexCalls += 1;
+      response.statusCode = 200;
+      if (indexCalls === 1) {
+        response.setHeader('content-type', 'text/html; charset=utf-8');
+        response.end('<!doctype html><html><body>WordPress is not ready yet</body></html>');
+        return;
+      }
+      response.setHeader('content-type', 'application/json; charset=utf-8');
+      response.end(JSON.stringify({ namespaces: ['reprint-push-lab/v1'] }));
+      return;
+    }
+
+    if (request.url === '/wp-json/reprint-push-lab/v1/snapshot') {
+      snapshotCalls += 1;
+      response.statusCode = 200;
+      response.setHeader('content-type', 'application/json; charset=utf-8');
+      response.end(JSON.stringify({ ok: true, snapshot: {} }));
+      return;
+    }
+
+    response.statusCode = 404;
+    response.end('not found');
+  });
+
+  await new Promise((resolve, reject) => {
+    server.listen(0, '127.0.0.1', (error) => {
+      if (error) {
+        reject(error);
+        return;
+      }
+      resolve();
+    });
+  });
+
+  const address = server.address();
+  assert.ok(address && typeof address === 'object' && typeof address.port === 'number');
+
+  try {
+    await waitForServer(
+      {
+        exitCode: null,
+        signalCode: null,
+        pid: null,
+      },
+      `http://127.0.0.1:${address.port}`,
+      () => '',
+    );
+  } finally {
+    await new Promise((resolve, reject) => {
+      server.close((error) => {
+        if (error) {
+          reject(error);
+          return;
+        }
+        resolve();
+      });
+    });
+  }
+
+  assert.equal(indexCalls, 2);
+  assert.equal(snapshotCalls, 1);
+});
+
 async function withPlaygroundServer(name, blueprintPath, run) {
   const server = await startPlaygroundServer(name, blueprintPath);
   try {
@@ -2624,7 +2707,8 @@ async function waitForServer(child, baseUrl, getLogs) {
       process.stderr.write(
         `Playground probe ${baseUrl}/wp-json/ -> ${response.status} ${responsePreview.slice(0, 160).replace(/\s+/g, ' ').trim()}\n`,
       );
-      if (response.status === 200) {
+      const readinessRetryable = labReadinessBodyRetryable(response.status, responseBody);
+      if (response.status === 200 && !readinessRetryable) {
         notReadyProbeCount = 0;
         await response.arrayBuffer();
         const snapshot = await fetchWithTimeout(`${baseUrl}/wp-json/reprint-push-lab/v1/snapshot`, {
@@ -2690,10 +2774,10 @@ async function waitForServer(child, baseUrl, getLogs) {
           { childPid: child.pid ?? null },
         );
       } else {
-        const readinessRetryable = labReadinessBodyRetryable(response.status, responseBody);
         const readinessHint = readinessRetryable
           ? responseBody.match(/WordPress is not ready yet/i)?.[0]
             ?? responseBody.match(/No route was found matching the URL and request method\.?/i)?.[0]
+            ?? responseBody.match(/wordpress_not_ready|rest_no_route/i)?.[0]
             ?? 'startup route is not ready yet'
           : null;
         const routeSummary = describeLastProbe(lastProbes.at(-1));

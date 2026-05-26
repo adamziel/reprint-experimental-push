@@ -2127,7 +2127,8 @@ async function waitForServer(child, baseUrl, getLogs) {
       process.stderr.write(
         `Playground probe ${baseUrl}/wp-json/ -> ${response.status} ${responsePreview.slice(0, 160).replace(/\s+/g, ' ').trim()}\n`,
       );
-      if (response.status === 200) {
+      const readinessRetryable = labReadinessBodyRetryable(response.status, responseBody);
+      if (response.status === 200 && !readinessRetryable) {
         notReadyProbeCount = 0;
         await response.arrayBuffer();
         const snapshot = await fetchWithTimeout(`${baseUrl}/wp-json/reprint-push-lab/v1/snapshot`, {
@@ -2194,10 +2195,10 @@ async function waitForServer(child, baseUrl, getLogs) {
           { childPid: child.pid ?? null },
         );
       } else {
-        const readinessRetryable = labReadinessBodyRetryable(response.status, responseBody);
         const readinessHint = readinessRetryable
           ? responseBody.match(/WordPress is not ready yet/i)?.[0]
             ?? responseBody.match(/No route was found matching the URL and request method\.?/i)?.[0]
+            ?? responseBody.match(/wordpress_not_ready|rest_no_route/i)?.[0]
             ?? 'startup route is not ready yet'
           : null;
         const routeSummary = describeLastRouteStatusBody(lastRouteStatusBody);
