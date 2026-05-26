@@ -9,6 +9,7 @@ import {
   loadAuthSessionSource,
   resolveAuthSessionSourceCredentials,
 } from '../scripts/playground/auth-session-source.js';
+import { buildAuthSessionSourceCommand } from '../scripts/playground/auth-session-source-command.js';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const muPluginDir = path.join(repoRoot, 'scripts/playground/rest-mu-plugins');
@@ -651,14 +652,15 @@ test('production-shaped release verify command fails closed when production auth
 });
 
 test('production-shaped release verify command consumes the production auth/session source command when provided', () => {
-  const source = loadAuthSessionSource(
-    `${process.execPath} -e "process.stdout.write(JSON.stringify({sourceUrl:'http://127.0.0.1:8080', username:'reprint_push_admin', applicationPassword:'reprint-push-admin-app-password'}))"`,
-    {
-      ...process.env,
-      NODE_NO_WARNINGS: '1',
-    },
-    repoRoot,
-  );
+  const sourceCommand = buildAuthSessionSourceCommand({
+    sourceUrl: 'http://127.0.0.1:8080',
+    username: 'reprint_push_admin',
+    applicationPassword: 'reprint-push-admin-app-password',
+  });
+  const source = loadAuthSessionSource(sourceCommand, {
+    ...process.env,
+    NODE_NO_WARNINGS: '1',
+  }, repoRoot);
   assert.deepEqual(source, {
     ok: true,
     sourceUrl: 'http://127.0.0.1:8080',
@@ -753,7 +755,11 @@ maybeTest('production-shaped release verify command surfaces the consumed produc
         REPRINT_PUSH_REMOTE_URL: remoteServer.baseUrl,
         REPRINT_PUSH_USERNAME: 'stale-lab-username',
         REPRINT_PUSH_APPLICATION_PASSWORD: 'stale-lab-password',
-        REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND: `${process.execPath} -e "process.stdout.write(JSON.stringify({sourceUrl:'${remoteServer.baseUrl}', username:'${liveCredentials.username}', applicationPassword:'${liveCredentials.password}'}))"`,
+        REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND: buildAuthSessionSourceCommand({
+          sourceUrl: remoteServer.baseUrl,
+          username: liveCredentials.username,
+          applicationPassword: liveCredentials.password,
+        }),
         NODE_NO_WARNINGS: '1',
       },
       {
