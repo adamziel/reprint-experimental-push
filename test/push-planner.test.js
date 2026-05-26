@@ -20398,6 +20398,7 @@ test('accepted post-failure recovery states are old remote, fully updated remote
     isAcceptableRecoveryState({
       status: 'old-remote',
       reason: 'Injected failure before staging any mutation.',
+      remoteHash: '0'.repeat(64),
       artifacts: { journal: { status: 'opened' } },
     }),
     true,
@@ -20406,6 +20407,7 @@ test('accepted post-failure recovery states are old remote, fully updated remote
     isAcceptableRecoveryState({
       status: 'fully-updated-remote',
       reason: 'All planned mutations were committed.',
+      remoteHash: '1'.repeat(64),
       artifacts: { journal: { status: 'completed' } },
     }),
     true,
@@ -20414,6 +20416,7 @@ test('accepted post-failure recovery states are old remote, fully updated remote
     isAcceptableRecoveryState({
       status: 'blocked-recovery',
       reason: 'Journaled resources drifted outside the before/after recovery envelope.',
+      remoteHash: '2'.repeat(64),
       driftedResources: ['row:["wp_posts","ID:1"]'],
       artifacts: {
         journal: { status: 'completed' },
@@ -20426,6 +20429,7 @@ test('accepted post-failure recovery states are old remote, fully updated remote
     isAcceptableRecoveryState({
       status: 'blocked-recovery',
       reason: 'Journaled resources drifted outside the before/after recovery envelope.',
+      remoteHash: '3'.repeat(64),
       driftedResources: ['row:["wp_posts","ID:1"]'],
       artifacts: {
         journal: { status: 'completed', planId: 'plan-1' },
@@ -20438,6 +20442,7 @@ test('accepted post-failure recovery states are old remote, fully updated remote
     isAcceptableRecoveryState({
       status: 'blocked-recovery',
       reason: 'Journaled resources drifted outside the before/after recovery envelope.',
+      remoteHash: '4'.repeat(64),
       driftedResources: ['row:["wp_posts","ID:1"]'],
       artifacts: {
         journal: { status: 'completed' },
@@ -20450,6 +20455,7 @@ test('accepted post-failure recovery states are old remote, fully updated remote
     isAcceptableRecoveryState({
       status: 'blocked-recovery',
       reason: 'Journaled resources drifted outside the before/after recovery envelope.',
+      remoteHash: '5'.repeat(64),
       driftedResources: ['row:["wp_posts","ID:1"]'],
       artifacts: { journal: { status: 'completed' } },
     }),
@@ -20459,17 +20465,20 @@ test('accepted post-failure recovery states are old remote, fully updated remote
     isAcceptableRecoveryState({
       status: 'partially-applied',
       reason: 'Journaled resources drifted outside the before/after recovery envelope.',
+      remoteHash: '6'.repeat(64),
       artifacts: { journal: { status: 'staged' } },
     }),
     false,
   );
   const inheritedStatus = Object.create({
     status: 'old-remote',
+    remoteHash: '7'.repeat(64),
     artifacts: { journal: { status: 'opened' } },
   });
   assert.equal(isAcceptableRecoveryState(inheritedStatus), false);
   const inheritedArtifacts = {
     status: 'blocked-recovery',
+    remoteHash: '8'.repeat(64),
   };
   Object.setPrototypeOf(inheritedArtifacts, {
     artifacts: {
@@ -20481,6 +20490,7 @@ test('accepted post-failure recovery states are old remote, fully updated remote
 
   const inheritedRemoteArtifact = {
     status: 'fully-updated-remote',
+    remoteHash: '9'.repeat(64),
     artifacts: { journal: { status: 'completed' } },
   };
   Object.setPrototypeOf(inheritedRemoteArtifact.artifacts, {
