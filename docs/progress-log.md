@@ -4,19 +4,19 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
-## 2026-05-26 - Public Status Audit 12:02:58
+## 2026-05-26 - Public Status Audit 12:05:08
 
-<a id="2026-05-26-public-status-audit-120258"></a>
+<a id="2026-05-26-public-status-audit-120508"></a>
 
 - Refreshed [progress.html](../progress.html) to the current `date` output
-  (`2026-05-26 12:02:58 CEST`) so the visible page stays fresh to the current
+  (`2026-05-26 12:05:08 CEST`) so the visible page stays fresh to the current
   supervision cycle. The headline, trend, audit note, and release-gate proof
-  item now name `581f142f` as the current reliable head and keep the surfaced
-  auth session lifecycle proof in view, while release gates remain `0/4`.
-- `581f142f` remains the current reliable head for the public lane surface;
-  auth/session lifecycle evidence is visible on the checked release verifier,
-  but production WordPress auth/session lifecycle and durable journal
-  semantics remain blocked.
+  item now name `c7a6432d` as the current reliable head and keep the surfaced
+  release-dependency proof in view, while release gates remain `0/4`.
+- `c7a6432d` remains the current reliable head for the public lane surface;
+  the checked release verifier now surfaces explicit gate dependencies, but
+  production WordPress auth/session lifecycle and durable journal semantics
+  remain blocked.
 - Evidence trail: [progress.html](../progress.html),
   [objective audit](../audits/objective-audit.md),
   [release-gate checklist](../progress.html#proof-gates).
