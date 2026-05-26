@@ -604,10 +604,7 @@ function reprint_push_lab_rest_attach_checked_recovery_journal_evidence(
         : '';
     if (
         $checked_scope !== ''
-        && (
-            $existing_scope === ''
-            || preg_match('/fixture-scoped|local Playground fixture only|not production durability/i', $existing_scope) === 1
-        )
+        && reprint_push_lab_rest_should_upgrade_checked_recovery_integrity_scope($existing_scope)
     ) {
         $existing_integrity['scope'] = $checked_scope;
     }
@@ -622,6 +619,18 @@ function reprint_push_lab_rest_attach_checked_recovery_journal_evidence(
         $checked_db_journal
     );
     return $result;
+}
+
+function reprint_push_lab_rest_should_upgrade_checked_recovery_integrity_scope(string $existing_scope): bool
+{
+    if ($existing_scope === '') {
+        return true;
+    }
+
+    return preg_match(
+        '/(^|; )local Playground fixture only|^fixture-scoped|not production durability/i',
+        $existing_scope
+    ) === 1;
 }
 
 function reprint_push_lab_rest_merge_checked_recovery_journal_contract(

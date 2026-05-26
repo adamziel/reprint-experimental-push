@@ -1290,6 +1290,71 @@ test('checked recovery inspect evidence injects the full checked durable journal
   });
 });
 
+test('checked recovery inspect evidence preserves a stronger existing checked scope with negated fixture wording', { skip: !hasPhp }, () => {
+  const result = runAttachCheckedRecoveryJournalEvidence(
+    {
+      ok: true,
+      recovery: {
+        journal: {
+          integrity: {
+            schemaVersion: 1,
+            status: 'ok',
+            scope: 'production recovery inspect journal evidence from external durable adapter; not local Playground fixture only',
+          },
+        },
+      },
+    },
+    true,
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  assert.deepEqual(JSON.parse(result.stdout), {
+    ok: true,
+    recovery: {
+      journal: {
+        integrity: {
+          schemaVersion: 1,
+          status: 'ok',
+          scope: 'production recovery inspect journal evidence from external durable adapter; not local Playground fixture only',
+        },
+        acceptedOnCheckedBoundary: true,
+        scope: 'checked live production-shaped journal surface; not local Playground fixture only',
+        ownership: {
+          ownsJournal: true,
+          restartReadable: true,
+          productionAdapter: 'wpdb-single-statement-cas',
+        },
+        writerLease: {
+          strategy: 'claim-fenced-single-writer',
+          claimKeyUnique: true,
+          fsyncEvidence: true,
+          storageGuard: 'wpdb-single-statement-cas',
+          monotonicSequence: true,
+          restartReadable: true,
+          staleClaimRejected: false,
+        },
+        leaseFence: {
+          boundary: 'wpdb-single-statement-cas',
+          claimKeyUnique: true,
+          fsyncEvidence: true,
+          monotonicSequence: true,
+          restartReadable: true,
+          staleClaimRejected: false,
+          writerLease: {
+            strategy: 'claim-fenced-single-writer',
+            claimKeyUnique: true,
+            fsyncEvidence: true,
+            storageGuard: 'wpdb-single-statement-cas',
+            monotonicSequence: true,
+            restartReadable: true,
+            staleClaimRejected: false,
+          },
+        },
+      },
+    },
+  });
+});
+
 test('checked recovery inspect evidence still merges the checked durable journal contract when inline recovery journal integrity is missing', { skip: !hasPhp }, () => {
   const result = runAttachCheckedRecoveryJournalEvidence(
     {
