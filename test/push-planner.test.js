@@ -23059,6 +23059,100 @@ test('blocks a local term relationship object from targeting a same-plan attachm
   assert.equal(JSON.stringify(blocker).includes('local-private-relationship-attachment-body'), false);
 });
 
+test('blocks an existing term relationship object reference from retargeting to a same-plan attachment even when unrelated remote attachment noise exists', () => {
+  const existingPostResourceKey = 'row:["wp_posts","ID:3"]';
+  const attachmentResourceKey = 'row:["wp_posts","ID:4"]';
+  const relationshipResourceKey = 'row:["wp_term_relationships","object_id:4|term_taxonomy_id:9"]';
+  const base = baseSite();
+  const local = baseSite();
+  const remote = baseSite();
+
+  base.db.wp_posts['ID:3'] = {
+    ID: 3,
+    post_title: 'Existing tagged post',
+    post_content: 'base-private-existing-tagged-post-body',
+    post_status: 'publish',
+  };
+  local.db.wp_posts['ID:3'] = {
+    ...base.db.wp_posts['ID:3'],
+  };
+  remote.db.wp_posts['ID:3'] = {
+    ...base.db.wp_posts['ID:3'],
+  };
+  base.db.wp_term_taxonomy = {
+    'term_taxonomy_id:9': {
+      term_taxonomy_id: 9,
+      term_id: 7,
+      taxonomy: 'category',
+      description: '',
+      parent: 0,
+      count: 1,
+    },
+  };
+  local.db.wp_term_taxonomy = {
+    'term_taxonomy_id:9': {
+      ...base.db.wp_term_taxonomy['term_taxonomy_id:9'],
+    },
+  };
+  remote.db.wp_term_taxonomy = {
+    'term_taxonomy_id:9': {
+      ...base.db.wp_term_taxonomy['term_taxonomy_id:9'],
+    },
+  };
+  base.db.wp_term_relationships = {
+    'object_id:3|term_taxonomy_id:9': {
+      object_id: 3,
+      term_taxonomy_id: 9,
+      term_order: 0,
+    },
+  };
+  local.db.wp_term_relationships = {
+    'object_id:4|term_taxonomy_id:9': {
+      object_id: 4,
+      term_taxonomy_id: 9,
+      term_order: 0,
+    },
+  };
+  remote.db.wp_term_relationships = {
+    'object_id:3|term_taxonomy_id:9': {
+      ...base.db.wp_term_relationships['object_id:3|term_taxonomy_id:9'],
+    },
+  };
+  local.db.wp_posts['ID:4'] = {
+    ID: 4,
+    post_title: 'Local relationship attachment',
+    post_content: 'local-private-relationship-attachment-body',
+    post_status: 'inherit',
+    post_type: 'attachment',
+  };
+  remote.db.wp_posts['ID:21'] = {
+    ID: 21,
+    post_title: 'Remote attachment noise',
+    post_content: 'remote-attachment-noise-body',
+    post_status: 'inherit',
+    post_type: 'attachment',
+  };
+
+  const plan = planFor(base, local, remote);
+  const attachmentMutation = mutationFor(plan, attachmentResourceKey);
+  const relationshipMutation = mutationFor(plan, relationshipResourceKey);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === relationshipResourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(mutationFor(plan, existingPostResourceKey), undefined);
+  assert.equal(attachmentMutation.changeKind, 'create');
+  assert.equal(relationshipMutation, undefined);
+  assert.ok(blocker);
+  assert.equal(blocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(blocker.surface, 'attachment');
+  assert.equal(blocker.resourceKey, relationshipResourceKey);
+  assert.match(blocker.reason, /outside the supported release-candidate slice/);
+  assert.equal(JSON.stringify(blocker).includes('base-private-existing-tagged-post-body'), false);
+  assert.equal(JSON.stringify(blocker).includes('local-private-relationship-attachment-body'), false);
+  assert.equal(JSON.stringify(plan).includes('remote-attachment-noise-body'), false);
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
+});
+
 test('blocks a local term relationship object reference owned by a revision even when it targets a same-plan post', () => {
   const revisionResourceKey = 'row:["wp_posts","ID:3"]';
   const postResourceKey = 'row:["wp_posts","ID:4"]';
