@@ -24,6 +24,8 @@ import {
 import {
   labReadinessBodyRetryable,
   labReadinessErrorRetryable,
+  labNextTimeoutProbeCount,
+  labReadinessProbeTimedOut,
   labSnapshotReady,
   labSnapshotRetryable,
 } from '../scripts/playground/lab-playground-readiness.js';
@@ -2851,6 +2853,33 @@ test('shared lab waitForServer retries startup-shaped /wp-json/ HTTP 200 bodies 
   assert.equal(snapshotCalls, 1);
 });
 
+test('shared lab readiness helpers track consecutive timeout probes', () => {
+  assert.equal(
+    labReadinessProbeTimedOut(
+      new Error('Timed out fetching http://127.0.0.1:9400/wp-json/'),
+    ),
+    true,
+  );
+  assert.equal(
+    labReadinessProbeTimedOut(new Error('socket hang up')),
+    false,
+  );
+  assert.equal(
+    labNextTimeoutProbeCount(
+      0,
+      new Error('Timed out fetching http://127.0.0.1:9400/wp-json/'),
+    ),
+    1,
+  );
+  assert.equal(
+    labNextTimeoutProbeCount(
+      3,
+      new Error('socket hang up'),
+    ),
+    0,
+  );
+});
+
 test('shared lab waitForServer keeps index and snapshot body reads child-aware', () => {
   const verifierSource = readFileSync(
     path.join(repoRoot, 'scripts/playground/production-shaped-release-verify.mjs'),
@@ -2871,6 +2900,11 @@ test('shared lab waitForServer keeps index and snapshot body reads child-aware',
     sharedWaitSource,
     /const \{ response: snapshot, bodyText: snapshotBody \} = await fetchTextWithTimeout\([\s\S]*serverFetchTimeoutMs,\s*child\);/,
   );
+  assert.match(sharedWaitSource, /let timeoutProbeCount = 0;/);
+  assert.match(sharedWaitSource, /timeoutProbeCount = 0;\s*const responsePreview = responseBody\.slice/);
+  assert.match(sharedWaitSource, /timeoutProbeCount = 0;\s*const snapshotPreview = snapshotBody\.slice/);
+  assert.match(sharedWaitSource, /timeoutProbeCount = labNextTimeoutProbeCount\(timeoutProbeCount, error\);/);
+  assert.match(sharedWaitSource, /if \(labReadinessProbeTimedOut\(error\) && timeoutProbeCount >= maxNotReadyReadinessProbes\)/);
   assert.match(sharedWaitSource, /await sleepUnlessChildExit\(readinessProbeIntervalMs, child\)/);
   assert.doesNotMatch(sharedWaitSource, /await response\.arrayBuffer\(\)/);
   assert.doesNotMatch(sharedWaitSource, /await snapshot\.arrayBuffer\(\)/);

@@ -143,6 +143,21 @@ export function labReadinessErrorRetryable(error) {
   return !(error && typeof error === 'object' && error.isPlaygroundReadinessFailure === true);
 }
 
+export function labReadinessProbeTimedOut(error) {
+  return Boolean(
+    error
+    && typeof error === 'object'
+    && typeof error.message === 'string'
+    && error.message.includes('Timed out fetching '),
+  );
+}
+
+export function labNextTimeoutProbeCount(currentCount, error) {
+  return labReadinessProbeTimedOut(error)
+    ? currentCount + 1
+    : 0;
+}
+
 export function labReadinessBodyRetryable(status, bodyText = '') {
   return (
     labWordPressNotReadyPattern.test(bodyText)

@@ -24,6 +24,8 @@ import {
 import {
   labReadinessBodyRetryable,
   labReadinessErrorRetryable,
+  labNextTimeoutProbeCount,
+  labReadinessProbeTimedOut,
   labSnapshotReady,
   labSnapshotRetryable,
 } from './lab-playground-readiness.js';
@@ -2274,6 +2276,7 @@ async function waitForServer(child, baseUrl, getLogs) {
   let lastError = null;
   const lastProbes = [];
   let notReadyProbeCount = 0;
+  let timeoutProbeCount = 0;
   while (Date.now() < deadline) {
     if (child.exitCode !== null || child.signalCode !== null) {
       const exitLabel =
@@ -2293,6 +2296,7 @@ async function waitForServer(child, baseUrl, getLogs) {
       const { response, bodyText: responseBody } = await fetchTextWithTimeout(`${baseUrl}/wp-json/`, {
         headers: { connection: 'close' },
       }, serverFetchTimeoutMs, child);
+      timeoutProbeCount = 0;
       const responsePreview = responseBody.slice(0, readinessFailureBodyLimit);
       const lastRouteStatusBody = {
         route: '/wp-json/',
@@ -2315,6 +2319,7 @@ async function waitForServer(child, baseUrl, getLogs) {
             connection: 'close',
           },
         }, serverFetchTimeoutMs, child);
+        timeoutProbeCount = 0;
         const snapshotPreview = snapshotBody.slice(0, 500);
         lastProbes.push({
           route: '/wp-json/reprint-push-lab/v1/snapshot',
@@ -2423,6 +2428,20 @@ async function waitForServer(child, baseUrl, getLogs) {
         throw error;
       }
       lastError = error;
+      timeoutProbeCount = labNextTimeoutProbeCount(timeoutProbeCount, error);
+      if (labReadinessProbeTimedOut(error) && timeoutProbeCount >= maxNotReadyReadinessProbes) {
+        await throwPlaygroundReadinessFailure(
+          child,
+          `Playground server hit ${timeoutProbeCount} consecutive readiness probe timeout${timeoutProbeCount === 1 ? '' : 's'}`,
+          lastError,
+          lastProbes,
+          getLogs(),
+          {
+            childPid: child.pid ?? null,
+            timeoutProbeCount,
+          },
+        );
+      }
     }
     await sleepUnlessChildExit(readinessProbeIntervalMs, child);
   }
