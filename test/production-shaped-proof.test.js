@@ -2025,7 +2025,26 @@ test('packaged production plugin smoke readiness helper preserves timeout fallba
   assert.match(helperSource, /lastTimeoutFallbackProbes = \{ preflightProbe, indexProbe \};/);
   assert.match(helperSource, /Last timeout fallback preflight route:/);
   assert.match(helperSource, /Last timeout fallback index route:/);
-  assert.match(helperSource, /describePackagedReadinessFailure\(lastProbe, lastTimeoutFallbackProbes\)/);
+  assert.match(helperSource, /describePackagedReadinessFailure\(\s*lastProbes\.at\(-1\) \?\? null,\s*lastTimeoutFallbackProbes,\s*lastProbes,\s*\)/);
+});
+
+test('packaged production plugin smoke readiness helper preserves bounded readiness probe history', () => {
+  const smokeSource = readFileSync(
+    path.join(repoRoot, 'scripts/playground/production-plugin-package-smoke.mjs'),
+    'utf8',
+  );
+  const start = smokeSource.indexOf('async function waitForServer(child, baseUrl, logs) {');
+  assert.notEqual(start, -1, 'expected packaged smoke readiness helper in smoke source');
+  const end = smokeSource.indexOf('async function fetchPackagedWordPressIndexProbe(', start);
+  assert.notEqual(end, -1, 'expected packaged smoke readiness helper boundary in smoke source');
+  const helperSource = smokeSource.slice(start, end);
+
+  assert.match(helperSource, /const lastProbes = \[\];/);
+  assert.match(helperSource, /lastProbes\.push\(preflightProbe\);/);
+  assert.match(helperSource, /lastProbes\.push\(indexProbe\);/);
+  assert.match(helperSource, /formatPackagedReadinessFailure\(/);
+  assert.match(helperSource, /function describePackagedReadinessProbes\(lastProbes\)/);
+  assert.match(helperSource, /Readiness probe \$\{index \+ 1\} route:/);
 });
 
 test('packaged readiness fetch helpers abort probe fetches when the Playground child exits mid-probe', () => {
