@@ -38,6 +38,10 @@ and backpressure. Each rejected entry names the first gate it breaks through
 proposal unsafe. That keeps "fast but ambiguous after failure" proposals out of
 the safe list even when they improve a throughput metric.
 
+The model now also exposes a direct shortcut lookup helper for pinning a single
+planning-only fast path in tests. That keeps the release-bundle retry-window
+compression case explicit without turning the helper into mutation authority.
+
 Current executable gate:
 
 - `timeout 40s node scripts/bench/guarded-executor-benchmark.js --profile=ci`

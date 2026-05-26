@@ -10,6 +10,7 @@ import {
   runGuardedExecutorBenchmark,
 } from '../scripts/bench/guarded-executor-benchmark.js';
 import { buildFastPathFixture } from '../scripts/bench/performance-model.js';
+import { findSafeFastPathByShortcut } from '../scripts/bench/performance-model.js';
 
 const fixedNow = new Date('2026-05-24T00:00:00.000Z');
 
@@ -148,6 +149,22 @@ test('guarded executor benchmark keeps the published throughput details in sync 
   const computed = productionThroughputDetails(report);
 
   assert.deepEqual(report.claims.productionThroughputDetails, computed);
+});
+
+test('guarded benchmark exposes the bounded release-bundle retry-window fast path as planning-only', () => {
+  const fastPath = findSafeFastPathByShortcut(
+    'compress-canonical-per-kind-budget-summaries-to-size-bounded-release-bundle-retry-windows',
+  );
+
+  assert.ok(fastPath);
+  assert.equal(fastPath.area, 'compression');
+  assert.equal(fastPath.visibilityBoundary, 'planning-only-budget-summary');
+  assert.equal(fastPath.bypassesLivePreconditions, false);
+  assert.equal(fastPath.splitsAtomicGroup, false);
+  assert.equal(fastPath.publishesStagedDataEarly, false);
+  assert.match(fastPath.gateProofs.skip, /compressed per-kind budget summaries/);
+  assert.match(fastPath.gateProofs.live, /rechecks its own live resource precondition/);
+  assert.match(fastPath.gateProofs.recovery, /durable receipts/);
 });
 
 test('guarded benchmark blocks row-batch executor claims when the measured surface is not visible', () => {

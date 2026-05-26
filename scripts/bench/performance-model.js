@@ -1797,6 +1797,10 @@ export const SAFE_FAST_PATHS = Object.freeze([
   },
 ]);
 
+export function findSafeFastPathByShortcut(allowedShortcut) {
+  return SAFE_FAST_PATHS.find((entry) => entry.allowedShortcut === allowedShortcut) ?? null;
+}
+
 export const FAILURE_INJECTION_BOUNDARIES = Object.freeze([
   {
     boundary: 'chunk-ack',
