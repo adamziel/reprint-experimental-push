@@ -118,6 +118,10 @@ test('guarded benchmark refuses production throughput claims until production ga
     report.claims.productionThroughputDetails.backpressureConsistency.queuePauseHasMeasuredReceiptCursorBackpressure,
     true,
   );
+  assert.equal(
+    report.claims.productionThroughputDetails.backpressureConsistency.queuePauseHasMeasuredReceiptCursorQueueSlack,
+    true,
+  );
   assert.equal(report.claims.productionThroughputDetails.backpressureConsistency.receiptCursorWithinQueueBudget, true);
   assert.equal(report.claims.productionThroughputDetails.backpressureConsistency.receiptCursorMatchesBackpressure, true);
   assert.equal(report.claims.productionThroughputDetails.backpressureConsistency.receiptCursorHeadroomWithinQueueBudget, true);
@@ -546,12 +550,29 @@ test('production claim gate fails closed if benchmark evidence is tampered', () 
   pausedWithoutMeasuredQueueSlack.evidence.backpressure.queuePausedBeforeOverflow = true;
   assert.ok(
     productionThroughputBlockers(pausedWithoutMeasuredQueueSlack).includes(
-      'queue-pause-without-measured-receipt-cursor-queue-slack',
+      'receipt-cursor-queue-slack-not-measured',
     ),
   );
   assert.equal(
     productionThroughputDetails(pausedWithoutMeasuredQueueSlack).backpressureConsistency.receiptCursorQueueSlackMeasured,
     false,
+  );
+  assert.equal(
+    productionThroughputDetails(pausedWithoutMeasuredQueueSlack).backpressureConsistency.queuePauseHasMeasuredReceiptCursorQueueSlack,
+    false,
+  );
+
+  const unpausedWithoutMeasuredQueueSlack = clone(report);
+  unpausedWithoutMeasuredQueueSlack.evidence.backpressure.receiptCursorQueueSlackBytes = null;
+  unpausedWithoutMeasuredQueueSlack.evidence.backpressure.queuePausedBeforeOverflow = false;
+  assert.ok(
+    productionThroughputBlockers(unpausedWithoutMeasuredQueueSlack).includes(
+      'receipt-cursor-queue-slack-not-measured',
+    ),
+  );
+  assert.equal(
+    productionThroughputDetails(unpausedWithoutMeasuredQueueSlack).backpressureConsistency.queuePauseHasMeasuredReceiptCursorQueueSlack,
+    true,
   );
   assert.ok(
     productionThroughputBlockers(mismatchedQueueSlack).includes(

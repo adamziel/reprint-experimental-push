@@ -257,11 +257,8 @@ export function productionThroughputBlockers(report) {
   ) {
     blockers.push('queue-pause-without-measured-receipt-cursor-backpressure');
   }
-  if (
-    report.evidence.backpressure?.queuePausedBeforeOverflow === true
-    && report.evidence.backpressure?.receiptCursorQueueSlackBytes == null
-  ) {
-    blockers.push('queue-pause-without-measured-receipt-cursor-queue-slack');
+  if (report.evidence.backpressure?.receiptCursorQueueSlackBytes == null) {
+    blockers.push('receipt-cursor-queue-slack-not-measured');
   }
   if (
     !Number.isFinite(report.evidence.backpressure?.queueBudgetBytes)
@@ -447,6 +444,9 @@ export function productionThroughputDetails(report) {
     && receiptCursorQueueSlackBytes === receiptCursorMemoryCeilingBytes - receiptCursorWindowBytes;
   const receiptCursorQueueSlackMeasured =
     Number.isFinite(receiptCursorQueueSlackBytes);
+  const queuePauseHasMeasuredReceiptCursorQueueSlack =
+    report.evidence.backpressure?.queuePausedBeforeOverflow !== true
+    || receiptCursorQueueSlackMeasured;
   const receiptCursorHeadroomCoveredByQueueBudget =
     Number.isFinite(receiptCursorMemoryHeadroomBytes)
     && Number.isFinite(receiptCursorQueueHeadroomBytes)
@@ -516,6 +516,7 @@ export function productionThroughputDetails(report) {
     receiptCursorBackpressureBytes,
     receiptCursorBackpressureMeasured,
     queuePauseHasMeasuredReceiptCursorBackpressure,
+    queuePauseHasMeasuredReceiptCursorQueueSlack,
     receiptCursorQueueSlackBytes,
     receiptCursorQueueSlackMatchesBackpressure,
     receiptCursorQueueSlackMatchesMemoryHeadroom,
@@ -551,6 +552,7 @@ export function productionThroughputDetails(report) {
       receiptCursorBackpressureBytes,
       receiptCursorBackpressureMeasured,
       queuePauseHasMeasuredReceiptCursorBackpressure,
+      queuePauseHasMeasuredReceiptCursorQueueSlack,
       receiptCursorQueueSlackBytes,
       receiptCursorQueueSlackMatchesBackpressure,
       receiptCursorQueueSlackMatchesMemoryHeadroom,
