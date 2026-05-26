@@ -1,6 +1,6 @@
-2026-05-26 12:02:37 CEST (+0200) - Critic lane classification pass
+2026-05-26 12:05:03 CEST (+0200) - Critic lane classification pass
 
-No gate movement. `581f142f` is the current reliable head, but it only surfaces auth/session lifecycle fields in the checked release verifier output. The production-backed auth/session lifecycle gate and the durable-journal ownership gate remain closed, so the critic verdict stays `0/4`.
+No gate movement. `998e856f` is the current reliable head, but it only surfaces replay-equivalence evidence in the checked release verifier output. The production-backed auth/session lifecycle gate and the durable-journal ownership gate remain closed, so the critic verdict stays `0/4`.
 
 Changed files:
 - [`audits/critic.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/critic/audits/critic.md)
