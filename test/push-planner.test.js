@@ -499,7 +499,7 @@ test('blocks plugin-owned custom tables while preserving a matching independent 
   const pluginDecision = decisionFor(plan, 'plugin:forms');
   const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
 
-  assert.equal(plan.status, 'conflict');
+  assert.equal(plan.status, 'blocked');
   assert.equal(blocker.class, 'unsupported-plugin-owned-resource');
   assert.equal(blocker.resourceKind, 'custom-table');
   assert.equal(
@@ -550,7 +550,7 @@ test('blocks unknown plugin-owned custom tables while preserving a matching inde
   const pluginDecision = decisionFor(plan, 'plugin:forms');
   const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
 
-  assert.equal(plan.status, 'conflict');
+  assert.equal(plan.status, 'blocked');
   assert.equal(blocker.class, 'unsupported-plugin-owned-resource');
   assert.equal(blocker.resourceKind, 'custom-table');
   assert.equal(
@@ -558,6 +558,62 @@ test('blocks unknown plugin-owned custom tables while preserving a matching inde
     'Plugin-owned custom tables, including deletes, are not yet supported by the planner.',
   );
   assert.equal(matchingEdit.decision, 'already-in-sync');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+});
+
+test('blocks deletion of unknown plugin-owned custom tables while preserving a matching independent delete and remote-only plugin removals', () => {
+  const resourceKey = 'row:["wp_custom_shadow","shadow_id:9"]';
+  const base = baseSite();
+  base.db.wp_custom_shadow = {
+    'shadow_id:9': {
+      shadow_id: 9,
+      shadow_name: 'base shadow',
+      __pluginOwner: 'forms',
+    },
+  };
+  base.files['about.php'] = '<?php echo "about";';
+  base.files['index.php'] = '<?php echo "shared";';
+
+  const local = baseSite();
+  local.db.wp_custom_shadow = {
+    'shadow_id:9': {
+      shadow_id: 9,
+      shadow_name: 'base shadow',
+      __pluginOwner: 'forms',
+    },
+  };
+  local.files['about.php'] = '<?php echo "about";';
+  delete local.db.wp_custom_shadow['shadow_id:9'];
+  delete local.files['about.php'];
+
+  const remote = baseSite();
+  remote.db.wp_custom_shadow = {
+    'shadow_id:9': {
+      shadow_id: 9,
+      shadow_name: 'base shadow',
+      __pluginOwner: 'forms',
+    },
+  };
+  remote.files['about.php'] = '<?php echo "about";';
+  remote.files['index.php'] = '<?php echo "shared";';
+  delete remote.plugins.forms;
+  delete remote.files['wp-content/plugins/forms/forms.php'];
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  const matchingDelete = mutationFor(plan, 'file:about.php');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(blocker.class, 'unsupported-plugin-owned-resource');
+  assert.equal(blocker.resourceKind, 'custom-table');
+  assert.equal(
+    blocker.reason,
+    'Plugin-owned custom tables, including deletes, are not yet supported by the planner.',
+  );
+  assert.equal(matchingDelete.change.localChange, 'delete');
   assert.equal(pluginDecision.decision, 'keep-remote');
   assert.equal(pluginFileDecision.decision, 'keep-remote');
 });
