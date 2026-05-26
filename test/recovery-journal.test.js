@@ -969,6 +969,43 @@ test('production recovery journal support fails closed when artifactRefs hides b
   });
 });
 
+test('production recovery journal support fails closed when second-argument options use a null prototype', () => {
+  const filePath = tempJournalPath();
+
+  assert.throws(() => {
+    openProductionRecoveryJournal(
+      filePath,
+      Object.assign(Object.create(null), {
+        truncate: true,
+        now: fixedNow,
+        claimId: 'claim-null-prototype-options',
+        writerLease: { id: 'claim-null-prototype-options' },
+      }),
+    );
+  }, {
+    name: 'UnsupportedProductionRecoveryJournalError',
+    code: 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL',
+    message: 'Production recovery journal support requires a strict plain options object.',
+  });
+});
+
+test('production recovery journal support fails closed when second-argument options inherit a custom prototype', () => {
+  const filePath = tempJournalPath();
+  const options = Object.create({ inherited: true });
+  options.truncate = true;
+  options.now = fixedNow;
+  options.claimId = 'claim-prototype-options';
+  options.writerLease = { id: 'claim-prototype-options' };
+
+  assert.throws(() => {
+    openProductionRecoveryJournal(filePath, options);
+  }, {
+    name: 'UnsupportedProductionRecoveryJournalError',
+    code: 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL',
+    message: 'Production recovery journal support requires a strict plain options object.',
+  });
+});
+
 test('production recovery journal consumption fails closed without an explicit claimId or writerLease', () => {
   const filePath = tempJournalPath();
   const remote = baseSite();
