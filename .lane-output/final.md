@@ -1,32 +1,36 @@
-2026-05-26 12:02:24 CEST (+0200)
+2026-05-26 21:04:35 CEST (+0200)
 
 Changed files:
-- [`scripts/playground/production-shaped-release-verify.mjs`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/reliable-executor/scripts/playground/production-shaped-release-verify.mjs)
-- [`src/recovery-journal.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/reliable-executor/src/recovery-journal.js)
-- [`test/production-shaped-proof.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/reliable-executor/test/production-shaped-proof.test.js)
-- [`test/recovery-journal.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/reliable-executor/test/recovery-journal.test.js)
+- [scripts/playground/production-auth-session-lifecycle.js](/home/claude/reprint-experimental-push-lanes/reorg-20260526-code/auth-session-code/scripts/playground/production-auth-session-lifecycle.js)
+- [test/production-shaped-proof.test.js](/home/claude/reprint-experimental-push-lanes/reorg-20260526-code/auth-session-code/test/production-shaped-proof.test.js)
 
-Checks run:
-- `node --check src/recovery-journal.js`
-- `node --check scripts/playground/production-shaped-release-verify.mjs`
-- `node --check test/recovery-journal.test.js`
+What changed:
+- Tightened `evaluateProductionAuthSessionLifecycleSummary()` so malformed lifecycle flags on intermediate `observations[]` entries fail closed as explicit `invalid-*` results before the helper can collapse them into generic `rotated` or other preserved-read failures.
+- Added focused summary-proof coverage for malformed intermediate observed lifecycle flags and cleanup aliases, including `cleanup`, `revoked`, `expired`, `cleanedUp`, and `rotated`.
+
+Commands run:
+- `git status --short --branch`
+- `sed -n '1,220p' AGENTS.md`
+- `sed -n '1,220p' supervision/README.md`
+- `sed -n '1,220p' .lane-output/final-loop-20260526-205935.md`
+- `sed -n '1,220p' .lane-output/final-loop-20260526-210101.md`
+- `sed -n '1,260p' scripts/playground/production-auth-session-lifecycle.js`
+- `sed -n '260,560p' scripts/playground/production-auth-session-lifecycle.js`
+- `sed -n '2230,3535p' test/production-shaped-proof.test.js`
+- `node --check scripts/playground/production-auth-session-lifecycle.js`
 - `node --check test/production-shaped-proof.test.js`
-- `timeout 120s node --test test/recovery-journal.test.js`
-- `timeout 120s node --test --test-name-pattern='production-shaped release verify command fails closed when production auth/session lifecycle is explicitly required|production-shaped release proof emits the exact gate output when no live source is supplied' test/production-shaped-proof.test.js`
-
-Result:
-- The recovery journal now fences stale claims on restart, and the release verifier surfaces that fence in the production-shaped proof path.
-- The focused recovery-journal suite passed `10/10`.
-- The focused release-proof slice passed `2/2`.
-- The checked release path still fails closed at `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED` / `PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED`.
+- `timeout 90s node --test --test-name-pattern='production auth/session lifecycle summary fails closed when an intermediate preserved-read cleanup alias is a string value|production auth/session lifecycle summary fails closed when an intermediate preserved-read lifecycle flag is malformed|production auth/session lifecycle summary fails closed when direct rotated metadata is a string value|production auth/session lifecycle summary fails closed when direct preserved-read preservation flags are string values' test/production-shaped-proof.test.js`
+- `git diff --check`
+- `date '+%Y-%m-%d %H:%M:%S %Z (%z)'`
+- `git commit -m "Fail closed on malformed observed lifecycle flags"`
+- `git push origin HEAD:lane/auth-session-code-20260526-1836`
 
 Push result:
-- Not pushed yet in this pass.
+- Pushed `cc1da0a8b143befca9c3405ac0343c990b596adf` to `origin/lane/auth-session-code-20260526-1836`
 
 Worktree status:
-- Dirty tracked files only in the four files above.
-- Branch: `lane/cycle-20260525-mainwindows-2349/reliable-followup`
-- `HEAD` and `origin/lane/reliable-executor` were aligned before this pass.
+- Clean on `lane/auth-session-code-20260526-1836`, tracking `origin/lane/auth-session-code-20260526-1836`
 
 Next supervisor nudge:
-- Move the next reliable pass to the remaining gate blockers only: production-backed auth/session lifecycle on the checked release path, durable journal ownership with lease/fencing beyond the retained Playground journal boundary, or preserved-remote retry.
+- Pull `cc1da0a8` into reliable if the checked release-path auth/session summary can still be poisoned by malformed intermediate observed lifecycle flags.
+- If reliable already enforces that path upstream, keep this lane on the next untested preserved-session summary branch where invalid `observations[]` metadata still degrades to a generic preserved-read failure instead of an explicit `invalid-*` result.
