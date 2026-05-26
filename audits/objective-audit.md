@@ -6,15 +6,15 @@ The project is **not releasable as a production WordPress push path**.
 
 - Fresh remote heads at audit time, checked on May 26, 2026:
 
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `6a925082`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `6537730d`
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `95c53c86`
-- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `be7f578e`
+- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `1922b4db`
 - `origin/lane/fast-paths` -> `8c5c2ccb`
-- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `44fd27f9`
+- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `4ba8fb91`
 - `origin/lane/reliable-executor` -> `1b709fb3`
 - `origin/lane/no-data-loss-invariants` -> `f99d6eed`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `76dc8545`
-- `origin/lane/no-data-loss-recovery` -> `aec5d04b`
+- `origin/lane/no-data-loss-recovery` -> `9e077c10`
 - `origin/lane/cycle-20260525-mainwindows-2349/critic` -> `fa0dc8a0`
 - `origin/lane/critic` -> `5b61693d`
 - `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration` -> `d388db27`
