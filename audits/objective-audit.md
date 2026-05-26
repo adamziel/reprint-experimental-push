@@ -152,6 +152,9 @@ but it did not change the release conclusion:
 - `origin/lane/reliable-executor` now records `221d8876`, tightening replay
   equivalence checks. It still does not prove production auth/session
   lifecycle on the release path.
+- `origin/lane/reliable-executor` now records `7fde0c76`, hardening replay
+  session equivalence. It still does not prove production auth/session
+  lifecycle on the release path.
 - `origin/lane/no-data-loss-recovery` now records `f469efa6`, failing closed
   on inherited artifact refs. It still does not prove production-backed
   journal ownership or restart-readable durable artifacts.
