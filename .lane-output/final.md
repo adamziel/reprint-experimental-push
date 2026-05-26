@@ -7,10 +7,9 @@ Changed files:
 
 Commands:
 - `date '+%Y-%m-%d %H:%M:%S %Z'`
-- `sed -n '490,540p' progress.html`
-- `sed -n '1,40p' docs/progress-log.md`
-- `git diff -- progress.html docs/progress-log.md`
 - `git status --short --branch`
+- `sed -n '1,40p' docs/progress-log.md`
+- `rg -n "Last updated|0/4|Public Status Audit|Newest audit|blocker summary|release gates remain" progress.html`
 
 Push result:
 - Pending commit and push after this handoff write-up.
