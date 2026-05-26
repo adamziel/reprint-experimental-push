@@ -32099,6 +32099,52 @@ test('blocks unsupported fifo special file entries while preserving a matching i
   assert.equal(remote.files['wp-content/plugins/forms/forms.php'], undefined);
 });
 
+test('blocks same-plan created socket-like and fifo-like special file entries while preserving a matching independent edit and remote-only plugin removals', () => {
+  const specialFileCases = [
+    ['socket', { type: 'socket', linkTarget: '/tmp/new-socket' }, '/tmp/new-socket'],
+    ['fifo', { type: 'fifo', mode: '0644' }, '0644'],
+  ];
+
+  for (const [type, localValue, leakedValue] of specialFileCases) {
+    const resourceKey = `file:wp-content/uploads/${type}-created`;
+    const base = baseSite();
+    base.files['about.php'] = '<?php echo "base about";';
+
+    const local = baseSite();
+    local.files[`wp-content/uploads/${type}-created`] = localValue;
+    local.files['about.php'] = '<?php echo "local about";';
+
+    const remote = baseSite();
+    remote.files['about.php'] = '<?php echo "local about";';
+    delete remote.plugins.forms;
+    delete remote.files['wp-content/plugins/forms/forms.php'];
+
+    const plan = planFor(base, local, remote);
+    const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+    const matchingEdit = decisionFor(plan, 'file:about.php');
+    const pluginDecision = decisionFor(plan, 'plugin:forms');
+    const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+    const planJson = JSON.stringify(plan);
+
+    assert.equal(plan.status, 'blocked');
+    assert.equal(plan.summary.mutations, 0);
+    assert.equal(mutationFor(plan, resourceKey), undefined);
+    assert.equal(plan.conflicts.length, 0);
+    assert.ok(blocker, `missing blocker for ${resourceKey}`);
+    assert.equal(blocker.class, 'unsupported-special-file-resource');
+    assert.equal(blocker.resourceKey, resourceKey);
+    assert.equal(blocker.reason, 'Special file entries are not yet supported by the planner.');
+    assert.equal(matchingEdit.decision, 'already-in-sync');
+    assert.equal(matchingEdit.change.localChange, 'update');
+    assert.equal(matchingEdit.change.remoteChange, 'update');
+    assert.equal(pluginDecision.decision, 'keep-remote');
+    assert.equal(pluginFileDecision.decision, 'keep-remote');
+    assert.equal(planJson.includes(leakedValue), false);
+    assert.equal(remote.plugins.forms, undefined);
+    assert.equal(remote.files['wp-content/plugins/forms/forms.php'], undefined);
+  }
+});
+
 test('blocks unsupported submodule special file entries while preserving remote-only plugin removals', () => {
   const resourceKey = 'file:wp-content/uploads/submodule';
   const base = baseSite();
