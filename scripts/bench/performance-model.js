@@ -4108,6 +4108,7 @@ function scheduleWorkload(workload, limits) {
         limits.maxBufferedUploadBytes,
         limits.chunkSizeBytes * limits.maxUploadConcurrency,
       ),
+      replaySizingVisible: true,
       replaySizing: {
         receiptCursor: 'advisory-receipt-cursor',
         memoryCeilingBytes: limits.maxBufferedUploadBytes,

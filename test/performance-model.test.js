@@ -196,6 +196,11 @@ test('benchmark model covers large uploads and plugin installs', () => {
     },
     'large upload exposes a bounded replay-sizing summary for cursor and memory-ceiling alignment',
   );
+  assert.equal(
+    largeUpload.backpressure.replaySizingVisible,
+    true,
+    'large upload keeps replay-sizing visibility explicit on the backpressure summary',
+  );
   assert.ok(
     pluginInstall.actions.some(
       (action) =>
