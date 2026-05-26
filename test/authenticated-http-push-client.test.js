@@ -964,6 +964,62 @@ test('production-shaped authenticated push fails closed on malformed preflight a
   }
 });
 
+test('production-shaped authenticated push preserves malformed preflight auth-session warning metadata in its lifecycle trace', async () => {
+  const originalFetch = global.fetch;
+  global.fetch = async (url) => {
+    if (String(url).includes('/preflight')) {
+      return new Response(JSON.stringify({
+        ok: true,
+        auth: {
+          identity: { userLogin: 'reprint_push_admin' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+            warning: ['lab-only-warning'],
+          },
+        },
+        session: { id: 'psh_01j00000000000000000000000' },
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+    throw new Error(`unexpected fetch to ${url}`);
+  };
+
+  try {
+    const summary = await runAuthenticatedHttpPush({
+      sourceUrl: 'http://127.0.0.1:8080',
+      base: { resources: [] },
+      local: { resources: [] },
+      username: credential.username,
+      applicationPassword: credential.password,
+      idempotencyKey: 'idem-01-invalid-preflight-warning',
+      routeProfile: 'production-shaped',
+      requireProductionAuthSession: true,
+    });
+
+    assert.equal(summary.ok, false);
+    assert.equal(summary.code, 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED');
+    assert.deepEqual(summary.authSession, {
+      field: 'auth.session.warning',
+      required: 'string lifecycle fields',
+      observed: 'invalid-warning',
+      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+    });
+    assert.equal(summary.authSessionLifecycleTrace.length, 1);
+    assert.equal(summary.authSessionLifecycleTrace[0].invalidIdentityField, 'warning');
+    assert.equal(summary.authSessionLifecycle.history.length, 1);
+    assert.equal(summary.authSessionLifecycle.history[0].invalidIdentityField, 'warning');
+    assert.equal(summary.authSessionLifecycleSummary.issued.invalidIdentityField, 'warning');
+    assert.equal(summary.authSessionLifecycleSummary.observations[0].invalidIdentityField, 'warning');
+  } finally {
+    global.fetch = originalFetch;
+  }
+});
+
 test('production-shaped authenticated push fails closed on malformed checked-path auth-session identity fields', async () => {
   const originalFetch = global.fetch;
   const seen = [];

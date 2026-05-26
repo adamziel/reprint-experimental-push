@@ -974,11 +974,16 @@ function summarizeAuthSessionLifecycle(session) {
     return null;
   }
 
+  const invalidLifecycleFlag = resolveInvalidProductionAuthSessionLifecycleFlag(session);
+  const invalidIdentityField = resolveInvalidProductionAuthSessionIdentityField(session);
+
   return {
     id: session.id || null,
     type: session.type || null,
     status: session.status || null,
     expiresAt: session.expiresAt || null,
+    ...(invalidLifecycleFlag ? { invalidLifecycleFlag } : {}),
+    ...(invalidIdentityField?.label ? { invalidIdentityField: invalidIdentityField.label } : {}),
     expired: session.status === 'expired' || isExpiredSession(session),
     revoked: session.revoked === true || session.status === 'revoked',
     cleanedUp: session.cleanedUp === true || session.cleanup === true || session.status === 'cleaned-up',
@@ -1040,6 +1045,12 @@ function recordAuthSessionLifecycle(summary, step, session) {
     type: observation?.type || null,
     status: normalizeAuthSessionLifecycleHistoryStatus(observation),
     expiresAt: observation?.expiresAt || null,
+    ...(typeof observation?.invalidLifecycleFlag === 'string' && observation.invalidLifecycleFlag
+      ? { invalidLifecycleFlag: observation.invalidLifecycleFlag }
+      : {}),
+    ...(typeof observation?.invalidIdentityField === 'string' && observation.invalidIdentityField
+      ? { invalidIdentityField: observation.invalidIdentityField }
+      : {}),
     expired: Boolean(observation?.expired),
     revoked: Boolean(observation?.revoked),
     cleanedUp: Boolean(observation?.cleanedUp),

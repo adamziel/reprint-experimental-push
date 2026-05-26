@@ -485,6 +485,7 @@ export function summarizeProductionAuthSessionLifecycleTrace(trace) {
         status: null,
         expiresAt: null,
         invalidLifecycleFlag: null,
+        invalidIdentityField: null,
         expired: false,
         revoked: false,
         cleanedUp: false,
@@ -500,6 +501,9 @@ export function summarizeProductionAuthSessionLifecycleTrace(trace) {
       status: entry.status ?? null,
       expiresAt: entry.expiresAt ?? null,
       invalidLifecycleFlag: resolveInvalidAuthSessionLifecycleFlag(entry),
+      ...(resolveInvalidAuthSessionIdentityField(entry)
+        ? { invalidIdentityField: resolveInvalidAuthSessionIdentityField(entry) }
+        : {}),
       expired: entry.expired === true || entry.status === 'expired',
       revoked: entry.revoked === true || entry.status === 'revoked',
       cleanedUp: entry.cleanedUp === true || entry.cleanup === true || entry.status === 'cleaned-up',
@@ -653,6 +657,10 @@ function resolveInvalidAuthSessionLifecycleFlag(observation) {
 function resolveInvalidAuthSessionIdentityField(observation) {
   if (!observation || typeof observation !== 'object') {
     return null;
+  }
+
+  if (typeof observation.invalidIdentityField === 'string' && observation.invalidIdentityField) {
+    return observation.invalidIdentityField;
   }
 
   if (observation.id !== undefined && observation.id !== null && !normalizeAuthSessionObservationId(observation.id)) {

@@ -2726,6 +2726,151 @@ test('production auth/session lifecycle trace summary preserves issued and read 
   );
 });
 
+test('production auth/session lifecycle trace summary preserves malformed warning identity metadata', () => {
+  assert.deepEqual(
+    summarizeProductionAuthSessionLifecycleTrace([
+      {
+        step: 'preflight',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+      },
+      {
+        step: 'apply',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+        preserved: true,
+        warning: ['lab-only-warning'],
+      },
+    ]),
+    {
+      issued: {
+        step: 'preflight',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+        invalidLifecycleFlag: null,
+        expired: false,
+        revoked: false,
+        cleanedUp: false,
+        rotated: false,
+        preserved: false,
+      },
+      read: {
+        step: 'apply',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+        invalidLifecycleFlag: null,
+        invalidIdentityField: 'warning',
+        expired: false,
+        revoked: false,
+        cleanedUp: false,
+        rotated: false,
+        preserved: true,
+      },
+      expired: null,
+      revoked: null,
+      cleanedUp: null,
+      rotated: null,
+      preserved: {
+        step: 'apply',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+        invalidLifecycleFlag: null,
+        invalidIdentityField: 'warning',
+        expired: false,
+        revoked: false,
+        cleanedUp: false,
+        rotated: false,
+        preserved: true,
+      },
+      observations: [
+        {
+          step: 'preflight',
+          id: 'session-01',
+          type: 'production-auth-session',
+          status: 'active',
+          expiresAt: '2099-01-01T00:00:00Z',
+          invalidLifecycleFlag: null,
+          expired: false,
+          revoked: false,
+          cleanedUp: false,
+          rotated: false,
+          preserved: false,
+        },
+        {
+          step: 'apply',
+          id: 'session-01',
+          type: 'production-auth-session',
+          status: 'active',
+          expiresAt: '2099-01-01T00:00:00Z',
+          invalidLifecycleFlag: null,
+          invalidIdentityField: 'warning',
+          expired: false,
+          revoked: false,
+          cleanedUp: false,
+          rotated: false,
+          preserved: true,
+        },
+      ],
+    },
+  );
+
+  assert.deepEqual(
+    evaluateProductionAuthSessionLifecycleSummary({
+      issued: {
+        step: 'preflight',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+      },
+      read: {
+        step: 'apply',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+        preserved: true,
+        invalidIdentityField: 'warning',
+      },
+      observations: [
+        {
+          step: 'preflight',
+          id: 'session-01',
+          type: 'production-auth-session',
+          status: 'active',
+          expiresAt: '2099-01-01T00:00:00Z',
+          preserved: false,
+        },
+        {
+          step: 'apply',
+          id: 'session-01',
+          type: 'production-auth-session',
+          status: 'active',
+          expiresAt: '2099-01-01T00:00:00Z',
+          preserved: true,
+          invalidIdentityField: 'warning',
+        },
+      ],
+    }),
+    {
+      ok: false,
+      field: 'auth.session.warning',
+      required: 'string lifecycle fields',
+      observed: 'invalid-warning',
+    },
+  );
+});
+
 test('production auth/session lifecycle trace summary treats recovery inspect as a preserved read', () => {
   const summary = summarizeProductionAuthSessionLifecycleTrace([
     {
