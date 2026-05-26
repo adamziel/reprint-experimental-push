@@ -24503,8 +24503,9 @@ test('production durable journal claims fail closed when remote artifact referen
   assert.equal(error.code, 'PRODUCTION_DURABLE_JOURNAL_UNSUPPORTED');
   assert.deepEqual(error.details.missingDependency, [
     'restart-readable recovery journal adapter',
-    'restart-readable recovery remote artifact references',
     'restart-readable remote recovery artifact ownership',
+    'restart-readable recovery remote artifact references',
+    'fencing or lease ownership for the journal writer',
   ]);
 });
 
