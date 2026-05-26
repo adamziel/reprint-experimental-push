@@ -476,6 +476,7 @@ async function waitForServer(child, baseUrl, logs) {
   const deadline = Date.now() + serverStartupTimeoutMs;
   let lastError = null;
   let lastProbe = null;
+  let lastTimeoutFallbackProbes = null;
   let notReadyProbeCounts = { snapshot: 0, preflight: 0 };
   let timeoutProbeCount = 0;
 
@@ -813,6 +814,7 @@ async function waitForServer(child, baseUrl, logs) {
       }
       if (packagedProductionPluginReadinessProbeTimedOut(error)) {
         const { preflightProbe, indexProbe } = await fetchPackagedTimeoutFallbackProbes(baseUrl, child);
+        lastTimeoutFallbackProbes = { preflightProbe, indexProbe };
         if (preflightProbe) {
           lastProbe = preflightProbe;
           if (preflightProbe.ready) {
@@ -847,9 +849,7 @@ async function waitForServer(child, baseUrl, logs) {
         packagedProductionPluginReadinessProbeTimedOut(error)
         && packagedProductionPluginNotReadyProbeLimitReached(timeoutProbeCount)
       ) {
-        const lastResponse = lastProbe === null
-          ? ''
-          : `\nLast readiness probe route: ${lastProbe.route}\nLast readiness probe status: ${lastProbe.status}\nLast readiness probe body: ${JSON.stringify(lastProbe.body, null, 2)}`;
+        const lastResponse = describePackagedReadinessFailure(lastProbe, lastTimeoutFallbackProbes);
         throw new Error(
           `Packaged production plugin readiness hit ${timeoutProbeCount} consecutive probe timeout${timeoutProbeCount === 1 ? '' : 's'}${lastResponse}\n${logs.join('')}`,
         );
@@ -859,10 +859,37 @@ async function waitForServer(child, baseUrl, logs) {
       await sleepUnlessChildExit(readinessProbeIntervalMs, child);
   }
 
-  const lastResponse = lastProbe === null
-    ? ''
-    : `\nLast readiness probe route: ${lastProbe.route}\nLast readiness probe status: ${lastProbe.status}\nLast readiness probe body: ${JSON.stringify(lastProbe.body, null, 2)}`;
+  const lastResponse = describePackagedReadinessFailure(lastProbe, lastTimeoutFallbackProbes);
   throw new Error(`Timed out waiting for Playground server at ${baseUrl}: ${lastError?.message || 'unknown'}${lastResponse}\n${logs.join('')}`);
+}
+
+function describePackagedReadinessFailure(lastProbe, lastTimeoutFallbackProbes = null) {
+  const parts = [];
+  if (lastProbe !== null) {
+    parts.push(
+      `Last readiness probe route: ${lastProbe.route}\n`
+      + `Last readiness probe status: ${lastProbe.status}\n`
+      + `Last readiness probe body: ${JSON.stringify(lastProbe.body, null, 2)}`,
+    );
+  }
+
+  if (lastTimeoutFallbackProbes?.preflightProbe) {
+    parts.push(
+      `Last timeout fallback preflight route: ${lastTimeoutFallbackProbes.preflightProbe.route}\n`
+      + `Last timeout fallback preflight status: ${lastTimeoutFallbackProbes.preflightProbe.status}\n`
+      + `Last timeout fallback preflight body: ${JSON.stringify(lastTimeoutFallbackProbes.preflightProbe.body, null, 2)}`,
+    );
+  }
+
+  if (lastTimeoutFallbackProbes?.indexProbe) {
+    parts.push(
+      `Last timeout fallback index route: ${lastTimeoutFallbackProbes.indexProbe.route}\n`
+      + `Last timeout fallback index status: ${lastTimeoutFallbackProbes.indexProbe.status}\n`
+      + `Last timeout fallback index body: ${JSON.stringify(lastTimeoutFallbackProbes.indexProbe.body, null, 2)}`,
+    );
+  }
+
+  return parts.length === 0 ? '' : `\n${parts.join('\n')}`;
 }
 
 async function fetchPackagedWordPressIndexProbe(baseUrl, child = null) {

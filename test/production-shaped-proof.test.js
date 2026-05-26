@@ -2010,6 +2010,24 @@ test('packaged production plugin smoke readiness helper fails fast on signaled c
   assert.match(helperSource, /terminated by \$\{child\.signalCode\}/);
 });
 
+test('packaged production plugin smoke readiness helper preserves timeout fallback probe details', () => {
+  const smokeSource = readFileSync(
+    path.join(repoRoot, 'scripts/playground/production-plugin-package-smoke.mjs'),
+    'utf8',
+  );
+  const start = smokeSource.indexOf('async function waitForServer(child, baseUrl, logs) {');
+  assert.notEqual(start, -1, 'expected packaged smoke readiness helper in smoke source');
+  const end = smokeSource.indexOf('async function fetchPackagedWordPressIndexProbe(', start);
+  assert.notEqual(end, -1, 'expected packaged smoke readiness helper boundary in smoke source');
+  const helperSource = smokeSource.slice(start, end);
+
+  assert.match(helperSource, /let lastTimeoutFallbackProbes = null;/);
+  assert.match(helperSource, /lastTimeoutFallbackProbes = \{ preflightProbe, indexProbe \};/);
+  assert.match(helperSource, /Last timeout fallback preflight route:/);
+  assert.match(helperSource, /Last timeout fallback index route:/);
+  assert.match(helperSource, /describePackagedReadinessFailure\(lastProbe, lastTimeoutFallbackProbes\)/);
+});
+
 test('packaged readiness fetch helpers abort probe fetches when the Playground child exits mid-probe', () => {
   const smokeSource = readFileSync(
     path.join(repoRoot, 'scripts/playground/production-plugin-package-smoke.mjs'),
