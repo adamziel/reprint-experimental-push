@@ -33,6 +33,7 @@ import { resolvePackagedProductionPluginSourceCommand } from './packaged-product
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const cliPath = path.join(repoRoot, 'bin/reprint-push-lab.js');
 const serverStartupTimeoutMs = 20_000;
+const readinessProbeFetchTimeoutMs = 3_000;
 const readinessFailureBodyLimit = 500;
 const transientFetchRetryDelayMs = 250;
 const transientFetchAttempts = 4;
@@ -454,13 +455,13 @@ async function waitForServer(child, baseUrl, logs) {
     }
 
     try {
-      const snapshotResponse = await fetch(`${baseUrl}/wp-json/reprint/v1/push/snapshot`, {
+      const snapshotResponse = await fetchWithTimeout(`${baseUrl}/wp-json/reprint/v1/push/snapshot`, {
         method: 'GET',
         headers: {
           connection: 'close',
           ...authHeaders(),
         },
-      });
+      }, readinessProbeFetchTimeoutMs);
       const snapshotText = await snapshotResponse.text();
       notReadyProbeCounts = packagedProductionPluginNextRouteNotReadyProbeCounts(
         notReadyProbeCounts,
@@ -585,13 +586,13 @@ async function waitForServer(child, baseUrl, logs) {
           );
         }
       } else {
-        const preflightResponse = await fetch(`${baseUrl}/wp-json/reprint/v1/push/preflight`, {
+        const preflightResponse = await fetchWithTimeout(`${baseUrl}/wp-json/reprint/v1/push/preflight`, {
           method: 'GET',
           headers: {
             connection: 'close',
             ...signedHeadersForPreflight(),
           },
-        });
+        }, readinessProbeFetchTimeoutMs);
         const preflightText = await preflightResponse.text();
         notReadyProbeCounts = packagedProductionPluginNextRouteNotReadyProbeCounts(
           notReadyProbeCounts,
@@ -740,18 +741,28 @@ async function waitForServer(child, baseUrl, logs) {
 }
 
 async function fetchPackagedWordPressIndexProbe(baseUrl) {
-  const response = await fetch(`${baseUrl}/wp-json/`, {
+  const response = await fetchWithTimeout(`${baseUrl}/wp-json/`, {
     method: 'GET',
     headers: {
       connection: 'close',
     },
-  });
+  }, readinessProbeFetchTimeoutMs);
   const bodyText = await response.text();
   return {
     route: '/wp-json/',
     status: response.status,
     body: bodyText.slice(0, readinessFailureBodyLimit),
   };
+}
+
+async function fetchWithTimeout(url, init = {}, timeoutMs = readinessProbeFetchTimeoutMs) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(new Error(`Timed out fetching ${url}`)), timeoutMs);
+  try {
+    return await fetch(url, { ...init, signal: controller.signal });
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 async function stopPlaygroundServer(server) {
