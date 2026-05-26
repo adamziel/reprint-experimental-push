@@ -72,6 +72,13 @@ export function packagedProductionPluginPreflightRetryable(preflight) {
     return true;
   }
 
+  // The packaged plugin disables the lab auth bootstrap by design, so the
+  // production-shaped preflight can briefly report auth-required before the
+  // packaged runtime source and signed session path are fully ready.
+  if (preflight?.status === 401 && preflight?.body?.code === 'reprint_push_lab_auth_required') {
+    return true;
+  }
+
   if (preflight?.status !== 200 || preflight?.body?.ok !== true) {
     return false;
   }

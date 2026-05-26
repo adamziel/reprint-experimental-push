@@ -1349,7 +1349,7 @@ test('packaged production plugin readiness helper accepts a stable snapshot befo
         code: 'reprint_push_lab_auth_required',
       },
     }),
-    false,
+    true,
   );
   assert.equal(
     packagedProductionPluginPreflightRetryable({
