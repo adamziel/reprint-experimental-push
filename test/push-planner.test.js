@@ -21103,6 +21103,87 @@ test('blocks local same-plan created comment meta identity while preserving remo
   assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin changes */');
 });
 
+test('blocks local same-plan created comment meta identity while preserving a matching independent file type swap and remote-only plugin drift', () => {
+  const resourceKey = 'row:["wp_commentmeta","meta_id:47"]';
+  const targetResourceKey = 'row:["wp_comments","comment_ID:27"]';
+  const swapFileKey = 'file:wp-content/uploads/commentmeta-same-plan-cover';
+  const base = baseSite();
+  base.db.wp_commentmeta = {
+    'meta_id:47': {
+      meta_id: 47,
+      comment_id: 27,
+      meta_key: 'note',
+      meta_value: 'Base same-plan swap comment meta',
+    },
+  };
+  base.files['wp-content/uploads/commentmeta-same-plan-cover'] = 'base cover bytes';
+
+  const local = baseSite();
+  local.db.wp_commentmeta = {
+    'meta_id:47': {
+      meta_id: 47,
+      comment_id: 27,
+      meta_key: 'note',
+      meta_value: 'Local same-plan swap comment meta',
+    },
+  };
+  local.db.wp_comments = {
+    'comment_ID:27': {
+      comment_ID: 27,
+      comment_post_ID: 1,
+      comment_content: 'Local same-plan swap comment',
+    },
+  };
+  local.files['wp-content/uploads/commentmeta-same-plan-cover'] = { type: 'directory' };
+
+  const remote = baseSite();
+  remote.db.wp_commentmeta = JSON.parse(JSON.stringify(base.db.wp_commentmeta));
+  remote.files['wp-content/uploads/commentmeta-same-plan-cover'] = { type: 'directory' };
+  remote.plugins.forms.description = 'remote-only plugin drift';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin drift */';
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  const targetBlocker = plan.blockers.find((entry) => entry.resourceKey === targetResourceKey);
+  const matchingTypeSwap = decisionFor(plan, swapFileKey);
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const reference = blocker.references[0];
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(decisionFor(plan, targetResourceKey), undefined);
+  assert.equal(plan.conflicts.length, 0);
+  assert.equal(blocker.class, 'unsupported-commentmeta-resource');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.unsupportedState, 'same-plan-reference');
+  assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_commentmeta","meta_id:47"] is created in the same plan as a comment identity that depends on it, and identity rewriting is not yet supported.');
+  assert.equal(blocker.referencesTruncated, false);
+  assert.equal(reference.relationshipKey, 'wp_commentmeta.comment_id');
+  assert.equal(reference.relationshipType, 'commentmeta-comment');
+  assert.equal(reference.targetResourceKey, targetResourceKey);
+  assert.equal(reference.targetChange.remote.state, 'absent');
+  assert.equal(reference.targetChange.local.state, 'present');
+  assert.equal(targetBlocker.class, 'unsupported-comments-users-resource');
+  assert.equal(targetBlocker.resourceKey, targetResourceKey);
+  assert.equal(targetBlocker.unsupportedState, 'same-plan-reference');
+  assert.equal(targetBlocker.reason, 'WordPress graph mutation row:["wp_comments","comment_ID:27"] is created in the same plan as a comment meta identity that depends on it, and identity rewriting is not yet supported.');
+  assert.equal(targetBlocker.references[0].relationshipType, 'commentmeta-comment');
+  assert.equal(targetBlocker.references[0].sourceResourceKey, resourceKey);
+  assert.equal(matchingTypeSwap.decision, 'already-in-sync');
+  assert.equal(matchingTypeSwap.change.localChange, 'type-change');
+  assert.equal(matchingTypeSwap.change.remoteChange, 'type-change');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('Local same-plan swap comment meta'), false);
+  assert.equal(planJson.includes('Base same-plan swap comment meta'), false);
+  assert.equal(planJson.includes('Local same-plan swap comment'), false);
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin drift');
+  assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin drift */');
+});
+
 test('blocks local same-plan created comment meta identity while preserving a matching independent delete and remote-only plugin removals', () => {
   const resourceKey = 'row:["wp_commentmeta","meta_id:48"]';
   const targetResourceKey = 'row:["wp_comments","comment_ID:28"]';
