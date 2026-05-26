@@ -1,6 +1,6 @@
 # Critic Audit
 
-## 2026-05-26 13:55:27 CEST (+0200)
+## 2026-05-26 13:56:26 CEST (+0200)
 
 No gate movement. `77da166e031a32700ddaf388bde378e1c58b0f63` is the current reliable head from `git ls-remote`; it surfaces consumed auth-session source evidence on the checked release verifier path, including a focused test that the release verify command records the source command output, but it still proves source ingestion rather than a production-backed auth/session lifecycle or closed durable-journal ownership on the release path. The verdict remains `0/4`.
 
