@@ -8,19 +8,21 @@ changed, what is helping, what is not helping, and the next nudge.
 ## 2026-05-26 15:47 CEST - Reliable Head Advanced Again
 
 - Going well: the live reliable head advanced to `89ee8eb41fbc650dfe324c9751985e3e736a95e5`, so the checked
-  release path is still moving forward instead of flattening out.
+  release path is still moving instead of stalling on the same support-surface
+  commit.
 - Not going well: the release gate is still `0/4`, and the missing proof is
   still production-backed auth/session lifecycle or durable-journal ownership.
-- Progress change: public status is still behind the live head and still names
-  `e82e3b1af126f62688f617a3fb4cc0baeb698d57` as current.
+- Progress change: the public status still needs to catch up to the new live
+  head and should not keep naming an older reliable commit as current.
 - Next nudge: keep `reliable-executor` on the next checked release-path
-  dependency, and have `progress-publisher` refresh the public page to
-  `89ee8eb41fbc650dfe324c9751985e3e736a95e5`.
+  dependency, and have `progress-publisher` refresh the public page to the
+  live `89ee8eb41fbc650dfe324c9751985e3e736a95e5` head with gates still at
+  `0/4`.
 
 | Lane | Nudge |
 | --- | --- |
 | Reliable executor | Move to the next checked release-path dependency, not another proof-field surface. |
-| Progress publisher | Refresh the public page because it still names `e82e3b1af126f62688f617a3fb4cc0baeb698d57`; keep the gate posture at `0/4` and catch up to `89ee8eb41fbc650dfe324c9751985e3e736a95e5`. |
+| Progress publisher | Refresh the public page to the live `89ee8eb41fbc650dfe324c9751985e3e736a95e5` head; keep the gate posture at `0/4`. |
 | Audit and critic | Keep the verdict at `0/4` unless production-backed lifecycle or durable ownership is proven. |
 
 ## 2026-05-26 15:30 CEST - Lane Retarget Complete
