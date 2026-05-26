@@ -959,12 +959,18 @@ async function waitForServer(child, baseUrl, getLogs) {
 }
 
 function writePlaygroundFailure(message, lastProbes, logs, lastError) {
+  const lastProbe = lastProbes.at(-1) ?? null;
   const summary = {
     message,
-    lastProbe: lastProbes.at(-1) ?? null,
+    lastProbe,
     lastError: lastError?.message ?? null,
   };
   process.stderr.write(`${message}\n`);
+  if (lastProbe) {
+    const probeLine = `Last playground probe route=${lastProbe.route} status=${lastProbe.status} ok=${lastProbe.ok} body=${lastProbe.body ?? ''}\n`;
+    process.stderr.write(probeLine);
+    process.stdout.write(probeLine);
+  }
   process.stderr.write(`${JSON.stringify(summary)}\n`);
   process.stdout.write(`${JSON.stringify(summary)}\n`);
   if (logs) {
