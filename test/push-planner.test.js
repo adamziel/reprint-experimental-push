@@ -5715,6 +5715,66 @@ test('blocks menu item parent metadata when the same-plan post target is itself 
   assert.throws(() => applyPlan(baseSite(), plan), /Refusing to apply/);
 });
 
+test('blocks menu item parent metadata when the same-plan post target is itself blocked by a nav_menu_item parent', () => {
+  const menuItemResourceKey = 'row:["wp_posts","ID:4"]';
+  const blockedTargetResourceKey = 'row:["wp_posts","ID:5"]';
+  const postmetaResourceKey = 'row:["wp_postmeta","meta_id:58"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_posts['ID:4'] = {
+    ID: 4,
+    post_title: 'Local nav menu item parent',
+    post_content: 'local-private-nav-menu-item-parent-body',
+    post_status: 'publish',
+    post_type: 'nav_menu_item',
+  };
+  local.db.wp_posts['ID:5'] = {
+    ID: 5,
+    post_title: 'Local blocked menu parent target',
+    post_content: 'local-private-blocked-menu-parent-target-body',
+    post_status: 'publish',
+    post_parent: 4,
+  };
+  local.db.wp_postmeta = {
+    'meta_id:58': {
+      meta_id: 58,
+      post_id: 1,
+      meta_key: 'menu_item_parent',
+      meta_value: 5,
+    },
+  };
+
+  const plan = planFor(base, local, baseSite());
+  const blockedTargetMutation = mutationFor(plan, blockedTargetResourceKey);
+  const blockedTargetBlocker = plan.blockers.find((entry) => entry.resourceKey === blockedTargetResourceKey);
+  const postmetaMutation = mutationFor(plan, postmetaResourceKey);
+  const postmetaBlocker = plan.blockers.find((entry) => entry.resourceKey === postmetaResourceKey);
+  const menuItemBlocker = plan.blockers.find((entry) => entry.resourceKey === menuItemResourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(mutationFor(plan, menuItemResourceKey), undefined);
+  assert.equal(blockedTargetMutation.changeKind, 'create');
+  assert.equal(postmetaMutation.changeKind, 'create');
+  assert.equal(menuItemBlocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(menuItemBlocker.surface, 'nav_menu_item');
+  assert.equal(blockedTargetBlocker.class, 'missing-wordpress-graph-dependency');
+  assert.equal(blockedTargetBlocker.references[0].relationshipType, 'post-parent');
+  assert.equal(blockedTargetBlocker.references[0].targetResourceKey, menuItemResourceKey);
+  assert.equal(postmetaBlocker.class, 'missing-wordpress-graph-dependency');
+  assert.equal(postmetaBlocker.references[0].relationshipType, 'menu-item-parent-post');
+  assert.equal(postmetaBlocker.references[0].targetResourceKey, blockedTargetResourceKey);
+  assert.equal(postmetaMutation.dependsOnMutationIds, undefined);
+  assert.equal(
+    JSON.stringify(postmetaBlocker).includes('local-private-blocked-menu-parent-target-body'),
+    false,
+  );
+  assert.equal(
+    JSON.stringify(postmetaBlocker).includes('local-private-nav-menu-item-parent-body'),
+    false,
+  );
+  assert.throws(() => applyPlan(baseSite(), plan), /Refusing to apply/);
+});
+
 test('allows a local post to reference a parent post created by the same plan', () => {
   const parentResourceKey = 'row:["wp_posts","ID:2"]';
   const childResourceKey = 'row:["wp_posts","ID:3"]';
@@ -12452,6 +12512,82 @@ test('blocks a local term relationship object reference when the same-plan post 
   assert.equal(relationshipBlocker.references[0].targetResourceKey, blockedPostResourceKey);
   assert.equal(relationshipMutation.dependsOnMutationIds, undefined);
   assert.equal(JSON.stringify(relationshipBlocker).includes('local-private-navigation-parent-body'), false);
+  assert.equal(JSON.stringify(relationshipBlocker).includes('local-private-blocked-tagged-post-body'), false);
+  assert.throws(() => applyPlan(baseSite(), plan), /Refusing to apply/);
+});
+
+test('blocks a local term relationship object reference when the same-plan post target is itself blocked by a nav_menu_item parent', () => {
+  const menuItemResourceKey = 'row:["wp_posts","ID:2"]';
+  const blockedPostResourceKey = 'row:["wp_posts","ID:3"]';
+  const termResourceKey = 'row:["wp_terms","term_id:7"]';
+  const taxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:9"]';
+  const relationshipResourceKey = 'row:["wp_term_relationships","object_id:3|term_taxonomy_id:9"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_title: 'Local nav menu item parent',
+    post_content: 'local-private-nav-menu-item-parent-body',
+    post_status: 'publish',
+    post_type: 'nav_menu_item',
+  };
+  local.db.wp_posts['ID:3'] = {
+    ID: 3,
+    post_title: 'Blocked tagged post',
+    post_content: 'local-private-blocked-tagged-post-body',
+    post_status: 'publish',
+    post_parent: 2,
+  };
+  local.db.wp_terms = {
+    'term_id:7': {
+      term_id: 7,
+      name: 'Local relationship term',
+      slug: 'local-relationship-term',
+    },
+  };
+  local.db.wp_term_taxonomy = {
+    'term_taxonomy_id:9': {
+      term_taxonomy_id: 9,
+      term_id: 7,
+      taxonomy: 'category',
+      description: '',
+      parent: 0,
+      count: 0,
+    },
+  };
+  local.db.wp_term_relationships = {
+    'object_id:3|term_taxonomy_id:9': {
+      object_id: 3,
+      term_taxonomy_id: 9,
+      term_order: 0,
+    },
+  };
+
+  const plan = planFor(base, local, baseSite());
+  const blockedPostMutation = mutationFor(plan, blockedPostResourceKey);
+  const termMutation = mutationFor(plan, termResourceKey);
+  const taxonomyMutation = mutationFor(plan, taxonomyResourceKey);
+  const relationshipMutation = mutationFor(plan, relationshipResourceKey);
+  const menuItemBlocker = plan.blockers.find((entry) => entry.resourceKey === menuItemResourceKey);
+  const blockedPostBlocker = plan.blockers.find((entry) => entry.resourceKey === blockedPostResourceKey);
+  const relationshipBlocker = plan.blockers.find((entry) => entry.resourceKey === relationshipResourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(mutationFor(plan, menuItemResourceKey), undefined);
+  assert.equal(blockedPostMutation.changeKind, 'create');
+  assert.equal(termMutation.changeKind, 'create');
+  assert.equal(taxonomyMutation.changeKind, 'create');
+  assert.equal(relationshipMutation.changeKind, 'create');
+  assert.equal(menuItemBlocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(menuItemBlocker.surface, 'nav_menu_item');
+  assert.equal(blockedPostBlocker.class, 'missing-wordpress-graph-dependency');
+  assert.equal(blockedPostBlocker.references[0].relationshipType, 'post-parent');
+  assert.equal(blockedPostBlocker.references[0].targetResourceKey, menuItemResourceKey);
+  assert.equal(relationshipBlocker.class, 'missing-wordpress-graph-dependency');
+  assert.equal(relationshipBlocker.references[0].relationshipType, 'term-relationship-object');
+  assert.equal(relationshipBlocker.references[0].targetResourceKey, blockedPostResourceKey);
+  assert.equal(relationshipMutation.dependsOnMutationIds, undefined);
+  assert.equal(JSON.stringify(relationshipBlocker).includes('local-private-nav-menu-item-parent-body'), false);
   assert.equal(JSON.stringify(relationshipBlocker).includes('local-private-blocked-tagged-post-body'), false);
   assert.throws(() => applyPlan(baseSite(), plan), /Refusing to apply/);
 });
