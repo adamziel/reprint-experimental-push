@@ -4109,6 +4109,19 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
   assert.ok(
     rejectedById.get('compressed-remote-index-and-drained-queue-skips-plugin-install-finalize-after-pause').violates.includes('durable-progress'),
   );
+  assert.equal(
+    rejectedById.get('cached-receipt-cursor-queue-slack-and-journal-lag-skips-backpressure-pause-after-retry').rejectedGate,
+    'recovery',
+  );
+  assert.ok(
+    rejectedById.get('cached-receipt-cursor-queue-slack-and-journal-lag-skips-backpressure-pause-after-retry').violates.includes('backpressure'),
+  );
+  assert.ok(
+    rejectedById.get('cached-receipt-cursor-queue-slack-and-journal-lag-skips-backpressure-pause-after-retry').violates.includes('chunk-receipts'),
+  );
+  assert.ok(
+    rejectedById.get('cached-receipt-cursor-queue-slack-and-journal-lag-skips-backpressure-pause-after-retry').violates.includes('durable-progress'),
+  );
   assert.ok(rejectedById.get('batched-receipt-journal-flush').violates.includes('backpressure'));
   assert.ok(rejectedById.get('batched-receipt-journal-flush').violates.includes('durable-progress'));
   assert.ok(model.rejectedFastPaths.every((fastPath) => fastPath.rejectedBecause));
