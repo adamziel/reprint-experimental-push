@@ -64,6 +64,7 @@ test('guarded executor benchmark moves buffers and row payloads through durable 
   assert.equal(report.evidence.backpressure.queuePausedBeforeOverflow, true);
   assert.equal(report.evidence.backpressure.receiptCursorWithinQueueBudget, true);
   assert.equal(report.evidence.backpressure.backpressureEvidenceComplete, true);
+  assert.equal(report.evidence.backpressure.receiptCursorQueueSlackBytes, 31.5 * 1024 * 1024);
   assert.equal(report.evidence.backpressure.receiptCursorMemoryHeadroomBytes, 31.5 * 1024 * 1024);
   assert.equal(report.evidence.backpressure.queueHeadroomBytes, 31.5 * 1024 * 1024);
   assert.equal(report.evidence.recovery.successInspectionStatus, 'fully-updated-remote');
@@ -118,6 +119,8 @@ test('guarded benchmark refuses production throughput claims until production ga
   assert.equal(report.claims.productionThroughputDetails.backpressureConsistency.receiptCursorHeadroomCoveredByQueueBudget, true);
   assert.equal(report.claims.productionThroughputDetails.backpressureConsistency.receiptCursorBackpressureBytes, 512 * 1024);
   assert.equal(report.claims.productionThroughputDetails.backpressureConsistency.receiptCursorBackpressureMeasured, true);
+  assert.equal(report.claims.productionThroughputDetails.backpressureConsistency.receiptCursorQueueSlackBytes, 31.5 * 1024 * 1024);
+  assert.equal(report.claims.productionThroughputDetails.backpressureConsistency.receiptCursorQueueSlackMatchesBackpressure, true);
   assert.equal(report.claims.productionThroughputDetails.backpressureConsistency.receiptCursorBackpressureWithinQueueBudget, true);
   assert.equal(
     report.claims.productionThroughputDetails.backpressureConsistency.receiptCursorBackpressureWithinResourceHeadroom,
@@ -477,6 +480,16 @@ test('production claim gate fails closed if benchmark evidence is tampered', () 
     false,
   );
   assert.ok(productionThroughputBlockers(missingQueueCursor).includes('backpressure-evidence-incomplete'));
+
+  const mismatchedQueueSlack = clone(report);
+  mismatchedQueueSlack.evidence.backpressure.receiptCursorQueueSlackBytes = 0;
+  assert.ok(
+    productionThroughputBlockers(mismatchedQueueSlack).includes('backpressure-evidence-incomplete'),
+  );
+  assert.equal(
+    productionThroughputDetails(mismatchedQueueSlack).backpressureConsistency.receiptCursorQueueSlackMatchesBackpressure,
+    false,
+  );
 
   const zeroQueueCursor = clone(report);
   zeroQueueCursor.evidence.backpressure.receiptCursorBytes = 0;

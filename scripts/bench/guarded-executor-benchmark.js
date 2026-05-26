@@ -336,6 +336,7 @@ export function productionThroughputDetails(report) {
   const receiptCursorMemoryCeilingBytes = report.resourceLimits?.memoryCeilingBytes ?? null;
   const receiptCursorQueueBudgetBytes = report.evidence.backpressure?.queueBudgetBytes ?? null;
   const receiptCursorQueueHeadroomBytes = report.evidence.backpressure?.queueHeadroomBytes ?? null;
+  const receiptCursorQueueSlackBytes = report.evidence.backpressure?.receiptCursorQueueSlackBytes ?? null;
   const backpressureEvidenceComplete = hasCompleteBackpressureEvidence(report);
   const receiptCursorIsTerminalChunk =
     report.evidence.chunkReceipts.cursorConsistency?.canResumeFromCursor === true
@@ -371,6 +372,11 @@ export function productionThroughputDetails(report) {
     Number.isFinite(receiptCursorBackpressureBytes)
     && Number.isFinite(receiptCursorQueueBudgetBytes)
     && receiptCursorBackpressureBytes <= receiptCursorQueueBudgetBytes;
+  const receiptCursorQueueSlackMatchesBackpressure =
+    Number.isFinite(receiptCursorQueueSlackBytes)
+    && Number.isFinite(receiptCursorQueueBudgetBytes)
+    && Number.isFinite(receiptCursorBackpressureBytes)
+    && receiptCursorQueueSlackBytes === receiptCursorQueueBudgetBytes - receiptCursorBackpressureBytes;
   const receiptCursorHeadroomCoveredByQueueBudget =
     Number.isFinite(receiptCursorMemoryHeadroomBytes)
     && Number.isFinite(receiptCursorQueueHeadroomBytes)
@@ -435,6 +441,8 @@ export function productionThroughputDetails(report) {
     receiptCursorHeadroomMatchesQueueHeadroom,
     receiptCursorBackpressureBytes,
     receiptCursorBackpressureMeasured,
+    receiptCursorQueueSlackBytes,
+    receiptCursorQueueSlackMatchesBackpressure,
     receiptCursorMemoryHeadroomBytes,
     receiptCursorMemoryHeadroomMatchesResourceHeadroom,
     receiptCursorMatchesBackpressure,
@@ -462,6 +470,8 @@ export function productionThroughputDetails(report) {
       receiptCursorHeadroomWithinQueueBudget,
       receiptCursorBackpressureBytes,
       receiptCursorBackpressureMeasured,
+      receiptCursorQueueSlackBytes,
+      receiptCursorQueueSlackMatchesBackpressure,
       receiptCursorMemoryHeadroomBytes,
       receiptCursorMemoryHeadroomMatchesResourceHeadroom,
       receiptCursorBackpressureWithinResourceHeadroom,
@@ -478,6 +488,7 @@ export function productionThroughputDetails(report) {
 
 function hasCompleteBackpressureEvidence(report) {
   const receiptCursorBackpressureBytes = report.evidence.backpressure?.receiptCursorBytes ?? null;
+  const receiptCursorQueueSlackBytes = report.evidence.backpressure?.receiptCursorQueueSlackBytes ?? null;
   const receiptCursorQueueBudgetBytes = report.evidence.backpressure?.queueBudgetBytes ?? null;
   const receiptCursorQueueHeadroomBytes = report.evidence.backpressure?.queueHeadroomBytes ?? null;
   const receiptCursorMemoryHeadroomBytes = report.evidence.backpressure?.receiptCursorMemoryHeadroomBytes ?? null;
@@ -508,6 +519,7 @@ function hasCompleteBackpressureEvidence(report) {
     && report.evidence.backpressure?.receiptCursorWithinQueueBudget === true
     && receiptCursorBackpressureBytes === receiptCursorWindowBytes
     && receiptCursorBackpressureBytes <= receiptCursorQueueBudgetBytes
+    && receiptCursorQueueSlackBytes === receiptCursorQueueBudgetBytes - receiptCursorBackpressureBytes
     && receiptCursorQueueHeadroomBytes === receiptCursorQueueBudgetBytes - report.shape.chunkSizeBytes
     && receiptCursorQueueHeadroomBytes >= receiptCursorBackpressureBytes
     && receiptCursorBackpressureWithinResourceHeadroom
@@ -933,6 +945,11 @@ function buildReport({
         queuePausedBeforeOverflow: config.chunkSizeBytes <= config.maxBufferedUploadBytes,
         chunkWindowBytes: config.chunkSizeBytes,
         receiptCursorBytes: lastChunkReceipt?.sizeBytes ?? null,
+        receiptCursorQueueSlackBytes:
+          Number.isFinite(lastChunkReceipt?.sizeBytes)
+          && Number.isFinite(config.maxBufferedUploadBytes)
+            ? config.maxBufferedUploadBytes - lastChunkReceipt.sizeBytes
+            : null,
         receiptCursorMemoryHeadroomBytes:
           Number.isFinite(lastChunkReceipt?.sizeBytes)
           && Number.isFinite(config.maxBufferedUploadBytes)
