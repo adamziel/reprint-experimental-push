@@ -17959,6 +17959,74 @@ test('blocks remote-only comment meta deletion while preserving a matching indep
   assert.equal(Object.hasOwn(remote.files, 'wp-content/plugins/forms/forms.php'), false);
 });
 
+test('blocks converged comment meta drift while preserving a matching independent edit and remote-only plugin changes', () => {
+  const resourceKey = 'row:["wp_commentmeta","meta_id:46"]';
+  const base = baseSite();
+  base.db.wp_commentmeta = {
+    'meta_id:46': {
+      meta_id: 46,
+      comment_id: 25,
+      meta_key: 'note',
+      meta_value: 'Base converged comment meta value',
+    },
+  };
+  base.db.wp_comments = {
+    'comment_ID:25': {
+      comment_ID: 25,
+      comment_post_ID: 1,
+      comment_content: 'Base converged referenced comment',
+    },
+  };
+  base.db.wp_posts['ID:1'].post_title = 'Base converged comment meta shared title';
+
+  const local = baseSite();
+  local.db.wp_commentmeta = {
+    'meta_id:46': {
+      meta_id: 46,
+      comment_id: 25,
+      meta_key: 'note',
+      meta_value: 'Converged comment meta value',
+    },
+  };
+  local.db.wp_comments = JSON.parse(JSON.stringify(base.db.wp_comments));
+  local.db.wp_posts['ID:1'].post_title = 'Shared converged comment meta title';
+
+  const remote = baseSite();
+  remote.db.wp_commentmeta = JSON.parse(JSON.stringify(local.db.wp_commentmeta));
+  remote.db.wp_comments = JSON.parse(JSON.stringify(base.db.wp_comments));
+  remote.db.wp_posts['ID:1'].post_title = 'Shared converged comment meta title';
+  remote.plugins.forms.description = 'remote-only plugin changes';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin changes */';
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  const matchingEdit = decisionFor(plan, 'row:["wp_posts","ID:1"]');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(decisionFor(plan, resourceKey), undefined);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(plan.conflicts.length, 0);
+  assert.equal(blocker.class, 'unsupported-commentmeta-resource');
+  assert.equal(blocker.resourceKind, 'comment-meta');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.unsupportedState, 'converged-drift');
+  assert.equal(blocker.reason, 'Comment meta graph resources are not yet supported by the planner.');
+  assert.equal(matchingEdit.decision, 'already-in-sync');
+  assert.equal(matchingEdit.change.localChange, 'update');
+  assert.equal(matchingEdit.change.remoteChange, 'update');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('Converged comment meta value'), false);
+  assert.equal(planJson.includes('Base converged comment meta value'), false);
+  assert.equal(planJson.includes('Base converged referenced comment'), false);
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin changes');
+  assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin changes */');
+});
+
 test('blocks local same-plan created user meta identity while preserving remote-only plugin drift', () => {
   const resourceKey = 'row:["wp_usermeta","umeta_id:77"]';
   const base = baseSite();
