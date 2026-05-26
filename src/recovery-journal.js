@@ -56,15 +56,20 @@ function hasStaleClaimRejectionEvidence(records) {
 export function checkedDurableJournalBoundarySatisfied(dbJournal) {
   const writerLease = dbJournal?.writerLease;
   const nestedWriterLease = dbJournal?.leaseFence?.writerLease;
+  const leaseFenceBoundary = dbJournal?.leaseFence?.boundary;
+  const productionAdapter = dbJournal?.ownership?.productionAdapter;
   return CHECKED_DURABLE_JOURNAL_SCOPE_PATTERN.test(dbJournal?.scope || '')
     && dbJournal?.acceptedOnCheckedBoundary === true
     && dbJournal?.ownership?.ownsJournal === true
     && dbJournal?.ownership?.restartReadable === true
-    && dbJournal?.ownership?.productionAdapter === 'wpdb-single-statement-cas'
+    && productionAdapter === 'wpdb-single-statement-cas'
     && writerLeaseContractMatches(writerLease)
     && writerLeaseContractMatches(nestedWriterLease)
     && writerLeaseContractsAgree(writerLease, nestedWriterLease)
-    && dbJournal?.leaseFence?.boundary === 'wpdb-single-statement-cas'
+    && leaseFenceBoundary === 'wpdb-single-statement-cas'
+    && writerLease?.storageGuard === leaseFenceBoundary
+    && nestedWriterLease?.storageGuard === leaseFenceBoundary
+    && productionAdapter === leaseFenceBoundary
     && dbJournal?.leaseFence?.claimKeyUnique === true
     && dbJournal?.leaseFence?.fsyncEvidence === true
     && dbJournal?.leaseFence?.monotonicSequence === true

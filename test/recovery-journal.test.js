@@ -2009,6 +2009,23 @@ test('checked durable journal boundary accepts the packaged production journal s
   };
 
   assert.equal(checkedDurableJournalBoundarySatisfied(packagedContract), true);
+  assert.equal(
+    checkedDurableJournalBoundarySatisfied({
+      ...packagedContract,
+      writerLease: {
+        ...packagedContract.writerLease,
+        storageGuard: 'filesystem-compare-rename',
+      },
+      leaseFence: {
+        ...packagedContract.leaseFence,
+        writerLease: {
+          ...packagedContract.leaseFence.writerLease,
+          storageGuard: 'filesystem-compare-rename',
+        },
+      },
+    }),
+    false,
+  );
 });
 
 test('checked durable journal boundary rejects nearby stale scope wording', () => {
