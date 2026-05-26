@@ -500,20 +500,20 @@
       <div>
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
-        <p class="lead">Last 12 hours: recovery's `351b6bbd` adapter proof is still valid, and reliable's newest readiness fast-fail patch is `0f36d838`, which supersedes `e725e749` and `27ad6f6f` as the current reliable head and fails immediately on the first `/wp-json/` `502` body containing `WordPress is not ready yet` through the bounded route/status/body diagnostic path. That is better bounded failure evidence, but it still needs to cross the outer release-verifier boundary before the release gate can move. Release gates remain `0/4`, and the production boundary is still closed.</p>
-        <time class="update-stamp" datetime="2026-05-26T10:48:24+02:00">Last updated: May 26, 2026, 10:48 CEST</time>
+        <p class="lead">Last 12 hours: recovery's `351b6bbd` adapter proof is still valid, and reliable's newest readiness fast-fail patch is `e7be9812`, which supersedes `0f36d838`, `e725e749`, and `27ad6f6f` as the current reliable head and fails fast on readiness `502`s through the bounded route/status/body diagnostic path. That is better bounded failure evidence, but it still needs to cross the outer release-verifier boundary before the release gate can move. Release gates remain `0/4`, and the production boundary is still closed.</p>
+        <time class="update-stamp" datetime="2026-05-26T10:50:54+02:00">Last updated: May 26, 2026, 10:50 CEST</time>
         <div class="meta" aria-label="Project status">
           <span class="pill">Evidence class: lab-only</span>
-          <span class="pill">Trend: readiness handling in `scripts/playground/production-shaped-release-verify.mjs` now points at `0f36d838`, which fails fast on the readiness 502 body, but the outer verifier proof is still pending</span>
+          <span class="pill">Trend: readiness handling in `scripts/playground/production-shaped-release-verify.mjs` now points at `e7be9812`, which fails fast on readiness 502s, but the outer verifier proof is still pending</span>
           <span class="pill">Top blocker: the new readiness behavior still needs to cross the outer release-verifier boundary before it can count as release proof</span>
           <span class="pill">Gate status: 0/4 verified; 4 pending</span>
           <span class="pill">Open gates: executor/auth, recovery journal, Docker/Playground, plugin drivers</span>
           <span class="pill">Supervised scope: 8 fast/low worker lanes plus the dedicated live progress watcher</span>
-          <span class="pill">Newest audit: <a href="docs/progress-log.md#2026-05-26-freshness-refresh-104824">2026-05-26 10:48:24</a></span>
+          <span class="pill">Newest audit: <a href="docs/progress-log.md#2026-05-26-freshness-refresh-105054">2026-05-26 10:50:54</a></span>
         </div>
       </div>
       <div class="header-actions" aria-label="Progress evidence">
-        <a class="log-link" href="docs/progress-log.md#2026-05-26-freshness-refresh-104824">Open newest audit</a>
+        <a class="log-link" href="docs/progress-log.md#2026-05-26-freshness-refresh-105054">Open newest audit</a>
         <a class="log-link" href="#proof-gates">Open release-gate checklist</a>
         <p><strong>Evidence trail:</strong> <a href="docs/progress-log.md">log</a>, <a href="audits/objective-audit.md">objective audit</a>, <a href="#proof-gates">gate checklist</a>.</p>
       </div>
@@ -522,7 +522,7 @@
     <section class="summary" aria-label="Current evidence summary">
       <div class="metric">
         <strong><a href="audits/objective-audit.md">Lab proof</a></strong>
-        <span>Latest lane evidence now includes the recovery adapter proof at `351b6bbd` and reliable's readiness fast-fail patch at `0f36d838`; the next proof still needs a bounded verifier run to show the new failure path before the live release proof can continue</span>
+        <span>Latest lane evidence now includes the recovery adapter proof at `351b6bbd` and reliable's readiness fast-fail patch at `e7be9812`; the next proof still needs a bounded verifier run to show the new failure path before the live release proof can continue</span>
       </div>
       <div class="metric">
         <strong>Pending</strong>

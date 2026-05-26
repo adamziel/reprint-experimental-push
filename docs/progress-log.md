@@ -4,6 +4,14 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-05-26 - Freshness Refresh 10:50:54
+
+<a id="2026-05-26-freshness-refresh-105054"></a>
+
+- Refreshed [progress.html](../progress.html) so the visible last-updated date stays aligned with the live supervision clock, and corrected the reliable head reference to `e7be9812`.
+- This remains a visibility-only update. The release gate posture stays `0/4`.
+- Evidence trail: [progress.html](../progress.html), [supervisor feedback](supervisor-feedback.md).
+
 ## 2026-05-26 - Freshness Refresh 10:48:24
 
 <a id="2026-05-26-freshness-refresh-104824"></a>
@@ -16,7 +24,7 @@ linked implementation artifacts.
 
 <a id="2026-05-26-fresh-evidence-delta-104732"></a>
 
-- Reliable's newest readiness fast-fail patch is `0f36d838`, which supersedes `e725e749` and `27ad6f6f` as the current reliable head and fails immediately on the first `/wp-json/` `502` body containing `WordPress is not ready yet` through the bounded route/status/body diagnostic path.
+- Reliable's newest readiness fast-fail patch is `e7be9812`, which supersedes `0f36d838`, `e725e749`, and `27ad6f6f` as the current reliable head and fails fast on readiness `502`s through the bounded route/status/body diagnostic path.
 - This is better bounded failure evidence, but it still does not cross the outer release-verifier boundary.
 - The release gate posture remains `0/4`.
 - Evidence trail: [supervisor feedback](supervisor-feedback.md).
