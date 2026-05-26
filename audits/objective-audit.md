@@ -10,19 +10,19 @@ Fresh remote heads at audit time, checked on May 26, 2026:
 - `origin/lane/no-data-loss-invariants` -> `9c70eba6`
 - `origin/lane/no-data-loss-recovery` -> `47b675c0`
 - `origin/lane/fast-paths` -> `9be664b2`
-- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `c0f7aa92`
+- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `ff2131c3`
 - `origin/lane/independent-auditor` -> `5abd1f65`
-- `origin/lane/critic` -> `68569c0b`
+- `origin/lane/critic` -> `f8591f9d`
 - `origin/lane/progress-publisher` -> `7695e1f9`
 - `origin/lane/same-plan-wordpress-graph-create` -> `fc8308c4`
 - `origin/lane/cycle-20260525-mainwindows-2349/same-plan-wordpress-graph-create` -> `fc8308c4`
 - `origin/lane/cycle-20260525-mainwindows-2349/same-plan-wordpress-graph-create` -> `e9cbf9d4`
 - `origin/lane/cycle-20260525-mainwindows-2357/no-data-loss-invariants-graph-proof` -> `98c0ce26`
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `3aa07c2e`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `95be2784`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `08e327b7`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `67de1e9f`
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` -> `5f256171`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-invariants` -> `9c70eba6`
-- `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `12174c08`
+- `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `ba49bb8d`
 - `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration` -> `a3a900d7`
 - `origin/main` -> `e55864f4`
 
@@ -34,14 +34,14 @@ Fresh lane proof since the last audit pass improved the local evidence floor,
 but it did not change the release conclusion:
 
 - `origin/lane/reliable-executor` now refreshes the audit evidence at
-  `0c4fd10f`. The sibling reliable-executor worktree now shows the
-  `spawnSync` timeout-hardening edits in progress, but they are still dirty
-  and unpublished, so the live proof path is not yet release evidence and the
+  `0c4fd10f`. The sibling reliable-executor worktree still has the
+  `spawnSync` timeout-hardening edits in progress, but they remain dirty and
+  unpublished, so the live proof path is not yet release evidence and the
   verdict does not move.
 - `origin/lane/no-data-loss-invariants` now tightens graph blockers at
   `9c70eba6`. A separate cycle-branch proof at `98c0ce26`
   extends that blocker coverage to missing graph identity references, and the
-  same-plan graph lane at `69f27361` now blocks unsupported graph surfaces
+  same-plan graph lane at `fc8308c4` now blocks unsupported graph surfaces
   including revision posts, menu/navigation posts, serialized blocks, and
   thumbnail parent references, but none of these produce live source mutation
   evidence.
@@ -49,30 +49,30 @@ but it did not change the release conclusion:
   coverage, which strengthens the fail-closed boundary but still does not
   prove live source mutation on unsupported surfaces.
 - `origin/lane/no-data-loss-recovery` now tightens the durable journal
-  production gate at `12174c08` while preserving the earlier recovery
+  production gate at `47b675c0` while preserving the earlier recovery
   evidence.
   `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` now
-  tightens the durable journal cleanup gate at `12174c08`, but it still does
+  tightens the durable journal cleanup gate at `ba49bb8d`, but it still does
   not add production-backed journal ownership or replay proof.
-- `origin/lane/fast-paths` now refreshes benchmark evidence at `a6ee1f74`.
+- `origin/lane/fast-paths` now refreshes benchmark evidence at `9be664b2`.
   This remains a safe fast-path implementation detail, but it still does not
   prove the live production push boundary.
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` now adds bounded
-  staging-disk backpressure shortcut handling at `974171d0`. That is still a
+  backpressure consistency handling at `ff2131c3`. That is still a
   fail-closed implementation improvement, not production release proof.
-- `origin/lane/cycle-20260525-mainwindows-2349/critic` now refreshes the critic handoff at `68569c0b`.
+- `origin/lane/cycle-20260525-mainwindows-2349/critic` now refreshes the critic handoff at `f8591f9d`.
 - `origin/lane/progress-publisher` now refreshes the public progress evidence
   at `7695e1f9`.
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` now refreshes the audit snapshot at
   `5abd1f65`.
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now
-  refreshes the supervisor evidence snapshot at `3aa07c2e`.
+  refreshes the supervisor evidence snapshot at `08e327b7`.
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now
-  records the latest progress freshness handoff at `95be2784`.
+  records the latest progress freshness handoff at `67de1e9f`.
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` now
   hardens the live proof timeout diagnostics at `5f256171`.
 - `origin/lane/same-plan-wordpress-graph-create` now blocks unsupported graph
-  surfaces at `69f27361`, including revision posts, menu/navigation posts,
+  surfaces at `fc8308c4`, including revision posts, menu/navigation posts,
   serialized blocks, and thumbnail parent references. That is a stronger
   fail-closed proof, but it still stops short of release-grade live mutation
   evidence.
