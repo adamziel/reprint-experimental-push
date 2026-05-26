@@ -651,11 +651,15 @@ function productionRecoverySupportReport(writer) {
   }
   if (
     writer?.productionAdapter === true
-    && writer?.supportedSurface !== 'production-recovery-journal-adapter'
+    && (!Object.hasOwn(writer, 'supportedSurface') || writer.supportedSurface !== 'production-recovery-journal-adapter')
   ) {
     addMissingDependency('supported production recovery journal adapter surface');
   }
-  if (writer?.supportedSurface === 'production-recovery-journal-adapter' && writer.restartReadable !== true) {
+  if (
+    Object.hasOwn(writer ?? {}, 'supportedSurface')
+    && writer.supportedSurface === 'production-recovery-journal-adapter'
+    && (!Object.hasOwn(writer, 'restartReadable') || writer.restartReadable !== true)
+  ) {
     addMissingDependency('restart-readable recovery journal adapter');
   }
   if (writer?.productionAdapter !== true) {
@@ -1673,7 +1677,11 @@ function isRecoveryEnvelopeArtifact(artifact) {
   return isStrictPlainObject(artifact)
     && (
       Object.hasOwn(artifact, 'artifacts')
-      || (ACCEPTABLE_RECOVERY_STATES.includes(artifact.status) && Object.hasOwn(artifact, 'reason'))
+      || (
+        Object.hasOwn(artifact, 'status')
+        && Object.hasOwn(artifact, 'reason')
+        && ACCEPTABLE_RECOVERY_STATES.includes(artifact.status)
+      )
     );
 }
 
