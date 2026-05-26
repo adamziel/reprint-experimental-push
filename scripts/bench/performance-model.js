@@ -3814,6 +3814,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['compression', 'backpressure', 'durable-progress'],
   },
   {
+    id: 'compressed-receipt-log-batches-without-raw-order',
+    proposal: 'treat a compressed receipt log plus journal batching as enough proof to replay without the original raw receipt order',
+    rejectedBecause: 'journal batching can reduce fsync cost, but it cannot preserve the ordered raw receipts needed to classify pause, retry, or crash',
+    rejectedGate: 'recovery',
+    violates: ['compression', 'backpressure', 'durable-progress'],
+  },
+  {
     id: 'receipt-cursor-memory-headroom-authorizes-commit',
     proposal: 'treat receipt cursor memory headroom as enough proof to authorize the atomic-group commit',
     rejectedBecause: 'memory headroom can size bounded replay, but it cannot prove which rows, chunks, or live compares survived the pause well enough to authorize commit',

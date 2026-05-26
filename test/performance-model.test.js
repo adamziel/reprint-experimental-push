@@ -990,6 +990,10 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-receipt-log-skips-raw-order-replay')?.rejectedGate,
     'recovery',
   );
+  assert.equal(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-receipt-log-batches-without-raw-order')?.rejectedGate,
+    'recovery',
+  );
   assert.ok(
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-receipt-log-skips-raw-order-replay')?.violates.includes('compression'),
   );
