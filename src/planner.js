@@ -646,6 +646,18 @@ function buildPluginOwnedResourcePolicy({ base, local, remote, intents }) {
         };
       }
 
+      const distinctDrivers = new Set(candidates.filter((entry) => entry.driver).map((entry) => entry.driver));
+      if (distinctDrivers.size > 1) {
+        return {
+          supported: false,
+          className: 'unsupported-plugin-owned-resource',
+          resourceKind: 'custom-table',
+          driver: withDriver.driver,
+          policySource: withDriver.source,
+          reason: 'Plugin-owned resource has conflicting driver metadata and cannot be applied safely.',
+        };
+      }
+
       const supported = candidates.find((entry) =>
         SUPPORTED_PLUGIN_DATA_DRIVERS.has(entry.driver)
         && pluginOwnedPolicyEntryMatchesResource(entry, resource, owner));
