@@ -9,6 +9,8 @@ Commands run
 - `sed -n '1,240p' supervision/README.md`
 - `sed -n '1,220p' supervision/lanes/independent-auditor.md`
 - `sed -n '1,280p' audits/objective-audit.md`
+- `nl -ba audits/objective-audit.md | sed -n '1,120p'`
+- `nl -ba audits/objective-audit.md | sed -n '120,240p'`
 - `find .lane-output -maxdepth 1 -type f -name 'final*.md' -printf '%TY-%Tm-%Td %TT %f\n' | sort | tail -n 8`
 - `git for-each-ref --format='%(refname:short) %(objectname:short) %(subject)' refs/remotes/origin/lane | sort`
 - `git diff -- .lane-output/final.md`
@@ -16,11 +18,11 @@ Commands run
 - `git diff -- audits/objective-audit.md`
 
 Push result
-- Not pushed; no evidence change justified a publish.
+- Pushed successfully to `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor`
 
 Worktree status
-- Dirty tracked changes in `audits/objective-audit.md` and `.lane-output/final.md`
-- Branch still compares as `ahead 1472, behind 269` relative to `origin/main`
+- Clean tracked state after push
+- Branch still compares as `ahead 1474, behind 270` relative to `origin/main`
 
 Next supervisor nudge
 1. Re-poll only when a lane lands live-source production proof or a blocker materially changes; the current audit still supports the same `0/4` release posture.
