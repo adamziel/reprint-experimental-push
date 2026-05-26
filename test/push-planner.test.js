@@ -25952,6 +25952,86 @@ test('carries bounded comment and usermeta references for a same-plan created us
   assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin changes */');
 });
 
+test('prioritizes usermeta blocker wording while carrying bounded post-author and usermeta references for a same-plan created user identity', () => {
+  const resourceKey = 'row:["wp_users","ID:22"]';
+  const base = baseSite();
+  base.db.wp_posts['ID:1'].post_title = 'Base shared user dependency post';
+  base.db.wp_usermeta = {
+    'umeta_id:22': {
+      umeta_id: 22,
+      user_id: 22,
+      meta_key: 'nickname',
+      meta_value: 'Base dependent nickname',
+    },
+  };
+
+  const local = baseSite();
+  local.db.wp_posts['ID:1'].post_title = 'Shared user dependency post';
+  local.db.wp_users = {
+    'ID:22': {
+      ID: 22,
+      user_login: 'local-post-author-usermeta-user',
+      user_email: 'local-post-author-usermeta@example.test',
+    },
+  };
+  local.db.wp_posts['ID:22'] = {
+    ID: 22,
+    post_title: 'Local post authored by same-plan user',
+    post_content: 'Local post authored by same-plan user body',
+    post_status: 'publish',
+    post_author: 22,
+  };
+  local.db.wp_usermeta = {
+    'umeta_id:22': {
+      umeta_id: 22,
+      user_id: 22,
+      meta_key: 'nickname',
+      meta_value: 'Local dependent nickname',
+    },
+  };
+
+  const remote = baseSite();
+  remote.db.wp_posts['ID:1'].post_title = 'Shared user dependency post';
+  remote.db.wp_usermeta = JSON.parse(JSON.stringify(base.db.wp_usermeta));
+  remote.plugins.forms.description = 'remote-only plugin changes';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin changes */';
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  const matchingEdit = decisionFor(plan, 'row:["wp_posts","ID:1"]');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(plan.conflicts.length, 0);
+  assert.equal(blocker.class, 'unsupported-comments-users-resource');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_users","ID:22"] is created in the same plan as a user meta identity that depends on it, and identity rewriting is not yet supported.');
+  assert.deepEqual(
+    blocker.references.map((reference) => reference.relationshipType).sort(),
+    ['post-author', 'usermeta-user'],
+  );
+  assert.deepEqual(
+    blocker.references.map((reference) => reference.sourceResourceKey).sort(),
+    ['row:["wp_posts","ID:22"]', 'row:["wp_usermeta","umeta_id:22"]'],
+  );
+  assert.equal(blocker.references.every((reference) => reference.targetResourceKey === resourceKey), true);
+  assert.equal(matchingEdit.decision, 'already-in-sync');
+  assert.equal(matchingEdit.change.localChange, 'update');
+  assert.equal(matchingEdit.change.remoteChange, 'update');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('Local post authored by same-plan user'), false);
+  assert.equal(planJson.includes('Local post authored by same-plan user body'), false);
+  assert.equal(planJson.includes('Local dependent nickname'), false);
+  assert.equal(planJson.includes('local-post-author-usermeta-user'), false);
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin changes');
+  assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin changes */');
+});
+
 test('blocks local post-author references to a same-plan created user identity while preserving a matching independent edit and remote-only plugin removals', () => {
   const resourceKey = 'row:["wp_posts","ID:13"]';
   const targetResourceKey = 'row:["wp_users","ID:12"]';

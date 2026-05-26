@@ -3950,7 +3950,13 @@ function unsupportedCommentsUsersResourceSupport({ resource, baseValue, localVal
         && reference.targetChange.local.state === 'present');
 
     if (inboundUserReferences.length > 0) {
-      const userReference = inboundUserReferences[0];
+      const userReference = inboundUserReferences.find((reference) =>
+        reference.relationshipType === 'comment-user')
+        || inboundUserReferences.find((reference) =>
+          reference.relationshipType === 'usermeta-user')
+        || inboundUserReferences.find((reference) =>
+          reference.relationshipType === 'post-author')
+        || inboundUserReferences[0];
       return {
         supported: false,
         className: 'unsupported-comments-users-resource',
