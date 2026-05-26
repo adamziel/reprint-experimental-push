@@ -1735,6 +1735,9 @@ Rejected fast paths stay rejected even when they look fast on paper:
   finalize survived the interruption.
 - A compressed receipt log can reduce recovery storage, but it cannot authorize
   apply or collapse the atomic-group boundary that still guards plugin writes.
+- A compressed per-kind budget summary can reduce resume-planning work, but it
+  cannot replace the later live recheck or the durable receipts that classify
+  pause, retry, or crash.
 - Cached row receipts cannot skip plugin-install writeback, because the
   metadata writes and atomic-group barrier still need durable proof.
 - Cached row receipts cannot skip plugin-update finalize, because the live row

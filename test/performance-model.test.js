@@ -486,6 +486,16 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
     'receipt-cursor planning can reuse aligned queue budget and memory ceiling without widening recovery evidence',
   );
   assert.ok(
+    model.safeFastPaths.some(
+      (fastPath) =>
+        fastPath.area === 'compression' &&
+        fastPath.allowedShortcut === 'compress-canonical-per-kind-budget-summaries-for-bounded-resume-planning' &&
+        fastPath.guardrails.includes('budget-summaries-stay-planning-evidence-only') &&
+        fastPath.gateProofs.recovery.includes('durable receipts and the group staging record still classify pause, retry, or crash'),
+    ),
+    'compressed budget summaries stay planning-only and keep recovery classification explicit',
+  );
+  assert.ok(
     model.rejectedFastPaths.some(
       (fastPath) =>
         fastPath.id === 'compressed-remote-index-and-cached-chunk-hashes-skips-large-upload-window-sizing-after-pause' &&

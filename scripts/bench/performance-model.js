@@ -1268,6 +1268,26 @@ export const SAFE_FAST_PATHS = Object.freeze([
     splitsAtomicGroup: false,
     publishesStagedDataEarly: false,
   },
+  {
+    area: 'compression',
+    reduces: ['wire-bytes', 'planning-round-trips', 'duplicate-budget-recomputation'],
+    allowedShortcut: 'compress-canonical-per-kind-budget-summaries-for-bounded-resume-planning',
+    guardrails: [
+      'budget-summaries-stay-planning-evidence-only',
+      'resume-sizing-revalidates-before-write',
+    ],
+    gateProofs: {
+      skip: 'compressed per-kind budget summaries can shorten resume planning without recomputing the same canonical fan-out limits',
+      live: 'each later mutation still rechecks its own live resource precondition before visibility changes',
+      group: 'budget-summary compression only narrows planning inside the same planned bundle and never widens the atomic-group barrier',
+      recovery: 'compressed budget summaries are advisory while durable receipts and the group staging record still classify pause, retry, or crash',
+    },
+    visibilityBoundary: 'planning-only-budget-summary',
+    failureEvidence: 'compressed per-kind budget summary plus later durable receipts and group staging record',
+    bypassesLivePreconditions: false,
+    splitsAtomicGroup: false,
+    publishesStagedDataEarly: false,
+  },
 ]);
 
 export const FAILURE_INJECTION_BOUNDARIES = Object.freeze([
