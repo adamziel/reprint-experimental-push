@@ -659,6 +659,8 @@ function summarizeAuthSessionLifecycle(session) {
     status: session.status || null,
     expiresAt: session.expiresAt || null,
     expired: isExpiredSession(session),
+    revoked: session.revoked === true || session.status === 'revoked',
+    cleanedUp: session.cleanedUp === true || session.cleanup === true,
   };
 }
 
@@ -671,6 +673,8 @@ function recordAuthSessionLifecycle(summary, step, session) {
     ...observation,
     rotated: Boolean(previous && previous.id && observation?.id && previous.id !== observation.id),
     preserved: Boolean(previous && previous.id && observation?.id && previous.id === observation.id),
+    revoked: Boolean(observation?.revoked),
+    cleanedUp: Boolean(observation?.cleanedUp),
   };
 
   trace.push(lifecycle);
