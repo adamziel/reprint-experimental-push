@@ -4,6 +4,34 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-05-26 - Public Status Audit 11:21:30
+
+<a id="2026-05-26-public-status-audit-112130"></a>
+
+- Freshness update plus reliable-head confirmation: `1c8a658b` remains the
+  current reliable-executor head and release-journal smoke evidence on the
+  public page, and the visible status now points at this 11:21:30 audit
+  refresh.
+- Gate posture remains conservative at `0/4`; no implementation verdict
+  changed.
+- Latest blocker summary remains the same: real WordPress executor/auth and
+  durable journal ownership still block any production push claim.
+
+---
+
+## 2026-05-26 - Public Status Audit 11:11:47
+
+<a id="2026-05-26-public-status-audit-111147"></a>
+
+- Freshness update plus reliable-head correction: `5fd9dfb4` remains the
+  current reliable-executor head and release-journal smoke evidence on the
+  public page, and the visible status now points at this 11:11:47 audit
+  refresh.
+- Gate posture remains conservative at `0/4`; no implementation verdict
+  changed.
+- Latest blocker summary remains the same: real WordPress executor/auth and
+  durable journal ownership still block any production push claim.
+
 ## 2026-05-26 - Public Status Audit 11:10:52
 
 <a id="2026-05-26-public-status-audit-111052"></a>
@@ -12188,47 +12216,3 @@ Newest entries stay short and link back to the evidence trail.
   solved.
 
 </details>
-# 2026-05-26 - Public Status Audit 08:24:54
-
-- Refreshed the public timestamp and newest-audit link to stay aligned with the
-  active supervision cycle.
-- Gate posture remains `0/4` verified and the blocker summary is unchanged.
-
-# 2026-05-26 - Public Status Audit 05:05:34
-
-- The visible progress page now matches the current supervision cycle with a
-  fresh `Last updated` stamp and newest-audit link.
-- Gate posture remains conservative at `0/4` verified, `4 pending`.
-- Top blocker remains the same constrained release-candidate boundary:
-  production WordPress executor/auth plus durable journal ownership still need
-  concrete proof before any broader claim can move.
-
-## 2026-05-26 - Public Status Audit 06:23:02
-
-- Refreshed the public timestamp and newest-audit link to stay aligned with the
-  active supervision cycle.
-- Gate posture remains `0/4` verified and the blocker summary is unchanged.
-
-# 2026-05-26 - Public Status Audit 07:26:25
-
-- Refreshed the public timestamp and newest-audit link to stay aligned with the
-  active supervision cycle.
-- Gate posture remains `0/4` verified and the blocker summary is unchanged.
-
-# 2026-05-26 - Public Status Audit 07:30:41
-
-- Refreshed the public timestamp and newest-audit link to stay aligned with the
-  active supervision cycle.
-- Gate posture remains `0/4` verified and the blocker summary is unchanged.
-
-# 2026-05-26 - Public Status Audit 07:29:58
-
-- Refreshed the public timestamp and newest-audit link to stay aligned with the
-  active supervision cycle.
-- Gate posture remains `0/4` verified and the blocker summary is unchanged.
-
-# 2026-05-26 - Public Status Audit 07:32:31
-
-- Refreshed the public timestamp and newest-audit link to stay aligned with the
-  active supervision cycle.
-- Gate posture remains `0/4` verified and the blocker summary is unchanged.
