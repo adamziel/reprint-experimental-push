@@ -408,6 +408,29 @@ test('snapshot apply gate rejects empty arbitrary plugin driver row ids', { skip
   assert.match(result.stderr, /row id must not be empty/i);
 });
 
+test('snapshot apply gate rejects whitespace-only arbitrary plugin driver row ids', { skip: !hasPhp }, () => {
+  const result = runSupportCheckWithDrivers(
+    {
+      type: 'row',
+      table: 'wp_reprint_push_driver_fixture',
+      id: '   ',
+    },
+    {
+      'fixture-driver': {
+        driver: 'fixture-driver',
+        table: 'wp_reprint_push_driver_fixture',
+        pluginOwner: 'driver-fixture',
+        exportRowsCallback: 'fixture_export_rows',
+        applyRowCallback: 'fixture_apply_row',
+        validateMutationCallback: 'fixture_validate_mutation',
+      },
+    },
+  );
+
+  assert.equal(result.status, 2);
+  assert.match(result.stderr, /row id must not be empty/i);
+});
+
 test('snapshot plugin-owned policy exposes arbitrary registered driver rows', { skip: !hasPhp }, () => {
   const result = runPluginOwnedPolicyCheck(
     {
@@ -458,6 +481,37 @@ test('snapshot plugin-owned policy rejects malformed arbitrary driver row ids', 
         wp_postmeta: {},
         wp_reprint_push_driver_fixture: {
           '': {
+            payload: { ok: true },
+            __pluginOwner: 'driver-fixture',
+          },
+        },
+      },
+    },
+    {
+      'fixture-driver': {
+        driver: 'fixture-driver',
+        table: 'wp_reprint_push_driver_fixture',
+        pluginOwner: 'driver-fixture',
+        exportRowsCallback: 'fixture_export_rows',
+        applyRowCallback: 'fixture_apply_row',
+        validateMutationCallback: 'fixture_validate_mutation',
+      },
+    },
+  );
+
+  assert.equal(result.status, 2);
+  assert.match(result.stderr, /row id must not be empty/i);
+});
+
+test('snapshot plugin-owned policy rejects whitespace-only arbitrary driver row ids', { skip: !hasPhp }, () => {
+  const result = runPluginOwnedPolicyCheck(
+    {
+      meta: {},
+      db: {
+        wp_options: {},
+        wp_postmeta: {},
+        wp_reprint_push_driver_fixture: {
+          '   ': {
             payload: { ok: true },
             __pluginOwner: 'driver-fixture',
           },

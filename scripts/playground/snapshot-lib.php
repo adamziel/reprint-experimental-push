@@ -1588,7 +1588,7 @@ function reprint_push_assert_plugin_owned_driver_row_id(array $driver, string $i
         reprint_push_forms_lab_row_id($id);
         return;
     }
-    if ($id === '') {
+    if (trim($id) === '') {
         throw new RuntimeException('Plugin-owned driver row id must not be empty.');
     }
 }
