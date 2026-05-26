@@ -1,8 +1,10 @@
 Refreshed the objective audit for the newest remote heads, including
-`origin/lane/no-data-loss-invariants` at `5c4cb015` and
-`origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` at `2d7ed103`.
-The verdict stays at `0/4`; the new evidence is still fail-closed graph or
-timeout coverage, not live-source production proof.
+`origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` at
+`b525d10a`, `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor`
+at `e383cb94`, and
+`origin/lane/cycle-20260525-mainwindows-2349/progress-followup` at `43a3ba1d`.
+The verdict stays at `0/4`; the new evidence is still freshness or fail-closed
+coverage, not live-source production proof.
 
 Changed files
 - [`audits/objective-audit.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/independent-auditor/audits/objective-audit.md)
@@ -16,13 +18,14 @@ Commands run
 - `git show --stat --oneline --decorate=short --no-patch origin/lane/no-data-loss-invariants`
 - `git show --stat --oneline --decorate=short --no-patch origin/lane/reliable-executor`
 - `git show --stat --oneline --decorate=short --no-patch origin/lane/cycle-20260525-mainwindows-2349/reliable-followup`
+- `git diff -- audits/objective-audit.md .lane-output/final.md`
 
 Push result
 - Not pushed yet
 
 Worktree status
 - Pending: `audits/objective-audit.md`, `.lane-output/final.md`
-- Branch comparison: `lane/cycle-20260525-mainwindows-2349/independent-auditor...origin/main [ahead 1497, behind 316]`
+- Branch comparison: `lane/cycle-20260525-mainwindows-2349/independent-auditor...origin/main [ahead 1498, behind 317]`
 
 Next supervisor nudge
 - Re-poll only when a lane lands live-source production proof or the release boundary materially changes; the current audit still sits at `0/4` and the updated remote heads do not move that gate.
