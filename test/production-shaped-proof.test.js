@@ -1174,6 +1174,14 @@ maybeTest('production-shaped release verify command runs the live protocol branc
       /"authSessionLifecycleTrace": \[\s*\{\s*"step": "preflight",\s*"id": "[^"]+",\s*"type": "application-password-basic",\s*"status": "active",\s*"expiresAt": "[^"]+",\s*"expired": false,\s*"rotated": false,\s*"preserved": false\s*\}/,
     );
     assert.match(proof.stdout, /"releaseProof": \{\s*"ok": false,\s*"mode": "apply"/);
+    assert.match(
+      proof.stdout,
+      /"staleClaimRetry": \{\s*"abandoned": \{\s*"status": 500,\s*"ok": false,\s*"code": "LAB_SIMULATED_STALE_CLAIM_ALL_OLD"/,
+    );
+    assert.match(
+      proof.stdout,
+      /"apply": \{[\s\S]*?"idempotency": \{\s*"replayed": true,\s*"freshMutationWork": false,\s*"status": "replayed",\s*"conflict": false,\s*"staleClaimRetry": true\s*\}/,
+    );
     assert.match(proof.stdout, /"releaseProof": \{[\s\S]*?"retryAttempts": 1[\s\S]*?\}/);
     assert.match(proof.stdout, /"replayEquivalence": \{\s*"equivalent": true,\s*"mismatches": \[\]\s*\}/);
     assert.match(proof.stdout, /"preflight": \{\s*"status": 200,\s*"ok": true,\s*"mode": "preflight"/);
