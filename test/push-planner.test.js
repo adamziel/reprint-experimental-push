@@ -33880,6 +33880,149 @@ test('production durable journal apply ignores inherited caller artifact refs on
   });
 });
 
+test('production durable journal apply records canonical artifact refs on journal-retry-opened', () => {
+  const base = baseSite();
+  const local = structuredClone(base);
+  local.db.wp_options['option_name:blogname'] = {
+    option_name: 'blogname',
+    option_value: 'Local Site',
+  };
+  const remote = structuredClone(base);
+  const plan = planFor(base, local, remote);
+  const durableJournalPath = tempRecoveryJournalPath();
+  const remoteArtifactPath = `${durableJournalPath}.remote`;
+  const claimId = 'claim-retry-opened-artifact-refs';
+
+  const firstWriter = openProductionRecoveryJournal(durableJournalPath, {
+    truncate: true,
+    now: fixedNow,
+    claimId,
+    ownsRemoteArtifact: true,
+    remoteArtifactPath,
+    writerLease: { id: claimId },
+  });
+  appendRecoveryClaimOpened(firstWriter, {
+    plan,
+    current: remote,
+    claimId,
+    artifactRefs: {
+      journal: durableJournalPath,
+      remote: remoteArtifactPath,
+    },
+  });
+
+  const firstError = captureError(() =>
+    applyPlan(remote, plan, {
+      durableJournal: firstWriter,
+      requireProductionDurableJournal: true,
+      failBeforeMutation: true,
+    }));
+  firstWriter.close();
+
+  assert.equal(firstError.code, 'INJECTED_FAILURE_BEFORE_MUTATION');
+  assert.equal(firstError.details.recovery.status, 'old-remote');
+
+  const retryWriter = openProductionRecoveryJournal(durableJournalPath, {
+    now: fixedNow,
+    claimId,
+    ownsRemoteArtifact: true,
+    remoteArtifactPath,
+    writerLease: { id: claimId },
+  });
+
+  applyPlan(remote, plan, {
+    journal: firstError.details.recovery.artifacts.journal,
+    durableJournal: retryWriter,
+    requireProductionDurableJournal: true,
+    mutateRemote: true,
+  });
+  retryWriter.close();
+
+  const persisted = readRecoveryJournal(durableJournalPath);
+  const retryOpenedRecord = persisted.records.find((record) => record.type === 'journal-retry-opened');
+  const targetRecords = persisted.records.filter((record) => record.type === 'target-planned');
+
+  assert.deepEqual(retryOpenedRecord.artifactRefs, {
+    journal: durableJournalPath,
+    remote: remoteArtifactPath,
+  });
+  assert.equal(targetRecords.length, plan.mutations.length);
+});
+
+test('production durable journal apply ignores inherited caller artifact refs on journal-retry-opened', () => {
+  const base = baseSite();
+  const local = structuredClone(base);
+  local.db.wp_options['option_name:blogname'] = {
+    option_name: 'blogname',
+    option_value: 'Local Site',
+  };
+  const remote = structuredClone(base);
+  const plan = planFor(base, local, remote);
+  const durableJournalPath = tempRecoveryJournalPath();
+  const remoteArtifactPath = `${durableJournalPath}.remote`;
+  const claimId = 'claim-retry-opened-inherited-artifact-refs';
+
+  const firstWriter = openProductionRecoveryJournal(durableJournalPath, {
+    truncate: true,
+    now: fixedNow,
+    claimId,
+    ownsRemoteArtifact: true,
+    remoteArtifactPath,
+    writerLease: { id: claimId },
+  });
+  appendRecoveryClaimOpened(firstWriter, {
+    plan,
+    current: remote,
+    claimId,
+    artifactRefs: {
+      journal: durableJournalPath,
+      remote: remoteArtifactPath,
+    },
+  });
+
+  const firstError = captureError(() =>
+    applyPlan(remote, plan, {
+      durableJournal: firstWriter,
+      requireProductionDurableJournal: true,
+      failBeforeMutation: true,
+    }));
+  firstWriter.close();
+
+  assert.equal(firstError.code, 'INJECTED_FAILURE_BEFORE_MUTATION');
+  assert.equal(firstError.details.recovery.status, 'old-remote');
+
+  const inheritedArtifactRefs = { remote: '' };
+  Object.setPrototypeOf(inheritedArtifactRefs, {
+    journal: '/tmp/stale-journal.jsonl',
+    remote: '/tmp/stale-remote.jsonl',
+  });
+
+  const retryWriter = openProductionRecoveryJournal(durableJournalPath, {
+    now: fixedNow,
+    claimId,
+    ownsRemoteArtifact: true,
+    remoteArtifactPath,
+    writerLease: { id: claimId },
+  });
+
+  applyPlan(remote, plan, {
+    journal: firstError.details.recovery.artifacts.journal,
+    durableJournal: retryWriter,
+    requireProductionDurableJournal: true,
+    mutateRemote: true,
+    artifactRefs: inheritedArtifactRefs,
+  });
+  retryWriter.close();
+
+  const persisted = readRecoveryJournal(durableJournalPath);
+  const retryOpenedRecord = persisted.records.find((record) => record.type === 'journal-retry-opened');
+
+  assert.deepEqual(retryOpenedRecord.artifactRefs, {
+    journal: durableJournalPath,
+    remote: remoteArtifactPath,
+  });
+});
+
 test('production durable journal support fails closed when restart inspection reports blocked journal integrity', () => {
   const plan = planFor(baseSite(), baseSite(), baseSite());
   const durableJournalPath = tempRecoveryJournalPath();

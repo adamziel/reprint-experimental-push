@@ -478,6 +478,9 @@ export function openProductionRecoveryJournal(filePathOrOptions, options = {}) {
       remote: remoteArtifactPath,
     }),
     schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+    get nextSequence() {
+      return journal.nextSequence;
+    },
     appendEvent(type, payload) {
       assertProductionWriterLeaseCurrent(type);
       return journal.appendEvent(type, payload);
