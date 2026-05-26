@@ -41,12 +41,10 @@ The project is **not releasable as a production WordPress push path**.
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `9abe8414`
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `d7813094`
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `8a7f4edd`
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `185094e1`
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `b03ee033`
-- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `1206eab7`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `e4f34571`
+- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `11c0cceb`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `2af1ddda`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `22984597`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `3b3c05e7`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `4eb8b16a`
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` -> `0ca7b35d`
 - `origin/lane/cycle-20260525-mainwindows-2349/same-plan-wordpress-graph-create` -> `af493c80`
 - `origin/lane/cycle-20260525-mainwindows-2357/no-data-loss-invariants-graph-proof` -> `98c0ce26`
@@ -55,7 +53,7 @@ The project is **not releasable as a production WordPress push path**.
 - `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration` -> `8cfc4f6c`
 - `origin/lane/critic` -> `e5130a9e`
 - `origin/lane/fast-paths` -> `8c5c2ccb`
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `185094e1`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `e4f34571`
 - `origin/lane/independent-auditor` -> `b36665ef`
 - `origin/lane/no-data-loss-invariants` -> `8fab9c35`
 - `origin/lane/no-data-loss-recovery` -> `9e077c10`
@@ -65,8 +63,16 @@ The project is **not releasable as a production WordPress push path**.
 
 Fresh visibility-lane heads moved, but they still only refresh public status surfaces:
 
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `b03ee033`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `3b3c05e7`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `dadd19c9`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `c8c67ae6`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `4eb8b16a`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `934383bc`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `af0ef2d9`
+- `origin/lane/reliable-executor` -> `79f31269`
+- `origin/lane/reliable-executor` -> `b368a170`
+- `origin/lane/no-data-loss-invariants` -> `270c7406`
+- `origin/lane/no-data-loss-invariants` -> `62b4acb0`
+- `origin/lane/no-data-loss-recovery` -> `2af1ddda`
 - `origin/main` -> `2c8d52cb`
 
 The current remote state still adds no production-backed auth/session
@@ -82,6 +88,15 @@ but it did not change the release conclusion:
 - `origin/lane/reliable-executor` now records `f1783e10`, hardening durable
   journal ownership. It still does not prove production auth/session
   lifecycle or a live-source mutation boundary.
+- `origin/lane/reliable-executor` now records `79f31269`, hardening release
+  verify timeouts. It still does not prove production auth/session lifecycle or
+  a live-source mutation boundary.
+- `origin/lane/reliable-executor` now records `b368a170`, hardening live proof
+  startup failure output. It still does not prove production auth/session
+  lifecycle or a live-source mutation boundary.
+- `origin/lane/no-data-loss-invariants` now records `62b4acb0`, adding a
+  termmeta unsupported-boundary proof. It still does not prove the live
+  release boundary or any production-backed source mutation.
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now
   records `b03ee033`, refreshing supervisor freshness only. It still does not
   change the release verdict.
@@ -95,11 +110,27 @@ but it did not change the release conclusion:
   now records `8cfc4f6c`, tightening termmeta graph hardening only. It still
   does not prove the live release boundary or any production-backed source
   mutation.
+- `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration`
+  now records `917adec4`, adding missing plugin driver metadata blockers only.
+  It still does not prove the live release boundary or any production-backed
+  source mutation.
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now records
   `7db84fc3`, refreshing progress visibility only. It still does not change
   the release verdict.
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now records
+  `dadd19c9`, refreshing progress visibility only. It still does not change
+  the release verdict.
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now records
+  `934383bc`, refreshing progress visibility only. It still does not change
+  the release verdict.
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now records
   `b83ea0fb`, refreshing public progress freshness only. It still does not add
+  production-backed gate movement.
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now records
+  `c8c67ae6`, refreshing public progress freshness only. It still does not add
+  production-backed gate movement.
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now records
+  `af0ef2d9`, refreshing public progress freshness only. It still does not add
   production-backed gate movement.
 - `origin/lane/reliable-executor` now records `41ea37b9`, hardening Playground startup timeout handling. It still does not prove production auth/session lifecycle or a live-source mutation boundary.
 - `origin/lane/reliable-executor` now records `ff94457a`, failing closed on unsupported production origins. It still does not prove production auth/session lifecycle or a live-source mutation boundary.
@@ -122,6 +153,12 @@ but it did not change the release conclusion:
 - `origin/lane/no-data-loss-invariants` now records `8fab9c35`, adding an
   unsupported plugin version range proof. It still does not prove the live
   release boundary or any production-backed source mutation.
+- `origin/lane/no-data-loss-invariants` now records `270c7406`, adding a
+  comments graph boundary proof. It still does not prove the live release
+  boundary or any production-backed source mutation.
+- `origin/lane/no-data-loss-recovery` now records `2af1ddda`, tightening
+  durable journal recovery guards. It still does not add production-backed
+  journal ownership or replay proof.
 - `origin/lane/no-data-loss-invariants` now records `57a487a8`, adding a
   special-file delete blocker proof. It still does not prove the live release
   boundary or any production-backed source mutation.
@@ -167,12 +204,8 @@ but it did not change the release conclusion:
   `e3ffb5ed`, refreshing public progress freshness only. It still does not
   add production-backed gate movement.
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` now records
-  `0ac76c38`, refreshing the audit snapshot only and not changing the release
+  `11c0cceb`, refreshing the audit snapshot only and not changing the release
   boundary.
-- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` now records
-  `8cd234a9`, refreshing the objective audit with the newest visible
-  fast-paths and durable-journal proof heads, but it still does not change the
-  release verdict.
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` now records
   `8a7f4edd`, tightening fast-path parallelism limits only. It still does not
   prove a production speed claim.
