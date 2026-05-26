@@ -1334,13 +1334,6 @@ function isValidSamePlanWordPressGraphTarget(targetMutation, reference, sourceMu
     if (
       sourceValue
       && typeof sourceValue === 'object'
-      && sourceValue.post_type === 'attachment'
-    ) {
-      return false;
-    }
-    if (
-      sourceValue
-      && typeof sourceValue === 'object'
       && (
         sourceValue.post_type === 'revision'
         || sourceValue.post_type === 'wp_navigation'
@@ -1352,10 +1345,17 @@ function isValidSamePlanWordPressGraphTarget(targetMutation, reference, sourceMu
       targetValue
       && typeof targetValue === 'object'
       && (
-        targetValue.post_type === 'attachment'
-        || targetValue.post_type === 'nav_menu_item'
+        targetValue.post_type === 'nav_menu_item'
         || targetValue.post_type === 'wp_navigation'
         || targetValue.post_type === 'revision'
+        || (
+          targetValue.post_type === 'attachment'
+          && (
+            !sourceValue
+            || typeof sourceValue !== 'object'
+            || sourceValue.post_type !== 'attachment'
+          )
+        )
       )
     ) {
       return false;

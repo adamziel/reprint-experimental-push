@@ -1,6 +1,10 @@
 # Scenario Matrix
 
 The first executable matrix lives in `test/push-planner.test.js`.
+The same-plan graph slice below is intentionally narrow: if a scenario does
+not add a new relationship type, ownership rule, or unsupported surface, it
+should be treated as covered by one of the existing rows instead of duplicated
+as a new claim.
 
 | Scenario | Expected behavior | Current evidence |
 | --- | --- | --- |
@@ -15,7 +19,11 @@ The first executable matrix lives in `test/push-planner.test.js`.
 | Remote and local independently changed a resource to identical content | No mutation is produced; plan records `already-in-sync`. | `recognizes matching independent edits as already in sync` |
 | Local revision post changes | Plan is `blocked`; revision rows stay outside the supported release-candidate slice and do not become ready mutations. | `blocks revision post graph surfaces in the release-candidate slice` |
 | Same-plan attachment parent plus thumbnail graph | A post, its attachment child, and the thumbnail metadata that points at that attachment can be created in one ordered plan when every referenced object is created in the same plan. | `allows a local attachment parent and thumbnail graph to resolve in the same plan` |
-| Same-plan term taxonomy term reference with unrelated remote nav menu taxonomies | A term taxonomy can resolve its same-plan term reference and stay ready even when an unrelated remote nav menu taxonomy exists. | `allows a term taxonomy term reference to a term created by the same plan even when a remote nav menu taxonomy exists` |
+| Same-plan post parent reference with unrelated remote graph state | A generic post parent reference can resolve its same-plan parent post and stay ready even when an unrelated remote attachment exists. | `allows a local post to reference a parent post created by the same plan even when an unrelated remote attachment exists` |
+| Same-plan menu item parent reference with unrelated remote graph state | A menu item parent metadata row can resolve its same-plan parent post and stay ready even when an unrelated remote attachment exists. | `allows local menu item parent metadata to reference a post created by the same plan even when an unrelated remote attachment exists` |
+| Same-plan generic postmeta post reference with unrelated remote graph state | A generic `wp_postmeta.post_id` reference can resolve to a same-plan post and stay ready even when unrelated remote `wp_navigation` or attachment posts exist. | `allows a local postmeta reference to a same-plan post through the generic postmeta-post edge even when a remote wp_navigation post exists`, `allows a local postmeta reference to a same-plan post through the generic postmeta-post edge even when a remote attachment exists` |
+| Same-plan term taxonomy parent reference with unrelated remote graph state | A term taxonomy can resolve its same-plan parent term reference and stay ready even when an unrelated remote nav menu taxonomy or attachment exists. | `allows a term taxonomy parent to reference a term created by the same plan even when a remote nav menu taxonomy exists`, `allows a term taxonomy parent to reference a term created by the same plan even when a remote attachment exists` |
+| Same-plan term taxonomy term reference with unrelated remote nav menu taxonomies | A term taxonomy can resolve its same-plan term reference and stay ready even when an unrelated remote nav menu taxonomy exists. | `allows a term taxonomy to reference its same-plan term through the term relationship edge` |
 | Remote-only plugin metadata or file changed | Remote plugin state is kept; no local mutation is produced. | `preserves remote-only plugin changes` |
 | Remote-only plugin metadata or file changed while local edits an ordinary resource | The ordinary local mutation can be planned with a live remote precondition while remote plugin metadata/files are kept as `keep-remote` decisions. | `combines local ordinary changes while preserving remote-only plugin changes` |
 | Local plugin metadata changed while remote plugin files changed | Plan is `blocked`; the local metadata mutation is not emitted; evidence names the stale remote plugin file context without file contents. | `blocks local plugin metadata changes when remote plugin files changed` |
