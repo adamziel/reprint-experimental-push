@@ -1218,38 +1218,18 @@ function assertPersistedProductionClaimLeaseMatchesWriterLease({
   }
 
   const claim = classifyRecoveryJournalClaims(persisted.records);
-  if (claim.status === 'blocked') {
-    throw new UnsupportedProductionRecoveryJournalError(
-      'Production recovery journal support requires reopening with the persisted fenced writer lease.',
-      {
-        kind: 'production-recovery-journal',
-        productionAdapter: true,
-        supportedSurface: 'production-recovery-journal-adapter',
-        restartReadable: true,
-        ownsJournal: true,
-        ownsRemoteArtifact,
-        writerLease,
-        journalPath: filePath,
-        artifactRefs: Object.freeze({
-          journal: filePath,
-          remote: remoteArtifactPath,
-        }),
-        activeClaimHash: claim.activeClaimHash,
-        activeClaimLease: claim.activeClaimLease,
-        activeClaimType: claim.type,
-        schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
-        reason: claim.reason || null,
-      },
-    );
-  }
   if (
     claim.status === 'none'
+    || claim.status === 'blocked'
     || !isValidProductionWriterLease(claim.activeClaimLease)
     || claim.activeClaimLease.id !== claimId
   ) {
     return;
   }
   if (!Object.hasOwn(claim.activeClaimLease, 'epoch')) {
+    if (claim.type !== 'stale-claim-advanced') {
+      return;
+    }
     throw new UnsupportedProductionRecoveryJournalError(
       'Production recovery journal support requires reopening with the persisted fenced writer lease.',
       {

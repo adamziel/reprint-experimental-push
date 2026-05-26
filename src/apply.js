@@ -730,6 +730,18 @@ export function productionRecoverySupportReport(writer) {
   const writerOwnsRemoteArtifact = Object.hasOwn(writer ?? {}, 'ownsRemoteArtifact')
     && !writerOwnsRemoteArtifactHidden
     && writer.ownsRemoteArtifact === true;
+  const consumedClaimConfirmsWriterLease = Boolean(
+    consumedClaim
+    && hasValidProductionLeaseIdentity(writer?.writerLease)
+    && productionLeaseIdentitiesMatch(consumedClaim.claimLease, writer.writerLease)
+    && typeof writer?.claimHash === 'string'
+    && /^[a-f0-9]{64}$/.test(writer.claimHash)
+    && consumedClaim.claimHash === writer.claimHash
+    && Number.isInteger(consumedClaim.sequence)
+    && Number.isInteger(inspectedClaimState?.sequence)
+    && consumedClaim.sequence > inspectedClaimState.sequence
+    && consumedClaim.claimHash === inspectedClaimState.activeClaimHash
+  );
   const addMissingDependency = (item) => {
     if (!missingDependency.includes(item)) {
       missingDependency.push(item);
@@ -1201,6 +1213,7 @@ export function productionRecoverySupportReport(writer) {
   if (
     hasValidProductionLeaseIdentity(writer?.writerLease)
     && !productionLeaseIdentitiesMatch(inspectedClaimState?.activeClaimLease, writer.writerLease)
+    && !consumedClaimConfirmsWriterLease
   ) {
     addMissingDependency('fencing or lease ownership for the journal writer');
   }
@@ -1261,6 +1274,7 @@ export function productionRecoverySupportReport(writer) {
   if (
     consumedClaim
     && inspectedClaimState?.status !== 'none'
+    && !consumedClaimConfirmsWriterLease
     && (
       consumedClaim.sequence < inspectedClaimState.sequence
       || (
@@ -2106,6 +2120,8 @@ function recordDurableRecoveryState(writer, current, plan, recoveryState, suppor
     journal: typeof writer?.journalPath === 'string' ? writer.journalPath : null,
   };
   const writerRemoteArtifactRef = durableJournalArtifactRemoteRef(writer);
+  const writerOwnsRemoteArtifact = Object.hasOwn(writer ?? {}, 'ownsRemoteArtifact')
+    && writer.ownsRemoteArtifact === true;
   const resolvedSupportReport = writer?.kind === 'production-recovery-journal'
     ? (
       recoveryState.status === 'blocked-recovery'

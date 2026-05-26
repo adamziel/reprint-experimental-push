@@ -22053,16 +22053,33 @@ test('production recovery support report fails closed when a later claim reopens
       remote: remoteArtifactPath,
     },
   });
-  appendRecoveryClaimOpened(journal, {
-    plan: { id: 'plan-rewritten-without-advance' },
-    current: baseSite(),
-    claimId: 'claim-rewritten-without-advance',
+  journal.close();
+
+  const persisted = readRecoveryJournal(filePath);
+  persisted.records.push({
+    schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+    sequence: 2,
+    type: 'recovery-claim-opened',
+    timestamp: fixedNow.toISOString(),
+    planId: 'plan-rewritten-without-advance',
+    state: 'active',
+    claimHash: digest({ recoveryJournalClaim: 'claim-rewritten-without-advance' }),
+    claimLease: { id: 'claim-rewritten-without-advance' },
+    observedHash: digest(baseSite()),
     artifactRefs: {
       journal: filePath,
       remote: remoteArtifactPath,
     },
+    fsync: {
+      requested: true,
+      strategy: 'after-append',
+    },
   });
-  journal.appendEvent('journal-opened', {
+  persisted.records.push({
+    schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+    sequence: 3,
+    type: 'journal-opened',
+    timestamp: fixedNow.toISOString(),
     planId: 'plan-rewritten-without-advance',
     state: 'opened',
     observedHash: 'snapshot-hash-only',
@@ -22070,8 +22087,12 @@ test('production recovery support report fails closed when a later claim reopens
       journal: filePath,
       remote: remoteArtifactPath,
     },
+    fsync: {
+      requested: true,
+      strategy: 'after-append',
+    },
   });
-  journal.close();
+  fs.writeFileSync(filePath, `${persisted.records.map((record) => JSON.stringify(record)).join('\n')}\n`);
 
   const reopened = openProductionRecoveryJournal(filePath, {
     claimId: 'claim-rewritten-without-advance',
@@ -24587,24 +24608,45 @@ test('production durable journal support fails closed when a later claim reopens
       remote: remoteArtifactPath,
     },
   });
-  appendRecoveryClaimOpened(journal, {
-    plan,
-    current: remote,
-    claimId: 'claim-rewritten-before-apply',
+  journal.close();
+
+  const persisted = readRecoveryJournal(filePath);
+  persisted.records.push({
+    schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+    sequence: 2,
+    type: 'recovery-claim-opened',
+    timestamp: fixedNow.toISOString(),
+    planId: plan.id,
+    state: 'active',
+    claimHash: digest({ recoveryJournalClaim: 'claim-rewritten-before-apply' }),
+    claimLease: { id: 'claim-rewritten-before-apply' },
+    observedHash: digest(remote),
     artifactRefs: {
       journal: filePath,
       remote: remoteArtifactPath,
     },
+    fsync: {
+      requested: true,
+      strategy: 'after-append',
+    },
+  });
+  fs.writeFileSync(filePath, `${persisted.records.map((record) => JSON.stringify(record)).join('\n')}\n`);
+
+  const reopened = openProductionRecoveryJournal(filePath, {
+    claimId: 'claim-rewritten-before-apply',
+    writerLease: { id: 'claim-rewritten-before-apply' },
+    ownsRemoteArtifact: true,
+    remoteArtifactPath,
   });
 
   const error = captureError(() => applyPlan(remote, plan, {
-    durableJournal: journal,
+    durableJournal: reopened,
     requireProductionDurableJournal: true,
   }));
 
   assert.equal(error.code, 'PRODUCTION_DURABLE_JOURNAL_UNSUPPORTED');
   assert.ok(error.details.missingDependency.includes('fencing or lease ownership for the journal writer'));
-  journal.close();
+  reopened.close();
 });
 
 test('production durable journal claims fail closed when artifactRefs are inherited through the prototype', () => {

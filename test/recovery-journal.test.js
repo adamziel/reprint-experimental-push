@@ -1009,7 +1009,7 @@ test('production recovery journal reopen fails closed when the persisted consume
     assert.equal(error?.code, 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL');
     assert.equal(
       error?.message,
-      'Production recovery journal persistence is corrupt or truncated.',
+      'Production recovery journal support requires reopening with the persisted consumed claim identity.',
     );
     return true;
   });
@@ -1067,7 +1067,7 @@ test('production recovery journal reopen fails closed when the persisted consume
     assert.equal(error?.code, 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL');
     assert.equal(
       error?.message,
-      'Production recovery journal persistence is corrupt or truncated.',
+      'Production recovery journal support requires reopening with the persisted consumed claim identity.',
     );
     return true;
   });
@@ -3229,6 +3229,7 @@ test('production recovery journal consumption surfaces stale claim advancement a
     current: remote,
     artifactRefs,
     claimId: 'claim-1',
+    writerLease: { id: 'claim-1', epoch: 1 },
   });
   appendRecoveryClaimOpened(firstJournal, {
     plan,
@@ -3245,6 +3246,7 @@ test('production recovery journal consumption surfaces stale claim advancement a
     artifactRefs,
     truncate: false,
     claimId: 'claim-2',
+    writerLease: { id: 'claim-2', epoch: 2 },
   });
   appendStaleClaimAdvanced(secondJournal, {
     plan,
@@ -3263,14 +3265,15 @@ test('production recovery journal consumption surfaces stale claim advancement a
     current: remote,
     artifactRefs,
     claimId: 'claim-2',
+    writerLease: { id: 'claim-2', epoch: 2 },
   });
 
   assert.equal(inspection.consumed, true);
   assert.equal(inspection.journal.consumed, true);
   assert.equal(inspection.journal.staleClaimRejected, true);
   assert.equal(inspection.journal.claimHash, recoveryClaimHash('claim-2'));
-  assert.deepEqual(inspection.journal.writerLease, { id: 'claim-2' });
-  assert.deepEqual(inspection.journal.leaseFence, { id: 'claim-2' });
+  assert.deepEqual(inspection.journal.writerLease, { id: 'claim-2', epoch: 2 });
+  assert.deepEqual(inspection.journal.leaseFence, { id: 'claim-2', epoch: 2 });
   assert.deepEqual(inspection.journal.writerLeaseContract, {
     strategy: 'claim-fenced-single-writer',
     claimKeyUnique: true,
