@@ -83,6 +83,7 @@ test('plugin-driver proof summary reports full packaged guard coverage', () => {
   assert.equal(summary.ok, true);
   assert.equal(summary.checkedScenarioCount, 11);
   assert.equal(summary.passedScenarioCount, 11);
+  assert.equal(summary.failedScenarioCount, 0);
   assert.equal(summary.skippedScenarioCount, 0);
   assert.equal(summary.checkedBundleCount, 4);
   assert.equal(summary.passedBundleCount, 4);
@@ -113,6 +114,7 @@ test('plugin-driver proof summary reports full packaged guard coverage', () => {
     'driverVerifierGuards',
   ]);
   assert.deepEqual(summary.failedBundles, []);
+  assert.equal(summary.requestedScenariosSatisfied, true);
   assert.equal(summary.requestedBundlesSatisfied, true);
   assert.equal(summary.selectedScenarios, 'all');
   assert.equal(summary.receiptGuards.revokedCredential, 'reprint_push_lab_auth_required');
@@ -230,6 +232,7 @@ test('plugin-driver proof summary marks unselected scenarios as skipped', () => 
   assert.equal(summary.ok, true);
   assert.equal(summary.checkedScenarioCount, 9);
   assert.equal(summary.passedScenarioCount, 9);
+  assert.equal(summary.failedScenarioCount, 0);
   assert.equal(summary.skippedScenarioCount, 2);
   assert.equal(summary.checkedBundleCount, 1);
   assert.equal(summary.passedBundleCount, 1);
@@ -263,6 +266,7 @@ test('plugin-driver proof summary marks unselected scenarios as skipped', () => 
   assert.deepEqual(summary.checkedBundles, ['driverVerifierGuards']);
   assert.deepEqual(summary.passedBundles, ['driverVerifierGuards']);
   assert.deepEqual(summary.failedBundles, []);
+  assert.equal(summary.requestedScenariosSatisfied, true);
   assert.equal(summary.requestedBundlesSatisfied, true);
   assert.deepEqual(summary.selectedScenarios, [
     'driver-duplicate-name-guard',
@@ -370,6 +374,9 @@ test('plugin-driver proof summary fails requested bundle verdict when a requeste
   assert.equal(summary.passedBundleCount, 0);
   assert.equal(summary.failedBundleCount, 1);
   assert.equal(summary.skippedBundleCount, 3);
+  assert.equal(summary.checkedScenarioCount, 9);
+  assert.equal(summary.passedScenarioCount, 8);
+  assert.equal(summary.failedScenarioCount, 1);
   assert.deepEqual(summary.checkedScenarios, [
     'driver-duplicate-name-guard',
     'driver-duplicate-table-guard',
@@ -395,6 +402,7 @@ test('plugin-driver proof summary fails requested bundle verdict when a requeste
   assert.deepEqual(summary.checkedBundles, ['driverVerifierGuards']);
   assert.deepEqual(summary.passedBundles, []);
   assert.deepEqual(summary.failedBundles, ['driverVerifierGuards']);
+  assert.equal(summary.requestedScenariosSatisfied, false);
   assert.equal(summary.requestedBundlesSatisfied, false);
   assert.equal(summary.bundles.driverVerifierGuards, 'missing');
   assert.equal(summary.scenarios.driverMissingValidateGuard, 'missing');
@@ -508,5 +516,7 @@ test('plugin-driver proof summary dedupes repeated requested bundle aliases', ()
   assert.equal(summary.checkedBundleCount, 2);
   assert.equal(summary.passedBundleCount, 2);
   assert.equal(summary.failedBundleCount, 0);
+  assert.equal(summary.failedScenarioCount, 0);
+  assert.equal(summary.requestedScenariosSatisfied, true);
   assert.equal(summary.requestedBundlesSatisfied, true);
 });

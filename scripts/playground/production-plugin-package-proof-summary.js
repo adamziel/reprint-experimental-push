@@ -130,6 +130,7 @@ export function buildProductionPluginPackageProofSummary(
   const scenarioPasses = new Map();
   let checkedScenarioCount = 0;
   let passedScenarioCount = 0;
+  let failedScenarioCount = 0;
   let skippedScenarioCount = 0;
 
   for (const definition of scenarioDefinitions) {
@@ -145,6 +146,7 @@ export function buildProductionPluginPackageProofSummary(
         passedScenarioCount += 1;
         passedScenarios.push(definition.scenario);
       } else {
+        failedScenarioCount += 1;
         failedScenarios.push(definition.scenario);
       }
     } else {
@@ -187,6 +189,7 @@ export function buildProductionPluginPackageProofSummary(
     ok: checkedScenarioCount > 0 && checkedScenarioCount === passedScenarioCount,
     checkedScenarioCount,
     passedScenarioCount,
+    failedScenarioCount,
     skippedScenarioCount,
     checkedBundleCount,
     passedBundleCount,
@@ -200,6 +203,7 @@ export function buildProductionPluginPackageProofSummary(
     checkedBundles: normalizedRequestedScenarios === null && selectedScenarios === null ? 'all' : checkedBundles.sort(),
     passedBundles: passedBundles.sort(),
     failedBundles: failedBundles.sort(),
+    requestedScenariosSatisfied: checkedScenarioCount > 0 && checkedScenarioCount === passedScenarioCount,
     requestedBundlesSatisfied: checkedBundleCount > 0 && checkedBundleCount === passedBundleCount,
     selectedScenarios: selectedScenarios === null ? 'all' : Array.from(selectedScenarios).sort(),
     package: {
