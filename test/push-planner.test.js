@@ -20917,6 +20917,57 @@ test('production durable journal support fails closed when a fenced claim is not
   journal.close();
 });
 
+test('production durable journal support fails closed when stale claim advancement reuses the same claim hash', () => {
+  const base = baseSite();
+  const local = structuredClone(base);
+  local.db.wp_options['option_name:blogname'] = {
+    option_name: 'blogname',
+    option_value: 'Local Site',
+  };
+  const remote = structuredClone(base);
+  const plan = planFor(base, local, remote);
+  const filePath = tempRecoveryJournalPath();
+  const remoteArtifactPath = `${path.dirname(filePath)}/remote.jsonl`;
+  const journal = openProductionRecoveryJournal(filePath, {
+    truncate: true,
+    now: fixedNow,
+    claimId: 'claim-self-advanced',
+    writerLease: { id: 'claim-self-advanced' },
+    ownsRemoteArtifact: true,
+    remoteArtifactPath,
+  });
+  appendRecoveryClaimOpened(journal, {
+    plan: { id: plan.id },
+    current: remote,
+    claimId: 'claim-self-advanced',
+    artifactRefs: {
+      journal: filePath,
+      remote: remoteArtifactPath,
+    },
+  });
+  appendStaleClaimAdvanced(journal, {
+    plan: { id: plan.id },
+    current: remote,
+    previousClaimId: 'claim-self-advanced',
+    claimId: 'claim-self-advanced',
+    staleThresholdMs: 5_000,
+    previousClaimAgeMs: 5_001,
+    artifactRefs: {
+      journal: filePath,
+      remote: remoteArtifactPath,
+    },
+  });
+
+  const error = captureError(() => applyPlan(remote, plan, {
+    durableJournal: journal,
+    requireProductionDurableJournal: true,
+  }));
+
+  assert.equal(error.code, 'PRODUCTION_DURABLE_JOURNAL_UNSUPPORTED');
+  assert.ok(error.details.missingDependency.includes('fencing or lease ownership for the journal writer'));
+  journal.close();
+});
+
 test('production durable journal claims fail closed when artifactRefs are inherited through the prototype', () => {
   const writer = Object.create({
     artifactRefs: {

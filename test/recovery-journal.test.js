@@ -980,6 +980,55 @@ test('production recovery journal consumption surfaces stale claim advancement a
   assert.equal(inspection.leaseFence.monotonicSequence, true);
 });
 
+test('production recovery journal consumption fails closed when stale claim advancement reuses the same claim hash', () => {
+  const filePath = tempJournalPath();
+  const remote = baseSite();
+  const plan = planFor(baseSite(), localSite(), remote);
+  const remoteArtifactPath = `${filePath}.remote`;
+  const artifactRefs = {
+    journal: filePath,
+    remote: remoteArtifactPath,
+  };
+
+  const journal = openProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs,
+    claimId: 'claim-self-advanced',
+  });
+  appendRecoveryClaimOpened(journal, {
+    plan,
+    current: remote,
+    claimId: 'claim-self-advanced',
+    artifactRefs,
+  });
+  appendStaleClaimAdvanced(journal, {
+    plan,
+    current: remote,
+    previousClaimId: 'claim-self-advanced',
+    claimId: 'claim-self-advanced',
+    staleThresholdMs: 30_000,
+    previousClaimAgeMs: 30_001,
+    artifactRefs,
+  });
+  journal.close();
+
+  assert.throws(() => {
+    consumeProductionRecoveryJournal({
+      filePath,
+      plan,
+      current: remote,
+      artifactRefs,
+      claimId: 'claim-self-advanced',
+    });
+  }, {
+    name: 'RecoveryJournalClaimStaleError',
+    code: 'RECOVERY_CLAIM_STALE',
+    message: 'Recovery journal claim was superseded before this fenced writer could append.',
+  });
+});
+
 test('production recovery journal compatibility overload fails closed when the consumed journal artifact ref diverges from the owned path', () => {
   const filePath = tempJournalPath();
   const remote = baseSite();

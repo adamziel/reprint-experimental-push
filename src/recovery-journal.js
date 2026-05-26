@@ -1145,6 +1145,12 @@ export function classifyRecoveryJournalClaims(records) {
     ) {
       return blockedClaimState(record, 'Advanced stale-claim record is missing a valid previous claim hash.');
     }
+    if (
+      record.type === 'stale-claim-advanced'
+      && record.previousClaimHash === record.claimHash
+    ) {
+      return blockedClaimState(record, 'Advanced stale-claim record must advance to a different active claim hash.');
+    }
   }
 
   const latest = claimRecords.at(-1);
