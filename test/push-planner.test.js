@@ -13286,6 +13286,7 @@ test('blocks local attachment graph resources while preserving a matching indepe
   assert.equal(mutationFor(plan, resourceKey), undefined);
   assert.equal(decisionFor(plan, resourceKey), undefined);
   assert.equal(blocker.class, 'unsupported-attachment-resource');
+  assert.equal(blocker.resourceKind, 'attachment');
   assert.equal(blocker.resourceKey, resourceKey);
   assert.equal(blocker.reason, 'Attachment graph resources are not yet supported by the planner.');
   assert.equal(matchingEdit.decision, 'already-in-sync');

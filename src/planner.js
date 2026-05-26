@@ -2096,6 +2096,7 @@ function addUnsupportedAttachmentResourceBlocker(plan, {
   plan.blockers.push({
     id: `blocker-unsupported-attachment-resource-${plan.blockers.length + 1}`,
     class: support.className || 'unsupported-attachment-resource',
+    resourceKind: 'attachment',
     resource,
     resourceKey: resource.key,
     reason: support.reason || `Attachment graph resource ${resource.key} is not yet supported by the planner.`,
