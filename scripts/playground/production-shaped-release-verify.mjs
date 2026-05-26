@@ -878,9 +878,13 @@ async function stopSpawnedServer(child) {
   }
 }
 
-function stopAllPlaygroundChildren() {
+async function stopAllPlaygroundChildren() {
   for (const child of activePlaygroundChildren) {
-    stopProcessTree(child, 'SIGTERM');
+    try {
+      await stopSpawnedServer(child);
+    } catch {
+      stopProcessTree(child, 'SIGKILL');
+    }
   }
 }
 
@@ -1057,7 +1061,7 @@ function isPortFree(port) {
 } catch (error) {
   topLevelError = error;
 } finally {
-  stopAllPlaygroundChildren();
+  await stopAllPlaygroundChildren();
   if (topLevelError && !(topLevelError instanceof ProofFailure)) {
     throw topLevelError;
   }
