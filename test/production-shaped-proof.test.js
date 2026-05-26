@@ -1923,10 +1923,14 @@ maybeTest('production-shaped live protocol proof runs the real preflight plus sn
   assert.match(proof.stdout, /"dbJournal": \{/);
   assert.match(proof.stdout, /"recoveryInspect": \{[\s\S]*"acceptedOnCheckedBoundary": true/);
   assert.match(proof.stdout, /"recoveryInspect": \{[\s\S]*"ownership": \{\s*"ownsJournal": true,\s*"restartReadable": true,\s*"productionAdapter": "wpdb-single-statement-cas"\s*\}/);
+  assert.match(proof.stdout, /"recoveryInspect": \{[\s\S]*"writerLease": \{\s*"strategy": "claim-fenced-single-writer",\s*"claimKeyUnique": true,\s*"storageGuard": "wpdb-single-statement-cas",\s*"monotonicSequence": true,\s*"restartReadable": true,\s*"staleClaimRejected": false\s*\}/);
   assert.match(proof.stdout, /"recoveryInspect": \{[\s\S]*"leaseFence": \{\s*"boundary": "wpdb-single-statement-cas",\s*"claimKeyUnique": true,\s*"monotonicSequence": true,\s*"restartReadable": true,\s*"staleClaimRejected": false\s*\}/);
+  assert.match(proof.stdout, /"recoveryInspect": \{[\s\S]*"leaseFence": \{[\s\S]*"writerLease": \{\s*"strategy": "claim-fenced-single-writer",\s*"claimKeyUnique": true,\s*"storageGuard": "wpdb-single-statement-cas",\s*"monotonicSequence": true,\s*"restartReadable": true,\s*"staleClaimRejected": false\s*\}/);
   assert.match(proof.stdout, /"dbJournal": \{[\s\S]*"acceptedOnCheckedBoundary": true/);
   assert.match(proof.stdout, /"dbJournal": \{[\s\S]*"ownership": \{\s*"ownsJournal": true,\s*"restartReadable": true,\s*"productionAdapter": "wpdb-single-statement-cas"\s*\}/);
+  assert.match(proof.stdout, /"dbJournal": \{[\s\S]*"writerLease": \{\s*"strategy": "claim-fenced-single-writer",\s*"claimKeyUnique": true,\s*"storageGuard": "wpdb-single-statement-cas",\s*"monotonicSequence": true,\s*"restartReadable": true,\s*"staleClaimRejected": false\s*\}/);
   assert.match(proof.stdout, /"dbJournal": \{[\s\S]*"leaseFence": \{\s*"boundary": "wpdb-single-statement-cas",\s*"claimKeyUnique": true,\s*"monotonicSequence": true,\s*"restartReadable": true,\s*"staleClaimRejected": false\s*\}/);
+  assert.match(proof.stdout, /"dbJournal": \{[\s\S]*"leaseFence": \{[\s\S]*"writerLease": \{\s*"strategy": "claim-fenced-single-writer",\s*"claimKeyUnique": true,\s*"storageGuard": "wpdb-single-statement-cas",\s*"monotonicSequence": true,\s*"restartReadable": true,\s*"staleClaimRejected": false\s*\}/);
 });
 
 test('production-shaped topology proof wrapper emits the fixed one-remote one-local one-drift harness', () => {

@@ -1020,11 +1020,30 @@ function dbJournalCheckedBoundaryContractIsPresent(dbJournal) {
     && dbJournal?.ownership?.restartReadable === true
     && typeof dbJournal?.ownership?.productionAdapter === 'string'
     && dbJournal.ownership.productionAdapter.length > 0
+    && dbJournalWriterLeaseContractIsPresent(dbJournal)
     && typeof dbJournal?.leaseFence?.boundary === 'string'
     && dbJournal.leaseFence.boundary.length > 0
     && dbJournal?.leaseFence?.claimKeyUnique === true
     && dbJournal?.leaseFence?.monotonicSequence === true
     && dbJournal?.leaseFence?.restartReadable === true;
+}
+
+function dbJournalWriterLeaseContractIsPresent(dbJournal) {
+  const writerLease = dbJournal?.writerLease;
+  const nestedWriterLease = dbJournal?.leaseFence?.writerLease;
+  const candidate = writerLease && typeof writerLease === 'object'
+    ? writerLease
+    : nestedWriterLease && typeof nestedWriterLease === 'object'
+      ? nestedWriterLease
+      : null;
+
+  return typeof candidate?.strategy === 'string'
+    && candidate.strategy.length > 0
+    && candidate?.claimKeyUnique === true
+    && typeof candidate?.storageGuard === 'string'
+    && candidate.storageGuard.length > 0
+    && candidate?.monotonicSequence === true
+    && candidate?.restartReadable === true;
 }
 
 function dbJournalStorageGuardIsTrusted(storageGuard) {
