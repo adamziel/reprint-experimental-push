@@ -9747,3 +9747,11 @@ Newest entries stay short and link back to the evidence trail.
   solved.
 
 </details>
+# 2026-05-26 - Public Status Audit 05:05:34
+
+- The visible progress page now matches the current supervision cycle with a
+  fresh `Last updated` stamp and newest-audit link.
+- Gate posture remains conservative at `0/4` verified, `4 pending`.
+- Top blocker remains the same constrained release-candidate boundary:
+  production WordPress executor/auth plus durable journal ownership still need
+  concrete proof before any broader claim can move.
