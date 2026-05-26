@@ -337,6 +337,13 @@ export function openProductionRecoveryJournal(filePathOrOptions, options = {}) {
     ownsRemoteArtifact,
     remoteArtifactPath,
   });
+  assertPersistedConsumedClaimMatchesWriterLease({
+    filePath,
+    claimId,
+    writerLease,
+    ownsRemoteArtifact,
+    remoteArtifactPath,
+  });
 
   const persistedArtifactRefs = persistedProductionArtifactRefs(filePath);
   if (persistedArtifactRefs.invalidReason) {
@@ -1238,6 +1245,59 @@ function assertPersistedProductionClaimLeaseMatchesWriterLease({
           remote: remoteArtifactPath,
         }),
         activeClaimLease: claim.activeClaimLease,
+        schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+      },
+    );
+  }
+}
+
+function assertPersistedConsumedClaimMatchesWriterLease({
+  filePath,
+  claimId,
+  writerLease,
+  ownsRemoteArtifact,
+  remoteArtifactPath,
+}) {
+  if (!isValidProductionWriterLease(writerLease)) {
+    return;
+  }
+
+  const persisted = readRecoveryJournal(filePath);
+  if (persisted.integrity?.status !== 'ok') {
+    return;
+  }
+
+  const hasConsumedRecord = Array.isArray(persisted.records)
+    && persisted.records.some((record) => record?.type === 'recovery-journal-consumed');
+  if (!hasConsumedRecord) {
+    return;
+  }
+
+  const consumedClaim = summarizeConsumedClaimRecord(persisted.records);
+  const expectedClaimHash = typeof claimId === 'string' && claimId.length > 0
+    ? recoveryClaimHash(claimId)
+    : null;
+  if (
+    consumedClaim === null
+    || !productionLeaseIdentitiesMatch(consumedClaim.claimLease, writerLease)
+    || consumedClaim.claimHash !== expectedClaimHash
+  ) {
+    throw new UnsupportedProductionRecoveryJournalError(
+      'Production recovery journal support requires reopening with the persisted consumed claim identity.',
+      {
+        kind: 'production-recovery-journal',
+        productionAdapter: true,
+        supportedSurface: 'production-recovery-journal-adapter',
+        restartReadable: true,
+        ownsJournal: true,
+        ownsRemoteArtifact,
+        writerLease,
+        journalPath: filePath,
+        artifactRefs: Object.freeze({
+          journal: filePath,
+          remote: remoteArtifactPath,
+        }),
+        consumedClaim,
         schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
       },
     );
