@@ -19658,6 +19658,20 @@ test('allows an existing term relationship object reference to retarget to a sam
   assert.equal(samePlanPostMutation.changeKind, 'create');
   assert.equal(relationshipMutation.changeKind, 'create');
   assert.deepEqual(relationshipMutation.dependsOnMutationIds, [samePlanPostMutation.id]);
+  assert.equal(plan.summary.graphDependencies, 1);
+  assert.deepEqual(plan.graphDependencies, [
+    {
+      sourceMutationId: relationshipMutation.id,
+      sourceResourceKey: relationshipResourceKey,
+      relationshipKey: 'wp_term_relationships.object_id',
+      relationshipType: 'term-relationship-object',
+      targetMutationId: samePlanPostMutation.id,
+      targetResourceKey: samePlanPostResourceKey,
+      resolutionPolicy: 'same-plan-local-create',
+      source: 'same-plan-local-create',
+      targetLocalHash: samePlanPostMutation.localHash,
+    },
+  ]);
   assert.equal(reference.resolutionPolicy, 'same-plan-local-create');
   assert.equal(reference.relationshipKey, 'wp_term_relationships.object_id');
   assert.equal(reference.relationshipType, 'term-relationship-object');
