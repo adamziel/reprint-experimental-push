@@ -229,6 +229,26 @@ export const SAFE_FAST_PATHS = Object.freeze([
   {
     area: 'chunk-upload',
     reduces: ['planning-round-trips', 'duplicate-body-transfer', 'idle-time'],
+    allowedShortcut: 'compress-remote-index-listings-and-reuse-plan-scoped-chunk-receipt-cursor-to-size-bounded-large-upload-resume',
+    guardrails: [
+      'compressed-index-remains-planning-evidence-only',
+      'chunk-receipt-cursor-remains-plan-scoped-and-advisory',
+    ],
+    gateProofs: {
+      skip: 'a compressed remote-index listing together with a plan-scoped chunk receipt cursor can shorten large-upload resume scans without rescanning acknowledged ranges',
+      live: 'the eventual file publish still compares the live remote resource hash before any staged bytes become visible',
+      group: 'the compressed listing and receipt cursor only narrow planning inside the same file boundary and never widen the atomic-group barrier',
+      recovery: 'the compressed listing, receipt cursor, durable chunk receipts, and guarded publish record still classify pause, retry, or crash',
+    },
+    visibilityBoundary: 'plan-staging-window-only',
+    failureEvidence: 'compressed remote-index listing plus plan-scoped chunk receipt cursor and durable chunk receipts',
+    bypassesLivePreconditions: false,
+    splitsAtomicGroup: false,
+    publishesStagedDataEarly: false,
+  },
+  {
+    area: 'chunk-upload',
+    reduces: ['planning-round-trips', 'duplicate-body-transfer', 'idle-time'],
     allowedShortcut: 'compress-plan-scoped-chunk-receipt-ledgers-to-size-bounded-large-upload-resume',
     guardrails: [
       'compressed-receipt-ledger-remains-planning-evidence-only',

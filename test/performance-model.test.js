@@ -134,6 +134,17 @@ test('benchmark model covers large uploads and plugin installs', () => {
     model.safeFastPaths.some(
       (fastPath) =>
         fastPath.area === 'chunk-upload' &&
+        fastPath.allowedShortcut === 'compress-remote-index-listings-and-reuse-plan-scoped-chunk-receipt-cursor-to-size-bounded-large-upload-resume' &&
+        fastPath.guardrails.includes('chunk-receipt-cursor-remains-plan-scoped-and-advisory') &&
+        fastPath.gateProofs.skip.includes('plan-scoped chunk receipt cursor') &&
+        fastPath.gateProofs.recovery.includes('durable chunk receipts'),
+    ),
+    'compressed remote-index listings and a plan-scoped chunk receipt cursor can size large-upload resume without weakening recovery evidence',
+  );
+  assert.ok(
+    model.safeFastPaths.some(
+      (fastPath) =>
+        fastPath.area === 'chunk-upload' &&
         fastPath.allowedShortcut === 'compress-plan-scoped-chunk-receipt-ledgers-to-size-bounded-large-upload-resume' &&
         fastPath.guardrails.includes('compressed-receipt-ledger-remains-planning-evidence-only') &&
         fastPath.gateProofs.skip.includes('compressed plan-scoped chunk receipt ledgers can trim repeat large-upload resume scans') &&
