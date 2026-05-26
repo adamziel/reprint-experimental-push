@@ -1154,6 +1154,7 @@ function isPluginOwnedDataResource(resource, owner) {
 }
 
 const WORDPRESS_GRAPH_TABLE_SUFFIXES = [
+  'comments',
   'term_relationships',
   'term_taxonomy',
   'postmeta',
@@ -1335,6 +1336,21 @@ function wordpressGraphReferences(resource, value) {
     });
   }
 
+  if (suffix === 'comments') {
+    addReference({
+      field: 'comment_parent',
+      relationshipType: 'comment-parent',
+      targetTable: 'comments',
+      targetId: value.comment_parent,
+    });
+    addReference({
+      field: 'comment_post_ID',
+      relationshipType: 'comment-post',
+      targetTable: 'posts',
+      targetId: value.comment_post_ID,
+    });
+  }
+
   if (suffix === 'postmeta') {
     addReference({
       field: 'post_id',
@@ -1483,6 +1499,7 @@ function isWordPressGraphReferenceResource(resource) {
     return false;
   }
   return [
+    'wp_comments',
     'wp_posts',
     'wp_postmeta',
     'wp_term_relationships',
@@ -1519,6 +1536,9 @@ function wordpressGraphTableSuffix(table) {
 function wordpressGraphPrimaryIdField(suffix) {
   if (suffix === 'posts') {
     return 'ID';
+  }
+  if (suffix === 'comments') {
+    return 'comment_ID';
   }
   if (suffix === 'terms') {
     return 'term_id';

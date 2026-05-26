@@ -10866,6 +10866,97 @@ test('blocks unknown plugin-owned custom table rows while preserving matching in
   assert.equal(pluginFileDecision.decision, 'keep-remote');
 });
 
+test('blocks forged generic drivers on unknown plugin-owned custom table rows while preserving matching independent edits and remote-only plugin drift', () => {
+  const resourceKey = 'row:["wp_forms_entries","entry_id:9"]';
+  const base = baseSite();
+  base.db.wp_forms_entries = {
+    'entry_id:9': { entry_id: 9, payload: 'base-private-entry', __pluginOwner: 'forms' },
+  };
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local index";';
+  local.db.wp_forms_entries = {
+    'entry_id:9': { entry_id: 9, payload: 'local-private-entry', __pluginOwner: 'forms' },
+  };
+  local.pushIntents = [
+    {
+      id: 'forged-custom-table-driver',
+      kind: 'plugin-data-update',
+      requireAtomic: true,
+      resources: [resourceKey],
+      resourcePolicy: pluginOwnedResourcePolicy(
+        allowedPluginOwnedResource(resourceKey, 'forms', 'wp-option'),
+      ),
+    },
+  ];
+  const remote = baseSite();
+  remote.db.wp_forms_entries = {
+    'entry_id:9': { entry_id: 9, payload: 'base-private-entry', __pluginOwner: 'forms' },
+  };
+  remote.files['index.php'] = '<?php echo "local index";';
+  remote.plugins.forms.description = 'remote-only plugin drift';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin drift */';
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers[0];
+  const editDecision = decisionFor(plan, 'file:index.php');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const blockerJson = JSON.stringify(blocker);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(blocker.class, 'unsupported-plugin-owned-resource');
+  assert.equal(blocker.pluginOwner, 'forms');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.reason, 'Plugin-owned resource driver does not match the resource type or table.');
+  assert.equal(blockerJson.includes('base-private-entry'), false);
+  assert.equal(blockerJson.includes('local-private-entry'), false);
+  assert.equal(editDecision.decision, 'already-in-sync');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+});
+
+test('blocks comments graph resources while preserving matching independent edits and remote-only plugin drift', () => {
+  const resourceKey = 'row:["wp_comments","comment_ID:11"]';
+  const base = baseSite();
+  base.db.wp_comments = {
+    'comment_ID:11': {
+      comment_ID: 11,
+      comment_post_ID: 1,
+      comment_parent: 0,
+      comment_content: 'Base comment',
+    },
+  };
+
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_comments = {
+    'comment_ID:11': {
+      comment_ID: 11,
+      comment_post_ID: 1,
+      comment_parent: 0,
+      comment_content: 'Local comment',
+    },
+  };
+
+  const remote = baseSite();
+  remote.db.wp_comments = JSON.parse(JSON.stringify(base.db.wp_comments));
+  remote.plugins.forms.description = 'remote-only plugin drift';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin drift */';
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 1);
+  assert.equal(blocker.class, 'unsupported-comments-users-resource');
+  assert.equal(blocker.reason, 'Comments graph resources are not yet supported by the planner.');
+  assert.equal(planJson.includes('Local comment'), false);
+  assert.equal(planJson.includes('Base comment'), false);
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin drift');
+});
+
 test('blocks unknown plugin-owned custom table rows while preserving remote-only plugin removals', () => {
   const resourceKey = 'row:["wp_forms_entries","entry_id:9"]';
   const base = baseSite();
