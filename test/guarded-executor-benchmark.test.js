@@ -117,6 +117,7 @@ test('guarded benchmark refuses production throughput claims until production ga
   assert.equal(report.claims.productionThroughputDetails.receiptCursorMatchesChunkWindow, true);
   assert.equal(report.claims.productionThroughputDetails.receiptCursorWithinMemoryCeiling, true);
   assert.equal(report.claims.productionThroughputDetails.receiptCursorMemoryHeadroomBytes, 31.5 * 1024 * 1024);
+  assert.equal(report.claims.productionThroughputDetails.receiptCursorMemoryCeilingBytes, 32 * 1024 * 1024);
   assert.equal(report.claims.productionThroughputDetails.receiptCursorHeadroomMatchesResourceHeadroom, true);
   assert.equal(report.claims.productionThroughputDetails.receiptCursorHeadroomCoveredByQueueBudget, true);
   assert.equal(report.claims.productionThroughputDetails.receiptCursorHeadroomBytes, 31.5 * 1024 * 1024);
@@ -133,6 +134,18 @@ test('guarded benchmark refuses production throughput claims until production ga
   assert.equal(
     report.claims.productionThroughputDetails.receiptCursorConsistency.canResumeFromCursor,
     true,
+  );
+  assert.equal(
+    report.claims.productionThroughputDetails.backpressureConsistency.receiptCursorMemoryCeilingBytes,
+    32 * 1024 * 1024,
+  );
+  assert.equal(
+    report.claims.productionThroughputDetails.backpressureConsistency.receiptCursorQueueBudgetBytes,
+    32 * 1024 * 1024,
+  );
+  assert.equal(
+    report.claims.productionThroughputDetails.backpressureConsistency.receiptCursorQueueHeadroomBytes,
+    31.5 * 1024 * 1024,
   );
   assert.equal(
     report.claims.productionThroughputDetails.recovery.partialCommitInspectionStatus,
@@ -442,6 +455,24 @@ test('production claim gate fails closed if benchmark evidence is tampered', () 
   );
   assert.equal(
     productionThroughputDetails(missingQueueHeadroom).backpressureConsistency.receiptCursorHeadroomCoveredByQueueBudget,
+    false,
+  );
+
+  const headroomNotCoveredByBudget = clone(report);
+  headroomNotCoveredByBudget.evidence.backpressure.queueBudgetBytes -= 1024 * 1024;
+  headroomNotCoveredByBudget.evidence.backpressure.queueHeadroomBytes =
+    headroomNotCoveredByBudget.evidence.backpressure.queueBudgetBytes - report.shape.chunkSizeBytes;
+  assert.ok(
+    productionThroughputBlockers(headroomNotCoveredByBudget).includes(
+      'receipt-cursor-headroom-not-covered-by-queue-budget',
+    ),
+  );
+  assert.equal(
+    productionThroughputDetails(headroomNotCoveredByBudget).receiptCursorHeadroomWithinQueueBudget,
+    false,
+  );
+  assert.equal(
+    productionThroughputDetails(headroomNotCoveredByBudget).backpressureConsistency.receiptCursorHeadroomWithinQueueBudget,
     false,
   );
 
