@@ -983,11 +983,13 @@ function durableJournalInspectRecords(inspected) {
     && typeof inspected === 'object'
     && typeof inspected.schemaVersion === 'number'
     && Array.isArray(inspected.records),
-  ) && inspected.records.length > 0
+  ) && !Reflect.ownKeys(inspected.records).some((key) => typeof key === 'symbol')
+  && inspected.records.length > 0
   && inspected.records[0].type === 'journal-opened'
   && inspected.records.every((record) =>
     record
     && typeof record === 'object'
+    && !Reflect.ownKeys(record).some((key) => typeof key === 'symbol')
     && Number.isInteger(record.sequence)
     && typeof record.type === 'string',
   ) && inspected.records.every((record, index, records) => (
