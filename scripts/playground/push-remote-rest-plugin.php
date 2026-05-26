@@ -705,7 +705,7 @@ function reprint_push_lab_rest_merge_checked_recovery_journal_contract(
         }
     }
 
-    return $journal;
+    return reprint_push_lab_rest_normalize_authoritative_checked_contract($journal, $checked_db_journal);
 }
 
 function reprint_push_lab_rest_attach_checked_db_journal_contract(
@@ -830,7 +830,7 @@ function reprint_push_lab_rest_merge_checked_db_journal_contract(array $db_journ
         }
     }
 
-    return $db_journal;
+    return reprint_push_lab_rest_normalize_authoritative_checked_contract($db_journal, $checked_summary);
 }
 
 function reprint_push_lab_rest_should_fill_checked_db_journal_field(array $db_journal, array $checked_summary, string $key): bool
@@ -975,7 +975,7 @@ function reprint_push_lab_rest_should_prefer_authoritative_checked_nested_contra
     }
 
     if (is_string($existing) && is_string($checked) && $checked !== '') {
-        return preg_match('/fixture|local-playground|local-fixture|playground/i', $existing) === 1;
+        return reprint_push_lab_rest_checked_nested_contract_anchor_matches($existing_fields, $checked_fields);
     }
 
     return false;
@@ -1006,6 +1006,81 @@ function reprint_push_lab_rest_checked_nested_contract_anchor_matches(array $exi
     }
 
     return true;
+}
+
+function reprint_push_lab_rest_normalize_authoritative_checked_contract(
+    array $journal,
+    array $checked_journal
+): array {
+    if (($journal['acceptedOnCheckedBoundary'] ?? false) !== true || ($checked_journal['acceptedOnCheckedBoundary'] ?? false) !== true) {
+        return $journal;
+    }
+
+    $checked_storage_guard = null;
+    if (isset($checked_journal['writerLease']) && is_array($checked_journal['writerLease'])) {
+        $checked_storage_guard = isset($checked_journal['writerLease']['storageGuard'])
+            ? (string) $checked_journal['writerLease']['storageGuard']
+            : null;
+    }
+    if (
+        (!is_string($checked_storage_guard) || $checked_storage_guard === '')
+        && isset($checked_journal['leaseFence']['writerLease'])
+        && is_array($checked_journal['leaseFence']['writerLease'])
+    ) {
+        $checked_storage_guard = isset($checked_journal['leaseFence']['writerLease']['storageGuard'])
+            ? (string) $checked_journal['leaseFence']['writerLease']['storageGuard']
+            : null;
+    }
+
+    $merged_storage_guard = null;
+    if (isset($journal['writerLease']) && is_array($journal['writerLease'])) {
+        $merged_storage_guard = isset($journal['writerLease']['storageGuard'])
+            ? (string) $journal['writerLease']['storageGuard']
+            : null;
+    }
+    if (
+        (!is_string($merged_storage_guard) || $merged_storage_guard === '')
+        && isset($journal['leaseFence']['writerLease'])
+        && is_array($journal['leaseFence']['writerLease'])
+    ) {
+        $merged_storage_guard = isset($journal['leaseFence']['writerLease']['storageGuard'])
+            ? (string) $journal['leaseFence']['writerLease']['storageGuard']
+            : null;
+    }
+
+    if (
+        !is_string($checked_storage_guard)
+        || $checked_storage_guard === ''
+        || $merged_storage_guard !== $checked_storage_guard
+    ) {
+        return $journal;
+    }
+
+    $checked_adapter = isset($checked_journal['ownership']['productionAdapter'])
+        ? (string) $checked_journal['ownership']['productionAdapter']
+        : null;
+    if (
+        is_string($checked_adapter)
+        && $checked_adapter !== ''
+        && isset($journal['ownership'])
+        && is_array($journal['ownership'])
+    ) {
+        $journal['ownership']['productionAdapter'] = $checked_adapter;
+    }
+
+    $checked_boundary = isset($checked_journal['leaseFence']['boundary'])
+        ? (string) $checked_journal['leaseFence']['boundary']
+        : null;
+    if (
+        is_string($checked_boundary)
+        && $checked_boundary !== ''
+        && isset($journal['leaseFence'])
+        && is_array($journal['leaseFence'])
+    ) {
+        $journal['leaseFence']['boundary'] = $checked_boundary;
+    }
+
+    return $journal;
 }
 
 function reprint_push_lab_rest_merge_checked_storage_guard(
