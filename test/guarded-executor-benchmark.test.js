@@ -616,6 +616,8 @@ test('guarded benchmark blocks parallelism visibility without a measurement', ()
   const blockers = productionThroughputBlockers(tampered);
 
   assert.equal(details.parallelismLimitsVisibleAndMeasured, false);
+  assert.equal(details.atomicGroup.parallelismLimitsVisible, false);
+  assert.equal(details.backpressureConsistency.parallelismLimitsVisible, false);
   assert.equal(blockers.includes('production-parallelism-limits-visible-without-measurement'), true);
   assert.equal(blockers.includes('production-parallelism-limits-not-visible'), true);
 });
@@ -1577,6 +1579,10 @@ test('production claim gate fails closed if benchmark evidence is tampered', () 
   );
   assert.equal(
     productionThroughputDetails(hiddenParallelismLimits).atomicGroup.parallelismLimitsVisible,
+    false,
+  );
+  assert.equal(
+    productionThroughputDetails(hiddenParallelismLimits).backpressureConsistency.parallelismLimitsVisible,
     false,
   );
 
