@@ -1,17 +1,14 @@
-Critic lane evidence check: no verdict change.
+Critic lane evidence check at 2026-05-26 07:25:12 CEST (+0200): no verdict change.
 
 Evidence checked:
-- `AGENTS.md`
-- `supervision/README.md`
-- `supervision/lanes/critic.md`
 - `audits/critic.md`
-- latest critic lane output files under `.lane-output/`
-- latest reliable-executor and recovery handoffs under `../reliable-executor/.lane-output/` and `../no-data-loss-recovery/.lane-output/`
+- newest reliable-executor handoff files under `../reliable-executor/.lane-output/`
 - `git status --short --branch`
 
 Why nothing changed:
-- The fresh handoffs stay inside the same constrained boundary: reliable-executor improved wrapper/readiness failure reporting and recovery tightened fail-closed durable-journal checks, but neither closes exact replay equivalence, preserved-remote retry, or live production journal ownership.
-- The critic audit already reflects the current bottom line, so this pass does not justify a new verdict.
+- The newest reliable-executor pass confirms the bounded harness no longer hangs silently and now has explicit teardown/timeout behavior, but it is still harness evidence rather than product-side proof.
+- It does not change the open critic blockers: production auth/session lifecycle, durable journal ownership with lease/fencing, preserved-remote retry, exact replay equivalence, or full graph identity safety.
+- The current audit already captures the constrained release-candidate boundary, so the verdict remains flat.
 
 Changed files:
 - `.lane-output/final.md`
@@ -20,7 +17,8 @@ Push result:
 - Not attempted
 
 Worktree status:
-- `lane/cycle-20260525-mainwindows-2349/critic...origin/main [ahead 1578, behind 415]`
+- `lane/cycle-20260525-mainwindows-2349/critic...origin/main [ahead 1579, behind 422]`
+- Only tracked change is `.lane-output/final.md`
 
 Next supervisor nudge:
-- Keep critic parked unless a future reliable-executor or recovery pass changes the production-claim verdict with exact replay equivalence, preserved-remote retry, or live durable-journal ownership evidence.
+- Re-poll `reliable-executor` only when it lands product-side proof, not another harness-only pass, especially exact replay-equivalence evidence or a production-backed mutation path that changes the current blocker set.
