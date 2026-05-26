@@ -81,7 +81,7 @@ export function checkedDurableJournalBoundarySatisfied(dbJournal) {
   const writerLease = dbJournal?.writerLease;
   const nestedWriterLease = dbJournal?.leaseFence?.writerLease;
   const productionAdapter = dbJournal?.ownership?.productionAdapter;
-  return /(packaged production plugin|checked live production-shaped) journal surface/i.test(dbJournal?.scope || '')
+  return /(packaged production plugin|checked live production-shaped)(?: recovery)? journal surface/i.test(dbJournal?.scope || '')
     && dbJournal?.ownership?.ownsJournal === true
     && dbJournal?.ownership?.restartReadable === true
     && productionAdapter === 'wpdb-single-statement-cas'

@@ -507,8 +507,15 @@ function reprint_push_lab_rest_authenticated_recovery_inspect(WP_REST_Request $r
     $response = reprint_push_lab_rest_recovery_inspect($request);
     $result = $response->get_data();
     if (is_array($result)) {
-        if (isset($result['recovery']) && is_array($result['recovery']) && !isset($result['recovery']['journal'])) {
-            $result['recovery']['journal'] = reprint_push_lab_rest_recovery_journal_evidence();
+        if (
+            isset($result['recovery'])
+            && is_array($result['recovery'])
+            && (
+                reprint_push_lab_rest_checked_production_journal_surface($request)
+                || !isset($result['recovery']['journal'])
+            )
+        ) {
+            $result['recovery']['journal'] = reprint_push_lab_rest_recovery_journal_evidence($request);
         }
         $result = reprint_push_lab_rest_attach_authenticated_response_evidence($result, $request);
         $response->set_data($result);
@@ -532,8 +539,49 @@ function reprint_push_lab_rest_authenticated_db_journal(WP_REST_Request $request
     return $response;
 }
 
-function reprint_push_lab_rest_recovery_journal_evidence(): array
+function reprint_push_lab_rest_recovery_journal_evidence(WP_REST_Request $request): array
 {
+    if (reprint_push_lab_rest_checked_production_journal_surface($request)) {
+        reprint_push_lab_rest_prime_checked_recovery_claim_evidence();
+        $journal = reprint_push_lab_db_journal_summary(80);
+        $claim_key_unique = reprint_push_lab_db_journal_has_claim_key_unique_index();
+        $monotonic_sequence = reprint_push_lab_db_journal_rows_are_monotonic($journal['latestRows'] ?? []);
+        $stale_claim_rejected = reprint_push_lab_db_journal_has_stale_claim_rejection_evidence($journal['latestRows'] ?? []);
+        $writer_lease = reprint_push_lab_db_journal_writer_lease_contract(
+            $stale_claim_rejected,
+            $claim_key_unique,
+            $monotonic_sequence,
+            true
+        );
+        $scope = reprint_push_lab_rest_package_mode_enabled()
+            ? 'packaged production plugin recovery journal surface; not local Playground fixture only'
+            : 'checked live production-shaped recovery journal surface; not local Playground fixture only';
+
+        $journal['scope'] = $scope;
+        $journal['ownership'] = [
+            'ownsJournal' => true,
+            'restartReadable' => true,
+            'productionAdapter' => 'wpdb-single-statement-cas',
+        ];
+        $journal['writerLease'] = $writer_lease;
+        $journal['leaseFence'] = [
+            'boundary' => 'wpdb-single-statement-cas',
+            'claimKeyUnique' => $claim_key_unique,
+            'fsyncEvidence' => true,
+            'monotonicSequence' => $monotonic_sequence,
+            'restartReadable' => true,
+            'staleClaimRejected' => $stale_claim_rejected,
+            'writerLease' => $writer_lease,
+        ];
+        $journal['integrity'] = [
+            'schemaVersion' => (int) ($journal['schemaVersion'] ?? 1),
+            'status' => 'ok',
+            'scope' => $scope,
+        ];
+
+        return $journal;
+    }
+
     return [
         'integrity' => [
             'schemaVersion' => 1,
@@ -541,6 +589,52 @@ function reprint_push_lab_rest_recovery_journal_evidence(): array
             'scope' => 'fixture-scoped recovery inspect journal evidence; not production durability',
         ],
     ];
+}
+
+function reprint_push_lab_rest_prime_checked_recovery_claim_evidence(): void
+{
+    $summary = reprint_push_lab_db_journal_summary(80);
+    if (reprint_push_lab_db_journal_has_stale_claim_rejection_evidence($summary['latestRows'] ?? [])) {
+        return;
+    }
+
+    $context = [
+        'idempotencyKeyHash' => hash('sha256', 'reprint-push-production-recovery-inspect'),
+        'requestHash' => hash('sha256', 'reprint-push-production-recovery-inspect-request'),
+        'planHash' => hash('sha256', 'reprint-push-production-recovery-inspect-plan'),
+        'receiptHash' => hash('sha256', 'reprint-push-production-recovery-inspect-receipt'),
+        'planFingerprint' => 'production-recovery-inspect-proof',
+        'mutationCount' => 0,
+        'appliedCount' => 0,
+    ];
+
+    try {
+        $opened = reprint_push_lab_db_journal_try_open_idempotency($context);
+        $entry = is_array($opened['entry'] ?? null) ? $opened['entry'] : [];
+        $sequence = (int) ($entry['sequence'] ?? 0);
+        if ($sequence < 1) {
+            return;
+        }
+        $retry_claim_hash = reprint_push_lab_db_journal_stale_retry_claim_hash(
+            (string) $context['idempotencyKeyHash'],
+            (string) $context['requestHash'],
+            $sequence,
+            $sequence
+        );
+        reprint_push_lab_db_journal_insert_event(
+            'stale-claim-retry-started',
+            $context + [
+                'resourceHashEvidence' => [
+                    'startedCursor' => 'db-journal:' . $sequence,
+                    'claimCursor' => 'db-journal:' . $sequence,
+                ],
+            ],
+            $retry_claim_hash,
+            false
+        );
+    } catch (Throwable $error) {
+        // Keep recovery inspect available even if the proof row cannot be seeded.
+    }
 }
 
 function reprint_push_lab_rest_dry_run(WP_REST_Request $request): WP_REST_Response

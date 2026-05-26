@@ -492,4 +492,15 @@ test('checked durable journal boundary stays closed until stale-claim rejection 
     }),
     false,
   );
+  assert.equal(
+    checkedDurableJournalBoundarySatisfied({
+      ...baseContract,
+      scope: 'checked live production-shaped recovery journal surface; not local Playground fixture only',
+      leaseFence: {
+        ...baseContract.leaseFence,
+        staleClaimRejected: true,
+      },
+    }),
+    true,
+  );
 });

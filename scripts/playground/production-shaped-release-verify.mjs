@@ -442,7 +442,7 @@ if (retainedSourceSummaryRequested) {
             journal: durableJournalSummary.journal,
             leaseFence: {
               ...durableJournalSummary.leaseFence,
-              staleClaimRejected: durableJournalSummary.journal.staleClaimRejected,
+              staleClaimRejected: durableJournalSummary.leaseFence?.staleClaimRejected === true,
             },
           },
           rows: 17,
@@ -910,31 +910,62 @@ try {
         'journal readback must show durable mutation evidence',
       );
 
-      const durableJournalSummary = runProductionRecoveryJournalProof({
-        plan: proof.planObject,
-        current: proof.remoteSnapshotObject,
-        artifactRefs: {
-          releaseVerifier: 'scripts/playground/production-shaped-release-verify.mjs',
-        },
-      });
-      assert.ok(Array.isArray(durableJournalSummary.journal?.checked), 'production recovery journal proof must report checked journal files');
-      assert.ok(
-        durableJournalSummary.journal.checked.length > 0,
-        'production recovery journal proof must check at least one persistent journal file',
-      );
-      assert.equal(
-        durableJournalSummary.leaseFence?.storageGuard,
-        'filesystem-compare-rename',
-        'production recovery journal proof must report the storage guard used for lease fencing',
-      );
-      assert.equal(durableJournalSummary.leaseFence?.fsyncEvidence, true);
-      assert.equal(durableJournalSummary.leaseFence?.monotonicSequence, true);
+      const recoveryInspectJournal = proof.recoveryInspect?.recovery?.journal || null;
+      const recoveryInspectJournalAccepted = checkedDurableJournalBoundarySatisfied(recoveryInspectJournal);
+      const durableJournalSummary = recoveryInspectJournalAccepted
+        ? {
+            journal: recoveryInspectJournal,
+            leaseFence: {
+              ...(recoveryInspectJournal.leaseFence || {}),
+              storageGuard: recoveryInspectJournal.leaseFence?.boundary || null,
+              fsyncEvidence: recoveryInspectJournal.leaseFence?.fsyncEvidence === true,
+              staleClaimRejected: recoveryInspectJournal.leaseFence?.staleClaimRejected === true,
+            },
+            consumed: true,
+            productionOwnedBySource: true,
+          }
+        : runProductionRecoveryJournalProof({
+            plan: proof.planObject,
+            current: proof.remoteSnapshotObject,
+            artifactRefs: {
+              releaseVerifier: 'scripts/playground/production-shaped-release-verify.mjs',
+            },
+          });
+
+      if (recoveryInspectJournalAccepted) {
+        assert.equal(
+          durableJournalSummary.journal?.ownership?.productionAdapter,
+          'wpdb-single-statement-cas',
+          'live recovery inspect must expose the production-owned journal adapter',
+        );
+        assert.equal(durableJournalSummary.journal?.ownership?.ownsJournal, true);
+        assert.equal(durableJournalSummary.journal?.ownership?.restartReadable, true);
+        assert.equal(durableJournalSummary.leaseFence?.boundary, 'wpdb-single-statement-cas');
+        assert.equal(durableJournalSummary.leaseFence?.claimKeyUnique, true);
+        assert.equal(durableJournalSummary.leaseFence?.monotonicSequence, true);
+        assert.equal(durableJournalSummary.leaseFence?.restartReadable, true);
+        assert.equal(durableJournalSummary.leaseFence?.staleClaimRejected, true);
+      } else {
+        assert.ok(Array.isArray(durableJournalSummary.journal?.checked), 'production recovery journal proof must report checked journal files');
+        assert.ok(
+          durableJournalSummary.journal.checked.length > 0,
+          'production recovery journal proof must check at least one persistent journal file',
+        );
+        assert.equal(
+          durableJournalSummary.leaseFence?.storageGuard,
+          'filesystem-compare-rename',
+          'production recovery journal proof must report the storage guard used for lease fencing',
+        );
+        assert.equal(durableJournalSummary.leaseFence?.fsyncEvidence, true);
+        assert.equal(durableJournalSummary.leaseFence?.monotonicSequence, true);
+      }
       const packagedPluginDriverProof = packagedSourceFixture
         ? summarizePackagedPluginDriverProof()
         : null;
       const checkedDurableJournalAccepted = packagedSourceFixture !== null
         ? checkedDurableJournalBoundarySatisfied(proof.dbJournal)
-        : dbJournalProofIsAcceptable(proof.dbJournal);
+        : dbJournalProofIsAcceptable(proof.dbJournal)
+          && recoveryInspectJournalAccepted;
 
       if (requireProductionDurableJournal && !checkedDurableJournalAccepted) {
         process.stdout.write(
@@ -969,7 +1000,7 @@ try {
                   journal: durableJournalSummary.journal,
                   leaseFence: {
                     ...durableJournalSummary.leaseFence,
-                    staleClaimRejected: durableJournalSummary.journal.staleClaimRejected,
+                    staleClaimRejected: durableJournalSummary.leaseFence?.staleClaimRejected === true,
                   },
                 },
                 rows: proof.dbJournal.rows,
@@ -1069,7 +1100,7 @@ try {
                   journal: durableJournalSummary.journal,
                   leaseFence: {
                     ...durableJournalSummary.leaseFence,
-                    staleClaimRejected: durableJournalSummary.journal.staleClaimRejected,
+                    staleClaimRejected: durableJournalSummary.leaseFence?.staleClaimRejected === true,
                   },
                 },
                 rows: proof.dbJournal.rows,
@@ -1125,7 +1156,7 @@ try {
                   verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_PROVEN',
                 },
                 durableJournal: {
-                  storageLeaseFence: 'live production-shaped auth/session is proven, but durable journal storage, lease fencing, restart-readable artifacts, and release-path acceptance remain below the checked live boundary',
+                  storageLeaseFence: 'live production-shaped auth/session is proven, but the signed recovery inspect path is still missing production-owned durable journal storage, lease fencing, restart-readable artifacts, or stale-claim rejection on the live source boundary',
                   verdict: 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED',
                 },
               },
@@ -1157,7 +1188,7 @@ try {
                   journal: durableJournalSummary.journal,
                   leaseFence: {
                     ...durableJournalSummary.leaseFence,
-                    staleClaimRejected: durableJournalSummary.journal.staleClaimRejected,
+                    staleClaimRejected: durableJournalSummary.leaseFence?.staleClaimRejected === true,
                   },
                 },
                 rows: proof.dbJournal.rows,
@@ -1188,14 +1219,14 @@ try {
           observed: checkedAuthSessionLifecycle.observed,
           verdict: packagedSourceFixture ? 'PACKAGED_RELEASE_BOUNDARY_OK' : 'LIVE_RELEASE_BOUNDARY_OK',
         },
-        durableJournal: {
-          storageLeaseFence: packagedSourceFixture
-            ? 'packaged production plugin journal surface accepted on the checked release boundary'
-            : 'checked live production-shaped journal surface accepted on the checked release boundary',
-          verdict: checkedDurableJournalAccepted
-            ? (packagedSourceFixture ? 'PACKAGED_RELEASE_BOUNDARY_OK' : 'LIVE_RELEASE_BOUNDARY_OK')
-            : 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED',
-        },
+          durableJournal: {
+            storageLeaseFence: packagedSourceFixture
+              ? 'packaged production plugin journal surface accepted on the checked release boundary'
+            : 'live production-shaped recovery inspect and journal surfaces accepted on the checked release boundary',
+            verdict: checkedDurableJournalAccepted
+              ? (packagedSourceFixture ? 'PACKAGED_RELEASE_BOUNDARY_OK' : 'LIVE_RELEASE_BOUNDARY_OK')
+              : 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED',
+          },
       };
 
       process.stdout.write(
@@ -1244,7 +1275,7 @@ try {
                 journal: durableJournalSummary.journal,
                 leaseFence: {
                   ...durableJournalSummary.leaseFence,
-                  staleClaimRejected: durableJournalSummary.journal.staleClaimRejected,
+                  staleClaimRejected: durableJournalSummary.leaseFence?.staleClaimRejected === true,
                 },
               },
               rows: proof.dbJournal.rows,

@@ -1899,6 +1899,7 @@ function summarizeRecoveryInspect(response) {
     return undefined;
   }
 
+  const journal = summarizeRecoveryInspectJournal(recovery.journal);
   const journalState = recovery.journal?.integrity?.status
     || (recovery.journalEvidence && typeof recovery.journalEvidence === 'object' ? 'ok' : undefined);
 
@@ -1916,6 +1917,29 @@ function summarizeRecoveryInspect(response) {
       total: recovery.counts.total,
     } : undefined,
     journalState,
+    journal,
+  };
+}
+
+function summarizeRecoveryInspectJournal(journal) {
+  if (!journal || typeof journal !== 'object') {
+    return undefined;
+  }
+
+  const integrity = journal.integrity && typeof journal.integrity === 'object'
+    ? {
+        schemaVersion: journal.integrity.schemaVersion ?? null,
+        status: journal.integrity.status ?? null,
+        scope: journal.integrity.scope ?? null,
+      }
+    : undefined;
+
+  return {
+    scope: journal.scope || integrity?.scope || null,
+    integrity,
+    ownership: summarizeDbJournalOwnership(journal),
+    writerLease: summarizeDbJournalWriterLease(journal.writerLease),
+    leaseFence: summarizeDbJournalLeaseFence(journal),
   };
 }
 
