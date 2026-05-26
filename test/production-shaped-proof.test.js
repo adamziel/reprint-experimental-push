@@ -19,7 +19,7 @@ const liveCredentials = {
   password: 'reprint-push-admin-app-password',
 };
 const proofSubprocessTimeoutMs = 45_000;
-const proofSubprocessKillSignal = 'SIGKILL';
+const proofSubprocessKillSignal = 'SIGTERM';
 const liveProofSubprocessTimeoutMs = 20_000;
 const releaseVerifySlowPathTimeoutMs = 12_000;
 const liveReleaseVerifyTimeoutMs = liveProofSubprocessTimeoutMs;
@@ -49,16 +49,12 @@ function spawnReleaseVerify(env = {}, timeout = proofSubprocessTimeoutMs) {
     spawnOptions,
   );
   if (proof.error) {
-    process.stderr.write(
-      `${describeSpawnProof(proof)}\n`,
-    );
+    process.stderr.write(`${describeSpawnProof(proof)}\n`);
     const timeoutNote = proof.error.code === 'ETIMEDOUT' && timeout ? ` after ${timeout}ms` : '';
     throw new Error(formatSpawnFailure(`production-shaped release verify failed${timeoutNote}`, proof));
   }
   if (proof.signal) {
-    process.stderr.write(
-      `${describeSpawnProof(proof)}\n`,
-    );
+    process.stderr.write(`${describeSpawnProof(proof)}\n`);
     const detail = describeSpawnProof(proof);
     throw new Error(
       `${formatSpawnFailure(
