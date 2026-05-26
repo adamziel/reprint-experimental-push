@@ -3344,6 +3344,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     rejectedGate: 'recovery',
     violates: ['backpressure', 'chunk-receipts', 'durable-progress'],
   },
+  {
+    id: 'cached-receipt-cursor-queue-slack-and-journal-lag-skips-backpressure-pause-after-retry',
+    proposal: 'use a cached receipt cursor plus queue slack and journal lag to skip the backpressure pause after a retry',
+    rejectedBecause: 'queue slack and journal lag can describe the paused sender, but they still cannot prove the pause happened before overflow or that the ordered raw receipts survived the retry without guessing which acknowledgements were durable',
+    rejectedGate: 'recovery',
+    violates: ['backpressure', 'chunk-receipts', 'durable-progress'],
+  },
 ]);
 
 export function buildBenchmarkModel(overrides = {}) {
