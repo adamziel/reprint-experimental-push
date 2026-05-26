@@ -63,15 +63,16 @@ The project is **not releasable as a production WordPress push path**.
 
 Fresh remote heads re-polled after the last audit note:
 
-- `origin/lane/reliable-executor` -> `2df7cd195d70e0fef9b5d1050e9fc49fb832254a`
+- `origin/lane/reliable-executor` -> `f57471be`
 - `origin/lane/no-data-loss-recovery` -> `9e077c10c2899bcaab4895627686a99d41070a3f`
 - `origin/lane/no-data-loss-invariants` -> `7be60dfa3d26006062c6ad0bb158897e88b81f20`
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `220057086a9337e5006df8cd74357d9b619ecdc5`
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `528a1b4dceb3212df92442c9c71a2f7f6e65400e`
 
 The latest reliable-executor head still only hardens release-verify timeout
-handling. It is support work, not production-backed auth/session lifecycle or
-durable journal ownership evidence, so the release gates remain `0/4`.
+handling and child-process cleanup. It is support work, not production-backed
+auth/session lifecycle or durable journal ownership evidence, so the release
+gates remain `0/4`.
 
 These fresh heads still do not add production-backed auth/session lifecycle or
 durable journal ownership evidence. The release gates remain `0/4`.
