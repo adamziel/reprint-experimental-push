@@ -127,6 +127,16 @@ test('benchmark model covers large uploads and plugin installs', () => {
   assert.ok(
     model.safeFastPaths.some(
       (fastPath) =>
+        fastPath.area === 'compression' &&
+        fastPath.allowedShortcut === 'compress-canonical-per-kind-budget-summaries-to-size-bounded-release-bundle-fanout' &&
+        fastPath.guardrails.includes('release-bundle-fanout-revalidates-before-write') &&
+        fastPath.gateProofs.skip.includes('shorten release-bundle fanout planning'),
+    ),
+    'compressed per-kind budget summaries can size release-bundle fanout without weakening live revalidation',
+  );
+  assert.ok(
+    model.safeFastPaths.some(
+      (fastPath) =>
         fastPath.area === 'remote-indexes' &&
         fastPath.allowedShortcut === 'reuse-cached-release-manifest-digest-to-size-bounded-release-bundle-fanout' &&
         fastPath.guardrails.includes('cached-release-manifest-remains-planning-evidence-only') &&

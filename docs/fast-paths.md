@@ -1756,6 +1756,9 @@ Rejected fast paths stay rejected even when they look fast on paper:
 - A compressed per-kind budget summary can reduce resume-planning work, but it
   cannot replace the later live recheck or the durable receipts that classify
   pause, retry, or crash.
+- A compressed per-kind budget summary can also size release-bundle fanout, but
+  only as planning evidence while the later live recheck and durable receipts
+  still decide visibility.
 - Cached row receipts cannot skip plugin-install writeback, because the
   metadata writes and atomic-group barrier still need durable proof.
 - Cached row receipts cannot skip plugin-update finalize, because the live row

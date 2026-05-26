@@ -548,6 +548,26 @@ export const SAFE_FAST_PATHS = Object.freeze([
     publishesStagedDataEarly: false,
   },
   {
+    area: 'compression',
+    reduces: ['wire-bytes', 'planning-round-trips', 'duplicate-budget-recomputation'],
+    allowedShortcut: 'compress-canonical-per-kind-budget-summaries-to-size-bounded-release-bundle-fanout',
+    guardrails: [
+      'budget-summaries-stay-planning-evidence-only',
+      'release-bundle-fanout-revalidates-before-write',
+    ],
+    gateProofs: {
+      skip: 'compressed per-kind budget summaries can shorten release-bundle fanout planning without recomputing the same canonical limits',
+      live: 'each later release-bundle write still rechecks its own live resource precondition before visibility changes',
+      group: 'budget-summary compression only narrows planning inside the same planned release bundle and never widens the atomic-group barrier',
+      recovery: 'compressed budget summaries are advisory while durable receipts and the release-bundle staging record still classify pause, retry, or crash',
+    },
+    visibilityBoundary: 'planning-only-budget-summary',
+    failureEvidence: 'compressed per-kind budget summary plus later durable receipts and release-bundle staging record',
+    bypassesLivePreconditions: false,
+    splitsAtomicGroup: false,
+    publishesStagedDataEarly: false,
+  },
+  {
     area: 'remote-indexes',
     reduces: ['remote-body-fetches', 'planning-round-trips'],
     allowedShortcut: 'plan-from-indexed-strong-hash-listing',
