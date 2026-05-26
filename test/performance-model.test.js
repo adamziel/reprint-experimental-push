@@ -165,6 +165,16 @@ test('benchmark model covers large uploads and plugin installs', () => {
     'compressed release-manifest digests can size retry windows without weakening release recovery evidence',
   );
   assert.ok(
+    model.safeFastPaths.some(
+      (fastPath) =>
+        fastPath.allowedShortcut === 'reuse-cached-release-manifest-digest-to-size-bounded-release-bundle-retry-windows' &&
+        fastPath.guardrails.includes('cached-release-manifest-remains-planning-evidence-only') &&
+        fastPath.gateProofs.skip.includes('trim repeat planning scans') &&
+        fastPath.gateProofs.recovery.includes('guarded release record'),
+    ),
+    'cached release-manifest digests can size retry windows without weakening release recovery evidence',
+  );
+  assert.ok(
     pluginInstall.actions.some((action) => action.type === 'db-batch-parallelism'),
     'plugin install includes bounded row-batch parallelism',
   );
