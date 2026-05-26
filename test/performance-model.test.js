@@ -3423,6 +3423,14 @@ test('safe fast paths retain all gate proofs and stay non-rejectable', () => {
     ),
   );
   assert.ok(
+    model.safeFastPaths.some((fastPath) =>
+      fastPath.allowedShortcut === 'compress-durable-receipt-logs-and-reuse-stable-receipt-keys-for-bounded-replay' &&
+      fastPath.gateProofs.skip.includes('skip duplicate fsync work') &&
+      fastPath.gateProofs.recovery.includes('stable receipt keys') &&
+      fastPath.failureEvidence.includes('compressed receipt log')
+    ),
+  );
+  assert.ok(
     model.safeFastPaths.every((fastPath) =>
       typeof fastPath.visibilityBoundary === 'string' && fastPath.visibilityBoundary.length > 0
     ),
