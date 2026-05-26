@@ -8,21 +8,21 @@ Fresh remote heads at audit time, checked on May 26, 2026:
 
 - `origin/lane/reliable-executor` -> `0c4fd10f`
 - `origin/lane/no-data-loss-invariants` -> `4335ce8b`
-- `origin/lane/no-data-loss-recovery` -> `aab54b56`
-- `origin/lane/fast-paths` -> `1bcec429`
-- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `cb4cf1ab`
+- `origin/lane/no-data-loss-recovery` -> `95092fcd`
+- `origin/lane/fast-paths` -> `a6ee1f74`
+- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `974171d0`
 - `origin/lane/independent-auditor` -> `93ec5762`
-- `origin/lane/critic` -> `e986a490`
+- `origin/lane/critic` -> `f8591f9d`
 - `origin/lane/progress-publisher` -> `7695e1f9`
 - `origin/lane/same-plan-wordpress-graph-create` -> `69f27361`
 - `origin/lane/cycle-20260525-mainwindows-2349/same-plan-wordpress-graph-create` -> `fc8308c4`
 - `origin/lane/cycle-20260525-mainwindows-2349/same-plan-wordpress-graph-create` -> `e9cbf9d4`
 - `origin/lane/cycle-20260525-mainwindows-2357/no-data-loss-invariants-graph-proof` -> `98c0ce26`
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `61b0968d`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `1c05e576`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `efc0551b`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `38c3aa72`
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` -> `5f256171`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-invariants` -> `4335ce8b`
-- `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `aab54b56`
+- `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `95092fcd`
 - `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration` -> `295dc72a`
 - `origin/main` -> `4b7b47a6`
 
@@ -48,16 +48,16 @@ but it did not change the release conclusion:
   proof, which strengthens the fail-closed boundary but still does not prove
   live source mutation on unsupported surfaces.
 - `origin/lane/no-data-loss-recovery` now tightens the durable journal
-  production gate at `aab54b56` while preserving the earlier recovery
+  production gate at `95092fcd` while preserving the earlier recovery
   evidence.
   `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` now
-  tightens the durable journal cleanup gate at `aab54b56`, but it still does
+  tightens the durable journal cleanup gate at `95092fcd`, but it still does
   not add production-backed journal ownership or replay proof.
-- `origin/lane/fast-paths` now refreshes benchmark evidence at `1bcec429`.
+- `origin/lane/fast-paths` now refreshes benchmark evidence at `a6ee1f74`.
   This remains a safe fast-path implementation detail, but it still does not
   prove the live production push boundary.
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` now adds bounded
-  staging-disk backpressure shortcut handling at `cb4cf1ab`. That is still a
+  staging-disk backpressure shortcut handling at `974171d0`. That is still a
   fail-closed implementation improvement, not production release proof.
 - `origin/lane/cycle-20260525-mainwindows-2349/critic` now refreshes the critic handoff at `f8591f9d`.
 - `origin/lane/progress-publisher` now refreshes the public progress evidence
@@ -65,9 +65,9 @@ but it did not change the release conclusion:
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` now refreshes the audit snapshot at
   `93ec5762`.
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now
-  refreshes the supervisor evidence snapshot at `61b0968d`.
+  refreshes the supervisor evidence snapshot at `efc0551b`.
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now
-  records the latest progress freshness handoff at `1c05e576`.
+  records the latest progress freshness handoff at `38c3aa72`.
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` now
   hardens the live proof timeout diagnostics at `5f256171`.
 - `origin/lane/same-plan-wordpress-graph-create` now blocks unsupported graph
