@@ -594,6 +594,13 @@ export function productionThroughputBlockers(report) {
   ) {
     blockers.push('success-inspection-claim-status-mismatch');
   }
+  if (
+    Number.isFinite(report.results?.successInspection?.counts?.new)
+    && Number.isFinite(report.shape?.mutations)
+    && report.results.successInspection.counts.new !== report.shape.mutations
+  ) {
+    blockers.push('success-inspection-counts-not-aligned');
+  }
   if (report.executorCapabilities.fileReceipts !== 'production-storage-receipts') {
     blockers.push('production-storage-receipts-not-measured');
   }
@@ -757,6 +764,10 @@ export function productionThroughputDetails(report) {
       successInspectionClaimStatus !== 'blocked'
       || report.evidence.recovery.successInspectionStatus !== 'fully-updated-remote'
     );
+  const successInspectionCountsNewMatchesMutations =
+    Number.isFinite(report.results.successInspection?.counts?.new)
+    && Number.isFinite(report.shape?.mutations)
+    && report.results.successInspection.counts.new === report.shape.mutations;
   const receiptCursorHeadroomMatchesResourceHeadroom =
     receiptCursorWithinMemoryCeiling
     && receiptCursorMemoryHeadroomBytes === receiptCursorMemoryCeilingBytes - receiptCursorWindowBytes;
@@ -888,6 +899,7 @@ export function productionThroughputDetails(report) {
     successInspectionClaimRecognized,
     successInspectionClaimReasonProven,
     successInspectionClaimMatchesInspectionStatus,
+    successInspectionCountsNewMatchesMutations,
     receiptCursorMemoryHeadroomMatchesResourceHeadroom,
     receiptCursorMemoryHeadroomWithinResourceHeadroom,
     receiptCursorMatchesBackpressure,
@@ -946,6 +958,7 @@ export function productionThroughputDetails(report) {
       successInspectionClaimReason,
       successInspectionClaimRecognized,
       successInspectionClaimMatchesInspectionStatus,
+      successInspectionCountsNewMatchesMutations,
       receiptCursorMemoryHeadroomMatchesResourceHeadroom,
       receiptCursorMemoryHeadroomWithinResourceHeadroom,
       receiptCursorBackpressureWithinResourceHeadroom,

@@ -297,6 +297,7 @@ test('guarded benchmark refuses production throughput claims until production ga
   assert.equal(report.results.successInspection.status, 'fully-updated-remote');
   assert.equal(report.results.successInspection.reason, 'Every planned target currently matches its journaled after hash.');
   assert.equal(report.results.successInspection.counts.new, report.shape.mutations);
+  assert.equal(report.claims.productionThroughputDetails.successInspectionCountsNewMatchesMutations, true);
   assert.equal(report.claims.productionThroughputDetails.successInspectionClaimStatus, 'none');
   assert.equal(report.claims.productionThroughputDetails.successInspectionClaimReason, null);
   assert.equal(report.claims.productionThroughputDetails.successInspectionClaimReasonProven, true);
@@ -395,6 +396,18 @@ test('production claim gate fails closed if benchmark evidence is tampered', () 
     productionThroughputBlockers(mismatchedPartialRecoveryStatus).includes(
       'partial-commit-recovery-status-mismatch',
     ),
+  );
+
+  const mismatchedSuccessInspectionCounts = clone(report);
+  mismatchedSuccessInspectionCounts.results.successInspection.counts.new -= 1;
+  assert.ok(
+    productionThroughputBlockers(mismatchedSuccessInspectionCounts).includes(
+      'success-inspection-counts-not-aligned',
+    ),
+  );
+  assert.equal(
+    productionThroughputDetails(mismatchedSuccessInspectionCounts).successInspectionCountsNewMatchesMutations,
+    false,
   );
 
   const blockedSuccessClaimWithoutReason = clone(report);
