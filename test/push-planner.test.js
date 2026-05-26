@@ -17974,6 +17974,54 @@ test('blocks local post GUID changes while preserving a matching independent edi
   assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin change */');
 });
 
+test('blocks local post GUID changes while preserving a matching independent edit and remote-only plugin removals', () => {
+  const resourceKey = 'row:["wp_posts","ID:51"]';
+  const base = baseSite();
+  base.db.wp_posts['ID:51'] = {
+    ID: 51,
+    guid: 'https://example.test/?p=51',
+    post_title: 'Base GUID removal shared post',
+    post_content: 'Base GUID removal shared content',
+    post_status: 'publish',
+    post_type: 'post',
+  };
+  base.db.wp_posts['ID:1'].post_title = 'Shared post title';
+
+  const local = baseSite();
+  local.db.wp_posts['ID:51'] = {
+    ID: 51,
+    guid: 'https://example.test/?p=51&local=1',
+    post_title: 'Local GUID removal shared post',
+    post_content: 'Local GUID removal shared content',
+    post_status: 'publish',
+    post_type: 'post',
+  };
+  local.db.wp_posts['ID:1'].post_title = 'Shared post title';
+
+  const remote = baseSite();
+  remote.db.wp_posts['ID:51'] = JSON.parse(JSON.stringify(base.db.wp_posts['ID:51']));
+  remote.db.wp_posts['ID:1'].post_title = 'Shared post title';
+  delete remote.plugins.forms;
+  delete remote.files['wp-content/plugins/forms/forms.php'];
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers[0];
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(plan.conflicts.length, 0);
+  assert.equal(blocker.class, 'unsupported-guid-resource');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.reason, 'Post GUID graph resources are not yet supported by the planner.');
+  assert.equal(decisionFor(plan, 'row:["wp_posts","ID:1"]'), undefined);
+  assert.equal(planJson.includes('Local GUID removal shared content'), false);
+  assert.equal(planJson.includes('Base GUID removal shared content'), false);
+  assert.equal(Object.hasOwn(remote.plugins, 'forms'), false);
+  assert.equal(Object.hasOwn(remote.files, 'wp-content/plugins/forms/forms.php'), false);
+});
+
 test('blocks local comments and users graph resources while preserving remote-only plugin drift', () => {
   const resourceKey = 'row:["wp_comments","comment_ID:9"]';
   const base = baseSite();
