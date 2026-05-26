@@ -500,20 +500,20 @@
       <div>
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
-        <p class="lead">Last 12 hours: recovery's `351b6bbd` adapter proof is still valid, and reliable's newest readiness fast-fail patch is `0f36d838`, which makes the release verifier fail immediately on the first `/wp-json/` `502` body containing `WordPress is not ready yet` through the bounded route/status/body diagnostic path. The new behavior still needs a bounded verifier run before the release boundary can move. Release gates remain `0/4`, and the production boundary is still closed.</p>
-        <time class="update-stamp" datetime="2026-05-26T10:42:32+02:00">Last updated: May 26, 2026, 10:42 CEST</time>
+        <p class="lead">Last 12 hours: recovery's `351b6bbd` adapter proof is still valid, and reliable's newest readiness fast-fail patch is `0f36d838`, which now fails immediately on the first `/wp-json/` `502` body containing `WordPress is not ready yet` through the bounded route/status/body diagnostic path. That is better bounded failure evidence, but it still needs to cross the outer release-verifier boundary before the release gate can move. Release gates remain `0/4`, and the production boundary is still closed.</p>
+        <time class="update-stamp" datetime="2026-05-26T10:43:21+02:00">Last updated: May 26, 2026, 10:43 CEST</time>
         <div class="meta" aria-label="Project status">
           <span class="pill">Evidence class: lab-only</span>
-          <span class="pill">Trend: readiness handling in `scripts/playground/production-shaped-release-verify.mjs` now points at `0f36d838`, but the bounded verifier proof is still pending</span>
-          <span class="pill">Top blocker: the new readiness behavior still needs a bounded verifier run before the outer wrapper can prove the live release path</span>
+          <span class="pill">Trend: readiness handling in `scripts/playground/production-shaped-release-verify.mjs` now points at `0f36d838`, which fails fast on the readiness 502 body, but the outer verifier proof is still pending</span>
+          <span class="pill">Top blocker: the new readiness behavior still needs to cross the outer release-verifier boundary before it can count as release proof</span>
           <span class="pill">Gate status: 0/4 verified; 4 pending</span>
           <span class="pill">Open gates: executor/auth, recovery journal, Docker/Playground, plugin drivers</span>
           <span class="pill">Supervised scope: 8 fast/low worker lanes plus the dedicated live progress watcher</span>
-          <span class="pill">Newest audit: <a href="docs/progress-log.md#2026-05-26-fresh-evidence-delta-103837">2026-05-26 10:38:37</a></span>
+          <span class="pill">Newest audit: <a href="docs/progress-log.md#2026-05-26-fresh-evidence-delta-104321">2026-05-26 10:43:21</a></span>
         </div>
       </div>
       <div class="header-actions" aria-label="Progress evidence">
-        <a class="log-link" href="docs/progress-log.md#2026-05-26-fresh-evidence-delta-103837">Open newest audit</a>
+        <a class="log-link" href="docs/progress-log.md#2026-05-26-fresh-evidence-delta-104321">Open newest audit</a>
         <a class="log-link" href="#proof-gates">Open release-gate checklist</a>
         <p><strong>Evidence trail:</strong> <a href="docs/progress-log.md">log</a>, <a href="audits/objective-audit.md">objective audit</a>, <a href="#proof-gates">gate checklist</a>.</p>
       </div>
