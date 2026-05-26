@@ -948,6 +948,7 @@ function withoutUnmappedGraphPostmeta(snapshot) {
 function runBoundedSync(command, args, options, label) {
   const proof = spawnSync(command, args, options);
   if (proof.error) {
+    stopAllPlaygroundChildrenSync();
     const timeoutNote = proof.error.code === 'ETIMEDOUT' && options.timeout ? ` after ${options.timeout}ms` : '';
     const detailParts = [
       proof.error.name ?? 'Error',
@@ -961,6 +962,7 @@ function runBoundedSync(command, args, options, label) {
     );
   }
   if (proof.signal) {
+    stopAllPlaygroundChildrenSync();
     throw new Error(
       `${label} terminated by ${proof.signal}\nstdout:\n${proof.stdout ?? ''}\nstderr:\n${proof.stderr ?? ''}`,
     );
@@ -991,6 +993,8 @@ async function waitForServer(child, baseUrl, getLogs) {
         getLogs(),
       );
       process.stderr.write(`${message}\n`);
+      await stopSpawnedServer(child);
+      await waitForExit(child, 2_000).catch(() => {});
       throw new Error(message);
     }
     try {

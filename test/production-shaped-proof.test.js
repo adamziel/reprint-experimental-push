@@ -101,9 +101,7 @@ function spawnBoundedSync(command, args, options, label) {
     throw new Error(formatSpawnFailure(`${label} terminated by ${proof.signal}${options.timeout ? ` after ${options.timeout}ms` : ''}`, proof));
   }
   if (proof.status === null) {
-    assert.fail(
-      `${label} exited without a status\nstdout:\n${proof.stdout ?? ''}\nstderr:\n${proof.stderr ?? ''}`,
-    );
+    throw new Error(formatSpawnFailure(`${label} exited without a status`, proof));
   }
 
   return proof;
@@ -612,23 +610,40 @@ async function waitForExit(child, timeoutMs) {
     await new Promise((resolve) => setTimeout(resolve, 100));
   }
   child.kill('SIGKILL');
-  while (child.exitCode === null) {
+  const forcedDeadline = Date.now() + 2_000;
+  while (Date.now() < forcedDeadline) {
+    if (child.exitCode !== null) {
+      return;
+    }
     await new Promise((resolve) => setTimeout(resolve, 100));
   }
+  throw new Error(`Playground server did not exit after SIGKILL`);
 }
 
 async function stopPlaygroundChild(child) {
   if (child.exitCode !== null) {
     return;
   }
-  child.kill('SIGTERM');
+  stopProcessGroup(child, 'SIGTERM');
   try {
     await waitForExit(child, 12_000);
   } catch (error) {
-    child.kill('SIGKILL');
+    stopProcessGroup(child, 'SIGKILL');
     await waitForExit(child, 12_000);
     throw error;
   }
+}
+
+function stopProcessGroup(child, signal) {
+  if (typeof child.pid === 'number') {
+    try {
+      process.kill(-child.pid, signal);
+      return;
+    } catch {
+      // Fall back to the wrapper PID if the process group is already gone.
+    }
+  }
+  child.kill(signal);
 }
 
 async function findLocalPort() {
