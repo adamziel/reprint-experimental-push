@@ -7,18 +7,18 @@ The project is **not releasable as a production WordPress push path**.
 Fresh remote heads at audit time, checked on May 26, 2026:
 
 - `origin/lane/critic` -> `49af85aa`
-- `origin/lane/independent-auditor` -> `1e7ac94f`
+- `origin/lane/independent-auditor` -> `69a4e299`
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `085c089e`
-- `origin/lane/reliable-executor` -> `960f9527`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `639059b0`
-- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `ae756337`
-- `origin/lane/no-data-loss-recovery` -> `47b675c0`
+- `origin/lane/reliable-executor` -> `8e2e5d7c`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `1f52c947`
+- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `e1f0d917`
+- `origin/lane/no-data-loss-recovery` -> `1214c397`
 - `origin/lane/same-plan-wordpress-graph-create` -> `0d2178e9`
 - `origin/lane/no-data-loss-invariants` -> `b5c81374`
 - `origin/lane/fast-paths` -> `cd0fddad`
 - `origin/lane/progress-publisher` -> `7695e1f9`
 - `origin/lane/cycle-20260525-mainwindows-2349/critic` -> `3b9a9c46`
-- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `1e7ac94f`
+- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `69a4e299`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `e84ce6e9`
 - `origin/lane/cycle-20260525-mainwindows-2349/same-plan-wordpress-graph-create` -> `0d2178e9`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-invariants` -> `b5c81374`
@@ -35,14 +35,14 @@ real source-site mutation boundary. The release gates still stay `0/4`.
 Fresh lane proof since the last audit pass improved the local evidence floor,
 but it did not change the release conclusion:
 
-- `origin/lane/reliable-executor` now tightens proof timeout guards at
-  `960f9527`. That improves the wrapper boundary, but the live proof path is
-  still lab-backed and the verdict does not move.
+- `origin/lane/reliable-executor` now hardens production proof server cleanup
+  at `8e2e5d7c`. That improves process shutdown behavior, but the live proof
+  path is still not release-grade source mutation evidence.
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` has advanced to
-  `12db5c3a`, which continues the fail-closed headroom tightening. It is still
-  not release-grade live-source evidence.
+  `e1f0d917`, which continues the fail-closed queue-slack tightening. It is
+  still not release-grade live-source evidence.
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` has
-  advanced to `4d5dd0e6`, refreshing the audit snapshot. That updates the
+  advanced to `69a4e299`, refreshing the audit snapshot. That updates the
   evidence surface but does not change the release boundary.
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now
   refreshes the progress visibility handoff at `085c089e`. This is freshness
@@ -57,21 +57,21 @@ but it did not change the release conclusion:
 - The newer integration cycle head at `a3a900d7` adds comments graph blocker
   coverage, which strengthens the fail-closed boundary but still does not
   prove live source mutation on unsupported surfaces.
-- `origin/lane/no-data-loss-recovery` now lands a recovery journal ownership
-  fence proof at `47b675c0`. It still does not add production-backed journal
-  ownership or replay proof.
+- `origin/lane/no-data-loss-recovery` now lands an unsupported production
+  recovery journal stub at `1214c397`. It still does not add production-backed
+  journal ownership or replay proof.
 - `origin/lane/fast-paths` now tightens backpressure evidence checks at
   `cd0fddad`. That is still a fail-closed implementation improvement, not
   production release proof.
-- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` now adds receipt
-  cursor headroom rejection at `12db5c3a`, which is still boundary plumbing
+- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` now adds zero queue
+  slack fail-closed handling at `e1f0d917`, which is still boundary plumbing
   rather than measured speed proof.
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now
-  records the latest progress freshness handoff at `28a8668e`.
-- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` now refreshes the audit snapshot at
-  `4d5dd0e6`.
-- `origin/lane/reliable-executor` now tightens proof timeout guards at
-  `960f9527`. This is still failure-path hardening, not live-source proof.
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now records
+  the latest progress freshness handoff at `1f52c947`.
+- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` now
+  refreshes the audit snapshot at `69a4e299`.
+- `origin/lane/reliable-executor` now hardens production proof server cleanup
+  at `8e2e5d7c`. This is still failure-path hardening, not live-source proof.
 - `origin/lane/critic` now refreshes the critic handoff at `49af85aa`.
 - `origin/lane/progress-publisher` now refreshes the public progress evidence
   at `7695e1f9`.
