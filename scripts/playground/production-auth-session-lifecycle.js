@@ -18,6 +18,15 @@ export function isExpiredAuthSession(session, now = Date.now()) {
 }
 
 export function evaluateProductionAuthSessionLifecycle(session, now = Date.now()) {
+  const invalidLifecycleFlag = resolveInvalidProductionAuthSessionLifecycleFlag(session);
+  if (invalidLifecycleFlag) {
+    return {
+      ok: false,
+      required: 'boolean lifecycle flags',
+      observed: `invalid-${invalidLifecycleFlag}`,
+    };
+  }
+
   const observedType = session?.type || 'missing';
   const observedStatus = session?.status || 'missing';
   const observedExpiresAt = session?.expiresAt || 'missing';
@@ -394,4 +403,27 @@ function resolveAuthSessionIdentitySummary(observation) {
     missing: !authUser,
     value: authUser,
   };
+}
+
+function resolveInvalidProductionAuthSessionLifecycleFlag(session) {
+  if (!session || typeof session !== 'object') {
+    return null;
+  }
+
+  const lifecycleFlags = [
+    ['revoked', session.revoked],
+    ['cleanedUp', session.cleanedUp],
+    ['cleanup', session.cleanup],
+    ['expired', session.expired],
+    ['rotated', session.rotated],
+    ['preserved', session.preserved],
+  ];
+
+  for (const [name, value] of lifecycleFlags) {
+    if (value !== undefined && value !== null && typeof value !== 'boolean') {
+      return name;
+    }
+  }
+
+  return null;
 }
