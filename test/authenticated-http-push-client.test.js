@@ -2757,7 +2757,6 @@ test('production-shaped authenticated push fails closed when replay changes the 
 
     assert.equal(summary.ok, false);
     assert.equal(summary.code, 'AUTH_SESSION_LIFECYCLE_DRIFT');
-    assert.equal(summary.code, 'AUTH_SESSION_LIFECYCLE_DRIFT');
     assert.ok(seen.some(({ url }) => url.includes('/apply')));
   } finally {
     global.fetch = originalFetch;
