@@ -1,13 +1,13 @@
 # Critic Verdict
 
-Current reliable head: `75d38550e3dfb89ce886da33c19326b4304b8418`
-(`Prove live auth session before journal gate`).
+Current reliable head: `4039fca9bff629d4fccdaf9540a82606d7f79c6c`
+(`Surface live auth session before journal gate`).
 
 Verdict: `0/4`
 
 Reason:
 
-- This head moves the checked release verifier toward the live
+- This head moves the checked release verifier further along the live
   auth/session boundary on the release path, but it still does not prove a
   production-backed lifecycle.
 - The checked proof is still missing live issuance/read/expiry/rotation/
