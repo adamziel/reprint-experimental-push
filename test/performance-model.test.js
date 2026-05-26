@@ -5763,6 +5763,40 @@ test('guarded executor large profile still preserves receipts and stays blocked 
   assert.equal(blockers.has('queue-budget-visible-without-memory-ceiling-match-visibility'), false);
 });
 
+test('benchmark model rejects release-bundle and plugin-install shortcuts that try to treat planning evidence as commit proof', () => {
+  const model = buildBenchmarkModel();
+  const releaseBundlePlanningShortcut = model.rejectedFastPaths.find(
+    (fastPath) => fastPath.id === 'compressed-remote-index-and-cached-release-manifest-skips-release-bundle-planning',
+  );
+  const releaseBundleCommitShortcut = model.rejectedFastPaths.find(
+    (fastPath) => fastPath.id === 'compressed-remote-index-and-compressed-db-batches-skips-release-bundle-commit',
+  );
+  const pluginInstallShortcut = model.rejectedFastPaths.find(
+    (fastPath) => fastPath.id === 'index-and-compressed-row-summary-completes-plugin-install',
+  );
+
+  assert.ok(releaseBundlePlanningShortcut);
+  assert.equal(releaseBundlePlanningShortcut.rejectedGate, 'skip');
+  assert.ok(releaseBundlePlanningShortcut.violates.includes('remote-index-planning-only'));
+  assert.ok(releaseBundlePlanningShortcut.violates.includes('plugin-preconditions'));
+  assert.ok(releaseBundlePlanningShortcut.violates.includes('row-preconditions'));
+  assert.match(releaseBundlePlanningShortcut.rejectedBecause, /cannot turn a remote index into apply authorization/);
+
+  assert.ok(releaseBundleCommitShortcut);
+  assert.equal(releaseBundleCommitShortcut.rejectedGate, 'group');
+  assert.ok(releaseBundleCommitShortcut.violates.includes('database-row-batching'));
+  assert.ok(releaseBundleCommitShortcut.violates.includes('atomic-groups'));
+  assert.ok(releaseBundleCommitShortcut.violates.includes('durable-progress'));
+  assert.match(releaseBundleCommitShortcut.rejectedBecause, /cannot prove the dependent plugin files, database row batches, and atomic-group commit survived failure/);
+
+  assert.ok(pluginInstallShortcut);
+  assert.equal(pluginInstallShortcut.rejectedGate, 'recovery');
+  assert.ok(pluginInstallShortcut.violates.includes('backpressure'));
+  assert.ok(pluginInstallShortcut.violates.includes('plugin-preconditions'));
+  assert.ok(pluginInstallShortcut.violates.includes('atomic-groups'));
+  assert.match(pluginInstallShortcut.rejectedBecause, /cannot prove the dependency checks, row receipts, or atomic-group commit survived failure/);
+});
+
 test('benchmark shape stays bounded for the current large fixtures', () => {
   const model = buildBenchmarkModel();
   const totalActions = model.schedules.reduce((sum, schedule) => sum + schedule.actions.length, 0);
