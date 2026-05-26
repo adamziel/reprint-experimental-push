@@ -68,174 +68,188 @@ export function applyPlan(remote, plan, options = {}) {
 
   const durableJournal = getDurableJournalWriter(options);
   assertProductionDurableJournalSupport(options, durableJournal);
-  const hasPreviousJournal = Boolean(options.journal);
-  let previousJournalState = null;
-  let journal = prepareJournal(remote, plan, options.journal);
-  if (journal.status === 'completed') {
-    let replayResult;
-    try {
-      replayResult = replayCompletedPlan(remote, plan, journal);
-      assertRecoveryStateEnvelope(replayResult.recoveryState);
-      recordDurableReplay(durableJournal, remote, plan, replayResult.recoveryState, journal);
-      return replayResult;
-    } catch (error) {
-      if (error?.details?.recovery?.status === 'blocked-recovery') {
-        recordDurableRecoveryStateBestEffort(durableJournal, remote, plan, error.details.recovery);
-        throw error;
-      }
-      throw journalWriteFailureFullyUpdated(
-        error,
-        remote,
-        plan,
-        replayResult?.journal || journal,
-        'journal-replayed',
-        recoveryStateDurableWriteDetails(error?.details),
-      );
-    }
-  }
-  if (hasPreviousJournal) {
-    const observedState = classifyJournalRemote(remote, journal);
-    previousJournalState = observedState.status;
-    if (observedState.status === 'fully-updated-remote') {
-      const completedJournal = completeObservedJournal(journal, plan);
-      const recoveryState = {
-        status: 'fully-updated-remote',
-        reason: 'Journal replay observed every planned mutation already present.',
-        artifacts: {
-          journal: completedJournal,
-        },
-      };
+  let failure = null;
+  try {
+    const hasPreviousJournal = Boolean(options.journal);
+    let previousJournalState = null;
+    let journal = prepareJournal(remote, plan, options.journal);
+    if (journal.status === 'completed') {
+      let replayResult;
       try {
-        assertRecoveryStateEnvelope(recoveryState);
-        recordDurableReplay(durableJournal, remote, plan, recoveryState, completedJournal);
-        recordDurableRecoveryState(durableJournal, remote, plan, recoveryState);
+        replayResult = replayCompletedPlan(remote, plan, journal);
+        assertRecoveryStateEnvelope(replayResult.recoveryState);
+        recordDurableReplay(durableJournal, remote, plan, replayResult.recoveryState, journal);
+        return replayResult;
       } catch (error) {
-        throw journalWriteFailureFullyUpdated(error, remote, plan, completedJournal, 'journal-replayed');
+        if (error?.details?.recovery?.status === 'blocked-recovery') {
+          recordDurableRecoveryStateBestEffort(durableJournal, remote, plan, error.details.recovery);
+          throw error;
+        }
+        throw journalWriteFailureFullyUpdated(
+          error,
+          remote,
+          plan,
+          replayResult?.journal || journal,
+          'journal-replayed',
+          recoveryStateDurableWriteDetails(error?.details),
+        );
       }
-      return {
-        site: deepClone(remote),
-        appliedMutations: 0,
-        journal: completedJournal,
-        recoveryState,
-      };
     }
-    if (observedState.status === 'blocked-recovery') {
-      throw recoveryBlocked(remote, plan, journal, observedState.reason, {
-        driftedResources: observedState.driftedResources,
+    if (hasPreviousJournal) {
+      const observedState = classifyJournalRemote(remote, journal);
+      previousJournalState = observedState.status;
+      if (observedState.status === 'fully-updated-remote') {
+        const completedJournal = completeObservedJournal(journal, plan);
+        const recoveryState = {
+          status: 'fully-updated-remote',
+          reason: 'Journal replay observed every planned mutation already present.',
+          artifacts: {
+            journal: completedJournal,
+          },
+        };
+        try {
+          assertRecoveryStateEnvelope(recoveryState);
+          recordDurableReplay(durableJournal, remote, plan, recoveryState, completedJournal);
+          recordDurableRecoveryState(durableJournal, remote, plan, recoveryState);
+        } catch (error) {
+          throw journalWriteFailureFullyUpdated(error, remote, plan, completedJournal, 'journal-replayed');
+        }
+        return {
+          site: deepClone(remote),
+          appliedMutations: 0,
+          journal: completedJournal,
+          recoveryState,
+        };
+      }
+      if (observedState.status === 'blocked-recovery') {
+        throw recoveryBlocked(remote, plan, journal, observedState.reason, {
+          driftedResources: observedState.driftedResources,
+        });
+      }
+    }
+
+    validatePreconditions(remote, plan);
+    try {
+      recordDurablePlanOpened(durableJournal, remote, plan, {
+        ...options,
+        previousJournalState,
       });
+    } catch (error) {
+      throw journalWriteFailureBeforeMutation(error, remote, plan, journal, 'journal-opened');
     }
-  }
 
-  validatePreconditions(remote, plan);
-  try {
-    recordDurablePlanOpened(durableJournal, remote, plan, {
-      ...options,
-      previousJournalState,
-    });
-  } catch (error) {
-    throw journalWriteFailureBeforeMutation(error, remote, plan, journal, 'journal-opened');
-  }
-
-  if (options.failBeforeMutation) {
-    const durableJournalError = recordDurableRecoveryStateBestEffort(durableJournal, remote, plan, {
-      status: 'old-remote',
-      reason: 'Injected failure before staging any mutation.',
-    });
-    throw injectedFailure(
-      'INJECTED_FAILURE_BEFORE_MUTATION',
-      'Injected failure before staging any mutation.',
-      remote,
-      plan,
-      journal,
-      recoveryStateDurableWriteDetails(durableJournalError),
-    );
-  }
-
-  const staged = deepClone(remote);
-  let stagedMutations = 0;
-  for (const mutation of plan.mutations) {
-    stagedMutations++;
-    setResource(staged, mutation.resource, deserializeResourceValue(mutation.value));
-    journal = markJournalEntry(journal, mutation.id, 'staged');
-    if (options.failBeforeCommitAtMutation === stagedMutations) {
+    if (options.failBeforeMutation) {
+      const durableJournalError = recordDurableRecoveryStateBestEffort(durableJournal, remote, plan, {
+        status: 'old-remote',
+        reason: 'Injected failure before staging any mutation.',
+      });
       throw injectedFailure(
-        'INJECTED_FAILURE_BEFORE_COMMIT',
-        `Injected failure after staging mutation ${mutation.id}.`,
+        'INJECTED_FAILURE_BEFORE_MUTATION',
+        'Injected failure before staging any mutation.',
         remote,
         plan,
-        markJournalStatus(journal, 'staging'),
-        { mutationId: mutation.id },
+        journal,
+        recoveryStateDurableWriteDetails(durableJournalError),
       );
     }
-  }
 
-  journal = markJournalStatus(journal, 'staged');
-  try {
-    recordDurableBoundary(durableJournal, 'apply-staged', remote, plan, {
-      state: 'staged',
-      stagedHash: digest(staged),
-    });
-  } catch (error) {
-    throw journalWriteFailureBeforeMutation(error, remote, plan, journal, 'apply-staged');
-  }
-  if (options.failAfterStaging) {
-    const durableJournalError = recordDurableRecoveryStateBestEffort(durableJournal, remote, plan, {
-      status: 'old-remote',
-      reason: 'Injected failure after staging all mutations.',
-    });
-    throw injectedFailure(
-      'INJECTED_FAILURE_AFTER_STAGING',
-      'Injected failure after staging all mutations.',
-      remote,
-      plan,
-      journal,
-      recoveryStateDurableWriteDetails(durableJournalError),
-    );
-  }
+    const staged = deepClone(remote);
+    let stagedMutations = 0;
+    for (const mutation of plan.mutations) {
+      stagedMutations++;
+      setResource(staged, mutation.resource, deserializeResourceValue(mutation.value));
+      journal = markJournalEntry(journal, mutation.id, 'staged');
+      if (options.failBeforeCommitAtMutation === stagedMutations) {
+        throw injectedFailure(
+          'INJECTED_FAILURE_BEFORE_COMMIT',
+          `Injected failure after staging mutation ${mutation.id}.`,
+          remote,
+          plan,
+          markJournalStatus(journal, 'staging'),
+          { mutationId: mutation.id },
+        );
+      }
+    }
 
-  validateAtomicGroups(staged, plan);
+    journal = markJournalStatus(journal, 'staged');
+    try {
+      recordDurableBoundary(durableJournal, 'apply-staged', remote, plan, {
+        state: 'staged',
+        stagedHash: digest(staged),
+      });
+    } catch (error) {
+      throw journalWriteFailureBeforeMutation(error, remote, plan, journal, 'apply-staged');
+    }
+    if (options.failAfterStaging) {
+      const durableJournalError = recordDurableRecoveryStateBestEffort(durableJournal, remote, plan, {
+        status: 'old-remote',
+        reason: 'Injected failure after staging all mutations.',
+      });
+      throw injectedFailure(
+        'INJECTED_FAILURE_AFTER_STAGING',
+        'Injected failure after staging all mutations.',
+        remote,
+        plan,
+        journal,
+        recoveryStateDurableWriteDetails(durableJournalError),
+      );
+    }
 
-  journal = markJournalStatus(journal, 'dependencies-validated');
-  try {
-    recordDurableBoundary(durableJournal, 'dependencies-validated', remote, plan, {
-      state: 'dependencies-validated',
-      stagedHash: digest(staged),
-    });
-  } catch (error) {
-    throw journalWriteFailureBeforeMutation(error, remote, plan, journal, 'dependencies-validated');
-  }
-  if (options.failAfterDependencyValidation) {
-    const durableJournalError = recordDurableRecoveryStateBestEffort(durableJournal, remote, plan, {
-      status: 'old-remote',
-      reason: 'Injected failure after dependency validation.',
-    });
-    throw injectedFailure(
-      'INJECTED_FAILURE_AFTER_DEPENDENCY_VALIDATION',
-      'Injected failure after dependency validation.',
-      remote,
-      plan,
-      journal,
-      recoveryStateDurableWriteDetails(durableJournalError),
-    );
-  }
+    validateAtomicGroups(staged, plan);
 
-  const commitResult = commitStagedSite(remote, staged, plan, journal, options, durableJournal);
-  if (commitResult.failure) {
-    throw commitResult.failure;
-  }
+    journal = markJournalStatus(journal, 'dependencies-validated');
+    try {
+      recordDurableBoundary(durableJournal, 'dependencies-validated', remote, plan, {
+        state: 'dependencies-validated',
+        stagedHash: digest(staged),
+      });
+    } catch (error) {
+      throw journalWriteFailureBeforeMutation(error, remote, plan, journal, 'dependencies-validated');
+    }
+    if (options.failAfterDependencyValidation) {
+      const durableJournalError = recordDurableRecoveryStateBestEffort(durableJournal, remote, plan, {
+        status: 'old-remote',
+        reason: 'Injected failure after dependency validation.',
+      });
+      throw injectedFailure(
+        'INJECTED_FAILURE_AFTER_DEPENDENCY_VALIDATION',
+        'Injected failure after dependency validation.',
+        remote,
+        plan,
+        journal,
+        recoveryStateDurableWriteDetails(durableJournalError),
+      );
+    }
 
-  return {
-    site: commitResult.site,
-    appliedMutations: commitResult.appliedMutations,
-    journal: commitResult.journal,
-    recoveryState: {
-      status: 'fully-updated-remote',
-      reason: 'All planned mutations were committed.',
-      artifacts: {
-        journal: commitResult.journal,
+    const commitResult = commitStagedSite(remote, staged, plan, journal, options, durableJournal);
+    if (commitResult.failure) {
+      throw commitResult.failure;
+    }
+
+    return {
+      site: commitResult.site,
+      appliedMutations: commitResult.appliedMutations,
+      journal: commitResult.journal,
+      recoveryState: {
+        status: 'fully-updated-remote',
+        reason: 'All planned mutations were committed.',
+        artifacts: {
+          journal: commitResult.journal,
+        },
       },
-    },
-  };
+    };
+  } catch (error) {
+    failure = error;
+    throw error;
+  } finally {
+    if (durableJournal && typeof durableJournal.close === 'function') {
+      try {
+        durableJournal.close();
+      } catch {
+        // Failure cleanup should not mask the original apply error.
+      }
+    }
+  }
 }
 
 function assertRecoveryStateEnvelope(recoveryState) {
@@ -586,6 +600,7 @@ function assertProductionDurableJournalSupport(options, writer) {
 
   if (
     writer
+    && writer.kind === 'production-recovery-journal'
     && typeof writer.flush === 'function'
     && typeof writer.close === 'function'
     && typeof writer.inspect === 'function'
@@ -599,6 +614,7 @@ function assertProductionDurableJournalSupport(options, writer) {
     'PRODUCTION_DURABLE_JOURNAL_UNSUPPORTED',
     'Production durable journal recovery is not available in this worktree.',
     {
+      supportedSurface: 'production-recovery-journal-adapter',
       missingDependency: [
         'append-only persisted journal storage',
         'restart-readable recovery inspection',

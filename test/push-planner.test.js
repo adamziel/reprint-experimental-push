@@ -1987,9 +1987,6 @@ test('atomic apply preserves the approved recovery envelope for pre-mutation, po
   local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
   const remote = baseSite();
   const plan = planFor(base, local, remote);
-  const journalPath = tempRecoveryJournalPath();
-  const durableJournal = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
-
   const failureCases = [
     ['before mutation', { failBeforeMutation: true }, 'old-remote', 'opened'],
     ['after staging', { failAfterStaging: true }, 'old-remote', 'staged'],
@@ -1998,6 +1995,7 @@ test('atomic apply preserves the approved recovery envelope for pre-mutation, po
 
   for (const [label, options, expectedStatus, expectedJournalStatus] of failureCases) {
     const before = JSON.stringify(remote);
+    const durableJournal = openRecoveryJournal(tempRecoveryJournalPath(), { truncate: true, now: fixedNow });
     const error = captureError(() => applyPlan(remote, plan, { durableJournal, ...options }));
 
     assert.ok(error instanceof PushPlanError, label);
@@ -2007,8 +2005,10 @@ test('atomic apply preserves the approved recovery envelope for pre-mutation, po
     assert.equal(error.details.recovery.artifacts.remote, undefined, label);
     assert.equal(error.details.recovery.artifacts.journal.planId, plan.id, label);
     assert.equal(error.details.recovery.artifacts.journal.status, expectedJournalStatus, label);
+    durableJournal.close();
   }
 
+  const durableJournal = openRecoveryJournal(tempRecoveryJournalPath(), { truncate: true, now: fixedNow });
   const completed = applyPlan(remote, plan, { durableJournal });
   assertAcceptableRecoveryState(completed.recoveryState);
   assertRecoveryStateArtifacts(completed.recoveryState, 'fully-updated-remote');
@@ -2036,8 +2036,6 @@ test('atomic apply keeps only the documented recovery states across the durable 
   local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
   const remote = baseSite();
   const plan = planFor(base, local, remote);
-  const journalPath = tempRecoveryJournalPath();
-  const durableJournal = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
 
   for (const options of [
     { failBeforeMutation: true },
@@ -2045,6 +2043,7 @@ test('atomic apply keeps only the documented recovery states across the durable 
     { failAfterDependencyValidation: true },
   ]) {
     const snapshot = JSON.stringify(remote);
+    const durableJournal = openRecoveryJournal(tempRecoveryJournalPath(), { truncate: true, now: fixedNow });
     const error = captureError(() => applyPlan(remote, plan, { durableJournal, ...options }));
 
     assert.ok(error instanceof PushPlanError);
@@ -2055,8 +2054,10 @@ test('atomic apply keeps only the documented recovery states across the durable 
       true,
     );
     assert.equal(error.details.recovery.artifacts.journal.planId, plan.id);
+    durableJournal.close();
   }
 
+  const durableJournal = openRecoveryJournal(tempRecoveryJournalPath(), { truncate: true, now: fixedNow });
   const completed = applyPlan(remote, plan, { durableJournal });
   assert.equal(isAcceptableRecoveryState(completed.recoveryState), true);
   assert.equal(completed.recoveryState.status, 'fully-updated-remote');
@@ -2126,15 +2127,13 @@ test('atomic recovery boundaries keep the old remote contract before mutation, a
   local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
   const remote = baseSite();
   const plan = planFor(base, local, remote);
-  const journalPath = tempRecoveryJournalPath();
-  const durableJournal = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
-
   for (const [label, options, expectedJournalStatus] of [
     ['before mutation', { failBeforeMutation: true }, 'opened'],
     ['after staging', { failAfterStaging: true }, 'staged'],
     ['after dependency validation', { failAfterDependencyValidation: true }, 'dependencies-validated'],
   ]) {
     const snapshot = JSON.stringify(remote);
+    const durableJournal = openRecoveryJournal(tempRecoveryJournalPath(), { truncate: true, now: fixedNow });
     const error = captureError(() => applyPlan(remote, plan, { durableJournal, ...options }));
 
     assert.ok(error instanceof PushPlanError, label);
@@ -2145,8 +2144,10 @@ test('atomic recovery boundaries keep the old remote contract before mutation, a
     assert.equal(error.details.recovery.artifacts.remote, undefined, label);
     assert.equal(error.details.recovery.artifacts.journal.planId, plan.id, label);
     assert.equal(error.details.recovery.artifacts.journal.status, expectedJournalStatus, label);
+    durableJournal.close();
   }
 
+  const durableJournal = openRecoveryJournal(tempRecoveryJournalPath(), { truncate: true, now: fixedNow });
   const completed = applyPlan(remote, plan, { durableJournal });
   assertAcceptableRecoveryState(completed.recoveryState);
   assertRecoveryStateArtifacts(completed.recoveryState, 'fully-updated-remote');
@@ -2180,9 +2181,6 @@ test('durable atomic apply only lands in old remote, fully updated remote, or bl
   local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
   const remote = baseSite();
   const plan = planFor(base, local, remote);
-  const journalPath = tempRecoveryJournalPath();
-  const durableJournal = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
-
   const failureCases = [
     ['before mutation', { failBeforeMutation: true }, 'old-remote', 'opened'],
     ['after staging', { failAfterStaging: true }, 'old-remote', 'staged'],
@@ -2191,6 +2189,7 @@ test('durable atomic apply only lands in old remote, fully updated remote, or bl
 
   for (const [label, options, expectedStatus, expectedJournalStatus] of failureCases) {
     const snapshot = JSON.stringify(remote);
+    const durableJournal = openRecoveryJournal(tempRecoveryJournalPath(), { truncate: true, now: fixedNow });
     const error = captureError(() => applyPlan(remote, plan, { durableJournal, ...options }));
 
     assert.ok(error instanceof PushPlanError, label);
@@ -2201,8 +2200,10 @@ test('durable atomic apply only lands in old remote, fully updated remote, or bl
     assert.equal(error.details.recovery.artifacts.remote, undefined, label);
     assert.equal(error.details.recovery.artifacts.journal.planId, plan.id, label);
     assert.equal(error.details.recovery.artifacts.journal.status, expectedJournalStatus, label);
+    durableJournal.close();
   }
 
+  const durableJournal = openRecoveryJournal(tempRecoveryJournalPath(), { truncate: true, now: fixedNow });
   const completed = applyPlan(remote, plan, { durableJournal });
   assertAcceptableRecoveryState(completed.recoveryState);
   assertRecoveryStateArtifacts(completed.recoveryState, 'fully-updated-remote');
@@ -2234,15 +2235,13 @@ test('durable recovery contract keeps failure-before-mutation, failure-after-sta
   local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
   const remote = baseSite();
   const plan = planFor(base, local, remote);
-  const journalPath = tempRecoveryJournalPath();
-  const durableJournal = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
-
   for (const [label, options, expectedJournalStatus] of [
     ['before mutation', { failBeforeMutation: true }, 'opened'],
     ['after staging', { failAfterStaging: true }, 'staged'],
     ['after dependency validation', { failAfterDependencyValidation: true }, 'dependencies-validated'],
   ]) {
     const snapshot = JSON.stringify(remote);
+    const durableJournal = openRecoveryJournal(tempRecoveryJournalPath(), { truncate: true, now: fixedNow });
     const error = captureError(() => applyPlan(remote, plan, { durableJournal, ...options }));
 
     assert.ok(error instanceof PushPlanError, label);
@@ -2252,8 +2251,10 @@ test('durable recovery contract keeps failure-before-mutation, failure-after-sta
     assert.equal(error.details.recovery.artifacts.remote, undefined, label);
     assert.equal(error.details.recovery.artifacts.journal.planId, plan.id, label);
     assert.equal(error.details.recovery.artifacts.journal.status, expectedJournalStatus, label);
+    durableJournal.close();
   }
 
+  const durableJournal = openRecoveryJournal(tempRecoveryJournalPath(), { truncate: true, now: fixedNow });
   const completed = applyPlan(remote, plan, { durableJournal });
   assertAcceptableRecoveryState(completed.recoveryState);
   assertRecoveryStateArtifacts(completed.recoveryState, 'fully-updated-remote');
@@ -2319,8 +2320,6 @@ test('durable recovery matrix keeps the three failure boundaries old-remote and 
   local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
   const remote = baseSite();
   const plan = planFor(base, local, remote);
-  const journalPath = tempRecoveryJournalPath();
-  const durableJournal = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
 
   const failureCases = [
     ['before mutation', { failBeforeMutation: true }, 'opened'],
@@ -2330,6 +2329,7 @@ test('durable recovery matrix keeps the three failure boundaries old-remote and 
 
   for (const [label, options, expectedJournalStatus] of failureCases) {
     const snapshot = JSON.stringify(remote);
+    const durableJournal = openRecoveryJournal(tempRecoveryJournalPath(), { truncate: true, now: fixedNow });
     const error = captureError(() => applyPlan(remote, plan, { durableJournal, ...options }));
 
     assert.ok(error instanceof PushPlanError, label);
@@ -2339,8 +2339,10 @@ test('durable recovery matrix keeps the three failure boundaries old-remote and 
     assert.equal(error.details.recovery.artifacts.remote, undefined, label);
     assert.equal(error.details.recovery.artifacts.journal.planId, plan.id, label);
     assert.equal(error.details.recovery.artifacts.journal.status, expectedJournalStatus, label);
+    durableJournal.close();
   }
 
+  const durableJournal = openRecoveryJournal(tempRecoveryJournalPath(), { truncate: true, now: fixedNow });
   const completed = applyPlan(remote, plan, { durableJournal });
   assertAcceptableRecoveryState(completed.recoveryState);
   assertRecoveryStateArtifacts(completed.recoveryState, 'fully-updated-remote');
@@ -19822,9 +19824,43 @@ test('production durable journal claims fail closed when the writer cannot fence
   assert.equal(error.details.requiresDurableJournal, true);
 });
 
+test('production durable journal claims fail closed without an explicit production adapter marker', () => {
+  const writer = {
+    nextSequence: 1,
+    appendEvent(type, payload) {
+      this.nextSequence += 1;
+      return { sequence: this.nextSequence - 1, type, payload };
+    },
+    flush() {},
+    close() {},
+    inspect() {
+      return { records: [{ sequence: 1, type: 'journal-opened' }] };
+    },
+    assertCurrentClaim() {},
+  };
+  const plan = planFor(baseSite(), baseSite(), {
+    ...baseSite(),
+    db: {
+      ...baseSite().db,
+      wp_options: {
+        ...baseSite().db.wp_options,
+        'option_name:blogname': { option_name: 'blogname', option_value: 'New Site' },
+      },
+    },
+  });
+  const error = captureError(() => applyPlan(baseSite(), plan, {
+    requireProductionDurableJournal: true,
+    durableJournal: writer,
+  }));
+
+  assert.equal(error.code, 'PRODUCTION_DURABLE_JOURNAL_UNSUPPORTED');
+  assert.equal(error.details.supportedSurface, 'production-recovery-journal-adapter');
+});
+
 test('production durable journal claims allow a restart-oriented writer contract', () => {
   const events = [];
   const writer = {
+    kind: 'production-recovery-journal',
     nextSequence: 1,
     appendEvent(type, payload) {
       events.push({ type, payload });
@@ -19856,4 +19892,82 @@ test('production durable journal claims allow a restart-oriented writer contract
 
   assert.equal(result.recoveryState.status, 'fully-updated-remote');
   assert.ok(events.some((event) => event.type === 'journal-opened'));
+});
+
+test('closes a durable journal writer when apply fails before commit', () => {
+  const events = [];
+  let closed = 0;
+  const writer = {
+    nextSequence: 1,
+    appendEvent(type, payload) {
+      events.push({ type, payload });
+      this.nextSequence += 1;
+      if (type === 'apply-staged') {
+        throw new Error('injected durable journal failure');
+      }
+      return { sequence: this.nextSequence - 1, type, payload };
+    },
+    flush() {},
+    close() {
+      closed += 1;
+    },
+    inspect() {
+      return { records: events.slice() };
+    },
+    assertCurrentClaim() {},
+  };
+  const plan = planFor(baseSite(), baseSite(), {
+    ...baseSite(),
+    db: {
+      ...baseSite().db,
+      wp_options: {
+        ...baseSite().db.wp_options,
+        'option_name:blogname': { option_name: 'blogname', option_value: 'New Site' },
+      },
+    },
+  });
+
+  assert.throws(() => applyPlan(baseSite(), plan, {
+    durableJournal: writer,
+  }), /before committing remote mutations at apply-staged\./);
+  assert.equal(closed, 1);
+});
+
+test('closes a durable journal writer after a successful apply', () => {
+  const events = [];
+  let closed = 0;
+  const writer = {
+    nextSequence: 1,
+    appendEvent(type, payload) {
+      events.push({ type, payload });
+      this.nextSequence += 1;
+      return { sequence: this.nextSequence - 1, type, payload };
+    },
+    flush() {},
+    close() {
+      closed += 1;
+    },
+    inspect() {
+      return { records: events.slice() };
+    },
+    assertCurrentClaim() {},
+  };
+  const plan = planFor(baseSite(), baseSite(), {
+    ...baseSite(),
+    db: {
+      ...baseSite().db,
+      wp_options: {
+        ...baseSite().db.wp_options,
+        'option_name:blogname': { option_name: 'blogname', option_value: 'New Site' },
+      },
+    },
+  });
+
+  const result = applyPlan(baseSite(), plan, {
+    durableJournal: writer,
+  });
+
+  assert.equal(result.recoveryState.status, 'fully-updated-remote');
+  assert.equal(closed, 1);
+  assert.ok(events.some((event) => event.type === 'journal-completed'));
 });
