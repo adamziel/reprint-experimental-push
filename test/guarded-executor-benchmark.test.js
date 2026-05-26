@@ -6780,6 +6780,8 @@ test('guarded benchmark keeps rollout summaries pinned when raw queue-budget byt
       blockerRefs: [
         'backpressure-evidence-incomplete',
         'queue-budget-does-not-match-resource-ceiling',
+        'queue-memory-ceiling-does-not-match-queue-budget',
+        'queue-headroom-exceeds-resource-ceiling',
       ],
     },
     {
@@ -6788,7 +6790,10 @@ test('guarded benchmark keeps rollout summaries pinned when raw queue-budget byt
       measured: false,
       visible: false,
       blockerRefs: [
+        'backpressure-evidence-incomplete',
         'queue-budget-does-not-match-resource-ceiling',
+        'queue-memory-ceiling-does-not-match-queue-budget',
+        'queue-headroom-exceeds-resource-ceiling',
       ],
     },
     {
@@ -6797,7 +6802,10 @@ test('guarded benchmark keeps rollout summaries pinned when raw queue-budget byt
       measured: false,
       visible: false,
       blockerRefs: [
+        'backpressure-evidence-incomplete',
         'queue-budget-does-not-match-resource-ceiling',
+        'queue-memory-ceiling-does-not-match-queue-budget',
+        'queue-headroom-exceeds-resource-ceiling',
       ],
     },
   ]);
@@ -6929,11 +6937,6 @@ test('guarded benchmark keeps rollout summaries pinned when raw memory-ceiling b
       blockerRefs: [
         'backpressure-evidence-incomplete',
         'queue-memory-ceiling-does-not-match-queue-budget',
-        'queue-headroom-memory-headroom-mismatch',
-        'receipt-cursor-headroom-not-covered-by-queue-budget',
-        'receipt-cursor-memory-headroom-not-covered-by-queue-budget',
-        'receipt-cursor-memory-headroom-resource-headroom-mismatch',
-        'receipt-cursor-queue-slack-mismatch',
       ],
     },
     {
@@ -6944,11 +6947,6 @@ test('guarded benchmark keeps rollout summaries pinned when raw memory-ceiling b
       blockerRefs: [
         'backpressure-evidence-incomplete',
         'queue-memory-ceiling-does-not-match-queue-budget',
-        'queue-headroom-memory-headroom-mismatch',
-        'receipt-cursor-headroom-not-covered-by-queue-budget',
-        'receipt-cursor-memory-headroom-not-covered-by-queue-budget',
-        'receipt-cursor-memory-headroom-resource-headroom-mismatch',
-        'receipt-cursor-queue-slack-mismatch',
       ],
     },
     {
@@ -6959,11 +6957,6 @@ test('guarded benchmark keeps rollout summaries pinned when raw memory-ceiling b
       blockerRefs: [
         'backpressure-evidence-incomplete',
         'queue-memory-ceiling-does-not-match-queue-budget',
-        'queue-headroom-memory-headroom-mismatch',
-        'receipt-cursor-headroom-not-covered-by-queue-budget',
-        'receipt-cursor-memory-headroom-not-covered-by-queue-budget',
-        'receipt-cursor-memory-headroom-resource-headroom-mismatch',
-        'receipt-cursor-queue-slack-mismatch',
       ],
     },
   ]);
