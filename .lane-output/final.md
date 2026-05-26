@@ -1,6 +1,6 @@
-`eeaea30dd84ae36765136e819aa8334e24954484` stays `0/4`.
+`66492522086b05d808b1fe64aa8b1b1433012000` stays `0/4`.
 
-It is the current remote reliable head and it consumes the production recovery journal in the checked release verifier, but it still does not prove production-backed auth/session lifecycle or production durable-journal semantics on the checked `verify:release` boundary.
+It is the current remote reliable head and it only retries transient release probes before the checked verifier gives up. That is still below the production-backed auth/session lifecycle and production durable-journal semantics required on the checked `verify:release` boundary.
 
 Changed files:
 - [`audits/objective-audit.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/independent-auditor/audits/objective-audit.md)
