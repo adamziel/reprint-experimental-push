@@ -301,6 +301,37 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
     false,
   );
   assert.deepEqual(
+    model.safeFastPaths.find(
+      (fastPath) =>
+        fastPath.area === 'chunk-upload' &&
+        fastPath.allowedShortcut === 'reuse-plan-scoped-chunk-receipts-to-resume-bounded-windowing',
+    ) && {
+      visibilityBoundary: model.safeFastPaths.find(
+        (fastPath) =>
+          fastPath.area === 'chunk-upload' &&
+          fastPath.allowedShortcut === 'reuse-plan-scoped-chunk-receipts-to-resume-bounded-windowing',
+      )?.visibilityBoundary,
+      failureEvidence: model.safeFastPaths.find(
+        (fastPath) =>
+          fastPath.area === 'chunk-upload' &&
+          fastPath.allowedShortcut === 'reuse-plan-scoped-chunk-receipts-to-resume-bounded-windowing',
+      )?.failureEvidence,
+      guardrails: model.safeFastPaths.find(
+        (fastPath) =>
+          fastPath.area === 'chunk-upload' &&
+          fastPath.allowedShortcut === 'reuse-plan-scoped-chunk-receipts-to-resume-bounded-windowing',
+      )?.guardrails,
+    },
+    {
+      visibilityBoundary: 'plan-staging-window-resume-only',
+      failureEvidence: 'plan-scoped chunk receipts plus guarded file-publish record',
+      guardrails: [
+        'chunk-receipts-are-plan-scoped-and-durable',
+        'window-sizing-stays-within-byte-and-receipt-budgets',
+      ],
+    },
+  );
+  assert.deepEqual(
     FAST_PATH_GATES.map((gate) => gate.id),
     ['skip', 'live', 'group', 'recovery'],
     'benchmark gate order stays aligned with the fast-path contract',
