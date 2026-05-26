@@ -100,6 +100,34 @@ function runHasStaleClaimRejectionEvidence(rows, eventSummaries = []) {
   });
 }
 
+function runDbJournalStorageGuard(summary) {
+  return spawnSync('php', [
+    '-r',
+    [
+      'define("ABSPATH", dirname($argv[1]));',
+      'function add_filter(...$args) {}',
+      'function add_action(...$args) {}',
+      'function register_rest_route(...$args) {}',
+      'class WP_REST_Server { const CREATABLE = "POST"; const READABLE = "GET"; }',
+      'class WP_REST_Response {',
+      '  private $data;',
+      '  public function __construct($data = null, $status = null) { $this->data = $data; }',
+      '  public function get_data() { return $this->data; }',
+      '  public function set_data($data) { $this->data = $data; }',
+      '}',
+      'class WP_REST_Request {}',
+      'require $argv[1];',
+      '$summary = json_decode($argv[2], true);',
+      'echo json_encode(reprint_push_lab_rest_db_journal_storage_guard($summary));',
+    ].join(' '),
+    pluginFile,
+    JSON.stringify(summary),
+  ], {
+    cwd: repoRoot,
+    encoding: 'utf8',
+  });
+}
+
 test('checked db journal merge fills nested ownership and lease fence gaps', { skip: !hasPhp }, () => {
   const result = runMerge(
     {
@@ -221,6 +249,57 @@ test('db journal stale-claim evidence stays visible when only event summaries re
 
   assert.equal(result.status, 0, result.stderr);
   assert.equal(JSON.parse(result.stdout), true);
+});
+
+test('db journal storage guard stays visible when only checked event summaries retain the committed row', { skip: !hasPhp }, () => {
+  const result = runDbJournalStorageGuard({
+    acceptedOnCheckedBoundary: true,
+    latestRows: [
+      {
+        sequence: 24,
+        event: 'apply-replayed',
+        result: {
+          ok: true,
+        },
+      },
+      {
+        sequence: 25,
+        event: 'idempotency-in-progress',
+        result: {
+          ok: false,
+        },
+      },
+    ],
+    eventSummaries: [
+      { event: 'idempotency-in-progress', count: 1, latestId: 25 },
+      { event: 'apply-replayed', count: 1, latestId: 24 },
+      { event: 'apply-committed', count: 1, latestId: 20 },
+    ],
+    leaseFence: {
+      boundary: 'wpdb-single-statement-cas',
+      claimKeyUnique: true,
+      fsyncEvidence: true,
+      monotonicSequence: true,
+      restartReadable: true,
+      staleClaimRejected: false,
+    },
+    writerLease: {
+      strategy: 'claim-fenced-single-writer',
+      claimKeyUnique: true,
+      fsyncEvidence: true,
+      storageGuard: 'wpdb-single-statement-cas',
+      monotonicSequence: true,
+      restartReadable: true,
+      staleClaimRejected: false,
+    },
+  });
+
+  assert.equal(result.status, 0, result.stderr);
+  assert.deepEqual(JSON.parse(result.stdout), {
+    boundary: 'wpdb-single-statement-cas',
+    operation: 'update',
+    outcome: 'applied',
+  });
 });
 
 test('checked db journal merge preserves more specific inline values', { skip: !hasPhp }, () => {

@@ -3641,6 +3641,35 @@ function reprint_push_lab_rest_db_journal_storage_guard(array $summary): ?array
         }
     }
 
+    if (($summary['acceptedOnCheckedBoundary'] ?? false) === true) {
+        $has_committed_evidence = false;
+        foreach (($summary['eventSummaries'] ?? []) as $event_summary) {
+            if (!is_array($event_summary)) {
+                continue;
+            }
+            if ((string) ($event_summary['event'] ?? '') === 'apply-committed' && (int) ($event_summary['count'] ?? 0) > 0) {
+                $has_committed_evidence = true;
+                break;
+            }
+        }
+
+        $boundary = null;
+        if (isset($summary['leaseFence']) && is_array($summary['leaseFence'])) {
+            $boundary = isset($summary['leaseFence']['boundary']) ? (string) $summary['leaseFence']['boundary'] : null;
+        }
+        if ((!is_string($boundary) || $boundary === '') && isset($summary['writerLease']) && is_array($summary['writerLease'])) {
+            $boundary = isset($summary['writerLease']['storageGuard']) ? (string) $summary['writerLease']['storageGuard'] : null;
+        }
+
+        if ($has_committed_evidence && is_string($boundary) && $boundary !== '') {
+            return [
+                'boundary' => $boundary,
+                'operation' => 'update',
+                'outcome' => 'applied',
+            ];
+        }
+    }
+
     return null;
 }
 
