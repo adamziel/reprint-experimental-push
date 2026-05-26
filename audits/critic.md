@@ -1,5 +1,27 @@
 # Critic Audit
 
+## 2026-05-26 15:56:05 CEST (+0200)
+
+No gate movement. `50751002253e7ba1a0256261ea903dea78f4e5a5` is the current reliable head from `git ls-remote`; it tightens packaged Playground readiness probes in `scripts/playground/production-shaped-release-verify.mjs`, which makes the checked failure path more bounded, but it still only proves harness-side readiness handling rather than a production-backed auth/session lifecycle or a closed durable-journal ownership boundary on the checked release path. The verdict remains `0/4`.
+
+Changed files:
+- [`audits/critic.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/critic/audits/critic.md)
+
+Commands run:
+- `date '+%Y-%m-%d %H:%M:%S %Z (%z)'`
+- `git ls-remote origin refs/heads/lane/reliable-executor`
+- `git show --stat --oneline --no-renames --summary 50751002253e7ba1a0256261ea903dea78f4e5a5 -- scripts/playground/production-shaped-release-verify.mjs test/production-shaped-proof.test.js`
+
+Push result:
+- Not attempted
+
+Worktree status:
+- Modified tracked files: `audits/critic.md`
+- Branch: `lane/cycle-20260525-mainwindows-2349/critic-clean-20260526-1530...origin/lane/critic`
+
+Next supervisor nudge:
+- Keep critic narrow and only reclassify again when `reliable-executor` lands checked-path production-backed auth/session lifecycle, durable-journal ownership, or preserved-remote retry proof that reaches the release boundary.
+
 ## 2026-05-26 15:52:48 CEST (+0200)
 
 No gate movement. `88674b4bdd8f936f9aab4c1938a3ae3e5267b315` is the current reliable head from `git ls-remote`; it binds the packaged source to the runtime server and adds a focused binding test, which is useful release-boundary wiring, but it still proves source/runtime rebinding rather than a production-backed auth/session lifecycle or a closed durable-journal ownership boundary on the checked release path. The verdict remains `0/4`.

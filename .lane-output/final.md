@@ -3,13 +3,13 @@ Changed files:
 - [`.lane-output/final.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/critic/.lane-output/final.md)
 
 What changed:
-- Reclassified the current reliable head as `89ee8eb41fbc650dfe324c9751985e3e736a95e5` from `git ls-remote`.
-- Kept the verdict at `0/4` because the commit wires packaged production source into `verify:release`, which is real release-path progress, but it still does not prove a production-backed auth/session lifecycle or a closed durable-journal ownership boundary on the checked release path.
+- Reclassified the current reliable head as `50751002253e7ba1a0256261ea903dea78f4e5a5` from `git ls-remote`.
+- Kept the verdict at `0/4` because the commit tightens packaged Playground readiness probes, which is useful harness hardening, but it still does not prove a production-backed auth/session lifecycle or a closed durable-journal ownership boundary on the checked release path.
 
 Commands run:
 - `date '+%Y-%m-%d %H:%M:%S %Z (%z)'`
 - `git ls-remote origin refs/heads/lane/reliable-executor`
-- `git show --stat --oneline --no-renames --summary 89ee8eb41fbc650dfe324c9751985e3e736a95e5 -- scripts/playground/production-shaped-release-verify.mjs test/production-shaped-proof.test.js`
+- `git show --stat --oneline --no-renames --summary 50751002253e7ba1a0256261ea903dea78f4e5a5 -- scripts/playground/production-shaped-release-verify.mjs test/production-shaped-proof.test.js`
 
 Push result:
 - Not attempted
