@@ -4617,7 +4617,7 @@ test('verify:release stays pinned to the checked release entrypoint and proves t
   assert.match(proof.stdout, /"durableJournal": \{\s*"proof": \{\s*"status": 0,\s*"journal": \{/);
   assert.match(
     proof.stdout,
-    /"boundary": \{\s*"firstRemainingProductionBoundary": null,\s*"status": "checked",\s*"verdict": "PACKAGED_RELEASE_BOUNDARY_OK"/,
+    /"boundary": \{\s*"firstRemainingProductionBoundary": null,\s*"status": "checked",\s*"verdict": "LIVE_RELEASE_BOUNDARY_OK"/,
   );
   assert.match(proof.stdout, /"checkedAccepted": true/);
 });
@@ -4625,7 +4625,7 @@ test('verify:release stays pinned to the checked release entrypoint and proves t
 test('verify:release keeps preserved-remote retry pinned at the checked entrypoint', () => {
   assert.equal(
     packageJson.scripts['verify:release'],
-    'npm run test:playground:production-shaped-topology-proof && REPRINT_PUSH_REQUIRE_PRODUCTION_AUTH_SESSION=1 REPRINT_PUSH_REQUIRE_PRODUCTION_DURABLE_JOURNAL=1 REPRINT_PUSH_SIMULATE_PRESERVED_REMOTE_RETRY_PATH=/snapshot npm run test:playground:production-shaped-release-verify && npm run test:recovery:file-journal',
+    'npm run test:playground:production-shaped-topology-proof && REPRINT_PUSH_REQUIRE_PRODUCTION_AUTH_SESSION=1 REPRINT_PUSH_REQUIRE_PRODUCTION_DURABLE_JOURNAL=1 REPRINT_PUSH_SIMULATE_PRESERVED_REMOTE_RETRY_PATH=/snapshot npm run test:playground:production-shaped-live-release-verify && npm run test:recovery:file-journal',
   );
 });
 

@@ -688,10 +688,17 @@ const packagedSourceFixture = packagedProductionPluginRequested
   : null;
 const remoteServer = packagedSourceFixture
   ? await startPackagedProductionPluginServer('remote-base', packagedSourceFixture)
-  : await startPlaygroundServer(
-    'remote-base',
-    remoteBaseFixturePath,
-  );
+  : explicitReleaseVerifySourceUrl
+    ? {
+        name: 'remote-base',
+        baseUrl: liveSourceUrl,
+        child: null,
+        external: true,
+      }
+    : await startPlaygroundServer(
+      'remote-base',
+      remoteBaseFixturePath,
+    );
 try {
   if (packagedSourceFixture) {
     const packagedRuntimeSource = bindPackagedProductionPluginRuntimeSource({
@@ -869,7 +876,9 @@ try {
       assert.equal(proof.preflight.status, 200);
       assert.equal(
         preflight.body.auth.session.type,
-        packagedSourceFixture ? 'production-auth-session' : 'application-password-basic',
+        packagedSourceFixture || explicitReleaseVerifySourceUrl
+          ? 'production-auth-session'
+          : 'application-password-basic',
       );
       if (packagedSourceFixture) {
         assert.equal(preflight.body.auth.session.status, 'active');
@@ -878,7 +887,9 @@ try {
       }
       assert.equal(
         preflight.body.session.type,
-        packagedSourceFixture ? 'production-auth-session' : 'lab-signed-push-session',
+        packagedSourceFixture || explicitReleaseVerifySourceUrl
+          ? 'production-auth-session'
+          : 'lab-signed-push-session',
       );
       assert.match(preflight.body.session.id, /^[A-Za-z0-9_-]{32,160}$/);
       assert.equal(proof.dryRun.status, 200);
@@ -1387,6 +1398,9 @@ async function startPlaygroundServer(name, blueprintPath) {
 }
 
 async function stopPlaygroundServer(server) {
+  if (!server?.child) {
+    return;
+  }
   if (server.child.exitCode !== null) {
     return;
   }
