@@ -3646,3 +3646,18 @@ test('guarded benchmark keeps pause-footprint visibility false when receipt-curs
   );
   assert.ok(blockers.includes('memory-ceiling-match-visible-without-memory-headroom-visibility'));
 });
+
+test('guarded benchmark keeps pause-footprint visibility false when memory-ceiling-match visibility is hidden', () => {
+  const report = smallBenchmark();
+  const mutated = clone(report);
+
+  mutated.evidence.backpressure.receiptCursorMemoryCeilingMatchesQueueBudgetVisible = false;
+
+  const details = productionThroughputDetails(mutated);
+  const blockers = productionThroughputBlockers(mutated);
+
+  assert.equal(details.receiptCursorPauseFootprintComplete, true);
+  assert.equal(details.receiptCursorPauseFootprintVisible, false);
+  assert.equal(details.receiptCursorMemoryCeilingMatchesQueueBudgetVisible, false);
+  assert.ok(blockers.includes('queue-pause-with-complete-footprint-without-memory-ceiling-match-visibility'));
+});

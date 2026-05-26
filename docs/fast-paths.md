@@ -217,6 +217,10 @@ Current executable gate:
   visible on the raw backpressure evidence surface, so the audit view can
   reject a queue-budget drift without reconstructing the bit from derived
   details alone.
+- The same pause-footprint visibility detail now also fails closed when the
+  explicit memory-ceiling-match visibility bit is hidden, so the receipt-
+  cursor pause summary cannot still look fully visible from the surrounding
+  budget, headroom, and slack flags alone.
 - The same details also fail closed if queue-budget visibility appears without
   memory-ceiling visibility, so a partial paused-backpressure summary cannot
   look complete when the ceiling boundary is hidden.

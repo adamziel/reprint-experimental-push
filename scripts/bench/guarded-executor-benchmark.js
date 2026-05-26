@@ -452,6 +452,13 @@ export function productionThroughputBlockers(report) {
   ) {
     blockers.push('queue-pause-with-complete-footprint-without-measured-and-aligned-receipt-cursor-queue-slack');
   }
+  if (
+    report.evidence.backpressure?.queuePausedBeforeOverflow === true
+    && report.evidence.backpressure?.receiptCursorPauseFootprintComplete === true
+    && report.evidence.backpressure?.receiptCursorMemoryCeilingMatchesQueueBudgetVisible !== true
+  ) {
+    blockers.push('queue-pause-with-complete-footprint-without-memory-ceiling-match-visibility');
+  }
   if (report.evidence.backpressure?.queuePausedBeforeOverflow !== true) {
     blockers.push('queue-did-not-pause-before-overflow');
   }
@@ -1506,6 +1513,7 @@ export function productionThroughputDetails(report) {
     && queueBudgetVisible
     && queueHeadroomVisible
     && receiptCursorMemoryCeilingVisible
+    && receiptCursorMemoryCeilingMatchesQueueBudgetVisible
     && receiptCursorQueueSlackVisible
     && receiptCursorMemoryHeadroomVisible
     && queueHeadroomMeasured;
