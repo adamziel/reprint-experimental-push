@@ -1614,6 +1614,64 @@ test('allows a local postmeta reference to a same-plan post through the generic 
   assert.equal(result.site.db.wp_postmeta['meta_id:58'].post_id, 2);
 });
 
+test('allows a local postmeta reference to a same-plan post through the generic postmeta-post edge even when a remote nav_menu_item post exists', () => {
+  const resourceKey = 'row:["wp_postmeta","meta_id:60"]';
+  const targetResourceKey = 'row:["wp_posts","ID:2"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_title: 'Local generic target post',
+    post_content: 'local-private-generic-target-body',
+    post_status: 'publish',
+  };
+  local.db.wp_postmeta = {
+    'meta_id:60': {
+      meta_id: 60,
+      post_id: 2,
+      meta_key: '_local_graph_note',
+      meta_value: 'local-private-generic-meta-payload',
+    },
+  };
+  const remote = baseSite();
+  remote.db.wp_posts['ID:9'] = {
+    ID: 9,
+    post_title: 'Remote navigation item',
+    post_content: 'remote-navigation-item-body',
+    post_status: 'publish',
+    post_type: 'nav_menu_item',
+  };
+
+  const plan = planFor(base, local, remote);
+  const targetMutation = mutationFor(plan, targetResourceKey);
+  const postmetaMutation = mutationFor(plan, resourceKey);
+  const reference = postmetaMutation.wordpressGraphReferences.find((entry) => entry.relationshipType === 'postmeta-post');
+  const referenceJson = JSON.stringify(reference);
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.blockers, 0);
+  assert.equal(targetMutation.changeKind, 'create');
+  assert.equal(postmetaMutation.changeKind, 'create');
+  assert.ok(
+    plan.mutations.indexOf(targetMutation) < plan.mutations.indexOf(postmetaMutation),
+    'target post create must be ordered before dependent generic postmeta',
+  );
+  assert.deepEqual(postmetaMutation.dependsOnMutationIds, [targetMutation.id]);
+  assert.equal(reference.resolutionPolicy, 'same-plan-local-create');
+  assert.equal(reference.relationshipKey, 'wp_postmeta.post_id');
+  assert.equal(reference.relationshipType, 'postmeta-post');
+  assert.equal(reference.targetResourceKey, targetResourceKey);
+  assert.equal(reference.dependency.targetMutationId, targetMutation.id);
+  assert.equal(reference.dependency.targetLocalHash, targetMutation.localHash);
+  assert.equal(referenceJson.includes('local-private-generic-target-body'), false);
+  assert.equal(referenceJson.includes('local-private-generic-meta-payload'), false);
+  assert.equal(referenceJson.includes('remote-navigation-item-body'), false);
+
+  const result = applyPlan(baseSite(), plan);
+  assert.equal(result.site.db.wp_posts['ID:2'].post_title, 'Local generic target post');
+  assert.equal(result.site.db.wp_postmeta['meta_id:60'].post_id, 2);
+});
+
 test('blocks a term taxonomy parent reference to stale remote-created term identity', () => {
   const resourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:9"]';
   const targetResourceKey = 'row:["wp_terms","term_id:7"]';
