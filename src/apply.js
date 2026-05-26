@@ -32,6 +32,9 @@ const DURABLE_OPEN_RECORD_TYPES = new Set([
   'journal-opened',
   'journal-retry-opened',
 ]);
+const DURABLE_TERMINAL_RECORD_TYPES = new Set([
+  'recovery-journal-consumed',
+]);
 const RECOVERY_JOURNAL_RECORD_TYPE_PATTERN = /^[a-z0-9-]+$/;
 export const ACCEPTABLE_RECOVERY_STATES = Object.freeze([
   'old-remote',
@@ -705,6 +708,10 @@ export function productionRecoverySupportReport(writer) {
   const claimTransitionIntegrityError = (openedInspectionRecords || claimInspectionRecords)
     ? productionRecoveryClaimTransitionIntegrityError(inspected.records)
     : null;
+  const consumedClaim = (openedInspectionRecords || claimInspectionRecords)
+    ? consumedRecoveryClaimSummary(inspected.records)
+    : null;
+  const hasConsumedClaimRecord = Boolean(recoveryJournalConsumedRecord(inspected?.records));
   const inspectedJournalPath = durableJournalInspectPath(inspected);
   const inspectionErrorMessage = productionRecoveryInspectionErrorMessage(inspected);
   const inspectedClaimState = (openedInspectionRecords || claimInspectionRecords)
@@ -1229,6 +1236,39 @@ export function productionRecoverySupportReport(writer) {
     addMissingDependency('journal-readable inspection records with sequence and type');
     addMissingDependency('restart-readable recovery journal adapter');
   }
+  if (hasConsumedClaimRecord && !consumedClaim) {
+    addMissingDependency('fencing or lease ownership for the journal writer');
+    addMissingDependency('journal-readable inspection records with sequence and type');
+    addMissingDependency('restart-readable recovery journal adapter');
+  }
+  if (
+    consumedClaim
+    && hasValidProductionLeaseIdentity(writer?.writerLease)
+    && !productionLeaseIdentitiesMatch(consumedClaim.claimLease, writer.writerLease)
+  ) {
+    addMissingDependency('fencing or lease ownership for the journal writer');
+    addMissingDependency('journal-readable inspection records with sequence and type');
+  }
+  if (
+    consumedClaim
+    && typeof writer?.claimHash === 'string'
+    && /^[a-f0-9]{64}$/.test(writer.claimHash)
+    && consumedClaim.claimHash !== writer.claimHash
+  ) {
+    addMissingDependency('fencing or lease ownership for the journal writer');
+    addMissingDependency('journal-readable inspection records with sequence and type');
+  }
+  if (
+    consumedClaim
+    && inspectedClaimState?.status !== 'none'
+    && (
+      consumedClaim.claimHash !== inspectedClaimState.activeClaimHash
+      || !productionLeaseIdentitiesMatch(consumedClaim.claimLease, inspectedClaimState.activeClaimLease)
+    )
+  ) {
+    addMissingDependency('fencing or lease ownership for the journal writer');
+    addMissingDependency('journal-readable inspection records with sequence and type');
+  }
   if (
     hasHiddenOwnStringProperty(inspected, 'writerLease')
     || hasHiddenOwnStringProperty(inspected, 'leaseFence')
@@ -1380,6 +1420,36 @@ function inspectedWriterLeaseContractsMatch(left, right) {
     && left.monotonicSequence === right.monotonicSequence
     && left.restartReadable === right.restartReadable
     && left.staleClaimRejected === right.staleClaimRejected;
+}
+
+function recoveryJournalConsumedRecord(records) {
+  return [...(Array.isArray(records) ? records : [])]
+    .reverse()
+    .find((record) => record?.type === 'recovery-journal-consumed') || null;
+}
+
+function consumedRecoveryClaimSummary(records) {
+  const consumedRecord = recoveryJournalConsumedRecord(records);
+  if (!consumedRecord) {
+    return null;
+  }
+  if (!Number.isInteger(consumedRecord.sequence)) {
+    return null;
+  }
+  if (
+    typeof consumedRecord.claimHash !== 'string'
+    || !/^[a-f0-9]{64}$/.test(consumedRecord.claimHash)
+  ) {
+    return null;
+  }
+  if (!hasValidProductionLeaseIdentity(consumedRecord.claimLease)) {
+    return null;
+  }
+  return Object.freeze({
+    sequence: consumedRecord.sequence,
+    claimHash: consumedRecord.claimHash,
+    claimLease: Object.freeze({ ...consumedRecord.claimLease }),
+  });
 }
 
 function closeUnsupportedProductionRecoveryWriter(writer) {
@@ -1770,6 +1840,12 @@ function durableJournalInspectRecords(inspected) {
   const durableOpenedCount = Array.isArray(records)
     ? records.filter((record) => DURABLE_OPEN_RECORD_TYPES.has(record?.type)).length
     : 0;
+  const durableTerminalIndex = Array.isArray(records)
+    ? records.findIndex((record) => DURABLE_TERMINAL_RECORD_TYPES.has(record?.type))
+    : -1;
+  const durableTerminalCount = Array.isArray(records)
+    ? records.filter((record) => DURABLE_TERMINAL_RECORD_TYPES.has(record?.type)).length
+    : 0;
   const claimFenceAfterOpened = Array.isArray(records)
     ? records.slice(durableOpenedIndex + 1).some((record) => CLAIM_FENCE_RECORD_TYPES.has(record?.type))
     : false;
@@ -1812,6 +1888,8 @@ function durableJournalInspectRecords(inspected) {
       : record.sequence === recordsList[index - 1].sequence + 1
   )) && durableOpenedIndex !== -1
   && durableOpenedCount === 1
+  && (durableTerminalIndex === -1 || durableTerminalIndex > durableOpenedIndex)
+  && durableTerminalCount <= 1
   && records
     .slice(0, durableOpenedIndex)
     .every((record) => CLAIM_FENCE_RECORD_TYPES.has(record.type))
@@ -1822,6 +1900,12 @@ function durableJournalInspectClaimRecords(inspected) {
   const records = inspected?.records;
   const recordsOwnKeys = Reflect.ownKeys(records ?? {});
   const numericKeys = recordsOwnKeys.filter((key) => typeof key === 'string' && /^\d+$/.test(key));
+  const durableTerminalIndex = Array.isArray(records)
+    ? records.findIndex((record) => DURABLE_TERMINAL_RECORD_TYPES.has(record?.type))
+    : -1;
+  const durableTerminalCount = Array.isArray(records)
+    ? records.filter((record) => DURABLE_TERMINAL_RECORD_TYPES.has(record?.type)).length
+    : 0;
   return Boolean(
     isStrictPlainObject(inspected)
     && Object.hasOwn(inspected, 'schemaVersion')
@@ -1852,12 +1936,27 @@ function durableJournalInspectClaimRecords(inspected) {
     && record.type.trim().length > 0
     && record.type.trim() === record.type
     && RECOVERY_JOURNAL_RECORD_TYPE_PATTERN.test(record.type)
-    && CLAIM_FENCE_RECORD_TYPES.has(record.type)
+    && (
+      CLAIM_FENCE_RECORD_TYPES.has(record.type)
+      || DURABLE_TERMINAL_RECORD_TYPES.has(record.type)
+    )
   ) && records.every((record, index, recordsList) => (
     index === 0
       ? record.sequence === 1
       : record.sequence === recordsList[index - 1].sequence + 1
-  ));
+  )) && durableTerminalCount <= 1
+  && (
+    durableTerminalIndex === -1
+    || records
+      .slice(0, durableTerminalIndex)
+      .every((record) => CLAIM_FENCE_RECORD_TYPES.has(record.type))
+  )
+  && (
+    durableTerminalIndex === -1
+    || records
+      .slice(durableTerminalIndex)
+      .every((record) => DURABLE_TERMINAL_RECORD_TYPES.has(record.type))
+  );
 }
 
 function productionRecoveryClaimTransitionIntegrityError(records) {
