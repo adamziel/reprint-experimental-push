@@ -529,6 +529,10 @@ test('production claim gate fails closed if benchmark evidence is tampered', () 
       'receipt-cursor-queue-slack-without-queue-pause',
     ),
   );
+  assert.equal(
+    productionThroughputDetails(slackWithoutQueuePause).backpressureConsistency.receiptCursorQueueSlackMeasured,
+    true,
+  );
 
   const pausedWithoutMeasuredBackpressure = clone(report);
   pausedWithoutMeasuredBackpressure.evidence.backpressure.receiptCursorBytes = null;
@@ -783,6 +787,10 @@ test('production claim gate fails closed if benchmark evidence is tampered', () 
   );
   assert.equal(
     productionThroughputDetails(spoofedBackpressureAlignment).backpressureConsistency.queuePauseHasMeasuredAndAlignedReceiptCursorBackpressure,
+    false,
+  );
+  assert.equal(
+    productionThroughputDetails(spoofedBackpressureAlignment).backpressureConsistency.backpressureEvidenceComplete,
     false,
   );
 

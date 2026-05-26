@@ -913,6 +913,7 @@ function hasCompleteBackpressureEvidence(report) {
     && receiptCursorQueueHeadroomBytes === receiptCursorQueueBudgetBytes - report.shape.chunkSizeBytes
     && receiptCursorQueueHeadroomBytes >= receiptCursorBackpressureBytes
     && receiptCursorBackpressureWithinResourceHeadroom
+    && report.evidence.backpressure?.queuePauseHasMeasuredAndAlignedReceiptCursorBackpressure === true
   );
 }
 
