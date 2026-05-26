@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const muPluginDir = path.join(repoRoot, 'scripts/playground/rest-mu-plugins');
-const serverStartupTimeoutMs = 6_000;
+const serverStartupTimeoutMs = 2_500;
 const playgroundServerTimeoutMs = 8;
 const serverFetchTimeoutMs = 3_000;
 const playgroundStopTimeoutMs = 3_000;
@@ -23,7 +23,7 @@ const proofSubprocessKillSignal = 'SIGTERM';
 const liveProofSubprocessTimeoutMs = 9_000;
 const liveProofSubprocessKillSignal = 'SIGKILL';
 const liveProofInnerTimeoutMs = Math.max(1_000, Math.min(2_000, liveProofSubprocessTimeoutMs - 5_000));
-const liveProofLaunchTimeoutMs = Math.max(1_000, Math.min(liveProofInnerTimeoutMs, liveProofSubprocessTimeoutMs - 6_000));
+const liveProofLaunchTimeoutMs = Math.max(1_000, Math.min(1_500, liveProofSubprocessTimeoutMs - 6_000));
 const releaseVerifyInnerTimeoutMs = Math.max(1_000, Math.min(12_000, proofSubprocessTimeoutMs - 5_000));
 const releaseVerifySlowPathTimeoutMs = 9_000;
 const releaseVerifySlowPathInnerTimeoutMs = Math.max(1_000, Math.min(5_000, releaseVerifySlowPathTimeoutMs - 2_000));
@@ -649,20 +649,20 @@ const maybeTest = runLivePlaygroundTopologyTests ? test : test.skip;
 
 maybeTest('production-shaped release proof runs the live preflight branch against a local Playground source', async () => {
   await withPlaygroundServer('remote-base', path.join(repoRoot, 'fixtures/playground/remote-base.blueprint.json'), async (remoteServer) => {
-    const proof = spawnBoundedSync(process.execPath, ['scripts/playground/production-shaped-release-proof.mjs'], {
-      cwd: repoRoot,
-      timeout: liveProofInnerTimeoutMs,
-      killSignal: liveProofSubprocessKillSignal,
-      encoding: 'utf8',
-      maxBuffer: 1024 * 1024 * 20,
-      env: {
+    const proof = spawnProductionShapedReleaseVerifySync(
+      {
         ...process.env,
         REPRINT_PUSH_SOURCE_URL: remoteServer.baseUrl,
         REPRINT_PUSH_REMOTE_URL: remoteServer.baseUrl,
         REPRINT_PUSH_LAB_AUTH_ADMIN_USER: liveCredentials.username,
         REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD: liveCredentials.password,
       },
-    }, 'live release proof');
+      {
+        timeout: liveProofInnerTimeoutMs,
+        killSignal: liveProofSubprocessKillSignal,
+      },
+      'live release proof',
+    );
     assertReleaseVerifySpawnProof(proof, 'live release proof', liveProofInnerTimeoutMs);
     assert.equal(proof.status, 0, proof.stderr);
     assert.match(proof.stdout, /"releaseProof": \{\s*"status": 0,\s*"code": "LIVE_PREFLIGHT_OK"\s*\}/);
@@ -674,9 +674,9 @@ maybeTest('production-shaped release proof runs the live preflight branch agains
 
 maybeTest('production-shaped release verify command runs the live protocol branch with local Playground source and local edited site', () => {
   return withPlaygroundServer('remote-base', path.join(repoRoot, 'fixtures/playground/remote-base.blueprint.json'), async (remoteServer) => {
-    const proof = spawnBoundedReleaseVerify(
-      process.execPath,
+    const proof = spawnProductionShapedReleaseVerifySync(
       {
+        ...process.env,
         REPRINT_PUSH_SOURCE_URL: remoteServer.baseUrl,
         REPRINT_PUSH_REMOTE_URL: remoteServer.baseUrl,
         REPRINT_PUSH_LAB_AUTH_ADMIN_USER: liveCredentials.username,
@@ -944,7 +944,13 @@ async function waitForServer(child, baseUrl, getLogs) {
         getLogs(),
       );
       writePlaygroundFailure(failureText, lastProbes, getLogs(), lastError);
-      await stopPlaygroundChild(child);
+      try {
+        await stopPlaygroundChild(child);
+      } catch (cleanupError) {
+        process.stderr.write(
+          `${cleanupError instanceof Error ? cleanupError.message : String(cleanupError)}\n`,
+        );
+      }
       await waitForExit(child, 2_000).catch(() => {});
       throw new Error(failureText);
     }
