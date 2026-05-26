@@ -1331,6 +1331,18 @@ test('production claim gate fails closed if benchmark evidence is tampered', () 
     productionThroughputDetails(nonTerminalPausedQueue).receiptCursorIsTerminalChunk,
     false,
   );
+
+  const unrecognizedSuccessClaim = clone(report);
+  unrecognizedSuccessClaim.results.successInspection.claim.status = 'mystery';
+  assert.ok(
+    productionThroughputBlockers(unrecognizedSuccessClaim).includes(
+      'success-inspection-claim-status-not-recognized',
+    ),
+  );
+  assert.equal(
+    productionThroughputDetails(unrecognizedSuccessClaim).successInspectionClaimRecognized,
+    false,
+  );
 });
 
 test('guarded benchmark fails closed when the buffered queue budget drifts from the default ceiling', () => {

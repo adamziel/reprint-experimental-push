@@ -544,6 +544,12 @@ export function productionThroughputBlockers(report) {
   if (!report.evidence.atomicGroup.productionAtomicCommitMeasured) {
     blockers.push('production-atomic-group-commit-not-measured');
   }
+  if (
+    report.results?.successInspection?.claim?.status != null
+    && !['none', 'active', 'advanced', 'blocked'].includes(report.results.successInspection.claim.status)
+  ) {
+    blockers.push('success-inspection-claim-status-not-recognized');
+  }
   if (report.executorCapabilities.fileReceipts !== 'production-storage-receipts') {
     blockers.push('production-storage-receipts-not-measured');
   }
@@ -688,13 +694,16 @@ export function productionThroughputDetails(report) {
     && receiptCursorQueueBudgetBytes === receiptCursorMemoryCeilingBytes;
   const successInspectionClaimStatus = report.results.successInspection?.claim?.status ?? null;
   const successInspectionClaimReason = report.results.successInspection?.claim?.reason ?? null;
-  const successInspectionClaimMatchesInspectionStatus =
+  const successInspectionClaimRecognized =
     successInspectionClaimStatus === 'none'
     || successInspectionClaimStatus === 'active'
     || successInspectionClaimStatus === 'advanced'
-    || (
-      successInspectionClaimStatus === 'blocked'
-      && report.evidence.recovery.successInspectionStatus !== 'fully-updated-remote'
+    || successInspectionClaimStatus === 'blocked';
+  const successInspectionClaimMatchesInspectionStatus =
+    successInspectionClaimRecognized
+    && (
+      successInspectionClaimStatus !== 'blocked'
+      || report.evidence.recovery.successInspectionStatus !== 'fully-updated-remote'
     );
   const receiptCursorHeadroomMatchesResourceHeadroom =
     receiptCursorWithinMemoryCeiling
@@ -824,6 +833,7 @@ export function productionThroughputDetails(report) {
     receiptCursorMemoryCeilingMatchesQueueBudget,
     successInspectionClaimStatus,
     successInspectionClaimReason,
+    successInspectionClaimRecognized,
     successInspectionClaimMatchesInspectionStatus,
     receiptCursorMemoryHeadroomMatchesResourceHeadroom,
     receiptCursorMemoryHeadroomWithinResourceHeadroom,
@@ -881,6 +891,7 @@ export function productionThroughputDetails(report) {
       receiptCursorMemoryCeilingMatchesQueueBudget,
       successInspectionClaimStatus,
       successInspectionClaimReason,
+      successInspectionClaimRecognized,
       successInspectionClaimMatchesInspectionStatus,
       receiptCursorMemoryHeadroomMatchesResourceHeadroom,
       receiptCursorMemoryHeadroomWithinResourceHeadroom,
