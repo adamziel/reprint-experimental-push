@@ -46,6 +46,7 @@ const maxPackagedStartupNotReadyProbeCount = Math.max(
   packagedProductionPluginMaxConsecutiveNotReadyProbes,
   Math.ceil(serverStartupTimeoutMs / readinessProbeIntervalMs),
 );
+let signedRequestNonceSequence = 0;
 
 const credentials = {
   username: 'reprint_push_admin',
@@ -1120,7 +1121,7 @@ function signedHeadersForPreflight(auth = credentials) {
 function signedHeadersForRequest(method, pathname, { auth = credentials, session = '', idempotencyKey = '' } = {}) {
   const contentHash = 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855';
   const timestamp = String(Math.floor(Date.now() / 1000));
-  const nonce = `production-plugin-package-${auth.username}-${Date.now()}`;
+  const nonce = createSignedRequestNonce(auth.username);
   const signingKey = hmacHex(auth.password, `reprint-push-lab-v1\n${auth.username}`);
   const authString = `${nonce}${timestamp}${contentHash}`;
   const canonical = [
@@ -1147,6 +1148,11 @@ function signedHeadersForRequest(method, pathname, { auth = credentials, session
     headers['X-Reprint-Push-Idempotency-Key'] = idempotencyKey;
   }
   return headers;
+}
+
+function createSignedRequestNonce(username) {
+  signedRequestNonceSequence += 1;
+  return `production-plugin-package-${username}-${process.pid}-${Date.now()}-${signedRequestNonceSequence}`;
 }
 
 function canonicalQuery(rawQuery = '') {

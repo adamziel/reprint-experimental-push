@@ -816,6 +816,26 @@ test('production plugin package smoke signs packaged journal inspect requests wi
   );
 });
 
+test('production plugin package smoke derives unique signed probe nonces inside one process', () => {
+  const smokeSource = readFileSync(
+    path.join(repoRoot, 'scripts/playground/production-plugin-package-smoke.mjs'),
+    'utf8',
+  );
+
+  assert.match(
+    smokeSource,
+    /let signedRequestNonceSequence = 0;/,
+  );
+  assert.match(
+    smokeSource,
+    /const nonce = createSignedRequestNonce\(auth\.username\);/,
+  );
+  assert.match(
+    smokeSource,
+    /function createSignedRequestNonce\(username\) \{\s*signedRequestNonceSequence \+= 1;\s*return `production-plugin-package-\$\{username\}-\$\{process\.pid\}-\$\{Date\.now\(\)\}-\$\{signedRequestNonceSequence\}`;\s*\}/s,
+  );
+});
+
 test('production-shaped release verify consumes the packaged production auth/session source command on the checked release path', () => {
   const sourceUrl = 'http://127.0.0.1:8080';
   const packagedSource = resolvePackagedProductionPluginAuthSessionSource({
