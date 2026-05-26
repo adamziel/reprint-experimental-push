@@ -919,10 +919,15 @@ function recordAuthSessionLifecycle(summary, step, session) {
   summary.authSessionLifecycleSummary = summarizeAuthSessionLifecycleHistory(
     summary.authSessionLifecycle.history,
   );
+  const lifecycleSummary = summary.authSessionLifecycleSummary || {};
   if (step === 'preflight') {
     summary.authSessionLifecycle.minted = observation;
     summary.authSessionLifecycle.read = null;
-    summary.authSessionLifecycle.expired = observation?.expired ? observation : null;
+    summary.authSessionLifecycle.expired = lifecycleSummary.expired || null;
+    summary.authSessionLifecycle.revoked = lifecycleSummary.revoked || null;
+    summary.authSessionLifecycle.cleanedUp = lifecycleSummary.cleanedUp || null;
+    summary.authSessionLifecycle.rotated = lifecycleSummary.rotated || null;
+    summary.authSessionLifecycle.preserved = lifecycleSummary.preserved || null;
     return;
   }
 
@@ -934,6 +939,11 @@ function recordAuthSessionLifecycle(summary, step, session) {
         ? 'journal'
         : step] = observation;
   summary.authSessionLifecycle.read = observation;
+  summary.authSessionLifecycle.expired = lifecycleSummary.expired || null;
+  summary.authSessionLifecycle.revoked = lifecycleSummary.revoked || null;
+  summary.authSessionLifecycle.cleanedUp = lifecycleSummary.cleanedUp || null;
+  summary.authSessionLifecycle.rotated = lifecycleSummary.rotated || null;
+  summary.authSessionLifecycle.preserved = lifecycleSummary.preserved || null;
 }
 
 function summarizeAuthSessionLifecycleHistory(history) {
