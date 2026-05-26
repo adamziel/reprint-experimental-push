@@ -1,19 +1,19 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-26 14:28 CEST
+Last updated: 2026-05-26 14:30 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
 
 ## 2026-05-26 - Current Nudge
 
-- Going well: `6beb5ed7c74509094d831bc4247541c4b684feae` is now the live
+- Going well: `6beb5ed7c74509094d831bc4247541c4b684feae` is still the live
   reliable head; the latest evidence is still support-side release-verifier
   work, not a gate cross.
 - Not going well: the release gate is still `0/4`; production-backed
   auth/session lifecycle and durable-journal ownership remain blocked.
-- Progress change: the public progress surface is still stale, so
-  `progress-publisher` needs to catch `progress.html` and the log up to
+- Progress change: the public progress branch is still behind the live head,
+  so `progress-publisher` needs to catch `progress.html` and the log up to
   `6beb5ed7c74509094d831bc4247541c4b684feae`.
 - Next nudge: `progress-publisher` should refresh the public page to the live
   reliable head without inflating gates; `reliable-executor` should stay on the

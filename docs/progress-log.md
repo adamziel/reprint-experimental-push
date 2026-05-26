@@ -8,9 +8,8 @@ linked implementation artifacts.
 
 - Status: `6beb5ed7c74509094d831bc4247541c4b684feae` is the live reliable head and the latest
   support-side release-verifier evidence.
-- Trend: the public status surface is still stale and needs a freshness
-  refresh; the live head advanced again, but the gate posture remains
-  conservative.
+- Trend: the public progress branch is still behind the live head and needs a
+  freshness refresh; the gate posture remains conservative.
 - Blocker: this is still support evidence, not production-backed auth/session
   lifecycle or durable-journal ownership on the release boundary.
 - Next nudge: `progress-publisher` should refresh the public page to the live
