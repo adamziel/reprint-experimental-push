@@ -1,9 +1,32 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-26 12:18 CEST
+Last updated: 2026-05-26 12:22 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-26 12:22 CEST - Reliable Head Correction
+
+- Going well: the current reliable head is now `9d0279a3`, and the fenced
+  stale-claim proof is still the most concrete release-path evidence on the
+  durable-journal side.
+- Not going well: the checked release path still lacks production-backed
+  auth/session lifecycle evidence, and the reliable worktree also has off-lane
+  public-progress commits that should stay out of the product evidence trail.
+- Progress change: no gate moved; the right next step remains lane-owned
+  code/tests in reliable, with progress keeping the public page current and
+  conservative.
+- Next nudge: keep the public page fresh at `0/4`, and keep reliable focused
+  on the next gate boundary instead of surfacing more progress-only commits.
+
+| Lane | Nudge |
+| --- | --- |
+| Recovery | Only patch if a recovery-owned durable-journal API gap is still blocking the release path. |
+| Reliable executor | Stop progress-only churn and move to production-backed auth/session lifecycle or preserved-remote retry. |
+| Audit and critic | Classify `9d0279a3` specifically; do not move the gate without production-backed semantics. |
+| Progress publisher | Keep the page fresh, concise, and conservative; preserve `0/4`. |
+| Invariants | Stay on the unsupported-boundary proof and avoid adjacent churn. |
+| Fast paths | Hold unless a code patch changes the runtime receipt or cursor path. |
 
 ## 2026-05-26 12:18 CEST - Freshness Alignment
 
