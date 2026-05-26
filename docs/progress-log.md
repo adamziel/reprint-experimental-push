@@ -3,6 +3,26 @@
 This log records evidence present in this repository. Public status should use
 release gates and named evidence gaps rather than stale percentage estimates.
 
+# 2026-05-27 - Public Status Audit 01:52:06
+
+<a id="2026-05-27-public-status-audit-015206"></a>
+
+- Refreshed [progress.html](../progress.html) to keep the current reliable
+  head `450be8ecdba058ad8a2a38e29eaf1894892b576f` visible on the public
+  status surface for the active supervision cycle.
+- Release gates remain `0/4`. The live checked durability boundary now
+  requires the live `/db-journal` surface itself; `recovery/inspect` is only
+  corroborating evidence. The remaining classifier-named blocker is
+  production ownership and production-backed auth/session lifecycle depth on a
+  releasable source boundary.
+- The public page keeps packaged plugin-driver guards pinned into
+  `verify:release` as support evidence, while the durability boundary and
+  production-backed graph/plugin-driver proof still block gate movement. The
+  stale percentage bars stay removed.
+- Evidence trail: [progress.html](../progress.html),
+  [objective audit](../audits/objective-audit.md),
+  [release-gate checklist](../progress.html#proof-gates).
+
 # 2026-05-27 - Public Status Audit 01:50:51
 
 <a id="2026-05-27-public-status-audit-015051"></a>
