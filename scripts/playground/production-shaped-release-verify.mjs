@@ -9,7 +9,7 @@ import { authenticatedHttpClient, runAuthenticatedHttpPush } from '../../src/aut
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const muPluginDir = path.join(repoRoot, 'scripts/playground/rest-mu-plugins');
-const serverStartupTimeoutMs = 5_000;
+const serverStartupTimeoutMs = 4_000;
 const serverFetchTimeoutMs = 3_000;
 const credentials = {
   username: 'reprint_push_admin',
@@ -446,32 +446,22 @@ try {
         'journal readback must show durable mutation evidence',
       );
 
-      const durableJournalProof = spawnSync(process.execPath, ['scripts/recovery/file-journal-restart-smoke.mjs'], {
-        cwd: process.cwd(),
-        timeout: 20_000,
-        killSignal: 'SIGKILL',
-        encoding: 'utf8',
-        maxBuffer: 1024 * 1024 * 20,
-        env: {
-          ...process.env,
-          NODE_NO_WARNINGS: '1',
+      const durableJournalProof = runBoundedSync(
+        process.execPath,
+        ['scripts/recovery/file-journal-restart-smoke.mjs'],
+        {
+          cwd: process.cwd(),
+          timeout: 10_000,
+          killSignal: 'SIGKILL',
+          encoding: 'utf8',
+          maxBuffer: 1024 * 1024 * 20,
+          env: {
+            ...process.env,
+            NODE_NO_WARNINGS: '1',
+          },
         },
-      });
-      if (durableJournalProof.error) {
-        throw new Error(
-          `durable journal smoke failed with ${durableJournalProof.error.name ?? 'Error'}: ${durableJournalProof.error.message}\nstdout:\n${durableJournalProof.stdout ?? ''}\nstderr:\n${durableJournalProof.stderr ?? ''}`,
-        );
-      }
-      if (durableJournalProof.signal) {
-        throw new Error(
-          `durable journal smoke terminated by ${durableJournalProof.signal}\nstdout:\n${durableJournalProof.stdout ?? ''}\nstderr:\n${durableJournalProof.stderr ?? ''}`,
-        );
-      }
-      if (durableJournalProof.status === null) {
-        throw new Error(
-          `durable journal smoke exited without a status\nstdout:\n${durableJournalProof.stdout ?? ''}\nstderr:\n${durableJournalProof.stderr ?? ''}`,
-        );
-      }
+        'durable journal smoke',
+      );
       assert.equal(durableJournalProof.status, 0, durableJournalProof.stderr || durableJournalProof.stdout);
 
       const durableJournalSummary = JSON.parse(durableJournalProof.stdout);
@@ -689,11 +679,16 @@ async function startPlaygroundServer(name, blueprintPath) {
       'quiet',
     ];
 
-    const child = spawn('npx', args, {
-      cwd: repoRoot,
-      env: process.env,
-      stdio: ['ignore', 'pipe', 'pipe'],
-    });
+    const child = spawn(
+      'timeout',
+      ['--preserve-status', '--kill-after=2s', '6s', 'npx', ...args],
+      {
+        cwd: repoRoot,
+        env: process.env,
+        detached: true,
+        stdio: ['ignore', 'pipe', 'pipe'],
+      },
+    );
 
     let output = '';
     child.stdout.on('data', (chunk) => {
@@ -708,7 +703,7 @@ async function startPlaygroundServer(name, blueprintPath) {
       return { name, baseUrl, child };
     } catch (error) {
       const logs = `${output}\n${error instanceof Error ? error.message : String(error)}`;
-      await stopExitedServer(child);
+      await stopSpawnedServer(child);
       if (!/EADDRINUSE/i.test(logs) || attempt === 3) {
         throw error;
       }
@@ -722,16 +717,31 @@ async function stopPlaygroundServer(server) {
   if (server.child.exitCode !== null) {
     return;
   }
-  server.child.kill('SIGTERM');
-  await waitForExit(server.child, 12_000);
+  await stopSpawnedServer(server.child);
 }
 
 async function stopExitedServer(child) {
   if (child.exitCode !== null) {
     return;
   }
-  child.kill('SIGTERM');
-  await waitForExit(child, 12_000);
+  await stopSpawnedServer(child);
+}
+
+async function stopSpawnedServer(child) {
+  stopProcessTree(child, 'SIGTERM');
+  await waitForExit(child, 500).catch(() => {
+    stopProcessTree(child, 'SIGKILL');
+  });
+}
+
+function stopProcessTree(child, signal) {
+  try {
+    if (child.pid && process.platform !== 'win32') {
+      process.kill(-child.pid, signal);
+      return;
+    }
+  } catch {}
+  child.kill(signal);
 }
 
 async function exportSnapshot(name, baseUrl) {
@@ -755,6 +765,27 @@ function withoutUnmappedGraphPostmeta(snapshot) {
   return next;
 }
 
+function runBoundedSync(command, args, options, label) {
+  const proof = spawnSync(command, args, options);
+  if (proof.error) {
+    const timeoutNote = proof.error.code === 'ETIMEDOUT' && options.timeout ? ` after ${options.timeout}ms` : '';
+    throw new Error(
+      `${label} failed${timeoutNote} with ${proof.error.name ?? 'Error'}: ${proof.error.message}\nstdout:\n${proof.stdout ?? ''}\nstderr:\n${proof.stderr ?? ''}`,
+    );
+  }
+  if (proof.signal) {
+    throw new Error(
+      `${label} terminated by ${proof.signal}\nstdout:\n${proof.stdout ?? ''}\nstderr:\n${proof.stderr ?? ''}`,
+    );
+  }
+  if (proof.status === null) {
+    throw new Error(
+      `${label} exited without a status\nstdout:\n${proof.stdout ?? ''}\nstderr:\n${proof.stderr ?? ''}`,
+    );
+  }
+  return proof;
+}
+
 function snapshotHash(snapshot) {
   return createHash('sha256').update(JSON.stringify(snapshot), 'utf8').digest('hex');
 }
@@ -763,6 +794,7 @@ async function waitForServer(child, baseUrl, getLogs) {
   const deadline = Date.now() + serverStartupTimeoutMs;
   let lastError = null;
   const lastProbes = [];
+  let consecutiveIndex502s = 0;
   while (Date.now() < deadline) {
     if (child.exitCode !== null) {
       throw new Error(`Playground server exited early with ${child.exitCode}\n${getLogs()}`);
@@ -779,6 +811,7 @@ async function waitForServer(child, baseUrl, getLogs) {
         body: responseBody.slice(0, 500),
       });
       if (response.status === 200) {
+        consecutiveIndex502s = 0;
         await response.arrayBuffer();
         const snapshot = await fetchWithTimeout(`${baseUrl}/wp-json/reprint-push-lab/v1/snapshot`, {
           headers: {
@@ -800,21 +833,23 @@ async function waitForServer(child, baseUrl, getLogs) {
         lastError = new Error(`Playground lab snapshot readiness HTTP ${snapshot.status}`);
       } else {
         lastError = new Error(`Playground index readiness HTTP ${response.status}`);
+        consecutiveIndex502s = response.status === 502 ? consecutiveIndex502s + 1 : 0;
+      }
+      if (consecutiveIndex502s >= 1) {
+        break;
       }
     } catch (error) {
       lastError = error;
+      consecutiveIndex502s = 0;
     }
-    await new Promise((resolve) => setTimeout(resolve, 500));
+    await new Promise((resolve) => setTimeout(resolve, 250));
   }
   const probeText = lastProbes.length
     ? `\nProbe trail: ${JSON.stringify(lastProbes.slice(-4), null, 2)}`
     : '';
   const diagnostic = `Timed out waiting for Playground server at ${baseUrl}: ${lastError?.message || 'unknown'}${probeText}\n${getLogs()}`;
   process.stderr.write(`${diagnostic}\n`);
-  child.kill('SIGTERM');
-  await waitForExit(child, 12_000).catch(() => {
-    child.kill('SIGKILL');
-  });
+  await stopSpawnedServer(child);
   throw new Error(diagnostic);
 }
 

@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const muPluginDir = path.join(repoRoot, 'scripts/playground/rest-mu-plugins');
-const serverStartupTimeoutMs = 18_000;
+const serverStartupTimeoutMs = 15_000;
 const serverFetchTimeoutMs = 3_000;
 const runLivePlaygroundTopologyTests = process.env.REPRINT_RUN_PLAYGROUND_LIVE_TESTS === '1';
 const packageJson = JSON.parse(readFileSync(path.join(repoRoot, 'package.json'), 'utf8'));
@@ -16,9 +16,9 @@ const liveCredentials = {
   username: 'reprint_push_admin',
   password: 'reprint-push-admin-app-password',
 };
-const proofSubprocessTimeoutMs = 45_000;
+const proofSubprocessTimeoutMs = 12_000;
 
-function spawnReleaseVerify(env = {}, timeout = 45_000) {
+function spawnReleaseVerify(env = {}, timeout = proofSubprocessTimeoutMs) {
   return spawnBoundedSync(process.execPath, ['scripts/playground/production-shaped-release-verify.mjs'], {
     cwd: repoRoot,
     timeout,
@@ -36,15 +36,20 @@ function spawnBoundedSync(command, args, options, label) {
   const proof = spawnSync(command, args, options);
 
   if (proof.error) {
+    const timeoutNote = proof.error.code === 'ETIMEDOUT' && options.timeout ? ` after ${options.timeout}ms` : '';
     assert.fail(
-      `${label} failed with ${proof.error.name ?? 'Error'}: ${proof.error.message}\n${proof.stdout ?? ''}${proof.stderr ?? ''}`,
+      `${label} failed${timeoutNote} with ${proof.error.name ?? 'Error'}: ${proof.error.message}\nstdout:\n${proof.stdout ?? ''}\nstderr:\n${proof.stderr ?? ''}`,
     );
   }
   if (proof.signal) {
-    assert.fail(`${label} terminated by ${proof.signal}\n${proof.stdout}${proof.stderr}`);
+    assert.fail(
+      `${label} terminated by ${proof.signal}\nstdout:\n${proof.stdout ?? ''}\nstderr:\n${proof.stderr ?? ''}`,
+    );
   }
   if (proof.status === null) {
-    assert.fail(`${label} exited without a status\n${proof.stdout ?? ''}${proof.stderr ?? ''}`);
+    assert.fail(
+      `${label} exited without a status\nstdout:\n${proof.stdout ?? ''}\nstderr:\n${proof.stderr ?? ''}`,
+    );
   }
 
   return proof;
@@ -319,24 +324,16 @@ test('production-shaped apply revalidation smoke fails closed on mid-apply drift
 });
 
 test('production-shaped release verify command reports the checked retained-source proof summary', () => {
-  const proof = spawnBoundedSync(process.execPath, ['scripts/playground/production-shaped-release-verify.mjs'], {
-    cwd: repoRoot,
-    timeout: proofSubprocessTimeoutMs,
-    killSignal: 'SIGKILL',
-    env: {
-      ...process.env,
-      REPRINT_PUSH_SOURCE_URL: '',
-      REPRINT_PUSH_REMOTE_URL: '',
-      REPRINT_PUSH_LAB_AUTH_ADMIN_USER: '',
-      REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD: '',
-      REPRINT_PUSH_USERNAME: '',
-      REPRINT_PUSH_APPLICATION_PASSWORD: '',
-      REPRINT_PUSH_SIGNING_SECRET: '',
-      NODE_NO_WARNINGS: '1',
-    },
-    encoding: 'utf8',
-    maxBuffer: 1024 * 1024 * 20,
-  }, 'retained-source release verify');
+  const proof = spawnReleaseVerify({
+    REPRINT_PUSH_SOURCE_URL: '',
+    REPRINT_PUSH_REMOTE_URL: '',
+    REPRINT_PUSH_LAB_AUTH_ADMIN_USER: '',
+    REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD: '',
+    REPRINT_PUSH_USERNAME: '',
+    REPRINT_PUSH_APPLICATION_PASSWORD: '',
+    REPRINT_PUSH_SIGNING_SECRET: '',
+    NODE_NO_WARNINGS: '1',
+  });
   assert.equal(proof.status, 0, proof.stderr);
   assert.match(proof.stdout, /"releaseProof": \{/);
   assert.match(proof.stdout, /"ok": true/);
@@ -483,6 +480,7 @@ async function waitForServer(child, baseUrl, getLogs) {
   const deadline = Date.now() + serverStartupTimeoutMs;
   let lastError = null;
   const lastProbes = [];
+  let consecutiveIndex502s = 0;
   while (Date.now() < deadline) {
     if (child.exitCode !== null) {
       throw new Error(`Playground server exited early with ${child.exitCode}\n${getLogs()}`);
@@ -499,6 +497,7 @@ async function waitForServer(child, baseUrl, getLogs) {
         body: responseBody.slice(0, 500),
       });
       if (response.status === 200) {
+        consecutiveIndex502s = 0;
         await response.arrayBuffer();
         const snapshot = await fetchWithTimeout(`${baseUrl}/wp-json/reprint-push-lab/v1/snapshot`, {
           headers: {
@@ -520,9 +519,18 @@ async function waitForServer(child, baseUrl, getLogs) {
         lastError = new Error(`Playground lab snapshot readiness HTTP ${snapshot.status}`);
       } else {
         lastError = new Error(`Playground index readiness HTTP ${response.status}`);
+        if (response.status === 502) {
+          consecutiveIndex502s += 1;
+        } else {
+          consecutiveIndex502s = 0;
+        }
+      }
+      if (consecutiveIndex502s >= 4) {
+        break;
       }
     } catch (error) {
       lastError = error;
+      consecutiveIndex502s = 0;
     }
     await new Promise((resolve) => setTimeout(resolve, 500));
   }
