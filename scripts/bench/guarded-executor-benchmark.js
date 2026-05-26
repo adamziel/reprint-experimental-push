@@ -330,6 +330,12 @@ export function productionThroughputBlockers(report) {
   }
   if (
     report.evidence.backpressure?.queuePausedBeforeOverflow === true
+    && report.evidence.backpressure?.queueHeadroomMeasured !== true
+  ) {
+    blockers.push('queue-pause-without-measured-queue-headroom-proof');
+  }
+  if (
+    report.evidence.backpressure?.queuePausedBeforeOverflow === true
     && report.evidence.backpressure?.queuePauseHasBackpressureAlignedReceiptCursorQueueSlack !== true
   ) {
     blockers.push('queue-pause-without-backpressure-aligned-receipt-cursor-queue-slack-proof');
@@ -782,6 +788,7 @@ export function productionThroughputDetails(report) {
     receiptCursorHeadroomBytes: receiptCursorMemoryHeadroomBytes,
     receiptCursorHeadroomMatchesQueueHeadroom,
     receiptCursorQueueHeadroomPositive: receiptCursorQueueHeadroomPositive,
+    queueHeadroomMeasured: report.evidence.backpressure?.queueHeadroomMeasured === true,
     receiptCursorBackpressureBytes,
     receiptCursorBackpressureMeasured,
     queuePauseHasMeasuredReceiptCursorBackpressure,
@@ -839,6 +846,7 @@ export function productionThroughputDetails(report) {
       ...pausedQueueSlackEvidence,
       queuePauseHasBackpressureAlignedReceiptCursorQueueSlack,
       queuePauseHasMeasuredAndAlignedReceiptCursorBackpressure,
+      queueHeadroomMeasured: report.evidence.backpressure?.queueHeadroomMeasured === true,
       receiptCursorQueueSlackBytes,
       receiptCursorQueueSlackPositive,
       receiptCursorQueueSlackMatchesBackpressure,
@@ -1437,6 +1445,10 @@ function buildReport({
         producerQueueBounded: true,
         queueBudgetBytes: config.maxBufferedUploadBytes,
         queueHeadroomBytes: config.maxBufferedUploadBytes - config.chunkSizeBytes,
+        queueHeadroomMeasured:
+          Number.isFinite(config.maxBufferedUploadBytes)
+          && Number.isFinite(config.chunkSizeBytes)
+          && config.maxBufferedUploadBytes - config.chunkSizeBytes > 0,
         queueBudgetMatchesResourceCeiling:
           config.maxBufferedUploadBytes === DEFAULT_LIMITS.maxBufferedUploadBytes,
         queuePausedBeforeOverflow: config.chunkSizeBytes <= config.maxBufferedUploadBytes,
