@@ -29732,6 +29732,56 @@ test('blocks steady unsupported serialized block rows before they can be treated
   assert.equal(remote.plugins.forms.description, 'remote-only plugin changes');
 });
 
+test('blocks matching serialized block deletes before they can be treated as already in sync while preserving a matching independent edit and remote-only plugin changes', () => {
+  const resourceKey = 'row:["wp_posts","ID:68"]';
+  const base = baseSite();
+  base.db.wp_posts['ID:68'] = {
+    ID: 68,
+    post_title: 'Base matching delete block post',
+    post_content: '<!-- wp:paragraph -->Base matching delete block content<!-- /wp:paragraph -->',
+    post_status: 'publish',
+    post_type: 'post',
+  };
+  base.db.wp_posts['ID:1'].post_title = 'Base matching delete shared title';
+
+  const local = baseSite();
+  delete local.db.wp_posts['ID:68'];
+  local.db.wp_posts['ID:1'].post_title = 'Shared matching delete title';
+
+  const remote = baseSite();
+  delete remote.db.wp_posts['ID:68'];
+  remote.db.wp_posts['ID:1'].post_title = 'Shared matching delete title';
+  remote.plugins.forms.description = 'remote-only plugin changes';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin changes */';
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.class === 'unsupported-serialized-blocks-resource' && entry.resourceKey === resourceKey);
+  const matchingEdit = decisionFor(plan, 'row:["wp_posts","ID:1"]');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(decisionFor(plan, resourceKey), undefined);
+  assert.equal(plan.conflicts.length, 0);
+  assert.equal(blocker.class, 'unsupported-serialized-blocks-resource');
+  assert.equal(blocker.resourceKind, 'serialized-blocks');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.unsupportedState, 'delete');
+  assert.equal(blocker.reason, 'Serialized block references are not yet supported by the planner.');
+  assert.equal(matchingEdit.decision, 'already-in-sync');
+  assert.equal(matchingEdit.change.localChange, 'update');
+  assert.equal(matchingEdit.change.remoteChange, 'update');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('Base matching delete block content'), false);
+  assert.equal(planJson.includes('Shared matching delete title'), false);
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin changes');
+  assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin changes */');
+});
+
 test('blocks unsupported special file entries while preserving remote-only plugin drift', () => {
   const resourceKey = 'file:wp-content/uploads/symlink';
   const base = baseSite();
