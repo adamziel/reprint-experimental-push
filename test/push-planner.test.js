@@ -20279,6 +20279,50 @@ test('blocks legacy links graph resources while preserving a matching independen
   assert.equal(Object.hasOwn(remote.files, 'wp-content/plugins/forms/forms.php'), false);
 });
 
+test('blocks steady unsupported legacy link rows before they can be treated as already in sync while preserving remote-only plugin changes', () => {
+  const resourceKey = 'row:["wp_links","link_id:21"]';
+  const base = baseSite();
+  base.db.wp_links = {
+    'link_id:21': {
+      link_id: 21,
+      link_url: 'https://steady.example.test',
+      link_name: 'Steady unsupported link',
+    },
+  };
+  base.db.wp_posts['ID:1'].post_title = 'Base steady unsupported legacy link shared title';
+
+  const local = baseSite();
+  local.db.wp_links = JSON.parse(JSON.stringify(base.db.wp_links));
+  local.db.wp_posts['ID:1'].post_title = 'Shared steady unsupported legacy link title';
+
+  const remote = baseSite();
+  remote.db.wp_links = JSON.parse(JSON.stringify(base.db.wp_links));
+  remote.db.wp_posts['ID:1'].post_title = 'Shared steady unsupported legacy link title';
+  remote.plugins.forms.description = 'remote-only plugin changes';
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers[0];
+  const matchingEdit = decisionFor(plan, 'row:["wp_posts","ID:1"]');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(plan.conflicts.length, 0);
+  assert.equal(blocker.class, 'unsupported-legacy-links-resource');
+  assert.equal(blocker.resourceKind, 'legacy-link');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.unsupportedState, 'steady-unsupported');
+  assert.equal(blocker.reason, 'Legacy link graph resources are not yet supported by the planner.');
+  assert.equal(matchingEdit.decision, 'already-in-sync');
+  assert.equal(matchingEdit.change.localChange, 'update');
+  assert.equal(matchingEdit.change.remoteChange, 'update');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('Steady unsupported link'), false);
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin changes');
+});
+
 test('blocks local term-relationship object references to a same-plan created attachment identity while preserving a matching independent edit and remote-only plugin changes', () => {
   const resourceKey = 'row:["wp_term_relationships","object_id:8,term_taxonomy_id:5"]';
   const targetResourceKey = 'row:["wp_posts","ID:8"]';
@@ -22046,6 +22090,49 @@ test('blocks local nav menu item graph resources while preserving a matching ind
   assert.equal(planJson.includes('Local nav menu item content'), false);
   assert.equal(planJson.includes('Base nav menu item content'), false);
   assert.equal(Object.hasOwn(remote.plugins, 'forms'), false);
+});
+
+test('blocks steady unsupported nav menu item rows before they can be treated as already in sync while preserving remote-only plugin changes', () => {
+  const resourceKey = 'row:["wp_posts","ID:49"]';
+  const base = baseSite();
+  base.db.wp_posts['ID:49'] = {
+    ID: 49,
+    post_title: 'Steady unsupported nav menu item',
+    post_content: 'Steady unsupported nav menu item content',
+    post_status: 'publish',
+    post_type: 'nav_menu_item',
+  };
+  base.db.wp_posts['ID:1'].post_title = 'Base steady unsupported nav shared title';
+
+  const local = baseSite();
+  local.db.wp_posts['ID:49'] = JSON.parse(JSON.stringify(base.db.wp_posts['ID:49']));
+  local.db.wp_posts['ID:1'].post_title = 'Shared steady unsupported nav title';
+
+  const remote = baseSite();
+  remote.db.wp_posts['ID:49'] = JSON.parse(JSON.stringify(base.db.wp_posts['ID:49']));
+  remote.db.wp_posts['ID:1'].post_title = 'Shared steady unsupported nav title';
+  remote.plugins.forms.description = 'remote-only plugin changes';
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.class === 'unsupported-navigation-resource' && entry.resourceKey === resourceKey);
+  const matchingEdit = decisionFor(plan, 'row:["wp_posts","ID:1"]');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(plan.conflicts.length, 0);
+  assert.equal(blocker.class, 'unsupported-navigation-resource');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.unsupportedState, 'steady-unsupported');
+  assert.equal(blocker.reason, 'Navigation and menu graph resources are not yet supported by the planner.');
+  assert.equal(matchingEdit.decision, 'already-in-sync');
+  assert.equal(matchingEdit.change.localChange, 'update');
+  assert.equal(matchingEdit.change.remoteChange, 'update');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('Steady unsupported nav menu item content'), false);
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin changes');
 });
 
 test('blocks local post-parent references to a same-plan created wp navigation while preserving remote-only plugin drift', () => {
@@ -26523,6 +26610,50 @@ test('blocks local serialized block references while preserving remote-only plug
   assert.equal(planJson.includes('Base change block content'), false);
   assert.equal(remote.plugins.forms.description, 'remote-only plugin change');
   assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin change */');
+});
+
+test('blocks steady unsupported serialized block rows before they can be treated as already in sync while preserving remote-only plugin changes', () => {
+  const resourceKey = 'row:["wp_posts","ID:67"]';
+  const base = baseSite();
+  base.db.wp_posts['ID:67'] = {
+    ID: 67,
+    post_title: 'Steady unsupported serialized block post',
+    post_content: '<!-- wp:paragraph -->Steady unsupported serialized block content<!-- /wp:paragraph -->',
+    post_status: 'publish',
+    post_type: 'post',
+  };
+  base.db.wp_posts['ID:1'].post_title = 'Base steady unsupported serialized block shared title';
+
+  const local = baseSite();
+  local.db.wp_posts['ID:67'] = JSON.parse(JSON.stringify(base.db.wp_posts['ID:67']));
+  local.db.wp_posts['ID:1'].post_title = 'Shared steady unsupported serialized block title';
+
+  const remote = baseSite();
+  remote.db.wp_posts['ID:67'] = JSON.parse(JSON.stringify(base.db.wp_posts['ID:67']));
+  remote.db.wp_posts['ID:1'].post_title = 'Shared steady unsupported serialized block title';
+  remote.plugins.forms.description = 'remote-only plugin changes';
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.class === 'unsupported-serialized-blocks-resource' && entry.resourceKey === resourceKey);
+  const matchingEdit = decisionFor(plan, 'row:["wp_posts","ID:1"]');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(plan.conflicts.length, 0);
+  assert.equal(blocker.class, 'unsupported-serialized-blocks-resource');
+  assert.equal(blocker.resourceKind, 'serialized-blocks');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.unsupportedState, 'steady-unsupported');
+  assert.equal(blocker.reason, 'Serialized block references are not yet supported by the planner.');
+  assert.equal(matchingEdit.decision, 'already-in-sync');
+  assert.equal(matchingEdit.change.localChange, 'update');
+  assert.equal(matchingEdit.change.remoteChange, 'update');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('Steady unsupported serialized block content'), false);
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin changes');
 });
 
 test('blocks unsupported special file entries while preserving remote-only plugin drift', () => {

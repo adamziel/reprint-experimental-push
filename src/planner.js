@@ -220,6 +220,70 @@ export function createPushPlan({ base, local, remote, now = new Date() }) {
         continue;
       }
 
+      const steadyNavigationSupport = unsupportedNavigationResourceSupport({
+        resource,
+        baseValue,
+        localValue,
+        remoteValue,
+        resources,
+        base,
+        local,
+        remote,
+      });
+      if (!steadyNavigationSupport.supported) {
+        addUnsupportedNavigationResourceBlocker(plan, {
+          resource,
+          support: steadyNavigationSupport,
+          baseValue,
+          localValue,
+          remoteValue,
+          baseHash,
+          localHash,
+          remoteHash,
+        });
+        continue;
+      }
+
+      const steadyLegacyLinksSupport = unsupportedLegacyLinksResourceSupport({
+        resource,
+        baseValue,
+        localValue,
+        remoteValue,
+      });
+      if (!steadyLegacyLinksSupport.supported) {
+        addUnsupportedLegacyLinksResourceBlocker(plan, {
+          resource,
+          support: steadyLegacyLinksSupport,
+          baseValue,
+          localValue,
+          remoteValue,
+          baseHash,
+          localHash,
+          remoteHash,
+        });
+        continue;
+      }
+
+      const steadySerializedBlocksSupport = unsupportedSerializedBlocksSupport({
+        resource,
+        baseValue,
+        localValue,
+        remoteValue,
+      });
+      if (!steadySerializedBlocksSupport.supported) {
+        addUnsupportedSerializedBlocksBlocker(plan, {
+          resource,
+          support: steadySerializedBlocksSupport,
+          baseValue,
+          localValue,
+          remoteValue,
+          baseHash,
+          localHash,
+          remoteHash,
+        });
+        continue;
+      }
+
       continue;
     }
 
@@ -3342,17 +3406,6 @@ function unsupportedNavigationResourceSupport({ resource, baseValue, localValue,
     reference.relationshipType === 'menu-item-parent'
     || reference.relationshipType === 'post-parent'
   ));
-  const remoteOnlyDrift = (
-    stableStringify(localValue) === stableStringify(baseValue)
-    && stableStringify(remoteValue) !== stableStringify(baseValue)
-  );
-  const convergedDrift = (
-    localValue !== ABSENT
-    && remoteValue !== ABSENT
-    && stableStringify(localValue) === stableStringify(remoteValue)
-    && stableStringify(localValue) !== stableStringify(baseValue)
-  );
-
   return {
     supported: false,
     className: 'unsupported-navigation-resource',
@@ -3360,11 +3413,12 @@ function unsupportedNavigationResourceSupport({ resource, baseValue, localValue,
       ? 'delete'
       : navigationReference
         ? 'same-plan-reference'
-        : convergedDrift
-          ? 'converged-drift'
-          : remoteOnlyDrift
-            ? 'remote-only-drift'
-            : 'local-or-divergent-drift',
+        : classifyUnsupportedDriftState({
+          baseValue,
+          localValue,
+          remoteValue,
+          allowSteadyUnsupported: true,
+        }),
     reason: 'Navigation and menu graph resources are not yet supported by the planner.',
     references: navigationReference ? [navigationReference] : [],
   };
@@ -3848,11 +3902,12 @@ function unsupportedLegacyLinksResourceSupport({ resource, baseValue, localValue
     return {
       supported: false,
       className: 'unsupported-legacy-links-resource',
-      unsupportedState: convergedDrift
-        ? 'converged-drift'
-        : remoteOnlyDrift
-          ? 'remote-only-drift'
-          : 'local-or-divergent-drift',
+      unsupportedState: classifyUnsupportedDriftState({
+        baseValue,
+        localValue,
+        remoteValue,
+        allowSteadyUnsupported: true,
+      }),
       reason: 'Legacy link graph resources are not yet supported by the planner.',
     };
   }
@@ -3888,11 +3943,12 @@ function unsupportedSerializedBlocksSupport({ resource, baseValue, localValue, r
   return {
     supported: false,
     className: 'unsupported-serialized-blocks-resource',
-    unsupportedState: convergedDrift
-      ? 'converged-drift'
-      : remoteOnlyDrift
-        ? 'remote-only-drift'
-        : 'local-or-divergent-drift',
+    unsupportedState: classifyUnsupportedDriftState({
+      baseValue,
+      localValue,
+      remoteValue,
+      allowSteadyUnsupported: true,
+    }),
     reason: 'Serialized block references are not yet supported by the planner.',
   };
 }
