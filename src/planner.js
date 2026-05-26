@@ -2171,6 +2171,13 @@ function wordpressGraphIdentitySupport({
     wordpressGraphReferenceEvidence(reference, resources, base, local, remote));
   const samePlanGraphReferences = referenceEvidence
     .filter((reference) =>
+      isSupportedSamePlanPostParentReference({
+        baseValue,
+        localValue,
+        reference,
+        local,
+      })
+      || (
       isSupportedSamePlanPostmetaReference({
         baseValue,
         localValue,
@@ -2207,7 +2214,7 @@ function wordpressGraphIdentitySupport({
         baseValue,
         localValue,
         reference,
-      }))
+      })))
     .map((reference) => samePlanWordPressGraphReferenceEvidence(reference));
   const samePlanCreatedTermRelationshipTaxonomyReferences = referenceEvidence.filter((reference) =>
     reference.relationshipType === 'term-relationship-taxonomy'
@@ -2417,6 +2424,25 @@ function wordpressGraphIdentitySupport({
         reason: 'Revision graph resources are not yet supported by the planner.',
       };
     }
+
+    const samePlanCreatedPostParentReference = referenceEvidence.find((reference) =>
+      reference.relationshipType === 'post-parent'
+      && reference.targetResource?.table === 'wp_posts'
+      && reference.targetChange.remote.state === 'absent'
+      && reference.targetChange.local.state === 'present');
+    if (
+      samePlanCreatedPostParentReference
+      && baseValue === ABSENT
+      && localPostParentTarget
+      && !['attachment', 'revision', 'nav_menu_item', 'wp_navigation'].includes(localPostParentTarget.post_type ?? 'post')
+    ) {
+      return {
+        supported: false,
+        className: 'stale-wordpress-graph-identity',
+        reason: `WordPress graph mutation ${resource.key} references a post parent identity without proven identity mapping or reference rewriting.`,
+        references: [samePlanCreatedPostParentReference],
+      };
+    }
   }
   const unsupportedAttachmentReferences = referenceEvidence
     .filter((reference) =>
@@ -2594,6 +2620,34 @@ function isSupportedSamePlanTermmetaReference({
     .find((entry) => normalizePositiveInteger(entry?.term_id) === targetTermId && entry?.taxonomy === 'nav_menu');
 
   return !localNavMenuTaxonomy && !remoteNavMenuTaxonomy;
+}
+
+function isSupportedSamePlanPostParentReference({
+  baseValue,
+  localValue,
+  reference,
+  local,
+}) {
+  if (
+    baseValue === ABSENT
+    || localValue === ABSENT
+    || reference.relationshipType !== 'post-parent'
+    || !isSamePlanWordPressGraphCreate(reference)
+  ) {
+    return false;
+  }
+
+  const targetPostId = normalizeWordPressGraphReferenceTargetIntegerId(reference);
+  if (
+    targetPostId == null
+    || normalizePositiveInteger(baseValue?.post_parent) != null
+    || normalizePositiveInteger(localValue?.post_parent) !== targetPostId
+  ) {
+    return false;
+  }
+
+  const targetPostType = getResource(local, reference.targetResource)?.post_type ?? 'post';
+  return !['attachment', 'revision', 'nav_menu_item', 'wp_navigation'].includes(targetPostType);
 }
 
 function isSupportedSamePlanPostmetaReference({
@@ -2860,12 +2914,18 @@ function isValidSamePlanWordPressGraphTarget(
   const supportsPostTarget = targetMutation.resource.table === 'wp_posts'
     && (
       (
+        reference.relationshipType === 'post-parent'
+        && reference.sourceTable === 'wp_posts'
+      )
+      || (
+      (
         reference.relationshipType === 'postmeta-post'
         && reference.sourceTable === 'wp_postmeta'
       )
       || (
         reference.relationshipType === 'term-relationship-object'
         && reference.sourceTable === 'wp_term_relationships'
+      )
       )
     );
   const supportsTermTaxonomyTarget = targetMutation.resource.table === 'wp_term_taxonomy'
@@ -3218,6 +3278,33 @@ function samePlanCreatedGraphIdentitySupport({ resource, resources, base, local,
           reference: evidence,
           local,
         })
+      ) {
+        continue;
+      }
+      if (
+        resource.table === 'wp_posts'
+        && sourceResource.table === 'wp_posts'
+        && isSupportedSamePlanPostParentReference({
+          baseValue: getResource(base, sourceResource),
+          localValue: sourceLocalValue,
+          reference: evidence,
+          local,
+        })
+        && !wordpressGraphReferences(sourceResource, sourceLocalValue)
+          .map((sourceReference) =>
+            wordpressGraphReferenceEvidence(sourceReference, resources, base, local, remote))
+          .some((sourceReferenceEvidence) =>
+            sourceReferenceEvidence.targetChange.remote.state === 'absent'
+            && sourceReferenceEvidence.targetChange.local.state === 'present'
+            && (
+              sourceReferenceEvidence.relationshipType !== 'post-parent'
+              || !isSupportedSamePlanPostParentReference({
+                baseValue: getResource(base, sourceResource),
+                localValue: sourceLocalValue,
+                reference: sourceReferenceEvidence,
+                local,
+              })
+            ))
       ) {
         continue;
       }
