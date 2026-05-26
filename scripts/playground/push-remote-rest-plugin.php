@@ -553,7 +553,7 @@ function reprint_push_lab_rest_merge_checked_db_journal_contract(array $db_journ
         'idempotencyEvidence',
     ] as $key) {
         if (
-            reprint_push_lab_rest_should_fill_checked_db_journal_field($db_journal, $key)
+            reprint_push_lab_rest_should_fill_checked_db_journal_field($db_journal, $checked_summary, $key)
             && array_key_exists($key, $checked_summary)
         ) {
             $db_journal[$key] = $checked_summary[$key];
@@ -583,7 +583,7 @@ function reprint_push_lab_rest_merge_checked_db_journal_contract(array $db_journ
     return $db_journal;
 }
 
-function reprint_push_lab_rest_should_fill_checked_db_journal_field(array $db_journal, string $key): bool
+function reprint_push_lab_rest_should_fill_checked_db_journal_field(array $db_journal, array $checked_summary, string $key): bool
 {
     if (!array_key_exists($key, $db_journal)) {
         return true;
@@ -592,6 +592,18 @@ function reprint_push_lab_rest_should_fill_checked_db_journal_field(array $db_jo
     $value = $db_journal[$key];
     if ($value === null || $value === '') {
         return true;
+    }
+
+    if ($key === 'rowCount' && is_numeric($value)) {
+        return (int) $value <= 0;
+    }
+
+    if (is_array($value) && in_array($key, ['latestRows', 'eventSummaries', 'idempotencyEvidence'], true)) {
+        if ($value === []) {
+            return true;
+        }
+        $checked_value = $checked_summary[$key] ?? null;
+        return is_array($checked_value) && count($value) < count($checked_value);
     }
 
     return is_array($value) && $value === [];

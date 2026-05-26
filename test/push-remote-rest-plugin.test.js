@@ -359,6 +359,87 @@ test('checked db journal merge fills empty top-level evidence arrays from the ch
   });
 });
 
+test('checked db journal merge upgrades partial top-level evidence arrays and zero row counts from the checked summary', { skip: !hasPhp }, () => {
+  const result = runMerge(
+    {
+      acceptedOnCheckedBoundary: true,
+      rowCount: 0,
+      latestRows: [
+        { event: 'apply-committed' },
+      ],
+      eventSummaries: [
+        { event: 'apply-committed', count: 1, latestId: 3 },
+      ],
+      idempotencyEvidence: [
+        { idempotencyKeyHash: 'idem-hash-01', events: 1, requestHashes: 1, latestId: 3 },
+      ],
+      ownership: {
+        ownsJournal: true,
+      },
+    },
+    {
+      acceptedOnCheckedBoundary: true,
+      rowCount: 3,
+      latestRows: [
+        { event: 'idempotency-opened' },
+        { event: 'mutation-applied' },
+        { event: 'apply-committed' },
+      ],
+      eventSummaries: [
+        { event: 'apply-committed', count: 1, latestId: 3 },
+        { event: 'mutation-applied', count: 1, latestId: 2 },
+      ],
+      idempotencyEvidence: [
+        { idempotencyKeyHash: 'idem-hash-01', events: 3, requestHashes: 1, latestId: 3 },
+        { idempotencyKeyHash: 'idem-hash-02', events: 1, requestHashes: 1, latestId: 4 },
+      ],
+      ownership: {
+        ownsJournal: true,
+        restartReadable: true,
+        productionAdapter: 'wpdb-single-statement-cas',
+      },
+      leaseFence: {
+        boundary: 'wpdb-single-statement-cas',
+        claimKeyUnique: true,
+        monotonicSequence: true,
+        restartReadable: true,
+        staleClaimRejected: false,
+      },
+    },
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  assert.deepEqual(JSON.parse(result.stdout), {
+    acceptedOnCheckedBoundary: true,
+    rowCount: 3,
+    latestRows: [
+      { event: 'idempotency-opened' },
+      { event: 'mutation-applied' },
+      { event: 'apply-committed' },
+    ],
+    eventSummaries: [
+      { event: 'apply-committed', count: 1, latestId: 3 },
+      { event: 'mutation-applied', count: 1, latestId: 2 },
+    ],
+    idempotencyEvidence: [
+      { idempotencyKeyHash: 'idem-hash-01', events: 3, requestHashes: 1, latestId: 3 },
+      { idempotencyKeyHash: 'idem-hash-02', events: 1, requestHashes: 1, latestId: 4 },
+    ],
+    ownership: {
+      ownsJournal: true,
+      restartReadable: true,
+      productionAdapter: 'wpdb-single-statement-cas',
+    },
+    leaseFence: {
+      boundary: 'wpdb-single-statement-cas',
+      claimKeyUnique: true,
+      monotonicSequence: true,
+      restartReadable: true,
+      staleClaimRejected: false,
+    },
+  });
+});
+
 test('checked storage guard merge fills partial inline values from the checked summary', { skip: !hasPhp }, () => {
   const result = spawnSync('php', [
     '-r',
