@@ -4012,6 +4012,54 @@ test('production auth/session lifecycle summary fails closed when direct preserv
   );
 });
 
+test('production auth/session lifecycle summary fails closed when a direct preserved read carries Playground fallback metadata', () => {
+  assert.deepEqual(
+    evaluateProductionAuthSessionLifecycleSummary({
+      issued: {
+        step: 'preflight',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+      },
+      read: {
+        step: 'apply',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+        preserved: true,
+        playgroundFallback: true,
+      },
+      observations: [
+        {
+          step: 'preflight',
+          id: 'session-01',
+          type: 'production-auth-session',
+          status: 'active',
+          expiresAt: '2099-01-01T00:00:00Z',
+          preserved: false,
+        },
+        {
+          step: 'apply',
+          id: 'session-01',
+          type: 'production-auth-session',
+          status: 'active',
+          expiresAt: '2099-01-01T00:00:00Z',
+          preserved: true,
+          playgroundFallback: true,
+        },
+      ],
+    }),
+    {
+      ok: false,
+      field: 'auth.session.playgroundFallback',
+      required: 'production-backed auth',
+      observed: 'playground-fallback',
+    },
+  );
+});
+
 test('production auth/session lifecycle summary fails closed when direct issued lifecycle flags are malformed', () => {
   assert.deepEqual(
     evaluateProductionAuthSessionLifecycleSummary({

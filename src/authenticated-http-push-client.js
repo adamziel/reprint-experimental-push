@@ -988,6 +988,8 @@ function summarizeAuthSessionLifecycle(session) {
         ? false
         : null,
     preserved: session.preserved === true ? true : session.preserved === false ? false : null,
+    ...(session.playgroundFallback === true ? { playgroundFallback: true } : {}),
+    ...(typeof session.warning === 'string' ? { warning: session.warning } : {}),
   };
 }
 
@@ -1043,6 +1045,8 @@ function recordAuthSessionLifecycle(summary, step, session) {
     cleanedUp: Boolean(observation?.cleanedUp),
     rotated: lifecycle.rotated,
     preserved: lifecycle.preserved,
+    ...(observation?.playgroundFallback === true ? { playgroundFallback: true } : {}),
+    ...(typeof observation?.warning === 'string' ? { warning: observation.warning } : {}),
   });
   summary.authSessionLifecycleSummary = summarizeAuthSessionLifecycleHistory(
     summary.authSessionLifecycle.history,
@@ -1503,6 +1507,11 @@ function resolveObservedProductionAuthSessionLifecycleDrift(response) {
     };
   }
 
+  const productionSourceObservation = resolveProductionAuthSessionSourceObservation(session);
+  if (productionSourceObservation) {
+    return productionSourceObservation;
+  }
+
   const unrevokedObservation = resolveProductionAuthSessionUnrevokedObservation(session);
   if (unrevokedObservation) {
     return {
@@ -1560,6 +1569,7 @@ function resolveInvalidProductionAuthSessionLifecycleFlag(session) {
     ['expired', session.expired],
     ['rotated', session.rotated],
     ['preserved', session.preserved],
+    ['playgroundFallback', session.playgroundFallback],
   ];
 
   for (const [name, value] of lifecycleFlags) {
@@ -1599,6 +1609,16 @@ function describeRequiredProductionAuthSession(response) {
       field: 'auth.session.type',
       required: 'production-auth-session',
       observed: session?.type || 'missing',
+      verdict,
+    };
+  }
+
+  const productionSourceObservation = resolveProductionAuthSessionSourceObservation(session);
+  if (productionSourceObservation) {
+    return {
+      field: productionSourceObservation.field,
+      required: productionSourceObservation.required,
+      observed: productionSourceObservation.observed,
       verdict,
     };
   }
@@ -1666,6 +1686,27 @@ function describeRequiredUnrevokedProductionAuthSession(response) {
     observed: unrevokedObservation?.observed || 'cleaned-up',
     verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
   };
+}
+
+function resolveProductionAuthSessionSourceObservation(session) {
+  if (session?.playgroundFallback === true) {
+    return {
+      field: 'auth.session.playgroundFallback',
+      required: 'production-backed auth',
+      observed: 'playground-fallback',
+    };
+  }
+
+  const warning = normalizeProductionAuthSessionIdentityField(session?.warning);
+  if (warning) {
+    return {
+      field: 'auth.session.warning',
+      required: 'production-backed auth',
+      observed: warning,
+    };
+  }
+
+  return null;
 }
 
 function resolveProductionAuthSessionUnrevokedObservation(session) {
@@ -1785,6 +1826,17 @@ function resolveInvalidProductionAuthSessionIdentityField(session) {
         label,
       };
     }
+  }
+
+  if (
+    session.warning !== undefined
+    && session.warning !== null
+    && !normalizeProductionAuthSessionIdentityField(session.warning)
+  ) {
+    return {
+      field: 'warning',
+      label: 'warning',
+    };
   }
 
   return null;

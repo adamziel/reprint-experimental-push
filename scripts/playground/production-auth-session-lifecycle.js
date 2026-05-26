@@ -55,6 +55,16 @@ export function evaluateProductionAuthSessionLifecycle(session, now = Date.now()
     };
   }
 
+  const productionSourceObservation = resolveProductionAuthSessionSourceObservation(session);
+  if (productionSourceObservation) {
+    return {
+      ok: false,
+      field: productionSourceObservation.field,
+      required: 'production-backed auth',
+      observed: productionSourceObservation.observed,
+    };
+  }
+
   if (revoked || cleanedUp) {
     return {
       ok: false,
@@ -495,6 +505,8 @@ export function summarizeProductionAuthSessionLifecycleTrace(trace) {
       cleanedUp: entry.cleanedUp === true || entry.cleanup === true || entry.status === 'cleaned-up',
       rotated: entry.rotated === true || entry.status === 'rotated',
       preserved: isAuthSessionReadStep(entry.step) && entry.preserved === true,
+      ...(entry.playgroundFallback === true ? { playgroundFallback: true } : {}),
+      ...(typeof entry.warning === 'string' ? { warning: entry.warning } : {}),
     };
   });
   const readObservation = [...observations]
@@ -599,6 +611,25 @@ function resolveProductionAuthSessionExpiredField(observation) {
   return 'auth.session.expiresAt';
 }
 
+function resolveProductionAuthSessionSourceObservation(observation) {
+  if (observation?.playgroundFallback === true) {
+    return {
+      field: 'auth.session.playgroundFallback',
+      observed: 'playground-fallback',
+    };
+  }
+
+  const warning = normalizeAuthSessionObservationField(observation?.warning);
+  if (warning) {
+    return {
+      field: 'auth.session.warning',
+      observed: warning,
+    };
+  }
+
+  return null;
+}
+
 function resolveInvalidAuthSessionLifecycleFlag(observation) {
   if (!observation || typeof observation !== 'object') {
     return null;
@@ -608,7 +639,7 @@ function resolveInvalidAuthSessionLifecycleFlag(observation) {
     return observation.invalidLifecycleFlag;
   }
 
-  const lifecycleFlags = ['expired', 'revoked', 'cleanedUp', 'cleanup', 'rotated', 'preserved'];
+  const lifecycleFlags = ['expired', 'revoked', 'cleanedUp', 'cleanup', 'rotated', 'preserved', 'playgroundFallback'];
   for (const flag of lifecycleFlags) {
     const value = observation[flag];
     if (value !== undefined && value !== null && typeof value !== 'boolean') {
@@ -639,6 +670,14 @@ function resolveInvalidAuthSessionIdentityField(observation) {
     if (value !== undefined && value !== null && !normalizeAuthSessionObservationField(value)) {
       return label;
     }
+  }
+
+  if (
+    observation.warning !== undefined
+    && observation.warning !== null
+    && !normalizeAuthSessionObservationField(observation.warning)
+  ) {
+    return 'warning';
   }
 
   return null;
@@ -999,11 +1038,13 @@ function authSessionObservationEquals(left, right) {
     && normalizeAuthSessionObservationField(left?.type) === normalizeAuthSessionObservationField(right?.type)
     && normalizeAuthSessionObservationField(left?.status) === normalizeAuthSessionObservationField(right?.status)
     && normalizeAuthSessionObservationField(left?.expiresAt) === normalizeAuthSessionObservationField(right?.expiresAt)
+    && normalizeAuthSessionObservationField(left?.warning) === normalizeAuthSessionObservationField(right?.warning)
     && normalizeAuthSessionObservationStep(left?.step) === normalizeAuthSessionObservationStep(right?.step)
     && normalizeLifecycleBoolean(left?.expired) === normalizeLifecycleBoolean(right?.expired)
     && normalizeLifecycleBoolean(left?.revoked) === normalizeLifecycleBoolean(right?.revoked)
     && normalizeLifecycleBoolean(left?.rotated) === normalizeLifecycleBoolean(right?.rotated)
     && normalizeLifecycleBoolean(left?.preserved) === normalizeLifecycleBoolean(right?.preserved)
+    && normalizeLifecycleBoolean(left?.playgroundFallback) === normalizeLifecycleBoolean(right?.playgroundFallback)
     && normalizeLifecycleBoolean(left?.cleanedUp ?? left?.cleanup) === normalizeLifecycleBoolean(right?.cleanedUp ?? right?.cleanup);
 }
 
