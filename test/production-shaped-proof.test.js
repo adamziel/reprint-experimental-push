@@ -1923,6 +1923,25 @@ test('packaged readiness fetch helpers abort probe fetches when the Playground c
   }
 });
 
+test('packaged readiness helpers keep response body reads inside the child-aware timeout wrapper', () => {
+  const smokeSource = readFileSync(
+    path.join(repoRoot, 'scripts/playground/production-plugin-package-smoke.mjs'),
+    'utf8',
+  );
+  const verifierSource = readFileSync(
+    path.join(repoRoot, 'scripts/playground/production-shaped-release-verify.mjs'),
+    'utf8',
+  );
+
+  for (const source of [smokeSource, verifierSource]) {
+    assert.match(source, /async function fetchTextWithTimeout\(url, init = \{\}, timeoutMs = [^,]+, child = null\)/);
+    assert.match(source, /const bodyTextPromise = response\.text\(\)/);
+    assert.match(source, /Promise\.race\(\[bodyTextPromise, childExitWatcher\.promise\]\)/);
+    assert.match(source, /const \{ response: snapshot(?:Response)?, bodyText: snapshotText \} = await fetchTextWithTimeout\(/);
+    assert.match(source, /const \{ response: preflight(?:Response)?, bodyText: preflightText \} = await fetchTextWithTimeout\(/);
+  }
+});
+
 test('packaged readiness helpers do not sleep through child exits between probes', () => {
   const smokeSource = readFileSync(
     path.join(repoRoot, 'scripts/playground/production-plugin-package-smoke.mjs'),
