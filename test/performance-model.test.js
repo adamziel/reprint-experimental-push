@@ -227,6 +227,7 @@ test('benchmark model covers large uploads and plugin installs', () => {
       (fastPath) =>
         fastPath.area === 'parallelism-limits' &&
         fastPath.allowedShortcut === 'reuse-memory-headroom-and-cached-release-manifest-cursor-to-size-bounded-release-bundle-retry-windows' &&
+        fastPath.visibilityBoundary === 'planning-only-for-release-bundle-retry-windows' &&
         fastPath.guardrails.includes('memory-headroom-stays-planning-evidence-only') &&
         fastPath.gateProofs.recovery.includes('the measured headroom and cached cursor are advisory'),
     ),

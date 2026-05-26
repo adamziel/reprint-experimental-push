@@ -91,6 +91,9 @@ atomic-group barrier.
 It also includes a memory-headroom-aware release-bundle retry-window shortcut,
 so retry planning can reuse the same bounded shape without turning headroom
 into mutation authority.
+The same retry-window path now also makes the cached release-manifest cursor
+boundary explicit in tests, so planning can skip duplicate sizing work while
+live file and row preconditions still decide visibility.
 It also includes a row-batch manifest compression shortcut that reuses
 canonical row digests only for planning, so batch sizing can skip duplicate
 digest recomputation without weakening row preconditions or the atomic-group
