@@ -170,7 +170,7 @@ function reprint_push_lab_db_journal_checked_boundary_contract(
             : 'checked live production-shaped journal surface; not local Playground fixture only',
         'ownership' => [
             'ownsJournal' => true,
-            'restartReadable' => true,
+            'restartReadable' => $restart_readable,
             'productionAdapter' => 'wpdb-single-statement-cas',
         ],
         'writerLease' => $writer_lease,

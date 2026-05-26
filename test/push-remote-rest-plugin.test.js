@@ -341,6 +341,54 @@ function runWriterLeaseContract({
   });
 }
 
+function runCheckedBoundaryContract({
+  checkedSurface = true,
+  staleClaimRejected = false,
+  claimKeyUnique = true,
+  monotonicSequence = true,
+  restartReadable = true,
+} = {}) {
+  return spawnSync('php', [
+    '-r',
+    [
+      'define("ABSPATH", dirname($argv[1]));',
+      'function add_filter(...$args) {}',
+      'function add_action(...$args) {}',
+      'function register_rest_route(...$args) {}',
+      'class WP_REST_Server { const CREATABLE = "POST"; const READABLE = "GET"; }',
+      'class WP_REST_Response {',
+      '  private $data;',
+      '  public function __construct($data = null, $status = null) { $this->data = $data; }',
+      '  public function get_data() { return $this->data; }',
+      '  public function set_data($data) { $this->data = $data; }',
+      '}',
+      'class WP_REST_Request {}',
+      'require $argv[1];',
+      '$checkedSurface = ($argv[2] ?? "1") === "1";',
+      '$staleClaimRejected = ($argv[3] ?? "0") === "1";',
+      '$claimKeyUnique = ($argv[4] ?? "1") === "1";',
+      '$monotonicSequence = ($argv[5] ?? "1") === "1";',
+      '$restartReadable = ($argv[6] ?? "1") === "1";',
+      'echo json_encode(reprint_push_lab_db_journal_checked_boundary_contract(',
+      '  $checkedSurface,',
+      '  $staleClaimRejected,',
+      '  $claimKeyUnique,',
+      '  $monotonicSequence,',
+      '  $restartReadable',
+      '));',
+    ].join(' '),
+    pluginFile,
+    checkedSurface ? '1' : '0',
+    staleClaimRejected ? '1' : '0',
+    claimKeyUnique ? '1' : '0',
+    monotonicSequence ? '1' : '0',
+    restartReadable ? '1' : '0',
+  ], {
+    cwd: repoRoot,
+    encoding: 'utf8',
+  });
+}
+
 function runRecoveryJournalEvidence({ checkedSurface = false, packageMode = false } = {}) {
   return spawnSync('php', [
     '-r',
@@ -2086,6 +2134,53 @@ test('db journal writer lease contract preserves observed checked-boundary evide
     monotonicSequence: false,
     restartReadable: true,
     staleClaimRejected: true,
+  });
+});
+
+test('checked db journal boundary contract keeps ownership restart readability aligned with authoritative checked lease evidence', { skip: !hasPhp }, () => {
+  const result = runCheckedBoundaryContract({
+    checkedSurface: true,
+    staleClaimRejected: true,
+    claimKeyUnique: true,
+    monotonicSequence: true,
+    restartReadable: false,
+  });
+
+  assert.equal(result.status, 0, result.stderr);
+  assert.deepEqual(JSON.parse(result.stdout), {
+    acceptedOnCheckedBoundary: true,
+    scope: 'checked live production-shaped journal surface; not local Playground fixture only',
+    ownership: {
+      ownsJournal: true,
+      restartReadable: false,
+      productionAdapter: 'wpdb-single-statement-cas',
+    },
+    writerLease: {
+      strategy: 'claim-fenced-single-writer',
+      claimKeyUnique: true,
+      fsyncEvidence: true,
+      storageGuard: 'wpdb-single-statement-cas',
+      monotonicSequence: true,
+      restartReadable: false,
+      staleClaimRejected: true,
+    },
+    leaseFence: {
+      boundary: 'wpdb-single-statement-cas',
+      claimKeyUnique: true,
+      fsyncEvidence: true,
+      monotonicSequence: true,
+      restartReadable: false,
+      staleClaimRejected: true,
+      writerLease: {
+        strategy: 'claim-fenced-single-writer',
+        claimKeyUnique: true,
+        fsyncEvidence: true,
+        storageGuard: 'wpdb-single-statement-cas',
+        monotonicSequence: true,
+        restartReadable: false,
+        staleClaimRejected: true,
+      },
+    },
   });
 });
 
