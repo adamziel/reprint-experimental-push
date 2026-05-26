@@ -2071,6 +2071,53 @@ test('blocks a local termmeta reference to a same-plan term when a remote nav me
   assert.equal(blockerJson.includes('local-private-termmeta-value'), false);
 });
 
+test('allows a local termmeta reference to a same-plan term even when an unrelated remote attachment exists', () => {
+  const resourceKey = 'row:["wp_termmeta","meta_id:12"]';
+  const targetResourceKey = 'row:["wp_terms","term_id:7"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_terms = {
+    'term_id:7': {
+      term_id: 7,
+      name: 'Local taxonomy term',
+      slug: 'local-taxonomy-term',
+    },
+  };
+  local.db.wp_termmeta = {
+    'meta_id:12': {
+      meta_id: 12,
+      term_id: 7,
+      meta_key: 'term-note',
+      meta_value: 'local-private-termmeta-value',
+    },
+  };
+  const remote = baseSite();
+  remote.db.wp_posts['ID:9'] = {
+    ID: 9,
+    post_title: 'Remote attachment',
+    post_content: 'remote-attachment-body',
+    post_status: 'inherit',
+    post_type: 'attachment',
+  };
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  const mutation = plan.mutations.find((entry) => entry.resourceKey === resourceKey);
+  const reference = mutation?.wordpressGraphReferences
+    ?.find((entry) => entry.relationshipType === 'termmeta-term');
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.mutations, 2);
+  assert.equal(blocker, undefined);
+  assert.equal(mutation.changeKind, 'create');
+  assert.equal(reference.resolutionPolicy, 'same-plan-local-create');
+  assert.equal(reference.targetResourceKey, targetResourceKey);
+  assert.equal(reference.targetRemoteHash.length, 64);
+  assert.equal(JSON.stringify(plan).includes('remote-attachment-body'), false);
+  const result = applyPlan(baseSite(), plan);
+  assert.equal(result.site.db.wp_termmeta['meta_id:12'].meta_value, 'local-private-termmeta-value');
+});
+
 test('blocks attachment-owned postmeta references to a same-plan attachment', () => {
   const resourceKey = 'row:["wp_postmeta","meta_id:45"]';
   const attachmentResourceKey = 'row:["wp_posts","ID:2"]';
