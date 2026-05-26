@@ -629,6 +629,26 @@ export const SAFE_FAST_PATHS = Object.freeze([
   },
   {
     area: 'parallelism-limits',
+    reduces: ['idle-time', 'head-of-line-blocking', 'duplicate-planning-work'],
+    allowedShortcut: 'reuse-measured-upload-concurrency-and-chunk-receipts-to-size-bounded-large-upload-fanout',
+    guardrails: [
+      'measured-upload-concurrency-stays-planning-evidence-only',
+      'chunk-receipts-stay-durable-and-plan-scoped',
+    ],
+    gateProofs: {
+      skip: 'the planner can reuse measured upload concurrency and durable chunk receipts to avoid recomputing large-upload fanout on a retry',
+      live: 'the later upload still rechecks the live remote resource hash before any staged bytes become visible',
+      group: 'concurrency reuse only narrows planning inside the same file boundary and never merges coupled groups',
+      recovery: 'the reused concurrency and receipts are advisory; durable chunk receipts and the guarded publish record still classify pause, retry, or crash',
+    },
+    visibilityBoundary: 'planning-only-budget-resume',
+    failureEvidence: 'measured upload concurrency plus durable chunk receipts and guarded publish record',
+    bypassesLivePreconditions: false,
+    splitsAtomicGroup: false,
+    publishesStagedDataEarly: false,
+  },
+  {
+    area: 'parallelism-limits',
     reduces: ['idle-time', 'head-of-line-blocking', 'duplicate-budget-recomputation'],
     allowedShortcut: 'reuse-measured-db-parallelism-caps-and-canonical-per-kind-budgets-to-size-bounded-plugin-update-row-batches',
     guardrails: [

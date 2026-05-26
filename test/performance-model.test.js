@@ -123,6 +123,17 @@ test('benchmark model covers large uploads and plugin installs', () => {
   assert.ok(
     model.safeFastPaths.some(
       (fastPath) =>
+        fastPath.area === 'parallelism-limits' &&
+        fastPath.allowedShortcut === 'reuse-measured-upload-concurrency-and-chunk-receipts-to-size-bounded-large-upload-fanout' &&
+        fastPath.guardrails.includes('measured-upload-concurrency-stays-planning-evidence-only') &&
+        fastPath.gateProofs.skip.includes('measured upload concurrency and durable chunk receipts') &&
+        fastPath.gateProofs.recovery.includes('durable chunk receipts and the guarded publish record still classify pause, retry, or crash'),
+    ),
+    'measured upload concurrency can size large-upload fanout without weakening recovery evidence',
+  );
+  assert.ok(
+    model.safeFastPaths.some(
+      (fastPath) =>
         fastPath.area === 'file-hashing' &&
         fastPath.allowedShortcut === 'reuse-cached-chunk-ledger-for-resume-with-live-publish-check' &&
         fastPath.guardrails.includes('chunk-ledger-is-resume-evidence-only') &&
