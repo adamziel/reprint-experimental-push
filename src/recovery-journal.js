@@ -890,11 +890,22 @@ function persistedProductionArtifactRefs(journalPath) {
 
   let persistedJournalPath = null;
   let persistedRemoteArtifactPath = null;
+  let sawRecordWithoutJournalArtifactRef = false;
+  let sawRecordWithoutRemoteArtifactRef = false;
 
   for (let index = persisted.records.length - 1; index >= 0; index -= 1) {
     const artifactRefs = persisted.records[index]?.artifactRefs;
     if (!isStrictPlainObject(artifactRefs)) {
       continue;
+    }
+    const hasAnyArtifactRefKeys = Reflect.ownKeys(artifactRefs).length > 0;
+
+    if (Reflect.ownKeys(artifactRefs).some((key) => key !== 'journal' && key !== 'remote')) {
+      return {
+        journal: null,
+        remote: null,
+        invalidReason: 'Production recovery journal persistence includes undeclared artifact reference keys.',
+      };
     }
 
     if (
@@ -935,18 +946,81 @@ function persistedProductionArtifactRefs(journalPath) {
     }
 
     if (
+      !Object.hasOwn(artifactRefs, 'journal')
+      && hasAnyArtifactRefKeys
+      && persistedJournalPath !== null
+    ) {
+      return {
+        journal: null,
+        remote: null,
+        invalidReason: 'Production recovery journal persistence dropped an owned journal artifact path.',
+      };
+    }
+    if (
+      !Object.hasOwn(artifactRefs, 'journal')
+      && hasAnyArtifactRefKeys
+      && persistedJournalPath === null
+    ) {
+      sawRecordWithoutJournalArtifactRef = true;
+    }
+
+    if (
       persistedJournalPath === null
       && Object.hasOwn(artifactRefs, 'journal')
       && isCanonicalAbsolutePath(artifactRefs.journal)
     ) {
+      if (sawRecordWithoutJournalArtifactRef) {
+        return {
+          journal: null,
+          remote: null,
+          invalidReason: 'Production recovery journal persistence dropped an owned journal artifact path.',
+        };
+      }
       persistedJournalPath = artifactRefs.journal;
+    } else if (
+      Object.hasOwn(artifactRefs, 'journal')
+      && isCanonicalAbsolutePath(artifactRefs.journal)
+      && persistedJournalPath !== artifactRefs.journal
+    ) {
+      return {
+        journal: null,
+        remote: null,
+        invalidReason: 'Production recovery journal persistence rewrote the owned journal artifact path.',
+      };
     }
+
+    if (
+      !Object.hasOwn(artifactRefs, 'remote')
+      && hasAnyArtifactRefKeys
+      && persistedRemoteArtifactPath !== null
+    ) {
+      return {
+        journal: null,
+        remote: null,
+        invalidReason: 'Production recovery journal persistence dropped an owned remote artifact path.',
+      };
+    }
+    if (
+      !Object.hasOwn(artifactRefs, 'remote')
+      && hasAnyArtifactRefKeys
+      && persistedRemoteArtifactPath === null
+    ) {
+      sawRecordWithoutRemoteArtifactRef = true;
+    }
+
     if (
       Object.hasOwn(artifactRefs, 'remote')
       && isCanonicalAbsolutePath(artifactRefs.remote)
       && artifactRefs.remote !== persistedJournalPath
       && artifactRefs.remote !== artifactRefs.journal
     ) {
+      if (sawRecordWithoutRemoteArtifactRef) {
+        return {
+          journal: null,
+          remote: null,
+          invalidReason: 'Production recovery journal persistence dropped an owned remote artifact path.',
+        };
+      }
       if (
         persistedRemoteArtifactPath !== null
         && persistedRemoteArtifactPath !== artifactRefs.remote
@@ -954,7 +1028,7 @@ function persistedProductionArtifactRefs(journalPath) {
         return {
           journal: null,
           remote: null,
-          invalidReason: 'Production recovery journal persistence includes an invalid owned remote artifact path.',
+          invalidReason: 'Production recovery journal persistence rewrote the owned remote artifact path.',
         };
       }
       persistedRemoteArtifactPath = artifactRefs.remote;

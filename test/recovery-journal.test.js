@@ -1822,6 +1822,99 @@ test('production recovery journal consumption fails closed when a later persiste
   });
 });
 
+test('production recovery journal reopen fails closed when a later persisted record rewrites the owned journal artifact path', () => {
+  const filePath = tempJournalPath();
+  const remote = baseSite();
+  const plan = planFor(baseSite(), localSite(), remote);
+  const claimId = 'claim-late-rewritten-journal-ref';
+  const artifactRefs = {
+    journal: filePath,
+  };
+  const journal = openProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs,
+    claimId,
+  });
+  appendRecoveryClaimOpened(journal, {
+    plan,
+    current: remote,
+    claimId,
+    artifactRefs,
+  });
+  journal.appendEvent('recovery-state', {
+    planId: plan.id,
+    state: 'blocked-recovery',
+    observedHash: 'snapshot-hash-only',
+    artifactRefs: {
+      journal: `${filePath}.rewritten`,
+    },
+  });
+  journal.close();
+
+  assert.throws(() => {
+    openProductionRecoveryJournal(filePath, {
+      truncate: false,
+      now: fixedNow,
+      claimId,
+      writerLease: { id: claimId },
+    });
+  }, {
+    name: 'UnsupportedProductionRecoveryJournalError',
+    code: 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL',
+  });
+});
+
+test('production recovery journal consumption fails closed when a later persisted record adds undeclared artifact reference keys', () => {
+  const filePath = tempJournalPath();
+  const remote = baseSite();
+  const plan = planFor(baseSite(), localSite(), remote);
+  const remoteArtifactPath = `${filePath}.remote`;
+  const claimId = 'claim-consume-extra-artifact-ref-key';
+  const artifactRefs = {
+    journal: filePath,
+    remote: remoteArtifactPath,
+  };
+  const journal = openProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs,
+    claimId,
+  });
+  appendRecoveryClaimOpened(journal, {
+    plan,
+    current: remote,
+    claimId,
+    artifactRefs,
+  });
+  journal.appendEvent('recovery-state', {
+    planId: plan.id,
+    state: 'blocked-recovery',
+    observedHash: 'snapshot-hash-only',
+    artifactRefs: {
+      journal: filePath,
+      remote: remoteArtifactPath,
+      extra: `${filePath}.extra`,
+    },
+  });
+  journal.close();
+
+  assert.throws(() => {
+    consumeProductionRecoveryJournal({
+      filePath,
+      plan,
+      current: remote,
+      artifactRefs,
+      claimId,
+    });
+  }, {
+    name: 'UnsupportedProductionRecoveryJournalError',
+    code: 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL',
+  });
+});
+
 test('production recovery journal reopen fails closed when persisted journal integrity is blocked', () => {
   const filePath = tempJournalPath();
   fs.writeFileSync(filePath, '{"sequence":1,"schemaVersion":1,"type":"journal-opened"}');
