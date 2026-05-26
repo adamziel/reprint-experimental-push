@@ -90,6 +90,14 @@ The fixed test topology is also shared:
 - browser-visible inspection stays on the sandbox-provided `8080` ingress through a local-only proxy
 - remote tunnels are disallowed
 
+Unsupported production surfaces stay explicitly blocked in this release-candidate slice:
+
+- non-loopback production-shaped source URLs fail closed in the executor client
+- remote tunnels stay disallowed for all browser-visible inspection
+- dry-run never gains write authority
+- apply must revalidate fresh live evidence before every batch and at the storage boundary
+- journal inspect and recovery inspect remain read-only until the durable ownership proof exists
+
 The topology proof is intentionally minimal and stable:
 
 - `remote-base` seeds the persisted pull base package

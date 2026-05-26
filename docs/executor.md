@@ -68,6 +68,14 @@ The shared test topology is fixed:
 - browser-visible inspection stays on the sandbox-provided `8080` ingress through a local-only proxy
 - remote tunnels are disallowed
 
+The constrained release-candidate boundary is fail-closed on unsupported production inputs:
+
+- production-shaped source URLs are only accepted on loopback origins
+- any non-loopback production-shaped source URL is rejected before preflight
+- dry-run stays receipt-only
+- apply keeps the live revalidation boundary at batch and storage scope
+- journal inspect and recovery inspect remain read-only until durable ownership is proven
+
 The executor maps the pull pipeline into push without ever collapsing the
 boundary:
 
