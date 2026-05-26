@@ -6800,6 +6800,63 @@ test('guarded benchmark keeps rollout summaries pinned when raw queue-budget byt
   assert.ok(blockers.includes('backpressure-evidence-incomplete'));
 });
 
+test('guarded benchmark keeps rollout summaries pinned when raw queue-headroom bytes drift under visible production capability evidence', () => {
+  const report = smallBenchmark();
+  const mutated = clone(report);
+
+  mutated.executorCapabilities.productionAtomicCommit = 'production-atomic-group-commit';
+  mutated.executorCapabilities.fileReceipts = 'production-storage-receipts';
+  mutated.executorCapabilities.rowApply = 'production-batched-compare-and-swap';
+  mutated.evidence.parallelism.parallelismLimitsMeasured = true;
+  mutated.evidence.parallelism.parallelismLimitsVisible = true;
+  mutated.evidence.parallelism.parallelismLimits = {
+    chunkUpload: 4,
+    fileHashing: 2,
+    dbBatchPerTable: 2,
+  };
+  mutated.evidence.atomicGroup.productionAtomicCommitMeasured = true;
+  mutated.evidence.atomicGroup.productionAtomicCommitVisible = true;
+  mutated.evidence.atomicGroup.productionAtomicGroupMetadataVisible = true;
+  mutated.evidence.atomicGroup.productionStorageReceiptsMeasured = true;
+  mutated.evidence.atomicGroup.productionStorageReceiptsVisible = true;
+  mutated.evidence.atomicGroup.productionRowBatchExecutorMeasured = true;
+  mutated.evidence.atomicGroup.productionRowBatchExecutorVisible = true;
+  mutated.evidence.backpressure.queueHeadroomBytes -= 1;
+
+  const details = productionThroughputDetails(mutated);
+  const blockers = productionThroughputBlockers(mutated);
+
+  assert.equal(details.queueHeadroomWithinResourceCeiling, false);
+  assert.equal(details.backpressureEvidenceComplete, false);
+  assert.deepEqual(details.productionCapabilityRolloutSummary, [
+    {
+      surface: 'chunk-upload-concurrency',
+      status: 'blocked',
+      measured: false,
+      visible: false,
+      blockerRefs: [
+        'backpressure-evidence-incomplete',
+      ],
+    },
+    {
+      surface: 'file-hashing-concurrency',
+      status: 'ready',
+      measured: true,
+      visible: true,
+      blockerRefs: [],
+    },
+    {
+      surface: 'row-batch-concurrency',
+      status: 'ready',
+      measured: true,
+      visible: true,
+      blockerRefs: [],
+    },
+  ]);
+  assert.ok(blockers.includes('queue-headroom-exceeds-resource-ceiling'));
+  assert.ok(blockers.includes('backpressure-evidence-incomplete'));
+});
+
 test('guarded benchmark keeps memory-ceiling match details false when raw memory-ceiling bytes drift below the bounded pause footprint', () => {
   const report = smallBenchmark();
   const mutated = clone(report);
