@@ -7,18 +7,18 @@ Changed files:
 
 Commands:
 - `date '+%Y-%m-%d %H:%M:%S %Z'`
-- `rg -n "Last updated|0/4|Current blocker|Freshness|progress-log|blocker|live progress" progress.html docs/progress-log.md`
-- `sed -n '492,540p' progress.html`
-- `sed -n '1,32p' docs/progress-log.md`
+- `sed -n '490,540p' progress.html`
+- `sed -n '1,40p' docs/progress-log.md`
+- `git diff -- progress.html docs/progress-log.md`
 - `git status --short --branch`
 
 Push result:
-- Commit `be4e9fce` pushed to `origin/lane/cycle-20260525-mainwindows-2349/progress-followup`
+- Pending commit and push after this handoff write-up.
 
 Worktree status:
-- Clean after commit and push
+- Dirty with the freshness-only edits above
 - Branch: `lane/cycle-20260525-mainwindows-2349/progress-followup`
-- Relative to `origin/main`: still ahead of `origin/main` by the pushed lane commits; the public surface remains conservative at `0/4`
+- Relative to `origin/main`: still ahead of `origin/main` by the lane commits; the public surface remains conservative at `0/4`
 
 Next supervisor nudge:
 - Keep the public page aligned with the active supervision cycle; wait for a real gate change before broadening claims.
