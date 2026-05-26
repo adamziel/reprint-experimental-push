@@ -72,8 +72,10 @@ Fresh visibility-lane heads moved, but they still only refresh public status sur
 - `origin/lane/reliable-executor` -> `b368a170`
 - `origin/lane/reliable-executor` -> `2c240aa7`
 - `origin/lane/reliable-executor` -> `3606228b`
+- `origin/lane/reliable-executor` -> `6dc56a5d`
 - `origin/lane/no-data-loss-invariants` -> `270c7406`
 - `origin/lane/no-data-loss-invariants` -> `62b4acb0`
+- `origin/lane/no-data-loss-invariants` -> `aa4f9c83`
 - `origin/lane/no-data-loss-recovery` -> `2af1ddda`
 - `origin/main` -> `2c8d52cb`
 
@@ -102,12 +104,18 @@ but it did not change the release conclusion:
 - `origin/lane/reliable-executor` now records `3606228b`, failing closed on
   missing production client credentials. It still does not prove production
   auth/session lifecycle or a live-source mutation boundary.
+- `origin/lane/reliable-executor` now records `6dc56a5d`, failing closed on
+  missing release verify credentials. It still does not prove production
+  auth/session lifecycle or a live-source mutation boundary.
 - `origin/lane/reliable-executor` now records `fa1d0e0e`, clarifying blocked
   production surfaces. It still does not prove production auth/session
   lifecycle or a live-source mutation boundary.
 - `origin/lane/no-data-loss-invariants` now records `62b4acb0`, adding a
   termmeta unsupported-boundary proof. It still does not prove the live
   release boundary or any production-backed source mutation.
+- `origin/lane/no-data-loss-invariants` now records `aa4f9c83`, adding a post
+  GUID boundary proof. It still does not prove the live release boundary or
+  any production-backed source mutation.
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now
   records `b03ee033`, refreshing supervisor freshness only. It still does not
   change the release verdict.
