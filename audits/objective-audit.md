@@ -39,16 +39,16 @@ The project is **not releasable as a production WordPress push path**.
 - `origin/lane/cycle-20260525-keep-busy-loop-2/no-data-loss-recovery` -> `63e01a49`
 - `origin/lane/cycle-20260525-mainwindows-2349/critic` -> `fa0dc8a0`
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `999ff0d8`
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `df42d5af`
-- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `ec4a978d`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `2fee0d53`
+- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `5ed83449`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `2af1ddda`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `f3a564a2`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `c0b30d13`
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` -> `0ca7b35d`
 - `origin/lane/cycle-20260525-mainwindows-2357/no-data-loss-invariants-graph-proof` -> `98c0ce26`
 - `origin/lane/cycle-20260525-restart-2340/feedback-supervisor` -> `ef3d911e`
 - `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration` -> `7efe180b`
 - `origin/lane/critic` -> `443dacd6`
-- `origin/lane/fast-paths` -> `8c5c2ccb`
+- `origin/lane/fast-paths` -> `d4abfce3`
 - `origin/lane/feedback-supervisor` -> `ee7069e6`
 - `origin/lane/independent-auditor` -> `6351130f`
 - `origin/lane/no-data-loss-invariants` -> `0247563b`
@@ -111,21 +111,19 @@ but it did not change the release conclusion:
   verify helper bounds and keeping the live proof wrapper fail-closed. It still
   does not prove production auth/session lifecycle or a live-source mutation
   boundary.
-- `origin/lane/fast-paths` now records `8c5c2ccb`, tightening backpressure
-  evidence checks only.
+- `origin/lane/fast-paths` now records `d4abfce3`, rejecting queue slack
+  commit shortcuts only.
 - `origin/lane/fast-paths` now records `999ff0d8`, adding chunk digest resume
   rejection. It still does not prove a production speed claim.
 - `origin/lane/feedback-supervisor` now records `ee7069e6`, refreshing the
   supervisor progress surface only.
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now records
-  `bfe116c7`, refreshing progress visibility only.
+  `2fee0d53`, refreshing progress visibility only.
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now records
-  `962cc2a8`, refreshing the public progress freshness only.
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now records
-  `f3a564a2`, refreshing public progress freshness only. It still does not
+  `c0b30d13`, refreshing public progress freshness only. It still does not
   add production-backed gate movement.
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` now records
-  `ec4a978d`, refreshing the audit snapshot only and not changing the release
+  `5ed83449`, refreshing the audit snapshot only and not changing the release
   boundary.
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now records
   `0f47e1c0`, refreshing the public progress freshness only.
@@ -144,15 +142,11 @@ but it did not change the release conclusion:
 - `origin/lane/progress-publisher` now records `7695e1f9`, refreshing public
   progress freshness only.
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now records
-  `d3849769`, refreshing the public progress freshness only.
+  `2fee0d53`, refreshing the public progress freshness only.
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now records
-  `37c0f126`, refreshing the public progress freshness only.
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now records
-  `c43e1a77`, refreshing the public progress freshness only.
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now records
-  `a871417a`, refreshing the public progress freshness only.
+  `c0b30d13`, refreshing the public progress freshness only.
 - `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration`
-  now records `0b33a5f9`, adding plugin-owned delete-guard coverage only.
+  now records `7efe180b`, adding revision postmeta removal proof only.
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` now
   records `2af1ddda`, tightening durable journal recovery guards. It still
   does not add production-backed journal ownership or replay proof.
