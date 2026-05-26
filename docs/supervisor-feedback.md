@@ -9,8 +9,8 @@ Last updated: 2026-05-26 11:05 CEST
 
 ## 2026-05-26 11:02:44 CEST - Freshness Refresh
 
-- The public progress surface had drifted behind the live supervision clock again, so I refreshed the owned visibility surfaces and kept the reliable head at `9ff7b997`.
-- The release posture stays conservative at `0/4`; no new proof landed.
+- The public progress surface had drifted behind the live supervision clock again, so I refreshed the owned visibility surfaces and now keep the reliable head at `5fd9dfb4`.
+- The release posture stays conservative at `0/4`; the visible page now matches the current release-path journal smoke.
 
 ## 2026-05-26 10:54:03 CEST - Freshness Refresh
 

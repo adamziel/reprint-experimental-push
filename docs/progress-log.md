@@ -17,8 +17,8 @@ linked implementation artifacts.
 
 <a id="2026-05-26-freshness-refresh-110244"></a>
 
-- Refreshed [progress.html](../progress.html) so the visible last-updated date stays aligned with the live supervision clock, and kept the reliable head reference at `9ff7b997`.
-- This remains a visibility-only update. The release gate posture stays `0/4`.
+- Refreshed [progress.html](../progress.html) so the visible last-updated date stays aligned with the live supervision clock, and kept the reliable head reference at `5fd9dfb4`.
+- This visibility update now matches the current release-path journal smoke, but the release gate posture stays `0/4`.
 - Evidence trail: [progress.html](../progress.html), [supervisor feedback](supervisor-feedback.md).
 
 ## 2026-05-26 - Freshness Refresh 10:52:13
