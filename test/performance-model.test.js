@@ -5259,6 +5259,7 @@ test('guarded executor large profile still preserves receipts and stays blocked 
   const report = runGuardedExecutorBenchmark({ profile: 'guardedLarge' });
   const model = buildBenchmarkModel();
   const blockers = new Set(report.claims.productionThroughput.blockers);
+  const backpressure = report.evidence.backpressure;
 
   assert.equal(report.profile, 'guardedLarge');
   assert.ok(report.shape.fileBytes >= 32 * MIB);
@@ -5301,10 +5302,14 @@ test('guarded executor large profile still preserves receipts and stays blocked 
   assert.equal(report.evidence.preconditions.everyMutationHasLiveRemotePrecondition, true);
   assert.equal(report.throughput.productionThroughput, 'not-claimed');
   assert.equal(report.claims.productionThroughput.status, 'blocked');
+  assert.equal(backpressure.queueBudgetVisible, true);
+  assert.equal(backpressure.receiptCursorMemoryCeilingVisible, true);
+  assert.equal(backpressure.receiptCursorMemoryCeilingMatchesQueueBudget, true);
+  assert.equal(backpressure.receiptCursorMemoryCeilingMatchesQueueBudgetVisible, true);
   assert.ok(blockers.has('production-atomic-group-commit-not-measured'));
   assert.ok(blockers.has('production-storage-receipts-not-measured'));
   assert.ok(blockers.has('production-row-batch-executor-not-measured'));
-  assert.ok(blockers.has('queue-budget-visible-without-memory-ceiling-match-visibility'));
+  assert.equal(blockers.has('queue-budget-visible-without-memory-ceiling-match-visibility'), false);
 });
 
 test('benchmark shape stays bounded for the current large fixtures', () => {
