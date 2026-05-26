@@ -224,6 +224,12 @@ test('guarded benchmark refuses production throughput claims until production ga
   assert.ok(
     report.claims.productionThroughput.blockers.includes('production-row-batch-executor-not-measured'),
   );
+  assert.equal(
+    report.claims.productionThroughput.blockers.filter(
+      (blocker) => blocker === 'production-atomic-group-commit-not-measured',
+    ).length,
+    1,
+  );
   assert.ok(
     !report.claims.productionThroughput.blockers.includes('chunk-window-exceeds-memory-ceiling'),
   );

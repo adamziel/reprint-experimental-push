@@ -386,9 +386,6 @@ export function productionThroughputBlockers(report) {
   if (report.executorCapabilities.fileReceipts !== 'production-storage-receipts') {
     blockers.push('production-storage-receipts-not-measured');
   }
-  if (report.executorCapabilities.productionAtomicCommit !== 'production-atomic-group-commit') {
-    blockers.push('production-atomic-group-commit-not-measured');
-  }
   if (report.executorCapabilities.rowApply !== 'production-batched-compare-and-swap') {
     blockers.push('production-row-batch-executor-not-measured');
   }
