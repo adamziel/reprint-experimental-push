@@ -671,7 +671,7 @@ function productionRecoverySupportReport(writer) {
   ) {
     addMissingDependency('restart-readable recovery journal adapter');
   }
-  if (writer?.productionAdapter !== true) {
+  if (!Object.hasOwn(writer ?? {}, 'productionAdapter') || writer.productionAdapter !== true) {
     addMissingDependency('explicit production recovery adapter marker');
   }
   if (!Object.hasOwn(writer ?? {}, 'ownsJournal') || writer.ownsJournal !== true) {
