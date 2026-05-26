@@ -2404,7 +2404,9 @@ test('packaged readiness helpers fall back to signed preflight and index probes 
   );
 
   for (const source of [smokeSource, verifierSource]) {
-    assert.match(source, /if \(packagedProductionPluginReadinessProbeTimedOut\(error\)\) \{[\s\S]*?const \{ preflightProbe, indexProbe \} = await fetchPackagedTimeoutFallbackProbes\(baseUrl, child\);/s);
+    assert.match(source, /if \(packagedProductionPluginReadinessProbeTimedOut\(error\)\) \{/);
+    assert.match(source, /fetchPackagedTimeoutFallbackProbes\(/);
+    assert.match(source, /packagedStartup:\s*true/);
     assert.match(source, /if \(preflightProbe\.ready\) \{\s*return;\s*\}/);
     assert.match(source, /packagedProductionPluginReadinessBodyRetryable\(indexProbe\?\.status, indexProbe\?\.body \|\| ''\)/);
     assert.match(source, /timeoutProbeCount = 0;\s*await sleepUnlessChildExit\(readinessProbeIntervalMs, child\);\s*continue;/);
@@ -2649,6 +2651,32 @@ test('packaged readiness helpers pass snapshot startup context into signed prefl
     assert.match(
       source,
       /probe\.retryable = packagedProductionPluginPreflightRetryable\(\s*\{ status: response\.status, body \},\s*readinessContext,\s*\);/s,
+    );
+  }
+});
+
+test('packaged timeout fallback helpers preserve packaged startup context for signed preflight probes', () => {
+  const smokeSource = readFileSync(
+    path.join(repoRoot, 'scripts/playground/production-plugin-package-smoke.mjs'),
+    'utf8',
+  );
+  const verifierSource = readFileSync(
+    path.join(repoRoot, 'scripts/playground/production-shaped-release-verify.mjs'),
+    'utf8',
+  );
+
+  for (const source of [smokeSource, verifierSource]) {
+    assert.match(
+      source,
+      /async function fetchPackagedTimeoutFallbackProbes\(baseUrl, child = null, readinessContext = \{\}\)/,
+    );
+    assert.match(
+      source,
+      /const preflightProbe = await fetchPackagedPreflightProbe\(baseUrl, child, readinessContext\)\.catch/,
+    );
+    assert.match(
+      source,
+      /packagedProductionPluginPreflightRetryable\(\s*\{ status: preflightProbe\.status, body: preflightProbe\.body \},\s*\{ \.\.\.readinessContext, indexProbe \},\s*\)/s,
     );
   }
 });

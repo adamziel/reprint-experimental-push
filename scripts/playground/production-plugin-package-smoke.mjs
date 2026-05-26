@@ -1051,7 +1051,11 @@ async function waitForServer(child, baseUrl, logs) {
       }
       if (packagedProductionPluginReadinessProbeTimedOut(error)) {
         noteReadinessPhase('timeout-fallback', `snapshot probe timed out; falling back to signed preflight and /wp-json/ readiness probes at ${baseUrl}`);
-        const { preflightProbe, indexProbe } = await fetchPackagedTimeoutFallbackProbes(baseUrl, child);
+        const { preflightProbe, indexProbe } = await fetchPackagedTimeoutFallbackProbes(
+          baseUrl,
+          child,
+          { packagedStartup: true },
+        );
         lastTimeoutFallbackProbes = { preflightProbe, indexProbe };
         if (preflightProbe) {
           lastProbe = preflightProbe;
@@ -1352,8 +1356,8 @@ async function fetchPackagedPreflightProbe(baseUrl, child = null, readinessConte
   return probe;
 }
 
-async function fetchPackagedTimeoutFallbackProbes(baseUrl, child = null) {
-  const preflightProbe = await fetchPackagedPreflightProbe(baseUrl, child).catch((error) =>
+async function fetchPackagedTimeoutFallbackProbes(baseUrl, child = null, readinessContext = {}) {
+  const preflightProbe = await fetchPackagedPreflightProbe(baseUrl, child, readinessContext).catch((error) =>
     buildPackagedTimeoutFallbackProbe('/wp-json/reprint/v1/push/preflight', error),
   );
   const indexProbe = await fetchPackagedWordPressIndexProbe(baseUrl, child).catch((error) =>
@@ -1362,7 +1366,7 @@ async function fetchPackagedTimeoutFallbackProbes(baseUrl, child = null) {
   if (preflightProbe && preflightProbe.ready !== true) {
     preflightProbe.retryable = packagedProductionPluginPreflightRetryable(
       { status: preflightProbe.status, body: preflightProbe.body },
-      { indexProbe },
+      { ...readinessContext, indexProbe },
     );
     preflightProbe.terminal = !preflightProbe.retryable;
   }
