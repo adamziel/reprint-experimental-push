@@ -205,7 +205,11 @@ export async function runAuthenticatedHttpPush({
     return summary;
   }
   const recoveryInspectAuthEnvelopeDrift = hasAuthEnvelopeDrift(preflightAuthEnvelope, recoveryInspect);
-  const recoveryInspectAuthSessionDrift = recoveryInspectAuthEnvelopeDrift && recoveryInspect.body?.recovery;
+  if (recoveryInspectAuthEnvelopeDrift) {
+    summary.code = 'AUTH_SESSION_LIFECYCLE_DRIFT';
+    setDurableJournalBoundary(summary, 'recovery-inspect');
+    return summary;
+  }
   if (!summary.recoveryInspect.recovery || summary.recoveryInspect.recovery.journalState !== 'ok') {
     summary.code = 'RECOVERY_INSPECT_JOURNAL_UNTRUSTED';
     setDurableJournalBoundary(summary, 'recovery-inspect');
@@ -213,11 +217,6 @@ export async function runAuthenticatedHttpPush({
   }
   if (summary.recoveryInspect.recovery?.state === 'blocked-recovery') {
     summary.code = recoveryInspect.body?.code || 'RECOVERY_INSPECT_BLOCKED';
-    setDurableJournalBoundary(summary, 'recovery-inspect');
-    return summary;
-  }
-  if (recoveryInspectAuthSessionDrift) {
-    summary.code = 'RECOVERY_INSPECT_AUTH_SESSION_DRIFT';
     setDurableJournalBoundary(summary, 'recovery-inspect');
     return summary;
   }
