@@ -5,6 +5,14 @@
 The project is **not releasable as a production WordPress push path**.
 
 - Fresh remote heads at audit time, checked on 2026-05-26 08:24:51 CEST (+0200):
+- Fresh production-side lane heads re-polled at 2026-05-26 08:26:09 CEST (+0200):
+
+- `origin/lane/critic` -> `567743c2`
+- `origin/lane/no-data-loss-invariants` -> `5f93c5f7`
+- `origin/lane/no-data-loss-recovery` -> `9e077c10`
+- `origin/lane/reliable-executor` -> `17f9a6a5`
+
+- These heads still do not change the release verdict. They remain fail-closed support evidence, not production-backed auth/session lifecycle, durable journal ownership on the release path, or a live production mutation boundary.
 
 - `origin/lane/cycle-20260524-auth-graph-hardening/critic` -> `e413f7a8`
 - `origin/lane/cycle-20260524-auth-graph-hardening/fast-paths` -> `ad7d82a4`
