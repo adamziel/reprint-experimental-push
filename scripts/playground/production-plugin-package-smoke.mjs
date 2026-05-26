@@ -106,6 +106,7 @@ try {
     driverDeleteGuard: {},
     driverUpdateValidationGuard: {},
     driverReceiptIdentityGuard: {},
+    driverReceiptExpiryGuard: {},
     final: {},
   };
 
@@ -433,6 +434,49 @@ try {
       dryRunRejectedMessage: invalidUpdateDryRun.body?.message,
       rowRetainedAfterReject: afterInvalidUpdateReject.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1'] !== undefined,
       updatedMarkerAfterReject: afterInvalidUpdateReject.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1']?.updated_marker,
+    };
+
+    const expiredReceiptApply = await client.signedPost(
+      '/apply',
+      {
+        plan: updatePlan,
+        receipt: mutateReceipt(updateDryRun.body.receipt, (receipt) => {
+          receipt.authBinding.expiresAt = '2000-01-01T00:00:00Z';
+        }),
+      },
+      {
+        session,
+        idempotencyKey: 'production-plugin-driver-expired-receipt-apply',
+      },
+    );
+    assert.equal(expiredReceiptApply.status, 409);
+    assert.equal(expiredReceiptApply.body?.ok, false);
+    assert.equal(expiredReceiptApply.body?.code, 'AUTH_RECEIPT_EXPIRED');
+
+    const afterExpiredReceiptReject = await client.get('/snapshot');
+    assert.equal(afterExpiredReceiptReject.status, 200);
+    assert.equal(afterExpiredReceiptReject.body?.ok, true);
+    assert.equal(
+      afterExpiredReceiptReject.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1']?.updated_marker,
+      'local-update',
+      'expired packaged driver receipt still mutated the remote snapshot',
+    );
+    assert.deepEqual(
+      afterExpiredReceiptReject.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1']?.payload,
+      {
+        owner: driverFixture.pluginOwner,
+        mode: 'local-update',
+        version: 2,
+      },
+      'expired packaged driver receipt changed the arbitrary driver payload',
+    );
+
+    summary.driverReceiptExpiryGuard = {
+      resourceKey: driverFixture.resourceKey,
+      applyRejectedCode: expiredReceiptApply.body?.code,
+      applyRejectedMessage: expiredReceiptApply.body?.message,
+      rowRetainedAfterReject: afterExpiredReceiptReject.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1'] !== undefined,
+      updatedMarkerAfterReject: afterExpiredReceiptReject.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1']?.updated_marker,
     };
 
     const alternateClient = authenticatedHttpClient({
@@ -1115,6 +1159,14 @@ function authHeaders(auth = credentials) {
 
 function hmacHex(key, data) {
   return createHmac('sha256', key).update(data, 'utf8').digest('hex');
+}
+
+function mutateReceipt(receipt, mutate) {
+  const next = JSON.parse(JSON.stringify(receipt));
+  mutate(next);
+  delete next.receiptHash;
+  next.receiptHash = digest(next);
+  return next;
 }
 
 function assertRouteNamespace(body) {
