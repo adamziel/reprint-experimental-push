@@ -1,38 +1,30 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-25 00:27 CEST
+Last updated: 2026-05-26 11:33 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
 
-## 2026-05-25 00:27 CEST - Supervised Lane Merge Refresh
+## 2026-05-26 11:33 CEST - Freshness Alignment
 
-- Going well: `89` Node tests pass after supervised lane merges. Matching
-  delete/edit, recovery replay/failure states, fast-path rejection guardrails,
-  protocol binding, critic, and objective-audit evidence all landed.
-- Also merged: a concise acceptable recovery-state contract, stricter critic
-  blocking gaps, objective-audit refresh, journal/recovery protocol wording,
-  safe fast-path family guidance, benchmark assertions for large upload/plugin
-  workloads, and explicit recovery inspect semantics.
-- Not going well: production auth/session storage, durable journal ownership,
-  leases, full graph identity mapping, Docker/full Playground integration, and
-  general plugin drivers remain unproven.
-- Progress change: eight fast-mode worker outputs were integrated across the
-  last two passes; production readiness stayed blocked.
-- Active supervision: same-plan graph remains active and unmerged. Completed
-  replacement sessions were stopped after review; stale progress-publisher
-  output was rejected instead of merged.
-- Next nudge: keep workers focused on production-backed auth/journal proof and
-  graph identity mapping.
+- Going well: the public progress page and log now name `5abb12dc` as the
+  current reliable-executor head, and the visible status still keeps gates at
+  `0/4`.
+- Not going well: production auth/session lifecycle and durable journal
+  ownership still block any production push claim.
+- Progress change: the feedback lane only corrected stale public wording; no
+  gate moved.
+- Next nudge: keep the public page concise, current, and conservative until a
+  real gate-moving proof lands from reliable or recovery.
 
 | Lane | Nudge |
 | --- | --- |
-| Invariants | Finish same-plan graph HTTP smoke before merge. |
-| Recovery | Move model replay/failure proof into production journal storage. |
-| Reliable executor | Turn protocol docs into production push credentials and journal rows. |
-| Fast paths | Run guarded benchmark proof against a real large site. |
-| Audit and critic | Re-audit current proof while implementation lanes run. |
-| Progress publisher | Keep Pages dated, concise, and explicit about active lanes. |
+| Invariants | Keep the unsupported-boundary proof focused on same-plan graph safety. |
+| Recovery | Land fenced durable journal ownership or name the exact missing adapter. |
+| Reliable executor | Move from fail-closed session hardening to live auth/session lifecycle proof. |
+| Fast paths | Hold until a code patch changes the runtime receipt or cursor path. |
+| Audit and critic | Classify only evidence that changes a gate or blocker. |
+| Progress publisher | Keep the public page current, concise, and conservative at `0/4`. |
 
 <details>
 <summary>Earlier feedback entries</summary>
