@@ -122,6 +122,17 @@ test('benchmark model covers large uploads and plugin installs', () => {
   assert.ok(
     model.safeFastPaths.some(
       (fastPath) =>
+        fastPath.area === 'file-hashing' &&
+        fastPath.allowedShortcut === 'reuse-plan-scoped-chunk-digests-for-large-file-resume' &&
+        fastPath.guardrails.includes('chunk-digests-are-plan-scoped') &&
+        fastPath.gateProofs.skip.includes('resumed large files can skip duplicate chunk rehashing') &&
+        fastPath.gateProofs.recovery.includes('chunk digest receipts and the publish record classify whether the upload stopped before or after guarded visibility'),
+    ),
+    'plan-scoped chunk digests can size large-file resume without weakening publish or recovery gates',
+  );
+  assert.ok(
+    model.safeFastPaths.some(
+      (fastPath) =>
         fastPath.area === 'backpressure' &&
         fastPath.allowedShortcut === 'reuse-receipt-cursor-queue-slack-and-memory-ceiling-to-size-bounded-replay' &&
         fastPath.guardrails.includes('queue-slack-and-memory-ceiling-stay-aligned') &&
