@@ -1459,6 +1459,7 @@ test('production-shaped authenticated push records revoked and cleaned-up auth s
       { step: 'replay', revoked: false, cleanedUp: true },
       { step: 'journal', revoked: false, cleanedUp: false },
     ]);
+    assert.equal(summary.authSessionLifecycle.dryRun.status, 'active');
     assert.equal(summary.authSessionLifecycle.dryRun.revoked, true);
     assert.equal(summary.authSessionLifecycle.apply.cleanedUp, true);
     assert.equal(summary.authSessionLifecycle.replay.cleanedUp, true);

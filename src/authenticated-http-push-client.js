@@ -970,7 +970,7 @@ function recordAuthSessionLifecycle(summary, step, session) {
     step,
     id: observation?.id || null,
     type: observation?.type || null,
-    status: observation?.status || null,
+    status: normalizeAuthSessionLifecycleHistoryStatus(observation),
     expiresAt: observation?.expiresAt || null,
     expired: Boolean(observation?.expired),
     revoked: Boolean(observation?.revoked),
@@ -1038,6 +1038,14 @@ function summarizeAuthSessionLifecycleHistory(history) {
     ) || null,
     observations,
   };
+}
+
+function normalizeAuthSessionLifecycleHistoryStatus(observation) {
+  if (observation?.revoked) {
+    return 'revoked';
+  }
+
+  return observation?.status || null;
 }
 
 function resolveRequiredProductionAuthSessionSummary(summary) {
