@@ -1182,7 +1182,10 @@ export function isDurableJournalClosed(writer) {
   return Boolean(
     writer
     && typeof writer === 'object'
-    && (writer[CLOSED_DURABLE_JOURNAL] === true || CLOSED_DURABLE_JOURNALS.has(writer)),
+    && (
+      (Object.hasOwn(writer, CLOSED_DURABLE_JOURNAL) && writer[CLOSED_DURABLE_JOURNAL] === true)
+      || CLOSED_DURABLE_JOURNALS.has(writer)
+    ),
   );
 }
 

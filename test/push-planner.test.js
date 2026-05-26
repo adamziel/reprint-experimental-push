@@ -29301,6 +29301,42 @@ test('idempotently skips closing an already closed owned production recovery jou
   assert.equal(isDurableJournalClosed(writer), true);
 });
 
+test('does not treat a distinct writer as closed when the closed marker is inherited through the prototype', () => {
+  const prototypeCloseCalls = [];
+  const prototypeWriter = {
+    kind: 'production-recovery-journal',
+    productionAdapter: true,
+    supportedSurface: 'production-recovery-journal-adapter',
+    ownsJournal: true,
+    ownsRemoteArtifact: true,
+    close() {
+      prototypeCloseCalls.push('prototype-close');
+    },
+  };
+
+  closeOwnedDurableJournal(prototypeWriter);
+  assert.equal(prototypeCloseCalls.length, 1);
+  assert.equal(isDurableJournalClosed(prototypeWriter), true);
+
+  const childCloseCalls = [];
+  const writer = Object.create(prototypeWriter);
+  writer.kind = 'production-recovery-journal';
+  writer.productionAdapter = true;
+  writer.supportedSurface = 'production-recovery-journal-adapter';
+  writer.ownsJournal = true;
+  writer.ownsRemoteArtifact = true;
+  writer.close = () => {
+    childCloseCalls.push('child-close');
+  };
+
+  assert.equal(isDurableJournalClosed(writer), false);
+
+  closeOwnedDurableJournal(writer);
+
+  assert.equal(childCloseCalls.length, 1);
+  assert.equal(isDurableJournalClosed(writer), true);
+});
+
 test('marks an owned production recovery journal writer closed even when close throws', () => {
   let closeCalls = 0;
   const writer = {
