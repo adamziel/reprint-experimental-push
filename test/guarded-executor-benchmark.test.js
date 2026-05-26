@@ -1472,6 +1472,47 @@ test('fast-path fixture rejects cached chunk hashes from skipping window sizing 
   assert.match(rejected.rejectedBecause, /guarded publish boundary/i);
 });
 
+test('fast-path fixture rejects compressed in-memory buffers from proving a plugin update already finished', () => {
+  const fixture = buildFastPathFixture();
+  const rejected = fixture.rejectedFastPaths.find(
+    (fastPath) => fastPath.id === 'index-and-compressed-buffer-completes-plugin-update',
+  );
+
+  assert.ok(rejected);
+  assert.equal(rejected.rejectedGate, 'recovery');
+  assert.match(rejected.proposal, /compressed in-memory buffer/);
+  assert.match(rejected.rejectedBecause, /row receipts/i);
+  assert.deepEqual(rejected.violates, [
+    'remote-index-planning-only',
+    'compression',
+    'backpressure',
+    'plugin-preconditions',
+    'row-preconditions',
+    'atomic-groups',
+    'durable-progress',
+  ]);
+});
+
+test('fast-path fixture rejects compressed in-memory buffers from proving a plugin install already finished', () => {
+  const fixture = buildFastPathFixture();
+  const rejected = fixture.rejectedFastPaths.find(
+    (fastPath) => fastPath.id === 'index-and-compressed-buffer-completes-plugin-install',
+  );
+
+  assert.ok(rejected);
+  assert.equal(rejected.rejectedGate, 'recovery');
+  assert.match(rejected.proposal, /compressed in-memory buffer/);
+  assert.match(rejected.rejectedBecause, /metadata writes, file receipts/i);
+  assert.deepEqual(rejected.violates, [
+    'remote-index-planning-only',
+    'compression',
+    'backpressure',
+    'plugin-preconditions',
+    'atomic-groups',
+    'durable-progress',
+  ]);
+});
+
 test('guarded benchmark refuses production throughput claims until production gaps are measured', () => {
   const report = smallBenchmark();
 
