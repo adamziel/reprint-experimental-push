@@ -1,6 +1,11 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-26 11:21 CEST
+Last updated: 2026-05-26 11:23 CEST
+
+## 2026-05-26 11:23:00 CEST - Freshness Refresh
+
+- Reliable's current head is `1c8a658b`; keep the next nudge tied to the production-boundary proof that can actually move the gate.
+- Release posture stays conservative at `0/4`.
 
 ## 2026-05-26 11:21:14 CEST - Freshness Refresh
 
