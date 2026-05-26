@@ -8518,6 +8518,57 @@ test('blocks a local thumbnail reference owned by a wp_navigation post even when
   assert.throws(() => applyPlan(baseSite(), plan), /Refusing to apply/);
 });
 
+test('blocks a local thumbnail reference owned by a nav_menu_item post even when it targets a same-plan attachment', () => {
+  const sourceMenuItemResourceKey = 'row:["wp_posts","ID:1"]';
+  const targetAttachmentResourceKey = 'row:["wp_posts","ID:2"]';
+  const postmetaResourceKey = 'row:["wp_postmeta","meta_id:249"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_posts['ID:1'] = {
+    ID: 1,
+    post_title: 'Local source nav menu item',
+    post_content: 'local-private-source-nav-menu-item-body',
+    post_status: 'publish',
+    post_type: 'nav_menu_item',
+  };
+  local.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_title: 'Local target attachment',
+    post_content: 'local-private-target-attachment-body',
+    post_status: 'inherit',
+    post_type: 'attachment',
+  };
+  local.db.wp_postmeta = {
+    'meta_id:249': {
+      meta_id: 249,
+      post_id: 1,
+      meta_key: '_thumbnail_id',
+      meta_value: 2,
+    },
+  };
+
+  const plan = planFor(base, local, baseSite());
+  const targetAttachmentMutation = mutationFor(plan, targetAttachmentResourceKey);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === postmetaResourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 1);
+  assert.equal(mutationFor(plan, sourceMenuItemResourceKey), undefined);
+  assert.equal(targetAttachmentMutation.changeKind, 'create');
+  assert.equal(mutationFor(plan, postmetaResourceKey), undefined);
+  assert.equal(blocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(blocker.surface, 'nav_menu_item');
+  assert.equal(
+    JSON.stringify(blocker).includes('local-private-source-nav-menu-item-body'),
+    false,
+  );
+  assert.equal(
+    JSON.stringify(blocker).includes('local-private-target-attachment-body'),
+    false,
+  );
+  assert.throws(() => applyPlan(baseSite(), plan), /Refusing to apply/);
+});
+
 test('allows a local attachment parent reference to a same-plan attachment', () => {
   const targetResourceKey = 'row:["wp_posts","ID:2"]';
   const attachmentResourceKey = 'row:["wp_posts","ID:3"]';
