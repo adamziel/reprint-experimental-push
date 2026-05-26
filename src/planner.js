@@ -2868,14 +2868,16 @@ function unsupportedGuidResourceSupport({ resource, baseValue, localValue, remot
   const candidate = localValue !== ABSENT ? localValue : (baseValue !== ABSENT ? baseValue : remoteValue);
   const baseGuid = baseValue !== ABSENT && baseValue && typeof baseValue === 'object' ? baseValue.guid : undefined;
   const localGuid = localValue !== ABSENT && localValue && typeof localValue === 'object' ? localValue.guid : undefined;
+  const remoteGuid = remoteValue !== ABSENT && remoteValue && typeof remoteValue === 'object' ? remoteValue.guid : undefined;
   if (
     !candidate
     || candidate === ABSENT
     || baseGuid == null
     || baseGuid === ''
-    || localGuid == null
-    || localGuid === ''
-    || localGuid === baseGuid
+    || (
+      (localGuid == null || localGuid === '' || localGuid === baseGuid)
+      && (remoteGuid == null || remoteGuid === '' || remoteGuid === baseGuid)
+    )
   ) {
     return { supported: true };
   }
