@@ -43,7 +43,12 @@ export function isAcceptableRecoveryState(recoveryState) {
     );
   }
 
-  return Boolean(recoveryState.artifacts && recoveryState.artifacts.journal && recoveryState.artifacts.remote);
+  return Boolean(
+    recoveryState.artifacts
+    && recoveryState.artifacts.journal
+    && recoveryState.artifacts.remote
+    && typeof recoveryState.artifacts.remote === 'object',
+  );
 }
 
 export class PushPlanError extends Error {

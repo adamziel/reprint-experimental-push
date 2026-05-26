@@ -19764,6 +19764,16 @@ test('accepted post-failure recovery states are old remote, fully updated remote
   assert.equal(
     isAcceptableRecoveryState({
       status: 'blocked-recovery',
+      artifacts: {
+        journal: { status: 'completed' },
+        remote: null,
+      },
+    }),
+    false,
+  );
+  assert.equal(
+    isAcceptableRecoveryState({
+      status: 'blocked-recovery',
       artifacts: { journal: { status: 'completed' } },
     }),
     false,
