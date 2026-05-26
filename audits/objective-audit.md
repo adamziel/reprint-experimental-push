@@ -8,22 +8,22 @@ Fresh remote heads at audit time, checked on May 26, 2026:
 
 - `origin/lane/reliable-executor` -> `0c4fd10f`
 - `origin/lane/no-data-loss-invariants` -> `9c70eba6`
-- `origin/lane/no-data-loss-recovery` -> `47b675c0`
-- `origin/lane/fast-paths` -> `9be664b2`
-- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `ff2131c3`
-- `origin/lane/independent-auditor` -> `7191fbc6`
+- `origin/lane/no-data-loss-recovery` -> `c93b1536`
+- `origin/lane/fast-paths` -> `401bda5a`
+- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `401bda5a`
+- `origin/lane/independent-auditor` -> `88f3fd7a`
 - `origin/lane/critic` -> `68569c0b`
 - `origin/lane/progress-publisher` -> `7695e1f9`
 - `origin/lane/same-plan-wordpress-graph-create` -> `09e6706d`
 - `origin/lane/cycle-20260525-mainwindows-2349/same-plan-wordpress-graph-create` -> `09e6706d`
 - `origin/lane/cycle-20260525-mainwindows-2349/same-plan-wordpress-graph-create` -> `e9cbf9d4`
 - `origin/lane/cycle-20260525-mainwindows-2357/no-data-loss-invariants-graph-proof` -> `98c0ce26`
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `f042a3e3`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `fde9e4ac`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `9cd3256e`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `4caa8b5b`
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` -> `5f256171`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-invariants` -> `9c70eba6`
-- `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `9fa23221`
-- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `6f3148a6`
+- `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `c93b1536`
+- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `401bda5a`
 - `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration` -> `a3a900d7`
 - `origin/main` -> `e55864f4`
 
@@ -50,26 +50,26 @@ but it did not change the release conclusion:
   coverage, which strengthens the fail-closed boundary but still does not
   prove live source mutation on unsupported surfaces.
 - `origin/lane/no-data-loss-recovery` now tightens the durable journal
-  production gate at `47b675c0` while preserving the earlier recovery
+  production gate at `c93b1536` while preserving the earlier recovery
   evidence.
   `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` now
-  fences journal path mismatches at `1d0146b5`, but it still does not add
+  fences journal path mismatches at `c93b1536`, but it still does not add
   production-backed journal ownership or replay proof.
-- `origin/lane/fast-paths` now refreshes benchmark evidence at `9be664b2`.
+- `origin/lane/fast-paths` now refreshes benchmark evidence at `401bda5a`.
   This remains a safe fast-path implementation detail, but it still does not
   prove the live production push boundary.
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` now adds bounded
-  backpressure consistency handling at `ff2131c3`. That is still a
+  backpressure consistency handling at `401bda5a`. That is still a
   fail-closed implementation improvement, not production release proof.
-- `origin/lane/cycle-20260525-mainwindows-2349/critic` now refreshes the critic handoff at `f8591f9d`.
+- `origin/lane/critic` now refreshes the critic handoff at `68569c0b`.
 - `origin/lane/progress-publisher` now refreshes the public progress evidence
   at `7695e1f9`.
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` now refreshes the audit snapshot at
   `62285938`.
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now
-  refreshes the supervisor evidence snapshot at `08e327b7`.
+  refreshes the supervisor evidence snapshot at `9cd3256e`.
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now
-  records the latest progress freshness handoff at `fde9e4ac`.
+  records the latest progress freshness handoff at `4caa8b5b`.
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` now
   hardens the live proof timeout diagnostics at `5f256171`.
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` now
