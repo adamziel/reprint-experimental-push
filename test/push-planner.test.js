@@ -20599,6 +20599,53 @@ test('blocks local serialized block references while preserving remote-only plug
   assert.equal(remote.plugins.forms.description, 'remote-only plugin drift');
 });
 
+test('blocks remote-only serialized block drift while preserving matching independent edits and remote-only plugin drift', () => {
+  const resourceKey = 'row:["wp_posts","ID:60"]';
+  const base = baseSite();
+  base.db.wp_posts['ID:60'] = {
+    ID: 60,
+    post_title: 'Base block post',
+    post_content: '<!-- wp:paragraph -->Base block content<!-- /wp:paragraph -->',
+    post_status: 'publish',
+    post_type: 'post',
+  };
+
+  const local = baseSite();
+  local.db.wp_posts['ID:60'] = {
+    ID: 60,
+    post_title: 'Base block post',
+    post_content: '<!-- wp:paragraph -->Base block content<!-- /wp:paragraph -->',
+    post_status: 'publish',
+    post_type: 'post',
+  };
+
+  const remote = baseSite();
+  remote.db.wp_posts['ID:60'] = {
+    ID: 60,
+    post_title: 'Base block post',
+    post_content: '<!-- wp:paragraph -->Remote block drift<!-- /wp:paragraph -->',
+    post_status: 'publish',
+    post_type: 'post',
+  };
+  remote.plugins.forms.description = 'remote-only plugin drift';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin drift */';
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers[0];
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(plan.conflicts.length, 0);
+  assert.equal(blocker.class, 'unsupported-serialized-blocks-resource');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.reason, 'Serialized block references are not yet supported by the planner.');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin drift');
+  assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin drift */');
+});
+
 test('blocks local serialized block references while preserving remote-only plugin removals', () => {
   const resourceKey = 'row:["wp_posts","ID:58"]';
   const base = baseSite();

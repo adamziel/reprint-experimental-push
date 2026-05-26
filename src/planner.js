@@ -104,6 +104,26 @@ export function createPushPlan({ base, local, remote, now = new Date() }) {
     }
 
     if (localHash === baseHash && remoteHash !== baseHash) {
+      const remoteSerializedBlocksSupport = unsupportedSerializedBlocksSupport({
+        resource,
+        baseValue,
+        localValue,
+        remoteValue,
+      });
+      if (!remoteSerializedBlocksSupport.supported) {
+        addUnsupportedSerializedBlocksBlocker(plan, {
+          resource,
+          support: remoteSerializedBlocksSupport,
+          baseValue,
+          localValue,
+          remoteValue,
+          baseHash,
+          localHash,
+          remoteHash,
+        });
+        continue;
+      }
+
       plan.decisions.push({
         id: `decision-${plan.decisions.length + 1}`,
         resource,
