@@ -2676,7 +2676,33 @@ test('packaged timeout fallback helpers preserve packaged startup context for si
     );
     assert.match(
       source,
-      /packagedProductionPluginPreflightRetryable\(\s*\{ status: preflightProbe\.status, body: preflightProbe\.body \},\s*\{ \.\.\.readinessContext, indexProbe \},\s*\)/s,
+      /packagedProductionPluginPreflightRetryable\(\s*\{\s*status: preflightProbe\.status,\s*body: preflightProbe\.parsedBody \?\? preflightProbe\.body,\s*\},\s*\{ \.\.\.readinessContext, indexProbe \},\s*\)/s,
+    );
+  }
+});
+
+test('packaged timeout fallback helpers preserve parsed preflight bodies when retryability is recomputed', () => {
+  const smokeSource = readFileSync(
+    path.join(repoRoot, 'scripts/playground/production-plugin-package-smoke.mjs'),
+    'utf8',
+  );
+  const verifierSource = readFileSync(
+    path.join(repoRoot, 'scripts/playground/production-shaped-release-verify.mjs'),
+    'utf8',
+  );
+
+  for (const source of [smokeSource, verifierSource]) {
+    assert.match(
+      source,
+      /const probe = \{[\s\S]*?body: bodyText\.slice\(0, readinessFailureBodyLimit\),[\s\S]*?parsedBody: null,[\s\S]*?ready: false/s,
+    );
+    assert.match(
+      source,
+      /if \(body !== null\) \{\s*probe\.parsedBody = body;\s*probe\.ready = packagedProductionPluginPreflightReady/s,
+    );
+    assert.match(
+      source,
+      /packagedProductionPluginPreflightRetryable\(\s*\{\s*status: preflightProbe\.status,\s*body: preflightProbe\.parsedBody \?\? preflightProbe\.body,\s*\},\s*\{ \.\.\.readinessContext, indexProbe \},\s*\)/s,
     );
   }
 });

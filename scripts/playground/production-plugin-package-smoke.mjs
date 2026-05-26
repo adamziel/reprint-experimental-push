@@ -1336,12 +1336,14 @@ async function fetchPackagedPreflightProbe(baseUrl, child = null, readinessConte
     route: '/wp-json/reprint/v1/push/preflight',
     status: response.status,
     body: bodyText.slice(0, readinessFailureBodyLimit),
+    parsedBody: null,
     ready: false,
     retryable: false,
     terminal: false,
   };
 
   if (body !== null) {
+    probe.parsedBody = body;
     probe.ready = packagedProductionPluginPreflightReady({ status: response.status, body });
     probe.retryable = packagedProductionPluginPreflightRetryable(
       { status: response.status, body },
@@ -1365,7 +1367,10 @@ async function fetchPackagedTimeoutFallbackProbes(baseUrl, child = null, readine
   );
   if (preflightProbe && preflightProbe.ready !== true) {
     preflightProbe.retryable = packagedProductionPluginPreflightRetryable(
-      { status: preflightProbe.status, body: preflightProbe.body },
+      {
+        status: preflightProbe.status,
+        body: preflightProbe.parsedBody ?? preflightProbe.body,
+      },
       { ...readinessContext, indexProbe },
     );
     preflightProbe.terminal = !preflightProbe.retryable;
