@@ -10,15 +10,16 @@ Fresh remote heads at audit time, checked on May 26, 2026:
 - `origin/lane/no-data-loss-invariants` -> `e42fe4ad`
 - `origin/lane/no-data-loss-recovery` -> `47b675c0`
 - `origin/lane/fast-paths` -> `9be664b2`
-- `origin/lane/independent-auditor` -> `955882b6`
-- `origin/lane/critic` -> `e986a490`
+- `origin/lane/independent-auditor` -> `5624aefd`
+- `origin/lane/critic` -> `f8591f9d`
 - `origin/lane/progress-publisher` -> `7695e1f9`
 - `origin/lane/same-plan-wordpress-graph-create` -> `69f27361`
 - `origin/lane/cycle-20260525-mainwindows-2357/no-data-loss-invariants-graph-proof` -> `98c0ce26`
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `534d941b`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `4e645ccd`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `1e81cfd9`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-invariants` -> `e42fe4ad`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `37d1cd8d`
+- `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration` -> `295dc72a`
 - `origin/main` -> `4b7b47a6`
 
 The current remote state still adds no production-backed auth/session
@@ -34,6 +35,9 @@ but it did not change the release conclusion:
   resources at `e42fe4ad`. A separate cycle-branch proof at `98c0ce26`
   extends that blocker coverage to missing graph identity references, but it
   is not the primary lane head.
+- The newer integration cycle head at `295dc72a` adds a post-parent conflict
+  proof, which strengthens the fail-closed boundary but still does not prove
+  live source mutation on unsupported surfaces.
 - `origin/lane/no-data-loss-recovery` now tightens the durable journal
   production gate at `47b675c0` while preserving the earlier recovery
   evidence.
@@ -46,11 +50,12 @@ but it did not change the release conclusion:
 - `origin/lane/progress-publisher` now refreshes the public progress evidence
   at `7695e1f9`.
 - `origin/lane/independent-auditor` now refreshes the audit snapshot at
-  `955882b6`.
+  `5624aefd`.
+- `origin/lane/critic` now refreshes the critic audit snapshot at `f8591f9d`.
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now
   refreshes the supervisor evidence snapshot at `534d941b`.
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now
-  records the latest progress handoff at `4e645ccd`.
+  records the latest progress handoff at `1e81cfd9`.
 - `origin/lane/same-plan-wordpress-graph-create` now blocks unsupported graph
   surfaces at `69f27361`, including revision posts, menu/navigation posts,
   serialized blocks, and thumbnail parent references. That is a stronger
@@ -156,7 +161,7 @@ These tests are still lab-bound. They mostly prove carefully controlled fixtures
 6. Reliability assertions often count events rather than prove every hash transition.
 7. Auth is lab-auth, not production-auth.
 8. Plugin safety is intentionally hard-coded.
-9. The strongest unsupported production-slice gap is still the boundary coverage for menu/navigation, serialized block references, comments/users, and plugin-owned custom tables. The current proof in [`test/push-planner.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/independent-auditor/test/push-planner.test.js) is refusal-backed for plugin-owned resources, not live-boundary proof for those graph surfaces. The newer same-plan graph proof at `69f27361` strengthens the fail-closed side for revision posts, menu/navigation posts, serialized blocks, and thumbnail parent references, but it still does not produce live source mutation evidence.
+9. The strongest unsupported production-slice gap is still the boundary coverage for menu/navigation, serialized block references, comments/users, and plugin-owned custom tables. The current proof in [`test/push-planner.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/independent-auditor/test/push-planner.test.js) is refusal-backed for plugin-owned resources, not live-boundary proof for those graph surfaces. The newer same-plan graph proof at `69f27361` strengthens the fail-closed side for revision posts, menu/navigation posts, serialized blocks, and thumbnail parent references, and the integration proof at `295dc72a` adds a post-parent conflict case, but neither produces live source mutation evidence.
 10. The repository script surface still lacks a checked-in `verify`, `verify:release`, or `release` command in [`package.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/independent-auditor/package.json:10), so there is still no enforced live-source gate that could own the verdict even if the missing proof appeared. The planner tests in [`test/push-planner.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/independent-auditor/test/push-planner.test.js:131) remain strong fixture evidence, but they still stop at local/remote simulation rather than the live release boundary. The exact missing command is a checked entrypoint that runs the live-source preflight, aborts on stale or unsupported boundaries, and exits non-zero before any apply step when the unsupported surface set is hit.
 11. Speed has no measured evidence.
 
