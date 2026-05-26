@@ -8,12 +8,12 @@ The project is **not releasable as a production WordPress push path**.
 
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `d2ee76e9`
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `c20709ba`
-- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `7fb8c8c8`
+- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `a3e891f0`
 - `origin/lane/fast-paths` -> `2d335a29`
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `9d50ae6f`
 - `origin/lane/reliable-executor` -> `1f71d4a2`
 - `origin/lane/no-data-loss-invariants` -> `8596e3be`
-- `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `5550bc36`
+- `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `3b6655a8`
 - `origin/lane/no-data-loss-recovery` -> `9e077c10`
 - `origin/lane/cycle-20260525-mainwindows-2349/critic` -> `fa0dc8a0`
 - `origin/lane/critic` -> `443dacd6`
@@ -36,7 +36,7 @@ but it did not change the release conclusion:
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now records
   `c20709ba`, refreshing the supervisor progress surface only.
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` now records
-  `7fb8c8c8`. This refreshes the audit snapshot only and does not change the
+  `a3e891f0`. This refreshes the audit snapshot only and does not change the
   release boundary.
 - `origin/lane/fast-paths` now records `2d335a29`, tightening backpressure
   proof checks only.
@@ -46,8 +46,8 @@ but it did not change the release conclusion:
 - `origin/lane/no-data-loss-invariants` now records `8596e3be`, adding special-
   file descendant delete guarding only.
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` now
-  records `5550bc36`, tightening durable recovery remote ownership fencing. It
-  still does not add production-backed journal ownership or replay proof.
+  records `3b6655a8`, tightening remote recovery ref validation. It still does
+  not add production-backed journal ownership or replay proof.
 - `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration`
   now records `d388db27`, adding nav menu parent reference blocking only.
 
