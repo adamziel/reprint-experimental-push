@@ -2026,6 +2026,14 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
     model.safeFastPaths.find((fastPath) => fastPath.allowedShortcut === 'reuse-remote-index-cursor-and-dependency-graph-to-presize-bounded-plugin-install-batches')?.visibilityBoundary,
     'planning-only-until-batch-commit',
   );
+  assert.ok(
+    model.safeFastPaths.find((fastPath) => fastPath.allowedShortcut === 'reuse-remote-index-cursor-and-dependency-graph-to-presize-bounded-plugin-install-batches')?.gateProofs.skip.includes('remote index cursor and dependency graph'),
+    'plugin-install batch planning may reuse the cursor and dependency graph only as planning evidence',
+  );
+  assert.ok(
+    model.safeFastPaths.find((fastPath) => fastPath.allowedShortcut === 'reuse-remote-index-cursor-and-dependency-graph-to-presize-bounded-plugin-install-batches')?.gateProofs.live.includes('live compare'),
+    'plugin-install batch planning keeps the live row compare in place',
+  );
   assert.equal(
     model.safeFastPaths.find((fastPath) => fastPath.allowedShortcut === 'reuse-remote-index-cursor-to-size-bounded-chunk-windows')?.visibilityBoundary,
     'plan-staging-window-only',

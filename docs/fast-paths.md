@@ -38,6 +38,12 @@ and backpressure. Each rejected entry names the first gate it breaks through
 proposal unsafe. That keeps "fast but ambiguous after failure" proposals out of
 the safe list even when they improve a throughput metric.
 
+One of the explicit planning-only shortcuts is reusing a remote-index cursor
+and dependency graph to pre-size bounded plugin-install batches. That shortcut
+is acceptable only as batch-shape planning evidence; the eventual row work still
+rechecks its live compare, and the atomic-group barrier stays fixed until the
+batch commits.
+
 The model now also exposes a direct shortcut lookup helper for pinning a single
 planning-only fast path in tests. That keeps the release-bundle retry-window
 compression case explicit without turning the helper into mutation authority.
