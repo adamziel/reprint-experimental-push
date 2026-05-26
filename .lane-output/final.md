@@ -1,4 +1,4 @@
-Updated the audit to the current reliable head `87914e0c3858e1aa87d242f5f7de85cbcada890c` and kept the overall verdict at `0/4`.
+Updated the audit to the current reliable head `a859cc2a68b44de7b7d7e9159f9a877249164076` and kept the overall verdict at `0/4`.
 
 Changed files:
 - [`audits/objective-audit.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/independent-auditor-current-20260526-1424/audits/objective-audit.md)
@@ -7,8 +7,8 @@ Changed files:
 Commands:
 - `date '+%Y-%m-%d %H:%M:%S %Z (%z)'`
 - `git ls-remote origin refs/heads/lane/reliable-executor`
-- `git show --stat --oneline --decorate=short --no-renames 87914e0c3858e1aa87d242f5f7de85cbcada890c`
-- `git show --unified=80 --no-ext-diff 87914e0c3858e1aa87d242f5f7de85cbcada890c -- scripts/playground/production-shaped-release-verify.mjs test/production-shaped-proof.test.js src/recovery-journal.js test/recovery-journal.test.js src/authenticated-http-push-client.js`
+- `git show --stat --oneline --decorate=short --no-renames a859cc2a68b44de7b7d7e9159f9a877249164076`
+- `git show --unified=40 --no-ext-diff a859cc2a68b44de7b7d7e9159f9a877249164076 -- scripts/playground/production-shaped-release-verify.mjs test/production-shaped-proof.test.js`
 - `sed -n '1,260p' audits/objective-audit.md`
 
 Push result:
