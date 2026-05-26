@@ -217,6 +217,26 @@ export function openProductionRecoveryJournal(filePathOrOptions, options = {}) {
       },
     );
   }
+  if (remoteArtifactPath !== null && remoteArtifactPath === filePath) {
+    throw new UnsupportedProductionRecoveryJournalError(
+      'Production recovery journal support requires a distinct owned remote artifact path.',
+      {
+        kind: 'production-recovery-journal',
+        productionAdapter: true,
+        supportedSurface: 'production-recovery-journal-adapter',
+        restartReadable: true,
+        ownsJournal: true,
+        ownsRemoteArtifact,
+        writerLease,
+        journalPath: filePath,
+        artifactRefs: Object.freeze({
+          journal: filePath,
+          remote: remoteArtifactPath,
+        }),
+        schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+      },
+    );
+  }
   if (!isValidProductionWriterLease(writerLease)) {
     throw new UnsupportedProductionRecoveryJournalError(
       'Production recovery journal support requires an explicit fenced writer lease.',
@@ -643,9 +663,16 @@ function normalizeProductionRecoveryJournalOptions(filePathOrOptions, options = 
         },
       );
     }
-    const remoteArtifactPath = legacyArtifactRefs && Object.hasOwn(legacyArtifactRefs, 'remote')
-      ? legacyArtifactRefs.remote
-      : null;
+    const explicitRemoteArtifactPath = Object.hasOwn(legacyOptions, 'remoteArtifactPath')
+      ? legacyOptions.remoteArtifactPath
+      : undefined;
+    const remoteArtifactPath = explicitRemoteArtifactPath !== undefined
+      ? explicitRemoteArtifactPath
+      : (
+        legacyArtifactRefs && Object.hasOwn(legacyArtifactRefs, 'remote')
+          ? legacyArtifactRefs.remote
+          : null
+      );
     const hasExplicitWriterLease = Object.hasOwn(legacyOptions, 'writerLease');
     const hasExplicitClaimId = Object.hasOwn(legacyOptions, 'claimId')
       && typeof legacyOptions.claimId === 'string'
@@ -674,7 +701,9 @@ function normalizeProductionRecoveryJournalOptions(filePathOrOptions, options = 
       writerLease: hasExplicitWriterLease
         ? legacyOptions.writerLease
         : { id: legacyOptions.claimId },
-      ownsRemoteArtifact: remoteArtifactPath !== null && remoteArtifactPath !== undefined && remoteArtifactPath !== '',
+      ownsRemoteArtifact: Object.hasOwn(legacyOptions, 'ownsRemoteArtifact')
+        ? legacyOptions.ownsRemoteArtifact === true
+        : remoteArtifactPath !== null && remoteArtifactPath !== undefined && remoteArtifactPath !== '',
       remoteArtifactPath,
     };
   }
@@ -732,6 +761,25 @@ function normalizeProductionArtifactRefs(artifactRefs, journalPath, remoteArtifa
         persistedArtifactRefs: Object.freeze({
           journal: persistedArtifactRefs.journal,
           remote: persistedArtifactRefs.remote,
+        }),
+        schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+      },
+    );
+  }
+  if (remoteArtifactPath !== null && remoteArtifactPath === journalPath) {
+    throw new UnsupportedProductionRecoveryJournalError(
+      'Production recovery journal consumption requires a distinct owned remote artifact path.',
+      {
+        kind: 'production-recovery-journal',
+        productionAdapter: true,
+        supportedSurface: 'production-recovery-journal-adapter',
+        restartReadable: true,
+        ownsJournal: true,
+        ownsRemoteArtifact: true,
+        journalPath,
+        artifactRefs: Object.freeze({
+          journal: Object.hasOwn(writerArtifactRefs, 'journal') ? writerArtifactRefs.journal : journalPath,
+          remote: Object.hasOwn(writerArtifactRefs, 'remote') ? writerArtifactRefs.remote : remoteArtifactPath,
         }),
         schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
       },

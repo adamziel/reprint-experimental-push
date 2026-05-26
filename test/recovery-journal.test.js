@@ -556,6 +556,25 @@ test('production recovery journal adapter fails closed when remote artifact path
   });
 });
 
+test('production recovery journal adapter fails closed when remote artifact ownership reuses the journal path', () => {
+  const filePath = tempJournalPath();
+
+  assert.throws(() => {
+    openProductionRecoveryJournal(filePath, {
+      truncate: true,
+      now: fixedNow,
+      claimId: 'lease-same-path',
+      writerLease: { id: 'lease-same-path' },
+      ownsRemoteArtifact: true,
+      remoteArtifactPath: filePath,
+    });
+  }, {
+    name: 'UnsupportedProductionRecoveryJournalError',
+    code: 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL',
+    message: 'Production recovery journal support requires a distinct owned remote artifact path.',
+  });
+});
+
 test('production recovery journal adapter fails closed when remote artifact ownership is not explicit', () => {
   const filePath = tempJournalPath();
   const remoteArtifactPath = `${filePath}.remote`;
@@ -977,6 +996,47 @@ test('production recovery journal consumption fails closed when compatibility ov
   }, {
     name: 'UnsupportedProductionRecoveryJournalError',
     code: 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL',
+  });
+});
+
+test('production recovery journal consumption fails closed when explicit owned remote artifact path reuses the journal path', () => {
+  const filePath = tempJournalPath();
+  const remote = baseSite();
+  const plan = planFor(baseSite(), localSite(), remote);
+  const claimId = 'claim-consume-same-path';
+  const journal = openProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs: {
+      journal: filePath,
+    },
+    claimId,
+  });
+  appendRecoveryClaimOpened(journal, {
+    plan,
+    current: remote,
+    claimId,
+    artifactRefs: {
+      journal: filePath,
+    },
+  });
+  journal.close();
+
+  assert.throws(() => {
+    consumeProductionRecoveryJournal({
+      filePath,
+      plan,
+      current: remote,
+      claimId,
+      writerLease: { id: claimId },
+      ownsRemoteArtifact: true,
+      remoteArtifactPath: filePath,
+    });
+  }, {
+    name: 'UnsupportedProductionRecoveryJournalError',
+    code: 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL',
+    message: 'Production recovery journal consumption requires a distinct owned remote artifact path.',
   });
 });
 
