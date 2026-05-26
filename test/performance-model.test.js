@@ -1,3 +1,4 @@
+import fs from 'node:fs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
@@ -556,6 +557,11 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
         fastPath.gateProofs.recovery.includes('the release-bundle staging record still classify pause, retry, or crash'),
     ),
     'canonical per-kind budgets can size release-bundle resume work without widening the visibility boundary',
+  );
+  assert.match(
+    fs.readFileSync(new URL('../docs/fast-paths.md', import.meta.url), 'utf8'),
+    /\| Parallelism limits \| Reuse canonical per-kind budgets to size bounded release-bundle resume work so retries can reuse the same concurrency shape before the live compare\./,
+    'fast-path docs include the release-bundle resume shortcut',
   );
   assert.ok(
     model.safeFastPaths.some(
