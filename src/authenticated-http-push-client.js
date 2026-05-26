@@ -499,6 +499,10 @@ function summarizeDbJournal(response) {
     applyCommitted: rows.some((entry) => entry.event === 'apply-committed'),
     mutationApplied: rows.filter((entry) => entry.event === 'mutation-applied').length,
     idempotencyOpened: rows.filter((entry) => entry.event === 'idempotency-opened').length,
+    authUser: response.body?.auth?.identity?.userLogin,
+    authSessionId: response.body?.auth?.session?.id,
+    sessionType: response.body?.auth?.session?.type,
+    sessionStatus: response.body?.auth?.session?.status,
   };
 }
 
