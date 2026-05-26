@@ -2517,7 +2517,7 @@ test('guarded benchmark keeps rollout summaries pinned to visible-without-positi
   );
 });
 
-test('guarded benchmark keeps row-batch rollout summary pinned to non-integral parallelism blockers', () => {
+test('guarded benchmark keeps rollout summaries pinned to non-integral parallelism blockers', () => {
   const report = smallBenchmark();
   const tampered = clone(report);
 
@@ -2546,6 +2546,41 @@ test('guarded benchmark keeps row-batch rollout summary pinned to non-integral p
   assert.equal(
     details.backpressureConsistency.productionRowBatchExecutorVisibleAndStorageReceiptsVisibleAndMeasured,
     false,
+  );
+  assert.deepEqual(
+    details.productionCapabilityRolloutSummary.find(
+      (entry) => entry.surface === 'chunk-upload-concurrency',
+    ),
+    {
+      surface: 'chunk-upload-concurrency',
+      status: 'blocked',
+      measured: false,
+      visible: false,
+      blockerRefs: [
+        'backpressure-evidence-incomplete',
+        'production-parallelism-limits-not-integral',
+        'production-parallelism-limits-not-canonical',
+        'production-parallelism-limits-visible-without-integral',
+        'production-parallelism-limits-visible-without-canonical',
+      ],
+    },
+  );
+  assert.deepEqual(
+    details.productionCapabilityRolloutSummary.find(
+      (entry) => entry.surface === 'file-hashing-concurrency',
+    ),
+    {
+      surface: 'file-hashing-concurrency',
+      status: 'blocked',
+      measured: false,
+      visible: false,
+      blockerRefs: [
+        'production-parallelism-limits-not-integral',
+        'production-parallelism-limits-not-canonical',
+        'production-parallelism-limits-visible-without-integral',
+        'production-parallelism-limits-visible-without-canonical',
+      ],
+    },
   );
   assert.deepEqual(
     details.productionCapabilityRolloutSummary.find(
