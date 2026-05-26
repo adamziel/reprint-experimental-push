@@ -135,6 +135,10 @@ test('guarded benchmark refuses production throughput claims until production ga
     true,
   );
   assert.equal(
+    report.claims.productionThroughputDetails.backpressureConsistency.queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack,
+    true,
+  );
+  assert.equal(
     report.claims.productionThroughputDetails.backpressureConsistency.queuePauseHasMeasuredAndAlignedReceiptCursorBackpressure,
     true,
   );
@@ -642,6 +646,10 @@ test('production claim gate fails closed if benchmark evidence is tampered', () 
   );
   assert.equal(
     productionThroughputDetails(mismatchedQueueSlack).backpressureConsistency.queuePauseHasBackpressureAlignedReceiptCursorQueueSlack,
+    false,
+  );
+  assert.equal(
+    productionThroughputDetails(mismatchedQueueSlack).backpressureConsistency.queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack,
     false,
   );
   assert.ok(

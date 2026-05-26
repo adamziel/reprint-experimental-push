@@ -609,6 +609,15 @@ export function productionThroughputDetails(report) {
   const queuePauseHasMeasuredReceiptCursorQueueSlack =
     report.evidence.backpressure?.queuePausedBeforeOverflow !== true
     || (receiptCursorQueueSlackPositive && receiptCursorQueueSlackWithinQueueBudget);
+  const queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack =
+    report.evidence.backpressure?.queuePausedBeforeOverflow !== true
+    || (
+      queuePauseHasMeasuredReceiptCursorQueueSlack
+      && receiptCursorQueueSlackMatchesBackpressure
+      && receiptCursorQueueSlackMatchesMemoryHeadroom
+      && receiptCursorQueueSlackMatchesQueueHeadroom
+      && receiptCursorQueueSlackMatchesResourceHeadroom
+    );
   const queuePauseHasBackpressureAlignedReceiptCursorQueueSlack =
     report.evidence.backpressure?.queuePausedBeforeOverflow !== true
     || (
@@ -719,6 +728,7 @@ export function productionThroughputDetails(report) {
     receiptCursorQueueSlackMeasured,
     receiptCursorQueueSlackWithinQueueBudget,
     receiptCursorQueueSlackWithinQueueHeadroom,
+    queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack,
     receiptCursorMemoryHeadroomWithinQueueBudget,
     receiptCursorMemoryHeadroomBytes,
     receiptCursorMemoryHeadroomPositive: receiptCursorMemoryHeadroomPositiveVisible,
@@ -768,6 +778,7 @@ export function productionThroughputDetails(report) {
       receiptCursorQueueSlackMeasured,
       receiptCursorQueueSlackWithinQueueBudget,
       receiptCursorQueueSlackWithinQueueHeadroom,
+      queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack,
       receiptCursorMemoryHeadroomWithinQueueBudget,
       receiptCursorMemoryHeadroomBytes,
       receiptCursorMemoryHeadroomPositive: receiptCursorMemoryHeadroomPositiveVisible,

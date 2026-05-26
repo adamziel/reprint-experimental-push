@@ -68,6 +68,9 @@ Current executable gate:
   queue slack that does not match the resource headroom and queue headroom
   records, so a partial pause record cannot masquerade as bounded backpressure
   evidence.
+- The production-throughput gate also exposes whether a paused sender's queue
+  slack is both measured and aligned, so a tampered pause record cannot look
+  complete when the slack values disagree.
 - The production-throughput gate also fails closed if paused queue slack no
   longer fits the measured resource headroom, so a slack record cannot be
   reused when the resource ceiling and chunk window no longer match.
