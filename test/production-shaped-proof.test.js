@@ -97,6 +97,10 @@ const releaseVerifyProofSubprocessOptions = {
   shell: false,
 };
 
+function wrapNestedStartupValue(pathSegments, leafValue) {
+  return pathSegments.reduceRight((nestedValue, key) => ({ [key]: nestedValue }), leafValue);
+}
+
 const activePlaygroundChildren = new Set();
 process.on('exit', stopAllPlaygroundChildrenSync);
 process.on('SIGINT', () => {
@@ -1212,6 +1216,47 @@ test('packaged production plugin readiness helper retries only startup-shaped pa
     true,
   );
   assert.equal(
+    packagedProductionPluginSnapshotRetryable({
+      status: 500,
+      body: wrapNestedStartupValue(
+        [
+          'level01',
+          'level02',
+          'level03',
+          'level04',
+          'level05',
+          'level06',
+          'level07',
+          'level08',
+          'level09',
+          'level10',
+          'level11',
+          'level12',
+        ],
+        { errorCode: 'wordpress_not_ready' },
+      ),
+    }),
+    true,
+  );
+  const packagedCyclicStartupBody = {
+    warning: null,
+  };
+  packagedCyclicStartupBody.warning = packagedCyclicStartupBody;
+  packagedCyclicStartupBody.payload = {
+    issue: {
+      details: {
+        error_description: 'No route was found matching the URL and request method.',
+      },
+    },
+  };
+  assert.equal(
+    packagedProductionPluginPreflightRetryable({
+      status: 503,
+      body: packagedCyclicStartupBody,
+    }),
+    true,
+  );
+  assert.equal(
     packagedProductionPluginPreflightRetryable({
       status: 503,
       body: {
@@ -1937,6 +1982,47 @@ test('lab Playground readiness helper rejects malformed ready responses and retr
           },
         },
       },
+    }),
+    true,
+  );
+  assert.equal(
+    labSnapshotRetryable({
+      status: 503,
+      body: wrapNestedStartupValue(
+        [
+          'level01',
+          'level02',
+          'level03',
+          'level04',
+          'level05',
+          'level06',
+          'level07',
+          'level08',
+          'level09',
+          'level10',
+          'level11',
+          'level12',
+        ],
+        { errorCode: 'wordpress_not_ready' },
+      ),
+    }),
+    true,
+  );
+  const labCyclicStartupBody = {
+    warning: null,
+  };
+  labCyclicStartupBody.warning = labCyclicStartupBody;
+  labCyclicStartupBody.payload = {
+    issue: {
+      details: {
+        error_description: 'No route was found matching the URL and request method.',
+      },
+    },
+  };
+  assert.equal(
+    labSnapshotRetryable({
+      status: 500,
+      body: labCyclicStartupBody,
     }),
     true,
   );

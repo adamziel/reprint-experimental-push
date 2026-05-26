@@ -2,10 +2,9 @@ const labWordPressNotReadyPattern = /WordPress is not ready yet/i;
 const labRouteNotReadyPattern = /No route was found matching the URL and request method\.?/i;
 const labWordPressNotReadyCodePattern = /wordpress_not_ready/i;
 const labRouteNotReadyCodePattern = /rest_no_route/i;
-const labMaxNestedReadinessDepth = 8;
 
-function labFindMessage(value, depth = 0) {
-  if (depth > labMaxNestedReadinessDepth || value == null) {
+function labFindMessage(value, visited = new Set()) {
+  if (value == null) {
     return '';
   }
 
@@ -15,7 +14,7 @@ function labFindMessage(value, depth = 0) {
 
   if (Array.isArray(value)) {
     for (const item of value) {
-      const message = labFindMessage(item, depth + 1);
+      const message = labFindMessage(item, visited);
       if (message) {
         return message;
       }
@@ -27,15 +26,20 @@ function labFindMessage(value, depth = 0) {
     return '';
   }
 
+  if (visited.has(value)) {
+    return '';
+  }
+  visited.add(value);
+
   for (const key of ['message', 'error', 'error_description', 'reason']) {
-    const message = labFindMessage(value[key], depth + 1);
+    const message = labFindMessage(value[key], visited);
     if (message) {
       return message;
     }
   }
 
   for (const key of ['data', 'details']) {
-    const message = labFindMessage(value[key], depth + 1);
+    const message = labFindMessage(value[key], visited);
     if (message) {
       return message;
     }
@@ -45,7 +49,7 @@ function labFindMessage(value, depth = 0) {
     if (['message', 'error', 'error_description', 'reason', 'data', 'details'].includes(key)) {
       continue;
     }
-    const message = labFindMessage(nestedValue, depth + 1);
+    const message = labFindMessage(nestedValue, visited);
     if (message) {
       return message;
     }
@@ -58,8 +62,8 @@ function labResponseMessage(response) {
   return labFindMessage(response?.body);
 }
 
-function labFindCode(value, depth = 0) {
-  if (depth > labMaxNestedReadinessDepth || value == null) {
+function labFindCode(value, visited = new Set()) {
+  if (value == null) {
     return '';
   }
 
@@ -69,7 +73,7 @@ function labFindCode(value, depth = 0) {
 
   if (Array.isArray(value)) {
     for (const item of value) {
-      const code = labFindCode(item, depth + 1);
+      const code = labFindCode(item, visited);
       if (code) {
         return code;
       }
@@ -81,8 +85,13 @@ function labFindCode(value, depth = 0) {
     return '';
   }
 
+  if (visited.has(value)) {
+    return '';
+  }
+  visited.add(value);
+
   for (const key of ['code', 'error_code', 'errorCode']) {
-    const code = labFindCode(value[key], depth + 1);
+    const code = labFindCode(value[key], visited);
     if (code) {
       return code;
     }
@@ -92,7 +101,7 @@ function labFindCode(value, depth = 0) {
     if (['code', 'error_code', 'errorCode'].includes(key)) {
       continue;
     }
-    const code = labFindCode(nestedValue, depth + 1);
+    const code = labFindCode(nestedValue, visited);
     if (code) {
       return code;
     }

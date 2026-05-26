@@ -5,10 +5,9 @@ const packagedProductionPluginWordPressNotReadyPattern = /WordPress is not ready
 const packagedProductionPluginRouteNotReadyPattern = /No route was found matching the URL and request method\.?/i;
 const packagedProductionPluginWordPressNotReadyCodePattern = /wordpress_not_ready/i;
 const packagedProductionPluginRouteNotReadyCodePattern = /rest_no_route/i;
-const packagedProductionPluginMaxNestedReadinessDepth = 8;
 
-function packagedProductionPluginFindMessage(value, depth = 0) {
-  if (depth > packagedProductionPluginMaxNestedReadinessDepth || value == null) {
+function packagedProductionPluginFindMessage(value, visited = new Set()) {
+  if (value == null) {
     return '';
   }
 
@@ -18,7 +17,7 @@ function packagedProductionPluginFindMessage(value, depth = 0) {
 
   if (Array.isArray(value)) {
     for (const item of value) {
-      const message = packagedProductionPluginFindMessage(item, depth + 1);
+      const message = packagedProductionPluginFindMessage(item, visited);
       if (message) {
         return message;
       }
@@ -30,15 +29,20 @@ function packagedProductionPluginFindMessage(value, depth = 0) {
     return '';
   }
 
+  if (visited.has(value)) {
+    return '';
+  }
+  visited.add(value);
+
   for (const key of ['message', 'error', 'error_description', 'reason']) {
-    const message = packagedProductionPluginFindMessage(value[key], depth + 1);
+    const message = packagedProductionPluginFindMessage(value[key], visited);
     if (message) {
       return message;
     }
   }
 
   for (const key of ['data', 'details']) {
-    const message = packagedProductionPluginFindMessage(value[key], depth + 1);
+    const message = packagedProductionPluginFindMessage(value[key], visited);
     if (message) {
       return message;
     }
@@ -48,7 +52,7 @@ function packagedProductionPluginFindMessage(value, depth = 0) {
     if (['message', 'error', 'error_description', 'reason', 'data', 'details'].includes(key)) {
       continue;
     }
-    const message = packagedProductionPluginFindMessage(nestedValue, depth + 1);
+    const message = packagedProductionPluginFindMessage(nestedValue, visited);
     if (message) {
       return message;
     }
@@ -61,8 +65,8 @@ function packagedProductionPluginResponseMessage(response) {
   return packagedProductionPluginFindMessage(response?.body);
 }
 
-function packagedProductionPluginFindCode(value, depth = 0) {
-  if (depth > packagedProductionPluginMaxNestedReadinessDepth || value == null) {
+function packagedProductionPluginFindCode(value, visited = new Set()) {
+  if (value == null) {
     return '';
   }
 
@@ -72,7 +76,7 @@ function packagedProductionPluginFindCode(value, depth = 0) {
 
   if (Array.isArray(value)) {
     for (const item of value) {
-      const code = packagedProductionPluginFindCode(item, depth + 1);
+      const code = packagedProductionPluginFindCode(item, visited);
       if (code) {
         return code;
       }
@@ -84,8 +88,13 @@ function packagedProductionPluginFindCode(value, depth = 0) {
     return '';
   }
 
+  if (visited.has(value)) {
+    return '';
+  }
+  visited.add(value);
+
   for (const key of ['code', 'error_code', 'errorCode']) {
-    const code = packagedProductionPluginFindCode(value[key], depth + 1);
+    const code = packagedProductionPluginFindCode(value[key], visited);
     if (code) {
       return code;
     }
@@ -95,7 +104,7 @@ function packagedProductionPluginFindCode(value, depth = 0) {
     if (['code', 'error_code', 'errorCode'].includes(key)) {
       continue;
     }
-    const code = packagedProductionPluginFindCode(nestedValue, depth + 1);
+    const code = packagedProductionPluginFindCode(nestedValue, visited);
     if (code) {
       return code;
     }
