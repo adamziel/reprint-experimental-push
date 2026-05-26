@@ -23719,7 +23719,6 @@ test('production durable journal claims fail closed when inspection data is adve
 test('production durable journal claims fail closed when claim fencing is inherited through the prototype', () => {
   const events = [];
   const writer = {
-    kind: 'production-recovery-journal',
     productionAdapter: true,
     supportedSurface: 'production-recovery-journal-adapter',
     restartReadable: true,
@@ -23754,6 +23753,9 @@ test('production durable journal claims fail closed when claim fencing is inheri
       },
     }),
   };
+  Object.setPrototypeOf(writer, {
+    kind: 'production-recovery-journal',
+  });
   const plan = planFor(baseSite(), baseSite(), {
     ...baseSite(),
     db: {
@@ -23771,6 +23773,7 @@ test('production durable journal claims fail closed when claim fencing is inheri
   }));
 
   assert.equal(error.code, 'PRODUCTION_DURABLE_JOURNAL_UNSUPPORTED');
+  assert.ok(error.details.missingDependency.includes('production recovery journal adapter marker'));
   assert.ok(error.details.missingDependency.includes('fencing or lease ownership for the journal writer'));
   assert.equal(events.some((event) => event.type === 'journal-completed'), false);
 });

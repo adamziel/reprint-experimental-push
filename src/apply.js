@@ -655,7 +655,7 @@ function productionRecoverySupportReport(writer) {
     }
   };
 
-  if (writer?.kind !== 'production-recovery-journal') {
+  if (!Object.hasOwn(writer ?? {}, 'kind') || writer.kind !== 'production-recovery-journal') {
     addMissingDependency('production recovery journal adapter marker');
   }
   if (
