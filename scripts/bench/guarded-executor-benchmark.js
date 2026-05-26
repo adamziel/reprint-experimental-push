@@ -1526,7 +1526,8 @@ export function productionThroughputDetails(report) {
   const receiptCursorHeadroomMatchesQueueHeadroom =
     Number.isFinite(receiptCursorMemoryHeadroomBytes)
     && Number.isFinite(receiptCursorQueueHeadroomBytes)
-    && receiptCursorMemoryHeadroomBytes === receiptCursorQueueHeadroomBytes;
+    && receiptCursorMemoryHeadroomBytes === receiptCursorQueueHeadroomBytes
+    && report.evidence.backpressure?.queueHeadroomWithinResourceCeiling === true;
   const receiptCursorBackpressureWithinQueueHeadroom =
     Number.isFinite(receiptCursorBackpressureBytes)
     && Number.isFinite(receiptCursorQueueHeadroomBytes)
