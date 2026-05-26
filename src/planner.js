@@ -1895,6 +1895,15 @@ function wordpressGraphReferences(resource, value) {
     });
   }
 
+  if (suffix === 'comments') {
+    addReference({
+      field: 'comment_parent',
+      relationshipType: 'comment-parent',
+      targetTable: 'comments',
+      targetId: value.comment_parent,
+    });
+  }
+
   if (suffix === 'termmeta') {
     addReference({
       field: 'term_id',

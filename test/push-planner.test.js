@@ -375,6 +375,49 @@ test('blocks a local commentmeta reference owned by a same-plan comment', () => 
   assert.equal(JSON.stringify(commentmetaBlocker).includes('local-private-comment-body'), false);
 });
 
+test('blocks a local comment parent reference owned by a same-plan comment', () => {
+  const base = baseSite();
+  const local = baseSite();
+  const remote = baseSite();
+
+  local.db.wp_comments = {
+    'comment_ID:1': {
+      comment_ID: 1,
+      comment_post_ID: 1,
+      comment_author: 'Parent comment',
+      comment_content: 'local-private-parent-comment-body',
+    },
+    'comment_ID:2': {
+      comment_ID: 2,
+      comment_post_ID: 1,
+      comment_parent: 1,
+      comment_author: 'Child comment',
+      comment_content: 'local-private-child-comment-body',
+    },
+  };
+  remote.db.wp_posts['ID:21'] = {
+    ID: 21,
+    post_title: 'Remote attachment noise',
+    post_content: 'remote-attachment-body',
+    post_status: 'inherit',
+    post_type: 'attachment',
+  };
+
+  const plan = planFor(base, local, remote);
+  const parentBlocker = plan.blockers.find((blocker) => blocker.resourceKey === 'row:["wp_comments","comment_ID:1"]');
+  const childBlocker = plan.blockers.find((blocker) => blocker.resourceKey === 'row:["wp_comments","comment_ID:2"]');
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(parentBlocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(parentBlocker.surface, 'comments');
+  assert.equal(childBlocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(childBlocker.surface, 'comments');
+  assert.match(childBlocker.reason, /outside the supported release-candidate slice/);
+  assert.equal(JSON.stringify(childBlocker).includes('local-private-child-comment-body'), false);
+  assert.equal(JSON.stringify(childBlocker).includes('local-private-parent-comment-body'), false);
+  assert.equal(JSON.stringify(childBlocker).includes('remote-attachment-body'), false);
+});
+
 test('blocks unsupported menu and navigation post graph surfaces in the release-candidate slice', () => {
   const base = baseSite();
   const local = baseSite();
