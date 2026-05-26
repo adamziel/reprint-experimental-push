@@ -16,6 +16,7 @@ const cliPath = path.join(repoRoot, 'bin/reprint-push-lab.js');
 const serverStartupTimeoutMs = 120_000;
 const transientFetchRetryDelayMs = 250;
 const transientFetchAttempts = 4;
+const selectedScenario = parseSelectedScenario(process.argv.slice(2), process.env.REPRINT_PUSH_PACKAGE_SMOKE_SCENARIO);
 
 const credentials = {
   username: 'reprint_push_admin',
@@ -175,7 +176,8 @@ try {
     final: {},
   };
 
-  await withPlaygroundServer('production-plugin-package', blueprintPath, pluginDir, async (server) => {
+  if (shouldRunScenario('core-package-routes')) {
+    await withPlaygroundServer('production-plugin-package', blueprintPath, pluginDir, async (server) => {
     const index = await requestJson(server.baseUrl, 'GET', '/wp-json/');
     assert.equal(index.status, 200);
     assertRouteNamespace(index.body);
@@ -282,14 +284,16 @@ try {
       finalMatchesLocal: result.after.finalMatchesLocal,
       visibleSurfaceHash: digest(visibleSurface(after.body.snapshot)),
     };
-  });
+    });
+  }
 
-  await withPlaygroundServer(
-    'production-plugin-driver-delete-guard',
-    driverGuardServerBlueprintPath,
-    pluginDir,
-    { authBootstrap: false },
-    async (server) => {
+  if (shouldRunScenario('driver-receipt-guards')) {
+    await withPlaygroundServer(
+      'production-plugin-driver-delete-guard',
+      driverGuardServerBlueprintPath,
+      pluginDir,
+      { authBootstrap: false },
+      async (server) => {
     const client = authenticatedHttpClient({
       sourceUrl: server.baseUrl,
       credential: credentials,
@@ -756,9 +760,12 @@ try {
       rowRetainedAfterReject: afterRevokedCredentialReject.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1'] !== undefined,
       updatedMarkerAfterReject: afterRevokedCredentialReject.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1']?.updated_marker,
     };
-  });
+      },
+    );
+  }
 
-  await withPlaygroundServer('production-plugin-driver-delete-apply', driverDeleteServerBlueprintPath, pluginDir, async (server) => {
+  if (shouldRunScenario('driver-delete-apply')) {
+    await withPlaygroundServer('production-plugin-driver-delete-apply', driverDeleteServerBlueprintPath, pluginDir, async (server) => {
     const client = authenticatedHttpClient({
       sourceUrl: server.baseUrl,
       credential: credentials,
@@ -840,9 +847,11 @@ try {
       applied: deleteApply.body?.applied,
       deletedAfterApply: afterDeleteApply.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1'] === undefined,
     };
-  });
+    });
+  }
 
-  await withPlaygroundServer('production-plugin-driver-missing-export-guard', driverMissingExportServerBlueprintPath, pluginDir, async (server) => {
+  if (shouldRunScenario('driver-missing-export-guard')) {
+    await withPlaygroundServer('production-plugin-driver-missing-export-guard', driverMissingExportServerBlueprintPath, pluginDir, async (server) => {
     const malformedSnapshot = await requestText(
       server.baseUrl,
       'GET',
@@ -862,9 +871,11 @@ try {
       status: malformedSnapshot.status,
       missingExportRowsCallback: /missing exportRowsCallback for driver: fixture-arbitrary-plugin-table/i.test(malformedSnapshot.text),
     };
-  });
+    });
+  }
 
-  await withPlaygroundServer('production-plugin-driver-missing-apply-guard', driverMissingApplyServerBlueprintPath, pluginDir, async (server) => {
+  if (shouldRunScenario('driver-missing-apply-guard')) {
+    await withPlaygroundServer('production-plugin-driver-missing-apply-guard', driverMissingApplyServerBlueprintPath, pluginDir, async (server) => {
     const malformedSnapshot = await requestText(
       server.baseUrl,
       'GET',
@@ -884,9 +895,11 @@ try {
       status: malformedSnapshot.status,
       missingApplyRowCallback: /missing applyRowCallback for driver: fixture-arbitrary-plugin-table/i.test(malformedSnapshot.text),
     };
-  });
+    });
+  }
 
-  await withPlaygroundServer('production-plugin-driver-missing-validate-guard', driverMissingValidateServerBlueprintPath, pluginDir, async (server) => {
+  if (shouldRunScenario('driver-missing-validate-guard')) {
+    await withPlaygroundServer('production-plugin-driver-missing-validate-guard', driverMissingValidateServerBlueprintPath, pluginDir, async (server) => {
     const malformedSnapshot = await requestText(
       server.baseUrl,
       'GET',
@@ -906,9 +919,11 @@ try {
       status: malformedSnapshot.status,
       missingValidateMutationCallback: /missing validateMutationCallback for driver: fixture-arbitrary-plugin-table/i.test(malformedSnapshot.text),
     };
-  });
+    });
+  }
 
-  await withPlaygroundServer('production-plugin-driver-missing-name-guard', driverMissingNameServerBlueprintPath, pluginDir, async (server) => {
+  if (shouldRunScenario('driver-missing-name-guard')) {
+    await withPlaygroundServer('production-plugin-driver-missing-name-guard', driverMissingNameServerBlueprintPath, pluginDir, async (server) => {
     const malformedSnapshot = await requestText(
       server.baseUrl,
       'GET',
@@ -927,9 +942,11 @@ try {
       status: malformedSnapshot.status,
       missingDriverName: /missing driver name for table: wp_reprint_push_driver_fixture/i.test(malformedSnapshot.text),
     };
-  });
+    });
+  }
 
-  await withPlaygroundServer('production-plugin-driver-missing-plugin-owner-guard', driverMissingPluginOwnerServerBlueprintPath, pluginDir, async (server) => {
+  if (shouldRunScenario('driver-missing-plugin-owner-guard')) {
+    await withPlaygroundServer('production-plugin-driver-missing-plugin-owner-guard', driverMissingPluginOwnerServerBlueprintPath, pluginDir, async (server) => {
     const malformedSnapshot = await requestText(
       server.baseUrl,
       'GET',
@@ -948,9 +965,11 @@ try {
       status: malformedSnapshot.status,
       missingPluginOwner: /missing pluginOwner for driver: fixture-arbitrary-plugin-table/i.test(malformedSnapshot.text),
     };
-  });
+    });
+  }
 
-  await withPlaygroundServer('production-plugin-driver-missing-table-guard', driverMissingTableServerBlueprintPath, pluginDir, async (server) => {
+  if (shouldRunScenario('driver-missing-table-guard')) {
+    await withPlaygroundServer('production-plugin-driver-missing-table-guard', driverMissingTableServerBlueprintPath, pluginDir, async (server) => {
     const malformedSnapshot = await requestText(
       server.baseUrl,
       'GET',
@@ -969,9 +988,11 @@ try {
       status: malformedSnapshot.status,
       missingTable: /missing table for driver: fixture-arbitrary-plugin-table/i.test(malformedSnapshot.text),
     };
-  });
+    });
+  }
 
-  await withPlaygroundServer('production-plugin-driver-duplicate-name-guard', driverDuplicateNameServerBlueprintPath, pluginDir, async (server) => {
+  if (shouldRunScenario('driver-duplicate-name-guard')) {
+    await withPlaygroundServer('production-plugin-driver-duplicate-name-guard', driverDuplicateNameServerBlueprintPath, pluginDir, async (server) => {
     const malformedSnapshot = await requestText(
       server.baseUrl,
       'GET',
@@ -990,9 +1011,11 @@ try {
       status: malformedSnapshot.status,
       duplicateDriverName: /duplicate driver name: fixture-arbitrary-plugin-table/i.test(malformedSnapshot.text),
     };
-  });
+    });
+  }
 
-  await withPlaygroundServer('production-plugin-driver-duplicate-table-guard', driverDuplicateTableServerBlueprintPath, pluginDir, async (server) => {
+  if (shouldRunScenario('driver-duplicate-table-guard')) {
+    await withPlaygroundServer('production-plugin-driver-duplicate-table-guard', driverDuplicateTableServerBlueprintPath, pluginDir, async (server) => {
     const malformedSnapshot = await requestText(
       server.baseUrl,
       'GET',
@@ -1011,7 +1034,8 @@ try {
       status: malformedSnapshot.status,
       duplicateTable: /duplicate table mapping for table: wp_reprint_push_driver_fixture/i.test(malformedSnapshot.text),
     };
-  });
+    });
+  }
 
   console.log(JSON.stringify(summary, null, 2));
 } finally {
@@ -1034,6 +1058,19 @@ function buildPluginPackage(targetDir) {
       path.join(includesDir, file),
     );
   }
+}
+
+function parseSelectedScenario(argv, envValue) {
+  const explicitArg = argv.find((arg) => arg.startsWith('--scenario='));
+  const scenario = explicitArg ? explicitArg.slice('--scenario='.length) : envValue;
+  if (!scenario) {
+    return null;
+  }
+  return scenario.trim() || null;
+}
+
+function shouldRunScenario(name) {
+  return selectedScenario === null || selectedScenario === name;
 }
 
 function withoutUnmappedGraphPostmeta(snapshot) {
