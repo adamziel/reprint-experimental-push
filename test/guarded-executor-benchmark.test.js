@@ -242,8 +242,17 @@ test('guarded benchmark refuses production throughput claims until production ga
     'blocked-recovery',
   );
   assert.equal(report.claims.productionThroughputDetails.atomicGroup.productionAtomicCommitMeasured, false);
+  assert.deepEqual(report.claims.productionThroughputDetails.parallelismLimits, {
+    chunkUpload: 4,
+    fileHashing: 2,
+    dbBatchPerTable: 2,
+  });
   assert.equal(
     report.claims.productionThroughputDetails.blockers.includes('production-memory-ceiling-not-measured'),
+    false,
+  );
+  assert.equal(
+    report.claims.productionThroughputDetails.blockers.includes('production-parallelism-limits-not-measured'),
     false,
   );
   assert.equal(
@@ -376,6 +385,9 @@ test('guarded benchmark refuses production throughput claims until production ga
       && error.details.productionThroughputDetails.receiptCursorWithinMemoryCeiling === true
       && error.details.productionThroughputDetails.receiptCursorMatchesChunkWindow === true
       && error.details.productionThroughputDetails.productionStorageReceiptsMeasured === false
+      && error.details.productionThroughputDetails.parallelismLimits.chunkUpload === 4
+      && error.details.productionThroughputDetails.parallelismLimits.fileHashing === 2
+      && error.details.productionThroughputDetails.parallelismLimits.dbBatchPerTable === 2
       && error.details.receiptCursor.chunkIndex === report.shape.chunkCount - 1
       && error.details.productionThroughputDetails.blockers.includes('production-storage-receipts-not-measured')
       && error.details.productionThroughputDetails.executorCapabilities.rowApply === 'per-row-apply-model'
@@ -584,6 +596,18 @@ test('production claim gate fails closed if benchmark evidence is tampered', () 
   delete missingMemoryCeiling.resourceLimits.memoryCeilingBytes;
   assert.ok(
     productionThroughputBlockers(missingMemoryCeiling).includes('production-memory-ceiling-not-measured'),
+  );
+
+  const missingParallelismLimits = clone(report);
+  delete missingParallelismLimits.claims.productionThroughputDetails.parallelismLimits.chunkUpload;
+  assert.ok(
+    productionThroughputBlockers(missingParallelismLimits).includes('production-parallelism-limits-not-measured'),
+  );
+
+  const invalidParallelismLimits = clone(report);
+  invalidParallelismLimits.claims.productionThroughputDetails.parallelismLimits.dbBatchPerTable = 0;
+  assert.ok(
+    productionThroughputBlockers(invalidParallelismLimits).includes('production-parallelism-limits-not-measured'),
   );
 
   const brokenWindowEvidence = clone(report);

@@ -152,6 +152,11 @@ export function runGuardedExecutorBenchmark(options = {}) {
 export function productionThroughputBlockers(report) {
   const blockers = [];
   const backpressureEvidenceComplete = hasCompleteBackpressureEvidence(report);
+  const parallelismLimits = report.claims?.productionThroughputDetails?.parallelismLimits ?? {
+    chunkUpload: report.resourceLimits?.maxBufferedUploadBytes,
+    fileHashing: report.resourceLimits?.maxBufferedUploadBytes,
+    dbBatchPerTable: report.resourceLimits?.maxBufferedUploadBytes,
+  };
   const receiptCursorBackpressureBytes = report.evidence.backpressure?.receiptCursorBytes ?? null;
   const receiptCursorQueueSlackBytes = report.evidence.backpressure?.receiptCursorQueueSlackBytes ?? null;
   const receiptCursorQueueBudgetBytes = report.evidence.backpressure?.queueBudgetBytes ?? null;
@@ -254,6 +259,16 @@ export function productionThroughputBlockers(report) {
   }
   if (!Number.isFinite(report.resourceLimits?.memoryCeilingBytes) || report.resourceLimits.memoryCeilingBytes <= 0) {
     blockers.push('production-memory-ceiling-not-measured');
+  }
+  if (
+    !Number.isFinite(parallelismLimits?.chunkUpload)
+    || !Number.isFinite(parallelismLimits?.fileHashing)
+    || !Number.isFinite(parallelismLimits?.dbBatchPerTable)
+    || parallelismLimits.chunkUpload <= 0
+    || parallelismLimits.fileHashing <= 0
+    || parallelismLimits.dbBatchPerTable <= 0
+  ) {
+    blockers.push('production-parallelism-limits-not-measured');
   }
   if (
     !Number.isFinite(report.resourceLimits?.memoryCeilingBytes)
@@ -946,6 +961,11 @@ export function productionThroughputDetails(report) {
   const productionAtomicCommitMeasured = report.executorCapabilities.productionAtomicCommit === 'production-atomic-group-commit';
   const productionStorageReceiptsMeasured = report.executorCapabilities.fileReceipts === 'production-storage-receipts';
   const productionRowBatchExecutorMeasured = report.executorCapabilities.rowApply === 'production-batched-compare-and-swap';
+  const parallelismLimits = {
+    chunkUpload: DEFAULT_LIMITS.maxUploadConcurrency,
+    fileHashing: DEFAULT_LIMITS.maxHashConcurrency,
+    dbBatchPerTable: DEFAULT_LIMITS.maxDbConcurrencyPerTable,
+  };
   const wordpressGraphIdentityPostmetaReferencesMatch =
     Number.isFinite(report.evidence.wordpressGraphIdentity?.postmetaReferences)
     && Number.isFinite(report.shape?.rowCount)
@@ -1031,6 +1051,7 @@ export function productionThroughputDetails(report) {
     productionAtomicCommitMeasured,
     productionStorageReceiptsMeasured,
     productionRowBatchExecutorMeasured,
+    parallelismLimits,
     wordpressGraphIdentityPostmetaReferencesMatch,
     journalSuccessRecordTypes,
     journalSuccessReceiptKindsGrouped,
@@ -1091,6 +1112,7 @@ export function productionThroughputDetails(report) {
       productionAtomicCommitMeasured,
       productionStorageReceiptsMeasured,
       productionRowBatchExecutorMeasured,
+      parallelismLimits,
       wordpressGraphIdentityPostmetaReferencesMatch,
       journalSuccessRecordTypes,
       journalSuccessReceiptKindsGrouped,
