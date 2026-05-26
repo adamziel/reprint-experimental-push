@@ -1662,11 +1662,16 @@ test('guarded benchmark refuses production throughput claims until production ga
 
   const missingAlignedBackpressureProof = clone(report);
   missingAlignedBackpressureProof.evidence.backpressure.queuePauseHasMeasuredAndAlignedReceiptCursorBackpressure = false;
+  const missingAlignedBackpressureDetails = productionThroughputDetails(missingAlignedBackpressureProof);
   assert.ok(
     productionThroughputBlockers(missingAlignedBackpressureProof).includes(
       'queue-pause-without-measured-and-aligned-receipt-cursor-backpressure-proof',
     ),
   );
+  assert.equal(missingAlignedBackpressureDetails.receiptCursorPauseFootprintComplete, false);
+  assert.equal(missingAlignedBackpressureDetails.receiptCursorPauseFootprintVisible, false);
+  assert.equal(missingAlignedBackpressureDetails.queueHeadroomVisibleAndMeasured, false);
+  assert.equal(missingAlignedBackpressureDetails.queueHeadroomVisibleAndMeasuredAndAligned, false);
 
   const fractionalParallelismLimits = clone(report);
   fractionalParallelismLimits.evidence.parallelism.parallelismLimits.chunkUpload = 3.5;

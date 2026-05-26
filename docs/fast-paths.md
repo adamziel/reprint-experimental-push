@@ -250,6 +250,10 @@ Current executable gate:
   visible-and-measured summaries now also fail closed when that aligned
   receipt-cursor slack proof bit is hidden, so derived pause details cannot
   still look auditable after the bounded pause proof disappears.
+- The same pause-footprint and queue-headroom summaries now also fail closed
+  when the measured-and-aligned receipt-cursor backpressure proof bit is
+  hidden, so advisory pause details cannot still look complete after the
+  bounded backpressure proof disappears.
 - The same details also expose whether the measured memory ceiling still
   matches the queue budget, so a tampered headroom summary cannot drift away
   from the recorded backpressure budget.

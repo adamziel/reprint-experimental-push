@@ -1559,7 +1559,7 @@ export function productionThroughputDetails(report) {
     && receiptCursorQueueHeadroomBytes === receiptCursorQueueBudgetBytes - report.shape.chunkSizeBytes
     && receiptCursorQueueSlackBytes === receiptCursorQueueBudgetBytes - receiptCursorBackpressureBytes
     && receiptCursorQueueSlackBytes === receiptCursorMemoryHeadroomBytes;
-  const receiptCursorPauseFootprintComplete =
+  const receiptCursorPauseFootprintBaseComplete =
     report.evidence.backpressure?.queuePausedBeforeOverflow === true
     && receiptCursorPauseFootprintMeasuredComplete
     && report.evidence.backpressure?.receiptCursorPauseFootprintComplete === true;
@@ -1604,6 +1604,10 @@ export function productionThroughputDetails(report) {
       && receiptCursorQueueSlackMatchesQueueHeadroom
       && receiptCursorQueueSlackMatchesResourceHeadroom
     );
+  const receiptCursorPauseFootprintComplete =
+    receiptCursorPauseFootprintBaseComplete
+    && queuePauseHasMeasuredAndAlignedReceiptCursorBackpressure
+    && queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack;
   const queueHeadroomVisibleAndMeasured =
     receiptCursorPauseFootprintComplete
     && queueHeadroomPositive
