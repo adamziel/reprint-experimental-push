@@ -1541,9 +1541,6 @@ function isValidSamePlanWordPressGraphTarget(targetMutation, reference, sourceMu
     if (sourceValue.taxonomy === 'nav_menu') {
       return false;
     }
-    if (hasRemoteWordPressNavigationPost(remote)) {
-      return false;
-    }
 
     const targetTaxonomyValue = [...(local?.db?.wp_term_taxonomy ? Object.values(local.db.wp_term_taxonomy) : [])]
       .find((candidate) => normalizePositiveInteger(candidate?.term_id) === normalizePositiveInteger(targetValue.term_id)
@@ -1756,11 +1753,6 @@ function isValidSamePlanWordPressGraphTarget(targetMutation, reference, sourceMu
   }
 
   return true;
-}
-
-function hasRemoteWordPressNavigationPost(remote) {
-  const posts = remote?.db?.wp_posts ? Object.values(remote.db.wp_posts) : [];
-  return posts.some((post) => post && typeof post === 'object' && post.post_type === 'wp_navigation');
 }
 
 function isBlockedSamePlanWordPressGraphSource(sourceMutation, reference, mutationByResourceKey) {

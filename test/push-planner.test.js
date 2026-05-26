@@ -7514,7 +7514,7 @@ test('allows a term taxonomy parent to reference a term created by the same plan
   assert.equal(JSON.stringify(reference).includes('remote-attachment-body'), false);
 });
 
-test('blocks a term taxonomy parent reference to a same-plan term when a remote wp_navigation post exists', () => {
+test('allows a term taxonomy parent reference to a same-plan term when an unrelated remote wp_navigation post exists', () => {
   const parentTermResourceKey = 'row:["wp_terms","term_id:7"]';
   const childTaxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:9"]';
   const base = baseSite();
@@ -7551,15 +7551,21 @@ test('blocks a term taxonomy parent reference to a same-plan term when a remote 
   const termMutation = mutationFor(plan, parentTermResourceKey);
   const taxonomyMutation = mutationFor(plan, childTaxonomyResourceKey);
   const blocker = plan.blockers.find((entry) => entry.resourceKey === childTaxonomyResourceKey);
+  const reference = taxonomyMutation.wordpressGraphReferences.find((entry) => entry.relationshipType === 'term-taxonomy-parent');
 
-  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.blockers, 0);
   assert.equal(termMutation.changeKind, 'create');
   assert.equal(taxonomyMutation.changeKind, 'create');
-  assert.equal(blocker.class, 'missing-wordpress-graph-dependency');
-  assert.equal(blocker.references[0].relationshipType, 'term-taxonomy-parent');
-  assert.equal(blocker.references[0].targetResourceKey, parentTermResourceKey);
-  assert.equal(JSON.stringify(blocker).includes('remote-navigation-body'), false);
-  assert.throws(() => applyPlan(baseSite(), plan), /Refusing to apply/);
+  assert.equal(blocker, undefined);
+  assert.deepEqual(taxonomyMutation.dependsOnMutationIds, [termMutation.id]);
+  assert.equal(reference.resolutionPolicy, 'same-plan-local-create');
+  assert.equal(reference.relationshipType, 'term-taxonomy-parent');
+  assert.equal(reference.targetResourceKey, parentTermResourceKey);
+  assert.equal(JSON.stringify(reference).includes('remote-navigation-body'), false);
+  const result = applyPlan(remote, plan);
+  assert.equal(result.site.db.wp_posts['ID:21'].post_type, 'wp_navigation');
+  assert.equal(result.site.db.wp_term_taxonomy['term_taxonomy_id:9'].parent, 7);
 });
 
 test('blocks a nav menu term taxonomy parent reference to a same-plan term', () => {
