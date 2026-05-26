@@ -6,21 +6,17 @@ linked implementation artifacts.
 
 ## 2026-05-26 - Current Supervisor Snapshot
 
-- Status: `node --test --test-name-pattern="allows a term taxonomy term reference to a term created by the same plan" test/push-planner.test.js`
-  passed, adding a seventh same-plan graph proof to the existing postmeta,
-  parent-post, thumbnail, taxonomy, term-taxonomy-parent, and termmeta cases.
-  The earlier planner proofs still stand, but the broader production gate
-  remains closed on `main`.
-- New proof: same-plan term taxonomy rows now have concrete passing Node
-  coverage through `wp_term_taxonomy.term_id`.
-- Trend: evidence improved again for the planner lane, while the broader
-  production gate is still not closed on `main`.
-- Blocker: `timeout 180s node scripts/playground/push-protocol-smoke.mjs`
-  exited `124` with no stdout or stderr, so the live issue is a silent
-  Playground smoke harness rather than a planner regression.
-- Next nudge: keep the gate closed until the smoke emits a real success or
-  failure artifact, or replace it with the smallest non-Playground assertion
-  that still covers the same-plan graph proof.
+- Status: the current reliable head is `e7be9812` (`Fail fast on readiness 502s`),
+  and the same-plan proof set remains intact for the existing postmeta,
+  parent-post, thumbnail, taxonomy, term-taxonomy-parent, termmeta, and
+  term-taxonomy term cases.
+- New proof: no new executable graph proof landed this pass.
+- Trend: the lane remains at `0/4` because the current reliable head is
+  readiness-boundary support work, not a production release proof.
+- Blocker: the live release boundary still needs production auth/session,
+  durable journal consumption, replay, or preserved-remote retry evidence.
+- Next nudge: keep the public page current with the reliable head while the
+  release gates stay closed.
 - Public page: [progress.html](../progress.html) carries the visible update
   date and keeps details behind links.
 
