@@ -273,9 +273,7 @@ export async function runAuthenticatedHttpPush({
     ? resolveObservedProductionAuthSessionLifecycleDrift(dryRun)
     : null;
   const dryRunLifecycleTerminationDrift = resolveObservedAuthSessionLifecycleTerminationSummary(summary);
-  const dryRunAuthEnvelopeDrift = requireProductionAuthSession
-    ? describeAuthEnvelopeDrift(preflightAuthEnvelope, dryRun)
-    : null;
+  const dryRunAuthEnvelopeDrift = describeAuthEnvelopeDrift(preflightAuthEnvelope, dryRun);
   if (dryRun.status !== 200 || dryRun.body?.ok !== true || !dryRun.body?.receipt) {
     summary.code = dryRun.body?.code || 'DRY_RUN_FAILED';
     setDurableJournalBoundary(summary, 'dry-run');
