@@ -1228,6 +1228,16 @@ test('production claim gate fails closed if benchmark evidence is tampered', () 
     ),
   );
 
+  const queueBudgetAndHeadroomVisibleWithoutMeasurement = clone(report);
+  queueBudgetAndHeadroomVisibleWithoutMeasurement.evidence.backpressure.queueBudgetVisible = true;
+  queueBudgetAndHeadroomVisibleWithoutMeasurement.evidence.backpressure.queueHeadroomVisible = true;
+  queueBudgetAndHeadroomVisibleWithoutMeasurement.evidence.backpressure.queueHeadroomMeasured = false;
+  assert.ok(
+    productionThroughputBlockers(queueBudgetAndHeadroomVisibleWithoutMeasurement).includes(
+      'queue-budget-and-queue-headroom-visible-without-queue-headroom-measurement',
+    ),
+  );
+
   const brokenWindowEvidence = clone(report);
   brokenWindowEvidence.evidence.resourceLimits.chunkWindowWithinMemoryCeiling = false;
   assert.ok(
