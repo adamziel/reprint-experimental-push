@@ -6,12 +6,12 @@ The project is **not releasable as a production WordPress push path**.
 
 - Fresh remote heads at audit time, checked on May 26, 2026:
 
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `20fd55c6`
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `22d6dab6`
-- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `c766828a`
-- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `5d0487a3`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `b638623f`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `ffd3832f`
+- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `377f2f3c`
+- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `44fd27f9`
 - `origin/lane/reliable-executor` -> `39ded935`
-- `origin/lane/no-data-loss-invariants` -> `d388db27`
+- `origin/lane/no-data-loss-invariants` -> `9ddd48b4`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `9e077c10`
 - `origin/lane/no-data-loss-recovery` -> `aec5d04b`
 - `origin/lane/cycle-20260525-mainwindows-2349/critic` -> `fa0dc8a0`
@@ -43,8 +43,8 @@ but it did not change the release conclusion:
 - `origin/lane/reliable-executor` now records `39ded935`, tightening release
   proof timeout logging and child cleanup again, but still not proving
   production auth/session lifecycle or a live-source mutation boundary.
-- `origin/lane/no-data-loss-invariants` now records `d388db27`, adding nav menu
-  parent reference blocking only.
+- `origin/lane/no-data-loss-invariants` now records `9ddd48b4`, adding same-plan
+  nav menu item parent blocking only.
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` now
   records `9e077c10`, tightening durable recovery remote ownership fencing. It
   still does not add production-backed journal ownership or replay proof.
