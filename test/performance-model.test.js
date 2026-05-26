@@ -212,6 +212,19 @@ test('benchmark model covers large uploads and plugin installs', () => {
     model.safeFastPaths.some(
       (fastPath) =>
         fastPath.area === 'chunk-upload' &&
+        fastPath.allowedShortcut === 'resume-plan-scoped-chunks-with-matching-receipts' &&
+        fastPath.visibilityBoundary === 'file-finalize-or-atomic-group-commit' &&
+        fastPath.guardrails.includes('chunks-write-only-to-plan-staging') &&
+        fastPath.guardrails.includes('finalize-requires-complete-chunk-receipts') &&
+        fastPath.gateProofs.skip.includes('matching plan-scoped durable receipt') &&
+        fastPath.gateProofs.recovery.includes('exact plan, resource, local hash, byte range, and digest'),
+    ),
+    'plan-scoped chunk resumes stay bounded to durable receipt matches and guarded finalize boundaries',
+  );
+  assert.ok(
+    model.safeFastPaths.some(
+      (fastPath) =>
+        fastPath.area === 'chunk-upload' &&
         fastPath.allowedShortcut === 'pipeline-independent-chunks-within-byte-and-receipt-budgets' &&
         fastPath.guardrails.includes('chunks-remain-plan-scoped-and-addressed-by-digest') &&
         fastPath.guardrails.includes('finalize-still-requires-complete-durable-receipts') &&
@@ -231,6 +244,19 @@ test('benchmark model covers large uploads and plugin installs', () => {
         fastPath.gateProofs.recovery.includes('batch receipts and plan-scoped idempotency keys'),
     ),
     'prepared row-batch statements stay inside one atomic group and preserve recovery evidence',
+  );
+  assert.ok(
+    model.safeFastPaths.some(
+      (fastPath) =>
+        fastPath.area === 'database-row-batching' &&
+        fastPath.allowedShortcut === 'reuse-statement-shapes-for-bounded-primary-key-batches' &&
+        fastPath.visibilityBoundary === 'batch-transaction-or-atomic-group-commit' &&
+        fastPath.guardrails.includes('one-expected-remote-hash-per-row') &&
+        fastPath.guardrails.includes('batch-transaction-or-group-staging-record') &&
+        fastPath.gateProofs.live.includes('expected remote hash') &&
+        fastPath.gateProofs.recovery.includes('batch idempotency keys and commit or staging records'),
+    ),
+    'bounded primary-key batch statement reuse keeps per-row preconditions and durable batch evidence intact',
   );
   assert.ok(
     model.safeFastPaths.some(
@@ -349,6 +375,32 @@ test('benchmark model covers large uploads and plugin installs', () => {
         fastPath.gateProofs.skip.includes('bounded plugin-install fanout before the live compare'),
     ),
     'compressed owner-partition scans can size plugin-install fanout without weakening the live compare',
+  );
+  assert.ok(
+    model.safeFastPaths.some(
+      (fastPath) =>
+        fastPath.area === 'remote-indexes' &&
+        fastPath.allowedShortcut === 'plan-from-indexed-strong-hash-listing' &&
+        fastPath.visibilityBoundary === 'none-planning-only' &&
+        fastPath.guardrails.includes('index-is-planning-evidence-only') &&
+        fastPath.gateProofs.skip.includes('indexed strong resource hashes') &&
+        fastPath.gateProofs.live.includes('apply revalidates live storage state') &&
+        fastPath.gateProofs.recovery.includes('index cursor'),
+    ),
+    'indexed strong-hash listings stay planning-only and still hand recovery back to later receipts',
+  );
+  assert.ok(
+    model.safeFastPaths.some(
+      (fastPath) =>
+        fastPath.area === 'remote-indexes' &&
+        fastPath.allowedShortcut === 'cache-planning-cursor-with-strong-hash-listing' &&
+        fastPath.visibilityBoundary === 'transport-only' &&
+        fastPath.guardrails.includes('cursor-is-not-an-apply-lock') &&
+        fastPath.gateProofs.skip.includes('recorded cursor and strong-hash listing') &&
+        fastPath.gateProofs.live.includes('cursor never authorizes mutation') &&
+        fastPath.gateProofs.recovery.includes('recovery evidence for planning replay'),
+    ),
+    'cached planning cursors with strong-hash listings stay advisory and never authorize apply work',
   );
   assert.ok(
     model.safeFastPaths.some(
