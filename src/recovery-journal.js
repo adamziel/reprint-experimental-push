@@ -49,6 +49,7 @@ export function createUnsupportedProductionRecoveryJournal(reason = 'Production 
     ownsJournal: false,
     ownsRemoteArtifact: false,
     restartReadable: false,
+    leaseFence: null,
     writerLease: null,
     journalPath: null,
     artifactRefs: Object.freeze({
@@ -220,6 +221,7 @@ export function openProductionRecoveryJournal(filePath, options = {}) {
     now: options.now,
     claimId,
   });
+  const leaseFence = freezeProductionWriterLease(writerLease);
 
   return Object.freeze({
     kind: 'production-recovery-journal',
@@ -228,6 +230,7 @@ export function openProductionRecoveryJournal(filePath, options = {}) {
     restartReadable: true,
     ownsJournal: true,
     ownsRemoteArtifact,
+    leaseFence,
     writerLease,
     claimHash,
     journalPath: journal.filePath,
@@ -251,6 +254,7 @@ export function openProductionRecoveryJournal(filePath, options = {}) {
         restartReadable: true,
         ownsJournal: true,
         ownsRemoteArtifact,
+        leaseFence,
         writerLease,
         claimHash,
         journalPath: journal.filePath,
@@ -268,6 +272,40 @@ export function openProductionRecoveryJournal(filePath, options = {}) {
     close() {
       journal.close();
     },
+  });
+}
+
+export function describeProductionRecoveryJournal(writer) {
+  if (!writer || writer.kind !== 'production-recovery-journal') {
+    return null;
+  }
+
+  const artifactRefs = isStrictPlainObject(writer.artifactRefs)
+    ? Object.freeze({
+        journal: Object.hasOwn(writer.artifactRefs, 'journal') ? writer.artifactRefs.journal : null,
+        remote: Object.hasOwn(writer.artifactRefs, 'remote') ? writer.artifactRefs.remote : null,
+      })
+    : Object.freeze({
+        journal: null,
+        remote: null,
+      });
+
+  return Object.freeze({
+    kind: writer.kind,
+    productionAdapter: writer.productionAdapter === true,
+    supportedSurface: writer.supportedSurface || null,
+    restartReadable: writer.restartReadable === true,
+    ownsJournal: writer.ownsJournal === true,
+    ownsRemoteArtifact: writer.ownsRemoteArtifact === true,
+    leaseFence: isStrictPlainObject(writer.leaseFence)
+      ? Object.freeze({ ...writer.leaseFence })
+      : null,
+    writerLease: isStrictPlainObject(writer.writerLease)
+      ? Object.freeze({ ...writer.writerLease })
+      : null,
+    journalPath: typeof writer.journalPath === 'string' ? writer.journalPath : null,
+    artifactRefs,
+    schemaVersion: Object.hasOwn(writer, 'schemaVersion') ? writer.schemaVersion : null,
   });
 }
 

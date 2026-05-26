@@ -9,6 +9,7 @@ import {
   appendRecoveryClaimOpened,
   assertJournalRecordHasNoRawValues,
   createUnsupportedProductionRecoveryJournal,
+  describeProductionRecoveryJournal,
   openPlanRecoveryJournal,
   openProductionRecoveryJournal,
   openRecoveryJournal,
@@ -175,6 +176,9 @@ test('production recovery journal adapter is restart-readable and release-path c
   assert.equal(journal.supportedSurface, 'production-recovery-journal-adapter');
   assert.equal(journal.restartReadable, true);
   assert.equal(journal.ownsJournal, true);
+  assert.equal(journal.leaseFence.id, 'lease-1');
+  assert.equal(journal.leaseFence.epoch, 7);
+  assert.equal(Object.isFrozen(journal.leaseFence), true);
   assert.equal(journal.claimHash, recoveryClaimHash('claim-1'));
   assert.equal(journal.journalPath, filePath);
   assert.equal(journal.schemaVersion, 1);
@@ -209,6 +213,7 @@ test('production recovery journal adapter is restart-readable and release-path c
   assert.equal(inspected.restartReadable, true);
   assert.equal(inspected.ownsJournal, true);
   assert.equal(inspected.ownsRemoteArtifact, false);
+  assert.deepEqual(inspected.leaseFence, { id: 'lease-1', epoch: 7 });
   assert.equal(inspected.claimHash, journal.claimHash);
   assert.equal(inspected.writerLease.id, 'lease-1');
   assert.equal(inspected.writerLease.epoch, 7);
@@ -218,6 +223,39 @@ test('production recovery journal adapter is restart-readable and release-path c
   assert.equal(inspected.schemaVersion, 1);
   assert.equal(inspected.records.at(-1).type, 'journal-opened');
   assert.deepEqual(inspected.artifactRefs, { journal: filePath, remote: null });
+});
+
+test('production recovery journal descriptor normalizes lease and artifact evidence for release consumption', () => {
+  const filePath = tempJournalPath();
+  const journal = openProductionRecoveryJournal(filePath, {
+    truncate: true,
+    now: fixedNow,
+    claimId: 'claim-describe',
+    writerLease: { id: 'lease-describe', epoch: 11 },
+    ownsRemoteArtifact: true,
+    remoteArtifactPath: `${filePath}.remote`,
+  });
+
+  const descriptor = describeProductionRecoveryJournal(journal);
+
+  assert.deepEqual(descriptor, {
+    kind: 'production-recovery-journal',
+    productionAdapter: true,
+    supportedSurface: 'production-recovery-journal-adapter',
+    restartReadable: true,
+    ownsJournal: true,
+    ownsRemoteArtifact: true,
+    leaseFence: { id: 'lease-describe', epoch: 11 },
+    writerLease: { id: 'lease-describe', epoch: 11 },
+    journalPath: filePath,
+    artifactRefs: { journal: filePath, remote: `${filePath}.remote` },
+    schemaVersion: 1,
+  });
+  assert.equal(Object.isFrozen(descriptor), true);
+  assert.equal(Object.isFrozen(descriptor.leaseFence), true);
+  assert.equal(Object.isFrozen(descriptor.writerLease), true);
+
+  journal.close();
 });
 
 test('production recovery journal adapter reopens with a new claim and rejects stale fenced writers', () => {
