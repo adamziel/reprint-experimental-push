@@ -205,7 +205,7 @@ export async function runAuthenticatedHttpPush({
     return summary;
   }
   const recoveryInspectAuthEnvelopeDrift = hasAuthEnvelopeDrift(preflightAuthEnvelope, recoveryInspect);
-  const recoveryInspectAuthSessionDrift = recoveryInspectAuthEnvelopeDrift && recoveryInspect.body?.auth;
+  const recoveryInspectAuthSessionDrift = recoveryInspectAuthEnvelopeDrift && recoveryInspect.body?.recovery;
   if (!summary.recoveryInspect.recovery || summary.recoveryInspect.recovery.journalState !== 'ok') {
     summary.code = 'RECOVERY_INSPECT_JOURNAL_UNTRUSTED';
     setDurableJournalBoundary(summary, 'recovery-inspect');
