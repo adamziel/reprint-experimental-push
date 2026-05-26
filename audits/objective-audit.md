@@ -39,10 +39,10 @@ The project is **not releasable as a production WordPress push path**.
 - `origin/lane/cycle-20260525-keep-busy-loop-2/no-data-loss-recovery` -> `63e01a49`
 - `origin/lane/cycle-20260525-mainwindows-2349/critic` -> `fa0dc8a0`
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `999ff0d8`
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `0b9f72b9`
-- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `f9e95355`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `df42d5af`
+- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `ec4a978d`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `2af1ddda`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `51fec500`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `f3a564a2`
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` -> `0ca7b35d`
 - `origin/lane/cycle-20260525-mainwindows-2357/no-data-loss-invariants-graph-proof` -> `98c0ce26`
 - `origin/lane/cycle-20260525-restart-2340/feedback-supervisor` -> `ef3d911e`
@@ -118,10 +118,10 @@ but it did not change the release conclusion:
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now records
   `962cc2a8`, refreshing the public progress freshness only.
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now records
-  `51fec500`, refreshing public progress freshness only. It still does not
+  `f3a564a2`, refreshing public progress freshness only. It still does not
   add production-backed gate movement.
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` now records
-  `432f82a9`, refreshing the audit snapshot only and not changing the release
+  `ec4a978d`, refreshing the audit snapshot only and not changing the release
   boundary.
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now records
   `0f47e1c0`, refreshing the public progress freshness only.
