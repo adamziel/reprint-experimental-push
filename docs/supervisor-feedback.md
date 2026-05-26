@@ -1,6 +1,12 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-26 04:26:20 CEST
+Last updated: 2026-05-26 04:27:06 CEST
+
+## 2026-05-26 04:27:06 CEST - Freshness Refresh
+
+- Refreshed the visible supervisor page so the public freshness marker stays aligned with the active supervision cycle.
+- No gate moved and no new proof landed. The release posture remains `0/4`.
+- Next nudge: wait for a real release-proof delta, not another timestamp-only update.
 
 ## 2026-05-26 04:26:20 CEST - Freshness Refresh
 
