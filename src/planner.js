@@ -244,6 +244,26 @@ export function createPushPlan({ base, local, remote, now = new Date() }) {
         continue;
       }
 
+      const guidSupport = unsupportedGuidResourceSupport({
+        resource,
+        baseValue,
+        localValue,
+        remoteValue,
+      });
+      if (!guidSupport.supported) {
+        addUnsupportedGuidResourceBlocker(plan, {
+          resource,
+          support: guidSupport,
+          baseValue,
+          localValue,
+          remoteValue,
+          baseHash,
+          localHash,
+          remoteHash,
+        });
+        continue;
+      }
+
       const commentsUsersSupport = unsupportedCommentsUsersResourceSupport({
         resource,
         baseValue,
@@ -1677,6 +1697,37 @@ function addUnsupportedCommentsUsersResourceBlocker(plan, {
   });
 }
 
+function addUnsupportedGuidResourceBlocker(plan, {
+  resource,
+  support,
+  baseValue,
+  localValue,
+  remoteValue,
+  baseHash,
+  localHash,
+  remoteHash,
+}) {
+  plan.blockers.push({
+    id: `blocker-unsupported-guid-resource-${plan.blockers.length + 1}`,
+    class: support.className || 'unsupported-guid-resource',
+    resource,
+    resourceKey: resource.key,
+    reason: support.reason || `Post GUID resource ${resource.key} is not yet supported by the planner.`,
+    baseHash,
+    localHash,
+    remoteHash,
+    change: changeEvidence(
+      resource,
+      baseValue,
+      localValue,
+      remoteValue,
+      baseHash,
+      localHash,
+      remoteHash,
+    ),
+  });
+}
+
 function addUnsupportedSerializedBlocksBlocker(plan, {
   resource,
   support,
@@ -1836,6 +1887,33 @@ function unsupportedRevisionResourceSupport({ resource, baseValue, localValue, r
     supported: false,
     className: 'unsupported-revision-resource',
     reason: 'Revision graph resources are not yet supported by the planner.',
+  };
+}
+
+function unsupportedGuidResourceSupport({ resource, baseValue, localValue, remoteValue }) {
+  if (resource.type !== 'row' || resource.table !== 'wp_posts') {
+    return { supported: true };
+  }
+
+  const candidate = localValue !== ABSENT ? localValue : (baseValue !== ABSENT ? baseValue : remoteValue);
+  const baseGuid = baseValue !== ABSENT && baseValue && typeof baseValue === 'object' ? baseValue.guid : undefined;
+  const localGuid = localValue !== ABSENT && localValue && typeof localValue === 'object' ? localValue.guid : undefined;
+  if (
+    !candidate
+    || candidate === ABSENT
+    || baseGuid == null
+    || baseGuid === ''
+    || localGuid == null
+    || localGuid === ''
+    || localGuid === baseGuid
+  ) {
+    return { supported: true };
+  }
+
+  return {
+    supported: false,
+    className: 'unsupported-guid-resource',
+    reason: 'Post GUID graph resources are not yet supported by the planner.',
   };
 }
 
