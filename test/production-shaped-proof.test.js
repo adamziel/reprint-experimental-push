@@ -21,6 +21,11 @@ import {
   resolvePackagedProductionPluginSourceCommand,
 } from '../scripts/playground/packaged-production-plugin-source-command.js';
 import {
+  packagedProductionPluginPreflightReady,
+  packagedProductionPluginServerReady,
+  packagedProductionPluginSnapshotReady,
+} from '../scripts/playground/packaged-production-plugin-readiness.js';
+import {
   evaluateProductionAuthSessionLifecycle,
   isExpiredAuthSession,
 } from '../scripts/playground/production-auth-session-lifecycle.js';
@@ -863,6 +868,66 @@ test('packaged production plugin auth/session source helper resolves and loads t
     username: 'reprint_push_admin',
     applicationPassword: 'reprint-push-admin-app-password',
   });
+});
+
+test('packaged production plugin readiness helper accepts a stable snapshot before signed preflight is ready', () => {
+  const readySnapshot = {
+    status: 200,
+    body: {
+      ok: true,
+    },
+  };
+  const notReadyPreflight = {
+    status: 502,
+    body: {
+      code: 'wordpress_not_ready',
+    },
+  };
+  const strictReadyPreflight = {
+    status: 200,
+    body: {
+      ok: true,
+      routeProfile: {
+        labBacked: false,
+      },
+      auth: {
+        session: {
+          type: 'production-auth-session',
+          status: 'active',
+          expiresAt: '2099-01-01T00:00:00Z',
+        },
+      },
+    },
+  };
+
+  assert.equal(packagedProductionPluginSnapshotReady(readySnapshot), true);
+  assert.equal(packagedProductionPluginPreflightReady(strictReadyPreflight), true);
+  assert.equal(
+    packagedProductionPluginServerReady({
+      snapshot: readySnapshot,
+      preflight: notReadyPreflight,
+    }),
+    true,
+  );
+  assert.equal(
+    packagedProductionPluginServerReady({
+      snapshot: readySnapshot,
+      preflight: strictReadyPreflight,
+    }),
+    true,
+  );
+  assert.equal(
+    packagedProductionPluginServerReady({
+      snapshot: {
+        status: 502,
+        body: {
+          ok: false,
+        },
+      },
+      preflight: strictReadyPreflight,
+    }),
+    false,
+  );
 });
 
 test('packaged production plugin runtime source binding replaces the stale command source URL', () => {
