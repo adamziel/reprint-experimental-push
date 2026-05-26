@@ -1801,6 +1801,8 @@ function buildReport({
             === config.maxBufferedUploadBytes - config.chunkSizeBytes,
         receiptCursorMemoryCeilingMatchesQueueBudget:
           config.maxBufferedUploadBytes === DEFAULT_LIMITS.maxBufferedUploadBytes,
+        receiptCursorMemoryCeilingVisible:
+          config.maxBufferedUploadBytes === DEFAULT_LIMITS.maxBufferedUploadBytes,
         queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack:
           queuePausedBeforeOverflow === true
           && Number.isFinite(lastChunkReceipt?.sizeBytes)
