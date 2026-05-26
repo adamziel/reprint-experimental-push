@@ -66,6 +66,7 @@ const driverDeleteSnapshotBlueprintPath = path.join(tmpDir, 'remote-base-with-dr
 const driverDeleteServerBlueprintPath = path.join(tmpDir, 'remote-base-with-driver-fixture-delete-server.blueprint.json');
 const driverMissingExportServerBlueprintPath = path.join(tmpDir, 'remote-base-with-driver-fixture-missing-export-server.blueprint.json');
 const driverMissingApplyServerBlueprintPath = path.join(tmpDir, 'remote-base-with-driver-fixture-missing-apply-server.blueprint.json');
+const driverMissingValidateServerBlueprintPath = path.join(tmpDir, 'remote-base-with-driver-fixture-missing-validate-server.blueprint.json');
 const basePath = path.join(tmpDir, 'base.json');
 const localPath = path.join(tmpDir, 'local.json');
 
@@ -94,6 +95,11 @@ try {
     activatePackagedPlugin: true,
     provisionAuth: true,
     omitApplyRowCallback: true,
+  });
+  writeDriverFixtureBlueprint(path.join(repoRoot, fixtures.base), driverMissingValidateServerBlueprintPath, {
+    activatePackagedPlugin: true,
+    provisionAuth: true,
+    omitValidateMutationCallback: true,
   });
   fs.writeFileSync(basePath, `${JSON.stringify(snapshots.base, null, 2)}\n`);
   fs.writeFileSync(localPath, `${JSON.stringify(packageLocalSnapshot, null, 2)}\n`);
@@ -128,6 +134,7 @@ try {
     driverReceiptRotatedCredentialGuard: {},
     driverExportGuard: {},
     driverApplyGuard: {},
+    driverValidateGuard: {},
     final: {},
   };
 
@@ -846,6 +853,78 @@ try {
     };
   });
 
+  await withPlaygroundServer('production-plugin-driver-missing-validate-guard', driverMissingValidateServerBlueprintPath, pluginDir, async (server) => {
+    const client = authenticatedHttpClient({
+      sourceUrl: server.baseUrl,
+      credential: credentials,
+      routeProfile: 'production-shaped',
+    });
+    const preflight = await client.signedGet('/preflight');
+    assert.equal(preflight.status, 200);
+    assert.equal(preflight.body?.ok, true);
+    const session = preflight.body?.session?.id;
+    assert.equal(typeof session, 'string');
+    assert.ok(session.length > 0, 'signed preflight did not return a session id for the missing validate callback guard');
+
+    const remoteSnapshot = await client.get('/snapshot');
+    assert.equal(remoteSnapshot.status, 200);
+    assert.equal(remoteSnapshot.body?.ok, true);
+
+    const updatePlan = createPushPlan({
+      base: driverGuardBaseSnapshot,
+      local: driverLocalUpdateSnapshot,
+      remote: remoteSnapshot.body.snapshot,
+      now: new Date('2026-05-26T18:14:00.000Z'),
+    });
+    assert.equal(updatePlan.status, 'ready');
+    assert.equal(updatePlan.mutations.length, 1);
+    assert.equal(updatePlan.mutations[0].resourceKey, driverFixture.resourceKey);
+    assert.equal(updatePlan.mutations[0].action, 'put');
+
+    const updateDryRun = await client.signedPost(
+      '/dry-run',
+      { plan: updatePlan },
+      {
+        session,
+        idempotencyKey: 'production-plugin-driver-missing-validate-dry-run',
+      },
+    );
+    assert.equal(updateDryRun.status, 500);
+    assert.equal(updateDryRun.body?.ok, false);
+    assert.equal(updateDryRun.body?.code, 'PUSH_PROTOCOL_ERROR');
+    assert.match(
+      updateDryRun.body?.message || '',
+      /missing validateMutationCallback for driver: fixture-arbitrary-plugin-table/i,
+      'packaged dry-run route did not fail closed on a malformed arbitrary plugin-owned driver validate registration',
+    );
+
+    const afterRejectedDryRun = await client.get('/snapshot');
+    assert.equal(afterRejectedDryRun.status, 200);
+    assert.equal(afterRejectedDryRun.body?.ok, true);
+    assert.equal(
+      afterRejectedDryRun.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1']?.updated_marker,
+      'base',
+      'packaged dry-run route mutated the arbitrary driver row despite the missing validate callback',
+    );
+    assert.deepEqual(
+      afterRejectedDryRun.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1']?.payload,
+      {
+        owner: driverFixture.pluginOwner,
+        mode: 'base',
+        version: 1,
+      },
+      'packaged dry-run route changed the arbitrary driver payload despite the missing validate callback',
+    );
+
+    summary.driverValidateGuard = {
+      resourceKey: driverFixture.resourceKey,
+      dryRunRejectedCode: updateDryRun.body?.code,
+      dryRunRejectedMessage: updateDryRun.body?.message,
+      rowRetainedAfterReject: afterRejectedDryRun.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1'] !== undefined,
+      updatedMarkerAfterReject: afterRejectedDryRun.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1']?.updated_marker,
+    };
+  });
+
   console.log(JSON.stringify(summary, null, 2));
 } finally {
   fs.rmSync(tmpDir, { recursive: true, force: true });
@@ -948,6 +1027,7 @@ function writeDriverFixtureBlueprint(
     supportsDelete = false,
     omitExportRowsCallback = false,
     omitApplyRowCallback = false,
+    omitValidateMutationCallback = false,
   } = {},
 ) {
   const blueprint = JSON.parse(fs.readFileSync(sourceBlueprintPath, 'utf8'));
@@ -960,6 +1040,7 @@ function writeDriverFixtureBlueprint(
     supportsDelete,
     omitExportRowsCallback,
     omitApplyRowCallback,
+    omitValidateMutationCallback,
   }), 'utf8').toString('base64');
   blueprint.steps.push({
     step: 'runPHP',
@@ -1024,13 +1105,21 @@ function writeDriverFixtureBlueprint(
   fs.writeFileSync(targetBlueprintPath, `${JSON.stringify(blueprint, null, 2)}\n`);
 }
 
-function driverFixturePluginPhp({ supportsDelete, omitExportRowsCallback = false, omitApplyRowCallback = false }) {
+function driverFixturePluginPhp({
+  supportsDelete,
+  omitExportRowsCallback = false,
+  omitApplyRowCallback = false,
+  omitValidateMutationCallback = false,
+}) {
   const exportRowsCallback = omitExportRowsCallback
     ? ''
     : "        'exportRowsCallback' => 'reprint_push_driver_fixture_export_rows',\n";
   const applyRowCallback = omitApplyRowCallback
     ? ''
     : "        'applyRowCallback' => 'reprint_push_driver_fixture_apply_row',\n";
+  const validateMutationCallback = omitValidateMutationCallback
+    ? ''
+    : "        'validateMutationCallback' => 'reprint_push_driver_fixture_validate_mutation',\n";
   return `<?php
 /*
 Plugin Name: Reprint Push Driver Fixture
@@ -1044,8 +1133,7 @@ add_filter('reprint_push_plugin_owned_row_drivers', static function (array $driv
         'table' => '${driverFixture.table}',
         'pluginOwner' => '${driverFixture.pluginOwner}',
         'supportsDelete' => ${supportsDelete ? 'true' : 'false'},
-${exportRowsCallback}${applyRowCallback}
-        'validateMutationCallback' => 'reprint_push_driver_fixture_validate_mutation',
+${exportRowsCallback}${applyRowCallback}${validateMutationCallback}
     ];
     return $drivers;
 });

@@ -1973,7 +1973,10 @@ function reprint_push_assert_supported_plugin_owned_mutation(array $mutation, ar
             throw new RuntimeException('Plugin-owned mutation driver does not support deletes for ' . (string) ($mutation['resourceKey'] ?? 'unknown'));
         }
         $validate_callback = $driver_definition['validateMutationCallback'] ?? null;
-        if ($matches_driver && (!is_callable($validate_callback) || $validate_callback($mutation, $snapshot, $driver_definition) === true)) {
+        if ($matches_driver && !is_callable($validate_callback)) {
+            throw new RuntimeException('Plugin-owned driver is missing validateMutationCallback for driver: ' . (string) ($driver_definition['driver'] ?? 'unknown'));
+        }
+        if ($matches_driver && $validate_callback($mutation, $snapshot, $driver_definition) === true) {
             return;
         }
     }

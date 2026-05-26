@@ -18,6 +18,7 @@ const resourceKey = `row:["${driverTable}","entry_id:1"]`;
 const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'reprint-plugin-driver-registry-'));
 const baseBlueprintPath = path.join(tmpDir, 'base.blueprint.json');
 const localBlueprintPath = path.join(tmpDir, 'local.blueprint.json');
+const malformedValidateBlueprintPath = path.join(tmpDir, 'missing-validate.blueprint.json');
 const repoTmpDir = path.join(repoRoot, '.tmp');
 const planPath = path.join(repoTmpDir, `plugin-driver-registry-plan-${process.pid}.json`);
 const deletePlanPath = path.join(repoTmpDir, `plugin-driver-registry-delete-plan-${process.pid}.json`);
@@ -31,6 +32,11 @@ try {
   writeBlueprint(localBlueprintPath, {
     payloadMode: 'local-edited',
     updatedMarker: 'local',
+  });
+  writeBlueprint(malformedValidateBlueprintPath, {
+    payloadMode: 'base',
+    updatedMarker: 'base',
+    omitValidateMutationCallback: true,
   });
 
   const base = exportSnapshot('base', baseBlueprintPath);
@@ -60,6 +66,14 @@ try {
   assert.equal(protocolApply.applied, 1);
   assert.deepEqual(protocolApply.verified, [resourceKey]);
   assert.equal(protocolApply.after.db[driverTable]['entry_id:1'].payload.mode, 'local-edited');
+
+  const malformedApply = applyPlanToBase(malformedValidateBlueprintPath, planPath, { expectStatus: 1 });
+  assert.equal(malformedApply.ok, false);
+  assert.equal(malformedApply.error?.class, 'RuntimeException');
+  assert.match(
+    malformedApply.error?.message || '',
+    /missing validateMutationCallback for driver: fixture-arbitrary-plugin-table/i,
+  );
 
   const deleteBase = protocolApply.after;
   const deleteLocal = JSON.parse(JSON.stringify(deleteBase));
@@ -97,6 +111,7 @@ try {
     applied: protocolApply.applied + protocolDelete.applied,
     updateVerified: protocolApply.verified,
     deleteVerified: protocolDelete.verified,
+    malformedValidateGuard: malformedApply.error?.class,
   }, null, 2));
 } finally {
   fs.rmSync(tmpDir, { recursive: true, force: true });
@@ -104,7 +119,7 @@ try {
   fs.rmSync(deletePlanPath, { force: true });
 }
 
-function writeBlueprint(targetPath, { payloadMode, updatedMarker }) {
+function writeBlueprint(targetPath, { payloadMode, updatedMarker, omitValidateMutationCallback = false }) {
   const blueprint = JSON.parse(fs.readFileSync(path.join(repoRoot, 'fixtures/playground/remote-base.blueprint.json'), 'utf8'));
   const pluginCode = `<?php
 /*
@@ -121,6 +136,7 @@ add_filter('reprint_push_plugin_owned_row_drivers', static function (array $driv
         'supportsDelete' => true,
         'exportRowsCallback' => 'reprint_push_driver_fixture_export_rows',
         'applyRowCallback' => 'reprint_push_driver_fixture_apply_row',
+${omitValidateMutationCallback ? '' : "        'validateMutationCallback' => 'reprint_push_driver_fixture_validate_mutation',"}
     ];
     return $drivers;
 });
@@ -195,6 +211,37 @@ function reprint_push_driver_fixture_apply_row(string $id, bool $is_delete, $val
         throw new RuntimeException('Could not apply driver fixture row: ' . $wpdb->last_error);
     }
 }
+
+function reprint_push_driver_fixture_validate_mutation(array $mutation, array $snapshot, array $driver): bool {
+    $resource = is_array($mutation['resource'] ?? null) ? $mutation['resource'] : [];
+    $value = is_array($mutation['value']['value'] ?? null) ? $mutation['value']['value'] : null;
+    if (($resource['table'] ?? '') !== '${driverTable}' || ($driver['pluginOwner'] ?? '') !== '${pluginOwner}') {
+        return false;
+    }
+    if (!preg_match('/^entry_id:([1-9]\\d*)$/', (string) ($resource['id'] ?? ''))) {
+        throw new RuntimeException('Unsupported driver fixture row id: ' . (string) ($resource['id'] ?? ''));
+    }
+    if (!empty($mutation['value']['absent'])) {
+        return !empty($driver['supportsDelete']);
+    }
+    if (!is_array($value) || array_is_list($value)) {
+        throw new RuntimeException('Driver fixture mutation payload must be an object.');
+    }
+    if ((int) ($value['entry_id'] ?? 0) < 1) {
+        throw new RuntimeException('Driver fixture mutation payload is missing a valid entry_id.');
+    }
+    if ((string) ($value['__pluginOwner'] ?? '') !== '${pluginOwner}') {
+        throw new RuntimeException('Driver fixture mutation payload owner does not match the registered plugin owner.');
+    }
+    if (!is_array($value['payload'] ?? null) || array_is_list($value['payload'])) {
+        throw new RuntimeException('Driver fixture mutation payload must include an object payload.');
+    }
+    $updated_marker = (string) ($value['updated_marker'] ?? '');
+    if (!preg_match('/^[a-z0-9_-]{1,32}$/', $updated_marker)) {
+        throw new RuntimeException('Driver fixture updated_marker must match /^[a-z0-9_-]{1,32}$/.');
+    }
+    return true;
+}
 `;
   const pluginCodeBase64 = Buffer.from(pluginCode, 'utf8').toString('base64');
   blueprint.meta = {
@@ -264,7 +311,7 @@ function exportSnapshot(name, blueprintPath) {
   );
 }
 
-function applyPlanToBase(blueprintPath, planFilePath) {
+function applyPlanToBase(blueprintPath, planFilePath, { expectStatus = 0 } = {}) {
   const result = spawnSync('npx', [
     '--yes',
     '@wp-playground/cli@latest',
@@ -291,7 +338,7 @@ function applyPlanToBase(blueprintPath, planFilePath) {
     `Apply markers missing\nSTDOUT:\n${result.stdout}\nSTDERR:\n${result.stderr}`,
   );
 
-  if (result.status !== 0) {
+  if (result.status !== expectStatus) {
     throw new Error(`Playground apply failed\n${JSON.stringify(payload, null, 2)}\nSTDERR:\n${result.stderr}`);
   }
 
