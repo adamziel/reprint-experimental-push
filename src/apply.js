@@ -83,8 +83,7 @@ export function isAcceptableRecoveryState(recoveryState) {
     && Object.hasOwn(recoveryState, 'driftedResources')
     && Array.isArray(recoveryState.driftedResources)
     && recoveryState.driftedResources.length > 0
-    && Reflect.ownKeys(recoveryState.driftedResources).filter((key) => typeof key === 'string' && /^\d+$/.test(key)).length
-      === recoveryState.driftedResources.length
+    && hasOnlyDenseOwnArrayIndexes(recoveryState.driftedResources)
     && recoveryState.driftedResources.every((resourceKey) => typeof resourceKey === 'string' && resourceKey.length > 0)
     && recoveryState.artifacts.journal !== recoveryState.artifacts.remote,
   );
@@ -2679,8 +2678,7 @@ function validateRecoveryStateEnvelopeKeys(recoveryState) {
     if (
       !Array.isArray(recoveryState.driftedResources)
       || recoveryState.driftedResources.length === 0
-      || Reflect.ownKeys(recoveryState.driftedResources).filter((key) => typeof key === 'string' && /^\d+$/.test(key)).length
-        !== recoveryState.driftedResources.length
+      || !hasOnlyDenseOwnArrayIndexes(recoveryState.driftedResources)
       || recoveryState.driftedResources.some((resourceKey) => typeof resourceKey !== 'string' || resourceKey.length === 0)
     ) {
       throw new PushPlanError(
@@ -2743,6 +2741,13 @@ function isPlainObject(value) {
 
 function isStrictPlainObject(value) {
   return isPlainObject(value) && Object.getPrototypeOf(value) === Object.prototype;
+}
+
+function hasOnlyDenseOwnArrayIndexes(value) {
+  const ownKeys = Reflect.ownKeys(value ?? {});
+  return ownKeys.length === value.length + 1
+    && ownKeys.includes('length')
+    && ownKeys.filter((key) => typeof key === 'string' && /^\d+$/.test(key)).length === value.length;
 }
 
 function sanitizeRecoveryRemote(remote, plan) {

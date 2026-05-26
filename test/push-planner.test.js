@@ -25877,6 +25877,46 @@ test('blocked recovery states fail closed when driftedResources is sparse', () =
   assert.match(error.message, /Blocked recovery states must carry a non-empty list of drifted resource keys\./);
 });
 
+test('blocked recovery states are not acceptable when driftedResources carries extra own string keys', () => {
+  const driftedResources = ['file:index.php'];
+  driftedResources.extra = 'unexpected';
+  const recovery = {
+    status: 'blocked-recovery',
+    planId: 'plan-drifted-resources-extra-key',
+    reason: 'extra drifted resources metadata',
+    remoteHash: 'a'.repeat(64),
+    driftedResources,
+    artifacts: {
+      journal: { status: 'completed' },
+      remote: baseSite(),
+    },
+  };
+
+  assert.equal(isAcceptableRecoveryState(recovery), false);
+});
+
+test('blocked recovery states fail closed when driftedResources carries extra own symbol keys', () => {
+  const hiddenKey = Symbol('hidden');
+  const driftedResources = ['file:index.php'];
+  driftedResources[hiddenKey] = 'unexpected';
+  const recovery = {
+    status: 'blocked-recovery',
+    planId: 'plan-drifted-resources-symbol-key',
+    reason: 'symbol-backed drifted resources metadata',
+    remoteHash: 'a'.repeat(64),
+    driftedResources,
+    artifacts: {
+      journal: { status: 'completed' },
+      remote: baseSite(),
+    },
+  };
+
+  const error = captureError(() => assertRecoveryStateEnvelope(recovery));
+
+  assert.equal(error.code, 'RECOVERY_STATE_INVALID');
+  assert.match(error.message, /Blocked recovery states must carry a non-empty list of drifted resource keys\./);
+});
+
 test('production durable journal claims fail closed when remote artifact references are empty strings', () => {
   const writer = {
     kind: 'production-recovery-journal',
