@@ -105,6 +105,7 @@ test('guarded executor benchmark moves buffers and row payloads through durable 
   assert.equal(report.evidence.atomicGroup.productionAtomicCommitMeasured, false);
   assert.equal(report.evidence.atomicGroup.productionAtomicCommitVisible, false);
   assert.equal(report.evidence.atomicGroup.productionStorageReceiptsMeasured, false);
+  assert.equal(report.claims.productionThroughputDetails.atomicGroup.productionStorageReceiptsMeasured, false);
   assert.equal(report.evidence.atomicGroup.productionAtomicGroupMetadataVisible, false);
   assert.equal(report.evidence.atomicGroup.productionStorageReceiptsVisible, false);
   assert.equal(
