@@ -4,16 +4,15 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
-## 2026-05-26 - Public Status Audit 14:07:17
+## 2026-05-26 - Public Status Audit 14:09:24
 
-<a id="2026-05-26-public-status-audit-140717"></a>
+<a id="2026-05-26-public-status-audit-140924"></a>
 
 - Refreshed [progress.html](../progress.html) to the current `date` output
-  (`2026-05-26 14:07:17 CEST`) and promoted `77da166e` as the current
+  (`2026-05-26 14:09:24 CEST`) and promoted `77da166e` as the current
   reliable head on the public page for auth-session source evidence.
 - `77da166e` is auth-session source evidence for
-  `REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND` (`authSessionSource`), not
-  replay-equivalence work; the release gate stays at `0/4` because
+  `REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND` (`authSessionSource`); the release gate stays at `0/4` because
   production-backed auth/session lifecycle and durable journal ownership with
   lease/fencing remain blocked.
 - Evidence trail: [progress.html](../progress.html),
