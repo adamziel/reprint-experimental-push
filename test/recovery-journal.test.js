@@ -435,6 +435,22 @@ test('production recovery journal adapter fails closed when no explicit fenced w
   });
 });
 
+test('production recovery journal adapter fails closed when claimId is omitted even with a writer lease', () => {
+  const filePath = tempJournalPath();
+
+  assert.throws(() => {
+    openProductionRecoveryJournal(filePath, {
+      truncate: true,
+      now: fixedNow,
+      writerLease: { id: 'lease-without-claim' },
+    });
+  }, {
+    name: 'UnsupportedProductionRecoveryJournalError',
+    code: 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL',
+    message: 'Production recovery journal support requires an explicit claimId.',
+  });
+});
+
 test('production recovery journal adapter fails closed when writerLease epoch is not an integer', () => {
   const filePath = tempJournalPath();
 
@@ -562,6 +578,7 @@ test('production recovery journal adapter accepts canonical remote artifact owne
   const journal = openProductionRecoveryJournal(filePath, {
     truncate: true,
     now: fixedNow,
+    claimId: 'lease-1',
     writerLease: { id: 'lease-1' },
     ownsRemoteArtifact: true,
     remoteArtifactPath,

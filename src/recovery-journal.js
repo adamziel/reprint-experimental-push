@@ -117,6 +117,26 @@ export function openProductionRecoveryJournal(filePathOrOptions, options = {}) {
   const remoteArtifactPath = Object.hasOwn(normalized, 'remoteArtifactPath')
     ? normalized.remoteArtifactPath
     : null;
+  if (!claimId) {
+    throw new UnsupportedProductionRecoveryJournalError(
+      'Production recovery journal support requires an explicit claimId.',
+      {
+        kind: 'production-recovery-journal',
+        productionAdapter: true,
+        supportedSurface: 'production-recovery-journal-adapter',
+        restartReadable: true,
+        ownsJournal: true,
+        ownsRemoteArtifact,
+        writerLease,
+        journalPath: filePath,
+        artifactRefs: Object.freeze({
+          journal: filePath,
+          remote: remoteArtifactPath,
+        }),
+        schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+      },
+    );
+  }
   if (!isCanonicalAbsolutePath(filePath)) {
     throw new UnsupportedProductionRecoveryJournalError(
       'Production recovery journal support requires a canonical absolute journal path.',

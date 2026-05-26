@@ -20695,6 +20695,7 @@ test('production recovery support report fails closed when the writer omits its 
   const journal = openProductionRecoveryJournal(filePath, {
     truncate: true,
     now: fixedNow,
+    claimId: 'lease-without-claim',
     writerLease: { id: 'lease-without-claim' },
     ownsRemoteArtifact: true,
     remoteArtifactPath,
@@ -20702,7 +20703,7 @@ test('production recovery support report fails closed when the writer omits its 
   appendRecoveryClaimOpened(journal, {
     plan: { id: 'plan-without-claim' },
     current: baseSite(),
-    claimId: 'claim-present-on-disk',
+    claimId: 'lease-without-claim',
     artifactRefs: {
       journal: filePath,
       remote: remoteArtifactPath,
@@ -20710,7 +20711,10 @@ test('production recovery support report fails closed when the writer omits its 
   });
   journal.close();
 
-  const report = productionRecoverySupportReport(journal);
+  const { claimHash: omittedClaimHash, ...writerWithoutClaimHash } = journal;
+  void omittedClaimHash;
+
+  const report = productionRecoverySupportReport(writerWithoutClaimHash);
 
   assert.equal(report.supported, false);
   assert.ok(report.missingDependency.includes('fencing or lease ownership for the journal writer'));
@@ -25096,6 +25100,7 @@ test('production durable journal claims fail closed when the writer omits its ex
   const journal = openProductionRecoveryJournal(filePath, {
     truncate: true,
     now: fixedNow,
+    claimId: 'lease-without-claim',
     writerLease: { id: 'lease-without-claim' },
     ownsRemoteArtifact: true,
     remoteArtifactPath,
@@ -25103,16 +25108,19 @@ test('production durable journal claims fail closed when the writer omits its ex
   appendRecoveryClaimOpened(journal, {
     plan: { id: plan.id },
     current: baseSite(),
-    claimId: 'claim-present-on-disk',
+    claimId: 'lease-without-claim',
     artifactRefs: {
       journal: filePath,
       remote: remoteArtifactPath,
     },
   });
 
+  const { claimHash: omittedClaimHash, ...writerWithoutClaimHash } = journal;
+  void omittedClaimHash;
+
   const error = captureError(() => applyPlan(baseSite(), plan, {
     requireProductionDurableJournal: true,
-    durableJournal: journal,
+    durableJournal: writerWithoutClaimHash,
   }));
 
   assert.equal(error.code, 'PRODUCTION_DURABLE_JOURNAL_UNSUPPORTED');
@@ -27434,12 +27442,23 @@ test('production durable journal support fails closed when restart inspection re
   const plan = planFor(baseSite(), baseSite(), baseSite());
   const durableJournalPath = tempRecoveryJournalPath();
   const remoteArtifactPath = `${durableJournalPath}.remote`;
+  const claimId = 'lease-corrupt';
   const durableJournal = openProductionRecoveryJournal(durableJournalPath, {
     truncate: true,
     now: fixedNow,
+    claimId,
     ownsRemoteArtifact: true,
     remoteArtifactPath,
     writerLease: { id: 'lease-corrupt' },
+  });
+  appendRecoveryClaimOpened(durableJournal, {
+    plan,
+    current: baseSite(),
+    claimId,
+    artifactRefs: {
+      journal: durableJournalPath,
+      remote: remoteArtifactPath,
+    },
   });
   durableJournal.appendEvent('journal-opened', {
     planId: plan.id,
@@ -27471,12 +27490,23 @@ test('production durable journal adapter preserves remote artifact ownership on 
   const plan = planFor(base, local, remote);
   const durableJournalPath = tempRecoveryJournalPath();
   const remoteArtifactPath = `${durableJournalPath}.remote`;
+  const claimId = 'lease-1';
   const durableJournal = openProductionRecoveryJournal(durableJournalPath, {
     truncate: true,
     now: fixedNow,
+    claimId,
     ownsRemoteArtifact: true,
     remoteArtifactPath,
     writerLease: { id: 'lease-1' },
+  });
+  appendRecoveryClaimOpened(durableJournal, {
+    plan,
+    current: remote,
+    claimId,
+    artifactRefs: {
+      journal: durableJournalPath,
+      remote: remoteArtifactPath,
+    },
   });
   durableJournal.appendEvent('journal-opened', {
     planId: plan.id,
@@ -27521,14 +27551,25 @@ test('production durable journal adapter preserves remote artifact ownership on 
   const plan = planFor(base, local, baseSite());
   const durableJournalPath = tempRecoveryJournalPath();
   const remoteArtifactPath = `${durableJournalPath}.remote`;
+  const claimId = 'lease-1';
   const durableJournal = openProductionRecoveryJournal(durableJournalPath, {
     truncate: true,
     now: fixedNow,
+    claimId,
     ownsRemoteArtifact: true,
     remoteArtifactPath,
     writerLease: { id: 'lease-1' },
   });
   const remote = baseSite();
+  appendRecoveryClaimOpened(durableJournal, {
+    plan,
+    current: remote,
+    claimId,
+    artifactRefs: {
+      journal: durableJournalPath,
+      remote: remoteArtifactPath,
+    },
+  });
   durableJournal.appendEvent('journal-opened', {
     planId: plan.id,
     state: 'opened',
@@ -27570,9 +27611,11 @@ test('production durable journal partial commits fail closed when the remote art
   const plan = planFor(base, local, baseSite());
   const durableJournalPath = tempRecoveryJournalPath();
   const remoteArtifactPath = `${durableJournalPath}.remote`;
+  const claimId = 'lease-1';
   const baseWriter = openProductionRecoveryJournal(durableJournalPath, {
     truncate: true,
     now: fixedNow,
+    claimId,
     ownsRemoteArtifact: true,
     remoteArtifactPath,
     writerLease: { id: 'lease-1' },
@@ -27603,6 +27646,15 @@ test('production durable journal partial commits fail closed when the remote art
     },
   };
   const remote = baseSite();
+  appendRecoveryClaimOpened(durableJournal, {
+    plan,
+    current: remote,
+    claimId,
+    artifactRefs: {
+      journal: durableJournalPath,
+      remote: remoteArtifactPath,
+    },
+  });
   durableJournal.appendEvent('journal-opened', {
     planId: plan.id,
     state: 'opened',
