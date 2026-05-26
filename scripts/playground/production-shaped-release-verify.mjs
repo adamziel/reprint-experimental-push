@@ -1347,6 +1347,7 @@ async function waitForServer(child, baseUrl, getLogs) {
         lastError,
         lastProbes,
         getLogs(),
+        { childPid: child.pid ?? null },
       );
       writePlaygroundFailure(message, lastProbes, getLogs(), lastError);
       await stopSpawnedServer(child);
@@ -1416,6 +1417,11 @@ async function waitForServer(child, baseUrl, getLogs) {
             lastError,
             lastProbes,
             getLogs(),
+            {
+              childPid: child.pid ?? null,
+              notReadyProbeCount,
+              readinessProbeCount,
+            },
           );
         }
         notReadyProbeCount = 0;
@@ -1426,6 +1432,10 @@ async function waitForServer(child, baseUrl, getLogs) {
             lastError,
             lastProbes,
             getLogs(),
+            {
+              childPid: child.pid ?? null,
+              readinessProbeCount,
+            },
           );
         }
       }
@@ -1444,6 +1454,10 @@ async function waitForServer(child, baseUrl, getLogs) {
       lastError,
       lastProbes,
       getLogs(),
+      {
+        childPid: child.pid ?? null,
+        notReadyProbeCount,
+      },
     );
   }
   await throwPlaygroundReadinessFailure(
@@ -1452,6 +1466,10 @@ async function waitForServer(child, baseUrl, getLogs) {
     lastError,
     lastProbes,
     getLogs(),
+    {
+      childPid: child.pid ?? null,
+      notReadyProbeCount,
+    },
   );
 }
 
@@ -1518,8 +1536,8 @@ function writePlaygroundFailure(message, lastProbes, logs, lastError) {
   }
 }
 
-async function throwPlaygroundReadinessFailure(child, prefix, lastError, lastProbes, logs) {
-  const diagnostic = formatPlaygroundStartupFailure(prefix, lastError, lastProbes, logs);
+async function throwPlaygroundReadinessFailure(child, prefix, lastError, lastProbes, logs, context = {}) {
+  const diagnostic = formatPlaygroundStartupFailure(prefix, lastError, lastProbes, logs, context);
   writePlaygroundFailure(diagnostic, lastProbes, logs, lastError);
   await stopSpawnedServer(child);
   const finalError = new Error(diagnostic);
@@ -1531,12 +1549,13 @@ async function throwPlaygroundReadinessFailure(child, prefix, lastError, lastPro
         route: finalError.lastProbe.route ?? null,
         status: finalError.lastProbe.status ?? null,
         body: finalError.lastProbe.body ?? null,
-      }
+    }
     : null;
+  finalError.context = context;
   throw finalError;
 }
 
-function formatPlaygroundStartupFailure(prefix, lastError, lastProbes, logs) {
+function formatPlaygroundStartupFailure(prefix, lastError, lastProbes, logs, context = {}) {
   const probeText = lastProbes.length
     ? `\nProbe trail: ${JSON.stringify(lastProbes.slice(-4), null, 2)}`
     : '';
@@ -1565,7 +1584,10 @@ function formatPlaygroundStartupFailure(prefix, lastError, lastProbes, logs) {
         2,
       )}`
     : '';
-  return `${prefix}: ${errorText}${probeText}${lastProbeText}${routeStatusBodyText}\n${logs}`;
+  const contextText = Object.keys(context).length
+    ? `\nContext: ${JSON.stringify(context, null, 2)}`
+    : '';
+  return `${prefix}: ${errorText}${probeText}${lastProbeText}${routeStatusBodyText}${contextText}\n${logs}`;
 }
 
 async function fetchWithTimeout(url, init = {}) {
