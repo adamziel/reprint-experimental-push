@@ -335,6 +335,17 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
     'kind-scoped receipt batches can stay fail-closed while preserving raw order',
   );
   assert.ok(
+    model.safeFastPaths.some(
+      (fastPath) =>
+        fastPath.allowedShortcut === 'reuse-durable-receipt-cursor-to-size-the-next-journal-batch-after-a-pause' &&
+        fastPath.area === 'backpressure' &&
+        fastPath.visibilityBoundary === 'kind-scoped-journal-planning-only' &&
+        fastPath.failureEvidence === 'durable receipt cursor plus ordered raw durable receipts and journal records' &&
+        fastPath.gateProofs.recovery.includes('the cursor, ordered raw receipts, and journal records still classify whether the pause happened before or after any durable writes'),
+    ),
+    'durable receipt cursors stay advisory while sizing the next journal batch after a pause',
+  );
+  assert.ok(
     model.rejectedFastPaths.every((fastPath) =>
       typeof fastPath.rejectedGate === 'string' &&
       Array.isArray(fastPath.violates) &&
