@@ -133,6 +133,10 @@ test('guarded executor benchmark moves buffers and row payloads through durable 
     report.claims.productionThroughputDetails.atomicGroup.productionRowBatchExecutorMeasured,
   );
   assert.equal(report.claims.productionThroughputDetails.atomicGroup.productionRowBatchExecutorVisible, false);
+  assert.equal(
+    report.claims.productionThroughputDetails.atomicGroup.productionRowBatchExecutorVisibleAndStorageReceiptsVisible,
+    false,
+  );
   assert.equal(report.throughput.productionThroughput, 'not-claimed');
 });
 
@@ -161,6 +165,22 @@ test('guarded benchmark blocks forged row-batch visibility without a measurement
 
   assert.equal(blockers.includes('production-row-batch-executor-visible-without-measurement'), true);
   assert.equal(blockers.includes('production-row-batch-executor-not-visible'), false);
+});
+
+test('guarded benchmark blocks row-batch executor visibility when storage-receipts measurement is hidden', () => {
+  const report = smallBenchmark();
+  const tampered = clone(report);
+
+  tampered.evidence.atomicGroup.productionRowBatchExecutorMeasured = true;
+  tampered.evidence.atomicGroup.productionRowBatchExecutorVisible = true;
+  tampered.evidence.atomicGroup.productionStorageReceiptsMeasured = false;
+
+  const details = productionThroughputDetails(tampered);
+  const blockers = productionThroughputBlockers(tampered);
+
+  assert.equal(details.atomicGroup.productionRowBatchExecutorVisibleAndStorageReceiptsVisible, false);
+  assert.equal(blockers.includes('production-row-batch-executor-visible-without-storage-receipts-measurement'), true);
+  assert.equal(blockers.includes('production-row-batch-executor-without-storage-receipts'), true);
 });
 
 test('guarded benchmark blocks forged atomic-group metadata visibility without a measurement', () => {

@@ -917,6 +917,12 @@ export function productionThroughputBlockers(report) {
   }
   if (
     report.evidence.atomicGroup.productionRowBatchExecutorVisible === true
+    && report.evidence.atomicGroup.productionStorageReceiptsMeasured !== true
+  ) {
+    blockers.push('production-row-batch-executor-visible-without-storage-receipts-measurement');
+  }
+  if (
+    report.evidence.atomicGroup.productionRowBatchExecutorVisible === true
     && report.evidence.atomicGroup.productionAtomicGroupMetadataVisible !== true
   ) {
     blockers.push('production-row-batch-executor-without-atomic-group-metadata');
@@ -1227,6 +1233,8 @@ export function productionThroughputDetails(report) {
     productionStorageReceiptsVisible && productionAtomicGroupMetadataVisible;
   const productionStorageReceiptsVisibleAndAtomicCommitVisible =
     productionStorageReceiptsVisible && productionAtomicCommitVisible;
+  const productionRowBatchExecutorVisibleAndStorageReceiptsVisible =
+    productionRowBatchExecutorVisible && productionStorageReceiptsVisible;
   const productionRowBatchExecutorVisibleAndAtomicCommitVisible =
     productionRowBatchExecutorVisible && productionAtomicCommitVisible;
   const productionAtomicGroupMetadataProven =
@@ -1362,6 +1370,7 @@ export function productionThroughputDetails(report) {
     productionStorageReceiptsVisible,
     productionStorageReceiptsVisibleAndAtomicGroupMetadataVisible,
     productionStorageReceiptsVisibleAndAtomicCommitVisible,
+    productionRowBatchExecutorVisibleAndStorageReceiptsVisible,
     productionRowBatchExecutorVisibleAndAtomicCommitVisible,
     productionAtomicGroupMetadataProven,
     parallelismLimits,
@@ -1450,6 +1459,7 @@ export function productionThroughputDetails(report) {
       productionStorageReceiptsVisibleAndAtomicGroupMetadataVisible,
       productionStorageReceiptsVisibleAndAtomicCommitVisible,
       productionRowBatchExecutorMeasured,
+      productionRowBatchExecutorVisibleAndStorageReceiptsVisible,
       productionRowBatchExecutorVisibleAndAtomicCommitVisible,
       productionAtomicGroupMetadataProven,
       parallelismLimits,
@@ -1470,6 +1480,7 @@ export function productionThroughputDetails(report) {
       productionStorageReceiptsVisibleAndAtomicGroupMetadataVisible,
       productionStorageReceiptsVisibleAndAtomicCommitVisible,
       productionRowBatchExecutorMeasured,
+      productionRowBatchExecutorVisibleAndStorageReceiptsVisible,
       productionRowBatchExecutorVisibleAndAtomicCommitVisible,
       productionAtomicGroupMetadataVisible,
       productionAtomicGroupMetadataProven,
