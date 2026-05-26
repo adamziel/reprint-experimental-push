@@ -92,8 +92,7 @@ function spawnReleaseVerifyBounded(command, args, options, label) {
   };
   const proof = spawnSync(command, args, boundedOptions);
   if (proof.error || proof.signal || proof.status === null) {
-    stopAllPlaygroundChildrenSync();
-    reportBoundedSpawnFailure(proof, command, args);
+    failBoundedSpawnProof(proof, command, args);
   }
   assertBoundedSpawnProof(proof, command, args, label, boundedOptions.timeout);
   return proof;
@@ -259,12 +258,16 @@ function spawnBoundedSync(command, args, options, label) {
   };
   const proof = spawnSync(command, args, boundedOptions);
   if (proof.error || proof.signal || proof.status === null) {
-    stopAllPlaygroundChildrenSync();
-    reportBoundedSpawnFailure(proof, command, args);
-    writeSpawnOutputTail(proof, `${command} ${args.join(' ')}`);
+    failBoundedSpawnProof(proof, command, args);
   }
   assertBoundedSpawnProof(proof, command, args, label, boundedOptions.timeout);
   return proof;
+}
+
+function failBoundedSpawnProof(proof, command, args) {
+  stopAllPlaygroundChildrenSync();
+  reportBoundedSpawnFailure(proof, command, args);
+  writeSpawnOutputTail(proof, `${command} ${args.join(' ')}`);
 }
 
 function assertBoundedSpawnProof(proof, command, args, label, timeoutMs) {
@@ -309,6 +312,7 @@ function spawnReleaseVerifySlowPathBounded(env = {}, options = {}) {
   if (proof.error || proof.signal || proof.status === null) {
     stopAllPlaygroundChildrenSync();
     logBoundedSpawnProofFailure(process.execPath, ['scripts/playground/production-shaped-release-verify.mjs'], proof);
+    writeSpawnOutputTail(proof, `${process.execPath} scripts/playground/production-shaped-release-verify.mjs`);
     if (proof.error) {
       const timeoutNote = proof.error.code === 'ETIMEDOUT' ? ` after ${boundedTimeout}ms` : '';
       throw new Error(formatSpawnFailure(`retained-source release verify failed${timeoutNote} with bounded spawn handling`, proof));
