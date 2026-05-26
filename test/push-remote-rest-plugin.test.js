@@ -2723,6 +2723,115 @@ test('checked db journal merge preserves more specific inline values', { skip: !
   });
 });
 
+test('checked db journal merge preserves custom writer lease evidence when accepted inline anchors still disagree', { skip: !hasPhp }, () => {
+  const result = runMerge(
+    {
+      acceptedOnCheckedBoundary: true,
+      ownership: {
+        ownsJournal: true,
+        restartReadable: true,
+        productionAdapter: 'custom-inline-adapter',
+      },
+      writerLease: {
+        strategy: 'custom-inline-writer',
+        claimKeyUnique: false,
+        fsyncEvidence: true,
+        storageGuard: 'custom-inline-guard',
+        monotonicSequence: false,
+        restartReadable: false,
+        staleClaimRejected: true,
+      },
+      leaseFence: {
+        boundary: 'custom-inline-boundary',
+        claimKeyUnique: false,
+        fsyncEvidence: true,
+        monotonicSequence: false,
+        restartReadable: false,
+        staleClaimRejected: true,
+        writerLease: {
+          strategy: 'custom-inline-writer',
+          claimKeyUnique: false,
+          fsyncEvidence: true,
+          storageGuard: 'custom-inline-guard',
+          monotonicSequence: false,
+          restartReadable: false,
+          staleClaimRejected: true,
+        },
+      },
+    },
+    {
+      acceptedOnCheckedBoundary: true,
+      ownership: {
+        ownsJournal: true,
+        restartReadable: true,
+        productionAdapter: 'wpdb-single-statement-cas',
+      },
+      writerLease: {
+        strategy: 'claim-fenced-single-writer',
+        claimKeyUnique: true,
+        fsyncEvidence: true,
+        storageGuard: 'wpdb-single-statement-cas',
+        monotonicSequence: true,
+        restartReadable: true,
+        staleClaimRejected: false,
+      },
+      leaseFence: {
+        boundary: 'wpdb-single-statement-cas',
+        claimKeyUnique: true,
+        fsyncEvidence: true,
+        monotonicSequence: true,
+        restartReadable: true,
+        staleClaimRejected: false,
+        writerLease: {
+          strategy: 'claim-fenced-single-writer',
+          claimKeyUnique: true,
+          fsyncEvidence: true,
+          storageGuard: 'wpdb-single-statement-cas',
+          monotonicSequence: true,
+          restartReadable: true,
+          staleClaimRejected: false,
+        },
+      },
+    },
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  assert.deepEqual(JSON.parse(result.stdout), {
+    acceptedOnCheckedBoundary: true,
+    ownership: {
+      ownsJournal: true,
+      restartReadable: true,
+      productionAdapter: 'custom-inline-adapter',
+    },
+    writerLease: {
+      strategy: 'custom-inline-writer',
+      claimKeyUnique: false,
+      fsyncEvidence: true,
+      storageGuard: 'custom-inline-guard',
+      monotonicSequence: false,
+      restartReadable: false,
+      staleClaimRejected: true,
+    },
+    leaseFence: {
+      boundary: 'custom-inline-boundary',
+      claimKeyUnique: false,
+      fsyncEvidence: true,
+      monotonicSequence: false,
+      restartReadable: false,
+      staleClaimRejected: true,
+      writerLease: {
+        strategy: 'custom-inline-writer',
+        claimKeyUnique: false,
+        fsyncEvidence: true,
+        storageGuard: 'custom-inline-guard',
+        monotonicSequence: false,
+        restartReadable: false,
+        staleClaimRejected: true,
+      },
+    },
+  });
+});
+
 test('checked db journal merge corrects stale optimistic booleans to authoritative checked false values when the accepted boundary matches', { skip: !hasPhp }, () => {
   const result = runMerge(
     {

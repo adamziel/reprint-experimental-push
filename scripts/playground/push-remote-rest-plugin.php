@@ -652,6 +652,11 @@ function reprint_push_lab_rest_merge_checked_recovery_journal_contract(
         $journal,
         $checked_db_journal
     );
+    $prefer_authoritative_checked_writer_lease = reprint_push_lab_rest_should_prefer_authoritative_checked_writer_lease(
+        $journal,
+        $checked_db_journal,
+        $prefer_authoritative_checked_top_level
+    );
 
     foreach ([
         'schemaVersion',
@@ -694,15 +699,31 @@ function reprint_push_lab_rest_merge_checked_recovery_journal_contract(
         $journal['acceptedOnCheckedBoundary'] = true;
     }
 
-    foreach (['ownership', 'writerLease', 'leaseFence'] as $nested_key) {
-        if (!isset($checked_db_journal[$nested_key]) || !is_array($checked_db_journal[$nested_key])) {
-            continue;
-        }
-        $journal[$nested_key] = reprint_push_lab_rest_merge_checked_contract_fields(
-            isset($journal[$nested_key]) && is_array($journal[$nested_key]) ? $journal[$nested_key] : [],
-            $checked_db_journal[$nested_key],
+    if (isset($checked_db_journal['ownership']) && is_array($checked_db_journal['ownership'])) {
+        $journal['ownership'] = reprint_push_lab_rest_merge_checked_contract_fields(
+            isset($journal['ownership']) && is_array($journal['ownership']) ? $journal['ownership'] : [],
+            $checked_db_journal['ownership'],
             $prefer_checked_top_level,
             $prefer_authoritative_checked_top_level
+        );
+    }
+
+    if (isset($checked_db_journal['writerLease']) && is_array($checked_db_journal['writerLease'])) {
+        $journal['writerLease'] = reprint_push_lab_rest_merge_checked_contract_fields(
+            isset($journal['writerLease']) && is_array($journal['writerLease']) ? $journal['writerLease'] : [],
+            $checked_db_journal['writerLease'],
+            $prefer_checked_top_level,
+            $prefer_authoritative_checked_writer_lease
+        );
+    }
+
+    if (isset($checked_db_journal['leaseFence']) && is_array($checked_db_journal['leaseFence'])) {
+        $journal['leaseFence'] = reprint_push_lab_rest_merge_checked_lease_fence_contract(
+            isset($journal['leaseFence']) && is_array($journal['leaseFence']) ? $journal['leaseFence'] : [],
+            $checked_db_journal['leaseFence'],
+            $prefer_checked_top_level,
+            $prefer_authoritative_checked_top_level,
+            $prefer_authoritative_checked_writer_lease
         );
     }
 
@@ -832,21 +853,57 @@ function reprint_push_lab_rest_merge_checked_db_journal_contract(array $db_journ
         $db_journal['acceptedOnCheckedBoundary'] = true;
     }
 
-    foreach (['ownership', 'writerLease', 'leaseFence'] as $nested_key) {
-        $existing = isset($db_journal[$nested_key]) && is_array($db_journal[$nested_key])
-            ? $db_journal[$nested_key]
-            : [];
-        $checked = isset($checked_summary[$nested_key]) && is_array($checked_summary[$nested_key])
-            ? $checked_summary[$nested_key]
-            : [];
-        if ($existing !== [] || $checked !== []) {
-            $db_journal[$nested_key] = reprint_push_lab_rest_merge_checked_contract_fields(
-                $existing,
-                $checked,
-                $upgrade_scope || $upgrade_acceptance,
-                $prefer_authoritative_checked_nested
-            );
-        }
+    $prefer_checked_nested = $upgrade_scope || $upgrade_acceptance;
+    $prefer_authoritative_checked_writer_lease = reprint_push_lab_rest_should_prefer_authoritative_checked_writer_lease(
+        $db_journal,
+        $checked_summary,
+        $prefer_authoritative_checked_nested
+    );
+
+    $existing_ownership = isset($db_journal['ownership']) && is_array($db_journal['ownership'])
+        ? $db_journal['ownership']
+        : [];
+    $checked_ownership = isset($checked_summary['ownership']) && is_array($checked_summary['ownership'])
+        ? $checked_summary['ownership']
+        : [];
+    if ($existing_ownership !== [] || $checked_ownership !== []) {
+        $db_journal['ownership'] = reprint_push_lab_rest_merge_checked_contract_fields(
+            $existing_ownership,
+            $checked_ownership,
+            $prefer_checked_nested,
+            $prefer_authoritative_checked_nested
+        );
+    }
+
+    $existing_writer_lease = isset($db_journal['writerLease']) && is_array($db_journal['writerLease'])
+        ? $db_journal['writerLease']
+        : [];
+    $checked_writer_lease = isset($checked_summary['writerLease']) && is_array($checked_summary['writerLease'])
+        ? $checked_summary['writerLease']
+        : [];
+    if ($existing_writer_lease !== [] || $checked_writer_lease !== []) {
+        $db_journal['writerLease'] = reprint_push_lab_rest_merge_checked_contract_fields(
+            $existing_writer_lease,
+            $checked_writer_lease,
+            $prefer_checked_nested,
+            $prefer_authoritative_checked_writer_lease
+        );
+    }
+
+    $existing_lease_fence = isset($db_journal['leaseFence']) && is_array($db_journal['leaseFence'])
+        ? $db_journal['leaseFence']
+        : [];
+    $checked_lease_fence = isset($checked_summary['leaseFence']) && is_array($checked_summary['leaseFence'])
+        ? $checked_summary['leaseFence']
+        : [];
+    if ($existing_lease_fence !== [] || $checked_lease_fence !== []) {
+        $db_journal['leaseFence'] = reprint_push_lab_rest_merge_checked_lease_fence_contract(
+            $existing_lease_fence,
+            $checked_lease_fence,
+            $prefer_checked_nested,
+            $prefer_authoritative_checked_nested,
+            $prefer_authoritative_checked_writer_lease
+        );
     }
 
     return reprint_push_lab_rest_normalize_authoritative_checked_contract($db_journal, $checked_summary);
@@ -968,6 +1025,83 @@ function reprint_push_lab_rest_merge_checked_contract_fields(
         ) {
             $merged[$key] = $value;
         }
+    }
+
+    return $merged;
+}
+
+function reprint_push_lab_rest_should_prefer_authoritative_checked_writer_lease(
+    array $journal,
+    array $checked_journal,
+    bool $prefer_authoritative_checked = false
+): bool {
+    if (!$prefer_authoritative_checked) {
+        return false;
+    }
+
+    $existing_anchor_fields = [
+        'productionAdapter' => isset($journal['ownership']['productionAdapter']) && is_string($journal['ownership']['productionAdapter'])
+            ? $journal['ownership']['productionAdapter']
+            : '',
+        'boundary' => isset($journal['leaseFence']['boundary']) && is_string($journal['leaseFence']['boundary'])
+            ? $journal['leaseFence']['boundary']
+            : '',
+    ];
+    $checked_anchor_fields = [
+        'productionAdapter' => isset($checked_journal['ownership']['productionAdapter']) && is_string($checked_journal['ownership']['productionAdapter'])
+            ? $checked_journal['ownership']['productionAdapter']
+            : '',
+        'boundary' => isset($checked_journal['leaseFence']['boundary']) && is_string($checked_journal['leaseFence']['boundary'])
+            ? $checked_journal['leaseFence']['boundary']
+            : '',
+    ];
+
+    $existing_adapter = $existing_anchor_fields['productionAdapter'];
+    $existing_boundary = $existing_anchor_fields['boundary'];
+    if (
+        $existing_adapter !== ''
+        && $existing_boundary !== ''
+        && $existing_adapter === $existing_boundary
+    ) {
+        return true;
+    }
+
+    return reprint_push_lab_rest_checked_nested_contract_anchor_matches(
+        $existing_anchor_fields,
+        $checked_anchor_fields
+    );
+}
+
+function reprint_push_lab_rest_merge_checked_lease_fence_contract(
+    array $existing,
+    array $checked,
+    bool $prefer_checked = false,
+    bool $prefer_authoritative_checked = false,
+    bool $prefer_authoritative_checked_writer_lease = false
+): array {
+    $existing_writer_lease = isset($existing['writerLease']) && is_array($existing['writerLease'])
+        ? $existing['writerLease']
+        : [];
+    $checked_writer_lease = isset($checked['writerLease']) && is_array($checked['writerLease'])
+        ? $checked['writerLease']
+        : [];
+
+    unset($existing['writerLease'], $checked['writerLease']);
+
+    $merged = reprint_push_lab_rest_merge_checked_contract_fields(
+        $existing,
+        $checked,
+        $prefer_checked,
+        $prefer_authoritative_checked
+    );
+
+    if ($existing_writer_lease !== [] || $checked_writer_lease !== []) {
+        $merged['writerLease'] = reprint_push_lab_rest_merge_checked_contract_fields(
+            $existing_writer_lease,
+            $checked_writer_lease,
+            $prefer_checked,
+            $prefer_authoritative_checked_writer_lease
+        );
     }
 
     return $merged;
