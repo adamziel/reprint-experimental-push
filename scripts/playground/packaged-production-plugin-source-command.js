@@ -35,3 +35,26 @@ export function resolvePackagedProductionPluginAuthSessionSource({
     source: loadAuthSessionSource(command),
   };
 }
+
+export function bindPackagedProductionPluginRuntimeSource({
+  sourceUrl,
+  authSessionSource,
+  runtimeSourceUrl = '',
+}) {
+  if (!runtimeSourceUrl) {
+    return {
+      sourceUrl,
+      authSessionSource,
+    };
+  }
+
+  return {
+    sourceUrl: runtimeSourceUrl,
+    authSessionSource: authSessionSource?.ok
+      ? {
+          ...authSessionSource,
+          sourceUrl: runtimeSourceUrl,
+        }
+      : authSessionSource,
+  };
+}

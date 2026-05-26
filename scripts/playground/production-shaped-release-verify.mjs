@@ -14,6 +14,7 @@ import {
   resolveAuthSessionSourceCredentials,
 } from './auth-session-source.js';
 import {
+  bindPackagedProductionPluginRuntimeSource,
   resolvePackagedProductionPluginAuthSessionSource,
   resolvePackagedProductionPluginSourceCommand,
 } from './packaged-production-plugin-source-command.js';
@@ -591,6 +592,16 @@ const remoteServer = packagedSourceFixture
     remoteBaseFixturePath,
   );
 try {
+  if (packagedSourceFixture) {
+    const packagedRuntimeSource = bindPackagedProductionPluginRuntimeSource({
+      sourceUrl: liveSourceUrl,
+      authSessionSource,
+      runtimeSourceUrl: remoteServer.baseUrl,
+    });
+    liveSourceUrl = packagedRuntimeSource.sourceUrl;
+    authSessionSource = packagedRuntimeSource.authSessionSource;
+  }
+
   if (!liveSourceUrl) {
     liveSourceUrl = remoteServer.baseUrl;
   }

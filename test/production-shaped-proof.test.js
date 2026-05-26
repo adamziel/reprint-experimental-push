@@ -14,6 +14,7 @@ import {
   resolveAuthSessionSourceCommand,
 } from '../scripts/playground/auth-session-source-command.js';
 import {
+  bindPackagedProductionPluginRuntimeSource,
   resolvePackagedProductionPluginAuthSessionSource,
   resolvePackagedProductionPluginSourceCommand,
 } from '../scripts/playground/packaged-production-plugin-source-command.js';
@@ -862,6 +863,29 @@ test('packaged production plugin auth/session source helper resolves and loads t
     sourceUrl: 'http://127.0.0.1:8080',
     username: 'reprint_push_admin',
     applicationPassword: 'reprint-push-admin-app-password',
+  });
+});
+
+test('packaged production plugin runtime source binding replaces the stale command source URL', () => {
+  const bound = bindPackagedProductionPluginRuntimeSource({
+    sourceUrl: 'http://127.0.0.1:8080',
+    authSessionSource: {
+      ok: true,
+      sourceUrl: 'http://127.0.0.1:8080',
+      username: 'reprint_push_admin',
+      applicationPassword: 'reprint-push-admin-app-password',
+    },
+    runtimeSourceUrl: 'http://127.0.0.1:49152',
+  });
+
+  assert.deepEqual(bound, {
+    sourceUrl: 'http://127.0.0.1:49152',
+    authSessionSource: {
+      ok: true,
+      sourceUrl: 'http://127.0.0.1:49152',
+      username: 'reprint_push_admin',
+      applicationPassword: 'reprint-push-admin-app-password',
+    },
   });
 });
 
