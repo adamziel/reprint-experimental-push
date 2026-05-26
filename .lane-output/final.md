@@ -1,35 +1,26 @@
-No material evidence delta landed this pass, so I left `audits/critic.md` unchanged.
-
-What I checked:
-- `git status --short --branch`
-- `sed -n '1,260p' audits/critic.md`
-- `find .lane-output -maxdepth 1 -name 'final*.md' -printf '%T@ %p\\n' | sort -nr | head -n 8`
-- `sed -n '1,260p' audits/critic.md`
-- `sed -n '1,220p' .lane-output/final.md`
-
-Result:
-- The critic audit still holds the same constrained verdict: `0/4`, not production-grade push support.
-- No new implementation evidence changed the blocker set.
-- The current open blockers remain: live production auth/session lifecycle, durable journal ownership, preserved-remote retry, exact replay equivalence, and plugin/graph coverage.
+Refined the critic audit to reflect the newest recovery hardening without changing the production verdict.
 
 Changed files:
+- [`audits/critic.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/critic/audits/critic.md)
 - [`.lane-output/final.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/critic/.lane-output/final.md)
 
-Commands:
+What changed:
+- Noted that recovery now fail-closes malformed artifact envelopes before symbol-key inspection.
+- Added the narrower nested symbol-key leakage boundary in preserved recovery artifacts.
+- Kept the blocker set unchanged: production auth/session lifecycle, durable journal ownership, preserved-remote retry, and exact replay equivalence are still unproven.
+
+Evidence checked:
 - `git status --short --branch`
 - `sed -n '1,260p' audits/critic.md`
-- `find .lane-output -maxdepth 1 -name 'final*.md' -printf '%T@ %p\\n' | sort -nr | head -n 8`
-- `sed -n '1,260p' audits/critic.md`
-- `sed -n '1,220p' .lane-output/final.md`
+- latest `../reliable-executor/.lane-output/final*.md`
+- latest `../no-data-loss-recovery/.lane-output/final*.md`
 
 Push result:
-- No push attempted
+- Not pushed yet.
 
 Worktree status:
-- Branch: `lane/cycle-20260525-mainwindows-2349/critic`
-- `HEAD`: `ade72e0d`
-- `origin/lane/critic`: `ade72e0d`
-- Tracked files: `.lane-output/final.md` updated
+- `lane/cycle-20260525-mainwindows-2349/critic...origin/main [ahead 1568, behind 377]`
+- Dirty tracked files: `audits/critic.md`, `.lane-output/final.md`
 
 Next supervisor nudge:
-- Re-poll `reliable-executor` only when it lands a concrete proof delta that changes the release-gate verdict, especially exact replay-equivalence evidence or a production-backed auth/journal path.
+- Re-poll `reliable-executor` only when it lands exact replay-equivalence or a production-backed mutation path, or `no-data-loss-recovery` only when it proves preserved-remote retry with lease/fencing and restart-readable artifacts.
