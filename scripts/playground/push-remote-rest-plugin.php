@@ -523,10 +523,15 @@ function reprint_push_lab_rest_authenticated_recovery_inspect(WP_REST_Request $r
                 $db_journal
             );
         }
-        if (!isset($result['storageGuard']) || !is_array($result['storageGuard'])) {
-            $storage_guard = reprint_push_lab_rest_db_journal_storage_guard($db_journal);
-            if (is_array($storage_guard)) {
+        $storage_guard = reprint_push_lab_rest_db_journal_storage_guard($db_journal);
+        if (is_array($storage_guard)) {
+            if (!isset($result['storageGuard']) || !is_array($result['storageGuard'])) {
                 $result['storageGuard'] = $storage_guard;
+            } else {
+                $result['storageGuard'] = reprint_push_lab_rest_merge_checked_storage_guard(
+                    $result['storageGuard'],
+                    $storage_guard
+                );
             }
         }
         $result['responseSchemaVersion'] = 1;
@@ -586,6 +591,20 @@ function reprint_push_lab_rest_should_upgrade_checked_db_journal_scope(array $db
     }
 
     return preg_match('/local Playground fixture only|not production durability/i', $existing_scope) === 1;
+}
+
+function reprint_push_lab_rest_merge_checked_storage_guard(array $storage_guard, array $checked_storage_guard): array
+{
+    foreach (['boundary', 'operation', 'outcome'] as $key) {
+        if (
+            (!array_key_exists($key, $storage_guard) || $storage_guard[$key] === null || $storage_guard[$key] === '')
+            && array_key_exists($key, $checked_storage_guard)
+        ) {
+            $storage_guard[$key] = $checked_storage_guard[$key];
+        }
+    }
+
+    return $storage_guard;
 }
 
 function reprint_push_lab_rest_authenticated_db_journal(WP_REST_Request $request): WP_REST_Response

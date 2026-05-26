@@ -190,3 +190,91 @@ test('checked db journal merge upgrades stale inline scope on checked boundaries
     },
   });
 });
+
+test('checked storage guard merge fills partial inline values from the checked summary', { skip: !hasPhp }, () => {
+  const result = spawnSync('php', [
+    '-r',
+    [
+      'define("ABSPATH", dirname($argv[1]));',
+      'function add_filter(...$args) {}',
+      'function add_action(...$args) {}',
+      'function register_rest_route(...$args) {}',
+      'class WP_REST_Server { const CREATABLE = "POST"; const READABLE = "GET"; }',
+      'class WP_REST_Response {',
+      '  private $data;',
+      '  public function __construct($data = null, $status = null) { $this->data = $data; }',
+      '  public function get_data() { return $this->data; }',
+      '  public function set_data($data) { $this->data = $data; }',
+      '}',
+      'class WP_REST_Request {}',
+      'require $argv[1];',
+      '$inline = json_decode($argv[2], true);',
+      '$checked = json_decode($argv[3], true);',
+      'echo json_encode(reprint_push_lab_rest_merge_checked_storage_guard($inline, $checked));',
+    ].join(' '),
+    pluginFile,
+    JSON.stringify({
+      boundary: 'wpdb-single-statement-cas',
+    }),
+    JSON.stringify({
+      boundary: 'wpdb-single-statement-cas',
+      operation: 'update',
+      outcome: 'applied',
+    }),
+  ], {
+    cwd: repoRoot,
+    encoding: 'utf8',
+  });
+
+  assert.equal(result.status, 0, result.stderr);
+  assert.deepEqual(JSON.parse(result.stdout), {
+    boundary: 'wpdb-single-statement-cas',
+    operation: 'update',
+    outcome: 'applied',
+  });
+});
+
+test('checked storage guard merge preserves more specific inline values', { skip: !hasPhp }, () => {
+  const result = spawnSync('php', [
+    '-r',
+    [
+      'define("ABSPATH", dirname($argv[1]));',
+      'function add_filter(...$args) {}',
+      'function add_action(...$args) {}',
+      'function register_rest_route(...$args) {}',
+      'class WP_REST_Server { const CREATABLE = "POST"; const READABLE = "GET"; }',
+      'class WP_REST_Response {',
+      '  private $data;',
+      '  public function __construct($data = null, $status = null) { $this->data = $data; }',
+      '  public function get_data() { return $this->data; }',
+      '  public function set_data($data) { $this->data = $data; }',
+      '}',
+      'class WP_REST_Request {}',
+      'require $argv[1];',
+      '$inline = json_decode($argv[2], true);',
+      '$checked = json_decode($argv[3], true);',
+      'echo json_encode(reprint_push_lab_rest_merge_checked_storage_guard($inline, $checked));',
+    ].join(' '),
+    pluginFile,
+    JSON.stringify({
+      boundary: 'custom-inline-boundary',
+      operation: 'compare-and-swap',
+      outcome: 'retained',
+    }),
+    JSON.stringify({
+      boundary: 'wpdb-single-statement-cas',
+      operation: 'update',
+      outcome: 'applied',
+    }),
+  ], {
+    cwd: repoRoot,
+    encoding: 'utf8',
+  });
+
+  assert.equal(result.status, 0, result.stderr);
+  assert.deepEqual(JSON.parse(result.stdout), {
+    boundary: 'custom-inline-boundary',
+    operation: 'compare-and-swap',
+    outcome: 'retained',
+  });
+});
