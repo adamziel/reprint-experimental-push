@@ -2013,6 +2013,29 @@ test('packaged readiness helpers reset snapshot startup counters before signed p
   }
 });
 
+test('packaged smoke readiness helper fails closed on non-retryable route responses without waiting for classifier-specific terminal flags', () => {
+  const smokeSource = readFileSync(
+    path.join(repoRoot, 'scripts/playground/production-plugin-package-smoke.mjs'),
+    'utf8',
+  );
+  const start = smokeSource.indexOf('async function waitForServer(child, baseUrl, logs) {');
+  assert.notEqual(start, -1, 'expected packaged smoke readiness helper in smoke source');
+  const end = smokeSource.indexOf('async function fetchPackagedWordPressIndexProbe(', start);
+  assert.notEqual(end, -1, 'expected packaged smoke readiness helper boundary in smoke source');
+  const helperSource = smokeSource.slice(start, end);
+
+  assert.doesNotMatch(helperSource, /if \(packagedProductionPluginSnapshotTerminal/);
+  assert.doesNotMatch(helperSource, /if \(packagedProductionPluginPreflightTerminal/);
+  assert.match(
+    helperSource,
+    /packagedProductionPluginResetRouteNotReadyProbeCounts\(\s*notReadyProbeCounts,\s*'snapshot',\s*\);\s*throw new Error\(\s*`Packaged production plugin snapshot returned a terminal readiness failure at \$\{baseUrl\}/s,
+  );
+  assert.match(
+    helperSource,
+    /packagedProductionPluginResetRouteNotReadyProbeCounts\(\s*notReadyProbeCounts,\s*'preflight',\s*\);\s*throw new Error\(\s*`Packaged production plugin preflight returned a terminal readiness failure at \$\{baseUrl\}/s,
+  );
+});
+
 test('lab Playground readiness helper rejects malformed ready responses and retries only startup-shaped failures', () => {
   const readySnapshot = {
     status: 200,
