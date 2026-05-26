@@ -1989,6 +1989,10 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
     'planning-only-until-batch-commit',
   );
   assert.equal(
+    model.safeFastPaths.find((fastPath) => fastPath.allowedShortcut === 'compress-remote-index-listings-and-reuse-cursor-to-presize-bounded-plugin-install-batches')?.failureEvidence,
+    'compressed index cursor, dependency graph, and batch idempotency key',
+  );
+  assert.equal(
     model.safeFastPaths.find((fastPath) => fastPath.allowedShortcut === 'compress-planning-row-batch-manifests-with-canonical-row-digests')?.visibilityBoundary,
     'planning-only-until-batch-commit',
   );
