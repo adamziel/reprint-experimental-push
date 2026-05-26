@@ -1850,6 +1850,12 @@ export function classifyRecoveryJournalClaims(records) {
 
   let previousActiveClaimHash = null;
   for (const record of claimRecords) {
+    if (!Object.hasOwn(record, 'sequence')) {
+      return blockedClaimState(record, 'Recovery claim record is missing an explicit persisted sequence identity.');
+    }
+    if (!Number.isInteger(record.sequence) || record.sequence < 1) {
+      return blockedClaimState(record, 'Recovery claim record is missing a valid persisted sequence identity.');
+    }
     if (!Object.hasOwn(record, 'claimHash')) {
       return blockedClaimState(record, 'Recovery claim record is missing an explicit claim hash.');
     }
