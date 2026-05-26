@@ -1948,12 +1948,10 @@ export function productionThroughputDetails(report) {
     report.evidence.atomicGroup?.productionRowBatchExecutorVisible === true;
   const productionStorageReceiptsVisibleAndAtomicGroupMetadataVisible =
     productionStorageReceiptsVisible
-    && productionAtomicGroupMetadataVisible
-    && productionAtomicCommitVisible;
+    && productionAtomicGroupMetadataVisibleAndMeasured;
   const productionStorageReceiptsVisibleAndAtomicCommitVisible =
     productionStorageReceiptsVisible
-    && productionAtomicCommitVisible
-    && productionAtomicGroupMetadataVisible;
+    && productionAtomicGroupMetadataVisibleAndMeasured;
   const productionStorageReceiptsVisibleAndAtomicCommitVisibleAndMeasured =
     productionStorageReceiptsVisible
     && productionAtomicCommitVisible
@@ -1963,8 +1961,7 @@ export function productionThroughputDetails(report) {
   const productionRowBatchExecutorVisibleAndStorageReceiptsVisible =
     productionRowBatchExecutorVisible
     && productionStorageReceiptsVisible
-    && productionAtomicGroupMetadataVisible
-    && productionAtomicCommitVisible;
+    && productionAtomicGroupMetadataVisibleAndMeasured;
   const productionRowBatchExecutorVisibleAndAtomicCommitVisible =
     productionRowBatchExecutorVisible
     && productionAtomicCommitVisible
@@ -2014,8 +2011,7 @@ export function productionThroughputDetails(report) {
     && productionStorageReceiptsVisible
     && productionRowBatchExecutorMeasured
     && productionStorageReceiptsMeasured
-    && productionAtomicGroupMetadataVisible
-    && productionAtomicCommitVisible
+    && productionAtomicGroupMetadataVisibleAndMeasured
     && parallelismLimitsVisible;
   const parallelismLimitsVisibleAndCanonical =
     parallelismLimitsVisibleOnReport

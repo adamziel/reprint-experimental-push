@@ -1995,6 +1995,67 @@ test('guarded benchmark keeps storage-receipts and atomic-commit visible detail 
   );
 });
 
+test('guarded benchmark keeps atomic rollout visibility pairs hidden when atomic-commit measurement is missing', () => {
+  const report = smallBenchmark();
+  const tampered = clone(report);
+
+  tampered.executorCapabilities.productionAtomicCommit = 'production-atomic-group-commit';
+  tampered.executorCapabilities.fileReceipts = 'production-storage-receipts';
+  tampered.executorCapabilities.rowApply = 'production-batched-compare-and-swap';
+  tampered.evidence.atomicGroup.productionAtomicCommitMeasured = false;
+  tampered.evidence.atomicGroup.productionAtomicCommitVisible = true;
+  tampered.evidence.atomicGroup.productionAtomicGroupMetadataVisible = true;
+  tampered.evidence.atomicGroup.productionStorageReceiptsMeasured = true;
+  tampered.evidence.atomicGroup.productionStorageReceiptsVisible = true;
+  tampered.evidence.atomicGroup.productionRowBatchExecutorMeasured = true;
+  tampered.evidence.atomicGroup.productionRowBatchExecutorVisible = true;
+  tampered.evidence.parallelism.parallelismLimitsVisible = true;
+  tampered.evidence.parallelism.parallelismLimitsMeasured = true;
+
+  const details = productionThroughputDetails(tampered);
+  const blockers = productionThroughputBlockers(tampered);
+
+  assert.equal(details.productionAtomicGroupMetadataVisibleAndMeasured, false);
+  assert.equal(
+    details.atomicGroup.productionStorageReceiptsVisibleAndAtomicGroupMetadataVisible,
+    false,
+  );
+  assert.equal(details.productionStorageReceiptsVisibleAndAtomicCommitVisible, false);
+  assert.equal(
+    details.atomicGroup.productionStorageReceiptsVisibleAndAtomicCommitVisible,
+    false,
+  );
+  assert.equal(details.atomicGroup.productionRowBatchExecutorVisibleAndStorageReceiptsVisible, false);
+  assert.equal(
+    details.atomicGroup.productionRowBatchExecutorVisibleAndStorageReceiptsVisibleAndMeasured,
+    false,
+  );
+  assert.equal(
+    details.backpressureConsistency.productionStorageReceiptsVisibleAndAtomicGroupMetadataVisible,
+    false,
+  );
+  assert.equal(
+    details.backpressureConsistency.productionStorageReceiptsVisibleAndAtomicCommitVisible,
+    false,
+  );
+  assert.equal(
+    details.backpressureConsistency.productionRowBatchExecutorVisibleAndStorageReceiptsVisible,
+    false,
+  );
+  assert.equal(
+    details.backpressureConsistency.productionRowBatchExecutorVisibleAndStorageReceiptsVisibleAndMeasured,
+    false,
+  );
+  assert.ok(
+    blockers.includes(
+      'production-storage-receipts-visible-and-atomic-commit-visible-without-atomic-commit-measurement',
+    ),
+  );
+  assert.ok(
+    blockers.includes('production-atomic-group-metadata-visible-without-measurement'),
+  );
+});
+
 test('guarded benchmark blocks storage-receipts and atomic-commit paired visibility when atomic-commit measurement is hidden', () => {
   const report = smallBenchmark();
   const tampered = clone(report);
