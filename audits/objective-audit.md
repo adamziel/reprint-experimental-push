@@ -9,9 +9,9 @@ Fresh remote heads at audit time, checked on May 26, 2026:
 - `origin/lane/reliable-executor` -> `ffdc0a9b`
 - `origin/lane/no-data-loss-invariants` -> `9c70eba6`
 - `origin/lane/no-data-loss-recovery` -> `b0949e57`
-- `origin/lane/fast-paths` -> `1e3014e8`
-- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `1e3014e8`
-- `origin/lane/independent-auditor` -> `1d3b495e`
+- `origin/lane/fast-paths` -> `adb53f6d`
+- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `adb53f6d`
+- `origin/lane/independent-auditor` -> `cbe5e4a0`
 - `origin/lane/critic` -> `6828861f`
 - `origin/lane/progress-publisher` -> `7695e1f9`
 - `origin/lane/same-plan-wordpress-graph-create` -> `09e6706d`
@@ -19,11 +19,11 @@ Fresh remote heads at audit time, checked on May 26, 2026:
 - `origin/lane/cycle-20260525-mainwindows-2349/same-plan-wordpress-graph-create` -> `e9cbf9d4`
 - `origin/lane/cycle-20260525-mainwindows-2357/no-data-loss-invariants-graph-proof` -> `98c0ce26`
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `b9bc7c95`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `0278700d`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `143e07d9`
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` -> `5f256171`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-invariants` -> `9c70eba6`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `b0949e57`
-- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `1e3014e8`
+- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `adb53f6d`
 - `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration` -> `a3a900d7`
 - `origin/main` -> `e55864f4`
 
@@ -51,27 +51,27 @@ but it did not change the release conclusion:
   and claim fencing at `b0949e57`. That narrows unsupported recovery claims,
   but it still does not add production-backed journal ownership or replay
   proof.
-- `origin/lane/fast-paths` now tightens receipt headroom checks at `1e3014e8`.
+- `origin/lane/fast-paths` now tightens cursor headroom drift checks at `adb53f6d`.
   That is still a fail-closed implementation improvement, not production
   release proof.
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` now mirrors the
-  same receipt headroom tightening at `1e3014e8`. That remains boundary
+  same cursor headroom tightening at `adb53f6d`. That remains boundary
   hardening, not production release proof.
 - `origin/lane/critic` now refreshes the critic handoff at `6828861f`.
 - `origin/lane/progress-publisher` now refreshes the public progress evidence
   at `7695e1f9`.
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` now refreshes the audit snapshot at
-  `1d3b495e`.
+  `cbe5e4a0`.
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now
   refreshes the supervisor evidence snapshot at `b9bc7c95`.
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now
-  records the latest progress freshness handoff at `0278700d`.
+  records the latest progress freshness handoff at `143e07d9`.
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` now
   hardens the live proof timeout diagnostics at `5f256171`.
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` now
   surfaces the journal ownership mismatch evidence at `9fa23221`.
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` now tightens the
-  guarded benchmark backpressure details at `6d739320`.
+  guarded benchmark backpressure details at `adb53f6d`.
 - `origin/lane/same-plan-wordpress-graph-create` now blocks unsupported graph
   surfaces at `7bf5d421`, including revision posts, menu/navigation posts,
   serialized blocks, thumbnail parent references, and other same-plan graph
