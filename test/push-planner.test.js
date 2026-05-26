@@ -13025,6 +13025,10 @@ test('fixture forms lab table delete remains blocked without driver delete opt-i
 
   assert.equal(plan.status, 'blocked');
   assert.equal(plan.blockers[0].class, 'unsupported-plugin-owned-resource');
+  assert.equal(
+    plan.blockers[0].reason,
+    'Fixture forms lab table driver does not support delete mutations without explicit delete opt-in.',
+  );
 });
 
 test('executor rejects forged ready custom table plans without valid fixture driver evidence', () => {

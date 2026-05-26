@@ -213,7 +213,9 @@ export function createPushPlan({ base, local, remote, now = new Date() }) {
               ...support,
               supported: false,
               className: 'unsupported-plugin-owned-resource',
-              reason: 'Plugin-owned resource driver does not support delete mutations.',
+              reason: support.driverEvidence
+                ? 'Fixture forms lab table driver does not support delete mutations without explicit delete opt-in.'
+                : 'Plugin-owned resource driver does not support delete mutations.',
             },
             baseValue,
             localValue,
