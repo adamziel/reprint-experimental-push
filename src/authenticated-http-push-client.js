@@ -1519,11 +1519,12 @@ function resolveObservedProductionAuthSessionLifecycleDrift(response) {
     };
   }
 
-  if (session?.status === 'expired' || isExpiredSession(session)) {
+  const expiredObservation = resolveProductionAuthSessionExpiredObservation(session);
+  if (expiredObservation) {
     return {
-      field: session?.status === 'expired' ? 'auth.session.status' : 'auth.session.expiresAt',
+      field: expiredObservation.field,
       required: 'unexpired',
-      observed: session?.status === 'expired' ? 'expired' : (session?.expiresAt || 'missing'),
+      observed: expiredObservation.observed,
     };
   }
 
@@ -1620,11 +1621,12 @@ function describeRequiredProductionAuthSession(response) {
     };
   }
 
-  if (session?.status === 'expired' || isExpiredSession(session)) {
+  const expiredObservation = resolveProductionAuthSessionExpiredObservation(session);
+  if (expiredObservation) {
     return {
-      field: session?.status === 'expired' ? 'auth.session.status' : 'auth.session.expiresAt',
+      field: expiredObservation.field,
       required: 'unexpired',
-      observed: session?.status === 'expired' ? 'expired' : (session?.expiresAt || 'missing'),
+      observed: expiredObservation.observed,
       verdict,
     };
   }
@@ -1702,6 +1704,31 @@ function resolveProductionAuthSessionUnrevokedField(session) {
   }
 
   return 'auth.session.cleanup';
+}
+
+function resolveProductionAuthSessionExpiredObservation(session) {
+  if (session?.status === 'expired') {
+    return {
+      field: 'auth.session.status',
+      observed: 'expired',
+    };
+  }
+
+  if (session?.expired === true) {
+    return {
+      field: 'auth.session.expired',
+      observed: 'expired',
+    };
+  }
+
+  if (isExpiredSession(session)) {
+    return {
+      field: 'auth.session.expiresAt',
+      observed: session?.expiresAt || 'missing',
+    };
+  }
+
+  return null;
 }
 
 function hasProductionAuthSessionTypeDrift(response) {
@@ -1782,6 +1809,9 @@ function normalizeProductionAuthSessionIdentityField(value) {
 function isExpiredSession(session) {
   if (!session || typeof session !== 'object') {
     return false;
+  }
+  if (session.expired === true) {
+    return true;
   }
   if (session.status === 'expired') {
     return true;
