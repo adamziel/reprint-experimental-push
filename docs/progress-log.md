@@ -4,11 +4,11 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
-## 2026-05-26 - Public Status Audit 13:03:34
+## 2026-05-26 - Public Status Audit 13:06:05
 
-<a id="2026-05-26-public-status-audit-130334"></a>
+<a id="2026-05-26-public-status-audit-130605"></a>
 
-- Freshness update plus reliable-head confirmation: `3a64aef6773c3c82ad3a5b91a6ea0ca53c3942fb` is the current reliable-executor head on the public page, and the visible status now points at this 13:03:34 audit refresh.
+- Freshness update plus reliable-head confirmation: `fd7d3a540996d51a459d9358126a3cb3e4a59a2e` is the current reliable-executor head on the public page, and the visible status now points at this 13:06:05 audit refresh.
 - Gate posture remains conservative at `0/4`; no implementation verdict changed.
 - Latest blocker summary remains the same: production-backed auth/session lifecycle on the checked release path and fenced durable journal ownership still block any production push claim, while the package-mode route/auth session/journal evidence remains bounded by the still-running Playground smoke.
 
