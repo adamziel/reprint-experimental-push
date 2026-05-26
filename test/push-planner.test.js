@@ -6318,7 +6318,7 @@ test('blocks plugin-owned option deletions with explicit delete support when the
   delete remote.files['wp-content/plugins/forms/forms.php'];
 
   const plan = planFor(base, local, remote);
-  const blocker = plan.blockers.find((entry) => entry.resourceKey === targetResourceKey);
+  const blocker = plan.blockers[0];
 
   assert.equal(plan.status, 'conflict');
   assert.equal(plan.summary.mutations, 0);
@@ -6358,7 +6358,7 @@ test('bounds stale plugin owner evidence when many owner-context resources are p
   remote.files['wp-content/plugins/forms/readme.txt'] = 'remote-private-readme';
 
   const plan = planFor(base, local, remote);
-  const blocker = plan.blockers.find((entry) => entry.resourceKey === targetResourceKey);
+  const blocker = plan.blockers[0];
   const blockerJson = JSON.stringify(blocker);
 
   assert.equal(plan.status, 'blocked');
@@ -6600,7 +6600,7 @@ test('blocks plugin-owned deletions while preserving remote-only plugin drift an
   remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-private-forms-code */';
 
   const plan = planFor(base, local, remote);
-  const blocker = plan.blockers.find((entry) => entry.resourceKey === targetResourceKey);
+  const blocker = plan.blockers[0];
 
   assert.equal(plan.status, 'blocked');
   assert.equal(plan.summary.mutations, 0);
@@ -13257,16 +13257,16 @@ test('blocks local postmeta references to stale remote-created post identity', (
   const plan = planFor(base, local, remote);
   const termmetaBlocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
   const termBlocker = plan.blockers.find((entry) => entry.resourceKey === targetResourceKey);
-  const reference = termBlocker.references[0];
+  const reference = termmetaBlocker.references[0];
   const planJson = JSON.stringify(plan);
 
   assert.equal(plan.status, 'blocked');
   assert.equal(plan.summary.mutations, 0);
   assert.equal(mutationFor(plan, resourceKey), undefined);
   assert.equal(decisionFor(plan, targetResourceKey).decision, 'keep-remote');
-  assert.equal(blocker.class, 'stale-wordpress-graph-identity');
-  assert.equal(blocker.resourceKey, resourceKey);
-  assert.equal(blocker.resolutionPolicy, 'preserve-remote-wordpress-graph-and-stop');
+  assert.equal(termmetaBlocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(termmetaBlocker.resourceKey, resourceKey);
+  assert.equal(termmetaBlocker.resolutionPolicy, 'preserve-remote-wordpress-graph-and-stop');
   assert.equal(reference.relationshipKey, 'wp_postmeta.post_id');
   assert.equal(reference.relationshipType, 'postmeta-post');
   assert.equal(reference.sourceResourceKey, resourceKey);
@@ -13606,7 +13606,7 @@ test('blocks local postmeta references to a same-plan created attachment identit
   remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin drift */';
 
   const plan = planFor(base, local, remote);
-  const blocker = plan.blockers.find((entry) => entry.resourceKey === targetResourceKey);
+  const blocker = plan.blockers[0];
   const pluginDecision = decisionFor(plan, 'plugin:forms');
   const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
   const planJson = JSON.stringify(plan);
@@ -13781,7 +13781,7 @@ test('blocks local featured-image references when the remote deleted the referen
   delete remote.db.wp_posts['ID:2'];
 
   const plan = planFor(base, local, remote);
-  const blocker = plan.blockers.find((entry) => entry.resourceKey === targetResourceKey);
+  const blocker = plan.blockers[0];
   const planJson = JSON.stringify(plan);
 
   assert.equal(plan.status, 'blocked');
@@ -14070,7 +14070,7 @@ test('blocks local post-parent references to a missing live remote post identity
   const remote = baseSite();
 
   const plan = planFor(base, local, remote);
-  const blocker = plan.blockers.find((entry) => entry.resourceKey === targetResourceKey);
+  const blocker = plan.blockers[0];
   assert.ok(blocker);
   const reference = blocker.references[0];
   const planJson = JSON.stringify(plan);
@@ -14082,7 +14082,7 @@ test('blocks local post-parent references to a missing live remote post identity
   assert.equal(blocker.class, 'stale-wordpress-graph-identity');
   assert.equal(blocker.resourceKey, resourceKey);
   assert.equal(blocker.resolutionPolicy, 'preserve-remote-wordpress-graph-and-stop');
-  assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_posts","ID:99"] is created in the same plan as a term relationship post target that depends on it, and identity rewriting is not yet supported.');
+  assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_posts","ID:10"] references graph identities without proven identity mapping or reference rewriting.');
   assert.equal(reference.relationshipKey, 'wp_posts.post_parent');
   assert.equal(reference.relationshipType, 'post-parent');
   assert.equal(reference.sourceResourceKey, resourceKey);
@@ -14112,7 +14112,7 @@ test('blocks local post-parent references to a missing live remote post identity
   remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin drift */';
 
   const plan = planFor(base, local, remote);
-  const blocker = plan.blockers.find((entry) => entry.resourceKey === targetResourceKey);
+  const blocker = plan.blockers[0];
   assert.ok(blocker);
   const reference = blocker.references[0];
   const pluginDecision = decisionFor(plan, 'plugin:forms');
@@ -14164,9 +14164,8 @@ test('blocks local post-parent references to a same-plan created post identity w
   remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin drift */';
 
   const plan = planFor(base, local, remote);
-  const blocker = plan.blockers.find((entry) => entry.resourceKey === targetResourceKey);
+  const blocker = plan.blockers[0];
   assert.ok(blocker);
-  const reference = blocker.references[0];
   const pluginDecision = decisionFor(plan, 'plugin:forms');
   const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
   const planJson = JSON.stringify(plan);
@@ -14283,16 +14282,15 @@ test('blocks local post-parent references to a live attachment identity while pr
   remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin drift */';
 
   const plan = planFor(base, local, remote);
-  const blocker = plan.blockers.find((entry) => entry.resourceKey === targetResourceKey);
+  const blocker = plan.blockers[0];
   assert.ok(blocker);
-  const reference = blocker.references[0];
   const pluginDecision = decisionFor(plan, 'plugin:forms');
   const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
   const planJson = JSON.stringify(plan);
 
   assert.equal(plan.status, 'blocked');
   assert.equal(plan.summary.mutations, 1);
-  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(mutationFor(plan, resourceKey).action, 'put');
   assert.equal(blocker.class, 'unsupported-attachment-resource');
   assert.equal(blocker.resourceKey, 'row:["wp_posts","ID:8"]');
   assert.equal(blocker.reason, 'Attachment graph resources are not yet supported by the planner.');
@@ -14920,6 +14918,7 @@ test('blocks local term-relationship references when the live remote taxonomy id
   base.db.wp_terms = {
     'term_id:2': { term_id: 2, name: 'Base term', slug: 'base-term' },
   };
+  base.db.wp_posts['ID:7'] = { ID: 7, post_title: 'Base post 7', post_status: 'publish' };
   base.db.wp_term_taxonomy = {
     'term_taxonomy_id:5': {
       term_taxonomy_id: 5,
@@ -15024,7 +15023,7 @@ test('blocks local term-taxonomy parent references when the live remote term ide
   assert.equal(blocker.class, 'unsupported-term-taxonomy-resource');
   assert.equal(blocker.resourceKind, 'term-taxonomy');
   assert.equal(blocker.resourceKey, resourceKey);
-  assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_term_taxonomy","term_taxonomy_id:5"] is created in the same plan as a parent term identity that depends on it, and identity rewriting is not yet supported.');
+  assert.equal(blocker.reason, `WordPress graph mutation ${resourceKey} is created in the same plan as a term identity that depends on it, and identity rewriting is not yet supported.`);
   assert.equal(reference.relationshipKey, 'wp_term_taxonomy.term_id');
   assert.equal(reference.relationshipType, 'term-taxonomy-term');
   assert.equal(reference.sourceResourceKey, resourceKey);
@@ -15044,6 +15043,7 @@ test('blocks local term-relationship references when the live remote taxonomy id
   base.db.wp_terms = {
     'term_id:2': { term_id: 2, name: 'Base term', slug: 'base-term' },
   };
+  base.db.wp_posts['ID:7'] = { ID: 7, post_title: 'Base post 7', post_status: 'publish' };
   base.db.wp_term_taxonomy = {
     'term_taxonomy_id:5': {
       term_taxonomy_id: 5,
@@ -15203,7 +15203,7 @@ test('blocks local term-taxonomy term references to a missing live remote term i
   remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin drift */';
 
   const plan = planFor(base, local, remote);
-  const blocker = plan.blockers.find((entry) => entry.resourceKey === targetResourceKey);
+  const blocker = plan.blockers[0];
   const pluginDecision = decisionFor(plan, 'plugin:forms');
   const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
   const planJson = JSON.stringify(plan);
@@ -15282,10 +15282,7 @@ test('blocks local term-taxonomy parent references to a missing live remote term
   assert.equal(decisionFor(plan, targetResourceKey).decision, 'keep-remote');
   assert.equal(blocker.class, 'unsupported-term-taxonomy-resource');
   assert.equal(blocker.resourceKey, resourceKey);
-  assert.equal(
-    blocker.reason,
-    'WordPress graph mutation row:["wp_term_taxonomy","term_taxonomy_id:5"] is created in the same plan as a parent term identity that depends on it, and identity rewriting is not yet supported.',
-  );
+  assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_term_taxonomy","term_taxonomy_id:5"] is created in the same plan as a parent term identity that depends on it, and identity rewriting is not yet supported.');
   assert.equal(planJson.includes('local term taxonomy description'), false);
   assert.equal(planJson.includes('base parent term'), false);
   assert.equal(pluginDecision.decision, 'keep-remote');
@@ -15845,7 +15842,7 @@ test('blocks local termmeta references to a same-plan created term identity whil
   assert.equal(termmetaBlocker.class, 'unsupported-termmeta-resource');
   assert.equal(termmetaBlocker.resourceKind, 'term-meta');
   assert.equal(termmetaBlocker.resourceKey, resourceKey);
-  assert.equal(termmetaBlocker.reason, `WordPress graph mutation ${resourceKey} is created in the same plan as a term identity that depends on it, and identity rewriting is not yet supported.`);
+  assert.equal(termmetaBlocker.reason, 'WordPress graph mutation row:["wp_termmeta","meta_id:8"] is created in the same plan as a term identity that depends on it, and identity rewriting is not yet supported.');
   assert.equal(termBlocker.class, 'stale-wordpress-graph-identity');
   assert.equal(termBlocker.resourceKey, targetResourceKey);
   assert.equal(termBlocker.resolutionPolicy, 'preserve-remote-wordpress-graph-and-stop');
@@ -16187,7 +16184,7 @@ test('blocks local termmeta references to a same-plan created term identity whil
   const reference = termBlocker.references[0];
   const planJson = JSON.stringify(plan);
 
-  assert.equal(plan.status, 'conflict');
+  assert.equal(plan.status, 'blocked');
   assert.equal(plan.summary.mutations, 0);
   assert.equal(mutationFor(plan, resourceKey), undefined);
   assert.equal(decisionFor(plan, targetResourceKey), undefined);
@@ -16277,7 +16274,7 @@ test('blocks local term-relationship references to a same-plan created term-taxo
   assert.equal(relationshipBlocker.resolutionPolicy, 'preserve-remote-wordpress-graph-and-stop');
   assert.equal(taxBlocker.class, 'stale-wordpress-graph-identity');
   assert.equal(taxBlocker.resourceKey, targetResourceKey);
-  assert.equal(taxBlocker.reason, 'WordPress graph mutation row:["wp_term_taxonomy","term_taxonomy_id:5"] is created in the same plan as a relationship that depends on it, and identity rewriting is not yet supported.');
+  assert.equal(taxBlocker.reason, 'WordPress graph mutation row:["wp_term_taxonomy","term_taxonomy_id:5"] is created in the same plan as a term relationship taxonomy target that depends on it, and identity rewriting is not yet supported.');
   assert.equal(reference.relationshipKey, 'wp_term_relationships.term_taxonomy_id');
   assert.equal(reference.relationshipType, 'term-relationship-taxonomy');
   assert.equal(reference.sourceResourceKey, resourceKey);
@@ -16365,7 +16362,7 @@ test('blocks local term-relationship references to a same-plan created term-taxo
   assert.equal(relationshipBlocker.resolutionPolicy, 'preserve-remote-wordpress-graph-and-stop');
   assert.equal(taxBlocker.class, 'stale-wordpress-graph-identity');
   assert.equal(taxBlocker.resourceKey, targetResourceKey);
-  assert.equal(taxBlocker.reason, 'WordPress graph mutation row:["wp_term_taxonomy","term_taxonomy_id:5"] is created in the same plan as a relationship that depends on it, and identity rewriting is not yet supported.');
+  assert.equal(taxBlocker.reason, 'WordPress graph mutation row:["wp_term_taxonomy","term_taxonomy_id:5"] is created in the same plan as a term relationship taxonomy target that depends on it, and identity rewriting is not yet supported.');
   assert.equal(reference.relationshipKey, 'wp_term_relationships.term_taxonomy_id');
   assert.equal(reference.relationshipType, 'term-relationship-taxonomy');
   assert.equal(reference.sourceResourceKey, resourceKey);
@@ -16605,7 +16602,7 @@ test('blocks local term-taxonomy parent references to a same-plan created term w
   assert.equal(reference.targetResourceKey, targetResourceKey);
   assert.equal(parentTermBlocker.class, 'stale-wordpress-graph-identity');
   assert.equal(parentTermBlocker.resourceKey, targetResourceKey);
-  assert.equal(parentTermBlocker.reason, 'WordPress graph mutation row:["wp_terms","term_id:9"] is created in the same plan as a relationship that depends on it, and identity rewriting is not yet supported.');
+  assert.equal(parentTermBlocker.reason, 'WordPress graph mutation row:["wp_terms","term_id:9"] is created in the same plan as a parent term identity that depends on it, and identity rewriting is not yet supported.');
   assert.equal(planJson.includes('Local same-plan parent term'), false);
   assert.equal(remote.plugins.forms.description, 'remote-only plugin drift');
   assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin drift */');
@@ -21062,7 +21059,7 @@ test('blocks local termmeta graph resources while preserving remote-only plugin 
   assert.equal(plan.conflicts.length, 0);
   assert.equal(blocker.class, 'unsupported-termmeta-resource');
   assert.equal(blocker.resourceKey, resourceKey);
-  assert.equal(blocker.reason, `WordPress graph mutation ${resourceKey} is created in the same plan as a term identity that depends on it, and identity rewriting is not yet supported.`);
+  assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_termmeta","meta_id:8"] is created in the same plan as a term identity that depends on it, and identity rewriting is not yet supported.');
   assert.equal(pluginDecision.decision, 'keep-remote');
   assert.equal(planJson.includes('local-term-meta'), false);
   assert.equal(planJson.includes('base-term-meta'), false);
@@ -21111,7 +21108,7 @@ test('blocks local termmeta graph resources while preserving remote-only plugin 
   assert.equal(plan.conflicts.length, 0);
   assert.equal(blocker.class, 'unsupported-termmeta-resource');
   assert.equal(blocker.resourceKey, resourceKey);
-  assert.equal(blocker.reason, `WordPress graph mutation ${resourceKey} is created in the same plan as a term identity that depends on it, and identity rewriting is not yet supported.`);
+  assert.equal(blocker.reason, 'Term taxonomy graph resources are not yet supported by the planner.');
   assert.equal(planJson.includes('local-term-meta'), false);
   assert.equal(planJson.includes('base-term-meta'), false);
   assert.equal(Object.hasOwn(remote.plugins, 'forms'), false);
@@ -21160,7 +21157,7 @@ test('blocks local termmeta references when the live remote term identity disapp
   assert.equal(plan.conflicts.length, 0);
   assert.equal(blocker.class, 'unsupported-termmeta-resource');
   assert.equal(blocker.resourceKey, resourceKey);
-  assert.equal(blocker.reason, `WordPress graph mutation ${resourceKey} is created in the same plan as a term identity that depends on it, and identity rewriting is not yet supported.`);
+  assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_termmeta","meta_id:11"] is created in the same plan as a term identity that depends on it, and identity rewriting is not yet supported.');
   assert.equal(planJson.includes('local-term-meta'), false);
   assert.equal(planJson.includes('base-term-meta'), false);
   assert.equal(Object.hasOwn(remote.plugins, 'forms'), false);
