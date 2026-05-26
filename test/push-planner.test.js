@@ -13646,7 +13646,7 @@ test('blocks local postmeta references to stale remote-created post identity whi
   assert.equal(plan.summary.mutations, 0);
   assert.equal(mutationFor(plan, resourceKey), undefined);
   assert.equal(decisionFor(plan, targetResourceKey).decision, 'keep-remote');
-  assert.equal(blocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(blocker.class, 'unsupported-term-taxonomy-resource');
   assert.equal(blocker.resourceKey, resourceKey);
   assert.equal(blocker.resolutionPolicy, 'preserve-remote-wordpress-graph-and-stop');
   assert.equal(reference.relationshipKey, 'wp_postmeta.post_id');
@@ -13774,7 +13774,7 @@ test('blocks local postmeta references to a same-plan created post identity whil
   assert.equal(plan.summary.mutations, 0);
   assert.equal(mutationFor(plan, resourceKey), undefined);
   assert.equal(decisionFor(plan, targetResourceKey), undefined);
-  assert.equal(blocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(blocker.class, 'unsupported-term-taxonomy-resource');
   assert.equal(blocker.resourceKey, resourceKey);
   assert.equal(blocker.resolutionPolicy, 'preserve-remote-wordpress-graph-and-stop');
   assert.equal(reference.relationshipKey, 'wp_postmeta.post_id');
@@ -17466,7 +17466,7 @@ test('blocks local term-relationship references to a same-plan created term-taxo
   assert.equal(relationshipBlocker.class, 'stale-wordpress-graph-identity');
   assert.equal(relationshipBlocker.resourceKey, resourceKey);
   assert.equal(relationshipBlocker.resolutionPolicy, 'preserve-remote-wordpress-graph-and-stop');
-  assert.equal(taxBlocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(taxBlocker.class, 'unsupported-term-taxonomy-resource');
   assert.equal(taxBlocker.resourceKey, targetResourceKey);
   assert.equal(taxBlocker.reason, 'WordPress graph mutation row:["wp_term_taxonomy","term_taxonomy_id:5"] is created in the same plan as a term relationship taxonomy target that depends on it, and identity rewriting is not yet supported.');
   assert.equal(reference.relationshipKey, 'wp_term_relationships.term_taxonomy_id');
@@ -17554,7 +17554,7 @@ test('blocks local term-relationship references to a same-plan created term-taxo
   assert.equal(relationshipBlocker.class, 'stale-wordpress-graph-identity');
   assert.equal(relationshipBlocker.resourceKey, resourceKey);
   assert.equal(relationshipBlocker.resolutionPolicy, 'preserve-remote-wordpress-graph-and-stop');
-  assert.equal(taxBlocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(taxBlocker.class, 'unsupported-term-taxonomy-resource');
   assert.equal(taxBlocker.resourceKey, targetResourceKey);
   assert.equal(taxBlocker.reason, 'WordPress graph mutation row:["wp_term_taxonomy","term_taxonomy_id:5"] is created in the same plan as a term relationship taxonomy target that depends on it, and identity rewriting is not yet supported.');
   assert.equal(reference.relationshipKey, 'wp_term_relationships.term_taxonomy_id');
@@ -17570,6 +17570,110 @@ test('blocks local term-relationship references to a same-plan created term-taxo
   assert.equal(planJson.includes('local relationship note'), false);
   assert.equal(remote.plugins.forms.description, 'remote-only plugin change');
   assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin change */');
+});
+
+test('orders same-plan term-taxonomy dependency references deterministically within the same priority bucket', () => {
+  const targetResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:5"]';
+  const earlyRelationshipResourceKey = 'row:["wp_term_relationships","object_id:7,term_taxonomy_id:5"]';
+  const lateRelationshipResourceKey = 'row:["wp_term_relationships","object_id:8,term_taxonomy_id:5"]';
+
+  const base = baseSite();
+  base.db.wp_terms = {
+    'term_id:2': { term_id: 2, name: 'Base ordered taxonomy term', slug: 'base-ordered-taxonomy-term' },
+  };
+  base.db.wp_posts['ID:1'].post_title = 'Base shared taxonomy ordering title';
+  base.db.wp_posts['ID:7'] = {
+    ID: 7,
+    post_title: 'Base early taxonomy relationship post',
+    post_status: 'publish',
+  };
+  base.db.wp_posts['ID:8'] = {
+    ID: 8,
+    post_title: 'Base late taxonomy relationship post',
+    post_status: 'publish',
+  };
+  base.db.wp_term_taxonomy = {};
+  base.db.wp_term_relationships = {};
+
+  const local = baseSite();
+  local.db.wp_terms = JSON.parse(JSON.stringify(base.db.wp_terms));
+  local.db.wp_posts['ID:1'].post_title = 'Shared taxonomy ordering title';
+  local.db.wp_posts['ID:7'] = JSON.parse(JSON.stringify(base.db.wp_posts['ID:7']));
+  local.db.wp_posts['ID:8'] = JSON.parse(JSON.stringify(base.db.wp_posts['ID:8']));
+  local.db.wp_term_taxonomy = {
+    'term_taxonomy_id:5': {
+      term_taxonomy_id: 5,
+      term_id: 2,
+      taxonomy: 'category',
+      description: 'Local ordered taxonomy description',
+      parent: 0,
+    },
+  };
+  local.db.wp_term_relationships = {
+    'object_id:8,term_taxonomy_id:5': {
+      object_id: 8,
+      term_taxonomy_id: 5,
+      term_order: 2,
+      note: 'Local late taxonomy relationship note',
+    },
+    'object_id:7,term_taxonomy_id:5': {
+      object_id: 7,
+      term_taxonomy_id: 5,
+      term_order: 1,
+      note: 'Local early taxonomy relationship note',
+    },
+  };
+
+  const remote = baseSite();
+  remote.db.wp_terms = JSON.parse(JSON.stringify(base.db.wp_terms));
+  remote.db.wp_posts['ID:1'].post_title = 'Shared taxonomy ordering title';
+  remote.db.wp_posts['ID:7'] = JSON.parse(JSON.stringify(base.db.wp_posts['ID:7']));
+  remote.db.wp_posts['ID:8'] = JSON.parse(JSON.stringify(base.db.wp_posts['ID:8']));
+  remote.db.wp_term_taxonomy = {};
+  remote.db.wp_term_relationships = {};
+  remote.plugins.forms.description = 'remote-only plugin taxonomy ordering drift';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin taxonomy ordering drift */';
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === targetResourceKey);
+  const earlyRelationshipBlocker = plan.blockers.find((entry) => entry.resourceKey === earlyRelationshipResourceKey);
+  const lateRelationshipBlocker = plan.blockers.find((entry) => entry.resourceKey === lateRelationshipResourceKey);
+  const matchingEdit = decisionFor(plan, 'row:["wp_posts","ID:1"]');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, targetResourceKey), undefined);
+  assert.equal(decisionFor(plan, targetResourceKey), undefined);
+  assert.equal(blocker.class, 'unsupported-term-taxonomy-resource');
+  assert.equal(
+    blocker.reason,
+    'WordPress graph mutation row:["wp_term_taxonomy","term_taxonomy_id:5"] is created in the same plan as a term relationship taxonomy target that depends on it, and identity rewriting is not yet supported.',
+  );
+  assert.deepEqual(
+    blocker.references.map((reference) => [reference.relationshipType, reference.sourceResourceKey]),
+    [
+      ['term-relationship-taxonomy', earlyRelationshipResourceKey],
+      ['term-relationship-taxonomy', lateRelationshipResourceKey],
+    ],
+  );
+  assert.equal(earlyRelationshipBlocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(lateRelationshipBlocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(matchingEdit.decision, 'already-in-sync');
+  assert.equal(matchingEdit.change.localChange, 'update');
+  assert.equal(matchingEdit.change.remoteChange, 'update');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('Local ordered taxonomy description'), false);
+  assert.equal(planJson.includes('Local early taxonomy relationship note'), false);
+  assert.equal(planJson.includes('Local late taxonomy relationship note'), false);
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin taxonomy ordering drift');
+  assert.equal(
+    remote.files['wp-content/plugins/forms/forms.php'],
+    '<?php /* remote-only plugin taxonomy ordering drift */',
+  );
 });
 
 test('blocks local term-relationship references to a same-plan created term identity through same-plan taxonomy while preserving remote-only plugin drift', () => {
@@ -17638,7 +17742,7 @@ test('blocks local term-relationship references to a same-plan created term iden
   assert.equal(relationshipBlocker.class, 'stale-wordpress-graph-identity');
   assert.equal(relationshipBlocker.resourceKey, resourceKey);
   assert.equal(relationshipBlocker.resolutionPolicy, 'preserve-remote-wordpress-graph-and-stop');
-  assert.equal(taxonomyBlocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(taxonomyBlocker.class, 'unsupported-term-taxonomy-resource');
   assert.equal(taxonomyBlocker.resourceKey, targetTaxonomyResourceKey);
   assert.equal(taxonomyBlocker.reason, 'WordPress graph mutation row:["wp_term_taxonomy","term_taxonomy_id:5"] is created in the same plan as a term relationship taxonomy target that depends on it, and identity rewriting is not yet supported.');
   assert.equal(taxonomyReference.relationshipKey, 'wp_term_relationships.term_taxonomy_id');
@@ -17721,7 +17825,7 @@ test('blocks local term-relationship references to a same-plan created term iden
   assert.equal(relationshipBlocker.class, 'stale-wordpress-graph-identity');
   assert.equal(relationshipBlocker.resourceKey, resourceKey);
   assert.equal(relationshipBlocker.resolutionPolicy, 'preserve-remote-wordpress-graph-and-stop');
-  assert.equal(taxonomyBlocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(taxonomyBlocker.class, 'unsupported-term-taxonomy-resource');
   assert.equal(taxonomyBlocker.resourceKey, targetTaxonomyResourceKey);
   assert.equal(taxonomyBlocker.reason, 'WordPress graph mutation row:["wp_term_taxonomy","term_taxonomy_id:5"] is created in the same plan as a term relationship taxonomy target that depends on it, and identity rewriting is not yet supported.');
   assert.equal(taxonomyReference.relationshipKey, 'wp_term_relationships.term_taxonomy_id');

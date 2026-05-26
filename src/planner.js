@@ -3930,6 +3930,31 @@ function unsupportedTermTaxonomyResourceSupport({ resource, baseValue, localValu
   const references = wordpressGraphReferences(resource, candidate);
   const referenceEvidence = references.map((reference) =>
     wordpressGraphReferenceEvidence(reference, resources, base, local, remote));
+  const samePlanCreatedTaxonomyRelationshipReferences = (
+    localValue !== ABSENT
+    && baseValue === ABSENT
+    && remoteValue === ABSENT
+  )
+    ? resources
+      .filter((sourceResource) => sourceResource.type === 'row')
+      .flatMap((sourceResource) => {
+        const sourceLocalValue = getResource(local, sourceResource);
+        if (sourceLocalValue === ABSENT) {
+          return [];
+        }
+        return wordpressGraphReferences(sourceResource, sourceLocalValue)
+          .filter((reference) => reference.targetResourceKey === resource.key)
+          .map((reference) =>
+            wordpressGraphReferenceEvidence(reference, resources, base, local, remote));
+      })
+      .filter((reference) =>
+        reference.relationshipType === 'term-relationship-taxonomy'
+        && reference.targetChange.remote.state === 'absent'
+        && reference.targetChange.local.state === 'present')
+      .sort((left, right) => compareReferenceEvidenceByPriority(new Map([
+        ['term-relationship-taxonomy', 0],
+      ]), left, right))
+    : [];
   const samePlanCreatedTermReferences = referenceEvidence.filter((reference) => (
     (reference.relationshipType === 'term-taxonomy-term' || reference.relationshipType === 'term-taxonomy-parent')
     && reference.targetChange.remote.state === 'absent'
@@ -3938,7 +3963,10 @@ function unsupportedTermTaxonomyResourceSupport({ resource, baseValue, localValu
     ['term-taxonomy-parent', 0],
     ['term-taxonomy-term', 1],
   ]), left, right));
-  const unsupportedState = samePlanCreatedTermReferences.length > 0
+  const unsupportedState = (
+    samePlanCreatedTermReferences.length > 0
+    || samePlanCreatedTaxonomyRelationshipReferences.length > 0
+  )
     ? 'same-plan-reference'
     : classifyUnsupportedDriftState({
       baseValue,
@@ -3955,8 +3983,12 @@ function unsupportedTermTaxonomyResourceSupport({ resource, baseValue, localValu
       ? `WordPress graph mutation ${resource.key} is created in the same plan as a parent term identity that depends on it, and identity rewriting is not yet supported.`
       : samePlanCreatedTermReferences.some((reference) => reference.relationshipType === 'term-taxonomy-term')
         ? `WordPress graph mutation ${resource.key} is created in the same plan as a term identity that depends on it, and identity rewriting is not yet supported.`
-        : 'Term taxonomy graph resources are not yet supported by the planner.',
-    references: samePlanCreatedTermReferences,
+        : samePlanCreatedTaxonomyRelationshipReferences.length > 0
+          ? `WordPress graph mutation ${resource.key} is created in the same plan as a term relationship taxonomy target that depends on it, and identity rewriting is not yet supported.`
+          : 'Term taxonomy graph resources are not yet supported by the planner.',
+    references: samePlanCreatedTermReferences.length > 0
+      ? samePlanCreatedTermReferences
+      : samePlanCreatedTaxonomyRelationshipReferences,
   };
 }
 
