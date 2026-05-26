@@ -1167,6 +1167,25 @@ test('db journal storage guard stays visible when only the checked top-level com
   });
 });
 
+test('db journal stale-claim evidence accepts explicit stale-claim-rejected rows and aged summary entries', { skip: !hasPhp }, () => {
+  const fromRows = runHasStaleClaimRejectionEvidence([
+    { sequence: 41, event: 'stale-claim-rejected' },
+  ]);
+  assert.equal(fromRows.status, 0, fromRows.stderr);
+  assert.equal(JSON.parse(fromRows.stdout), true);
+
+  const fromEventSummaries = runHasStaleClaimRejectionEvidence(
+    [
+      { sequence: 61, event: 'apply-committed' },
+    ],
+    [
+      { event: 'stale-claim-rejected', count: 1, latestId: 12 },
+    ],
+  );
+  assert.equal(fromEventSummaries.status, 0, fromEventSummaries.stderr);
+  assert.equal(JSON.parse(fromEventSummaries.stdout), true);
+});
+
 test('db journal writer lease contract preserves observed checked-boundary evidence instead of hard-coding stronger guarantees', { skip: !hasPhp }, () => {
   const result = runWriterLeaseContract({
     staleClaimRejected: true,

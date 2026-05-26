@@ -659,6 +659,7 @@ function reprint_push_lab_db_journal_has_stale_claim_rejection_evidence(
         $event = (string) ($summary['event'] ?? '');
         if (
             $event === 'stale-claim-abandoned'
+            || $event === 'stale-claim-rejected'
             || $event === 'stale-claim-retry-started'
             || $event === 'stale-claim-retry-in-progress'
         ) {
@@ -673,6 +674,7 @@ function reprint_push_lab_db_journal_has_stale_claim_rejection_evidence(
         $event = (string) ($row['event'] ?? '');
         if (
             $event === 'stale-claim-abandoned'
+            || $event === 'stale-claim-rejected'
             || $event === 'stale-claim-retry-started'
             || $event === 'stale-claim-retry-in-progress'
         ) {
