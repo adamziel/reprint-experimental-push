@@ -5238,6 +5238,25 @@ test('production throughput details fail closed when queue headroom visibility d
   assert.ok(blockers.includes('receipt-cursor-memory-headroom-visible-without-queue-headroom-visibility'));
 });
 
+test('production throughput details fail closed when memory-ceiling match visibility disappears from the pause boundary', () => {
+  const report = runGuardedExecutorBenchmark({ profile: 'ci' });
+
+  report.evidence.backpressure.receiptCursorMemoryCeilingMatchesQueueBudgetVisible = false;
+  const details = productionThroughputDetails(report);
+  const blockers = productionThroughputBlockers(report);
+
+  assert.equal(details.queueBudgetVisible, true);
+  assert.equal(details.receiptCursorMemoryCeilingVisible, true);
+  assert.equal(details.queueBudgetVisibleAndMemoryCeilingVisible, false);
+  assert.equal(details.receiptCursorMemoryCeilingVisibleAndQueueBudgetVisible, false);
+  assert.equal(details.queueBudgetVisibleAndMemoryCeilingVisibleAndMeasured, false);
+  assert.equal(details.receiptCursorPauseFootprintVisible, false);
+  assert.equal(details.backpressureConsistency.queueBudgetVisibleAndMemoryCeilingVisible, false);
+  assert.equal(details.backpressureConsistency.receiptCursorMemoryCeilingVisibleAndQueueBudgetVisible, false);
+  assert.equal(details.backpressureConsistency.queueBudgetVisibleAndMemoryCeilingVisibleAndMeasured, false);
+  assert.ok(blockers.includes('queue-budget-visible-without-memory-ceiling-match-visibility'));
+});
+
 test('production throughput blocks malformed parallelism limits before faster execution can be claimed', () => {
   const report = runGuardedExecutorBenchmark({
     profile: 'ci',

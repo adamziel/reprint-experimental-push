@@ -1684,12 +1684,14 @@ export function productionThroughputDetails(report) {
     receiptCursorPauseFootprintComplete
     && queueBudgetVisible
     && receiptCursorMemoryCeilingVisible
+    && report.evidence.backpressure?.receiptCursorMemoryCeilingMatchesQueueBudgetVisible === true
     && queueHeadroomVisible
     && queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack;
   const receiptCursorMemoryCeilingVisibleAndQueueBudgetVisible =
     receiptCursorPauseFootprintComplete
     && receiptCursorMemoryCeilingVisible
     && queueBudgetVisible
+    && report.evidence.backpressure?.receiptCursorMemoryCeilingMatchesQueueBudgetVisible === true
     && queueHeadroomVisible
     && queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack;
   const receiptCursorQueueSlackVisibleAndMemoryHeadroomVisible =
