@@ -8,16 +8,16 @@ Fresh remote heads at audit time, checked on May 26, 2026:
 
 - `origin/lane/reliable-executor` -> `0c4fd10f`
 - `origin/lane/no-data-loss-invariants` -> `4335ce8b`
-- `origin/lane/no-data-loss-recovery` -> `a1798631`
-- `origin/lane/fast-paths` -> `9be664b2`
+- `origin/lane/no-data-loss-recovery` -> `47b675c0`
+- `origin/lane/fast-paths` -> `77d21cd8`
 - `origin/lane/independent-auditor` -> `20c7ab63`
 - `origin/lane/critic` -> `e986a490`
 - `origin/lane/progress-publisher` -> `7695e1f9`
 - `origin/lane/same-plan-wordpress-graph-create` -> `69f27361`
 - `origin/lane/cycle-20260525-mainwindows-2349/same-plan-wordpress-graph-create` -> `e9cbf9d4`
 - `origin/lane/cycle-20260525-mainwindows-2357/no-data-loss-invariants-graph-proof` -> `98c0ce26`
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `83b1e256`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `19be8f01`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `ce92ee57`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `12c0e9e4`
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` -> `596bdf5e`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-invariants` -> `4335ce8b`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `a1798631`
@@ -46,12 +46,12 @@ but it did not change the release conclusion:
   proof, which strengthens the fail-closed boundary but still does not prove
   live source mutation on unsupported surfaces.
 - `origin/lane/no-data-loss-recovery` now tightens the durable journal
-  production gate at `a1798631` while preserving the earlier recovery
+  production gate at `47b675c0` while preserving the earlier recovery
   evidence.
   `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` now
   tightens the durable journal cleanup gate at `a1798631`, but it still does
   not add production-backed journal ownership or replay proof.
-- `origin/lane/fast-paths` now refreshes benchmark evidence at `9be664b2`.
+- `origin/lane/fast-paths` now refreshes benchmark evidence at `77d21cd8`.
   This remains a safe fast-path implementation detail, but it still does not
   prove the live production push boundary.
 - `origin/lane/cycle-20260525-mainwindows-2349/critic` now refreshes the critic handoff at `f8591f9d`.
@@ -60,9 +60,9 @@ but it did not change the release conclusion:
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` now refreshes the audit snapshot at
   `20c7ab63`.
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now
-  refreshes the supervisor evidence snapshot at `83b1e256`.
+  refreshes the supervisor evidence snapshot at `ce92ee57`.
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now
-  records the latest progress freshness handoff at `19be8f01`.
+  records the latest progress freshness handoff at `12c0e9e4`.
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` now
   hardens the live proof timeout diagnostics at `596bdf5e`.
 - `origin/lane/same-plan-wordpress-graph-create` now blocks unsupported graph
