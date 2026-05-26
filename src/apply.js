@@ -1792,6 +1792,36 @@ function recordDurableRecoveryState(writer, current, plan, recoveryState, suppor
     ? durableJournalPersistedArtifactRefs(blockedInspection)
     : null;
   const missingDependency = resolvedSupportReport?.missingDependency || [];
+  const blockedClaimState = blockedInspection?.records
+    ? classifyRecoveryJournalClaims(blockedInspection.records)
+    : null;
+  const writerHasValidLeaseIdentity = hasValidProductionLeaseIdentity(writer?.writerLease);
+  const writerHasValidLeaseFence = hasValidProductionLeaseIdentity(writer?.leaseFence)
+    && writerHasValidLeaseIdentity
+    && productionLeaseIdentitiesMatch(writer.leaseFence, writer.writerLease);
+  const writerHasValidClaimHash = typeof writer?.claimHash === 'string'
+    && /^[a-f0-9]{64}$/.test(writer.claimHash);
+  const writerClaimHashMatchesLease = writerHasValidLeaseIdentity
+    && writerHasValidClaimHash
+    && writer.claimHash === digest({ recoveryJournalClaim: writer.writerLease.id });
+  const missingClaimFence = writer?.kind === 'production-recovery-journal' && (
+    !writerHasValidLeaseIdentity
+    || !writerHasValidLeaseFence
+    || !writerHasValidClaimHash
+    || !writerClaimHashMatchesLease
+    || blockedClaimState?.status === 'blocked'
+    || (
+      blockedClaimState
+      && blockedClaimState.status !== 'none'
+      && writerHasValidClaimHash
+      && blockedClaimState.activeClaimHash !== writer.claimHash
+    )
+    || (
+      blockedClaimState
+      && writerHasValidLeaseIdentity
+      && !productionLeaseIdentitiesMatch(blockedClaimState.activeClaimLease, writer.writerLease)
+    )
+  );
   const missingJournalArtifactSurface = missingDependency.includes('restart-readable recovery artifact references')
     || missingDependency.includes('restart-readable recovery artifact location')
     || missingDependency.includes('journal-readable inspection records with sequence and type')
@@ -1812,6 +1842,21 @@ function recordDurableRecoveryState(writer, current, plan, recoveryState, suppor
       writer?.ownsRemoteArtifact === true,
     )
     : null;
+
+  if (
+    writer?.kind === 'production-recovery-journal'
+    && missingClaimFence
+  ) {
+    throw new PushPlanError(
+      'JOURNAL_WRITER_INVALID',
+      'Production durable journal lost its fenced claim ownership before recording recovery state.',
+      {
+        eventType: 'recovery-state',
+        causeMessage: 'Production durable journal lost its fenced claim ownership before recording recovery state.',
+        missingDependency: ['fencing or lease ownership for the journal writer'],
+      },
+    );
+  }
 
   if (
     writer?.kind === 'production-recovery-journal'
