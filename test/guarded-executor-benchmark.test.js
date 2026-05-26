@@ -644,7 +644,7 @@ test('guarded benchmark exposes unbounded upload parallelism shortcuts as reject
   assert.match(fastPath.rejectedBecause, /receipt and journal order/i);
   assert.deepEqual(
     fastPath.violates,
-    ['remote-index-planning-only', 'compression', 'backpressure', 'chunk-receipts', 'durable-progress'],
+    ['remote-index-planning-only', 'compression', 'chunk-receipts', 'backpressure', 'durable-progress'],
   );
 });
 
@@ -720,6 +720,66 @@ test('guarded benchmark exposes compressed remote-index and parallel chunk-send 
   assert.deepEqual(
     fastPath.violates,
     ['remote-index-planning-only', 'compression', 'parallelism-limits', 'backpressure', 'chunk-receipts', 'atomic-file-publish', 'durable-progress'],
+  );
+});
+
+test('guarded benchmark exposes compressed remote-index and cached chunk-receipt backpressure shortcuts as rejected', () => {
+  const fastPath = findRejectedFastPathById(
+    'compressed-remote-index-and-cached-chunk-receipts-skips-large-upload-backpressure',
+  );
+
+  assert.ok(fastPath);
+  assert.equal(fastPath.rejectedGate, 'recovery');
+  assert.match(fastPath.proposal, /cached chunk receipts/i);
+  assert.match(fastPath.rejectedBecause, /queue stayed bounded or that the durable receipts survived/i);
+  assert.deepEqual(
+    fastPath.violates,
+    ['remote-index-planning-only', 'compression', 'chunk-receipts', 'backpressure', 'durable-progress'],
+  );
+});
+
+test('guarded benchmark exposes compressed remote-index and cached chunk-receipt chunk-send shortcuts as rejected', () => {
+  const fastPath = findRejectedFastPathById(
+    'compressed-remote-index-and-cached-chunk-receipts-skips-large-upload-chunk-send-backpressure',
+  );
+
+  assert.ok(fastPath);
+  assert.equal(fastPath.rejectedGate, 'recovery');
+  assert.match(fastPath.proposal, /skip backpressure during large-upload chunk sends/i);
+  assert.match(fastPath.rejectedBecause, /bounded chunk fanout, complete receipt order, and durable journal evidence/i);
+  assert.deepEqual(
+    fastPath.violates,
+    ['remote-index-planning-only', 'compression', 'parallelism-limits', 'backpressure', 'chunk-receipts', 'durable-progress'],
+  );
+});
+
+test('guarded benchmark exposes compressed remote-index and cached chunk-receipt publish shortcuts as rejected', () => {
+  const fastPath = findRejectedFastPathById(
+    'compressed-remote-index-and-cached-chunk-receipts-skips-large-upload-publish-backpressure',
+  );
+
+  assert.ok(fastPath);
+  assert.equal(fastPath.rejectedGate, 'recovery');
+  assert.match(fastPath.proposal, /skip backpressure before the large-upload publish step/i);
+  assert.match(fastPath.rejectedBecause, /guarded publish barrier is still intact/i);
+  assert.deepEqual(
+    fastPath.violates,
+    ['remote-index-planning-only', 'compression', 'backpressure', 'chunk-receipts', 'atomic-file-publish', 'durable-progress'],
+  );
+});
+
+test('guarded benchmark exposes compressed remote-index and cached chunk-receipt windowing shortcuts as rejected', () => {
+  const fastPath = findRejectedFastPathById(
+    'compressed-remote-index-and-cached-chunk-receipts-skips-large-upload-windowing',
+  );
+
+  assert.ok(fastPath);
+  assert.equal(fastPath.rejectedGate, 'recovery');
+  assert.match(fastPath.proposal, /skip large-upload window sizing after a pause/i);
+  assert.match(fastPath.rejectedBecause, /next bounded window still matches the live queue order/i);
+  assert.deepEqual(
+    fastPath.violates,
+    ['remote-index-planning-only', 'compression', 'backpressure', 'chunk-receipts', 'durable-progress', 'atomic-file-publish'],
   );
 });
 
