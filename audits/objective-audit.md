@@ -41,10 +41,10 @@ The project is **not releasable as a production WordPress push path**.
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `9abe8414`
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `d7813094`
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `8a7f4edd`
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `e4f34571`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `f2d32e1d`
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `11c0cceb`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `2af1ddda`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `4eb8b16a`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `3769f63a`
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` -> `0ca7b35d`
 - `origin/lane/cycle-20260525-mainwindows-2349/same-plan-wordpress-graph-create` -> `af493c80`
 - `origin/lane/cycle-20260525-mainwindows-2357/no-data-loss-invariants-graph-proof` -> `98c0ce26`
@@ -53,32 +53,20 @@ The project is **not releasable as a production WordPress push path**.
 - `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration` -> `8cfc4f6c`
 - `origin/lane/critic` -> `e5130a9e`
 - `origin/lane/fast-paths` -> `8c5c2ccb`
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `e4f34571`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `f2d32e1d`
 - `origin/lane/independent-auditor` -> `b36665ef`
-- `origin/lane/no-data-loss-invariants` -> `8fab9c35`
+- `origin/lane/no-data-loss-invariants` -> `30040cee`
 - `origin/lane/no-data-loss-recovery` -> `9e077c10`
 - `origin/lane/progress-publisher` -> `7695e1f9`
-- `origin/lane/reliable-executor` -> `f1783e10`
-- `origin/lane/reliable-executor` -> `e5419417`
+- `origin/lane/reliable-executor` -> `c1943da1`
 - `origin/lane/same-plan-wordpress-graph-create` -> `8dea1ca3`
 
 Fresh visibility-lane heads moved, but they still only refresh public status surfaces:
 
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `dadd19c9`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `c8c67ae6`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `4eb8b16a`
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `934383bc`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `af0ef2d9`
-- `origin/lane/reliable-executor` -> `79f31269`
-- `origin/lane/reliable-executor` -> `b368a170`
-- `origin/lane/reliable-executor` -> `2c240aa7`
-- `origin/lane/reliable-executor` -> `3606228b`
-- `origin/lane/reliable-executor` -> `6dc56a5d`
-- `origin/lane/no-data-loss-invariants` -> `270c7406`
-- `origin/lane/no-data-loss-invariants` -> `62b4acb0`
-- `origin/lane/no-data-loss-invariants` -> `aa4f9c83`
-- `origin/lane/no-data-loss-invariants` -> `58e8b8a2`
-- `origin/lane/no-data-loss-invariants` -> `1258cd31`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `f2d32e1d`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `3769f63a`
+- `origin/lane/reliable-executor` -> `c1943da1`
+- `origin/lane/no-data-loss-invariants` -> `30040cee`
 - `origin/lane/no-data-loss-recovery` -> `2af1ddda`
 - `origin/main` -> `2c8d52cb`
 
@@ -98,6 +86,9 @@ but it did not change the release conclusion:
 - `origin/lane/reliable-executor` now records `e5419417`, hardening
   production proof subprocess bounds. It still does not prove production
   auth/session lifecycle or a live-source mutation boundary.
+- `origin/lane/reliable-executor` now records `c1943da1`, hardening release
+  verify test timeouts. It still does not prove production auth/session
+  lifecycle or a live-source mutation boundary.
 - `origin/lane/reliable-executor` now records `79f31269`, hardening release
   verify timeouts. It still does not prove production auth/session lifecycle or
   a live-source mutation boundary.
@@ -131,14 +122,23 @@ but it did not change the release conclusion:
 - `origin/lane/no-data-loss-invariants` now records `1258cd31`, adding a
   featured image boundary proof. It still does not prove the live release
   boundary or any production-backed source mutation.
+- `origin/lane/no-data-loss-invariants` now records `30040cee`, adding a wp
+  navigation removal boundary proof. It still does not prove the live release
+  boundary or any production-backed source mutation.
 - `origin/lane/no-data-loss-invariants` now records `0886616c`, adding a
   submodule boundary proof. It still does not prove the live release boundary
   or any production-backed source mutation.
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now
   records `b03ee033`, refreshing supervisor freshness only. It still does not
   change the release verdict.
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now
+  records `f2d32e1d`, refreshing progress visibility only. It still does not
+  change the release verdict.
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now records
   `3b3c05e7`, refreshing public progress freshness only. It still does not add
+  production-backed gate movement.
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now records
+  `3769f63a`, refreshing public progress freshness only. It still does not add
   production-backed gate movement.
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` now records
   `9abe8414`, tightening parallelism limit proof only. It still does not prove
