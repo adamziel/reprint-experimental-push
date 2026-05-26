@@ -2759,13 +2759,21 @@ function reprint_push_lab_rest_auth_evidence(WP_REST_Request $request): array
         $session_revoked = is_array($lifecycle_drift) && ($lifecycle_drift['mode'] ?? '') === 'revoked';
         $session_cleaned_up = is_array($lifecycle_drift) && ($lifecycle_drift['mode'] ?? '') === 'cleaned-up';
     }
+    $identity_user_login = (string) $user->user_login;
+    if ($production_session && is_array($lifecycle_drift)) {
+        if (($lifecycle_drift['mode'] ?? '') === 'missing-user-login') {
+            $identity_user_login = '';
+        } elseif (($lifecycle_drift['mode'] ?? '') === 'identity-mismatch') {
+            $identity_user_login = 'reprint_push_drifted_user';
+        }
+    }
 
     return [
         'schemaVersion' => 1,
         'scope' => REPRINT_PUSH_LAB_AUTH_SCOPE,
         'identity' => [
             'userId' => (int) $user->ID,
-            'userLogin' => (string) $user->user_login,
+            'userLogin' => $identity_user_login,
             'roles' => array_values(array_map('strval', (array) $user->roles)),
             'capabilities' => [
                 'manage_options' => current_user_can('manage_options'),
@@ -2814,7 +2822,7 @@ function reprint_push_lab_rest_auth_session_lifecycle_drift(WP_REST_Request $req
         return null;
     }
 
-    if (!in_array($drift_mode, ['revoked', 'cleaned-up', 'expired', 'rotated'], true)) {
+    if (!in_array($drift_mode, ['revoked', 'cleaned-up', 'expired', 'rotated', 'missing-user-login', 'identity-mismatch'], true)) {
         return null;
     }
 
