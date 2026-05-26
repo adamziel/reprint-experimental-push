@@ -1952,7 +1952,10 @@ function summarizeAuthSessionLifecycle(trace) {
     .filter((entry) => entry && typeof entry === 'object')
     .map((entry) => ({
       step: entry.step ?? null,
+      id: entry.id ?? null,
+      type: entry.type ?? null,
       status: entry.status ?? null,
+      expiresAt: entry.expiresAt ?? null,
       expired: Boolean(entry.expired),
       revoked: Boolean(entry.revoked),
       cleanedUp: Boolean(entry.cleanedUp),
