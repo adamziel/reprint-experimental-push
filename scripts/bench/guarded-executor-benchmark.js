@@ -1181,6 +1181,8 @@ export function productionThroughputDetails(report) {
     report.evidence.atomicGroup?.productionStorageReceiptsVisible === true;
   const productionRowBatchExecutorVisible =
     report.evidence.atomicGroup?.productionRowBatchExecutorVisible === true;
+  const productionStorageReceiptsVisibleAndAtomicCommitVisible =
+    productionStorageReceiptsVisible && productionAtomicCommitVisible;
   const productionAtomicGroupMetadataProven =
     report.evidence.atomicGroup?.productionAtomicCommitMeasured !== true
     || (
@@ -1307,6 +1309,7 @@ export function productionThroughputDetails(report) {
     productionRowBatchExecutorMeasured,
     productionAtomicGroupMetadataVisible,
     productionStorageReceiptsVisible,
+    productionStorageReceiptsVisibleAndAtomicCommitVisible,
     productionAtomicGroupMetadataProven,
     parallelismLimits,
     parallelismLimitsMeasured: parallelismLimitsMeasuredOnReport,
@@ -1409,6 +1412,7 @@ export function productionThroughputDetails(report) {
       productionAtomicGroupMetadataVisible,
       productionAtomicGroupMetadataProven,
       productionStorageReceiptsVisible,
+      productionStorageReceiptsVisibleAndAtomicCommitVisible,
       productionRowBatchExecutorVisible,
       parallelismLimits,
       parallelismLimitsVisible: parallelismLimitsVisibleOnReport,
