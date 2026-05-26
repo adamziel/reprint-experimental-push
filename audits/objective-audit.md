@@ -7,19 +7,19 @@ The project is **not releasable as a production WordPress push path**.
 Fresh remote heads at audit time, checked on May 26, 2026:
 
 - `origin/lane/reliable-executor` -> `0c4fd10f`
-- `origin/lane/no-data-loss-invariants` -> `04927056`
+- `origin/lane/no-data-loss-invariants` -> `0253c05d`
 - `origin/lane/no-data-loss-recovery` -> `47b675c0`
-- `origin/lane/fast-paths` -> `3ef373f4`
-- `origin/lane/independent-auditor` -> `5624aefd`
+- `origin/lane/fast-paths` -> `9be664b2`
+- `origin/lane/independent-auditor` -> `6c3b2e00`
 - `origin/lane/critic` -> `e986a490`
 - `origin/lane/progress-publisher` -> `7695e1f9`
 - `origin/lane/same-plan-wordpress-graph-create` -> `69f27361`
 - `origin/lane/cycle-20260525-mainwindows-2349/same-plan-wordpress-graph-create` -> `e9cbf9d4`
 - `origin/lane/cycle-20260525-mainwindows-2357/no-data-loss-invariants-graph-proof` -> `98c0ce26`
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `534d941b`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `eb0f9a90`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `83b1e256`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `879e536f`
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` -> `596bdf5e`
-- `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-invariants` -> `e42fe4ad`
+- `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-invariants` -> `0253c05d`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `37d1cd8d`
 - `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration` -> `295dc72a`
 - `origin/main` -> `4b7b47a6`
@@ -36,7 +36,7 @@ but it did not change the release conclusion:
   timeout-hardening blocker on the live proof path, so the verdict does not
   move.
 - `origin/lane/no-data-loss-invariants` now blocks post GUID mutations at
-  `04927056`. A separate cycle-branch proof at `98c0ce26`
+  `0253c05d`. A separate cycle-branch proof at `98c0ce26`
   extends that blocker coverage to missing graph identity references, and the
   same-plan graph lane at `69f27361` now blocks unsupported graph surfaces
   including revision posts, menu/navigation posts, serialized blocks, and
@@ -51,20 +51,19 @@ but it did not change the release conclusion:
   `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` now
   tightens the durable journal inspect gate at `37d1cd8d`, but it still does
   not add production-backed journal ownership or replay proof.
-- `origin/lane/fast-paths` now tightens blocked production-claim diagnostics at
-  `3ef373f4` by adding bounded receipt-log backpressure handling. This is a
-  safer fast-path implementation detail, but it still does not prove the live
-  production push boundary.
+- `origin/lane/fast-paths` now refreshes benchmark evidence at `9be664b2`.
+  This remains a safe fast-path implementation detail, but it still does not
+  prove the live production push boundary.
 - `origin/lane/critic` now refreshes the critic handoff at `e986a490`.
 - `origin/lane/progress-publisher` now refreshes the public progress evidence
   at `7695e1f9`.
 - `origin/lane/independent-auditor` now refreshes the audit snapshot at
-  `5624aefd`.
+  `6c3b2e00`.
 - `origin/lane/critic` now refreshes the critic audit snapshot at `f8591f9d`.
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now
-  refreshes the supervisor evidence snapshot at `534d941b`.
+  refreshes the supervisor evidence snapshot at `83b1e256`.
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now
-  records the latest progress freshness handoff at `eb0f9a90`.
+  records the latest progress freshness handoff at `879e536f`.
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` now
   hardens the live proof timeout diagnostics at `596bdf5e`.
 - `origin/lane/same-plan-wordpress-graph-create` now blocks unsupported graph
@@ -121,8 +120,8 @@ The release requirements implied by that objective are:
 | Requirement | Current proof | Missing proof | Release blocker |
 | --- | --- | --- | --- |
 | R1 base manifest | The JSON model carries base/local/remote snapshots with stable resource keys and hashes. Playground exporters produce fixture snapshots for posts, options, files, postmeta, a forms lab table, and narrow plugin metadata. | No production Reprint pull-base manifest contract. No proof for complete WordPress identity mapping, table schemas, generated data, object cache state, media metadata, taxonomies, users, multisite, or arbitrary plugin ownership. | Yes |
-| R2 three-way planning | `createPushPlan()` compares base/local/remote hashes. `npm test` covers local-only changes, remote-only changes, matching independent edits, direct conflicts, deletes, file topology conflicts, graph-identity blockers, plugin state, and atomic dependency metadata. The production-shaped CLI smoke plans from exported fixture snapshots and targets `/wp-json/reprint/v1/push/*`. `origin/lane/no-data-loss-invariants` now blocks unsupported special file entries at `778f4c35`. A separate cycle-branch proof at `63ebcc84` extends that fail-closed coverage to socket-like and hard-link special files, but it is not the primary lane head. | No production remote hash listing contract. No test starts from a real Reprint pull and then pushes back through production-backed source mutation internals. | Yes |
-| R3 preserve remote changes | Unit tests keep remote-only row and plugin changes, block local deletion versus remote update, stop local directory deletion that would hide a remote-only descendant, and stop file type swaps that would hide remote-only descendants. Playground stale apply smokes preserve fixture drift. `origin/lane/no-data-loss-invariants` now blocks unsupported special file entries at `778f4c35`. A separate cycle-branch proof at `63ebcc84` extends that fail-closed coverage to socket-like and hard-link special files, but it is not the primary lane head. | No proof for semantic graph preservation across posts/postmeta/attachments/terms/menus/options/plugin tables. No proof for remote changes to resources that are not directly mutated but are semantically coupled to local changes. | Yes |
+| R2 three-way planning | `createPushPlan()` compares base/local/remote hashes. `npm test` covers local-only changes, remote-only changes, matching independent edits, direct conflicts, deletes, file topology conflicts, graph-identity blockers, plugin state, and atomic dependency metadata. The production-shaped CLI smoke plans from exported fixture snapshots and targets `/wp-json/reprint/v1/push/*`. `origin/lane/no-data-loss-invariants` now blocks unsupported special file entries at `0253c05d`. A separate cycle-branch proof at `63ebcc84` extends that fail-closed coverage to socket-like and hard-link special files, but it is not the primary lane head. | No production remote hash listing contract. No test starts from a real Reprint pull and then pushes back through production-backed source mutation internals. | Yes |
+| R3 preserve remote changes | Unit tests keep remote-only row and plugin changes, block local deletion versus remote update, stop local directory deletion that would hide a remote-only descendant, and stop file type swaps that would hide remote-only descendants. Playground stale apply smokes preserve fixture drift. `origin/lane/no-data-loss-invariants` now blocks unsupported special file entries at `0253c05d`. A separate cycle-branch proof at `63ebcc84` extends that fail-closed coverage to socket-like and hard-link special files, but it is not the primary lane head. | No proof for semantic graph preservation across posts/postmeta/attachments/terms/menus/options/plugin tables. No proof for remote changes to resources that are not directly mutated but are semantically coupled to local changes. | Yes |
 | R4 conflict stop and evidence | Conflicts, blockers, hashes, change kinds, and plugin-owned conflict classes are represented. Raw fixture values are checked out of selected conflict/journal/recovery paths. | No durable production conflict artifact, operator workflow, reviewed resolution path, complete redaction schema, or production audit report. | Yes |
 | R5 immediate preconditions | `applyPlan()` validates preconditions before model apply. Playground smokes verify stale dry-run/apply refusal and just-in-time pre-write hash rejection for selected fixtures. Production-shaped route smoke applies the same ready fixture plan through `/wp-json/reprint/v1/push/*`. | The production-shaped write path is still lab-backed. No proof that every production mutation rechecks liveness immediately before its write under real source-site concurrency. | Yes |
 | R6 storage-boundary guards | `test:playground:storage-guarded-db-write` proves guarded single-statement `UPDATE` behavior for existing fixture `wp_posts`, allowlisted `wp_options`, allowlisted single-row `wp_postmeta`, and exact forms lab rows. `test:playground:storage-guarded-file-write` proves guarded update/create/delete for accepted fixture upload files. Production-shaped route smoke carries those fixture internals behind the `/reprint/v1` route shape. | No production MySQL/InnoDB CAS proof, transactions, locks, rollback, filesystem `fsync`, filesystem lock/CAS proof, arbitrary file guarding, arbitrary create/delete DB guarding, schema changes, plugin activation guarding, or production-backed Reprint HTTP mutation. | Yes |
