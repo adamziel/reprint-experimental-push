@@ -76,6 +76,7 @@ function spawnReleaseVerify(env = {}, timeout = proofSubprocessTimeoutMs) {
     {
       cwd: repoRoot,
       ...releaseVerifyProofSubprocessOptions,
+      killSignal: proofSubprocessKillSignal,
       timeout,
       env: {
         ...process.env,
