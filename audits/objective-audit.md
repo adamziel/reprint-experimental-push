@@ -51,7 +51,7 @@ The project is **not releasable as a production WordPress push path**.
 - `origin/lane/fast-paths` -> `fdf30894`
 - `origin/lane/feedback-supervisor` -> `8af2c127`
 - `origin/lane/independent-auditor` -> `fad9b731`
-- `origin/lane/no-data-loss-invariants` -> `0d3a148f`
+- `origin/lane/no-data-loss-invariants` -> `1d6bf421`
 - `origin/lane/no-data-loss-recovery` -> `91424e5b`
 - `origin/lane/progress-publisher` -> `7695e1f9`
 - `origin/lane/reliable-executor` -> `d6f65f9a`
@@ -75,6 +75,9 @@ but it did not change the release conclusion:
 - `origin/lane/no-data-loss-invariants` now records `0d3a148f`, adding
   custom-table sibling proof. It still does not prove the live release
   boundary or any production-backed source mutation.
+- `origin/lane/no-data-loss-invariants` now records `1d6bf421`, adding hard-
+  link sibling proof. It still does not prove the live release boundary or any
+  production-backed source mutation.
 - `origin/lane/no-data-loss-invariants` now records `b5e199f0`, adding special
   file sibling proof again, but still not proving the live release boundary or
   any production-backed source mutation.
