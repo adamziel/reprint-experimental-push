@@ -8110,6 +8110,59 @@ test('blocks a local term relationship from an attachment to a same-plan term ta
   );
 });
 
+test('blocks a local term relationship owned by a wp_navigation post even when it targets a same-plan term taxonomy', () => {
+  const navigationPostResourceKey = 'row:["wp_posts","ID:3"]';
+  const taxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:9"]';
+  const relationshipResourceKey = 'row:["wp_term_relationships","object_id:3|term_taxonomy_id:9"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_posts['ID:3'] = {
+    ID: 3,
+    post_title: 'Local navigation post',
+    post_content: 'local-private-navigation-post-body',
+    post_status: 'publish',
+    post_type: 'wp_navigation',
+  };
+  local.db.wp_terms = {
+    'term_id:7': {
+      term_id: 7,
+      name: 'Local taxonomy term',
+      slug: 'local-taxonomy-term',
+    },
+  };
+  local.db.wp_term_taxonomy = {
+    'term_taxonomy_id:9': {
+      term_taxonomy_id: 9,
+      term_id: 7,
+      taxonomy: 'category',
+      description: '',
+      parent: 0,
+      count: 0,
+    },
+  };
+  local.db.wp_term_relationships = {
+    'object_id:3|term_taxonomy_id:9': {
+      object_id: 3,
+      term_taxonomy_id: 9,
+      term_order: 0,
+    },
+  };
+
+  const plan = planFor(base, local, baseSite());
+  const navigationPostMutation = mutationFor(plan, navigationPostResourceKey);
+  const taxonomyMutation = mutationFor(plan, taxonomyResourceKey);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === relationshipResourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.ok(plan.summary.mutations > 0);
+  assert.equal(navigationPostMutation, undefined);
+  assert.equal(taxonomyMutation.changeKind, 'create');
+  assert.equal(blocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(blocker.surface, 'wp_navigation');
+  assert.equal(blocker.resourceKey, relationshipResourceKey);
+  assert.equal(JSON.stringify(blocker).includes('local-private-navigation-post-body'), false);
+});
+
 test('blocks a local term relationship owned by an attachment even when it targets a same-plan post', () => {
   const attachmentPostResourceKey = 'row:["wp_posts","ID:3"]';
   const taggedPostResourceKey = 'row:["wp_posts","ID:4"]';
