@@ -10,6 +10,7 @@ import { createHmac } from 'node:crypto';
 import { createPushPlan } from '../../src/planner.js';
 import { authenticatedHttpClient } from '../../src/authenticated-http-push-client.js';
 import { deepClone, digest } from '../../src/stable-json.js';
+import { buildProductionPluginPackageProofSummary } from './production-plugin-package-proof-summary.js';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const cliPath = path.join(repoRoot, 'bin/reprint-push-lab.js');
@@ -1097,6 +1098,7 @@ try {
     );
   }
 
+  summary.pluginDriverProof = buildProductionPluginPackageProofSummary(summary, { selectedScenarios });
   console.log(JSON.stringify(summary, null, 2));
 } finally {
   fs.rmSync(tmpDir, { recursive: true, force: true });
