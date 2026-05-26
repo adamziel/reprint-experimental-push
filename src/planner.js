@@ -1361,7 +1361,6 @@ function isValidSamePlanWordPressGraphTarget(targetMutation, reference, sourceMu
         !sourceValue
         || typeof sourceValue !== 'object'
         || sourceValue.post_type !== 'attachment'
-        || !hasRemoteWordPressNavigationPost(remote)
       ) {
         return false;
       }
