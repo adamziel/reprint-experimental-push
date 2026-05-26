@@ -718,6 +718,20 @@ test('production-shaped release verify can force the production auth/session sou
   );
 });
 
+test('auth-session source command builder emits a shell-safe node snippet', () => {
+  const command = buildAuthSessionSourceCommand({
+    nodePath: '/opt/node/bin/node',
+    sourceUrl: "http://127.0.0.1:8080/path?label=owner's",
+    username: "reprint_push_owner'oops",
+    applicationPassword: "p@ss'word",
+  });
+
+  assert.equal(
+    command,
+    `/opt/node/bin/node -e "process.stdout.write(JSON.stringify({sourceUrl:'http://127.0.0.1:8080/path?label=owner'\\''s', username:'reprint_push_owner'\\''oops', applicationPassword:'p@ss'\\''word'}))"`,
+  );
+});
+
 test('production-shaped release proof emits the exact gate output when no live source is supplied', () => {
   const proof = spawnBoundedSync(process.execPath, ['scripts/playground/production-shaped-release-proof.mjs'], {
     cwd: repoRoot,

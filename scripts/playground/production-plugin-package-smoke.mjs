@@ -12,6 +12,7 @@ import {
   loadAuthSessionSource,
   resolveAuthSessionSourceCredentials,
 } from './auth-session-source.js';
+import { buildAuthSessionSourceCommand } from './auth-session-source-command.js';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const cliPath = path.join(repoRoot, 'bin/reprint-push-lab.js');
@@ -204,7 +205,11 @@ try {
       applied: result.apply.applied,
       applyCommitted: result.dbJournal.applyCommitted,
       authSessionSource: {
-        command: authSessionSourceCommand,
+        command: authSessionSourceCommand || buildAuthSessionSourceCommand({
+          sourceUrl: resolvedCredentials.liveSourceUrl || server.baseUrl,
+          username: resolvedCredentials.username,
+          applicationPassword: resolvedCredentials.applicationPassword,
+        }),
         ok: Boolean(authSessionSource?.ok),
       },
     };
