@@ -354,6 +354,26 @@ export function createPushPlan({ base, local, remote, now = new Date() }) {
         continue;
       }
 
+      const legacyLinksSupport = unsupportedLegacyLinksResourceSupport({
+        resource,
+        baseValue,
+        localValue,
+        remoteValue,
+      });
+      if (!legacyLinksSupport.supported) {
+        addUnsupportedLegacyLinksResourceBlocker(plan, {
+          resource,
+          support: legacyLinksSupport,
+          baseValue,
+          localValue,
+          remoteValue,
+          baseHash,
+          localHash,
+          remoteHash,
+        });
+        continue;
+      }
+
       const serializedBlocksSupport = unsupportedSerializedBlocksSupport({
         resource,
         baseValue,
@@ -2107,6 +2127,37 @@ function addUnsupportedCommentsUsersResourceBlocker(plan, {
   });
 }
 
+function addUnsupportedLegacyLinksResourceBlocker(plan, {
+  resource,
+  support,
+  baseValue,
+  localValue,
+  remoteValue,
+  baseHash,
+  localHash,
+  remoteHash,
+}) {
+  plan.blockers.push({
+    id: `blocker-unsupported-legacy-links-resource-${plan.blockers.length + 1}`,
+    class: support.className || 'unsupported-legacy-links-resource',
+    resource,
+    resourceKey: resource.key,
+    reason: support.reason || `Legacy link resource ${resource.key} is not yet supported by the planner.`,
+    baseHash,
+    localHash,
+    remoteHash,
+    change: changeEvidence(
+      resource,
+      baseValue,
+      localValue,
+      remoteValue,
+      baseHash,
+      localHash,
+      remoteHash,
+    ),
+  });
+}
+
 function addUnsupportedGuidResourceBlocker(plan, {
   resource,
   support,
@@ -2433,8 +2484,25 @@ function unsupportedCommentsUsersResourceSupport({ resource, baseValue, localVal
     className: 'unsupported-comments-users-resource',
     reason: resource.table === 'wp_users'
       ? 'User graph resources are not yet supported by the planner.'
-      : 'Comments graph resources are not yet supported by the planner.',
+    : 'Comments graph resources are not yet supported by the planner.',
   };
+}
+
+function unsupportedLegacyLinksResourceSupport({ resource, baseValue, localValue, remoteValue }) {
+  if (resource.type !== 'row' || resource.table !== 'wp_links') {
+    return { supported: true };
+  }
+
+  const candidate = localValue !== ABSENT ? localValue : (baseValue !== ABSENT ? baseValue : remoteValue);
+  if (candidate && candidate !== ABSENT) {
+    return {
+      supported: false,
+      className: 'unsupported-legacy-links-resource',
+      reason: 'Legacy link graph resources are not yet supported by the planner.',
+    };
+  }
+
+  return { supported: true };
 }
 
 function unsupportedSerializedBlocksSupport({ resource, baseValue, localValue, remoteValue }) {
