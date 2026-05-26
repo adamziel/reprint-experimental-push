@@ -192,6 +192,21 @@ export async function runAuthenticatedHttpPush({
     };
     return summary;
   }
+  if (requireProductionAuthSession && hasMissingProductionAuthSessionExpiry(preflight)) {
+    summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
+    summary.authSession = {
+      required: 'unexpired',
+      observed: preflight.body.auth?.session?.expiresAt || 'missing',
+      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+    };
+    summary.boundary = {
+      firstRemainingProductionBoundary: 'auth/session lifecycle and durable journal semantics',
+      status: 'unimplemented',
+      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+      authSession: summary.authSession,
+    };
+    return summary;
+  }
   if (requireProductionAuthSession && isExpiredSession(preflight.body.auth?.session)) {
     summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
     summary.authSession = {
@@ -326,6 +341,7 @@ export async function runAuthenticatedHttpPush({
   const applyAuthSessionDrift = requireProductionAuthSession && (
     hasProductionAuthSessionTypeDrift(apply)
     || hasProductionAuthSessionStatusDrift(apply)
+    || hasMissingProductionAuthSessionExpiry(apply)
     || hasProductionAuthSessionExpiryDrift(apply)
   );
   if (applyAuthSessionDrift) {
@@ -353,6 +369,7 @@ export async function runAuthenticatedHttpPush({
   const recoveryInspectAuthSessionDrift = requireProductionAuthSession && (
     hasProductionAuthSessionTypeDrift(recoveryInspect)
     || hasProductionAuthSessionStatusDrift(recoveryInspect)
+    || hasMissingProductionAuthSessionExpiry(recoveryInspect)
     || hasProductionAuthSessionExpiryDrift(recoveryInspect)
   );
   if (recoveryInspect.status !== 200 || recoveryInspect.body?.ok !== true) {
@@ -385,6 +402,16 @@ export async function runAuthenticatedHttpPush({
     setDurableJournalBoundary(summary, 'recovery-inspect');
     return summary;
   }
+  if (recoveryInspectAuthSessionDrift) {
+    summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
+    summary.authSession = {
+      required: 'production-auth-session',
+      observed: recoveryInspect.body?.auth?.session?.type || 'missing',
+      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+    };
+    setDurableJournalBoundary(summary, 'recovery-inspect');
+    return summary;
+  }
   const recoveryInspectAuthEnvelopeDrift = hasAuthEnvelopeDrift(preflightAuthEnvelope, recoveryInspect);
   if (recoveryInspectAuthEnvelopeDrift) {
     summary.code = 'AUTH_SESSION_LIFECYCLE_DRIFT';
@@ -411,16 +438,6 @@ export async function runAuthenticatedHttpPush({
     setDurableJournalBoundary(summary, 'recovery-inspect');
     return summary;
   }
-  if (recoveryInspectAuthSessionDrift) {
-    summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
-    summary.authSession = {
-      required: 'production-auth-session',
-      observed: recoveryInspect.body?.auth?.session?.type || 'missing',
-      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
-    };
-    setDurableJournalBoundary(summary, 'recovery-inspect');
-    return summary;
-  }
 
   const replay = await client.signedPost('/apply', {
     plan,
@@ -441,6 +458,7 @@ export async function runAuthenticatedHttpPush({
   const replayAuthSessionDrift = requireProductionAuthSession && (
     hasProductionAuthSessionTypeDrift(replay)
     || hasProductionAuthSessionStatusDrift(replay)
+    || hasMissingProductionAuthSessionExpiry(replay)
     || hasProductionAuthSessionExpiryDrift(replay)
   );
   if (applyAuthEnvelopeDrift || recoveryInspectAuthEnvelopeDrift || replayAuthEnvelopeDrift) {
@@ -504,6 +522,7 @@ export async function runAuthenticatedHttpPush({
   const dbJournalAuthSessionDrift = requireProductionAuthSession && (
     hasProductionAuthSessionTypeDrift(dbJournal)
     || hasProductionAuthSessionStatusDrift(dbJournal)
+    || hasMissingProductionAuthSessionExpiry(dbJournal)
     || hasProductionAuthSessionExpiryDrift(dbJournal)
   );
   if (dbJournal.status !== 200 || dbJournal.body?.ok !== true) {
@@ -1073,6 +1092,11 @@ function hasProductionAuthSessionTypeDrift(response) {
 
 function hasProductionAuthSessionStatusDrift(response) {
   return response?.body?.auth?.session?.status !== 'active';
+}
+
+function hasMissingProductionAuthSessionExpiry(response) {
+  const session = response?.body?.auth?.session;
+  return session?.type === 'production-auth-session' && !session?.expiresAt;
 }
 
 function hasProductionAuthSessionExpiryDrift(response) {

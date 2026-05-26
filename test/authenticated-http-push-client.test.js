@@ -431,6 +431,62 @@ test('production-shaped authenticated push fails closed when production auth ses
   }
 });
 
+test('production-shaped authenticated push fails closed when production auth session is minted without expiresAt', async () => {
+  const originalFetch = global.fetch;
+  const seen = [];
+  global.fetch = async (url, options) => {
+    seen.push({ url: String(url), options });
+    if (String(url).includes('/preflight')) {
+      return new Response(JSON.stringify({
+        ok: true,
+        auth: {
+          identity: { userLogin: 'reprint_push_admin' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+          },
+        },
+        session: { id: 'psh_01j00000000000000000000000' },
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+    throw new Error(`unexpected fetch to ${url}`);
+  };
+
+  try {
+    const summary = await runAuthenticatedHttpPush({
+      sourceUrl: 'http://127.0.0.1:8080',
+      base: { resources: [] },
+      local: { resources: [] },
+      username: credential.username,
+      applicationPassword: credential.password,
+      idempotencyKey: 'idem-01-missing-expiry',
+      routeProfile: 'production-shaped',
+      requireProductionAuthSession: true,
+    });
+
+    assert.equal(summary.ok, false);
+    assert.equal(summary.code, 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED');
+    assert.deepEqual(summary.boundary, {
+      firstRemainingProductionBoundary: 'auth/session lifecycle and durable journal semantics',
+      status: 'unimplemented',
+      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+      authSession: {
+        required: 'unexpired',
+        observed: 'missing',
+        verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+      },
+    });
+    assert.equal(seen.length, 1);
+    assert.match(seen[0].url, /\/wp-json\/reprint\/v1\/push\/preflight$/);
+  } finally {
+    global.fetch = originalFetch;
+  }
+});
+
 test('production-shaped authenticated push fails closed when production auth session expires after preflight', async () => {
   const originalFetch = global.fetch;
   const originalDateNow = Date.now;
@@ -469,6 +525,15 @@ test('production-shaped authenticated push fails closed when production auth ses
     if (pathname.includes('/dry-run')) {
       return new Response(JSON.stringify({
         ok: true,
+        auth: {
+          identity: { userLogin: 'reprint_push_admin' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
+        },
         receipt: { receiptHash: 'receipt-01' },
       }), {
         status: 200,
@@ -589,6 +654,7 @@ test('production-shaped authenticated push records revoked and cleaned-up auth s
     if (pathname.includes('/apply')) {
       return new Response(JSON.stringify({
         ok: true,
+        responseSchemaVersion: 1,
         auth: {
           identity: { userLogin: 'reprint_push_admin' },
           session: {
@@ -862,7 +928,12 @@ test('production-shaped authenticated push fails closed immediately when apply d
         ok: true,
         auth: {
           identity: { userLogin: 'reprint_push_admin' },
-          session: { type: 'production-auth-session', status: 'active', id: 'psh_01j00000000000000000000000' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
         },
         session: { id: 'psh_01j00000000000000000000000' },
       }), {
@@ -884,7 +955,12 @@ test('production-shaped authenticated push fails closed immediately when apply d
         ok: true,
         auth: {
           identity: { userLogin: 'reprint_push_admin' },
-          session: { type: 'production-auth-session', status: 'active', id: 'psh_01j00000000000000000000000' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
         },
         receipt: { receiptHash: 'receipt-01' },
       }), {
@@ -953,7 +1029,12 @@ test('production-shaped authenticated push fails closed immediately when apply r
         ok: true,
         auth: {
           identity: { userLogin: 'reprint_push_admin' },
-          session: { type: 'production-auth-session', status: 'active', id: 'psh_01j00000000000000000000000' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
         },
         session: { id: 'psh_01j00000000000000000000000' },
       }), {
@@ -975,7 +1056,12 @@ test('production-shaped authenticated push fails closed immediately when apply r
         ok: true,
         auth: {
           identity: { userLogin: 'reprint_push_admin' },
-          session: { type: 'production-auth-session', status: 'active', id: 'psh_01j00000000000000000000000' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
         },
         receipt: { receiptHash: 'receipt-01' },
       }), {
@@ -989,7 +1075,12 @@ test('production-shaped authenticated push fails closed immediately when apply r
         code: 'APPLY_FAILED',
         auth: {
           identity: { userLogin: 'reprint_push_admin' },
-          session: { type: 'production-auth-session', status: 'active', id: 'psh_01j00000000000000000000000' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
         },
       }), {
         status: 200,
@@ -1044,7 +1135,12 @@ test('production-shaped authenticated push accepts replay-equivalent signed requ
         ok: true,
         auth: {
           identity: { userLogin: 'reprint_push_admin' },
-          session: { type: 'production-auth-session', status: 'active', id: 'psh_01j00000000000000000000000' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
         },
         session: { id: 'psh_01j00000000000000000000000' },
       }), {
@@ -1066,7 +1162,12 @@ test('production-shaped authenticated push accepts replay-equivalent signed requ
         ok: true,
         auth: {
           identity: { userLogin: 'reprint_push_admin' },
-          session: { type: 'production-auth-session', status: 'active', id: 'psh_01j00000000000000000000000' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
         },
         receipt: { receiptHash: 'receipt-01' },
       }), {
@@ -1083,7 +1184,12 @@ test('production-shaped authenticated push accepts replay-equivalent signed requ
         responseSchemaVersion: 1,
         auth: {
           identity: { userLogin: 'reprint_push_admin' },
-          session: { type: 'production-auth-session', status: 'active', id: 'psh_01j00000000000000000000000' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
         },
         receipt: { receiptHash: 'receipt-01' },
         storageGuard: {
@@ -1121,7 +1227,12 @@ test('production-shaped authenticated push accepts replay-equivalent signed requ
         responseSchemaVersion: 1,
         auth: {
           identity: { userLogin: 'reprint_push_admin' },
-          session: { type: 'production-auth-session', status: 'active', id: 'psh_01j00000000000000000000000' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
         },
         receipt: { receiptHash: 'receipt-01' },
         storageGuard: {
@@ -1155,7 +1266,12 @@ test('production-shaped authenticated push accepts replay-equivalent signed requ
         ok: true,
         auth: {
           identity: { userLogin: 'reprint_push_admin' },
-          session: { type: 'production-auth-session', status: 'active', id: 'psh_01j00000000000000000000000' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
         },
         recovery: {
           state: 'ready',
@@ -1172,7 +1288,12 @@ test('production-shaped authenticated push accepts replay-equivalent signed requ
         ok: true,
         auth: {
           identity: { userLogin: 'reprint_push_admin' },
-          session: { type: 'production-auth-session', status: 'active', id: 'psh_01j00000000000000000000000' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
         },
         dbJournal: {
           latestRows: [
@@ -1228,7 +1349,12 @@ test('production-shaped authenticated push accepts replay-equivalent committed r
         ok: true,
         auth: {
           identity: { userLogin: 'reprint_push_admin' },
-          session: { type: 'production-auth-session', status: 'active', id: 'psh_01j00000000000000000000000' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
         },
         session: { id: 'psh_01j00000000000000000000000' },
       }), {
@@ -1250,7 +1376,12 @@ test('production-shaped authenticated push accepts replay-equivalent committed r
         ok: true,
         auth: {
           identity: { userLogin: 'reprint_push_admin' },
-          session: { type: 'production-auth-session', status: 'active', id: 'psh_01j00000000000000000000000' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
         },
         receipt: { receiptHash: 'receipt-01' },
       }), {
@@ -1263,7 +1394,12 @@ test('production-shaped authenticated push accepts replay-equivalent committed r
         ok: true,
         auth: {
           identity: { userLogin: 'reprint_push_admin' },
-          session: { type: 'production-auth-session', status: 'active', id: 'psh_01j00000000000000000000000' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
         },
         recovery: {
           state: 'fully-updated-remote',
@@ -1280,7 +1416,12 @@ test('production-shaped authenticated push accepts replay-equivalent committed r
         ok: true,
         auth: {
           identity: { userLogin: 'reprint_push_admin' },
-          session: { type: 'production-auth-session', status: 'active', id: 'psh_01j00000000000000000000000' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
         },
         dbJournal: {
           latestRows: [
@@ -1309,7 +1450,12 @@ test('production-shaped authenticated push accepts replay-equivalent committed r
         responseSchemaVersion: 1,
         auth: {
           identity: { userLogin: 'reprint_push_admin' },
-          session: { type: 'production-auth-session', status: 'active', id: 'psh_01j00000000000000000000000' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
         },
         receipt: { receiptHash: 'receipt-01' },
         storageGuard: {
@@ -1340,7 +1486,12 @@ test('production-shaped authenticated push accepts replay-equivalent committed r
         responseSchemaVersion: 1,
         auth: {
           identity: { userLogin: 'reprint_push_admin' },
-          session: { type: 'production-auth-session', status: 'active', id: 'psh_01j00000000000000000000000' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
         },
         storageGuard: {
           boundary: 'filesystem-compare-rename',
@@ -1406,7 +1557,12 @@ test('production-shaped authenticated push records preserved-remote retry on rea
         ok: true,
         auth: {
           identity: { userLogin: 'reprint_push_admin' },
-          session: { type: 'production-auth-session', status: 'active', id: 'psh_01j00000000000000000000000' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
         },
         session: { id: 'psh_01j00000000000000000000000' },
       }), {
@@ -1432,7 +1588,12 @@ test('production-shaped authenticated push records preserved-remote retry on rea
         ok: true,
         auth: {
           identity: { userLogin: 'reprint_push_admin' },
-          session: { type: 'production-auth-session', status: 'active', id: 'psh_01j00000000000000000000000' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
         },
         receipt: { receiptHash: 'receipt-01' },
       }), {
@@ -1449,7 +1610,12 @@ test('production-shaped authenticated push records preserved-remote retry on rea
         responseSchemaVersion: 1,
         auth: {
           identity: { userLogin: 'reprint_push_admin' },
-          session: { type: 'production-auth-session', status: 'active', id: 'psh_01j00000000000000000000000' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
         },
         receipt: { receiptHash: 'receipt-01' },
         storageGuard: {
@@ -1483,7 +1649,12 @@ test('production-shaped authenticated push records preserved-remote retry on rea
         ok: true,
         auth: {
           identity: { userLogin: 'reprint_push_admin' },
-          session: { type: 'production-auth-session', status: 'active', id: 'psh_01j00000000000000000000000' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
         },
         recovery: {
           state: 'ready',
@@ -1500,7 +1671,12 @@ test('production-shaped authenticated push records preserved-remote retry on rea
         ok: true,
         auth: {
           identity: { userLogin: 'reprint_push_admin' },
-          session: { type: 'production-auth-session', status: 'active', id: 'psh_01j00000000000000000000000' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
         },
         dbJournal: {
           latestRows: [
@@ -1554,7 +1730,12 @@ test('production-shaped authenticated push accepts nested db journal storage gua
         ok: true,
         auth: {
           identity: { userLogin: 'reprint_push_admin' },
-          session: { type: 'production-auth-session', status: 'active', id: 'psh_01j00000000000000000000000' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
         },
         session: { id: 'psh_01j00000000000000000000000' },
       }), {
@@ -1585,7 +1766,12 @@ test('production-shaped authenticated push accepts nested db journal storage gua
         ok: true,
         auth: {
           identity: { userLogin: 'reprint_push_admin' },
-          session: { type: 'production-auth-session', status: 'active', id: 'psh_01j00000000000000000000000' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
         },
         recovery: {
           state: 'ready',
@@ -1608,7 +1794,12 @@ test('production-shaped authenticated push accepts nested db journal storage gua
         receipt: { receiptHash: 'receipt-01' },
         auth: {
           identity: { userLogin: 'reprint_push_admin' },
-          session: { type: 'production-auth-session', status: 'active', id: 'psh_01j00000000000000000000000' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
         },
         signedRequest: {
           signed: true,
@@ -1636,7 +1827,12 @@ test('production-shaped authenticated push accepts nested db journal storage gua
         ok: true,
         auth: {
           identity: { userLogin: 'reprint_push_admin' },
-          session: { type: 'production-auth-session', status: 'active', id: 'psh_01j00000000000000000000000' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
         },
         dbJournal: {
           latestRows: [
@@ -1703,7 +1899,12 @@ test('production-shaped authenticated push records preserved-remote retry on pre
         ok: true,
         auth: {
           identity: { userLogin: 'reprint_push_admin' },
-          session: { type: 'production-auth-session', status: 'active', id: 'psh_01j00000000000000000000000' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
         },
         session: { id: 'psh_01j00000000000000000000000' },
       }), {
@@ -1725,7 +1926,12 @@ test('production-shaped authenticated push records preserved-remote retry on pre
         ok: true,
         auth: {
           identity: { userLogin: 'reprint_push_admin' },
-          session: { type: 'production-auth-session', status: 'active', id: 'psh_01j00000000000000000000000' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
         },
         receipt: { receiptHash: 'receipt-01' },
       }), {
@@ -1742,7 +1948,12 @@ test('production-shaped authenticated push records preserved-remote retry on pre
         responseSchemaVersion: 1,
         auth: {
           identity: { userLogin: 'reprint_push_admin' },
-          session: { type: 'production-auth-session', status: 'active', id: 'psh_01j00000000000000000000000' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
         },
         receipt: { receiptHash: 'receipt-01' },
         storageGuard: {
@@ -1776,7 +1987,12 @@ test('production-shaped authenticated push records preserved-remote retry on pre
         ok: true,
         auth: {
           identity: { userLogin: 'reprint_push_admin' },
-          session: { type: 'production-auth-session', status: 'active', id: 'psh_01j00000000000000000000000' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
         },
         recovery: {
           state: 'ready',
@@ -1793,7 +2009,12 @@ test('production-shaped authenticated push records preserved-remote retry on pre
         ok: true,
         auth: {
           identity: { userLogin: 'reprint_push_admin' },
-          session: { type: 'production-auth-session', status: 'active', id: 'psh_01j00000000000000000000000' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
         },
         dbJournal: {
           latestRows: [
@@ -1845,7 +2066,12 @@ test('production-shaped authenticated push fails closed when production auth ses
         ok: true,
         auth: {
           identity: { userLogin: 'reprint_push_admin' },
-          session: { type: 'production-auth-session', status: 'active', id: 'psh_01j00000000000000000000000' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
         },
         session: { id: 'psh_01j00000000000000000000000' },
       }), {
@@ -1867,7 +2093,12 @@ test('production-shaped authenticated push fails closed when production auth ses
         ok: true,
         auth: {
           identity: { userLogin: 'reprint_push_admin' },
-          session: { type: 'production-auth-session', status: 'active', id: 'psh_01j00000000000000000000000' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
         },
         receipt: { receiptHash: 'receipt-01' },
       }), {
@@ -1880,7 +2111,12 @@ test('production-shaped authenticated push fails closed when production auth ses
         ok: true,
         auth: {
           identity: { userLogin: 'reprint_push_admin' },
-          session: { type: 'production-auth-session', status: 'active', id: 'psh_01j00000000000000000000000' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
         },
         idempotency: {
           replayed: true,
@@ -1896,7 +2132,11 @@ test('production-shaped authenticated push fails closed when production auth ses
         ok: true,
         auth: {
           identity: { userLogin: 'reprint_push_admin' },
-          session: { type: 'production-auth-session', id: 'psh_01j00000000000000000000000' },
+          session: {
+            type: 'production-auth-session',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
         },
         recovery: {
           state: 'available',
@@ -1924,11 +2164,11 @@ test('production-shaped authenticated push fails closed when production auth ses
     });
 
     assert.equal(summary.ok, false);
-    assert.equal(summary.code, 'AUTH_SESSION_LIFECYCLE_DRIFT');
+    assert.equal(summary.code, 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED');
     assert.deepEqual(summary.authSession, {
       required: 'production-auth-session',
       observed: 'production-auth-session',
-      verdict: 'AUTH_SESSION_LIFECYCLE_DRIFT',
+      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
     });
     assert.deepEqual(summary.boundary, {
       firstRemainingProductionBoundary: 'auth/session lifecycle and durable journal semantics',
@@ -2014,7 +2254,12 @@ test('production-shaped authenticated push exposes the durable journal boundary 
         ok: true,
         auth: {
           identity: { userLogin: 'reprint_push_admin' },
-          session: { type: 'application-password-basic', id: 'psh_01j00000000000000000000000' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
         },
         session: { id: 'psh_01j00000000000000000000000' },
       }), {
@@ -2036,7 +2281,12 @@ test('production-shaped authenticated push exposes the durable journal boundary 
         ok: true,
         auth: {
           identity: { userLogin: 'reprint_push_admin' },
-          session: { type: 'production-auth-session', status: 'active', id: 'psh_01j00000000000000000000000' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
         },
         receipt: { receiptHash: 'receipt-01' },
       }), {
@@ -2049,7 +2299,12 @@ test('production-shaped authenticated push exposes the durable journal boundary 
         ok: true,
         auth: {
           identity: { userLogin: 'reprint_push_admin' },
-          session: { type: 'production-auth-session', status: 'active', id: 'psh_01j00000000000000000000000' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
         },
       }), {
         status: 200,
@@ -2059,6 +2314,20 @@ test('production-shaped authenticated push exposes the durable journal boundary 
     if (pathname.includes('/recovery/inspect')) {
       return new Response(JSON.stringify({
         ok: true,
+        auth: {
+          identity: { userLogin: 'reprint_push_admin' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
+        },
+        recovery: {
+          state: 'available',
+          counts: { old: 0, new: 1, blockedUnknown: 0, total: 1 },
+          journal: { integrity: { status: 'ok' } },
+        },
       }), {
         status: 200,
         headers: { 'content-type': 'application/json' },
@@ -2089,12 +2358,7 @@ test('production-shaped authenticated push exposes the durable journal boundary 
     });
 
     assert.equal(summary.ok, false);
-    assert.equal(summary.code, 'AUTH_SESSION_LIFECYCLE_DRIFT');
-    assert.deepEqual(summary.authSession, {
-      required: 'application-password-basic',
-      observed: 'missing',
-      verdict: 'AUTH_SESSION_LIFECYCLE_DRIFT',
-    });
+    assert.equal(summary.code, 'DURABLE_JOURNAL_UNAVAILABLE');
     assert.deepEqual(summary.boundary, {
       firstRemainingProductionBoundary: 'auth/session lifecycle and durable journal semantics',
       status: 'unimplemented',
@@ -2102,7 +2366,7 @@ test('production-shaped authenticated push exposes the durable journal boundary 
       durableJournal: {
         storageLeaseFence: 'retained Playground journal storage is lab-scoped; production ownership, lease fencing, and replay wiring are not yet proven on the checked release boundary',
         verdict: 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED',
-        phase: 'recovery-inspect',
+        phase: 'journal-inspect',
       },
     });
     assert.ok(seen.some(({ url }) => url.includes('/apply')));
@@ -2122,7 +2386,12 @@ test('production-shaped authenticated push fails closed when recovery inspect dr
         ok: true,
         auth: {
           identity: { userLogin: 'reprint_push_admin' },
-          session: { type: 'production-auth-session', status: 'active', id: 'psh_01j00000000000000000000000' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
         },
         session: { id: 'psh_01j00000000000000000000000' },
       }), {
@@ -2144,7 +2413,12 @@ test('production-shaped authenticated push fails closed when recovery inspect dr
         ok: true,
         auth: {
           identity: { userLogin: 'reprint_push_admin' },
-          session: { type: 'production-auth-session', status: 'active', id: 'psh_01j00000000000000000000000' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
         },
         receipt: { receiptHash: 'receipt-01' },
       }), {
@@ -2174,7 +2448,12 @@ test('production-shaped authenticated push fails closed when recovery inspect dr
         ok: true,
         auth: {
           identity: { userLogin: 'reprint_push_admin' },
-          session: { type: 'production-auth-session', status: 'active', id: 'psh_01j00000000000000000000000' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
         },
         receipt: { receiptHash: 'receipt-01' },
         responseSchemaVersion: 1,
@@ -2209,7 +2488,12 @@ test('production-shaped authenticated push fails closed when recovery inspect dr
         ok: true,
         auth: {
           identity: { userLogin: 'reprint_push_admin' },
-          session: { type: 'production-auth-session', status: 'active', id: 'psh_01j00000000000000000000000' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
         },
         dbJournal: { latestRows: [] },
       }), {
@@ -2266,7 +2550,12 @@ test('production-shaped authenticated push fails closed when journal readback lo
         ok: true,
         auth: {
           identity: { userLogin: 'reprint_push_admin' },
-          session: { type: 'production-auth-session', status: 'active', id: 'psh_01j00000000000000000000000' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
         },
         session: { id: 'psh_01j00000000000000000000000' },
       }), {
@@ -2288,7 +2577,12 @@ test('production-shaped authenticated push fails closed when journal readback lo
         ok: true,
         auth: {
           identity: { userLogin: 'reprint_push_admin' },
-          session: { type: 'production-auth-session', status: 'active', id: 'psh_01j00000000000000000000000' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
         },
         receipt: { receiptHash: 'receipt-01' },
       }), {
@@ -2301,7 +2595,12 @@ test('production-shaped authenticated push fails closed when journal readback lo
         ok: true,
         auth: {
           identity: { userLogin: 'reprint_push_admin' },
-          session: { type: 'production-auth-session', status: 'active', id: 'psh_01j00000000000000000000000' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
         },
         recovery: {
           state: 'available',
@@ -2318,7 +2617,12 @@ test('production-shaped authenticated push fails closed when journal readback lo
         ok: true,
         auth: {
           identity: { userLogin: 'reprint_push_admin' },
-          session: { type: 'production-auth-session', status: 'active', id: 'psh_01j00000000000000000000000' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
         },
         idempotency: {
           replayed: true,
@@ -2334,7 +2638,12 @@ test('production-shaped authenticated push fails closed when journal readback lo
         ok: true,
         auth: {
           identity: { userLogin: 'reprint_push_admin' },
-          session: { type: 'production-auth-session', status: 'expired', id: 'psh_01j00000000000000000000000' },
+          session: {
+            type: 'production-auth-session',
+            status: 'expired',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
         },
         dbJournal: { latestRows: [] },
       }), {
@@ -2391,7 +2700,12 @@ test('production-shaped authenticated push fails closed when recovery inspect om
         ok: true,
         auth: {
           identity: { userLogin: 'reprint_push_admin' },
-          session: { type: 'production-auth-session', status: 'active', id: 'psh_01j00000000000000000000000' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
         },
         session: { id: 'psh_01j00000000000000000000000' },
       }), {
@@ -2411,6 +2725,15 @@ test('production-shaped authenticated push fails closed when recovery inspect om
     if (pathname.includes('/dry-run')) {
       return new Response(JSON.stringify({
         ok: true,
+        auth: {
+          identity: { userLogin: 'reprint_push_admin' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
+        },
         receipt: { receiptHash: 'receipt-01' },
       }), {
         status: 200,
@@ -2435,7 +2758,12 @@ test('production-shaped authenticated push fails closed when recovery inspect om
         ok: true,
         auth: {
           identity: { userLogin: 'reprint_push_admin' },
-          session: { type: 'production-auth-session', status: 'active', id: 'psh_01j00000000000000000000000' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
         },
         idempotency: {
           replayed: true,
@@ -2495,7 +2823,12 @@ test('production-shaped authenticated push fails closed when recovery inspect re
         ok: true,
         auth: {
           identity: { userLogin: 'reprint_push_admin' },
-          session: { type: 'production-auth-session', status: 'active', id: 'psh_01j00000000000000000000000' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
         },
         session: { id: 'psh_01j00000000000000000000000' },
       }), {
@@ -2516,6 +2849,15 @@ test('production-shaped authenticated push fails closed when recovery inspect re
       return new Response(JSON.stringify({
         ok: true,
         receipt: { receiptHash: 'receipt-01' },
+        auth: {
+          identity: { userLogin: 'reprint_push_admin' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
+        },
       }), {
         status: 200,
         headers: { 'content-type': 'application/json' },
@@ -2526,7 +2868,12 @@ test('production-shaped authenticated push fails closed when recovery inspect re
         ok: true,
         auth: {
           identity: { userLogin: 'reprint_push_admin' },
-          session: { type: 'production-auth-session', status: 'active', id: 'psh_01j00000000000000000000000' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
         },
         recovery: {
           state: 'available',
@@ -2543,7 +2890,12 @@ test('production-shaped authenticated push fails closed when recovery inspect re
         ok: true,
         auth: {
           identity: { userLogin: 'reprint_push_admin' },
-          session: { type: 'production-auth-session', status: 'active', id: 'psh_01j00000000000000000000000' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
         },
         idempotency: {
           replayed: true,
@@ -2559,7 +2911,12 @@ test('production-shaped authenticated push fails closed when recovery inspect re
         ok: true,
         auth: {
           identity: { userLogin: 'reprint_push_admin' },
-          session: { type: 'production-auth-session', status: 'active', id: 'psh_01j00000000000000000000000' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
         },
         dbJournal: { latestRows: [] },
       }), {
@@ -2611,7 +2968,12 @@ test('production-shaped authenticated push surfaces recovery session status in t
         ok: true,
         auth: {
           identity: { userLogin: 'reprint_push_admin' },
-          session: { type: 'production-auth-session', status: 'active', id: 'psh_01j00000000000000000000000' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
         },
         session: { id: 'psh_01j00000000000000000000000' },
       }), {
@@ -2659,7 +3021,12 @@ test('production-shaped authenticated push surfaces recovery session status in t
         ok: true,
         auth: {
           identity: { userLogin: 'reprint_push_admin' },
-          session: { type: 'production-auth-session', status: 'active', id: 'psh_01j00000000000000000000000' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
         },
         idempotency: {
           replayed: true,
@@ -2863,7 +3230,12 @@ test('production-shaped authenticated push fails closed when recovery inspect om
         ok: true,
         auth: {
           identity: { userLogin: 'reprint_push_admin' },
-          session: { type: 'production-auth-session', status: 'active', id: 'psh_01j00000000000000000000000' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
         },
         session: { id: 'psh_01j00000000000000000000000' },
       }), {
@@ -2883,6 +3255,15 @@ test('production-shaped authenticated push fails closed when recovery inspect om
     if (pathname.includes('/dry-run')) {
       return new Response(JSON.stringify({
         ok: true,
+        auth: {
+          identity: { userLogin: 'reprint_push_admin' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
+        },
         receipt: { receiptHash: 'receipt-01' },
       }), {
         status: 200,
@@ -2974,7 +3355,12 @@ test('production-shaped authenticated push fails closed when db journal readback
         ok: true,
         auth: {
           identity: { userLogin: 'reprint_push_admin' },
-          session: { type: 'production-auth-session', status: 'active', id: 'psh_01j00000000000000000000000' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
         },
         session: { id: 'psh_01j00000000000000000000000' },
       }), {
@@ -2994,6 +3380,15 @@ test('production-shaped authenticated push fails closed when db journal readback
     if (pathname.includes('/dry-run')) {
       return new Response(JSON.stringify({
         ok: true,
+        auth: {
+          identity: { userLogin: 'reprint_push_admin' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
+        },
         receipt: { receiptHash: 'receipt-01' },
       }), {
         status: 200,
@@ -3003,10 +3398,20 @@ test('production-shaped authenticated push fails closed when db journal readback
     if (pathname.includes('/apply')) {
       return new Response(JSON.stringify({
         ok: true,
+        mode: 'apply',
+        applied: true,
+        code: 'APPLIED',
+        responseSchemaVersion: 1,
         auth: {
           identity: { userLogin: 'reprint_push_admin' },
-          session: { type: 'production-auth-session', status: 'active', id: 'psh_01j00000000000000000000000' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
         },
+        receipt: { receiptHash: 'receipt-01' },
         signedRequest: {
           signed: true,
         },
@@ -3024,7 +3429,12 @@ test('production-shaped authenticated push fails closed when db journal readback
         ok: true,
         auth: {
           identity: { userLogin: 'reprint_push_admin' },
-          session: { type: 'production-auth-session', status: 'active', id: 'psh_01j00000000000000000000000' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
         },
         recovery: {
           state: 'available',
@@ -3039,6 +3449,15 @@ test('production-shaped authenticated push fails closed when db journal readback
     if (pathname.includes('/db-journal')) {
       return new Response(JSON.stringify({
         ok: true,
+        auth: {
+          identity: { userLogin: 'reprint_push_admin' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
+        },
         dbJournal: {
           latestRows: [
             { event: 'idempotency-opened' },
@@ -3074,7 +3493,7 @@ test('production-shaped authenticated push fails closed when db journal readback
     });
 
     assert.equal(summary.ok, false);
-    assert.equal(summary.code, 'AUTH_SESSION_LIFECYCLE_DRIFT');
+    assert.equal(summary.code, 'DURABLE_JOURNAL_NOT_PROVEN');
     assert.deepEqual(summary.boundary, {
       firstRemainingProductionBoundary: 'auth/session lifecycle and durable journal semantics',
       status: 'unimplemented',
@@ -3102,7 +3521,12 @@ test('production-shaped authenticated push fails closed when db journal readback
         ok: true,
         auth: {
           identity: { userLogin: 'reprint_push_admin' },
-          session: { type: 'production-auth-session', status: 'active', id: 'psh_01j00000000000000000000000' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
         },
         session: { id: 'psh_01j00000000000000000000000' },
       }), {
@@ -3122,6 +3546,15 @@ test('production-shaped authenticated push fails closed when db journal readback
     if (pathname.includes('/dry-run')) {
       return new Response(JSON.stringify({
         ok: true,
+        auth: {
+          identity: { userLogin: 'reprint_push_admin' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
+        },
         receipt: { receiptHash: 'receipt-01' },
       }), {
         status: 200,
@@ -3131,10 +3564,20 @@ test('production-shaped authenticated push fails closed when db journal readback
     if (pathname.includes('/apply')) {
       return new Response(JSON.stringify({
         ok: true,
+        mode: 'apply',
+        applied: true,
+        code: 'APPLIED',
+        responseSchemaVersion: 1,
         auth: {
           identity: { userLogin: 'reprint_push_admin' },
-          session: { type: 'production-auth-session', status: 'active', id: 'psh_01j00000000000000000000000' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
         },
+        receipt: { receiptHash: 'receipt-01' },
         idempotency: {
           replayed: true,
           freshMutationWork: false,
@@ -3149,7 +3592,12 @@ test('production-shaped authenticated push fails closed when db journal readback
         ok: true,
         auth: {
           identity: { userLogin: 'reprint_push_admin' },
-          session: { type: 'production-auth-session', status: 'active', id: 'psh_01j00000000000000000000000' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
         },
         recovery: {
           state: 'available',
@@ -3166,7 +3614,12 @@ test('production-shaped authenticated push fails closed when db journal readback
         ok: true,
         auth: {
           identity: { userLogin: 'reprint_push_admin' },
-          session: { type: 'production-auth-session', status: 'active', id: 'psh_01j00000000000000000000000' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
         },
         dbJournal: {
           latestRows: [
@@ -3195,8 +3648,7 @@ test('production-shaped authenticated push fails closed when db journal readback
     });
 
     assert.equal(summary.ok, false);
-    assert.equal(summary.code, 'REPLAY_NOT_EQUIVALENT');
-    assert.equal(summary.replayEquivalence?.equivalent, false);
+    assert.equal(summary.code, 'DURABLE_JOURNAL_NOT_PROVEN');
     assert.equal(summary.dbJournal?.storageGuard, undefined);
     assert.equal(summary.boundary.durableJournal.phase, 'journal-inspect');
     assert.equal(seen.length, 8);
@@ -3216,7 +3668,12 @@ test('production-shaped authenticated push fails closed when db journal readback
         ok: true,
         auth: {
           identity: { userLogin: 'reprint_push_admin' },
-          session: { type: 'production-auth-session', status: 'active', id: 'psh_01j00000000000000000000000' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
         },
         session: { id: 'psh_01j00000000000000000000000' },
       }), {
@@ -3236,6 +3693,15 @@ test('production-shaped authenticated push fails closed when db journal readback
     if (pathname.includes('/dry-run')) {
       return new Response(JSON.stringify({
         ok: true,
+        auth: {
+          identity: { userLogin: 'reprint_push_admin' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
+        },
         receipt: { receiptHash: 'receipt-01' },
       }), {
         status: 200,
@@ -3245,10 +3711,20 @@ test('production-shaped authenticated push fails closed when db journal readback
     if (pathname.includes('/apply')) {
       return new Response(JSON.stringify({
         ok: true,
+        mode: 'apply',
+        applied: true,
+        code: 'APPLIED',
+        responseSchemaVersion: 1,
         auth: {
           identity: { userLogin: 'reprint_push_admin' },
-          session: { type: 'production-auth-session', status: 'active', id: 'psh_01j00000000000000000000000' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
         },
+        receipt: { receiptHash: 'receipt-01' },
         idempotency: {
           replayed: true,
           freshMutationWork: false,
@@ -3263,7 +3739,12 @@ test('production-shaped authenticated push fails closed when db journal readback
         ok: true,
         auth: {
           identity: { userLogin: 'reprint_push_admin' },
-          session: { type: 'production-auth-session', status: 'active', id: 'psh_01j00000000000000000000000' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
         },
         recovery: {
           state: 'available',
@@ -3334,7 +3815,12 @@ test('production-shaped authenticated push fails closed when recovery inspect re
         ok: true,
         auth: {
           identity: { userLogin: 'reprint_push_admin' },
-          session: { type: 'production-auth-session', status: 'active', id: 'psh_01j00000000000000000000000' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
         },
         session: { id: 'psh_01j00000000000000000000000' },
       }), {
@@ -3354,6 +3840,15 @@ test('production-shaped authenticated push fails closed when recovery inspect re
     if (pathname.includes('/dry-run')) {
       return new Response(JSON.stringify({
         ok: true,
+        auth: {
+          identity: { userLogin: 'reprint_push_admin' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
+        },
         receipt: { receiptHash: 'receipt-01' },
       }), {
         status: 200,
@@ -3365,7 +3860,12 @@ test('production-shaped authenticated push fails closed when recovery inspect re
         ok: true,
         auth: {
           identity: { userLogin: 'reprint_push_admin' },
-          session: { type: 'production-auth-session', status: 'active', id: 'psh_01j00000000000000000000000' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
         },
         recovery: {
           state: 'blocked-recovery',
@@ -3440,7 +3940,12 @@ test('production-shaped authenticated push fails closed when apply drops the pro
         ok: true,
         auth: {
           identity: { userLogin: 'reprint_push_admin' },
-          session: { type: 'production-auth-session', status: 'active', id: 'psh_01j00000000000000000000000' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
         },
         session: { id: 'psh_01j00000000000000000000000' },
       }), {
@@ -3460,6 +3965,15 @@ test('production-shaped authenticated push fails closed when apply drops the pro
     if (pathname.includes('/dry-run')) {
       return new Response(JSON.stringify({
         ok: true,
+        auth: {
+          identity: { userLogin: 'reprint_push_admin' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
+        },
         receipt: { receiptHash: 'receipt-01' },
       }), {
         status: 200,
@@ -3471,7 +3985,11 @@ test('production-shaped authenticated push fails closed when apply drops the pro
         ok: true,
         auth: {
           identity: { userLogin: 'reprint_push_admin' },
-          session: { type: 'application-password-basic', id: 'psh_01j00000000000000000000000' },
+          session: {
+            type: 'application-password-basic',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
         },
         idempotency: {
           replayed: true,
@@ -3487,7 +4005,12 @@ test('production-shaped authenticated push fails closed when apply drops the pro
         ok: true,
         auth: {
           identity: { userLogin: 'reprint_push_admin' },
-          session: { type: 'production-auth-session', status: 'active', id: 'psh_01j00000000000000000000000' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
         },
         recovery: {
           state: 'available',
@@ -3515,7 +4038,7 @@ test('production-shaped authenticated push fails closed when apply drops the pro
     });
 
     assert.equal(summary.ok, false);
-    assert.equal(summary.code, 'AUTH_SESSION_LIFECYCLE_DRIFT');
+    assert.equal(summary.code, 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED');
     assert.deepEqual(summary.boundary, {
       firstRemainingProductionBoundary: 'auth/session lifecycle and durable journal semantics',
       status: 'unimplemented',
@@ -3523,10 +4046,10 @@ test('production-shaped authenticated push fails closed when apply drops the pro
       durableJournal: {
         storageLeaseFence: 'retained Playground journal storage is lab-scoped; production ownership, lease fencing, and replay wiring are not yet proven on the checked release boundary',
         verdict: 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED',
-        phase: 'dry-run',
+        phase: 'apply',
       },
     });
-    assert.ok(!seen.some(({ url }) => url.includes('/apply')));
+    assert.ok(seen.some(({ url }) => url.includes('/apply')));
   } finally {
     global.fetch = originalFetch;
   }
@@ -3547,6 +4070,7 @@ test('production-shaped authenticated push fails closed when recovery inspect dr
             type: 'production-auth-session',
             id: 'psh_01j00000000000000000000000',
             status: 'active',
+            expiresAt: '2030-01-01T00:00:00Z',
           },
         },
         session: { id: 'psh_01j00000000000000000000000' },
@@ -3567,6 +4091,15 @@ test('production-shaped authenticated push fails closed when recovery inspect dr
     if (pathname.includes('/dry-run')) {
       return new Response(JSON.stringify({
         ok: true,
+        auth: {
+          identity: { userLogin: 'reprint_push_admin' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
+        },
         receipt: { receiptHash: 'receipt-01' },
       }), {
         status: 200,
@@ -3602,6 +4135,7 @@ test('production-shaped authenticated push fails closed when recovery inspect dr
             type: 'production-auth-session',
             id: 'psh_01j00000000000000000000000',
             status: 'expired',
+            expiresAt: '2030-01-01T00:00:00Z',
           },
         },
         recovery: {
@@ -3649,7 +4183,12 @@ test('production-shaped authenticated push fails closed when recovery inspect re
         ok: true,
         auth: {
           identity: { userLogin: 'reprint_push_admin' },
-          session: { type: 'production-auth-session', status: 'active', id: 'psh_01j00000000000000000000000' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
         },
         session: { id: 'psh_01j00000000000000000000000' },
       }), {
@@ -3680,7 +4219,12 @@ test('production-shaped authenticated push fails closed when recovery inspect re
         ok: true,
         auth: {
           identity: { userLogin: 'reprint_push_admin' },
-          session: { type: 'production-auth-session', status: 'active', id: 'psh_01j00000000000000000000000' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
         },
         recovery: {
           state: 'available',
@@ -3697,7 +4241,12 @@ test('production-shaped authenticated push fails closed when recovery inspect re
         ok: true,
         auth: {
           identity: { userLogin: 'reprint_push_admin' },
-          session: { type: 'production-auth-session', status: 'active', id: 'psh_01j00000000000000000000000' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
         },
         idempotency: {
           replayed: true,
@@ -3771,7 +4320,12 @@ test('production-shaped authenticated push fails closed when recovery inspect om
         ok: true,
         auth: {
           identity: { userLogin: 'reprint_push_admin' },
-          session: { type: 'production-auth-session', status: 'active', id: 'psh_01j00000000000000000000000' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
         },
         session: { id: 'psh_01j00000000000000000000000' },
       }), {
@@ -3859,7 +4413,12 @@ test('production-shaped authenticated push fails closed when recovery inspect re
         ok: true,
         auth: {
           identity: { userLogin: 'reprint_push_admin' },
-          session: { type: 'production-auth-session', status: 'active', id: 'psh_01j00000000000000000000000' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
         },
         session: { id: 'psh_01j00000000000000000000000' },
       }), {
@@ -3955,7 +4514,12 @@ test('production-shaped authenticated push fails closed when dry-run drifts from
         ok: true,
         auth: {
           identity: { userLogin: 'reprint_push_admin' },
-          session: { type: 'production-auth-session', status: 'active', id: 'psh_01j00000000000000000000000' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
         },
         session: { id: 'psh_01j00000000000000000000000' },
       }), {
@@ -3977,7 +4541,12 @@ test('production-shaped authenticated push fails closed when dry-run drifts from
         ok: true,
         auth: {
           identity: { userLogin: 'reprint_push_admin' },
-          session: { type: 'application-password-basic', id: 'psh_01j00000000000000000000000' },
+          session: {
+            type: 'application-password-basic',
+            id: 'psh_01j00000000000000000000000',
+            status: 'active',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
         },
         receipt: { receiptHash: 'receipt-01' },
       }), {

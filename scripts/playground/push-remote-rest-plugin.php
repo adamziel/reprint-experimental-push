@@ -2077,7 +2077,7 @@ function reprint_push_lab_rest_verify_signed_request(WP_REST_Request $request, s
             'nonceHash' => hash('sha256', $nonce),
             'signingKeyHash' => $signing_key_hash,
             'session' => [
-                'id' => $mode === 'preflight' ? $session_id : null,
+                'id' => $session_id,
                 'sessionHash' => (string) ($session['sessionHash'] ?? ''),
                 'issuedAt' => (string) ($session['issuedAt'] ?? ''),
                 'expiresAt' => (string) ($session['expiresAt'] ?? ''),
@@ -2704,11 +2704,18 @@ function reprint_push_lab_rest_auth_evidence(WP_REST_Request $request): array
     $auth = reprint_push_lab_rest_basic_auth_context($request);
     $user = wp_get_current_user();
     $package_mode = reprint_push_lab_rest_package_mode_enabled();
+    $signature = reprint_push_lab_rest_signature_context($request);
     $session_type = is_array($auth)
         ? ($package_mode ? 'production-auth-session' : $auth['type'])
         : null;
     $session_status = is_array($auth)
         ? ($package_mode ? 'active' : ($auth['status'] ?? 'active'))
+        : null;
+    $session_id = is_array($auth)
+        ? ($package_mode ? ($signature['session']['id'] ?? null) : ($auth['sessionId'] ?? null))
+        : null;
+    $session_expires_at = is_array($auth)
+        ? ($package_mode ? ($signature['session']['expiresAt'] ?? null) : ($auth['expiresAt'] ?? null))
         : null;
 
     return [
@@ -2723,6 +2730,7 @@ function reprint_push_lab_rest_auth_evidence(WP_REST_Request $request): array
             ],
         ],
         'session' => [
+            'id' => $session_id,
             'type' => $session_type,
             'verifier' => is_array($auth) ? ($auth['verifier'] ?? null) : null,
             'applicationPasswordUuid' => is_array($auth) ? $auth['applicationPasswordUuid'] : null,
@@ -2733,7 +2741,7 @@ function reprint_push_lab_rest_auth_evidence(WP_REST_Request $request): array
             'status' => $session_status,
             'revoked' => is_array($auth) ? ($package_mode ? false : (bool) ($auth['revoked'] ?? false)) : false,
             'cleanedUp' => is_array($auth) ? ($package_mode ? false : (bool) ($auth['cleanedUp'] ?? false)) : false,
-            'expiresAt' => is_array($auth) ? ($package_mode ? null : ($auth['expiresAt'] ?? null)) : null,
+            'expiresAt' => $session_expires_at,
             'playgroundFallback' => is_array($auth)
                 ? ($package_mode ? false : (bool) ($auth['playgroundFallback'] ?? false))
                 : false,
