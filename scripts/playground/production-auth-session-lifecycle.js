@@ -235,6 +235,19 @@ export function evaluateProductionAuthSessionLifecycleSummary(summary, now = Dat
     if (!lifecycle.ok) {
       return lifecycle;
     }
+
+    if (
+      observation.step !== null
+      && observation.step !== undefined
+      && observation.step !== 'preflight'
+      && !isAuthSessionReadStep(observation.step)
+    ) {
+      return {
+        ok: false,
+        required: 'preserved read',
+        observed: observation.step || 'missing',
+      };
+    }
   }
 
   return {
