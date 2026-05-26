@@ -4493,6 +4493,16 @@ test('safe fast paths retain all gate proofs and stay non-rejectable', () => {
   );
   assert.ok(
     model.safeFastPaths.some((fastPath) =>
+      fastPath.allowedShortcut === 'reuse-planned-dependency-graph-and-remote-index-cursor-to-size-bounded-plugin-update-retry-windows' &&
+      fastPath.guardrails.includes('dependency-graph-stays-planning-evidence-only') &&
+      fastPath.guardrails.includes('remote-index-cursor-stays-planning-evidence-only') &&
+      fastPath.gateProofs.skip.includes('planned dependency graph together with a remote-index cursor') &&
+      fastPath.gateProofs.recovery.includes('guarded finalize record')
+    ),
+    'planned dependency graphs and remote index cursors can size plugin-update retry windows without weakening recovery evidence',
+  );
+  assert.ok(
+    model.safeFastPaths.some((fastPath) =>
       fastPath.allowedShortcut === 'compress-release-manifest-and-reuse-cursor-to-size-bounded-release-bundle-fanout' &&
       fastPath.gateProofs.skip.includes('compressed release manifest') &&
       fastPath.gateProofs.recovery.includes('later durable receipts still classify pause or crash')

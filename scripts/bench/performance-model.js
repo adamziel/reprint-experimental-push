@@ -1713,6 +1713,27 @@ export const SAFE_FAST_PATHS = Object.freeze([
     splitsAtomicGroup: false,
     publishesStagedDataEarly: false,
   },
+  {
+    area: 'database-row-batching',
+    reduces: ['planning-round-trips', 'duplicate-dependency-recomputation', 'retry-window-recomputation'],
+    allowedShortcut: 'reuse-planned-dependency-graph-and-remote-index-cursor-to-size-bounded-plugin-update-retry-windows',
+    guardrails: [
+      'dependency-graph-stays-planning-evidence-only',
+      'remote-index-cursor-stays-planning-evidence-only',
+      'plugin-update-retry-window-revalidates-before-write',
+    ],
+    gateProofs: {
+      skip: 'a planned dependency graph together with a remote-index cursor can trim repeat plugin-update retry-window planning without recomputing the same dependency shape',
+      live: 'each later plugin-update write still rechecks its own live resource precondition before visibility changes',
+      group: 'the dependency graph and cursor only narrow planning inside the same planned plugin-update bundle and never widen the atomic-group barrier',
+      recovery: 'the dependency graph and cursor are advisory; durable receipts, row batch records, and the guarded finalize record still classify pause, retry, or crash',
+    },
+    visibilityBoundary: 'planning-only-for-plugin-update-retry-windows',
+    failureEvidence: 'planned dependency graph plus remote-index cursor and guarded finalize record',
+    bypassesLivePreconditions: false,
+    splitsAtomicGroup: false,
+    publishesStagedDataEarly: false,
+  },
 ]);
 
 export const FAILURE_INJECTION_BOUNDARIES = Object.freeze([
