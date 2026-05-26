@@ -49,6 +49,8 @@ This is the short operational version of the planner invariant policy.
   even if unrelated remote-only plugin drift is present.
 - A file delete must stop when it would hide a live remote descendant, even if
   unrelated remote-only plugin drift is present.
+- A file delete must also stop when the hidden live remote descendant is a
+  special file entry, even if unrelated remote-only plugin drift is present.
 - The same delete rule also holds when the matching resource is a restored file
   and a file type swap appears in the same plan; both matching resources stay
   `already-in-sync` and remote-only plugin drift remains preserved.
