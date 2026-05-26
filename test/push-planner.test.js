@@ -23063,6 +23063,7 @@ test('production durable journal claims fail closed when restart inspection adve
   assert.equal(error.code, 'PRODUCTION_DURABLE_JOURNAL_UNSUPPORTED');
   assert.deepEqual(error.details.missingDependency, [
     'supported production recovery journal adapter surface',
+    'restart-readable remote recovery artifact ownership',
     'restart-readable recovery remote artifact references',
   ]);
 });
@@ -23224,6 +23225,7 @@ test('production durable journal claims fail closed when a remote artifact refer
   assert.equal(error.code, 'PRODUCTION_DURABLE_JOURNAL_UNSUPPORTED');
   assert.deepEqual(error.details.missingDependency, [
     'supported production recovery journal adapter surface',
+    'restart-readable remote recovery artifact ownership',
     'restart-readable recovery remote artifact references',
   ]);
 });
@@ -23277,6 +23279,7 @@ test('production durable journal claims fail closed when the writer advertises a
   assert.equal(error.code, 'PRODUCTION_DURABLE_JOURNAL_UNSUPPORTED');
   assert.deepEqual(error.details.missingDependency, [
     'supported production recovery journal adapter surface',
+    'restart-readable remote recovery artifact ownership',
     'restart-readable recovery remote artifact references',
   ]);
 });
