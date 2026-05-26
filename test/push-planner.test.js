@@ -23272,12 +23272,63 @@ test('blocks unsupported special file aliases while preserving remote-only plugi
     assert.equal(mutationFor(plan, resourceKey), undefined);
     assert.equal(plan.conflicts.length, 0);
     assert.equal(blocker.class, 'unsupported-special-file-resource');
+    assert.equal(blocker.resourceKind, 'special-file');
     assert.equal(blocker.resourceKey, resourceKey);
     assert.equal(blocker.reason, 'Special file entries are not yet supported by the planner.');
     assert.equal(pluginDecision.decision, 'keep-remote');
     assert.equal(planJson.includes(JSON.stringify(localValue)), false);
     assert.equal(planJson.includes(JSON.stringify(baseValue)), false);
     assert.equal(remote.plugins.forms.description, 'remote-only plugin drift');
+  }
+});
+
+test('blocks unsupported special file aliases while preserving a matching independent edit and remote-only plugin removals', () => {
+  const specialFileTypes = [
+    ['block-device', { inode: 7201 }, { inode: 9201 }],
+    ['character', { major: 3, minor: 4 }, { major: 3, minor: 8 }],
+    ['char-device', { major: 5, minor: 2 }, { major: 5, minor: 6 }],
+    ['named-pipe', { mode: '0600' }, { mode: '0644' }],
+  ];
+
+  for (const [type, baseValue, localValue] of specialFileTypes) {
+    const resourceKey = `file:wp-content/uploads/${type}`;
+    const base = baseSite();
+    base.files[`wp-content/uploads/${type}`] = { type, ...baseValue };
+    base.files['about.php'] = '<?php echo "base about";';
+
+    const local = baseSite();
+    local.files[`wp-content/uploads/${type}`] = { type, ...localValue };
+    local.files['about.php'] = '<?php echo "local about";';
+
+    const remote = baseSite();
+    remote.files[`wp-content/uploads/${type}`] = JSON.parse(JSON.stringify(base.files[`wp-content/uploads/${type}`]));
+    remote.files['about.php'] = '<?php echo "local about";';
+    delete remote.plugins.forms;
+    delete remote.files['wp-content/plugins/forms/forms.php'];
+
+    const plan = planFor(base, local, remote);
+    const blocker = plan.blockers[0];
+    const matchingEdit = decisionFor(plan, 'file:about.php');
+    const pluginDecision = decisionFor(plan, 'plugin:forms');
+    const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+    const planJson = JSON.stringify(plan);
+
+    assert.equal(plan.status, 'blocked');
+    assert.equal(plan.summary.mutations, 0);
+    assert.equal(mutationFor(plan, resourceKey), undefined);
+    assert.equal(plan.conflicts.length, 0);
+    assert.equal(blocker.class, 'unsupported-special-file-resource');
+    assert.equal(blocker.resourceKey, resourceKey);
+    assert.equal(blocker.reason, 'Special file entries are not yet supported by the planner.');
+    assert.equal(matchingEdit.decision, 'already-in-sync');
+    assert.equal(matchingEdit.change.localChange, 'update');
+    assert.equal(matchingEdit.change.remoteChange, 'update');
+    assert.equal(pluginDecision.decision, 'keep-remote');
+    assert.equal(pluginFileDecision.decision, 'keep-remote');
+    assert.equal(planJson.includes(JSON.stringify(localValue)), false);
+    assert.equal(planJson.includes(JSON.stringify(baseValue)), false);
+    assert.equal(remote.plugins.forms, undefined);
+    assert.equal(remote.files['wp-content/plugins/forms/forms.php'], undefined);
   }
 });
 

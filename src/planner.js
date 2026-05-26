@@ -2432,6 +2432,7 @@ function addUnsupportedSpecialFileBlocker(plan, {
   plan.blockers.push({
     id: `blocker-unsupported-special-file-resource-${plan.blockers.length + 1}`,
     class: support.className || 'unsupported-special-file-resource',
+    resourceKind: 'special-file',
     resource,
     resourceKey: resource.key,
     reason: support.reason || `Special file entry ${resource.key} is not yet supported by the planner.`,
