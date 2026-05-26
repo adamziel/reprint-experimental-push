@@ -3,12 +3,14 @@ Changed files:
 - [`.lane-output/final.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/critic/.lane-output/final.md)
 
 What changed:
-- Reclassified the current reliable head as `6beb5ed7c74509094d831bc4247541c4b684feae` from `git ls-remote`.
-- Kept the verdict at `0/4` because the commit only cleans up the release journal temp directory and still does not prove a production-backed auth/session lifecycle or a closed durable-journal ownership boundary on the checked release path.
+- Reclassified the current reliable head as `8a85d1da2b89b98a014fd24a1556940be2a5151e` from `git ls-remote`.
+- Kept the verdict at `0/4` because the commit only extracts the auth-session source command helper and wires it into the checked release verifier and proof test, but still does not prove a production-backed auth/session lifecycle or a closed durable-journal ownership boundary on the checked release path.
 
 Commands run:
 - `date '+%Y-%m-%d %H:%M:%S %Z (%z)'`
 - `git ls-remote origin refs/heads/lane/reliable-executor`
+- `git show --stat --oneline --no-renames --decorate=short --summary 8a85d1da2b89b98a014fd24a1556940be2a5151e`
+- `git show --no-renames --format=medium --unified=40 8a85d1da2b89b98a014fd24a1556940be2a5151e -- scripts/playground/auth-session-source-command.js scripts/playground/production-shaped-release-verify.mjs test/production-shaped-proof.test.js`
 
 Push result:
 - Not attempted yet

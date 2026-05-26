@@ -1,5 +1,51 @@
 # Critic Audit
 
+## 2026-05-26 14:42:16 CEST (+0200)
+
+No gate movement. `8a85d1da2b89b98a014fd24a1556940be2a5151e` is the current reliable head from `git ls-remote`; it only extracts the auth-session source command helper and wires it into the checked release verifier and proof test, which reduces duplication and keeps the auth-session source path aligned, but it still proves command-shape reuse rather than a production-backed auth/session lifecycle or a closed durable-journal ownership boundary on the release path. The verdict remains `0/4`.
+
+Changed files:
+- [`audits/critic.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/critic/audits/critic.md)
+- [`.lane-output/final.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/critic/.lane-output/final.md)
+
+Commands run:
+- `date '+%Y-%m-%d %H:%M:%S %Z (%z)'`
+- `git ls-remote origin refs/heads/lane/reliable-executor`
+- `git show --stat --oneline --no-renames --decorate=short --summary 8a85d1da2b89b98a014fd24a1556940be2a5151e`
+- `git show --no-renames --format=medium --unified=40 8a85d1da2b89b98a014fd24a1556940be2a5151e -- scripts/playground/auth-session-source-command.js scripts/playground/production-shaped-release-verify.mjs test/production-shaped-proof.test.js`
+
+Push result:
+- Not attempted yet
+
+Worktree status:
+- Modified tracked files: `audits/critic.md`, `.lane-output/final.md`
+- Branch: `lane/cycle-20260525-mainwindows-2349/critic-current-20260526-1408...origin/lane/critic`
+
+Next supervisor nudge:
+- Keep critic narrow and only reclassify again when `reliable-executor` lands checked-path production-backed auth/session lifecycle, durable-journal ownership, or preserved-remote retry proof that reaches the release boundary.
+
+## 2026-05-26 14:41:26 CEST (+0200)
+
+No gate movement. `2b9210975f6dba5cb0d7230a8a7a79b386be31a5` is the current reliable head from `git ls-remote`; it consumes the production auth session source on the checked release-verifier path and makes that source override stale environment credentials, which is a useful checked-path correctness improvement, but it still proves source selection rather than a production-backed auth/session lifecycle or a closed durable-journal ownership boundary on the release path. The verdict remains `0/4`.
+
+Changed files:
+- [`audits/critic.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/critic/audits/critic.md)
+- [`.lane-output/final.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/critic/.lane-output/final.md)
+
+Commands run:
+- `date '+%Y-%m-%d %H:%M:%S %Z (%z)'`
+- `git ls-remote origin refs/heads/lane/reliable-executor`
+
+Push result:
+- Not attempted yet
+
+Worktree status:
+- Modified tracked files: `audits/critic.md`, `.lane-output/final.md`
+- Branch: `lane/cycle-20260525-mainwindows-2349/critic-current-20260526-1408...origin/lane/critic`
+
+Next supervisor nudge:
+- Keep critic narrow and only reclassify again when `reliable-executor` lands checked-path production-backed auth/session lifecycle, durable-journal ownership, or preserved-remote retry proof that reaches the release boundary.
+
 ## 2026-05-26 14:39:16 CEST (+0200)
 
 No gate movement. `6beb5ed7c74509094d831bc4247541c4b684feae` is still the current reliable head from `git ls-remote`; it cleans up the release journal temp directory, which is useful recovery-boundary hygiene, but it still only hardens cleanup behavior and does not prove a production-backed auth/session lifecycle or a closed durable-journal ownership boundary on the checked release path. The verdict remains `0/4`.
