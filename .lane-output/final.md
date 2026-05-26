@@ -1,12 +1,12 @@
 Recovery lane handoff:
 
-- Timestamp: 2026-05-26 11:34:36 CEST (+0200)
-- No recovery-side code patch was needed this pass.
-- The checked recovery adapter surface is still present in `src/recovery-journal.js` via `openProductionRecoveryJournal()`, including `productionAdapter`, `supportedSurface`, `restartReadable`, `ownsJournal`, `journalPath`, `writerLease`, `artifactRefs`, `inspect()`, `flush()`, `close()`, and `assertCurrentClaim()`.
-- The owned recovery tests still pass, including the replay and failure-state coverage in `test/recovery-journal.test.js`.
-- `package.json` already exposes `verify:release`; the missing consumer wiring is in the release-verifier owner lane, not here.
-- Exact blocker: `reliable-executor` must wire `openProductionRecoveryJournal()` into the checked release verifier entrypoint that owns `verify:release`; if that consumer is absent from its worktree, it should name the missing file/API boundary concretely instead of handing this lane another recovery-side change request.
-- Current reliable head to classify/publicize: `5abb12dc` (`Fail closed on expired preflight sessions`).
+- Timestamp: 2026-05-26 12:00:00 CEST (+0200)
+- The recovery adapter now fails closed when `openProductionRecoveryJournal()` is called without an explicit fenced `writerLease`; it no longer synthesizes an implicit ownership claim.
+- `src/recovery-journal.js` keeps the production adapter restart-readable surface, but the owned journal is only constructible with a real plain-object lease that has a non-empty string `id`.
+- `test/recovery-journal.test.js` now covers both the supported adapter path and the fail-closed missing-lease path.
+- The owned recovery tests still pass.
+- The checked `verify:release` path still does not prove the live consumer boundary that would make the production recovery journal evidence release-gate material.
+- Exact blocker: the checked release path still lacks production-backed auth/session lifecycle proof on the real push flow, so `reliable-executor` must wire `openProductionRecoveryJournal()` into the `verify:release` consumer path or name the exact missing file/API boundary if that consumer is absent.
 
 Changed files:
 
@@ -15,12 +15,14 @@ Changed files:
 Commands:
 
 - `date '+%Y-%m-%d %H:%M:%S %Z (%z)'`
-- `sed -n '1,220p' supervision/README.md`
-- `sed -n '1,220p' supervision/lanes/no-data-loss-recovery.md`
-- `sed -n '1,220p' src/recovery-journal.js`
-- `sed -n '1,260p' src/recovery-inspect.js`
+- `rg -n "openProductionRecoveryJournal|production-recovery-journal|recovery-journal" src scripts test package.json`
+- `rg -n "verify:release|production-shaped-release-verify|release verify|release-verifier" scripts src test package.json`
+- `sed -n '1,260p' src/recovery-journal.js`
 - `sed -n '1,260p' test/recovery-journal.test.js`
-- `timeout 60s node --test test/recovery-journal.test.js`
+- `sed -n '1,240p' scripts/recovery/file-journal-restart-smoke.mjs`
+- `node -e "const p=require('./package.json'); console.log(p.scripts['verify:release'])"`
+- `sed -n '18390,18520p' test/push-planner.test.js`
+- `timeout 60s node --test --test-name-pattern='production recovery journal adapter' test/recovery-journal.test.js`
 
 Push result:
 

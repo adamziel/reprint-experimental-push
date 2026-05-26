@@ -192,6 +192,17 @@ test('production recovery journal adapter is restart-readable and release-path c
   assert.deepEqual(inspected.artifactRefs, { journal: filePath });
 });
 
+test('production recovery journal adapter fails closed when no explicit fenced writer lease is provided', () => {
+  const filePath = tempJournalPath();
+
+  assert.throws(() => {
+    openProductionRecoveryJournal(filePath, { truncate: true, now: fixedNow });
+  }, {
+    name: 'UnsupportedProductionRecoveryJournalError',
+    code: 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL',
+  });
+});
+
 test('restart inspection classifies fail-before mutation journal as old remote', () => {
   const filePath = tempJournalPath();
   const remote = baseSite();

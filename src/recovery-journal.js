@@ -108,7 +108,30 @@ export function openProductionRecoveryJournal(filePath, options = {}) {
     now: options.now,
     claimId: options.claimId || options.claim?.id || null,
   });
-  const writerLease = Object.hasOwn(options, 'writerLease') ? options.writerLease : { filePath };
+  const writerLease = Object.hasOwn(options, 'writerLease') ? options.writerLease : null;
+  if (!isValidProductionWriterLease(writerLease)) {
+    journal.close();
+    throw new UnsupportedProductionRecoveryJournalError(
+      'Production recovery journal support requires an explicit fenced writer lease.',
+      {
+        kind: 'production-recovery-journal',
+        productionAdapter: true,
+        supportedSurface: 'production-recovery-journal-adapter',
+        restartReadable: true,
+        ownsJournal: true,
+        ownsRemoteArtifact: Boolean(options.ownsRemoteArtifact),
+        writerLease,
+        journalPath: journal.filePath,
+        artifactRefs: Object.freeze({
+          journal: journal.filePath,
+          remote: Object.hasOwn(options, 'remoteArtifactPath') && typeof options.remoteArtifactPath === 'string'
+            ? options.remoteArtifactPath
+            : null,
+        }),
+        schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+      },
+    );
+  }
 
   return Object.freeze({
     kind: 'production-recovery-journal',
@@ -152,6 +175,24 @@ export function openProductionRecoveryJournal(filePath, options = {}) {
       journal.close();
     },
   });
+}
+
+function isValidProductionWriterLease(writerLease) {
+  return (
+    isStrictPlainObject(writerLease)
+    && Object.hasOwn(writerLease, 'id')
+    && typeof writerLease.id === 'string'
+    && writerLease.id.trim().length > 0
+  );
+}
+
+function isStrictPlainObject(value) {
+  if (!value || typeof value !== 'object') {
+    return false;
+  }
+
+  const prototype = Object.getPrototypeOf(value);
+  return prototype === Object.prototype || prototype === null;
 }
 
 export function openRecoveryJournal(filePath, options = {}) {
