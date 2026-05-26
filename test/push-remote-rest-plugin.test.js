@@ -2546,6 +2546,173 @@ test('checked recovery inspect evidence preserves conflicting accepted inline co
   });
 });
 
+test('checked db journal attachment preserves conflicting accepted inline storage-guard evidence instead of silently normalizing it', { skip: !hasPhp }, () => {
+  const result = runAttachCheckedDbJournalContract(
+    {
+      ok: false,
+      dbJournal: {
+        event: 'apply-rejected',
+        sequence: 18,
+        scope: 'checked live production-shaped journal surface; not local Playground fixture only',
+        acceptedOnCheckedBoundary: true,
+        ownership: {
+          ownsJournal: true,
+          restartReadable: true,
+          productionAdapter: 'custom-inline-adapter',
+        },
+        writerLease: {
+          strategy: 'claim-fenced-single-writer',
+          claimKeyUnique: true,
+          fsyncEvidence: true,
+          storageGuard: 'wpdb-single-statement-cas',
+          monotonicSequence: true,
+          restartReadable: true,
+          staleClaimRejected: true,
+        },
+        leaseFence: {
+          boundary: 'custom-inline-boundary',
+          claimKeyUnique: true,
+          fsyncEvidence: true,
+          monotonicSequence: true,
+          restartReadable: true,
+          staleClaimRejected: true,
+          writerLease: {
+            strategy: 'claim-fenced-single-writer',
+            claimKeyUnique: true,
+            fsyncEvidence: true,
+            storageGuard: 'wpdb-single-statement-cas',
+            monotonicSequence: true,
+            restartReadable: true,
+            staleClaimRejected: true,
+          },
+        },
+        storageGuard: {
+          boundary: 'custom-inline-boundary',
+          operation: 'compare-and-swap',
+          outcome: 'precondition-failed',
+        },
+      },
+    },
+    {
+      acceptedOnCheckedBoundary: true,
+      scope: 'checked live production-shaped journal surface; not local Playground fixture only',
+      ownership: {
+        ownsJournal: true,
+        restartReadable: true,
+        productionAdapter: 'wpdb-single-statement-cas',
+      },
+      writerLease: {
+        strategy: 'claim-fenced-single-writer',
+        claimKeyUnique: true,
+        fsyncEvidence: true,
+        storageGuard: 'wpdb-single-statement-cas',
+        monotonicSequence: true,
+        restartReadable: true,
+        staleClaimRejected: true,
+      },
+      leaseFence: {
+        boundary: 'wpdb-single-statement-cas',
+        claimKeyUnique: true,
+        fsyncEvidence: true,
+        monotonicSequence: true,
+        restartReadable: true,
+        staleClaimRejected: true,
+        writerLease: {
+          strategy: 'claim-fenced-single-writer',
+          claimKeyUnique: true,
+          fsyncEvidence: true,
+          storageGuard: 'wpdb-single-statement-cas',
+          monotonicSequence: true,
+          restartReadable: true,
+          staleClaimRejected: true,
+        },
+      },
+      latestRows: [
+        {
+          event: 'stale-claim-rejected',
+          result: {
+            storageGuard: {
+              boundary: 'wpdb-single-statement-cas',
+              operation: 'compare-and-swap',
+              outcome: 'precondition-failed',
+            },
+          },
+        },
+      ],
+      eventSummaries: [
+        { event: 'stale-claim-rejected', count: 1, latestId: 33 },
+      ],
+    },
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  assert.deepEqual(JSON.parse(result.stdout), {
+    ok: false,
+    dbJournal: {
+      event: 'apply-rejected',
+      sequence: 18,
+      scope: 'checked live production-shaped journal surface; not local Playground fixture only',
+      acceptedOnCheckedBoundary: true,
+      ownership: {
+        ownsJournal: true,
+        restartReadable: true,
+        productionAdapter: 'custom-inline-adapter',
+      },
+      writerLease: {
+        strategy: 'claim-fenced-single-writer',
+        claimKeyUnique: true,
+        fsyncEvidence: true,
+        storageGuard: 'wpdb-single-statement-cas',
+        monotonicSequence: true,
+        restartReadable: true,
+        staleClaimRejected: true,
+      },
+      leaseFence: {
+        boundary: 'custom-inline-boundary',
+        claimKeyUnique: true,
+        fsyncEvidence: true,
+        monotonicSequence: true,
+        restartReadable: true,
+        staleClaimRejected: true,
+        writerLease: {
+          strategy: 'claim-fenced-single-writer',
+          claimKeyUnique: true,
+          fsyncEvidence: true,
+          storageGuard: 'wpdb-single-statement-cas',
+          monotonicSequence: true,
+          restartReadable: true,
+          staleClaimRejected: true,
+        },
+      },
+      latestRows: [
+        {
+          event: 'stale-claim-rejected',
+          result: {
+            storageGuard: {
+              boundary: 'wpdb-single-statement-cas',
+              operation: 'compare-and-swap',
+              outcome: 'precondition-failed',
+            },
+          },
+        },
+      ],
+      eventSummaries: [
+        { event: 'stale-claim-rejected', count: 1, latestId: 33 },
+      ],
+      storageGuard: {
+        boundary: 'custom-inline-boundary',
+        operation: 'compare-and-swap',
+        outcome: 'precondition-failed',
+      },
+    },
+    storageGuard: {
+      boundary: 'wpdb-single-statement-cas',
+      operation: 'compare-and-swap',
+      outcome: 'precondition-failed',
+    },
+  });
+});
+
 test('db journal storage guard stays visible when only the checked top-level committed proof survives the trimmed summary', { skip: !hasPhp }, () => {
   const result = runDbJournalStorageGuard({
     acceptedOnCheckedBoundary: true,
