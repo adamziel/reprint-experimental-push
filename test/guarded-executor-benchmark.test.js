@@ -247,6 +247,23 @@ test('guarded benchmark blocks parallelism visibility without a measurement', ()
   assert.equal(blockers.includes('production-parallelism-limits-not-visible'), true);
 });
 
+test('guarded benchmark blocks parallelism visibility when the canonical limit surface is broken', () => {
+  const report = smallBenchmark();
+  const tampered = clone(report);
+
+  tampered.evidence.parallelism.parallelismLimitsVisible = true;
+  tampered.evidence.parallelism.parallelismLimitsMeasured = true;
+  tampered.evidence.parallelism.parallelismLimits.chunkUpload = 3;
+
+  const details = productionThroughputDetails(tampered);
+  const blockers = productionThroughputBlockers(tampered);
+
+  assert.equal(details.parallelismLimitsVisible, false);
+  assert.equal(details.parallelismLimitsCanonical, false);
+  assert.equal(blockers.includes('production-parallelism-limits-visible-without-canonical'), true);
+  assert.equal(blockers.includes('production-parallelism-limits-not-canonical'), true);
+});
+
 test('guarded benchmark blocks atomic-commit visibility when the metadata surface is hidden', () => {
   const report = smallBenchmark();
   const tampered = clone(report);

@@ -322,6 +322,16 @@ export function productionThroughputBlockers(report) {
     blockers.push('production-parallelism-limits-visible-without-measurement');
   }
   if (
+    report.evidence.parallelism?.parallelismLimitsVisible === true
+    && (
+      report.evidence.parallelism?.parallelismLimits?.chunkUpload !== DEFAULT_LIMITS.maxUploadConcurrency
+      || report.evidence.parallelism?.parallelismLimits?.fileHashing !== DEFAULT_LIMITS.maxHashConcurrency
+      || report.evidence.parallelism?.parallelismLimits?.dbBatchPerTable !== DEFAULT_LIMITS.maxDbConcurrencyPerTable
+    )
+  ) {
+    blockers.push('production-parallelism-limits-visible-without-canonical');
+  }
+  if (
     !Number.isFinite(report.resourceLimits?.memoryCeilingBytes)
     || !Number.isFinite(report.evidence.chunkReceipts.resumeCursor?.sizeBytes)
     || report.evidence.chunkReceipts.resumeCursor.sizeBytes > report.resourceLimits.memoryCeilingBytes
