@@ -42,7 +42,7 @@ The project is **not releasable as a production WordPress push path**.
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `5c4f60cc`
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `f9e95355`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `2af1ddda`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `7c394bcc`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `962cc2a8`
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` -> `0ca7b35d`
 - `origin/lane/cycle-20260525-mainwindows-2357/no-data-loss-invariants-graph-proof` -> `98c0ce26`
 - `origin/lane/cycle-20260525-restart-2340/feedback-supervisor` -> `ef3d911e`
@@ -111,7 +111,7 @@ but it did not change the release conclusion:
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now records
   `bfe116c7`, refreshing progress visibility only.
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now records
-  `3718bfa4`, refreshing the public progress freshness only.
+  `962cc2a8`, refreshing the public progress freshness only.
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` now records
   `432f82a9`, refreshing the audit snapshot only and not changing the release
   boundary.
