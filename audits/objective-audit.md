@@ -8,7 +8,7 @@ Fresh remote heads at audit time, checked on May 26, 2026:
 
 - `origin/lane/reliable-executor` -> `ffdc0a9b`
 - `origin/lane/no-data-loss-invariants` -> `9c70eba6`
-- `origin/lane/no-data-loss-recovery` -> `0c53048b`
+- `origin/lane/no-data-loss-recovery` -> `b0949e57`
 - `origin/lane/fast-paths` -> `1e3014e8`
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `1e3014e8`
 - `origin/lane/independent-auditor` -> `1d3b495e`
@@ -19,10 +19,10 @@ Fresh remote heads at audit time, checked on May 26, 2026:
 - `origin/lane/cycle-20260525-mainwindows-2349/same-plan-wordpress-graph-create` -> `e9cbf9d4`
 - `origin/lane/cycle-20260525-mainwindows-2357/no-data-loss-invariants-graph-proof` -> `98c0ce26`
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `b9bc7c95`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `23d3fb66`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `0278700d`
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` -> `5f256171`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-invariants` -> `9c70eba6`
-- `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `0c53048b`
+- `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `b0949e57`
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `1e3014e8`
 - `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration` -> `a3a900d7`
 - `origin/main` -> `e55864f4`
@@ -48,8 +48,9 @@ but it did not change the release conclusion:
   coverage, which strengthens the fail-closed boundary but still does not
   prove live source mutation on unsupported surfaces.
 - `origin/lane/no-data-loss-recovery` now fails closed on artifact references
-  at `0c53048b`. That narrows unsupported recovery claims, but it still does
-  not add production-backed journal ownership or replay proof.
+  and claim fencing at `b0949e57`. That narrows unsupported recovery claims,
+  but it still does not add production-backed journal ownership or replay
+  proof.
 - `origin/lane/fast-paths` now tightens receipt headroom checks at `1e3014e8`.
   That is still a fail-closed implementation improvement, not production
   release proof.
@@ -64,7 +65,7 @@ but it did not change the release conclusion:
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now
   refreshes the supervisor evidence snapshot at `b9bc7c95`.
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now
-  records the latest progress freshness handoff at `23d3fb66`.
+  records the latest progress freshness handoff at `0278700d`.
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` now
   hardens the live proof timeout diagnostics at `5f256171`.
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` now
