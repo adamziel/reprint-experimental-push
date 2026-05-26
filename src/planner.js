@@ -1153,6 +1153,21 @@ function wordpressGraphIdentitySupport({
 
   const referenceEvidence = references.map((reference) =>
     wordpressGraphReferenceEvidence(reference, resources, base, local, remote));
+  if (resource.table === 'wp_termmeta') {
+    const samePlanCreatedTermReferences = referenceEvidence
+      .filter((reference) =>
+        reference.relationshipType === 'termmeta-term'
+        && reference.targetChange.remote.state === 'absent'
+        && reference.targetChange.local.state === 'present');
+
+    if (samePlanCreatedTermReferences.length > 0) {
+      return {
+        supported: false,
+        className: 'unsupported-termmeta-resource',
+        reason: 'Term meta graph resources are not yet supported by the planner.',
+      };
+    }
+  }
   if (resource.table === 'wp_posts' && normalizePositiveInteger(localValue.post_parent) != null) {
     const postParentTarget = wordpressGraphTargetResource({
       sourceTable: resource.table,
@@ -2199,6 +2214,12 @@ function isUnsupportedSpecialFileValue(value) {
     'fifo',
     'socket',
     'device',
+    'block',
+    'block-device',
+    'character',
+    'char',
+    'char-device',
+    'named-pipe',
     'hardlink',
     'hard-link',
   ]);

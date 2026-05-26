@@ -5812,7 +5812,7 @@ test('blocks local plugin metadata changes when remote plugin files changed', ()
   remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-private-forms-code */';
 
   const plan = planFor(base, local, remote);
-  const blocker = plan.blockers[0];
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === targetResourceKey);
   const blockerJson = JSON.stringify(blocker);
 
   assert.equal(plan.status, 'blocked');
@@ -5838,7 +5838,7 @@ test('blocks local plugin file changes when remote plugin metadata changed', () 
   remote.plugins.forms = { version: '1.1.0', active: false };
 
   const plan = planFor(base, local, remote);
-  const blocker = plan.blockers[0];
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === targetResourceKey);
   const blockerJson = JSON.stringify(blocker);
 
   assert.equal(plan.status, 'blocked');
@@ -5921,7 +5921,7 @@ test('blocks plugin-owned data when owner plugin files changed only on remote', 
   remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-private-forms-code */';
 
   const plan = planFor(base, local, remote);
-  const blocker = plan.blockers[0];
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === targetResourceKey);
   const blockerJson = JSON.stringify(blocker);
 
   assert.equal(plan.status, 'blocked');
@@ -6039,7 +6039,7 @@ test('blocks plugin-owned data when the live remote removed the owner plugin', (
   delete remote.files['wp-content/plugins/forms/forms.php'];
 
   const plan = planFor(base, local, remote);
-  const blocker = plan.blockers[0];
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === targetResourceKey);
   const blockerJson = JSON.stringify(blocker);
 
   assert.equal(plan.status, 'blocked');
@@ -6071,7 +6071,7 @@ test('blocks plugin-owned option deletions when the live remote removed the owne
   delete remote.files['wp-content/plugins/forms/forms.php'];
 
   const plan = planFor(base, local, remote);
-  const blocker = plan.blockers[0];
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
   const blockerJson = JSON.stringify(blocker);
 
   assert.equal(plan.status, 'blocked');
@@ -6113,7 +6113,7 @@ test('blocks plugin-owned option deletions with explicit delete support when the
   delete remote.files['wp-content/plugins/forms/forms.php'];
 
   const plan = planFor(base, local, remote);
-  const blocker = plan.blockers[0];
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
 
   assert.equal(plan.status, 'blocked');
   assert.equal(plan.summary.mutations, 0);
@@ -12108,8 +12108,9 @@ test('blocks local postmeta references to stale remote-created post identity', (
   };
 
   const plan = planFor(base, local, remote);
-  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
-  const reference = blocker.references[0];
+  const termmetaBlocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  const termBlocker = plan.blockers.find((entry) => entry.resourceKey === targetResourceKey);
+  const reference = termBlocker.references[0];
   const planJson = JSON.stringify(plan);
 
   assert.equal(plan.status, 'blocked');
@@ -13232,17 +13233,21 @@ test('blocks local termmeta references to a same-plan created term identity whil
   remote.plugins.forms.description = 'remote-only plugin drift';
 
   const plan = planFor(base, local, remote);
-  const blocker = plan.blockers[0];
-  const reference = blocker.references[0];
+  const termmetaBlocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  const termBlocker = plan.blockers.find((entry) => entry.resourceKey === targetResourceKey);
+  const reference = termBlocker.references[0];
   const planJson = JSON.stringify(plan);
 
   assert.equal(plan.status, 'blocked');
   assert.equal(plan.summary.mutations, 0);
   assert.equal(mutationFor(plan, resourceKey), undefined);
   assert.equal(decisionFor(plan, targetResourceKey), undefined);
-  assert.equal(blocker.class, 'stale-wordpress-graph-identity');
-  assert.equal(blocker.resourceKey, targetResourceKey);
-  assert.equal(blocker.resolutionPolicy, 'preserve-remote-wordpress-graph-and-stop');
+  assert.equal(termmetaBlocker.class, 'unsupported-termmeta-resource');
+  assert.equal(termmetaBlocker.resourceKey, resourceKey);
+  assert.equal(termmetaBlocker.reason, 'Term meta graph resources are not yet supported by the planner.');
+  assert.equal(termBlocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(termBlocker.resourceKey, targetResourceKey);
+  assert.equal(termBlocker.resolutionPolicy, 'preserve-remote-wordpress-graph-and-stop');
   assert.equal(reference.relationshipKey, 'wp_termmeta.term_id');
   assert.equal(reference.relationshipType, 'termmeta-term');
   assert.equal(reference.sourceResourceKey, resourceKey);
@@ -14392,6 +14397,45 @@ test('blocks unsupported device special file entries while preserving remote-onl
   assert.equal(planJson.includes('9001'), false);
   assert.equal(planJson.includes('7001'), false);
   assert.equal(remote.plugins.forms.description, 'remote-only plugin drift');
+});
+
+test('blocks unsupported special file aliases while preserving remote-only plugin drift', () => {
+  const specialFileTypes = [
+    ['block-device', { inode: 7101 }, { inode: 9101 }],
+    ['character', { major: 1, minor: 9 }, { major: 1, minor: 3 }],
+    ['char-device', { major: 2, minor: 7 }, { major: 2, minor: 11 }],
+    ['named-pipe', { mode: '0600' }, { mode: '0644' }],
+  ];
+
+  for (const [type, baseValue, localValue] of specialFileTypes) {
+    const resourceKey = `file:wp-content/uploads/${type}`;
+    const base = baseSite();
+    base.files[`wp-content/uploads/${type}`] = { type, ...baseValue };
+
+    const local = baseSite();
+    local.files[`wp-content/uploads/${type}`] = { type, ...localValue };
+
+    const remote = baseSite();
+    remote.files[`wp-content/uploads/${type}`] = JSON.parse(JSON.stringify(base.files[`wp-content/uploads/${type}`]));
+    remote.plugins.forms.description = 'remote-only plugin drift';
+
+    const plan = planFor(base, local, remote);
+    const blocker = plan.blockers[0];
+    const pluginDecision = decisionFor(plan, 'plugin:forms');
+    const planJson = JSON.stringify(plan);
+
+    assert.equal(plan.status, 'blocked');
+    assert.equal(plan.summary.mutations, 0);
+    assert.equal(mutationFor(plan, resourceKey), undefined);
+    assert.equal(plan.conflicts.length, 0);
+    assert.equal(blocker.class, 'unsupported-special-file-resource');
+    assert.equal(blocker.resourceKey, resourceKey);
+    assert.equal(blocker.reason, 'Special file entries are not yet supported by the planner.');
+    assert.equal(pluginDecision.decision, 'keep-remote');
+    assert.equal(planJson.includes(JSON.stringify(localValue)), false);
+    assert.equal(planJson.includes(JSON.stringify(baseValue)), false);
+    assert.equal(remote.plugins.forms.description, 'remote-only plugin drift');
+  }
 });
 
 test('blocks a file type swap that would hide a live remote descendant while preserving remote-only plugin drift', () => {
@@ -18363,6 +18407,94 @@ test('blocks a file type swap that would hide a live remote descendant while pre
   assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
   assert.equal(Object.hasOwn(remote.plugins, 'forms'), false);
   assert.equal(Object.hasOwn(remote.files, 'wp-content/plugins/forms/forms.php'), false);
+});
+
+test('blocks a descendant file change that would overwrite a live remote ancestor while preserving remote-only plugin drift', () => {
+  const base = baseSite();
+  base.files['wp-content/uploads/gallery'] = 'base ancestor file';
+
+  const local = baseSite();
+  local.files['wp-content/uploads/gallery/cover.jpg'] = 'local descendant bytes';
+
+  const remote = baseSite();
+  remote.files['wp-content/uploads/gallery'] = 'remote ancestor file';
+  remote.plugins.forms.description = 'remote-only plugin drift';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin drift */';
+
+  const plan = planFor(base, local, remote);
+  const conflict = plan.conflicts.find((entry) => entry.resourceKey === 'file:wp-content/uploads/gallery/cover.jpg');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'conflict');
+  assert.equal(plan.summary.conflicts >= 1, true);
+  assert.ok(conflict);
+  assert.equal(mutationFor(plan, 'file:wp-content/uploads/gallery/cover.jpg'), undefined);
+  assert.equal(conflict.class, 'file-topology-conflict');
+  assert.equal(conflict.reason, 'Local descendant change would require overwriting a live remote ancestor.');
+  assert.equal(conflict.relatedResource.key, 'file:wp-content/uploads/gallery');
+  assert.equal(conflict.relatedChange.localChange, 'delete');
+  assert.equal(conflict.relatedChange.remoteChange, 'update');
+  assert.equal(conflict.change.localChange, 'create');
+  assert.equal(conflict.change.remoteChange, 'unchanged');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('remote ancestor file'), false);
+  assert.equal(planJson.includes('local descendant bytes'), false);
+  assertEveryMutationHasLiveRemotePrecondition(plan);
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
+  assert.equal(remote.files['wp-content/uploads/gallery'], 'remote ancestor file');
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin drift');
+  assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin drift */');
+});
+
+test('blocks a descendant file change that would overwrite a live remote ancestor while preserving a matching independent edit and remote-only plugin drift', () => {
+  const base = baseSite();
+  base.files['wp-content/uploads/gallery'] = 'base ancestor file';
+  base.files['about.php'] = '<?php echo "base about";';
+
+  const local = baseSite();
+  local.files['wp-content/uploads/gallery/cover.jpg'] = 'local descendant bytes';
+  local.files['about.php'] = '<?php echo "shared about";';
+
+  const remote = baseSite();
+  remote.files['wp-content/uploads/gallery'] = 'remote ancestor file';
+  remote.files['about.php'] = '<?php echo "shared about";';
+  remote.plugins.forms.description = 'remote-only plugin drift';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin drift */';
+
+  const plan = planFor(base, local, remote);
+  const conflict = plan.conflicts.find((entry) => entry.resourceKey === 'file:wp-content/uploads/gallery/cover.jpg');
+  const editDecision = decisionFor(plan, 'file:about.php');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'conflict');
+  assert.equal(plan.summary.conflicts >= 1, true);
+  assert.ok(conflict);
+  assert.equal(mutationFor(plan, 'file:wp-content/uploads/gallery/cover.jpg'), undefined);
+  assert.equal(conflict.class, 'file-topology-conflict');
+  assert.equal(conflict.reason, 'Local descendant change would require overwriting a live remote ancestor.');
+  assert.equal(conflict.relatedResource.key, 'file:wp-content/uploads/gallery');
+  assert.equal(conflict.relatedChange.localChange, 'delete');
+  assert.equal(conflict.relatedChange.remoteChange, 'update');
+  assert.equal(conflict.change.localChange, 'create');
+  assert.equal(conflict.change.remoteChange, 'unchanged');
+  assert.equal(editDecision.decision, 'already-in-sync');
+  assert.equal(editDecision.change.localChange, 'update');
+  assert.equal(editDecision.change.remoteChange, 'update');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('remote ancestor file'), false);
+  assert.equal(planJson.includes('local descendant bytes'), false);
+  assertEveryMutationHasLiveRemotePrecondition(plan);
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
+  assert.equal(remote.files['wp-content/uploads/gallery'], 'remote ancestor file');
+  assert.equal(remote.files['about.php'], '<?php echo "shared about";');
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin drift');
+  assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin drift */');
 });
 
 test('keeps remote-only plugin changes while a live-preconditioned file delete, matching independent edit, and matching independent type swap stay safe with apply verification', () => {
