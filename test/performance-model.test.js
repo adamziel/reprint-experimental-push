@@ -755,6 +755,10 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-chunk-hashes-skips-large-upload-publish-after-pause')?.violates.includes('backpressure'),
     'cached chunk hashes still cannot bypass backpressure recovery evidence',
   );
+  assert.ok(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-receipt-cursor-skips-large-upload-chunk-publish-after-pause')?.violates.includes('atomic-file-publish'),
+    'a cached receipt cursor still cannot bypass the guarded chunk-publish boundary',
+  );
   assert.equal(
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-bounded-chunk-parallelism-skips-large-upload-publish-after-pause')?.rejectedGate,
     'live',
@@ -4087,6 +4091,10 @@ test('production throughput details expose fail-closed receipt cursor and queue 
   );
   assert.equal(details.queueBudgetVisibleAndQueueHeadroomMeasured, true);
   assert.equal(details.backpressureConsistency.queueBudgetVisibleAndQueueHeadroomMeasured, true);
+  assert.equal(details.queueHeadroomVisibleAndQueueSlackMeasured, true);
+  assert.equal(details.backpressureConsistency.queueHeadroomVisibleAndQueueSlackMeasured, true);
+  assert.equal(details.queueHeadroomVisibleAndQueueSlackVisibleAndMeasured, true);
+  assert.equal(details.backpressureConsistency.queueHeadroomVisibleAndQueueSlackVisibleAndMeasured, true);
 });
 
 test('failure injection boundaries include every durable transition in the benchmark shape', () => {

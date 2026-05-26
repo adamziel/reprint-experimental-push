@@ -1503,6 +1503,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['remote-index-planning-only', 'compression', 'file-hashing', 'chunk-receipts', 'backpressure', 'atomic-file-publish', 'durable-progress'],
   },
   {
+    id: 'compressed-remote-index-and-cached-receipt-cursor-skips-large-upload-chunk-publish-after-pause',
+    proposal: 'treat a compressed remote index plus a cached receipt cursor as enough proof to skip the large-upload chunk publish step after a pause',
+    rejectedBecause: 'planning evidence and a cached cursor can reduce replay work, but they cannot prove which chunk acknowledgements survived the pause or restore the guarded publish boundary',
+    rejectedGate: 'recovery',
+    violates: ['remote-index-planning-only', 'compression', 'chunk-receipts', 'backpressure', 'atomic-file-publish', 'durable-progress'],
+  },
+  {
     id: 'compressed-remote-index-and-parallel-chunk-sends-skips-large-upload-backpressure-after-pause',
     proposal: 'treat a compressed remote index and extra chunk parallelism as enough proof to skip large-upload backpressure handling after a pause',
     rejectedBecause: 'planning evidence and wider fan-out cannot prove the bounded queue order, which chunk acknowledgements survived the pause, or that the guarded publish barrier survived failure',
