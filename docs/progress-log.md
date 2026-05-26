@@ -4,6 +4,21 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+# 2026-05-26 - Public Status Audit 11:23:22
+
+<a id="2026-05-26-public-status-audit-112322"></a>
+
+- Freshness update plus reliable-head confirmation: `1c8a658b` remains the
+  current reliable-executor head and release-journal smoke evidence on the
+  public page, and the visible status now points at this 11:23:22 audit
+  refresh.
+- Gate posture remains conservative at `0/4`; no implementation verdict
+  changed.
+- Latest blocker summary remains the same: real WordPress executor/auth and
+  durable journal ownership still block any production push claim.
+
+---
+
 ## 2026-05-26 - Public Status Audit 11:21:30
 
 <a id="2026-05-26-public-status-audit-112130"></a>
