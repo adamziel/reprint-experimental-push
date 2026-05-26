@@ -4,13 +4,13 @@
 
 The project is **not releasable as a production WordPress push path**.
 
-- Fresh remote heads at audit time, checked on 2026-05-26 08:31:48 CEST (+0200):
-- Fresh production-side lane heads re-polled at 2026-05-26 08:31:48 CEST (+0200):
+- Fresh remote heads at audit time, checked on 2026-05-26 08:32:50 CEST (+0200):
+- Fresh production-side lane heads re-polled at 2026-05-26 08:32:50 CEST (+0200):
 
 - `origin/lane/critic` -> `567743c2`
-- `origin/lane/no-data-loss-invariants` -> `69112382`
+- `origin/lane/no-data-loss-invariants` -> `71791827`
 - `origin/lane/no-data-loss-recovery` -> `9e077c10`
-- `origin/lane/reliable-executor` -> `72f5097b`
+- `origin/lane/reliable-executor` -> `169ebf1e`
 
 - These heads still do not change the release verdict. They remain fail-closed support evidence, not production-backed auth/session lifecycle, durable journal ownership on the release path, or a live production mutation boundary.
 
@@ -118,6 +118,10 @@ change the release verdict:
   missing recovery auth. This is still support-side auth-envelope and recovery
   validation, not production-backed auth/session lifecycle, live production
   replay, or durable journal ownership on the release path.
+- `origin/lane/reliable-executor` now records `169ebf1e`, mirroring bounded
+  proof tails to stdout. This is still support-side proof formatting, not
+  production-backed auth/session lifecycle, live production replay, or durable
+  journal ownership on the release path.
 - `origin/lane/no-data-loss-recovery` now records `9e077c10`, tightening
   durable recovery remote ownership fencing. This is still fail-closed
   support evidence, not restart-readable durable journal ownership on the
@@ -232,6 +236,9 @@ but it did not change the release conclusion:
   production-backed source mutation.
 - `origin/lane/no-data-loss-invariants` now records `69112382`, classifying
   comments blockers. This is still unsupported-surface blocking, not a
+  production-backed release proof.
+- `origin/lane/no-data-loss-invariants` now records `71791827`, classifying
+  post GUID blockers. This is still unsupported-surface blocking, not a
   production-backed release proof.
 
 - `origin/lane/reliable-executor` now records `bbf04945`, hardening durable journal ownership. It still does not prove production auth/session lifecycle or a live-source mutation boundary.
