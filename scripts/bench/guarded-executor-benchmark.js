@@ -341,6 +341,13 @@ export function productionThroughputDetails(report) {
   const receiptCursorMatchesBackpressure =
     receiptCursorBackpressureBytes !== null
     && receiptCursorBackpressureBytes === receiptCursorWindowBytes;
+  const receiptCursorBackpressureMeasured = Number.isFinite(receiptCursorBackpressureBytes);
+  const backpressureEvidenceComplete =
+    receiptCursorBackpressureMeasured
+    && Number.isFinite(receiptCursorQueueBudgetBytes)
+    && Number.isFinite(receiptCursorQueueHeadroomBytes)
+    && report.evidence.backpressure?.queuePausedBeforeOverflow === true
+    && report.evidence.backpressure?.receiptCursorWithinQueueBudget === true;
   const productionAtomicCommitMeasured = report.executorCapabilities.productionAtomicCommit === 'production-atomic-group-commit';
   const productionRowBatchExecutorMeasured = report.executorCapabilities.rowApply === 'production-batched-compare-and-swap';
   return {
@@ -373,8 +380,10 @@ export function productionThroughputDetails(report) {
     receiptCursorHeadroomBytes: receiptCursorMemoryHeadroomBytes,
     receiptCursorHeadroomMatchesQueueHeadroom,
     receiptCursorBackpressureBytes,
+    receiptCursorBackpressureMeasured,
     receiptCursorBackpressureWithinQueueHeadroom,
     receiptCursorHeadroomWithinQueueBudget,
+    backpressureEvidenceComplete,
     productionAtomicCommitMeasured,
     productionRowBatchExecutorMeasured,
     backpressureConsistency: {
@@ -391,6 +400,8 @@ export function productionThroughputDetails(report) {
       receiptCursorHeadroomCoveredByQueueBudget,
       receiptCursorHeadroomWithinQueueBudget,
       receiptCursorBackpressureBytes,
+      receiptCursorBackpressureMeasured,
+      backpressureEvidenceComplete,
       productionAtomicCommitMeasured,
       productionRowBatchExecutorMeasured,
     },
