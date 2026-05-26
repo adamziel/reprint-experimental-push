@@ -743,6 +743,10 @@ maybeTest('production-shaped release verify command runs the live protocol branc
     );
     assert.match(
       proof.stdout,
+      /"releaseProof": \{\s*"ok": false,\s*"status": 409,\s*"code": "PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED"\s*\}[\s\S]*?"authSessionLifecycle": \{\s*"minted": \{\s*"id": "[^"]+",\s*"type": "application-password-basic",\s*"status": "active",\s*"expiresAt": "[^"]+",\s*"expired": false\s*\},\s*"read": \{\s*"id": "[^"]+",\s*"type": "application-password-basic",\s*"status": "active",\s*"expiresAt": "[^"]+",\s*"expired": false\s*\}/,
+    );
+    assert.match(
+      proof.stdout,
       /"authSessionLifecycle": \{\s*"minted": \{\s*"id": "[^"]+",\s*"type": "application-password-basic",\s*"status": "active",\s*"expiresAt": "[^"]+",\s*"expired": false\s*\},\s*"read": \{\s*"id": "[^"]+",\s*"type": "application-password-basic",\s*"status": "active",\s*"expiresAt": "[^"]+",\s*"expired": false\s*\}/,
     );
     assert.match(
