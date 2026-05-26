@@ -64,6 +64,26 @@ test('authenticated push client allows production-shaped loopback runtime ports'
   assert.equal(typeof client.get, 'function');
 });
 
+test('authenticated push client allows production-shaped https loopback runtime ports', () => {
+  const client = authenticatedHttpClient({
+    sourceUrl: 'https://127.0.0.1:3443',
+    credential,
+    routeProfile: 'production-shaped',
+    requestTimeoutMs: 1,
+  });
+  assert.equal(typeof client.get, 'function');
+});
+
+test('authenticated push client allows production-shaped ipv6 loopback runtime ports', () => {
+  const client = authenticatedHttpClient({
+    sourceUrl: 'http://[::1]:3000',
+    credential,
+    routeProfile: 'production-shaped',
+    requestTimeoutMs: 1,
+  });
+  assert.equal(typeof client.get, 'function');
+});
+
 test('authenticated push client fails closed for missing production-shaped credentials', () => {
   assert.throws(
     () => authenticatedHttpClient({

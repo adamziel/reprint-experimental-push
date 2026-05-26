@@ -235,10 +235,10 @@ function isSupportedAuthSessionSourceUrl(sourceUrl) {
     return false;
   }
 
-  if (parsed.protocol === 'http:' && isLoopbackHost(parsed.hostname)) {
-    return true;
-  }
-  if (parsed.protocol === 'https:' && parsed.hostname === 'localhost') {
+  if (
+    (parsed.protocol === 'http:' || parsed.protocol === 'https:')
+    && isLoopbackHost(parsed.hostname)
+  ) {
     return true;
   }
 
@@ -249,6 +249,7 @@ function isLoopbackHost(hostname) {
   return hostname === 'localhost'
     || hostname === '127.0.0.1'
     || hostname === '::1'
+    || hostname === '[::1]'
     || hostname.startsWith('127.');
 }
 

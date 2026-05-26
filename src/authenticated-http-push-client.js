@@ -2063,10 +2063,10 @@ function assertSupportedSourceUrlForRouteProfile(baseUrl, profile) {
     return;
   }
 
-  if (baseUrl.protocol === 'http:' && isLoopbackHost(baseUrl.hostname)) {
-    return;
-  }
-  if (baseUrl.protocol === 'https:' && baseUrl.hostname === 'localhost') {
+  if (
+    (baseUrl.protocol === 'http:' || baseUrl.protocol === 'https:')
+    && isLoopbackHost(baseUrl.hostname)
+  ) {
     return;
   }
 
@@ -2079,6 +2079,7 @@ function isLoopbackHost(hostname) {
   return hostname === 'localhost'
     || hostname === '127.0.0.1'
     || hostname === '::1'
+    || hostname === '[::1]'
     || hostname.startsWith('127.');
 }
 
