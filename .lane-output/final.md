@@ -1,25 +1,30 @@
-Refreshed the objective audit to the latest remote heads and kept the release
-verdict closed. The new evidence is freshness-only: recovery, fast-paths,
-feedback-supervisor, and progress-followup all moved, but none of them changed
-the production release blockers.
+Updated the objective audit to include the latest cycle-scoped `fast-paths`
+and `same-plan` remote heads, and kept the release verdict closed. Those new
+heads only harden fail-closed planning boundaries; they still do not supply
+production-backed auth/session, durable journal ownership, or a live source
+mutation boundary.
 
 Changed files:
 - [`audits/objective-audit.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/independent-auditor/audits/objective-audit.md)
 - [`.lane-output/final.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/independent-auditor/.lane-output/final.md)
 
 Commands run:
-- `sed -n '1,220p' audits/objective-audit.md`
-- `git for-each-ref --format='%(refname:short) %(objectname:short) %(committerdate:iso8601) %(subject)' refs/remotes/origin/lane | sort | tail -n 80`
+- `sed -n '1,220p' AGENTS.md`
+- `sed -n '1,220p' supervision/README.md`
+- `sed -n '1,220p' supervision/lanes/independent-auditor.md`
+- `for f in $(ls -1t .lane-output/final*.md 2>/dev/null | head -n 5); do ...`
 - `git status --short --branch`
-- `git diff -- audits/objective-audit.md`
+- `sed -n '1,260p' audits/objective-audit.md`
+- `git for-each-ref --format='%(refname:short) %(objectname:short) %(committerdate:iso8601) %(subject)' refs/remotes/origin/lane | sort | tail -n 30`
+- `git diff -- audits/objective-audit.md .lane-output/final.md`
 
 Push result:
-- Not pushed yet
+- No push this turn
 
 Worktree status:
 - Branch: `lane/cycle-20260525-mainwindows-2349/independent-auditor`
-- Dirty tracked files: `audits/objective-audit.md`, `.lane-output/final.md`
-- Relative to `origin/main`: `ahead 1295, behind 204`
+- Status: dirty tracked files in `audits/objective-audit.md` and `.lane-output/final.md`
+- Remote comparison: `ahead 1296, behind 204` relative to `origin/main`
 
 Next supervisor nudge:
-1. Keep auditing only when a lane lands new proof; the release blockers remain unchanged and the next real movement still has to come from reliable-executor or a new fail-closed boundary proof.
+1. Re-poll only when a lane lands new proof that changes the live production release boundary; the current audit still holds the same `0/4` gate posture.
