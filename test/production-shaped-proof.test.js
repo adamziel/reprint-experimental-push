@@ -3001,6 +3001,22 @@ test('production-shaped release verify tracks distinct cached blueprint snapshot
   assert.equal(remoteFixture.files['wp-content/uploads/reprint-push/remote-only.txt'], 'remote-only upload content');
 });
 
+test('production-shaped release verify reuses the tracked remote-base blueprint snapshot for packaged sources', () => {
+  const verifierSource = readFileSync(
+    path.join(repoRoot, 'scripts/playground/production-shaped-release-verify.mjs'),
+    'utf8',
+  );
+
+  assert.match(
+    verifierSource,
+    /const remoteBaseSnapshot = packagedSourceFixture\s*\?\s*exportSnapshotFromBlueprint\('remote-base', remoteBaseFixturePath\)\s*:\s*await exportSnapshot\('remote-base', liveSourceUrl\);/s,
+  );
+  assert.doesNotMatch(
+    verifierSource,
+    /const remoteBaseSnapshot = packagedSourceFixture\s*\?\s*await exportProductionSnapshot\('remote-base', liveSourceUrl\)/s,
+  );
+});
+
 test('packaged production plugin smoke derives the tracked fixture name from the blueprint path', () => {
   const smokeSource = readFileSync(
     path.join(repoRoot, 'scripts/playground/production-plugin-package-smoke.mjs'),

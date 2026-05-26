@@ -663,7 +663,7 @@ try {
       assert.equal(preflight.body.ok, true);
 
       const remoteBaseSnapshot = packagedSourceFixture
-        ? await exportProductionSnapshot('remote-base', liveSourceUrl)
+        ? exportSnapshotFromBlueprint('remote-base', remoteBaseFixturePath)
         : await exportSnapshot('remote-base', liveSourceUrl);
       const proof = await runAuthenticatedHttpPush({
         sourceUrl: liveSourceUrl,
