@@ -1,5 +1,69 @@
 # Critic Audit
 
+## 2026-05-26 13:46:30 CEST (+0200)
+
+No gate movement. `1afb1657` is the current reliable head from `git ls-remote`; it surfaces packaged `production-auth-session`, `revoked`, `cleanedUp`, and `expiresAt` evidence, but it still stays on the package/release-verifier path rather than a checked-path production auth/session lifecycle or a fully closed durable-journal ownership proof. The verdict remains `0/4`.
+
+Changed files:
+- [`audits/critic.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/critic/audits/critic.md)
+
+Commands run:
+- `date '+%Y-%m-%d %H:%M:%S %Z (%z)'`
+- `git ls-remote origin refs/heads/lane/reliable-executor`
+
+Push result:
+- Not attempted
+
+Worktree status:
+- Modified tracked files: `audits/critic.md`, `.lane-output/final.md`
+- Branch: `lane/cycle-20260525-mainwindows-2349/critic...origin/main [ahead 1646, behind 695]`
+
+Next supervisor nudge:
+- Keep critic narrow and only reclassify again when `reliable-executor` lands checked-path production-backed auth/session lifecycle, durable-journal ownership, or preserved-remote retry proof that reaches the release boundary.
+
+## 2026-05-26 13:45:08 CEST (+0200)
+
+No gate movement. `1afb1657` is the current reliable head from `git ls-remote`; it surfaces packaged `production-auth-session`, `revoked`, `cleanedUp`, and `expiresAt` evidence, but it still stays on the package/release-verifier path rather than a checked-path production auth/session lifecycle or a fully closed durable-journal ownership proof. The verdict remains `0/4`.
+
+Changed files:
+- [`audits/critic.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/critic/audits/critic.md)
+
+Commands run:
+- `date '+%Y-%m-%d %H:%M:%S %Z (%z)'`
+- `git ls-remote origin refs/heads/lane/reliable-executor`
+
+Push result:
+- Not attempted
+
+Worktree status:
+- Modified tracked files: `audits/critic.md`, `.lane-output/final.md`
+- Branch: `lane/cycle-20260525-mainwindows-2349/critic...origin/main [ahead 1646, behind 695]`
+
+Next supervisor nudge:
+- Keep critic narrow and only reclassify again when `reliable-executor` lands checked-path production-backed auth/session lifecycle, durable-journal ownership, or preserved-remote retry proof that reaches the release boundary.
+
+## 2026-05-26 13:44:40 CEST (+0200)
+
+No gate movement. `1afb1657` is the current reliable head from `git ls-remote`; it tightens packaged auth-session evidence by surfacing `production-auth-session`, `revoked`, `cleanedUp`, and `expiresAt` fields in package mode, but it still remains release-verifier evidence rather than a checked-path production auth/session lifecycle or a fully closed durable-journal ownership proof. The verdict remains `0/4`.
+
+Changed files:
+- [`audits/critic.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/critic/audits/critic.md)
+
+Commands run:
+- `date '+%Y-%m-%d %H:%M:%S %Z (%z)'`
+- `git ls-remote origin refs/heads/lane/reliable-executor`
+- `git show --stat --oneline --no-renames 1afb1657d653411cfb3a3658d6a4cd4e273552f2 -- scripts/playground/push-remote-rest-plugin.php`
+
+Push result:
+- Not attempted
+
+Worktree status:
+- Modified tracked files: `audits/critic.md`
+- Branch: `lane/cycle-20260525-mainwindows-2349/critic...origin/main [ahead 1646, behind 695]`
+
+Next supervisor nudge:
+- Keep critic narrow and only reclassify again when `reliable-executor` lands checked-path production-backed auth/session lifecycle, durable-journal ownership, or preserved-remote retry proof that reaches the release boundary.
+
 ## 2026-05-26 13:41:21 CEST (+0200)
 
 No gate movement. `f770a1ec` is the current reliable head from `git ls-remote`; it exposes consumed recovery-journal state on the checked release path, but it still stops short of a production-backed auth/session lifecycle or a fully closed durable-journal ownership proof on the release command. The verdict remains `0/4`.
