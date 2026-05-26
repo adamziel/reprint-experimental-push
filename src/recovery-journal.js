@@ -2054,15 +2054,20 @@ function summarizeConsumedClaimRecord(records) {
   ) {
     return null;
   }
+  if (!Number.isInteger(consumedRecord.sequence)) {
+    return null;
+  }
+  if (typeof consumedRecord.claimHash !== 'string' || !CLAIM_HASH_PATTERN.test(consumedRecord.claimHash)) {
+    return null;
+  }
+  if (!isValidProductionWriterLease(consumedRecord.claimLease)) {
+    return null;
+  }
 
   return Object.freeze({
-    sequence: Number.isInteger(consumedRecord.sequence) ? consumedRecord.sequence : null,
-    claimHash: typeof consumedRecord.claimHash === 'string' && CLAIM_HASH_PATTERN.test(consumedRecord.claimHash)
-      ? consumedRecord.claimHash
-      : null,
-    claimLease: isValidProductionWriterLease(consumedRecord.claimLease)
-      ? freezeProductionWriterLease(consumedRecord.claimLease)
-      : null,
+    sequence: consumedRecord.sequence,
+    claimHash: consumedRecord.claimHash,
+    claimLease: freezeProductionWriterLease(consumedRecord.claimLease),
   });
 }
 
