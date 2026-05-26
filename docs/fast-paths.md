@@ -164,6 +164,10 @@ Current executable gate:
 - The details surface now also exposes whether those parallelism caps are
   canonical, so the audit view can reject a forged integral summary without
   recomputing the guard from hidden defaults.
+- The details surface now also exposes whether visible parallelism caps are
+  both visible and canonical, so the audit view can reject a drifted limit
+  summary without reconstructing the visible bit from the rest of the
+  backpressure evidence.
 - The production-throughput gate also fails closed if the success journal no
   longer keeps receipt flushes grouped by kind, so journal lag savings cannot
   hide interleaved recovery evidence.

@@ -1317,6 +1317,13 @@ export function productionThroughputDetails(report) {
   const parallelismLimitsVisibleAndMeasured =
     parallelismLimitsVisibleOnReport
     && parallelismLimitsMeasuredOnReport;
+  const parallelismLimitsVisibleAndCanonical =
+    parallelismLimitsVisibleOnReport
+    && parallelismLimitsCanonical;
+  const parallelismLimitsVisibleMeasuredAndCanonical =
+    parallelismLimitsVisibleOnReport
+    && parallelismLimitsMeasuredOnReport
+    && parallelismLimitsCanonical;
   const wordpressGraphIdentityPostmetaReferencesMatch =
     Number.isFinite(report.evidence.wordpressGraphIdentity?.postmetaReferences)
     && Number.isFinite(report.shape?.rowCount)
@@ -1427,6 +1434,8 @@ export function productionThroughputDetails(report) {
     parallelismLimitsMeasured: parallelismLimitsMeasuredOnReport,
     parallelismLimitsVisible: parallelismLimitsVisibleOnReport,
     parallelismLimitsVisibleAndMeasured,
+    parallelismLimitsVisibleAndCanonical,
+    parallelismLimitsVisibleMeasuredAndCanonical,
     parallelismLimitsIntegral,
     parallelismLimitsCanonical,
     parallelismLimitsVisible,
@@ -1515,6 +1524,9 @@ export function productionThroughputDetails(report) {
       productionAtomicGroupMetadataProven,
       parallelismLimits,
       parallelismLimitsVisible: parallelismLimitsVisibleOnReport,
+      parallelismLimitsVisibleAndMeasured,
+      parallelismLimitsVisibleAndCanonical,
+      parallelismLimitsVisibleMeasuredAndCanonical,
       parallelismLimitsIntegral,
       parallelismLimitsCanonical,
       parallelismLimitsVisible,

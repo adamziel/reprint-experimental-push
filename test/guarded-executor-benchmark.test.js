@@ -378,6 +378,8 @@ test('guarded benchmark blocks parallelism visibility when the canonical limit s
 
   assert.equal(details.parallelismLimitsVisible, false);
   assert.equal(details.parallelismLimitsCanonical, false);
+  assert.equal(details.parallelismLimitsVisibleAndCanonical, false);
+  assert.equal(details.backpressureConsistency.parallelismLimitsVisibleAndCanonical, false);
   assert.equal(blockers.includes('production-parallelism-limits-visible-without-canonical'), true);
   assert.equal(blockers.includes('production-parallelism-limits-not-canonical'), true);
 });
