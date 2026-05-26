@@ -116,10 +116,12 @@ export function applyPlan(remote, plan, options = {}) {
         replayResult = replayCompletedPlan(remote, plan, journal);
         assertRecoveryStateEnvelope(replayResult.recoveryState);
         recordDurableReplay(durableJournal, remote, plan, replayResult.recoveryState, journal);
+        flushDurableJournal(durableJournal);
         return replayResult;
       } catch (error) {
         if (error?.details?.recovery?.status === 'blocked-recovery') {
           recordDurableRecoveryStateBestEffort(durableJournal, remote, plan, error.details.recovery);
+          flushDurableJournal(durableJournal);
           throw error;
         }
         throw journalWriteFailureFullyUpdated(
@@ -147,6 +149,7 @@ export function applyPlan(remote, plan, options = {}) {
           assertRecoveryStateEnvelope(recoveryState);
           recordDurableReplay(durableJournal, remote, plan, recoveryState, completedJournal);
           recordDurableRecoveryState(durableJournal, remote, plan, recoveryState);
+          flushDurableJournal(durableJournal);
         } catch (error) {
           throw journalWriteFailureFullyUpdated(error, remote, plan, completedJournal, 'journal-replayed');
         }
@@ -170,6 +173,7 @@ export function applyPlan(remote, plan, options = {}) {
         ...options,
         previousJournalState,
       });
+      flushDurableJournal(durableJournal);
     } catch (error) {
       throw journalWriteFailureBeforeMutation(error, remote, plan, journal, 'journal-opened');
     }
@@ -179,6 +183,7 @@ export function applyPlan(remote, plan, options = {}) {
         status: 'old-remote',
         reason: 'Injected failure before staging any mutation.',
       });
+      flushDurableJournal(durableJournal);
       throw injectedFailure(
         'INJECTED_FAILURE_BEFORE_MUTATION',
         'Injected failure before staging any mutation.',
@@ -213,6 +218,7 @@ export function applyPlan(remote, plan, options = {}) {
         state: 'staged',
         stagedHash: digest(staged),
       });
+      flushDurableJournal(durableJournal);
     } catch (error) {
       throw journalWriteFailureBeforeMutation(error, remote, plan, journal, 'apply-staged');
     }
@@ -221,6 +227,7 @@ export function applyPlan(remote, plan, options = {}) {
         status: 'old-remote',
         reason: 'Injected failure after staging all mutations.',
       });
+      flushDurableJournal(durableJournal);
       throw injectedFailure(
         'INJECTED_FAILURE_AFTER_STAGING',
         'Injected failure after staging all mutations.',
@@ -239,6 +246,7 @@ export function applyPlan(remote, plan, options = {}) {
         state: 'dependencies-validated',
         stagedHash: digest(staged),
       });
+      flushDurableJournal(durableJournal);
     } catch (error) {
       throw journalWriteFailureBeforeMutation(error, remote, plan, journal, 'dependencies-validated');
     }
@@ -247,6 +255,7 @@ export function applyPlan(remote, plan, options = {}) {
         status: 'old-remote',
         reason: 'Injected failure after dependency validation.',
       });
+      flushDurableJournal(durableJournal);
       throw injectedFailure(
         'INJECTED_FAILURE_AFTER_DEPENDENCY_VALIDATION',
         'Injected failure after dependency validation.',
@@ -1251,6 +1260,24 @@ function recordDurableReplay(writer, remote, plan, recoveryState, journal = null
     state: recoveryState.status,
     reason: recoveryState.reason,
   });
+}
+
+function flushDurableJournal(writer) {
+  if (!writer || typeof writer.flush !== 'function') {
+    return;
+  }
+  try {
+    writer.flush();
+  } catch (error) {
+    throw new PushPlanError(
+      'JOURNAL_WRITE_FAILED',
+      'Durable recovery journal flush failed.',
+      {
+        eventType: 'flush',
+        causeMessage: error?.message || String(error),
+      },
+    );
+  }
 }
 
 function recordDurableBoundary(writer, type, current, plan, payload = {}) {

@@ -27242,6 +27242,7 @@ test('closes a durable journal writer when apply fails before commit', () => {
 test('closes an owned production recovery journal writer after a successful apply', () => {
   const events = [];
   let closed = 0;
+  let flushed = 0;
   const writer = {
     kind: 'production-recovery-journal',
     ownsJournal: true,
@@ -27252,7 +27253,9 @@ test('closes an owned production recovery journal writer after a successful appl
       this.nextSequence += 1;
       return { sequence: this.nextSequence - 1, type, payload };
     },
-    flush() {},
+    flush() {
+      flushed += 1;
+    },
     close() {
       closed += 1;
     },
@@ -27280,6 +27283,7 @@ test('closes an owned production recovery journal writer after a successful appl
   });
 
   assert.equal(result.recoveryState.status, 'fully-updated-remote');
+  assert.ok(flushed > 0);
   assert.equal(closed, 1);
   assert.ok(events.some((event) => event.type === 'journal-completed'));
 });
