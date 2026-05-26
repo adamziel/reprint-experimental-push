@@ -1003,6 +1003,7 @@ function summarizeDbJournalBody(body, {
       : rows.filter((entry) => entry.event === 'idempotency-opened').length,
     storageGuard,
     ownership: summarizeDbJournalOwnership(dbJournal),
+    claim: summarizeDbJournalClaim(dbJournal),
     writerLease: summarizeDbJournalWriterLease(dbJournal),
     leaseFence: summarizeDbJournalLeaseFence(dbJournal),
     authUser: body?.auth?.identity?.userLogin,
@@ -1136,6 +1137,46 @@ function summarizeDbJournalOwnership(dbJournal) {
     restartReadable: ownership.restartReadable === true,
     productionAdapter: ownership.productionAdapter || null,
   };
+}
+
+function summarizeDbJournalClaim(dbJournal) {
+  const claim = dbJournal?.claim;
+  if (!claim || typeof claim !== 'object') {
+    return undefined;
+  }
+
+  const summary = {
+    status: claim.status || null,
+    activeClaimKeyHash: claim.activeClaimKeyHash || null,
+    activeClaimSequence: Number.isInteger(claim.activeClaimSequence)
+      ? claim.activeClaimSequence
+      : null,
+    activeClaimEvent: claim.activeClaimEvent || null,
+    idempotencyKeyHash: claim.idempotencyKeyHash || null,
+    requestHash: claim.requestHash || null,
+    staleClaimRejected: claim.staleClaimRejected === true,
+  };
+
+  if (Number.isInteger(claim.abandonedSequence)) {
+    summary.abandonedSequence = claim.abandonedSequence;
+  }
+  if (typeof claim.abandonedEvent === 'string' && claim.abandonedEvent.length > 0) {
+    summary.abandonedEvent = claim.abandonedEvent;
+  }
+  if (Number.isInteger(claim.previousStartedSequence)) {
+    summary.previousStartedSequence = claim.previousStartedSequence;
+  }
+  if (Number.isInteger(claim.previousClaimSequence)) {
+    summary.previousClaimSequence = claim.previousClaimSequence;
+  }
+  if (typeof claim.previousClaimKeyHash === 'string' && claim.previousClaimKeyHash.length > 0) {
+    summary.previousClaimKeyHash = claim.previousClaimKeyHash;
+  }
+  if (typeof claim.previousClaimEvent === 'string' && claim.previousClaimEvent.length > 0) {
+    summary.previousClaimEvent = claim.previousClaimEvent;
+  }
+
+  return summary;
 }
 
 function summarizeDbJournalLeaseFence(dbJournal) {

@@ -906,6 +906,21 @@ test('production-shaped authenticated push can prove packaged stale-claim retry 
             { event: 'mutation-applied' },
             { event: 'apply-committed' },
           ],
+          claim: {
+            status: 'stale-claim-rejected',
+            activeClaimKeyHash: 'retry-claim-hash-02',
+            activeClaimSequence: 20,
+            activeClaimEvent: 'stale-claim-retry-started',
+            idempotencyKeyHash: 'idempotency-hash-01',
+            requestHash: 'request-hash-01',
+            staleClaimRejected: true,
+            abandonedSequence: 18,
+            abandonedEvent: 'stale-claim-abandoned',
+            previousStartedSequence: 12,
+            previousClaimSequence: 11,
+            previousClaimKeyHash: 'retry-claim-hash-01',
+            previousClaimEvent: 'idempotency-opened',
+          },
           ownership: {
             ownsJournal: true,
             restartReadable: true,
@@ -960,6 +975,21 @@ test('production-shaped authenticated push can prove packaged stale-claim retry 
     assert.equal(summary.staleClaimRetry.abandoned.code, 'LAB_SIMULATED_STALE_CLAIM_ALL_OLD');
     assert.equal(summary.dbJournal.leaseFence.staleClaimRejected, true);
     assert.equal(summary.dbJournal.ownership.productionAdapter, 'wpdb-single-statement-cas');
+    assert.deepEqual(summary.dbJournal.claim, {
+      status: 'stale-claim-rejected',
+      activeClaimKeyHash: 'retry-claim-hash-02',
+      activeClaimSequence: 20,
+      activeClaimEvent: 'stale-claim-retry-started',
+      idempotencyKeyHash: 'idempotency-hash-01',
+      requestHash: 'request-hash-01',
+      staleClaimRejected: true,
+      abandonedSequence: 18,
+      abandonedEvent: 'stale-claim-abandoned',
+      previousStartedSequence: 12,
+      previousClaimSequence: 11,
+      previousClaimKeyHash: 'retry-claim-hash-01',
+      previousClaimEvent: 'idempotency-opened',
+    });
     assert.equal(summary.replayEquivalence.equivalent, true);
 
     const applyRequests = seen.filter(({ pathname }) => pathname.endsWith('/apply'));
@@ -6885,6 +6915,19 @@ test('production-shaped authenticated push accepts checked durable journal proof
         dbJournal: {
           scope: 'packaged production plugin journal surface; not local Playground fixture only',
           acceptedOnCheckedBoundary: true,
+          claim: {
+            status: 'active',
+            activeClaimKeyHash: 'retry-claim-hash-02',
+            activeClaimSequence: 20,
+            activeClaimEvent: 'stale-claim-retry-started',
+            idempotencyKeyHash: 'idempotency-hash-01',
+            requestHash: 'request-hash-01',
+            staleClaimRejected: false,
+            previousStartedSequence: 12,
+            previousClaimSequence: 11,
+            previousClaimKeyHash: 'retry-claim-hash-01',
+            previousClaimEvent: 'idempotency-opened',
+          },
           ownership: {
             ownsJournal: true,
             restartReadable: true,
@@ -7005,6 +7048,19 @@ test('production-shaped authenticated push accepts checked durable journal proof
         ownsJournal: true,
         restartReadable: true,
         productionAdapter: 'wpdb-single-statement-cas',
+      },
+      claim: {
+        status: 'active',
+        activeClaimKeyHash: 'retry-claim-hash-02',
+        activeClaimSequence: 20,
+        activeClaimEvent: 'stale-claim-retry-started',
+        idempotencyKeyHash: 'idempotency-hash-01',
+        requestHash: 'request-hash-01',
+        staleClaimRejected: false,
+        previousStartedSequence: 12,
+        previousClaimSequence: 11,
+        previousClaimKeyHash: 'retry-claim-hash-01',
+        previousClaimEvent: 'idempotency-opened',
       },
       writerLease: {
         strategy: 'claim-fenced-single-writer',
