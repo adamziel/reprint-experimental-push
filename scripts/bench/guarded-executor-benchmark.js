@@ -402,6 +402,13 @@ export function productionThroughputBlockers(report) {
   ) {
     blockers.push('queue-pause-footprint-not-proven');
   }
+  if (
+    report.evidence.backpressure?.queuePausedBeforeOverflow === true
+    && report.evidence.backpressure?.receiptCursorPauseFootprintComplete === true
+    && report.evidence.backpressure?.queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack !== true
+  ) {
+    blockers.push('queue-pause-with-complete-footprint-without-measured-and-aligned-receipt-cursor-queue-slack');
+  }
   if (report.evidence.backpressure?.queuePausedBeforeOverflow !== true) {
     blockers.push('queue-did-not-pause-before-overflow');
   }

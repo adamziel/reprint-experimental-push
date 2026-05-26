@@ -926,6 +926,14 @@ test('guarded benchmark refuses production throughput claims until production ga
       'queue-pause-footprint-not-proven',
     ),
   );
+
+  const inconsistentPauseFootprint = clone(report);
+  inconsistentPauseFootprint.evidence.backpressure.queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack = false;
+  assert.ok(
+    productionThroughputBlockers(inconsistentPauseFootprint).includes(
+      'queue-pause-with-complete-footprint-without-measured-and-aligned-receipt-cursor-queue-slack',
+    ),
+  );
   assert.equal(report.results.preCommitFailure.remoteUnchanged, true);
   assert.equal(report.results.partialFailure.remoteUnchanged, false);
   assert.equal(report.results.successInspection.status, 'fully-updated-remote');
