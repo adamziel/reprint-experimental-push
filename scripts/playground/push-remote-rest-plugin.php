@@ -349,6 +349,10 @@ function reprint_push_lab_rest_authenticated_preflight(WP_REST_Request $request)
     $auth = reprint_push_lab_rest_auth_evidence($request);
     $signature = reprint_push_lab_rest_signature_context($request);
     $profile = reprint_push_lab_rest_route_profile($request);
+    $session_type = reprint_push_lab_rest_package_mode_enabled()
+        && (string) ($profile['profile'] ?? '') === 'production-shaped'
+        ? 'production-auth-session'
+        : 'lab-signed-push-session';
 
     return reprint_push_lab_rest_json_response([
         'ok' => true,
@@ -390,7 +394,7 @@ function reprint_push_lab_rest_authenticated_preflight(WP_REST_Request $request)
             ],
         ],
         'session' => [
-            'type' => 'lab-signed-push-session',
+            'type' => $session_type,
             'id' => $signature['session']['id'] ?? null,
             'sessionHash' => $signature['session']['sessionHash'] ?? null,
             'applicationPasswordUuid' => $auth['session']['applicationPasswordUuid'] ?? null,
@@ -3180,7 +3184,10 @@ function reprint_push_lab_rest_db_journal_storage_guard(array $summary): ?array
         if (!is_array($row)) {
             continue;
         }
-        $storage_guard = $row['result']['storageGuard'] ?? $row['resourceHashEvidence']['storageGuard'] ?? null;
+        $storage_guard = $row['result']['storageGuard']
+            ?? $row['resourceHashEvidence']['storageGuard']
+            ?? $row['resourceHashEvidence']['mutation']['storageGuard']
+            ?? null;
         if (is_array($storage_guard)) {
             return [
                 'boundary' => isset($storage_guard['boundary']) ? (string) $storage_guard['boundary'] : null,

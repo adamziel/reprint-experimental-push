@@ -9,6 +9,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { authenticatedHttpClient, runAuthenticatedHttpPush } from '../../src/authenticated-http-push-client.js';
+import { digest } from '../../src/stable-json.js';
 import {
   loadAuthSessionSource,
   resolveAuthSessionSourceCredentials,

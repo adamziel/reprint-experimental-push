@@ -874,6 +874,7 @@ function summarizeDbJournal(response) {
     return summarizeResponse(response);
   }
   const rows = response.body.dbJournal?.latestRows || [];
+  const storageGuard = summarizeDbJournalStorageGuard(response.body);
   return {
     status: response.status,
     ok: true,
@@ -882,11 +883,7 @@ function summarizeDbJournal(response) {
     applyCommitted: rows.some((entry) => entry.event === 'apply-committed'),
     mutationApplied: rows.filter((entry) => entry.event === 'mutation-applied').length,
     idempotencyOpened: rows.filter((entry) => entry.event === 'idempotency-opened').length,
-    storageGuard: response.body.storageGuard ? {
-      boundary: response.body.storageGuard.boundary,
-      operation: response.body.storageGuard.operation,
-      outcome: response.body.storageGuard.outcome,
-    } : undefined,
+    storageGuard,
     authUser: response.body?.auth?.identity?.userLogin,
     authSessionId: response.body?.auth?.session?.id,
     sessionType: response.body?.auth?.session?.type,
@@ -903,9 +900,47 @@ function dbJournalProofIsAcceptable(dbJournal) {
 }
 
 function dbJournalStorageGuardIsTrusted(storageGuard) {
-  return storageGuard?.boundary === 'filesystem-compare-rename'
+  return (
+    storageGuard?.boundary === 'filesystem-compare-rename'
+    || storageGuard?.boundary === 'wpdb-single-statement-cas'
+  )
     && storageGuard?.operation === 'update'
     && storageGuard?.outcome === 'applied';
+}
+
+function summarizeDbJournalStorageGuard(body) {
+  const directStorageGuard = sanitizeStorageGuard(body?.storageGuard);
+  if (directStorageGuard) {
+    return directStorageGuard;
+  }
+
+  const rows = Array.isArray(body?.dbJournal?.latestRows)
+    ? [...body.dbJournal.latestRows].reverse()
+    : [];
+  for (const row of rows) {
+    const nestedStorageGuard = sanitizeStorageGuard(
+      row?.result?.storageGuard
+      || row?.resourceHashEvidence?.storageGuard
+      || row?.resourceHashEvidence?.mutation?.storageGuard,
+    );
+    if (nestedStorageGuard) {
+      return nestedStorageGuard;
+    }
+  }
+
+  return undefined;
+}
+
+function sanitizeStorageGuard(storageGuard) {
+  if (!storageGuard || typeof storageGuard !== 'object') {
+    return undefined;
+  }
+
+  return {
+    boundary: storageGuard.boundary,
+    operation: storageGuard.operation,
+    outcome: storageGuard.outcome,
+  };
 }
 
 function summarizeRecoveryInspect(response) {
