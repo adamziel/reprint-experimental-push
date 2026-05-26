@@ -1322,8 +1322,17 @@ export function classifyRecoveryJournalClaims(records) {
   }
 
   for (const record of claimRecords) {
+    if (!Object.hasOwn(record, 'claimHash')) {
+      return blockedClaimState(record, 'Recovery claim record is missing an explicit claim hash.');
+    }
     if (!CLAIM_HASH_PATTERN.test(record.claimHash || '')) {
       return blockedClaimState(record, 'Recovery claim record is missing a valid claim hash.');
+    }
+    if (
+      record.type === 'stale-claim-advanced'
+      && !Object.hasOwn(record, 'previousClaimHash')
+    ) {
+      return blockedClaimState(record, 'Advanced stale-claim record is missing an explicit previous claim hash.');
     }
     if (
       record.type === 'stale-claim-advanced'
@@ -1336,6 +1345,12 @@ export function classifyRecoveryJournalClaims(records) {
       && record.previousClaimHash === record.claimHash
     ) {
       return blockedClaimState(record, 'Advanced stale-claim record must advance to a different active claim hash.');
+    }
+    if (
+      !Object.hasOwn(record, 'claimLease')
+      && typeof record.claimLease !== 'undefined'
+    ) {
+      return blockedClaimState(record, 'Recovery claim record has a prototype-inherited persisted lease identity.');
     }
     if (
       Object.hasOwn(record, 'claimLease')
