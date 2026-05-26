@@ -1159,73 +1159,77 @@ function runBoundedSync(command, args, options, label) {
 function runProductionRecoveryJournalProof({ plan, current, artifactRefs = {} }) {
   const workDir = fs.mkdtempSync(path.join(os.tmpdir(), 'reprint-release-journal-'));
   const journalPath = path.join(workDir, 'production-recovery.journal.jsonl');
-  const activeClaimId = digest({
-    planId: plan.id,
-    observedHash: digest(current),
-    artifactRefs,
-  });
-  const journal = openProductionRecoveryJournal({
-    filePath: journalPath,
-    plan,
-    current,
-    artifactRefs,
-    claimId: activeClaimId,
-  });
-  appendRecoveryClaimOpened(journal, {
-    plan,
-    current,
-    claimId: activeClaimId,
-    artifactRefs,
-  });
-  journal.close();
-
-  const inspection = consumeProductionRecoveryJournal({
-    filePath: journalPath,
-    plan,
-    current,
-    artifactRefs,
-    claimId: activeClaimId,
-  });
-  assert.equal(inspection.consumed, true, 'production recovery journal consumer must report consumption');
-  assert.equal(inspection.journal.productionAdapter, 'openProductionRecoveryJournal');
-  assert.equal(inspection.journal.ownsJournal, true);
-  assert.equal(inspection.journal.consumed, true);
-  assert.equal(inspection.journal.restartReadable, true);
-
-  const staleClaimId = `${activeClaimId}-stale`;
-  const staleJournal = openProductionRecoveryJournal({
-    filePath: journalPath,
-    plan,
-    current,
-    artifactRefs,
-    truncate: false,
-    claimId: staleClaimId,
-  });
-  let staleClaimRejected = false;
   try {
-    staleJournal.appendEvent('journal-opened', {
+    const activeClaimId = digest({
       planId: plan.id,
-      state: 'opened',
       observedHash: digest(current),
       artifactRefs,
     });
-  } catch (error) {
-    staleClaimRejected = error?.code === 'RECOVERY_CLAIM_STALE';
-  } finally {
-    staleJournal.close();
-  }
+    const journal = openProductionRecoveryJournal({
+      filePath: journalPath,
+      plan,
+      current,
+      artifactRefs,
+      claimId: activeClaimId,
+    });
+    appendRecoveryClaimOpened(journal, {
+      plan,
+      current,
+      claimId: activeClaimId,
+      artifactRefs,
+    });
+    journal.close();
 
-  return {
-    journal: {
-      ...inspection.journal,
-      staleClaimRejected,
-    },
-    leaseFence: {
-      ...inspection.leaseFence,
-      staleClaimRejected,
-    },
-    consumed: inspection.consumed,
-  };
+    const inspection = consumeProductionRecoveryJournal({
+      filePath: journalPath,
+      plan,
+      current,
+      artifactRefs,
+      claimId: activeClaimId,
+    });
+    assert.equal(inspection.consumed, true, 'production recovery journal consumer must report consumption');
+    assert.equal(inspection.journal.productionAdapter, 'openProductionRecoveryJournal');
+    assert.equal(inspection.journal.ownsJournal, true);
+    assert.equal(inspection.journal.consumed, true);
+    assert.equal(inspection.journal.restartReadable, true);
+
+    const staleClaimId = `${activeClaimId}-stale`;
+    const staleJournal = openProductionRecoveryJournal({
+      filePath: journalPath,
+      plan,
+      current,
+      artifactRefs,
+      truncate: false,
+      claimId: staleClaimId,
+    });
+    let staleClaimRejected = false;
+    try {
+      staleJournal.appendEvent('journal-opened', {
+        planId: plan.id,
+        state: 'opened',
+        observedHash: digest(current),
+        artifactRefs,
+      });
+    } catch (error) {
+      staleClaimRejected = error?.code === 'RECOVERY_CLAIM_STALE';
+    } finally {
+      staleJournal.close();
+    }
+
+    return {
+      journal: {
+        ...inspection.journal,
+        staleClaimRejected,
+      },
+      leaseFence: {
+        ...inspection.leaseFence,
+        staleClaimRejected,
+      },
+      consumed: inspection.consumed,
+    };
+  } finally {
+    fs.rmSync(workDir, { recursive: true, force: true });
+  }
 }
 
 function writeSpawnOutputTail(proof, commandLabel = '') {
