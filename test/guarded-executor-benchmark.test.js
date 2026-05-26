@@ -227,6 +227,20 @@ test('guarded benchmark blocks forged atomic-commit visibility without a measure
   assert.equal(blockers.includes('production-atomic-group-commit-not-visible'), false);
 });
 
+test('guarded benchmark blocks atomic-commit visibility when the metadata surface is hidden', () => {
+  const report = smallBenchmark();
+  const tampered = clone(report);
+
+  tampered.evidence.atomicGroup.productionAtomicCommitMeasured = true;
+  tampered.evidence.atomicGroup.productionAtomicCommitVisible = true;
+  tampered.evidence.atomicGroup.productionAtomicGroupMetadataVisible = false;
+
+  const blockers = productionThroughputBlockers(tampered);
+
+  assert.equal(blockers.includes('production-atomic-group-commit-visible-without-metadata'), true);
+  assert.equal(blockers.includes('production-atomic-group-commit-visible-without-measurement'), false);
+});
+
 test('guarded benchmark blocks row-batch executor visibility without atomic-commit visibility', () => {
   const report = smallBenchmark();
   const tampered = clone(report);

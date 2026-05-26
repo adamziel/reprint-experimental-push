@@ -266,6 +266,9 @@ Current executable gate:
 - The report also fails closed if atomic-group metadata visibility appears
   without atomic-group commit visibility, so the wrapper cannot look complete
   when the commit surface itself is hidden.
+- The report also fails closed if atomic-group commit visibility appears
+  without atomic-group metadata visibility, so the details view cannot look
+  complete when the metadata surface itself is hidden.
 - Latest measured lab throughput:
   - `labStagedMiBPerSecond: 59.54`
   - `labApplyMutationsPerSecond: 62.29`
