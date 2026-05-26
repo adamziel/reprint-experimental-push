@@ -704,7 +704,11 @@ function productionRecoverySupportReport(writer) {
   if (typeof writer?.close !== 'function') {
     addMissingDependency('durable writer cleanup');
   }
-  if (typeof writer?.inspect !== 'function' || inspectionErrorMessage) {
+  if (
+    !Object.hasOwn(writer ?? {}, 'inspect')
+    || typeof writer.inspect !== 'function'
+    || inspectionErrorMessage
+  ) {
     addMissingDependency('restart-readable recovery inspection');
   } else {
     if (typeof inspected?.schemaVersion !== 'number' || inspected.schemaVersion !== writer.schemaVersion) {
