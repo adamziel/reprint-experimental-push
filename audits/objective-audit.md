@@ -40,9 +40,9 @@ The project is **not releasable as a production WordPress push path**.
 - `origin/lane/cycle-20260525-mainwindows-2349/critic` -> `fa0dc8a0`
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `51d203fc`
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `c43e1a77`
-- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `197b3c33`
+- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `6a473208`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `2af1ddda`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `57ce0bd3`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `60d562c9`
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` -> `2d7ed103`
 - `origin/lane/cycle-20260525-mainwindows-2357/no-data-loss-invariants-graph-proof` -> `98c0ce26`
 - `origin/lane/cycle-20260525-restart-2340/feedback-supervisor` -> `ef3d911e`
@@ -96,8 +96,10 @@ but it did not change the release conclusion:
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now records
   `57ce0bd3`, refreshing the public progress freshness only.
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` now records
-  `197b3c33`, refreshing the audit snapshot only and not changing the release
+  `6a473208`, refreshing the audit snapshot only and not changing the release
   boundary.
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now records
+  `60d562c9`, refreshing the public progress freshness only.
 - `origin/lane/no-data-loss-invariants` now records `b5e199f0`, adding special
   file sibling proof again, but still not proving the live release boundary or
   any production-backed source mutation.
