@@ -300,7 +300,7 @@ export function createPushPlan({ base, local, remote, now = new Date() }) {
     });
   }
 
-  finalizeWordPressGraphDependencies(plan);
+  finalizeWordPressGraphDependencies(plan, local);
   addFileTopologyConflicts(plan, resources, base, local, remote);
   plan.atomicGroups = intents.map((intent) => buildAtomicGroup(intent, plan, base, remote));
   const existingBlockerIds = new Set(plan.blockers.map((blocker) => blocker.id));
@@ -1053,6 +1053,64 @@ function wordpressGraphIdentitySupport({
     }
   }
 
+  if (resource.table === 'wp_term_relationships') {
+    const ownerId = normalizePositiveInteger(localValue.object_id);
+    if (ownerId != null) {
+      const ownerResource = resources.find((candidate) => candidate.type === 'row'
+        && candidate.table === 'wp_posts'
+        && candidate.id === `ID:${ownerId}`);
+      const ownerValue = ownerResource ? getResource(local, ownerResource) : null;
+      if (ownerValue && typeof ownerValue === 'object') {
+        const ownerPostType = ownerValue.post_type;
+        if (
+          ownerPostType === 'attachment'
+          || ownerPostType === 'revision'
+          || ownerPostType === 'nav_menu_item'
+          || ownerPostType === 'wp_navigation'
+        ) {
+          return {
+            supported: false,
+            className: 'unsupported-wordpress-graph-surface',
+            surface: ownerPostType,
+            reason: `WordPress graph mutation ${resource.key} owned by ${ownerPostType} is outside the supported release-candidate slice and must stay blocked.`,
+          };
+        }
+      }
+    }
+
+    const termTaxonomyId = normalizePositiveInteger(localValue.term_taxonomy_id);
+    if (termTaxonomyId != null) {
+      const termTaxonomyResource = resources.find((candidate) => candidate.type === 'row'
+        && candidate.table === 'wp_term_taxonomy'
+        && candidate.id === `term_taxonomy_id:${termTaxonomyId}`);
+      const termTaxonomyValue = termTaxonomyResource ? getResource(local, termTaxonomyResource) : null;
+      if (termTaxonomyValue && typeof termTaxonomyValue === 'object' && termTaxonomyValue.taxonomy === 'nav_menu') {
+        return {
+          supported: false,
+          className: 'unsupported-wordpress-graph-surface',
+          surface: 'nav_menu',
+          reason: `WordPress graph mutation ${resource.key} owned by a navigation menu term taxonomy is outside the supported release-candidate slice and must stay blocked.`,
+        };
+      }
+    }
+  }
+
+  if (
+    resource.table === 'wp_posts'
+    && localValue.post_parent != null
+    && (
+      localValue.post_type === 'nav_menu_item'
+      || localValue.post_type === 'wp_navigation'
+    )
+  ) {
+    return {
+      supported: false,
+      className: 'unsupported-wordpress-graph-surface',
+      surface: localValue.post_type,
+      reason: `WordPress graph mutation ${resource.key} owned by ${localValue.post_type} is outside the supported release-candidate slice and must stay blocked.`,
+    };
+  }
+
   if (resource.table === 'wp_postmeta') {
     const ownerId = normalizePositiveInteger(localValue.post_id);
     if (ownerId != null) {
@@ -1060,12 +1118,48 @@ function wordpressGraphIdentitySupport({
         && candidate.table === 'wp_posts'
         && candidate.id === `ID:${ownerId}`);
       const ownerValue = ownerResource ? getResource(local, ownerResource) : null;
-      if (ownerValue && typeof ownerValue === 'object' && ownerValue.post_type === 'revision') {
+      if (ownerValue && typeof ownerValue === 'object') {
+        if (ownerValue.post_type === 'attachment') {
+          return {
+            supported: false,
+            className: 'unsupported-wordpress-graph-surface',
+            surface: 'attachment',
+            reason: `WordPress graph mutation ${resource.key} owned by an attachment is outside the supported release-candidate slice and must stay blocked.`,
+          };
+        }
+        if (ownerValue.post_type === 'nav_menu_item' || ownerValue.post_type === 'wp_navigation') {
+          return {
+            supported: false,
+            className: 'unsupported-wordpress-graph-surface',
+            surface: ownerValue.post_type,
+            reason: `WordPress graph mutation ${resource.key} owned by ${ownerValue.post_type} is outside the supported release-candidate slice and must stay blocked.`,
+          };
+        }
+        if (ownerValue.post_type === 'revision') {
+          return {
+            supported: false,
+            className: 'unsupported-wordpress-graph-surface',
+            surface: 'revision',
+            reason: `WordPress graph mutation ${resource.key} owned by a revision is outside the supported release-candidate slice and must stay blocked.`,
+          };
+        }
+      }
+    }
+  }
+
+  if (resource.table === 'wp_termmeta') {
+    const ownerId = normalizePositiveInteger(localValue.term_id);
+    if (ownerId != null) {
+      const navMenuTaxonomy = resources.find((candidate) => candidate.type === 'row'
+        && candidate.table === 'wp_term_taxonomy'
+        && normalizePositiveInteger(getResource(local, candidate)?.term_id) === ownerId
+        && getResource(local, candidate)?.taxonomy === 'nav_menu');
+      if (navMenuTaxonomy) {
         return {
           supported: false,
           className: 'unsupported-wordpress-graph-surface',
-          surface: 'revision',
-          reason: `WordPress graph mutation ${resource.key} owned by a revision is outside the supported release-candidate slice and must stay blocked.`,
+          surface: 'nav_menu',
+          reason: `WordPress graph mutation ${resource.key} owned by a navigation menu term is outside the supported release-candidate slice and must stay blocked.`,
         };
       }
     }
@@ -1138,7 +1232,7 @@ function samePlanWordPressGraphReferenceEvidence(reference) {
   };
 }
 
-function finalizeWordPressGraphDependencies(plan) {
+function finalizeWordPressGraphDependencies(plan, local) {
   const mutationByResourceKey = new Map(
     plan.mutations.map((mutation) => [mutation.resourceKey, mutation]),
   );
@@ -1157,7 +1251,7 @@ function finalizeWordPressGraphDependencies(plan) {
       }
 
       const targetMutation = mutationByResourceKey.get(reference.targetResourceKey);
-      if (!isValidSamePlanWordPressGraphTarget(targetMutation, reference, mutation, mutationByResourceKey)) {
+      if (!isValidSamePlanWordPressGraphTarget(targetMutation, reference, mutation, mutationByResourceKey, local)) {
         plan.blockers.push({
           id: `blocker-wordpress-graph-dependency-${blockerIndex++}`,
           class: 'missing-wordpress-graph-dependency',
@@ -1200,7 +1294,7 @@ function finalizeWordPressGraphDependencies(plan) {
   plan.mutations = orderMutationsByDependencies(plan.mutations);
 }
 
-function isValidSamePlanWordPressGraphTarget(targetMutation, reference, sourceMutation, mutationByResourceKey) {
+function isValidSamePlanWordPressGraphTarget(targetMutation, reference, sourceMutation, mutationByResourceKey, local) {
   if (
     !targetMutation
     || targetMutation.action !== 'put'
@@ -1238,9 +1332,21 @@ function isValidSamePlanWordPressGraphTarget(targetMutation, reference, sourceMu
     const sourceValue = deserializeResourceValue(sourceMutation.value);
     const targetValue = deserializeResourceValue(targetMutation.value);
     if (
+      sourceValue
+      && typeof sourceValue === 'object'
+      && sourceValue.post_type === 'revision'
+    ) {
+      return false;
+    }
+    if (
       targetValue
       && typeof targetValue === 'object'
-      && targetValue.post_type === 'attachment'
+      && (
+        targetValue.post_type === 'attachment'
+        || targetValue.post_type === 'nav_menu_item'
+        || targetValue.post_type === 'wp_navigation'
+        || targetValue.post_type === 'revision'
+      )
     ) {
       return false;
     }
@@ -1282,6 +1388,112 @@ function isValidSamePlanWordPressGraphTarget(targetMutation, reference, sourceMu
   }
 
   if (
+    reference.relationshipType === 'term-relationship-taxonomy'
+    && sourceMutation?.resource?.type === 'row'
+    && sourceMutation?.resource?.table === 'wp_term_relationships'
+    && targetMutation.resource.type === 'row'
+    && targetMutation.resource.table === 'wp_term_taxonomy'
+  ) {
+    const sourceValue = deserializeResourceValue(sourceMutation.value);
+    const targetValue = deserializeResourceValue(targetMutation.value);
+    if (
+      !sourceValue
+      || typeof sourceValue !== 'object'
+      || !targetValue
+      || typeof targetValue !== 'object'
+    ) {
+      return false;
+    }
+  }
+
+  if (
+    reference.relationshipType === 'termmeta-term'
+    && sourceMutation?.resource?.type === 'row'
+    && sourceMutation?.resource?.table === 'wp_termmeta'
+    && targetMutation.resource.type === 'row'
+    && targetMutation.resource.table === 'wp_terms'
+  ) {
+    const sourceValue = deserializeResourceValue(sourceMutation.value);
+    const targetValue = deserializeResourceValue(targetMutation.value);
+    if (
+      !sourceValue
+      || typeof sourceValue !== 'object'
+      || !targetValue
+      || typeof targetValue !== 'object'
+    ) {
+      return false;
+    }
+
+    const ownerTermTaxonomy = [...mutationByResourceKey.values()].find((candidate) => {
+      if (candidate.resource?.type !== 'row' || candidate.resource?.table !== 'wp_term_taxonomy') {
+        return false;
+      }
+      const candidateValue = deserializeResourceValue(candidate.value);
+      return candidateValue
+        && typeof candidateValue === 'object'
+        && normalizePositiveInteger(candidateValue.term_id) === normalizePositiveInteger(targetValue.term_id)
+        && candidateValue.taxonomy === 'nav_menu';
+    });
+    if (ownerTermTaxonomy) {
+      return false;
+    }
+  }
+
+  if (
+    reference.relationshipType === 'term-taxonomy-parent'
+    && sourceMutation?.resource?.type === 'row'
+    && sourceMutation?.resource?.table === 'wp_term_taxonomy'
+    && targetMutation.resource.type === 'row'
+    && targetMutation.resource.table === 'wp_terms'
+  ) {
+    const sourceValue = deserializeResourceValue(sourceMutation.value);
+    const targetValue = deserializeResourceValue(targetMutation.value);
+    if (
+      !sourceValue
+      || typeof sourceValue !== 'object'
+      || !targetValue
+      || typeof targetValue !== 'object'
+    ) {
+      return false;
+    }
+
+    const targetTaxonomyValue = [...(local?.db?.wp_term_taxonomy ? Object.values(local.db.wp_term_taxonomy) : [])]
+      .find((candidate) => normalizePositiveInteger(candidate?.term_id) === normalizePositiveInteger(targetValue.term_id)
+        && candidate?.taxonomy === 'nav_menu');
+    if (
+      targetTaxonomyValue
+      && typeof targetTaxonomyValue === 'object'
+      && targetTaxonomyValue.taxonomy === 'nav_menu'
+    ) {
+      return false;
+    }
+  }
+
+  if (
+    reference.relationshipType === 'term-taxonomy-term'
+    && sourceMutation?.resource?.type === 'row'
+    && sourceMutation?.resource?.table === 'wp_term_taxonomy'
+    && targetMutation.resource.type === 'row'
+    && targetMutation.resource.table === 'wp_terms'
+  ) {
+    const targetValue = deserializeResourceValue(targetMutation.value);
+    if (!targetValue || typeof targetValue !== 'object') {
+      return false;
+    }
+
+    const targetTaxonomyValue = [...(local?.db?.wp_term_taxonomy ? Object.values(local.db.wp_term_taxonomy) : [])]
+      .find((candidate) => normalizePositiveInteger(candidate?.term_id) === normalizePositiveInteger(targetValue.term_id)
+        && candidate?.taxonomy === 'nav_menu');
+    if (
+      targetTaxonomyValue
+      && typeof targetTaxonomyValue === 'object'
+      && targetTaxonomyValue.taxonomy === 'nav_menu'
+    ) {
+      return false;
+    }
+  }
+
+  if (
     reference.relationshipType === 'postmeta-post'
     && sourceMutation?.resource?.type === 'row'
     && sourceMutation?.resource?.table === 'wp_postmeta'
@@ -1290,6 +1502,17 @@ function isValidSamePlanWordPressGraphTarget(targetMutation, reference, sourceMu
   ) {
     const sourceValue = deserializeResourceValue(sourceMutation.value);
     const targetValue = deserializeResourceValue(targetMutation.value);
+    if (
+      targetValue
+      && typeof targetValue === 'object'
+      && (
+        targetValue.post_type === 'nav_menu_item'
+        || targetValue.post_type === 'wp_navigation'
+        || targetValue.post_type === 'revision'
+      )
+    ) {
+      return false;
+    }
     if (
       targetValue
       && typeof targetValue === 'object'
@@ -1314,6 +1537,13 @@ function isValidSamePlanWordPressGraphTarget(targetMutation, reference, sourceMu
     if (
       sourceValue
       && typeof sourceValue === 'object'
+      && sourceValue.meta_key !== 'menu_item_parent'
+    ) {
+      return false;
+    }
+    if (
+      sourceValue
+      && typeof sourceValue === 'object'
       && normalizePositiveInteger(sourceValue.post_id) != null
     ) {
       const ownerMutation = mutationByResourceKey.get(
@@ -1333,7 +1563,12 @@ function isValidSamePlanWordPressGraphTarget(targetMutation, reference, sourceMu
     if (
       targetValue
       && typeof targetValue === 'object'
-      && targetValue.post_type === 'attachment'
+      && (
+        targetValue.post_type === 'attachment'
+        || targetValue.post_type === 'nav_menu_item'
+        || targetValue.post_type === 'wp_navigation'
+        || targetValue.post_type === 'revision'
+      )
     ) {
       return false;
     }
@@ -1589,6 +1824,12 @@ function wordpressGraphUnsupportedSurface(resource, value) {
     const postContent = value && typeof value === 'object' ? value.post_content : null;
     if (typeof postContent === 'string' && /<!--\s*wp:[\s\S]*?-->/.test(postContent)) {
       return 'serialized-blocks';
+    }
+  }
+  if (resource.table === 'wp_term_taxonomy') {
+    const taxonomy = value && typeof value === 'object' ? value.taxonomy : null;
+    if (taxonomy === 'nav_menu') {
+      return 'nav_menu';
     }
   }
   if (UNSUPPORTED_WORDPRESS_GRAPH_TABLE_SUFFIXES.has(resource.table.replace(/^wp_/, ''))) {
