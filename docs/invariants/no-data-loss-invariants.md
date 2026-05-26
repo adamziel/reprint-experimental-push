@@ -209,6 +209,9 @@ This note captures the planner boundary in plain language.
   matching independent edit is already in sync and remote-only plugin changes
   are present; the matching edit stays `already-in-sync`, the plugin changes
   stay `keep-remote`, and the graph blocker evidence stays bounded.
+- A same-plan-created revision-linked postmeta reference must still stop even
+  when remote-only plugin removals are present; the revision-linked postmeta
+  blocker evidence stays bounded and the plugin removals stay `keep-remote`.
 - A same-plan-created socket-like special file must still stop even when a
   matching independent edit is already in sync and remote-only plugin
   removals are present; the matching edit stays `already-in-sync`, the plugin
