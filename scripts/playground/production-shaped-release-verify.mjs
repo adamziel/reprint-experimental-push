@@ -15,8 +15,9 @@ import {
 } from './auth-session-source.js';
 import {
   bindPackagedProductionPluginRuntimeSource,
+  isPackagedProductionPluginSourceCommand,
+  resolvePackagedProductionPluginAuthSessionRequest,
   resolvePackagedProductionPluginAuthSessionSource,
-  resolvePackagedProductionPluginSourceCommand,
 } from './packaged-production-plugin-source-command.js';
 import {
   appendRecoveryClaimOpened,
@@ -52,9 +53,7 @@ const liveAuthSessionSourceBlocker = {
 let authSessionSourceCommand = process.env.REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND || '';
 let authSessionSource = authSessionSourceCommand ? loadAuthSessionSource(authSessionSourceCommand) : null;
 let packagedProductionPluginAuthSessionSource = null;
-const packagedProductionPluginRequested = /\bREPRINT_PUSH_PACKAGED_PRODUCTION_PLUGIN=1\b/.test(
-  String(authSessionSourceCommand || ''),
-);
+let packagedProductionPluginRequested = isPackagedProductionPluginSourceCommand(authSessionSourceCommand);
 
 if (authSessionSource?.ok) {
   const resolvedAuthSessionSource = resolveAuthSessionSourceCredentials({
@@ -76,12 +75,14 @@ if (
   credentials.username &&
   credentials.password
 ) {
-  packagedProductionPluginAuthSessionSource = resolvePackagedProductionPluginAuthSessionSource({
+  const packagedProductionPluginAuthSessionRequest = resolvePackagedProductionPluginAuthSessionRequest({
     sourceUrl: liveSourceUrl || 'http://127.0.0.1:8080',
     username: credentials.username,
     applicationPassword: credentials.password,
     authSessionSourceCommand,
   });
+  packagedProductionPluginAuthSessionSource = packagedProductionPluginAuthSessionRequest;
+  packagedProductionPluginRequested = packagedProductionPluginAuthSessionRequest.requested;
 }
 
 if (packagedProductionPluginAuthSessionSource?.source.ok) {
@@ -1160,29 +1161,40 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
       throw new Error(message);
     }
     try {
-      const index = await fetchWithTimeout(`${baseUrl}/wp-json/`, {
+      const snapshot = await fetchWithTimeout(`${baseUrl}/wp-json/reprint/v1/push/snapshot`, {
         headers: {
+          ...authHeaders(),
           connection: 'close',
         },
       }, packagedServerFetchTimeoutMs);
-      const indexBody = await index.clone().text().catch(() => '');
-      const indexPreview = indexBody.slice(0, readinessFailureBodyLimit);
+      const snapshotText = await snapshot.text();
+      const snapshotPreview = snapshotText.slice(0, readinessFailureBodyLimit);
       lastProbes.push({
-        route: '/wp-json/',
-        status: index.status,
-        ok: index.ok,
-        body: indexPreview,
+        route: '/wp-json/reprint/v1/push/snapshot',
+        status: snapshot.status,
+        ok: snapshot.ok,
+        body: snapshotPreview,
       });
-      if (index.status !== 200) {
-        lastError = new Error(`Production plugin package index readiness HTTP ${index.status}`);
-        if (isWordPressNotReadyResponse(index.status, indexBody)) {
+      let snapshotBody = null;
+      try {
+        snapshotBody = JSON.parse(snapshotText);
+      } catch (error) {
+        if (isWordPressNotReadyResponse(snapshot.status, snapshotText)) {
+          lastError = new Error(`Production plugin package snapshot readiness HTTP ${snapshot.status}`);
+          await sleep(readinessProbeIntervalMs);
+          continue;
+        }
+        throw error;
+      }
+      if (snapshot.status !== 200 || snapshotBody?.ok !== true) {
+        lastError = new Error(`Production plugin package snapshot readiness HTTP ${snapshot.status}`);
+        if (isWordPressNotReadyResponse(snapshot.status, snapshotText)) {
           await sleep(readinessProbeIntervalMs);
           continue;
         }
         await sleep(readinessProbeIntervalMs);
         continue;
       }
-      await index.arrayBuffer();
 
       const preflight = await fetchWithTimeout(`${baseUrl}/wp-json/reprint/v1/push/preflight`, {
         method: 'GET',
@@ -1485,10 +1497,6 @@ function writeSpawnOutputTail(proof, commandLabel = '') {
 
 function snapshotHash(snapshot) {
   return createHash('sha256').update(JSON.stringify(snapshot), 'utf8').digest('hex');
-}
-
-function authSessionSourceCommandIncludesPackagedProductionPlugin(command) {
-  return /\bREPRINT_PUSH_PACKAGED_PRODUCTION_PLUGIN=1\b/.test(String(command || ''));
 }
 
 function createPackagedProductionPluginFixture() {
@@ -1870,6 +1878,12 @@ function signedHeadersForProductionPreflight(auth = credentials) {
     'X-Auth-Nonce': nonce,
     'X-Auth-Signature': hmacHex(signingKey, authString),
     'X-Reprint-Push-Signature': hmacHex(signingKey, canonical),
+  };
+}
+
+function authHeaders(auth = credentials) {
+  return {
+    authorization: `Basic ${Buffer.from(`${auth.username}:${auth.password}`, 'utf8').toString('base64')}`,
   };
 }
 

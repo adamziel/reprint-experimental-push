@@ -17,6 +17,10 @@ export function resolvePackagedProductionPluginSourceCommand({
   return `REPRINT_PUSH_PACKAGED_PRODUCTION_PLUGIN=1 ${command}`;
 }
 
+export function isPackagedProductionPluginSourceCommand(command = '') {
+  return /\bREPRINT_PUSH_PACKAGED_PRODUCTION_PLUGIN=1\b/.test(String(command || ''));
+}
+
 export function resolvePackagedProductionPluginAuthSessionSource({
   sourceUrl,
   username,
@@ -33,6 +37,25 @@ export function resolvePackagedProductionPluginAuthSessionSource({
   return {
     command,
     source: loadAuthSessionSource(command),
+  };
+}
+
+export function resolvePackagedProductionPluginAuthSessionRequest({
+  sourceUrl,
+  username,
+  applicationPassword,
+  authSessionSourceCommand = '',
+}) {
+  const request = resolvePackagedProductionPluginAuthSessionSource({
+    sourceUrl,
+    username,
+    applicationPassword,
+    authSessionSourceCommand,
+  });
+
+  return {
+    ...request,
+    requested: isPackagedProductionPluginSourceCommand(request.command),
   };
 }
 

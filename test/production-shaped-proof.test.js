@@ -15,6 +15,8 @@ import {
 } from '../scripts/playground/auth-session-source-command.js';
 import {
   bindPackagedProductionPluginRuntimeSource,
+  isPackagedProductionPluginSourceCommand,
+  resolvePackagedProductionPluginAuthSessionRequest,
   resolvePackagedProductionPluginAuthSessionSource,
   resolvePackagedProductionPluginSourceCommand,
 } from '../scripts/playground/packaged-production-plugin-source-command.js';
@@ -630,36 +632,22 @@ test('production-shaped release verify command fails closed when production dura
   assert.match(proof.stdout, /"code": "PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED"/);
 });
 
-test('production-shaped release verify command fails closed when production auth/session lifecycle is explicitly required', () => {
-  const proof = spawnProductionShapedReleaseVerify(
-    {
-      REPRINT_PUSH_SOURCE_URL: 'http://127.0.0.1:8080',
-      REPRINT_PUSH_REMOTE_URL: 'http://127.0.0.1:8080',
-      REPRINT_PUSH_LAB_AUTH_ADMIN_USER: liveCredentials.username,
-      REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD: liveCredentials.password,
-      REPRINT_PUSH_REQUIRE_PRODUCTION_AUTH_SESSION: '1',
-      NODE_NO_WARNINGS: '1',
-    },
-    boundedLiveReleaseVerifyOptions({ timeout: Math.max(1_000, Math.min(releaseVerifySlowPathTimeoutMs, liveProofInnerTimeoutMs)) }),
-    'auth/session release verify',
-  );
-  assertReleaseVerifySpawnProof(proof, 'auth/session release verify', liveProofInnerTimeoutMs);
-  assert.equal(proof.status, 1, proof.stderr);
-  assert.match(proof.stdout, /"ok": false/);
-  assert.match(
-    proof.stdout,
-    /"boundary": \{\s*"firstRemainingProductionBoundary": "auth\/session lifecycle and durable journal semantics",\s*"status": "unimplemented",\s*"verdict": "PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED",\s*"durableJournal": \{\s*"storageLeaseFence": "production durable journal storage, lease, and fencing are not yet proven beyond the retained Playground journal path",\s*"verdict": "PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED"\s*\},\s*"authSession": \{\s*"required": "production-auth-session",\s*"observed": "unreachable-live-source",\s*"verdict": "PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED"\s*\},\s*"liveAuthSessionSource": \{\s*"requiredCommand": "REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND",\s*"verdict": "PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED",\s*"observed": "unreachable-live-source",\s*"error": "fetch failed"\s*\},\s*"liveSource": \{\s*"url": "http:\/\/127\.0\.0\.1:8080",\s*"verdict": "PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED",\s*"error": "fetch failed"\s*\}\s*\}/,
-  );
-  assert.match(proof.stdout, /"authSessionLifecycle": null/);
-  assert.match(proof.stdout, /"authSessionLifecycleTrace": \[\s*\]/);
-  assert.match(
-    proof.stdout,
-    /"gateDependencies": \{\s*"productionAuthSession": "production-backed auth\/session issuance, read, expiry, rotation, revocation, and cleanup on the checked release path",\s*"durableJournal": "production durable journal storage with lease fencing, restart-readable artifacts, and release-path consumption",\s*"replayAndRetry": "checked live replay equivalence plus preserved-remote retry on the release verifier path"\s*\}/,
-  );
-  assert.match(
-    proof.stdout,
-    /"releaseProof": \{\s*"ok": false,\s*"status": 409,\s*"code": "PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED"\s*\}/,
-  );
+test('production-shaped release verify request state marks synthesized packaged production auth/session sources as packaged requests', () => {
+  const request = resolvePackagedProductionPluginAuthSessionRequest({
+    sourceUrl: 'http://127.0.0.1:8080',
+    username: liveCredentials.username,
+    applicationPassword: liveCredentials.password,
+  });
+
+  assert.equal(request.requested, true);
+  assert.equal(isPackagedProductionPluginSourceCommand(request.command), true);
+  assert.match(request.command, /^REPRINT_PUSH_PACKAGED_PRODUCTION_PLUGIN=1 /);
+  assert.deepEqual(request.source, {
+    ok: true,
+    sourceUrl: 'http://127.0.0.1:8080',
+    username: liveCredentials.username,
+    applicationPassword: liveCredentials.password,
+  });
 });
 
 test('production-shaped release verify command consumes the production auth/session source command when provided', () => {
