@@ -530,8 +530,10 @@ export function describeProductionRecoveryJournal(writer) {
 }
 
 function isValidProductionWriterLease(writerLease) {
+  const ownKeys = Reflect.ownKeys(writerLease ?? {});
   return (
     isStrictPlainObject(writerLease)
+    && ownKeys.every((key) => key === 'id' || key === 'epoch')
     && Object.hasOwn(writerLease, 'id')
     && typeof writerLease.id === 'string'
     && writerLease.id.trim().length > 0
