@@ -710,7 +710,11 @@ function durableJournalInspectRecords(inspected) {
     && typeof record === 'object'
     && Number.isInteger(record.sequence)
     && typeof record.type === 'string',
-  );
+  ) && inspected.records.every((record, index, records) => (
+    index === 0
+      ? record.sequence > 0
+      : record.sequence > records[index - 1].sequence
+  ));
 }
 
 function recordDurablePlanOpened(writer, remote, plan, options = {}) {
