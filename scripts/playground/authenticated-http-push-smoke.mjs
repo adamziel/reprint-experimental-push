@@ -345,11 +345,58 @@ await withPlaygroundServer('authenticated-ready-base', path.join(repoRoot, fixtu
 
   const authenticatedDbJournal = await getAuthenticated(server, '/db-journal?limit=80', authHeaders(credentials.admin));
   assert.equal(authenticatedDbJournal.status, 200);
+  assert.equal(authenticatedDbJournal.body.dbJournal?.acceptedOnCheckedBoundary, undefined);
   await assertNoMutation(server, initial.body.snapshot, 'authenticated Basic db-journal');
 
   const authenticatedDbJournalSchema = await getAuthenticated(server, '/db-journal/schema', authHeaders(credentials.admin));
   assert.equal(authenticatedDbJournalSchema.status, 200);
+  assert.equal(authenticatedDbJournalSchema.body.dbJournalSchema?.acceptedOnCheckedBoundary, undefined);
   await assertNoMutation(server, initial.body.snapshot, 'authenticated Basic db-journal schema');
+
+  const signedAuthenticatedDbJournal = await signedGetAuthenticated(
+    server,
+    '/db-journal?limit=80',
+    credentials.admin,
+    { session: pushSession },
+  );
+  assert.equal(signedAuthenticatedDbJournal.status, 200);
+  assert.equal(signedAuthenticatedDbJournal.body.ok, true);
+  assert.equal(signedAuthenticatedDbJournal.body.dbJournal.acceptedOnCheckedBoundary, true);
+  assert.deepEqual(signedAuthenticatedDbJournal.body.dbJournal.ownership, {
+    ownsJournal: true,
+    restartReadable: true,
+    productionAdapter: 'wpdb-single-statement-cas',
+  });
+  assert.deepEqual(signedAuthenticatedDbJournal.body.dbJournal.leaseFence, {
+    boundary: 'wpdb-single-statement-cas',
+    claimKeyUnique: true,
+    monotonicSequence: true,
+    restartReadable: true,
+    staleClaimRejected: false,
+  });
+  await assertNoMutation(server, initial.body.snapshot, 'authenticated signed db-journal');
+
+  const signedAuthenticatedDbJournalSchema = await signedGetAuthenticated(
+    server,
+    '/db-journal/schema',
+    credentials.admin,
+    { session: pushSession },
+  );
+  assert.equal(signedAuthenticatedDbJournalSchema.status, 200);
+  assert.equal(signedAuthenticatedDbJournalSchema.body.ok, true);
+  assert.equal(signedAuthenticatedDbJournalSchema.body.dbJournalSchema.acceptedOnCheckedBoundary, true);
+  assert.deepEqual(signedAuthenticatedDbJournalSchema.body.dbJournalSchema.ownership, {
+    ownsJournal: true,
+    restartReadable: true,
+    productionAdapter: 'wpdb-single-statement-cas',
+  });
+  assert.deepEqual(signedAuthenticatedDbJournalSchema.body.dbJournalSchema.leaseFence, {
+    boundary: 'wpdb-single-statement-cas',
+    claimKeyUnique: true,
+    monotonicSequence: true,
+    restartReadable: true,
+  });
+  await assertNoMutation(server, initial.body.snapshot, 'authenticated signed db-journal schema');
 
   const authenticatedRecovery = await postAuthenticated(
     server,

@@ -482,12 +482,13 @@ function reprint_push_lab_db_journal_row_by_id(int $id): array
     return is_array($row) ? reprint_push_lab_db_journal_public_row($row) : [];
 }
 
-function reprint_push_lab_db_journal_summary(int $limit = 20): array
+function reprint_push_lab_db_journal_summary(int $limit = 20, bool $checked_surface = false): array
 {
     global $wpdb;
 
     reprint_push_lab_db_journal_ensure_table();
     $package_mode = reprint_push_lab_db_journal_package_mode_enabled();
+    $accepted_on_checked_boundary = $package_mode || $checked_surface;
 
     $limit = max(1, min(500, $limit));
     $quoted_table = reprint_push_lab_db_journal_quoted_table_name();
@@ -513,8 +514,10 @@ function reprint_push_lab_db_journal_summary(int $limit = 20): array
     $summary = [
         'schemaVersion' => 1,
         'table' => reprint_push_lab_db_journal_table_name(),
-        'scope' => $package_mode
-            ? 'packaged production plugin journal surface; not local Playground fixture only'
+        'scope' => $accepted_on_checked_boundary
+            ? ($package_mode
+                ? 'packaged production plugin journal surface; not local Playground fixture only'
+                : 'checked live production-shaped journal surface; not local Playground fixture only')
             : 'local Playground fixture only; not production durability',
         'rowCount' => $row_count,
         'latestRows' => array_map('reprint_push_lab_db_journal_public_row', array_reverse($latest)),
@@ -535,7 +538,7 @@ function reprint_push_lab_db_journal_summary(int $limit = 20): array
         }, $idempotency),
     ];
 
-    if ($package_mode) {
+    if ($accepted_on_checked_boundary) {
         $summary['acceptedOnCheckedBoundary'] = true;
         $summary['ownership'] = [
             'ownsJournal' => true,

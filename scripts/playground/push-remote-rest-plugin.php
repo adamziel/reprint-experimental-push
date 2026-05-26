@@ -3247,23 +3247,10 @@ function reprint_push_lab_rest_journal(WP_REST_Request $request): WP_REST_Respon
 function reprint_push_lab_rest_db_journal(WP_REST_Request $request): WP_REST_Response
 {
     $limit = max(1, min(500, (int) $request->get_param('limit')));
-    $db_journal = reprint_push_lab_db_journal_summary($limit);
-    if (reprint_push_lab_rest_checked_production_journal_surface($request)) {
-        $db_journal['scope'] = 'checked live production-shaped journal surface; not local Playground fixture only';
-        $db_journal['acceptedOnCheckedBoundary'] = true;
-        $db_journal['ownership'] = [
-            'ownsJournal' => true,
-            'restartReadable' => true,
-            'productionAdapter' => 'wpdb-single-statement-cas',
-        ];
-        $db_journal['leaseFence'] = [
-            'boundary' => 'wpdb-single-statement-cas',
-            'claimKeyUnique' => reprint_push_lab_db_journal_has_claim_key_unique_index(),
-            'monotonicSequence' => reprint_push_lab_db_journal_rows_are_monotonic($db_journal['latestRows'] ?? []),
-            'restartReadable' => true,
-            'staleClaimRejected' => reprint_push_lab_db_journal_has_stale_claim_rejection_evidence($db_journal['latestRows'] ?? []),
-        ];
-    }
+    $db_journal = reprint_push_lab_db_journal_summary(
+        $limit,
+        reprint_push_lab_rest_checked_production_journal_surface($request)
+    );
     $result = [
         'ok' => true,
         'dbJournal' => $db_journal,
