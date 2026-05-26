@@ -1,6 +1,6 @@
 Recovery lane handoff:
 
-- Timestamp: 2026-05-26 11:32:21 CEST (+0200)
+- Timestamp: 2026-05-26 11:34:36 CEST (+0200)
 - No recovery-side code patch was needed this pass.
 - The checked recovery adapter surface is still present in `src/recovery-journal.js` via `openProductionRecoveryJournal()`, including `productionAdapter`, `supportedSurface`, `restartReadable`, `ownsJournal`, `journalPath`, `writerLease`, `artifactRefs`, `inspect()`, `flush()`, `close()`, and `assertCurrentClaim()`.
 - The owned recovery tests still pass, including the replay and failure-state coverage in `test/recovery-journal.test.js`.
