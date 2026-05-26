@@ -5246,11 +5246,17 @@ test('production throughput details fail closed when queue-budget visibility dis
   const blockers = productionThroughputBlockers(report);
 
   assert.equal(details.queueBudgetVisible, false);
+  assert.equal(details.receiptCursorPauseFootprintVisible, false);
   assert.equal(details.receiptCursorQueueSlackVisible, true);
   assert.equal(details.receiptCursorMemoryHeadroomVisible, true);
+  assert.equal(details.queueBudgetVisibleAndMemoryCeilingVisible, false);
+  assert.equal(details.queueBudgetVisibleAndQueueHeadroomVisible, false);
   assert.equal(details.receiptCursorQueueSlackVisibleAndMemoryHeadroomVisible, false);
   assert.equal(details.receiptCursorMemoryHeadroomVisibleAndQueueBudgetVisible, false);
   assert.equal(details.backpressureConsistency.queueBudgetVisible, false);
+  assert.equal(details.backpressureConsistency.receiptCursorPauseFootprintVisible, false);
+  assert.equal(details.backpressureConsistency.queueBudgetVisibleAndMemoryCeilingVisible, false);
+  assert.equal(details.backpressureConsistency.queueBudgetVisibleAndQueueHeadroomVisible, false);
   assert.equal(
     details.backpressureConsistency.receiptCursorQueueSlackVisibleAndMemoryHeadroomVisible,
     false,
@@ -5259,6 +5265,7 @@ test('production throughput details fail closed when queue-budget visibility dis
     details.backpressureConsistency.receiptCursorMemoryHeadroomVisibleAndQueueBudgetVisible,
     false,
   );
+  assert.ok(blockers.includes('memory-ceiling-visible-without-queue-budget-visibility'));
   assert.ok(blockers.includes('receipt-cursor-queue-slack-visible-without-queue-budget-visibility'));
   assert.ok(blockers.includes('receipt-cursor-memory-headroom-visible-without-queue-budget-visibility'));
 });
