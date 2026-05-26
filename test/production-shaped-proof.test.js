@@ -747,6 +747,30 @@ test('production plugin package smoke synthesizes a packaged source command befo
   );
 });
 
+test('production plugin package smoke seeds signed session and nonce options with hashed ids', () => {
+  const smokeSource = readFileSync(
+    path.join(repoRoot, 'scripts/playground/production-plugin-package-smoke.mjs'),
+    'utf8',
+  );
+
+  assert.match(
+    smokeSource,
+    /add_option\('reprint_push_lab_signed_session_' \. hash\('sha256', \$expired_session_id\)/,
+  );
+  assert.match(
+    smokeSource,
+    /add_option\('reprint_push_lab_signed_session_' \. hash\('sha256', \$future_session_id\)/,
+  );
+  assert.match(
+    smokeSource,
+    /add_option\('reprint_push_lab_signed_nonce_' \. hash\('sha256', \$expired_nonce\)/,
+  );
+  assert.match(
+    smokeSource,
+    /add_option\('reprint_push_lab_signed_nonce_' \. hash\('sha256', \$future_nonce\)/,
+  );
+});
+
 test('production-shaped release verify consumes the packaged production auth/session source command on the checked release path', () => {
   const sourceUrl = 'http://127.0.0.1:8080';
   const packagedSource = resolvePackagedProductionPluginAuthSessionSource({
