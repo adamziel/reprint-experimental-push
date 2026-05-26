@@ -22974,6 +22974,98 @@ test('production durable journal claims fail closed when inspection records neve
   assert.ok(error.details.missingDependency.includes('journal-readable inspection records with sequence and type'));
 });
 
+test('production durable journal claims fail closed when inspection records reopen journal-opened after the persisted boundary', () => {
+  const claimId = 'claim-with-duplicate-journal-opened';
+  const claimHash = digest({ recoveryJournalClaim: claimId });
+  const writer = {
+    kind: 'production-recovery-journal',
+    productionAdapter: true,
+    supportedSurface: 'production-recovery-journal-adapter',
+    restartReadable: true,
+    ownsJournal: true,
+    ownsRemoteArtifact: true,
+    journalPath: '/var/lib/reprint/recovery.jsonl',
+    artifactRefs: {
+      journal: '/var/lib/reprint/recovery.jsonl',
+      remote: '/var/lib/reprint/recovery-remote.jsonl',
+    },
+    schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+    writerLease: { id: claimId, epoch: 1 },
+    leaseFence: { id: claimId, epoch: 1 },
+    claimHash,
+    appendEvent() {},
+    flush() {},
+    close() {},
+    inspect() {
+      return {
+        filePath: '/var/lib/reprint/recovery.jsonl',
+        schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+        writerLease: { id: claimId, epoch: 1 },
+        leaseFence: { id: claimId, epoch: 1 },
+        artifactRefs: {
+          journal: '/var/lib/reprint/recovery.jsonl',
+          remote: '/var/lib/reprint/recovery-remote.jsonl',
+        },
+        records: [
+          {
+            sequence: 1,
+            type: 'recovery-claim-opened',
+            claimHash,
+            claimLease: { id: claimId, epoch: 1 },
+            fsync: { requested: true },
+            artifactRefs: {
+              journal: '/var/lib/reprint/recovery.jsonl',
+              remote: '/var/lib/reprint/recovery-remote.jsonl',
+            },
+          },
+          {
+            sequence: 2,
+            type: 'journal-opened',
+            artifactRefs: {
+              journal: '/var/lib/reprint/recovery.jsonl',
+              remote: '/var/lib/reprint/recovery-remote.jsonl',
+            },
+          },
+          {
+            sequence: 3,
+            type: 'target-planned',
+            artifactRefs: {
+              journal: '/var/lib/reprint/recovery.jsonl',
+              remote: '/var/lib/reprint/recovery-remote.jsonl',
+            },
+          },
+          {
+            sequence: 4,
+            type: 'journal-opened',
+            artifactRefs: {
+              journal: '/var/lib/reprint/recovery.jsonl',
+              remote: '/var/lib/reprint/recovery-remote.jsonl',
+            },
+          },
+        ],
+      };
+    },
+    assertCurrentClaim() {},
+  };
+  const plan = planFor(baseSite(), baseSite(), {
+    ...baseSite(),
+    db: {
+      ...baseSite().db,
+      wp_options: {
+        ...baseSite().db.wp_options,
+        'option_name:blogname': { option_name: 'blogname', option_value: 'New Site' },
+      },
+    },
+  });
+  const error = captureError(() => applyPlan(baseSite(), plan, {
+    requireProductionDurableJournal: true,
+    durableJournal: writer,
+  }));
+
+  assert.equal(error.code, 'PRODUCTION_DURABLE_JOURNAL_UNSUPPORTED');
+  assert.ok(error.details.missingDependency.includes('journal-readable inspection records with sequence and type'));
+});
+
 test('production durable journal claims fail closed when the writer cannot fence claims', () => {
   const writer = {
     nextSequence: 1,

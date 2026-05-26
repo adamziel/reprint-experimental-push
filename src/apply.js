@@ -1448,6 +1448,9 @@ function durableJournalInspectRecords(inspected) {
   const journalOpenedIndex = Array.isArray(records)
     ? records.findIndex((record) => record?.type === 'journal-opened')
     : -1;
+  const journalOpenedCount = Array.isArray(records)
+    ? records.filter((record) => record?.type === 'journal-opened').length
+    : 0;
   return Boolean(
     isStrictPlainObject(inspected)
     && Object.hasOwn(inspected, 'schemaVersion')
@@ -1485,6 +1488,7 @@ function durableJournalInspectRecords(inspected) {
       ? record.sequence === 1
       : record.sequence === recordsList[index - 1].sequence + 1
   )) && journalOpenedIndex !== -1
+  && journalOpenedCount === 1
   && records
     .slice(0, journalOpenedIndex)
     .every((record) => CLAIM_FENCE_RECORD_TYPES.has(record.type));
