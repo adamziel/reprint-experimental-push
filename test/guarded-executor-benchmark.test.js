@@ -6079,6 +6079,35 @@ test('guarded benchmark keeps memory-headroom pair summaries false when memory-c
   assert.ok(blockers.includes('queue-budget-visible-without-memory-ceiling-match-visibility'));
 });
 
+test('guarded benchmark keeps queue-headroom measured visibility summaries false when memory-ceiling-match visibility is hidden', () => {
+  const report = smallBenchmark();
+  const mutated = clone(report);
+
+  mutated.evidence.backpressure.receiptCursorMemoryCeilingMatchesQueueBudgetVisible = false;
+
+  const details = productionThroughputDetails(mutated);
+  const blockers = productionThroughputBlockers(mutated);
+
+  assert.equal(details.queueHeadroomVisible, true);
+  assert.equal(details.queueHeadroomMeasured, true);
+  assert.equal(details.receiptCursorQueueSlackVisible, true);
+  assert.equal(details.receiptCursorQueueSlackMeasured, true);
+  assert.equal(details.queueHeadroomVisibleAndMeasured, false);
+  assert.equal(details.queueHeadroomVisibleAndMeasuredAndAligned, false);
+  assert.equal(details.queueHeadroomVisibleAndQueueSlackMeasured, false);
+  assert.equal(details.queueHeadroomVisibleAndQueueSlackVisibleAndMeasured, false);
+  assert.equal(details.receiptCursorQueueSlackVisibleAndMeasured, false);
+  assert.equal(details.backpressureConsistency.queueHeadroomVisibleAndMeasured, false);
+  assert.equal(details.backpressureConsistency.queueHeadroomVisibleAndMeasuredAndAligned, false);
+  assert.equal(details.backpressureConsistency.queueHeadroomVisibleAndQueueSlackMeasured, false);
+  assert.equal(
+    details.backpressureConsistency.queueHeadroomVisibleAndQueueSlackVisibleAndMeasured,
+    false,
+  );
+  assert.equal(details.backpressureConsistency.receiptCursorQueueSlackVisibleAndMeasured, false);
+  assert.ok(blockers.includes('queue-budget-visible-without-memory-ceiling-match-visibility'));
+});
+
 test('guarded benchmark keeps paused queue-budget and memory-headroom pair summaries false when raw memory-ceiling visibility is hidden', () => {
   const report = smallBenchmark();
   const mutated = clone(report);
