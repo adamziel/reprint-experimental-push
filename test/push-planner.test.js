@@ -12880,6 +12880,48 @@ test('blocks local term-taxonomy parent references to a missing live remote term
   assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin drift */');
 });
 
+test('blocks local comments and users graph resources while preserving remote-only plugin removals', () => {
+  const resourceKey = 'row:["wp_comments","comment_id:11"]';
+  const base = baseSite();
+  base.db.wp_comments = {
+    'comment_id:11': {
+      comment_ID: 11,
+      comment_post_ID: 1,
+      comment_content: 'Base comment',
+    },
+  };
+
+  const local = baseSite();
+  local.db.wp_comments = {
+    'comment_id:11': {
+      comment_ID: 11,
+      comment_post_ID: 1,
+      comment_content: 'Local comment',
+    },
+  };
+
+  const remote = baseSite();
+  remote.db.wp_comments = JSON.parse(JSON.stringify(base.db.wp_comments));
+  delete remote.plugins.forms;
+  delete remote.files['wp-content/plugins/forms/forms.php'];
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers[0];
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(plan.conflicts.length, 0);
+  assert.equal(blocker.class, 'unsupported-comments-users-resource');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.reason, 'Comments graph resources are not yet supported by the planner.');
+  assert.equal(planJson.includes('Local comment'), false);
+  assert.equal(planJson.includes('Base comment'), false);
+  assert.equal(Object.hasOwn(remote.plugins, 'forms'), false);
+  assert.equal(Object.hasOwn(remote.files, 'wp-content/plugins/forms/forms.php'), false);
+});
+
 test('blocks local term-relationship object references when the live remote post identity disappears while preserving remote-only plugin drift', () => {
   const resourceKey = 'row:["wp_term_relationships","object_id:7,term_taxonomy_id:5"]';
   const targetResourceKey = 'row:["wp_posts","ID:7"]';
