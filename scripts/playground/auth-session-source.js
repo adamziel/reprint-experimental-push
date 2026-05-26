@@ -129,7 +129,8 @@ export function resolveAuthSessionRequestCredentials({
   const normalizedApplicationPassword = normalizeAuthSessionSourceField(applicationPassword);
   const normalizedFallbackUsername = normalizeAuthSessionSourceField(fallbackUsername);
   const normalizedFallbackApplicationPassword = normalizeAuthSessionSourceField(fallbackApplicationPassword);
-  const hasExplicitCredentialField = Boolean(normalizedUsername || normalizedApplicationPassword);
+  const hasExplicitCredentialField = hasExplicitAuthSessionCredentialField(username)
+    || hasExplicitAuthSessionCredentialField(applicationPassword);
   const resolvedUsername = hasExplicitCredentialField
     ? normalizedUsername
     : normalizedFallbackUsername;
@@ -231,4 +232,10 @@ function isLoopbackHost(hostname) {
     || hostname === '127.0.0.1'
     || hostname === '::1'
     || hostname.startsWith('127.');
+}
+
+function hasExplicitAuthSessionCredentialField(value) {
+  return value !== undefined
+    && value !== null
+    && !(typeof value === 'string' && value === '');
 }

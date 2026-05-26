@@ -1048,6 +1048,54 @@ test('production-shaped release verify does not mix partial explicit direct cred
   );
 });
 
+test('production-shaped release verify does not replace malformed explicit direct credentials with fallback auth defaults before source override', () => {
+  assert.deepEqual(
+    resolveAuthSessionRequestState(
+      {
+        liveSourceUrl: 'http://127.0.0.1:9090',
+        username: ' trusted-runtime-username ',
+        applicationPassword: '\treliable-runtime-password',
+        fallbackUsername: 'reprint_push_admin',
+        fallbackApplicationPassword: 'reprint-push-admin-app-password',
+      },
+      null,
+    ),
+    {
+      liveSourceUrl: 'http://127.0.0.1:9090',
+      username: '',
+      applicationPassword: '',
+      credentials: {
+        username: '',
+        password: '',
+      },
+    },
+  );
+});
+
+test('production-shaped release verify does not replace non-string explicit direct credentials with fallback auth defaults before source override', () => {
+  assert.deepEqual(
+    resolveAuthSessionRequestState(
+      {
+        liveSourceUrl: 'http://127.0.0.1:9090',
+        username: ['trusted-runtime-username'],
+        applicationPassword: { secret: 'trusted-runtime-password' },
+        fallbackUsername: 'reprint_push_admin',
+        fallbackApplicationPassword: 'reprint-push-admin-app-password',
+      },
+      null,
+    ),
+    {
+      liveSourceUrl: 'http://127.0.0.1:9090',
+      username: '',
+      applicationPassword: '',
+      credentials: {
+        username: '',
+        password: '',
+      },
+    },
+  );
+});
+
 test('production-shaped release verify lets a required production auth/session source override explicit direct credentials', () => {
   const source = {
     ok: true,
