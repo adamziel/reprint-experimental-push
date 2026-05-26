@@ -17120,6 +17120,65 @@ test('blocks local termmeta deletes while preserving remote-only plugin removals
   assert.equal(Object.hasOwn(remote.files, 'wp-content/plugins/forms/forms.php'), false);
 });
 
+test('blocks local termmeta deletes while preserving a matching independent file type swap and remote-only plugin changes', () => {
+  const resourceKey = 'row:["wp_termmeta","meta_id:8"]';
+  const swapFileKey = 'file:wp-content/uploads/termmeta-delete-cover';
+  const base = baseSite();
+  base.db.wp_terms = {
+    'term_id:9': {
+      term_id: 9,
+      name: 'Base term',
+      slug: 'base-term',
+    },
+  };
+  base.db.wp_termmeta = {
+    'meta_id:8': {
+      meta_id: 8,
+      term_id: 9,
+      meta_key: 'term-label',
+      meta_value: 'base termmeta value',
+    },
+  };
+  base.files['wp-content/uploads/termmeta-delete-cover'] = 'base cover bytes';
+
+  const local = baseSite();
+  local.db.wp_terms = JSON.parse(JSON.stringify(base.db.wp_terms));
+  local.db.wp_termmeta = JSON.parse(JSON.stringify(base.db.wp_termmeta));
+  delete local.db.wp_termmeta['meta_id:8'];
+  local.files['wp-content/uploads/termmeta-delete-cover'] = { type: 'directory' };
+
+  const remote = baseSite();
+  remote.db.wp_terms = JSON.parse(JSON.stringify(base.db.wp_terms));
+  remote.db.wp_termmeta = JSON.parse(JSON.stringify(base.db.wp_termmeta));
+  remote.files['wp-content/uploads/termmeta-delete-cover'] = { type: 'directory' };
+  remote.plugins.forms.description = 'remote-only plugin changes';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin changes */';
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  const matchingTypeSwap = decisionFor(plan, swapFileKey);
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(blocker.class, 'unsupported-termmeta-resource');
+  assert.equal(blocker.resourceKind, 'term-meta');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.unsupportedState, 'delete');
+  assert.equal(blocker.reason, 'Term meta graph resource deletes are not yet supported by the planner.');
+  assert.equal(matchingTypeSwap.decision, 'already-in-sync');
+  assert.equal(matchingTypeSwap.change.localChange, 'type-change');
+  assert.equal(matchingTypeSwap.change.remoteChange, 'type-change');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('base termmeta value'), false);
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin changes');
+  assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin changes */');
+});
+
 test('blocks steady unsupported term meta rows before they can be treated as already in sync while preserving remote-only plugin changes', () => {
   const resourceKey = 'row:["wp_termmeta","meta_id:88"]';
   const base = baseSite();
