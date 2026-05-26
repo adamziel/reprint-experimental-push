@@ -3476,10 +3476,10 @@ function unsupportedNavigationResourceSupport({ resource, baseValue, localValue,
       reference.relationshipType === 'menu-item-parent'
       || reference.relationshipType === 'post-parent');
 
-  const navigationReference = inboundReferences.find((reference) => (
-    reference.relationshipType === 'menu-item-parent'
-    || reference.relationshipType === 'post-parent'
-  ));
+  const samePlanNavigationReferences = inboundReferences.filter((reference) =>
+    reference.targetChange.remote.state === 'absent'
+    && reference.targetChange.local.state === 'present');
+  const navigationReference = samePlanNavigationReferences[0];
   return {
     supported: false,
     className: 'unsupported-navigation-resource',
@@ -3494,7 +3494,7 @@ function unsupportedNavigationResourceSupport({ resource, baseValue, localValue,
           allowSteadyUnsupported: true,
         }),
     reason: 'Navigation and menu graph resources are not yet supported by the planner.',
-    references: navigationReference ? [navigationReference] : [],
+    references: navigationReference ? samePlanNavigationReferences : [],
   };
 }
 

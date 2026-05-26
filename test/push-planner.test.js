@@ -21641,6 +21641,118 @@ test('blocks local post-parent references to a same-plan created wp navigation w
   assert.equal(Object.hasOwn(remote.plugins, 'forms'), false);
 });
 
+test('carries bounded menu-item and post-parent references for a same-plan created wp navigation while preserving a matching independent edit and remote-only plugin changes', () => {
+  const navigationResourceKey = 'row:["wp_posts","ID:56"]';
+  const menuItemResourceKey = 'row:["wp_posts","ID:55"]';
+  const postResourceKey = 'row:["wp_posts","ID:57"]';
+  const base = baseSite();
+  base.db.wp_posts['ID:1'].post_title = 'Base shared post title';
+  base.db.wp_posts['ID:55'] = {
+    ID: 55,
+    post_title: 'Base child menu item',
+    post_content: 'Base child menu item content',
+    post_status: 'publish',
+    post_type: 'nav_menu_item',
+    menu_item_parent: 0,
+  };
+  base.db.wp_posts['ID:57'] = {
+    ID: 57,
+    post_title: 'Base child post',
+    post_content: 'Base child post content',
+    post_status: 'publish',
+    post_parent: 0,
+    post_type: 'post',
+  };
+
+  const local = baseSite();
+  local.db.wp_posts['ID:1'].post_title = 'Local shared post title';
+  local.db.wp_posts['ID:55'] = {
+    ID: 55,
+    post_title: 'Local child menu item',
+    post_content: 'Local child menu item content',
+    post_status: 'publish',
+    post_type: 'nav_menu_item',
+    menu_item_parent: 56,
+  };
+  local.db.wp_posts['ID:56'] = {
+    ID: 56,
+    post_title: 'Local same-plan wp navigation',
+    post_content: 'Local same-plan wp navigation body',
+    post_status: 'publish',
+    post_type: 'wp_navigation',
+  };
+  local.db.wp_posts['ID:57'] = {
+    ID: 57,
+    post_title: 'Local child post',
+    post_content: 'Local child post content',
+    post_status: 'publish',
+    post_parent: 56,
+    post_type: 'post',
+  };
+
+  const remote = baseSite();
+  remote.db.wp_posts['ID:1'].post_title = 'Remote editorial update';
+  remote.db.wp_posts['ID:55'] = JSON.parse(JSON.stringify(base.db.wp_posts['ID:55']));
+  remote.db.wp_posts['ID:57'] = JSON.parse(JSON.stringify(base.db.wp_posts['ID:57']));
+  remote.plugins.forms.description = 'remote-only plugin changes';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin changes */';
+
+  const plan = planFor(base, local, remote);
+  const navigationBlocker = plan.blockers.find((entry) => entry.resourceKey === navigationResourceKey);
+  const conflict = plan.conflicts[0];
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const references = navigationBlocker.references
+    .map((reference) => ({
+      relationshipKey: reference.relationshipKey,
+      relationshipType: reference.relationshipType,
+      sourceResourceKey: reference.sourceResourceKey,
+      targetResourceKey: reference.targetResourceKey,
+      remoteState: reference.targetChange.remote.state,
+      localState: reference.targetChange.local.state,
+    }))
+    .sort((left, right) => left.relationshipKey.localeCompare(right.relationshipKey));
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'conflict');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, menuItemResourceKey), undefined);
+  assert.equal(mutationFor(plan, postResourceKey), undefined);
+  assert.equal(decisionFor(plan, navigationResourceKey), undefined);
+  assert.equal(navigationBlocker.class, 'unsupported-navigation-resource');
+  assert.equal(navigationBlocker.resourceKey, navigationResourceKey);
+  assert.equal(navigationBlocker.unsupportedState, 'same-plan-reference');
+  assert.equal(navigationBlocker.reason, 'Navigation and menu graph resources are not yet supported by the planner.');
+  assert.deepEqual(references, [
+    {
+      relationshipKey: 'wp_posts.menu_item_parent',
+      relationshipType: 'menu-item-parent',
+      sourceResourceKey: menuItemResourceKey,
+      targetResourceKey: navigationResourceKey,
+      remoteState: 'absent',
+      localState: 'present',
+    },
+    {
+      relationshipKey: 'wp_posts.post_parent',
+      relationshipType: 'post-parent',
+      sourceResourceKey: postResourceKey,
+      targetResourceKey: navigationResourceKey,
+      remoteState: 'absent',
+      localState: 'present',
+    },
+  ]);
+  assert.equal(conflict.class, 'row-conflict');
+  assert.equal(conflict.resourceKey, 'row:["wp_posts","ID:1"]');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('Local same-plan wp navigation body'), false);
+  assert.equal(planJson.includes('Local child menu item content'), false);
+  assert.equal(planJson.includes('Local child post content'), false);
+  assert.equal(remote.db.wp_posts['ID:1'].post_title, 'Remote editorial update');
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin changes');
+  assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin changes */');
+});
+
 test('blocks local comments and users graph resources while preserving remote-only plugin changes', () => {
   const resourceKey = 'row:["wp_comments","comment_ID:12"]';
   const base = baseSite();
