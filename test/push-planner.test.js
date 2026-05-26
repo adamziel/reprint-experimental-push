@@ -20186,6 +20186,21 @@ test('accepted post-failure recovery states are old remote, fully updated remote
     }),
     false,
   );
+  const inheritedStatus = Object.create({
+    status: 'old-remote',
+    artifacts: { journal: { status: 'opened' } },
+  });
+  assert.equal(isAcceptableRecoveryState(inheritedStatus), false);
+  const inheritedArtifacts = {
+    status: 'blocked-recovery',
+  };
+  Object.setPrototypeOf(inheritedArtifacts, {
+    artifacts: {
+      journal: { status: 'completed' },
+      remote: { files: {} },
+    },
+  });
+  assert.equal(isAcceptableRecoveryState(inheritedArtifacts), false);
 });
 
 test('production durable journal claims fail closed without a restart-readable writer', () => {

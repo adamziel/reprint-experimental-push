@@ -33,20 +33,29 @@ export function isAcceptableRecoveryState(recoveryState) {
     return false;
   }
 
+  if (!Object.hasOwn(recoveryState, 'status')) {
+    return false;
+  }
+
   if (!ACCEPTABLE_RECOVERY_STATES.includes(recoveryState.status)) {
     return false;
   }
 
   if (recoveryState.status !== 'blocked-recovery') {
     return Boolean(
-      isStrictPlainObject(recoveryState.artifacts)
+      Object.hasOwn(recoveryState, 'artifacts')
+      && isStrictPlainObject(recoveryState.artifacts)
+      && Object.hasOwn(recoveryState.artifacts, 'journal')
       && isStrictPlainObject(recoveryState.artifacts.journal)
-      && recoveryState.artifacts.remote === undefined,
+      && !Object.hasOwn(recoveryState.artifacts, 'remote'),
     );
   }
 
   return Boolean(
-    isStrictPlainObject(recoveryState.artifacts)
+    Object.hasOwn(recoveryState, 'artifacts')
+    && isStrictPlainObject(recoveryState.artifacts)
+    && Object.hasOwn(recoveryState.artifacts, 'journal')
+    && Object.hasOwn(recoveryState.artifacts, 'remote')
     && isStrictPlainObject(recoveryState.artifacts.journal)
     && isStrictPlainObject(recoveryState.artifacts.remote)
     && recoveryState.artifacts.journal !== recoveryState.artifacts.remote,
