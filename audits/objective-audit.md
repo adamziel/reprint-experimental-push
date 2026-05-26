@@ -4,13 +4,13 @@
 
 The project is **not releasable as a production WordPress push path**.
 
-- Fresh remote heads at audit time, checked on 2026-05-26 08:29:26 CEST (+0200):
-- Fresh production-side lane heads re-polled at 2026-05-26 08:29:26 CEST (+0200):
+- Fresh remote heads at audit time, checked on 2026-05-26 08:30:50 CEST (+0200):
+- Fresh production-side lane heads re-polled at 2026-05-26 08:30:50 CEST (+0200):
 
 - `origin/lane/critic` -> `567743c2`
 - `origin/lane/no-data-loss-invariants` -> `7e29df2c`
 - `origin/lane/no-data-loss-recovery` -> `9e077c10`
-- `origin/lane/reliable-executor` -> `5622e975`
+- `origin/lane/reliable-executor` -> `72f5097b`
 
 - These heads still do not change the release verdict. They remain fail-closed support evidence, not production-backed auth/session lifecycle, durable journal ownership on the release path, or a live production mutation boundary.
 
@@ -114,8 +114,8 @@ Fresh remote heads re-polled after the last audit note:
 The newest visible lane heads since the prior audit snapshot still do not
 change the release verdict:
 
-- `origin/lane/reliable-executor` now records `5622e975`, hardening recovery
-  inspect auth drift. This is still support-side auth-envelope and recovery
+- `origin/lane/reliable-executor` now records `72f5097b`, failing closed on
+  missing recovery auth. This is still support-side auth-envelope and recovery
   validation, not production-backed auth/session lifecycle, live production
   replay, or durable journal ownership on the release path.
 - `origin/lane/no-data-loss-recovery` now records `9e077c10`, tightening
