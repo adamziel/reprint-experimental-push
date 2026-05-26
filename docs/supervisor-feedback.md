@@ -7,7 +7,7 @@ changed, what is helping, what is not helping, and the next nudge.
 
 ## 2026-05-26 16:37 CEST - Reliable Head Advanced to `e3a0be0e`
 
-- Going well: the live reliable head is now `e3a0be0e6f2310bb5f51ddc947c124e245cf61ff`, so the checked release path has advanced again.
+- Going well: the live reliable head is now `e3a0be0e6f2310bb5f51ddc947c124e245cf61ff`, so the checked release path advanced again.
 - Not going well: the shared `waitForServer()` readiness boundary still ends at `GET /wp-json/ -> 502 "WordPress is not ready yet"`, so the gate stays `0/4`.
 - Progress change: this is a real head update, not a gate move; the remaining blocker is still production-backed auth/session lifecycle and durable journal ownership.
 - Next nudge: keep `reliable-executor` on `scripts/playground/production-shaped-release-verify.mjs` at `startPlaygroundServer()` / `waitForServer()` for `fixtures/playground/remote-changed.blueprint.json`, and have `progress-publisher` catch the public page up once if it is still behind the live head.
