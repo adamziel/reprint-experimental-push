@@ -585,7 +585,7 @@ function ensureDurableJournalClaimOpened(writer, remote, plan) {
     : [];
   const hasClaimRecords = existingRecords.some((record) => record.type === 'recovery-claim-opened' || record.type === 'stale-claim-advanced');
   if (hasClaimRecords) {
-    assertDurableClaimCurrent(writer, 'journal-opened');
+    assertPersistedDurableJournalClaimCurrent(writer, existingRecords, 'journal-opened');
     writer.claimOpened = true;
     return;
   }
@@ -609,6 +609,36 @@ function readPersistedDurableJournalRecords(filePath) {
   } catch {
     return [];
   }
+}
+
+function assertPersistedDurableJournalClaimCurrent(writer, records, type) {
+  const latestClaim = [...records].reverse().find((record) =>
+    record.type === 'recovery-claim-opened' || record.type === 'stale-claim-advanced',
+  );
+
+  if (!latestClaim) {
+    assertDurableClaimCurrent(writer, type);
+    return;
+  }
+
+  if (latestClaim.claimHash !== writer.claimHash) {
+    throw durableJournalOperationError(
+      new PushPlanError(
+        'RECOVERY_CLAIM_STALE',
+        'Persisted recovery journal claim ownership no longer matches the active writer claim.',
+        {
+          eventType: type,
+          staleClaimHash: writer.claimHash,
+          activeClaimHash: latestClaim.claimHash,
+          activeClaimSequence: latestClaim.sequence || null,
+          activeClaimType: latestClaim.type,
+        },
+      ),
+      type,
+    );
+  }
+
+  assertDurableClaimCurrent(writer, type);
 }
 
 function recordDurablePlanOpened(writer, remote, plan, options = {}) {

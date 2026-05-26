@@ -10,6 +10,7 @@ import {
   appendStaleClaimAdvanced,
   assertJournalRecordHasNoRawValues,
   openRecoveryJournal,
+  recoveryClaimHash,
   readRecoveryJournal,
 } from '../src/recovery-journal.js';
 import { inspectRecoveryJournal } from '../src/recovery-inspect.js';
@@ -2248,6 +2249,8 @@ test('durable apply refuses a claim-fenced journal writer when persisted claim o
     error.message,
     /Durable recovery journal claim was superseded before journal-opened\./,
   );
+  assert.equal(error.details.activeClaimHash, recoveryClaimHash('psh_01j00000000000000000000000'));
+  assert.equal(error.details.staleClaimHash, recoveryClaimHash('psh_01j00000000000000000000001'));
 });
 
 test('durable recovery stays within old remote, fully updated remote, or blocked recovery', () => {
