@@ -54,8 +54,9 @@ export function resolveAuthSessionSourceCommand({
   applicationPassword,
   authSessionSourceCommand = '',
 }) {
-  if (authSessionSourceCommand) {
-    return authSessionSourceCommand;
+  const normalizedAuthSessionSourceCommand = normalizeAuthSessionSourceCommandField(authSessionSourceCommand);
+  if (normalizedAuthSessionSourceCommand) {
+    return normalizedAuthSessionSourceCommand;
   }
 
   return buildAuthSessionSourceCommand({

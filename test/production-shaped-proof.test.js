@@ -1415,6 +1415,44 @@ test('auth-session source command builder emits a shell-safe node snippet', () =
   );
 });
 
+test('auth-session source command resolver ignores blank or malformed command overrides and rebuilds a trusted command', () => {
+  const expectedCommand = buildAuthSessionSourceCommand({
+    sourceUrl: 'http://127.0.0.1:8080',
+    username: 'reprint_push_admin',
+    applicationPassword: 'reprint-push-admin-app-password',
+  });
+
+  assert.equal(
+    resolveAuthSessionSourceCommand({
+      sourceUrl: 'http://127.0.0.1:8080',
+      username: 'reprint_push_admin',
+      applicationPassword: 'reprint-push-admin-app-password',
+      authSessionSourceCommand: '   ',
+    }),
+    expectedCommand,
+  );
+
+  assert.equal(
+    resolveAuthSessionSourceCommand({
+      sourceUrl: 'http://127.0.0.1:8080',
+      username: 'reprint_push_admin',
+      applicationPassword: 'reprint-push-admin-app-password',
+      authSessionSourceCommand: '\t',
+    }),
+    expectedCommand,
+  );
+
+  assert.equal(
+    resolvePackagedProductionPluginSourceCommand({
+      sourceUrl: 'http://127.0.0.1:8080',
+      username: 'reprint_push_admin',
+      applicationPassword: 'reprint-push-admin-app-password',
+      authSessionSourceCommand: '   ',
+    }),
+    `REPRINT_PUSH_PACKAGED_PRODUCTION_PLUGIN=1 ${expectedCommand}`,
+  );
+});
+
 test('auth-session source command builder preserves shell-sensitive credential characters when loaded', () => {
   const sourceUrl = 'http://127.0.0.1:8080/path?label=$USER&quote="double"&tick=`cmd`';
   const username = 'reprint "owner" $USER `tick`';
