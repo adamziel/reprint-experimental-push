@@ -404,6 +404,8 @@ export function productionThroughputDetails(report) {
     receiptCursorHeadroomCoveredByQueueBudget,
     queueBudgetBytes: receiptCursorQueueBudgetBytes,
     queueHeadroomBytes: receiptCursorQueueHeadroomBytes,
+    queueBudgetMatchesResourceCeiling,
+    queueHeadroomMatchesResourceHeadroom,
     queuePausedBeforeOverflow: report.evidence.backpressure?.queuePausedBeforeOverflow ?? false,
     receiptCursorWithinQueueBudget: report.evidence.backpressure?.receiptCursorWithinQueueBudget ?? false,
     receiptCursor: report.evidence.chunkReceipts.resumeCursor,
