@@ -551,6 +551,17 @@ export function consumeProductionRecoveryJournal(options) {
   const staleClaimRejected = hasStaleClaimRejectionEvidence(records);
   const consumed = records.some((record) => record.type === 'recovery-journal-consumed');
   const monotonicSequence = records.every((record, index) => record?.sequence === index + 1);
+  const fsyncEvidence = records.every((record) => record?.fsync?.requested === true);
+  const restartReadable = inspection.integrity?.status === 'ok';
+  const leaseFenceContract = Object.freeze({
+    strategy: 'claim-fenced-single-writer',
+    claimKeyUnique: true,
+    fsyncEvidence,
+    storageGuard: 'filesystem-compare-rename',
+    monotonicSequence,
+    restartReadable,
+    staleClaimRejected,
+  });
 
   return {
     journal: {
@@ -566,7 +577,7 @@ export function consumeProductionRecoveryJournal(options) {
       ownsRemoteArtifact: normalized.ownsRemoteArtifact === true,
       claimHash: claimId ? recoveryClaimHash(claimId) : null,
       consumed,
-      restartReadable: inspection.integrity?.status === 'ok',
+      restartReadable,
       writerLease,
       leaseFence,
       schemaVersion: inspection.schemaVersion ?? null,
@@ -575,10 +586,14 @@ export function consumeProductionRecoveryJournal(options) {
       staleClaimRejected,
     },
     leaseFence: {
+      boundary: 'filesystem-compare-rename',
+      claimKeyUnique: true,
       storageGuard: 'filesystem-compare-rename',
-      fsyncEvidence: records.every((record) => record?.fsync?.requested === true),
+      fsyncEvidence,
       monotonicSequence,
+      restartReadable,
       staleClaimRejected,
+      writerLease: leaseFenceContract,
     },
     consumed,
   };

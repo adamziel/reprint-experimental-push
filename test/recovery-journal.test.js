@@ -797,10 +797,22 @@ test('production recovery journal compatibility overload supports reliable relea
   assert.deepEqual(inspection.journal.checked, [filePath]);
   assert.deepEqual(inspection.journal.writerLease, { id: claimId });
   assert.deepEqual(inspection.journal.leaseFence, { id: claimId });
+  assert.equal(inspection.leaseFence.boundary, 'filesystem-compare-rename');
+  assert.equal(inspection.leaseFence.claimKeyUnique, true);
   assert.equal(inspection.leaseFence.storageGuard, 'filesystem-compare-rename');
   assert.equal(inspection.leaseFence.fsyncEvidence, true);
   assert.equal(inspection.leaseFence.monotonicSequence, true);
+  assert.equal(inspection.leaseFence.restartReadable, true);
   assert.equal(inspection.leaseFence.staleClaimRejected, false);
+  assert.deepEqual(inspection.leaseFence.writerLease, {
+    strategy: 'claim-fenced-single-writer',
+    claimKeyUnique: true,
+    fsyncEvidence: true,
+    storageGuard: 'filesystem-compare-rename',
+    monotonicSequence: true,
+    restartReadable: true,
+    staleClaimRejected: false,
+  });
 
   const staleJournal = openProductionRecoveryJournal({
     filePath,
@@ -1734,9 +1746,22 @@ test('production recovery journal consumption surfaces stale claim advancement a
   assert.equal(inspection.journal.claimHash, recoveryClaimHash('claim-2'));
   assert.deepEqual(inspection.journal.writerLease, { id: 'claim-2' });
   assert.deepEqual(inspection.journal.leaseFence, { id: 'claim-2' });
+  assert.equal(inspection.leaseFence.boundary, 'filesystem-compare-rename');
+  assert.equal(inspection.leaseFence.claimKeyUnique, true);
+  assert.equal(inspection.leaseFence.storageGuard, 'filesystem-compare-rename');
   assert.equal(inspection.leaseFence.staleClaimRejected, true);
   assert.equal(inspection.leaseFence.fsyncEvidence, true);
   assert.equal(inspection.leaseFence.monotonicSequence, true);
+  assert.equal(inspection.leaseFence.restartReadable, true);
+  assert.deepEqual(inspection.leaseFence.writerLease, {
+    strategy: 'claim-fenced-single-writer',
+    claimKeyUnique: true,
+    fsyncEvidence: true,
+    storageGuard: 'filesystem-compare-rename',
+    monotonicSequence: true,
+    restartReadable: true,
+    staleClaimRejected: true,
+  });
 });
 
 test('production recovery journal records stale-claim rejection evidence before a stale writer can reopen the active claim', () => {
@@ -1795,7 +1820,20 @@ test('production recovery journal records stale-claim rejection evidence before 
 
   assert.equal(inspection.consumed, true);
   assert.equal(inspection.journal.staleClaimRejected, true);
+  assert.equal(inspection.leaseFence.boundary, 'filesystem-compare-rename');
+  assert.equal(inspection.leaseFence.claimKeyUnique, true);
+  assert.equal(inspection.leaseFence.storageGuard, 'filesystem-compare-rename');
+  assert.equal(inspection.leaseFence.restartReadable, true);
   assert.equal(inspection.leaseFence.staleClaimRejected, true);
+  assert.deepEqual(inspection.leaseFence.writerLease, {
+    strategy: 'claim-fenced-single-writer',
+    claimKeyUnique: true,
+    fsyncEvidence: true,
+    storageGuard: 'filesystem-compare-rename',
+    monotonicSequence: true,
+    restartReadable: true,
+    staleClaimRejected: true,
+  });
 
   const persisted = readRecoveryJournal(filePath);
   assert.equal(
