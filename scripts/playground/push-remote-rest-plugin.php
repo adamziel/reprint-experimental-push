@@ -784,9 +784,7 @@ function reprint_push_lab_rest_should_prefer_authoritative_checked_nested_contra
     }
 
     if (is_bool($existing) && is_bool($checked)) {
-        return $existing === false
-            && $checked === true
-            && reprint_push_lab_rest_checked_nested_contract_anchor_matches($existing_fields, $checked_fields);
+        return reprint_push_lab_rest_checked_nested_contract_anchor_matches($existing_fields, $checked_fields);
     }
 
     if (is_string($existing) && is_string($checked) && $checked !== '') {
