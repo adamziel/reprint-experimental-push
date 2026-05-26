@@ -9,7 +9,7 @@ Fresh remote heads at audit time, checked on May 26, 2026:
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `2690b912`
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `864ba33f`
 - `origin/lane/reliable-executor` -> `b8d91776`
-- `origin/lane/no-data-loss-invariants` -> `9c70eba6`
+- `origin/lane/no-data-loss-invariants` -> `c718a4af`
 - `origin/lane/no-data-loss-recovery` -> `4372167e`
 - `origin/lane/fast-paths` -> `74b44338`
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `9d74af17`
@@ -20,8 +20,8 @@ Fresh remote heads at audit time, checked on May 26, 2026:
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `2690b912`
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `148f9bd5`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `4372167e`
-- `origin/lane/same-plan-wordpress-graph-create` -> `09e6706d`
-- `origin/lane/cycle-20260525-mainwindows-2349/same-plan-wordpress-graph-create` -> `09e6706d`
+- `origin/lane/same-plan-wordpress-graph-create` -> `a719e09c`
+- `origin/lane/cycle-20260525-mainwindows-2349/same-plan-wordpress-graph-create` -> `a719e09c`
 - `origin/lane/cycle-20260525-mainwindows-2357/no-data-loss-invariants-graph-proof` -> `98c0ce26`
 - `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration` -> `a3a900d7`
 - `origin/main` -> `e55864f4`
@@ -40,10 +40,10 @@ but it did not change the release conclusion:
   headroom evidence at `bd7d8686`, and `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor`
   now refreshes the progress visibility handoff at `88d39047`. These are both
   freshness or fail-closed updates, not release-grade live-source evidence.
-- `origin/lane/no-data-loss-invariants` now tightens graph blockers at
-  `9c70eba6`. A separate cycle-branch proof at `98c0ce26`
+- `origin/lane/no-data-loss-invariants` now tightens revision-parent graph
+  blocking at `c718a4af`. A separate cycle-branch proof at `98c0ce26`
   extends that blocker coverage to missing graph identity references, and the
-  same-plan graph lane at `fc8308c4` now blocks unsupported graph surfaces
+  same-plan graph lane at `a719e09c` now blocks unsupported graph surfaces
   including revision posts, menu/navigation posts, serialized blocks, and
   thumbnail parent references, but none of these produce live source mutation
   evidence.
@@ -75,20 +75,13 @@ but it did not change the release conclusion:
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` now adds receipt
   cursor headroom rejection at `bd7d8686`.
 - `origin/lane/same-plan-wordpress-graph-create` now blocks unsupported graph
-  surfaces at `7bf5d421`, including revision posts, menu/navigation posts,
+  surfaces at `a719e09c`, including revision posts, menu/navigation posts,
   serialized blocks, thumbnail parent references, and other same-plan graph
   blockers. That is a stronger fail-closed proof, but it still stops short of
   release-grade live mutation evidence.
-- `origin/lane/same-plan-wordpress-graph-create` now tightens the same-plan
-  graph revision checks at `09e6706d`. This remains boundary hardening, not
-  production-backed mutation proof.
-- `origin/lane/cycle-20260525-mainwindows-2349/same-plan-wordpress-graph-create`
-  now adds same-plan graph edge hardening at `7bf5d421`. It tightens the
-  planner boundary further, but it still does not add live source mutation
-  evidence.
 - The cycle-scoped same-plan graph lane at
   `origin/lane/cycle-20260525-mainwindows-2349/same-plan-wordpress-graph-create`
-  now tightens thumbnail-guard handling at `e9cbf9d4`, which further narrows
+  now tracks the same `a719e09c` boundary hardening, which further narrows
   unsupported graph writes but still does not add live source mutation proof.
 
 Those changes strengthen the lab evidence for protocol safety and no-loss
@@ -190,7 +183,7 @@ These tests are still lab-bound. They mostly prove carefully controlled fixtures
 6. Reliability assertions often count events rather than prove every hash transition.
 7. Auth is lab-auth, not production-auth.
 8. Plugin safety is intentionally hard-coded.
-9. The strongest unsupported production-slice gap is still the boundary coverage for menu/navigation, serialized block references, comments/users, and plugin-owned custom tables. The current proof in [`test/push-planner.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/independent-auditor/test/push-planner.test.js) is refusal-backed for plugin-owned resources, not live-boundary proof for those graph surfaces. The newer same-plan graph proof at `69f27361` strengthens the fail-closed side for revision posts, menu/navigation posts, serialized blocks, and thumbnail parent references, the cycle-scoped proof at `e9cbf9d4` tightens thumbnail-guard handling further, and the integration proof at `295dc72a` adds a post-parent conflict case, but none produce live source mutation evidence.
+9. The strongest unsupported production-slice gap is still the boundary coverage for menu/navigation, serialized block references, comments/users, and plugin-owned custom tables. The current proof in [`test/push-planner.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/independent-auditor/test/push-planner.test.js) is refusal-backed for plugin-owned resources, not live-boundary proof for those graph surfaces. The newer same-plan graph proof at `a719e09c` strengthens the fail-closed side for revision posts, menu/navigation posts, serialized blocks, and thumbnail parent references, but none produce live source mutation evidence.
 10. The repository script surface still lacks a checked-in `verify`, `verify:release`, or `release` command in [`package.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/independent-auditor/package.json:10), so there is still no enforced live-source gate that could own the verdict even if the missing proof appeared. The planner tests in [`test/push-planner.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/independent-auditor/test/push-planner.test.js:131) remain strong fixture evidence, but they still stop at local/remote simulation rather than the live release boundary. The exact missing command is a checked entrypoint that runs the live-source preflight, aborts on stale or unsupported boundaries, and exits non-zero before any apply step when the unsupported surface set is hit.
 11. Speed has no measured evidence.
 
