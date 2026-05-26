@@ -203,6 +203,25 @@ test('production recovery journal adapter fails closed when no explicit fenced w
   });
 });
 
+test('production recovery journal adapter validates inputs before touching the journal file', () => {
+  const filePath = 'relative-journal.jsonl';
+  const remoteArtifactPath = `${filePath}.remote`;
+
+  assert.throws(() => {
+    openProductionRecoveryJournal(filePath, {
+      truncate: true,
+      now: fixedNow,
+      writerLease: { id: 'lease-1' },
+      ownsRemoteArtifact: true,
+      remoteArtifactPath,
+    });
+  }, {
+    name: 'UnsupportedProductionRecoveryJournalError',
+    code: 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL',
+  });
+  assert.equal(fs.existsSync(path.resolve(filePath)), false);
+});
+
 test('production recovery journal adapter fails closed when remote artifact path is not canonical', () => {
   const filePath = tempJournalPath();
 

@@ -103,18 +103,32 @@ export function createUnsupportedProductionRecoveryJournal(reason = 'Production 
 }
 
 export function openProductionRecoveryJournal(filePath, options = {}) {
-  const journal = openRecoveryJournal(filePath, {
-    truncate: options.truncate,
-    now: options.now,
-    claimId: options.claimId || options.claim?.id || null,
-  });
+  if (!isCanonicalAbsolutePath(filePath)) {
+    throw new UnsupportedProductionRecoveryJournalError(
+      'Production recovery journal support requires a canonical absolute journal path.',
+      {
+        kind: 'production-recovery-journal',
+        productionAdapter: true,
+        supportedSurface: 'production-recovery-journal-adapter',
+        restartReadable: true,
+        ownsJournal: true,
+        ownsRemoteArtifact: Boolean(options.ownsRemoteArtifact),
+        writerLease: Object.hasOwn(options, 'writerLease') ? options.writerLease : null,
+        journalPath: filePath,
+        artifactRefs: Object.freeze({
+          journal: filePath,
+          remote: Object.hasOwn(options, 'remoteArtifactPath') ? options.remoteArtifactPath : null,
+        }),
+        schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+      },
+    );
+  }
   const writerLease = Object.hasOwn(options, 'writerLease') ? options.writerLease : null;
   const remoteArtifactPath = Object.hasOwn(options, 'remoteArtifactPath')
     ? options.remoteArtifactPath
     : null;
   const ownsRemoteArtifact = Boolean(options.ownsRemoteArtifact);
   if (remoteArtifactPath !== null && !ownsRemoteArtifact) {
-    journal.close();
     throw new UnsupportedProductionRecoveryJournalError(
       'Production recovery journal support requires owned remote artifact references.',
       {
@@ -125,9 +139,9 @@ export function openProductionRecoveryJournal(filePath, options = {}) {
         ownsJournal: true,
         ownsRemoteArtifact,
         writerLease,
-        journalPath: journal.filePath,
+        journalPath: filePath,
         artifactRefs: Object.freeze({
-          journal: journal.filePath,
+          journal: filePath,
           remote: remoteArtifactPath,
         }),
         schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
@@ -135,7 +149,6 @@ export function openProductionRecoveryJournal(filePath, options = {}) {
     );
   }
   if (remoteArtifactPath !== null && !isCanonicalAbsolutePath(remoteArtifactPath)) {
-    journal.close();
     throw new UnsupportedProductionRecoveryJournalError(
       'Production recovery journal support requires a canonical remote artifact path.',
       {
@@ -146,9 +159,9 @@ export function openProductionRecoveryJournal(filePath, options = {}) {
         ownsJournal: true,
         ownsRemoteArtifact,
         writerLease,
-        journalPath: journal.filePath,
+        journalPath: filePath,
         artifactRefs: Object.freeze({
-          journal: journal.filePath,
+          journal: filePath,
           remote: remoteArtifactPath,
         }),
         schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
@@ -156,7 +169,6 @@ export function openProductionRecoveryJournal(filePath, options = {}) {
     );
   }
   if (!isValidProductionWriterLease(writerLease)) {
-    journal.close();
     throw new UnsupportedProductionRecoveryJournalError(
       'Production recovery journal support requires an explicit fenced writer lease.',
       {
@@ -167,15 +179,21 @@ export function openProductionRecoveryJournal(filePath, options = {}) {
         ownsJournal: true,
         ownsRemoteArtifact,
         writerLease,
-        journalPath: journal.filePath,
+        journalPath: filePath,
         artifactRefs: Object.freeze({
-          journal: journal.filePath,
+          journal: filePath,
           remote: remoteArtifactPath,
         }),
         schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
       },
     );
   }
+
+  const journal = openRecoveryJournal(filePath, {
+    truncate: options.truncate,
+    now: options.now,
+    claimId: options.claimId || options.claim?.id || null,
+  });
 
   return Object.freeze({
     kind: 'production-recovery-journal',
