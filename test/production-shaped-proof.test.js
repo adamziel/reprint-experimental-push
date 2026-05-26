@@ -1183,7 +1183,21 @@ test('packaged production plugin readiness helper does not retry terminal readin
   );
   assert.equal(
     packagedProductionPluginReadinessBodyRetryable(
+      200,
+      '<!doctype html><html><body>WordPress is not ready yet</body></html>',
+    ),
+    true,
+  );
+  assert.equal(
+    packagedProductionPluginReadinessBodyRetryable(
       404,
+      '<!doctype html><html><body>No route was found matching the URL and request method.</body></html>',
+    ),
+    true,
+  );
+  assert.equal(
+    packagedProductionPluginReadinessBodyRetryable(
+      500,
       '<!doctype html><html><body>No route was found matching the URL and request method.</body></html>',
     ),
     true,
@@ -1201,6 +1215,22 @@ test('packaged production plugin readiness helper does not retry terminal readin
       '<!doctype html><html><body>unauthorized packaged route</body></html>',
     ),
     false,
+  );
+  assert.equal(
+    packagedProductionPluginNextNotReadyProbeCount(
+      0,
+      200,
+      '<!doctype html><html><body>WordPress is not ready yet</body></html>',
+    ),
+    1,
+  );
+  assert.equal(
+    packagedProductionPluginNextNotReadyProbeCount(
+      3,
+      500,
+      '<!doctype html><html><body>No route was found matching the URL and request method.</body></html>',
+    ),
+    4,
   );
   assert.equal(
     packagedProductionPluginNextNotReadyProbeCount(
@@ -1267,6 +1297,24 @@ test('packaged production plugin readiness helper does not retry terminal readin
       404,
       '<!doctype html><html><body>No route was found matching the URL and request method.</body></html>',
       502,
+      '<!doctype html><html><body>WordPress is not ready yet</body></html>',
+    ),
+    true,
+  );
+  assert.equal(
+    packagedProductionPluginRouteRetryableWhileWordPressStarting(
+      502,
+      '<!doctype html><html><body>WordPress is not ready yet</body></html>',
+      200,
+      '<!doctype html><html><body>WordPress is not ready yet</body></html>',
+    ),
+    true,
+  );
+  assert.equal(
+    packagedProductionPluginRouteRetryableWhileWordPressStarting(
+      500,
+      '<!doctype html><html><body>No route was found matching the URL and request method.</body></html>',
+      503,
       '<!doctype html><html><body>WordPress is not ready yet</body></html>',
     ),
     true,

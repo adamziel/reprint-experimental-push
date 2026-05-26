@@ -78,7 +78,7 @@ export function packagedProductionPluginReadinessErrorRetryable(error) {
 }
 
 export function packagedProductionPluginReadinessWordPressNotReady(status, bodyText = '') {
-  return status === 502 && /WordPress is not ready yet/i.test(bodyText);
+  return /WordPress is not ready yet/i.test(bodyText);
 }
 
 export function packagedProductionPluginNextNotReadyProbeCount(currentCount, status, bodyText = '') {
@@ -94,7 +94,7 @@ export function packagedProductionPluginNotReadyProbeLimitReached(currentCount) 
 export function packagedProductionPluginReadinessBodyRetryable(status, bodyText = '') {
   return (
     packagedProductionPluginReadinessWordPressNotReady(status, bodyText)
-    || (status === 404 && /No route was found matching the URL and request method\./i.test(bodyText))
+    || /No route was found matching the URL and request method\./i.test(bodyText)
   );
 }
 
