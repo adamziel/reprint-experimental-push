@@ -2809,6 +2809,32 @@ test('shared lab waitForServer retries startup-shaped /wp-json/ HTTP 200 bodies 
   assert.equal(snapshotCalls, 1);
 });
 
+test('shared lab waitForServer keeps index and snapshot body reads child-aware', () => {
+  const verifierSource = readFileSync(
+    path.join(repoRoot, 'scripts/playground/production-shaped-release-verify.mjs'),
+    'utf8',
+  );
+
+  const sharedWaitStart = verifierSource.indexOf('async function waitForServer(child, baseUrl, getLogs) {');
+  assert.notEqual(sharedWaitStart, -1, 'expected shared waitForServer helper in release verifier source');
+  const sharedWaitEnd = verifierSource.indexOf('\nfunction describeLastProbe(', sharedWaitStart);
+  assert.notEqual(sharedWaitEnd, -1, 'expected shared waitForServer helper boundary in release verifier source');
+  const sharedWaitSource = verifierSource.slice(sharedWaitStart, sharedWaitEnd);
+
+  assert.match(
+    sharedWaitSource,
+    /const \{ response, bodyText: responseBody \} = await fetchTextWithTimeout\([\s\S]*serverFetchTimeoutMs,\s*child\);/,
+  );
+  assert.match(
+    sharedWaitSource,
+    /const \{ response: snapshot, bodyText: snapshotBody \} = await fetchTextWithTimeout\([\s\S]*serverFetchTimeoutMs,\s*child\);/,
+  );
+  assert.match(sharedWaitSource, /await sleepUnlessChildExit\(readinessProbeIntervalMs, child\)/);
+  assert.doesNotMatch(sharedWaitSource, /await response\.arrayBuffer\(\)/);
+  assert.doesNotMatch(sharedWaitSource, /await snapshot\.arrayBuffer\(\)/);
+  assert.doesNotMatch(sharedWaitSource, /await new Promise\(\(resolve\) => setTimeout\(resolve, readinessProbeIntervalMs\)\)/);
+});
+
 async function withPlaygroundServer(name, blueprintPath, run) {
   const server = await startPlaygroundServer(name, blueprintPath);
   try {
