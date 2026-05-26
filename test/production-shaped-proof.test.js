@@ -881,6 +881,54 @@ test('production-shaped release verify preserves an explicit live source URL unl
   );
 });
 
+test('production-shaped release verify fails closed on malformed direct live source URLs before source override', () => {
+  const source = {
+    ok: true,
+    sourceUrl: 'http://127.0.0.1:8080',
+    username: 'reprint_push_admin',
+    applicationPassword: 'reprint-push-admin-app-password',
+  };
+  assert.deepEqual(
+    resolveAuthSessionSourceCredentials(
+      {
+        liveSourceUrl: ' https://example.com/push ',
+        username: 'trusted-runtime-username',
+        applicationPassword: 'trusted-runtime-password',
+      },
+      source,
+    ),
+    {
+      liveSourceUrl: '',
+      username: 'reprint_push_admin',
+      applicationPassword: 'reprint-push-admin-app-password',
+    },
+  );
+});
+
+test('production-shaped release verify fails closed on non-string direct live source URLs before source override', () => {
+  const source = {
+    ok: true,
+    sourceUrl: 'http://127.0.0.1:8080',
+    username: 'reprint_push_admin',
+    applicationPassword: 'reprint-push-admin-app-password',
+  };
+  assert.deepEqual(
+    resolveAuthSessionSourceCredentials(
+      {
+        liveSourceUrl: ['http://127.0.0.1:9090'],
+        username: 'trusted-runtime-username',
+        applicationPassword: 'trusted-runtime-password',
+      },
+      source,
+    ),
+    {
+      liveSourceUrl: '',
+      username: 'reprint_push_admin',
+      applicationPassword: 'reprint-push-admin-app-password',
+    },
+  );
+});
+
 test('production-shaped release verify fills missing direct auth/session credentials from the consumed source', () => {
   const source = {
     ok: true,
@@ -1181,6 +1229,68 @@ test('production-shaped release verify does not replace malformed explicit direc
       credentials: {
         username: '',
         password: '',
+      },
+    },
+  );
+});
+
+test('production-shaped release verify does not replace malformed explicit direct live source URLs with source-command URLs before override is required', () => {
+  const source = {
+    ok: true,
+    sourceUrl: 'http://127.0.0.1:8080',
+    username: 'reprint_push_admin',
+    applicationPassword: 'reprint-push-admin-app-password',
+  };
+
+  assert.deepEqual(
+    resolveAuthSessionRequestState(
+      {
+        liveSourceUrl: ' https://example.com/push ',
+        username: 'trusted-runtime-username',
+        applicationPassword: 'trusted-runtime-password',
+        fallbackUsername: 'stale-fallback-username',
+        fallbackApplicationPassword: 'stale-fallback-password',
+      },
+      source,
+    ),
+    {
+      liveSourceUrl: '',
+      username: 'trusted-runtime-username',
+      applicationPassword: 'trusted-runtime-password',
+      credentials: {
+        username: 'trusted-runtime-username',
+        password: 'trusted-runtime-password',
+      },
+    },
+  );
+});
+
+test('production-shaped release verify does not replace non-string explicit direct live source URLs with source-command URLs before override is required', () => {
+  const source = {
+    ok: true,
+    sourceUrl: 'http://127.0.0.1:8080',
+    username: 'reprint_push_admin',
+    applicationPassword: 'reprint-push-admin-app-password',
+  };
+
+  assert.deepEqual(
+    resolveAuthSessionRequestState(
+      {
+        liveSourceUrl: ['http://127.0.0.1:9090'],
+        username: 'trusted-runtime-username',
+        applicationPassword: 'trusted-runtime-password',
+        fallbackUsername: 'stale-fallback-username',
+        fallbackApplicationPassword: 'stale-fallback-password',
+      },
+      source,
+    ),
+    {
+      liveSourceUrl: '',
+      username: 'trusted-runtime-username',
+      applicationPassword: 'trusted-runtime-password',
+      credentials: {
+        username: 'trusted-runtime-username',
+        password: 'trusted-runtime-password',
       },
     },
   );

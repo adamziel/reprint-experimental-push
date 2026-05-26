@@ -90,9 +90,11 @@ export function resolveAuthSessionSourceCredentials({
   username = '',
   applicationPassword = '',
 }, source, { preferSource = false } = {}) {
+  const normalizedLiveSourceUrl = normalizeSupportedAuthSessionSourceUrl(liveSourceUrl);
+  const hasExplicitSourceField = hasExplicitAuthSessionCredentialField(liveSourceUrl);
   if (!source?.ok) {
     return {
-      liveSourceUrl,
+      liveSourceUrl: normalizedLiveSourceUrl,
       username,
       applicationPassword,
     };
@@ -110,7 +112,11 @@ export function resolveAuthSessionSourceCredentials({
   }
 
   return {
-    liveSourceUrl: preferSource ? normalizedSourceUrl : liveSourceUrl || normalizedSourceUrl,
+    liveSourceUrl: preferSource
+      ? normalizedSourceUrl
+      : hasExplicitSourceField
+        ? normalizedLiveSourceUrl
+        : normalizedLiveSourceUrl || normalizedSourceUrl,
     username: normalizedUsername,
     applicationPassword: preferSource
       ? normalizedApplicationPassword
@@ -125,6 +131,8 @@ export function resolveAuthSessionRequestCredentials({
   fallbackUsername = '',
   fallbackApplicationPassword = '',
 }, source, { preferSource = false } = {}) {
+  const normalizedLiveSourceUrl = normalizeSupportedAuthSessionSourceUrl(liveSourceUrl);
+  const hasExplicitSourceField = hasExplicitAuthSessionCredentialField(liveSourceUrl);
   const normalizedUsername = normalizeAuthSessionSourceField(username);
   const normalizedApplicationPassword = normalizeAuthSessionSourceField(applicationPassword);
   const normalizedFallbackUsername = normalizeAuthSessionSourceField(fallbackUsername);
@@ -140,7 +148,9 @@ export function resolveAuthSessionRequestCredentials({
     : normalizedFallbackApplicationPassword;
   if (hasExplicitCredentialField && !preferSource) {
     return {
-      liveSourceUrl: liveSourceUrl || normalizedSourceUrl,
+      liveSourceUrl: hasExplicitSourceField
+        ? normalizedLiveSourceUrl
+        : normalizedLiveSourceUrl || normalizedSourceUrl,
       username: resolvedUsername,
       applicationPassword: resolvedApplicationPassword,
     };
