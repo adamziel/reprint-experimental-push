@@ -512,6 +512,10 @@ test('production-shaped authenticated push fails closed when recovery inspect om
     if (pathname.includes('/recovery/inspect')) {
       return new Response(JSON.stringify({
         ok: true,
+        auth: {
+          identity: { userLogin: 'reprint_push_admin' },
+          session: { type: 'production-auth-session', id: 'psh_01j00000000000000000000000' },
+        },
         recovery: {
           state: 'available',
           counts: { old: 0, new: 1, blockedUnknown: 0, total: 1 },
@@ -602,6 +606,10 @@ test('production-shaped authenticated push fails closed when recovery inspect re
     if (pathname.includes('/recovery/inspect')) {
       return new Response(JSON.stringify({
         ok: true,
+        auth: {
+          identity: { userLogin: 'reprint_push_admin' },
+          session: { type: 'production-auth-session', id: 'psh_01j00000000000000000000000' },
+        },
         recovery: {
           state: 'available',
           counts: { old: 0, new: 1, blockedUnknown: 0, total: 1 },
@@ -631,6 +639,10 @@ test('production-shaped authenticated push fails closed when recovery inspect re
     if (pathname.includes('/db-journal')) {
       return new Response(JSON.stringify({
         ok: true,
+        auth: {
+          identity: { userLogin: 'reprint_push_admin' },
+          session: { type: 'production-auth-session', id: 'psh_01j00000000000000000000000' },
+        },
         dbJournal: { latestRows: [] },
       }), {
         status: 200,
@@ -841,6 +853,10 @@ test('production-shaped authenticated push fails closed when recovery inspect om
     if (pathname.includes('/db-journal')) {
       return new Response(JSON.stringify({
         ok: true,
+        auth: {
+          identity: { userLogin: 'reprint_push_admin' },
+          session: { type: 'production-auth-session', id: 'psh_01j00000000000000000000000' },
+        },
         dbJournal: { latestRows: [] },
       }), {
         status: 200,
@@ -1483,6 +1499,19 @@ test('production-shaped authenticated push fails closed when recovery inspect re
         headers: { 'content-type': 'application/json' },
       });
     }
+    if (pathname.includes('/db-journal')) {
+      return new Response(JSON.stringify({
+        ok: true,
+        auth: {
+          identity: { userLogin: 'reprint_push_admin' },
+          session: { type: 'production-auth-session', id: 'psh_01j00000000000000000000000' },
+        },
+        dbJournal: { latestRows: [] },
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
     throw new Error(`unexpected fetch to ${url}`);
   };
 
@@ -1746,6 +1775,10 @@ test('production-shaped authenticated push fails closed when replay reopens fres
     if (pathname.includes('/recovery/inspect')) {
       return new Response(JSON.stringify({
         ok: true,
+        auth: {
+          identity: { userLogin: 'reprint_push_admin' },
+          session: { type: 'production-auth-session', id: 'psh_01j00000000000000000000000' },
+        },
         recovery: {
           state: 'available',
           counts: { old: 0, new: 1, blockedUnknown: 0, total: 1 },
@@ -1775,6 +1808,10 @@ test('production-shaped authenticated push fails closed when replay reopens fres
     if (pathname.includes('/db-journal')) {
       return new Response(JSON.stringify({
         ok: true,
+        auth: {
+          identity: { userLogin: 'reprint_push_admin' },
+          session: { type: 'production-auth-session', id: 'psh_01j00000000000000000000000' },
+        },
         dbJournal: { latestRows: [] },
       }), {
         status: 200,
@@ -1854,6 +1891,10 @@ test('production-shaped authenticated push fails closed when replay omits the au
     if (pathname.includes('/recovery/inspect')) {
       return new Response(JSON.stringify({
         ok: true,
+        auth: {
+          identity: { userLogin: 'reprint_push_admin' },
+          session: { type: 'production-auth-session', id: 'psh_01j00000000000000000000000' },
+        },
         recovery: {
           state: 'available',
           counts: { old: 0, new: 1, blockedUnknown: 0, total: 1 },
@@ -1888,6 +1929,10 @@ test('production-shaped authenticated push fails closed when replay omits the au
     if (pathname.includes('/db-journal')) {
       return new Response(JSON.stringify({
         ok: true,
+        auth: {
+          identity: { userLogin: 'reprint_push_admin' },
+          session: { type: 'production-auth-session', id: 'psh_01j00000000000000000000000' },
+        },
         dbJournal: { latestRows: [] },
       }), {
         status: 200,
@@ -1959,6 +2004,10 @@ test('production-shaped authenticated push fails closed when replay response div
     if (pathname.includes('/recovery/inspect')) {
       return new Response(JSON.stringify({
         ok: true,
+        auth: {
+          identity: { userLogin: 'reprint_push_admin' },
+          session: { type: 'production-auth-session', id: 'psh_01j00000000000000000000000' },
+        },
         recovery: {
           state: 'available',
           counts: { old: 0, new: 1, blockedUnknown: 0, total: 1 },
@@ -2063,6 +2112,10 @@ test('production-shaped authenticated push fails closed when replay changes the 
     if (pathname.includes('/recovery/inspect')) {
       return new Response(JSON.stringify({
         ok: true,
+        auth: {
+          identity: { userLogin: 'reprint_push_admin' },
+          session: { type: 'production-auth-session', id: 'psh_01j00000000000000000000000' },
+        },
         recovery: {
           state: 'available',
           counts: { old: 0, new: 1, blockedUnknown: 0, total: 1 },
@@ -2576,6 +2629,117 @@ test('production-shaped authenticated push fails closed when replay changes the 
     assert.equal(summary.ok, false);
     assert.equal(summary.code, 'AUTH_SESSION_LIFECYCLE_DRIFT');
     assert.equal(summary.code, 'AUTH_SESSION_LIFECYCLE_DRIFT');
+    assert.ok(seen.some(({ url }) => url.includes('/apply')));
+  } finally {
+    global.fetch = originalFetch;
+  }
+});
+
+test('production-shaped authenticated push fails closed when replay changes the response schema version', async () => {
+  const originalFetch = global.fetch;
+  const seen = [];
+  let applyCount = 0;
+  global.fetch = async (url, options) => {
+    seen.push({ url: String(url), options });
+    const pathname = String(url);
+    if (pathname.includes('/preflight')) {
+      return new Response(JSON.stringify({
+        ok: true,
+        auth: {
+          identity: { userLogin: 'reprint_push_admin' },
+          session: { type: 'production-auth-session', id: 'psh_01j00000000000000000000000' },
+        },
+        session: { id: 'psh_01j00000000000000000000000' },
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+    if (pathname.includes('/snapshot')) {
+      return new Response(JSON.stringify({
+        ok: true,
+        snapshot: { resources: [] },
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+    if (pathname.includes('/dry-run')) {
+      return new Response(JSON.stringify({
+        ok: true,
+        receipt: { receiptHash: 'receipt-01' },
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+    if (pathname.includes('/recovery/inspect')) {
+      return new Response(JSON.stringify({
+        ok: true,
+        recovery: {
+          state: 'available',
+          counts: { old: 0, new: 1, blockedUnknown: 0, total: 1 },
+          journal: { integrity: { status: 'ok' } },
+        },
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+    if (pathname.includes('/apply')) {
+      applyCount += 1;
+      return new Response(JSON.stringify({
+        ok: true,
+        mode: 'apply',
+        responseSchemaVersion: applyCount === 1 ? 1 : 2,
+        receipt: { receiptHash: 'receipt-01' },
+        auth: {
+          identity: { userLogin: 'reprint_push_admin' },
+          session: { type: 'production-auth-session', id: 'psh_01j00000000000000000000000' },
+        },
+        signedRequest: {
+          signed: true,
+        },
+        storageGuard: {
+          boundary: 'retained-playground-journal',
+          operation: 'write',
+          outcome: 'allowed',
+        },
+        idempotency: {
+          replayed: true,
+          freshMutationWork: false,
+        },
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+    if (pathname.includes('/db-journal')) {
+      return new Response(JSON.stringify({
+        ok: true,
+        dbJournal: { latestRows: [] },
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+    throw new Error(`unexpected fetch to ${url}`);
+  };
+
+  try {
+    const summary = await runAuthenticatedHttpPush({
+      sourceUrl: 'http://127.0.0.1:8080',
+      base: { resources: [] },
+      local: { resources: [] },
+      username: credential.username,
+      applicationPassword: credential.password,
+      idempotencyKey: 'idem-10a',
+      routeProfile: 'production-shaped',
+    });
+
+    assert.equal(summary.ok, false);
+    assert.equal(summary.code, 'AUTH_SESSION_LIFECYCLE_DRIFT');
+    assert.equal(summary.replay?.responseSchemaVersion, 2);
     assert.ok(seen.some(({ url }) => url.includes('/apply')));
   } finally {
     global.fetch = originalFetch;

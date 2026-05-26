@@ -262,6 +262,7 @@ export async function runAuthenticatedHttpPush({
     idempotencyKey,
   });
   summary.replay = summarizeResponse(replay);
+  summary.replay.responseSchemaVersion = replay.body?.responseSchemaVersion;
   const replayEquivalent = isReplayEquivalent(apply, replay);
   const applyAuthEnvelopeDrift = hasAuthEnvelopeDrift(preflightAuthEnvelope, apply);
   const replayAuthEnvelopeDrift = hasAuthEnvelopeDrift(preflightAuthEnvelope, replay);
@@ -445,6 +446,7 @@ function summarizeResponse(response) {
     code: body.code,
     applied: body.applied,
     receiptHash: body.receipt?.receiptHash,
+    responseSchemaVersion: body.responseSchemaVersion,
     authUser: body.auth?.identity?.userLogin,
     authSessionId: body.auth?.session?.id,
     sessionType: body.auth?.session?.type,
@@ -543,6 +545,7 @@ function isReplayEquivalent(applyResponse, replayResponse) {
     && applyBody.code === replayBody.code
     && applyBody.applied === replayBody.applied
     && applyBody.receipt?.receiptHash === replayBody.receipt?.receiptHash
+    && applyBody.responseSchemaVersion === replayBody.responseSchemaVersion
     && isStorageGuardEquivalent(applyBody.storageGuard, replayBody.storageGuard)
     && applyBody.auth?.identity?.userLogin === replayBody.auth?.identity?.userLogin
     && applyBody.auth?.session?.id === replayBody.auth?.session?.id
