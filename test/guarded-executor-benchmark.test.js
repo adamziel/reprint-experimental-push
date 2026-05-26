@@ -1921,6 +1921,29 @@ test('guarded benchmark keeps storage-receipts and atomic-commit measured detail
   );
 });
 
+test('guarded benchmark keeps storage-receipts and atomic-commit visible detail hidden when metadata is hidden', () => {
+  const report = smallBenchmark();
+  const tampered = clone(report);
+
+  tampered.evidence.atomicGroup.productionStorageReceiptsMeasured = true;
+  tampered.evidence.atomicGroup.productionStorageReceiptsVisible = true;
+  tampered.evidence.atomicGroup.productionAtomicCommitMeasured = true;
+  tampered.evidence.atomicGroup.productionAtomicCommitVisible = true;
+  tampered.evidence.atomicGroup.productionAtomicGroupMetadataVisible = false;
+
+  const details = productionThroughputDetails(tampered);
+
+  assert.equal(details.productionStorageReceiptsVisibleAndAtomicCommitVisible, false);
+  assert.equal(
+    details.atomicGroup.productionStorageReceiptsVisibleAndAtomicCommitVisible,
+    false,
+  );
+  assert.equal(
+    details.backpressureConsistency.productionStorageReceiptsVisibleAndAtomicCommitVisible,
+    false,
+  );
+});
+
 test('guarded benchmark blocks storage-receipts and atomic-commit paired visibility when atomic-commit measurement is hidden', () => {
   const report = smallBenchmark();
   const tampered = clone(report);
@@ -2126,6 +2149,25 @@ test('guarded benchmark blocks row-batch executor visibility without atomic-comm
   );
   assert.equal(blockers.includes('production-row-batch-executor-without-atomic-commit'), true);
   assert.equal(blockers.includes('production-row-batch-executor-not-visible'), false);
+});
+
+test('guarded benchmark keeps row-batch and atomic-commit visible detail hidden when metadata is hidden', () => {
+  const report = smallBenchmark();
+  const tampered = clone(report);
+
+  tampered.evidence.atomicGroup.productionRowBatchExecutorMeasured = true;
+  tampered.evidence.atomicGroup.productionRowBatchExecutorVisible = true;
+  tampered.evidence.atomicGroup.productionAtomicCommitMeasured = true;
+  tampered.evidence.atomicGroup.productionAtomicCommitVisible = true;
+  tampered.evidence.atomicGroup.productionAtomicGroupMetadataVisible = false;
+
+  const details = productionThroughputDetails(tampered);
+
+  assert.equal(details.atomicGroup.productionRowBatchExecutorVisibleAndAtomicCommitVisible, false);
+  assert.equal(
+    details.backpressureConsistency.productionRowBatchExecutorVisibleAndAtomicCommitVisible,
+    false,
+  );
 });
 
 test('guarded benchmark blocks row-batch executor visibility without visible measured parallelism caps', () => {

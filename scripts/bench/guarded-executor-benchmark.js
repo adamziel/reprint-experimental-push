@@ -1956,7 +1956,9 @@ export function productionThroughputDetails(report) {
   const productionStorageReceiptsVisibleAndAtomicGroupMetadataVisible =
     productionStorageReceiptsVisible && productionAtomicGroupMetadataVisible;
   const productionStorageReceiptsVisibleAndAtomicCommitVisible =
-    productionStorageReceiptsVisible && productionAtomicCommitVisible;
+    productionStorageReceiptsVisible
+    && productionAtomicCommitVisible
+    && productionAtomicGroupMetadataVisible;
   const productionStorageReceiptsVisibleAndAtomicCommitVisibleAndMeasured =
     productionStorageReceiptsVisible
     && productionAtomicCommitVisible
@@ -1966,7 +1968,9 @@ export function productionThroughputDetails(report) {
   const productionRowBatchExecutorVisibleAndStorageReceiptsVisible =
     productionRowBatchExecutorVisible && productionStorageReceiptsVisible;
   const productionRowBatchExecutorVisibleAndAtomicCommitVisible =
-    productionRowBatchExecutorVisible && productionAtomicCommitVisible;
+    productionRowBatchExecutorVisible
+    && productionAtomicCommitVisible
+    && productionAtomicGroupMetadataVisible;
   const productionAtomicGroupMetadataProven =
     report.evidence.atomicGroup?.productionAtomicCommitMeasured !== true
     || (
