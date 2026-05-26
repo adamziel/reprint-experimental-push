@@ -4322,6 +4322,36 @@ test('guarded benchmark keeps memory-headroom and queue-budget visibility pair f
   );
 });
 
+test('guarded benchmark keeps memory-headroom pair summaries false when memory-ceiling-match visibility is hidden', () => {
+  const report = smallBenchmark();
+  const mutated = clone(report);
+
+  mutated.evidence.backpressure.receiptCursorMemoryCeilingMatchesQueueBudgetVisible = false;
+
+  const details = productionThroughputDetails(mutated);
+  const blockers = productionThroughputBlockers(mutated);
+
+  assert.equal(details.queueHeadroomVisible, true);
+  assert.equal(details.receiptCursorQueueSlackVisible, true);
+  assert.equal(details.receiptCursorMemoryHeadroomVisible, true);
+  assert.equal(details.queueHeadroomVisibleAndMemoryHeadroomVisible, false);
+  assert.equal(
+    details.backpressureConsistency.queueHeadroomVisibleAndMemoryHeadroomVisible,
+    false,
+  );
+  assert.equal(details.receiptCursorQueueSlackVisibleAndMemoryHeadroomVisible, false);
+  assert.equal(
+    details.backpressureConsistency.receiptCursorQueueSlackVisibleAndMemoryHeadroomVisible,
+    false,
+  );
+  assert.equal(details.receiptCursorMemoryHeadroomVisibleAndQueueBudgetVisible, false);
+  assert.equal(
+    details.backpressureConsistency.receiptCursorMemoryHeadroomVisibleAndQueueBudgetVisible,
+    false,
+  );
+  assert.ok(blockers.includes('queue-budget-visible-without-memory-ceiling-match-visibility'));
+});
+
 test('guarded benchmark keeps queue-headroom and memory-headroom visibility pair false when the aligned queue-slack proof is hidden', () => {
   const report = smallBenchmark();
   const mutated = clone(report);
