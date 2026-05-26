@@ -209,6 +209,30 @@ test('guarded executor benchmark keeps large-site rollout proof bounded and name
     'production-row-batch-executor-not-measured',
     'production-storage-receipts-not-measured',
   ];
+  const expectedRejectedFastPaths = [
+    {
+      id: 'compressed-remote-index-and-parallel-chunk-sends-skips-large-upload-backpressure-after-pause',
+      rejectedGate: 'recovery',
+      blockerRefs: [
+        'production-parallelism-limits-not-visible',
+        'production-storage-receipts-not-measured',
+      ],
+    },
+    {
+      id: 'compressed-remote-index-and-parallel-row-batches-skips-plugin-update-commit',
+      rejectedGate: 'group',
+      blockerRefs: [
+        'production-atomic-group-commit-not-measured',
+        'production-row-batch-executor-not-measured',
+        'production-row-batch-executor-measured-not-proven',
+      ],
+    },
+    {
+      id: 'compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-dependency-checks',
+      rejectedGate: 'live',
+      blockerRefs: ['production-capability-measurement-not-aligned'],
+    },
+  ];
 
   assert.equal(report.shape.fileBytes, 32 * 1024 * 1024);
   assert.equal(report.shape.chunkSizeBytes, 8 * 1024 * 1024);
@@ -230,6 +254,14 @@ test('guarded executor benchmark keeps large-site rollout proof bounded and name
   assert.equal(report.claims.productionThroughputDetails.parallelismLimitsCanonical, true);
   assert.equal(report.claims.productionThroughput.status, 'blocked');
   assert.deepEqual([...report.claims.productionThroughput.blockers].sort(), expectedBlockers);
+  assert.deepEqual(
+    report.claims.productionThroughput.rejectedFastPaths.map((entry) => ({
+      id: entry.id,
+      rejectedGate: entry.rejectedGate,
+      blockerRefs: entry.blockerRefs,
+    })),
+    expectedRejectedFastPaths,
+  );
   assert.ok(
     !report.claims.productionThroughput.blockers.includes('backpressure-evidence-incomplete'),
   );

@@ -14,6 +14,7 @@ import {
 } from '../../src/recovery-journal.js';
 import { inspectRecoveryJournal } from '../../src/recovery-inspect.js';
 import { resourceHash } from '../../src/resources.js';
+import { findRejectedFastPathById } from './performance-model.js';
 import { DEFAULT_LIMITS, MIB } from './performance-model.js';
 
 const FIXED_NOW = new Date('2026-05-24T00:00:00.000Z');
@@ -44,6 +45,30 @@ export const GUARDED_EXECUTOR_BENCHMARK_PROFILES = Object.freeze({
     rowPayloadBytes: 700,
   }),
 });
+
+const ROLLOUT_REJECTED_FAST_PATH_SPECS = Object.freeze([
+  Object.freeze({
+    id: 'compressed-remote-index-and-parallel-chunk-sends-skips-large-upload-backpressure-after-pause',
+    blockerRefs: Object.freeze([
+      'production-parallelism-limits-not-visible',
+      'production-storage-receipts-not-measured',
+    ]),
+  }),
+  Object.freeze({
+    id: 'compressed-remote-index-and-parallel-row-batches-skips-plugin-update-commit',
+    blockerRefs: Object.freeze([
+      'production-atomic-group-commit-not-measured',
+      'production-row-batch-executor-not-measured',
+      'production-row-batch-executor-measured-not-proven',
+    ]),
+  }),
+  Object.freeze({
+    id: 'compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-dependency-checks',
+    blockerRefs: Object.freeze([
+      'production-capability-measurement-not-aligned',
+    ]),
+  }),
+]);
 
 export class BenchmarkClaimError extends Error {
   constructor(message, details = {}) {
@@ -1395,7 +1420,32 @@ export function productionThroughputClaim(report) {
     allowed: blockers.length === 0,
     status: blockers.length === 0 ? 'allowed' : 'blocked',
     blockers,
+    rejectedFastPaths: rolloutRejectedFastPaths(blockers),
   };
+}
+
+function rolloutRejectedFastPaths(blockers) {
+  const blockerSet = new Set(blockers);
+
+  return ROLLOUT_REJECTED_FAST_PATH_SPECS.flatMap((spec) => {
+    const matchedBlockers = spec.blockerRefs.filter((blocker) => blockerSet.has(blocker));
+    if (matchedBlockers.length === 0) {
+      return [];
+    }
+
+    const rejected = findRejectedFastPathById(spec.id);
+    if (!rejected) {
+      return [];
+    }
+
+    return [{
+      id: rejected.id,
+      rejectedGate: rejected.rejectedGate,
+      blockerRefs: matchedBlockers,
+      proposal: rejected.proposal,
+      violates: [...rejected.violates],
+    }];
+  });
 }
 
 export function productionThroughputDetails(report) {
