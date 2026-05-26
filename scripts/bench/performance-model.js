@@ -3317,6 +3317,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['remote-index-planning-only', 'compression', 'row-preconditions', 'plugin-preconditions', 'atomic-groups', 'backpressure', 'durable-progress'],
   },
   {
+    id: 'cached-dependency-graph-and-remote-index-cursor-skips-plugin-update-row-batch-revalidation-after-pause',
+    proposal: 'use a cached dependency graph plus a remote index cursor to skip plugin-update row-batch revalidation after a pause',
+    rejectedBecause: 'the dependency graph and planning cursor can trim rescans, but they cannot prove the live row compares, batch receipts, or atomic-group barrier survived the pause without guessing which rows remained durable',
+    rejectedGate: 'recovery',
+    violates: ['remote-index-planning-only', 'database-row-batching', 'row-preconditions', 'plugin-preconditions', 'atomic-groups', 'backpressure', 'durable-progress'],
+  },
+  {
     id: 'compressed-remote-index-and-parallel-row-batches-skips-plugin-install-backpressure-after-pause',
     proposal: 'use a compressed remote index plus parallel row batches to skip plugin-install backpressure after a pause',
     rejectedBecause: 'planning evidence and row fan-out can reduce idle time, but they cannot prove the paused install rows, queue order, or atomic-group evidence survived the interruption',
