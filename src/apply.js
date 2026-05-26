@@ -985,6 +985,7 @@ function durableJournalInspectRecords(inspected) {
     && Array.isArray(inspected.records),
   ) && !Reflect.ownKeys(inspected.records).some((key) => typeof key === 'symbol')
   && inspected.records.length > 0
+  && inspected.records.every((record) => isStrictPlainObject(record))
   && inspected.records[0].type === 'journal-opened'
   && inspected.records.every((record) =>
     record
