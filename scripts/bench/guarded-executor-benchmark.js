@@ -624,6 +624,7 @@ function hasCompleteBackpressureEvidence(report) {
     && receiptCursorBackpressureBytes === receiptCursorWindowBytes
     && receiptCursorBackpressureBytes <= receiptCursorQueueBudgetBytes
     && receiptCursorQueueSlackBytes === receiptCursorQueueBudgetBytes - receiptCursorBackpressureBytes
+    && receiptCursorQueueSlackBytes > 0
     && receiptCursorQueueSlackBytes === receiptCursorMemoryHeadroomBytes
     && receiptCursorQueueHeadroomBytes === receiptCursorQueueBudgetBytes - report.shape.chunkSizeBytes
     && receiptCursorQueueHeadroomBytes >= receiptCursorBackpressureBytes
