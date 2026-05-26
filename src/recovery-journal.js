@@ -63,6 +63,7 @@ export function openProductionRecoveryJournal({
   artifactRefs = {},
   now,
   truncate = true,
+  claimId = null,
 }) {
   return openPlanRecoveryJournal({
     filePath,
@@ -71,6 +72,7 @@ export function openProductionRecoveryJournal({
     artifactRefs,
     now,
     truncate,
+    claimId,
   });
 }
 
@@ -81,8 +83,9 @@ export function openPlanRecoveryJournal({
   artifactRefs = {},
   now,
   truncate = true,
+  claimId = null,
 }) {
-  const journal = openRecoveryJournal(filePath, { truncate, now });
+  const journal = openRecoveryJournal(filePath, { truncate, now, claimId });
   journal.appendEvent('journal-opened', {
     planId: plan.id,
     state: 'opened',

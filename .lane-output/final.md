@@ -1,26 +1,32 @@
-2026-05-26 11:24:36 CEST (+0200)
+2026-05-26 12:02:24 CEST (+0200)
 
 Changed files:
-- None in this pass.
+- [`scripts/playground/production-shaped-release-verify.mjs`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/reliable-executor/scripts/playground/production-shaped-release-verify.mjs)
+- [`src/recovery-journal.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/reliable-executor/src/recovery-journal.js)
+- [`test/production-shaped-proof.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/reliable-executor/test/production-shaped-proof.test.js)
+- [`test/recovery-journal.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/reliable-executor/test/recovery-journal.test.js)
 
 Checks run:
+- `node --check src/recovery-journal.js`
 - `node --check scripts/playground/production-shaped-release-verify.mjs`
-- `node --check src/authenticated-http-push-client.js`
-- `timeout 120s node --test test/production-shaped-proof.test.js --test-name-pattern='release verify|release journal|durable journal'`
+- `node --check test/recovery-journal.test.js`
+- `node --check test/production-shaped-proof.test.js`
+- `timeout 120s node --test test/recovery-journal.test.js`
+- `timeout 120s node --test --test-name-pattern='production-shaped release verify command fails closed when production auth/session lifecycle is explicitly required|production-shaped release proof emits the exact gate output when no live source is supplied' test/production-shaped-proof.test.js`
 
 Result:
-- Syntax checks passed.
-- The bounded release-verifier slice passed `8/8` non-skipped tests with `5` skips.
-- The checked release path consumes `openProductionRecoveryJournal()` and carries the plan plus remote snapshot evidence through the release verifier.
+- The recovery journal now fences stale claims on restart, and the release verifier surfaces that fence in the production-shaped proof path.
+- The focused recovery-journal suite passed `10/10`.
+- The focused release-proof slice passed `2/2`.
+- The checked release path still fails closed at `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED` / `PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED`.
 
 Push result:
-- No push from this pass.
+- Not pushed yet in this pass.
 
 Worktree status:
-- Clean
+- Dirty tracked files only in the four files above.
 - Branch: `lane/cycle-20260525-mainwindows-2349/reliable-followup`
-- Head: `26cfdfe0`
-- Remote tracking: `origin/lane/reliable-executor`
+- `HEAD` and `origin/lane/reliable-executor` were aligned before this pass.
 
 Next supervisor nudge:
-- Keep the reliable lane on product-side release-gate work only if there is a new production-boundary dependency to prove. Otherwise, hand off the exact next missing production file/API/owner for auth/session lifecycle depth, live replay equivalence, or durable journal ownership wired into `verify:release`.
+- Move the next reliable pass to the remaining gate blockers only: production-backed auth/session lifecycle on the checked release path, durable journal ownership with lease/fencing beyond the retained Playground journal boundary, or preserved-remote retry.

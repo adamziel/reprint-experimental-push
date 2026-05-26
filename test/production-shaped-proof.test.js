@@ -736,9 +736,10 @@ maybeTest('production-shaped release verify command runs the live protocol branc
     assert.match(proof.stdout, /"durableJournal": \{\s*"proof": \{\s*"status": 0,\s*"journal": \{/);
     assert.match(proof.stdout, /"ownsJournal": true/);
     assert.match(proof.stdout, /"restartReadable": true/);
+    assert.match(proof.stdout, /"staleClaimRejected": true/);
     assert.match(
       proof.stdout,
-      /"leaseFence": \{\s*"storageGuard": "filesystem-compare-rename",\s*"fsyncEvidence": true,\s*"monotonicSequence": true\s*\}/,
+      /"leaseFence": \{\s*"storageGuard": "filesystem-compare-rename",\s*"fsyncEvidence": true,\s*"monotonicSequence": true,\s*"staleClaimRejected": true\s*\}/,
     );
     assert.match(
       proof.stdout,

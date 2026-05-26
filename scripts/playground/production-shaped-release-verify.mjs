@@ -9,7 +9,11 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { authenticatedHttpClient, runAuthenticatedHttpPush } from '../../src/authenticated-http-push-client.js';
-import { openProductionRecoveryJournal, readRecoveryJournal } from '../../src/recovery-journal.js';
+import {
+  appendRecoveryClaimOpened,
+  openProductionRecoveryJournal,
+  readRecoveryJournal,
+} from '../../src/recovery-journal.js';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const muPluginDir = path.join(repoRoot, 'scripts/playground/rest-mu-plugins');
@@ -242,7 +246,10 @@ if (retainedSourceSummaryRequested) {
           proof: {
             status: 0,
             journal: durableJournalSummary.journal,
-            leaseFence: durableJournalSummary.leaseFence,
+            leaseFence: {
+              ...durableJournalSummary.leaseFence,
+              staleClaimRejected: durableJournalSummary.journal.staleClaimRejected,
+            },
           },
           rows: 17,
           applyCommitted: true,
@@ -684,7 +691,10 @@ try {
                 proof: {
                   status: 0,
                   journal: durableJournalSummary.journal,
-                  leaseFence: durableJournalSummary.leaseFence,
+                  leaseFence: {
+                    ...durableJournalSummary.leaseFence,
+                    staleClaimRejected: durableJournalSummary.journal.staleClaimRejected,
+                  },
                 },
                 rows: proof.dbJournal.rows,
                 applyCommitted: proof.dbJournal.applyCommitted,
@@ -755,16 +765,19 @@ try {
             authSessionLifecycle: proof.authSessionLifecycle,
             authSessionLifecycleTrace: proof.authSessionLifecycleTrace,
             replayEquivalence: proof.replayEquivalence,
-          durableJournal: {
-            proof: {
-              status: 0,
-              journal: durableJournalSummary.journal,
-              leaseFence: durableJournalSummary.leaseFence,
-            },
-            rows: proof.dbJournal.rows,
-            applyCommitted: proof.dbJournal.applyCommitted,
-            mutationApplied: proof.dbJournal.mutationApplied,
-            idempotencyOpened: proof.dbJournal.idempotencyOpened,
+            durableJournal: {
+              proof: {
+                status: 0,
+                journal: durableJournalSummary.journal,
+                leaseFence: {
+                  ...durableJournalSummary.leaseFence,
+                  staleClaimRejected: durableJournalSummary.journal.staleClaimRejected,
+                },
+              },
+              rows: proof.dbJournal.rows,
+              applyCommitted: proof.dbJournal.applyCommitted,
+              mutationApplied: proof.dbJournal.mutationApplied,
+              idempotencyOpened: proof.dbJournal.idempotencyOpened,
             },
           },
           null,
@@ -1048,30 +1061,68 @@ function runBoundedSync(command, args, options, label) {
 function runProductionRecoveryJournalProof({ plan, current, artifactRefs = {} }) {
   const workDir = fs.mkdtempSync(path.join(os.tmpdir(), 'reprint-release-journal-'));
   const journalPath = path.join(workDir, 'production-recovery.journal.jsonl');
+  const activeClaimId = digest({
+    planId: plan.id,
+    observedHash: digest(current),
+    artifactRefs,
+  });
   const journal = openProductionRecoveryJournal({
     filePath: journalPath,
     plan,
     current,
     artifactRefs,
+    claimId: activeClaimId,
+  });
+  appendRecoveryClaimOpened(journal, {
+    plan,
+    current,
+    claimId: activeClaimId,
+    artifactRefs,
   });
   journal.close();
 
   const persisted = readRecoveryJournal(journalPath);
+  const staleClaimId = `${activeClaimId}-stale`;
+  const staleJournal = openProductionRecoveryJournal({
+    filePath: journalPath,
+    plan,
+    current,
+    artifactRefs,
+    truncate: false,
+    claimId: staleClaimId,
+  });
+  let staleClaimRejected = false;
+  try {
+    staleJournal.appendEvent('journal-opened', {
+      planId: plan.id,
+      state: 'opened',
+      observedHash: digest(current),
+      artifactRefs,
+    });
+  } catch (error) {
+    staleClaimRejected = error?.code === 'RECOVERY_CLAIM_STALE';
+  } finally {
+    staleJournal.close();
+  }
+
   return {
     journal: {
       path: journalPath,
       checked: [journalPath],
       artifactRefs,
+      claimId: activeClaimId,
       ownsJournal: true,
       restartReadable: persisted.integrity.status === 'ok',
       schemaVersion: persisted.records[0]?.schemaVersion ?? null,
       integrity: persisted.integrity,
       records: persisted.records.length,
+      staleClaimRejected,
     },
     leaseFence: {
       storageGuard: 'filesystem-compare-rename',
       fsyncEvidence: true,
       monotonicSequence: true,
+      staleClaimRejected,
     },
   };
 }

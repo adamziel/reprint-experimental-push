@@ -5,8 +5,10 @@ import os from 'node:os';
 import path from 'node:path';
 import {
   appendJournalCompleted,
+  appendRecoveryClaimOpened,
   appendMutationObserved,
   assertJournalRecordHasNoRawValues,
+  RecoveryJournalClaimStaleError,
   openPlanRecoveryJournal,
   openRecoveryJournal,
   readRecoveryJournal,
@@ -237,4 +239,38 @@ test('restart inspection blocks corrupt or truncated journal records', () => {
   assert.equal(inspection.status, 'blocked-recovery');
   assert.deepEqual(inspection.counts, { old: 0, new: 0, blockedUnknown: 8 });
   assert.equal(inspection.journal.integrity.status, 'blocked');
+});
+
+test('file-backed journal fences out stale claims on restart', () => {
+  const filePath = tempJournalPath();
+  const remote = baseSite();
+  const plan = planFor(baseSite(), localSite(), remote);
+  const activeClaimId = 'active-journal-claim';
+  const staleClaimId = 'stale-journal-claim';
+
+  const journal = openRecoveryJournal(filePath, { now: fixedNow, claimId: activeClaimId });
+  appendRecoveryClaimOpened(journal, {
+    plan,
+    current: remote,
+    claimId: activeClaimId,
+  });
+  journal.close();
+
+  const reopened = openRecoveryJournal(filePath, {
+    claimId: staleClaimId,
+    now: fixedNow,
+  });
+
+  assert.throws(
+    () =>
+      reopened.appendEvent('journal-opened', {
+        planId: plan.id,
+        state: 'opened',
+        observedHash: 'snapshot-hash-only',
+        artifactRefs: {},
+      }),
+    RecoveryJournalClaimStaleError,
+  );
+
+  reopened.close();
 });
