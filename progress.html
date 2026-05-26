@@ -500,11 +500,11 @@
       <div>
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
-          <p class="lead">Last 12 hours: evidence progressed; release gates remain `0/4`. The runtime anchor remains `npm run verify:release` from commit `3089aee2`. `998e856f` is the newest reliable head, surfacing replay-equivalence evidence in the checked release verifier while production-backed auth/session lifecycle and durable journal ownership remain blocked. Supporting no-data-loss, recovery, critique, fast-path, and objective-audit evidence stays visible, but no gate moved.</p>
-        <time class="update-stamp" datetime="2026-05-26T11:57:14+02:00">Last updated: May 26, 2026, 11:57:14 CEST</time>
+          <p class="lead">Last 12 hours: evidence progressed; release gates remain `0/4`. The runtime anchor remains `npm run verify:release` from commit `3089aee2`. `fd425b41` is the newest reliable head, surfacing release-verifier journal ownership proof fields while production-backed auth/session lifecycle and durable journal ownership remain blocked. Supporting no-data-loss, recovery, critique, fast-path, and objective-audit evidence stays visible, but no gate moved.</p>
+        <time class="update-stamp" datetime="2026-05-26T12:01:38+02:00">Last updated: May 26, 2026, 12:01:38 CEST</time>
         <div class="meta" aria-label="Project status">
           <span class="pill">Evidence class: lab-only</span>
-          <span class="pill">Trend: `998e856f` is the newest reliable head; earlier support evidence remains visible behind it</span>
+          <span class="pill">Trend: `fd425b41` is the newest reliable head; earlier support evidence remains visible behind it</span>
           <span class="pill">Top blocker: production-backed WordPress auth/session lifecycle and durable journal ownership with lease/fencing still block any production push claim</span>
           <span class="pill">Gate status: 0/4 verified; 4 pending</span>
           <span class="pill">Open gates: executor/auth, recovery journal, Docker/Playground, plugin drivers</span>
@@ -647,7 +647,7 @@
         <section class="panel" aria-labelledby="proof-gates">
           <h2 id="proof-gates">Release Gate Checklist</h2>
           <div class="proof-list">
-            <div class="proof-item"><span class="status">Lab proof</span><p>Last 12 hours: evidence progressed; release gates remain `0/4`. The runtime anchor remains `npm run verify:release` from commit `3089aee2`; `998e856f` now exposes top-level replay-equivalence evidence in the checked release verifier, while the production auth/session lifecycle and durable journal ownership gates remain blocked. Supporting no-data-loss, recovery, critique, fast-path, and objective-audit evidence remains visible. Evidence: <a href="audits/objective-audit.md">objective audit</a>, <a href="docs/progress-log.md#2026-05-26-public-status-audit-115714">latest log entry</a>.</p></div>
+            <div class="proof-item"><span class="status">Lab proof</span><p>Last 12 hours: evidence progressed; release gates remain `0/4`. The runtime anchor remains `npm run verify:release` from commit `3089aee2`; `fd425b41` now exposes release-verifier journal ownership proof fields, while the production auth/session lifecycle and durable journal ownership gates remain blocked. Supporting no-data-loss, recovery, critique, fast-path, and objective-audit evidence remains visible. Evidence: <a href="audits/objective-audit.md">objective audit</a>, <a href="docs/progress-log.md#2026-05-26-public-status-audit-120138">latest log entry</a>.</p></div>
             <div class="proof-item"><span class="status">Gate 1</span><p>Pending: production WordPress executor and auth, with fail-closed source-gate proof in the production-shaped release command. Evidence: <a href="docs/executor.md">executor notes</a>, <a href="docs/protocol.md">protocol sketch</a>, <a href="scripts/playground/production-shaped-release-verify.mjs">release-verify runner</a>.</p></div>
             <div class="proof-item"><span class="status">Gate 2</span><p>Pending: durable recovery journal with crash, lease, fencing, and rollback tests. Evidence: <a href="docs/recovery/apply-journal.md">recovery journal</a>.</p></div>
             <div class="proof-item"><span class="status">Gate 3</span><p>Pending: Docker/full Playground integration beyond fixture labs. Evidence: <a href="docs/playground-topology.md">playground topology</a>.</p></div>
