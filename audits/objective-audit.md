@@ -19,20 +19,20 @@ Fresh remote heads at audit time, checked on May 26, 2026:
 - `origin/lane/cycle-20260525-mainwindows-2349/critic` -> `3b9a9c46`
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `f2a4f694`
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `7a0f7454`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `628b0073`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `55c63437`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `4372167e`
 - `origin/lane/same-plan-wordpress-graph-create` -> `09e6706d`
 - `origin/lane/cycle-20260525-mainwindows-2349/same-plan-wordpress-graph-create` -> `09e6706d`
 - `origin/lane/cycle-20260525-mainwindows-2349/same-plan-wordpress-graph-create` -> `e9cbf9d4`
 - `origin/lane/cycle-20260525-mainwindows-2357/no-data-loss-invariants-graph-proof` -> `98c0ce26`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `628b0073`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `55c63437`
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` -> `5f256171`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-invariants` -> `9c70eba6`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `4372167e`
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `38532801`
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `e88851d8`
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `bd46cd43`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `82e0f4ed`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `55c63437`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `4372167e`
 - `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration` -> `a3a900d7`
 - `origin/main` -> `e55864f4`
@@ -70,9 +70,9 @@ but it did not change the release conclusion:
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now
   refreshes supervisor progress visibility at `4a9b19e0`.
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now
-  records the latest progress freshness handoff at `d9379e28`.
+  records the latest progress freshness handoff at `55c63437`.
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` now refreshes the audit snapshot at
-  `599ec3db`.
+  `e076d384`.
 - `origin/lane/critic` now refreshes the critic handoff at `6828861f`.
 - `origin/lane/progress-publisher` now refreshes the public progress evidence
   at `7695e1f9`.
