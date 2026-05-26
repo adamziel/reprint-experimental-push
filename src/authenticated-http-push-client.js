@@ -45,33 +45,43 @@ export async function runAuthenticatedHttpPush({
   dryRunOnly = false,
   labDriftAfterSnapshot = '',
   requireProductionAuthSession = false,
+  authSessionSource = null,
   now = new Date(),
 }) {
-  if (!sourceUrl) {
+  const resolvedSource = resolveAuthenticatedHttpPushSource({
+    sourceUrl,
+    username,
+    applicationPassword,
+    authSessionSource,
+  });
+  if (!resolvedSource.sourceUrl) {
     throw new Error('Missing sourceUrl');
   }
-  if (!username) {
+  if (!resolvedSource.username) {
     throw new Error('Missing username');
   }
-  if (!applicationPassword) {
+  if (!resolvedSource.applicationPassword) {
     throw new Error('Missing applicationPassword');
   }
   if (!idempotencyKey) {
     throw new Error('Missing idempotencyKey');
   }
 
-  const credential = { username, password: applicationPassword };
+  const credential = {
+    username: resolvedSource.username,
+    password: resolvedSource.applicationPassword,
+  };
   const profile = resolveRouteProfile(routeProfile);
-  const client = authenticatedHttpClient({ sourceUrl, credential, routeProfile: profile.name });
+  const client = authenticatedHttpClient({ sourceUrl: resolvedSource.sourceUrl, credential, routeProfile: profile.name });
   const summary = {
     ok: false,
     mode: dryRunOnly ? 'dry-run' : 'apply',
     source: {
-      url: redactUrl(sourceUrl),
+      url: redactUrl(resolvedSource.sourceUrl),
       namespace: profile.namespace,
       routePrefix: profile.routePrefix,
       routeProfile: profile.name,
-      labBacked: true,
+      labBacked: !authSessionSource?.ok,
     },
     idempotencyKeyHash: digest(idempotencyKey),
     preflight: null,
@@ -596,6 +606,27 @@ export async function runAuthenticatedHttpPush({
       : 'journal-inspect');
   }
   return summary;
+}
+
+export function resolveAuthenticatedHttpPushSource({
+  sourceUrl = '',
+  username = '',
+  applicationPassword = '',
+  authSessionSource = null,
+}) {
+  if (!authSessionSource?.ok) {
+    return {
+      sourceUrl,
+      username,
+      applicationPassword,
+    };
+  }
+
+  return {
+    sourceUrl: authSessionSource.sourceUrl || sourceUrl,
+    username: authSessionSource.username || username,
+    applicationPassword: authSessionSource.applicationPassword || applicationPassword,
+  };
 }
 
 export function authenticatedHttpClient({

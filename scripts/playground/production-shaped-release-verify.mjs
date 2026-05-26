@@ -49,7 +49,9 @@ if (authSessionSource?.ok) {
     liveSourceUrl,
     username: credentials.username,
     applicationPassword: credentials.password,
-  }, authSessionSource);
+  }, authSessionSource, {
+    preferSource: requireProductionAuthSession,
+  });
   // When a live auth-session source is supplied, prefer it over any stale lab
   // credentials already present in the environment.
   liveSourceUrl = resolvedAuthSessionSource.liveSourceUrl;
@@ -579,6 +581,7 @@ try {
         routeProfile: 'production-shaped',
         dryRunOnly: false,
         requireProductionAuthSession: true,
+        authSessionSource,
         labDriftAfterSnapshot,
         now: new Date('2026-05-25T10:12:00.000Z'),
       });

@@ -42,7 +42,7 @@ export function resolveAuthSessionSourceCredentials({
   liveSourceUrl = '',
   username = '',
   applicationPassword = '',
-}, source) {
+}, source, { preferSource = false } = {}) {
   if (!source?.ok) {
     return {
       liveSourceUrl,
@@ -52,8 +52,10 @@ export function resolveAuthSessionSourceCredentials({
   }
 
   return {
-    liveSourceUrl: source.sourceUrl || liveSourceUrl,
-    username: source.username || username,
-    applicationPassword: source.applicationPassword || applicationPassword,
+    liveSourceUrl: preferSource && source.sourceUrl ? source.sourceUrl : source.sourceUrl || liveSourceUrl,
+    username: preferSource && source.username ? source.username : source.username || username,
+    applicationPassword: preferSource && source.applicationPassword
+      ? source.applicationPassword
+      : source.applicationPassword || applicationPassword,
   };
 }

@@ -8,6 +8,10 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createHmac } from 'node:crypto';
 import { digest } from '../../src/stable-json.js';
+import {
+  loadAuthSessionSource,
+  resolveAuthSessionSourceCredentials,
+} from './auth-session-source.js';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const cliPath = path.join(repoRoot, 'bin/reprint-push-lab.js');
@@ -19,6 +23,11 @@ const credentials = {
   username: 'reprint_push_admin',
   password: 'reprint-push-admin-app-password',
 };
+const authSessionSourceCommand = process.env.REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND || '';
+const authSessionSource = authSessionSourceCommand ? loadAuthSessionSource(authSessionSourceCommand) : null;
+const resolvedCredentials = resolveAuthSessionSourceCredentials(credentials, authSessionSource, {
+  preferSource: true,
+});
 
 const alternateCredentials = {
   username: 'reprint_push_alt_admin',
@@ -144,11 +153,11 @@ try {
       '--local',
       localPath,
       '--source-url',
-      server.baseUrl,
+      resolvedCredentials.liveSourceUrl || server.baseUrl,
       '--username',
-      credentials.username,
+      resolvedCredentials.username,
       '--application-password',
-      credentials.password,
+      resolvedCredentials.applicationPassword,
       '--idempotency-key',
       'production-plugin-package-apply',
       '--route-profile',
@@ -194,6 +203,10 @@ try {
       namespace: result.source.namespace,
       applied: result.apply.applied,
       applyCommitted: result.dbJournal.applyCommitted,
+      authSessionSource: {
+        command: authSessionSourceCommand,
+        ok: Boolean(authSessionSource?.ok),
+      },
     };
     summary.final = {
       finalMatchesLocal: result.after.finalMatchesLocal,
