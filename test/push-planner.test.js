@@ -24459,6 +24459,63 @@ test('production durable journal claims fail closed when inspect is inherited th
   assert.equal(events.some((event) => event.type === 'journal-completed'), false);
 });
 
+test('production durable journal claims fail closed when inspected filePath is inherited through the prototype', () => {
+  const events = [];
+  const inspected = Object.assign(Object.create({
+    filePath: '/var/lib/reprint/recovery.jsonl',
+  }), {
+    schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+    artifactRefs: {
+      journal: '/var/lib/reprint/recovery.jsonl',
+      remote: '/var/lib/reprint/remote.jsonl',
+    },
+    records: [{ sequence: 1, type: 'journal-opened' }],
+  });
+  const writer = {
+    kind: 'production-recovery-journal',
+    productionAdapter: true,
+    supportedSurface: 'production-recovery-journal-adapter',
+    restartReadable: true,
+    ownsJournal: true,
+    ownsRemoteArtifact: true,
+    journalPath: '/var/lib/reprint/recovery.jsonl',
+    artifactRefs: {
+      journal: '/var/lib/reprint/recovery.jsonl',
+      remote: '/var/lib/reprint/remote.jsonl',
+    },
+    schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+    appendEvent(type, payload) {
+      events.push({ type, payload });
+      return { sequence: events.length, type, payload };
+    },
+    flush() {},
+    close() {},
+    inspect() {
+      return inspected;
+    },
+    assertCurrentClaim() {},
+  };
+  const plan = planFor(baseSite(), baseSite(), {
+    ...baseSite(),
+    db: {
+      ...baseSite().db,
+      wp_options: {
+        ...baseSite().db.wp_options,
+        'option_name:blogname': { option_name: 'blogname', option_value: 'New Site' },
+      },
+    },
+  });
+
+  const error = captureError(() => applyPlan(baseSite(), plan, {
+    requireProductionDurableJournal: true,
+    durableJournal: writer,
+  }));
+
+  assert.equal(error.code, 'PRODUCTION_DURABLE_JOURNAL_UNSUPPORTED');
+  assert.ok(error.details.missingDependency.includes('restart-readable recovery artifact location'));
+  assert.equal(events.some((event) => event.type === 'journal-completed'), false);
+});
+
 test('production durable journal claims fail closed when claim fencing is inherited through the prototype', () => {
   const events = [];
   const writer = {

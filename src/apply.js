@@ -1077,7 +1077,10 @@ function isCanonicalAbsolutePath(filePath) {
 }
 
 function durableJournalInspectPath(inspected) {
-  return inspected && typeof inspected === 'object' && typeof inspected.filePath === 'string'
+  return inspected
+    && typeof inspected === 'object'
+    && Object.hasOwn(inspected, 'filePath')
+    && typeof inspected.filePath === 'string'
     ? inspected.filePath
     : null;
 }
