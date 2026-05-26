@@ -1052,6 +1052,26 @@ export const SAFE_FAST_PATHS = Object.freeze([
   },
   {
     area: 'database-row-batching',
+    reduces: ['round-trips', 'wire-bytes-for-planning', 'retry-window-recomputation'],
+    allowedShortcut: 'compress-remote-index-listings-and-reuse-cursor-to-size-bounded-plugin-update-retry-windows',
+    guardrails: [
+      'compressed-index-remains-planning-evidence-only',
+      'plugin-update-retry-window-revalidates-before-write',
+    ],
+    gateProofs: {
+      skip: 'a plugin update can reuse a compressed remote-index listing and cursor to avoid rescanning unchanged planning data when sizing a retry window',
+      live: 'every row in the later plugin update still rechecks its live compare at the storage boundary before visibility changes',
+      group: 'the compressed listing only narrows planning work inside the same atomic group and never widens visibility across owners',
+      recovery: 'the compressed index cursor, dependency graph, and retry-window receipts still classify retry, pause, or crash without guessing',
+    },
+    visibilityBoundary: 'planning-only-for-plugin-update-retry-windows',
+    failureEvidence: 'compressed index cursor, dependency graph, and plugin-update retry-window receipt',
+    bypassesLivePreconditions: false,
+    splitsAtomicGroup: false,
+    publishesStagedDataEarly: false,
+  },
+  {
+    area: 'database-row-batching',
     reduces: ['round-trips', 'wire-bytes-for-planning', 'batch-shape-recomputation'],
     allowedShortcut: 'compress-remote-index-listings-and-reuse-cursor-to-presize-bounded-plugin-install-batches',
     guardrails: [

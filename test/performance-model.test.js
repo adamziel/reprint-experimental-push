@@ -89,6 +89,17 @@ test('benchmark model covers large uploads and plugin installs', () => {
   assert.ok(
     model.safeFastPaths.some(
       (fastPath) =>
+        fastPath.area === 'database-row-batching' &&
+        fastPath.allowedShortcut === 'compress-remote-index-listings-and-reuse-cursor-to-size-bounded-plugin-update-retry-windows' &&
+        fastPath.guardrails.includes('compressed-index-remains-planning-evidence-only') &&
+        fastPath.gateProofs.skip.includes('sizing a retry window') &&
+        fastPath.gateProofs.recovery.includes('retry-window receipts still classify retry, pause, or crash'),
+    ),
+    'compressed row-batch planning can size plugin-update retry windows without weakening recovery evidence',
+  );
+  assert.ok(
+    model.safeFastPaths.some(
+      (fastPath) =>
         fastPath.area === 'file-hashing' &&
         fastPath.allowedShortcut === 'reuse-cached-chunk-ledger-for-resume-with-live-publish-check' &&
         fastPath.guardrails.includes('chunk-ledger-is-resume-evidence-only') &&
