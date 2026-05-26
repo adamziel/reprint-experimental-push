@@ -16374,6 +16374,7 @@ test('blocks local same-plan created user meta identity while preserving remote-
   assert.equal(mutationFor(plan, resourceKey), undefined);
   assert.equal(plan.conflicts.length, 0);
   assert.equal(blocker.class, 'unsupported-usermeta-resource');
+  assert.equal(blocker.resourceKind, 'user-meta');
   assert.equal(blocker.resourceKey, resourceKey);
   assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_usermeta","umeta_id:77"] is created in the same plan as a user identity that depends on it, and identity rewriting is not yet supported.');
   assert.equal(planJson.includes('Local nickname'), false);

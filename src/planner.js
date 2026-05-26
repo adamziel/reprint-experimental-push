@@ -2251,6 +2251,7 @@ function addUnsupportedUsermetaResourceBlocker(plan, {
   plan.blockers.push({
     id: `blocker-unsupported-usermeta-resource-${plan.blockers.length + 1}`,
     class: support.className || 'unsupported-usermeta-resource',
+    resourceKind: 'user-meta',
     resource,
     resourceKey: resource.key,
     reason: support.reason || `User meta resource ${resource.key} is not yet supported by the planner.`,
