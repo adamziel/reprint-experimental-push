@@ -20,6 +20,7 @@ import {
   packagedProductionPluginNextTimeoutProbeCount,
   packagedProductionPluginNotReadyProbeLimitReached,
   packagedProductionPluginPackagedRouteStartupLimitReached,
+  packagedProductionPluginPreflightTerminalContext,
   packagedProductionPluginPreflightReady,
   packagedProductionPluginPreflightRetryable,
   packagedProductionPluginReadinessBodyRetryable,
@@ -574,11 +575,10 @@ async function waitForServer(child, baseUrl, logs) {
                 lastError,
                 lastProbes,
                 logs,
-                {
-                  packagedProductionPlugin: true,
-                  preflightTerminal: true,
-                  snapshotStartupFallback: true,
-                },
+                packagedProductionPluginPreflightTerminalContext(
+                  {},
+                  { snapshotStartupFallback: true },
+                ),
                 lastTimeoutFallbackProbes,
               ),
             );
@@ -747,11 +747,10 @@ async function waitForServer(child, baseUrl, logs) {
                 lastError,
                 lastProbes,
                 logs,
-                {
-                  packagedProductionPlugin: true,
-                  preflightTerminal: true,
-                  snapshotStartupFallback: true,
-                },
+                packagedProductionPluginPreflightTerminalContext(
+                  {},
+                  { snapshotStartupFallback: true },
+                ),
                 lastTimeoutFallbackProbes,
               ),
             );
@@ -1106,11 +1105,10 @@ async function waitForServer(child, baseUrl, logs) {
                 error,
                 lastProbes,
                 logs,
-                {
-                  packagedProductionPlugin: true,
-                  preflightTerminal: true,
-                  timeoutFallback: true,
-                },
+                packagedProductionPluginPreflightTerminalContext(
+                  {},
+                  { timeoutFallback: true },
+                ),
                 lastTimeoutFallbackProbes,
               ),
             );

@@ -41,6 +41,7 @@ import {
   packagedProductionPluginNextTimeoutProbeCount,
   packagedProductionPluginNotReadyProbeLimitReached,
   packagedProductionPluginPackagedRouteStartupLimitReached,
+  packagedProductionPluginPreflightTerminalContext,
   packagedProductionPluginPreflightReady,
   packagedProductionPluginPreflightRetryable,
   packagedProductionPluginReadinessProbeTimedOut,
@@ -1375,12 +1376,10 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
               lastError,
               lastProbes,
               getOutput(),
-              {
-                childPid: child.pid ?? null,
-                packagedProductionPlugin: true,
-                preflightTerminal: true,
-                snapshotStartupFallback: true,
-              },
+              packagedProductionPluginPreflightTerminalContext(
+                { childPid: child.pid ?? null },
+                { snapshotStartupFallback: true },
+              ),
             );
           }
           if (
@@ -1594,12 +1593,10 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
               lastError,
               lastProbes,
               getOutput(),
-              {
-                childPid: child.pid ?? null,
-                packagedProductionPlugin: true,
-                preflightTerminal: true,
-                snapshotStartupFallback: true,
-              },
+              packagedProductionPluginPreflightTerminalContext(
+                { childPid: child.pid ?? null },
+                { snapshotStartupFallback: true },
+              ),
             );
           }
           if (
@@ -2042,12 +2039,10 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
               lastError,
               lastProbes,
               getOutput(),
-              {
-                childPid: child.pid ?? null,
-                packagedProductionPlugin: true,
-                preflightTerminal: true,
-                timeoutFallback: true,
-              },
+              packagedProductionPluginPreflightTerminalContext(
+                { childPid: child.pid ?? null },
+                { timeoutFallback: true },
+              ),
               lastTimeoutFallbackProbes,
             );
           }

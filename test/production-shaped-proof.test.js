@@ -40,6 +40,7 @@ import {
   packagedProductionPluginNextTimeoutProbeCount,
   packagedProductionPluginNotReadyProbeLimitReached,
   packagedProductionPluginPackagedRouteStartupLimitReached,
+  packagedProductionPluginPreflightTerminalContext,
   packagedProductionPluginPreflightTerminal,
   packagedProductionPluginReadinessBodyRetryable,
   packagedProductionPluginReadinessErrorRetryable,
@@ -2333,11 +2334,11 @@ test('packaged readiness helpers can accept signed preflight readiness before sn
 
   assert.match(
     smokeSource,
-    /preflight became terminal while snapshot still reported startup-shaped readiness[\s\S]*?preflightTerminal:\s*true[\s\S]*?snapshotStartupFallback:\s*true/s,
+    /packagedProductionPluginPreflightTerminalContext\([\s\S]*?snapshotStartupFallback:\s*true[\s\S]*?\)/s,
   );
   assert.match(
     verifierSource,
-    /preflight became terminal while snapshot still reported startup-shaped readiness[\s\S]*?preflightTerminal:\s*true[\s\S]*?snapshotStartupFallback:\s*true/s,
+    /packagedProductionPluginPreflightTerminalContext\([\s\S]*?childPid:\s*child\.pid\s*\?\?\s*null[\s\S]*?snapshotStartupFallback:\s*true[\s\S]*?\)/s,
   );
 });
 
@@ -2463,8 +2464,43 @@ test('packaged readiness timeout fallback classifies global WordPress versus pac
     verifierSource,
     /preflight became terminal while the snapshot probe timed out[\s\S]*?preflightTerminal:\s*true[\s\S]*?timeoutFallback:\s*true/s,
   );
+  assert.match(
+    smokeSource,
+    /packagedProductionPluginPreflightTerminalContext\([\s\S]*?timeoutFallback:\s*true[\s\S]*?\)/s,
+  );
+  assert.match(
+    verifierSource,
+    /packagedProductionPluginPreflightTerminalContext\([\s\S]*?childPid:\s*child\.pid\s*\?\?\s*null[\s\S]*?timeoutFallback:\s*true[\s\S]*?\)/s,
+  );
   assert.match(smokeSource, /packagedProductionPluginClassifyTimeoutFallbackStartup\(/);
   assert.match(verifierSource, /packagedProductionPluginClassifyTimeoutFallbackStartup\(/);
+});
+
+test('packaged readiness helper builds consistent preflight terminal context', () => {
+  assert.deepEqual(
+    packagedProductionPluginPreflightTerminalContext(
+      { childPid: 123 },
+      { snapshotStartupFallback: true },
+    ),
+    {
+      childPid: 123,
+      packagedProductionPlugin: true,
+      preflightTerminal: true,
+      snapshotStartupFallback: true,
+    },
+  );
+
+  assert.deepEqual(
+    packagedProductionPluginPreflightTerminalContext(
+      {},
+      { timeoutFallback: true },
+    ),
+    {
+      packagedProductionPlugin: true,
+      preflightTerminal: true,
+      timeoutFallback: true,
+    },
+  );
 });
 
 test('packaged readiness timeout fallback classifier distinguishes terminal index failures', () => {

@@ -459,3 +459,19 @@ export function packagedProductionPluginClassifyTimeoutFallbackStartup(
 
   return null;
 }
+
+export function packagedProductionPluginPreflightTerminalContext(
+  context = {},
+  {
+    snapshotStartupFallback = false,
+    timeoutFallback = false,
+  } = {},
+) {
+  return {
+    ...context,
+    packagedProductionPlugin: true,
+    preflightTerminal: true,
+    ...(snapshotStartupFallback ? { snapshotStartupFallback: true } : {}),
+    ...(timeoutFallback ? { timeoutFallback: true } : {}),
+  };
+}
