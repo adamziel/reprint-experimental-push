@@ -41,7 +41,9 @@ the safe list even when they improve a throughput metric.
 Current executable gate:
 
 - `timeout 40s node scripts/bench/guarded-executor-benchmark.js --profile=ci`
-- Current result: `productionThroughput.status === "blocked"`
+- Current result: `productionThroughput.status === "blocked"` because the
+  release candidate still lacks measured production atomic-group commit,
+  storage receipts, and row-batch executor evidence.
 - Fast-path mode remains disabled for production claims until the reliable and
   recovery lanes provide storage receipts, atomic-group commit evidence, and
   row-batch executor evidence.
