@@ -1,9 +1,30 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-25 00:27 CEST
+Last updated: 2026-05-26 14:55 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-26 14:55 CEST - Reliable Head Advanced Again
+
+- Going well: `dcacf95e` is the live reliable head, and the checked release
+  path now loads packaged auth-source helpers instead of relying on the older
+  source-command-only seam.
+- Not going well: the gate is still blocked at production auth/session
+  lifecycle and durable journal ownership, so the release boundary remains
+  `0/4`.
+- Progress change: the public progress surfaces in this worktree are still
+  anchored to `998e856f`, so the progress lane needs a conservative refresh
+  once it confirms the same live head and blocker wording.
+- Next nudge: keep `progress-publisher` aligned to `dcacf95e`, and keep
+  `reliable-executor` on the remaining production auth/session or durable
+  journal dependency instead of more source-command polish.
+
+| Lane | Nudge |
+| --- | --- |
+| Reliable executor | Move off auth-source helper churn and attack production auth/session or durable journal ownership. |
+| Progress publisher | Refresh the public page to `dcacf95e` only if it is still stale, and keep the gate posture at `0/4`. |
+| Audit and critic | Classify `dcacf95e` narrowly: helper consumption improved, but the gate is still closed. |
 
 ## 2026-05-25 00:27 CEST - Supervised Lane Merge Refresh
 
