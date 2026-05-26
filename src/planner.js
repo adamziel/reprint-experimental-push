@@ -1519,6 +1519,9 @@ function isValidSamePlanWordPressGraphTarget(targetMutation, reference, sourceMu
     ) {
       return false;
     }
+    if (sourceValue.taxonomy === 'nav_menu') {
+      return false;
+    }
     if (hasRemoteWordPressNavigationPost(remote)) {
       return false;
     }
