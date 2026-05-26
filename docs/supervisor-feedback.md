@@ -1,9 +1,22 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-26 17:19 CEST
+Last updated: 2026-05-26 17:25 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-26 17:25 CEST - Reliable Head Advanced to `17a0a150`
+
+- Going well: the live reliable head advanced to `17a0a150f6212ee5dc6a39fe832ddad266d8e070`, so the checked release path moved again.
+- Not going well: the gate posture is still `0/4`, and the remaining blocker stays on production-backed auth/session lifecycle and durable journal ownership rather than support-only proof fields.
+- Progress change: this is a real head update, not a gate move; critic and auditor should classify the new head once, then stop until the checked boundary changes.
+- Next nudge: keep `reliable-executor` on the shared release-path proof, and have `progress-publisher`/`progress-live` refresh the public page only if it is still behind the live head.
+
+| Lane | Nudge |
+| --- | --- |
+| Reliable executor | Continue the product/test push toward production-backed auth/session lifecycle or durable journal ownership; do not backslide into proof-field polish. |
+| Progress publisher | Refresh the public page only if it still lags `17a0a150f6212ee5dc6a39fe832ddad266d8e070`; keep the gate posture at `0/4`. |
+| Audit and critic | Classify the new head once and keep the verdict at `0/4` unless the checked release boundary proves a gate. |
 
 ## 2026-05-26 17:19 CEST - Public Page Still Behind `1506e667`
 
