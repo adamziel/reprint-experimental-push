@@ -451,16 +451,16 @@ async function startPlaygroundServer(name, blueprintPath) {
     'quiet',
   ];
 
-    const child = spawn(
-      'timeout',
-      ['--preserve-status', '--kill-after=1s', `${playgroundServerTimeoutMs}s`, 'npx', ...args],
-      {
+  const child = spawn(
+    'timeout',
+    ['--preserve-status', '--kill-after=1s', `${playgroundServerTimeoutMs}s`, 'npx', ...args],
+    {
       cwd: repoRoot,
       env: process.env,
       detached: true,
       stdio: ['ignore', 'pipe', 'pipe'],
-      },
-    );
+    },
+  );
 
   let output = '';
   child.stdout.on('data', (chunk) => {
@@ -546,6 +546,7 @@ async function waitForServer(child, baseUrl, getLogs) {
   const probeText = lastProbes.length ? `\nProbe trail: ${JSON.stringify(lastProbes.slice(-4), null, 2)}` : '';
   const failureText = `Timed out waiting for Playground server at ${baseUrl}: ${lastError?.message || 'unknown'}${probeText}\n${getLogs()}`;
   process.stderr.write(`${failureText}\n`);
+  await stopPlaygroundChild(child);
   throw new Error(failureText);
 }
 
