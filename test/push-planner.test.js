@@ -554,6 +554,7 @@ test('blocks unknown plugin-owned custom tables while preserving a matching inde
   assert.equal(plan.status, 'blocked');
   assert.equal(blocker.class, 'unsupported-plugin-owned-resource');
   assert.equal(blocker.resourceKind, 'custom-table');
+  assert.equal(blocker.unsupportedState, 'local-or-divergent-drift');
   assert.equal(
     blocker.reason,
     'Plugin-owned custom tables, including deletes, are not yet supported by the planner.',
@@ -610,6 +611,7 @@ test('blocks deletion of unknown plugin-owned custom tables while preserving a m
   assert.equal(plan.status, 'blocked');
   assert.equal(blocker.class, 'unsupported-plugin-owned-resource');
   assert.equal(blocker.resourceKind, 'custom-table');
+  assert.equal(blocker.unsupportedState, 'delete');
   assert.equal(
     blocker.reason,
     'Plugin-owned custom tables, including deletes, are not yet supported by the planner.',
