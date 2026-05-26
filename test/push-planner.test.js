@@ -1901,6 +1901,58 @@ test('rejects blocked recovery states that hide non-enumerable nested artifact m
   );
 });
 
+test('rejects blocked recovery states that hide null-prototype nested artifact containers', () => {
+  const journal = {
+    status: 'completed',
+    entries: [Object.assign(Object.create(null), { mutationId: 'mutation-1', status: 'applied' })],
+  };
+
+  const recoveryState = {
+    status: 'blocked-recovery',
+    reason: 'Null-prototype nested artifact containers should not be accepted.',
+    remoteHash: 'a'.repeat(64),
+    planId: 'plan-null-prototype-nested-artifact',
+    driftedResources: ['row:["wp_options","option_name:blogname"]'],
+    artifacts: {
+      journal,
+      remote: { status: 'blocked' },
+    },
+  };
+
+  assert.throws(
+    () => assertRecoveryStateEnvelope(recoveryState),
+    (error) => error.code === 'RECOVERY_ARTIFACTS_INVALID',
+  );
+});
+
+test('rejects blocked recovery states that hide class-backed nested artifact containers', () => {
+  class HiddenArtifactContainer {
+    constructor() {
+      this.path = '/var/lib/reprint/recovery.jsonl';
+    }
+  }
+
+  const recoveryState = {
+    status: 'blocked-recovery',
+    reason: 'Class-backed nested artifact containers should not be accepted.',
+    remoteHash: 'a'.repeat(64),
+    planId: 'plan-class-backed-nested-artifact',
+    driftedResources: ['row:["wp_options","option_name:blogname"]'],
+    artifacts: {
+      journal: {
+        status: 'completed',
+        manifest: new HiddenArtifactContainer(),
+      },
+      remote: { status: 'blocked' },
+    },
+  };
+
+  assert.throws(
+    () => assertRecoveryStateEnvelope(recoveryState),
+    (error) => error.code === 'RECOVERY_ARTIFACTS_INVALID',
+  );
+});
+
 test('rejects blocked recovery states that reuse the same journal and remote artifact object', () => {
   const sharedArtifact = {
     status: 'blocked',

@@ -2396,6 +2396,18 @@ export function validateRecoveryArtifacts(recovery) {
     );
   }
 
+  if (hasNestedUnsupportedArtifactContainer(recovery.artifacts)) {
+    throw new PushPlanError(
+      'RECOVERY_ARTIFACTS_INVALID',
+      'Recovery states must preserve artifacts only with strict plain objects and canonical arrays.',
+      {
+        status: recovery.status,
+        planId: recovery.planId,
+        artifactKeys,
+      },
+    );
+  }
+
   if (recovery.status === 'blocked-recovery') {
     if (artifactKeys.some((key) => typeof key === 'symbol' || (key !== 'journal' && key !== 'remote'))) {
       throw new PushPlanError(
@@ -2647,6 +2659,36 @@ function hasNestedNonCanonicalArrayShape(value, seen = new Set()) {
       return false;
     }
     return hasNestedNonCanonicalArrayShape(value[key], seen);
+  });
+}
+
+function hasNestedUnsupportedArtifactContainer(value, seen = new Set()) {
+  if (!value || typeof value !== 'object' || seen.has(value)) {
+    return false;
+  }
+
+  seen.add(value);
+
+  if (Array.isArray(value)) {
+    if (Object.getPrototypeOf(value) !== Array.prototype || !hasOnlyDenseEnumerableArrayIndexes(value)) {
+      return true;
+    }
+    return value.some((nested) => hasNestedUnsupportedArtifactContainer(nested, seen));
+  }
+
+  if (!isPlainObject(value)) {
+    return true;
+  }
+
+  if (!isStrictPlainObject(value)) {
+    return true;
+  }
+
+  return Reflect.ownKeys(value).some((key) => {
+    if (typeof key === 'symbol') {
+      return false;
+    }
+    return hasNestedUnsupportedArtifactContainer(value[key], seen);
   });
 }
 
