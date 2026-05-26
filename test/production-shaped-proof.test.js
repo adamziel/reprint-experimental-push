@@ -53,15 +53,18 @@ function spawnReleaseVerify(env = {}, timeout = proofSubprocessTimeoutMs) {
     throw new Error(formatSpawnFailure(`production-shaped release verify failed${timeoutNote}`, proof));
   }
   if (proof.signal) {
+    const detail = describeSpawnProof(proof);
     throw new Error(
-      formatSpawnFailure(
+      `${formatSpawnFailure(
         `production-shaped release verify terminated by ${proof.signal}${timeout ? ` after ${timeout}ms` : ''}`,
         proof,
-      ),
+      )}\n${detail}`,
     );
   }
   if (proof.status === null) {
-    throw new Error(formatSpawnFailure('production-shaped release verify exited without a status', proof));
+    throw new Error(
+      `${formatSpawnFailure('production-shaped release verify exited without a status', proof)}\n${describeSpawnProof(proof)}`,
+    );
   }
   return proof;
 }
@@ -133,6 +136,26 @@ function formatSpawnFailure(prefix, proof) {
     proof.signal ? `signal=${proof.signal}` : null,
   ].filter(Boolean);
   return `${prefix} with ${detailParts.join(' ')}: ${proof.error?.message ?? 'unknown error'}\nstdout:\n${proof.stdout ?? ''}\nstderr:\n${proof.stderr ?? ''}`;
+}
+
+function describeSpawnProof(proof) {
+  return JSON.stringify(
+    {
+      status: proof.status,
+      signal: proof.signal ?? null,
+      error: proof.error
+        ? {
+            name: proof.error.name,
+            code: proof.error.code ?? null,
+            message: proof.error.message,
+          }
+        : null,
+      stdout: proof.stdout ?? '',
+      stderr: proof.stderr ?? '',
+    },
+    null,
+    2,
+  );
 }
 
 test('production-shaped proof wrapper emits the checked proof summary and exact missing-secret gate', () => {
