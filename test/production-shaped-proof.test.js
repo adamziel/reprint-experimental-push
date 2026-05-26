@@ -22,13 +22,13 @@ const proofSubprocessTimeoutMs = 30_000;
 const proofSubprocessKillSignal = 'SIGTERM';
 const liveProofSubprocessTimeoutMs = 9_000;
 const liveProofSubprocessKillSignal = 'SIGKILL';
-const liveProofInnerTimeoutMs = Math.max(1_000, Math.min(2_000, liveProofSubprocessTimeoutMs - 5_000));
+const liveProofInnerTimeoutMs = Math.max(1_000, Math.min(2_000, liveProofSubprocessTimeoutMs - 6_000));
 // Give the verifier enough time to reach its own bounded readiness failure and
 // emit probe diagnostics before the outer subprocess timeout can kill it.
-const liveProofLaunchTimeoutMs = Math.max(1_000, Math.min(6_000, liveProofSubprocessTimeoutMs - 1_000));
-const releaseVerifyInnerTimeoutMs = Math.max(1_000, Math.min(12_000, proofSubprocessTimeoutMs - 5_000));
+const liveProofLaunchTimeoutMs = Math.max(1_000, Math.min(5_000, liveProofSubprocessTimeoutMs - 2_000));
+const releaseVerifyInnerTimeoutMs = Math.max(1_000, Math.min(12_000, proofSubprocessTimeoutMs - 6_000));
 const releaseVerifySlowPathTimeoutMs = 9_000;
-const releaseVerifySlowPathInnerTimeoutMs = Math.max(1_000, Math.min(5_000, releaseVerifySlowPathTimeoutMs - 2_000));
+const releaseVerifySlowPathInnerTimeoutMs = Math.max(1_000, Math.min(4_000, releaseVerifySlowPathTimeoutMs - 3_000));
 const proofSubprocessOptions = {
   timeout: proofSubprocessTimeoutMs,
   killSignal: proofSubprocessKillSignal,
@@ -69,7 +69,7 @@ function stopAllPlaygroundChildrenSync() {
 }
 
 function spawnReleaseVerify(env = {}, options = {}) {
-  const timeout = Math.max(1_000, Math.min(options.timeout ?? proofSubprocessTimeoutMs, releaseVerifyInnerTimeoutMs));
+  const timeout = boundedReleaseVerifyTimeout(options.timeout ?? proofSubprocessTimeoutMs);
   const killSignal = options.killSignal ?? proofSubprocessKillSignal;
   const proof = spawnReleaseVerifySync(
     process.execPath,
@@ -93,7 +93,7 @@ function runReleaseVerifySync(env, timeout, killSignal, label) {
     ['scripts/playground/production-shaped-release-verify.mjs'],
     env,
     {
-      timeout: Math.max(1_000, Math.min(timeout, releaseVerifyInnerTimeoutMs)),
+      timeout: boundedReleaseVerifyTimeout(timeout),
       killSignal,
     },
   );
@@ -126,13 +126,18 @@ function spawnProductionShapedReleaseVerify(env, options, label) {
 }
 
 function spawnProductionShapedReleaseVerifyCommand(env, options, label) {
-  const timeout = Math.max(1_000, Math.min(options.timeout ?? releaseVerifyInnerTimeoutMs, releaseVerifyInnerTimeoutMs));
+  const timeout = boundedReleaseVerifyTimeout(options.timeout ?? releaseVerifyInnerTimeoutMs);
   const proof = spawnReleaseVerifySync(process.execPath, ['scripts/playground/production-shaped-release-verify.mjs'], env, {
     timeout,
     killSignal: options.killSignal ?? proofSubprocessKillSignal,
   });
   assertReleaseVerifyProof(proof, label, timeout);
   return proof;
+}
+
+function boundedReleaseVerifyTimeout(timeout) {
+  const outerBudget = Math.max(1_000, proofSubprocessTimeoutMs - 6_000);
+  return Math.max(1_000, Math.min(timeout, releaseVerifyInnerTimeoutMs, outerBudget));
 }
 
 function spawnProductionShapedReleaseVerifyWithDiagnostics(env, options, label) {
