@@ -290,6 +290,14 @@ export function productionThroughputBlockers(report) {
   ) {
     blockers.push('receipt-cursor-headroom-mismatch');
   }
+  if (
+    Number.isFinite(report.evidence.backpressure?.receiptCursorQueueSlackBytes)
+    && Number.isFinite(report.evidence.backpressure?.receiptCursorMemoryHeadroomBytes)
+    && report.evidence.backpressure.receiptCursorQueueSlackBytes
+      !== report.evidence.backpressure.receiptCursorMemoryHeadroomBytes
+  ) {
+    blockers.push('receipt-cursor-queue-slack-mismatch');
+  }
   if (report.evidence.backpressure?.receiptCursorHeadroomWithinQueueBudget !== true) {
     blockers.push('receipt-cursor-headroom-not-covered-by-queue-budget');
   }
@@ -377,6 +385,10 @@ export function productionThroughputDetails(report) {
     && Number.isFinite(receiptCursorQueueBudgetBytes)
     && Number.isFinite(receiptCursorBackpressureBytes)
     && receiptCursorQueueSlackBytes === receiptCursorQueueBudgetBytes - receiptCursorBackpressureBytes;
+  const receiptCursorQueueSlackMatchesMemoryHeadroom =
+    Number.isFinite(receiptCursorQueueSlackBytes)
+    && Number.isFinite(receiptCursorMemoryHeadroomBytes)
+    && receiptCursorQueueSlackBytes === receiptCursorMemoryHeadroomBytes;
   const receiptCursorHeadroomCoveredByQueueBudget =
     Number.isFinite(receiptCursorMemoryHeadroomBytes)
     && Number.isFinite(receiptCursorQueueHeadroomBytes)
@@ -443,6 +455,7 @@ export function productionThroughputDetails(report) {
     receiptCursorBackpressureMeasured,
     receiptCursorQueueSlackBytes,
     receiptCursorQueueSlackMatchesBackpressure,
+    receiptCursorQueueSlackMatchesMemoryHeadroom,
     receiptCursorMemoryHeadroomBytes,
     receiptCursorMemoryHeadroomMatchesResourceHeadroom,
     receiptCursorMatchesBackpressure,
@@ -472,6 +485,7 @@ export function productionThroughputDetails(report) {
       receiptCursorBackpressureMeasured,
       receiptCursorQueueSlackBytes,
       receiptCursorQueueSlackMatchesBackpressure,
+      receiptCursorQueueSlackMatchesMemoryHeadroom,
       receiptCursorMemoryHeadroomBytes,
       receiptCursorMemoryHeadroomMatchesResourceHeadroom,
       receiptCursorBackpressureWithinResourceHeadroom,
@@ -520,6 +534,7 @@ function hasCompleteBackpressureEvidence(report) {
     && receiptCursorBackpressureBytes === receiptCursorWindowBytes
     && receiptCursorBackpressureBytes <= receiptCursorQueueBudgetBytes
     && receiptCursorQueueSlackBytes === receiptCursorQueueBudgetBytes - receiptCursorBackpressureBytes
+    && receiptCursorQueueSlackBytes === receiptCursorMemoryHeadroomBytes
     && receiptCursorQueueHeadroomBytes === receiptCursorQueueBudgetBytes - report.shape.chunkSizeBytes
     && receiptCursorQueueHeadroomBytes >= receiptCursorBackpressureBytes
     && receiptCursorBackpressureWithinResourceHeadroom

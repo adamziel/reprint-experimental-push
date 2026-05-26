@@ -67,6 +67,8 @@ Current executable gate:
 - The report now also exposes whether receipt-cursor headroom is covered by
   the queue budget, so the cursor audit can fail closed even when the exact
   headroom values drift apart.
+- The report now also fails closed if queue slack and memory headroom disagree,
+  so a tampered slack record cannot make the backpressure summary look stable.
 - The report now also fails closed when the recorded receipt-cursor
   backpressure exceeds the queue budget, so a tampered backpressure record
   cannot hide behind a still-valid headroom calculation.
