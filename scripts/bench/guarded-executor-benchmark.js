@@ -654,6 +654,7 @@ export function productionThroughputBlockers(report) {
     && (
       report.evidence.backpressure?.receiptCursorQueueSlackBytes == null
       || report.evidence.backpressure?.receiptCursorQueueSlackBytes <= 0
+      || report.evidence.backpressure?.receiptCursorQueueSlackMatchesQueueHeadroom !== true
       || report.evidence.backpressure?.receiptCursorQueueSlackBytes
         !== report.evidence.backpressure?.queueHeadroomBytes
       || report.evidence.backpressure?.receiptCursorQueueSlackBytes
@@ -1527,11 +1528,13 @@ export function productionThroughputDetails(report) {
     Number.isFinite(receiptCursorMemoryHeadroomBytes)
     && Number.isFinite(receiptCursorQueueHeadroomBytes)
     && receiptCursorMemoryHeadroomBytes === receiptCursorQueueHeadroomBytes
+    && report.evidence.backpressure?.receiptCursorQueueSlackMatchesQueueHeadroom === true
     && report.evidence.backpressure?.queueHeadroomWithinResourceCeiling === true;
   const receiptCursorBackpressureWithinQueueHeadroom =
     Number.isFinite(receiptCursorBackpressureBytes)
     && Number.isFinite(receiptCursorQueueHeadroomBytes)
     && receiptCursorBackpressureBytes <= receiptCursorQueueHeadroomBytes
+    && report.evidence.backpressure?.receiptCursorQueueSlackMatchesQueueHeadroom === true
     && report.evidence.backpressure?.queueHeadroomWithinResourceCeiling === true;
   const receiptCursorBackpressureWithinResourceHeadroom =
     Number.isFinite(receiptCursorBackpressureBytes)
@@ -1567,7 +1570,8 @@ export function productionThroughputDetails(report) {
   const receiptCursorQueueSlackMatchesQueueHeadroom =
     Number.isFinite(receiptCursorQueueSlackBytes)
     && Number.isFinite(receiptCursorQueueHeadroomBytes)
-    && receiptCursorQueueSlackBytes === receiptCursorQueueHeadroomBytes;
+    && receiptCursorQueueSlackBytes === receiptCursorQueueHeadroomBytes
+    && report.evidence.backpressure?.receiptCursorQueueSlackMatchesQueueHeadroom === true;
   const receiptCursorQueueSlackMatchesResourceHeadroom =
     Number.isFinite(receiptCursorQueueSlackBytes)
     && Number.isFinite(receiptCursorMemoryCeilingBytes)
@@ -1588,7 +1592,8 @@ export function productionThroughputDetails(report) {
   const receiptCursorQueueSlackWithinQueueHeadroom =
     Number.isFinite(receiptCursorQueueSlackBytes)
     && Number.isFinite(receiptCursorQueueHeadroomBytes)
-    && receiptCursorQueueSlackBytes <= receiptCursorQueueHeadroomBytes;
+    && receiptCursorQueueSlackBytes <= receiptCursorQueueHeadroomBytes
+    && report.evidence.backpressure?.receiptCursorQueueSlackMatchesQueueHeadroom === true;
   const receiptCursorQueueSlackWithinResourceHeadroom =
     Number.isFinite(receiptCursorQueueSlackBytes)
     && Number.isFinite(receiptCursorMemoryCeilingBytes)
@@ -2606,6 +2611,7 @@ function hasCompleteBackpressureEvidence(report) {
     && (
       queuePauseHasMeasuredReceiptCursorQueueSlack
       && queuePauseHasBackpressureAlignedReceiptCursorQueueSlack
+      && report.evidence.backpressure?.receiptCursorQueueSlackMatchesQueueHeadroom === true
       && report.evidence.backpressure?.queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack === true
     );
   const receiptCursorQueueSlackWithinResourceHeadroom =

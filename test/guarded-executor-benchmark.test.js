@@ -6244,6 +6244,55 @@ test('guarded benchmark keeps paused queue-headroom summaries false when raw res
   assert.ok(blockers.includes('backpressure-evidence-incomplete'));
 });
 
+test('guarded benchmark keeps paused queue-headroom summaries false when raw queue-slack headroom proof is hidden', () => {
+  const report = smallBenchmark();
+  const mutated = clone(report);
+
+  mutated.evidence.backpressure.receiptCursorQueueSlackMatchesQueueHeadroom = false;
+
+  const details = productionThroughputDetails(mutated);
+  const blockers = productionThroughputBlockers(mutated);
+
+  assert.equal(details.receiptCursorQueueSlackMatchesQueueHeadroom, false);
+  assert.equal(details.receiptCursorHeadroomMatchesQueueHeadroom, false);
+  assert.equal(details.receiptCursorBackpressureWithinQueueHeadroom, false);
+  assert.equal(details.receiptCursorHeadroomWithinQueueBudget, false);
+  assert.equal(details.receiptCursorQueueSlackWithinQueueHeadroom, false);
+  assert.equal(details.queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack, false);
+  assert.equal(details.backpressureEvidenceComplete, false);
+  assert.equal(
+    details.backpressureConsistency.receiptCursorQueueSlackMatchesQueueHeadroom,
+    false,
+  );
+  assert.equal(
+    details.backpressureConsistency.receiptCursorHeadroomMatchesQueueHeadroom,
+    false,
+  );
+  assert.equal(
+    details.backpressureConsistency.receiptCursorBackpressureWithinQueueHeadroom,
+    false,
+  );
+  assert.equal(
+    details.backpressureConsistency.receiptCursorHeadroomWithinQueueBudget,
+    false,
+  );
+  assert.equal(
+    details.backpressureConsistency.receiptCursorQueueSlackWithinQueueHeadroom,
+    false,
+  );
+  assert.equal(
+    details.backpressureConsistency.queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack,
+    false,
+  );
+  assert.equal(details.backpressureConsistency.backpressureEvidenceComplete, false);
+  assert.ok(
+    blockers.includes('queue-pause-without-consistent-receipt-cursor-slack'),
+  );
+  assert.ok(
+    blockers.includes('backpressure-evidence-incomplete'),
+  );
+});
+
 test('guarded benchmark keeps paused queue-budget and memory-headroom pair summaries false when raw memory-ceiling visibility is hidden', () => {
   const report = smallBenchmark();
   const mutated = clone(report);
