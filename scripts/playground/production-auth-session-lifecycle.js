@@ -281,6 +281,7 @@ export function summarizeProductionAuthSessionLifecycleTrace(trace) {
     .reverse()
     .find((entry) => entry.step === 'journal'
       || entry.step === 'replay'
+      || entry.step === 'recovery-inspect'
       || entry.step === 'apply'
       || entry.step === 'dry-run') ?? null;
 
@@ -299,6 +300,7 @@ export function summarizeProductionAuthSessionLifecycleTrace(trace) {
 function isAuthSessionReadStep(step) {
   return step === 'dry-run'
     || step === 'apply'
+    || step === 'recovery-inspect'
     || step === 'replay'
     || step === 'journal';
 }

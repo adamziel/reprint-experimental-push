@@ -1411,6 +1411,7 @@ function summarizeAuthSessionLifecycleHistory(history) {
 function isAuthSessionReadStep(step) {
   return step === 'dry-run'
     || step === 'apply'
+    || step === 'recovery-inspect'
     || step === 'replay'
     || step === 'journal';
 }

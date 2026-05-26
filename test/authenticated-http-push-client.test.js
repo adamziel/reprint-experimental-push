@@ -665,7 +665,7 @@ test('production-shaped authenticated push keeps the last read step in the lifec
         preserved: false,
       },
       read: {
-        step: 'apply',
+        step: 'recovery-inspect',
         id: 'psh_01j00000000000000000000000',
         type: 'production-auth-session',
         status: 'active',
