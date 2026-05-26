@@ -827,6 +827,17 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
   assert.ok(
     model.safeFastPaths.some(
       (fastPath) =>
+        fastPath.area === 'chunk-upload' &&
+        fastPath.allowedShortcut === 'compress-remote-index-listings-and-reuse-chunk-receipts-to-size-bounded-large-upload-resume-windows' &&
+        fastPath.guardrails.includes('chunk-receipts-stay-durable-and-plan-scoped') &&
+        fastPath.gateProofs.skip.includes('cached chunk receipts size the next bounded resume window') &&
+        fastPath.gateProofs.recovery.includes('durable chunk receipts and the guarded publish record still classify pause, retry, or crash'),
+    ),
+    'compressed remote-index listings can size large-upload resume windows from chunk receipts without weakening recovery evidence',
+  );
+  assert.ok(
+    model.safeFastPaths.some(
+      (fastPath) =>
         fastPath.area === 'backpressure' &&
         fastPath.allowedShortcut === 'reuse-measured-queue-headroom-to-size-bounded-plugin-install-retry-windows' &&
         fastPath.guardrails.includes('plugin-install-retry-window-revalidates-before-write') &&

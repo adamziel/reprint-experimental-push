@@ -1418,6 +1418,27 @@ export const SAFE_FAST_PATHS = Object.freeze([
   {
     area: 'chunk-upload',
     reduces: ['wire-bytes', 'planning-round-trips', 'queue-drain-time'],
+    allowedShortcut: 'compress-remote-index-listings-and-reuse-chunk-receipts-to-size-bounded-large-upload-resume-windows',
+    guardrails: [
+      'compressed-index-remains-planning-evidence-only',
+      'chunk-receipts-stay-durable-and-plan-scoped',
+      'resume-window-stays-within-byte-and-receipt-budgets',
+    ],
+    gateProofs: {
+      skip: 'a compressed remote-index listing can shorten large-upload resume-window planning while cached chunk receipts size the next bounded resume window',
+      live: 'the final file publish still compares the live remote resource hash against the expected file precondition',
+      group: 'the compressed listing and cached receipts only narrow planning work inside the same file boundary and never widen the atomic-group barrier',
+      recovery: 'compressed planning evidence stays advisory while durable chunk receipts and the guarded publish record still classify pause, retry, or crash',
+    },
+    visibilityBoundary: 'planning-only-with-transport-compression',
+    failureEvidence: 'compressed index cursor plus cached chunk receipts, bounded resume window, and guarded publish record',
+    bypassesLivePreconditions: false,
+    splitsAtomicGroup: false,
+    publishesStagedDataEarly: false,
+  },
+  {
+    area: 'chunk-upload',
+    reduces: ['wire-bytes', 'planning-round-trips', 'queue-drain-time'],
     allowedShortcut: 'compress-remote-index-listings-and-reuse-file-hash-to-size-bounded-large-upload-resume-windows',
     guardrails: [
       'compressed-index-remains-planning-evidence-only',
