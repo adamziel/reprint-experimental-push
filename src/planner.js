@@ -193,16 +193,29 @@ export function createPushPlan({ base, local, remote, now = new Date() }) {
         remote,
       });
       if (!graphIdentitySupport.supported) {
-        addWordPressGraphIdentityBlocker(plan, {
-          resource,
-          support: graphIdentitySupport,
-          baseValue,
-          localValue,
-          remoteValue,
-          baseHash,
-          localHash,
-          remoteHash,
-        });
+        if (graphIdentitySupport.className === 'unsupported-wordpress-graph-surface') {
+          addWordPressGraphSurfaceBlocker(plan, {
+            resource,
+            surface: graphIdentitySupport.surface,
+            baseValue,
+            localValue,
+            remoteValue,
+            baseHash,
+            localHash,
+            remoteHash,
+          });
+        } else {
+          addWordPressGraphIdentityBlocker(plan, {
+            resource,
+            support: graphIdentitySupport,
+            baseValue,
+            localValue,
+            remoteValue,
+            baseHash,
+            localHash,
+            remoteHash,
+          });
+        }
         continue;
       }
       const wordpressGraphReferences = graphIdentitySupport.references || [];
@@ -1016,6 +1029,48 @@ function wordpressGraphIdentitySupport({
     .filter(Boolean)
     .filter((reference) => isUnsafeWordPressGraphReference(reference));
 
+  if (
+    resource.table === 'wp_postmeta'
+    && localValue.meta_key === 'menu_item_parent'
+  ) {
+    const ownerId = normalizePositiveInteger(localValue.post_id);
+    if (ownerId != null) {
+      const ownerResource = resources.find((candidate) => candidate.type === 'row'
+        && candidate.table === 'wp_posts'
+        && candidate.id === `ID:${ownerId}`);
+      const ownerValue = ownerResource ? getResource(local, ownerResource) : null;
+      if (ownerValue && typeof ownerValue === 'object') {
+        const ownerPostType = ownerValue.post_type;
+        if (ownerPostType === 'nav_menu_item' || ownerPostType === 'wp_navigation') {
+          return {
+            supported: false,
+            className: 'unsupported-wordpress-graph-surface',
+            surface: ownerPostType,
+            reason: `WordPress graph mutation ${resource.key} owned by ${ownerPostType} is outside the supported release-candidate slice and must stay blocked.`,
+          };
+        }
+      }
+    }
+  }
+
+  if (resource.table === 'wp_postmeta') {
+    const ownerId = normalizePositiveInteger(localValue.post_id);
+    if (ownerId != null) {
+      const ownerResource = resources.find((candidate) => candidate.type === 'row'
+        && candidate.table === 'wp_posts'
+        && candidate.id === `ID:${ownerId}`);
+      const ownerValue = ownerResource ? getResource(local, ownerResource) : null;
+      if (ownerValue && typeof ownerValue === 'object' && ownerValue.post_type === 'revision') {
+        return {
+          supported: false,
+          className: 'unsupported-wordpress-graph-surface',
+          surface: 'revision',
+          reason: `WordPress graph mutation ${resource.key} owned by a revision is outside the supported release-candidate slice and must stay blocked.`,
+        };
+      }
+    }
+  }
+
   if (unsafeReferences.length === 0) {
     const samePlanReferences = references
       .map((reference) => wordpressGraphReferenceEvidence(reference, resources, base, local, remote))
@@ -1265,7 +1320,13 @@ function isValidSamePlanWordPressGraphTarget(targetMutation, reference, sourceMu
         `row:${JSON.stringify(['wp_posts', `ID:${normalizePositiveInteger(sourceValue.post_id)}`])}`,
       );
       const ownerValue = ownerMutation ? deserializeResourceValue(ownerMutation.value) : null;
-      if (ownerValue && typeof ownerValue === 'object' && ownerValue.post_type === 'attachment') {
+      if (
+        ownerValue
+        && typeof ownerValue === 'object'
+        && (ownerValue.post_type === 'attachment'
+          || ownerValue.post_type === 'nav_menu_item'
+          || ownerValue.post_type === 'wp_navigation')
+      ) {
         return false;
       }
     }

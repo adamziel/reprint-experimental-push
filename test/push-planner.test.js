@@ -358,6 +358,49 @@ test('blocks revision post graph surfaces in the release-candidate slice', () =>
   assert.match(blocker.reason, /outside the supported release-candidate slice/);
 });
 
+test('blocks postmeta owned by a revision even when it targets a same-plan post', () => {
+  const revisionResourceKey = 'row:["wp_posts","ID:13"]';
+  const postmetaResourceKey = 'row:["wp_postmeta","meta_id:48"]';
+  const targetResourceKey = 'row:["wp_posts","ID:14"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_posts['ID:13'] = {
+    ID: 13,
+    post_type: 'revision',
+    post_title: 'Local revision owner',
+    post_content: 'local-private-revision-owner-body',
+  };
+  local.db.wp_posts['ID:14'] = {
+    ID: 14,
+    post_title: 'Local revision target post',
+    post_content: 'local-private-revision-target-body',
+    post_status: 'publish',
+  };
+  local.db.wp_postmeta = {
+    'meta_id:48': {
+      meta_id: 48,
+      post_id: 13,
+      meta_key: 'revision-note',
+      meta_value: 'local-private-revision-note',
+    },
+  };
+  const remote = baseSite();
+
+  const plan = planFor(base, local, remote);
+  const revisionMutation = mutationFor(plan, revisionResourceKey);
+  const targetMutation = mutationFor(plan, targetResourceKey);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === postmetaResourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 1);
+  assert.equal(revisionMutation, undefined);
+  assert.equal(targetMutation.changeKind, 'create');
+  assert.equal(blocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(blocker.surface, 'revision');
+  assert.equal(JSON.stringify(blocker).includes('local-private-revision-owner-body'), false);
+  assert.equal(JSON.stringify(blocker).includes('local-private-revision-note'), false);
+});
+
 test('stops a local directory deletion that would remove a remote-only descendant', () => {
   const base = baseSite();
   base.files['wp-content/uploads/gallery'] = { type: 'directory' };
@@ -1945,6 +1988,100 @@ test('blocks a local postmeta reference to a same-plan attachment when it is not
   assert.throws(() => applyPlan(baseSite(), plan), /Refusing to apply/);
 });
 
+test('blocks menu item parent metadata owned by a navigation post even when it targets a same-plan post', () => {
+  const resourceKey = 'row:["wp_postmeta","meta_id:49"]';
+  const navigationResourceKey = 'row:["wp_posts","ID:2"]';
+  const targetResourceKey = 'row:["wp_posts","ID:3"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_title: 'Local navigation item owner',
+    post_content: 'local-private-navigation-item-owner-body',
+    post_status: 'publish',
+    post_type: 'nav_menu_item',
+  };
+  local.db.wp_posts['ID:3'] = {
+    ID: 3,
+    post_title: 'Local menu parent target',
+    post_content: 'local-private-menu-parent-target-body',
+    post_status: 'publish',
+  };
+  local.db.wp_postmeta = {
+    'meta_id:49': {
+      meta_id: 49,
+      post_id: 2,
+      meta_key: 'menu_item_parent',
+      meta_value: 3,
+    },
+  };
+  const remote = baseSite();
+
+  const plan = planFor(base, local, remote);
+  const navigationMutation = mutationFor(plan, navigationResourceKey);
+  const targetMutation = mutationFor(plan, targetResourceKey);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 1);
+  assert.equal(navigationMutation, undefined);
+  assert.equal(targetMutation.changeKind, 'create');
+  assert.equal(blocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(blocker.surface, 'nav_menu_item');
+  assert.equal(
+    JSON.stringify(blocker).includes('local-private-navigation-item-owner-body'),
+    false,
+  );
+  assert.equal(JSON.stringify(blocker).includes('local-private-menu-parent-target-body'), false);
+});
+
+test('blocks menu item parent metadata owned by a wp_navigation post even when it targets a same-plan post', () => {
+  const resourceKey = 'row:["wp_postmeta","meta_id:50"]';
+  const navigationResourceKey = 'row:["wp_posts","ID:4"]';
+  const targetResourceKey = 'row:["wp_posts","ID:5"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_posts['ID:4'] = {
+    ID: 4,
+    post_title: 'Local wp_navigation owner',
+    post_content: 'local-private-wp-navigation-owner-body',
+    post_status: 'publish',
+    post_type: 'wp_navigation',
+  };
+  local.db.wp_posts['ID:5'] = {
+    ID: 5,
+    post_title: 'Local menu parent target',
+    post_content: 'local-private-menu-parent-target-body',
+    post_status: 'publish',
+  };
+  local.db.wp_postmeta = {
+    'meta_id:50': {
+      meta_id: 50,
+      post_id: 4,
+      meta_key: 'menu_item_parent',
+      meta_value: 5,
+    },
+  };
+  const remote = baseSite();
+
+  const plan = planFor(base, local, remote);
+  const navigationMutation = mutationFor(plan, navigationResourceKey);
+  const targetMutation = mutationFor(plan, targetResourceKey);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 1);
+  assert.equal(navigationMutation, undefined);
+  assert.equal(targetMutation.changeKind, 'create');
+  assert.equal(blocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(blocker.surface, 'wp_navigation');
+  assert.equal(
+    JSON.stringify(blocker).includes('local-private-wp-navigation-owner-body'),
+    false,
+  );
+  assert.equal(JSON.stringify(blocker).includes('local-private-menu-parent-target-body'), false);
+});
+
 test('allows a local thumbnail reference to a same-plan attachment after postmeta hardening', () => {
   const attachmentResourceKey = 'row:["wp_posts","ID:2"]';
   const postmetaResourceKey = 'row:["wp_postmeta","meta_id:47"]';
@@ -2397,6 +2534,78 @@ test('blocks a local term relationship owned by an attachment even when it targe
   );
   assert.equal(
     JSON.stringify(blocker).includes('local-private-tagged-post-body'),
+    false,
+  );
+});
+
+test('blocks a local term relationship owned by a navigation post even when it targets a same-plan post', () => {
+  const navigationPostResourceKey = 'row:["wp_posts","ID:3"]';
+  const taggedPostResourceKey = 'row:["wp_posts","ID:4"]';
+  const taxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:9"]';
+  const relationshipResourceKey = 'row:["wp_term_relationships","object_id:3|term_taxonomy_id:9"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_posts['ID:3'] = {
+    ID: 3,
+    post_title: 'Local navigation post',
+    post_content: 'local-private-navigation-post-body',
+    post_status: 'publish',
+    post_type: 'nav_menu_item',
+  };
+  local.db.wp_posts['ID:4'] = {
+    ID: 4,
+    post_title: 'Local tagged post',
+    post_content: 'local-private-tagged-post-body',
+    post_status: 'publish',
+  };
+  local.db.wp_terms = {
+    'term_id:7': {
+      term_id: 7,
+      name: 'Local taxonomy term',
+      slug: 'local-taxonomy-term',
+    },
+  };
+  local.db.wp_term_taxonomy = {
+    'term_taxonomy_id:9': {
+      term_taxonomy_id: 9,
+      term_id: 7,
+      taxonomy: 'category',
+      description: '',
+      parent: 0,
+      count: 0,
+    },
+  };
+  local.db.wp_term_relationships = {
+    'object_id:3|term_taxonomy_id:9': {
+      object_id: 3,
+      term_taxonomy_id: 9,
+      term_order: 0,
+    },
+  };
+  const remote = baseSite();
+
+  const plan = planFor(base, local, remote);
+  const navigationMutation = mutationFor(plan, navigationPostResourceKey);
+  const taggedPostMutation = mutationFor(plan, taggedPostResourceKey);
+  const taxonomyMutation = mutationFor(plan, taxonomyResourceKey);
+  const navigationBlocker = plan.blockers.find((entry) => entry.resourceKey === navigationPostResourceKey);
+  const relationshipBlocker = plan.blockers.find((entry) => entry.resourceKey === relationshipResourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(navigationBlocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(navigationBlocker.surface, 'nav_menu_item');
+  assert.equal(navigationMutation, undefined);
+  assert.equal(taggedPostMutation.changeKind, 'create');
+  assert.equal(taxonomyMutation.changeKind, 'create');
+  assert.equal(relationshipBlocker.class, 'missing-wordpress-graph-dependency');
+  assert.equal(relationshipBlocker.references[0].relationshipType, 'term-relationship-object');
+  assert.equal(relationshipBlocker.references[0].targetResourceKey, navigationPostResourceKey);
+  assert.equal(
+    JSON.stringify(relationshipBlocker).includes('local-private-navigation-post-body'),
+    false,
+  );
+  assert.equal(
+    JSON.stringify(relationshipBlocker).includes('local-private-tagged-post-body'),
     false,
   );
 });
