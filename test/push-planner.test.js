@@ -23470,6 +23470,121 @@ test('orders same-plan comment-post dependency references deterministically for 
   assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin drift */');
 });
 
+test('orders same-plan term-relationship object references deterministically for a same-plan created post identity', () => {
+  const targetResourceKey = 'row:["wp_posts","ID:92"]';
+  const earlyRelationshipResourceKey = 'row:["wp_term_relationships","object_id:92,term_taxonomy_id:5"]';
+  const lateRelationshipResourceKey = 'row:["wp_term_relationships","object_id:92,term_taxonomy_id:9"]';
+  const base = baseSite();
+  base.db.wp_posts['ID:1'].post_title = 'Base shared ordered term relationship title';
+  base.db.wp_terms = {
+    'term_id:2': { term_id: 2, name: 'Base first term', slug: 'base-first-term' },
+    'term_id:4': { term_id: 4, name: 'Base second term', slug: 'base-second-term' },
+  };
+  base.db.wp_term_taxonomy = {
+    'term_taxonomy_id:9': {
+      term_taxonomy_id: 9,
+      term_id: 4,
+      taxonomy: 'category',
+      description: 'Base late relationship taxonomy',
+      parent: 0,
+    },
+    'term_taxonomy_id:5': {
+      term_taxonomy_id: 5,
+      term_id: 2,
+      taxonomy: 'category',
+      description: 'Base early relationship taxonomy',
+      parent: 0,
+    },
+  };
+  base.db.wp_term_relationships = {
+    'object_id:92,term_taxonomy_id:9': {
+      object_id: 92,
+      term_taxonomy_id: 9,
+      term_order: 2,
+      note: 'Base late dependent relationship',
+    },
+    'object_id:92,term_taxonomy_id:5': {
+      object_id: 92,
+      term_taxonomy_id: 5,
+      term_order: 1,
+      note: 'Base early dependent relationship',
+    },
+  };
+
+  const local = baseSite();
+  local.db.wp_posts['ID:1'].post_title = 'Shared ordered term relationship title';
+  local.db.wp_posts['ID:92'] = {
+    ID: 92,
+    post_title: 'Local ordered same-plan term relationship post',
+    post_content: 'Local ordered same-plan term relationship post body',
+    post_status: 'publish',
+    post_type: 'post',
+  };
+  local.db.wp_terms = JSON.parse(JSON.stringify(base.db.wp_terms));
+  local.db.wp_term_taxonomy = JSON.parse(JSON.stringify(base.db.wp_term_taxonomy));
+  local.db.wp_term_relationships = {
+    'object_id:92,term_taxonomy_id:9': {
+      object_id: 92,
+      term_taxonomy_id: 9,
+      term_order: 2,
+      note: 'Local late dependent relationship',
+    },
+    'object_id:92,term_taxonomy_id:5': {
+      object_id: 92,
+      term_taxonomy_id: 5,
+      term_order: 1,
+      note: 'Local early dependent relationship',
+    },
+  };
+
+  const remote = baseSite();
+  remote.db.wp_posts['ID:1'].post_title = 'Shared ordered term relationship title';
+  remote.db.wp_terms = JSON.parse(JSON.stringify(base.db.wp_terms));
+  remote.db.wp_term_taxonomy = JSON.parse(JSON.stringify(base.db.wp_term_taxonomy));
+  remote.db.wp_term_relationships = JSON.parse(JSON.stringify(base.db.wp_term_relationships));
+  remote.plugins.forms.description = 'remote-only plugin drift';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin drift */';
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === targetResourceKey);
+  const earlyRelationshipBlocker = plan.blockers.find((entry) => entry.resourceKey === earlyRelationshipResourceKey);
+  const lateRelationshipBlocker = plan.blockers.find((entry) => entry.resourceKey === lateRelationshipResourceKey);
+  const matchingEdit = decisionFor(plan, 'row:["wp_posts","ID:1"]');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, targetResourceKey), undefined);
+  assert.equal(decisionFor(plan, targetResourceKey), undefined);
+  assert.equal(blocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(
+    blocker.reason,
+    'WordPress graph mutation row:["wp_posts","ID:92"] is created in the same plan as a term relationship post target that depends on it, and identity rewriting is not yet supported.',
+  );
+  assert.deepEqual(
+    blocker.references.map((reference) => [reference.relationshipType, reference.sourceResourceKey]),
+    [
+      ['term-relationship-object', earlyRelationshipResourceKey],
+      ['term-relationship-object', lateRelationshipResourceKey],
+    ],
+  );
+  assert.equal(earlyRelationshipBlocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(lateRelationshipBlocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(matchingEdit.decision, 'already-in-sync');
+  assert.equal(matchingEdit.change.localChange, 'update');
+  assert.equal(matchingEdit.change.remoteChange, 'update');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('Local ordered same-plan term relationship post'), false);
+  assert.equal(planJson.includes('Local ordered same-plan term relationship post body'), false);
+  assert.equal(planJson.includes('Local early dependent relationship'), false);
+  assert.equal(planJson.includes('Local late dependent relationship'), false);
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin drift');
+  assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin drift */');
+});
+
 test('prioritizes comment-post blocker wording while carrying bounded comment-post, term-relationship, and postmeta references for a same-plan created post identity', () => {
   const targetResourceKey = 'row:["wp_posts","ID:91"]';
   const commentResourceKey = 'row:["wp_comments","comment_ID:41"]';
