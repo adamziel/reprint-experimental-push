@@ -10,7 +10,7 @@ linked implementation artifacts.
 
 - Refreshed [progress.html](../progress.html) to the current `date` output
   (`2026-05-26 14:00:20 CEST`) and promoted `77da166e` as the current
-  reliable head on the public page.
+  reliable head on the public page for auth-session source evidence.
 - `77da166e` is auth-session source evidence for
   `REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND`; the release gate stays at `0/4`
   because production-backed auth/session lifecycle and durable journal
