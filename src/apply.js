@@ -1519,6 +1519,24 @@ function recordDurableRecoveryState(writer, current, plan, recoveryState) {
 
   if (
     writer?.kind === 'production-recovery-journal'
+    && (
+      supportReport?.missingDependency.includes('restart-readable recovery artifact references')
+      || supportReport?.missingDependency.includes('restart-readable recovery artifact location')
+    )
+  ) {
+    throw new PushPlanError(
+      'JOURNAL_WRITER_INVALID',
+      'Production durable journal lost its owned restart-readable journal artifact reference before recording recovery state.',
+      {
+        eventType: 'recovery-state',
+        causeMessage: 'Production durable journal lost its owned restart-readable journal artifact reference before recording recovery state.',
+        missingDependency: ['restart-readable recovery artifact references'],
+      },
+    );
+  }
+
+  if (
+    writer?.kind === 'production-recovery-journal'
     && recoveryState.status === 'blocked-recovery'
     && (
       !writerRemoteArtifactRef
