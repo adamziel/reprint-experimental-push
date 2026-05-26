@@ -5270,6 +5270,23 @@ test('production throughput details fail closed when queue-budget visibility dis
   assert.ok(blockers.includes('receipt-cursor-memory-headroom-visible-without-queue-budget-visibility'));
 });
 
+test('production throughput details fail closed for staged disk after pause when queue-budget visibility disappears', () => {
+  const report = runGuardedExecutorBenchmark({ profile: 'ci' });
+
+  report.evidence.backpressure.queueBudgetVisible = false;
+  const details = productionThroughputDetails(report);
+  const blockers = productionThroughputBlockers(report);
+
+  assert.equal(details.stagingDiskHeadroomVisibleAndMeasured, true);
+  assert.equal(details.receiptCursorPauseFootprintVisible, false);
+  assert.equal(details.stagingDiskHeadroomVisibleAndMeasuredAfterPause, false);
+  assert.equal(
+    details.backpressureConsistency.stagingDiskHeadroomVisibleAndMeasuredAfterPause,
+    false,
+  );
+  assert.ok(blockers.includes('staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint'));
+});
+
 test('production throughput details fail closed when receipt-cursor memory-headroom visibility disappears from the pause boundary', () => {
   const report = runGuardedExecutorBenchmark({ profile: 'ci' });
 
