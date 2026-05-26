@@ -258,6 +258,35 @@ function spawnReleaseVerifySync(command, args, env, options = {}) {
   return proof;
 }
 
+function spawnBoundedReleaseVerify(command, args, env, options = {}, label = 'release verify') {
+  const timeout = options.timeout ?? proofSubprocessTimeoutMs;
+  const killSignal = options.killSignal ?? proofSubprocessKillSignal;
+  const proof = spawnSync(command, args, {
+    cwd: repoRoot,
+    shell: false,
+    timeout,
+    killSignal,
+    encoding: 'utf8',
+    maxBuffer: 1024 * 1024 * 20,
+    env,
+  });
+
+  if (proof.error || proof.signal || proof.status === null) {
+    stopAllPlaygroundChildrenSync();
+    reportSpawnFailure(proof);
+    const timeoutNote = proof.error?.code === 'ETIMEDOUT' && timeout ? ` after ${timeout}ms` : '';
+    if (proof.error) {
+      throw new Error(formatSpawnFailure(`${label} failed${timeoutNote} with explicit spawn error handling`, proof));
+    }
+    if (proof.signal) {
+      throw new Error(formatSpawnFailure(`${label} terminated by ${proof.signal}${timeout ? ` after ${timeout}ms` : ''} with explicit spawn signal handling`, proof));
+    }
+    throw new Error(`${label} exited without a status with explicit spawn status handling\nstdout:\n${proof.stdout ?? ''}\nstderr:\n${proof.stderr ?? ''}`);
+  }
+
+  return proof;
+}
+
 function assertBoundedSpawnProof(proof, command, args, label, timeoutMs) {
   if (!proof.error && !proof.signal && proof.status !== null) {
     return;
@@ -638,7 +667,8 @@ maybeTest('production-shaped release proof runs the live preflight branch agains
 
 maybeTest('production-shaped release verify command runs the live protocol branch with local Playground source and local edited site', () => {
   return withPlaygroundServer('remote-base', path.join(repoRoot, 'fixtures/playground/remote-base.blueprint.json'), async (remoteServer) => {
-    const proof = spawnProductionShapedReleaseVerifyWithDiagnostics(
+    const proof = spawnBoundedReleaseVerify(
+      process.execPath,
       {
         REPRINT_PUSH_SOURCE_URL: remoteServer.baseUrl,
         REPRINT_PUSH_REMOTE_URL: remoteServer.baseUrl,
@@ -646,10 +676,12 @@ maybeTest('production-shaped release verify command runs the live protocol branc
         REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD: liveCredentials.password,
         NODE_NO_WARNINGS: '1',
       },
-      boundedLiveReleaseVerifyOptions({ timeout: liveProofInnerTimeoutMs }),
+      {
+        timeout: liveProofInnerTimeoutMs,
+        killSignal: liveProofSubprocessKillSignal,
+      },
       'live release verify',
     );
-    assertReleaseVerifySpawnProof(proof, 'live release verify', liveProofInnerTimeoutMs);
     assert.equal(proof.status, 0, proof.stderr);
     assert.match(proof.stdout, /"ok": true/);
     assert.match(proof.stdout, /"sourceUrl": "http:\/\/127\.0\.0\.1:\d+"/);
