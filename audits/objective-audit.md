@@ -10,7 +10,7 @@ Fresh remote heads at audit time, checked on May 26, 2026:
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `658a735d`
 - `origin/lane/reliable-executor` -> `b8d91776`
 - `origin/lane/no-data-loss-invariants` -> `c718a4af`
-- `origin/lane/no-data-loss-recovery` -> `4372167e`
+- `origin/lane/no-data-loss-recovery` -> `47b675c0`
 - `origin/lane/fast-paths` -> `74b44338`
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `76edd508`
 - `origin/lane/critic` -> `cba0890b`
@@ -50,9 +50,10 @@ but it did not change the release conclusion:
 - The newer integration cycle head at `a3a900d7` adds comments graph blocker
   coverage, which strengthens the fail-closed boundary but still does not
   prove live source mutation on unsupported surfaces.
-- `origin/lane/no-data-loss-recovery` now fails closed on artifact references
-  and claim fencing at `b0949e57`. That narrows unsupported recovery claims,
-  but it still does not add production-backed journal ownership or replay
+- `origin/lane/no-data-loss-recovery` now lands a large recovery-contract and
+  durable-journal documentation bundle at `47b675c0`. It materially expands
+  the recovery boundary notes, but the evidence is still documentation- and
+  fixture-bound rather than production-backed journal ownership or replay
   proof.
 - `origin/lane/fast-paths` now tightens backpressure evidence checks at
   `cd0fddad`. That is still a fail-closed implementation improvement, not
