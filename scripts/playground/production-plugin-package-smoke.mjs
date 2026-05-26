@@ -1290,12 +1290,18 @@ function enableForgedDeletePolicy(snapshot, resourceKey) {
 
 function runPackagedDriverRegistryGuard(scenarioName, mountedPluginDir) {
   if (packagedDriverRegistryGuardResults === null) {
-    packagedDriverRegistryGuardResults = runPackagedDriverRegistryGuards(mountedPluginDir);
+    packagedDriverRegistryGuardResults = selectedScenarios === null
+      ? runPackagedDriverRegistryGuards(mountedPluginDir)
+      : {};
+  }
+  if (!Object.hasOwn(packagedDriverRegistryGuardResults, scenarioName)) {
+    const singleScenarioResult = runPackagedDriverRegistryGuards(mountedPluginDir, scenarioName);
+    packagedDriverRegistryGuardResults[scenarioName] = singleScenarioResult[scenarioName];
   }
   return packagedDriverRegistryGuardResults[scenarioName];
 }
 
-function runPackagedDriverRegistryGuards(mountedPluginDir) {
+function runPackagedDriverRegistryGuards(mountedPluginDir, scenarioName = null) {
   const result = spawnSync('npx', [
     '--yes',
     '@wp-playground/cli@latest',
@@ -1310,6 +1316,7 @@ function runPackagedDriverRegistryGuards(mountedPluginDir) {
     'quiet',
     '--',
     '/tmp/reprint-production-plugin-package/packaged-driver-registry-guards.php',
+    ...(scenarioName === null ? [] : [scenarioName]),
   ], {
     cwd: repoRoot,
     encoding: 'utf8',
