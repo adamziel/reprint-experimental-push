@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const muPluginDir = path.join(repoRoot, 'scripts/playground/rest-mu-plugins');
-const serverStartupTimeoutMs = 2_500;
+const serverStartupTimeoutMs = 1_500;
 const playgroundServerTimeoutMs = 8;
 const serverFetchTimeoutMs = 3_000;
 const playgroundStopTimeoutMs = 3_000;
