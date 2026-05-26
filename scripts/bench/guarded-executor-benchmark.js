@@ -178,6 +178,9 @@ export function productionThroughputBlockers(report) {
   if (!report.evidence.journal.allJournalsIntegrityOk) {
     blockers.push('missing-durable-journal-integrity');
   }
+  if (areReceiptKindsGrouped(report.evidence.journal?.successRecordTypes ?? []) !== true) {
+    blockers.push('receipt-flushes-not-kind-scoped');
+  }
   if (!report.evidence.redaction.durableJournalsContainNoRawValues) {
     blockers.push('durable-journal-redaction-not-proven');
   }
@@ -622,6 +625,8 @@ export function productionThroughputDetails(report) {
   const receiptCursorMemoryHeadroomMatchesResourceHeadroom =
     receiptCursorWithinMemoryCeiling
     && receiptCursorMemoryHeadroomBytes === receiptCursorMemoryCeilingBytes - receiptCursorWindowBytes;
+  const journalSuccessRecordTypes = report.evidence.journal?.successRecordTypes ?? [];
+  const journalSuccessReceiptKindsGrouped = areReceiptKindsGrouped(journalSuccessRecordTypes);
   const productionAtomicCommitMeasured = report.executorCapabilities.productionAtomicCommit === 'production-atomic-group-commit';
   const productionRowBatchExecutorMeasured = report.executorCapabilities.rowApply === 'production-batched-compare-and-swap';
   return {
@@ -689,6 +694,8 @@ export function productionThroughputDetails(report) {
     backpressureEvidenceComplete,
     productionAtomicCommitMeasured,
     productionRowBatchExecutorMeasured,
+    journalSuccessRecordTypes,
+    journalSuccessReceiptKindsGrouped,
     backpressureConsistency: {
       queueBudgetMatchesResourceCeiling,
       queueHeadroomMatchesResourceHeadroom,
@@ -732,6 +739,8 @@ export function productionThroughputDetails(report) {
       backpressureEvidenceComplete,
       productionAtomicCommitMeasured,
       productionRowBatchExecutorMeasured,
+      journalSuccessRecordTypes,
+      journalSuccessReceiptKindsGrouped,
     },
     recovery: report.evidence.recovery,
     atomicGroup: report.evidence.atomicGroup,
@@ -790,6 +799,35 @@ function hasCompleteBackpressureEvidence(report) {
     && receiptCursorQueueHeadroomBytes >= receiptCursorBackpressureBytes
     && receiptCursorBackpressureWithinResourceHeadroom
   );
+}
+
+function areReceiptKindsGrouped(recordTypes) {
+  const kindOrder = new Map([
+    ['chunk-receipt', 0],
+    ['file-staging-finalized', 1],
+    ['journal-opened', 2],
+    ['target-planned', 3],
+    ['apply-staged', 4],
+    ['dependencies-validated', 5],
+    ['apply-committing', 6],
+    ['mutation-observed', 7],
+    ['journal-completed', 8],
+    ['recovery-state', 9],
+  ]);
+
+  let lastRank = -1;
+  for (const recordType of recordTypes) {
+    const rank = kindOrder.get(recordType);
+    if (rank == null) {
+      continue;
+    }
+    if (rank < lastRank) {
+      return false;
+    }
+    lastRank = rank;
+  }
+
+  return true;
 }
 
 export function assertCanClaimProductionThroughput(report) {
@@ -1186,6 +1224,10 @@ function buildReport({
       journal: {
         successIntegrity: successPersisted.integrity.status,
         successRecords: successPersisted.records.length,
+        successRecordTypes: successPersisted.records.map((record) => record.type),
+        successReceiptKindsGrouped: areReceiptKindsGrouped(
+          successPersisted.records.map((record) => record.type),
+        ),
         preCommitFailureIntegrity: preCommitFailure.journalIntegrity,
         partialFailureIntegrity: partialFailure.journalIntegrity,
         allJournalsIntegrityOk,

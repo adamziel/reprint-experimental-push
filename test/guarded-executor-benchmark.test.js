@@ -57,6 +57,7 @@ test('guarded executor benchmark moves buffers and row payloads through durable 
   assert.equal(report.evidence.wordpressGraphIdentity.allPostmetaReferencesUseStableRemoteIdentity, true);
   assert.equal(report.evidence.wordpressGraphIdentity.graphIdentityBlockers, 0);
   assert.equal(report.evidence.journal.allJournalsIntegrityOk, true);
+  assert.equal(report.evidence.journal.successReceiptKindsGrouped, true);
   assert.equal(report.evidence.redaction.durableJournalsContainNoRawValues, true);
   assert.equal(report.resourceLimits.memoryCeilingBytes, 32 * 1024 * 1024);
   assert.equal(report.evidence.resourceLimits.chunkWindowWithinMemoryCeiling, true);
@@ -174,6 +175,7 @@ test('guarded benchmark refuses production throughput claims until production ga
   assert.equal(report.claims.productionThroughputDetails.receiptCursorWithinQueueBudget, true);
   assert.equal(report.claims.productionThroughputDetails.productionAtomicCommitMeasured, false);
   assert.equal(report.claims.productionThroughputDetails.productionRowBatchExecutorMeasured, false);
+  assert.equal(report.claims.productionThroughputDetails.journalSuccessReceiptKindsGrouped, true);
   assert.equal(
     report.claims.productionThroughputDetails.receiptCursor.resourceKey,
     'file:wp-content/uploads/2026/05/catalog-export.bin',
@@ -231,6 +233,9 @@ test('guarded benchmark refuses production throughput claims until production ga
     report.claims.productionThroughput.blockers.includes('production-row-batch-executor-not-measured'),
   );
   assert.ok(
+    !report.claims.productionThroughput.blockers.includes('receipt-flushes-not-kind-scoped'),
+  );
+  assert.ok(
     !report.claims.productionThroughput.blockers.includes(
       'queue-pause-without-resource-headroom-safe-receipt-cursor-slack',
     ),
@@ -261,6 +266,23 @@ test('guarded benchmark refuses production throughput claims until production ga
   assert.ok(!report.claims.productionThroughput.blockers.includes('missing-live-remote-preconditions'));
   assert.ok(!report.claims.productionThroughput.blockers.includes('missing-partial-commit-recovery-evidence'));
   assert.ok(!report.claims.productionThroughput.blockers.includes('wordpress-graph-identity-evidence-not-proven'));
+
+  const interleavedJournalKinds = clone(report);
+  interleavedJournalKinds.evidence.journal.successRecordTypes = [
+    'apply-staged',
+    'chunk-receipt',
+    'journal-opened',
+    'target-planned',
+    'dependencies-validated',
+    'recovery-state',
+  ];
+  assert.equal(
+    productionThroughputDetails(interleavedJournalKinds).journalSuccessReceiptKindsGrouped,
+    false,
+  );
+  assert.ok(
+    productionThroughputBlockers(interleavedJournalKinds).includes('receipt-flushes-not-kind-scoped'),
+  );
 
   assert.throws(
     () => smallBenchmark({ claimProductionThroughput: true }),
