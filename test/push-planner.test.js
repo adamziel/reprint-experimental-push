@@ -14957,6 +14957,102 @@ test('blocks local postmeta references to a same-plan created revision while pre
   assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin drift */');
 });
 
+test('prioritizes post-parent revision blocker wording while carrying bounded post-parent and postmeta references for a same-plan created revision identity', () => {
+  const revisionResourceKey = 'row:["wp_posts","ID:72"]';
+  const childPostResourceKey = 'row:["wp_posts","ID:73"]';
+  const revisionMetaResourceKey = 'row:["wp_postmeta","meta_id:72"]';
+  const base = baseSite();
+  base.db.wp_posts['ID:1'].post_title = 'Base shared revision dependency post';
+  base.db.wp_posts['ID:73'] = {
+    ID: 73,
+    post_title: 'Base child post title',
+    post_content: 'Base child post body',
+    post_status: 'publish',
+    post_parent: 72,
+  };
+  base.db.wp_postmeta = {
+    'meta_id:72': {
+      meta_id: 72,
+      post_id: 72,
+      meta_key: 'revision_note',
+      meta_value: 'Base same-plan revision meta',
+    },
+  };
+
+  const local = baseSite();
+  local.db.wp_posts['ID:1'].post_title = 'Shared revision dependency post';
+  local.db.wp_posts['ID:72'] = {
+    ID: 72,
+    post_title: 'Local same-plan revision identity',
+    post_content: 'Local same-plan revision body',
+    post_status: 'inherit',
+    post_type: 'revision',
+  };
+  local.db.wp_posts['ID:73'] = {
+    ID: 73,
+    post_title: 'Local child post title',
+    post_content: 'Local child post body',
+    post_status: 'publish',
+    post_parent: 72,
+  };
+  local.db.wp_postmeta = {
+    'meta_id:72': {
+      meta_id: 72,
+      post_id: 72,
+      meta_key: 'revision_note',
+      meta_value: 'Local same-plan revision meta',
+    },
+  };
+
+  const remote = baseSite();
+  remote.db.wp_posts['ID:1'].post_title = 'Shared revision dependency post';
+  remote.db.wp_posts['ID:73'] = JSON.parse(JSON.stringify(base.db.wp_posts['ID:73']));
+  remote.db.wp_postmeta = JSON.parse(JSON.stringify(base.db.wp_postmeta));
+  remote.plugins.forms.description = 'remote-only plugin changes';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin changes */';
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === revisionResourceKey);
+  const childPostBlocker = plan.blockers.find((entry) => entry.resourceKey === childPostResourceKey);
+  const revisionMetaBlocker = plan.blockers.find((entry) => entry.resourceKey === revisionMetaResourceKey);
+  const matchingEdit = decisionFor(plan, 'row:["wp_posts","ID:1"]');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, revisionResourceKey), undefined);
+  assert.equal(decisionFor(plan, revisionResourceKey), undefined);
+  assert.equal(blocker.class, 'unsupported-revision-resource');
+  assert.equal(blocker.resourceKey, revisionResourceKey);
+  assert.equal(
+    blocker.reason,
+    'WordPress graph mutation row:["wp_posts","ID:72"] is created in the same plan as a post parent revision target that depends on it, and identity rewriting is not yet supported.',
+  );
+  assert.equal(blocker.references.length, 2);
+  assert.equal(blocker.references[0].relationshipType, 'post-parent');
+  assert.equal(blocker.references[0].sourceResourceKey, childPostResourceKey);
+  assert.equal(blocker.references[0].targetResourceKey, revisionResourceKey);
+  assert.equal(blocker.references[1].relationshipType, 'postmeta-post');
+  assert.equal(blocker.references[1].sourceResourceKey, revisionMetaResourceKey);
+  assert.equal(blocker.references[1].targetResourceKey, revisionResourceKey);
+  assert.equal(childPostBlocker.class, 'unsupported-revision-resource');
+  assert.equal(revisionMetaBlocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(revisionMetaBlocker.references[0].relationshipType, 'postmeta-post');
+  assert.equal(matchingEdit.decision, 'already-in-sync');
+  assert.equal(matchingEdit.change.localChange, 'update');
+  assert.equal(matchingEdit.change.remoteChange, 'update');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('Local same-plan revision identity'), false);
+  assert.equal(planJson.includes('Local same-plan revision body'), false);
+  assert.equal(planJson.includes('Local child post body'), false);
+  assert.equal(planJson.includes('Local same-plan revision meta'), false);
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin changes');
+  assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin changes */');
+});
+
 test('blocks local postmeta references to a same-plan created revision while preserving a matching independent edit and remote-only plugin removals', () => {
   const resourceKey = 'row:["wp_postmeta","meta_id:54"]';
   const targetResourceKey = 'row:["wp_posts","ID:48"]';

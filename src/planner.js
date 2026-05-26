@@ -3648,6 +3648,15 @@ function unsupportedRevisionResourceSupport({ resource, baseValue, localValue, r
         reference.relationshipType === 'post-parent'
         || reference.relationshipType === 'postmeta-post'
         || reference.relationshipType === 'term-relationship-object')
+      .sort((left, right) => {
+        const priority = new Map([
+          ['post-parent', 0],
+          ['postmeta-post', 1],
+          ['term-relationship-object', 2],
+        ]);
+        return (priority.get(left.relationshipType) ?? Number.MAX_SAFE_INTEGER)
+          - (priority.get(right.relationshipType) ?? Number.MAX_SAFE_INTEGER);
+      })
     : [];
   const samePlanRevisionReason = references.some((reference) => reference.relationshipType === 'post-parent')
     ? `WordPress graph mutation ${resource.key} is created in the same plan as a post parent revision target that depends on it, and identity rewriting is not yet supported.`
