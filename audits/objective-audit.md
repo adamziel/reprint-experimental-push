@@ -6,20 +6,20 @@ The project is **not releasable as a production WordPress push path**.
 
 Fresh remote heads at audit time, checked on May 26, 2026:
 
-- `origin/lane/reliable-executor` -> `0c4fd10f`
+- `origin/lane/reliable-executor` -> `7be5a3f6`
 - `origin/lane/no-data-loss-invariants` -> `9c70eba6`
 - `origin/lane/no-data-loss-recovery` -> `c93b1536`
 - `origin/lane/fast-paths` -> `401bda5a`
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `401bda5a`
-- `origin/lane/independent-auditor` -> `88f3fd7a`
+- `origin/lane/independent-auditor` -> `641b09c1`
 - `origin/lane/critic` -> `68569c0b`
 - `origin/lane/progress-publisher` -> `7695e1f9`
 - `origin/lane/same-plan-wordpress-graph-create` -> `09e6706d`
 - `origin/lane/cycle-20260525-mainwindows-2349/same-plan-wordpress-graph-create` -> `09e6706d`
 - `origin/lane/cycle-20260525-mainwindows-2349/same-plan-wordpress-graph-create` -> `e9cbf9d4`
 - `origin/lane/cycle-20260525-mainwindows-2357/no-data-loss-invariants-graph-proof` -> `98c0ce26`
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `9cd3256e`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `4caa8b5b`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `2af0d9ba`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `7f833f49`
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` -> `5f256171`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-invariants` -> `9c70eba6`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `c93b1536`
@@ -34,11 +34,10 @@ real source-site mutation boundary. The release gates still stay `0/4`.
 Fresh lane proof since the last audit pass improved the local evidence floor,
 but it did not change the release conclusion:
 
-- `origin/lane/reliable-executor` now refreshes the audit evidence at
-  `0c4fd10f`. The sibling reliable-executor worktree still has the
-  `spawnSync` timeout-hardening edits in progress, but they remain dirty and
-  unpublished, so the live proof path is not yet release evidence and the
-  verdict does not move.
+- `origin/lane/reliable-executor` now tightens release verify startup cleanup
+  at `7be5a3f6`. The sibling reliable-executor worktree still has the
+  `spawnSync` timeout-hardening edits in progress, but the live proof path is
+  still lab-backed and the verdict does not move.
 - `origin/lane/no-data-loss-invariants` now tightens graph blockers at
   `9c70eba6`. A separate cycle-branch proof at `98c0ce26`
   extends that blocker coverage to missing graph identity references, and the
@@ -65,11 +64,11 @@ but it did not change the release conclusion:
 - `origin/lane/progress-publisher` now refreshes the public progress evidence
   at `7695e1f9`.
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` now refreshes the audit snapshot at
-  `62285938`.
+  `641b09c1`.
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now
-  refreshes the supervisor evidence snapshot at `9cd3256e`.
+  refreshes the supervisor evidence snapshot at `2af0d9ba`.
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now
-  records the latest progress freshness handoff at `4caa8b5b`.
+  records the latest progress freshness handoff at `7f833f49`.
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` now
   hardens the live proof timeout diagnostics at `5f256171`.
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` now
