@@ -283,6 +283,9 @@ export function applyPlan(remote, plan, options = {}) {
 }
 
 export function assertRecoveryStateEnvelope(recoveryState) {
+  validateRecoveryStateEnvelopeKeys(recoveryState);
+  validateRecoveryArtifacts(recoveryState);
+
   if (!isAcceptableRecoveryState(recoveryState)) {
     throw new PushPlanError(
       'RECOVERY_STATE_INVALID',
@@ -293,9 +296,6 @@ export function assertRecoveryStateEnvelope(recoveryState) {
       },
     );
   }
-
-  validateRecoveryStateEnvelopeKeys(recoveryState);
-  validateRecoveryArtifacts(recoveryState);
 }
 
 function validateSupportedPluginOwnedMutations(remote, plan) {

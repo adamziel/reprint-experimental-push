@@ -24387,6 +24387,7 @@ test('recovery artifacts fail closed when a non-blocked remote artifact is inher
       status: 'old-remote',
       planId: 'plan-123',
       reason: 'prototype-hidden remote',
+      remoteHash: 'a'.repeat(64),
       artifacts: {
         journal: { schemaVersion: 1 },
       },
@@ -24395,7 +24396,7 @@ test('recovery artifacts fail closed when a non-blocked remote artifact is inher
     const error = captureError(() => assertRecoveryStateEnvelope(recovery));
 
     assert.equal(error.code, 'RECOVERY_ARTIFACTS_INVALID');
-    assert.match(error.message, /must not carry an own remote artifact key/);
+    assert.match(error.message, /Non-blocked recovery states must not carry an own remote artifact key\./);
   } finally {
     delete Object.prototype.remote;
   }
@@ -24415,7 +24416,7 @@ test('recovery states fail closed when the artifact envelope is inherited from t
   const error = captureError(() => assertRecoveryStateEnvelope(recovery));
 
   assert.equal(error.code, 'RECOVERY_STATE_INVALID');
-  assert.match(error.message, /Recovery state must be old-remote, fully-updated-remote, or blocked-recovery\./);
+  assert.match(error.message, /Recovery state must carry an own artifact envelope\./);
 });
 
 test('recovery states fail closed when remoteHash is inherited from the prototype', () => {
