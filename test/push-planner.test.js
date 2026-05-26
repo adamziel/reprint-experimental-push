@@ -20944,6 +20944,132 @@ test('production recovery support report accepts stale-claim fencing records bef
   assert.equal(report.inspectionErrorMessage, null);
 });
 
+test('production recovery support report fails closed when a claim fence record appears after journal-opened', () => {
+  const claimId = 'claim-after-opened';
+  const claimHash = digest({ recoveryJournalClaim: claimId });
+  const previousClaimHash = digest({ recoveryJournalClaim: 'claim-before-opened' });
+  const report = productionRecoverySupportReport({
+    kind: 'production-recovery-journal',
+    productionAdapter: true,
+    supportedSurface: 'production-recovery-journal-adapter',
+    restartReadable: true,
+    ownsJournal: true,
+    ownsRemoteArtifact: false,
+    claimHash,
+    writerLease: { id: claimId },
+    leaseFence: { id: claimId },
+    journalPath: '/var/lib/reprint/recovery.jsonl',
+    artifactRefs: {
+      journal: '/var/lib/reprint/recovery.jsonl',
+      remote: null,
+    },
+    schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+    appendEvent() {
+      return null;
+    },
+    flush() {},
+    close() {},
+    inspect() {
+      return {
+        filePath: '/var/lib/reprint/recovery.jsonl',
+        schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+        artifactRefs: {
+          journal: '/var/lib/reprint/recovery.jsonl',
+          remote: null,
+        },
+        writerLease: { id: claimId },
+        leaseFence: { id: claimId },
+        records: [
+          {
+            sequence: 1,
+            type: 'recovery-claim-opened',
+            claimHash,
+            claimLease: { id: claimId },
+          },
+          {
+            sequence: 2,
+            type: 'journal-opened',
+          },
+          {
+            sequence: 3,
+            type: 'stale-claim-advanced',
+            claimHash,
+            previousClaimHash,
+            claimLease: { id: claimId },
+          },
+        ],
+      };
+    },
+    assertCurrentClaim() {},
+  });
+
+  assert.equal(report.supported, false);
+  assert.ok(report.missingDependency.includes('journal-readable inspection records with sequence and type'));
+});
+
+test('production recovery support report fails closed when a claim fence record appears after journal-retry-opened', () => {
+  const claimId = 'claim-after-retry-opened';
+  const claimHash = digest({ recoveryJournalClaim: claimId });
+  const previousClaimHash = digest({ recoveryJournalClaim: 'claim-before-retry-opened' });
+  const report = productionRecoverySupportReport({
+    kind: 'production-recovery-journal',
+    productionAdapter: true,
+    supportedSurface: 'production-recovery-journal-adapter',
+    restartReadable: true,
+    ownsJournal: true,
+    ownsRemoteArtifact: false,
+    claimHash,
+    writerLease: { id: claimId },
+    leaseFence: { id: claimId },
+    journalPath: '/var/lib/reprint/recovery.jsonl',
+    artifactRefs: {
+      journal: '/var/lib/reprint/recovery.jsonl',
+      remote: null,
+    },
+    schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+    appendEvent() {
+      return null;
+    },
+    flush() {},
+    close() {},
+    inspect() {
+      return {
+        filePath: '/var/lib/reprint/recovery.jsonl',
+        schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+        artifactRefs: {
+          journal: '/var/lib/reprint/recovery.jsonl',
+          remote: null,
+        },
+        writerLease: { id: claimId },
+        leaseFence: { id: claimId },
+        records: [
+          {
+            sequence: 1,
+            type: 'recovery-claim-opened',
+            claimHash,
+            claimLease: { id: claimId },
+          },
+          {
+            sequence: 2,
+            type: 'journal-retry-opened',
+          },
+          {
+            sequence: 3,
+            type: 'stale-claim-advanced',
+            claimHash,
+            previousClaimHash,
+            claimLease: { id: claimId },
+          },
+        ],
+      };
+    },
+    assertCurrentClaim() {},
+  });
+
+  assert.equal(report.supported, false);
+  assert.ok(report.missingDependency.includes('journal-readable inspection records with sequence and type'));
+});
+
 test('production recovery support report fails closed when a fenced claim lacks a persisted claim record', () => {
   const filePath = tempRecoveryJournalPath();
   const remoteArtifactPath = `${path.dirname(filePath)}/remote.jsonl`;

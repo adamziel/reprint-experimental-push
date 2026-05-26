@@ -1455,6 +1455,9 @@ function durableJournalInspectRecords(inspected) {
   const durableOpenedCount = Array.isArray(records)
     ? records.filter((record) => DURABLE_OPEN_RECORD_TYPES.has(record?.type)).length
     : 0;
+  const claimFenceAfterOpened = Array.isArray(records)
+    ? records.slice(durableOpenedIndex + 1).some((record) => CLAIM_FENCE_RECORD_TYPES.has(record?.type))
+    : false;
   return Boolean(
     isStrictPlainObject(inspected)
     && Object.hasOwn(inspected, 'schemaVersion')
@@ -1495,7 +1498,8 @@ function durableJournalInspectRecords(inspected) {
   && durableOpenedCount === 1
   && records
     .slice(0, durableOpenedIndex)
-    .every((record) => CLAIM_FENCE_RECORD_TYPES.has(record.type));
+    .every((record) => CLAIM_FENCE_RECORD_TYPES.has(record.type))
+  && !claimFenceAfterOpened;
 }
 
 function recordDurablePlanOpened(writer, remote, plan, options = {}) {
