@@ -361,10 +361,10 @@ test('blocks a local post author reference to a same-plan user', () => {
   const blocker = plan.blockers.find((entry) => entry.resourceKey === 'row:["wp_posts","ID:3"]');
 
   assert.equal(plan.status, 'blocked');
-  assert.equal(blocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(blocker.class, 'missing-wordpress-graph-dependency');
   assert.equal(blocker.references[0].relationshipType, 'post-author-user');
-  assert.equal(blocker.references[0].targetResourceKey, 'row:["wp_users","id:2"]');
-  assert.match(blocker.reason, /graph identities without proven identity mapping or reference rewriting/);
+  assert.equal(blocker.references[0].targetResourceKey, 'row:["wp_users","ID:2"]');
+  assert.match(blocker.reason, /without a matching supported target create mutation/);
   assert.equal(JSON.stringify(blocker).includes('local-author'), false);
 });
 
@@ -397,10 +397,10 @@ test('blocks a local post author reference to a same-plan user even when an unre
   const blocker = plan.blockers.find((entry) => entry.resourceKey === 'row:["wp_posts","ID:3"]');
 
   assert.equal(plan.status, 'blocked');
-  assert.equal(blocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(blocker.class, 'missing-wordpress-graph-dependency');
   assert.equal(blocker.references[0].relationshipType, 'post-author-user');
-  assert.equal(blocker.references[0].targetResourceKey, 'row:["wp_users","id:2"]');
-  assert.match(blocker.reason, /graph identities without proven identity mapping or reference rewriting/);
+  assert.equal(blocker.references[0].targetResourceKey, 'row:["wp_users","ID:2"]');
+  assert.match(blocker.reason, /without a matching supported target create mutation/);
   assert.equal(JSON.stringify(blocker).includes('local-author'), false);
   assert.equal(JSON.stringify(blocker).includes('remote-attachment-body'), false);
 });

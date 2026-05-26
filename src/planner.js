@@ -1316,7 +1316,7 @@ function finalizeWordPressGraphDependencies(plan, local, remote) {
             class: 'missing-wordpress-graph-dependency',
             resource: mutation.resource,
             resourceKey: mutation.resourceKey,
-            reason: `WordPress graph mutation ${mutation.resourceKey} references a same-plan target without a matching target create mutation.`,
+            reason: `WordPress graph mutation ${mutation.resourceKey} references a same-plan target without a matching supported target create mutation.`,
             resolutionPolicy: 'preserve-remote-wordpress-graph-and-stop',
             references: [reference],
           });
@@ -2242,11 +2242,25 @@ function wordpressGraphPrimaryIdField(suffix) {
   if (suffix === 'posts') {
     return 'ID';
   }
+  if (suffix === 'users') {
+    return 'ID';
+  }
+  if (suffix === 'comments') {
+    return 'comment_ID';
+  }
   if (suffix === 'terms') {
     return 'term_id';
   }
   if (suffix === 'term_taxonomy') {
     return 'term_taxonomy_id';
+  }
+  if (
+    suffix === 'postmeta'
+    || suffix === 'commentmeta'
+    || suffix === 'termmeta'
+    || suffix === 'usermeta'
+  ) {
+    return 'meta_id';
   }
   return 'id';
 }
