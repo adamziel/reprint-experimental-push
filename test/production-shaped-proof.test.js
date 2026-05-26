@@ -1009,6 +1009,11 @@ maybeTest('production-shaped release verify reports trusted recovery journal sta
   assertSpawnCompletedWithoutSpawnError(proof, 'packaged recovery journal release verify', releaseVerifyInnerTimeoutMs);
   assert.equal(proof.status, 0, proof.stderr);
   assert.match(proof.stdout, /"recoveryInspect": \{[\s\S]*"journalState": "ok"/);
+  assert.match(proof.stdout, /"durableJournal": \{[\s\S]*"staleClaimRejected": true/);
+  assert.match(
+    proof.stdout,
+    /"liveLeaseFence": \{\s*"boundary": "wpdb-single-statement-cas",\s*"claimKeyUnique": true,\s*"monotonicSequence": true,\s*"restartReadable": true,\s*"staleClaimRejected": true\s*\}/,
+  );
 });
 
 maybeTest('production-shaped release proof runs the live preflight branch against a local Playground source', async () => {

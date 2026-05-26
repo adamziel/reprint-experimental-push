@@ -316,15 +316,57 @@ test('production recovery journal wrapper writes a restart-readable claim-fenced
   assert.equal(restarted.integrity.status, 'ok');
   assert.equal(restarted.records[0].type, 'journal-opened');
   assert.equal(restarted.records[0].artifactRefs.releaseProof, 'artifact://release-proof-1');
-  assert.equal(restarted.records.some((record) => record.type === 'recovery-claim-opened'), true);
+  assert.equal(restarted.records.filter((record) => record.type === 'recovery-claim-opened').length, 1);
   assert.equal(restarted.records.at(-1).type, 'recovery-claim-opened');
   assert.equal(restarted.records.at(-1).claimHash.length, 64);
+
+  assert.throws(
+    () => openProductionRecoveryJournal({
+      filePath,
+      plan,
+      current: remote,
+      artifactRefs: {
+        releaseProof: 'artifact://release-proof-2',
+      },
+      now: fixedNow,
+      truncate: false,
+      claimId: 'production-claim-02',
+    }),
+    RecoveryJournalClaimStaleError,
+  );
 });
 
 test('checked release path consumes the production recovery journal inspection surface', () => {
   const filePath = tempJournalPath();
   const remote = baseSite();
   const plan = planFor(baseSite(), localSite(), remote);
+  const activeClaimId = 'production-claim-consumer-01';
+
+  const journal = openProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs: {
+      releaseProof: 'artifact://release-proof-1',
+    },
+    claimId: activeClaimId,
+  });
+  journal.close();
+
+  assert.throws(
+    () => openProductionRecoveryJournal({
+      filePath,
+      plan,
+      current: remote,
+      artifactRefs: {
+        releaseProof: 'artifact://release-proof-stale',
+      },
+      truncate: false,
+      claimId: 'production-claim-consumer-stale',
+    }),
+    RecoveryJournalClaimStaleError,
+  );
+
   const inspection = consumeProductionRecoveryJournal({
     filePath,
     plan,
@@ -332,16 +374,16 @@ test('checked release path consumes the production recovery journal inspection s
     artifactRefs: {
       releaseProof: 'artifact://release-proof-1',
     },
-    claimId: 'production-claim-consumer-01',
+    claimId: activeClaimId,
   });
 
   assert.equal(inspection.journal.productionAdapter, 'openProductionRecoveryJournal');
   assert.equal(inspection.journal.ownsJournal, true);
-  assert.equal(inspection.journal.claimId, 'production-claim-consumer-01');
-  assert.equal(inspection.journal.claimHash, recoveryClaimHash('production-claim-consumer-01'));
+  assert.equal(inspection.journal.claimId, activeClaimId);
+  assert.equal(inspection.journal.claimHash, recoveryClaimHash(activeClaimId));
   assert.equal(inspection.journal.consumed, true);
   assert.equal(inspection.journal.restartReadable, true);
-  assert.equal(inspection.journal.staleClaimRejected, false);
+  assert.equal(inspection.journal.staleClaimRejected, true);
   assert.equal(inspection.leaseFence.storageGuard, 'filesystem-compare-rename');
-  assert.equal(inspection.leaseFence.staleClaimRejected, false);
+  assert.equal(inspection.leaseFence.staleClaimRejected, true);
 });

@@ -1428,12 +1428,6 @@ function runProductionRecoveryJournalProof({ plan, current, artifactRefs = {} })
       artifactRefs,
       claimId: activeClaimId,
     });
-    appendRecoveryClaimOpened(journal, {
-      plan,
-      current,
-      claimId: activeClaimId,
-      artifactRefs,
-    });
     journal.close();
 
     const inspection = consumeProductionRecoveryJournal({

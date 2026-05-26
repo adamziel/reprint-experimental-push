@@ -5,9 +5,13 @@ import { deserializeResourceValue, resourceHash } from './resources.js';
 
 export const RECOVERY_JOURNAL_SCHEMA_VERSION = 1;
 
-const CLAIM_EVENT_TYPES = new Set([
+const CLAIM_STATE_EVENT_TYPES = new Set([
   'recovery-claim-opened',
   'stale-claim-advanced',
+]);
+const CLAIM_APPEND_EVENT_TYPES = new Set([
+  ...CLAIM_STATE_EVENT_TYPES,
+  'stale-claim-rejected',
 ]);
 const CLAIM_HASH_PATTERN = /^[a-f0-9]{64}$/;
 
@@ -30,6 +34,12 @@ export class RecoveryJournalClaimStaleError extends Error {
     this.code = 'RECOVERY_CLAIM_STALE';
     this.details = details;
   }
+}
+
+function hasStaleClaimRejectionEvidence(records) {
+  return (Array.isArray(records) ? records : []).some(
+    (record) => record.type === 'stale-claim-advanced' || record.type === 'stale-claim-rejected',
+  );
 }
 
 export function openRecoveryJournal(filePath, options = {}) {
@@ -82,6 +92,9 @@ export function openProductionRecoveryJournal({
       artifactRefs,
       reason: 'Production recovery journal claim opened.',
     });
+    journal.claimId = claimId;
+    journal.claimHash = recoveryClaimHash(claimId);
+    journal.claimFenced = true;
   }
 
   journal.productionAdapter = 'openProductionRecoveryJournal';
@@ -106,13 +119,13 @@ export function openProductionRecoveryJournal({
         schemaVersion: persisted.records[0]?.schemaVersion ?? null,
         integrity: persisted.integrity,
         records: persisted.records.length,
-        staleClaimRejected: persisted.records.some((record) => record.type === 'stale-claim-advanced'),
+        staleClaimRejected: hasStaleClaimRejectionEvidence(persisted.records),
       },
       leaseFence: {
         storageGuard: 'filesystem-compare-rename',
         fsyncEvidence: true,
         monotonicSequence: true,
-        staleClaimRejected: persisted.records.some((record) => record.type === 'stale-claim-advanced'),
+        staleClaimRejected: hasStaleClaimRejectionEvidence(persisted.records),
       },
     };
   };
@@ -195,10 +208,40 @@ export function appendRecoveryClaimOpened(journal, {
   artifactRefs = {},
   reason = 'Recovery claim opened.',
 }) {
+  const nextClaimHash = recoveryClaimHash(claimId);
+  const persisted = readRecoveryJournal(journal.filePath);
+  if (persisted.integrity.status !== 'ok') {
+    throw new Error(`Refusing to append to invalid recovery journal: ${persisted.integrity.reason}`);
+  }
+  const claim = classifyRecoveryJournalClaims(persisted.records);
+  if (claim.status !== 'none' && claim.activeClaimHash !== nextClaimHash) {
+    journal.appendEvent('stale-claim-rejected', {
+      planId: plan.id,
+      state: 'rejected',
+      claimHash: nextClaimHash,
+      previousClaimHash: claim.activeClaimHash,
+      observedHash: digest(current),
+      staleThresholdMs: normalizeOptionalNonNegativeInteger(staleThresholdMs),
+      reason,
+      artifactRefs,
+    });
+    throw new RecoveryJournalClaimStaleError(
+      'Recovery journal claim was superseded before this production claim could open.',
+      {
+        filePath: journal.filePath,
+        eventType: 'recovery-claim-opened',
+        staleClaimHash: nextClaimHash,
+        activeClaimHash: claim.activeClaimHash,
+        activeClaimSequence: claim.sequence,
+        activeClaimType: claim.type,
+        reason: claim.reason || null,
+      },
+    );
+  }
   return journal.appendEvent('recovery-claim-opened', {
     planId: plan.id,
     state: 'active',
-    claimHash: recoveryClaimHash(claimId),
+    claimHash: nextClaimHash,
     observedHash: digest(current),
     staleThresholdMs: normalizeOptionalNonNegativeInteger(staleThresholdMs),
     reason,
@@ -351,7 +394,7 @@ export function assertJournalRecordHasNoRawValues(record) {
 
 export function classifyRecoveryJournalClaims(records) {
   const claimRecords = (Array.isArray(records) ? records : [])
-    .filter((record) => CLAIM_EVENT_TYPES.has(record.type));
+    .filter((record) => CLAIM_STATE_EVENT_TYPES.has(record.type));
   if (claimRecords.length === 0) {
     return {
       status: 'none',
@@ -425,7 +468,7 @@ class RecoveryJournalWriter {
   }
 
   assertCurrentClaim(eventType = 'journal-append') {
-    if (!this.claimHash || CLAIM_EVENT_TYPES.has(eventType)) {
+    if (!this.claimHash || CLAIM_APPEND_EVENT_TYPES.has(eventType)) {
       return;
     }
 
