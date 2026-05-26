@@ -3022,6 +3022,36 @@ maybeTest('production-shaped release verify command fails closed when remote dri
   });
 });
 
+maybeTest('production-shaped release verify command fails closed when preserved-remote retry proof is required but not observed', () => {
+  return withPlaygroundServer('remote-base', path.join(repoRoot, 'fixtures/playground/remote-base.blueprint.json'), async (remoteServer) => {
+    const proof = spawnProductionShapedReleaseVerify(
+      {
+        REPRINT_PUSH_SOURCE_URL: remoteServer.baseUrl,
+        REPRINT_PUSH_REMOTE_URL: remoteServer.baseUrl,
+        REPRINT_PUSH_LAB_AUTH_ADMIN_USER: liveCredentials.username,
+        REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD: liveCredentials.password,
+        REPRINT_PUSH_SIMULATE_PRESERVED_REMOTE_RETRY_PATH: '/unmatched-read-path',
+        NODE_NO_WARNINGS: '1',
+      },
+      boundedLiveReleaseVerifyOptions({ timeout: liveProofInnerTimeoutMs }),
+      'preserved-remote retry release verify',
+    );
+    assertSpawnCompletedWithoutSpawnError(proof, 'preserved-remote retry release verify', liveProofInnerTimeoutMs);
+    assert.equal(proof.status, 1, proof.stderr);
+    assert.match(proof.stdout, /"ok": false/);
+    assert.match(proof.stdout, /"code": "PRESERVED_REMOTE_RETRY_REQUIRED"/);
+    assert.match(
+      proof.stdout,
+      /"boundary": \{\s*"firstRemainingProductionBoundary": "replay and preserved-remote retry on the checked release path",\s*"status": "unimplemented",\s*"verdict": "PRESERVED_REMOTE_RETRY_REQUIRED"/,
+    );
+    assert.match(
+      proof.stdout,
+      /"replayAndRetry": \{\s*"required": "\/unmatched-read-path",\s*"observed": "missing-transient-retry",\s*"retryAttempts": 1,\s*"verdict": "PRESERVED_REMOTE_RETRY_REQUIRED"\s*\}/,
+    );
+    assert.match(proof.stdout, /"releaseProof": \{\s*"ok": false,\s*"status": 1,\s*"code": "PRESERVED_REMOTE_RETRY_REQUIRED"/);
+  });
+});
+
 test('production-shaped apply revalidation smoke fails closed on mid-apply drift with production routes', () => {
   const proof = spawnBoundedSync(process.execPath, ['scripts/playground/production-shaped-apply-revalidation-smoke.mjs'], {
     cwd: repoRoot,

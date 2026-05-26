@@ -62,6 +62,7 @@ const maxNotReadyReadinessProbes = Math.max(4, Math.ceil(serverStartupTimeoutMs 
 const requireProductionDurableJournal = process.env.REPRINT_PUSH_REQUIRE_PRODUCTION_DURABLE_JOURNAL === '1';
 const requireProductionAuthSession = process.env.REPRINT_PUSH_REQUIRE_PRODUCTION_AUTH_SESSION === '1';
 const labAuthSessionDrift = process.env.REPRINT_PUSH_LAB_AUTH_SESSION_DRIFT || '';
+const requiredPreservedRemoteRetryPath = process.env.REPRINT_PUSH_SIMULATE_PRESERVED_REMOTE_RETRY_PATH || '/snapshot';
 let liveSourceUrl = process.env.REPRINT_PUSH_SOURCE_URL || process.env.REPRINT_PUSH_REMOTE_URL || '';
 let username = process.env.REPRINT_PUSH_LAB_AUTH_ADMIN_USER || process.env.REPRINT_PUSH_USERNAME || '';
 let applicationPassword = process.env.REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD || process.env.REPRINT_PUSH_APPLICATION_PASSWORD || '';
@@ -719,9 +720,9 @@ try {
         dryRunOnly: false,
         requireProductionAuthSession: true,
         simulateStaleClaimRetry: packagedSourceFixture !== null,
-        // Require preserved-read retry proof on the checked snapshot surface
-        // regardless of whether the source is packaged or direct.
-        simulatePreservedRemoteRetryPath: '/snapshot',
+        // Require preserved-read retry proof on the checked verifier path and
+        // allow focused tests to fail closed against a mismatched path.
+        simulatePreservedRemoteRetryPath: requiredPreservedRemoteRetryPath,
         authSessionSource,
         labDriftAfterSnapshot,
         labAuthSessionDrift,
