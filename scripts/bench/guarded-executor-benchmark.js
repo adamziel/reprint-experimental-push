@@ -769,6 +769,18 @@ export function productionThroughputBlockers(report) {
     blockers.push('receipt-cursor-queue-slack-visible-without-queue-budget-visibility');
   }
   if (
+    receiptCursorQueueSlackVisible === true
+    && report.evidence.backpressure?.queueHeadroomVisible !== true
+  ) {
+    blockers.push('receipt-cursor-queue-slack-visible-without-queue-headroom-visibility');
+  }
+  if (
+    receiptCursorQueueSlackVisible === true
+    && report.evidence.backpressure?.receiptCursorMemoryCeilingVisible !== true
+  ) {
+    blockers.push('receipt-cursor-queue-slack-visible-without-memory-ceiling-visibility');
+  }
+  if (
     receiptCursorMemoryHeadroomVisible === true
     && report.evidence.backpressure?.receiptCursorMemoryCeilingVisible !== true
   ) {

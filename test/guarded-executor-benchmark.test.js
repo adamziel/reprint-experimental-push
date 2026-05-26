@@ -2812,6 +2812,36 @@ test('guarded benchmark treats receipt-cursor queue-slack visibility without que
   assert.ok(blockers.includes('receipt-cursor-queue-slack-visible-without-queue-budget-visibility'));
 });
 
+test('guarded benchmark treats receipt-cursor queue-slack visibility without queue-headroom visibility as incomplete backpressure evidence', () => {
+  const report = smallBenchmark();
+  const mutated = clone(report);
+
+  mutated.evidence.backpressure.receiptCursorQueueSlackVisible = true;
+  mutated.evidence.backpressure.queueHeadroomVisible = false;
+
+  const details = productionThroughputDetails(mutated);
+  const blockers = productionThroughputBlockers(mutated);
+
+  assert.equal(details.receiptCursorQueueSlackVisible, true);
+  assert.equal(details.backpressureConsistency.receiptCursorQueueSlackVisible, true);
+  assert.ok(blockers.includes('receipt-cursor-queue-slack-visible-without-queue-headroom-visibility'));
+});
+
+test('guarded benchmark treats receipt-cursor queue-slack visibility without memory-ceiling visibility as incomplete backpressure evidence', () => {
+  const report = smallBenchmark();
+  const mutated = clone(report);
+
+  mutated.evidence.backpressure.receiptCursorQueueSlackVisible = true;
+  mutated.evidence.backpressure.receiptCursorMemoryCeilingVisible = false;
+
+  const details = productionThroughputDetails(mutated);
+  const blockers = productionThroughputBlockers(mutated);
+
+  assert.equal(details.receiptCursorQueueSlackVisible, true);
+  assert.equal(details.backpressureConsistency.receiptCursorQueueSlackVisible, true);
+  assert.ok(blockers.includes('receipt-cursor-queue-slack-visible-without-memory-ceiling-visibility'));
+});
+
 test('guarded benchmark treats queue-headroom visibility without measurement as incomplete backpressure evidence', () => {
   const report = smallBenchmark();
   const mutated = clone(report);
