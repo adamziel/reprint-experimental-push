@@ -20914,6 +20914,55 @@ test('blocks local termmeta references when the live remote term identity disapp
   assert.equal(Object.hasOwn(remote.files, 'wp-content/plugins/forms/forms.php'), false);
 });
 
+test('blocks local termmeta references when the live remote term identity disappears while preserving remote-only plugin changes', () => {
+  const resourceKey = 'row:["wp_termmeta","meta_id:14"]';
+  const base = baseSite();
+  base.db.wp_terms = {
+    'term_id:13': { term_id: 13, name: 'Base term', slug: 'base-term' },
+  };
+  base.db.wp_termmeta = {
+    'meta_id:14': {
+      meta_id: 14,
+      term_id: 13,
+      meta_key: 'base-term-meta',
+      meta_value: 'base-term-value',
+    },
+  };
+
+  const local = baseSite();
+  local.db.wp_terms = JSON.parse(JSON.stringify(base.db.wp_terms));
+  local.db.wp_termmeta = {
+    'meta_id:14': {
+      meta_id: 14,
+      term_id: 13,
+      meta_key: 'local-term-meta',
+      meta_value: 'local-term-value',
+    },
+  };
+
+  const remote = baseSite();
+  remote.db.wp_terms = {};
+  remote.db.wp_termmeta = JSON.parse(JSON.stringify(base.db.wp_termmeta));
+  remote.plugins.forms.description = 'remote-only plugin change';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin change */';
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers[0];
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(plan.conflicts.length, 0);
+  assert.equal(blocker.class, 'unsupported-termmeta-resource');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.reason, `WordPress graph mutation ${resourceKey} is created in the same plan as a term identity that depends on it, and identity rewriting is not yet supported.`);
+  assert.equal(planJson.includes('local-term-meta'), false);
+  assert.equal(planJson.includes('base-term-meta'), false);
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin change');
+  assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin change */');
+});
+
 test('blocks local termmeta references to a same-plan created term identity while preserving remote-only plugin removals', () => {
   const resourceKey = 'row:["wp_termmeta","meta_id:12"]';
   const base = baseSite();
