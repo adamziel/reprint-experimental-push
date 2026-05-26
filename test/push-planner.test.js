@@ -20721,6 +20721,40 @@ test('production recovery support report fails closed when the writer omits its 
   assert.ok(report.missingDependency.includes('fencing or lease ownership for the journal writer'));
 });
 
+test('production recovery support report fails closed when claimHash is inherited through the prototype', () => {
+  const filePath = tempRecoveryJournalPath();
+  const remoteArtifactPath = `${path.dirname(filePath)}/remote.jsonl`;
+  const journal = openProductionRecoveryJournal(filePath, {
+    truncate: true,
+    now: fixedNow,
+    claimId: 'lease-inherited-claim-hash',
+    writerLease: { id: 'lease-inherited-claim-hash' },
+    ownsRemoteArtifact: true,
+    remoteArtifactPath,
+  });
+  appendRecoveryClaimOpened(journal, {
+    plan: { id: 'plan-inherited-claim-hash' },
+    current: baseSite(),
+    claimId: 'lease-inherited-claim-hash',
+    artifactRefs: {
+      journal: filePath,
+      remote: remoteArtifactPath,
+    },
+  });
+  journal.close();
+
+  const writerWithoutOwnClaimHash = { ...journal };
+  delete writerWithoutOwnClaimHash.claimHash;
+  Object.setPrototypeOf(writerWithoutOwnClaimHash, {
+    claimHash: journal.claimHash,
+  });
+
+  const report = productionRecoverySupportReport(writerWithoutOwnClaimHash);
+
+  assert.equal(report.supported, false);
+  assert.ok(report.missingDependency.includes('fencing or lease ownership for the journal writer'));
+});
+
 test('production recovery support report fails closed when the persisted claim omits its lease identity', () => {
   const claimId = 'lease-without-persisted-claim-lease';
   const claimHash = digest({ recoveryJournalClaim: claimId });
@@ -25220,6 +25254,53 @@ test('production durable journal claims fail closed when the writer omits its ex
   const error = captureError(() => applyPlan(baseSite(), plan, {
     requireProductionDurableJournal: true,
     durableJournal: writerWithoutClaimHash,
+  }));
+
+  assert.equal(error.code, 'PRODUCTION_DURABLE_JOURNAL_UNSUPPORTED');
+  assert.ok(error.details.missingDependency.includes('fencing or lease ownership for the journal writer'));
+});
+
+test('production durable journal claims fail closed when claimHash is inherited through the prototype', () => {
+  const filePath = tempRecoveryJournalPath();
+  const remoteArtifactPath = `${path.dirname(filePath)}/remote.jsonl`;
+  const remote = {
+    ...baseSite(),
+    db: {
+      ...baseSite().db,
+      wp_options: {
+        ...baseSite().db.wp_options,
+        'option_name:blogname': { option_name: 'blogname', option_value: 'New Site' },
+      },
+    },
+  };
+  const plan = planFor(baseSite(), baseSite(), remote);
+  const journal = openProductionRecoveryJournal(filePath, {
+    truncate: true,
+    now: fixedNow,
+    claimId: 'lease-inherited-claim-hash',
+    writerLease: { id: 'lease-inherited-claim-hash' },
+    ownsRemoteArtifact: true,
+    remoteArtifactPath,
+  });
+  appendRecoveryClaimOpened(journal, {
+    plan: { id: plan.id },
+    current: baseSite(),
+    claimId: 'lease-inherited-claim-hash',
+    artifactRefs: {
+      journal: filePath,
+      remote: remoteArtifactPath,
+    },
+  });
+
+  const writerWithoutOwnClaimHash = { ...journal };
+  delete writerWithoutOwnClaimHash.claimHash;
+  Object.setPrototypeOf(writerWithoutOwnClaimHash, {
+    claimHash: journal.claimHash,
+  });
+
+  const error = captureError(() => applyPlan(baseSite(), plan, {
+    requireProductionDurableJournal: true,
+    durableJournal: writerWithoutOwnClaimHash,
   }));
 
   assert.equal(error.code, 'PRODUCTION_DURABLE_JOURNAL_UNSUPPORTED');
