@@ -4,6 +4,41 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+# 2026-05-26 - Public Status Audit 03:06:25
+
+<a id="2026-05-26-public-status-audit-030625"></a>
+
+- Visible freshness refreshed to match the active supervision cycle on the public page.
+- Gate posture remains conservative at `0/4`; no implementation verdict changed.
+- Latest blocker summary remains the same: real WordPress executor/auth and durable journal ownership still block any production push claim.
+
+# 2026-05-26 - Public Status Audit 03:05:37
+
+<a id="2026-05-26-public-status-audit-030537"></a>
+
+- Refreshed [progress.html](../progress.html) so the visible public page stays
+  current for the active supervision cycle.
+- Kept the conservative `0/4` posture and blocker summary unchanged.
+- The newest audit link on [progress.html](../progress.html) now points here.
+
+# 2026-05-26 - Public Status Audit 03:05:02
+
+<a id="2026-05-26-public-status-audit-030502"></a>
+
+- Refreshed [progress.html](../progress.html) so the visible public page stays
+  current for the active supervision cycle.
+- Kept the conservative `0/4` posture and blocker summary unchanged.
+- The newest audit link on [progress.html](../progress.html) now points here.
+
+# 2026-05-26 - Public Status Audit 03:04:25
+
+<a id="2026-05-26-public-status-audit-030425"></a>
+
+- Refreshed [progress.html](../progress.html) so the visible public page stays
+  current for the active supervision cycle.
+- Kept the conservative `0/4` posture and blocker summary unchanged.
+- The newest audit link on [progress.html](../progress.html) now points here.
+
 # 2026-05-26 - Public Status Audit 03:03:19
 
 <a id="2026-05-26-public-status-audit-030319"></a>
