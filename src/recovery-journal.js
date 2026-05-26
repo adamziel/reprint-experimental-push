@@ -89,6 +89,7 @@ export function checkedDurableJournalBoundarySatisfied(dbJournal) {
     && writerLeaseContractMatches(writerLease)
     && writerLeaseContractMatches(nestedWriterLease)
     && writerLeaseContractsAgree(writerLease, nestedWriterLease)
+    && checkedBoundaryStorageGuardMatches(dbJournal, productionAdapter, writerLease, nestedWriterLease, leaseFenceBoundary)
     && leaseFenceBoundary === 'wpdb-single-statement-cas'
     && writerLease?.storageGuard === leaseFenceBoundary
     && nestedWriterLease?.storageGuard === leaseFenceBoundary
@@ -99,6 +100,30 @@ export function checkedDurableJournalBoundarySatisfied(dbJournal) {
     && dbJournal?.leaseFence?.monotonicSequence === true
     && dbJournal?.leaseFence?.restartReadable === true
     && dbJournal?.leaseFence?.staleClaimRejected === true;
+}
+
+function checkedBoundaryStorageGuardMatches(dbJournal, productionAdapter, writerLease, nestedWriterLease, leaseFenceBoundary) {
+  if (!Object.hasOwn(dbJournal ?? {}, 'storageGuard')) {
+    return true;
+  }
+
+  const storageGuard = dbJournal?.storageGuard;
+  return storageGuardContractMatches(storageGuard)
+    && storageGuard.boundary === productionAdapter
+    && storageGuard.boundary === writerLease?.storageGuard
+    && storageGuard.boundary === leaseFenceBoundary
+    && storageGuard.boundary === nestedWriterLease?.storageGuard
+    && storageGuard.operation === 'update'
+    && storageGuard.outcome === 'applied';
+}
+
+function storageGuardContractMatches(candidate) {
+  return typeof candidate?.boundary === 'string'
+    && candidate.boundary.length > 0
+    && typeof candidate?.operation === 'string'
+    && candidate.operation.length > 0
+    && typeof candidate?.outcome === 'string'
+    && candidate.outcome.length > 0;
 }
 
 function durableJournalClaimContractMatches(claim) {
