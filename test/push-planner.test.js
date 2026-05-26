@@ -853,7 +853,7 @@ test('stops a local file deletion on conflict while preserving unrelated remote-
   const pluginDecision = decisionFor(plan, 'plugin:forms');
   const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
 
-  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.status, 'conflict');
   assert.equal(conflict.class, 'file-conflict');
   assert.equal(conflict.change.localChange, 'delete');
   assert.equal(conflict.change.remoteChange, 'update');
@@ -6075,7 +6075,7 @@ test('blocks stale plugin file changes while preserving an unrelated safe deleti
   const conflict = plan.conflicts[0];
   const deletion = mutationFor(plan, 'file:index.php');
 
-  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.status, 'conflict');
   assert.equal(plan.summary.mutations, 1);
   assert.equal(deletion.action, 'delete');
   assert.equal(deletion.changeKind, 'delete');
