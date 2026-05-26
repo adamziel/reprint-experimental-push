@@ -1,8 +1,8 @@
 # Critic Audit
 
-## 2026-05-26 13:39:34 CEST (+0200)
+## 2026-05-26 13:41:21 CEST (+0200)
 
-No gate movement. `a618c206` is the current reliable head from `git ls-remote`; it is still release-probe support and retry hardening rather than a checked-path production auth/session lifecycle or fully closed durable-journal ownership proof on the release command. The verdict remains `0/4`.
+No gate movement. `f770a1ec` is the current reliable head from `git ls-remote`; it exposes consumed recovery-journal state on the checked release path, but it still stops short of a production-backed auth/session lifecycle or a fully closed durable-journal ownership proof on the release command. The verdict remains `0/4`.
 
 Changed files:
 - [`audits/critic.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/critic/audits/critic.md)
