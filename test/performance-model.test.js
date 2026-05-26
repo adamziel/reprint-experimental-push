@@ -1877,6 +1877,8 @@ test('unsafe shortcuts stay rejected when they would bypass live preconditions o
   assert.equal(skipMemoryHeadroomCommit.rejectedGate, 'recovery');
   assert.ok(skipMemoryHeadroomCommit.violates.includes('backpressure'));
   assert.ok(skipMemoryHeadroomCommit.violates.includes('atomic-groups'));
+  assert.ok(skipMemoryHeadroomCommit.violates.includes('live-preconditions'));
+  assert.ok(skipMemoryHeadroomCommit.violates.includes('durable-progress'));
 });
 
 test('fast-path fixture isolates the release-safety benchmark shape', () => {
