@@ -61,6 +61,9 @@ Current executable gate:
 - The report now also cross-checks receipt-cursor memory headroom against queue
   headroom so a tampered buffer budget cannot make the production claim look
   consistent when the recorded cursor and queue view disagree.
+- The report now also exposes whether the receipt-cursor headroom and queue
+  headroom match, so the bounded backpressure proof can be audited directly
+  without changing the claim gate.
 - The report now also rejects a backpressure budget that does not match the
   measured resource ceiling, so a copied budget cannot make the proof look
   stronger than the actual ceiling.

@@ -301,6 +301,11 @@ export function productionThroughputDetails(report) {
     receiptCursorWithinMemoryCeiling
       ? report.resourceLimits.memoryCeilingBytes - receiptCursorWindowBytes
       : null;
+  const receiptCursorQueueHeadroomBytes = report.evidence.backpressure?.queueHeadroomBytes ?? null;
+  const receiptCursorHeadroomMatchesQueueHeadroom =
+    Number.isFinite(receiptCursorMemoryHeadroomBytes)
+    && Number.isFinite(receiptCursorQueueHeadroomBytes)
+    && receiptCursorMemoryHeadroomBytes === receiptCursorQueueHeadroomBytes;
   return {
     shape: {
       fileBytes: report.shape.fileBytes,
@@ -320,12 +325,13 @@ export function productionThroughputDetails(report) {
     receiptCursorWithinMemoryCeiling,
     receiptCursorMemoryHeadroomBytes,
     queueBudgetBytes: report.evidence.backpressure?.queueBudgetBytes ?? null,
-    queueHeadroomBytes: report.evidence.backpressure?.queueHeadroomBytes ?? null,
+    queueHeadroomBytes: receiptCursorQueueHeadroomBytes,
     queuePausedBeforeOverflow: report.evidence.backpressure?.queuePausedBeforeOverflow ?? false,
     receiptCursorWithinQueueBudget: report.evidence.backpressure?.receiptCursorWithinQueueBudget ?? false,
     receiptCursor: report.evidence.chunkReceipts.resumeCursor,
     receiptCursorConsistency: report.evidence.chunkReceipts.cursorConsistency,
     receiptCursorHeadroomBytes: receiptCursorMemoryHeadroomBytes,
+    receiptCursorHeadroomMatchesQueueHeadroom,
     recovery: report.evidence.recovery,
     atomicGroup: report.evidence.atomicGroup,
     blockers: productionThroughputBlockers(report),
