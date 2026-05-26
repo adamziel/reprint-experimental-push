@@ -7,23 +7,23 @@ The project is **not releasable as a production WordPress push path**.
 Fresh remote heads at audit time, checked on May 26, 2026:
 
 - `origin/lane/critic` -> `49af85aa`
-- `origin/lane/independent-auditor` -> `69a4e299`
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `085c089e`
+- `origin/lane/independent-auditor` -> `3045a1d8`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `ba9636aa`
 - `origin/lane/reliable-executor` -> `8e2e5d7c`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `1f52c947`
-- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `e1f0d917`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `81d643f4`
+- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `91e98e77`
 - `origin/lane/no-data-loss-recovery` -> `1214c397`
 - `origin/lane/same-plan-wordpress-graph-create` -> `0d2178e9`
 - `origin/lane/no-data-loss-invariants` -> `b5c81374`
 - `origin/lane/fast-paths` -> `cd0fddad`
 - `origin/lane/progress-publisher` -> `7695e1f9`
 - `origin/lane/cycle-20260525-mainwindows-2349/critic` -> `3b9a9c46`
-- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `69a4e299`
+- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `3045a1d8`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `e84ce6e9`
 - `origin/lane/cycle-20260525-mainwindows-2349/same-plan-wordpress-graph-create` -> `0d2178e9`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-invariants` -> `b5c81374`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `e84ce6e9`
-- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `ae756337`
+- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `91e98e77`
 - `origin/lane/cycle-20260525-mainwindows-2357/no-data-loss-invariants-graph-proof` -> `98c0ce26`
 - `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration` -> `a3a900d7`
 - `origin/main` -> `e55864f4`
@@ -67,9 +67,9 @@ but it did not change the release conclusion:
   slack fail-closed handling at `e1f0d917`, which is still boundary plumbing
   rather than measured speed proof.
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now records
-  the latest progress freshness handoff at `1f52c947`.
+  the latest progress freshness handoff at `81d643f4`.
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` now
-  refreshes the audit snapshot at `69a4e299`.
+  refreshes the audit snapshot at `3045a1d8`.
 - `origin/lane/reliable-executor` now hardens production proof server cleanup
   at `8e2e5d7c`. This is still failure-path hardening, not live-source proof.
 - `origin/lane/critic` now refreshes the critic handoff at `49af85aa`.
