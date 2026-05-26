@@ -32694,6 +32694,68 @@ test('blocks local post-author references to a same-plan created user identity w
   assert.equal(Object.hasOwn(remote.files, 'wp-content/plugins/forms/forms.php'), false);
 });
 
+test('blocks local post-author references to a same-plan created user identity while preserving a matching independent edit and remote-only plugin drift', () => {
+  const resourceKey = 'row:["wp_posts","ID:13"]';
+  const targetResourceKey = 'row:["wp_users","ID:12"]';
+  const base = baseSite();
+  base.db.wp_posts['ID:1'].post_title = 'Base shared post title';
+
+  const local = baseSite();
+  local.db.wp_posts['ID:1'].post_title = 'Shared post title';
+  local.db.wp_users = {
+    'ID:12': {
+      ID: 12,
+      user_login: 'local-post-author-drift',
+      user_email: 'local-post-author-drift@example.test',
+    },
+  };
+  local.db.wp_posts['ID:13'] = {
+    ID: 13,
+    post_title: 'Local post authored by same-plan drift user',
+    post_content: 'Local post authored by same-plan drift user content',
+    post_status: 'publish',
+    post_author: 12,
+  };
+
+  const remote = baseSite();
+  remote.db.wp_posts['ID:1'].post_title = 'Shared post title';
+  remote.plugins.forms.description = 'remote-only plugin drift';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin drift */';
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === targetResourceKey);
+  const reference = blocker.references[0];
+  const matchingEdit = decisionFor(plan, 'row:["wp_posts","ID:1"]');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(decisionFor(plan, targetResourceKey), undefined);
+  assert.equal(blocker.class, 'unsupported-comments-users-resource');
+  assert.equal(blocker.resourceKey, targetResourceKey);
+  assert.equal(blocker.unsupportedState, 'same-plan-reference');
+  assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_users","ID:12"] is created in the same plan as a post author identity that depends on it, and identity rewriting is not yet supported.');
+  assert.equal(reference.relationshipKey, 'wp_posts.post_author');
+  assert.equal(reference.relationshipType, 'post-author');
+  assert.equal(reference.sourceResourceKey, resourceKey);
+  assert.equal(reference.targetResourceKey, targetResourceKey);
+  assert.equal(reference.targetChange.remote.state, 'absent');
+  assert.equal(reference.targetChange.local.state, 'present');
+  assert.equal(matchingEdit.decision, 'already-in-sync');
+  assert.equal(matchingEdit.change.localChange, 'update');
+  assert.equal(matchingEdit.change.remoteChange, 'update');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('Local post authored by same-plan drift user'), false);
+  assert.equal(planJson.includes('Local post authored by same-plan drift user content'), false);
+  assert.equal(planJson.includes('local-post-author-drift'), false);
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin drift');
+  assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin drift */');
+});
+
 test('blocks local post-author references to a same-plan created user identity while preserving a matching independent file type swap and remote-only plugin removals', () => {
   const resourceKey = 'row:["wp_posts","ID:13"]';
   const targetResourceKey = 'row:["wp_users","ID:12"]';

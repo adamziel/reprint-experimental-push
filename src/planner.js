@@ -2444,6 +2444,22 @@ function wordpressGraphIdentitySupport({
       };
     }
   }
+  if (resource.table === 'wp_posts' && normalizePositiveInteger(localValue.post_author) != null) {
+    const samePlanCreatedPostAuthorReference = referenceEvidence.find((reference) =>
+      reference.relationshipType === 'post-author'
+      && reference.targetResource?.table === 'wp_users'
+      && reference.targetChange.remote.state === 'absent'
+      && reference.targetChange.local.state === 'present');
+
+    if (samePlanCreatedPostAuthorReference) {
+      return {
+        supported: false,
+        className: 'stale-wordpress-graph-identity',
+        reason: `WordPress graph mutation ${resource.key} references a post author identity without proven identity mapping or reference rewriting.`,
+        references: [samePlanCreatedPostAuthorReference],
+      };
+    }
+  }
   const unsupportedAttachmentReferences = referenceEvidence
     .filter((reference) =>
       reference.relationshipType === 'featured-image-attachment'
