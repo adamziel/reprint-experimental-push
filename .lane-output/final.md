@@ -3,7 +3,7 @@ Changed files:
 - [`.lane-output/final.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/critic-clean-20260526-1530/.lane-output/final.md)
 
 What changed:
-- Reclassified the current reliable head as `42209a94bff4375e648d1a6660f83db1106c4e9f` from `git ls-remote`.
+- Reclassified the current reliable head as `b80e6321b4411775af6e74614f414b60d33d9173` from `git ls-remote`.
 - Kept the verdict at `0/4` because the release verifier still does not prove a production-backed auth/session lifecycle or stricter durable-journal ownership consumed by the checked release path.
 
 Commands run:
