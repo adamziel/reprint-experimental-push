@@ -8,6 +8,7 @@ import {
   serializeResourceValue,
   setResource,
 } from './resources.js';
+import { inspectProductionRecoveryJournal } from './recovery-journal.js';
 
 const JOURNAL_SCHEMA_VERSION = 1;
 const FIXTURE_PLUGIN_DEPENDENCIES = new Map([
@@ -1106,17 +1107,6 @@ export function isDurableJournalClosed(writer) {
     && typeof writer === 'object'
     && (writer[CLOSED_DURABLE_JOURNAL] === true || CLOSED_DURABLE_JOURNALS.has(writer)),
   );
-}
-
-function inspectProductionRecoveryJournal(writer) {
-  if (!writer || typeof writer.inspect !== 'function') {
-    return null;
-  }
-  try {
-    return writer.inspect();
-  } catch (error) {
-    return { error };
-  }
 }
 
 function durableJournalInspectSurface(inspected) {

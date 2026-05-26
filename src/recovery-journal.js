@@ -250,6 +250,18 @@ export function openProductionRecoveryJournal(filePath, options = {}) {
   });
 }
 
+export function inspectProductionRecoveryJournal(writer) {
+  if (!writer || typeof writer.inspect !== 'function') {
+    return null;
+  }
+
+  try {
+    return writer.inspect();
+  } catch (error) {
+    return { error };
+  }
+}
+
 export function isValidProductionWriterLease(writerLease) {
   return (
     isStrictPlainObject(writerLease)

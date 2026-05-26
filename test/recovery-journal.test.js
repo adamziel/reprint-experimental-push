@@ -9,6 +9,7 @@ import {
   appendRecoveryClaimOpened,
   assertJournalRecordHasNoRawValues,
   createUnsupportedProductionRecoveryJournal,
+  inspectProductionRecoveryJournal,
   isValidProductionWriterLease,
   openPlanRecoveryJournal,
   openProductionRecoveryJournal,
@@ -165,6 +166,25 @@ test('production recovery journal lease validation is available to release-path 
   assert.equal(isValidProductionWriterLease(null), false);
   assert.equal(isValidProductionWriterLease({}), false);
   assert.equal(isValidProductionWriterLease({ id: 1 }), false);
+});
+
+test('production recovery journal inspection is exported for release-path consumers', () => {
+  assert.equal(inspectProductionRecoveryJournal(null), null);
+
+  const filePath = tempJournalPath();
+  const journal = openProductionRecoveryJournal(filePath, {
+    truncate: true,
+    now: fixedNow,
+    claimId: 'claim-inspect-1',
+    writerLease: { id: 'lease-inspect-1' },
+  });
+
+  const inspected = inspectProductionRecoveryJournal(journal);
+  assert.equal(inspected.kind, 'production-recovery-journal');
+  assert.equal(inspected.restartReadable, true);
+  assert.equal(inspected.ownsJournal, true);
+  assert.equal(inspected.writerLease.id, 'lease-inspect-1');
+  assert.equal(inspected.journalPath, filePath);
 });
 
 test('production recovery journal adapter is restart-readable and release-path compatible', () => {
