@@ -431,7 +431,7 @@ export function describeProductionRecoveryJournal(writer) {
   const rawLeaseFence = Object.hasOwn(writer, 'leaseFence') && isValidProductionWriterLease(writer.leaseFence)
     ? writer.leaseFence
     : null;
-  const leaseFence = rawLeaseFence && writerLease && rawLeaseFence.id === writerLease.id
+  const leaseFence = rawLeaseFence && writerLease && productionLeaseIdentitiesMatch(rawLeaseFence, writerLease)
     ? Object.freeze({ ...rawLeaseFence })
     : null;
   const rawArtifactRefs = Object.hasOwn(writer, 'artifactRefs') && isStrictPlainObject(writer.artifactRefs)
@@ -476,7 +476,25 @@ function isValidProductionWriterLease(writerLease) {
     && Object.hasOwn(writerLease, 'id')
     && typeof writerLease.id === 'string'
     && writerLease.id.trim().length > 0
+    && (
+      !Object.hasOwn(writerLease, 'epoch')
+      || Number.isInteger(writerLease.epoch)
+    )
   );
+}
+
+function productionLeaseIdentitiesMatch(left, right) {
+  return isValidProductionWriterLease(left)
+    && isValidProductionWriterLease(right)
+    && left.id === right.id
+    && (
+      (!Object.hasOwn(left, 'epoch') && !Object.hasOwn(right, 'epoch'))
+      || (
+        Object.hasOwn(left, 'epoch')
+        && Object.hasOwn(right, 'epoch')
+        && left.epoch === right.epoch
+      )
+    );
 }
 
 function normalizeProductionRecoveryJournalOptions(filePathOrOptions, options = {}) {

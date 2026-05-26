@@ -335,6 +335,44 @@ test('production recovery journal descriptor fails closed on non-canonical owner
   });
 });
 
+test('production recovery journal descriptor fails closed on divergent lease epochs', () => {
+  const writer = {
+    kind: 'production-recovery-journal',
+    productionAdapter: true,
+    supportedSurface: 'production-recovery-journal-adapter',
+    restartReadable: true,
+    ownsJournal: true,
+    ownsRemoteArtifact: true,
+    leaseFence: { id: 'lease-shared', epoch: 4 },
+    writerLease: { id: 'lease-shared', epoch: 3 },
+    journalPath: '/var/lib/reprint/recovery.jsonl',
+    artifactRefs: {
+      journal: '/var/lib/reprint/recovery.jsonl',
+      remote: '/var/lib/reprint/recovery-remote.jsonl',
+    },
+    schemaVersion: 1,
+  };
+
+  const descriptor = describeProductionRecoveryJournal(writer);
+
+  assert.deepEqual(descriptor, {
+    kind: 'production-recovery-journal',
+    productionAdapter: true,
+    supportedSurface: 'production-recovery-journal-adapter',
+    restartReadable: true,
+    ownsJournal: true,
+    ownsRemoteArtifact: true,
+    leaseFence: null,
+    writerLease: { id: 'lease-shared', epoch: 3 },
+    journalPath: '/var/lib/reprint/recovery.jsonl',
+    artifactRefs: {
+      journal: '/var/lib/reprint/recovery.jsonl',
+      remote: '/var/lib/reprint/recovery-remote.jsonl',
+    },
+    schemaVersion: 1,
+  });
+});
+
 test('production recovery journal adapter reopens with a new claim and rejects stale fenced writers', () => {
   const filePath = tempJournalPath();
   const remote = baseSite();
@@ -391,6 +429,21 @@ test('production recovery journal adapter fails closed when no explicit fenced w
 
   assert.throws(() => {
     openProductionRecoveryJournal(filePath, { truncate: true, now: fixedNow });
+  }, {
+    name: 'UnsupportedProductionRecoveryJournalError',
+    code: 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL',
+  });
+});
+
+test('production recovery journal adapter fails closed when writerLease epoch is not an integer', () => {
+  const filePath = tempJournalPath();
+
+  assert.throws(() => {
+    openProductionRecoveryJournal(filePath, {
+      truncate: true,
+      now: fixedNow,
+      writerLease: { id: 'lease-1', epoch: 'bad-epoch' },
+    });
   }, {
     name: 'UnsupportedProductionRecoveryJournalError',
     code: 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL',

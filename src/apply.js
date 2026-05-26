@@ -1010,7 +1010,7 @@ export function productionRecoverySupportReport(writer) {
   if (
     !Object.hasOwn(writer ?? {}, 'leaseFence')
     || !hasValidProductionLeaseIdentity(writer.leaseFence)
-    || writer.leaseFence.id !== writer.writerLease.id
+    || !productionLeaseIdentitiesMatch(writer.leaseFence, writer.writerLease)
   ) {
     addMissingDependency('fencing or lease ownership for the journal writer');
   }
@@ -1187,7 +1187,28 @@ function hasValidProductionLeaseIdentity(value) {
   return isStrictPlainObject(value)
     && Object.hasOwn(value, 'id')
     && typeof value.id === 'string'
-    && value.id.trim().length > 0;
+    && value.id.trim().length > 0
+    && (
+      !Object.hasOwn(value, 'epoch')
+      || Number.isInteger(value.epoch)
+    );
+}
+
+function productionLeaseIdentitiesMatch(left, right) {
+  if (!hasValidProductionLeaseIdentity(left) || !hasValidProductionLeaseIdentity(right)) {
+    return false;
+  }
+  if (left.id !== right.id) {
+    return false;
+  }
+
+  const leftHasEpoch = Object.hasOwn(left, 'epoch');
+  const rightHasEpoch = Object.hasOwn(right, 'epoch');
+  if (!leftHasEpoch && !rightHasEpoch) {
+    return true;
+  }
+
+  return leftHasEpoch && rightHasEpoch && left.epoch === right.epoch;
 }
 
 function durableJournalInspectPath(inspected) {
