@@ -95,19 +95,34 @@ export async function runAuthenticatedHttpPush({
     summary.code = 'PREFLIGHT_SESSION_MISSING';
     return summary;
   }
-  const preflightAuthEnvelope = {
-    userLogin: preflight.body.auth?.identity?.userLogin,
-    sessionId: preflight.body.auth?.session?.id,
-    sessionType: preflight.body.auth?.session?.type,
-    sessionStatus: preflight.body.auth?.session?.status,
-    sessionExpiresAt: preflight.body.auth?.session?.expiresAt,
-  };
   summary.authSessionLifecycle = {
     minted: summarizeAuthSessionLifecycle(preflight.body.auth?.session),
     read: summarizeAuthSessionLifecycle(preflight.body.auth?.session),
     expired: isExpiredSession(preflight.body.auth?.session)
       ? summarizeAuthSessionLifecycle(preflight.body.auth?.session)
       : null,
+  };
+  if (isExpiredSession(preflight.body.auth?.session)) {
+    summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
+    summary.authSession = {
+      required: 'unexpired',
+      observed: preflight.body.auth?.session?.expiresAt || 'missing',
+      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+    };
+    summary.boundary = {
+      firstRemainingProductionBoundary: 'auth/session lifecycle and durable journal semantics',
+      status: 'unimplemented',
+      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+      authSession: summary.authSession,
+    };
+    return summary;
+  }
+  const preflightAuthEnvelope = {
+    userLogin: preflight.body.auth?.identity?.userLogin,
+    sessionId: preflight.body.auth?.session?.id,
+    sessionType: preflight.body.auth?.session?.type,
+    sessionStatus: preflight.body.auth?.session?.status,
+    sessionExpiresAt: preflight.body.auth?.session?.expiresAt,
   };
   if (preflight.body.auth?.session?.id && preflight.body.auth.session.id !== session) {
     summary.code = 'PREFLIGHT_SESSION_MISMATCH';
