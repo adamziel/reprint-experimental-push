@@ -6,10 +6,10 @@ The project is **not releasable as a production WordPress push path**.
 
 Fresh remote heads at audit time, checked on May 26, 2026:
 
-- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `143ccb70`
+- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `4411cbd7`
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `ca8f14fa`
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `8b39b1ea`
-- `origin/lane/independent-auditor` -> `6351130f`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `34b083c4`
+- `origin/lane/independent-auditor` -> `bbd3c5a6`
 - `origin/lane/reliable-executor` -> `66339fdc`
 - `origin/lane/no-data-loss-invariants` -> `4db0dd4a`
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` -> `db36753e`
@@ -20,7 +20,7 @@ Fresh remote heads at audit time, checked on May 26, 2026:
 - `origin/lane/fast-paths` -> `cd0fddad`
 - `origin/lane/progress-publisher` -> `7695e1f9`
 - `origin/lane/cycle-20260525-mainwindows-2349/critic` -> `49af85aa`
-- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `03a8c27c`
+- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `bbd3c5a6`
 - `origin/lane/cycle-20260525-mainwindows-2349/same-plan-wordpress-graph-create` -> `0d2178e9`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-invariants` -> `1f6ab914`
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `88a02787`
@@ -82,7 +82,7 @@ but it did not change the release conclusion:
   live production mutation proof.
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` advances to
   `ca8f14fa`, and `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor`
-  advances to `8b39b1ea`; both are freshness updates only and do not move the
+  advances to `34b083c4`; both are freshness updates only and do not move the
   live production release boundary.
 
 Those changes strengthen the lab evidence for protocol safety and no-loss
