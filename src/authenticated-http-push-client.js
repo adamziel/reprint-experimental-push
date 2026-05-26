@@ -533,6 +533,9 @@ function assertMutatingRequestOptions(pathname, options) {
   if (options.session === undefined || options.session === '') {
     throw new Error(`Missing push session for mutating request: ${pathname}`);
   }
+  if (!/^psh_[A-Za-z0-9_-]{8,}$/.test(options.session)) {
+    throw new Error(`Invalid push session for mutating request: ${pathname}`);
+  }
   if (options.idempotencyKey === undefined || options.idempotencyKey === '') {
     throw new Error(`Missing push idempotencyKey for mutating request: ${pathname}`);
   }
