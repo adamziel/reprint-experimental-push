@@ -767,6 +767,292 @@ export function createPushPlan({ base, local, remote, now = new Date() }) {
           continue;
         }
       }
+
+      const navigationSupport = unsupportedNavigationResourceSupport({
+        resource,
+        baseValue,
+        localValue,
+        remoteValue,
+        resources,
+        base,
+        local,
+        remote,
+      });
+      if (!navigationSupport.supported) {
+        addUnsupportedNavigationResourceBlocker(plan, {
+          resource,
+          support: navigationSupport,
+          baseValue,
+          localValue,
+          remoteValue,
+          baseHash,
+          localHash,
+          remoteHash,
+        });
+        continue;
+      }
+
+      const attachmentSupport = unsupportedAttachmentResourceSupport({
+        resource,
+        baseValue,
+        localValue,
+        remoteValue,
+        resources,
+        base,
+        local,
+        remote,
+      });
+      if (!attachmentSupport.supported) {
+        addUnsupportedAttachmentResourceBlocker(plan, {
+          resource,
+          support: attachmentSupport,
+          baseValue,
+          localValue,
+          remoteValue,
+          baseHash,
+          localHash,
+          remoteHash,
+        });
+        continue;
+      }
+
+      const revisionSupport = unsupportedRevisionResourceSupport({
+        resource,
+        baseValue,
+        localValue,
+        remoteValue,
+      });
+      if (!revisionSupport.supported) {
+        addUnsupportedRevisionResourceBlocker(plan, {
+          resource,
+          support: revisionSupport,
+          baseValue,
+          localValue,
+          remoteValue,
+          baseHash,
+          localHash,
+          remoteHash,
+        });
+        continue;
+      }
+
+      const termmetaSupport = unsupportedTermmetaResourceSupport({
+        resource,
+        baseValue,
+        localValue,
+        remoteValue,
+        resources,
+        base,
+        local,
+        remote,
+      });
+      if (!termmetaSupport.supported) {
+        addUnsupportedTermmetaResourceBlocker(plan, {
+          resource,
+          support: termmetaSupport,
+          baseValue,
+          localValue,
+          remoteValue,
+          baseHash,
+          localHash,
+          remoteHash,
+        });
+        continue;
+      }
+
+      const termTaxonomySupport = unsupportedTermTaxonomyResourceSupport({
+        resource,
+        baseValue,
+        localValue,
+        remoteValue,
+        local,
+        remote,
+      });
+      if (!termTaxonomySupport.supported) {
+        addUnsupportedTermTaxonomyResourceBlocker(plan, {
+          resource,
+          support: termTaxonomySupport,
+          baseValue,
+          localValue,
+          remoteValue,
+          baseHash,
+          localHash,
+          remoteHash,
+        });
+        continue;
+      }
+
+      const guidSupport = unsupportedGuidResourceSupport({
+        resource,
+        baseValue,
+        localValue,
+        remoteValue,
+      });
+      if (!guidSupport.supported) {
+        addUnsupportedGuidResourceBlocker(plan, {
+          resource,
+          support: guidSupport,
+          baseValue,
+          localValue,
+          remoteValue,
+          baseHash,
+          localHash,
+          remoteHash,
+        });
+        continue;
+      }
+
+      const commentsUsersSupport = unsupportedCommentsUsersResourceSupport({
+        resource,
+        baseValue,
+        localValue,
+        remoteValue,
+        resources,
+        base,
+        local,
+        remote,
+      });
+      if (!commentsUsersSupport.supported) {
+        addUnsupportedCommentsUsersResourceBlocker(plan, {
+          resource,
+          support: commentsUsersSupport,
+          baseValue,
+          localValue,
+          remoteValue,
+          baseHash,
+          localHash,
+          remoteHash,
+        });
+        continue;
+      }
+
+      const usermetaSupport = unsupportedUsermetaResourceSupport({
+        resource,
+        baseValue,
+        localValue,
+        remoteValue,
+        resources,
+        base,
+        local,
+        remote,
+      });
+      if (!usermetaSupport.supported) {
+        addUnsupportedUsermetaResourceBlocker(plan, {
+          resource,
+          support: usermetaSupport,
+          baseValue,
+          localValue,
+          remoteValue,
+          baseHash,
+          localHash,
+          remoteHash,
+        });
+        continue;
+      }
+
+      const legacyLinksSupport = unsupportedLegacyLinksResourceSupport({
+        resource,
+        baseValue,
+        localValue,
+        remoteValue,
+      });
+      if (!legacyLinksSupport.supported) {
+        addUnsupportedLegacyLinksResourceBlocker(plan, {
+          resource,
+          support: legacyLinksSupport,
+          baseValue,
+          localValue,
+          remoteValue,
+          baseHash,
+          localHash,
+          remoteHash,
+        });
+        continue;
+      }
+
+      const serializedBlocksSupport = unsupportedSerializedBlocksSupport({
+        resource,
+        baseValue,
+        localValue,
+        remoteValue,
+      });
+      if (!serializedBlocksSupport.supported) {
+        addUnsupportedSerializedBlocksBlocker(plan, {
+          resource,
+          support: serializedBlocksSupport,
+          baseValue,
+          localValue,
+          remoteValue,
+          baseHash,
+          localHash,
+          remoteHash,
+        });
+        continue;
+      }
+
+      const specialFileSupport = unsupportedSpecialFileResourceSupport({
+        resource,
+        baseValue,
+        localValue,
+        remoteValue,
+      });
+      if (!specialFileSupport.supported) {
+        addUnsupportedSpecialFileBlocker(plan, {
+          resource,
+          support: specialFileSupport,
+          baseValue,
+          localValue,
+          remoteValue,
+          baseHash,
+          localHash,
+          remoteHash,
+        });
+        continue;
+      }
+
+      const graphIdentitySupport = wordpressGraphIdentitySupport({
+        resource,
+        localValue,
+        resources,
+        base,
+        local,
+        remote,
+      });
+      if (!graphIdentitySupport.supported) {
+        addWordPressGraphIdentityBlocker(plan, {
+          resource,
+          support: graphIdentitySupport,
+          baseValue,
+          localValue,
+          remoteValue,
+          baseHash,
+          localHash,
+          remoteHash,
+        });
+        continue;
+      }
+
+      const samePlanCreateSupport = samePlanCreatedGraphIdentitySupport({
+        resource,
+        resources,
+        base,
+        local,
+        remote,
+      });
+      if (!samePlanCreateSupport.supported) {
+        addWordPressGraphIdentityBlocker(plan, {
+          resource,
+          support: samePlanCreateSupport,
+          baseValue,
+          localValue,
+          remoteValue,
+          baseHash,
+          localHash,
+          remoteHash,
+        });
+        continue;
+      }
+
       plan.decisions.push({
         id: `decision-${plan.decisions.length + 1}`,
         resource,

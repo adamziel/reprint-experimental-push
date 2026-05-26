@@ -1,30 +1,31 @@
 # no-data-loss-invariants handoff
 
-Current lane evidence is that the unsupported-surface stops now cover comments/users, serialized block references, and plugin-owned custom-table mismatches without leaking payload values. I also tightened the wrong-driver proof so it still blocks while unrelated remote-only plugin drift is preserved.
+Timestamp:
+- `2026-05-26 16:07:43 CEST (+0200)`
 
-Evidence:
-- The planner hard-blocks `wp_comments` and `wp_users` rows as `unsupported-comments-users-resource`.
-- The planner hard-blocks `wp_posts` rows whose `post_content` contains serialized block markup as `unsupported-serialized-blocks-resource`.
-- Plugin-owned rows with a declared driver mismatch stay blocked while unrelated remote-only plugin drift remains `keep-remote`.
+Current lane evidence:
+- The planner now fail-closes unsupported WordPress surfaces even when local and remote independently converge on the same content. Unsupported GUID and legacy-link rows no longer slip through as `already-in-sync`.
+- Matching independent edits still stay `already-in-sync`, and unrelated remote-only plugin drift still stays `keep-remote`.
 
 Changed files:
-- [`test/push-planner.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/no-data-loss-invariants/test/push-planner.test.js)
-- [`docs/scenario-matrix.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/no-data-loss-invariants/docs/scenario-matrix.md)
-- [`.lane-output/final.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/no-data-loss-invariants/.lane-output/final.md)
+- [`src/planner.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/no-data-loss-invariants-clean-20260526-1530/src/planner.js)
+- [`test/push-planner.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/no-data-loss-invariants-clean-20260526-1530/test/push-planner.test.js)
+- [`docs/scenario-matrix.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/no-data-loss-invariants-clean-20260526-1530/docs/scenario-matrix.md)
+- [`.lane-output/final.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/no-data-loss-invariants-clean-20260526-1530/.lane-output/final.md)
 
 Commands run:
-- `node --test --test-name-pattern='blocks local comments and users graph resources while preserving remote-only plugin drift|blocks local serialized block references while preserving remote-only plugin drift|blocks plugin-owned resources when the declared driver does not match the table while preserving remote-only plugin drift|keeps same-remote graph identity at the live release boundary while a ready delete plan preserves a matching independent file delete, a matching file type swap, a matching independent edit, and remote-only plugin removals after apply revalidation' test/push-planner.test.js`
-- `node --test --test-name-pattern='blocks plugin-owned resources when the declared driver does not match the table|blocks plugin-owned resources when the declared driver does not match the table while preserving remote-only plugin drift' test/push-planner.test.js`
+- `node --input-type=module <<'EOF' ... createPushPlan(...) ... EOF`
+- `timeout 60s node --test --test-name-pattern='blocks converged post GUID changes while preserving a matching independent edit and remote-only plugin changes|blocks converged legacy link changes while preserving a matching independent edit and remote-only plugin changes' test/push-planner.test.js`
+- `git diff --check -- src/planner.js test/push-planner.test.js docs/scenario-matrix.md`
 - `git status --short --branch`
 
 Push result:
-- Pushed on `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration` at `2375ddd0`
+- Pending commit/push from this worktree.
 
 Worktree status:
-- Clean tracked state
-- Branch: `lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration`
-- `HEAD`: `2375ddd0`
-- `origin/lane/no-data-loss-invariants`: `5b25867b`
+- Dirty tracked state limited to the four lane-owned files above.
+- Branch: `lane/cycle-20260525-mainwindows-2349/ndl-invariants-clean-20260526-1530`
+- `HEAD`: `00199613`
 
 Next supervisor nudge:
-- Assign the next distinct unsupported boundary to hard-block, or stop the lane if this proof set is sufficient for publication.
+- If reliable or same-plan-graph exposes another converged unsupported resource class, route it back here; otherwise the next useful invariant edge is the same fail-closed behavior for any remaining unsupported row class that can still reach `already-in-sync`.
