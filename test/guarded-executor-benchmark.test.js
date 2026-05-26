@@ -145,6 +145,10 @@ test('guarded benchmark refuses production throughput claims until production ga
   assert.equal(report.claims.productionThroughputDetails.backpressureConsistency.receiptCursorQueueSlackWithinMemoryCeiling, true);
   assert.equal(report.claims.productionThroughputDetails.backpressureConsistency.receiptCursorQueueSlackMeasured, true);
   assert.equal(report.claims.productionThroughputDetails.backpressureConsistency.receiptCursorQueueSlackWithinQueueBudget, true);
+  assert.equal(
+    report.claims.productionThroughputDetails.backpressureConsistency.receiptCursorQueueSlackWithinResourceHeadroom,
+    true,
+  );
   assert.equal(report.claims.productionThroughputDetails.receiptCursorMemoryHeadroomWithinQueueBudget, true);
   assert.equal(report.claims.productionThroughputDetails.backpressureConsistency.receiptCursorBackpressureWithinQueueBudget, true);
   assert.equal(
@@ -224,6 +228,11 @@ test('guarded benchmark refuses production throughput claims until production ga
   );
   assert.ok(
     report.claims.productionThroughput.blockers.includes('production-row-batch-executor-not-measured'),
+  );
+  assert.ok(
+    !report.claims.productionThroughput.blockers.includes(
+      'queue-pause-without-resource-headroom-safe-receipt-cursor-slack',
+    ),
   );
   assert.equal(
     report.claims.productionThroughput.blockers.filter(
