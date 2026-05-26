@@ -2778,6 +2778,16 @@ function validateRecoveryStateEnvelopeKeys(recoveryState) {
       },
     );
   }
+  if (hasHiddenOwnStringKeys(recoveryState)) {
+    throw new PushPlanError(
+      'RECOVERY_STATE_INVALID',
+      'Recovery state must not hide top-level envelope fields behind non-enumerable string keys.',
+      {
+        status: recoveryState.status,
+        planId: recoveryState.planId,
+      },
+    );
+  }
   if (typeof recoveryState.remoteHash !== 'string' || !/^[a-f0-9]{64}$/.test(recoveryState.remoteHash)) {
     throw new PushPlanError(
       'RECOVERY_STATE_INVALID',
@@ -2803,7 +2813,8 @@ function validateRecoveryStateEnvelopeKeys(recoveryState) {
     if (
       !Array.isArray(recoveryState.driftedResources)
       || recoveryState.driftedResources.length === 0
-      || !hasOnlyDenseOwnArrayIndexes(recoveryState.driftedResources)
+      || Object.getPrototypeOf(recoveryState.driftedResources) !== Array.prototype
+      || !hasOnlyDenseEnumerableArrayIndexes(recoveryState.driftedResources)
       || !hasOnlyUniqueNonEmptyStrings(recoveryState.driftedResources)
       || recoveryState.driftedResources.some((resourceKey) => typeof resourceKey !== 'string' || resourceKey.length === 0)
     ) {
@@ -2867,6 +2878,14 @@ function isPlainObject(value) {
 
 function isStrictPlainObject(value) {
   return isPlainObject(value) && Object.getPrototypeOf(value) === Object.prototype;
+}
+
+function hasHiddenOwnStringKeys(value) {
+  if (!value || typeof value !== 'object') {
+    return false;
+  }
+
+  return Object.values(Object.getOwnPropertyDescriptors(value)).some((descriptor) => descriptor.enumerable !== true);
 }
 
 function hasOnlyDenseOwnArrayIndexes(value) {

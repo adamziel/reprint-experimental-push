@@ -1874,6 +1874,41 @@ test('rejects non-blocked recovery states that hide the journal artifact behind 
   );
 });
 
+test('rejects recovery states that hide top-level envelope fields behind non-enumerable keys', () => {
+  const recoveryState = {
+    artifacts: { journal: { status: 'completed' } },
+  };
+  Object.defineProperty(recoveryState, 'status', {
+    value: 'old-remote',
+    enumerable: false,
+    configurable: true,
+    writable: true,
+  });
+  Object.defineProperty(recoveryState, 'reason', {
+    value: 'Hidden top-level recovery fields should not be accepted.',
+    enumerable: false,
+    configurable: true,
+    writable: true,
+  });
+  Object.defineProperty(recoveryState, 'remoteHash', {
+    value: 'a'.repeat(64),
+    enumerable: false,
+    configurable: true,
+    writable: true,
+  });
+  Object.defineProperty(recoveryState, 'planId', {
+    value: 'plan-hidden-top-level-recovery-field',
+    enumerable: false,
+    configurable: true,
+    writable: true,
+  });
+
+  assert.throws(
+    () => assertRecoveryStateEnvelope(recoveryState),
+    (error) => error.code === 'RECOVERY_STATE_INVALID',
+  );
+});
+
 test('rejects blocked recovery states that hide non-enumerable nested artifact metadata', () => {
   const journal = { status: 'completed' };
   Object.defineProperty(journal, 'hidden', {
@@ -1898,6 +1933,27 @@ test('rejects blocked recovery states that hide non-enumerable nested artifact m
   assert.throws(
     () => assertRecoveryStateEnvelope(recoveryState),
     (error) => error.code === 'RECOVERY_ARTIFACTS_INVALID',
+  );
+});
+
+test('rejects blocked recovery states whose drifted resources use an array subclass', () => {
+  class DriftedResources extends Array {}
+
+  const recoveryState = {
+    status: 'blocked-recovery',
+    reason: 'Drifted resource containers must stay canonical arrays.',
+    remoteHash: 'a'.repeat(64),
+    planId: 'plan-drifted-resources-array-subclass',
+    driftedResources: new DriftedResources('row:["wp_options","option_name:blogname"]'),
+    artifacts: {
+      journal: { status: 'completed' },
+      remote: { status: 'blocked' },
+    },
+  };
+
+  assert.throws(
+    () => assertRecoveryStateEnvelope(recoveryState),
+    (error) => error.code === 'RECOVERY_STATE_INVALID',
   );
 });
 
