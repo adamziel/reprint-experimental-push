@@ -45,6 +45,16 @@ test('benchmark model covers large uploads and plugin installs', () => {
     'compressed row-batch manifests stay planning-only and keep row preconditions intact',
   );
   assert.ok(
+    model.safeFastPaths.some(
+      (fastPath) =>
+        fastPath.area === 'backpressure' &&
+        fastPath.allowedShortcut === 'reuse-receipt-cursor-queue-headroom-and-journal-lag-to-size-bounded-replay' &&
+        fastPath.guardrails.includes('queue-headroom-and-journal-lag-stay-bounded') &&
+        fastPath.gateProofs.skip.includes('queue headroom and journal lag stay inside the recorded pause footprint'),
+    ),
+    'queue headroom and journal lag can bound replay sizing without weakening recovery classification',
+  );
+  assert.ok(
     pluginInstall.actions.some((action) => action.type === 'db-batch-parallelism'),
     'plugin install includes bounded row-batch parallelism',
   );
