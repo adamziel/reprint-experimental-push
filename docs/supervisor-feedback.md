@@ -7,7 +7,7 @@ changed, what is helping, what is not helping, and the next nudge.
 
 ## 2026-05-26 15:20 CEST - Reliable Head Advanced, Gate Still Closed
 
-- Going well: the live reliable head advanced to `ac417774`, so the checked
+- Going well: the live reliable head advanced to `e82e3b1af126f62688f617a3fb4cc0baeb698d57`, so the checked
   release path is still moving forward instead of stalling on old support
   evidence.
 - Not going well: the gate is still blocked at production auth/session
