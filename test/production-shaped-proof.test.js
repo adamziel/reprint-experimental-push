@@ -1518,6 +1518,78 @@ test('production auth/session lifecycle trace summary preserves issued and read 
   );
 });
 
+test('production auth/session lifecycle trace summary does not treat preflight as a preserved read', () => {
+  const summary = summarizeProductionAuthSessionLifecycleTrace([
+    {
+      step: 'preflight',
+      id: 'session-01',
+      type: 'production-auth-session',
+      status: 'active',
+      expiresAt: '2099-01-01T00:00:00Z',
+      expired: false,
+      revoked: false,
+      cleanedUp: false,
+      rotated: false,
+      preserved: true,
+    },
+  ]);
+
+  assert.deepEqual(summary, {
+    issued: {
+      step: 'preflight',
+      id: 'session-01',
+      type: 'production-auth-session',
+      status: 'active',
+      expiresAt: '2099-01-01T00:00:00Z',
+      expired: false,
+      revoked: false,
+      cleanedUp: false,
+      rotated: false,
+      preserved: true,
+    },
+    read: null,
+    expired: null,
+    revoked: null,
+    cleanedUp: null,
+    rotated: null,
+    preserved: {
+      step: 'preflight',
+      id: 'session-01',
+      type: 'production-auth-session',
+      status: 'active',
+      expiresAt: '2099-01-01T00:00:00Z',
+      expired: false,
+      revoked: false,
+      cleanedUp: false,
+      rotated: false,
+      preserved: true,
+    },
+    observations: [
+      {
+        step: 'preflight',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+        expired: false,
+        revoked: false,
+        cleanedUp: false,
+        rotated: false,
+        preserved: true,
+      },
+    ],
+  });
+
+  assert.deepEqual(
+    evaluateProductionAuthSessionLifecycleSummary(summary),
+    {
+      ok: false,
+      required: 'preserved read',
+      observed: 'missing',
+    },
+  );
+});
+
 maybeTest('production-shaped release verify command consumes the packaged production auth/session source command when production auth/session is required', async () => {
   await withPlaygroundServer('remote-base', path.join(repoRoot, 'fixtures/playground/remote-base.blueprint.json'), async (remoteServer) => {
     const expectedSourceCommand = resolvePackagedProductionPluginSourceCommand({

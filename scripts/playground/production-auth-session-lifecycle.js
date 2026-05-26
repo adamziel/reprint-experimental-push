@@ -202,8 +202,7 @@ export function summarizeProductionAuthSessionLifecycleTrace(trace) {
     .find((entry) => entry.step === 'journal'
       || entry.step === 'replay'
       || entry.step === 'apply'
-      || entry.step === 'dry-run'
-      || entry.step === 'preflight') ?? null;
+      || entry.step === 'dry-run') ?? null;
 
   return {
     issued: observations[0] ?? null,
