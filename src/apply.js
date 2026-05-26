@@ -987,7 +987,13 @@ function productionRecoverySupportReport(writer) {
   ) {
     addMissingDependency('fencing or lease ownership for the journal writer');
   }
-  if (!Object.hasOwn(writer ?? {}, 'writerLease') || writer.writerLease == null) {
+  if (
+    !Object.hasOwn(writer ?? {}, 'writerLease')
+    || !isStrictPlainObject(writer.writerLease)
+    || !Object.hasOwn(writer.writerLease, 'id')
+    || typeof writer.writerLease.id !== 'string'
+    || writer.writerLease.id.length === 0
+  ) {
     addMissingDependency('fencing or lease ownership for the journal writer');
   }
   if (writer && typeof writer.inspect === 'function' && !inspectionErrorMessage && !durableJournalInspectRecords(inspected)) {
