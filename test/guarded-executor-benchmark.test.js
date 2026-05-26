@@ -123,6 +123,8 @@ test('guarded benchmark refuses production throughput claims until production ga
   assert.equal(report.claims.productionThroughputDetails.receiptCursorHeadroomBytes, 31.5 * 1024 * 1024);
   assert.equal(report.claims.productionThroughputDetails.receiptCursorHeadroomMatchesQueueHeadroom, true);
   assert.equal(report.claims.productionThroughputDetails.receiptCursorWithinQueueBudget, true);
+  assert.equal(report.claims.productionThroughputDetails.productionAtomicCommitMeasured, false);
+  assert.equal(report.claims.productionThroughputDetails.productionRowBatchExecutorMeasured, false);
   assert.equal(
     report.claims.productionThroughputDetails.receiptCursor.resourceKey,
     'file:wp-content/uploads/2026/05/catalog-export.bin',

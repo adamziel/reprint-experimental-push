@@ -341,6 +341,8 @@ export function productionThroughputDetails(report) {
   const receiptCursorMatchesBackpressure =
     receiptCursorBackpressureBytes !== null
     && receiptCursorBackpressureBytes === receiptCursorWindowBytes;
+  const productionAtomicCommitMeasured = report.executorCapabilities.productionAtomicCommit === 'production-atomic-group-commit';
+  const productionRowBatchExecutorMeasured = report.executorCapabilities.rowApply === 'production-batched-compare-and-swap';
   return {
     shape: {
       fileBytes: report.shape.fileBytes,
@@ -373,6 +375,8 @@ export function productionThroughputDetails(report) {
     receiptCursorBackpressureBytes,
     receiptCursorBackpressureWithinQueueHeadroom,
     receiptCursorHeadroomWithinQueueBudget,
+    productionAtomicCommitMeasured,
+    productionRowBatchExecutorMeasured,
     backpressureConsistency: {
       queueBudgetMatchesResourceCeiling,
       queueHeadroomMatchesResourceHeadroom,
@@ -387,6 +391,8 @@ export function productionThroughputDetails(report) {
       receiptCursorHeadroomCoveredByQueueBudget,
       receiptCursorHeadroomWithinQueueBudget,
       receiptCursorBackpressureBytes,
+      productionAtomicCommitMeasured,
+      productionRowBatchExecutorMeasured,
     },
     recovery: report.evidence.recovery,
     atomicGroup: report.evidence.atomicGroup,
