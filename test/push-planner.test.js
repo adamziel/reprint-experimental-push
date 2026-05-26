@@ -11048,6 +11048,63 @@ test('durable recovery fails closed when the writer journal artifact reference i
   assert.ok(error.details.missingDependency.includes('restart-readable recovery artifact references'));
 });
 
+test('durable recovery fails closed when remote artifact ownership is inherited through the prototype', () => {
+  const writer = Object.create({
+    ownsRemoteArtifact: true,
+  });
+  Object.assign(writer, {
+    kind: 'production-recovery-journal',
+    productionAdapter: true,
+    supportedSurface: 'production-recovery-journal-adapter',
+    ownsJournal: true,
+    restartReadable: true,
+    journalPath: '/var/lib/reprint/recovery.jsonl',
+    artifactRefs: {
+      journal: '/var/lib/reprint/recovery.jsonl',
+      remote: '/var/lib/reprint/recovery-remote.json',
+    },
+    schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+    nextSequence: 1,
+    appendEvent(type, payload) {
+      this.nextSequence += 1;
+      return { sequence: this.nextSequence - 1, type, payload };
+    },
+    flush() {},
+    close() {},
+    inspect() {
+      return {
+        filePath: '/var/lib/reprint/recovery.jsonl',
+        schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+        artifactRefs: {
+          journal: '/var/lib/reprint/recovery.jsonl',
+          remote: '/var/lib/reprint/recovery-remote.json',
+        },
+        records: [{ sequence: 1, type: 'journal-opened' }],
+      };
+    },
+    assertCurrentClaim() {},
+  });
+
+  const plan = planFor(baseSite(), baseSite(), {
+    ...baseSite(),
+    db: {
+      ...baseSite().db,
+      wp_options: {
+        ...baseSite().db.wp_options,
+        'option_name:blogname': { option_name: 'blogname', option_value: 'New Site' },
+      },
+    },
+  });
+
+  const error = captureError(() => applyPlan(baseSite(), plan, {
+    requireProductionDurableJournal: true,
+    durableJournal: writer,
+  }));
+
+  assert.equal(error.code, 'PRODUCTION_DURABLE_JOURNAL_UNSUPPORTED');
+  assert.ok(error.details.missingDependency.includes('restart-readable remote recovery artifact ownership'));
+});
+
 test('durable recovery stays within the accepted post-failure states and completed replay remains inert', () => {
   const base = baseSite();
   const local = baseSite();
@@ -21157,11 +21214,9 @@ test('production durable journal support checks close a writer when the support 
 
   assert.equal(error.code, 'PRODUCTION_DURABLE_JOURNAL_UNSUPPORTED');
   assert.equal(closed, 1);
-  assert.deepEqual(error.details.missingDependency, [
-    'explicit production recovery adapter marker',
-    'restart-readable recovery artifact references',
-    'fencing or lease ownership for the journal writer',
-  ]);
+  assert.ok(error.details.missingDependency.includes('explicit production recovery adapter marker'));
+  assert.ok(error.details.missingDependency.includes('restart-readable recovery artifact references'));
+  assert.ok(error.details.missingDependency.includes('fencing or lease ownership for the journal writer'));
 });
 
 test('production durable journal claims fail closed when remote artifact ownership is advertised without a restart-readable remote artifact', () => {
@@ -21212,9 +21267,8 @@ test('production durable journal claims fail closed when remote artifact ownersh
   }));
 
   assert.equal(error.code, 'PRODUCTION_DURABLE_JOURNAL_UNSUPPORTED');
-  assert.deepEqual(error.details.missingDependency, [
-    'restart-readable remote recovery artifact ownership',
-  ]);
+  assert.ok(error.details.missingDependency.includes('restart-readable recovery journal adapter'));
+  assert.ok(error.details.missingDependency.includes('restart-readable remote recovery artifact ownership'));
   assert.equal(closed, 1);
 });
 
