@@ -474,8 +474,8 @@
       <div>
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
-        <p class="lead">Current proof now includes seven passing same-plan graph edges: local postmeta to a same-plan post, local parent-post links, local thumbnail metadata to a same-plan attachment, taxonomy term relationships to same-plan terms and posts, term-taxonomy term links, term-taxonomy parent links, and local termmeta to a same-plan term. The current reliable head is `581f142f` (`Surface auth session lifecycle in release verify`), which surfaces auth/session lifecycle fields in the release verifier while the broader production gate stays at `0/4`.</p>
-        <time class="update-stamp" datetime="2026-05-26T12:00:42+02:00">Last updated: May 26, 2026, 12:00 CEST</time>
+        <p class="lead">Current proof now includes seven passing same-plan graph edges: local postmeta to a same-plan post, local parent-post links, local thumbnail metadata to a same-plan attachment, taxonomy term relationships to same-plan terms and posts, term-taxonomy term links, term-taxonomy parent links, and local termmeta to a same-plan term. The current reliable head is `c7a6432d` (`Expose release gate dependencies`), which makes the release-verifier gate dependencies explicit while the broader production gate stays at `0/4`.</p>
+        <time class="update-stamp" datetime="2026-05-26T12:06:11+02:00">Last updated: May 26, 2026, 12:06 CEST</time>
         <div class="meta" aria-label="Project status">
           <span class="pill">82 Node tests passing</span>
           <span class="pill">Packaged plugin route passing</span>
@@ -556,7 +556,7 @@
           <ul class="compact-list">
             <li><strong>Going well</strong><span>The same-plan graph identity coverage now spans postmeta, parent-post, thumbnail, taxonomy relationship, term-taxonomy term and parent, and termmeta cases.</span></li>
             <li><strong>Not going well</strong><span>The broader production boundary still lacks auth/session, durable journal consumption, replay, or preserved-remote retry proof.</span></li>
-            <li><strong>Progress change</strong><span>The visible page now names `581f142f` as the current reliable head and notes the surfaced auth/session lifecycle proof fields while keeping the gate posture at `0/4`.</span></li>
+            <li><strong>Progress change</strong><span>The visible page now names `c7a6432d` as the current reliable head and notes the surfaced release-verifier gate dependencies while keeping the gate posture at `0/4`.</span></li>
             <li><strong>Next nudge</strong><span>Keep the page explicit about the current reliable head and wait for critic and auditor acceptance before moving the gates.</span></li>
           </ul>
           <p class="note"><a href="docs/supervisor-feedback.md">Open full feedback log</a></p>
@@ -598,11 +598,11 @@
           <figure class="evidence-map">
             <figcaption>
               <h2 id="evidence-map-title">Evidence Path</h2>
-              <p>Snapshots feed guarded plans; Playground and CLI labs prove fixture apply/refusal paths. Production mutation/auth and graph safety remain pending, and the public page now tracks `581f142f` as the current reliable head for the surfaced auth/session lifecycle release-verify evidence while the gate stays closed at `0/4`.</p>
+              <p>Snapshots feed guarded plans; Playground and CLI labs prove fixture apply/refusal paths. Production mutation/auth and graph safety remain pending, and the public page now tracks `c7a6432d` as the current reliable head for the surfaced release-verifier dependency evidence while the gate stays closed at `0/4`.</p>
             </figcaption>
             <svg role="img" viewBox="0 0 720 190" aria-labelledby="map-title map-desc">
               <title id="map-title">Current evidence path</title>
-              <desc id="map-desc">Base, local, and remote snapshots feed a guarded plan. Lab evidence covers no-server Playground apply and protocol behavior. Production Reprint mutation, durable storage, and WordPress graph identity are still pending, and the current reliable head is 581f142f at a closed 0/4 gate.</desc>
+              <desc id="map-desc">Base, local, and remote snapshots feed a guarded plan. Lab evidence covers no-server Playground apply and protocol behavior. Production Reprint mutation, durable storage, and WordPress graph identity are still pending, and the current reliable head is c7a6432d at a closed 0/4 gate.</desc>
               <rect x="24" y="34" width="126" height="58" rx="8" fill="#ffffff" stroke="#d8dee4"></rect>
               <text x="87" y="59" text-anchor="middle" class="map-label">Pull base</text>
               <text x="87" y="78" text-anchor="middle" class="map-small">snapshot</text>

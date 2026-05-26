@@ -6,16 +6,16 @@ linked implementation artifacts.
 
 ## 2026-05-26 - Current Supervisor Snapshot
 
-- Status: the current reliable head is `581f142f` (`Surface auth session
-  lifecycle in release verify`), and the same-plan proof set remains intact
-  for the existing postmeta, parent-post, thumbnail, taxonomy,
-  term-taxonomy-parent, termmeta, and term-taxonomy term cases.
-- New proof: release-verifier auth/session lifecycle fields are now visible,
-  but the checked path still reports the production durable-journal and
-  release-path lifecycle gaps and no gate-moving production proof landed this
-  pass.
-- Trend: the lane remains at `0/4` because the current reliable head is
-  release-verifier auth/session visibility, not a production release proof.
+- Status: the current reliable head is `c7a6432d` (`Expose release gate
+  dependencies`), and the same-plan proof set remains intact for the existing
+  postmeta, parent-post, thumbnail, taxonomy, term-taxonomy-parent, termmeta,
+  and term-taxonomy term cases.
+- New proof: the release verifier now makes the gate dependencies explicit, but
+  the checked path still reports the production auth/session lifecycle and
+  durable-journal semantic gaps, so no gate-moving production proof landed
+  this pass.
+- Trend: the lane remains at `0/4` because the current reliable head clarifies
+  release-verifier dependencies, not production release readiness.
 - Blocker: the live release boundary still needs production auth/session,
   durable journal consumption, replay, or preserved-remote retry evidence.
 - Next nudge: keep the public page current with the reliable head while the
