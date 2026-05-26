@@ -41,11 +41,11 @@ The project is **not releasable as a production WordPress push path**.
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `9abe8414`
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `d7813094`
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `8a7f4edd`
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `7db84fc3`
-- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `8ef285fe`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `c86ece15`
+- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `33be6aa4`
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `0ac76c38`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `2af1ddda`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `b83ea0fb`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `ea8694c3`
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` -> `0ca7b35d`
 - `origin/lane/cycle-20260525-mainwindows-2349/same-plan-wordpress-graph-create` -> `af493c80`
 - `origin/lane/cycle-20260525-mainwindows-2357/no-data-loss-invariants-graph-proof` -> `98c0ce26`
@@ -56,7 +56,7 @@ The project is **not releasable as a production WordPress push path**.
 - `origin/lane/fast-paths` -> `8c5c2ccb`
 - `origin/lane/feedback-supervisor` -> `2a67a6b8`
 - `origin/lane/independent-auditor` -> `6351130f`
-- `origin/lane/no-data-loss-invariants` -> `0247563b`
+- `origin/lane/no-data-loss-invariants` -> `57a487a8`
 - `origin/lane/no-data-loss-recovery` -> `2af1ddda`
 - `origin/lane/progress-publisher` -> `7695e1f9`
 - `origin/lane/reliable-executor` -> `f1783e10`
@@ -77,10 +77,10 @@ but it did not change the release conclusion:
   journal ownership. It still does not prove production auth/session
   lifecycle or a live-source mutation boundary.
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now
-  records `7db84fc3`, refreshing supervisor freshness only. It still does not
+  records `c86ece15`, refreshing supervisor freshness only. It still does not
   change the release verdict.
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now records
-  `b83ea0fb`, refreshing public progress freshness only. It still does not add
+  `ea8694c3`, refreshing public progress freshness only. It still does not add
   production-backed gate movement.
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` now records
   `9abe8414`, tightening parallelism limit proof only. It still does not prove
@@ -113,6 +113,9 @@ but it did not change the release conclusion:
   verify helper bounds and keeping the live proof wrapper fail-closed. It still
   does not prove production auth/session lifecycle or a live-source mutation
   boundary.
+- `origin/lane/no-data-loss-invariants` now records `57a487a8`, adding a
+  special-file delete blocker proof. It still does not prove the live release
+  boundary or any production-backed source mutation.
 - `origin/lane/no-data-loss-invariants` now records `768b0fc8`, adding
   synchronized unsupported custom-table blocking. It still does not prove the
   live release boundary or any production-backed source mutation.
