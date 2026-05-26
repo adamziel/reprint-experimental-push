@@ -364,6 +364,12 @@ export function productionThroughputDetails(report) {
     && Number.isFinite(receiptCursorMemoryCeilingBytes)
     && Number.isFinite(receiptCursorWindowBytes)
     && receiptCursorBackpressureBytes <= receiptCursorMemoryCeilingBytes - receiptCursorWindowBytes;
+  const queueHeadroomWithinResourceCeiling =
+    Number.isFinite(receiptCursorQueueBudgetBytes)
+    && Number.isFinite(receiptCursorQueueHeadroomBytes)
+    && Number.isFinite(report.resourceLimits?.maxBufferedUploadBytes)
+    && receiptCursorQueueBudgetBytes === report.resourceLimits.maxBufferedUploadBytes
+    && receiptCursorQueueHeadroomBytes === receiptCursorQueueBudgetBytes - report.shape.chunkSizeBytes;
   const receiptCursorBackpressureWithinQueueBudget =
     Number.isFinite(receiptCursorBackpressureBytes)
     && Number.isFinite(receiptCursorQueueBudgetBytes)
@@ -420,6 +426,7 @@ export function productionThroughputDetails(report) {
     queueHeadroomBytes: receiptCursorQueueHeadroomBytes,
     queueBudgetMatchesResourceCeiling,
     queueHeadroomMatchesResourceHeadroom,
+    queueHeadroomWithinResourceCeiling,
     queuePausedBeforeOverflow: report.evidence.backpressure?.queuePausedBeforeOverflow ?? false,
     receiptCursorWithinQueueBudget: report.evidence.backpressure?.receiptCursorWithinQueueBudget ?? false,
     receiptCursor: report.evidence.chunkReceipts.resumeCursor,
@@ -439,6 +446,7 @@ export function productionThroughputDetails(report) {
     backpressureConsistency: {
       queueBudgetMatchesResourceCeiling,
       queueHeadroomMatchesResourceHeadroom,
+      queueHeadroomWithinResourceCeiling,
       receiptCursorMemoryCeilingBytes,
       receiptCursorQueueBudgetBytes,
       receiptCursorQueueHeadroomBytes,
@@ -474,6 +482,12 @@ function hasCompleteBackpressureEvidence(report) {
     && Number.isFinite(receiptCursorMemoryCeilingBytes)
     && Number.isFinite(receiptCursorWindowBytes)
     && receiptCursorBackpressureBytes <= receiptCursorMemoryCeilingBytes - receiptCursorWindowBytes;
+  const queueHeadroomWithinResourceCeiling =
+    Number.isFinite(receiptCursorQueueBudgetBytes)
+    && Number.isFinite(receiptCursorQueueHeadroomBytes)
+    && Number.isFinite(receiptCursorMemoryCeilingBytes)
+    && receiptCursorQueueBudgetBytes === receiptCursorMemoryCeilingBytes
+    && receiptCursorQueueHeadroomBytes === receiptCursorQueueBudgetBytes - report.shape.chunkSizeBytes;
   return (
     Number.isFinite(receiptCursorBackpressureBytes)
     && Number.isFinite(receiptCursorQueueBudgetBytes)
@@ -481,6 +495,7 @@ function hasCompleteBackpressureEvidence(report) {
     && Number.isFinite(receiptCursorQueueHeadroomBytes)
     && receiptCursorQueueHeadroomBytes >= 0
     && Number.isFinite(receiptCursorMemoryCeilingBytes)
+    && queueHeadroomWithinResourceCeiling
     && report.evidence.backpressure?.queuePausedBeforeOverflow === true
     && report.evidence.backpressure?.receiptCursorWithinQueueBudget === true
     && receiptCursorBackpressureBytes === receiptCursorWindowBytes
