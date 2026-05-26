@@ -130,6 +130,14 @@ function writerLeaseContractsAgree(writerLease, nestedWriterLease) {
   return true;
 }
 
+function assertProductionRecoveryClaimId(claimId, operationName) {
+  if (typeof claimId !== 'string' || claimId.length === 0) {
+    throw new Error(
+      `${operationName} requires a non-empty claimId for claim-fenced production recovery journals.`,
+    );
+  }
+}
+
 export function openProductionRecoveryJournal(options) {
   assertAllowedOptionKeys(
     options,
@@ -145,6 +153,7 @@ export function openProductionRecoveryJournal(options) {
     truncate = true,
     claimId = null,
   } = options;
+  assertProductionRecoveryClaimId(claimId, 'openProductionRecoveryJournal()');
   const journal = openPlanRecoveryJournal({
     filePath,
     plan,
@@ -154,18 +163,16 @@ export function openProductionRecoveryJournal(options) {
     truncate,
   });
 
-  if (claimId) {
-    appendRecoveryClaimOpened(journal, {
-      plan,
-      current,
-      claimId,
-      artifactRefs,
-      reason: 'Production recovery journal claim opened.',
-    });
-    journal.claimId = claimId;
-    journal.claimHash = recoveryClaimHash(claimId);
-    journal.claimFenced = true;
-  }
+  appendRecoveryClaimOpened(journal, {
+    plan,
+    current,
+    claimId,
+    artifactRefs,
+    reason: 'Production recovery journal claim opened.',
+  });
+  journal.claimId = claimId;
+  journal.claimHash = recoveryClaimHash(claimId);
+  journal.claimFenced = true;
 
   journal.productionAdapter = 'openProductionRecoveryJournal';
   journal.ownsJournal = true;
@@ -234,6 +241,7 @@ export function consumeProductionRecoveryJournal(options) {
     artifactRefs = {},
     claimId = null,
   } = options;
+  assertProductionRecoveryClaimId(claimId, 'consumeProductionRecoveryJournal()');
   const journal = openProductionRecoveryJournal({
     filePath,
     plan,

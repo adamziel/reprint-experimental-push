@@ -440,6 +440,26 @@ test('production recovery journal wrapper rejects hidden open options', () => {
   assert.equal(fs.existsSync(filePath), false);
 });
 
+test('production recovery journal wrapper requires a non-empty claimId', () => {
+  const filePath = tempJournalPath();
+  const remote = baseSite();
+  const plan = planFor(baseSite(), localSite(), remote);
+
+  assert.throws(
+    () => openProductionRecoveryJournal({
+      filePath,
+      plan,
+      current: remote,
+      artifactRefs: {
+        releaseProof: 'artifact://release-proof-1',
+      },
+    }),
+    /openProductionRecoveryJournal\(\) requires a non-empty claimId for claim-fenced production recovery journals\./,
+  );
+
+  assert.equal(fs.existsSync(filePath), false);
+});
+
 test('production recovery journal consumer rejects hidden open options', () => {
   const filePath = tempJournalPath();
   const remote = baseSite();
@@ -470,6 +490,26 @@ test('production recovery journal consumer rejects hidden open options', () => {
     }),
     /consumeProductionRecoveryJournal\(\) received unsupported option keys: truncate/,
   );
+});
+
+test('production recovery journal consumer requires a non-empty claimId', () => {
+  const filePath = tempJournalPath();
+  const remote = baseSite();
+  const plan = planFor(baseSite(), localSite(), remote);
+
+  assert.throws(
+    () => consumeProductionRecoveryJournal({
+      filePath,
+      plan,
+      current: remote,
+      artifactRefs: {
+        releaseProof: 'artifact://release-proof-1',
+      },
+    }),
+    /consumeProductionRecoveryJournal\(\) requires a non-empty claimId for claim-fenced production recovery journals\./,
+  );
+
+  assert.equal(fs.existsSync(filePath), false);
 });
 
 test('checked durable journal boundary stays closed until stale-claim rejection is proven on the lease fence', () => {
