@@ -565,6 +565,14 @@ function resolveInvalidAuthSessionSummaryObservationField(summary) {
         observed: `invalid-${invalidIdentityField}`,
       };
     }
+
+    if (!summaryObservationCarriesExpectedFlag(field, observation)) {
+      return {
+        ok: false,
+        required: 'boolean lifecycle flags',
+        observed: `invalid-${field}`,
+      };
+    }
   }
 
   return null;
@@ -593,4 +601,21 @@ function resolveMismatchedSummaryObservationSession(summary, issuedSessionId) {
   }
 
   return null;
+}
+
+function summaryObservationCarriesExpectedFlag(field, observation) {
+  switch (field) {
+    case 'expired':
+      return observation.expired === true;
+    case 'revoked':
+      return observation.revoked === true;
+    case 'cleanedUp':
+      return observation.cleanedUp === true || observation.cleanup === true;
+    case 'rotated':
+      return observation.rotated === true;
+    case 'preserved':
+      return observation.preserved === true;
+    default:
+      return true;
+  }
 }
