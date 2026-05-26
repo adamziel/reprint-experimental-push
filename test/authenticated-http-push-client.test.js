@@ -773,6 +773,8 @@ test('production-shaped authenticated push fails closed when production auth ses
         expired: true,
         revoked: false,
         cleanedUp: false,
+        rotated: false,
+        preserved: false,
       },
       read: null,
       expired: {
@@ -1011,6 +1013,7 @@ test('production-shaped authenticated push preserves malformed preflight auth-se
     });
     assert.equal(summary.authSessionLifecycleTrace.length, 1);
     assert.equal(summary.authSessionLifecycleTrace[0].invalidIdentityField, 'warning');
+    assert.equal(summary.authSessionLifecycle.minted.invalidIdentityField, 'warning');
     assert.equal(summary.authSessionLifecycle.history.length, 1);
     assert.equal(summary.authSessionLifecycle.history[0].invalidIdentityField, 'warning');
     assert.equal(summary.authSessionLifecycleSummary.issued.invalidIdentityField, 'warning');

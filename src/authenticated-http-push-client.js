@@ -1069,9 +1069,19 @@ function recordAuthSessionLifecycle(summary, step, session) {
       type: observation?.type || null,
       status: observation?.status || null,
       expiresAt: observation?.expiresAt || null,
+      ...(typeof observation?.invalidLifecycleFlag === 'string' && observation.invalidLifecycleFlag
+        ? { invalidLifecycleFlag: observation.invalidLifecycleFlag }
+        : {}),
+      ...(typeof observation?.invalidIdentityField === 'string' && observation.invalidIdentityField
+        ? { invalidIdentityField: observation.invalidIdentityField }
+        : {}),
       expired: Boolean(observation?.expired),
       revoked: Boolean(observation?.revoked),
       cleanedUp: Boolean(observation?.cleanedUp),
+      rotated: lifecycle.rotated,
+      preserved: lifecycle.preserved,
+      ...(observation?.playgroundFallback === true ? { playgroundFallback: true } : {}),
+      ...(typeof observation?.warning === 'string' ? { warning: observation.warning } : {}),
     };
     summary.authSessionLifecycle.read = null;
     summary.authSessionLifecycle.expired = lifecycleSummary.expired || null;
