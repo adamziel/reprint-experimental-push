@@ -1,21 +1,24 @@
-Confirmed the audit already names `e7be9812` as the current reliable head, so no public/audit correction was needed in this pass.
+Classified `c007bb25` as support-only release-diagnostic work and kept the audit verdict at `0/4`.
 
 Changed files:
+- `audits/objective-audit.md`
 - `.lane-output/final.md`
 
 Commands:
+- `git log --oneline -n 5 origin/lane/reliable-executor`
+- `git show --stat --oneline --summary c007bb25 --`
+- `sed -n '1,260p' audits/objective-audit.md`
+- `git status --short --branch`
 - `date '+%Y-%m-%d %H:%M:%S %Z (%z)'`
-- `sed -n '1,220p' supervision/lanes/independent-auditor.md`
-- `sed -n '1,220p' .lane-output/final-loop-20260526-105344.md`
-- `rg -n "0f36d838|e7be9812|27ad6f6f|e725e749|0c4fd10f|351b6bbd" -S .`
-- `sed -n '1,220p' audits/objective-audit.md`
+- `rg -n "Audit time|origin/lane/reliable-executor|72b3ddce|Release Blockers|Production-backed auth/session lifecycle|reliable-executor advanced the readiness harness" audits/objective-audit.md`
+- `git diff -- audits/objective-audit.md`
 
 Push result:
-- Not attempted; no audit correction was needed this pass.
+- Not yet pushed
 
 Worktree status:
-- Tracked change only in `.lane-output/final.md`
-- Audit file remains correct and already reflects `e7be9812`
+- Dirty tracked changes in `audits/objective-audit.md` and `.lane-output/final.md`
+- Branch remains ahead/behind `origin/main`
 
 Next supervisor nudge:
-- Re-poll only when fresh production-backed proof changes the release boundary; until then the audit stays at `0/4` and the current reliable head remains `e7be9812`.
+- Keep the audit closed unless a later reliable head proves production-backed release-path auth/session lifecycle, durable journal ownership, or another release-gate movement.
