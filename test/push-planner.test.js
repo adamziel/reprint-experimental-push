@@ -16218,6 +16218,52 @@ test('blocks local post-parent references to a same-plan created wp navigation w
   assert.equal(Object.hasOwn(remote.plugins, 'forms'), false);
 });
 
+test('blocks local comments and users graph resources while preserving remote-only plugin changes', () => {
+  const resourceKey = 'row:["wp_comments","comment_ID:12"]';
+  const base = baseSite();
+  base.db.wp_comments = {
+    'comment_ID:12': {
+      comment_ID: 12,
+      comment_post_ID: 7,
+      comment_content: 'Base changed comment content',
+      comment_approved: '1',
+    },
+  };
+
+  const local = baseSite();
+  local.db.wp_comments = {
+    'comment_ID:12': {
+      comment_ID: 12,
+      comment_post_ID: 7,
+      comment_content: 'Local changed comment content',
+      comment_approved: '1',
+    },
+  };
+
+  const remote = baseSite();
+  remote.db.wp_comments = JSON.parse(JSON.stringify(base.db.wp_comments));
+  remote.plugins.forms.description = 'remote-only plugin change';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin change */';
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers[0];
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(plan.conflicts.length, 0);
+  assert.equal(blocker.class, 'unsupported-comments-users-resource');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.reason, 'Comments graph resources are not yet supported by the planner.');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('Local changed comment content'), false);
+  assert.equal(planJson.includes('Base changed comment content'), false);
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin change');
+  assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin change */');
+});
+
 test('blocks local menu item parent references to a same-plan created nav menu item while preserving remote-only plugin drift', () => {
   const resourceKey = 'row:["wp_posts","ID:49"]';
   const targetResourceKey = 'row:["wp_posts","ID:13"]';
