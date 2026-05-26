@@ -3642,8 +3642,16 @@ function unsupportedRevisionResourceSupport({ resource, baseValue, localValue, r
       })
       .filter((reference) =>
         reference.relationshipType === 'post-parent'
-        || reference.relationshipType === 'postmeta-post')
+        || reference.relationshipType === 'postmeta-post'
+        || reference.relationshipType === 'term-relationship-object')
     : [];
+  const samePlanRevisionReason = references.some((reference) => reference.relationshipType === 'post-parent')
+    ? `WordPress graph mutation ${resource.key} is created in the same plan as a post parent revision target that depends on it, and identity rewriting is not yet supported.`
+    : references.some((reference) => reference.relationshipType === 'postmeta-post')
+      ? `WordPress graph mutation ${resource.key} is created in the same plan as a postmeta revision target that depends on it, and identity rewriting is not yet supported.`
+      : references.some((reference) => reference.relationshipType === 'term-relationship-object')
+        ? `WordPress graph mutation ${resource.key} is created in the same plan as a term relationship revision target that depends on it, and identity rewriting is not yet supported.`
+        : `WordPress graph mutation ${resource.key} is created in the same plan as a revision identity that depends on it, and identity rewriting is not yet supported.`;
   return {
     supported: false,
     className: 'unsupported-revision-resource',
@@ -3656,9 +3664,9 @@ function unsupportedRevisionResourceSupport({ resource, baseValue, localValue, r
           localValue,
           remoteValue,
           allowSteadyUnsupported: true,
-        }),
+    }),
     reason: samePlanCreatedRevision
-      ? `WordPress graph mutation ${resource.key} is created in the same plan as a revision identity that depends on it, and identity rewriting is not yet supported.`
+      ? samePlanRevisionReason
       : localValue === ABSENT
         ? 'Revision graph resource deletes are not yet supported by the planner.'
         : 'Revision graph resources are not yet supported by the planner.',

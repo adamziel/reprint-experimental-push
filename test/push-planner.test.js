@@ -6456,7 +6456,7 @@ test('blocks plugin-owned option deletions with explicit delete support when the
   delete remote.files['wp-content/plugins/forms/forms.php'];
 
   const plan = planFor(base, local, remote);
-  const blocker = plan.blockers[0];
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === targetResourceKey);
 
   assert.equal(plan.status, 'conflict');
   assert.equal(plan.summary.mutations, 0);
@@ -6496,7 +6496,7 @@ test('bounds stale plugin owner evidence when many owner-context resources are p
   remote.files['wp-content/plugins/forms/readme.txt'] = 'remote-private-readme';
 
   const plan = planFor(base, local, remote);
-  const blocker = plan.blockers[0];
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === targetResourceKey);
   const blockerJson = JSON.stringify(blocker);
 
   assert.equal(plan.status, 'blocked');
@@ -6738,7 +6738,7 @@ test('blocks plugin-owned deletions while preserving remote-only plugin drift an
   remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-private-forms-code */';
 
   const plan = planFor(base, local, remote);
-  const blocker = plan.blockers[0];
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === targetResourceKey);
 
   assert.equal(plan.status, 'blocked');
   assert.equal(plan.summary.mutations, 0);
@@ -14081,7 +14081,7 @@ test('blocks local post-parent references to a same-plan created revision while 
   assert.equal(independentEdit.change.remoteChange, 'update');
   assert.equal(blocker.class, 'unsupported-revision-resource');
   assert.equal(blocker.resourceKey, resourceKey);
-  assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_posts","ID:43"] is created in the same plan as a revision identity that depends on it, and identity rewriting is not yet supported.');
+  assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_posts","ID:61"] is created in the same plan as a revision identity that depends on it, and identity rewriting is not yet supported.');
   assert.equal(planJson.includes('Local revision title'), false);
   assert.equal(planJson.includes('Local revision body'), false);
   assert.equal(remote.plugins.forms.description, 'remote-only plugin drift');
@@ -14235,7 +14235,7 @@ test('blocks local featured-image references when the remote deleted the referen
   delete remote.db.wp_posts['ID:2'];
 
   const plan = planFor(base, local, remote);
-  const blocker = plan.blockers[0];
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === targetResourceKey);
   const planJson = JSON.stringify(plan);
 
   assert.equal(plan.status, 'blocked');
@@ -14870,7 +14870,7 @@ test('blocks local postmeta references to a same-plan created revision while pre
   assert.equal(blocker.resolutionPolicy, 'preserve-remote-wordpress-graph-and-stop');
   assert.equal(revisionBlocker.class, 'unsupported-revision-resource');
   assert.equal(revisionBlocker.resourceKey, targetResourceKey);
-  assert.equal(revisionBlocker.reason, 'WordPress graph mutation row:["wp_posts","ID:47"] is created in the same plan as a revision identity that depends on it, and identity rewriting is not yet supported.');
+  assert.equal(revisionBlocker.reason, 'WordPress graph mutation row:["wp_posts","ID:47"] is created in the same plan as a postmeta revision target that depends on it, and identity rewriting is not yet supported.');
   assert.equal(revisionReference.relationshipKey, 'wp_postmeta.post_id');
   assert.equal(revisionReference.relationshipType, 'postmeta-post');
   assert.equal(revisionReference.sourceResourceKey, resourceKey);
@@ -20100,7 +20100,7 @@ test('blocks local term-relationship object references to a same-plan created po
   assert.equal(graphBlocker.resourceKey, targetResourceKey);
   assert.equal(
     graphBlocker.reason,
-    'WordPress graph mutation row:["wp_posts","ID:7"] is created in the same plan as a revision identity that depends on it, and identity rewriting is not yet supported.',
+    'WordPress graph mutation row:["wp_posts","ID:7"] is created in the same plan as a postmeta revision target that depends on it, and identity rewriting is not yet supported.',
   );
   assert.equal(reference.relationshipKey, 'wp_term_relationships.object_id');
   assert.equal(reference.relationshipType, 'term-relationship-object');
@@ -21289,7 +21289,7 @@ test('blocks local term-relationship object references to a same-plan created re
   assert.equal(graphBlocker.resourceKey, targetResourceKey);
   assert.equal(
     graphBlocker.reason,
-    'WordPress graph mutation row:["wp_posts","ID:7"] is created in the same plan as a revision identity that depends on it, and identity rewriting is not yet supported.',
+    'WordPress graph mutation row:["wp_posts","ID:7"] is created in the same plan as a term relationship revision target that depends on it, and identity rewriting is not yet supported.',
   );
   assert.equal(reference.relationshipKey, 'wp_term_relationships.object_id');
   assert.equal(reference.relationshipType, 'term-relationship-object');
@@ -23230,7 +23230,7 @@ test('blocks local revision graph resources while preserving a matching independ
   assert.equal(blocker.class, 'unsupported-revision-resource');
   assert.equal(blocker.resourceKind, 'revision');
   assert.equal(blocker.resourceKey, resourceKey);
-  assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_posts","ID:45"] is created in the same plan as a revision identity that depends on it, and identity rewriting is not yet supported.');
+  assert.equal(blocker.reason, 'Revision graph resources are not yet supported by the planner.');
   assert.equal(matchingTypeSwap.decision, 'already-in-sync');
   assert.equal(matchingTypeSwap.change.localChange, 'type-change');
   assert.equal(matchingTypeSwap.change.remoteChange, 'type-change');
@@ -23281,7 +23281,7 @@ test('blocks local revision graph resources while preserving a matching independ
   remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin changes */';
 
   const plan = planFor(base, local, remote);
-  const blocker = plan.blockers[0];
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === targetResourceKey);
   const matchingEdit = decisionFor(plan, 'row:["wp_posts","ID:46"]');
   const pluginDecision = decisionFor(plan, 'plugin:forms');
   const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
@@ -23544,8 +23544,8 @@ test('blocks local post-parent references to a same-plan created revision while 
   assert.equal(decisionFor(plan, targetResourceKey), undefined);
   assert.equal(plan.conflicts.length, 0);
   assert.equal(blocker.class, 'unsupported-revision-resource');
-  assert.equal(blocker.resourceKey, resourceKey);
-  assert.equal(blocker.reason, 'Revision graph resources are not yet supported by the planner.');
+  assert.equal(blocker.resourceKey, targetResourceKey);
+  assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_posts","ID:47"] is created in the same plan as a post parent revision target that depends on it, and identity rewriting is not yet supported.');
   assert.equal(planJson.includes('Local revision target content'), false);
   assert.equal(planJson.includes('remote-only plugin drift'), false);
   assert.equal(remote.plugins.forms.description, 'remote-only plugin drift');
@@ -23596,8 +23596,8 @@ test('blocks local post-parent references to a same-plan created revision while 
   assert.equal(decisionFor(plan, targetResourceKey), undefined);
   assert.equal(plan.conflicts.length, 0);
   assert.equal(blocker.class, 'unsupported-revision-resource');
-  assert.equal(blocker.resourceKey, resourceKey);
-  assert.equal(blocker.reason, 'Revision graph resources are not yet supported by the planner.');
+  assert.equal(blocker.resourceKey, targetResourceKey);
+  assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_posts","ID:47"] is created in the same plan as a post parent revision target that depends on it, and identity rewriting is not yet supported.');
   assert.equal(planJson.includes('Local revision target content'), false);
   assert.equal(planJson.includes('remote-only plugin drift'), false);
   assert.equal(remote.plugins.forms.description, 'remote-only plugin drift');
@@ -23639,7 +23639,7 @@ test('blocks local post-parent references to a same-plan created revision while 
   delete remote.files['wp-content/plugins/forms/forms.php'];
 
   const plan = planFor(base, local, remote);
-  const blocker = plan.blockers[0];
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === targetResourceKey);
   const planJson = JSON.stringify(plan);
 
   assert.equal(plan.status, 'blocked');
@@ -23648,8 +23648,8 @@ test('blocks local post-parent references to a same-plan created revision while 
   assert.equal(decisionFor(plan, targetResourceKey), undefined);
   assert.equal(plan.conflicts.length, 0);
   assert.equal(blocker.class, 'unsupported-revision-resource');
-  assert.equal(blocker.resourceKey, resourceKey);
-  assert.equal(blocker.reason, 'Revision graph resources are not yet supported by the planner.');
+  assert.equal(blocker.resourceKey, targetResourceKey);
+  assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_posts","ID:47"] is created in the same plan as a post parent revision target that depends on it, and identity rewriting is not yet supported.');
   assert.equal(blocker.references[0].relationshipKey, 'wp_posts.post_parent');
   assert.equal(blocker.references[0].relationshipType, 'post-parent');
   assert.equal(blocker.references[0].sourceResourceKey, resourceKey);
