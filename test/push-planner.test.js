@@ -6568,6 +6568,47 @@ test('blocks _menu_item_menu_item_parent metadata from referencing a same-plan w
   assert.throws(() => applyPlan(baseSite(), plan), /Refusing to apply/);
 });
 
+test('blocks _menu_item_menu_item_parent metadata from referencing a same-plan nav_menu_item post', () => {
+  const resourceKey = 'row:["wp_postmeta","meta_id:473"]';
+  const navigationResourceKey = 'row:["wp_posts","ID:2"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_title: 'Local menu parent nav menu item target',
+    post_content: 'local-private-menu-parent-nav-menu-item-body',
+    post_status: 'publish',
+    post_type: 'nav_menu_item',
+  };
+  local.db.wp_postmeta = {
+    'meta_id:473': {
+      meta_id: 473,
+      post_id: 1,
+      meta_key: '_menu_item_menu_item_parent',
+      meta_value: 2,
+    },
+  };
+
+  const plan = planFor(base, local, baseSite());
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.ok(plan.summary.mutations > 0);
+  assert.equal(mutationFor(plan, resourceKey).changeKind, 'create');
+  assert.equal(mutationFor(plan, navigationResourceKey), undefined);
+  assert.ok(blocker);
+  assert.equal(blocker.class, 'missing-wordpress-graph-dependency');
+  assert.equal(blocker.resourceKey, resourceKey);
+  const reference = blocker.references[0];
+  assert.equal(reference.relationshipType, 'menu-item-parent-post');
+  assert.equal(reference.targetResourceKey, navigationResourceKey);
+  assert.equal(
+    JSON.stringify(blocker).includes('local-private-menu-parent-nav-menu-item-body'),
+    false,
+  );
+  assert.throws(() => applyPlan(baseSite(), plan), /Refusing to apply/);
+});
+
 test('blocks _menu_item_object_id metadata from referencing a same-plan attachment', () => {
   const resourceKey = 'row:["wp_postmeta","meta_id:471"]';
   const attachmentResourceKey = 'row:["wp_posts","ID:2"]';
