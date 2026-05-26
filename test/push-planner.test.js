@@ -8475,6 +8475,65 @@ test('blocks a local thumbnail reference owned by an existing revision even when
   assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
 });
 
+test('blocks a local thumbnail reference owned by an existing wp_navigation post even when it targets a same-plan attachment', () => {
+  const sourceNavigationResourceKey = 'row:["wp_posts","ID:1"]';
+  const targetAttachmentResourceKey = 'row:["wp_posts","ID:2"]';
+  const postmetaResourceKey = 'row:["wp_postmeta","meta_id:151"]';
+  const base = baseSite();
+  const local = baseSite();
+  const remote = baseSite();
+
+  base.db.wp_posts['ID:1'] = {
+    ID: 1,
+    post_title: 'Existing source navigation',
+    post_content: 'base-private-source-navigation-body',
+    post_status: 'publish',
+    post_type: 'wp_navigation',
+  };
+  local.db.wp_posts['ID:1'] = {
+    ...base.db.wp_posts['ID:1'],
+  };
+  remote.db.wp_posts['ID:1'] = {
+    ...base.db.wp_posts['ID:1'],
+  };
+  local.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_title: 'Local target attachment',
+    post_content: 'local-private-target-attachment-body',
+    post_status: 'inherit',
+    post_type: 'attachment',
+  };
+  local.db.wp_postmeta = {
+    'meta_id:151': {
+      meta_id: 151,
+      post_id: 1,
+      meta_key: '_thumbnail_id',
+      meta_value: 2,
+    },
+  };
+
+  const plan = planFor(base, local, remote);
+  const sourceNavigationMutation = mutationFor(plan, sourceNavigationResourceKey);
+  const targetAttachmentMutation = mutationFor(plan, targetAttachmentResourceKey);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === postmetaResourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(sourceNavigationMutation, undefined);
+  assert.equal(targetAttachmentMutation.changeKind, 'create');
+  assert.equal(mutationFor(plan, postmetaResourceKey), undefined);
+  assert.equal(blocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(blocker.surface, 'wp_navigation');
+  assert.equal(
+    JSON.stringify(blocker).includes('base-private-source-navigation-body'),
+    false,
+  );
+  assert.equal(
+    JSON.stringify(blocker).includes('local-private-target-attachment-body'),
+    false,
+  );
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
+});
+
 test('blocks a local thumbnail reference owned by a revision even when it targets a same-plan attachment', () => {
   const sourceRevisionResourceKey = 'row:["wp_posts","ID:1"]';
   const targetAttachmentResourceKey = 'row:["wp_posts","ID:2"]';
