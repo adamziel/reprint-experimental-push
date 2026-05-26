@@ -7,6 +7,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   loadAuthSessionSource,
+  resolveAuthSessionRequestCredentials,
   resolveAuthSessionSourceCredentials,
 } from '../scripts/playground/auth-session-source.js';
 import {
@@ -949,6 +950,54 @@ test('production-shaped release verify ignores malformed direct auth/session sou
       liveSourceUrl: 'http://127.0.0.1:9999',
       username: 'stale-lab-username',
       applicationPassword: 'stale-lab-password',
+    },
+  );
+});
+
+test('production-shaped release verify prefers explicit direct credentials over fallback auth defaults before source override', () => {
+  assert.deepEqual(
+    resolveAuthSessionRequestCredentials(
+      {
+        liveSourceUrl: 'http://127.0.0.1:9090',
+        username: 'trusted-runtime-username',
+        applicationPassword: 'trusted-runtime-password',
+        fallbackUsername: 'reprint_push_admin',
+        fallbackApplicationPassword: 'reprint-push-admin-app-password',
+      },
+      null,
+    ),
+    {
+      liveSourceUrl: 'http://127.0.0.1:9090',
+      username: 'trusted-runtime-username',
+      applicationPassword: 'trusted-runtime-password',
+    },
+  );
+});
+
+test('production-shaped release verify lets a required production auth/session source override explicit direct credentials', () => {
+  const source = {
+    ok: true,
+    sourceUrl: 'http://127.0.0.1:8080',
+    username: 'reprint_push_admin',
+    applicationPassword: 'reprint-push-admin-app-password',
+  };
+
+  assert.deepEqual(
+    resolveAuthSessionRequestCredentials(
+      {
+        liveSourceUrl: 'http://127.0.0.1:9090',
+        username: 'trusted-runtime-username',
+        applicationPassword: 'trusted-runtime-password',
+        fallbackUsername: 'stale-fallback-username',
+        fallbackApplicationPassword: 'stale-fallback-password',
+      },
+      source,
+      { preferSource: true },
+    ),
+    {
+      liveSourceUrl: 'http://127.0.0.1:8080',
+      username: 'reprint_push_admin',
+      applicationPassword: 'reprint-push-admin-app-password',
     },
   );
 });

@@ -12,7 +12,7 @@ import { authenticatedHttpClient, runAuthenticatedHttpPush } from '../../src/aut
 import { digest } from '../../src/stable-json.js';
 import {
   loadAuthSessionSource,
-  resolveAuthSessionSourceCredentials,
+  resolveAuthSessionRequestCredentials,
 } from './auth-session-source.js';
 import {
   evaluateProductionAuthSessionLifecycle,
@@ -70,10 +70,12 @@ let packagedProductionPluginAuthSessionSource = null;
 let packagedProductionPluginRequested = isPackagedProductionPluginSourceCommand(authSessionSourceCommand);
 
 if (authSessionSource?.ok) {
-  const resolvedAuthSessionSource = resolveAuthSessionSourceCredentials({
+  const resolvedAuthSessionSource = resolveAuthSessionRequestCredentials({
     liveSourceUrl,
-    username: credentials.username,
-    applicationPassword: credentials.password,
+    username,
+    applicationPassword,
+    fallbackUsername: credentials.username,
+    fallbackApplicationPassword: credentials.password,
   }, authSessionSource, {
     preferSource: requireProductionAuthSession,
   });

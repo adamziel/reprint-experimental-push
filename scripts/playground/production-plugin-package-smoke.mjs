@@ -10,7 +10,7 @@ import { createHmac } from 'node:crypto';
 import { digest } from '../../src/stable-json.js';
 import {
   loadAuthSessionSource,
-  resolveAuthSessionSourceCredentials,
+  resolveAuthSessionRequestCredentials,
 } from './auth-session-source.js';
 import { resolvePackagedProductionPluginSourceCommand } from './packaged-production-plugin-source-command.js';
 
@@ -26,7 +26,13 @@ const credentials = {
 };
 const authSessionSourceCommand = process.env.REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND || '';
 const authSessionSource = authSessionSourceCommand ? loadAuthSessionSource(authSessionSourceCommand) : null;
-const resolvedCredentials = resolveAuthSessionSourceCredentials(credentials, authSessionSource, {
+const resolvedCredentials = resolveAuthSessionRequestCredentials({
+  liveSourceUrl: '',
+  username: process.env.REPRINT_PUSH_LAB_AUTH_ADMIN_USER || process.env.REPRINT_PUSH_USERNAME || '',
+  applicationPassword: process.env.REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD || process.env.REPRINT_PUSH_APPLICATION_PASSWORD || '',
+  fallbackUsername: credentials.username,
+  fallbackApplicationPassword: credentials.password,
+}, authSessionSource, {
   preferSource: true,
 });
 const packagedAuthSessionSourceCommand = resolvePackagedProductionPluginSourceCommand({
