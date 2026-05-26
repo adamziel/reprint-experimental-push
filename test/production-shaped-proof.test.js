@@ -685,6 +685,22 @@ test('production-shaped release verify command consumes the production auth/sess
   });
 });
 
+test('production auth/session source loader fails closed when required fields are missing', () => {
+  const source = loadAuthSessionSource(
+    `${process.execPath} -e "process.stdout.write(JSON.stringify({sourceUrl:'http://127.0.0.1:8080', username:'reprint_push_admin'}))"`,
+    {
+      ...process.env,
+      NODE_NO_WARNINGS: '1',
+    },
+    repoRoot,
+  );
+
+  assert.deepEqual(source, {
+    ok: false,
+    error: 'Auth session source command must return applicationPassword',
+  });
+});
+
 test('production-shaped release verify synthesizes the packaged production auth/session source command on the checked release path', () => {
   const expectedSourceCommand = buildAuthSessionSourceCommand({
     sourceUrl: 'http://127.0.0.1:8080',
@@ -821,6 +837,33 @@ test('production-shaped release proof emits the exact gate output when no live s
     proof.stdout,
     /"missingLiveSource": \{\s*"status": 1,\s*"code": "REPRINT_PUSH_LIVE_SOURCE_REQUIRED",\s*"stderr": "REPRINT_PUSH_LIVE_SOURCE_REQUIRED: production push requires a live source URL; provide REPRINT_PUSH_SOURCE_URL before running preflight, dry-run, or apply\."\s*\}/,
   );
+});
+
+test('production-shaped release verify fails closed when a required production auth/session source command is invalid', () => {
+  const proof = spawnProductionShapedReleaseVerifySync(
+    {
+      ...process.env,
+      REPRINT_PUSH_SOURCE_URL: 'http://127.0.0.1:8080',
+      REPRINT_PUSH_REMOTE_URL: 'http://127.0.0.1:8080',
+      REPRINT_PUSH_USERNAME: 'stale-lab-username',
+      REPRINT_PUSH_APPLICATION_PASSWORD: 'stale-lab-password',
+      REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND: `${process.execPath} -e "process.stdout.write(JSON.stringify({sourceUrl:'http://127.0.0.1:8080', username:'reprint_push_admin'}))"`,
+      REPRINT_PUSH_REQUIRE_PRODUCTION_AUTH_SESSION: '1',
+      NODE_NO_WARNINGS: '1',
+    },
+    {
+      timeout: releaseVerifyInnerTimeoutMs,
+      killSignal: proofSubprocessKillSignal,
+    },
+    'invalid auth/session source release verify',
+  );
+  assertSpawnCompletedWithoutSpawnError(proof, 'invalid auth/session source release verify', releaseVerifyInnerTimeoutMs);
+  assert.equal(proof.status, 1, proof.stderr);
+  assert.match(proof.stdout, /"ok": false/);
+  assert.match(proof.stdout, /"verdict": "PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED"/);
+  assert.match(proof.stdout, /"observed": "invalid-production-auth-session-source"/);
+  assert.match(proof.stdout, /"error": "Auth session source command must return applicationPassword"/);
+  assert.match(proof.stdout, /"authSessionType": "invalid-production-auth-session-source"/);
 });
 
 maybeTest('production-shaped release verify command surfaces the consumed production auth/session source evidence', async () => {

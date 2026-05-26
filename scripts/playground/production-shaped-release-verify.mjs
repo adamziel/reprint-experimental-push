@@ -183,6 +183,61 @@ const protocolExtension = {
 
 const labDriftAfterSnapshot = process.env.REPRINT_PUSH_LAB_DRIFT_AFTER_SNAPSHOT || '';
 
+if (requireProductionAuthSession && authSessionSourceCommand && !authSessionSource?.ok) {
+  process.stdout.write(
+    JSON.stringify(
+      {
+        ok: false,
+        topology: {
+          sourceUrl: liveSourceUrl,
+          remoteBase: null,
+          remoteChanged: null,
+          localEdited: null,
+        },
+        boundary: {
+          firstRemainingProductionBoundary: 'auth/session lifecycle and durable journal semantics',
+          status: 'unimplemented',
+          verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+          durableJournal: {
+            storageLeaseFence: 'production durable journal storage, lease, and fencing are not yet proven beyond the retained Playground journal path',
+            verdict: 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED',
+          },
+          authSession: {
+            required: 'production-auth-session',
+            observed: 'invalid-production-auth-session-source',
+            verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+          },
+          liveAuthSessionSource: {
+            ...liveAuthSessionSourceBlocker,
+            observed: 'invalid-production-auth-session-source',
+            error: authSessionSource?.error || 'invalid auth session source',
+          },
+        },
+        protocolExtension,
+        preflight: {
+          status: 0,
+          authSessionType: 'invalid-production-auth-session-source',
+          routeProfile: 'production-shaped',
+          session: {
+            id: '',
+            type: 'invalid-production-auth-session-source',
+          },
+        },
+        releaseProof: {
+          ok: false,
+          status: 501,
+          code: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+        },
+        authSessionSource: summarizeAuthSessionSource(authSessionSourceCommand, authSessionSource),
+      },
+      null,
+      2,
+    ),
+  );
+  process.stdout.write('\n');
+  throw new ProofFailure();
+}
+
 if ((!liveSourceUrl || !username || !applicationPassword) && authSessionSourceCommand) {
   if (!liveSourceUrl) {
     liveSourceUrl = authSessionSource.sourceUrl || liveSourceUrl;

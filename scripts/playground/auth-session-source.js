@@ -30,11 +30,42 @@ export function loadAuthSessionSource(command, baseEnv = process.env, cwd = proc
     };
   }
 
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+    return {
+      ok: false,
+      error: 'Auth session source command must return a JSON object',
+    };
+  }
+
+  const sourceUrl = normalizeAuthSessionSourceField(parsed.sourceUrl);
+  if (!sourceUrl) {
+    return {
+      ok: false,
+      error: 'Auth session source command must return sourceUrl',
+    };
+  }
+
+  const username = normalizeAuthSessionSourceField(parsed.username);
+  if (!username) {
+    return {
+      ok: false,
+      error: 'Auth session source command must return username',
+    };
+  }
+
+  const applicationPassword = normalizeAuthSessionSourceField(parsed.applicationPassword);
+  if (!applicationPassword) {
+    return {
+      ok: false,
+      error: 'Auth session source command must return applicationPassword',
+    };
+  }
+
   return {
     ok: true,
-    sourceUrl: parsed.sourceUrl || '',
-    username: parsed.username || '',
-    applicationPassword: parsed.applicationPassword || '',
+    sourceUrl,
+    username,
+    applicationPassword,
   };
 }
 
@@ -58,4 +89,12 @@ export function resolveAuthSessionSourceCredentials({
       ? source.applicationPassword
       : source.applicationPassword || applicationPassword,
   };
+}
+
+function normalizeAuthSessionSourceField(value) {
+  if (value === null || value === undefined) {
+    return '';
+  }
+
+  return String(value).trim();
 }
