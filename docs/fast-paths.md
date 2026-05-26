@@ -741,6 +741,9 @@ The benchmark shape must stay realistic:
 - Chunk receipts can also be compressed for retry-window sizing, but only as
   planning evidence while durable chunk receipts and the guarded publish
   record still decide recovery.
+- Canonical row-batch manifests can also size bounded plugin-update batches,
+  but only as planning evidence while each row still keeps its own precondition
+  and the batch receipts still decide recovery.
 - A rejected-path workload proves that a visible staging object is not enough
   to complete a chunk, and that a fresh dry run still does not authorize apply.
 - Large uploads and plugin installs must both include recovery edges, not just

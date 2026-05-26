@@ -849,6 +849,26 @@ export const SAFE_FAST_PATHS = Object.freeze([
     publishesStagedDataEarly: false,
   },
   {
+    area: 'database-row-batching',
+    reduces: ['wire-bytes-for-planning', 'planning-round-trips', 'duplicate-batch-shape-recomputation'],
+    allowedShortcut: 'reuse-canonical-row-batch-manifests-to-size-bounded-plugin-update-batches',
+    guardrails: [
+      'canonical-manifests-stay-planning-evidence-only',
+      'batch-bounds-still-honor-row-preconditions',
+    ],
+    gateProofs: {
+      skip: 'canonical row-batch manifests can shorten plugin-update sizing work when the batch shape is already known and each row still keeps its own precondition',
+      live: 'every row in the batch still rechecks its live compare at the storage boundary before visibility changes',
+      group: 'the canonical manifest only narrows planning work inside the same atomic group and never widens visibility across owners',
+      recovery: 'the canonical manifest, dependency graph, and batch receipts still classify retry, pause, or crash without guessing',
+    },
+    visibilityBoundary: 'planning-only-until-batch-commit',
+    failureEvidence: 'canonical row-batch manifest, dependency graph, and batch idempotency key',
+    bypassesLivePreconditions: false,
+    splitsAtomicGroup: false,
+    publishesStagedDataEarly: false,
+  },
+  {
     area: 'compression',
     reduces: ['wire-bytes', 'staging-io-for-text-payloads'],
     allowedShortcut: 'compress-transport-frames-with-canonical-uncompressed-digest',
