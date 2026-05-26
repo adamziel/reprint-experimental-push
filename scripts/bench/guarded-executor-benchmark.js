@@ -588,6 +588,12 @@ export function productionThroughputBlockers(report) {
     blockers.push('queue-headroom-exceeds-resource-ceiling');
   }
   if (
+    report.evidence.backpressure?.queuePausedBeforeOverflow === true
+    && report.evidence.backpressure?.queueHeadroomVisible !== true
+  ) {
+    blockers.push('queue-headroom-not-visible');
+  }
+  if (
     Number.isFinite(report.evidence.backpressure?.receiptCursorMemoryHeadroomBytes)
     && report.evidence.backpressure.receiptCursorMemoryHeadroomBytes <= 0
   ) {
@@ -806,6 +812,8 @@ export function productionThroughputDetails(report) {
     && receiptCursorQueueBudgetBytes > 0;
   const queueBudgetVisible =
     report.evidence.backpressure?.queueBudgetVisible === true;
+  const queueHeadroomVisible =
+    report.evidence.backpressure?.queueHeadroomVisible === true;
   const receiptCursorMemoryHeadroomPositive =
     Number.isFinite(receiptCursorMemoryHeadroomBytes)
     && receiptCursorMemoryHeadroomBytes > 0;
@@ -1114,6 +1122,7 @@ export function productionThroughputDetails(report) {
     queueHeadroomPositive,
     queueBudgetPositive,
     queueBudgetVisible,
+    queueHeadroomVisible,
     receiptCursorMemoryHeadroomPositive: receiptCursorMemoryHeadroomPositiveVisible,
     queuePausedBeforeOverflow: report.evidence.backpressure?.queuePausedBeforeOverflow ?? false,
     receiptCursorWithinQueueBudget: report.evidence.backpressure?.receiptCursorWithinQueueBudget ?? false,
@@ -1183,6 +1192,7 @@ export function productionThroughputDetails(report) {
       queueHeadroomPositive,
       queueBudgetPositive,
       queueBudgetVisible,
+      queueHeadroomVisible,
       queuePausedBeforeOverflow: report.evidence.backpressure?.queuePausedBeforeOverflow ?? false,
       receiptCursorMemoryCeilingBytes,
       receiptCursorQueueBudgetBytes,
@@ -1863,6 +1873,8 @@ function buildReport({
         queueBudgetMatchesResourceCeiling:
           config.maxBufferedUploadBytes === DEFAULT_LIMITS.maxBufferedUploadBytes,
         queueBudgetVisible:
+          config.maxBufferedUploadBytes === DEFAULT_LIMITS.maxBufferedUploadBytes,
+        queueHeadroomVisible:
           config.maxBufferedUploadBytes === DEFAULT_LIMITS.maxBufferedUploadBytes,
         queuePausedBeforeOverflow,
         chunkWindowBytes: config.chunkSizeBytes,

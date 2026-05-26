@@ -69,6 +69,7 @@ test('guarded executor benchmark moves buffers and row payloads through durable 
   assert.equal(report.evidence.backpressure.producerQueueBounded, true);
   assert.equal(report.evidence.backpressure.queueBudgetMatchesResourceCeiling, true);
   assert.equal(report.evidence.backpressure.queueBudgetVisible, true);
+  assert.equal(report.evidence.backpressure.queueHeadroomVisible, true);
   assert.equal(report.evidence.backpressure.queuePausedBeforeOverflow, true);
   assert.equal(report.evidence.backpressure.receiptCursorWithinQueueBudget, true);
   assert.equal(report.evidence.backpressure.backpressureEvidenceComplete, true);
@@ -146,6 +147,7 @@ test('guarded benchmark refuses production throughput claims until production ga
   assert.equal(report.claims.productionThroughputDetails.queueBudgetBytes, 32 * 1024 * 1024);
   assert.equal(report.claims.productionThroughputDetails.queueBudgetMatchesResourceCeiling, true);
   assert.equal(report.claims.productionThroughputDetails.queueBudgetVisible, true);
+  assert.equal(report.claims.productionThroughputDetails.queueHeadroomVisible, true);
   assert.equal(report.claims.productionThroughputDetails.queueHeadroomMatchesResourceHeadroom, true);
   assert.equal(report.claims.productionThroughputDetails.queueHeadroomMatchesMemoryHeadroom, true);
   assert.equal(report.claims.productionThroughputDetails.queueHeadroomWithinResourceCeiling, true);
@@ -1436,6 +1438,12 @@ test('production claim gate fails closed if benchmark evidence is tampered', () 
   assert.equal(
     productionThroughputDetails(queueHeadroomBeyondResourceCeiling).backpressureConsistency.queueHeadroomWithinResourceCeiling,
     false,
+  );
+
+  const hiddenQueueHeadroom = clone(report);
+  hiddenQueueHeadroom.evidence.backpressure.queueHeadroomVisible = false;
+  assert.ok(
+    productionThroughputBlockers(hiddenQueueHeadroom).includes('queue-headroom-not-visible'),
   );
 
   const headroomNotCoveredByBudget = clone(report);

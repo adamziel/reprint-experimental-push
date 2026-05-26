@@ -54,6 +54,9 @@ Current executable gate:
   inferring safety from the raw cursor alone.
 - The same details also carry the explicit queue-headroom measurement bit, so a
   paused sender cannot look bounded when the headroom probe itself is missing.
+- The same details also expose whether queue headroom is visible on the raw
+  backpressure surface, so a paused sender cannot hide the headroom bit and
+  still look auditable.
 - The same details also expose whether the measured memory ceiling still
   matches the queue budget, so a tampered headroom summary cannot drift away
   from the recorded backpressure budget.
