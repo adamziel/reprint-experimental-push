@@ -740,8 +740,29 @@ function productionRecoverySupportReport(writer) {
     addMissingDependency('restart-readable recovery artifact references');
   }
   if (
+    isStrictPlainObject(writer?.artifactRefs)
+    && !Object.hasOwn(writer.artifactRefs, 'journal')
+    && 'journal' in writer.artifactRefs
+  ) {
+    addMissingDependency('restart-readable recovery artifact references');
+  }
+  if (
+    isStrictPlainObject(writer?.artifactRefs)
+    && !Object.hasOwn(writer.artifactRefs, 'remote')
+    && 'remote' in writer.artifactRefs
+  ) {
+    addMissingDependency('restart-readable recovery remote artifact references');
+  }
+  if (
     isStrictPlainObject(inspectedArtifactRefs)
     && Reflect.ownKeys(inspectedArtifactRefs).some((key) => key !== 'journal' && key !== 'remote')
+  ) {
+    addMissingDependency('restart-readable recovery artifact references');
+  }
+  if (
+    isStrictPlainObject(inspectedArtifactRefs)
+    && !Object.hasOwn(inspectedArtifactRefs, 'journal')
+    && 'journal' in inspectedArtifactRefs
   ) {
     addMissingDependency('restart-readable recovery artifact references');
   }
@@ -750,6 +771,13 @@ function productionRecoverySupportReport(writer) {
     && (!isStrictPlainObject(inspectedArtifactRefs) || hasNestedSymbolOwnKeys(inspectedArtifactRefs))
   ) {
     addMissingDependency('restart-readable recovery artifact references');
+  }
+  if (
+    isStrictPlainObject(inspectedArtifactRefs)
+    && !Object.hasOwn(inspectedArtifactRefs, 'remote')
+    && 'remote' in inspectedArtifactRefs
+  ) {
+    addMissingDependency('restart-readable recovery remote artifact references');
   }
   if (
     inspectedArtifactRefs
