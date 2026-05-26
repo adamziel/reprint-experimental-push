@@ -639,6 +639,323 @@ test('production-shaped authenticated push fails closed when production auth ses
   }
 });
 
+test('production-shaped authenticated push can prove packaged stale-claim retry through the DB journal surface', async () => {
+  const originalFetch = global.fetch;
+  const seen = [];
+  const base = {
+    meta: { fixture: 'remote-base' },
+    files: {
+      'wp-content/uploads/reprint-push/shared.txt': 'base',
+    },
+    plugins: {},
+    db: {},
+  };
+  const local = {
+    meta: { fixture: 'local-edited' },
+    files: {
+      'wp-content/uploads/reprint-push/shared.txt': 'local',
+    },
+    plugins: {},
+    db: {},
+  };
+  let applyCount = 0;
+  let snapshotCount = 0;
+
+  global.fetch = async (url, options = {}) => {
+    const urlString = String(url);
+    const pathname = new URL(urlString).pathname;
+    const requestBody = options.body ? JSON.parse(options.body) : null;
+    seen.push({ url: urlString, pathname, body: requestBody });
+
+    if (pathname.endsWith('/preflight')) {
+      return new Response(JSON.stringify({
+        ok: true,
+        auth: {
+          identity: { userLogin: 'reprint_push_admin' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
+        },
+        session: { id: 'psh_01j00000000000000000000000' },
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+
+    if (pathname.endsWith('/snapshot')) {
+      snapshotCount += 1;
+      return new Response(JSON.stringify({
+        ok: true,
+        snapshot: snapshotCount === 1 ? base : local,
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+
+    if (pathname.endsWith('/dry-run')) {
+      return new Response(JSON.stringify({
+        ok: true,
+        mode: 'dry-run',
+        receipt: { receiptHash: 'receipt-01' },
+        responseSchemaVersion: 1,
+        auth: {
+          identity: { userLogin: 'reprint_push_admin' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
+        },
+        signedRequest: {
+          signed: false,
+          schemaVersion: 1,
+          contentHash: 'dry-run-content-hash',
+          sessionHash: 'session-hash',
+          signingKeyHash: 'signing-key-hash',
+          request: { method: 'POST', path: '/wp-json/reprint/v1/push/dry-run' },
+        },
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+
+    if (pathname.endsWith('/apply')) {
+      applyCount += 1;
+      if (applyCount === 1) {
+        return new Response(JSON.stringify({
+          ok: false,
+          mode: 'apply',
+          code: 'LAB_SIMULATED_STALE_CLAIM_ALL_OLD',
+          applied: 0,
+          responseSchemaVersion: 1,
+          auth: {
+            identity: { userLogin: 'reprint_push_admin' },
+            session: {
+              type: 'production-auth-session',
+              status: 'active',
+              id: 'psh_01j00000000000000000000000',
+              expiresAt: '2030-01-01T00:00:00Z',
+            },
+          },
+          idempotency: {
+            replayed: false,
+            freshMutationWork: false,
+          },
+          signedRequest: {
+            signed: false,
+            schemaVersion: 1,
+            contentHash: 'apply-content-hash',
+            sessionHash: 'session-hash',
+            signingKeyHash: 'signing-key-hash',
+            request: { method: 'POST', path: '/wp-json/reprint/v1/push/apply' },
+          },
+        }), {
+          status: 500,
+          headers: { 'content-type': 'application/json' },
+        });
+      }
+
+      if (applyCount === 2) {
+        return new Response(JSON.stringify({
+          ok: true,
+          mode: 'apply',
+          applied: 1,
+          responseSchemaVersion: 1,
+          auth: {
+            identity: { userLogin: 'reprint_push_admin' },
+            session: {
+              type: 'production-auth-session',
+              status: 'active',
+              id: 'psh_01j00000000000000000000000',
+              expiresAt: '2030-01-01T00:00:00Z',
+            },
+          },
+          idempotency: {
+            replayed: false,
+            freshMutationWork: true,
+            staleClaimRetry: true,
+          },
+          storageGuard: {
+            boundary: 'wpdb-single-statement-cas',
+            operation: 'update',
+            outcome: 'applied',
+          },
+          signedRequest: {
+            signed: false,
+            schemaVersion: 1,
+            contentHash: 'apply-content-hash',
+            sessionHash: 'session-hash',
+            signingKeyHash: 'signing-key-hash',
+            request: { method: 'POST', path: '/wp-json/reprint/v1/push/apply' },
+          },
+        }), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        });
+      }
+
+      return new Response(JSON.stringify({
+        ok: true,
+        mode: 'apply',
+        code: 'BATCH_ALREADY_COMMITTED',
+        applied: 1,
+        responseSchemaVersion: 1,
+        auth: {
+          identity: { userLogin: 'reprint_push_admin' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
+        },
+        idempotency: {
+          replayed: true,
+          freshMutationWork: false,
+          staleClaimRetry: true,
+        },
+        storageGuard: {
+          boundary: 'wpdb-single-statement-cas',
+          operation: 'update',
+          outcome: 'applied',
+        },
+        signedRequest: {
+          signed: false,
+          schemaVersion: 1,
+          contentHash: 'apply-content-hash',
+          sessionHash: 'session-hash',
+          signingKeyHash: 'signing-key-hash',
+          request: { method: 'POST', path: '/wp-json/reprint/v1/push/apply' },
+        },
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+
+    if (pathname.endsWith('/recovery/inspect')) {
+      return new Response(JSON.stringify({
+        ok: true,
+        mode: 'inspect',
+        responseSchemaVersion: 1,
+        auth: {
+          identity: { userLogin: 'reprint_push_admin' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
+        },
+        recovery: {
+          state: 'fully-updated-remote',
+          counts: { old: 0, new: 1, blockedUnknown: 0, total: 1 },
+          journal: {
+            integrity: {
+              status: 'ok',
+            },
+          },
+        },
+        signedRequest: {
+          signed: false,
+          schemaVersion: 1,
+          contentHash: 'inspect-content-hash',
+          sessionHash: 'session-hash',
+          signingKeyHash: 'signing-key-hash',
+          request: { method: 'POST', path: '/wp-json/reprint/v1/push/recovery/inspect' },
+        },
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+
+    if (pathname.endsWith('/db-journal')) {
+      return new Response(JSON.stringify({
+        ok: true,
+        dbJournal: {
+          scope: 'packaged production plugin journal surface; not local Playground fixture only',
+          latestRows: [
+            { event: 'idempotency-opened' },
+            { event: 'apply-started' },
+            { event: 'stale-claim-abandoned' },
+            { event: 'stale-claim-retry-started' },
+            { event: 'mutation-applied' },
+            { event: 'apply-committed' },
+          ],
+          ownership: {
+            ownsJournal: true,
+            restartReadable: true,
+            productionAdapter: 'wpdb-single-statement-cas',
+          },
+          leaseFence: {
+            boundary: 'wpdb-single-statement-cas',
+            claimKeyUnique: true,
+            monotonicSequence: true,
+            restartReadable: true,
+            staleClaimRejected: true,
+          },
+        },
+        storageGuard: {
+          boundary: 'wpdb-single-statement-cas',
+          operation: 'update',
+          outcome: 'applied',
+        },
+        auth: {
+          identity: { userLogin: 'reprint_push_admin' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
+        },
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+
+    throw new Error(`unexpected fetch to ${urlString}`);
+  };
+
+  try {
+    const summary = await runAuthenticatedHttpPush({
+      sourceUrl: 'http://127.0.0.1:8080',
+      base,
+      local,
+      username: credential.username,
+      applicationPassword: credential.password,
+      idempotencyKey: 'idem-stale-claim-retry-01',
+      routeProfile: 'production-shaped',
+      requireProductionAuthSession: true,
+      simulateStaleClaimRetry: true,
+    });
+
+    assert.equal(summary.ok, true);
+    assert.equal(summary.apply.idempotency.staleClaimRetry, true);
+    assert.equal(summary.staleClaimRetry.abandoned.code, 'LAB_SIMULATED_STALE_CLAIM_ALL_OLD');
+    assert.equal(summary.dbJournal.leaseFence.staleClaimRejected, true);
+    assert.equal(summary.dbJournal.ownership.productionAdapter, 'wpdb-single-statement-cas');
+    assert.equal(summary.replayEquivalence.equivalent, true);
+
+    const applyRequests = seen.filter(({ pathname }) => pathname.endsWith('/apply'));
+    assert.equal(applyRequests.length, 3);
+    assert.equal(applyRequests[0].body.labSimulateStaleClaimAllOld, true);
+    assert.equal(applyRequests[1].body.labSimulateStaleClaimAllOld, true);
+    assert.equal(applyRequests[2].body.labSimulateStaleClaimAllOld, true);
+  } finally {
+    global.fetch = originalFetch;
+  }
+});
+
 test('production-shaped authenticated push records revoked and cleaned-up auth session lifecycle observations', async () => {
   const originalFetch = global.fetch;
   const seen = [];

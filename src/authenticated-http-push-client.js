@@ -45,6 +45,7 @@ export async function runAuthenticatedHttpPush({
   dryRunOnly = false,
   labDriftAfterSnapshot = '',
   requireProductionAuthSession = false,
+  simulateStaleClaimRetry = false,
   authSessionSource = null,
   now = new Date(),
 }) {
@@ -298,10 +299,33 @@ export async function runAuthenticatedHttpPush({
     return summary;
   }
 
-  const apply = await client.signedPost('/apply', {
+  const applyPayload = {
     plan,
     receipt: dryRun.body.receipt,
-  }, {
+  };
+  if (simulateStaleClaimRetry) {
+    applyPayload.labSimulateStaleClaimAllOld = true;
+  }
+
+  let apply = null;
+  if (simulateStaleClaimRetry) {
+    const staleClaimAttempt = await client.signedPost('/apply', applyPayload, {
+      session,
+      idempotencyKey,
+    });
+    summary.staleClaimRetry = {
+      abandoned: summarizeResponse(staleClaimAttempt),
+    };
+    updateRetryAttempts(summary, summary.staleClaimRetry.abandoned);
+    if (staleClaimAttempt.status !== 500 || staleClaimAttempt.body?.code !== 'LAB_SIMULATED_STALE_CLAIM_ALL_OLD') {
+      summary.apply = summarizeResponse(staleClaimAttempt);
+      summary.code = staleClaimAttempt.body?.code || 'APPLY_FAILED';
+      setDurableJournalBoundary(summary, 'apply');
+      return summary;
+    }
+  }
+
+  apply = await client.signedPost('/apply', applyPayload, {
     session,
     idempotencyKey,
   });
@@ -439,10 +463,7 @@ export async function runAuthenticatedHttpPush({
     return summary;
   }
 
-  const replay = await client.signedPost('/apply', {
-    plan,
-    receipt: dryRun.body.receipt,
-  }, {
+  const replay = await client.signedPost('/apply', applyPayload, {
     session,
     idempotencyKey,
   });
@@ -778,6 +799,7 @@ function summarizeResponse(response) {
     idempotency: body.idempotency ? {
       replayed: body.idempotency.replayed === true,
       freshMutationWork: body.idempotency.freshMutationWork === true,
+      staleClaimRetry: body.idempotency.staleClaimRetry === true,
       status: body.idempotency.status,
       conflict: body.idempotency.conflict === true,
     } : undefined,

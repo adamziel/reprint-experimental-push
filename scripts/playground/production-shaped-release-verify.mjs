@@ -646,6 +646,7 @@ try {
         routeProfile: 'production-shaped',
         dryRunOnly: false,
         requireProductionAuthSession: true,
+        simulateStaleClaimRetry: packagedSourceFixture !== null,
         authSessionSource,
         labDriftAfterSnapshot,
         now: new Date('2026-05-25T10:12:00.000Z'),
