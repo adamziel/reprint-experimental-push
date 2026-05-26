@@ -1,9 +1,9 @@
-`1890bd198e164619e79c8ea2e510f5d129b7c061` stays `0/4`.
+`e3a0be0e6f2310bb5f51ddc947c124e245cf61ff` stays `0/4`.
 
-Audit time: 2026-05-26 16:16:20 CEST (+0200)
+Audit time: 2026-05-26 16:36:39 CEST (+0200)
 
 Current verdict:
-- The checked release verifier now gets further through the shared packaged Playground readiness budget, but it still does not prove production-backed auth/session lifecycle on the live `verify:release` boundary.
+- The checked release verifier now trims Playground topology and loopback port handling, but it still does not prove production-backed auth/session lifecycle on the live `verify:release` boundary.
 - It still does not establish production durable-journal ownership or restart-readable production storage semantics.
 - The next gate owner remains `reliable-executor`.
 

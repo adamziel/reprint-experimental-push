@@ -4,9 +4,9 @@
 
 The project is **not releasable as a production WordPress push path**.
 
-- Audit time: 2026-05-26 16:16:20 CEST (+0200)
+- Audit time: 2026-05-26 16:36:39 CEST (+0200)
 - Fresh remote heads re-polled at audit time:
-  - `origin/lane/reliable-executor` -> `1890bd198e164619e79c8ea2e510f5d129b7c061` (`Widen shared release verify readiness budget`)
+  - `origin/lane/reliable-executor` -> `e3a0be0e6f2310bb5f51ddc947c124e245cf61ff` (`Trim release verify Playground topology`)
   - `origin/lane/no-data-loss-recovery` -> `0a28d046`
   - `origin/lane/critic` -> `dc091bcc`
   - `origin/lane/progress-publisher` -> `349eea68`
@@ -17,14 +17,14 @@ The project is **not releasable as a production WordPress push path**.
 | Requirement | Current proof | Missing proof | Verdict impact |
 | --- | --- | --- | --- |
 | Live mutation boundary | `no-data-loss-invariants` continues unsupported-surface blocking, but still no live production mutation boundary proof. | A live production mutation boundary proving source changes are safe. | Blocked |
-| Production auth/session lifecycle | `1890bd198e164619e79c8ea2e510f5d129b7c061` widens the shared release-verify readiness budget, so the checked path can continue probing longer before failure. | Production-backed issuance, read, expiry, rotation, revocation, replay rejection, and cleanup on the live `verify:release` boundary. | Blocked |
+| Production auth/session lifecycle | `e3a0be0e6f2310bb5f51ddc947c124e245cf61ff` trims the release-verify Playground topology and relaxes loopback port handling for production-shaped clients, but it still stays within harness/topology support work. | Production-backed issuance, read, expiry, rotation, revocation, replay rejection, and cleanup on the live `verify:release` boundary. | Blocked |
 | Production durable-journal ownership | The release verifier still surfaces support-side durable-journal evidence only. | Production durable-journal storage consumed by the release path with restart-readable artifacts and lease/fencing semantics proven end to end. | Blocked |
 | Public progress freshness | Freshness-only updates in `progress-publisher` and `feedback-supervisor`. | Freshness does not change release readiness. | Not a gate |
 
 ## Release Blockers
 
-1. `reliable-executor` moved from replay diagnostics to replay-equivalence visibility, journal-ownership proof surfacing, release-gate dependency evidence, recovery claim fencing, preserved-remote retry attempts, package-mode signaling, binding packaged source to the runtime server, and now widening the shared release verify readiness budget on the checked release path. Those are real product-path changes, but they still stop short of proving production-backed auth/session lifecycle or durable-journal ownership on the live `verify:release` boundary.
-2. `1890bd198e164619e79c8ea2e510f5d129b7c061` lowers the readiness friction by letting the verifier continue longer before timing out, but it remains a release-verifier support patch rather than production lifecycle proof.
+1. `reliable-executor` moved from replay diagnostics to replay-equivalence visibility, journal-ownership proof surfacing, release-gate dependency evidence, recovery claim fencing, preserved-remote retry attempts, package-mode signaling, binding packaged source to the runtime server, widening the shared release verify readiness budget, and now trimming the release verify Playground topology. Those are real product-path changes, but they still stop short of proving production-backed auth/session lifecycle or durable-journal ownership on the live `verify:release` boundary.
+2. `e3a0be0e6f2310bb5f51ddc947c124e245cf61ff` reduces topology and port-handling friction, but it remains a release-verifier support patch rather than production lifecycle proof.
 3. `no-data-loss-invariants` still blocks unsupported surfaces, but there is no live production mutation boundary proof.
 4. `progress-publisher` freshness updates do not move a release gate.
 
