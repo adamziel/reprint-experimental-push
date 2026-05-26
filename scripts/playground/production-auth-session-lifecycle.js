@@ -81,11 +81,7 @@ export function evaluateProductionAuthSessionLifecycleSummary(summary, now = Dat
     };
   }
 
-  if (
-    Object.prototype.hasOwnProperty.call(issuedObservation, 'step')
-    && issuedObservation.step !== null
-    && issuedObservation.step !== 'preflight'
-  ) {
+  if (issuedObservation.step !== 'preflight') {
     return {
       ok: false,
       required: 'issued preflight',
@@ -144,11 +140,7 @@ export function evaluateProductionAuthSessionLifecycleSummary(summary, now = Dat
     };
   }
 
-  if (
-    Object.prototype.hasOwnProperty.call(readObservation, 'step')
-    && readObservation.step !== null
-    && !isAuthSessionReadStep(readObservation.step)
-  ) {
+  if (!isAuthSessionReadStep(readObservation.step)) {
     return {
       ok: false,
       required: 'preserved read',

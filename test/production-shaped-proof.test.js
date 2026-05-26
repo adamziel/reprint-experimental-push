@@ -1100,12 +1100,14 @@ test('production auth/session lifecycle summary helper requires a preserved acti
   assert.deepEqual(
     evaluateProductionAuthSessionLifecycleSummary({
       issued: {
+        step: 'preflight',
         id: 'session-01',
         type: 'production-auth-session',
         status: 'active',
         expiresAt: '2099-01-01T00:00:00Z',
       },
       read: {
+        step: 'apply',
         id: 'session-01',
         type: 'production-auth-session',
         status: 'active',
@@ -1123,12 +1125,14 @@ test('production auth/session lifecycle summary helper requires a preserved acti
   assert.deepEqual(
     evaluateProductionAuthSessionLifecycleSummary({
       issued: {
+        step: 'preflight',
         id: 'session-01',
         type: 'production-auth-session',
         status: 'active',
         expiresAt: '2099-01-01T00:00:00Z',
       },
       read: {
+        step: 'apply',
         id: 'session-02',
         type: 'production-auth-session',
         status: 'active',
@@ -1147,12 +1151,14 @@ test('production auth/session lifecycle summary helper requires a preserved acti
   assert.deepEqual(
     evaluateProductionAuthSessionLifecycleSummary({
       issued: {
+        step: 'preflight',
         id: 'session-01',
         type: 'production-auth-session',
         status: 'active',
         expiresAt: '2099-01-01T00:00:00Z',
       },
       read: {
+        step: 'apply',
         id: 'session-01',
         type: 'production-auth-session',
         status: 'active',
@@ -1199,12 +1205,14 @@ test('production auth/session lifecycle summary helper requires a preserved acti
   assert.deepEqual(
     evaluateProductionAuthSessionLifecycleSummary({
       issued: {
+        step: 'preflight',
         id: 'session-01',
         type: 'production-auth-session',
         status: 'active',
         expiresAt: '2099-01-01T00:00:00Z',
       },
       read: {
+        step: 'apply',
         id: 'session-02',
         type: 'production-auth-session',
         status: 'active',
@@ -1242,12 +1250,14 @@ test('production auth/session lifecycle summary helper requires a preserved acti
   assert.deepEqual(
     evaluateProductionAuthSessionLifecycleSummary({
       issued: {
+        step: 'preflight',
         id: 'session-01',
         type: 'production-auth-session',
         status: 'active',
         expiresAt: '2099-01-01T00:00:00Z',
       },
       read: {
+        step: 'apply',
         id: 'session-01',
         type: 'production-auth-session',
         status: 'active',
@@ -1266,12 +1276,14 @@ test('production auth/session lifecycle summary helper requires a preserved acti
   assert.deepEqual(
     evaluateProductionAuthSessionLifecycleSummary({
       issued: {
+        step: 'preflight',
         id: 'session-01',
         type: 'production-auth-session',
         status: 'active',
         expiresAt: '2099-01-01T00:00:00Z',
       },
       read: {
+        step: 'apply',
         id: 'session-02',
         type: 'production-auth-session',
         status: 'active',
@@ -1322,12 +1334,14 @@ test('production auth/session lifecycle summary helper requires a preserved acti
   assert.deepEqual(
     evaluateProductionAuthSessionLifecycleSummary({
       issued: {
+        step: 'preflight',
         id: 'session-01',
         type: 'production-auth-session',
         status: 'active',
         expiresAt: '2099-01-01T00:00:00Z',
       },
       read: {
+        step: 'apply',
         id: 'session-01',
         type: 'production-auth-session',
         status: 'active',
@@ -1378,12 +1392,14 @@ test('production auth/session lifecycle summary helper requires a preserved acti
   assert.deepEqual(
     evaluateProductionAuthSessionLifecycleSummary({
       issued: {
+        step: 'preflight',
         id: 'session-01',
         type: 'production-auth-session',
         status: 'active',
         expiresAt: '2099-01-01T00:00:00Z',
       },
       read: {
+        step: 'apply',
         id: 'session-01',
         type: 'production-auth-session',
         status: 'active',
@@ -1420,12 +1436,14 @@ test('production auth/session lifecycle summary helper requires a preserved acti
   assert.deepEqual(
     evaluateProductionAuthSessionLifecycleSummary({
       issued: {
+        step: 'preflight',
         id: 'session-01',
         type: 'production-auth-session',
         status: 'active',
         expiresAt: '2099-01-01T00:00:00Z',
       },
       read: {
+        step: 'replay',
         id: 'session-01',
         type: 'production-auth-session',
         status: 'active',
@@ -1461,6 +1479,7 @@ test('production auth/session lifecycle summary helper requires a preserved acti
   assert.deepEqual(
     evaluateProductionAuthSessionLifecycleSummary({
       issued: {
+        step: 'preflight',
         id: 'session-01',
         type: 'production-auth-session',
         status: 'active',
@@ -1479,6 +1498,53 @@ test('production auth/session lifecycle summary helper requires a preserved acti
       ok: false,
       required: 'preserved read',
       observed: 'preflight',
+    },
+  );
+
+  assert.deepEqual(
+    evaluateProductionAuthSessionLifecycleSummary({
+      issued: {
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+      },
+      read: {
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+        preserved: true,
+      },
+    }),
+    {
+      ok: false,
+      required: 'issued preflight',
+      observed: 'missing',
+    },
+  );
+
+  assert.deepEqual(
+    evaluateProductionAuthSessionLifecycleSummary({
+      issued: {
+        step: 'preflight',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+      },
+      read: {
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+        preserved: true,
+      },
+    }),
+    {
+      ok: false,
+      required: 'preserved read',
+      observed: 'missing',
     },
   );
 });
