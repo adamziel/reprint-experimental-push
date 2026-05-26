@@ -142,6 +142,17 @@ export function evaluateProductionAuthSessionLifecycleSummary(summary, now = Dat
       continue;
     }
 
+    const observationSessionId = typeof observation.id === 'string' && observation.id.trim()
+      ? observation.id
+      : null;
+    if (observationSessionId && observationSessionId !== issuedSessionId) {
+      return {
+        ok: false,
+        required: 'preserved read',
+        observed: 'rotated',
+      };
+    }
+
     if (observation.rotated) {
       return {
         ok: false,
