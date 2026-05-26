@@ -758,6 +758,12 @@ export function productionThroughputBlockers(report) {
   ) {
     blockers.push('production-storage-receipts-evidence-not-aligned');
   }
+  if (
+    report.evidence.atomicGroup.productionStorageReceiptsMeasured === true
+    && report.evidence.atomicGroup.productionStorageReceiptsVisible !== true
+  ) {
+    blockers.push('production-storage-receipts-not-visible');
+  }
   if (report.executorCapabilities.rowApply !== 'production-batched-compare-and-swap') {
     blockers.push('production-row-batch-executor-not-measured');
   }
@@ -1051,6 +1057,8 @@ export function productionThroughputDetails(report) {
   const productionRowBatchExecutorMeasured = report.executorCapabilities.rowApply === 'production-batched-compare-and-swap';
   const productionAtomicGroupMetadataVisible =
     report.evidence.atomicGroup?.productionAtomicGroupMetadataVisible === true;
+  const productionStorageReceiptsVisible =
+    report.evidence.atomicGroup?.productionStorageReceiptsVisible === true;
   const productionAtomicGroupMetadataProven =
     report.evidence.atomicGroup?.productionAtomicCommitMeasured !== true
     || (
@@ -1243,6 +1251,7 @@ export function productionThroughputDetails(report) {
       productionStorageReceiptsMeasured,
       productionRowBatchExecutorMeasured,
       productionAtomicGroupMetadataProven,
+      productionStorageReceiptsVisible,
     },
     blockers: productionThroughputBlockers(report),
   };
@@ -1733,6 +1742,8 @@ function buildReport({
   const productionAtomicGroupMetadataVisible =
     atomicGroup?.status === 'ready'
     && atomicGroup?.requireAtomic === true;
+  const productionStorageReceiptsVisible =
+    productionStorageReceiptsMeasured && productionAtomicGroupMetadataVisible;
 
   return {
     schemaVersion: 1,
@@ -1837,6 +1848,7 @@ function buildReport({
         productionStorageReceiptsMeasured,
         productionRowBatchExecutorMeasured,
         productionAtomicGroupMetadataVisible,
+        productionStorageReceiptsVisible,
       },
       resourceLimits: {
         memoryCeilingBytes: config.maxBufferedUploadBytes,
