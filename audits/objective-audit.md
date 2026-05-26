@@ -6,7 +6,7 @@ The project is **not releasable as a production WordPress push path**.
 
 Fresh remote heads at audit time, checked on May 26, 2026:
 
-- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `f5df48d6`
+- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `2861b118`
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `1d2735e6`
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `5f6f5c8c`
 - `origin/lane/independent-auditor` -> `6351130f`
@@ -36,8 +36,8 @@ Fresh lane proof since the last audit pass improved the local evidence floor,
 but it did not change the release conclusion:
 
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` now advances to
-  `f5df48d6`, tightening paused-slack safety. This remains fail-closed
-  boundary work, not release-grade live-source evidence.
+  `2861b118`, tightening fast-path replay rejection coverage. This remains
+  fail-closed boundary work, not release-grade live-source evidence.
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now records
   `1d2735e6`, refreshing the public progress freshness surface only.
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now
