@@ -1178,6 +1178,9 @@ async function waitForServer(child, baseUrl, getLogs) {
         }
       }
     } catch (error) {
+      if (error && typeof error === 'object' && error.isPlaygroundReadinessFailure) {
+        throw error;
+      }
       lastError = error;
     }
     await new Promise((resolve) => setTimeout(resolve, readinessProbeIntervalMs));
@@ -1260,6 +1263,7 @@ async function throwPlaygroundReadinessFailure(child, prefix, lastError, lastPro
   writePlaygroundFailure(diagnostic, lastProbes, logs, lastError);
   await stopSpawnedServer(child);
   const finalError = new Error(diagnostic);
+  finalError.isPlaygroundReadinessFailure = true;
   finalError.cause = lastError ?? null;
   finalError.lastProbe = lastProbes.at(-1) ?? null;
   finalError.lastRouteStatusBody = finalError.lastProbe
