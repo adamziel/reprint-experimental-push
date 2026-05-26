@@ -264,7 +264,7 @@ export function inspectProductionRecoveryJournal(writer) {
       return inspected;
     }
 
-    const inspectedArtifactRefs = isStrictPlainObject(inspected.artifactRefs)
+    const inspectedArtifactRefs = inspected.artifactRefs && typeof inspected.artifactRefs === 'object'
       ? inspected.artifactRefs
       : null;
     const writerArtifactRefs = isStrictPlainObject(writer.artifactRefs)
@@ -279,6 +279,23 @@ export function inspectProductionRecoveryJournal(writer) {
         ? writerArtifactRefs.remote
         : null,
     };
+
+    const normalizedArtifactRefs = inspectedArtifactRefs
+      ? Object.assign(
+          Object.create(Object.getPrototypeOf(inspectedArtifactRefs) || null),
+          inspectedArtifactRefs,
+        )
+      : { ...fallbackArtifactRefs };
+    if (normalizedArtifactRefs && !Object.hasOwn(normalizedArtifactRefs, 'journal')) {
+      normalizedArtifactRefs.journal = fallbackArtifactRefs.journal;
+    }
+    if (
+      normalizedArtifactRefs
+      && !('remote' in normalizedArtifactRefs)
+      && fallbackArtifactRefs.remote !== null
+    ) {
+      normalizedArtifactRefs.remote = fallbackArtifactRefs.remote;
+    }
 
     return {
       ...inspected,
@@ -309,10 +326,7 @@ export function inspectProductionRecoveryJournal(writer) {
       schemaVersion: Object.hasOwn(inspected, 'schemaVersion')
         ? inspected.schemaVersion
         : writer.schemaVersion ?? RECOVERY_JOURNAL_SCHEMA_VERSION,
-      artifactRefs: {
-        ...fallbackArtifactRefs,
-        ...(inspectedArtifactRefs || {}),
-      },
+      artifactRefs: normalizedArtifactRefs,
     };
   } catch (error) {
     return { error };

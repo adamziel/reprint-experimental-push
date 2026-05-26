@@ -1054,7 +1054,7 @@ export function productionRecoverySupportReport(writer) {
 
 function productionRecoveryArtifactRefs(writer, inspected) {
   const writerArtifactRefs = isStrictPlainObject(writer?.artifactRefs) ? writer.artifactRefs : null;
-  const inspectedArtifactRefs = durableJournalInspectArtifactRefs(inspected)
+  const inspectedArtifactRefs = inspected && typeof inspected === 'object' && 'artifactRefs' in inspected
     ? inspected.artifactRefs
     : null;
   const inspectedHasOwnRemoteArtifactRef = Boolean(
