@@ -427,7 +427,10 @@ function isReplayEquivalent(applyResponse, replayResponse) {
     && applyBody.ok === replayBody.ok
     && applyBody.code === replayBody.code
     && applyBody.applied === replayBody.applied
-    && applyBody.receipt?.receiptHash === replayBody.receipt?.receiptHash;
+    && applyBody.receipt?.receiptHash === replayBody.receipt?.receiptHash
+    && applyBody.auth?.identity?.userLogin === replayBody.auth?.identity?.userLogin
+    && applyBody.auth?.session?.type === replayBody.auth?.session?.type
+    && applyBody.signedRequest?.signed === replayBody.signedRequest?.signed;
 }
 
 function setDurableJournalBoundary(summary, phase) {
