@@ -9083,6 +9083,106 @@ test('blocks an existing attachment parent reference to a same-plan post', () =>
   assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
 });
 
+test('blocks an existing revision parent reference to a same-plan post', () => {
+  const targetResourceKey = 'row:["wp_posts","ID:2"]';
+  const revisionResourceKey = 'row:["wp_posts","ID:3"]';
+  const base = baseSite();
+  const local = baseSite();
+  const remote = baseSite();
+
+  base.db.wp_posts['ID:3'] = {
+    ID: 3,
+    post_title: 'Existing revision child',
+    post_content: 'base-private-existing-revision-child-body',
+    post_status: 'inherit',
+    post_type: 'revision',
+    post_parent: 0,
+  };
+  local.db.wp_posts['ID:3'] = {
+    ...base.db.wp_posts['ID:3'],
+    post_parent: 2,
+  };
+  remote.db.wp_posts['ID:3'] = {
+    ...base.db.wp_posts['ID:3'],
+  };
+  local.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_title: 'Local parent post',
+    post_content: 'local-private-parent-post-body',
+    post_status: 'publish',
+  };
+
+  const plan = planFor(base, local, remote);
+  const targetMutation = mutationFor(plan, targetResourceKey);
+  const revisionMutation = mutationFor(plan, revisionResourceKey);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === revisionResourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(targetMutation.changeKind, 'create');
+  assert.equal(revisionMutation, undefined);
+  assert.equal(blocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(blocker.surface, 'revision');
+  assert.equal(
+    JSON.stringify(blocker).includes('base-private-existing-revision-child-body'),
+    false,
+  );
+  assert.equal(
+    JSON.stringify(blocker).includes('local-private-parent-post-body'),
+    false,
+  );
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
+});
+
+test('blocks an existing wp_navigation parent reference to a same-plan post', () => {
+  const targetResourceKey = 'row:["wp_posts","ID:2"]';
+  const navigationResourceKey = 'row:["wp_posts","ID:3"]';
+  const base = baseSite();
+  const local = baseSite();
+  const remote = baseSite();
+
+  base.db.wp_posts['ID:3'] = {
+    ID: 3,
+    post_title: 'Existing navigation child',
+    post_content: 'base-private-existing-navigation-child-body',
+    post_status: 'publish',
+    post_type: 'wp_navigation',
+    post_parent: 0,
+  };
+  local.db.wp_posts['ID:3'] = {
+    ...base.db.wp_posts['ID:3'],
+    post_parent: 2,
+  };
+  remote.db.wp_posts['ID:3'] = {
+    ...base.db.wp_posts['ID:3'],
+  };
+  local.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_title: 'Local parent post',
+    post_content: 'local-private-parent-post-body',
+    post_status: 'publish',
+  };
+
+  const plan = planFor(base, local, remote);
+  const targetMutation = mutationFor(plan, targetResourceKey);
+  const navigationMutation = mutationFor(plan, navigationResourceKey);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === navigationResourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(targetMutation.changeKind, 'create');
+  assert.equal(navigationMutation, undefined);
+  assert.equal(blocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(blocker.surface, 'wp_navigation');
+  assert.equal(
+    JSON.stringify(blocker).includes('base-private-existing-navigation-child-body'),
+    false,
+  );
+  assert.equal(
+    JSON.stringify(blocker).includes('local-private-parent-post-body'),
+    false,
+  );
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
+});
+
 test('allows a local attachment parent reference to a same-plan post even when a remote navigation post exists', () => {
   const targetResourceKey = 'row:["wp_posts","ID:2"]';
   const attachmentResourceKey = 'row:["wp_posts","ID:3"]';
