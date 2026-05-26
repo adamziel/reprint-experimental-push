@@ -664,6 +664,7 @@ function productionRecoverySupportReport(writer) {
     ? writer.artifactRefs.journal
     : null;
   const writerRemoteArtifactRef = typeof writer?.artifactRefs?.remote === 'string'
+    && writer.artifactRefs.remote.length > 0
     ? writer.artifactRefs.remote
     : null;
   if (!writer?.artifactRefs || typeof writer.artifactRefs !== 'object' || !writer.artifactRefs.journal) {
@@ -704,20 +705,21 @@ function productionRecoverySupportReport(writer) {
   if (
     writer?.artifactRefs
     && Object.hasOwn(writer.artifactRefs, 'remote')
-    && typeof writer.artifactRefs.remote !== 'string'
+    && (typeof writer.artifactRefs.remote !== 'string' || writer.artifactRefs.remote.length === 0)
   ) {
     addMissingDependency('restart-readable recovery remote artifact references');
   }
   if (
     durableJournalInspectArtifactRefs(inspected)
     && Object.hasOwn(inspected.artifactRefs, 'remote')
-    && typeof inspected.artifactRefs.remote !== 'string'
+    && (typeof inspected.artifactRefs.remote !== 'string' || inspected.artifactRefs.remote.length === 0)
   ) {
     addMissingDependency('restart-readable recovery remote artifact references');
   }
   if (
     durableJournalInspectArtifactRefs(inspected)
     && typeof inspected.artifactRefs.remote === 'string'
+    && inspected.artifactRefs.remote.length > 0
   ) {
     addMissingDependency('restart-readable recovery remote artifact references');
     if (!isCanonicalAbsolutePath(inspected.artifactRefs.remote)) {
@@ -726,7 +728,7 @@ function productionRecoverySupportReport(writer) {
   }
   if (
     writerRemoteArtifactRef
-    || (durableJournalInspectArtifactRefs(inspected) && typeof inspected.artifactRefs.remote === 'string')
+    || (durableJournalInspectArtifactRefs(inspected) && typeof inspected.artifactRefs.remote === 'string' && inspected.artifactRefs.remote.length > 0)
   ) {
     if (writer?.ownsRemoteArtifact !== true) {
       addMissingDependency('restart-readable remote recovery artifact ownership');
