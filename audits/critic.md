@@ -1,6 +1,6 @@
 # Critic Verdict
 
-Current reliable head: `028804fa1f0ec67312d1e77ad5705c8bdbf5aa9d`
+Current reliable head: `7c3daccde3ed2739bb055bb0912f530bd08ad16d`
 (`Fail closed on auth session history rotation`).
 
 Verdict: `0/4`
