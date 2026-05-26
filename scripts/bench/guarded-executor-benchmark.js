@@ -454,6 +454,9 @@ export function productionThroughputBlockers(report) {
   ) {
     blockers.push('queue-headroom-not-positive');
   }
+  if (report.evidence.backpressure?.queueHeadroomMeasured === true && report.evidence.backpressure?.queueHeadroomWithinResourceCeiling !== true) {
+    blockers.push('queue-headroom-exceeds-resource-ceiling');
+  }
   if (
     Number.isFinite(report.evidence.backpressure?.receiptCursorMemoryHeadroomBytes)
     && report.evidence.backpressure.receiptCursorMemoryHeadroomBytes <= 0

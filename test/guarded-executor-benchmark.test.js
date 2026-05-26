@@ -1151,6 +1151,19 @@ test('production claim gate fails closed if benchmark evidence is tampered', () 
     false,
   );
 
+  const queueHeadroomBeyondResourceCeiling = clone(report);
+  queueHeadroomBeyondResourceCeiling.evidence.backpressure.queueHeadroomBytes =
+    queueHeadroomBeyondResourceCeiling.resourceLimits.maxBufferedUploadBytes + 1;
+  assert.ok(
+    productionThroughputBlockers(queueHeadroomBeyondResourceCeiling).includes(
+      'queue-headroom-exceeds-resource-ceiling',
+    ),
+  );
+  assert.equal(
+    productionThroughputDetails(queueHeadroomBeyondResourceCeiling).backpressureConsistency.queueHeadroomWithinResourceCeiling,
+    false,
+  );
+
   const headroomNotCoveredByBudget = clone(report);
   headroomNotCoveredByBudget.evidence.backpressure.queueBudgetBytes -= 1024 * 1024;
   headroomNotCoveredByBudget.evidence.backpressure.queueHeadroomBytes =
