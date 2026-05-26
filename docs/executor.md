@@ -1896,6 +1896,9 @@ The recovery/journal/session chain is equally strict:
   to mutate when the live remote no longer matches the persisted proof
 - stale dry-run evidence never becomes recovery authority
 - the same auth floor applies to apply, journal inspection, and recovery
+- durable journal ownership remains out of scope for this constrained release
+  candidate until the storage/lease/fence proof is present; the recovery docs
+  stay read-only evidence for that gap
 
 For reviewers, the shortest proof chain is:
 

@@ -234,6 +234,10 @@ It also emits the checked boundary verdict
 lab-shaped proof from the still-missing production boundary.
 The checked boundary object also names the still-unproven durable-journal
 storage/lease/fence gap with `PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED`.
+That gap is intentionally fail-closed for the constrained release candidate:
+the docs may describe journal evidence and recovery inspection, but they do
+not claim durable production journal ownership until the storage/lease/fence
+proof lands.
 When the live source or credentials are missing, the same checked entrypoint
 must fail closed with the exact `REPRINT_PUSH_LIVE_SOURCE_REQUIRED` or
 `REPRINT_PUSH_SECRET_REQUIRED` gate before any preflight, dry-run, or apply
