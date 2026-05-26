@@ -23,7 +23,7 @@ linked implementation artifacts.
 
 <a id="2026-05-26-public-status-audit-135538"></a>
 
-- Freshness update plus reliable-head confirmation: `77da166e031a32700ddaf388bde378e1c58b0f63` is the current reliable-executor head on the public page, and the visible status now points at this 13:55:38 audit refresh.
+- Freshness update plus reliable-head confirmation: `77da166e031a32700ddaf388bde378e1c58b0f63` is the current reliable-executor head on the public page, and the visible status now points at this 13:55:38 audit refresh as checked-release auth-session source evidence for `REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND`.
 - Gate posture remains conservative at `0/4`; no implementation verdict changed.
 - Latest blocker summary remains the same: production-backed auth/session lifecycle on the checked release path and fenced durable journal ownership still block any production push claim, while `77da166e031a32700ddaf388bde378e1c58b0f63` is checked-release auth-session source evidence for `REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND` and does not move a release gate.
 
