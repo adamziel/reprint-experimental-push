@@ -51,16 +51,16 @@ await withPlaygroundServer('remote-base', path.join(repoRoot, 'fixtures/playgrou
           topology,
           source: {
             url: remoteServer.baseUrl,
-          routeProfile: preflight.body.routeProfile,
-          session: {
-            id: preflight.body.session.id,
-            type: preflight.body.session.type,
-            status: preflight.body.auth?.session?.status || null,
-            expiresAt: preflight.body.auth?.session?.expiresAt || null,
-            expired: isExpiredSession(preflight.body.auth?.session),
+            routeProfile: preflight.body.routeProfile,
+            session: {
+              id: preflight.body.session.id,
+              type: preflight.body.session.type,
+              status: preflight.body.auth?.session?.status || null,
+              expiresAt: preflight.body.auth?.session?.expiresAt || null,
+              expired: isExpiredSession(preflight.body.auth?.session),
+            },
           },
-        },
-        local: {
+          local: {
             url: localServer.baseUrl,
             indexStatus: localIndex.status,
           },
