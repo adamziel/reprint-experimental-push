@@ -218,11 +218,7 @@ export function evaluateProductionAuthSessionLifecycleSummary(summary, now = Dat
     }
 
     const lifecycle = evaluateProductionAuthSessionLifecycle(observation, now);
-    if (!lifecycle.ok && (
-      lifecycle.required === 'active' ||
-      lifecycle.required === 'unexpired' ||
-      lifecycle.required === 'unrevoked'
-    )) {
+    if (!lifecycle.ok) {
       return lifecycle;
     }
   }
