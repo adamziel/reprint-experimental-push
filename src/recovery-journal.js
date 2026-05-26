@@ -525,11 +525,12 @@ export function consumeProductionRecoveryJournal(options) {
     filePath,
     plan,
     current,
-    claimId = null,
+    claimId: explicitClaimId = null,
   } = normalized;
   const writerLease = Object.hasOwn(normalized, 'writerLease')
     ? freezeProductionWriterLease(normalized.writerLease)
     : null;
+  const claimId = explicitClaimId ?? writerLease?.id ?? null;
   const leaseFence = freezeProductionWriterLease(writerLease);
   const artifactRefs = normalizeProductionArtifactRefs(
     normalized.artifactRefs,

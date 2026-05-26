@@ -874,6 +874,45 @@ test('production recovery journal compatibility overload supports reliable relea
   staleJournal.close();
 });
 
+test('production recovery journal consumption derives claim identity from the fenced writer lease when claimId is omitted', () => {
+  const filePath = tempJournalPath();
+  const remote = baseSite();
+  const plan = planFor(baseSite(), localSite(), remote);
+  const claimId = 'claim-consume-derived-identity';
+  const writerLease = { id: claimId, epoch: 4 };
+  const artifactRefs = {
+    journal: filePath,
+  };
+  const journal = openProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs,
+    claimId,
+    writerLease,
+  });
+  appendRecoveryClaimOpened(journal, {
+    plan,
+    current: remote,
+    claimId,
+    artifactRefs,
+  });
+  journal.close();
+
+  const inspection = consumeProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs,
+    writerLease,
+  });
+
+  assert.equal(inspection.journal.claimId, claimId);
+  assert.equal(inspection.journal.claimHash, recoveryClaimHash(claimId));
+  assert.deepEqual(inspection.journal.writerLease, writerLease);
+  assert.deepEqual(inspection.journal.leaseFence, writerLease);
+});
+
 test('production recovery journal compatibility overload fails closed without an explicit claimId or writerLease', () => {
   const filePath = tempJournalPath();
   const remote = baseSite();
