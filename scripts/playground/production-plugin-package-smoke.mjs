@@ -12,11 +12,20 @@ import {
   loadAuthSessionSource,
   resolveAuthSessionSourceCredentials,
 } from './auth-session-source.js';
+import {
+  packagedProductionPluginPreflightReady,
+  packagedProductionPluginPreflightRetryable,
+  packagedProductionPluginReadinessBodyRetryable,
+  packagedProductionPluginReadinessErrorRetryable,
+  packagedProductionPluginServerReady,
+  packagedProductionPluginSnapshotRetryable,
+} from './packaged-production-plugin-readiness.js';
 import { resolvePackagedProductionPluginSourceCommand } from './packaged-production-plugin-source-command.js';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const cliPath = path.join(repoRoot, 'bin/reprint-push-lab.js');
 const serverStartupTimeoutMs = 20_000;
+const readinessFailureBodyLimit = 500;
 const transientFetchRetryDelayMs = 250;
 const transientFetchAttempts = 4;
 
@@ -428,8 +437,7 @@ async function startPlaygroundServer(name, blueprintPath, mountedPluginDir) {
 async function waitForServer(child, baseUrl, logs) {
   const deadline = Date.now() + serverStartupTimeoutMs;
   let lastError = null;
-  let lastStatus = null;
-  let lastBody = null;
+  let lastProbe = null;
 
   while (Date.now() < deadline) {
     if (child.exitCode !== null) {
@@ -437,30 +445,90 @@ async function waitForServer(child, baseUrl, logs) {
     }
 
     try {
-      const response = await requestJson(
-        baseUrl,
-        'GET',
-        '/wp-json/reprint/v1/push/snapshot',
-        undefined,
-        authHeaders(),
-        { attempts: 2 },
-      );
-      if (response.status === 200 && response.body?.ok === true) {
-        return;
+      const snapshotResponse = await fetch(`${baseUrl}/wp-json/reprint/v1/push/snapshot`, {
+        method: 'GET',
+        headers: {
+          connection: 'close',
+          ...authHeaders(),
+        },
+      });
+      const snapshotText = await snapshotResponse.text();
+      lastProbe = {
+        route: '/wp-json/reprint/v1/push/snapshot',
+        status: snapshotResponse.status,
+        body: snapshotText.slice(0, readinessFailureBodyLimit),
+      };
+      let snapshotBody = null;
+      try {
+        snapshotBody = JSON.parse(snapshotText);
+      } catch (error) {
+        if (packagedProductionPluginReadinessBodyRetryable(snapshotResponse.status, snapshotText)) {
+          lastError = new Error(`Production plugin package snapshot readiness HTTP ${snapshotResponse.status}`);
+          await sleep(500);
+          continue;
+        }
+        throw new Error(
+          `Expected JSON from GET /wp-json/reprint/v1/push/snapshot, got HTTP ${snapshotResponse.status}\n${snapshotText}\n${error.message}`,
+        );
       }
-      lastError = new Error(`Production plugin package snapshot readiness HTTP ${response.status}`);
-      lastStatus = response.status;
-      lastBody = response.body;
+
+      if (!packagedProductionPluginServerReady({ snapshot: { status: snapshotResponse.status, body: snapshotBody } })) {
+        lastError = new Error(`Production plugin package snapshot readiness HTTP ${snapshotResponse.status}`);
+        if (packagedProductionPluginSnapshotRetryable({ status: snapshotResponse.status, body: snapshotBody })) {
+          await sleep(500);
+          continue;
+        }
+      } else {
+        const preflightResponse = await fetch(`${baseUrl}/wp-json/reprint/v1/push/preflight`, {
+          method: 'GET',
+          headers: {
+            connection: 'close',
+            ...signedHeadersForPreflight(),
+          },
+        });
+        const preflightText = await preflightResponse.text();
+        lastProbe = {
+          route: '/wp-json/reprint/v1/push/preflight',
+          status: preflightResponse.status,
+          body: preflightText.slice(0, readinessFailureBodyLimit),
+        };
+        let preflightBody = null;
+        try {
+          preflightBody = JSON.parse(preflightText);
+        } catch (error) {
+          if (packagedProductionPluginReadinessBodyRetryable(preflightResponse.status, preflightText)) {
+            lastError = new Error(`Production plugin package preflight readiness HTTP ${preflightResponse.status}`);
+            await sleep(500);
+            continue;
+          }
+          throw new Error(
+            `Expected JSON from GET /wp-json/reprint/v1/push/preflight, got HTTP ${preflightResponse.status}\n${preflightText}\n${error.message}`,
+          );
+        }
+
+        if (packagedProductionPluginPreflightReady({ status: preflightResponse.status, body: preflightBody })) {
+          return;
+        }
+
+        lastError = new Error(`Production plugin package preflight readiness HTTP ${preflightResponse.status}`);
+        if (packagedProductionPluginPreflightRetryable({ status: preflightResponse.status, body: preflightBody })) {
+          await sleep(500);
+          continue;
+        }
+      }
     } catch (error) {
+      if (!packagedProductionPluginReadinessErrorRetryable(error)) {
+        throw error;
+      }
       lastError = error;
     }
 
     await sleep(500);
   }
 
-  const lastResponse = lastStatus === null
+  const lastResponse = lastProbe === null
     ? ''
-    : `\nLast snapshot probe status: ${lastStatus}\nLast snapshot probe body: ${JSON.stringify(lastBody, null, 2)}`;
+    : `\nLast readiness probe route: ${lastProbe.route}\nLast readiness probe status: ${lastProbe.status}\nLast readiness probe body: ${JSON.stringify(lastProbe.body, null, 2)}`;
   throw new Error(`Timed out waiting for Playground server at ${baseUrl}: ${lastError?.message || 'unknown'}${lastResponse}\n${logs.join('')}`);
 }
 
