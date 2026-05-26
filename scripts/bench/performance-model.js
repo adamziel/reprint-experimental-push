@@ -629,6 +629,26 @@ export const SAFE_FAST_PATHS = Object.freeze([
   },
   {
     area: 'remote-indexes',
+    reduces: ['planning-round-trips', 'repeat-scanning', 'duplicate-manifest-hash-work'],
+    allowedShortcut: 'reuse-cached-release-manifest-digest-to-size-bounded-release-bundle-fanout',
+    guardrails: [
+      'cached-release-manifest-remains-planning-evidence-only',
+      'release-bundle-fanout-stays-within-per-site-and-per-kind-budgets',
+    ],
+    gateProofs: {
+      skip: 'a cached release-manifest digest can trim repeat planning scans while the planner sizes the next bounded release-bundle fanout',
+      live: 'the eventual release still revalidates live file and row preconditions before anything becomes visible',
+      group: 'the cached manifest only narrows planning inside the same release bundle and never widens the atomic-group barrier',
+      recovery: 'cached manifest evidence is advisory; durable receipts and the guarded release record still classify pause, retry, or crash',
+    },
+    visibilityBoundary: 'planning-only-for-release-bundle-fanout',
+    failureEvidence: 'cached release-manifest digest plus bounded fanout record and guarded release record',
+    bypassesLivePreconditions: false,
+    splitsAtomicGroup: false,
+    publishesStagedDataEarly: false,
+  },
+  {
+    area: 'remote-indexes',
     reduces: ['planning-round-trips', 'idle-time'],
     allowedShortcut: 'parallelize-independent-owner-index-scans-to-size-bounded-batches',
     guardrails: [

@@ -75,6 +75,16 @@ test('benchmark model covers large uploads and plugin installs', () => {
     'compressed owner-partition scans can size release-bundle fanout without weakening the live compare',
   );
   assert.ok(
+    model.safeFastPaths.some(
+      (fastPath) =>
+        fastPath.area === 'remote-indexes' &&
+        fastPath.allowedShortcut === 'reuse-cached-release-manifest-digest-to-size-bounded-release-bundle-fanout' &&
+        fastPath.guardrails.includes('cached-release-manifest-remains-planning-evidence-only') &&
+        fastPath.gateProofs.skip.includes('cached release-manifest digest can trim repeat planning scans'),
+    ),
+    'cached release manifests can size release-bundle fanout without weakening the live compare',
+  );
+  assert.ok(
     pluginInstall.actions.some((action) => action.type === 'db-batch-parallelism'),
     'plugin install includes bounded row-batch parallelism',
   );
