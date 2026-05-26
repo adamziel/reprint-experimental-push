@@ -848,6 +848,31 @@ test('production-shaped release verify can force the production auth/session sou
   );
 });
 
+test('production-shaped release verify ignores malformed direct auth/session source credentials', () => {
+  const source = {
+    ok: true,
+    sourceUrl: ' http://127.0.0.1:8080 ',
+    username: ' reprint_push_admin ',
+    applicationPassword: ' reprint-push-admin-app-password ',
+  };
+  assert.deepEqual(
+    resolveAuthSessionSourceCredentials(
+      {
+        liveSourceUrl: 'http://127.0.0.1:9999',
+        username: 'stale-lab-username',
+        applicationPassword: 'stale-lab-password',
+      },
+      source,
+      { preferSource: true },
+    ),
+    {
+      liveSourceUrl: 'http://127.0.0.1:9999',
+      username: 'stale-lab-username',
+      applicationPassword: 'stale-lab-password',
+    },
+  );
+});
+
 test('auth-session source command builder emits a shell-safe node snippet', () => {
   const command = buildAuthSessionSourceCommand({
     nodePath: '/opt/node/bin/node',

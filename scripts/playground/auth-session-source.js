@@ -92,12 +92,23 @@ export function resolveAuthSessionSourceCredentials({
     };
   }
 
+  const normalizedSourceUrl = normalizeAuthSessionSourceField(source.sourceUrl);
+  const normalizedUsername = normalizeAuthSessionSourceField(source.username);
+  const normalizedApplicationPassword = normalizeAuthSessionSourceField(source.applicationPassword);
+  if (!normalizedSourceUrl || !normalizedUsername || !normalizedApplicationPassword) {
+    return {
+      liveSourceUrl,
+      username,
+      applicationPassword,
+    };
+  }
+
   return {
-    liveSourceUrl: preferSource && source.sourceUrl ? source.sourceUrl : source.sourceUrl || liveSourceUrl,
-    username: preferSource && source.username ? source.username : source.username || username,
-    applicationPassword: preferSource && source.applicationPassword
-      ? source.applicationPassword
-      : source.applicationPassword || applicationPassword,
+    liveSourceUrl: preferSource ? normalizedSourceUrl : normalizedSourceUrl || liveSourceUrl,
+    username: preferSource ? normalizedUsername : normalizedUsername || username,
+    applicationPassword: preferSource
+      ? normalizedApplicationPassword
+      : normalizedApplicationPassword || applicationPassword,
   };
 }
 
