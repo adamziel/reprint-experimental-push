@@ -705,24 +705,37 @@ export function productionRecoverySupportReport(writer) {
     : null;
   const persistedArtifactRefs = durableJournalPersistedArtifactRefs(inspected);
   const artifactRefs = productionRecoveryArtifactRefs(writer, inspected);
+  const writerKindHidden = hasHiddenOwnStringProperty(writer, 'kind');
+  const writerProductionAdapterHidden = hasHiddenOwnStringProperty(writer, 'productionAdapter');
+  const writerSupportedSurfaceHidden = hasHiddenOwnStringProperty(writer, 'supportedSurface');
+  const writerRestartReadableHidden = hasHiddenOwnStringProperty(writer, 'restartReadable');
+  const writerJournalPathHidden = hasHiddenOwnStringProperty(writer, 'journalPath');
+  const writerSchemaVersionHidden = hasHiddenOwnStringProperty(writer, 'schemaVersion');
+  const writerOwnsJournalHidden = hasHiddenOwnStringProperty(writer, 'ownsJournal');
   const addMissingDependency = (item) => {
     if (!missingDependency.includes(item)) {
       missingDependency.push(item);
     }
   };
 
-  if (!Object.hasOwn(writer ?? {}, 'kind') || writer.kind !== 'production-recovery-journal') {
+  if (!Object.hasOwn(writer ?? {}, 'kind') || writerKindHidden || writer.kind !== 'production-recovery-journal') {
     addMissingDependency('production recovery journal adapter marker');
   }
   if (
     Object.hasOwn(writer ?? {}, 'productionAdapter')
+    && !writerProductionAdapterHidden
     && writer.productionAdapter === true
-    && (!Object.hasOwn(writer, 'supportedSurface') || writer.supportedSurface !== 'production-recovery-journal-adapter')
+    && (
+      !Object.hasOwn(writer, 'supportedSurface')
+      || writerSupportedSurfaceHidden
+      || writer.supportedSurface !== 'production-recovery-journal-adapter'
+    )
   ) {
     addMissingDependency('supported production recovery journal adapter surface');
   }
   if (
     Object.hasOwn(writer ?? {}, 'productionAdapter')
+    && !writerProductionAdapterHidden
     && writer.productionAdapter === true
     && !Object.hasOwn(writer ?? {}, 'supportedSurface')
     && writer?.supportedSurface === 'production-recovery-journal-adapter'
@@ -731,13 +744,19 @@ export function productionRecoverySupportReport(writer) {
   }
   if (
     Object.hasOwn(writer ?? {}, 'supportedSurface')
+    && !writerSupportedSurfaceHidden
     && writer.supportedSurface === 'production-recovery-journal-adapter'
-    && (!Object.hasOwn(writer, 'restartReadable') || writer.restartReadable !== true)
+    && (
+      !Object.hasOwn(writer, 'restartReadable')
+      || writerRestartReadableHidden
+      || writer.restartReadable !== true
+    )
   ) {
     addMissingDependency('restart-readable recovery journal adapter');
   }
   if (
     Object.hasOwn(writer ?? {}, 'supportedSurface')
+    && !writerSupportedSurfaceHidden
     && writer.supportedSurface === 'production-recovery-journal-adapter'
     && !Object.hasOwn(writer ?? {}, 'restartReadable')
   ) {
@@ -745,13 +764,19 @@ export function productionRecoverySupportReport(writer) {
   }
   if (
     Object.hasOwn(writer ?? {}, 'productionAdapter')
+    && !writerProductionAdapterHidden
     && writer.productionAdapter === true
-    && (!Object.hasOwn(writer, 'journalPath') || !isCanonicalAbsolutePath(writer.journalPath))
+    && (
+      !Object.hasOwn(writer, 'journalPath')
+      || writerJournalPathHidden
+      || !isCanonicalAbsolutePath(writer.journalPath)
+    )
   ) {
     addMissingDependency('restart-readable recovery artifact location');
   }
   if (
     Object.hasOwn(writer ?? {}, 'productionAdapter')
+    && !writerProductionAdapterHidden
     && writer.productionAdapter === true
     && !Object.hasOwn(writer ?? {}, 'artifactRefs')
   ) {
@@ -759,19 +784,20 @@ export function productionRecoverySupportReport(writer) {
   }
   if (
     Object.hasOwn(writer ?? {}, 'productionAdapter')
+    && !writerProductionAdapterHidden
     && writer.productionAdapter === true
     && !Object.hasOwn(writer ?? {}, 'artifactRefs')
     && isStrictPlainObject(writer?.artifactRefs)
   ) {
     addMissingDependency('restart-readable recovery artifact references');
   }
-  if (!Object.hasOwn(writer ?? {}, 'productionAdapter') || writer.productionAdapter !== true) {
+  if (!Object.hasOwn(writer ?? {}, 'productionAdapter') || writerProductionAdapterHidden || writer.productionAdapter !== true) {
     addMissingDependency('explicit production recovery adapter marker');
   }
-  if (!Object.hasOwn(writer ?? {}, 'schemaVersion')) {
+  if (!Object.hasOwn(writer ?? {}, 'schemaVersion') || writerSchemaVersionHidden) {
     addMissingDependency('restart-readable recovery journal schema');
   }
-  if (!Object.hasOwn(writer ?? {}, 'ownsJournal') || writer.ownsJournal !== true) {
+  if (!Object.hasOwn(writer ?? {}, 'ownsJournal') || writerOwnsJournalHidden || writer.ownsJournal !== true) {
     addMissingDependency('explicit journal ownership fencing');
   }
   if (!Object.hasOwn(writer ?? {}, 'flush') || typeof writer.flush !== 'function') {
@@ -1258,12 +1284,16 @@ function shouldCloseOwnedDurableJournal(writer) {
   return Boolean(
     writer
     && Object.hasOwn(writer, 'kind')
+    && !hasHiddenOwnStringProperty(writer, 'kind')
     && writer.kind === 'production-recovery-journal'
     && Object.hasOwn(writer, 'productionAdapter')
+    && !hasHiddenOwnStringProperty(writer, 'productionAdapter')
     && writer.productionAdapter === true
     && Object.hasOwn(writer, 'supportedSurface')
+    && !hasHiddenOwnStringProperty(writer, 'supportedSurface')
     && writer.supportedSurface === 'production-recovery-journal-adapter'
     && Object.hasOwn(writer, 'ownsJournal')
+    && !hasHiddenOwnStringProperty(writer, 'ownsJournal')
     && writer.ownsJournal === true
     && Object.hasOwn(writer, 'close')
     && typeof writer.close === 'function',

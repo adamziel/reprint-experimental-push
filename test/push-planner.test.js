@@ -25520,6 +25520,107 @@ test('production durable journal claims fail closed when the adapter marker is i
   assert.equal(events.some((event) => event.type === 'journal-completed'), false);
 });
 
+test('production durable journal claims fail closed when supported surface hides behind a non-enumerable key', () => {
+  const writer = {
+    kind: 'production-recovery-journal',
+    productionAdapter: true,
+    restartReadable: true,
+    ownsJournal: true,
+    journalPath: '/var/lib/reprint/recovery.jsonl',
+    schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+    artifactRefs: {
+      journal: '/var/lib/reprint/recovery.jsonl',
+    },
+    appendEvent() {},
+    flush() {},
+    close() {},
+    inspect() {
+      return {
+        filePath: '/var/lib/reprint/recovery.jsonl',
+        schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+        artifactRefs: {
+          journal: '/var/lib/reprint/recovery.jsonl',
+        },
+        records: [{ sequence: 1, type: 'journal-opened' }],
+      };
+    },
+    assertCurrentClaim() {},
+  };
+  Object.defineProperties(writer, {
+    supportedSurface: { value: 'production-recovery-journal-adapter', enumerable: false, configurable: true, writable: true },
+  });
+  const plan = planFor(baseSite(), baseSite(), {
+    ...baseSite(),
+    db: {
+      ...baseSite().db,
+      wp_options: {
+        ...baseSite().db.wp_options,
+        'option_name:blogname': { option_name: 'blogname', option_value: 'New Site' },
+      },
+    },
+  });
+
+  const error = captureError(() => applyPlan(baseSite(), plan, {
+    requireProductionDurableJournal: true,
+    durableJournal: writer,
+  }));
+
+  assert.equal(error.code, 'PRODUCTION_DURABLE_JOURNAL_UNSUPPORTED');
+  assert.ok(error.details.missingDependency.includes('supported production recovery journal adapter surface'));
+});
+
+test('production durable journal claims fail closed when runtime and ownership markers hide behind non-enumerable keys', () => {
+  const writer = {
+    kind: 'production-recovery-journal',
+    productionAdapter: true,
+    supportedSurface: 'production-recovery-journal-adapter',
+    artifactRefs: {
+      journal: '/var/lib/reprint/recovery.jsonl',
+    },
+    appendEvent() {},
+    flush() {},
+    close() {},
+    inspect() {
+      return {
+        filePath: '/var/lib/reprint/recovery.jsonl',
+        schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+        artifactRefs: {
+          journal: '/var/lib/reprint/recovery.jsonl',
+        },
+        records: [{ sequence: 1, type: 'journal-opened' }],
+      };
+    },
+    assertCurrentClaim() {},
+  };
+  Object.defineProperties(writer, {
+    restartReadable: { value: true, enumerable: false, configurable: true, writable: true },
+    ownsJournal: { value: true, enumerable: false, configurable: true, writable: true },
+    journalPath: { value: '/var/lib/reprint/recovery.jsonl', enumerable: false, configurable: true, writable: true },
+    schemaVersion: { value: RECOVERY_JOURNAL_SCHEMA_VERSION, enumerable: false, configurable: true, writable: true },
+  });
+  const plan = planFor(baseSite(), baseSite(), {
+    ...baseSite(),
+    db: {
+      ...baseSite().db,
+      wp_options: {
+        ...baseSite().db.wp_options,
+        'option_name:blogname': { option_name: 'blogname', option_value: 'New Site' },
+      },
+    },
+  });
+
+  const error = captureError(() => applyPlan(baseSite(), plan, {
+    requireProductionDurableJournal: true,
+    durableJournal: writer,
+  }));
+
+  assert.equal(error.code, 'PRODUCTION_DURABLE_JOURNAL_UNSUPPORTED');
+  assert.ok(error.details.missingDependency.includes('restart-readable recovery journal adapter'));
+  assert.ok(error.details.missingDependency.includes('restart-readable recovery artifact location'));
+  assert.ok(error.details.missingDependency.includes('restart-readable recovery journal schema'));
+  assert.ok(error.details.missingDependency.includes('explicit journal ownership fencing'));
+});
+
 test('production durable journal claims fail closed when restart inspection artifact references are array-shaped', () => {
   const writer = {
     kind: 'production-recovery-journal',
@@ -34216,6 +34317,27 @@ test('skips closing an owned production recovery journal writer when ownsJournal
 
   Object.setPrototypeOf(writer, {
     ownsJournal: true,
+  });
+
+  closeOwnedDurableJournal(writer);
+
+  assert.equal(closeCalls, 0);
+  assert.equal(isDurableJournalClosed(writer), true);
+});
+
+test('skips closing an owned production recovery journal writer when top-level ownership markers hide behind non-enumerable keys', () => {
+  let closeCalls = 0;
+  const writer = {
+    close() {
+      closeCalls += 1;
+    },
+  };
+
+  Object.defineProperties(writer, {
+    kind: { value: 'production-recovery-journal', enumerable: false, configurable: true, writable: true },
+    productionAdapter: { value: true, enumerable: false, configurable: true, writable: true },
+    supportedSurface: { value: 'production-recovery-journal-adapter', enumerable: false, configurable: true, writable: true },
+    ownsJournal: { value: true, enumerable: false, configurable: true, writable: true },
   });
 
   closeOwnedDurableJournal(writer);
