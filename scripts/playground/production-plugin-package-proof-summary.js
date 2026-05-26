@@ -1,3 +1,5 @@
+import { scenarioGroups } from './production-plugin-package-scenarios.js';
+
 const scenarioDefinitions = [
   {
     key: 'corePackageRoutes',
@@ -102,11 +104,17 @@ function summarizeScenario(selected, passed) {
   return passed ? 'passed' : 'missing';
 }
 
+function toBundleKey(name) {
+  return name.replace(/-([a-z])/g, (_match, character) => character.toUpperCase());
+}
+
 export function buildProductionPluginPackageProofSummary(
   summary,
   { requestedScenarios = null, selectedScenarios = null } = {},
 ) {
   const scenarioResults = {};
+  const bundleResults = {};
+  const scenarioPasses = new Map();
   let checkedScenarioCount = 0;
   let passedScenarioCount = 0;
   let skippedScenarioCount = 0;
@@ -114,6 +122,7 @@ export function buildProductionPluginPackageProofSummary(
   for (const definition of scenarioDefinitions) {
     const selected = isScenarioSelected(selectedScenarios, definition.scenario);
     const passed = definition.evaluate(summary);
+    scenarioPasses.set(definition.scenario, passed);
     const status = summarizeScenario(selected, passed);
     scenarioResults[definition.key] = status;
     if (selected) {
@@ -124,6 +133,14 @@ export function buildProductionPluginPackageProofSummary(
     } else {
       skippedScenarioCount += 1;
     }
+  }
+
+  for (const [bundleName, bundleScenarios] of Object.entries(scenarioGroups)) {
+    const selected = requestedScenarios === null
+      ? selectedScenarios === null || bundleScenarios.some((scenario) => selectedScenarios.has(scenario))
+      : requestedScenarios.includes(bundleName);
+    const passed = bundleScenarios.every((scenario) => scenarioPasses.get(scenario) === true);
+    bundleResults[toBundleKey(bundleName)] = summarizeScenario(selected, passed);
   }
 
   return {
@@ -165,6 +182,7 @@ export function buildProductionPluginPackageProofSummary(
       deleteApplied: summary?.driverDeleteApply?.deletedAfterApply ?? false,
       finalMatchesLocal: summary?.final?.finalMatchesLocal ?? false,
     },
+    bundles: bundleResults,
     scenarios: scenarioResults,
   };
 }

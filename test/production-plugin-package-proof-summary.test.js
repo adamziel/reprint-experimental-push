@@ -88,6 +88,12 @@ test('plugin-driver proof summary reports full packaged guard coverage', () => {
   assert.equal(summary.selectedScenarios, 'all');
   assert.equal(summary.receiptGuards.revokedCredential, 'reprint_push_lab_auth_required');
   assert.equal(summary.mutationProof.deleteRejected, true);
+  assert.deepEqual(summary.bundles, {
+    driverVerifierGuards: 'passed',
+    driverRegistrationGuards: 'passed',
+    driverCallbackGuards: 'passed',
+    driverRegistrationShapeGuards: 'passed',
+  });
   assert.deepEqual(summary.scenarios, {
     corePackageRoutes: 'passed',
     driverReceiptGuards: 'passed',
@@ -208,6 +214,12 @@ test('plugin-driver proof summary marks unselected scenarios as skipped', () => 
     'driver-missing-validate-guard',
     'driver-receipt-guards',
   ]);
+  assert.deepEqual(summary.bundles, {
+    driverVerifierGuards: 'passed',
+    driverRegistrationGuards: 'skipped',
+    driverCallbackGuards: 'skipped',
+    driverRegistrationShapeGuards: 'skipped',
+  });
   assert.equal(summary.scenarios.corePackageRoutes, 'skipped');
   assert.equal(summary.scenarios.driverReceiptGuards, 'passed');
   assert.equal(summary.scenarios.driverDeleteApply, 'skipped');
