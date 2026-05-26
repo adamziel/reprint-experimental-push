@@ -6,11 +6,11 @@ The project is **not releasable as a production WordPress push path**.
 
 - Fresh remote heads at audit time, checked on May 26, 2026:
 
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `71d32324`
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `3b2310aa`
-- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `6d77deaa`
-- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `3b6911ca`
-- `origin/lane/reliable-executor` -> `5912fc94`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `ace359ce`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `6b1e3669`
+- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `aabb96d6`
+- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `5d0487a3`
+- `origin/lane/reliable-executor` -> `5991bec7`
 - `origin/lane/no-data-loss-invariants` -> `d388db27`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `9e077c10`
 - `origin/lane/no-data-loss-recovery` -> `aec5d04b`
@@ -32,14 +32,17 @@ Fresh lane proof since the last audit pass improved the local evidence floor,
 but it did not change the release conclusion:
 
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now records
-  `71d32324`, refreshing public progress freshness only.
+  `ace359ce`, refreshing public progress freshness only.
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now records
-  `3b2310aa`, refreshing the supervisor progress surface only.
+  `6b1e3669`, refreshing the supervisor progress surface only.
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` now records
-  `6d77deaa`. This refreshes the audit snapshot only and does not change the
+  `aabb96d6`. This refreshes the audit snapshot only and does not change the
   release boundary.
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` now records
-  `3b6911ca`, tightening queue slack proof only.
+  `5d0487a3`, tightening guarded executor headroom detail only.
+- `origin/lane/reliable-executor` now records `5991bec7`, tightening release
+  proof timeout logging and child cleanup, but still not proving production
+  auth/session lifecycle or a live-source mutation boundary.
 - `origin/lane/no-data-loss-invariants` now records `d388db27`, adding nav menu
   parent reference blocking only.
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` now
