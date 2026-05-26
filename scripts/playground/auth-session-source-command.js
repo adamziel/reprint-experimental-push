@@ -1,3 +1,5 @@
+import { normalizeSupportedAuthSessionSourceUrl } from './auth-session-source.js';
+
 export function buildAuthSessionSourceCommand({
   nodePath = process.execPath,
   sourceUrl,
@@ -8,9 +10,9 @@ export function buildAuthSessionSourceCommand({
   if (!normalizedNodePath) {
     throw new Error('Missing nodePath for auth-session source command');
   }
-  const normalizedSourceUrl = normalizeAuthSessionSourceCommandField(sourceUrl);
+  const normalizedSourceUrl = normalizeSupportedAuthSessionSourceUrl(sourceUrl);
   if (!normalizedSourceUrl) {
-    throw new Error('Missing sourceUrl for auth-session source command');
+    throw new Error('Missing or unsupported sourceUrl for auth-session source command');
   }
   const normalizedUsername = normalizeAuthSessionSourceCommandField(username);
   if (!normalizedUsername) {

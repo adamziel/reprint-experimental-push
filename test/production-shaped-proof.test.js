@@ -1017,7 +1017,7 @@ test('auth-session source command builder fails closed when required fields cont
       username: 'reprint_push_admin',
       applicationPassword: 'reprint-push-admin-app-password',
     }),
-    /Missing sourceUrl/,
+    /Missing or unsupported sourceUrl/,
   );
 
   assert.throws(
@@ -1036,6 +1036,28 @@ test('auth-session source command builder fails closed when required fields cont
       applicationPassword: ' secret-value ',
     }),
     /Missing applicationPassword/,
+  );
+});
+
+test('auth-session source command builder fails closed when sourceUrl is not a supported local runtime URL', () => {
+  assert.throws(
+    () => buildAuthSessionSourceCommand({
+      sourceUrl: 'https://example.com/push',
+      username: 'reprint_push_admin',
+      applicationPassword: 'reprint-push-admin-app-password',
+    }),
+    /Missing or unsupported sourceUrl/,
+  );
+});
+
+test('packaged production plugin source command resolver fails closed when sourceUrl is not a supported local runtime URL', () => {
+  assert.throws(
+    () => resolvePackagedProductionPluginSourceCommand({
+      sourceUrl: 'https://example.com/push',
+      username: 'reprint_push_admin',
+      applicationPassword: 'reprint-push-admin-app-password',
+    }),
+    /Missing or unsupported sourceUrl/,
   );
 });
 
