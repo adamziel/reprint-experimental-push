@@ -539,6 +539,9 @@ function assertMutatingRequestOptions(pathname, options) {
   if (options.idempotencyKey === undefined || options.idempotencyKey === '') {
     throw new Error(`Missing push idempotencyKey for mutating request: ${pathname}`);
   }
+  if (typeof options.idempotencyKey !== 'string' || options.idempotencyKey.trim() !== options.idempotencyKey || !/^\S+$/.test(options.idempotencyKey)) {
+    throw new Error(`Invalid push idempotencyKey for mutating request: ${pathname}`);
+  }
 }
 
 function hmacHex(key, data) {

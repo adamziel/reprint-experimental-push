@@ -30,6 +30,13 @@ test('authenticated push client requires an explicit session and idempotency key
     }),
     /Invalid push session for mutating request: \/wp-json\/reprint\/v1\/push\/apply/,
   );
+  assert.throws(
+    () => client.signedPost('/apply', { plan: { id: 'plan-01' } }, {
+      session: 'psh_01j00000000000000000000000',
+      idempotencyKey: '   ',
+    }),
+    /Invalid push idempotencyKey for mutating request: \/wp-json\/reprint\/v1\/push\/apply/,
+  );
 });
 
 test('authenticated push client fails closed for unsupported production-shaped origins', () => {
