@@ -83,6 +83,7 @@ export function createUnsupportedProductionRecoveryJournal(reason = 'Production 
     'fencing or lease ownership for the journal writer',
     'stale-worker rejection fencing',
     'journal-readable inspection records with sequence and type',
+    'claim-fenced inspection records',
   ]);
 
   const throwUnsupported = (method) => {

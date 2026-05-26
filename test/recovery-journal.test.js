@@ -154,6 +154,7 @@ test('unsupported production recovery journal stub fails closed on every operati
     'fencing or lease ownership for the journal writer',
     'stale-worker rejection fencing',
     'journal-readable inspection records with sequence and type',
+    'claim-fenced inspection records',
   ]);
 
   for (const method of ['appendEvent', 'inspect', 'assertCurrentClaim', 'flush', 'close']) {
