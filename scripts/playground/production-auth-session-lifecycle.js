@@ -27,6 +27,15 @@ export function evaluateProductionAuthSessionLifecycle(session, now = Date.now()
     };
   }
 
+  const invalidIdentityField = resolveInvalidAuthSessionIdentityField(session);
+  if (invalidIdentityField) {
+    return {
+      ok: false,
+      required: 'string lifecycle fields',
+      observed: `invalid-${invalidIdentityField}`,
+    };
+  }
+
   const observedType = session?.type || 'missing';
   const observedStatus = session?.status || 'missing';
   const observedExpiresAt = session?.expiresAt || 'missing';
@@ -417,6 +426,27 @@ function resolveInvalidAuthSessionLifecycleFlag(observation) {
     const value = observation[flag];
     if (value !== undefined && value !== null && typeof value !== 'boolean') {
       return flag;
+    }
+  }
+
+  return null;
+}
+
+function resolveInvalidAuthSessionIdentityField(observation) {
+  if (!observation || typeof observation !== 'object') {
+    return null;
+  }
+
+  const identityFields = [
+    ['type', 'type'],
+    ['status', 'status'],
+    ['expiresAt', 'expires-at'],
+  ];
+
+  for (const [field, label] of identityFields) {
+    const value = observation[field];
+    if (value !== undefined && value !== null && typeof value !== 'string') {
+      return label;
     }
   }
 
