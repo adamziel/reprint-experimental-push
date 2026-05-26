@@ -712,6 +712,14 @@ function productionRecoverySupportReport(writer) {
   ) {
     addMissingDependency('restart-readable recovery artifact references');
   }
+  if (
+    Object.hasOwn(writer ?? {}, 'productionAdapter')
+    && writer.productionAdapter === true
+    && !Object.hasOwn(writer ?? {}, 'artifactRefs')
+    && isStrictPlainObject(writer?.artifactRefs)
+  ) {
+    addMissingDependency('restart-readable recovery artifact references');
+  }
   if (!Object.hasOwn(writer ?? {}, 'productionAdapter') || writer.productionAdapter !== true) {
     addMissingDependency('explicit production recovery adapter marker');
   }
