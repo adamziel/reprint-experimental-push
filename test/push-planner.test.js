@@ -14414,7 +14414,7 @@ test('blocks local postmeta references to a same-plan created revision while pre
   assert.equal(blocker.resolutionPolicy, 'preserve-remote-wordpress-graph-and-stop');
   assert.equal(revisionBlocker.class, 'unsupported-revision-resource');
   assert.equal(revisionBlocker.resourceKey, targetResourceKey);
-  assert.equal(revisionBlocker.reason, 'Revision graph resources are not yet supported by the planner.');
+  assert.equal(revisionBlocker.reason, 'WordPress graph mutation row:["wp_posts","ID:47"] is created in the same plan as a revision identity that depends on it, and identity rewriting is not yet supported.');
   assert.equal(matchingEdit.decision, 'already-in-sync');
   assert.equal(pluginDecision.decision, 'keep-remote');
   assert.equal(pluginFileDecision.decision, 'keep-remote');
