@@ -83,15 +83,18 @@ function spawnReleaseVerifyBounded(command, args, options, label) {
   const proof = spawnSync(command, args, options);
 
   if (proof.error) {
+    stopAllPlaygroundChildrenSync();
     reportSpawnFailure(proof);
     const timeoutNote = proof.error.code === 'ETIMEDOUT' && options.timeout ? ` after ${options.timeout}ms` : '';
     throw new Error(formatSpawnFailure(`${label} failed${timeoutNote}`, proof));
   }
   if (proof.signal) {
+    stopAllPlaygroundChildrenSync();
     reportSpawnFailure(proof);
     throw new Error(formatSpawnFailure(`${label} terminated by ${proof.signal}${options.timeout ? ` after ${options.timeout}ms` : ''}`, proof));
   }
   if (proof.status === null) {
+    stopAllPlaygroundChildrenSync();
     reportSpawnFailure(proof);
     throw new Error(formatSpawnFailure(`${label} exited without a status`, proof));
   }
