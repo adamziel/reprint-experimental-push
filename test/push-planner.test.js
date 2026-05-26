@@ -12623,6 +12623,179 @@ test('flags local featured-image attachment references as a conflict when the li
   assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin drift */');
 });
 
+test('flags local featured-image attachment references as a conflict when the live remote attachment identity disappears while preserving remote-only plugin removals', () => {
+  const resourceKey = 'row:["wp_postmeta","meta_id:48"]';
+  const targetResourceKey = 'row:["wp_posts","ID:9"]';
+  const base = baseSite();
+  base.db.wp_posts['ID:1'] = {
+    ID: 1,
+    post_title: 'Base parent post for removals',
+    post_content: 'Base parent body for removals',
+    post_status: 'publish',
+  };
+  base.db.wp_posts['ID:9'] = {
+    ID: 9,
+    post_title: 'Base attachment target for removals',
+    post_content: 'Base attachment body for removals',
+    post_status: 'inherit',
+  };
+  base.db.wp_postmeta = {
+    'meta_id:48': {
+      meta_id: 48,
+      post_id: 1,
+      meta_key: '_thumbnail_id',
+      meta_value: 9,
+      note: 'base featured image removal note',
+    },
+  };
+
+  const local = baseSite();
+  local.db.wp_posts['ID:1'] = {
+    ID: 1,
+    post_title: 'Local parent post for removals',
+    post_content: 'Local parent body for removals',
+    post_status: 'publish',
+  };
+  local.db.wp_posts['ID:9'] = {
+    ID: 9,
+    post_title: 'Local attachment target for removals',
+    post_content: 'Local attachment body for removals',
+    post_status: 'inherit',
+  };
+  local.db.wp_postmeta = {
+    'meta_id:48': {
+      meta_id: 48,
+      post_id: 1,
+      meta_key: '_thumbnail_id',
+      meta_value: 9,
+      note: 'local featured image removal note',
+    },
+  };
+
+  const remote = baseSite();
+  remote.db.wp_posts['ID:1'] = JSON.parse(JSON.stringify(base.db.wp_posts['ID:1']));
+  remote.db.wp_posts['ID:9'] = JSON.parse(JSON.stringify(base.db.wp_posts['ID:9']));
+  remote.db.wp_postmeta = JSON.parse(JSON.stringify(base.db.wp_postmeta));
+  delete remote.db.wp_posts['ID:9'];
+  delete remote.plugins.forms;
+  delete remote.files['wp-content/plugins/forms/forms.php'];
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers[0];
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'conflict');
+  assert.equal(plan.summary.mutations, 1);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(blocker.class, 'unsupported-attachment-resource');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.reason, 'Attachment graph resources are not yet supported by the planner.');
+  assert.equal(plan.conflicts.length, 1);
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('local featured image removal note'), false);
+  assert.equal(planJson.includes('base featured image removal note'), false);
+  assert.equal(planJson.includes('Base attachment target for removals'), false);
+  assert.equal(planJson.includes('Base attachment body for removals'), false);
+  assert.equal(remote.db.wp_posts['ID:9'], undefined);
+});
+
+test('flags local featured-image attachment references as a conflict when the live remote attachment identity disappears while preserving a matching independent edit and remote-only plugin changes', () => {
+  const resourceKey = 'row:["wp_postmeta","meta_id:49"]';
+  const targetResourceKey = 'row:["wp_posts","ID:11"]';
+  const base = baseSite();
+  base.db.wp_posts['ID:1'] = {
+    ID: 1,
+    post_title: 'Base parent post for changes',
+    post_content: 'Base parent body for changes',
+    post_status: 'publish',
+  };
+  base.db.wp_posts['ID:11'] = {
+    ID: 11,
+    post_title: 'Base attachment target for changes',
+    post_content: 'Base attachment body for changes',
+    post_status: 'inherit',
+  };
+  base.db.wp_postmeta = {
+    'meta_id:49': {
+      meta_id: 49,
+      post_id: 1,
+      meta_key: '_thumbnail_id',
+      meta_value: 11,
+      note: 'base featured image change note',
+    },
+  };
+  base.db.wp_posts['ID:21'] = {
+    ID: 21,
+    post_title: 'Base matching independent post',
+    post_content: 'Base matching independent body',
+    post_status: 'publish',
+  };
+
+  const local = baseSite();
+  local.db.wp_posts['ID:1'] = {
+    ID: 1,
+    post_title: 'Local parent post for changes',
+    post_content: 'Local parent body for changes',
+    post_status: 'publish',
+  };
+  local.db.wp_posts['ID:11'] = {
+    ID: 11,
+    post_title: 'Local attachment target for changes',
+    post_content: 'Local attachment body for changes',
+    post_status: 'inherit',
+  };
+  local.db.wp_postmeta = {
+    'meta_id:49': {
+      meta_id: 49,
+      post_id: 1,
+      meta_key: '_thumbnail_id',
+      meta_value: 11,
+      note: 'local featured image change note',
+    },
+  };
+  local.db.wp_posts['ID:21'] = {
+    ID: 21,
+    post_title: 'Local matching independent post',
+    post_content: 'Local matching independent body',
+    post_status: 'publish',
+  };
+
+  const remote = baseSite();
+  remote.db.wp_posts['ID:1'] = JSON.parse(JSON.stringify(base.db.wp_posts['ID:1']));
+  remote.db.wp_posts['ID:11'] = JSON.parse(JSON.stringify(base.db.wp_posts['ID:11']));
+  remote.db.wp_postmeta = JSON.parse(JSON.stringify(base.db.wp_postmeta));
+  remote.db.wp_posts['ID:21'] = JSON.parse(JSON.stringify(local.db.wp_posts['ID:21']));
+  delete remote.db.wp_posts['ID:11'];
+  remote.plugins.forms.description = 'remote-only plugin change';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin change */';
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers[0];
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const independentDecision = decisionFor(plan, 'row:["wp_posts","ID:21"]');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'conflict');
+  assert.equal(plan.summary.mutations, 1);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(blocker.class, 'unsupported-attachment-resource');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.reason, 'Attachment graph resources are not yet supported by the planner.');
+  assert.equal(plan.conflicts.length, 1);
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(independentDecision.decision, 'already-in-sync');
+  assert.equal(planJson.includes('local featured image change note'), false);
+  assert.equal(planJson.includes('base featured image change note'), false);
+  assert.equal(planJson.includes('Base attachment target for changes'), false);
+  assert.equal(planJson.includes('Base attachment body for changes'), false);
+  assert.equal(remote.db.wp_posts['ID:11'], undefined);
+});
+
 test('blocks local post-parent references to a missing live remote post identity', () => {
   const resourceKey = 'row:["wp_posts","ID:10"]';
   const targetResourceKey = 'row:["wp_posts","ID:99"]';
