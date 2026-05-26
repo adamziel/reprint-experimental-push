@@ -55,10 +55,10 @@ The project is **not releasable as a production WordPress push path**.
 - `origin/lane/fast-paths` -> `8c5c2ccb`
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `0339a1a4`
 - `origin/lane/independent-auditor` -> `049af0cb`
-- `origin/lane/no-data-loss-invariants` -> `30040cee`
+- `origin/lane/no-data-loss-invariants` -> `c55aab49`
 - `origin/lane/no-data-loss-recovery` -> `9e077c10`
 - `origin/lane/progress-publisher` -> `7695e1f9`
-- `origin/lane/reliable-executor` -> `3604dede`
+- `origin/lane/reliable-executor` -> `907ef93a`
 - `origin/lane/same-plan-wordpress-graph-create` -> `8dea1ca3`
 
 Fresh visibility-lane heads moved, but they still only refresh public status surfaces:
@@ -71,8 +71,8 @@ Fresh visibility-lane heads moved, but they still only refresh public status sur
   `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` ->
   `0339a1a4` and `origin/lane/cycle-20260525-mainwindows-2349/progress-followup`
   -> `922d2533`.
-- `origin/lane/reliable-executor` -> `3604dede`
-- `origin/lane/no-data-loss-invariants` -> `30040cee`
+- `origin/lane/reliable-executor` -> `907ef93a`
+- `origin/lane/no-data-loss-invariants` -> `c55aab49`
 - `origin/lane/no-data-loss-recovery` -> `2af1ddda`
 - `origin/main` -> `2c8d52cb`
 
@@ -128,7 +128,7 @@ but it did not change the release conclusion:
 - `origin/lane/no-data-loss-invariants` now records `1258cd31`, adding a
   featured image boundary proof. It still does not prove the live release
   boundary or any production-backed source mutation.
-- `origin/lane/no-data-loss-invariants` now records `30040cee`, adding a wp
+- `origin/lane/no-data-loss-invariants` now records `c55aab49`, adding a wp
   navigation removal boundary proof. It still does not prove the live release
   boundary or any production-backed source mutation.
 - `origin/lane/no-data-loss-invariants` now records `0886616c`, adding a
@@ -269,7 +269,7 @@ but it did not change the release conclusion:
 - `origin/lane/no-data-loss-invariants` now records `47223e20`, adding GUID
   removal sibling proof. It still does not prove the live release boundary or
   any production-backed source mutation.
-- `origin/lane/no-data-loss-invariants` now records `30040cee`, adding a wp
+- `origin/lane/no-data-loss-invariants` now records `c55aab49`, adding a wp
   navigation removal boundary proof. It still does not prove the live release
   boundary or any production-backed source mutation.
 - `origin/lane/progress-publisher` now records `7695e1f9`, refreshing public
