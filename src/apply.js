@@ -1078,6 +1078,7 @@ function durableJournalInspectArtifactRefs(inspected) {
     && typeof inspected === 'object'
     && Object.hasOwn(inspected, 'artifactRefs')
     && isStrictPlainObject(inspected.artifactRefs)
+    && Object.hasOwn(inspected.artifactRefs, 'journal')
     && typeof inspected.artifactRefs.journal === 'string'
   );
 }
