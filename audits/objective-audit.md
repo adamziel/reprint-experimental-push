@@ -10,13 +10,13 @@ Fresh remote heads at audit time, checked on May 26, 2026:
 - `origin/lane/no-data-loss-invariants` -> `e42fe4ad`
 - `origin/lane/no-data-loss-recovery` -> `47b675c0`
 - `origin/lane/fast-paths` -> `9be664b2`
-- `origin/lane/independent-auditor` -> `bfc25c4d`
-- `origin/lane/critic` -> `f8591f9d`
+- `origin/lane/independent-auditor` -> `33b839f0`
+- `origin/lane/critic` -> `e986a490`
 - `origin/lane/progress-publisher` -> `7695e1f9`
 - `origin/lane/same-plan-wordpress-graph-create` -> `69f27361`
 - `origin/lane/cycle-20260525-mainwindows-2357/no-data-loss-invariants-graph-proof` -> `98c0ce26`
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `534d941b`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `895a7025`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `8f1baf13`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-invariants` -> `e42fe4ad`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `37d1cd8d`
 - `origin/main` -> `4b7b47a6`
@@ -46,11 +46,11 @@ but it did not change the release conclusion:
 - `origin/lane/progress-publisher` now refreshes the public progress evidence
   at `7695e1f9`.
 - `origin/lane/independent-auditor` now refreshes the audit snapshot at
-  `a2915d2a`.
+  `33b839f0`.
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now
   refreshes the supervisor evidence snapshot at `534d941b`.
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now
-  records the latest progress handoff at `895a7025`.
+  records the latest progress handoff at `8f1baf13`.
 - `origin/lane/same-plan-wordpress-graph-create` now blocks unsupported graph
   surfaces at `69f27361`, including revision posts, menu/navigation posts,
   serialized blocks, and thumbnail parent references. That is a stronger
