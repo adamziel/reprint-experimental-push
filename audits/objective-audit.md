@@ -9,7 +9,7 @@ Fresh remote heads at audit time, checked on May 26, 2026:
 - `origin/lane/reliable-executor` -> `0c4fd10f`
 - `origin/lane/no-data-loss-invariants` -> `41fba8ae`
 - `origin/lane/no-data-loss-recovery` -> `47b675c0`
-- `origin/lane/fast-paths` -> `9be664b2`
+- `origin/lane/fast-paths` -> `af79456d`
 - `origin/lane/independent-auditor` -> `5624aefd`
 - `origin/lane/critic` -> `e986a490`
 - `origin/lane/progress-publisher` -> `7695e1f9`
@@ -52,7 +52,7 @@ but it did not change the release conclusion:
   tightens the durable journal inspect gate at `37d1cd8d`, but it still does
   not add production-backed journal ownership or replay proof.
 - `origin/lane/fast-paths` now tightens blocked production-claim diagnostics at
-  `9be664b2` by adding bounded receipt-log backpressure handling. This is a
+  `af79456d` by adding bounded receipt-log backpressure handling. This is a
   safer fast-path implementation detail, but it still does not prove the live
   production push boundary.
 - `origin/lane/critic` now refreshes the critic handoff at `e986a490`.
