@@ -2444,6 +2444,10 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
     'plan-staging-window-only',
   );
   assert.equal(
+    model.safeFastPaths.find((fastPath) => fastPath.allowedShortcut === 'reuse-recorded-remote-index-cursor-to-size-bounded-chunk-windows')?.visibilityBoundary,
+    'plan-staging-window-only',
+  );
+  assert.equal(
     model.safeFastPaths.find((fastPath) => fastPath.allowedShortcut === 'reuse-remote-index-cursor-to-skip-unchanged-file-hash-planning')?.visibilityBoundary,
     'planning-only-before-file-publish',
   );
@@ -2616,6 +2620,10 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
     'planning cursor plus bounded chunk receipt ledger',
   );
   assert.equal(
+    model.safeFastPaths.find((fastPath) => fastPath.allowedShortcut === 'reuse-recorded-remote-index-cursor-to-size-bounded-chunk-windows')?.failureEvidence,
+    'planning cursor plus bounded chunk receipt ledger',
+  );
+  assert.equal(
     model.safeFastPaths.find((fastPath) => fastPath.allowedShortcut === 'compress-index-listings-without-changing-planning-semantics')?.visibilityBoundary,
     'transport-only',
   );
@@ -2731,6 +2739,15 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
   assert.equal(
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-receipt-log-authorizes-apply-after-pause')?.rejectedGate,
     'recovery',
+  );
+  const shortcutCounts = model.safeFastPaths.reduce((counts, fastPath) => {
+    counts.set(fastPath.allowedShortcut, (counts.get(fastPath.allowedShortcut) ?? 0) + 1);
+    return counts;
+  }, new Map());
+  assert.deepEqual(
+    [...shortcutCounts.entries()].filter(([, count]) => count > 1),
+    [],
+    'every fast-path shortcut id should remain unique so direct lookup stays deterministic',
   );
   assert.ok(
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-receipt-log-authorizes-apply-after-pause')?.violates.includes('backpressure'),

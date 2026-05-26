@@ -430,7 +430,7 @@ export const SAFE_FAST_PATHS = Object.freeze([
   {
     area: 'chunk-upload',
     reduces: ['idle-time', 'planning-round-trips', 'duplicate-body-transfer'],
-    allowedShortcut: 'reuse-remote-index-cursor-to-size-bounded-chunk-windows',
+    allowedShortcut: 'reuse-recorded-remote-index-cursor-to-size-bounded-chunk-windows',
     guardrails: [
       'remote-index-is-planning-evidence-only',
       'chunk-window-stays-within-byte-and-receipt-budgets',
