@@ -616,6 +616,10 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-unbounded-hash-fanout-skips-large-upload-backpressure')?.violates.includes('backpressure'),
     'unbounded hash fanout still cannot bypass large-upload backpressure',
   );
+  assert.ok(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-unbounded-hash-fanout-skips-large-upload-backpressure')?.violates.includes('durable-progress'),
+    'unbounded hash fanout still needs durable progress evidence after a pause or crash',
+  );
   assert.equal(
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-file-hash-skips-parallel-chunk-send-publish-after-pause')?.rejectedGate,
     'recovery',
