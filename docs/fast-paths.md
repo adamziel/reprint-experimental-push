@@ -430,6 +430,10 @@ Current executable gate:
 - The derived production-throughput details now honor that same raw
   pause-footprint completeness bit, so the audit view cannot reconstruct a
   complete paused-backpressure proof from the footprint numbers alone.
+- The same derived pause-footprint summary now also stays hidden when any of
+  its queue-budget, queue-headroom, memory-ceiling, queue-slack, or
+  memory-headroom visibility bits are hidden, so a partial paused-backpressure
+  surface cannot still look fully visible from the measured bytes alone.
 - The production-throughput gate now also fails closed when the pause-footprint
   summary says complete but the measured-and-aligned queue-slack proof bit is
   missing, so a tampered summary cannot reuse raw footprint numbers without

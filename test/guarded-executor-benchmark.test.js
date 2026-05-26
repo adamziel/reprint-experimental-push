@@ -3403,3 +3403,37 @@ test('guarded benchmark keeps pause-footprint details false when the raw complet
   assert.equal(details.backpressureConsistency.receiptCursorPauseFootprintComplete, false);
   assert.ok(blockers.includes('queue-pause-footprint-not-proven'));
 });
+
+test('guarded benchmark keeps pause-footprint visibility false when queue-budget visibility is hidden', () => {
+  const report = smallBenchmark();
+  const mutated = clone(report);
+
+  mutated.evidence.backpressure.queueBudgetVisible = false;
+
+  const details = productionThroughputDetails(mutated);
+  const blockers = productionThroughputBlockers(mutated);
+
+  assert.equal(details.receiptCursorPauseFootprintComplete, true);
+  assert.equal(details.receiptCursorPauseFootprintVisible, false);
+  assert.equal(details.backpressureConsistency.queueBudgetVisible, false);
+  assert.ok(blockers.includes('memory-ceiling-visible-without-queue-budget-visibility'));
+});
+
+test('guarded benchmark keeps pause-footprint visibility false when receipt-cursor memory-headroom visibility is hidden', () => {
+  const report = smallBenchmark();
+  const mutated = clone(report);
+
+  mutated.evidence.backpressure.receiptCursorMemoryHeadroomVisible = false;
+
+  const details = productionThroughputDetails(mutated);
+  const blockers = productionThroughputBlockers(mutated);
+
+  assert.equal(details.receiptCursorPauseFootprintComplete, true);
+  assert.equal(details.receiptCursorPauseFootprintVisible, false);
+  assert.equal(details.receiptCursorMemoryHeadroomVisibleAndMeasured, false);
+  assert.equal(
+    details.backpressureConsistency.receiptCursorMemoryHeadroomVisibleAndMeasured,
+    false,
+  );
+  assert.ok(blockers.includes('memory-ceiling-match-visible-without-memory-headroom-visibility'));
+});

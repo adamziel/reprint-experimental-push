@@ -1478,7 +1478,14 @@ export function productionThroughputDetails(report) {
   const receiptCursorPauseFootprintComplete =
     receiptCursorPauseFootprintMeasuredComplete
     && report.evidence.backpressure?.receiptCursorPauseFootprintComplete === true;
-  const receiptCursorPauseFootprintVisible = receiptCursorPauseFootprintComplete;
+  const receiptCursorPauseFootprintVisible =
+    receiptCursorPauseFootprintComplete
+    && queueBudgetVisible
+    && queueHeadroomVisible
+    && receiptCursorMemoryCeilingVisible
+    && receiptCursorQueueSlackVisible
+    && receiptCursorMemoryHeadroomVisible
+    && queueHeadroomMeasured;
   const queueBudgetMatchesResourceCeiling =
     Number.isFinite(receiptCursorQueueBudgetBytes)
     && Number.isFinite(report.resourceLimits?.maxBufferedUploadBytes)
