@@ -260,6 +260,10 @@ but it did not change the release conclusion:
 - `origin/lane/reliable-executor` now records `0a6de039`, hardening bounded
   release-verify spawn handling. It still does not prove production
   auth/session lifecycle or a live-source mutation boundary.
+- `origin/lane/reliable-executor` now records `6e2d1548`, covering replay auth
+  session drift in tests. This is still support-side replay/auth-session
+  validation, not production-backed auth/session lifecycle, live production
+  replay, or durable journal ownership on the release path.
 - `origin/lane/reliable-executor` now records `f1783e10`, hardening durable
   journal ownership. It still does not prove production auth/session
   lifecycle or a live-source mutation boundary.
