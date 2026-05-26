@@ -23167,6 +23167,97 @@ test('orders same-plan postmeta dependency references deterministically for a sa
   assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin drift */');
 });
 
+test('orders same-plan comment-post dependency references deterministically for a same-plan created post identity', () => {
+  const targetResourceKey = 'row:["wp_posts","ID:90"]';
+  const earlyCommentResourceKey = 'row:["wp_comments","comment_ID:26"]';
+  const lateCommentResourceKey = 'row:["wp_comments","comment_ID:99"]';
+  const base = baseSite();
+  base.db.wp_posts['ID:1'].post_title = 'Base shared ordered comment-post title';
+  base.db.wp_comments = {
+    'comment_ID:99': {
+      comment_ID: 99,
+      comment_post_ID: 90,
+      comment_content: 'Base late dependent comment content',
+      comment_approved: '1',
+    },
+    'comment_ID:26': {
+      comment_ID: 26,
+      comment_post_ID: 90,
+      comment_content: 'Base early dependent comment content',
+      comment_approved: '1',
+    },
+  };
+
+  const local = baseSite();
+  local.db.wp_posts['ID:1'].post_title = 'Shared ordered comment-post title';
+  local.db.wp_posts['ID:90'] = {
+    ID: 90,
+    post_title: 'Local ordered same-plan post identity',
+    post_content: 'Local ordered same-plan post body',
+    post_status: 'publish',
+    post_type: 'post',
+  };
+  local.db.wp_comments = {
+    'comment_ID:99': {
+      comment_ID: 99,
+      comment_post_ID: 90,
+      comment_content: 'Local late dependent comment content',
+      comment_approved: '1',
+    },
+    'comment_ID:26': {
+      comment_ID: 26,
+      comment_post_ID: 90,
+      comment_content: 'Local early dependent comment content',
+      comment_approved: '1',
+    },
+  };
+
+  const remote = baseSite();
+  remote.db.wp_posts['ID:1'].post_title = 'Shared ordered comment-post title';
+  remote.db.wp_comments = JSON.parse(JSON.stringify(base.db.wp_comments));
+  remote.plugins.forms.description = 'remote-only plugin drift';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin drift */';
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === targetResourceKey);
+  const earlyCommentBlocker = plan.blockers.find((entry) => entry.resourceKey === earlyCommentResourceKey);
+  const lateCommentBlocker = plan.blockers.find((entry) => entry.resourceKey === lateCommentResourceKey);
+  const matchingEdit = decisionFor(plan, 'row:["wp_posts","ID:1"]');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, targetResourceKey), undefined);
+  assert.equal(decisionFor(plan, targetResourceKey), undefined);
+  assert.equal(blocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(
+    blocker.reason,
+    'WordPress graph mutation row:["wp_posts","ID:90"] is created in the same plan as a comment post target that depends on it, and identity rewriting is not yet supported.',
+  );
+  assert.deepEqual(
+    blocker.references.map((reference) => [reference.relationshipType, reference.sourceResourceKey]),
+    [
+      ['comment-post', earlyCommentResourceKey],
+      ['comment-post', lateCommentResourceKey],
+    ],
+  );
+  assert.equal(earlyCommentBlocker.class, 'unsupported-comments-users-resource');
+  assert.equal(lateCommentBlocker.class, 'unsupported-comments-users-resource');
+  assert.equal(matchingEdit.decision, 'already-in-sync');
+  assert.equal(matchingEdit.change.localChange, 'update');
+  assert.equal(matchingEdit.change.remoteChange, 'update');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('Local ordered same-plan post identity'), false);
+  assert.equal(planJson.includes('Local ordered same-plan post body'), false);
+  assert.equal(planJson.includes('Local early dependent comment content'), false);
+  assert.equal(planJson.includes('Local late dependent comment content'), false);
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin drift');
+  assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin drift */');
+});
+
 test('blocks local menu item parent references to a same-plan created nav menu item while preserving remote-only plugin drift', () => {
   const resourceKey = 'row:["wp_posts","ID:49"]';
   const targetResourceKey = 'row:["wp_posts","ID:13"]';
