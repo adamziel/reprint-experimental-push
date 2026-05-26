@@ -27,6 +27,10 @@ const CLAIM_FENCE_RECORD_TYPES = new Set([
   'recovery-claim-opened',
   'stale-claim-advanced',
 ]);
+const DURABLE_OPEN_RECORD_TYPES = new Set([
+  'journal-opened',
+  'journal-retry-opened',
+]);
 const RECOVERY_JOURNAL_RECORD_TYPE_PATTERN = /^[a-z0-9-]+$/;
 export const ACCEPTABLE_RECOVERY_STATES = Object.freeze([
   'old-remote',
@@ -1445,11 +1449,11 @@ function durableJournalInspectRecords(inspected) {
   const records = inspected?.records;
   const recordsOwnKeys = Reflect.ownKeys(records ?? {});
   const numericKeys = recordsOwnKeys.filter((key) => typeof key === 'string' && /^\d+$/.test(key));
-  const journalOpenedIndex = Array.isArray(records)
-    ? records.findIndex((record) => record?.type === 'journal-opened')
+  const durableOpenedIndex = Array.isArray(records)
+    ? records.findIndex((record) => DURABLE_OPEN_RECORD_TYPES.has(record?.type))
     : -1;
-  const journalOpenedCount = Array.isArray(records)
-    ? records.filter((record) => record?.type === 'journal-opened').length
+  const durableOpenedCount = Array.isArray(records)
+    ? records.filter((record) => DURABLE_OPEN_RECORD_TYPES.has(record?.type)).length
     : 0;
   return Boolean(
     isStrictPlainObject(inspected)
@@ -1469,7 +1473,7 @@ function durableJournalInspectRecords(inspected) {
   && Object.hasOwn(records[0], 'type')
   && records[0].sequence === 1
   && (
-    records[0].type === 'journal-opened'
+    DURABLE_OPEN_RECORD_TYPES.has(records[0].type)
     || CLAIM_FENCE_RECORD_TYPES.has(records[0].type)
   )
   && records.every((record) =>
@@ -1487,10 +1491,10 @@ function durableJournalInspectRecords(inspected) {
     index === 0
       ? record.sequence === 1
       : record.sequence === recordsList[index - 1].sequence + 1
-  )) && journalOpenedIndex !== -1
-  && journalOpenedCount === 1
+  )) && durableOpenedIndex !== -1
+  && durableOpenedCount === 1
   && records
-    .slice(0, journalOpenedIndex)
+    .slice(0, durableOpenedIndex)
     .every((record) => CLAIM_FENCE_RECORD_TYPES.has(record.type));
 }
 
