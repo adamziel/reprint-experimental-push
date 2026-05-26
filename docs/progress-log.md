@@ -11,7 +11,9 @@ linked implementation artifacts.
 - Refreshed [progress.html](../progress.html) to the current `date` output
   (`2026-05-26 15:22:30 CEST`) and kept
   `e82e3b1af126f62688f617a3fb4cc0baeb698d57` as the current reliable head on
-  the public page.
+  the public page, replacing the older
+  `ac41777479f04355b0017e77c2107d89dd66c01a` wording in the visible
+  current-head rows.
 - `e82e3b1af126f62688f617a3fb4cc0baeb698d57` remains support-side evidence;
   the release gate stays at `0/4` because production-backed auth/session
   lifecycle and durable journal ownership with lease/fencing remain blocked.
