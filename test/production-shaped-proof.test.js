@@ -106,6 +106,7 @@ function spawnReleaseVerifyBounded(command, args, options, label) {
     throw new Error(formatSpawnFailure(`${label} exited without a status`, proof));
   }
   if (proof.status !== 0) {
+    stopAllPlaygroundChildrenSync();
     process.stderr.write(`${describeSpawnProof(proof)}\n`);
   }
 
