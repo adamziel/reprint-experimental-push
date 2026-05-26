@@ -921,13 +921,30 @@ function summarizeAuthSessionLifecycleHistory(history) {
   }
 
   const observations = history.filter((entry) => entry && typeof entry === 'object');
-  const issued = history.find((entry) => entry.step === 'preflight') || history[0];
-  const read = history[history.length - 1];
+  const issued = observations.find((entry) => entry.step === 'preflight') || observations[0] || history[0];
+  const read = [...observations]
+    .reverse()
+    .find((entry) => isAuthSessionReadStep(entry.step)) || observations[observations.length - 1] || history[history.length - 1];
   return {
     issued,
     read,
+    expired: observations.find((entry) => entry.expired) || null,
+    revoked: observations.find((entry) => entry.revoked) || null,
+    cleanedUp: observations.find((entry) => entry.cleanedUp) || null,
+    rotated: observations.find((entry) => entry.rotated) || null,
+    preserved: [...observations]
+      .reverse()
+      .find((entry) => isAuthSessionReadStep(entry.step) && entry.preserved === true) || null,
     observations,
   };
+}
+
+function isAuthSessionReadStep(step) {
+  return step === 'dry-run'
+    || step === 'apply'
+    || step === 'recovery-inspect'
+    || step === 'replay'
+    || step === 'journal';
 }
 
 function summarizeSnapshot(response, local) {
