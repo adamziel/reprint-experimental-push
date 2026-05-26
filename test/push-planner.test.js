@@ -9383,6 +9383,57 @@ test('blocks a local menu item parent reference owned by a revision even when it
   );
 });
 
+test('blocks a local menu item parent reference owned by a wp_navigation post even when it targets a same-plan post', () => {
+  const navigationResourceKey = 'row:["wp_posts","ID:3"]';
+  const parentResourceKey = 'row:["wp_posts","ID:4"]';
+  const postmetaResourceKey = 'row:["wp_postmeta","meta_id:23"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_posts['ID:3'] = {
+    ID: 3,
+    post_title: 'Local navigation menu item',
+    post_content: 'local-private-navigation-menu-item-body',
+    post_status: 'publish',
+    post_type: 'wp_navigation',
+    post_parent: 4,
+  };
+  local.db.wp_posts['ID:4'] = {
+    ID: 4,
+    post_title: 'Local parent post',
+    post_content: 'local-private-parent-body',
+    post_status: 'publish',
+  };
+  local.db.wp_postmeta = {
+    'meta_id:23': {
+      meta_id: 23,
+      post_id: 3,
+      meta_key: 'menu_item_parent',
+      meta_value: '4',
+    },
+  };
+
+  const plan = planFor(base, local, baseSite());
+  const navigationMutation = mutationFor(plan, navigationResourceKey);
+  const parentMutation = mutationFor(plan, parentResourceKey);
+  const postmetaMutation = mutationFor(plan, postmetaResourceKey);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === postmetaResourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(navigationMutation, undefined);
+  assert.equal(parentMutation.changeKind, 'create');
+  assert.equal(postmetaMutation, undefined);
+  assert.equal(blocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(blocker.surface, 'wp_navigation');
+  assert.equal(
+    JSON.stringify(blocker).includes('local-private-navigation-menu-item-body'),
+    false,
+  );
+  assert.equal(
+    JSON.stringify(blocker).includes('local-private-parent-body'),
+    false,
+  );
+});
+
 test('blocks an atomic plugin install when dependencies are absent', () => {
   const base = baseSite();
   const local = baseSite();
