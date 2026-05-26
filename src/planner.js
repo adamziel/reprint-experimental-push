@@ -315,6 +315,10 @@ export function createPushPlan({ base, local, remote, now = new Date() }) {
         baseValue,
         localValue,
         remoteValue,
+        resources,
+        base,
+        local,
+        remote,
       });
       if (!commentsUsersSupport.supported) {
         addUnsupportedCommentsUsersResourceBlocker(plan, {
@@ -1226,6 +1230,21 @@ function wordpressGraphIdentitySupport({
       && reference.targetChange.remote.state === 'absent');
 
     if (menuItemParentReference) {
+      return {
+        supported: false,
+        className: 'unsupported-navigation-resource',
+        reason: 'Navigation and menu graph resources are not yet supported by the planner.',
+      };
+    }
+  }
+  if (resource.table === 'wp_posts' && localValue.post_type === 'wp_navigation') {
+    const inboundNavigationReference = referenceEvidence.find((reference) =>
+      reference.relationshipType === 'post-parent'
+      && reference.targetChange.targetResource?.table === 'wp_posts'
+      && ['wp_navigation', 'nav_menu_item'].includes(reference.targetChange.local.value?.post_type)
+      && reference.targetChange.remote.state === 'absent');
+
+    if (inboundNavigationReference) {
       return {
         supported: false,
         className: 'unsupported-navigation-resource',
@@ -2222,6 +2241,15 @@ function unsupportedAttachmentResourceSupport({ resource, baseValue, localValue,
     return { supported: true };
   }
 
+  const samePlanCreatedAttachment = localValue !== ABSENT && baseValue === ABSENT && remoteValue === ABSENT;
+  if (samePlanCreatedAttachment) {
+    return {
+      supported: false,
+      className: 'unsupported-attachment-resource',
+      reason: 'Attachment graph resources are not yet supported by the planner.',
+    };
+  }
+
   return {
     supported: false,
     className: 'unsupported-attachment-resource',
@@ -2297,7 +2325,9 @@ function unsupportedTermTaxonomyResourceSupport({ resource, baseValue, localValu
   return {
     supported: false,
     className: 'unsupported-term-taxonomy-resource',
-    reason: 'Term taxonomy graph resources are not yet supported by the planner.',
+    reason: samePlanCreatedTermReferences.some((reference) => reference.relationshipType === 'term-taxonomy-parent')
+      ? 'WordPress graph mutation row:["wp_term_taxonomy","term_taxonomy_id:5"] is created in the same plan as a parent term identity that depends on it, and identity rewriting is not yet supported.'
+      : 'Term taxonomy graph resources are not yet supported by the planner.',
   };
 }
 
@@ -2328,7 +2358,7 @@ function unsupportedGuidResourceSupport({ resource, baseValue, localValue, remot
   };
 }
 
-function unsupportedCommentsUsersResourceSupport({ resource, baseValue, localValue, remoteValue }) {
+function unsupportedCommentsUsersResourceSupport({ resource, baseValue, localValue, remoteValue, resources, base, local, remote }) {
   if (resource.type !== 'row' || !['wp_comments', 'wp_users'].includes(resource.table)) {
     return { supported: true };
   }
@@ -2336,6 +2366,33 @@ function unsupportedCommentsUsersResourceSupport({ resource, baseValue, localVal
   const candidate = localValue !== ABSENT ? localValue : (baseValue !== ABSENT ? baseValue : remoteValue);
   if (!candidate || candidate === ABSENT) {
     return { supported: true };
+  }
+
+  if (resource.table === 'wp_comments') {
+    const references = wordpressGraphReferences(resource, candidate);
+    const commentGraphReference = references.find((reference) =>
+      (
+        reference.relationshipType === 'comment-parent'
+        && reference.targetResource?.table === 'wp_comments'
+        && getResource(remote, reference.targetResource) === ABSENT
+        && getResource(local, reference.targetResource) !== ABSENT
+      )
+      || (
+        reference.relationshipType === 'comment-post'
+        && reference.targetResource?.table === 'wp_posts'
+        && getResource(remote, reference.targetResource) === ABSENT
+        && getResource(local, reference.targetResource) !== ABSENT
+      ));
+
+    if (commentGraphReference) {
+      return {
+        supported: false,
+        className: 'unsupported-comments-users-resource',
+        reason: commentGraphReference.relationshipType === 'comment-parent'
+          ? `WordPress graph mutation ${resource.key} is created in the same plan as a parent comment identity that depends on it, and identity rewriting is not yet supported.`
+          : `WordPress graph mutation ${resource.key} is created in the same plan as a comment post identity that depends on it, and identity rewriting is not yet supported.`,
+      };
+    }
   }
 
   return {
