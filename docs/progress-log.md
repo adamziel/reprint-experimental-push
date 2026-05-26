@@ -18,6 +18,20 @@ linked implementation artifacts.
   still block any production push claim, while the checked replay-equivalence
   evidence is now visible but still below a gate movement.
 
+## 2026-05-26 - Public Status Audit 12:10:43
+
+<a id="2026-05-26-public-status-audit-121043"></a>
+
+- Freshness update plus reliable-head confirmation: `9d0279a3` is the current
+  reliable-executor head on the public page, and the visible status now points
+  at this 12:10:43 audit refresh.
+- Gate posture remains conservative at `0/4`; no implementation verdict
+  changed.
+- Latest blocker summary remains the same: production-backed auth/session
+  lifecycle on the checked release path and production durable-journal
+  semantics still block any production push claim, while the stale-claim
+  fencing evidence is now visible but still below a gate movement.
+
 ## 2026-05-26 - Public Status Audit 12:06:57
 
 <a id="2026-05-26-public-status-audit-120657"></a>
