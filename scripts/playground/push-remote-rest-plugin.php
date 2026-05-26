@@ -3822,7 +3822,9 @@ function reprint_push_lab_rest_db_journal_schema(WP_REST_Request $request): WP_R
 
 function reprint_push_lab_rest_db_journal_evidence(array $entry): array
 {
-    $package_mode = reprint_push_lab_rest_package_mode_enabled();
+    $scope_key = isset($entry['labScope']) && is_string($entry['labScope']) && $entry['labScope'] !== ''
+        ? $entry['labScope']
+        : reprint_push_lab_db_journal_scope_key();
     return [
         'table' => reprint_push_lab_db_journal_table_name(),
         'cursor' => 'db-journal:' . (int) ($entry['sequence'] ?? 0),
@@ -3831,9 +3833,7 @@ function reprint_push_lab_rest_db_journal_evidence(array $entry): array
         'idempotencyKeyHash' => (string) ($entry['idempotencyKeyHash'] ?? ''),
         'requestHash' => (string) ($entry['requestHash'] ?? ''),
         'resultHash' => (string) ($entry['resultHash'] ?? ''),
-        'scope' => $package_mode
-            ? 'packaged production plugin journal evidence'
-            : 'local Playground fixture only',
+        'scope' => reprint_push_lab_db_journal_scope_label($scope_key, false),
     ];
 }
 

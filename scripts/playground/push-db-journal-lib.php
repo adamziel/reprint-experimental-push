@@ -1,9 +1,10 @@
 <?php
 /**
- * Lab-only DB journal and idempotency helpers for Playground REST proofs.
+ * DB journal and idempotency helpers for Playground REST proofs.
  *
- * This table is intentionally fixture-scoped. It is not a production durability
- * contract; it only records hash evidence for local Playground push experiments.
+ * The table is still a testing primitive, but checked production-shaped and
+ * packaged routes promote its exposed contract into a fail-closed durability
+ * boundary that the release verifier can inspect.
  */
 
 function reprint_push_lab_db_journal_table_name(): string
@@ -77,17 +78,13 @@ function reprint_push_lab_db_journal_ensure_table(): void
 function reprint_push_lab_db_journal_schema(bool $checked_surface = false): array
 {
     reprint_push_lab_db_journal_ensure_table();
-    $package_mode = reprint_push_lab_db_journal_package_mode_enabled();
-    $accepted_on_checked_boundary = $package_mode || $checked_surface;
+    $scope_key = reprint_push_lab_db_journal_scope_key([], $checked_surface);
+    $accepted_on_checked_boundary = $scope_key !== 'local-playground-fixture';
 
     $schema = [
         'schemaVersion' => 1,
         'table' => reprint_push_lab_db_journal_table_name(),
-        'scope' => $accepted_on_checked_boundary
-            ? ($package_mode
-                ? 'packaged production plugin journal surface; not local Playground fixture only'
-                : 'checked live production-shaped journal surface; not local Playground fixture only')
-            : 'local Playground fixture only; not production durability',
+        'scope' => reprint_push_lab_db_journal_scope_label($scope_key, true),
         'appendOnlyEvents' => true,
         'columns' => [
             'id' => 'append-only event sequence',
@@ -143,6 +140,38 @@ function reprint_push_lab_db_journal_package_mode_enabled(): bool
         && REPRINT_PUSH_DISABLE_AUTH_BOOTSTRAP === true;
 }
 
+function reprint_push_lab_db_journal_scope_key(array $context = [], bool $checked_surface = false): string
+{
+    if (reprint_push_lab_db_journal_package_mode_enabled()) {
+        return 'packaged-production-plugin';
+    }
+
+    if ($checked_surface || (string) ($context['routeProfile'] ?? '') === 'production-shaped') {
+        return 'checked-live-production-shaped';
+    }
+
+    return 'local-playground-fixture';
+}
+
+function reprint_push_lab_db_journal_scope_label(string $scope_key, bool $surface = true): string
+{
+    if ($scope_key === 'packaged-production-plugin') {
+        return $surface
+            ? 'packaged production plugin journal surface; not local Playground fixture only'
+            : 'packaged production plugin journal evidence; not local Playground fixture only';
+    }
+
+    if ($scope_key === 'checked-live-production-shaped') {
+        return $surface
+            ? 'checked live production-shaped journal surface; not local Playground fixture only'
+            : 'checked live production-shaped journal evidence; not local Playground fixture only';
+    }
+
+    return $surface
+        ? 'local Playground fixture only; not production durability'
+        : 'local Playground fixture only';
+}
+
 function reprint_push_lab_db_journal_checked_boundary_contract(
     bool $checked_surface = false,
     bool $stale_claim_rejected = false,
@@ -150,8 +179,8 @@ function reprint_push_lab_db_journal_checked_boundary_contract(
     bool $monotonic_sequence = true,
     bool $restart_readable = true
 ): array {
-    $package_mode = reprint_push_lab_db_journal_package_mode_enabled();
-    $accepted_on_checked_boundary = $package_mode || $checked_surface;
+    $scope_key = reprint_push_lab_db_journal_scope_key([], $checked_surface);
+    $accepted_on_checked_boundary = $scope_key !== 'local-playground-fixture';
     if (!$accepted_on_checked_boundary) {
         return [];
     }
@@ -165,9 +194,7 @@ function reprint_push_lab_db_journal_checked_boundary_contract(
 
     return [
         'acceptedOnCheckedBoundary' => true,
-        'scope' => $package_mode
-            ? 'packaged production plugin journal surface; not local Playground fixture only'
-            : 'checked live production-shaped journal surface; not local Playground fixture only',
+        'scope' => reprint_push_lab_db_journal_scope_label($scope_key, true),
         'ownership' => [
             'ownsJournal' => true,
             'restartReadable' => $restart_readable,
@@ -366,7 +393,7 @@ function reprint_push_lab_db_journal_insert_event(
         'resource_hash_evidence_json' => $resource_evidence_json,
         'error_code' => (string) ($context['errorCode'] ?? ''),
         'claim_key_hash' => $claim_key_hash,
-        'lab_scope' => 'local-playground-fixture',
+        'lab_scope' => reprint_push_lab_db_journal_scope_key($context),
         'created_at' => $now,
         'updated_at' => $now,
     ];
@@ -522,8 +549,8 @@ function reprint_push_lab_db_journal_summary(int $limit = 20, bool $checked_surf
     global $wpdb;
 
     reprint_push_lab_db_journal_ensure_table();
-    $package_mode = reprint_push_lab_db_journal_package_mode_enabled();
-    $accepted_on_checked_boundary = $package_mode || $checked_surface;
+    $scope_key = reprint_push_lab_db_journal_scope_key([], $checked_surface);
+    $accepted_on_checked_boundary = $scope_key !== 'local-playground-fixture';
 
     $limit = max(1, min(500, $limit));
     $quoted_table = reprint_push_lab_db_journal_quoted_table_name();
@@ -549,11 +576,7 @@ function reprint_push_lab_db_journal_summary(int $limit = 20, bool $checked_surf
     $summary = [
         'schemaVersion' => 1,
         'table' => reprint_push_lab_db_journal_table_name(),
-        'scope' => $accepted_on_checked_boundary
-            ? ($package_mode
-                ? 'packaged production plugin journal surface; not local Playground fixture only'
-                : 'checked live production-shaped journal surface; not local Playground fixture only')
-            : 'local Playground fixture only; not production durability',
+        'scope' => reprint_push_lab_db_journal_scope_label($scope_key, true),
         'rowCount' => $row_count,
         'latestRows' => array_map('reprint_push_lab_db_journal_public_row', array_reverse($latest)),
         'eventSummaries' => array_map(static function (array $row): array {

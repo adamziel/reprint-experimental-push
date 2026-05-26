@@ -128,6 +128,67 @@ function runDbJournalStorageGuard(summary) {
   });
 }
 
+function runDbJournalScopeKey(context = {}, packageMode = false, checkedSurface = false) {
+  return spawnSync('php', [
+    '-r',
+    [
+      packageMode ? 'define("REPRINT_PUSH_DISABLE_LAB_ROUTES", true); define("REPRINT_PUSH_DISABLE_AUTH_BOOTSTRAP", true);' : '',
+      'define("ABSPATH", dirname($argv[1]));',
+      'function add_filter(...$args) {}',
+      'function add_action(...$args) {}',
+      'function register_rest_route(...$args) {}',
+      'class WP_REST_Server { const CREATABLE = "POST"; const READABLE = "GET"; }',
+      'class WP_REST_Response {',
+      '  private $data;',
+      '  public function __construct($data = null, $status = null) { $this->data = $data; }',
+      '  public function get_data() { return $this->data; }',
+      '  public function set_data($data) { $this->data = $data; }',
+      '}',
+      'class WP_REST_Request {}',
+      'require $argv[1];',
+      '$context = json_decode($argv[2], true);',
+      '$checkedSurface = ($argv[3] ?? "0") === "1";',
+      'echo json_encode(reprint_push_lab_db_journal_scope_key($context, $checkedSurface));',
+    ].join(' '),
+    pluginFile,
+    JSON.stringify(context),
+    checkedSurface ? '1' : '0',
+  ], {
+    cwd: repoRoot,
+    encoding: 'utf8',
+  });
+}
+
+function runDbJournalEvidence(entry, packageMode = false) {
+  return spawnSync('php', [
+    '-r',
+    [
+      packageMode ? 'define("REPRINT_PUSH_DISABLE_LAB_ROUTES", true); define("REPRINT_PUSH_DISABLE_AUTH_BOOTSTRAP", true);' : '',
+      'define("ABSPATH", dirname($argv[1]));',
+      '$GLOBALS["wpdb"] = (object) ["prefix" => "wp_"];',
+      'function add_filter(...$args) {}',
+      'function add_action(...$args) {}',
+      'function register_rest_route(...$args) {}',
+      'class WP_REST_Server { const CREATABLE = "POST"; const READABLE = "GET"; }',
+      'class WP_REST_Response {',
+      '  private $data;',
+      '  public function __construct($data = null, $status = null) { $this->data = $data; }',
+      '  public function get_data() { return $this->data; }',
+      '  public function set_data($data) { $this->data = $data; }',
+      '}',
+      'class WP_REST_Request {}',
+      'require $argv[1];',
+      '$entry = json_decode($argv[2], true);',
+      'echo json_encode(reprint_push_lab_rest_db_journal_evidence($entry));',
+    ].join(' '),
+    pluginFile,
+    JSON.stringify(entry),
+  ], {
+    cwd: repoRoot,
+    encoding: 'utf8',
+  });
+}
+
 function runAttachCheckedDbJournalContract(result, checkedSummary, injectIfMissing = false) {
   return spawnSync('php', [
     '-r',
@@ -1619,6 +1680,56 @@ test('db journal storage guard stays visible when only checked event summaries r
     boundary: 'wpdb-single-statement-cas',
     operation: 'update',
     outcome: 'applied',
+  });
+});
+
+test('db journal scope key follows the checked route profile and packaged mode', { skip: !hasPhp }, () => {
+  const checkedRoute = runDbJournalScopeKey({ routeProfile: 'production-shaped' });
+  assert.equal(checkedRoute.status, 0, checkedRoute.stderr);
+  assert.equal(JSON.parse(checkedRoute.stdout), 'checked-live-production-shaped');
+
+  const checkedSurface = runDbJournalScopeKey({}, false, true);
+  assert.equal(checkedSurface.status, 0, checkedSurface.stderr);
+  assert.equal(JSON.parse(checkedSurface.stdout), 'checked-live-production-shaped');
+
+  const packaged = runDbJournalScopeKey({ routeProfile: 'production-shaped' }, true);
+  assert.equal(packaged.status, 0, packaged.stderr);
+  assert.equal(JSON.parse(packaged.stdout), 'packaged-production-plugin');
+});
+
+test('db journal evidence exposes checked and packaged scope labels instead of collapsing to fixture-only', { skip: !hasPhp }, () => {
+  const checked = runDbJournalEvidence({
+    event: 'apply-committed',
+    sequence: 8,
+    labScope: 'checked-live-production-shaped',
+  });
+  assert.equal(checked.status, 0, checked.stderr);
+  assert.deepEqual(JSON.parse(checked.stdout), {
+    table: 'wp_reprint_push_lab_push_journal',
+    cursor: 'db-journal:8',
+    event: 'apply-committed',
+    sequence: 8,
+    idempotencyKeyHash: '',
+    requestHash: '',
+    resultHash: '',
+    scope: 'checked live production-shaped journal evidence; not local Playground fixture only',
+  });
+
+  const packaged = runDbJournalEvidence({
+    event: 'apply-committed',
+    sequence: 9,
+    labScope: 'packaged-production-plugin',
+  }, true);
+  assert.equal(packaged.status, 0, packaged.stderr);
+  assert.deepEqual(JSON.parse(packaged.stdout), {
+    table: 'wp_reprint_push_lab_push_journal',
+    cursor: 'db-journal:9',
+    event: 'apply-committed',
+    sequence: 9,
+    idempotencyKeyHash: '',
+    requestHash: '',
+    resultHash: '',
+    scope: 'packaged production plugin journal evidence; not local Playground fixture only',
   });
 });
 
