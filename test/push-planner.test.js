@@ -462,7 +462,7 @@ test('blocks plugin-owned custom tables while preserving a matching independent 
   const pluginDecision = decisionFor(plan, 'plugin:forms');
   const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
 
-  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.status, 'conflict');
   assert.equal(blocker.class, 'unsupported-plugin-owned-resource');
   assert.equal(blocker.resourceKind, 'custom-table');
   assert.equal(
@@ -513,7 +513,7 @@ test('blocks unknown plugin-owned custom tables while preserving a matching inde
   const pluginDecision = decisionFor(plan, 'plugin:forms');
   const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
 
-  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.status, 'conflict');
   assert.equal(blocker.class, 'unsupported-plugin-owned-resource');
   assert.equal(blocker.resourceKind, 'custom-table');
   assert.equal(
@@ -565,7 +565,7 @@ test('blocks deletion of unknown plugin-owned custom tables while preserving a m
   const pluginDecision = decisionFor(plan, 'plugin:forms');
   const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
 
-  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.status, 'conflict');
   assert.equal(blocker.class, 'unsupported-plugin-owned-resource');
   assert.equal(blocker.resourceKind, 'custom-table');
   assert.equal(
@@ -617,7 +617,7 @@ test('blocks plugin-owned custom table deletes while preserving a matching indep
   const pluginDecision = decisionFor(plan, 'plugin:forms');
   const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
 
-  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.status, 'conflict');
   assert.equal(blocker.class, 'unsupported-plugin-owned-resource');
   assert.equal(
     blocker.reason,
@@ -981,7 +981,7 @@ test('stops a local file deletion when the remote turned the same file into a di
   const plan = planFor(base, local, remote);
   const conflict = plan.conflicts[0];
 
-  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.status, 'conflict');
   assert.equal(plan.summary.mutations, 0);
   assert.equal(conflict.class, 'file-conflict');
   assert.equal(conflict.resourceKey, 'file:index.php');
@@ -1014,7 +1014,7 @@ test('stops a local file delete when the remote turned the same file into a dire
   const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
   const planJson = JSON.stringify(plan);
 
-  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.status, 'conflict');
   assert.equal(plan.summary.mutations, 0);
   assert.equal(plan.preconditions.length, 0);
   assert.equal(conflict.class, 'file-conflict');
@@ -1060,7 +1060,7 @@ test('stops a local file delete when the remote turned the same file into a dire
   const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
   const conflictJson = JSON.stringify(conflict);
 
-  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.status, 'conflict');
   assert.equal(plan.summary.mutations, 0);
   assert.equal(plan.preconditions.length, 0);
   assert.equal(conflict.class, 'file-conflict');
@@ -1104,7 +1104,7 @@ test('stops a local file delete when the remote turned the same file into a dire
   const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
   const conflictJson = JSON.stringify(conflict);
 
-  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.status, 'conflict');
   assert.equal(plan.summary.mutations, 0);
   assert.equal(plan.preconditions.length, 0);
   assert.equal(conflict.class, 'file-conflict');
@@ -1146,7 +1146,7 @@ test('stops a local row deletion when the remote independently updated the same 
   const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
   const planJson = JSON.stringify(plan);
 
-  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.status, 'conflict');
   assert.equal(plan.summary.mutations, 0);
   assert.equal(conflict.class, 'row-conflict');
   assert.equal(conflict.resourceKey, 'row:["wp_posts","ID:2"]');
@@ -1179,7 +1179,7 @@ test('stops a local directory deletion that would remove a remote-only descendan
   const plan = planFor(base, local, remote);
   const conflict = plan.conflicts[0];
 
-  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.status, 'conflict');
   assert.equal(plan.summary.mutations, 0);
   assert.equal(mutationFor(plan, 'file:wp-content/uploads/gallery'), undefined);
   assert.equal(
@@ -1246,7 +1246,7 @@ test('stops a local file delete when the remote independently type swaps the sam
   const pluginDecision = decisionFor(plan, 'plugin:forms');
   const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
 
-  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.status, 'conflict');
   assert.equal(plan.summary.mutations, 0);
   assert.equal(mutationFor(plan, 'file:wp-content/uploads/gallery'), undefined);
   assert.equal(plan.preconditions.some((precondition) =>
@@ -1289,7 +1289,7 @@ test('stops a local file delete when the remote independently type swaps the sam
   const pluginDecision = decisionFor(plan, 'plugin:forms');
   const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
 
-  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.status, 'conflict');
   assert.equal(plan.summary.mutations, 0);
   assert.equal(mutationFor(plan, 'file:wp-content/uploads/gallery'), undefined);
   assert.equal(plan.preconditions.some((precondition) =>
@@ -1338,7 +1338,7 @@ test('stops a local file delete when the remote independently type swaps the sam
   const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
   const planJson = JSON.stringify(plan);
 
-  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.status, 'conflict');
   assert.equal(plan.summary.conflicts, 1);
   assert.equal(plan.summary.mutations, 0);
   assert.equal(mutationFor(plan, 'file:wp-content/uploads/gallery'), undefined);
