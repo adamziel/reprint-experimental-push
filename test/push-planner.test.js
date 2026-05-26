@@ -23049,6 +23049,65 @@ test('blocks local serialized block references while preserving a matching indep
   assert.equal(Object.hasOwn(remote.files, 'wp-content/plugins/forms/forms.php'), false);
 });
 
+test('blocks local serialized block references while preserving a matching independent delete and remote-only plugin changes', () => {
+  const resourceKey = 'row:["wp_posts","ID:65"]';
+  const base = baseSite();
+  base.db.wp_posts['ID:65'] = {
+    ID: 65,
+    post_title: 'Base change delete block post',
+    post_content: '<!-- wp:paragraph -->Base change delete block content<!-- /wp:paragraph -->',
+    post_status: 'publish',
+    post_type: 'post',
+  };
+  base.db.wp_posts['ID:66'] = {
+    ID: 66,
+    post_title: 'Base shared delete title',
+    post_content: 'Base shared delete content',
+    post_status: 'publish',
+    post_type: 'post',
+  };
+
+  const local = baseSite();
+  local.db.wp_posts['ID:65'] = {
+    ID: 65,
+    post_title: 'Local change delete block post',
+    post_content: '<!-- wp:paragraph -->Local change delete block content<!-- /wp:paragraph -->',
+    post_status: 'publish',
+    post_type: 'post',
+  };
+  delete local.db.wp_posts['ID:66'];
+
+  const remote = baseSite();
+  remote.db.wp_posts['ID:65'] = JSON.parse(JSON.stringify(base.db.wp_posts['ID:65']));
+  remote.db.wp_posts['ID:66'] = JSON.parse(JSON.stringify(base.db.wp_posts['ID:66']));
+  delete remote.db.wp_posts['ID:66'];
+  remote.plugins.forms.description = 'remote-only plugin changes';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin changes */';
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers[0];
+  const matchingDelete = decisionFor(plan, 'row:["wp_posts","ID:66"]');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(plan.conflicts.length, 0);
+  assert.equal(blocker.class, 'unsupported-serialized-blocks-resource');
+  assert.equal(blocker.resourceKind, 'serialized-blocks');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.reason, 'Serialized block references are not yet supported by the planner.');
+  assert.equal(matchingDelete.decision, 'already-in-sync');
+  assert.equal(matchingDelete.change.localChange, 'delete');
+  assert.equal(matchingDelete.change.remoteChange, 'delete');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('Local change delete block content'), false);
+  assert.equal(planJson.includes('Base change delete block content'), false);
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin changes');
+  assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin changes */');
+});
+
 test('blocks local serialized block references while preserving remote-only plugin changes', () => {
   const resourceKey = 'row:["wp_posts","ID:59"]';
   const base = baseSite();
