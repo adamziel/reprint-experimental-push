@@ -1037,6 +1037,10 @@ export function productionThroughputDetails(report) {
   const queueHeadroomVisible =
     report.evidence.backpressure?.queueHeadroomVisible === true;
   const queueHeadroomMeasured = report.evidence.backpressure?.queueHeadroomMeasured === true;
+  const queueBudgetVisibleAndMemoryCeilingVisibleAndMeasured =
+    queueBudgetVisible
+    && receiptCursorMemoryCeilingVisible
+    && queueHeadroomMeasured;
   const queueBudgetVisibleAndQueueHeadroomMeasured =
     queueBudgetVisible && queueHeadroomMeasured;
   const receiptCursorMemoryCeilingVisibleAndQueueHeadroomVisible =
@@ -1393,6 +1397,7 @@ export function productionThroughputDetails(report) {
     queueHeadroomPositive,
     queueBudgetPositive,
     queueBudgetVisible,
+    queueBudgetVisibleAndMemoryCeilingVisibleAndMeasured,
     queueBudgetVisibleAndQueueHeadroomMeasured,
     queueBudgetVisibleAndQueueHeadroomVisible:
       queueBudgetVisible && queueHeadroomVisible,
@@ -1486,6 +1491,7 @@ export function productionThroughputDetails(report) {
       queueHeadroomPositive,
       queueBudgetPositive,
       queueBudgetVisible,
+      queueBudgetVisibleAndMemoryCeilingVisibleAndMeasured,
       queueBudgetVisibleAndQueueHeadroomMeasured,
       queueBudgetVisibleAndQueueHeadroomVisible:
         queueBudgetVisible && queueHeadroomVisible,

@@ -69,6 +69,7 @@ test('guarded executor benchmark moves buffers and row payloads through durable 
   assert.equal(report.evidence.backpressure.producerQueueBounded, true);
   assert.equal(report.evidence.backpressure.queueBudgetMatchesResourceCeiling, true);
   assert.equal(report.evidence.backpressure.queueBudgetVisible, true);
+  assert.equal(report.claims.productionThroughputDetails.queueBudgetVisibleAndMemoryCeilingVisibleAndMeasured, true);
   assert.equal(report.evidence.backpressure.queueHeadroomVisible, true);
   assert.equal(report.evidence.backpressure.queuePausedBeforeOverflow, true);
   assert.equal(report.evidence.backpressure.receiptCursorWithinQueueBudget, true);
@@ -241,11 +242,16 @@ test('guarded benchmark blocks forged queue-budget visibility without memory-cei
 
   tampered.evidence.backpressure.queueBudgetVisible = true;
   tampered.evidence.backpressure.receiptCursorMemoryCeilingVisible = false;
+  tampered.evidence.backpressure.queueHeadroomMeasured = false;
 
   const blockers = productionThroughputBlockers(tampered);
 
   assert.equal(blockers.includes('queue-budget-visible-without-memory-ceiling-visibility'), true);
   assert.equal(blockers.includes('queue-budget-not-visible'), false);
+  assert.equal(
+    productionThroughputDetails(tampered).queueBudgetVisibleAndMemoryCeilingVisibleAndMeasured,
+    false,
+  );
 });
 
 test('guarded benchmark blocks forged memory-ceiling visibility without queue-budget visibility', () => {
