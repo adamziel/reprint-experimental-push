@@ -1436,6 +1436,7 @@ function hasValidProductionLeaseIdentity(value) {
     && Object.hasOwn(value, 'id')
     && typeof value.id === 'string'
     && value.id.trim().length > 0
+    && value.id.trim() === value.id
     && (
       !Object.hasOwn(value, 'epoch')
       || (Number.isInteger(value.epoch) && value.epoch >= 0)
