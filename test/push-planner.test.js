@@ -25856,6 +25856,7 @@ test('production durable journal support probes restart inspection only once', (
     productionAdapter: true,
     supportedSurface: 'production-recovery-journal-adapter',
     ownsJournal: true,
+    writerLease: { id: 'lease-1' },
     restartReadable: true,
     journalPath: '/var/lib/reprint/recovery.jsonl',
     artifactRefs: {
