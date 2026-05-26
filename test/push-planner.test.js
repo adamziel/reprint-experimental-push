@@ -4784,6 +4784,62 @@ test('blocks menu item parent metadata from referencing a same-plan revision eve
   );
 });
 
+test('blocks menu item parent metadata when the same-plan post target is itself blocked by a revision parent', () => {
+  const revisionResourceKey = 'row:["wp_posts","ID:4"]';
+  const blockedTargetResourceKey = 'row:["wp_posts","ID:5"]';
+  const postmetaResourceKey = 'row:["wp_postmeta","meta_id:58"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_posts['ID:4'] = {
+    ID: 4,
+    post_title: 'Local revision parent',
+    post_content: 'local-private-revision-parent-body',
+    post_type: 'revision',
+  };
+  local.db.wp_posts['ID:5'] = {
+    ID: 5,
+    post_title: 'Local blocked menu parent target',
+    post_content: 'local-private-blocked-menu-parent-target-body',
+    post_status: 'publish',
+    post_parent: 4,
+  };
+  local.db.wp_postmeta = {
+    'meta_id:58': {
+      meta_id: 58,
+      post_id: 1,
+      meta_key: 'menu_item_parent',
+      meta_value: 5,
+    },
+  };
+
+  const plan = planFor(base, local, baseSite());
+  const blockedTargetMutation = mutationFor(plan, blockedTargetResourceKey);
+  const blockedTargetBlocker = plan.blockers.find((entry) => entry.resourceKey === blockedTargetResourceKey);
+  const postmetaMutation = mutationFor(plan, postmetaResourceKey);
+  const postmetaBlocker = plan.blockers.find((entry) => entry.resourceKey === postmetaResourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(mutationFor(plan, revisionResourceKey), undefined);
+  assert.equal(blockedTargetMutation.changeKind, 'create');
+  assert.equal(postmetaMutation.changeKind, 'create');
+  assert.equal(blockedTargetBlocker.class, 'missing-wordpress-graph-dependency');
+  assert.equal(blockedTargetBlocker.references[0].relationshipType, 'post-parent');
+  assert.equal(blockedTargetBlocker.references[0].targetResourceKey, revisionResourceKey);
+  assert.equal(postmetaBlocker.class, 'missing-wordpress-graph-dependency');
+  assert.equal(postmetaBlocker.references[0].relationshipType, 'menu-item-parent-post');
+  assert.equal(postmetaBlocker.references[0].targetResourceKey, blockedTargetResourceKey);
+  assert.equal(postmetaMutation.dependsOnMutationIds, undefined);
+  assert.equal(
+    JSON.stringify(postmetaBlocker).includes('local-private-blocked-menu-parent-target-body'),
+    false,
+  );
+  assert.equal(
+    JSON.stringify(postmetaBlocker).includes('local-private-revision-parent-body'),
+    false,
+  );
+  assert.throws(() => applyPlan(baseSite(), plan), /Refusing to apply/);
+});
+
 test('allows a local post to reference a parent post created by the same plan', () => {
   const parentResourceKey = 'row:["wp_posts","ID:2"]';
   const childResourceKey = 'row:["wp_posts","ID:3"]';
