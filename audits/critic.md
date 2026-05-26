@@ -1,15 +1,14 @@
 # Critic Verdict
 
-Current reliable head: `749ccca7b503a0818bf69b8f74e0a4bfc8fc777c`
-(`Expose release proof journal ownership`).
+Current reliable head: `42209a94bff4375e648d1a6660f83db1106c4e9f`
+(`current release-executor head`).
 
 Verdict: `0/4`
 
 Reason:
 
-- This head exposes more release-verifier journal ownership evidence, but it
-  still does not prove a production-backed auth/session lifecycle on the
-  checked release path.
+- This head still does not prove a production-backed auth/session lifecycle on
+  the checked release path.
 - The checked proof is still missing live issuance/read/expiry/rotation/
   revocation/cleanup evidence for `production-auth-session`, and it still does
   not establish stricter durable-journal ownership/restart semantics consumed
