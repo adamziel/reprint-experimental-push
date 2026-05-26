@@ -70,6 +70,10 @@ try {
   const driverBaseSnapshot = exportSnapshot('driver-fixture-base', driverSnapshotBlueprintPath);
   const driverLocalDeleteSnapshot = deepClone(driverBaseSnapshot);
   delete driverLocalDeleteSnapshot.db?.[driverFixture.table]?.['entry_id:1'];
+  const driverLocalUpdateSnapshot = deepClone(driverBaseSnapshot);
+  driverLocalUpdateSnapshot.db[driverFixture.table]['entry_id:1'].payload.mode = 'local-update';
+  driverLocalUpdateSnapshot.db[driverFixture.table]['entry_id:1'].payload.version = 2;
+  driverLocalUpdateSnapshot.db[driverFixture.table]['entry_id:1'].updated_marker = 'local-update';
 
   const summary = {
     package: {
@@ -79,6 +83,7 @@ try {
     },
     routes: {},
     cli: {},
+    driverUpdateApply: {},
     driverDeleteGuard: {},
     final: {},
   };
@@ -217,6 +222,64 @@ try {
     assert.equal(allowedEntry.pluginOwner, driverFixture.pluginOwner);
     assert.equal(allowedEntry.supportsDelete, false);
 
+    const updatePlan = createPushPlan({
+      base: driverBaseSnapshot,
+      local: driverLocalUpdateSnapshot,
+      remote: remoteSnapshot.body.snapshot,
+      now: new Date('2026-05-26T18:05:00.000Z'),
+    });
+    assert.equal(updatePlan.status, 'ready');
+    assert.equal(updatePlan.mutations.length, 1);
+    assert.equal(updatePlan.mutations[0].resourceKey, driverFixture.resourceKey);
+    assert.equal(updatePlan.mutations[0].action, 'update');
+    assert.equal(updatePlan.mutations[0].pluginOwnedResource?.driver, driverFixture.driver);
+    assert.equal(updatePlan.mutations[0].pluginOwnedResource?.table, driverFixture.table);
+
+    const updateDryRun = await client.signedPost(
+      '/dry-run',
+      { plan: updatePlan },
+      {
+        session,
+        idempotencyKey: 'production-plugin-driver-update-dry-run',
+      },
+    );
+    assert.equal(updateDryRun.status, 200);
+    assert.equal(updateDryRun.body?.ok, true);
+    assert.ok(updateDryRun.body?.receipt?.receiptHash, 'driver update dry-run did not produce a receipt');
+
+    const updateApply = await client.signedPost(
+      '/apply',
+      {
+        plan: updatePlan,
+        receipt: updateDryRun.body.receipt,
+      },
+      {
+        session,
+        idempotencyKey: 'production-plugin-driver-update-apply',
+      },
+    );
+    assert.equal(updateApply.status, 200);
+    assert.equal(updateApply.body?.ok, true);
+    assert.equal(updateApply.body?.applied, 1);
+
+    const afterUpdateApply = await client.get('/snapshot');
+    assert.equal(afterUpdateApply.status, 200);
+    assert.equal(afterUpdateApply.body?.ok, true);
+    assert.deepEqual(
+      afterUpdateApply.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1']?.payload,
+      {
+        owner: driverFixture.pluginOwner,
+        mode: 'local-update',
+        version: 2,
+      },
+      'packaged apply route did not persist the arbitrary driver payload update',
+    );
+    assert.equal(
+      afterUpdateApply.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1']?.updated_marker,
+      'local-update',
+      'packaged apply route did not persist the arbitrary driver updated_marker',
+    );
+
     const forgedRemote = deepClone(remoteSnapshot.body.snapshot);
     const forgedAllowedEntry = forgedRemote.meta.pluginOwnedResources.allowedResources.find(
       (entry) => entry?.resourceKey === driverFixture.resourceKey,
@@ -273,10 +336,27 @@ try {
     assert.equal(afterRejectedApply.body?.ok, true);
     assert.equal(
       afterRejectedApply.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1']?.updated_marker,
-      'base',
+      'local-update',
       'rejected packaged driver delete still mutated the remote snapshot',
     );
+    assert.deepEqual(
+      afterRejectedApply.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1']?.payload,
+      {
+        owner: driverFixture.pluginOwner,
+        mode: 'local-update',
+        version: 2,
+      },
+      'rejected packaged driver delete changed the updated arbitrary driver payload',
+    );
 
+    summary.driverUpdateApply = {
+      resourceKey: driverFixture.resourceKey,
+      remoteSupportsDelete: allowedEntry.supportsDelete,
+      dryRunReceiptHash: updateDryRun.body?.receipt?.receiptHash,
+      applied: updateApply.body?.applied,
+      updatedMarkerAfterApply: afterUpdateApply.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1']?.updated_marker,
+      payloadModeAfterApply: afterUpdateApply.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1']?.payload?.mode,
+    };
     summary.driverDeleteGuard = {
       resourceKey: driverFixture.resourceKey,
       remoteSupportsDelete: allowedEntry.supportsDelete,
