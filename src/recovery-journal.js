@@ -103,17 +103,19 @@ export function createUnsupportedProductionRecoveryJournal(reason = 'Production 
   });
 }
 
-export function openProductionRecoveryJournal(filePath, options = {}) {
-  const claimId = options.claimId || options.claim?.id || null;
+export function openProductionRecoveryJournal(filePathOrOptions, options = {}) {
+  const normalized = normalizeProductionRecoveryJournalOptions(filePathOrOptions, options);
+  const { filePath } = normalized;
+  const claimId = normalized.claimId || normalized.claim?.id || null;
   const claimHash = claimId ? recoveryClaimHash(claimId) : null;
-  const writerLease = Object.hasOwn(options, 'writerLease')
-    ? freezeProductionWriterLease(options.writerLease)
+  const writerLease = Object.hasOwn(normalized, 'writerLease')
+    ? freezeProductionWriterLease(normalized.writerLease)
     : null;
-  const ownsRemoteArtifact = Object.hasOwn(options, 'ownsRemoteArtifact')
-    ? options.ownsRemoteArtifact === true
+  const ownsRemoteArtifact = Object.hasOwn(normalized, 'ownsRemoteArtifact')
+    ? normalized.ownsRemoteArtifact === true
     : false;
-  const remoteArtifactPath = Object.hasOwn(options, 'remoteArtifactPath')
-    ? options.remoteArtifactPath
+  const remoteArtifactPath = Object.hasOwn(normalized, 'remoteArtifactPath')
+    ? normalized.remoteArtifactPath
     : null;
   if (!isCanonicalAbsolutePath(filePath)) {
     throw new UnsupportedProductionRecoveryJournalError(
@@ -217,8 +219,8 @@ export function openProductionRecoveryJournal(filePath, options = {}) {
   }
 
   const journal = openRecoveryJournal(filePath, {
-    truncate: options.truncate,
-    now: options.now,
+    truncate: normalized.truncate,
+    now: normalized.now,
     claimId,
   });
   const leaseFence = freezeProductionWriterLease(writerLease);
@@ -275,6 +277,71 @@ export function openProductionRecoveryJournal(filePath, options = {}) {
   });
 }
 
+export function consumeProductionRecoveryJournal(options) {
+  const normalized = normalizeProductionRecoveryJournalOptions(options);
+  const {
+    filePath,
+    plan,
+    current,
+    claimId = null,
+  } = normalized;
+  const artifactRefs = normalizeProductionArtifactRefs(
+    normalized.artifactRefs,
+    filePath,
+    normalized.remoteArtifactPath ?? null,
+  );
+  const journal = openProductionRecoveryJournal({
+    ...normalized,
+    truncate: false,
+    claimId,
+  });
+
+  try {
+    journal.appendEvent('recovery-journal-consumed', {
+      planId: plan?.id || null,
+      state: 'consumed',
+      observedHash: current ? digest(current) : null,
+      artifactRefs,
+    });
+  } catch (error) {
+    journal.close();
+    throw error;
+  }
+
+  const inspection = journal.inspect();
+  journal.close();
+
+  const records = Array.isArray(inspection.records) ? inspection.records : [];
+  const staleClaimRejected = records.some((record) => record.type === 'stale-claim-advanced');
+  const consumed = records.some((record) => record.type === 'recovery-journal-consumed');
+  const monotonicSequence = records.every((record, index) => record?.sequence === index + 1);
+
+  return {
+    journal: {
+      path: filePath,
+      checked: [filePath],
+      artifactRefs,
+      productionAdapter: 'openProductionRecoveryJournal',
+      claimId,
+      ownsJournal: true,
+      claimHash: claimId ? recoveryClaimHash(claimId) : null,
+      consumed,
+      restartReadable: inspection.integrity?.status === 'ok',
+      schemaVersion: inspection.schemaVersion ?? null,
+      integrity: inspection.integrity,
+      records: records.length,
+      staleClaimRejected,
+    },
+    leaseFence: {
+      storageGuard: 'filesystem-compare-rename',
+      fsyncEvidence: records.every((record) => record?.fsync?.requested === true),
+      monotonicSequence,
+      staleClaimRejected,
+    },
+    consumed,
+  };
+}
+
 export function describeProductionRecoveryJournal(writer) {
   if (!writer || writer.kind !== 'production-recovery-journal') {
     return null;
@@ -316,6 +383,43 @@ function isValidProductionWriterLease(writerLease) {
     && typeof writerLease.id === 'string'
     && writerLease.id.trim().length > 0
   );
+}
+
+function normalizeProductionRecoveryJournalOptions(filePathOrOptions, options = {}) {
+  if (
+    isStrictPlainObject(filePathOrOptions)
+    && (
+      Object.hasOwn(filePathOrOptions, 'filePath')
+      || Object.hasOwn(filePathOrOptions, 'plan')
+      || Object.hasOwn(filePathOrOptions, 'current')
+      || Object.hasOwn(filePathOrOptions, 'artifactRefs')
+    )
+  ) {
+    const legacyOptions = { ...filePathOrOptions };
+    const remoteArtifactPath = legacyOptions.artifactRefs?.remote ?? null;
+    const derivedWriterLease = Object.hasOwn(legacyOptions, 'writerLease')
+      ? legacyOptions.writerLease
+      : { id: legacyOptions.claimId || legacyOptions.plan?.id || legacyOptions.filePath || 'production-recovery-journal' };
+    return {
+      ...legacyOptions,
+      writerLease: derivedWriterLease,
+      ownsRemoteArtifact: remoteArtifactPath !== null && remoteArtifactPath !== undefined && remoteArtifactPath !== '',
+      remoteArtifactPath,
+    };
+  }
+
+  return {
+    ...options,
+    filePath: filePathOrOptions,
+  };
+}
+
+function normalizeProductionArtifactRefs(artifactRefs, journalPath, remoteArtifactPath = null) {
+  const writerArtifactRefs = isStrictPlainObject(artifactRefs) ? artifactRefs : {};
+  return {
+    journal: Object.hasOwn(writerArtifactRefs, 'journal') ? writerArtifactRefs.journal : journalPath,
+    remote: Object.hasOwn(writerArtifactRefs, 'remote') ? writerArtifactRefs.remote : remoteArtifactPath,
+  };
 }
 
 function isStrictPlainObject(value) {

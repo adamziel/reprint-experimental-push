@@ -8,6 +8,7 @@ import {
   appendMutationObserved,
   appendRecoveryClaimOpened,
   assertJournalRecordHasNoRawValues,
+  consumeProductionRecoveryJournal,
   createUnsupportedProductionRecoveryJournal,
   describeProductionRecoveryJournal,
   openPlanRecoveryJournal,
@@ -428,6 +429,75 @@ test('production recovery journal adapter accepts canonical remote artifact owne
   assert.deepEqual(inspected.artifactRefs, { journal: filePath, remote: remoteArtifactPath });
 
   journal.close();
+});
+
+test('production recovery journal compatibility overload supports reliable release consumer shape', () => {
+  const filePath = tempJournalPath();
+  const remote = baseSite();
+  const plan = planFor(baseSite(), localSite(), remote);
+  const remoteArtifactPath = `${filePath}.remote`;
+  const claimId = 'claim-compat';
+  const artifactRefs = {
+    journal: filePath,
+    remote: remoteArtifactPath,
+  };
+  const journal = openProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs,
+    claimId,
+  });
+
+  assert.equal(journal.ownsRemoteArtifact, true);
+  assert.equal(journal.writerLease.id, claimId);
+  appendRecoveryClaimOpened(journal, {
+    plan,
+    current: remote,
+    claimId,
+    artifactRefs,
+  });
+  journal.close();
+
+  const inspection = consumeProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs,
+    claimId,
+  });
+
+  assert.equal(inspection.consumed, true);
+  assert.equal(inspection.journal.productionAdapter, 'openProductionRecoveryJournal');
+  assert.equal(inspection.journal.ownsJournal, true);
+  assert.equal(inspection.journal.consumed, true);
+  assert.equal(inspection.journal.restartReadable, true);
+  assert.deepEqual(inspection.journal.artifactRefs, artifactRefs);
+  assert.deepEqual(inspection.journal.checked, [filePath]);
+  assert.equal(inspection.leaseFence.storageGuard, 'filesystem-compare-rename');
+  assert.equal(inspection.leaseFence.fsyncEvidence, true);
+  assert.equal(inspection.leaseFence.monotonicSequence, true);
+
+  const staleJournal = openProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs,
+    truncate: false,
+    claimId: 'claim-stale',
+  });
+  assert.throws(() => {
+    staleJournal.appendEvent('journal-opened', {
+      planId: plan.id,
+      state: 'opened',
+      observedHash: 'snapshot-hash-only',
+      artifactRefs,
+    });
+  }, {
+    name: 'RecoveryJournalClaimStaleError',
+    code: 'RECOVERY_CLAIM_STALE',
+  });
+  staleJournal.close();
 });
 
 test('restart inspection classifies fail-before mutation journal as old remote', () => {
