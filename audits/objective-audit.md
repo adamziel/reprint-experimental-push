@@ -79,6 +79,10 @@ but it did not change the release conclusion:
 - `origin/lane/reliable-executor` now records `e282b5fc`, hardening live proof
   subprocess cleanup on failure, but it still does not prove production
   auth/session lifecycle or a live-source mutation boundary.
+- `origin/lane/reliable-executor` now records `ebfbdaeb`, tightening release-
+  verify helper bounds and keeping the live proof wrapper fail-closed. It still
+  does not prove production auth/session lifecycle or a live-source mutation
+  boundary.
 - `origin/lane/no-data-loss-invariants` now records `768b0fc8`, adding
   synchronized unsupported custom-table blocking. It still does not prove the
   live release boundary or any production-backed source mutation.
@@ -125,6 +129,9 @@ but it did not change the release conclusion:
   boundary.
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now records
   `0f47e1c0`, refreshing the public progress freshness only.
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now records
+  `c1a06bbe`, refreshing the public progress freshness only. It still does not
+  add production-backed gate movement.
 - `origin/lane/no-data-loss-invariants` now records `b5e199f0`, adding special
   file sibling proof again, but still not proving the live release boundary or
   any production-backed source mutation.
