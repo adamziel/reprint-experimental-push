@@ -3164,17 +3164,30 @@ function unsupportedGuidResourceSupport({ resource, baseValue, localValue, remot
   }
 
   const candidate = localValue !== ABSENT ? localValue : (baseValue !== ABSENT ? baseValue : remoteValue);
+  const candidateGuid = candidate && typeof candidate === 'object' ? candidate.guid : undefined;
   const baseGuid = baseValue !== ABSENT && baseValue && typeof baseValue === 'object' ? baseValue.guid : undefined;
   const localGuid = localValue !== ABSENT && localValue && typeof localValue === 'object' ? localValue.guid : undefined;
   const remoteGuid = remoteValue !== ABSENT && remoteValue && typeof remoteValue === 'object' ? remoteValue.guid : undefined;
+  const localIntroducedGuid = (
+    localValue !== ABSENT
+    && localGuid != null
+    && localGuid !== ''
+    && (baseValue === ABSENT || baseGuid == null || baseGuid === '' || localGuid !== baseGuid)
+  );
+  const remoteIntroducedGuid = (
+    remoteValue !== ABSENT
+    && remoteGuid != null
+    && remoteGuid !== ''
+    && (baseValue === ABSENT || baseGuid == null || baseGuid === '' || remoteGuid !== baseGuid)
+  );
   if (
     !candidate
     || candidate === ABSENT
-    || baseGuid == null
-    || baseGuid === ''
+    || candidateGuid == null
+    || candidateGuid === ''
     || (
-      (localGuid == null || localGuid === '' || localGuid === baseGuid)
-      && (remoteGuid == null || remoteGuid === '' || remoteGuid === baseGuid)
+      !localIntroducedGuid
+      && !remoteIntroducedGuid
     )
   ) {
     return { supported: true };
