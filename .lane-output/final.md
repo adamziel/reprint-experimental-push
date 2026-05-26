@@ -1,36 +1,42 @@
-2026-05-26 21:04:35 CEST (+0200)
+2026-05-26 21:37:27 CEST (+0200)
 
 Changed files:
-- [scripts/playground/production-auth-session-lifecycle.js](/home/claude/reprint-experimental-push-lanes/reorg-20260526-code/auth-session-code/scripts/playground/production-auth-session-lifecycle.js)
-- [test/production-shaped-proof.test.js](/home/claude/reprint-experimental-push-lanes/reorg-20260526-code/auth-session-code/test/production-shaped-proof.test.js)
+- [src/authenticated-http-push-client.js](/home/claude/reprint-experimental-push-lanes/reorg-20260526-code/auth-session-code/src/authenticated-http-push-client.js)
+- [test/authenticated-http-push-client.test.js](/home/claude/reprint-experimental-push-lanes/reorg-20260526-code/auth-session-code/test/authenticated-http-push-client.test.js)
 
 What changed:
-- Tightened `evaluateProductionAuthSessionLifecycleSummary()` so malformed lifecycle flags on intermediate `observations[]` entries fail closed as explicit `invalid-*` results before the helper can collapse them into generic `rotated` or other preserved-read failures.
-- Added focused summary-proof coverage for malformed intermediate observed lifecycle flags and cleanup aliases, including `cleanup`, `revoked`, `expired`, `cleanedUp`, and `rotated`.
+- Aligned `summarizeAuthSessionLifecycleHistory()` with the canonical trace-summary shape so producer-side `authSessionLifecycleSummary` now carries top-level `expired`, `revoked`, `cleanedUp`, `rotated`, and `preserved` markers instead of only `{ issued, read, observations }`.
+- Switched the summary’s top-level `read` and `preserved` selection to the last actual read-phase observation, which keeps cleanup/non-read history from becoming the canonical preserved-read marker.
+- Added focused client-side regression coverage for the richer summary shape on expired preflight history and revoked/cleaned-up multi-step history.
 
 Commands run:
 - `git status --short --branch`
 - `sed -n '1,220p' AGENTS.md`
 - `sed -n '1,220p' supervision/README.md`
-- `sed -n '1,220p' .lane-output/final-loop-20260526-205935.md`
-- `sed -n '1,220p' .lane-output/final-loop-20260526-210101.md`
+- `find .lane-output -maxdepth 1 -type f | sort | tail -n 5 | xargs -r -I{} sh -c 'echo "--- {}"; sed -n "1,220p" "{}"'`
 - `sed -n '1,260p' scripts/playground/production-auth-session-lifecycle.js`
-- `sed -n '260,560p' scripts/playground/production-auth-session-lifecycle.js`
-- `sed -n '2230,3535p' test/production-shaped-proof.test.js`
-- `node --check scripts/playground/production-auth-session-lifecycle.js`
-- `node --check test/production-shaped-proof.test.js`
-- `timeout 90s node --test --test-name-pattern='production auth/session lifecycle summary fails closed when an intermediate preserved-read cleanup alias is a string value|production auth/session lifecycle summary fails closed when an intermediate preserved-read lifecycle flag is malformed|production auth/session lifecycle summary fails closed when direct rotated metadata is a string value|production auth/session lifecycle summary fails closed when direct preserved-read preservation flags are string values' test/production-shaped-proof.test.js`
+- `sed -n '261,520p' scripts/playground/production-auth-session-lifecycle.js`
+- `sed -n '520,820p' scripts/playground/production-auth-session-lifecycle.js`
+- `sed -n '820,980p' scripts/playground/production-auth-session-lifecycle.js`
+- `sed -n '820,960p' src/authenticated-http-push-client.js`
+- `sed -n '360,520p' test/authenticated-http-push-client.test.js`
+- `sed -n '600,700p' test/authenticated-http-push-client.test.js`
+- `sed -n '975,1335p' test/authenticated-http-push-client.test.js`
+- `node --check src/authenticated-http-push-client.js`
+- `node --check test/authenticated-http-push-client.test.js`
+- `timeout 90s node --test --test-name-pattern='production-shaped authenticated push fails closed on an expired preflight session even without the stricter production-session gate|production-shaped authenticated push records revoked and cleaned-up auth session lifecycle observations' test/authenticated-http-push-client.test.js`
+- `timeout 90s node --test --test-name-pattern='production-shaped authenticated push records revoked and cleaned-up auth session lifecycle observations' test/authenticated-http-push-client.test.js`
 - `git diff --check`
 - `date '+%Y-%m-%d %H:%M:%S %Z (%z)'`
-- `git commit -m "Fail closed on malformed observed lifecycle flags"`
+- `git commit -m "Align auth session summary markers"`
 - `git push origin HEAD:lane/auth-session-code-20260526-1836`
 
 Push result:
-- Pushed `cc1da0a8b143befca9c3405ac0343c990b596adf` to `origin/lane/auth-session-code-20260526-1836`
+- Pushed `cab7b3be7f7cae73b8d39f89f7c41609bcff0d77` to `origin/lane/auth-session-code-20260526-1836`
 
 Worktree status:
 - Clean on `lane/auth-session-code-20260526-1836`, tracking `origin/lane/auth-session-code-20260526-1836`
 
 Next supervisor nudge:
-- Pull `cc1da0a8` into reliable if the checked release-path auth/session summary can still be poisoned by malformed intermediate observed lifecycle flags.
-- If reliable already enforces that path upstream, keep this lane on the next untested preserved-session summary branch where invalid `observations[]` metadata still degrades to a generic preserved-read failure instead of an explicit `invalid-*` result.
+- Pull `cab7b3be` into reliable if the checked release path still relies on the producer-side `authSessionLifecycleSummary` and needs explicit top-level `expired` / `revoked` / `cleanedUp` / `rotated` / `preserved` markers without falling back to trace re-summarization.
+- If reliable already canonicalizes the trace upstream, keep this lane on the next producer-side auth/session history inconsistency where the emitted summary can still diverge from the canonical trace-derived shape.
