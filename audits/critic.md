@@ -1,5 +1,26 @@
 # Critic Audit
 
+## 2026-05-26 13:35:22 CEST (+0200)
+
+No gate movement. `c2395f82` is the current reliable head from `git ls-remote`; it adds more auth/session lifecycle observations in `src/authenticated-http-push-client.js` and `test/authenticated-http-push-client.test.js`, but it still stays on the client-side release evidence path rather than proving a production-backed auth/session lifecycle or fully closed durable-journal ownership on the release command. The verdict remains `0/4`.
+
+Changed files:
+- [`audits/critic.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/critic/audits/critic.md)
+
+Commands run:
+- `date '+%Y-%m-%d %H:%M:%S %Z (%z)'`
+- `git ls-remote origin refs/heads/lane/reliable-executor`
+
+Push result:
+- Not attempted
+
+Worktree status:
+- Modified tracked files: `audits/critic.md`, `.lane-output/final.md`
+- Branch: `lane/cycle-20260525-mainwindows-2349/critic...origin/main [ahead 1642, behind 690]`
+
+Next supervisor nudge:
+- Keep critic narrow and only reclassify again when `reliable-executor` lands checked-path production-backed auth/session lifecycle, durable-journal ownership, or preserved-remote retry proof.
+
 ## 2026-05-26 13:33:46 CEST (+0200)
 
 No gate movement. `c2395f82` is the current reliable head from `git ls-remote`; it adds more auth/session lifecycle observations in `src/authenticated-http-push-client.js` and `test/authenticated-http-push-client.test.js`, but it still stays on the client-side release evidence path rather than proving a production-backed auth/session lifecycle or fully closed durable-journal ownership on the release command. The verdict remains `0/4`.
