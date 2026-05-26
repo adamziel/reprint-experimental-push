@@ -12,8 +12,9 @@ linked implementation artifacts.
   (`2026-05-26 12:13:19 CEST`) so the visible page stays fresh to the current
   supervision cycle. The headline, trend, audit note, and release-gate proof
   item now name `77da166e` as the current reliable head and describe the
-  surfaced auth-session source evidence for `REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND`,
-  not replay-equivalence work, while release gates remain `0/4`.
+  surfaced auth-session source evidence for
+  `REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND` (`authSessionSource`), not
+  replay-equivalence work, while release gates remain `0/4`.
 - `77da166e` is the current reliable head for the public lane surface; the
   release verifier now shows auth-session source evidence on the recovery
   path, but production WordPress auth/session lifecycle and durable journal
