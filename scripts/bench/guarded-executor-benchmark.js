@@ -785,6 +785,18 @@ export function productionThroughputBlockers(report) {
     blockers.push('missing-staging-disk-headroom-evidence');
   }
   if (
+    !Number.isFinite(report.evidence.backpressure?.stagingDiskReserveBytes)
+    || report.evidence.backpressure.stagingDiskReserveBytes <= 0
+  ) {
+    blockers.push('missing-staging-disk-reserve-evidence');
+  }
+  if (
+    Number.isFinite(report.evidence.backpressure?.stagingDiskReserveBytes)
+    && report.evidence.backpressure.stagingDiskReserveBytes !== report.shape.chunkSizeBytes
+  ) {
+    blockers.push('staging-disk-reserve-not-aligned-to-chunk-window');
+  }
+  if (
     Number.isFinite(report.evidence.backpressure?.queueHeadroomBytes)
     && report.evidence.backpressure.queueHeadroomBytes <= 0
   ) {
@@ -1349,8 +1361,15 @@ export function productionThroughputDetails(report) {
     report.evidence.backpressure?.stagingDiskHeadroomVisible === true;
   const stagingDiskHeadroomMeasured =
     report.evidence.backpressure?.stagingDiskHeadroomMeasured === true;
+  const stagingDiskReservePositive =
+    Number.isFinite(stagingDiskReserveBytes)
+    && stagingDiskReserveBytes > 0;
+  const stagingDiskReserveMatchesChunkWindow =
+    stagingDiskReservePositive
+    && stagingDiskReserveBytes === report.shape.chunkSizeBytes;
   const stagingDiskHeadroomWithinPlanReserve =
-    report.evidence.backpressure?.stagingDiskHeadroomWithinPlanReserve === true;
+    report.evidence.backpressure?.stagingDiskHeadroomWithinPlanReserve === true
+    && stagingDiskReserveMatchesChunkWindow;
   const receiptCursorQueueSlackVisible =
     report.evidence.backpressure?.receiptCursorQueueSlackVisible === true;
   const receiptCursorMemoryHeadroomVisible =
@@ -1910,6 +1929,8 @@ export function productionThroughputDetails(report) {
     queueHeadroomPositive,
     stagingDiskHeadroomBytes,
     stagingDiskReserveBytes,
+    stagingDiskReservePositive,
+    stagingDiskReserveMatchesChunkWindow,
     stagingDiskHeadroomPositive,
     stagingDiskHeadroomVisible,
     stagingDiskHeadroomMeasured,
@@ -2025,6 +2046,8 @@ export function productionThroughputDetails(report) {
       queueHeadroomPositive,
       stagingDiskHeadroomBytes,
       stagingDiskReserveBytes,
+      stagingDiskReservePositive,
+      stagingDiskReserveMatchesChunkWindow,
       stagingDiskHeadroomPositive,
       stagingDiskHeadroomVisible,
       stagingDiskHeadroomMeasured,
@@ -2259,11 +2282,17 @@ function hasCompleteBackpressureEvidence(report) {
   const stagingDiskHeadroomMeasured =
     Number.isFinite(stagingDiskHeadroomBytes)
     && stagingDiskHeadroomBytes > 0;
+  const stagingDiskReservePositive =
+    Number.isFinite(stagingDiskReserveBytes)
+    && stagingDiskReserveBytes > 0;
+  const stagingDiskReserveMatchesChunkWindow =
+    stagingDiskReservePositive
+    && stagingDiskReserveBytes === report.shape.chunkSizeBytes;
   const stagingDiskHeadroomVisible =
     report.evidence.backpressure?.stagingDiskHeadroomVisible === true;
   const stagingDiskHeadroomWithinPlanReserve =
     stagingDiskHeadroomMeasured
-    && Number.isFinite(stagingDiskReserveBytes)
+    && stagingDiskReserveMatchesChunkWindow
     && Number.isFinite(maxStagingDiskBytes)
     && stagingDiskHeadroomBytes === maxStagingDiskBytes - report.shape.bytesMovedThroughStaging
     && stagingDiskHeadroomBytes >= stagingDiskReserveBytes

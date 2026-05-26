@@ -93,6 +93,8 @@ test('guarded executor benchmark moves buffers and row payloads through durable 
     report.resourceLimits.maxStagingDiskBytes - report.shape.bytesMovedThroughStaging,
   );
   assert.equal(report.evidence.backpressure.stagingDiskReserveBytes, 512 * 1024);
+  assert.equal(report.claims.productionThroughputDetails.stagingDiskReservePositive, true);
+  assert.equal(report.claims.productionThroughputDetails.stagingDiskReserveMatchesChunkWindow, true);
   assert.equal(report.evidence.backpressure.stagingDiskHeadroomMeasured, true);
   assert.equal(report.evidence.backpressure.stagingDiskHeadroomVisible, true);
   assert.equal(report.evidence.backpressure.stagingDiskHeadroomWithinPlanReserve, true);
@@ -186,6 +188,24 @@ test('guarded executor benchmark keeps the published throughput details in sync 
   const computed = productionThroughputDetails(report);
 
   assert.deepEqual(report.claims.productionThroughputDetails, computed);
+});
+
+test('guarded benchmark blocks staging-disk headroom claims when the reserve no longer matches the chunk window', () => {
+  const report = smallBenchmark();
+  const tampered = clone(report);
+
+  tampered.evidence.backpressure.stagingDiskReserveBytes = report.shape.chunkSizeBytes / 2;
+
+  const details = productionThroughputDetails(tampered);
+  const blockers = productionThroughputBlockers(tampered);
+
+  assert.equal(details.stagingDiskReservePositive, true);
+  assert.equal(details.stagingDiskReserveMatchesChunkWindow, false);
+  assert.equal(details.stagingDiskHeadroomWithinPlanReserve, false);
+  assert.equal(details.stagingDiskHeadroomVisibleAndMeasured, false);
+  assert.equal(details.backpressureConsistency.stagingDiskReserveMatchesChunkWindow, false);
+  assert.equal(blockers.includes('staging-disk-reserve-not-aligned-to-chunk-window'), true);
+  assert.equal(blockers.includes('backpressure-evidence-incomplete'), true);
 });
 
 test('guarded benchmark exposes the bounded release-bundle retry-window fast path as planning-only', () => {
