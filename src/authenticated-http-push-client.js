@@ -881,11 +881,21 @@ function recordAuthSessionLifecycle(summary, step, session) {
   const observation = summarizeAuthSessionLifecycle(session);
   const trace = summary.authSessionLifecycleTrace || [];
   const previous = trace.length > 0 ? trace[trace.length - 1] : null;
+  const previousSessionId = normalizeProductionAuthSessionIdentityField(previous?.id);
+  const observationSessionId = normalizeProductionAuthSessionIdentityField(observation?.id);
   const lifecycle = {
     step,
     ...observation,
-    rotated: Boolean(previous && previous.id && observation?.id && previous.id !== observation.id),
-    preserved: Boolean(previous && previous.id && observation?.id && previous.id === observation.id),
+    rotated: Boolean(
+      previousSessionId
+      && observationSessionId
+      && previousSessionId !== observationSessionId
+    ),
+    preserved: Boolean(
+      previousSessionId
+      && observationSessionId
+      && previousSessionId === observationSessionId
+    ),
     revoked: Boolean(observation?.revoked),
     cleanedUp: Boolean(observation?.cleanedUp),
   };
