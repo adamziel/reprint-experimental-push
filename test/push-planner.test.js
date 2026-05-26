@@ -6837,6 +6837,72 @@ test('allows term taxonomy and relationships to reference same-plan terms and po
   assert.equal(result.site.db.wp_term_relationships['object_id:3|term_taxonomy_id:9'].term_taxonomy_id, 9);
 });
 
+test('blocks attachment-owned term relationships even when they target same-plan terms and unrelated remote attachment noise exists', () => {
+  const attachmentResourceKey = 'row:["wp_posts","ID:3"]';
+  const termResourceKey = 'row:["wp_terms","term_id:7"]';
+  const taxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:9"]';
+  const relationshipResourceKey = 'row:["wp_term_relationships","object_id:3|term_taxonomy_id:9"]';
+  const base = baseSite();
+  const local = baseSite();
+  const remote = baseSite();
+
+  local.db.wp_terms = {
+    'term_id:7': {
+      term_id: 7,
+      name: 'Local taxonomy term',
+      slug: 'local-taxonomy-term',
+    },
+  };
+  local.db.wp_term_taxonomy = {
+    'term_taxonomy_id:9': {
+      term_taxonomy_id: 9,
+      term_id: 7,
+      taxonomy: 'category',
+      description: '',
+      parent: 0,
+      count: 1,
+    },
+  };
+  local.db.wp_posts['ID:3'] = {
+    ID: 3,
+    post_title: 'Local attachment owner',
+    post_content: 'local-private-attachment-owner-body',
+    post_status: 'inherit',
+    post_type: 'attachment',
+  };
+  local.db.wp_term_relationships = {
+    'object_id:3|term_taxonomy_id:9': {
+      object_id: 3,
+      term_taxonomy_id: 9,
+      term_order: 0,
+    },
+  };
+  remote.db.wp_posts['ID:21'] = {
+    ID: 21,
+    post_title: 'Remote attachment noise',
+    post_content: 'remote-attachment-body',
+    post_status: 'inherit',
+    post_type: 'attachment',
+  };
+
+  const plan = planFor(base, local, remote);
+  const attachmentMutation = mutationFor(plan, attachmentResourceKey);
+  const termMutation = mutationFor(plan, termResourceKey);
+  const taxonomyMutation = mutationFor(plan, taxonomyResourceKey);
+  const relationshipBlocker = plan.blockers.find((entry) => entry.resourceKey === relationshipResourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(attachmentMutation.changeKind, 'create');
+  assert.equal(termMutation.changeKind, 'create');
+  assert.equal(taxonomyMutation.changeKind, 'create');
+  assert.equal(relationshipBlocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(relationshipBlocker.surface, 'attachment');
+  assert.match(relationshipBlocker.reason, /outside the supported release-candidate slice/);
+  assert.equal(JSON.stringify(relationshipBlocker).includes('local-private-attachment-owner-body'), false);
+  assert.equal(JSON.stringify(relationshipBlocker).includes('remote-attachment-body'), false);
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
+});
+
 test('allows a term taxonomy parent to reference a term created by the same plan', () => {
   const parentTermResourceKey = 'row:["wp_terms","term_id:7"]';
   const childTaxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:9"]';
