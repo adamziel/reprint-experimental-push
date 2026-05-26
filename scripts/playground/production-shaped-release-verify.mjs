@@ -9,6 +9,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { authenticatedHttpClient, runAuthenticatedHttpPush } from '../../src/authenticated-http-push-client.js';
+import { loadAuthSessionSource } from './auth-session-source.js';
 import {
   appendRecoveryClaimOpened,
   consumeProductionRecoveryJournal,
@@ -92,7 +93,21 @@ const protocolExtension = {
 let liveSourceUrl = process.env.REPRINT_PUSH_SOURCE_URL || process.env.REPRINT_PUSH_REMOTE_URL || '';
 let username = process.env.REPRINT_PUSH_LAB_AUTH_ADMIN_USER || process.env.REPRINT_PUSH_USERNAME || '';
 let applicationPassword = process.env.REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD || process.env.REPRINT_PUSH_APPLICATION_PASSWORD || '';
+const authSessionSourceCommand = process.env.REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND || '';
 const labDriftAfterSnapshot = process.env.REPRINT_PUSH_LAB_DRIFT_AFTER_SNAPSHOT || '';
+
+if ((!liveSourceUrl || !username || !applicationPassword) && authSessionSourceCommand) {
+  const authSessionSource = loadAuthSessionSource(authSessionSourceCommand);
+  if (!liveSourceUrl) {
+    liveSourceUrl = authSessionSource.sourceUrl || liveSourceUrl;
+  }
+  if (!username) {
+    username = authSessionSource.username || username;
+  }
+  if (!applicationPassword) {
+    applicationPassword = authSessionSource.applicationPassword || applicationPassword;
+  }
+}
 
 if (liveSourceUrl && (!username || !applicationPassword)) {
   process.stdout.write(

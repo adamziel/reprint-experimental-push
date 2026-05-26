@@ -5,6 +5,7 @@ import { spawn, spawnSync } from 'node:child_process';
 import net from 'node:net';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { loadAuthSessionSource } from '../scripts/playground/auth-session-source.js';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const muPluginDir = path.join(repoRoot, 'scripts/playground/rest-mu-plugins');
@@ -644,6 +645,23 @@ test('production-shaped release verify command fails closed when production auth
     proof.stdout,
     /"releaseProof": \{\s*"ok": false,\s*"status": 409,\s*"code": "PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED"\s*\}/,
   );
+});
+
+test('production-shaped release verify command consumes the production auth/session source command when provided', () => {
+  const source = loadAuthSessionSource(
+    `${process.execPath} -e "process.stdout.write(JSON.stringify({sourceUrl:'http://127.0.0.1:8080', username:'reprint_push_admin', applicationPassword:'reprint-push-admin-app-password'}))"`,
+    {
+      ...process.env,
+      NODE_NO_WARNINGS: '1',
+    },
+    repoRoot,
+  );
+  assert.deepEqual(source, {
+    ok: true,
+    sourceUrl: 'http://127.0.0.1:8080',
+    username: 'reprint_push_admin',
+    applicationPassword: 'reprint-push-admin-app-password',
+  });
 });
 
 test('production-shaped release proof emits the exact gate output when no live source is supplied', () => {
