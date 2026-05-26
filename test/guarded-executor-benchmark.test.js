@@ -761,6 +761,19 @@ test('production claim gate fails closed if benchmark evidence is tampered', () 
     ),
   );
 
+  const missingMemoryCeilingProof = clone(report);
+  missingMemoryCeilingProof.evidence.backpressure.receiptCursorMemoryCeilingMatchesQueueBudget = false;
+  assert.equal(
+    productionThroughputDetails(missingMemoryCeilingProof).backpressureConsistency
+      .receiptCursorMemoryCeilingMatchesQueueBudget,
+    false,
+  );
+  assert.ok(
+    productionThroughputBlockers(missingMemoryCeilingProof).includes(
+      'queue-pause-without-memory-ceiling-matching-queue-budget-proof',
+    ),
+  );
+
   const spoofedQueueSlackProof = clone(report);
   spoofedQueueSlackProof.evidence.backpressure.queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack = false;
   assert.ok(

@@ -165,6 +165,9 @@ Current executable gate:
 - The report now also exposes whether the receipt cursor's memory headroom
   matches the measured resource ceiling, so the cursor audit can be read
   directly without recomputing that relationship from separate fields.
+- The report now also exposes an explicit memory-ceiling-versus-queue-budget
+  proof bit for paused backpressure, so the paused-queue proof does not rely
+  only on a derived detail.
 - The report `results` payload also carries explicit failure-probe details for
   the pre-commit and partial-commit probes, including inspection status,
   journal path, remote-unchanged classification, and journal record types so a
