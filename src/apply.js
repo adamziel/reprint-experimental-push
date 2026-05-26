@@ -940,7 +940,7 @@ function durableJournalInspectSurface(inspected) {
     inspected
     && typeof inspected === 'object'
     && Object.hasOwn(inspected, 'filePath')
-    && typeof inspected.filePath === 'string'
+    && isCanonicalAbsolutePath(inspected.filePath)
     && Object.hasOwn(inspected, 'schemaVersion')
     && typeof inspected.schemaVersion === 'number'
     && Object.hasOwn(inspected, 'records')

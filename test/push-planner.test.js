@@ -23655,6 +23655,61 @@ test('production durable journal claims fail closed when inspection data is adve
   assert.equal(events.some((event) => event.type === 'journal-completed'), false);
 });
 
+test('production durable journal claims fail closed when restart inspection file paths are not canonical absolute paths', () => {
+  const events = [];
+  const writer = {
+    kind: 'production-recovery-journal',
+    productionAdapter: true,
+    supportedSurface: 'production-recovery-journal-adapter',
+    restartReadable: true,
+    ownsJournal: true,
+    ownsRemoteArtifact: true,
+    journalPath: '/var/lib/reprint/recovery.jsonl',
+    artifactRefs: {
+      journal: '/var/lib/reprint/recovery.jsonl',
+      remote: '/var/lib/reprint/remote.jsonl',
+    },
+    schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+    appendEvent(type, payload) {
+      events.push({ type, payload });
+      return { sequence: events.length, type, payload };
+    },
+    flush() {},
+    close() {},
+    inspect() {
+      return {
+        filePath: '/var/lib/reprint/../reprint/recovery.jsonl',
+        schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+        artifactRefs: {
+          journal: '/var/lib/reprint/recovery.jsonl',
+          remote: '/var/lib/reprint/remote.jsonl',
+        },
+        records: [{ sequence: 1, type: 'journal-opened' }],
+      };
+    },
+    assertCurrentClaim() {},
+  };
+  const plan = planFor(baseSite(), baseSite(), {
+    ...baseSite(),
+    db: {
+      ...baseSite().db,
+      wp_options: {
+        ...baseSite().db.wp_options,
+        'option_name:blogname': { option_name: 'blogname', option_value: 'New Site' },
+      },
+    },
+  });
+
+  const error = captureError(() => applyPlan(baseSite(), plan, {
+    requireProductionDurableJournal: true,
+    durableJournal: writer,
+  }));
+
+  assert.equal(error.code, 'PRODUCTION_DURABLE_JOURNAL_UNSUPPORTED');
+  assert.ok(error.details.missingDependency.includes('restart-readable recovery artifact location'));
+  assert.equal(events.some((event) => event.type === 'journal-completed'), false);
+});
+
 test('production durable journal support probes restart inspection only once', () => {
   let inspectCalls = 0;
   const writer = {
