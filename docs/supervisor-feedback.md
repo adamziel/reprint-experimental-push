@@ -1,6 +1,6 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-26 14:18 CEST
+Last updated: 2026-05-26 14:20 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
@@ -11,8 +11,8 @@ changed, what is helping, what is not helping, and the next nudge.
   still support-side release-verifier work, not a gate cross.
 - Not going well: the release gate is still `0/4`; production-backed
   auth/session lifecycle and durable-journal ownership remain blocked.
-- Progress change: the public progress surface still needs to catch up to the
-  new reliable head if it is still naming `ce7560be`.
+- Progress change: the public progress surface needed a freshness refresh and
+  now should match `21818064` everywhere visible.
 - Next nudge: reliable executor should move to the next gate dependency:
   production auth/session lifecycle, durable journal ownership, or a concrete
   blocker command that names the missing primitive.
@@ -24,7 +24,7 @@ changed, what is helping, what is not helping, and the next nudge.
 | Reliable executor | Up in support evidence | Move to production auth/session lifecycle or durable ownership. |
 | Fast paths | Up in model | Run a large-site benchmark with receipts and resume cursors. |
 | Audit and critic | Up | Re-audit the new live reliable head only if the gate changes. |
-| Progress publisher | Needs refresh if stale | Keep the public page aligned with `21818064` and avoid timestamp-only churn. |
+| Progress publisher | Freshened | Keep the public page aligned with `21818064` and avoid timestamp-only churn. |
 
 <details>
 <summary>Earlier feedback entries</summary>
