@@ -26339,8 +26339,10 @@ test('blocks local termmeta graph resources while preserving remote-only plugin 
   assert.equal(mutationFor(plan, resourceKey), undefined);
   assert.equal(plan.conflicts.length, 0);
   assert.equal(blocker.class, 'unsupported-termmeta-resource');
+  assert.equal(blocker.resourceKind, 'term-meta');
   assert.equal(blocker.resourceKey, resourceKey);
-  assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_termmeta","meta_id:8"] is created in the same plan as a term identity that depends on it, and identity rewriting is not yet supported.');
+  assert.equal(blocker.unsupportedState, 'local-or-divergent-drift');
+  assert.equal(blocker.reason, 'Term meta graph resources are not yet supported by the planner.');
   assert.equal(pluginDecision.decision, 'keep-remote');
   assert.equal(planJson.includes('local-term-meta'), false);
   assert.equal(planJson.includes('base-term-meta'), false);
@@ -26388,8 +26390,10 @@ test('blocks local termmeta graph resources while preserving remote-only plugin 
   assert.equal(mutationFor(plan, resourceKey), undefined);
   assert.equal(plan.conflicts.length, 0);
   assert.equal(blocker.class, 'unsupported-termmeta-resource');
+  assert.equal(blocker.resourceKind, 'term-meta');
   assert.equal(blocker.resourceKey, resourceKey);
-  assert.equal(blocker.reason, 'Term taxonomy graph resources are not yet supported by the planner.');
+  assert.equal(blocker.unsupportedState, 'local-or-divergent-drift');
+  assert.equal(blocker.reason, 'Term meta graph resources are not yet supported by the planner.');
   assert.equal(planJson.includes('local-term-meta'), false);
   assert.equal(planJson.includes('base-term-meta'), false);
   assert.equal(Object.hasOwn(remote.plugins, 'forms'), false);
