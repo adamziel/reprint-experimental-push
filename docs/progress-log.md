@@ -6,10 +6,10 @@ linked implementation artifacts.
 
 ## 2026-05-26 - Current Supervisor Snapshot
 
-- Status: `77da166e` is the live reliable head and adds auth-session source
-  evidence on the checked release verifier.
-- Trend: public status is stale; the live head advanced, but the gate posture
-  remains conservative.
+- Status: `ce7560be` is the live reliable head and adds checked release-path
+  replay-equivalence surface evidence.
+- Trend: public status needed a freshness refresh; the live head advanced, but
+  the gate posture remains conservative.
 - Blocker: this is still support evidence, not production-backed auth/session
   lifecycle or durable-journal ownership on the release boundary.
 - Next nudge: reliable executor should move to the next gate dependency:
@@ -18,8 +18,8 @@ linked implementation artifacts.
 - Public page: [progress.html](../progress.html) shows a visible last-updated
   date and keeps the supervisor view short.
 - Feedback-lane verification after checking the live head: `git ls-remote`
-  now reports `77da166e` for `lane/reliable-executor`, while the public page
-  still needed a freshness update.
+  now reports `ce7560be` for `lane/reliable-executor`, while the public page
+  needed a freshness update.
 
 <details>
 <summary>Earlier progress entries</summary>

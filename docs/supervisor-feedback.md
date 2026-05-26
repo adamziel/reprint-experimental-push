@@ -1,18 +1,18 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-26 14:13 CEST
+Last updated: 2026-05-26 14:17 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
 
 ## 2026-05-26 - Current Nudge
 
-- Going well: `77da166e` is now the live reliable head, and it adds checked
-  release-verifier auth-session source evidence.
+- Going well: `ce7560be` is now the live reliable head, and it adds checked
+  release-path replay-equivalence surface evidence.
 - Not going well: the release gate is still `0/4`; this is support evidence,
   not production-backed auth/session lifecycle or durable-journal ownership.
-- Progress change: the public surfaces are stale against the live reliable
-  head and need a single freshness refresh.
+- Progress change: the public surfaces needed a single freshness refresh to
+  catch up with the live reliable head.
 - Next nudge: reliable executor should move to the next gate dependency:
   production auth/session lifecycle on the checked release path, durable
   journal ownership, or a concrete blocker command that names the missing
@@ -25,7 +25,7 @@ changed, what is helping, what is not helping, and the next nudge.
 | Reliable executor | Up in support evidence | Move to production auth/session lifecycle or durable ownership. |
 | Fast paths | Up in model | Run a large-site benchmark with receipts and resume cursors. |
 | Audit and critic | Up | Re-audit the new live reliable head only if the gate changes. |
-| Progress publisher | Stale | Refresh the public page to `77da166e` and keep `0/4`. |
+| Progress publisher | Freshness update needed | Refresh the public page to `ce7560be` and keep `0/4`. |
 
 <details>
 <summary>Earlier feedback entries</summary>
