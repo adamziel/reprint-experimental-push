@@ -1342,6 +1342,25 @@ function isValidSamePlanWordPressGraphTarget(targetMutation, reference, sourceMu
   }
 
   if (
+    reference.relationshipType === 'post-author-user'
+    && sourceMutation?.resource?.type === 'row'
+    && sourceMutation?.resource?.table === 'wp_posts'
+    && targetMutation.resource.type === 'row'
+    && targetMutation.resource.table === 'wp_users'
+  ) {
+    const sourceValue = deserializeResourceValue(sourceMutation.value);
+    const targetValue = deserializeResourceValue(targetMutation.value);
+    if (
+      !sourceValue
+      || typeof sourceValue !== 'object'
+      || !targetValue
+      || typeof targetValue !== 'object'
+    ) {
+      return false;
+    }
+  }
+
+  if (
     reference.relationshipType === 'post-parent'
     && reference.sourceTable === 'wp_posts'
     && reference.sourceRowId
@@ -1838,6 +1857,12 @@ function wordpressGraphReferences(resource, value) {
   };
 
   if (suffix === 'posts') {
+    addReference({
+      field: 'post_author',
+      relationshipType: 'post-author-user',
+      targetTable: 'users',
+      targetId: value.post_author,
+    });
     addReference({
       field: 'post_parent',
       relationshipType: 'post-parent',
