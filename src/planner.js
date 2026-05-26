@@ -374,6 +374,30 @@ export function createPushPlan({ base, local, remote, now = new Date() }) {
         continue;
       }
 
+      const usermetaSupport = unsupportedUsermetaResourceSupport({
+        resource,
+        baseValue,
+        localValue,
+        remoteValue,
+        resources,
+        base,
+        local,
+        remote,
+      });
+      if (!usermetaSupport.supported) {
+        addUnsupportedUsermetaResourceBlocker(plan, {
+          resource,
+          support: usermetaSupport,
+          baseValue,
+          localValue,
+          remoteValue,
+          baseHash,
+          localHash,
+          remoteHash,
+        });
+        continue;
+      }
+
       const legacyLinksSupport = unsupportedLegacyLinksResourceSupport({
         resource,
         baseValue,
@@ -1244,6 +1268,7 @@ const WORDPRESS_GRAPH_TABLE_SUFFIXES = [
   'term_taxonomy',
   'postmeta',
   'termmeta',
+  'usermeta',
   'posts',
   'terms',
   'users',
@@ -1558,6 +1583,15 @@ function wordpressGraphReferences(resource, value) {
     });
   }
 
+  if (suffix === 'usermeta') {
+    addReference({
+      field: 'user_id',
+      relationshipType: 'usermeta-user',
+      targetTable: 'users',
+      targetId: value.user_id,
+    });
+  }
+
   return references;
 }
 
@@ -1714,6 +1748,9 @@ function wordpressGraphPrimaryIdField(suffix) {
   }
   if (suffix === 'users') {
     return 'ID';
+  }
+  if (suffix === 'usermeta') {
+    return 'umeta_id';
   }
   if (suffix === 'terms') {
     return 'term_id';
@@ -2173,6 +2210,37 @@ function addUnsupportedCommentsUsersResourceBlocker(plan, {
   });
 }
 
+function addUnsupportedUsermetaResourceBlocker(plan, {
+  resource,
+  support,
+  baseValue,
+  localValue,
+  remoteValue,
+  baseHash,
+  localHash,
+  remoteHash,
+}) {
+  plan.blockers.push({
+    id: `blocker-unsupported-usermeta-resource-${plan.blockers.length + 1}`,
+    class: support.className || 'unsupported-usermeta-resource',
+    resource,
+    resourceKey: resource.key,
+    reason: support.reason || `User meta resource ${resource.key} is not yet supported by the planner.`,
+    baseHash,
+    localHash,
+    remoteHash,
+    change: changeEvidence(
+      resource,
+      baseValue,
+      localValue,
+      remoteValue,
+      baseHash,
+      localHash,
+      remoteHash,
+    ),
+  });
+}
+
 function addUnsupportedLegacyLinksResourceBlocker(plan, {
   resource,
   support,
@@ -2539,6 +2607,38 @@ function unsupportedCommentsUsersResourceSupport({ resource, baseValue, localVal
     reason: resource.table === 'wp_users'
       ? 'User graph resources are not yet supported by the planner.'
       : 'Comments graph resources are not yet supported by the planner.',
+  };
+}
+
+function unsupportedUsermetaResourceSupport({ resource, baseValue, localValue, remoteValue, resources, base, local, remote }) {
+  if (resource.type !== 'row' || resource.table !== 'wp_usermeta') {
+    return { supported: true };
+  }
+
+  const candidate = localValue !== ABSENT ? localValue : (baseValue !== ABSENT ? baseValue : remoteValue);
+  if (!candidate || candidate === ABSENT) {
+    return { supported: true };
+  }
+
+  const references = wordpressGraphReferences(resource, candidate);
+  const userGraphReference = references.find((reference) =>
+    reference.relationshipType === 'usermeta-user'
+    && reference.targetResource?.table === 'wp_users'
+    && getResource(remote, reference.targetResource) === ABSENT
+    && getResource(local, reference.targetResource) !== ABSENT);
+
+  if (userGraphReference) {
+    return {
+      supported: false,
+      className: 'unsupported-usermeta-resource',
+      reason: `WordPress graph mutation ${resource.key} is created in the same plan as a user identity that depends on it, and identity rewriting is not yet supported.`,
+    };
+  }
+
+  return {
+    supported: false,
+    className: 'unsupported-usermeta-resource',
+    reason: 'User meta graph resources are not yet supported by the planner.',
   };
 }
 

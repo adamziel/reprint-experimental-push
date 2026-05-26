@@ -16153,6 +16153,58 @@ test('blocks local same-plan created comment user identity while preserving remo
   assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin drift */');
 });
 
+test('blocks local same-plan created user meta identity while preserving remote-only plugin drift', () => {
+  const resourceKey = 'row:["wp_usermeta","umeta_id:77"]';
+  const base = baseSite();
+  base.db.wp_usermeta = {
+    'umeta_id:77': {
+      umeta_id: 77,
+      user_id: 11,
+      meta_key: 'nickname',
+      meta_value: 'Base nickname',
+    },
+  };
+
+  const local = baseSite();
+  local.db.wp_usermeta = {
+    'umeta_id:77': {
+      umeta_id: 77,
+      user_id: 11,
+      meta_key: 'nickname',
+      meta_value: 'Local nickname',
+    },
+  };
+  local.db.wp_users = {
+    'ID:11': {
+      ID: 11,
+      user_login: 'local-same-plan-user',
+      user_email: 'local@example.test',
+    },
+  };
+
+  const remote = baseSite();
+  remote.db.wp_usermeta = JSON.parse(JSON.stringify(base.db.wp_usermeta));
+  remote.plugins.forms.description = 'remote-only plugin drift';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin drift */';
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(plan.conflicts.length, 0);
+  assert.equal(blocker.class, 'unsupported-usermeta-resource');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_usermeta","umeta_id:77"] is created in the same plan as a user identity that depends on it, and identity rewriting is not yet supported.');
+  assert.equal(planJson.includes('Local nickname'), false);
+  assert.equal(planJson.includes('Base nickname'), false);
+  assert.equal(planJson.includes('local-same-plan-user'), false);
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin drift');
+  assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin drift */');
+});
+
 test('blocks local same-plan created post author identity while preserving remote-only plugin removals', () => {
   const resourceKey = 'row:["wp_posts","ID:42"]';
   const base = baseSite();
