@@ -19,10 +19,11 @@ Fresh remote heads at audit time, checked on May 26, 2026:
 - `origin/lane/cycle-20260525-mainwindows-2349/same-plan-wordpress-graph-create` -> `e9cbf9d4`
 - `origin/lane/cycle-20260525-mainwindows-2357/no-data-loss-invariants-graph-proof` -> `98c0ce26`
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `08e327b7`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `5cebfe50`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `4008b08c`
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` -> `5f256171`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-invariants` -> `9c70eba6`
-- `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `1d0146b5`
+- `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `9fa23221`
+- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `6d739320`
 - `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration` -> `a3a900d7`
 - `origin/main` -> `e55864f4`
 
@@ -68,9 +69,13 @@ but it did not change the release conclusion:
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now
   refreshes the supervisor evidence snapshot at `08e327b7`.
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now
-  records the latest progress freshness handoff at `eafb7f6d`.
+  records the latest progress freshness handoff at `4008b08c`.
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` now
   hardens the live proof timeout diagnostics at `5f256171`.
+- `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` now
+  surfaces the journal ownership mismatch evidence at `9fa23221`.
+- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` now tightens the
+  guarded benchmark backpressure details at `6d739320`.
 - `origin/lane/same-plan-wordpress-graph-create` now blocks unsupported graph
   surfaces at `7bf5d421`, including revision posts, menu/navigation posts,
   serialized blocks, thumbnail parent references, and other same-plan graph
