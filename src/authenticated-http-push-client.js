@@ -900,7 +900,7 @@ function recordAuthSessionLifecycle(summary, step, session) {
   );
   if (step === 'preflight') {
     summary.authSessionLifecycle.minted = observation;
-    summary.authSessionLifecycle.read = observation;
+    summary.authSessionLifecycle.read = null;
     summary.authSessionLifecycle.expired = observation?.expired ? observation : null;
     return;
   }
@@ -921,10 +921,10 @@ function summarizeAuthSessionLifecycleHistory(history) {
   }
 
   const observations = history.filter((entry) => entry && typeof entry === 'object');
-  const issued = observations.find((entry) => entry.step === 'preflight') || observations[0] || history[0];
+  const issued = observations.find((entry) => entry.step === 'preflight') || null;
   const read = [...observations]
     .reverse()
-    .find((entry) => isAuthSessionReadStep(entry.step)) || observations[observations.length - 1] || history[history.length - 1];
+    .find((entry) => isAuthSessionReadStep(entry.step)) || null;
   return {
     issued,
     read,
