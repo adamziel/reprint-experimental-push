@@ -132,6 +132,12 @@ function reprint_push_lab_db_journal_schema(bool $checked_surface = false): arra
             'restartReadable' => true,
             'productionAdapter' => 'wpdb-single-statement-cas',
         ];
+        $schema['leaseFence'] = [
+            'boundary' => 'wpdb-single-statement-cas',
+            'claimKeyUnique' => true,
+            'monotonicSequence' => true,
+            'restartReadable' => true,
+        ];
     }
 
     return $schema;

@@ -147,6 +147,12 @@ try {
       restartReadable: true,
       productionAdapter: 'wpdb-single-statement-cas',
     });
+    assert.deepEqual(dbJournalSchema.body.dbJournalSchema.leaseFence, {
+      boundary: 'wpdb-single-statement-cas',
+      claimKeyUnique: true,
+      monotonicSequence: true,
+      restartReadable: true,
+    });
 
     const dbJournal = await requestJson(
       server.baseUrl,
@@ -163,6 +169,13 @@ try {
       ownsJournal: true,
       restartReadable: true,
       productionAdapter: 'wpdb-single-statement-cas',
+    });
+    assert.deepEqual(dbJournal.body.dbJournal.leaseFence, {
+      boundary: 'wpdb-single-statement-cas',
+      claimKeyUnique: true,
+      monotonicSequence: true,
+      restartReadable: true,
+      staleClaimRejected: false,
     });
 
     const result = runCli([
