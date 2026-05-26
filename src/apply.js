@@ -1007,6 +1007,28 @@ function productionRecoverySupportReport(writer) {
   if (writer && typeof writer.inspect === 'function' && !inspectionErrorMessage && !durableJournalInspectRecords(inspected)) {
     addMissingDependency('journal-readable inspection records with sequence and type');
   }
+  if (
+    writer && typeof writer.inspect === 'function'
+    && !inspectionErrorMessage
+    && (
+      !Object.hasOwn(inspected, 'claim')
+      || !isStrictPlainObject(inspected.claim)
+      || !Object.hasOwn(inspected.claim, 'status')
+      || typeof inspected.claim.status !== 'string'
+      || !Object.hasOwn(inspected.claim, 'activeClaimHash')
+      || (
+        inspected.claim.activeClaimHash !== null
+        && typeof inspected.claim.activeClaimHash !== 'string'
+      )
+      || (
+        writer?.claimHash
+        && inspected.claim.status !== 'none'
+        && inspected.claim.activeClaimHash !== writer.claimHash
+      )
+    )
+  ) {
+    addMissingDependency('claim-fenced inspection records');
+  }
 
   return {
     supported: missingDependency.length === 0,

@@ -27516,6 +27516,9 @@ test('replaying a completed plan remains blocked until the production recovery j
     artifactRefs: writer.artifactRefs,
   });
   writer.flush();
+  const inspectedWriter = writer.inspect();
+  assert.equal(inspectedWriter.claim.status, 'active');
+  assert.equal(inspectedWriter.claim.activeClaimHash, writer.claimHash);
   const completedJournal = {
     status: 'completed',
     id: `journal-${completedPlan.id}`,

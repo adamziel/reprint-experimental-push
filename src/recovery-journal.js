@@ -219,6 +219,7 @@ export function openProductionRecoveryJournal(filePath, options = {}) {
       return journal.appendEvent(type, payload);
     },
     inspect() {
+      const inspectedJournal = readRecoveryJournal(journal.filePath);
       const artifactRefs = {
         journal: journal.filePath,
         remote: remoteArtifactPath,
@@ -233,7 +234,8 @@ export function openProductionRecoveryJournal(filePath, options = {}) {
         writerLease,
         claimHash,
         journalPath: journal.filePath,
-        ...readRecoveryJournal(journal.filePath),
+        ...inspectedJournal,
+        claim: classifyRecoveryJournalClaims(inspectedJournal.records),
         schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
         artifactRefs,
       };

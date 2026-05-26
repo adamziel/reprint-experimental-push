@@ -185,6 +185,8 @@ test('production recovery journal inspection is exported for release-path consum
   assert.equal(inspected.ownsJournal, true);
   assert.equal(inspected.writerLease.id, 'lease-inspect-1');
   assert.equal(inspected.journalPath, filePath);
+  assert.equal(inspected.claim.status, 'none');
+  assert.equal(inspected.claim.activeClaimHash, null);
 });
 
 test('production recovery journal adapter is restart-readable and release-path compatible', () => {
@@ -431,6 +433,7 @@ test('production recovery journal adapter ignores prototype-inherited claim iden
 
   assert.equal(journal.claimHash, null);
   assert.equal(journal.inspect().claimHash, null);
+  assert.equal(journal.inspect().claim.status, 'none');
   journal.close();
 });
 
