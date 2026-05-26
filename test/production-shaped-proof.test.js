@@ -69,21 +69,24 @@ function stopAllPlaygroundChildrenSync() {
 function spawnReleaseVerify(env = {}, options = {}) {
   const timeout = options.timeout ?? proofSubprocessTimeoutMs;
   const killSignal = options.killSignal ?? proofSubprocessKillSignal;
-  return runReleaseVerifySync(
+  const proof = spawnReleaseVerifySync(
+    process.execPath,
+    ['scripts/playground/production-shaped-release-verify.mjs'],
     {
       ...process.env,
       ...env,
     },
-    timeout,
-    killSignal,
-    'production-shaped release verify',
+    {
+      timeout,
+      killSignal,
+    },
   );
+  assertReleaseVerifyProof(proof, 'production-shaped release verify', timeout);
+  return proof;
 }
 
 function runReleaseVerifySync(env, timeout, killSignal, label) {
-  const command = process.execPath;
-  const args = ['scripts/playground/production-shaped-release-verify.mjs'];
-  const proof = spawnReleaseVerifySync(command, args, env, {
+  const proof = spawnReleaseVerifySync(process.execPath, ['scripts/playground/production-shaped-release-verify.mjs'], env, {
     timeout,
     killSignal,
   });
@@ -116,10 +119,8 @@ function spawnProductionShapedReleaseVerify(env, options, label) {
 }
 
 function spawnProductionShapedReleaseVerifyCommand(env, options, label) {
-  const command = process.execPath;
-  const args = ['scripts/playground/production-shaped-release-verify.mjs'];
   const timeout = options.timeout ?? releaseVerifyInnerTimeoutMs;
-  const proof = spawnReleaseVerifySync(command, args, env, {
+  const proof = spawnReleaseVerifySync(process.execPath, ['scripts/playground/production-shaped-release-verify.mjs'], env, {
     timeout,
     killSignal: options.killSignal ?? proofSubprocessKillSignal,
   });
