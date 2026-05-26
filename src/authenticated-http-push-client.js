@@ -1211,6 +1211,16 @@ function describeAuthEnvelopeDrift(expected, response) {
     };
   }
 
+  const invalidObservedSessionField = resolveInvalidObservedAuthEnvelopeSessionField(body.auth?.session);
+  if (invalidObservedSessionField) {
+    return {
+      field: `auth.session.${invalidObservedSessionField.field}`,
+      required: 'string lifecycle fields',
+      observed: `invalid-${invalidObservedSessionField.label}`,
+      verdict: 'AUTH_SESSION_LIFECYCLE_DRIFT',
+    };
+  }
+
   const observedUserLogin = body.auth?.identity?.userLogin || 'missing';
   if (observedUserLogin !== expected.userLogin) {
     return {
@@ -1259,6 +1269,31 @@ function describeAuthEnvelopeDrift(expected, response) {
       observed: observedSessionExpiresAt,
       verdict: 'AUTH_SESSION_LIFECYCLE_DRIFT',
     };
+  }
+
+  return null;
+}
+
+function resolveInvalidObservedAuthEnvelopeSessionField(session) {
+  if (!session || typeof session !== 'object') {
+    return null;
+  }
+
+  const fieldChecks = [
+    ['id', 'id', normalizeProductionAuthSessionIdentityField(session.id)],
+    ['type', 'type', normalizeProductionAuthSessionIdentityField(session.type)],
+    ['status', 'status', normalizeProductionAuthSessionIdentityField(session.status)],
+    ['expiresAt', 'expires-at', normalizeProductionAuthSessionIdentityField(session.expiresAt)],
+  ];
+
+  for (const [field, label, normalized] of fieldChecks) {
+    const value = session[field];
+    if (value !== undefined && value !== null && !normalized) {
+      return {
+        field,
+        label,
+      };
+    }
   }
 
   return null;
