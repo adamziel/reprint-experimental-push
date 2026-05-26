@@ -12,6 +12,7 @@ import {
 import {
   runGuardedExecutorBenchmark,
   productionThroughputBlockers,
+  productionThroughputDetails,
 } from '../scripts/bench/guarded-executor-benchmark.js';
 
 test('benchmark model covers large uploads and plugin installs', () => {
@@ -5186,6 +5187,23 @@ test('production throughput details expose fail-closed receipt cursor and queue 
   assert.equal(details.backpressureConsistency.queueHeadroomVisibleAndQueueSlackMeasured, true);
   assert.equal(details.queueHeadroomVisibleAndQueueSlackVisibleAndMeasured, true);
   assert.equal(details.backpressureConsistency.queueHeadroomVisibleAndQueueSlackVisibleAndMeasured, true);
+});
+
+test('production throughput details fail closed when queue headroom visibility disappears from the pause boundary', () => {
+  const report = runGuardedExecutorBenchmark({ profile: 'ci' });
+
+  report.evidence.backpressure.queueHeadroomVisible = false;
+  const details = productionThroughputDetails(report);
+  const blockers = productionThroughputBlockers(report);
+
+  assert.equal(details.queueBudgetVisible, true);
+  assert.equal(details.receiptCursorMemoryCeilingVisible, true);
+  assert.equal(details.queueBudgetVisibleAndMemoryCeilingVisible, false);
+  assert.equal(details.receiptCursorMemoryCeilingVisibleAndQueueBudgetVisible, false);
+  assert.equal(details.backpressureConsistency.queueBudgetVisibleAndMemoryCeilingVisible, false);
+  assert.equal(details.backpressureConsistency.receiptCursorMemoryCeilingVisibleAndQueueBudgetVisible, false);
+  assert.ok(blockers.includes('queue-budget-visible-without-queue-headroom-visible'));
+  assert.ok(blockers.includes('memory-ceiling-visible-without-queue-headroom-visible'));
 });
 
 test('production throughput blocks malformed parallelism limits before faster execution can be claimed', () => {

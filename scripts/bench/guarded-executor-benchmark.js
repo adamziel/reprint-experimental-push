@@ -1837,10 +1837,12 @@ export function productionThroughputDetails(report) {
     queueBudgetVisibleAndMemoryCeilingVisible:
       queueBudgetVisible
       && receiptCursorMemoryCeilingVisible
+      && queueHeadroomVisible
       && queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack,
     receiptCursorMemoryCeilingVisibleAndQueueBudgetVisible:
       receiptCursorMemoryCeilingVisible
       && queueBudgetVisible
+      && queueHeadroomVisible
       && queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack,
     queueHeadroomVisible,
     queueHeadroomVisibleAndMeasured,
@@ -1960,10 +1962,12 @@ export function productionThroughputDetails(report) {
       queueBudgetVisibleAndMemoryCeilingVisible:
         queueBudgetVisible
         && receiptCursorMemoryCeilingVisible
+        && queueHeadroomVisible
         && queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack,
       receiptCursorMemoryCeilingVisibleAndQueueBudgetVisible:
         receiptCursorMemoryCeilingVisible
         && queueBudgetVisible
+        && queueHeadroomVisible
         && queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack,
       queueHeadroomVisible,
       queueHeadroomVisibleAndMeasured,
