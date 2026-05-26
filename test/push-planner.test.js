@@ -4599,6 +4599,46 @@ test('stale recovery claim fences an old worker before target mutation', () => {
   }
 });
 
+test('stale recovery claim fences the durable journal before opening the plan', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "STALE_LOCAL";';
+  const remote = baseSite();
+  const plan = planFor(base, local, remote);
+  const journal = {
+    kind: 'production-recovery-journal',
+    nextSequence: 1,
+    events: [],
+    appendEvent(type, payload) {
+      this.events.push({ type, payload });
+      return { sequence: this.nextSequence++, type, payload };
+    },
+    close() {},
+    assertCurrentClaim(type) {
+      throw new PushPlanError('RECOVERY_CLAIM_STALE', 'Injected stale claim before durable append.', {
+        staleClaimHash: 'stale-claim',
+        activeClaimHash: 'active-claim',
+        activeClaimSequence: 2,
+        activeClaimType: type,
+      });
+    },
+  };
+
+  const error = captureError(() =>
+    applyPlan(remote, plan, {
+      durableJournal: journal,
+      mutateRemote: true,
+    }),
+  );
+
+  assert.ok(error instanceof PushPlanError);
+  assert.equal(error.code, 'RECOVERY_CLAIM_STALE');
+  assert.equal(error.details.recovery.status, 'blocked-recovery');
+  assert.equal(error.details.recovery.artifacts.remote.files['index.php'], '<?php echo "base";');
+  assert.equal(remote.files['index.php'], '<?php echo "base";');
+  assert.deepEqual(journal.events, []);
+});
+
 test('replaying a completed plan does not duplicate inserts or reapply stale local data', () => {
   const base = baseSite();
   const local = baseSite();

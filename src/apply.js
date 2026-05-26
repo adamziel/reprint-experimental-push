@@ -828,6 +828,9 @@ function recordDurableRecoveryStateBestEffort(writer, current, plan, recoverySta
 
 function appendDurableEvent(writer, type, payload) {
   try {
+    if (writer?.kind === 'production-recovery-journal') {
+      assertDurableClaimCurrent(writer, type);
+    }
     return writer.appendEvent(type, payload);
   } catch (error) {
     throw durableJournalOperationError(error, type);
