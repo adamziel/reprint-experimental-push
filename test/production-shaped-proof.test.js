@@ -138,6 +138,13 @@ function spawnLiveReleaseVerify(env = {}, options = {}) {
   );
 }
 
+function boundedLiveReleaseVerifyOptions(options = {}) {
+  return {
+    timeout: options.timeout ?? liveProofInnerTimeoutMs,
+    killSignal: options.killSignal ?? liveProofSubprocessKillSignal,
+  };
+}
+
 function spawnProductionShapedReleaseVerify(env, options, label) {
   return spawnProductionShapedReleaseVerifyCommand(env, options, label);
 }
@@ -292,7 +299,7 @@ function spawnBoundedSync(command, args, options, label) {
 function spawnReleaseVerifySlowPathBounded(env = {}, options = {}) {
   const timeout = options.timeout ?? releaseVerifySlowPathTimeoutMs;
   const boundedTimeout = Math.max(1_000, Math.min(timeout, releaseVerifySlowPathInnerTimeoutMs));
-  return spawnReleaseVerifyBounded(
+  const proof = spawnReleaseVerifyBounded(
     process.execPath,
     ['scripts/playground/production-shaped-release-verify.mjs'],
     {
@@ -309,6 +316,11 @@ function spawnReleaseVerifySlowPathBounded(env = {}, options = {}) {
     },
     'retained-source release verify',
   );
+  if (proof.error || proof.signal || proof.status === null) {
+    stopAllPlaygroundChildrenSync();
+    logBoundedSpawnProofFailure(process.execPath, ['scripts/playground/production-shaped-release-verify.mjs'], proof);
+  }
+  return proof;
 }
 
 function logBoundedSpawnProofFailure(command, args, proof) {
@@ -534,10 +546,7 @@ test('production-shaped release verify command fails closed when production dura
       REPRINT_PUSH_REQUIRE_PRODUCTION_DURABLE_JOURNAL: '1',
       NODE_NO_WARNINGS: '1',
     },
-    {
-      timeout: Math.max(1_000, Math.min(releaseVerifySlowPathTimeoutMs, liveProofInnerTimeoutMs)),
-      killSignal: proofSubprocessKillSignal,
-    },
+    boundedLiveReleaseVerifyOptions({ timeout: Math.max(1_000, Math.min(releaseVerifySlowPathTimeoutMs, liveProofInnerTimeoutMs)) }),
     'durable journal release verify',
   );
   assert.equal(proof.status, 1, proof.stderr);
@@ -554,10 +563,7 @@ test('production-shaped release verify command fails closed when production auth
       REPRINT_PUSH_REQUIRE_PRODUCTION_AUTH_SESSION: '1',
       NODE_NO_WARNINGS: '1',
     },
-    {
-      timeout: Math.max(1_000, Math.min(releaseVerifySlowPathTimeoutMs, liveProofInnerTimeoutMs)),
-      killSignal: proofSubprocessKillSignal,
-    },
+    boundedLiveReleaseVerifyOptions({ timeout: Math.max(1_000, Math.min(releaseVerifySlowPathTimeoutMs, liveProofInnerTimeoutMs)) }),
     'auth/session release verify',
   );
   assert.equal(proof.status, 1, proof.stderr);
@@ -634,7 +640,7 @@ maybeTest('production-shaped release verify command runs the live protocol branc
         REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD: liveCredentials.password,
         NODE_NO_WARNINGS: '1',
       },
-      liveProofSpawnOptions(liveProofInnerTimeoutMs),
+      boundedLiveReleaseVerifyOptions({ timeout: liveProofInnerTimeoutMs }),
       'live release verify',
     );
     assert.equal(proof.status, 0, proof.stderr);
@@ -676,7 +682,7 @@ maybeTest('production-shaped release verify command fails closed when remote dri
         REPRINT_PUSH_LAB_DRIFT_AFTER_SNAPSHOT: 'post-title',
         NODE_NO_WARNINGS: '1',
       },
-      liveProofSpawnOptions(liveProofInnerTimeoutMs),
+      boundedLiveReleaseVerifyOptions({ timeout: liveProofInnerTimeoutMs }),
       'drift release verify',
     );
     assert.equal(proof.status, 1, proof.stderr);
