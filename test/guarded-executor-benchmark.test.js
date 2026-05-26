@@ -577,6 +577,11 @@ test('production claim gate fails closed if benchmark evidence is tampered', () 
     productionThroughputDetails(mismatchedQueueSlack).backpressureConsistency.queuePauseHasBackpressureAlignedReceiptCursorQueueSlack,
     false,
   );
+  assert.ok(
+    productionThroughputBlockers(mismatchedQueueSlack).includes(
+      'queue-pause-without-backpressure-aligned-receipt-cursor-queue-slack',
+    ),
+  );
 
   const missingQueueSlack = clone(report);
   delete missingQueueSlack.evidence.backpressure.receiptCursorQueueSlackBytes;
