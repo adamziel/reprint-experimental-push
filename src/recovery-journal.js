@@ -628,18 +628,40 @@ function persistedProductionArtifactRefs(journalPath) {
     return { journal: null, remote: null };
   }
 
+  let persistedJournalPath = null;
+  let persistedRemoteArtifactPath = null;
+
   for (let index = persisted.records.length - 1; index >= 0; index -= 1) {
     const artifactRefs = persisted.records[index]?.artifactRefs;
     if (!isStrictPlainObject(artifactRefs)) {
       continue;
     }
-    return {
-      journal: Object.hasOwn(artifactRefs, 'journal') ? artifactRefs.journal : null,
-      remote: Object.hasOwn(artifactRefs, 'remote') ? artifactRefs.remote : null,
-    };
+
+    if (
+      persistedJournalPath === null
+      && Object.hasOwn(artifactRefs, 'journal')
+      && isCanonicalAbsolutePath(artifactRefs.journal)
+    ) {
+      persistedJournalPath = artifactRefs.journal;
+    }
+    if (
+      persistedRemoteArtifactPath === null
+      && Object.hasOwn(artifactRefs, 'remote')
+      && isCanonicalAbsolutePath(artifactRefs.remote)
+      && artifactRefs.remote !== persistedJournalPath
+      && artifactRefs.remote !== artifactRefs.journal
+    ) {
+      persistedRemoteArtifactPath = artifactRefs.remote;
+    }
+    if (persistedJournalPath !== null && persistedRemoteArtifactPath !== null) {
+      break;
+    }
   }
 
-  return { journal: null, remote: null };
+  return {
+    journal: persistedJournalPath,
+    remote: persistedRemoteArtifactPath,
+  };
 }
 
 function isStrictPlainObject(value) {

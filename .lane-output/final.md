@@ -1,9 +1,9 @@
 No Data Loss Recovery handoff:
 
-- Timestamp: 2026-05-26 16:15:50 CEST (+0200)
-- The production recovery journal compatibility overload now rejects prototype-shaped option objects before deriving restart-readable ownership state.
-- This closes a recovery-owned gap where inherited `artifactRefs.remote` could influence the owned remote-artifact path on the compatibility overload, and where the consumer path could otherwise fall through to a generic `TypeError` instead of failing closed with `UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL`.
-- Added focused regressions for both `openProductionRecoveryJournal(...)` and `consumeProductionRecoveryJournal(...)` when `artifactRefs` are inherited through the prototype.
+- Timestamp: 2026-05-26 16:36:57 CEST (+0200)
+- Persisted production recovery artifact ownership now scans backward for the last valid owned journal and remote artifact refs instead of trusting the first tail record that merely has an `artifactRefs` object.
+- This closes a fail-open gap where a later persisted record could drop `artifactRefs.remote` and let reopen or release-path consumption forget that the journal had already claimed a production remote artifact.
+- Added focused reopen and consume regressions proving that once a production journal has persisted owned remote artifact refs, later records that omit that remote ref still keep the journal fail-closed.
 
 Changed files:
 
@@ -14,11 +14,13 @@ Changed files:
 Commands:
 
 - `git status --short --branch`
-- `sed -n '1,260p' supervision/lanes/no-data-loss-recovery.md`
+- `sed -n '1,220p' AGENTS.md`
+- `sed -n '1,220p' supervision/README.md`
+- `sed -n '1,220p' supervision/lanes/no-data-loss-recovery.md`
 - targeted `grep`/`sed` reads across `src/recovery-journal.js`, `src/apply.js`, `test/recovery-journal.test.js`, and `test/push-planner.test.js`
-- `date '+%Y-%m-%d %H:%M:%S %Z (%z)'`
-- `timeout 60s node --test test/recovery-journal.test.js --test-name-pattern "production recovery journal compatibility overload|artifact refs are inherited through the prototype|production recovery journal consumption fails closed when compatibility overload artifact refs are inherited through the prototype"`
+- `timeout 60s node --test --test-name-pattern "production recovery journal reopen fails closed when a later persisted record drops owned remote artifact refs|production recovery journal consumption fails closed when a later persisted record drops owned remote artifact refs|production recovery journal reopen fails closed when persisted remote artifact ownership is omitted|production recovery journal consumption fails closed when persisted remote artifact ownership is omitted" test/recovery-journal.test.js`
 - `git diff --check -- src/recovery-journal.js test/recovery-journal.test.js`
+- `date '+%Y-%m-%d %H:%M:%S %Z (%z)'`
 
 Push result:
 
@@ -31,4 +33,4 @@ Worktree status:
 
 Next supervisor nudge:
 
-1. `main:reliable-exec` can rely on the recovery compatibility overload refusing inherited artifact-ref ownership state instead of deriving production remote-artifact ownership from the prototype chain or crashing with a generic path-type failure.
+1. `main:reliable-exec` can now treat persisted production remote-artifact ownership as sticky across restart-readable records: later journal events that accidentally omit `artifactRefs.remote` no longer weaken the reopen/consume fence.
