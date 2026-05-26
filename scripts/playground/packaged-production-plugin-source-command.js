@@ -64,7 +64,8 @@ export function bindPackagedProductionPluginRuntimeSource({
   authSessionSource,
   runtimeSourceUrl = '',
 }) {
-  if (!runtimeSourceUrl) {
+  const normalizedRuntimeSourceUrl = normalizeRuntimeSourceUrl(runtimeSourceUrl);
+  if (!normalizedRuntimeSourceUrl) {
     return {
       sourceUrl,
       authSessionSource,
@@ -72,12 +73,25 @@ export function bindPackagedProductionPluginRuntimeSource({
   }
 
   return {
-    sourceUrl: runtimeSourceUrl,
+    sourceUrl: normalizedRuntimeSourceUrl,
     authSessionSource: authSessionSource?.ok
       ? {
           ...authSessionSource,
-          sourceUrl: runtimeSourceUrl,
+          sourceUrl: normalizedRuntimeSourceUrl,
         }
       : authSessionSource,
   };
+}
+
+function normalizeRuntimeSourceUrl(value) {
+  if (typeof value !== 'string') {
+    return '';
+  }
+
+  const normalized = value.trim();
+  if (!normalized || normalized !== value || /[\u0000-\u001f\u007f]/.test(normalized)) {
+    return '';
+  }
+
+  return normalized;
 }
