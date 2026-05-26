@@ -1731,6 +1731,7 @@ export function productionThroughputDetails(report) {
     && queueHeadroomVisible
     && queueHeadroomMeasured
     && report.evidence.backpressure?.receiptCursorMemoryCeilingMatchesQueueBudgetVisible === true
+    && receiptCursorQueueSlackVisible
     && receiptCursorMemoryHeadroomVisible
     && queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack;
   const receiptCursorPauseFootprintVisible =
@@ -1851,6 +1852,7 @@ export function productionThroughputDetails(report) {
   const receiptCursorMemoryHeadroomVisibleAndMeasured =
     receiptCursorPauseFootprintComplete
     && queueHeadroomWithinResourceCeiling
+    && receiptCursorQueueSlackVisible
     && receiptCursorMemoryHeadroomVisible
     && Number.isFinite(receiptCursorMemoryHeadroomBytes)
     && queueHeadroomVisible
