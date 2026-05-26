@@ -603,6 +603,20 @@ test('production claim gate fails closed if benchmark evidence is tampered', () 
     false,
   );
 
+  const unsafePausedQueueSlack = clone(report);
+  unsafePausedQueueSlack.evidence.backpressure.receiptCursorQueueSlackBytes =
+    unsafePausedQueueSlack.resourceLimits.memoryCeilingBytes + 1;
+  unsafePausedQueueSlack.evidence.backpressure.queuePausedBeforeOverflow = true;
+  assert.ok(
+    productionThroughputBlockers(unsafePausedQueueSlack).includes(
+      'queue-pause-without-memory-safe-receipt-cursor-slack',
+    ),
+  );
+  assert.equal(
+    productionThroughputDetails(unsafePausedQueueSlack).backpressureConsistency.receiptCursorQueueSlackWithinMemoryCeiling,
+    false,
+  );
+
   const unpausedWithoutMeasuredQueueSlack = clone(report);
   unpausedWithoutMeasuredQueueSlack.evidence.backpressure.receiptCursorQueueSlackBytes = null;
   unpausedWithoutMeasuredQueueSlack.evidence.backpressure.queuePausedBeforeOverflow = false;
