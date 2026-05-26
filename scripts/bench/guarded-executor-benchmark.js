@@ -373,6 +373,13 @@ export function productionThroughputBlockers(report) {
   if (
     report.evidence.backpressure?.queuePausedBeforeOverflow === true
     && report.evidence.backpressure?.queuePauseHasMeasuredAndAlignedReceiptCursorBackpressure === true
+    && report.evidence.backpressure?.receiptCursorBackpressureWithinResourceHeadroom !== true
+  ) {
+    blockers.push('queue-pause-without-resource-headroom-safe-receipt-cursor-backpressure');
+  }
+  if (
+    report.evidence.backpressure?.queuePausedBeforeOverflow === true
+    && report.evidence.backpressure?.queuePauseHasMeasuredAndAlignedReceiptCursorBackpressure === true
     && (
       report.evidence.backpressure?.queuePauseHasMeasuredReceiptCursorBackpressure !== true
       || report.evidence.backpressure?.queuePauseHasMeasuredReceiptCursorQueueSlack !== true
