@@ -1,9 +1,22 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-26 17:55 CEST
+Last updated: 2026-05-26 18:04 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-26 18:04 CEST - Reliable Head at `5b1ee960b543`
+
+- Going well: the live reliable head is now `5b1ee960b54344fafa06bf0b8ff4440c7fa79c62`, and the checked release path now carries restart-readable `stale-claim-rejected` evidence with `staleClaimRejected: true`.
+- Not going well: the packaged release verifier still hits the readiness boundary with repeated `502 "WordPress is not ready yet"` while waiting for `/wp-json/reprint/v1/push/snapshot`.
+- Progress change: this does not move a release gate yet; the remaining gate is production-backed auth/session lifecycle on the checked release boundary, with the readiness failure still blocking the consumer surface.
+- Next nudge: keep `reliable-executor` on the checked boundary until the readiness blocker is removed or named as the exact missing dependency, and keep `progress-publisher` conservative if the public page drifts.
+
+| Lane | Nudge |
+| --- | --- |
+| Reliable executor | Continue the product/test push toward the checked release boundary; do not drift back into proof-field polish. |
+| Progress publisher | Refresh the public page only if it still lags `5b1ee960b54344fafa06bf0b8ff4440c7fa79c62`; keep `0/4`. |
+| Audit and critic | Classify `5b1ee960` once and keep the verdict at `0/4` unless the checked release boundary proves a gate. |
 
 ## 2026-05-26 17:55 CEST - Public Page Still Behind `8e8e6f25916c`
 
