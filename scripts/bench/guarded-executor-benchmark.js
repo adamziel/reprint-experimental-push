@@ -2385,11 +2385,15 @@ function summarizeProductionCapabilityRollout({
       parallelismLimitsMeasuredOnReport
         && parallelismLimitsCanonical
         && backpressureEvidenceComplete
-        && productionStorageReceiptsMeasured,
+        && productionStorageReceiptsMeasured
+        && productionAtomicCommitMeasured
+        && productionAtomicGroupMetadataVisibleAndMeasured,
       parallelismLimitsVisible
         && backpressureEvidenceComplete
         && productionStorageReceiptsMeasured
-        && productionStorageReceiptsVisible,
+        && productionStorageReceiptsVisible
+        && productionAtomicCommitVisible
+        && productionAtomicGroupMetadataVisibleAndMeasured,
       [
         'backpressure-evidence-incomplete',
         'production-parallelism-limits-not-measured',
@@ -2400,9 +2404,20 @@ function summarizeProductionCapabilityRollout({
         'production-parallelism-limits-visible-without-measurement',
         'production-parallelism-limits-visible-without-integral',
         'production-parallelism-limits-visible-without-canonical',
+        'production-atomic-group-commit-not-measured',
+        'production-atomic-group-commit-not-visible',
+        'production-atomic-group-commit-visible-without-measurement',
+        'production-atomic-group-metadata-not-visible',
+        'production-atomic-group-metadata-visible-without-measurement',
+        'production-atomic-group-metadata-visible-without-atomic-commit',
         'production-storage-receipts-not-measured',
         'production-storage-receipts-not-visible',
         'production-storage-receipts-visible-without-measurement',
+        'production-storage-receipts-without-atomic-group-metadata',
+        'production-storage-receipts-without-atomic-commit',
+        'production-storage-receipts-visible-and-atomic-commit-visible-without-measurement',
+        'production-storage-receipts-visible-and-atomic-commit-visible-without-atomic-commit-measurement',
+        'production-storage-receipts-visible-and-atomic-commit-visible-without-metadata',
       ],
     ),
     entry(
