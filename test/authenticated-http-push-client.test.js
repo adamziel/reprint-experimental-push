@@ -117,6 +117,48 @@ test('authenticated push source does not mix partial auth/session source fields 
   );
 });
 
+test('authenticated push source ignores malformed auth/session source string fields', () => {
+  assert.deepEqual(
+    resolveAuthenticatedHttpPushSource({
+      sourceUrl: 'http://127.0.0.1:9090',
+      username: 'trusted-runtime-username',
+      applicationPassword: 'trusted-runtime-password',
+      authSessionSource: {
+        ok: true,
+        sourceUrl: ' http://127.0.0.1:8080 ',
+        username: 'reprint_push_admin',
+        applicationPassword: 'reprint-push-admin-app-password',
+      },
+    }),
+    {
+      sourceUrl: 'http://127.0.0.1:9090',
+      username: 'trusted-runtime-username',
+      applicationPassword: 'trusted-runtime-password',
+    },
+  );
+});
+
+test('authenticated push source ignores non-string auth/session source fields', () => {
+  assert.deepEqual(
+    resolveAuthenticatedHttpPushSource({
+      sourceUrl: 'http://127.0.0.1:9090',
+      username: 'trusted-runtime-username',
+      applicationPassword: 'trusted-runtime-password',
+      authSessionSource: {
+        ok: true,
+        sourceUrl: 'http://127.0.0.1:8080',
+        username: ['reprint_push_admin'],
+        applicationPassword: 'reprint-push-admin-app-password',
+      },
+    }),
+    {
+      sourceUrl: 'http://127.0.0.1:9090',
+      username: 'trusted-runtime-username',
+      applicationPassword: 'trusted-runtime-password',
+    },
+  );
+});
+
 test('authenticated push client signs mutating requests when session and idempotency are present', async () => {
   const originalFetch = global.fetch;
   const seen = [];

@@ -727,7 +727,8 @@ export function resolveAuthenticatedHttpPushSource({
   applicationPassword = '',
   authSessionSource = null,
 }) {
-  if (!hasCompleteAuthSessionSource(authSessionSource)) {
+  const normalizedAuthSessionSource = normalizeAuthenticatedHttpPushSource(authSessionSource);
+  if (!normalizedAuthSessionSource) {
     return {
       sourceUrl,
       username,
@@ -736,19 +737,42 @@ export function resolveAuthenticatedHttpPushSource({
   }
 
   return {
-    sourceUrl: authSessionSource.sourceUrl || sourceUrl,
-    username: authSessionSource.username || username,
-    applicationPassword: authSessionSource.applicationPassword || applicationPassword,
+    sourceUrl: normalizedAuthSessionSource.sourceUrl,
+    username: normalizedAuthSessionSource.username,
+    applicationPassword: normalizedAuthSessionSource.applicationPassword,
   };
 }
 
-function hasCompleteAuthSessionSource(authSessionSource) {
-  return Boolean(
-    authSessionSource?.ok
-    && authSessionSource.sourceUrl
-    && authSessionSource.username
-    && authSessionSource.applicationPassword
-  );
+function normalizeAuthenticatedHttpPushSource(authSessionSource) {
+  if (!authSessionSource?.ok) {
+    return null;
+  }
+
+  const sourceUrl = normalizeAuthenticatedHttpPushSourceField(authSessionSource.sourceUrl);
+  const username = normalizeAuthenticatedHttpPushSourceField(authSessionSource.username);
+  const applicationPassword = normalizeAuthenticatedHttpPushSourceField(authSessionSource.applicationPassword);
+  if (!sourceUrl || !username || !applicationPassword) {
+    return null;
+  }
+
+  return {
+    sourceUrl,
+    username,
+    applicationPassword,
+  };
+}
+
+function normalizeAuthenticatedHttpPushSourceField(value) {
+  if (typeof value !== 'string') {
+    return '';
+  }
+
+  const normalized = value.trim();
+  if (!normalized || normalized !== value || /[\u0000-\u001f\u007f]/.test(normalized)) {
+    return '';
+  }
+
+  return normalized;
 }
 
 export function authenticatedHttpClient({
