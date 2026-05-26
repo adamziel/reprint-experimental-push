@@ -2346,6 +2346,25 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
   assert.ok(rejectedById.get('compressed-receipt-log-authorizes-apply').violates.includes('atomic-groups'));
   assert.ok(rejectedById.get('compressed-receipt-log-authorizes-apply').violates.includes('durable-progress'));
   assert.equal(
+    rejectedById.get('compressed-receipt-log-and-stable-keys-authorize-commit-after-pause').rejectedGate,
+    'recovery',
+  );
+  assert.ok(
+    rejectedById.get('compressed-receipt-log-and-stable-keys-authorize-commit-after-pause').violates.includes('compression'),
+  );
+  assert.ok(
+    rejectedById.get('compressed-receipt-log-and-stable-keys-authorize-commit-after-pause').violates.includes('backpressure'),
+  );
+  assert.ok(
+    rejectedById.get('compressed-receipt-log-and-stable-keys-authorize-commit-after-pause').violates.includes('live-preconditions'),
+  );
+  assert.ok(
+    rejectedById.get('compressed-receipt-log-and-stable-keys-authorize-commit-after-pause').violates.includes('atomic-groups'),
+  );
+  assert.ok(
+    rejectedById.get('compressed-receipt-log-and-stable-keys-authorize-commit-after-pause').violates.includes('durable-progress'),
+  );
+  assert.equal(
     rejectedById.get('index-and-compressed-package-cache-completes-plugin-update').rejectedGate,
     'group',
   );

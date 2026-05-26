@@ -2812,6 +2812,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['compression', 'backpressure', 'live-preconditions', 'atomic-groups', 'durable-progress'],
   },
   {
+    id: 'compressed-receipt-log-and-stable-keys-authorize-commit-after-pause',
+    proposal: 'treat a compressed receipt log plus stable receipt keys as enough proof to authorize commit after a pause',
+    rejectedBecause: 'receipt compression can reduce replay storage, but it still cannot prove the raw receipt order, live compare, or atomic-group barrier survived the pause',
+    rejectedGate: 'recovery',
+    violates: ['compression', 'backpressure', 'live-preconditions', 'atomic-groups', 'durable-progress'],
+  },
+  {
     id: 'receipt-cursor-memory-headroom-authorizes-commit',
     proposal: 'treat receipt cursor memory headroom as enough proof to authorize the atomic-group commit',
     rejectedBecause: 'memory headroom can size bounded replay, but it cannot prove which rows, chunks, or live compares survived the pause well enough to authorize commit',
