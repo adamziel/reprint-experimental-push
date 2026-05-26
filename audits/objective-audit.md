@@ -11,18 +11,18 @@ Fresh remote heads at audit time, checked on May 26, 2026:
 - `origin/lane/no-data-loss-recovery` -> `47b675c0`
 - `origin/lane/fast-paths` -> `9be664b2`
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `c0f7aa92`
-- `origin/lane/independent-auditor` -> `509df7a0`
+- `origin/lane/independent-auditor` -> `5abd1f65`
 - `origin/lane/critic` -> `68569c0b`
 - `origin/lane/progress-publisher` -> `7695e1f9`
 - `origin/lane/same-plan-wordpress-graph-create` -> `fc8308c4`
 - `origin/lane/cycle-20260525-mainwindows-2349/same-plan-wordpress-graph-create` -> `fc8308c4`
 - `origin/lane/cycle-20260525-mainwindows-2349/same-plan-wordpress-graph-create` -> `e9cbf9d4`
 - `origin/lane/cycle-20260525-mainwindows-2357/no-data-loss-invariants-graph-proof` -> `98c0ce26`
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `bb2742a6`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `88267730`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `3aa07c2e`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `95be2784`
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` -> `5f256171`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-invariants` -> `9c70eba6`
-- `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `93340006`
+- `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `12174c08`
 - `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration` -> `a3a900d7`
 - `origin/main` -> `e55864f4`
 
@@ -49,10 +49,10 @@ but it did not change the release conclusion:
   coverage, which strengthens the fail-closed boundary but still does not
   prove live source mutation on unsupported surfaces.
 - `origin/lane/no-data-loss-recovery` now tightens the durable journal
-  production gate at `93340006` while preserving the earlier recovery
+  production gate at `12174c08` while preserving the earlier recovery
   evidence.
   `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` now
-  tightens the durable journal cleanup gate at `93340006`, but it still does
+  tightens the durable journal cleanup gate at `12174c08`, but it still does
   not add production-backed journal ownership or replay proof.
 - `origin/lane/fast-paths` now refreshes benchmark evidence at `a6ee1f74`.
   This remains a safe fast-path implementation detail, but it still does not
@@ -64,11 +64,11 @@ but it did not change the release conclusion:
 - `origin/lane/progress-publisher` now refreshes the public progress evidence
   at `7695e1f9`.
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` now refreshes the audit snapshot at
-  `509df7a0`.
+  `5abd1f65`.
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now
-  refreshes the supervisor evidence snapshot at `25e5f592`.
+  refreshes the supervisor evidence snapshot at `3aa07c2e`.
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now
-  records the latest progress freshness handoff at `88267730`.
+  records the latest progress freshness handoff at `95be2784`.
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` now
   hardens the live proof timeout diagnostics at `5f256171`.
 - `origin/lane/same-plan-wordpress-graph-create` now blocks unsupported graph
