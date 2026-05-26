@@ -1015,17 +1015,16 @@ export function productionRecoverySupportReport(writer) {
   if (inspectedClaimState?.status === 'blocked') {
     addMissingDependency('fencing or lease ownership for the journal writer');
   }
-  if (Object.hasOwn(writer ?? {}, 'claimHash') && writer.claimHash !== null) {
-    if (
-      typeof writer.claimHash !== 'string'
-      || !/^[a-f0-9]{64}$/.test(writer.claimHash)
-      || !inspectedClaimState
-      || inspectedClaimState.status === 'none'
-      || inspectedClaimState.status === 'blocked'
-      || inspectedClaimState.activeClaimHash !== writer.claimHash
-    ) {
-      addMissingDependency('fencing or lease ownership for the journal writer');
-    }
+  if (
+    !Object.hasOwn(writer ?? {}, 'claimHash')
+    || typeof writer.claimHash !== 'string'
+    || !/^[a-f0-9]{64}$/.test(writer.claimHash)
+    || !inspectedClaimState
+    || inspectedClaimState.status === 'none'
+    || inspectedClaimState.status === 'blocked'
+    || inspectedClaimState.activeClaimHash !== writer.claimHash
+  ) {
+    addMissingDependency('fencing or lease ownership for the journal writer');
   }
   if (writer && typeof writer.inspect === 'function' && !inspectionErrorMessage && !durableJournalInspectRecords(inspected)) {
     addMissingDependency('journal-readable inspection records with sequence and type');

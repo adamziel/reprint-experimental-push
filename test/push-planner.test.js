@@ -20689,6 +20689,33 @@ test('production recovery support report accepts a fenced restart-readable journ
   assert.equal(report.inspectionErrorMessage, null);
 });
 
+test('production recovery support report fails closed when the writer omits its explicit claim hash', () => {
+  const filePath = tempRecoveryJournalPath();
+  const remoteArtifactPath = `${path.dirname(filePath)}/remote.jsonl`;
+  const journal = openProductionRecoveryJournal(filePath, {
+    truncate: true,
+    now: fixedNow,
+    writerLease: { id: 'lease-without-claim' },
+    ownsRemoteArtifact: true,
+    remoteArtifactPath,
+  });
+  appendRecoveryClaimOpened(journal, {
+    plan: { id: 'plan-without-claim' },
+    current: baseSite(),
+    claimId: 'claim-present-on-disk',
+    artifactRefs: {
+      journal: filePath,
+      remote: remoteArtifactPath,
+    },
+  });
+  journal.close();
+
+  const report = productionRecoverySupportReport(journal);
+
+  assert.equal(report.supported, false);
+  assert.ok(report.missingDependency.includes('fencing or lease ownership for the journal writer'));
+});
+
 test('production recovery support report accepts stale-claim fencing records before journal-opened', () => {
   const filePath = tempRecoveryJournalPath();
   const remoteArtifactPath = `${path.dirname(filePath)}/remote.jsonl`;
@@ -25050,6 +25077,46 @@ test('production durable journal claims fail closed when remote artifact referen
     'restart-readable recovery remote artifact references',
     'fencing or lease ownership for the journal writer',
   ]);
+});
+
+test('production durable journal claims fail closed when the writer omits its explicit claim hash', () => {
+  const filePath = tempRecoveryJournalPath();
+  const remoteArtifactPath = `${path.dirname(filePath)}/remote.jsonl`;
+  const remote = {
+    ...baseSite(),
+    db: {
+      ...baseSite().db,
+      wp_options: {
+        ...baseSite().db.wp_options,
+        'option_name:blogname': { option_name: 'blogname', option_value: 'New Site' },
+      },
+    },
+  };
+  const plan = planFor(baseSite(), baseSite(), remote);
+  const journal = openProductionRecoveryJournal(filePath, {
+    truncate: true,
+    now: fixedNow,
+    writerLease: { id: 'lease-without-claim' },
+    ownsRemoteArtifact: true,
+    remoteArtifactPath,
+  });
+  appendRecoveryClaimOpened(journal, {
+    plan: { id: plan.id },
+    current: baseSite(),
+    claimId: 'claim-present-on-disk',
+    artifactRefs: {
+      journal: filePath,
+      remote: remoteArtifactPath,
+    },
+  });
+
+  const error = captureError(() => applyPlan(baseSite(), plan, {
+    requireProductionDurableJournal: true,
+    durableJournal: journal,
+  }));
+
+  assert.equal(error.code, 'PRODUCTION_DURABLE_JOURNAL_UNSUPPORTED');
+  assert.ok(error.details.missingDependency.includes('fencing or lease ownership for the journal writer'));
 });
 
 test('production durable journal claims fail closed when artifact paths include traversal segments', () => {
