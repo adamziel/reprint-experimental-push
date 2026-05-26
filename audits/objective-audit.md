@@ -6,17 +6,17 @@ The project is **not releasable as a production WordPress push path**.
 
 Fresh remote heads at audit time, checked on May 26, 2026:
 
-- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `e88851d8`
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `c13ccd13`
+- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `5598d25b`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `30ae7487`
 - `origin/lane/reliable-executor` -> `ffdc0a9b`
 - `origin/lane/no-data-loss-invariants` -> `9c70eba6`
 - `origin/lane/no-data-loss-recovery` -> `4372167e`
 - `origin/lane/fast-paths` -> `cd0fddad`
-- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `e88851d8`
-- `origin/lane/independent-auditor` -> `77868df5`
+- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `5598d25b`
+- `origin/lane/independent-auditor` -> `5abd1f65`
 - `origin/lane/critic` -> `6828861f`
 - `origin/lane/progress-publisher` -> `7695e1f9`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `ffb4e32a`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `994e60a5`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `4372167e`
 - `origin/lane/cycle-20260525-mainwindows-2349/critic` -> `3b9a9c46`
 - `origin/lane/same-plan-wordpress-graph-create` -> `09e6706d`
@@ -71,7 +71,7 @@ but it did not change the release conclusion:
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now
   records the latest progress freshness handoff at `d9379e28`.
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` now refreshes the audit snapshot at
-  `dabd35e2`.
+  `5abd1f65`.
 - `origin/lane/critic` now refreshes the critic handoff at `6828861f`.
 - `origin/lane/progress-publisher` now refreshes the public progress evidence
   at `7695e1f9`.
