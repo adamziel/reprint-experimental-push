@@ -18,8 +18,8 @@ Fresh remote heads at audit time, checked on May 26, 2026:
 - `origin/lane/cycle-20260525-mainwindows-2349/same-plan-wordpress-graph-create` -> `09e6706d`
 - `origin/lane/cycle-20260525-mainwindows-2349/same-plan-wordpress-graph-create` -> `e9cbf9d4`
 - `origin/lane/cycle-20260525-mainwindows-2357/no-data-loss-invariants-graph-proof` -> `98c0ce26`
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `c4a411f9`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `1a0122cf`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `562f0947`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `19ada1a0`
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` -> `5f256171`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-invariants` -> `9c70eba6`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `deb3e35b`
@@ -64,7 +64,7 @@ but it did not change the release conclusion:
 - `origin/lane/progress-publisher` now refreshes the public progress evidence
   at `7695e1f9`.
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` now refreshes the audit snapshot at
-  `d2e1c69d`.
+  `5abd1f65`.
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now
   refreshes the supervisor evidence snapshot at `c4a411f9`.
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now
