@@ -1793,6 +1793,35 @@ test('supported recovery boundaries only resolve to old-remote, fully-updated-re
   }
 });
 
+test('blocks replaying a completed journal when an entry is not marked applied', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  const plan = planFor(base, local, baseSite());
+  const completedJournalWriter = openRecoveryJournal(tempRecoveryJournalPath(), { truncate: true, now: fixedNow });
+  const completed = applyPlan(baseSite(), plan, { durableJournal: completedJournalWriter });
+  completedJournalWriter.close();
+
+  const replayRemote = JSON.parse(JSON.stringify(completed.site));
+  const replayJournal = JSON.parse(JSON.stringify(completed.journal));
+  replayJournal.entries[0].status = 'pending';
+  const replayJournalWriter = openRecoveryJournal(tempRecoveryJournalPath(), { truncate: true, now: fixedNow });
+
+  const error = captureError(() =>
+    applyPlan(replayRemote, plan, {
+      journal: replayJournal,
+      durableJournal: replayJournalWriter,
+    }),
+  );
+  replayJournalWriter.close();
+
+  assert.equal(error.code, 'RECOVERY_BLOCKED');
+  assertAcceptableRecoveryState(error.details.recovery);
+  assert.equal(error.details.recovery.status, 'blocked-recovery');
+  assert.match(error.details.recovery.reason, /not marked applied/);
+  assert.ok(error.details.recovery.artifacts.remote);
+});
+
 test('rejects recovery states that hide symbol-keyed artifact metadata', () => {
   const recoveryState = {
     status: 'blocked-recovery',

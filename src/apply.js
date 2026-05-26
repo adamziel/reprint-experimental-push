@@ -520,6 +520,17 @@ function journalValueEvidence(mutation, value) {
 }
 
 function replayCompletedPlan(remote, plan, journal) {
+  const unappliedEntries = journal.entries.filter((entry) => entry.status !== 'applied');
+  if (unappliedEntries.length > 0) {
+    throw recoveryBlocked(
+      remote,
+      plan,
+      journal,
+      'Completed journal contains entries that were not marked applied.',
+      { driftedResources: unappliedEntries.map((entry) => entry.resourceKey) },
+    );
+  }
+
   const drifted = journal.entries.filter(
     (entry) => resourceHash(remote, entry.resource) !== entry.afterHash,
   );
