@@ -2067,6 +2067,21 @@ test('guarded benchmark treats queue-budget visibility without memory-ceiling vi
   assert.ok(blockers.includes('queue-budget-visible-without-memory-ceiling-visibility'));
 });
 
+test('guarded benchmark treats queue-budget visibility without queue-headroom visibility as incomplete backpressure evidence', () => {
+  const report = smallBenchmark();
+  const mutated = clone(report);
+
+  mutated.evidence.backpressure.queueHeadroomVisible = false;
+  mutated.evidence.backpressure.queueBudgetVisible = true;
+
+  const details = productionThroughputDetails(mutated);
+  const blockers = productionThroughputBlockers(mutated);
+
+  assert.equal(details.queueBudgetVisibleAndQueueHeadroomVisible, false);
+  assert.equal(details.backpressureConsistency.queueBudgetVisibleAndQueueHeadroomVisible, false);
+  assert.ok(blockers.includes('queue-budget-visible-without-queue-headroom-visible'));
+});
+
 test('guarded benchmark treats memory-ceiling visibility without queue-budget visibility as incomplete backpressure evidence', () => {
   const report = smallBenchmark();
   const mutated = clone(report);
