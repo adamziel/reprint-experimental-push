@@ -255,10 +255,52 @@ function isSupportedPluginOwnedMutation(remote, mutation, owner, driver, planned
       && validFixtureFormsLabTableEvidence(mutation.pluginOwnedResource?.driverEvidence, remote);
   }
   if (driver && driverTable) {
-    return mutation.resource?.type === 'row'
-      && mutation.resource.table === driverTable
-      && (mutation.action !== 'delete' || mutation.pluginOwnedResource?.supportsDelete === true);
+    if (mutation.resource?.type !== 'row' || mutation.resource.table !== driverTable) {
+      return false;
+    }
+    const remoteSupport = remotePluginOwnedMutationSupport(remote, mutation, owner, driver, driverTable);
+    if (remoteSupport === false) {
+      return false;
+    }
+    if (remoteSupport !== null) {
+      return mutation.action !== 'delete' || remoteSupport.supportsDelete === true;
+    }
+    return mutation.action !== 'delete' || mutation.pluginOwnedResource?.supportsDelete === true;
   }
+  return false;
+}
+
+function remotePluginOwnedMutationSupport(remote, mutation, owner, driver, driverTable) {
+  const allowedResources = remote?.meta?.pluginOwnedResources?.allowedResources;
+  if (!allowedResources) {
+    return null;
+  }
+
+  const entries = Array.isArray(allowedResources)
+    ? allowedResources
+    : Object.entries(allowedResources).map(([resourceKey, entry]) => ({ resourceKey, ...entry }));
+
+  for (const entry of entries) {
+    if (!entry || typeof entry !== 'object') {
+      continue;
+    }
+    if ((entry.resourceKey || entry.key || null) !== mutation.resourceKey) {
+      continue;
+    }
+    if ((entry.pluginOwner || entry.owner || entry.plugin || null) !== owner) {
+      continue;
+    }
+    if ((entry.driver || entry.supportedDriver || entry.resourceDriver || null) !== driver) {
+      continue;
+    }
+    if ((entry.table || entry.driverTable || entry.resourceTable || null) !== driverTable) {
+      continue;
+    }
+    return {
+      supportsDelete: entry.supportsDelete === true || entry.delete === true || entry.allowDelete === true,
+    };
+  }
+
   return false;
 }
 
