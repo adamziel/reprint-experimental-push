@@ -3068,6 +3068,7 @@ function addUnsupportedSpecialFileBlocker(plan, {
     resourceKind: 'special-file',
     resource,
     resourceKey: resource.key,
+    unsupportedState: support.unsupportedState || null,
     reason: support.reason || `Special file entry ${resource.key} is not yet supported by the planner.`,
     baseHash,
     localHash,
@@ -3763,9 +3764,33 @@ function unsupportedSpecialFileResourceSupport({ resource, baseValue, localValue
     return { supported: true };
   }
 
+  const remoteOnlyDrift = (
+    stableStringify(localValue) === stableStringify(baseValue)
+    && stableStringify(remoteValue) !== stableStringify(baseValue)
+  );
+  const convergedDrift = (
+    localValue !== ABSENT
+    && remoteValue !== ABSENT
+    && stableStringify(localValue) === stableStringify(remoteValue)
+    && stableStringify(localValue) !== stableStringify(baseValue)
+  );
+  const steadyUnsupported = (
+    stableStringify(localValue) === stableStringify(baseValue)
+    && stableStringify(remoteValue) === stableStringify(baseValue)
+  );
+
   return {
     supported: false,
     className: 'unsupported-special-file-resource',
+    unsupportedState: localValue === ABSENT
+      ? 'delete'
+      : convergedDrift
+        ? 'converged-drift'
+        : remoteOnlyDrift
+          ? 'remote-only-drift'
+          : steadyUnsupported
+            ? 'steady-unsupported'
+            : 'local-or-divergent-drift',
     reason: 'Special file entries are not yet supported by the planner.',
   };
 }

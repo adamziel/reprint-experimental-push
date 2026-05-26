@@ -25799,6 +25799,7 @@ test('blocks unsupported special file entries while preserving remote-only plugi
   assert.equal(plan.conflicts.length, 0);
   assert.equal(blocker.class, 'unsupported-special-file-resource');
   assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.unsupportedState, 'local-or-divergent-drift');
   assert.equal(blocker.reason, 'Special file entries are not yet supported by the planner.');
   assert.equal(pluginDecision.decision, 'keep-remote');
   assert.equal(planJson.includes('../shared/other-target'), false);
@@ -25831,10 +25832,70 @@ test('blocks unsupported special file entries even when the live remote already 
   assert.equal(plan.conflicts.length, 0);
   assert.equal(blocker.class, 'unsupported-special-file-resource');
   assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.unsupportedState, 'steady-unsupported');
   assert.equal(blocker.reason, 'Special file entries are not yet supported by the planner.');
   assert.equal(pluginDecision.decision, 'keep-remote');
   assert.equal(remote.plugins.forms.description, 'remote-only plugin drift');
   assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin drift */');
+});
+
+test('blocks converged unsupported special file entries while preserving a matching independent edit and remote-only plugin changes', () => {
+  const resourceKey = 'file:wp-content/uploads/converged-symlink';
+  const base = baseSite();
+  base.files['wp-content/uploads/converged-symlink'] = 'base regular file';
+  base.db.wp_posts['ID:145'] = {
+    ID: 145,
+    post_title: 'Base converged post',
+    post_content: 'Base converged post content',
+    post_status: 'publish',
+    post_type: 'post',
+  };
+
+  const local = baseSite();
+  local.files['wp-content/uploads/converged-symlink'] = { type: 'symlink', target: '../shared/converged-target' };
+  local.db.wp_posts['ID:145'] = {
+    ID: 145,
+    post_title: 'Base converged post',
+    post_content: 'Local converged post content',
+    post_status: 'publish',
+    post_type: 'post',
+  };
+
+  const remote = baseSite();
+  remote.files['wp-content/uploads/converged-symlink'] = { type: 'symlink', target: '../shared/converged-target' };
+  remote.db.wp_posts['ID:145'] = {
+    ID: 145,
+    post_title: 'Base converged post',
+    post_content: 'Local converged post content',
+    post_status: 'publish',
+    post_type: 'post',
+  };
+  remote.plugins.forms.description = 'remote-only plugin changes';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin changes */';
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers[0];
+  const postDecision = decisionFor(plan, 'row:["wp_posts","ID:145"]');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(plan.conflicts.length, 0);
+  assert.equal(blocker.class, 'unsupported-special-file-resource');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.unsupportedState, 'converged-drift');
+  assert.equal(blocker.reason, 'Special file entries are not yet supported by the planner.');
+  assert.equal(postDecision.decision, 'already-in-sync');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('../shared/converged-target'), false);
+  assert.equal(planJson.includes('Local converged post content'), false);
+  assert.equal(planJson.includes('Base converged post content'), false);
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin changes');
+  assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin changes */');
 });
 
 test('blocks unsupported special file entries even when a same-plan created sibling delete and remote-only plugin removals are already safe', () => {
@@ -26023,6 +26084,7 @@ test('blocks deletion of unsupported special file entries while preserving remot
   assert.equal(plan.conflicts.length, 0);
   assert.equal(blocker.class, 'unsupported-special-file-resource');
   assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.unsupportedState, 'delete');
   assert.equal(blocker.reason, 'Special file entries are not yet supported by the planner.');
   assert.equal(remote.plugins.forms, undefined);
   assert.equal(remote.files['wp-content/plugins/forms/forms.php'], undefined);
@@ -26075,6 +26137,7 @@ test('blocks deletion of unsupported special file entries while preserving a mat
   assert.equal(plan.conflicts.length, 0);
   assert.equal(blocker.class, 'unsupported-special-file-resource');
   assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.unsupportedState, 'remote-only-drift');
   assert.equal(blocker.reason, 'Special file entries are not yet supported by the planner.');
   assert.equal(postDecision.decision, 'already-in-sync');
   assert.equal(pluginDecision.decision, 'keep-remote');
