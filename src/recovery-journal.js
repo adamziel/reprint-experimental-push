@@ -426,10 +426,81 @@ function normalizeProductionRecoveryJournalOptions(filePathOrOptions, options = 
 
 function normalizeProductionArtifactRefs(artifactRefs, journalPath, remoteArtifactPath = null) {
   const writerArtifactRefs = isStrictPlainObject(artifactRefs) ? artifactRefs : {};
+  const persistedArtifactRefs = persistedProductionArtifactRefs(journalPath);
+  if (
+    Object.hasOwn(writerArtifactRefs, 'journal')
+    && writerArtifactRefs.journal !== journalPath
+  ) {
+    throw new UnsupportedProductionRecoveryJournalError(
+      'Production recovery journal consumption requires artifactRefs.journal to match the owned journal path.',
+      {
+        kind: 'production-recovery-journal',
+        productionAdapter: true,
+        supportedSurface: 'production-recovery-journal-adapter',
+        restartReadable: true,
+        ownsJournal: true,
+        ownsRemoteArtifact: remoteArtifactPath !== null,
+        journalPath,
+        artifactRefs: Object.freeze({
+          journal: writerArtifactRefs.journal,
+          remote: Object.hasOwn(writerArtifactRefs, 'remote') ? writerArtifactRefs.remote : remoteArtifactPath,
+        }),
+        schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+      },
+    );
+  }
+  if (
+    Object.hasOwn(writerArtifactRefs, 'remote')
+    && (
+      writerArtifactRefs.remote !== remoteArtifactPath
+      || (
+        persistedArtifactRefs.remote !== null
+        && writerArtifactRefs.remote !== persistedArtifactRefs.remote
+      )
+    )
+  ) {
+    throw new UnsupportedProductionRecoveryJournalError(
+      'Production recovery journal consumption requires artifactRefs.remote to match the owned remote artifact path.',
+      {
+        kind: 'production-recovery-journal',
+        productionAdapter: true,
+        supportedSurface: 'production-recovery-journal-adapter',
+        restartReadable: true,
+        ownsJournal: true,
+        ownsRemoteArtifact: remoteArtifactPath !== null,
+        journalPath,
+        artifactRefs: Object.freeze({
+          journal: Object.hasOwn(writerArtifactRefs, 'journal') ? writerArtifactRefs.journal : journalPath,
+          remote: writerArtifactRefs.remote,
+        }),
+        schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+      },
+    );
+  }
   return {
     journal: Object.hasOwn(writerArtifactRefs, 'journal') ? writerArtifactRefs.journal : journalPath,
     remote: Object.hasOwn(writerArtifactRefs, 'remote') ? writerArtifactRefs.remote : remoteArtifactPath,
   };
+}
+
+function persistedProductionArtifactRefs(journalPath) {
+  const persisted = readRecoveryJournal(journalPath);
+  if (persisted.integrity?.status !== 'ok') {
+    return { journal: null, remote: null };
+  }
+
+  for (let index = persisted.records.length - 1; index >= 0; index -= 1) {
+    const artifactRefs = persisted.records[index]?.artifactRefs;
+    if (!isStrictPlainObject(artifactRefs)) {
+      continue;
+    }
+    return {
+      journal: Object.hasOwn(artifactRefs, 'journal') ? artifactRefs.journal : null,
+      remote: Object.hasOwn(artifactRefs, 'remote') ? artifactRefs.remote : null,
+    };
+  }
+
+  return { journal: null, remote: null };
 }
 
 function isStrictPlainObject(value) {
