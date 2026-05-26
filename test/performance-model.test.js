@@ -2193,6 +2193,14 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
     model.safeFastPaths.find((fastPath) => fastPath.allowedShortcut === 'compress-remote-index-listings-and-reuse-cursor-to-presize-bounded-plugin-update-batches')?.failureEvidence,
     'compressed index cursor, dependency graph, and batch idempotency key',
   );
+  assert.equal(
+    model.safeFastPaths.find((fastPath) => fastPath.allowedShortcut === 'reuse-canonical-per-kind-budgets-and-plan-scoped-row-receipts-to-size-bounded-plugin-update-batches')?.visibilityBoundary,
+    'planning-only-until-batch-commit',
+  );
+  assert.equal(
+    model.safeFastPaths.find((fastPath) => fastPath.allowedShortcut === 'reuse-canonical-per-kind-budgets-and-plan-scoped-row-receipts-to-size-bounded-plugin-update-batches')?.failureEvidence,
+    'canonical per-kind budget summary plus plan-scoped row receipts and batch idempotency key',
+  );
   assert.ok(
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-row-batch-replaces-atomic-group')?.violates.includes('atomic-groups'),
   );

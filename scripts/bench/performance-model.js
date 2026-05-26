@@ -1031,6 +1031,26 @@ export const SAFE_FAST_PATHS = Object.freeze([
   },
   {
     area: 'database-row-batching',
+    reduces: ['round-trips', 'rescan-work', 'batch-shape-recomputation'],
+    allowedShortcut: 'reuse-canonical-per-kind-budgets-and-plan-scoped-row-receipts-to-size-bounded-plugin-update-batches',
+    guardrails: [
+      'plan-scoped-row-receipts-remain-durable-and-advisory',
+      'batch-bounds-still-honor-row-preconditions',
+    ],
+    gateProofs: {
+      skip: 'the planner can reuse canonical per-kind budgets and plan-scoped row receipts to avoid recomputing unchanged plugin-update batch shapes',
+      live: 'every row in the batch still rechecks its live compare at the storage boundary',
+      group: 'the batch shape only narrows planning inside the same atomic group and never widens visibility across owners',
+      recovery: 'the plan-scoped row receipts, batch receipts, and group staging record still classify retry, pause, or crash without guessing',
+    },
+    visibilityBoundary: 'planning-only-until-batch-commit',
+    failureEvidence: 'canonical per-kind budget summary plus plan-scoped row receipts and batch idempotency key',
+    bypassesLivePreconditions: false,
+    splitsAtomicGroup: false,
+    publishesStagedDataEarly: false,
+  },
+  {
+    area: 'database-row-batching',
     reduces: ['wire-bytes-for-planning', 'planning-round-trips'],
     allowedShortcut: 'compress-planning-row-batch-manifests-with-canonical-row-digests',
     guardrails: [
