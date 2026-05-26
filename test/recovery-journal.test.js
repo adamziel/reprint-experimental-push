@@ -1844,6 +1844,134 @@ test('production recovery journal reopen fails closed when a later persisted cla
   });
 });
 
+test('production recovery journal reopen fails closed when a later persisted claim reopen uses a non-positive sequence identity', () => {
+  const filePath = tempJournalPath();
+  const remote = baseSite();
+  const plan = planFor(baseSite(), localSite(), remote);
+  const claimId = 'claim-consumed-reopened-sequence-zero';
+  const writerLease = { id: claimId, epoch: 4 };
+  const remoteArtifactPath = `${filePath}.remote`;
+  const artifactRefs = {
+    journal: filePath,
+    remote: remoteArtifactPath,
+  };
+  const journal = openProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs,
+    claimId,
+    writerLease,
+  });
+  appendRecoveryClaimOpened(journal, {
+    plan,
+    current: remote,
+    claimId,
+    artifactRefs,
+  });
+  journal.close();
+
+  consumeProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs,
+    writerLease,
+  });
+
+  const persisted = readRecoveryJournal(filePath);
+  persisted.records.push({
+    sequence: 0,
+    type: 'recovery-claim-opened',
+    schemaVersion: persisted.records[0].schemaVersion,
+    claimHash: recoveryClaimHash(claimId),
+    claimLease: writerLease,
+    planId: plan.id,
+    state: 'opened',
+    observedHash: 'snapshot-hash-only',
+    artifactRefs,
+    fsync: { requested: true },
+  });
+  fs.writeFileSync(filePath, `${persisted.records.map((record) => JSON.stringify(record)).join('\n')}\n`);
+
+  assert.throws(() => {
+    openProductionRecoveryJournal(filePath, {
+      claimId,
+      writerLease,
+      ownsRemoteArtifact: true,
+      remoteArtifactPath,
+    });
+  }, {
+    name: 'UnsupportedProductionRecoveryJournalError',
+    code: 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL',
+    message: 'Production recovery journal persistence is corrupt or truncated.',
+  });
+});
+
+test('production recovery journal reopen fails closed when a later persisted claim reopen uses a non-integer sequence identity', () => {
+  const filePath = tempJournalPath();
+  const remote = baseSite();
+  const plan = planFor(baseSite(), localSite(), remote);
+  const claimId = 'claim-consumed-reopened-sequence-fractional';
+  const writerLease = { id: claimId, epoch: 4 };
+  const remoteArtifactPath = `${filePath}.remote`;
+  const artifactRefs = {
+    journal: filePath,
+    remote: remoteArtifactPath,
+  };
+  const journal = openProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs,
+    claimId,
+    writerLease,
+  });
+  appendRecoveryClaimOpened(journal, {
+    plan,
+    current: remote,
+    claimId,
+    artifactRefs,
+  });
+  journal.close();
+
+  consumeProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs,
+    writerLease,
+  });
+
+  const persisted = readRecoveryJournal(filePath);
+  persisted.records.push({
+    sequence: 3.5,
+    type: 'recovery-claim-opened',
+    schemaVersion: persisted.records[0].schemaVersion,
+    claimHash: recoveryClaimHash(claimId),
+    claimLease: writerLease,
+    planId: plan.id,
+    state: 'opened',
+    observedHash: 'snapshot-hash-only',
+    artifactRefs,
+    fsync: { requested: true },
+  });
+  fs.writeFileSync(filePath, `${persisted.records.map((record) => JSON.stringify(record)).join('\n')}\n`);
+
+  assert.throws(() => {
+    openProductionRecoveryJournal(filePath, {
+      claimId,
+      writerLease,
+      ownsRemoteArtifact: true,
+      remoteArtifactPath,
+    });
+  }, {
+    name: 'UnsupportedProductionRecoveryJournalError',
+    code: 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL',
+    message: 'Production recovery journal persistence is corrupt or truncated.',
+  });
+});
+
 test('production recovery journal compatibility overload fails closed without an explicit claimId or writerLease', () => {
   const filePath = tempJournalPath();
   const remote = baseSite();
