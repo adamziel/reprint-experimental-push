@@ -1,9 +1,21 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-25 00:27 CEST
+Last updated: 2026-05-26 11:10 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-26 11:10 CEST - Release Journal Smoke Refresh
+
+- Going well: the public page now names `5fd9dfb4` as the current reliable
+  head, and the release-journal smoke is linked instead of stale wording.
+- Not going well: production auth/session lifecycle, durable storage, leases,
+  graph mapping, integration, and plugin drivers still do not prove the
+  release gate.
+- Progress change: the visible status is current again, but the gate posture
+  stays conservative at `0/4`.
+- Next nudge: keep the next proof tied to the audit decision and the next
+  production-boundary evidence.
 
 ## 2026-05-25 00:27 CEST - Supervised Lane Merge Refresh
 

@@ -474,14 +474,16 @@
       <div>
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
-        <p class="lead">Current proof is still lab/model scope: 89 Node tests pass after supervised lane merges covering planner invariants, recovery replay/failure states, fast-path guardrails, protocol binding, and audit updates. Eight recent fast-mode outputs were integrated. Production push remains blocked until auth, journal durability, graph identity, and plugin-driver proof exist.</p>
-        <time class="update-stamp" datetime="2026-05-25T00:47:15+02:00">Last updated: May 25, 2026, 00:47 CEST</time>
+        <p class="lead">Current proof is still lab/model scope: `origin/lane/reliable-executor` now points at `5fd9dfb4` for the release-journal smoke, while 89 Node tests continue to pass after supervised lane merges covering planner invariants, recovery replay/failure states, fast-path guardrails, protocol binding, and audit updates. Production push remains blocked until auth, journal durability, graph identity, and plugin-driver proof exist.</p>
+        <time class="update-stamp" datetime="2026-05-26T11:10:06+02:00">Last updated: May 26, 2026, 11:10 CEST</time>
         <div class="meta" aria-label="Project status">
           <span class="pill">89 Node tests passing</span>
           <span class="pill">Production gates still blocked</span>
           <span class="pill">Auth and journal proof missing</span>
           <span class="pill">Graph identity still pending</span>
           <span class="pill">Plugin driver proof missing</span>
+          <span class="pill">Reliable head 5fd9dfb4</span>
+          <span class="pill">Release-journal smoke passed</span>
           <span class="pill">8 worker outputs integrated</span>
           <span class="pill">Evidence links below</span>
           <span class="pill">Production push blocked</span>
@@ -500,7 +502,7 @@
       </div>
       <div class="metric">
         <strong>Flat</strong>
-        <span>production readiness trend</span>
+        <span>production readiness trend after the release-journal smoke</span>
       </div>
       <div class="metric">
         <strong>0</strong>
@@ -534,7 +536,7 @@
         <div class="lane">
           <div class="lane-head"><strong>Reliable executor and protocol</strong><span class="percent">42%</span></div>
           <div class="bar" aria-label="Reliable executor and protocol 42 percent"><div class="fill amber" style="width:42%"></div></div>
-          <p class="note">Protocol/executor docs name the production push flow, but the proof is still local-lab scoped. Gap: production auth, journal, and leases.</p>
+          <p class="note">Protocol/executor docs name the production push flow, and the current reliable head `5fd9dfb4` adds release-journal smoke evidence, but the proof is still local-lab scoped. Gap: production auth, journal, and leases.</p>
         </div>
 
         <div class="lane">
@@ -546,7 +548,7 @@
         <div class="lane">
           <div class="lane-head"><strong>Independent evidence and critique</strong><span class="percent">30%</span></div>
           <div class="bar" aria-label="Independent evidence and critique 30 percent"><div class="fill red" style="width:30%"></div></div>
-          <p class="note">Objective and critic audits reflect the latest evidence. Gap: re-audit production-backed internals and graph/plugin proof.</p>
+          <p class="note">Objective and critic audits reflect the latest evidence, including `5fd9dfb4` as the current reliable head. Gap: re-audit production-backed internals and graph/plugin proof.</p>
         </div>
       </section>
 
@@ -556,8 +558,8 @@
           <ul class="compact-list">
             <li><strong>Going well</strong><span>89 Node tests pass; planner, recovery, fast-path, protocol, critic, and audit evidence landed.</span></li>
             <li><strong>Not going well</strong><span>Production auth, journal durability, leases, graph mapping, integration, and plugin drivers remain unproven.</span></li>
-            <li><strong>Progress change</strong><span>Eight worker outputs were integrated; readiness stayed blocked.</span></li>
-            <li><strong>Next nudge</strong><span>Prove production auth and journal storage before claiming any push safety.</span></li>
+            <li><strong>Progress change</strong><span>`5fd9dfb4` became the current reliable head; the release-journal smoke passed; gates stayed at 0/4.</span></li>
+            <li><strong>Next nudge</strong><span>Keep the next proof tied to the audit decision and the next production-boundary evidence.</span></li>
           </ul>
           <p class="note"><a href="docs/supervisor-feedback.md">Open full feedback log</a></p>
         </section>
@@ -565,6 +567,7 @@
         <section class="panel latest-evidence-panel" aria-labelledby="latest-evidence">
           <h2 id="latest-evidence">Latest Evidence</h2>
           <ul class="link-list">
+            <li><a href="scripts/recovery/file-journal-restart-smoke.mjs">Release-journal smoke</a></li>
             <li><a href="scripts/playground/production-plugin-package-smoke.mjs">Packaged plugin smoke</a></li>
             <li><a href="scripts/playground/production-shaped-route-smoke.mjs">Production-shaped route smoke</a></li>
             <li><a href="plugins/reprint-push/reprint-push.php">Plugin wrapper</a></li>
@@ -585,7 +588,7 @@
         <section class="panel" aria-labelledby="proof-gates">
           <h2 id="proof-gates">Pending Proof Gates</h2>
           <div class="proof-list">
-            <div class="proof-item"><span class="status">Lab proof</span><p>Packaged route requires scoped credentials, rejects unprovisioned and unscoped credentials, cleans 2 expired signed artifacts, and applies 7 graph-safe mutations in local lab runs.</p></div>
+            <div class="proof-item"><span class="status">Lab proof</span><p>Release-journal smoke now passes with `5fd9dfb4` as the current reliable head, but it still does not cross production auth or durable-storage gates.</p></div>
             <div class="proof-item"><span class="status">Pending</span><p>Production credential lifecycle and authorization.</p></div>
             <div class="proof-item"><span class="status">Pending</span><p>Durable journal with crash, lease, and fencing tests.</p></div>
             <div class="proof-item"><span class="status">Pending</span><p>Docker/full Playground integration beyond fixture labs.</p></div>
