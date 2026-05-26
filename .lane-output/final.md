@@ -1,6 +1,6 @@
-`ea74b2bdc01574dce1380641171497338df62883` stays `0/4`.
+`347aebcc42b43d0282a28e5927715b90bb642178` stays `0/4`.
 
-Audit time: 2026-05-26 16:08:42 CEST (+0200)
+Audit time: 2026-05-26 16:10:56 CEST (+0200)
 
 Current verdict:
 - The checked release verifier now gets further through packaged Playground readiness, but it still does not prove production-backed auth/session lifecycle on the live `verify:release` boundary.
