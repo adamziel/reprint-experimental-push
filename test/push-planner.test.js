@@ -9955,6 +9955,62 @@ test('blocks a local termmeta reference to a same-plan term when the term is als
   assert.throws(() => applyPlan(baseSite(), plan), /Refusing to apply/);
 });
 
+test('blocks a local termmeta reference to a same-plan term when the term is also used by a nav menu taxonomy and unrelated remote attachment noise exists', () => {
+  const termmetaResourceKey = 'row:["wp_termmeta","meta_id:13"]';
+  const taxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:9"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_terms = {
+    'term_id:5': {
+      term_id: 5,
+      name: 'Local navigation menu term',
+      slug: 'local-navigation-menu-term',
+    },
+  };
+  local.db.wp_term_taxonomy = {
+    'term_taxonomy_id:9': {
+      term_taxonomy_id: 9,
+      term_id: 5,
+      taxonomy: 'nav_menu',
+      description: '',
+      parent: 0,
+      count: 0,
+    },
+  };
+  local.db.wp_termmeta = {
+    'meta_id:13': {
+      meta_id: 13,
+      term_id: 5,
+      meta_key: 'term-note',
+      meta_value: 'local-private-navigation-term-note',
+    },
+  };
+  const remote = baseSite();
+  remote.db.wp_posts['ID:9'] = {
+    ID: 9,
+    post_title: 'Remote attachment noise',
+    post_content: 'remote-attachment-body',
+    post_status: 'inherit',
+    post_type: 'attachment',
+  };
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === termmetaResourceKey);
+  const termMutation = mutationFor(plan, 'row:["wp_terms","term_id:5"]');
+  const taxonomyMutation = mutationFor(plan, taxonomyResourceKey);
+  const termmetaMutation = mutationFor(plan, termmetaResourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(termMutation.changeKind, 'create');
+  assert.equal(taxonomyMutation, undefined);
+  assert.equal(termmetaMutation, undefined);
+  assert.equal(blocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(blocker.surface, 'nav_menu');
+  assert.equal(JSON.stringify(blocker).includes('local-private-navigation-term-note'), false);
+  assert.equal(JSON.stringify(blocker).includes('remote-attachment-body'), false);
+  assert.throws(() => applyPlan(baseSite(), plan), /Refusing to apply/);
+});
+
 test('blocks a local termmeta reference to a same-plan term when a remote nav menu taxonomy already uses the term', () => {
   const termmetaResourceKey = 'row:["wp_termmeta","meta_id:14"]';
   const termResourceKey = 'row:["wp_terms","term_id:5"]';
