@@ -11360,6 +11360,59 @@ test('blocks conflicting plugin-owned driver metadata while preserving matching 
   assert.equal(pluginFileDecision.decision, 'keep-remote');
 });
 
+test('blocks conflicting plugin-owned driver metadata on deletes while preserving matching independent deletes and remote-only plugin drift', () => {
+  const resourceKey = 'row:["wp_forms_entries","entry_id:9"]';
+  const base = baseSite();
+  base.db.wp_forms_entries = {
+    'entry_id:9': { entry_id: 9, payload: 'base-private-entry', __pluginOwner: 'forms' },
+  };
+  base.files['about.php'] = '<?php echo "base about";';
+
+  const local = baseSite();
+  local.db.wp_forms_entries = {
+    'entry_id:9': { entry_id: 9, payload: 'local-private-entry', __pluginOwner: 'forms' },
+  };
+  local.files['about.php'] = '<?php echo "shared about";';
+  delete local.db.wp_forms_entries['entry_id:9'];
+  local.meta = {
+    pushPolicy: {
+      pluginOwnedResources: {
+        allowedResources: [
+          allowedPluginOwnedResource(resourceKey, 'forms', 'wp-option'),
+          allowedPluginOwnedResource(resourceKey, 'forms', 'wp-postmeta'),
+        ],
+      },
+    },
+  };
+
+  const remote = baseSite();
+  remote.db.wp_forms_entries = {
+    'entry_id:9': { entry_id: 9, payload: 'base-private-entry', __pluginOwner: 'forms' },
+  };
+  remote.files['about.php'] = '<?php echo "shared about";';
+  remote.plugins.forms.description = 'remote-only plugin drift';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin drift */';
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers[0];
+  const editDecision = decisionFor(plan, 'file:about.php');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const blockerJson = JSON.stringify(blocker);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(blocker.class, 'unsupported-plugin-owned-resource');
+  assert.equal(blocker.pluginOwner, 'forms');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.reason, 'Plugin-owned resource has conflicting driver metadata and cannot be applied safely.');
+  assert.equal(blockerJson.includes('base-private-entry'), false);
+  assert.equal(blockerJson.includes('local-private-entry'), false);
+  assert.equal(editDecision.decision, 'already-in-sync');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+});
+
 test('blocks unknown plugin-owned custom table rows while preserving a matching independent file type swap and remote-only plugin removals', () => {
   const resourceKey = 'row:["wp_forms_entries","entry_id:9"]';
   const base = baseSite();
