@@ -12,18 +12,18 @@ Fresh remote heads at audit time, checked on May 26, 2026:
 - `origin/lane/fast-paths` -> `9be664b2`
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `c0f7aa92`
 - `origin/lane/independent-auditor` -> `509df7a0`
-- `origin/lane/critic` -> `f8591f9d`
+- `origin/lane/critic` -> `68569c0b`
 - `origin/lane/progress-publisher` -> `7695e1f9`
 - `origin/lane/same-plan-wordpress-graph-create` -> `fc8308c4`
 - `origin/lane/cycle-20260525-mainwindows-2349/same-plan-wordpress-graph-create` -> `fc8308c4`
 - `origin/lane/cycle-20260525-mainwindows-2349/same-plan-wordpress-graph-create` -> `e9cbf9d4`
 - `origin/lane/cycle-20260525-mainwindows-2357/no-data-loss-invariants-graph-proof` -> `98c0ce26`
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `bb2742a6`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `814034cd`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `88267730`
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` -> `5f256171`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-invariants` -> `9c70eba6`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `93340006`
-- `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration` -> `295dc72a`
+- `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration` -> `a3a900d7`
 - `origin/main` -> `e55864f4`
 
 The current remote state still adds no production-backed auth/session
@@ -45,9 +45,9 @@ but it did not change the release conclusion:
   including revision posts, menu/navigation posts, serialized blocks, and
   thumbnail parent references, but none of these produce live source mutation
   evidence.
-- The newer integration cycle head at `295dc72a` adds a post-parent conflict
-  proof, which strengthens the fail-closed boundary but still does not prove
-  live source mutation on unsupported surfaces.
+- The newer integration cycle head at `a3a900d7` adds comments graph blocker
+  coverage, which strengthens the fail-closed boundary but still does not
+  prove live source mutation on unsupported surfaces.
 - `origin/lane/no-data-loss-recovery` now tightens the durable journal
   production gate at `93340006` while preserving the earlier recovery
   evidence.
@@ -60,7 +60,7 @@ but it did not change the release conclusion:
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` now adds bounded
   staging-disk backpressure shortcut handling at `974171d0`. That is still a
   fail-closed implementation improvement, not production release proof.
-- `origin/lane/cycle-20260525-mainwindows-2349/critic` now refreshes the critic handoff at `f8591f9d`.
+- `origin/lane/cycle-20260525-mainwindows-2349/critic` now refreshes the critic handoff at `68569c0b`.
 - `origin/lane/progress-publisher` now refreshes the public progress evidence
   at `7695e1f9`.
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` now refreshes the audit snapshot at
@@ -68,7 +68,7 @@ but it did not change the release conclusion:
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now
   refreshes the supervisor evidence snapshot at `25e5f592`.
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now
-  records the latest progress freshness handoff at `814034cd`.
+  records the latest progress freshness handoff at `88267730`.
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` now
   hardens the live proof timeout diagnostics at `5f256171`.
 - `origin/lane/same-plan-wordpress-graph-create` now blocks unsupported graph
