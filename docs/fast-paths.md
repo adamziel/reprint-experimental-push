@@ -741,6 +741,9 @@ The benchmark shape must stay realistic:
 - Chunk receipts can also be compressed for retry-window sizing, but only as
   planning evidence while durable chunk receipts and the guarded publish
   record still decide recovery.
+- A compressed release-manifest digest can also size bounded release-bundle
+  retry windows, but only as planning evidence while durable receipts and the
+  guarded release record still decide recovery.
 - Canonical row-batch manifests can also size bounded plugin-update batches,
   but only as planning evidence while each row still keeps its own precondition
   and the batch receipts still decide recovery.

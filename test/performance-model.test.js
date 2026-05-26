@@ -135,6 +135,16 @@ test('benchmark model covers large uploads and plugin installs', () => {
     'cached release-manifest fanout stays planning-only and still depends on durable release receipts',
   );
   assert.ok(
+    model.safeFastPaths.some(
+      (fastPath) =>
+        fastPath.allowedShortcut === 'compress-release-manifest-digest-to-size-bounded-release-bundle-retry-windows' &&
+        fastPath.visibilityBoundary === 'planning-only-for-release-bundle-retry-windows' &&
+        fastPath.guardrails.includes('compressed-release-manifest-digest-stays-planning-evidence-only') &&
+        fastPath.gateProofs.recovery.includes('guarded release record'),
+    ),
+    'compressed release-manifest digests can size retry windows without weakening release recovery evidence',
+  );
+  assert.ok(
     pluginInstall.actions.some((action) => action.type === 'db-batch-parallelism'),
     'plugin install includes bounded row-batch parallelism',
   );
