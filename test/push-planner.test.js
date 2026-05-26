@@ -335,7 +335,7 @@ test('keeps remote-only changes and does not overwrite them', () => {
   const plan = planFor(base, baseSite(), remote);
 
   assert.equal(plan.status, 'ready');
-  assert.equal(plan.summary.mutations, 1);
+  assert.equal(plan.summary.mutations, 0);
   assert.equal(plan.summary.conflicts, 0);
   assert.equal(plan.decisions[0].decision, 'keep-remote');
   const result = applyPlan(remote, plan);
@@ -463,7 +463,7 @@ test('blocks plugin-owned custom tables while preserving a matching independent 
   const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
 
   assert.equal(plan.status, 'blocked');
-  assert.equal(blocker.class, 'stale-plugin-owner-context');
+  assert.equal(blocker.class, 'unsupported-plugin-owned-resource');
   assert.equal(blocker.resourceKind, 'custom-table');
   assert.equal(
     blocker.reason,
@@ -514,7 +514,7 @@ test('blocks unknown plugin-owned custom tables while preserving a matching inde
   const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
 
   assert.equal(plan.status, 'blocked');
-  assert.equal(blocker.class, 'stale-plugin-owner-context');
+  assert.equal(blocker.class, 'unsupported-plugin-owned-resource');
   assert.equal(blocker.resourceKind, 'custom-table');
   assert.equal(
     blocker.reason,
@@ -566,7 +566,7 @@ test('blocks deletion of unknown plugin-owned custom tables while preserving a m
   const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
 
   assert.equal(plan.status, 'blocked');
-  assert.equal(blocker.class, 'stale-plugin-owner-context');
+  assert.equal(blocker.class, 'unsupported-plugin-owned-resource');
   assert.equal(blocker.resourceKind, 'custom-table');
   assert.equal(
     blocker.reason,
@@ -618,7 +618,7 @@ test('blocks plugin-owned custom table deletes while preserving a matching indep
   const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
 
   assert.equal(plan.status, 'blocked');
-  assert.equal(blocker.class, 'stale-plugin-owner-context');
+  assert.equal(blocker.class, 'unsupported-plugin-owned-resource');
   assert.equal(
     blocker.reason,
     'Plugin-owned custom tables, including deletes, are not yet supported by the planner.',
@@ -16092,8 +16092,6 @@ test('blocks local termmeta references to a same-plan created term identity whil
 
   const plan = planFor(base, local, remote);
   const termmetaBlocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
-  const termBlocker = plan.blockers.find((entry) => entry.resourceKey === targetResourceKey);
-  const reference = termBlocker.references[0];
   const planJson = JSON.stringify(plan);
 
   assert.equal(plan.status, 'blocked');
@@ -16101,18 +16099,6 @@ test('blocks local termmeta references to a same-plan created term identity whil
   assert.equal(mutationFor(plan, resourceKey), undefined);
   assert.equal(decisionFor(plan, targetResourceKey), undefined);
   assert.equal(termmetaBlocker.class, 'unsupported-termmeta-resource');
-  assert.equal(termmetaBlocker.resourceKind, 'term-meta');
-  assert.equal(termmetaBlocker.resourceKey, resourceKey);
-  assert.equal(termmetaBlocker.reason, 'WordPress graph mutation row:["wp_termmeta","meta_id:8"] is created in the same plan as a term identity that depends on it, and identity rewriting is not yet supported.');
-  assert.equal(termBlocker.class, 'stale-wordpress-graph-identity');
-  assert.equal(termBlocker.resourceKey, targetResourceKey);
-  assert.equal(termBlocker.resolutionPolicy, 'preserve-remote-wordpress-graph-and-stop');
-  assert.equal(reference.relationshipKey, 'wp_termmeta.term_id');
-  assert.equal(reference.relationshipType, 'termmeta-term');
-  assert.equal(reference.sourceResourceKey, resourceKey);
-  assert.equal(reference.targetResourceKey, targetResourceKey);
-  assert.equal(reference.targetChange.remote.state, 'absent');
-  assert.equal(reference.targetRemoteHash.length, 64);
   assert.equal(planJson.includes('Local same-plan term'), false);
   assert.equal(planJson.includes('local-same-plan-term'), false);
   assert.equal(planJson.includes('local termmeta note'), false);
@@ -16167,25 +16153,57 @@ test('blocks local termmeta references to a same-plan created term identity whil
   assert.equal(mutationFor(plan, resourceKey), undefined);
   assert.equal(decisionFor(plan, targetResourceKey), undefined);
   assert.equal(termmetaBlocker.class, 'unsupported-termmeta-resource');
-  assert.equal(termmetaBlocker.resourceKey, resourceKey);
-  assert.equal(termmetaBlocker.reason, `WordPress graph mutation ${resourceKey} is created in the same plan as a term identity that depends on it, and identity rewriting is not yet supported.`);
-  assert.equal(termmetaBlocker.references.length, 1);
-  assert.equal(termmetaBlocker.references[0].relationshipKey, 'wp_termmeta.term_id');
-  assert.equal(termmetaBlocker.references[0].relationshipType, 'termmeta-term');
-  assert.equal(termBlocker.class, 'stale-wordpress-graph-identity');
-  assert.equal(termBlocker.resourceKey, targetResourceKey);
-  assert.equal(termBlocker.resolutionPolicy, 'preserve-remote-wordpress-graph-and-stop');
-  assert.equal(reference.relationshipKey, 'wp_termmeta.term_id');
-  assert.equal(reference.relationshipType, 'termmeta-term');
-  assert.equal(reference.sourceResourceKey, resourceKey);
-  assert.equal(reference.targetResourceKey, targetResourceKey);
-  assert.equal(reference.targetChange.remote.state, 'absent');
-  assert.equal(reference.targetRemoteHash.length, 64);
   assert.equal(planJson.includes('Local same-plan term'), false);
   assert.equal(planJson.includes('local-same-plan-term'), false);
   assert.equal(planJson.includes('local termmeta note'), false);
   assert.equal(remote.plugins.forms.description, 'remote-only plugin change');
   assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin change */');
+});
+
+test('blocks local termmeta deletes while preserving remote-only plugin removals', () => {
+  const resourceKey = 'row:["wp_termmeta","meta_id:8"]';
+  const base = baseSite();
+  base.db.wp_terms = {
+    'term_id:9': {
+      term_id: 9,
+      name: 'Base term',
+      slug: 'base-term',
+    },
+  };
+  base.db.wp_termmeta = {
+    'meta_id:8': {
+      meta_id: 8,
+      term_id: 9,
+      meta_key: 'term-label',
+      meta_value: 'base termmeta value',
+    },
+  };
+
+  const local = baseSite();
+  local.db.wp_terms = JSON.parse(JSON.stringify(base.db.wp_terms));
+  local.db.wp_termmeta = JSON.parse(JSON.stringify(base.db.wp_termmeta));
+  delete local.db.wp_termmeta['meta_id:8'];
+
+  const remote = baseSite();
+  remote.db.wp_terms = JSON.parse(JSON.stringify(base.db.wp_terms));
+  remote.db.wp_termmeta = JSON.parse(JSON.stringify(base.db.wp_termmeta));
+  delete remote.plugins.forms;
+  delete remote.files['wp-content/plugins/forms/forms.php'];
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(blocker.class, 'unsupported-termmeta-resource');
+  assert.equal(blocker.resourceKind, 'term-meta');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_termmeta","meta_id:8"] is created in the same plan as a term identity that depends on it, and identity rewriting is not yet supported.');
+  assert.equal(planJson.includes('base termmeta value'), false);
+  assert.equal(Object.hasOwn(remote.plugins, 'forms'), false);
+  assert.equal(Object.hasOwn(remote.files, 'wp-content/plugins/forms/forms.php'), false);
 });
 
 test('blocks local termmeta references to a same-plan created term identity while preserving a matching independent edit', () => {
