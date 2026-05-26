@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
+import { writeSync } from 'node:fs';
 import { spawn, spawnSync } from 'node:child_process';
 import net from 'node:net';
 import path from 'node:path';
@@ -1242,12 +1243,12 @@ function writePlaygroundFailure(message, lastProbes, logs, lastError) {
         2,
       )}`
     : '';
-  process.stderr.write(`${message}\n`);
-  process.stderr.write(`${flatLastProbe}\n`);
-  process.stderr.write(`${JSON.stringify(summary)}\n`);
-  process.stdout.write(`${JSON.stringify(summary)}\n`);
+  writeSync(2, `${message}\n`);
+  writeSync(2, `${flatLastProbe}\n`);
+  writeSync(2, `${JSON.stringify(summary)}\n`);
+  writeSync(1, `${JSON.stringify(summary)}\n`);
   if (logs) {
-    process.stderr.write(`${logs}\n`);
+    writeSync(2, `${logs}\n`);
   }
 }
 
