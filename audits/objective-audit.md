@@ -39,22 +39,22 @@ The project is **not releasable as a production WordPress push path**.
 - `origin/lane/cycle-20260525-keep-busy-loop-2/no-data-loss-recovery` -> `63e01a49`
 - `origin/lane/cycle-20260525-mainwindows-2349/critic` -> `fa0dc8a0`
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `79aa3e50`
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `3533de9b`
-- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `c674765f`
-- `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `b5a70bfa`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `af6f3f26`
-- `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` -> `9e05da5e`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `b4eeed32`
+- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `f1599fb2`
+- `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `9e077c10`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `57fe23d6`
+- `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` -> `c4103594`
 - `origin/lane/cycle-20260525-mainwindows-2357/no-data-loss-invariants-graph-proof` -> `98c0ce26`
 - `origin/lane/cycle-20260525-restart-2340/feedback-supervisor` -> `ef3d911e`
 - `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration` -> `29fff11d`
 - `origin/lane/critic` -> `443dacd6`
 - `origin/lane/fast-paths` -> `8c5c2ccb`
-- `origin/lane/feedback-supervisor` -> `f386dfa6`
+- `origin/lane/feedback-supervisor` -> `b4eeed32`
 - `origin/lane/independent-auditor` -> `6351130f`
-- `origin/lane/no-data-loss-invariants` -> `fb19b76d`
+- `origin/lane/no-data-loss-invariants` -> `56b2667a`
 - `origin/lane/no-data-loss-recovery` -> `9e077c10`
 - `origin/lane/progress-publisher` -> `7695e1f9`
-- `origin/lane/reliable-executor` -> `76e90151`
+- `origin/lane/reliable-executor` -> `f41e5f3f`
 - `origin/lane/same-plan-wordpress-graph-create` -> `0d2178e9`
 - `origin/main` -> `56063f13`
 
@@ -65,36 +65,34 @@ real source-site mutation boundary. The release gates still stay `0/4`.
 Fresh lane proof since the last audit pass improved the local evidence floor,
 but it did not change the release conclusion:
 
-- `origin/lane/reliable-executor` now records `76e90151`, tightening release
-  verify timeouts again, but still not proving production
-  auth/session lifecycle or a live-source mutation boundary.
-- `origin/lane/no-data-loss-invariants` now records `fb19b76d`, adding a
-  revision-linked postmeta blocker variant to the unsupported-surface boundary
-  set.
+- `origin/lane/reliable-executor` now records `f41e5f3f`, tightening release
+  verify cleanup again, but still not proving production auth/session
+  lifecycle or a live-source mutation boundary.
+- `origin/lane/no-data-loss-invariants` now records `56b2667a`, adding term
+  graph blocker coverage to the unsupported-surface boundary set.
 - `origin/lane/progress-publisher` now records `7695e1f9`, refreshing public
   progress freshness only.
 - `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration`
   now records `29fff11d`, adding featured-image attachment drift proof only.
-- `origin/lane/independent-auditor` now records `c674765f`. This refreshes the
-  audit snapshot only and does not change the
-  release boundary.
-- `origin/lane/fast-paths` now records `8c5c2ccb`, tightening success-claim
-  proof only.
+- `origin/lane/independent-auditor` now records `6351130f`. This refreshes the
+  audit snapshot only and does not change the release boundary.
+- `origin/lane/fast-paths` now records `8c5c2ccb`, tightening guarded
+  benchmark and pause-reporting evidence checks only.
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` now
-  records `b5a70bfa`, tightening remote recovery URL suffix fencing. It still
-  does not add production-backed journal ownership or replay proof.
-- `origin/lane/feedback-supervisor` now records `f386dfa6`, refreshing the
+  records `435f2d1e`, tightening blocked recovery validation. It still does
+  not add production-backed journal ownership or replay proof.
+- `origin/lane/feedback-supervisor` now records `b4eeed32`, refreshing the
   supervisor progress surface only.
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now records
-  `3533de9b`, refreshing the public progress freshness only.
+  `b4eeed32`, refreshing the public progress freshness only.
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` now records
-  `79aa3e50`, tightening success inspection claim checks only.
+  `155a9cf7`, tightening pause detail reporting only.
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` now records
-  `9e05da5e`, hardening live proof cleanup and timeouts only.
+  `c4103594`, hardening live proof cleanup and timeouts only.
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now records
-  `af6f3f26`, refreshing the public progress freshness only.
+  `57fe23d6`, refreshing the public progress freshness only.
 - `origin/lane/no-data-loss-recovery` now records `9e077c10`, tightening
-  durable recovery remote-ownership fencing only.
+  unsupported recovery journal boundaries only.
 - `origin/lane/same-plan-wordpress-graph-create` now records `0d2178e9`,
   hardening revision graph references only.
 

@@ -1,28 +1,21 @@
-Refreshed the objective audit against the current remote lane heads. The evidence floor changed, but the release verdict remains `0/4` because the production-backed live-source mutation boundary is still unproved.
+Refreshed `audits/objective-audit.md` to the latest remote-head snapshot, including the newer `reliable-executor`, `fast-paths`, `progress-publisher`, `progress-followup`, and `no-data-loss-recovery` heads. The verdict remains `0/4`.
 
 Changed files
 - [`audits/objective-audit.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/independent-auditor/audits/objective-audit.md)
 - [`.lane-output/final.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/independent-auditor/.lane-output/final.md)
 
 Commands run
-- `sed -n '1,220p' AGENTS.md`
-- `sed -n '1,240p' supervision/README.md`
-- `sed -n '1,220p' supervision/lanes/independent-auditor.md`
 - `sed -n '1,280p' audits/objective-audit.md`
-- `nl -ba audits/objective-audit.md | sed -n '1,120p'`
-- `nl -ba audits/objective-audit.md | sed -n '120,240p'`
-- `find .lane-output -maxdepth 1 -type f -name 'final*.md' -printf '%TY-%Tm-%Td %TT %f\n' | sort | tail -n 8`
-- `git for-each-ref --format='%(refname:short) %(objectname:short) %(subject)' refs/remotes/origin/lane | sort`
-- `git diff -- .lane-output/final.md`
 - `git status --short --branch`
-- `git diff -- audits/objective-audit.md`
+- `git for-each-ref --sort=-committerdate --format='%(refname:short) %(objectname:short) %(committerdate:iso8601) %(subject)' refs/remotes/origin/lane | head -n 20`
+- `git diff -- audits/objective-audit.md .lane-output/final.md`
 
 Push result
-- Pushed successfully to `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor`
+- No push yet
 
 Worktree status
-- Clean tracked state after push
-- Branch still compares as `ahead 1474, behind 270` relative to `origin/main`
+- `lane/cycle-20260525-mainwindows-2349/independent-auditor...origin/main [ahead 1476, behind 279]`
+- Dirty tracked files: `audits/objective-audit.md`, `.lane-output/final.md`
 
 Next supervisor nudge
-1. Re-poll only when a lane lands live-source production proof or a blocker materially changes; the current audit still supports the same `0/4` release posture.
+- Re-poll `origin/lane/reliable-executor` or `origin/lane/no-data-loss-recovery` only when one lands live-source production proof that changes the release boundary; otherwise keep the audit at `0/4` and avoid freshness-only churn.
