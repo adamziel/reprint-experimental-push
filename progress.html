@@ -501,7 +501,7 @@
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
         <time class="update-stamp" datetime="2026-05-26T15:24:30+02:00">Last updated: May 26, 2026, 15:24:30 CEST</time>
-        <p class="lead">Freshness update: the public page is current as of the active supervision cycle. Release gates still remain `0/4`. The runtime anchor remains `npm run verify:release` from commit `3089aee2`. `e82e3b1af126f62688f617a3fb4cc0baeb698d57` is the current reliable-executor head, replacing the older `e82e3b1af126f62688f617a3fb4cc0baeb698d57` wording on the visible current-head rows. The checked-release proof remains support-side evidence, but it still does not move a release gate. Production WordPress auth/session lifecycle and durable journal storage with lease/fencing remain pending. Evidence links now point to the 2026-05-26 15:24:30 CEST audit refresh.</p>
+        <p class="lead">Freshness update: the public page is current as of the active supervision cycle. Release gates still remain `0/4`. The runtime anchor remains `npm run verify:release` from commit `3089aee2`. `e82e3b1af126f62688f617a3fb4cc0baeb698d57` is the current reliable-executor head and current latest checked release-path auth/session source evidence, replacing the older `ac41777479f04355b0017e77c2107d89dd66c01a` wording on the visible current-head rows. The checked-release proof remains support-side evidence, but it still does not move a release gate. Production WordPress auth/session lifecycle and durable journal storage with lease/fencing remain pending. Evidence links now point to the 2026-05-26 15:24:30 CEST audit refresh.</p>
         <div class="meta" aria-label="Project status">
           <span class="pill">Evidence class: lab-only</span>
           <span class="pill">Trend: `e82e3b1af126f62688f617a3fb4cc0baeb698d57` is the current reliable-executor head, replacing the older `e82e3b1af126f62688f617a3fb4cc0baeb698d57` wording</span>
@@ -584,7 +584,11 @@
             <li><strong>Lab evidence</strong><span>89 Node tests pass in lab evidence; see the <a href="audits/objective-audit.md">objective audit</a> and linked executor, recovery, playground, protocol, and feedback docs.</span></li>
             <li><strong>Top blocker</strong><span>Real WordPress executor/auth still blocks any production push claim.</span></li>
             <li><strong>Release gates</strong><span>Four pending gates stay explicit below: executor/auth, recovery journal, Docker/Playground, and plugin drivers.</span></li>
-            <li><strong>Audit note</strong><span>The newest dated entry above is the public audit; the checklist below stays the source of truth for open gates and evidence gaps, with the current reliable-executor head at `e82e3b1af126f62688f617a3fb4cc0baeb698d57`, replacing the older `e82e3b1af126f62688f617a3fb4cc0baeb698d57` wording in the visible current-head rows, and the durability boundary at fenced journal ownership plus restart-readable artifacts.</span></li>
+            <li><strong>Audit note</strong><span>The newest dated entry above is the public audit; the checklist below stays the source of truth for open gates and evidence gaps, with the current reliable-executor head at `e82e3b1af126f62688f617a3fb4cc0baeb698d57`, replacing the older `ac41777479f04355b0017e77c2107d89dd66c01a` wording in the visible current-head rows, and the durability boundary at fenced journal ownership plus restart-readable artifacts.</span></li>
+            <li><strong>Going well</strong><span>Reliable head `e82e3b1af126f62688f617a3fb4cc0baeb698d57` is the current latest checked release-path auth/session source evidence.</span></li>
+            <li><strong>Not going well</strong><span>Production auth/session lifecycle, durable journal ownership, and plugin-driver proof are still missing.</span></li>
+            <li><strong>Progress change</strong><span>Public surfaces were stale; the live reliable head advanced and needs one freshness refresh.</span></li>
+            <li><strong>Next nudge</strong><span>Have reliable executor move to production auth/session lifecycle or durable ownership on the checked release path.</span></li>
           </ul>
           <p class="note"><a href="docs/supervisor-feedback.md">Open full feedback log</a></p>
         </section>

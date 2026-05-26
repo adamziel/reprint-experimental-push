@@ -11,24 +11,10 @@ linked implementation artifacts.
 - Refreshed [progress.html](../progress.html) to the current `date` output
   (`2026-05-26 15:24:30 CEST`) and kept
   `e82e3b1af126f62688f617a3fb4cc0baeb698d57` as the current reliable head on
-  the public page, replacing the older
-  `e82e3b1af126f62688f617a3fb4cc0baeb698d57` wording in the visible
+  the public page and current latest checked release-path auth/session source
+  evidence, replacing the older
+  `ac41777479f04355b0017e77c2107d89dd66c01a` wording in the visible
   current-head rows.
-- `e82e3b1af126f62688f617a3fb4cc0baeb698d57` remains support-side evidence;
-  the release gate stays at `0/4` because production-backed auth/session
-  lifecycle and durable journal ownership with lease/fencing remain blocked.
-- Evidence trail: [progress.html](../progress.html),
-  [objective audit](../audits/objective-audit.md),
-  [release-gate checklist](../progress.html#proof-gates).
-
-## 2026-05-26 - Public Status Audit 15:16:28
-
-<a id="2026-05-26-public-status-audit-151628"></a>
-
-- Refreshed [progress.html](../progress.html) to the current `date` output
-  (`2026-05-26 15:16:28 CEST`) and kept
-  `e82e3b1af126f62688f617a3fb4cc0baeb698d57` as the current reliable head on
-  the public page.
 - `e82e3b1af126f62688f617a3fb4cc0baeb698d57` remains support-side evidence;
   the release gate stays at `0/4` because production-backed auth/session
   lifecycle and durable journal ownership with lease/fencing remain blocked.
@@ -12819,8 +12805,22 @@ Newest entries stay short and link back to the evidence trail.
   and arbitrary plugin drivers remain unproven.
 - Next nudge: keep production gates blocked until a worker proves production
   auth/session/journal internals and graph identity mapping.
-- Public page: [progress.html](../progress.html) carries the visible update
+- Public page: [progress.html](../progress.html) shows a visible last-updated
   date and keeps details behind links.
+- Status: `e82e3b1af126f62688f617a3fb4cc0baeb698d57` is the live reliable head and the current
+  latest support-side auth/session source evidence.
+- Trend: the public progress branch is still behind the live head and needs a
+  freshness refresh; the current reliable-head wording should stay aligned and the gate posture remains conservative.
+- Blocker: this is still support evidence, not production-backed auth/session
+  lifecycle or durable-journal ownership on the release boundary.
+- Next nudge: `progress-publisher` should refresh the public page to the live
+  reliable head, and reliable executor should move to the next gate
+  dependency: production auth/session lifecycle, durable journal ownership, or
+  a concrete blocking command naming the missing primitive.
+- Feedback-lane verification after checking the live head: `git ls-remote`
+  reports `e82e3b1af126f62688f617a3fb4cc0baeb698d57` for
+  `lane/reliable-executor`, and the public page should keep that current head
+  wording in sync with the auth/session source evidence.
 
 <details>
 <summary>Earlier progress entries</summary>
