@@ -328,6 +328,7 @@ test('guarded benchmark refuses production throughput claims until production ga
     fileHashing: 2,
     dbBatchPerTable: 2,
   });
+  assert.equal(report.claims.productionThroughputDetails.parallelismLimitsMeasured, true);
   assert.equal(report.claims.productionThroughputDetails.parallelismLimitsIntegral, true);
   assert.equal(report.claims.productionThroughputDetails.parallelismLimitsCanonical, true);
   assert.equal(report.claims.productionThroughputDetails.parallelismLimitsVisible, true);
@@ -832,6 +833,14 @@ test('production claim gate fails closed if benchmark evidence is tampered', () 
   hiddenParallelismLimits.claims.productionThroughputDetails.parallelismLimitsVisible = false;
   assert.ok(
     productionThroughputBlockers(hiddenParallelismLimits).includes('production-parallelism-limits-not-visible'),
+  );
+
+  const visibleParallelismLimitsWithoutMeasurement = clone(report);
+  visibleParallelismLimitsWithoutMeasurement.evidence.parallelism.parallelismLimitsMeasured = false;
+  assert.ok(
+    productionThroughputBlockers(visibleParallelismLimitsWithoutMeasurement).includes(
+      'production-parallelism-limits-visible-without-measurement',
+    ),
   );
 
   const brokenWindowEvidence = clone(report);

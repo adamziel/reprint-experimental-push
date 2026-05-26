@@ -298,6 +298,12 @@ export function productionThroughputBlockers(report) {
     blockers.push('production-parallelism-limits-not-visible');
   }
   if (
+    report.evidence.parallelism?.parallelismLimitsVisible === true
+    && report.evidence.parallelism?.parallelismLimitsMeasured !== true
+  ) {
+    blockers.push('production-parallelism-limits-visible-without-measurement');
+  }
+  if (
     !Number.isFinite(report.resourceLimits?.memoryCeilingBytes)
     || !Number.isFinite(report.evidence.chunkReceipts.resumeCursor?.sizeBytes)
     || report.evidence.chunkReceipts.resumeCursor.sizeBytes > report.resourceLimits.memoryCeilingBytes
@@ -1151,6 +1157,8 @@ export function productionThroughputDetails(report) {
   };
   const parallelismLimitsVisibleOnReport =
     report.evidence.parallelism?.parallelismLimitsVisible === true;
+  const parallelismLimitsMeasuredOnReport =
+    report.evidence.parallelism?.parallelismLimitsMeasured === true;
   const parallelismLimitsIntegral =
     Number.isInteger(parallelismLimits.chunkUpload)
     && Number.isInteger(parallelismLimits.fileHashing)
@@ -1161,6 +1169,7 @@ export function productionThroughputDetails(report) {
     && parallelismLimits.dbBatchPerTable === DEFAULT_LIMITS.maxDbConcurrencyPerTable;
   const parallelismLimitsVisible =
     parallelismLimitsVisibleOnReport
+    && parallelismLimitsMeasuredOnReport
     && parallelismLimitsIntegral
     && parallelismLimitsCanonical;
   const wordpressGraphIdentityPostmetaReferencesMatch =
@@ -1260,6 +1269,7 @@ export function productionThroughputDetails(report) {
     productionStorageReceiptsVisible,
     productionAtomicGroupMetadataProven,
     parallelismLimits,
+    parallelismLimitsMeasured: parallelismLimitsMeasuredOnReport,
     parallelismLimitsVisible: parallelismLimitsVisibleOnReport,
     parallelismLimitsIntegral,
     parallelismLimitsCanonical,
@@ -1969,6 +1979,7 @@ function buildReport({
           fileHashing: DEFAULT_LIMITS.maxHashConcurrency,
           dbBatchPerTable: DEFAULT_LIMITS.maxDbConcurrencyPerTable,
         },
+        parallelismLimitsMeasured: true,
         parallelismLimitsVisible: true,
       },
       resourceLimits: {
