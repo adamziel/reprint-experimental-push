@@ -278,6 +278,9 @@ export function productionThroughputBlockers(report) {
   ) {
     blockers.push('receipt-cursor-backpressure-mismatch');
   }
+  if (!Number.isFinite(report.evidence.backpressure?.receiptCursorBytes)) {
+    blockers.push('receipt-cursor-backpressure-not-measured');
+  }
   if (!report.evidence.atomicGroup.productionAtomicCommitMeasured) {
     blockers.push('production-atomic-group-commit-not-measured');
   }

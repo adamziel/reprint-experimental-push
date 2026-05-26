@@ -365,6 +365,18 @@ test('production claim gate fails closed if benchmark evidence is tampered', () 
     true,
   );
 
+  const missingQueueCursor = clone(report);
+  missingQueueCursor.evidence.backpressure.receiptCursorBytes = null;
+  assert.ok(
+    productionThroughputBlockers(missingQueueCursor).includes(
+      'receipt-cursor-backpressure-not-measured',
+    ),
+  );
+  assert.equal(
+    productionThroughputDetails(missingQueueCursor).backpressureConsistency.receiptCursorMatchesBackpressure,
+    false,
+  );
+
   const mismatchedQueueHeadroom = clone(report);
   mismatchedQueueHeadroom.evidence.backpressure.queueHeadroomBytes = 0;
   assert.ok(
