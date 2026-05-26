@@ -24520,6 +24520,25 @@ test('recovery states fail closed when reason is an empty own string', () => {
   assert.match(error.message, /Recovery state must carry a valid reason\./);
 });
 
+test('blocked recovery states fail closed when driftedResources is inherited from the prototype', () => {
+  const recovery = Object.create({
+    driftedResources: ['file:index.php'],
+  });
+  recovery.status = 'blocked-recovery';
+  recovery.planId = 'plan-123';
+  recovery.reason = 'prototype-hidden drifted resources';
+  recovery.remoteHash = 'a'.repeat(64);
+  recovery.artifacts = {
+    journal: { status: 'completed' },
+    remote: baseSite(),
+  };
+
+  const error = captureError(() => assertRecoveryStateEnvelope(recovery));
+
+  assert.equal(error.code, 'RECOVERY_STATE_INVALID');
+  assert.match(error.message, /Blocked recovery states must carry own drifted resources\./);
+});
+
 test('production durable journal claims fail closed when remote artifact references are empty strings', () => {
   const writer = {
     kind: 'production-recovery-journal',
