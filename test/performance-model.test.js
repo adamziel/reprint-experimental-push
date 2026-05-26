@@ -5639,6 +5639,51 @@ test('production throughput details fail closed when the raw pause-footprint com
   assert.ok(blockers.includes('queue-pause-footprint-not-proven'));
 });
 
+test('production throughput details fail closed when queue headroom exceeds the resource ceiling', () => {
+  const report = runGuardedExecutorBenchmark({ profile: 'ci' });
+  const oversizedHeadroom = structuredClone(report);
+
+  oversizedHeadroom.evidence.backpressure.queueHeadroomBytes =
+    oversizedHeadroom.resourceLimits.maxBufferedUploadBytes + 1;
+
+  const details = productionThroughputDetails(oversizedHeadroom);
+  const blockers = productionThroughputBlockers(oversizedHeadroom);
+
+  assert.equal(details.queueHeadroomWithinResourceCeiling, false);
+  assert.equal(details.queueHeadroomVisibleAndMeasured, false);
+  assert.equal(details.queueHeadroomVisibleAndMeasuredAndAligned, false);
+  assert.equal(details.queueBudgetVisibleAndMemoryCeilingVisibleAndMeasured, false);
+  assert.equal(details.queueBudgetVisibleAndQueueHeadroomVisibleAndMeasured, false);
+  assert.equal(details.receiptCursorPauseFootprintVisible, false);
+  assert.equal(details.receiptCursorMemoryCeilingVisibleAndQueueHeadroomVisibleAndSafe, false);
+  assert.equal(details.backpressureConsistency.queueHeadroomWithinResourceCeiling, false);
+  assert.equal(details.backpressureConsistency.queueHeadroomVisibleAndMeasured, false);
+  assert.equal(details.backpressureConsistency.queueHeadroomVisibleAndMeasuredAndAligned, false);
+  assert.equal(details.backpressureConsistency.queueBudgetVisibleAndMemoryCeilingVisibleAndMeasured, false);
+  assert.equal(details.backpressureConsistency.queueBudgetVisibleAndQueueHeadroomVisibleAndMeasured, false);
+  assert.equal(details.backpressureConsistency.receiptCursorPauseFootprintVisible, false);
+  assert.equal(
+    details.backpressureConsistency.receiptCursorMemoryCeilingVisibleAndQueueHeadroomVisibleAndSafe,
+    false,
+  );
+  assert.ok(blockers.includes('queue-headroom-exceeds-resource-ceiling'));
+});
+
+test('production throughput details fail closed when receipt-cursor backpressure exceeds the queue budget', () => {
+  const report = runGuardedExecutorBenchmark({ profile: 'ci' });
+  const oversizedBackpressure = structuredClone(report);
+
+  oversizedBackpressure.evidence.backpressure.receiptCursorBytes =
+    oversizedBackpressure.evidence.backpressure.queueBudgetBytes + 1;
+
+  const details = productionThroughputDetails(oversizedBackpressure);
+  const blockers = productionThroughputBlockers(oversizedBackpressure);
+
+  assert.equal(details.backpressureConsistency.receiptCursorBackpressureWithinQueueBudget, false);
+  assert.equal(details.backpressureConsistency.backpressureEvidenceComplete, false);
+  assert.ok(blockers.includes('receipt-cursor-backpressure-exceeds-queue-budget'));
+});
+
 test('production throughput blocks malformed parallelism limits before faster execution can be claimed', () => {
   const report = runGuardedExecutorBenchmark({
     profile: 'ci',
