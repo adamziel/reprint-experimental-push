@@ -220,6 +220,12 @@ export function productionThroughputBlockers(report) {
     blockers.push('receipt-cursor-exceeds-queue-budget');
   }
   if (
+    !Number.isFinite(report.evidence.backpressure?.queueBudgetBytes)
+    || report.evidence.backpressure.queueBudgetBytes <= 0
+  ) {
+    blockers.push('missing-queue-budget-evidence');
+  }
+  if (
     report.evidence.backpressure?.receiptCursorBytes !== null
     && report.evidence.backpressure?.receiptCursorBytes !== report.evidence.chunkReceipts.resumeCursor?.sizeBytes
   ) {
@@ -281,6 +287,7 @@ export function productionThroughputDetails(report) {
     receiptCursorMatchesChunkWindow,
     receiptCursorWithinMemoryCeiling,
     receiptCursorMemoryHeadroomBytes,
+    queueBudgetBytes: report.evidence.backpressure?.queueBudgetBytes ?? null,
     queueHeadroomBytes: report.evidence.backpressure?.queueHeadroomBytes ?? null,
     queuePausedBeforeOverflow: report.evidence.backpressure?.queuePausedBeforeOverflow ?? false,
     receiptCursorWithinQueueBudget: report.evidence.backpressure?.receiptCursorWithinQueueBudget ?? false,

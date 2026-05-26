@@ -100,6 +100,7 @@ test('guarded benchmark refuses production throughput claims until production ga
   assert.equal(report.claims.productionThroughputDetails.chunkWindowWithinMemoryCeiling, true);
   assert.equal(report.claims.productionThroughputDetails.queuePausedBeforeOverflow, true);
   assert.equal(report.claims.productionThroughputDetails.queueHeadroomBytes, 31.5 * 1024 * 1024);
+  assert.equal(report.claims.productionThroughputDetails.queueBudgetBytes, 32 * 1024 * 1024);
   assert.equal(report.claims.productionThroughputDetails.backpressure.producerQueueBounded, true);
   assert.equal(report.claims.productionThroughputDetails.receiptCursorWindowBytes, 512 * 1024);
   assert.equal(report.claims.productionThroughputDetails.receiptCursorIsTerminalChunk, true);
@@ -306,6 +307,12 @@ test('production claim gate fails closed if benchmark evidence is tampered', () 
     productionThroughputBlockers(oversizedQueueCursor).includes(
       'receipt-cursor-exceeds-queue-budget',
     ),
+  );
+
+  const missingQueueBudget = clone(report);
+  missingQueueBudget.evidence.backpressure.queueBudgetBytes = 0;
+  assert.ok(
+    productionThroughputBlockers(missingQueueBudget).includes('missing-queue-budget-evidence'),
   );
 
   const mismatchedQueueCursor = clone(report);
