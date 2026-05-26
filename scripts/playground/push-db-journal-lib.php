@@ -849,9 +849,44 @@ function reprint_push_lab_db_journal_checked_boundary_persisted_evidence_matches
         && reprint_push_lab_db_journal_is_positive_int($journal['rowCount'] ?? null)
         && is_array($journal['latestRows'] ?? null)
         && count($journal['latestRows']) > 0
+        && reprint_push_lab_db_journal_checked_boundary_latest_rows_evidence_matches($journal['latestRows'])
         && is_array($journal['eventSummaries'] ?? null)
         && count($journal['eventSummaries']) > 0
+        && reprint_push_lab_db_journal_checked_boundary_event_summaries_evidence_matches($journal['eventSummaries'])
         && reprint_push_lab_db_journal_checked_boundary_stale_claim_evidence_matches($journal);
+}
+
+function reprint_push_lab_db_journal_checked_boundary_latest_rows_evidence_matches($latest_rows): bool
+{
+    if (!is_array($latest_rows)) {
+        return false;
+    }
+
+    foreach ($latest_rows as $row) {
+        if (is_array($row) && reprint_push_lab_db_journal_non_empty_string($row['event'] ?? null)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+function reprint_push_lab_db_journal_checked_boundary_event_summaries_evidence_matches($event_summaries): bool
+{
+    if (!is_array($event_summaries)) {
+        return false;
+    }
+
+    foreach ($event_summaries as $event_summary) {
+        if (
+            is_array($event_summary)
+            && reprint_push_lab_db_journal_non_empty_string($event_summary['event'] ?? null)
+        ) {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 function reprint_push_lab_db_journal_checked_boundary_stale_claim_evidence_matches($journal): bool

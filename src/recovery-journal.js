@@ -115,9 +115,19 @@ function checkedBoundaryPersistedEvidenceMatches(dbJournal) {
     && isPositiveInteger(dbJournal?.rowCount)
     && Array.isArray(dbJournal?.latestRows)
     && dbJournal.latestRows.length > 0
+    && checkedBoundaryLatestRowsEvidenceMatches(dbJournal.latestRows)
     && Array.isArray(dbJournal?.eventSummaries)
     && dbJournal.eventSummaries.length > 0
+    && checkedBoundaryEventSummariesEvidenceMatches(dbJournal.eventSummaries)
     && checkedBoundaryStaleClaimEvidenceMatches(dbJournal);
+}
+
+function checkedBoundaryLatestRowsEvidenceMatches(latestRows) {
+  return latestRows.some((row) => hasNonEmptyString(row?.event));
+}
+
+function checkedBoundaryEventSummariesEvidenceMatches(eventSummaries) {
+  return eventSummaries.some((summary) => hasNonEmptyString(summary?.event));
 }
 
 function checkedBoundaryStaleClaimEvidenceMatches(dbJournal) {
