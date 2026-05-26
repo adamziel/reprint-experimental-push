@@ -1117,12 +1117,14 @@ test('production auth/session lifecycle summary helper requires a preserved acti
         type: 'production-auth-session',
         status: 'active',
         expiresAt: '2099-01-01T00:00:00Z',
+        authUser: 'reprint_push_admin',
       },
       read: {
         id: 'session-01',
         type: 'production-auth-session',
         status: 'active',
         expiresAt: '2099-01-01T00:00:00Z',
+        authUser: 'reprint_push_admin',
         preserved: true,
       },
     }),
@@ -1140,12 +1142,14 @@ test('production auth/session lifecycle summary helper requires a preserved acti
         type: 'production-auth-session',
         status: 'active',
         expiresAt: '2099-01-01T00:00:00Z',
+        authUser: 'reprint_push_admin',
       },
       read: {
         id: 'session-02',
         type: 'production-auth-session',
         status: 'active',
         expiresAt: '2099-01-01T00:00:00Z',
+        authUser: 'reprint_push_admin',
         rotated: true,
         preserved: false,
       },
@@ -1164,12 +1168,14 @@ test('production auth/session lifecycle summary helper requires a preserved acti
         type: 'production-auth-session',
         status: 'active',
         expiresAt: '2099-01-01T00:00:00Z',
+        authUser: 'reprint_push_admin',
       },
       read: {
         id: 'session-01',
         type: 'production-auth-session',
         status: 'active',
         expiresAt: '2099-01-01T00:00:00Z',
+        authUser: 'reprint_push_admin',
         preserved: true,
       },
       observations: [
@@ -1179,6 +1185,7 @@ test('production auth/session lifecycle summary helper requires a preserved acti
           type: 'production-auth-session',
           status: 'active',
           expiresAt: '2099-01-01T00:00:00Z',
+          authUser: 'reprint_push_admin',
           preserved: false,
           rotated: false,
         },
@@ -1188,6 +1195,7 @@ test('production auth/session lifecycle summary helper requires a preserved acti
           type: 'production-auth-session',
           status: 'active',
           expiresAt: '2099-01-01T00:00:00Z',
+          authUser: 'reprint_push_admin',
           preserved: false,
           rotated: false,
         },
@@ -1197,6 +1205,7 @@ test('production auth/session lifecycle summary helper requires a preserved acti
           type: 'production-auth-session',
           status: 'active',
           expiresAt: '2099-01-01T00:00:00Z',
+          authUser: 'reprint_push_admin',
           preserved: true,
           rotated: false,
         },
@@ -1216,12 +1225,14 @@ test('production auth/session lifecycle summary helper requires a preserved acti
         type: 'production-auth-session',
         status: 'active',
         expiresAt: '2099-01-01T00:00:00Z',
+        authUser: 'reprint_push_admin',
       },
       read: {
         id: 'session-01',
         type: 'production-auth-session',
         status: 'active',
         expiresAt: '2099-01-01T00:00:00Z',
+        authUser: 'reprint_push_admin',
         preserved: true,
       },
       observations: [
@@ -1231,6 +1242,7 @@ test('production auth/session lifecycle summary helper requires a preserved acti
           type: 'production-auth-session',
           status: 'active',
           expiresAt: '2099-01-01T00:00:00Z',
+          authUser: 'reprint_push_admin',
           preserved: false,
           rotated: false,
         },
@@ -1240,6 +1252,7 @@ test('production auth/session lifecycle summary helper requires a preserved acti
           type: 'production-auth-session',
           status: 'active',
           expiresAt: '2099-01-01T00:00:00Z',
+          authUser: 'reprint_push_admin',
           preserved: true,
           rotated: false,
         },
@@ -1249,6 +1262,7 @@ test('production auth/session lifecycle summary helper requires a preserved acti
           type: 'production-auth-session',
           status: 'active',
           expiresAt: '2099-01-01T00:00:00Z',
+          authUser: 'reprint_push_admin',
           preserved: true,
           rotated: false,
         },
@@ -1595,6 +1609,7 @@ test('production auth/session lifecycle summary helper requires a preserved acti
           type: 'production-auth-session',
           status: 'active',
           expiresAt: '2099-01-01T00:00:00Z',
+          authUser: 'reprint_push_admin',
           preserved: true,
           rotated: false,
         },
@@ -1613,6 +1628,55 @@ test('production auth/session lifecycle summary helper requires a preserved acti
       ok: false,
       required: 'issued preflight',
       observed: 'apply',
+    },
+  );
+});
+
+test('production auth/session lifecycle summary fails closed on authenticated identity continuity drift', () => {
+  assert.deepEqual(
+    evaluateProductionAuthSessionLifecycleSummary({
+      issued: {
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+        authUser: 'reprint_push_admin',
+      },
+      read: {
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+        authUser: 'different-user',
+        preserved: true,
+      },
+      observations: [
+        {
+          step: 'preflight',
+          id: 'session-01',
+          type: 'production-auth-session',
+          status: 'active',
+          expiresAt: '2099-01-01T00:00:00Z',
+          authUser: 'reprint_push_admin',
+          preserved: false,
+          rotated: false,
+        },
+        {
+          step: 'recovery-inspect',
+          id: 'session-01',
+          type: 'production-auth-session',
+          status: 'active',
+          expiresAt: '2099-01-01T00:00:00Z',
+          authUser: 'different-user',
+          preserved: true,
+          rotated: false,
+        },
+      ],
+    }),
+    {
+      ok: false,
+      required: 'authenticated identity continuity',
+      observed: 'different-user',
     },
   );
 });
@@ -1796,6 +1860,7 @@ test('production auth/session lifecycle trace summary treats recovery inspect as
       type: 'production-auth-session',
       status: 'active',
       expiresAt: '2099-01-01T00:00:00Z',
+      authUser: 'reprint_push_admin',
       expired: false,
       revoked: false,
       cleanedUp: false,
@@ -1808,6 +1873,7 @@ test('production auth/session lifecycle trace summary treats recovery inspect as
       type: 'production-auth-session',
       status: 'active',
       expiresAt: '2099-01-01T00:00:00Z',
+      authUser: 'reprint_push_admin',
       expired: false,
       revoked: false,
       cleanedUp: false,
@@ -1823,6 +1889,7 @@ test('production auth/session lifecycle trace summary treats recovery inspect as
       type: 'production-auth-session',
       status: 'active',
       expiresAt: '2099-01-01T00:00:00Z',
+      authUser: 'reprint_push_admin',
       expired: false,
       revoked: false,
       cleanedUp: false,
@@ -1835,6 +1902,7 @@ test('production auth/session lifecycle trace summary treats recovery inspect as
       type: 'production-auth-session',
       status: 'active',
       expiresAt: '2099-01-01T00:00:00Z',
+      authUser: 'reprint_push_admin',
       expired: false,
       revoked: false,
       cleanedUp: false,
@@ -1851,6 +1919,7 @@ test('production auth/session lifecycle trace summary treats recovery inspect as
       type: 'production-auth-session',
       status: 'active',
       expiresAt: '2099-01-01T00:00:00Z',
+      authUser: 'reprint_push_admin',
       expired: false,
       revoked: false,
       cleanedUp: false,
@@ -1864,6 +1933,7 @@ test('production auth/session lifecycle trace summary treats recovery inspect as
         type: 'production-auth-session',
         status: 'active',
         expiresAt: '2099-01-01T00:00:00Z',
+        authUser: 'reprint_push_admin',
         expired: false,
         revoked: false,
         cleanedUp: false,
@@ -1876,6 +1946,7 @@ test('production auth/session lifecycle trace summary treats recovery inspect as
         type: 'production-auth-session',
         status: 'active',
         expiresAt: '2099-01-01T00:00:00Z',
+        authUser: 'reprint_push_admin',
         expired: false,
         revoked: false,
         cleanedUp: false,
@@ -2396,15 +2467,15 @@ maybeTest('production-shaped release verify command consumes the packaged produc
     assert.match(proof.stdout, /"preflight": \{\s*"status": 200,\s*"authSessionType": "production-auth-session"/);
     assert.match(
       proof.stdout,
-      /"authSessionLifecycle": \{\s*"history": \[[\s\S]*?"minted": \{\s*"id": "[^"]+",\s*"type": "production-auth-session",\s*"status": "active",\s*"expiresAt": "[^"]+",\s*"expired": false,\s*"revoked": false,\s*"cleanedUp": false\s*\}/,
+      /"authSessionLifecycle": \{\s*"history": \[[\s\S]*?"minted": \{\s*"id": "[^"]+",\s*"type": "production-auth-session",\s*"status": "active",\s*"expiresAt": "[^"]+",\s*"authUser": "[^"]+",\s*"expired": false,\s*"revoked": false,\s*"cleanedUp": false\s*\}/,
     );
     assert.match(
       proof.stdout,
-      /"authSessionLifecycleSummary": \{\s*"issued": \{\s*"step": "preflight",\s*"id": "[^"]+",\s*"type": "production-auth-session",\s*"status": "active",\s*"expiresAt": "[^"]+",\s*"expired": false,\s*"revoked": false,\s*"cleanedUp": false,\s*"rotated": false,\s*"preserved": false\s*\}/,
+      /"authSessionLifecycleSummary": \{\s*"issued": \{\s*"step": "preflight",\s*"id": "[^"]+",\s*"type": "production-auth-session",\s*"status": "active",\s*"expiresAt": "[^"]+",\s*"authUser": "[^"]+",\s*"expired": false,\s*"revoked": false,\s*"cleanedUp": false,\s*"rotated": false,\s*"preserved": false\s*\}/,
     );
     assert.match(
       proof.stdout,
-      /"authSessionLifecycleSummary": \{[\s\S]*?"read": \{\s*"step": "(dry-run|apply|replay|journal)",\s*"id": "[^"]+",\s*"type": "production-auth-session",\s*"status": "active",\s*"expiresAt": "[^"]+",\s*"expired": false,\s*"revoked": false,\s*"cleanedUp": false,\s*"rotated": false,\s*"preserved": true\s*\}/,
+      /"authSessionLifecycleSummary": \{[\s\S]*?"read": \{\s*"step": "(dry-run|apply|replay|journal)",\s*"id": "[^"]+",\s*"type": "production-auth-session",\s*"status": "active",\s*"expiresAt": "[^"]+",\s*"authUser": "[^"]+",\s*"expired": false,\s*"revoked": false,\s*"cleanedUp": false,\s*"rotated": false,\s*"preserved": true\s*\}/,
     );
   });
 });
@@ -2511,19 +2582,19 @@ maybeTest('production-shaped release verify command runs the live protocol branc
     assert.match(proof.stdout, /"consumed": true/);
     assert.match(
       proof.stdout,
-      /"releaseProof": \{\s*"ok": true[\s\S]*?"authSessionLifecycle": \{\s*"minted": \{\s*"id": "[^"]+",\s*"type": "production-auth-session",\s*"status": "active",\s*"expiresAt": "[^"]+",\s*"expired": false\s*\},\s*"read": \{\s*"id": "[^"]+",\s*"type": "production-auth-session",\s*"status": "active",\s*"expiresAt": "[^"]+",\s*"expired": false\s*\}/,
+      /"releaseProof": \{\s*"ok": true[\s\S]*?"authSessionLifecycle": \{\s*"minted": \{\s*"id": "[^"]+",\s*"type": "production-auth-session",\s*"status": "active",\s*"expiresAt": "[^"]+",\s*"authUser": "[^"]+",\s*"expired": false\s*\},\s*"read": \{\s*"id": "[^"]+",\s*"type": "production-auth-session",\s*"status": "active",\s*"expiresAt": "[^"]+",\s*"authUser": "[^"]+",\s*"expired": false\s*\}/,
     );
     assert.match(
       proof.stdout,
-      /"authSessionLifecycleSummary": \{\s*"issued": \{\s*"step": "preflight",\s*"id": "[^"]+",\s*"type": "production-auth-session",\s*"status": "active",\s*"expiresAt": "[^"]+",\s*"expired": false,\s*"revoked": false,\s*"cleanedUp": false,\s*"rotated": false,\s*"preserved": false\s*\},\s*"read": \{\s*"step": "(journal|replay|apply|dry-run)",\s*"id": "[^"]+",\s*"type": "production-auth-session",\s*"status": "active",\s*"expiresAt": "[^"]+",\s*"expired": false,\s*"revoked": false,\s*"cleanedUp": false,\s*"rotated": false,\s*"preserved": true\s*\}/,
+      /"authSessionLifecycleSummary": \{\s*"issued": \{\s*"step": "preflight",\s*"id": "[^"]+",\s*"type": "production-auth-session",\s*"status": "active",\s*"expiresAt": "[^"]+",\s*"authUser": "[^"]+",\s*"expired": false,\s*"revoked": false,\s*"cleanedUp": false,\s*"rotated": false,\s*"preserved": false\s*\},\s*"read": \{\s*"step": "(journal|replay|apply|dry-run)",\s*"id": "[^"]+",\s*"type": "production-auth-session",\s*"status": "active",\s*"expiresAt": "[^"]+",\s*"authUser": "[^"]+",\s*"expired": false,\s*"revoked": false,\s*"cleanedUp": false,\s*"rotated": false,\s*"preserved": true\s*\}/,
     );
     assert.match(
       proof.stdout,
-      /"authSessionLifecycle": \{\s*"minted": \{\s*"id": "[^"]+",\s*"type": "production-auth-session",\s*"status": "active",\s*"expiresAt": "[^"]+",\s*"expired": false\s*\},\s*"read": \{\s*"id": "[^"]+",\s*"type": "production-auth-session",\s*"status": "active",\s*"expiresAt": "[^"]+",\s*"expired": false\s*\}/,
+      /"authSessionLifecycle": \{\s*"minted": \{\s*"id": "[^"]+",\s*"type": "production-auth-session",\s*"status": "active",\s*"expiresAt": "[^"]+",\s*"authUser": "[^"]+",\s*"expired": false\s*\},\s*"read": \{\s*"id": "[^"]+",\s*"type": "production-auth-session",\s*"status": "active",\s*"expiresAt": "[^"]+",\s*"authUser": "[^"]+",\s*"expired": false\s*\}/,
     );
     assert.match(
       proof.stdout,
-      /"authSessionLifecycleTrace": \[[\s\S]*?\{\s*"step": "(dry-run|apply|replay|journal)",\s*"id": "[^"]+",\s*"type": "production-auth-session",\s*"status": "active",\s*"expiresAt": "[^"]+",\s*"expired": false,\s*"rotated": false,\s*"preserved": true\s*\}/,
+      /"authSessionLifecycleTrace": \[[\s\S]*?\{\s*"step": "(dry-run|apply|replay|journal)",\s*"id": "[^"]+",\s*"type": "production-auth-session",\s*"status": "active",\s*"expiresAt": "[^"]+",\s*"authUser": "[^"]+",\s*"expired": false,\s*"rotated": false,\s*"preserved": true\s*\}/,
     );
     assert.match(proof.stdout, /"releaseProof": \{\s*"ok": true,\s*"mode": "apply"/);
     assert.match(

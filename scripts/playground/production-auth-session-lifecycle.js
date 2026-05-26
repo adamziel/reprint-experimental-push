@@ -98,6 +98,7 @@ export function evaluateProductionAuthSessionLifecycleSummary(summary, now = Dat
     return issuedLifecycle;
   }
 
+  const issuedAuthUser = resolveAuthSessionIdentitySummary(issuedObservation);
   const observations = Array.isArray(summary.observations) ? summary.observations : [];
   if (observations.length > 0) {
     const issuedIndex = observations.findIndex((observation) =>
@@ -166,6 +167,15 @@ export function evaluateProductionAuthSessionLifecycleSummary(summary, now = Dat
   const readLifecycle = evaluateProductionAuthSessionLifecycle(readObservation, now);
   if (!readLifecycle.ok) {
     return readLifecycle;
+  }
+
+  const readAuthUser = resolveAuthSessionIdentitySummary(readObservation);
+  if (!issuedAuthUser.missing && !readAuthUser.missing && readAuthUser.value !== issuedAuthUser.value) {
+    return {
+      ok: false,
+      required: 'authenticated identity continuity',
+      observed: readAuthUser.value,
+    };
   }
 
   const issuedSessionId = typeof summary.issued?.id === 'string' && summary.issued.id.trim()
@@ -245,6 +255,16 @@ export function evaluateProductionAuthSessionLifecycleSummary(summary, now = Dat
       };
     }
 
+    const observationAuthUser = resolveAuthSessionIdentitySummary(observation);
+    if (!issuedAuthUser.missing && !observationAuthUser.missing
+      && observationAuthUser.value !== issuedAuthUser.value) {
+      return {
+        ok: false,
+        required: 'authenticated identity continuity',
+        observed: observationAuthUser.value,
+      };
+    }
+
     const lifecycle = evaluateProductionAuthSessionLifecycle(observation, now);
     if (!lifecycle.ok) {
       return lifecycle;
@@ -271,6 +291,9 @@ export function summarizeProductionAuthSessionLifecycleTrace(trace) {
       type: entry.type ?? null,
       status: entry.status ?? null,
       expiresAt: entry.expiresAt ?? null,
+      ...(typeof entry.authUser === 'string' && entry.authUser.trim()
+        ? { authUser: entry.authUser.trim() }
+        : {}),
       expired: Boolean(entry.expired),
       revoked: Boolean(entry.revoked),
       cleanedUp: Boolean(entry.cleanedUp),
@@ -303,4 +326,18 @@ function isAuthSessionReadStep(step) {
     || step === 'recovery-inspect'
     || step === 'replay'
     || step === 'journal';
+}
+
+function resolveAuthSessionIdentitySummary(observation) {
+  if (!observation || typeof observation !== 'object') {
+    return { missing: true, value: '' };
+  }
+
+  const authUser = typeof observation.authUser === 'string'
+    ? observation.authUser.trim()
+    : '';
+  return {
+    missing: !authUser,
+    value: authUser,
+  };
 }

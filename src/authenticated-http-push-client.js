@@ -131,7 +131,7 @@ export async function runAuthenticatedHttpPush({
     summary.code = 'PREFLIGHT_SESSION_MISSING';
     return summary;
   }
-  recordAuthSessionLifecycle(summary, 'preflight', preflight.body.auth?.session);
+  recordAuthSessionLifecycle(summary, 'preflight', preflight.body?.auth);
   if (isExpiredSession(preflight.body.auth?.session)) {
     summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
     summary.authSession = {
@@ -330,7 +330,7 @@ export async function runAuthenticatedHttpPush({
   }
   summary.dryRun = summarizeResponse(dryRun);
   updateRetryAttempts(summary, summary.dryRun);
-  recordAuthSessionLifecycle(summary, 'dry-run', dryRun.body?.auth?.session);
+  recordAuthSessionLifecycle(summary, 'dry-run', dryRun.body?.auth);
   const dryRunAuthEnvelopeDrift = requireProductionAuthSession && hasAuthEnvelopeDrift(preflightAuthEnvelope, dryRun);
   if (dryRun.status !== 200 || dryRun.body?.ok !== true || !dryRun.body?.receipt) {
     summary.code = dryRun.body?.code || 'DRY_RUN_FAILED';
@@ -487,7 +487,7 @@ export async function runAuthenticatedHttpPush({
   }
   summary.apply = summarizeResponse(apply);
   updateRetryAttempts(summary, summary.apply);
-  recordAuthSessionLifecycle(summary, 'apply', apply.body?.auth?.session);
+  recordAuthSessionLifecycle(summary, 'apply', apply.body?.auth);
   if (apply.status !== 200 || apply.body?.ok !== true) {
     summary.code = apply.body?.code || 'APPLY_FAILED';
     setDurableJournalBoundary(summary, 'apply');
@@ -614,7 +614,7 @@ export async function runAuthenticatedHttpPush({
   }
   summary.recoveryInspect = summarizeResponse(recoveryInspect);
   updateRetryAttempts(summary, summary.recoveryInspect);
-  recordAuthSessionLifecycle(summary, 'recovery-inspect', recoveryInspect.body?.auth?.session);
+  recordAuthSessionLifecycle(summary, 'recovery-inspect', recoveryInspect.body?.auth);
   summary.recoveryInspect.recovery = summarizeRecoveryInspect(recoveryInspect);
   const recoveryInspectAuthSessionDrift = requireProductionAuthSession && (
     hasProductionAuthSessionTypeDrift(recoveryInspect)
@@ -765,7 +765,7 @@ export async function runAuthenticatedHttpPush({
   }
   summary.replay = summarizeResponse(replay);
   updateRetryAttempts(summary, summary.replay);
-  recordAuthSessionLifecycle(summary, 'replay', replay.body?.auth?.session);
+  recordAuthSessionLifecycle(summary, 'replay', replay.body?.auth);
   summary.replay.responseSchemaVersion = replay.body?.responseSchemaVersion;
   const replayEquivalence = summarizeReplayEquivalence(apply, replay);
   summary.replayEquivalence = replayEquivalence;
@@ -915,7 +915,7 @@ export async function runAuthenticatedHttpPush({
   }
   summary.dbJournal = summarizeDbJournal(dbJournal);
   updateRetryAttempts(summary, summary.dbJournal);
-  recordAuthSessionLifecycle(summary, 'journal', dbJournal.body?.auth?.session);
+  recordAuthSessionLifecycle(summary, 'journal', dbJournal.body?.auth);
   const requiredPreservedRemoteRetryAttempts = requiredPreservedRemoteRetryPath
     ? summary.readRetryEvidence?.[requiredPreservedRemoteRetryPath] || 1
     : 1;
@@ -1325,10 +1325,15 @@ function captureTransportFailure(summary, field, error, code, phase) {
   setDurableJournalBoundary(summary, phase);
 }
 
-function summarizeAuthSessionLifecycle(session) {
+function summarizeAuthSessionLifecycle(auth) {
+  const session = auth?.session;
   if (!session || typeof session !== 'object') {
     return null;
   }
+
+  const authUser = typeof auth?.identity?.userLogin === 'string'
+    ? auth.identity.userLogin.trim()
+    : '';
 
   return {
     id: session.id || null,
@@ -1338,11 +1343,12 @@ function summarizeAuthSessionLifecycle(session) {
     expired: isExpiredSession(session),
     revoked: session.revoked === true || session.status === 'revoked',
     cleanedUp: session.cleanedUp === true || session.cleanup === true,
+    ...(authUser ? { authUser } : {}),
   };
 }
 
-function recordAuthSessionLifecycle(summary, step, session) {
-  const observation = summarizeAuthSessionLifecycle(session);
+function recordAuthSessionLifecycle(summary, step, auth) {
+  const observation = summarizeAuthSessionLifecycle(auth);
   const trace = summary.authSessionLifecycleTrace || [];
   const previous = trace.length > 0 ? trace[trace.length - 1] : null;
   const lifecycle = {
@@ -1364,6 +1370,7 @@ function recordAuthSessionLifecycle(summary, step, session) {
     type: observation?.type || null,
     status: observation?.status || null,
     expiresAt: observation?.expiresAt || null,
+    ...(observation?.authUser ? { authUser: observation.authUser } : {}),
     expired: Boolean(observation?.expired),
     revoked: Boolean(observation?.revoked),
     cleanedUp: Boolean(observation?.cleanedUp),
