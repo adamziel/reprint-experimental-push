@@ -22,7 +22,7 @@ const proofSubprocessTimeoutMs = 45_000;
 const proofSubprocessKillSignal = 'SIGTERM';
 const liveProofSubprocessTimeoutMs = 9_000;
 const liveProofSubprocessKillSignal = 'SIGKILL';
-const liveProofInnerTimeoutMs = Math.max(1_000, liveProofSubprocessTimeoutMs - 1_000);
+const liveProofInnerTimeoutMs = Math.max(1_000, liveProofSubprocessTimeoutMs - 2_000);
 const releaseVerifySlowPathTimeoutMs = 9_000;
 const liveReleaseVerifyTimeoutMs = liveProofSubprocessTimeoutMs;
 const proofSubprocessOptions = {
@@ -132,7 +132,7 @@ function spawnLiveReleaseVerify(env = {}, options = {}) {
   const timeout = options.timeout ?? liveProofSubprocessTimeoutMs;
   const boundedTimeout = Math.max(1_000, Math.min(timeout, liveProofInnerTimeoutMs));
   const killSignal = options.killSignal ?? liveProofSubprocessKillSignal;
-  return spawnReleaseVerifyBounded(
+  const proof = spawnReleaseVerifyBounded(
     process.execPath,
     ['scripts/playground/production-shaped-release-verify.mjs'],
     {
@@ -147,6 +147,10 @@ function spawnLiveReleaseVerify(env = {}, options = {}) {
     },
     'live release verify',
   );
+  if (proof.error || proof.signal || proof.status === null) {
+    reportSpawnFailure(proof);
+  }
+  return proof;
 }
 
 function assertReleaseVerifyProof(proof, label) {
