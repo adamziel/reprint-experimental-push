@@ -115,6 +115,14 @@ export function buildProductionPluginPackageProofSummary(
   const normalizedRequestedScenarios = requestedScenarios === null
     ? null
     : Array.from(new Set(requestedScenarios));
+  const requestedBundles = normalizedRequestedScenarios === null
+    ? 'all'
+    : normalizedRequestedScenarios
+      .filter((scenario) => Object.hasOwn(scenarioGroups, scenario))
+      .map((bundleName) => toBundleKey(bundleName));
+  const requestedConcreteScenarios = normalizedRequestedScenarios === null
+    ? 'all'
+    : normalizedRequestedScenarios.filter((scenario) => !Object.hasOwn(scenarioGroups, scenario));
   const scenarioResults = {};
   const bundleResults = {};
   const checkedBundles = [];
@@ -178,12 +186,6 @@ export function buildProductionPluginPackageProofSummary(
     }
   }
 
-  const requestedBundles = normalizedRequestedScenarios === null
-    ? 'all'
-    : normalizedRequestedScenarios
-      .filter((scenario) => Object.hasOwn(scenarioGroups, scenario))
-      .map((bundleName) => toBundleKey(bundleName));
-
   return {
     kind: 'production-plugin-package-driver-proof',
     ok: checkedScenarioCount > 0 && checkedScenarioCount === passedScenarioCount,
@@ -197,6 +199,7 @@ export function buildProductionPluginPackageProofSummary(
     skippedBundleCount,
     requestedScenarios: normalizedRequestedScenarios === null ? 'all' : normalizedRequestedScenarios.slice(),
     requestedBundles,
+    requestedConcreteScenarios,
     checkedScenarios: normalizedRequestedScenarios === null && selectedScenarios === null ? 'all' : checkedScenarios.sort(),
     passedScenarios: passedScenarios.sort(),
     failedScenarios: failedScenarios.sort(),
