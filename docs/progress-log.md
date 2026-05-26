@@ -4,21 +4,17 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-05-26 - Freshness Refresh 06:30:00
+
+<a id="2026-05-26-freshness-refresh-063000"></a>
+
+- Refreshed the visible progress surface because it was behind the active supervision cycle again.
+- This is a visibility-only update. The release gate posture remains `0/4`.
+- Evidence trail: [progress.html](../progress.html), [supervisor feedback](supervisor-feedback.md).
+
 ## 2026-05-26 - Freshness Refresh 06:27:00
 
 <a id="2026-05-26-freshness-refresh-062700"></a>
-
-- Refreshed the visible progress surface because it was behind the active supervision cycle again.
-- This is a visibility-only update. The release gate posture remains `0/4`.
-- Evidence trail: [progress.html](../progress.html), [supervisor feedback](supervisor-feedback.md).
-
-## 2026-05-26 - Freshness Refresh 06:28:00
-
-<a id="2026-05-26-freshness-refresh-062800"></a>
-
-- Refreshed the visible progress surface because it was behind the active supervision cycle again.
-- This is a visibility-only update. The release gate posture remains `0/4`.
-- Evidence trail: [progress.html](../progress.html), [supervisor feedback](supervisor-feedback.md).
 
 ## 2026-05-26 - Freshness Refresh 06:26:00
 
