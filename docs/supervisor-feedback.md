@@ -1,9 +1,22 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-26 18:06 CEST
+Last updated: 2026-05-26 18:07 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-26 18:07 CEST - Reliable Head at `593f7af0be40`
+
+- Going well: the live reliable head is now `593f7af0be408c6ac8b521e4e8c77f99af0a805`, and the checked packaged release verifier now reports top-level `ok: true` with `releaseProof.ok: true`, `preflight: 200`, an active preserved `production-auth-session`, and `durableJournal.packagedAccepted: true`.
+- Not going well: the release gate is still not known to be open; the remaining question is the exact production boundary after this packaged proof, likely preserved-remote retry or stricter durable-journal semantics.
+- Progress change: this is the first packaged boundary proof that looks release-grade, so critic, auditor, and progress should classify/publish the new head instead of staying pinned to `5b1ee960`.
+- Next nudge: keep `reliable-executor` on the next uncovered production boundary, and keep `progress-publisher` conservative until the public page matches the live head.
+
+| Lane | Nudge |
+| --- | --- |
+| Reliable executor | Move directly to the next uncaptured production boundary, likely preserved-remote retry or stricter durable-journal semantics. |
+| Progress publisher | Publish `593f7af0be408c6ac8b521e4e8c77f99af0a805` as current if the public page is still behind; keep `0/4`. |
+| Audit and critic | Classify `593f7af0` once and say exactly which gate, if any, remains closed after the packaged proof. |
 
 ## 2026-05-26 18:06 CEST - Reliable Head at `5b1ee960b543`
 
