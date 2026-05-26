@@ -29,113 +29,134 @@ const driftMutation = {
   },
 };
 
-await withPlaygroundServer('remote-base', remoteBlueprint, async (remoteServer) => {
-  await withPlaygroundServer('local-edited', localBlueprint, async (localServer) => {
-    const client = authenticatedHttpClient({
-      sourceUrl: remoteServer.baseUrl,
-      credential: credentials,
-      routeProfile: 'production-shaped',
-      requestTimeoutMs,
-    });
-
-    const preflight = await client.signedGet('/preflight');
-    assert.equal(preflight.status, 200, `production-shaped apply revalidation preflight HTTP ${preflight.status}`);
-    assert.equal(preflight.body.ok, true);
-    assert.equal(preflight.body.routeProfile.profile, 'production-shaped');
-    assert.match(preflight.body.session.id, /^[A-Za-z0-9_-]{32,160}$/);
-
-    const base = await exportSnapshot('remote-base', remoteServer.baseUrl);
-    const local = withoutUnmappedGraphPostmeta(await exportSnapshot('local-edited', localServer.baseUrl));
-    const plan = createPushPlan({ base, local, remote: base });
-    assert.equal(plan.status, 'ready');
-    assert.ok(plan.mutations.length > 0, 'apply revalidation proof needs at least one mutation');
-
-    const driftTarget = plan.mutations.find((mutation) => mutation.resourceKey === driftMutation.resourceKey)
-      || plan.mutations.find((mutation) => mutation.resourceKey.startsWith('file:'))
-      || plan.mutations[0];
-    assert.ok(driftTarget, 'apply revalidation proof needs a prepared mutation target');
-    const session = preflight.body.session.id;
-    const idempotencyKey = 'production-shaped-apply-revalidation-smoke-001';
-
-    process.stderr.write('apply-revalidation: dry-run /dry-run\n');
-    const dryRun = await client.signedPost('/dry-run', { plan }, { session, idempotencyKey });
-    assert.equal(dryRun.status, 200);
-    assert.equal(dryRun.body.ok, true);
-    assert.equal(dryRun.body.mode, 'dry-run');
-    assert.ok(dryRun.body.receipt?.receiptHash, 'dry-run receipt hash missing');
-
-    process.stderr.write('apply-revalidation: apply /apply\n');
-    const apply = await client.signedPost('/apply', {
-      plan,
-      receipt: dryRun.body.receipt,
-      labDriftAfterPrepared: {
-        mutationId: driftTarget.id,
-        resourceKey: driftTarget.resourceKey,
-        value: {
-          type: 'file',
-          content: 'production-shaped apply revalidation drift',
-        },
-      },
-    }, { session, idempotencyKey });
-    assert.equal(apply.status, 412);
-    assert.equal(apply.body.ok, false);
-    assert.equal(apply.body.code, 'PRECONDITION_FAILED');
-    assert.equal(apply.body.preconditionCheck, 'just-in-time');
-    assert.equal(apply.body.recovery?.required, true);
-    assert.equal(apply.body.recovery?.state, 'blocked-recovery');
-
-    process.stderr.write('apply-revalidation: recovery inspect /recovery/inspect\n');
-    const recoveryInspect = await client.signedPost('/recovery/inspect', {
-      plan,
-      receipt: dryRun.body.receipt,
-    }, { session, idempotencyKey });
-    assert.equal(recoveryInspect.status, 200);
-    assert.equal(recoveryInspect.body.ok, true);
-    assert.ok(recoveryInspect.body.recovery?.counts?.blockedUnknown >= 1);
-
-    process.stdout.write(JSON.stringify({
-      ok: true,
-      topology: {
-        sourceUrl: remoteServer.baseUrl,
-        remoteBase: 'remote-base',
-        localEdited: 'local-edited',
-        proxyPolicy: 'local-only',
-        ingressPort: 8080,
-      },
-      preflight: {
-        status: preflight.status,
-        routeProfile: preflight.body.routeProfile,
-        session: {
-          id: preflight.body.session.id,
-          type: preflight.body.session.type,
-        },
-      },
-      dryRun: {
-        status: dryRun.status,
-        mode: dryRun.body.mode,
-        receiptHash: dryRun.body.receipt.receiptHash,
-      },
-      apply: {
-        status: apply.status,
-        code: apply.body.code,
-        preconditionCheck: apply.body.preconditionCheck,
-        recovery: apply.body.recovery,
-      },
-      recoveryInspect: {
-        status: recoveryInspect.status,
-        recovery: recoveryInspect.body.recovery,
-      },
-      boundary: {
-        firstRemainingProductionBoundary: 'auth/session lifecycle and durable journal semantics',
-        verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
-        durableJournal: {
-          verdict: 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED',
-        },
-      },
-    }, null, 2));
-    process.stdout.write('\n');
-  });
+const activePlaygroundChildren = new Set();
+process.on('beforeExit', stopAllPlaygroundChildrenSync);
+process.on('exit', stopAllPlaygroundChildrenSync);
+process.on('SIGINT', () => {
+  stopAllPlaygroundChildrenSync();
 });
+process.on('SIGTERM', () => {
+  stopAllPlaygroundChildrenSync();
+});
+process.on('uncaughtException', () => {
+  stopAllPlaygroundChildrenSync();
+});
+process.on('unhandledRejection', () => {
+  stopAllPlaygroundChildrenSync();
+});
+
+try {
+  await withPlaygroundServer('remote-base', remoteBlueprint, async (remoteServer) => {
+    await withPlaygroundServer('local-edited', localBlueprint, async (localServer) => {
+      const client = authenticatedHttpClient({
+        sourceUrl: remoteServer.baseUrl,
+        credential: credentials,
+        routeProfile: 'production-shaped',
+        requestTimeoutMs,
+      });
+
+      const preflight = await client.signedGet('/preflight');
+      assert.equal(preflight.status, 200, `production-shaped apply revalidation preflight HTTP ${preflight.status}`);
+      assert.equal(preflight.body.ok, true);
+      assert.equal(preflight.body.routeProfile.profile, 'production-shaped');
+      assert.match(preflight.body.session.id, /^[A-Za-z0-9_-]{32,160}$/);
+
+      const base = await exportSnapshot('remote-base', remoteServer.baseUrl);
+      const local = withoutUnmappedGraphPostmeta(await exportSnapshot('local-edited', localServer.baseUrl));
+      const plan = createPushPlan({ base, local, remote: base });
+      assert.equal(plan.status, 'ready');
+      assert.ok(plan.mutations.length > 0, 'apply revalidation proof needs at least one mutation');
+
+      const driftTarget = plan.mutations.find((mutation) => mutation.resourceKey === driftMutation.resourceKey)
+        || plan.mutations.find((mutation) => mutation.resourceKey.startsWith('file:'))
+        || plan.mutations[0];
+      assert.ok(driftTarget, 'apply revalidation proof needs a prepared mutation target');
+      const session = preflight.body.session.id;
+      const idempotencyKey = 'production-shaped-apply-revalidation-smoke-001';
+
+      process.stderr.write('apply-revalidation: dry-run /dry-run\n');
+      const dryRun = await client.signedPost('/dry-run', { plan }, { session, idempotencyKey });
+      assert.equal(dryRun.status, 200);
+      assert.equal(dryRun.body.ok, true);
+      assert.equal(dryRun.body.mode, 'dry-run');
+      assert.ok(dryRun.body.receipt?.receiptHash, 'dry-run receipt hash missing');
+
+      process.stderr.write('apply-revalidation: apply /apply\n');
+      const apply = await client.signedPost('/apply', {
+        plan,
+        receipt: dryRun.body.receipt,
+        labDriftAfterPrepared: {
+          mutationId: driftTarget.id,
+          resourceKey: driftTarget.resourceKey,
+          value: {
+            type: 'file',
+            content: 'production-shaped apply revalidation drift',
+          },
+        },
+      }, { session, idempotencyKey });
+      assert.equal(apply.status, 412);
+      assert.equal(apply.body.ok, false);
+      assert.equal(apply.body.code, 'PRECONDITION_FAILED');
+      assert.equal(apply.body.preconditionCheck, 'just-in-time');
+      assert.equal(apply.body.recovery?.required, true);
+      assert.equal(apply.body.recovery?.state, 'blocked-recovery');
+
+      process.stderr.write('apply-revalidation: recovery inspect /recovery/inspect\n');
+      const recoveryInspect = await client.signedPost('/recovery/inspect', {
+        plan,
+        receipt: dryRun.body.receipt,
+      }, { session, idempotencyKey });
+      assert.equal(recoveryInspect.status, 200);
+      assert.equal(recoveryInspect.body.ok, true);
+      assert.ok(recoveryInspect.body.recovery?.counts?.blockedUnknown >= 1);
+
+      process.stdout.write(JSON.stringify({
+        ok: true,
+        topology: {
+          sourceUrl: remoteServer.baseUrl,
+          remoteBase: 'remote-base',
+          localEdited: 'local-edited',
+          proxyPolicy: 'local-only',
+          ingressPort: 8080,
+        },
+        preflight: {
+          status: preflight.status,
+          routeProfile: preflight.body.routeProfile,
+          session: {
+            id: preflight.body.session.id,
+            type: preflight.body.session.type,
+          },
+        },
+        dryRun: {
+          status: dryRun.status,
+          mode: dryRun.body.mode,
+          receiptHash: dryRun.body.receipt.receiptHash,
+        },
+        apply: {
+          status: apply.status,
+          code: apply.body.code,
+          preconditionCheck: apply.body.preconditionCheck,
+          recovery: apply.body.recovery,
+        },
+        recoveryInspect: {
+          status: recoveryInspect.status,
+          recovery: recoveryInspect.body.recovery,
+        },
+        boundary: {
+          firstRemainingProductionBoundary: 'auth/session lifecycle and durable journal semantics',
+          verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+          durableJournal: {
+            verdict: 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED',
+          },
+        },
+      }, null, 2));
+      process.stdout.write('\n');
+    });
+  });
+} catch (error) {
+  stopAllPlaygroundChildrenSync();
+  throw error;
+}
 
 async function exportSnapshot(name, baseUrl) {
   const response = await fetch(`${baseUrl}/wp-json/reprint-push-lab/v1/snapshot`, {
@@ -200,6 +221,7 @@ async function startPlaygroundServer(name, blueprintPath) {
       stdio: ['ignore', 'pipe', 'pipe'],
     },
   );
+  activePlaygroundChildren.add(child);
 
   let output = '';
   child.stdout.on('data', (chunk) => {
@@ -227,6 +249,7 @@ async function startPlaygroundServer(name, blueprintPath) {
 
 async function stopPlaygroundServer(server) {
   await stopPlaygroundChild(server.child);
+  activePlaygroundChildren.delete(server.child);
 }
 
 async function stopPlaygroundChild(child) {
@@ -250,6 +273,22 @@ async function stopPlaygroundChild(child) {
   }
 }
 
+function stopAllPlaygroundChildrenSync() {
+  for (const child of activePlaygroundChildren) {
+    if (child.exitCode !== null || child.signalCode !== null) {
+      activePlaygroundChildren.delete(child);
+      continue;
+    }
+    try {
+      child.kill('SIGTERM');
+    } catch {}
+    try {
+      child.kill('SIGKILL');
+    } catch {}
+    activePlaygroundChildren.delete(child);
+  }
+}
+
 async function waitForServer(child, baseUrl, getLogs) {
   const deadline = Date.now() + serverStartupTimeoutMs;
   let lastError = null;
@@ -258,7 +297,7 @@ async function waitForServer(child, baseUrl, getLogs) {
   let nextHeartbeat = Date.now();
   while (Date.now() < deadline) {
     if (child.exitCode !== null) {
-      throw new Error(`Playground server exited early with ${child.exitCode}\n${getLogs()}`);
+      throw new Error(`Playground server exited early with ${child.exitCode}${formatProbeTrail(lastProbes)}\n${getLogs()}`);
     }
     if (Date.now() >= nextHeartbeat) {
       process.stderr.write(`apply-revalidation: waiting for Playground at ${baseUrl}\n`);
@@ -316,8 +355,7 @@ async function waitForServer(child, baseUrl, getLogs) {
     }
     await new Promise((resolve) => setTimeout(resolve, 500));
   }
-  const probeText = lastProbes.length ? `\nProbe trail: ${JSON.stringify(lastProbes.slice(-4), null, 2)}` : '';
-  throw new Error(`Timed out waiting for Playground server at ${baseUrl}: ${lastError?.message || 'unknown'}${probeText}\n${getLogs()}`);
+  throw new Error(`Timed out waiting for Playground server at ${baseUrl}: ${lastError?.message || 'unknown'}${formatProbeTrail(lastProbes)}\n${getLogs()}`);
 }
 
 async function fetchWithTimeout(url, init = {}) {
@@ -355,6 +393,13 @@ async function waitForExit(child, timeoutMs) {
     child.once('exit', onExit);
     child.once('close', onExit);
   });
+}
+
+function formatProbeTrail(lastProbes) {
+  if (lastProbes.length === 0) {
+    return '';
+  }
+  return `\nLast probe trail: ${JSON.stringify(lastProbes.slice(-4), null, 2)}`;
 }
 
 async function findLocalPort() {
