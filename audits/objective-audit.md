@@ -4,7 +4,7 @@
 
 The project is **not releasable as a production WordPress push path**.
 
-- Fresh remote heads at audit time, checked on 2026-05-26 08:12:30 CEST (+0200):
+- Fresh remote heads at audit time, checked on 2026-05-26 08:13:41 CEST (+0200):
 
 - `origin/lane/cycle-20260524-auth-graph-hardening/critic` -> `e413f7a8`
 - `origin/lane/cycle-20260524-auth-graph-hardening/fast-paths` -> `ad7d82a4`
@@ -113,6 +113,10 @@ The newest visible heads continue that same pattern:
   authenticated HTTP client path, not production-backed auth/session
   lifecycle, canonical response schema, live production replay, or durable
   journal ownership on the release path.
+- `origin/lane/reliable-executor` now records `dadb8f13`, failing closed on
+  auth drift before journal reads. This is still client-side fail-closed
+  behavior, not production-backed auth/session lifecycle, live production
+  replay, or durable journal ownership on the release path.
 - `origin/lane/no-data-loss-invariants` now records `eff8b208`, blocking user
   meta graph identity drift. It still does not prove the live release
   boundary or any production-backed source mutation.
