@@ -8,23 +8,23 @@ Fresh remote heads at audit time, checked on May 26, 2026:
 
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `c9a0e53d`
 - `origin/lane/reliable-executor` -> `27c9bdd0`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `fa1c5e1e`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `c8614f52`
 - `origin/lane/same-plan-wordpress-graph-create` -> `0d2178e9`
-- `origin/lane/no-data-loss-recovery` -> `9dc4a1f8`
-- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `634a1753`
+- `origin/lane/no-data-loss-recovery` -> `e84ce6e9`
+- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `270d8cc6`
 - `origin/lane/no-data-loss-invariants` -> `b5c81374`
-- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `de5eca6e`
-- `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `9dc4a1f8`
-- `origin/lane/critic` -> `cba0890b`
+- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `4c32012a`
+- `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `e84ce6e9`
+- `origin/lane/critic` -> `9f93f0c4`
 - `origin/lane/fast-paths` -> `cd0fddad`
 - `origin/lane/progress-publisher` -> `7695e1f9`
-- `origin/lane/cycle-20260525-mainwindows-2349/critic` -> `cba0890b`
+- `origin/lane/cycle-20260525-mainwindows-2349/critic` -> `9f93f0c4`
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `f574ab87`
 - `origin/lane/cycle-20260525-mainwindows-2349/same-plan-wordpress-graph-create` -> `0d2178e9`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-invariants` -> `b5c81374`
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `d702c908`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `54c3b972`
-- `origin/lane/no-data-loss-recovery` -> `47b675c0`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `c9a0e53d`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `c8614f52`
+- `origin/lane/no-data-loss-recovery` -> `e84ce6e9`
 - `origin/lane/cycle-20260525-mainwindows-2357/no-data-loss-invariants-graph-proof` -> `98c0ce26`
 - `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration` -> `a3a900d7`
 - `origin/main` -> `e55864f4`
@@ -40,10 +40,10 @@ but it did not change the release conclusion:
   `27c9bdd0`. That improves the wrapper boundary, but the live proof path is
   still lab-backed and the verdict does not move.
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` has advanced to
-  `f574ab87`, which continues the fail-closed headroom tightening. It is still
+  `270d8cc6`, which continues the fail-closed headroom tightening. It is still
   not release-grade live-source evidence.
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` has
-  advanced to `27d0c72e`, refreshing the audit snapshot. That updates the
+  advanced to `4c32012a`, refreshing the audit snapshot. That updates the
   evidence surface but does not change the release boundary.
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now
   refreshes the progress visibility handoff at `c9a0e53d`. This is freshness
@@ -58,11 +58,9 @@ but it did not change the release conclusion:
 - The newer integration cycle head at `a3a900d7` adds comments graph blocker
   coverage, which strengthens the fail-closed boundary but still does not
   prove live source mutation on unsupported surfaces.
-- `origin/lane/no-data-loss-recovery` now lands a large recovery-contract and
-  durable-journal documentation bundle at `47b675c0`. It materially expands
-  the recovery boundary notes, but the evidence is still documentation- and
-  fixture-bound rather than production-backed journal ownership or replay
-  proof.
+- `origin/lane/no-data-loss-recovery` now lands a recovery journal ownership
+  fence proof at `e84ce6e9`. It still does not add production-backed journal
+  ownership or replay proof.
 - `origin/lane/fast-paths` now tightens backpressure evidence checks at
   `cd0fddad`. That is still a fail-closed implementation improvement, not
   production release proof.
