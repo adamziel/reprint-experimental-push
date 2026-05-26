@@ -7,11 +7,11 @@ The project is **not releasable as a production WordPress push path**.
 Fresh remote heads at audit time, checked on May 26, 2026:
 
 - `origin/lane/reliable-executor` -> `0c4fd10f`
-- `origin/lane/no-data-loss-invariants` -> `4335ce8b`
+- `origin/lane/no-data-loss-invariants` -> `9c70eba6`
 - `origin/lane/no-data-loss-recovery` -> `47b675c0`
 - `origin/lane/fast-paths` -> `9be664b2`
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `c0f7aa92`
-- `origin/lane/independent-auditor` -> `5abd1f65`
+- `origin/lane/independent-auditor` -> `509df7a0`
 - `origin/lane/critic` -> `f8591f9d`
 - `origin/lane/progress-publisher` -> `7695e1f9`
 - `origin/lane/same-plan-wordpress-graph-create` -> `fc8308c4`
@@ -19,9 +19,9 @@ Fresh remote heads at audit time, checked on May 26, 2026:
 - `origin/lane/cycle-20260525-mainwindows-2349/same-plan-wordpress-graph-create` -> `e9cbf9d4`
 - `origin/lane/cycle-20260525-mainwindows-2357/no-data-loss-invariants-graph-proof` -> `98c0ce26`
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `bb2742a6`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `3cbd731a`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `814034cd`
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` -> `5f256171`
-- `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-invariants` -> `4335ce8b`
+- `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-invariants` -> `9c70eba6`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `93340006`
 - `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration` -> `295dc72a`
 - `origin/main` -> `e55864f4`
@@ -38,8 +38,8 @@ but it did not change the release conclusion:
   `spawnSync` timeout-hardening edits in progress, but they are still dirty
   and unpublished, so the live proof path is not yet release evidence and the
   verdict does not move.
-- `origin/lane/no-data-loss-invariants` now blocks post GUID mutations at
-  `4335ce8b`. A separate cycle-branch proof at `98c0ce26`
+- `origin/lane/no-data-loss-invariants` now tightens graph blockers at
+  `9c70eba6`. A separate cycle-branch proof at `98c0ce26`
   extends that blocker coverage to missing graph identity references, and the
   same-plan graph lane at `69f27361` now blocks unsupported graph surfaces
   including revision posts, menu/navigation posts, serialized blocks, and
@@ -64,11 +64,11 @@ but it did not change the release conclusion:
 - `origin/lane/progress-publisher` now refreshes the public progress evidence
   at `7695e1f9`.
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` now refreshes the audit snapshot at
-  `5abd1f65`.
+  `509df7a0`.
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now
   refreshes the supervisor evidence snapshot at `25e5f592`.
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now
-  records the latest progress freshness handoff at `50d75f8b`.
+  records the latest progress freshness handoff at `814034cd`.
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` now
   hardens the live proof timeout diagnostics at `5f256171`.
 - `origin/lane/same-plan-wordpress-graph-create` now blocks unsupported graph
