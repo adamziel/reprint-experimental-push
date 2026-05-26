@@ -13,10 +13,10 @@ Fresh remote heads at audit time, checked on May 26, 2026:
 - `origin/lane/no-data-loss-recovery` -> `4372167e`
 - `origin/lane/fast-paths` -> `9be664b2`
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `596c7b31`
-- `origin/lane/independent-auditor` -> `5abd1f65`
+- `origin/lane/independent-auditor` -> `815ee959`
 - `origin/lane/critic` -> `6828861f`
 - `origin/lane/progress-publisher` -> `7695e1f9`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `53fe1ff5`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `6ab59037`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `4372167e`
 - `origin/lane/cycle-20260525-mainwindows-2349/critic` -> `3b9a9c46`
 - `origin/lane/same-plan-wordpress-graph-create` -> `09e6706d`
@@ -24,13 +24,13 @@ Fresh remote heads at audit time, checked on May 26, 2026:
 - `origin/lane/cycle-20260525-mainwindows-2349/same-plan-wordpress-graph-create` -> `e9cbf9d4`
 - `origin/lane/cycle-20260525-mainwindows-2357/no-data-loss-invariants-graph-proof` -> `98c0ce26`
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `20a83c09`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `53fe1ff5`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `6ab59037`
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` -> `5f256171`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-invariants` -> `9c70eba6`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `4372167e`
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `337eb2ff`
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `20a83c09`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `53fe1ff5`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `6ab59037`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `4372167e`
 - `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration` -> `a3a900d7`
 - `origin/main` -> `e55864f4`
@@ -68,9 +68,9 @@ but it did not change the release conclusion:
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now
   refreshes the supervisor evidence snapshot at `20a83c09`.
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now
-  records the latest progress freshness handoff at `53fe1ff5`.
+  records the latest progress freshness handoff at `6ab59037`.
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` now refreshes the audit snapshot at
-  `5abd1f65`.
+  `815ee959`.
 - `origin/lane/critic` now refreshes the critic handoff at `6828861f`.
 - `origin/lane/progress-publisher` now refreshes the public progress evidence
   at `7695e1f9`.
