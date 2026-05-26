@@ -18061,6 +18061,22 @@ test('assertRecoveryStateEnvelope rejects symbol-keyed top-level envelope fields
   );
 });
 
+test('recovery states fail closed when plan identity and remote hash are inherited through the prototype', () => {
+  const recovery = Object.create({
+    planId: 'plan-1',
+    remoteHash: 'a'.repeat(64),
+  });
+  recovery.status = 'old-remote';
+  recovery.artifacts = {
+    journal: { status: 'opened' },
+  };
+
+  const error = captureError(() => assertRecoveryStateEnvelope(recovery));
+
+  assert.equal(error.code, 'RECOVERY_STATE_INVALID');
+  assert.match(error.message, /own plan identifier/);
+});
+
 test('non-blocked recovery artifacts fail closed when the envelope is not a plain object', () => {
   assert.throws(
     () => validateRecoveryArtifacts({

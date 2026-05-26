@@ -1765,6 +1765,26 @@ function validateRecoveryStateEnvelopeKeys(recoveryState) {
     ? ['status', 'reason', 'remoteHash', 'planId', 'artifacts', 'driftedResources']
     : ['status', 'reason', 'remoteHash', 'planId', 'artifacts'];
 
+  if (!Object.hasOwn(recoveryState, 'status')) {
+    throw new PushPlanError(
+      'RECOVERY_STATE_INVALID',
+      'Recovery state must carry an own status field.',
+      {
+        status: recoveryState.status,
+        planId: recoveryState.planId,
+      },
+    );
+  }
+  if (!Object.hasOwn(recoveryState, 'planId')) {
+    throw new PushPlanError(
+      'RECOVERY_STATE_INVALID',
+      'Recovery state must carry an own plan identifier.',
+      {
+        status: recoveryState.status,
+        planId: recoveryState.planId,
+      },
+    );
+  }
   if (!Object.hasOwn(recoveryState, 'artifacts')) {
     throw new PushPlanError(
       'RECOVERY_STATE_INVALID',
