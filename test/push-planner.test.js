@@ -3263,6 +3263,51 @@ test('allows local _menu_item_object_id metadata to reference a post created by 
   assert.equal(result.site.db.wp_postmeta['meta_id:461'].meta_value, 2);
 });
 
+test('blocks _menu_item_object_id metadata owned by a wp_navigation post even when it targets a same-plan post', () => {
+  const resourceKey = 'row:["wp_postmeta","meta_id:461"]';
+  const ownerResourceKey = 'row:["wp_posts","ID:1"]';
+  const targetResourceKey = 'row:["wp_posts","ID:2"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_posts['ID:1'] = {
+    ID: 1,
+    post_title: 'Local wp_navigation owner',
+    post_content: 'local-private-wp-navigation-owner-body',
+    post_status: 'publish',
+    post_type: 'wp_navigation',
+  };
+  local.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_title: 'Local menu object post',
+    post_content: 'local-private-menu-object-body',
+    post_status: 'publish',
+  };
+  local.db.wp_postmeta = {
+    'meta_id:461': {
+      meta_id: 461,
+      post_id: 1,
+      meta_key: '_menu_item_object_id',
+      meta_value: 2,
+    },
+  };
+
+  const plan = planFor(base, local, baseSite());
+  const ownerMutation = mutationFor(plan, ownerResourceKey);
+  const targetMutation = mutationFor(plan, targetResourceKey);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(ownerMutation, undefined);
+  assert.equal(targetMutation.changeKind, 'create');
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.ok(blocker);
+  assert.equal(blocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(blocker.surface, 'wp_navigation');
+  assert.equal(JSON.stringify(blocker).includes('local-private-wp-navigation-owner-body'), false);
+  assert.equal(JSON.stringify(blocker).includes('local-private-menu-object-body'), false);
+  assert.throws(() => applyPlan(baseSite(), plan), /Refusing to apply/);
+});
+
 test('allows local _menu_item_object_id taxonomy metadata to reference a term created by the same plan', () => {
   const resourceKey = 'row:["wp_postmeta","meta_id:462"]';
   const targetResourceKey = 'row:["wp_terms","term_id:7"]';
@@ -3319,6 +3364,64 @@ test('allows local _menu_item_object_id taxonomy metadata to reference a term cr
   const result = applyPlan(remote, plan);
   assert.equal(result.site.db.wp_terms['term_id:7'].name, 'Local menu taxonomy term');
   assert.equal(result.site.db.wp_postmeta['meta_id:462'].meta_value, 7);
+});
+
+test('blocks _menu_item_object_id taxonomy metadata owned by an attachment even when it targets a same-plan term', () => {
+  const resourceKey = 'row:["wp_postmeta","meta_id:462"]';
+  const ownerResourceKey = 'row:["wp_posts","ID:1"]';
+  const targetResourceKey = 'row:["wp_terms","term_id:7"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_posts['ID:1'] = {
+    ID: 1,
+    post_title: 'Local attachment owner',
+    post_content: 'local-private-attachment-owner-body',
+    post_status: 'inherit',
+    post_type: 'attachment',
+  };
+  local.db.wp_terms = {
+    'term_id:7': {
+      term_id: 7,
+      name: 'Local menu taxonomy term',
+      slug: 'local-menu-taxonomy-term',
+    },
+  };
+  local.db.wp_postmeta = {
+    'meta_id:462': {
+      meta_id: 462,
+      post_id: 1,
+      meta_key: '_menu_item_object_id',
+      meta_value: 7,
+    },
+    'meta_id:463': {
+      meta_id: 463,
+      post_id: 1,
+      meta_key: '_menu_item_type',
+      meta_value: 'taxonomy',
+    },
+    'meta_id:464': {
+      meta_id: 464,
+      post_id: 1,
+      meta_key: '_menu_item_object',
+      meta_value: 'category',
+    },
+  };
+
+  const plan = planFor(base, local, baseSite());
+  const ownerMutation = mutationFor(plan, ownerResourceKey);
+  const targetMutation = mutationFor(plan, targetResourceKey);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(ownerMutation.changeKind, 'update');
+  assert.equal(targetMutation.changeKind, 'create');
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.ok(blocker);
+  assert.equal(blocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(blocker.surface, 'attachment');
+  assert.equal(JSON.stringify(blocker).includes('local-private-attachment-owner-body'), false);
+  assert.equal(JSON.stringify(blocker).includes('local-menu-taxonomy-term'), false);
+  assert.throws(() => applyPlan(baseSite(), plan), /Refusing to apply/);
 });
 
 test('allows local _menu_item_object_id taxonomy metadata to reference a term created by the same plan even when an unrelated remote attachment exists', () => {
