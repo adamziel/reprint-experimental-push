@@ -894,7 +894,7 @@ function reprint_push_lab_rest_fail_closed_checked_recovery_journal_acceptance(
         return $journal;
     }
 
-    if (array_key_exists('claim', $journal) && !reprint_push_lab_db_journal_claim_contract_matches($journal['claim'])) {
+    if (!reprint_push_lab_db_journal_claim_contract_matches($journal['claim'] ?? null)) {
         $journal['acceptedOnCheckedBoundary'] = false;
         return $journal;
     }
