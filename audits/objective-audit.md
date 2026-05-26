@@ -4,11 +4,11 @@
 
 The project is **not releasable as a production WordPress push path**.
 
-- Fresh remote heads at audit time, checked on 2026-05-26 08:36:59 CEST (+0200):
-- Fresh production-side lane heads re-polled at 2026-05-26 08:36:59 CEST (+0200):
+- Fresh remote heads at audit time, checked on 2026-05-26 08:38:50 CEST (+0200):
+- Fresh production-side lane heads re-polled at 2026-05-26 08:38:50 CEST (+0200):
 
 - `origin/lane/critic` -> `567743c2`
-- `origin/lane/no-data-loss-invariants` -> `b17a5edb`
+- `origin/lane/no-data-loss-invariants` -> `fa31b92e`
 - `origin/lane/no-data-loss-recovery` -> `9e077c10`
 - `origin/lane/reliable-executor` -> `7f8704ce`
 
@@ -122,6 +122,9 @@ change the release verdict:
   production auth session type drift. This is still support-side auth/session
   validation, not production-backed auth/session lifecycle, live production
   replay, or durable journal ownership on the release path.
+- `origin/lane/no-data-loss-invariants` now records `fa31b92e`, aligning graph
+  identity test expectations. This is still unsupported-surface test cleanup,
+  not production-backed source mutation proof.
 - `origin/lane/reliable-executor` now records `169ebf1e`, mirroring bounded
   proof tails to stdout. This is still support-side proof formatting, not
   production-backed auth/session lifecycle, live production replay, or durable
