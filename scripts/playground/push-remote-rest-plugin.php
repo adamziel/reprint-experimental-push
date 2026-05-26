@@ -2974,8 +2974,13 @@ function reprint_push_lab_rest_validate_authenticated_receipt(
     if ((int) ($identity['userId'] ?? 0) !== (int) ($current['identity']['userId'] ?? 0)
         || (string) ($identity['userLogin'] ?? '') !== (string) ($current['identity']['userLogin'] ?? '')
         || (string) ($session['type'] ?? '') !== (string) ($current['session']['type'] ?? '')
+        || (string) ($session['id'] ?? '') !== (string) ($current['session']['id'] ?? '')
         || (string) ($session['applicationPasswordUuid'] ?? '') !== (string) ($current['session']['applicationPasswordUuid'] ?? '')
         || (string) ($session['credentialHash'] ?? '') !== (string) ($current['session']['credentialHash'] ?? '')
+        || (string) ($session['status'] ?? '') !== (string) ($current['session']['status'] ?? '')
+        || (string) ($session['expiresAt'] ?? '') !== (string) ($current['session']['expiresAt'] ?? '')
+        || (bool) ($session['revoked'] ?? false) !== (bool) ($current['session']['revoked'] ?? false)
+        || (bool) ($session['cleanedUp'] ?? false) !== (bool) ($current['session']['cleanedUp'] ?? false)
     ) {
         reprint_push_lab_rest_auth_receipt_mismatch('Receipt auth identity or session does not match the current request.', $receipt);
     }

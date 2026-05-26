@@ -134,6 +134,8 @@ try {
     assert.equal(dryRun.body.receipt.authBinding.request.dryRunRoute, '/push/dry-run');
     assert.equal(dryRun.body.receipt.authBinding.request.routeProfile, 'production-shaped');
     assert.equal(dryRun.body.receipt.authBinding.request.labBacked, true);
+    assert.equal(dryRun.body.receipt.authBinding.session.type, 'production-auth-session');
+    assert.equal(dryRun.body.receipt.authBinding.session.id, session);
     await assertCurrentSurface(client, snapshots.base, 'production-shaped dry-run must not mutate');
 
     const labPreflight = await labClient.signedGet('/preflight');
@@ -179,7 +181,25 @@ try {
     assert.equal(productionReceiptOnLabApply.body.mode, 'apply');
     await assertCurrentSurface(client, snapshots.base, 'production-shaped receipt on lab-authenticated apply must not mutate');
 
-    const journalAfterCrossRouteFailures = await client.get('/db-journal?limit=80');
+    const sessionMismatchReceiptOnApply = await client.signedPost('/apply', {
+      plan: readyPlan,
+      receipt: mutateReceipt(dryRun.body.receipt, (receipt) => {
+        receipt.authBinding.session.id = `${session}-stale`;
+      }),
+    }, {
+      session,
+      idempotencyKey: 'production-shaped-session-mismatch-apply',
+    });
+    assert.equal(sessionMismatchReceiptOnApply.status, 409);
+    assert.equal(sessionMismatchReceiptOnApply.body.ok, false);
+    assert.equal(sessionMismatchReceiptOnApply.body.code, 'AUTH_RECEIPT_MISMATCH');
+    assert.equal(sessionMismatchReceiptOnApply.body.mode, 'apply');
+    await assertCurrentSurface(client, snapshots.base, 'production-shaped stale session receipt apply must not mutate');
+
+    const journalAfterCrossRouteFailures = await client.signedGet('/db-journal?limit=80', {
+      session,
+      idempotencyKey: 'production-shaped-cross-route-failures-journal',
+    });
     assert.equal(journalAfterCrossRouteFailures.status, 200);
     assert.equal(journalAfterCrossRouteFailures.body.ok, true);
     const crossRouteFailureRows = journalAfterCrossRouteFailures.body.dbJournal.latestRows;
@@ -222,7 +242,10 @@ try {
     assert.equal(conflict.body.idempotency.freshMutationWork, false);
     await assertCurrentSurface(client, routeLocalSnapshot, 'production-shaped different-body conflict must not mutate');
 
-    const dbJournal = await client.get('/db-journal?limit=80');
+    const dbJournal = await client.signedGet('/db-journal?limit=80', {
+      session,
+      idempotencyKey: 'production-shaped-final-journal',
+    });
     assert.equal(dbJournal.status, 200);
     const entries = dbJournal.body.dbJournal.latestRows;
     assert.ok(entries.some((entry) => entry.event === 'apply-committed'), 'DB journal missing apply-committed');
@@ -230,7 +253,10 @@ try {
     assert.ok(entries.some((entry) => entry.event === 'idempotency-key-conflict'), 'DB journal missing idempotency-key-conflict');
     assert.equal(entries.filter((entry) => entry.event === 'mutation-applied').length, readyPlan.mutations.length);
 
-    const recovery = await client.post('/recovery/inspect', applyBody);
+    const recovery = await client.signedPost('/recovery/inspect', applyBody, {
+      session,
+      idempotencyKey: 'production-shaped-recovery-inspect',
+    });
     assert.equal(recovery.status, 200);
     assert.equal(recovery.body.ok, true);
     assert.equal(recovery.body.recovery.state, 'fully-updated-remote');
@@ -285,6 +311,14 @@ try {
 }
 
 console.log(JSON.stringify(summary, null, 2));
+
+function mutateReceipt(receipt, mutate) {
+  const next = JSON.parse(JSON.stringify(receipt));
+  mutate(next);
+  delete next.receiptHash;
+  next.receiptHash = digest(next);
+  return next;
+}
 
 function exportSnapshot(name, blueprintPath) {
   const result = spawnSync('npx', [
