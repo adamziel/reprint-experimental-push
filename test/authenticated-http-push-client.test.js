@@ -265,6 +265,20 @@ test('production-shaped authenticated push fails closed when production auth ses
       },
     });
     assert.deepEqual(summary.authSessionLifecycle, {
+      history: [
+        {
+          step: 'preflight',
+          id: 'psh_01j00000000000000000000000',
+          type: 'production-auth-session',
+          status: 'active',
+          expiresAt: '2000-01-01T00:00:00Z',
+          expired: true,
+          revoked: false,
+          cleanedUp: false,
+          rotated: false,
+          preserved: false,
+        },
+      ],
       minted: {
         id: 'psh_01j00000000000000000000000',
         type: 'production-auth-session',
@@ -283,7 +297,19 @@ test('production-shaped authenticated push fails closed when production auth ses
         revoked: false,
         cleanedUp: false,
       },
-      expired: {
+        expired: {
+          id: 'psh_01j00000000000000000000000',
+          type: 'production-auth-session',
+          status: 'active',
+          expiresAt: '2000-01-01T00:00:00Z',
+          expired: true,
+          revoked: false,
+          cleanedUp: false,
+        },
+    });
+    assert.deepEqual(summary.authSessionLifecycleSummary, {
+      issued: {
+        step: 'preflight',
         id: 'psh_01j00000000000000000000000',
         type: 'production-auth-session',
         status: 'active',
@@ -291,7 +317,35 @@ test('production-shaped authenticated push fails closed when production auth ses
         expired: true,
         revoked: false,
         cleanedUp: false,
+        rotated: false,
+        preserved: false,
       },
+      read: {
+        step: 'preflight',
+        id: 'psh_01j00000000000000000000000',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2000-01-01T00:00:00Z',
+        expired: true,
+        revoked: false,
+        cleanedUp: false,
+        rotated: false,
+        preserved: false,
+      },
+      observations: [
+        {
+          step: 'preflight',
+          id: 'psh_01j00000000000000000000000',
+          type: 'production-auth-session',
+          status: 'active',
+          expiresAt: '2000-01-01T00:00:00Z',
+          expired: true,
+          revoked: false,
+          cleanedUp: false,
+          rotated: false,
+          preserved: false,
+        },
+      ],
     });
     assert.equal(seen.length, 1);
     assert.match(seen[0].url, /\/wp-json\/reprint\/v1\/push\/preflight$/);
@@ -553,6 +607,23 @@ test('production-shaped authenticated push records revoked and cleaned-up auth s
     assert.equal(summary.authSessionLifecycle.dryRun.revoked, true);
     assert.equal(summary.authSessionLifecycle.apply.cleanedUp, true);
     assert.equal(summary.authSessionLifecycle.replay.cleanedUp, true);
+    assert.deepEqual(
+      summary.authSessionLifecycle.history.map(({ step, revoked, cleanedUp, rotated, preserved }) => ({
+        step,
+        revoked,
+        cleanedUp,
+        rotated,
+        preserved,
+      })),
+      [
+        { step: 'preflight', revoked: false, cleanedUp: false, rotated: false, preserved: false },
+        { step: 'dry-run', revoked: true, cleanedUp: false, rotated: false, preserved: true },
+        { step: 'apply', revoked: false, cleanedUp: true, rotated: false, preserved: true },
+        { step: 'recovery-inspect', revoked: false, cleanedUp: false, rotated: false, preserved: true },
+        { step: 'replay', revoked: false, cleanedUp: true, rotated: false, preserved: true },
+        { step: 'journal', revoked: false, cleanedUp: false, rotated: false, preserved: false },
+      ],
+    );
     assert.equal(seen.length, 8);
   } finally {
     global.fetch = originalFetch;

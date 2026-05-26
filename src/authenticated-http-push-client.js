@@ -770,6 +770,22 @@ function recordAuthSessionLifecycle(summary, step, session) {
   trace.push(lifecycle);
   summary.authSessionLifecycleTrace = trace;
   summary.authSessionLifecycle = summary.authSessionLifecycle || {};
+  summary.authSessionLifecycle.history = summary.authSessionLifecycle.history || [];
+  summary.authSessionLifecycle.history.push({
+    step,
+    id: observation?.id || null,
+    type: observation?.type || null,
+    status: observation?.status || null,
+    expiresAt: observation?.expiresAt || null,
+    expired: Boolean(observation?.expired),
+    revoked: Boolean(observation?.revoked),
+    cleanedUp: Boolean(observation?.cleanedUp),
+    rotated: lifecycle.rotated,
+    preserved: lifecycle.preserved,
+  });
+  summary.authSessionLifecycleSummary = summarizeAuthSessionLifecycleHistory(
+    summary.authSessionLifecycle.history,
+  );
   if (step === 'preflight') {
     summary.authSessionLifecycle.minted = observation;
     summary.authSessionLifecycle.read = observation;
@@ -784,6 +800,22 @@ function recordAuthSessionLifecycle(summary, step, session) {
       : step === 'journal'
         ? 'journal'
         : step] = observation;
+  summary.authSessionLifecycle.read = observation;
+}
+
+function summarizeAuthSessionLifecycleHistory(history) {
+  if (!Array.isArray(history) || history.length === 0) {
+    return null;
+  }
+
+  const observations = history.filter((entry) => entry && typeof entry === 'object');
+  const issued = history.find((entry) => entry.step === 'preflight') || history[0];
+  const read = history[history.length - 1];
+  return {
+    issued,
+    read,
+    observations,
+  };
 }
 
 function summarizeSnapshot(response, local) {
