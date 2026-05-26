@@ -68,6 +68,7 @@ const driverMissingExportServerBlueprintPath = path.join(tmpDir, 'remote-base-wi
 const driverMissingApplyServerBlueprintPath = path.join(tmpDir, 'remote-base-with-driver-fixture-missing-apply-server.blueprint.json');
 const driverMissingValidateServerBlueprintPath = path.join(tmpDir, 'remote-base-with-driver-fixture-missing-validate-server.blueprint.json');
 const driverMissingPluginOwnerServerBlueprintPath = path.join(tmpDir, 'remote-base-with-driver-fixture-missing-plugin-owner-server.blueprint.json');
+const driverMissingTableServerBlueprintPath = path.join(tmpDir, 'remote-base-with-driver-fixture-missing-table-server.blueprint.json');
 const driverDuplicateNameServerBlueprintPath = path.join(tmpDir, 'remote-base-with-driver-fixture-duplicate-name-server.blueprint.json');
 const driverDuplicateTableServerBlueprintPath = path.join(tmpDir, 'remote-base-with-driver-fixture-duplicate-table-server.blueprint.json');
 const basePath = path.join(tmpDir, 'base.json');
@@ -108,6 +109,11 @@ try {
     activatePackagedPlugin: true,
     provisionAuth: true,
     omitPluginOwner: true,
+  });
+  writeDriverFixtureBlueprint(path.join(repoRoot, fixtures.base), driverMissingTableServerBlueprintPath, {
+    activatePackagedPlugin: true,
+    provisionAuth: true,
+    omitTable: true,
   });
   writeDriverFixtureBlueprint(path.join(repoRoot, fixtures.base), driverDuplicateNameServerBlueprintPath, {
     activatePackagedPlugin: true,
@@ -154,6 +160,7 @@ try {
     driverApplyGuard: {},
     driverValidateGuard: {},
     driverPluginOwnerGuard: {},
+    driverMissingTableGuard: {},
     driverDuplicateNameGuard: {},
     driverDuplicateTableGuard: {},
     final: {},
@@ -967,6 +974,27 @@ try {
     };
   });
 
+  await withPlaygroundServer('production-plugin-driver-missing-table-guard', driverMissingTableServerBlueprintPath, pluginDir, async (server) => {
+    const malformedSnapshot = await requestText(
+      server.baseUrl,
+      'GET',
+      '/wp-json/reprint/v1/push/snapshot',
+      undefined,
+      authHeaders(),
+    );
+    assert.equal(malformedSnapshot.status, 500);
+    assert.match(
+      malformedSnapshot.text,
+      /missing table for driver: fixture-arbitrary-plugin-table/i,
+      'packaged snapshot did not fail closed on a plugin-owned driver registration without table',
+    );
+
+    summary.driverMissingTableGuard = {
+      status: malformedSnapshot.status,
+      missingTable: /missing table for driver: fixture-arbitrary-plugin-table/i.test(malformedSnapshot.text),
+    };
+  });
+
   await withPlaygroundServer('production-plugin-driver-duplicate-name-guard', driverDuplicateNameServerBlueprintPath, pluginDir, async (server) => {
     const malformedSnapshot = await requestText(
       server.baseUrl,
@@ -1201,6 +1229,7 @@ function driverFixturePluginPhp({
   omitApplyRowCallback = false,
   omitValidateMutationCallback = false,
   omitPluginOwner = false,
+  omitTable = false,
   duplicateDriverName = false,
   duplicateTable = false,
 }) {
@@ -1223,7 +1252,7 @@ Version: 0.0.1
 add_filter('reprint_push_plugin_owned_row_drivers', static function (array $drivers): array {
     $drivers['${driverFixture.driver}'] = [
         'driver' => '${driverFixture.driver}',
-        'table' => '${driverFixture.table}',
+${omitTable ? '' : `        'table' => '${driverFixture.table}',`}
 ${omitPluginOwner ? '' : `        'pluginOwner' => '${driverFixture.pluginOwner}',`}
         'supportsDelete' => ${supportsDelete ? 'true' : 'false'},
 ${exportRowsCallback}${applyRowCallback}${validateMutationCallback}

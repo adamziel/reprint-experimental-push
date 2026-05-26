@@ -20,6 +20,7 @@ const baseBlueprintPath = path.join(tmpDir, 'base.blueprint.json');
 const localBlueprintPath = path.join(tmpDir, 'local.blueprint.json');
 const malformedValidateBlueprintPath = path.join(tmpDir, 'missing-validate.blueprint.json');
 const missingPluginOwnerBlueprintPath = path.join(tmpDir, 'missing-plugin-owner.blueprint.json');
+const missingTableBlueprintPath = path.join(tmpDir, 'missing-table.blueprint.json');
 const duplicateDriverNameBlueprintPath = path.join(tmpDir, 'duplicate-driver-name.blueprint.json');
 const duplicateTableBlueprintPath = path.join(tmpDir, 'duplicate-driver-table.blueprint.json');
 const repoTmpDir = path.join(repoRoot, '.tmp');
@@ -45,6 +46,11 @@ try {
     payloadMode: 'base',
     updatedMarker: 'base',
     omitPluginOwner: true,
+  });
+  writeBlueprint(missingTableBlueprintPath, {
+    payloadMode: 'base',
+    updatedMarker: 'base',
+    omitTable: true,
   });
   writeBlueprint(duplicateDriverNameBlueprintPath, {
     payloadMode: 'base',
@@ -117,6 +123,14 @@ try {
     /missing pluginOwner for driver: fixture-arbitrary-plugin-table/i,
   );
 
+  const missingTableExport = exportSnapshotFailure('missing-table', missingTableBlueprintPath);
+  assert.equal(missingTableExport.ok, false);
+  assert.equal(missingTableExport.error?.class, 'RuntimeException');
+  assert.match(
+    missingTableExport.error?.message || '',
+    /missing table for driver: fixture-arbitrary-plugin-table/i,
+  );
+
   const deleteBase = protocolApply.after;
   const deleteLocal = JSON.parse(JSON.stringify(deleteBase));
   delete deleteLocal.db[driverTable]['entry_id:1'];
@@ -155,6 +169,7 @@ try {
     deleteVerified: protocolDelete.verified,
     malformedValidateGuard: malformedApply.error?.class,
     missingPluginOwnerGuard: missingPluginOwnerExport.error?.class,
+    missingTableGuard: missingTableExport.error?.class,
     duplicateDriverNameGuard: duplicateDriverNameExport.error?.class,
     duplicateTableGuard: duplicateTableExport.error?.class,
   }, null, 2));
@@ -171,6 +186,7 @@ function writeBlueprint(
     updatedMarker,
     omitValidateMutationCallback = false,
     omitPluginOwner = false,
+    omitTable = false,
     duplicateDriverName = false,
     duplicateTable = false,
   },
@@ -186,7 +202,7 @@ Version: 0.0.1
 add_filter('reprint_push_plugin_owned_row_drivers', static function (array $drivers): array {
     $drivers['${driverName}'] = [
         'driver' => '${driverName}',
-        'table' => '${driverTable}',
+${omitTable ? '' : `        'table' => '${driverTable}',`}
 ${omitPluginOwner ? '' : `        'pluginOwner' => '${pluginOwner}',`}
         'supportsDelete' => true,
         'exportRowsCallback' => 'reprint_push_driver_fixture_export_rows',
