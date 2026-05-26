@@ -1,3 +1,12 @@
+# 2026-05-26 - Fresh Evidence Delta 11:15:11
+
+<a id="2026-05-26-fresh-evidence-delta-111511"></a>
+
+- Reliable's newest release-path journal evidence is `1c8a658b`, which supersedes `5fd9dfb4` as the current reliable head and wires the recovery journal into `scripts/playground/production-shaped-release-verify.mjs`.
+- This is stronger release-path journal evidence, but it still does not prove the gate can move on its own.
+- The release gate posture remains `0/4`.
+- Evidence trail: [supervisor feedback](supervisor-feedback.md).
+
 ## 2026-05-26 - Freshness Refresh 11:12:37
 
 <a id="2026-05-26-freshness-refresh-111237"></a>

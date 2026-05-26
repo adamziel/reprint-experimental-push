@@ -1,6 +1,12 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-26 11:12 CEST
+Last updated: 2026-05-26 11:15 CEST
+
+## 2026-05-26 11:15:11 CEST - Fresh Evidence Delta
+
+- Reliable's newest release-path journal evidence is `1c8a658b`, which supersedes `5fd9dfb4` as the current reliable head and wires the recovery journal into the release-verify path.
+- This is stronger release-path journal evidence, but it still does not prove the gate can move on its own.
+- The release posture stays conservative at `0/4`.
 
 ## 2026-05-26 11:12:37 CEST - Freshness Refresh
 
