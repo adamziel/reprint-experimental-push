@@ -2915,6 +2915,76 @@ test('guarded benchmark blocks row-batch executor visibility without visible mea
   assert.equal(blockers.includes('production-parallelism-limits-not-visible'), true);
 });
 
+test('guarded benchmark keeps rollout summaries pinned to hidden parallelism-limit blockers', () => {
+  const report = smallBenchmark();
+  const tampered = clone(report);
+
+  tampered.executorCapabilities.productionAtomicCommit = 'production-atomic-group-commit';
+  tampered.executorCapabilities.fileReceipts = 'production-storage-receipts';
+  tampered.executorCapabilities.rowApply = 'production-batched-compare-and-swap';
+  tampered.evidence.atomicGroup.productionAtomicCommitMeasured = true;
+  tampered.evidence.atomicGroup.productionAtomicCommitVisible = true;
+  tampered.evidence.atomicGroup.productionAtomicGroupMetadataVisible = true;
+  tampered.evidence.atomicGroup.productionStorageReceiptsMeasured = true;
+  tampered.evidence.atomicGroup.productionStorageReceiptsVisible = true;
+  tampered.evidence.atomicGroup.productionRowBatchExecutorMeasured = true;
+  tampered.evidence.atomicGroup.productionRowBatchExecutorVisible = true;
+  tampered.evidence.parallelism.parallelismLimitsMeasured = true;
+  tampered.evidence.parallelism.parallelismLimitsVisible = false;
+
+  const details = productionThroughputDetails(tampered);
+
+  assert.deepEqual(
+    details.productionCapabilityRolloutSummary.find(
+      (entry) => entry.surface === 'chunk-upload-concurrency',
+    ),
+    {
+      surface: 'chunk-upload-concurrency',
+      status: 'blocked',
+      measured: false,
+      visible: false,
+      blockerRefs: [
+        'backpressure-evidence-incomplete',
+        'queue-memory-ceiling-does-not-match-queue-budget',
+        'production-parallelism-limits-not-visible',
+      ],
+    },
+  );
+  assert.deepEqual(
+    details.productionCapabilityRolloutSummary.find(
+      (entry) => entry.surface === 'file-hashing-concurrency',
+    ),
+    {
+      surface: 'file-hashing-concurrency',
+      status: 'blocked',
+      measured: false,
+      visible: false,
+      blockerRefs: [
+        'backpressure-evidence-incomplete',
+        'queue-memory-ceiling-does-not-match-queue-budget',
+        'production-parallelism-limits-not-visible',
+      ],
+    },
+  );
+  assert.deepEqual(
+    details.productionCapabilityRolloutSummary.find(
+      (entry) => entry.surface === 'row-batch-concurrency',
+    ),
+    {
+      surface: 'row-batch-concurrency',
+      status: 'blocked',
+      measured: false,
+      visible: false,
+      blockerRefs: [
+        'backpressure-evidence-incomplete',
+        'queue-memory-ceiling-does-not-match-queue-budget',
+        'production-parallelism-limits-not-visible',
+        'production-row-batch-executor-visible-without-parallelism-limits',
+      ],
+    },
+  );
+});
+
 test('guarded benchmark details fail closed when atomic commit capability is present but the evidence bit is hidden', () => {
   const report = smallBenchmark();
   const tampered = clone(report);
