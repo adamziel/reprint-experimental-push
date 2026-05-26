@@ -952,6 +952,26 @@ test('packaged production plugin readiness helper waits for signed preflight rea
     false,
   );
   assert.equal(
+    packagedProductionPluginSnapshotRetryable({
+      status: 404,
+      body: {
+        code: 'rest_no_route',
+        message: 'No route was found matching the URL and request method.',
+      },
+    }),
+    true,
+  );
+  assert.equal(
+    packagedProductionPluginPreflightRetryable({
+      status: 404,
+      body: {
+        code: 'rest_no_route',
+        message: 'No route was found matching the URL and request method.',
+      },
+    }),
+    true,
+  );
+  assert.equal(
     packagedProductionPluginPreflightRetryable({
       status: 200,
       body: {
