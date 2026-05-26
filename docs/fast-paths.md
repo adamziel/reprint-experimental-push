@@ -57,6 +57,10 @@ the atomic-group barrier.
 It also includes a compressed per-kind budget summary plus bounded queue
 headroom for release-bundle resume windows, so the planner can trim duplicate
 retry sizing without turning advisory backpressure into mutation authority.
+It also includes measured queue headroom plus canonical per-kind budgets for
+plugin-update replay windows, so bounded replay sizing can skip duplicate
+fan-out planning without turning advisory backpressure into mutation
+authority.
 It also includes a compressed per-kind budget summary plus a planned
 dependency-graph shortcut for plugin-install retry windows, so bounded retry
 planning can reuse known batch shape without changing the live compare or the

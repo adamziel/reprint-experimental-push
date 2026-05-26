@@ -197,6 +197,17 @@ test('benchmark model covers large uploads and plugin installs', () => {
     model.safeFastPaths.some(
       (fastPath) =>
         fastPath.area === 'backpressure' &&
+        fastPath.allowedShortcut === 'reuse-measured-queue-headroom-and-canonical-per-kind-budgets-to-size-bounded-plugin-update-replay-windows' &&
+        fastPath.guardrails.includes('queue-headroom-stays-advisory-and-bounded') &&
+        fastPath.gateProofs.skip.includes('measured queue headroom together with canonical per-kind budgets') &&
+        fastPath.gateProofs.recovery.includes('canonical budgets are advisory'),
+    ),
+    'measured queue headroom and canonical budgets can size plugin-update replay windows without weakening recovery evidence',
+  );
+  assert.ok(
+    model.safeFastPaths.some(
+      (fastPath) =>
+        fastPath.area === 'backpressure' &&
         fastPath.allowedShortcut === 'reuse-receipt-cursor-and-staging-disk-headroom-to-size-bounded-journal-batches-after-pause' &&
         fastPath.guardrails.includes('receipt-cursor-remains-advisory') &&
         fastPath.guardrails.includes('staging-disk-headroom-stays-within-plan-reserve') &&

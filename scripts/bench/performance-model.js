@@ -750,6 +750,26 @@ export const SAFE_FAST_PATHS = Object.freeze([
     publishesStagedDataEarly: false,
   },
   {
+    area: 'backpressure',
+    reduces: ['idle-time', 'planning-round-trips', 'duplicate-budget-recomputation'],
+    allowedShortcut: 'reuse-measured-queue-headroom-and-canonical-per-kind-budgets-to-size-bounded-plugin-update-replay-windows',
+    guardrails: [
+      'queue-headroom-stays-advisory-and-bounded',
+      'per-kind-budgets-stay-canonical-and-revalidated-before-write',
+    ],
+    gateProofs: {
+      skip: 'measured queue headroom together with canonical per-kind budgets can trim repeat plugin-update replay-window sizing without recomputing unchanged fan-out shape',
+      live: 'each later plugin-update row still rechecks its live compare at the storage boundary before visibility changes',
+      group: 'the replay window only narrows planning inside the same planned atomic group and never merges coupled plugin owners',
+      recovery: 'the measured queue headroom and canonical budgets are advisory; durable receipts and the group staging record still classify pause, retry, or crash',
+    },
+    visibilityBoundary: 'planning-only-budget-resume',
+    failureEvidence: 'measured queue headroom plus canonical per-kind budget summary and plugin-update replay-window receipts',
+    bypassesLivePreconditions: false,
+    splitsAtomicGroup: false,
+    publishesStagedDataEarly: false,
+  },
+  {
     area: 'remote-indexes',
     reduces: ['remote-body-fetches', 'planning-round-trips'],
     allowedShortcut: 'plan-from-indexed-strong-hash-listing',
