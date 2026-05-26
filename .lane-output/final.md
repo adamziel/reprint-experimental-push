@@ -6,15 +6,16 @@ Changed files
 
 Commands run
 - `sed -n '1,260p' audits/objective-audit.md`
-- `git for-each-ref --sort=-committerdate --format='%(refname:short) %(objectname:short) %(committerdate:iso8601) %(subject)' refs/remotes/origin/lane | head -n 20`
-- `git diff -- .lane-output/final.md audits/objective-audit.md`
+- `git status --short --branch`
+- `git for-each-ref --sort=-committerdate --format='%(refname:short) %(objectname:short) %(committerdate:iso8601) %(subject)' refs/remotes/origin/lane | head -n 25`
+- `git diff -- audits/objective-audit.md .lane-output/final.md`
 
 Push result
 - Not pushed yet this pass
 
 Worktree status
 - Dirty tracked files: `audits/objective-audit.md`, `.lane-output/final.md`
-- Branch status at check time: `lane/cycle-20260525-mainwindows-2349/independent-auditor...origin/main [ahead 1483, behind 295]`
+- Branch status at check time: `lane/cycle-20260525-mainwindows-2349/independent-auditor...origin/main [ahead 1484, behind 295]`
 
 Next supervisor nudge
 - Re-poll only when a lane lands live-source production proof or the release boundary materially changes; otherwise keep the audit at `0/4` and avoid freshness-only churn.

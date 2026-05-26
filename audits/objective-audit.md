@@ -54,7 +54,7 @@ The project is **not releasable as a production WordPress push path**.
 - `origin/lane/no-data-loss-invariants` -> `c271a83b`
 - `origin/lane/no-data-loss-recovery` -> `91424e5b`
 - `origin/lane/progress-publisher` -> `7695e1f9`
-- `origin/lane/reliable-executor` -> `f58b9566`
+- `origin/lane/reliable-executor` -> `c7fc237d`
 - `origin/lane/same-plan-wordpress-graph-create` -> `52be8d87`
 - `origin/main` -> `56063f13`
 
@@ -68,14 +68,14 @@ but it did not change the release conclusion:
 - `origin/lane/reliable-executor` now records `f58b9566`, clarifying the
   durable-journal release boundary again, but still not proving production
   auth/session lifecycle or a live-source mutation boundary.
-- `origin/lane/no-data-loss-invariants` now records `5e63d72d`, adding
-  navigation-parent blocker proof again, but still not proving the live
-  release boundary or any production-backed source mutation.
+- `origin/lane/no-data-loss-invariants` now records `c271a83b`, adding
+  term-relationship identity sibling proof again, but still not proving the
+  live release boundary or any production-backed source mutation.
 - `origin/lane/progress-publisher` now records `7695e1f9`, refreshing public
   progress freshness only.
 - `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration`
   now records `0b33a5f9`, adding plugin-owned delete-guard coverage only.
-- `origin/lane/independent-auditor` now records `76920d18`. This refreshes the
+- `origin/lane/independent-auditor` now records `6351130f`. This refreshes the
   audit snapshot only and does not change the release boundary.
 - `origin/lane/fast-paths` now records `7098b26d`, tightening guarded
   benchmark and pause-reporting evidence checks only.
