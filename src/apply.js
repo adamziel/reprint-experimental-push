@@ -659,13 +659,15 @@ function productionRecoverySupportReport(writer) {
     addMissingDependency('production recovery journal adapter marker');
   }
   if (
-    writer?.productionAdapter === true
+    Object.hasOwn(writer ?? {}, 'productionAdapter')
+    && writer.productionAdapter === true
     && (!Object.hasOwn(writer, 'supportedSurface') || writer.supportedSurface !== 'production-recovery-journal-adapter')
   ) {
     addMissingDependency('supported production recovery journal adapter surface');
   }
   if (
-    writer?.productionAdapter === true
+    Object.hasOwn(writer ?? {}, 'productionAdapter')
+    && writer.productionAdapter === true
     && !Object.hasOwn(writer ?? {}, 'supportedSurface')
     && writer?.supportedSurface === 'production-recovery-journal-adapter'
   ) {
