@@ -1257,6 +1257,11 @@ function finalizeWordPressGraphDependencies(plan, local, remote) {
   const mutationByResourceKey = new Map(
     plan.mutations.map((mutation) => [mutation.resourceKey, mutation]),
   );
+  const blockedTargetResourceKeys = new Set(
+    plan.blockers
+      .map((blocker) => blocker?.resourceKey)
+      .filter(Boolean),
+  );
   let blockerIndex = plan.blockers.length + 1;
 
   for (const mutation of plan.mutations) {
@@ -1272,7 +1277,17 @@ function finalizeWordPressGraphDependencies(plan, local, remote) {
       }
 
       const targetMutation = mutationByResourceKey.get(reference.targetResourceKey);
-      if (!isValidSamePlanWordPressGraphTarget(targetMutation, reference, mutation, mutationByResourceKey, local, remote)) {
+      if (
+        !isValidSamePlanWordPressGraphTarget(
+          targetMutation,
+          reference,
+          mutation,
+          mutationByResourceKey,
+          blockedTargetResourceKeys,
+          local,
+          remote,
+        )
+      ) {
         plan.blockers.push({
           id: `blocker-wordpress-graph-dependency-${blockerIndex++}`,
           class: 'missing-wordpress-graph-dependency',
@@ -1282,6 +1297,7 @@ function finalizeWordPressGraphDependencies(plan, local, remote) {
           resolutionPolicy: 'preserve-remote-wordpress-graph-and-stop',
           references: [reference],
         });
+        blockedTargetResourceKeys.add(mutation.resourceKey);
         continue;
       }
 
@@ -1295,6 +1311,7 @@ function finalizeWordPressGraphDependencies(plan, local, remote) {
           resolutionPolicy: 'preserve-remote-wordpress-graph-and-stop',
           references: [reference],
         });
+        blockedTargetResourceKeys.add(mutation.resourceKey);
         continue;
       }
 
@@ -1315,13 +1332,22 @@ function finalizeWordPressGraphDependencies(plan, local, remote) {
   plan.mutations = orderMutationsByDependencies(plan.mutations);
 }
 
-function isValidSamePlanWordPressGraphTarget(targetMutation, reference, sourceMutation, mutationByResourceKey, local, remote) {
+function isValidSamePlanWordPressGraphTarget(
+  targetMutation,
+  reference,
+  sourceMutation,
+  mutationByResourceKey,
+  blockedTargetResourceKeys,
+  local,
+  remote,
+) {
   if (
     !targetMutation
     || targetMutation.action !== 'put'
     || targetMutation.changeKind !== 'create'
     || targetMutation.resourceKey !== reference.targetResourceKey
     || targetMutation.localHash !== reference.targetLocalHash
+    || blockedTargetResourceKeys.has(targetMutation.resourceKey)
   ) {
     return false;
   }
