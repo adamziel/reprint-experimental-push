@@ -838,6 +838,17 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
     model.safeFastPaths.some(
       (fastPath) =>
         fastPath.area === 'compression' &&
+        fastPath.allowedShortcut === 'compress-canonical-per-kind-budget-summaries-and-reuse-planned-dependency-graph-to-size-bounded-plugin-install-retry-windows' &&
+        fastPath.guardrails.includes('planned-dependency-graph-stays-planning-evidence-only') &&
+        fastPath.gateProofs.skip.includes('plugin-install retry-window planning without recomputing the same canonical limits') &&
+        fastPath.gateProofs.recovery.includes('durable plugin-install receipts still classify pause, retry, or crash'),
+    ),
+    'compressed budget summaries can reuse the planned dependency graph for plugin-install retry windows without widening the visibility boundary',
+  );
+  assert.ok(
+    model.safeFastPaths.some(
+      (fastPath) =>
+        fastPath.area === 'compression' &&
         fastPath.allowedShortcut === 'compress-canonical-per-kind-budget-summaries-to-size-bounded-plugin-update-retry-windows' &&
         fastPath.guardrails.includes('plugin-update-retry-window-revalidates-before-write') &&
         fastPath.gateProofs.recovery.includes('dependency graph records'),

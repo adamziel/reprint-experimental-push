@@ -2041,6 +2041,27 @@ export const SAFE_FAST_PATHS = Object.freeze([
   },
   {
     area: 'compression',
+    reduces: ['wire-bytes', 'planning-round-trips', 'duplicate-dependency-recomputation'],
+    allowedShortcut: 'compress-canonical-per-kind-budget-summaries-and-reuse-planned-dependency-graph-to-size-bounded-plugin-install-retry-windows',
+    guardrails: [
+      'budget-summaries-stay-planning-evidence-only',
+      'planned-dependency-graph-stays-planning-evidence-only',
+      'plugin-install-retry-window-revalidates-before-write',
+    ],
+    gateProofs: {
+      skip: 'compressed per-kind budget summaries and a planned dependency graph can shorten plugin-install retry-window planning without recomputing the same canonical limits',
+      live: 'each later plugin-install write still rechecks its own live resource precondition before visibility changes',
+      group: 'budget-summary compression and dependency-graph reuse only narrow planning inside the same planned plugin-install bundle and never widen the atomic-group barrier',
+      recovery: 'compressed budget summaries, the planned dependency graph, and durable plugin-install receipts still classify pause, retry, or crash',
+    },
+    visibilityBoundary: 'planning-only-for-plugin-install-retry-windows',
+    failureEvidence: 'compressed per-kind budget summary plus planned dependency graph and guarded plugin-install finalize record',
+    bypassesLivePreconditions: false,
+    splitsAtomicGroup: false,
+    publishesStagedDataEarly: false,
+  },
+  {
+    area: 'compression',
     reduces: ['wire-bytes', 'planning-round-trips', 'duplicate-retry-window-recomputation'],
     allowedShortcut: 'compress-canonical-per-kind-budget-summaries-to-size-bounded-plugin-update-retry-windows',
     guardrails: [
