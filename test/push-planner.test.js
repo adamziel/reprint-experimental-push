@@ -15796,6 +15796,9 @@ test('blocks local termmeta references to a same-plan created term identity whil
   assert.equal(termmetaBlocker.class, 'unsupported-termmeta-resource');
   assert.equal(termmetaBlocker.resourceKey, resourceKey);
   assert.equal(termmetaBlocker.reason, `WordPress graph mutation ${resourceKey} is created in the same plan as a term identity that depends on it, and identity rewriting is not yet supported.`);
+  assert.equal(termmetaBlocker.references.length, 1);
+  assert.equal(termmetaBlocker.references[0].relationshipKey, 'wp_termmeta.term_id');
+  assert.equal(termmetaBlocker.references[0].relationshipType, 'termmeta-term');
   assert.equal(termBlocker.class, 'stale-wordpress-graph-identity');
   assert.equal(termBlocker.resourceKey, targetResourceKey);
   assert.equal(termBlocker.resolutionPolicy, 'preserve-remote-wordpress-graph-and-stop');
