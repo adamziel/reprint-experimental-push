@@ -3,12 +3,12 @@
 This log records evidence present in this repository. Public status should use
 release gates and named evidence gaps rather than stale percentage estimates.
 
-# 2026-05-27 - Public Status Audit 00:39:00
+# 2026-05-27 - Public Status Audit 00:41:04
 
-<a id="2026-05-27-public-status-audit-003900"></a>
+<a id="2026-05-27-public-status-audit-004104"></a>
 
 - Refreshed [progress.html](../progress.html) to the current `date` output
-  (`2026-05-27 00:39:00 CEST`) and kept
+  (`2026-05-27 00:41:04 CEST`) and kept
   `9b534e7575b60268aadf1d0a7b12a6414a485930` as the current
   reliable-executor head on the public page. The visible status surface keeps
   the evidence/gap labels and release-gate posture, not the stale percentage
