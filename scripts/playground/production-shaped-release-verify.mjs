@@ -1016,7 +1016,6 @@ async function waitForServer(child, baseUrl, getLogs) {
       );
       writePlaygroundFailure(message, lastProbes, getLogs(), lastError);
       await stopSpawnedServer(child);
-      await waitForExit(child, 2_000).catch(() => {});
       throw new Error(message);
     }
     try {
@@ -1078,7 +1077,6 @@ async function waitForServer(child, baseUrl, getLogs) {
   );
   writePlaygroundFailure(diagnostic, lastProbes, getLogs(), lastError);
   await stopSpawnedServer(child);
-  await waitForExit(child, 2_000).catch(() => {});
   throw new Error(diagnostic);
 }
 
@@ -1141,14 +1139,30 @@ async function fetchWithTimeout(url, init = {}) {
 }
 
 async function waitForExit(child, timeoutMs) {
-  const deadline = Date.now() + timeoutMs;
-  while (Date.now() < deadline) {
-    if (child.exitCode !== null) {
-      return;
-    }
-    await new Promise((resolve) => setTimeout(resolve, 100));
+  if (child.exitCode !== null || child.signalCode !== null) {
+    return;
   }
-  throw new Error(`Playground server did not exit within ${timeoutMs}ms`);
+
+  await new Promise((resolve, reject) => {
+    const timeout = setTimeout(() => {
+      cleanup();
+      reject(new Error(`Playground server did not exit within ${timeoutMs}ms`));
+    }, timeoutMs);
+
+    const cleanup = () => {
+      clearTimeout(timeout);
+      child.off('exit', onExit);
+      child.off('close', onExit);
+    };
+
+    const onExit = () => {
+      cleanup();
+      resolve();
+    };
+
+    child.once('exit', onExit);
+    child.once('close', onExit);
+  });
 }
 
 async function findLocalPort() {

@@ -230,16 +230,23 @@ async function stopPlaygroundServer(server) {
 }
 
 async function stopPlaygroundChild(child) {
-  if (child.exitCode !== null) {
+  if (child.exitCode !== null || child.signalCode !== null) {
     return;
   }
   child.kill('SIGTERM');
   try {
     await waitForExit(child, 2_000);
     return;
-  } catch {
+  } catch (error) {
     child.kill('SIGKILL');
-    await waitForExit(child, 2_000);
+    try {
+      await waitForExit(child, 2_000);
+    } catch {
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error(String(error));
+    }
   }
 }
 
@@ -324,17 +331,30 @@ async function fetchWithTimeout(url, init = {}) {
 }
 
 async function waitForExit(child, timeoutMs) {
-  const deadline = Date.now() + timeoutMs;
-  while (Date.now() < deadline) {
-    if (child.exitCode !== null) {
-      return;
-    }
-    await new Promise((resolve) => setTimeout(resolve, 100));
-  }
-  if (child.exitCode !== null) {
+  if (child.exitCode !== null || child.signalCode !== null) {
     return;
   }
-  throw new Error(`Child did not exit within ${timeoutMs}ms${child.pid ? ` (pid ${child.pid})` : ''}`);
+
+  await new Promise((resolve, reject) => {
+    const cleanup = () => {
+      clearTimeout(timeoutHandle);
+      child.off('exit', onExit);
+      child.off('close', onExit);
+    };
+
+    const onExit = () => {
+      cleanup();
+      resolve();
+    };
+
+    const timeoutHandle = setTimeout(() => {
+      cleanup();
+      reject(new Error(`Child did not exit within ${timeoutMs}ms${child.pid ? ` (pid ${child.pid})` : ''}`));
+    }, timeoutMs);
+
+    child.once('exit', onExit);
+    child.once('close', onExit);
+  });
 }
 
 async function findLocalPort() {

@@ -22,6 +22,7 @@ const proofSubprocessTimeoutMs = 45_000;
 const proofSubprocessKillSignal = 'SIGTERM';
 const liveProofSubprocessTimeoutMs = 9_000;
 const liveProofSubprocessKillSignal = 'SIGKILL';
+const liveProofInnerTimeoutMs = Math.max(1_000, liveProofSubprocessTimeoutMs - 1_000);
 const releaseVerifySlowPathTimeoutMs = 9_000;
 const liveReleaseVerifyTimeoutMs = liveProofSubprocessTimeoutMs;
 const proofSubprocessOptions = {
@@ -90,11 +91,13 @@ function spawnReleaseVerify(env = {}, timeout = proofSubprocessTimeoutMs) {
 }
 
 function spawnReleaseVerifyBounded(command, args, options, label) {
+  const timeout = options.timeout ?? proofSubprocessTimeoutMs;
+  const killSignal = options.killSignal ?? proofSubprocessKillSignal;
   const boundedOptions = {
     shell: false,
-    timeout: proofSubprocessTimeoutMs,
-    killSignal: proofSubprocessKillSignal,
     ...options,
+    timeout,
+    killSignal,
   };
   const proof = spawnSync(command, args, boundedOptions);
 
@@ -123,11 +126,12 @@ function spawnReleaseVerifyBounded(command, args, options, label) {
 }
 
 function spawnLiveReleaseVerify(env = {}, timeout = liveProofSubprocessTimeoutMs) {
-  const boundedTimeout = Math.max(1_000, Math.min(timeout, liveProofSubprocessTimeoutMs - 1_000));
+  const boundedTimeout = Math.max(1_000, Math.min(timeout, liveProofInnerTimeoutMs));
   const options = {
     cwd: repoRoot,
     ...releaseVerifyLiveSubprocessOptions,
     timeout: boundedTimeout,
+    killSignal: liveProofSubprocessKillSignal,
     env: {
       ...process.env,
       ...env,
@@ -217,9 +221,9 @@ function assertSpawnCompletedWithoutSpawnError(proof, label, timeoutMs) {
 function spawnBoundedSync(command, args, options, label) {
   const boundedOptions = {
     shell: false,
-    killSignal: 'SIGKILL',
-    timeout: proofSubprocessTimeoutMs,
     ...options,
+    timeout: options.timeout ?? proofSubprocessTimeoutMs,
+    killSignal: options.killSignal ?? 'SIGKILL',
   };
   const proof = spawnSync(command, args, boundedOptions);
 
@@ -477,7 +481,10 @@ maybeTest('production-shaped release proof runs the live preflight branch agains
   await withPlaygroundServer('remote-base', path.join(repoRoot, 'fixtures/playground/remote-base.blueprint.json'), async (remoteServer) => {
     const proof = spawnBoundedSync(process.execPath, ['scripts/playground/production-shaped-release-proof.mjs'], {
       cwd: repoRoot,
-      ...proofSubprocessOptions,
+      timeout: liveProofInnerTimeoutMs,
+      killSignal: liveProofSubprocessKillSignal,
+      encoding: 'utf8',
+      maxBuffer: 1024 * 1024 * 20,
       env: {
         ...process.env,
         REPRINT_PUSH_SOURCE_URL: remoteServer.baseUrl,
@@ -504,10 +511,10 @@ maybeTest('production-shaped release verify command runs the live protocol branc
         REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD: liveCredentials.password,
         NODE_NO_WARNINGS: '1',
       },
-      liveProofSubprocessTimeoutMs,
+      liveProofInnerTimeoutMs,
     );
-    assertSpawnCompletedWithoutSpawnError(proof, 'live release verify', liveReleaseVerifyTimeoutMs);
-    assertLiveReleaseVerifyProof(proof, 'live release verify', liveReleaseVerifyTimeoutMs);
+    assertSpawnCompletedWithoutSpawnError(proof, 'live release verify', liveProofInnerTimeoutMs);
+    assertLiveReleaseVerifyProof(proof, 'live release verify', liveProofInnerTimeoutMs);
     assert.equal(proof.status, 0, proof.stderr);
     assert.match(proof.stdout, /"ok": true/);
     assert.match(proof.stdout, /"sourceUrl": "http:\/\/127\.0\.0\.1:\d+"/);
@@ -547,10 +554,10 @@ maybeTest('production-shaped release verify command fails closed when remote dri
         REPRINT_PUSH_LAB_DRIFT_AFTER_SNAPSHOT: 'post-title',
         NODE_NO_WARNINGS: '1',
       },
-      liveProofSubprocessTimeoutMs,
+      liveProofInnerTimeoutMs,
     );
-    assertSpawnCompletedWithoutSpawnError(proof, 'drift release verify', liveProofSubprocessTimeoutMs);
-    assertLiveReleaseVerifyProof(proof, 'drift release verify', liveProofSubprocessTimeoutMs);
+    assertSpawnCompletedWithoutSpawnError(proof, 'drift release verify', liveProofInnerTimeoutMs);
+    assertLiveReleaseVerifyProof(proof, 'drift release verify', liveProofInnerTimeoutMs);
     assert.equal(proof.status, 1, proof.stderr);
     assert.match(proof.stdout, /"ok": false/);
     assert.match(proof.stdout, /"sourceUrl": "http:\/\/127\.0\.0\.1:\d+"/);
@@ -878,22 +885,48 @@ async function fetchWithTimeout(url, init = {}) {
 }
 
 async function waitForExit(child, timeoutMs) {
-  const deadline = Date.now() + timeoutMs;
-  while (Date.now() < deadline) {
-    if (child.exitCode !== null) {
-      return;
-    }
-    await new Promise((resolve) => setTimeout(resolve, 100));
+  if (child.exitCode !== null || child.signalCode !== null) {
+    return;
   }
-  child.kill('SIGKILL');
-  const forcedDeadline = Date.now() + 2_000;
-  while (Date.now() < forcedDeadline) {
-    if (child.exitCode !== null) {
-      return;
+
+  const waitForSignal = () =>
+    new Promise((resolve, reject) => {
+      const cleanup = () => {
+        clearTimeout(timeoutHandle);
+        child.off('exit', onExit);
+        child.off('close', onExit);
+      };
+
+      const onExit = () => {
+        cleanup();
+        resolve();
+      };
+
+      const timeoutHandle = setTimeout(() => {
+        cleanup();
+        reject(new Error(`Playground server did not exit within ${timeoutMs}ms`));
+      }, timeoutMs);
+
+      child.once('exit', onExit);
+      child.once('close', onExit);
+    });
+
+  try {
+    await waitForSignal();
+  } catch (error) {
+    const initialError = error instanceof Error ? error : new Error(String(error));
+    child.kill('SIGKILL');
+    try {
+      await Promise.race([
+        waitForSignal(),
+        new Promise((_, reject) => {
+          setTimeout(() => reject(new Error('Playground server did not exit after SIGKILL')), 2_000);
+        }),
+      ]);
+    } catch {
+      throw initialError;
     }
-    await new Promise((resolve) => setTimeout(resolve, 100));
   }
-  throw new Error(`Playground server did not exit after SIGKILL`);
 }
 
 async function stopPlaygroundChild(child) {
@@ -960,6 +993,9 @@ function stopParentProcesses(child, signal) {
       timeout: 2_000,
       killSignal: 'SIGKILL',
     }, `process cleanup ${command}`);
+    if (proof.error || proof.signal || proof.status === null) {
+      throw new Error(formatSpawnFailure(`process cleanup ${command} failed`, proof));
+    }
   }
 }
 
