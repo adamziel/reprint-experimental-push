@@ -65,12 +65,12 @@ Fresh visibility-lane heads moved again, but they still only refresh public stat
 
 - Since the last audit pass, the visible progress lanes advanced again:
 `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` ->
-`2e17cadd` and `origin/lane/cycle-20260525-mainwindows-2349/progress-followup`
--> `4ebd5ac0`. That changes the freshness surface, not the release gate.
+`196ae0b2` and `origin/lane/cycle-20260525-mainwindows-2349/progress-followup`
+-> `b8c25fd6`. That changes the freshness surface, not the release gate.
 - The current public-refresh branch heads remain:
 `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` ->
-`2e17cadd` and `origin/lane/cycle-20260525-mainwindows-2349/progress-followup`
--> `4ebd5ac0`.
+`196ae0b2` and `origin/lane/cycle-20260525-mainwindows-2349/progress-followup`
+-> `b8c25fd6`.
 - `origin/lane/reliable-executor` -> `9658b415`
 - `origin/lane/no-data-loss-invariants` -> `c55aab49`
 - `origin/lane/no-data-loss-recovery` -> `2af1ddda`
