@@ -23216,6 +23216,95 @@ test('blocks local term-relationship object references to a same-plan created po
   assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
 });
 
+test('blocks local term-relationship object references to a same-plan created post identity while preserving a matching independent delete and remote-only plugin removals', () => {
+  const resourceKey = 'row:["wp_term_relationships","object_id:7,term_taxonomy_id:5"]';
+  const targetResourceKey = 'row:["wp_posts","ID:7"]';
+  const matchingResourceKey = 'row:["wp_posts","ID:1"]';
+  const base = baseSite();
+  base.db.wp_terms = {
+    'term_id:2': { term_id: 2, name: 'Base term', slug: 'base-term' },
+  };
+  base.db.wp_term_taxonomy = {
+    'term_taxonomy_id:5': {
+      term_taxonomy_id: 5,
+      term_id: 2,
+      taxonomy: 'category',
+      description: 'base taxonomy',
+      parent: 0,
+    },
+  };
+  base.db.wp_term_relationships = {};
+
+  const local = baseSite();
+  local.db.wp_terms = JSON.parse(JSON.stringify(base.db.wp_terms));
+  delete local.db.wp_posts['ID:1'];
+  local.db.wp_posts['ID:7'] = {
+    ID: 7,
+    post_title: 'local-created relationship post',
+    post_content: 'local-created relationship body',
+    post_status: 'publish',
+  };
+  local.db.wp_term_taxonomy = JSON.parse(JSON.stringify(base.db.wp_term_taxonomy));
+  local.db.wp_term_relationships = {
+    'object_id:7,term_taxonomy_id:5': {
+      object_id: 7,
+      term_taxonomy_id: 5,
+      term_order: 1,
+      note: 'local relationship note',
+    },
+  };
+
+  const remote = baseSite();
+  remote.db.wp_terms = JSON.parse(JSON.stringify(base.db.wp_terms));
+  remote.db.wp_posts = JSON.parse(JSON.stringify(base.db.wp_posts));
+  delete remote.db.wp_posts['ID:1'];
+  remote.db.wp_term_taxonomy = JSON.parse(JSON.stringify(base.db.wp_term_taxonomy));
+  remote.db.wp_term_relationships = {};
+  delete remote.plugins.forms;
+  delete remote.files['wp-content/plugins/forms/forms.php'];
+
+  const plan = planFor(base, local, remote);
+  const evidence = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  const graphBlocker = plan.blockers.find((entry) => entry.resourceKey === targetResourceKey);
+  const relationshipBlocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  const reference = relationshipBlocker.references[0];
+  const matchingDelete = decisionFor(plan, matchingResourceKey);
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(decisionFor(plan, targetResourceKey), undefined);
+  assert.equal(evidence.class, 'stale-wordpress-graph-identity');
+  assert.equal(evidence.resourceKey, resourceKey);
+  assert.equal(evidence.resolutionPolicy, 'preserve-remote-wordpress-graph-and-stop');
+  assert.equal(graphBlocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(graphBlocker.resourceKey, targetResourceKey);
+  assert.equal(
+    graphBlocker.reason,
+    'WordPress graph mutation row:["wp_posts","ID:7"] is created in the same plan as a term relationship post target that depends on it, and identity rewriting is not yet supported.',
+  );
+  assert.equal(
+    relationshipBlocker.reason,
+    'WordPress graph mutation row:["wp_term_relationships","object_id:7,term_taxonomy_id:5"] references a term relationship post identity without proven identity mapping or reference rewriting.',
+  );
+  assert.equal(reference.relationshipKey, 'wp_term_relationships.object_id');
+  assert.equal(reference.relationshipType, 'term-relationship-object');
+  assert.equal(reference.sourceResourceKey, resourceKey);
+  assert.equal(reference.targetResourceKey, targetResourceKey);
+  assert.equal(reference.targetChange.remote.state, 'absent');
+  assert.equal(reference.targetRemoteHash.length, 64);
+  assert.equal(matchingDelete.decision, 'already-in-sync');
+  assert.equal(matchingDelete.change.localChange, 'delete');
+  assert.equal(matchingDelete.change.remoteChange, 'delete');
+  assert.equal(planJson.includes('local-created relationship post'), false);
+  assert.equal(planJson.includes('local-created relationship body'), false);
+  assert.equal(planJson.includes('local relationship note'), false);
+  assert.equal(Object.hasOwn(remote.plugins, 'forms'), false);
+  assert.equal(Object.hasOwn(remote.files, 'wp-content/plugins/forms/forms.php'), false);
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
+});
+
 test('blocks local term-relationship object references to a same-plan created revision identity while preserving remote-only plugin drift', () => {
   const resourceKey = 'row:["wp_term_relationships","object_id:7,term_taxonomy_id:5"]';
   const targetResourceKey = 'row:["wp_posts","ID:7"]';
