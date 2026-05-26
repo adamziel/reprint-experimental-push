@@ -465,6 +465,20 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
     ),
     'receipt-cursor planning can reuse aligned queue budget and memory ceiling without widening recovery evidence',
   );
+  assert.ok(
+    model.rejectedFastPaths.some(
+      (fastPath) =>
+        fastPath.id === 'compressed-remote-index-and-cached-chunk-hashes-skips-large-upload-window-sizing-after-pause' &&
+        fastPath.rejectedGate === 'recovery' &&
+        fastPath.violates.includes('remote-index-planning-only') &&
+        fastPath.violates.includes('compression') &&
+        fastPath.violates.includes('file-hashing') &&
+        fastPath.violates.includes('chunk-receipts') &&
+        fastPath.violates.includes('backpressure') &&
+        fastPath.violates.includes('durable-progress'),
+    ),
+    'compressed remote-index planning and cached chunk hashes stay rejected after a pause',
+  );
   assert.equal(
     model.safeFastPaths.find(
       (fastPath) =>
