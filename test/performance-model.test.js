@@ -154,6 +154,17 @@ test('benchmark model covers large uploads and plugin installs', () => {
     model.safeFastPaths.some(
       (fastPath) =>
         fastPath.area === 'backpressure' &&
+        fastPath.allowedShortcut === 'reuse-receipt-cursor-and-staging-disk-headroom-to-size-bounded-journal-batches-after-pause' &&
+        fastPath.guardrails.includes('receipt-cursor-remains-advisory') &&
+        fastPath.guardrails.includes('staging-disk-headroom-stays-within-plan-reserve') &&
+        fastPath.gateProofs.recovery.includes('staging-disk headroom, and journal records still classify pause, retry, or crash'),
+    ),
+    'receipt cursor and staging-disk headroom can size journal batches after a pause without weakening recovery evidence',
+  );
+  assert.ok(
+    model.safeFastPaths.some(
+      (fastPath) =>
+        fastPath.area === 'backpressure' &&
         fastPath.allowedShortcut === 'compress-pause-footprint-summaries-to-size-bounded-replay-windows' &&
         fastPath.guardrails.includes('pause-footprint-summary-stays-planning-evidence-only') &&
         fastPath.gateProofs.recovery.includes('compressed summary, cached receipt cursor, journal lag, and journal records'),

@@ -1699,6 +1699,26 @@ export const SAFE_FAST_PATHS = Object.freeze([
   },
   {
     area: 'backpressure',
+    reduces: ['memory-pressure', 'queue-drain-time', 'fsync-count'],
+    allowedShortcut: 'reuse-receipt-cursor-and-staging-disk-headroom-to-size-bounded-journal-batches-after-pause',
+    guardrails: [
+      'receipt-cursor-remains-advisory',
+      'staging-disk-headroom-stays-within-plan-reserve',
+    ],
+    gateProofs: {
+      skip: 'a receipt cursor can size the next bounded journal batch after a pause when staging-disk headroom still fits the plan reserve',
+      live: 'the underlying receipt-producing write still rechecks the same live preconditions before visibility changes',
+      group: 'journal batching only shortens flush timing inside the same atomic-group boundary and never merges owners',
+      recovery: 'the receipt cursor, staging-disk headroom, and journal records still classify pause, retry, or crash without guessing which receipts survived',
+    },
+    visibilityBoundary: 'kind-scoped-memory-and-journal-planning-only',
+    failureEvidence: 'receipt cursor plus staging-disk headroom and journal records',
+    bypassesLivePreconditions: false,
+    splitsAtomicGroup: false,
+    publishesStagedDataEarly: false,
+  },
+  {
+    area: 'backpressure',
     reduces: ['memory-pressure', 'queue-drain-time', 'duplicate-replay-work'],
     allowedShortcut: 'compress-pause-footprint-summaries-to-size-bounded-replay-windows',
     guardrails: [
