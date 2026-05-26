@@ -6,7 +6,7 @@ linked implementation artifacts.
 
 ## 2026-05-26 - Current Supervisor Snapshot
 
-- Status: `0b8026f3b0db9b2207e51c7bac65d3b4ec053f30` is the live reliable head and the latest
+- Status: `6beb5ed7c74509094d831bc4247541c4b684feae` is the live reliable head and the latest
   support-side release-verifier evidence.
 - Trend: public status needed a freshness refresh; the live head advanced again,
   but the gate posture remains conservative.
@@ -18,7 +18,7 @@ linked implementation artifacts.
 - Public page: [progress.html](../progress.html) shows a visible last-updated
   date and keeps the supervisor view short.
 - Feedback-lane verification after checking the live head: `git ls-remote`
-  now reports `0b8026f3b0db9b2207e51c7bac65d3b4ec053f30` for
+  now reports `6beb5ed7c74509094d831bc4247541c4b684feae` for
   `lane/reliable-executor`, while the public page
   needed a freshness update.
 
