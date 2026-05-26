@@ -17786,6 +17786,73 @@ test('allows an existing term taxonomy row to retarget its term reference to a s
   assert.equal(result.site.db.wp_posts['ID:21'].post_type, 'wp_navigation');
 });
 
+test('allows an existing term taxonomy row to retarget its term reference to a same-plan term create even when an unrelated remote revision post exists', () => {
+  const termResourceKey = 'row:["wp_terms","term_id:7"]';
+  const taxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:9"]';
+  const base = baseSite();
+  const local = baseSite();
+  const remote = baseSite();
+  base.db.wp_term_taxonomy = {
+    'term_taxonomy_id:9': {
+      term_taxonomy_id: 9,
+      term_id: 0,
+      taxonomy: 'category',
+      description: 'Base taxonomy description',
+      parent: 0,
+      count: 0,
+    },
+  };
+  remote.db.wp_term_taxonomy = {
+    'term_taxonomy_id:9': {
+      ...base.db.wp_term_taxonomy['term_taxonomy_id:9'],
+    },
+  };
+  remote.db.wp_posts = {
+    'ID:21': {
+      ID: 21,
+      post_title: 'Remote revision noise',
+      post_content: 'remote-revision-noise-body',
+      post_status: 'inherit',
+      post_type: 'revision',
+    },
+  };
+  local.db.wp_terms = {
+    'term_id:7': {
+      term_id: 7,
+      name: 'Local existing taxonomy term',
+      slug: 'local-existing-taxonomy-term',
+    },
+  };
+  local.db.wp_term_taxonomy = {
+    'term_taxonomy_id:9': {
+      ...base.db.wp_term_taxonomy['term_taxonomy_id:9'],
+      term_id: 7,
+    },
+  };
+
+  const plan = planFor(base, local, remote);
+  const termMutation = mutationFor(plan, termResourceKey);
+  const taxonomyMutation = mutationFor(plan, taxonomyResourceKey);
+  const reference = taxonomyMutation.wordpressGraphReferences.find((entry) => entry.relationshipType === 'term-taxonomy-term');
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.blockers, 0);
+  assert.equal(termMutation.changeKind, 'create');
+  assert.equal(taxonomyMutation.changeKind, 'update');
+  assert.deepEqual(taxonomyMutation.dependsOnMutationIds, [termMutation.id]);
+  assert.equal(reference.resolutionPolicy, 'same-plan-local-create');
+  assert.equal(reference.relationshipKey, 'wp_term_taxonomy.term_id');
+  assert.equal(reference.relationshipType, 'term-taxonomy-term');
+  assert.equal(reference.targetResourceKey, termResourceKey);
+  assert.equal(JSON.stringify(reference).includes('Local existing taxonomy term'), false);
+  assert.equal(JSON.stringify(reference).includes('remote-revision-noise-body'), false);
+
+  const result = applyPlan(remote, plan);
+  assert.equal(result.site.db.wp_terms['term_id:7'].name, 'Local existing taxonomy term');
+  assert.equal(result.site.db.wp_term_taxonomy['term_taxonomy_id:9'].term_id, 7);
+  assert.equal(result.site.db.wp_posts['ID:21'].post_type, 'revision');
+});
+
 test('blocks an existing term taxonomy row when its same-plan term target is claimed by a nav menu taxonomy', () => {
   const termResourceKey = 'row:["wp_terms","term_id:7"]';
   const navMenuTaxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:10"]';
