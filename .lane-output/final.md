@@ -1,8 +1,9 @@
 Refreshed the objective audit for the newest remote heads, including
 `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` at
-`b525d10a`, `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor`
-at `e383cb94`, and
-`origin/lane/cycle-20260525-mainwindows-2349/progress-followup` at `43a3ba1d`.
+`3bba3e0d`, `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor`
+at `be61bb58`, and
+`origin/lane/cycle-20260525-mainwindows-2349/progress-followup` at
+`a871417a`.
 The verdict stays at `0/4`; the new evidence is still freshness or fail-closed
 coverage, not live-source production proof.
 
