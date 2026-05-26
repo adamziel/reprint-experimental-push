@@ -86,6 +86,7 @@ test('plugin-driver proof summary reports full packaged guard coverage', () => {
   assert.equal(summary.skippedScenarioCount, 0);
   assert.equal(summary.checkedBundleCount, 4);
   assert.equal(summary.passedBundleCount, 4);
+  assert.equal(summary.failedBundleCount, 0);
   assert.equal(summary.skippedBundleCount, 0);
   assert.equal(summary.requestedScenarios, 'all');
   assert.equal(summary.requestedBundles, 'all');
@@ -96,6 +97,7 @@ test('plugin-driver proof summary reports full packaged guard coverage', () => {
     'driverRegistrationShapeGuards',
     'driverVerifierGuards',
   ]);
+  assert.deepEqual(summary.failedBundles, []);
   assert.equal(summary.requestedBundlesSatisfied, true);
   assert.equal(summary.selectedScenarios, 'all');
   assert.equal(summary.receiptGuards.revokedCredential, 'reprint_push_lab_auth_required');
@@ -216,11 +218,13 @@ test('plugin-driver proof summary marks unselected scenarios as skipped', () => 
   assert.equal(summary.skippedScenarioCount, 2);
   assert.equal(summary.checkedBundleCount, 1);
   assert.equal(summary.passedBundleCount, 1);
+  assert.equal(summary.failedBundleCount, 0);
   assert.equal(summary.skippedBundleCount, 3);
   assert.deepEqual(summary.requestedScenarios, ['driver-verifier-guards']);
   assert.deepEqual(summary.requestedBundles, ['driverVerifierGuards']);
   assert.deepEqual(summary.checkedBundles, ['driverVerifierGuards']);
   assert.deepEqual(summary.passedBundles, ['driverVerifierGuards']);
+  assert.deepEqual(summary.failedBundles, []);
   assert.equal(summary.requestedBundlesSatisfied, true);
   assert.deepEqual(summary.selectedScenarios, [
     'driver-duplicate-name-guard',
@@ -326,9 +330,11 @@ test('plugin-driver proof summary fails requested bundle verdict when a requeste
   assert.equal(summary.ok, false);
   assert.equal(summary.checkedBundleCount, 1);
   assert.equal(summary.passedBundleCount, 0);
+  assert.equal(summary.failedBundleCount, 1);
   assert.equal(summary.skippedBundleCount, 3);
   assert.deepEqual(summary.checkedBundles, ['driverVerifierGuards']);
   assert.deepEqual(summary.passedBundles, []);
+  assert.deepEqual(summary.failedBundles, ['driverVerifierGuards']);
   assert.equal(summary.requestedBundlesSatisfied, false);
   assert.equal(summary.bundles.driverVerifierGuards, 'missing');
   assert.equal(summary.scenarios.driverMissingValidateGuard, 'missing');
