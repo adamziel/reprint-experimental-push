@@ -1147,6 +1147,18 @@ function wordpressGraphIdentitySupport({
     }
   }
 
+  if (resource.table === 'wp_usermeta') {
+    const ownerId = normalizePositiveInteger(localValue.user_id);
+    if (ownerId != null) {
+      return {
+        supported: false,
+        className: 'unsupported-wordpress-graph-surface',
+        surface: 'users',
+        reason: `WordPress graph mutation ${resource.key} owned by a user is outside the supported release-candidate slice and must stay blocked.`,
+      };
+    }
+  }
+
   if (resource.table === 'wp_termmeta') {
     const ownerId = normalizePositiveInteger(localValue.term_id);
     if (ownerId != null) {
@@ -1929,6 +1941,9 @@ function wordpressGraphUnsupportedSurface(resource, value) {
     if (taxonomy === 'nav_menu') {
       return 'nav_menu';
     }
+  }
+  if (resource.table === 'wp_usermeta') {
+    return 'users';
   }
   if (UNSUPPORTED_WORDPRESS_GRAPH_TABLE_SUFFIXES.has(resource.table.replace(/^wp_/, ''))) {
     return resource.table.replace(/^wp_/, '');
