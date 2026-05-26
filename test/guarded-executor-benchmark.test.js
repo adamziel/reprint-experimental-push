@@ -361,11 +361,16 @@ test('guarded benchmark keeps rollout capability summary blocked when row-batch 
       blockerRefs: [
         'production-atomic-group-commit-not-measured',
         'production-atomic-group-commit-visible-without-measurement',
+        'production-atomic-group-metadata-visible-without-measurement',
+        'production-atomic-group-metadata-visible-without-storage-receipts-measurement',
         'production-storage-receipts-not-measured',
         'production-storage-receipts-visible-without-measurement',
+        'production-storage-receipts-visible-and-atomic-commit-visible-without-measurement',
+        'production-storage-receipts-visible-and-atomic-commit-visible-without-atomic-commit-measurement',
         'production-row-batch-executor-not-measured',
         'production-row-batch-executor-measured-not-proven',
         'production-row-batch-executor-visible-without-measurement',
+        'production-row-batch-executor-visible-without-storage-receipts-measurement',
       ],
     },
   ]);
@@ -2474,6 +2479,45 @@ test('guarded benchmark keeps row-batch rollout summary pinned to atomic-group m
         'production-storage-receipts-visible-and-atomic-commit-visible-without-metadata',
         'production-storage-receipts-and-row-batch-visible-without-atomic-group-metadata',
         'production-row-batch-executor-without-atomic-group-metadata',
+      ],
+    },
+  );
+});
+
+test('guarded benchmark keeps row-batch rollout summary pinned to hidden atomic-commit blockers', () => {
+  const report = smallBenchmark();
+  const tampered = clone(report);
+
+  tampered.executorCapabilities.productionAtomicCommit = 'production-atomic-group-commit';
+  tampered.executorCapabilities.fileReceipts = 'production-storage-receipts';
+  tampered.executorCapabilities.rowApply = 'production-batched-compare-and-swap';
+  tampered.evidence.atomicGroup.productionAtomicCommitMeasured = true;
+  tampered.evidence.atomicGroup.productionAtomicCommitVisible = false;
+  tampered.evidence.atomicGroup.productionAtomicGroupMetadataVisible = true;
+  tampered.evidence.atomicGroup.productionStorageReceiptsMeasured = true;
+  tampered.evidence.atomicGroup.productionStorageReceiptsVisible = true;
+  tampered.evidence.atomicGroup.productionRowBatchExecutorMeasured = true;
+  tampered.evidence.atomicGroup.productionRowBatchExecutorVisible = true;
+  tampered.evidence.parallelism.parallelismLimitsMeasured = true;
+  tampered.evidence.parallelism.parallelismLimitsVisible = true;
+
+  const details = productionThroughputDetails(tampered);
+
+  assert.deepEqual(
+    details.productionCapabilityRolloutSummary.find(
+      (entry) => entry.surface === 'row-batch-concurrency',
+    ),
+    {
+      surface: 'row-batch-concurrency',
+      status: 'blocked',
+      measured: true,
+      visible: false,
+      blockerRefs: [
+        'production-atomic-group-commit-not-visible',
+        'production-atomic-group-metadata-visible-without-atomic-commit',
+        'production-storage-receipts-without-atomic-commit',
+        'production-row-batch-executor-visible-and-storage-receipts-visible-without-atomic-commit',
+        'production-row-batch-executor-without-atomic-commit',
       ],
     },
   );
