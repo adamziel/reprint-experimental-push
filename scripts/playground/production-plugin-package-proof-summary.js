@@ -123,6 +123,9 @@ export function buildProductionPluginPackageProofSummary(
   const requestedConcreteScenarios = normalizedRequestedScenarios === null
     ? 'all'
     : normalizedRequestedScenarios.filter((scenario) => !Object.hasOwn(scenarioGroups, scenario));
+  const requestedConcreteScenarioSet = requestedConcreteScenarios === 'all'
+    ? null
+    : new Set(requestedConcreteScenarios);
   const scenarioResults = {};
   const bundleResults = {};
   const checkedBundles = [];
@@ -131,6 +134,8 @@ export function buildProductionPluginPackageProofSummary(
   const checkedScenarios = [];
   const passedScenarios = [];
   const failedScenarios = [];
+  const passedRequestedConcreteScenarios = [];
+  const failedRequestedConcreteScenarios = [];
   let checkedBundleCount = 0;
   let passedBundleCount = 0;
   let failedBundleCount = 0;
@@ -153,9 +158,15 @@ export function buildProductionPluginPackageProofSummary(
       if (passed) {
         passedScenarioCount += 1;
         passedScenarios.push(definition.scenario);
+        if (requestedConcreteScenarioSet?.has(definition.scenario)) {
+          passedRequestedConcreteScenarios.push(definition.scenario);
+        }
       } else {
         failedScenarioCount += 1;
         failedScenarios.push(definition.scenario);
+        if (requestedConcreteScenarioSet?.has(definition.scenario)) {
+          failedRequestedConcreteScenarios.push(definition.scenario);
+        }
       }
     } else {
       skippedScenarioCount += 1;
@@ -200,6 +211,12 @@ export function buildProductionPluginPackageProofSummary(
     requestedScenarios: normalizedRequestedScenarios === null ? 'all' : normalizedRequestedScenarios.slice(),
     requestedBundles,
     requestedConcreteScenarios,
+    passedRequestedConcreteScenarios: requestedConcreteScenarios === 'all'
+      ? 'all'
+      : passedRequestedConcreteScenarios.sort(),
+    failedRequestedConcreteScenarios: requestedConcreteScenarios === 'all'
+      ? 'all'
+      : failedRequestedConcreteScenarios.sort(),
     checkedScenarios: normalizedRequestedScenarios === null && selectedScenarios === null ? 'all' : checkedScenarios.sort(),
     passedScenarios: passedScenarios.sort(),
     failedScenarios: failedScenarios.sort(),
@@ -208,6 +225,9 @@ export function buildProductionPluginPackageProofSummary(
     failedBundles: failedBundles.sort(),
     requestedScenariosSatisfied: checkedScenarioCount > 0 && checkedScenarioCount === passedScenarioCount,
     requestedBundlesSatisfied: checkedBundleCount > 0 && checkedBundleCount === passedBundleCount,
+    requestedConcreteScenariosSatisfied: requestedConcreteScenarios === 'all'
+      ? checkedScenarioCount > 0 && checkedScenarioCount === passedScenarioCount
+      : failedRequestedConcreteScenarios.length === 0,
     selectedScenarios: selectedScenarios === null ? 'all' : Array.from(selectedScenarios).sort(),
     package: {
       plugin: summary?.package?.plugin ?? null,
