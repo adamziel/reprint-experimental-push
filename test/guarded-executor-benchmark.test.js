@@ -6013,10 +6013,65 @@ test('guarded benchmark keeps pause-footprint visibility false when queue-budget
   const details = productionThroughputDetails(mutated);
   const blockers = productionThroughputBlockers(mutated);
 
-  assert.equal(details.receiptCursorPauseFootprintComplete, true);
+  assert.equal(details.receiptCursorPauseFootprintComplete, false);
   assert.equal(details.receiptCursorPauseFootprintVisible, false);
+  assert.equal(details.queueHeadroomVisibleAndMeasured, false);
+  assert.equal(details.queueHeadroomVisibleAndMeasuredAndAligned, false);
+  assert.equal(details.queueHeadroomVisibleAndQueueSlackMeasured, false);
+  assert.equal(details.queueHeadroomVisibleAndQueueSlackVisibleAndMeasured, false);
+  assert.equal(details.queueHeadroomVisibleAndMemoryHeadroomVisible, false);
+  assert.equal(details.queueBudgetVisibleAndMemoryCeilingVisibleAndMeasured, false);
+  assert.equal(details.queueBudgetVisibleAndQueueHeadroomMeasured, false);
+  assert.equal(details.queueBudgetVisibleAndQueueHeadroomVisibleAndMeasured, false);
+  assert.equal(details.queueBudgetVisibleAndQueueHeadroomVisible, false);
+  assert.equal(details.queueBudgetVisibleAndMemoryCeilingVisible, false);
+  assert.equal(details.receiptCursorMemoryCeilingVisibleAndQueueBudgetVisible, false);
+  assert.equal(details.receiptCursorQueueSlackVisibleAndMemoryHeadroomVisible, false);
+  assert.equal(details.receiptCursorMemoryHeadroomVisibleAndQueueBudgetVisible, false);
+  assert.equal(details.receiptCursorMemoryCeilingVisibleAndQueueHeadroomVisible, false);
   assert.equal(details.backpressureConsistency.queueBudgetVisible, false);
+  assert.equal(details.backpressureConsistency.queueHeadroomVisibleAndMeasured, false);
+  assert.equal(details.backpressureConsistency.queueHeadroomVisibleAndMeasuredAndAligned, false);
+  assert.equal(details.backpressureConsistency.queueHeadroomVisibleAndQueueSlackMeasured, false);
+  assert.equal(
+    details.backpressureConsistency.queueHeadroomVisibleAndQueueSlackVisibleAndMeasured,
+    false,
+  );
+  assert.equal(
+    details.backpressureConsistency.queueHeadroomVisibleAndMemoryHeadroomVisible,
+    false,
+  );
+  assert.equal(
+    details.backpressureConsistency.queueBudgetVisibleAndMemoryCeilingVisibleAndMeasured,
+    false,
+  );
+  assert.equal(details.backpressureConsistency.queueBudgetVisibleAndQueueHeadroomMeasured, false);
+  assert.equal(
+    details.backpressureConsistency.queueBudgetVisibleAndQueueHeadroomVisibleAndMeasured,
+    false,
+  );
+  assert.equal(details.backpressureConsistency.queueBudgetVisibleAndQueueHeadroomVisible, false);
+  assert.equal(details.backpressureConsistency.queueBudgetVisibleAndMemoryCeilingVisible, false);
+  assert.equal(
+    details.backpressureConsistency.receiptCursorMemoryCeilingVisibleAndQueueBudgetVisible,
+    false,
+  );
+  assert.equal(
+    details.backpressureConsistency.receiptCursorQueueSlackVisibleAndMemoryHeadroomVisible,
+    false,
+  );
+  assert.equal(
+    details.backpressureConsistency.receiptCursorMemoryHeadroomVisibleAndQueueBudgetVisible,
+    false,
+  );
+  assert.equal(
+    details.backpressureConsistency.receiptCursorMemoryCeilingVisibleAndQueueHeadroomVisible,
+    false,
+  );
+  assert.equal(details.backpressureConsistency.receiptCursorPauseFootprintComplete, false);
   assert.ok(blockers.includes('memory-ceiling-visible-without-queue-budget-visibility'));
+  assert.ok(blockers.includes('queue-budget-not-visible'));
+  assert.ok(blockers.includes('queue-headroom-visible-without-queue-budget-visibility'));
 });
 
 test('guarded benchmark keeps pause-footprint visibility false when receipt-cursor memory-headroom visibility is hidden', () => {
