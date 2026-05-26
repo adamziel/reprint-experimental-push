@@ -716,6 +716,12 @@ export function productionThroughputBlockers(report) {
     blockers.push('production-atomic-group-metadata-not-visible');
   }
   if (
+    report.evidence.atomicGroup.productionAtomicGroupMetadataVisible === true
+    && report.evidence.atomicGroup.productionAtomicCommitMeasured !== true
+  ) {
+    blockers.push('production-atomic-group-metadata-visible-without-measurement');
+  }
+  if (
     report.results?.successInspection?.claim?.status != null
     && !['none', 'active', 'advanced', 'blocked'].includes(report.results.successInspection.claim.status)
   ) {

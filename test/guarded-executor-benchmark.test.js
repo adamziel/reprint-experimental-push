@@ -150,6 +150,19 @@ test('guarded benchmark blocks forged row-batch visibility without a measurement
   assert.equal(blockers.includes('production-row-batch-executor-not-visible'), false);
 });
 
+test('guarded benchmark blocks forged atomic-group metadata visibility without a measurement', () => {
+  const report = smallBenchmark();
+  const tampered = clone(report);
+
+  tampered.evidence.atomicGroup.productionAtomicCommitMeasured = false;
+  tampered.evidence.atomicGroup.productionAtomicGroupMetadataVisible = true;
+
+  const blockers = productionThroughputBlockers(tampered);
+
+  assert.equal(blockers.includes('production-atomic-group-metadata-visible-without-measurement'), true);
+  assert.equal(blockers.includes('production-atomic-group-metadata-not-visible'), false);
+});
+
 test('guarded benchmark refuses production throughput claims until production gaps are measured', () => {
   const report = smallBenchmark();
 
