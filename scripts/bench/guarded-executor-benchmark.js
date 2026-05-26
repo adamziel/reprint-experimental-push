@@ -740,9 +740,7 @@ export function productionThroughputDetails(report) {
   const receiptCursorMemoryCeilingBytes = report.resourceLimits?.memoryCeilingBytes ?? null;
   const receiptCursorQueueBudgetBytes = report.evidence.backpressure?.queueBudgetBytes ?? null;
   const receiptCursorMemoryCeilingVisible =
-    Number.isFinite(receiptCursorMemoryCeilingBytes)
-    && Number.isFinite(receiptCursorQueueBudgetBytes)
-    && receiptCursorMemoryCeilingBytes === receiptCursorQueueBudgetBytes;
+    report.evidence.backpressure?.receiptCursorMemoryCeilingVisible === true;
   const receiptCursorQueueHeadroomBytes = report.evidence.backpressure?.queueHeadroomBytes ?? null;
   const receiptCursorQueueSlackBytes = report.evidence.backpressure?.receiptCursorQueueSlackBytes ?? null;
   const receiptCursorQueueHeadroomPositive =

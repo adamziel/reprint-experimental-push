@@ -1689,6 +1689,7 @@ test('guarded benchmark fails closed when the buffered queue budget drifts from 
   assert.equal(report.evidence.backpressure.queueBudgetBytes, 16 * 1024 * 1024);
   assert.equal(report.evidence.backpressure.queueBudgetMatchesResourceCeiling, false);
   assert.equal(report.evidence.backpressure.receiptCursorMemoryCeilingVisible, false);
+  assert.equal(report.claims.productionThroughputDetails.backpressureConsistency.receiptCursorMemoryCeilingVisible, false);
   assert.ok(
     report.claims.productionThroughput.blockers.includes('queue-budget-does-not-match-resource-ceiling'),
   );
