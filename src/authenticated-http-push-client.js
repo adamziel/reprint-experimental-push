@@ -385,6 +385,19 @@ export async function runAuthenticatedHttpPush({
     };
     return summary;
   }
+  const dryRunCleanupEvidenceDrift = requireProductionAuthSession
+    ? resolveProductionAuthSessionCleanupEvidenceDrift(dryRun)
+    : null;
+  if (dryRunCleanupEvidenceDrift) {
+    summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
+    summary.authSession = {
+      required: 'cleanup evidence',
+      observed: dryRunCleanupEvidenceDrift,
+      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+    };
+    setProductionAuthSessionBoundary(summary);
+    return summary;
+  }
   if (requireProductionAuthSession && hasMissingProductionAuthSessionIdentity(dryRun)) {
     summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
     summary.authSession = {
@@ -541,6 +554,19 @@ export async function runAuthenticatedHttpPush({
     };
     return summary;
   }
+  const applyCleanupEvidenceDrift = requireProductionAuthSession
+    ? resolveProductionAuthSessionCleanupEvidenceDrift(apply)
+    : null;
+  if (applyCleanupEvidenceDrift) {
+    summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
+    summary.authSession = {
+      required: 'cleanup evidence',
+      observed: applyCleanupEvidenceDrift,
+      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+    };
+    setProductionAuthSessionBoundary(summary);
+    return summary;
+  }
   if (requireProductionAuthSession && hasMissingProductionAuthSessionIdentity(apply)) {
     summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
     summary.authSession = {
@@ -673,6 +699,19 @@ export async function runAuthenticatedHttpPush({
       verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
       authSession: summary.authSession,
     };
+    return summary;
+  }
+  const recoveryInspectCleanupEvidenceDrift = requireProductionAuthSession
+    ? resolveProductionAuthSessionCleanupEvidenceDrift(recoveryInspect)
+    : null;
+  if (recoveryInspectCleanupEvidenceDrift) {
+    summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
+    summary.authSession = {
+      required: 'cleanup evidence',
+      observed: recoveryInspectCleanupEvidenceDrift,
+      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+    };
+    setProductionAuthSessionBoundary(summary);
     return summary;
   }
   if (requireProductionAuthSession && hasMissingProductionAuthSessionIdentity(recoveryInspect)) {
@@ -850,6 +889,19 @@ export async function runAuthenticatedHttpPush({
     };
     return summary;
   }
+  const replayCleanupEvidenceDrift = requireProductionAuthSession
+    ? resolveProductionAuthSessionCleanupEvidenceDrift(replay)
+    : null;
+  if (replayCleanupEvidenceDrift) {
+    summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
+    summary.authSession = {
+      required: 'cleanup evidence',
+      observed: replayCleanupEvidenceDrift,
+      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+    };
+    setProductionAuthSessionBoundary(summary);
+    return summary;
+  }
   if (requireProductionAuthSession && hasMissingProductionAuthSessionIdentity(replay)) {
     summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
     summary.authSession = {
@@ -995,6 +1047,19 @@ export async function runAuthenticatedHttpPush({
       verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
       authSession: summary.authSession,
     };
+    return summary;
+  }
+  const dbJournalCleanupEvidenceDrift = requireProductionAuthSession
+    ? resolveProductionAuthSessionCleanupEvidenceDrift(dbJournal)
+    : null;
+  if (dbJournalCleanupEvidenceDrift) {
+    summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
+    summary.authSession = {
+      required: 'cleanup evidence',
+      observed: dbJournalCleanupEvidenceDrift,
+      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+    };
+    setProductionAuthSessionBoundary(summary);
     return summary;
   }
   if (requireProductionAuthSession && hasMissingProductionAuthSessionIdentity(dbJournal)) {
