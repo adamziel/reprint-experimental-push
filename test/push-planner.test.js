@@ -20378,6 +20378,7 @@ test('accepted post-failure recovery states are old remote, fully updated remote
   assert.equal(
     isAcceptableRecoveryState({
       status: 'old-remote',
+      reason: 'Injected failure before staging any mutation.',
       artifacts: { journal: { status: 'opened' } },
     }),
     true,
@@ -20385,6 +20386,7 @@ test('accepted post-failure recovery states are old remote, fully updated remote
   assert.equal(
     isAcceptableRecoveryState({
       status: 'fully-updated-remote',
+      reason: 'All planned mutations were committed.',
       artifacts: { journal: { status: 'completed' } },
     }),
     true,
@@ -20392,6 +20394,8 @@ test('accepted post-failure recovery states are old remote, fully updated remote
   assert.equal(
     isAcceptableRecoveryState({
       status: 'blocked-recovery',
+      reason: 'Journaled resources drifted outside the before/after recovery envelope.',
+      driftedResources: ['row:["wp_posts","ID:1"]'],
       artifacts: {
         journal: { status: 'completed' },
         remote: { files: {} },
@@ -20402,6 +20406,8 @@ test('accepted post-failure recovery states are old remote, fully updated remote
   assert.equal(
     isAcceptableRecoveryState({
       status: 'blocked-recovery',
+      reason: 'Journaled resources drifted outside the before/after recovery envelope.',
+      driftedResources: ['row:["wp_posts","ID:1"]'],
       artifacts: {
         journal: { status: 'completed', planId: 'plan-1' },
         remote: { files: {} },
@@ -20412,6 +20418,8 @@ test('accepted post-failure recovery states are old remote, fully updated remote
   assert.equal(
     isAcceptableRecoveryState({
       status: 'blocked-recovery',
+      reason: 'Journaled resources drifted outside the before/after recovery envelope.',
+      driftedResources: ['row:["wp_posts","ID:1"]'],
       artifacts: {
         journal: { status: 'completed' },
         remote: null,
@@ -20422,6 +20430,8 @@ test('accepted post-failure recovery states are old remote, fully updated remote
   assert.equal(
     isAcceptableRecoveryState({
       status: 'blocked-recovery',
+      reason: 'Journaled resources drifted outside the before/after recovery envelope.',
+      driftedResources: ['row:["wp_posts","ID:1"]'],
       artifacts: { journal: { status: 'completed' } },
     }),
     false,
@@ -20429,6 +20439,7 @@ test('accepted post-failure recovery states are old remote, fully updated remote
   assert.equal(
     isAcceptableRecoveryState({
       status: 'partially-applied',
+      reason: 'Journaled resources drifted outside the before/after recovery envelope.',
       artifacts: { journal: { status: 'staged' } },
     }),
     false,
@@ -20448,6 +20459,15 @@ test('accepted post-failure recovery states are old remote, fully updated remote
     },
   });
   assert.equal(isAcceptableRecoveryState(inheritedArtifacts), false);
+
+  const inheritedRemoteArtifact = {
+    status: 'fully-updated-remote',
+    artifacts: { journal: { status: 'completed' } },
+  };
+  Object.setPrototypeOf(inheritedRemoteArtifact.artifacts, {
+    remote: { files: {} },
+  });
+  assert.equal(isAcceptableRecoveryState(inheritedRemoteArtifact), false);
 });
 
 test('production durable journal claims fail closed without a restart-readable writer', () => {

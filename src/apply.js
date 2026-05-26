@@ -51,7 +51,7 @@ export function isAcceptableRecoveryState(recoveryState) {
       && isStrictPlainObject(recoveryState.artifacts)
       && Object.hasOwn(recoveryState.artifacts, 'journal')
       && isStrictPlainObject(recoveryState.artifacts.journal)
-      && !Object.hasOwn(recoveryState.artifacts, 'remote'),
+      && !('remote' in recoveryState.artifacts),
     );
   }
 
