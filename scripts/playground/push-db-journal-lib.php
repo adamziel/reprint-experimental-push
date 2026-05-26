@@ -606,6 +606,51 @@ function reprint_push_lab_db_journal_summary(int $limit = 20, bool $checked_surf
             $summary['latestRows'],
             $summary['eventSummaries']
         );
+        $latest_claim_row = $wpdb->get_row(
+            "SELECT * FROM {$quoted_table} WHERE claim_key_hash IS NOT NULL AND claim_key_hash <> '' ORDER BY id DESC LIMIT 1",
+            ARRAY_A
+        );
+        if (is_array($latest_claim_row)) {
+            $latest_claim = reprint_push_lab_db_journal_public_row($latest_claim_row);
+            $latest_abandoned = null;
+            $previous_claim = null;
+            if ((string) ($latest_claim['event'] ?? '') === 'stale-claim-retry-started') {
+                $latest_abandoned_row = $wpdb->get_row(
+                    $wpdb->prepare(
+                        "SELECT * FROM {$quoted_table}
+                         WHERE event = 'stale-claim-abandoned'
+                           AND idempotency_key_hash = %s
+                           AND request_hash = %s
+                           AND id < %d
+                         ORDER BY id DESC
+                         LIMIT 1",
+                        (string) ($latest_claim_row['idempotency_key_hash'] ?? ''),
+                        (string) ($latest_claim_row['request_hash'] ?? ''),
+                        (int) ($latest_claim_row['id'] ?? 0)
+                    ),
+                    ARRAY_A
+                );
+                if (is_array($latest_abandoned_row)) {
+                    $latest_abandoned = reprint_push_lab_db_journal_public_row($latest_abandoned_row);
+                    $previous_claim_sequence = reprint_push_lab_db_journal_cursor_sequence(
+                        $latest_abandoned['resourceHashEvidence']['claimCursor'] ?? null
+                    );
+                    if (is_int($previous_claim_sequence)) {
+                        $previous_claim = reprint_push_lab_db_journal_row_by_id($previous_claim_sequence);
+                    }
+                }
+            }
+
+            $claim = reprint_push_lab_db_journal_claim_summary(
+                $latest_claim,
+                $latest_abandoned,
+                $previous_claim,
+                $stale_claim_rejected
+            );
+            if ($claim !== []) {
+                $summary['claim'] = $claim;
+            }
+        }
         $summary = array_merge(
             $summary,
             reprint_push_lab_db_journal_checked_boundary_contract(
@@ -615,6 +660,64 @@ function reprint_push_lab_db_journal_summary(int $limit = 20, bool $checked_surf
                 $monotonic_sequence
             )
         );
+    }
+
+    return $summary;
+}
+
+function reprint_push_lab_db_journal_cursor_sequence($cursor): ?int
+{
+    if (!is_string($cursor) || preg_match('/^db-journal:(\d+)$/', $cursor, $matches) !== 1) {
+        return null;
+    }
+
+    $sequence = (int) ($matches[1] ?? 0);
+    return $sequence > 0 ? $sequence : null;
+}
+
+function reprint_push_lab_db_journal_claim_summary(
+    array $latest_claim_row,
+    ?array $latest_abandoned_row = null,
+    ?array $previous_claim_row = null,
+    bool $stale_claim_rejected = false
+): array {
+    $active_claim_key_hash = (string) ($latest_claim_row['claimKeyHash'] ?? '');
+    if ($active_claim_key_hash === '') {
+        return [];
+    }
+
+    $summary = [
+        'status' => $stale_claim_rejected ? 'stale-claim-rejected' : 'active',
+        'activeClaimKeyHash' => $active_claim_key_hash,
+        'activeClaimSequence' => (int) ($latest_claim_row['sequence'] ?? 0),
+        'activeClaimEvent' => (string) ($latest_claim_row['event'] ?? ''),
+        'idempotencyKeyHash' => (string) ($latest_claim_row['idempotencyKeyHash'] ?? ''),
+        'requestHash' => (string) ($latest_claim_row['requestHash'] ?? ''),
+        'staleClaimRejected' => $stale_claim_rejected,
+    ];
+
+    if (is_array($latest_abandoned_row)) {
+        $summary['abandonedSequence'] = (int) ($latest_abandoned_row['sequence'] ?? 0);
+        $summary['abandonedEvent'] = (string) ($latest_abandoned_row['event'] ?? '');
+        $summary['previousStartedSequence'] = reprint_push_lab_db_journal_cursor_sequence(
+            $latest_abandoned_row['resourceHashEvidence']['startedCursor'] ?? null
+        );
+
+        $previous_claim_sequence = reprint_push_lab_db_journal_cursor_sequence(
+            $latest_abandoned_row['resourceHashEvidence']['claimCursor'] ?? null
+        );
+        if (is_int($previous_claim_sequence)) {
+            $summary['previousClaimSequence'] = $previous_claim_sequence;
+        }
+    }
+
+    if (is_array($previous_claim_row) && !empty($previous_claim_row)) {
+        $previous_claim_key_hash = (string) ($previous_claim_row['claimKeyHash'] ?? '');
+        if ($previous_claim_key_hash !== '') {
+            $summary['previousClaimKeyHash'] = $previous_claim_key_hash;
+            $summary['previousClaimSequence'] = (int) ($previous_claim_row['sequence'] ?? 0);
+            $summary['previousClaimEvent'] = (string) ($previous_claim_row['event'] ?? '');
+        }
     }
 
     return $summary;

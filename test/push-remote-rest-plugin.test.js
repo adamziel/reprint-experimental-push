@@ -128,6 +128,40 @@ function runDbJournalStorageGuard(summary) {
   });
 }
 
+function runDbJournalClaimSummary(latestClaimRow, latestAbandonedRow = null, previousClaimRow = null, staleClaimRejected = false) {
+  return spawnSync('php', [
+    '-r',
+    [
+      'define("ABSPATH", dirname($argv[1]));',
+      'function add_filter(...$args) {}',
+      'function add_action(...$args) {}',
+      'function register_rest_route(...$args) {}',
+      'class WP_REST_Server { const CREATABLE = "POST"; const READABLE = "GET"; }',
+      'class WP_REST_Response {',
+      '  private $data;',
+      '  public function __construct($data = null, $status = null) { $this->data = $data; }',
+      '  public function get_data() { return $this->data; }',
+      '  public function set_data($data) { $this->data = $data; }',
+      '}',
+      'class WP_REST_Request {}',
+      'require $argv[1];',
+      '$latestClaimRow = json_decode($argv[2], true);',
+      '$latestAbandonedRow = json_decode($argv[3], true);',
+      '$previousClaimRow = json_decode($argv[4], true);',
+      '$staleClaimRejected = ($argv[5] ?? "0") === "1";',
+      'echo json_encode(reprint_push_lab_db_journal_claim_summary($latestClaimRow, $latestAbandonedRow, $previousClaimRow, $staleClaimRejected));',
+    ].join(' '),
+    pluginFile,
+    JSON.stringify(latestClaimRow),
+    JSON.stringify(latestAbandonedRow),
+    JSON.stringify(previousClaimRow),
+    staleClaimRejected ? '1' : '0',
+  ], {
+    cwd: repoRoot,
+    encoding: 'utf8',
+  });
+}
+
 function runDbJournalScopeKey(context = {}, packageMode = false, checkedSurface = false) {
   return spawnSync('php', [
     '-r',
@@ -608,6 +642,67 @@ test('checked db journal merge fills nested ownership and lease fence gaps', { s
         staleClaimRejected: false,
       },
       staleClaimRejected: false,
+    },
+  });
+});
+
+test('checked db journal merge fills missing claim ownership evidence from the authoritative summary', { skip: !hasPhp }, () => {
+  const result = runMerge(
+    {
+      acceptedOnCheckedBoundary: true,
+      ownership: {
+        ownsJournal: true,
+        restartReadable: true,
+        productionAdapter: 'wpdb-single-statement-cas',
+      },
+    },
+    {
+      acceptedOnCheckedBoundary: true,
+      ownership: {
+        ownsJournal: true,
+        restartReadable: true,
+        productionAdapter: 'wpdb-single-statement-cas',
+      },
+      claim: {
+        status: 'stale-claim-rejected',
+        activeClaimKeyHash: 'retry-claim-hash-02',
+        activeClaimSequence: 20,
+        activeClaimEvent: 'stale-claim-retry-started',
+        idempotencyKeyHash: 'idempotency-hash-01',
+        requestHash: 'request-hash-01',
+        staleClaimRejected: true,
+        abandonedSequence: 18,
+        abandonedEvent: 'stale-claim-abandoned',
+        previousStartedSequence: 12,
+        previousClaimSequence: 11,
+        previousClaimKeyHash: 'retry-claim-hash-01',
+        previousClaimEvent: 'idempotency-opened',
+      },
+    },
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  assert.deepEqual(JSON.parse(result.stdout), {
+    acceptedOnCheckedBoundary: true,
+    ownership: {
+      ownsJournal: true,
+      restartReadable: true,
+      productionAdapter: 'wpdb-single-statement-cas',
+    },
+    claim: {
+      status: 'stale-claim-rejected',
+      activeClaimKeyHash: 'retry-claim-hash-02',
+      activeClaimSequence: 20,
+      activeClaimEvent: 'stale-claim-retry-started',
+      idempotencyKeyHash: 'idempotency-hash-01',
+      requestHash: 'request-hash-01',
+      staleClaimRejected: true,
+      abandonedSequence: 18,
+      abandonedEvent: 'stale-claim-abandoned',
+      previousStartedSequence: 12,
+      previousClaimSequence: 11,
+      previousClaimKeyHash: 'retry-claim-hash-01',
+      previousClaimEvent: 'idempotency-opened',
     },
   });
 });
@@ -1795,6 +1890,49 @@ test('db journal evidence exposes checked and packaged scope labels instead of c
     requestHash: '',
     resultHash: '',
     scope: 'packaged production journal evidence; not local Playground fixture only',
+  });
+});
+
+test('db journal claim summary preserves active and previous claim identity for stale retries', { skip: !hasPhp }, () => {
+  const result = runDbJournalClaimSummary(
+    {
+      sequence: 20,
+      event: 'stale-claim-retry-started',
+      idempotencyKeyHash: 'idempotency-hash-01',
+      requestHash: 'request-hash-01',
+      claimKeyHash: 'retry-claim-hash-02',
+    },
+    {
+      sequence: 18,
+      event: 'stale-claim-abandoned',
+      resourceHashEvidence: {
+        claimCursor: 'db-journal:11',
+        startedCursor: 'db-journal:12',
+      },
+    },
+    {
+      sequence: 11,
+      event: 'idempotency-opened',
+      claimKeyHash: 'retry-claim-hash-01',
+    },
+    true,
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  assert.deepEqual(JSON.parse(result.stdout), {
+    status: 'stale-claim-rejected',
+    activeClaimKeyHash: 'retry-claim-hash-02',
+    activeClaimSequence: 20,
+    activeClaimEvent: 'stale-claim-retry-started',
+    idempotencyKeyHash: 'idempotency-hash-01',
+    requestHash: 'request-hash-01',
+    staleClaimRejected: true,
+    abandonedSequence: 18,
+    abandonedEvent: 'stale-claim-abandoned',
+    previousStartedSequence: 12,
+    previousClaimSequence: 11,
+    previousClaimKeyHash: 'retry-claim-hash-01',
+    previousClaimEvent: 'idempotency-opened',
   });
 });
 
