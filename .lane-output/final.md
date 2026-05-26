@@ -1,4 +1,4 @@
-Refreshed the objective audit snapshot with the newest remote heads. The release verdict stayed at `0/4`; the new evidence is still freshness/hardening, not production-backed push proof.
+Refreshed the objective audit snapshot with the newest remote heads. The release verdict stayed at `0/4`; the new evidence is still fail-closed hardening, not production-backed push proof.
 
 Changed files:
 - [`audits/objective-audit.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/independent-auditor/audits/objective-audit.md)
@@ -6,7 +6,7 @@ Changed files:
 
 Commands run:
 - `sed -n '1,260p' audits/objective-audit.md`
-- `git for-each-ref --sort=-committerdate --format='%(refname:short) %(objectname:short) %(committerdate:iso8601) %(subject)' refs/remotes/origin/lane | head -n 20`
+- `git for-each-ref --sort=-committerdate --format='%(refname:short) %(objectname:short) %(committerdate:iso8601) %(subject)' refs/remotes/origin/lane | head -n 25`
 - `sed -n '1,220p' supervision/lanes/independent-auditor.md`
 - `git status --short --branch`
 - `rg -n "feedback-supervisor|progress-followup|no-data-loss-invariants-integration|reliable-executor" audits/objective-audit.md`
