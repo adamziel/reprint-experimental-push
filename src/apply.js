@@ -667,6 +667,12 @@ function productionRecoverySupportReport(writer) {
   }
   if (typeof writer?.assertCurrentClaim !== 'function') {
     addMissingDependency('fencing or lease ownership for the journal writer');
+  } else {
+    try {
+      writer.assertCurrentClaim('production-recovery-journal');
+    } catch {
+      addMissingDependency('fencing or lease ownership for the journal writer');
+    }
   }
   if (writer && typeof writer.inspect === 'function' && !inspectionErrorMessage && !durableJournalInspectRecords(inspected)) {
     addMissingDependency('journal-readable inspection records with sequence and type');
