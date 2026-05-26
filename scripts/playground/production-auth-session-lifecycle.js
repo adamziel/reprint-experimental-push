@@ -386,10 +386,7 @@ export function summarizeProductionAuthSessionLifecycleTrace(trace) {
   });
   const readObservation = [...observations]
     .reverse()
-    .find((entry) => entry.step === 'journal'
-      || entry.step === 'replay'
-      || entry.step === 'apply'
-      || entry.step === 'dry-run') ?? null;
+    .find((entry) => isAuthSessionReadStep(entry.step)) ?? null;
 
   return {
     issued: observations.find((entry) => entry.step === 'preflight') ?? null,
@@ -406,6 +403,7 @@ export function summarizeProductionAuthSessionLifecycleTrace(trace) {
 function isAuthSessionReadStep(step) {
   return step === 'dry-run'
     || step === 'apply'
+    || step === 'recovery-inspect'
     || step === 'replay'
     || step === 'journal';
 }

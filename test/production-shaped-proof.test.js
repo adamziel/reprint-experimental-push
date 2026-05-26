@@ -1811,6 +1811,51 @@ test('production auth/session lifecycle summary helper requires a preserved acti
       observed: 'missing',
     },
   );
+
+  assert.deepEqual(
+    evaluateProductionAuthSessionLifecycleSummary({
+      issued: {
+        step: 'preflight',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+      },
+      read: {
+        step: 'recovery-inspect',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+        preserved: true,
+      },
+      observations: [
+        {
+          step: 'preflight',
+          id: 'session-01',
+          type: 'production-auth-session',
+          status: 'active',
+          expiresAt: '2099-01-01T00:00:00Z',
+          preserved: false,
+          rotated: false,
+        },
+        {
+          step: 'recovery-inspect',
+          id: 'session-01',
+          type: 'production-auth-session',
+          status: 'active',
+          expiresAt: '2099-01-01T00:00:00Z',
+          preserved: true,
+          rotated: false,
+        },
+      ],
+    }),
+    {
+      ok: true,
+      required: 'production-auth-session lifecycle',
+      observed: 'active-unexpired-preserved',
+    },
+  );
 });
 
 test('production auth/session lifecycle trace summary preserves issued and read session evidence', () => {
@@ -1908,6 +1953,45 @@ test('production auth/session lifecycle trace summary preserves issued and read 
           preserved: true,
         },
       ],
+    },
+  );
+});
+
+test('production auth/session lifecycle trace summary treats recovery inspect as a preserved read', () => {
+  const summary = summarizeProductionAuthSessionLifecycleTrace([
+    {
+      step: 'preflight',
+      id: 'session-01',
+      type: 'production-auth-session',
+      status: 'active',
+      expiresAt: '2099-01-01T00:00:00Z',
+      expired: false,
+      revoked: false,
+      cleanedUp: false,
+      rotated: false,
+      preserved: false,
+    },
+    {
+      step: 'recovery-inspect',
+      id: 'session-01',
+      type: 'production-auth-session',
+      status: 'active',
+      expiresAt: '2099-01-01T00:00:00Z',
+      expired: false,
+      revoked: false,
+      cleanedUp: false,
+      rotated: false,
+      preserved: true,
+    },
+  ]);
+
+  assert.equal(summary.read?.step, 'recovery-inspect');
+  assert.deepEqual(
+    evaluateProductionAuthSessionLifecycleSummary(summary),
+    {
+      ok: true,
+      required: 'production-auth-session lifecycle',
+      observed: 'active-unexpired-preserved',
     },
   );
 });
