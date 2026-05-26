@@ -1498,6 +1498,10 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
           },
         );
       }
+      notReadyProbeCounts = packagedProductionPluginResetRouteNotReadyProbeCounts(
+        notReadyProbeCounts,
+        'snapshot',
+      );
 
       const { response: preflight, bodyText: preflightText } = await fetchTextWithTimeout(`${baseUrl}/wp-json/reprint/v1/push/preflight`, {
         method: 'GET',

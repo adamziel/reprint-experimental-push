@@ -585,6 +585,10 @@ async function waitForServer(child, baseUrl, logs) {
           );
         }
       } else {
+        notReadyProbeCounts = packagedProductionPluginResetRouteNotReadyProbeCounts(
+          notReadyProbeCounts,
+          'snapshot',
+        );
         const { response: preflightResponse, bodyText: preflightText } = await fetchTextWithTimeout(`${baseUrl}/wp-json/reprint/v1/push/preflight`, {
           method: 'GET',
           headers: {

@@ -1976,6 +1976,24 @@ test('packaged readiness helpers fail fast when both the packaged route and /wp-
   }
 });
 
+test('packaged readiness helpers reset snapshot startup counters before signed preflight probes', () => {
+  const smokeSource = readFileSync(
+    path.join(repoRoot, 'scripts/playground/production-plugin-package-smoke.mjs'),
+    'utf8',
+  );
+  const verifierSource = readFileSync(
+    path.join(repoRoot, 'scripts/playground/production-shaped-release-verify.mjs'),
+    'utf8',
+  );
+
+  for (const source of [smokeSource, verifierSource]) {
+    assert.match(
+      source,
+      /packagedProductionPluginResetRouteNotReadyProbeCounts\(\s*notReadyProbeCounts,\s*'snapshot',\s*\);\s*(?:const\s+\{\s*response:\s*preflight|const\s+\{\s*response:\s*preflightResponse)/s,
+    );
+  }
+});
+
 test('lab Playground readiness helper rejects malformed ready responses and retries only startup-shaped failures', () => {
   const readySnapshot = {
     status: 200,
