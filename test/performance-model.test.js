@@ -490,6 +490,18 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'cached-receipt-cursor-memory-headroom-skips-atomic-group-commit-after-pause')?.rejectedGate,
     'recovery',
   );
+  assert.equal(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'cached-receipt-cursor-queue-slack-authorizes-commit-after-pause')?.rejectedGate,
+    'recovery',
+  );
+  assert.ok(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'cached-receipt-cursor-queue-slack-authorizes-commit-after-pause')?.violates.includes('backpressure'),
+    'cached queue slack still cannot authorize commit after a pause',
+  );
+  assert.ok(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'cached-receipt-cursor-queue-slack-authorizes-commit-after-pause')?.violates.includes('atomic-groups'),
+    'cached queue slack still cannot bypass the atomic-group barrier after a pause',
+  );
   assert.ok(
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'cached-receipt-cursor-memory-headroom-skips-atomic-group-commit-after-pause')?.violates.includes('atomic-groups'),
     'memory headroom still cannot bypass the atomic-group commit boundary',

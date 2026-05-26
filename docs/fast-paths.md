@@ -1589,6 +1589,9 @@ Rejected fast paths stay rejected even when they look fast on paper:
 - Cached row receipts cannot skip plugin-update finalize, because the live row
   compares, dependency checks, and atomic-group finalize still need durable
   proof.
+- A cached receipt cursor plus queue slack cannot authorize commit after a
+  pause, because queue slack can help size replay but cannot prove which raw
+  receipts or live compares survived failure.
 - A compressed remote index plus a cached file hash cannot skip a release-
   bundle commit after a pause, because planning evidence and cached hashes do
   not prove the chunk receipts, row receipts, backpressure state, or

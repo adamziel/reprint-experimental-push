@@ -2819,6 +2819,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['backpressure', 'atomic-groups', 'durable-progress', 'live-preconditions'],
   },
   {
+    id: 'cached-receipt-cursor-queue-slack-authorizes-commit-after-pause',
+    proposal: 'treat a cached receipt cursor plus queue slack as enough proof to authorize commit after a pause',
+    rejectedBecause: 'queue slack can help size bounded replay, but it cannot prove which raw receipts or live compares survived the pause well enough to authorize commit',
+    rejectedGate: 'recovery',
+    violates: ['backpressure', 'atomic-groups', 'durable-progress', 'live-preconditions'],
+  },
+  {
     id: 'parallelize-atomic-group-commit',
     proposal: 'run atomic group commits in parallel so independent work can publish sooner',
     rejectedBecause: 'the commit barrier is part of the atomic group and must stay a single visibility point',
