@@ -201,6 +201,26 @@ test('benchmark model covers large uploads and plugin installs', () => {
     true,
     'large upload keeps replay-sizing visibility explicit on the backpressure summary',
   );
+  assert.equal(
+    pluginInstall.backpressure.replaySizingVisible,
+    true,
+    'plugin install keeps replay-sizing visibility explicit on the backpressure summary',
+  );
+  assert.equal(
+    releaseBundle.backpressure.replaySizingVisible,
+    true,
+    'release bundle keeps replay-sizing visibility explicit on the backpressure summary',
+  );
+  assert.deepEqual(
+    pluginInstall.backpressure.replaySizing,
+    largeUpload.backpressure.replaySizing,
+    'plugin install reuses the same bounded replay-sizing summary as large uploads',
+  );
+  assert.deepEqual(
+    releaseBundle.backpressure.replaySizing,
+    largeUpload.backpressure.replaySizing,
+    'release bundle reuses the same bounded replay-sizing summary as large uploads',
+  );
   assert.ok(
     pluginInstall.actions.some(
       (action) =>

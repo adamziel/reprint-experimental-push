@@ -4034,6 +4034,16 @@ function scheduleWorkload(workload, limits) {
       workloadId: workload.id,
       planId: workload.planId,
       pauseWhen: [...new Set(backpressureSignals)],
+      replaySizingVisible: true,
+      replaySizing: {
+        receiptCursor: 'advisory-receipt-cursor',
+        memoryCeilingBytes: limits.maxBufferedUploadBytes,
+        queueBudgetBytes: limits.maxBufferedUploadBytes,
+        queueBudgetMatchesMemoryCeiling: true,
+        boundedReplayWindowBytes: limits.maxBufferedUploadBytes,
+      },
+      memoryCeilingBytes: limits.maxBufferedUploadBytes,
+      queueBudgetBytes: limits.maxBufferedUploadBytes,
       onPressure: 'pause-upstream-producers',
       forbiddenResponse: 'drop-evidence-or-mark-unacknowledged-work-complete',
       resumeRequires: [
@@ -4103,38 +4113,7 @@ function scheduleWorkload(workload, limits) {
       dbPerTable: limits.maxDbConcurrencyPerTable,
       atomicGroupCommit: workload.atomicGroup ? 1 : 0,
     },
-    backpressure: {
-      maxInFlightUploadBytes: Math.min(
-        limits.maxBufferedUploadBytes,
-        limits.chunkSizeBytes * limits.maxUploadConcurrency,
-      ),
-      replaySizingVisible: true,
-      replaySizing: {
-        receiptCursor: 'advisory-receipt-cursor',
-        memoryCeilingBytes: limits.maxBufferedUploadBytes,
-        queueBudgetBytes: limits.maxBufferedUploadBytes,
-        queueBudgetMatchesMemoryCeiling: true,
-        boundedReplayWindowBytes: limits.maxBufferedUploadBytes,
-      },
-      memoryCeilingBytes: limits.maxBufferedUploadBytes,
-      queueBudgetBytes: limits.maxBufferedUploadBytes,
-      maxQueuedDbBatches: limits.maxPendingDbBatches,
-      maxJournalLagMs: limits.maxJournalLagMs,
-      maxStagingDiskBytes: limits.maxStagingDiskBytes,
-      pauseWhen: [
-        'upload-acks-lag',
-        'journal-fsync-lag',
-        'staging-disk-budget-hit',
-        'remote-latency-budget-hit',
-      ],
-      onPressure: 'pause-upstream-producers',
-      forbiddenResponse: 'drop-evidence-or-mark-unacknowledged-work-complete',
-      resumeRequires: [
-        'durable-chunk-receipts',
-        'database-batch-commit-records',
-        'journal-fsync-caught-up',
-      ],
-    },
+    backpressure: buildBackpressureSummary(limits),
     actions,
     totals: summarizeActions(actions),
   };
@@ -4401,6 +4380,41 @@ function summarizeActions(actions) {
   }
 
   return totals;
+}
+
+function buildBackpressureSummary(limits) {
+  return {
+    maxInFlightUploadBytes: Math.min(
+      limits.maxBufferedUploadBytes,
+      limits.chunkSizeBytes * limits.maxUploadConcurrency,
+    ),
+    replaySizingVisible: true,
+    replaySizing: {
+      receiptCursor: 'advisory-receipt-cursor',
+      memoryCeilingBytes: limits.maxBufferedUploadBytes,
+      queueBudgetBytes: limits.maxBufferedUploadBytes,
+      queueBudgetMatchesMemoryCeiling: true,
+      boundedReplayWindowBytes: limits.maxBufferedUploadBytes,
+    },
+    memoryCeilingBytes: limits.maxBufferedUploadBytes,
+    queueBudgetBytes: limits.maxBufferedUploadBytes,
+    maxQueuedDbBatches: limits.maxPendingDbBatches,
+    maxJournalLagMs: limits.maxJournalLagMs,
+    maxStagingDiskBytes: limits.maxStagingDiskBytes,
+    pauseWhen: [
+      'upload-acks-lag',
+      'journal-fsync-lag',
+      'staging-disk-budget-hit',
+      'remote-latency-budget-hit',
+    ],
+    onPressure: 'pause-upstream-producers',
+    forbiddenResponse: 'drop-evidence-or-mark-unacknowledged-work-complete',
+    resumeRequires: [
+      'durable-chunk-receipts',
+      'database-batch-commit-records',
+      'journal-fsync-caught-up',
+    ],
+  };
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
