@@ -1,6 +1,6 @@
 Recovery lane handoff:
 
-- Timestamp: 2026-05-26 10:48:49 CEST (+0200)
+- Timestamp: 2026-05-26 10:50:09 CEST (+0200)
 - I added a regression that keeps production recovery writers fail-closed when `writerLease.id` is inherited through the prototype, matching the existing own-property fence in `src/apply.js`.
 - The focused claim-shape slice passed under `timeout 60s`.
 
@@ -16,13 +16,14 @@ Commands:
 
 Push result:
 
-- Not pushed yet.
+- Pushed to `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery`
+- Commit: `b6f46f2f`
 
 Worktree status:
 
 - Branch: `lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery...origin/main`
-- Dirty tracked files: `.lane-output/final.md`, `test/push-planner.test.js`
+- Dirty tracked files: none
 
 Next supervisor nudge:
 
-1. Commit and push the claim-shape regression, or hand off the exact remaining recovery-owned edge if this lane should stop here.
+1. If this lane keeps moving, the next useful recovery-owned edge is another production claim-shape predicate not already covered by the inherited-ownership regressions.
