@@ -964,7 +964,17 @@ test('production-shaped authenticated push fails closed when production auth ses
       observed: '2030-01-01T00:00:00Z',
       verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
     });
-    assert.equal(summary.boundary.durableJournal.phase, 'apply');
+    assert.deepEqual(summary.boundary, {
+      firstRemainingProductionBoundary: 'auth/session lifecycle and durable journal semantics',
+      status: 'unimplemented',
+      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+      authSession: {
+        field: 'auth.session.expiresAt',
+        required: 'unexpired',
+        observed: '2030-01-01T00:00:00Z',
+        verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+      },
+    });
     assert.equal(seen.length, 4);
   } finally {
     global.fetch = originalFetch;
@@ -6026,7 +6036,7 @@ test('production-shaped authenticated push fails closed when replay response div
 
     assert.equal(summary.ok, false);
     assert.equal(summary.code, 'AUTH_SESSION_LIFECYCLE_DRIFT');
-    assert.equal(summary.boundary.durableJournal.phase, 'journal-inspect');
+    assert.equal(summary.boundary.durableJournal.phase, 'recovery-inspect');
     assert.ok(seen.some(({ url }) => url.includes('/apply')));
   } finally {
     global.fetch = originalFetch;
