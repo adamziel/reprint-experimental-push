@@ -83,18 +83,10 @@ function spawnReleaseVerify(env = {}, options = {}) {
 function runReleaseVerifySync(env, timeout, killSignal, label) {
   const command = process.execPath;
   const args = ['scripts/playground/production-shaped-release-verify.mjs'];
-  const proof = spawnSync(command, args, {
-    cwd: repoRoot,
-    shell: false,
+  const proof = spawnReleaseVerifySync(command, args, env, {
     timeout,
     killSignal,
-    encoding: 'utf8',
-    maxBuffer: 1024 * 1024 * 20,
-    env,
   });
-  if (proof.error || proof.signal || proof.status === null) {
-    failReleaseVerifySpawnProof(proof, command, args, label, timeout);
-  }
   assertReleaseVerifyProof(proof, label, timeout);
   return proof;
 }
@@ -124,22 +116,13 @@ function spawnProductionShapedReleaseVerify(env, options, label) {
 }
 
 function spawnProductionShapedReleaseVerifyCommand(env, options, label) {
-  const timeout = options.timeout ?? releaseVerifyInnerTimeoutMs;
-  const killSignal = options.killSignal ?? proofSubprocessKillSignal;
   const command = process.execPath;
   const args = ['scripts/playground/production-shaped-release-verify.mjs'];
-  const proof = spawnSync(command, args, {
-    cwd: repoRoot,
-    shell: false,
+  const timeout = options.timeout ?? releaseVerifyInnerTimeoutMs;
+  const proof = spawnReleaseVerifySync(command, args, env, {
     timeout,
-    killSignal,
-    encoding: 'utf8',
-    maxBuffer: 1024 * 1024 * 20,
-    env,
+    killSignal: options.killSignal ?? proofSubprocessKillSignal,
   });
-  if (proof.error || proof.signal || proof.status === null) {
-    failReleaseVerifySpawnProof(proof, command, args, label, timeout);
-  }
   assertReleaseVerifyProof(proof, label, timeout);
   return proof;
 }
@@ -257,6 +240,24 @@ function failReleaseVerifySpawnProof(proof, command, args, label = 'release veri
   assertReleaseVerifySpawnFailure(proof, label, timeoutMs);
 }
 
+function spawnReleaseVerifySync(command, args, env, options = {}) {
+  const timeout = options.timeout ?? proofSubprocessTimeoutMs;
+  const killSignal = options.killSignal ?? proofSubprocessKillSignal;
+  const proof = spawnSync(command, args, {
+    cwd: repoRoot,
+    shell: false,
+    timeout,
+    killSignal,
+    encoding: 'utf8',
+    maxBuffer: 1024 * 1024 * 20,
+    env,
+  });
+  if (proof.error || proof.signal || proof.status === null) {
+    failReleaseVerifySpawnProof(proof, command, args, 'release verify', timeout);
+  }
+  return proof;
+}
+
 function assertBoundedSpawnProof(proof, command, args, label, timeoutMs) {
   if (!proof.error && !proof.signal && proof.status !== null) {
     return;
@@ -294,31 +295,18 @@ function spawnReleaseVerifySlowPathBounded(env = {}, options = {}) {
   const boundedTimeout = Math.max(1_000, Math.min(timeout, releaseVerifySlowPathInnerTimeoutMs));
   const command = process.execPath;
   const args = ['scripts/playground/production-shaped-release-verify.mjs'];
-  const proof = spawnSync(command, args, {
-    cwd: repoRoot,
-    timeout: boundedTimeout,
-    killSignal: options.killSignal ?? proofSubprocessKillSignal,
-    encoding: 'utf8',
-    maxBuffer: 1024 * 1024 * 20,
-    shell: false,
-    env: {
+  const proof = spawnReleaseVerifySync(
+    command,
+    args,
+    {
       ...process.env,
       ...env,
     },
-  });
-  if (proof.error || proof.signal || proof.status === null) {
-    stopAllPlaygroundChildrenSync();
-    logBoundedSpawnProofFailure(command, args, proof);
-    writeSpawnOutputTail(proof, `${command} ${args.join(' ')}`);
-    if (proof.error) {
-      const timeoutNote = proof.error.code === 'ETIMEDOUT' ? ` after ${boundedTimeout}ms` : '';
-      throw new Error(formatSpawnFailure(`retained-source release verify failed${timeoutNote} with bounded spawn handling`, proof));
-    }
-    if (proof.signal) {
-      throw new Error(formatSpawnFailure(`retained-source release verify terminated by ${proof.signal} with bounded spawn handling`, proof));
-    }
-    throw new Error(formatSpawnFailure('retained-source release verify exited without a status with bounded spawn handling', proof));
-  }
+    {
+      timeout: boundedTimeout,
+      killSignal: options.killSignal ?? proofSubprocessKillSignal,
+    },
+  );
   return proof;
 }
 
