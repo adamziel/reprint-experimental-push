@@ -131,6 +131,21 @@ export async function runAuthenticatedHttpPush({
     };
     return summary;
   }
+  if (requireProductionAuthSession && preflight.body.auth?.session?.status && preflight.body.auth.session.status !== 'active') {
+    summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
+    summary.authSession = {
+      required: 'active',
+      observed: preflight.body.auth.session.status,
+      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+    };
+    summary.boundary = {
+      firstRemainingProductionBoundary: 'auth/session lifecycle and durable journal semantics',
+      status: 'unimplemented',
+      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+      authSession: summary.authSession,
+    };
+    return summary;
+  }
 
   const snapshotPath = labDriftAfterSnapshot
     ? `/snapshot?reprint_push_lab_drift_after_snapshot=${encodeURIComponent(labDriftAfterSnapshot)}`
