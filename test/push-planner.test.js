@@ -6282,6 +6282,180 @@ test('blocks a local thumbnail reference from an attachment to a same-plan post'
   );
 });
 
+test('blocks a local thumbnail reference owned by an existing attachment even when it targets a same-plan post', () => {
+  const sourceAttachmentResourceKey = 'row:["wp_posts","ID:1"]';
+  const targetPostResourceKey = 'row:["wp_posts","ID:3"]';
+  const postmetaResourceKey = 'row:["wp_postmeta","meta_id:145"]';
+  const base = baseSite();
+  const local = baseSite();
+  const remote = baseSite();
+
+  base.db.wp_posts['ID:1'] = {
+    ID: 1,
+    post_title: 'Existing source attachment',
+    post_content: 'base-private-source-attachment-body',
+    post_status: 'inherit',
+    post_type: 'attachment',
+  };
+  local.db.wp_posts['ID:1'] = {
+    ...base.db.wp_posts['ID:1'],
+  };
+  remote.db.wp_posts['ID:1'] = {
+    ...base.db.wp_posts['ID:1'],
+  };
+  local.db.wp_posts['ID:3'] = {
+    ID: 3,
+    post_title: 'Local target post',
+    post_content: 'local-private-target-post-body',
+    post_status: 'publish',
+  };
+  local.db.wp_postmeta = {
+    'meta_id:145': {
+      meta_id: 145,
+      post_id: 1,
+      meta_key: '_thumbnail_id',
+      meta_value: 3,
+    },
+  };
+
+  const plan = planFor(base, local, remote);
+  const sourceAttachmentMutation = mutationFor(plan, sourceAttachmentResourceKey);
+  const targetPostMutation = mutationFor(plan, targetPostResourceKey);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === postmetaResourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(sourceAttachmentMutation, undefined);
+  assert.equal(targetPostMutation.changeKind, 'create');
+  assert.equal(mutationFor(plan, postmetaResourceKey), undefined);
+  assert.equal(blocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(blocker.surface, 'attachment');
+  assert.equal(
+    JSON.stringify(blocker).includes('base-private-source-attachment-body'),
+    false,
+  );
+  assert.equal(
+    JSON.stringify(blocker).includes('local-private-target-post-body'),
+    false,
+  );
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
+});
+
+test('blocks a local thumbnail reference owned by an existing revision even when it targets a same-plan post', () => {
+  const sourceRevisionResourceKey = 'row:["wp_posts","ID:1"]';
+  const targetPostResourceKey = 'row:["wp_posts","ID:3"]';
+  const postmetaResourceKey = 'row:["wp_postmeta","meta_id:146"]';
+  const base = baseSite();
+  const local = baseSite();
+  const remote = baseSite();
+
+  base.db.wp_posts['ID:1'] = {
+    ID: 1,
+    post_title: 'Existing source revision',
+    post_content: 'base-private-source-revision-body',
+    post_status: 'inherit',
+    post_type: 'revision',
+  };
+  local.db.wp_posts['ID:1'] = {
+    ...base.db.wp_posts['ID:1'],
+  };
+  remote.db.wp_posts['ID:1'] = {
+    ...base.db.wp_posts['ID:1'],
+  };
+  local.db.wp_posts['ID:3'] = {
+    ID: 3,
+    post_title: 'Local target post',
+    post_content: 'local-private-target-post-body',
+    post_status: 'publish',
+  };
+  local.db.wp_postmeta = {
+    'meta_id:146': {
+      meta_id: 146,
+      post_id: 1,
+      meta_key: '_thumbnail_id',
+      meta_value: 3,
+    },
+  };
+
+  const plan = planFor(base, local, remote);
+  const sourceRevisionMutation = mutationFor(plan, sourceRevisionResourceKey);
+  const targetPostMutation = mutationFor(plan, targetPostResourceKey);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === postmetaResourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(sourceRevisionMutation, undefined);
+  assert.equal(targetPostMutation.changeKind, 'create');
+  assert.equal(mutationFor(plan, postmetaResourceKey), undefined);
+  assert.equal(blocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(blocker.surface, 'revision');
+  assert.equal(
+    JSON.stringify(blocker).includes('base-private-source-revision-body'),
+    false,
+  );
+  assert.equal(
+    JSON.stringify(blocker).includes('local-private-target-post-body'),
+    false,
+  );
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
+});
+
+test('blocks a local thumbnail reference owned by an existing wp_navigation post even when it targets a same-plan post', () => {
+  const sourceNavigationResourceKey = 'row:["wp_posts","ID:1"]';
+  const targetPostResourceKey = 'row:["wp_posts","ID:3"]';
+  const postmetaResourceKey = 'row:["wp_postmeta","meta_id:147"]';
+  const base = baseSite();
+  const local = baseSite();
+  const remote = baseSite();
+
+  base.db.wp_posts['ID:1'] = {
+    ID: 1,
+    post_title: 'Existing source navigation',
+    post_content: 'base-private-source-navigation-body',
+    post_status: 'publish',
+    post_type: 'wp_navigation',
+  };
+  local.db.wp_posts['ID:1'] = {
+    ...base.db.wp_posts['ID:1'],
+  };
+  remote.db.wp_posts['ID:1'] = {
+    ...base.db.wp_posts['ID:1'],
+  };
+  local.db.wp_posts['ID:3'] = {
+    ID: 3,
+    post_title: 'Local target post',
+    post_content: 'local-private-target-post-body',
+    post_status: 'publish',
+  };
+  local.db.wp_postmeta = {
+    'meta_id:147': {
+      meta_id: 147,
+      post_id: 1,
+      meta_key: '_thumbnail_id',
+      meta_value: 3,
+    },
+  };
+
+  const plan = planFor(base, local, remote);
+  const sourceNavigationMutation = mutationFor(plan, sourceNavigationResourceKey);
+  const targetPostMutation = mutationFor(plan, targetPostResourceKey);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === postmetaResourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(sourceNavigationMutation, undefined);
+  assert.equal(targetPostMutation.changeKind, 'create');
+  assert.equal(mutationFor(plan, postmetaResourceKey), undefined);
+  assert.equal(blocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(blocker.surface, 'wp_navigation');
+  assert.equal(
+    JSON.stringify(blocker).includes('base-private-source-navigation-body'),
+    false,
+  );
+  assert.equal(
+    JSON.stringify(blocker).includes('local-private-target-post-body'),
+    false,
+  );
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
+});
+
 test('blocks menu item parent metadata from referencing a same-plan wp_navigation post', () => {
   const navigationResourceKey = 'row:["wp_posts","ID:2"]';
   const postmetaResourceKey = 'row:["wp_postmeta","meta_id:46"]';
