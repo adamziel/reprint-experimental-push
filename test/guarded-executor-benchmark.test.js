@@ -343,6 +343,51 @@ test('guarded benchmark exposes staging-disk and journal-lag release-bundle comm
   );
 });
 
+test('guarded benchmark exposes memory-headroom commit shortcuts across atomic groups as rejected', () => {
+  const fastPath = findRejectedFastPathById(
+    'cached-receipt-cursor-memory-headroom-skips-atomic-group-commit-after-pause',
+  );
+
+  assert.ok(fastPath);
+  assert.equal(fastPath.rejectedGate, 'recovery');
+  assert.match(fastPath.proposal, /memory headroom/);
+  assert.match(fastPath.rejectedBecause, /atomic-group barrier/);
+  assert.deepEqual(
+    fastPath.violates,
+    ['backpressure', 'atomic-groups', 'row-preconditions', 'durable-progress'],
+  );
+});
+
+test('guarded benchmark exposes memory-headroom release-bundle commit shortcuts as rejected', () => {
+  const fastPath = findRejectedFastPathById(
+    'cached-receipt-cursor-memory-headroom-skips-release-bundle-commit-after-pause',
+  );
+
+  assert.ok(fastPath);
+  assert.equal(fastPath.rejectedGate, 'recovery');
+  assert.match(fastPath.proposal, /release-bundle commit/);
+  assert.match(fastPath.rejectedBecause, /durable journal trail/);
+  assert.deepEqual(
+    fastPath.violates,
+    ['backpressure', 'atomic-groups', 'durable-progress'],
+  );
+});
+
+test('guarded benchmark exposes memory-headroom commit authorization shortcuts as rejected', () => {
+  const fastPath = findRejectedFastPathById(
+    'receipt-cursor-memory-headroom-authorizes-commit',
+  );
+
+  assert.ok(fastPath);
+  assert.equal(fastPath.rejectedGate, 'recovery');
+  assert.match(fastPath.proposal, /memory headroom/);
+  assert.match(fastPath.rejectedBecause, /live compares survived the pause/);
+  assert.deepEqual(
+    fastPath.violates,
+    ['backpressure', 'atomic-groups', 'durable-progress', 'live-preconditions'],
+  );
+});
+
 test('guarded benchmark blocks row-batch executor claims when the measured surface is not visible', () => {
   const report = smallBenchmark();
   const tampered = clone(report);
