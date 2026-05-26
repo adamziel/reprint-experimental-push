@@ -231,6 +231,18 @@ export function evaluateProductionAuthSessionLifecycleSummary(summary, now = Dat
       };
     }
 
+    if (
+      observation.step !== 'preflight'
+      && isAuthSessionReadStep(observation.step)
+      && observation.preserved !== true
+    ) {
+      return {
+        ok: false,
+        required: 'preserved read',
+        observed: observation.rotated ? 'rotated' : 'unpreserved',
+      };
+    }
+
     const lifecycle = evaluateProductionAuthSessionLifecycle(observation, now);
     if (!lifecycle.ok) {
       return lifecycle;
