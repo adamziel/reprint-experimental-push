@@ -618,6 +618,9 @@ function reprint_push_lab_rest_attach_checked_recovery_journal_evidence(
         $result['recovery']['journal'],
         $checked_db_journal
     );
+    $result['recovery']['journal'] = reprint_push_lab_rest_fail_closed_checked_recovery_journal_acceptance(
+        $result['recovery']['journal']
+    );
     return $result;
 }
 
@@ -832,6 +835,19 @@ function reprint_push_lab_rest_fail_closed_checked_db_journal_acceptance(array $
     }
 
     return $db_journal;
+}
+
+function reprint_push_lab_rest_fail_closed_checked_recovery_journal_acceptance(array $journal): array
+{
+    if (($journal['acceptedOnCheckedBoundary'] ?? false) !== true) {
+        return $journal;
+    }
+
+    if (array_key_exists('claim', $journal) && !reprint_push_lab_db_journal_claim_contract_matches($journal['claim'])) {
+        $journal['acceptedOnCheckedBoundary'] = false;
+    }
+
+    return $journal;
 }
 
 function reprint_push_lab_rest_merge_checked_db_journal_contract(array $db_journal, array $checked_summary): array

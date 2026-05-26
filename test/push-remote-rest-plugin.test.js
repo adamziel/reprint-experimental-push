@@ -1631,6 +1631,162 @@ test('checked recovery inspect evidence still merges the checked durable journal
   });
 });
 
+test('checked recovery inspect evidence fails closed on partial checked journal claim contracts', { skip: !hasPhp }, () => {
+  const result = runAttachCheckedRecoveryJournalEvidence(
+    {
+      ok: true,
+      recovery: {
+        journal: {
+          integrity: {
+            schemaVersion: 1,
+            status: 'ok',
+            scope: 'fixture-scoped recovery inspect journal evidence; not production durability',
+          },
+          storage: 'wp-options+journal-evidence',
+        },
+      },
+    },
+    true,
+    false,
+    {
+      acceptedOnCheckedBoundary: true,
+      scope: 'checked live production-shaped journal surface; not local Playground fixture only',
+      claim: {
+        status: 'stale-claim-rejected',
+        activeClaimKeyHash: 'retry-claim-hash-02',
+        activeClaimSequence: 33,
+        activeClaimEvent: 'stale-claim-rejected',
+        idempotencyKeyHash: 'idem-hash-01',
+        requestHash: 'request-hash-01',
+        staleClaimRejected: true,
+      },
+      ownership: {
+        ownsJournal: true,
+        restartReadable: true,
+        productionAdapter: 'wpdb-single-statement-cas',
+      },
+      writerLease: {
+        strategy: 'claim-fenced-single-writer',
+        claimKeyUnique: true,
+        fsyncEvidence: true,
+        storageGuard: 'wpdb-single-statement-cas',
+        monotonicSequence: true,
+        restartReadable: true,
+        staleClaimRejected: true,
+      },
+      leaseFence: {
+        boundary: 'wpdb-single-statement-cas',
+        claimKeyUnique: true,
+        fsyncEvidence: true,
+        monotonicSequence: true,
+        restartReadable: true,
+        staleClaimRejected: true,
+        writerLease: {
+          strategy: 'claim-fenced-single-writer',
+          claimKeyUnique: true,
+          fsyncEvidence: true,
+          storageGuard: 'wpdb-single-statement-cas',
+          monotonicSequence: true,
+          restartReadable: true,
+          staleClaimRejected: true,
+        },
+      },
+      latestRows: [
+        {
+          event: 'stale-claim-rejected',
+          result: {
+            storageGuard: {
+              boundary: 'wpdb-single-statement-cas',
+              operation: 'compare-and-swap',
+              outcome: 'precondition-failed',
+            },
+          },
+        },
+      ],
+      eventSummaries: [
+        { event: 'stale-claim-rejected', count: 1, latestId: 33 },
+      ],
+    },
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  assert.deepEqual(JSON.parse(result.stdout), {
+    ok: true,
+    recovery: {
+      journal: {
+        integrity: {
+          schemaVersion: 1,
+          status: 'ok',
+          scope: 'checked live production-shaped recovery inspect journal evidence; not local Playground fixture only',
+        },
+        storage: 'wp-options+journal-evidence',
+        acceptedOnCheckedBoundary: false,
+        scope: 'checked live production-shaped journal surface; not local Playground fixture only',
+        claim: {
+          status: 'stale-claim-rejected',
+          activeClaimKeyHash: 'retry-claim-hash-02',
+          activeClaimSequence: 33,
+          activeClaimEvent: 'stale-claim-rejected',
+          idempotencyKeyHash: 'idem-hash-01',
+          requestHash: 'request-hash-01',
+          staleClaimRejected: true,
+        },
+        latestRows: [
+          {
+            event: 'stale-claim-rejected',
+            result: {
+              storageGuard: {
+                boundary: 'wpdb-single-statement-cas',
+                operation: 'compare-and-swap',
+                outcome: 'precondition-failed',
+              },
+            },
+          },
+        ],
+        eventSummaries: [
+          { event: 'stale-claim-rejected', count: 1, latestId: 33 },
+        ],
+        ownership: {
+          ownsJournal: true,
+          restartReadable: true,
+          productionAdapter: 'wpdb-single-statement-cas',
+        },
+        writerLease: {
+          strategy: 'claim-fenced-single-writer',
+          claimKeyUnique: true,
+          fsyncEvidence: true,
+          storageGuard: 'wpdb-single-statement-cas',
+          monotonicSequence: true,
+          restartReadable: true,
+          staleClaimRejected: true,
+        },
+        leaseFence: {
+          boundary: 'wpdb-single-statement-cas',
+          claimKeyUnique: true,
+          fsyncEvidence: true,
+          monotonicSequence: true,
+          restartReadable: true,
+          staleClaimRejected: true,
+          writerLease: {
+            strategy: 'claim-fenced-single-writer',
+            claimKeyUnique: true,
+            fsyncEvidence: true,
+            storageGuard: 'wpdb-single-statement-cas',
+            monotonicSequence: true,
+            restartReadable: true,
+            staleClaimRejected: true,
+          },
+        },
+        storageGuard: {
+          boundary: 'wpdb-single-statement-cas',
+          operation: 'compare-and-swap',
+          outcome: 'precondition-failed',
+        },
+      },
+    },
+  });
+});
+
 test('checked recovery inspect evidence fills nested checked counters and summary arrays from the authoritative db journal summary', { skip: !hasPhp }, () => {
   const result = runAttachCheckedRecoveryJournalEvidence(
     {
@@ -2883,6 +3039,18 @@ test('checked recovery inspect evidence preserves conflicting accepted inline co
         },
         acceptedOnCheckedBoundary: true,
         scope: 'checked live production-shaped journal surface; not local Playground fixture only',
+        claim: {
+          status: 'stale-claim-rejected',
+          activeClaimKeyHash: 'retry-claim-hash-02',
+          activeClaimSequence: 33,
+          activeClaimEvent: 'stale-claim-rejected',
+          idempotencyKeyHash: 'idem-hash-01',
+          requestHash: 'request-hash-01',
+          staleClaimRejected: true,
+          previousClaimKeyHash: 'retry-claim-hash-01',
+          previousClaimSequence: 18,
+          previousClaimEvent: 'idempotency-opened',
+        },
         ownership: {
           ownsJournal: true,
           restartReadable: true,
