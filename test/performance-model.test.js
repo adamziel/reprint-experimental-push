@@ -65,6 +65,16 @@ test('benchmark model covers large uploads and plugin installs', () => {
     'queue headroom and journal lag can bound replay sizing without weakening recovery classification',
   );
   assert.ok(
+    model.safeFastPaths.some(
+      (fastPath) =>
+        fastPath.area === 'remote-indexes' &&
+        fastPath.allowedShortcut === 'compress-owner-partition-index-scans-and-reuse-cursor-to-size-bounded-release-bundle-fanout' &&
+        fastPath.guardrails.includes('bounded-release-bundle-fanout-stays-within-per-site-and-per-kind-budgets') &&
+        fastPath.gateProofs.skip.includes('bounded release-bundle fanout before the live compare'),
+    ),
+    'compressed owner-partition scans can size release-bundle fanout without weakening the live compare',
+  );
+  assert.ok(
     pluginInstall.actions.some((action) => action.type === 'db-batch-parallelism'),
     'plugin install includes bounded row-batch parallelism',
   );
