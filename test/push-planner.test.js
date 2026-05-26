@@ -12416,6 +12416,60 @@ test('blocks local postmeta references to a same-plan created attachment identit
   assert.equal(Object.hasOwn(remote.files, 'wp-content/plugins/forms/forms.php'), false);
 });
 
+test('blocks local postmeta references to a same-plan created attachment identity while preserving remote-only plugin changes', () => {
+  const resourceKey = 'row:["wp_postmeta","meta_id:51"]';
+  const targetResourceKey = 'row:["wp_posts","ID:51"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_posts['ID:51'] = {
+    ID: 51,
+    post_title: 'local-created attachment target change',
+    post_content: 'local-created attachment body change',
+    post_type: 'attachment',
+    post_status: 'inherit',
+  };
+  local.db.wp_postmeta = {
+    'meta_id:51': {
+      meta_id: 51,
+      post_id: 51,
+      meta_key: '_local_attachment_note',
+      meta_value: 'local-private-attachment-meta-payload-change',
+    },
+  };
+
+  const remote = baseSite();
+  remote.plugins.forms.description = 'remote-only plugin change';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin change */';
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers[0];
+  const reference = blocker.references[0];
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(decisionFor(plan, targetResourceKey), undefined);
+  assert.equal(blocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.resolutionPolicy, 'preserve-remote-wordpress-graph-and-stop');
+  assert.equal(reference.relationshipKey, 'wp_postmeta.post_id');
+  assert.equal(reference.relationshipType, 'postmeta-post');
+  assert.equal(reference.sourceResourceKey, resourceKey);
+  assert.equal(reference.targetResourceKey, targetResourceKey);
+  assert.equal(reference.targetChange.remote.state, 'absent');
+  assert.equal(reference.targetRemoteHash.length, 64);
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('local-created attachment target change'), false);
+  assert.equal(planJson.includes('local-created attachment body change'), false);
+  assert.equal(planJson.includes('local-private-attachment-meta-payload-change'), false);
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin change');
+  assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin change */');
+});
+
 test('blocks local featured-image references when the remote deleted the referenced post', () => {
   const resourceKey = 'row:["wp_postmeta","meta_id:46"]';
   const targetResourceKey = 'row:["wp_posts","ID:2"]';
