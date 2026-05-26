@@ -183,6 +183,25 @@ test('guarded benchmark blocks row-batch executor visibility when storage-receip
   assert.equal(blockers.includes('production-row-batch-executor-without-storage-receipts'), true);
 });
 
+test('guarded benchmark blocks row-batch executor and storage-receipts paired visibility when atomic-commit visibility is hidden', () => {
+  const report = smallBenchmark();
+  const tampered = clone(report);
+
+  tampered.evidence.atomicGroup.productionRowBatchExecutorMeasured = true;
+  tampered.evidence.atomicGroup.productionRowBatchExecutorVisible = true;
+  tampered.evidence.atomicGroup.productionStorageReceiptsMeasured = true;
+  tampered.evidence.atomicGroup.productionStorageReceiptsVisible = true;
+  tampered.evidence.atomicGroup.productionAtomicCommitVisible = false;
+
+  const blockers = productionThroughputBlockers(tampered);
+
+  assert.equal(
+    blockers.includes('production-row-batch-executor-visible-and-storage-receipts-visible-without-atomic-commit'),
+    true,
+  );
+  assert.equal(blockers.includes('production-row-batch-executor-without-atomic-commit'), true);
+});
+
 test('guarded benchmark blocks forged atomic-group metadata visibility without a measurement', () => {
   const report = smallBenchmark();
   const tampered = clone(report);
