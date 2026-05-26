@@ -39,6 +39,7 @@ await withPlaygroundServer('remote-base', path.join(repoRoot, 'fixtures/playgrou
     assert.equal(preflight.body.routeProfile.restNamespace, 'reprint/v1');
     assert.equal(preflight.body.routeProfile.routePrefix, '/push');
     assert.match(preflight.body.session.id, /^[A-Za-z0-9_-]{32,160}$/);
+    assertProductionAuthSessionLifecycle(preflight.body.auth?.session);
 
     const localIndex = await fetch(`${localServer.baseUrl}/wp-json/`);
     assert.equal(localIndex.status, 200);
@@ -50,13 +51,16 @@ await withPlaygroundServer('remote-base', path.join(repoRoot, 'fixtures/playgrou
           topology,
           source: {
             url: remoteServer.baseUrl,
-            routeProfile: preflight.body.routeProfile,
-            session: {
-              id: preflight.body.session.id,
-              type: preflight.body.session.type,
-            },
+          routeProfile: preflight.body.routeProfile,
+          session: {
+            id: preflight.body.session.id,
+            type: preflight.body.session.type,
+            status: preflight.body.auth?.session?.status || null,
+            expiresAt: preflight.body.auth?.session?.expiresAt || null,
+            expired: isExpiredSession(preflight.body.auth?.session),
           },
-          local: {
+        },
+        local: {
             url: localServer.baseUrl,
             indexStatus: localIndex.status,
           },
@@ -76,6 +80,27 @@ async function withPlaygroundServer(name, blueprintPath, run) {
   } finally {
     await stopPlaygroundServer(server);
   }
+}
+
+function assertProductionAuthSessionLifecycle(session) {
+  assert.ok(session, 'production-shaped live preflight missing auth session');
+  assert.equal(session.type, 'production-auth-session', 'production-shaped live preflight session type');
+  assert.equal(session.status, 'active', 'production-shaped live preflight session status');
+  assert.equal(isExpiredSession(session), false, 'production-shaped live preflight session must be unexpired');
+}
+
+function isExpiredSession(session) {
+  if (!session || typeof session !== 'object') {
+    return false;
+  }
+
+  const expiresAt = session.expiresAt;
+  if (!expiresAt) {
+    return false;
+  }
+
+  const expiresAtMs = Date.parse(expiresAt);
+  return !Number.isFinite(expiresAtMs) || expiresAtMs <= Date.now();
 }
 
 async function startPlaygroundServer(name, blueprintPath) {
