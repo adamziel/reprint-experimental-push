@@ -1033,6 +1033,12 @@ export function productionThroughputBlockers(report) {
   }
   if (
     report.evidence.atomicGroup.productionRowBatchExecutorVisible === true
+    && report.claims?.productionThroughputDetails?.parallelismLimitsVisible !== true
+  ) {
+    blockers.push('production-row-batch-executor-visible-without-parallelism-limits');
+  }
+  if (
+    report.evidence.atomicGroup.productionRowBatchExecutorVisible === true
     && report.evidence.atomicGroup.productionAtomicCommitVisible !== true
   ) {
     blockers.push('production-row-batch-executor-without-atomic-commit');

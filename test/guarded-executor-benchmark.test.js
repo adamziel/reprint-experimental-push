@@ -642,6 +642,37 @@ test('guarded benchmark blocks row-batch executor visibility without atomic-comm
   assert.equal(blockers.includes('production-row-batch-executor-not-visible'), false);
 });
 
+test('guarded benchmark blocks row-batch executor visibility without visible measured parallelism caps', () => {
+  const report = smallBenchmark();
+  const tampered = clone(report);
+
+  tampered.executorCapabilities.productionAtomicCommit = 'production-atomic-group-commit';
+  tampered.executorCapabilities.fileReceipts = 'production-storage-receipts';
+  tampered.executorCapabilities.rowApply = 'production-batched-compare-and-swap';
+  tampered.evidence.atomicGroup.productionAtomicCommitMeasured = true;
+  tampered.evidence.atomicGroup.productionAtomicCommitVisible = true;
+  tampered.evidence.atomicGroup.productionAtomicGroupMetadataVisible = true;
+  tampered.evidence.atomicGroup.productionStorageReceiptsMeasured = true;
+  tampered.evidence.atomicGroup.productionStorageReceiptsVisible = true;
+  tampered.evidence.atomicGroup.productionRowBatchExecutorMeasured = true;
+  tampered.evidence.atomicGroup.productionRowBatchExecutorVisible = true;
+  tampered.evidence.parallelism.parallelismLimitsVisible = false;
+
+  const details = productionThroughputDetails(tampered);
+  const blockers = productionThroughputBlockers(tampered);
+
+  assert.equal(details.parallelismLimitsVisible, false);
+  assert.equal(
+    details.atomicGroup.productionRowBatchExecutorVisibleAndStorageReceiptsVisible,
+    true,
+  );
+  assert.equal(
+    blockers.includes('production-row-batch-executor-visible-without-parallelism-limits'),
+    true,
+  );
+  assert.equal(blockers.includes('production-parallelism-limits-not-visible'), true);
+});
+
 test('fast-path fixture rejects cached chunk hashes from skipping window sizing after a pause', () => {
   const fixture = buildFastPathFixture();
   const rejected = fixture.rejectedFastPaths.find(

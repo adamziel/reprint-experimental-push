@@ -325,6 +325,9 @@ Current executable gate:
   both visible and canonical, so the audit view can reject a drifted limit
   summary without reconstructing the visible bit from the rest of the
   backpressure evidence.
+- The production-throughput gate now also fails closed if row-batch executor
+  visibility appears without visible measured canonical parallelism caps, so a
+  forged batch surface cannot masquerade as bounded production fanout.
 - The same details also let compressed row-batch manifests reuse the
   dependency graph for bounded plugin-update batch sizing, but only as
   planning evidence with per-row preconditions and batch receipts still
