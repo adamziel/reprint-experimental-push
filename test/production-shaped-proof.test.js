@@ -13,6 +13,7 @@ import {
   buildAuthSessionSourceCommand,
   resolveAuthSessionSourceCommand,
 } from '../scripts/playground/auth-session-source-command.js';
+import { resolvePackagedProductionPluginSourceCommand } from '../scripts/playground/packaged-production-plugin-source-command.js';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const muPluginDir = path.join(repoRoot, 'scripts/playground/rest-mu-plugins');
@@ -678,12 +679,22 @@ test('production-shaped release verify synthesizes the packaged production auth/
     username: 'reprint_push_admin',
     applicationPassword: 'reprint-push-admin-app-password',
   });
-  const sourceCommand = resolveAuthSessionSourceCommand({
+  const sourceCommand = resolvePackagedProductionPluginSourceCommand({
     sourceUrl: 'http://127.0.0.1:8080',
     username: 'reprint_push_admin',
     applicationPassword: 'reprint-push-admin-app-password',
   });
   assert.equal(sourceCommand, expectedSourceCommand);
+});
+
+test('packaged production plugin source command preserves an explicit command override', () => {
+  const sourceCommand = resolvePackagedProductionPluginSourceCommand({
+    sourceUrl: 'http://127.0.0.1:8080',
+    username: 'reprint_push_admin',
+    applicationPassword: 'reprint-push-admin-app-password',
+    authSessionSourceCommand: 'custom-source-command',
+  });
+  assert.equal(sourceCommand, 'custom-source-command');
 });
 
 test('production-shaped release verify prefers the consumed production auth/session source over stale env credentials', () => {

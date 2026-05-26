@@ -13,7 +13,7 @@ import {
   loadAuthSessionSource,
   resolveAuthSessionSourceCredentials,
 } from './auth-session-source.js';
-import { resolveAuthSessionSourceCommand } from './auth-session-source-command.js';
+import { resolvePackagedProductionPluginSourceCommand } from './packaged-production-plugin-source-command.js';
 import {
   appendRecoveryClaimOpened,
   consumeProductionRecoveryJournal,
@@ -67,7 +67,7 @@ if (
   username &&
   applicationPassword
 ) {
-  authSessionSourceCommand = resolveAuthSessionSourceCommand({
+  authSessionSourceCommand = resolvePackagedProductionPluginSourceCommand({
     sourceUrl: liveSourceUrl,
     username,
     applicationPassword,

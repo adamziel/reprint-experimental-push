@@ -12,7 +12,7 @@ import {
   loadAuthSessionSource,
   resolveAuthSessionSourceCredentials,
 } from './auth-session-source.js';
-import { resolveAuthSessionSourceCommand } from './auth-session-source-command.js';
+import { resolvePackagedProductionPluginSourceCommand } from './packaged-production-plugin-source-command.js';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const cliPath = path.join(repoRoot, 'bin/reprint-push-lab.js');
@@ -29,7 +29,7 @@ const authSessionSource = authSessionSourceCommand ? loadAuthSessionSource(authS
 const resolvedCredentials = resolveAuthSessionSourceCredentials(credentials, authSessionSource, {
   preferSource: true,
 });
-const packagedAuthSessionSourceCommand = resolveAuthSessionSourceCommand({
+const packagedAuthSessionSourceCommand = resolvePackagedProductionPluginSourceCommand({
   sourceUrl: resolvedCredentials.liveSourceUrl || '',
   username: resolvedCredentials.username,
   applicationPassword: resolvedCredentials.applicationPassword,
