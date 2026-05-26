@@ -1171,7 +1171,7 @@ async function waitForServer(child, baseUrl, getLogs) {
         const readinessProbeCount = lastProbes.filter((probe) => probe.route === '/wp-json/').length;
         if (readinessHint) {
           notReadyProbeCount += 1;
-          throwPlaygroundReadinessFailure(
+          await throwPlaygroundReadinessFailure(
             child,
             `Playground server reported the bounded readiness failure ${response.status} after ${readinessProbeCount} /wp-json/ probes (${notReadyProbeCount} consecutive not-ready response${notReadyProbeCount === 1 ? '' : 's'}; limit ${maxNotReadyReadinessProbes})`,
             lastError,
@@ -1181,7 +1181,7 @@ async function waitForServer(child, baseUrl, getLogs) {
         }
         notReadyProbeCount = 0;
         if (response.status !== 200 && readinessProbeCount >= maxReadinessProbes) {
-          throwPlaygroundReadinessFailure(
+          await throwPlaygroundReadinessFailure(
             child,
             `Playground server stayed in readiness response ${response.status} after ${readinessProbeCount} /wp-json/ probes`,
             lastError,
@@ -1207,7 +1207,7 @@ async function waitForServer(child, baseUrl, getLogs) {
       getLogs(),
     );
   }
-  throwPlaygroundReadinessFailure(
+  await throwPlaygroundReadinessFailure(
     child,
     `Timed out waiting for Playground server at ${baseUrl}`,
     lastError,
