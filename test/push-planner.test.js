@@ -15071,6 +15071,179 @@ test('allows existing post and postmeta rows to reference the same post created 
   assert.equal(result.site.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin drift */');
 });
 
+test('allows existing post postmeta and term-relationship rows to share same-plan post and taxonomy creates while preserving remote-only plugin drift', () => {
+  const parentResourceKey = 'row:["wp_posts","ID:99"]';
+  const childResourceKey = 'row:["wp_posts","ID:10"]';
+  const postmetaResourceKey = 'row:["wp_postmeta","meta_id:55"]';
+  const taxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:5"]';
+  const relationshipResourceKey = 'row:["wp_term_relationships","object_id:99,term_taxonomy_id:5"]';
+  const base = baseSite();
+  base.db.wp_posts['ID:10'] = {
+    ID: 10,
+    post_title: 'Base child post',
+    post_content: 'Base child body',
+    post_status: 'publish',
+    post_parent: 0,
+  };
+  base.db.wp_postmeta = {
+    'meta_id:55': {
+      meta_id: 55,
+      post_id: 0,
+      meta_key: '_shared_post_note',
+      meta_value: 'base existing shared post note',
+    },
+  };
+  base.db.wp_terms = {
+    'term_id:2': { term_id: 2, name: 'Base relationship term', slug: 'base-relationship-term' },
+  };
+  base.db.wp_term_relationships = {
+    'object_id:99,term_taxonomy_id:5': {
+      object_id: 99,
+      term_taxonomy_id: 5,
+      term_order: 0,
+      note: 'base relationship note',
+    },
+  };
+
+  const local = baseSite();
+  local.db.wp_posts['ID:10'] = {
+    ID: 10,
+    post_title: 'Local child post',
+    post_content: 'Local child body',
+    post_status: 'publish',
+    post_parent: 99,
+  };
+  local.db.wp_posts['ID:99'] = {
+    ID: 99,
+    post_title: 'Local shared parent post',
+    post_content: 'Local shared parent body',
+    post_status: 'publish',
+    post_type: 'post',
+  };
+  local.db.wp_postmeta = {
+    'meta_id:55': {
+      meta_id: 55,
+      post_id: 99,
+      meta_key: '_shared_post_note',
+      meta_value: 'local existing shared post note',
+    },
+  };
+  local.db.wp_terms = JSON.parse(JSON.stringify(base.db.wp_terms));
+  local.db.wp_term_taxonomy = {
+    'term_taxonomy_id:5': {
+      term_taxonomy_id: 5,
+      term_id: 2,
+      taxonomy: 'category',
+      description: 'Local shared relationship taxonomy',
+      parent: 0,
+    },
+  };
+  local.db.wp_term_relationships = {
+    'object_id:99,term_taxonomy_id:5': {
+      object_id: 99,
+      term_taxonomy_id: 5,
+      term_order: 1,
+      note: 'local shared relationship note',
+    },
+  };
+
+  const remote = baseSite();
+  remote.db.wp_posts['ID:10'] = JSON.parse(JSON.stringify(base.db.wp_posts['ID:10']));
+  remote.db.wp_postmeta = JSON.parse(JSON.stringify(base.db.wp_postmeta));
+  remote.db.wp_terms = JSON.parse(JSON.stringify(base.db.wp_terms));
+  remote.db.wp_term_relationships = JSON.parse(JSON.stringify(base.db.wp_term_relationships));
+  remote.plugins.forms.description = 'remote-only plugin drift';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin drift */';
+
+  const plan = planFor(base, local, remote);
+  const parentMutation = mutationFor(plan, parentResourceKey);
+  const childMutation = mutationFor(plan, childResourceKey);
+  const postmetaMutation = mutationFor(plan, postmetaResourceKey);
+  const taxonomyMutation = mutationFor(plan, taxonomyResourceKey);
+  const relationshipMutation = mutationFor(plan, relationshipResourceKey);
+  const childReference = childMutation.wordpressGraphReferences.find((reference) =>
+    reference.relationshipType === 'post-parent');
+  const postmetaReference = postmetaMutation.wordpressGraphReferences.find((reference) =>
+    reference.relationshipType === 'postmeta-post');
+  const relationshipObjectReference = relationshipMutation.wordpressGraphReferences.find((reference) =>
+    reference.relationshipType === 'term-relationship-object');
+  const relationshipTaxonomyReference = relationshipMutation.wordpressGraphReferences.find((reference) =>
+    reference.relationshipType === 'term-relationship-taxonomy');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.blockers, 0);
+  assert.equal(parentMutation.changeKind, 'create');
+  assert.equal(taxonomyMutation.changeKind, 'create');
+  assert.equal(childMutation.changeKind, 'update');
+  assert.equal(postmetaMutation.changeKind, 'update');
+  assert.equal(relationshipMutation.changeKind, 'update');
+  assert.ok(
+    plan.mutations.indexOf(parentMutation) < plan.mutations.indexOf(childMutation),
+    'parent create must be ordered before dependent child update',
+  );
+  assert.ok(
+    plan.mutations.indexOf(parentMutation) < plan.mutations.indexOf(postmetaMutation),
+    'parent create must be ordered before dependent existing postmeta update',
+  );
+  assert.ok(
+    plan.mutations.indexOf(parentMutation) < plan.mutations.indexOf(relationshipMutation),
+    'parent create must be ordered before dependent existing term-relationship update',
+  );
+  assert.ok(
+    plan.mutations.indexOf(taxonomyMutation) < plan.mutations.indexOf(relationshipMutation),
+    'taxonomy create must be ordered before dependent existing term-relationship update',
+  );
+  assert.deepEqual(childMutation.dependsOnMutationIds, [parentMutation.id]);
+  assert.deepEqual(postmetaMutation.dependsOnMutationIds, [parentMutation.id]);
+  assert.deepEqual(
+    [...relationshipMutation.dependsOnMutationIds].sort(),
+    [parentMutation.id, taxonomyMutation.id].sort(),
+  );
+  assert.equal(plan.summary.graphDependencies, 4);
+  assert.deepEqual(
+    plan.graphDependencies.map((dependency) => [dependency.relationshipType, dependency.sourceResourceKey, dependency.targetResourceKey]),
+    [
+      ['postmeta-post', postmetaResourceKey, parentResourceKey],
+      ['post-parent', childResourceKey, parentResourceKey],
+      ['term-relationship-object', relationshipResourceKey, parentResourceKey],
+      ['term-relationship-taxonomy', relationshipResourceKey, taxonomyResourceKey],
+    ],
+  );
+  assert.equal(childReference.relationshipKey, 'wp_posts.post_parent');
+  assert.equal(childReference.relationshipType, 'post-parent');
+  assert.equal(childReference.targetResourceKey, parentResourceKey);
+  assert.equal(childReference.resolutionPolicy, 'same-plan-local-create');
+  assert.equal(postmetaReference.relationshipKey, 'wp_postmeta.post_id');
+  assert.equal(postmetaReference.relationshipType, 'postmeta-post');
+  assert.equal(postmetaReference.targetResourceKey, parentResourceKey);
+  assert.equal(postmetaReference.resolutionPolicy, 'same-plan-local-create');
+  assert.equal(relationshipObjectReference.relationshipKey, 'wp_term_relationships.object_id');
+  assert.equal(relationshipObjectReference.relationshipType, 'term-relationship-object');
+  assert.equal(relationshipObjectReference.targetResourceKey, parentResourceKey);
+  assert.equal(relationshipObjectReference.resolutionPolicy, 'same-plan-local-create');
+  assert.equal(relationshipTaxonomyReference.relationshipKey, 'wp_term_relationships.term_taxonomy_id');
+  assert.equal(relationshipTaxonomyReference.relationshipType, 'term-relationship-taxonomy');
+  assert.equal(relationshipTaxonomyReference.targetResourceKey, taxonomyResourceKey);
+  assert.equal(relationshipTaxonomyReference.resolutionPolicy, 'same-plan-local-create');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+
+  const result = applyPlan(remote, plan);
+  assert.equal(result.site.db.wp_posts['ID:99'].post_title, 'Local shared parent post');
+  assert.equal(result.site.db.wp_posts['ID:10'].post_parent, 99);
+  assert.equal(result.site.db.wp_posts['ID:10'].post_title, 'Local child post');
+  assert.equal(result.site.db.wp_postmeta['meta_id:55'].post_id, 99);
+  assert.equal(result.site.db.wp_postmeta['meta_id:55'].meta_value, 'local existing shared post note');
+  assert.equal(result.site.db.wp_term_taxonomy['term_taxonomy_id:5'].description, 'Local shared relationship taxonomy');
+  assert.equal(result.site.db.wp_term_relationships['object_id:99,term_taxonomy_id:5'].object_id, 99);
+  assert.equal(result.site.db.wp_term_relationships['object_id:99,term_taxonomy_id:5'].term_order, 1);
+  assert.equal(result.site.db.wp_term_relationships['object_id:99,term_taxonomy_id:5'].note, 'local shared relationship note');
+  assert.equal(result.site.plugins.forms.description, 'remote-only plugin drift');
+  assert.equal(result.site.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin drift */');
+});
+
 test('flags local post-parent references as a conflict when the live remote parent identity disappears while preserving remote-only plugin drift', () => {
   const resourceKey = 'row:["wp_posts","ID:10"]';
   const targetResourceKey = 'row:["wp_posts","ID:99"]';
