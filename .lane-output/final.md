@@ -10,14 +10,17 @@ Commands run
 - `find . -path '*/.lane-output/final*.md' -type f | sort | tail -n 12 | xargs -r ls -lt`
 - `git status --short --branch`
 - `git for-each-ref --sort=-committerdate --format='%(refname:short) %(objectname:short) %(committerdate:iso8601) %(subject)' refs/remotes/origin/lane | head -n 25`
-- `sed -n '1,260p' audits/objective-audit.md`
+- `sed -n '1,280p' audits/objective-audit.md`
 - `git diff --stat`
+- `git diff -- audits/objective-audit.md .lane-output/final.md`
+- `git status --short --branch && git rev-parse --short HEAD`
+- `git for-each-ref --sort=-committerdate --format='%(refname:short) %(objectname:short) %(committerdate:iso8601) %(subject)' refs/remotes/origin/lane | head -n 30`
 
 Push result
-- Not pushed this pass
+- Not pushed yet
 
 Worktree status
-- Clean
+- Dirty tracked files: `audits/objective-audit.md`, `.lane-output/final.md`
 - Branch: `lane/cycle-20260525-mainwindows-2349/independent-auditor...origin/main [ahead 1417, behind 246]`
 
 Next supervisor nudge
