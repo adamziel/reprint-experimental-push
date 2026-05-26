@@ -136,6 +136,58 @@ test('checked db journal merge preserves more specific inline values', { skip: !
   });
 });
 
+test('checked db journal merge upgrades stale checked-boundary acceptance and fills empty nested values', { skip: !hasPhp }, () => {
+  const result = runMerge(
+    {
+      acceptedOnCheckedBoundary: false,
+      ownership: {
+        ownsJournal: true,
+        restartReadable: null,
+        productionAdapter: '',
+      },
+      leaseFence: {
+        boundary: '',
+        claimKeyUnique: true,
+        monotonicSequence: null,
+        restartReadable: '',
+        staleClaimRejected: null,
+      },
+    },
+    {
+      acceptedOnCheckedBoundary: true,
+      ownership: {
+        ownsJournal: true,
+        restartReadable: true,
+        productionAdapter: 'wpdb-single-statement-cas',
+      },
+      leaseFence: {
+        boundary: 'wpdb-single-statement-cas',
+        claimKeyUnique: true,
+        monotonicSequence: true,
+        restartReadable: true,
+        staleClaimRejected: true,
+      },
+    },
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  assert.deepEqual(JSON.parse(result.stdout), {
+    acceptedOnCheckedBoundary: true,
+    ownership: {
+      ownsJournal: true,
+      restartReadable: true,
+      productionAdapter: 'wpdb-single-statement-cas',
+    },
+    leaseFence: {
+      boundary: 'wpdb-single-statement-cas',
+      claimKeyUnique: true,
+      monotonicSequence: true,
+      restartReadable: true,
+      staleClaimRejected: true,
+    },
+  });
+});
+
 test('checked db journal merge upgrades stale inline scope on checked boundaries', { skip: !hasPhp }, () => {
   const result = runMerge(
     {

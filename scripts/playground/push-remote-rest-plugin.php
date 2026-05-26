@@ -545,7 +545,6 @@ function reprint_push_lab_rest_authenticated_recovery_inspect(WP_REST_Request $r
 function reprint_push_lab_rest_merge_checked_db_journal_contract(array $db_journal, array $checked_summary): array
 {
     foreach ([
-        'acceptedOnCheckedBoundary',
         'rowCount',
         'latestRows',
         'eventSummaries',
@@ -560,6 +559,10 @@ function reprint_push_lab_rest_merge_checked_db_journal_contract(array $db_journ
         $db_journal['scope'] = $checked_summary['scope'];
     }
 
+    if (reprint_push_lab_rest_should_upgrade_checked_boundary_acceptance($db_journal, $checked_summary)) {
+        $db_journal['acceptedOnCheckedBoundary'] = true;
+    }
+
     foreach (['ownership', 'leaseFence'] as $nested_key) {
         $existing = isset($db_journal[$nested_key]) && is_array($db_journal[$nested_key])
             ? $db_journal[$nested_key]
@@ -568,7 +571,7 @@ function reprint_push_lab_rest_merge_checked_db_journal_contract(array $db_journ
             ? $checked_summary[$nested_key]
             : [];
         if ($existing !== [] || $checked !== []) {
-            $db_journal[$nested_key] = array_merge($checked, $existing);
+            $db_journal[$nested_key] = reprint_push_lab_rest_merge_checked_contract_fields($existing, $checked);
         }
     }
 
@@ -591,6 +594,29 @@ function reprint_push_lab_rest_should_upgrade_checked_db_journal_scope(array $db
     }
 
     return preg_match('/local Playground fixture only|not production durability/i', $existing_scope) === 1;
+}
+
+function reprint_push_lab_rest_should_upgrade_checked_boundary_acceptance(array $db_journal, array $checked_summary): bool
+{
+    if (($checked_summary['acceptedOnCheckedBoundary'] ?? false) !== true) {
+        return false;
+    }
+
+    return !array_key_exists('acceptedOnCheckedBoundary', $db_journal)
+        || $db_journal['acceptedOnCheckedBoundary'] !== true;
+}
+
+function reprint_push_lab_rest_merge_checked_contract_fields(array $existing, array $checked): array
+{
+    $merged = $existing;
+
+    foreach ($checked as $key => $value) {
+        if (!array_key_exists($key, $merged) || $merged[$key] === null || $merged[$key] === '') {
+            $merged[$key] = $value;
+        }
+    }
+
+    return $merged;
 }
 
 function reprint_push_lab_rest_merge_checked_storage_guard(array $storage_guard, array $checked_storage_guard): array
