@@ -128,6 +128,38 @@ function runDbJournalStorageGuard(summary) {
   });
 }
 
+function runAttachCheckedDbJournalContract(result, checkedSummary, injectIfMissing = false) {
+  return spawnSync('php', [
+    '-r',
+    [
+      'define("ABSPATH", dirname($argv[1]));',
+      'function add_filter(...$args) {}',
+      'function add_action(...$args) {}',
+      'function register_rest_route(...$args) {}',
+      'class WP_REST_Server { const CREATABLE = "POST"; const READABLE = "GET"; }',
+      'class WP_REST_Response {',
+      '  private $data;',
+      '  public function __construct($data = null, $status = null) { $this->data = $data; }',
+      '  public function get_data() { return $this->data; }',
+      '  public function set_data($data) { $this->data = $data; }',
+      '}',
+      'class WP_REST_Request {}',
+      'require $argv[1];',
+      '$result = json_decode($argv[2], true);',
+      '$checkedSummary = json_decode($argv[3], true);',
+      '$injectIfMissing = ($argv[4] ?? "0") === "1";',
+      'echo json_encode(reprint_push_lab_rest_attach_checked_db_journal_contract($result, $injectIfMissing, $checkedSummary));',
+    ].join(' '),
+    pluginFile,
+    JSON.stringify(result),
+    JSON.stringify(checkedSummary),
+    injectIfMissing ? '1' : '0',
+  ], {
+    cwd: repoRoot,
+    encoding: 'utf8',
+  });
+}
+
 function runWriterLeaseContract({
   staleClaimRejected,
   claimKeyUnique = true,
@@ -338,6 +370,137 @@ test('db journal storage guard stays visible when only checked event summaries r
     boundary: 'wpdb-single-statement-cas',
     operation: 'update',
     outcome: 'applied',
+  });
+});
+
+test('checked authenticated apply evidence is upgraded to the authoritative db journal contract', { skip: !hasPhp }, () => {
+  const checkedSummary = {
+    acceptedOnCheckedBoundary: true,
+    scope: 'packaged production plugin journal surface; not local Playground fixture only',
+    ownership: {
+      ownsJournal: true,
+      restartReadable: true,
+      productionAdapter: 'wpdb-single-statement-cas',
+    },
+    writerLease: {
+      strategy: 'claim-fenced-single-writer',
+      claimKeyUnique: true,
+      fsyncEvidence: true,
+      storageGuard: 'wpdb-single-statement-cas',
+      monotonicSequence: true,
+      restartReadable: true,
+      staleClaimRejected: true,
+    },
+    leaseFence: {
+      boundary: 'wpdb-single-statement-cas',
+      claimKeyUnique: true,
+      fsyncEvidence: true,
+      monotonicSequence: true,
+      restartReadable: true,
+      staleClaimRejected: true,
+      writerLease: {
+        strategy: 'claim-fenced-single-writer',
+        claimKeyUnique: true,
+        fsyncEvidence: true,
+        storageGuard: 'wpdb-single-statement-cas',
+        monotonicSequence: true,
+        restartReadable: true,
+        staleClaimRejected: true,
+      },
+    },
+    latestRows: [
+      {
+        event: 'apply-committed',
+        result: {
+          storageGuard: {
+            boundary: 'wpdb-single-statement-cas',
+            operation: 'update',
+            outcome: 'applied',
+          },
+        },
+      },
+    ],
+    eventSummaries: [
+      { event: 'apply-committed', count: 1, latestId: 14 },
+    ],
+  };
+  const result = runAttachCheckedDbJournalContract(
+    {
+      ok: true,
+      dbJournal: {
+        event: 'apply-replayed',
+        sequence: 15,
+        scope: 'local Playground fixture only',
+      },
+      storageGuard: {
+        boundary: 'local-fixture-write',
+        operation: 'append',
+        outcome: 'fixture-only',
+      },
+    },
+    checkedSummary,
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  assert.deepEqual(JSON.parse(result.stdout), {
+    ok: true,
+    dbJournal: {
+      event: 'apply-replayed',
+      sequence: 15,
+      scope: 'packaged production plugin journal surface; not local Playground fixture only',
+      acceptedOnCheckedBoundary: true,
+      ownership: {
+        ownsJournal: true,
+        restartReadable: true,
+        productionAdapter: 'wpdb-single-statement-cas',
+      },
+      writerLease: {
+        strategy: 'claim-fenced-single-writer',
+        claimKeyUnique: true,
+        fsyncEvidence: true,
+        storageGuard: 'wpdb-single-statement-cas',
+        monotonicSequence: true,
+        restartReadable: true,
+        staleClaimRejected: true,
+      },
+      leaseFence: {
+        boundary: 'wpdb-single-statement-cas',
+        claimKeyUnique: true,
+        fsyncEvidence: true,
+        monotonicSequence: true,
+        restartReadable: true,
+        staleClaimRejected: true,
+        writerLease: {
+          strategy: 'claim-fenced-single-writer',
+          claimKeyUnique: true,
+          fsyncEvidence: true,
+          storageGuard: 'wpdb-single-statement-cas',
+          monotonicSequence: true,
+          restartReadable: true,
+          staleClaimRejected: true,
+        },
+      },
+      latestRows: [
+        {
+          event: 'apply-committed',
+          result: {
+            storageGuard: {
+              boundary: 'wpdb-single-statement-cas',
+              operation: 'update',
+              outcome: 'applied',
+            },
+          },
+        },
+      ],
+      eventSummaries: [
+        { event: 'apply-committed', count: 1, latestId: 14 },
+      ],
+    },
+    storageGuard: {
+      boundary: 'wpdb-single-statement-cas',
+      operation: 'update',
+      outcome: 'applied',
+    },
   });
 });
 

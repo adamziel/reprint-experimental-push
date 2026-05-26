@@ -494,6 +494,7 @@ function reprint_push_lab_rest_authenticated_apply(WP_REST_Request $request): WP
     $response = reprint_push_lab_rest_apply_with_db_journal($request, true);
     $result = $response->get_data();
     if (($result['ok'] ?? false) === true || isset($result['idempotency'])) {
+        $result = reprint_push_lab_rest_attach_checked_db_journal_contract($result);
         $result['responseSchemaVersion'] = 1;
         $result['auth'] = reprint_push_lab_rest_auth_evidence($request);
         $result['signedRequest'] = reprint_push_lab_rest_signed_request_evidence($request);
@@ -514,46 +515,63 @@ function reprint_push_lab_rest_authenticated_recovery_inspect(WP_REST_Request $r
         if (isset($result['recovery']) && is_array($result['recovery']) && !isset($result['recovery']['journal'])) {
             $result['recovery']['journal'] = reprint_push_lab_rest_recovery_journal_evidence();
         }
-        $db_journal = reprint_push_lab_db_journal_summary(20, true);
-        if (!isset($result['dbJournal']) || !is_array($result['dbJournal'])) {
-            $result['dbJournal'] = $db_journal;
-        } else {
-            $upgrade_checked_storage_guard = reprint_push_lab_rest_should_upgrade_checked_db_journal_scope(
-                $result['dbJournal'],
-                $db_journal
-            ) || reprint_push_lab_rest_should_upgrade_checked_boundary_acceptance(
-                $result['dbJournal'],
-                $db_journal
-            );
-            $result['dbJournal'] = reprint_push_lab_rest_merge_checked_db_journal_contract(
-                $result['dbJournal'],
-                $db_journal
-            );
-        }
-        $storage_guard = reprint_push_lab_rest_db_journal_storage_guard($db_journal);
-        if (is_array($storage_guard)) {
-            $prefer_checked_storage_guard = (isset($upgrade_checked_storage_guard) && $upgrade_checked_storage_guard)
-                || reprint_push_lab_rest_should_prefer_authoritative_checked_storage_guard(
-                    $result['storageGuard'] ?? [],
-                    $storage_guard,
-                    $db_journal
-                );
-            if (!isset($result['storageGuard']) || !is_array($result['storageGuard'])) {
-                $result['storageGuard'] = $storage_guard;
-            } else {
-                $result['storageGuard'] = reprint_push_lab_rest_merge_checked_storage_guard(
-                    $result['storageGuard'],
-                    $storage_guard,
-                    $prefer_checked_storage_guard
-                );
-            }
-        }
+        $result = reprint_push_lab_rest_attach_checked_db_journal_contract($result, true);
         $result['responseSchemaVersion'] = 1;
         $result['auth'] = reprint_push_lab_rest_auth_evidence($request);
         $result['signedRequest'] = reprint_push_lab_rest_signed_request_evidence($request);
         $response->set_data($result);
     }
     return $response;
+}
+
+function reprint_push_lab_rest_attach_checked_db_journal_contract(
+    array $result,
+    bool $inject_if_missing = false,
+    ?array $checked_db_journal = null
+): array {
+    $db_journal = is_array($checked_db_journal)
+        ? $checked_db_journal
+        : reprint_push_lab_db_journal_summary(20, true);
+    $upgrade_checked_storage_guard = false;
+
+    if (!isset($result['dbJournal']) || !is_array($result['dbJournal'])) {
+        if ($inject_if_missing) {
+            $result['dbJournal'] = $db_journal;
+        }
+    } else {
+        $upgrade_checked_storage_guard = reprint_push_lab_rest_should_upgrade_checked_db_journal_scope(
+            $result['dbJournal'],
+            $db_journal
+        ) || reprint_push_lab_rest_should_upgrade_checked_boundary_acceptance(
+            $result['dbJournal'],
+            $db_journal
+        );
+        $result['dbJournal'] = reprint_push_lab_rest_merge_checked_db_journal_contract(
+            $result['dbJournal'],
+            $db_journal
+        );
+    }
+
+    $storage_guard = reprint_push_lab_rest_db_journal_storage_guard($db_journal);
+    if (is_array($storage_guard)) {
+        $prefer_checked_storage_guard = $upgrade_checked_storage_guard
+            || reprint_push_lab_rest_should_prefer_authoritative_checked_storage_guard(
+                $result['storageGuard'] ?? [],
+                $storage_guard,
+                $db_journal
+            );
+        if (!isset($result['storageGuard']) || !is_array($result['storageGuard'])) {
+            $result['storageGuard'] = $storage_guard;
+        } else {
+            $result['storageGuard'] = reprint_push_lab_rest_merge_checked_storage_guard(
+                $result['storageGuard'],
+                $storage_guard,
+                $prefer_checked_storage_guard
+            );
+        }
+    }
+
+    return $result;
 }
 
 function reprint_push_lab_rest_merge_checked_db_journal_contract(array $db_journal, array $checked_summary): array
