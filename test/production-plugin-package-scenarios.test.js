@@ -32,6 +32,18 @@ test('scenario parser expands the full driver-registration alias into every malf
   );
 });
 
+test('scenario parser expands the verifier alias into receipt and registration guards', () => {
+  const selected = parseProductionPluginPackageSelectedScenarios(
+    ['--scenario=driver-verifier-guards'],
+    undefined,
+  );
+
+  assert.deepEqual(
+    Array.from(selected).sort(),
+    scenarioGroups['driver-verifier-guards'].slice().sort(),
+  );
+});
+
 test('scenario parser rejects unknown plugin-driver smoke scenarios', () => {
   assert.throws(
     () => parseProductionPluginPackageSelectedScenarios(

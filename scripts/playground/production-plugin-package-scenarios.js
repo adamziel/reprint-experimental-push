@@ -1,4 +1,15 @@
 const scenarioGroups = {
+  'driver-verifier-guards': [
+    'driver-receipt-guards',
+    'driver-missing-export-guard',
+    'driver-missing-apply-guard',
+    'driver-missing-validate-guard',
+    'driver-missing-name-guard',
+    'driver-missing-plugin-owner-guard',
+    'driver-missing-table-guard',
+    'driver-duplicate-name-guard',
+    'driver-duplicate-table-guard',
+  ],
   'driver-registration-guards': [
     'driver-missing-export-guard',
     'driver-missing-apply-guard',

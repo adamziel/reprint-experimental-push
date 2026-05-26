@@ -250,7 +250,9 @@ echo "REPRINT_PUSH_DRIVER_GUARD_JSON_END\\n";
   logSmokeStage('write-blueprints');
   writeActivationBlueprint(path.join(repoRoot, fixtures.base), blueprintPath);
   if (shouldRunAnyScenario(['driver-receipt-guards'])) {
-    writeDriverFixtureBlueprint(path.join(repoRoot, fixtures.base), driverGuardSnapshotBlueprintPath);
+    writeDriverFixtureBlueprint(path.join(repoRoot, fixtures.base), driverGuardSnapshotBlueprintPath, {
+      enableCredentialRevocationRoute: true,
+    });
     writeDriverFixtureBlueprint(path.join(repoRoot, fixtures.base), driverGuardServerBlueprintPath, {
       activatePackagedPlugin: true,
       provisionAuth: true,
@@ -607,16 +609,24 @@ echo "REPRINT_PUSH_DRIVER_GUARD_JSON_END\\n";
       'packaged apply route did not persist the arbitrary driver updated_marker',
     );
 
-    const forgedRemote = deepClone(remoteSnapshot.body.snapshot);
+    const forgedDeleteBase = enableForgedDeletePolicy(
+      deepClone(driverGuardBaseSnapshot),
+      driverFixture.resourceKey,
+    );
+    const forgedDeleteLocal = deepClone(forgedDeleteBase);
+    delete forgedDeleteLocal.db?.[driverFixture.table]?.['entry_id:1'];
+    enableForgedDeletePolicy(forgedDeleteLocal, driverFixture.resourceKey);
+    const forgedRemote = enableForgedDeletePolicy(
+      deepClone(remoteSnapshot.body.snapshot),
+      driverFixture.resourceKey,
+    );
     const forgedAllowedEntry = forgedRemote.meta.pluginOwnedResources.allowedResources.find(
       (entry) => entry?.resourceKey === driverFixture.resourceKey,
     );
-    forgedAllowedEntry.supportsDelete = true;
-    forgedAllowedEntry.allowDelete = true;
 
     const forgedDeletePlan = createPushPlan({
-      base: driverGuardBaseSnapshot,
-      local: driverLocalDeleteSnapshot,
+      base: forgedDeleteBase,
+      local: forgedDeleteLocal,
       remote: forgedRemote,
       now: new Date('2026-05-26T18:10:00.000Z'),
     });
@@ -1254,6 +1264,20 @@ function exportSnapshotWithStage(name, blueprintPath) {
   logSmokeStage('export-snapshot:start', name);
   const snapshot = exportSnapshot(name, blueprintPath);
   logSmokeStage('export-snapshot:ok', name);
+  return snapshot;
+}
+
+function enableForgedDeletePolicy(snapshot, resourceKey) {
+  const allowedResources = snapshot?.meta?.pluginOwnedResources?.allowedResources;
+  if (!Array.isArray(allowedResources)) {
+    return snapshot;
+  }
+  const entry = allowedResources.find((candidate) => candidate?.resourceKey === resourceKey);
+  if (!entry || typeof entry !== 'object') {
+    return snapshot;
+  }
+  entry.supportsDelete = true;
+  entry.allowDelete = true;
   return snapshot;
 }
 
