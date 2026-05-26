@@ -254,6 +254,16 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
     'compressed durable receipt logs stay bounded and preserve replay keys',
   );
   assert.ok(
+    model.safeFastPaths.some(
+      (fastPath) =>
+        fastPath.allowedShortcut === 'compress-planning-evidence-and-batch-raw-receipts-for-bounded-replay' &&
+        fastPath.area === 'backpressure' &&
+        fastPath.visibilityBoundary === 'transport-and-journal-flush-only' &&
+        fastPath.failureEvidence === 'compressed planning cursor plus ordered raw durable receipts and journal records',
+    ),
+    'compressed planning evidence can batch raw receipts without widening visibility',
+  );
+  assert.ok(
     model.rejectedFastPaths.every((fastPath) =>
       typeof fastPath.rejectedGate === 'string' &&
       Array.isArray(fastPath.violates) &&

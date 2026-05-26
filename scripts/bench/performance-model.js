@@ -728,6 +728,27 @@ export const SAFE_FAST_PATHS = Object.freeze([
     publishesStagedDataEarly: false,
   },
   {
+    area: 'backpressure',
+    reduces: ['wire-bytes', 'fsync-count', 'queue-drain-time'],
+    allowedShortcut: 'compress-planning-evidence-and-batch-raw-receipts-for-bounded-replay',
+    guardrails: [
+      'planning-compression-stays-transport-only',
+      'raw-receipt-order-and-keys-stay-intact-for-replay',
+      'journal-lag-stays-within-budget',
+    ],
+    gateProofs: {
+      skip: 'compressed planning evidence can reduce duplicate scan traffic while the executor batches already-produced raw receipts for replay',
+      live: 'the eventual file publish or row apply still rechecks the live precondition at the storage boundary',
+      group: 'receipt batching changes flush timing only and never moves an atomic-group boundary or file-publish barrier',
+      recovery: 'compressed planning evidence remains advisory while raw receipt order and journal records classify pause, retry, or crash',
+    },
+    visibilityBoundary: 'transport-and-journal-flush-only',
+    failureEvidence: 'compressed planning cursor plus ordered raw durable receipts and journal records',
+    bypassesLivePreconditions: false,
+    splitsAtomicGroup: false,
+    publishesStagedDataEarly: false,
+  },
+  {
     area: 'compression',
     reduces: ['wire-bytes', 'storage-footprint-for-recovery-evidence'],
     allowedShortcut: 'compress-durable-receipt-logs-with-stable-receipt-keys',
