@@ -1620,7 +1620,6 @@ function samePlanCreatedGraphIdentitySupport({ resource, resources, base, local,
   const postInboundReference = inboundReferences.find((reference) =>
     reference.relationshipType === 'term-relationship-object'
     && reference.targetResource?.table === 'wp_posts');
-
   return {
     supported: false,
     className: 'stale-wordpress-graph-identity',
@@ -2504,7 +2503,7 @@ function unsupportedCommentsUsersResourceSupport({ resource, baseValue, localVal
     className: 'unsupported-comments-users-resource',
     reason: resource.table === 'wp_users'
       ? 'User graph resources are not yet supported by the planner.'
-    : 'Comments graph resources are not yet supported by the planner.',
+      : 'Comments graph resources are not yet supported by the planner.',
   };
 }
 

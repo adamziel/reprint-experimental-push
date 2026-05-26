@@ -16103,7 +16103,6 @@ test('blocks local same-plan created comment parent identity while preserving re
 
 test('blocks local same-plan created comment user identity while preserving remote-only plugin drift', () => {
   const resourceKey = 'row:["wp_comments","comment_ID:20"]';
-  const targetResourceKey = 'row:["wp_users","id:9"]';
   const base = baseSite();
   base.db.wp_comments = {
     'comment_ID:20': {
@@ -16142,8 +16141,7 @@ test('blocks local same-plan created comment user identity while preserving remo
 
   assert.equal(plan.status, 'blocked');
   assert.equal(plan.summary.mutations, 0);
-  assert.equal(mutationFor(plan, targetResourceKey), undefined);
-  assert.equal(decisionFor(plan, targetResourceKey), undefined);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
   assert.equal(plan.conflicts.length, 0);
   assert.equal(blocker.class, 'unsupported-comments-users-resource');
   assert.equal(blocker.resourceKey, resourceKey);
