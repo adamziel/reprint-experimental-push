@@ -1,4 +1,4 @@
-Checked the freshest remote lane heads at `2026-05-26 08:07:17 CEST (+0200)`. The visible delta is still support/freshness hardening, not live production release proof, so the verdict remains `0/4`.
+Checked the freshest remote `reliable-executor` head at `2026-05-26 08:09:10 CEST (+0200)`. The current tip is `7fde0c76`, which still only tightens replay/session equivalence and does not prove production-backed auth/session lifecycle or a live release boundary, so the verdict remains `0/4`.
 
 Changed files:
 - [`audits/objective-audit.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/independent-auditor/audits/objective-audit.md)
@@ -6,38 +6,21 @@ Changed files:
 
 Commands run:
 - `date '+%Y-%m-%d %H:%M:%S %Z (%z)'`
+- `sed -n '1,240p' supervision/README.md`
+- `sed -n '1,220p' supervision/lanes/independent-auditor.md`
+- `sed -n '1,240p' .lane-output/final-loop-20260526-080756.md`
 - `sed -n '1,260p' audits/objective-audit.md`
-- `git for-each-ref --format='%(refname:short) %(objectname:short) %(committerdate:iso8601) %(subject)' refs/remotes/origin/lane | sort | tail -n 35`
 - `git status --short --branch`
-- `sed -n '1,220p' .lane-output/final.md`
-- `rg -n "Fresh remote heads at audit time|1a169e1f|221d8876|eff8b208" audits/objective-audit.md`
+- `git ls-remote --heads origin lane/reliable-executor lane/no-data-loss-recovery lane/no-data-loss-invariants lane/cycle-20260525-mainwindows-2349/reliable-executor lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery lane/cycle-20260525-mainwindows-2349/no-data-loss-invariants | sed -n '1,20p'`
+- `git log --oneline -1 origin/lane/reliable-executor`
+- `rg -n "221d8876|7fde0c76|Fresh remote heads|0/4|reliable-executor" audits/objective-audit.md`
 
 Push result:
 - Not run yet
 
 Worktree status:
-- Branch: `lane/cycle-20260525-mainwindows-2349/independent-auditor...origin/main [ahead 1597, behind 471]`
-- Dirty tracked state until the audit update is committed
+- Dirty tracked state in `audits/objective-audit.md` and `.lane-output/final.md`
+- Branch compares as `ahead 1599, behind 473` versus `origin/main`
 
 Next supervisor nudge:
-1. Re-poll only when fresh implementation evidence changes the release boundary, specifically production-backed auth/session lifecycle, durable-journal ownership, or a live release proof; the current audit still supports `0/4`.
-Audit pass complete.
-
-Changed files:
-- `audits/objective-audit.md`
-
-Commands run:
-- `date '+%Y-%m-%d %H:%M:%S %Z (%z)'`
-- `sed -n '1,260p' audits/objective-audit.md`
-- `git for-each-ref --format='%(refname:short) %(objectname:short) %(committerdate:iso8601) %(subject)' refs/remotes/origin/lane | sort | tail -n 30`
-- `git status --short --branch`
-
-Push result:
-- Not run yet
-
-Worktree status:
-- Dirty tracked state in `audits/objective-audit.md`
-- Branch `lane/cycle-20260525-mainwindows-2349/independent-auditor...origin/main [ahead 1598, behind 472]`
-
-Next supervisor nudge:
-1. Re-poll only when production-backed auth/session lifecycle, durable journal ownership, or live release proof changes the boundary; the audit still supports `0/4`.
+1. Re-poll only when fresh implementation evidence changes the release boundary, specifically production-backed auth/session lifecycle, durable journal ownership, or live release proof; the audit still supports `0/4`.
