@@ -309,6 +309,12 @@ export function productionThroughputBlockers(report) {
   }
   if (
     report.evidence.backpressure?.queuePausedBeforeOverflow === true
+    && report.evidence.backpressure?.receiptCursorMemoryHeadroomBytes == null
+  ) {
+    blockers.push('queue-pause-without-measured-receipt-cursor-memory-headroom');
+  }
+  if (
+    report.evidence.backpressure?.queuePausedBeforeOverflow === true
     && report.evidence.backpressure?.queuePauseHasMeasuredReceiptCursorBackpressure !== true
   ) {
     blockers.push('queue-pause-without-measured-receipt-cursor-backpressure-proof');
