@@ -581,6 +581,7 @@ function isValidProductionWriterLease(writerLease) {
   const ownKeys = Reflect.ownKeys(writerLease ?? {});
   return (
     isStrictPlainObject(writerLease)
+    && !hasHiddenOwnStringKeys(writerLease)
     && ownKeys.every((key) => key === 'id' || key === 'epoch')
     && Object.hasOwn(writerLease, 'id')
     && typeof writerLease.id === 'string'
@@ -1204,6 +1205,17 @@ function isStrictPlainObject(value) {
 
   const prototype = Object.getPrototypeOf(value);
   return prototype === Object.prototype;
+}
+
+function hasHiddenOwnStringKeys(value) {
+  if (!value || typeof value !== 'object') {
+    return false;
+  }
+
+  return Object.getOwnPropertyNames(value).some((key) => {
+    const descriptor = Object.getOwnPropertyDescriptor(value, key);
+    return descriptor?.enumerable === false;
+  });
 }
 
 function freezeProductionWriterLease(writerLease) {
