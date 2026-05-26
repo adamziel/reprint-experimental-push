@@ -1897,6 +1897,60 @@ test('blocks local termmeta references to stale remote-created term identity', (
   assert.equal(remote.db.wp_terms['term_id:7'].name, 'remote-private-term-name');
 });
 
+test('blocks a local termmeta reference to a same-plan term when a remote nav menu taxonomy exists', () => {
+  const resourceKey = 'row:["wp_termmeta","meta_id:12"]';
+  const targetResourceKey = 'row:["wp_terms","term_id:7"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_terms = {
+    'term_id:7': {
+      term_id: 7,
+      name: 'Local taxonomy term',
+      slug: 'local-taxonomy-term',
+    },
+  };
+  local.db.wp_termmeta = {
+    'meta_id:12': {
+      meta_id: 12,
+      term_id: 7,
+      meta_key: 'term-note',
+      meta_value: 'local-private-termmeta-value',
+    },
+  };
+  const remote = baseSite();
+  remote.db.wp_term_taxonomy = {
+    'term_taxonomy_id:20': {
+      term_taxonomy_id: 20,
+      term_id: 7,
+      taxonomy: 'nav_menu',
+      description: '',
+      parent: 0,
+      count: 0,
+    },
+  };
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers[0];
+  const reference = blocker.references[0];
+  const blockerJson = JSON.stringify(blocker);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 2);
+  assert.equal(mutationFor(plan, resourceKey).changeKind, 'create');
+  assert.equal(mutationFor(plan, targetResourceKey).changeKind, 'create');
+  assert.equal(decisionFor(plan, targetResourceKey), undefined);
+  assert.equal(blocker.class, 'missing-wordpress-graph-dependency');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.resolutionPolicy, 'preserve-remote-wordpress-graph-and-stop');
+  assert.equal(reference.relationshipKey, 'wp_termmeta.term_id');
+  assert.equal(reference.relationshipType, 'termmeta-term');
+  assert.equal(reference.sourceResourceKey, resourceKey);
+  assert.equal(reference.targetResourceKey, targetResourceKey);
+  assert.equal(reference.targetChange.remoteChange, 'unchanged');
+  assert.equal(reference.targetRemoteHash.length, 64);
+  assert.equal(blockerJson.includes('local-private-termmeta-value'), false);
+});
+
 test('blocks attachment-owned postmeta references to a same-plan attachment', () => {
   const resourceKey = 'row:["wp_postmeta","meta_id:45"]';
   const attachmentResourceKey = 'row:["wp_posts","ID:2"]';
