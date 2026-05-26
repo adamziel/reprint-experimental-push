@@ -8,8 +8,9 @@ linked implementation artifacts.
 
 <a id="2026-05-26-public-status-audit-104701"></a>
 
-- Freshness update only: the public page timestamp and newest-audit link were
-  refreshed to the active supervision cycle.
+- Freshness update plus summary correction: the public page now points the
+  summary text at the 10:47:01 audit refresh, keeping the visible head wording
+  aligned with the newest reliable-executor head `0f36d838`.
 - Gate posture remains conservative at `0/4`; no implementation verdict
   changed.
 - Latest blocker summary remains the same: real WordPress executor/auth and
