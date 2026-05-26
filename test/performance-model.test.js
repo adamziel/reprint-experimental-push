@@ -98,6 +98,12 @@ test('benchmark model covers large uploads and plugin installs', () => {
   assert.ok(releaseBundle.totals.uploadBytes >= 128 * MIB, 'release bundle includes large upload traffic');
   assert.ok(releaseBundle.totals.dbRows >= 10_000, 'release bundle includes large row batches');
   assert.ok(releaseBundle.actions.some((action) => action.type === 'remote-index-probe'), 'release bundle models remote-index planning');
+  assert.ok(
+    releaseBundle.actions.some(
+      (action) => action.type === 'remote-index-probe' && action.applyMustRevalidate === true,
+    ),
+    'release bundle keeps remote-index planning separate from apply authorization',
+  );
   assert.ok(releaseBundle.actions.some((action) => action.type === 'compression-decision'), 'release bundle models compression decisions');
   assert.ok(releaseBundle.actions.some((action) => action.type === 'backpressure-pause'), 'release bundle models backpressure pauses');
   assert.ok(releaseBundle.actions.some((action) => action.type === 'group-staging-finalize'), 'release bundle preserves atomic-group finalization');
