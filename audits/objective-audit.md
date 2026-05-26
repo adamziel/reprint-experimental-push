@@ -4,13 +4,13 @@
 
 The project is **not releasable as a production WordPress push path**.
 
-- Fresh remote heads at audit time, checked on 2026-05-26 08:38:50 CEST (+0200):
-- Fresh production-side lane heads re-polled at 2026-05-26 08:38:50 CEST (+0200):
+- Fresh remote heads at audit time, checked on 2026-05-26 08:39:48 CEST (+0200):
+- Fresh production-side lane heads re-polled at 2026-05-26 08:39:48 CEST (+0200):
 
 - `origin/lane/critic` -> `567743c2`
-- `origin/lane/no-data-loss-invariants` -> `fa31b92e`
+- `origin/lane/no-data-loss-invariants` -> `4184540f`
 - `origin/lane/no-data-loss-recovery` -> `9e077c10`
-- `origin/lane/reliable-executor` -> `7f8704ce`
+- `origin/lane/reliable-executor` -> `16ccc32f`
 
 - These heads still do not change the release verdict. They remain fail-closed support evidence, not production-backed auth/session lifecycle, durable journal ownership on the release path, or a live production mutation boundary.
 
@@ -118,6 +118,10 @@ change the release verdict:
   missing recovery auth. This is still support-side auth-envelope and recovery
   validation, not production-backed auth/session lifecycle, live production
   replay, or durable journal ownership on the release path.
+- `origin/lane/reliable-executor` now records `16ccc32f`, tightening recovery
+  inspect auth drift. This is still support-side recovery validation, not
+  production-backed auth/session lifecycle, live production replay, or durable
+  journal ownership on the release path.
 - `origin/lane/reliable-executor` now records `7f8704ce`, failing closed on
   production auth session type drift. This is still support-side auth/session
   validation, not production-backed auth/session lifecycle, live production
@@ -247,6 +251,9 @@ but it did not change the release conclusion:
 - `origin/lane/no-data-loss-invariants` now records `71791827`, classifying
   post GUID blockers. This is still unsupported-surface blocking, not a
   production-backed release proof.
+- `origin/lane/no-data-loss-invariants` now records `4184540f`, fixing term
+  taxonomy blocker evidence. This is still unsupported-surface evidence
+  cleanup, not a production-backed source mutation proof.
 
 - `origin/lane/reliable-executor` now records `bbf04945`, hardening durable journal ownership. It still does not prove production auth/session lifecycle or a live-source mutation boundary.
 - `origin/lane/cycle-20260525-mainwindows-2349/same-plan-wordpress-graph-create` now records `65a40803`, tightening same-plan attachment rules. It still does not prove the live release boundary or any production-backed source mutation.
