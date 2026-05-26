@@ -28354,6 +28354,103 @@ test('production durable journal adapter satisfies the release-path support prob
   durableJournal.close();
 });
 
+test('production durable journal apply records canonical artifact refs on journal-opened', () => {
+  const base = baseSite();
+  const local = structuredClone(base);
+  local.db.wp_options['option_name:blogname'] = {
+    option_name: 'blogname',
+    option_value: 'Local Site',
+  };
+  const remote = structuredClone(base);
+  const plan = planFor(base, local, remote);
+  const durableJournalPath = tempRecoveryJournalPath();
+  const remoteArtifactPath = `${durableJournalPath}.remote`;
+  const claimId = 'claim-opened-artifact-refs';
+  const durableJournal = openProductionRecoveryJournal(durableJournalPath, {
+    truncate: true,
+    now: fixedNow,
+    claimId,
+    ownsRemoteArtifact: true,
+    remoteArtifactPath,
+    writerLease: { id: claimId },
+  });
+  appendRecoveryClaimOpened(durableJournal, {
+    plan,
+    current: remote,
+    claimId,
+    artifactRefs: {
+      journal: durableJournalPath,
+      remote: remoteArtifactPath,
+    },
+  });
+
+  applyPlan(remote, plan, {
+    durableJournal,
+    requireProductionDurableJournal: true,
+  });
+  durableJournal.close();
+
+  const persisted = readRecoveryJournal(durableJournalPath);
+  const openedRecord = persisted.records.find((record) => record.type === 'journal-opened');
+
+  assert.deepEqual(openedRecord.artifactRefs, {
+    journal: durableJournalPath,
+    remote: remoteArtifactPath,
+  });
+});
+
+test('production durable journal apply ignores inherited caller artifact refs on journal-opened', () => {
+  const base = baseSite();
+  const local = structuredClone(base);
+  local.db.wp_options['option_name:blogname'] = {
+    option_name: 'blogname',
+    option_value: 'Local Site',
+  };
+  const remote = structuredClone(base);
+  const plan = planFor(base, local, remote);
+  const durableJournalPath = tempRecoveryJournalPath();
+  const remoteArtifactPath = `${durableJournalPath}.remote`;
+  const claimId = 'claim-opened-inherited-artifact-refs';
+  const durableJournal = openProductionRecoveryJournal(durableJournalPath, {
+    truncate: true,
+    now: fixedNow,
+    claimId,
+    ownsRemoteArtifact: true,
+    remoteArtifactPath,
+    writerLease: { id: claimId },
+  });
+  appendRecoveryClaimOpened(durableJournal, {
+    plan,
+    current: remote,
+    claimId,
+    artifactRefs: {
+      journal: durableJournalPath,
+      remote: remoteArtifactPath,
+    },
+  });
+
+  const inheritedArtifactRefs = { remote: '' };
+  Object.setPrototypeOf(inheritedArtifactRefs, {
+    journal: '/tmp/stale-journal.jsonl',
+    remote: '/tmp/stale-remote.jsonl',
+  });
+
+  applyPlan(remote, plan, {
+    durableJournal,
+    requireProductionDurableJournal: true,
+    artifactRefs: inheritedArtifactRefs,
+  });
+  durableJournal.close();
+
+  const persisted = readRecoveryJournal(durableJournalPath);
+  const openedRecord = persisted.records.find((record) => record.type === 'journal-opened');
+
+  assert.deepEqual(openedRecord.artifactRefs, {
+    journal: durableJournalPath,
+    remote: remoteArtifactPath,
+  });
+});
+
 test('production durable journal support fails closed when restart inspection reports blocked journal integrity', () => {
   const plan = planFor(baseSite(), baseSite(), baseSite());
   const durableJournalPath = tempRecoveryJournalPath();

@@ -1339,7 +1339,10 @@ function recordDurablePlanOpened(writer, remote, plan, options = {}) {
     return;
   }
 
-  const artifactRefs = options.artifactRefs || options.journalArtifactRefs || {};
+  const artifactRefs = durableOpenedArtifactRefs(
+    writer,
+    options.artifactRefs || options.journalArtifactRefs || null,
+  );
   const retryingOldRemoteJournal = options.previousJournalState === 'old-remote';
   const appendOnlyRetry = retryingOldRemoteJournal && durableJournalHasPriorRecords(writer);
   appendDurableEvent(writer, appendOnlyRetry ? 'journal-retry-opened' : 'journal-opened', {
@@ -1391,7 +1394,7 @@ function recordDurableReplay(writer, remote, plan, recoveryState, journal = null
       planId: plan.id,
       state: 'replay-observed',
       observedHash: digest(remote),
-      artifactRefs: {},
+      artifactRefs: durableOpenedArtifactRefs(writer),
     });
     recordDurableTargets(writer, remote, plan, journal);
   }
@@ -1480,6 +1483,46 @@ function durableJournalArtifactRemoteRef(writer) {
   return typeof writer.artifactRefs.remote === 'string' && writer.artifactRefs.remote.length > 0
     ? writer.artifactRefs.remote
     : null;
+}
+
+function durableOpenedArtifactRefs(writer, explicitArtifactRefs = null) {
+  const writerArtifactRefs = sanitizedDurableArtifactRefs(writer?.artifactRefs);
+  const suppliedArtifactRefs = sanitizedDurableArtifactRefs(explicitArtifactRefs);
+
+  if (writer?.kind === 'production-recovery-journal') {
+    return {
+      ...suppliedArtifactRefs,
+      ...writerArtifactRefs,
+    };
+  }
+
+  return suppliedArtifactRefs;
+}
+
+function sanitizedDurableArtifactRefs(artifactRefs) {
+  if (!isStrictPlainObject(artifactRefs)) {
+    return {};
+  }
+
+  const sanitized = {};
+
+  if (
+    Object.hasOwn(artifactRefs, 'journal')
+    && typeof artifactRefs.journal === 'string'
+    && artifactRefs.journal.length > 0
+  ) {
+    sanitized.journal = artifactRefs.journal;
+  }
+
+  if (Object.hasOwn(artifactRefs, 'remote')) {
+    if (artifactRefs.remote === null) {
+      sanitized.remote = null;
+    } else if (typeof artifactRefs.remote === 'string' && artifactRefs.remote.length > 0) {
+      sanitized.remote = artifactRefs.remote;
+    }
+  }
+
+  return sanitized;
 }
 
 function recordDurableRecoveryStateBestEffort(writer, current, plan, recoveryState) {
