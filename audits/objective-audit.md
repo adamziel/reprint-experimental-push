@@ -6,19 +6,19 @@ The project is **not releasable as a production WordPress push path**.
 
 - Fresh remote heads at audit time, checked on May 26, 2026:
 
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `052ff899`
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `9954e25b`
-- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `c88a5689`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `d2ee76e9`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `c20709ba`
+- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `7fb8c8c8`
 - `origin/lane/fast-paths` -> `2d335a29`
-- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `4ba8fb91`
-- `origin/lane/reliable-executor` -> `97eca6ce`
-- `origin/lane/no-data-loss-invariants` -> `f99d6eed`
-- `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `76dc8545`
+- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `9d50ae6f`
+- `origin/lane/reliable-executor` -> `1f71d4a2`
+- `origin/lane/no-data-loss-invariants` -> `8596e3be`
+- `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `5550bc36`
 - `origin/lane/no-data-loss-recovery` -> `9e077c10`
-- `origin/lane/cycle-20260525-mainwindows-2349/critic` -> `ade72e0d`
-- `origin/lane/critic` -> `4880187b`
+- `origin/lane/cycle-20260525-mainwindows-2349/critic` -> `fa0dc8a0`
+- `origin/lane/critic` -> `443dacd6`
 - `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration` -> `d388db27`
-- `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` -> `db36753e`
+- `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` -> `9e05da5e`
 - `origin/lane/same-plan-wordpress-graph-create` -> `0d2178e9`
 - `origin/lane/progress-publisher` -> `7695e1f9`
 - `origin/lane/cycle-20260525-mainwindows-2357/no-data-loss-invariants-graph-proof` -> `98c0ce26`
@@ -32,21 +32,21 @@ Fresh lane proof since the last audit pass improved the local evidence floor,
 but it did not change the release conclusion:
 
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now records
-  `5d60e641`, refreshing public progress freshness only.
+  `d2ee76e9`, refreshing public progress freshness only.
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now records
-  `97ae15d0`, refreshing the supervisor progress surface only.
+  `c20709ba`, refreshing the supervisor progress surface only.
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` now records
-  `57a3e623`. This refreshes the audit snapshot only and does not change the
+  `7fb8c8c8`. This refreshes the audit snapshot only and does not change the
   release boundary.
 - `origin/lane/fast-paths` now records `2d335a29`, tightening backpressure
   proof checks only.
-- `origin/lane/reliable-executor` now records `97eca6ce`, tightening release
+- `origin/lane/reliable-executor` now records `1f71d4a2`, tightening release
   proof timeout logging and child cleanup again, but still not proving
   production auth/session lifecycle or a live-source mutation boundary.
-- `origin/lane/no-data-loss-invariants` now records `f99d6eed`, adding special-
+- `origin/lane/no-data-loss-invariants` now records `8596e3be`, adding special-
   file descendant delete guarding only.
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` now
-  records `76dc8545`, tightening durable recovery remote ownership fencing. It
+  records `5550bc36`, tightening durable recovery remote ownership fencing. It
   still does not add production-backed journal ownership or replay proof.
 - `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration`
   now records `d388db27`, adding nav menu parent reference blocking only.
