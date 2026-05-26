@@ -2888,6 +2888,23 @@ test('guarded benchmark treats receipt-cursor memory-headroom visibility without
   assert.ok(blockers.includes('receipt-cursor-memory-headroom-visible-without-memory-ceiling-visibility'));
 });
 
+test('guarded benchmark treats receipt-cursor memory-headroom visibility without queue-headroom visibility as incomplete backpressure evidence', () => {
+  const report = smallBenchmark();
+  const mutated = clone(report);
+
+  mutated.evidence.backpressure.receiptCursorMemoryHeadroomVisible = true;
+  mutated.evidence.backpressure.queueHeadroomVisible = false;
+
+  const details = productionThroughputDetails(mutated);
+  const blockers = productionThroughputBlockers(mutated);
+
+  assert.equal(details.receiptCursorMemoryHeadroomVisible, true);
+  assert.equal(details.backpressureConsistency.receiptCursorMemoryHeadroomVisible, true);
+  assert.equal(details.queueHeadroomVisible, false);
+  assert.equal(details.backpressureConsistency.queueHeadroomVisible, false);
+  assert.ok(blockers.includes('receipt-cursor-memory-headroom-visible-without-queue-headroom-visibility'));
+});
+
 test('guarded benchmark treats memory-ceiling and queue-headroom visibility without queue-budget visibility as incomplete backpressure evidence', () => {
   const report = smallBenchmark();
   const mutated = clone(report);

@@ -216,6 +216,9 @@ Current executable gate:
 - The same details also fail closed if queue-headroom visibility appears
   without memory-ceiling visibility, so a partial bounded-backpressure
   surface cannot hide the ceiling boundary while still looking resumable.
+- The same details also fail closed if receipt-cursor memory headroom is
+  visible while queue headroom is hidden, so a partial pause-footprint summary
+  cannot look complete when the paired bounded-backpressure surface is absent.
 - The same details also expose and require an explicit parallelism-measurement
   bit, so surfaced concurrency limits cannot look visible without a measured
   report surface behind them.

@@ -775,6 +775,12 @@ export function productionThroughputBlockers(report) {
     blockers.push('receipt-cursor-memory-headroom-visible-without-memory-ceiling-visibility');
   }
   if (
+    receiptCursorMemoryHeadroomVisible === true
+    && report.evidence.backpressure?.queueHeadroomVisible !== true
+  ) {
+    blockers.push('receipt-cursor-memory-headroom-visible-without-queue-headroom-visibility');
+  }
+  if (
     report.evidence.backpressure?.queuePausedBeforeOverflow === true
     && report.evidence.backpressure?.receiptCursorMemoryCeilingVisible !== true
   ) {
