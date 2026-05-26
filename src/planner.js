@@ -1277,68 +1277,91 @@ function finalizeWordPressGraphDependencies(plan, local, remote) {
   );
   let blockerIndex = plan.blockers.length + 1;
 
-  for (const mutation of plan.mutations) {
-    const references = mutation.wordpressGraphReferences || [];
-    if (references.length === 0) {
-      continue;
-    }
+  let addedBlocker = true;
+  while (addedBlocker) {
+    addedBlocker = false;
 
-    const dependencyIds = new Set(mutation.dependsOnMutationIds || []);
-    for (const reference of references) {
-      if (reference.resolutionPolicy !== 'same-plan-local-create') {
+    for (const mutation of plan.mutations) {
+      if (blockedTargetResourceKeys.has(mutation.resourceKey)) {
+        delete mutation.dependsOnMutationIds;
         continue;
       }
 
-      const targetMutation = mutationByResourceKey.get(reference.targetResourceKey);
-      if (
-        !isValidSamePlanWordPressGraphTarget(
-          targetMutation,
-          reference,
-          mutation,
-          mutationByResourceKey,
-          blockedTargetResourceKeys,
-          local,
-          remote,
-        )
-      ) {
-        plan.blockers.push({
-          id: `blocker-wordpress-graph-dependency-${blockerIndex++}`,
-          class: 'missing-wordpress-graph-dependency',
-          resource: mutation.resource,
-          resourceKey: mutation.resourceKey,
-          reason: `WordPress graph mutation ${mutation.resourceKey} references a same-plan target without a matching target create mutation.`,
-          resolutionPolicy: 'preserve-remote-wordpress-graph-and-stop',
-          references: [reference],
-        });
-        blockedTargetResourceKeys.add(mutation.resourceKey);
+      const references = mutation.wordpressGraphReferences || [];
+      if (references.length === 0) {
         continue;
       }
 
-      if (isBlockedSamePlanWordPressGraphSource(mutation, reference, mutationByResourceKey)) {
-        plan.blockers.push({
-          id: `blocker-wordpress-graph-dependency-${blockerIndex++}`,
-          class: 'stale-wordpress-graph-identity',
-          resource: mutation.resource,
-          resourceKey: mutation.resourceKey,
-          reason: `WordPress graph mutation ${mutation.resourceKey} references a same-plan thumbnail target from an attachment source without a supported merge policy.`,
-          resolutionPolicy: 'preserve-remote-wordpress-graph-and-stop',
-          references: [reference],
-        });
-        blockedTargetResourceKeys.add(mutation.resourceKey);
+      const dependencyIds = new Set();
+      let mutationBlocked = false;
+      for (const reference of references) {
+        if (reference.resolutionPolicy !== 'same-plan-local-create') {
+          continue;
+        }
+
+        const targetMutation = mutationByResourceKey.get(reference.targetResourceKey);
+        if (
+          !isValidSamePlanWordPressGraphTarget(
+            targetMutation,
+            reference,
+            mutation,
+            mutationByResourceKey,
+            blockedTargetResourceKeys,
+            local,
+            remote,
+          )
+        ) {
+          plan.blockers.push({
+            id: `blocker-wordpress-graph-dependency-${blockerIndex++}`,
+            class: 'missing-wordpress-graph-dependency',
+            resource: mutation.resource,
+            resourceKey: mutation.resourceKey,
+            reason: `WordPress graph mutation ${mutation.resourceKey} references a same-plan target without a matching target create mutation.`,
+            resolutionPolicy: 'preserve-remote-wordpress-graph-and-stop',
+            references: [reference],
+          });
+          blockedTargetResourceKeys.add(mutation.resourceKey);
+          delete mutation.dependsOnMutationIds;
+          mutationBlocked = true;
+          addedBlocker = true;
+          break;
+        }
+
+        if (isBlockedSamePlanWordPressGraphSource(mutation, reference, mutationByResourceKey)) {
+          plan.blockers.push({
+            id: `blocker-wordpress-graph-dependency-${blockerIndex++}`,
+            class: 'stale-wordpress-graph-identity',
+            resource: mutation.resource,
+            resourceKey: mutation.resourceKey,
+            reason: `WordPress graph mutation ${mutation.resourceKey} references a same-plan thumbnail target from an attachment source without a supported merge policy.`,
+            resolutionPolicy: 'preserve-remote-wordpress-graph-and-stop',
+            references: [reference],
+          });
+          blockedTargetResourceKeys.add(mutation.resourceKey);
+          delete mutation.dependsOnMutationIds;
+          mutationBlocked = true;
+          addedBlocker = true;
+          break;
+        }
+
+        reference.dependency = {
+          ...reference.dependency,
+          targetMutationId: targetMutation.id,
+          targetResourceKey: targetMutation.resourceKey,
+          targetLocalHash: targetMutation.localHash,
+        };
+        dependencyIds.add(targetMutation.id);
+      }
+
+      if (mutationBlocked) {
         continue;
       }
 
-      reference.dependency = {
-        ...reference.dependency,
-        targetMutationId: targetMutation.id,
-        targetResourceKey: targetMutation.resourceKey,
-        targetLocalHash: targetMutation.localHash,
-      };
-      dependencyIds.add(targetMutation.id);
-    }
-
-    if (dependencyIds.size > 0) {
-      mutation.dependsOnMutationIds = [...dependencyIds];
+      if (dependencyIds.size > 0) {
+        mutation.dependsOnMutationIds = [...dependencyIds];
+      } else {
+        delete mutation.dependsOnMutationIds;
+      }
     }
   }
 

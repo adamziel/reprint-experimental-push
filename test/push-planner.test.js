@@ -2100,7 +2100,6 @@ test('blocks a term taxonomy parent reference to a same-plan term when the term 
 
   const plan = planFor(base, local, remote);
   const blocker = plan.blockers[0];
-  const blockerTypes = plan.blockers.flatMap((entry) => entry.references.map((reference) => reference.relationshipType));
 
   assert.equal(plan.status, 'blocked');
   assert.ok(plan.summary.mutations > 0);
@@ -2109,8 +2108,11 @@ test('blocks a term taxonomy parent reference to a same-plan term when the term 
   assert.equal(blocker.class, 'missing-wordpress-graph-dependency');
   assert.equal(blocker.resourceKey, resourceKey);
   assert.equal(blocker.resolutionPolicy, 'preserve-remote-wordpress-graph-and-stop');
-  assert.deepEqual(blockerTypes.sort(), ['term-taxonomy-parent', 'term-taxonomy-term']);
-  assert.equal(plan.blockers.length, 2);
+  assert.deepEqual(
+    blocker.references.map((reference) => reference.relationshipType),
+    ['term-taxonomy-term'],
+  );
+  assert.equal(plan.blockers.length, 1);
   assert.equal(JSON.stringify(plan.blockers).includes('local-private-term-name'), false);
   assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
   assert.equal(remote.db.wp_term_taxonomy['term_taxonomy_id:20'].taxonomy, 'nav_menu');
@@ -2160,7 +2162,6 @@ test('blocks a term taxonomy parent reference to a same-plan term when the term 
 
   const plan = planFor(base, local, remote);
   const blocker = plan.blockers[0];
-  const blockerTypes = plan.blockers.flatMap((entry) => entry.references.map((reference) => reference.relationshipType));
   const planJson = JSON.stringify(plan);
 
   assert.equal(plan.status, 'blocked');
@@ -2170,8 +2171,11 @@ test('blocks a term taxonomy parent reference to a same-plan term when the term 
   assert.equal(blocker.class, 'missing-wordpress-graph-dependency');
   assert.equal(blocker.resourceKey, resourceKey);
   assert.equal(blocker.resolutionPolicy, 'preserve-remote-wordpress-graph-and-stop');
-  assert.deepEqual(blockerTypes.sort(), ['term-taxonomy-parent', 'term-taxonomy-term']);
-  assert.equal(plan.blockers.length, 2);
+  assert.deepEqual(
+    blocker.references.map((reference) => reference.relationshipType),
+    ['term-taxonomy-term'],
+  );
+  assert.equal(plan.blockers.length, 1);
   assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
   assert.equal(remote.db.wp_term_taxonomy['term_taxonomy_id:20'].taxonomy, 'nav_menu');
 });
@@ -10825,6 +10829,81 @@ test('blocks a local term taxonomy reference to a same-plan term when a remote n
   assert.equal(blocker.references[0].relationshipType, 'term-taxonomy-term');
   assert.equal(blocker.references[0].targetResourceKey, termResourceKey);
   assert.equal(JSON.stringify(blocker).includes('local-shared-term'), false);
+  assert.throws(() => applyPlan(baseSite(), plan), /Refusing to apply/);
+});
+
+test('blocks a local term relationship when its same-plan category taxonomy target is itself blocked by a same-plan nav menu taxonomy', () => {
+  const postResourceKey = 'row:["wp_posts","ID:3"]';
+  const termResourceKey = 'row:["wp_terms","term_id:7"]';
+  const navMenuTaxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:9"]';
+  const categoryTaxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:10"]';
+  const relationshipResourceKey = 'row:["wp_term_relationships","object_id:3|term_taxonomy_id:10"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_posts['ID:3'] = {
+    ID: 3,
+    post_title: 'Local tagged post',
+    post_content: 'local-private-tagged-post-body',
+    post_status: 'publish',
+  };
+  local.db.wp_terms = {
+    'term_id:7': {
+      term_id: 7,
+      name: 'Local shared term',
+      slug: 'local-shared-term',
+    },
+  };
+  local.db.wp_term_taxonomy = {
+    'term_taxonomy_id:9': {
+      term_taxonomy_id: 9,
+      term_id: 7,
+      taxonomy: 'nav_menu',
+      description: '',
+      parent: 0,
+      count: 0,
+    },
+    'term_taxonomy_id:10': {
+      term_taxonomy_id: 10,
+      term_id: 7,
+      taxonomy: 'category',
+      description: '',
+      parent: 0,
+      count: 0,
+    },
+  };
+  local.db.wp_term_relationships = {
+    'object_id:3|term_taxonomy_id:10': {
+      object_id: 3,
+      term_taxonomy_id: 10,
+      term_order: 0,
+    },
+  };
+
+  const plan = planFor(base, local, baseSite());
+  const postMutation = mutationFor(plan, postResourceKey);
+  const termMutation = mutationFor(plan, termResourceKey);
+  const categoryTaxonomyMutation = mutationFor(plan, categoryTaxonomyResourceKey);
+  const relationshipMutation = mutationFor(plan, relationshipResourceKey);
+  const navMenuTaxonomyBlocker = plan.blockers.find((entry) => entry.resourceKey === navMenuTaxonomyResourceKey);
+  const categoryTaxonomyBlocker = plan.blockers.find((entry) => entry.resourceKey === categoryTaxonomyResourceKey);
+  const relationshipBlocker = plan.blockers.find((entry) => entry.resourceKey === relationshipResourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(postMutation.changeKind, 'create');
+  assert.equal(termMutation.changeKind, 'create');
+  assert.equal(categoryTaxonomyMutation.changeKind, 'create');
+  assert.equal(relationshipMutation.changeKind, 'create');
+  assert.equal(navMenuTaxonomyBlocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(navMenuTaxonomyBlocker.surface, 'nav_menu');
+  assert.equal(categoryTaxonomyBlocker.class, 'missing-wordpress-graph-dependency');
+  assert.equal(categoryTaxonomyBlocker.references[0].relationshipType, 'term-taxonomy-term');
+  assert.equal(categoryTaxonomyBlocker.references[0].targetResourceKey, termResourceKey);
+  assert.equal(relationshipBlocker.class, 'missing-wordpress-graph-dependency');
+  assert.equal(relationshipBlocker.references[0].relationshipType, 'term-relationship-taxonomy');
+  assert.equal(relationshipBlocker.references[0].targetResourceKey, categoryTaxonomyResourceKey);
+  assert.equal(relationshipMutation.dependsOnMutationIds, undefined);
+  assert.equal(JSON.stringify(relationshipBlocker).includes('local-private-tagged-post-body'), false);
+  assert.equal(JSON.stringify(relationshipBlocker).includes('local-shared-term'), false);
   assert.throws(() => applyPlan(baseSite(), plan), /Refusing to apply/);
 });
 
