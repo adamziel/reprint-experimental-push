@@ -4189,6 +4189,17 @@ test('safe fast paths retain all gate proofs and stay non-rejectable', () => {
     ),
   );
   assert.ok(
+    model.safeFastPaths.some((fastPath) =>
+      fastPath.allowedShortcut === 'treat-drained-upload-buffer-as-publish-ready' &&
+      fastPath.area === 'backpressure' &&
+      fastPath.visibilityBoundary === 'none-pause-only' &&
+      fastPath.guardrails.includes('drained-buffer-is-not-a-durable-receipt') &&
+      fastPath.gateProofs.live.includes('live remote resource hash') &&
+      fastPath.gateProofs.recovery.includes('durable chunk receipts and the guarded publish record still classify pause, retry, or crash')
+    ),
+    'drained upload buffers stay advisory and never replace durable receipts or guarded publish evidence',
+  );
+  assert.ok(
     model.safeFastPaths.every((fastPath) =>
       typeof fastPath.visibilityBoundary === 'string' && fastPath.visibilityBoundary.length > 0
     ),
