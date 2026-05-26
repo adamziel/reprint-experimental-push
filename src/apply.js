@@ -1285,14 +1285,16 @@ function recordDurableRecoveryState(writer, current, plan, recoveryState) {
     return;
   }
 
-  const artifactRefs = recoveryState.status === 'blocked-recovery'
-    ? {
-        journal: typeof writer?.journalPath === 'string' ? writer.journalPath : null,
-        remote: recoveryState.artifacts?.remote ? digest(recoveryState.artifacts.remote) : null,
-      }
-    : {
-        journal: typeof writer?.journalPath === 'string' ? writer.journalPath : null,
-      };
+  const artifactRefs = {
+    journal: typeof writer?.journalPath === 'string' ? writer.journalPath : null,
+  };
+  const writerRemoteArtifactRef = durableJournalArtifactRemoteRef(writer);
+
+  if (recoveryState.status === 'blocked-recovery') {
+    artifactRefs.remote = recoveryState.artifacts?.remote ? digest(recoveryState.artifacts.remote) : null;
+  } else if (writerRemoteArtifactRef) {
+    artifactRefs.remote = writerRemoteArtifactRef;
+  }
 
   appendDurableEvent(writer, 'recovery-state', {
     planId: plan.id,
@@ -1301,6 +1303,18 @@ function recordDurableRecoveryState(writer, current, plan, recoveryState) {
     observedHash: digest(current),
     artifactRefs,
   });
+}
+
+function durableJournalArtifactRemoteRef(writer) {
+  if (!isStrictPlainObject(writer?.artifactRefs)) {
+    return null;
+  }
+  if (!Object.hasOwn(writer.artifactRefs, 'remote')) {
+    return null;
+  }
+  return typeof writer.artifactRefs.remote === 'string' && writer.artifactRefs.remote.length > 0
+    ? writer.artifactRefs.remote
+    : null;
 }
 
 function recordDurableRecoveryStateBestEffort(writer, current, plan, recoveryState) {

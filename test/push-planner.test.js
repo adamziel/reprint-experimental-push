@@ -26845,6 +26845,11 @@ test('production durable journal adapter satisfies the release-path support prob
   assert.equal(completed.recoveryState.status, 'fully-updated-remote');
   assert.equal(completed.recoveryState.artifacts.journal.status, 'completed');
   assert.equal(completed.recoveryState.artifacts.remote, undefined);
+  const persisted = readRecoveryJournal(durableJournalPath);
+  assert.equal(
+    persisted.records.find((record) => record.type === 'recovery-state').artifactRefs.remote,
+    remoteArtifactPath,
+  );
   durableJournal.close();
 });
 
