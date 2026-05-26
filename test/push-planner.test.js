@@ -15333,6 +15333,67 @@ test('allows local termmeta references to a term created by the same plan', () =
   assert.equal(result.site.db.wp_termmeta['meta_id:12'].term_id, 7);
 });
 
+test('allows an existing termmeta row to reference a term created by the same plan', () => {
+  const termResourceKey = 'row:["wp_terms","term_id:7"]';
+  const termmetaResourceKey = 'row:["wp_termmeta","meta_id:12"]';
+  const base = baseSite();
+  const local = baseSite();
+  const remote = baseSite();
+  base.db.wp_termmeta = {
+    'meta_id:12': {
+      meta_id: 12,
+      term_id: 0,
+      meta_key: 'term-note',
+      meta_value: 'base-private-existing-term-note',
+    },
+  };
+  remote.db.wp_termmeta = {
+    'meta_id:12': {
+      ...base.db.wp_termmeta['meta_id:12'],
+    },
+  };
+  local.db.wp_terms = {
+    'term_id:7': {
+      term_id: 7,
+      name: 'Local tagged term',
+      slug: 'local-tagged-term',
+    },
+  };
+  local.db.wp_termmeta = {
+    'meta_id:12': {
+      meta_id: 12,
+      term_id: 7,
+      meta_key: 'term-note',
+      meta_value: 'local-private-existing-term-note',
+    },
+  };
+
+  const plan = planFor(base, local, remote);
+  const termMutation = mutationFor(plan, termResourceKey);
+  const termmetaMutation = mutationFor(plan, termmetaResourceKey);
+  const reference = termmetaMutation.wordpressGraphReferences[0];
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.blockers, 0);
+  assert.equal(termMutation.changeKind, 'create');
+  assert.equal(termmetaMutation.changeKind, 'update');
+  assert.ok(
+    plan.mutations.indexOf(termMutation) < plan.mutations.indexOf(termmetaMutation),
+    'term create must be ordered before dependent existing termmeta update',
+  );
+  assert.deepEqual(termmetaMutation.dependsOnMutationIds, [termMutation.id]);
+  assert.equal(reference.resolutionPolicy, 'same-plan-local-create');
+  assert.equal(reference.relationshipKey, 'wp_termmeta.term_id');
+  assert.equal(reference.relationshipType, 'termmeta-term');
+  assert.equal(reference.targetResourceKey, termResourceKey);
+  assert.equal(JSON.stringify(reference).includes('local-private-existing-term-note'), false);
+
+  const result = applyPlan(remote, plan);
+  assert.equal(result.site.db.wp_terms['term_id:7'].name, 'Local tagged term');
+  assert.equal(result.site.db.wp_termmeta['meta_id:12'].term_id, 7);
+  assert.equal(result.site.db.wp_termmeta['meta_id:12'].meta_value, 'local-private-existing-term-note');
+});
+
 test('allows local termmeta references to a term created by the same plan even when a remote nav menu taxonomy exists for another term', () => {
   const termResourceKey = 'row:["wp_terms","term_id:7"]';
   const termmetaResourceKey = 'row:["wp_termmeta","meta_id:12"]';
@@ -15504,6 +15565,72 @@ test('blocks local termmeta for a term that belongs to a same-plan nav menu taxo
     JSON.stringify(blocker).includes('local-navigation-term'),
     false,
   );
+});
+
+test('blocks an existing termmeta row when its same-plan term belongs to a nav menu taxonomy', () => {
+  const termResourceKey = 'row:["wp_terms","term_id:7"]';
+  const taxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:9"]';
+  const termmetaResourceKey = 'row:["wp_termmeta","meta_id:12"]';
+  const base = baseSite();
+  const local = baseSite();
+  const remote = baseSite();
+  base.db.wp_termmeta = {
+    'meta_id:12': {
+      meta_id: 12,
+      term_id: 0,
+      meta_key: 'term-note',
+      meta_value: 'base-private-existing-term-note',
+    },
+  };
+  remote.db.wp_termmeta = {
+    'meta_id:12': {
+      ...base.db.wp_termmeta['meta_id:12'],
+    },
+  };
+  local.db.wp_terms = {
+    'term_id:7': {
+      term_id: 7,
+      name: 'Local navigation term',
+      slug: 'local-navigation-term',
+    },
+  };
+  local.db.wp_term_taxonomy = {
+    'term_taxonomy_id:9': {
+      term_taxonomy_id: 9,
+      term_id: 7,
+      taxonomy: 'nav_menu',
+      description: '',
+      parent: 0,
+      count: 0,
+    },
+  };
+  local.db.wp_termmeta = {
+    'meta_id:12': {
+      meta_id: 12,
+      term_id: 7,
+      meta_key: 'term-note',
+      meta_value: 'local-private-existing-navigation-term-note',
+    },
+  };
+
+  const plan = planFor(base, local, remote);
+  const termMutation = mutationFor(plan, termResourceKey);
+  const taxonomyMutation = mutationFor(plan, taxonomyResourceKey);
+  const termmetaMutation = mutationFor(plan, termmetaResourceKey);
+  const taxonomyBlocker = plan.blockers.find((entry) => entry.resourceKey === taxonomyResourceKey);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === termmetaResourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(termMutation.changeKind, 'create');
+  assert.equal(taxonomyMutation, undefined);
+  assert.equal(termmetaMutation, undefined);
+  assert.equal(taxonomyBlocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(taxonomyBlocker.surface, 'nav_menu');
+  assert.equal(blocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(blocker.surface, 'nav_menu');
+  assert.equal(JSON.stringify(blocker).includes('local-private-existing-navigation-term-note'), false);
+  assert.equal(JSON.stringify(blocker).includes('local-navigation-term'), false);
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
 });
 
 test('allows a local term relationship object reference to a same-plan post even when a remote nav menu taxonomy exists', () => {
