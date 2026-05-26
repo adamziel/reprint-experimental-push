@@ -935,6 +935,42 @@ async function waitForServer(child, baseUrl, logs) {
             return;
           }
           if (preflightProbe.retryable) {
+            if (
+              packagedProductionPluginRouteRetryableWhileWordPressStarting(
+                preflightProbe.status,
+                preflightProbe.body,
+                indexProbe?.status,
+                indexProbe?.body || '',
+              )
+            ) {
+              throw new Error(
+                formatPackagedReadinessFailure(
+                  `Packaged production plugin preflight stayed startup-shaped while /wp-json/ kept reporting global WordPress startup HTTP ${indexProbe?.status ?? 0} after the snapshot probe timed out at ${baseUrl}`,
+                  error,
+                  lastProbes,
+                  logs,
+                  lastTimeoutFallbackProbes,
+                ),
+              );
+            }
+            if (
+              packagedProductionPluginRouteRetryableWhilePackagedRouteStarting(
+                preflightProbe.status,
+                preflightProbe.body,
+                indexProbe?.status,
+                indexProbe?.body || '',
+              )
+            ) {
+              throw new Error(
+                formatPackagedReadinessFailure(
+                  `Packaged production plugin preflight stayed startup-shaped after global WordPress startup HTTP ${indexProbe?.status ?? 0} while the snapshot probe timed out at ${baseUrl}`,
+                  error,
+                  lastProbes,
+                  logs,
+                  lastTimeoutFallbackProbes,
+                ),
+              );
+            }
             lastError = error;
             timeoutProbeCount = 0;
             await sleepUnlessChildExit(readinessProbeIntervalMs, child);

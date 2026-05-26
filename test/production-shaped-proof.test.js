@@ -2228,6 +2228,34 @@ test('packaged readiness helpers fall back to signed preflight and index probes 
   }
 });
 
+test('packaged readiness timeout fallback classifies global WordPress versus packaged-route startup', () => {
+  const smokeSource = readFileSync(
+    path.join(repoRoot, 'scripts/playground/production-plugin-package-smoke.mjs'),
+    'utf8',
+  );
+  const verifierSource = readFileSync(
+    path.join(repoRoot, 'scripts/playground/production-shaped-release-verify.mjs'),
+    'utf8',
+  );
+
+  assert.match(
+    smokeSource,
+    /preflight stayed startup-shaped while \/wp-json\/ kept reporting global WordPress startup HTTP \$\{indexProbe[\s\S]*?after the snapshot probe timed out/,
+  );
+  assert.match(
+    smokeSource,
+    /preflight stayed startup-shaped after global WordPress startup HTTP \$\{indexProbe[\s\S]*?while the snapshot probe timed out/,
+  );
+  assert.match(
+    verifierSource,
+    /preflight stayed startup-shaped while \/wp-json\/ kept reporting global WordPress startup HTTP \$\{indexProbe[\s\S]*?after the snapshot probe timed out[\s\S]*?globalWordPressStartup:\s*true/s,
+  );
+  assert.match(
+    verifierSource,
+    /preflight stayed startup-shaped after global WordPress startup HTTP \$\{indexProbe[\s\S]*?while the snapshot probe timed out[\s\S]*?packagedRouteStartup:\s*true/s,
+  );
+});
+
 test('packaged readiness helpers treat signed preflight as the bootstrap authority before terminal snapshot auth failures', () => {
   const smokeSource = readFileSync(
     path.join(repoRoot, 'scripts/playground/production-plugin-package-smoke.mjs'),
