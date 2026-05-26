@@ -104,25 +104,19 @@ function spawnReleaseVerifyBounded(command, args, options, label) {
   };
   const proof = spawnSync(command, args, boundedOptions);
 
-  if (proof.error) {
+  if (proof.error || proof.signal || proof.status === null || proof.status !== 0) {
     stopAllPlaygroundChildrenSync();
     reportBoundedSpawnFailure(proof, command, args);
-    const timeoutNote = proof.error.code === 'ETIMEDOUT' && boundedOptions.timeout ? ` after ${boundedOptions.timeout}ms` : '';
-    throw new Error(formatSpawnFailure(`${label} failed${timeoutNote}`, proof));
-  }
-  if (proof.signal) {
-    stopAllPlaygroundChildrenSync();
-    reportBoundedSpawnFailure(proof, command, args);
-    throw new Error(formatSpawnFailure(`${label} terminated by ${proof.signal}${boundedOptions.timeout ? ` after ${boundedOptions.timeout}ms` : ''}`, proof));
-  }
-  if (proof.status === null) {
-    stopAllPlaygroundChildrenSync();
-    reportBoundedSpawnFailure(proof, command, args);
-    throw new Error(formatSpawnFailure(`${label} exited without a status`, proof));
-  }
-  if (proof.status !== 0) {
-    stopAllPlaygroundChildrenSync();
-    reportBoundedSpawnFailure(proof, command, args);
+    if (proof.error) {
+      const timeoutNote = proof.error.code === 'ETIMEDOUT' && boundedOptions.timeout ? ` after ${boundedOptions.timeout}ms` : '';
+      throw new Error(formatSpawnFailure(`${label} failed${timeoutNote}`, proof));
+    }
+    if (proof.signal) {
+      throw new Error(formatSpawnFailure(`${label} terminated by ${proof.signal}${boundedOptions.timeout ? ` after ${boundedOptions.timeout}ms` : ''}`, proof));
+    }
+    if (proof.status === null) {
+      throw new Error(formatSpawnFailure(`${label} exited without a status`, proof));
+    }
   }
 
   return proof;
@@ -252,25 +246,19 @@ function spawnBoundedSync(command, args, options, label) {
   };
   const proof = spawnSync(command, args, boundedOptions);
 
-  if (proof.error) {
+  if (proof.error || proof.signal || proof.status === null || proof.status !== 0) {
     stopAllPlaygroundChildrenSync();
     reportBoundedSpawnFailure(proof, command, args);
-    const timeoutNote = proof.error.code === 'ETIMEDOUT' && boundedOptions.timeout ? ` after ${boundedOptions.timeout}ms` : '';
-    throw new Error(formatSpawnFailure(`${label} failed${timeoutNote}`, proof));
-  }
-  if (proof.signal) {
-    stopAllPlaygroundChildrenSync();
-    reportBoundedSpawnFailure(proof, command, args);
-    throw new Error(formatSpawnFailure(`${label} terminated by ${proof.signal}${boundedOptions.timeout ? ` after ${boundedOptions.timeout}ms` : ''}`, proof));
-  }
-  if (proof.status === null) {
-    stopAllPlaygroundChildrenSync();
-    reportBoundedSpawnFailure(proof, command, args);
-    throw new Error(formatSpawnFailure(`${label} exited without a status`, proof));
-  }
-  if (proof.status !== 0) {
-    stopAllPlaygroundChildrenSync();
-    reportBoundedSpawnFailure(proof, command, args);
+    if (proof.error) {
+      const timeoutNote = proof.error.code === 'ETIMEDOUT' && boundedOptions.timeout ? ` after ${boundedOptions.timeout}ms` : '';
+      throw new Error(formatSpawnFailure(`${label} failed${timeoutNote}`, proof));
+    }
+    if (proof.signal) {
+      throw new Error(formatSpawnFailure(`${label} terminated by ${proof.signal}${boundedOptions.timeout ? ` after ${boundedOptions.timeout}ms` : ''}`, proof));
+    }
+    if (proof.status === null) {
+      throw new Error(formatSpawnFailure(`${label} exited without a status`, proof));
+    }
   }
 
   return proof;
