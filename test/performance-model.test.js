@@ -5263,6 +5263,40 @@ test('production throughput details fail closed when queue-budget visibility dis
   assert.ok(blockers.includes('receipt-cursor-memory-headroom-visible-without-queue-budget-visibility'));
 });
 
+test('production throughput details fail closed when receipt-cursor memory-headroom visibility disappears from the pause boundary', () => {
+  const report = runGuardedExecutorBenchmark({ profile: 'ci' });
+
+  report.evidence.backpressure.receiptCursorMemoryHeadroomVisible = false;
+  const details = productionThroughputDetails(report);
+  const blockers = productionThroughputBlockers(report);
+
+  assert.equal(details.receiptCursorPauseFootprintVisible, false);
+  assert.equal(details.receiptCursorMemoryHeadroomVisible, false);
+  assert.equal(details.receiptCursorMemoryHeadroomVisibleAndMeasured, false);
+  assert.equal(details.receiptCursorQueueSlackVisibleAndMemoryHeadroomVisible, false);
+  assert.equal(details.receiptCursorMemoryHeadroomVisibleAndQueueBudgetVisible, false);
+  assert.equal(details.queueHeadroomVisibleAndMemoryHeadroomVisible, false);
+  assert.equal(details.backpressureConsistency.receiptCursorPauseFootprintVisible, false);
+  assert.equal(details.backpressureConsistency.receiptCursorMemoryHeadroomVisible, false);
+  assert.equal(details.backpressureConsistency.receiptCursorMemoryHeadroomVisibleAndMeasured, false);
+  assert.equal(
+    details.backpressureConsistency.receiptCursorQueueSlackVisibleAndMemoryHeadroomVisible,
+    false,
+  );
+  assert.equal(
+    details.backpressureConsistency.receiptCursorMemoryHeadroomVisibleAndQueueBudgetVisible,
+    false,
+  );
+  assert.equal(
+    details.backpressureConsistency.queueHeadroomVisibleAndMemoryHeadroomVisible,
+    false,
+  );
+  assert.ok(blockers.includes('memory-ceiling-match-visible-without-memory-headroom-visibility'));
+  assert.ok(blockers.includes('queue-headroom-visible-without-receipt-cursor-memory-headroom-visibility'));
+  assert.ok(blockers.includes('queue-pause-without-visible-receipt-cursor-memory-headroom'));
+  assert.ok(blockers.includes('receipt-cursor-queue-slack-visible-without-memory-headroom-visibility'));
+});
+
 test('production throughput details fail closed when queue-headroom measurement disappears from the pause boundary', () => {
   const report = runGuardedExecutorBenchmark({ profile: 'ci' });
 
