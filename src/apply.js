@@ -38,16 +38,16 @@ export function isAcceptableRecoveryState(recoveryState) {
   if (recoveryState.status !== 'blocked-recovery') {
     return Boolean(
       recoveryState.artifacts
-      && recoveryState.artifacts.journal
+      && isPlainObject(recoveryState.artifacts.journal)
       && recoveryState.artifacts.remote === undefined,
     );
   }
 
   return Boolean(
     recoveryState.artifacts
-    && recoveryState.artifacts.journal
-    && recoveryState.artifacts.remote
-    && typeof recoveryState.artifacts.remote === 'object',
+    && isPlainObject(recoveryState.artifacts.journal)
+    && isPlainObject(recoveryState.artifacts.remote)
+    && recoveryState.artifacts.journal !== recoveryState.artifacts.remote,
   );
 }
 
@@ -672,7 +672,7 @@ function productionRecoverySupportReport(writer) {
     && writer.artifactRefs.remote.length > 0
     ? writer.artifactRefs.remote
     : null;
-  if (!writer?.artifactRefs || typeof writer.artifactRefs !== 'object' || !writer.artifactRefs.journal) {
+  if (!isPlainObject(writer?.artifactRefs) || !writer.artifactRefs.journal) {
     addMissingDependency('restart-readable recovery artifact references');
   } else if (
     typeof writer.artifactRefs.journal !== 'string'
@@ -708,7 +708,7 @@ function productionRecoverySupportReport(writer) {
     addMissingDependency('restart-readable recovery artifact references');
   }
   if (
-    writer?.artifactRefs
+    isPlainObject(writer?.artifactRefs)
     && Object.hasOwn(writer.artifactRefs, 'remote')
     && (typeof writer.artifactRefs.remote !== 'string' || writer.artifactRefs.remote.length === 0)
   ) {
@@ -834,8 +834,7 @@ function durableJournalInspectArtifactRefs(inspected) {
   return Boolean(
     inspected
     && typeof inspected === 'object'
-    && inspected.artifactRefs
-    && typeof inspected.artifactRefs === 'object'
+    && isPlainObject(inspected.artifactRefs)
     && typeof inspected.artifactRefs.journal === 'string'
   );
 }
@@ -1351,11 +1350,32 @@ function recoveryState(status, remote, plan, journal, reason, details = {}) {
 }
 
 export function validateRecoveryArtifacts(recovery) {
+  if (!isPlainObject(recovery.artifacts)) {
+    throw new PushPlanError(
+      'RECOVERY_ARTIFACTS_INVALID',
+      'Recovery states must preserve a plain-object artifact envelope.',
+      {
+        status: recovery.status,
+        planId: recovery.planId,
+      },
+    );
+  }
+
   if (recovery.status === 'blocked-recovery') {
-    if (!recovery.artifacts?.journal || !recovery.artifacts?.remote) {
+    if (!isPlainObject(recovery.artifacts.journal) || !isPlainObject(recovery.artifacts.remote)) {
       throw new PushPlanError(
         'RECOVERY_ARTIFACTS_INVALID',
-        'Blocked recovery states must preserve both journal and remote artifacts.',
+        'Blocked recovery states must preserve both plain-object journal and remote artifacts.',
+        {
+          status: recovery.status,
+          planId: recovery.planId,
+        },
+      );
+    }
+    if (recovery.artifacts.journal === recovery.artifacts.remote) {
+      throw new PushPlanError(
+        'RECOVERY_ARTIFACTS_INVALID',
+        'Blocked recovery states must preserve distinct journal and remote artifacts.',
         {
           status: recovery.status,
           planId: recovery.planId,
@@ -1365,10 +1385,10 @@ export function validateRecoveryArtifacts(recovery) {
     return;
   }
 
-  if (!recovery.artifacts?.journal) {
+  if (!isPlainObject(recovery.artifacts.journal)) {
     throw new PushPlanError(
       'RECOVERY_ARTIFACTS_INVALID',
-      'Non-blocked recovery states must preserve the journal artifact.',
+      'Non-blocked recovery states must preserve a plain-object journal artifact.',
       {
         status: recovery.status,
         planId: recovery.planId,
@@ -1386,6 +1406,10 @@ export function validateRecoveryArtifacts(recovery) {
       },
     );
   }
+}
+
+function isPlainObject(value) {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 }
 
 function sanitizeRecoveryRemote(remote, plan) {

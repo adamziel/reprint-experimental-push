@@ -15062,6 +15062,16 @@ test('no-data-loss recovery contract only accepts old-remote, fully-updated-remo
   assertFailureRecoveryState(partialFailure.details.recovery, 'blocked-recovery');
   assert.ok(partialFailure.details.recovery.artifacts.remote);
   assert.ok(partialFailure.details.recovery.artifacts.journal);
+
+  const invalidBlockedRecovery = {
+    status: 'blocked-recovery',
+    reason: 'missing remote recovery artifact object',
+    artifacts: {
+      journal: partialFailure.details.recovery.artifacts.journal,
+      remote: null,
+    },
+  };
+  assert.equal(isAcceptableRecoveryState(invalidBlockedRecovery), false);
 });
 
 test('no-data-loss recovery matrix keeps pre-mutation failures old-remote, replayed journals fully-updated, and retries idempotent', () => {
@@ -17650,6 +17660,10 @@ test('approved recovery states are limited to the durable old, updated, and bloc
   }), true);
   assert.equal(isAcceptableRecoveryState({
     status: 'old-remote',
+    artifacts: { journal: [] },
+  }), false);
+  assert.equal(isAcceptableRecoveryState({
+    status: 'old-remote',
     artifacts: { journal: { status: 'opened' }, remote: { files: {} } },
   }), false);
   assert.equal(isAcceptableRecoveryState({
@@ -17683,6 +17697,41 @@ test('non-blocked recovery artifacts fail closed when a remote artifact leaks in
       },
     }),
     /must not expose remote artifacts/,
+  );
+});
+
+test('non-blocked recovery artifacts fail closed when the journal artifact is not a plain object', () => {
+  assert.throws(
+    () => validateRecoveryArtifacts({
+      status: 'old-remote',
+      planId: 'plan-1',
+      artifacts: {
+        journal: [],
+      },
+    }),
+    /must preserve a plain-object journal artifact/,
+  );
+});
+
+test('blocked recovery artifacts fail closed when the envelope is not a plain object', () => {
+  assert.throws(
+    () => validateRecoveryArtifacts({
+      status: 'blocked-recovery',
+      planId: 'plan-1',
+      artifacts: [],
+    }),
+    /plain-object artifact envelope/,
+  );
+});
+
+test('non-blocked recovery artifacts fail closed when the envelope is not a plain object', () => {
+  assert.throws(
+    () => validateRecoveryArtifacts({
+      status: 'old-remote',
+      planId: 'plan-1',
+      artifacts: [],
+    }),
+    /plain-object artifact envelope/,
   );
 });
 
@@ -18696,6 +18745,79 @@ test('blocked recovery must keep both journal and remote artifacts while non-blo
       },
     }),
     false,
+  );
+});
+
+test('blocked recovery rejects non-object remote artifacts', () => {
+  assert.equal(
+    isAcceptableRecoveryState({
+      status: 'blocked-recovery',
+      artifacts: {
+        journal: { status: 'completed' },
+        remote: [],
+      },
+    }),
+    false,
+  );
+  assert.throws(
+    () => validateRecoveryArtifacts({
+      status: 'blocked-recovery',
+      planId: 'plan-1',
+      artifacts: {
+        journal: { status: 'completed' },
+        remote: [],
+      },
+    }),
+    /Blocked recovery states must preserve both plain-object journal and remote artifacts\./,
+  );
+});
+
+test('blocked recovery rejects non-object journal artifacts', () => {
+  assert.equal(
+    isAcceptableRecoveryState({
+      status: 'blocked-recovery',
+      artifacts: {
+        journal: [],
+        remote: { status: 'blocked' },
+      },
+    }),
+    false,
+  );
+  assert.throws(
+    () => validateRecoveryArtifacts({
+      status: 'blocked-recovery',
+      planId: 'plan-2',
+      artifacts: {
+        journal: [],
+        remote: { status: 'blocked' },
+      },
+    }),
+    /Blocked recovery states must preserve both plain-object journal and remote artifacts\./,
+  );
+});
+
+test('blocked recovery rejects aliased journal and remote artifacts', () => {
+  const sharedArtifact = { status: 'blocked' };
+  assert.equal(
+    isAcceptableRecoveryState({
+      status: 'blocked-recovery',
+      artifacts: {
+        journal: sharedArtifact,
+        remote: sharedArtifact,
+      },
+    }),
+    false,
+  );
+  assert.throws(
+    () => validateRecoveryArtifacts({
+      status: 'blocked-recovery',
+      planId: 'plan-3',
+      artifacts: {
+        journal: sharedArtifact,
+        remote: sharedArtifact,
+      },
+    }),
+    /must preserve distinct journal and remote artifacts\./,
   );
 });
 
@@ -20627,6 +20749,51 @@ test('production durable journal claims fail closed when restart inspection is n
 
   assert.equal(error.code, 'PRODUCTION_DURABLE_JOURNAL_UNSUPPORTED');
   assert.equal(error.details.requiresDurableJournal, true);
+});
+
+test('production durable journal claims fail closed when artifact references are array-shaped', () => {
+  const writer = {
+    kind: 'production-recovery-journal',
+    productionAdapter: true,
+    ownsJournal: true,
+    journalPath: '/var/lib/reprint/recovery.jsonl',
+    schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+    nextSequence: 1,
+    artifactRefs: [],
+    appendEvent() {
+      this.nextSequence += 1;
+    },
+    flush() {},
+    close() {},
+    inspect() {
+      return {
+        filePath: '/var/lib/reprint/recovery.jsonl',
+        schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+        artifactRefs: [],
+        records: [{ sequence: 1, type: 'journal-opened' }],
+      };
+    },
+    assertCurrentClaim() {},
+  };
+  const plan = planFor(baseSite(), baseSite(), {
+    ...baseSite(),
+    db: {
+      ...baseSite().db,
+      wp_options: {
+        ...baseSite().db.wp_options,
+        'option_name:blogname': { option_name: 'blogname', option_value: 'New Site' },
+      },
+    },
+  });
+  const error = captureError(() => applyPlan(baseSite(), plan, {
+    requireProductionDurableJournal: true,
+    durableJournal: writer,
+  }));
+
+  assert.equal(error.code, 'PRODUCTION_DURABLE_JOURNAL_UNSUPPORTED');
+  assert.deepEqual(error.details.missingDependency, [
+    'restart-readable recovery artifact references',
+  ]);
 });
 
 test('production durable journal claims fail closed when inspection records are structurally incomplete', () => {
