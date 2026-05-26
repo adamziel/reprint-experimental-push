@@ -376,6 +376,14 @@ test('production-shaped authenticated push fails closed when production auth ses
 
     assert.equal(summary.ok, false);
     assert.equal(summary.code, 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED');
+    assert.deepEqual(summary.authSessionLifecycleTrace.map(({ step }) => step), [
+      'preflight',
+      'dry-run',
+      'apply',
+    ]);
+    assert.equal(summary.authSessionLifecycleTrace[0].id, 'psh_01j00000000000000000000000');
+    assert.equal(summary.authSessionLifecycleTrace[0].status, 'active');
+    assert.equal(summary.authSessionLifecycleTrace[2].expired, true);
     assert.deepEqual(summary.authSession, {
       required: 'unexpired',
       observed: '2030-01-01T00:00:00Z',

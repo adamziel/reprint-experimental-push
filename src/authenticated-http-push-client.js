@@ -81,6 +81,7 @@ export async function runAuthenticatedHttpPush({
     replay: null,
     after: null,
     dbJournal: null,
+    authSessionLifecycleTrace: [],
   };
 
   const preflight = await client.signedGet('/preflight');
@@ -95,13 +96,7 @@ export async function runAuthenticatedHttpPush({
     summary.code = 'PREFLIGHT_SESSION_MISSING';
     return summary;
   }
-  summary.authSessionLifecycle = {
-    minted: summarizeAuthSessionLifecycle(preflight.body.auth?.session),
-    read: summarizeAuthSessionLifecycle(preflight.body.auth?.session),
-    expired: isExpiredSession(preflight.body.auth?.session)
-      ? summarizeAuthSessionLifecycle(preflight.body.auth?.session)
-      : null,
-  };
+  recordAuthSessionLifecycle(summary, 'preflight', preflight.body.auth?.session);
   if (isExpiredSession(preflight.body.auth?.session)) {
     summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
     summary.authSession = {
@@ -219,10 +214,7 @@ export async function runAuthenticatedHttpPush({
     idempotencyKey,
   });
   summary.dryRun = summarizeResponse(dryRun);
-  summary.authSessionLifecycle = {
-    ...summary.authSessionLifecycle,
-    dryRun: summarizeAuthSessionLifecycle(dryRun.body?.auth?.session),
-  };
+  recordAuthSessionLifecycle(summary, 'dry-run', dryRun.body?.auth?.session);
   const dryRunAuthEnvelopeDrift = requireProductionAuthSession && hasAuthEnvelopeDrift(preflightAuthEnvelope, dryRun);
   if (dryRun.status !== 200 || dryRun.body?.ok !== true || !dryRun.body?.receipt) {
     summary.code = dryRun.body?.code || 'DRY_RUN_FAILED';
@@ -253,10 +245,7 @@ export async function runAuthenticatedHttpPush({
     idempotencyKey,
   });
   summary.apply = summarizeResponse(apply);
-  summary.authSessionLifecycle = {
-    ...summary.authSessionLifecycle,
-    apply: summarizeAuthSessionLifecycle(apply.body?.auth?.session),
-  };
+  recordAuthSessionLifecycle(summary, 'apply', apply.body?.auth?.session);
   if (apply.status !== 200 || apply.body?.ok !== true) {
     summary.code = apply.body?.code || 'APPLY_FAILED';
     setDurableJournalBoundary(summary, 'apply');
@@ -296,10 +285,7 @@ export async function runAuthenticatedHttpPush({
     idempotencyKey,
   });
   summary.recoveryInspect = summarizeResponse(recoveryInspect);
-  summary.authSessionLifecycle = {
-    ...summary.authSessionLifecycle,
-    recoveryInspect: summarizeAuthSessionLifecycle(recoveryInspect.body?.auth?.session),
-  };
+  recordAuthSessionLifecycle(summary, 'recovery-inspect', recoveryInspect.body?.auth?.session);
   summary.recoveryInspect.recovery = summarizeRecoveryInspect(recoveryInspect);
   const recoveryInspectAuthSessionDrift = requireProductionAuthSession && (
     hasProductionAuthSessionTypeDrift(recoveryInspect)
@@ -366,10 +352,7 @@ export async function runAuthenticatedHttpPush({
     idempotencyKey,
   });
   summary.replay = summarizeResponse(replay);
-  summary.authSessionLifecycle = {
-    ...summary.authSessionLifecycle,
-    replay: summarizeAuthSessionLifecycle(replay.body?.auth?.session),
-  };
+  recordAuthSessionLifecycle(summary, 'replay', replay.body?.auth?.session);
   summary.replay.responseSchemaVersion = replay.body?.responseSchemaVersion;
   const replayEquivalent = isReplayEquivalent(apply, replay);
   const applyAuthEnvelopeDrift = hasAuthEnvelopeDrift(preflightAuthEnvelope, apply);
@@ -419,10 +402,7 @@ export async function runAuthenticatedHttpPush({
   summary.afterObject = afterApply.body.snapshot;
   const dbJournal = await client.get('/db-journal?limit=80');
   summary.dbJournal = summarizeDbJournal(dbJournal);
-  summary.authSessionLifecycle = {
-    ...summary.authSessionLifecycle,
-    journal: summarizeAuthSessionLifecycle(dbJournal.body?.auth?.session),
-  };
+  recordAuthSessionLifecycle(summary, 'journal', dbJournal.body?.auth?.session);
   const dbJournalAuthSessionDrift = requireProductionAuthSession && (
     hasProductionAuthSessionTypeDrift(dbJournal)
     || hasProductionAuthSessionStatusDrift(dbJournal)
@@ -659,6 +639,36 @@ function summarizeAuthSessionLifecycle(session) {
     expiresAt: session.expiresAt || null,
     expired: isExpiredSession(session),
   };
+}
+
+function recordAuthSessionLifecycle(summary, step, session) {
+  const observation = summarizeAuthSessionLifecycle(session);
+  const trace = summary.authSessionLifecycleTrace || [];
+  const previous = trace.length > 0 ? trace[trace.length - 1] : null;
+  const lifecycle = {
+    step,
+    ...observation,
+    rotated: Boolean(previous && previous.id && observation?.id && previous.id !== observation.id),
+    preserved: Boolean(previous && previous.id && observation?.id && previous.id === observation.id),
+  };
+
+  trace.push(lifecycle);
+  summary.authSessionLifecycleTrace = trace;
+  summary.authSessionLifecycle = summary.authSessionLifecycle || {};
+  if (step === 'preflight') {
+    summary.authSessionLifecycle.minted = observation;
+    summary.authSessionLifecycle.read = observation;
+    summary.authSessionLifecycle.expired = observation?.expired ? observation : null;
+    return;
+  }
+
+  summary.authSessionLifecycle[step === 'dry-run'
+    ? 'dryRun'
+    : step === 'recovery-inspect'
+      ? 'recoveryInspect'
+      : step === 'journal'
+        ? 'journal'
+        : step] = observation;
 }
 
 function summarizeSnapshot(response, local) {
