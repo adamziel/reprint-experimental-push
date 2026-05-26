@@ -714,6 +714,8 @@ export function describeProductionRecoveryJournal(writer) {
   const rawArtifactRefs = Object.hasOwn(writer, 'artifactRefs')
     && !hasHiddenOwnStringProperty(writer, 'artifactRefs')
     && isStrictPlainObject(writer.artifactRefs)
+    && !hasHiddenOwnStringKeys(writer.artifactRefs)
+    && Reflect.ownKeys(writer.artifactRefs).every((key) => key === 'journal' || key === 'remote')
     ? writer.artifactRefs
     : null;
   const artifactRefs = Object.freeze({

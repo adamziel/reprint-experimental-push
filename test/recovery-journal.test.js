@@ -438,6 +438,86 @@ test('production recovery journal descriptor rejects a non-enumerable kind marke
   assert.equal(describeProductionRecoveryJournal(writer), null);
 });
 
+test('production recovery journal descriptor fails closed on non-enumerable nested artifact refs', () => {
+  const writer = {
+    kind: 'production-recovery-journal',
+    productionAdapter: true,
+    supportedSurface: 'production-recovery-journal-adapter',
+    restartReadable: true,
+    ownsJournal: true,
+    ownsRemoteArtifact: true,
+    leaseFence: { id: 'lease-shared', epoch: 3 },
+    writerLease: { id: 'lease-shared', epoch: 3 },
+    journalPath: '/var/lib/reprint/recovery.jsonl',
+    artifactRefs: {
+      journal: '/var/lib/reprint/recovery.jsonl',
+    },
+    schemaVersion: 1,
+  };
+  Object.defineProperty(writer.artifactRefs, 'remote', {
+    value: '/var/lib/reprint/recovery-remote.jsonl',
+    enumerable: false,
+  });
+
+  const descriptor = describeProductionRecoveryJournal(writer);
+
+  assert.deepEqual(descriptor, {
+    kind: 'production-recovery-journal',
+    productionAdapter: true,
+    supportedSurface: 'production-recovery-journal-adapter',
+    restartReadable: true,
+    ownsJournal: true,
+    ownsRemoteArtifact: false,
+    leaseFence: { id: 'lease-shared', epoch: 3 },
+    writerLease: { id: 'lease-shared', epoch: 3 },
+    journalPath: '/var/lib/reprint/recovery.jsonl',
+    artifactRefs: {
+      journal: null,
+      remote: null,
+    },
+    schemaVersion: 1,
+  });
+});
+
+test('production recovery journal descriptor fails closed on unsupported nested artifact refs keys', () => {
+  const writer = {
+    kind: 'production-recovery-journal',
+    productionAdapter: true,
+    supportedSurface: 'production-recovery-journal-adapter',
+    restartReadable: true,
+    ownsJournal: true,
+    ownsRemoteArtifact: true,
+    leaseFence: { id: 'lease-shared', epoch: 3 },
+    writerLease: { id: 'lease-shared', epoch: 3 },
+    journalPath: '/var/lib/reprint/recovery.jsonl',
+    artifactRefs: {
+      journal: '/var/lib/reprint/recovery.jsonl',
+      remote: '/var/lib/reprint/recovery-remote.jsonl',
+      extra: '/var/lib/reprint/recovery-extra.jsonl',
+    },
+    schemaVersion: 1,
+  };
+
+  const descriptor = describeProductionRecoveryJournal(writer);
+
+  assert.deepEqual(descriptor, {
+    kind: 'production-recovery-journal',
+    productionAdapter: true,
+    supportedSurface: 'production-recovery-journal-adapter',
+    restartReadable: true,
+    ownsJournal: true,
+    ownsRemoteArtifact: false,
+    leaseFence: { id: 'lease-shared', epoch: 3 },
+    writerLease: { id: 'lease-shared', epoch: 3 },
+    journalPath: '/var/lib/reprint/recovery.jsonl',
+    artifactRefs: {
+      journal: null,
+      remote: null,
+    },
+    schemaVersion: 1,
+  });
+});
+
 test('production recovery journal descriptor fails closed on non-canonical ownership paths and divergent lease ids', () => {
   const writer = {
     kind: 'production-recovery-journal',
