@@ -287,6 +287,35 @@ function spawnBoundedReleaseVerify(command, args, env, options = {}, label = 're
   return proof;
 }
 
+function spawnProductionShapedReleaseVerifySync(env, options = {}, label = 'production-shaped release verify') {
+  const timeout = options.timeout ?? releaseVerifyInnerTimeoutMs;
+  const killSignal = options.killSignal ?? proofSubprocessKillSignal;
+  const proof = spawnSync(process.execPath, ['scripts/playground/production-shaped-release-verify.mjs'], {
+    cwd: repoRoot,
+    shell: false,
+    timeout,
+    killSignal,
+    encoding: 'utf8',
+    maxBuffer: 1024 * 1024 * 20,
+    env,
+  });
+
+  if (proof.error || proof.signal || proof.status === null) {
+    stopAllPlaygroundChildrenSync();
+    reportSpawnFailure(proof);
+    const timeoutNote = proof.error?.code === 'ETIMEDOUT' && timeout ? ` after ${timeout}ms` : '';
+    if (proof.error) {
+      throw new Error(formatSpawnFailure(`${label} failed${timeoutNote} with explicit spawn error handling`, proof));
+    }
+    if (proof.signal) {
+      throw new Error(formatSpawnFailure(`${label} terminated by ${proof.signal}${timeout ? ` after ${timeout}ms` : ''} with explicit spawn signal handling`, proof));
+    }
+    throw new Error(`${label} exited without a status with explicit spawn status handling\nstdout:\n${proof.stdout ?? ''}\nstderr:\n${proof.stderr ?? ''}`);
+  }
+
+  return proof;
+}
+
 function assertBoundedSpawnProof(proof, command, args, label, timeoutMs) {
   if (!proof.error && !proof.signal && proof.status !== null) {
     return;
@@ -322,11 +351,7 @@ function assertReleaseVerifySpawnFailure(proof, label, timeoutMs) {
 function spawnReleaseVerifySlowPathBounded(env = {}, options = {}) {
   const timeout = options.timeout ?? releaseVerifySlowPathTimeoutMs;
   const boundedTimeout = Math.max(1_000, Math.min(timeout, releaseVerifySlowPathInnerTimeoutMs));
-  const command = process.execPath;
-  const args = ['scripts/playground/production-shaped-release-verify.mjs'];
-  const proof = spawnReleaseVerifySync(
-    command,
-    args,
+  const proof = spawnProductionShapedReleaseVerifySync(
     {
       ...process.env,
       ...env,
