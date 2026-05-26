@@ -298,6 +298,51 @@ test('guarded benchmark exposes staging-disk headroom and journal lag replay sho
   );
 });
 
+test('guarded benchmark exposes staging-disk commit shortcuts across atomic groups as rejected', () => {
+  const fastPath = findRejectedFastPathById(
+    'cached-receipt-cursor-and-staging-disk-headroom-skips-atomic-group-commit-after-pause',
+  );
+
+  assert.ok(fastPath);
+  assert.equal(fastPath.rejectedGate, 'recovery');
+  assert.match(fastPath.proposal, /staging-disk headroom/);
+  assert.match(fastPath.rejectedBecause, /atomic-group barrier/);
+  assert.deepEqual(
+    fastPath.violates,
+    ['backpressure', 'atomic-groups', 'row-preconditions', 'durable-progress', 'live-preconditions'],
+  );
+});
+
+test('guarded benchmark exposes staging-disk release-bundle commit shortcuts as rejected', () => {
+  const fastPath = findRejectedFastPathById(
+    'cached-receipt-cursor-and-staging-disk-headroom-skips-release-bundle-commit-after-pause',
+  );
+
+  assert.ok(fastPath);
+  assert.equal(fastPath.rejectedGate, 'recovery');
+  assert.match(fastPath.proposal, /release-bundle commit/);
+  assert.match(fastPath.rejectedBecause, /atomic-group barrier/);
+  assert.deepEqual(
+    fastPath.violates,
+    ['backpressure', 'atomic-groups', 'durable-progress', 'live-preconditions'],
+  );
+});
+
+test('guarded benchmark exposes staging-disk and journal-lag release-bundle commit shortcuts as rejected', () => {
+  const fastPath = findRejectedFastPathById(
+    'cached-receipt-cursor-staging-disk-headroom-and-journal-lag-skips-release-bundle-commit-after-pause',
+  );
+
+  assert.ok(fastPath);
+  assert.equal(fastPath.rejectedGate, 'recovery');
+  assert.match(fastPath.proposal, /journal lag/);
+  assert.match(fastPath.rejectedBecause, /durable journal trail/);
+  assert.deepEqual(
+    fastPath.violates,
+    ['backpressure', 'atomic-groups', 'durable-progress', 'live-preconditions'],
+  );
+});
+
 test('guarded benchmark blocks row-batch executor claims when the measured surface is not visible', () => {
   const report = smallBenchmark();
   const tampered = clone(report);
