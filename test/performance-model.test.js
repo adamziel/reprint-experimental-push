@@ -3429,6 +3429,24 @@ test('safe fast paths retain all gate proofs and stay non-rejectable', () => {
   );
 });
 
+test('production throughput details expose fail-closed receipt cursor and queue headroom alignment', () => {
+  const report = runGuardedExecutorBenchmark({ profile: 'ci' });
+  const details = report.claims.productionThroughputDetails;
+
+  assert.equal(details.receiptCursorHeadroomWithinQueueBudget, true);
+  assert.equal(details.backpressureConsistency.receiptCursorHeadroomWithinQueueBudget, true);
+  assert.equal(details.receiptCursorHeadroomCoveredByQueueBudget, true);
+  assert.equal(details.backpressureConsistency.receiptCursorHeadroomCoveredByQueueBudget, true);
+  assert.equal(
+    details.receiptCursorHeadroomMatchesQueueHeadroom,
+    details.backpressureConsistency.receiptCursorHeadroomMatchesQueueHeadroom,
+  );
+  assert.equal(
+    details.queueHeadroomBytes,
+    details.backpressure.queueHeadroomBytes,
+  );
+});
+
 test('failure injection boundaries include every durable transition in the benchmark shape', () => {
   const model = buildBenchmarkModel();
   const boundaries = new Set(
