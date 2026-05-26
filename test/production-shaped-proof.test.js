@@ -29,6 +29,20 @@ const proofSubprocessOptions = {
   encoding: 'utf8',
   maxBuffer: 1024 * 1024 * 20,
 };
+const releaseVerifyProofSubprocessOptions = {
+  timeout: proofSubprocessTimeoutMs,
+  killSignal: proofSubprocessKillSignal,
+  encoding: 'utf8',
+  maxBuffer: 1024 * 1024 * 20,
+  shell: false,
+};
+const releaseVerifyLiveSubprocessOptions = {
+  timeout: liveReleaseVerifyTimeoutMs,
+  killSignal: proofSubprocessKillSignal,
+  encoding: 'utf8',
+  maxBuffer: 1024 * 1024 * 20,
+  shell: false,
+};
 
 const activePlaygroundChildren = new Set();
 
@@ -53,11 +67,8 @@ function spawnReleaseVerify(env = {}, timeout = proofSubprocessTimeoutMs) {
     ['scripts/playground/production-shaped-release-verify.mjs'],
     {
       cwd: repoRoot,
+      ...releaseVerifyProofSubprocessOptions,
       timeout,
-      killSignal: proofSubprocessKillSignal,
-      encoding: 'utf8',
-      maxBuffer: 1024 * 1024 * 20,
-      shell: false,
       env: {
         ...process.env,
         ...env,
@@ -96,11 +107,8 @@ function spawnLiveReleaseVerify(env = {}, timeout = liveProofSubprocessTimeoutMs
     ['scripts/playground/production-shaped-release-verify.mjs'],
     {
       cwd: repoRoot,
+      ...releaseVerifyLiveSubprocessOptions,
       timeout,
-      killSignal: proofSubprocessKillSignal,
-      encoding: 'utf8',
-      maxBuffer: 1024 * 1024 * 20,
-      shell: false,
       env: {
         ...process.env,
         ...env,
@@ -112,6 +120,8 @@ function spawnLiveReleaseVerify(env = {}, timeout = liveProofSubprocessTimeoutMs
 
 function assertReleaseVerifyProof(proof, label) {
   if (proof.error) {
+    stopAllPlaygroundChildrenSync();
+    process.stderr.write(`${describeSpawnProof(proof)}\n`);
     const detailParts = [
       proof.error.name ?? 'Error',
       proof.error.code ? `code=${proof.error.code}` : null,
@@ -127,6 +137,7 @@ function assertReleaseVerifyProof(proof, label) {
 
   if (proof.signal) {
     stopAllPlaygroundChildrenSync();
+    process.stderr.write(`${describeSpawnProof(proof)}\n`);
     assert.fail(
       `${label} terminated by ${proof.signal}\nstdout:\n${proof.stdout ?? ''}\nstderr:\n${proof.stderr ?? ''}`,
     );
@@ -134,6 +145,7 @@ function assertReleaseVerifyProof(proof, label) {
 
   if (proof.status === null) {
     stopAllPlaygroundChildrenSync();
+    process.stderr.write(`${describeSpawnProof(proof)}\n`);
     assert.fail(
       `${label} exited without a status\nstdout:\n${proof.stdout ?? ''}\nstderr:\n${proof.stderr ?? ''}`,
     );
