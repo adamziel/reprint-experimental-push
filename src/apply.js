@@ -597,8 +597,8 @@ function assertProductionDurableJournalSupport(options, writer) {
     return;
   }
 
-  const missingDependency = productionRecoveryMissingDependencies(writer);
-  if (missingDependency.length === 0) {
+  const supportReport = productionRecoverySupportReport(writer);
+  if (supportReport.supported) {
     return;
   }
 
@@ -607,13 +607,13 @@ function assertProductionDurableJournalSupport(options, writer) {
     'Production durable journal recovery is not available in this worktree.',
     {
       supportedSurface: 'production-recovery-journal-adapter',
-      missingDependency,
+      missingDependency: supportReport.missingDependency,
       requiresDurableJournal: true,
     },
   );
 }
 
-function productionRecoveryMissingDependencies(writer) {
+function productionRecoverySupportReport(writer) {
   const missingDependency = [];
 
   if (writer?.kind !== 'production-recovery-journal') {
@@ -640,7 +640,10 @@ function productionRecoveryMissingDependencies(writer) {
     missingDependency.push('journal-readable inspection records with sequence and type');
   }
 
-  return missingDependency;
+  return {
+    supported: missingDependency.length === 0,
+    missingDependency,
+  };
 }
 
 function durableJournalInspectSurface(writer) {
