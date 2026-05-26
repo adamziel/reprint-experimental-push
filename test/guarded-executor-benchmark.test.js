@@ -58,6 +58,10 @@ test('guarded executor benchmark moves buffers and row payloads through durable 
   assert.equal(report.evidence.wordpressGraphIdentity.graphIdentityBlockers, 0);
   assert.equal(report.evidence.journal.allJournalsIntegrityOk, true);
   assert.equal(report.evidence.journal.successReceiptKindsGrouped, true);
+  assert.equal(report.evidence.journal.successReceiptKindLedger.length, report.evidence.journal.successRecords);
+  assert.equal(report.evidence.journal.successReceiptKindLedger[0].kind, 'chunk');
+  assert.ok(report.evidence.journal.successReceiptKindLedger.some((entry) => entry.kind === 'other'));
+  assert.equal(report.evidence.journal.successReceiptKindLedgerComplete, true);
   assert.equal(report.evidence.redaction.durableJournalsContainNoRawValues, true);
   assert.equal(report.resourceLimits.memoryCeilingBytes, 32 * 1024 * 1024);
   assert.equal(report.evidence.resourceLimits.chunkWindowWithinMemoryCeiling, true);
@@ -253,6 +257,9 @@ test('guarded benchmark refuses production throughput claims until production ga
     !report.claims.productionThroughput.blockers.includes('missing-valid-receipt-cursor'),
   );
   assert.ok(!report.claims.productionThroughput.blockers.includes('queue-budget-does-not-match-resource-ceiling'));
+  const tamperedLedger = clone(report);
+  tamperedLedger.evidence.journal.successReceiptKindLedgerComplete = false;
+  assert.ok(productionThroughputBlockers(tamperedLedger).includes('receipt-ledger-kind-summary-not-proven'));
   assert.equal(report.results.preCommitFailure.remoteUnchanged, true);
   assert.equal(report.results.partialFailure.remoteUnchanged, false);
   assert.equal(report.results.successInspection.status, 'fully-updated-remote');

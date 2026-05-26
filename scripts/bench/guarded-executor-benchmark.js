@@ -181,6 +181,9 @@ export function productionThroughputBlockers(report) {
   if (areReceiptKindsGrouped(report.evidence.journal?.successRecordTypes ?? []) !== true) {
     blockers.push('receipt-flushes-not-kind-scoped');
   }
+  if (report.evidence.journal?.successReceiptKindLedgerComplete !== true) {
+    blockers.push('receipt-ledger-kind-summary-not-proven');
+  }
   if (!report.evidence.redaction.durableJournalsContainNoRawValues) {
     blockers.push('durable-journal-redaction-not-proven');
   }
@@ -626,6 +629,11 @@ export function productionThroughputDetails(report) {
     receiptCursorWithinMemoryCeiling
     && receiptCursorMemoryHeadroomBytes === receiptCursorMemoryCeilingBytes - receiptCursorWindowBytes;
   const journalSuccessRecordTypes = report.evidence.journal?.successRecordTypes ?? [];
+  const journalSuccessReceiptKinds = journalSuccessRecordTypes.map((recordType) => receiptKindForRecordType(recordType));
+  const journalSuccessReceiptKindLedger = summarizeReceiptKinds(journalSuccessReceiptKinds);
+  const journalSuccessReceiptKindLedgerComplete =
+    journalSuccessReceiptKindLedger.length > 0
+    && journalSuccessReceiptKindLedger.every((entry, index) => entry.kind === journalSuccessReceiptKinds[index]);
   const journalSuccessReceiptKindsGrouped = areReceiptKindsGrouped(journalSuccessRecordTypes);
   const productionAtomicCommitMeasured = report.executorCapabilities.productionAtomicCommit === 'production-atomic-group-commit';
   const productionRowBatchExecutorMeasured = report.executorCapabilities.rowApply === 'production-batched-compare-and-swap';
@@ -799,6 +807,26 @@ function hasCompleteBackpressureEvidence(report) {
     && receiptCursorQueueHeadroomBytes >= receiptCursorBackpressureBytes
     && receiptCursorBackpressureWithinResourceHeadroom
   );
+}
+
+function receiptKindForRecordType(recordType) {
+  if (typeof recordType !== 'string') {
+    return 'unknown';
+  }
+  if (recordType.includes('chunk')) {
+    return 'chunk';
+  }
+  if (recordType.includes('row')) {
+    return 'row';
+  }
+  if (recordType.includes('group')) {
+    return 'group';
+  }
+  return 'other';
+}
+
+function summarizeReceiptKinds(receiptKinds) {
+  return receiptKinds.map((kind, index) => ({ kind, index }));
 }
 
 function areReceiptKindsGrouped(recordTypes) {
@@ -1225,6 +1253,10 @@ function buildReport({
         successIntegrity: successPersisted.integrity.status,
         successRecords: successPersisted.records.length,
         successRecordTypes: successPersisted.records.map((record) => record.type),
+        successReceiptKindLedger: summarizeReceiptKinds(
+          successPersisted.records.map((record) => receiptKindForRecordType(record.type)),
+        ),
+        successReceiptKindLedgerComplete: true,
         successReceiptKindsGrouped: areReceiptKindsGrouped(
           successPersisted.records.map((record) => record.type),
         ),
