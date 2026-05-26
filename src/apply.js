@@ -1115,7 +1115,12 @@ function productionRecoveryArtifactRefs(writer, inspected) {
 }
 
 function closeUnsupportedProductionRecoveryWriter(writer) {
-  if (!writer || typeof writer.close !== 'function' || isDurableJournalClosed(writer)) {
+  if (!writer || isDurableJournalClosed(writer)) {
+    return;
+  }
+
+  if (!Object.hasOwn(writer, 'close') || typeof writer.close !== 'function') {
+    markDurableJournalClosed(writer);
     return;
   }
 

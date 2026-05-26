@@ -4833,6 +4833,60 @@ test('unsupported production recovery writers are marked closed even when cleanu
   assert.equal(isDurableJournalClosed(writer), true);
 });
 
+test('unsupported production recovery writers do not invoke inherited cleanup hooks', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  const remote = baseSite();
+  const plan = planFor(base, local, remote);
+  let inheritedCloseCalls = 0;
+  const writer = Object.create({
+    close() {
+      inheritedCloseCalls += 1;
+    },
+  });
+  Object.assign(writer, {
+    kind: 'production-recovery-journal',
+    productionAdapter: true,
+    supportedSurface: 'production-recovery-journal-adapter',
+    ownsJournal: true,
+    ownsRemoteArtifact: false,
+    restartReadable: true,
+    journalPath: '/tmp/reprint-recovery-journal.jsonl',
+    schemaVersion: 1,
+    artifactRefs: {
+      journal: '/tmp/reprint-recovery-journal.jsonl',
+    },
+    appendEvent() {
+      throw new Error('unsupported');
+    },
+    inspect() {
+      return {
+        filePath: '/tmp/reprint-recovery-journal.jsonl',
+        schemaVersion: 1,
+        records: [],
+        artifactRefs: {
+          journal: '/tmp/reprint-recovery-journal.jsonl',
+        },
+      };
+    },
+    assertCurrentClaim() {
+      return true;
+    },
+    flush() {},
+  });
+
+  assert.throws(
+    () => applyPlan(remote, plan, {
+      durableJournal: writer,
+      requireProductionDurableJournal: true,
+    }),
+    (error) => error instanceof PushPlanError && error.code === 'PRODUCTION_DURABLE_JOURNAL_UNSUPPORTED',
+  );
+  assert.equal(inheritedCloseCalls, 0);
+  assert.equal(isDurableJournalClosed(writer), true);
+});
+
 test('replaying a completed plan does not duplicate inserts or reapply stale local data', () => {
   const base = baseSite();
   const local = baseSite();
