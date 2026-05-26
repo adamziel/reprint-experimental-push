@@ -2038,7 +2038,11 @@ test('guarded benchmark blocks row-batch executor visibility without visible mea
   );
   assert.equal(
     details.atomicGroup.productionRowBatchExecutorVisibleAndStorageReceiptsVisibleAndMeasured,
-    true,
+    false,
+  );
+  assert.equal(
+    details.backpressureConsistency.productionRowBatchExecutorVisibleAndStorageReceiptsVisibleAndMeasured,
+    false,
   );
   assert.equal(
     blockers.includes('production-row-batch-executor-visible-without-parallelism-limits'),

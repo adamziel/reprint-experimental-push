@@ -1964,11 +1964,6 @@ export function productionThroughputDetails(report) {
     && productionAtomicCommitMeasured;
   const productionRowBatchExecutorVisibleAndStorageReceiptsVisible =
     productionRowBatchExecutorVisible && productionStorageReceiptsVisible;
-  const productionRowBatchExecutorVisibleAndStorageReceiptsVisibleAndMeasured =
-    productionRowBatchExecutorVisible
-    && productionStorageReceiptsVisible
-    && productionRowBatchExecutorMeasured
-    && productionStorageReceiptsMeasured;
   const productionRowBatchExecutorVisibleAndAtomicCommitVisible =
     productionRowBatchExecutorVisible && productionAtomicCommitVisible;
   const productionAtomicGroupMetadataProven =
@@ -2011,6 +2006,12 @@ export function productionThroughputDetails(report) {
     && parallelismLimitsMeasuredOnReport
     && parallelismLimitsPositive
     && parallelismLimitsIntegral;
+  const productionRowBatchExecutorVisibleAndStorageReceiptsVisibleAndMeasured =
+    productionRowBatchExecutorVisible
+    && productionStorageReceiptsVisible
+    && productionRowBatchExecutorMeasured
+    && productionStorageReceiptsMeasured
+    && parallelismLimitsVisibleAndMeasured;
   const parallelismLimitsVisibleAndCanonical =
     parallelismLimitsVisibleOnReport
     && parallelismLimitsMeasuredOnReport
