@@ -1,27 +1,27 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-26 15:35 CEST
+Last updated: 2026-05-26 15:37 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
 
-## 2026-05-26 15:35 CEST - Reliable Head Advanced Again, Gate Still Closed
+## 2026-05-26 15:37 CEST - Reliable Head Advanced Again, Public Page Still Lags
 
 - Going well: the live reliable head advanced to `325950822499a32663371ed99a487d3faa0e0d4c`, so the checked
   release path is still moving instead of stalling on the prior support-only
   head.
 - Not going well: the release gate is still `0/4`, and production-backed
   auth/session lifecycle or durable-ownership proof is still missing.
-- Progress change: this is still release-path progress, but it has not crossed
-  into a gate move.
+- Progress change: the release-path head moved again, but the public page is
+  still behind and the gate has not moved.
 - Next nudge: keep `reliable-executor` on the next checked release-path
-  dependency, and let `progress-publisher` refresh the public page only if it
-  still names `e82e3b1af126f62688f617a3fb4cc0baeb698d57`.
+  dependency, and have `progress-publisher` refresh the page because it still
+  names `e82e3b1af126f62688f617a3fb4cc0baeb698d57`.
 
 | Lane | Nudge |
 | --- | --- |
 | Reliable executor | Move to the next checked release-path dependency, not another proof-field surface. |
-| Progress publisher | Refresh only if the public head drifts from `325950822499a32663371ed99a487d3faa0e0d4c` or the page still names `e82e3b1af126f62688f617a3fb4cc0baeb698d57`. |
+| Progress publisher | Refresh now: the page still names `e82e3b1af126f62688f617a3fb4cc0baeb698d57` even though the live head is `325950822499a32663371ed99a487d3faa0e0d4c`. |
 | Audit and critic | Keep the verdict at `0/4` unless production-backed lifecycle or durable ownership is proven. |
 
 ## 2026-05-26 15:30 CEST - Lane Retarget Complete
