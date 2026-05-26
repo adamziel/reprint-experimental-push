@@ -108,6 +108,9 @@ but it did not change the release conclusion:
 - `origin/lane/reliable-executor` now records `6dc56a5d`, failing closed on
   missing release verify credentials. It still does not prove production
   auth/session lifecycle or a live-source mutation boundary.
+- `origin/lane/reliable-executor` now records `1b492e93`, tightening release
+  verify spawn handling. It still does not prove production auth/session
+  lifecycle or a live-source mutation boundary.
 - `origin/lane/reliable-executor` now records `fa1d0e0e`, clarifying blocked
   production surfaces. It still does not prove production auth/session
   lifecycle or a live-source mutation boundary.
@@ -119,6 +122,9 @@ but it did not change the release conclusion:
   any production-backed source mutation.
 - `origin/lane/no-data-loss-invariants` now records `58e8b8a2`, adding special
   file swap boundary proof. It still does not prove the live release boundary
+  or any production-backed source mutation.
+- `origin/lane/no-data-loss-invariants` now records `0886616c`, adding a
+  submodule boundary proof. It still does not prove the live release boundary
   or any production-backed source mutation.
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now
   records `b03ee033`, refreshing supervisor freshness only. It still does not
