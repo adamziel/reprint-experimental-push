@@ -38,23 +38,23 @@ The project is **not releasable as a production WordPress push path**.
 - `origin/lane/cycle-20260525-keep-busy-loop-2/independent-auditor` -> `1d6cb6fd`
 - `origin/lane/cycle-20260525-keep-busy-loop-2/no-data-loss-recovery` -> `63e01a49`
 - `origin/lane/cycle-20260525-mainwindows-2349/critic` -> `fa0dc8a0`
-- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `79aa3e50`
+- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `863075c1`
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `b4eeed32`
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `f1599fb2`
-- `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `9e077c10`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `57fe23d6`
+- `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `435f2d1e`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `6198aeac`
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` -> `c4103594`
 - `origin/lane/cycle-20260525-mainwindows-2357/no-data-loss-invariants-graph-proof` -> `98c0ce26`
 - `origin/lane/cycle-20260525-restart-2340/feedback-supervisor` -> `ef3d911e`
 - `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration` -> `29fff11d`
 - `origin/lane/critic` -> `443dacd6`
-- `origin/lane/fast-paths` -> `8c5c2ccb`
+- `origin/lane/fast-paths` -> `863075c1`
 - `origin/lane/feedback-supervisor` -> `b4eeed32`
 - `origin/lane/independent-auditor` -> `6351130f`
 - `origin/lane/no-data-loss-invariants` -> `56b2667a`
-- `origin/lane/no-data-loss-recovery` -> `9e077c10`
+- `origin/lane/no-data-loss-recovery` -> `435f2d1e`
 - `origin/lane/progress-publisher` -> `7695e1f9`
-- `origin/lane/reliable-executor` -> `f41e5f3f`
+- `origin/lane/reliable-executor` -> `a9e5d4e2`
 - `origin/lane/same-plan-wordpress-graph-create` -> `0d2178e9`
 - `origin/main` -> `56063f13`
 
@@ -65,7 +65,7 @@ real source-site mutation boundary. The release gates still stay `0/4`.
 Fresh lane proof since the last audit pass improved the local evidence floor,
 but it did not change the release conclusion:
 
-- `origin/lane/reliable-executor` now records `f41e5f3f`, tightening release
+- `origin/lane/reliable-executor` now records `a9e5d4e2`, tightening release
   verify cleanup again, but still not proving production auth/session
   lifecycle or a live-source mutation boundary.
 - `origin/lane/no-data-loss-invariants` now records `56b2667a`, adding term
@@ -76,7 +76,7 @@ but it did not change the release conclusion:
   now records `29fff11d`, adding featured-image attachment drift proof only.
 - `origin/lane/independent-auditor` now records `6351130f`. This refreshes the
   audit snapshot only and does not change the release boundary.
-- `origin/lane/fast-paths` now records `8c5c2ccb`, tightening guarded
+- `origin/lane/fast-paths` now records `863075c1`, tightening guarded
   benchmark and pause-reporting evidence checks only.
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` now
   records `435f2d1e`, tightening blocked recovery validation. It still does
@@ -86,12 +86,12 @@ but it did not change the release conclusion:
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now records
   `b4eeed32`, refreshing the public progress freshness only.
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` now records
-  `155a9cf7`, tightening pause detail reporting only.
+  `863075c1`, tightening pause detail reporting only.
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` now records
   `c4103594`, hardening live proof cleanup and timeouts only.
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now records
-  `57fe23d6`, refreshing the public progress freshness only.
-- `origin/lane/no-data-loss-recovery` now records `9e077c10`, tightening
+  `6198aeac`, refreshing the public progress freshness only.
+- `origin/lane/no-data-loss-recovery` now records `435f2d1e`, tightening
   unsupported recovery journal boundaries only.
 - `origin/lane/same-plan-wordpress-graph-create` now records `0d2178e9`,
   hardening revision graph references only.
