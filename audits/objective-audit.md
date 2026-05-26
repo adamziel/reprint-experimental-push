@@ -69,17 +69,17 @@ Fresh remote heads added after the prior audit note:
 
 Fresh remote heads re-polled after the last audit note:
 
-- `origin/lane/reliable-executor` -> `ef3e42b9`
-- `origin/lane/no-data-loss-recovery` -> `09b55454`
+- `origin/lane/reliable-executor` -> `66033fe3`
+- `origin/lane/no-data-loss-recovery` -> `89b98ce5`
 - `origin/lane/no-data-loss-invariants` -> `bce3664d`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `ce5250a5`
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `50be3251`
-- `origin/lane/cycle-20260525-mainwindows-2349/reliable-executor` -> `a279d99b`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `a1c474fb`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `462b8b16`
+- `origin/lane/cycle-20260525-mainwindows-2349/reliable-executor` -> `66033fe3`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-invariants` -> `bce3664d`
-- `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `09b55454`
-- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `7f8b3735`
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `50be3251`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `ce5250a5`
+- `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `89b98ce5`
+- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `b9890ae9`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `462b8b16`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `a1c474fb`
 
 These heads are still fail-closed support evidence and freshness work. They
 improve unsupported-surface blocking and public visibility, but they still do
@@ -94,10 +94,10 @@ evidence of a live production mutation boundary.
 Fresh lane proof since the last audit pass improved the local evidence floor,
 but it did not change the release conclusion:
 
-- `origin/lane/reliable-executor` now records `a279d99b`, tightening auth
+- `origin/lane/reliable-executor` now records `66033fe3`, tightening auth
   session lifecycle checks. It still does not prove production auth/session
   lifecycle on the release path.
-- `origin/lane/no-data-loss-recovery` now records `09b55454`, hardening replay
+- `origin/lane/no-data-loss-recovery` now records `89b98ce5`, hardening replay
   journal isolation. It still does not prove production-backed journal
   ownership or restart-readable durable artifacts.
 - `origin/lane/no-data-loss-invariants` now records `bce3664d`, blocking post
