@@ -1260,16 +1260,7 @@ function durableJournalInspectSurface(inspected) {
     && Object.hasOwn(inspected, 'filePath')
     && isCanonicalAbsolutePath(inspected.filePath)
     && Object.hasOwn(inspected, 'schemaVersion')
-    && typeof inspected.schemaVersion === 'number'
-    && Object.hasOwn(inspected, 'records')
-    && Array.isArray(inspected.records),
-  ) && inspected.records.every((record) =>
-    record
-    && typeof record === 'object'
-    && Object.hasOwn(record, 'sequence')
-    && Number.isInteger(record.sequence)
-    && Object.hasOwn(record, 'type')
-    && typeof record.type === 'string',
+    && typeof inspected.schemaVersion === 'number',
   );
 }
 
@@ -1453,7 +1444,9 @@ function durableJournalInspectRecords(inspected) {
   return Boolean(
     inspected
     && typeof inspected === 'object'
+    && Object.hasOwn(inspected, 'schemaVersion')
     && typeof inspected.schemaVersion === 'number'
+    && Object.hasOwn(inspected, 'records')
     && Array.isArray(inspected.records),
   ) && !Reflect.ownKeys(inspected.records).some((key) => typeof key === 'symbol')
   && inspected.records.length > 0
