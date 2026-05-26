@@ -1,12 +1,10 @@
-Critic lane pass at 2026-05-26 10:20:03 CEST (+0200): I checked the latest recovery-journal proof candidate `351b6bbd` (`Add production recovery journal adapter`) and the latest reliable-executor auth/session follow-up `949477de` (`Expose auth session lifecycle evidence`).
+Critic lane pass at 2026-05-26 10:23:13 CEST (+0200): I reclassified the latest recovery-journal adapter proof `351b6bbd` (`Add production recovery journal adapter`) alongside the latest reliable-executor auth/session evidence `949477de` (`Expose auth session lifecycle evidence`).
 
-`351b6bbd` is the stronger result: it adds `openProductionRecoveryJournal()`, restart-readable `inspect()`, production adapter metadata, `flush()`, and a focused probe that requires `applyPlan(..., { requireProductionDurableJournal: true })`. That is real progress toward the constrained recovery gate, but it is still a support-side adapter proof unless the release path actually consumes it.
+`351b6bbd` is real progress because it adds `openProductionRecoveryJournal()`, restart-readable `inspect()`, production adapter metadata, `flush()`, and a focused `requireProductionDurableJournal` probe. `949477de` is also real progress because it extends the auth envelope drift check with `sessionStatus`, surfaces that status in the response summary, and rejects an expired session on the production-shaped path.
 
-`949477de` is also useful, but still support-side: it extends the auth envelope drift check with `sessionStatus`, surfaces that status in the response summary, and proves an expired session is rejected on the production-shaped path. That tightens the fail-closed story, but it still does not prove a live production-backed auth/session lifecycle on the release boundary.
+Neither head crosses the release boundary yet. Both are still support-side until the release path actually consumes the recovery adapter or a live production-backed auth/session consumer. The exact owner for that next integration is `reliable-executor`, and the bounded proof command after wiring remains `timeout 180s node --test test/production-shaped-proof.test.js`.
 
-What is still missing is the live production-backed consumer on the release boundary, specifically wiring the recovery adapter into `verify:release` or another server-side release-path check, or proving a production-backed auth/session lifecycle, live canonical replay, or preserved-remote retry from the same boundary. Until that exists, this does not prove release-gate movement.
-
-Verdict: still blocked for release-gate movement. The narrower reason remains that the current evidence proves adapter and client-side fail-closed behavior, not a live production boundary wired into `verify:release`.
+Verdict: still blocked for release-gate movement. The narrow reason remains that the current evidence proves adapter availability and client-side fail-closed behavior, not a live production boundary wired into `verify:release`.
 
 Changed files:
 - [`audits/critic.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/critic/audits/critic.md)
@@ -17,11 +15,13 @@ Commands run:
 - `sed -n '1,220p' AGENTS.md`
 - `sed -n '1,220p' supervision/README.md`
 - `sed -n '1,220p' supervision/lanes/critic.md`
-- `git -C ../reliable-executor log --oneline --decorate -n 5 origin/lane/reliable-executor`
-- `git -C ../no-data-loss-recovery log --oneline --decorate -n 5 origin/lane/no-data-loss-recovery`
-- `sed -n '1,220p' ../reliable-executor/.lane-output/final.md`
+- `sed -n '1,260p' .lane-output/final-mainwindows-round-20260525-2357.md`
+- `sed -n '1,260p' .lane-output/final-recovery-20260526-071520.md`
+- `sed -n '1,260p' .lane-output/final-watchdog-20260526-002640.md`
 - `sed -n '1,260p' .lane-output/final.md`
 - `sed -n '1,260p' audits/critic.md`
+- `git log --oneline --decorate -n 6 origin/lane/reliable-executor`
+- `git log --oneline --decorate -n 6 origin/lane/no-data-loss-recovery`
 
 Push result:
 - Not attempted this pass.
@@ -32,4 +32,4 @@ Worktree status:
 - Branch: `lane/cycle-20260525-mainwindows-2349/critic...origin/main [ahead 1598, behind 597]`
 
 Next supervisor nudge:
-- Ask `reliable-executor` for the server-side release-path integration that consumes the durable journal adapter, ideally `verify:release` wiring, or the live production-backed auth/session lifecycle consumer. If that surface does not exist here, keep the gate closed and do not treat client-side fail-closed journal checks or timestamp-only freshness updates as release proof.
+- Ask `reliable-executor` to wire `openProductionRecoveryJournal()` into the release verifier or report the exact missing file/API if that consumer surface does not exist; do not count another adapter-only or timestamp-only update as release proof.
