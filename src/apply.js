@@ -26,6 +26,7 @@ const CLOSED_DURABLE_JOURNALS = new WeakSet();
 const CLAIM_FENCE_RECORD_TYPES = new Set([
   'recovery-claim-opened',
   'stale-claim-advanced',
+  'stale-claim-rejected',
 ]);
 const DURABLE_OPEN_RECORD_TYPES = new Set([
   'journal-opened',

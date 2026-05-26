@@ -20941,6 +20941,70 @@ test('production recovery support report accepts a fenced claim before apply ope
   assert.equal(report.inspectionErrorMessage, null);
 });
 
+test('production recovery support report accepts stale-claim rejection evidence before apply opens the journal body', () => {
+  const filePath = tempRecoveryJournalPath();
+  const remoteArtifactPath = `${path.dirname(filePath)}/pre-open-rejected-remote.jsonl`;
+  const activeClaimId = 'claim-pre-open-rejection-active';
+  const staleClaimId = 'claim-pre-open-rejection-stale';
+  const activeJournal = openProductionRecoveryJournal(filePath, {
+    truncate: true,
+    now: fixedNow,
+    claimId: activeClaimId,
+    writerLease: { id: activeClaimId },
+    ownsRemoteArtifact: true,
+    remoteArtifactPath,
+  });
+  appendRecoveryClaimOpened(activeJournal, {
+    plan: { id: 'plan-pre-open-rejection-active' },
+    current: baseSite(),
+    claimId: activeClaimId,
+    artifactRefs: {
+      journal: filePath,
+      remote: remoteArtifactPath,
+    },
+  });
+  activeJournal.close();
+
+  assert.throws(() => {
+    const staleJournal = openProductionRecoveryJournal(filePath, {
+      claimId: staleClaimId,
+      writerLease: { id: staleClaimId },
+      ownsRemoteArtifact: true,
+      remoteArtifactPath,
+    });
+    try {
+      appendRecoveryClaimOpened(staleJournal, {
+        plan: { id: 'plan-pre-open-rejection-stale' },
+        current: baseSite(),
+        claimId: staleClaimId,
+        artifactRefs: {
+          journal: filePath,
+          remote: remoteArtifactPath,
+        },
+      });
+    } finally {
+      staleJournal.close();
+    }
+  }, {
+    code: 'RECOVERY_CLAIM_STALE',
+  });
+
+  const reopened = openProductionRecoveryJournal(filePath, {
+    claimId: activeClaimId,
+    writerLease: { id: activeClaimId },
+    ownsRemoteArtifact: true,
+    remoteArtifactPath,
+  });
+  const report = productionRecoverySupportReport(reopened);
+  reopened.close();
+
+  assert.equal(report.supported, true);
+  assert.deepEqual(report.missingDependency, []);
+  assert.equal(report.inspectedJournalPath, filePath);
+  assert.equal(report.writerJournalPath, filePath);
+  assert.equal(report.inspectionErrorMessage, null);
+});
+
 test('production recovery support report fails closed when a reopen introduces unpersisted remote artifact ownership', () => {
   const filePath = tempRecoveryJournalPath();
   const introducedRemoteArtifactPath = `${path.dirname(filePath)}/introduced-remote.jsonl`;
