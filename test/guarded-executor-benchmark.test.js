@@ -1627,7 +1627,7 @@ test('production claim gate fails closed if benchmark evidence is tampered', () 
   hiddenPausedMemoryCeiling.evidence.backpressure.receiptCursorMemoryCeilingVisible = false;
   assert.ok(
     productionThroughputBlockers(hiddenPausedMemoryCeiling).includes(
-      'queue-budget-visible-without-memory-ceiling-visible',
+      'queue-budget-visible-without-memory-ceiling-visibility',
     ),
   );
 
@@ -2839,7 +2839,7 @@ test('guarded benchmark treats memory-ceiling visibility without queue-budget vi
 
   assert.equal(details.receiptCursorMemoryCeilingVisibleAndQueueBudgetVisible, false);
   assert.equal(details.backpressureConsistency.receiptCursorMemoryCeilingVisibleAndQueueBudgetVisible, false);
-  assert.ok(blockers.includes('memory-ceiling-visible-without-queue-budget-visible'));
+  assert.ok(blockers.includes('memory-ceiling-visible-without-queue-budget-visibility'));
 });
 
 test('guarded benchmark treats receipt-cursor memory-headroom visibility without memory-ceiling visibility as incomplete backpressure evidence', () => {

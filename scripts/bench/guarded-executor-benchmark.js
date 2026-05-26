@@ -284,7 +284,7 @@ export function productionThroughputBlockers(report) {
     && report.evidence.backpressure?.queueBudgetVisible === true
     && report.evidence.backpressure?.receiptCursorMemoryCeilingVisible !== true
   ) {
-    blockers.push('queue-budget-visible-without-memory-ceiling-visible');
+    blockers.push('queue-budget-visible-without-memory-ceiling-visibility');
   }
   if (
     report.evidence.backpressure?.queuePausedBeforeOverflow === true
@@ -311,7 +311,7 @@ export function productionThroughputBlockers(report) {
     && report.evidence.backpressure?.receiptCursorMemoryCeilingVisible === true
     && report.evidence.backpressure?.queueBudgetVisible !== true
   ) {
-    blockers.push('memory-ceiling-visible-without-queue-budget-visible');
+    blockers.push('memory-ceiling-visible-without-queue-budget-visibility');
   }
   if (!Number.isFinite(report.resourceLimits?.memoryCeilingBytes) || report.resourceLimits.memoryCeilingBytes <= 0) {
     blockers.push('production-memory-ceiling-not-measured');
