@@ -2399,6 +2399,68 @@ test('guarded benchmark refuses production throughput claims until production ga
   assert.equal(missingAlignedBackpressureDetails.queueHeadroomVisibleAndMeasured, false);
   assert.equal(missingAlignedBackpressureDetails.queueHeadroomVisibleAndMeasuredAndAligned, false);
 
+  const missingBackpressureAlignedSlackProof = clone(report);
+  missingBackpressureAlignedSlackProof.evidence.backpressure.queuePauseHasBackpressureAlignedReceiptCursorQueueSlack = false;
+  const missingBackpressureAlignedSlackProofDetails = productionThroughputDetails(
+    missingBackpressureAlignedSlackProof,
+  );
+  assert.ok(
+    productionThroughputBlockers(missingBackpressureAlignedSlackProof).includes(
+      'queue-pause-without-backpressure-aligned-receipt-cursor-queue-slack-proof',
+    ),
+  );
+  assert.ok(
+    productionThroughputBlockers(missingBackpressureAlignedSlackProof).includes(
+      'queue-pause-without-consistent-measured-and-aligned-receipt-cursor-queue-slack',
+    ),
+  );
+  assert.equal(
+    missingBackpressureAlignedSlackProofDetails.backpressureConsistency
+      .queuePauseHasBackpressureAlignedReceiptCursorQueueSlack,
+    false,
+  );
+  assert.equal(
+    missingBackpressureAlignedSlackProofDetails.backpressureConsistency.backpressureEvidenceComplete,
+    false,
+  );
+
+  const missingResourceSafeBackpressure = clone(report);
+  missingResourceSafeBackpressure.evidence.backpressure.receiptCursorBackpressureWithinResourceHeadroom = false;
+  const missingResourceSafeBackpressureDetails = productionThroughputDetails(
+    missingResourceSafeBackpressure,
+  );
+  assert.ok(
+    productionThroughputBlockers(missingResourceSafeBackpressure).includes(
+      'queue-pause-without-resource-headroom-safe-receipt-cursor-backpressure',
+    ),
+  );
+  assert.equal(
+    missingResourceSafeBackpressureDetails.backpressureConsistency
+      .receiptCursorBackpressureWithinResourceHeadroom,
+    true,
+  );
+  assert.equal(
+    missingResourceSafeBackpressureDetails.backpressureConsistency.backpressureEvidenceComplete,
+    true,
+  );
+
+  const missingMemorySafeSlack = clone(report);
+  missingMemorySafeSlack.evidence.backpressure.receiptCursorQueueSlackWithinMemoryCeiling = false;
+  const missingMemorySafeSlackDetails = productionThroughputDetails(missingMemorySafeSlack);
+  assert.ok(
+    productionThroughputBlockers(missingMemorySafeSlack).includes(
+      'queue-pause-without-memory-safe-receipt-cursor-slack',
+    ),
+  );
+  assert.equal(
+    missingMemorySafeSlackDetails.backpressureConsistency.receiptCursorQueueSlackWithinMemoryCeiling,
+    true,
+  );
+  assert.equal(
+    missingMemorySafeSlackDetails.backpressureConsistency.backpressureEvidenceComplete,
+    true,
+  );
+
   const fractionalParallelismLimits = clone(report);
   fractionalParallelismLimits.evidence.parallelism.parallelismLimits.chunkUpload = 3.5;
   assert.ok(
