@@ -273,7 +273,9 @@ export async function runAuthenticatedHttpPush({
   summary.dryRun = summarizeResponse(dryRun);
   updateRetryAttempts(summary, summary.dryRun);
   recordAuthSessionLifecycle(summary, 'dry-run', dryRun.body?.auth?.session);
-  const dryRunAuthEnvelopeDrift = requireProductionAuthSession && hasAuthEnvelopeDrift(preflightAuthEnvelope, dryRun);
+  const dryRunAuthEnvelopeDrift = requireProductionAuthSession
+    ? describeAuthEnvelopeDrift(preflightAuthEnvelope, dryRun)
+    : null;
   if (dryRun.status !== 200 || dryRun.body?.ok !== true || !dryRun.body?.receipt) {
     summary.code = dryRun.body?.code || 'DRY_RUN_FAILED';
     setDurableJournalBoundary(summary, 'dry-run');
@@ -296,6 +298,7 @@ export async function runAuthenticatedHttpPush({
   }
   if (dryRunAuthEnvelopeDrift) {
     summary.code = 'AUTH_SESSION_LIFECYCLE_DRIFT';
+    summary.authSession = dryRunAuthEnvelopeDrift;
     setDurableJournalBoundary(summary, 'dry-run');
     return summary;
   }
@@ -448,7 +451,7 @@ export async function runAuthenticatedHttpPush({
     setDurableJournalBoundary(summary, 'recovery-inspect');
     return summary;
   }
-  const recoveryInspectAuthEnvelopeDrift = hasAuthEnvelopeDrift(preflightAuthEnvelope, recoveryInspect);
+  const recoveryInspectAuthEnvelopeDrift = describeAuthEnvelopeDrift(preflightAuthEnvelope, recoveryInspect);
   if (recoveryInspectAuthEnvelopeDrift) {
     summary.code = 'AUTH_SESSION_LIFECYCLE_DRIFT';
     summary.authSession = {
@@ -486,8 +489,8 @@ export async function runAuthenticatedHttpPush({
   const replayEquivalence = summarizeReplayEquivalence(apply, replay);
   summary.replayEquivalence = replayEquivalence;
   const replayEquivalent = replayEquivalence.equivalent;
-  const applyAuthEnvelopeDrift = hasAuthEnvelopeDrift(preflightAuthEnvelope, apply);
-  const replayAuthEnvelopeDrift = hasAuthEnvelopeDrift(preflightAuthEnvelope, replay);
+  const applyAuthEnvelopeDrift = describeAuthEnvelopeDrift(preflightAuthEnvelope, apply);
+  const replayAuthEnvelopeDrift = describeAuthEnvelopeDrift(preflightAuthEnvelope, replay);
   const replayAuthSessionDrift = requireProductionAuthSession && (
     hasProductionAuthSessionTypeDrift(replay)
     || hasProductionAuthSessionStatusDrift(replay)
@@ -496,15 +499,9 @@ export async function runAuthenticatedHttpPush({
   );
   if (applyAuthEnvelopeDrift || recoveryInspectAuthEnvelopeDrift || replayAuthEnvelopeDrift) {
     summary.code = 'AUTH_SESSION_LIFECYCLE_DRIFT';
-    summary.authSession = {
-      required: preflightAuthEnvelope.sessionType || 'auth-session',
-      observed: applyAuthEnvelopeDrift
-        ? apply.body?.auth?.session?.type || 'missing'
-        : recoveryInspectAuthEnvelopeDrift
-        ? recoveryInspect.body?.auth?.session?.type || 'missing'
-        : replay.body?.auth?.session?.type || 'missing',
-      verdict: 'AUTH_SESSION_LIFECYCLE_DRIFT',
-    };
+    summary.authSession = applyAuthEnvelopeDrift
+      || recoveryInspectAuthEnvelopeDrift
+      || replayAuthEnvelopeDrift;
     setDurableJournalBoundary(summary, 'replay');
     return summary;
   }
@@ -602,14 +599,10 @@ export async function runAuthenticatedHttpPush({
     setDurableJournalBoundary(summary, 'journal-inspect');
     return summary;
   }
-  const dbJournalAuthEnvelopeDrift = hasAuthEnvelopeDrift(preflightAuthEnvelope, dbJournal);
+  const dbJournalAuthEnvelopeDrift = describeAuthEnvelopeDrift(preflightAuthEnvelope, dbJournal);
   if (dbJournalAuthEnvelopeDrift) {
     summary.code = 'AUTH_SESSION_LIFECYCLE_DRIFT';
-    summary.authSession = {
-      required: preflightAuthEnvelope.sessionType || 'auth-session',
-      observed: dbJournal.body?.auth?.session?.type || 'missing',
-      verdict: 'AUTH_SESSION_LIFECYCLE_DRIFT',
-    };
+    summary.authSession = dbJournalAuthEnvelopeDrift;
     setDurableJournalBoundary(summary, 'journal-inspect');
     return summary;
   }
@@ -1179,16 +1172,62 @@ function isStorageGuardEquivalent(applyStorageGuard, replayStorageGuard) {
     && applyStorageGuard?.outcome === replayStorageGuard?.outcome;
 }
 
-function hasAuthEnvelopeDrift(expected, response) {
+function describeAuthEnvelopeDrift(expected, response) {
   const body = response?.body || {};
   if (!body.auth) {
-    return true;
+    return {
+      required: expected.sessionType || 'auth-session',
+      observed: 'missing',
+      verdict: 'AUTH_SESSION_LIFECYCLE_DRIFT',
+    };
   }
-  return body.auth?.identity?.userLogin !== expected.userLogin
-    || body.auth?.session?.id !== expected.sessionId
-    || body.auth?.session?.type !== expected.sessionType
-    || body.auth?.session?.status !== expected.sessionStatus
-    || body.auth?.session?.expiresAt !== expected.sessionExpiresAt;
+
+  const observedUserLogin = body.auth?.identity?.userLogin || 'missing';
+  if (observedUserLogin !== expected.userLogin) {
+    return {
+      required: expected.userLogin || 'auth-user',
+      observed: observedUserLogin,
+      verdict: 'AUTH_SESSION_LIFECYCLE_DRIFT',
+    };
+  }
+
+  const observedSessionId = body.auth?.session?.id || 'missing';
+  if (observedSessionId !== expected.sessionId) {
+    return {
+      required: expected.sessionId || 'auth-session',
+      observed: observedSessionId,
+      verdict: 'AUTH_SESSION_LIFECYCLE_DRIFT',
+    };
+  }
+
+  const observedSessionType = body.auth?.session?.type || 'missing';
+  if (observedSessionType !== expected.sessionType) {
+    return {
+      required: expected.sessionType || 'auth-session',
+      observed: observedSessionType,
+      verdict: 'AUTH_SESSION_LIFECYCLE_DRIFT',
+    };
+  }
+
+  const observedSessionStatus = body.auth?.session?.status || 'missing';
+  if (observedSessionStatus !== expected.sessionStatus) {
+    return {
+      required: expected.sessionStatus || 'auth-session-status',
+      observed: observedSessionStatus,
+      verdict: 'AUTH_SESSION_LIFECYCLE_DRIFT',
+    };
+  }
+
+  const observedSessionExpiresAt = body.auth?.session?.expiresAt || 'missing';
+  if (observedSessionExpiresAt !== expected.sessionExpiresAt) {
+    return {
+      required: expected.sessionExpiresAt || 'auth-session-expiry',
+      observed: observedSessionExpiresAt,
+      verdict: 'AUTH_SESSION_LIFECYCLE_DRIFT',
+    };
+  }
+
+  return null;
 }
 
 function hasProductionAuthSessionTypeDrift(response) {
