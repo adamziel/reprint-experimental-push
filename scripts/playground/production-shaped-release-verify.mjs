@@ -726,6 +726,7 @@ try {
         changedHash: snapshotHash(remoteChangedSnapshot),
         changedFixture: remoteChangedSnapshot.meta?.fixture,
       };
+      const authSessionLifecycleSummary = summarizeAuthSessionLifecycle(proof.authSessionLifecycleTrace);
 
       process.stdout.write(
         JSON.stringify(
@@ -772,6 +773,7 @@ try {
             releaseProof: proof,
             authSessionLifecycle: proof.authSessionLifecycle,
             authSessionLifecycleTrace: proof.authSessionLifecycleTrace,
+            authSessionLifecycleSummary,
             replayEquivalence: proof.replayEquivalence,
             durableJournal: {
               proof: {
@@ -841,6 +843,7 @@ try {
             error: error instanceof Error ? error.message : String(error),
             authSessionLifecycle: null,
             authSessionLifecycleTrace: [],
+            authSessionLifecycleSummary: null,
           },
           null,
           2,
@@ -1174,6 +1177,35 @@ function writeSpawnOutputTail(proof, commandLabel = '') {
 
 function snapshotHash(snapshot) {
   return createHash('sha256').update(JSON.stringify(snapshot), 'utf8').digest('hex');
+}
+
+function summarizeAuthSessionLifecycle(trace) {
+  if (!Array.isArray(trace) || trace.length === 0) {
+    return null;
+  }
+
+  const observations = trace
+    .filter((entry) => entry && typeof entry === 'object')
+    .map((entry) => ({
+      step: entry.step ?? null,
+      status: entry.status ?? null,
+      expired: Boolean(entry.expired),
+      revoked: Boolean(entry.revoked),
+      cleanedUp: Boolean(entry.cleanedUp),
+      rotated: Boolean(entry.rotated),
+      preserved: Boolean(entry.preserved),
+    }));
+
+  return {
+    issued: observations[0] ?? null,
+    read: observations.find((entry) => entry.step === 'preflight' || entry.step === 'dry-run' || entry.step === 'apply') ?? null,
+    expired: observations.find((entry) => entry.expired) ?? null,
+    revoked: observations.find((entry) => entry.revoked) ?? null,
+    cleanedUp: observations.find((entry) => entry.cleanedUp) ?? null,
+    rotated: observations.find((entry) => entry.rotated) ?? null,
+    preserved: observations.find((entry) => entry.preserved) ?? null,
+    observations,
+  };
 }
 
 async function waitForServer(child, baseUrl, getLogs) {

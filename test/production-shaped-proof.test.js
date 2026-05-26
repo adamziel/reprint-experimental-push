@@ -756,6 +756,10 @@ maybeTest('production-shaped release verify command runs the live protocol branc
     );
     assert.match(
       proof.stdout,
+      /"authSessionLifecycleSummary": \{\s*"issued": \{\s*"step": "preflight",\s*"status": "active",\s*"expired": false,\s*"revoked": false,\s*"cleanedUp": false,\s*"rotated": false,\s*"preserved": false\s*\},\s*"read": \{\s*"step": "preflight",\s*"status": "active",\s*"expired": false,\s*"revoked": false,\s*"cleanedUp": false,\s*"rotated": false,\s*"preserved": false\s*\}/,
+    );
+    assert.match(
+      proof.stdout,
       /"authSessionLifecycle": \{\s*"minted": \{\s*"id": "[^"]+",\s*"type": "application-password-basic",\s*"status": "active",\s*"expiresAt": "[^"]+",\s*"expired": false\s*\},\s*"read": \{\s*"id": "[^"]+",\s*"type": "application-password-basic",\s*"status": "active",\s*"expiresAt": "[^"]+",\s*"expired": false\s*\}/,
     );
     assert.match(
