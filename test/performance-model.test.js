@@ -496,6 +496,16 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
     'compressed budget summaries stay planning-only and keep recovery classification explicit',
   );
   assert.ok(
+    model.safeFastPaths.some(
+      (fastPath) =>
+        fastPath.area === 'backpressure' &&
+        fastPath.allowedShortcut === 'compress-kind-scoped-receipt-ledgers-and-reuse-canonical-per-kind-budget-summary-for-bounded-replay' &&
+        fastPath.guardrails.includes('compressed-ledgers-stay-recovery-evidence-only') &&
+        fastPath.gateProofs.skip.includes('compressed kind-scoped receipt ledgers and the canonical per-kind budget summary can reduce replay sizing work'),
+    ),
+    'compressed kind-scoped receipt ledgers can stay recovery-only while reusing canonical budgets for replay sizing',
+  );
+  assert.ok(
     model.rejectedFastPaths.some(
       (fastPath) =>
         fastPath.id === 'compressed-remote-index-and-cached-chunk-hashes-skips-large-upload-window-sizing-after-pause' &&

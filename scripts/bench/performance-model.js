@@ -1269,6 +1269,26 @@ export const SAFE_FAST_PATHS = Object.freeze([
     publishesStagedDataEarly: false,
   },
   {
+    area: 'backpressure',
+    reduces: ['fsync-count', 'planning-round-trips', 'duplicate-recovery-writes'],
+    allowedShortcut: 'compress-kind-scoped-receipt-ledgers-and-reuse-canonical-per-kind-budget-summary-for-bounded-replay',
+    guardrails: [
+      'compressed-ledgers-stay-recovery-evidence-only',
+      'canonical-per-kind-budget-summary-stays-advisory',
+    ],
+    gateProofs: {
+      skip: 'compressed kind-scoped receipt ledgers and the canonical per-kind budget summary can reduce replay sizing work without changing which raw receipt keys were recorded',
+      live: 'compressed receipt ledgers never authorize a write; the original live precondition still guards the storage boundary',
+      group: 'ledger compression and budget reuse stay inside recovery planning and never widen an atomic-group barrier',
+      recovery: 'raw receipt keys and journal records still classify the exact chunk, row, or group state after a crash or pause',
+    },
+    visibilityBoundary: 'recovery-evidence-only',
+    failureEvidence: 'compressed kind-scoped receipt ledger plus original durable receipt key and canonical per-kind budget summary',
+    bypassesLivePreconditions: false,
+    splitsAtomicGroup: false,
+    publishesStagedDataEarly: false,
+  },
+  {
     area: 'compression',
     reduces: ['wire-bytes', 'planning-round-trips', 'duplicate-budget-recomputation'],
     allowedShortcut: 'compress-canonical-per-kind-budget-summaries-for-bounded-resume-planning',
