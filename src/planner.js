@@ -3986,13 +3986,16 @@ function unsupportedCommentsUsersResourceSupport({ resource, baseValue, localVal
         && reference.targetChange.local.state === 'present');
 
     if (inboundUserReferences.length > 0) {
-      const userReference = inboundUserReferences.find((reference) =>
-        reference.relationshipType === 'comment-user')
-        || inboundUserReferences.find((reference) =>
-          reference.relationshipType === 'usermeta-user')
-        || inboundUserReferences.find((reference) =>
-          reference.relationshipType === 'post-author')
-        || inboundUserReferences[0];
+      const orderedInboundUserReferences = inboundUserReferences.slice().sort((left, right) => {
+        const priority = new Map([
+          ['comment-user', 0],
+          ['usermeta-user', 1],
+          ['post-author', 2],
+        ]);
+        return (priority.get(left.relationshipType) ?? Number.MAX_SAFE_INTEGER)
+          - (priority.get(right.relationshipType) ?? Number.MAX_SAFE_INTEGER);
+      });
+      const userReference = orderedInboundUserReferences[0];
       return {
         supported: false,
         className: 'unsupported-comments-users-resource',
@@ -4002,7 +4005,7 @@ function unsupportedCommentsUsersResourceSupport({ resource, baseValue, localVal
           : userReference.relationshipType === 'usermeta-user'
             ? `WordPress graph mutation ${resource.key} is created in the same plan as a user meta identity that depends on it, and identity rewriting is not yet supported.`
             : `WordPress graph mutation ${resource.key} is created in the same plan as a post author identity that depends on it, and identity rewriting is not yet supported.`,
-        references: inboundUserReferences,
+        references: orderedInboundUserReferences,
       };
     }
   }
