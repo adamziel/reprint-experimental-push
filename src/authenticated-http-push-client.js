@@ -440,6 +440,9 @@ function summarizeRecoveryInspect(response) {
   }
 
   return {
+    authUser: response.body?.auth?.identity?.userLogin,
+    authSessionId: response.body?.auth?.session?.id,
+    sessionType: response.body?.auth?.session?.type,
     state: recovery.state,
     counts: recovery.counts ? {
       old: recovery.counts.old,

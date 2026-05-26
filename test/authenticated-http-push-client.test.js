@@ -589,11 +589,17 @@ test('production-shaped authenticated push fails closed when recovery inspect re
 
     assert.equal(summary.ok, false);
     assert.equal(summary.code, 'RECOVERY_INSPECT_BLOCKED');
-    assert.deepEqual(summary.recoveryInspect.recovery, {
-      state: 'blocked-recovery',
-      counts: { old: 0, new: 0, blockedUnknown: 1, total: 1 },
-      journalState: 'ok',
+    assert.equal(summary.recoveryInspect.recovery.state, 'blocked-recovery');
+    assert.deepEqual(summary.recoveryInspect.recovery.counts, {
+      old: 0,
+      new: 0,
+      blockedUnknown: 1,
+      total: 1,
     });
+    assert.equal(summary.recoveryInspect.recovery.journalState, 'ok');
+    assert.equal(summary.recoveryInspect.authUser, undefined);
+    assert.equal(summary.recoveryInspect.authSessionId, undefined);
+    assert.equal(summary.recoveryInspect.sessionType, undefined);
     assert.deepEqual(summary.boundary, {
       firstRemainingProductionBoundary: 'auth/session lifecycle and durable journal semantics',
       status: 'unimplemented',
