@@ -41,6 +41,16 @@ function packagedProductionPluginFindMessage(value, depth = 0) {
     }
   }
 
+  for (const [key, nestedValue] of Object.entries(value)) {
+    if (['message', 'error', 'error_description', 'reason', 'data', 'details'].includes(key)) {
+      continue;
+    }
+    const message = packagedProductionPluginFindMessage(nestedValue, depth + 1);
+    if (message) {
+      return message;
+    }
+  }
+
   return '';
 }
 

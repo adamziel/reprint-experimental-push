@@ -1124,11 +1124,41 @@ test('packaged production plugin readiness helper retries only startup-shaped pa
     true,
   );
   assert.equal(
+    packagedProductionPluginSnapshotRetryable({
+      status: 500,
+      body: {
+        errors: [
+          {
+            detail: {
+              text: 'WordPress is not ready yet',
+            },
+          },
+        ],
+      },
+    }),
+    true,
+  );
+  assert.equal(
     packagedProductionPluginPreflightRetryable({
       status: 503,
       body: {
         details: {
           error: 'No route was found matching the URL and request method.',
+        },
+      },
+    }),
+    true,
+  );
+  assert.equal(
+    packagedProductionPluginPreflightRetryable({
+      status: 503,
+      body: {
+        response: {
+          payload: {
+            errors: [
+              'No route was found matching the URL and request method.',
+            ],
+          },
         },
       },
     }),
@@ -1620,6 +1650,21 @@ test('lab Playground readiness helper rejects malformed ready responses and retr
       body: {
         details: {
           error: 'No route was found matching the URL and request method.',
+        },
+      },
+    }),
+    true,
+  );
+  assert.equal(
+    labSnapshotRetryable({
+      status: 503,
+      body: {
+        response: {
+          errors: [
+            {
+              text: 'WordPress is not ready yet',
+            },
+          ],
         },
       },
     }),
