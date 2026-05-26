@@ -39,10 +39,10 @@ The project is **not releasable as a production WordPress push path**.
 - `origin/lane/cycle-20260525-keep-busy-loop-2/no-data-loss-recovery` -> `63e01a49`
 - `origin/lane/cycle-20260525-mainwindows-2349/critic` -> `fa0dc8a0`
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `79aa3e50`
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `4e2ecdeb`
-- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `6b004912`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `3533de9b`
+- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `c674765f`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `b5a70bfa`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `a97509fe`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `af6f3f26`
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` -> `9e05da5e`
 - `origin/lane/cycle-20260525-mainwindows-2357/no-data-loss-invariants-graph-proof` -> `98c0ce26`
 - `origin/lane/cycle-20260525-restart-2340/feedback-supervisor` -> `ef3d911e`
@@ -51,7 +51,7 @@ The project is **not releasable as a production WordPress push path**.
 - `origin/lane/fast-paths` -> `8c5c2ccb`
 - `origin/lane/feedback-supervisor` -> `f386dfa6`
 - `origin/lane/independent-auditor` -> `6351130f`
-- `origin/lane/no-data-loss-invariants` -> `05e91770`
+- `origin/lane/no-data-loss-invariants` -> `fb19b76d`
 - `origin/lane/no-data-loss-recovery` -> `9e077c10`
 - `origin/lane/progress-publisher` -> `7695e1f9`
 - `origin/lane/reliable-executor` -> `76e90151`
@@ -68,14 +68,14 @@ but it did not change the release conclusion:
 - `origin/lane/reliable-executor` now records `76e90151`, tightening release
   verify timeouts again, but still not proving production
   auth/session lifecycle or a live-source mutation boundary.
-- `origin/lane/no-data-loss-invariants` now records `05e91770`, adding a
+- `origin/lane/no-data-loss-invariants` now records `fb19b76d`, adding a
   revision-linked postmeta blocker variant to the unsupported-surface boundary
   set.
 - `origin/lane/progress-publisher` now records `7695e1f9`, refreshing public
   progress freshness only.
 - `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration`
   now records `29fff11d`, adding featured-image attachment drift proof only.
-- `origin/lane/independent-auditor` now records `6b004912`. This refreshes the
+- `origin/lane/independent-auditor` now records `c674765f`. This refreshes the
   audit snapshot only and does not change the
   release boundary.
 - `origin/lane/fast-paths` now records `8c5c2ccb`, tightening success-claim
@@ -86,13 +86,13 @@ but it did not change the release conclusion:
 - `origin/lane/feedback-supervisor` now records `f386dfa6`, refreshing the
   supervisor progress surface only.
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now records
-  `a7e68a1a`, refreshing the public progress freshness only.
+  `3533de9b`, refreshing the public progress freshness only.
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` now records
   `79aa3e50`, tightening success inspection claim checks only.
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` now records
   `9e05da5e`, hardening live proof cleanup and timeouts only.
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now records
-  `a97509fe`, refreshing the public progress freshness only.
+  `af6f3f26`, refreshing the public progress freshness only.
 - `origin/lane/no-data-loss-recovery` now records `9e077c10`, tightening
   durable recovery remote-ownership fencing only.
 - `origin/lane/same-plan-wordpress-graph-create` now records `0d2178e9`,
