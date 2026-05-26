@@ -309,6 +309,14 @@ export function evaluateProductionAuthSessionLifecycleSummary(summary, now = Dat
     if (!lifecycle.ok) {
       return lifecycle;
     }
+
+    if (isAuthSessionReadStep(observation.step) && observation.preserved !== true) {
+      return {
+        ok: false,
+        required: 'preserved read',
+        observed: observation.rotated ? 'rotated' : 'unpreserved',
+      };
+    }
   }
 
   if (issuedAuthUser.missing) {
