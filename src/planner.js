@@ -2770,6 +2770,13 @@ function unsupportedLegacyLinksResourceSupport({ resource, baseValue, localValue
 
   const candidate = localValue !== ABSENT ? localValue : (baseValue !== ABSENT ? baseValue : remoteValue);
   if (candidate && candidate !== ABSENT) {
+    if (localValue === ABSENT) {
+      return {
+        supported: false,
+        className: 'unsupported-legacy-links-resource',
+        reason: 'Legacy link graph resource deletes are not yet supported by the planner.',
+      };
+    }
     return {
       supported: false,
       className: 'unsupported-legacy-links-resource',
