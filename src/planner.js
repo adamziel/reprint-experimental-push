@@ -2171,7 +2171,13 @@ function wordpressGraphIdentitySupport({
     wordpressGraphReferenceEvidence(reference, resources, base, local, remote));
   const samePlanGraphReferences = referenceEvidence
     .filter((reference) =>
-      isSupportedSamePlanTermmetaReference({
+      isSupportedSamePlanPostmetaReference({
+        baseValue,
+        localValue,
+        reference,
+        local,
+      })
+      || isSupportedSamePlanTermmetaReference({
         baseValue,
         reference,
         local,
@@ -2228,10 +2234,15 @@ function wordpressGraphIdentitySupport({
     }
   }
   if (resource.table === 'wp_postmeta') {
+    const samePlanCreatedPostReferences = referenceEvidence.filter((reference) =>
+      reference.relationshipType === 'postmeta-post'
+      && reference.targetResource?.table === 'wp_posts'
+      && reference.targetChange.remote.state === 'absent'
+      && reference.targetChange.local.state === 'present');
     const samePlanCreatedRevisionReferences = referenceEvidence.find((reference) =>
       reference.relationshipType === 'postmeta-post'
-      && reference.targetChange.targetResource?.table === 'wp_posts'
-      && reference.targetChange.local.value?.post_type === 'revision'
+      && reference.targetResource?.table === 'wp_posts'
+      && getResource(local, reference.targetResource)?.post_type === 'revision'
       && reference.targetChange.remote.state === 'absent');
 
     if (samePlanCreatedRevisionReferences) {
@@ -2239,13 +2250,41 @@ function wordpressGraphIdentitySupport({
         supported: false,
         className: 'unsupported-revision-resource',
         reason: 'Revision graph resources are not yet supported by the planner.',
+        references: [samePlanCreatedRevisionReferences],
+      };
+    }
+
+    const samePlanCreatedAttachmentReferences = samePlanCreatedPostReferences.find((reference) =>
+      getResource(local, reference.targetResource)?.post_type === 'attachment');
+    if (samePlanCreatedAttachmentReferences) {
+      return {
+        supported: false,
+        className: 'stale-wordpress-graph-identity',
+        reason: `WordPress graph mutation ${resource.key} references a post meta attachment identity without proven identity mapping or reference rewriting.`,
+        references: [samePlanCreatedAttachmentReferences],
+      };
+    }
+
+    const unsupportedSamePlanPostReference = samePlanCreatedPostReferences.find((reference) =>
+      !isSupportedSamePlanPostmetaReference({
+        baseValue,
+        localValue,
+        reference,
+        local,
+      }));
+    if (unsupportedSamePlanPostReference) {
+      return {
+        supported: false,
+        className: 'stale-wordpress-graph-identity',
+        reason: `WordPress graph mutation ${resource.key} references a post meta target identity without proven identity mapping or reference rewriting.`,
+        references: [unsupportedSamePlanPostReference],
       };
     }
   }
   if (resource.table === 'wp_comments') {
     const samePlanCreatedCommentParentReference = referenceEvidence.find((reference) =>
       reference.relationshipType === 'comment-parent'
-      && reference.targetChange.targetResource?.table === 'wp_comments'
+      && reference.targetResource?.table === 'wp_comments'
       && reference.targetChange.remote.state === 'absent'
       && reference.targetChange.local.state === 'present');
 
@@ -2260,8 +2299,8 @@ function wordpressGraphIdentitySupport({
   if (resource.table === 'wp_posts' && localValue.post_type === 'nav_menu_item') {
     const menuItemParentReference = referenceEvidence.find((reference) =>
       reference.relationshipType === 'menu-item-parent'
-      && reference.targetChange.targetResource?.table === 'wp_posts'
-      && ['wp_navigation', 'nav_menu_item'].includes(reference.targetChange.local.value?.post_type)
+      && reference.targetResource?.table === 'wp_posts'
+      && ['wp_navigation', 'nav_menu_item'].includes(getResource(local, reference.targetResource)?.post_type)
       && reference.targetChange.remote.state === 'absent');
 
     if (menuItemParentReference) {
@@ -2275,8 +2314,8 @@ function wordpressGraphIdentitySupport({
   if (resource.table === 'wp_posts' && localValue.post_type === 'wp_navigation') {
     const inboundNavigationReference = referenceEvidence.find((reference) =>
       reference.relationshipType === 'post-parent'
-      && reference.targetChange.targetResource?.table === 'wp_posts'
-      && ['wp_navigation', 'nav_menu_item'].includes(reference.targetChange.local.value?.post_type)
+      && reference.targetResource?.table === 'wp_posts'
+      && ['wp_navigation', 'nav_menu_item'].includes(getResource(local, reference.targetResource)?.post_type)
       && reference.targetChange.remote.state === 'absent');
 
     if (inboundNavigationReference) {
@@ -2321,13 +2360,13 @@ function wordpressGraphIdentitySupport({
       reference.relationshipType === 'featured-image-attachment'
       || (
         reference.relationshipType === 'post-parent'
-        && reference.targetChange.targetResource?.table === 'wp_posts'
-        && getResource(remote, reference.targetChange.targetResource)?.post_type === 'attachment'
+        && reference.targetResource?.table === 'wp_posts'
+        && getResource(remote, reference.targetResource)?.post_type === 'attachment'
       )
       || (
         reference.targetChange.remote.state === 'absent'
         && reference.targetChange.local.state === 'present'
-        && reference.targetChange.local.value?.post_type === 'attachment'
+        && getResource(local, reference.targetResource)?.post_type === 'attachment'
       ));
 
   if (unsupportedAttachmentReferences.length > 0) {
@@ -2342,12 +2381,12 @@ function wordpressGraphIdentitySupport({
   const unsupportedRevisionReferences = referenceEvidence
     .filter((reference) =>
       reference.relationshipType === 'post-parent'
-      && reference.targetChange.targetResource?.table === 'wp_posts'
+      && reference.targetResource?.table === 'wp_posts'
       && (
-        getResource(remote, reference.targetChange.targetResource)?.post_type === 'revision'
+        getResource(remote, reference.targetResource)?.post_type === 'revision'
         || (
           reference.targetChange.remote.state === 'absent'
-          && getResource(local, reference.targetChange.targetResource)?.post_type === 'revision'
+          && getResource(local, reference.targetResource)?.post_type === 'revision'
         )
       ));
 
@@ -2492,6 +2531,34 @@ function isSupportedSamePlanTermmetaReference({
     .find((entry) => normalizePositiveInteger(entry?.term_id) === targetTermId && entry?.taxonomy === 'nav_menu');
 
   return !localNavMenuTaxonomy && !remoteNavMenuTaxonomy;
+}
+
+function isSupportedSamePlanPostmetaReference({
+  baseValue,
+  localValue,
+  reference,
+  local,
+}) {
+  if (
+    baseValue === ABSENT
+    || localValue === ABSENT
+    || reference.relationshipType !== 'postmeta-post'
+    || !isSamePlanWordPressGraphCreate(reference)
+  ) {
+    return false;
+  }
+
+  const targetPostId = normalizeWordPressGraphReferenceTargetIntegerId(reference);
+  if (
+    targetPostId == null
+    || normalizePositiveInteger(baseValue?.post_id) != null
+    || normalizePositiveInteger(localValue?.post_id) !== targetPostId
+  ) {
+    return false;
+  }
+
+  const targetPostType = getResource(local, reference.targetResource)?.post_type ?? 'post';
+  return !['attachment', 'revision', 'nav_menu_item', 'wp_navigation'].includes(targetPostType);
 }
 
 function isSupportedSamePlanTermTaxonomyReference({
@@ -2699,10 +2766,13 @@ function isValidSamePlanWordPressGraphTarget(
     reference.relationshipType === 'term-taxonomy-parent'
     && reference.sourceTable === 'wp_term_taxonomy'
   );
+  const supportsPostTarget = targetMutation.resource.table === 'wp_posts'
+    && reference.relationshipType === 'postmeta-post'
+    && reference.sourceTable === 'wp_postmeta';
   const supportsTermTaxonomyTarget = targetMutation.resource.table === 'wp_term_taxonomy'
     && reference.relationshipType === 'term-relationship-taxonomy'
     && reference.sourceTable === 'wp_term_relationships';
-  if (!supportsTermTarget && !supportsTermTaxonomyTarget) {
+  if (!supportsTermTarget && !supportsPostTarget && !supportsTermTaxonomyTarget) {
     return false;
   }
 
@@ -2728,6 +2798,15 @@ function isValidSamePlanWordPressGraphTarget(
     if (ownerTermTaxonomy || remoteTermTaxonomy) {
       return false;
     }
+  }
+
+  if (
+    targetMutation.resource.table === 'wp_posts'
+    && ['attachment', 'revision', 'nav_menu_item', 'wp_navigation'].includes(
+      targetValue.post_type ?? 'post',
+    )
+  ) {
+    return false;
   }
 
   if (targetMutation.resource.table === 'wp_term_taxonomy' && targetValue.taxonomy === 'nav_menu') {
@@ -3031,6 +3110,18 @@ function samePlanCreatedGraphIdentitySupport({ resource, resources, base, local,
         continue;
       }
       const evidence = wordpressGraphReferenceEvidence(reference, resources, base, local, remote);
+      if (
+        resource.table === 'wp_posts'
+        && sourceResource.table === 'wp_postmeta'
+        && isSupportedSamePlanPostmetaReference({
+          baseValue: getResource(base, sourceResource),
+          localValue: sourceLocalValue,
+          reference: evidence,
+          local,
+        })
+      ) {
+        continue;
+      }
       if (
         resource.table === 'wp_terms'
         && sourceResource.table === 'wp_termmeta'

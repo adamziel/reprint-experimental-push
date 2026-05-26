@@ -13652,7 +13652,7 @@ test('blocks local postmeta references to stale remote-created post identity whi
   assert.equal(plan.summary.mutations, 0);
   assert.equal(mutationFor(plan, resourceKey), undefined);
   assert.equal(decisionFor(plan, targetResourceKey).decision, 'keep-remote');
-  assert.equal(blocker.class, 'unsupported-term-taxonomy-resource');
+  assert.equal(blocker.class, 'unsupported-revision-resource');
   assert.equal(blocker.resourceKey, resourceKey);
   assert.equal(blocker.resolutionPolicy, 'preserve-remote-wordpress-graph-and-stop');
   assert.equal(reference.relationshipKey, 'wp_postmeta.post_id');
@@ -13780,7 +13780,7 @@ test('blocks local postmeta references to a same-plan created post identity whil
   assert.equal(plan.summary.mutations, 0);
   assert.equal(mutationFor(plan, resourceKey), undefined);
   assert.equal(decisionFor(plan, targetResourceKey), undefined);
-  assert.equal(blocker.class, 'unsupported-term-taxonomy-resource');
+  assert.equal(blocker.class, 'stale-wordpress-graph-identity');
   assert.equal(blocker.resourceKey, resourceKey);
   assert.equal(blocker.resolutionPolicy, 'preserve-remote-wordpress-graph-and-stop');
   assert.equal(reference.relationshipKey, 'wp_postmeta.post_id');
@@ -13863,6 +13863,144 @@ test('blocks local postmeta references to a same-plan created post identity whil
   assert.equal(planJson.includes('local-private-meta-payload'), false);
   assert.equal(Object.hasOwn(remote.plugins, 'forms'), false);
   assert.equal(Object.hasOwn(remote.files, 'wp-content/plugins/forms/forms.php'), false);
+});
+
+test('allows an existing postmeta row to reference a post created by the same plan while preserving remote-only plugin drift', () => {
+  const postResourceKey = 'row:["wp_posts","ID:87"]';
+  const postmetaResourceKey = 'row:["wp_postmeta","meta_id:55"]';
+  const base = baseSite();
+  base.db.wp_postmeta = {
+    'meta_id:55': {
+      meta_id: 55,
+      post_id: 0,
+      meta_key: '_local_graph_note',
+      meta_value: 'base-private-existing-post-note',
+    },
+  };
+
+  const local = baseSite();
+  local.db.wp_posts['ID:87'] = {
+    ID: 87,
+    post_title: 'Local same-plan post target',
+    post_content: 'Local same-plan post target body',
+    post_status: 'publish',
+    post_type: 'post',
+  };
+  local.db.wp_postmeta = {
+    'meta_id:55': {
+      meta_id: 55,
+      post_id: 87,
+      meta_key: '_local_graph_note',
+      meta_value: 'local-private-existing-post-note',
+    },
+  };
+
+  const remote = baseSite();
+  remote.db.wp_postmeta = {
+    'meta_id:55': {
+      ...base.db.wp_postmeta['meta_id:55'],
+    },
+  };
+  remote.plugins.forms.description = 'remote-only plugin drift';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin drift */';
+
+  const plan = planFor(base, local, remote);
+  const postMutation = mutationFor(plan, postResourceKey);
+  const postmetaMutation = mutationFor(plan, postmetaResourceKey);
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const reference = postmetaMutation.wordpressGraphReferences[0];
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.blockers, 0);
+  assert.equal(postMutation.changeKind, 'create');
+  assert.equal(postmetaMutation.changeKind, 'update');
+  assert.ok(
+    plan.mutations.indexOf(postMutation) < plan.mutations.indexOf(postmetaMutation),
+    'post create must be ordered before dependent existing postmeta update',
+  );
+  assert.deepEqual(postmetaMutation.dependsOnMutationIds, [postMutation.id]);
+  assert.equal(plan.summary.graphDependencies, 1);
+  assert.deepEqual(plan.graphDependencies, [
+    {
+      sourceMutationId: postmetaMutation.id,
+      sourceResourceKey: postmetaResourceKey,
+      relationshipKey: 'wp_postmeta.post_id',
+      relationshipType: 'postmeta-post',
+      targetMutationId: postMutation.id,
+      targetResourceKey: postResourceKey,
+      resolutionPolicy: 'same-plan-local-create',
+      source: 'same-plan-local-create',
+      targetLocalHash: postMutation.localHash,
+    },
+  ]);
+  assert.equal(reference.resolutionPolicy, 'same-plan-local-create');
+  assert.equal(reference.relationshipKey, 'wp_postmeta.post_id');
+  assert.equal(reference.relationshipType, 'postmeta-post');
+  assert.equal(reference.targetResourceKey, postResourceKey);
+  assert.equal(JSON.stringify(reference).includes('local-private-existing-post-note'), false);
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+
+  const result = applyPlan(remote, plan);
+  assert.equal(result.site.db.wp_posts['ID:87'].post_title, 'Local same-plan post target');
+  assert.equal(result.site.db.wp_postmeta['meta_id:55'].post_id, 87);
+  assert.equal(result.site.db.wp_postmeta['meta_id:55'].meta_value, 'local-private-existing-post-note');
+  assert.equal(result.site.plugins.forms.description, 'remote-only plugin drift');
+  assert.equal(result.site.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin drift */');
+});
+
+test('blocks an existing postmeta row when its same-plan post belongs to an unsupported revision surface', () => {
+  const postResourceKey = 'row:["wp_posts","ID:88"]';
+  const postmetaResourceKey = 'row:["wp_postmeta","meta_id:56"]';
+  const base = baseSite();
+  base.db.wp_postmeta = {
+    'meta_id:56': {
+      meta_id: 56,
+      post_id: 0,
+      meta_key: '_local_graph_note',
+      meta_value: 'base-private-existing-revision-note',
+    },
+  };
+
+  const local = baseSite();
+  local.db.wp_posts['ID:88'] = {
+    ID: 88,
+    post_title: 'Local same-plan revision target',
+    post_content: 'Local same-plan revision target body',
+    post_status: 'inherit',
+    post_type: 'revision',
+    post_parent: 1,
+  };
+  local.db.wp_postmeta = {
+    'meta_id:56': {
+      meta_id: 56,
+      post_id: 88,
+      meta_key: '_local_graph_note',
+      meta_value: 'local-private-existing-revision-note',
+    },
+  };
+
+  const remote = baseSite();
+  remote.db.wp_postmeta = {
+    'meta_id:56': {
+      ...base.db.wp_postmeta['meta_id:56'],
+    },
+  };
+
+  const plan = planFor(base, local, remote);
+  const postBlocker = plan.blockers.find((entry) => entry.resourceKey === postResourceKey);
+  const postmetaBlocker = plan.blockers.find((entry) => entry.resourceKey === postmetaResourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(mutationFor(plan, postResourceKey), undefined);
+  assert.equal(mutationFor(plan, postmetaResourceKey), undefined);
+  assert.equal(postBlocker.class, 'unsupported-revision-resource');
+  assert.equal(postmetaBlocker.class, 'unsupported-revision-resource');
+  assert.equal(postmetaBlocker.reason, 'Revision graph resources are not yet supported by the planner.');
+  assert.equal(JSON.stringify(postmetaBlocker).includes('local-private-existing-revision-note'), false);
+  assert.equal(JSON.stringify(postBlocker).includes('Local same-plan revision target'), false);
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
 });
 
 test('blocks local postmeta references to a same-plan created attachment identity while preserving remote-only plugin removals', () => {
@@ -14029,7 +14167,7 @@ test('blocks local postmeta references to a same-plan created attachment identit
   assert.equal(blocker.resourceKey, resourceKey);
   assert.equal(
     blocker.reason,
-    'WordPress graph mutation row:["wp_postmeta","meta_id:52"] references graph identities without proven identity mapping or reference rewriting.',
+    'WordPress graph mutation row:["wp_postmeta","meta_id:52"] references a post meta attachment identity without proven identity mapping or reference rewriting.',
   );
   assert.equal(pluginDecision.decision, 'keep-remote');
   assert.equal(pluginFileDecision.decision, 'keep-remote');
@@ -14331,7 +14469,7 @@ test('blocks local featured-image references when the remote deleted the referen
   assert.equal(plan.summary.mutations, 0);
   assert.equal(mutationFor(plan, resourceKey), undefined);
   assert.equal(decisionFor(plan, targetResourceKey).decision, 'keep-remote');
-  assert.equal(blocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(blocker.class, 'unsupported-revision-resource');
   assert.equal(blocker.resourceKey, resourceKey);
   assert.equal(reference.relationshipKey, 'wp_postmeta.post_id');
   assert.equal(reference.relationshipType, 'postmeta-post');
@@ -14632,7 +14770,7 @@ test('blocks local post-parent references to a missing live remote post identity
   assert.equal(plan.summary.mutations, 0);
   assert.equal(mutationFor(plan, resourceKey), undefined);
   assert.equal(decisionFor(plan, targetResourceKey), undefined);
-  assert.equal(blocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(blocker.class, 'unsupported-revision-resource');
   assert.equal(blocker.resourceKey, resourceKey);
   assert.equal(blocker.resolutionPolicy, 'preserve-remote-wordpress-graph-and-stop');
   assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_posts","ID:10"] references a post parent identity without proven identity mapping or reference rewriting.');
@@ -14969,7 +15107,7 @@ test('blocks local postmeta references to a same-plan created revision while pre
   assert.equal(plan.summary.mutations, 0);
   assert.equal(mutationFor(plan, resourceKey), undefined);
   assert.equal(decisionFor(plan, targetResourceKey), undefined);
-  assert.equal(blocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(blocker.class, 'unsupported-revision-resource');
   assert.equal(blocker.resourceKey, resourceKey);
   assert.equal(blocker.resolutionPolicy, 'preserve-remote-wordpress-graph-and-stop');
   assert.equal(revisionBlocker.class, 'unsupported-revision-resource');
@@ -15040,7 +15178,7 @@ test('blocks local postmeta references to a same-plan created revision while pre
   assert.equal(plan.summary.mutations, 0);
   assert.equal(mutationFor(plan, resourceKey), undefined);
   assert.equal(decisionFor(plan, targetResourceKey), undefined);
-  assert.equal(blocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(blocker.class, 'unsupported-revision-resource');
   assert.equal(blocker.resourceKey, resourceKey);
   assert.equal(blocker.resolutionPolicy, 'preserve-remote-wordpress-graph-and-stop');
   assert.equal(blocker.references[0].relationshipKey, 'wp_postmeta.post_id');
@@ -15142,7 +15280,7 @@ test('prioritizes post-parent revision blocker wording while carrying bounded po
   assert.equal(blocker.references[1].sourceResourceKey, revisionMetaResourceKey);
   assert.equal(blocker.references[1].targetResourceKey, revisionResourceKey);
   assert.equal(childPostBlocker.class, 'unsupported-revision-resource');
-  assert.equal(revisionMetaBlocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(revisionMetaBlocker.class, 'unsupported-revision-resource');
   assert.equal(revisionMetaBlocker.references[0].relationshipType, 'postmeta-post');
   assert.equal(matchingEdit.decision, 'already-in-sync');
   assert.equal(matchingEdit.change.localChange, 'update');
@@ -15249,8 +15387,8 @@ test('orders same-plan revision dependency references deterministically within t
       ['postmeta-post', lateMetaResourceKey],
     ],
   );
-  assert.equal(earlyMetaBlocker.class, 'stale-wordpress-graph-identity');
-  assert.equal(lateMetaBlocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(earlyMetaBlocker.class, 'unsupported-revision-resource');
+  assert.equal(lateMetaBlocker.class, 'unsupported-revision-resource');
   assert.equal(matchingEdit.decision, 'already-in-sync');
   assert.equal(pluginDecision.decision, 'keep-remote');
   assert.equal(pluginFileDecision.decision, 'keep-remote');
@@ -15414,12 +15552,12 @@ test('blocks local postmeta references to a same-plan created revision while pre
   assert.equal(plan.summary.mutations, 0);
   assert.equal(mutationFor(plan, resourceKey), undefined);
   assert.equal(decisionFor(plan, targetResourceKey), undefined);
-  assert.equal(blocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(blocker.class, 'unsupported-revision-resource');
   assert.equal(blocker.resourceKey, resourceKey);
   assert.equal(blocker.resolutionPolicy, 'preserve-remote-wordpress-graph-and-stop');
   assert.equal(revisionBlocker.class, 'unsupported-revision-resource');
   assert.equal(revisionBlocker.resourceKey, targetResourceKey);
-  assert.equal(revisionBlocker.reason, 'Revision graph resources are not yet supported by the planner.');
+  assert.equal(revisionBlocker.reason, 'WordPress graph mutation row:["wp_posts","ID:48"] is created in the same plan as a postmeta revision target that depends on it, and identity rewriting is not yet supported.');
   assert.equal(matchingEdit.decision, 'already-in-sync');
   assert.equal(pluginDecision.decision, 'keep-remote');
   assert.equal(pluginFileDecision.decision, 'keep-remote');
@@ -15987,7 +16125,7 @@ test('blocks local term-relationship references when the live remote taxonomy id
   assert.equal(plan.summary.mutations, 0);
   assert.equal(mutationFor(plan, resourceKey), undefined);
   assert.equal(decisionFor(plan, targetResourceKey).decision, 'keep-remote');
-  assert.equal(blocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(blocker.class, 'unsupported-revision-resource');
   assert.equal(blocker.resourceKey, resourceKey);
   assert.equal(blocker.resolutionPolicy, 'preserve-remote-wordpress-graph-and-stop');
   assert.equal(reference.relationshipKey, 'wp_term_relationships.term_taxonomy_id');
@@ -28087,7 +28225,7 @@ test('blocks local postmeta references to a same-plan created revision while pre
   assert.equal(plan.summary.mutations, 0);
   assert.equal(mutationFor(plan, resourceKey), undefined);
   assert.equal(decisionFor(plan, targetResourceKey), undefined);
-  assert.equal(blocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(blocker.class, 'unsupported-revision-resource');
   assert.equal(blocker.resourceKey, resourceKey);
   assert.equal(blocker.resolutionPolicy, 'preserve-remote-wordpress-graph-and-stop');
   assert.equal(reference.relationshipKey, 'wp_postmeta.post_id');
@@ -28155,7 +28293,7 @@ test('blocks local postmeta references to a same-plan created revision while pre
   assert.equal(plan.summary.mutations, 0);
   assert.equal(mutationFor(plan, resourceKey), undefined);
   assert.equal(decisionFor(plan, targetResourceKey), undefined);
-  assert.equal(blocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(blocker.class, 'unsupported-revision-resource');
   assert.equal(blocker.resourceKey, resourceKey);
   assert.equal(blocker.resolutionPolicy, 'preserve-remote-wordpress-graph-and-stop');
   assert.equal(reference.relationshipKey, 'wp_postmeta.post_id');
@@ -28225,7 +28363,7 @@ test('blocks local postmeta references to a same-plan created revision while pre
   assert.equal(plan.summary.mutations, 0);
   assert.equal(mutationFor(plan, resourceKey), undefined);
   assert.equal(decisionFor(plan, targetResourceKey), undefined);
-  assert.equal(blocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(blocker.class, 'unsupported-revision-resource');
   assert.equal(blocker.resourceKey, resourceKey);
   assert.equal(blocker.resolutionPolicy, 'preserve-remote-wordpress-graph-and-stop');
   assert.equal(revisionBlocker.class, 'unsupported-revision-resource');
@@ -28292,7 +28430,7 @@ test('blocks local postmeta references to a same-plan created revision while pre
   assert.equal(plan.summary.mutations, 0);
   assert.equal(mutationFor(plan, resourceKey), undefined);
   assert.equal(decisionFor(plan, targetResourceKey), undefined);
-  assert.equal(blocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(blocker.class, 'unsupported-revision-resource');
   assert.equal(blocker.resourceKey, resourceKey);
   assert.equal(blocker.resolutionPolicy, 'preserve-remote-wordpress-graph-and-stop');
   assert.equal(revisionBlocker.class, 'unsupported-revision-resource');
@@ -28359,7 +28497,7 @@ test('blocks local postmeta references to a same-plan created revision while pre
   assert.equal(plan.summary.mutations, 0);
   assert.equal(mutationFor(plan, resourceKey), undefined);
   assert.equal(decisionFor(plan, targetResourceKey), undefined);
-  assert.equal(blocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(blocker.class, 'unsupported-revision-resource');
   assert.equal(blocker.resourceKey, resourceKey);
   assert.equal(blocker.resolutionPolicy, 'preserve-remote-wordpress-graph-and-stop');
   assert.equal(revisionBlocker.class, 'unsupported-revision-resource');
@@ -28431,7 +28569,7 @@ test('blocks local postmeta references to a same-plan created revision while pre
   assert.equal(plan.summary.mutations, 0);
   assert.equal(mutationFor(plan, resourceKey), undefined);
   assert.equal(decisionFor(plan, targetResourceKey), undefined);
-  assert.equal(blocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(blocker.class, 'unsupported-revision-resource');
   assert.equal(blocker.resourceKey, resourceKey);
   assert.equal(blocker.resolutionPolicy, 'preserve-remote-wordpress-graph-and-stop');
   assert.equal(reference.relationshipKey, 'wp_postmeta.post_id');
