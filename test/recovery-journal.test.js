@@ -945,6 +945,12 @@ test('production recovery journal consumption derives claim identity from the fe
   assert.equal(inspection.journal.claimHash, recoveryClaimHash(claimId));
   assert.deepEqual(inspection.journal.writerLease, writerLease);
   assert.deepEqual(inspection.journal.leaseFence, writerLease);
+
+  const persisted = readRecoveryJournal(filePath);
+  const consumedRecord = persisted.records.at(-1);
+  assert.equal(consumedRecord.type, 'recovery-journal-consumed');
+  assert.equal(consumedRecord.claimHash, recoveryClaimHash(claimId));
+  assert.deepEqual(consumedRecord.claimLease, writerLease);
 });
 
 test('production recovery journal compatibility overload fails closed without an explicit claimId or writerLease', () => {
