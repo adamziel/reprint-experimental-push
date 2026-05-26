@@ -1,10 +1,10 @@
-`21818064ecf416ba195b9c2da8eca96287812fc7` stays `0/4`.
+`6beb5ed7c74509094d831bc4247541c4b684feae` stays `0/4`.
 
-Audit time: 2026-05-26 14:20:46 CEST (+0200)
+Audit time: 2026-05-26 14:24:58 CEST (+0200)
 
 Current verdict:
-- `21818064` is a small verifier initialization fix, but it does not move a production gate.
-- It only adjusts auth source initialization order inside `scripts/playground/production-shaped-release-verify.mjs`.
+- `6beb5ed7` is a small verifier cleanup, but it does not move a production gate.
+- It only cleans up the release journal temp directory inside `scripts/playground/production-shaped-release-verify.mjs`.
 - It does not prove production-backed auth/session lifecycle or production durable-journal semantics on the live `verify:release` boundary.
 
 Evidence check:
@@ -12,7 +12,7 @@ Evidence check:
 - Public progress files in this worktree are clean.
 
 Changed files:
-- [`audits/current-head-21818064.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/independent-auditor/audits/current-head-21818064.md)
+- [`audits/current-head-6beb5ed7.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/independent-auditor/audits/current-head-6beb5ed7.md)
 - [`audits/objective-audit.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/independent-auditor/audits/objective-audit.md)
 - [`.lane-output/final.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/independent-auditor/.lane-output/final.md)
 
@@ -36,7 +36,7 @@ Push result:
 - Not pushed
 
 Worktree status:
-- Dirty: [`audits/current-head-21818064.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/independent-auditor/audits/current-head-21818064.md), [`audits/objective-audit.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/independent-auditor/audits/objective-audit.md), [`.lane-output/final.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/independent-auditor/.lane-output/final.md)
+- Dirty: [`audits/current-head-6beb5ed7.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/independent-auditor/audits/current-head-6beb5ed7.md), [`audits/objective-audit.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/independent-auditor/audits/objective-audit.md), [`.lane-output/final.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/independent-auditor/.lane-output/final.md)
 
 Next supervisor nudge:
-- Keep the gate verdict at `0/4`; the live reliable head is now `21818064`, and the next gate owner is still `reliable-executor`.
+- Keep the gate verdict at `0/4`; the live reliable head is now `6beb5ed7`, and the next gate owner is still `reliable-executor`.
