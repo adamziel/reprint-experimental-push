@@ -317,6 +317,14 @@ test('guarded benchmark refuses production throughput claims until production ga
       'queue-pause-without-resource-headroom-safe-receipt-cursor-slack',
     ),
   );
+
+  const missingAlignedBackpressureProof = clone(report);
+  missingAlignedBackpressureProof.evidence.backpressure.queuePauseHasMeasuredAndAlignedReceiptCursorBackpressure = false;
+  assert.ok(
+    productionThroughputBlockers(missingAlignedBackpressureProof).includes(
+      'queue-pause-without-measured-and-aligned-receipt-cursor-backpressure-proof',
+    ),
+  );
   assert.equal(report.results.preCommitFailure.remoteUnchanged, true);
   assert.equal(report.results.partialFailure.remoteUnchanged, false);
   assert.equal(report.results.successInspection.status, 'fully-updated-remote');
