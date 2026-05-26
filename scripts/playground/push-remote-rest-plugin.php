@@ -555,6 +555,7 @@ function reprint_push_lab_rest_merge_checked_db_journal_contract(array $db_journ
     $upgrade_scope = array_key_exists('scope', $checked_summary)
         && reprint_push_lab_rest_should_upgrade_checked_db_journal_scope($db_journal, $checked_summary);
     $upgrade_acceptance = reprint_push_lab_rest_should_upgrade_checked_boundary_acceptance($db_journal, $checked_summary);
+    $prefer_checked_top_level = $upgrade_scope || $upgrade_acceptance;
 
     foreach ([
         'schemaVersion',
@@ -565,7 +566,15 @@ function reprint_push_lab_rest_merge_checked_db_journal_contract(array $db_journ
         'idempotencyEvidence',
     ] as $key) {
         if (
-            reprint_push_lab_rest_should_fill_checked_db_journal_field($db_journal, $checked_summary, $key)
+            (
+                reprint_push_lab_rest_should_fill_checked_db_journal_field($db_journal, $checked_summary, $key)
+                || (
+                    $prefer_checked_top_level
+                    && array_key_exists($key, $db_journal)
+                    && array_key_exists($key, $checked_summary)
+                    && $db_journal[$key] !== $checked_summary[$key]
+                )
+            )
             && array_key_exists($key, $checked_summary)
         ) {
             $db_journal[$key] = $checked_summary[$key];
