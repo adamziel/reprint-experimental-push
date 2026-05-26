@@ -20952,6 +20952,7 @@ test('blocks local same-plan created comment parent identity while preserving a 
   const plan = planFor(base, local, remote);
   const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
   const independentEditDecision = decisionFor(plan, 'row:["wp_posts","ID:1"]');
+  const reference = blocker.references[0];
   const planJson = JSON.stringify(plan);
 
   assert.equal(plan.status, 'blocked');
@@ -20961,7 +20962,14 @@ test('blocks local same-plan created comment parent identity while preserving a 
   assert.equal(plan.conflicts.length, 0);
   assert.equal(blocker.class, 'unsupported-comments-users-resource');
   assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.unsupportedState, 'same-plan-reference');
   assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_comments","comment_ID:18"] is created in the same plan as a parent comment identity that depends on it, and identity rewriting is not yet supported.');
+  assert.equal(reference.relationshipKey, 'wp_comments.comment_parent');
+  assert.equal(reference.relationshipType, 'comment-parent');
+  assert.equal(reference.sourceResourceKey, resourceKey);
+  assert.equal(reference.targetResourceKey, targetResourceKey);
+  assert.equal(reference.targetChange.remote.state, 'absent');
+  assert.equal(reference.targetChange.local.state, 'present');
   assert.equal(independentEditDecision.decision, 'already-in-sync');
   assert.equal(independentEditDecision.change.localChange, 'update');
   assert.equal(independentEditDecision.change.remoteChange, 'update');
@@ -28474,11 +28482,13 @@ test('blocks local post-author references to a same-plan created user identity w
   assert.equal(plan.status, 'blocked');
   assert.equal(plan.summary.mutations, 0);
   assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(decisionFor(plan, targetResourceKey), undefined);
   assert.equal(typeSwapDecision.decision, 'already-in-sync');
   assert.equal(typeSwapDecision.change.localChange, 'type-change');
   assert.equal(typeSwapDecision.change.remoteChange, 'type-change');
   assert.equal(userBlocker.class, 'unsupported-comments-users-resource');
   assert.equal(userBlocker.resourceKey, targetResourceKey);
+  assert.equal(userBlocker.unsupportedState, 'same-plan-reference');
   assert.equal(userBlocker.reason, 'WordPress graph mutation row:["wp_users","ID:12"] is created in the same plan as a post author identity that depends on it, and identity rewriting is not yet supported.');
   assert.equal(reference.relationshipKey, 'wp_posts.post_author');
   assert.equal(reference.relationshipType, 'post-author');
