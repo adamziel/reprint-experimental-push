@@ -216,6 +216,10 @@ Current executable gate:
 - The same details also fail closed if queue-headroom visibility appears
   without memory-ceiling visibility, so a partial bounded-backpressure
   surface cannot hide the ceiling boundary while still looking resumable.
+- The same details also fail closed if queue-headroom visibility appears
+  without receipt-cursor memory-headroom visibility, so a partial bounded-
+  backpressure surface cannot claim visible pause headroom while hiding the
+  paired receipt-cursor headroom proof.
 - The same details also fail closed if the raw memory-ceiling-match bit appears
   while queue-headroom visibility is hidden, so the audit surface cannot mark
   the queue-budget match complete while the paired headroom boundary is absent.
