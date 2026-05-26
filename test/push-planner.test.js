@@ -24023,6 +24023,57 @@ test('blocks unsupported special file aliases while preserving a matching indepe
   }
 });
 
+test('blocks unsupported special file aliases while preserving a matching independent delete and remote-only plugin drift', () => {
+  const specialFileTypes = [
+    ['block-device', { inode: 7301 }, { inode: 9301 }],
+    ['character', { major: 7, minor: 1 }, { major: 7, minor: 5 }],
+    ['char-device', { major: 9, minor: 2 }, { major: 9, minor: 6 }],
+    ['junction', { target: '../shared/junction-target' }, { target: '../shared/local-junction-target' }],
+    ['named-pipe', { mode: '0600' }, { mode: '0644' }],
+  ];
+
+  for (const [type, baseValue, localValue] of specialFileTypes) {
+    const resourceKey = `file:wp-content/uploads/${type}`;
+    const base = baseSite();
+    base.files[`wp-content/uploads/${type}`] = { type, ...baseValue };
+    base.files['about.php'] = '<?php echo "base about";';
+
+    const local = baseSite();
+    local.files[`wp-content/uploads/${type}`] = { type, ...localValue };
+    delete local.files['about.php'];
+
+    const remote = baseSite();
+    remote.files[`wp-content/uploads/${type}`] = JSON.parse(JSON.stringify(base.files[`wp-content/uploads/${type}`]));
+    delete remote.files['about.php'];
+    remote.plugins.forms.description = 'remote-only plugin drift';
+    remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin drift */';
+
+    const plan = planFor(base, local, remote);
+    const blocker = plan.blockers[0];
+    const matchingDelete = decisionFor(plan, 'file:about.php');
+    const pluginDecision = decisionFor(plan, 'plugin:forms');
+    const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+    const planJson = JSON.stringify(plan);
+
+    assert.equal(plan.status, 'blocked');
+    assert.equal(plan.summary.mutations, 0);
+    assert.equal(mutationFor(plan, resourceKey), undefined);
+    assert.equal(plan.conflicts.length, 0);
+    assert.equal(blocker.class, 'unsupported-special-file-resource');
+    assert.equal(blocker.resourceKey, resourceKey);
+    assert.equal(blocker.reason, 'Special file entries are not yet supported by the planner.');
+    assert.equal(matchingDelete.decision, 'already-in-sync');
+    assert.equal(matchingDelete.change.localChange, 'delete');
+    assert.equal(matchingDelete.change.remoteChange, 'delete');
+    assert.equal(pluginDecision.decision, 'keep-remote');
+    assert.equal(pluginFileDecision.decision, 'keep-remote');
+    assert.equal(planJson.includes(JSON.stringify(localValue)), false);
+    assert.equal(planJson.includes(JSON.stringify(baseValue)), false);
+    assert.equal(remote.plugins.forms.description, 'remote-only plugin drift');
+    assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin drift */');
+  }
+});
+
 test('blocks unsupported gitlink special file entries while preserving remote-only plugin removals', () => {
   const resourceKey = 'file:wp-content/uploads/gitlink';
   const base = baseSite();
