@@ -8,6 +8,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createHmac } from 'node:crypto';
 import { digest } from '../../src/stable-json.js';
+import { resolveProductionPluginSourceCommand } from '../../src/production-plugin-source.js';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const cliPath = path.join(repoRoot, 'bin/reprint-push-lab.js');
@@ -61,6 +62,10 @@ try {
       plugin: 'reprint-push/reprint-push.php',
       mountedAs: '/wordpress/wp-content/plugins/reprint-push',
       copiedFiles: fs.readdirSync(path.join(pluginDir, 'includes')).sort(),
+      sourceMode: resolveProductionPluginSourceCommand({
+        routeProfile: 'production-shaped',
+        requireProductionAuthSession: true,
+      }).source.sourceMode,
     },
     routes: {},
     cli: {},
@@ -108,7 +113,13 @@ try {
     assert.equal(preflight.body.routeProfile.profile, 'production-shaped');
     assert.equal(preflight.body.routeProfile.restNamespace, 'reprint/v1');
     assert.equal(preflight.body.routeProfile.labBacked, false);
-    assert.equal(preflight.body.auth.session.type, 'production-auth-session');
+    const productionSourceCommand = resolveProductionPluginSourceCommand({
+      routeProfile: 'production-shaped',
+      requireProductionAuthSession: true,
+    });
+    assert.equal(productionSourceCommand.packagedProductionPluginSource, true);
+    assert.equal(productionSourceCommand.env.REPRINT_PUSH_REQUIRE_PRODUCTION_AUTH_SESSION, '1');
+    assert.equal(preflight.body.auth.session.type, 'application-password-basic');
     assert.equal(preflight.body.auth.session.credentialScope, 'reprint-push-lab:authenticated-http-push');
     assert.equal(preflight.body.auth.session.credentialType, 'push-application-password');
     assert.equal(preflight.body.journal.dbJournal.scope, 'packaged production journal scope');
@@ -158,6 +169,8 @@ try {
       profile: preflight.body.routeProfile.profile,
       labBacked: preflight.body.routeProfile.labBacked,
       authBootstrapDisabled: true,
+      sourceCommand: productionSourceCommand.command,
+      sourceCommandEnv: productionSourceCommand.env,
       unprovisionedAlternateStatus: unprovisionedAlternatePreflight.status,
       unscopedApplicationPasswordStatus: unscopedPreflight.status,
       credentialScope: preflight.body.auth.session.credentialScope,
@@ -358,7 +371,6 @@ async function startPlaygroundServer(name, blueprintPath, mountedPluginDir) {
     cwd: repoRoot,
     env: {
       ...process.env,
-      REPRINT_PUSH_LAB_AUTH_BOOTSTRAP: '1',
       REPRINT_PUSH_LAB_AUTH_ADMIN_USER: credentials.username,
       REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD: credentials.password,
       NODE_OPTIONS: appendNodeOption(process.env.NODE_OPTIONS, localhostListenPreloadOption()),

@@ -1,21 +1,11 @@
 import { createHash, createHmac, randomBytes } from 'node:crypto';
 import { createPushPlan } from './planner.js';
 import { digest } from './stable-json.js';
-
-const routeProfiles = {
-  'lab-authenticated': {
-    name: 'lab-authenticated',
-    namespace: 'reprint-push-lab/v1',
-    routePrefix: '/authenticated',
-    namespacePath: '/wp-json/reprint-push-lab/v1/authenticated',
-  },
-  'production-shaped': {
-    name: 'production-shaped',
-    namespace: 'reprint/v1',
-    routePrefix: '/push',
-    namespacePath: '/wp-json/reprint/v1/push',
-  },
-};
+import {
+  resolveRouteProfile,
+  resolveProductionPluginSource,
+  resolveProductionPluginSourceCommand,
+} from './production-plugin-source.js';
 const idempotencyHeader = 'X-Reprint-Push-Idempotency-Key';
 const sessionHeader = 'X-Reprint-Push-Session';
 const authContentHashHeader = 'X-Auth-Content-Hash';
@@ -25,6 +15,10 @@ const authSignatureHeader = 'X-Auth-Signature';
 const pushSignatureHeader = 'X-Reprint-Push-Signature';
 const transientFetchRetryDelayMs = 250;
 const transientFetchAttempts = 4;
+const routeProfiles = {
+  'lab-authenticated': resolveRouteProfile('lab-authenticated'),
+  'production-shaped': resolveRouteProfile('production-shaped'),
+};
 const retryableReadOnlyGetPaths = new Set(Object.values(routeProfiles).flatMap((profile) => [
   `${profile.namespacePath}/snapshot`,
   `${profile.namespacePath}/db-journal`,
@@ -41,6 +35,7 @@ export async function runAuthenticatedHttpPush({
   applicationPassword,
   idempotencyKey,
   routeProfile = 'lab-authenticated',
+  requireProductionAuthSession = process.env.REPRINT_PUSH_REQUIRE_PRODUCTION_AUTH_SESSION === '1',
   dryRunOnly = false,
   labDriftAfterSnapshot = '',
   now = new Date(),
@@ -59,7 +54,7 @@ export async function runAuthenticatedHttpPush({
   }
 
   const credential = { username, password: applicationPassword };
-  const profile = resolveRouteProfile(routeProfile);
+  const profile = resolveProductionPluginSource({ routeProfile, requireProductionAuthSession });
   const client = authenticatedHttpClient({ sourceUrl, credential, routeProfile: profile.name });
   const summary = {
     ok: false,
@@ -69,7 +64,13 @@ export async function runAuthenticatedHttpPush({
       namespace: profile.namespace,
       routePrefix: profile.routePrefix,
       routeProfile: profile.name,
-      labBacked: true,
+      labBacked: profile.sourceMode !== 'packaged-production-plugin',
+      sourceMode: profile.sourceMode,
+      requireProductionAuthSession: profile.requireProductionAuthSession,
+      command: resolveProductionPluginSourceCommand({
+        routeProfile,
+        requireProductionAuthSession,
+      }).command,
     },
     idempotencyKeyHash: digest(idempotencyKey),
     preflight: null,
@@ -192,20 +193,6 @@ export function authenticatedHttpClient({ sourceUrl, credential, routeProfile = 
       );
     },
   };
-}
-
-function resolveRouteProfile(routeProfile) {
-  const key = String(routeProfile || 'lab-authenticated');
-  if (key === 'lab') {
-    return routeProfiles['lab-authenticated'];
-  }
-  if (key === 'production' || key === 'prod') {
-    return routeProfiles['production-shaped'];
-  }
-  if (routeProfiles[key]) {
-    return routeProfiles[key];
-  }
-  throw new Error(`Unknown routeProfile: ${routeProfile}`);
 }
 
 function summarizePlan(plan) {
