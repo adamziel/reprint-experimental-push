@@ -1503,6 +1503,9 @@ masquerade as a production-bounded batch executor.
 The same atomic-group record now also exposes `productionStorageReceiptsVisible`,
 and the claim gate fails closed if storage-receipt evidence is claimed without
 that visibility bit.
+The same gate also fails closed if storage receipts appear visible without a
+matching measurement, so a forged receipt summary cannot masquerade as
+production evidence.
 The claim gate also fails closed if atomic-group commit evidence is present
 without a ready required group record, so a staged or optional group cannot
 masquerade as a production atomic commit.
