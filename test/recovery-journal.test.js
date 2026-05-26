@@ -2169,6 +2169,70 @@ test('production recovery journal reopen fails closed when a later persisted cla
   });
 });
 
+test('production recovery journal reopen fails closed when a later persisted claim reopen lease id diverges from its claim hash', () => {
+  const filePath = tempJournalPath();
+  const remote = baseSite();
+  const plan = planFor(baseSite(), localSite(), remote);
+  const claimId = 'claim-consumed-reopened-lease-id-drifted';
+  const writerLease = { id: claimId, epoch: 4 };
+  const remoteArtifactPath = `${filePath}.remote`;
+  const artifactRefs = {
+    journal: filePath,
+    remote: remoteArtifactPath,
+  };
+  const journal = openProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs,
+    claimId,
+    writerLease,
+  });
+  appendRecoveryClaimOpened(journal, {
+    plan,
+    current: remote,
+    claimId,
+    artifactRefs,
+  });
+  journal.close();
+
+  consumeProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs,
+    writerLease,
+  });
+
+  const persisted = readRecoveryJournal(filePath);
+  persisted.records.push({
+    sequence: 3,
+    type: 'recovery-claim-opened',
+    schemaVersion: persisted.records[0].schemaVersion,
+    claimHash: recoveryClaimHash(claimId),
+    claimLease: { id: `${claimId}-drifted`, epoch: writerLease.epoch },
+    planId: plan.id,
+    state: 'opened',
+    observedHash: 'snapshot-hash-only',
+    artifactRefs,
+    fsync: { requested: true },
+  });
+  fs.writeFileSync(filePath, `${persisted.records.map((record) => JSON.stringify(record)).join('\n')}\n`);
+
+  assert.throws(() => {
+    openProductionRecoveryJournal(filePath, {
+      claimId,
+      writerLease,
+      ownsRemoteArtifact: true,
+      remoteArtifactPath,
+    });
+  }, {
+    name: 'UnsupportedProductionRecoveryJournalError',
+    code: 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL',
+    message: 'Production recovery journal support requires reopening with the persisted consumed claim identity.',
+  });
+});
+
 test('production recovery journal reopen fails closed when a later persisted claim reopen uses a non-positive sequence identity', () => {
   const filePath = tempJournalPath();
   const remote = baseSite();
