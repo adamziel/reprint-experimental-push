@@ -1138,6 +1138,10 @@ function shouldCloseOwnedDurableJournal(writer) {
     writer
     && Object.hasOwn(writer, 'kind')
     && writer.kind === 'production-recovery-journal'
+    && Object.hasOwn(writer, 'productionAdapter')
+    && writer.productionAdapter === true
+    && Object.hasOwn(writer, 'supportedSurface')
+    && writer.supportedSurface === 'production-recovery-journal-adapter'
     && Object.hasOwn(writer, 'ownsJournal')
     && writer.ownsJournal === true
     && Object.hasOwn(writer, 'close')
