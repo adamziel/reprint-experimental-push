@@ -174,7 +174,7 @@ function reprint_push_lab_db_journal_scope_label(string $scope_key, bool $surfac
 
 function reprint_push_lab_db_journal_checked_boundary_contract(
     bool $checked_surface = false,
-    bool $stale_claim_rejected = false,
+    bool $stale_claim_rejected = true,
     bool $claim_key_unique = true,
     bool $monotonic_sequence = true,
     bool $restart_readable = true
@@ -193,6 +193,7 @@ function reprint_push_lab_db_journal_checked_boundary_contract(
     );
 
     return [
+        'schemaVersion' => 1,
         'acceptedOnCheckedBoundary' => true,
         'scope' => reprint_push_lab_db_journal_scope_label($scope_key, true),
         'ownership' => [
@@ -804,23 +805,23 @@ function reprint_push_lab_db_journal_writer_lease_contract_matches($writer_lease
 {
     return is_array($writer_lease)
         && reprint_push_lab_db_journal_non_empty_string($writer_lease['strategy'] ?? null)
-        && is_bool($writer_lease['claimKeyUnique'] ?? null)
-        && is_bool($writer_lease['fsyncEvidence'] ?? null)
+        && ($writer_lease['claimKeyUnique'] ?? false) === true
+        && ($writer_lease['fsyncEvidence'] ?? false) === true
         && reprint_push_lab_db_journal_non_empty_string($writer_lease['storageGuard'] ?? null)
-        && is_bool($writer_lease['monotonicSequence'] ?? null)
-        && is_bool($writer_lease['restartReadable'] ?? null)
-        && is_bool($writer_lease['staleClaimRejected'] ?? null);
+        && ($writer_lease['monotonicSequence'] ?? false) === true
+        && ($writer_lease['restartReadable'] ?? false) === true
+        && ($writer_lease['staleClaimRejected'] ?? false) === true;
 }
 
 function reprint_push_lab_db_journal_lease_fence_contract_matches($lease_fence): bool
 {
     return is_array($lease_fence)
         && reprint_push_lab_db_journal_non_empty_string($lease_fence['boundary'] ?? null)
-        && is_bool($lease_fence['claimKeyUnique'] ?? null)
-        && is_bool($lease_fence['fsyncEvidence'] ?? null)
-        && is_bool($lease_fence['monotonicSequence'] ?? null)
-        && is_bool($lease_fence['restartReadable'] ?? null)
-        && is_bool($lease_fence['staleClaimRejected'] ?? null)
+        && ($lease_fence['claimKeyUnique'] ?? false) === true
+        && ($lease_fence['fsyncEvidence'] ?? false) === true
+        && ($lease_fence['monotonicSequence'] ?? false) === true
+        && ($lease_fence['restartReadable'] ?? false) === true
+        && ($lease_fence['staleClaimRejected'] ?? false) === true
         && reprint_push_lab_db_journal_writer_lease_contract_matches($lease_fence['writerLease'] ?? null);
 }
 

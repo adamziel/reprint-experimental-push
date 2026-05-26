@@ -784,7 +784,8 @@ test('checked recovery inspect evidence upgrades an existing fixture-scoped jour
           status: 'ok',
           scope: 'checked live production-shaped recovery inspect journal evidence; not local Playground fixture only',
         },
-        acceptedOnCheckedBoundary: true,
+        schemaVersion: 1,
+        acceptedOnCheckedBoundary: false,
         scope: 'checked live production-shaped journal surface; not local Playground fixture only',
         ownership: {
           ownsJournal: true,
@@ -798,7 +799,7 @@ test('checked recovery inspect evidence upgrades an existing fixture-scoped jour
           storageGuard: 'wpdb-single-statement-cas',
           monotonicSequence: true,
           restartReadable: true,
-          staleClaimRejected: false,
+          staleClaimRejected: true,
         },
         leaseFence: {
           boundary: 'wpdb-single-statement-cas',
@@ -806,7 +807,7 @@ test('checked recovery inspect evidence upgrades an existing fixture-scoped jour
           fsyncEvidence: true,
           monotonicSequence: true,
           restartReadable: true,
-          staleClaimRejected: false,
+          staleClaimRejected: true,
           writerLease: {
             strategy: 'claim-fenced-single-writer',
             claimKeyUnique: true,
@@ -814,7 +815,7 @@ test('checked recovery inspect evidence upgrades an existing fixture-scoped jour
             storageGuard: 'wpdb-single-statement-cas',
             monotonicSequence: true,
             restartReadable: true,
-            staleClaimRejected: false,
+            staleClaimRejected: true,
           },
         },
       },
@@ -850,7 +851,8 @@ test('checked recovery inspect evidence upgrades an existing fixture-scoped jour
           status: 'ok',
           scope: 'packaged production plugin recovery inspect journal evidence; not local Playground fixture only',
         },
-        acceptedOnCheckedBoundary: true,
+        schemaVersion: 1,
+        acceptedOnCheckedBoundary: false,
         scope: 'packaged production journal scope',
         ownership: {
           ownsJournal: true,
@@ -864,7 +866,7 @@ test('checked recovery inspect evidence upgrades an existing fixture-scoped jour
           storageGuard: 'wpdb-single-statement-cas',
           monotonicSequence: true,
           restartReadable: true,
-          staleClaimRejected: false,
+          staleClaimRejected: true,
         },
         leaseFence: {
           boundary: 'wpdb-single-statement-cas',
@@ -872,7 +874,7 @@ test('checked recovery inspect evidence upgrades an existing fixture-scoped jour
           fsyncEvidence: true,
           monotonicSequence: true,
           restartReadable: true,
-          staleClaimRejected: false,
+          staleClaimRejected: true,
           writerLease: {
             strategy: 'claim-fenced-single-writer',
             claimKeyUnique: true,
@@ -880,7 +882,7 @@ test('checked recovery inspect evidence upgrades an existing fixture-scoped jour
             storageGuard: 'wpdb-single-statement-cas',
             monotonicSequence: true,
             restartReadable: true,
-            staleClaimRejected: false,
+            staleClaimRejected: true,
           },
         },
       },
@@ -915,7 +917,8 @@ test('checked recovery inspect evidence preserves a stronger existing non-fixtur
           status: 'ok',
           scope: 'production recovery inspect journal evidence from external durable adapter',
         },
-        acceptedOnCheckedBoundary: true,
+        schemaVersion: 1,
+        acceptedOnCheckedBoundary: false,
         scope: 'checked live production-shaped journal surface; not local Playground fixture only',
         ownership: {
           ownsJournal: true,
@@ -929,7 +932,7 @@ test('checked recovery inspect evidence preserves a stronger existing non-fixtur
           storageGuard: 'wpdb-single-statement-cas',
           monotonicSequence: true,
           restartReadable: true,
-          staleClaimRejected: false,
+          staleClaimRejected: true,
         },
         leaseFence: {
           boundary: 'wpdb-single-statement-cas',
@@ -937,7 +940,7 @@ test('checked recovery inspect evidence preserves a stronger existing non-fixtur
           fsyncEvidence: true,
           monotonicSequence: true,
           restartReadable: true,
-          staleClaimRejected: false,
+          staleClaimRejected: true,
           writerLease: {
             strategy: 'claim-fenced-single-writer',
             claimKeyUnique: true,
@@ -945,7 +948,7 @@ test('checked recovery inspect evidence preserves a stronger existing non-fixtur
             storageGuard: 'wpdb-single-statement-cas',
             monotonicSequence: true,
             restartReadable: true,
-            staleClaimRejected: false,
+            staleClaimRejected: true,
           },
         },
       },
@@ -983,11 +986,12 @@ test('checked recovery inspect evidence preserves existing recovery journal stor
           status: 'ok',
           scope: 'checked live production-shaped recovery inspect journal evidence; not local Playground fixture only',
         },
+        schemaVersion: 1,
         scope: 'checked live production-shaped journal surface; not local Playground fixture only',
         storage: 'wp-options+journal-evidence',
         planHash: 'plan-hash-123',
         receiptHash: 'receipt-hash-456',
-        acceptedOnCheckedBoundary: true,
+        acceptedOnCheckedBoundary: false,
         ownership: {
           ownsJournal: true,
           restartReadable: true,
@@ -1000,7 +1004,7 @@ test('checked recovery inspect evidence preserves existing recovery journal stor
           storageGuard: 'wpdb-single-statement-cas',
           monotonicSequence: true,
           restartReadable: true,
-          staleClaimRejected: false,
+          staleClaimRejected: true,
         },
         leaseFence: {
           boundary: 'wpdb-single-statement-cas',
@@ -1008,7 +1012,7 @@ test('checked recovery inspect evidence preserves existing recovery journal stor
           fsyncEvidence: true,
           monotonicSequence: true,
           restartReadable: true,
-          staleClaimRejected: false,
+          staleClaimRejected: true,
           writerLease: {
             strategy: 'claim-fenced-single-writer',
             claimKeyUnique: true,
@@ -1016,7 +1020,7 @@ test('checked recovery inspect evidence preserves existing recovery journal stor
             storageGuard: 'wpdb-single-statement-cas',
             monotonicSequence: true,
             restartReadable: true,
-            staleClaimRejected: false,
+            staleClaimRejected: true,
           },
         },
       },
@@ -1044,6 +1048,7 @@ test('checked recovery inspect evidence carries authoritative stale-claim fencin
     true,
     false,
     {
+      schemaVersion: 1,
       acceptedOnCheckedBoundary: true,
       ownership: {
         ownsJournal: true,
@@ -1089,10 +1094,11 @@ test('checked recovery inspect evidence carries authoritative stale-claim fencin
           status: 'ok',
           scope: 'checked live production-shaped recovery inspect journal evidence; not local Playground fixture only',
         },
+        schemaVersion: 1,
         storage: 'wp-options+journal-evidence',
         planHash: 'plan-hash-123',
         receiptHash: 'receipt-hash-456',
-        acceptedOnCheckedBoundary: true,
+        acceptedOnCheckedBoundary: false,
         ownership: {
           ownsJournal: true,
           restartReadable: true,
@@ -1154,6 +1160,7 @@ test('checked recovery inspect evidence carries authoritative checked storage gu
     true,
     false,
     {
+      schemaVersion: 1,
       acceptedOnCheckedBoundary: true,
       ownership: {
         ownsJournal: true,
@@ -1214,6 +1221,7 @@ test('checked recovery inspect evidence carries authoritative checked storage gu
           status: 'ok',
           scope: 'checked live production-shaped recovery inspect journal evidence; not local Playground fixture only',
         },
+        schemaVersion: 1,
         storage: 'wp-options+journal-evidence',
         planHash: 'plan-hash-123',
         receiptHash: 'receipt-hash-456',
@@ -1284,6 +1292,7 @@ test('checked recovery inspect evidence injects the full checked durable journal
     true,
     false,
     {
+      schemaVersion: 1,
       acceptedOnCheckedBoundary: true,
       ownership: {
         ownsJournal: true,
@@ -1345,7 +1354,8 @@ test('checked recovery inspect evidence injects the full checked durable journal
           status: 'ok',
           scope: 'checked live production-shaped recovery inspect journal evidence; not local Playground fixture only',
         },
-        acceptedOnCheckedBoundary: true,
+        schemaVersion: 1,
+        acceptedOnCheckedBoundary: false,
         scope: 'checked live production-shaped journal surface; not local Playground fixture only',
         latestRows: [
           {
@@ -1430,7 +1440,8 @@ test('checked recovery inspect evidence preserves a stronger existing checked sc
           status: 'ok',
           scope: 'production recovery inspect journal evidence from external durable adapter; not local Playground fixture only',
         },
-        acceptedOnCheckedBoundary: true,
+        schemaVersion: 1,
+        acceptedOnCheckedBoundary: false,
         scope: 'checked live production-shaped journal surface; not local Playground fixture only',
         ownership: {
           ownsJournal: true,
@@ -1444,7 +1455,7 @@ test('checked recovery inspect evidence preserves a stronger existing checked sc
           storageGuard: 'wpdb-single-statement-cas',
           monotonicSequence: true,
           restartReadable: true,
-          staleClaimRejected: false,
+          staleClaimRejected: true,
         },
         leaseFence: {
           boundary: 'wpdb-single-statement-cas',
@@ -1452,7 +1463,7 @@ test('checked recovery inspect evidence preserves a stronger existing checked sc
           fsyncEvidence: true,
           monotonicSequence: true,
           restartReadable: true,
-          staleClaimRejected: false,
+          staleClaimRejected: true,
           writerLease: {
             strategy: 'claim-fenced-single-writer',
             claimKeyUnique: true,
@@ -1460,7 +1471,7 @@ test('checked recovery inspect evidence preserves a stronger existing checked sc
             storageGuard: 'wpdb-single-statement-cas',
             monotonicSequence: true,
             restartReadable: true,
-            staleClaimRejected: false,
+            staleClaimRejected: true,
           },
         },
       },
@@ -1918,6 +1929,7 @@ test('checked recovery inspect evidence fails closed on conflicting checked jour
             status: 'ok',
             scope: 'checked live production-shaped recovery inspect journal evidence; not local Playground fixture only',
           },
+          schemaVersion: 1,
           acceptedOnCheckedBoundary: true,
           scope: 'checked live production-shaped journal surface; not local Playground fixture only',
           claim: {
@@ -1943,6 +1955,7 @@ test('checked recovery inspect evidence fails closed on conflicting checked jour
     true,
     false,
     {
+      schemaVersion: 1,
       acceptedOnCheckedBoundary: true,
       scope: 'checked live production-shaped journal surface; not local Playground fixture only',
       claim: {
@@ -3860,6 +3873,7 @@ test('checked recovery inspect evidence fails closed on conflicting accepted inl
             status: 'ok',
             scope: 'checked live production-shaped recovery inspect journal evidence; not local Playground fixture only',
           },
+          schemaVersion: 1,
           acceptedOnCheckedBoundary: true,
           scope: 'checked live production-shaped journal surface; not local Playground fixture only',
           ownership: {
@@ -3904,6 +3918,7 @@ test('checked recovery inspect evidence fails closed on conflicting accepted inl
     true,
     false,
     {
+      schemaVersion: 1,
       acceptedOnCheckedBoundary: true,
       scope: 'checked live production-shaped journal surface; not local Playground fixture only',
       claim: {
@@ -3979,6 +3994,7 @@ test('checked recovery inspect evidence fails closed on conflicting accepted inl
           status: 'ok',
           scope: 'checked live production-shaped recovery inspect journal evidence; not local Playground fixture only',
         },
+        schemaVersion: 1,
         acceptedOnCheckedBoundary: false,
         scope: 'checked live production-shaped journal surface; not local Playground fixture only',
         claim: {
@@ -4062,6 +4078,7 @@ test('checked recovery inspect evidence backfills the required top-level storage
             status: 'ok',
             scope: 'checked live production-shaped recovery inspect journal evidence; not local Playground fixture only',
           },
+          schemaVersion: 1,
           acceptedOnCheckedBoundary: true,
           scope: 'checked live production-shaped journal surface; not local Playground fixture only',
           claim: {
@@ -4116,6 +4133,7 @@ test('checked recovery inspect evidence backfills the required top-level storage
     true,
     false,
     {
+      schemaVersion: 1,
       acceptedOnCheckedBoundary: true,
       scope: 'checked live production-shaped journal surface; not local Playground fixture only',
       claim: {
@@ -4394,6 +4412,7 @@ test('checked db journal attachment backfills the required top-level storage gua
     {
       ok: true,
       dbJournal: {
+        schemaVersion: 1,
         scope: 'checked live production-shaped journal surface; not local Playground fixture only',
         acceptedOnCheckedBoundary: true,
         claim: {
@@ -4445,6 +4464,7 @@ test('checked db journal attachment backfills the required top-level storage gua
       },
     },
     {
+      schemaVersion: 1,
       acceptedOnCheckedBoundary: true,
       scope: 'checked live production-shaped journal surface; not local Playground fixture only',
       claim: {
