@@ -10395,3 +10395,9 @@ Newest entries stay short and link back to the evidence trail.
 - Top blocker remains the same constrained release-candidate boundary:
   production WordPress executor/auth plus durable journal ownership still need
   concrete proof before any broader claim can move.
+
+## 2026-05-26 - Public Status Audit 06:23:02
+
+- Refreshed the public timestamp and newest-audit link to stay aligned with the
+  active supervision cycle.
+- Gate posture remains `0/4` verified and the blocker summary is unchanged.
