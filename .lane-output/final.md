@@ -1,9 +1,9 @@
-`325950822499a32663371ed99a487d3faa0e0d4c` stays `0/4`.
+`89ee8eb41fbc650dfe324c9751985e3e736a95e5` stays `0/4`.
 
-Audit time: 2026-05-26 15:41:59 CEST (+0200)
+Audit time: 2026-05-26 15:47:04 CEST (+0200)
 
 Current verdict:
-- The checked release verifier has clearer release-path startup diagnostics, but it still does not prove production-backed auth/session lifecycle on the live `verify:release` boundary.
+- The checked release verifier now wires in packaged production source on the checked path, but it still does not prove production-backed auth/session lifecycle on the live `verify:release` boundary.
 - It still does not establish production durable-journal ownership or restart-readable production storage semantics.
 - The next gate owner remains `reliable-executor`.
 
