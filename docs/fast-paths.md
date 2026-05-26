@@ -148,6 +148,10 @@ Current executable gate:
   so blocked proof runs carry the current throughput, executor capabilities,
   resource ceiling, recovery status, atomic-group context, chunk resume cursor,
   and blocker list without depending on the thrown error.
+- The same rollout details now also carry `rejectedFastPaths` plus
+  `rejectedFastPathGateSummary`, so every blocked large-site shortcut still
+  names the first safety gate it fails instead of collapsing into a flat
+  blocker list.
 - The same details now expose receipt-cursor headroom against the measured
   memory ceiling so a cursor-sized resume proof stays fail-closed instead of
   inferring safety from the raw cursor alone.

@@ -255,6 +255,22 @@ test('guarded executor benchmark keeps large-site rollout proof bounded and name
   assert.equal(report.claims.productionThroughput.status, 'blocked');
   assert.deepEqual([...report.claims.productionThroughput.blockers].sort(), expectedBlockers);
   assert.deepEqual(
+    report.claims.productionThroughputDetails.rejectedFastPathGateSummary,
+    [
+      { rejectedGate: 'group', count: 1 },
+      { rejectedGate: 'live', count: 1 },
+      { rejectedGate: 'recovery', count: 1 },
+    ],
+  );
+  assert.deepEqual(
+    report.claims.productionThroughputDetails.rejectedFastPaths.map((entry) => ({
+      id: entry.id,
+      rejectedGate: entry.rejectedGate,
+      blockerRefs: entry.blockerRefs,
+    })),
+    expectedRejectedFastPaths,
+  );
+  assert.deepEqual(
     report.claims.productionThroughput.rejectedFastPaths.map((entry) => ({
       id: entry.id,
       rejectedGate: entry.rejectedGate,

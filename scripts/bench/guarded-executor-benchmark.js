@@ -1449,6 +1449,9 @@ function rolloutRejectedFastPaths(blockers) {
 }
 
 export function productionThroughputDetails(report) {
+  const blockers = productionThroughputBlockers(report);
+  const rejectedFastPaths = rolloutRejectedFastPaths(blockers);
+  const rejectedFastPathGateSummary = summarizeRejectedFastPathGates(rejectedFastPaths);
   const receiptCursorWindowBytes = report.evidence.chunkReceipts.resumeCursor?.sizeBytes ?? null;
   const receiptCursorBackpressureBytes = report.evidence.backpressure?.receiptCursorBytes ?? null;
   const receiptCursorMemoryHeadroomBytes = report.evidence.backpressure?.receiptCursorMemoryHeadroomBytes ?? null;
@@ -2312,8 +2315,27 @@ export function productionThroughputDetails(report) {
       parallelismLimitsVisible,
       parallelismLimitsVisibleAndMeasured,
     },
-    blockers: productionThroughputBlockers(report),
+    blockers,
+    rejectedFastPaths,
+    rejectedFastPathGateSummary,
   };
+}
+
+function summarizeRejectedFastPathGates(rejectedFastPaths) {
+  const counts = new Map();
+
+  for (const fastPath of rejectedFastPaths) {
+    const gate = fastPath?.rejectedGate;
+    if (typeof gate !== 'string' || gate.length === 0) {
+      continue;
+    }
+
+    counts.set(gate, (counts.get(gate) ?? 0) + 1);
+  }
+
+  return [...counts.entries()]
+    .sort(([leftGate], [rightGate]) => leftGate.localeCompare(rightGate))
+    .map(([rejectedGate, count]) => ({ rejectedGate, count }));
 }
 
 function hasCompleteBackpressureEvidence(report) {
