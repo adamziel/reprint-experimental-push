@@ -1,4 +1,4 @@
-Refreshed the objective audit with the newest reliable-executor head `03cf6917`, but the release verdict remains `0/4`.
+Refreshed the objective audit with the newest visible `progress-followup` and `feedback-supervisor` heads, but the release verdict remains `0/4`.
 
 Changed files:
 - [`audits/objective-audit.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/independent-auditor/audits/objective-audit.md)
@@ -16,7 +16,7 @@ Push result:
 
 Worktree status:
 - Dirty tracked files: `audits/objective-audit.md`, `.lane-output/final.md`
-- Branch state before edit: `lane/cycle-20260525-mainwindows-2349/independent-auditor...origin/main [ahead 1521, behind 356]`
+- Branch state before edit: `lane/cycle-20260525-mainwindows-2349/independent-auditor...origin/main [ahead 1525, behind 361]`
 
 Next supervisor nudge:
 - Re-poll only when a lane lands live-source production proof or the release boundary materially changes; the current audit still has the same production blockers.

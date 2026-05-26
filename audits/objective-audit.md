@@ -39,10 +39,10 @@ The project is **not releasable as a production WordPress push path**.
 - `origin/lane/cycle-20260525-keep-busy-loop-2/no-data-loss-recovery` -> `63e01a49`
 - `origin/lane/cycle-20260525-mainwindows-2349/critic` -> `fa0dc8a0`
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `999ff0d8`
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `c49f4eae`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `3d198310`
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `0ac76c38`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `2af1ddda`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `b717124c`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `4d11356b`
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` -> `0ca7b35d`
 - `origin/lane/cycle-20260525-mainwindows-2357/no-data-loss-invariants-graph-proof` -> `98c0ce26`
 - `origin/lane/cycle-20260525-restart-2340/feedback-supervisor` -> `ef3d911e`
