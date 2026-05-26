@@ -1102,7 +1102,7 @@ function finalizeWordPressGraphDependencies(plan) {
       }
 
       const targetMutation = mutationByResourceKey.get(reference.targetResourceKey);
-      if (!isValidSamePlanWordPressGraphTarget(targetMutation, reference, mutation)) {
+      if (!isValidSamePlanWordPressGraphTarget(targetMutation, reference, mutation, mutationByResourceKey)) {
         plan.blockers.push({
           id: `blocker-wordpress-graph-dependency-${blockerIndex++}`,
           class: 'missing-wordpress-graph-dependency',
@@ -1145,7 +1145,7 @@ function finalizeWordPressGraphDependencies(plan) {
   plan.mutations = orderMutationsByDependencies(plan.mutations);
 }
 
-function isValidSamePlanWordPressGraphTarget(targetMutation, reference, sourceMutation) {
+function isValidSamePlanWordPressGraphTarget(targetMutation, reference, sourceMutation, mutationByResourceKey) {
   if (
     !targetMutation
     || targetMutation.action !== 'put'
@@ -1183,10 +1183,94 @@ function isValidSamePlanWordPressGraphTarget(targetMutation, reference, sourceMu
     const sourceValue = deserializeResourceValue(sourceMutation.value);
     const targetValue = deserializeResourceValue(targetMutation.value);
     if (
+      targetValue
+      && typeof targetValue === 'object'
+      && targetValue.post_type === 'attachment'
+    ) {
+      return false;
+    }
+    if (
       sourceValue
       && typeof sourceValue === 'object'
       && sourceValue.post_type === 'attachment'
       && targetValue
+      && typeof targetValue === 'object'
+      && targetValue.post_type === 'attachment'
+    ) {
+      return false;
+    }
+  }
+
+  if (
+    reference.relationshipType === 'term-relationship-object'
+    && sourceMutation?.resource?.type === 'row'
+    && sourceMutation?.resource?.table === 'wp_term_relationships'
+  ) {
+    const sourceValue = deserializeResourceValue(sourceMutation.value);
+    const targetValue = deserializeResourceValue(targetMutation.value);
+    if (
+      sourceValue
+      && typeof sourceValue === 'object'
+      && normalizePositiveInteger(sourceValue.object_id) != null
+    ) {
+      const ownerMutation = mutationByResourceKey.get(
+        `row:${JSON.stringify(['wp_posts', `ID:${normalizePositiveInteger(sourceValue.object_id)}`])}`,
+      );
+      const ownerValue = ownerMutation ? deserializeResourceValue(ownerMutation.value) : null;
+      if (ownerValue && typeof ownerValue === 'object' && ownerValue.post_type === 'attachment') {
+        return false;
+      }
+    }
+    if (targetValue && typeof targetValue === 'object' && targetValue.post_type === 'attachment') {
+      return false;
+    }
+  }
+
+  if (
+    reference.relationshipType === 'postmeta-post'
+    && sourceMutation?.resource?.type === 'row'
+    && sourceMutation?.resource?.table === 'wp_postmeta'
+    && targetMutation.resource.type === 'row'
+    && targetMutation.resource.table === 'wp_posts'
+  ) {
+    const sourceValue = deserializeResourceValue(sourceMutation.value);
+    const targetValue = deserializeResourceValue(targetMutation.value);
+    if (
+      targetValue
+      && typeof targetValue === 'object'
+      && targetValue.post_type === 'attachment'
+      && sourceValue
+      && typeof sourceValue === 'object'
+      && sourceValue.meta_key !== '_thumbnail_id'
+    ) {
+      return false;
+    }
+  }
+
+  if (
+    reference.relationshipType === 'menu-item-parent-post'
+    && sourceMutation?.resource?.type === 'row'
+    && sourceMutation?.resource?.table === 'wp_postmeta'
+    && targetMutation.resource.type === 'row'
+    && targetMutation.resource.table === 'wp_posts'
+  ) {
+    const sourceValue = deserializeResourceValue(sourceMutation.value);
+    const targetValue = deserializeResourceValue(targetMutation.value);
+    if (
+      sourceValue
+      && typeof sourceValue === 'object'
+      && normalizePositiveInteger(sourceValue.post_id) != null
+    ) {
+      const ownerMutation = mutationByResourceKey.get(
+        `row:${JSON.stringify(['wp_posts', `ID:${normalizePositiveInteger(sourceValue.post_id)}`])}`,
+      );
+      const ownerValue = ownerMutation ? deserializeResourceValue(ownerMutation.value) : null;
+      if (ownerValue && typeof ownerValue === 'object' && ownerValue.post_type === 'attachment') {
+        return false;
+      }
+    }
+    if (
+      targetValue
       && typeof targetValue === 'object'
       && targetValue.post_type === 'attachment'
     ) {
@@ -1205,6 +1289,16 @@ function isBlockedSamePlanWordPressGraphSource(sourceMutation, reference, mutati
     return false;
   }
   const sourceValue = deserializeResourceValue(sourceMutation.value);
+  if (sourceValue && typeof sourceValue === 'object') {
+    const ownerId = normalizePositiveInteger(sourceValue.post_id);
+    const ownerMutation = ownerId == null
+      ? null
+      : mutationByResourceKey.get(`row:${JSON.stringify(['wp_posts', `ID:${ownerId}`])}`);
+    const ownerValue = ownerMutation ? deserializeResourceValue(ownerMutation.value) : null;
+    if (ownerValue && typeof ownerValue === 'object' && ownerValue.post_type === 'attachment') {
+      return true;
+    }
+  }
   const ownerId = normalizePositiveInteger(sourceValue && typeof sourceValue === 'object' ? sourceValue.post_id : null);
   if (ownerId == null) {
     return false;
@@ -1215,7 +1309,10 @@ function isBlockedSamePlanWordPressGraphSource(sourceMutation, reference, mutati
     return false;
   }
   const ownerValue = deserializeResourceValue(ownerMutation.value);
-  return Boolean(ownerValue && typeof ownerValue === 'object' && ownerValue.post_type === 'attachment');
+  if (!ownerValue || typeof ownerValue !== 'object') {
+    return false;
+  }
+  return ownerValue.post_type === 'attachment';
 }
 
 function orderMutationsByDependencies(mutations) {
@@ -1292,6 +1389,14 @@ function wordpressGraphReferences(resource, value) {
       targetTable: 'posts',
       targetId: value.post_id,
     });
+    if (value.meta_key === 'menu_item_parent') {
+      addReference({
+        field: 'meta_value',
+        relationshipType: 'menu-item-parent-post',
+        targetTable: 'posts',
+        targetId: value.meta_value,
+      });
+    }
     if (value.meta_key === '_thumbnail_id') {
       addReference({
         field: 'meta_value',
