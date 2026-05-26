@@ -25,6 +25,17 @@ test('authenticated push client requires an explicit session and idempotency key
   );
 });
 
+test('authenticated push client fails closed for unsupported production-shaped origins', () => {
+  assert.throws(
+    () => authenticatedHttpClient({
+      sourceUrl: 'https://example.com',
+      credential,
+      routeProfile: 'production-shaped',
+    }),
+    /Unsupported production-shaped sourceUrl host: example\.com/,
+  );
+});
+
 test('authenticated push client signs mutating requests when session and idempotency are present', async () => {
   const originalFetch = global.fetch;
   const seen = [];

@@ -190,6 +190,7 @@ export function authenticatedHttpClient({
 }) {
   const baseUrl = normalizeBaseUrl(sourceUrl);
   const profile = resolveRouteProfile(routeProfile);
+  assertSupportedSourceUrlForRouteProfile(baseUrl, profile);
 
   return {
     get(pathSuffix) {
@@ -550,6 +551,30 @@ function normalizeBaseUrl(sourceUrl) {
     parsed.pathname += '/';
   }
   return parsed;
+}
+
+function assertSupportedSourceUrlForRouteProfile(baseUrl, profile) {
+  if (profile.name !== 'production-shaped') {
+    return;
+  }
+
+  if (baseUrl.protocol === 'http:' && isLoopbackHost(baseUrl.hostname)) {
+    return;
+  }
+  if (baseUrl.protocol === 'https:' && baseUrl.hostname === 'localhost') {
+    return;
+  }
+
+  throw new Error(
+    `Unsupported production-shaped sourceUrl host: ${baseUrl.hostname}. Use a local Playground loopback origin or fail closed.`,
+  );
+}
+
+function isLoopbackHost(hostname) {
+  return hostname === 'localhost'
+    || hostname === '127.0.0.1'
+    || hostname === '::1'
+    || hostname.startsWith('127.');
 }
 
 function redactUrl(sourceUrl) {
