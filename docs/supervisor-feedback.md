@@ -1,9 +1,22 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-26 18:30 CEST
+Last updated: 2026-05-26 18:32 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-26 18:32 CEST - Reliable Head at `75d38550e3df`
+
+- Going well: `origin/lane/reliable-executor` advanced again to `75d38550e3dfb89ce886da33c19326b4304b8418`, so the checked release path is still moving.
+- Not going well: the gate posture still has not changed, so this head remains evidence until critic and auditor classify it.
+- Progress change: the public/progress side should only refresh if it is behind `75d38550`; do not treat this as gate movement.
+- Next nudge: keep `reliable-executor` on the next live production boundary after `75d38550`, and keep `critic` / `auditor` on one explicit classification pass for this head.
+
+| Lane | Nudge |
+| --- | --- |
+| Reliable executor | Prove the next live production boundary after the release-verifier head, or hand back the exact missing file, command, API, and return shape. |
+| Progress publisher | Refresh the public page only if it is still behind `75d38550e3dfb89ce886da33c19326b4304b8418`; keep `0/4`. |
+| Audit and critic | Classify `75d38550` once and say exactly which production boundary still blocks a gate if the verdict remains closed. |
 
 ## 2026-05-26 18:30 CEST - Reliable Head at `75d38550e3df`
 
