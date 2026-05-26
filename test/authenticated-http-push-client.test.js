@@ -1040,6 +1040,7 @@ test('production-shaped authenticated push keeps the last read step in the lifec
           type: 'production-auth-session',
           status: 'active',
           expiresAt: '2030-01-01T00:00:00Z',
+          authUser: 'reprint_push_admin',
           expired: false,
           revoked: false,
           cleanedUp: false,
@@ -1530,7 +1531,16 @@ test('production-shaped authenticated push fails closed when production auth ses
       observed: '2030-01-01T00:00:00Z',
       verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
     });
-    assert.equal(summary.boundary.durableJournal.phase, 'apply');
+    assert.deepEqual(summary.boundary, {
+      firstRemainingProductionBoundary: 'auth/session lifecycle and durable journal semantics',
+      status: 'unimplemented',
+      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+      authSession: {
+        required: 'unexpired',
+        observed: '2030-01-01T00:00:00Z',
+        verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+      },
+    });
     assert.equal(seen.length, 4);
   } finally {
     global.fetch = originalFetch;
@@ -2569,11 +2579,11 @@ test('production-shaped authenticated push fails closed immediately when apply d
     assert.deepEqual(summary.boundary, {
       firstRemainingProductionBoundary: 'auth/session lifecycle and durable journal semantics',
       status: 'unimplemented',
-      verdict: 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED',
-      durableJournal: {
-        storageLeaseFence: 'retained Playground journal storage is lab-scoped; production ownership, lease fencing, and replay wiring are not yet proven on the checked release boundary',
-        verdict: 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED',
-        phase: 'apply',
+      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+      authSession: {
+        required: 'production-auth-session',
+        observed: 'application-password-basic',
+        verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
       },
     });
     assert.equal(seen.length, 4);
@@ -4394,11 +4404,11 @@ test('production-shaped authenticated push exposes the durable journal boundary 
     assert.deepEqual(summary.boundary, {
       firstRemainingProductionBoundary: 'auth/session lifecycle and durable journal semantics',
       status: 'unimplemented',
-      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
-      authSession: {
-        required: 'production-auth-session',
-        observed: 'production-auth-session',
-        verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+      verdict: 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED',
+      durableJournal: {
+        storageLeaseFence: 'retained Playground journal storage is lab-scoped; production ownership, lease fencing, and replay wiring are not yet proven on the checked release boundary',
+        verdict: 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED',
+        phase: 'journal-inspect',
       },
     });
     assert.ok(seen.some(({ url }) => url.includes('/apply')));
@@ -6074,11 +6084,11 @@ test('production-shaped authenticated push fails closed when apply drops the pro
     assert.deepEqual(summary.boundary, {
       firstRemainingProductionBoundary: 'auth/session lifecycle and durable journal semantics',
       status: 'unimplemented',
-      verdict: 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED',
-      durableJournal: {
-        storageLeaseFence: 'retained Playground journal storage is lab-scoped; production ownership, lease fencing, and replay wiring are not yet proven on the checked release boundary',
-        verdict: 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED',
-        phase: 'apply',
+      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+      authSession: {
+        required: 'production-auth-session',
+        observed: 'application-password-basic',
+        verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
       },
     });
     assert.ok(seen.some(({ url }) => url.includes('/apply')));
