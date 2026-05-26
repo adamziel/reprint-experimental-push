@@ -9,6 +9,7 @@ import {
   appendRecoveryClaimOpened,
   assertJournalRecordHasNoRawValues,
   createUnsupportedProductionRecoveryJournal,
+  isValidProductionWriterLease,
   openPlanRecoveryJournal,
   openProductionRecoveryJournal,
   openRecoveryJournal,
@@ -156,6 +157,14 @@ test('unsupported production recovery journal stub fails closed on every operati
       code: 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL',
     });
   }
+});
+
+test('production recovery journal lease validation is available to release-path consumers', () => {
+  assert.equal(isValidProductionWriterLease({ id: 'lease-1' }), true);
+  assert.equal(isValidProductionWriterLease({ id: '   ' }), false);
+  assert.equal(isValidProductionWriterLease(null), false);
+  assert.equal(isValidProductionWriterLease({}), false);
+  assert.equal(isValidProductionWriterLease({ id: 1 }), false);
 });
 
 test('production recovery journal adapter is restart-readable and release-path compatible', () => {

@@ -250,7 +250,7 @@ export function openProductionRecoveryJournal(filePath, options = {}) {
   });
 }
 
-function isValidProductionWriterLease(writerLease) {
+export function isValidProductionWriterLease(writerLease) {
   return (
     isStrictPlainObject(writerLease)
     && Object.hasOwn(writerLease, 'id')
