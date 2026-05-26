@@ -409,6 +409,12 @@ export function productionThroughputDetails(report) {
   const receiptCursorQueueBudgetBytes = report.evidence.backpressure?.queueBudgetBytes ?? null;
   const receiptCursorQueueHeadroomBytes = report.evidence.backpressure?.queueHeadroomBytes ?? null;
   const receiptCursorQueueSlackBytes = report.evidence.backpressure?.receiptCursorQueueSlackBytes ?? null;
+  const receiptCursorQueueHeadroomPositive =
+    Number.isFinite(receiptCursorQueueHeadroomBytes)
+    && receiptCursorQueueHeadroomBytes > 0;
+  const receiptCursorMemoryHeadroomPositive =
+    Number.isFinite(receiptCursorMemoryHeadroomBytes)
+    && receiptCursorMemoryHeadroomBytes > 0;
   const backpressureEvidenceComplete = hasCompleteBackpressureEvidence(report);
   const receiptCursorIsTerminalChunk =
     report.evidence.chunkReceipts.cursorConsistency?.canResumeFromCursor === true
@@ -473,6 +479,8 @@ export function productionThroughputDetails(report) {
     && Number.isFinite(receiptCursorQueueBudgetBytes)
     && receiptCursorQueueSlackBytes > 0
     && receiptCursorQueueSlackBytes <= receiptCursorQueueBudgetBytes;
+  const queueHeadroomPositive = receiptCursorQueueHeadroomPositive;
+  const receiptCursorMemoryHeadroomPositiveVisible = receiptCursorMemoryHeadroomPositive;
   const queuePauseHasMeasuredReceiptCursorQueueSlack =
     report.evidence.backpressure?.queuePausedBeforeOverflow !== true
     || (receiptCursorQueueSlackMeasured && receiptCursorQueueSlackWithinQueueBudget);
@@ -538,6 +546,7 @@ export function productionThroughputDetails(report) {
     queueHeadroomMatchesResourceHeadroom,
     queueHeadroomMatchesMemoryHeadroom,
     queueHeadroomWithinResourceCeiling,
+    queueHeadroomPositive,
     queuePausedBeforeOverflow: report.evidence.backpressure?.queuePausedBeforeOverflow ?? false,
     receiptCursorWithinQueueBudget: report.evidence.backpressure?.receiptCursorWithinQueueBudget ?? false,
     receiptCursor: report.evidence.chunkReceipts.resumeCursor,
@@ -557,6 +566,7 @@ export function productionThroughputDetails(report) {
     receiptCursorQueueSlackWithinQueueBudget,
     receiptCursorMemoryHeadroomWithinQueueBudget,
     receiptCursorMemoryHeadroomBytes,
+    receiptCursorMemoryHeadroomPositive: receiptCursorMemoryHeadroomPositiveVisible,
     receiptCursorMemoryHeadroomMatchesResourceHeadroom,
     receiptCursorMatchesBackpressure,
     receiptCursorBackpressureWithinResourceHeadroom,
@@ -571,6 +581,7 @@ export function productionThroughputDetails(report) {
       queueHeadroomMatchesResourceHeadroom,
       queueHeadroomMatchesMemoryHeadroom,
       queueHeadroomWithinResourceCeiling,
+      queueHeadroomPositive,
       queuePausedBeforeOverflow: report.evidence.backpressure?.queuePausedBeforeOverflow ?? false,
       receiptCursorMemoryCeilingBytes,
       receiptCursorQueueBudgetBytes,
@@ -595,6 +606,7 @@ export function productionThroughputDetails(report) {
       receiptCursorQueueSlackWithinQueueBudget,
       receiptCursorMemoryHeadroomWithinQueueBudget,
       receiptCursorMemoryHeadroomBytes,
+      receiptCursorMemoryHeadroomPositive: receiptCursorMemoryHeadroomPositiveVisible,
       receiptCursorMemoryHeadroomMatchesResourceHeadroom,
       receiptCursorBackpressureWithinResourceHeadroom,
       receiptCursorBackpressureWithinQueueBudget,

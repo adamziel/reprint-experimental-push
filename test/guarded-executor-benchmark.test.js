@@ -113,6 +113,7 @@ test('guarded benchmark refuses production throughput claims until production ga
   assert.equal(report.claims.productionThroughputDetails.backpressureConsistency.queueHeadroomMatchesResourceHeadroom, true);
   assert.equal(report.claims.productionThroughputDetails.backpressureConsistency.queueHeadroomMatchesMemoryHeadroom, true);
   assert.equal(report.claims.productionThroughputDetails.backpressureConsistency.queueHeadroomWithinResourceCeiling, true);
+  assert.equal(report.claims.productionThroughputDetails.backpressureConsistency.queueHeadroomPositive, true);
   assert.equal(report.claims.productionThroughputDetails.backpressureConsistency.queuePausedBeforeOverflow, true);
   assert.equal(
     report.claims.productionThroughputDetails.backpressureConsistency.queuePauseHasMeasuredReceiptCursorBackpressure,
@@ -151,6 +152,7 @@ test('guarded benchmark refuses production throughput claims until production ga
   assert.equal(report.claims.productionThroughputDetails.receiptCursorWithinMemoryCeiling, true);
   assert.equal(report.claims.productionThroughputDetails.receiptCursorMemoryHeadroomBytes, 31.5 * 1024 * 1024);
   assert.equal(report.claims.productionThroughputDetails.receiptCursorMemoryCeilingBytes, 32 * 1024 * 1024);
+  assert.equal(report.claims.productionThroughputDetails.backpressureConsistency.receiptCursorMemoryHeadroomPositive, true);
   assert.equal(report.claims.productionThroughputDetails.receiptCursorHeadroomMatchesResourceHeadroom, true);
   assert.equal(report.claims.productionThroughputDetails.receiptCursorHeadroomCoveredByQueueBudget, true);
   assert.equal(report.claims.productionThroughputDetails.receiptCursorHeadroomBytes, 31.5 * 1024 * 1024);
@@ -860,6 +862,20 @@ test('production claim gate fails closed if benchmark evidence is tampered', () 
   );
   assert.equal(
     productionThroughputDetails(zeroMemoryHeadroom).backpressureConsistency.backpressureEvidenceComplete,
+    false,
+  );
+
+  const negativeQueueHeadroom = clone(report);
+  negativeQueueHeadroom.evidence.backpressure.queueHeadroomBytes = -1;
+  assert.ok(
+    productionThroughputBlockers(negativeQueueHeadroom).includes('missing-queue-headroom-evidence'),
+  );
+  assert.equal(
+    productionThroughputDetails(negativeQueueHeadroom).backpressureConsistency.queueHeadroomPositive,
+    false,
+  );
+  assert.equal(
+    productionThroughputDetails(negativeQueueHeadroom).backpressureConsistency.backpressureEvidenceComplete,
     false,
   );
 
