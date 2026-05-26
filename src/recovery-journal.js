@@ -670,6 +670,28 @@ function normalizeProductionRecoveryJournalOptions(filePathOrOptions, options = 
       : null;
     if (
       legacyArtifactRefs
+      && Reflect.ownKeys(legacyArtifactRefs).some((key) => key !== 'journal' && key !== 'remote')
+    ) {
+      throw new UnsupportedProductionRecoveryJournalError(
+        'Production recovery journal compatibility overload allows only artifactRefs.journal and artifactRefs.remote.',
+        {
+          kind: 'production-recovery-journal',
+          productionAdapter: true,
+          supportedSurface: 'production-recovery-journal-adapter',
+          restartReadable: false,
+          ownsJournal: false,
+          ownsRemoteArtifact: Object.hasOwn(legacyArtifactRefs, 'remote'),
+          journalPath: typeof legacyOptions.filePath === 'string' ? legacyOptions.filePath : null,
+          artifactRefs: Object.freeze({
+            journal: Object.hasOwn(legacyArtifactRefs, 'journal') ? legacyArtifactRefs.journal : null,
+            remote: Object.hasOwn(legacyArtifactRefs, 'remote') ? legacyArtifactRefs.remote : null,
+          }),
+          schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+        },
+      );
+    }
+    if (
+      legacyArtifactRefs
       && Object.hasOwn(legacyArtifactRefs, 'journal')
       && legacyArtifactRefs.journal !== legacyOptions.filePath
     ) {
@@ -744,6 +766,25 @@ function normalizeProductionRecoveryJournalOptions(filePathOrOptions, options = 
 
 function normalizeProductionArtifactRefs(artifactRefs, journalPath, remoteArtifactPath = null) {
   const writerArtifactRefs = isStrictPlainObject(artifactRefs) ? artifactRefs : {};
+  if (Reflect.ownKeys(writerArtifactRefs).some((key) => key !== 'journal' && key !== 'remote')) {
+    throw new UnsupportedProductionRecoveryJournalError(
+      'Production recovery journal consumption allows only artifactRefs.journal and artifactRefs.remote.',
+      {
+        kind: 'production-recovery-journal',
+        productionAdapter: true,
+        supportedSurface: 'production-recovery-journal-adapter',
+        restartReadable: true,
+        ownsJournal: true,
+        ownsRemoteArtifact: remoteArtifactPath !== null,
+        journalPath,
+        artifactRefs: Object.freeze({
+          journal: Object.hasOwn(writerArtifactRefs, 'journal') ? writerArtifactRefs.journal : journalPath,
+          remote: Object.hasOwn(writerArtifactRefs, 'remote') ? writerArtifactRefs.remote : remoteArtifactPath,
+        }),
+        schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+      },
+    );
+  }
   const persistedArtifactRefs = persistedProductionArtifactRefs(journalPath);
   if (persistedArtifactRefs.invalidReason) {
     throw new UnsupportedProductionRecoveryJournalError(

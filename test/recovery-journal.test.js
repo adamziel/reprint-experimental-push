@@ -1464,6 +1464,29 @@ test('production recovery journal compatibility overload fails closed when the o
   });
 });
 
+test('production recovery journal compatibility overload fails closed when artifact refs add undeclared keys', () => {
+  const filePath = tempJournalPath();
+  const remote = baseSite();
+  const plan = planFor(baseSite(), localSite(), remote);
+
+  assert.throws(() => {
+    openProductionRecoveryJournal({
+      filePath,
+      plan,
+      current: remote,
+      claimId: 'claim-open-extra-artifact-ref',
+      artifactRefs: {
+        journal: filePath,
+        extra: `${filePath}.extra`,
+      },
+    });
+  }, {
+    name: 'UnsupportedProductionRecoveryJournalError',
+    code: 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL',
+    message: 'Production recovery journal compatibility overload allows only artifactRefs.journal and artifactRefs.remote.',
+  });
+});
+
 test('production recovery journal compatibility overload fails closed when the consumed remote artifact ref diverges from the owned path', () => {
   const filePath = tempJournalPath();
   const remote = baseSite();
@@ -1503,6 +1526,47 @@ test('production recovery journal compatibility overload fails closed when the c
   }, {
     name: 'UnsupportedProductionRecoveryJournalError',
     code: 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL',
+  });
+});
+
+test('production recovery journal consumption fails closed when artifact refs add undeclared keys', () => {
+  const filePath = tempJournalPath();
+  const remote = baseSite();
+  const plan = planFor(baseSite(), localSite(), remote);
+  const claimId = 'claim-consume-extra-input-artifact-ref';
+  const artifactRefs = {
+    journal: filePath,
+  };
+  const journal = openProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs,
+    claimId,
+  });
+  appendRecoveryClaimOpened(journal, {
+    plan,
+    current: remote,
+    claimId,
+    artifactRefs,
+  });
+  journal.close();
+
+  assert.throws(() => {
+    consumeProductionRecoveryJournal({
+      filePath,
+      plan,
+      current: remote,
+      claimId,
+      artifactRefs: {
+        journal: filePath,
+        extra: `${filePath}.extra`,
+      },
+    });
+  }, {
+    name: 'UnsupportedProductionRecoveryJournalError',
+    code: 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL',
+    message: 'Production recovery journal compatibility overload allows only artifactRefs.journal and artifactRefs.remote.',
   });
 });
 
