@@ -77,6 +77,9 @@ test('checked db journal merge fills nested ownership and lease fence gaps', { s
       ownership: {
         ownsJournal: true,
       },
+      writerLease: {
+        strategy: 'claim-fenced-single-writer',
+      },
       leaseFence: {
         boundary: 'wpdb-single-statement-cas',
       },
@@ -88,11 +91,27 @@ test('checked db journal merge fills nested ownership and lease fence gaps', { s
         restartReadable: true,
         productionAdapter: 'wpdb-single-statement-cas',
       },
+      writerLease: {
+        strategy: 'claim-fenced-single-writer',
+        claimKeyUnique: true,
+        storageGuard: 'wpdb-single-statement-cas',
+        monotonicSequence: true,
+        restartReadable: true,
+        staleClaimRejected: false,
+      },
       leaseFence: {
         boundary: 'wpdb-single-statement-cas',
         claimKeyUnique: true,
         monotonicSequence: true,
         restartReadable: true,
+        writerLease: {
+          strategy: 'claim-fenced-single-writer',
+          claimKeyUnique: true,
+          storageGuard: 'wpdb-single-statement-cas',
+          monotonicSequence: true,
+          restartReadable: true,
+          staleClaimRejected: false,
+        },
         staleClaimRejected: false,
       },
     },
@@ -106,11 +125,27 @@ test('checked db journal merge fills nested ownership and lease fence gaps', { s
       restartReadable: true,
       productionAdapter: 'wpdb-single-statement-cas',
     },
+    writerLease: {
+      strategy: 'claim-fenced-single-writer',
+      claimKeyUnique: true,
+      storageGuard: 'wpdb-single-statement-cas',
+      monotonicSequence: true,
+      restartReadable: true,
+      staleClaimRejected: false,
+    },
     leaseFence: {
       boundary: 'wpdb-single-statement-cas',
       claimKeyUnique: true,
       monotonicSequence: true,
       restartReadable: true,
+      writerLease: {
+        strategy: 'claim-fenced-single-writer',
+        claimKeyUnique: true,
+        storageGuard: 'wpdb-single-statement-cas',
+        monotonicSequence: true,
+        restartReadable: true,
+        staleClaimRejected: false,
+      },
       staleClaimRejected: false,
     },
   });

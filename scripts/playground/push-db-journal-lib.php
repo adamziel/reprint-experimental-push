@@ -126,17 +126,20 @@ function reprint_push_lab_db_journal_schema(bool $checked_surface = false): arra
     ];
 
     if ($accepted_on_checked_boundary) {
+        $writer_lease = reprint_push_lab_db_journal_writer_lease_contract(false);
         $schema['acceptedOnCheckedBoundary'] = true;
         $schema['ownership'] = [
             'ownsJournal' => true,
             'restartReadable' => true,
             'productionAdapter' => 'wpdb-single-statement-cas',
         ];
+        $schema['writerLease'] = $writer_lease;
         $schema['leaseFence'] = [
             'boundary' => 'wpdb-single-statement-cas',
             'claimKeyUnique' => true,
             'monotonicSequence' => true,
             'restartReadable' => true,
+            'writerLease' => $writer_lease,
         ];
     }
 
@@ -539,22 +542,38 @@ function reprint_push_lab_db_journal_summary(int $limit = 20, bool $checked_surf
     ];
 
     if ($accepted_on_checked_boundary) {
+        $stale_claim_rejected = reprint_push_lab_db_journal_has_stale_claim_rejection_evidence($summary['latestRows']);
+        $writer_lease = reprint_push_lab_db_journal_writer_lease_contract($stale_claim_rejected);
         $summary['acceptedOnCheckedBoundary'] = true;
         $summary['ownership'] = [
             'ownsJournal' => true,
             'restartReadable' => true,
             'productionAdapter' => 'wpdb-single-statement-cas',
         ];
+        $summary['writerLease'] = $writer_lease;
         $summary['leaseFence'] = [
             'boundary' => 'wpdb-single-statement-cas',
             'claimKeyUnique' => reprint_push_lab_db_journal_has_claim_key_unique_index(),
             'monotonicSequence' => reprint_push_lab_db_journal_rows_are_monotonic($summary['latestRows']),
             'restartReadable' => true,
-            'staleClaimRejected' => reprint_push_lab_db_journal_has_stale_claim_rejection_evidence($summary['latestRows']),
+            'staleClaimRejected' => $stale_claim_rejected,
+            'writerLease' => $writer_lease,
         ];
     }
 
     return $summary;
+}
+
+function reprint_push_lab_db_journal_writer_lease_contract(bool $stale_claim_rejected): array
+{
+    return [
+        'strategy' => 'claim-fenced-single-writer',
+        'claimKeyUnique' => true,
+        'storageGuard' => 'wpdb-single-statement-cas',
+        'monotonicSequence' => true,
+        'restartReadable' => true,
+        'staleClaimRejected' => $stale_claim_rejected,
+    ];
 }
 
 function reprint_push_lab_db_journal_has_claim_key_unique_index(): bool

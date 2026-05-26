@@ -605,7 +605,7 @@ function reprint_push_lab_rest_merge_checked_db_journal_contract(array $db_journ
         $db_journal['acceptedOnCheckedBoundary'] = true;
     }
 
-    foreach (['ownership', 'leaseFence'] as $nested_key) {
+    foreach (['ownership', 'writerLease', 'leaseFence'] as $nested_key) {
         $existing = isset($db_journal[$nested_key]) && is_array($db_journal[$nested_key])
             ? $db_journal[$nested_key]
             : [];

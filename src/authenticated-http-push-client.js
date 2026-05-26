@@ -997,6 +997,7 @@ function summarizeDbJournalBody(body, {
     idempotencyOpened: rows.filter((entry) => entry.event === 'idempotency-opened').length,
     storageGuard,
     ownership: summarizeDbJournalOwnership(body?.dbJournal),
+    writerLease: summarizeDbJournalWriterLease(body?.dbJournal),
     leaseFence: summarizeDbJournalLeaseFence(body?.dbJournal),
     authUser: body?.auth?.identity?.userLogin,
     authSessionId: body?.auth?.session?.id,
@@ -1105,6 +1106,28 @@ function summarizeDbJournalLeaseFence(dbJournal) {
     monotonicSequence: leaseFence.monotonicSequence === true,
     restartReadable: leaseFence.restartReadable === true,
     staleClaimRejected: leaseFence.staleClaimRejected === true,
+  };
+}
+
+function summarizeDbJournalWriterLease(dbJournal) {
+  const writerLease = dbJournal?.writerLease;
+  const nestedWriterLease = dbJournal?.leaseFence?.writerLease;
+  const candidate = writerLease && typeof writerLease === 'object'
+    ? writerLease
+    : nestedWriterLease && typeof nestedWriterLease === 'object'
+      ? nestedWriterLease
+      : null;
+  if (!candidate) {
+    return undefined;
+  }
+
+  return {
+    strategy: candidate.strategy || null,
+    claimKeyUnique: candidate.claimKeyUnique === true,
+    storageGuard: candidate.storageGuard || null,
+    monotonicSequence: candidate.monotonicSequence === true,
+    restartReadable: candidate.restartReadable === true,
+    staleClaimRejected: candidate.staleClaimRejected === true,
   };
 }
 

@@ -6671,11 +6671,27 @@ test('production-shaped authenticated push accepts checked durable journal proof
             restartReadable: true,
             productionAdapter: 'wpdb-single-statement-cas',
           },
+          writerLease: {
+            strategy: 'claim-fenced-single-writer',
+            claimKeyUnique: true,
+            storageGuard: 'wpdb-single-statement-cas',
+            monotonicSequence: true,
+            restartReadable: true,
+            staleClaimRejected: false,
+          },
           leaseFence: {
             boundary: 'wpdb-single-statement-cas',
             claimKeyUnique: true,
             monotonicSequence: true,
             restartReadable: true,
+            writerLease: {
+              strategy: 'claim-fenced-single-writer',
+              claimKeyUnique: true,
+              storageGuard: 'wpdb-single-statement-cas',
+              monotonicSequence: true,
+              restartReadable: true,
+              staleClaimRejected: false,
+            },
             staleClaimRejected: false,
           },
           latestRows: [
@@ -6768,6 +6784,14 @@ test('production-shaped authenticated push accepts checked durable journal proof
         restartReadable: true,
         productionAdapter: 'wpdb-single-statement-cas',
       },
+      writerLease: {
+        strategy: 'claim-fenced-single-writer',
+        claimKeyUnique: true,
+        storageGuard: 'wpdb-single-statement-cas',
+        monotonicSequence: true,
+        restartReadable: true,
+        staleClaimRejected: false,
+      },
       leaseFence: {
         boundary: 'wpdb-single-statement-cas',
         claimKeyUnique: true,
@@ -6785,6 +6809,14 @@ test('production-shaped authenticated push accepts checked durable journal proof
       ownsJournal: true,
       restartReadable: true,
       productionAdapter: 'wpdb-single-statement-cas',
+    });
+    assert.deepEqual(summary.dbJournal?.writerLease, {
+      strategy: 'claim-fenced-single-writer',
+      claimKeyUnique: true,
+      storageGuard: 'wpdb-single-statement-cas',
+      monotonicSequence: true,
+      restartReadable: true,
+      staleClaimRejected: false,
     });
     assert.deepEqual(summary.dbJournal?.leaseFence, {
       boundary: 'wpdb-single-statement-cas',
