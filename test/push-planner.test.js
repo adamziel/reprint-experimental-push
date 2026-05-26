@@ -18663,6 +18663,20 @@ test('allows an existing term taxonomy row to retarget its parent reference to a
   assert.equal(termMutation.changeKind, 'create');
   assert.equal(taxonomyMutation.changeKind, 'update');
   assert.deepEqual(taxonomyMutation.dependsOnMutationIds, [termMutation.id]);
+  assert.equal(plan.summary.graphDependencies, 1);
+  assert.deepEqual(plan.graphDependencies, [
+    {
+      sourceMutationId: taxonomyMutation.id,
+      sourceResourceKey: taxonomyResourceKey,
+      relationshipKey: 'wp_term_taxonomy.parent',
+      relationshipType: 'term-taxonomy-parent',
+      targetMutationId: termMutation.id,
+      targetResourceKey: termResourceKey,
+      resolutionPolicy: 'same-plan-local-create',
+      source: 'same-plan-local-create',
+      targetLocalHash: termMutation.localHash,
+    },
+  ]);
   assert.equal(reference.resolutionPolicy, 'same-plan-local-create');
   assert.equal(reference.relationshipKey, 'wp_term_taxonomy.parent');
   assert.equal(reference.relationshipType, 'term-taxonomy-parent');
