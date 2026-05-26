@@ -1445,6 +1445,9 @@ function durableJournalInspectRecords(inspected) {
   const records = inspected?.records;
   const recordsOwnKeys = Reflect.ownKeys(records ?? {});
   const numericKeys = recordsOwnKeys.filter((key) => typeof key === 'string' && /^\d+$/.test(key));
+  const journalOpenedIndex = Array.isArray(records)
+    ? records.findIndex((record) => record?.type === 'journal-opened')
+    : -1;
   return Boolean(
     isStrictPlainObject(inspected)
     && Object.hasOwn(inspected, 'schemaVersion')
@@ -1481,7 +1484,10 @@ function durableJournalInspectRecords(inspected) {
     index === 0
       ? record.sequence === 1
       : record.sequence === recordsList[index - 1].sequence + 1
-  )) && records.some((record) => record.type === 'journal-opened');
+  )) && journalOpenedIndex !== -1
+  && records
+    .slice(0, journalOpenedIndex)
+    .every((record) => CLAIM_FENCE_RECORD_TYPES.has(record.type));
 }
 
 function recordDurablePlanOpened(writer, remote, plan, options = {}) {
