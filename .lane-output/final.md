@@ -1,6 +1,6 @@
-`66492522086b05d808b1fe64aa8b1b1433012000` stays `0/4`.
+`f770a1ec3cfc77ab020781536b52b75f1ca38afc` stays `0/4`.
 
-It is the current remote reliable head and it only retries transient release probes before the checked verifier gives up. That is still below the production-backed auth/session lifecycle and production durable-journal semantics required on the checked `verify:release` boundary.
+It exposes consumed recovery journal state in the checked release verifier and adds matching journal/test assertions, but it still does not prove production-backed auth/session lifecycle or production durable-journal semantics on the live `verify:release` boundary.
 
 Changed files:
 - [`audits/objective-audit.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/independent-auditor/audits/objective-audit.md)
@@ -9,17 +9,18 @@ Changed files:
 Commands run:
 - `date '+%Y-%m-%d %H:%M:%S %Z (%z)'`
 - `git ls-remote origin refs/heads/lane/reliable-executor`
-- `sed -n '1,220p' supervision/README.md`
-- `sed -n '1,220p' supervision/lanes/independent-auditor.md`
-- `find .lane-output -maxdepth 1 -type f -name 'final*.md' -print | sort | tail -n 5 | xargs -r -I{} sh -c 'printf "===== %s =====\n" "$1"; sed -n "1,220p" "$1"' sh {}`
-- `sed -n '1,260p' audits/objective-audit.md`
 - `git status --short --branch`
-- `git log --oneline --decorate -n 5 origin/lane/reliable-executor`
+- `sed -n '1,220p' AGENTS.md`
+- `sed -n '1,220p' supervision/README.md`
+- `ls -1t .lane-output/final*.md 2>/dev/null | head -n 10`
+- `git show --stat --summary --oneline --decorate=short f770a1ec3cfc77ab020781536b52b75f1ca38afc`
+- `git show --unified=80 --no-ext-diff f770a1ec3cfc77ab020781536b52b75f1ca38afc -- scripts/playground/production-shaped-release-verify.mjs src/recovery-journal.js test/recovery-journal.test.js`
 
 Push result:
 - Not pushed.
 
 Worktree status:
+- Dirty: `audits/objective-audit.md`
 - Dirty: `.lane-output/final.md`
 
 Next supervisor nudge:
