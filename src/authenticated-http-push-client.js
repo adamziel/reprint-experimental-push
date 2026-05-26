@@ -727,7 +727,7 @@ export function resolveAuthenticatedHttpPushSource({
   applicationPassword = '',
   authSessionSource = null,
 }) {
-  if (!authSessionSource?.ok) {
+  if (!hasCompleteAuthSessionSource(authSessionSource)) {
     return {
       sourceUrl,
       username,
@@ -740,6 +740,15 @@ export function resolveAuthenticatedHttpPushSource({
     username: authSessionSource.username || username,
     applicationPassword: authSessionSource.applicationPassword || applicationPassword,
   };
+}
+
+function hasCompleteAuthSessionSource(authSessionSource) {
+  return Boolean(
+    authSessionSource?.ok
+    && authSessionSource.sourceUrl
+    && authSessionSource.username
+    && authSessionSource.applicationPassword
+  );
 }
 
 export function authenticatedHttpClient({
