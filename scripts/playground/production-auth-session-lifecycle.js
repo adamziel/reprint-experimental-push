@@ -145,6 +145,13 @@ export function evaluateProductionAuthSessionLifecycleSummary(summary, now = Dat
     const observationSessionId = typeof observation.id === 'string' && observation.id.trim()
       ? observation.id
       : null;
+    if (!observationSessionId) {
+      return {
+        ok: false,
+        required: 'preserved read',
+        observed: 'missing-session-id',
+      };
+    }
     if (observationSessionId && observationSessionId !== issuedSessionId) {
       return {
         ok: false,

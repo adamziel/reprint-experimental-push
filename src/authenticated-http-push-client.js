@@ -926,6 +926,11 @@ function summarizeAuthSessionLifecycleHistory(history) {
   return {
     issued,
     read,
+    expired: observations.find((entry) => entry.expired) || null,
+    revoked: observations.find((entry) => entry.revoked) || null,
+    cleanedUp: observations.find((entry) => entry.cleanedUp) || null,
+    rotated: observations.find((entry) => entry.rotated) || null,
+    preserved: [...observations].reverse().find((entry) => entry.preserved) || null,
     observations,
   };
 }

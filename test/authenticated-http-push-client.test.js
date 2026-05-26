@@ -449,6 +449,22 @@ test('production-shaped authenticated push fails closed when production auth ses
         rotated: false,
         preserved: false,
       },
+      expired: {
+        step: 'preflight',
+        id: 'psh_01j00000000000000000000000',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2000-01-01T00:00:00Z',
+        expired: true,
+        revoked: false,
+        cleanedUp: false,
+        rotated: false,
+        preserved: false,
+      },
+      revoked: null,
+      cleanedUp: null,
+      rotated: null,
+      preserved: null,
       observations: [
         {
           step: 'preflight',
