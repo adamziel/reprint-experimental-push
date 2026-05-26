@@ -6,11 +6,13 @@ import path from 'node:path';
 import {
   appendJournalCompleted,
   appendMutationObserved,
+  appendRecoveryClaimOpened,
   assertJournalRecordHasNoRawValues,
   createUnsupportedProductionRecoveryJournal,
   openPlanRecoveryJournal,
   openProductionRecoveryJournal,
   openRecoveryJournal,
+  recoveryClaimHash,
   readRecoveryJournal,
 } from '../src/recovery-journal.js';
 import { inspectRecoveryJournal } from '../src/recovery-inspect.js';
@@ -163,6 +165,7 @@ test('production recovery journal adapter is restart-readable and release-path c
   const journal = openProductionRecoveryJournal(filePath, {
     truncate: true,
     now: fixedNow,
+    claimId: 'claim-1',
     writerLease: { id: 'lease-1' },
   });
 
@@ -171,12 +174,18 @@ test('production recovery journal adapter is restart-readable and release-path c
   assert.equal(journal.supportedSurface, 'production-recovery-journal-adapter');
   assert.equal(journal.restartReadable, true);
   assert.equal(journal.ownsJournal, true);
+  assert.equal(journal.claimHash, recoveryClaimHash('claim-1'));
   assert.equal(journal.journalPath, filePath);
   assert.equal(journal.schemaVersion, 1);
   assert.deepEqual(journal.artifactRefs, { journal: filePath, remote: null });
 
   journal.flush();
-  journal.assertCurrentClaim('production-recovery-journal');
+  appendRecoveryClaimOpened(journal, {
+    plan,
+    current: remote,
+    claimId: 'claim-1',
+    artifactRefs: { journal: filePath },
+  });
   journal.appendEvent('journal-opened', {
     planId: plan.id,
     state: 'opened',
@@ -192,12 +201,64 @@ test('production recovery journal adapter is restart-readable and release-path c
   assert.equal(inspected.restartReadable, true);
   assert.equal(inspected.ownsJournal, true);
   assert.equal(inspected.ownsRemoteArtifact, false);
+  assert.equal(inspected.claimHash, journal.claimHash);
   assert.equal(inspected.writerLease.id, 'lease-1');
   assert.equal(inspected.journalPath, filePath);
   assert.equal(inspected.filePath, filePath);
   assert.equal(inspected.schemaVersion, 1);
   assert.equal(inspected.records.at(-1).type, 'journal-opened');
   assert.deepEqual(inspected.artifactRefs, { journal: filePath, remote: null });
+});
+
+test('production recovery journal adapter reopens with a new claim and rejects stale fenced writers', () => {
+  const filePath = tempJournalPath();
+  const remote = baseSite();
+  const plan = planFor(baseSite(), localSite(), remote);
+  const firstJournal = openProductionRecoveryJournal(filePath, {
+    truncate: true,
+    now: fixedNow,
+    claimId: 'claim-1',
+    writerLease: { id: 'lease-1' },
+  });
+
+  appendRecoveryClaimOpened(firstJournal, {
+    plan,
+    current: remote,
+    claimId: 'claim-1',
+    artifactRefs: { journal: filePath },
+  });
+  firstJournal.appendEvent('journal-opened', {
+    planId: plan.id,
+    state: 'opened',
+    observedHash: 'snapshot-hash-only',
+    artifactRefs: { journal: filePath },
+  });
+  firstJournal.close();
+
+  const reopened = openProductionRecoveryJournal(filePath, {
+    truncate: false,
+    now: fixedNow,
+    claimId: 'claim-2',
+    writerLease: { id: 'lease-2' },
+  });
+
+  assert.notEqual(reopened.claimHash, firstJournal.claimHash);
+  assert.throws(() => {
+    reopened.appendEvent('mutation-observed', {
+      planId: plan.id,
+      mutationId: 'mutation-1',
+      resourceKey: 'file:file-1.txt',
+      beforeHash: 'before',
+      afterHash: 'after',
+      state: 'applied',
+      observedHash: 'snapshot-hash-only',
+      artifactRefs: { journal: filePath },
+    });
+  }, {
+    name: 'RecoveryJournalClaimStaleError',
+    code: 'RECOVERY_CLAIM_STALE',
+  });
+  reopened.close();
 });
 
 test('production recovery journal adapter fails closed when no explicit fenced writer lease is provided', () => {

@@ -103,6 +103,8 @@ export function createUnsupportedProductionRecoveryJournal(reason = 'Production 
 }
 
 export function openProductionRecoveryJournal(filePath, options = {}) {
+  const claimId = options.claimId || options.claim?.id || null;
+  const claimHash = claimId ? recoveryClaimHash(claimId) : null;
   if (!isCanonicalAbsolutePath(filePath)) {
     throw new UnsupportedProductionRecoveryJournalError(
       'Production recovery journal support requires a canonical absolute journal path.',
@@ -192,7 +194,7 @@ export function openProductionRecoveryJournal(filePath, options = {}) {
   const journal = openRecoveryJournal(filePath, {
     truncate: options.truncate,
     now: options.now,
-    claimId: options.claimId || options.claim?.id || null,
+    claimId,
   });
 
   return Object.freeze({
@@ -203,6 +205,7 @@ export function openProductionRecoveryJournal(filePath, options = {}) {
     ownsJournal: true,
     ownsRemoteArtifact,
     writerLease,
+    claimHash,
     journalPath: journal.filePath,
     artifactRefs: Object.freeze({
       journal: journal.filePath,
@@ -225,6 +228,7 @@ export function openProductionRecoveryJournal(filePath, options = {}) {
         ownsJournal: true,
         ownsRemoteArtifact,
         writerLease,
+        claimHash,
         journalPath: journal.filePath,
         ...readRecoveryJournal(journal.filePath),
         schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
