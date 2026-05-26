@@ -1294,6 +1294,27 @@ export const SAFE_FAST_PATHS = Object.freeze([
     publishesStagedDataEarly: false,
   },
   {
+    area: 'chunk-upload',
+    reduces: ['planning-round-trips', 'duplicate-body-transfer', 'idle-time'],
+    allowedShortcut: 'compress-remote-index-listings-and-reuse-chunk-receipts-to-size-bounded-large-upload-retry-windows',
+    guardrails: [
+      'compressed-index-remains-planning-evidence-only',
+      'chunk-receipts-stay-durable-and-plan-scoped',
+      'retry-window-stays-within-byte-and-receipt-budgets',
+    ],
+    gateProofs: {
+      skip: 'a compressed remote-index listing can shorten large-upload retry-window planning while cached chunk receipts size the next bounded retry window',
+      live: 'the later file publish still compares the live remote resource hash against the expected file precondition',
+      group: 'the compressed listing and cached receipts only narrow planning work inside the same file boundary and never widen the atomic-group barrier',
+      recovery: 'compressed planning evidence stays advisory while durable chunk receipts and the guarded publish record still classify pause, retry, or crash',
+    },
+    visibilityBoundary: 'planning-only-with-transport-compression',
+    failureEvidence: 'compressed index cursor plus cached chunk receipts, bounded retry window, and guarded publish record',
+    bypassesLivePreconditions: false,
+    splitsAtomicGroup: false,
+    publishesStagedDataEarly: false,
+  },
+  {
     area: 'parallelism-limits',
     reduces: ['idle-time', 'head-of-line-blocking'],
     allowedShortcut: 'run-independent-staging-work-within-per-site-and-per-kind-budgets',

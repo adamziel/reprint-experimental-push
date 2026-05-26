@@ -4462,6 +4462,18 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
   assert.ok(compressedLargeUploadResumeWindowing.gateProofs.skip.includes('cached file hash can shorten large-upload resume-window planning'));
   assert.ok(compressedLargeUploadResumeWindowing.gateProofs.live.includes('live remote resource hash'));
   assert.ok(compressedLargeUploadResumeWindowing.gateProofs.recovery.includes('durable chunk receipts'));
+  const compressedLargeUploadRetryWindowing = model.safeFastPaths.find(
+    (fastPath) => fastPath.allowedShortcut === 'compress-remote-index-listings-and-reuse-chunk-receipts-to-size-bounded-large-upload-retry-windows',
+  );
+  assert.ok(compressedLargeUploadRetryWindowing, 'compressed large-upload retry windowing fast path exists');
+  assert.equal(compressedLargeUploadRetryWindowing.area, 'chunk-upload');
+  assert.equal(compressedLargeUploadRetryWindowing.bypassesLivePreconditions, false);
+  assert.equal(compressedLargeUploadRetryWindowing.splitsAtomicGroup, false);
+  assert.equal(compressedLargeUploadRetryWindowing.publishesStagedDataEarly, false);
+  assert.ok(compressedLargeUploadRetryWindowing.guardrails.includes('chunk-receipts-stay-durable-and-plan-scoped'));
+  assert.ok(compressedLargeUploadRetryWindowing.gateProofs.skip.includes('cached chunk receipts size the next bounded retry window'));
+  assert.ok(compressedLargeUploadRetryWindowing.gateProofs.live.includes('live remote resource hash'));
+  assert.ok(compressedLargeUploadRetryWindowing.gateProofs.recovery.includes('durable chunk receipts'));
   const compressedChunkWindowing = model.safeFastPaths.find(
     (fastPath) => fastPath.allowedShortcut === 'compress-remote-index-listings-and-reuse-cursor-to-size-bounded-chunk-windows',
   );
