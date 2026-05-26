@@ -1,39 +1,37 @@
 No Data Loss Recovery handoff:
 
-- Timestamp: 2026-05-26 21:46:26 CEST (+0200)
-- Pushed `REPLACE_AFTER_PUSH` to `origin/lane/no-data-loss-recovery`.
-- This pass closes the next recovery-artifact container hole: preserved journal and remote artifacts now fail closed if any nested container is not a strict plain object or a canonical dense array.
-- [src/apply.js](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/no-data-loss-recovery/src/apply.js) now rejects nested null-prototype objects, class-backed instances, and other non-standard object containers inside preserved recovery artifacts, in addition to the earlier sparse/non-canonical array checks.
-- Additive regressions in [test/push-planner.test.js](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/no-data-loss-recovery/test/push-planner.test.js) pin two new blocked-recovery cases: a nested null-prototype journal entry object and a class-backed nested manifest container.
+- Timestamp: 2026-05-26 22:11:03 CEST (+0200)
+- Pending push from `0c048892`.
+- This pass closes the next persisted claim-sequence hole in production durable-journal support: a journal can no longer start its claim history with `stale-claim-advanced`.
+- [src/recovery-journal.js](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/no-data-loss-recovery/src/recovery-journal.js) now blocks `stale-claim-advanced` records unless they advance from an immediately previous active claim hash, instead of accepting an orphaned first stale-claim transition.
+- Additive regression coverage in [test/push-planner.test.js](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/no-data-loss-recovery/test/push-planner.test.js) proves the production durable-journal support path rejects a persisted claim stream whose first claim record is already `stale-claim-advanced`.
 
 Changed files:
 
-- [src/apply.js](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/no-data-loss-recovery/src/apply.js)
+- [src/recovery-journal.js](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/no-data-loss-recovery/src/recovery-journal.js)
 - [test/push-planner.test.js](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/no-data-loss-recovery/test/push-planner.test.js)
 - [.lane-output/final.md](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/no-data-loss-recovery/.lane-output/final.md)
 
 Commands:
 
 - `git status --short --branch`
-- `sed -n '1,220p' AGENTS.md`
-- `sed -n '1,220p' supervision/README.md`
-- `sed -n '1,220p' supervision/lanes/no-data-loss-recovery.md`
-- targeted `grep` / `sed` reads in `src/apply.js`, `src/recovery-journal.js`, and `test/push-planner.test.js`
-- `timeout 120s node --test --test-name-pattern='rejects blocked recovery states that hide (null-prototype nested artifact containers|class-backed nested artifact containers)|rejects blocked recovery states that hide non-enumerable nested artifact metadata' test/push-planner.test.js`
-- `git diff --check -- src/apply.js test/push-planner.test.js`
-- `git commit -m "Reject non-plain recovery artifact containers"`
-- `git push origin HEAD:lane/no-data-loss-recovery`
+- targeted `grep` / `sed` reads in `src/recovery-journal.js`, `src/apply.js`, and `test/push-planner.test.js`
+- `node --input-type=module` repro proving `classifyRecoveryJournalClaims()` incorrectly accepted a first claim record of type \`stale-claim-advanced\``
+- `timeout 120s node --test --test-name-pattern='production durable journal claims fail closed when (a persisted claim record hides claimHash behind a non-enumerable key|a stale-claim record hides previousClaimHash behind a non-enumerable key|a stale-claim record rewrites the previous active claim hash chain|the first persisted claim record is stale-claim-advanced)' test/push-planner.test.js`
+- `git diff --check -- src/recovery-journal.js test/push-planner.test.js`
 - `date '+%Y-%m-%d %H:%M:%S %Z (%z)'`
+- pending: `git commit -m "Reject orphaned stale durable journal claims"`
+- pending: `git push origin HEAD:lane/no-data-loss-recovery`
 
 Push result:
 
-- `REPLACE_AFTER_PUSH`
+- `pending`
 
 Worktree status:
 
-- Clean for tracked lane code on `lane/no-data-loss-recovery-work...origin/lane/no-data-loss-recovery`; only [.lane-output/final.md](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/no-data-loss-recovery/.lane-output/final.md) is locally updated for the tmux handoff.
+- Dirty tracked files on `lane/no-data-loss-recovery-work...origin/lane/no-data-loss-recovery`: [.lane-output/final.md](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/no-data-loss-recovery/.lane-output/final.md), [src/recovery-journal.js](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/no-data-loss-recovery/src/recovery-journal.js), and [test/push-planner.test.js](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/no-data-loss-recovery/test/push-planner.test.js).
 
 Next supervisor nudge:
 
-1. `main:reliable-exec` and `main:journal-code` can now assume preserved recovery artifacts reject nested null-prototype objects and class-backed containers, not just top-level envelope drift, hidden metadata, or non-canonical arrays.
-2. If the checked release path still finds a recovery-owned durable-journal shape hole, the next likely class is persisted inspection-record or artifact-ref container drift outside `assertRecoveryStateEnvelope()`; otherwise reliable should stay on production auth/session lifecycle, preserved-remote retry, or the next production durable-storage consumer mismatch.
+1. `main:reliable-exec` and `main:journal-code` can now assume persisted claim streams reject orphaned first `stale-claim-advanced` records as well as hidden or rewritten claim-hash continuity.
+2. If a recovery-owned durable-journal gap still remains on the checked release path, the next likely class is persisted claim-lease metadata drift or release-path consumer mismatch rather than missing claim-sequence validation.

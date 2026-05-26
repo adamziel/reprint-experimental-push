@@ -1483,6 +1483,12 @@ export function classifyRecoveryJournalClaims(records) {
     }
     if (
       record.type === 'stale-claim-advanced'
+      && previousActiveClaimHash === null
+    ) {
+      return blockedClaimState(record, 'Advanced stale-claim record requires an immediately previous active claim hash.');
+    }
+    if (
+      record.type === 'stale-claim-advanced'
       && previousActiveClaimHash !== null
       && record.previousClaimHash !== previousActiveClaimHash
     ) {
