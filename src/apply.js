@@ -1141,11 +1141,16 @@ function durableJournalInspectRecords(inspected) {
   ) && !Reflect.ownKeys(inspected.records).some((key) => typeof key === 'symbol')
   && inspected.records.length > 0
   && inspected.records.every((record) => isStrictPlainObject(record))
+  && Object.hasOwn(inspected.records[0], 'sequence')
+  && Object.hasOwn(inspected.records[0], 'type')
+  && inspected.records[0].sequence === 1
   && inspected.records[0].type === 'journal-opened'
   && inspected.records.every((record) =>
     record
     && typeof record === 'object'
     && !Reflect.ownKeys(record).some((key) => typeof key === 'symbol')
+    && Object.hasOwn(record, 'sequence')
+    && Object.hasOwn(record, 'type')
     && Number.isInteger(record.sequence)
     && typeof record.type === 'string',
   ) && inspected.records.every((record, index, records) => (
