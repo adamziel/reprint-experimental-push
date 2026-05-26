@@ -2947,6 +2947,18 @@ test('production-shaped authenticated push accepts replay-equivalent signed requ
             { event: 'mutation-applied' },
             { event: 'apply-committed' },
           ],
+          ownership: {
+            ownsJournal: true,
+            restartReadable: true,
+            productionAdapter: 'filesystem-compare-rename',
+          },
+          leaseFence: {
+            boundary: 'filesystem-compare-rename',
+            claimKeyUnique: true,
+            monotonicSequence: true,
+            restartReadable: true,
+            staleClaimRejected: false,
+          },
         },
         storageGuard: {
           boundary: 'filesystem-compare-rename',
@@ -3075,6 +3087,18 @@ test('production-shaped authenticated push accepts replay-equivalent committed r
             { event: 'mutation-applied' },
             { event: 'apply-committed' },
           ],
+          ownership: {
+            ownsJournal: true,
+            restartReadable: true,
+            productionAdapter: 'filesystem-compare-rename',
+          },
+          leaseFence: {
+            boundary: 'filesystem-compare-rename',
+            claimKeyUnique: true,
+            monotonicSequence: true,
+            restartReadable: true,
+            staleClaimRejected: false,
+          },
         },
         storageGuard: {
           boundary: 'filesystem-compare-rename',
@@ -3325,6 +3349,18 @@ test('production-shaped authenticated push records preserved-remote retry on rea
             { event: 'mutation-applied' },
             { event: 'apply-committed' },
           ],
+          ownership: {
+            ownsJournal: true,
+            restartReadable: true,
+            productionAdapter: 'filesystem-compare-rename',
+          },
+          leaseFence: {
+            boundary: 'filesystem-compare-rename',
+            claimKeyUnique: true,
+            monotonicSequence: true,
+            restartReadable: true,
+            staleClaimRejected: false,
+          },
         },
         storageGuard: {
           boundary: 'filesystem-compare-rename',
@@ -3498,6 +3534,18 @@ test('production-shaped authenticated push fails closed when preserved-remote re
             { event: 'mutation-applied' },
             { event: 'apply-committed' },
           ],
+          ownership: {
+            ownsJournal: true,
+            restartReadable: true,
+            productionAdapter: 'filesystem-compare-rename',
+          },
+          leaseFence: {
+            boundary: 'filesystem-compare-rename',
+            claimKeyUnique: true,
+            monotonicSequence: true,
+            restartReadable: true,
+            staleClaimRejected: false,
+          },
         },
         storageGuard: {
           boundary: 'filesystem-compare-rename',
@@ -3873,6 +3921,18 @@ test('production-shaped authenticated push records preserved-remote retry on pre
             { event: 'mutation-applied' },
             { event: 'apply-committed' },
           ],
+          ownership: {
+            ownsJournal: true,
+            restartReadable: true,
+            productionAdapter: 'filesystem-compare-rename',
+          },
+          leaseFence: {
+            boundary: 'filesystem-compare-rename',
+            claimKeyUnique: true,
+            monotonicSequence: true,
+            restartReadable: true,
+            staleClaimRejected: false,
+          },
         },
         storageGuard: {
           boundary: 'filesystem-compare-rename',
@@ -4044,6 +4104,18 @@ test('production-shaped authenticated push fails closed when a different read re
             { event: 'mutation-applied' },
             { event: 'apply-committed' },
           ],
+          ownership: {
+            ownsJournal: true,
+            restartReadable: true,
+            productionAdapter: 'filesystem-compare-rename',
+          },
+          leaseFence: {
+            boundary: 'filesystem-compare-rename',
+            claimKeyUnique: true,
+            monotonicSequence: true,
+            restartReadable: true,
+            staleClaimRejected: false,
+          },
         },
         storageGuard: {
           boundary: 'filesystem-compare-rename',
@@ -5295,6 +5367,18 @@ test('production-shaped authenticated push fails closed when replay changes the 
             { event: 'mutation-applied' },
             { event: 'apply-committed' },
           ],
+          ownership: {
+            ownsJournal: true,
+            restartReadable: true,
+            productionAdapter: 'filesystem-compare-rename',
+          },
+          leaseFence: {
+            boundary: 'filesystem-compare-rename',
+            claimKeyUnique: true,
+            monotonicSequence: true,
+            restartReadable: true,
+            staleClaimRejected: false,
+          },
         },
         storageGuard: {
           boundary: 'filesystem-compare-rename',
@@ -5738,6 +5822,18 @@ test('production-shaped authenticated push fails closed when db journal readback
             { event: 'mutation-applied' },
             { event: 'apply-committed' },
           ],
+          leaseFence: {
+            boundary: 'filesystem-compare-rename',
+            claimKeyUnique: true,
+            monotonicSequence: true,
+            restartReadable: true,
+            staleClaimRejected: false,
+          },
+        },
+        storageGuard: {
+          boundary: 'filesystem-compare-rename',
+          operation: 'update',
+          outcome: 'applied',
         },
       }), {
         status: 200,
@@ -5760,7 +5856,12 @@ test('production-shaped authenticated push fails closed when db journal readback
 
     assert.equal(summary.ok, false);
     assert.equal(summary.code, 'DURABLE_JOURNAL_NOT_PROVEN');
-    assert.equal(summary.dbJournal?.storageGuard, undefined);
+    assert.deepEqual(summary.dbJournal?.storageGuard, {
+      boundary: 'filesystem-compare-rename',
+      operation: 'update',
+      outcome: 'applied',
+    });
+    assert.equal(summary.dbJournal?.ownership, undefined);
     assert.equal(summary.boundary.durableJournal.phase, 'journal-inspect');
     assert.equal(seen.length, 8);
   } finally {

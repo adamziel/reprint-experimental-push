@@ -1312,14 +1312,18 @@ export async function runAuthenticatedHttpPush({
     && !replayAuthEnvelopeDrift
     && dbJournal.status === 200
     && dbJournal.body?.ok === true
-    && dbJournalProofIsAcceptable(summary.dbJournal)
+    && dbJournalProofIsAcceptable(summary.dbJournal, {
+      requireStaleClaimRejected: simulateStaleClaimRetry,
+    })
     && summary.after?.finalMatchesLocal === true;
   if (!summary.ok) {
     const replayIdempotency = replay.body?.idempotency;
     const authEnvelopeDrift = applyAuthEnvelopeDrift || replayAuthEnvelopeDrift;
     const journalProofFailed = dbJournal.status === 200
       && dbJournal.body?.ok === true
-      && !dbJournalProofIsAcceptable(summary.dbJournal);
+      && !dbJournalProofIsAcceptable(summary.dbJournal, {
+        requireStaleClaimRejected: simulateStaleClaimRetry,
+      });
     const replayEquivalenceFailed = replay.status === 200
       && replay.body?.ok === true
       && replayIdempotency
@@ -1715,11 +1719,13 @@ function summarizeDbJournal(response) {
   };
 }
 
-function dbJournalProofIsAcceptable(dbJournal) {
+function dbJournalProofIsAcceptable(dbJournal, options = {}) {
   return dbJournal?.applyCommitted === true
     && dbJournal?.idempotencyOpened > 0
     && dbJournal?.mutationApplied > 0
-    && dbJournalStorageGuardIsTrusted(dbJournal?.storageGuard);
+    && dbJournalStorageGuardIsTrusted(dbJournal?.storageGuard)
+    && dbJournalOwnershipIsTrusted(dbJournal?.ownership)
+    && dbJournalLeaseFenceIsTrusted(dbJournal?.leaseFence, options);
 }
 
 function dbJournalStorageGuardIsTrusted(storageGuard) {
@@ -1729,6 +1735,25 @@ function dbJournalStorageGuardIsTrusted(storageGuard) {
   )
     && storageGuard?.operation === 'update'
     && storageGuard?.outcome === 'applied';
+}
+
+function dbJournalOwnershipIsTrusted(ownership) {
+  return ownership?.ownsJournal === true
+    && ownership?.restartReadable === true
+    && typeof ownership?.productionAdapter === 'string'
+    && ownership.productionAdapter.trim().length > 0;
+}
+
+function dbJournalLeaseFenceIsTrusted(leaseFence, options = {}) {
+  const requireStaleClaimRejected = options.requireStaleClaimRejected === true;
+  const trustedBoundary = leaseFence?.boundary === 'filesystem-compare-rename'
+    || leaseFence?.boundary === 'wpdb-single-statement-cas';
+
+  return trustedBoundary
+    && leaseFence?.claimKeyUnique === true
+    && leaseFence?.monotonicSequence === true
+    && leaseFence?.restartReadable === true
+    && (!requireStaleClaimRejected || leaseFence?.staleClaimRejected === true);
 }
 
 function summarizeDbJournalStorageGuard(body) {
