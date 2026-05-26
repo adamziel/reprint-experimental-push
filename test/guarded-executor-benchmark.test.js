@@ -328,6 +328,51 @@ test('guarded benchmark exposes queue-slack and journal-lag pause shortcuts as r
   );
 });
 
+test('guarded benchmark exposes journal-lag pause shortcuts as rejected', () => {
+  const fastPath = findRejectedFastPathById(
+    'cached-receipt-cursor-and-journal-lag-skips-backpressure-pause-after-retry',
+  );
+
+  assert.ok(fastPath);
+  assert.equal(fastPath.rejectedGate, 'recovery');
+  assert.match(fastPath.proposal, /journal lag/);
+  assert.match(fastPath.rejectedBecause, /raw receipt order survived the retry/);
+  assert.deepEqual(
+    fastPath.violates,
+    ['backpressure', 'chunk-receipts', 'durable-progress'],
+  );
+});
+
+test('guarded benchmark exposes canonical budget pause shortcuts as rejected', () => {
+  const fastPath = findRejectedFastPathById(
+    'canonical-per-kind-budgets-and-cached-receipt-cursor-skips-backpressure-pause-after-retry',
+  );
+
+  assert.ok(fastPath);
+  assert.equal(fastPath.rejectedGate, 'recovery');
+  assert.match(fastPath.proposal, /canonical per-kind budgets/);
+  assert.match(fastPath.rejectedBecause, /durable receipt trail survived the retry/);
+  assert.deepEqual(
+    fastPath.violates,
+    ['parallelism-limits', 'backpressure', 'chunk-receipts', 'durable-progress'],
+  );
+});
+
+test('guarded benchmark exposes queue-headroom pause shortcuts as rejected', () => {
+  const fastPath = findRejectedFastPathById(
+    'cached-receipt-cursor-and-queue-headroom-skips-backpressure-pause-after-retry',
+  );
+
+  assert.ok(fastPath);
+  assert.equal(fastPath.rejectedGate, 'recovery');
+  assert.match(fastPath.proposal, /queue headroom/);
+  assert.match(fastPath.rejectedBecause, /pause happened before overflow/);
+  assert.deepEqual(
+    fastPath.violates,
+    ['backpressure', 'chunk-receipts', 'durable-progress'],
+  );
+});
+
 test('guarded benchmark exposes staging-disk headroom and journal lag replay shortcuts as rejected', () => {
   const fastPath = findRejectedFastPathById(
     'cached-receipt-cursor-staging-disk-headroom-and-journal-lag-skips-post-pause-replay',
