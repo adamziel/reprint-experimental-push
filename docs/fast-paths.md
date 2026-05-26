@@ -52,6 +52,9 @@ Current executable gate:
 - The same details now expose receipt-cursor headroom against the measured
   memory ceiling so a cursor-sized resume proof stays fail-closed instead of
   inferring safety from the raw cursor alone.
+- The same details now also let compressed remote-index listings size the next
+  bounded chunk window, but only as planning evidence with durable chunk
+  receipts and the guarded publish record still deciding recovery.
 - The same details also carry the explicit queue-headroom measurement bit, so a
   paused sender cannot look bounded when the headroom probe itself is missing.
 - The same details also expose whether queue headroom is visible on the raw

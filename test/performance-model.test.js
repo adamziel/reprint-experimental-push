@@ -3835,6 +3835,14 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
   assert.equal(compressedLargeUploadWindowing.splitsAtomicGroup, false);
   assert.ok(compressedLargeUploadWindowing.gateProofs.skip.includes('compressed remote-index listing'));
   assert.ok(compressedLargeUploadWindowing.gateProofs.recovery.includes('durable chunk receipts'));
+  const compressedChunkWindowing = model.safeFastPaths.find(
+    (fastPath) => fastPath.allowedShortcut === 'compress-remote-index-listings-and-reuse-cursor-to-size-bounded-chunk-windows',
+  );
+  assert.ok(compressedChunkWindowing, 'compressed chunk windowing fast path exists');
+  assert.equal(compressedChunkWindowing.bypassesLivePreconditions, false);
+  assert.equal(compressedChunkWindowing.splitsAtomicGroup, false);
+  assert.ok(compressedChunkWindowing.gateProofs.skip.includes('compressed remote-index listing'));
+  assert.ok(compressedChunkWindowing.gateProofs.recovery.includes('durable chunk receipts'));
   assert.ok(
     rejectedById.get('compressed-index-finalizes-plugin-install').violates.includes('atomic-groups'),
   );

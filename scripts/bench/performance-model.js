@@ -208,6 +208,26 @@ export const SAFE_FAST_PATHS = Object.freeze([
   },
   {
     area: 'chunk-upload',
+    reduces: ['wire-bytes', 'planning-round-trips', 'queue-drain-time'],
+    allowedShortcut: 'compress-remote-index-listings-and-reuse-cursor-to-size-bounded-chunk-windows',
+    guardrails: [
+      'compressed-index-remains-planning-evidence-only',
+      'chunk-window-stays-within-byte-and-receipt-budgets',
+    ],
+    gateProofs: {
+      skip: 'a compressed remote-index listing can shorten chunk-window resume scans while the planning cursor is reused to size the next bounded chunk window',
+      live: 'the eventual file publish still compares the live remote resource hash against the expected file precondition',
+      group: 'the compressed listing and cursor only narrow planning work inside the same file boundary and never widen the atomic-group barrier',
+      recovery: 'compressed planning evidence stays advisory while durable chunk receipts and the guarded publish record still classify pause, retry, or crash',
+    },
+    visibilityBoundary: 'planning-only-with-transport-compression',
+    failureEvidence: 'compressed index cursor plus bounded chunk receipt ledger and guarded publish record',
+    bypassesLivePreconditions: false,
+    splitsAtomicGroup: false,
+    publishesStagedDataEarly: false,
+  },
+  {
+    area: 'chunk-upload',
     reduces: ['planning-round-trips', 'duplicate-body-transfer', 'idle-time'],
     allowedShortcut: 'reuse-plan-scoped-chunk-receipts-to-resume-bounded-windowing',
     guardrails: [
