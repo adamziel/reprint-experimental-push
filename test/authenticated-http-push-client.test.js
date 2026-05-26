@@ -150,6 +150,16 @@ test('production-shaped authenticated push fails closed when production auth ses
       observed: 'application-password-basic',
       verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
     });
+    assert.deepEqual(summary.boundary, {
+      firstRemainingProductionBoundary: 'auth/session lifecycle and durable journal semantics',
+      status: 'unimplemented',
+      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+      authSession: {
+        required: 'production-auth-session',
+        observed: 'application-password-basic',
+        verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+      },
+    });
     assert.equal(seen.length, 1);
     assert.match(seen[0].url, /\/wp-json\/reprint\/v1\/push\/preflight$/);
   } finally {

@@ -96,17 +96,17 @@ export async function runAuthenticatedHttpPush({
   }
   if (requireProductionAuthSession && preflight.body.auth?.session?.type !== 'production-auth-session') {
     summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
-    summary.authSession = summarizeResponse(preflight).sessionType
-      ? {
-          required: 'production-auth-session',
-          observed: preflight.body.auth?.session?.type || 'missing',
-          verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
-        }
-      : {
-          required: 'production-auth-session',
-          observed: 'missing',
-          verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
-        };
+    summary.authSession = {
+      required: 'production-auth-session',
+      observed: preflight.body.auth?.session?.type || 'missing',
+      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+    };
+    summary.boundary = {
+      firstRemainingProductionBoundary: 'auth/session lifecycle and durable journal semantics',
+      status: 'unimplemented',
+      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+      authSession: summary.authSession,
+    };
     return summary;
   }
 
