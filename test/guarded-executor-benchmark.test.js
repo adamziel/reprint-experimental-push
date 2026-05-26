@@ -201,6 +201,14 @@ test('guarded executor benchmark keeps the published throughput details in sync 
 
 test('guarded executor benchmark keeps large-site rollout proof bounded and names explicit remaining blockers', () => {
   const report = largeBenchmark();
+  const expectedBlockers = [
+    'production-atomic-group-commit-not-measured',
+    'production-capability-measurement-not-aligned',
+    'production-parallelism-limits-not-visible',
+    'production-row-batch-executor-measured-not-proven',
+    'production-row-batch-executor-not-measured',
+    'production-storage-receipts-not-measured',
+  ];
 
   assert.equal(report.shape.fileBytes, 32 * 1024 * 1024);
   assert.equal(report.shape.chunkSizeBytes, 8 * 1024 * 1024);
@@ -221,15 +229,7 @@ test('guarded executor benchmark keeps large-site rollout proof bounded and name
   assert.equal(report.claims.productionThroughputDetails.backpressureConsistency.backpressureEvidenceComplete, true);
   assert.equal(report.claims.productionThroughputDetails.parallelismLimitsCanonical, true);
   assert.equal(report.claims.productionThroughput.status, 'blocked');
-  assert.ok(
-    report.claims.productionThroughput.blockers.includes('production-atomic-group-commit-not-measured'),
-  );
-  assert.ok(
-    report.claims.productionThroughput.blockers.includes('production-storage-receipts-not-measured'),
-  );
-  assert.ok(
-    report.claims.productionThroughput.blockers.includes('production-row-batch-executor-not-measured'),
-  );
+  assert.deepEqual([...report.claims.productionThroughput.blockers].sort(), expectedBlockers);
   assert.ok(
     !report.claims.productionThroughput.blockers.includes('backpressure-evidence-incomplete'),
   );
