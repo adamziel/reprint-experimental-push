@@ -4,7 +4,7 @@
 
 The project is **not releasable as a production WordPress push path**.
 
-- Fresh remote heads at audit time, checked on 2026-05-26 07:34:57 CEST (+0200):
+- Fresh remote heads at audit time, checked on 2026-05-26 07:35:44 CEST (+0200):
 
 - `origin/lane/cycle-20260524-auth-graph-hardening/critic` -> `e413f7a8`
 - `origin/lane/cycle-20260524-auth-graph-hardening/fast-paths` -> `ad7d82a4`
@@ -66,11 +66,11 @@ Fresh visibility-lane and invariants heads moved again, but they still do not ch
 - Since the last audit pass, the visible progress lanes advanced again:
 `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` ->
 `a6359b91` and `origin/lane/cycle-20260525-mainwindows-2349/progress-followup`
--> `6705f663`. That changes the freshness surface, not the release gate.
+-> `bcd0cb47`. That changes the freshness surface, not the release gate.
 - The current public-refresh branch heads remain:
 `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` ->
 `a6359b91` and `origin/lane/cycle-20260525-mainwindows-2349/progress-followup`
--> `6705f663`.
+-> `bcd0cb47`.
 - `origin/lane/reliable-executor` -> `5c75c43b`
 - `origin/lane/no-data-loss-invariants` -> `d87858d7`
 - `origin/lane/no-data-loss-recovery` -> `0ff46819`
