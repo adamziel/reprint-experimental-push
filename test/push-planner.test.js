@@ -20337,8 +20337,9 @@ test('blocks local same-plan created user meta identity while preserving a match
   assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin drift */');
 });
 
-test('blocks local same-plan created post author identity while preserving remote-only plugin removals', () => {
+test('blocks local post-author references to a same-plan created user identity while preserving remote-only plugin removals', () => {
   const resourceKey = 'row:["wp_posts","ID:42"]';
+  const targetResourceKey = 'row:["wp_users","ID:9"]';
   const base = baseSite();
   base.db.wp_posts['ID:42'] = {
     ID: 42,
@@ -20372,16 +20373,25 @@ test('blocks local same-plan created post author identity while preserving remot
   delete remote.files['wp-content/plugins/forms/forms.php'];
 
   const plan = planFor(base, local, remote);
-  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === targetResourceKey);
+  const reference = blocker.references[0];
   const planJson = JSON.stringify(plan);
 
   assert.equal(plan.status, 'blocked');
   assert.equal(plan.summary.mutations, 0);
   assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(decisionFor(plan, targetResourceKey), undefined);
   assert.equal(plan.conflicts.length, 0);
-  assert.equal(blocker.class, 'stale-wordpress-graph-identity');
-  assert.equal(blocker.resourceKey, resourceKey);
-  assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_posts","ID:42"] references a post author identity without proven identity mapping or reference rewriting.');
+  assert.equal(blocker.class, 'unsupported-comments-users-resource');
+  assert.equal(blocker.resourceKey, targetResourceKey);
+  assert.equal(blocker.unsupportedState, 'same-plan-reference');
+  assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_users","ID:9"] is created in the same plan as a post author identity that depends on it, and identity rewriting is not yet supported.');
+  assert.equal(reference.relationshipKey, 'wp_posts.post_author');
+  assert.equal(reference.relationshipType, 'post-author');
+  assert.equal(reference.sourceResourceKey, resourceKey);
+  assert.equal(reference.targetResourceKey, targetResourceKey);
+  assert.equal(reference.targetChange.remote.state, 'absent');
+  assert.equal(reference.targetChange.local.state, 'present');
   assert.equal(planJson.includes('Local authored post content'), false);
   assert.equal(planJson.includes('Base authored post content'), false);
   assert.equal(planJson.includes('local-same-plan-author'), false);
@@ -20389,8 +20399,9 @@ test('blocks local same-plan created post author identity while preserving remot
   assert.equal(Object.hasOwn(remote.files, 'wp-content/plugins/forms/forms.php'), false);
 });
 
-test('blocks local same-plan created post author identity while preserving a matching independent edit and remote-only plugin changes', () => {
+test('blocks local post-author references to a same-plan created user identity while preserving a matching independent edit and remote-only plugin changes', () => {
   const resourceKey = 'row:["wp_posts","ID:42"]';
+  const targetResourceKey = 'row:["wp_users","ID:9"]';
   const base = baseSite();
   base.db.wp_posts['ID:42'] = {
     ID: 42,
@@ -20424,16 +20435,25 @@ test('blocks local same-plan created post author identity while preserving a mat
   remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin change */';
 
   const plan = planFor(base, local, remote);
-  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === targetResourceKey);
+  const reference = blocker.references[0];
   const planJson = JSON.stringify(plan);
 
   assert.equal(plan.status, 'blocked');
   assert.equal(plan.summary.mutations, 0);
   assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(decisionFor(plan, targetResourceKey), undefined);
   assert.equal(plan.conflicts.length, 0);
-  assert.equal(blocker.class, 'stale-wordpress-graph-identity');
-  assert.equal(blocker.resourceKey, resourceKey);
-  assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_posts","ID:42"] references a post author identity without proven identity mapping or reference rewriting.');
+  assert.equal(blocker.class, 'unsupported-comments-users-resource');
+  assert.equal(blocker.resourceKey, targetResourceKey);
+  assert.equal(blocker.unsupportedState, 'same-plan-reference');
+  assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_users","ID:9"] is created in the same plan as a post author identity that depends on it, and identity rewriting is not yet supported.');
+  assert.equal(reference.relationshipKey, 'wp_posts.post_author');
+  assert.equal(reference.relationshipType, 'post-author');
+  assert.equal(reference.sourceResourceKey, resourceKey);
+  assert.equal(reference.targetResourceKey, targetResourceKey);
+  assert.equal(reference.targetChange.remote.state, 'absent');
+  assert.equal(reference.targetChange.local.state, 'present');
   assert.equal(planJson.includes('Local authored post edit content'), false);
   assert.equal(planJson.includes('Base authored post content'), false);
   assert.equal(planJson.includes('local-same-plan-author-edit'), false);
@@ -20441,8 +20461,9 @@ test('blocks local same-plan created post author identity while preserving a mat
   assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin change */');
 });
 
-test('blocks local same-plan created post author identity while preserving a matching independent file type swap and remote-only plugin removals', () => {
+test('blocks local post-author references to a same-plan created user identity while preserving a matching independent file type swap and remote-only plugin removals', () => {
   const resourceKey = 'row:["wp_posts","ID:42"]';
+  const targetResourceKey = 'row:["wp_users","ID:9"]';
   const base = baseSite();
   base.db.wp_posts['ID:42'] = {
     ID: 42,
@@ -20483,17 +20504,26 @@ test('blocks local same-plan created post author identity while preserving a mat
   delete remote.files['wp-content/plugins/forms/forms.php'];
 
   const plan = planFor(base, local, remote);
-  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === targetResourceKey);
+  const reference = blocker.references[0];
   const typeSwapDecision = decisionFor(plan, 'file:wp-content/uploads/cover');
   const planJson = JSON.stringify(plan);
 
   assert.equal(plan.status, 'blocked');
   assert.equal(plan.summary.mutations, 0);
   assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(decisionFor(plan, targetResourceKey), undefined);
   assert.equal(plan.conflicts.length, 0);
-  assert.equal(blocker.class, 'stale-wordpress-graph-identity');
-  assert.equal(blocker.resourceKey, resourceKey);
-  assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_posts","ID:42"] references a post author identity without proven identity mapping or reference rewriting.');
+  assert.equal(blocker.class, 'unsupported-comments-users-resource');
+  assert.equal(blocker.resourceKey, targetResourceKey);
+  assert.equal(blocker.unsupportedState, 'same-plan-reference');
+  assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_users","ID:9"] is created in the same plan as a post author identity that depends on it, and identity rewriting is not yet supported.');
+  assert.equal(reference.relationshipKey, 'wp_posts.post_author');
+  assert.equal(reference.relationshipType, 'post-author');
+  assert.equal(reference.sourceResourceKey, resourceKey);
+  assert.equal(reference.targetResourceKey, targetResourceKey);
+  assert.equal(reference.targetChange.remote.state, 'absent');
+  assert.equal(reference.targetChange.local.state, 'present');
   assert.equal(typeSwapDecision.decision, 'already-in-sync');
   assert.equal(typeSwapDecision.change.localChange, 'type-change');
   assert.equal(typeSwapDecision.change.remoteChange, 'type-change');
