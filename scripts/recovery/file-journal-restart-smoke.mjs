@@ -10,8 +10,12 @@ import { createPushPlan } from '../../src/planner.js';
 import { setResource } from '../../src/resources.js';
 import { digest } from '../../src/stable-json.js';
 import {
+  appendRecoveryClaimOpened,
   appendJournalCompleted,
   appendMutationObserved,
+  appendStaleClaimAdvanced,
+  classifyRecoveryJournalClaims,
+  openRecoveryJournal,
   openPlanRecoveryJournal,
   readRecoveryJournal,
 } from '../../src/recovery-journal.js';
@@ -54,6 +58,7 @@ summary.scenarios.failAfter2 = await scenarioFailAfter2();
 summary.scenarios.retryAfterPartial = summary.scenarios.failAfter2.retry;
 summary.scenarios.completedReplay = await scenarioCompletedReplay();
 summary.scenarios.drift = await scenarioDrift();
+summary.scenarios.claimFenceTakeover = await scenarioClaimFenceTakeover();
 summary.journal = assertJournalFiles();
 
 console.log(JSON.stringify(summary, null, 2));
@@ -242,6 +247,92 @@ async function scenarioDrift() {
   return {
     journal: path.relative(repoRoot, journalPath),
     recovery: recoveryCounts(restarted),
+  };
+}
+
+async function scenarioClaimFenceTakeover() {
+  const journalPath = path.join(workDir, 'claim-fence-takeover.journal.jsonl');
+  const remote = clone(fixture.base);
+  const staleThresholdMs = 1_000;
+  const previousClaimAgeMs = 5_000;
+  const workerAClaim = claimIdForScenario('claim-fence-worker-a', remote);
+  const workerBClaim = claimIdForScenario('claim-fence-worker-b', remote);
+  const workerA = openPlanRecoveryJournal({
+    filePath: journalPath,
+    plan,
+    current: remote,
+    now: fixedNow,
+    claimId: workerAClaim,
+  });
+  workerA.close();
+
+  const workerB = openRecoveryJournal(journalPath, {
+    now: new Date(fixedNow.getTime() + previousClaimAgeMs),
+    claimId: workerBClaim,
+  });
+  appendStaleClaimAdvanced(workerB, {
+    plan,
+    current: remote,
+    previousClaimId: workerAClaim,
+    claimId: workerBClaim,
+    staleThresholdMs,
+    previousClaimAgeMs,
+    artifactRefs: {
+      journal: journalPath,
+    },
+  });
+  workerB.appendEvent('journal-retry-opened', {
+    planId: plan.id,
+    state: 'retry-opened',
+    observedHash: digest(remote),
+    artifactRefs: {
+      journal: journalPath,
+    },
+  });
+  workerB.close();
+
+  const staleWriter = openRecoveryJournal(journalPath, {
+    now: new Date(fixedNow.getTime() + previousClaimAgeMs + 1),
+    claimId: workerAClaim,
+  });
+  const staleError = captureApply(() => {
+    staleWriter.appendEvent('apply-committing', {
+      planId: plan.id,
+      state: 'committing',
+      observedHash: digest(remote),
+      artifactRefs: {
+        journal: journalPath,
+      },
+    });
+  });
+  staleWriter.close();
+
+  assert.notEqual(staleError.ok, true, 'stale restarted writer must fail after claim takeover');
+  assert.equal(staleError.code, 'RECOVERY_CLAIM_STALE');
+
+  const persisted = readRecoveryJournal(journalPath);
+  const claim = classifyRecoveryJournalClaims(persisted.records);
+  assert.equal(persisted.integrity.status, 'ok');
+  assert.equal(claim.status, 'advanced');
+  assert.equal(claim.activeClaimHash, digest({ recoveryJournalClaim: workerBClaim }));
+  assert.equal(claim.previousClaimHash, digest({ recoveryJournalClaim: workerAClaim }));
+  assert.equal(claim.staleThresholdMs, staleThresholdMs);
+  assert.equal(claim.previousClaimAgeMs, previousClaimAgeMs);
+  assert.ok(
+    persisted.records.some((record) => record.type === 'journal-retry-opened'),
+    'claim takeover must record a retry-opened boundary for the replacement writer',
+  );
+
+  return {
+    journal: path.relative(repoRoot, journalPath),
+    staleWriterCode: staleError.code,
+    claim: {
+      status: claim.status,
+      sequence: claim.sequence,
+      type: claim.type,
+      staleThresholdMs: claim.staleThresholdMs,
+      previousClaimAgeMs: claim.previousClaimAgeMs,
+    },
   };
 }
 
