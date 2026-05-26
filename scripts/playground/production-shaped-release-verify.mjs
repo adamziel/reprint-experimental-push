@@ -823,6 +823,8 @@ async function startPlaygroundServer(name, blueprintPath) {
       {
         cwd: repoRoot,
         env: process.env,
+        timeout: serverStartupTimeoutMs + 2_000,
+        killSignal: 'SIGKILL',
         detached: true,
         stdio: ['ignore', 'pipe', 'pipe'],
       },
