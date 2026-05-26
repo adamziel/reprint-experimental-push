@@ -39,10 +39,10 @@ The project is **not releasable as a production WordPress push path**.
 - `origin/lane/cycle-20260525-keep-busy-loop-2/no-data-loss-recovery` -> `63e01a49`
 - `origin/lane/cycle-20260525-mainwindows-2349/critic` -> `fa0dc8a0`
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `51d203fc`
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `73b4c5fc`
-- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `0fcb72a9`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `5081bbdb`
+- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `197b3c33`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `2af1ddda`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `c93940b8`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `c6d7deea`
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` -> `2d7ed103`
 - `origin/lane/cycle-20260525-mainwindows-2357/no-data-loss-invariants-graph-proof` -> `98c0ce26`
 - `origin/lane/cycle-20260525-restart-2340/feedback-supervisor` -> `ef3d911e`
@@ -54,7 +54,7 @@ The project is **not releasable as a production WordPress push path**.
 - `origin/lane/no-data-loss-invariants` -> `ad23992d`
 - `origin/lane/no-data-loss-recovery` -> `9e077c10`
 - `origin/lane/progress-publisher` -> `7695e1f9`
-- `origin/lane/reliable-executor` -> `83fed4d3`
+- `origin/lane/reliable-executor` -> `0f0150e8`
 - `origin/lane/same-plan-wordpress-graph-create` -> `f53e607f`
 - `origin/main` -> `56063f13`
 
@@ -65,7 +65,7 @@ real source-site mutation boundary. The release gates still stay `0/4`.
 Fresh lane proof since the last audit pass improved the local evidence floor,
 but it did not change the release conclusion:
 
-- `origin/lane/reliable-executor` now records `83fed4d3`, tightening the
+- `origin/lane/reliable-executor` now records `0f0150e8`, tightening the
   Playground startup readiness window. It still does not prove production
   auth/session lifecycle or a live-source mutation boundary.
 - `origin/lane/no-data-loss-invariants` now records `ad23992d`, adding nav
@@ -94,9 +94,9 @@ but it did not change the release conclusion:
 - `origin/lane/feedback-supervisor` now records `ee7069e6`, refreshing the
   supervisor progress surface only.
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now records
-  `a84b14ce`, refreshing the public progress freshness only.
+  `117ed571`, refreshing the public progress freshness only.
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` now records
-  `0fcb72a9`, refreshing the audit snapshot only and not changing the release
+  `197b3c33`, refreshing the audit snapshot only and not changing the release
   boundary.
 - `origin/lane/no-data-loss-invariants` now records `b5e199f0`, adding special
   file sibling proof again, but still not proving the live release boundary or
