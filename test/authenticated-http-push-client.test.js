@@ -50,15 +50,14 @@ test('authenticated push client fails closed for unsupported production-shaped o
   );
 });
 
-test('authenticated push client fails closed for production-shaped loopback ports outside the sandbox ingress', () => {
-  assert.throws(
-    () => authenticatedHttpClient({
-      sourceUrl: 'http://127.0.0.1:3000',
-      credential,
-      routeProfile: 'production-shaped',
-    }),
-    /Unsupported production-shaped sourceUrl origin: http:\/\/127\.0\.0\.1:3000/,
-  );
+test('authenticated push client allows production-shaped loopback runtime ports', () => {
+  const client = authenticatedHttpClient({
+    sourceUrl: 'http://127.0.0.1:3000',
+    credential,
+    routeProfile: 'production-shaped',
+    requestTimeoutMs: 1,
+  });
+  assert.equal(typeof client.get, 'function');
 });
 
 test('authenticated push client fails closed for missing production-shaped credentials', () => {

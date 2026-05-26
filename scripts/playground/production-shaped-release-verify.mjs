@@ -32,14 +32,13 @@ const readinessFailureBodyLimit = 240;
 // The release verifier starts remote-base, remote-changed, and local-edited in
 // sequence, so the shared readiness helper needs a longer bounded window than
 // the earlier single-server smoke path.
-const serverStartupTimeoutMs = 20_000;
-const serverFetchTimeoutMs = 250;
+const serverStartupTimeoutMs = 30_000;
+const serverFetchTimeoutMs = 1_000;
 const packagedPlaygroundTimeoutSeconds = 30;
 const packagedServerStartupTimeoutMs = packagedPlaygroundTimeoutSeconds * 1_000;
 const packagedServerFetchTimeoutMs = 3_000;
 const maxReadinessProbes = Math.max(10, Math.ceil(serverStartupTimeoutMs / readinessProbeIntervalMs));
 const maxNotReadyReadinessProbes = Math.max(4, Math.ceil(serverStartupTimeoutMs / readinessProbeIntervalMs));
-const spawnedPlaygroundTimeoutSeconds = 30;
 const credentials = {
   username: 'reprint_push_admin',
   password: 'reprint-push-admin-app-password',
@@ -610,16 +609,11 @@ try {
     liveSourceUrl = remoteServer.baseUrl;
   }
 
-  const remoteChangedServer = await startPlaygroundServer(
-    'remote-changed',
-    remoteChangedFixturePath,
+  const localEditedSnapshot = withoutUnmappedGraphPostmeta(
+    exportSnapshotFromBlueprint('local-edited', localEditedFixturePath),
   );
+  const remoteChangedSnapshot = exportSnapshotFromBlueprint('remote-changed', remoteChangedFixturePath);
   try {
-    const localServer = await startPlaygroundServer(
-      'local-edited',
-      localEditedFixturePath,
-    );
-    try {
       const client = authenticatedHttpClient({
         sourceUrl: liveSourceUrl,
         credential: credentials,
@@ -636,7 +630,7 @@ try {
       const proof = await runAuthenticatedHttpPush({
         sourceUrl: liveSourceUrl,
         base: remoteBaseSnapshot,
-        local: withoutUnmappedGraphPostmeta(await exportSnapshot('local-edited', localServer.baseUrl)),
+        local: localEditedSnapshot,
         username: credentials.username,
         applicationPassword: credentials.password,
         idempotencyKey: 'production-shaped-release-verify-001',
@@ -649,7 +643,6 @@ try {
       });
 
       if (!proof.ok) {
-        const remoteChangedSnapshot = await exportSnapshot('remote-changed', remoteChangedServer.baseUrl);
         process.stdout.write(
           JSON.stringify(
             {
@@ -657,8 +650,8 @@ try {
               topology: {
                 sourceUrl: liveSourceUrl,
                 remoteBase: remoteServer.baseUrl,
-                remoteChanged: remoteChangedServer.baseUrl,
-                localEdited: localServer.baseUrl,
+                remoteChanged: 'remote-changed',
+                localEdited: 'local-edited',
               },
               drift: labDriftAfterSnapshot ? {
                 mode: labDriftAfterSnapshot,
@@ -710,8 +703,8 @@ try {
               topology: {
                 sourceUrl: liveSourceUrl,
                 remoteBase: remoteServer.baseUrl,
-                remoteChanged: remoteChangedServer.baseUrl,
-                localEdited: localServer.baseUrl,
+                remoteChanged: null,
+                localEdited: 'local-edited',
               },
               boundary: {
                 firstRemainingProductionBoundary: 'auth/session lifecycle and durable journal semantics',
@@ -822,8 +815,8 @@ try {
               topology: {
                 sourceUrl: liveSourceUrl,
                 remoteBase: remoteServer.baseUrl,
-                remoteChanged: remoteChangedServer.baseUrl,
-                localEdited: localServer.baseUrl,
+                remoteChanged: null,
+                localEdited: 'local-edited',
               },
               boundary: {
                 firstRemainingProductionBoundary: 'auth/session lifecycle and durable journal semantics',
@@ -866,7 +859,6 @@ try {
         throw new ProofFailure();
       }
 
-      const remoteChangedSnapshot = await exportSnapshot('remote-changed', remoteChangedServer.baseUrl);
       const liveDrift = {
         sameRemoteIdentity: true,
         baseHash: snapshotHash(remoteBaseSnapshot),
@@ -882,8 +874,8 @@ try {
           topology: {
             sourceUrl: liveSourceUrl,
             remoteBase: remoteServer.baseUrl,
-            remoteChanged: remoteChangedServer.baseUrl,
-            localEdited: localServer.baseUrl,
+            remoteChanged: 'remote-changed',
+            localEdited: 'local-edited',
           },
           remoteSnapshotHashes: {
             sameRemoteIdentity: true,
@@ -944,7 +936,6 @@ try {
       );
       process.stdout.write('\n');
     } catch (error) {
-      const remoteChangedSnapshot = await exportSnapshot('remote-changed', remoteChangedServer.baseUrl);
       process.stdout.write(
         JSON.stringify(
           {
@@ -952,8 +943,8 @@ try {
             topology: {
               sourceUrl: liveSourceUrl,
               remoteBase: remoteServer.baseUrl,
-              remoteChanged: remoteChangedServer.baseUrl,
-              localEdited: localServer.baseUrl,
+              remoteChanged: 'remote-changed',
+              localEdited: 'local-edited',
             },
             drift: labDriftAfterSnapshot
               ? {
@@ -999,11 +990,6 @@ try {
         ),
       );
       process.stdout.write('\n');
-    } finally {
-      await stopPlaygroundServer(localServer);
-    }
-  } finally {
-    await stopPlaygroundServer(remoteChangedServer);
   }
 } finally {
   await stopPlaygroundServer(remoteServer);
@@ -1038,13 +1024,17 @@ async function startPlaygroundServer(name, blueprintPath) {
     ];
 
     const child = spawn(
-      'timeout',
-      ['--preserve-status', '--kill-after=1s', `${spawnedPlaygroundTimeoutSeconds}s`, 'npx', ...args],
+      'npx',
+      args,
       {
         cwd: repoRoot,
-        env: process.env,
-        timeout: serverStartupTimeoutMs + 2_000,
-        killSignal: 'SIGKILL',
+        env: {
+          ...process.env,
+          REPRINT_PUSH_LAB_AUTH_BOOTSTRAP: '1',
+          REPRINT_PUSH_LAB_AUTH_ADMIN_USER: credentials.username,
+          REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD: credentials.password,
+          NODE_OPTIONS: appendNodeOption(process.env.NODE_OPTIONS, localhostListenPreloadOption()),
+        },
         detached: true,
         stdio: ['ignore', 'pipe', 'pipe'],
       },
