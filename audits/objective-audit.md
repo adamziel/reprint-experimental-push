@@ -14,9 +14,9 @@ Fresh remote heads at audit time, checked on May 26, 2026:
 - `origin/lane/fast-paths` -> `cd0fddad`
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `6cd2dea8`
 - `origin/lane/independent-auditor` -> `70d069fa`
-- `origin/lane/critic` -> `3b9a9c46`
+- `origin/lane/critic` -> `17215d0e`
 - `origin/lane/progress-publisher` -> `7695e1f9`
-- `origin/lane/cycle-20260525-mainwindows-2349/critic` -> `3b9a9c46`
+- `origin/lane/cycle-20260525-mainwindows-2349/critic` -> `17215d0e`
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `44771ed8`
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `6cd2dea8`
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `3e634346`
