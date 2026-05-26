@@ -986,9 +986,11 @@ async function waitForServer(child, baseUrl, getLogs) {
   const lastProbes = [];
   let consecutiveIndex502s = 0;
   while (Date.now() < deadline) {
-    if (child.exitCode !== null) {
+    if (child.exitCode !== null || child.signalCode !== null) {
+      const exitLabel =
+        child.exitCode !== null ? `exited early with ${child.exitCode}` : `terminated by ${child.signalCode}`;
       const message = formatPlaygroundStartupFailure(
-        `Playground server exited early with ${child.exitCode}`,
+        `Playground server ${exitLabel}`,
         lastError,
         lastProbes,
         getLogs(),
