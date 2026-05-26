@@ -1354,6 +1354,7 @@ function isValidSamePlanWordPressGraphTarget(targetMutation, reference, sourceMu
             !sourceValue
             || typeof sourceValue !== 'object'
             || sourceValue.post_type !== 'attachment'
+            || !hasRemoteWordPressNavigationPost(remote)
           )
         )
       )
@@ -1637,6 +1638,11 @@ function isValidSamePlanWordPressGraphTarget(targetMutation, reference, sourceMu
   }
 
   return true;
+}
+
+function hasRemoteWordPressNavigationPost(remote) {
+  const posts = remote?.db?.wp_posts ? Object.values(remote.db.wp_posts) : [];
+  return posts.some((post) => post && typeof post === 'object' && post.post_type === 'wp_navigation');
 }
 
 function isBlockedSamePlanWordPressGraphSource(sourceMutation, reference, mutationByResourceKey) {
