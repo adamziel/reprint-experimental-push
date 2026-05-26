@@ -369,6 +369,7 @@ Current executable gate:
 | Parallelism limits | Run mixed release-bundle work, including large uploads and dependency-heavy plugin changes, within the same bounded per-site budgets so shared planning does not widen the recovery boundary. | The mixed bundle still needs its own receipts, live preconditions, and atomic-group barrier. Parallelism may overlap staging, but it cannot claim visibility early. |
 | Parallelism limits | Keep mixed release-bundle fanout within per-kind budgets so upload, hash, and row work can overlap without widening the bundle boundary. | The fanout remains staging-only. Each mutating file or row still rechecks its live precondition, and the bundle staging record still classifies recovery. |
 | Compression | Compress canonical per-kind budget summaries to size bounded release-bundle retry windows so repeat planning moves fewer bytes before the live compare. | Compression stays planning-only. The compressed summary cannot authorize writes, widen the atomic-group barrier, or replace later durable receipts. |
+| Compression | Compress canonical per-kind budget summaries and reuse a cached release-manifest digest to size bounded release-bundle fanout so repeat planning moves fewer bytes before the live compare. | Compression stays planning-only. The compressed summary and cached manifest cannot authorize writes, widen the atomic-group barrier, or replace later durable receipts. |
 | Parallelism limits | Partition owner-scoped index scans and bounded hash planning within per-site budgets so independent planning can overlap before the live compare. | Partitioned planning stays advisory, each later mutation still rechecks its live resource precondition, and the atomic-group barrier does not move. |
 | Backpressure | Use bounded producer queues for hashing, chunk upload, and database batching. Pause earlier stages when upload acks, journal fsyncs, memory, disk, or remote latency exceed budget. | A paused or failed sender must have enough durable state to resume or abort without guessing which bytes or rows reached the remote. |
 | Backpressure | Reuse measured queue headroom to size bounded chunk-upload retry windows so a paused sender can plan the next attempt without rescanning the same queue evidence. | Queue headroom stays planning-only. The retry window still cannot authorize publish, widen an atomic-group boundary, or replace durable chunk receipts. |
@@ -752,6 +753,9 @@ The benchmark shape must stay realistic:
 - A compressed release-manifest digest can also size bounded release-bundle
   retry windows, but only as planning evidence while durable receipts and the
   guarded release record still decide recovery.
+- Compressed per-kind budget summaries and a cached release-manifest digest can
+  also size bounded release-bundle fanout, but only as planning evidence while
+  durable receipts and the guarded release record still decide recovery.
 - Canonical row-batch manifests can also size bounded plugin-update batches,
   but only as planning evidence while each row still keeps its own precondition
   and the batch receipts still decide recovery.

@@ -137,6 +137,16 @@ test('benchmark model covers large uploads and plugin installs', () => {
   assert.ok(
     model.safeFastPaths.some(
       (fastPath) =>
+        fastPath.area === 'compression' &&
+        fastPath.allowedShortcut === 'compress-canonical-per-kind-budget-summaries-and-reuse-cached-release-manifest-digest-to-size-bounded-release-bundle-fanout' &&
+        fastPath.guardrails.includes('cached-release-manifest-remains-planning-evidence-only') &&
+        fastPath.gateProofs.recovery.includes('guarded release record'),
+    ),
+    'compressed budget summaries and cached release manifests can size release-bundle fanout without weakening recovery evidence',
+  );
+  assert.ok(
+    model.safeFastPaths.some(
+      (fastPath) =>
         fastPath.area === 'remote-indexes' &&
         fastPath.allowedShortcut === 'reuse-cached-release-manifest-digest-to-size-bounded-release-bundle-fanout' &&
         fastPath.guardrails.includes('cached-release-manifest-remains-planning-evidence-only') &&
