@@ -1569,7 +1569,8 @@ export function productionThroughputDetails(report) {
     Number.isFinite(receiptCursorQueueSlackBytes)
     && Number.isFinite(receiptCursorMemoryCeilingBytes)
     && Number.isFinite(receiptCursorWindowBytes)
-    && receiptCursorQueueSlackBytes === receiptCursorMemoryCeilingBytes - receiptCursorWindowBytes;
+    && receiptCursorQueueSlackBytes === receiptCursorMemoryCeilingBytes - receiptCursorWindowBytes
+    && queueHeadroomWithinResourceCeiling;
   const receiptCursorQueueSlackWithinMemoryCeiling =
     Number.isFinite(receiptCursorQueueSlackBytes)
     && Number.isFinite(receiptCursorMemoryCeilingBytes)
@@ -1589,7 +1590,8 @@ export function productionThroughputDetails(report) {
     Number.isFinite(receiptCursorQueueSlackBytes)
     && Number.isFinite(receiptCursorMemoryCeilingBytes)
     && Number.isFinite(receiptCursorWindowBytes)
-    && receiptCursorQueueSlackBytes <= receiptCursorMemoryCeilingBytes - receiptCursorWindowBytes;
+    && receiptCursorQueueSlackBytes <= receiptCursorMemoryCeilingBytes - receiptCursorWindowBytes
+    && queueHeadroomWithinResourceCeiling;
   const queueHeadroomPositive = receiptCursorQueueHeadroomPositive;
   const receiptCursorMemoryHeadroomPositiveVisible = receiptCursorMemoryHeadroomPositive;
   const queuePauseHasMeasuredReceiptCursorQueueSlack =
@@ -1684,7 +1686,8 @@ export function productionThroughputDetails(report) {
     && report.results.successInspection.counts.new === report.shape.mutations;
   const receiptCursorHeadroomMatchesResourceHeadroom =
     receiptCursorWithinMemoryCeiling
-    && receiptCursorMemoryHeadroomBytes === receiptCursorMemoryCeilingBytes - receiptCursorWindowBytes;
+    && receiptCursorMemoryHeadroomBytes === receiptCursorMemoryCeilingBytes - receiptCursorWindowBytes
+    && queueHeadroomWithinResourceCeiling;
   const receiptCursorPauseFootprint = {
     receiptCursorBytes: receiptCursorBackpressureBytes,
     queueBudgetBytes: receiptCursorQueueBudgetBytes,
@@ -1918,12 +1921,14 @@ export function productionThroughputDetails(report) {
   };
   const receiptCursorMemoryHeadroomMatchesResourceHeadroom =
     receiptCursorWithinMemoryCeiling
-    && receiptCursorMemoryHeadroomBytes === receiptCursorMemoryCeilingBytes - receiptCursorWindowBytes;
+    && receiptCursorMemoryHeadroomBytes === receiptCursorMemoryCeilingBytes - receiptCursorWindowBytes
+    && queueHeadroomWithinResourceCeiling;
   const receiptCursorMemoryHeadroomWithinResourceHeadroom =
     Number.isFinite(receiptCursorMemoryHeadroomBytes)
     && Number.isFinite(receiptCursorMemoryCeilingBytes)
     && Number.isFinite(receiptCursorWindowBytes)
-    && receiptCursorMemoryHeadroomBytes <= receiptCursorMemoryCeilingBytes - receiptCursorWindowBytes;
+    && receiptCursorMemoryHeadroomBytes <= receiptCursorMemoryCeilingBytes - receiptCursorWindowBytes
+    && queueHeadroomWithinResourceCeiling;
   const receiptCursorMemoryHeadroomVisibleAndMeasured =
     receiptCursorPauseFootprintComplete
     && queueHeadroomWithinResourceCeiling
@@ -2257,6 +2262,7 @@ export function productionThroughputDetails(report) {
       receiptCursorWithinQueueBudget: report.evidence.backpressure?.receiptCursorWithinQueueBudget ?? false,
       receiptCursorMatchesBackpressure,
       receiptCursorHeadroomMatchesQueueHeadroom,
+      receiptCursorHeadroomMatchesResourceHeadroom,
       receiptCursorBackpressureWithinQueueHeadroom,
       receiptCursorBackpressureWithinResourceHeadroom,
       receiptCursorHeadroomCoveredByQueueBudget,
