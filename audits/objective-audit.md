@@ -6,13 +6,13 @@ The project is **not releasable as a production WordPress push path**.
 
 - Fresh remote heads at audit time, checked on May 26, 2026:
 
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `d1b13506`
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `936e7987`
-- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `c5a47cce`
-- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `94def865`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `71d32324`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `3b2310aa`
+- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `6d77deaa`
+- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `3b6911ca`
 - `origin/lane/reliable-executor` -> `5912fc94`
 - `origin/lane/no-data-loss-invariants` -> `d388db27`
-- `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `d121c210`
+- `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `9e077c10`
 - `origin/lane/no-data-loss-recovery` -> `aec5d04b`
 - `origin/lane/cycle-20260525-mainwindows-2349/critic` -> `fa0dc8a0`
 - `origin/lane/critic` -> `5b61693d`
@@ -32,18 +32,18 @@ Fresh lane proof since the last audit pass improved the local evidence floor,
 but it did not change the release conclusion:
 
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now records
-  `d1b13506`, refreshing public progress freshness only.
+  `71d32324`, refreshing public progress freshness only.
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now records
-  `936e7987`, refreshing the supervisor progress surface only.
+  `3b2310aa`, refreshing the supervisor progress surface only.
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` now records
-  `6379a697`. This refreshes the audit snapshot only and does not change the
+  `6d77deaa`. This refreshes the audit snapshot only and does not change the
   release boundary.
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` now records
-  `94def865`, tightening graph identity proof only.
+  `3b6911ca`, tightening queue slack proof only.
 - `origin/lane/no-data-loss-invariants` now records `d388db27`, adding nav menu
   parent reference blocking only.
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` now
-  records `d121c210`, failing closed on inspected remote artifact refs. It
+  records `9e077c10`, tightening durable recovery remote ownership fencing. It
   still does not add production-backed journal ownership or replay proof.
 - `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration`
   now records `d388db27`, adding nav menu parent reference blocking only.
