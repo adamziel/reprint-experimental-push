@@ -1246,6 +1246,7 @@ const WORDPRESS_GRAPH_TABLE_SUFFIXES = [
   'termmeta',
   'posts',
   'terms',
+  'users',
 ];
 
 function wordpressGraphIdentitySupport({
@@ -1464,6 +1465,12 @@ function wordpressGraphReferences(resource, value) {
       targetTable: 'posts',
       targetId: value.post_parent,
     });
+    addReference({
+      field: 'post_author',
+      relationshipType: 'post-author',
+      targetTable: 'users',
+      targetId: value.post_author,
+    });
     if (value.post_type === 'nav_menu_item') {
       addReference({
         field: 'menu_item_parent',
@@ -1640,6 +1647,9 @@ function samePlanCreatedGraphIdentitySupport({ resource, resources, base, local,
   const postInboundReference = inboundReferences.find((reference) =>
     reference.relationshipType === 'term-relationship-object'
     && reference.targetResource?.table === 'wp_posts');
+  const postAuthorInboundReference = inboundReferences.find((reference) =>
+    reference.relationshipType === 'post-author'
+    && reference.targetResource?.table === 'wp_users');
   return {
     supported: false,
     className: 'stale-wordpress-graph-identity',
@@ -1649,6 +1659,8 @@ function samePlanCreatedGraphIdentitySupport({ resource, resources, base, local,
         ? `WordPress graph mutation ${resource.key} is created in the same plan as a term relationship revision target that depends on it, and identity rewriting is not yet supported.`
       : postInboundReference
         ? `WordPress graph mutation ${resource.key} is created in the same plan as a term relationship post target that depends on it, and identity rewriting is not yet supported.`
+        : postAuthorInboundReference
+          ? `WordPress graph mutation ${resource.key} is created in the same plan as a post author target that depends on it, and identity rewriting is not yet supported.`
       : `WordPress graph mutation ${resource.key} is created in the same plan as a relationship that depends on it, and identity rewriting is not yet supported.`,
     references: inboundReferences,
   };
@@ -1699,6 +1711,9 @@ function wordpressGraphPrimaryIdField(suffix) {
   }
   if (suffix === 'comments') {
     return 'comment_ID';
+  }
+  if (suffix === 'users') {
+    return 'ID';
   }
   if (suffix === 'terms') {
     return 'term_id';

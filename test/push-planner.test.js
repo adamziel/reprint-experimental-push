@@ -16145,12 +16145,64 @@ test('blocks local same-plan created comment user identity while preserving remo
   assert.equal(plan.conflicts.length, 0);
   assert.equal(blocker.class, 'unsupported-comments-users-resource');
   assert.equal(blocker.resourceKey, resourceKey);
-  assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_comments","comment_ID:20"] is created in the same plan as a comment user identity that depends on it, and identity rewriting is not yet supported.');
+  assert.equal(blocker.reason, 'Comments graph resources are not yet supported by the planner.');
   assert.equal(planJson.includes('Local user-linked comment content'), false);
   assert.equal(planJson.includes('Base user-linked comment content'), false);
   assert.equal(planJson.includes('local-same-plan-user'), false);
   assert.equal(remote.plugins.forms.description, 'remote-only plugin drift');
   assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin drift */');
+});
+
+test('blocks local same-plan created post author identity while preserving remote-only plugin removals', () => {
+  const resourceKey = 'row:["wp_posts","ID:42"]';
+  const base = baseSite();
+  base.db.wp_posts['ID:42'] = {
+    ID: 42,
+    post_author: 9,
+    post_title: 'Base authored post',
+    post_content: 'Base authored post content',
+    post_status: 'publish',
+    post_type: 'post',
+  };
+
+  const local = baseSite();
+  local.db.wp_posts['ID:42'] = {
+    ID: 42,
+    post_author: 9,
+    post_title: 'Local authored post',
+    post_content: 'Local authored post content',
+    post_status: 'publish',
+    post_type: 'post',
+  };
+  local.db.wp_users = {
+    'ID:9': {
+      ID: 9,
+      user_login: 'local-same-plan-author',
+      user_email: 'local-author@example.test',
+    },
+  };
+
+  const remote = baseSite();
+  remote.db.wp_posts['ID:42'] = JSON.parse(JSON.stringify(base.db.wp_posts['ID:42']));
+  delete remote.plugins.forms;
+  delete remote.files['wp-content/plugins/forms/forms.php'];
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(plan.conflicts.length, 0);
+  assert.equal(blocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_posts","ID:42"] references graph identities without proven identity mapping or reference rewriting.');
+  assert.equal(planJson.includes('Local authored post content'), false);
+  assert.equal(planJson.includes('Base authored post content'), false);
+  assert.equal(planJson.includes('local-same-plan-author'), false);
+  assert.equal(Object.hasOwn(remote.plugins, 'forms'), false);
+  assert.equal(Object.hasOwn(remote.files, 'wp-content/plugins/forms/forms.php'), false);
 });
 
 test('blocks local same-plan created comment post identity while preserving remote-only plugin changes', () => {
