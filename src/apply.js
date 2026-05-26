@@ -1,4 +1,5 @@
 import { ABSENT, deepClone, digest } from './stable-json.js';
+import path from 'node:path';
 import {
   deserializeResourceValue,
   getResource,
@@ -653,6 +654,8 @@ function productionRecoverySupportReport(writer) {
   }
   if (typeof writer?.journalPath !== 'string' || writer.journalPath.length === 0) {
     addMissingDependency('owned restart-readable recovery journal path');
+  } else if (!path.isAbsolute(writer.journalPath)) {
+    addMissingDependency('absolute restart-readable recovery journal path');
   }
   if (typeof writer?.schemaVersion !== 'number' || writer.schemaVersion !== JOURNAL_SCHEMA_VERSION) {
     addMissingDependency('restart-readable recovery journal schema');
