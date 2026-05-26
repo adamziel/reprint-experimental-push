@@ -822,9 +822,9 @@ try {
       );
       assert.equal(durableJournalSummary.leaseFence?.fsyncEvidence, true);
       assert.equal(durableJournalSummary.leaseFence?.monotonicSequence, true);
-      const packagedDurableJournalAccepted = packagedProductionDurableJournalProofIsAcceptable(proof.dbJournal);
+      const checkedDurableJournalAccepted = checkedReleaseDurableJournalProofIsAcceptable(proof.dbJournal);
 
-      if (requireProductionDurableJournal && !packagedDurableJournalAccepted) {
+      if (requireProductionDurableJournal && !checkedDurableJournalAccepted) {
         process.stdout.write(
           JSON.stringify(
             {
@@ -867,7 +867,7 @@ try {
                 scope: proof.dbJournal.scope || null,
                 ownership: proof.dbJournal.ownership || null,
                 liveLeaseFence: proof.dbJournal.leaseFence || null,
-                packagedAccepted: packagedDurableJournalAccepted,
+                checkedAccepted: checkedDurableJournalAccepted,
               },
               authSessionLifecycle: proof.authSessionLifecycle,
               authSessionLifecycleTrace: proof.authSessionLifecycleTrace,
@@ -887,7 +887,7 @@ try {
         changedFixture: remoteChangedSnapshot.meta?.fixture,
       };
       const authSessionLifecycleSummary = summarizeAuthSessionLifecycle(proof.authSessionLifecycleTrace);
-      if (!packagedSourceFixture) {
+      if (!checkedDurableJournalAccepted) {
         process.stdout.write(
           JSON.stringify(
             {
@@ -963,7 +963,7 @@ try {
                 scope: proof.dbJournal.scope || null,
                 ownership: proof.dbJournal.ownership || null,
                 liveLeaseFence: proof.dbJournal.leaseFence || null,
-                packagedAccepted: false,
+                checkedAccepted: checkedDurableJournalAccepted,
               },
             },
             null,
@@ -977,16 +977,18 @@ try {
       const successfulReleaseBoundary = {
         firstRemainingProductionBoundary: null,
         status: 'checked',
-        verdict: 'PACKAGED_RELEASE_BOUNDARY_OK',
+        verdict: packagedSourceFixture ? 'PACKAGED_RELEASE_BOUNDARY_OK' : 'LIVE_RELEASE_BOUNDARY_OK',
         authSession: {
           required: 'production-auth-session lifecycle',
           observed: 'active-unexpired-preserved',
-          verdict: 'PACKAGED_RELEASE_BOUNDARY_OK',
+          verdict: packagedSourceFixture ? 'PACKAGED_RELEASE_BOUNDARY_OK' : 'LIVE_RELEASE_BOUNDARY_OK',
         },
         durableJournal: {
-          storageLeaseFence: 'packaged production plugin journal surface accepted on the checked release boundary',
-          verdict: packagedDurableJournalAccepted
-            ? 'PACKAGED_RELEASE_BOUNDARY_OK'
+          storageLeaseFence: packagedSourceFixture
+            ? 'packaged production plugin journal surface accepted on the checked release boundary'
+            : 'checked live production-shaped journal surface accepted on the checked release boundary',
+          verdict: checkedDurableJournalAccepted
+            ? (packagedSourceFixture ? 'PACKAGED_RELEASE_BOUNDARY_OK' : 'LIVE_RELEASE_BOUNDARY_OK')
             : 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED',
         },
       };
@@ -1047,7 +1049,7 @@ try {
               scope: proof.dbJournal.scope || null,
               ownership: proof.dbJournal.ownership || null,
               liveLeaseFence: proof.dbJournal.leaseFence || null,
-              packagedAccepted: packagedDurableJournalAccepted,
+              checkedAccepted: checkedDurableJournalAccepted,
             },
           },
           null,
@@ -1581,8 +1583,8 @@ function runProductionRecoveryJournalProof({ plan, current, artifactRefs = {} })
   }
 }
 
-function packagedProductionDurableJournalProofIsAcceptable(dbJournal) {
-  return /packaged production plugin journal surface/i.test(dbJournal?.scope || '')
+function checkedReleaseDurableJournalProofIsAcceptable(dbJournal) {
+  return /(packaged production plugin|checked live production-shaped) journal surface/i.test(dbJournal?.scope || '')
     && dbJournal?.ownership?.ownsJournal === true
     && dbJournal?.ownership?.restartReadable === true
     && dbJournal?.ownership?.productionAdapter === 'wpdb-single-statement-cas'

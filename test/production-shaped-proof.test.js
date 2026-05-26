@@ -1124,8 +1124,8 @@ maybeTest('production-shaped release verify command runs the live protocol branc
       'live release verify',
     );
     assertSpawnCompletedWithoutSpawnError(proof, 'live release verify', liveProofInnerTimeoutMs);
-    assert.equal(proof.status, 1, proof.stderr);
-    assert.match(proof.stdout, /"ok": false/);
+    assert.equal(proof.status, 0, proof.stderr);
+    assert.match(proof.stdout, /"ok": true/);
     assert.match(proof.stdout, /"sourceUrl": "http:\/\/127\.0\.0\.1:\d+"/);
     assert.match(proof.stdout, /"topology": \{\s*"remoteBase": "http:\/\/127\.0\.0\.1:\d+"/);
     assert.match(proof.stdout, /"remoteChanged": "(http:\/\/127\.0\.0\.1:\d+|remote-changed)"/);
@@ -1140,18 +1140,19 @@ maybeTest('production-shaped release verify command runs the live protocol branc
     );
     assert.match(proof.stdout, /"remoteSnapshot": \{\s*"status": 200,\s*"ok": true,\s*"snapshotHash": "[a-f0-9]{64}",\s*"visibleSurfaceHash": "[a-f0-9]{64}",\s*"finalMatchesLocal": false\s*\}/);
     assert.match(proof.stdout, /"boundary": \{/);
-    assert.match(proof.stdout, /"firstRemainingProductionBoundary": "durable journal semantics on the checked live release path"/);
-    assert.match(proof.stdout, /"verdict": "PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED"/);
+    assert.match(proof.stdout, /"firstRemainingProductionBoundary": null/);
+    assert.match(proof.stdout, /"verdict": "LIVE_RELEASE_BOUNDARY_OK"/);
     assert.match(
       proof.stdout,
       /"gateDependencies": \{\s*"productionAuthSession": "production-backed auth\/session issuance, read, expiry, rotation, revocation, and cleanup on the checked release path",\s*"durableJournal": "production durable journal storage with lease fencing, restart-readable artifacts, and release-path consumption",\s*"replayAndRetry": "checked live replay equivalence plus preserved-remote retry on the release verifier path"\s*\}/,
     );
-    assert.match(proof.stdout, /"releaseProof": \{\s*"ok": false,\s*"status": 501,\s*"code": "PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED"/);
+    assert.match(proof.stdout, /"releaseProof": \{\s*"ok": true,\s*"mode": "apply"/);
     assert.match(proof.stdout, /"durableJournal": \{\s*"proof": \{\s*"status": 0,\s*"journal": \{/);
     assert.match(proof.stdout, /"productionAdapter": "openProductionRecoveryJournal"/);
     assert.match(proof.stdout, /"ownsJournal": true/);
     assert.match(proof.stdout, /"restartReadable": true/);
     assert.match(proof.stdout, /"staleClaimRejected": true/);
+    assert.match(proof.stdout, /"checkedAccepted": true/);
     assert.match(
       proof.stdout,
       /"leaseFence": \{\s*"storageGuard": "filesystem-compare-rename",\s*"fsyncEvidence": true,\s*"monotonicSequence": true,\s*"staleClaimRejected": true\s*\}/,
@@ -1159,7 +1160,7 @@ maybeTest('production-shaped release verify command runs the live protocol branc
     assert.match(proof.stdout, /"consumed": true/);
     assert.match(
       proof.stdout,
-      /"releaseProof": \{\s*"ok": false,\s*"status": 501,\s*"code": "PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED"[\s\S]*?"authSessionLifecycle": \{\s*"minted": \{\s*"id": "[^"]+",\s*"type": "production-auth-session",\s*"status": "active",\s*"expiresAt": "[^"]+",\s*"expired": false\s*\},\s*"read": \{\s*"id": "[^"]+",\s*"type": "production-auth-session",\s*"status": "active",\s*"expiresAt": "[^"]+",\s*"expired": false\s*\}/,
+      /"releaseProof": \{\s*"ok": true[\s\S]*?"authSessionLifecycle": \{\s*"minted": \{\s*"id": "[^"]+",\s*"type": "production-auth-session",\s*"status": "active",\s*"expiresAt": "[^"]+",\s*"expired": false\s*\},\s*"read": \{\s*"id": "[^"]+",\s*"type": "production-auth-session",\s*"status": "active",\s*"expiresAt": "[^"]+",\s*"expired": false\s*\}/,
     );
     assert.match(
       proof.stdout,
@@ -1173,7 +1174,7 @@ maybeTest('production-shaped release verify command runs the live protocol branc
       proof.stdout,
       /"authSessionLifecycleTrace": \[\s*\{\s*"step": "preflight",\s*"id": "[^"]+",\s*"type": "production-auth-session",\s*"status": "active",\s*"expiresAt": "[^"]+",\s*"expired": false,\s*"rotated": false,\s*"preserved": false\s*\}/,
     );
-    assert.match(proof.stdout, /"releaseProof": \{\s*"ok": false,\s*"mode": "apply"/);
+    assert.match(proof.stdout, /"releaseProof": \{\s*"ok": true,\s*"mode": "apply"/);
     assert.match(
       proof.stdout,
       /"staleClaimRetry": \{\s*"abandoned": \{\s*"status": 500,\s*"ok": false,\s*"code": "LAB_SIMULATED_STALE_CLAIM_ALL_OLD"/,
