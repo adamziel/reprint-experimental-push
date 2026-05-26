@@ -1,6 +1,6 @@
 # Critic Verdict
 
-Current reliable head: `a859cc2a68b44de7b7d7e9159f9a877249164076`
+Current reliable head: `1b02b97e7fae6e0cc0a38a5f9cfe33ec78cfbac6`
 (`current release-executor head`).
 
 Verdict: `0/4`
