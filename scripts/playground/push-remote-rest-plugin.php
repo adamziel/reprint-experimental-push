@@ -2769,12 +2769,19 @@ function reprint_push_lab_rest_auth_evidence(WP_REST_Request $request): array
         : null;
     $production_session_playground_fallback = false;
     $production_session_warning = null;
+    $production_session_preserved = null;
     if ($production_session && is_array($lifecycle_drift)) {
         if (($lifecycle_drift['mode'] ?? '') === 'expired') {
             $session_expires_at = gmdate('Y-m-d\\TH:i:s\\Z', time() - 60);
         }
         if (($lifecycle_drift['mode'] ?? '') === 'rotated' && !empty($session_id)) {
             $session_id .= '-rotated';
+        }
+        if (($lifecycle_drift['mode'] ?? '') === 'unpreserved') {
+            $production_session_preserved = false;
+        }
+        if (($lifecycle_drift['mode'] ?? '') === 'preserved-invalid') {
+            $production_session_preserved = ['lab-unpreserved'];
         }
         if (($lifecycle_drift['mode'] ?? '') === 'playground-fallback') {
             $production_session_playground_fallback = true;
@@ -2796,6 +2803,32 @@ function reprint_push_lab_rest_auth_evidence(WP_REST_Request $request): array
         $session_cleaned_up = is_array($lifecycle_drift) && ($lifecycle_drift['mode'] ?? '') === 'cleaned-up';
     }
 
+    $session = [
+        'id' => $session_id,
+        'type' => $session_type,
+        'verifier' => is_array($auth) ? ($auth['verifier'] ?? null) : null,
+        'applicationPasswordUuid' => is_array($auth) ? $auth['applicationPasswordUuid'] : null,
+        'applicationPasswordAppId' => is_array($auth) ? ($auth['applicationPasswordAppId'] ?? null) : null,
+        'credentialScope' => is_array($auth) ? ($auth['credentialScope'] ?? null) : null,
+        'credentialType' => is_array($auth) ? ($auth['credentialType'] ?? null) : null,
+        'credentialHash' => is_array($auth) ? $auth['credentialHash'] : null,
+        'status' => $session_status,
+        'revoked' => $session_revoked,
+        'cleanedUp' => $session_cleaned_up,
+        'expiresAt' => $session_expires_at,
+        'playgroundFallback' => is_array($auth)
+            ? ($production_session ? $production_session_playground_fallback : (bool) ($auth['playgroundFallback'] ?? false))
+            : false,
+        'warning' => is_array($auth)
+            ? ($production_session
+                ? $production_session_warning
+                : (isset($auth['warning']) ? (string) $auth['warning'] : null))
+            : null,
+    ];
+    if ($production_session && $production_session_preserved !== null) {
+        $session['preserved'] = $production_session_preserved;
+    }
+
     return [
         'schemaVersion' => 1,
         'scope' => REPRINT_PUSH_LAB_AUTH_SCOPE,
@@ -2807,28 +2840,7 @@ function reprint_push_lab_rest_auth_evidence(WP_REST_Request $request): array
                 'manage_options' => current_user_can('manage_options'),
             ],
         ],
-        'session' => [
-            'id' => $session_id,
-            'type' => $session_type,
-            'verifier' => is_array($auth) ? ($auth['verifier'] ?? null) : null,
-            'applicationPasswordUuid' => is_array($auth) ? $auth['applicationPasswordUuid'] : null,
-            'applicationPasswordAppId' => is_array($auth) ? ($auth['applicationPasswordAppId'] ?? null) : null,
-            'credentialScope' => is_array($auth) ? ($auth['credentialScope'] ?? null) : null,
-            'credentialType' => is_array($auth) ? ($auth['credentialType'] ?? null) : null,
-            'credentialHash' => is_array($auth) ? $auth['credentialHash'] : null,
-            'status' => $session_status,
-            'revoked' => $session_revoked,
-            'cleanedUp' => $session_cleaned_up,
-            'expiresAt' => $session_expires_at,
-            'playgroundFallback' => is_array($auth)
-                ? ($production_session ? $production_session_playground_fallback : (bool) ($auth['playgroundFallback'] ?? false))
-                : false,
-            'warning' => is_array($auth)
-                ? ($production_session
-                    ? $production_session_warning
-                    : (isset($auth['warning']) ? (string) $auth['warning'] : null))
-                : null,
-        ],
+        'session' => $session,
     ];
 }
 
@@ -2852,7 +2864,7 @@ function reprint_push_lab_rest_auth_session_lifecycle_drift(WP_REST_Request $req
         return null;
     }
 
-    if (!in_array($drift_mode, ['revoked', 'cleaned-up', 'expired', 'rotated', 'playground-fallback', 'playground-fallback-invalid', 'warning', 'warning-invalid'], true)) {
+    if (!in_array($drift_mode, ['revoked', 'cleaned-up', 'expired', 'rotated', 'unpreserved', 'preserved-invalid', 'playground-fallback', 'playground-fallback-invalid', 'warning', 'warning-invalid'], true)) {
         return null;
     }
 
