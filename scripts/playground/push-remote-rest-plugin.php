@@ -573,6 +573,12 @@ function reprint_push_lab_rest_merge_checked_db_journal_contract(array $db_journ
                     && array_key_exists($key, $db_journal)
                     && array_key_exists($key, $checked_summary)
                     && $db_journal[$key] !== $checked_summary[$key]
+                ) || (
+                    reprint_push_lab_rest_should_prefer_authoritative_checked_db_journal_field(
+                        $db_journal,
+                        $checked_summary,
+                        $key
+                    )
                 )
             )
             && array_key_exists($key, $checked_summary)
@@ -632,6 +638,26 @@ function reprint_push_lab_rest_should_fill_checked_db_journal_field(array $db_jo
     }
 
     return is_array($value) && $value === [];
+}
+
+function reprint_push_lab_rest_should_prefer_authoritative_checked_db_journal_field(
+    array $db_journal,
+    array $checked_summary,
+    string $key
+): bool {
+    if (($checked_summary['acceptedOnCheckedBoundary'] ?? false) !== true) {
+        return false;
+    }
+
+    if (($db_journal['acceptedOnCheckedBoundary'] ?? false) !== true) {
+        return false;
+    }
+
+    if (!array_key_exists($key, $db_journal) || !array_key_exists($key, $checked_summary)) {
+        return false;
+    }
+
+    return $db_journal[$key] !== $checked_summary[$key];
 }
 
 function reprint_push_lab_rest_should_upgrade_checked_db_journal_scope(array $db_journal, array $checked_summary): bool

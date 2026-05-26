@@ -676,6 +676,104 @@ test('checked db journal merge replaces stale top-level checked evidence when th
   });
 });
 
+test('checked db journal merge prefers authoritative checked top-level evidence even when the inline contract is already accepted', { skip: !hasPhp }, () => {
+  const result = runMerge(
+    {
+      scope: 'packaged production plugin journal surface; not local Playground fixture only',
+      acceptedOnCheckedBoundary: true,
+      schemaVersion: 1,
+      table: 'wp_reprint_push_lab_push_journal',
+      rowCount: 2,
+      latestRows: [
+        { event: 'idempotency-opened', id: 1 },
+        { event: 'mutation-applied', id: 2 },
+      ],
+      eventSummaries: [
+        { event: 'mutation-applied', count: 1, latestId: 2 },
+      ],
+      idempotencyEvidence: [
+        { idempotencyKeyHash: 'idem-hash-01', events: 2, requestHashes: 1, latestId: 2 },
+      ],
+      ownership: {
+        ownsJournal: true,
+        restartReadable: true,
+        productionAdapter: 'wpdb-single-statement-cas',
+      },
+      leaseFence: {
+        boundary: 'wpdb-single-statement-cas',
+        claimKeyUnique: true,
+        monotonicSequence: true,
+        restartReadable: true,
+        staleClaimRejected: false,
+      },
+    },
+    {
+      scope: 'packaged production plugin journal surface; not local Playground fixture only',
+      acceptedOnCheckedBoundary: true,
+      schemaVersion: 1,
+      table: 'wp_reprint_push_lab_push_journal',
+      rowCount: 3,
+      latestRows: [
+        { event: 'idempotency-opened', id: 1 },
+        { event: 'mutation-applied', id: 2 },
+        { event: 'apply-committed', id: 3 },
+      ],
+      eventSummaries: [
+        { event: 'apply-committed', count: 1, latestId: 3 },
+        { event: 'mutation-applied', count: 1, latestId: 2 },
+      ],
+      idempotencyEvidence: [
+        { idempotencyKeyHash: 'idem-hash-01', events: 3, requestHashes: 1, latestId: 3 },
+      ],
+      ownership: {
+        ownsJournal: true,
+        restartReadable: true,
+        productionAdapter: 'wpdb-single-statement-cas',
+      },
+      leaseFence: {
+        boundary: 'wpdb-single-statement-cas',
+        claimKeyUnique: true,
+        monotonicSequence: true,
+        restartReadable: true,
+        staleClaimRejected: false,
+      },
+    },
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  assert.deepEqual(JSON.parse(result.stdout), {
+    scope: 'packaged production plugin journal surface; not local Playground fixture only',
+    acceptedOnCheckedBoundary: true,
+    schemaVersion: 1,
+    table: 'wp_reprint_push_lab_push_journal',
+    rowCount: 3,
+    latestRows: [
+      { event: 'idempotency-opened', id: 1 },
+      { event: 'mutation-applied', id: 2 },
+      { event: 'apply-committed', id: 3 },
+    ],
+    eventSummaries: [
+      { event: 'apply-committed', count: 1, latestId: 3 },
+      { event: 'mutation-applied', count: 1, latestId: 2 },
+    ],
+    idempotencyEvidence: [
+      { idempotencyKeyHash: 'idem-hash-01', events: 3, requestHashes: 1, latestId: 3 },
+    ],
+    ownership: {
+      ownsJournal: true,
+      restartReadable: true,
+      productionAdapter: 'wpdb-single-statement-cas',
+    },
+    leaseFence: {
+      boundary: 'wpdb-single-statement-cas',
+      claimKeyUnique: true,
+      monotonicSequence: true,
+      restartReadable: true,
+      staleClaimRejected: false,
+    },
+  });
+});
+
 test('checked storage guard merge replaces stale checked-boundary values when the inline contract was not accepted yet', { skip: !hasPhp }, () => {
   const result = runStorageGuardMerge(
     {
