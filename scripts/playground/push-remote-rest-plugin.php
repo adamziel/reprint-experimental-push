@@ -349,8 +349,7 @@ function reprint_push_lab_rest_authenticated_preflight(WP_REST_Request $request)
     $auth = reprint_push_lab_rest_auth_evidence($request);
     $signature = reprint_push_lab_rest_signature_context($request);
     $profile = reprint_push_lab_rest_route_profile($request);
-    $session_type = reprint_push_lab_rest_package_mode_enabled()
-        && (string) ($profile['profile'] ?? '') === 'production-shaped'
+    $session_type = (string) ($profile['profile'] ?? '') === 'production-shaped'
         ? 'production-auth-session'
         : 'lab-signed-push-session';
 
@@ -2725,18 +2724,25 @@ function reprint_push_lab_rest_auth_evidence(WP_REST_Request $request): array
     $auth = reprint_push_lab_rest_basic_auth_context($request);
     $user = wp_get_current_user();
     $package_mode = reprint_push_lab_rest_package_mode_enabled();
+    $profile = reprint_push_lab_rest_route_profile($request);
     $signature = reprint_push_lab_rest_signature_context($request);
+    $signed_production_session = is_array($auth)
+        && (string) ($profile['profile'] ?? '') === 'production-shaped'
+        && isset($signature['session'])
+        && is_array($signature['session'])
+        && !empty($signature['session']['id']);
+    $production_session = $package_mode || $signed_production_session;
     $session_type = is_array($auth)
-        ? ($package_mode ? 'production-auth-session' : $auth['type'])
+        ? ($production_session ? 'production-auth-session' : $auth['type'])
         : null;
     $session_status = is_array($auth)
-        ? ($package_mode ? 'active' : ($auth['status'] ?? 'active'))
+        ? ($production_session ? 'active' : ($auth['status'] ?? 'active'))
         : null;
     $session_id = is_array($auth)
-        ? ($package_mode ? ($signature['session']['id'] ?? null) : ($auth['sessionId'] ?? null))
+        ? ($production_session ? ($signature['session']['id'] ?? null) : ($auth['sessionId'] ?? null))
         : null;
     $session_expires_at = is_array($auth)
-        ? ($package_mode ? ($signature['session']['expiresAt'] ?? null) : ($auth['expiresAt'] ?? null))
+        ? ($production_session ? ($signature['session']['expiresAt'] ?? null) : ($auth['expiresAt'] ?? null))
         : null;
 
     return [
@@ -2760,13 +2766,13 @@ function reprint_push_lab_rest_auth_evidence(WP_REST_Request $request): array
             'credentialType' => is_array($auth) ? ($auth['credentialType'] ?? null) : null,
             'credentialHash' => is_array($auth) ? $auth['credentialHash'] : null,
             'status' => $session_status,
-            'revoked' => is_array($auth) ? ($package_mode ? false : (bool) ($auth['revoked'] ?? false)) : false,
-            'cleanedUp' => is_array($auth) ? ($package_mode ? false : (bool) ($auth['cleanedUp'] ?? false)) : false,
+            'revoked' => is_array($auth) ? ($production_session ? false : (bool) ($auth['revoked'] ?? false)) : false,
+            'cleanedUp' => is_array($auth) ? ($production_session ? false : (bool) ($auth['cleanedUp'] ?? false)) : false,
             'expiresAt' => $session_expires_at,
             'playgroundFallback' => is_array($auth)
-                ? ($package_mode ? false : (bool) ($auth['playgroundFallback'] ?? false))
+                ? ($production_session ? false : (bool) ($auth['playgroundFallback'] ?? false))
                 : false,
-            'warning' => is_array($auth) && !$package_mode && isset($auth['warning'])
+            'warning' => is_array($auth) && !$production_session && isset($auth['warning'])
                 ? (string) $auth['warning']
                 : null,
         ],

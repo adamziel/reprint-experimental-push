@@ -887,6 +887,93 @@ try {
         changedFixture: remoteChangedSnapshot.meta?.fixture,
       };
       const authSessionLifecycleSummary = summarizeAuthSessionLifecycle(proof.authSessionLifecycleTrace);
+      if (!packagedSourceFixture) {
+        process.stdout.write(
+          JSON.stringify(
+            {
+              ok: false,
+              topology: {
+                sourceUrl: liveSourceUrl,
+                remoteBase: remoteServer.baseUrl,
+                remoteChanged: 'remote-changed',
+                localEdited: 'local-edited',
+              },
+              remoteSnapshotHashes: {
+                sameRemoteIdentity: true,
+                baseHash: liveDrift.baseHash,
+                changedHash: liveDrift.changedHash,
+              },
+              drift: labDriftAfterSnapshot ? {
+                mode: labDriftAfterSnapshot,
+                sameRemoteIdentity: true,
+                changedHash: liveDrift.changedHash,
+              } : {
+                sameRemoteIdentity: true,
+              },
+              liveDrift,
+              boundary: {
+                firstRemainingProductionBoundary: 'durable journal semantics on the checked live release path',
+                status: 'unimplemented',
+                verdict: 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED',
+                authSession: {
+                  required: 'production-auth-session lifecycle',
+                  observed: 'active-unexpired-preserved',
+                  verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_PROVEN',
+                },
+                durableJournal: {
+                  storageLeaseFence: 'live production-shaped auth/session is proven, but durable journal storage, lease fencing, restart-readable artifacts, and release-path acceptance remain below the checked live boundary',
+                  verdict: 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED',
+                },
+              },
+              protocolExtension,
+              preflight: {
+                status: preflight.status,
+                authSessionType: preflight.body.auth.session.type,
+                routeProfile: preflight.body.routeProfile,
+                session: {
+                  id: preflight.body.session.id,
+                  type: preflight.body.session.type,
+                },
+              },
+              releaseProof: {
+                ok: false,
+                status: 501,
+                code: 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED',
+                mode: proof.mode,
+                retryAttempts: proof.retryAttempts,
+              },
+              authSessionSource: summarizeAuthSessionSource(authSessionSourceCommand, authSessionSource),
+              authSessionLifecycle: proof.authSessionLifecycle,
+              authSessionLifecycleTrace: proof.authSessionLifecycleTrace,
+              authSessionLifecycleSummary,
+              replayEquivalence: proof.replayEquivalence,
+              durableJournal: {
+                proof: {
+                  status: 0,
+                  journal: durableJournalSummary.journal,
+                  leaseFence: {
+                    ...durableJournalSummary.leaseFence,
+                    staleClaimRejected: durableJournalSummary.journal.staleClaimRejected,
+                  },
+                },
+                rows: proof.dbJournal.rows,
+                applyCommitted: proof.dbJournal.applyCommitted,
+                mutationApplied: proof.dbJournal.mutationApplied,
+                idempotencyOpened: proof.dbJournal.idempotencyOpened,
+                scope: proof.dbJournal.scope || null,
+                ownership: proof.dbJournal.ownership || null,
+                liveLeaseFence: proof.dbJournal.leaseFence || null,
+                packagedAccepted: false,
+              },
+            },
+            null,
+            2,
+          ),
+        );
+        process.stdout.write('\n');
+        throw new ProofFailure();
+      }
+
       const successfulReleaseBoundary = {
         firstRemainingProductionBoundary: null,
         status: 'checked',

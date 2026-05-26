@@ -1140,13 +1140,13 @@ maybeTest('production-shaped release verify command runs the live protocol branc
     );
     assert.match(proof.stdout, /"remoteSnapshot": \{\s*"status": 200,\s*"ok": true,\s*"snapshotHash": "[a-f0-9]{64}",\s*"visibleSurfaceHash": "[a-f0-9]{64}",\s*"finalMatchesLocal": false\s*\}/);
     assert.match(proof.stdout, /"boundary": \{/);
-    assert.match(proof.stdout, /"firstRemainingProductionBoundary": "auth\/session lifecycle and durable journal semantics"/);
-    assert.match(proof.stdout, /"verdict": "PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED"/);
+    assert.match(proof.stdout, /"firstRemainingProductionBoundary": "durable journal semantics on the checked live release path"/);
+    assert.match(proof.stdout, /"verdict": "PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED"/);
     assert.match(
       proof.stdout,
       /"gateDependencies": \{\s*"productionAuthSession": "production-backed auth\/session issuance, read, expiry, rotation, revocation, and cleanup on the checked release path",\s*"durableJournal": "production durable journal storage with lease fencing, restart-readable artifacts, and release-path consumption",\s*"replayAndRetry": "checked live replay equivalence plus preserved-remote retry on the release verifier path"\s*\}/,
     );
-    assert.match(proof.stdout, /"releaseProof": \{\s*"ok": false,\s*"status": 409,\s*"code": "PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED"\s*\}/);
+    assert.match(proof.stdout, /"releaseProof": \{\s*"ok": false,\s*"status": 501,\s*"code": "PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED"/);
     assert.match(proof.stdout, /"durableJournal": \{\s*"proof": \{\s*"status": 0,\s*"journal": \{/);
     assert.match(proof.stdout, /"productionAdapter": "openProductionRecoveryJournal"/);
     assert.match(proof.stdout, /"ownsJournal": true/);
@@ -1159,7 +1159,7 @@ maybeTest('production-shaped release verify command runs the live protocol branc
     assert.match(proof.stdout, /"consumed": true/);
     assert.match(
       proof.stdout,
-      /"releaseProof": \{\s*"ok": false,\s*"status": 409,\s*"code": "PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED"\s*\}[\s\S]*?"authSessionLifecycle": \{\s*"minted": \{\s*"id": "[^"]+",\s*"type": "application-password-basic",\s*"status": "active",\s*"expiresAt": "[^"]+",\s*"expired": false\s*\},\s*"read": \{\s*"id": "[^"]+",\s*"type": "application-password-basic",\s*"status": "active",\s*"expiresAt": "[^"]+",\s*"expired": false\s*\}/,
+      /"releaseProof": \{\s*"ok": false,\s*"status": 501,\s*"code": "PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED"[\s\S]*?"authSessionLifecycle": \{\s*"minted": \{\s*"id": "[^"]+",\s*"type": "production-auth-session",\s*"status": "active",\s*"expiresAt": "[^"]+",\s*"expired": false\s*\},\s*"read": \{\s*"id": "[^"]+",\s*"type": "production-auth-session",\s*"status": "active",\s*"expiresAt": "[^"]+",\s*"expired": false\s*\}/,
     );
     assert.match(
       proof.stdout,
@@ -1167,11 +1167,11 @@ maybeTest('production-shaped release verify command runs the live protocol branc
     );
     assert.match(
       proof.stdout,
-      /"authSessionLifecycle": \{\s*"minted": \{\s*"id": "[^"]+",\s*"type": "application-password-basic",\s*"status": "active",\s*"expiresAt": "[^"]+",\s*"expired": false\s*\},\s*"read": \{\s*"id": "[^"]+",\s*"type": "application-password-basic",\s*"status": "active",\s*"expiresAt": "[^"]+",\s*"expired": false\s*\}/,
+      /"authSessionLifecycle": \{\s*"minted": \{\s*"id": "[^"]+",\s*"type": "production-auth-session",\s*"status": "active",\s*"expiresAt": "[^"]+",\s*"expired": false\s*\},\s*"read": \{\s*"id": "[^"]+",\s*"type": "production-auth-session",\s*"status": "active",\s*"expiresAt": "[^"]+",\s*"expired": false\s*\}/,
     );
     assert.match(
       proof.stdout,
-      /"authSessionLifecycleTrace": \[\s*\{\s*"step": "preflight",\s*"id": "[^"]+",\s*"type": "application-password-basic",\s*"status": "active",\s*"expiresAt": "[^"]+",\s*"expired": false,\s*"rotated": false,\s*"preserved": false\s*\}/,
+      /"authSessionLifecycleTrace": \[\s*\{\s*"step": "preflight",\s*"id": "[^"]+",\s*"type": "production-auth-session",\s*"status": "active",\s*"expiresAt": "[^"]+",\s*"expired": false,\s*"rotated": false,\s*"preserved": false\s*\}/,
     );
     assert.match(proof.stdout, /"releaseProof": \{\s*"ok": false,\s*"mode": "apply"/);
     assert.match(
