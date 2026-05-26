@@ -4,7 +4,7 @@
 
 The project is **not releasable as a production WordPress push path**.
 
-- Fresh remote heads at audit time, checked on 2026-05-26 07:44:27 CEST (+0200):
+- Fresh remote heads at audit time, checked on 2026-05-26 07:54:56 CEST (+0200):
 
 - `origin/lane/cycle-20260524-auth-graph-hardening/critic` -> `e413f7a8`
 - `origin/lane/cycle-20260524-auth-graph-hardening/fast-paths` -> `ad7d82a4`
@@ -38,13 +38,11 @@ The project is **not releasable as a production WordPress push path**.
 - `origin/lane/cycle-20260525-keep-busy-loop-2/independent-auditor` -> `1d6cb6fd`
 - `origin/lane/cycle-20260525-keep-busy-loop-2/no-data-loss-recovery` -> `63e01a49`
 - `origin/lane/cycle-20260525-mainwindows-2349/critic` -> `fe4edb00`
-- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `4bed4db3`
-- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `d7813094`
-- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `8a7f4edd`
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `22027a28`
-- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `6b10836d`
-- `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `8cf7262b`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `4ebeae50`
+- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `c0512cd0`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `4ee4d877`
+- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `641a1e3d`
+- `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `537c2465`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `b9c0fdcb`
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` -> `0ca7b35d`
 - `origin/lane/cycle-20260525-mainwindows-2349/same-plan-wordpress-graph-create` -> `65a40803`
 - `origin/lane/cycle-20260525-mainwindows-2357/no-data-loss-invariants-graph-proof` -> `98c0ce26`
@@ -55,58 +53,25 @@ The project is **not releasable as a production WordPress push path**.
 - `origin/lane/fast-paths` -> `8c5c2ccb`
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `a6359b91`
 - `origin/lane/independent-auditor` -> `25a543ff`
-- `origin/lane/no-data-loss-invariants` -> `7be60dfa`
-- `origin/lane/no-data-loss-recovery` -> `8cf7262b`
+- `origin/lane/no-data-loss-invariants` -> `12c69034`
+- `origin/lane/no-data-loss-recovery` -> `537c2465`
 - `origin/lane/progress-publisher` -> `7695e1f9`
 - `origin/lane/reliable-executor` -> `5d163dd7`
 - `origin/lane/same-plan-wordpress-graph-create` -> `8dea1ca3`
 
 Fresh remote heads re-polled after the last audit note:
 
-- `origin/lane/reliable-executor` -> `f57471be`
-- `origin/lane/no-data-loss-recovery` -> `9e077c10c2899bcaab4895627686a99d41070a3f`
-- `origin/lane/no-data-loss-invariants` -> `7be60dfa3d26006062c6ad0bb158897e88b81f20`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `220057086a9337e5006df8cd74357d9b619ecdc5`
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `528a1b4dceb3212df92442c9c71a2f7f6e65400e`
+- `origin/lane/reliable-executor` -> `ef3e42b9`
+- `origin/lane/no-data-loss-recovery` -> `537c2465`
+- `origin/lane/no-data-loss-invariants` -> `12c69034`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `b9c0fdcb`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `4ee4d877`
 
-The latest reliable-executor head still only hardens release-verify timeout
-handling and child-process cleanup. It is support work, not production-backed
-auth/session lifecycle or durable journal ownership evidence, so the release
-gates remain `0/4`.
-
-Fresh heads after the latest re-poll:
-
-- `origin/lane/reliable-executor` -> `ba248d54` (`Fail closed on production auth session`)
-- `origin/lane/no-data-loss-invariants` -> `ddbb4cbe` (`Block comment post identity references`)
-
-These new heads are still fail-closed support evidence. The reliable-executor
-change closes unsupported production auth-session handling, but it does not
-yet prove a live production mutation boundary or durable journal ownership on
-the release path. The invariants change adds another blocker proof for comment
-identity references, which improves the unsupported-surface boundary but does
-not move the release gate.
-
-These fresh heads still do not add production-backed auth/session lifecycle or
-durable journal ownership evidence. The release gates remain `0/4`.
-
-Fresh visibility-lane and supporting heads moved again, but they still do not change the release gate:
-
-- Since the last audit pass, the visible progress lanes advanced again:
-`origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` ->
-`22027a28` and `origin/lane/cycle-20260525-mainwindows-2349/progress-followup`
--> `12fbd834`. That changes the freshness surface, not the release gate.
-- The current public-refresh branch heads remain:
-`origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` ->
-`22027a28` and `origin/lane/cycle-20260525-mainwindows-2349/progress-followup`
--> `12fbd834`.
-- `origin/lane/reliable-executor` -> `f451b28f`
-- `origin/lane/no-data-loss-invariants` -> `f7501d92`
-- `origin/lane/no-data-loss-recovery` -> `8cf7262b`
-- `origin/main` -> `2c8d52cb`
-
-The current remote state still adds no production-backed auth/session
-lifecycle or durable journal ownership/lease/fencing/replay path proving a
-real source-site mutation boundary. The release gates still stay `0/4`.
+These heads are still fail-closed support evidence and freshness work. They
+improve unsupported-surface blocking and public visibility, but they still do
+not prove a live production mutation boundary, production-backed auth/session
+lifecycle, or durable journal ownership on the release path. The release gates
+remain `0/4`.
 
 The latest reliable-executor and invariants heads only add push/idempotency
 and termmeta same-plan hardening. They are still fail-closed support work, not
