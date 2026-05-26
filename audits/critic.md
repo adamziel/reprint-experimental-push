@@ -1,15 +1,15 @@
 # Critic Verdict
 
-Current reliable head: `fd615755e210ce34d3fcf45fa83444422025f9e0`
-(`Fail closed on preserved read retry exhaustion`).
+Current reliable head: `1311bf2420f9fd93d615724f92f6bd1e4214286c`
+(`Require preserved remote retry proof`).
 
 Verdict: `0/4`
 
 Reason:
 
-- This head tightens the release verifier by failing closed when preserved
-  read retries are exhausted, but it still does not prove a production-backed
-  lifecycle on the release path.
+- This head adds preserved-remote retry proof on the release verifier path,
+  but it still does not prove a production-backed lifecycle on the checked
+  release path.
 - The checked proof is still missing live issuance/read/expiry/rotation/
   revocation/cleanup evidence for `production-auth-session`, and it still does
   not establish stricter durable-journal ownership/restart semantics on the
