@@ -1,19 +1,19 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-26 11:40 CEST
+Last updated: 2026-05-26 11:44 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
 
-## 2026-05-26 11:40 CEST - Freshness Alignment
+## 2026-05-26 11:44 CEST - Freshness Alignment
 
-- Going well: the public progress page and log now name `4bc94c99` as the
-  current reliable-executor head, and the visible status still keeps gates at
-  `0/4`.
-- Not going well: the remaining release proof still needs durable journal
-  ownership with lease and fencing, plus the release-boundary auth/session
-  evidence being carried by the reliable lane, before any production push
-  claim is valid.
+- Going well: the public progress page and log now name `91419223` as the
+  current support-only release-diagnostic head, and the visible status still
+  keeps gates at `0/4`.
+- Not going well: the remaining release proof still needs production-backed
+  auth/session lifecycle evidence on the checked release path, plus durable
+  journal ownership with lease and fencing, before any production push claim
+  is valid.
 - Progress change: the feedback lane only refreshed the public wording and
   audit anchor; no gate moved.
 - Next nudge: keep the public page concise, current, and conservative until a

@@ -125,6 +125,33 @@ linked implementation artifacts.
   durable journal ownership still block any production push claim, and the
   auth/session lifecycle trace is evidence but not a gate movement.
 
+## 2026-05-26 - Public Status Audit 11:40:53
+
+<a id="2026-05-26-public-status-audit-114053"></a>
+
+- Freshness update plus reliable-head confirmation: `10903372` is the current
+  product-side expiry hardening on the public page, and the visible status now
+  points at this 11:40:53 audit refresh.
+- Gate posture remains conservative at `0/4`; no implementation verdict
+  changed.
+- Latest blocker summary remains the same: real WordPress executor/auth and
+  durable journal ownership still block any production push claim, and the
+  fail-closed post-preflight expiry update is evidence but not a gate
+  movement.
+
+## 2026-05-26 - Public Status Audit 11:41:58
+
+<a id="2026-05-26-public-status-audit-114158"></a>
+
+- Freshness update plus reliable-head confirmation: `72b3ddce` is the current
+  reliable-executor head on the public page, and the visible status now points
+  at this 11:41:58 audit refresh.
+- Gate posture remains conservative at `0/4`; no implementation verdict
+  changed.
+- Latest blocker summary remains the same: real WordPress executor/auth and
+  durable journal ownership still block any production push claim, and the
+  auth/session lifecycle trace is evidence but not a gate movement.
+
 ## 2026-05-26 - Public Status Audit 11:40:39
 
 <a id="2026-05-26-public-status-audit-114039"></a>
