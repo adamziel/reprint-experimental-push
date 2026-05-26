@@ -1,27 +1,29 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-26 15:53 CEST
+Last updated: 2026-05-26 15:54 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
 
-## 2026-05-26 15:53 CEST - Public Status Refreshed
+## 2026-05-26 15:54 CEST - Reliable Head Advanced Again
 
-- Going well: the live reliable head is still advancing on the checked
-  release path, and public status can stay aligned with
-  `88674b4bdd8f936f9aab4c1938a3ae3e5267b315` instead of drifting stale.
+- Going well: the live reliable head advanced to `50751002253e7ba1a0256261ea903dea78f4e5a5`, so the checked
+  release path now carries the latest fenced durable-journal evidence instead
+  of the older support-only heads.
 - Not going well: the release gate is still `0/4`; the missing proof remains
-  production-backed auth/session lifecycle or durable-journal ownership.
-- Progress change: the public surface stays conservative while naming the live
-  head and the unchanged gate posture.
-- Next nudge: keep `reliable-executor` on the next checked release-path
-  dependency, and keep `progress-publisher` aligned with
-  `88674b4bdd8f936f9aab4c1938a3ae3e5267b315` while gates stay at `0/4`.
+  production-backed auth/session lifecycle or durable-journal ownership on the
+  checked release boundary.
+- Progress change: this is a real release-path improvement, but it does not
+  by itself prove a production gate.
+- Next nudge: keep `reliable-executor` off proof-field churn and on the next
+  checked release-path dependency, and have `progress-publisher` and the
+  auditors catch public/current-head wording up to `50751002253e7ba1a0256261ea903dea78f4e5a5` without
+  inflating the gate posture.
 
 | Lane | Nudge |
 | --- | --- |
 | Reliable executor | Move to the next checked release-path dependency, not another proof-field surface. |
-| Progress publisher | Keep the public page aligned with the live `88674b4bdd8f936f9aab4c1938a3ae3e5267b315` head; keep the gate posture at `0/4`. |
+| Progress publisher | Keep the public page aligned with the live `50751002253e7ba1a0256261ea903dea78f4e5a5` head; keep the gate posture at `0/4`. |
 | Audit and critic | Keep the verdict at `0/4` unless production-backed lifecycle or durable ownership is proven. |
 
 ## 2026-05-26 15:30 CEST - Lane Retarget Complete
