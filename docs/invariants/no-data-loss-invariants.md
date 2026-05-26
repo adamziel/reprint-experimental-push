@@ -213,6 +213,9 @@ This note captures the planner boundary in plain language.
   matching independent edit is already in sync and remote-only plugin
   removals are present; the matching edit stays `already-in-sync`, the plugin
   removals stay `keep-remote`, and the graph blocker evidence stays bounded.
+- A local serialized block reference must still stop when unrelated
+  remote-only plugin changes are present; the serialized-block blocker stays
+  bounded and the plugin changes stay `keep-remote`.
 - A local comments row must still stop when comments graph resources are
   unsupported, even if unrelated remote-only plugin drift is present; the
   comments blocker evidence stays bounded and the plugin drift stays
