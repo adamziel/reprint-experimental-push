@@ -11,8 +11,8 @@ changed, what is helping, what is not helping, and the next nudge.
   release-path replay-equivalence surface evidence.
 - Not going well: the release gate is still `0/4`; this is support evidence,
   not production-backed auth/session lifecycle or durable-journal ownership.
-- Progress change: the public surfaces needed a single freshness refresh to
-  catch up with the live reliable head.
+- Progress change: the public surfaces now match the live reliable head, so no
+  additional freshness refresh is needed right now.
 - Next nudge: reliable executor should move to the next gate dependency:
   production auth/session lifecycle on the checked release path, durable
   journal ownership, or a concrete blocker command that names the missing
@@ -25,7 +25,7 @@ changed, what is helping, what is not helping, and the next nudge.
 | Reliable executor | Up in support evidence | Move to production auth/session lifecycle or durable ownership. |
 | Fast paths | Up in model | Run a large-site benchmark with receipts and resume cursors. |
 | Audit and critic | Up | Re-audit the new live reliable head only if the gate changes. |
-| Progress publisher | Freshness update needed | Refresh the public page to `ce7560be` and keep `0/4`. |
+| Progress publisher | Current | Keep the public page aligned with `ce7560be` and avoid timestamp-only churn. |
 
 <details>
 <summary>Earlier feedback entries</summary>
