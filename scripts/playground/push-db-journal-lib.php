@@ -927,12 +927,29 @@ function reprint_push_lab_db_journal_checked_boundary_contract_matches($journal)
         return false;
     }
 
+    $production_adapter = is_array($journal['ownership'] ?? null)
+        ? ($journal['ownership']['productionAdapter'] ?? null)
+        : null;
+    $lease_fence_boundary = is_array($journal['leaseFence'] ?? null)
+        ? ($journal['leaseFence']['boundary'] ?? null)
+        : null;
+    $writer_lease_storage_guard = is_array($journal['writerLease'] ?? null)
+        ? ($journal['writerLease']['storageGuard'] ?? null)
+        : null;
+    $storage_guard_boundary = is_array($journal['storageGuard'] ?? null)
+        ? ($journal['storageGuard']['boundary'] ?? null)
+        : null;
+
     return ($journal['schemaVersion'] ?? null) === 1
         && reprint_push_lab_db_journal_checked_boundary_scope_matches($journal['scope'] ?? null)
         && reprint_push_lab_db_journal_claim_contract_matches($journal['claim'] ?? null)
         && reprint_push_lab_db_journal_ownership_contract_matches($journal['ownership'] ?? null)
         && reprint_push_lab_db_journal_writer_lease_contract_matches($journal['writerLease'] ?? null)
         && reprint_push_lab_db_journal_lease_fence_contract_matches($journal['leaseFence'] ?? null)
+        && $production_adapter === 'wpdb-single-statement-cas'
+        && $lease_fence_boundary === 'wpdb-single-statement-cas'
+        && $writer_lease_storage_guard === 'wpdb-single-statement-cas'
+        && $storage_guard_boundary === 'wpdb-single-statement-cas'
         && reprint_push_lab_db_journal_checked_boundary_contract_is_coherent($journal)
         && reprint_push_lab_db_journal_checked_boundary_storage_guard_is_coherent($journal);
 }

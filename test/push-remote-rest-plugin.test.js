@@ -4367,6 +4367,91 @@ test('checked recovery inspect evidence fails closed on conflicting accepted inl
   });
 });
 
+test('checked recovery inspect evidence fails closed on unsupported accepted inline production adapters', { skip: !hasPhp }, () => {
+  const result = runAttachCheckedRecoveryJournalEvidence(
+    {
+      recovery: {
+        journal: {
+          integrity: {
+            schemaVersion: 1,
+            status: 'ok',
+            scope: 'checked live production-shaped recovery inspect journal evidence; not local Playground fixture only',
+          },
+          schemaVersion: 1,
+          acceptedOnCheckedBoundary: true,
+          scope: 'checked live production-shaped journal surface; not local Playground fixture only',
+          claim: {
+            status: 'stale-claim-rejected',
+            activeClaimKeyHash: 'retry-claim-hash-02',
+            activeClaimSequence: 33,
+            activeClaimEvent: 'stale-claim-rejected',
+            idempotencyKeyHash: 'idem-hash-01',
+            requestHash: 'request-hash-01',
+            staleClaimRejected: true,
+            abandonedSequence: 24,
+            abandonedEvent: 'stale-claim-abandoned',
+            previousStartedSequence: 19,
+            previousClaimKeyHash: 'retry-claim-hash-01',
+            previousClaimSequence: 18,
+            previousClaimEvent: 'idempotency-opened',
+          },
+          ownership: {
+            ownsJournal: true,
+            restartReadable: true,
+            productionAdapter: 'custom-inline-adapter',
+          },
+          writerLease: {
+            strategy: 'claim-fenced-single-writer',
+            claimKeyUnique: true,
+            fsyncEvidence: true,
+            storageGuard: 'custom-inline-adapter',
+            monotonicSequence: true,
+            restartReadable: true,
+            staleClaimRejected: true,
+          },
+          leaseFence: {
+            boundary: 'custom-inline-adapter',
+            claimKeyUnique: true,
+            fsyncEvidence: true,
+            monotonicSequence: true,
+            restartReadable: true,
+            staleClaimRejected: true,
+            writerLease: {
+              strategy: 'claim-fenced-single-writer',
+              claimKeyUnique: true,
+              fsyncEvidence: true,
+              storageGuard: 'custom-inline-adapter',
+              monotonicSequence: true,
+              restartReadable: true,
+              staleClaimRejected: true,
+            },
+          },
+          storageGuard: {
+            boundary: 'custom-inline-adapter',
+            operation: 'update',
+            outcome: 'applied',
+          },
+        },
+      },
+    },
+    true,
+    false,
+    {},
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.recovery.journal.acceptedOnCheckedBoundary, false);
+  assert.equal(parsed.recovery.journal.ownership.productionAdapter, 'custom-inline-adapter');
+  assert.equal(parsed.recovery.journal.writerLease.storageGuard, 'custom-inline-adapter');
+  assert.equal(parsed.recovery.journal.leaseFence.boundary, 'custom-inline-adapter');
+  assert.deepEqual(parsed.recovery.journal.storageGuard, {
+    boundary: 'custom-inline-adapter',
+    operation: 'update',
+    outcome: 'applied',
+  });
+});
+
 test('checked recovery inspect evidence backfills the required top-level storage guard summary from checked journal evidence', { skip: !hasPhp }, () => {
   const result = runAttachCheckedRecoveryJournalEvidence(
     {
@@ -4704,6 +4789,83 @@ test('checked db journal attachment fails closed on conflicting accepted inline 
       outcome: 'precondition-failed',
     },
   });
+});
+
+test('checked db journal attachment fails closed on unsupported accepted inline production adapters', { skip: !hasPhp }, () => {
+  const result = runAttachCheckedDbJournalContract(
+    {
+      ok: true,
+      dbJournal: {
+        scope: 'checked live production-shaped journal surface; not local Playground fixture only',
+        acceptedOnCheckedBoundary: true,
+        claim: {
+          status: 'stale-claim-rejected',
+          activeClaimKeyHash: 'retry-claim-hash-02',
+          activeClaimSequence: 33,
+          activeClaimEvent: 'stale-claim-rejected',
+          idempotencyKeyHash: 'idem-hash-01',
+          requestHash: 'request-hash-01',
+          staleClaimRejected: true,
+          abandonedSequence: 24,
+          abandonedEvent: 'stale-claim-abandoned',
+          previousStartedSequence: 19,
+          previousClaimKeyHash: 'retry-claim-hash-01',
+          previousClaimSequence: 18,
+          previousClaimEvent: 'idempotency-opened',
+        },
+        ownership: {
+          ownsJournal: true,
+          restartReadable: true,
+          productionAdapter: 'custom-inline-adapter',
+        },
+        writerLease: {
+          strategy: 'claim-fenced-single-writer',
+          claimKeyUnique: true,
+          fsyncEvidence: true,
+          storageGuard: 'custom-inline-adapter',
+          monotonicSequence: true,
+          restartReadable: true,
+          staleClaimRejected: true,
+        },
+        leaseFence: {
+          boundary: 'custom-inline-adapter',
+          claimKeyUnique: true,
+          fsyncEvidence: true,
+          monotonicSequence: true,
+          restartReadable: true,
+          staleClaimRejected: true,
+          writerLease: {
+            strategy: 'claim-fenced-single-writer',
+            claimKeyUnique: true,
+            fsyncEvidence: true,
+            storageGuard: 'custom-inline-adapter',
+            monotonicSequence: true,
+            restartReadable: true,
+            staleClaimRejected: true,
+          },
+        },
+        storageGuard: {
+          boundary: 'custom-inline-adapter',
+          operation: 'update',
+          outcome: 'applied',
+        },
+      },
+    },
+    {},
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.dbJournal.acceptedOnCheckedBoundary, false);
+  assert.equal(parsed.dbJournal.ownership.productionAdapter, 'custom-inline-adapter');
+  assert.equal(parsed.dbJournal.writerLease.storageGuard, 'custom-inline-adapter');
+  assert.equal(parsed.dbJournal.leaseFence.boundary, 'custom-inline-adapter');
+  assert.deepEqual(parsed.dbJournal.storageGuard, {
+    boundary: 'custom-inline-adapter',
+    operation: 'update',
+    outcome: 'applied',
+  });
+  assert.equal(parsed.storageGuard, undefined);
 });
 
 test('checked db journal attachment backfills the required top-level storage guard summary from checked journal evidence', { skip: !hasPhp }, () => {
