@@ -20038,6 +20038,49 @@ test('blocks unsupported special file entries while preserving a matching indepe
   assert.equal(remote.files['wp-content/plugins/forms/forms.php'], undefined);
 });
 
+test('blocks unsupported special file entries while preserving a matching independent file type swap and remote-only plugin changes', () => {
+  const resourceKey = 'file:wp-content/uploads/symlink';
+  const base = baseSite();
+  base.files['wp-content/uploads/symlink'] = { type: 'symlink', target: '../shared/target' };
+  base.files['wp-content/uploads/cover'] = 'base cover bytes';
+
+  const local = baseSite();
+  local.files['wp-content/uploads/symlink'] = { type: 'symlink', target: '../shared/other-target' };
+  local.files['wp-content/uploads/cover'] = { type: 'directory' };
+  delete local.files['wp-content/uploads/cover/keep.txt'];
+
+  const remote = baseSite();
+  remote.files['wp-content/uploads/symlink'] = JSON.parse(JSON.stringify(base.files['wp-content/uploads/symlink']));
+  remote.files['wp-content/uploads/cover'] = { type: 'directory' };
+  remote.plugins.forms.description = 'remote-only plugin changes';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin changes */';
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers[0];
+  const typeSwapDecision = decisionFor(plan, 'file:wp-content/uploads/cover');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(plan.conflicts.length, 0);
+  assert.equal(blocker.class, 'unsupported-special-file-resource');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.reason, 'Special file entries are not yet supported by the planner.');
+  assert.equal(typeSwapDecision.decision, 'already-in-sync');
+  assert.equal(typeSwapDecision.change.localChange, 'type-change');
+  assert.equal(typeSwapDecision.change.remoteChange, 'type-change');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('../shared/other-target'), false);
+  assert.equal(planJson.includes('../shared/target'), false);
+  assert.equal(planJson.includes('remote descendant bytes'), false);
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin changes');
+  assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin changes */');
+});
+
 test('blocks unsupported socket-like special file entries while preserving remote-only plugin drift', () => {
   const resourceKey = 'file:wp-content/uploads/socket';
   const base = baseSite();
