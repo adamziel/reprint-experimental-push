@@ -33,6 +33,7 @@ import {
   packagedProductionPluginNextRouteNotReadyProbeCounts,
   packagedProductionPluginNextTimeoutProbeCount,
   packagedProductionPluginNotReadyProbeLimitReached,
+  packagedProductionPluginPackagedRouteStartupLimitReached,
   packagedProductionPluginPreflightTerminal,
   packagedProductionPluginReadinessBodyRetryable,
   packagedProductionPluginReadinessErrorRetryable,
@@ -1665,6 +1666,18 @@ test('packaged production plugin readiness helper does not retry terminal readin
   );
   assert.equal(
     packagedProductionPluginNotReadyProbeLimitReached(
+      packagedProductionPluginMaxConsecutiveNotReadyProbes,
+    ),
+    true,
+  );
+  assert.equal(
+    packagedProductionPluginPackagedRouteStartupLimitReached(
+      packagedProductionPluginMaxConsecutiveNotReadyProbes - 1,
+    ),
+    false,
+  );
+  assert.equal(
+    packagedProductionPluginPackagedRouteStartupLimitReached(
       packagedProductionPluginMaxConsecutiveNotReadyProbes,
     ),
     true,

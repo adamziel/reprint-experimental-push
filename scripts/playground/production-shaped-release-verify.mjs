@@ -34,6 +34,7 @@ import {
   packagedProductionPluginNextRouteNotReadyProbeCounts,
   packagedProductionPluginNextTimeoutProbeCount,
   packagedProductionPluginNotReadyProbeLimitReached,
+  packagedProductionPluginPackagedRouteStartupLimitReached,
   packagedProductionPluginPreflightReady,
   packagedProductionPluginPreflightRetryable,
   packagedProductionPluginReadinessProbeTimedOut,
@@ -1357,11 +1358,19 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
                 indexProbe.body,
               )
             ) {
-              lastError = new Error(
-                `Production plugin package snapshot route is still warming after global WordPress startup HTTP ${indexProbe.status}`,
-              );
-              await sleep(readinessProbeIntervalMs);
-              continue;
+              if (packagedProductionPluginPackagedRouteStartupLimitReached(snapshotNotReadyProbeCount)) {
+                await throwPlaygroundReadinessFailure(
+                  child,
+                  `Packaged production plugin snapshot stayed startup-shaped after global WordPress startup HTTP ${indexProbe.status} for ${snapshotNotReadyProbeCount} consecutive response${snapshotNotReadyProbeCount === 1 ? '' : 's'} (limit ${packagedProductionPluginMaxConsecutiveNotReadyProbes})`,
+                  lastError,
+                  lastProbes,
+                  getLogs(),
+                  {
+                    childPid: child.pid ?? null,
+                    snapshotNotReadyProbeCount,
+                  },
+                );
+              }
             }
             await throwPlaygroundReadinessFailure(
               child,
@@ -1435,11 +1444,19 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
                 indexProbe.body,
               )
             ) {
-              lastError = new Error(
-                `Production plugin package snapshot route is still warming after global WordPress startup HTTP ${indexProbe.status}`,
-              );
-              await sleep(readinessProbeIntervalMs);
-              continue;
+              if (packagedProductionPluginPackagedRouteStartupLimitReached(snapshotNotReadyProbeCount)) {
+                await throwPlaygroundReadinessFailure(
+                  child,
+                  `Packaged production plugin snapshot stayed startup-shaped after global WordPress startup HTTP ${indexProbe.status} for ${snapshotNotReadyProbeCount} consecutive response${snapshotNotReadyProbeCount === 1 ? '' : 's'} (limit ${packagedProductionPluginMaxConsecutiveNotReadyProbes})`,
+                  lastError,
+                  lastProbes,
+                  getLogs(),
+                  {
+                    childPid: child.pid ?? null,
+                    snapshotNotReadyProbeCount,
+                  },
+                );
+              }
             }
             await throwPlaygroundReadinessFailure(
               child,
@@ -1530,11 +1547,19 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
                 indexProbe.body,
               )
             ) {
-              lastError = new Error(
-                `Production plugin package preflight route is still warming after global WordPress startup HTTP ${indexProbe.status}`,
-              );
-              await sleep(readinessProbeIntervalMs);
-              continue;
+              if (packagedProductionPluginPackagedRouteStartupLimitReached(preflightNotReadyProbeCount)) {
+                await throwPlaygroundReadinessFailure(
+                  child,
+                  `Packaged production plugin preflight stayed startup-shaped after global WordPress startup HTTP ${indexProbe.status} for ${preflightNotReadyProbeCount} consecutive response${preflightNotReadyProbeCount === 1 ? '' : 's'} (limit ${packagedProductionPluginMaxConsecutiveNotReadyProbes})`,
+                  lastError,
+                  lastProbes,
+                  getLogs(),
+                  {
+                    childPid: child.pid ?? null,
+                    preflightNotReadyProbeCount,
+                  },
+                );
+              }
             }
             await throwPlaygroundReadinessFailure(
               child,
@@ -1610,11 +1635,19 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
               indexProbe.body,
             )
           ) {
-            lastError = new Error(
-              `Production plugin package preflight route is still warming after global WordPress startup HTTP ${indexProbe.status}`,
-            );
-            await sleep(readinessProbeIntervalMs);
-            continue;
+            if (packagedProductionPluginPackagedRouteStartupLimitReached(preflightNotReadyProbeCount)) {
+              await throwPlaygroundReadinessFailure(
+                child,
+                `Packaged production plugin preflight stayed startup-shaped after global WordPress startup HTTP ${indexProbe.status} for ${preflightNotReadyProbeCount} consecutive response${preflightNotReadyProbeCount === 1 ? '' : 's'} (limit ${packagedProductionPluginMaxConsecutiveNotReadyProbes})`,
+                lastError,
+                lastProbes,
+                getLogs(),
+                {
+                  childPid: child.pid ?? null,
+                  preflightNotReadyProbeCount,
+                },
+              );
+            }
           }
           await throwPlaygroundReadinessFailure(
             child,

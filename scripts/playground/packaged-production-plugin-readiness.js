@@ -234,6 +234,10 @@ export function packagedProductionPluginNotReadyProbeLimitReached(currentCount) 
   return currentCount >= packagedProductionPluginMaxConsecutiveNotReadyProbes;
 }
 
+export function packagedProductionPluginPackagedRouteStartupLimitReached(currentCount) {
+  return packagedProductionPluginNotReadyProbeLimitReached(currentCount);
+}
+
 export function packagedProductionPluginNextTimeoutProbeCount(currentCount, error) {
   return packagedProductionPluginReadinessProbeTimedOut(error)
     ? currentCount + 1
