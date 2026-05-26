@@ -143,6 +143,16 @@ test('benchmark model covers large uploads and plugin installs', () => {
     model.safeFastPaths.some(
       (fastPath) =>
         fastPath.area === 'backpressure' &&
+        fastPath.allowedShortcut === 'reuse-queue-slack-and-ordered-receipt-keys-to-size-bounded-post-pause-replay' &&
+        fastPath.guardrails.includes('queue-slack-stays-bounded-and-advisory') &&
+        fastPath.gateProofs.recovery.includes('queue slack, ordered receipt keys, and journal records still classify pause, retry, or crash'),
+    ),
+    'queue slack and ordered receipt keys can size post-pause replay without weakening recovery classification',
+  );
+  assert.ok(
+    model.safeFastPaths.some(
+      (fastPath) =>
+        fastPath.area === 'backpressure' &&
         fastPath.allowedShortcut === 'reuse-receipt-cursor-queue-headroom-and-journal-lag-to-size-bounded-release-bundle-replay-windows' &&
         fastPath.guardrails.includes('receipt-cursor-stays-advisory-and-plan-scoped') &&
         fastPath.gateProofs.skip.includes('queue headroom and journal lag') &&

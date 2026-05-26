@@ -1885,6 +1885,9 @@ Rejected fast paths stay rejected even when they look fast on paper:
 - A cached receipt cursor plus queue slack cannot authorize commit after a
   pause, because queue slack can help size replay but cannot prove which raw
   receipts or live compares survived failure.
+- Queue slack plus ordered receipt keys can still size bounded post-pause
+  replay, but only as planning evidence while the live preconditions and
+  durable journal records continue to decide visibility and recovery.
 - A compressed remote index plus a cached file hash cannot skip a release-
   bundle commit after a pause, because planning evidence and cached hashes do
   not prove the chunk receipts, row receipts, backpressure state, or

@@ -1781,6 +1781,26 @@ export const SAFE_FAST_PATHS = Object.freeze([
   {
     area: 'backpressure',
     reduces: ['memory-pressure', 'queue-drain-time', 'duplicate-replay-work'],
+    allowedShortcut: 'reuse-queue-slack-and-ordered-receipt-keys-to-size-bounded-post-pause-replay',
+    guardrails: [
+      'queue-slack-stays-bounded-and-advisory',
+      'ordered-receipt-keys-stay-durable-and-kind-scoped',
+    ],
+    gateProofs: {
+      skip: 'bounded queue slack can size the next replay window after a pause when the ordered receipt keys already capture the same work units',
+      live: 'the storage-boundary write still rechecks the same live preconditions for each receipt-producing mutation',
+      group: 'queue-slack reuse only shortens replay planning inside the same atomic-group boundary and never widens visibility',
+      recovery: 'queue slack, ordered receipt keys, and journal records still classify pause, retry, or crash without guessing which receipts survived',
+    },
+    visibilityBoundary: 'kind-scoped-replay-planning-only',
+    failureEvidence: 'bounded queue slack plus ordered raw receipt keys and journal records',
+    bypassesLivePreconditions: false,
+    splitsAtomicGroup: false,
+    publishesStagedDataEarly: false,
+  },
+  {
+    area: 'backpressure',
+    reduces: ['memory-pressure', 'queue-drain-time', 'duplicate-replay-work'],
     allowedShortcut: 'compress-pause-footprint-summaries-to-size-bounded-replay-windows',
     guardrails: [
       'pause-footprint-summary-stays-planning-evidence-only',
