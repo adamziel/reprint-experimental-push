@@ -220,7 +220,7 @@ linked implementation artifacts.
 - Latest blocker summary remains the same: real WordPress executor/auth and
   durable journal ownership still block any production push claim.
 
-# 2026-05-26 - Public Status Audit 10:42:07
+## 2026-05-26 - Public Status Audit 10:42:07
 
 <a id="2026-05-26-public-status-audit-104207"></a>
 
@@ -356,7 +356,7 @@ linked implementation artifacts.
 
 ---
 
-# 2026-05-26 - Public Status Audit 10:22:07
+## 2026-05-26 - Public Status Audit 10:22:07
 
 <a id="2026-05-26-public-status-audit-102207"></a>
 
@@ -364,7 +364,7 @@ linked implementation artifacts.
 - Gate posture remains conservative at `0/4`; no implementation verdict changed.
 - Latest blocker summary remains the same: real WordPress executor/auth and durable journal ownership still block any production push claim.
 
-# 2026-05-26 - Public Status Audit 10:20:56
+## 2026-05-26 - Public Status Audit 10:20:56
 
 <a id="2026-05-26-public-status-audit-102056"></a>
 
@@ -372,7 +372,7 @@ linked implementation artifacts.
 - Gate posture remains conservative at `0/4`; no implementation verdict changed.
 - Latest blocker summary remains the same: real WordPress executor/auth and durable journal ownership still block any production push claim.
 
-# 2026-05-26 - Public Status Audit 10:20:01
+## 2026-05-26 - Public Status Audit 10:20:01
 
 <a id="2026-05-26-public-status-audit-102001"></a>
 
@@ -420,7 +420,7 @@ linked implementation artifacts.
 - Gate posture remains conservative at `0/4`; no implementation verdict changed.
 - Latest blocker summary remains the same: real WordPress executor/auth and durable journal ownership still block any production push claim.
 
-# 2026-05-26 - Public Status Audit 10:13:18
+## 2026-05-26 - Public Status Audit 10:13:18
 
 <a id="2026-05-26-public-status-audit-101318"></a>
 
@@ -428,7 +428,7 @@ linked implementation artifacts.
 - Gate posture remains conservative at `0/4`; no implementation verdict changed.
 - Latest blocker summary remains the same: real WordPress executor/auth and durable journal ownership still block any production push claim.
 
-# 2026-05-26 - Public Status Audit 10:12:16
+## 2026-05-26 - Public Status Audit 10:12:16
 
 <a id="2026-05-26-public-status-audit-101216"></a>
 
@@ -436,7 +436,7 @@ linked implementation artifacts.
 - Gate posture remains conservative at `0/4`; no implementation verdict changed.
 - Latest blocker summary remains the same: real WordPress executor/auth and durable journal ownership still block any production push claim.
 
-# 2026-05-26 - Public Status Audit 10:10:41
+## 2026-05-26 - Public Status Audit 10:10:41
 
 <a id="2026-05-26-public-status-audit-101041"></a>
 
@@ -444,7 +444,7 @@ linked implementation artifacts.
 - Gate posture remains conservative at `0/4`; no implementation verdict changed.
 - Latest blocker summary remains the same: real WordPress executor/auth and durable journal ownership still block any production push claim.
 
-# 2026-05-26 - Public Status Audit 10:09:48
+## 2026-05-26 - Public Status Audit 10:09:48
 
 <a id="2026-05-26-public-status-audit-100948"></a>
 
