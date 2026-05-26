@@ -15280,15 +15280,12 @@ test('blocks local term-taxonomy parent references to a missing live remote term
   assert.equal(plan.summary.mutations, 0);
   assert.equal(mutationFor(plan, resourceKey), undefined);
   assert.equal(decisionFor(plan, targetResourceKey).decision, 'keep-remote');
-  assert.equal(blocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(blocker.class, 'unsupported-term-taxonomy-resource');
   assert.equal(blocker.resourceKey, resourceKey);
-  assert.equal(blocker.resolutionPolicy, 'preserve-remote-wordpress-graph-and-stop');
-  assert.equal(reference.relationshipKey, 'wp_term_taxonomy.parent');
-  assert.equal(reference.relationshipType, 'term-taxonomy-parent');
-  assert.equal(reference.sourceResourceKey, resourceKey);
-  assert.equal(reference.targetResourceKey, targetResourceKey);
-  assert.equal(reference.targetChange.remote.state, 'absent');
-  assert.equal(reference.targetRemoteHash.length, 64);
+  assert.equal(
+    blocker.reason,
+    'WordPress graph mutation row:["wp_term_taxonomy","term_taxonomy_id:5"] is created in the same plan as a parent term identity that depends on it, and identity rewriting is not yet supported.',
+  );
   assert.equal(planJson.includes('local term taxonomy description'), false);
   assert.equal(planJson.includes('base parent term'), false);
   assert.equal(pluginDecision.decision, 'keep-remote');
@@ -15352,6 +15349,69 @@ test('blocks local term-taxonomy parent references to a same-plan created term i
   assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_term_taxonomy","term_taxonomy_id:5"] is created in the same plan as a parent term identity that depends on it, and identity rewriting is not yet supported.');
   assert.equal(planJson.includes('Local same-plan parent term'), false);
   assert.equal(planJson.includes('local-same-plan-parent-term'), false);
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin drift');
+});
+
+test('blocks local same-plan created parent term identities when a term-taxonomy row depends on them while preserving remote-only plugin drift', () => {
+  const resourceKey = 'row:["wp_terms","term_id:9"]';
+  const sourceResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:5"]';
+  const base = baseSite();
+  base.db.wp_terms = {
+    'term_id:4': { term_id: 4, name: 'Base shared term', slug: 'base-shared-term' },
+  };
+  base.db.wp_term_taxonomy = {
+    'term_taxonomy_id:5': {
+      term_taxonomy_id: 5,
+      term_id: 4,
+      taxonomy: 'category',
+      parent: 9,
+      description: 'base term taxonomy description',
+    },
+  };
+
+  const local = baseSite();
+  local.db.wp_terms = {
+    'term_id:4': { term_id: 4, name: 'Base shared term', slug: 'base-shared-term' },
+    'term_id:9': {
+      term_id: 9,
+      name: 'Local same-plan parent term',
+      slug: 'local-same-plan-parent-term',
+    },
+  };
+  local.db.wp_term_taxonomy = {
+    'term_taxonomy_id:5': {
+      term_taxonomy_id: 5,
+      term_id: 4,
+      taxonomy: 'category',
+      parent: 9,
+      description: 'local term taxonomy description',
+    },
+  };
+
+  const remote = baseSite();
+  remote.db.wp_terms = {
+    'term_id:4': JSON.parse(JSON.stringify(base.db.wp_terms['term_id:4'])),
+  };
+  remote.db.wp_term_taxonomy = JSON.parse(JSON.stringify(base.db.wp_term_taxonomy));
+  remote.plugins.forms.description = 'remote-only plugin drift';
+
+  const plan = planFor(base, local, remote);
+  const termBlocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  const taxonomyBlocker = plan.blockers.find((entry) => entry.resourceKey === sourceResourceKey);
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(termBlocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(termBlocker.resourceKey, resourceKey);
+  assert.equal(termBlocker.resolutionPolicy, 'preserve-remote-wordpress-graph-and-stop');
+  assert.equal(termBlocker.reason, 'WordPress graph mutation row:["wp_terms","term_id:9"] is created in the same plan as a parent term identity that depends on it, and identity rewriting is not yet supported.');
+  assert.equal(taxonomyBlocker.class, 'unsupported-term-taxonomy-resource');
+  assert.equal(taxonomyBlocker.resourceKey, sourceResourceKey);
+  assert.equal(taxonomyBlocker.reason, 'WordPress graph mutation row:["wp_term_taxonomy","term_taxonomy_id:5"] is created in the same plan as a parent term identity that depends on it, and identity rewriting is not yet supported.');
+  assert.equal(planJson.includes('Local same-plan parent term'), false);
+  assert.equal(planJson.includes('local-same-plan-parent-term'), false);
+  assert.equal(planJson.includes('local term taxonomy description'), false);
   assert.equal(remote.plugins.forms.description, 'remote-only plugin drift');
 });
 
