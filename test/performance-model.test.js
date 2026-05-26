@@ -4045,6 +4045,7 @@ test('guarded executor large profile still preserves receipts and stays blocked 
   assert.ok(blockers.has('production-atomic-group-commit-not-measured'));
   assert.ok(blockers.has('production-storage-receipts-not-measured'));
   assert.ok(blockers.has('production-row-batch-executor-not-measured'));
+  assert.ok(blockers.has('queue-budget-visible-without-memory-ceiling-match-visibility'));
 });
 
 test('benchmark shape stays bounded for the current large fixtures', () => {

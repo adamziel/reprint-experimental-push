@@ -621,6 +621,12 @@ export function productionThroughputBlockers(report) {
     blockers.push('queue-budget-visible-without-memory-ceiling-visibility');
   }
   if (
+    report.evidence.backpressure?.queueBudgetVisible === true
+    && report.evidence.backpressure?.receiptCursorMemoryCeilingMatchesQueueBudgetVisible !== true
+  ) {
+    blockers.push('queue-budget-visible-without-memory-ceiling-match-visibility');
+  }
+  if (
     report.evidence.backpressure?.receiptCursorMemoryCeilingVisible === true
     && report.evidence.backpressure?.queueBudgetVisible !== true
   ) {
