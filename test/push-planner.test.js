@@ -1862,6 +1862,25 @@ test('rejects blocked recovery states that reuse the same journal and remote art
   );
 });
 
+test('rejects recovery states that inherit the journal artifact through the prototype', () => {
+  const recoveryState = {
+    status: 'old-remote',
+    reason: 'Prototype journal artifacts should not be accepted.',
+    remoteHash: 'a'.repeat(64),
+    planId: 'plan-inherited-journal',
+    artifacts: Object.create({
+      journal: {
+        status: 'completed',
+      },
+    }),
+  };
+
+  assert.throws(
+    () => assertRecoveryStateEnvelope(recoveryState),
+    (error) => error.code === 'RECOVERY_STATE_INVALID',
+  );
+});
+
 test('keeps the durable old-remote contract intact when failure happens before mutation', () => {
   const base = baseSite();
   const local = baseSite();

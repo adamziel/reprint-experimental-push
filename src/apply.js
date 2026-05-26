@@ -1680,6 +1680,17 @@ export function validateRecoveryArtifacts(recovery) {
         },
       );
     }
+    if (!Object.hasOwn(recovery.artifacts, 'journal')) {
+      throw new PushPlanError(
+        'RECOVERY_ARTIFACTS_INVALID',
+        'Blocked recovery states must preserve an own journal artifact.',
+        {
+          status: recovery.status,
+          planId: recovery.planId,
+          artifactKeys,
+        },
+      );
+    }
     if (isRecoveryEnvelopeArtifact(recovery.artifacts.journal)) {
       throw new PushPlanError(
         'RECOVERY_ARTIFACTS_INVALID',
@@ -1756,6 +1767,17 @@ export function validateRecoveryArtifacts(recovery) {
     throw new PushPlanError(
       'RECOVERY_ARTIFACTS_INVALID',
       'Non-blocked recovery states must not carry an own remote artifact key.',
+      {
+        status: recovery.status,
+        planId: recovery.planId,
+        artifactKeys,
+      },
+    );
+  }
+  if (!Object.hasOwn(recovery.artifacts, 'journal')) {
+    throw new PushPlanError(
+      'RECOVERY_ARTIFACTS_INVALID',
+      'Non-blocked recovery states must preserve an own journal artifact.',
       {
         status: recovery.status,
         planId: recovery.planId,
