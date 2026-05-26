@@ -93,23 +93,22 @@ function spawnReleaseVerifyBounded(command, args, options, label) {
 
   if (proof.error) {
     stopAllPlaygroundChildrenSync();
-    reportSpawnFailure(proof);
+    process.stderr.write(`${describeSpawnProof(proof)}\n`);
     const timeoutNote = proof.error.code === 'ETIMEDOUT' && options.timeout ? ` after ${options.timeout}ms` : '';
     throw new Error(formatSpawnFailure(`${label} failed${timeoutNote}`, proof));
   }
   if (proof.signal) {
     stopAllPlaygroundChildrenSync();
-    reportSpawnFailure(proof);
+    process.stderr.write(`${describeSpawnProof(proof)}\n`);
     throw new Error(formatSpawnFailure(`${label} terminated by ${proof.signal}${options.timeout ? ` after ${options.timeout}ms` : ''}`, proof));
   }
   if (proof.status === null) {
     stopAllPlaygroundChildrenSync();
-    reportSpawnFailure(proof);
+    process.stderr.write(`${describeSpawnProof(proof)}\n`);
     throw new Error(formatSpawnFailure(`${label} exited without a status`, proof));
   }
   if (proof.status !== 0) {
     stopAllPlaygroundChildrenSync();
-    reportSpawnFailure(proof);
     process.stderr.write(`${describeSpawnProof(proof)}\n`);
   }
 
@@ -189,18 +188,23 @@ function assertLiveReleaseVerifyProof(proof, label, timeoutMs) {
 }
 
 function spawnBoundedSync(command, args, options, label) {
-  const proof = spawnSync(command, args, options);
+  const boundedOptions = {
+    killSignal: 'SIGKILL',
+    timeout: proofSubprocessTimeoutMs,
+    ...options,
+  };
+  const proof = spawnSync(command, args, boundedOptions);
 
   if (proof.error) {
     stopAllPlaygroundChildrenSync();
     process.stderr.write(`${describeSpawnProof(proof)}\n`);
-    const timeoutNote = proof.error.code === 'ETIMEDOUT' && options.timeout ? ` after ${options.timeout}ms` : '';
+    const timeoutNote = proof.error.code === 'ETIMEDOUT' && boundedOptions.timeout ? ` after ${boundedOptions.timeout}ms` : '';
     throw new Error(formatSpawnFailure(`${label} failed${timeoutNote}`, proof));
   }
   if (proof.signal) {
     stopAllPlaygroundChildrenSync();
     process.stderr.write(`${describeSpawnProof(proof)}\n`);
-    throw new Error(formatSpawnFailure(`${label} terminated by ${proof.signal}${options.timeout ? ` after ${options.timeout}ms` : ''}`, proof));
+    throw new Error(formatSpawnFailure(`${label} terminated by ${proof.signal}${boundedOptions.timeout ? ` after ${boundedOptions.timeout}ms` : ''}`, proof));
   }
   if (proof.status === null) {
     stopAllPlaygroundChildrenSync();
