@@ -20698,6 +20698,55 @@ test('production recovery support report accepts stale-claim fencing records bef
   assert.equal(report.inspectionErrorMessage, null);
 });
 
+test('production recovery support report fails closed when a fenced claim lacks a persisted claim record', () => {
+  const filePath = tempRecoveryJournalPath();
+  const remoteArtifactPath = `${path.dirname(filePath)}/remote.jsonl`;
+  const journal = openRecoveryJournal(filePath, { truncate: true, now: fixedNow });
+  journal.appendEvent('journal-opened', {
+    planId: 'plan-missing-claim-record',
+    state: 'opened',
+    observedHash: 'snapshot-hash-only',
+    artifactRefs: {
+      journal: filePath,
+      remote: remoteArtifactPath,
+    },
+  });
+  journal.close();
+
+  const report = productionRecoverySupportReport({
+    kind: 'production-recovery-journal',
+    productionAdapter: true,
+    supportedSurface: 'production-recovery-journal-adapter',
+    restartReadable: true,
+    ownsJournal: true,
+    ownsRemoteArtifact: true,
+    claimHash: 'f'.repeat(64),
+    writerLease: { id: 'lease-without-record' },
+    leaseFence: { id: 'lease-without-record' },
+    journalPath: filePath,
+    artifactRefs: {
+      journal: filePath,
+      remote: remoteArtifactPath,
+    },
+    schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+    appendEvent() {
+      return null;
+    },
+    flush() {},
+    close() {},
+    inspect() {
+      return readRecoveryJournal(filePath);
+    },
+    assertCurrentClaim() {},
+  });
+
+  assert.equal(report.supported, false);
+  assert.ok(report.missingDependency.includes('fencing or lease ownership for the journal writer'));
+  assert.equal(report.inspectedJournalPath, filePath);
+  assert.equal(report.writerJournalPath, filePath);
+  assert.equal(report.inspectionErrorMessage, null);
+});
+
 test('production durable journal support accepts a fenced claim before apply opens the journal body', () => {
   const base = baseSite();
   const local = structuredClone(base);
@@ -20734,6 +20783,36 @@ test('production durable journal support accepts a fenced claim before apply ope
   });
 
   assert.equal(result.recoveryState.status, 'fully-updated-remote');
+  journal.close();
+});
+
+test('production durable journal support fails closed when a fenced claim is not persisted before apply', () => {
+  const base = baseSite();
+  const local = structuredClone(base);
+  local.db.wp_options['option_name:blogname'] = {
+    option_name: 'blogname',
+    option_value: 'Local Site',
+  };
+  const remote = structuredClone(base);
+  const plan = planFor(base, local, remote);
+  const filePath = tempRecoveryJournalPath();
+  const remoteArtifactPath = `${path.dirname(filePath)}/remote.jsonl`;
+  const journal = openProductionRecoveryJournal(filePath, {
+    truncate: true,
+    now: fixedNow,
+    claimId: 'claim-missing-before-apply',
+    writerLease: { id: 'lease-missing-before-apply' },
+    ownsRemoteArtifact: true,
+    remoteArtifactPath,
+  });
+
+  const error = captureError(() => applyPlan(remote, plan, {
+    durableJournal: journal,
+    requireProductionDurableJournal: true,
+  }));
+
+  assert.equal(error.code, 'PRODUCTION_DURABLE_JOURNAL_UNSUPPORTED');
+  assert.ok(error.details.missingDependency.includes('fencing or lease ownership for the journal writer'));
   journal.close();
 });
 

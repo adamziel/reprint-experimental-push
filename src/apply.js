@@ -8,6 +8,7 @@ import {
   serializeResourceValue,
   setResource,
 } from './resources.js';
+import { classifyRecoveryJournalClaims } from './recovery-journal.js';
 
 const JOURNAL_SCHEMA_VERSION = 1;
 const FIXTURE_PLUGIN_DEPENDENCIES = new Map([
@@ -688,6 +689,9 @@ export function productionRecoverySupportReport(writer) {
   const inspectionErrorMessage = inspected && typeof inspected === 'object' && typeof inspected.error?.message === 'string'
     ? inspected.error.message
     : null;
+  const inspectedClaimState = durableJournalInspectRecords(inspected)
+    ? classifyRecoveryJournalClaims(inspected.records)
+    : null;
   const artifactRefs = productionRecoveryArtifactRefs(writer, inspected);
   const addMissingDependency = (item) => {
     if (!missingDependency.includes(item)) {
@@ -1007,6 +1011,21 @@ export function productionRecoverySupportReport(writer) {
     || writer.leaseFence.id !== writer.writerLease.id
   ) {
     addMissingDependency('fencing or lease ownership for the journal writer');
+  }
+  if (inspectedClaimState?.status === 'blocked') {
+    addMissingDependency('fencing or lease ownership for the journal writer');
+  }
+  if (Object.hasOwn(writer ?? {}, 'claimHash')) {
+    if (
+      typeof writer.claimHash !== 'string'
+      || !/^[a-f0-9]{64}$/.test(writer.claimHash)
+      || !inspectedClaimState
+      || inspectedClaimState.status === 'none'
+      || inspectedClaimState.status === 'blocked'
+      || inspectedClaimState.activeClaimHash !== writer.claimHash
+    ) {
+      addMissingDependency('fencing or lease ownership for the journal writer');
+    }
   }
   if (writer && typeof writer.inspect === 'function' && !inspectionErrorMessage && !durableJournalInspectRecords(inspected)) {
     addMissingDependency('journal-readable inspection records with sequence and type');
