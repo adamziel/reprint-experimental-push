@@ -12,6 +12,30 @@ linked implementation artifacts.
 - This remains a visibility-only update. The release gate posture stays `0/4`.
 - Evidence trail: [progress.html](../progress.html), [supervisor feedback](supervisor-feedback.md).
 
+## 2026-05-26 - Freshness Refresh 07:03:31
+
+<a id="2026-05-26-freshness-refresh-070331"></a>
+
+- Refreshed the visible progress surface so the public page stays current for the active supervision cycle.
+- This remains a visibility-only update. The release gate posture stays `0/4`.
+- Evidence trail: [progress.html](../progress.html), [supervisor feedback](supervisor-feedback.md).
+
+## 2026-05-26 - Freshness Refresh 07:04:12
+
+<a id="2026-05-26-freshness-refresh-070412"></a>
+
+- Refreshed the visible progress surface so the public page stays current for the active supervision cycle.
+- This remains a visibility-only update. The release gate posture stays `0/4`.
+- Evidence trail: [progress.html](../progress.html), [supervisor feedback](supervisor-feedback.md).
+
+## 2026-05-26 - Freshness Refresh 07:05:22
+
+<a id="2026-05-26-freshness-refresh-070522"></a>
+
+- Refreshed the visible progress surface so the public page stays current for the active supervision cycle.
+- This remains a visibility-only update. The release gate posture stays `0/4`.
+- Evidence trail: [progress.html](../progress.html), [supervisor feedback](supervisor-feedback.md).
+
 ## 2026-05-26 - Freshness Refresh 06:59:55
 
 <a id="2026-05-26-freshness-refresh-065955"></a>
