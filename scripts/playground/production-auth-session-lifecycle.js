@@ -375,6 +375,11 @@ export function evaluateProductionAuthSessionLifecycleSummary(summary, now = Dat
     return mismatchedReadObservation;
   }
 
+  const mismatchedPreservedObservation = resolveMismatchedSummaryPreservedObservation(summary.preserved, observations);
+  if (mismatchedPreservedObservation) {
+    return mismatchedPreservedObservation;
+  }
+
   return {
     ok: true,
     required: 'production-auth-session lifecycle',
@@ -715,6 +720,35 @@ function resolveMismatchedSummaryIssuedObservation(issuedObservation, observatio
       ok: false,
       required: 'issued preflight',
       observed: 'stale-issued-summary',
+    };
+  }
+
+  return null;
+}
+
+function resolveMismatchedSummaryPreservedObservation(preservedObservation, observations) {
+  if (!preservedObservation || !Array.isArray(observations) || observations.length === 0) {
+    return null;
+  }
+
+  const observedPreserved = observations.find((observation) =>
+    observation
+    && typeof observation === 'object'
+    && isAuthSessionReadStep(observation.step)
+    && observation.preserved === true);
+  if (!observedPreserved) {
+    return {
+      ok: false,
+      required: 'preserved read',
+      observed: 'stale-preserved-summary',
+    };
+  }
+
+  if (!authSessionObservationEquals(preservedObservation, observedPreserved)) {
+    return {
+      ok: false,
+      required: 'preserved read',
+      observed: 'stale-preserved-summary',
     };
   }
 
