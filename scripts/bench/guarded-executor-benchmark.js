@@ -2523,9 +2523,13 @@ function summarizeProductionCapabilityRollout({
       'file-hashing-concurrency',
       parallelismLimitsMeasuredOnReport
         && parallelismLimitsCanonical
-        && queueBudgetMatchesResourceCeiling,
-      parallelismLimitsVisible && queueBudgetMatchesResourceCeiling,
+        && queueBudgetMatchesResourceCeiling
+        && backpressureEvidenceComplete,
+      parallelismLimitsVisible
+        && queueBudgetMatchesResourceCeiling
+        && backpressureEvidenceComplete,
       [
+        'backpressure-evidence-incomplete',
         'queue-budget-does-not-match-resource-ceiling',
         'queue-memory-ceiling-does-not-match-queue-budget',
         'queue-headroom-exceeds-resource-ceiling',
@@ -2543,11 +2547,13 @@ function summarizeProductionCapabilityRollout({
       'row-batch-concurrency',
       productionAtomicCommitMeasured
         && queueBudgetMatchesResourceCeiling
+        && backpressureEvidenceComplete
         && productionStorageReceiptsMeasured
         && productionRowBatchExecutorMeasured,
       productionAtomicCommitVisible
         && productionAtomicCommitMeasured
         && queueBudgetMatchesResourceCeiling
+        && backpressureEvidenceComplete
         && productionStorageReceiptsVisible
         && productionStorageReceiptsMeasured
         && productionRowBatchExecutorVisible
@@ -2555,6 +2561,7 @@ function summarizeProductionCapabilityRollout({
         && productionAtomicGroupMetadataVisibleAndMeasured
         && parallelismLimitsVisible,
       [
+        'backpressure-evidence-incomplete',
         'queue-budget-does-not-match-resource-ceiling',
         'queue-memory-ceiling-does-not-match-queue-budget',
         'queue-headroom-exceeds-resource-ceiling',

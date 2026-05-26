@@ -6843,9 +6843,10 @@ test('guarded benchmark keeps rollout summaries pinned when raw queue-headroom b
     {
       surface: 'file-hashing-concurrency',
       status: 'blocked',
-      measured: true,
-      visible: true,
+      measured: false,
+      visible: false,
       blockerRefs: [
+        'backpressure-evidence-incomplete',
         'queue-memory-ceiling-does-not-match-queue-budget',
         'queue-headroom-exceeds-resource-ceiling',
       ],
@@ -6853,9 +6854,10 @@ test('guarded benchmark keeps rollout summaries pinned when raw queue-headroom b
     {
       surface: 'row-batch-concurrency',
       status: 'blocked',
-      measured: true,
-      visible: true,
+      measured: false,
+      visible: false,
       blockerRefs: [
+        'backpressure-evidence-incomplete',
         'queue-memory-ceiling-does-not-match-queue-budget',
         'queue-headroom-exceeds-resource-ceiling',
       ],
@@ -6907,18 +6909,20 @@ test('guarded benchmark keeps rollout summaries pinned when raw memory-ceiling b
     {
       surface: 'file-hashing-concurrency',
       status: 'blocked',
-      measured: true,
-      visible: true,
+      measured: false,
+      visible: false,
       blockerRefs: [
+        'backpressure-evidence-incomplete',
         'queue-memory-ceiling-does-not-match-queue-budget',
       ],
     },
     {
       surface: 'row-batch-concurrency',
       status: 'blocked',
-      measured: true,
-      visible: true,
+      measured: false,
+      visible: false,
       blockerRefs: [
+        'backpressure-evidence-incomplete',
         'queue-memory-ceiling-does-not-match-queue-budget',
       ],
     },
@@ -7177,6 +7181,71 @@ test('guarded benchmark keeps paused memory-boundary pair summaries false when r
   assert.ok(blockers.includes('queue-headroom-memory-headroom-mismatch'));
   assert.ok(blockers.includes('receipt-cursor-queue-slack-mismatch'));
   assert.ok(blockers.includes('receipt-cursor-memory-headroom-resource-headroom-mismatch'));
+  assert.ok(blockers.includes('receipt-cursor-memory-headroom-not-covered-by-queue-budget'));
+  assert.ok(blockers.includes('backpressure-evidence-incomplete'));
+});
+
+test('guarded benchmark keeps rollout summaries pinned when raw memory-headroom bytes drift under visible production capability evidence', () => {
+  const report = smallBenchmark();
+  const mutated = clone(report);
+
+  mutated.executorCapabilities.productionAtomicCommit = 'production-atomic-group-commit';
+  mutated.executorCapabilities.fileReceipts = 'production-storage-receipts';
+  mutated.executorCapabilities.rowApply = 'production-batched-compare-and-swap';
+  mutated.evidence.parallelism.parallelismLimitsMeasured = true;
+  mutated.evidence.parallelism.parallelismLimitsVisible = true;
+  mutated.evidence.parallelism.parallelismLimits = {
+    chunkUpload: 4,
+    fileHashing: 2,
+    dbBatchPerTable: 2,
+  };
+  mutated.evidence.atomicGroup.productionAtomicCommitMeasured = true;
+  mutated.evidence.atomicGroup.productionAtomicCommitVisible = true;
+  mutated.evidence.atomicGroup.productionAtomicGroupMetadataVisible = true;
+  mutated.evidence.atomicGroup.productionStorageReceiptsMeasured = true;
+  mutated.evidence.atomicGroup.productionStorageReceiptsVisible = true;
+  mutated.evidence.atomicGroup.productionRowBatchExecutorMeasured = true;
+  mutated.evidence.atomicGroup.productionRowBatchExecutorVisible = true;
+  mutated.evidence.backpressure.receiptCursorMemoryHeadroomBytes -= 1;
+
+  const details = productionThroughputDetails(mutated);
+  const blockers = productionThroughputBlockers(mutated);
+
+  assert.equal(details.queueHeadroomVisibleAndMemoryHeadroomVisible, false);
+  assert.equal(details.backpressureEvidenceComplete, false);
+  assert.deepEqual(details.productionCapabilityRolloutSummary, [
+    {
+      surface: 'chunk-upload-concurrency',
+      status: 'blocked',
+      measured: false,
+      visible: false,
+      blockerRefs: [
+        'backpressure-evidence-incomplete',
+        'queue-memory-ceiling-does-not-match-queue-budget',
+      ],
+    },
+    {
+      surface: 'file-hashing-concurrency',
+      status: 'blocked',
+      measured: false,
+      visible: false,
+      blockerRefs: [
+        'backpressure-evidence-incomplete',
+        'queue-memory-ceiling-does-not-match-queue-budget',
+      ],
+    },
+    {
+      surface: 'row-batch-concurrency',
+      status: 'blocked',
+      measured: false,
+      visible: false,
+      blockerRefs: [
+        'backpressure-evidence-incomplete',
+        'queue-memory-ceiling-does-not-match-queue-budget',
+      ],
+    },
+  ]);
+  assert.ok(blockers.includes('queue-headroom-memory-headroom-mismatch'));
   assert.ok(blockers.includes('receipt-cursor-memory-headroom-not-covered-by-queue-budget'));
   assert.ok(blockers.includes('backpressure-evidence-incomplete'));
 });
