@@ -48,6 +48,7 @@ export function createUnsupportedProductionRecoveryJournal(reason = 'Production 
     productionAdapter: true,
     ownsJournal: false,
     ownsRemoteArtifact: false,
+    restartReadable: false,
     journalPath: null,
     artifactRefs: Object.freeze({
       journal: null,
@@ -58,6 +59,7 @@ export function createUnsupportedProductionRecoveryJournal(reason = 'Production 
   const missingDependency = Object.freeze([
     'production recovery journal adapter marker',
     'explicit production recovery adapter marker',
+    'restart-readable recovery journal adapter',
     'explicit journal ownership fencing',
     'stable-storage flush or fsync semantics',
     'durable writer cleanup',

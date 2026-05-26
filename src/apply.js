@@ -630,6 +630,9 @@ function productionRecoverySupportReport(writer) {
   if (writer?.kind !== 'production-recovery-journal') {
     addMissingDependency('production recovery journal adapter marker');
   }
+  if (writer?.supportedSurface === 'production-recovery-journal-adapter' && writer.restartReadable !== true) {
+    addMissingDependency('restart-readable recovery journal adapter');
+  }
   if (writer?.productionAdapter !== true) {
     addMissingDependency('explicit production recovery adapter marker');
   }
