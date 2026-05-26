@@ -15698,6 +15698,65 @@ test('blocks local term-relationship references to a same-plan created term iden
   assert.equal(remote.files['wp-content/plugins/forms/forms.php'], undefined);
 });
 
+test('blocks local term-taxonomy parent references to a same-plan created term while preserving remote-only plugin drift', () => {
+  const resourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:5"]';
+  const targetResourceKey = 'row:["wp_terms","term_id:9"]';
+  const base = baseSite();
+  base.db.wp_terms = {
+    'term_id:2': { term_id: 2, name: 'Base term', slug: 'base-term' },
+  };
+  base.db.wp_term_taxonomy = {
+    'term_taxonomy_id:5': {
+      term_taxonomy_id: 5,
+      term_id: 2,
+      taxonomy: 'category',
+      description: 'base taxonomy',
+      parent: 0,
+    },
+  };
+
+  const local = baseSite();
+  local.db.wp_terms = {
+    'term_id:2': { term_id: 2, name: 'Base term', slug: 'base-term' },
+    'term_id:9': { term_id: 9, name: 'Local same-plan parent term', slug: 'local-same-plan-parent-term' },
+  };
+  local.db.wp_term_taxonomy = {
+    'term_taxonomy_id:5': {
+      term_taxonomy_id: 5,
+      term_id: 2,
+      taxonomy: 'category',
+      description: 'local taxonomy',
+      parent: 9,
+    },
+  };
+
+  const remote = baseSite();
+  remote.db.wp_terms = JSON.parse(JSON.stringify(base.db.wp_terms));
+  remote.db.wp_term_taxonomy = JSON.parse(JSON.stringify(base.db.wp_term_taxonomy));
+  remote.plugins.forms.description = 'remote-only plugin drift';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin drift */';
+
+  const plan = planFor(base, local, remote);
+  const taxonomyBlocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  const parentTermBlocker = plan.blockers.find((entry) => entry.resourceKey === targetResourceKey);
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(mutationFor(plan, targetResourceKey), undefined);
+  assert.equal(plan.conflicts.length, 0);
+  assert.equal(taxonomyBlocker.class, 'unsupported-term-taxonomy-resource');
+  assert.equal(taxonomyBlocker.resourceKey, resourceKey);
+  assert.equal(taxonomyBlocker.reason, 'WordPress graph mutation row:["wp_term_taxonomy","term_taxonomy_id:5"] is created in the same plan as a parent term identity that depends on it, and identity rewriting is not yet supported.');
+  assert.equal(parentTermBlocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(parentTermBlocker.resourceKey, targetResourceKey);
+  assert.equal(parentTermBlocker.reason, 'WordPress graph mutation row:["wp_terms","term_id:9"] is created in the same plan as a relationship that depends on it, and identity rewriting is not yet supported.');
+  assert.equal(planJson.includes('Local same-plan parent term'), false);
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin drift');
+  assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin drift */');
+});
+
 test('blocks local comments and users graph resources while preserving remote-only plugin removals', () => {
   const resourceKey = 'row:["wp_comments","comment_id:11"]';
   const base = baseSite();
@@ -34511,6 +34570,33 @@ test('blocks local post GUID changes while preserving a matching independent fil
   remote.files['wp-content/uploads/cover'] = { type: 'directory' };
   delete remote.plugins.forms;
   delete remote.files['wp-content/plugins/forms/forms.php'];
+
+  const plan = planFor(base, local, remote);
+  const fileDecision = decisionFor(plan, 'file:wp-content/uploads/cover');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+
+  assert.equal(plan.status, 'conflict');
+  assert.equal(fileDecision.decision, 'already-in-sync');
+  assert.equal(fileDecision.change.localChange, 'type-change');
+  assert.equal(fileDecision.change.remoteChange, 'type-change');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+});
+
+test('blocks local post GUID changes while preserving a matching independent file type swap and remote-only plugin changes', () => {
+  const base = baseSite();
+  base.db.wp_posts['ID:1'].guid = 'https://example.test/?p=1';
+  base.files['wp-content/uploads/cover'] = 'base file bytes';
+
+  const local = baseSite();
+  local.db.wp_posts['ID:1'].guid = 'https://example.test/?p=1-updated';
+  local.files['wp-content/uploads/cover'] = { type: 'directory' };
+
+  const remote = baseSite();
+  remote.files['wp-content/uploads/cover'] = { type: 'directory' };
+  remote.plugins.forms.description = 'remote-only plugin drift';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin drift */';
 
   const plan = planFor(base, local, remote);
   const fileDecision = decisionFor(plan, 'file:wp-content/uploads/cover');
