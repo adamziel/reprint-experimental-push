@@ -4,14 +4,14 @@
 
 The project is **not releasable as a production WordPress push path**.
 
-- Audit time: 2026-05-26 10:43:46 CEST (+0200)
+- Audit time: 2026-05-26 10:44:40 CEST (+0200)
 - Fresh remote heads re-polled at audit time:
   - `origin/lane/reliable-executor` -> `795349aa`
   - `origin/lane/no-data-loss-invariants` -> `475a7373`
   - `origin/lane/no-data-loss-recovery` -> `7ec504b7`
   - `origin/lane/critic` -> `d10f636f`
-  - `origin/lane/progress-publisher` -> `a740a28f`
-  - `origin/lane/feedback-supervisor` -> `2a5d0468`
+  - `origin/lane/progress-publisher` -> `ce00921b`
+  - `origin/lane/feedback-supervisor` -> `6d2e2e3f`
 
 ## Evidence Table
 
@@ -25,7 +25,7 @@ The project is **not releasable as a production WordPress push path**.
 
 ## Release Blockers
 
-1. `reliable-executor` now has tighter auth-session drift handling in `5271f45f`, a durable-journal ownership fail-closed head in `a63dfc93`, `949477de` exposing auth session lifecycle evidence in summaries, `e725e749` making readiness failure propagation bounded, `0f36d838` failing fast on readiness `502`s, and `de7e7f57` sharpening readiness-failure diagnostics, but these still only prove support behavior and boundary reporting. They do not establish production-backed auth/session lifecycle, canonical replay on a live source, or a restart-readable durable journal adapter on the release path.
+1. `reliable-executor` now has tighter auth-session drift handling in `5271f45f`, a durable-journal ownership fail-closed head in `a63dfc93`, `949477de` exposing auth session lifecycle evidence in summaries, `e725e749` making readiness failure propagation bounded, `0f36d838` failing fast on readiness `502`s, and `795349aa` continuing that readiness failure hardening, but these still only prove support behavior and boundary reporting. They do not establish production-backed auth/session lifecycle, canonical replay on a live source, or a restart-readable durable journal adapter on the release path.
 2. `no-data-loss-recovery` now exposes a production recovery journal adapter in `351b6bbd`, and `7ec504b7` tightens writer-lease fail-closed behavior, but the only release-boundary evidence is still the focused `applyPlan(..., { requireProductionDurableJournal: true })` probe. It does not yet show the adapter consumed by `verify:release` or another live production-backed release entrypoint. The exact next owner is `reliable-executor`, and the exact command surface is `scripts/playground/production-shaped-release-verify.mjs` behind `npm run verify:release`.
 3. `reliable-executor` advanced the readiness harness in `e725e749`, `0f36d838`, and `795349aa` so the readiness failure now fails fast with bounded route/status/body diagnostics instead of hanging. That is a better failure, but it is still a readiness boundary, not live release-proof past readiness, so no downstream release-boundary evidence can count yet.
 4. `no-data-loss-invariants` now shows additional unsupported-surface blocking, but `19c32bb9`, `5f5a2f8a`, `6cd23be4`, `3998cb83`, `7400e3eb`, `eed6af9f`, `63baa64d`, `c1cc6e93`, `ad57d11a`, `93a4a4eb`, `8b6c8bca`, `3f5e4919`, `60d398ba`, `22ac2d21`, `56fd6a3a`, `7d614106`, `38e14784`, `b12d7401`, `ff1c8e35`, `5e76166e`, `10cb1368`, and `e884c34d` still do not prove the live production mutation boundary.
