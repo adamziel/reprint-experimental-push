@@ -36,6 +36,17 @@ test('authenticated push client fails closed for unsupported production-shaped o
   );
 });
 
+test('authenticated push client fails closed for missing production-shaped credentials', () => {
+  assert.throws(
+    () => authenticatedHttpClient({
+      sourceUrl: 'http://127.0.0.1:8080',
+      credential: {},
+      routeProfile: 'production-shaped',
+    }),
+    /Missing credentials for production-shaped authenticated client/,
+  );
+});
+
 test('authenticated push client signs mutating requests when session and idempotency are present', async () => {
   const originalFetch = global.fetch;
   const seen = [];

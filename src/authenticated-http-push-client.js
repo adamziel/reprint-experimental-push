@@ -191,6 +191,7 @@ export function authenticatedHttpClient({
   const baseUrl = normalizeBaseUrl(sourceUrl);
   const profile = resolveRouteProfile(routeProfile);
   assertSupportedSourceUrlForRouteProfile(baseUrl, profile);
+  assertSupportedCredentialForRouteProfile(credential, profile);
 
   return {
     get(pathSuffix) {
@@ -227,6 +228,16 @@ export function authenticatedHttpClient({
       );
     },
   };
+}
+
+function assertSupportedCredentialForRouteProfile(credential, profile) {
+  if (profile.name !== 'production-shaped') {
+    return;
+  }
+
+  if (!credential?.username || !credential?.password) {
+    throw new Error('Missing credentials for production-shaped authenticated client');
+  }
 }
 
 function resolveRouteProfile(routeProfile) {
