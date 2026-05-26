@@ -24,6 +24,7 @@ const liveProofSubprocessTimeoutMs = 9_000;
 const liveProofSubprocessKillSignal = 'SIGKILL';
 const liveProofInnerTimeoutMs = Math.max(1_000, Math.min(2_000, liveProofSubprocessTimeoutMs - 5_000));
 const liveProofLaunchTimeoutMs = Math.max(1_000, Math.min(liveProofInnerTimeoutMs, liveProofSubprocessTimeoutMs - 6_000));
+const releaseVerifyInnerTimeoutMs = Math.max(1_000, Math.min(20_000, proofSubprocessTimeoutMs - 5_000));
 const releaseVerifySlowPathTimeoutMs = 9_000;
 const releaseVerifySlowPathInnerTimeoutMs = Math.max(1_000, Math.min(5_000, releaseVerifySlowPathTimeoutMs - 2_000));
 const proofSubprocessOptions = {
@@ -80,7 +81,7 @@ function spawnReleaseVerify(env = {}, options = {}) {
 }
 
 function spawnReleaseVerifyBounded(command, args, options, label) {
-  const timeout = options.timeout ?? proofSubprocessTimeoutMs;
+  const timeout = options.timeout ?? releaseVerifyInnerTimeoutMs;
   const killSignal = options.killSignal ?? proofSubprocessKillSignal;
   const boundedOptions = {
     shell: false,
@@ -143,7 +144,7 @@ function spawnProductionShapedReleaseVerify(env, options, label) {
 }
 
 function spawnProductionShapedReleaseVerifyCommand(env, options, label) {
-  const timeout = options.timeout ?? proofSubprocessTimeoutMs;
+  const timeout = options.timeout ?? releaseVerifyInnerTimeoutMs;
   const killSignal = options.killSignal ?? proofSubprocessKillSignal;
   const proof = spawnReleaseVerifyBounded(
     process.execPath,
@@ -260,6 +261,7 @@ function spawnBoundedSync(command, args, options, label) {
   if (proof.error || proof.signal || proof.status === null) {
     stopAllPlaygroundChildrenSync();
     reportBoundedSpawnFailure(proof, command, args);
+    writeSpawnOutputTail(proof, `${command} ${args.join(' ')}`);
   }
   assertBoundedSpawnProof(proof, command, args, label, boundedOptions.timeout);
   return proof;
