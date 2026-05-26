@@ -5669,6 +5669,7 @@ test('blocks a local attachment parent reference to a same-plan attachment', () 
     JSON.stringify(blocker).includes('local-private-attachment-child-body'),
     false,
   );
+  assert.throws(() => applyPlan(baseSite(), plan), /Refusing to apply/);
 });
 
 test('allows a local attachment parent reference to a same-plan post', () => {
@@ -7190,6 +7191,73 @@ test('blocks a local term relationship object reference owned by an attachment e
   assert.equal(blocker.surface, 'attachment');
   assert.equal(JSON.stringify(blocker).includes('local-private-attachment-relationship-owner-body'), false);
   assert.equal(JSON.stringify(blocker).includes('local-private-tagged-post-body'), false);
+  assert.throws(() => applyPlan(baseSite(), plan), /Refusing to apply/);
+});
+
+test('blocks a local term relationship object reference owned by a revision even when it targets a same-plan post', () => {
+  const revisionResourceKey = 'row:["wp_posts","ID:3"]';
+  const postResourceKey = 'row:["wp_posts","ID:4"]';
+  const termResourceKey = 'row:["wp_terms","term_id:7"]';
+  const taxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:9"]';
+  const relationshipResourceKey = 'row:["wp_term_relationships","object_id:3|term_taxonomy_id:9"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_posts['ID:3'] = {
+    ID: 3,
+    post_title: 'Local revision relationship owner',
+    post_content: 'local-private-revision-relationship-owner-body',
+    post_status: 'inherit',
+    post_type: 'revision',
+  };
+  local.db.wp_posts['ID:4'] = {
+    ID: 4,
+    post_title: 'Local target post',
+    post_content: 'local-private-target-post-body',
+    post_status: 'publish',
+  };
+  local.db.wp_terms = {
+    'term_id:7': {
+      term_id: 7,
+      name: 'Local relationship term',
+      slug: 'local-relationship-term',
+    },
+  };
+  local.db.wp_term_taxonomy = {
+    'term_taxonomy_id:9': {
+      term_taxonomy_id: 9,
+      term_id: 7,
+      taxonomy: 'category',
+      description: '',
+      parent: 0,
+      count: 0,
+    },
+  };
+  local.db.wp_term_relationships = {
+    'object_id:3|term_taxonomy_id:9': {
+      object_id: 3,
+      term_taxonomy_id: 9,
+      term_order: 0,
+    },
+  };
+
+  const plan = planFor(base, local, baseSite());
+  const revisionMutation = mutationFor(plan, revisionResourceKey);
+  const postMutation = mutationFor(plan, postResourceKey);
+  const termMutation = mutationFor(plan, termResourceKey);
+  const taxonomyMutation = mutationFor(plan, taxonomyResourceKey);
+  const relationshipMutation = mutationFor(plan, relationshipResourceKey);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === relationshipResourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 3);
+  assert.equal(revisionMutation, undefined);
+  assert.equal(postMutation.changeKind, 'create');
+  assert.equal(termMutation.changeKind, 'create');
+  assert.equal(taxonomyMutation.changeKind, 'create');
+  assert.equal(blocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(blocker.surface, 'revision');
+  assert.equal(JSON.stringify(blocker).includes('local-private-revision-relationship-owner-body'), false);
+  assert.equal(JSON.stringify(blocker).includes('local-private-target-post-body'), false);
   assert.throws(() => applyPlan(baseSite(), plan), /Refusing to apply/);
 });
 

@@ -1711,6 +1711,7 @@ function isBlockedSamePlanWordPressGraphSource(sourceMutation, reference, mutati
       return false;
     }
     return ownerValue.post_type === 'revision'
+      || ownerValue.post_type === 'attachment'
       || ownerValue.post_type === 'nav_menu_item'
       || ownerValue.post_type === 'wp_navigation';
   }
