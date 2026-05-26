@@ -1,8 +1,9 @@
 Recovery lane handoff:
 
-- Timestamp: 2026-05-26 11:22:13 CEST (+0200)
+- Timestamp: 2026-05-26 11:23:11 CEST (+0200)
 - No recovery-side code patch was needed this pass.
 - The checked recovery adapter surface is still present in `src/recovery-journal.js` via `openProductionRecoveryJournal()`, including `productionAdapter`, `supportedSurface`, `restartReadable`, `ownsJournal`, `journalPath`, `writerLease`, `artifactRefs`, `inspect()`, `flush()`, `close()`, and `assertCurrentClaim()`.
+- The owned recovery tests still pass, including the replay and failure-state coverage in `test/recovery-journal.test.js`.
 - `package.json` already exposes `verify:release`; the missing consumer wiring is in the release-verifier owner lane, not here.
 - Exact blocker: `reliable-executor` must wire `openProductionRecoveryJournal()` into the checked release verifier entrypoint that owns `verify:release`; if that consumer is absent from its worktree, it should name the missing file/API boundary concretely instead of handing this lane another recovery-side change request.
 - Current reliable head to classify/publicize: `1c8a658b` (`Wire recovery journal into release verify`).
@@ -14,16 +15,14 @@ Changed files:
 Commands:
 
 - `date '+%Y-%m-%d %H:%M:%S %Z (%z)'`
+- `git rev-parse --short HEAD && git rev-parse --short origin/main && git branch --show-current`
 - `git status --short --branch`
-- `sed -n '1,220p' AGENTS.md`
-- `sed -n '1,220p' supervision/README.md`
-- `sed -n '1,240p' supervision/lanes/no-data-loss-recovery.md`
-- `sed -n '1,240p' .lane-output/final.md`
-- `rg -n "openProductionRecoveryJournal\\(|productionAdapter|supportedSurface|restartReadable|ownsJournal|writerLease|assertCurrentClaim|verify:release" -S src package.json scripts test docs`
+- `rg -n "openProductionRecoveryJournal|productionAdapter|supportedSurface|restartReadable|ownsJournal|artifactRefs|schemaVersion|writerLease|assertCurrentClaim|blocked partial remote recovery|replaying a completed plan|failure after staging|failure before mutation|dependency validation" src test docs -S`
+- `timeout 60s node --test test/recovery-journal.test.js`
 
 Push result:
 
-- Not pushed
+- Not pushed yet
 
 Worktree status:
 
@@ -32,4 +31,4 @@ Worktree status:
 
 Next supervisor nudge:
 
-1. Send `reliable-executor` to the checked release-path consumer wiring for `openProductionRecoveryJournal()`, or have audit name the exact missing consumer file/API if the release verifier entrypoint is absent.
+1. Keep `reliable-executor` focused on the checked release-path consumer wiring for `openProductionRecoveryJournal()`, or have audit name the exact missing consumer file/API if the release verifier entrypoint is absent.
