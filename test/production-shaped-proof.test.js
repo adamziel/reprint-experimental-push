@@ -2749,6 +2749,38 @@ test('packaged readiness timeout fallback classifier distinguishes terminal inde
   );
 });
 
+test('packaged bounded startup classifier distinguishes global WordPress versus packaged-route startup', () => {
+  assert.deepEqual(
+    packagedProductionPluginClassifyBoundedStartup(
+      { retryable: true, status: 503, body: 'WordPress is not ready yet' },
+      { status: 503, body: 'WordPress is not ready yet' },
+    ),
+    {
+      kind: 'retryable-route-wordpress-starting',
+      globalWordPressStartup: true,
+    },
+  );
+
+  assert.deepEqual(
+    packagedProductionPluginClassifyBoundedStartup(
+      { retryable: true, status: 404, body: 'No route was found matching the URL and request method.' },
+      { status: 200, body: '{"namespaces":["reprint/v1"]}' },
+    ),
+    {
+      kind: 'retryable-route-packaged-route-starting',
+      packagedRouteStartup: true,
+    },
+  );
+
+  assert.equal(
+    packagedProductionPluginClassifyBoundedStartup(
+      { retryable: false, status: 404, body: 'No route was found matching the URL and request method.' },
+      { status: 503, body: 'WordPress is not ready yet' },
+    ),
+    null,
+  );
+});
+
 test('packaged readiness helpers treat signed preflight as the bootstrap authority before terminal snapshot auth failures', () => {
   const smokeSource = readFileSync(
     path.join(repoRoot, 'scripts/playground/production-plugin-package-smoke.mjs'),

@@ -371,11 +371,14 @@ export function packagedProductionPluginClassifyBoundedStartup(
   indexProbe,
 ) {
   if (
+    routeProbe?.retryable === true
+    && (
     packagedProductionPluginRouteRetryableWhileWordPressStarting(
       routeProbe?.status,
       routeProbe?.body || '',
       indexProbe?.status,
       indexProbe?.body || '',
+    )
     )
   ) {
     return {
@@ -385,11 +388,14 @@ export function packagedProductionPluginClassifyBoundedStartup(
   }
 
   if (
+    routeProbe?.retryable === true
+    && (
     packagedProductionPluginRouteRetryableWhilePackagedRouteStarting(
       routeProbe?.status,
       routeProbe?.body || '',
       indexProbe?.status,
       indexProbe?.body || '',
+    )
     )
   ) {
     return {
