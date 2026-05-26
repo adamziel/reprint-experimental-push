@@ -4,7 +4,7 @@
 
 The project is **not releasable as a production WordPress push path**.
 
-- Fresh remote heads at audit time, checked on 2026-05-26 07:40:37 CEST (+0200):
+- Fresh remote heads at audit time, checked on 2026-05-26 07:41:59 CEST (+0200):
 
 - `origin/lane/cycle-20260524-auth-graph-hardening/critic` -> `e413f7a8`
 - `origin/lane/cycle-20260524-auth-graph-hardening/fast-paths` -> `ad7d82a4`
@@ -42,9 +42,9 @@ The project is **not releasable as a production WordPress push path**.
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `d7813094`
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `8a7f4edd`
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `22027a28`
-- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `25a543ff`
+- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `6b10836d`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `8cf7262b`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `12fbd834`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `4ebeae50`
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` -> `0ca7b35d`
 - `origin/lane/cycle-20260525-mainwindows-2349/same-plan-wordpress-graph-create` -> `65a40803`
 - `origin/lane/cycle-20260525-mainwindows-2357/no-data-loss-invariants-graph-proof` -> `98c0ce26`
@@ -55,10 +55,10 @@ The project is **not releasable as a production WordPress push path**.
 - `origin/lane/fast-paths` -> `8c5c2ccb`
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `a6359b91`
 - `origin/lane/independent-auditor` -> `25a543ff`
-- `origin/lane/no-data-loss-invariants` -> `f7501d92`
-- `origin/lane/no-data-loss-recovery` -> `9e077c10`
+- `origin/lane/no-data-loss-invariants` -> `7be60dfa`
+- `origin/lane/no-data-loss-recovery` -> `8cf7262b`
 - `origin/lane/progress-publisher` -> `7695e1f9`
-- `origin/lane/reliable-executor` -> `f451b28f`
+- `origin/lane/reliable-executor` -> `5d163dd7`
 - `origin/lane/same-plan-wordpress-graph-create` -> `8dea1ca3`
 
 Fresh visibility-lane and supporting heads moved again, but they still do not change the release gate:
