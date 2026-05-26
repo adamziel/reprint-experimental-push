@@ -1481,7 +1481,7 @@ function durableJournalInspectRecords(inspected) {
     index === 0
       ? record.sequence === 1
       : record.sequence === recordsList[index - 1].sequence + 1
-  ));
+  )) && records.some((record) => record.type === 'journal-opened');
 }
 
 function recordDurablePlanOpened(writer, remote, plan, options = {}) {
