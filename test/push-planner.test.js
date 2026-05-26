@@ -25772,6 +25772,44 @@ test('recovery states fail closed when the artifact envelope is inherited from t
   assert.match(error.message, /Recovery state must carry an own artifact envelope\./);
 });
 
+test('non-blocked recovery states fail closed when the top-level envelope uses a null prototype', () => {
+  const recovery = Object.assign(Object.create(null), {
+    status: 'old-remote',
+    planId: 'plan-null-prototype-recovery',
+    reason: 'null prototype recovery envelope',
+    remoteHash: 'a'.repeat(64),
+    artifacts: {
+      journal: { schemaVersion: 1 },
+    },
+  });
+
+  assert.equal(isAcceptableRecoveryState(recovery), false);
+  const error = captureError(() => assertRecoveryStateEnvelope(recovery));
+
+  assert.equal(error.code, 'RECOVERY_STATE_INVALID');
+  assert.match(error.message, /Recovery state must use a strict plain-object envelope\./);
+});
+
+test('blocked recovery states fail closed when the top-level envelope uses a null prototype', () => {
+  const recovery = Object.assign(Object.create(null), {
+    status: 'blocked-recovery',
+    planId: 'plan-null-prototype-blocked-recovery',
+    reason: 'null prototype blocked recovery envelope',
+    remoteHash: 'a'.repeat(64),
+    driftedResources: ['file:index.php'],
+    artifacts: {
+      journal: { status: 'completed' },
+      remote: baseSite(),
+    },
+  });
+
+  assert.equal(isAcceptableRecoveryState(recovery), false);
+  const error = captureError(() => assertRecoveryStateEnvelope(recovery));
+
+  assert.equal(error.code, 'RECOVERY_STATE_INVALID');
+  assert.match(error.message, /Recovery state must use a strict plain-object envelope\./);
+});
+
 test('recovery states fail closed when remoteHash is inherited from the prototype', () => {
   const recovery = Object.create({
     remoteHash: 'a'.repeat(64),

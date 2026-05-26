@@ -39,7 +39,7 @@ export const ACCEPTABLE_RECOVERY_STATES = Object.freeze([
 ]);
 
 export function isAcceptableRecoveryState(recoveryState) {
-  if (!recoveryState || typeof recoveryState !== 'object') {
+  if (!isStrictPlainObject(recoveryState)) {
     return false;
   }
 
@@ -2580,6 +2580,17 @@ function hasNestedSymbolOwnKeys(value, seen = new Set()) {
 }
 
 function validateRecoveryStateEnvelopeKeys(recoveryState) {
+  if (!isStrictPlainObject(recoveryState)) {
+    throw new PushPlanError(
+      'RECOVERY_STATE_INVALID',
+      'Recovery state must use a strict plain-object envelope.',
+      {
+        status: recoveryState?.status,
+        planId: recoveryState?.planId,
+      },
+    );
+  }
+
   const allowedKeys = recoveryState.status === 'blocked-recovery'
     ? ['status', 'reason', 'remoteHash', 'planId', 'artifacts', 'driftedResources']
     : ['status', 'reason', 'remoteHash', 'planId', 'artifacts'];
