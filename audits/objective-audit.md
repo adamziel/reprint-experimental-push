@@ -6,12 +6,12 @@ The project is **not releasable as a production WordPress push path**.
 
 Fresh remote heads at audit time, checked on May 26, 2026:
 
-- `origin/lane/reliable-executor` -> `7be5a3f6`
+- `origin/lane/reliable-executor` -> `ffdc0a9b`
 - `origin/lane/no-data-loss-invariants` -> `9c70eba6`
 - `origin/lane/no-data-loss-recovery` -> `deb3e35b`
 - `origin/lane/fast-paths` -> `a72b08ad`
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `a72b08ad`
-- `origin/lane/independent-auditor` -> `1b67182a`
+- `origin/lane/independent-auditor` -> `921a94f8`
 - `origin/lane/critic` -> `3b9a9c46`
 - `origin/lane/progress-publisher` -> `7695e1f9`
 - `origin/lane/same-plan-wordpress-graph-create` -> `09e6706d`
@@ -34,10 +34,9 @@ real source-site mutation boundary. The release gates still stay `0/4`.
 Fresh lane proof since the last audit pass improved the local evidence floor,
 but it did not change the release conclusion:
 
-- `origin/lane/reliable-executor` now tightens release verify startup cleanup
-  at `7be5a3f6`. The sibling reliable-executor worktree still has the
-  `spawnSync` timeout-hardening edits in progress, but the live proof path is
-  still lab-backed and the verdict does not move.
+- `origin/lane/reliable-executor` now tightens production-proof subprocess
+  bounds at `ffdc0a9b`. That is useful harness hardening, but the live proof
+  path is still lab-backed and the verdict does not move.
 - `origin/lane/no-data-loss-invariants` now tightens graph blockers at
   `9c70eba6`. A separate cycle-branch proof at `98c0ce26`
   extends that blocker coverage to missing graph identity references, and the
@@ -48,15 +47,12 @@ but it did not change the release conclusion:
 - The newer integration cycle head at `a3a900d7` adds comments graph blocker
   coverage, which strengthens the fail-closed boundary but still does not
   prove live source mutation on unsupported surfaces.
-- `origin/lane/no-data-loss-recovery` now tightens the durable journal
-  production gate at `deb3e35b` while preserving the earlier recovery
-  evidence.
-  `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` now
-  hardens durable recovery support at `deb3e35b`, but it still does not add
-  production-backed journal ownership or replay proof.
-- `origin/lane/fast-paths` now refreshes benchmark evidence at `a72b08ad`.
-  This remains a safe fast-path implementation detail, but it still does not
-  prove the live production push boundary.
+- `origin/lane/no-data-loss-recovery` now fails closed on artifact references
+  at `0c53048b`. That narrows unsupported recovery claims, but it still does
+  not add production-backed journal ownership or replay proof.
+- `origin/lane/fast-paths` now fails closed on unmeasured backpressure at
+  `21afdad9`. This remains a safe fast-path implementation detail, but it
+  still does not prove the live production push boundary.
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` now adds bounded
   backpressure consistency handling at `a72b08ad`. That is still a
   fail-closed implementation improvement, not production release proof.
@@ -64,7 +60,7 @@ but it did not change the release conclusion:
 - `origin/lane/progress-publisher` now refreshes the public progress evidence
   at `7695e1f9`.
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` now refreshes the audit snapshot at
-  `5abd1f65`.
+  `921a94f8`.
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now
   refreshes the supervisor evidence snapshot at `c4a411f9`.
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now
