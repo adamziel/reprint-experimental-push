@@ -6,10 +6,10 @@ The project is **not releasable as a production WordPress push path**.
 
 Fresh remote heads at audit time, checked on May 26, 2026:
 
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `407c256e`
-- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `35ba5a8c`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `7ec3f8bf`
+- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `4d29785b`
 - `origin/lane/reliable-executor` -> `acb309b3`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `63734587`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `485966c4`
 - `origin/lane/no-data-loss-invariants` -> `f3c8fe4f`
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `59fe13d4`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `d121c210`
@@ -32,9 +32,9 @@ Fresh lane proof since the last audit pass improved the local evidence floor,
 but it did not change the release conclusion:
 
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now records
-  `63734587`, refreshing public progress freshness only.
+  `485966c4`, refreshing public progress freshness only.
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now records
-  `407c256e`, refreshing the supervisor progress surface only.
+  `7ec3f8bf`, refreshing the supervisor progress surface only.
 - `origin/lane/reliable-executor` now records `acb309b3`, hardening Playground
   cleanup handling only.
 - `origin/lane/no-data-loss-invariants` now records `f3c8fe4f`, adding
