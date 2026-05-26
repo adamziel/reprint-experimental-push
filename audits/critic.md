@@ -1,13 +1,14 @@
 # Critic Verdict
 
-Current reliable head: `ae9f558da5bd76c5168bc3f92326e5c441ae8af1`
-(`Require checked preserved-remote retry proof`).
+Current reliable head: `66c24931c6674378a479bef58294375f1d2a088a`
+(`Prove packaged release boundary continuity`).
 
 Verdict: `0/4`
 
 Reason:
 
-- This head proves a checked preserved-remote retry surface, but it is still
+- This head proves packaged release-boundary continuity, authenticated
+  session-store response evidence, and readiness gating, but it is still
   support-side release evidence rather than a production-backed gate crossing.
 - The checked release path still lacks live production auth/session
   issuance/read/expiry/rotation/revocation/cleanup evidence, and it still does
@@ -22,5 +23,5 @@ Next owner / command:
   `src/authenticated-http-push-client.js`, and
   `src/recovery-journal.js` with the checked command
   `timeout 180s npm run verify:release`, or hand off the exact missing
-  release-path file/function/command if the verifier still cannot consume the
-  production auth/session lifecycle or journal ownership proof.
+  production auth/session lifecycle primitive or durable-journal ownership
+  primitive if the verifier still cannot consume the proof.

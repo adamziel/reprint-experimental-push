@@ -1,20 +1,21 @@
-Changed files:
-- [`audits/critic.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/critic-clean-20260526-1530/audits/critic.md)
-- [`.lane-output/final.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/critic-clean-20260526-1530/.lane-output/final.md)
+Updated [audits/critic.md](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/critic-clean-20260526-1530/audits/critic.md) for live reliable head `66c24931c6674378a479bef58294375f1d2a088a`.
 
-What changed:
-- Reclassified the current reliable head as `afe8a88179a09722ebe9ebeb84a34de593a0d82c` from `git ls-remote`.
-- Kept the verdict at `0/4` because the release verifier only gained live-credential wiring; it still does not prove a production-backed auth/session lifecycle or stricter durable-journal ownership consumed by the checked release path.
+- Verdict: `0/4`
+- Reason: the head proves packaged release-boundary continuity plus authenticated session-store response evidence, but it still stops at support-side release evidence. The checked release path still lacks production-backed auth/session issuance/read/expiry/rotation/revocation/cleanup, and it still does not prove production durable-journal ownership with restart-readable replay consumed by `verify:release`.
+- Next owner/command: `main:reliable-exec` on `scripts/playground/production-shaped-release-verify.mjs`, `src/authenticated-http-push-client.js`, and `src/recovery-journal.js` with `timeout 180s npm run verify:release`, or the exact missing production auth/session lifecycle primitive or durable-journal ownership primitive if that verifier path still cannot consume the proof.
 
 Commands run:
 - `git status --short --branch`
-- `git ls-remote origin refs/heads/lane/reliable-executor`
 - `sed -n '1,220p' AGENTS.md`
-- `sed -n '1,220p' supervision/README.md`
+- `find . -path '*/.lane-output/final*.md' -type f | sort | tail -n 10`
+- `git ls-remote origin refs/heads/lane/reliable-executor`
+- `sed -n '1,220p' .lane-output/final.md`
+- `sed -n '1,220p' .lane-output/final-loop-20260526-222105.md`
+- `sed -n '1,220p' .lane-output/final-loop-20260526-221813.md`
+- `sed -n '1,220p' .lane-output/final-loop-20260526-221440.md`
+- `sed -n '1,220p' audits/critic.md`
 - `sed -n '1,220p' supervision/lanes/critic.md`
-- `find . -maxdepth 3 -type f | sed -n '1,220p'`
-- `git show --stat --oneline --decorate=short --no-renames afe8a88179a09722ebe9ebeb84a34de593a0d82c`
-- `git show --no-ext-diff --unified=40 afe8a88179a09722ebe9ebeb84a34de593a0d82c -- scripts/playground/production-shaped-release-verify.mjs scripts/playground/release-verify-credentials.js test/production-shaped-proof.test.js`
+- `git show --stat --oneline --no-renames --format=fuller 66c24931c6674378a479bef58294375f1d2a088a --`
 - `date '+%Y-%m-%d %H:%M:%S %Z (%z)'`
 
 Push result:
@@ -25,4 +26,4 @@ Worktree status:
 - Branch: `lane/cycle-20260525-mainwindows-2349/critic-clean-20260526-1530...origin/lane/critic`
 
 Next supervisor nudge:
-- Reclassify only when `reliable-executor` lands checked-path production-backed auth/session lifecycle proof, durable-journal ownership, preserved-remote retry on the checked release path, or another gate-moving release-boundary change.
+- Reclassify only when `origin/lane/reliable-executor` lands a checked-path production-backed auth/session lifecycle proof, durable-journal ownership, preserved-remote retry on the checked release path, or another gate-moving release-boundary change.
