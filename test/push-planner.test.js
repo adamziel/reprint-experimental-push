@@ -29055,6 +29055,184 @@ test('production durable journal claims fail closed when restart inspection hide
   assert.equal(events.length, 0);
 });
 
+test('production durable journal claims fail closed when a persisted claim record hides claimHash behind a non-enumerable key', () => {
+  const events = [];
+  const claimId = 'hidden-persisted-claim-hash';
+  const claimHash = digest({ recoveryJournalClaim: claimId });
+  const writer = {
+    kind: 'production-recovery-journal',
+    productionAdapter: true,
+    supportedSurface: 'production-recovery-journal-adapter',
+    restartReadable: true,
+    ownsJournal: true,
+    ownsRemoteArtifact: false,
+    journalPath: '/var/lib/reprint/recovery.jsonl',
+    artifactRefs: {
+      journal: '/var/lib/reprint/recovery.jsonl',
+      remote: null,
+    },
+    schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+    writerLease: { id: claimId, epoch: 1 },
+    leaseFence: { id: claimId, epoch: 1 },
+    claimHash,
+    appendEvent(type, payload) {
+      events.push({ type, payload });
+      return { sequence: events.length, type, payload };
+    },
+    flush() {},
+    close() {},
+    inspect() {
+      const record = {
+        sequence: 1,
+        type: 'recovery-claim-opened',
+        claimLease: { id: claimId, epoch: 1 },
+        fsync: { requested: true },
+      };
+      Object.defineProperty(record, 'claimHash', {
+        value: claimHash,
+        enumerable: false,
+        configurable: true,
+        writable: true,
+      });
+      return {
+        kind: 'production-recovery-journal',
+        productionAdapter: true,
+        supportedSurface: 'production-recovery-journal-adapter',
+        restartReadable: true,
+        ownsJournal: true,
+        ownsRemoteArtifact: false,
+        writerLease: { id: claimId, epoch: 1 },
+        leaseFence: { id: claimId, epoch: 1 },
+        claimHash,
+        journalPath: '/var/lib/reprint/recovery.jsonl',
+        filePath: '/var/lib/reprint/recovery.jsonl',
+        schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+        artifactRefs: {
+          journal: '/var/lib/reprint/recovery.jsonl',
+          remote: null,
+        },
+        records: [record],
+      };
+    },
+    assertCurrentClaim() {},
+  };
+  const plan = planFor(baseSite(), baseSite(), {
+    ...baseSite(),
+    db: {
+      ...baseSite().db,
+      wp_options: {
+        ...baseSite().db.wp_options,
+        'option_name:blogname': { option_name: 'blogname', option_value: 'New Site' },
+      },
+    },
+  });
+
+  const error = captureError(() => applyPlan(baseSite(), plan, {
+    requireProductionDurableJournal: true,
+    durableJournal: writer,
+  }));
+
+  assert.equal(error.code, 'PRODUCTION_DURABLE_JOURNAL_UNSUPPORTED');
+  assert.ok(error.details.missingDependency.includes('journal-readable inspection records with sequence and type'));
+  assert.ok(error.details.missingDependency.includes('fencing or lease ownership for the journal writer'));
+  assert.equal(events.length, 0);
+});
+
+test('production durable journal claims fail closed when a stale-claim record hides previousClaimHash behind a non-enumerable key', () => {
+  const events = [];
+  const previousClaimId = 'hidden-previous-claim';
+  const claimId = 'hidden-next-claim';
+  const previousClaimHash = digest({ recoveryJournalClaim: previousClaimId });
+  const claimHash = digest({ recoveryJournalClaim: claimId });
+  const writer = {
+    kind: 'production-recovery-journal',
+    productionAdapter: true,
+    supportedSurface: 'production-recovery-journal-adapter',
+    restartReadable: true,
+    ownsJournal: true,
+    ownsRemoteArtifact: false,
+    journalPath: '/var/lib/reprint/recovery.jsonl',
+    artifactRefs: {
+      journal: '/var/lib/reprint/recovery.jsonl',
+      remote: null,
+    },
+    schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+    writerLease: { id: claimId, epoch: 1 },
+    leaseFence: { id: claimId, epoch: 1 },
+    claimHash,
+    appendEvent(type, payload) {
+      events.push({ type, payload });
+      return { sequence: events.length, type, payload };
+    },
+    flush() {},
+    close() {},
+    inspect() {
+      const advancedRecord = {
+        sequence: 2,
+        type: 'stale-claim-advanced',
+        claimHash,
+        claimLease: { id: claimId, epoch: 1 },
+        fsync: { requested: true },
+      };
+      Object.defineProperty(advancedRecord, 'previousClaimHash', {
+        value: previousClaimHash,
+        enumerable: false,
+        configurable: true,
+        writable: true,
+      });
+      return {
+        kind: 'production-recovery-journal',
+        productionAdapter: true,
+        supportedSurface: 'production-recovery-journal-adapter',
+        restartReadable: true,
+        ownsJournal: true,
+        ownsRemoteArtifact: false,
+        writerLease: { id: claimId, epoch: 1 },
+        leaseFence: { id: claimId, epoch: 1 },
+        claimHash,
+        journalPath: '/var/lib/reprint/recovery.jsonl',
+        filePath: '/var/lib/reprint/recovery.jsonl',
+        schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+        artifactRefs: {
+          journal: '/var/lib/reprint/recovery.jsonl',
+          remote: null,
+        },
+        records: [
+          {
+            sequence: 1,
+            type: 'recovery-claim-opened',
+            claimHash: previousClaimHash,
+            claimLease: { id: previousClaimId, epoch: 1 },
+            fsync: { requested: true },
+          },
+          advancedRecord,
+        ],
+      };
+    },
+    assertCurrentClaim() {},
+  };
+  const plan = planFor(baseSite(), baseSite(), {
+    ...baseSite(),
+    db: {
+      ...baseSite().db,
+      wp_options: {
+        ...baseSite().db.wp_options,
+        'option_name:blogname': { option_name: 'blogname', option_value: 'New Site' },
+      },
+    },
+  });
+
+  const error = captureError(() => applyPlan(baseSite(), plan, {
+    requireProductionDurableJournal: true,
+    durableJournal: writer,
+  }));
+
+  assert.equal(error.code, 'PRODUCTION_DURABLE_JOURNAL_UNSUPPORTED');
+  assert.ok(error.details.missingDependency.includes('journal-readable inspection records with sequence and type'));
+  assert.ok(error.details.missingDependency.includes('fencing or lease ownership for the journal writer'));
+  assert.equal(events.length, 0);
+});
+
 test('production durable journal claims fail closed when writer leases expose unexpected fields', () => {
   const events = [];
   const claimHash = digest({ recoveryJournalClaim: 'lease-extra-fields' });

@@ -1628,6 +1628,7 @@ function durableJournalInspectRecords(inspected) {
   && records.every((record) =>
     record
     && typeof record === 'object'
+    && !hasHiddenOwnStringKeys(record)
     && !Reflect.ownKeys(record).some((key) => typeof key === 'symbol')
     && Object.hasOwn(record, 'sequence')
     && Object.hasOwn(record, 'type')
@@ -1673,6 +1674,7 @@ function durableJournalInspectClaimRecords(inspected) {
   && records.every((record) =>
     record
     && typeof record === 'object'
+    && !hasHiddenOwnStringKeys(record)
     && !Reflect.ownKeys(record).some((key) => typeof key === 'symbol')
     && Object.hasOwn(record, 'sequence')
     && Object.hasOwn(record, 'type')
