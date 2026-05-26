@@ -5,10 +5,18 @@ import net from 'node:net';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { authenticatedHttpClient, runAuthenticatedHttpPush } from '../../src/authenticated-http-push-client.js';
+import {
+  labReadinessBodyRetryable,
+  labSnapshotReady,
+  labSnapshotRetryable,
+} from './lab-playground-readiness.js';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const muPluginDir = path.join(repoRoot, 'scripts/playground/rest-mu-plugins');
 const serverStartupTimeoutMs = 120_000;
+const serverFetchTimeoutMs = 3_000;
+const readinessProbeIntervalMs = 500;
+const readinessFailureBodyLimit = 500;
 const credentials = {
   username: 'reprint_push_admin',
   password: 'reprint-push-admin-app-password',
@@ -181,20 +189,82 @@ async function stopPlaygroundServer(server) {
 
 async function waitForServer(child, baseUrl, getLogs) {
   const deadline = Date.now() + serverStartupTimeoutMs;
+  let lastError = null;
   while (Date.now() < deadline) {
     if (child.exitCode !== null) {
       throw new Error(`Playground server exited early with ${child.exitCode}\n${getLogs()}`);
     }
     try {
-      const response = await fetch(`${baseUrl}/wp-json/`);
+      const response = await fetchWithTimeout(`${baseUrl}/wp-json/`, {
+        headers: { connection: 'close' },
+      }, serverFetchTimeoutMs);
+      const responseBody = await response.clone().text().catch(() => '');
       if (response.status === 200) {
         await response.arrayBuffer();
-        return;
+        const snapshot = await fetchWithTimeout(`${baseUrl}/wp-json/reprint-push-lab/v1/snapshot`, {
+          headers: {
+            Authorization: `Basic ${Buffer.from(`${credentials.username}:${credentials.password}`).toString('base64')}`,
+            connection: 'close',
+          },
+        }, serverFetchTimeoutMs);
+        const snapshotBody = await snapshot.clone().text().catch(() => '');
+        let snapshotJson = null;
+        try {
+          snapshotJson = JSON.parse(snapshotBody);
+        } catch (error) {
+          if (labReadinessBodyRetryable(snapshot.status, snapshotBody)) {
+            lastError = new Error(`Snapshot readiness HTTP ${snapshot.status}`);
+            await new Promise((resolve) => setTimeout(resolve, readinessProbeIntervalMs));
+            continue;
+          }
+          throw new Error(
+            `Playground lab snapshot returned an invalid readiness body at ${baseUrl}: `
+            + `${snapshotBody.slice(0, readinessFailureBodyLimit)}\n${getLogs()}`,
+            { cause: error },
+          );
+        }
+        if (labSnapshotReady({
+          status: snapshot.status,
+          body: snapshotJson,
+        })) {
+          await snapshot.arrayBuffer();
+          return;
+        }
+        lastError = new Error(`Snapshot readiness HTTP ${snapshot.status}`);
+        if (labSnapshotRetryable({
+          status: snapshot.status,
+          body: snapshotJson,
+        })) {
+          await new Promise((resolve) => setTimeout(resolve, readinessProbeIntervalMs));
+          continue;
+        }
+        throw new Error(
+          `Playground lab snapshot returned a terminal readiness failure at ${baseUrl}: `
+          + `${snapshotBody.slice(0, readinessFailureBodyLimit)}\n${getLogs()}`,
+        );
       }
-    } catch {}
-    await new Promise((resolve) => setTimeout(resolve, 500));
+      lastError = new Error(`HTTP ${response.status}: ${responseBody.slice(0, readinessFailureBodyLimit)}`);
+    } catch (error) {
+      lastError = error;
+    }
+    await new Promise((resolve) => setTimeout(resolve, readinessProbeIntervalMs));
   }
-  throw new Error(`Timed out waiting for Playground server at ${baseUrl}\n${getLogs()}`);
+  throw new Error(
+    `Timed out waiting for Playground server at ${baseUrl}: ${lastError?.message ?? 'unknown'}\n${getLogs()}`,
+  );
+}
+
+async function fetchWithTimeout(url, options = {}, timeoutMs = serverFetchTimeoutMs) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, {
+      ...options,
+      signal: controller.signal,
+    });
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 async function waitForExit(child, timeoutMs) {
