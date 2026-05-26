@@ -27,6 +27,7 @@ const CLAIM_FENCE_RECORD_TYPES = new Set([
   'recovery-claim-opened',
   'stale-claim-advanced',
 ]);
+const RECOVERY_JOURNAL_RECORD_TYPE_PATTERN = /^[a-z0-9-]+$/;
 export const ACCEPTABLE_RECOVERY_STATES = Object.freeze([
   'old-remote',
   'fully-updated-remote',
@@ -1474,7 +1475,8 @@ function durableJournalInspectRecords(inspected) {
     && Number.isInteger(record.sequence)
     && typeof record.type === 'string'
     && record.type.trim().length > 0
-    && record.type.trim() === record.type,
+    && record.type.trim() === record.type
+    && RECOVERY_JOURNAL_RECORD_TYPE_PATTERN.test(record.type),
   ) && records.every((record, index, recordsList) => (
     index === 0
       ? record.sequence === 1
