@@ -1960,6 +1960,22 @@ test('packaged readiness helpers do not sleep through child exits between probes
   }
 });
 
+test('packaged readiness helpers fail fast when both the packaged route and /wp-json/ stay startup-shaped', () => {
+  const smokeSource = readFileSync(
+    path.join(repoRoot, 'scripts/playground/production-plugin-package-smoke.mjs'),
+    'utf8',
+  );
+  const verifierSource = readFileSync(
+    path.join(repoRoot, 'scripts/playground/production-shaped-release-verify.mjs'),
+    'utf8',
+  );
+
+  for (const source of [smokeSource, verifierSource]) {
+    assert.match(source, /stayed startup-shaped while \/wp-json\/ kept reporting global WordPress startup HTTP/);
+    assert.doesNotMatch(source, /still waiting on global WordPress startup HTTP/);
+  }
+});
+
 test('lab Playground readiness helper rejects malformed ready responses and retries only startup-shaped failures', () => {
   const readySnapshot = {
     status: 200,
