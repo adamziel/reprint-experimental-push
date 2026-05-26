@@ -48,7 +48,7 @@ function stopAllPlaygroundChildrenSync() {
 }
 
 function spawnReleaseVerify(env = {}, timeout = proofSubprocessTimeoutMs) {
-  const proof = spawnSync(
+  return spawnBoundedSync(
     process.execPath,
     ['scripts/playground/production-shaped-release-verify.mjs'],
     {
@@ -63,32 +63,8 @@ function spawnReleaseVerify(env = {}, timeout = proofSubprocessTimeoutMs) {
         ...env,
       },
     },
+    'production-shaped release verify',
   );
-  if (proof.error) {
-    stopAllPlaygroundChildrenSync();
-    process.stderr.write(`${describeSpawnProof(proof)}\n`);
-    const timeoutNote = proof.error.code === 'ETIMEDOUT' && timeout ? ` after ${timeout}ms` : '';
-    throw new Error(formatSpawnFailure(`production-shaped release verify failed${timeoutNote}`, proof));
-  }
-  if (proof.signal) {
-    stopAllPlaygroundChildrenSync();
-    process.stderr.write(`${describeSpawnProof(proof)}\n`);
-    const detail = describeSpawnProof(proof);
-    throw new Error(
-      `${formatSpawnFailure(
-        `production-shaped release verify terminated by ${proof.signal}${timeout ? ` after ${timeout}ms` : ''}`,
-        proof,
-      )}\n${detail}`,
-    );
-  }
-  if (proof.status === null) {
-    stopAllPlaygroundChildrenSync();
-    process.stderr.write(`${describeSpawnProof(proof)}\n`);
-    throw new Error(
-      `${formatSpawnFailure('production-shaped release verify exited without a status', proof)}\n${describeSpawnProof(proof)}`,
-    );
-  }
-  return proof;
 }
 
 function spawnReleaseVerifyBounded(command, args, options, label) {
