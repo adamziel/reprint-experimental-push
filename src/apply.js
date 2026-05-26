@@ -1081,12 +1081,14 @@ export function productionRecoverySupportReport(writer) {
   if (
     !Object.hasOwn(writer ?? {}, 'writerLease')
     || !hasValidProductionLeaseIdentity(writer.writerLease)
+    || hasHiddenOwnStringKeys(writer.writerLease)
   ) {
     addMissingDependency('fencing or lease ownership for the journal writer');
   }
   if (
     !Object.hasOwn(writer ?? {}, 'leaseFence')
     || !hasValidProductionLeaseIdentity(writer.leaseFence)
+    || hasHiddenOwnStringKeys(writer.leaseFence)
     || !productionLeaseIdentitiesMatch(writer.leaseFence, writer.writerLease)
   ) {
     addMissingDependency('fencing or lease ownership for the journal writer');
@@ -1101,6 +1103,7 @@ export function productionRecoverySupportReport(writer) {
     !Object.hasOwn(writer ?? {}, 'claimHash')
     || typeof writer.claimHash !== 'string'
     || !/^[a-f0-9]{64}$/.test(writer.claimHash)
+    || hasHiddenOwnStringProperty(writer, 'claimHash')
     || !inspectedClaimState
     || inspectedClaimState.status === 'none'
     || inspectedClaimState.status === 'blocked'

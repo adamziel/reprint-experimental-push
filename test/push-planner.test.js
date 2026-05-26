@@ -26731,6 +26731,57 @@ test('production durable journal claims fail closed when claimHash is inherited 
   assert.ok(error.details.missingDependency.includes('fencing or lease ownership for the journal writer'));
 });
 
+test('production durable journal claims fail closed when claimHash hides behind a non-enumerable key', () => {
+  const filePath = tempRecoveryJournalPath();
+  const remoteArtifactPath = `${path.dirname(filePath)}/remote.jsonl`;
+  const remote = {
+    ...baseSite(),
+    db: {
+      ...baseSite().db,
+      wp_options: {
+        ...baseSite().db.wp_options,
+        'option_name:blogname': { option_name: 'blogname', option_value: 'New Site' },
+      },
+    },
+  };
+  const plan = planFor(baseSite(), baseSite(), remote);
+  const journal = openProductionRecoveryJournal(filePath, {
+    truncate: true,
+    now: fixedNow,
+    claimId: 'hidden-claim-hash',
+    writerLease: { id: 'hidden-claim-hash', epoch: 7 },
+    ownsRemoteArtifact: true,
+    remoteArtifactPath,
+  });
+  appendRecoveryClaimOpened(journal, {
+    plan: { id: plan.id },
+    current: baseSite(),
+    claimId: 'hidden-claim-hash',
+    artifactRefs: {
+      journal: filePath,
+      remote: remoteArtifactPath,
+    },
+  });
+
+  const durableJournal = {
+    ...journal,
+  };
+  Object.defineProperty(durableJournal, 'claimHash', {
+    value: journal.claimHash,
+    enumerable: false,
+    configurable: true,
+    writable: true,
+  });
+
+  const error = captureError(() => applyPlan(baseSite(), plan, {
+    requireProductionDurableJournal: true,
+    durableJournal,
+  }));
+
+  assert.equal(error.code, 'PRODUCTION_DURABLE_JOURNAL_UNSUPPORTED');
+  assert.ok(error.details.missingDependency.includes('fencing or lease ownership for the journal writer'));
+});
+
 test('production durable journal claims fail closed when writerLease hides identity fields behind non-enumerable keys', () => {
   const filePath = tempRecoveryJournalPath();
   const remoteArtifactPath = `${path.dirname(filePath)}/remote.jsonl`;
