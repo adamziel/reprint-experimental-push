@@ -6,17 +6,17 @@ The project is **not releasable as a production WordPress push path**.
 
 Fresh remote heads at audit time, checked on May 26, 2026:
 
-- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `a987a664`
+- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `a7386af1`
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `1832a967`
 - `origin/lane/reliable-executor` -> `ffdc0a9b`
 - `origin/lane/no-data-loss-invariants` -> `9c70eba6`
-- `origin/lane/no-data-loss-recovery` -> `b0949e57`
+- `origin/lane/no-data-loss-recovery` -> `4372167e`
 - `origin/lane/fast-paths` -> `9be664b2`
-- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `5e11833a`
+- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `a7386af1`
 - `origin/lane/independent-auditor` -> `5abd1f65`
 - `origin/lane/critic` -> `6828861f`
 - `origin/lane/progress-publisher` -> `7695e1f9`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `4be97ee9`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `5ccff356`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `4372167e`
 - `origin/lane/cycle-20260525-mainwindows-2349/critic` -> `3b9a9c46`
 - `origin/lane/same-plan-wordpress-graph-create` -> `09e6706d`
@@ -27,7 +27,7 @@ Fresh remote heads at audit time, checked on May 26, 2026:
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `143e07d9`
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` -> `5f256171`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-invariants` -> `9c70eba6`
-- `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `b0949e57`
+- `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `4372167e`
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `5e11833a`
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `1832a967`
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `38f53062`
@@ -69,10 +69,10 @@ but it did not change the release conclusion:
 - `origin/lane/progress-publisher` now refreshes the public progress evidence
   at `7695e1f9`.
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now refreshes
-  the visible freshness surface at `4be97ee9`, but that remains status
+  the visible freshness surface at `5ccff356`, but that remains status
   evidence, not release proof.
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` now covers bounded
-  receipt log replay at `5e11833a`, which is still boundary plumbing rather
+  receipt log replay and backpressure completeness at `a7386af1`, which is still boundary plumbing rather
   than measured speed proof.
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now aligns
   the newest audit link at `1832a967`, which updates visibility only.
@@ -85,9 +85,10 @@ but it did not change the release conclusion:
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` now
   hardens the live proof timeout diagnostics at `5f256171`.
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` now
-  surfaces the journal ownership mismatch evidence at `9fa23221`.
+  fails closed on artifact ref drift at `4372167e`, but still does not add
+  production-backed journal ownership or replay proof.
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` now tightens the
-  bounded receipt log replay path at `5e11833a`.
+  bounded receipt log replay path at `a7386af1`.
 - `origin/lane/same-plan-wordpress-graph-create` now blocks unsupported graph
   surfaces at `7bf5d421`, including revision posts, menu/navigation posts,
   serialized blocks, thumbnail parent references, and other same-plan graph
