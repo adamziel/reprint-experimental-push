@@ -283,6 +283,15 @@ export function evaluateProductionAuthSessionLifecycleSummary(summary, now = Dat
       };
     }
 
+    const invalidObservationLifecycleFlag = resolveInvalidAuthSessionLifecycleFlag(observation);
+    if (invalidObservationLifecycleFlag) {
+      return {
+        ok: false,
+        required: 'boolean lifecycle flags',
+        observed: `invalid-${invalidObservationLifecycleFlag}`,
+      };
+    }
+
     if (observation.rotated) {
       return {
         ok: false,
