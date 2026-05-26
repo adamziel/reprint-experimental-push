@@ -9,7 +9,7 @@ import { authenticatedHttpClient, runAuthenticatedHttpPush } from '../../src/aut
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const muPluginDir = path.join(repoRoot, 'scripts/playground/rest-mu-plugins');
-const serverStartupTimeoutMs = 4_000;
+const serverStartupTimeoutMs = 3_000;
 const serverFetchTimeoutMs = 250;
 const credentials = {
   username: 'reprint_push_admin',
@@ -819,7 +819,7 @@ async function startPlaygroundServer(name, blueprintPath) {
 
     const child = spawn(
       'timeout',
-      ['--preserve-status', '--kill-after=1s', '6s', 'npx', ...args],
+      ['--preserve-status', '--kill-after=1s', '5s', 'npx', ...args],
       {
         cwd: repoRoot,
         env: process.env,
