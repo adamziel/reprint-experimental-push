@@ -1425,6 +1425,18 @@ function resolveObservedProductionAuthSessionLifecycleDrift(response) {
     };
   }
 
+  if (session?.revoked === true || session?.status === 'revoked' || session?.cleanedUp === true || session?.cleanup === true) {
+    return {
+      field: session?.revoked === true || session?.status === 'revoked'
+        ? 'auth.session.status'
+        : session?.cleanedUp === true
+          ? 'auth.session.cleanedUp'
+          : 'auth.session.cleanup',
+      required: 'unrevoked',
+      observed: session?.revoked === true || session?.status === 'revoked' ? 'revoked' : 'cleaned-up',
+    };
+  }
+
   if (session?.status !== 'active') {
     return {
       field: 'auth.session.status',
@@ -1438,18 +1450,6 @@ function resolveObservedProductionAuthSessionLifecycleDrift(response) {
       field: 'auth.session.expiresAt',
       required: 'unexpired',
       observed: session?.expiresAt || 'missing',
-    };
-  }
-
-  if (session?.revoked === true || session?.status === 'revoked' || session?.cleanedUp === true || session?.cleanup === true) {
-    return {
-      field: session?.revoked === true || session?.status === 'revoked'
-        ? 'auth.session.status'
-        : session?.cleanedUp === true
-          ? 'auth.session.cleanedUp'
-          : 'auth.session.cleanup',
-      required: 'unrevoked',
-      observed: session?.revoked === true || session?.status === 'revoked' ? 'revoked' : 'cleaned-up',
     };
   }
 
@@ -1511,6 +1511,21 @@ function describeRequiredProductionAuthSession(response) {
     };
   }
 
+  if (session?.revoked === true || session?.status === 'revoked' || session?.cleanedUp === true || session?.cleanup === true) {
+    return {
+      field: session?.revoked === true || session?.status === 'revoked'
+        ? 'auth.session.status'
+        : session?.cleanedUp === true
+          ? 'auth.session.cleanedUp'
+          : 'auth.session.cleanup',
+      required: 'unrevoked',
+      observed: session?.revoked === true || session?.status === 'revoked'
+        ? 'revoked'
+        : 'cleaned-up',
+      verdict,
+    };
+  }
+
   if (session?.status !== 'active') {
     return {
       field: 'auth.session.status',
@@ -1528,7 +1543,6 @@ function describeRequiredProductionAuthSession(response) {
       verdict,
     };
   }
-
   return {
     field: 'auth.session',
     required: 'production-auth-session lifecycle',

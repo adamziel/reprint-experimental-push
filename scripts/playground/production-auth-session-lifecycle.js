@@ -50,6 +50,14 @@ export function evaluateProductionAuthSessionLifecycle(session, now = Date.now()
     };
   }
 
+  if (revoked || cleanedUp) {
+    return {
+      ok: false,
+      required: 'unrevoked',
+      observed: revoked ? 'revoked' : 'cleaned-up',
+    };
+  }
+
   if (observedStatus !== 'active') {
     return {
       ok: false,
@@ -63,14 +71,6 @@ export function evaluateProductionAuthSessionLifecycle(session, now = Date.now()
       ok: false,
       required: 'unexpired',
       observed: observedExpiresAt,
-    };
-  }
-
-  if (revoked || cleanedUp) {
-    return {
-      ok: false,
-      required: 'unrevoked',
-      observed: revoked ? 'revoked' : 'cleaned-up',
     };
   }
 

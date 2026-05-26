@@ -1392,7 +1392,7 @@ test('production auth/session lifecycle helper requires an active unexpired pack
     }),
     {
       ok: false,
-      required: 'active',
+      required: 'unrevoked',
       observed: 'revoked',
     },
   );
