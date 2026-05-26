@@ -25,8 +25,16 @@ import {
   resolvePackagedProductionPluginSourceCommand,
 } from '../scripts/playground/packaged-production-plugin-source-command.js';
 import {
+  packagedProductionPluginMaxConsecutiveNotReadyProbes,
+  packagedProductionPluginNextRouteNotReadyProbeCounts,
+  packagedProductionPluginNextTimeoutProbeCount,
+  packagedProductionPluginNotReadyProbeLimitReached,
   packagedProductionPluginPreflightRetryable,
   packagedProductionPluginPreflightReady,
+  packagedProductionPluginReadinessBodyRetryable,
+  packagedProductionPluginReadinessErrorRetryable,
+  packagedProductionPluginReadinessProbeTimedOut,
+  packagedProductionPluginResetRouteNotReadyProbeCounts,
   packagedProductionPluginServerReady,
   packagedProductionPluginSnapshotRetryable,
   packagedProductionPluginSnapshotReady,
@@ -1086,6 +1094,50 @@ test('packaged production plugin readiness helper accepts a stable snapshot befo
     }),
     false,
   );
+});
+
+test('packaged production plugin readiness helper bounds repeated not-ready probes and fetch timeouts', () => {
+  let routeCounts = {
+    snapshot: 0,
+    preflight: 0,
+  };
+  for (let attempt = 1; attempt <= packagedProductionPluginMaxConsecutiveNotReadyProbes; attempt += 1) {
+    routeCounts = packagedProductionPluginNextRouteNotReadyProbeCounts(
+      routeCounts,
+      'snapshot',
+      502,
+      'WordPress is not ready yet',
+    );
+  }
+  assert.equal(routeCounts.snapshot, packagedProductionPluginMaxConsecutiveNotReadyProbes);
+  assert.equal(packagedProductionPluginNotReadyProbeLimitReached(routeCounts.snapshot), true);
+  routeCounts = packagedProductionPluginResetRouteNotReadyProbeCounts(routeCounts, 'snapshot');
+  assert.equal(routeCounts.snapshot, 0);
+  assert.equal(routeCounts.preflight, 0);
+
+  routeCounts = packagedProductionPluginNextRouteNotReadyProbeCounts(
+    routeCounts,
+    'preflight',
+    404,
+    'No route was found matching the URL and request method.',
+  );
+  assert.equal(routeCounts.preflight, 1);
+  assert.equal(
+    packagedProductionPluginReadinessBodyRetryable(
+      404,
+      'No route was found matching the URL and request method.',
+    ),
+    true,
+  );
+
+  const timedOutFetch = new Error('Timed out fetching http://127.0.0.1:8080/wp-json/reprint/v1/push/snapshot');
+  assert.equal(packagedProductionPluginReadinessProbeTimedOut(timedOutFetch), true);
+  assert.equal(packagedProductionPluginNextTimeoutProbeCount(0, timedOutFetch), 1);
+  assert.equal(packagedProductionPluginReadinessErrorRetryable(timedOutFetch), true);
+
+  const readinessFailure = new Error('bounded readiness failure');
+  readinessFailure.isPlaygroundReadinessFailure = true;
+  assert.equal(packagedProductionPluginReadinessErrorRetryable(readinessFailure), false);
 });
 
 test('packaged production plugin runtime source binding replaces the stale command source URL', () => {

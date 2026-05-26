@@ -33,8 +33,14 @@ import {
   resolvePackagedProductionPluginAuthSessionSource,
 } from './packaged-production-plugin-source-command.js';
 import {
+  packagedProductionPluginNextRouteNotReadyProbeCounts,
+  packagedProductionPluginNextTimeoutProbeCount,
+  packagedProductionPluginNotReadyProbeLimitReached,
   packagedProductionPluginPreflightRetryable,
   packagedProductionPluginPreflightReady,
+  packagedProductionPluginReadinessBodyRetryable,
+  packagedProductionPluginReadinessErrorRetryable,
+  packagedProductionPluginResetRouteNotReadyProbeCounts,
   packagedProductionPluginSnapshotRetryable,
   packagedProductionPluginServerReady,
 } from './packaged-production-plugin-readiness.js';
@@ -1430,6 +1436,11 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
   const deadline = Date.now() + packagedServerStartupTimeoutMs;
   let lastError = null;
   const lastProbes = [];
+  let timeoutProbeCount = 0;
+  let routeNotReadyProbeCounts = {
+    snapshot: 0,
+    preflight: 0,
+  };
   while (Date.now() < deadline) {
     if (child.exitCode !== null) {
       const message = formatPlaygroundStartupFailure(
@@ -1451,6 +1462,7 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
         },
       }, packagedServerFetchTimeoutMs);
       const snapshotText = await snapshot.text();
+      timeoutProbeCount = 0;
       const snapshotPreview = snapshotText.slice(0, readinessFailureBodyLimit);
       lastProbes.push({
         route: '/wp-json/reprint/v1/push/snapshot',
@@ -1458,6 +1470,21 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
         ok: snapshot.ok,
         body: snapshotPreview,
       });
+      routeNotReadyProbeCounts = packagedProductionPluginNextRouteNotReadyProbeCounts(
+        routeNotReadyProbeCounts,
+        'snapshot',
+        snapshot.status,
+        snapshotText,
+      );
+      if (
+        packagedProductionPluginReadinessBodyRetryable(snapshot.status, snapshotText)
+        && packagedProductionPluginNotReadyProbeLimitReached(routeNotReadyProbeCounts.snapshot)
+      ) {
+        lastError = new Error(
+          `Production plugin package snapshot readiness stayed not ready for ${routeNotReadyProbeCounts.snapshot} consecutive probes`,
+        );
+        break;
+      }
       let snapshotBody = null;
       try {
         snapshotBody = JSON.parse(snapshotText);
@@ -1469,6 +1496,10 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
         }
         throw error;
       }
+      routeNotReadyProbeCounts = packagedProductionPluginResetRouteNotReadyProbeCounts(
+        routeNotReadyProbeCounts,
+        'snapshot',
+      );
       if (!packagedProductionPluginServerReady({
         snapshot: {
           status: snapshot.status,
@@ -1491,6 +1522,7 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
         headers: signedHeadersForProductionPreflight(),
       }, packagedServerFetchTimeoutMs);
       const preflightText = await preflight.text();
+      timeoutProbeCount = 0;
       const preview = preflightText.slice(0, readinessFailureBodyLimit);
       lastProbes.push({
         route: '/wp-json/reprint/v1/push/preflight',
@@ -1498,6 +1530,21 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
         ok: preflight.ok,
         body: preview,
       });
+      routeNotReadyProbeCounts = packagedProductionPluginNextRouteNotReadyProbeCounts(
+        routeNotReadyProbeCounts,
+        'preflight',
+        preflight.status,
+        preflightText,
+      );
+      if (
+        packagedProductionPluginReadinessBodyRetryable(preflight.status, preflightText)
+        && packagedProductionPluginNotReadyProbeLimitReached(routeNotReadyProbeCounts.preflight)
+      ) {
+        lastError = new Error(
+          `Production plugin package preflight readiness stayed not ready for ${routeNotReadyProbeCounts.preflight} consecutive probes`,
+        );
+        break;
+      }
       let preflightBody = null;
       try {
         preflightBody = JSON.parse(preflightText);
@@ -1520,12 +1567,23 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
         status: preflight.status,
         body: preflightBody,
       })) {
+        routeNotReadyProbeCounts = packagedProductionPluginResetRouteNotReadyProbeCounts(
+          routeNotReadyProbeCounts,
+          'snapshot',
+        );
         await sleep(readinessProbeIntervalMs);
         continue;
       }
       throw lastError;
     } catch (error) {
       lastError = error;
+      timeoutProbeCount = packagedProductionPluginNextTimeoutProbeCount(timeoutProbeCount, error);
+      if (packagedProductionPluginNotReadyProbeLimitReached(timeoutProbeCount)) {
+        break;
+      }
+      if (!packagedProductionPluginReadinessErrorRetryable(error)) {
+        break;
+      }
     }
     await sleep(readinessProbeIntervalMs);
   }
