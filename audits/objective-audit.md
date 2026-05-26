@@ -69,6 +69,10 @@ Fresh remote heads re-polled after the last audit note:
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `220057086a9337e5006df8cd74357d9b619ecdc5`
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `528a1b4dceb3212df92442c9c71a2f7f6e65400e`
 
+The latest reliable-executor head still only hardens release-verify timeout
+handling. It is support work, not production-backed auth/session lifecycle or
+durable journal ownership evidence, so the release gates remain `0/4`.
+
 These fresh heads still do not add production-backed auth/session lifecycle or
 durable journal ownership evidence. The release gates remain `0/4`.
 
