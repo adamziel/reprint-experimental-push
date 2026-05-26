@@ -17555,6 +17555,88 @@ test('allows an existing term taxonomy row to retarget its parent reference to a
   assert.equal(result.site.db.wp_term_taxonomy['term_taxonomy_id:9'].parent, 7);
 });
 
+test('allows an existing term taxonomy row to retarget its parent reference to a same-plan term create even when a remote navigation post exists', () => {
+  const termResourceKey = 'row:["wp_terms","term_id:7"]';
+  const taxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:9"]';
+  const base = baseSite();
+  const local = baseSite();
+  const remote = baseSite();
+  base.db.wp_terms = {
+    'term_id:11': {
+      term_id: 11,
+      name: 'Base existing taxonomy term',
+      slug: 'base-existing-taxonomy-term',
+    },
+  };
+  remote.db.wp_terms = {
+    'term_id:11': {
+      ...base.db.wp_terms['term_id:11'],
+    },
+  };
+  base.db.wp_term_taxonomy = {
+    'term_taxonomy_id:9': {
+      term_taxonomy_id: 9,
+      term_id: 11,
+      taxonomy: 'category',
+      description: 'Base taxonomy description',
+      parent: 0,
+      count: 0,
+    },
+  };
+  remote.db.wp_term_taxonomy = {
+    'term_taxonomy_id:9': {
+      ...base.db.wp_term_taxonomy['term_taxonomy_id:9'],
+    },
+  };
+  remote.db.wp_posts = {
+    'ID:21': {
+      ID: 21,
+      post_title: 'Remote navigation noise',
+      post_content: 'remote-navigation-noise-body',
+      post_status: 'publish',
+      post_type: 'wp_navigation',
+    },
+  };
+  local.db.wp_terms = {
+    'term_id:11': {
+      ...base.db.wp_terms['term_id:11'],
+    },
+    'term_id:7': {
+      term_id: 7,
+      name: 'Local existing taxonomy parent term',
+      slug: 'local-existing-taxonomy-parent-term',
+    },
+  };
+  local.db.wp_term_taxonomy = {
+    'term_taxonomy_id:9': {
+      ...base.db.wp_term_taxonomy['term_taxonomy_id:9'],
+      parent: 7,
+    },
+  };
+
+  const plan = planFor(base, local, remote);
+  const termMutation = mutationFor(plan, termResourceKey);
+  const taxonomyMutation = mutationFor(plan, taxonomyResourceKey);
+  const reference = taxonomyMutation.wordpressGraphReferences.find((entry) => entry.relationshipType === 'term-taxonomy-parent');
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.blockers, 0);
+  assert.equal(termMutation.changeKind, 'create');
+  assert.equal(taxonomyMutation.changeKind, 'update');
+  assert.deepEqual(taxonomyMutation.dependsOnMutationIds, [termMutation.id]);
+  assert.equal(reference.resolutionPolicy, 'same-plan-local-create');
+  assert.equal(reference.relationshipKey, 'wp_term_taxonomy.parent');
+  assert.equal(reference.relationshipType, 'term-taxonomy-parent');
+  assert.equal(reference.targetResourceKey, termResourceKey);
+  assert.equal(JSON.stringify(reference).includes('Local existing taxonomy parent term'), false);
+  assert.equal(JSON.stringify(reference).includes('remote-navigation-noise-body'), false);
+
+  const result = applyPlan(remote, plan);
+  assert.equal(result.site.db.wp_terms['term_id:7'].name, 'Local existing taxonomy parent term');
+  assert.equal(result.site.db.wp_term_taxonomy['term_taxonomy_id:9'].parent, 7);
+  assert.equal(result.site.db.wp_posts['ID:21'].post_type, 'wp_navigation');
+});
+
 test('allows an existing term taxonomy row to retarget its term reference to a same-plan term create even when a remote navigation post exists', () => {
   const termResourceKey = 'row:["wp_terms","term_id:7"]';
   const taxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:9"]';
