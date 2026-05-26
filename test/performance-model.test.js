@@ -108,6 +108,16 @@ test('benchmark model covers large uploads and plugin installs', () => {
   assert.ok(
     model.safeFastPaths.some(
       (fastPath) =>
+        fastPath.area === 'backpressure' &&
+        fastPath.allowedShortcut === 'compress-pause-footprint-summaries-to-size-bounded-replay-windows' &&
+        fastPath.guardrails.includes('pause-footprint-summary-stays-planning-evidence-only') &&
+        fastPath.gateProofs.recovery.includes('compressed summary, cached receipt cursor, journal lag, and journal records'),
+    ),
+    'compressed pause-footprint summaries can size replay windows without weakening recovery classification',
+  );
+  assert.ok(
+    model.safeFastPaths.some(
+      (fastPath) =>
         fastPath.allowedShortcut === 'reuse-ordered-receipt-keys-and-journal-lag-to-size-bounded-post-pause-replay' &&
         fastPath.area === 'backpressure' &&
         fastPath.visibilityBoundary === 'kind-scoped-replay-planning-only' &&

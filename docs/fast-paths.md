@@ -72,6 +72,10 @@ Current executable gate:
 - The same details also let ordered raw receipt keys and journal lag size the
   next bounded replay window after a pause, but only as planning evidence
   while live preconditions and durable journal records still decide recovery.
+- The same details also let a compressed pause-footprint summary size the next
+  bounded replay window, but only as planning evidence while the cached
+  receipt cursor, journal lag, and durable journal records still decide
+  recovery.
 - The same details also expose whether queue headroom is visible on the raw
   backpressure surface, so a paused sender cannot hide the headroom bit and
   still look auditable.

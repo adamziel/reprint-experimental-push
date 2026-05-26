@@ -1516,6 +1516,26 @@ export const SAFE_FAST_PATHS = Object.freeze([
   {
     area: 'backpressure',
     reduces: ['memory-pressure', 'queue-drain-time', 'duplicate-replay-work'],
+    allowedShortcut: 'compress-pause-footprint-summaries-to-size-bounded-replay-windows',
+    guardrails: [
+      'pause-footprint-summary-stays-planning-evidence-only',
+      'live-publish-still-requires-durable-receipts',
+    ],
+    gateProofs: {
+      skip: 'a compressed pause-footprint summary can size the next bounded replay window when the cached receipt cursor and journal lag are already recorded',
+      live: 'the storage-boundary write still rechecks the same live preconditions for each receipt-producing mutation',
+      group: 'summary compression only shortens replay planning inside the same atomic-group boundary and never widens visibility',
+      recovery: 'the compressed summary, cached receipt cursor, journal lag, and journal records still classify pause, retry, or crash without guessing which receipts survived',
+    },
+    visibilityBoundary: 'kind-scoped-replay-planning-only',
+    failureEvidence: 'compressed pause-footprint summary plus cached receipt cursor, journal lag, and journal records',
+    bypassesLivePreconditions: false,
+    splitsAtomicGroup: false,
+    publishesStagedDataEarly: false,
+  },
+  {
+    area: 'backpressure',
+    reduces: ['memory-pressure', 'queue-drain-time', 'duplicate-replay-work'],
     allowedShortcut: 'reuse-ordered-receipt-keys-and-journal-lag-to-size-bounded-post-pause-replay',
     guardrails: [
       'ordered-receipt-keys-stay-durable-and-kind-scoped',
