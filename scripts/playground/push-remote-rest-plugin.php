@@ -545,6 +545,8 @@ function reprint_push_lab_rest_authenticated_recovery_inspect(WP_REST_Request $r
 function reprint_push_lab_rest_merge_checked_db_journal_contract(array $db_journal, array $checked_summary): array
 {
     foreach ([
+        'schemaVersion',
+        'table',
         'rowCount',
         'latestRows',
         'eventSummaries',
