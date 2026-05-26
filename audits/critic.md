@@ -4,7 +4,7 @@
 
 Verdict: the design still cannot claim production-grade push support.
 
-The current evidence is still narrow and lab-shaped. The recent reliable-lane work now closes the release-verifier timeout/cleanup boundary with a concrete bounded pass, and the push client now fails closed on mutating requests without `session` and `idempotencyKey`. That is real hardening, but the proof is still release-gated rather than live production proof. It does not yet prove a live production auth/session lifecycle, durable journal ownership with lease/fencing, preserved-remote retry, or exact replay equivalence on the real push path. For the next 24 hours, the claim must stay cut to a constrained release-candidate slice, not broad production support. The newest live release-verify handoff now reaches a concrete readiness failure and a bounded test verdict instead of hanging silently, but that is still harness evidence rather than production proof.
+The current evidence is still narrow and lab-shaped. The recent reliable-lane work now closes the release-verifier timeout/cleanup boundary with a concrete bounded pass, and the push client now fails closed on mutating requests without `session` and `idempotencyKey`. That is real hardening, but the proof is still release-gated rather than live production proof. It does not yet prove a live production auth/session lifecycle, durable journal ownership with lease/fencing, preserved-remote retry, or exact replay equivalence on the real push path. For the next 24 hours, the claim must stay cut to a constrained release-candidate slice, not broad production support. The newest live release-verify handoff now reaches a bounded passing verdict instead of hanging silently, but that is still harness evidence rather than production proof.
 
 ## What The Source Notes Actually Support
 
@@ -59,7 +59,7 @@ These are the missing proofs that must land before the project can claim product
 
 Three blockers can still move in this window:
 
-1. Reliable executor: finish the live release proof with a concrete readiness result or prove the packaged route is still lab-backed; the current live trail still stops at readiness-probe evidence and a timeout.
+1. Reliable executor: keep the live release proof bounded and use it to probe the next product-side gap; the current live trail now has a clean bounded pass, but it is still harness evidence rather than production proof.
 2. No-data-loss recovery: convert the fail-closed durable-journal boundary into a real preserved-remote retry with lease/fencing and restart-readable artifacts; the new restart-readable guard is only a boundary check, not a production backend.
 3. No-data-loss invariants: extend the hard-block coverage to the next unsupported boundary such as menu/navigation or revision posts; the attachment parent and `_thumbnail_id` edges only prove two more fail-closed graph classes.
 4. Progress visibility: keep the public freshness surface current, but do not let timestamp-only updates alter the release verdict.
