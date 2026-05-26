@@ -625,7 +625,7 @@ test('checked durable journal boundary stays closed until stale-claim rejection 
     latestRows: [
       {
         event: 'stale-claim-rejected',
-        sequence: 20,
+        id: 20,
       },
     ],
     eventSummaries: [
@@ -736,6 +736,7 @@ test('checked durable journal boundary stays closed until stale-claim rejection 
       ...baseContract,
       latestRows: [
         {
+          event: 'stale-claim-rejected',
           sequence: 20,
         },
       ],
@@ -788,8 +789,8 @@ test('checked durable journal boundary stays closed until stale-claim rejection 
       ...baseContract,
       eventSummaries: [
         {
+          event: 'stale-claim-rejected',
           count: 1,
-          latestId: 20,
         },
       ],
       storageGuard: {

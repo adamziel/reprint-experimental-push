@@ -863,7 +863,11 @@ function reprint_push_lab_db_journal_checked_boundary_latest_rows_evidence_match
     }
 
     foreach ($latest_rows as $row) {
-        if (is_array($row) && reprint_push_lab_db_journal_non_empty_string($row['event'] ?? null)) {
+        if (
+            is_array($row)
+            && reprint_push_lab_db_journal_non_empty_string($row['event'] ?? null)
+            && reprint_push_lab_db_journal_is_positive_int($row['id'] ?? null)
+        ) {
             return true;
         }
     }
@@ -881,6 +885,7 @@ function reprint_push_lab_db_journal_checked_boundary_event_summaries_evidence_m
         if (
             is_array($event_summary)
             && reprint_push_lab_db_journal_non_empty_string($event_summary['event'] ?? null)
+            && reprint_push_lab_db_journal_is_positive_int($event_summary['latestId'] ?? null)
         ) {
             return true;
         }

@@ -123,11 +123,15 @@ function checkedBoundaryPersistedEvidenceMatches(dbJournal) {
 }
 
 function checkedBoundaryLatestRowsEvidenceMatches(latestRows) {
-  return latestRows.some((row) => hasNonEmptyString(row?.event));
+  return latestRows.some(
+    (row) => hasNonEmptyString(row?.event) && isPositiveInteger(row?.id),
+  );
 }
 
 function checkedBoundaryEventSummariesEvidenceMatches(eventSummaries) {
-  return eventSummaries.some((summary) => hasNonEmptyString(summary?.event));
+  return eventSummaries.some(
+    (summary) => hasNonEmptyString(summary?.event) && isPositiveInteger(summary?.latestId),
+  );
 }
 
 function checkedBoundaryStaleClaimEvidenceMatches(dbJournal) {
