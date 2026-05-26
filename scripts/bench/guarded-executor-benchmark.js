@@ -258,6 +258,13 @@ export function productionThroughputBlockers(report) {
   ) {
     blockers.push('queue-pause-without-resource-headroom-safe-receipt-cursor-slack');
   }
+  if (
+    report.evidence.backpressure?.queuePausedBeforeOverflow === true
+    && report.evidence.backpressure?.queueBudgetVisible === true
+    && report.evidence.backpressure?.receiptCursorMemoryCeilingVisible !== true
+  ) {
+    blockers.push('queue-budget-visible-without-memory-ceiling-visible');
+  }
   if (!Number.isFinite(report.resourceLimits?.memoryCeilingBytes) || report.resourceLimits.memoryCeilingBytes <= 0) {
     blockers.push('production-memory-ceiling-not-measured');
   }
@@ -1235,6 +1242,7 @@ export function productionThroughputDetails(report) {
     queueBudgetVisibleAndMemoryCeilingVisible:
       queueBudgetVisible && receiptCursorMemoryCeilingVisible,
     queueHeadroomVisible,
+    receiptCursorMemoryCeilingVisible,
     receiptCursorMemoryHeadroomPositive: receiptCursorMemoryHeadroomPositiveVisible,
     queuePausedBeforeOverflow: report.evidence.backpressure?.queuePausedBeforeOverflow ?? false,
     receiptCursorWithinQueueBudget: report.evidence.backpressure?.receiptCursorWithinQueueBudget ?? false,
@@ -1311,6 +1319,7 @@ export function productionThroughputDetails(report) {
       queueBudgetVisibleAndMemoryCeilingVisible:
         queueBudgetVisible && receiptCursorMemoryCeilingVisible,
       queueHeadroomVisible,
+      receiptCursorMemoryCeilingVisible,
       productionAtomicGroupMetadataVisible,
       productionStorageReceiptsVisible,
       queuePausedBeforeOverflow: report.evidence.backpressure?.queuePausedBeforeOverflow ?? false,
