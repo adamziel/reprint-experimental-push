@@ -6555,6 +6555,51 @@ test('guarded benchmark keeps paused memory-boundary pair summaries false when m
   );
 });
 
+test('guarded benchmark keeps paused queue-budget pair summaries false when raw queue-budget drifts below the bounded pause footprint', () => {
+  const report = smallBenchmark();
+  const mutated = clone(report);
+
+  mutated.evidence.backpressure.queueBudgetBytes -= 1;
+
+  const details = productionThroughputDetails(mutated);
+  const blockers = productionThroughputBlockers(mutated);
+
+  assert.equal(details.queueBudgetMatchesResourceCeiling, false);
+  assert.equal(details.queueBudgetVisibleAndMemoryCeilingVisible, false);
+  assert.equal(details.queueBudgetVisibleAndMemoryCeilingVisibleAndMeasured, false);
+  assert.equal(details.queueBudgetVisibleAndQueueHeadroomMeasured, false);
+  assert.equal(details.queueBudgetVisibleAndQueueHeadroomVisible, false);
+  assert.equal(details.queueBudgetVisibleAndQueueHeadroomVisibleAndMeasured, false);
+  assert.equal(details.receiptCursorPauseFootprintVisible, false);
+  assert.equal(details.backpressureEvidenceComplete, false);
+  assert.equal(details.backpressureConsistency.queueBudgetMatchesResourceCeiling, false);
+  assert.equal(
+    details.backpressureConsistency.queueBudgetVisibleAndMemoryCeilingVisible,
+    false,
+  );
+  assert.equal(
+    details.backpressureConsistency.queueBudgetVisibleAndMemoryCeilingVisibleAndMeasured,
+    false,
+  );
+  assert.equal(
+    details.backpressureConsistency.queueBudgetVisibleAndQueueHeadroomMeasured,
+    false,
+  );
+  assert.equal(
+    details.backpressureConsistency.queueBudgetVisibleAndQueueHeadroomVisible,
+    false,
+  );
+  assert.equal(
+    details.backpressureConsistency.queueBudgetVisibleAndQueueHeadroomVisibleAndMeasured,
+    false,
+  );
+  assert.equal(details.backpressureConsistency.receiptCursorPauseFootprintVisible, false);
+  assert.equal(details.backpressureConsistency.backpressureEvidenceComplete, false);
+  assert.ok(blockers.includes('queue-budget-does-not-match-resource-ceiling'));
+  assert.ok(blockers.includes('queue-memory-ceiling-does-not-match-queue-budget'));
+  assert.ok(blockers.includes('backpressure-evidence-incomplete'));
+});
+
 test('guarded benchmark keeps paused memory-boundary pair summaries false when raw memory-headroom drifts below the bounded pause footprint', () => {
   const report = smallBenchmark();
   const mutated = clone(report);
