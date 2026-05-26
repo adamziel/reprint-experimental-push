@@ -514,14 +514,6 @@ export async function runAuthenticatedHttpPush({
     || hasMissingProductionAuthSessionExpiry(replay)
     || hasProductionAuthSessionExpiryDrift(replay)
   );
-  if (applyAuthEnvelopeDrift || recoveryInspectAuthEnvelopeDrift || replayAuthEnvelopeDrift) {
-    summary.code = 'AUTH_SESSION_LIFECYCLE_DRIFT';
-    summary.authSession = applyAuthEnvelopeDrift
-      || recoveryInspectAuthEnvelopeDrift
-      || replayAuthEnvelopeDrift;
-    setDurableJournalBoundary(summary, 'replay');
-    return summary;
-  }
   if (replayObservedLifecycleDrift) {
     summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
     summary.authSession = {
@@ -553,6 +545,14 @@ export async function runAuthenticatedHttpPush({
   if (hasExpiredAuthSession(replay)) {
     summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
     summary.authSession = describeRequiredProductionAuthSession(replay);
+    setDurableJournalBoundary(summary, 'replay');
+    return summary;
+  }
+  if (applyAuthEnvelopeDrift || recoveryInspectAuthEnvelopeDrift || replayAuthEnvelopeDrift) {
+    summary.code = 'AUTH_SESSION_LIFECYCLE_DRIFT';
+    summary.authSession = applyAuthEnvelopeDrift
+      || recoveryInspectAuthEnvelopeDrift
+      || replayAuthEnvelopeDrift;
     setDurableJournalBoundary(summary, 'replay');
     return summary;
   }

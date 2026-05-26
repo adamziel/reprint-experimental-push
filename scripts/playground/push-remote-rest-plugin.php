@@ -27,6 +27,7 @@ const REPRINT_PUSH_LAB_REST_NAMESPACE = 'reprint-push-lab/v1';
 const REPRINT_PUSH_PRODUCTION_SHAPED_REST_NAMESPACE = 'reprint/v1';
 const REPRINT_PUSH_LAB_AUTH_SCOPE = 'reprint-push-lab:authenticated-http-push';
 const REPRINT_PUSH_LAB_AUTH_REQUEST_ATTRIBUTE = 'reprint_push_lab_auth';
+const REPRINT_PUSH_LAB_AUTH_SESSION_LIFECYCLE_STEP_ATTRIBUTE = 'reprint_push_lab_auth_session_lifecycle_step';
 const REPRINT_PUSH_LAB_SIGNATURE_REQUEST_ATTRIBUTE = 'reprint_push_lab_signature';
 const REPRINT_PUSH_LAB_SIGNED_SESSION_TTL = 300;
 const REPRINT_PUSH_LAB_SIGNED_TIMESTAMP_SKEW = 300;
@@ -649,6 +650,7 @@ function reprint_push_lab_rest_apply_with_db_journal(
         $committed = reprint_push_lab_db_journal_committed_row_for_key($context['idempotencyKeyHash']);
 
         if (is_array($committed) && (string) ($committed['request_hash'] ?? '') === $context['requestHash']) {
+            reprint_push_lab_rest_set_auth_session_lifecycle_step($request, 'replay');
             $replay_result = reprint_push_lab_db_journal_replay_result($committed);
             $replay_entry = reprint_push_lab_db_journal_append_event('apply-replayed', $context + [
                 'appliedCount' => 0,
@@ -664,6 +666,7 @@ function reprint_push_lab_rest_apply_with_db_journal(
             && (string) ($terminal['event'] ?? '') === 'apply-rejected'
             && (string) ($terminal['request_hash'] ?? '') === $context['requestHash']
         ) {
+            reprint_push_lab_rest_set_auth_session_lifecycle_step($request, 'replay');
             $replay_result = reprint_push_lab_db_journal_replay_rejected_result($terminal);
             $replay_entry = reprint_push_lab_db_journal_append_event('apply-replayed', $context + [
                 'appliedCount' => 0,
@@ -701,6 +704,7 @@ function reprint_push_lab_rest_apply_with_db_journal(
 
             $terminal = reprint_push_lab_db_journal_terminal_row_for_key($context['idempotencyKeyHash']);
             if (is_array($terminal) && (string) ($terminal['request_hash'] ?? '') === $context['requestHash']) {
+                reprint_push_lab_rest_set_auth_session_lifecycle_step($request, 'replay');
                 $replay_result = (string) ($terminal['event'] ?? '') === 'apply-committed'
                     ? reprint_push_lab_db_journal_replay_result($terminal)
                     : reprint_push_lab_db_journal_replay_rejected_result($terminal);
@@ -2596,6 +2600,24 @@ function reprint_push_lab_rest_set_auth_context(WP_REST_Request $request, array 
     $request->set_attributes($attributes);
 }
 
+function reprint_push_lab_rest_set_auth_session_lifecycle_step(WP_REST_Request $request, string $step): void
+{
+    $attributes = $request->get_attributes();
+    $attributes[REPRINT_PUSH_LAB_AUTH_SESSION_LIFECYCLE_STEP_ATTRIBUTE] = $step;
+    $request->set_attributes($attributes);
+}
+
+function reprint_push_lab_rest_get_auth_session_lifecycle_step(WP_REST_Request $request): ?string
+{
+    $attributes = $request->get_attributes();
+    $step = $attributes[REPRINT_PUSH_LAB_AUTH_SESSION_LIFECYCLE_STEP_ATTRIBUTE] ?? null;
+    if (!is_string($step) || $step === '') {
+        return null;
+    }
+
+    return $step;
+}
+
 function reprint_push_lab_rest_authorization_header(WP_REST_Request $request): string
 {
     $headers = [
@@ -2826,6 +2848,11 @@ function reprint_push_lab_rest_auth_session_lifecycle_drift(WP_REST_Request $req
 
 function reprint_push_lab_rest_auth_session_lifecycle_step(WP_REST_Request $request): ?string
 {
+    $request_step = reprint_push_lab_rest_get_auth_session_lifecycle_step($request);
+    if ($request_step !== null) {
+        return $request_step;
+    }
+
     $route = (string) $request->get_route();
     return match (true) {
         str_ends_with($route, '/preflight') => 'preflight',
