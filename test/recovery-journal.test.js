@@ -508,6 +508,75 @@ test('production recovery journal compatibility overload supports reliable relea
   staleJournal.close();
 });
 
+test('production recovery journal compatibility overload fails closed when artifact refs are inherited through the prototype', () => {
+  const filePath = tempJournalPath();
+  const remote = baseSite();
+  const plan = planFor(baseSite(), localSite(), remote);
+  const remoteArtifactPath = `${filePath}.remote`;
+  const options = {
+    filePath,
+    plan,
+    current: remote,
+    claimId: 'claim-prototype-artifact-refs',
+  };
+  Object.setPrototypeOf(options, {
+    artifactRefs: {
+      journal: filePath,
+      remote: remoteArtifactPath,
+    },
+  });
+
+  assert.throws(() => {
+    openProductionRecoveryJournal(options);
+  }, {
+    name: 'UnsupportedProductionRecoveryJournalError',
+    code: 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL',
+  });
+});
+
+test('production recovery journal consumption fails closed when compatibility overload artifact refs are inherited through the prototype', () => {
+  const filePath = tempJournalPath();
+  const remote = baseSite();
+  const plan = planFor(baseSite(), localSite(), remote);
+  const remoteArtifactPath = `${filePath}.remote`;
+  const claimId = 'claim-prototype-consume-artifact-refs';
+  const artifactRefs = {
+    journal: filePath,
+    remote: remoteArtifactPath,
+  };
+  const journal = openProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs,
+    claimId,
+  });
+  appendRecoveryClaimOpened(journal, {
+    plan,
+    current: remote,
+    claimId,
+    artifactRefs,
+  });
+  journal.close();
+
+  const consumeOptions = {
+    filePath,
+    plan,
+    current: remote,
+    claimId,
+  };
+  Object.setPrototypeOf(consumeOptions, {
+    artifactRefs,
+  });
+
+  assert.throws(() => {
+    consumeProductionRecoveryJournal(consumeOptions);
+  }, {
+    name: 'UnsupportedProductionRecoveryJournalError',
+    code: 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL',
+  });
+});
+
 test('production recovery journal consumption surfaces stale claim advancement after a fenced takeover', () => {
   const filePath = tempJournalPath();
   const remote = baseSite();

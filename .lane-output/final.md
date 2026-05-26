@@ -1,9 +1,9 @@
 No Data Loss Recovery handoff:
 
-- Timestamp: 2026-05-26 16:14:09 CEST (+0200)
-- Production recovery journals now fail closed if a restarted consumer or reopened writer tries to drop a persisted owned remote-artifact path.
-- This closes a recovery-owned gap where `consumeProductionRecoveryJournal(...)` could previously reopen a journal that had persisted `artifactRefs.remote` and silently report `remote: null` / `ownsRemoteArtifact: false` instead of rejecting the restart.
-- Added focused regression coverage for both reopen and consume paths in the recovery-journal test slice.
+- Timestamp: 2026-05-26 16:15:50 CEST (+0200)
+- The production recovery journal compatibility overload now rejects prototype-shaped option objects before deriving restart-readable ownership state.
+- This closes a recovery-owned gap where inherited `artifactRefs.remote` could influence the owned remote-artifact path on the compatibility overload, and where the consumer path could otherwise fall through to a generic `TypeError` instead of failing closed with `UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL`.
+- Added focused regressions for both `openProductionRecoveryJournal(...)` and `consumeProductionRecoveryJournal(...)` when `artifactRefs` are inherited through the prototype.
 
 Changed files:
 
@@ -13,9 +13,11 @@ Changed files:
 
 Commands:
 
+- `git status --short --branch`
+- `sed -n '1,260p' supervision/lanes/no-data-loss-recovery.md`
+- targeted `grep`/`sed` reads across `src/recovery-journal.js`, `src/apply.js`, `test/recovery-journal.test.js`, and `test/push-planner.test.js`
 - `date '+%Y-%m-%d %H:%M:%S %Z (%z)'`
-- `node --input-type=module <<'EOF' ... EOF`
-- `timeout 60s node --test test/recovery-journal.test.js`
+- `timeout 60s node --test test/recovery-journal.test.js --test-name-pattern "production recovery journal compatibility overload|artifact refs are inherited through the prototype|production recovery journal consumption fails closed when compatibility overload artifact refs are inherited through the prototype"`
 - `git diff --check -- src/recovery-journal.js test/recovery-journal.test.js`
 
 Push result:
@@ -29,4 +31,4 @@ Worktree status:
 
 Next supervisor nudge:
 
-1. Reliable can keep treating the recovery adapter as required to preserve owned remote-artifact evidence across restart; if the checked release path reopens the journal without the persisted remote artifact path, it should now fail closed immediately instead of silently downgrading ownership.
+1. `main:reliable-exec` can rely on the recovery compatibility overload refusing inherited artifact-ref ownership state instead of deriving production remote-artifact ownership from the prototype chain or crashing with a generic path-type failure.

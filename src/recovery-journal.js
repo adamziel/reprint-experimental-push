@@ -425,6 +425,35 @@ function isValidProductionWriterLease(writerLease) {
 }
 
 function normalizeProductionRecoveryJournalOptions(filePathOrOptions, options = {}) {
+  const looksLikeCompatibilityOverload = Boolean(
+    filePathOrOptions
+    && typeof filePathOrOptions === 'object'
+    && (
+      'filePath' in filePathOrOptions
+      || 'plan' in filePathOrOptions
+      || 'current' in filePathOrOptions
+      || 'artifactRefs' in filePathOrOptions
+    )
+  );
+  if (looksLikeCompatibilityOverload && !isStrictPlainObject(filePathOrOptions)) {
+    throw new UnsupportedProductionRecoveryJournalError(
+      'Production recovery journal compatibility overload requires a strict plain options object.',
+      {
+        kind: 'production-recovery-journal',
+        productionAdapter: true,
+        supportedSurface: 'production-recovery-journal-adapter',
+        restartReadable: false,
+        ownsJournal: false,
+        ownsRemoteArtifact: false,
+        journalPath: null,
+        artifactRefs: Object.freeze({
+          journal: null,
+          remote: null,
+        }),
+        schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+      },
+    );
+  }
   if (
     isStrictPlainObject(filePathOrOptions)
     && (
@@ -435,7 +464,12 @@ function normalizeProductionRecoveryJournalOptions(filePathOrOptions, options = 
     )
   ) {
     const legacyOptions = { ...filePathOrOptions };
-    const remoteArtifactPath = legacyOptions.artifactRefs?.remote ?? null;
+    const legacyArtifactRefs = Object.hasOwn(legacyOptions, 'artifactRefs') && isStrictPlainObject(legacyOptions.artifactRefs)
+      ? legacyOptions.artifactRefs
+      : null;
+    const remoteArtifactPath = legacyArtifactRefs && Object.hasOwn(legacyArtifactRefs, 'remote')
+      ? legacyArtifactRefs.remote
+      : null;
     const derivedWriterLease = Object.hasOwn(legacyOptions, 'writerLease')
       ? legacyOptions.writerLease
       : { id: legacyOptions.claimId || legacyOptions.plan?.id || legacyOptions.filePath || 'production-recovery-journal' };
