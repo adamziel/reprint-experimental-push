@@ -23972,6 +23972,20 @@ test('allows an existing termmeta row to reference a term created by the same pl
     'term create must be ordered before dependent existing termmeta update',
   );
   assert.deepEqual(termmetaMutation.dependsOnMutationIds, [termMutation.id]);
+  assert.equal(plan.summary.graphDependencies, 1);
+  assert.deepEqual(plan.graphDependencies, [
+    {
+      sourceMutationId: termmetaMutation.id,
+      sourceResourceKey: termmetaResourceKey,
+      relationshipKey: 'wp_termmeta.term_id',
+      relationshipType: 'termmeta-term',
+      targetMutationId: termMutation.id,
+      targetResourceKey: termResourceKey,
+      resolutionPolicy: 'same-plan-local-create',
+      source: 'same-plan-local-create',
+      targetLocalHash: termMutation.localHash,
+    },
+  ]);
   assert.equal(reference.resolutionPolicy, 'same-plan-local-create');
   assert.equal(reference.relationshipKey, 'wp_termmeta.term_id');
   assert.equal(reference.relationshipType, 'termmeta-term');
