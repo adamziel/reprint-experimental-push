@@ -1346,6 +1346,21 @@ function wordpressGraphIdentitySupport({
       };
     }
   }
+  if (resource.table === 'wp_comments') {
+    const samePlanCreatedCommentParentReference = referenceEvidence.find((reference) =>
+      reference.relationshipType === 'comment-parent'
+      && reference.targetChange.targetResource?.table === 'wp_comments'
+      && reference.targetChange.remote.state === 'absent'
+      && reference.targetChange.local.state === 'present');
+
+    if (samePlanCreatedCommentParentReference) {
+      return {
+        supported: false,
+        className: 'unsupported-comments-users-resource',
+        reason: 'Comment graph resources are not yet supported by the planner.',
+      };
+    }
+  }
   if (resource.table === 'wp_posts' && localValue.post_type === 'nav_menu_item') {
     const menuItemParentReference = referenceEvidence.find((reference) =>
       reference.relationshipType === 'menu-item-parent'
@@ -1711,6 +1726,9 @@ function samePlanCreatedGraphIdentitySupport({ resource, resources, base, local,
     reference.relationshipType === 'featured-image-attachment'
     && reference.targetResource?.table === 'wp_posts'
     && getResource(local, reference.targetResource)?.post_type === 'attachment');
+  const commentParentInboundReference = inboundReferences.find((reference) =>
+    reference.relationshipType === 'comment-parent'
+    && reference.targetResource?.table === 'wp_comments');
   const commentUserInboundReference = inboundReferences.find((reference) =>
     reference.relationshipType === 'comment-user'
     && reference.targetResource?.table === 'wp_users');
@@ -1730,6 +1748,8 @@ function samePlanCreatedGraphIdentitySupport({ resource, resources, base, local,
             ? `WordPress graph mutation ${resource.key} is created in the same plan as a post author target that depends on it, and identity rewriting is not yet supported.`
             : attachmentInboundReference
               ? `WordPress graph mutation ${resource.key} is created in the same plan as a featured image attachment target that depends on it, and identity rewriting is not yet supported.`
+              : commentParentInboundReference
+                ? `WordPress graph mutation ${resource.key} is created in the same plan as a comment parent target that depends on it, and identity rewriting is not yet supported.`
               : commentUserInboundReference
                 ? `WordPress graph mutation ${resource.key} is created in the same plan as a comment user target that depends on it, and identity rewriting is not yet supported.`
                 : usermetaUserInboundReference
