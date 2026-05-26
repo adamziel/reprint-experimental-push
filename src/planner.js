@@ -106,6 +106,188 @@ export function createPushPlan({ base, local, remote, now = new Date() }) {
     }
 
     if (localHash === baseHash && remoteHash !== baseHash) {
+      const remoteNavigationSupport = unsupportedNavigationResourceSupport({
+        resource,
+        baseValue,
+        localValue,
+        remoteValue,
+        resources,
+        base,
+        local,
+        remote,
+      });
+      if (!remoteNavigationSupport.supported) {
+        addUnsupportedNavigationResourceBlocker(plan, {
+          resource,
+          support: remoteNavigationSupport,
+          baseValue,
+          localValue,
+          remoteValue,
+          baseHash,
+          localHash,
+          remoteHash,
+        });
+        continue;
+      }
+
+      const remoteAttachmentSupport = unsupportedAttachmentResourceSupport({
+        resource,
+        baseValue,
+        localValue,
+        remoteValue,
+        resources,
+        base,
+        local,
+        remote,
+      });
+      if (!remoteAttachmentSupport.supported) {
+        addUnsupportedAttachmentResourceBlocker(plan, {
+          resource,
+          support: remoteAttachmentSupport,
+          baseValue,
+          localValue,
+          remoteValue,
+          baseHash,
+          localHash,
+          remoteHash,
+        });
+        continue;
+      }
+
+      const remoteRevisionSupport = unsupportedRevisionResourceSupport({
+        resource,
+        baseValue,
+        localValue,
+        remoteValue,
+      });
+      if (!remoteRevisionSupport.supported) {
+        addUnsupportedRevisionResourceBlocker(plan, {
+          resource,
+          support: remoteRevisionSupport,
+          baseValue,
+          localValue,
+          remoteValue,
+          baseHash,
+          localHash,
+          remoteHash,
+        });
+        continue;
+      }
+
+      const remoteTermmetaSupport = unsupportedTermmetaResourceSupport({
+        resource,
+        baseValue,
+        localValue,
+        remoteValue,
+        resources,
+        base,
+        local,
+        remote,
+      });
+      if (!remoteTermmetaSupport.supported) {
+        addUnsupportedTermmetaResourceBlocker(plan, {
+          resource,
+          support: remoteTermmetaSupport,
+          baseValue,
+          localValue,
+          remoteValue,
+          baseHash,
+          localHash,
+          remoteHash,
+        });
+        continue;
+      }
+
+      const remoteTermTaxonomySupport = unsupportedTermTaxonomyResourceSupport({
+        resource,
+        baseValue,
+        localValue,
+        remoteValue,
+        local,
+        remote,
+      });
+      if (!remoteTermTaxonomySupport.supported) {
+        addUnsupportedTermTaxonomyResourceBlocker(plan, {
+          resource,
+          support: remoteTermTaxonomySupport,
+          baseValue,
+          localValue,
+          remoteValue,
+          baseHash,
+          localHash,
+          remoteHash,
+        });
+        continue;
+      }
+
+      const remoteGuidSupport = unsupportedGuidResourceSupport({
+        resource,
+        baseValue,
+        localValue,
+        remoteValue,
+      });
+      if (!remoteGuidSupport.supported) {
+        addUnsupportedGuidResourceBlocker(plan, {
+          resource,
+          support: remoteGuidSupport,
+          baseValue,
+          localValue,
+          remoteValue,
+          baseHash,
+          localHash,
+          remoteHash,
+        });
+        continue;
+      }
+
+      const remoteCommentsUsersSupport = unsupportedCommentsUsersResourceSupport({
+        resource,
+        baseValue,
+        localValue,
+        remoteValue,
+        resources,
+        base,
+        local,
+        remote,
+      });
+      if (!remoteCommentsUsersSupport.supported) {
+        addUnsupportedCommentsUsersResourceBlocker(plan, {
+          resource,
+          support: remoteCommentsUsersSupport,
+          baseValue,
+          localValue,
+          remoteValue,
+          baseHash,
+          localHash,
+          remoteHash,
+        });
+        continue;
+      }
+
+      const remoteUsermetaSupport = unsupportedUsermetaResourceSupport({
+        resource,
+        baseValue,
+        localValue,
+        remoteValue,
+        resources,
+        base,
+        local,
+        remote,
+      });
+      if (!remoteUsermetaSupport.supported) {
+        addUnsupportedUsermetaResourceBlocker(plan, {
+          resource,
+          support: remoteUsermetaSupport,
+          baseValue,
+          localValue,
+          remoteValue,
+          baseHash,
+          localHash,
+          remoteHash,
+        });
+        continue;
+      }
+
       const remoteSerializedBlocksSupport = unsupportedSerializedBlocksSupport({
         resource,
         baseValue,
