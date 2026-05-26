@@ -230,6 +230,10 @@ Current executable gate:
   visible while receipt-cursor queue slack is hidden, so a partial pause-
   footprint summary cannot surface its headroom proof without the paired
   bounded-slack evidence that makes the pause auditable.
+- The same details also fail closed if receipt-cursor queue slack is visible
+  while receipt-cursor memory headroom is hidden, so the pause-footprint
+  surface stays symmetric instead of surfacing visible slack without the
+  paired headroom proof.
 - The same details also expose and require an explicit parallelism-measurement
   bit, so surfaced concurrency limits cannot look visible without a measured
   report surface behind them.

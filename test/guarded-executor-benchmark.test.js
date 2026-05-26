@@ -2905,6 +2905,26 @@ test('guarded benchmark treats receipt-cursor queue-slack visibility without mem
   assert.ok(blockers.includes('receipt-cursor-queue-slack-visible-without-memory-ceiling-visibility'));
 });
 
+test('guarded benchmark treats receipt-cursor queue-slack visibility without memory-headroom visibility as incomplete backpressure evidence', () => {
+  const report = smallBenchmark();
+  const mutated = clone(report);
+
+  mutated.evidence.backpressure.receiptCursorQueueSlackVisible = true;
+  mutated.evidence.backpressure.receiptCursorMemoryHeadroomVisible = false;
+
+  const details = productionThroughputDetails(mutated);
+  const blockers = productionThroughputBlockers(mutated);
+
+  assert.equal(details.receiptCursorQueueSlackVisible, true);
+  assert.equal(details.receiptCursorMemoryHeadroomVisible, false);
+  assert.equal(details.receiptCursorQueueSlackVisibleAndMemoryHeadroomVisible, false);
+  assert.equal(
+    details.backpressureConsistency.receiptCursorQueueSlackVisibleAndMemoryHeadroomVisible,
+    false,
+  );
+  assert.ok(blockers.includes('receipt-cursor-queue-slack-visible-without-memory-headroom-visibility'));
+});
+
 test('guarded benchmark treats queue-headroom visibility without measurement as incomplete backpressure evidence', () => {
   const report = smallBenchmark();
   const mutated = clone(report);

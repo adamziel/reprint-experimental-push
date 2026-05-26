@@ -793,6 +793,12 @@ export function productionThroughputBlockers(report) {
     blockers.push('receipt-cursor-queue-slack-visible-without-memory-ceiling-visibility');
   }
   if (
+    receiptCursorQueueSlackVisible === true
+    && receiptCursorMemoryHeadroomVisible !== true
+  ) {
+    blockers.push('receipt-cursor-queue-slack-visible-without-memory-headroom-visibility');
+  }
+  if (
     receiptCursorMemoryHeadroomVisible === true
     && report.evidence.backpressure?.queueBudgetVisible !== true
   ) {
@@ -1197,6 +1203,8 @@ export function productionThroughputDetails(report) {
     report.evidence.backpressure?.receiptCursorQueueSlackVisible === true;
   const receiptCursorMemoryHeadroomVisible =
     report.evidence.backpressure?.receiptCursorMemoryHeadroomVisible === true;
+  const receiptCursorQueueSlackVisibleAndMemoryHeadroomVisible =
+    receiptCursorQueueSlackVisible && receiptCursorMemoryHeadroomVisible;
   const receiptCursorMemoryHeadroomVisibleAndQueueBudgetVisible =
     receiptCursorMemoryHeadroomVisible && queueBudgetVisible;
   const queueHeadroomVisibleAndMeasured =
@@ -1627,6 +1635,7 @@ export function productionThroughputDetails(report) {
     queuePauseHasMeasuredAndAlignedReceiptCursorBackpressure,
     receiptCursorQueueSlackBytes,
     receiptCursorQueueSlackVisible,
+    receiptCursorQueueSlackVisibleAndMemoryHeadroomVisible,
     receiptCursorQueueSlackPositive,
     receiptCursorQueueSlackMatchesBackpressure,
     receiptCursorQueueSlackMatchesMemoryHeadroom,
@@ -1740,6 +1749,7 @@ export function productionThroughputDetails(report) {
       queueHeadroomMeasured,
       receiptCursorQueueSlackBytes,
       receiptCursorQueueSlackVisible,
+      receiptCursorQueueSlackVisibleAndMemoryHeadroomVisible,
       receiptCursorQueueSlackPositive,
       receiptCursorQueueSlackMatchesBackpressure,
       receiptCursorQueueSlackMatchesMemoryHeadroom,
