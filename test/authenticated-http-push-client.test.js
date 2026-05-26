@@ -424,7 +424,7 @@ test('production-shaped authenticated push fails closed when production auth ses
   }
 });
 
-test('production-shaped authenticated push fails closed when production auth session is minted but inactive', async () => {
+test('production-shaped authenticated push fails closed when production auth session is minted but expired by status', async () => {
   const originalFetch = global.fetch;
   const seen = [];
   global.fetch = async (url, options) => {
@@ -464,7 +464,8 @@ test('production-shaped authenticated push fails closed when production auth ses
       status: 'unimplemented',
       verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
       authSession: {
-        required: 'active',
+        field: 'auth.session.status',
+        required: 'unexpired',
         observed: 'expired',
         verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
       },
@@ -5484,7 +5485,8 @@ test('production-shaped authenticated push fails closed when journal readback lo
     assert.equal(summary.ok, false);
     assert.equal(summary.code, 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED');
     assert.deepEqual(summary.authSession, {
-      required: 'active',
+      field: 'auth.session.status',
+      required: 'unexpired',
       observed: 'expired',
       verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
     });
@@ -5493,7 +5495,8 @@ test('production-shaped authenticated push fails closed when journal readback lo
       status: 'unimplemented',
       verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
       authSession: {
-        required: 'active',
+        field: 'auth.session.status',
+        required: 'unexpired',
         observed: 'expired',
         verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
       },

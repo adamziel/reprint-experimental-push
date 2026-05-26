@@ -32,6 +32,8 @@ export function evaluateProductionAuthSessionLifecycle(session, now = Date.now()
   const observedExpiresAt = session?.expiresAt || 'missing';
   const revoked = session?.revoked === true || session?.status === 'revoked';
   const cleanedUp = session?.cleanedUp === true || session?.cleanup === true || session?.status === 'cleaned-up';
+  const rotated = session?.rotated === true || session?.status === 'rotated';
+  const expired = session?.expired === true || session?.status === 'expired' || isExpiredAuthSession(session, now);
 
   if (observedType !== 'production-auth-session') {
     return {
@@ -49,6 +51,21 @@ export function evaluateProductionAuthSessionLifecycle(session, now = Date.now()
     };
   }
 
+  if (rotated) {
+    return {
+      ok: false,
+      required: 'preserved read',
+      observed: 'rotated',
+    };
+  }
+
+  if (expired) {
+    return {
+      ok: false,
+      required: 'unexpired',
+      observed: observedStatus === 'expired' ? 'expired' : observedExpiresAt,
+    };
+  }
   if (observedStatus !== 'active') {
     return {
       ok: false,
@@ -57,7 +74,7 @@ export function evaluateProductionAuthSessionLifecycle(session, now = Date.now()
     };
   }
 
-  if (!session?.expiresAt || isExpiredAuthSession(session, now)) {
+  if (!session?.expiresAt) {
     return {
       ok: false,
       required: 'unexpired',
@@ -358,11 +375,12 @@ export function summarizeProductionAuthSessionLifecycleTrace(trace) {
       ...(typeof entry.authUser === 'string' && entry.authUser.trim()
         ? { authUser: entry.authUser.trim() }
         : {}),
-      expired: Boolean(entry.expired),
-      revoked: Boolean(entry.revoked),
-      cleanedUp: Boolean(entry.cleanedUp),
-      rotated: Boolean(entry.rotated),
-      preserved: Boolean(entry.preserved),
+      invalidLifecycleFlag: resolveInvalidAuthSessionLifecycleFlag(entry),
+      expired: entry.expired === true || entry.status === 'expired',
+      revoked: entry.revoked === true || entry.status === 'revoked',
+      cleanedUp: entry.cleanedUp === true || entry.cleanup === true || entry.status === 'cleaned-up',
+      rotated: entry.rotated === true || entry.status === 'rotated',
+      preserved: isAuthSessionReadStep(entry.step) && entry.preserved === true,
     }));
   const readObservation = [...observations]
     .reverse()
