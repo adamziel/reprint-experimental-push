@@ -1,9 +1,28 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-26 15:30 CEST
+Last updated: 2026-05-26 15:33 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-26 15:33 CEST - Retargeted Worktrees, No Gate Move
+
+- Going well: the active panes now point at fresh lane-owned worktrees, so the
+  contaminated progress branches are preserved but no longer live.
+- Not going well: the release gate is still `0/4`, and the visible reliable
+  head remains `e82e3b1af126f62688f617a3fb4cc0baeb698d57` without production
+  lifecycle or durable-ownership proof.
+- Progress change: this is workspace correction only; it does not change the
+  release verdict.
+- Next nudge: keep `reliable-executor` on the checked release-path gap, keep
+  `progress-publisher` quiet unless the public head drifts, and keep the
+  critic/auditor verdict narrow.
+
+| Lane | Nudge |
+| --- | --- |
+| Reliable executor | Move to the next checked release-path dependency, not another proof-field surface. |
+| Progress publisher | Refresh only if the public head drifts from `e82e3b1af126f62688f617a3fb4cc0baeb698d57`. |
+| Audit and critic | Keep the verdict at `0/4` unless production-backed lifecycle or durable ownership is proven. |
 
 ## 2026-05-26 15:30 CEST - Lane Retarget Complete
 
