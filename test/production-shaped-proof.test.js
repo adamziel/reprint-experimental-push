@@ -42,6 +42,8 @@ const serverStartupTimeoutMs = 30_000;
 const playgroundServerTimeoutMs = 40;
 const serverFetchTimeoutMs = 3_000;
 const playgroundStopTimeoutMs = 3_000;
+const readinessProbeIntervalMs = 500;
+const readinessFailureBodyLimit = 500;
 const runLivePlaygroundTopologyTests = process.env.REPRINT_RUN_PLAYGROUND_LIVE_TESTS === '1';
 const maybeTest = runLivePlaygroundTopologyTests ? test : test.skip;
 const packageJson = JSON.parse(readFileSync(path.join(repoRoot, 'package.json'), 'utf8'));
@@ -63,6 +65,7 @@ const liveProofLaunchTimeoutMs = Math.max(1_000, Math.min(7_000, liveProofSubpro
 const releaseVerifyInnerTimeoutMs = Math.max(1_000, Math.min(36_000, proofSubprocessTimeoutMs - 6_000));
 const releaseVerifySlowPathTimeoutMs = 15_000;
 const releaseVerifySlowPathInnerTimeoutMs = Math.max(1_000, Math.min(6_000, releaseVerifySlowPathTimeoutMs - 6_000));
+const maxReadinessProbes = Math.max(10, Math.ceil(serverStartupTimeoutMs / readinessProbeIntervalMs));
 const maxNotReadyReadinessProbes = Math.max(4, Math.ceil(serverStartupTimeoutMs / 500));
 const proofSubprocessOptions = {
   timeout: proofSubprocessTimeoutMs,
@@ -340,7 +343,9 @@ function spawnBoundedReleaseVerify(command, args, env, options = {}, label = 're
 }
 
 function spawnProductionShapedReleaseVerifySync(env, options = {}, label = 'production-shaped release verify') {
-  const timeoutCeiling = Math.max(1_000, liveProofSubprocessTimeoutMs - 2_000);
+  // Production-shaped release verify callers need the full release-proof
+  // budget, not the shorter live-topology subprocess ceiling.
+  const timeoutCeiling = Math.max(1_000, proofSubprocessTimeoutMs - 2_000);
   const timeout = Math.max(1_000, Math.min(options.timeout ?? releaseVerifyInnerTimeoutMs, timeoutCeiling));
   const killSignal = options.killSignal ?? proofSubprocessKillSignal;
   const proof = spawnBoundedReleaseVerify(
@@ -1470,15 +1475,18 @@ async function startPlaygroundServer(name, blueprintPath) {
     'quiet',
   ];
 
-  const child = spawn(
-    'timeout',
-    ['--preserve-status', '--kill-after=1s', `${playgroundServerTimeoutMs}s`, 'npx', ...args],
-    {
-      cwd: repoRoot,
-      env: process.env,
-      stdio: ['ignore', 'pipe', 'pipe'],
+  const child = spawn('npx', args, {
+    cwd: repoRoot,
+    env: {
+      ...process.env,
+      REPRINT_PUSH_LAB_AUTH_BOOTSTRAP: '1',
+      REPRINT_PUSH_LAB_AUTH_ADMIN_USER: liveCredentials.username,
+      REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD: liveCredentials.password,
+      NODE_OPTIONS: appendNodeOption(process.env.NODE_OPTIONS, localhostListenPreloadOption()),
     },
-  );
+    detached: true,
+    stdio: ['ignore', 'pipe', 'pipe'],
+  });
   activePlaygroundChildren.add(child);
 
   let output = '';
@@ -1543,17 +1551,18 @@ async function waitForServer(child, baseUrl, getLogs) {
         headers: { connection: 'close' },
       });
       const responseBody = await response.clone().text().catch(() => '');
+      const responsePreview = responseBody.slice(0, readinessFailureBodyLimit);
       lastProbes.push({
         route: '/wp-json/',
         status: response.status,
         ok: response.ok,
-        body: responseBody.slice(0, 500),
+        body: responsePreview,
       });
       process.stderr.write(
-        `Playground probe ${baseUrl}/wp-json/ -> ${response.status} ${responseBody.slice(0, 160).replace(/\s+/g, ' ').trim()}\n`,
+        `Playground probe ${baseUrl}/wp-json/ -> ${response.status} ${responsePreview.slice(0, 160).replace(/\s+/g, ' ').trim()}\n`,
       );
       if (response.status === 200) {
-        consecutiveIndex502s = 0;
+        notReadyProbeCount = 0;
         await response.arrayBuffer();
         const snapshot = await fetchWithTimeout(`${baseUrl}/wp-json/reprint-push-lab/v1/snapshot`, {
           headers: {
@@ -1575,41 +1584,74 @@ async function waitForServer(child, baseUrl, getLogs) {
           await snapshot.arrayBuffer();
           return;
         }
-        lastError = new Error(`Playground lab snapshot readiness HTTP ${snapshot.status}`);
+        lastError = new Error(
+          `Playground lab snapshot readiness HTTP ${snapshot.status}; ${describeLastProbe(lastProbes.at(-1))}`,
+        );
       } else {
-        lastError = new Error(`Playground index readiness HTTP ${response.status}`);
-        const readinessHint = response.status === 502 && responseBody.includes('WordPress is not ready yet');
+        const readinessHint = isWordPressNotReadyResponse(response.status, responseBody)
+          ? 'WordPress is not ready yet'
+          : null;
+        const routeSummary = describeLastProbe(lastProbes.at(-1));
+        lastError = new Error(
+          readinessHint
+            ? `Playground index readiness HTTP 502: ${readinessHint}; ${routeSummary}`
+            : `Playground index readiness HTTP ${response.status}; ${routeSummary}`,
+        );
+        const readinessProbeCount = lastProbes.filter((probe) => probe.route === '/wp-json/').length;
         if (readinessHint) {
           notReadyProbeCount += 1;
           if (notReadyProbeCount >= maxNotReadyReadinessProbes) {
-            break;
+            await throwPlaygroundReadinessFailure(
+              child,
+              `Playground server reported the bounded readiness failure ${response.status} after ${readinessProbeCount} /wp-json/ probes (${notReadyProbeCount} consecutive not-ready response${notReadyProbeCount === 1 ? '' : 's'}; limit ${maxNotReadyReadinessProbes})`,
+              lastError,
+              lastProbes,
+              getLogs(),
+              {
+                childPid: child.pid ?? null,
+                notReadyProbeCount,
+                readinessProbeCount,
+              },
+            );
           }
-          await new Promise((resolve) => setTimeout(resolve, 500));
+          await new Promise((resolve) => setTimeout(resolve, readinessProbeIntervalMs));
           continue;
         }
         notReadyProbeCount = 0;
+        if (readinessProbeCount >= maxReadinessProbes) {
+          await throwPlaygroundReadinessFailure(
+            child,
+            `Playground server stayed in readiness response ${response.status} after ${readinessProbeCount} /wp-json/ probes`,
+            lastError,
+            lastProbes,
+            getLogs(),
+            {
+              childPid: child.pid ?? null,
+              readinessProbeCount,
+            },
+          );
+        }
       }
     } catch (error) {
+      if (error && typeof error === 'object' && error.isPlaygroundReadinessFailure) {
+        throw error;
+      }
       lastError = error;
       notReadyProbeCount = 0;
     }
-    await new Promise((resolve) => setTimeout(resolve, 500));
+    await new Promise((resolve) => setTimeout(resolve, readinessProbeIntervalMs));
   }
-  const failureText = formatPlaygroundStartupFailure(
+  await throwPlaygroundReadinessFailure(
+    child,
     `Timed out waiting for Playground server at ${baseUrl}`,
     lastError,
     lastProbes,
     getLogs(),
+    {
+      childPid: child.pid ?? null,
+      notReadyProbeCount,
+    },
   );
-  writePlaygroundFailure(failureText, lastProbes, getLogs(), lastError);
-  try {
-    await stopPlaygroundChild(child);
-  } catch (cleanupError) {
-    process.stderr.write(
-      `${cleanupError instanceof Error ? cleanupError.message : String(cleanupError)}\n`,
-    );
-  }
-  throw new Error(failureText);
 }
 
 function writePlaygroundFailure(message, lastProbes, logs, lastError) {
@@ -1632,7 +1674,40 @@ function writePlaygroundFailure(message, lastProbes, logs, lastError) {
   }
 }
 
-function formatPlaygroundStartupFailure(prefix, lastError, lastProbes, logs) {
+function describeLastProbe(probe) {
+  if (!probe) {
+    return 'route/status/body: unavailable';
+  }
+  return `route/status/body: ${JSON.stringify(
+    {
+      route: probe.route ?? null,
+      status: probe.status ?? null,
+      body: probe.body ?? null,
+    },
+    null,
+    2,
+  )}`;
+}
+
+async function throwPlaygroundReadinessFailure(child, prefix, lastError, lastProbes, logs, context = {}) {
+  const diagnostic = formatPlaygroundStartupFailure(prefix, lastError, lastProbes, logs, context);
+  writePlaygroundFailure(diagnostic, lastProbes, logs, lastError);
+  try {
+    await stopPlaygroundChild(child);
+  } catch (cleanupError) {
+    process.stderr.write(
+      `${cleanupError instanceof Error ? cleanupError.message : String(cleanupError)}\n`,
+    );
+  }
+  const finalError = new Error(diagnostic);
+  finalError.isPlaygroundReadinessFailure = true;
+  finalError.cause = lastError ?? null;
+  finalError.lastProbe = lastProbes.at(-1) ?? null;
+  finalError.context = context;
+  throw finalError;
+}
+
+function formatPlaygroundStartupFailure(prefix, lastError, lastProbes, logs, context = {}) {
   const probeText = lastProbes.length
     ? `\nProbe trail: ${JSON.stringify(lastProbes.slice(-4), null, 2)}`
     : '';
@@ -1650,7 +1725,35 @@ function formatPlaygroundStartupFailure(prefix, lastError, lastProbes, logs) {
       )}`
     : '';
   const errorText = lastError?.message || 'unknown';
-  return `${prefix}: ${errorText}${probeText}${lastProbeText}\n${logs}`;
+  const contextText = Object.keys(context).length
+    ? `\nContext: ${JSON.stringify(context, null, 2)}`
+    : '';
+  return `${prefix}: ${errorText}${probeText}${lastProbeText}${contextText}\n${logs}`;
+}
+
+function isWordPressNotReadyResponse(status, body) {
+  return status === 502 && /WordPress is not ready yet/i.test(body);
+}
+
+function appendNodeOption(existing, option) {
+  return [existing, option].filter(Boolean).join(' ');
+}
+
+function localhostListenPreloadOption() {
+  const source = `
+import http from 'node:http';
+const originalListen = http.Server.prototype.listen;
+http.Server.prototype.listen = function reprintPushLocalhostListen(...args) {
+  if (typeof args[0] === 'number' && (args.length === 1 || typeof args[1] === 'function')) {
+    return originalListen.call(this, args[0], '127.0.0.1', ...args.slice(1));
+  }
+  if (typeof args[0] === 'number' && typeof args[1] === 'number') {
+    return originalListen.call(this, args[0], '127.0.0.1', ...args.slice(1));
+  }
+  return Reflect.apply(originalListen, this, args);
+};
+`;
+  return `--import=data:text/javascript,${encodeURIComponent(source)}`;
 }
 
 async function fetchWithTimeout(url, init = {}) {
