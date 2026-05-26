@@ -39,6 +39,12 @@ export const ACCEPTABLE_RECOVERY_STATES = Object.freeze([
   'blocked-recovery',
 ]);
 
+function hasStaleClaimRejectionEvidence(records) {
+  return (Array.isArray(records) ? records : []).some(
+    (record) => record?.type === 'stale-claim-advanced' || record?.type === 'stale-claim-rejected',
+  );
+}
+
 export function isAcceptableRecoveryState(recoveryState) {
   if (!isStrictPlainObject(recoveryState)) {
     return false;
@@ -1202,6 +1208,24 @@ export function productionRecoverySupportReport(writer) {
     hasValidProductionLeaseIdentity(writer?.leaseFence)
     && Object.hasOwn(inspected ?? {}, 'leaseFence')
     && !productionLeaseIdentitiesMatch(inspected.leaseFence, writer.leaseFence)
+  ) {
+    addMissingDependency('fencing or lease ownership for the journal writer');
+  }
+  if (
+    (openedInspectionRecords || claimInspectionRecords)
+    && (
+      !Object.hasOwn(inspected ?? {}, 'leaseFence')
+      || inspected.leaseFence?.fsyncEvidence !== true
+    )
+  ) {
+    addMissingDependency('stable-storage flush or fsync semantics');
+  }
+  if (
+    hasStaleClaimRejectionEvidence(inspected?.records)
+    && (
+      !Object.hasOwn(inspected ?? {}, 'leaseFence')
+      || inspected.leaseFence?.staleClaimRejected !== true
+    )
   ) {
     addMissingDependency('fencing or lease ownership for the journal writer');
   }
