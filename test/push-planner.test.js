@@ -467,7 +467,7 @@ test('blocks plugin-owned custom tables while preserving a matching independent 
   assert.equal(blocker.resourceKind, 'custom-table');
   assert.equal(
     blocker.reason,
-    'Plugin-owned resource row:["wp_custom_lanes","lane_id:7"] is not covered by a supported resource driver policy for plugin forms.',
+    'Plugin-owned custom tables, including deletes, are not yet supported by the planner.',
   );
   assert.equal(matchingEdit.decision, 'already-in-sync');
   assert.equal(pluginDecision.decision, 'keep-remote');
@@ -518,7 +518,7 @@ test('blocks plugin-owned custom table deletes while preserving a matching indep
   assert.equal(blocker.class, 'unsupported-plugin-owned-resource');
   assert.equal(
     blocker.reason,
-    'Plugin-owned resource row:["wp_custom_lanes","lane_id:7"] is not covered by a supported resource driver policy for plugin forms.',
+    'Plugin-owned custom tables, including deletes, are not yet supported by the planner.',
   );
   assert.equal(matchingEdit.decision, 'already-in-sync');
   assert.equal(pluginDecision.decision, 'keep-remote');
@@ -11615,7 +11615,7 @@ test('blocks unknown plugin-owned custom table rows while preserving remote-only
   assert.equal(blocker.resourceKey, resourceKey);
   assert.equal(
     blocker.reason,
-    'Plugin-owned resource row:["wp_forms_entries","entry_id:9"] is not covered by a supported resource driver policy for plugin forms.',
+    'Plugin-owned custom tables, including deletes, are not yet supported by the planner.',
   );
   assert.equal(blockerJson.includes('base-private-entry'), false);
   assert.equal(blockerJson.includes('local-private-entry'), false);
