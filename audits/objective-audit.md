@@ -7,7 +7,7 @@ The project is **not releasable as a production WordPress push path**.
 Fresh remote heads at audit time, checked on May 26, 2026:
 
 - `origin/lane/critic` -> `49af85aa`
-- `origin/lane/independent-auditor` -> `70b96c1c`
+- `origin/lane/independent-auditor` -> `45d29a03`
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `94d67549`
 - `origin/lane/reliable-executor` -> `c83266ee`
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `eed9fdd8`
@@ -72,7 +72,7 @@ but it did not change the release conclusion:
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now records
   the latest progress freshness handoff at `eed9fdd8`.
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` now
-  refreshes the audit snapshot at `70b96c1c`.
+  refreshes the audit snapshot at `45d29a03`.
 - `origin/lane/reliable-executor` now hardens release verify spawn checks at
   `c83266ee`. This is still failure-path hardening, not live-source proof.
 - `origin/lane/critic` now refreshes the critic handoff at `49af85aa`.
