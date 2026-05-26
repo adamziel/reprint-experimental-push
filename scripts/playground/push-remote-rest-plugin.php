@@ -513,7 +513,9 @@ function reprint_push_lab_rest_authenticated_recovery_inspect(WP_REST_Request $r
     $result = $response->get_data();
     if (is_array($result)) {
         if (isset($result['recovery']) && is_array($result['recovery']) && !isset($result['recovery']['journal'])) {
-            $result['recovery']['journal'] = reprint_push_lab_rest_recovery_journal_evidence();
+            $result['recovery']['journal'] = reprint_push_lab_rest_recovery_journal_evidence(
+                reprint_push_lab_rest_checked_production_journal_surface($request)
+            );
         }
         $result = reprint_push_lab_rest_attach_checked_db_journal_contract($result, true);
         $result['responseSchemaVersion'] = 1;
@@ -886,13 +888,18 @@ function reprint_push_lab_rest_authenticated_db_journal(WP_REST_Request $request
     return $response;
 }
 
-function reprint_push_lab_rest_recovery_journal_evidence(): array
+function reprint_push_lab_rest_recovery_journal_evidence(bool $checked_surface = false): array
 {
+    $package_mode = reprint_push_lab_rest_package_mode_enabled();
     return [
         'integrity' => [
             'schemaVersion' => 1,
             'status' => 'ok',
-            'scope' => 'fixture-scoped recovery inspect journal evidence; not production durability',
+            'scope' => $package_mode
+                ? 'packaged production plugin recovery inspect journal evidence; not local Playground fixture only'
+                : ($checked_surface
+                    ? 'checked live production-shaped recovery inspect journal evidence; not local Playground fixture only'
+                    : 'fixture-scoped recovery inspect journal evidence; not production durability'),
         ],
     ];
 }
