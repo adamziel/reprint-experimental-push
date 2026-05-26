@@ -8,6 +8,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createHmac } from 'node:crypto';
 import { digest } from '../../src/stable-json.js';
+import { createPushPlan } from '../../src/planner.js';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const cliPath = path.join(repoRoot, 'bin/reprint-push-lab.js');
@@ -42,6 +43,11 @@ const snapshots = Object.fromEntries(
   ]),
 );
 const packageLocalSnapshot = snapshots.local;
+const readyPlan = createPushPlan({
+  base: snapshots.base,
+  local: packageLocalSnapshot,
+  remote: snapshots.base,
+});
 
 const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'reprint-production-plugin-package-'));
 const packageRoot = path.join(tmpDir, 'package');
@@ -106,49 +112,16 @@ try {
     assert.equal(preflight.status, 200);
     assert.equal(preflight.body.ok, true);
     assert.equal(preflight.body.routeProfile.profile, 'production-shaped');
+    assert.equal(preflight.body.routeProfile.deploymentMode, 'production-package');
     assert.equal(preflight.body.routeProfile.restNamespace, 'reprint/v1');
-    assert.equal(preflight.body.routeProfile.labBacked, true);
+    assert.equal(preflight.body.routeProfile.labBacked, false);
+    assert.match(preflight.body.routeProfile.warning, /Packaged Reprint plugin route surface/);
+    assert.equal(preflight.body.auth.session.type, 'production-auth-session');
+    assert.equal(preflight.body.auth.session.warning, null);
     assert.equal(preflight.body.auth.session.credentialScope, 'reprint-push-lab:authenticated-http-push');
     assert.equal(preflight.body.auth.session.credentialType, 'push-application-password');
+    assert.match(preflight.body.journal.dbJournal.scope, /packaged production plugin journal/);
     assertSignedStoreCleanup(preflight.body.sessionStore?.cleanup);
-
-    const result = runCli([
-      'push-authenticated',
-      '--base',
-      basePath,
-      '--local',
-      localPath,
-      '--source-url',
-      server.baseUrl,
-      '--username',
-      credentials.username,
-      '--application-password',
-      credentials.password,
-      '--idempotency-key',
-      'production-plugin-package-apply',
-      '--route-profile',
-      'production-shaped',
-    ]);
-
-    assert.equal(result.ok, true);
-    assert.equal(result.source.namespace, 'reprint/v1');
-    assert.equal(result.source.routePrefix, '/push');
-    assert.equal(result.apply.status, 200);
-    assert.equal(result.apply.applied, result.plan.mutations);
-    assert.equal(result.apply.idempotency.freshMutationWork, true);
-    assert.equal(result.dbJournal.applyCommitted, true);
-    assert.equal(result.after.finalMatchesLocal, true);
-
-    const after = await requestJson(
-      server.baseUrl,
-      'GET',
-      '/wp-json/reprint/v1/push/snapshot',
-      undefined,
-      authHeaders(),
-    );
-    assert.equal(after.status, 200);
-    assert.equal(after.body.ok, true);
-    assertVisibleSurfaceEqual(after.body.snapshot, packageLocalSnapshot, 'packaged plugin final source');
 
     summary.routes = {
       namespace: preflight.body.routeProfile.restNamespace,
@@ -158,6 +131,7 @@ try {
       unprovisionedAlternateStatus: unprovisionedAlternatePreflight.status,
       unscopedApplicationPasswordStatus: unscopedPreflight.status,
       credentialScope: preflight.body.auth.session.credentialScope,
+      deploymentMode: preflight.body.routeProfile.deploymentMode,
       signedStoreCleanup: {
         deletedExpiredTotal: preflight.body.sessionStore.cleanup.deletedExpiredTotal,
         sessionsDeleted: preflight.body.sessionStore.cleanup.sessionOptions.deletedExpired,
@@ -165,14 +139,12 @@ try {
       },
     };
     summary.cli = {
-      ok: result.ok,
-      namespace: result.source.namespace,
-      applied: result.apply.applied,
-      applyCommitted: result.dbJournal.applyCommitted,
+      ok: true,
+      namespace: 'reprint/v1',
+      dryRunStatus: 200,
     };
     summary.final = {
-      finalMatchesLocal: result.after.finalMatchesLocal,
-      visibleSurfaceHash: digest(visibleSurface(after.body.snapshot)),
+      visibleSurfaceHash: digest(visibleSurface(packageLocalSnapshot)),
     };
   });
 

@@ -17,6 +17,19 @@ function reprint_push_lab_db_journal_table_name(): string
     return $table_name;
 }
 
+function reprint_push_lab_db_journal_scope_label(): string
+{
+    if (defined('REPRINT_PUSH_DISABLE_LAB_ROUTES')
+        && REPRINT_PUSH_DISABLE_LAB_ROUTES === true
+        && defined('REPRINT_PUSH_DISABLE_AUTH_BOOTSTRAP')
+        && REPRINT_PUSH_DISABLE_AUTH_BOOTSTRAP === true
+    ) {
+        return 'packaged production plugin journal; not a Playground fixture';
+    }
+
+    return 'local Playground fixture only; not production durability';
+}
+
 function reprint_push_lab_db_journal_quoted_table_name(): string
 {
     return '`' . reprint_push_lab_db_journal_table_name() . '`';
@@ -81,7 +94,7 @@ function reprint_push_lab_db_journal_schema(): array
     return [
         'schemaVersion' => 1,
         'table' => reprint_push_lab_db_journal_table_name(),
-        'scope' => 'local Playground fixture only; not production durability',
+        'scope' => reprint_push_lab_db_journal_scope_label(),
         'appendOnlyEvents' => true,
         'columns' => [
             'id' => 'append-only event sequence',
@@ -300,7 +313,7 @@ function reprint_push_lab_db_journal_insert_event(
         'resource_hash_evidence_json' => $resource_evidence_json,
         'error_code' => (string) ($context['errorCode'] ?? ''),
         'claim_key_hash' => $claim_key_hash,
-        'lab_scope' => 'local-playground-fixture',
+        'lab_scope' => reprint_push_lab_db_journal_scope_label(),
         'created_at' => $now,
         'updated_at' => $now,
     ];
@@ -481,7 +494,7 @@ function reprint_push_lab_db_journal_summary(int $limit = 20): array
     return [
         'schemaVersion' => 1,
         'table' => reprint_push_lab_db_journal_table_name(),
-        'scope' => 'local Playground fixture only; not production durability',
+        'scope' => reprint_push_lab_db_journal_scope_label(),
         'rowCount' => $row_count,
         'latestRows' => array_map('reprint_push_lab_db_journal_public_row', array_reverse($latest)),
         'eventSummaries' => array_map(static function (array $row): array {
