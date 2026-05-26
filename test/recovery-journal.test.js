@@ -18,6 +18,7 @@ import {
   readRecoveryJournal,
   RECOVERY_JOURNAL_SCHEMA_VERSION,
 } from '../src/recovery-journal.js';
+import { productionRecoverySupportReport } from '../src/apply.js';
 import { inspectRecoveryJournal } from '../src/recovery-inspect.js';
 import { createPushPlan } from '../src/planner.js';
 import { deserializeResourceValue, setResource } from '../src/resources.js';
@@ -188,6 +189,31 @@ test('production recovery journal inspection is exported for release-path consum
   assert.equal(inspected.journalPath, filePath);
   assert.equal(inspected.claim.status, 'none');
   assert.equal(inspected.claim.activeClaimHash, null);
+});
+
+test('production recovery support report exposes the release-path dependency surface', () => {
+  const unsupported = createUnsupportedProductionRecoveryJournal('production recovery is unavailable here.');
+  const unsupportedReport = productionRecoverySupportReport(unsupported);
+
+  assert.equal(unsupportedReport.supported, false);
+  assert.ok(unsupportedReport.missingDependency.includes('restart-readable recovery inspection'));
+  assert.ok(unsupportedReport.missingDependency.includes('fencing or lease ownership for the journal writer'));
+
+  const filePath = tempJournalPath();
+  const journal = openProductionRecoveryJournal(filePath, {
+    truncate: true,
+    now: fixedNow,
+    claimId: 'claim-report-1',
+    writerLease: { id: 'lease-report-1' },
+  });
+  const supportedReport = productionRecoverySupportReport(journal);
+
+  assert.equal(supportedReport.supported, false);
+  assert.equal(supportedReport.inspectedJournalPath, filePath);
+  assert.equal(supportedReport.writerJournalPath, filePath);
+  assert.ok(supportedReport.missingDependency.includes('restart-readable recovery remote artifact references'));
+  assert.ok(supportedReport.missingDependency.includes('journal-readable inspection records with sequence and type'));
+  journal.close();
 });
 
 test('production recovery journal inspection normalizes restart-readable lease and artifact metadata', () => {

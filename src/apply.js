@@ -687,7 +687,7 @@ function assertProductionDurableJournalSupport(options, writer) {
   );
 }
 
-function productionRecoverySupportReport(writer) {
+export function productionRecoverySupportReport(writer) {
   const missingDependency = [];
   const inspected = inspectProductionRecoveryJournal(writer);
   const inspectedJournalPath = durableJournalInspectPath(inspected);
