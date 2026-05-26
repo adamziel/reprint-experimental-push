@@ -1632,6 +1632,26 @@ export const SAFE_FAST_PATHS = Object.freeze([
     splitsAtomicGroup: false,
     publishesStagedDataEarly: false,
   },
+  {
+    area: 'compression',
+    reduces: ['wire-bytes', 'planning-round-trips', 'duplicate-retry-window-recomputation'],
+    allowedShortcut: 'compress-canonical-per-kind-budget-summaries-to-size-bounded-plugin-install-retry-windows',
+    guardrails: [
+      'budget-summaries-stay-planning-evidence-only',
+      'plugin-install-retry-window-revalidates-before-write',
+    ],
+    gateProofs: {
+      skip: 'compressed per-kind budget summaries can shorten plugin-install retry-window planning without recomputing the same canonical limits',
+      live: 'each later plugin-install write still rechecks its own live resource precondition before visibility changes',
+      group: 'budget-summary compression only narrows planning inside the same planned plugin-install bundle and never widens the atomic-group barrier',
+      recovery: 'compressed budget summaries are advisory while durable receipts, metadata staging records, and the guarded finalize record still classify pause, retry, or crash',
+    },
+    visibilityBoundary: 'planning-only-for-plugin-install-retry-windows',
+    failureEvidence: 'compressed per-kind budget summary plus plugin-install retry window and guarded finalize record',
+    bypassesLivePreconditions: false,
+    splitsAtomicGroup: false,
+    publishesStagedDataEarly: false,
+  },
 ]);
 
 export const FAILURE_INJECTION_BOUNDARIES = Object.freeze([
