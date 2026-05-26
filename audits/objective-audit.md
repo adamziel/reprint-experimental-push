@@ -7,7 +7,7 @@ The project is **not releasable as a production WordPress push path**.
 Fresh remote heads at audit time, checked on May 26, 2026:
 
 - `origin/lane/reliable-executor` -> `0c4fd10f`
-- `origin/lane/no-data-loss-invariants` -> `41fba8ae`
+- `origin/lane/no-data-loss-invariants` -> `04927056`
 - `origin/lane/no-data-loss-recovery` -> `47b675c0`
 - `origin/lane/fast-paths` -> `af79456d`
 - `origin/lane/independent-auditor` -> `5624aefd`
@@ -35,8 +35,8 @@ but it did not change the release conclusion:
   `0c4fd10f`. The reliable lane still has the open `spawnSync`
   timeout-hardening blocker on the live proof path, so the verdict does not
   move.
-- `origin/lane/no-data-loss-invariants` now blocks attachment graph
-  resources at `41fba8ae`. A separate cycle-branch proof at `98c0ce26`
+- `origin/lane/no-data-loss-invariants` now blocks post GUID mutations at
+  `04927056`. A separate cycle-branch proof at `98c0ce26`
   extends that blocker coverage to missing graph identity references, and the
   same-plan graph lane at `69f27361` now blocks unsupported graph surfaces
   including revision posts, menu/navigation posts, serialized blocks, and
