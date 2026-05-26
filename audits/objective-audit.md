@@ -4,7 +4,7 @@
 
 The project is **not releasable as a production WordPress push path**.
 
-- Fresh remote heads at audit time, checked on 2026-05-26 08:19:39 CEST (+0200):
+- Fresh remote heads at audit time, checked on 2026-05-26 08:22:32 CEST (+0200):
 
 - `origin/lane/cycle-20260524-auth-graph-hardening/critic` -> `e413f7a8`
 - `origin/lane/cycle-20260524-auth-graph-hardening/fast-paths` -> `ad7d82a4`
@@ -102,6 +102,19 @@ Fresh remote heads re-polled after the last audit note:
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `269de396`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `c52e932a`
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `c9354cf9`
+
+The newest visible lane heads since the prior audit snapshot still do not
+change the release verdict:
+
+- `origin/lane/reliable-executor` now records `937a654f`, hardening release
+  proof cleanup. This is still harness/support work, not production-backed
+  auth/session lifecycle or durable journal ownership on the release path.
+- `origin/lane/no-data-loss-recovery` now records `9e077c10`, tightening
+  durable recovery remote ownership fencing. This is still fail-closed
+  support evidence, not restart-readable durable journal ownership on the
+  release path.
+- `origin/lane/progress-publisher` now records `7695e1f9`, updating restart
+  progress evidence. It still does not change release readiness.
 
 These heads are still fail-closed support evidence and freshness work. They
 improve unsupported-surface blocking and public visibility, but they still do
