@@ -792,6 +792,7 @@ function durableJournalInspectRecords(inspected) {
     && typeof inspected.schemaVersion === 'number'
     && Array.isArray(inspected.records),
   ) && inspected.records.length > 0
+  && inspected.records[0].type === 'journal-opened'
   && inspected.records.every((record) =>
     record
     && typeof record === 'object'

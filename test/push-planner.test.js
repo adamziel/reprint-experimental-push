@@ -19807,6 +19807,7 @@ test('unsupported production recovery journal adapters remain fenced and restart
   assert.equal(journal.productionAdapter, true);
   assert.equal(journal.ownsJournal, false);
   assert.equal(journal.journalPath, null);
+  assert.deepEqual(journal.artifactRefs, { journal: null, remote: null });
   assert.equal(typeof journal.inspect, 'function');
   assert.throws(() => journal.inspect(), /Production recovery journal support is not available/);
 });
@@ -20756,6 +20757,56 @@ test('production durable journal claims fail closed when inspection records are 
         records: [
           { sequence: 2, type: 'journal-opened' },
           { sequence: 1, type: 'journal-completed' },
+        ],
+      };
+    },
+    assertCurrentClaim() {},
+  };
+  const plan = planFor(baseSite(), baseSite(), {
+    ...baseSite(),
+    db: {
+      ...baseSite().db,
+      wp_options: {
+        ...baseSite().db.wp_options,
+        'option_name:blogname': { option_name: 'blogname', option_value: 'New Site' },
+      },
+    },
+  });
+  const error = captureError(() => applyPlan(baseSite(), plan, {
+    requireProductionDurableJournal: true,
+    durableJournal: writer,
+  }));
+
+  assert.equal(error.code, 'PRODUCTION_DURABLE_JOURNAL_UNSUPPORTED');
+  assert.deepEqual(error.details.missingDependency, [
+    'explicit production recovery adapter marker',
+    'restart-readable recovery artifact references',
+    'journal-readable inspection records with sequence and type',
+  ]);
+});
+
+test('production durable journal claims fail closed when the first inspection record is not journal-opened', () => {
+  const writer = {
+    kind: 'production-recovery-journal',
+    ownsJournal: true,
+    journalPath: '/var/lib/reprint/recovery.jsonl',
+    schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+    nextSequence: 1,
+    appendEvent() {
+      this.nextSequence += 1;
+    },
+    flush() {},
+    close() {},
+    inspect() {
+      return {
+        filePath: '/var/lib/reprint/recovery.jsonl',
+        schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+        artifactRefs: {
+          journal: '/var/lib/reprint/recovery.jsonl',
+        },
+        records: [
+          { sequence: 1, type: 'mutation-observed' },
+          { sequence: 2, type: 'journal-opened' },
         ],
       };
     },

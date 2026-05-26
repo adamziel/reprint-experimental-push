@@ -48,6 +48,10 @@ export function createUnsupportedProductionRecoveryJournal(reason = 'Production 
     productionAdapter: true,
     ownsJournal: false,
     journalPath: null,
+    artifactRefs: Object.freeze({
+      journal: null,
+      remote: null,
+    }),
     schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
   };
 
