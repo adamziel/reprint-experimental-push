@@ -1,4 +1,4 @@
-Checked the freshest remote `reliable-executor` head at `2026-05-26 08:09:10 CEST (+0200)`. The current tip is `7fde0c76`, which still only tightens replay/session equivalence and does not prove production-backed auth/session lifecycle or a live release boundary, so the verdict remains `0/4`.
+Checked the freshest remote `reliable-executor` head at `2026-05-26 08:10:17 CEST (+0200)`. The current tip is `f716d1e1`, which hardens auth envelope replay checks but still does not prove production-backed auth/session lifecycle or a live release boundary, so the verdict remains `0/4`.
 
 Changed files:
 - [`audits/objective-audit.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/independent-auditor/audits/objective-audit.md)

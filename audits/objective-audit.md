@@ -149,6 +149,9 @@ The newest visible heads continue that same pattern:
 Fresh lane proof since the last audit pass improved the local evidence floor,
 but it did not change the release conclusion:
 
+- `origin/lane/reliable-executor` now records `f716d1e1`, hardening auth
+  envelope replay checks. It still does not prove production auth/session
+  lifecycle on the release path.
 - `origin/lane/reliable-executor` now records `7fde0c76`, tightening replay
   equivalence checks. It still does not prove production auth/session
   lifecycle on the release path.
