@@ -2,10 +2,21 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import process from 'node:process';
+import { loadAuthSessionSource, resolveAuthSessionRequestState } from './auth-session-source.js';
 
-const liveSourceUrl = process.env.REPRINT_PUSH_SOURCE_URL || process.env.REPRINT_PUSH_REMOTE_URL || '';
-const username = process.env.REPRINT_PUSH_LAB_AUTH_ADMIN_USER || process.env.REPRINT_PUSH_USERNAME || '';
-const applicationPassword = process.env.REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD || process.env.REPRINT_PUSH_APPLICATION_PASSWORD || '';
+const authSessionSourceCommand = process.env.REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND || '';
+const authSessionSource = authSessionSourceCommand ? loadAuthSessionSource(authSessionSourceCommand) : null;
+const resolvedAuthSessionRequest = resolveAuthSessionRequestState(
+  {
+    liveSourceUrl: process.env.REPRINT_PUSH_SOURCE_URL || process.env.REPRINT_PUSH_REMOTE_URL || '',
+    username: process.env.REPRINT_PUSH_LAB_AUTH_ADMIN_USER || process.env.REPRINT_PUSH_USERNAME || '',
+    applicationPassword: process.env.REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD || process.env.REPRINT_PUSH_APPLICATION_PASSWORD || '',
+  },
+  authSessionSource,
+);
+const liveSourceUrl = resolvedAuthSessionRequest.liveSourceUrl;
+const username = resolvedAuthSessionRequest.username;
+const applicationPassword = resolvedAuthSessionRequest.applicationPassword;
 
 if (liveSourceUrl && username && applicationPassword) {
   const livePreflightResult = spawnSync(process.execPath, ['scripts/playground/production-shaped-live-preflight-smoke.mjs'], {

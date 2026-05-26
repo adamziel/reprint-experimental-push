@@ -2,10 +2,21 @@
 import assert from 'node:assert/strict';
 import process from 'node:process';
 import { authenticatedHttpClient } from '../../src/authenticated-http-push-client.js';
+import { loadAuthSessionSource, resolveAuthSessionRequestState } from './auth-session-source.js';
 
-const sourceUrl = process.env.REPRINT_PUSH_SOURCE_URL || process.env.REPRINT_PUSH_REMOTE_URL || '';
-const username = process.env.REPRINT_PUSH_USERNAME || process.env.REPRINT_PUSH_LAB_AUTH_ADMIN_USER || '';
-const applicationPassword = process.env.REPRINT_PUSH_APPLICATION_PASSWORD || process.env.REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD || '';
+const authSessionSourceCommand = process.env.REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND || '';
+const authSessionSource = authSessionSourceCommand ? loadAuthSessionSource(authSessionSourceCommand) : null;
+const resolvedAuthSessionRequest = resolveAuthSessionRequestState(
+  {
+    liveSourceUrl: process.env.REPRINT_PUSH_SOURCE_URL || process.env.REPRINT_PUSH_REMOTE_URL || '',
+    username: process.env.REPRINT_PUSH_USERNAME || process.env.REPRINT_PUSH_LAB_AUTH_ADMIN_USER || '',
+    applicationPassword: process.env.REPRINT_PUSH_APPLICATION_PASSWORD || process.env.REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD || '',
+  },
+  authSessionSource,
+);
+const sourceUrl = resolvedAuthSessionRequest.liveSourceUrl;
+const username = resolvedAuthSessionRequest.username;
+const applicationPassword = resolvedAuthSessionRequest.applicationPassword;
 
 if (!sourceUrl) {
   process.stderr.write(

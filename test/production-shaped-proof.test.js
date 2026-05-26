@@ -286,6 +286,82 @@ function spawnBoundedSync(command, args, options, label) {
   return proof;
 }
 
+async function withStubProductionPreflightServer(run) {
+  const serverScript = `
+    import http from 'node:http';
+    const sessionId = 'psh_01j0000000000000000000000000000';
+    const server = http.createServer((request, response) => {
+      if (request.method === 'GET' && request.url === '/wp-json/reprint/v1/push/preflight') {
+        response.writeHead(200, { 'content-type': 'application/json' });
+        response.end(JSON.stringify({
+          ok: true,
+          routeProfile: { profile: 'production-shaped' },
+          session: { id: sessionId, type: 'production-auth-session' },
+        }));
+        return;
+      }
+      response.writeHead(404, { 'content-type': 'application/json' });
+      response.end(JSON.stringify({ ok: false, code: 'rest_no_route' }));
+    });
+    server.listen(0, '127.0.0.1', () => {
+      const address = server.address();
+      process.stdout.write(JSON.stringify({ baseUrl: \`http://127.0.0.1:\${address.port}\` }) + '\\n');
+    });
+    process.on('SIGTERM', () => server.close(() => process.exit(0)));
+    process.on('SIGINT', () => server.close(() => process.exit(0)));
+  `;
+  const child = spawn(process.execPath, ['--input-type=module', '-e', serverScript], {
+    cwd: repoRoot,
+    stdio: ['ignore', 'pipe', 'pipe'],
+    env: {
+      ...process.env,
+      NODE_NO_WARNINGS: '1',
+    },
+  });
+
+  let stdout = '';
+  let stderr = '';
+  child.stdout.setEncoding('utf8');
+  child.stderr.setEncoding('utf8');
+  child.stdout.on('data', (chunk) => {
+    stdout += chunk;
+  });
+  child.stderr.on('data', (chunk) => {
+    stderr += chunk;
+  });
+
+  try {
+    const baseUrl = await new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => reject(new Error(`stub preflight server did not start\nstdout:\n${stdout}\nstderr:\n${stderr}`)), 5_000);
+      const check = () => {
+        const line = stdout.split('\n')[0]?.trim();
+        if (!line) {
+          return;
+        }
+        clearTimeout(timeout);
+        try {
+          resolve(JSON.parse(line).baseUrl);
+        } catch (error) {
+          reject(error);
+        }
+      };
+      child.stdout.on('data', check);
+      child.once('error', reject);
+      child.once('exit', (code, signal) => {
+        reject(new Error(`stub preflight server exited early with code ${code ?? 'null'} signal ${signal ?? 'none'}\nstdout:\n${stdout}\nstderr:\n${stderr}`));
+      });
+      check();
+    });
+
+    return await run(baseUrl);
+  } finally {
+    if (child.exitCode === null) {
+      child.kill('SIGTERM');
+      await new Promise((resolve) => child.once('exit', resolve));
+    }
+  }
+}
+
 function failBoundedSpawnProof(proof, command, args) {
   stopAllPlaygroundChildrenSync();
   reportBoundedSpawnFailure(proof, command, args);
@@ -629,6 +705,35 @@ test('production-shaped live preflight smoke fails fast when the live source or 
     missingAuth.stderr.trim(),
     'REPRINT_PUSH_SECRET_REQUIRED: production push credentials are missing; provide REPRINT_PUSH_LAB_AUTH_ADMIN_USER and REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD before running preflight, dry-run, or apply.',
   );
+});
+
+test('production-shaped live preflight smoke consumes the auth/session source command when direct inputs are absent', async () => {
+  await withStubProductionPreflightServer(async (baseUrl) => {
+    const proof = spawnBoundedSync(process.execPath, ['scripts/playground/production-shaped-live-preflight-smoke.mjs'], {
+      cwd: repoRoot,
+      ...proofSubprocessOptions,
+      env: {
+        ...process.env,
+        REPRINT_PUSH_SOURCE_URL: '',
+        REPRINT_PUSH_REMOTE_URL: '',
+        REPRINT_PUSH_USERNAME: '',
+        REPRINT_PUSH_APPLICATION_PASSWORD: '',
+        REPRINT_PUSH_LAB_AUTH_ADMIN_USER: '',
+        REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD: '',
+        REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND: buildAuthSessionSourceCommand({
+          sourceUrl: baseUrl,
+          username: liveCredentials.username,
+          applicationPassword: liveCredentials.password,
+        }),
+        NODE_NO_WARNINGS: '1',
+      },
+    }, 'source-command live preflight smoke');
+
+    assert.equal(proof.status, 0, proof.stderr);
+    assert.equal(proof.stderr, '');
+    assert.match(proof.stdout, new RegExp(`"sourceUrl": "${baseUrl.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}"`));
+    assert.match(proof.stdout, /"type": "production-auth-session"/);
+  });
 });
 
 test('production-shaped release verify command fails closed when production durable journal ownership is explicitly required', () => {
@@ -1445,6 +1550,34 @@ test('production-shaped release proof emits the exact gate output when no live s
     proof.stdout,
     /"missingLiveSource": \{\s*"status": 1,\s*"code": "REPRINT_PUSH_LIVE_SOURCE_REQUIRED",\s*"stderr": "REPRINT_PUSH_LIVE_SOURCE_REQUIRED: production push requires a live source URL; provide REPRINT_PUSH_SOURCE_URL before running preflight, dry-run, or apply\."\s*\}/,
   );
+});
+
+test('production-shaped release proof consumes the auth/session source command when direct inputs are absent', async () => {
+  await withStubProductionPreflightServer(async (baseUrl) => {
+    const proof = spawnBoundedSync(process.execPath, ['scripts/playground/production-shaped-release-proof.mjs'], {
+      cwd: repoRoot,
+      ...proofSubprocessOptions,
+      env: {
+        ...process.env,
+        REPRINT_PUSH_SOURCE_URL: '',
+        REPRINT_PUSH_REMOTE_URL: '',
+        REPRINT_PUSH_USERNAME: '',
+        REPRINT_PUSH_APPLICATION_PASSWORD: '',
+        REPRINT_PUSH_LAB_AUTH_ADMIN_USER: '',
+        REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD: '',
+        REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND: buildAuthSessionSourceCommand({
+          sourceUrl: baseUrl,
+          username: liveCredentials.username,
+          applicationPassword: liveCredentials.password,
+        }),
+        NODE_NO_WARNINGS: '1',
+      },
+    }, 'source-command release proof');
+
+    assert.equal(proof.status, 0, proof.stderr);
+    assert.equal(proof.stderr, '');
+    assert.match(proof.stdout, /"releaseProof": \{\s*"status": 0,\s*"code": "LIVE_PREFLIGHT_OK"\s*\}/);
+  });
 });
 
 test('production-shaped release verify fails closed when a required production auth/session source command is invalid', () => {
