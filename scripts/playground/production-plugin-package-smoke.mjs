@@ -59,10 +59,11 @@ const malformedDriverGuardServerOptions = {
   readyOk: (response) => response.status === 200 && response.body?.namespaces?.includes?.('reprint/v1'),
 };
 
+logSmokeStage('prepare-base-snapshots', formatSelectedScenarioNames(selectedScenarios));
 const snapshots = Object.fromEntries(
   Object.entries(fixtures).map(([name, fixture]) => [
     name,
-    exportSnapshot(name, path.join(repoRoot, fixture)),
+    exportSnapshotWithStage(name, path.join(repoRoot, fixture)),
   ]),
 );
 const packageLocalSnapshot = withoutUnmappedGraphPostmeta(snapshots.local);
@@ -93,75 +94,105 @@ try {
   buildPluginPackage(pluginDir);
   logSmokeStage('write-blueprints');
   writeActivationBlueprint(path.join(repoRoot, fixtures.base), blueprintPath);
-  writeDriverFixtureBlueprint(path.join(repoRoot, fixtures.base), driverGuardSnapshotBlueprintPath);
-  writeDriverFixtureBlueprint(path.join(repoRoot, fixtures.base), driverGuardServerBlueprintPath, {
-    activatePackagedPlugin: true,
-    provisionAuth: true,
-    enableCredentialRevocationRoute: true,
-  });
-  writeDriverFixtureBlueprint(path.join(repoRoot, fixtures.base), driverDeleteSnapshotBlueprintPath, {
-    supportsDelete: true,
-  });
-  writeDriverFixtureBlueprint(path.join(repoRoot, fixtures.base), driverDeleteServerBlueprintPath, {
-    activatePackagedPlugin: true,
-    provisionAuth: true,
-    supportsDelete: true,
-  });
-  writeDriverFixtureBlueprint(path.join(repoRoot, fixtures.base), driverMissingExportServerBlueprintPath, {
-    activatePackagedPlugin: true,
-    provisionAuth: true,
-    omitExportRowsCallback: true,
-  });
-  writeDriverFixtureBlueprint(path.join(repoRoot, fixtures.base), driverMissingApplyServerBlueprintPath, {
-    activatePackagedPlugin: true,
-    provisionAuth: true,
-    omitApplyRowCallback: true,
-  });
-  writeDriverFixtureBlueprint(path.join(repoRoot, fixtures.base), driverMissingValidateServerBlueprintPath, {
-    activatePackagedPlugin: true,
-    provisionAuth: true,
-    omitValidateMutationCallback: true,
-  });
-  writeDriverFixtureBlueprint(path.join(repoRoot, fixtures.base), driverMissingNameServerBlueprintPath, {
-    activatePackagedPlugin: true,
-    provisionAuth: true,
-    blankDriverName: true,
-  });
-  writeDriverFixtureBlueprint(path.join(repoRoot, fixtures.base), driverMissingPluginOwnerServerBlueprintPath, {
-    activatePackagedPlugin: true,
-    provisionAuth: true,
-    omitPluginOwner: true,
-  });
-  writeDriverFixtureBlueprint(path.join(repoRoot, fixtures.base), driverMissingTableServerBlueprintPath, {
-    activatePackagedPlugin: true,
-    provisionAuth: true,
-    omitTable: true,
-  });
-  writeDriverFixtureBlueprint(path.join(repoRoot, fixtures.base), driverDuplicateNameServerBlueprintPath, {
-    activatePackagedPlugin: true,
-    provisionAuth: true,
-    duplicateDriverName: true,
-  });
-  writeDriverFixtureBlueprint(path.join(repoRoot, fixtures.base), driverDuplicateTableServerBlueprintPath, {
-    activatePackagedPlugin: true,
-    provisionAuth: true,
-    duplicateTable: true,
-  });
+  if (shouldRunAnyScenario(['driver-receipt-guards'])) {
+    writeDriverFixtureBlueprint(path.join(repoRoot, fixtures.base), driverGuardSnapshotBlueprintPath);
+    writeDriverFixtureBlueprint(path.join(repoRoot, fixtures.base), driverGuardServerBlueprintPath, {
+      activatePackagedPlugin: true,
+      provisionAuth: true,
+      enableCredentialRevocationRoute: true,
+    });
+  }
+  if (shouldRunAnyScenario(['driver-delete-apply'])) {
+    writeDriverFixtureBlueprint(path.join(repoRoot, fixtures.base), driverDeleteSnapshotBlueprintPath, {
+      supportsDelete: true,
+    });
+    writeDriverFixtureBlueprint(path.join(repoRoot, fixtures.base), driverDeleteServerBlueprintPath, {
+      activatePackagedPlugin: true,
+      provisionAuth: true,
+      supportsDelete: true,
+    });
+  }
+  if (shouldRunAnyScenario(['driver-missing-export-guard'])) {
+    writeDriverFixtureBlueprint(path.join(repoRoot, fixtures.base), driverMissingExportServerBlueprintPath, {
+      activatePackagedPlugin: true,
+      provisionAuth: true,
+      omitExportRowsCallback: true,
+    });
+  }
+  if (shouldRunAnyScenario(['driver-missing-apply-guard'])) {
+    writeDriverFixtureBlueprint(path.join(repoRoot, fixtures.base), driverMissingApplyServerBlueprintPath, {
+      activatePackagedPlugin: true,
+      provisionAuth: true,
+      omitApplyRowCallback: true,
+    });
+  }
+  if (shouldRunAnyScenario(['driver-missing-validate-guard'])) {
+    writeDriverFixtureBlueprint(path.join(repoRoot, fixtures.base), driverMissingValidateServerBlueprintPath, {
+      activatePackagedPlugin: true,
+      provisionAuth: true,
+      omitValidateMutationCallback: true,
+    });
+  }
+  if (shouldRunAnyScenario(['driver-missing-name-guard'])) {
+    writeDriverFixtureBlueprint(path.join(repoRoot, fixtures.base), driverMissingNameServerBlueprintPath, {
+      activatePackagedPlugin: true,
+      provisionAuth: true,
+      blankDriverName: true,
+    });
+  }
+  if (shouldRunAnyScenario(['driver-missing-plugin-owner-guard'])) {
+    writeDriverFixtureBlueprint(path.join(repoRoot, fixtures.base), driverMissingPluginOwnerServerBlueprintPath, {
+      activatePackagedPlugin: true,
+      provisionAuth: true,
+      omitPluginOwner: true,
+    });
+  }
+  if (shouldRunAnyScenario(['driver-missing-table-guard'])) {
+    writeDriverFixtureBlueprint(path.join(repoRoot, fixtures.base), driverMissingTableServerBlueprintPath, {
+      activatePackagedPlugin: true,
+      provisionAuth: true,
+      omitTable: true,
+    });
+  }
+  if (shouldRunAnyScenario(['driver-duplicate-name-guard'])) {
+    writeDriverFixtureBlueprint(path.join(repoRoot, fixtures.base), driverDuplicateNameServerBlueprintPath, {
+      activatePackagedPlugin: true,
+      provisionAuth: true,
+      duplicateDriverName: true,
+    });
+  }
+  if (shouldRunAnyScenario(['driver-duplicate-table-guard'])) {
+    writeDriverFixtureBlueprint(path.join(repoRoot, fixtures.base), driverDuplicateTableServerBlueprintPath, {
+      activatePackagedPlugin: true,
+      provisionAuth: true,
+      duplicateTable: true,
+    });
+  }
   logSmokeStage('export-base-snapshots');
   fs.writeFileSync(basePath, `${JSON.stringify(snapshots.base, null, 2)}\n`);
   fs.writeFileSync(localPath, `${JSON.stringify(packageLocalSnapshot, null, 2)}\n`);
-  const driverGuardBaseSnapshot = exportSnapshot('driver-fixture-guard-base', driverGuardSnapshotBlueprintPath);
-  const driverDeleteBaseSnapshot = exportSnapshot('driver-fixture-delete-base', driverDeleteSnapshotBlueprintPath);
-  const driverLocalDeleteSnapshot = deepClone(driverDeleteBaseSnapshot);
-  delete driverLocalDeleteSnapshot.db?.[driverFixture.table]?.['entry_id:1'];
-  const driverLocalUpdateSnapshot = deepClone(driverGuardBaseSnapshot);
-  driverLocalUpdateSnapshot.db[driverFixture.table]['entry_id:1'].payload.mode = 'local-update';
-  driverLocalUpdateSnapshot.db[driverFixture.table]['entry_id:1'].payload.version = 2;
-  driverLocalUpdateSnapshot.db[driverFixture.table]['entry_id:1'].updated_marker = 'local-update';
-  const driverLocalInvalidUpdateSnapshot = deepClone(driverGuardBaseSnapshot);
-  driverLocalInvalidUpdateSnapshot.db[driverFixture.table]['entry_id:1'].payload.mode = 'invalid-update';
-  driverLocalInvalidUpdateSnapshot.db[driverFixture.table]['entry_id:1'].payload.version = 3;
-  driverLocalInvalidUpdateSnapshot.db[driverFixture.table]['entry_id:1'].updated_marker = 'INVALID marker!';
+  const driverGuardBaseSnapshot = shouldRunAnyScenario(['driver-receipt-guards'])
+    ? exportSnapshotWithStage('driver-fixture-guard-base', driverGuardSnapshotBlueprintPath)
+    : null;
+  const driverDeleteBaseSnapshot = shouldRunAnyScenario(['driver-delete-apply'])
+    ? exportSnapshotWithStage('driver-fixture-delete-base', driverDeleteSnapshotBlueprintPath)
+    : null;
+  const driverLocalDeleteSnapshot = driverDeleteBaseSnapshot ? deepClone(driverDeleteBaseSnapshot) : null;
+  if (driverLocalDeleteSnapshot) {
+    delete driverLocalDeleteSnapshot.db?.[driverFixture.table]?.['entry_id:1'];
+  }
+  const driverLocalUpdateSnapshot = driverGuardBaseSnapshot ? deepClone(driverGuardBaseSnapshot) : null;
+  if (driverLocalUpdateSnapshot) {
+    driverLocalUpdateSnapshot.db[driverFixture.table]['entry_id:1'].payload.mode = 'local-update';
+    driverLocalUpdateSnapshot.db[driverFixture.table]['entry_id:1'].payload.version = 2;
+    driverLocalUpdateSnapshot.db[driverFixture.table]['entry_id:1'].updated_marker = 'local-update';
+  }
+  const driverLocalInvalidUpdateSnapshot = driverGuardBaseSnapshot ? deepClone(driverGuardBaseSnapshot) : null;
+  if (driverLocalInvalidUpdateSnapshot) {
+    driverLocalInvalidUpdateSnapshot.db[driverFixture.table]['entry_id:1'].payload.mode = 'invalid-update';
+    driverLocalInvalidUpdateSnapshot.db[driverFixture.table]['entry_id:1'].payload.version = 3;
+    driverLocalInvalidUpdateSnapshot.db[driverFixture.table]['entry_id:1'].updated_marker = 'INVALID marker!';
+  }
 
   const summary = {
     package: {
@@ -1120,6 +1151,10 @@ function shouldRunScenario(name) {
   return selectedScenarios === null || selectedScenarios.has(name);
 }
 
+function shouldRunAnyScenario(names) {
+  return selectedScenarios === null || names.some((name) => selectedScenarios.has(name));
+}
+
 async function runScenario(name, run) {
   if (!shouldRunScenario(name)) {
     return;
@@ -1150,6 +1185,13 @@ function formatScenarioError(error) {
 function logSmokeStage(stage, detail = '') {
   const suffix = detail ? ` ${detail}` : '';
   console.error(`[plugin-driver-smoke:${stage}]${suffix}`);
+}
+
+function exportSnapshotWithStage(name, blueprintPath) {
+  logSmokeStage('export-snapshot:start', name);
+  const snapshot = exportSnapshot(name, blueprintPath);
+  logSmokeStage('export-snapshot:ok', name);
+  return snapshot;
 }
 
 function formatSelectedScenarioNames(selected) {
@@ -1242,6 +1284,7 @@ function writeDriverFixtureBlueprint(
     omitValidateMutationCallback = false,
     blankDriverName = false,
     omitPluginOwner = false,
+    omitTable = false,
     duplicateDriverName = false,
     duplicateTable = false,
   } = {},
@@ -1260,6 +1303,7 @@ function writeDriverFixtureBlueprint(
     omitValidateMutationCallback,
     blankDriverName,
     omitPluginOwner,
+    omitTable,
     duplicateDriverName,
     duplicateTable,
   }), 'utf8').toString('base64');
