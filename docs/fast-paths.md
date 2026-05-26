@@ -57,6 +57,9 @@ the atomic-group barrier.
 It also includes a cached release-manifest digest plus cursor shortcut for
 release-bundle fanout, so the planner can trim repeat fanout scans without
 changing the guarded release boundary.
+It also includes a memory-headroom-aware release-bundle retry-window shortcut,
+so retry planning can reuse the same bounded shape without turning headroom
+into mutation authority.
 It also includes a row-batch manifest compression shortcut that reuses
 canonical row digests only for planning, so batch sizing can skip duplicate
 digest recomputation without weakening row preconditions or the atomic-group
@@ -415,6 +418,7 @@ Current executable gate:
 | Parallelism limits | Reuse canonical per-kind budgets to size bounded row-batch fanout so plugin installs and updates can avoid recomputing the same concurrency shape on a retry. | The budgets stay planning evidence only. Each later row batch still rechecks its live compare, and the atomic-group barrier stays fixed. |
 | Parallelism limits | Reuse canonical per-kind budgets to size bounded release-bundle resume work so retries can reuse the same concurrency shape before the live compare. | The budgets stay planning evidence only. The resumed release bundle still cannot authorize writes, widen the atomic-group barrier, or replace later durable receipts. |
 | Compression | Compress canonical per-kind budget summaries and reuse a cached release-manifest digest to size bounded release-bundle resume work so retries can reuse the same planning shape before the live compare. | Compression stays planning-only. The compressed summary and cached manifest digest cannot authorize writes, widen the atomic-group barrier, or replace later durable receipts. |
+| Parallelism limits | Reuse measured memory headroom and a cached release-manifest cursor to size bounded release-bundle retry windows so retry planning can reuse the same concurrency shape without widening visibility. | The measured headroom and cursor stay planning evidence only. The release bundle still revalidates live file and row preconditions, and durable receipts plus the guarded release record still decide recovery. |
 | Remote indexes | Ask the remote for an indexed resource listing with keys, type, size, generation, tombstone state, strong hash, and owner so planning can avoid fetching unchanged resources. | The index speeds up planning only. Apply must recheck live preconditions against the current resource state. |
 | Remote indexes | Compress index responses and cache the planning cursor so repeated scans move fewer bytes without changing planning semantics. | Compression stays transport-only, and a compressed index response still cannot authorize apply or widen the atomic-group barrier. |
 | Remote indexes | Compress owner-partition index scans and reuse the planning cursor to size bounded plugin-update fanout so repeated scans move fewer bytes before the live compare. | Compression stays planning-only, and the compressed scan still cannot authorize apply, widen the atomic-group barrier, or replace the durable receipt trail. |
