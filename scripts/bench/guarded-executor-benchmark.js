@@ -1349,8 +1349,6 @@ export function productionThroughputDetails(report) {
     report.evidence.backpressure?.receiptCursorQueueSlackVisible === true;
   const receiptCursorMemoryHeadroomVisible =
     report.evidence.backpressure?.receiptCursorMemoryHeadroomVisible === true;
-  const queueHeadroomVisibleAndMeasured =
-    queueHeadroomVisible && queueHeadroomMeasured;
   const stagingDiskHeadroomVisibleAndMeasured =
     stagingDiskHeadroomVisible
     && stagingDiskHeadroomMeasured
@@ -1392,6 +1390,10 @@ export function productionThroughputDetails(report) {
     && Number.isFinite(report.resourceLimits?.maxBufferedUploadBytes)
     && receiptCursorQueueBudgetBytes === report.resourceLimits.maxBufferedUploadBytes
     && receiptCursorQueueHeadroomBytes === receiptCursorQueueBudgetBytes - report.shape.chunkSizeBytes;
+  const queueHeadroomVisibleAndMeasured =
+    queueHeadroomVisible
+    && queueHeadroomMeasured
+    && queueHeadroomWithinResourceCeiling;
   const queueHeadroomMatchesMemoryHeadroom =
     Number.isFinite(receiptCursorQueueHeadroomBytes)
     && Number.isFinite(receiptCursorMemoryHeadroomBytes)

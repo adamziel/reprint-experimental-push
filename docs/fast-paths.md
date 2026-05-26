@@ -188,6 +188,9 @@ Current executable gate:
 - The same details also fail closed when queue headroom is visible but not
   measured, so a forged visibility bit cannot masquerade as bounded
   backpressure evidence.
+- The same measured queue-headroom summary now also fails closed when the raw
+  headroom bytes drift outside the resource ceiling, so advisory backpressure
+  cannot still look bounded from visibility and measurement bits alone.
 - The same queue-budget plus measured-headroom summary now also fails closed
   when the aligned paused-slack proof is hidden, so advisory headroom bytes
   cannot still look release-safe without the receipt-cursor pause evidence

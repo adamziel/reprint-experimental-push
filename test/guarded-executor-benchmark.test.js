@@ -2851,6 +2851,15 @@ test('production claim gate fails closed if benchmark evidence is tampered', () 
     ),
   );
   assert.equal(
+    productionThroughputDetails(queueHeadroomBeyondResourceCeiling).queueHeadroomVisibleAndMeasured,
+    false,
+  );
+  assert.equal(
+    productionThroughputDetails(queueHeadroomBeyondResourceCeiling).backpressureConsistency
+      .queueHeadroomVisibleAndMeasured,
+    false,
+  );
+  assert.equal(
     productionThroughputDetails(queueHeadroomBeyondResourceCeiling).backpressureConsistency.queueHeadroomWithinResourceCeiling,
     false,
   );
