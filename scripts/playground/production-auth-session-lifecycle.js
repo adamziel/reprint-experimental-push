@@ -141,6 +141,20 @@ export function evaluateProductionAuthSessionLifecycleSummary(summary, now = Dat
       && typeof observation === 'object'
       && observation.step === 'preflight',
     );
+    if (issuedIndex < 0) {
+      const readBeforeIssued = observations.find((observation) =>
+        observation
+        && typeof observation === 'object'
+        && isAuthSessionReadStep(observation.step),
+      );
+      if (readBeforeIssued) {
+        return {
+          ok: false,
+          required: 'issued preflight',
+          observed: 'missing',
+        };
+      }
+    }
     if (issuedIndex > 0) {
       for (const observation of observations.slice(0, issuedIndex)) {
         if (!observation || typeof observation !== 'object') {
