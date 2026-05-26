@@ -2184,6 +2184,13 @@ function wordpressGraphIdentitySupport({
         local,
         remote,
       })
+      || isSupportedSamePlanTermTaxonomyParentReference({
+        baseValue,
+        localValue,
+        reference,
+        local,
+        remote,
+      })
       || isSupportedSamePlanTermRelationshipTaxonomyReference({
         baseValue,
         localValue,
@@ -2523,6 +2530,42 @@ function isSupportedSamePlanTermTaxonomyReference({
     && baseValue?.taxonomy !== 'nav_menu';
 }
 
+function isSupportedSamePlanTermTaxonomyParentReference({
+  baseValue,
+  localValue,
+  reference,
+  local,
+  remote,
+}) {
+  if (
+    baseValue === ABSENT
+    || localValue === ABSENT
+    || reference.relationshipType !== 'term-taxonomy-parent'
+    || !isSamePlanWordPressGraphCreate(reference)
+  ) {
+    return false;
+  }
+
+  const targetTermId = normalizeWordPressGraphReferenceTargetIntegerId(reference);
+  if (
+    targetTermId == null
+    || normalizePositiveInteger(baseValue?.parent) !== targetTermId
+    || normalizePositiveInteger(localValue?.parent) !== targetTermId
+  ) {
+    return false;
+  }
+
+  const localNavMenuTaxonomy = [...(local?.db?.wp_term_taxonomy ? Object.values(local.db.wp_term_taxonomy) : [])]
+    .find((entry) => normalizePositiveInteger(entry?.term_id) === targetTermId && entry?.taxonomy === 'nav_menu');
+  const remoteNavMenuTaxonomy = [...(remote?.db?.wp_term_taxonomy ? Object.values(remote.db.wp_term_taxonomy) : [])]
+    .find((entry) => normalizePositiveInteger(entry?.term_id) === targetTermId && entry?.taxonomy === 'nav_menu');
+
+  return !localNavMenuTaxonomy
+    && !remoteNavMenuTaxonomy
+    && localValue?.taxonomy !== 'nav_menu'
+    && baseValue?.taxonomy !== 'nav_menu';
+}
+
 function isSupportedSamePlanTermRelationshipTaxonomyReference({
   baseValue,
   localValue,
@@ -2651,6 +2694,9 @@ function isValidSamePlanWordPressGraphTarget(
     && reference.sourceTable === 'wp_termmeta'
   ) || (
     reference.relationshipType === 'term-taxonomy-term'
+    && reference.sourceTable === 'wp_term_taxonomy'
+  ) || (
+    reference.relationshipType === 'term-taxonomy-parent'
     && reference.sourceTable === 'wp_term_taxonomy'
   );
   const supportsTermTaxonomyTarget = targetMutation.resource.table === 'wp_term_taxonomy'
@@ -3000,13 +3046,22 @@ function samePlanCreatedGraphIdentitySupport({ resource, resources, base, local,
       if (
         resource.table === 'wp_terms'
         && sourceResource.table === 'wp_term_taxonomy'
-        && isSupportedSamePlanTermTaxonomyReference({
-          baseValue: getResource(base, sourceResource),
-          localValue: sourceLocalValue,
-          reference: evidence,
-          local,
-          remote,
-        })
+        && (
+          isSupportedSamePlanTermTaxonomyReference({
+            baseValue: getResource(base, sourceResource),
+            localValue: sourceLocalValue,
+            reference: evidence,
+            local,
+            remote,
+          })
+          || isSupportedSamePlanTermTaxonomyParentReference({
+            baseValue: getResource(base, sourceResource),
+            localValue: sourceLocalValue,
+            reference: evidence,
+            local,
+            remote,
+          })
+        )
         && !wordpressGraphReferences(sourceResource, sourceLocalValue)
           .map((sourceReference) =>
             wordpressGraphReferenceEvidence(sourceReference, resources, base, local, remote))
@@ -3014,14 +3069,26 @@ function samePlanCreatedGraphIdentitySupport({ resource, resources, base, local,
             sourceReferenceEvidence.targetChange.remote.state === 'absent'
             && sourceReferenceEvidence.targetChange.local.state === 'present'
             && (
-              sourceReferenceEvidence.relationshipType !== 'term-taxonomy-term'
-              || !isSupportedSamePlanTermTaxonomyReference({
-                baseValue: getResource(base, sourceResource),
-                localValue: sourceLocalValue,
-                reference: sourceReferenceEvidence,
-                local,
-                remote,
-              })
+              (
+                sourceReferenceEvidence.relationshipType !== 'term-taxonomy-term'
+                || !isSupportedSamePlanTermTaxonomyReference({
+                  baseValue: getResource(base, sourceResource),
+                  localValue: sourceLocalValue,
+                  reference: sourceReferenceEvidence,
+                  local,
+                  remote,
+                })
+              )
+              && (
+                sourceReferenceEvidence.relationshipType !== 'term-taxonomy-parent'
+                || !isSupportedSamePlanTermTaxonomyParentReference({
+                  baseValue: getResource(base, sourceResource),
+                  localValue: sourceLocalValue,
+                  reference: sourceReferenceEvidence,
+                  local,
+                  remote,
+                })
+              )
             ))
       ) {
         continue;
@@ -4497,6 +4564,13 @@ function unsupportedTermTaxonomyResourceSupport({ resource, baseValue, localValu
   }
   const supportedSamePlanTermReferences = samePlanCreatedTermReferences.filter((reference) =>
     isSupportedSamePlanTermTaxonomyReference({
+      baseValue,
+      localValue,
+      reference,
+      local,
+      remote,
+    })
+    || isSupportedSamePlanTermTaxonomyParentReference({
       baseValue,
       localValue,
       reference,
