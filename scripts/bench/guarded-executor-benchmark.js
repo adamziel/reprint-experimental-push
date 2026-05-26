@@ -457,7 +457,7 @@ export function productionThroughputDetails(report) {
     && receiptCursorQueueSlackBytes <= receiptCursorQueueBudgetBytes;
   const queuePauseHasMeasuredReceiptCursorQueueSlack =
     report.evidence.backpressure?.queuePausedBeforeOverflow !== true
-    || receiptCursorQueueSlackMeasured;
+    || (receiptCursorQueueSlackMeasured && receiptCursorQueueSlackWithinQueueBudget);
   const receiptCursorHeadroomCoveredByQueueBudget =
     Number.isFinite(receiptCursorMemoryHeadroomBytes)
     && Number.isFinite(receiptCursorQueueHeadroomBytes)

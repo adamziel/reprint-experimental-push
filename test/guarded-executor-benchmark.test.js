@@ -798,6 +798,10 @@ test('production claim gate fails closed if benchmark evidence is tampered', () 
     productionThroughputDetails(zeroQueueSlack).backpressureConsistency.receiptCursorQueueSlackWithinQueueBudget,
     false,
   );
+  assert.equal(
+    productionThroughputDetails(zeroQueueSlack).backpressureConsistency.queuePauseHasMeasuredReceiptCursorQueueSlack,
+    false,
+  );
   assert.ok(
     productionThroughputBlockers(zeroQueueSlack).includes('receipt-cursor-queue-slack-not-positive'),
   );

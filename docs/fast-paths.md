@@ -80,6 +80,8 @@ Current executable gate:
 - The report now also fails closed if queue slack is measured as zero or
   negative, so a degenerate paused queue cannot masquerade as supported
   headroom.
+- The detail surface now also treats zero-slack pauses as unproven queue
+  slack, so the audit view stays aligned with the blocker.
 - The report now also fails closed when the recorded receipt-cursor
   backpressure exceeds the queue budget, so a tampered backpressure record
   cannot hide behind a still-valid headroom calculation.
