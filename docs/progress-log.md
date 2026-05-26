@@ -4,6 +4,42 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-05-26 - Public Status Audit 11:59:28
+
+<a id="2026-05-26-public-status-audit-115928"></a>
+
+- Refreshed [progress.html](../progress.html) to the current `date` output
+  (`2026-05-26 11:59:28 CEST`) so the visible page stays fresh to the current
+  supervision cycle. The headline, trend, audit note, and release-gate proof
+  item still name `fd425b41` as the current reliable head and keep the
+  surfaced release-journal ownership proof in view, while release gates remain
+  `0/4`.
+- `fd425b41` remains the current reliable head for the public lane surface;
+  journal ownership evidence is visible on the checked release verifier, but
+  production WordPress auth/session lifecycle and durable journal semantics
+  remain blocked.
+- Evidence trail: [progress.html](../progress.html),
+  [objective audit](../audits/objective-audit.md),
+  [release-gate checklist](../progress.html#proof-gates).
+
+## 2026-05-26 - Public Status Audit 11:58:25
+
+<a id="2026-05-26-public-status-audit-115825"></a>
+
+- Refreshed [progress.html](../progress.html) to the current `date` output
+  (`2026-05-26 11:58:25 CEST`) so the visible page stays internally
+  consistent. The headline, trend, audit note, and release-gate proof item all
+  name `fd425b41` as the current reliable head and describe the surfaced
+  release-journal ownership proof on the checked release verifier, while
+  release gates remain `0/4`.
+- `fd425b41` is the current reliable head for the public lane surface; journal
+  ownership evidence is now visible on the release verifier, but production
+  WordPress auth/session lifecycle and durable journal semantics remain
+  blocked.
+- Evidence trail: [progress.html](../progress.html),
+  [objective audit](../audits/objective-audit.md),
+  [release-gate checklist](../progress.html#proof-gates).
+
 ## 2026-05-26 - Public Status Audit 11:56:11
 
 <a id="2026-05-26-public-status-audit-115611"></a>
