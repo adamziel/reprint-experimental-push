@@ -848,6 +848,93 @@ test('production recovery journal direct options fail closed when explicit remot
   });
 });
 
+test('production recovery journal consumption infers canonical remote artifact ownership from artifact refs', () => {
+  const filePath = tempJournalPath();
+  const remote = baseSite();
+  const plan = planFor(baseSite(), localSite(), remote);
+  const claimId = 'claim-consume-remote-refs';
+  const writerLease = { id: claimId, epoch: 2 };
+  const remoteArtifactPath = `${filePath}.remote`;
+  const artifactRefs = {
+    journal: filePath,
+    remote: remoteArtifactPath,
+  };
+  const journal = openProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs,
+    claimId,
+    writerLease,
+  });
+  appendRecoveryClaimOpened(journal, {
+    plan,
+    current: remote,
+    claimId,
+    artifactRefs,
+  });
+  journal.close();
+
+  const inspection = consumeProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs,
+    writerLease,
+  });
+
+  assert.equal(inspection.journal.ownsRemoteArtifact, true);
+  assert.deepEqual(inspection.journal.artifactRefs, artifactRefs);
+
+  const persisted = readRecoveryJournal(filePath);
+  const consumedRecord = persisted.records.at(-1);
+  assert.equal(consumedRecord.type, 'recovery-journal-consumed');
+  assert.deepEqual(consumedRecord.artifactRefs, artifactRefs);
+});
+
+test('production recovery journal consumption fails closed when explicit remote ownership contradicts artifact refs', () => {
+  const filePath = tempJournalPath();
+  const remote = baseSite();
+  const plan = planFor(baseSite(), localSite(), remote);
+  const claimId = 'claim-consume-remote-refs-contradict';
+  const writerLease = { id: claimId, epoch: 3 };
+  const remoteArtifactPath = `${filePath}.remote`;
+  const artifactRefs = {
+    journal: filePath,
+    remote: remoteArtifactPath,
+  };
+  const journal = openProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs,
+    claimId,
+    writerLease,
+  });
+  appendRecoveryClaimOpened(journal, {
+    plan,
+    current: remote,
+    claimId,
+    artifactRefs,
+  });
+  journal.close();
+
+  assert.throws(() => {
+    consumeProductionRecoveryJournal({
+      filePath,
+      plan,
+      current: remote,
+      artifactRefs,
+      writerLease,
+      ownsRemoteArtifact: false,
+    });
+  }, {
+    name: 'UnsupportedProductionRecoveryJournalError',
+    code: 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL',
+    message: 'Production recovery journal support requires owned remote artifact references.',
+  });
+});
+
 test('production recovery journal compatibility overload supports reliable release consumer shape', () => {
   const filePath = tempJournalPath();
   const remote = baseSite();
