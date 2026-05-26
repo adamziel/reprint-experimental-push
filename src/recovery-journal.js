@@ -476,6 +476,14 @@ export function openProductionRecoveryJournal(filePathOrOptions, options = {}) {
       return journal.appendEvent(type, payload);
     },
     inspect() {
+      const inspection = readRecoveryJournal(journal.filePath);
+      const inspectionRecords = Array.isArray(inspection.records) ? inspection.records : [];
+      const writerLeaseContract = fileLeaseFenceContract({
+        fsyncEvidence: inspectionRecords.every((record) => record?.fsync?.requested === true),
+        monotonicSequence: inspectionRecords.every((record, index) => record?.sequence === index + 1),
+        restartReadable: inspection.integrity?.status === 'ok',
+        staleClaimRejected: hasStaleClaimRejectionEvidence(inspectionRecords),
+      });
       const artifactRefs = {
         journal: journal.filePath,
         remote: remoteArtifactPath,
@@ -491,7 +499,9 @@ export function openProductionRecoveryJournal(filePathOrOptions, options = {}) {
         writerLease,
         claimHash,
         journalPath: journal.filePath,
-        ...readRecoveryJournal(journal.filePath),
+        writerLeaseContract,
+        leaseFenceContract: fileLeaseFenceEnvelope(writerLeaseContract),
+        ...inspection,
         schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
         artifactRefs,
       };
@@ -553,15 +563,13 @@ export function consumeProductionRecoveryJournal(options) {
   const monotonicSequence = records.every((record, index) => record?.sequence === index + 1);
   const fsyncEvidence = records.every((record) => record?.fsync?.requested === true);
   const restartReadable = inspection.integrity?.status === 'ok';
-  const leaseFenceContract = Object.freeze({
-    strategy: 'claim-fenced-single-writer',
-    claimKeyUnique: true,
+  const leaseFenceContract = fileLeaseFenceContract({
     fsyncEvidence,
-    storageGuard: 'filesystem-compare-rename',
     monotonicSequence,
     restartReadable,
     staleClaimRejected,
   });
+  const leaseFenceEnvelope = fileLeaseFenceEnvelope(leaseFenceContract);
 
   return {
     journal: {
@@ -580,21 +588,14 @@ export function consumeProductionRecoveryJournal(options) {
       restartReadable,
       writerLease,
       leaseFence,
+      writerLeaseContract: leaseFenceContract,
+      leaseFenceContract: leaseFenceEnvelope,
       schemaVersion: inspection.schemaVersion ?? null,
       integrity: inspection.integrity,
       records: records.length,
       staleClaimRejected,
     },
-    leaseFence: {
-      boundary: 'filesystem-compare-rename',
-      claimKeyUnique: true,
-      storageGuard: 'filesystem-compare-rename',
-      fsyncEvidence,
-      monotonicSequence,
-      restartReadable,
-      staleClaimRejected,
-      writerLease: leaseFenceContract,
-    },
+    leaseFence: leaseFenceEnvelope,
     consumed,
   };
 }
@@ -662,6 +663,36 @@ export function describeProductionRecoveryJournal(writer) {
     journalPath,
     artifactRefs,
     schemaVersion: Object.hasOwn(writer, 'schemaVersion') ? writer.schemaVersion : null,
+  });
+}
+
+function fileLeaseFenceContract({
+  fsyncEvidence,
+  monotonicSequence,
+  restartReadable,
+  staleClaimRejected,
+}) {
+  return Object.freeze({
+    strategy: 'claim-fenced-single-writer',
+    claimKeyUnique: true,
+    fsyncEvidence,
+    storageGuard: 'filesystem-compare-rename',
+    monotonicSequence,
+    restartReadable,
+    staleClaimRejected,
+  });
+}
+
+function fileLeaseFenceEnvelope(writerLeaseContract) {
+  return Object.freeze({
+    boundary: 'filesystem-compare-rename',
+    claimKeyUnique: true,
+    storageGuard: 'filesystem-compare-rename',
+    fsyncEvidence: writerLeaseContract.fsyncEvidence,
+    monotonicSequence: writerLeaseContract.monotonicSequence,
+    restartReadable: writerLeaseContract.restartReadable,
+    staleClaimRejected: writerLeaseContract.staleClaimRejected,
+    writerLease: writerLeaseContract,
   });
 }
 
