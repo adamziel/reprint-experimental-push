@@ -2330,6 +2330,15 @@ test('packaged readiness helpers can accept signed preflight readiness before sn
     assert.match(source, /if \(preflightProbe\.ready\) \{\s*return;\s*\}/);
     assert.match(source, /preflight became terminal while snapshot still reported startup-shaped readiness/);
   }
+
+  assert.match(
+    smokeSource,
+    /preflight became terminal while snapshot still reported startup-shaped readiness[\s\S]*?preflightTerminal:\s*true[\s\S]*?snapshotStartupFallback:\s*true/s,
+  );
+  assert.match(
+    verifierSource,
+    /preflight became terminal while snapshot still reported startup-shaped readiness[\s\S]*?preflightTerminal:\s*true[\s\S]*?snapshotStartupFallback:\s*true/s,
+  );
 });
 
 test('packaged readiness helpers fall back to signed preflight and index probes after snapshot timeouts', () => {
@@ -2445,6 +2454,14 @@ test('packaged readiness timeout fallback classifies global WordPress versus pac
   assert.match(
     verifierSource,
     /preflight probe timed out while \/wp-json\/ returned a terminal readiness failure HTTP \$\{indexProbe\.status\} after the snapshot probe timed out[\s\S]*?indexTerminal:\s*true/s,
+  );
+  assert.match(
+    smokeSource,
+    /preflight became terminal while the snapshot probe timed out[\s\S]*?preflightTerminal:\s*true[\s\S]*?timeoutFallback:\s*true/s,
+  );
+  assert.match(
+    verifierSource,
+    /preflight became terminal while the snapshot probe timed out[\s\S]*?preflightTerminal:\s*true[\s\S]*?timeoutFallback:\s*true/s,
   );
   assert.match(smokeSource, /packagedProductionPluginClassifyTimeoutFallbackStartup\(/);
   assert.match(verifierSource, /packagedProductionPluginClassifyTimeoutFallbackStartup\(/);

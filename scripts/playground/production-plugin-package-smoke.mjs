@@ -574,6 +574,11 @@ async function waitForServer(child, baseUrl, logs) {
                 lastError,
                 lastProbes,
                 logs,
+                {
+                  packagedProductionPlugin: true,
+                  preflightTerminal: true,
+                  snapshotStartupFallback: true,
+                },
                 lastTimeoutFallbackProbes,
               ),
             );
@@ -742,6 +747,11 @@ async function waitForServer(child, baseUrl, logs) {
                 lastError,
                 lastProbes,
                 logs,
+                {
+                  packagedProductionPlugin: true,
+                  preflightTerminal: true,
+                  snapshotStartupFallback: true,
+                },
                 lastTimeoutFallbackProbes,
               ),
             );
@@ -1096,6 +1106,11 @@ async function waitForServer(child, baseUrl, logs) {
                 error,
                 lastProbes,
                 logs,
+                {
+                  packagedProductionPlugin: true,
+                  preflightTerminal: true,
+                  timeoutFallback: true,
+                },
                 lastTimeoutFallbackProbes,
               ),
             );
@@ -1199,18 +1214,25 @@ function formatPackagedReadinessFailure(
   lastError,
   lastProbes,
   logs,
+  context = null,
   lastTimeoutFallbackProbes = null,
 ) {
   const details = describePackagedReadinessFailure(
     lastProbes.at(-1) ?? null,
     lastTimeoutFallbackProbes,
     lastProbes,
+    context,
   );
   const lastErrorText = lastError?.message ? `\nLast readiness error: ${lastError.message}` : '';
   return `${prefix}${lastErrorText}${details}\n${logs.join('')}`;
 }
 
-function describePackagedReadinessFailure(lastProbe, lastTimeoutFallbackProbes = null, lastProbes = []) {
+function describePackagedReadinessFailure(
+  lastProbe,
+  lastTimeoutFallbackProbes = null,
+  lastProbes = [],
+  context = null,
+) {
   const parts = [];
   if (lastProbes.length > 0) {
     parts.push(describePackagedReadinessProbes(lastProbes));
@@ -1236,6 +1258,10 @@ function describePackagedReadinessFailure(lastProbe, lastTimeoutFallbackProbes =
       + `Last timeout fallback index status: ${lastTimeoutFallbackProbes.indexProbe.status}\n`
       + `Last timeout fallback index body: ${JSON.stringify(lastTimeoutFallbackProbes.indexProbe.body, null, 2)}`,
     );
+  }
+
+  if (context && typeof context === 'object' && Object.keys(context).length > 0) {
+    parts.push(`Readiness context: ${JSON.stringify(context, null, 2)}`);
   }
 
   return parts.length === 0 ? '' : `\n${parts.join('\n')}`;

@@ -1378,6 +1378,8 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
               {
                 childPid: child.pid ?? null,
                 packagedProductionPlugin: true,
+                preflightTerminal: true,
+                snapshotStartupFallback: true,
               },
             );
           }
@@ -1595,6 +1597,8 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
               {
                 childPid: child.pid ?? null,
                 packagedProductionPlugin: true,
+                preflightTerminal: true,
+                snapshotStartupFallback: true,
               },
             );
           }
@@ -2041,6 +2045,8 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
               {
                 childPid: child.pid ?? null,
                 packagedProductionPlugin: true,
+                preflightTerminal: true,
+                timeoutFallback: true,
               },
               lastTimeoutFallbackProbes,
             );
