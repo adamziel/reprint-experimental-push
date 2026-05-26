@@ -4,7 +4,7 @@
 
 - The project is **not yet releasable as a production WordPress push path**.
 
-- Audit time: 2026-05-26 23:42:45 CEST (+0200)
+- Audit time: 2026-05-26 23:44:06 CEST (+0200)
 - Fresh remote heads re-polled at audit time:
   - `origin/lane/reliable-executor` -> `941407bd4aef3a4635dc4ac792fc225543ba8752` (`Support packaged plugin-owned row drivers`)
 
