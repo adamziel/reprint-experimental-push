@@ -726,6 +726,8 @@ maybeTest('production-shaped release verify command runs the live protocol branc
     assert.match(proof.stdout, /"verdict": "PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED"/);
     assert.match(proof.stdout, /"releaseProof": \{\s*"ok": false,\s*"status": 409,\s*"code": "PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED"\s*\}/);
     assert.match(proof.stdout, /"durableJournal": \{\s*"proof": \{\s*"status": 0,\s*"journal": \{/);
+    assert.match(proof.stdout, /"ownsJournal": true/);
+    assert.match(proof.stdout, /"restartReadable": true/);
     assert.match(
       proof.stdout,
       /"leaseFence": \{\s*"storageGuard": "filesystem-compare-rename",\s*"fsyncEvidence": true,\s*"monotonicSequence": true\s*\}/,

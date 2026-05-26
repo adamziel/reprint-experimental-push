@@ -629,6 +629,9 @@ try {
       const durableJournalSummary = runProductionRecoveryJournalProof({
         plan: proof.planObject,
         current: proof.remoteSnapshotObject,
+        artifactRefs: {
+          releaseVerifier: 'scripts/playground/production-shaped-release-verify.mjs',
+        },
       });
       assert.ok(Array.isArray(durableJournalSummary.journal?.checked), 'production recovery journal proof must report checked journal files');
       assert.ok(
@@ -1032,23 +1035,26 @@ function runBoundedSync(command, args, options, label) {
   return proof;
 }
 
-function runProductionRecoveryJournalProof({ plan, current }) {
+function runProductionRecoveryJournalProof({ plan, current, artifactRefs = {} }) {
   const workDir = fs.mkdtempSync(path.join(os.tmpdir(), 'reprint-release-journal-'));
   const journalPath = path.join(workDir, 'production-recovery.journal.jsonl');
   const journal = openProductionRecoveryJournal({
     filePath: journalPath,
     plan,
     current,
-    artifactRefs: {
-      releaseVerifier: 'scripts/playground/production-shaped-release-verify.mjs',
-    },
+    artifactRefs,
   });
   journal.close();
 
   const persisted = readRecoveryJournal(journalPath);
   return {
     journal: {
+      path: journalPath,
       checked: [journalPath],
+      artifactRefs,
+      ownsJournal: true,
+      restartReadable: persisted.integrity.status === 'ok',
+      schemaVersion: persisted.records[0]?.schemaVersion ?? null,
       integrity: persisted.integrity,
       records: persisted.records.length,
     },
