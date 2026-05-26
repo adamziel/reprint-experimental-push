@@ -14911,6 +14911,69 @@ test('blocks local post-parent references to a same-plan created attachment iden
   assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin drift */');
 });
 
+test('blocks local post-parent references to a same-plan created attachment identity while preserving a matching independent file type swap and remote-only plugin changes', () => {
+  const resourceKey = 'row:["wp_posts","ID:10"]';
+  const targetResourceKey = 'row:["wp_posts","ID:8"]';
+  const base = baseSite();
+  base.files['wp-content/uploads/cover'] = 'base attachment bytes';
+  base.files['wp-content/uploads/cover/keep.txt'] = 'base attachment child bytes';
+
+  const local = baseSite();
+  local.files['about.php'] = '<?php echo "shared about";';
+  local.files['wp-content/uploads/cover'] = { type: 'directory' };
+  delete local.files['wp-content/uploads/cover/keep.txt'];
+  local.db.wp_posts['ID:8'] = {
+    ID: 8,
+    post_title: 'local-created attachment target',
+    post_content: 'local-created attachment body',
+    post_type: 'attachment',
+    post_status: 'inherit',
+  };
+  local.db.wp_posts['ID:10'] = {
+    ID: 10,
+    post_title: 'local-private-child-post',
+    post_content: 'local-private-child-body',
+    post_status: 'publish',
+    post_parent: 8,
+  };
+
+  const remote = baseSite();
+  remote.files['about.php'] = '<?php echo "shared about";';
+  remote.files['wp-content/uploads/cover'] = { type: 'directory' };
+  delete remote.files['wp-content/uploads/cover/keep.txt'];
+  remote.plugins.forms.description = 'remote-only plugin changes';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin changes */';
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.class === 'unsupported-attachment-resource' && entry.resourceKey === targetResourceKey);
+  const matchingEditDecision = decisionFor(plan, 'file:about.php');
+  const fileTypeDecision = decisionFor(plan, 'file:wp-content/uploads/cover');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(decisionFor(plan, targetResourceKey), undefined);
+  assert.equal(blocker.class, 'unsupported-attachment-resource');
+  assert.equal(blocker.resourceKey, targetResourceKey);
+  assert.equal(blocker.reason, 'Attachment graph resources are not yet supported by the planner.');
+  assert.equal(matchingEditDecision.decision, 'already-in-sync');
+  assert.equal(matchingEditDecision.change.localChange, 'update');
+  assert.equal(matchingEditDecision.change.remoteChange, 'update');
+  assert.equal(fileTypeDecision.decision, 'already-in-sync');
+  assert.equal(fileTypeDecision.change.localChange, 'type-change');
+  assert.equal(fileTypeDecision.change.remoteChange, 'type-change');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('local-created attachment target'), false);
+  assert.equal(planJson.includes('local-created attachment body'), false);
+  assert.equal(planJson.includes('local-private-child-post'), false);
+  assert.equal(planJson.includes('local-private-child-body'), false);
+  assert.equal(planJson.includes('remote-only plugin changes'), false);
+});
+
 test('blocks local term-relationship references when the live remote taxonomy identity disappears', () => {
   const resourceKey = 'row:["wp_term_relationships","object_id:7,term_taxonomy_id:5"]';
   const targetResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:5"]';
