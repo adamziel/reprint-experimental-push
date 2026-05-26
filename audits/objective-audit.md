@@ -4,14 +4,14 @@
 
 The project is **not releasable as a production WordPress push path**.
 
-- Audit time: 2026-05-26 10:50:45 CEST (+0200)
+- Audit time: 2026-05-26 10:51:15 CEST (+0200)
 - Fresh remote heads re-polled at audit time:
   - `origin/lane/reliable-executor` -> `e7be9812`
   - `origin/lane/no-data-loss-invariants` -> `475a7373`
-  - `origin/lane/no-data-loss-recovery` -> `b0758794`
+  - `origin/lane/no-data-loss-recovery` -> `09314a55`
   - `origin/lane/critic` -> `d10f636f`
-  - `origin/lane/progress-publisher` -> `3f7f0002`
-  - `origin/lane/feedback-supervisor` -> `f01a0f3a`
+  - `origin/lane/progress-publisher` -> `d2003380`
+  - `origin/lane/feedback-supervisor` -> `e1a67d4c`
 
 ## Evidence Table
 
