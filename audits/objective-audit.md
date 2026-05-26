@@ -9,20 +9,20 @@ Fresh remote heads at audit time, checked on May 26, 2026:
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `4411cbd7`
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `ca8f14fa`
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `34b083c4`
-- `origin/lane/independent-auditor` -> `bbd3c5a6`
+- `origin/lane/independent-auditor` -> `dc0be79b`
 - `origin/lane/reliable-executor` -> `66339fdc`
-- `origin/lane/no-data-loss-invariants` -> `4db0dd4a`
+- `origin/lane/no-data-loss-invariants` -> `67597696`
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` -> `db36753e`
 - `origin/lane/critic` -> `49af85aa`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `1214c397`
 - `origin/lane/same-plan-wordpress-graph-create` -> `0d2178e9`
 - `origin/lane/no-data-loss-recovery` -> `1214c397`
-- `origin/lane/fast-paths` -> `cd0fddad`
+- `origin/lane/fast-paths` -> `4411cbd7`
 - `origin/lane/progress-publisher` -> `7695e1f9`
 - `origin/lane/cycle-20260525-mainwindows-2349/critic` -> `49af85aa`
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `bbd3c5a6`
 - `origin/lane/cycle-20260525-mainwindows-2349/same-plan-wordpress-graph-create` -> `0d2178e9`
-- `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-invariants` -> `1f6ab914`
+- `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-invariants` -> `67597696`
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `88a02787`
 - `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration` -> `a3a900d7`
 - `origin/lane/cycle-20260525-mainwindows-2357/no-data-loss-invariants-graph-proof` -> `98c0ce26`
@@ -77,9 +77,9 @@ but it did not change the release conclusion:
   `origin/lane/cycle-20260525-mainwindows-2349/same-plan-wordpress-graph-create`
   now tracks the same `a719e09c` boundary hardening, which further narrows
   unsupported graph writes but still does not add live source mutation proof.
-- `origin/lane/no-data-loss-invariants` now advances to `4db0dd4a`, adding
-  attachment removal proof. That remains fail-closed boundary evidence, not a
-  live production mutation proof.
+- `origin/lane/no-data-loss-invariants` now advances to `67597696`, adding
+  featured image removal proof. That remains fail-closed boundary evidence,
+  not a live production mutation proof.
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` advances to
   `ca8f14fa`, and `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor`
   advances to `34b083c4`; both are freshness updates only and do not move the
