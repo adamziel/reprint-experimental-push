@@ -1944,7 +1944,8 @@ export function productionThroughputDetails(report) {
   const productionAtomicGroupMetadataVisibleAndMeasured =
     productionAtomicGroupMetadataVisible
     && productionAtomicCommitMeasured
-    && productionAtomicCommitVisible;
+    && productionAtomicCommitVisible
+    && productionStorageReceiptsMeasured;
   const productionStorageReceiptsVisible =
     report.evidence.atomicGroup?.productionStorageReceiptsVisible === true;
   const productionRowBatchExecutorVisible =

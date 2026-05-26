@@ -2713,6 +2713,27 @@ test('guarded benchmark details fail closed when atomic commit capability is pre
   assert.equal(details.backpressureConsistency.productionAtomicGroupMetadataVisibleAndMeasured, false);
 });
 
+test('guarded benchmark keeps atomic-group metadata visible-and-measured detail hidden when storage-receipt measurement is missing', () => {
+  const report = smallBenchmark();
+  const tampered = clone(report);
+
+  tampered.executorCapabilities.productionAtomicCommit = 'production-atomic-group-commit';
+  tampered.evidence.atomicGroup.productionAtomicCommitMeasured = true;
+  tampered.evidence.atomicGroup.productionAtomicCommitVisible = true;
+  tampered.evidence.atomicGroup.productionAtomicGroupMetadataVisible = true;
+  tampered.evidence.atomicGroup.productionStorageReceiptsMeasured = false;
+  tampered.evidence.atomicGroup.productionStorageReceiptsVisible = false;
+
+  const details = productionThroughputDetails(tampered);
+  const blockers = productionThroughputBlockers(tampered);
+
+  assert.equal(details.productionAtomicGroupMetadataVisibleAndMeasured, false);
+  assert.equal(details.backpressureConsistency.productionAtomicGroupMetadataVisibleAndMeasured, false);
+  assert.ok(
+    blockers.includes('production-atomic-group-metadata-visible-without-storage-receipts-measurement'),
+  );
+});
+
 test('guarded benchmark details fail closed when storage and row-batch capabilities are present but evidence bits are hidden', () => {
   const report = smallBenchmark();
   const tampered = clone(report);
