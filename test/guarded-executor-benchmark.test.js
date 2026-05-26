@@ -272,6 +272,7 @@ test('guarded benchmark blocks memory-ceiling visibility when queue-headroom vis
   const blockers = productionThroughputBlockers(tampered);
 
   assert.equal(details.receiptCursorMemoryCeilingVisibleAndQueueHeadroomVisible, false);
+  assert.equal(details.receiptCursorMemoryCeilingVisibleAndQueueHeadroomVisibleAndSafe, false);
   assert.equal(blockers.includes('memory-ceiling-visible-without-queue-headroom-visible'), true);
   assert.equal(blockers.includes('queue-headroom-visible-without-queue-budget-visibility'), false);
 });
@@ -488,6 +489,10 @@ test('guarded benchmark refuses production throughput claims until production ga
   assert.equal(report.claims.productionThroughputDetails.queueBudgetVisible, true);
   assert.equal(report.claims.productionThroughputDetails.queueHeadroomVisible, true);
   assert.equal(report.claims.productionThroughputDetails.receiptCursorMemoryCeilingVisible, true);
+  assert.equal(
+    report.claims.productionThroughputDetails.receiptCursorMemoryCeilingVisibleAndQueueHeadroomVisibleAndSafe,
+    true,
+  );
   assert.equal(report.claims.productionThroughputDetails.queueHeadroomMatchesResourceHeadroom, true);
   assert.equal(report.claims.productionThroughputDetails.queueHeadroomMatchesMemoryHeadroom, true);
   assert.equal(report.claims.productionThroughputDetails.queueHeadroomWithinResourceCeiling, true);

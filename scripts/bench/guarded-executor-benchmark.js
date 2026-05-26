@@ -1064,6 +1064,9 @@ export function productionThroughputDetails(report) {
     && Number.isFinite(receiptCursorMemoryCeilingBytes)
     && Number.isFinite(receiptCursorWindowBytes)
     && receiptCursorBackpressureBytes <= receiptCursorMemoryCeilingBytes - receiptCursorWindowBytes;
+  const receiptCursorMemoryCeilingVisibleAndQueueHeadroomVisibleAndSafe =
+    receiptCursorMemoryCeilingVisibleAndQueueHeadroomVisible
+    && receiptCursorBackpressureWithinResourceHeadroom;
   const queueHeadroomWithinResourceCeiling =
     Number.isFinite(receiptCursorQueueBudgetBytes)
     && Number.isFinite(receiptCursorQueueHeadroomBytes)
@@ -1389,6 +1392,7 @@ export function productionThroughputDetails(report) {
     queueHeadroomVisible,
     receiptCursorMemoryCeilingVisible,
     receiptCursorMemoryCeilingVisibleAndQueueHeadroomVisible,
+    receiptCursorMemoryCeilingVisibleAndQueueHeadroomVisibleAndSafe,
     receiptCursorMemoryHeadroomPositive: receiptCursorMemoryHeadroomPositiveVisible,
     queuePausedBeforeOverflow: report.evidence.backpressure?.queuePausedBeforeOverflow ?? false,
     receiptCursorWithinQueueBudget: report.evidence.backpressure?.receiptCursorWithinQueueBudget ?? false,
@@ -1479,6 +1483,7 @@ export function productionThroughputDetails(report) {
       queueHeadroomVisible,
       receiptCursorMemoryCeilingVisible,
       receiptCursorMemoryCeilingVisibleAndQueueHeadroomVisible,
+      receiptCursorMemoryCeilingVisibleAndQueueHeadroomVisibleAndSafe,
       productionAtomicGroupMetadataVisible,
       productionStorageReceiptsVisible,
       queuePausedBeforeOverflow: report.evidence.backpressure?.queuePausedBeforeOverflow ?? false,
