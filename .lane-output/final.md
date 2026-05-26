@@ -24,11 +24,12 @@ Commands:
 
 Push result:
 
-- Pending commit/push in this pass.
+- `81876407..59224932  HEAD -> lane/no-data-loss-recovery`
 
 Worktree status:
 
-- Modified: `src/apply.js`, `test/push-planner.test.js`, `.lane-output/final.md`
+- Clean on `lane/no-data-loss-recovery-work...origin/lane/no-data-loss-recovery`
+- HEAD: `592249320b20a00d95caed5e860872dc20778fdf`
 
 Next supervisor nudge:
 
