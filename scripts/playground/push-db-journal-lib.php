@@ -795,6 +795,42 @@ function reprint_push_lab_db_journal_lease_fence_contract_matches($lease_fence):
         && reprint_push_lab_db_journal_writer_lease_contract_matches($lease_fence['writerLease'] ?? null);
 }
 
+function reprint_push_lab_db_journal_checked_boundary_contract_is_coherent($journal): bool
+{
+    if (!is_array($journal)) {
+        return false;
+    }
+
+    $ownership = $journal['ownership'] ?? null;
+    $writer_lease = $journal['writerLease'] ?? null;
+    $lease_fence = $journal['leaseFence'] ?? null;
+    $lease_fence_writer_lease = is_array($lease_fence) ? ($lease_fence['writerLease'] ?? null) : null;
+    if (
+        !is_array($ownership)
+        || !is_array($writer_lease)
+        || !is_array($lease_fence)
+        || !is_array($lease_fence_writer_lease)
+    ) {
+        return false;
+    }
+
+    return ($ownership['productionAdapter'] ?? null) === ($writer_lease['storageGuard'] ?? null)
+        && ($ownership['productionAdapter'] ?? null) === ($lease_fence['boundary'] ?? null)
+        && ($ownership['restartReadable'] ?? null) === ($writer_lease['restartReadable'] ?? null)
+        && ($ownership['restartReadable'] ?? null) === ($lease_fence['restartReadable'] ?? null)
+        && ($writer_lease['strategy'] ?? null) === ($lease_fence_writer_lease['strategy'] ?? null)
+        && ($writer_lease['claimKeyUnique'] ?? null) === ($lease_fence['claimKeyUnique'] ?? null)
+        && ($writer_lease['claimKeyUnique'] ?? null) === ($lease_fence_writer_lease['claimKeyUnique'] ?? null)
+        && ($writer_lease['fsyncEvidence'] ?? null) === ($lease_fence['fsyncEvidence'] ?? null)
+        && ($writer_lease['fsyncEvidence'] ?? null) === ($lease_fence_writer_lease['fsyncEvidence'] ?? null)
+        && ($writer_lease['storageGuard'] ?? null) === ($lease_fence_writer_lease['storageGuard'] ?? null)
+        && ($writer_lease['monotonicSequence'] ?? null) === ($lease_fence['monotonicSequence'] ?? null)
+        && ($writer_lease['monotonicSequence'] ?? null) === ($lease_fence_writer_lease['monotonicSequence'] ?? null)
+        && ($writer_lease['restartReadable'] ?? null) === ($lease_fence_writer_lease['restartReadable'] ?? null)
+        && ($writer_lease['staleClaimRejected'] ?? null) === ($lease_fence['staleClaimRejected'] ?? null)
+        && ($writer_lease['staleClaimRejected'] ?? null) === ($lease_fence_writer_lease['staleClaimRejected'] ?? null);
+}
+
 function reprint_push_lab_db_journal_checked_boundary_contract_matches($journal): bool
 {
     if (!is_array($journal)) {
@@ -803,7 +839,8 @@ function reprint_push_lab_db_journal_checked_boundary_contract_matches($journal)
 
     return reprint_push_lab_db_journal_ownership_contract_matches($journal['ownership'] ?? null)
         && reprint_push_lab_db_journal_writer_lease_contract_matches($journal['writerLease'] ?? null)
-        && reprint_push_lab_db_journal_lease_fence_contract_matches($journal['leaseFence'] ?? null);
+        && reprint_push_lab_db_journal_lease_fence_contract_matches($journal['leaseFence'] ?? null)
+        && reprint_push_lab_db_journal_checked_boundary_contract_is_coherent($journal);
 }
 
 function reprint_push_lab_db_journal_non_empty_string($value): bool

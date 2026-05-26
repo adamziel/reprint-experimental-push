@@ -1839,6 +1839,68 @@ test('checked recovery inspect evidence fails closed on partial checked writer-l
   assert.equal(parsed.recovery.journal.leaseFence.writerLease.storageGuard, 'wpdb-single-statement-cas');
 });
 
+test('checked recovery inspect evidence fails closed on conflicting checked writer-lease storage guards', { skip: !hasPhp }, () => {
+  const result = runAttachCheckedRecoveryJournalEvidence(
+    {
+      recovery: {
+        journal: {
+          acceptedOnCheckedBoundary: true,
+          scope: 'checked live production-shaped journal surface; not local Playground fixture only',
+          claim: {
+            status: 'active',
+            activeClaimKeyHash: 'claim-hash-01',
+            activeClaimSequence: 18,
+            activeClaimEvent: 'idempotency-opened',
+            idempotencyKeyHash: 'idem-hash-01',
+            requestHash: 'request-hash-01',
+            staleClaimRejected: false,
+          },
+          ownership: {
+            ownsJournal: true,
+            restartReadable: true,
+            productionAdapter: 'wpdb-single-statement-cas',
+          },
+          writerLease: {
+            strategy: 'claim-fenced-single-writer',
+            claimKeyUnique: true,
+            fsyncEvidence: true,
+            storageGuard: 'wpdb-single-statement-cas',
+            monotonicSequence: true,
+            restartReadable: true,
+            staleClaimRejected: false,
+          },
+          leaseFence: {
+            boundary: 'wpdb-single-statement-cas',
+            claimKeyUnique: true,
+            fsyncEvidence: true,
+            monotonicSequence: true,
+            restartReadable: true,
+            staleClaimRejected: false,
+            writerLease: {
+              strategy: 'claim-fenced-single-writer',
+              claimKeyUnique: true,
+              fsyncEvidence: true,
+              storageGuard: 'mysql-advisory-lock-lease',
+              monotonicSequence: true,
+              restartReadable: true,
+              staleClaimRejected: false,
+            },
+          },
+        },
+      },
+    },
+    true,
+    false,
+    {},
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.recovery.journal.acceptedOnCheckedBoundary, false);
+  assert.equal(parsed.recovery.journal.writerLease.storageGuard, 'wpdb-single-statement-cas');
+  assert.equal(parsed.recovery.journal.leaseFence.writerLease.storageGuard, 'mysql-advisory-lock-lease');
+});
+
 test('checked recovery inspect evidence fails closed on conflicting checked journal claim lineage', { skip: !hasPhp }, () => {
   const result = runAttachCheckedRecoveryJournalEvidence(
     {
@@ -2661,6 +2723,65 @@ test('checked authenticated apply evidence fails closed on accepted checked jour
   assert.equal(parsed.dbJournal.acceptedOnCheckedBoundary, false);
   assert.equal(parsed.dbJournal.writerLease.storageGuard, undefined);
   assert.equal(parsed.dbJournal.leaseFence.writerLease.storageGuard, 'wpdb-single-statement-cas');
+});
+
+test('checked authenticated apply evidence fails closed on conflicting checked writer-lease storage guards', { skip: !hasPhp }, () => {
+  const result = runAttachCheckedDbJournalContract(
+    {
+      ok: true,
+      dbJournal: {
+        acceptedOnCheckedBoundary: true,
+        scope: 'packaged production journal scope',
+        claim: {
+          status: 'active',
+          activeClaimKeyHash: 'claim-hash-01',
+          activeClaimSequence: 18,
+          activeClaimEvent: 'idempotency-opened',
+          idempotencyKeyHash: 'idem-hash-01',
+          requestHash: 'request-hash-01',
+          staleClaimRejected: false,
+        },
+        ownership: {
+          ownsJournal: true,
+          restartReadable: true,
+          productionAdapter: 'wpdb-single-statement-cas',
+        },
+        writerLease: {
+          strategy: 'claim-fenced-single-writer',
+          claimKeyUnique: true,
+          fsyncEvidence: true,
+          storageGuard: 'wpdb-single-statement-cas',
+          monotonicSequence: true,
+          restartReadable: true,
+          staleClaimRejected: false,
+        },
+        leaseFence: {
+          boundary: 'wpdb-single-statement-cas',
+          claimKeyUnique: true,
+          fsyncEvidence: true,
+          monotonicSequence: true,
+          restartReadable: true,
+          staleClaimRejected: false,
+          writerLease: {
+            strategy: 'claim-fenced-single-writer',
+            claimKeyUnique: true,
+            fsyncEvidence: true,
+            storageGuard: 'mysql-advisory-lock-lease',
+            monotonicSequence: true,
+            restartReadable: true,
+            staleClaimRejected: false,
+          },
+        },
+      },
+    },
+    {},
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.dbJournal.acceptedOnCheckedBoundary, false);
+  assert.equal(parsed.dbJournal.writerLease.storageGuard, 'wpdb-single-statement-cas');
+  assert.equal(parsed.dbJournal.leaseFence.writerLease.storageGuard, 'mysql-advisory-lock-lease');
 });
 
 test('authenticated apply finalization upgrades checked failure journal evidence and preserves signed auth metadata', { skip: !hasPhp }, () => {
