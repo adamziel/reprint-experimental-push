@@ -291,6 +291,74 @@ test('checked db journal merge fills checked schema metadata without overriding 
   });
 });
 
+test('checked db journal merge fills empty top-level evidence arrays from the checked summary', { skip: !hasPhp }, () => {
+  const result = runMerge(
+    {
+      acceptedOnCheckedBoundary: true,
+      latestRows: [],
+      eventSummaries: [],
+      idempotencyEvidence: [],
+      ownership: {
+        ownsJournal: true,
+      },
+    },
+    {
+      acceptedOnCheckedBoundary: true,
+      latestRows: [
+        { event: 'idempotency-opened' },
+        { event: 'mutation-applied' },
+        { event: 'apply-committed' },
+      ],
+      eventSummaries: [
+        { event: 'apply-committed', count: 1, latestId: 3 },
+      ],
+      idempotencyEvidence: [
+        { idempotencyKeyHash: 'idem-hash-01', events: 3, requestHashes: 1, latestId: 3 },
+      ],
+      ownership: {
+        ownsJournal: true,
+        restartReadable: true,
+        productionAdapter: 'wpdb-single-statement-cas',
+      },
+      leaseFence: {
+        boundary: 'wpdb-single-statement-cas',
+        claimKeyUnique: true,
+        monotonicSequence: true,
+        restartReadable: true,
+        staleClaimRejected: false,
+      },
+    },
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  assert.deepEqual(JSON.parse(result.stdout), {
+    acceptedOnCheckedBoundary: true,
+    latestRows: [
+      { event: 'idempotency-opened' },
+      { event: 'mutation-applied' },
+      { event: 'apply-committed' },
+    ],
+    eventSummaries: [
+      { event: 'apply-committed', count: 1, latestId: 3 },
+    ],
+    idempotencyEvidence: [
+      { idempotencyKeyHash: 'idem-hash-01', events: 3, requestHashes: 1, latestId: 3 },
+    ],
+    ownership: {
+      ownsJournal: true,
+      restartReadable: true,
+      productionAdapter: 'wpdb-single-statement-cas',
+    },
+    leaseFence: {
+      boundary: 'wpdb-single-statement-cas',
+      claimKeyUnique: true,
+      monotonicSequence: true,
+      restartReadable: true,
+      staleClaimRejected: false,
+    },
+  });
+});
+
 test('checked storage guard merge fills partial inline values from the checked summary', { skip: !hasPhp }, () => {
   const result = spawnSync('php', [
     '-r',

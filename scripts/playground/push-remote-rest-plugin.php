@@ -552,7 +552,10 @@ function reprint_push_lab_rest_merge_checked_db_journal_contract(array $db_journ
         'eventSummaries',
         'idempotencyEvidence',
     ] as $key) {
-        if (!array_key_exists($key, $db_journal) && array_key_exists($key, $checked_summary)) {
+        if (
+            reprint_push_lab_rest_should_fill_checked_db_journal_field($db_journal, $key)
+            && array_key_exists($key, $checked_summary)
+        ) {
             $db_journal[$key] = $checked_summary[$key];
         }
     }
@@ -578,6 +581,20 @@ function reprint_push_lab_rest_merge_checked_db_journal_contract(array $db_journ
     }
 
     return $db_journal;
+}
+
+function reprint_push_lab_rest_should_fill_checked_db_journal_field(array $db_journal, string $key): bool
+{
+    if (!array_key_exists($key, $db_journal)) {
+        return true;
+    }
+
+    $value = $db_journal[$key];
+    if ($value === null || $value === '') {
+        return true;
+    }
+
+    return is_array($value) && $value === [];
 }
 
 function reprint_push_lab_rest_should_upgrade_checked_db_journal_scope(array $db_journal, array $checked_summary): bool
