@@ -70,6 +70,9 @@ Current executable gate:
 - The same details also fail closed if queue-budget visibility appears without
   memory-ceiling visibility, so a partial paused-backpressure summary cannot
   look complete when the ceiling boundary is hidden.
+- The same details also fail closed if memory-ceiling visibility appears
+  without queue-budget visibility, so the backpressure visibility boundary
+  stays symmetric.
 - The same details also expose and require an explicit parallelism-measurement
   bit, so surfaced concurrency limits cannot look visible without a measured
   report surface behind them.
