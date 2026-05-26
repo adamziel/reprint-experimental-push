@@ -157,8 +157,8 @@ function reprint_push_lab_db_journal_scope_label(string $scope_key, bool $surfac
 {
     if ($scope_key === 'packaged-production-plugin') {
         return $surface
-            ? 'packaged production plugin journal surface; not local Playground fixture only'
-            : 'packaged production plugin journal evidence; not local Playground fixture only';
+            ? 'packaged production journal scope'
+            : 'packaged production journal evidence; not local Playground fixture only';
     }
 
     if ($scope_key === 'checked-live-production-shaped') {

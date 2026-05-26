@@ -738,7 +738,7 @@ test('checked recovery inspect evidence upgrades an existing fixture-scoped jour
           scope: 'packaged production plugin recovery inspect journal evidence; not local Playground fixture only',
         },
         acceptedOnCheckedBoundary: true,
-        scope: 'packaged production plugin journal surface; not local Playground fixture only',
+        scope: 'packaged production journal scope',
         ownership: {
           ownsJournal: true,
           restartReadable: true,
@@ -1729,14 +1729,14 @@ test('db journal evidence exposes checked and packaged scope labels instead of c
     idempotencyKeyHash: '',
     requestHash: '',
     resultHash: '',
-    scope: 'packaged production plugin journal evidence; not local Playground fixture only',
+    scope: 'packaged production journal evidence; not local Playground fixture only',
   });
 });
 
 test('checked authenticated apply evidence is upgraded to the authoritative db journal contract', { skip: !hasPhp }, () => {
   const checkedSummary = {
     acceptedOnCheckedBoundary: true,
-    scope: 'packaged production plugin journal surface; not local Playground fixture only',
+    scope: 'packaged production journal scope',
     ownership: {
       ownsJournal: true,
       restartReadable: true,
@@ -1807,7 +1807,7 @@ test('checked authenticated apply evidence is upgraded to the authoritative db j
     dbJournal: {
       event: 'apply-replayed',
       sequence: 15,
-      scope: 'packaged production plugin journal surface; not local Playground fixture only',
+      scope: 'packaged production journal scope',
       acceptedOnCheckedBoundary: true,
       ownership: {
         ownsJournal: true,
@@ -3315,7 +3315,7 @@ test('checked db journal merge replaces stale top-level checked evidence when th
 test('checked db journal merge prefers authoritative checked top-level evidence even when the inline contract is already accepted', { skip: !hasPhp }, () => {
   const result = runMerge(
     {
-      scope: 'packaged production plugin journal surface; not local Playground fixture only',
+      scope: 'packaged production journal scope',
       acceptedOnCheckedBoundary: true,
       schemaVersion: 1,
       table: 'wp_reprint_push_lab_push_journal',
@@ -3344,7 +3344,7 @@ test('checked db journal merge prefers authoritative checked top-level evidence 
       },
     },
     {
-      scope: 'packaged production plugin journal surface; not local Playground fixture only',
+      scope: 'packaged production journal scope',
       acceptedOnCheckedBoundary: true,
       schemaVersion: 1,
       table: 'wp_reprint_push_lab_push_journal',
@@ -3378,7 +3378,7 @@ test('checked db journal merge prefers authoritative checked top-level evidence 
 
   assert.equal(result.status, 0, result.stderr);
   assert.deepEqual(JSON.parse(result.stdout), {
-    scope: 'packaged production plugin journal surface; not local Playground fixture only',
+    scope: 'packaged production journal scope',
     acceptedOnCheckedBoundary: true,
     schemaVersion: 1,
     table: 'wp_reprint_push_lab_push_journal',
@@ -3413,7 +3413,7 @@ test('checked db journal merge prefers authoritative checked top-level evidence 
 test('checked db journal merge upgrades stale nested checked-boundary booleans even when top-level acceptance is already true', { skip: !hasPhp }, () => {
   const result = runMerge(
     {
-      scope: 'packaged production plugin journal surface; not local Playground fixture only',
+      scope: 'packaged production journal scope',
       acceptedOnCheckedBoundary: true,
       ownership: {
         ownsJournal: true,
@@ -3429,7 +3429,7 @@ test('checked db journal merge upgrades stale nested checked-boundary booleans e
       },
     },
     {
-      scope: 'packaged production plugin journal surface; not local Playground fixture only',
+      scope: 'packaged production journal scope',
       acceptedOnCheckedBoundary: true,
       ownership: {
         ownsJournal: true,
@@ -3448,7 +3448,7 @@ test('checked db journal merge upgrades stale nested checked-boundary booleans e
 
   assert.equal(result.status, 0, result.stderr);
   assert.deepEqual(JSON.parse(result.stdout), {
-    scope: 'packaged production plugin journal surface; not local Playground fixture only',
+    scope: 'packaged production journal scope',
     acceptedOnCheckedBoundary: true,
     ownership: {
       ownsJournal: true,
@@ -3468,7 +3468,7 @@ test('checked db journal merge upgrades stale nested checked-boundary booleans e
 test('checked db journal merge upgrades nested writer lease evidence when the authoritative checked contract is already accepted', { skip: !hasPhp }, () => {
   const result = runMerge(
     {
-      scope: 'packaged production plugin journal surface; not local Playground fixture only',
+      scope: 'packaged production journal scope',
       acceptedOnCheckedBoundary: true,
       leaseFence: {
         boundary: 'wpdb-single-statement-cas',
@@ -3487,7 +3487,7 @@ test('checked db journal merge upgrades nested writer lease evidence when the au
       },
     },
     {
-      scope: 'packaged production plugin journal surface; not local Playground fixture only',
+      scope: 'packaged production journal scope',
       acceptedOnCheckedBoundary: true,
       leaseFence: {
         boundary: 'wpdb-single-statement-cas',
@@ -3511,7 +3511,7 @@ test('checked db journal merge upgrades nested writer lease evidence when the au
 
   assert.equal(result.status, 0, result.stderr);
   assert.deepEqual(JSON.parse(result.stdout), {
-    scope: 'packaged production plugin journal surface; not local Playground fixture only',
+    scope: 'packaged production journal scope',
     acceptedOnCheckedBoundary: true,
     leaseFence: {
       boundary: 'wpdb-single-statement-cas',
@@ -3536,7 +3536,7 @@ test('checked db journal merge upgrades nested writer lease evidence when the au
 test('checked db journal merge upgrades stale fixture-style nested checked-boundary strings without overriding custom inline adapters', { skip: !hasPhp }, () => {
   const result = runMerge(
     {
-      scope: 'packaged production plugin journal surface; not local Playground fixture only',
+      scope: 'packaged production journal scope',
       acceptedOnCheckedBoundary: true,
       ownership: {
         ownsJournal: true,
@@ -3552,7 +3552,7 @@ test('checked db journal merge upgrades stale fixture-style nested checked-bound
       },
     },
     {
-      scope: 'packaged production plugin journal surface; not local Playground fixture only',
+      scope: 'packaged production journal scope',
       acceptedOnCheckedBoundary: true,
       ownership: {
         ownsJournal: true,
@@ -3571,7 +3571,7 @@ test('checked db journal merge upgrades stale fixture-style nested checked-bound
 
   assert.equal(result.status, 0, result.stderr);
   assert.deepEqual(JSON.parse(result.stdout), {
-    scope: 'packaged production plugin journal surface; not local Playground fixture only',
+    scope: 'packaged production journal scope',
     acceptedOnCheckedBoundary: true,
     ownership: {
       ownsJournal: true,
@@ -3764,7 +3764,7 @@ test('authoritative checked storage guard preference upgrades stale fixture-styl
     }),
     JSON.stringify({
       acceptedOnCheckedBoundary: true,
-      scope: 'packaged production plugin journal surface; not local Playground fixture only',
+      scope: 'packaged production journal scope',
     }),
   ], {
     cwd: repoRoot,
