@@ -1060,12 +1060,17 @@ function shouldCloseOwnedDurableJournal(writer) {
     && writer.kind === 'production-recovery-journal'
     && Object.hasOwn(writer, 'ownsJournal')
     && writer.ownsJournal === true
+    && Object.hasOwn(writer, 'close')
     && typeof writer.close === 'function',
   );
 }
 
 export function closeOwnedDurableJournal(writer) {
   if (isDurableJournalClosed(writer)) {
+    return;
+  }
+  if (!Object.hasOwn(writer ?? {}, 'close') || typeof writer.close !== 'function') {
+    markDurableJournalClosed(writer);
     return;
   }
   try {

@@ -27018,3 +27018,25 @@ test('marks an owned production recovery journal writer closed even when close t
   assert.equal(closeCalls, 1);
   assert.equal(isDurableJournalClosed(writer), true);
 });
+
+test('closes an owned production recovery journal writer only when close is owned directly', () => {
+  let closeCalls = 0;
+  const writer = {
+    kind: 'production-recovery-journal',
+    productionAdapter: true,
+    supportedSurface: 'production-recovery-journal-adapter',
+    ownsJournal: true,
+    ownsRemoteArtifact: true,
+  };
+
+  Object.setPrototypeOf(writer, {
+    close() {
+      closeCalls += 1;
+    },
+  });
+
+  closeOwnedDurableJournal(writer);
+
+  assert.equal(closeCalls, 0);
+  assert.equal(isDurableJournalClosed(writer), true);
+});
