@@ -84,6 +84,12 @@ test('guarded executor benchmark moves buffers and row payloads through durable 
   assert.equal(report.evidence.recovery.partialCommitInspectionStatus, 'blocked-recovery');
   assert.equal(report.evidence.atomicGroup.requireAtomic, true);
   assert.equal(report.evidence.atomicGroup.preCommitFailureLeavesRemoteUnchanged, true);
+  assert.equal(report.evidence.atomicGroup.productionAtomicCommitMeasured, false);
+  assert.equal(report.evidence.atomicGroup.productionStorageReceiptsMeasured, false);
+  assert.equal(
+    report.evidence.atomicGroup.productionStorageReceiptsMeasured,
+    report.claims.productionThroughputDetails.atomicGroup.productionStorageReceiptsMeasured,
+  );
   assert.equal(report.throughput.productionThroughput, 'not-claimed');
 });
 
@@ -204,6 +210,7 @@ test('guarded benchmark refuses production throughput claims until production ga
   assert.equal(report.claims.productionThroughputDetails.receiptCursorHeadroomMatchesQueueHeadroom, true);
   assert.equal(report.claims.productionThroughputDetails.receiptCursorWithinQueueBudget, true);
   assert.equal(report.claims.productionThroughputDetails.productionAtomicCommitMeasured, false);
+  assert.equal(report.claims.productionThroughputDetails.productionStorageReceiptsMeasured, false);
   assert.equal(report.claims.productionThroughputDetails.productionRowBatchExecutorMeasured, false);
   assert.equal(report.claims.productionThroughputDetails.journalSuccessReceiptKindsGrouped, true);
   assert.equal(
@@ -318,6 +325,7 @@ test('guarded benchmark refuses production throughput claims until production ga
   assert.equal(report.claims.productionThroughputDetails.successInspectionCountsNewMatchesMutations, true);
   assert.equal(report.claims.productionThroughputDetails.successInspectionClaimStatus, 'none');
   assert.equal(report.claims.productionThroughputDetails.successInspectionClaimReason, null);
+  assert.equal(report.claims.productionThroughputDetails.successInspectionClaimReasonTrimmed, null);
   assert.equal(report.claims.productionThroughputDetails.successInspectionClaimReasonProven, true);
   assert.equal(report.claims.productionThroughputDetails.successInspectionClaimMatchesInspectionStatus, true);
   assert.equal(report.claims.productionThroughputDetails.successInspectionClaimCanonical, true);
@@ -359,6 +367,7 @@ test('guarded benchmark refuses production throughput claims until production ga
       && error.details.resourceLimits.memoryCeilingBytes === 32 * 1024 * 1024
       && error.details.productionThroughputDetails.receiptCursorWithinMemoryCeiling === true
       && error.details.productionThroughputDetails.receiptCursorMatchesChunkWindow === true
+      && error.details.productionThroughputDetails.productionStorageReceiptsMeasured === false
       && error.details.receiptCursor.chunkIndex === report.shape.chunkCount - 1
       && error.details.productionThroughputDetails.blockers.includes('production-storage-receipts-not-measured')
       && error.details.productionThroughputDetails.executorCapabilities.rowApply === 'per-row-apply-model'
@@ -1538,7 +1547,7 @@ test('production claim gate fails closed if benchmark evidence is tampered', () 
   );
   assert.equal(
     productionThroughputDetails(blockedReasonWithWhitespace).successInspectionClaimReasonTrimmed,
-    false,
+    '',
   );
 });
 

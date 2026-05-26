@@ -849,6 +849,26 @@ export const SAFE_FAST_PATHS = Object.freeze([
   },
   {
     area: 'backpressure',
+    reduces: ['memory-pressure', 'queue-drain-time', 'duplicate-replay-work'],
+    allowedShortcut: 'reuse-receipt-cursor-memory-headroom-to-size-bounded-replay-within-ceiling',
+    guardrails: [
+      'receipt-cursor-memory-headroom-stays-advisory',
+      'bounded-replay-stays-within-the-measured-memory-ceiling',
+    ],
+    gateProofs: {
+      skip: 'a receipt cursor can size the next bounded replay window when its measured memory headroom fits inside the recorded ceiling',
+      live: 'the storage-boundary write still rechecks the same live preconditions for each receipt-producing mutation',
+      group: 'cursor-guided replay only shortens queue planning inside the same atomic-group boundary and never widens visibility',
+      recovery: 'the receipt cursor, memory headroom, and journal records still classify pause, retry, or crash without guessing which receipts survived',
+    },
+    visibilityBoundary: 'kind-scoped-memory-and-journal-planning-only',
+    failureEvidence: 'receipt cursor plus measured memory headroom and journal records',
+    bypassesLivePreconditions: false,
+    splitsAtomicGroup: false,
+    publishesStagedDataEarly: false,
+  },
+  {
+    area: 'backpressure',
     reduces: ['memory-pressure', 'idle-time', 'queue-drain-time'],
     allowedShortcut: 'treat-drained-upload-buffer-as-publish-ready',
     guardrails: [
@@ -2790,6 +2810,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     rejectedBecause: 'journal batching can reduce fsync cost, but a flushed log still cannot prove the live compare or atomic-group barrier survived the pause',
     rejectedGate: 'recovery',
     violates: ['compression', 'backpressure', 'live-preconditions', 'atomic-groups', 'durable-progress'],
+  },
+  {
+    id: 'receipt-cursor-memory-headroom-authorizes-commit',
+    proposal: 'treat receipt cursor memory headroom as enough proof to authorize the atomic-group commit',
+    rejectedBecause: 'memory headroom can size bounded replay, but it cannot prove which rows, chunks, or live compares survived the pause well enough to authorize commit',
+    rejectedGate: 'recovery',
+    violates: ['backpressure', 'atomic-groups', 'durable-progress', 'live-preconditions'],
   },
   {
     id: 'parallelize-atomic-group-commit',

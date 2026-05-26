@@ -817,6 +817,9 @@ export function productionThroughputDetails(report) {
   };
   const successInspectionClaimStatus = report.results.successInspection?.claim?.status ?? null;
   const successInspectionClaimReason = report.results.successInspection?.claim?.reason ?? null;
+  const successInspectionClaimReasonTrimmed = typeof successInspectionClaimReason === 'string'
+    ? successInspectionClaimReason.trim()
+    : null;
   const successInspectionClaimRecognized =
     successInspectionClaimStatus === 'none'
     || successInspectionClaimStatus === 'active'
@@ -824,10 +827,8 @@ export function productionThroughputDetails(report) {
     || successInspectionClaimStatus === 'blocked';
   const successInspectionClaimReasonProven =
     successInspectionClaimStatus !== 'blocked'
-    || (typeof successInspectionClaimReason === 'string' && successInspectionClaimReason.trim().length > 0);
-  const successInspectionClaimReasonTrimmed =
-    typeof successInspectionClaimReason === 'string'
-    && successInspectionClaimReason.trim().length > 0;
+    || (successInspectionClaimReasonTrimmed !== null
+      && successInspectionClaimReasonTrimmed.length > 0);
   const successInspectionClaimMatchesInspectionStatus =
     successInspectionClaimRecognized
     && (
@@ -908,6 +909,7 @@ export function productionThroughputDetails(report) {
     && journalSuccessReceiptKindLedger.every((entry, index) => entry.kind === journalSuccessReceiptKinds[index]);
   const journalSuccessReceiptKindsGrouped = areReceiptKindsGrouped(journalSuccessRecordTypes);
   const productionAtomicCommitMeasured = report.executorCapabilities.productionAtomicCommit === 'production-atomic-group-commit';
+  const productionStorageReceiptsMeasured = report.executorCapabilities.fileReceipts === 'production-storage-receipts';
   const productionRowBatchExecutorMeasured = report.executorCapabilities.rowApply === 'production-batched-compare-and-swap';
   const wordpressGraphIdentityPostmetaReferencesMatch =
     Number.isFinite(report.evidence.wordpressGraphIdentity?.postmetaReferences)
@@ -975,9 +977,9 @@ export function productionThroughputDetails(report) {
     queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack,
     successInspectionClaimStatus,
     successInspectionClaimReason,
+    successInspectionClaimReasonTrimmed,
     successInspectionClaimRecognized,
     successInspectionClaimReasonProven,
-    successInspectionClaimReasonTrimmed,
     successInspectionClaimMatchesInspectionStatus,
     successInspectionClaimCanonical,
     successInspectionClaimReasonCanonical,
@@ -992,6 +994,7 @@ export function productionThroughputDetails(report) {
     backpressureAlignment,
     backpressureEvidenceComplete,
     productionAtomicCommitMeasured,
+    productionStorageReceiptsMeasured,
     productionRowBatchExecutorMeasured,
     wordpressGraphIdentityPostmetaReferencesMatch,
     journalSuccessRecordTypes,
@@ -1051,6 +1054,7 @@ export function productionThroughputDetails(report) {
       receiptCursorBackpressureWithinQueueBudget,
       backpressureEvidenceComplete,
       productionAtomicCommitMeasured,
+      productionStorageReceiptsMeasured,
       productionRowBatchExecutorMeasured,
       wordpressGraphIdentityPostmetaReferencesMatch,
       journalSuccessRecordTypes,
@@ -1060,6 +1064,7 @@ export function productionThroughputDetails(report) {
     atomicGroup: {
       ...report.evidence.atomicGroup,
       productionAtomicCommitMeasured,
+      productionStorageReceiptsMeasured,
     },
     blockers: productionThroughputBlockers(report),
   };
@@ -1544,6 +1549,8 @@ function buildReport({
     && Number.isFinite(config.chunkSizeBytes)
     && config.maxBufferedUploadBytes - config.chunkSizeBytes > 0;
   const queuePausedBeforeOverflow = config.chunkSizeBytes <= config.maxBufferedUploadBytes;
+  const productionAtomicCommitMeasured = false;
+  const productionStorageReceiptsMeasured = false;
 
   return {
     schemaVersion: 1,
@@ -1644,7 +1651,8 @@ function buildReport({
         preCommitFailureLeavesRemoteUnchanged: preCommitFailure.remoteUnchanged,
         partialCommitGroupNewTargets: partialFailure.groupNewTargets,
         partialCommitStatus: partialFailure.inspectionStatus,
-        productionAtomicCommitMeasured: false,
+        productionAtomicCommitMeasured,
+        productionStorageReceiptsMeasured,
       },
       resourceLimits: {
         memoryCeilingBytes: config.maxBufferedUploadBytes,

@@ -272,6 +272,24 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
     ),
     'bounded kind-scoped receipt ledgers stay fail-closed inside the memory ceiling',
   );
+  assert.ok(
+    model.safeFastPaths.some(
+      (fastPath) =>
+        fastPath.area === 'backpressure' &&
+        fastPath.allowedShortcut === 'reuse-receipt-cursor-memory-headroom-to-size-bounded-replay-within-ceiling' &&
+        fastPath.guardrails.includes('receipt-cursor-memory-headroom-stays-advisory') &&
+        fastPath.gateProofs.recovery.includes('memory headroom, and journal records still classify pause, retry, or crash'),
+    ),
+    'receipt-cursor memory headroom can size bounded replay without widening visibility',
+  );
+  assert.equal(
+    model.safeFastPaths.find(
+      (fastPath) =>
+        fastPath.area === 'backpressure' &&
+        fastPath.allowedShortcut === 'reuse-receipt-cursor-memory-headroom-to-size-bounded-replay-within-ceiling',
+    )?.bypassesLivePreconditions,
+    false,
+  );
   assert.deepEqual(
     FAST_PATH_GATES.map((gate) => gate.id),
     ['skip', 'live', 'group', 'recovery'],
@@ -436,6 +454,10 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'cached-receipt-cursor-and-journal-lag-skips-backpressure-pause-after-retry')?.violates.includes('durable-progress'),
     'journal lag still cannot bypass the backpressure pause boundary',
   );
+  assert.ok(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'cached-receipt-cursor-and-journal-lag-skips-backpressure-pause-after-retry')?.violates.includes('backpressure'),
+    'journal lag still cannot bypass the backpressure pause boundary',
+  );
   assert.equal(
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'cached-receipt-cursor-queue-headroom-and-journal-lag-skips-backpressure-pause-after-retry')?.rejectedGate,
     'recovery',
@@ -451,6 +473,14 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
   assert.ok(
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'cached-receipt-cursor-queue-slack-and-journal-lag-skips-backpressure-pause-after-retry')?.violates.includes('durable-progress'),
     'queue slack and journal lag still cannot bypass the backpressure pause boundary',
+  );
+  assert.equal(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'backpressure-pause-means-complete')?.rejectedGate,
+    'recovery',
+  );
+  assert.ok(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'backpressure-pause-means-complete')?.violates.includes('atomic-groups'),
+    'a pause still cannot bypass the atomic-group boundary',
   );
   assert.ok(
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-chunk-receipts-skips-large-upload-window-sizing-after-pause-and-backpressure')?.violates.includes('backpressure'),
@@ -555,6 +585,14 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
   assert.equal(
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-unbounded-db-parallelism-skips-atomic-group-barriers')?.rejectedGate,
     'group',
+  );
+  assert.ok(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-unbounded-db-parallelism-skips-atomic-group-barriers')?.violates.includes('atomic-groups'),
+    'unbounded DB parallelism still cannot bypass atomic-group barriers',
+  );
+  assert.ok(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-unbounded-db-parallelism-skips-atomic-group-barriers')?.violates.includes('backpressure'),
+    'unbounded DB parallelism still cannot bypass the backpressure boundary',
   );
   assert.equal(
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-package-hash-skips-plugin-install-activation-after-pause')?.rejectedGate,
@@ -1622,6 +1660,15 @@ test('unsafe shortcuts stay rejected when they would bypass live preconditions o
   assert.ok(skipCompressedPauseReplay, 'compressed receipt logs cannot skip paused recovery');
   assert.equal(skipCompressedPauseReplay.rejectedGate, 'recovery');
   assert.deepEqual(skipCompressedPauseReplay.violates, ['compression', 'backpressure', 'chunk-receipts', 'durable-progress']);
+
+  const skipMemoryHeadroomCommit = model.rejectedFastPaths.find(
+    (fastPath) => fastPath.id === 'receipt-cursor-memory-headroom-authorizes-commit',
+  );
+
+  assert.ok(skipMemoryHeadroomCommit, 'receipt cursor memory headroom cannot authorize commit');
+  assert.equal(skipMemoryHeadroomCommit.rejectedGate, 'recovery');
+  assert.ok(skipMemoryHeadroomCommit.violates.includes('backpressure'));
+  assert.ok(skipMemoryHeadroomCommit.violates.includes('atomic-groups'));
 });
 
 test('fast-path fixture isolates the release-safety benchmark shape', () => {
@@ -3421,6 +3468,14 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
   assert.ok(
     rejectedById.get('compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-commit-after-pause').violates.includes('durable-progress'),
   );
+  assert.ok(
+    rejectedById.get('compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-commit-after-pause').violates.includes('atomic-groups'),
+    'cached row-batch receipts still cannot bypass the plugin-update commit barrier after a pause',
+  );
+  assert.ok(
+    rejectedById.get('compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-commit-after-pause').violates.includes('backpressure'),
+    'cached row-batch receipts still cannot bypass the backpressure boundary after a pause',
+  );
   assert.equal(
     rejectedById.get('cached-dependency-graph-and-remote-index-cursor-skips-plugin-update-row-batch-revalidation-after-pause').rejectedGate,
     'recovery',
@@ -3491,6 +3546,9 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
   );
   assert.ok(
     rejectedById.get('compressed-remote-index-and-batched-receipt-flush-skips-plugin-update-activation').violates.includes('atomic-groups'),
+  );
+  assert.ok(
+    rejectedById.get('compressed-remote-index-and-batched-receipt-flush-skips-plugin-update-activation').violates.includes('durable-progress'),
   );
   assert.equal(
     rejectedById.get('compressed-remote-index-and-paused-row-queue-skips-plugin-install-finalize').rejectedGate,
@@ -3722,6 +3780,7 @@ test('guarded executor large profile still preserves receipts and stays blocked 
   assert.equal(report.evidence.atomicGroup.requireAtomic, true);
   assert.equal(report.evidence.atomicGroup.successAllTargetsNew, true);
   assert.equal(report.evidence.atomicGroup.productionAtomicCommitMeasured, false);
+  assert.equal(report.evidence.atomicGroup.productionStorageReceiptsMeasured, false);
   assert.equal(report.evidence.recovery.partialCommitBlocksRecovery, true);
   assert.equal(report.evidence.preconditions.everyMutationHasLiveRemotePrecondition, true);
   assert.equal(report.throughput.productionThroughput, 'not-claimed');
