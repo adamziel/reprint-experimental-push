@@ -1,25 +1,25 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-26 00:59 CEST
+Last updated: 2026-05-26 11:12 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
 
-## 2026-05-26 00:59 CEST - Playground Smoke Timed Out Silently
+## 2026-05-26 11:12 CEST - Reliable Head Updated To 5fd9dfb4
 
-- Going well: the same-plan graph proof set is still intact, and the latest smoke attempt gave a concrete failure mode instead of a vague status.
-- Not going well: `timeout 180s node scripts/playground/push-protocol-smoke.mjs` exited `124` with no stdout or stderr, so the live blocker is a silent harness rather than a semantic planner failure.
-- Progress change: the evidence now has an exact bounded blocker to carry forward, which is more actionable than the earlier open-ended smoke note.
-- Next nudge: keep the page brief and name the timeout artifact directly until the smoke either emits a real success/failure result or is replaced by the smallest non-Playground assertion that still covers the same-plan graph proof.
+- Going well: the public status surfaces now agree that `5fd9dfb4` is the current reliable head, and the release-journal smoke is visible as support evidence.
+- Not going well: the release gate is still `0/4`, because the new smoke does not yet prove production auth/session, durable journal consumption, replay, or preserved-remote retry at the boundary.
+- Progress change: the stale-head mismatch is removed from the feedback record, so the next audit pass can classify `5fd9dfb4` directly instead of handoff based on `9ff7b997`.
+- Next nudge: keep the next update tied to the critic/auditor decision on whether this support evidence changes any gate, then ask reliable-executor for the next production-boundary proof.
 
 | Lane | Nudge |
 | --- | --- |
 | Invariants | Keep the same-plan proof set stable unless a new executable edge fails. |
-| Recovery | Do not widen recovery claims from a silent smoke. |
-| Reliable executor | Treat the timeout as a harness issue, not a production success. |
+| Recovery | Do not widen recovery claims from a smoke until the durable journal boundary is proven. |
+| Reliable executor | Move from release-journal smoke support to a production-boundary proof or name the exact blocker. |
 | Fast paths | Leave benchmark claims blocked until a concrete artifact lands. |
-| Audit and critic | Re-check only after the smoke returns output or is replaced. |
-| Progress publisher | Keep the page dated and explicit about the timeout blocker. |
+| Audit and critic | Classify `5fd9dfb4` directly and only move the gate if the boundary evidence changes. |
+| Progress publisher | Keep the page dated and explicit about the current reliable head and closed gates. |
 
 ## 2026-05-26 00:53 CEST - Same-Plan Term Taxonomy Term Proof Added
 
