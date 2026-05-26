@@ -4,7 +4,7 @@
 
 The project is **not releasable as a production WordPress push path**.
 
-- Fresh remote heads at audit time, checked on 2026-05-26 08:13:41 CEST (+0200):
+- Fresh remote heads at audit time, checked on 2026-05-26 08:19:39 CEST (+0200):
 
 - `origin/lane/cycle-20260524-auth-graph-hardening/critic` -> `e413f7a8`
 - `origin/lane/cycle-20260524-auth-graph-hardening/fast-paths` -> `ad7d82a4`
@@ -59,6 +59,16 @@ The project is **not releasable as a production WordPress push path**.
 - `origin/lane/progress-publisher` -> `7695e1f9`
 - `origin/lane/reliable-executor` -> `a279d99b`
 - `origin/lane/same-plan-wordpress-graph-create` -> `8dea1ca3`
+
+Fresh remote heads added since the last audit snapshot:
+
+- `origin/lane/critic` -> `5f2bc189`
+- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `3ad13b72`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `d1722494`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `8361a057`
+- `origin/lane/no-data-loss-recovery` -> `f2803ceb`
+- `origin/lane/no-data-loss-invariants` -> `bb2ccb8a`
+- `origin/lane/reliable-executor` -> `0b8e4340`
 
 Fresh remote heads added after the prior audit note:
 
