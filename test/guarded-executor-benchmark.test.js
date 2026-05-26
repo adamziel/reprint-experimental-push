@@ -535,11 +535,11 @@ test('production claim gate fails closed if benchmark evidence is tampered', () 
   );
 
   const pausedWithoutMeasuredBackpressure = clone(report);
-  pausedWithoutMeasuredBackpressure.evidence.backpressure.receiptCursorBytes = null;
   pausedWithoutMeasuredBackpressure.evidence.backpressure.queuePausedBeforeOverflow = true;
+  delete pausedWithoutMeasuredBackpressure.evidence.backpressure.queuePauseHasMeasuredReceiptCursorBackpressure;
   assert.ok(
     productionThroughputBlockers(pausedWithoutMeasuredBackpressure).includes(
-      'queue-pause-without-measured-receipt-cursor-backpressure',
+      'queue-pause-without-measured-and-aligned-receipt-cursor-backpressure',
     ),
   );
   assert.equal(
@@ -801,6 +801,23 @@ test('production claim gate fails closed if benchmark evidence is tampered', () 
   );
   assert.equal(
     productionThroughputDetails(spoofedBackpressureAlignment).backpressureConsistency.backpressureEvidenceComplete,
+    false,
+  );
+
+  const missingMeasuredBackpressureBit = clone(report);
+  delete missingMeasuredBackpressureBit.evidence.backpressure.queuePauseHasMeasuredReceiptCursorBackpressure;
+  assert.ok(
+    productionThroughputBlockers(missingMeasuredBackpressureBit).includes(
+      'queue-pause-without-measured-and-aligned-receipt-cursor-backpressure',
+    ),
+  );
+  assert.equal(
+    productionThroughputDetails(missingMeasuredBackpressureBit).backpressureConsistency
+      .queuePauseHasMeasuredReceiptCursorBackpressure,
+    false,
+  );
+  assert.equal(
+    productionThroughputDetails(missingMeasuredBackpressureBit).backpressureConsistency.backpressureEvidenceComplete,
     false,
   );
 

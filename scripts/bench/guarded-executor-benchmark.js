@@ -681,7 +681,10 @@ export function productionThroughputDetails(report) {
     && receiptCursorBackpressureBytes > 0;
   const queuePauseHasMeasuredReceiptCursorBackpressure =
     report.evidence.backpressure?.queuePausedBeforeOverflow !== true
-    || receiptCursorBackpressureMeasured;
+    || (
+      receiptCursorBackpressureMeasured
+      && report.evidence.backpressure?.queuePauseHasMeasuredReceiptCursorBackpressure === true
+    );
   const queuePauseHasMeasuredAndAlignedReceiptCursorBackpressure =
     report.evidence.backpressure?.queuePausedBeforeOverflow !== true
     || (
@@ -869,7 +872,11 @@ function hasCompleteBackpressureEvidence(report) {
     || (Number.isFinite(receiptCursorQueueSlackBytes) && receiptCursorQueueSlackBytes > 0);
   const queuePauseHasMeasuredReceiptCursorBackpressure =
     report.evidence.backpressure?.queuePausedBeforeOverflow !== true
-    || (Number.isFinite(receiptCursorBackpressureBytes) && receiptCursorBackpressureBytes > 0);
+    || (
+      Number.isFinite(receiptCursorBackpressureBytes)
+      && receiptCursorBackpressureBytes > 0
+      && report.evidence.backpressure?.queuePauseHasMeasuredReceiptCursorBackpressure === true
+    );
   const queuePauseHasBackpressureAlignedReceiptCursorQueueSlack =
     report.evidence.backpressure?.queuePausedBeforeOverflow !== true
     || (
@@ -1434,6 +1441,13 @@ function buildReport({
             Number.isFinite(lastChunkReceipt?.sizeBytes)
             && Number.isFinite(config.maxBufferedUploadBytes)
             && config.maxBufferedUploadBytes - lastChunkReceipt.sizeBytes > 0
+          ),
+        queuePauseHasMeasuredReceiptCursorBackpressure:
+          config.chunkSizeBytes > config.maxBufferedUploadBytes
+          || (
+            Number.isFinite(lastChunkReceipt?.sizeBytes)
+            && Number.isFinite(config.maxBufferedUploadBytes)
+            && lastChunkReceipt.sizeBytes > 0
           ),
         queuePauseHasMeasuredAndAlignedReceiptCursorBackpressure:
           config.chunkSizeBytes > config.maxBufferedUploadBytes
