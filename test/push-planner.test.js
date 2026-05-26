@@ -11115,7 +11115,7 @@ test('durable recovery fails closed when the writer journal artifact reference i
   }));
 
   assert.equal(error.code, 'PRODUCTION_DURABLE_JOURNAL_UNSUPPORTED');
-  assert.ok(error.details.missingDependency.includes('restart-readable recovery remote artifact references'));
+  assert.ok(error.details.missingDependency.includes('restart-readable recovery artifact references'));
 });
 
 test('durable recovery fails closed when remote artifact ownership is inherited through the prototype', () => {
@@ -20521,7 +20521,7 @@ test('production durable journal claims fail closed when artifactRefs are inheri
   }));
 
   assert.equal(error.code, 'PRODUCTION_DURABLE_JOURNAL_UNSUPPORTED');
-  assert.ok(error.details.missingDependency.includes('restart-readable recovery remote artifact references'));
+  assert.ok(error.details.missingDependency.includes('restart-readable recovery artifact references'));
 });
 
 test('production durable journal claims fail closed when writer artifactRefs use a null prototype', () => {
@@ -20630,7 +20630,7 @@ test('production durable journal claims fail closed when inspected artifactRefs 
   }));
 
   assert.equal(error.code, 'PRODUCTION_DURABLE_JOURNAL_UNSUPPORTED');
-  assert.ok(error.details.missingDependency.includes('restart-readable recovery remote artifact references'));
+  assert.ok(error.details.missingDependency.includes('restart-readable recovery artifact references'));
 });
 
 test('production durable journal claims fail closed when the writer advertises the production surface but stays restart-opaque', () => {
