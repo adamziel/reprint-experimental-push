@@ -6,10 +6,10 @@ The project is **not releasable as a production WordPress push path**.
 
 Fresh remote heads at audit time, checked on May 26, 2026:
 
-- `origin/lane/reliable-executor` -> `e986a490`
-- `origin/lane/no-data-loss-invariants` -> `e42fe4ad`
+- `origin/lane/reliable-executor` -> `0c4fd10f`
+- `origin/lane/no-data-loss-invariants` -> `9bbe7bf0`
 - `origin/lane/no-data-loss-recovery` -> `47b675c0`
-- `origin/lane/fast-paths` -> `fc52ff8d`
+- `origin/lane/fast-paths` -> `9be664b2`
 - `origin/lane/independent-auditor` -> `5624aefd`
 - `origin/lane/critic` -> `e986a490`
 - `origin/lane/progress-publisher` -> `7695e1f9`
@@ -17,7 +17,7 @@ Fresh remote heads at audit time, checked on May 26, 2026:
 - `origin/lane/cycle-20260525-mainwindows-2349/same-plan-wordpress-graph-create` -> `e9cbf9d4`
 - `origin/lane/cycle-20260525-mainwindows-2357/no-data-loss-invariants-graph-proof` -> `98c0ce26`
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `534d941b`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `36622fb7`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `e42fd5d4`
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` -> `596bdf5e`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-invariants` -> `e42fe4ad`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `37d1cd8d`
@@ -32,10 +32,11 @@ Fresh lane proof since the last audit pass improved the local evidence floor,
 but it did not change the release conclusion:
 
 - `origin/lane/reliable-executor` now refreshes the audit evidence at
-  `e986a490`. The reliable lane still has the open `spawnSync` timeout-hardening
-  blocker on the live proof path, so the verdict does not move.
-- `origin/lane/no-data-loss-invariants` now blocks nav menu item graph
-  resources at `e42fe4ad`. A separate cycle-branch proof at `98c0ce26`
+  `0c4fd10f`. The reliable lane still has the open `spawnSync`
+  timeout-hardening blocker on the live proof path, so the verdict does not
+  move.
+- `origin/lane/no-data-loss-invariants` now blocks term parent graph
+  resources at `9bbe7bf0`. A separate cycle-branch proof at `98c0ce26`
   extends that blocker coverage to missing graph identity references, but it
   is not the primary lane head.
 - The newer integration cycle head at `295dc72a` adds a post-parent conflict
@@ -48,7 +49,7 @@ but it did not change the release conclusion:
   tightens the durable journal inspect gate at `37d1cd8d`, but it still does
   not add production-backed journal ownership or replay proof.
 - `origin/lane/fast-paths` now tightens blocked production-claim diagnostics at
-  `fc52ff8d` by adding bounded receipt-log backpressure handling. This is a
+  `9be664b2` by adding bounded receipt-log backpressure handling. This is a
   safer fast-path implementation detail, but it still does not prove the live
   production push boundary.
 - `origin/lane/critic` now refreshes the critic handoff at `e986a490`.
@@ -60,7 +61,7 @@ but it did not change the release conclusion:
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now
   refreshes the supervisor evidence snapshot at `534d941b`.
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now
-  records the latest progress freshness handoff at `36622fb7`.
+  records the latest progress freshness handoff at `e42fd5d4`.
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` now
   hardens the live proof timeout diagnostics at `596bdf5e`.
 - `origin/lane/same-plan-wordpress-graph-create` now blocks unsupported graph
