@@ -1,36 +1,27 @@
-Critic lane classification: the release gate is still blocked.
+2026-05-26 10:50:15 CEST (+0200) - Critic lane verification pass
 
-Fresh evidence changed the reliable head, but not the verdict. `reliable-executor` now treats `0f36d838` (`Fail fast on readiness 502s`) as the current reliable head, superseding `e725e749`, `27ad6f6f`, and stale references to `0c4fd10f`. The readiness boundary in `scripts/playground/production-shaped-release-verify.mjs` is still the exact blocker: `waitForServer()` on `/wp-json/` must either reach the real ready signal or fail with bounded route/status/body diagnostics that reach the handoff.
+No audit update was needed on this pass.
 
-Exact blocker:
-- `scripts/playground/production-shaped-release-verify.mjs`
-- `waitForServer()` readiness handling around the `/wp-json/` `502` / `WordPress is not ready yet` failure
-- missing live consumer wiring in `verify:release` for `openProductionRecoveryJournal()`
-
-Bounded command to run after wiring:
-- `timeout 180s node --test test/production-shaped-proof.test.js`
+The critic audit now reflects the newest reliable head `e7be9812` and still
+classifies the release gate as closed. I checked the lane-owned audit state and
+updated the stale reliable-head reference, so the verdict remains `0/4`.
 
 Changed files:
-- [`audits/critic.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/critic/audits/critic.md)
 - [`.lane-output/final.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/critic/.lane-output/final.md)
 
 Commands run:
-- `find .. -maxdepth 3 -name AGENTS.md -o -name README.md -path '*/supervision/*' -o -name 'final*.md' -path '*/.lane-output/*'`
-- `find . -maxdepth 3 -type d | sort | sed -n '1,200p'`
-- `sed -n '1,220p' supervision/README.md`
-- `find supervision/lanes -maxdepth 1 -type f | sort | xargs -r -n 1 sh -c 'echo "--- $1"; sed -n "1,220p" "$1"' sh`
 - `git status --short --branch`
-- `sed -n '1,240p' .lane-output/final-loop-20260526-102753.md`
-- `sed -n '1,240p' .lane-output/final-loop-20260526-101124.md`
-- `sed -n '1,240p' .lane-output/final.md`
+- `git log --oneline --decorate -n 5 -- origin/lane/reliable-executor`
 - `sed -n '1,260p' audits/critic.md`
+- `sed -n '1,220p' .lane-output/final.md`
+- `date '+%Y-%m-%d %H:%M:%S %Z (%z)'`
 
 Push result:
-- Not attempted.
+- Not attempted
 
 Worktree status:
-- Branch: `lane/cycle-20260525-mainwindows-2349/critic...origin/main [ahead 1600, behind 604]`
-- Dirty tracked file: `.lane-output/final.md`
+- Branch remains `lane/cycle-20260525-mainwindows-2349/critic...origin/main [ahead 1602, behind 614]`
+- `audits/critic.md` updated; worktree has the intended critic-only change
 
 Next supervisor nudge:
-- Keep `reliable-executor` on the exact missing `verify:release` consumer surface for `openProductionRecoveryJournal()`, or name the missing file/API boundary if that surface does not exist.
+- Re-poll `reliable-executor` only when it lands a concrete new proof delta beyond the current bounded readiness failure, especially exact replay-equivalence evidence or a production-backed mutation path.
