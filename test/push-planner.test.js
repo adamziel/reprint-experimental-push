@@ -8141,6 +8141,64 @@ test('blocks _menu_item_menu_item_parent metadata owned by an existing attachmen
   assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
 });
 
+test('blocks menu item parent metadata owned by an existing attachment even when it targets a same-plan post', () => {
+  const resourceKey = 'row:["wp_postmeta","meta_id:5031"]';
+  const attachmentResourceKey = 'row:["wp_posts","ID:4"]';
+  const targetResourceKey = 'row:["wp_posts","ID:5"]';
+  const base = baseSite();
+  const local = baseSite();
+  const remote = baseSite();
+
+  base.db.wp_posts['ID:4'] = {
+    ID: 4,
+    post_title: 'Existing attachment owner',
+    post_content: 'base-private-existing-attachment-owner-body',
+    post_status: 'inherit',
+    post_type: 'attachment',
+  };
+  local.db.wp_posts['ID:4'] = {
+    ...base.db.wp_posts['ID:4'],
+  };
+  remote.db.wp_posts['ID:4'] = {
+    ...base.db.wp_posts['ID:4'],
+  };
+  local.db.wp_posts['ID:5'] = {
+    ID: 5,
+    post_title: 'Local menu parent target',
+    post_content: 'local-private-menu-parent-target-body',
+    post_status: 'publish',
+  };
+  local.db.wp_postmeta = {
+    'meta_id:5031': {
+      meta_id: 5031,
+      post_id: 4,
+      meta_key: 'menu_item_parent',
+      meta_value: 5,
+    },
+  };
+
+  const plan = planFor(base, local, remote);
+  const attachmentMutation = mutationFor(plan, attachmentResourceKey);
+  const targetMutation = mutationFor(plan, targetResourceKey);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(attachmentMutation, undefined);
+  assert.equal(targetMutation.changeKind, 'create');
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(blocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(blocker.surface, 'attachment');
+  assert.equal(
+    JSON.stringify(blocker).includes('base-private-existing-attachment-owner-body'),
+    false,
+  );
+  assert.equal(
+    JSON.stringify(blocker).includes('local-private-menu-parent-target-body'),
+    false,
+  );
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
+});
+
 test('blocks menu item parent metadata owned by an existing revision even when it targets a same-plan post', () => {
   const resourceKey = 'row:["wp_postmeta","meta_id:504"]';
   const revisionResourceKey = 'row:["wp_posts","ID:4"]';
