@@ -2439,6 +2439,46 @@ test('guarded benchmark keeps row-batch and atomic-commit visible detail hidden 
   );
 });
 
+test('guarded benchmark keeps row-batch rollout summary pinned to atomic-group metadata blockers', () => {
+  const report = smallBenchmark();
+  const tampered = clone(report);
+
+  tampered.executorCapabilities.productionAtomicCommit = 'production-atomic-group-commit';
+  tampered.executorCapabilities.fileReceipts = 'production-storage-receipts';
+  tampered.executorCapabilities.rowApply = 'production-batched-compare-and-swap';
+  tampered.evidence.atomicGroup.productionAtomicCommitMeasured = true;
+  tampered.evidence.atomicGroup.productionAtomicCommitVisible = true;
+  tampered.evidence.atomicGroup.productionAtomicGroupMetadataVisible = false;
+  tampered.evidence.atomicGroup.productionStorageReceiptsMeasured = true;
+  tampered.evidence.atomicGroup.productionStorageReceiptsVisible = true;
+  tampered.evidence.atomicGroup.productionRowBatchExecutorMeasured = true;
+  tampered.evidence.atomicGroup.productionRowBatchExecutorVisible = true;
+  tampered.evidence.parallelism.parallelismLimitsMeasured = true;
+  tampered.evidence.parallelism.parallelismLimitsVisible = true;
+
+  const details = productionThroughputDetails(tampered);
+
+  assert.deepEqual(
+    details.productionCapabilityRolloutSummary.find(
+      (entry) => entry.surface === 'row-batch-concurrency',
+    ),
+    {
+      surface: 'row-batch-concurrency',
+      status: 'blocked',
+      measured: true,
+      visible: false,
+      blockerRefs: [
+        'production-atomic-group-metadata-not-visible',
+        'production-atomic-group-commit-visible-without-metadata',
+        'production-storage-receipts-without-atomic-group-metadata',
+        'production-storage-receipts-visible-and-atomic-commit-visible-without-metadata',
+        'production-storage-receipts-and-row-batch-visible-without-atomic-group-metadata',
+        'production-row-batch-executor-without-atomic-group-metadata',
+      ],
+    },
+  );
+});
+
 test('guarded benchmark keeps row-batch and atomic-commit visible detail hidden when atomic commit measurement is missing', () => {
   const report = smallBenchmark();
   const tampered = clone(report);
