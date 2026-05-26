@@ -202,6 +202,13 @@ export function productionThroughputBlockers(report) {
     blockers.push('production-memory-ceiling-not-measured');
   }
   if (
+    !Number.isFinite(report.resourceLimits?.memoryCeilingBytes)
+    || !Number.isFinite(report.evidence.chunkReceipts.resumeCursor?.sizeBytes)
+    || report.evidence.chunkReceipts.resumeCursor.sizeBytes > report.resourceLimits.memoryCeilingBytes
+  ) {
+    blockers.push('receipt-cursor-memory-headroom-not-measured');
+  }
+  if (
     !Number.isFinite(report.resourceLimits?.maxBufferedUploadBytes)
     || report.resourceLimits.maxBufferedUploadBytes <= 0
     || report.shape.chunkSizeBytes > report.resourceLimits.maxBufferedUploadBytes
@@ -240,6 +247,10 @@ export function productionThroughputDetails(report) {
     Number.isFinite(receiptCursorWindowBytes)
     && Number.isFinite(report.resourceLimits?.memoryCeilingBytes)
     && receiptCursorWindowBytes <= report.resourceLimits.memoryCeilingBytes;
+  const receiptCursorMemoryHeadroomBytes =
+    receiptCursorWithinMemoryCeiling
+      ? report.resourceLimits.memoryCeilingBytes - receiptCursorWindowBytes
+      : null;
   return {
     shape: {
       fileBytes: report.shape.fileBytes,
@@ -255,6 +266,7 @@ export function productionThroughputDetails(report) {
     receiptCursorWindowBytes,
     receiptCursorIsTerminalChunk,
     receiptCursorWithinMemoryCeiling,
+    receiptCursorMemoryHeadroomBytes,
     receiptCursor: report.evidence.chunkReceipts.resumeCursor,
     receiptCursorConsistency: report.evidence.chunkReceipts.cursorConsistency,
     recovery: report.evidence.recovery,

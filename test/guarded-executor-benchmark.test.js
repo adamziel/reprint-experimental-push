@@ -97,6 +97,7 @@ test('guarded benchmark refuses production throughput claims until production ga
   assert.equal(report.claims.productionThroughputDetails.receiptCursorWindowBytes, 512 * 1024);
   assert.equal(report.claims.productionThroughputDetails.receiptCursorIsTerminalChunk, true);
   assert.equal(report.claims.productionThroughputDetails.receiptCursorWithinMemoryCeiling, true);
+  assert.equal(report.claims.productionThroughputDetails.receiptCursorMemoryHeadroomBytes, 31.5 * 1024 * 1024);
   assert.equal(
     report.claims.productionThroughputDetails.receiptCursor.resourceKey,
     'file:wp-content/uploads/2026/05/catalog-export.bin',
@@ -194,6 +195,15 @@ test('production claim gate fails closed if benchmark evidence is tampered', () 
   missingRecovery.evidence.recovery.partialCommitBlocksRecovery = false;
   assert.ok(
     productionThroughputBlockers(missingRecovery).includes('missing-partial-commit-recovery-evidence'),
+  );
+
+  const missingCursorHeadroom = clone(report);
+  missingCursorHeadroom.evidence.chunkReceipts.resumeCursor.sizeBytes =
+    missingCursorHeadroom.resourceLimits.memoryCeilingBytes + 1;
+  assert.ok(
+    productionThroughputBlockers(missingCursorHeadroom).includes(
+      'receipt-cursor-memory-headroom-not-measured',
+    ),
   );
 
   const missingReceiptCursor = clone(report);

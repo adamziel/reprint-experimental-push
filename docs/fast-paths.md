@@ -49,6 +49,9 @@ Current executable gate:
   so blocked proof runs carry the current throughput, executor capabilities,
   resource ceiling, recovery status, atomic-group context, chunk resume cursor,
   and blocker list without depending on the thrown error.
+- The same details now expose receipt-cursor headroom against the measured
+  memory ceiling so a cursor-sized resume proof stays fail-closed instead of
+  inferring safety from the raw cursor alone.
 - The report `results` payload also carries explicit failure-probe details for
   the pre-commit and partial-commit probes, including inspection status,
   journal path, remote-unchanged classification, and journal record types so a
