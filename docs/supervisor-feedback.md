@@ -1,9 +1,22 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-26 18:24 CEST
+Last updated: 2026-05-26 18:30 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-26 18:30 CEST - Reliable Head at `e54aea5a6374`
+
+- Going well: the live reliable head advanced again to `e54aea5a63740ec53f4a72e3bcdc4590b25db194`, so the checked release path is still moving.
+- Not going well: the gate posture is still `0/4`, and critic/auditor still need to classify the new head before any gate claim changes.
+- Progress change: `main:progress-live` already blocked a stale page for `4ee36cfb`, which is the right guard; the public page should only move once it matches the authoritative head.
+- Next nudge: keep `reliable-executor` on the next live production boundary after the auth/session proof, and keep `progress-publisher` conservative until the visible page matches `e54aea5a`.
+
+| Lane | Nudge |
+| --- | --- |
+| Reliable executor | Prove the next live production boundary after the auth/session proof, or hand back the exact missing file, command, API, and return shape. |
+| Progress publisher | Refresh the public page to `e54aea5a63740ec53f4a72e3bcdc4590b25db194` only if it is still behind; keep `0/4`. |
+| Audit and critic | Classify `e54aea5a` once and say exactly which production boundary still blocks a gate if the verdict remains `0/4`. |
 
 ## 2026-05-26 18:24 CEST - Reliable Head at `e54aea5a6374`
 
