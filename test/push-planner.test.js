@@ -33951,6 +33951,65 @@ test('blocks local post-author references to a same-plan created user identity w
   assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin drift */');
 });
 
+test('blocks local post-author references to a same-plan created user identity while preserving a matching independent restore and remote-only plugin removals', () => {
+  const resourceKey = 'row:["wp_posts","ID:13"]';
+  const targetResourceKey = 'row:["wp_users","ID:12"]';
+  const base = baseSite();
+  delete base.files['about.php'];
+
+  const local = baseSite();
+  local.files['about.php'] = '<?php echo "shared restore removals";';
+  local.db.wp_users = {
+    'ID:12': {
+      ID: 12,
+      user_login: 'local-post-author-restore-removals',
+      user_email: 'local-post-author-restore-removals@example.test',
+    },
+  };
+  local.db.wp_posts['ID:13'] = {
+    ID: 13,
+    post_title: 'Local post authored by same-plan restore removals user',
+    post_content: 'Local post authored by same-plan restore removals user content',
+    post_status: 'publish',
+    post_author: 12,
+  };
+
+  const remote = baseSite();
+  remote.files['about.php'] = '<?php echo "shared restore removals";';
+  delete remote.plugins.forms;
+  delete remote.files['wp-content/plugins/forms/forms.php'];
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === targetResourceKey);
+  const reference = blocker.references[0];
+  const restoreDecision = decisionFor(plan, 'file:about.php');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(decisionFor(plan, targetResourceKey), undefined);
+  assert.equal(restoreDecision.decision, 'already-in-sync');
+  assert.equal(restoreDecision.change.localChange, 'create');
+  assert.equal(restoreDecision.change.remoteChange, 'create');
+  assert.equal(blocker.class, 'unsupported-comments-users-resource');
+  assert.equal(blocker.resourceKey, targetResourceKey);
+  assert.equal(blocker.unsupportedState, 'same-plan-reference');
+  assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_users","ID:12"] is created in the same plan as a post author identity that depends on it, and identity rewriting is not yet supported.');
+  assert.equal(reference.relationshipKey, 'wp_posts.post_author');
+  assert.equal(reference.relationshipType, 'post-author');
+  assert.equal(reference.sourceResourceKey, resourceKey);
+  assert.equal(reference.targetResourceKey, targetResourceKey);
+  assert.equal(reference.targetChange.remote.state, 'absent');
+  assert.equal(reference.targetChange.local.state, 'present');
+  assert.equal(planJson.includes('shared restore removals'), false);
+  assert.equal(planJson.includes('Local post authored by same-plan restore removals user'), false);
+  assert.equal(planJson.includes('Local post authored by same-plan restore removals user content'), false);
+  assert.equal(planJson.includes('local-post-author-restore-removals'), false);
+  assert.equal(Object.hasOwn(remote.plugins, 'forms'), false);
+  assert.equal(Object.hasOwn(remote.files, 'wp-content/plugins/forms/forms.php'), false);
+});
+
 test('blocks local same-plan created comment post identity while preserving a matching independent edit and remote-only plugin changes', () => {
   const resourceKey = 'row:["wp_comments","comment_ID:13"]';
   const targetResourceKey = 'row:["wp_posts","ID:17"]';
