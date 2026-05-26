@@ -285,6 +285,14 @@ export function evaluateProductionAuthSessionLifecycleSummary(summary, now = Dat
     }
   }
 
+  if (issuedAuthUser.missing) {
+    return {
+      ok: false,
+      required: 'authenticated identity continuity',
+      observed: 'missing-user-login',
+    };
+  }
+
   return {
     ok: true,
     required: 'production-auth-session lifecycle',

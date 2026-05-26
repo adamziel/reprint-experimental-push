@@ -1681,6 +1681,53 @@ test('production auth/session lifecycle summary fails closed on authenticated id
   );
 });
 
+test('production auth/session lifecycle summary fails closed when the issued preflight drops the authenticated identity', () => {
+  assert.deepEqual(
+    evaluateProductionAuthSessionLifecycleSummary({
+      issued: {
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+      },
+      read: {
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+        authUser: 'reprint_push_admin',
+        preserved: true,
+      },
+      observations: [
+        {
+          step: 'preflight',
+          id: 'session-01',
+          type: 'production-auth-session',
+          status: 'active',
+          expiresAt: '2099-01-01T00:00:00Z',
+          preserved: false,
+          rotated: false,
+        },
+        {
+          step: 'journal',
+          id: 'session-01',
+          type: 'production-auth-session',
+          status: 'active',
+          expiresAt: '2099-01-01T00:00:00Z',
+          authUser: 'reprint_push_admin',
+          preserved: true,
+          rotated: false,
+        },
+      ],
+    }),
+    {
+      ok: false,
+      required: 'authenticated identity continuity',
+      observed: 'missing-user-login',
+    },
+  );
+});
+
 test('production auth/session lifecycle summary fails closed when a preserved read drops the authenticated identity', () => {
   assert.deepEqual(
     evaluateProductionAuthSessionLifecycleSummary({
