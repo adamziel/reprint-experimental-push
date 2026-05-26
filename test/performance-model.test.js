@@ -4158,6 +4158,16 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
   );
   assert.ok(rejectedById.get('batched-receipt-journal-flush').violates.includes('backpressure'));
   assert.ok(rejectedById.get('batched-receipt-journal-flush').violates.includes('durable-progress'));
+  assert.equal(rejectedById.get('receipt-cursor-headroom-completes-replay').rejectedGate, 'recovery');
+  assert.ok(
+    rejectedById.get('receipt-cursor-headroom-completes-replay').violates.includes('chunk-receipts'),
+  );
+  assert.ok(
+    rejectedById.get('receipt-cursor-headroom-completes-replay').violates.includes('row-preconditions'),
+  );
+  assert.ok(
+    rejectedById.get('receipt-cursor-headroom-completes-replay').violates.includes('atomic-groups'),
+  );
   assert.ok(model.rejectedFastPaths.every((fastPath) => fastPath.rejectedBecause));
 });
 

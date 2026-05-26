@@ -1679,6 +1679,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['remote-index-planning-only', 'chunk-receipts', 'atomic-file-publish', 'durable-progress'],
   },
   {
+    id: 'receipt-cursor-headroom-completes-replay',
+    proposal: 'treat receipt-cursor headroom plus queue budget as proof that replay is complete',
+    rejectedBecause: 'headroom only bounds pause safety; it cannot prove which chunk, row, or group receipts survived failure',
+    rejectedGate: 'recovery',
+    violates: ['durable-progress', 'chunk-receipts', 'row-preconditions', 'atomic-groups'],
+  },
+  {
     id: 'index-and-table-checksum-skips-batch-preconditions',
     proposal: 'use a fresh remote index plus a table checksum to skip row-batch preconditions or plugin metadata checks',
     rejectedBecause: 'planning evidence and table-level metadata can shorten lookup work, but they cannot replace live per-row or per-member preconditions at mutation time',
