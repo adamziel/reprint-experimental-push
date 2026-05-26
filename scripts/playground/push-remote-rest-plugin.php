@@ -2981,6 +2981,8 @@ function reprint_push_lab_rest_validate_authenticated_receipt(
         || (string) ($session['expiresAt'] ?? '') !== (string) ($current['session']['expiresAt'] ?? '')
         || (bool) ($session['revoked'] ?? false) !== (bool) ($current['session']['revoked'] ?? false)
         || (bool) ($session['cleanedUp'] ?? false) !== (bool) ($current['session']['cleanedUp'] ?? false)
+        || (bool) ($session['playgroundFallback'] ?? false) !== (bool) ($current['session']['playgroundFallback'] ?? false)
+        || (string) ($session['warning'] ?? '') !== (string) ($current['session']['warning'] ?? '')
     ) {
         reprint_push_lab_rest_auth_receipt_mismatch('Receipt auth identity or session does not match the current request.', $receipt);
     }

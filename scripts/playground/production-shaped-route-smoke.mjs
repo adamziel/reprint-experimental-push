@@ -196,6 +196,22 @@ try {
     assert.equal(sessionMismatchReceiptOnApply.body.mode, 'apply');
     await assertCurrentSurface(client, snapshots.base, 'production-shaped stale session receipt apply must not mutate');
 
+    const fallbackMismatchReceiptOnApply = await client.signedPost('/apply', {
+      plan: readyPlan,
+      receipt: mutateReceipt(dryRun.body.receipt, (receipt) => {
+        receipt.authBinding.session.playgroundFallback = true;
+        receipt.authBinding.session.warning = 'playground fallback drifted after dry-run';
+      }),
+    }, {
+      session,
+      idempotencyKey: 'production-shaped-fallback-mismatch-apply',
+    });
+    assert.equal(fallbackMismatchReceiptOnApply.status, 409);
+    assert.equal(fallbackMismatchReceiptOnApply.body.ok, false);
+    assert.equal(fallbackMismatchReceiptOnApply.body.code, 'AUTH_RECEIPT_MISMATCH');
+    assert.equal(fallbackMismatchReceiptOnApply.body.mode, 'apply');
+    await assertCurrentSurface(client, snapshots.base, 'production-shaped fallback-drift receipt apply must not mutate');
+
     const journalAfterCrossRouteFailures = await client.signedGet('/db-journal?limit=80', {
       session,
       idempotencyKey: 'production-shaped-cross-route-failures-journal',
@@ -286,6 +302,8 @@ try {
       labReceiptOnProductionCode: labReceiptOnProductionApply.body.code,
       productionReceiptOnLabStatus: productionReceiptOnLabApply.status,
       productionReceiptOnLabCode: productionReceiptOnLabApply.body.code,
+      fallbackReceiptOnProductionStatus: fallbackMismatchReceiptOnApply.status,
+      fallbackReceiptOnProductionCode: fallbackMismatchReceiptOnApply.body.code,
       dbMutationRowsBeforeValidApply: crossRouteFailureRows.filter((entry) => entry.event === 'mutation-applied').length,
     };
     summary.replay = {
