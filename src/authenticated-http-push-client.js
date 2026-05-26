@@ -43,6 +43,7 @@ export async function runAuthenticatedHttpPush({
   routeProfile = 'lab-authenticated',
   dryRunOnly = false,
   labDriftAfterSnapshot = '',
+  requireProductionAuthSession = false,
   now = new Date(),
 }) {
   if (!sourceUrl) {
@@ -91,6 +92,21 @@ export async function runAuthenticatedHttpPush({
   const session = preflight.body.session?.id;
   if (!session) {
     summary.code = 'PREFLIGHT_SESSION_MISSING';
+    return summary;
+  }
+  if (requireProductionAuthSession && preflight.body.auth?.session?.type !== 'production-auth-session') {
+    summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
+    summary.authSession = summarizeResponse(preflight).sessionType
+      ? {
+          required: 'production-auth-session',
+          observed: preflight.body.auth?.session?.type || 'missing',
+          verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+        }
+      : {
+          required: 'production-auth-session',
+          observed: 'missing',
+          verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+        };
     return summary;
   }
 

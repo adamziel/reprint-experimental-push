@@ -81,6 +81,10 @@ The constrained release-candidate boundary is fail-closed on unsupported product
 - dry-run stays receipt-only
 - apply keeps the live revalidation boundary at batch and storage scope
 - journal inspect and recovery inspect remain read-only until durable ownership is proven
+- production auth/session lifecycles remain blocked until live preflight mints
+  the expected production session type
+- durable journal ownership remains blocked until the checked release surface
+  can prove claim-fenced storage and restart-readable journal evidence
 
 The executor maps the pull pipeline into push without ever collapsing the
 boundary:

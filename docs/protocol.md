@@ -254,6 +254,11 @@ That gap is intentionally fail-closed for the constrained release candidate:
 the docs may describe journal evidence and recovery inspection, but they do
 not claim durable production journal ownership until the storage/lease/fence
 proof lands.
+The same release boundary also stays fail-closed on production auth/session
+lifecycles that are not yet minted on the live source. If the live preflight
+does not return the expected production session type, the checked release
+surface remains blocked at `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED`
+instead of silently treating the lab-shaped session as production-ready.
 When the live source or credentials are missing, the same checked entrypoint
 must fail closed with the exact `REPRINT_PUSH_LIVE_SOURCE_REQUIRED` or
 `REPRINT_PUSH_SECRET_REQUIRED` gate before any preflight, dry-run, or apply
