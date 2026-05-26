@@ -94,6 +94,7 @@ test('guarded executor benchmark moves buffers and row payloads through durable 
   assert.equal(report.evidence.parallelism.parallelismLimitsMeasured, true);
   assert.equal(report.evidence.parallelism.parallelismLimitsVisible, false);
   assert.equal(report.claims.productionThroughputDetails.parallelismLimitsVisible, false);
+  assert.equal(report.claims.productionThroughputDetails.parallelismLimitsVisibleAndMeasured, false);
   assert.equal(report.evidence.recovery.successInspectionStatus, 'fully-updated-remote');
   assert.equal(report.evidence.recovery.preCommitFailureInspectionStatus, 'old-remote');
   assert.equal(report.evidence.recovery.partialCommitInspectionStatus, 'blocked-recovery');
@@ -225,6 +226,21 @@ test('guarded benchmark blocks forged atomic-commit visibility without a measure
 
   assert.equal(blockers.includes('production-atomic-group-commit-visible-without-measurement'), true);
   assert.equal(blockers.includes('production-atomic-group-commit-not-visible'), false);
+});
+
+test('guarded benchmark blocks parallelism visibility without a measurement', () => {
+  const report = smallBenchmark();
+  const tampered = clone(report);
+
+  tampered.evidence.parallelism.parallelismLimitsVisible = true;
+  tampered.evidence.parallelism.parallelismLimitsMeasured = false;
+
+  const details = productionThroughputDetails(tampered);
+  const blockers = productionThroughputBlockers(tampered);
+
+  assert.equal(details.parallelismLimitsVisibleAndMeasured, false);
+  assert.equal(blockers.includes('production-parallelism-limits-visible-without-measurement'), true);
+  assert.equal(blockers.includes('production-parallelism-limits-not-visible'), true);
 });
 
 test('guarded benchmark blocks atomic-commit visibility when the metadata surface is hidden', () => {
