@@ -1343,37 +1343,62 @@ function isValidSamePlanWordPressGraphTarget(targetMutation, reference, sourceMu
 }
 
 function isBlockedSamePlanWordPressGraphSource(sourceMutation, reference, mutationByResourceKey) {
-  if (reference.relationshipType !== 'featured-image-attachment') {
-    return false;
-  }
-  if (sourceMutation?.resource?.type !== 'row' || sourceMutation?.resource?.table !== 'wp_postmeta') {
-    return false;
-  }
-  const sourceValue = deserializeResourceValue(sourceMutation.value);
-  if (sourceValue && typeof sourceValue === 'object') {
-    const ownerId = normalizePositiveInteger(sourceValue.post_id);
-    const ownerMutation = ownerId == null
-      ? null
-      : mutationByResourceKey.get(`row:${JSON.stringify(['wp_posts', `ID:${ownerId}`])}`);
-    const ownerValue = ownerMutation ? deserializeResourceValue(ownerMutation.value) : null;
-    if (ownerValue && typeof ownerValue === 'object' && ownerValue.post_type === 'attachment') {
-      return true;
+  if (reference.relationshipType === 'featured-image-attachment') {
+    if (sourceMutation?.resource?.type !== 'row' || sourceMutation?.resource?.table !== 'wp_postmeta') {
+      return false;
     }
+    const sourceValue = deserializeResourceValue(sourceMutation.value);
+    if (sourceValue && typeof sourceValue === 'object') {
+      const ownerId = normalizePositiveInteger(sourceValue.post_id);
+      const ownerMutation = ownerId == null
+        ? null
+        : mutationByResourceKey.get(`row:${JSON.stringify(['wp_posts', `ID:${ownerId}`])}`);
+      const ownerValue = ownerMutation ? deserializeResourceValue(ownerMutation.value) : null;
+      if (ownerValue && typeof ownerValue === 'object' && ownerValue.post_type === 'attachment') {
+        return true;
+      }
+    }
+    const ownerId = normalizePositiveInteger(sourceValue && typeof sourceValue === 'object' ? sourceValue.post_id : null);
+    if (ownerId == null) {
+      return false;
+    }
+    const ownerResourceKey = `row:${JSON.stringify(['wp_posts', `ID:${ownerId}`])}`;
+    const ownerMutation = mutationByResourceKey.get(ownerResourceKey);
+    if (!ownerMutation || ownerMutation.changeKind !== 'create' || ownerMutation.action !== 'put') {
+      return false;
+    }
+    const ownerValue = deserializeResourceValue(ownerMutation.value);
+    if (!ownerValue || typeof ownerValue !== 'object') {
+      return false;
+    }
+    return ownerValue.post_type === 'attachment';
   }
-  const ownerId = normalizePositiveInteger(sourceValue && typeof sourceValue === 'object' ? sourceValue.post_id : null);
-  if (ownerId == null) {
-    return false;
+
+  if (reference.relationshipType === 'term-relationship-object') {
+    if (sourceMutation?.resource?.type !== 'row' || sourceMutation?.resource?.table !== 'wp_term_relationships') {
+      return false;
+    }
+    const sourceValue = deserializeResourceValue(sourceMutation.value);
+    if (!sourceValue || typeof sourceValue !== 'object') {
+      return false;
+    }
+    const ownerId = normalizePositiveInteger(sourceValue.object_id);
+    if (ownerId == null) {
+      return false;
+    }
+    const ownerResourceKey = `row:${JSON.stringify(['wp_posts', `ID:${ownerId}`])}`;
+    const ownerMutation = mutationByResourceKey.get(ownerResourceKey);
+    if (!ownerMutation || ownerMutation.changeKind !== 'create' || ownerMutation.action !== 'put') {
+      return false;
+    }
+    const ownerValue = deserializeResourceValue(ownerMutation.value);
+    if (!ownerValue || typeof ownerValue !== 'object') {
+      return false;
+    }
+    return ownerValue.post_type === 'revision';
   }
-  const ownerResourceKey = `row:${JSON.stringify(['wp_posts', `ID:${ownerId}`])}`;
-  const ownerMutation = mutationByResourceKey.get(ownerResourceKey);
-  if (!ownerMutation || ownerMutation.changeKind !== 'create' || ownerMutation.action !== 'put') {
-    return false;
-  }
-  const ownerValue = deserializeResourceValue(ownerMutation.value);
-  if (!ownerValue || typeof ownerValue !== 'object') {
-    return false;
-  }
-  return ownerValue.post_type === 'attachment';
+
+  return false;
 }
 
 function orderMutationsByDependencies(mutations) {

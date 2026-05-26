@@ -2610,6 +2610,75 @@ test('blocks a local term relationship owned by a navigation post even when it t
   );
 });
 
+test('blocks a local term relationship owned by a revision even when it targets a same-plan post', () => {
+  const revisionPostResourceKey = 'row:["wp_posts","ID:5"]';
+  const taggedPostResourceKey = 'row:["wp_posts","ID:4"]';
+  const taxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:9"]';
+  const relationshipResourceKey = 'row:["wp_term_relationships","object_id:5|term_taxonomy_id:9"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_posts['ID:5'] = {
+    ID: 5,
+    post_title: 'Local revision post',
+    post_content: 'local-private-revision-post-body',
+    post_status: 'inherit',
+    post_type: 'revision',
+  };
+  local.db.wp_posts['ID:4'] = {
+    ID: 4,
+    post_title: 'Local tagged post',
+    post_content: 'local-private-tagged-post-body',
+    post_status: 'publish',
+  };
+  local.db.wp_terms = {
+    'term_id:7': {
+      term_id: 7,
+      name: 'Local taxonomy term',
+      slug: 'local-taxonomy-term',
+    },
+  };
+  local.db.wp_term_taxonomy = {
+    'term_taxonomy_id:9': {
+      term_taxonomy_id: 9,
+      term_id: 7,
+      taxonomy: 'category',
+      description: '',
+      parent: 0,
+      count: 0,
+    },
+  };
+  local.db.wp_term_relationships = {
+    'object_id:5|term_taxonomy_id:9': {
+      object_id: 5,
+      term_taxonomy_id: 9,
+      term_order: 0,
+    },
+  };
+  const remote = baseSite();
+
+  const plan = planFor(base, local, remote);
+  const revisionMutation = mutationFor(plan, revisionPostResourceKey);
+  const taggedPostMutation = mutationFor(plan, taggedPostResourceKey);
+  const taxonomyMutation = mutationFor(plan, taxonomyResourceKey);
+  const relationshipBlocker = plan.blockers.find((entry) => entry.resourceKey === relationshipResourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(revisionMutation, undefined);
+  assert.equal(taggedPostMutation.changeKind, 'create');
+  assert.equal(taxonomyMutation.changeKind, 'create');
+  assert.equal(relationshipBlocker.class, 'missing-wordpress-graph-dependency');
+  assert.equal(relationshipBlocker.references[0].relationshipType, 'term-relationship-object');
+  assert.equal(relationshipBlocker.references[0].targetResourceKey, revisionPostResourceKey);
+  assert.equal(
+    JSON.stringify(relationshipBlocker).includes('local-private-revision-post-body'),
+    false,
+  );
+  assert.equal(
+    JSON.stringify(relationshipBlocker).includes('local-private-tagged-post-body'),
+    false,
+  );
+});
+
 test('blocks an atomic plugin install when dependencies are absent', () => {
   const base = baseSite();
   const local = baseSite();
