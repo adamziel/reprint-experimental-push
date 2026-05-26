@@ -554,12 +554,15 @@ function summarizeRecoveryInspect(response) {
 function isReplayEquivalent(applyResponse, replayResponse) {
   const applyBody = applyResponse?.body || {};
   const replayBody = replayResponse?.body || {};
+  const hasResponseSchemaVersion = applyBody.responseSchemaVersion !== undefined
+    && replayBody.responseSchemaVersion !== undefined;
   return applyResponse?.status === replayResponse?.status
     && applyBody.mode === replayBody.mode
     && applyBody.ok === replayBody.ok
     && applyBody.code === replayBody.code
     && applyBody.applied === replayBody.applied
     && applyBody.receipt?.receiptHash === replayBody.receipt?.receiptHash
+    && hasResponseSchemaVersion
     && applyBody.responseSchemaVersion === replayBody.responseSchemaVersion
     && isStorageGuardEquivalent(applyBody.storageGuard, replayBody.storageGuard)
     && applyBody.auth?.identity?.userLogin === replayBody.auth?.identity?.userLogin
