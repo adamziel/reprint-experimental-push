@@ -2602,42 +2602,53 @@ function samePlanCreatedGraphIdentitySupport({ resource, resources, base, local,
     return { supported: true };
   }
 
-  const termTaxonomyInboundReference = inboundReferences.find((reference) =>
+  const orderedInboundReferences = inboundReferences.slice().sort((left, right) => {
+    const priorityDelta = samePlanCreatedGraphIdentityReferencePriority(left)
+      - samePlanCreatedGraphIdentityReferencePriority(right);
+    if (priorityDelta !== 0) {
+      return priorityDelta;
+    }
+    return left.sourceResourceKey.localeCompare(right.sourceResourceKey)
+      || left.relationshipType.localeCompare(right.relationshipType)
+      || left.relationshipKey.localeCompare(right.relationshipKey);
+  });
+
+  const termTaxonomyInboundReference = orderedInboundReferences.find((reference) =>
     reference.relationshipType === 'term-relationship-taxonomy'
     && reference.targetResource?.table === 'wp_term_taxonomy');
-  const termTaxonomyParentInboundReference = inboundReferences.find((reference) =>
+  const termTaxonomyParentInboundReference = orderedInboundReferences.find((reference) =>
     reference.relationshipType === 'term-taxonomy-parent'
     && reference.targetResource?.table === 'wp_terms');
-  const revisionInboundReference = inboundReferences.find((reference) =>
+  const revisionInboundReference = orderedInboundReferences.find((reference) =>
     reference.relationshipType === 'term-relationship-object'
     && reference.targetResource?.table === 'wp_posts'
     && getResource(local, reference.targetResource)?.post_type === 'revision');
-  const postParentInboundReference = inboundReferences.find((reference) =>
+  const postParentInboundReference = orderedInboundReferences.find((reference) =>
     reference.relationshipType === 'post-parent'
     && reference.targetResource?.table === 'wp_posts');
-  const commentPostInboundReference = inboundReferences.find((reference) =>
+  const commentPostInboundReference = orderedInboundReferences.find((reference) =>
     reference.relationshipType === 'comment-post'
     && reference.targetResource?.table === 'wp_posts');
-  const postInboundReference = inboundReferences.find((reference) =>
+  const postInboundReference = orderedInboundReferences.find((reference) =>
     reference.relationshipType === 'term-relationship-object'
     && reference.targetResource?.table === 'wp_posts');
-  const postAuthorInboundReference = inboundReferences.find((reference) =>
+  const postAuthorInboundReference = orderedInboundReferences.find((reference) =>
     reference.relationshipType === 'post-author'
     && reference.targetResource?.table === 'wp_users');
-  const attachmentInboundReference = inboundReferences.find((reference) =>
+  const attachmentInboundReference = orderedInboundReferences.find((reference) =>
     reference.relationshipType === 'featured-image-attachment'
     && reference.targetResource?.table === 'wp_posts'
     && getResource(local, reference.targetResource)?.post_type === 'attachment');
-  const commentParentInboundReference = inboundReferences.find((reference) =>
+  const commentParentInboundReference = orderedInboundReferences.find((reference) =>
     reference.relationshipType === 'comment-parent'
     && reference.targetResource?.table === 'wp_comments');
-  const commentUserInboundReference = inboundReferences.find((reference) =>
+  const commentUserInboundReference = orderedInboundReferences.find((reference) =>
     reference.relationshipType === 'comment-user'
     && reference.targetResource?.table === 'wp_users');
-  const commentmetaCommentInboundReference = inboundReferences.find((reference) =>
+  const commentmetaCommentInboundReference = orderedInboundReferences.find((reference) =>
     reference.relationshipType === 'commentmeta-comment'
     && reference.targetResource?.table === 'wp_comments');
-  const usermetaUserInboundReference = inboundReferences.find((reference) =>
+  const usermetaUserInboundReference = orderedInboundReferences.find((reference) =>
     reference.relationshipType === 'usermeta-user'
     && reference.targetResource?.table === 'wp_users');
   let reason = `WordPress graph mutation ${resource.key} is created in the same plan as a relationship that depends on it, and identity rewriting is not yet supported.`;
@@ -2671,8 +2682,66 @@ function samePlanCreatedGraphIdentitySupport({ resource, resources, base, local,
     supported: false,
     className: 'stale-wordpress-graph-identity',
     reason,
-    references: inboundReferences,
+    references: orderedInboundReferences,
   };
+}
+
+function samePlanCreatedGraphIdentityReferencePriority(reference) {
+  if (reference.relationshipType === 'term-relationship-taxonomy'
+    && reference.targetResource?.table === 'wp_term_taxonomy') {
+    return 0;
+  }
+  if (reference.relationshipType === 'term-taxonomy-parent'
+    && reference.targetResource?.table === 'wp_terms') {
+    return 1;
+  }
+  if (reference.relationshipType === 'term-relationship-object'
+    && reference.targetResource?.table === 'wp_posts'
+    && reference.targetChange.local.value?.post_type === 'revision') {
+    return 2;
+  }
+  if (reference.relationshipType === 'post-parent'
+    && reference.targetResource?.table === 'wp_posts') {
+    return 3;
+  }
+  if (reference.relationshipType === 'comment-post'
+    && reference.targetResource?.table === 'wp_posts') {
+    return 4;
+  }
+  if (reference.relationshipType === 'term-relationship-object'
+    && reference.targetResource?.table === 'wp_posts') {
+    return 5;
+  }
+  if (reference.relationshipType === 'postmeta-post'
+    && reference.targetResource?.table === 'wp_posts') {
+    return 6;
+  }
+  if (reference.relationshipType === 'post-author'
+    && reference.targetResource?.table === 'wp_users') {
+    return 7;
+  }
+  if (reference.relationshipType === 'featured-image-attachment'
+    && reference.targetResource?.table === 'wp_posts'
+    && reference.targetChange.local.value?.post_type === 'attachment') {
+    return 8;
+  }
+  if (reference.relationshipType === 'comment-parent'
+    && reference.targetResource?.table === 'wp_comments') {
+    return 9;
+  }
+  if (reference.relationshipType === 'comment-user'
+    && reference.targetResource?.table === 'wp_users') {
+    return 10;
+  }
+  if (reference.relationshipType === 'commentmeta-comment'
+    && reference.targetResource?.table === 'wp_comments') {
+    return 11;
+  }
+  if (reference.relationshipType === 'usermeta-user'
+    && reference.targetResource?.table === 'wp_users') {
+    return 12;
+  }
+  return Number.MAX_SAFE_INTEGER;
 }
 
 function isWordPressGraphReferenceResource(resource) {
