@@ -3723,6 +3723,10 @@ maybeTest('production-shaped release verify command runs the live protocol branc
     assert.match(proof.stdout, /"verdict": "LIVE_RELEASE_BOUNDARY_OK"/);
     assert.match(
       proof.stdout,
+      /"boundary": \{[\s\S]*"replayAndRetry": \{\s*"required": "\/snapshot",\s*"observed": "\/snapshot",\s*"retryAttempts": 2,\s*"verdict": "LIVE_RELEASE_BOUNDARY_OK"\s*\}/,
+    );
+    assert.match(
+      proof.stdout,
       /"gateDependencies": \{\s*"productionAuthSession": "production-backed auth\/session issuance, read, expiry, rotation, revocation, and cleanup on the checked release path",\s*"durableJournal": "production durable journal storage with lease fencing, restart-readable artifacts, and release-path consumption",\s*"replayAndRetry": "checked live replay equivalence plus preserved-remote retry on the release verifier path"\s*\}/,
     );
     assert.match(proof.stdout, /"releaseProof": \{\s*"ok": true,\s*"mode": "apply"/);

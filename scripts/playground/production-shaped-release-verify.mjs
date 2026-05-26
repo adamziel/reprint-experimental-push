@@ -1236,6 +1236,115 @@ try {
         throw new ProofFailure();
       }
 
+      const checkedReplayEquivalence = proof.replayEquivalence?.equivalent === true;
+      const checkedPreservedRemoteRetry = requiredPreservedRemoteRetryPath
+        ? proof.replayAndRetry?.verdict === 'PRESERVED_REMOTE_RETRY_PROVEN'
+        : true;
+
+      if (!checkedReplayEquivalence || !checkedPreservedRemoteRetry) {
+        process.stdout.write(
+          JSON.stringify(
+            {
+              ok: false,
+              topology: {
+                sourceUrl: liveSourceUrl,
+                remoteBase: remoteServer.baseUrl,
+                remoteChanged: 'remote-changed',
+                localEdited: 'local-edited',
+              },
+              remoteSnapshotHashes: {
+                sameRemoteIdentity: true,
+                baseHash: liveDrift.baseHash,
+                changedHash: liveDrift.changedHash,
+              },
+              drift: labDriftAfterSnapshot ? {
+                mode: labDriftAfterSnapshot,
+                sameRemoteIdentity: true,
+                changedHash: liveDrift.changedHash,
+              } : {
+                sameRemoteIdentity: true,
+              },
+              liveDrift,
+              boundary: {
+                firstRemainingProductionBoundary: 'replay and preserved-remote retry on the checked live release path',
+                status: 'unimplemented',
+                verdict: !checkedReplayEquivalence
+                  ? 'REPLAY_NOT_EQUIVALENT'
+                  : 'PRESERVED_REMOTE_RETRY_REQUIRED',
+                authSession: {
+                  required: checkedAuthSessionLifecycle.required,
+                  observed: checkedAuthSessionLifecycle.observed,
+                  verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_PROVEN',
+                },
+                durableJournal: {
+                  storageLeaseFence: 'live production-shaped db-journal surface accepted on the checked release boundary',
+                  verdict: packagedSourceFixture ? 'PACKAGED_RELEASE_BOUNDARY_OK' : 'LIVE_RELEASE_BOUNDARY_OK',
+                },
+                replayAndRetry: checkedPreservedRemoteRetry
+                  ? {
+                      required: requiredPreservedRemoteRetryPath,
+                      observed: proof.replayAndRetry?.observed || requiredPreservedRemoteRetryPath,
+                      retryAttempts: proof.replayAndRetry?.retryAttempts || proof.retryAttempts || 1,
+                      verdict: 'PRESERVED_REMOTE_RETRY_PROVEN',
+                    }
+                  : {
+                      required: requiredPreservedRemoteRetryPath,
+                      observed: proof.replayAndRetry?.observed || 'missing-transient-retry',
+                      retryAttempts: proof.replayAndRetry?.retryAttempts || proof.retryAttempts || 1,
+                      verdict: 'PRESERVED_REMOTE_RETRY_REQUIRED',
+                    },
+              },
+              protocolExtension,
+              preflight: {
+                status: preflight.status,
+                authSessionType: preflight.body.auth.session.type,
+                routeProfile: preflight.body.routeProfile,
+                session: {
+                  id: preflight.body.session.id,
+                  type: preflight.body.session.type,
+                },
+              },
+              releaseProof: {
+                ok: false,
+                status: 409,
+                code: !checkedReplayEquivalence ? 'REPLAY_NOT_EQUIVALENT' : 'PRESERVED_REMOTE_RETRY_REQUIRED',
+                mode: proof.mode,
+                retryAttempts: proof.retryAttempts,
+              },
+              authSessionSource: summarizeAuthSessionSource(authSessionSourceCommand, authSessionSource),
+              authSessionLifecycle: proof.authSessionLifecycle,
+              authSessionLifecycleTrace: proof.authSessionLifecycleTrace,
+              authSessionLifecycleSummary,
+              replayEquivalence: proof.replayEquivalence,
+              durableJournal: {
+                proof: {
+                  status: 0,
+                  journal: durableJournalSummary.journal,
+                  leaseFence: {
+                    ...durableJournalSummary.leaseFence,
+                    staleClaimRejected: durableJournalSummary.leaseFence?.staleClaimRejected === true,
+                  },
+                },
+                rows: proof.dbJournal.rows,
+                applyCommitted: proof.dbJournal.applyCommitted,
+                mutationApplied: proof.dbJournal.mutationApplied,
+                idempotencyOpened: proof.dbJournal.idempotencyOpened,
+                scope: proof.dbJournal.scope || null,
+                ownership: proof.dbJournal.ownership || null,
+                liveLeaseFence: proof.dbJournal.leaseFence || null,
+                checkedAccepted: checkedDurableJournalAccepted,
+              },
+              replayAndRetry: proof.replayAndRetry || null,
+              ...(packagedPluginDriverProof ? { pluginDriver: packagedPluginDriverProof } : {}),
+            },
+            null,
+            2,
+          ),
+        );
+        process.stdout.write('\n');
+        throw new ProofFailure();
+      }
+
       const successfulReleaseBoundary = {
         firstRemainingProductionBoundary: null,
         status: 'checked',
@@ -1253,6 +1362,14 @@ try {
               ? (packagedSourceFixture ? 'PACKAGED_RELEASE_BOUNDARY_OK' : 'LIVE_RELEASE_BOUNDARY_OK')
               : 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED',
           },
+        replayAndRetry: {
+          required: requiredPreservedRemoteRetryPath,
+          observed: proof.replayAndRetry?.observed || requiredPreservedRemoteRetryPath,
+          retryAttempts: proof.replayAndRetry?.retryAttempts || proof.retryAttempts || 1,
+          verdict: checkedReplayEquivalence && checkedPreservedRemoteRetry
+            ? 'LIVE_RELEASE_BOUNDARY_OK'
+            : 'PRESERVED_REMOTE_RETRY_REQUIRED',
+        },
       };
 
       process.stdout.write(
