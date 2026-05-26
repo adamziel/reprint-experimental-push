@@ -1,28 +1,27 @@
 Critic lane handoff:
 
-- Rechecked the newest lane evidence from `reliable-executor`, `no-data-loss-recovery`, `progress-publisher`, and the independent audit surface.
-- Evidence changed in one useful way: `reliable-executor` now surfaces a concrete readiness failure trail instead of a silent timeout.
-- The blocker set is narrower, but the verdict is unchanged: the project still cannot claim production-grade push support.
-- The live proof still fails on startup readiness with repeated `502 WordPress is not ready yet` responses on `/wp-json/`, with the last probe trail now surfaced before timeout, so the next useful code change is to shorten or fail-closed that startup window rather than rerun the same proof unchanged.
-- The production claim remains blocked by the same missing live proofs: auth/session lifecycle, preserved-remote retry, exact replay equivalence, and durable journal ownership on the real push path.
+- Rechecked the freshest `reliable-executor`, `independent-auditor`, `progress-publisher`, and `feedback-supervisor` evidence. The public audit surface stayed fresh, but the release verdict is still flat: the harness is bounded, yet the proof still does not establish production-grade release evidence.
+- The latest reliable proof has narrowed the immediate failure from a slow readiness loop to the `npx @wp-playground/cli@latest server` bootstrap path itself. Two focused subtests now pass the auth/session gate, while the durable-journal and retained-source proof paths still hit the outer subprocess budget, so the release posture remains `0/4`.
+- The production claim is still blocked by the same unproven areas: auth/session lifecycle, preserved-remote retry, exact replay equivalence, durable journal ownership, and broad graph/plugin coverage.
+- The next useful proof move is to bypass or bound the Playground launch path so `startPlaygroundServer()` does not spend the full subprocess budget bootstrapping the CLI, then rerun the same focused proof.
 
 Changed files:
-- [`audits/critic.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/critic/audits/critic.md)
 - [`.lane-output/final.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/critic/.lane-output/final.md)
 
 Commands run:
-- `sed -n '1,260p' audits/critic.md`
-- `find ../ -path '*/.lane-output/final*.md' -type f | sort | tail -n 12 | xargs -r -I{} sh -c 'echo "--- {}"; sed -n "1,220p" "{}"'`
 - `git status --short --branch`
+- `for d in ../reliable-executor/.lane-output ../progress-publisher/.lane-output ../independent-auditor/.lane-output; do echo "=== $d ==="; ls -1t "$d"/final*.md 2>/dev/null | head -n 4; done`
+- `f=$(ls -1t ../reliable-executor/.lane-output/final*.md | head -n 1); echo "FILE=$f"; sed -n '1,240p' "$f"`
+- `f=$(ls -1t ../progress-publisher/.lane-output/final*.md | head -n 1); echo "FILE=$f"; sed -n '1,240p' "$f"`
+- `f=$(ls -1t ../independent-auditor/.lane-output/final*.md | head -n 1); echo "FILE=$f"; sed -n '1,240p' "$f"`
+- `f=$(ls -1t ../feedback-supervisor/.lane-output/final*.md | head -n 1); echo "FILE=$f"; sed -n '1,220p' "$f"`
 
 Push result:
 - No push attempted
 
 Worktree status:
-- `## lane/cycle-20260525-mainwindows-2349/critic...origin/main [ahead 1549, behind 202]`
-- Dirty tracked files:
-  - [`audits/critic.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/critic/audits/critic.md)
-  - [`.lane-output/final.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/critic/.lane-output/final.md)
+- `## lane/cycle-20260525-mainwindows-2349/critic...origin/main [ahead 1550, behind 208]`
+- Dirty tracked file: [`.lane-output/final.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/critic/.lane-output/final.md)
 
 Next supervisor nudge:
-- Re-poll `reliable-executor` only after it lands a concrete proof delta or a concrete failure path that changes the audit verdict; otherwise keep the critic lane parked and avoid status-only churn.
+- Re-poll `reliable-executor` only after it either bypasses the CLI bootstrap path or lands a concrete fail-closed path from the bounded test; otherwise keep `critic` parked and avoid another status-only loop.
