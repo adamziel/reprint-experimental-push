@@ -842,7 +842,9 @@ function reprint_push_lab_db_journal_checked_boundary_storage_guard_is_coherent(
     return ($storage_guard['boundary'] ?? null) === ($ownership['productionAdapter'] ?? null)
         && ($storage_guard['boundary'] ?? null) === ($writer_lease['storageGuard'] ?? null)
         && ($storage_guard['boundary'] ?? null) === ($lease_fence['boundary'] ?? null)
-        && ($storage_guard['boundary'] ?? null) === ($lease_fence_writer_lease['storageGuard'] ?? null);
+        && ($storage_guard['boundary'] ?? null) === ($lease_fence_writer_lease['storageGuard'] ?? null)
+        && ($storage_guard['operation'] ?? null) === 'update'
+        && ($storage_guard['outcome'] ?? null) === 'applied';
 }
 
 function reprint_push_lab_db_journal_checked_boundary_contract_is_coherent($journal): bool

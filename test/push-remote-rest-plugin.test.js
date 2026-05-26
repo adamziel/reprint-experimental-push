@@ -3034,6 +3034,73 @@ test('checked authenticated apply evidence fails closed on conflicting checked c
   assert.equal(parsed.dbJournal.claim.activeClaimEvent, 'stale-claim-rejected');
 });
 
+test('checked authenticated apply evidence fails closed on checked storage guard operation drift', { skip: !hasPhp }, () => {
+  const result = runAttachCheckedDbJournalContract(
+    {
+      ok: true,
+      dbJournal: {
+        acceptedOnCheckedBoundary: true,
+        scope: 'packaged production journal scope',
+        claim: {
+          status: 'active',
+          activeClaimKeyHash: 'claim-hash-01',
+          activeClaimSequence: 33,
+          activeClaimEvent: 'idempotency-opened',
+          idempotencyKeyHash: 'idem-hash-01',
+          requestHash: 'request-hash-01',
+          staleClaimRejected: false,
+        },
+        ownership: {
+          ownsJournal: true,
+          restartReadable: true,
+          productionAdapter: 'wpdb-single-statement-cas',
+        },
+        writerLease: {
+          strategy: 'claim-fenced-single-writer',
+          claimKeyUnique: true,
+          fsyncEvidence: true,
+          storageGuard: 'wpdb-single-statement-cas',
+          monotonicSequence: true,
+          restartReadable: true,
+          staleClaimRejected: false,
+        },
+        leaseFence: {
+          boundary: 'wpdb-single-statement-cas',
+          claimKeyUnique: true,
+          fsyncEvidence: true,
+          monotonicSequence: true,
+          restartReadable: true,
+          staleClaimRejected: false,
+          writerLease: {
+            strategy: 'claim-fenced-single-writer',
+            claimKeyUnique: true,
+            fsyncEvidence: true,
+            storageGuard: 'wpdb-single-statement-cas',
+            monotonicSequence: true,
+            restartReadable: true,
+            staleClaimRejected: false,
+          },
+        },
+        storageGuard: {
+          boundary: 'wpdb-single-statement-cas',
+          operation: 'compare-and-swap',
+          outcome: 'applied',
+        },
+      },
+    },
+    {},
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.dbJournal.acceptedOnCheckedBoundary, false);
+  assert.deepEqual(parsed.dbJournal.storageGuard, {
+    boundary: 'wpdb-single-statement-cas',
+    operation: 'compare-and-swap',
+    outcome: 'applied',
+  });
+});
+
 test('authenticated apply finalization upgrades checked failure journal evidence and preserves signed auth metadata', { skip: !hasPhp }, () => {
   const result = runFinalizeAuthenticatedApplyResult(
     {
