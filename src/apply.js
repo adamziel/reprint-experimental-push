@@ -983,6 +983,9 @@ export function productionRecoverySupportReport(writer) {
     addMissingDependency('restart-readable recovery remote artifact references');
   }
   if (persistedArtifactRefs.invalidReason) {
+    if (persistedArtifactRefs.invalidReason === 'invalid artifact ref keys') {
+      addMissingDependency('restart-readable recovery artifact references');
+    }
     if (persistedArtifactRefs.invalidReason.includes('journal artifact ref')) {
       addMissingDependency('restart-readable recovery artifact references');
     }
@@ -1300,6 +1303,9 @@ function durableJournalPersistedArtifactRefs(inspected) {
       continue;
     }
     const hasAnyArtifactRefKeys = Reflect.ownKeys(artifactRefs).length > 0;
+    if (Reflect.ownKeys(artifactRefs).some((key) => key !== 'journal' && key !== 'remote')) {
+      return { journal: null, remote: null, invalidReason: 'invalid artifact ref keys' };
+    }
     if (
       Object.hasOwn(artifactRefs, 'journal')
       && !isCanonicalAbsolutePath(artifactRefs.journal)
