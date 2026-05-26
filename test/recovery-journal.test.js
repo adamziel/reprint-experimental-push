@@ -16,6 +16,7 @@ import {
   openRecoveryJournal,
   recoveryClaimHash,
   readRecoveryJournal,
+  RECOVERY_JOURNAL_SCHEMA_VERSION,
 } from '../src/recovery-journal.js';
 import { inspectRecoveryJournal } from '../src/recovery-inspect.js';
 import { createPushPlan } from '../src/planner.js';
@@ -187,6 +188,45 @@ test('production recovery journal inspection is exported for release-path consum
   assert.equal(inspected.journalPath, filePath);
   assert.equal(inspected.claim.status, 'none');
   assert.equal(inspected.claim.activeClaimHash, null);
+});
+
+test('production recovery journal inspection normalizes restart-readable lease and artifact metadata', () => {
+  const inspected = inspectProductionRecoveryJournal({
+    productionAdapter: true,
+    supportedSurface: 'production-recovery-journal-adapter',
+    restartReadable: true,
+    ownsJournal: true,
+    ownsRemoteArtifact: true,
+    journalPath: '/var/lib/reprint/recovery.jsonl',
+    artifactRefs: {
+      journal: '/var/lib/reprint/recovery.jsonl',
+      remote: '/var/lib/reprint/recovery-remote.jsonl',
+    },
+    schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+    writerLease: { id: 'lease-normalized-1' },
+    claimHash: 'a'.repeat(64),
+    inspect() {
+      return {
+        filePath: '/var/lib/reprint/recovery.jsonl',
+        schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+        artifactRefs: {
+          journal: '/var/lib/reprint/recovery.jsonl',
+        },
+        records: [{ sequence: 1, type: 'journal-opened' }],
+      };
+    },
+  });
+
+  assert.equal(inspected.productionAdapter, true);
+  assert.equal(inspected.supportedSurface, 'production-recovery-journal-adapter');
+  assert.equal(inspected.restartReadable, true);
+  assert.equal(inspected.ownsJournal, true);
+  assert.equal(inspected.ownsRemoteArtifact, true);
+  assert.deepEqual(inspected.writerLease, { id: 'lease-normalized-1' });
+  assert.equal(inspected.claimHash, 'a'.repeat(64));
+  assert.deepEqual(inspected.artifactRefs, {
+    journal: '/var/lib/reprint/recovery.jsonl',
+  });
 });
 
 test('production recovery journal adapter is restart-readable and release-path compatible', () => {

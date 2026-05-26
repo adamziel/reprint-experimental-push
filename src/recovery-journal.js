@@ -258,7 +258,56 @@ export function inspectProductionRecoveryJournal(writer) {
   }
 
   try {
-    return writer.inspect();
+    const inspected = writer.inspect();
+    if (!inspected || typeof inspected !== 'object') {
+      return inspected;
+    }
+
+    const inspectedArtifactRefs = isStrictPlainObject(inspected.artifactRefs)
+      ? inspected.artifactRefs
+      : null;
+    const writerArtifactRefs = isStrictPlainObject(writer.artifactRefs)
+      ? writer.artifactRefs
+      : null;
+
+    return {
+      ...inspected,
+      productionAdapter: Object.hasOwn(inspected, 'productionAdapter')
+        ? inspected.productionAdapter
+        : Boolean(writer.productionAdapter),
+      supportedSurface: Object.hasOwn(inspected, 'supportedSurface')
+        ? inspected.supportedSurface
+        : writer.supportedSurface || 'production-recovery-journal-adapter',
+      restartReadable: Object.hasOwn(inspected, 'restartReadable')
+        ? inspected.restartReadable
+        : Boolean(writer.restartReadable),
+      ownsJournal: Object.hasOwn(inspected, 'ownsJournal')
+        ? inspected.ownsJournal
+        : Boolean(writer.ownsJournal),
+      ownsRemoteArtifact: Object.hasOwn(inspected, 'ownsRemoteArtifact')
+        ? inspected.ownsRemoteArtifact
+        : Boolean(writer.ownsRemoteArtifact),
+      writerLease: Object.hasOwn(inspected, 'writerLease')
+        ? inspected.writerLease
+        : writer.writerLease ?? null,
+      claimHash: Object.hasOwn(inspected, 'claimHash')
+        ? inspected.claimHash
+        : writer.claimHash ?? null,
+      journalPath: Object.hasOwn(inspected, 'journalPath')
+        ? inspected.journalPath
+        : writer.journalPath ?? null,
+      schemaVersion: Object.hasOwn(inspected, 'schemaVersion')
+        ? inspected.schemaVersion
+        : writer.schemaVersion ?? RECOVERY_JOURNAL_SCHEMA_VERSION,
+      artifactRefs: inspectedArtifactRefs || {
+        journal: writerArtifactRefs && Object.hasOwn(writerArtifactRefs, 'journal')
+          ? writerArtifactRefs.journal
+          : null,
+        remote: writerArtifactRefs && Object.hasOwn(writerArtifactRefs, 'remote')
+          ? writerArtifactRefs.remote
+          : null,
+      },
+    };
   } catch (error) {
     return { error };
   }
