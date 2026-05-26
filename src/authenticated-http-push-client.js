@@ -292,6 +292,24 @@ export async function runAuthenticatedHttpPush({
     };
     return summary;
   }
+  const preflightCleanupEvidenceDrift = requireProductionAuthSession
+    ? resolveProductionAuthSessionCleanupEvidenceDrift(preflight)
+    : null;
+  if (preflightCleanupEvidenceDrift) {
+    summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
+    summary.authSession = {
+      required: 'cleanup evidence',
+      observed: preflightCleanupEvidenceDrift,
+      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+    };
+    summary.boundary = {
+      firstRemainingProductionBoundary: 'auth/session lifecycle and durable journal semantics',
+      status: 'unimplemented',
+      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+      authSession: summary.authSession,
+    };
+    return summary;
+  }
 
   const snapshotPath = labDriftAfterSnapshot
     ? `/snapshot?reprint_push_lab_drift_after_snapshot=${encodeURIComponent(labDriftAfterSnapshot)}`
@@ -1790,6 +1808,42 @@ function resolveProductionAuthSessionIdentityContinuityDrift(expected, response)
   }
 
   return observedUserLogin;
+}
+
+function resolveProductionAuthSessionCleanupEvidenceDrift(response) {
+  const session = response?.body?.auth?.session;
+  if (session?.type !== 'production-auth-session') {
+    return null;
+  }
+
+  const cleanup = response?.body?.sessionStore?.cleanup;
+  if (!cleanup || typeof cleanup !== 'object') {
+    return null;
+  }
+
+  const sessionOptions = cleanup.sessionOptions;
+  const nonceOptions = cleanup.nonceOptions;
+  if (
+    cleanup.schemaVersion !== 1
+    || cleanup.store !== 'wp-options'
+    || !Number.isInteger(cleanup.deletedExpiredTotal)
+    || !sessionOptions
+    || typeof sessionOptions !== 'object'
+    || !nonceOptions
+    || typeof nonceOptions !== 'object'
+    || !Number.isInteger(sessionOptions.deletedExpired)
+    || !Number.isInteger(nonceOptions.deletedExpired)
+    || !Number.isInteger(sessionOptions.retainedUnexpired)
+    || !Number.isInteger(nonceOptions.retainedUnexpired)
+    || sessionOptions.retainedUnexpired < 1
+    || nonceOptions.retainedUnexpired < 1
+    || sessionOptions.limitReached !== false
+    || nonceOptions.limitReached !== false
+  ) {
+    return 'invalid-session-store-cleanup';
+  }
+
+  return null;
 }
 
 function hasMissingProductionAuthSessionExpiry(response) {
