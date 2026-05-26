@@ -525,6 +525,7 @@ function isReplayEquivalent(applyResponse, replayResponse) {
     && applyBody.auth?.identity?.userLogin === replayBody.auth?.identity?.userLogin
     && applyBody.auth?.session?.id === replayBody.auth?.session?.id
     && applyBody.auth?.session?.type === replayBody.auth?.session?.type
+    && applyBody.auth?.session?.status === replayBody.auth?.session?.status
     && applyBody.signedRequest?.signed === replayBody.signedRequest?.signed
     && applyBody.signedRequest?.schemaVersion === replayBody.signedRequest?.schemaVersion
     && applyBody.signedRequest?.contentHash === replayBody.signedRequest?.contentHash
