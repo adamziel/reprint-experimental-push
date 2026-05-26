@@ -1297,6 +1297,8 @@ export function productionThroughputDetails(report) {
     && receiptCursorQueueSlackBytes <= receiptCursorMemoryCeilingBytes;
   const receiptCursorQueueSlackMeasured =
     Number.isFinite(receiptCursorQueueSlackBytes);
+  const receiptCursorQueueSlackVisibleAndMeasured =
+    receiptCursorQueueSlackVisible && receiptCursorQueueSlackMeasured;
   const queueHeadroomVisibleAndQueueSlackMeasured =
     queueHeadroomVisible && receiptCursorQueueSlackMeasured;
   const queueHeadroomVisibleAndQueueSlackVisibleAndMeasured =
@@ -1488,6 +1490,8 @@ export function productionThroughputDetails(report) {
     && Number.isFinite(receiptCursorMemoryCeilingBytes)
     && Number.isFinite(receiptCursorWindowBytes)
     && receiptCursorMemoryHeadroomBytes <= receiptCursorMemoryCeilingBytes - receiptCursorWindowBytes;
+  const receiptCursorMemoryHeadroomVisibleAndMeasured =
+    receiptCursorMemoryHeadroomVisible && Number.isFinite(receiptCursorMemoryHeadroomBytes);
   const journalSuccessRecordTypes = report.evidence.journal?.successRecordTypes ?? [];
   const journalSuccessReceiptKinds = journalSuccessRecordTypes.map((recordType) => receiptKindForRecordType(recordType));
   const journalSuccessReceiptKindLedger = summarizeReceiptKinds(journalSuccessReceiptKinds);
@@ -1642,6 +1646,7 @@ export function productionThroughputDetails(report) {
     queuePauseHasMeasuredAndAlignedReceiptCursorBackpressure,
     receiptCursorQueueSlackBytes,
     receiptCursorQueueSlackVisible,
+    receiptCursorQueueSlackVisibleAndMeasured,
     receiptCursorQueueSlackVisibleAndMemoryHeadroomVisible,
     receiptCursorQueueSlackPositive,
     receiptCursorQueueSlackMatchesBackpressure,
@@ -1656,6 +1661,7 @@ export function productionThroughputDetails(report) {
     receiptCursorMemoryHeadroomWithinQueueBudget,
     receiptCursorMemoryHeadroomBytes,
     receiptCursorMemoryHeadroomVisible,
+    receiptCursorMemoryHeadroomVisibleAndMeasured,
     receiptCursorMemoryHeadroomVisibleAndQueueBudgetVisible,
     receiptCursorMemoryHeadroomPositive: receiptCursorMemoryHeadroomPositiveVisible,
     receiptCursorMemoryCeilingMatchesQueueBudget,
@@ -1756,6 +1762,7 @@ export function productionThroughputDetails(report) {
       queueHeadroomMeasured,
       receiptCursorQueueSlackBytes,
       receiptCursorQueueSlackVisible,
+      receiptCursorQueueSlackVisibleAndMeasured,
       receiptCursorQueueSlackVisibleAndMemoryHeadroomVisible,
       receiptCursorQueueSlackPositive,
       receiptCursorQueueSlackMatchesBackpressure,
@@ -1771,6 +1778,7 @@ export function productionThroughputDetails(report) {
       receiptCursorMemoryHeadroomWithinQueueBudget,
       receiptCursorMemoryHeadroomBytes,
       receiptCursorMemoryHeadroomVisible,
+      receiptCursorMemoryHeadroomVisibleAndMeasured,
       receiptCursorMemoryHeadroomVisibleAndQueueBudgetVisible,
       receiptCursorMemoryHeadroomPositive: receiptCursorMemoryHeadroomPositiveVisible,
       receiptCursorMemoryHeadroomWithinResourceHeadroom,
