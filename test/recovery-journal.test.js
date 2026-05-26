@@ -291,6 +291,19 @@ test('production recovery journal wrapper writes a restart-readable claim-fenced
     claimId: 'production-claim-01',
   });
 
+  const inspection = journal.inspect();
+  assert.equal(journal.productionAdapter, 'openProductionRecoveryJournal');
+  assert.equal(journal.ownsJournal, true);
+  assert.equal(journal.restartReadable, true);
+  assert.deepEqual(journal.artifactRefs, {
+    releaseProof: 'artifact://release-proof-1',
+  });
+  assert.equal(inspection.journal.productionAdapter, 'openProductionRecoveryJournal');
+  assert.equal(inspection.journal.ownsJournal, true);
+  assert.equal(inspection.journal.restartReadable, true);
+  assert.equal(inspection.journal.schemaVersion, 1);
+  assert.equal(inspection.leaseFence.staleClaimRejected, false);
+
   journal.close();
 
   const restarted = readRecoveryJournal(filePath);

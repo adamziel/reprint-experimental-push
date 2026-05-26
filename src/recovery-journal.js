@@ -84,6 +84,36 @@ export function openProductionRecoveryJournal({
     });
   }
 
+  journal.productionAdapter = 'openProductionRecoveryJournal';
+  journal.ownsJournal = true;
+  journal.restartReadable = true;
+  journal.artifactRefs = { ...artifactRefs };
+  journal.schemaVersion = RECOVERY_JOURNAL_SCHEMA_VERSION;
+  journal.inspect = function inspectProductionRecoveryJournal() {
+    const persisted = readRecoveryJournal(filePath);
+    return {
+      journal: {
+        path: filePath,
+        checked: [filePath],
+        artifactRefs: { ...artifactRefs },
+        productionAdapter: 'openProductionRecoveryJournal',
+        claimId,
+        ownsJournal: true,
+        restartReadable: persisted.integrity.status === 'ok',
+        schemaVersion: persisted.records[0]?.schemaVersion ?? null,
+        integrity: persisted.integrity,
+        records: persisted.records.length,
+        staleClaimRejected: persisted.records.some((record) => record.type === 'stale-claim-advanced'),
+      },
+      leaseFence: {
+        storageGuard: 'filesystem-compare-rename',
+        fsyncEvidence: true,
+        monotonicSequence: true,
+        staleClaimRejected: persisted.records.some((record) => record.type === 'stale-claim-advanced'),
+      },
+    };
+  };
+
   return journal;
 }
 

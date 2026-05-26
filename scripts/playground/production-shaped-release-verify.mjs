@@ -12,7 +12,6 @@ import { authenticatedHttpClient, runAuthenticatedHttpPush } from '../../src/aut
 import {
   appendRecoveryClaimOpened,
   openProductionRecoveryJournal,
-  readRecoveryJournal,
 } from '../../src/recovery-journal.js';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
@@ -1091,7 +1090,6 @@ function runProductionRecoveryJournalProof({ plan, current, artifactRefs = {} })
   });
   journal.close();
 
-  const persisted = readRecoveryJournal(journalPath);
   const staleClaimId = `${activeClaimId}-stale`;
   const staleJournal = openProductionRecoveryJournal({
     filePath: journalPath,
@@ -1115,24 +1113,14 @@ function runProductionRecoveryJournalProof({ plan, current, artifactRefs = {} })
     staleJournal.close();
   }
 
+  const inspection = journal.inspect();
   return {
     journal: {
-      path: journalPath,
-      checked: [journalPath],
-      artifactRefs,
-      productionAdapter: 'openProductionRecoveryJournal',
-      claimId: activeClaimId,
-      ownsJournal: true,
-      restartReadable: persisted.integrity.status === 'ok',
-      schemaVersion: persisted.records[0]?.schemaVersion ?? null,
-      integrity: persisted.integrity,
-      records: persisted.records.length,
+      ...inspection.journal,
       staleClaimRejected,
     },
     leaseFence: {
-      storageGuard: 'filesystem-compare-rename',
-      fsyncEvidence: true,
-      monotonicSequence: true,
+      ...inspection.leaseFence,
       staleClaimRejected,
     },
   };
