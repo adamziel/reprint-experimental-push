@@ -245,30 +245,6 @@ export function evaluateProductionAuthSessionLifecycleSummary(summary, now = Dat
     };
   }
 
-  if (summary.rotated) {
-    return {
-      ok: false,
-      required: 'preserved read',
-      observed: 'rotated',
-    };
-  }
-
-  if (summary.revoked || summary.cleanedUp || summary.cleanup) {
-    return {
-      ok: false,
-      required: 'unrevoked',
-      observed: summary.revoked ? 'revoked' : 'cleaned-up',
-    };
-  }
-
-  if (summary.expired) {
-    return {
-      ok: false,
-      required: 'unexpired',
-      observed: summary.expired.expiresAt || 'expired',
-    };
-  }
-
   for (const observation of observations) {
     if (!observation || typeof observation !== 'object') {
       return {
@@ -378,6 +354,66 @@ export function evaluateProductionAuthSessionLifecycleSummary(summary, now = Dat
   const mismatchedPreservedObservation = resolveMismatchedSummaryPreservedObservation(summary.preserved, observations);
   if (mismatchedPreservedObservation) {
     return mismatchedPreservedObservation;
+  }
+
+  const mismatchedExpiredObservation = resolveMismatchedSummaryLifecycleMarkerObservation(
+    'expired',
+    summary.expired,
+    observations,
+  );
+  if (mismatchedExpiredObservation) {
+    return mismatchedExpiredObservation;
+  }
+
+  const mismatchedRevokedObservation = resolveMismatchedSummaryLifecycleMarkerObservation(
+    'revoked',
+    summary.revoked,
+    observations,
+  );
+  if (mismatchedRevokedObservation) {
+    return mismatchedRevokedObservation;
+  }
+
+  const mismatchedCleanedUpObservation = resolveMismatchedSummaryLifecycleMarkerObservation(
+    'cleanedUp',
+    summary.cleanedUp ?? summary.cleanup,
+    observations,
+  );
+  if (mismatchedCleanedUpObservation) {
+    return mismatchedCleanedUpObservation;
+  }
+
+  const mismatchedRotatedObservation = resolveMismatchedSummaryLifecycleMarkerObservation(
+    'rotated',
+    summary.rotated,
+    observations,
+  );
+  if (mismatchedRotatedObservation) {
+    return mismatchedRotatedObservation;
+  }
+
+  if (summary.rotated) {
+    return {
+      ok: false,
+      required: 'preserved read',
+      observed: 'rotated',
+    };
+  }
+
+  if (summary.revoked || summary.cleanedUp || summary.cleanup) {
+    return {
+      ok: false,
+      required: 'unrevoked',
+      observed: summary.revoked ? 'revoked' : 'cleaned-up',
+    };
+  }
+
+  if (summary.expired) {
+    return {
+      ok: false,
+      required: 'unexpired',
+      observed: summary.expired.expiresAt || 'expired',
+    };
   }
 
   return {
@@ -755,6 +791,35 @@ function resolveMismatchedSummaryPreservedObservation(preservedObservation, obse
   return null;
 }
 
+function resolveMismatchedSummaryLifecycleMarkerObservation(field, markerObservation, observations) {
+  if (!markerObservation || !Array.isArray(observations) || observations.length === 0) {
+    return null;
+  }
+
+  const observedMarker = observations.find((observation) =>
+    observation
+    && typeof observation === 'object'
+    && observationMatchesLifecycleMarker(field, observation),
+  );
+  if (!observedMarker) {
+    return {
+      ok: false,
+      required: summaryLifecycleMarkerRequirement(field),
+      observed: `stale-${summaryLifecycleMarkerLabel(field)}-summary`,
+    };
+  }
+
+  if (!authSessionObservationEquals(markerObservation, observedMarker)) {
+    return {
+      ok: false,
+      required: summaryLifecycleMarkerRequirement(field),
+      observed: `stale-${summaryLifecycleMarkerLabel(field)}-summary`,
+    };
+  }
+
+  return null;
+}
+
 function resolveInvalidIssuedAuthSessionObservation(observation) {
   if (!observation || typeof observation !== 'object') {
     return null;
@@ -884,4 +949,42 @@ function summaryMarkerMatchesDirectReadLifecycleOutcome(summary, field, observat
   const directReadSessionId = normalizeAuthSessionObservationId(directRead.id);
   const observationSessionId = normalizeAuthSessionObservationId(observation?.id);
   return !directReadSessionId || !observationSessionId || directReadSessionId === observationSessionId;
+}
+
+function observationMatchesLifecycleMarker(field, observation) {
+  switch (field) {
+    case 'expired':
+      return observation.expired === true;
+    case 'revoked':
+      return observation.revoked === true;
+    case 'cleanedUp':
+      return observation.cleanedUp === true || observation.cleanup === true;
+    case 'rotated':
+      return observation.rotated === true;
+    default:
+      return false;
+  }
+}
+
+function summaryLifecycleMarkerRequirement(field) {
+  switch (field) {
+    case 'expired':
+      return 'unexpired';
+    case 'revoked':
+    case 'cleanedUp':
+      return 'unrevoked';
+    case 'rotated':
+      return 'preserved read';
+    default:
+      return 'preserved read';
+  }
+}
+
+function summaryLifecycleMarkerLabel(field) {
+  switch (field) {
+    case 'cleanedUp':
+      return 'cleaned-up';
+    default:
+      return field;
+  }
 }
