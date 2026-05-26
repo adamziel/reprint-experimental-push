@@ -1398,6 +1398,11 @@ under load:
   hashes can trim duplicate hashing, but they cannot prove which chunk
   acknowledgements survived the pause, whether backpressure stayed bounded, or
   that the guarded publish barrier remained intact.
+- compressed-remote-index-and-cached-chunk-hashes-skips-large-upload-window-
+  sizing-after-pause is rejected because planning evidence and cached chunk
+  hashes can narrow window sizing, but they cannot prove the live queue order,
+  the durable chunk receipts, or the guarded publish barrier survived the
+  interruption.
 - compressed-remote-index-and-cached-chunk-digests-skips-large-upload-chunk-
   upload-after-pause is rejected because planning evidence and cached chunk
   digests can trim duplicate hashing, but they cannot prove which chunk

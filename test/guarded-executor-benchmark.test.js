@@ -9,6 +9,7 @@ import {
   productionThroughputDetails,
   runGuardedExecutorBenchmark,
 } from '../scripts/bench/guarded-executor-benchmark.js';
+import { buildFastPathFixture } from '../scripts/bench/performance-model.js';
 
 const fixedNow = new Date('2026-05-24T00:00:00.000Z');
 
@@ -550,6 +551,27 @@ test('guarded benchmark blocks row-batch executor visibility without atomic-comm
   );
   assert.equal(blockers.includes('production-row-batch-executor-without-atomic-commit'), true);
   assert.equal(blockers.includes('production-row-batch-executor-not-visible'), false);
+});
+
+test('fast-path fixture rejects cached chunk hashes from skipping window sizing after a pause', () => {
+  const fixture = buildFastPathFixture();
+  const rejected = fixture.rejectedFastPaths.find(
+    (fastPath) =>
+      fastPath.id === 'compressed-remote-index-and-cached-chunk-hashes-skips-large-upload-window-sizing-after-pause',
+  );
+
+  assert.ok(rejected);
+  assert.match(rejected.id, /window-sizing-after-pause$/);
+  assert.equal(rejected.rejectedGate, 'recovery');
+  assert.deepEqual(rejected.violates, [
+    'remote-index-planning-only',
+    'compression',
+    'file-hashing',
+    'chunk-receipts',
+    'backpressure',
+    'durable-progress',
+  ]);
+  assert.match(rejected.rejectedBecause, /guarded publish boundary/i);
 });
 
 test('guarded benchmark refuses production throughput claims until production gaps are measured', () => {
