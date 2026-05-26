@@ -74,6 +74,18 @@ handling and child-process cleanup. It is support work, not production-backed
 auth/session lifecycle or durable journal ownership evidence, so the release
 gates remain `0/4`.
 
+Fresh heads after the latest re-poll:
+
+- `origin/lane/reliable-executor` -> `ba248d54` (`Fail closed on production auth session`)
+- `origin/lane/no-data-loss-invariants` -> `ddbb4cbe` (`Block comment post identity references`)
+
+These new heads are still fail-closed support evidence. The reliable-executor
+change closes unsupported production auth-session handling, but it does not
+yet prove a live production mutation boundary or durable journal ownership on
+the release path. The invariants change adds another blocker proof for comment
+identity references, which improves the unsupported-surface boundary but does
+not move the release gate.
+
 These fresh heads still do not add production-backed auth/session lifecycle or
 durable journal ownership evidence. The release gates remain `0/4`.
 
