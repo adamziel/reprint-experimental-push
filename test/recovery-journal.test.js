@@ -616,6 +616,44 @@ test('production recovery journal adapter fails closed when persisted journal ow
   });
 });
 
+test('production recovery journal adapter fails closed when persisted records use non-plain artifact refs', () => {
+  const filePath = tempJournalPath();
+  const journal = openProductionRecoveryJournal(filePath, {
+    truncate: true,
+    now: fixedNow,
+    claimId: 'claim-non-plain-persisted-artifact-refs',
+    writerLease: { id: 'claim-non-plain-persisted-artifact-refs' },
+  });
+
+  appendRecoveryClaimOpened(journal, {
+    plan: { id: 'plan-non-plain-persisted-artifact-refs' },
+    current: baseSite(),
+    claimId: 'claim-non-plain-persisted-artifact-refs',
+    artifactRefs: {
+      journal: filePath,
+    },
+  });
+  journal.appendEvent('journal-opened', {
+    planId: 'plan-non-plain-persisted-artifact-refs',
+    state: 'opened',
+    observedHash: 'snapshot-hash-only',
+    artifactRefs: [],
+  });
+  journal.close();
+
+  assert.throws(() => {
+    openProductionRecoveryJournal(filePath, {
+      now: fixedNow,
+      claimId: 'claim-non-plain-persisted-artifact-refs',
+      writerLease: { id: 'claim-non-plain-persisted-artifact-refs' },
+    });
+  }, {
+    name: 'UnsupportedProductionRecoveryJournalError',
+    code: 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL',
+    message: 'Production recovery journal persistence includes invalid artifact references.',
+  });
+});
+
 test('production recovery journal adapter fails closed when remote artifact ownership is not explicit', () => {
   const filePath = tempJournalPath();
   const remoteArtifactPath = `${filePath}.remote`;

@@ -894,9 +894,24 @@ function persistedProductionArtifactRefs(journalPath) {
   let sawRecordWithoutRemoteArtifactRef = false;
 
   for (let index = persisted.records.length - 1; index >= 0; index -= 1) {
-    const artifactRefs = persisted.records[index]?.artifactRefs;
-    if (!isStrictPlainObject(artifactRefs)) {
+    const record = persisted.records[index];
+    if (!Object.hasOwn(record ?? {}, 'artifactRefs')) {
+      if (typeof record?.artifactRefs !== 'undefined') {
+        return {
+          journal: null,
+          remote: null,
+          invalidReason: 'Production recovery journal persistence includes invalid artifact references.',
+        };
+      }
       continue;
+    }
+    const artifactRefs = record.artifactRefs;
+    if (!isStrictPlainObject(artifactRefs)) {
+      return {
+        journal: null,
+        remote: null,
+        invalidReason: 'Production recovery journal persistence includes invalid artifact references.',
+      };
     }
     const hasAnyArtifactRefKeys = Reflect.ownKeys(artifactRefs).length > 0;
 

@@ -1298,9 +1298,16 @@ function durableJournalPersistedArtifactRefs(inspected) {
   let sawRecordWithoutJournalArtifactRef = false;
   let sawRecordWithoutRemoteArtifactRef = false;
   for (let index = inspected.records.length - 1; index >= 0; index -= 1) {
-    const artifactRefs = inspected.records[index]?.artifactRefs;
-    if (!isStrictPlainObject(artifactRefs)) {
+    const record = inspected.records[index];
+    if (!Object.hasOwn(record ?? {}, 'artifactRefs')) {
+      if (typeof record?.artifactRefs !== 'undefined') {
+        return { journal: null, remote: null, invalidReason: 'invalid artifact ref keys' };
+      }
       continue;
+    }
+    const artifactRefs = record.artifactRefs;
+    if (!isStrictPlainObject(artifactRefs)) {
+      return { journal: null, remote: null, invalidReason: 'invalid artifact ref keys' };
     }
     const hasAnyArtifactRefKeys = Reflect.ownKeys(artifactRefs).length > 0;
     if (Reflect.ownKeys(artifactRefs).some((key) => key !== 'journal' && key !== 'remote')) {
