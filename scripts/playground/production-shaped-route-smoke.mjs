@@ -416,14 +416,35 @@ async function stopChildProcess(child) {
 async function waitForServer(child, baseUrl, logs) {
   const deadline = Date.now() + serverStartupTimeoutMs;
   let lastError = null;
+  const lastProbes = [];
 
   while (Date.now() < deadline) {
-    if (child.exitCode !== null) {
-      throw new Error(`Playground server exited early with ${child.exitCode}\n${logs.join('')}`);
+    if (child.exitCode !== null || child.signalCode !== null) {
+      const exitLabel =
+        child.exitCode !== null ? `exited early with ${child.exitCode}` : `terminated by ${child.signalCode}`;
+      const message = formatPlaygroundStartupFailure(
+        `Playground server ${exitLabel}`,
+        lastError,
+        lastProbes,
+        logs.join(''),
+      );
+      await stopSpawnedServer(child);
+      throw new Error(message);
     }
 
     try {
       const response = await fetch(`${baseUrl}/wp-json/`, { headers: { connection: 'close' } });
+      const responseBody = await response.clone().text().catch(() => '');
+      const responsePreview = responseBody.slice(0, 240);
+      lastProbes.push({
+        route: '/wp-json/',
+        status: response.status,
+        ok: response.ok,
+        body: responsePreview,
+      });
+      process.stderr.write(
+        `Playground probe ${baseUrl}/wp-json/ -> ${response.status} ${responsePreview.slice(0, 160).replace(/\s+/g, ' ').trim()}\n`,
+      );
       if (response.status === 200) {
         await response.arrayBuffer();
         const snapshot = await requestJsonWithRetry(
@@ -434,12 +455,43 @@ async function waitForServer(child, baseUrl, logs) {
           authHeaders(credentials),
           { attempts: 2 },
         );
+        const snapshotBody = JSON.stringify(snapshot.body ?? '').slice(0, 500);
+        lastProbes.push({
+          route: '/wp-json/reprint/v1/push/snapshot',
+          status: snapshot.status,
+          ok: snapshot.body?.ok === true,
+          body: snapshotBody,
+        });
+        process.stderr.write(
+          `Playground probe ${baseUrl}/wp-json/reprint/v1/push/snapshot -> ${snapshot.status} ${snapshotBody.slice(0, 160).replace(/\s+/g, ' ').trim()}\n`,
+        );
         if (snapshot.status === 200 && snapshot.body?.ok === true) {
           return;
         }
-        lastError = new Error(`Production-shaped snapshot readiness HTTP ${snapshot.status}`);
+        lastError = new Error(`Production-shaped snapshot readiness HTTP ${snapshot.status}; ${describeLastProbe(lastProbes.at(-1))}`);
       } else {
-        lastError = new Error(`HTTP ${response.status}`);
+        const readinessHint = isWordPressNotReadyResponse(response.status, responseBody)
+          ? 'WordPress is not ready yet'
+          : null;
+        const routeSummary = describeLastProbe(lastProbes.at(-1));
+        lastError = new Error(
+          readinessHint
+            ? `Production-shaped index readiness HTTP 502: ${readinessHint}; ${routeSummary}`
+            : `Production-shaped index readiness HTTP ${response.status}; ${routeSummary}`,
+        );
+        if (readinessHint) {
+          const readinessProbeCount = lastProbes.filter((probe) => probe.route === '/wp-json/').length;
+          if (readinessProbeCount >= 3) {
+            throw new Error(
+              formatPlaygroundStartupFailure(
+                `Playground server stayed in readiness response ${response.status} after ${readinessProbeCount} /wp-json/ probes`,
+                lastError,
+                lastProbes,
+                logs.join(''),
+              ),
+            );
+          }
+        }
       }
     } catch (error) {
       lastError = error;
@@ -448,7 +500,74 @@ async function waitForServer(child, baseUrl, logs) {
     await sleep(500);
   }
 
-  throw new Error(`Timed out waiting for Playground server at ${baseUrl}: ${lastError?.message || 'unknown'}\n${logs.join('')}`);
+  throw new Error(
+    formatPlaygroundStartupFailure(`Timed out waiting for Playground server at ${baseUrl}`, lastError, lastProbes, logs.join('')),
+  );
+}
+
+function describeLastProbe(probe) {
+  if (!probe) {
+    return 'route/status/body: unavailable';
+  }
+
+  return `route/status/body: ${JSON.stringify(
+    {
+      route: probe.route ?? null,
+      status: probe.status ?? null,
+      body: probe.body ?? null,
+    },
+    null,
+    2,
+  )}`;
+}
+
+function isWordPressNotReadyResponse(status, body) {
+  return status === 502 && /WordPress is not ready yet/i.test(body);
+}
+
+function formatPlaygroundStartupFailure(message, lastError, lastProbes, logs) {
+  const lastProbe = lastProbes.at(-1) ?? null;
+  const lastRouteStatusBody = lastProbe
+    ? {
+        route: lastProbe.route ?? null,
+        status: lastProbe.status ?? null,
+        body: lastProbe.body ?? null,
+      }
+    : null;
+  const summary = {
+    message,
+    lastProbe,
+    lastProbeSummary: lastRouteStatusBody,
+    lastRouteStatusBody,
+    lastError: lastError?.message ?? null,
+  };
+  const flatLastProbe = lastProbe
+    ? `\nLast route/status/body: ${JSON.stringify(
+        {
+          route: lastProbe.route,
+          status: lastProbe.status,
+          body: lastProbe.body,
+        },
+        null,
+        2,
+      )}`
+    : '';
+  const output = `${message}${flatLastProbe}\n${JSON.stringify(summary)}\n${logs || ''}`;
+  process.stderr.write(`${message}\n`);
+  process.stderr.write(`${flatLastProbe}\n`);
+  process.stderr.write(`${JSON.stringify(summary)}\n`);
+  process.stdout.write(`${JSON.stringify(summary)}\n`);
+  if (logs) {
+    process.stderr.write(`${logs}\n`);
+  }
+  return output;
+}
+
+async function stopSpawnedServer(child) {
+  if (child.exitCode !== null || child.signalCode !== null) {
+    return;
+  }
+  child.kill('SIGKILL');
 }
 
 function waitForExit(child, timeoutMs) {
