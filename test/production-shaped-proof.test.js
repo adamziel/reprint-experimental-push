@@ -5,7 +5,10 @@ import { spawn, spawnSync } from 'node:child_process';
 import net from 'node:net';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { loadAuthSessionSource } from '../scripts/playground/auth-session-source.js';
+import {
+  loadAuthSessionSource,
+  resolveAuthSessionSourceCredentials,
+} from '../scripts/playground/auth-session-source.js';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const muPluginDir = path.join(repoRoot, 'scripts/playground/rest-mu-plugins');
@@ -664,6 +667,30 @@ test('production-shaped release verify command consumes the production auth/sess
   });
 });
 
+test('production-shaped release verify prefers the consumed production auth/session source over stale env credentials', () => {
+  const source = {
+    ok: true,
+    sourceUrl: 'http://127.0.0.1:8080',
+    username: 'reprint_push_admin',
+    applicationPassword: 'reprint-push-admin-app-password',
+  };
+  assert.deepEqual(
+    resolveAuthSessionSourceCredentials(
+      {
+        liveSourceUrl: 'http://127.0.0.1:8080',
+        username: 'stale-lab-username',
+        applicationPassword: 'stale-lab-password',
+      },
+      source,
+    ),
+    {
+      liveSourceUrl: 'http://127.0.0.1:8080',
+      username: 'reprint_push_admin',
+      applicationPassword: 'reprint-push-admin-app-password',
+    },
+  );
+});
+
 test('production-shaped release proof emits the exact gate output when no live source is supplied', () => {
   const proof = spawnBoundedSync(process.execPath, ['scripts/playground/production-shaped-release-proof.mjs'], {
     cwd: repoRoot,
@@ -699,6 +726,8 @@ maybeTest('production-shaped release verify command surfaces the consumed produc
         ...process.env,
         REPRINT_PUSH_SOURCE_URL: remoteServer.baseUrl,
         REPRINT_PUSH_REMOTE_URL: remoteServer.baseUrl,
+        REPRINT_PUSH_USERNAME: 'stale-lab-username',
+        REPRINT_PUSH_APPLICATION_PASSWORD: 'stale-lab-password',
         REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND: `${process.execPath} -e "process.stdout.write(JSON.stringify({sourceUrl:'${remoteServer.baseUrl}', username:'${liveCredentials.username}', applicationPassword:'${liveCredentials.password}'}))"`,
         NODE_NO_WARNINGS: '1',
       },

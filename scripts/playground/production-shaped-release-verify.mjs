@@ -9,7 +9,10 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { authenticatedHttpClient, runAuthenticatedHttpPush } from '../../src/authenticated-http-push-client.js';
-import { loadAuthSessionSource } from './auth-session-source.js';
+import {
+  loadAuthSessionSource,
+  resolveAuthSessionSourceCredentials,
+} from './auth-session-source.js';
 import {
   appendRecoveryClaimOpened,
   consumeProductionRecoveryJournal,
@@ -37,6 +40,19 @@ const liveAuthSessionSourceBlocker = {
 };
 const authSessionSourceCommand = process.env.REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND || '';
 const authSessionSource = authSessionSourceCommand ? loadAuthSessionSource(authSessionSourceCommand) : null;
+
+if (authSessionSource?.ok) {
+  const resolvedAuthSessionSource = resolveAuthSessionSourceCredentials({
+    liveSourceUrl,
+    username: credentials.username,
+    applicationPassword: credentials.password,
+  }, authSessionSource);
+  // When a live auth-session source is supplied, prefer it over any stale lab
+  // credentials already present in the environment.
+  liveSourceUrl = resolvedAuthSessionSource.liveSourceUrl;
+  credentials.username = resolvedAuthSessionSource.username;
+  credentials.password = resolvedAuthSessionSource.applicationPassword;
+}
 
 function summarizeAuthSessionSource(command, source) {
   if (!command) {

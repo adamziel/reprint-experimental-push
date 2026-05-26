@@ -37,3 +37,23 @@ export function loadAuthSessionSource(command, baseEnv = process.env, cwd = proc
     applicationPassword: parsed.applicationPassword || '',
   };
 }
+
+export function resolveAuthSessionSourceCredentials({
+  liveSourceUrl = '',
+  username = '',
+  applicationPassword = '',
+}, source) {
+  if (!source?.ok) {
+    return {
+      liveSourceUrl,
+      username,
+      applicationPassword,
+    };
+  }
+
+  return {
+    liveSourceUrl: source.sourceUrl || liveSourceUrl,
+    username: source.username || username,
+    applicationPassword: source.applicationPassword || applicationPassword,
+  };
+}
