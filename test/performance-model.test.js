@@ -2671,6 +2671,19 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
   assert.ok(rejectedById.get('compressed-remote-index-and-cached-row-receipts-skips-plugin-update-finalize-after-pause').violates.includes('plugin-preconditions'));
   assert.ok(rejectedById.get('compressed-remote-index-and-cached-row-receipts-skips-plugin-update-finalize-after-pause').violates.includes('atomic-groups'));
   assert.ok(rejectedById.get('compressed-remote-index-and-cached-row-receipts-skips-plugin-update-finalize-after-pause').violates.includes('durable-progress'));
+  assert.equal(
+    rejectedById.get('compressed-remote-index-and-cached-termmeta-summary-skips-plugin-update-finalize-after-pause').rejectedGate,
+    'group',
+  );
+  assert.ok(
+    rejectedById.get('compressed-remote-index-and-cached-termmeta-summary-skips-plugin-update-finalize-after-pause').violates.includes('row-preconditions'),
+  );
+  assert.ok(
+    rejectedById.get('compressed-remote-index-and-cached-termmeta-summary-skips-plugin-update-finalize-after-pause').violates.includes('plugin-preconditions'),
+  );
+  assert.ok(
+    rejectedById.get('compressed-remote-index-and-cached-termmeta-summary-skips-plugin-update-finalize-after-pause').violates.includes('atomic-groups'),
+  );
   assert.equal(rejectedById.get('compressed-remote-index-and-cached-file-fingerprint-skips-plugin-update-finalize-after-pause').rejectedGate, 'group');
   assert.ok(rejectedById.get('compressed-remote-index-and-cached-file-fingerprint-skips-plugin-update-finalize-after-pause').violates.includes('file-hashing'));
   assert.ok(rejectedById.get('compressed-remote-index-and-cached-file-fingerprint-skips-plugin-update-finalize-after-pause').violates.includes('atomic-groups'));
