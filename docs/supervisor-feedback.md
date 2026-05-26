@@ -5,6 +5,19 @@ Last updated: 2026-05-26 16:22 CEST
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
 
+## 2026-05-26 16:22 CEST - Reliable Head Advanced to Shared Readiness Budget
+
+- Going well: the live reliable head is now `1890bd198e164619e79c8ea2e510f5d129b7c061`, so the release-path work is still advancing.
+- Not going well: the checked packaged release path is still stuck in the shared `waitForServer()` readiness boundary for `remote-changed`, ending in repeated `GET /wp-json/ -> 502 "WordPress is not ready yet"` probes.
+- Progress change: this is a real head update and blocker refinement, but the gate posture remains `0/4`.
+- Next nudge: keep `reliable-executor` on the shared readiness boundary in `scripts/playground/production-shaped-release-verify.mjs`, keep `progress-publisher` aligned with the live head, and keep critic/auditor narrow until a checked gate moves.
+
+| Lane | Nudge |
+| --- | --- |
+| Reliable executor | Fix the shared `waitForServer()` readiness boundary for `remote-changed`; do not polish support-only surfaces. |
+| Progress publisher | Catch the public page up to `1890bd198e164619e79c8ea2e510f5d129b7c061` if stale; keep `0/4`. |
+| Audit and critic | Keep the verdict at `0/4` until production-backed lifecycle or durable ownership is proven. |
+
 ## 2026-05-26 16:21 CEST - Reliable Head and Exact Blocker
 
 - Going well: the live reliable head is now `1890bd198e164619e79c8ea2e510f5d129b7c061`, so the checked release path has a current head to align against.
