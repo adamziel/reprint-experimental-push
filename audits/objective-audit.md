@@ -76,6 +76,10 @@ Fresh remote heads re-polled after the last audit note:
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `4ee4d877`
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-executor` -> `a279d99b`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-invariants` -> `b3561bd2`
+- `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `55b12556`
+- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `7f8b3735`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `5174c983`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `41879e6a`
 
 These heads are still fail-closed support evidence and freshness work. They
 improve unsupported-surface blocking and public visibility, but they still do
