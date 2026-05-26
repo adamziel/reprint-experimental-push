@@ -4546,6 +4546,15 @@ test('safe fast paths retain all gate proofs and stay non-rejectable', () => {
   );
   assert.ok(
     model.safeFastPaths.some((fastPath) =>
+      fastPath.allowedShortcut === 'compress-canonical-per-kind-budget-summaries-and-reuse-cached-release-manifest-digest-to-size-bounded-release-bundle-resume' &&
+      fastPath.guardrails.includes('cached-release-manifest-digest-stays-planning-evidence-only') &&
+      fastPath.gateProofs.skip.includes('cached release-manifest digest') &&
+      fastPath.gateProofs.recovery.includes('release-bundle staging record')
+    ),
+    'compressed budget summaries and a cached release-manifest digest stay planning-only for bounded release-bundle resume work',
+  );
+  assert.ok(
+    model.safeFastPaths.some((fastPath) =>
       fastPath.allowedShortcut === 'reuse-canonical-per-kind-budgets-and-cached-release-manifest-cursor-to-size-bounded-release-bundle-retry-windows' &&
       fastPath.visibilityBoundary === 'planning-only-for-release-bundle-retry-windows' &&
       fastPath.guardrails.includes('cached-release-manifest-cursor-remains-planning-evidence-only') &&

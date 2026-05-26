@@ -608,6 +608,27 @@ export const SAFE_FAST_PATHS = Object.freeze([
     publishesStagedDataEarly: false,
   },
   {
+    area: 'compression',
+    reduces: ['wire-bytes', 'planning-round-trips', 'duplicate-budget-recomputation'],
+    allowedShortcut: 'compress-canonical-per-kind-budget-summaries-and-reuse-cached-release-manifest-digest-to-size-bounded-release-bundle-resume',
+    guardrails: [
+      'budget-summaries-stay-planning-evidence-only',
+      'cached-release-manifest-digest-stays-planning-evidence-only',
+      'release-bundle-resume-revalidates-before-write',
+    ],
+    gateProofs: {
+      skip: 'compressed per-kind budget summaries and a cached release-manifest digest can shorten release-bundle resume planning without recomputing the same canonical fan-out limits',
+      live: 'each later release-bundle write still rechecks its own live resource precondition before visibility changes',
+      group: 'budget-summary compression and cached manifest reuse only narrow planning inside the same planned release bundle and never widen the atomic-group barrier',
+      recovery: 'compressed budget summaries and the cached release-manifest digest are advisory while durable receipts and the release-bundle staging record still classify pause, retry, or crash',
+    },
+    visibilityBoundary: 'planning-only-budget-summary',
+    failureEvidence: 'compressed per-kind budget summary plus cached release-manifest digest and later durable receipts',
+    bypassesLivePreconditions: false,
+    splitsAtomicGroup: false,
+    publishesStagedDataEarly: false,
+  },
+  {
     area: 'remote-indexes',
     reduces: ['remote-body-fetches', 'planning-round-trips'],
     allowedShortcut: 'plan-from-indexed-strong-hash-listing',
