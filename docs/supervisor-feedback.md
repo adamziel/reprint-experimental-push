@@ -1,11 +1,31 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-26 14:36 CEST
+Last updated: 2026-05-26 15:15 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
 
-## 2026-05-26 - Current Nudge
+## 2026-05-26 15:15 CEST - Reliable Head Advanced, Gate Still Closed
+
+- Going well: the live reliable head advanced to `ac417774`, so the checked
+  release path is still moving forward instead of stalling on old support
+  evidence.
+- Not going well: the gate is still blocked at production auth/session
+  lifecycle and durable journal ownership, so the release boundary remains
+  `0/4`.
+- Progress change: the latest reliable work is still on the checked release
+  boundary, but it has not crossed into production-backed lifecycle or
+  durable-journal ownership yet.
+- Next nudge: keep `reliable-executor` on the exact release-boundary gap and
+  refresh public progress only when the visible head or blocker text is stale.
+
+| Lane | Nudge |
+| --- | --- |
+| Reliable executor | Stop source-command polish and finish the checked release-boundary gap: production auth/session or durable journal ownership. |
+| Progress publisher | Refresh the public page only when the visible current head or blocker text is stale, and keep the gate posture at `0/4`. |
+| Audit and critic | Classify the live head narrowly: release-surface progress improved, but the gate is still closed. |
+
+## 2026-05-26 14:36 CEST - Current Nudge
 
 - Going well: `6beb5ed7c74509094d831bc4247541c4b684feae` is now the live
   reliable head; the latest evidence still points to support-side
@@ -19,6 +39,152 @@ changed, what is helping, what is not helping, and the next nudge.
   inflating gates; `reliable-executor` should stay on the next gate
   dependency: production auth/session lifecycle, durable journal ownership, or
   a concrete blocker command that names the missing primitive.
+
+## 2026-05-25 00:27 CEST - Supervised Lane Merge Refresh
+
+- Going well: `89` Node tests pass after supervised lane merges. Matching
+  delete/edit, recovery replay/failure states, fast-path rejection guardrails,
+  protocol binding, critic, and objective-audit evidence all landed.
+- Also merged: a concise acceptable recovery-state contract, stricter critic
+  blocking gaps, objective-audit refresh, journal/recovery protocol wording,
+  safe fast-path family guidance, benchmark assertions for large upload/plugin
+  workloads, and explicit recovery inspect semantics.
+- Not going well: production auth/session storage, durable journal ownership,
+  leases, full graph identity mapping, Docker/full Playground integration, and
+  general plugin drivers remain unproven.
+- Progress change: eight fast-mode worker outputs were integrated across the
+  last two passes; production readiness stayed blocked.
+- Active supervision: same-plan graph remains active and unmerged. Completed
+  replacement sessions were stopped after review; stale progress-publisher
+  output was rejected instead of merged.
+- Next nudge: keep workers focused on production-backed auth/journal proof and
+  graph identity mapping.
+
+| Lane | Nudge |
+| --- | --- |
+| Invariants | Finish same-plan graph HTTP smoke before merge. |
+| Recovery | Move model replay/failure proof into production journal storage. |
+| Reliable executor | Turn protocol docs into production push credentials and journal rows. |
+| Fast paths | Run guarded benchmark proof against a real large site. |
+| Audit and critic | Re-audit current proof while implementation lanes run. |
+| Progress publisher | Keep Pages dated, concise, and explicit about active lanes. |
+
+<details>
+<summary>Earlier feedback entries</summary>
+
+## 2026-05-24 23:24 CEST - Scoped Credential And Graph Safety Refresh
+
+- Going well: `82` Node tests pass. Packaged push now rejects unprovisioned
+  alternate credentials and unscoped administrator Application Passwords, then
+  applies seven graph-safe mutations.
+- Also merged: stale WordPress graph references block instead of guessing,
+  stale recovery claims fence old workers before mutation, and guarded
+  benchmark tests fail closed on unsupported production speed claims.
+- Not going well: the route is still lab-backed. Production auth/session
+  storage, durable journal ownership, leases, full graph identity mapping, and
+  general plugin drivers remain unproven.
+- Progress change: no-data-loss, recovery, fast-path, and reliable-executor
+  lanes all moved up inside lab/model evidence; production readiness stayed
+  blocked.
+- Next nudge: replace lab auth/session/journal internals with production
+  storage, then prove graph identity mapping without excluding blocked edges
+  from route smokes.
+
+| Lane | Nudge |
+| --- | --- |
+| Invariants | Prove real post/postmeta/attachment/taxonomy identity mapping. |
+| Recovery | Move stale-claim fencing from model to production journal storage. |
+| Reliable executor | Replace scoped lab credentials with production push credentials. |
+| Fast paths | Run the guarded benchmark against a real large Playground/Docker site. |
+| Audit and critic | Re-audit after production-backed auth and journal rows land. |
+| Progress publisher | Keep Pages dated, concise, and explicit about blocked production gates. |
+
+## 2026-05-24 23:04 CEST - Auth Bootstrap And Redaction Refresh
+
+- Going well: `77` Node tests pass. The packaged plugin now disables lab auth
+  bootstrap, requires explicit credentials, rejects an unprovisioned alternate
+  credential with `401`, and still passes signed cleanup plus eight-mutation
+  apply.
+- Also merged: push plans redact raw dependency payloads and keep unsafe
+  topology mutations suppressed.
+- Not going well: auth, sessions, journal storage, leases, graph identity, and
+  plugin drivers are still lab/model proof, not production proof.
+- Progress change: reliable executor and invariants nudged up; production
+  readiness stayed blocked.
+- Next nudge: replace lab-backed auth/session/journal internals with production
+  lifecycle and durable storage while preserving replay/conflict refusal.
+
+| Lane | Nudge |
+| --- | --- |
+| Invariants | Add real graph fixtures before widening automatic apply. |
+| Recovery | Prove kill-at-boundary journal durability on production storage. |
+| Reliable executor | Prove production credential lifecycle and journal rows. |
+| Fast paths | Measure chunking without weakening receipts or preconditions. |
+| Audit and critic | Re-audit the next production-backed mutation slice, not just route shape. |
+| Progress publisher | Keep Pages concise and dated after each proof change. |
+
+## 2026-05-24 22:45 CEST - Hardening Merge Refresh
+
+- Going well: `76` Node tests pass. The production-shaped and packaged-plugin
+  smokes pass; packaged-plugin evidence includes signed-store cleanup
+  `deletedExpiredTotal: 2`, `sessionsDeleted: 1`, `noncesDeleted: 1`,
+  `applied: 8`, and `finalMatchesLocal: true`.
+- Also merged: fast-path proof obligations, no-overwrite topology suppression,
+  recovery journaling hardening, protocol transport binding, objective audit,
+  and critic production gate refresh.
+- Not going well: the endpoint internals remain lab-backed. Production
+  credential lifecycle, durable storage, leases/fencing, WordPress graph
+  identity, and arbitrary plugin drivers remain unproven.
+- Progress change: several lab/model lanes moved up; production push remains
+  blocked by missing production internals.
+- Next nudge: replace lab-backed auth/session/journal internals with production
+  lifecycle and durable storage behavior while keeping replay/conflict refusal
+  intact.
+
+| Lane | Nudge |
+| --- | --- |
+| Invariants | Add real graph fixtures before widening automatic apply. |
+| Recovery | Prove kill-at-boundary journal durability on production storage. |
+| Reliable executor | Replace lab auth/session storage with production lifecycle. |
+| Fast paths | Measure chunking without weakening receipts or preconditions. |
+| Audit and critic | Re-audit the next production-backed mutation slice, not just route shape. |
+| Progress publisher | Keep Pages concise and dated after each proof change. |
+
+## 2026-05-24 22:32 CEST - Package Nudge
+
+- Going well: `70` Node tests pass, the production-shaped route smoke passes,
+  and a normal plugin package now activates `/wp-json/reprint/v1/push/*` with
+  the public lab namespace disabled.
+- Not going well: the route still uses lab auth and lab journal internals.
+  Production credential lifecycle, nonce/session cleanup, durable storage,
+  leases, and arbitrary plugin drivers are still unproven.
+- Progress change: reliable executor moved from route-shape proof to packaged
+  endpoint proof; production readiness remains blocked.
+- Next nudge: replace the lab-backed internals one layer at a time: production
+  auth cleanup, durable journal rows, replay/conflict refusal, then recovery
+  inspect under the packaged plugin.
+
+| Lane | Nudge |
+| --- | --- |
+| Invariants | Prove real post/postmeta/attachment/taxonomy graph identity. |
+| Recovery | Kill DB/file/journal boundaries against durable storage. |
+| Reliable executor | Swap lab auth/journal internals for production ones. |
+| Fast paths | Benchmark large chunks with receipts and resume cursors. |
+| Audit and critic | Re-audit this packaged endpoint before any readiness jump. |
+| Progress publisher | Keep the page dated, one-screen, and caveat-linked. |
+
+## 2026-05-24 - Current Nudge
+
+- Going well: `70` Node tests pass, and
+  `npm run test:playground:production-shaped-push` proves the lab-backed
+  `/wp-json/reprint/v1/push/*` route slice.
+- Not going well: production readiness is flat. The repo still lacks a
+  production endpoint, credential binding, nonce cleanup, durable audit,
+  storage guard, and general plugin driver proof.
+- Progress change: reliable executor moved up in lab-backed route proof;
+  production evidence did not.
+- Next nudge: package the route as a production endpoint with real auth/session
+  cleanup and durable journal guarantees.
 
 | Lane | Change | Next nudge |
 | --- | --- | --- |
