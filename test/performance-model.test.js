@@ -1391,6 +1391,18 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
     'memory headroom still cannot bypass the backpressure pause boundary',
   );
   assert.equal(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'cached-receipt-cursor-memory-headroom-skips-release-bundle-commit-after-pause')?.rejectedGate,
+    'recovery',
+  );
+  assert.ok(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'cached-receipt-cursor-memory-headroom-skips-release-bundle-commit-after-pause')?.violates.includes('atomic-groups'),
+    'release-bundle commit skipping still cannot bypass the atomic-group barrier',
+  );
+  assert.ok(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'cached-receipt-cursor-memory-headroom-skips-release-bundle-commit-after-pause')?.violates.includes('durable-progress'),
+    'release-bundle commit skipping still cannot bypass durable recovery evidence',
+  );
+  assert.equal(
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-chunk-hashes-skips-large-upload-window-sizing-after-pause')?.rejectedGate,
     'recovery',
   );

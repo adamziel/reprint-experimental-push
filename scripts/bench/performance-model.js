@@ -4937,6 +4937,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['backpressure', 'atomic-groups', 'row-preconditions', 'durable-progress'],
   },
   {
+    id: 'cached-receipt-cursor-memory-headroom-skips-release-bundle-commit-after-pause',
+    proposal: 'use a cached receipt cursor plus memory headroom to skip a release-bundle commit after a pause',
+    rejectedBecause: 'memory headroom can size the next bounded release-bundle retry, but it cannot prove the release bundle preserved its atomic-group barrier, live compare, or durable journal trail after interruption',
+    rejectedGate: 'recovery',
+    violates: ['backpressure', 'atomic-groups', 'durable-progress'],
+  },
+  {
     id: 'compressed-remote-index-and-cached-chunk-hashes-skips-large-upload-window-sizing-after-pause',
     proposal: 'use a compressed remote index plus cached chunk hashes to skip large-upload window sizing after a pause',
     rejectedBecause: 'planning evidence and cached chunk hashes can trim replay work, but they cannot prove the live chunk receipts, pause ordering, or guarded publish boundary survived the interruption',

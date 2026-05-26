@@ -189,6 +189,9 @@ Current executable gate:
 - The same details also expose and require an explicit parallelism-measurement
   bit, so surfaced concurrency limits cannot look visible without a measured
   report surface behind them.
+- The same details also keep memory headroom advisory for bounded replay
+  sizing only; they do not turn a cached receipt cursor into authority to
+  skip an atomic-group commit after pause, including release-bundle retries.
 - The current supported production-plumbing surface is narrow:
   - file-hash reuse is allowed only as resume evidence when the strong digest
     and fingerprint still line up;
