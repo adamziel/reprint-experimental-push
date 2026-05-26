@@ -8,21 +8,21 @@ Fresh remote heads at audit time, checked on May 26, 2026:
 
 - `origin/lane/reliable-executor` -> `7be5a3f6`
 - `origin/lane/no-data-loss-invariants` -> `9c70eba6`
-- `origin/lane/no-data-loss-recovery` -> `8643b2ee`
+- `origin/lane/no-data-loss-recovery` -> `deb3e35b`
 - `origin/lane/fast-paths` -> `a72b08ad`
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `a72b08ad`
-- `origin/lane/independent-auditor` -> `3dac053e`
-- `origin/lane/critic` -> `68569c0b`
+- `origin/lane/independent-auditor` -> `1b67182a`
+- `origin/lane/critic` -> `3b9a9c46`
 - `origin/lane/progress-publisher` -> `7695e1f9`
 - `origin/lane/same-plan-wordpress-graph-create` -> `09e6706d`
 - `origin/lane/cycle-20260525-mainwindows-2349/same-plan-wordpress-graph-create` -> `09e6706d`
 - `origin/lane/cycle-20260525-mainwindows-2349/same-plan-wordpress-graph-create` -> `e9cbf9d4`
 - `origin/lane/cycle-20260525-mainwindows-2357/no-data-loss-invariants-graph-proof` -> `98c0ce26`
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `2af0d9ba`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `c4a776f9`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `c4a411f9`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `1a0122cf`
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` -> `5f256171`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-invariants` -> `9c70eba6`
-- `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `8643b2ee`
+- `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `deb3e35b`
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `a72b08ad`
 - `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration` -> `a3a900d7`
 - `origin/main` -> `e55864f4`
@@ -49,10 +49,10 @@ but it did not change the release conclusion:
   coverage, which strengthens the fail-closed boundary but still does not
   prove live source mutation on unsupported surfaces.
 - `origin/lane/no-data-loss-recovery` now tightens the durable journal
-  production gate at `8643b2ee` while preserving the earlier recovery
+  production gate at `deb3e35b` while preserving the earlier recovery
   evidence.
   `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` now
-  hardens durable recovery support at `8643b2ee`, but it still does not add
+  hardens durable recovery support at `deb3e35b`, but it still does not add
   production-backed journal ownership or replay proof.
 - `origin/lane/fast-paths` now refreshes benchmark evidence at `a72b08ad`.
   This remains a safe fast-path implementation detail, but it still does not
@@ -60,15 +60,15 @@ but it did not change the release conclusion:
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` now adds bounded
   backpressure consistency handling at `a72b08ad`. That is still a
   fail-closed implementation improvement, not production release proof.
-- `origin/lane/critic` now refreshes the critic handoff at `68569c0b`.
+- `origin/lane/critic` now refreshes the critic handoff at `3b9a9c46`.
 - `origin/lane/progress-publisher` now refreshes the public progress evidence
   at `7695e1f9`.
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` now refreshes the audit snapshot at
   `d2e1c69d`.
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now
-  refreshes the supervisor evidence snapshot at `2af0d9ba`.
+  refreshes the supervisor evidence snapshot at `c4a411f9`.
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now
-  records the latest progress freshness handoff at `c4a776f9`.
+  records the latest progress freshness handoff at `1a0122cf`.
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` now
   hardens the live proof timeout diagnostics at `5f256171`.
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` now
