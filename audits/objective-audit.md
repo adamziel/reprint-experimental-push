@@ -10,19 +10,19 @@ Fresh remote heads at audit time, checked on May 26, 2026:
 - `origin/lane/critic` -> `77767d32`
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `6ff8e393`
 - `origin/lane/independent-auditor` -> `4d5dd0e6`
-- `origin/lane/reliable-executor` -> `5e422878`
+- `origin/lane/reliable-executor` -> `960f9527`
 - `origin/lane/same-plan-wordpress-graph-create` -> `0d2178e9`
 - `origin/lane/no-data-loss-recovery` -> `1214c397`
-- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `12db5c3a`
+- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `ae756337`
 - `origin/lane/no-data-loss-invariants` -> `b5c81374`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `e84ce6e9`
-- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `12db5c3a`
+- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `ae756337`
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `4d5dd0e6`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `e84ce6e9`
 - `origin/lane/fast-paths` -> `cd0fddad`
 - `origin/lane/progress-publisher` -> `7695e1f9`
 - `origin/lane/cycle-20260525-mainwindows-2349/critic` -> `77767d32`
-- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `12db5c3a`
+- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `ae756337`
 - `origin/lane/cycle-20260525-mainwindows-2349/same-plan-wordpress-graph-create` -> `0d2178e9`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-invariants` -> `b5c81374`
 - `origin/lane/no-data-loss-recovery` -> `1214c397`
@@ -72,6 +72,8 @@ but it did not change the release conclusion:
   records the latest progress freshness handoff at `28a8668e`.
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` now refreshes the audit snapshot at
   `4d5dd0e6`.
+- `origin/lane/reliable-executor` now tightens proof timeout guards at
+  `960f9527`. This is still failure-path hardening, not live-source proof.
 - `origin/lane/critic` now refreshes the critic handoff at `77767d32`.
 - `origin/lane/progress-publisher` now refreshes the public progress evidence
   at `7695e1f9`.
