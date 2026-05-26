@@ -712,6 +712,10 @@ export function productionRecoverySupportReport(writer) {
   const writerJournalPathHidden = hasHiddenOwnStringProperty(writer, 'journalPath');
   const writerSchemaVersionHidden = hasHiddenOwnStringProperty(writer, 'schemaVersion');
   const writerOwnsJournalHidden = hasHiddenOwnStringProperty(writer, 'ownsJournal');
+  const writerOwnsRemoteArtifactHidden = hasHiddenOwnStringProperty(writer, 'ownsRemoteArtifact');
+  const writerOwnsRemoteArtifact = Object.hasOwn(writer ?? {}, 'ownsRemoteArtifact')
+    && !writerOwnsRemoteArtifactHidden
+    && writer.ownsRemoteArtifact === true;
   const addMissingDependency = (item) => {
     if (!missingDependency.includes(item)) {
       missingDependency.push(item);
@@ -996,19 +1000,19 @@ export function productionRecoverySupportReport(writer) {
     writerRemoteArtifactRef
     || inspectedRemoteArtifactRef
   ) {
-    if (!Object.hasOwn(writer ?? {}, 'ownsRemoteArtifact') || writer.ownsRemoteArtifact !== true) {
+    if (!writerOwnsRemoteArtifact) {
       addMissingDependency('restart-readable remote recovery artifact ownership');
     }
   }
   if (
-    writer?.ownsRemoteArtifact === true
+    writerOwnsRemoteArtifact
     && writerRemoteArtifactRef
     && !inspectedRemoteArtifactRef
   ) {
     addMissingDependency('restart-readable remote recovery artifact ownership');
   }
   if (
-    writer?.ownsRemoteArtifact === true
+    writerOwnsRemoteArtifact
     && !writerRemoteArtifactRef
     && !inspectedRemoteArtifactRef
   ) {
@@ -1050,7 +1054,7 @@ export function productionRecoverySupportReport(writer) {
     if (persistedArtifactRefs.invalidReason.includes('journal artifact ref')) {
       addMissingDependency('restart-readable recovery artifact references');
       if (
-        writer?.ownsRemoteArtifact === true
+        writerOwnsRemoteArtifact
         || writerRemoteArtifactRef
         || inspectedRemoteArtifactRef
       ) {
@@ -1072,7 +1076,7 @@ export function productionRecoverySupportReport(writer) {
     && (
       writerRemoteArtifactRef
       || inspectedRemoteArtifactRef
-      || writer?.ownsRemoteArtifact === true
+      || writerOwnsRemoteArtifact
     )
   ) {
     addMissingDependency('restart-readable recovery remote artifact references');
@@ -1937,7 +1941,7 @@ function recordDurableRecoveryState(writer, current, plan, recoveryState, suppor
       blockedInspection,
       typeof writer?.journalPath === 'string' ? writer.journalPath : null,
       writerRemoteArtifactRef,
-      writer?.ownsRemoteArtifact === true,
+      writerOwnsRemoteArtifact,
     )
     : null;
 
