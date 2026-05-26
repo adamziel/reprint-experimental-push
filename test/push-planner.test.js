@@ -7339,6 +7339,146 @@ test('blocks a local term relationship object reference owned by an attachment e
   assert.throws(() => applyPlan(baseSite(), plan), /Refusing to apply/);
 });
 
+test('blocks a local term relationship object owned by a nav menu item even when it targets a same-plan post', () => {
+  const navMenuItemResourceKey = 'row:["wp_posts","ID:3"]';
+  const postResourceKey = 'row:["wp_posts","ID:4"]';
+  const termResourceKey = 'row:["wp_terms","term_id:7"]';
+  const taxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:9"]';
+  const relationshipResourceKey = 'row:["wp_term_relationships","object_id:3|term_taxonomy_id:9"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_posts['ID:3'] = {
+    ID: 3,
+    post_title: 'Local nav menu relationship owner',
+    post_content: 'local-private-nav-menu-relationship-owner-body',
+    post_status: 'publish',
+    post_type: 'nav_menu_item',
+  };
+  local.db.wp_posts['ID:4'] = {
+    ID: 4,
+    post_title: 'Local tagged post',
+    post_content: 'local-private-tagged-post-body',
+    post_status: 'publish',
+  };
+  local.db.wp_terms = {
+    'term_id:7': {
+      term_id: 7,
+      name: 'Local relationship term',
+      slug: 'local-relationship-term',
+    },
+  };
+  local.db.wp_term_taxonomy = {
+    'term_taxonomy_id:9': {
+      term_taxonomy_id: 9,
+      term_id: 7,
+      taxonomy: 'category',
+      description: '',
+      parent: 0,
+      count: 0,
+    },
+  };
+  local.db.wp_term_relationships = {
+    'object_id:3|term_taxonomy_id:9': {
+      object_id: 3,
+      term_taxonomy_id: 9,
+      term_order: 0,
+    },
+  };
+
+  const plan = planFor(base, local, baseSite());
+  const navMenuItemMutation = mutationFor(plan, navMenuItemResourceKey);
+  const postMutation = mutationFor(plan, postResourceKey);
+  const termMutation = mutationFor(plan, termResourceKey);
+  const taxonomyMutation = mutationFor(plan, taxonomyResourceKey);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === relationshipResourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(navMenuItemMutation, undefined);
+  assert.equal(postMutation.changeKind, 'create');
+  assert.equal(termMutation.changeKind, 'create');
+  assert.equal(taxonomyMutation.changeKind, 'create');
+  assert.equal(blocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(blocker.surface, 'nav_menu_item');
+  assert.equal(
+    JSON.stringify(blocker).includes('local-private-nav-menu-relationship-owner-body'),
+    false,
+  );
+  assert.equal(
+    JSON.stringify(blocker).includes('local-private-tagged-post-body'),
+    false,
+  );
+});
+
+test('blocks a local term relationship object owned by a wp_navigation post even when it targets a same-plan post', () => {
+  const wpNavigationResourceKey = 'row:["wp_posts","ID:3"]';
+  const postResourceKey = 'row:["wp_posts","ID:4"]';
+  const termResourceKey = 'row:["wp_terms","term_id:7"]';
+  const taxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:9"]';
+  const relationshipResourceKey = 'row:["wp_term_relationships","object_id:3|term_taxonomy_id:9"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_posts['ID:3'] = {
+    ID: 3,
+    post_title: 'Local navigation relationship owner',
+    post_content: 'local-private-navigation-relationship-owner-body',
+    post_status: 'publish',
+    post_type: 'wp_navigation',
+  };
+  local.db.wp_posts['ID:4'] = {
+    ID: 4,
+    post_title: 'Local tagged post',
+    post_content: 'local-private-tagged-post-body',
+    post_status: 'publish',
+  };
+  local.db.wp_terms = {
+    'term_id:7': {
+      term_id: 7,
+      name: 'Local relationship term',
+      slug: 'local-relationship-term',
+    },
+  };
+  local.db.wp_term_taxonomy = {
+    'term_taxonomy_id:9': {
+      term_taxonomy_id: 9,
+      term_id: 7,
+      taxonomy: 'category',
+      description: '',
+      parent: 0,
+      count: 0,
+    },
+  };
+  local.db.wp_term_relationships = {
+    'object_id:3|term_taxonomy_id:9': {
+      object_id: 3,
+      term_taxonomy_id: 9,
+      term_order: 0,
+    },
+  };
+
+  const plan = planFor(base, local, baseSite());
+  const wpNavigationMutation = mutationFor(plan, wpNavigationResourceKey);
+  const postMutation = mutationFor(plan, postResourceKey);
+  const termMutation = mutationFor(plan, termResourceKey);
+  const taxonomyMutation = mutationFor(plan, taxonomyResourceKey);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === relationshipResourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(wpNavigationMutation, undefined);
+  assert.equal(postMutation.changeKind, 'create');
+  assert.equal(termMutation.changeKind, 'create');
+  assert.equal(taxonomyMutation.changeKind, 'create');
+  assert.equal(blocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(blocker.surface, 'wp_navigation');
+  assert.equal(
+    JSON.stringify(blocker).includes('local-private-navigation-relationship-owner-body'),
+    false,
+  );
+  assert.equal(
+    JSON.stringify(blocker).includes('local-private-tagged-post-body'),
+    false,
+  );
+});
+
 test('blocks a local term relationship object from targeting a same-plan attachment', () => {
   const postResourceKey = 'row:["wp_posts","ID:3"]';
   const attachmentResourceKey = 'row:["wp_posts","ID:4"]';
