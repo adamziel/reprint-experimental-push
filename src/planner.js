@@ -1949,6 +1949,11 @@ function addPluginOwnedResourceBlocker(plan, {
   remoteHash,
 }) {
   const className = support.className || 'unsupported-plugin-owned-resource';
+  const resourceKind = support.resourceKind || (className === 'missing-plugin-driver'
+    ? (resource.type === 'row' && typeof resource.table === 'string' && !PLUGIN_DATA_DRIVER_TABLE_NAMES.has(resource.table)
+      ? 'custom-table'
+      : resource.type)
+    : null);
   const reason = support.reason || (className === 'missing-plugin-driver'
     ? `Plugin-owned resource ${resource.key} is missing explicit driver metadata for plugin ${owner}.`
     : `Plugin-owned resource ${resource.key} is not covered by a supported resource driver policy for plugin ${owner}.`);
@@ -1960,7 +1965,7 @@ function addPluginOwnedResourceBlocker(plan, {
     resource,
     resourceKey: resource.key,
     pluginOwner: owner,
-    resourceKind: support.resourceKind || null,
+    resourceKind,
     driver: support.driver || null,
     policySource: support.policySource || null,
     ...(ownerContext.length > 0 ? { ownerContext, ownerContextTruncated: Boolean((support.ownerContext || []).length > ownerContext.length) } : {}),

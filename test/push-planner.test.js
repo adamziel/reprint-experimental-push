@@ -464,6 +464,7 @@ test('blocks plugin-owned custom tables while preserving a matching independent 
 
   assert.equal(plan.status, 'blocked');
   assert.equal(blocker.class, 'unsupported-plugin-owned-resource');
+  assert.equal(blocker.resourceKind, 'custom-table');
   assert.equal(
     blocker.reason,
     'Plugin-owned resource row:["wp_custom_lanes","lane_id:7"] is not covered by a supported resource driver policy for plugin forms.',
