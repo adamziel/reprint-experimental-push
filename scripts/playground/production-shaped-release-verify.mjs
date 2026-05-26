@@ -1104,8 +1104,8 @@ async function startPackagedProductionPluginServer(name, packagedFixture) {
     'quiet',
   ];
   const child = spawn(
-    'timeout',
-    ['--preserve-status', '--kill-after=1s', `${packagedPlaygroundTimeoutSeconds}s`, 'npx', ...args],
+    'npx',
+    args,
     {
       cwd: repoRoot,
       env: {
@@ -1115,8 +1115,6 @@ async function startPackagedProductionPluginServer(name, packagedFixture) {
         REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD: credentials.password,
         NODE_OPTIONS: appendNodeOption(process.env.NODE_OPTIONS, localhostListenPreloadOption()),
       },
-      timeout: serverStartupTimeoutMs + 2_000,
-      killSignal: 'SIGKILL',
       detached: true,
       stdio: ['ignore', 'pipe', 'pipe'],
     },
@@ -1147,30 +1145,66 @@ async function startPackagedProductionPluginServer(name, packagedFixture) {
 async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) {
   const deadline = Date.now() + packagedServerStartupTimeoutMs;
   let lastError = null;
-  let lastStatus = null;
-  let lastBody = null;
+  const lastProbes = [];
   while (Date.now() < deadline) {
     if (child.exitCode !== null) {
-      throw new Error(`Playground server exited early with ${child.exitCode}\n${getOutput()}`);
+      const message = formatPlaygroundStartupFailure(
+        `Packaged Playground server exited early with ${child.exitCode}`,
+        lastError,
+        lastProbes,
+        getOutput(),
+        { childPid: child.pid ?? null, packagedProductionPlugin: true },
+      );
+      writePlaygroundFailure(message, lastProbes, getOutput(), lastError);
+      await stopSpawnedServer(child);
+      throw new Error(message);
     }
     try {
-      const response = await fetch(`${baseUrl}/wp-json/reprint/v1/push/snapshot`, {
+      const index = await fetchWithTimeout(`${baseUrl}/wp-json/`, {
+        headers: {
+          connection: 'close',
+        },
+      }, packagedServerFetchTimeoutMs);
+      const indexBody = await index.clone().text().catch(() => '');
+      const indexPreview = indexBody.slice(0, readinessFailureBodyLimit);
+      lastProbes.push({
+        route: '/wp-json/',
+        status: index.status,
+        ok: index.ok,
+        body: indexPreview,
+      });
+      if (index.status !== 200) {
+        lastError = new Error(`Production plugin package index readiness HTTP ${index.status}`);
+        if (isWordPressNotReadyResponse(index.status, indexBody)) {
+          await sleep(readinessProbeIntervalMs);
+          continue;
+        }
+        await sleep(readinessProbeIntervalMs);
+        continue;
+      }
+      await index.arrayBuffer();
+
+      const response = await fetchWithTimeout(`${baseUrl}/wp-json/reprint/v1/push/snapshot`, {
         method: 'GET',
         headers: {
           connection: 'close',
           authorization: `Basic ${Buffer.from(`${credentials.username}:${credentials.password}`).toString('base64')}`,
         },
-        signal: AbortSignal.timeout(packagedServerFetchTimeoutMs),
-      });
+      }, packagedServerFetchTimeoutMs);
       const text = await response.text();
+      const preview = text.slice(0, readinessFailureBodyLimit);
+      lastProbes.push({
+        route: '/wp-json/reprint/v1/push/snapshot',
+        status: response.status,
+        ok: response.ok,
+        body: preview,
+      });
       let body = null;
       try {
         body = JSON.parse(text);
       } catch (error) {
         if (isWordPressNotReadyResponse(response.status, text)) {
           lastError = new Error(`Production plugin package snapshot readiness HTTP ${response.status}`);
-          lastStatus = response.status;
-          lastBody = text.slice(0, readinessFailureBodyLimit);
           await sleep(readinessProbeIntervalMs);
           continue;
         }
@@ -1180,17 +1214,22 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
         return;
       }
       lastError = new Error(`Production plugin package snapshot readiness HTTP ${response.status}`);
-      lastStatus = response.status;
-      lastBody = body;
     } catch (error) {
       lastError = error;
     }
     await sleep(readinessProbeIntervalMs);
   }
-  const lastResponse = lastStatus === null
-    ? ''
-    : `\nLast snapshot probe status: ${lastStatus}\nLast snapshot probe body: ${JSON.stringify(lastBody, null, 2)}`;
-  throw new Error(`Timed out waiting for Playground server at ${baseUrl}: ${lastError?.message || 'unknown'}${lastResponse}\n${getOutput()}`);
+  await throwPlaygroundReadinessFailure(
+    child,
+    `Timed out waiting for packaged Playground server at ${baseUrl}`,
+    lastError,
+    lastProbes,
+    getOutput(),
+    {
+      childPid: child.pid ?? null,
+      packagedProductionPlugin: true,
+    },
+  );
 }
 
 async function stopExitedServer(child) {
@@ -1893,9 +1932,9 @@ function formatPlaygroundStartupFailure(prefix, lastError, lastProbes, logs, con
   return `${prefix}: ${errorText}${probeText}${lastProbeText}${routeStatusBodyText}${contextText}\n${logs}`;
 }
 
-async function fetchWithTimeout(url, init = {}) {
+async function fetchWithTimeout(url, init = {}, timeoutMs = serverFetchTimeoutMs) {
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(new Error(`Timed out fetching ${url}`)), serverFetchTimeoutMs);
+  const timeout = setTimeout(() => controller.abort(new Error(`Timed out fetching ${url}`)), timeoutMs);
   try {
     return await fetch(url, { ...init, signal: controller.signal });
   } finally {
