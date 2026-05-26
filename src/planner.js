@@ -3558,15 +3558,36 @@ function unsupportedAttachmentResourceSupport({ resource, baseValue, localValue,
 
   const samePlanCreatedAttachment = localValue !== ABSENT && baseValue === ABSENT && remoteValue === ABSENT;
   if (samePlanCreatedAttachment) {
-    const references = wordpressGraphReferences(resource, candidate);
-    const referenceEvidence = references.map((reference) =>
-      wordpressGraphReferenceEvidence(reference, resources, base, local, remote));
+    const inboundReferences = resources
+      .filter((sourceResource) => sourceResource.type === 'row')
+      .flatMap((sourceResource) => {
+        const sourceLocalValue = getResource(local, sourceResource);
+        if (sourceLocalValue === ABSENT) {
+          return [];
+        }
+        return wordpressGraphReferences(sourceResource, sourceLocalValue)
+          .filter((reference) => reference.targetResourceKey === resource.key)
+          .map((reference) =>
+            wordpressGraphReferenceEvidence(reference, resources, base, local, remote));
+      })
+      .filter((reference) =>
+        reference.targetChange.remote.state === 'absent'
+        && reference.targetChange.local.state === 'present'
+        && (
+          reference.relationshipType === 'featured-image-attachment'
+          || reference.relationshipType === 'post-parent'
+          || reference.relationshipType === 'term-relationship-object'
+        ));
+    const references = inboundReferences.length > 0
+      ? inboundReferences
+      : wordpressGraphReferences(resource, candidate).map((reference) =>
+        wordpressGraphReferenceEvidence(reference, resources, base, local, remote));
     return {
       supported: false,
       className: 'unsupported-attachment-resource',
       unsupportedState: 'same-plan-reference',
       reason: 'Attachment graph resources are not yet supported by the planner.',
-      references: referenceEvidence,
+      references,
     };
   }
 

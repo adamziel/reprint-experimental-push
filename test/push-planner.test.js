@@ -16123,6 +16123,7 @@ test('blocks local term-taxonomy parent references to a same-plan created term i
 
   const plan = planFor(base, local, remote);
   const blocker = plan.blockers[0];
+  const attachmentBlocker = plan.blockers.find((entry) => entry.resourceKey === targetResourceKey);
   const matchingEdit = decisionFor(plan, 'row:["wp_posts","ID:1"]');
   const planJson = JSON.stringify(plan);
 
@@ -20223,6 +20224,7 @@ test('blocks legacy links graph resources while preserving a matching independen
 
   const plan = planFor(base, local, remote);
   const blocker = plan.blockers[0];
+  const attachmentBlocker = plan.blockers.find((entry) => entry.resourceKey === targetResourceKey);
   const matchingEdit = decisionFor(plan, 'row:["wp_posts","ID:1"]');
   const pluginDecision = decisionFor(plan, 'plugin:forms');
   const planJson = JSON.stringify(plan);
@@ -20603,6 +20605,12 @@ test('blocks local featured image references to a same-plan created attachment i
   assert.equal(attachmentBlocker.class, 'unsupported-attachment-resource');
   assert.equal(attachmentBlocker.resourceKey, attachmentResourceKey);
   assert.equal(attachmentBlocker.reason, 'Attachment graph resources are not yet supported by the planner.');
+  assert.equal(attachmentBlocker.references.length, 1);
+  assert.equal(attachmentBlocker.references[0].relationshipType, 'featured-image-attachment');
+  assert.equal(attachmentBlocker.references[0].sourceResourceKey, featuredImageResourceKey);
+  assert.equal(attachmentBlocker.references[0].targetResourceKey, attachmentResourceKey);
+  assert.equal(attachmentBlocker.references[0].targetChange.remote.state, 'absent');
+  assert.equal(attachmentBlocker.references[0].targetChange.local.state, 'present');
   assert.equal(metaBlocker.class, 'unsupported-attachment-resource');
   assert.equal(metaBlocker.resourceKey, featuredImageResourceKey);
   assert.equal(matchingEdit.decision, 'already-in-sync');
@@ -21059,6 +21067,7 @@ test('blocks local post-parent references to a same-plan created nav menu item w
 
   const plan = planFor(base, local, remote);
   const blocker = plan.blockers[0];
+  const attachmentBlocker = plan.blockers.find((entry) => entry.resourceKey === targetResourceKey);
   const matchingEdit = decisionFor(plan, 'row:["wp_posts","ID:1"]');
   const planJson = JSON.stringify(plan);
 
@@ -22750,6 +22759,7 @@ test('blocks local featured-image attachment references when the attachment is c
 
   const plan = planFor(base, local, remote);
   const blocker = plan.blockers[0];
+  const attachmentBlocker = plan.blockers.find((entry) => entry.resourceKey === targetResourceKey);
   const matchingEdit = decisionFor(plan, 'row:["wp_posts","ID:1"]');
   const planJson = JSON.stringify(plan);
 
@@ -22870,6 +22880,7 @@ test('blocks local post-parent attachment references when the attachment is crea
 
   const plan = planFor(base, local, remote);
   const blocker = plan.blockers[0];
+  const attachmentBlocker = plan.blockers.find((entry) => entry.resourceKey === targetResourceKey);
   const matchingEdit = decisionFor(plan, 'row:["wp_posts","ID:1"]');
   const planJson = JSON.stringify(plan);
 
@@ -22881,6 +22892,14 @@ test('blocks local post-parent attachment references when the attachment is crea
   assert.equal(blocker.class, 'unsupported-attachment-resource');
   assert.equal(blocker.resourceKey, resourceKey);
   assert.equal(blocker.reason, 'Attachment graph resources are not yet supported by the planner.');
+  assert.equal(attachmentBlocker.class, 'unsupported-attachment-resource');
+  assert.equal(attachmentBlocker.resourceKey, targetResourceKey);
+  assert.equal(attachmentBlocker.references.length, 1);
+  assert.equal(attachmentBlocker.references[0].relationshipType, 'post-parent');
+  assert.equal(attachmentBlocker.references[0].sourceResourceKey, resourceKey);
+  assert.equal(attachmentBlocker.references[0].targetResourceKey, targetResourceKey);
+  assert.equal(attachmentBlocker.references[0].targetChange.remote.state, 'absent');
+  assert.equal(attachmentBlocker.references[0].targetChange.local.state, 'present');
   assert.equal(matchingEdit.decision, 'already-in-sync');
   assert.equal(matchingEdit.change.localChange, 'update');
   assert.equal(matchingEdit.change.remoteChange, 'update');
