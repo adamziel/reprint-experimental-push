@@ -2443,16 +2443,41 @@ test('packaged readiness helpers fail fast when both the packaged route and /wp-
 });
 
 test('packaged release verifier tags packaged-route startup failures after global WordPress readiness', () => {
+  const smokeSource = readFileSync(
+    path.join(repoRoot, 'scripts/playground/production-plugin-package-smoke.mjs'),
+    'utf8',
+  );
   const verifierSource = readFileSync(
     path.join(repoRoot, 'scripts/playground/production-shaped-release-verify.mjs'),
     'utf8',
   );
+  const smokeStart = smokeSource.indexOf('async function waitForServer(child, baseUrl, logs) {');
+  assert.notEqual(smokeStart, -1, 'expected packaged smoke readiness helper in smoke source');
+  const smokeEnd = smokeSource.indexOf('async function fetchPackagedWordPressIndexProbe(', smokeStart);
+  assert.notEqual(smokeEnd, -1, 'expected packaged smoke readiness helper boundary in smoke source');
+  const smokeHelperSource = smokeSource.slice(smokeStart, smokeEnd);
   const start = verifierSource.indexOf('async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) {');
   assert.notEqual(start, -1, 'expected packaged verifier readiness helper in verifier source');
   const end = verifierSource.indexOf('async function fetchPackagedPreflightProbe(', start);
   assert.notEqual(end, -1, 'expected packaged verifier readiness helper boundary in verifier source');
   const helperSource = verifierSource.slice(start, end);
 
+  assert.match(
+    smokeHelperSource,
+    /snapshot stayed startup-shaped while \/wp-json\/ kept reporting global WordPress startup HTTP[\s\S]*?packagedProductionPlugin:\s*true,\s*globalWordPressStartup:\s*true,\s*snapshotNotReadyProbeCount/s,
+  );
+  assert.match(
+    smokeHelperSource,
+    /snapshot stayed startup-shaped after global WordPress startup HTTP[\s\S]*?packagedProductionPlugin:\s*true,\s*packagedRouteStartup:\s*true,\s*snapshotNotReadyProbeCount/s,
+  );
+  assert.match(
+    smokeHelperSource,
+    /preflight stayed startup-shaped while \/wp-json\/ kept reporting global WordPress startup HTTP[\s\S]*?packagedProductionPlugin:\s*true,\s*globalWordPressStartup:\s*true,\s*preflightNotReadyProbeCount/s,
+  );
+  assert.match(
+    smokeHelperSource,
+    /preflight stayed startup-shaped after global WordPress startup HTTP[\s\S]*?packagedProductionPlugin:\s*true,\s*packagedRouteStartup:\s*true,\s*preflightNotReadyProbeCount/s,
+  );
   assert.match(
     helperSource,
     /snapshot stayed startup-shaped after global WordPress startup HTTP[\s\S]*?packagedProductionPlugin:\s*true,\s*packagedRouteStartup:\s*true,\s*snapshotNotReadyProbeCount/s,
@@ -2603,19 +2628,39 @@ test('packaged readiness timeout fallback classifies global WordPress versus pac
   );
   assert.match(
     smokeSource,
+    /preflight stayed startup-shaped while \/wp-json\/ kept reporting global WordPress startup HTTP \$\{indexProbe[\s\S]*?after the snapshot probe timed out[\s\S]*?globalWordPressStartup:\s*true/s,
+  );
+  assert.match(
+    smokeSource,
+    /preflight probe timed out while \/wp-json\/ kept reporting global WordPress startup HTTP \$\{indexProbe\.status\} after the snapshot probe timed out[\s\S]*?globalWordPressStartup:\s*true/s,
+  );
+  assert.match(
+    smokeSource,
+    /preflight stayed startup-shaped after global WordPress startup HTTP \$\{indexProbe[\s\S]*?while the snapshot probe timed out[\s\S]*?packagedRouteStartup:\s*true/s,
+  );
+  assert.match(
+    smokeSource,
+    /preflight stayed startup-shaped while \/wp-json\/ timed out after the snapshot probe timed out[\s\S]*?indexProbeTimedOut:\s*true/s,
+  );
+  assert.match(
+    smokeSource,
+    /preflight stayed startup-shaped while \/wp-json\/ returned a terminal readiness failure HTTP \$\{indexProbe(?:\?\.status \?\? 0|\.status)\} after the snapshot probe timed out[\s\S]*?indexTerminal:\s*true/s,
+  );
+  assert.match(
+    smokeSource,
+    /preflight probe timed out after global WordPress startup HTTP \$\{indexProbe\.status\} while the snapshot probe timed out[\s\S]*?packagedRouteStartup:\s*true/s,
+  );
+  assert.match(
+    smokeSource,
+    /preflight probe timed out while \/wp-json\/ returned a terminal readiness failure HTTP \$\{indexProbe\.status\} after the snapshot probe timed out[\s\S]*?indexTerminal:\s*true/s,
+  );
+  assert.match(
+    smokeSource,
+    /preflight probe timed out while \/wp-json\/ also timed out after the snapshot probe timed out[\s\S]*?indexProbeTimedOut:\s*true/s,
+  );
+  assert.match(
+    smokeSource,
     /preflight stayed startup-shaped while \/wp-json\/ returned a terminal readiness failure HTTP \$\{indexProbe(?:\?\.status \?\? 0|\.status)\} after the snapshot probe timed out/,
-  );
-  assert.match(
-    smokeSource,
-    /preflight probe timed out after global WordPress startup HTTP \$\{indexProbe\.status\} while the snapshot probe timed out/,
-  );
-  assert.match(
-    smokeSource,
-    /preflight probe timed out while \/wp-json\/ returned a terminal readiness failure HTTP \$\{indexProbe\.status\} after the snapshot probe timed out/,
-  );
-  assert.match(
-    smokeSource,
-    /preflight probe timed out while \/wp-json\/ also timed out after the snapshot probe timed out/,
   );
   assert.match(
     verifierSource,

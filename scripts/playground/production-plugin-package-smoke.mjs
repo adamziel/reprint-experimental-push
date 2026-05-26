@@ -613,6 +613,11 @@ async function waitForServer(child, baseUrl, logs) {
                   lastError,
                   lastProbes,
                   logs,
+                  {
+                    packagedProductionPlugin: true,
+                    globalWordPressStartup: true,
+                    snapshotNotReadyProbeCount,
+                  },
                   lastTimeoutFallbackProbes,
                 ),
               );
@@ -630,6 +635,11 @@ async function waitForServer(child, baseUrl, logs) {
                     lastError,
                     lastProbes,
                     logs,
+                    {
+                      packagedProductionPlugin: true,
+                      packagedRouteStartup: true,
+                      snapshotNotReadyProbeCount,
+                    },
                     lastTimeoutFallbackProbes,
                   ),
                 );
@@ -642,6 +652,11 @@ async function waitForServer(child, baseUrl, logs) {
                   lastError,
                   lastProbes,
                   logs,
+                  {
+                    packagedProductionPlugin: true,
+                    indexTerminal: true,
+                    snapshotNotReadyProbeCount,
+                  },
                   lastTimeoutFallbackProbes,
                 ),
               );
@@ -652,6 +667,11 @@ async function waitForServer(child, baseUrl, logs) {
                 lastError,
                 lastProbes,
                 logs,
+                {
+                  packagedProductionPlugin: true,
+                  notReadyProbeCount: snapshotNotReadyProbeCount,
+                  maxNotReadyProbeCount: maxPackagedStartupNotReadyProbeCount,
+                },
                 lastTimeoutFallbackProbes,
               ),
             );
@@ -705,6 +725,11 @@ async function waitForServer(child, baseUrl, logs) {
                   lastError,
                   lastProbes,
                   logs,
+                  {
+                    packagedProductionPlugin: true,
+                    globalWordPressStartup: true,
+                    snapshotNotReadyProbeCount,
+                  },
                   lastTimeoutFallbackProbes,
                 ),
               );
@@ -722,6 +747,11 @@ async function waitForServer(child, baseUrl, logs) {
                     lastError,
                     lastProbes,
                     logs,
+                    {
+                      packagedProductionPlugin: true,
+                      packagedRouteStartup: true,
+                      snapshotNotReadyProbeCount,
+                    },
                     lastTimeoutFallbackProbes,
                   ),
                 );
@@ -734,6 +764,11 @@ async function waitForServer(child, baseUrl, logs) {
                   lastError,
                   lastProbes,
                   logs,
+                  {
+                    packagedProductionPlugin: true,
+                    indexTerminal: true,
+                    snapshotNotReadyProbeCount,
+                  },
                   lastTimeoutFallbackProbes,
                 ),
               );
@@ -744,6 +779,11 @@ async function waitForServer(child, baseUrl, logs) {
                 lastError,
                 lastProbes,
                 logs,
+                {
+                  packagedProductionPlugin: true,
+                  notReadyProbeCount: snapshotNotReadyProbeCount,
+                  maxNotReadyProbeCount: maxPackagedStartupNotReadyProbeCount,
+                },
                 lastTimeoutFallbackProbes,
               ),
             );
@@ -791,6 +831,11 @@ async function waitForServer(child, baseUrl, logs) {
                   lastError,
                   lastProbes,
                   logs,
+                  {
+                    packagedProductionPlugin: true,
+                    globalWordPressStartup: true,
+                    snapshotNotReadyProbeCount,
+                  },
                   lastTimeoutFallbackProbes,
                 ),
               );
@@ -808,6 +853,11 @@ async function waitForServer(child, baseUrl, logs) {
                     lastError,
                     lastProbes,
                     logs,
+                    {
+                      packagedProductionPlugin: true,
+                      packagedRouteStartup: true,
+                      snapshotNotReadyProbeCount,
+                    },
                     lastTimeoutFallbackProbes,
                   ),
                 );
@@ -820,6 +870,11 @@ async function waitForServer(child, baseUrl, logs) {
                   lastError,
                   lastProbes,
                   logs,
+                  {
+                    packagedProductionPlugin: true,
+                    indexTerminal: true,
+                    snapshotNotReadyProbeCount,
+                  },
                   lastTimeoutFallbackProbes,
                 ),
               );
@@ -830,6 +885,11 @@ async function waitForServer(child, baseUrl, logs) {
                 lastError,
                 lastProbes,
                 logs,
+                {
+                  packagedProductionPlugin: true,
+                  notReadyProbeCount: snapshotNotReadyProbeCount,
+                  maxNotReadyProbeCount: maxPackagedStartupNotReadyProbeCount,
+                },
                 lastTimeoutFallbackProbes,
               ),
             );
@@ -903,6 +963,11 @@ async function waitForServer(child, baseUrl, logs) {
                   lastError,
                   lastProbes,
                   logs,
+                  {
+                    packagedProductionPlugin: true,
+                    globalWordPressStartup: true,
+                    preflightNotReadyProbeCount,
+                  },
                   lastTimeoutFallbackProbes,
                 ),
               );
@@ -920,6 +985,11 @@ async function waitForServer(child, baseUrl, logs) {
                     lastError,
                     lastProbes,
                     logs,
+                    {
+                      packagedProductionPlugin: true,
+                      packagedRouteStartup: true,
+                      preflightNotReadyProbeCount,
+                    },
                     lastTimeoutFallbackProbes,
                   ),
                 );
@@ -932,6 +1002,11 @@ async function waitForServer(child, baseUrl, logs) {
                   lastError,
                   lastProbes,
                   logs,
+                  {
+                    packagedProductionPlugin: true,
+                    indexTerminal: true,
+                    preflightNotReadyProbeCount,
+                  },
                   lastTimeoutFallbackProbes,
                 ),
               );
@@ -942,6 +1017,11 @@ async function waitForServer(child, baseUrl, logs) {
                 lastError,
                 lastProbes,
                 logs,
+                {
+                  packagedProductionPlugin: true,
+                  notReadyProbeCount: preflightNotReadyProbeCount,
+                  maxNotReadyProbeCount: maxPackagedStartupNotReadyProbeCount,
+                },
                 lastTimeoutFallbackProbes,
               ),
             );
@@ -991,6 +1071,11 @@ async function waitForServer(child, baseUrl, logs) {
                 lastError,
                 lastProbes,
                 logs,
+                {
+                  packagedProductionPlugin: true,
+                  globalWordPressStartup: true,
+                  preflightNotReadyProbeCount,
+                },
                 lastTimeoutFallbackProbes,
               ),
             );
@@ -1008,6 +1093,11 @@ async function waitForServer(child, baseUrl, logs) {
                   lastError,
                   lastProbes,
                   logs,
+                  {
+                    packagedProductionPlugin: true,
+                    packagedRouteStartup: true,
+                    preflightNotReadyProbeCount,
+                  },
                   lastTimeoutFallbackProbes,
                 ),
               );
@@ -1020,6 +1110,11 @@ async function waitForServer(child, baseUrl, logs) {
                 lastError,
                 lastProbes,
                 logs,
+                {
+                  packagedProductionPlugin: true,
+                  indexTerminal: true,
+                  preflightNotReadyProbeCount,
+                },
                 lastTimeoutFallbackProbes,
               ),
             );
@@ -1030,6 +1125,11 @@ async function waitForServer(child, baseUrl, logs) {
               lastError,
               lastProbes,
               logs,
+              {
+                packagedProductionPlugin: true,
+                notReadyProbeCount: preflightNotReadyProbeCount,
+                maxNotReadyProbeCount: maxPackagedStartupNotReadyProbeCount,
+              },
               lastTimeoutFallbackProbes,
             ),
           );
@@ -1075,6 +1175,10 @@ async function waitForServer(child, baseUrl, logs) {
                   error,
                   lastProbes,
                   logs,
+                  {
+                    packagedProductionPlugin: true,
+                    globalWordPressStartup: true,
+                  },
                   lastTimeoutFallbackProbes,
                 ),
               );
@@ -1086,6 +1190,10 @@ async function waitForServer(child, baseUrl, logs) {
                   error,
                   lastProbes,
                   logs,
+                  {
+                    packagedProductionPlugin: true,
+                    packagedRouteStartup: true,
+                  },
                   lastTimeoutFallbackProbes,
                 ),
               );
@@ -1097,6 +1205,10 @@ async function waitForServer(child, baseUrl, logs) {
                   error,
                   lastProbes,
                   logs,
+                  {
+                    packagedProductionPlugin: true,
+                    indexProbeTimedOut: true,
+                  },
                   lastTimeoutFallbackProbes,
                 ),
               );
@@ -1108,6 +1220,10 @@ async function waitForServer(child, baseUrl, logs) {
                   error,
                   lastProbes,
                   logs,
+                  {
+                    packagedProductionPlugin: true,
+                    indexTerminal: true,
+                  },
                   lastTimeoutFallbackProbes,
                 ),
               );
@@ -1144,6 +1260,10 @@ async function waitForServer(child, baseUrl, logs) {
                   error,
                   lastProbes,
                   logs,
+                  {
+                    packagedProductionPlugin: true,
+                    globalWordPressStartup: true,
+                  },
                   lastTimeoutFallbackProbes,
                 ),
               );
@@ -1155,6 +1275,10 @@ async function waitForServer(child, baseUrl, logs) {
                   error,
                   lastProbes,
                   logs,
+                  {
+                    packagedProductionPlugin: true,
+                    indexProbeTimedOut: true,
+                  },
                   lastTimeoutFallbackProbes,
                 ),
               );
@@ -1166,6 +1290,10 @@ async function waitForServer(child, baseUrl, logs) {
                   error,
                   lastProbes,
                   logs,
+                  {
+                    packagedProductionPlugin: true,
+                    packagedRouteStartup: true,
+                  },
                   lastTimeoutFallbackProbes,
                 ),
               );
@@ -1177,6 +1305,10 @@ async function waitForServer(child, baseUrl, logs) {
                   error,
                   lastProbes,
                   logs,
+                  {
+                    packagedProductionPlugin: true,
+                    indexTerminal: true,
+                  },
                   lastTimeoutFallbackProbes,
                 ),
               );
@@ -1206,6 +1338,11 @@ async function waitForServer(child, baseUrl, logs) {
             lastError,
             lastProbes,
             logs,
+            {
+              packagedProductionPlugin: true,
+              timeoutProbeCount,
+              maxTimeoutProbeCount: packagedProductionPluginMaxConsecutiveNotReadyProbes,
+            },
             lastTimeoutFallbackProbes,
           ),
         );
