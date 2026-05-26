@@ -698,6 +698,12 @@ function productionRecoverySupportReport(writer) {
   ) {
     addMissingDependency('restart-readable recovery artifact references');
   }
+  if (
+    durableJournalInspectArtifactRefs(inspected)
+    && typeof inspected.artifactRefs.remote === 'string'
+  ) {
+    addMissingDependency('restart-readable recovery remote artifact references');
+  }
   if (writerRemoteArtifactRef) {
     addMissingDependency('restart-readable recovery remote artifact references');
   }
