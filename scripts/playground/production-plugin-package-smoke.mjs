@@ -454,8 +454,11 @@ async function waitForServer(child, baseUrl, logs) {
   let timeoutProbeCount = 0;
 
   while (Date.now() < deadline) {
-    if (child.exitCode !== null) {
-      throw new Error(`Playground server exited early with ${child.exitCode}\n${logs.join('')}`);
+    if (child.exitCode !== null || child.signalCode !== null) {
+      const exitLabel = child.exitCode !== null
+        ? `exited early with ${child.exitCode}`
+        : `terminated by ${child.signalCode}`;
+      throw new Error(`Playground server ${exitLabel}\n${logs.join('')}`);
     }
 
     try {
@@ -793,7 +796,7 @@ async function stopPlaygroundServer(server) {
 }
 
 async function stopChildProcess(child) {
-  if (child.exitCode !== null || child.killed) {
+  if (child.exitCode !== null || child.signalCode !== null || child.killed) {
     return;
   }
   child.kill('SIGTERM');
@@ -807,7 +810,7 @@ async function stopChildProcess(child) {
 
 function waitForExit(child, timeoutMs) {
   return new Promise((resolve, reject) => {
-    if (child.exitCode !== null) {
+    if (child.exitCode !== null || child.signalCode !== null) {
       resolve();
       return;
     }

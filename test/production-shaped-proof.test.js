@@ -1890,6 +1890,21 @@ test('packaged release verifier readiness helper uses the provided output collec
   assert.doesNotMatch(helperSource, /getLogs\(\)/);
 });
 
+test('packaged production plugin smoke readiness helper fails fast on signaled child termination', () => {
+  const smokeSource = readFileSync(
+    path.join(repoRoot, 'scripts/playground/production-plugin-package-smoke.mjs'),
+    'utf8',
+  );
+  const start = smokeSource.indexOf('async function waitForServer(child, baseUrl, logs) {');
+  assert.notEqual(start, -1, 'expected packaged smoke readiness helper in smoke source');
+  const end = smokeSource.indexOf('async function fetchPackagedWordPressIndexProbe(baseUrl) {', start);
+  assert.notEqual(end, -1, 'expected packaged smoke readiness helper boundary in smoke source');
+  const helperSource = smokeSource.slice(start, end);
+
+  assert.match(helperSource, /child\.exitCode !== null \|\| child\.signalCode !== null/);
+  assert.match(helperSource, /terminated by \$\{child\.signalCode\}/);
+});
+
 test('lab Playground readiness helper rejects malformed ready responses and retries only startup-shaped failures', () => {
   const readySnapshot = {
     status: 200,
