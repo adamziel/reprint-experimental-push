@@ -20653,7 +20653,7 @@ test('production durable journal claims fail closed when restart inspection omit
 
   assert.equal(error.code, 'PRODUCTION_DURABLE_JOURNAL_UNSUPPORTED');
   assert.deepEqual(error.details.missingDependency, [
-    'supported production recovery journal adapter surface',
+    'restart-readable recovery journal adapter',
     'restart-readable recovery artifact references',
   ]);
 });
