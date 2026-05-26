@@ -3693,6 +3693,223 @@ test('allows an existing _menu_item_object_id metadata row to retarget to a post
   assert.equal(result.site.db.wp_postmeta['meta_id:461'].meta_value, 2);
 });
 
+test('allows an existing _menu_item_object_id metadata row to retarget to a post created by the same plan even when an unrelated remote wp_navigation post exists', () => {
+  const resourceKey = 'row:["wp_postmeta","meta_id:461"]';
+  const targetResourceKey = 'row:["wp_posts","ID:2"]';
+  const base = baseSite();
+  const local = baseSite();
+  const remote = baseSite();
+  base.db.wp_postmeta = {
+    'meta_id:461': {
+      meta_id: 461,
+      post_id: 1,
+      meta_key: '_menu_item_object_id',
+      meta_value: 1,
+    },
+  };
+  remote.db.wp_postmeta = {
+    'meta_id:461': {
+      ...base.db.wp_postmeta['meta_id:461'],
+    },
+  };
+  remote.db.wp_posts = {
+    ...remote.db.wp_posts,
+    'ID:21': {
+      ID: 21,
+      post_title: 'Remote navigation noise',
+      post_content: 'remote-navigation-noise-body',
+      post_status: 'publish',
+      post_type: 'wp_navigation',
+    },
+  };
+  local.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_title: 'Local menu object post',
+    post_content: 'local-private-menu-object-body',
+    post_status: 'publish',
+  };
+  local.db.wp_postmeta = {
+    'meta_id:461': {
+      meta_id: 461,
+      post_id: 1,
+      meta_key: '_menu_item_object_id',
+      meta_value: 2,
+    },
+  };
+
+  const plan = planFor(base, local, remote);
+  const targetMutation = mutationFor(plan, targetResourceKey);
+  const postmetaMutation = mutationFor(plan, resourceKey);
+  const reference = postmetaMutation.wordpressGraphReferences.find((entry) => entry.relationshipType === 'menu-item-object-post');
+  const referenceJson = JSON.stringify(reference);
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.blockers, 0);
+  assert.equal(targetMutation.changeKind, 'create');
+  assert.equal(postmetaMutation.changeKind, 'update');
+  assert.ok(
+    plan.mutations.indexOf(targetMutation) < plan.mutations.indexOf(postmetaMutation),
+    'target post create must be ordered before dependent existing menu item object metadata',
+  );
+  assert.deepEqual(postmetaMutation.dependsOnMutationIds, [targetMutation.id]);
+  assert.equal(reference.resolutionPolicy, 'same-plan-local-create');
+  assert.equal(reference.relationshipKey, 'wp_postmeta.meta_value');
+  assert.equal(reference.relationshipType, 'menu-item-object-post');
+  assert.equal(reference.targetResourceKey, targetResourceKey);
+  assert.equal(referenceJson.includes('local-private-menu-object-body'), false);
+  assert.equal(referenceJson.includes('remote-navigation-noise-body'), false);
+
+  const result = applyPlan(remote, plan);
+  assert.equal(result.site.db.wp_posts['ID:2'].post_title, 'Local menu object post');
+  assert.equal(result.site.db.wp_postmeta['meta_id:461'].meta_value, 2);
+  assert.equal(result.site.db.wp_posts['ID:21'].post_title, 'Remote navigation noise');
+});
+
+test('allows an existing _menu_item_object_id metadata row to retarget to a post created by the same plan even when an unrelated remote attachment exists', () => {
+  const resourceKey = 'row:["wp_postmeta","meta_id:461"]';
+  const targetResourceKey = 'row:["wp_posts","ID:2"]';
+  const base = baseSite();
+  const local = baseSite();
+  const remote = baseSite();
+  base.db.wp_postmeta = {
+    'meta_id:461': {
+      meta_id: 461,
+      post_id: 1,
+      meta_key: '_menu_item_object_id',
+      meta_value: 1,
+    },
+  };
+  remote.db.wp_postmeta = {
+    'meta_id:461': {
+      ...base.db.wp_postmeta['meta_id:461'],
+    },
+  };
+  remote.db.wp_posts = {
+    ...remote.db.wp_posts,
+    'ID:21': {
+      ID: 21,
+      post_title: 'Remote attachment noise',
+      post_content: 'remote-attachment-noise-body',
+      post_status: 'inherit',
+      post_type: 'attachment',
+    },
+  };
+  local.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_title: 'Local menu object post',
+    post_content: 'local-private-menu-object-body',
+    post_status: 'publish',
+  };
+  local.db.wp_postmeta = {
+    'meta_id:461': {
+      meta_id: 461,
+      post_id: 1,
+      meta_key: '_menu_item_object_id',
+      meta_value: 2,
+    },
+  };
+
+  const plan = planFor(base, local, remote);
+  const targetMutation = mutationFor(plan, targetResourceKey);
+  const postmetaMutation = mutationFor(plan, resourceKey);
+  const reference = postmetaMutation.wordpressGraphReferences.find((entry) => entry.relationshipType === 'menu-item-object-post');
+  const referenceJson = JSON.stringify(reference);
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.blockers, 0);
+  assert.equal(targetMutation.changeKind, 'create');
+  assert.equal(postmetaMutation.changeKind, 'update');
+  assert.ok(
+    plan.mutations.indexOf(targetMutation) < plan.mutations.indexOf(postmetaMutation),
+    'target post create must be ordered before dependent existing menu item object metadata',
+  );
+  assert.deepEqual(postmetaMutation.dependsOnMutationIds, [targetMutation.id]);
+  assert.equal(reference.resolutionPolicy, 'same-plan-local-create');
+  assert.equal(reference.relationshipKey, 'wp_postmeta.meta_value');
+  assert.equal(reference.relationshipType, 'menu-item-object-post');
+  assert.equal(reference.targetResourceKey, targetResourceKey);
+  assert.equal(referenceJson.includes('local-private-menu-object-body'), false);
+  assert.equal(referenceJson.includes('remote-attachment-noise-body'), false);
+
+  const result = applyPlan(remote, plan);
+  assert.equal(result.site.db.wp_posts['ID:2'].post_title, 'Local menu object post');
+  assert.equal(result.site.db.wp_postmeta['meta_id:461'].meta_value, 2);
+  assert.equal(result.site.db.wp_posts['ID:21'].post_title, 'Remote attachment noise');
+});
+
+test('allows an existing _menu_item_object_id metadata row to retarget to a post created by the same plan even when an unrelated remote revision post exists', () => {
+  const resourceKey = 'row:["wp_postmeta","meta_id:461"]';
+  const targetResourceKey = 'row:["wp_posts","ID:2"]';
+  const base = baseSite();
+  const local = baseSite();
+  const remote = baseSite();
+  base.db.wp_postmeta = {
+    'meta_id:461': {
+      meta_id: 461,
+      post_id: 1,
+      meta_key: '_menu_item_object_id',
+      meta_value: 1,
+    },
+  };
+  remote.db.wp_postmeta = {
+    'meta_id:461': {
+      ...base.db.wp_postmeta['meta_id:461'],
+    },
+  };
+  remote.db.wp_posts = {
+    ...remote.db.wp_posts,
+    'ID:21': {
+      ID: 21,
+      post_title: 'Remote revision noise',
+      post_content: 'remote-revision-noise-body',
+      post_status: 'inherit',
+      post_type: 'revision',
+      post_parent: 7,
+    },
+  };
+  local.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_title: 'Local menu object post',
+    post_content: 'local-private-menu-object-body',
+    post_status: 'publish',
+  };
+  local.db.wp_postmeta = {
+    'meta_id:461': {
+      meta_id: 461,
+      post_id: 1,
+      meta_key: '_menu_item_object_id',
+      meta_value: 2,
+    },
+  };
+
+  const plan = planFor(base, local, remote);
+  const targetMutation = mutationFor(plan, targetResourceKey);
+  const postmetaMutation = mutationFor(plan, resourceKey);
+  const reference = postmetaMutation.wordpressGraphReferences.find((entry) => entry.relationshipType === 'menu-item-object-post');
+  const referenceJson = JSON.stringify(reference);
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.blockers, 0);
+  assert.equal(targetMutation.changeKind, 'create');
+  assert.equal(postmetaMutation.changeKind, 'update');
+  assert.ok(
+    plan.mutations.indexOf(targetMutation) < plan.mutations.indexOf(postmetaMutation),
+    'target post create must be ordered before dependent existing menu item object metadata',
+  );
+  assert.deepEqual(postmetaMutation.dependsOnMutationIds, [targetMutation.id]);
+  assert.equal(reference.resolutionPolicy, 'same-plan-local-create');
+  assert.equal(reference.relationshipKey, 'wp_postmeta.meta_value');
+  assert.equal(reference.relationshipType, 'menu-item-object-post');
+  assert.equal(reference.targetResourceKey, targetResourceKey);
+  assert.equal(referenceJson.includes('local-private-menu-object-body'), false);
+  assert.equal(referenceJson.includes('remote-revision-noise-body'), false);
+
+  const result = applyPlan(remote, plan);
+  assert.equal(result.site.db.wp_posts['ID:2'].post_title, 'Local menu object post');
+  assert.equal(result.site.db.wp_postmeta['meta_id:461'].meta_value, 2);
+  assert.equal(result.site.db.wp_posts['ID:21'].post_title, 'Remote revision noise');
+});
+
 test('allows an existing _menu_item_menu_item_parent metadata row to retarget to a post created by the same plan', () => {
   const resourceKey = 'row:["wp_postmeta","meta_id:460"]';
   const targetResourceKey = 'row:["wp_posts","ID:2"]';
