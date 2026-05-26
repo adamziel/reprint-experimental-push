@@ -4384,6 +4384,56 @@ test('production recovery journal consumption fails closed when stale claim adva
   });
 });
 
+test('production recovery journal consumption fails closed when the compatibility overload sees an invalid persisted active claim lease', () => {
+  const filePath = tempJournalPath();
+  const remote = baseSite();
+  const plan = planFor(baseSite(), localSite(), remote);
+  const claimId = 'claim-active-invalid-lease';
+  const artifactRefs = {
+    journal: filePath,
+  };
+
+  const journal = openProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs,
+    claimId,
+  });
+  appendRecoveryClaimOpened(journal, {
+    plan,
+    current: remote,
+    claimId,
+    artifactRefs,
+  });
+  journal.close();
+
+  const persisted = readRecoveryJournal(filePath);
+  persisted.records.at(-1).claimLease = { id: claimId, epoch: -1 };
+  fs.writeFileSync(filePath, `${persisted.records.map((record) => JSON.stringify(record)).join('\n')}\n`);
+
+  assert.throws(() => {
+    consumeProductionRecoveryJournal({
+      filePath,
+      plan,
+      current: remote,
+      artifactRefs,
+      claimId,
+    });
+  }, (error) => {
+    assert.equal(error?.name, 'RecoveryJournalClaimStaleError');
+    assert.equal(error?.code, 'RECOVERY_CLAIM_STALE');
+    assert.equal(
+      error?.message,
+      'Recovery journal claim was superseded before this fenced writer could append.',
+    );
+    assert.equal(error?.details?.reason, 'Recovery claim record has an invalid persisted lease identity.');
+    assert.equal(error?.details?.activeClaimHash, recoveryClaimHash(claimId));
+    assert.equal(error?.details?.activeClaimType, 'recovery-claim-opened');
+    return true;
+  });
+});
+
 test('checked durable journal boundary stays closed until stale-claim rejection is proven on the lease fence', () => {
   const baseContract = {
     acceptedOnCheckedBoundary: true,
