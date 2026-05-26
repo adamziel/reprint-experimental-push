@@ -38,13 +38,13 @@ The project is **not releasable as a production WordPress push path**.
 - `origin/lane/cycle-20260525-keep-busy-loop-2/independent-auditor` -> `1d6cb6fd`
 - `origin/lane/cycle-20260525-keep-busy-loop-2/no-data-loss-recovery` -> `63e01a49`
 - `origin/lane/cycle-20260525-mainwindows-2349/critic` -> `fe4edb00`
-- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `9abe8414`
+- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `4bed4db3`
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `d7813094`
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `8a7f4edd`
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `f2d32e1d`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `1cdca21b`
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `11c0cceb`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `2af1ddda`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `3769f63a`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `93f15c4d`
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` -> `0ca7b35d`
 - `origin/lane/cycle-20260525-mainwindows-2349/same-plan-wordpress-graph-create` -> `af493c80`
 - `origin/lane/cycle-20260525-mainwindows-2357/no-data-loss-invariants-graph-proof` -> `98c0ce26`
@@ -66,11 +66,11 @@ Fresh visibility-lane heads moved, but they still only refresh public status sur
 - Since the last audit pass, the visible progress lanes advanced again:
   `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` ->
   `1cdca21b` and `origin/lane/cycle-20260525-mainwindows-2349/progress-followup`
-  -> `f34c148f`. That changes the freshness surface, not the release gate.
+  -> `93f15c4d`. That changes the freshness surface, not the release gate.
 - The current public-refresh branch heads remain:
   `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` ->
   `1cdca21b` and `origin/lane/cycle-20260525-mainwindows-2349/progress-followup`
-  -> `f34c148f`.
+  -> `93f15c4d`.
 - `origin/lane/reliable-executor` -> `c1943da1`
 - `origin/lane/no-data-loss-invariants` -> `30040cee`
 - `origin/lane/no-data-loss-recovery` -> `2af1ddda`
