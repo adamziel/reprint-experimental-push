@@ -117,6 +117,10 @@ The newest visible heads continue that same pattern:
   auth drift before journal reads. This is still client-side fail-closed
   behavior, not production-backed auth/session lifecycle, live production
   replay, or durable journal ownership on the release path.
+- `origin/lane/reliable-executor` now records `0b8e4340`, failing closed on
+  a missing replay auth envelope. This is still support-side auth-envelope
+  hardening, not production-backed auth/session lifecycle, live production
+  replay, or durable journal ownership on the release path.
 - `origin/lane/no-data-loss-invariants` now records `eff8b208`, blocking user
   meta graph identity drift. It still does not prove the live release
   boundary or any production-backed source mutation.
