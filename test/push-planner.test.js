@@ -24,12 +24,26 @@ function tempRecoveryJournalPath() {
 
 function failingDurableJournal(failType) {
   return {
+    claimFenced: true,
     events: [],
     nextSequence: 1,
     appendEvent(type, payload) {
       if (type === failType) {
         throw new Error(`injected journal failure for ${type}`);
       }
+      const record = { sequence: this.nextSequence, type, ...payload };
+      this.events.push(record);
+      this.nextSequence++;
+      return record;
+    },
+  };
+}
+
+function unfencedDurableJournal() {
+  return {
+    events: [],
+    nextSequence: 1,
+    appendEvent(type, payload) {
       const record = { sequence: this.nextSequence, type, ...payload };
       this.events.push(record);
       this.nextSequence++;
@@ -1685,7 +1699,11 @@ test('durable apply journal classifies pre-commit failures as old remote', () =>
     const before = JSON.stringify(remote);
     const plan = planFor(base, local, remote);
     const journalPath = tempRecoveryJournalPath();
-    const durableJournal = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
+    const durableJournal = openRecoveryJournal(journalPath, {
+      truncate: true,
+      now: fixedNow,
+      claimId: `apply-plan-scenario-${scenario.code}`,
+    });
 
     const error = captureError(() =>
       applyPlan(remote, plan, { ...scenario.options, durableJournal }));
@@ -1772,7 +1790,11 @@ test('retrying an old-remote journal appends durable retry state without duplica
   const plan = planFor(base, local, remote);
   const journalPath = tempRecoveryJournalPath();
 
-  const firstWriter = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
+  const firstWriter = openRecoveryJournal(journalPath, {
+    truncate: true,
+    now: fixedNow,
+    claimId: 'retrying-old-remote-first-writer',
+  });
   const firstError = captureError(() =>
     applyPlan(remote, plan, { failBeforeMutation: true, durableJournal: firstWriter }));
   firstWriter.close();
@@ -1780,7 +1802,10 @@ test('retrying an old-remote journal appends durable retry state without duplica
   assert.ok(firstError instanceof PushPlanError);
   assert.equal(firstError.details.recovery.status, 'old-remote');
 
-  const retryWriter = openRecoveryJournal(journalPath, { now: fixedNow });
+  const retryWriter = openRecoveryJournal(journalPath, {
+    now: fixedNow,
+    claimId: 'retrying-old-remote-retry-writer',
+  });
   const retry = applyPlan(remote, plan, {
     journal: firstError.details.recovery.artifacts.journal,
     durableJournal: retryWriter,
@@ -1924,7 +1949,11 @@ test('completed replay on a fresh durable journal persists a restart-inspectable
   const plan = planFor(base, local, remote);
   const result = applyPlan(remote, plan);
   const journalPath = tempRecoveryJournalPath();
-  const durableJournal = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
+  const durableJournal = openRecoveryJournal(journalPath, {
+    truncate: true,
+    now: fixedNow,
+    claimId: 'completed-replay-fresh-durable-journal',
+  });
 
   const replay = applyPlan(result.site, plan, {
     journal: result.journal,
@@ -1942,12 +1971,13 @@ test('completed replay on a fresh durable journal persists a restart-inspectable
   assert.deepEqual(
     persisted.records.map((record) => record.type),
     [
+      'recovery-claim-opened',
       'journal-opened',
       ...plan.mutations.map(() => 'target-planned'),
       'journal-replayed',
     ],
   );
-  assert.equal(persisted.records[0].state, 'replay-observed');
+  assert.equal(persisted.records[0].state, 'active');
   assert.equal(targetRecords.length, plan.mutations.length);
   assert.equal(inspection.status, 'fully-updated-remote');
   assert.deepEqual(inspection.counts, { old: 0, new: 2, blockedUnknown: 0 });
@@ -2020,7 +2050,11 @@ test('durable apply journal classifies partial remote mutation as blocked recove
   const remote = baseSite();
   const plan = planFor(base, local, remote);
   const journalPath = tempRecoveryJournalPath();
-  const durableJournal = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
+  const durableJournal = openRecoveryJournal(journalPath, {
+    truncate: true,
+    now: fixedNow,
+    claimId: 'durable-apply-journal-partial-commit',
+  });
 
   const error = captureError(() =>
     applyPlan(remote, plan, {
@@ -2040,6 +2074,7 @@ test('durable apply journal classifies partial remote mutation as blocked recove
   assert.deepEqual(
     persisted.records.map((record) => record.type),
     [
+      'recovery-claim-opened',
       'journal-opened',
       'target-planned',
       'target-planned',
@@ -2055,6 +2090,24 @@ test('durable apply journal classifies partial remote mutation as blocked recove
   for (const record of persisted.records) {
     assert.doesNotThrow(() => assertJournalRecordHasNoRawValues(record));
   }
+});
+
+test('durable apply refuses an unfenced journal writer', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:1'].post_title = 'Local title';
+  const remote = baseSite();
+  const plan = planFor(base, local, remote);
+
+  const error = captureError(() =>
+    applyPlan(remote, plan, {
+      durableJournal: unfencedDurableJournal(),
+    }));
+
+  assert.ok(error instanceof PushPlanError);
+  assert.equal(error.code, 'JOURNAL_OWNERSHIP_REQUIRED');
+  assert.equal(error.details.recovery, undefined);
 });
 
 test('durable recovery stays within old remote, fully updated remote, or blocked recovery', () => {

@@ -64,6 +64,7 @@ export function runGuardedExecutorBenchmark(options = {}) {
   const successJournal = openRecoveryJournal(successJournalPath, {
     truncate: true,
     now: config.now,
+    claimId: 'guarded-executor-benchmark-success',
   });
 
   let stagedFile;
@@ -427,7 +428,11 @@ function benchmarkPostIdForRow(index) {
 
 function runFailureProbe({ mode, plan, remote, tempDir, now, failDuringCommitAtMutation = null }) {
   const journalPath = path.join(tempDir, `${mode}.jsonl`);
-  const durableJournal = openRecoveryJournal(journalPath, { truncate: true, now });
+  const durableJournal = openRecoveryJournal(journalPath, {
+    truncate: true,
+    now,
+    claimId: `guarded-executor-benchmark-${mode}`,
+  });
   const current = clone(remote);
   const before = JSON.stringify(current);
   let error = null;

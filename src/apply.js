@@ -7,6 +7,7 @@ import {
   serializeResourceValue,
   setResource,
 } from './resources.js';
+import { readRecoveryJournal } from './recovery-journal.js';
 
 const JOURNAL_SCHEMA_VERSION = 1;
 const FIXTURE_PLUGIN_DEPENDENCIES = new Map([
@@ -45,6 +46,7 @@ export function applyPlan(remote, plan, options = {}) {
   const hasPreviousJournal = Boolean(options.journal);
   let previousJournalState = null;
   let journal = prepareJournal(remote, plan, options.journal);
+  ensureDurableJournalClaimOpened(durableJournal, remote, plan);
   if (journal.status === 'completed') {
     const result = replayCompletedPlan(remote, plan, journal);
     try {
@@ -522,7 +524,52 @@ function getDurableJournalWriter(options) {
       {},
     );
   }
+  if (writer.claimFenced !== true) {
+    throw new PushPlanError(
+      'JOURNAL_OWNERSHIP_REQUIRED',
+      'Durable recovery journal writer must be claim-fenced before applyPlan can write to it.',
+      {},
+    );
+  }
   return writer;
+}
+
+function ensureDurableJournalClaimOpened(writer, remote, plan) {
+  if (!writer || writer.claimFenced !== true) {
+    return;
+  }
+  if (writer.claimOpened === true) {
+    return;
+  }
+
+  const existingRecords = typeof writer.filePath === 'string'
+    ? readPersistedDurableJournalRecords(writer.filePath)
+    : [];
+  const hasClaimRecords = existingRecords.some((record) => record.type === 'recovery-claim-opened' || record.type === 'stale-claim-advanced');
+  if (hasClaimRecords) {
+    writer.claimOpened = true;
+    return;
+  }
+
+  appendDurableEvent(writer, 'recovery-claim-opened', {
+    planId: plan.id,
+    state: 'active',
+    claimHash: writer.claimHash,
+    observedHash: digest(remote),
+    staleThresholdMs: null,
+    reason: 'Durable recovery journal claim opened for this apply run.',
+    artifactRefs: {},
+  });
+  writer.claimOpened = true;
+}
+
+function readPersistedDurableJournalRecords(filePath) {
+  try {
+    const { records, integrity } = readRecoveryJournal(filePath);
+    return integrity.status === 'ok' ? records : [];
+  } catch {
+    return [];
+  }
 }
 
 function recordDurablePlanOpened(writer, remote, plan, options = {}) {
@@ -570,7 +617,10 @@ function recordDurableTargets(writer, remote, plan, journal = null) {
 }
 
 function durableJournalHasPriorRecords(writer) {
-  return Number.isInteger(writer.nextSequence) && writer.nextSequence > 1;
+  const persisted = typeof writer.filePath === 'string'
+    ? readPersistedDurableJournalRecords(writer.filePath)
+    : [];
+  return persisted.some((record) => !['recovery-claim-opened', 'stale-claim-advanced'].includes(record.type));
 }
 
 function recordDurableReplay(writer, remote, plan, recoveryState, journal = null) {

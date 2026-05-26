@@ -292,7 +292,9 @@ class RecoveryJournalWriter {
     this.fd = fd;
     this.nextSequence = nextSequence;
     this.now = options.now;
+    this.claimId = options.claimId || null;
     this.claimHash = options.claimId ? recoveryClaimHash(options.claimId) : null;
+    this.claimFenced = Boolean(this.claimHash);
     this.closed = false;
   }
 
