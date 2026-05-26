@@ -33,10 +33,14 @@ const sideEffectQueryParams = new Set([
   'reprint_push_lab_drift_after_snapshot',
 ]);
 
+export function productionPluginPackageSourceCommand() {
+  return 'npm run test:playground:production-plugin-package';
+}
+
 export function productionPluginPackageSource({
   plugin = 'reprint-push/reprint-push.php',
   mountedAs = '/wordpress/wp-content/plugins/reprint-push',
-  sourceCommand = 'npm run test:playground:production-plugin-package',
+  sourceCommand = productionPluginPackageSourceCommand(),
   includes = [
     'push-remote-rest-plugin.php',
     'push-remote-lib.php',

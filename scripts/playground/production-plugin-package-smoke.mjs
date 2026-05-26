@@ -8,7 +8,10 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createHmac } from 'node:crypto';
 import { digest } from '../../src/stable-json.js';
-import { productionPluginPackageSource } from '../../src/authenticated-http-push-client.js';
+import {
+  productionPluginPackageSource,
+  productionPluginPackageSourceCommand,
+} from '../../src/authenticated-http-push-client.js';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const cliPath = path.join(repoRoot, 'bin/reprint-push-lab.js');
@@ -164,7 +167,7 @@ try {
         noncesDeleted: preflight.body.sessionStore.cleanup.nonceOptions.deletedExpired,
       },
     };
-    assert.equal(summary.package.sourceCommand, 'npm run test:playground:production-plugin-package');
+    assert.equal(summary.package.sourceCommand, productionPluginPackageSourceCommand());
     summary.cli = {
       ok: result.ok,
       namespace: result.source.namespace,

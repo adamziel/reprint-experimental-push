@@ -20941,6 +20941,58 @@ test('blocks local revision graph resources while preserving remote-only plugin 
   assert.equal(Object.hasOwn(remote.files, 'wp-content/plugins/forms/forms.php'), false);
 });
 
+test('blocks local revision graph resources while preserving a matching independent file type swap and remote-only plugin removals', () => {
+  const resourceKey = 'row:["wp_posts","ID:45"]';
+  const base = baseSite();
+  base.files['about.php'] = '<?php echo "base about";';
+  base.db.wp_posts['ID:45'] = {
+    ID: 45,
+    post_title: 'Base revision with swap',
+    post_content: 'Base revision with swap content',
+    post_status: 'inherit',
+    post_type: 'revision',
+  };
+
+  const local = baseSite();
+  local.files['about.php'] = { type: 'directory' };
+  local.db.wp_posts['ID:45'] = {
+    ID: 45,
+    post_title: 'Local revision with swap',
+    post_content: 'Local revision with swap content',
+    post_status: 'inherit',
+    post_type: 'revision',
+  };
+
+  const remote = baseSite();
+  remote.files['about.php'] = { type: 'directory' };
+  remote.db.wp_posts['ID:45'] = JSON.parse(JSON.stringify(base.db.wp_posts['ID:45']));
+  delete remote.plugins.forms;
+  delete remote.files['wp-content/plugins/forms/forms.php'];
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  const matchingTypeSwap = decisionFor(plan, 'file:about.php');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(plan.conflicts.length, 0);
+  assert.equal(blocker.class, 'unsupported-revision-resource');
+  assert.equal(blocker.resourceKind, 'revision');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_posts","ID:45"] is created in the same plan as a revision identity that depends on it, and identity rewriting is not yet supported.');
+  assert.equal(matchingTypeSwap.decision, 'already-in-sync');
+  assert.equal(matchingTypeSwap.change.localChange, 'type-change');
+  assert.equal(matchingTypeSwap.change.remoteChange, 'type-change');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('Local revision with swap content'), false);
+  assert.equal(planJson.includes('Base revision with swap content'), false);
+});
+
 test('blocks local revision graph resources while preserving a matching independent edit and remote-only plugin changes', () => {
   const resourceKey = 'row:["wp_posts","ID:45"]';
   const base = baseSite();
