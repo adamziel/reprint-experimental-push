@@ -6,19 +6,19 @@ The project is **not releasable as a production WordPress push path**.
 
 Fresh remote heads at audit time, checked on May 26, 2026:
 
-- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `d80ea38c`
+- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `40d5aa1a`
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `b49f66db`
 - `origin/lane/reliable-executor` -> `b8d91776`
 - `origin/lane/no-data-loss-invariants` -> `c718a4af`
 - `origin/lane/no-data-loss-recovery` -> `47b675c0`
 - `origin/lane/fast-paths` -> `cd0fddad`
-- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `d317ac39`
+- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `27d0c72e`
 - `origin/lane/critic` -> `cba0890b`
 - `origin/lane/progress-publisher` -> `7695e1f9`
 - `origin/lane/cycle-20260525-mainwindows-2349/critic` -> `cba0890b`
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `b49f66db`
-- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `d80ea38c`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `0da05dee`
+- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `40d5aa1a`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `f7550697`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `4372167e`
 - `origin/lane/same-plan-wordpress-graph-create` -> `a719e09c`
 - `origin/lane/cycle-20260525-mainwindows-2349/same-plan-wordpress-graph-create` -> `a719e09c`
@@ -37,7 +37,7 @@ but it did not change the release conclusion:
   bounds at `b8d91776`. That is useful harness hardening, but the live proof
   path is still lab-backed and the verdict does not move.
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` now tightens queue
-  headroom evidence at `d80ea38c`, and `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor`
+  headroom evidence at `40d5aa1a`, and `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor`
   now refreshes the progress visibility handoff at `b49f66db`. These are both
   freshness or fail-closed updates, not release-grade live-source evidence.
 - `origin/lane/no-data-loss-invariants` now tightens revision-parent graph
@@ -59,12 +59,12 @@ but it did not change the release conclusion:
   `cd0fddad`. That is still a fail-closed implementation improvement, not
   production release proof.
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` now adds receipt
-  cursor headroom rejection at `44873b39`, which is still boundary plumbing
+  cursor headroom rejection at `40d5aa1a`, which is still boundary plumbing
   rather than measured speed proof.
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now
-  records the latest progress freshness handoff at `0da05dee`.
+  records the latest progress freshness handoff at `f7550697`.
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` now refreshes the audit snapshot at
-  `d317ac39`.
+  `27d0c72e`.
 - `origin/lane/critic` now refreshes the critic handoff at `cba0890b`.
 - `origin/lane/progress-publisher` now refreshes the public progress evidence
   at `7695e1f9`.
