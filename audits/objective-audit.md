@@ -8,9 +8,9 @@ Fresh remote heads at audit time, checked on May 26, 2026:
 
 - `origin/lane/critic` -> `49af85aa`
 - `origin/lane/independent-auditor` -> `70b96c1c`
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `ba9636aa`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `94d67549`
 - `origin/lane/reliable-executor` -> `c83266ee`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `09992679`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `eed9fdd8`
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `855789dd`
 - `origin/lane/no-data-loss-recovery` -> `1214c397`
 - `origin/lane/same-plan-wordpress-graph-create` -> `0d2178e9`
@@ -45,10 +45,10 @@ but it did not change the release conclusion:
   advanced to `70b96c1c`, refreshing the audit snapshot. That updates the
   evidence surface but does not change the release boundary.
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now records
-  a public freshness refresh at `3d90a3b5`. This is visibility only, not
+  a public freshness refresh at `eed9fdd8`. This is visibility only, not
   release-grade live-source evidence.
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now
-  refreshes the progress visibility handoff at `ba9636aa`. This is freshness
+  refreshes the progress visibility handoff at `94d67549`. This is freshness
   and visibility only, not release-grade live-source evidence.
 - `origin/lane/no-data-loss-invariants` now tightens navigation blocker proof
   at `b5c81374`. A separate cycle-branch proof at `98c0ce26`
@@ -70,7 +70,7 @@ but it did not change the release conclusion:
   slack fail-closed handling at `e1f0d917`, which is still boundary plumbing
   rather than measured speed proof.
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now records
-  the latest progress freshness handoff at `3d90a3b5`.
+  the latest progress freshness handoff at `eed9fdd8`.
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` now
   refreshes the audit snapshot at `70b96c1c`.
 - `origin/lane/reliable-executor` now hardens release verify spawn checks at
