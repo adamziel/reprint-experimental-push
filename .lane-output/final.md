@@ -3,13 +3,12 @@ Public freshness was updated to the current supervision cycle without changing t
 Changed files:
 - [`progress.html`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/progress-publisher/progress.html)
 - [`docs/progress-log.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/progress-publisher/docs/progress-log.md)
-- [`.lane-output/final.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/progress-publisher/.lane-output/final.md)
 
 Commands:
 - `date '+%Y-%m-%d %H:%M:%S %Z'`
+- `sed -n '495,545p' progress.html`
+- `sed -n '1,24p' docs/progress-log.md`
 - `git status --short --branch`
-- `sed -n '1,40p' docs/progress-log.md`
-- `rg -n "Last updated|0/4|Public Status Audit|Newest audit|blocker summary|release gates remain" progress.html`
 
 Push result:
 - Pending commit and push after this handoff write-up.
