@@ -3812,6 +3812,8 @@ function unsupportedRevisionResourceSupport({ resource, baseValue, localValue, r
   }
 
   const samePlanCreatedRevision = localValue !== ABSENT && baseValue === ABSENT && remoteValue === ABSENT;
+  const referenceEvidence = wordpressGraphReferences(resource, candidate).map((reference) =>
+    wordpressGraphReferenceEvidence(reference, resources, base, local, remote));
   const references = samePlanCreatedRevision
     ? resources
       .filter((sourceResource) => sourceResource.type === 'row')
@@ -3857,10 +3859,10 @@ function unsupportedRevisionResourceSupport({ resource, baseValue, localValue, r
     }),
     reason: samePlanCreatedRevision
       ? samePlanRevisionReason
-      : localValue === ABSENT
-        ? 'Revision graph resource deletes are not yet supported by the planner.'
-        : 'Revision graph resources are not yet supported by the planner.',
-    references,
+        : localValue === ABSENT
+          ? 'Revision graph resource deletes are not yet supported by the planner.'
+          : 'Revision graph resources are not yet supported by the planner.',
+    references: references.length > 0 ? references : referenceEvidence,
   };
 }
 
