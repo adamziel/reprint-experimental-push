@@ -1,7 +1,7 @@
-Audit time: 2026-05-26 21:31:58 CEST (+0200)
+Audit time: 2026-05-26 21:38:49 CEST (+0200)
 
 Current verdict:
-- The live reliable head `2bc538a5f573eeb79b1615cefea9f608c53fc73d` fails closed on malformed auth-session lifecycle flags in the checked release verifier.
+- The live reliable head `ab020198f934bd15265617be4a845065ddf7d991` requires checked journal ownership proof in the release verifier.
 - The overall project is still not releasable as a production WordPress push path because unsupported live surfaces remain under audit.
 - The next audit task is to isolate the remaining unsupported live surface, not reopen the accepted checked-path boundary.
 
@@ -19,6 +19,8 @@ Commands run:
 - `sed -n '1,260p' audits/objective-audit.md`
 - `git show --stat --oneline --decorate=short --no-renames 2bc538a5f573eeb79b1615cefea9f608c53fc73d`
 - `git show --unified=80 --no-ext-diff 2bc538a5f573eeb79b1615cefea9f608c53fc73d -- scripts/playground/production-shaped-release-verify.mjs test/production-shaped-proof.test.js src/recovery-journal.js test/recovery-journal.test.js src/authenticated-http-push-client.js`
+- `git show --stat --oneline --decorate=short --no-renames ab020198f934bd15265617be4a845065ddf7d991`
+- `git show --unified=80 --no-ext-diff ab020198f934bd15265617be4a845065ddf7d991 -- scripts/playground/production-shaped-release-verify.mjs test/production-shaped-proof.test.js`
 - `git diff --check -- audits/objective-audit.md .lane-output/final.md`
 
 Push result:
