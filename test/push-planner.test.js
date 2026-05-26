@@ -8692,6 +8692,46 @@ test('allows a local post parent reference owned by an attachment even when it t
   assert.doesNotThrow(() => applyPlan(baseSite(), plan));
 });
 
+test('blocks a local post parent reference owned by a revision even when it targets a same-plan post', () => {
+  const revisionResourceKey = 'row:["wp_posts","ID:3"]';
+  const parentResourceKey = 'row:["wp_posts","ID:4"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_posts['ID:3'] = {
+    ID: 3,
+    post_title: 'Local revision child',
+    post_content: 'local-private-revision-child-body',
+    post_status: 'inherit',
+    post_type: 'revision',
+    post_parent: 4,
+  };
+  local.db.wp_posts['ID:4'] = {
+    ID: 4,
+    post_title: 'Local parent post',
+    post_content: 'local-private-parent-body',
+    post_status: 'publish',
+  };
+
+  const plan = planFor(base, local, baseSite());
+  const revisionMutation = mutationFor(plan, revisionResourceKey);
+  const parentMutation = mutationFor(plan, parentResourceKey);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === revisionResourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(revisionMutation, undefined);
+  assert.equal(parentMutation.changeKind, 'create');
+  assert.equal(blocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(blocker.surface, 'revision');
+  assert.equal(
+    JSON.stringify(blocker).includes('local-private-revision-child-body'),
+    false,
+  );
+  assert.equal(
+    JSON.stringify(blocker).includes('local-private-parent-body'),
+    false,
+  );
+});
+
 test('blocks an atomic plugin install when dependencies are absent', () => {
   const base = baseSite();
   const local = baseSite();
