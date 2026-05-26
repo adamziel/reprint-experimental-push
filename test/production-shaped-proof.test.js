@@ -3953,6 +3953,71 @@ test('shared lab waitForServer tolerates more than four startup-shaped no-route 
   assert.equal(snapshotCalls, readyAfterIndexCalls);
 });
 
+test('shared lab waitForServer fails with bounded timeout diagnostics after consecutive readiness probe timeouts', async () => {
+  const sockets = new Set();
+  const server = createServer(() => {
+    // Intentionally never respond so fetchWithTimeout() exercises the bounded timeout path.
+  });
+  server.on('connection', (socket) => {
+    sockets.add(socket);
+    socket.on('close', () => {
+      sockets.delete(socket);
+    });
+  });
+
+  await new Promise((resolve, reject) => {
+    server.listen(0, '127.0.0.1', (error) => {
+      if (error) {
+        reject(error);
+        return;
+      }
+      resolve();
+    });
+  });
+
+  const address = server.address();
+  assert.ok(address && typeof address === 'object' && typeof address.port === 'number');
+
+  const child = {
+    exitCode: null,
+    signalCode: null,
+    pid: null,
+    kill() {
+      this.exitCode = 1;
+      return true;
+    },
+  };
+
+  try {
+    await assert.rejects(
+      waitForServer(
+        child,
+        `http://127.0.0.1:${address.port}`,
+        () => '',
+      ),
+      (error) => {
+        assert.match(error.message, /Playground server hit 4 consecutive readiness probe timeouts/);
+        assert.equal(error.context?.timeoutProbeCount, 4);
+        assert.equal(error.context?.childPid ?? null, null);
+        return true;
+      },
+    );
+  } finally {
+    for (const socket of sockets) {
+      socket.destroy();
+    }
+    await new Promise((resolve, reject) => {
+      server.close((error) => {
+        if (error) {
+          reject(error);
+          return;
+        }
+        resolve();
+      });
+    });
+  }
+});
+
 test('shared lab waitForServer accepts a ready snapshot even while /wp-json/ still reports startup-shaped 502s', async () => {
   let indexCalls = 0;
   let snapshotCalls = 0;
@@ -4193,6 +4258,7 @@ async function waitForServer(child, baseUrl, getLogs) {
   let lastError = null;
   const lastProbes = [];
   let notReadyProbeCount = 0;
+  let timeoutProbeCount = 0;
   while (Date.now() < deadline) {
     if (child.exitCode !== null || child.signalCode !== null) {
       const exitLabel =
@@ -4218,6 +4284,7 @@ async function waitForServer(child, baseUrl, getLogs) {
       const response = await fetchWithTimeout(`${baseUrl}/wp-json/`, {
         headers: { connection: 'close' },
       });
+      timeoutProbeCount = 0;
       const responseBody = await response.clone().text().catch(() => '');
       const responsePreview = responseBody.slice(0, readinessFailureBodyLimit);
       lastProbes.push({
@@ -4239,6 +4306,7 @@ async function waitForServer(child, baseUrl, getLogs) {
             connection: 'close',
           },
         });
+        timeoutProbeCount = 0;
         const snapshotBody = await snapshot.clone().text().catch(() => '');
         lastProbes.push({
           route: '/wp-json/reprint-push-lab/v1/snapshot',
@@ -4316,6 +4384,7 @@ async function waitForServer(child, baseUrl, getLogs) {
               connection: 'close',
             },
           });
+          timeoutProbeCount = 0;
           const snapshotBody = await snapshot.clone().text().catch(() => '');
           lastProbes.push({
             route: '/wp-json/reprint-push-lab/v1/snapshot',
@@ -4405,7 +4474,20 @@ async function waitForServer(child, baseUrl, getLogs) {
         throw error;
       }
       lastError = error;
-      notReadyProbeCount = 0;
+      timeoutProbeCount = labNextTimeoutProbeCount(timeoutProbeCount, error);
+      if (labReadinessProbeTimedOut(error) && labNotReadyProbeLimitReached(timeoutProbeCount)) {
+        await throwPlaygroundReadinessFailure(
+          child,
+          `Playground server hit ${timeoutProbeCount} consecutive readiness probe timeout${timeoutProbeCount === 1 ? '' : 's'}`,
+          lastError,
+          lastProbes,
+          getLogs(),
+          {
+            childPid: child.pid ?? null,
+            timeoutProbeCount,
+          },
+        );
+      }
     }
     await new Promise((resolve) => setTimeout(resolve, readinessProbeIntervalMs));
   }
