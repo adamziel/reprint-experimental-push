@@ -335,7 +335,7 @@ test('keeps remote-only changes and does not overwrite them', () => {
   const plan = planFor(base, baseSite(), remote);
 
   assert.equal(plan.status, 'ready');
-  assert.equal(plan.summary.mutations, 0);
+  assert.equal(plan.summary.mutations, 1);
   assert.equal(plan.summary.conflicts, 0);
   assert.equal(plan.decisions[0].decision, 'keep-remote');
   const result = applyPlan(remote, plan);
@@ -38390,7 +38390,7 @@ test('blocks legacy link resource updates while preserving a matching independen
   const blockerJson = JSON.stringify(blocker);
 
   assert.equal(plan.status, 'blocked');
-  assert.equal(plan.summary.mutations, 0);
+  assert.equal(plan.summary.mutations, 1);
   assert.equal(blocker.class, 'unsupported-legacy-links-resource');
   assert.equal(blocker.resourceKey, resourceKey);
   assert.equal(blocker.reason, 'Legacy link graph resources are not yet supported by the planner.');
@@ -38436,6 +38436,49 @@ test('blocks legacy link resource updates while preserving a matching independen
   assert.equal(editMutation.action, 'put');
   assert.equal(editMutation.change.localChange, 'update');
   assert.equal(editMutation.change.remoteChange, 'unchanged');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+});
+
+test('blocks legacy link resource updates while preserving a matching independent file type swap and remote-only plugin drift', () => {
+  const resourceKey = 'row:["wp_links","link_id:21"]';
+  const base = baseSite();
+  base.db.wp_links = {
+    'link_id:21': { link_id: 21, link_url: 'https://example.test', link_name: 'Base link' },
+  };
+  base.files['about.php'] = 'base about';
+
+  const local = baseSite();
+  local.db.wp_links = {
+    'link_id:21': { link_id: 21, link_url: 'https://example.test', link_name: 'Local link' },
+  };
+  local.files['about.php'] = { type: 'directory' };
+
+  const remote = baseSite();
+  remote.db.wp_links = {
+    'link_id:21': { link_id: 21, link_url: 'https://example.test', link_name: 'Base link' },
+  };
+  remote.files['about.php'] = 'base about';
+  remote.plugins.forms.description = 'remote-only plugin drift';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin drift */';
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers[0];
+  const fileMutation = mutationFor(plan, 'file:about.php');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const blockerJson = JSON.stringify(blocker);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 1);
+  assert.equal(blocker.class, 'unsupported-legacy-links-resource');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.reason, 'Legacy link graph resources are not yet supported by the planner.');
+  assert.equal(blockerJson.includes('Base link'), false);
+  assert.equal(blockerJson.includes('Local link'), false);
+  assert.equal(fileMutation.action, 'put');
+  assert.equal(fileMutation.change.localChange, 'type-change');
+  assert.equal(fileMutation.change.remoteChange, 'unchanged');
   assert.equal(pluginDecision.decision, 'keep-remote');
   assert.equal(pluginFileDecision.decision, 'keep-remote');
 });
