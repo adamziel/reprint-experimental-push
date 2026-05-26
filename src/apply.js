@@ -651,8 +651,6 @@ function productionRecoverySupportReport(writer) {
   }
   if (
     writer?.productionAdapter === true
-    && writer?.restartReadable === true
-    && writer?.ownsRemoteArtifact === true
     && writer?.supportedSurface !== 'production-recovery-journal-adapter'
   ) {
     addMissingDependency('supported production recovery journal adapter surface');
