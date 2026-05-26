@@ -9,21 +9,21 @@ Fresh remote heads at audit time, checked on May 26, 2026:
 - `origin/lane/reliable-executor` -> `7be5a3f6`
 - `origin/lane/no-data-loss-invariants` -> `9c70eba6`
 - `origin/lane/no-data-loss-recovery` -> `c93b1536`
-- `origin/lane/fast-paths` -> `401bda5a`
-- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `401bda5a`
-- `origin/lane/independent-auditor` -> `641b09c1`
-- `origin/lane/critic` -> `68569c0b`
+- `origin/lane/fast-paths` -> `a72b08ad`
+- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `a72b08ad`
+- `origin/lane/independent-auditor` -> `d2e1c69d`
+- `origin/lane/critic` -> `3b9a9c46`
 - `origin/lane/progress-publisher` -> `7695e1f9`
 - `origin/lane/same-plan-wordpress-graph-create` -> `09e6706d`
 - `origin/lane/cycle-20260525-mainwindows-2349/same-plan-wordpress-graph-create` -> `09e6706d`
 - `origin/lane/cycle-20260525-mainwindows-2349/same-plan-wordpress-graph-create` -> `e9cbf9d4`
 - `origin/lane/cycle-20260525-mainwindows-2357/no-data-loss-invariants-graph-proof` -> `98c0ce26`
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `2af0d9ba`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `7f833f49`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `c4a776f9`
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` -> `5f256171`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-invariants` -> `9c70eba6`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `c93b1536`
-- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `401bda5a`
+- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `a72b08ad`
 - `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration` -> `a3a900d7`
 - `origin/main` -> `e55864f4`
 
@@ -54,21 +54,21 @@ but it did not change the release conclusion:
   `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` now
   fences journal path mismatches at `c93b1536`, but it still does not add
   production-backed journal ownership or replay proof.
-- `origin/lane/fast-paths` now refreshes benchmark evidence at `401bda5a`.
+- `origin/lane/fast-paths` now refreshes benchmark evidence at `a72b08ad`.
   This remains a safe fast-path implementation detail, but it still does not
   prove the live production push boundary.
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` now adds bounded
-  backpressure consistency handling at `401bda5a`. That is still a
+  backpressure consistency handling at `a72b08ad`. That is still a
   fail-closed implementation improvement, not production release proof.
-- `origin/lane/critic` now refreshes the critic handoff at `68569c0b`.
+- `origin/lane/critic` now refreshes the critic handoff at `3b9a9c46`.
 - `origin/lane/progress-publisher` now refreshes the public progress evidence
   at `7695e1f9`.
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` now refreshes the audit snapshot at
-  `641b09c1`.
+  `d2e1c69d`.
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now
   refreshes the supervisor evidence snapshot at `2af0d9ba`.
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now
-  records the latest progress freshness handoff at `7f833f49`.
+  records the latest progress freshness handoff at `c4a776f9`.
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` now
   hardens the live proof timeout diagnostics at `5f256171`.
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` now
