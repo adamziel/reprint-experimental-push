@@ -6,8 +6,8 @@ The project is **not releasable as a production WordPress push path**.
 
 - Fresh remote heads at audit time, checked on May 26, 2026:
 
-- `origin/lane/reliable-executor` -> `618d4694`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `b1eabc4e`
+- `origin/lane/reliable-executor` -> `8e9683b3`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `22e9d2c5`
 - `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration` -> `29fff11d`
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `6b6d4e00`
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `0a50d5b3`
@@ -21,7 +21,7 @@ The project is **not releasable as a production WordPress push path**.
 - `origin/lane/progress-publisher` -> `7695e1f9`
 - `origin/lane/same-plan-wordpress-graph-create` -> `0d2178e9`
 - `origin/lane/cycle-20260525-mainwindows-2357/no-data-loss-invariants-graph-proof` -> `98c0ce26`
-- `origin/main` -> `e55864f4`
+- `origin/main` -> `56063f13`
 
 The current remote state still adds no production-backed auth/session
 lifecycle or durable journal ownership/lease/fencing/replay path proving a
@@ -30,11 +30,11 @@ real source-site mutation boundary. The release gates still stay `0/4`.
 Fresh lane proof since the last audit pass improved the local evidence floor,
 but it did not change the release conclusion:
 
-- `origin/lane/reliable-executor` now records `618d4694`, tightening production-
+- `origin/lane/reliable-executor` now records `8e9683b3`, tightening production-
   shaped proof timeout handling again, but still not proving production
   auth/session lifecycle or a live-source mutation boundary.
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now records
-  `6fa43e62`, refreshing public progress freshness only.
+  `22e9d2c5`, refreshing public progress freshness only.
 - `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration`
   now records `29fff11d`, adding featured image attachment drift proof only.
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` now records
