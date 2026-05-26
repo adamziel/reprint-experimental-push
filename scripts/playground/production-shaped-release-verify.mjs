@@ -8,7 +8,11 @@ import net from 'node:net';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { authenticatedHttpClient, runAuthenticatedHttpPush } from '../../src/authenticated-http-push-client.js';
+import {
+  authenticatedHttpClient,
+  dbJournalProofIsAcceptable,
+  runAuthenticatedHttpPush,
+} from '../../src/authenticated-http-push-client.js';
 import { digest } from '../../src/stable-json.js';
 import {
   loadAuthSessionSource,
@@ -887,7 +891,9 @@ try {
       );
       assert.equal(durableJournalSummary.leaseFence?.fsyncEvidence, true);
       assert.equal(durableJournalSummary.leaseFence?.monotonicSequence, true);
-      const checkedDurableJournalAccepted = checkedReleaseDurableJournalProofIsAcceptable(proof.dbJournal);
+      const checkedDurableJournalAccepted = dbJournalProofIsAcceptable(proof.dbJournal, {
+        requireStaleClaimRejected: packagedSourceFixture !== null,
+      });
 
       if (requireProductionDurableJournal && !checkedDurableJournalAccepted) {
         process.stdout.write(
@@ -1748,17 +1754,6 @@ function runProductionRecoveryJournalProof({ plan, current, artifactRefs = {} })
   } finally {
     fs.rmSync(workDir, { recursive: true, force: true });
   }
-}
-
-function checkedReleaseDurableJournalProofIsAcceptable(dbJournal) {
-  return /(packaged production plugin|checked live production-shaped) journal surface/i.test(dbJournal?.scope || '')
-    && dbJournal?.ownership?.ownsJournal === true
-    && dbJournal?.ownership?.restartReadable === true
-    && dbJournal?.ownership?.productionAdapter === 'wpdb-single-statement-cas'
-    && dbJournal?.leaseFence?.boundary === 'wpdb-single-statement-cas'
-    && dbJournal?.leaseFence?.claimKeyUnique === true
-    && dbJournal?.leaseFence?.monotonicSequence === true
-    && dbJournal?.leaseFence?.restartReadable === true;
 }
 
 function writeSpawnOutputTail(proof, commandLabel = '') {

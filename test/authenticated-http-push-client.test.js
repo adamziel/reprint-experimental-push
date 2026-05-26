@@ -1,6 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { authenticatedHttpClient, runAuthenticatedHttpPush } from '../src/authenticated-http-push-client.js';
+import {
+  authenticatedHttpClient,
+  dbJournalProofIsAcceptable,
+  runAuthenticatedHttpPush,
+} from '../src/authenticated-http-push-client.js';
 
 const credential = {
   username: 'reprint_push_admin',
@@ -58,6 +62,42 @@ test('authenticated push client allows production-shaped loopback runtime ports'
     requestTimeoutMs: 1,
   });
   assert.equal(typeof client.get, 'function');
+});
+
+test('db journal proof requires stale claim rejection when explicitly requested', () => {
+  const proof = {
+    applyCommitted: true,
+    idempotencyOpened: 1,
+    mutationApplied: 1,
+    storageGuard: {
+      boundary: 'wpdb-single-statement-cas',
+      operation: 'update',
+      outcome: 'applied',
+    },
+    ownership: {
+      ownsJournal: true,
+      restartReadable: true,
+      productionAdapter: 'wpdb-single-statement-cas',
+    },
+    leaseFence: {
+      boundary: 'wpdb-single-statement-cas',
+      claimKeyUnique: true,
+      monotonicSequence: true,
+      restartReadable: true,
+      staleClaimRejected: false,
+    },
+  };
+
+  assert.equal(dbJournalProofIsAcceptable(proof), true);
+  assert.equal(
+    dbJournalProofIsAcceptable(proof, { requireStaleClaimRejected: true }),
+    false,
+  );
+  proof.leaseFence.staleClaimRejected = true;
+  assert.equal(
+    dbJournalProofIsAcceptable(proof, { requireStaleClaimRejected: true }),
+    true,
+  );
 });
 
 test('authenticated push client fails closed for missing production-shaped credentials', () => {

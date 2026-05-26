@@ -1719,7 +1719,7 @@ function summarizeDbJournal(response) {
   };
 }
 
-function dbJournalProofIsAcceptable(dbJournal, options = {}) {
+export function dbJournalProofIsAcceptable(dbJournal, options = {}) {
   return dbJournal?.applyCommitted === true
     && dbJournal?.idempotencyOpened > 0
     && dbJournal?.mutationApplied > 0
