@@ -30144,7 +30144,7 @@ test('blocks deletion of unsupported special file entries while preserving a mat
   assert.equal(plan.conflicts.length, 0);
   assert.equal(blocker.class, 'unsupported-special-file-resource');
   assert.equal(blocker.resourceKey, resourceKey);
-  assert.equal(blocker.unsupportedState, 'remote-only-drift');
+  assert.equal(blocker.unsupportedState, 'delete');
   assert.equal(blocker.reason, 'Special file entries are not yet supported by the planner.');
   assert.equal(postDecision.decision, 'already-in-sync');
   assert.equal(pluginDecision.decision, 'keep-remote');
