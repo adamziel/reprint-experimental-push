@@ -55,6 +55,9 @@ Current executable gate:
 - The production-throughput gate also fails closed if the recorded receipt
   cursor no longer fits the bounded queue budget, so the backpressure evidence
   stays aligned with the replayable cursor state.
+- The production-throughput gate also fails closed if the queue never paused
+  before overflow, so a runaway sender cannot masquerade as bounded
+  backpressure evidence.
 - The report now also cross-checks receipt-cursor memory headroom against queue
   headroom so a tampered buffer budget cannot make the production claim look
   consistent when the recorded cursor and queue view disagree.
