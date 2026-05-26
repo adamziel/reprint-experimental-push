@@ -1531,12 +1531,14 @@ export function productionThroughputDetails(report) {
   const receiptCursorBackpressureWithinQueueHeadroom =
     Number.isFinite(receiptCursorBackpressureBytes)
     && Number.isFinite(receiptCursorQueueHeadroomBytes)
-    && receiptCursorBackpressureBytes <= receiptCursorQueueHeadroomBytes;
+    && receiptCursorBackpressureBytes <= receiptCursorQueueHeadroomBytes
+    && report.evidence.backpressure?.queueHeadroomWithinResourceCeiling === true;
   const receiptCursorBackpressureWithinResourceHeadroom =
     Number.isFinite(receiptCursorBackpressureBytes)
     && Number.isFinite(receiptCursorMemoryCeilingBytes)
     && Number.isFinite(receiptCursorWindowBytes)
-    && receiptCursorBackpressureBytes <= receiptCursorMemoryCeilingBytes - receiptCursorWindowBytes;
+    && receiptCursorBackpressureBytes <= receiptCursorMemoryCeilingBytes - receiptCursorWindowBytes
+    && report.evidence.backpressure?.queueHeadroomWithinResourceCeiling === true;
   const queueHeadroomWithinResourceCeiling =
     Number.isFinite(receiptCursorQueueBudgetBytes)
     && Number.isFinite(receiptCursorQueueHeadroomBytes)
