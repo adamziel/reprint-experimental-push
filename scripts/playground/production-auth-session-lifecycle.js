@@ -36,9 +36,9 @@ export function evaluateProductionAuthSessionLifecycle(session, now = Date.now()
     };
   }
 
-  const observedType = session?.type || 'missing';
-  const observedStatus = session?.status || 'missing';
-  const observedExpiresAt = session?.expiresAt || 'missing';
+  const observedType = normalizeAuthSessionObservationField(session?.type) ?? 'missing';
+  const observedStatus = normalizeAuthSessionObservationField(session?.status) ?? 'missing';
+  const observedExpiresAt = normalizeAuthSessionObservationField(session?.expiresAt) ?? 'missing';
   const revoked = session?.revoked === true || session?.status === 'revoked';
   const cleanedUp = session?.cleanedUp === true || session?.cleanup === true;
 
@@ -408,6 +408,23 @@ function normalizeAuthSessionObservationId(id) {
   return normalized;
 }
 
+function normalizeAuthSessionObservationField(value) {
+  if (typeof value !== 'string') {
+    return null;
+  }
+
+  const normalized = value.trim();
+  if (
+    !normalized
+    || normalized !== value
+    || /[\u0000-\u001f\u007f]/.test(normalized)
+  ) {
+    return null;
+  }
+
+  return normalized;
+}
+
 function normalizeAuthSessionObservationStep(step) {
   if (step === null || step === undefined || step === '') {
     return 'missing';
@@ -457,7 +474,7 @@ function resolveInvalidAuthSessionIdentityField(observation) {
 
   for (const [field, label] of identityFields) {
     const value = observation[field];
-    if (value !== undefined && value !== null && typeof value !== 'string') {
+    if (value !== undefined && value !== null && !normalizeAuthSessionObservationField(value)) {
       return label;
     }
   }
