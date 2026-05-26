@@ -258,6 +258,7 @@ export function evaluateProductionAuthSessionLifecycleSummary(summary, now = Dat
   if (readObservation.preserved !== true) {
     return {
       ok: false,
+      field: 'auth.session.preserved',
       required: 'preserved read',
       observed: readObservation.rotated ? 'rotated' : 'unpreserved',
     };
@@ -340,6 +341,7 @@ export function evaluateProductionAuthSessionLifecycleSummary(summary, now = Dat
     ) {
       return {
         ok: false,
+        field: 'auth.session.preserved',
         required: 'preserved read',
         observed: observation.rotated ? 'rotated' : 'unpreserved',
       };

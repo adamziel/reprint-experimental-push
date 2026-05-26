@@ -3503,6 +3503,7 @@ test('production auth/session lifecycle summary fails closed when an intermediat
     evaluateProductionAuthSessionLifecycleSummary(summary),
     {
       ok: false,
+      field: 'auth.session.preserved',
       required: 'preserved read',
       observed: 'unpreserved',
     },

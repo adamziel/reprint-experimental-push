@@ -2876,6 +2876,7 @@ test('production-shaped authenticated push fails closed when a required producti
     assert.equal(summary.ok, false);
     assert.equal(summary.code, 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED');
     assert.deepEqual(summary.authSession, {
+      field: 'auth.session.preserved',
       required: 'preserved read',
       observed: 'unpreserved',
       verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',

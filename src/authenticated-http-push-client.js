@@ -1129,6 +1129,7 @@ function resolveRequiredProductionAuthSessionSummary(summary) {
   }
 
   return {
+    ...(observedLifecycle.field ? { field: observedLifecycle.field } : {}),
     required: observedLifecycle.required,
     observed: observedLifecycle.observed,
     verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
