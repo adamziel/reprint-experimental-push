@@ -1918,6 +1918,27 @@ export const SAFE_FAST_PATHS = Object.freeze([
     publishesStagedDataEarly: false,
   },
   {
+    area: 'compression',
+    reduces: ['wire-bytes', 'planning-round-trips', 'duplicate-release-bundle-retry-window-recomputation'],
+    allowedShortcut: 'compress-canonical-per-kind-budget-summaries-and-reuse-planned-dependency-graph-to-size-bounded-release-bundle-retry-windows',
+    guardrails: [
+      'budget-summaries-stay-planning-evidence-only',
+      'dependency-graph-stays-planning-evidence-only',
+      'release-bundle-retry-window-revalidates-before-write',
+    ],
+    gateProofs: {
+      skip: 'compressed per-kind budget summaries and a planned dependency graph can shorten release-bundle retry-window planning without recomputing the same fan-out shape',
+      live: 'each later release-bundle write still rechecks its own live resource precondition before visibility changes',
+      group: 'budget-summary compression and dependency-graph reuse only narrow planning inside the same planned release bundle and never widen the atomic-group barrier',
+      recovery: 'compressed budget summaries, the planned dependency graph, and durable release receipts still classify pause, retry, or crash',
+    },
+    visibilityBoundary: 'planning-only-for-release-bundle-retry-windows',
+    failureEvidence: 'compressed per-kind budget summary plus planned dependency graph and guarded release record',
+    bypassesLivePreconditions: false,
+    splitsAtomicGroup: false,
+    publishesStagedDataEarly: false,
+  },
+  {
     area: 'database-row-batching',
     reduces: ['planning-round-trips', 'duplicate-dependency-recomputation', 'retry-window-recomputation'],
     allowedShortcut: 'reuse-planned-dependency-graph-and-remote-index-cursor-to-size-bounded-plugin-update-retry-windows',

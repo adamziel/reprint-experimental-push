@@ -264,6 +264,16 @@ test('benchmark model covers large uploads and plugin installs', () => {
   assert.ok(
     model.safeFastPaths.some(
       (fastPath) =>
+        fastPath.allowedShortcut === 'compress-canonical-per-kind-budget-summaries-and-reuse-planned-dependency-graph-to-size-bounded-release-bundle-retry-windows' &&
+        fastPath.visibilityBoundary === 'planning-only-for-release-bundle-retry-windows' &&
+        fastPath.guardrails.includes('dependency-graph-stays-planning-evidence-only') &&
+        fastPath.gateProofs.recovery.includes('durable release receipts still classify pause, retry, or crash'),
+    ),
+    'compressed release-bundle planning can reuse a planned dependency graph without weakening recovery evidence',
+  );
+  assert.ok(
+    model.safeFastPaths.some(
+      (fastPath) =>
         fastPath.allowedShortcut === 'reuse-cached-release-manifest-digest-to-size-bounded-release-bundle-retry-windows' &&
         fastPath.guardrails.includes('cached-release-manifest-remains-planning-evidence-only') &&
         fastPath.gateProofs.skip.includes('trim repeat planning scans') &&

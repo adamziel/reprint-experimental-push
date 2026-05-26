@@ -50,6 +50,10 @@ compression case explicit without turning the helper into mutation authority.
 It also includes a compressed per-kind budget summary plus cached release-
 manifest digest shortcut for retry windows, so the retry planner can trim
 duplicate scanning without weakening live revalidation or durable recovery.
+It also includes a compressed per-kind budget summary plus a planned
+dependency-graph shortcut for release-bundle retry windows, so bounded retry
+planning can reuse known fan-out shape without changing the live compare or
+the atomic-group barrier.
 It also includes a cached release-manifest digest plus cursor shortcut for
 release-bundle fanout, so the planner can trim repeat fanout scans without
 changing the guarded release boundary.
