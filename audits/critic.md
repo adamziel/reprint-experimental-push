@@ -1,14 +1,14 @@
 # Critic Verdict
 
-Current reliable head: `0463f4f39ac1e6e11d612cce97744fb9dbee3d0b`
-(`Fail closed on malformed auth lifecycle flags`).
+Current reliable head: `afe8a88179a09722ebe9ebeb84a34de593a0d82c`
+(`Use live credentials in release verify`).
 
 Verdict: `0/4`
 
 Reason:
 
-- This head is narrower auth-session hardening only. It fails closed on
-  malformed lifecycle flags, but it still does not prove a production-backed
+- This head is release-verify credential wiring only. It switches the checked
+  verifier to live credentials, but it still does not prove a production-backed
   auth/session lifecycle on the checked release path.
 - The checked proof is still missing live issuance/read/expiry/rotation/
   revocation/cleanup evidence for `production-auth-session`, and it still does

@@ -3,20 +3,19 @@ Changed files:
 - [`.lane-output/final.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/critic-clean-20260526-1530/.lane-output/final.md)
 
 What changed:
-- Reclassified the current reliable head as `b80e6321b4411775af6e74614f414b60d33d9173` from `git ls-remote`.
-- Kept the verdict at `0/4` because the release verifier still does not prove a production-backed auth/session lifecycle or stricter durable-journal ownership consumed by the checked release path.
+- Reclassified the current reliable head as `afe8a88179a09722ebe9ebeb84a34de593a0d82c` from `git ls-remote`.
+- Kept the verdict at `0/4` because the release verifier only gained live-credential wiring; it still does not prove a production-backed auth/session lifecycle or stricter durable-journal ownership consumed by the checked release path.
 
 Commands run:
 - `git status --short --branch`
 - `git ls-remote origin refs/heads/lane/reliable-executor`
-- `date '+%Y-%m-%d %H:%M:%S %Z (%z)'`
 - `sed -n '1,220p' AGENTS.md`
-- `sed -n '1,260p' supervision/README.md`
-- `sed -n '1,260p' supervision/lanes/critic.md`
-- `sed -n '1,220p' .lane-output/final.md`
-- `sed -n '1,260p' .lane-output/final-loop-20260526-205630.md`
-- `sed -n '1,240p' audits/critic.md`
-- `git branch -vv --no-abbrev | sed -n '1,40p'`
+- `sed -n '1,220p' supervision/README.md`
+- `sed -n '1,220p' supervision/lanes/critic.md`
+- `find . -maxdepth 3 -type f | sed -n '1,220p'`
+- `git show --stat --oneline --decorate=short --no-renames afe8a88179a09722ebe9ebeb84a34de593a0d82c`
+- `git show --no-ext-diff --unified=40 afe8a88179a09722ebe9ebeb84a34de593a0d82c -- scripts/playground/production-shaped-release-verify.mjs scripts/playground/release-verify-credentials.js test/production-shaped-proof.test.js`
+- `date '+%Y-%m-%d %H:%M:%S %Z (%z)'`
 
 Push result:
 - Not pushed yet
