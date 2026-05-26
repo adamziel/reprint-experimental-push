@@ -20,8 +20,8 @@ const liveCredentials = {
 };
 const proofSubprocessTimeoutMs = 45_000;
 const proofSubprocessKillSignal = 'SIGTERM';
-const liveProofSubprocessTimeoutMs = 12_000;
-const releaseVerifySlowPathTimeoutMs = 12_000;
+const liveProofSubprocessTimeoutMs = 9_000;
+const releaseVerifySlowPathTimeoutMs = 9_000;
 const liveReleaseVerifyTimeoutMs = liveProofSubprocessTimeoutMs;
 const proofSubprocessOptions = {
   timeout: proofSubprocessTimeoutMs,
@@ -40,6 +40,9 @@ function stopAllPlaygroundChildrenSync() {
     }
     try {
       child.kill('SIGTERM');
+    } catch {}
+    try {
+      child.kill('SIGKILL');
     } catch {}
   }
 }

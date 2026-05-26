@@ -9,8 +9,8 @@ import { authenticatedHttpClient, runAuthenticatedHttpPush } from '../../src/aut
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const muPluginDir = path.join(repoRoot, 'scripts/playground/rest-mu-plugins');
-const serverStartupTimeoutMs = 900;
-const serverFetchTimeoutMs = 900;
+const serverStartupTimeoutMs = 650;
+const serverFetchTimeoutMs = 450;
 const credentials = {
   username: 'reprint_push_admin',
   password: 'reprint-push-admin-app-password',
@@ -878,7 +878,15 @@ async function stopSpawnedServer(child) {
     return;
   } catch {
     stopProcessTree(child, 'SIGKILL');
-    await waitForExit(child, 2_000);
+    try {
+      await waitForExit(child, 2_000);
+    } catch {
+      process.stderr.write('Playground server did not exit after SIGKILL\n');
+      if (typeof child.pid === 'number') {
+        process.stderr.write(`Playground child pid still active: ${child.pid}\n`);
+      }
+      stopAllPlaygroundChildrenSync();
+    }
   }
 }
 
@@ -952,6 +960,7 @@ function runBoundedSync(command, args, options, label) {
   const proof = spawnSync(command, args, options);
   if (proof.error) {
     stopAllPlaygroundChildrenSync();
+    process.stderr.write(`${describeSpawnProof(proof)}\n`);
     const timeoutNote = proof.error.code === 'ETIMEDOUT' && options.timeout ? ` after ${options.timeout}ms` : '';
     const detailParts = [
       proof.error.name ?? 'Error',
@@ -966,12 +975,14 @@ function runBoundedSync(command, args, options, label) {
   }
   if (proof.signal) {
     stopAllPlaygroundChildrenSync();
+    process.stderr.write(`${describeSpawnProof(proof)}\n`);
     throw new Error(
       `${label} terminated by ${proof.signal}\nstdout:\n${proof.stdout ?? ''}\nstderr:\n${proof.stderr ?? ''}`,
     );
   }
   if (proof.status === null) {
     stopAllPlaygroundChildrenSync();
+    process.stderr.write(`${describeSpawnProof(proof)}\n`);
     throw new Error(
       `${label} exited without a status\nstdout:\n${proof.stdout ?? ''}\nstderr:\n${proof.stderr ?? ''}`,
     );
