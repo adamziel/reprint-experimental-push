@@ -444,6 +444,7 @@ Concrete failure modes stay rejected even when the throughput gain looks temptin
 - A compressed remote index plus cached chunk receipts still cannot skip large-upload resume after a pause, because planning evidence and cached receipts cannot prove the live compare or guarded publish barrier survived failure.
 - A compressed remote index plus cached chunk receipts still cannot skip the large-upload publish step after a pause, because planning evidence and cached receipts cannot prove the live compare, the guarded publish record, or which acknowledgements survived the pause.
 - A compressed remote index plus cached chunk receipts still cannot skip large-upload window sizing after a pause, because planning evidence and cached receipts cannot prove the next bounded window still matches the live queue order or restore the guarded publish barrier after failure.
+- A compressed remote index plus cached chunk hashes still cannot skip large-upload window sizing after a pause, because planning evidence and cached hashes cannot prove the live chunk receipts, pause ordering, or guarded publish boundary survived interruption.
 - A compressed remote index plus cached chunk hashes still cannot skip large-upload chunk upload after a pause, because planning evidence and cached hashes cannot prove which chunk acknowledgements survived the pause or restore the guarded publish boundary.
 - A compressed remote index plus cached chunk hashes still cannot skip large-upload publish after a pause, because planning evidence and cached hashes cannot prove the live compare, surviving chunk acknowledgements, or guarded publish barrier.
 - A compressed remote index plus a cached file hash still cannot skip large-upload chunk upload after a pause, because planning evidence and cached hashes cannot prove which chunk acknowledgements survived the pause or restore the guarded publish barrier.
@@ -1542,6 +1543,10 @@ Rejected fast paths stay rejected even when they look fast on paper:
   window sizing after a pause, because the hash does not prove which chunk
   acknowledgements survived, how the next bounded window should be ordered, or
   that the guarded publish barrier is still intact.
+- A cached receipt cursor plus memory headroom still cannot skip an atomic-
+  group commit after a pause, because memory headroom can size the next bounded
+  replay, but it cannot prove the paused group preserved its live row
+  preconditions, receipt order, or atomic-group barrier after interruption.
 - A compressed remote index plus a cached file hash cannot skip chunk-hash
   backpressure after a large-upload pause, because the hash does not prove the
   queue stayed bounded, which acknowledgements survived, or that the guarded

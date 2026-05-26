@@ -3406,6 +3406,20 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     rejectedGate: 'recovery',
     violates: ['backpressure', 'chunk-receipts', 'durable-progress'],
   },
+  {
+    id: 'cached-receipt-cursor-memory-headroom-skips-atomic-group-commit-after-pause',
+    proposal: 'use a cached receipt cursor plus memory headroom to skip an atomic-group commit after a pause',
+    rejectedBecause: 'memory headroom can size the next bounded replay, but it cannot prove the paused group preserved its live row preconditions, receipt order, or atomic-group barrier after interruption',
+    rejectedGate: 'recovery',
+    violates: ['backpressure', 'atomic-groups', 'row-preconditions', 'durable-progress'],
+  },
+  {
+    id: 'compressed-remote-index-and-cached-chunk-hashes-skips-large-upload-window-sizing-after-pause',
+    proposal: 'use a compressed remote index plus cached chunk hashes to skip large-upload window sizing after a pause',
+    rejectedBecause: 'planning evidence and cached chunk hashes can trim replay work, but they cannot prove the live chunk receipts, pause ordering, or guarded publish boundary survived the interruption',
+    rejectedGate: 'recovery',
+    violates: ['remote-index-planning-only', 'compression', 'file-hashing', 'chunk-receipts', 'backpressure', 'durable-progress'],
+  },
 ]);
 
 export function buildBenchmarkModel(overrides = {}) {

@@ -475,6 +475,26 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
     'queue slack and journal lag still cannot bypass the backpressure pause boundary',
   );
   assert.equal(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'cached-receipt-cursor-memory-headroom-skips-atomic-group-commit-after-pause')?.rejectedGate,
+    'recovery',
+  );
+  assert.ok(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'cached-receipt-cursor-memory-headroom-skips-atomic-group-commit-after-pause')?.violates.includes('atomic-groups'),
+    'memory headroom still cannot bypass the atomic-group commit boundary',
+  );
+  assert.ok(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'cached-receipt-cursor-memory-headroom-skips-atomic-group-commit-after-pause')?.violates.includes('backpressure'),
+    'memory headroom still cannot bypass the backpressure pause boundary',
+  );
+  assert.equal(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-chunk-hashes-skips-large-upload-window-sizing-after-pause')?.rejectedGate,
+    'recovery',
+  );
+  assert.ok(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-chunk-hashes-skips-large-upload-window-sizing-after-pause')?.violates.includes('chunk-receipts'),
+    'cached chunk hashes still cannot bypass the large-upload receipt boundary',
+  );
+  assert.equal(
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'backpressure-pause-means-complete')?.rejectedGate,
     'recovery',
   );
