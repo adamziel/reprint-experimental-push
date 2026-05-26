@@ -20970,6 +20970,33 @@ test('production durable journal claims fail closed when schemaVersion is inheri
   assert.equal(events.some((event) => event.type === 'journal-completed'), false);
 });
 
+test('replay journals fail closed when status is inherited through the prototype', () => {
+  const replayRemote = JSON.parse(JSON.stringify(baseSite()));
+  const completedPlan = planFor(baseSite(), baseSite(), baseSite());
+  const completedJournal = Object.create({
+    status: 'completed',
+  });
+  Object.assign(completedJournal, {
+    schemaVersion: 1,
+    id: `journal-${completedPlan.id}`,
+    planId: completedPlan.id,
+    entries: completedPlan.mutations.map((mutation) => ({
+      mutationId: mutation.id,
+      resourceKey: mutation.resourceKey,
+      status: 'applied',
+      beforeValue: null,
+      afterValue: null,
+    })),
+  });
+
+  const error = captureError(() => applyPlan(replayRemote, completedPlan, {
+    journal: completedJournal,
+  }));
+
+  assert.equal(error.code, 'JOURNAL_SCHEMA_UNSUPPORTED');
+  assert.match(error.message, /owned, not inherited/);
+});
+
 test('production durable journal claims fail closed when the adapter kind is inherited through the prototype', () => {
   const writer = Object.create({
     kind: 'production-recovery-journal',

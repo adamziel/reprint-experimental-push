@@ -385,6 +385,17 @@ function validFixtureFormsLabTableEvidence(evidence, remote) {
 function prepareJournal(remote, plan, previousJournal) {
   if (previousJournal) {
     const journal = deepClone(previousJournal);
+    if (
+      !Object.hasOwn(journal, 'schemaVersion')
+      || !Object.hasOwn(journal, 'planId')
+      || !Object.hasOwn(journal, 'status')
+    ) {
+      throw new PushPlanError(
+        'JOURNAL_SCHEMA_UNSUPPORTED',
+        'Recovery journal metadata must be owned, not inherited.',
+        { journal },
+      );
+    }
     if (journal.schemaVersion !== JOURNAL_SCHEMA_VERSION) {
       throw new PushPlanError(
         'JOURNAL_SCHEMA_UNSUPPORTED',
