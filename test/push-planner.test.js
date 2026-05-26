@@ -502,7 +502,7 @@ test('blocks plugin-owned custom tables while preserving a matching independent 
   assert.equal(plan.status, 'blocked');
   assert.equal(blocker.class, 'unsupported-plugin-owned-resource');
   assert.equal(blocker.resourceKind, 'custom-table');
-  assert.equal(blocker.unsupportedState, 'local-or-divergent-drift');
+  assert.equal(blocker.unsupportedState, 'same-plan-reference');
   assert.equal(
     blocker.reason,
     'Plugin-owned custom tables, including deletes, are not yet supported by the planner.',
@@ -554,7 +554,7 @@ test('blocks unknown plugin-owned custom tables while preserving a matching inde
   assert.equal(plan.status, 'blocked');
   assert.equal(blocker.class, 'unsupported-plugin-owned-resource');
   assert.equal(blocker.resourceKind, 'custom-table');
-  assert.equal(blocker.unsupportedState, 'local-or-divergent-drift');
+  assert.equal(blocker.unsupportedState, 'same-plan-reference');
   assert.equal(
     blocker.reason,
     'Plugin-owned custom tables, including deletes, are not yet supported by the planner.',
@@ -16507,6 +16507,83 @@ test('blocks local term-taxonomy parent references to a same-plan created term i
   assert.equal(pluginFileDecision.decision, 'keep-remote');
   assert.equal(planJson.includes('Local same-plan parent term'), false);
   assert.equal(planJson.includes('local-same-plan-parent-term'), false);
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin changes');
+  assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin changes */');
+});
+
+test('blocks local term-taxonomy parent references to a same-plan created term identity while preserving a matching independent file type swap and remote-only plugin changes', () => {
+  const resourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:5"]';
+  const targetResourceKey = 'row:["wp_terms","term_id:9"]';
+  const matchingResourceKey = 'file:wp-content/uploads/term-parent-cover';
+  const base = baseSite();
+  base.db.wp_terms = {
+    'term_id:4': { term_id: 4, name: 'Base shared term', slug: 'base-shared-term' },
+  };
+  base.db.wp_term_taxonomy = {
+    'term_taxonomy_id:5': {
+      term_taxonomy_id: 5,
+      term_id: 4,
+      taxonomy: 'category',
+      parent: 0,
+      description: 'base term taxonomy description',
+    },
+  };
+  base.files['wp-content/uploads/term-parent-cover'] = 'base cover bytes';
+
+  const local = baseSite();
+  local.db.wp_terms = {
+    'term_id:4': { term_id: 4, name: 'Base shared term', slug: 'base-shared-term' },
+    'term_id:9': {
+      term_id: 9,
+      name: 'Local same-plan parent term',
+      slug: 'local-same-plan-parent-term',
+    },
+  };
+  local.db.wp_term_taxonomy = {
+    'term_taxonomy_id:5': {
+      term_taxonomy_id: 5,
+      term_id: 4,
+      taxonomy: 'category',
+      parent: 9,
+      description: 'local term taxonomy description',
+    },
+  };
+  local.files['wp-content/uploads/term-parent-cover'] = { type: 'directory' };
+
+  const remote = baseSite();
+  remote.db.wp_terms = JSON.parse(JSON.stringify(base.db.wp_terms));
+  remote.db.wp_term_taxonomy = JSON.parse(JSON.stringify(base.db.wp_term_taxonomy));
+  remote.files['wp-content/uploads/term-parent-cover'] = { type: 'directory' };
+  remote.plugins.forms.description = 'remote-only plugin changes';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin changes */';
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  const matchingTypeSwap = decisionFor(plan, matchingResourceKey);
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(decisionFor(plan, targetResourceKey), undefined);
+  assert.equal(blocker.class, 'unsupported-term-taxonomy-resource');
+  assert.equal(blocker.resourceKind, 'term-taxonomy');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.unsupportedState, 'same-plan-reference');
+  assert.equal(
+    blocker.reason,
+    'WordPress graph mutation row:["wp_term_taxonomy","term_taxonomy_id:5"] is created in the same plan as a parent term identity that depends on it, and identity rewriting is not yet supported.',
+  );
+  assert.equal(matchingTypeSwap.decision, 'already-in-sync');
+  assert.equal(matchingTypeSwap.change.localChange, 'type-change');
+  assert.equal(matchingTypeSwap.change.remoteChange, 'type-change');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('Local same-plan parent term'), false);
+  assert.equal(planJson.includes('local-same-plan-parent-term'), false);
+  assert.equal(planJson.includes('local term taxonomy description'), false);
   assert.equal(remote.plugins.forms.description, 'remote-only plugin changes');
   assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin changes */');
 });
