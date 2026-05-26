@@ -203,6 +203,11 @@ export function evaluateProductionAuthSessionLifecycleSummary(summary, now = Dat
     };
   }
 
+  const mismatchedSummaryObservation = resolveMismatchedSummaryObservationSession(summary, issuedSessionId);
+  if (mismatchedSummaryObservation) {
+    return mismatchedSummaryObservation;
+  }
+
   if (readObservation.preserved !== true) {
     return {
       ok: false,
@@ -560,6 +565,31 @@ function resolveInvalidAuthSessionSummaryObservationField(summary) {
         ok: false,
         required: 'string lifecycle fields',
         observed: `invalid-${invalidIdentityField}`,
+      };
+    }
+  }
+
+  return null;
+}
+
+function resolveMismatchedSummaryObservationSession(summary, issuedSessionId) {
+  if (!summary || typeof summary !== 'object' || !issuedSessionId) {
+    return null;
+  }
+
+  const summaryObservationFields = ['expired', 'revoked', 'cleanedUp', 'rotated', 'preserved'];
+  for (const field of summaryObservationFields) {
+    const observation = summary[field];
+    if (!observation || typeof observation !== 'object' || Array.isArray(observation)) {
+      continue;
+    }
+
+    const observationSessionId = normalizeAuthSessionObservationId(observation.id);
+    if (observationSessionId && observationSessionId !== issuedSessionId) {
+      return {
+        ok: false,
+        required: 'preserved read',
+        observed: 'rotated',
       };
     }
   }
