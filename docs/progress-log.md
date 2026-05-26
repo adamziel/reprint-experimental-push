@@ -4,6 +4,20 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-05-26 - Public Status Audit 11:40:39
+
+<a id="2026-05-26-public-status-audit-114039"></a>
+
+- Freshness update plus reliable-head confirmation: `10903372` is the current
+  product-side expiry hardening on the public page, and the visible status now
+  points at this 11:40:39 audit refresh.
+- Gate posture remains conservative at `0/4`; no implementation verdict
+  changed.
+- Latest blocker summary remains the same: real WordPress executor/auth and
+  durable journal ownership still block any production push claim, and the
+  fail-closed post-preflight expiry update is evidence but not a gate
+  movement.
+
 ## 2026-05-26 - Public Status Audit 11:39:25
 
 <a id="2026-05-26-public-status-audit-113925"></a>
