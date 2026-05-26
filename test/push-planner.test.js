@@ -1835,6 +1835,7 @@ test('rejects recovery states that hide symbol-keyed artifact metadata', () => {
     reason: 'Symbol-keyed artifact metadata should not be accepted.',
     remoteHash: 'a'.repeat(64),
     planId: 'plan-symbol-artifacts',
+    driftedResources: ['row:["wp_options","option_name:blogname"]'],
     artifacts: {
       journal: { status: 'completed' },
       remote: { status: 'blocked' },
@@ -1857,6 +1858,9 @@ test('rejects blocked recovery states that reuse the same journal and remote art
   const recoveryState = {
     status: 'blocked-recovery',
     reason: 'Blocked recovery must preserve distinct artifact ownership.',
+    planId: 'plan-shared-artifacts',
+    remoteHash: 'b'.repeat(64),
+    driftedResources: ['row:["wp_options","option_name:blogname"]'],
     artifacts: {
       journal: sharedArtifact,
       remote: sharedArtifact,
@@ -1865,7 +1869,7 @@ test('rejects blocked recovery states that reuse the same journal and remote art
 
   assert.throws(
     () => assertRecoveryStateEnvelope(recoveryState),
-    (error) => error.code === 'RECOVERY_STATE_INVALID',
+    (error) => error.code === 'RECOVERY_ARTIFACTS_INVALID',
   );
 });
 
@@ -1884,7 +1888,7 @@ test('rejects recovery states that inherit the journal artifact through the prot
 
   assert.throws(
     () => assertRecoveryStateEnvelope(recoveryState),
-    (error) => error.code === 'RECOVERY_STATE_INVALID',
+    (error) => error.code === 'RECOVERY_ARTIFACTS_INVALID',
   );
 });
 

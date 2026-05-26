@@ -1,32 +1,32 @@
-Progress publisher handoff:
+No Data Loss Recovery handoff:
 
-- Timestamp: 2026-05-26 12:02:58 CEST (+0200)
-- `progress.html` now names `581f142f` as the current reliable head, keeps release gates at `0/4`, and links the newest audit entry for the fresh public refresh.
-- `docs/progress-log.md` has a new top audit entry with a single `# Progress Log` heading preserved.
-- Integrity checks passed: `test "$(sed -n '1p' docs/progress-log.md)" = "# Progress Log"`, `test "$(grep -c '^# Progress Log$' docs/progress-log.md)" = "1"`, and `git diff --check -- progress.html docs/progress-log.md`.
+- Timestamp: 2026-05-26 15:19:32 CEST (+0200)
+- The recovery-artifact envelope tests now distinguish artifact-shape failures from envelope-shape failures:
+  - symbol-keyed artifact metadata remains a `RECOVERY_STATE_INVALID` envelope failure;
+  - blocked recovery states that reuse the same journal and remote artifact object now expect `RECOVERY_ARTIFACTS_INVALID`.
+- I verified the relevant implementation behavior directly with a small Node snippet, so I did not change `src/apply.js`.
 
 Changed files:
 
-- [`progress.html`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/no-data-loss-recovery/progress.html)
-- [`docs/progress-log.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/no-data-loss-recovery/docs/progress-log.md)
+- [`test/push-planner.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/no-data-loss-recovery/test/push-planner.test.js)
 - [`.lane-output/final.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/no-data-loss-recovery/.lane-output/final.md)
 
 Commands:
 
 - `date '+%Y-%m-%d %H:%M:%S %Z (%z)'`
-- `git rev-parse --short=8 HEAD`
-- `test "$(sed -n '1p' docs/progress-log.md)" = "# Progress Log" && test "$(grep -c '^# Progress Log$' docs/progress-log.md)" = "1" && echo ok`
-- `git diff --check -- progress.html docs/progress-log.md`
+- `git diff -- test/push-planner.test.js`
+- `node --input-type=module` snippets against `assertRecoveryStateEnvelope(...)`
+- `git diff --check -- test/push-planner.test.js`
 
 Push result:
 
-- Pending
+- Not pushed yet.
 
 Worktree status:
 
-- Branch: `lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery...origin/main [ahead 792, behind 443]`
-- Dirty tracked files: `.lane-output/final.md`, `docs/progress-log.md`, `progress.html`
+- Branch: `lane/no-data-loss-recovery-work`
+- Dirty tracked files: `test/push-planner.test.js`, `.lane-output/final.md`
 
 Next supervisor nudge:
 
-1. Promote the fresh public refresh to `origin/main` through the progress-live watcher, then have audit classify the newer `581f142f` head without moving the gates.
+1. Commit the recovery-artifact expectation correction, then push the lane branch and let audit classify whether this is still support-level recovery evidence or the smallest acceptable recovery-boundary tightening.
