@@ -683,6 +683,14 @@ function reprint_push_lab_db_journal_claim_event_requires_retry_lineage($event):
         || $event === 'stale-claim-rejected';
 }
 
+function reprint_push_lab_db_journal_checked_claim_event_matches($event): bool
+{
+    return $event === 'idempotency-opened'
+        || $event === 'stale-claim-retry-started'
+        || $event === 'stale-claim-retry-in-progress'
+        || $event === 'stale-claim-rejected';
+}
+
 function reprint_push_lab_db_journal_claim_summary(
     array $latest_claim_row,
     ?array $latest_abandoned_row = null,
@@ -753,6 +761,7 @@ function reprint_push_lab_db_journal_claim_contract_matches($claim): bool
     );
     $event_matches_stale_claim = is_string($active_claim_event)
         && $active_claim_event !== ''
+        && reprint_push_lab_db_journal_checked_claim_event_matches($active_claim_event)
         && !($stale_claim_rejected === false && $active_claim_event === 'stale-claim-rejected')
         && !($stale_claim_rejected === true && $active_claim_event === 'idempotency-opened');
     $requires_consumed_retry_lineage = $stale_claim_rejected === true

@@ -13,6 +13,12 @@ const CLAIM_APPEND_EVENT_TYPES = new Set([
   ...CLAIM_STATE_EVENT_TYPES,
   'stale-claim-rejected',
 ]);
+const CHECKED_CLAIM_EVENT_TYPES = new Set([
+  'idempotency-opened',
+  'stale-claim-retry-started',
+  'stale-claim-retry-in-progress',
+  'stale-claim-rejected',
+]);
 const CLAIM_HASH_PATTERN = /^[a-f0-9]{64}$/;
 
 const RAW_VALUE_KEYS = new Set([
@@ -133,6 +139,7 @@ function durableJournalClaimContractMatches(claim) {
     || (claim.status === 'stale-claim-rejected' && claim.staleClaimRejected === true)
   );
   const eventMatchesStaleClaim = hasNonEmptyString(claim.activeClaimEvent)
+    && CHECKED_CLAIM_EVENT_TYPES.has(claim.activeClaimEvent)
     && !(claim.staleClaimRejected === false && claim.activeClaimEvent === 'stale-claim-rejected')
     && !(claim.staleClaimRejected === true && claim.activeClaimEvent === 'idempotency-opened');
   const requiresConsumedRetryLineage = claim.staleClaimRejected === true
