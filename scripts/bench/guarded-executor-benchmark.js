@@ -359,6 +359,17 @@ export function productionThroughputBlockers(report) {
     report.evidence.parallelism?.parallelismLimitsVisible === true
     && report.evidence.parallelism?.parallelismLimitsMeasured === true
     && (
+      report.evidence.parallelism?.parallelismLimits?.chunkUpload <= 0
+      || report.evidence.parallelism?.parallelismLimits?.fileHashing <= 0
+      || report.evidence.parallelism?.parallelismLimits?.dbBatchPerTable <= 0
+    )
+  ) {
+    blockers.push('production-parallelism-limits-visible-without-positive');
+  }
+  if (
+    report.evidence.parallelism?.parallelismLimitsVisible === true
+    && report.evidence.parallelism?.parallelismLimitsMeasured === true
+    && (
       !Number.isInteger(report.evidence.parallelism?.parallelismLimits?.chunkUpload)
       || !Number.isInteger(report.evidence.parallelism?.parallelismLimits?.fileHashing)
       || !Number.isInteger(report.evidence.parallelism?.parallelismLimits?.dbBatchPerTable)

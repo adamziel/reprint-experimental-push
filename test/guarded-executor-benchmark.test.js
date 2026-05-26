@@ -770,6 +770,10 @@ test('guarded benchmark details fail closed when visible measured parallelism ca
   assert.equal(details.parallelismLimitsVisibleAndMeasured, false);
   assert.equal(details.atomicGroup.parallelismLimitsVisibleAndMeasured, false);
   assert.equal(details.backpressureConsistency.parallelismLimitsVisibleAndMeasured, false);
+  assert.equal(
+    blockers.includes('production-parallelism-limits-visible-without-positive'),
+    true,
+  );
   assert.equal(blockers.includes('production-parallelism-limits-not-measured'), true);
 });
 
