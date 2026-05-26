@@ -3683,6 +3683,20 @@ test('allows an existing _menu_item_object_id metadata row to retarget to a post
     'target post create must be ordered before dependent existing menu item object metadata',
   );
   assert.deepEqual(postmetaMutation.dependsOnMutationIds, [targetMutation.id]);
+  assert.equal(plan.summary.graphDependencies, 1);
+  assert.deepEqual(plan.graphDependencies, [
+    {
+      sourceMutationId: postmetaMutation.id,
+      sourceResourceKey: resourceKey,
+      relationshipKey: 'wp_postmeta.meta_value',
+      relationshipType: 'menu-item-object-post',
+      targetMutationId: targetMutation.id,
+      targetResourceKey,
+      resolutionPolicy: 'same-plan-local-create',
+      source: 'same-plan-local-create',
+      targetLocalHash: targetMutation.localHash,
+    },
+  ]);
   assert.equal(reference.resolutionPolicy, 'same-plan-local-create');
   assert.equal(reference.relationshipKey, 'wp_postmeta.meta_value');
   assert.equal(reference.relationshipType, 'menu-item-object-post');
