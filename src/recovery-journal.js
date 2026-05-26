@@ -103,10 +103,6 @@ export function checkedDurableJournalBoundarySatisfied(dbJournal) {
 }
 
 function checkedBoundaryStorageGuardMatches(dbJournal, productionAdapter, writerLease, nestedWriterLease, leaseFenceBoundary) {
-  if (!Object.hasOwn(dbJournal ?? {}, 'storageGuard')) {
-    return true;
-  }
-
   const storageGuard = dbJournal?.storageGuard;
   return storageGuardContractMatches(storageGuard)
     && storageGuard.boundary === productionAdapter

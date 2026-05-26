@@ -835,7 +835,7 @@ function reprint_push_lab_db_journal_storage_guard_contract_matches($storage_gua
 function reprint_push_lab_db_journal_checked_boundary_storage_guard_is_coherent($journal): bool
 {
     if (!is_array($journal) || !array_key_exists('storageGuard', $journal)) {
-        return true;
+        return false;
     }
 
     $storage_guard = $journal['storageGuard'] ?? null;
