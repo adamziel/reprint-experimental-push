@@ -658,7 +658,7 @@ test('blocks deletion of unknown plugin-owned custom tables while preserving a m
   const pluginDecision = decisionFor(plan, 'plugin:forms');
   const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
 
-  assert.equal(plan.status, 'conflict');
+  assert.equal(plan.status, 'blocked');
   assert.equal(blocker.class, 'unsupported-plugin-owned-resource');
   assert.equal(blocker.resourceKind, 'custom-table');
   assert.equal(
@@ -710,7 +710,7 @@ test('blocks plugin-owned custom table deletes while preserving a matching indep
   const pluginDecision = decisionFor(plan, 'plugin:forms');
   const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
 
-  assert.equal(plan.status, 'conflict');
+  assert.equal(plan.status, 'blocked');
   assert.equal(blocker.class, 'unsupported-plugin-owned-resource');
   assert.equal(
     blocker.reason,
@@ -22103,7 +22103,8 @@ test('blocks local revision graph resources while preserving remote-only plugin 
   assert.equal(blocker.class, 'unsupported-revision-resource');
   assert.equal(blocker.resourceKind, 'revision');
   assert.equal(blocker.resourceKey, resourceKey);
-  assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_posts","ID:43"] is created in the same plan as a revision identity that depends on it, and identity rewriting is not yet supported.');
+  assert.equal(blocker.unsupportedState, 'local-or-divergent-drift');
+  assert.equal(blocker.reason, 'Revision graph resources are not yet supported by the planner.');
   assert.equal(pluginDecision.decision, 'keep-remote');
   assert.equal(planJson.includes('Local revision content'), false);
   assert.equal(planJson.includes('Base revision content'), false);
@@ -22139,12 +22140,13 @@ test('blocks local revision graph resources while preserving remote-only plugin 
   const blocker = plan.blockers[0];
   const planJson = JSON.stringify(plan);
 
-  assert.equal(plan.status, 'conflict');
+  assert.equal(plan.status, 'blocked');
   assert.equal(plan.summary.mutations, 0);
   assert.equal(mutationFor(plan, resourceKey), undefined);
   assert.equal(plan.conflicts.length, 0);
   assert.equal(blocker.class, 'unsupported-revision-resource');
   assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.unsupportedState, 'local-or-divergent-drift');
   assert.equal(blocker.reason, 'Revision graph resources are not yet supported by the planner.');
   assert.equal(planJson.includes('Local revision removal content'), false);
   assert.equal(planJson.includes('Base revision removal content'), false);
@@ -22257,7 +22259,8 @@ test('blocks local revision graph resources while preserving a matching independ
   assert.equal(plan.conflicts.length, 0);
   assert.equal(blocker.class, 'unsupported-revision-resource');
   assert.equal(blocker.resourceKey, resourceKey);
-  assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_posts","ID:44"] is created in the same plan as a revision identity that depends on it, and identity rewriting is not yet supported.');
+  assert.equal(blocker.unsupportedState, 'local-or-divergent-drift');
+  assert.equal(blocker.reason, 'Revision graph resources are not yet supported by the planner.');
   assert.equal(matchingEdit.decision, 'already-in-sync');
   assert.equal(pluginDecision.decision, 'keep-remote');
   assert.equal(pluginFileDecision.decision, 'keep-remote');
@@ -22319,7 +22322,8 @@ test('blocks local revision graph resources while preserving a matching independ
   assert.equal(plan.conflicts.length, 0);
   assert.equal(blocker.class, 'unsupported-revision-resource');
   assert.equal(blocker.resourceKey, resourceKey);
-  assert.equal(blocker.reason, `WordPress graph mutation ${resourceKey} is created in the same plan as a revision identity that depends on it, and identity rewriting is not yet supported.`);
+  assert.equal(blocker.unsupportedState, 'local-or-divergent-drift');
+  assert.equal(blocker.reason, 'Revision graph resources are not yet supported by the planner.');
   assert.equal(matchingDelete.decision, 'already-in-sync');
   assert.equal(planJson.includes('Local revision delete content'), false);
   assert.equal(planJson.includes('Base revision delete content'), false);
@@ -22381,7 +22385,8 @@ test('blocks remote-only revision drift while preserving a matching independent 
   assert.equal(plan.conflicts.length, 0);
   assert.equal(blocker.class, 'unsupported-revision-resource');
   assert.equal(blocker.resourceKey, resourceKey);
-  assert.equal(blocker.reason, `WordPress graph mutation ${resourceKey} is created in the same plan as a revision identity that depends on it, and identity rewriting is not yet supported.`);
+  assert.equal(blocker.unsupportedState, 'remote-only-drift');
+  assert.equal(blocker.reason, 'Revision graph resources are not yet supported by the planner.');
   assert.equal(matchingEdit.decision, 'already-in-sync');
   assert.equal(matchingEdit.change.localChange, 'update');
   assert.equal(matchingEdit.change.remoteChange, 'update');
@@ -22389,6 +22394,73 @@ test('blocks remote-only revision drift while preserving a matching independent 
   assert.equal(pluginFileDecision.decision, 'keep-remote');
   assert.equal(planJson.includes('Remote-only revision drift content'), false);
   assert.equal(planJson.includes('Base remote-only revision content'), false);
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin changes');
+  assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin changes */');
+});
+
+test('blocks converged revision drift while preserving a matching independent edit and remote-only plugin changes', () => {
+  const resourceKey = 'row:["wp_posts","ID:49"]';
+  const base = baseSite();
+  base.db.wp_posts['ID:49'] = {
+    ID: 49,
+    post_title: 'Base converged revision',
+    post_content: 'Base converged revision content',
+    post_status: 'inherit',
+    post_type: 'revision',
+  };
+  base.db.wp_posts['ID:50'] = {
+    ID: 50,
+    post_title: 'Base converged revision shared row',
+    post_content: 'Base converged revision shared content',
+    post_status: 'publish',
+    post_type: 'post',
+  };
+
+  const local = baseSite();
+  local.db.wp_posts['ID:49'] = {
+    ID: 49,
+    post_title: 'Converged revision drift',
+    post_content: 'Converged revision drift content',
+    post_status: 'inherit',
+    post_type: 'revision',
+  };
+  local.db.wp_posts['ID:50'] = {
+    ID: 50,
+    post_title: 'Shared converged revision row',
+    post_content: 'Shared converged revision content',
+    post_status: 'publish',
+    post_type: 'post',
+  };
+
+  const remote = baseSite();
+  remote.db.wp_posts['ID:49'] = JSON.parse(JSON.stringify(local.db.wp_posts['ID:49']));
+  remote.db.wp_posts['ID:50'] = JSON.parse(JSON.stringify(local.db.wp_posts['ID:50']));
+  remote.plugins.forms.description = 'remote-only plugin changes';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin changes */';
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  const matchingEdit = decisionFor(plan, 'row:["wp_posts","ID:50"]');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(decisionFor(plan, resourceKey), undefined);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(plan.conflicts.length, 0);
+  assert.equal(blocker.class, 'unsupported-revision-resource');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.unsupportedState, 'converged-drift');
+  assert.equal(blocker.reason, 'Revision graph resources are not yet supported by the planner.');
+  assert.equal(matchingEdit.decision, 'already-in-sync');
+  assert.equal(matchingEdit.change.localChange, 'update');
+  assert.equal(matchingEdit.change.remoteChange, 'update');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('Converged revision drift content'), false);
+  assert.equal(planJson.includes('Base converged revision content'), false);
   assert.equal(remote.plugins.forms.description, 'remote-only plugin changes');
   assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin changes */');
 });

@@ -2771,6 +2771,7 @@ function addUnsupportedRevisionResourceBlocker(plan, {
     resource,
     resourceKey: resource.key,
     reason: support.reason || `Revision graph resource ${resource.key} is not yet supported by the planner.`,
+    unsupportedState: support.unsupportedState || null,
     baseHash,
     localHash,
     remoteHash,
@@ -3249,10 +3250,35 @@ function unsupportedRevisionResourceSupport({ resource, baseValue, localValue, r
     return { supported: true };
   }
 
+  const samePlanCreatedRevision = localValue !== ABSENT && baseValue === ABSENT && remoteValue === ABSENT;
+  const remoteOnlyDrift = (
+    stableStringify(localValue) === stableStringify(baseValue)
+    && stableStringify(remoteValue) !== stableStringify(baseValue)
+  );
+  const convergedDrift = (
+    localValue !== ABSENT
+    && remoteValue !== ABSENT
+    && stableStringify(localValue) === stableStringify(remoteValue)
+    && stableStringify(localValue) !== stableStringify(baseValue)
+  );
+
   return {
     supported: false,
     className: 'unsupported-revision-resource',
-    reason: `WordPress graph mutation ${resource.key} is created in the same plan as a revision identity that depends on it, and identity rewriting is not yet supported.`,
+    unsupportedState: localValue === ABSENT
+      ? 'delete'
+      : samePlanCreatedRevision
+        ? 'same-plan-reference'
+        : convergedDrift
+          ? 'converged-drift'
+          : remoteOnlyDrift
+            ? 'remote-only-drift'
+            : 'local-or-divergent-drift',
+    reason: samePlanCreatedRevision
+      ? `WordPress graph mutation ${resource.key} is created in the same plan as a revision identity that depends on it, and identity rewriting is not yet supported.`
+      : localValue === ABSENT
+        ? 'Revision graph resource deletes are not yet supported by the planner.'
+        : 'Revision graph resources are not yet supported by the planner.',
   };
 }
 
