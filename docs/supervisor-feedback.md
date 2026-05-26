@@ -1,13 +1,13 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-26 16:59 CEST
+Last updated: 2026-05-26 17:00 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
 
-## 2026-05-26 16:59 CEST - Reliable Head Advanced to `a4b9c689`
+## 2026-05-26 17:00 CEST - Reliable Head Advanced to `3c444838`
 
-- Going well: the live reliable head is now `a4b9c689c565b42e79cd835ec060a9b7e1fc605a`, so the checked release path advanced again.
+- Going well: the live reliable head is now `3c4448380a87b1d63dfa3624751381061828031f`, so the checked release path advanced again.
 - Not going well: the shared `waitForServer()` readiness boundary still ends at `GET /wp-json/ -> 502 "WordPress is not ready yet"`, so the gate stays `0/4`.
 - Progress change: this is a real head update, not a gate move; the remaining blocker is still production-backed auth/session lifecycle and durable journal ownership.
 - Next nudge: keep `reliable-executor` on `scripts/playground/production-shaped-release-verify.mjs` at `startPlaygroundServer()` / `waitForServer()` for `fixtures/playground/remote-changed.blueprint.json`, and have `progress-publisher` catch the public page up once if it is still behind the live head.
@@ -15,7 +15,7 @@ changed, what is helping, what is not helping, and the next nudge.
 | Lane | Nudge |
 | --- | --- |
 | Reliable executor | Fix the shared `waitForServer()` readiness boundary for `remote-changed`; do not switch back to proof-field polish. |
-| Progress publisher | Catch the public page up to `a4b9c689c565b42e79cd835ec060a9b7e1fc605a` if stale; keep `0/4`. |
+| Progress publisher | Catch the public page up to `3c4448380a87b1d63dfa3624751381061828031f` if stale; keep `0/4`. |
 | Audit and critic | Keep the verdict at `0/4` until production-backed lifecycle or durable ownership is proven. |
 
 ## 2026-05-26 16:57 CEST - Reliable Head Advanced to `a4b9c689`
