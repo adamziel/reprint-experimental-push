@@ -1703,6 +1703,10 @@ function samePlanCreatedGraphIdentitySupport({ resource, resources, base, local,
   const postAuthorInboundReference = inboundReferences.find((reference) =>
     reference.relationshipType === 'post-author'
     && reference.targetResource?.table === 'wp_users');
+  const attachmentInboundReference = inboundReferences.find((reference) =>
+    reference.relationshipType === 'featured-image-attachment'
+    && reference.targetResource?.table === 'wp_posts'
+    && getResource(local, reference.targetResource)?.post_type === 'attachment');
   const commentUserInboundReference = inboundReferences.find((reference) =>
     reference.relationshipType === 'comment-user'
     && reference.targetResource?.table === 'wp_users');
@@ -1716,15 +1720,17 @@ function samePlanCreatedGraphIdentitySupport({ resource, resources, base, local,
       ? `WordPress graph mutation ${resource.key} is created in the same plan as a term relationship taxonomy target that depends on it, and identity rewriting is not yet supported.`
       : revisionInboundReference
         ? `WordPress graph mutation ${resource.key} is created in the same plan as a term relationship revision target that depends on it, and identity rewriting is not yet supported.`
-      : postInboundReference
-        ? `WordPress graph mutation ${resource.key} is created in the same plan as a term relationship post target that depends on it, and identity rewriting is not yet supported.`
-        : postAuthorInboundReference
-          ? `WordPress graph mutation ${resource.key} is created in the same plan as a post author target that depends on it, and identity rewriting is not yet supported.`
-          : commentUserInboundReference
-            ? `WordPress graph mutation ${resource.key} is created in the same plan as a comment user target that depends on it, and identity rewriting is not yet supported.`
-            : usermetaUserInboundReference
-              ? `WordPress graph mutation ${resource.key} is created in the same plan as a user meta target that depends on it, and identity rewriting is not yet supported.`
-      : `WordPress graph mutation ${resource.key} is created in the same plan as a relationship that depends on it, and identity rewriting is not yet supported.`,
+        : postInboundReference
+          ? `WordPress graph mutation ${resource.key} is created in the same plan as a term relationship post target that depends on it, and identity rewriting is not yet supported.`
+          : postAuthorInboundReference
+            ? `WordPress graph mutation ${resource.key} is created in the same plan as a post author target that depends on it, and identity rewriting is not yet supported.`
+            : attachmentInboundReference
+              ? `WordPress graph mutation ${resource.key} is created in the same plan as a featured image attachment target that depends on it, and identity rewriting is not yet supported.`
+              : commentUserInboundReference
+                ? `WordPress graph mutation ${resource.key} is created in the same plan as a comment user target that depends on it, and identity rewriting is not yet supported.`
+                : usermetaUserInboundReference
+                  ? `WordPress graph mutation ${resource.key} is created in the same plan as a user meta target that depends on it, and identity rewriting is not yet supported.`
+                  : `WordPress graph mutation ${resource.key} is created in the same plan as a relationship that depends on it, and identity rewriting is not yet supported.`,
     references: inboundReferences,
   };
 }

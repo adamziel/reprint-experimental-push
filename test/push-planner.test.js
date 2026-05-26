@@ -17378,6 +17378,63 @@ test('blocks local term-relationship object references to a same-plan created at
   assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin change */');
 });
 
+test('blocks local featured image references to a same-plan created attachment identity while preserving a matching independent edit and remote-only plugin changes', () => {
+  const attachmentResourceKey = 'row:["wp_posts","ID:8"]';
+  const featuredImageResourceKey = 'row:["wp_postmeta","meta_id:12"]';
+  const base = baseSite();
+  base.db.wp_posts['ID:1'].post_title = 'Base shared post title';
+  base.db.wp_postmeta = {};
+
+  const local = baseSite();
+  local.db.wp_posts['ID:1'].post_title = 'Shared post title';
+  local.db.wp_posts['ID:8'] = {
+    ID: 8,
+    post_title: 'local-created attachment target',
+    post_content: 'local-created attachment body',
+    post_status: 'inherit',
+    post_type: 'attachment',
+  };
+  local.db.wp_postmeta = {
+    'meta_id:12': {
+      meta_id: 12,
+      post_id: 1,
+      meta_key: '_thumbnail_id',
+      meta_value: 8,
+    },
+  };
+
+  const remote = baseSite();
+  remote.db.wp_posts['ID:1'] = JSON.parse(JSON.stringify(base.db.wp_posts['ID:1']));
+  remote.db.wp_posts['ID:1'].post_title = 'Shared post title';
+  remote.db.wp_postmeta = {};
+  remote.plugins.forms.description = 'remote-only plugin change';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin change */';
+
+  const plan = planFor(base, local, remote);
+  const attachmentBlocker = plan.blockers.find((entry) => entry.resourceKey === attachmentResourceKey);
+  const metaBlocker = plan.blockers.find((entry) => entry.resourceKey === featuredImageResourceKey);
+  const matchingEdit = decisionFor(plan, 'row:["wp_posts","ID:1"]');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, attachmentResourceKey), undefined);
+  assert.equal(attachmentBlocker.class, 'unsupported-attachment-resource');
+  assert.equal(attachmentBlocker.resourceKey, attachmentResourceKey);
+  assert.equal(attachmentBlocker.reason, 'Attachment graph resources are not yet supported by the planner.');
+  assert.equal(metaBlocker.class, 'unsupported-attachment-resource');
+  assert.equal(metaBlocker.resourceKey, featuredImageResourceKey);
+  assert.equal(matchingEdit.decision, 'already-in-sync');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('local-created attachment target'), false);
+  assert.equal(planJson.includes('local-created attachment body'), false);
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin change');
+  assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin change */');
+});
+
 test('blocks local navigation graph resources while preserving remote-only plugin drift', () => {
   const resourceKey = 'row:["wp_posts","ID:42"]';
   const base = baseSite();
