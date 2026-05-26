@@ -35,6 +35,16 @@ test('benchmark model covers large uploads and plugin installs', () => {
     'plugin update includes row batching',
   );
   assert.ok(
+    model.safeFastPaths.some(
+      (fastPath) =>
+        fastPath.area === 'database-row-batching' &&
+        fastPath.allowedShortcut === 'compress-planning-row-batch-manifests-with-canonical-row-digests' &&
+        fastPath.guardrails.includes('compressed-manifest-remains-planning-evidence-only') &&
+        fastPath.gateProofs.skip.includes('each row still keeps its own precondition'),
+    ),
+    'compressed row-batch manifests stay planning-only and keep row preconditions intact',
+  );
+  assert.ok(
     pluginInstall.actions.some((action) => action.type === 'db-batch-parallelism'),
     'plugin install includes bounded row-batch parallelism',
   );
