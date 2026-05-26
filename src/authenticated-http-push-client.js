@@ -983,22 +983,28 @@ function summarizeDbJournalBody(body, {
   if (!body?.dbJournal || typeof body.dbJournal !== 'object') {
     return undefined;
   }
-  const rows = body.dbJournal?.latestRows || [];
+  const dbJournal = body.dbJournal;
+  const rows = dbJournal?.latestRows || [];
   const storageGuard = summarizeDbJournalStorageGuard(body);
   return {
     status,
     ok: true,
     retryAttempts,
-    scope: body?.dbJournal?.scope,
-    acceptedOnCheckedBoundary: body?.dbJournal?.acceptedOnCheckedBoundary === true,
+    scope: dbJournal?.scope,
+    acceptedOnCheckedBoundary: dbJournal?.acceptedOnCheckedBoundary === true,
     rows: rows.length,
-    applyCommitted: rows.some((entry) => entry.event === 'apply-committed'),
-    mutationApplied: rows.filter((entry) => entry.event === 'mutation-applied').length,
-    idempotencyOpened: rows.filter((entry) => entry.event === 'idempotency-opened').length,
+    applyCommitted: dbJournal?.applyCommitted === true
+      || rows.some((entry) => entry.event === 'apply-committed'),
+    mutationApplied: Number.isInteger(dbJournal?.mutationApplied)
+      ? Math.max(0, dbJournal.mutationApplied)
+      : rows.filter((entry) => entry.event === 'mutation-applied').length,
+    idempotencyOpened: Number.isInteger(dbJournal?.idempotencyOpened)
+      ? Math.max(0, dbJournal.idempotencyOpened)
+      : rows.filter((entry) => entry.event === 'idempotency-opened').length,
     storageGuard,
-    ownership: summarizeDbJournalOwnership(body?.dbJournal),
-    writerLease: summarizeDbJournalWriterLease(body?.dbJournal),
-    leaseFence: summarizeDbJournalLeaseFence(body?.dbJournal),
+    ownership: summarizeDbJournalOwnership(dbJournal),
+    writerLease: summarizeDbJournalWriterLease(dbJournal),
+    leaseFence: summarizeDbJournalLeaseFence(dbJournal),
     authUser: body?.auth?.identity?.userLogin,
     authSessionId: body?.auth?.session?.id,
     sessionType: body?.auth?.session?.type,
