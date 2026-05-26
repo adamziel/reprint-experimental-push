@@ -4,14 +4,14 @@
 
 The project is **not releasable as a production WordPress push path**.
 
-- Audit time: 2026-05-26 08:44:34 CEST (+0200)
+- Audit time: 2026-05-26 08:46:05 CEST (+0200)
 - Fresh remote heads re-polled at audit time:
   - `origin/lane/critic` -> `87f204f6`
   - `origin/lane/no-data-loss-invariants` -> `85bca4c0`
   - `origin/lane/no-data-loss-recovery` -> `9e077c10`
   - `origin/lane/progress-publisher` -> `7695e1f9`
   - `origin/lane/feedback-supervisor` -> `f386dfa6`
-  - `origin/lane/reliable-executor` -> `37409bc8`
+  - `origin/lane/reliable-executor` -> `d178bd1c`
 
 ## Evidence Table
 
@@ -25,7 +25,7 @@ The project is **not releasable as a production WordPress push path**.
 
 ## Release Blockers
 
-1. `reliable-executor` still only proves fail-closed support behavior. The new head `37409bc8` tightens recovery auth drift classification and adds a narrower fail-closed test, but it still does not establish production-backed auth/session lifecycle, canonical replay on a live source, or durable journal ownership on the release path.
+1. `reliable-executor` still only proves fail-closed support behavior. The new head `d178bd1c` tightens replay signed-request proof and adds a wider unit test, but it still does not establish production-backed auth/session lifecycle, canonical replay on a live source, or durable journal ownership on the release path.
 2. `no-data-loss-recovery` still fences recovery paths, but `9e077c10` does not prove restart-readable durable artifacts owned by the production release path.
 3. `no-data-loss-invariants` now shows additional unsupported-surface blocking, but `7491bae4` still does not prove the live production mutation boundary.
 4. `progress-publisher` and `feedback-supervisor` only moved visible freshness. That is useful for visibility, but it does not move a release gate.
