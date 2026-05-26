@@ -41,8 +41,8 @@ The project is **not releasable as a production WordPress push path**.
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `4bed4db3`
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `d7813094`
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `8a7f4edd`
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `1cdca21b`
-- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `876e1156`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `2e17cadd`
+- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `2f470a9a`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `2af1ddda`
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `93f15c4d`
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` -> `0ca7b35d`
@@ -58,20 +58,20 @@ The project is **not releasable as a production WordPress push path**.
 - `origin/lane/no-data-loss-invariants` -> `c55aab49`
 - `origin/lane/no-data-loss-recovery` -> `9e077c10`
 - `origin/lane/progress-publisher` -> `7695e1f9`
-- `origin/lane/reliable-executor` -> `907ef93a`
+- `origin/lane/reliable-executor` -> `9658b415`
 - `origin/lane/same-plan-wordpress-graph-create` -> `8dea1ca3`
 
 Fresh visibility-lane heads moved, but they still only refresh public status surfaces:
 
 - Since the last audit pass, the visible progress lanes advanced again:
-  `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` ->
-  `0339a1a4` and `origin/lane/cycle-20260525-mainwindows-2349/progress-followup`
-  -> `922d2533`. That changes the freshness surface, not the release gate.
+`origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` ->
+`2e17cadd` and `origin/lane/cycle-20260525-mainwindows-2349/progress-followup`
+-> `922d2533`. That changes the freshness surface, not the release gate.
 - The current public-refresh branch heads remain:
-  `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` ->
-  `0339a1a4` and `origin/lane/cycle-20260525-mainwindows-2349/progress-followup`
-  -> `922d2533`.
-- `origin/lane/reliable-executor` -> `907ef93a`
+`origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` ->
+`2e17cadd` and `origin/lane/cycle-20260525-mainwindows-2349/progress-followup`
+-> `922d2533`.
+- `origin/lane/reliable-executor` -> `9658b415`
 - `origin/lane/no-data-loss-invariants` -> `c55aab49`
 - `origin/lane/no-data-loss-recovery` -> `2af1ddda`
 - `origin/main` -> `2c8d52cb`
@@ -83,7 +83,7 @@ real source-site mutation boundary. The release gates still stay `0/4`.
 Fresh lane proof since the last audit pass improved the local evidence floor,
 but it did not change the release conclusion:
 
-- `origin/lane/reliable-executor` now records `03cf6917`, hardening bounded
+- `origin/lane/reliable-executor` now records `9658b415`, hardening bounded
   release-verify spawn handling. It still does not prove production
   auth/session lifecycle or a live-source mutation boundary.
 - `origin/lane/reliable-executor` now records `f1783e10`, hardening durable
@@ -135,7 +135,7 @@ but it did not change the release conclusion:
   submodule boundary proof. It still does not prove the live release boundary
   or any production-backed source mutation.
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now
-  records `b03ee033`, refreshing supervisor freshness only. It still does not
+  records `2e17cadd`, refreshing supervisor freshness only. It still does not
   change the release verdict.
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now
   records `f2d32e1d`, refreshing progress visibility only. It still does not
@@ -250,7 +250,7 @@ but it did not change the release conclusion:
   `e3ffb5ed`, refreshing public progress freshness only. It still does not
   add production-backed gate movement.
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` now records
-  `11c0cceb`, refreshing the audit snapshot only and not changing the release
+  `2f470a9a`, refreshing the audit snapshot only and not changing the release
   boundary.
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` now records
   `876e1156`, refreshing the audit snapshot only and not changing the release
