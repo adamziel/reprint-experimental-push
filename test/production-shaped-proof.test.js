@@ -831,6 +831,39 @@ test('production plugin package smoke leaves one expired signed session for pref
   );
 });
 
+test('production plugin package smoke includes the revoked packaged driver credential guard summary', () => {
+  const smokeSource = readFileSync(
+    path.join(repoRoot, 'scripts/playground/production-plugin-package-smoke.mjs'),
+    'utf8',
+  );
+
+  assert.match(smokeSource, /driverReceiptRevokedCredentialGuard/);
+  assert.match(smokeSource, /revoke-application-password/);
+  assert.match(smokeSource, /applyRejectedCode: revokedCredentialApply\.body\?\.code/);
+  assert.match(smokeSource, /payloadModeAfterReject/);
+});
+
+maybeTest('production plugin package smoke rejects revoked packaged driver credentials without mutating the remote row', () => {
+  const proof = spawnBoundedSync(process.execPath, ['scripts/playground/production-plugin-package-smoke.mjs'], {
+    cwd: repoRoot,
+    timeout: 90_000,
+    killSignal: 'SIGKILL',
+    env: {
+      ...process.env,
+      NODE_NO_WARNINGS: '1',
+    },
+    encoding: 'utf8',
+    maxBuffer: 1024 * 1024 * 20,
+  }, 'production plugin package smoke');
+  assert.equal(proof.status, 0, proof.stderr);
+  assert.match(proof.stdout, /"driverReceiptRevokedCredentialGuard": \{/);
+  assert.match(proof.stdout, /"applyRejectedCode": "reprint_push_lab_auth_required"/);
+  assert.match(proof.stdout, /"revokeDeleted": true/);
+  assert.match(proof.stdout, /"rowRetainedAfterReject": true/);
+  assert.match(proof.stdout, /"updatedMarkerAfterReject": "base"/);
+  assert.match(proof.stdout, /"payloadModeAfterReject": "base"/);
+});
+
 test('production-shaped release verify consumes the packaged production auth/session source command on the checked release path', () => {
   const sourceUrl = 'http://127.0.0.1:8080';
   const packagedSource = resolvePackagedProductionPluginAuthSessionSource({

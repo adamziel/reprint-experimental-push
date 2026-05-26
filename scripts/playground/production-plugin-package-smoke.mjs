@@ -7,7 +7,9 @@ import net from 'node:net';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createHmac } from 'node:crypto';
-import { digest } from '../../src/stable-json.js';
+import { authenticatedHttpClient } from '../../src/authenticated-http-push-client.js';
+import { createPushPlan } from '../../src/planner.js';
+import { deepClone, digest } from '../../src/stable-json.js';
 import {
   loadAuthSessionSource,
   resolveAuthSessionSourceCredentials,
@@ -29,16 +31,23 @@ const authSessionSource = authSessionSourceCommand ? loadAuthSessionSource(authS
 const resolvedCredentials = resolveAuthSessionSourceCredentials(credentials, authSessionSource, {
   preferSource: true,
 });
-const packagedAuthSessionSourceCommand = resolvePackagedProductionPluginSourceCommand({
-  sourceUrl: resolvedCredentials.liveSourceUrl || '',
-  username: resolvedCredentials.username,
-  applicationPassword: resolvedCredentials.applicationPassword,
-  authSessionSourceCommand,
-});
+const packagedAuthSessionSourceCommand = resolvedCredentials.liveSourceUrl
+  ? resolvePackagedProductionPluginSourceCommand({
+      sourceUrl: resolvedCredentials.liveSourceUrl,
+      username: resolvedCredentials.username,
+      applicationPassword: resolvedCredentials.applicationPassword,
+      authSessionSourceCommand,
+    })
+  : '';
 
 const alternateCredentials = {
   username: 'reprint_push_alt_admin',
   password: 'reprint-push-alt-admin-app-password',
+};
+
+const rotatedCredentials = {
+  username: 'reprint_push_admin',
+  password: 'reprint-push-admin-rotated-app-password',
 };
 
 const unscopedCredentials = {
@@ -63,14 +72,35 @@ const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'reprint-production-plugin-
 const packageRoot = path.join(tmpDir, 'package');
 const pluginDir = path.join(packageRoot, 'reprint-push');
 const blueprintPath = path.join(tmpDir, 'remote-base-with-reprint-push-plugin.blueprint.json');
+const driverGuardSnapshotBlueprintPath = path.join(tmpDir, 'remote-base-with-driver-fixture-guard-snapshot.blueprint.json');
+const driverGuardServerBlueprintPath = path.join(tmpDir, 'remote-base-with-driver-fixture-guard-server.blueprint.json');
 const basePath = path.join(tmpDir, 'base.json');
 const localPath = path.join(tmpDir, 'local.json');
+const driverFixture = {
+  driver: 'fixture-arbitrary-plugin-table',
+  table: 'wp_reprint_push_driver_fixture',
+  pluginOwner: 'driver-fixture',
+};
 
 try {
   buildPluginPackage(pluginDir);
   writeActivationBlueprint(path.join(repoRoot, fixtures.base), blueprintPath);
+  writeDriverFixtureBlueprint(path.join(repoRoot, fixtures.base), driverGuardSnapshotBlueprintPath);
+  writeDriverFixtureBlueprint(path.join(repoRoot, fixtures.base), driverGuardServerBlueprintPath, {
+    activatePackagedPlugin: true,
+    provisionAuth: true,
+    enableCredentialRevocationRoute: true,
+  });
   fs.writeFileSync(basePath, `${JSON.stringify(snapshots.base, null, 2)}\n`);
   fs.writeFileSync(localPath, `${JSON.stringify(packageLocalSnapshot, null, 2)}\n`);
+  const driverGuardBaseSnapshot = exportSnapshot('driver-fixture-guard-base', driverGuardSnapshotBlueprintPath);
+  const driverFixtureTableKey = Object.keys(driverGuardBaseSnapshot.db || {}).find((key) => key.endsWith('reprint_push_driver_fixture'));
+  assert.ok(driverFixtureTableKey, 'driver fixture snapshot did not expose the arbitrary plugin-owned table');
+  const driverFixtureResourceKey = `row:[${JSON.stringify(driverFixtureTableKey)},"entry_id:1"]`;
+  const driverLocalUpdateSnapshot = deepClone(driverGuardBaseSnapshot);
+  driverLocalUpdateSnapshot.db[driverFixtureTableKey]['entry_id:1'].payload.mode = 'local-update';
+  driverLocalUpdateSnapshot.db[driverFixtureTableKey]['entry_id:1'].payload.version = 2;
+  driverLocalUpdateSnapshot.db[driverFixtureTableKey]['entry_id:1'].updated_marker = 'local-update';
 
   const summary = {
     package: {
@@ -80,6 +110,7 @@ try {
     },
     routes: {},
     cli: {},
+    driverReceiptRevokedCredentialGuard: {},
     final: {},
   };
 
@@ -221,6 +252,129 @@ try {
     };
   });
 
+  await withPlaygroundServer(
+    'production-plugin-driver-revoked-credential-guard',
+    driverGuardServerBlueprintPath,
+    pluginDir,
+    { authBootstrap: false },
+    async (server) => {
+      const client = authenticatedHttpClient({
+        sourceUrl: server.baseUrl,
+        credential: credentials,
+        routeProfile: 'production-shaped',
+      });
+      const rotatedClient = authenticatedHttpClient({
+        sourceUrl: server.baseUrl,
+        credential: rotatedCredentials,
+        routeProfile: 'production-shaped',
+      });
+
+      const preflight = await client.signedGet('/preflight');
+      assert.equal(preflight.status, 200);
+      assert.equal(preflight.body?.ok, true);
+      const session = preflight.body?.session?.id;
+      assert.equal(typeof session, 'string');
+      assert.ok(session.length > 0, 'signed preflight did not return a session id');
+
+      const remoteSnapshot = await client.get('/snapshot');
+      assert.equal(remoteSnapshot.status, 200);
+      assert.equal(remoteSnapshot.body?.ok, true);
+      const allowedEntry = remoteSnapshot.body.snapshot?.meta?.pluginOwnedResources?.allowedResources?.find?.(
+        (entry) => entry?.resourceKey === driverFixtureResourceKey,
+      );
+      assert.ok(allowedEntry, 'packaged snapshot did not expose the arbitrary plugin-owned driver policy');
+      assert.equal(allowedEntry.driver, driverFixture.driver);
+      assert.equal(allowedEntry.table, driverFixture.table);
+      assert.equal(allowedEntry.pluginOwner, driverFixture.pluginOwner);
+
+      const updatePlan = createPushPlan({
+        base: driverGuardBaseSnapshot,
+        local: driverLocalUpdateSnapshot,
+        remote: remoteSnapshot.body.snapshot,
+        now: new Date('2026-05-26T18:05:00.000Z'),
+      });
+      assert.equal(updatePlan.status, 'ready');
+      assert.equal(updatePlan.mutations.length, 1);
+      assert.equal(updatePlan.mutations[0].resourceKey, driverFixtureResourceKey);
+      assert.equal(updatePlan.mutations[0].action, 'put');
+
+      const updateDryRun = await client.signedPost(
+        '/dry-run',
+        { plan: updatePlan },
+        {
+          session,
+          idempotencyKey: 'production-plugin-driver-update-dry-run',
+        },
+      );
+      assert.equal(updateDryRun.status, 200);
+      assert.equal(updateDryRun.body?.ok, true);
+      assert.ok(updateDryRun.body?.receipt?.receiptHash, 'driver update dry-run did not produce a receipt');
+
+      const revokedCredentialUuid = preflight.body?.auth?.session?.applicationPasswordUuid;
+      assert.equal(typeof revokedCredentialUuid, 'string');
+      assert.ok(revokedCredentialUuid.length > 0, 'signed preflight did not return an application password uuid to revoke');
+
+      const rotatedPreflight = await rotatedClient.signedGet('/preflight');
+      assert.equal(rotatedPreflight.status, 200);
+      assert.equal(rotatedPreflight.body?.ok, true);
+
+      const revokeResponse = await requestJson(
+        server.baseUrl,
+        'DELETE',
+        `/wp-json/reprint-push-driver-fixture/v1/revoke-application-password/${encodeURIComponent(revokedCredentialUuid)}`,
+        undefined,
+        authHeaders(rotatedCredentials),
+      );
+      assert.equal(revokeResponse.status, 200);
+      assert.equal(revokeResponse.body?.deleted, true);
+      assert.equal(revokeResponse.body?.previous?.uuid, revokedCredentialUuid);
+
+      const revokedCredentialApply = await client.signedPost(
+        '/apply',
+        {
+          plan: updatePlan,
+          receipt: updateDryRun.body.receipt,
+        },
+        {
+          session,
+          idempotencyKey: 'production-plugin-driver-revoked-credential-apply',
+        },
+      );
+      assert.equal(revokedCredentialApply.status, 401);
+      assert.equal(revokedCredentialApply.body?.code, 'reprint_push_lab_auth_required');
+
+      const afterRevokedCredentialReject = await rotatedClient.get('/snapshot');
+      assert.equal(afterRevokedCredentialReject.status, 200);
+      assert.equal(afterRevokedCredentialReject.body?.ok, true);
+      assert.equal(
+        afterRevokedCredentialReject.body.snapshot?.db?.[driverFixtureTableKey]?.['entry_id:1']?.updated_marker,
+        'base',
+        'revoked-credential packaged apply still mutated the remote snapshot',
+      );
+      assert.deepEqual(
+        afterRevokedCredentialReject.body.snapshot?.db?.[driverFixtureTableKey]?.['entry_id:1']?.payload,
+        {
+          owner: driverFixture.pluginOwner,
+          mode: 'base',
+          version: 1,
+        },
+        'revoked-credential packaged apply changed the arbitrary driver payload',
+      );
+
+      summary.driverReceiptRevokedCredentialGuard = {
+        resourceKey: driverFixtureResourceKey,
+        revokedCredentialUuid,
+        rotatedCredentialUsedForRevocation: rotatedPreflight.body?.auth?.session?.applicationPasswordUuid,
+        revokeDeleted: revokeResponse.body?.deleted === true,
+        applyRejectedCode: revokedCredentialApply.body?.code,
+        applyRejectedMessage: revokedCredentialApply.body?.message,
+        rowRetainedAfterReject: afterRevokedCredentialReject.body.snapshot?.db?.[driverFixtureTableKey]?.['entry_id:1'] !== undefined,
+        updatedMarkerAfterReject: afterRevokedCredentialReject.body.snapshot?.db?.[driverFixtureTableKey]?.['entry_id:1']?.updated_marker,
+        payloadModeAfterReject: afterRevokedCredentialReject.body.snapshot?.db?.[driverFixtureTableKey]?.['entry_id:1']?.payload?.mode,
+      };
+    },
+  );
+
   console.log(JSON.stringify(summary, null, 2));
 } finally {
   fs.rmSync(tmpDir, { recursive: true, force: true });
@@ -324,6 +478,193 @@ function writeActivationBlueprint(sourceBlueprintPath, targetBlueprintPath) {
   fs.writeFileSync(targetBlueprintPath, `${JSON.stringify(blueprint, null, 2)}\n`);
 }
 
+function writeDriverFixtureBlueprint(
+  sourceBlueprintPath,
+  targetBlueprintPath,
+  {
+    activatePackagedPlugin = false,
+    provisionAuth = false,
+    enableCredentialRevocationRoute = false,
+  } = {},
+) {
+  const blueprint = JSON.parse(fs.readFileSync(sourceBlueprintPath, 'utf8'));
+  blueprint.meta = {
+    ...blueprint.meta,
+    title: 'Reprint Push Driver Fixture Package Guard',
+    description: 'Remote base fixture with packaged Reprint Push plus an arbitrary plugin-owned row driver fixture.',
+  };
+  const pluginCodeBase64 = Buffer.from(driverFixturePluginPhp({ enableCredentialRevocationRoute }), 'utf8').toString('base64');
+  blueprint.steps.push({
+    step: 'runPHP',
+    code: [
+      '<?php',
+      "require_once '/wordpress/wp-load.php';",
+      '$plugin_dir = WP_PLUGIN_DIR . \'/driver-fixture\';',
+      'wp_mkdir_p($plugin_dir);',
+      '$plugin_file = $plugin_dir . \'/driver-fixture.php\';',
+      `file_put_contents($plugin_file, base64_decode('${pluginCodeBase64}'));`,
+      "require_once ABSPATH . 'wp-admin/includes/plugin.php';",
+      "$result = activate_plugin('driver-fixture/driver-fixture.php');",
+      'if (is_wp_error($result)) { throw new RuntimeException($result->get_error_message()); }',
+      'global $wpdb;',
+      '$table = $wpdb->prefix . \'reprint_push_driver_fixture\';',
+      '$wpdb->query(\'CREATE TABLE \' . $table . \' (entry_id bigint(20) unsigned NOT NULL, payload_json longtext NOT NULL, updated_marker varchar(32) NOT NULL, PRIMARY KEY (entry_id)) \' . $wpdb->get_charset_collate());',
+      '$payload = wp_json_encode(array(\'owner\' => \'driver-fixture\', \'mode\' => \'base\', \'version\' => 1));',
+      '$wpdb->replace($table, array(\'entry_id\' => 1, \'payload_json\' => $payload, \'updated_marker\' => \'base\'), array(\'%d\', \'%s\', \'%s\'));',
+    ].join(' '),
+  });
+  if (activatePackagedPlugin) {
+    blueprint.steps.push({
+      step: 'runPHP',
+      code: [
+        '<?php',
+        "require_once '/wordpress/wp-load.php';",
+        "require_once ABSPATH . 'wp-admin/includes/plugin.php';",
+        "$result = activate_plugin('reprint-push/reprint-push.php');",
+        'if (is_wp_error($result)) { throw new RuntimeException($result->get_error_message()); }',
+      ].join(' '),
+    });
+  }
+  if (provisionAuth) {
+    blueprint.steps.push({
+      step: 'runPHP',
+      code: [
+        '<?php',
+        "require_once '/wordpress/wp-load.php';",
+        '$result = reprint_push_lab_rest_provision_push_application_password(array(\'login\' => \'reprint_push_admin\', \'appPassword\' => \'reprint-push-admin-app-password\', \'role\' => \'administrator\', \'slug\' => \'primary-admin\', \'name\' => \'Reprint Push Package Smoke\', \'createUser\' => true, \'updateRole\' => true));',
+        'if (empty($result[\'ok\'])) { throw new RuntimeException((string) ($result[\'message\'] ?? \'push credential provisioning failed\')); }',
+      ].join(' '),
+    });
+    blueprint.steps.push({
+      step: 'runPHP',
+      code: [
+        '<?php',
+        "require_once '/wordpress/wp-load.php';",
+        '$result = reprint_push_lab_rest_provision_push_application_password(array(\'login\' => \'reprint_push_admin\', \'appPassword\' => \'reprint-push-admin-rotated-app-password\', \'role\' => \'administrator\', \'slug\' => \'primary-admin-rotated\', \'name\' => \'Reprint Push Package Smoke Rotated\', \'createUser\' => true, \'updateRole\' => true));',
+        'if (empty($result[\'ok\'])) { throw new RuntimeException((string) ($result[\'message\'] ?? \'rotated push credential provisioning failed\')); }',
+      ].join(' '),
+    });
+  }
+  fs.writeFileSync(targetBlueprintPath, `${JSON.stringify(blueprint, null, 2)}\n`);
+}
+
+function driverFixturePluginPhp({ enableCredentialRevocationRoute = false } = {}) {
+  return `<?php
+/*
+Plugin Name: Reprint Push Driver Fixture
+Description: Fixture plugin for packaged plugin-owned row driver guard coverage.
+Version: 0.0.1
+*/
+
+${enableCredentialRevocationRoute ? `add_action('rest_api_init', static function (): void {
+    register_rest_route('reprint-push-driver-fixture/v1', '/revoke-application-password/(?P<uuid>[A-Za-z0-9-]+)', [
+        'methods' => WP_REST_Server::DELETABLE,
+        'permission_callback' => 'reprint_push_lab_rest_authenticated_permission',
+        'callback' => 'reprint_push_driver_fixture_revoke_application_password',
+    ]);
+});
+` : ''}
+
+add_filter('reprint_push_plugin_owned_row_drivers', static function (array $drivers): array {
+    $drivers['${driverFixture.driver}'] = [
+        'driver' => '${driverFixture.driver}',
+        'table' => '${driverFixture.table}',
+        'pluginOwner' => '${driverFixture.pluginOwner}',
+        'supportsDelete' => false,
+        'exportRowsCallback' => 'reprint_push_driver_fixture_export_rows',
+        'applyRowCallback' => 'reprint_push_driver_fixture_apply_row',
+        'validateMutationCallback' => 'reprint_push_driver_fixture_validate_mutation',
+    ];
+    return $drivers;
+});
+
+function reprint_push_driver_fixture_table_name(): string {
+    global $wpdb;
+    return $wpdb->prefix . 'reprint_push_driver_fixture';
+}
+
+${enableCredentialRevocationRoute ? `function reprint_push_driver_fixture_revoke_application_password(WP_REST_Request $request): WP_REST_Response {
+    $uuid = (string) $request['uuid'];
+    $user = wp_get_current_user();
+    $user_id = (int) ($user->ID ?? 0);
+    if ($user_id < 1) {
+        return new WP_REST_Response(['deleted' => false, 'code' => 'reprint_push_driver_fixture_user_missing'], 401);
+    }
+    $items = get_user_meta($user_id, '_application_passwords', true);
+    $items = is_array($items) ? array_values($items) : [];
+    $previous = null;
+    $remaining = [];
+    foreach ($items as $item) {
+        if (is_array($item) && (string) ($item['uuid'] ?? '') === $uuid) {
+            $previous = $item;
+            continue;
+        }
+        $remaining[] = $item;
+    }
+    update_user_meta($user_id, '_application_passwords', $remaining);
+    return new WP_REST_Response([
+        'deleted' => is_array($previous),
+        'previous' => is_array($previous) ? [
+            'uuid' => (string) ($previous['uuid'] ?? ''),
+            'app_id' => (string) ($previous['app_id'] ?? ''),
+            'name' => (string) ($previous['name'] ?? ''),
+        ] : null,
+    ], is_array($previous) ? 200 : 404);
+}
+` : ''}
+
+function reprint_push_driver_fixture_export_rows(array &$snapshot, array $driver): void {
+    global $wpdb;
+    $table_name = reprint_push_driver_fixture_table_name();
+    $rows = $wpdb->get_results("SELECT entry_id, payload_json, updated_marker FROM {$table_name} ORDER BY entry_id ASC", ARRAY_A);
+    if (!isset($snapshot['db']['${driverFixture.table}']) || !is_array($snapshot['db']['${driverFixture.table}'])) {
+        $snapshot['db']['${driverFixture.table}'] = [];
+    }
+    foreach ($rows as $row) {
+        $payload = json_decode((string) $row['payload_json'], true);
+        $snapshot['db']['${driverFixture.table}']['entry_id:' . (int) $row['entry_id']] = [
+            'entry_id' => (int) $row['entry_id'],
+            'payload' => is_array($payload) ? $payload : [],
+            'updated_marker' => (string) $row['updated_marker'],
+            '__pluginOwner' => '${driverFixture.pluginOwner}',
+        ];
+    }
+}
+
+function reprint_push_driver_fixture_apply_row(string $id, bool $is_delete, $value, array $driver): void {
+    global $wpdb;
+    if (!preg_match('/^entry_id:([1-9]\\d*)$/', $id, $matches)) {
+        throw new RuntimeException('Unsupported driver fixture row id: ' . $id);
+    }
+    $entry_id = (int) $matches[1];
+    $table_name = reprint_push_driver_fixture_table_name();
+    if ($is_delete) {
+        $wpdb->delete($table_name, ['entry_id' => $entry_id], ['%d']);
+        return;
+    }
+    $payload_json = wp_json_encode($value['payload'] ?? []);
+    $updated_marker = (string) ($value['updated_marker'] ?? '');
+    $sql = $wpdb->prepare(
+        'INSERT INTO ' . $table_name . ' (entry_id, payload_json, updated_marker) VALUES (%d, %s, %s) ON DUPLICATE KEY UPDATE payload_json = VALUES(payload_json), updated_marker = VALUES(updated_marker)',
+        $entry_id,
+        $payload_json,
+        $updated_marker
+    );
+    if ($wpdb->query($sql) === false) {
+        throw new RuntimeException('Could not apply driver fixture row: ' . $wpdb->last_error);
+    }
+}
+
+function reprint_push_driver_fixture_validate_mutation(array $mutation, array $snapshot, array $driver): bool {
+    $resource = is_array($mutation['resource'] ?? null) ? $mutation['resource'] : [];
+    if (($resource['table'] ?? '') !== '${driverFixture.table}' || ($driver['pluginOwner'] ?? '') !== '${driverFixture.pluginOwner}') {
+        return false;
+    }
+    return !empty($mutation['value']) && empty($mutation['value']['absent']);
+}
+`;
+}
+
 function runCli(args, { expectStatus = 0 } = {}) {
   const result = spawnSync(process.execPath, [cliPath, ...args], {
     cwd: repoRoot,
@@ -375,8 +716,10 @@ function exportSnapshot(name, blueprintPath) {
   );
 }
 
-async function withPlaygroundServer(name, blueprintPath, mountedPluginDir, run) {
-  const server = await startPlaygroundServer(name, blueprintPath, mountedPluginDir);
+async function withPlaygroundServer(name, blueprintPath, mountedPluginDir, optionsOrRun, maybeRun) {
+  const options = typeof optionsOrRun === 'function' ? {} : (optionsOrRun ?? {});
+  const run = typeof optionsOrRun === 'function' ? optionsOrRun : maybeRun;
+  const server = await startPlaygroundServer(name, blueprintPath, mountedPluginDir, options);
   try {
     await run(server);
   } finally {
@@ -384,7 +727,7 @@ async function withPlaygroundServer(name, blueprintPath, mountedPluginDir, run) 
   }
 }
 
-async function startPlaygroundServer(name, blueprintPath, mountedPluginDir) {
+async function startPlaygroundServer(name, blueprintPath, mountedPluginDir, { authBootstrap = true } = {}) {
   const port = await findLocalPort();
   const baseUrl = `http://127.0.0.1:${port}`;
   const logs = [];
@@ -408,7 +751,7 @@ async function startPlaygroundServer(name, blueprintPath, mountedPluginDir) {
     cwd: repoRoot,
     env: {
       ...process.env,
-      REPRINT_PUSH_LAB_AUTH_BOOTSTRAP: '1',
+      REPRINT_PUSH_LAB_AUTH_BOOTSTRAP: authBootstrap ? '1' : '0',
       REPRINT_PUSH_LAB_AUTH_ADMIN_USER: credentials.username,
       REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD: credentials.password,
       NODE_OPTIONS: appendNodeOption(process.env.NODE_OPTIONS, localhostListenPreloadOption()),
