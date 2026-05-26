@@ -13439,6 +13439,58 @@ test('allows a local attachment parent reference to a same-plan post', () => {
   assert.equal(result.site.db.wp_posts['ID:3'].post_parent, 2);
 });
 
+test('blocks an existing post parent reference to a same-plan attachment', () => {
+  const targetResourceKey = 'row:["wp_posts","ID:2"]';
+  const postResourceKey = 'row:["wp_posts","ID:3"]';
+  const base = baseSite();
+  const local = baseSite();
+  const remote = baseSite();
+
+  base.db.wp_posts['ID:3'] = {
+    ID: 3,
+    post_title: 'Existing post child',
+    post_content: 'base-private-existing-post-child-body',
+    post_status: 'publish',
+    post_parent: 0,
+  };
+  local.db.wp_posts['ID:3'] = {
+    ...base.db.wp_posts['ID:3'],
+    post_parent: 2,
+  };
+  remote.db.wp_posts['ID:3'] = {
+    ...base.db.wp_posts['ID:3'],
+  };
+  local.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_title: 'Local attachment parent',
+    post_content: 'local-private-attachment-parent-body',
+    post_status: 'inherit',
+    post_type: 'attachment',
+  };
+
+  const plan = planFor(base, local, remote);
+  const targetMutation = mutationFor(plan, targetResourceKey);
+  const postMutation = mutationFor(plan, postResourceKey);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === postResourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(targetMutation.changeKind, 'create');
+  assert.equal(postMutation.changeKind, 'update');
+  assert.equal(blocker.class, 'missing-wordpress-graph-dependency');
+  assert.equal(blocker.references[0].relationshipType, 'post-parent');
+  assert.equal(blocker.references[0].targetResourceKey, targetResourceKey);
+  assert.equal(postMutation.dependsOnMutationIds, undefined);
+  assert.equal(
+    JSON.stringify(blocker).includes('base-private-existing-post-child-body'),
+    false,
+  );
+  assert.equal(
+    JSON.stringify(blocker).includes('local-private-attachment-parent-body'),
+    false,
+  );
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
+});
+
 test('blocks an existing attachment parent reference to a same-plan post', () => {
   const targetResourceKey = 'row:["wp_posts","ID:2"]';
   const attachmentResourceKey = 'row:["wp_posts","ID:3"]';
