@@ -20621,7 +20621,7 @@ test('production recovery support report exposes the remaining release-path bloc
     truncate: true,
     now: fixedNow,
     claimId: 'claim-1',
-    writerLease: { id: 'lease-1' },
+    writerLease: { id: 'claim-1' },
     ownsRemoteArtifact: true,
     remoteArtifactPath,
   });
@@ -20660,7 +20660,7 @@ test('production recovery support report accepts a fenced restart-readable journ
     truncate: true,
     now: fixedNow,
     claimId: 'claim-no-remote-artifact',
-    writerLease: { id: 'lease-no-remote-artifact' },
+    writerLease: { id: 'claim-no-remote-artifact' },
   });
   appendRecoveryClaimOpened(journal, {
     plan: { id: 'plan-no-remote-artifact' },
@@ -20727,7 +20727,7 @@ test('production recovery support report accepts stale-claim fencing records bef
     truncate: true,
     now: fixedNow,
     claimId: 'claim-2',
-    writerLease: { id: 'lease-2' },
+    writerLease: { id: 'claim-2' },
     ownsRemoteArtifact: true,
     remoteArtifactPath,
   });
@@ -20828,7 +20828,7 @@ test('production durable journal support accepts a fenced claim before apply ope
     truncate: true,
     now: fixedNow,
     claimId: 'claim-pre-apply',
-    writerLease: { id: 'lease-pre-apply' },
+    writerLease: { id: 'claim-pre-apply' },
     ownsRemoteArtifact: true,
     remoteArtifactPath,
   });
@@ -20866,7 +20866,7 @@ test('production durable journal support accepts a fenced claim without remote a
     truncate: true,
     now: fixedNow,
     claimId: 'claim-pre-apply-no-remote-artifact',
-    writerLease: { id: 'lease-pre-apply-no-remote-artifact' },
+    writerLease: { id: 'claim-pre-apply-no-remote-artifact' },
   });
 
   appendRecoveryClaimOpened(journal, {
@@ -20902,7 +20902,7 @@ test('production durable journal support fails closed when a fenced claim is not
     truncate: true,
     now: fixedNow,
     claimId: 'claim-missing-before-apply',
-    writerLease: { id: 'lease-missing-before-apply' },
+    writerLease: { id: 'claim-missing-before-apply' },
     ownsRemoteArtifact: true,
     remoteArtifactPath,
   });
@@ -27397,7 +27397,7 @@ test('production durable journal adapter satisfies the release-path support prob
     claimId,
     ownsRemoteArtifact: true,
     remoteArtifactPath,
-    writerLease: { id: 'lease-1' },
+    writerLease: { id: claimId },
   });
   appendRecoveryClaimOpened(durableJournal, {
     plan,
