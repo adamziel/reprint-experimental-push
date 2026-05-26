@@ -462,8 +462,8 @@ export function summarizeProductionAuthSessionLifecycleTrace(trace) {
       expiresAt: entry.expiresAt ?? null,
       invalidLifecycleFlag: resolveInvalidAuthSessionLifecycleFlag(entry),
       expired: entry.expired === true,
-      revoked: entry.revoked === true,
-      cleanedUp: entry.cleanedUp === true || entry.cleanup === true,
+      revoked: entry.revoked === true || entry.status === 'revoked',
+      cleanedUp: entry.cleanedUp === true || entry.cleanup === true || entry.status === 'cleaned-up',
       rotated: entry.rotated === true || entry.status === 'rotated',
       preserved: isAuthSessionReadStep(entry.step) && entry.preserved === true,
     };

@@ -2745,6 +2745,82 @@ test('production auth/session lifecycle trace summary treats recovery inspect as
   );
 });
 
+test('production auth/session lifecycle trace summary preserves status-only revoked and cleaned-up markers', () => {
+  const revokedSummary = summarizeProductionAuthSessionLifecycleTrace([
+    {
+      step: 'preflight',
+      id: 'session-01',
+      type: 'production-auth-session',
+      status: 'active',
+      expiresAt: '2099-01-01T00:00:00Z',
+      expired: false,
+      revoked: false,
+      cleanedUp: false,
+      rotated: false,
+      preserved: false,
+    },
+    {
+      step: 'apply',
+      id: 'session-01',
+      type: 'production-auth-session',
+      status: 'revoked',
+      expiresAt: '2099-01-01T00:00:00Z',
+      expired: false,
+      revoked: false,
+      cleanedUp: false,
+      rotated: false,
+      preserved: true,
+    },
+  ]);
+
+  assert.equal(revokedSummary.revoked?.status, 'revoked');
+  assert.deepEqual(
+    evaluateProductionAuthSessionLifecycleSummary(revokedSummary),
+    {
+      ok: false,
+      required: 'unrevoked',
+      observed: 'revoked',
+    },
+  );
+
+  const cleanedUpSummary = summarizeProductionAuthSessionLifecycleTrace([
+    {
+      step: 'preflight',
+      id: 'session-01',
+      type: 'production-auth-session',
+      status: 'active',
+      expiresAt: '2099-01-01T00:00:00Z',
+      expired: false,
+      revoked: false,
+      cleanedUp: false,
+      rotated: false,
+      preserved: false,
+    },
+    {
+      step: 'apply',
+      id: 'session-01',
+      type: 'production-auth-session',
+      status: 'cleaned-up',
+      expiresAt: '2099-01-01T00:00:00Z',
+      expired: false,
+      revoked: false,
+      cleanedUp: false,
+      rotated: false,
+      preserved: true,
+    },
+  ]);
+
+  assert.equal(cleanedUpSummary.cleanedUp?.status, 'cleaned-up');
+  assert.deepEqual(
+    evaluateProductionAuthSessionLifecycleSummary(cleanedUpSummary),
+    {
+      ok: false,
+      required: 'unrevoked',
+      observed: 'cleaned-up',
+    },
+  );
+});
+
 test('production auth/session lifecycle trace summary does not treat preflight as a preserved read', () => {
   const summary = summarizeProductionAuthSessionLifecycleTrace([
     {
