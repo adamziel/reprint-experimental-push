@@ -1,22 +1,21 @@
 # Critic Lane Classification Pass
 
-## 2026-05-26 12:20:20 CEST (+0200)
+## 2026-05-26 12:27:58 CEST (+0200)
 
-No gate movement. `fc2de1bd` is material preserved-remote retry evidence, but it only proves the retry-attempt surface in the client/test path. The critic verdict stays `0/4` because the checked release path still lacks a production-backed preserved-remote retry command or API, plus the separate auth/session lifecycle and durable-journal ownership proofs.
+No gate movement. `9d0279a3` is the current reliable head: it proves recovery claim fencing on the checked path, but it still does not move the durable-journal/recovery gate. The critic verdict stays `0/4` because the separate auth/session lifecycle and durable-journal ownership proofs remain unproven; `fc2de1bd` is material preserved-remote retry evidence, but it is still product/test-only and not tied to a checked production backend or release-path command.
 
 Changed files:
+- [`audits/critic.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/critic/audits/critic.md)
 - [`.lane-output/final.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/critic/.lane-output/final.md)
 
 Commands run:
 - `date '+%Y-%m-%d %H:%M:%S %Z (%z)'`
-- `find .. -name AGENTS.md -o -path '*/supervision/README.md' -o -path '*/supervision/lanes/*' -o -path '*/.lane-output/final*.md' | sort`
-- `sed -n '1,220p' ../AGENTS.md`
-- `sed -n '1,240p' supervision/README.md`
-- `sed -n '1,240p' supervision/lanes/critic.md`
-- `ls -1t .lane-output/final*.md | head -5`
-- `sed -n '1,240p' .lane-output/final.md`
-- `sed -n '1,240p' audits/critic.md`
 - `git status --short --branch`
+- `sed -n '1,220p' AGENTS.md`
+- `sed -n '1,220p' supervision/README.md`
+- `sed -n '1,220p' supervision/lanes/critic.md`
+- `sed -n '1,120p' .lane-output/final.md`
+- `sed -n '1,220p' audits/critic.md`
 - `git diff --check`
 
 Push result:
@@ -24,7 +23,7 @@ Push result:
 
 Worktree status:
 - Dirty: `audits/critic.md`, `.lane-output/final.md`
-- Branch: `lane/cycle-20260525-mainwindows-2349/critic...origin/main [ahead 1618, behind 645]`
+- Branch: `lane/cycle-20260525-mainwindows-2349/critic...origin/main [ahead 1625, behind 656]`
 
 Next supervisor nudge:
 - Keep the critic lane on narrow classification duty until `reliable-executor` produces a production-backed preserved-remote retry command or API on the checked release path, or the separate auth/session lifecycle or durable-journal ownership proof changes the gate verdict.
