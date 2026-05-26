@@ -1,8 +1,8 @@
 # Critic Audit
 
-## 2026-05-26 14:47:14 CEST (+0200)
+## 2026-05-26 14:49:34 CEST (+0200)
 
-No gate movement. `32c6c88f358f3b97a26e723ff8afa5a1f78701fd` is the current reliable head from `git ls-remote`; it reuses the auth-session source command builder in the checked release verifier and package-smoke path, which trims helper drift and keeps the source-command path consistent, but it still proves checked-path source reuse rather than a production-backed auth/session lifecycle or a closed durable-journal ownership boundary on the release path. The verdict remains `0/4`.
+No gate movement. `0f4df01bef956123c08e4b33c94d347484222347` is the current reliable head from `git ls-remote`; it shares packaged auth source command resolution across the checked release verifier and package-smoke path, which reduces helper drift and keeps source selection consistent, but it still proves checked-path source resolution rather than a production-backed auth/session lifecycle or a closed durable-journal ownership boundary on the release path. The verdict remains `0/4`.
 
 Changed files:
 - [`audits/critic.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/critic/audits/critic.md)
