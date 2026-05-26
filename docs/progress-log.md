@@ -4,19 +4,19 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
-## 2026-05-26 - Public Status Audit 11:07:53
+## 2026-05-26 - Public Status Audit 12:13:37
 
-<a id="2026-05-26-public-status-audit-110753"></a>
+<a id="2026-05-26-public-status-audit-121337"></a>
 
 - Refreshed [progress.html](../progress.html) to the current `date` output
-  (`2026-05-26 11:07:53 CEST`) so the visible progress page names
-  `5fd9dfb4` as the current reliable head. The first screen stays concise:
-  evidence progressed, release gates remain `0/4`, and the release-journal
-  smoke is now the visible reliable-head evidence while production WordPress
-  auth/session lifecycle plus durable journal storage with lease/fencing
-  remain pending.
-- `5fd9dfb4` is the current reliable head: `Wire production recovery journal
-  into release smoke`. Supporting restart-cycle evidence still includes
+  (`2026-05-26 12:13:37 CEST`) so the visible progress page names
+  `9d0279a3` as the current reliable head. The first screen stays concise:
+  evidence progressed, release gates remain `0/4`, and the recovery claim
+  fencing proof is now the visible reliable-head evidence while production
+  WordPress auth/session lifecycle plus durable journal storage with
+  lease/fencing remain pending.
+- `9d0279a3` is the current reliable head: `Prove recovery claim fencing`.
+  Supporting restart-cycle evidence still includes
   `b725b2d3`, `b9aebe71`, `134d0401`, `4e13d882`, `63dd27cc`, and
   `9208c2da` for the explicit production auth/session boundary, no-data-loss,
   recovery, critique, fast-path bounds, and objective-audit freshness.
