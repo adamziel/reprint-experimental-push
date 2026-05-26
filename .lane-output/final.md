@@ -1,38 +1,32 @@
-Recovery lane handoff:
+Progress publisher handoff:
 
-- Timestamp: 2026-05-26 12:00:00 CEST (+0200)
-- The recovery adapter now fails closed when `openProductionRecoveryJournal()` is called without an explicit fenced `writerLease`; it no longer synthesizes an implicit ownership claim.
-- `src/recovery-journal.js` keeps the production adapter restart-readable surface, but the owned journal is only constructible with a real plain-object lease that has a non-empty string `id`.
-- `test/recovery-journal.test.js` now covers both the supported adapter path and the fail-closed missing-lease path.
-- The owned recovery tests still pass.
-- The checked `verify:release` path still does not prove the live consumer boundary that would make the production recovery journal evidence release-gate material.
-- Exact blocker: the checked release path still lacks production-backed auth/session lifecycle proof on the real push flow, so `reliable-executor` must wire `openProductionRecoveryJournal()` into the `verify:release` consumer path or name the exact missing file/API boundary if that consumer is absent.
+- Timestamp: 2026-05-26 12:02:58 CEST (+0200)
+- `progress.html` now names `581f142f` as the current reliable head, keeps release gates at `0/4`, and links the newest audit entry for the fresh public refresh.
+- `docs/progress-log.md` has a new top audit entry with a single `# Progress Log` heading preserved.
+- Integrity checks passed: `test "$(sed -n '1p' docs/progress-log.md)" = "# Progress Log"`, `test "$(grep -c '^# Progress Log$' docs/progress-log.md)" = "1"`, and `git diff --check -- progress.html docs/progress-log.md`.
 
 Changed files:
 
+- [`progress.html`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/no-data-loss-recovery/progress.html)
+- [`docs/progress-log.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/no-data-loss-recovery/docs/progress-log.md)
 - [`.lane-output/final.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/no-data-loss-recovery/.lane-output/final.md)
 
 Commands:
 
 - `date '+%Y-%m-%d %H:%M:%S %Z (%z)'`
-- `rg -n "openProductionRecoveryJournal|production-recovery-journal|recovery-journal" src scripts test package.json`
-- `rg -n "verify:release|production-shaped-release-verify|release verify|release-verifier" scripts src test package.json`
-- `sed -n '1,260p' src/recovery-journal.js`
-- `sed -n '1,260p' test/recovery-journal.test.js`
-- `sed -n '1,240p' scripts/recovery/file-journal-restart-smoke.mjs`
-- `node -e "const p=require('./package.json'); console.log(p.scripts['verify:release'])"`
-- `sed -n '18390,18520p' test/push-planner.test.js`
-- `timeout 60s node --test --test-name-pattern='production recovery journal adapter' test/recovery-journal.test.js`
+- `git rev-parse --short=8 HEAD`
+- `test "$(sed -n '1p' docs/progress-log.md)" = "# Progress Log" && test "$(grep -c '^# Progress Log$' docs/progress-log.md)" = "1" && echo ok`
+- `git diff --check -- progress.html docs/progress-log.md`
 
 Push result:
 
-- Not pushed
+- Pending
 
 Worktree status:
 
-- Branch: `lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery...origin/main [ahead 785, behind 428]`
-- Dirty tracked files: `.lane-output/final.md`
+- Branch: `lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery...origin/main [ahead 792, behind 443]`
+- Dirty tracked files: `.lane-output/final.md`, `docs/progress-log.md`, `progress.html`
 
 Next supervisor nudge:
 
-1. Keep `reliable-executor` focused on the checked release-path consumer wiring for `openProductionRecoveryJournal()`, or have audit name the exact missing consumer file/API if the release verifier entrypoint is absent.
+1. Promote the fresh public refresh to `origin/main` through the progress-live watcher, then have audit classify the newer `581f142f` head without moving the gates.
