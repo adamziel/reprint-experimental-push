@@ -4,7 +4,7 @@
 
 The project is **not releasable as a production WordPress push path**.
 
-- Fresh remote heads at audit time, checked on 2026-05-26 07:36:18 CEST (+0200):
+- Fresh remote heads at audit time, checked on 2026-05-26 07:37:02 CEST (+0200):
 
 - `origin/lane/cycle-20260524-auth-graph-hardening/critic` -> `e413f7a8`
 - `origin/lane/cycle-20260524-auth-graph-hardening/fast-paths` -> `ad7d82a4`
@@ -58,7 +58,7 @@ The project is **not releasable as a production WordPress push path**.
 - `origin/lane/no-data-loss-invariants` -> `d87858d7`
 - `origin/lane/no-data-loss-recovery` -> `f641b166`
 - `origin/lane/progress-publisher` -> `7695e1f9`
-- `origin/lane/reliable-executor` -> `5c75c43b`
+- `origin/lane/reliable-executor` -> `34e9c7c1`
 - `origin/lane/same-plan-wordpress-graph-create` -> `8dea1ca3`
 
 Fresh visibility-lane and invariants heads moved again, but they still do not change the release gate:
@@ -73,7 +73,7 @@ Fresh visibility-lane and invariants heads moved again, but they still do not ch
 -> `516e58ea`.
 - `origin/lane/reliable-executor` -> `5c75c43b`
 - `origin/lane/no-data-loss-invariants` -> `d87858d7`
-- `origin/lane/no-data-loss-recovery` -> `f641b166`
+- `origin/lane/no-data-loss-recovery` -> `6d08dd6c`
 - `origin/main` -> `2c8d52cb`
 
 The current remote state still adds no production-backed auth/session
@@ -87,6 +87,7 @@ evidence of a live production mutation boundary.
 Fresh lane proof since the last audit pass improved the local evidence floor,
 but it did not change the release conclusion:
 
+- `origin/lane/reliable-executor` now records `34e9c7c1`, hardening durable journal ownership. It still does not prove production auth/session lifecycle or a live-source mutation boundary.
 - `origin/lane/reliable-executor` now records `0a6de039`, hardening bounded
   release-verify spawn handling. It still does not prove production
   auth/session lifecycle or a live-source mutation boundary.
@@ -206,6 +207,7 @@ but it did not change the release conclusion:
 - `origin/lane/no-data-loss-invariants` now records `270c7406`, adding a
   comments graph boundary proof. It still does not prove the live release
   boundary or any production-backed source mutation.
+- `origin/lane/no-data-loss-recovery` now records `6d08dd6c`, adding blocked recovery isolation regression. It still does not add production-backed journal ownership or replay proof.
 - `origin/lane/no-data-loss-recovery` now records `2af1ddda`, tightening
   durable journal recovery guards. It still does not add production-backed
   journal ownership or replay proof.
