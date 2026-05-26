@@ -41,6 +41,10 @@ export function isAcceptableRecoveryState(recoveryState) {
     return false;
   }
 
+  if (!Object.hasOwn(recoveryState, 'reason') || typeof recoveryState.reason !== 'string' || recoveryState.reason.length === 0) {
+    return false;
+  }
+
   if (recoveryState.status !== 'blocked-recovery') {
     return Boolean(
       Object.hasOwn(recoveryState, 'artifacts')
