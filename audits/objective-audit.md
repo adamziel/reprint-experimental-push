@@ -6,12 +6,12 @@ The project is **not releasable as a production WordPress push path**.
 
 Fresh remote heads at audit time, checked on May 26, 2026:
 
-- `origin/lane/reliable-executor` -> `0c4fd10f`
+- `origin/lane/reliable-executor` -> `e986a490`
 - `origin/lane/no-data-loss-invariants` -> `e42fe4ad`
 - `origin/lane/no-data-loss-recovery` -> `47b675c0`
 - `origin/lane/fast-paths` -> `9be664b2`
-- `origin/lane/independent-auditor` -> `5624aefd`
-- `origin/lane/critic` -> `f8591f9d`
+- `origin/lane/independent-auditor` -> `9373ad60`
+- `origin/lane/critic` -> `e986a490`
 - `origin/lane/progress-publisher` -> `7695e1f9`
 - `origin/lane/same-plan-wordpress-graph-create` -> `69f27361`
 - `origin/lane/cycle-20260525-mainwindows-2349/same-plan-wordpress-graph-create` -> `e9cbf9d4`
@@ -30,8 +30,9 @@ real source-site mutation boundary. The release gates still stay `0/4`.
 Fresh lane proof since the last audit pass improved the local evidence floor,
 but it did not change the release conclusion:
 
-- `origin/lane/reliable-executor` now retries the release-proof port handling
-  at `0c4fd10f`.
+- `origin/lane/reliable-executor` now refreshes the audit evidence at
+  `e986a490`. The reliable lane still has the open `spawnSync` timeout-hardening
+  blocker on the live proof path, so the verdict does not move.
 - `origin/lane/no-data-loss-invariants` now blocks nav menu item graph
   resources at `e42fe4ad`. A separate cycle-branch proof at `98c0ce26`
   extends that blocker coverage to missing graph identity references, but it
@@ -51,7 +52,7 @@ but it did not change the release conclusion:
 - `origin/lane/progress-publisher` now refreshes the public progress evidence
   at `7695e1f9`.
 - `origin/lane/independent-auditor` now refreshes the audit snapshot at
-  `5624aefd`.
+  `9373ad60`.
 - `origin/lane/critic` now refreshes the critic audit snapshot at `f8591f9d`.
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now
   refreshes the supervisor evidence snapshot at `534d941b`.
