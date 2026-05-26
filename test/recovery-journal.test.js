@@ -219,6 +219,23 @@ test('production recovery journal adapter fails closed when remote artifact path
   });
 });
 
+test('production recovery journal adapter fails closed when remote artifact ownership is not explicit', () => {
+  const filePath = tempJournalPath();
+  const remoteArtifactPath = `${filePath}.remote`;
+
+  assert.throws(() => {
+    openProductionRecoveryJournal(filePath, {
+      truncate: true,
+      now: fixedNow,
+      writerLease: { id: 'lease-1' },
+      remoteArtifactPath,
+    });
+  }, {
+    name: 'UnsupportedProductionRecoveryJournalError',
+    code: 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL',
+  });
+});
+
 test('production recovery journal adapter accepts canonical remote artifact ownership metadata', () => {
   const filePath = tempJournalPath();
   const remoteArtifactPath = `${filePath}.remote`;

@@ -112,6 +112,28 @@ export function openProductionRecoveryJournal(filePath, options = {}) {
   const remoteArtifactPath = Object.hasOwn(options, 'remoteArtifactPath')
     ? options.remoteArtifactPath
     : null;
+  const ownsRemoteArtifact = Boolean(options.ownsRemoteArtifact);
+  if (remoteArtifactPath !== null && !ownsRemoteArtifact) {
+    journal.close();
+    throw new UnsupportedProductionRecoveryJournalError(
+      'Production recovery journal support requires owned remote artifact references.',
+      {
+        kind: 'production-recovery-journal',
+        productionAdapter: true,
+        supportedSurface: 'production-recovery-journal-adapter',
+        restartReadable: true,
+        ownsJournal: true,
+        ownsRemoteArtifact,
+        writerLease,
+        journalPath: journal.filePath,
+        artifactRefs: Object.freeze({
+          journal: journal.filePath,
+          remote: remoteArtifactPath,
+        }),
+        schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+      },
+    );
+  }
   if (remoteArtifactPath !== null && !isCanonicalAbsolutePath(remoteArtifactPath)) {
     journal.close();
     throw new UnsupportedProductionRecoveryJournalError(
@@ -122,7 +144,7 @@ export function openProductionRecoveryJournal(filePath, options = {}) {
         supportedSurface: 'production-recovery-journal-adapter',
         restartReadable: true,
         ownsJournal: true,
-        ownsRemoteArtifact: Boolean(options.ownsRemoteArtifact),
+        ownsRemoteArtifact,
         writerLease,
         journalPath: journal.filePath,
         artifactRefs: Object.freeze({
@@ -143,7 +165,7 @@ export function openProductionRecoveryJournal(filePath, options = {}) {
         supportedSurface: 'production-recovery-journal-adapter',
         restartReadable: true,
         ownsJournal: true,
-        ownsRemoteArtifact: Boolean(options.ownsRemoteArtifact),
+        ownsRemoteArtifact,
         writerLease,
         journalPath: journal.filePath,
         artifactRefs: Object.freeze({
@@ -161,7 +183,7 @@ export function openProductionRecoveryJournal(filePath, options = {}) {
     supportedSurface: 'production-recovery-journal-adapter',
     restartReadable: true,
     ownsJournal: true,
-    ownsRemoteArtifact: Boolean(options.ownsRemoteArtifact),
+    ownsRemoteArtifact,
     writerLease,
     journalPath: journal.filePath,
     artifactRefs: Object.freeze({
