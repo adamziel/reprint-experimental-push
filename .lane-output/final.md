@@ -8,13 +8,12 @@ Changed files:
 
 Commands run:
 - `git ls-remote origin refs/heads/lane/reliable-executor`
-- `find . -path '*/.lane-output/final*.md' -type f | sort | tail -n 8`
-- `git status --short`
-- `sed -n '1,220p' .lane-output/final-loop-20260526-130224.md`
-- `sed -n '1,220p' .lane-output/final.md`
 - `sed -n '1,220p' supervision/README.md`
-- `git show --stat --summary --oneline --no-renames 3a64aef6773c3c82ad3a5b91a6ea0ca53c3942fb`
-- `git show --unified=80 --no-renames 3a64aef6773c3c82ad3a5b91a6ea0ca53c3942fb -- scripts/playground/production-shaped-release-verify.mjs test/production-shaped-proof.test.js src/authenticated-http-push-client.js src/recovery-journal.js`
+- `sed -n '1,220p' supervision/lanes/independent-auditor.md`
+- `sed -n '1,220p' .lane-output/final.md`
+- `git show --stat --summary --oneline --no-renames fd7d3a540996d51a459d9358126a3cb3e4a59a2e`
+- `git status --short --branch`
+- `sed -n '1,220p' audits/objective-audit.md`
 - `date '+%Y-%m-%d %H:%M:%S %Z (%z)'`
 
 Push result:
