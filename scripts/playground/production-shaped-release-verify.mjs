@@ -963,9 +963,12 @@ function runBoundedSync(command, args, options, label) {
     ...options,
   };
   const proof = spawnSync(command, args, boundedOptions);
-  if (proof.error) {
+  if (proof.error || proof.signal || proof.status === null || proof.status !== 0) {
     stopAllPlaygroundChildrenSync();
     process.stderr.write(`${describeSpawnProof(proof)}\n`);
+    writeSpawnOutputTail(proof, `${command} ${args.join(' ')}`);
+  }
+  if (proof.error) {
     const timeoutNote = proof.error.code === 'ETIMEDOUT' && boundedOptions.timeout ? ` after ${boundedOptions.timeout}ms` : '';
     const detailParts = [
       proof.error.name ?? 'Error',
@@ -979,20 +982,54 @@ function runBoundedSync(command, args, options, label) {
     );
   }
   if (proof.signal) {
-    stopAllPlaygroundChildrenSync();
-    process.stderr.write(`${describeSpawnProof(proof)}\n`);
     throw new Error(
       `${label} terminated by ${proof.signal}\nstdout:\n${proof.stdout ?? ''}\nstderr:\n${proof.stderr ?? ''}`,
     );
   }
   if (proof.status === null) {
-    stopAllPlaygroundChildrenSync();
-    process.stderr.write(`${describeSpawnProof(proof)}\n`);
     throw new Error(
       `${label} exited without a status\nstdout:\n${proof.stdout ?? ''}\nstderr:\n${proof.stderr ?? ''}`,
     );
   }
+  if (proof.status !== 0) {
+    throw new Error(
+      `${label} exited with ${proof.status}\nstdout:\n${proof.stdout ?? ''}\nstderr:\n${proof.stderr ?? ''}`,
+    );
+  }
   return proof;
+}
+
+function writeSpawnOutputTail(proof, commandLabel = '') {
+  const stdout = (proof.stdout ?? '').trimEnd();
+  if (!stdout) {
+    return;
+  }
+  const stdoutTail = stdout.slice(-4000);
+  let structuredTail = null;
+  try {
+    const parsed = JSON.parse(stdoutTail.slice(stdoutTail.indexOf('{')));
+    const lastProbe = parsed.lastProbe ?? parsed.lastProbeSummary ?? parsed.lastProbeResult ?? null;
+    const topLevel = parsed.lastProbe
+      ? parsed
+      : parsed?.summary
+        ? parsed.summary
+        : parsed;
+    structuredTail = {
+      route: lastProbe?.route ?? topLevel?.route ?? parsed?.route ?? null,
+      status: lastProbe?.status ?? topLevel?.status ?? parsed?.status ?? null,
+      body: lastProbe?.body ?? topLevel?.body ?? parsed?.body ?? null,
+    };
+  } catch {
+    structuredTail = null;
+  }
+  if (commandLabel) {
+    process.stderr.write(`${commandLabel} stdout tail:\n${stdoutTail}\n`);
+  } else {
+    process.stderr.write(`stdout tail:\n${stdoutTail}\n`);
+  }
+  if (structuredTail && (structuredTail.route !== null || structuredTail.status !== null || structuredTail.body !== null)) {
+    process.stderr.write(`Last route/status/body: ${JSON.stringify(structuredTail, null, 2)}\n`);
+  }
 }
 
 function snapshotHash(snapshot) {

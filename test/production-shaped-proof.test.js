@@ -22,7 +22,7 @@ const proofSubprocessTimeoutMs = 45_000;
 const proofSubprocessKillSignal = 'SIGTERM';
 const liveProofSubprocessTimeoutMs = 9_000;
 const liveProofSubprocessKillSignal = 'SIGKILL';
-const liveProofInnerTimeoutMs = Math.max(1_000, liveProofSubprocessTimeoutMs - 2_000);
+const liveProofInnerTimeoutMs = Math.max(1_000, Math.min(5_000, liveProofSubprocessTimeoutMs - 4_000));
 const releaseVerifySlowPathTimeoutMs = 9_000;
 const liveReleaseVerifyTimeoutMs = liveProofSubprocessTimeoutMs;
 const proofSubprocessOptions = {
@@ -106,23 +106,23 @@ function spawnReleaseVerifyBounded(command, args, options, label) {
 
   if (proof.error) {
     stopAllPlaygroundChildrenSync();
-    process.stderr.write(`${describeSpawnProof(proof)}\n`);
+    reportBoundedSpawnFailure(proof, command, args);
     const timeoutNote = proof.error.code === 'ETIMEDOUT' && boundedOptions.timeout ? ` after ${boundedOptions.timeout}ms` : '';
     throw new Error(formatSpawnFailure(`${label} failed${timeoutNote}`, proof));
   }
   if (proof.signal) {
     stopAllPlaygroundChildrenSync();
-    process.stderr.write(`${describeSpawnProof(proof)}\n`);
+    reportBoundedSpawnFailure(proof, command, args);
     throw new Error(formatSpawnFailure(`${label} terminated by ${proof.signal}${boundedOptions.timeout ? ` after ${boundedOptions.timeout}ms` : ''}`, proof));
   }
   if (proof.status === null) {
     stopAllPlaygroundChildrenSync();
-    process.stderr.write(`${describeSpawnProof(proof)}\n`);
+    reportBoundedSpawnFailure(proof, command, args);
     throw new Error(formatSpawnFailure(`${label} exited without a status`, proof));
   }
   if (proof.status !== 0) {
     stopAllPlaygroundChildrenSync();
-    process.stderr.write(`${describeSpawnProof(proof)}\n`);
+    reportBoundedSpawnFailure(proof, command, args);
   }
 
   return proof;
@@ -253,24 +253,20 @@ function spawnBoundedSync(command, args, options, label) {
   const proof = spawnSync(command, args, boundedOptions);
 
   if (proof.error) {
-    stopAllPlaygroundChildrenSync();
-    process.stderr.write(`${describeSpawnProof(proof)}\n`);
+    reportBoundedSpawnFailure(proof, command, args);
     const timeoutNote = proof.error.code === 'ETIMEDOUT' && boundedOptions.timeout ? ` after ${boundedOptions.timeout}ms` : '';
     throw new Error(formatSpawnFailure(`${label} failed${timeoutNote}`, proof));
   }
   if (proof.signal) {
-    stopAllPlaygroundChildrenSync();
-    process.stderr.write(`${describeSpawnProof(proof)}\n`);
+    reportBoundedSpawnFailure(proof, command, args);
     throw new Error(formatSpawnFailure(`${label} terminated by ${proof.signal}${boundedOptions.timeout ? ` after ${boundedOptions.timeout}ms` : ''}`, proof));
   }
   if (proof.status === null) {
-    stopAllPlaygroundChildrenSync();
-    process.stderr.write(`${describeSpawnProof(proof)}\n`);
+    reportBoundedSpawnFailure(proof, command, args);
     throw new Error(formatSpawnFailure(`${label} exited without a status`, proof));
   }
   if (proof.status !== 0) {
-    stopAllPlaygroundChildrenSync();
-    process.stderr.write(`${describeSpawnProof(proof)}\n`);
+    reportBoundedSpawnFailure(proof, command, args);
   }
 
   return proof;
@@ -317,6 +313,46 @@ function logBoundedSpawnProofFailure(command, args, proof) {
 function reportSpawnFailure(proof) {
   stopAllPlaygroundChildrenSync();
   process.stderr.write(`${describeSpawnProof(proof)}\n`);
+  writeSpawnOutputTail(proof);
+}
+
+function reportBoundedSpawnFailure(proof, command, args) {
+  stopAllPlaygroundChildrenSync();
+  process.stderr.write(`${describeSpawnProof(proof)}\n`);
+  writeSpawnOutputTail(proof, `${command} ${args.join(' ')}`);
+}
+
+function writeSpawnOutputTail(proof, commandLabel = '') {
+  const stdout = (proof.stdout ?? '').trimEnd();
+  if (!stdout) {
+    return;
+  }
+  const stdoutTail = stdout.slice(-4000);
+  let structuredTail = null;
+  try {
+    const parsed = JSON.parse(stdoutTail.slice(stdoutTail.indexOf('{')));
+    const lastProbe = parsed.lastProbe ?? parsed.lastProbeSummary ?? parsed.lastProbeResult ?? null;
+    const topLevel = parsed.lastProbe
+      ? parsed
+      : parsed?.summary
+        ? parsed.summary
+        : parsed;
+    structuredTail = {
+      route: lastProbe?.route ?? topLevel?.route ?? parsed?.route ?? null,
+      status: lastProbe?.status ?? topLevel?.status ?? parsed?.status ?? null,
+      body: lastProbe?.body ?? topLevel?.body ?? parsed?.body ?? null,
+    };
+  } catch {
+    structuredTail = null;
+  }
+  if (commandLabel) {
+    process.stderr.write(`${commandLabel} stdout tail:\n${stdoutTail}\n`);
+  } else {
+    process.stderr.write(`stdout tail:\n${stdoutTail}\n`);
+  }
+  if (structuredTail && (structuredTail.route !== null || structuredTail.status !== null || structuredTail.body !== null)) {
+    process.stderr.write(`Last route/status/body: ${JSON.stringify(structuredTail, null, 2)}\n`);
+  }
 }
 
 function formatSpawnFailure(prefix, proof) {
