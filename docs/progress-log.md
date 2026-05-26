@@ -6,26 +6,28 @@ linked implementation artifacts.
 
 ## 2026-05-26 - Auth-Session Source Evidence Refresh
 
-- Last update: 2026-05-26 14:01 CEST.
-- Status: `origin/lane/reliable-executor` now points at `77da166e` as the
-  current reliable product head for the auth-session source evidence behind
+- Last update: 2026-05-26 15:23 CEST.
+- Status: `origin/lane/reliable-executor` now points at
+  `e82e3b1af126f62688f617a3fb4cc0baeb698d57` as the current reliable product
+  head for the auth-session source evidence behind
   `REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND`, while older heads such as
   `c7a6432d` remain superseded historical evidence.
 - New proof: the release verifier now carries the consumed auth-session source
   command on the checked path, while the tracked gates remain at `0/4`.
 - Trend: auth-session source evidence visibility improved, but the production
   gate posture did not move.
-- Supervision: the visible page now names `77da166e` as the current reliable
-  product head, keeps the conservative gate posture, and links the detailed
-  evidence without repeating the lead paragraph.
+- Supervision: the visible page now names
+  `e82e3b1af126f62688f617a3fb4cc0baeb698d57` as the current reliable product
+  head, keeps the conservative gate posture, and links the detailed evidence
+  without repeating the lead paragraph.
 - Blocker: production auth/session lifecycle, durable storage semantics,
   leases/fencing, full graph identity mapping, Docker/full Playground
   integration, and arbitrary plugin drivers remain unproven.
 - Next nudge: keep the next proof tied to the audit decision and the next
   production-boundary evidence.
-- Public page: [progress.html](../progress.html) now names `77da166e` as the
-  current reliable product head and keeps the detailed release-verifier
-  evidence linked.
+- Public page: [progress.html](../progress.html) now names
+  `e82e3b1af126f62688f617a3fb4cc0baeb698d57` as the current reliable product
+  head and keeps the detailed release-verifier evidence linked.
 
 ## 2026-05-25 - Current Supervisor Snapshot
 
