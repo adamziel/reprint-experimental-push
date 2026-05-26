@@ -264,6 +264,10 @@ function writeActivationBlueprint(sourceBlueprintPath, targetBlueprintPath) {
       "add_option('reprint_push_lab_signed_session_' . str_repeat('b', 64), array('schemaVersion'=>1,'expiresAtUnix'=>$future,'fixture'=>'future-session'), '', 'no');",
       "add_option('reprint_push_lab_signed_nonce_' . str_repeat('c', 64), array('schemaVersion'=>1,'expiresAtUnix'=>$past,'fixture'=>'expired-nonce'), '', 'no');",
       "add_option('reprint_push_lab_signed_nonce_' . str_repeat('d', 64), array('schemaVersion'=>1,'expiresAtUnix'=>$future,'fixture'=>'future-nonce'), '', 'no');",
+      '$expired_session = reprint_push_lab_rest_signed_session(str_repeat(\'a\', 64));',
+      '$future_session = reprint_push_lab_rest_signed_session(str_repeat(\'b\', 64));',
+      'if (!is_null($expired_session)) { throw new RuntimeException(\'expired signed session must not be reusable\'); }',
+      'if (!is_array($future_session) || (string) ($future_session[\'fixture\'] ?? \'\') !== \'future-session\') { throw new RuntimeException(\'unexpired signed session must remain reusable\'); }',
     ].join(' '),
   });
   fs.writeFileSync(targetBlueprintPath, `${JSON.stringify(blueprint, null, 2)}\n`);

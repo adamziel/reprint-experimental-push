@@ -2187,6 +2187,10 @@ function reprint_push_lab_rest_signed_session(string $session_id): ?array
     if (!is_array($session)) {
         return null;
     }
+    if ((int) ($session['expiresAtUnix'] ?? 0) < time()) {
+        delete_option(reprint_push_lab_rest_signed_session_option($session_hash));
+        return null;
+    }
     $session['sessionHash'] = $session_hash;
     return $session;
 }
