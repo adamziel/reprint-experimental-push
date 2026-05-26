@@ -1482,9 +1482,12 @@ function reprint_push_default_forms_lab_driver(): array
     ];
 }
 
-function reprint_push_plugin_owned_row_drivers(): array
+function reprint_push_plugin_owned_row_drivers(bool $refresh = false): array
 {
     static $drivers = null;
+    if ($refresh) {
+        $drivers = null;
+    }
     if ($drivers !== null) {
         return $drivers;
     }

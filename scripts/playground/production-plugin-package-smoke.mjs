@@ -72,6 +72,7 @@ const driverDuplicateTableServerBlueprintPath = path.join(tmpDir, 'remote-base-w
 const packagedDriverRegistryGuardScriptPath = path.join(tmpDir, 'packaged-driver-registry-guards.php');
 const basePath = path.join(tmpDir, 'base.json');
 const localPath = path.join(tmpDir, 'local.json');
+let packagedDriverRegistryGuardResults = null;
 
 logSmokeStage('start', formatSelectedScenarioNames(selectedScenarios));
 
@@ -93,7 +94,7 @@ function reprint_push_packaged_driver_guard_capture(callable $builder): array {
     remove_all_filters('reprint_push_plugin_owned_row_drivers');
     add_filter('reprint_push_plugin_owned_row_drivers', $builder);
     try {
-        reprint_push_plugin_owned_row_drivers();
+        reprint_push_plugin_owned_row_drivers(true);
         return [
             'ok' => true,
             'error' => null,
@@ -1257,6 +1258,13 @@ function exportSnapshotWithStage(name, blueprintPath) {
 }
 
 function runPackagedDriverRegistryGuard(scenarioName, mountedPluginDir) {
+  if (packagedDriverRegistryGuardResults === null) {
+    packagedDriverRegistryGuardResults = runPackagedDriverRegistryGuards(mountedPluginDir);
+  }
+  return packagedDriverRegistryGuardResults[scenarioName];
+}
+
+function runPackagedDriverRegistryGuards(mountedPluginDir) {
   const result = spawnSync('npx', [
     '--yes',
     '@wp-playground/cli@latest',
@@ -1271,7 +1279,6 @@ function runPackagedDriverRegistryGuard(scenarioName, mountedPluginDir) {
     'quiet',
     '--',
     '/tmp/reprint-production-plugin-package/packaged-driver-registry-guards.php',
-    scenarioName,
   ], {
     cwd: repoRoot,
     encoding: 'utf8',
@@ -1279,16 +1286,15 @@ function runPackagedDriverRegistryGuard(scenarioName, mountedPluginDir) {
   });
 
   if (result.status !== 0) {
-    throw new Error(`Packaged driver registry guard export failed for ${scenarioName}\nSTDOUT:\n${result.stdout}\nSTDERR:\n${result.stderr}`);
+    throw new Error(`Packaged driver registry guard export failed\nSTDOUT:\n${result.stdout}\nSTDERR:\n${result.stderr}`);
   }
 
-  const guardResults = parseMarkedJson(
+  return parseMarkedJson(
     result.stdout,
     'REPRINT_PUSH_DRIVER_GUARD_JSON_BEGIN',
     'REPRINT_PUSH_DRIVER_GUARD_JSON_END',
     `Packaged driver guard markers missing\nSTDOUT:\n${result.stdout}\nSTDERR:\n${result.stderr}`,
   );
-  return guardResults[scenarioName];
 }
 
 function formatSelectedScenarioNames(selected) {

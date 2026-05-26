@@ -20,6 +20,18 @@ test('scenario parser expands malformed driver aliases into concrete checks', ()
   );
 });
 
+test('scenario parser expands the full driver-registration alias into every malformed guard', () => {
+  const selected = parseProductionPluginPackageSelectedScenarios(
+    ['--scenario=driver-registration-guards'],
+    undefined,
+  );
+
+  assert.deepEqual(
+    Array.from(selected).sort(),
+    scenarioGroups['driver-registration-guards'].slice().sort(),
+  );
+});
+
 test('scenario parser rejects unknown plugin-driver smoke scenarios', () => {
   assert.throws(
     () => parseProductionPluginPackageSelectedScenarios(
