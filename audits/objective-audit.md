@@ -4,30 +4,30 @@
 
 The project is **not releasable as a production WordPress push path**.
 
-- Audit time: 2026-05-26 09:03:39 CEST (+0200)
+- Audit time: 2026-05-26 09:04:43 CEST (+0200)
 - Fresh remote heads re-polled at audit time:
   - `origin/lane/critic` -> `85c975d5`
-  - `origin/lane/no-data-loss-invariants` -> `a7ead953`
+  - `origin/lane/no-data-loss-invariants` -> `4b29620e`
   - `origin/lane/no-data-loss-recovery` -> `9e077c10`
   - `origin/lane/progress-publisher` -> `7695e1f9`
   - `origin/lane/feedback-supervisor` -> `f386dfa6`
-  - `origin/lane/reliable-executor` -> `5b3240fb`
+  - `origin/lane/reliable-executor` -> `1f453e04`
 
 ## Evidence Table
 
 | Requirement | Current proof | Missing proof | Verdict impact |
 | --- | --- | --- | --- |
-| Production-backed auth/session lifecycle | Support-side fail-closed auth and replay checks in `reliable-executor`, including `5b3240fb` closing journal readback auth | Live production-backed auth/session lifecycle on the release path | Blocked |
+| Production-backed auth/session lifecycle | Support-side fail-closed auth and replay checks in `reliable-executor`, including `1f453e04` tracking replay schema version in summaries | Live production-backed auth/session lifecycle on the release path | Blocked |
 | Durable journal ownership | Fail-closed recovery fencing and restart-readability checks in `no-data-loss-recovery`, including `9e077c10` tightening remote ownership fencing | Restart-readable durable journal ownership with production artifacts on the release path | Blocked |
-| Live mutation boundary | Unsupported-surface blocking in `no-data-loss-invariants`, including `a7ead953` classifying comments graph unsupported boundaries | A live production mutation boundary proving source changes are safe | Blocked |
+| Live mutation boundary | Unsupported-surface blocking in `no-data-loss-invariants`, including `4b29620e` tightening plugin-owned custom-table blockers | A live production mutation boundary proving source changes are safe | Blocked |
 | Production speed claim | Visibility and support-path proof only | A release-grade production speed proof tied to the real push path | Blocked |
 | Public progress freshness | Freshness-only updates in `progress-publisher` and `feedback-supervisor` | Freshness does not change release readiness | Not a gate |
 
 ## Release Blockers
 
-1. `reliable-executor` still only proves fail-closed support behavior. The new head `5b3240fb` closes journal readback auth, but it still does not establish production-backed auth/session lifecycle, canonical replay on a live source, or durable journal ownership on the release path.
+1. `reliable-executor` still only proves fail-closed support behavior. The new head `1f453e04` tracks replay schema version in summaries, but it still does not establish production-backed auth/session lifecycle, canonical replay on a live source, or durable journal ownership on the release path.
 2. `no-data-loss-recovery` still fences recovery paths, but `9e077c10` only tightens remote ownership fencing and does not prove restart-readable durable artifacts owned by the production release path.
-3. `no-data-loss-invariants` now shows additional unsupported-surface blocking, but `a7ead953` still does not prove the live production mutation boundary.
+3. `no-data-loss-invariants` now shows additional unsupported-surface blocking, but `4b29620e` still does not prove the live production mutation boundary.
 4. `critic` refined the audit wording in `85c975d5`, but that is still a critique update rather than release proof.
 5. `progress-publisher` and `feedback-supervisor` only moved visible freshness. That is useful for visibility, but it does not move a release gate.
 
