@@ -1,6 +1,11 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-26 11:08 CEST
+Last updated: 2026-05-26 11:10 CEST
+
+## 2026-05-26 11:10:06 CEST - Freshness Refresh
+
+- Reliable's current head is `5fd9dfb4`; keep the next nudge tied to the critic/auditor decision on that commit and the next production-boundary proof.
+- Release posture stays conservative at `0/4` until the proof boundary changes.
 
 ## 2026-05-26 11:08:18 CEST - Freshness Refresh
 
