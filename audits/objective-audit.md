@@ -4,9 +4,9 @@
 
 The project is **not releasable as a production WordPress push path**.
 
-- Audit time: 2026-05-26 10:27:22 CEST (+0200)
+- Audit time: 2026-05-26 10:34:05 CEST (+0200)
 - Fresh remote heads re-polled at audit time:
-  - `origin/lane/reliable-executor` -> `949477de`
+  - `origin/lane/reliable-executor` -> `27ad6f6f`
   - `origin/lane/no-data-loss-invariants` -> `120c0a1e`
   - `origin/lane/no-data-loss-recovery` -> `351b6bbd`
   - `origin/lane/critic` -> `228d2429`
@@ -27,11 +27,11 @@ The project is **not releasable as a production WordPress push path**.
 
 1. `reliable-executor` now has tighter auth-session drift handling in `5271f45f`, a durable-journal ownership fail-closed head in `a63dfc93`, and `949477de` exposing auth session lifecycle evidence in summaries, but they still only prove support behavior and boundary reporting. They do not establish production-backed auth/session lifecycle, canonical replay on a live source, or a restart-readable durable journal adapter on the release path.
 2. `no-data-loss-recovery` now exposes a production recovery journal adapter in `351b6bbd`, but the only release-boundary evidence is still the focused `applyPlan(..., { requireProductionDurableJournal: true })` probe. It does not yet show the adapter consumed by `verify:release` or another live production-backed release entrypoint. The exact next owner is `reliable-executor`, and the exact command surface is `scripts/playground/production-shaped-release-verify.mjs` behind `npm run verify:release`.
-3. The current release verifier is still blocked earlier in Playground readiness: `scripts/playground/production-shaped-release-verify.mjs` hits `waitForServer()` and sees `/wp-json/` return HTTP `502` with `WordPress is not ready yet`. Until that readiness branch either waits through the real ready signal or emits bounded route/status/body diagnostics before the outer wrapper expires, no downstream release-boundary evidence can count.
+3. `reliable-executor` advanced the readiness harness in `27ad6f6f` so the `/wp-json/` 502 path now records bounded route/status/body diagnostics and stops the spawned Playground child before outer timeout. That is a better failure, but it is still a readiness boundary, not live release-proof past readiness, so no downstream release-boundary evidence can count yet.
 4. `no-data-loss-invariants` now shows additional unsupported-surface blocking, but `19c32bb9`, `5f5a2f8a`, `6cd23be4`, `3998cb83`, `7400e3eb`, `eed6af9f`, `63baa64d`, `c1cc6e93`, `ad57d11a`, `93a4a4eb`, `8b6c8bca`, `3f5e4919`, `60d398ba`, `22ac2d21`, `56fd6a3a`, `7d614106`, `38e14784`, `b12d7401`, `ff1c8e35`, `5e76166e`, and `10cb1368` still do not prove the live production mutation boundary.
 5. `critic` refreshed the auth-session evidence in `228d2429`, but that is still a critique update rather than release proof.
 6. `progress-publisher` and `feedback-supervisor` only moved visible freshness in `7695e1f9` and `fd3b339b`. That is useful for visibility, but it does not move a release gate.
 
 ## Conclusion
 
-The current evidence remains support-side and fail-closed. `351b6bbd` improves the durable-journal surface and narrows the gap, and `949477de` adds auth session lifecycle summaries, but neither closes the production release gate because the adapter is not yet consumed by the live release path and the auth/session evidence is still not live production-backed lifecycle proof. The verdict stays `0/4`.
+The current evidence remains support-side and fail-closed. `351b6bbd` improves the durable-journal surface and narrows the gap, and `27ad6f6f` makes the readiness failure bounded, but neither closes the production release gate because the adapter is not yet consumed by the live release path and the auth/session/replay evidence is still not live production-backed proof. The verdict stays `0/4`.
