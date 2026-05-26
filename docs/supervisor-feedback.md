@@ -1,6 +1,6 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-26 14:25 CEST
+Last updated: 2026-05-26 14:28 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
@@ -12,11 +12,13 @@ changed, what is helping, what is not helping, and the next nudge.
   work, not a gate cross.
 - Not going well: the release gate is still `0/4`; production-backed
   auth/session lifecycle and durable-journal ownership remain blocked.
-- Progress change: the public progress surface needed a freshness refresh and
-  now should match `6beb5ed7c74509094d831bc4247541c4b684feae` everywhere visible.
-- Next nudge: reliable executor should move to the next gate dependency:
-  production auth/session lifecycle, durable journal ownership, or a concrete
-  blocker command that names the missing primitive.
+- Progress change: the public progress surface is still stale, so
+  `progress-publisher` needs to catch `progress.html` and the log up to
+  `6beb5ed7c74509094d831bc4247541c4b684feae`.
+- Next nudge: `progress-publisher` should refresh the public page to the live
+  reliable head without inflating gates; `reliable-executor` should stay on the
+  next gate dependency: production auth/session lifecycle, durable journal
+  ownership, or a concrete blocker command that names the missing primitive.
 
 | Lane | Change | Next nudge |
 | --- | --- | --- |
@@ -25,7 +27,7 @@ changed, what is helping, what is not helping, and the next nudge.
 | Reliable executor | Up in support evidence | Move to production auth/session lifecycle or durable ownership. |
 | Fast paths | Up in model | Run a large-site benchmark with receipts and resume cursors. |
 | Audit and critic | Up | Re-audit the new live reliable head only if the gate changes. |
-| Progress publisher | Freshened | Keep the public page aligned with `6beb5ed7c74509094d831bc4247541c4b684feae` and avoid timestamp-only churn. |
+| Progress publisher | Stale | Refresh the public page to `6beb5ed7c74509094d831bc4247541c4b684feae` without timestamp-only churn. |
 
 <details>
 <summary>Earlier feedback entries</summary>

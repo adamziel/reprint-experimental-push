@@ -8,19 +8,21 @@ linked implementation artifacts.
 
 - Status: `6beb5ed7c74509094d831bc4247541c4b684feae` is the live reliable head and the latest
   support-side release-verifier evidence.
-- Trend: public status needed a freshness refresh; the live head advanced again,
-  but the gate posture remains conservative.
+- Trend: the public status surface is still stale and needs a freshness
+  refresh; the live head advanced again, but the gate posture remains
+  conservative.
 - Blocker: this is still support evidence, not production-backed auth/session
   lifecycle or durable-journal ownership on the release boundary.
-- Next nudge: reliable executor should move to the next gate dependency:
-  production auth/session lifecycle, durable journal ownership, or a concrete
-  blocking command naming the missing primitive.
+- Next nudge: `progress-publisher` should refresh the public page to the live
+  reliable head, and reliable executor should move to the next gate
+  dependency: production auth/session lifecycle, durable journal ownership, or
+  a concrete blocking command naming the missing primitive.
 - Public page: [progress.html](../progress.html) shows a visible last-updated
   date and keeps the supervisor view short.
 - Feedback-lane verification after checking the live head: `git ls-remote`
-  now reports `6beb5ed7c74509094d831bc4247541c4b684feae` for
-  `lane/reliable-executor`, while the public page
-  needed a freshness update.
+  reports `6beb5ed7c74509094d831bc4247541c4b684feae` for
+  `lane/reliable-executor`, while the public page still needs a freshness
+  update.
 
 <details>
 <summary>Earlier progress entries</summary>
