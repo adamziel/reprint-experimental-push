@@ -617,6 +617,7 @@ test('production recovery journal consumer requires a non-empty claimId', () => 
 
 test('checked durable journal boundary stays closed until stale-claim rejection is proven on the lease fence', () => {
   const baseContract = {
+    schemaVersion: 1,
     acceptedOnCheckedBoundary: true,
     scope: 'checked live production-shaped journal surface; not local Playground fixture only',
     claim: {
@@ -667,6 +668,30 @@ test('checked durable journal boundary stays closed until stale-claim rejection 
     },
   };
 
+  assert.equal(
+    checkedDurableJournalBoundarySatisfied({
+      ...baseContract,
+      schemaVersion: undefined,
+      storageGuard: {
+        boundary: 'wpdb-single-statement-cas',
+        operation: 'update',
+        outcome: 'applied',
+      },
+      writerLease: {
+        ...baseContract.writerLease,
+        staleClaimRejected: true,
+      },
+      leaseFence: {
+        ...baseContract.leaseFence,
+        staleClaimRejected: true,
+        writerLease: {
+          ...baseContract.leaseFence.writerLease,
+          staleClaimRejected: true,
+        },
+      },
+    }),
+    false,
+  );
   assert.equal(checkedDurableJournalBoundarySatisfied(baseContract), false);
   assert.equal(
     checkedDurableJournalBoundarySatisfied({

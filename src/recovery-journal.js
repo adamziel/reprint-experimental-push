@@ -81,7 +81,8 @@ export function checkedDurableJournalBoundarySatisfied(dbJournal) {
   const nestedWriterLease = dbJournal?.leaseFence?.writerLease;
   const productionAdapter = dbJournal?.ownership?.productionAdapter;
   const leaseFenceBoundary = dbJournal?.leaseFence?.boundary;
-  return /(packaged production plugin|checked live production-shaped) journal surface/i.test(dbJournal?.scope || '')
+  return dbJournal?.schemaVersion === RECOVERY_JOURNAL_SCHEMA_VERSION
+    && /(packaged production plugin|checked live production-shaped) journal surface/i.test(dbJournal?.scope || '')
     && dbJournal?.acceptedOnCheckedBoundary === true
     && dbJournal?.ownership?.ownsJournal === true
     && dbJournal?.ownership?.restartReadable === true
