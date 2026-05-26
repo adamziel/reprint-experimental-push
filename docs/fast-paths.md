@@ -188,6 +188,10 @@ Current executable gate:
   both visible and canonical, so the audit view can reject a drifted limit
   summary without reconstructing the visible bit from the rest of the
   backpressure evidence.
+- The same details also let compressed row-batch manifests reuse the
+  dependency graph for bounded plugin-update batch sizing, but only as
+  planning evidence with per-row preconditions and batch receipts still
+  deciding visibility and recovery.
 - The production-throughput gate also fails closed if the success journal no
   longer keeps receipt flushes grouped by kind, so journal lag savings cannot
   hide interleaved recovery evidence.
