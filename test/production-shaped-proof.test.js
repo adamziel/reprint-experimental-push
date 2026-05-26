@@ -21,6 +21,7 @@ import {
   resolvePackagedProductionPluginSourceCommand,
 } from '../scripts/playground/packaged-production-plugin-source-command.js';
 import {
+  packagedProductionPluginReadinessBodyRetryable,
   packagedProductionPluginReadinessErrorRetryable,
   packagedProductionPluginPreflightReady,
   packagedProductionPluginPreflightRetryable,
@@ -1023,6 +1024,27 @@ test('packaged production plugin readiness helper retries only startup-shaped pa
 });
 
 test('packaged production plugin readiness helper does not retry terminal readiness failures', () => {
+  assert.equal(
+    packagedProductionPluginReadinessBodyRetryable(
+      502,
+      '<!doctype html><html><body>WordPress is not ready yet</body></html>',
+    ),
+    true,
+  );
+  assert.equal(
+    packagedProductionPluginReadinessBodyRetryable(
+      200,
+      '<!doctype html><html><body>fatal startup mismatch</body></html>',
+    ),
+    false,
+  );
+  assert.equal(
+    packagedProductionPluginReadinessBodyRetryable(
+      401,
+      '<!doctype html><html><body>unauthorized packaged route</body></html>',
+    ),
+    false,
+  );
   assert.equal(packagedProductionPluginReadinessErrorRetryable(new Error('transient fetch failure')), true);
   assert.equal(
     packagedProductionPluginReadinessErrorRetryable({

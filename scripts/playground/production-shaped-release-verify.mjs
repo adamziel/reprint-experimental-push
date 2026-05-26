@@ -22,6 +22,7 @@ import {
   resolvePackagedProductionPluginAuthSessionSource,
 } from './packaged-production-plugin-source-command.js';
 import {
+  packagedProductionPluginReadinessBodyRetryable,
   packagedProductionPluginReadinessErrorRetryable,
   packagedProductionPluginPreflightReady,
   packagedProductionPluginPreflightRetryable,
@@ -1301,12 +1302,23 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
       try {
         snapshotBody = JSON.parse(snapshotText);
       } catch (error) {
-        if (isWordPressNotReadyResponse(snapshot.status, snapshotText)) {
+        if (packagedProductionPluginReadinessBodyRetryable(snapshot.status, snapshotText)) {
           lastError = new Error(`Production plugin package snapshot readiness HTTP ${snapshot.status}`);
           await sleep(readinessProbeIntervalMs);
           continue;
         }
-        throw error;
+        lastError = error;
+        await throwPlaygroundReadinessFailure(
+          child,
+          `Packaged Playground snapshot returned an invalid readiness body at ${baseUrl}`,
+          lastError,
+          lastProbes,
+          getOutput(),
+          {
+            childPid: child.pid ?? null,
+            packagedProductionPlugin: true,
+          },
+        );
       }
       if (!packagedProductionPluginServerReady({
         snapshot: {
@@ -1354,14 +1366,23 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
       try {
         preflightBody = JSON.parse(preflightText);
       } catch (error) {
-        if (isWordPressNotReadyResponse(preflight.status, preflightText)) {
+        if (packagedProductionPluginReadinessBodyRetryable(preflight.status, preflightText)) {
           lastError = new Error(`Production plugin package preflight readiness HTTP ${preflight.status}`);
           await sleep(readinessProbeIntervalMs);
           continue;
         }
         lastError = error;
-        await sleep(readinessProbeIntervalMs);
-        continue;
+        await throwPlaygroundReadinessFailure(
+          child,
+          `Packaged Playground signed preflight returned an invalid readiness body at ${baseUrl}`,
+          lastError,
+          lastProbes,
+          getOutput(),
+          {
+            childPid: child.pid ?? null,
+            packagedProductionPlugin: true,
+          },
+        );
       }
       if (packagedProductionPluginPreflightReady({
         status: preflight.status,

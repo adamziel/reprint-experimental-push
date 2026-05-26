@@ -53,3 +53,7 @@ export function packagedProductionPluginServerReady({ snapshot, preflight = null
 export function packagedProductionPluginReadinessErrorRetryable(error) {
   return !(error && typeof error === 'object' && error.isPlaygroundReadinessFailure === true);
 }
+
+export function packagedProductionPluginReadinessBodyRetryable(status, bodyText = '') {
+  return status === 502 && /WordPress is not ready yet/i.test(bodyText);
+}
