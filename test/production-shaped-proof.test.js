@@ -53,6 +53,7 @@ function spawnBoundedSync(command, args, options, label) {
       proof.error.name ?? 'Error',
       proof.error.code ? `code=${proof.error.code}` : null,
       proof.error.errno ? `errno=${proof.error.errno}` : null,
+      proof.killed ? 'killed=true' : null,
       proof.status !== null ? `status=${proof.status}` : null,
       proof.signal ? `signal=${proof.signal}` : null,
     ].filter(Boolean);
@@ -62,7 +63,7 @@ function spawnBoundedSync(command, args, options, label) {
   }
   if (proof.signal) {
     assert.fail(
-      `${label} terminated by ${proof.signal}\nstdout:\n${proof.stdout ?? ''}\nstderr:\n${proof.stderr ?? ''}`,
+      `${label} terminated by ${proof.signal}${options.timeout ? ` after ${options.timeout}ms` : ''}\nstdout:\n${proof.stdout ?? ''}\nstderr:\n${proof.stderr ?? ''}`,
     );
   }
   if (proof.status === null) {
