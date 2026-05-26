@@ -885,6 +885,7 @@ test('packaged production plugin readiness helper retries only startup-shaped pa
     status: 200,
     body: {
       ok: true,
+      snapshot: {},
     },
   };
   const notReadyPreflight = {
@@ -934,6 +935,27 @@ test('packaged production plugin readiness helper retries only startup-shaped pa
         status: 502,
         body: {
           ok: false,
+        },
+      },
+      preflight: strictReadyPreflight,
+    }),
+    false,
+  );
+  assert.equal(
+    packagedProductionPluginSnapshotReady({
+      status: 200,
+      body: {
+        ok: true,
+      },
+    }),
+    false,
+  );
+  assert.equal(
+    packagedProductionPluginServerReady({
+      snapshot: {
+        status: 200,
+        body: {
+          ok: true,
         },
       },
       preflight: strictReadyPreflight,

@@ -5,7 +5,11 @@ function packagedProductionPluginRouteNotReady(response) {
 }
 
 export function packagedProductionPluginSnapshotReady(snapshot) {
-  return snapshot?.status === 200 && snapshot?.body?.ok === true;
+  return snapshot?.status === 200
+    && snapshot?.body?.ok === true
+    && typeof snapshot?.body?.snapshot === 'object'
+    && snapshot.body.snapshot !== null
+    && !Array.isArray(snapshot.body.snapshot);
 }
 
 export function packagedProductionPluginSnapshotRetryable(snapshot) {
