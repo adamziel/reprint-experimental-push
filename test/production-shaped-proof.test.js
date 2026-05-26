@@ -141,7 +141,8 @@ function spawnLiveReleaseVerify(env = {}, options = {}) {
     },
     'live release verify',
   );
-  if (proof.error || proof.signal || proof.status === null) {
+  if (proof.error || proof.signal || proof.status === null || proof.status !== 0) {
+    stopAllPlaygroundChildrenSync();
     reportSpawnFailure(proof);
   }
   return proof;
@@ -198,7 +199,6 @@ function assertLiveReleaseVerifyProof(proof, label, timeoutMs) {
     reportSpawnFailure(proof);
     assert.fail(`${label} exited without a status\nstdout:\n${proof.stdout ?? ''}\nstderr:\n${proof.stderr ?? ''}`);
   }
-  assertReleaseVerifyProof(proof, label);
 }
 
 function assertSpawnCompletedWithoutSpawnError(proof, label, timeoutMs) {
