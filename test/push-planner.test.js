@@ -167,6 +167,11 @@ function assertFailureRecoveryState(recoveryState, expectedStatus) {
   assert.ok(recoveryState.artifacts?.journal, `${expectedStatus} recovery must carry journal artifacts`);
   if (expectedStatus === 'blocked-recovery') {
     assert.ok(recoveryState.artifacts?.remote, 'blocked recovery must carry remote artifacts');
+    assert.notStrictEqual(
+      recoveryState.artifacts.journal,
+      recoveryState.artifacts.remote,
+      'blocked recovery must keep distinct journal and remote artifacts',
+    );
   } else {
     assert.equal(recoveryState.artifacts.remote, undefined);
   }
