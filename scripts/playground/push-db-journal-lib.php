@@ -850,7 +850,24 @@ function reprint_push_lab_db_journal_checked_boundary_persisted_evidence_matches
         && is_array($journal['latestRows'] ?? null)
         && count($journal['latestRows']) > 0
         && is_array($journal['eventSummaries'] ?? null)
-        && count($journal['eventSummaries']) > 0;
+        && count($journal['eventSummaries']) > 0
+        && reprint_push_lab_db_journal_checked_boundary_stale_claim_evidence_matches($journal);
+}
+
+function reprint_push_lab_db_journal_checked_boundary_stale_claim_evidence_matches($journal): bool
+{
+    if (!is_array($journal)) {
+        return false;
+    }
+
+    if (($journal['claim']['staleClaimRejected'] ?? false) !== true) {
+        return true;
+    }
+
+    return reprint_push_lab_db_journal_has_stale_claim_rejection_evidence(
+        is_array($journal['latestRows'] ?? null) ? $journal['latestRows'] : [],
+        is_array($journal['eventSummaries'] ?? null) ? $journal['eventSummaries'] : []
+    );
 }
 
 function reprint_push_lab_db_journal_checked_boundary_storage_guard_is_coherent($journal): bool

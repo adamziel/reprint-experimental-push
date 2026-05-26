@@ -5184,6 +5184,153 @@ test('checked db journal attachment fails closed on conflicting checked claim li
   });
 });
 
+test('checked db journal attachment fails closed when accepted checked summaries claim stale-claim rejection without persisted stale-claim evidence', { skip: !hasPhp }, () => {
+  const result = runAttachCheckedDbJournalContract(
+    {
+      ok: true,
+      dbJournal: {
+        scope: 'checked live production-shaped journal surface; not local Playground fixture only',
+        acceptedOnCheckedBoundary: true,
+        table: 'wp_reprint_push_lab_push_journal',
+        rowCount: 1,
+        claim: {
+          status: 'stale-claim-rejected',
+          activeClaimKeyHash: 'retry-claim-hash-02',
+          activeClaimSequence: 20,
+          activeClaimEvent: 'stale-claim-retry-started',
+          idempotencyKeyHash: 'idempotency-hash-01',
+          requestHash: 'request-hash-01',
+          staleClaimRejected: true,
+          abandonedSequence: 18,
+          abandonedEvent: 'stale-claim-abandoned',
+          previousStartedSequence: 12,
+          previousClaimSequence: 11,
+          previousClaimKeyHash: 'retry-claim-hash-01',
+          previousClaimEvent: 'idempotency-opened',
+        },
+        ownership: {
+          ownsJournal: true,
+          restartReadable: true,
+          productionAdapter: 'wpdb-single-statement-cas',
+        },
+        writerLease: {
+          strategy: 'claim-fenced-single-writer',
+          claimKeyUnique: true,
+          fsyncEvidence: true,
+          storageGuard: 'wpdb-single-statement-cas',
+          monotonicSequence: true,
+          restartReadable: true,
+          staleClaimRejected: true,
+        },
+        leaseFence: {
+          boundary: 'wpdb-single-statement-cas',
+          claimKeyUnique: true,
+          fsyncEvidence: true,
+          monotonicSequence: true,
+          restartReadable: true,
+          staleClaimRejected: true,
+          writerLease: {
+            strategy: 'claim-fenced-single-writer',
+            claimKeyUnique: true,
+            fsyncEvidence: true,
+            storageGuard: 'wpdb-single-statement-cas',
+            monotonicSequence: true,
+            restartReadable: true,
+            staleClaimRejected: true,
+          },
+        },
+        storageGuard: {
+          boundary: 'wpdb-single-statement-cas',
+          operation: 'update',
+          outcome: 'applied',
+        },
+        latestRows: [
+          {
+            sequence: 20,
+            event: 'apply-committed',
+          },
+        ],
+        eventSummaries: [
+          {
+            event: 'apply-committed',
+            count: 1,
+            latestId: 20,
+          },
+        ],
+      },
+    },
+    {
+      acceptedOnCheckedBoundary: true,
+      scope: 'checked live production-shaped journal surface; not local Playground fixture only',
+      table: 'wp_reprint_push_lab_push_journal',
+      rowCount: 1,
+      claim: {
+        status: 'stale-claim-rejected',
+        activeClaimKeyHash: 'retry-claim-hash-02',
+        activeClaimSequence: 20,
+        activeClaimEvent: 'stale-claim-retry-started',
+        idempotencyKeyHash: 'idempotency-hash-01',
+        requestHash: 'request-hash-01',
+        staleClaimRejected: true,
+        abandonedSequence: 18,
+        abandonedEvent: 'stale-claim-abandoned',
+        previousStartedSequence: 12,
+        previousClaimSequence: 11,
+        previousClaimKeyHash: 'retry-claim-hash-01',
+        previousClaimEvent: 'idempotency-opened',
+      },
+      ownership: {
+        ownsJournal: true,
+        restartReadable: true,
+        productionAdapter: 'wpdb-single-statement-cas',
+      },
+      writerLease: {
+        strategy: 'claim-fenced-single-writer',
+        claimKeyUnique: true,
+        fsyncEvidence: true,
+        storageGuard: 'wpdb-single-statement-cas',
+        monotonicSequence: true,
+        restartReadable: true,
+        staleClaimRejected: true,
+      },
+      leaseFence: {
+        boundary: 'wpdb-single-statement-cas',
+        claimKeyUnique: true,
+        fsyncEvidence: true,
+        monotonicSequence: true,
+        restartReadable: true,
+        staleClaimRejected: true,
+        writerLease: {
+          strategy: 'claim-fenced-single-writer',
+          claimKeyUnique: true,
+          fsyncEvidence: true,
+          storageGuard: 'wpdb-single-statement-cas',
+          monotonicSequence: true,
+          restartReadable: true,
+          staleClaimRejected: true,
+        },
+      },
+      latestRows: [
+        {
+          sequence: 20,
+          event: 'apply-committed',
+        },
+      ],
+      eventSummaries: [
+        {
+          event: 'apply-committed',
+          count: 1,
+          latestId: 20,
+        },
+      ],
+    },
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.dbJournal.acceptedOnCheckedBoundary, false);
+});
+
 test('db journal storage guard stays visible when only the checked top-level committed proof survives the trimmed summary', { skip: !hasPhp }, () => {
   const result = runDbJournalStorageGuard({
     acceptedOnCheckedBoundary: true,
@@ -5313,6 +5460,8 @@ test('checked db journal boundary contract fails closed when the checked claim c
   const baseJournal = {
     schemaVersion: 1,
     acceptedOnCheckedBoundary: true,
+    table: 'wp_reprint_push_lab_push_journal',
+    rowCount: 1,
     scope: 'checked live production-shaped journal surface; not local Playground fixture only',
     claim: {
       status: 'stale-claim-rejected',
@@ -5365,6 +5514,19 @@ test('checked db journal boundary contract fails closed when the checked claim c
       operation: 'update',
       outcome: 'applied',
     },
+    latestRows: [
+      {
+        sequence: 20,
+        event: 'stale-claim-rejected',
+      },
+    ],
+    eventSummaries: [
+      {
+        event: 'stale-claim-rejected',
+        count: 1,
+        latestId: 20,
+      },
+    ],
   };
 
   let result = runCheckedBoundaryContractMatches(baseJournal);
@@ -5385,6 +5547,83 @@ test('checked db journal boundary contract fails closed when the checked claim c
       activeClaimSequence: 0,
     },
   });
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(JSON.parse(result.stdout), false);
+});
+
+test('checked db journal boundary contract fails closed when stale-claim rejection is claimed without persisted stale-claim evidence', { skip: !hasPhp }, () => {
+  const result = runCheckedBoundaryContractMatches({
+    schemaVersion: 1,
+    acceptedOnCheckedBoundary: true,
+    table: 'wp_reprint_push_lab_push_journal',
+    rowCount: 1,
+    scope: 'checked live production-shaped journal surface; not local Playground fixture only',
+    claim: {
+      status: 'stale-claim-rejected',
+      activeClaimKeyHash: 'retry-claim-hash-02',
+      activeClaimSequence: 20,
+      activeClaimEvent: 'stale-claim-retry-started',
+      idempotencyKeyHash: 'idempotency-hash-01',
+      requestHash: 'request-hash-01',
+      staleClaimRejected: true,
+      abandonedSequence: 18,
+      abandonedEvent: 'stale-claim-abandoned',
+      previousStartedSequence: 12,
+      previousClaimSequence: 11,
+      previousClaimKeyHash: 'retry-claim-hash-01',
+      previousClaimEvent: 'idempotency-opened',
+    },
+    ownership: {
+      ownsJournal: true,
+      restartReadable: true,
+      productionAdapter: 'wpdb-single-statement-cas',
+    },
+    writerLease: {
+      strategy: 'claim-fenced-single-writer',
+      claimKeyUnique: true,
+      fsyncEvidence: true,
+      storageGuard: 'wpdb-single-statement-cas',
+      monotonicSequence: true,
+      restartReadable: true,
+      staleClaimRejected: true,
+    },
+    leaseFence: {
+      boundary: 'wpdb-single-statement-cas',
+      claimKeyUnique: true,
+      fsyncEvidence: true,
+      monotonicSequence: true,
+      restartReadable: true,
+      staleClaimRejected: true,
+      writerLease: {
+        strategy: 'claim-fenced-single-writer',
+        claimKeyUnique: true,
+        fsyncEvidence: true,
+        storageGuard: 'wpdb-single-statement-cas',
+        monotonicSequence: true,
+        restartReadable: true,
+        staleClaimRejected: true,
+      },
+    },
+    storageGuard: {
+      boundary: 'wpdb-single-statement-cas',
+      operation: 'update',
+      outcome: 'applied',
+    },
+    latestRows: [
+      {
+        sequence: 20,
+        event: 'apply-committed',
+      },
+    ],
+    eventSummaries: [
+      {
+        event: 'apply-committed',
+        count: 1,
+        latestId: 20,
+      },
+    ],
+  });
+
   assert.equal(result.status, 0, result.stderr);
   assert.equal(JSON.parse(result.stdout), false);
 });

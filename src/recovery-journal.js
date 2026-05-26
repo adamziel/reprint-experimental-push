@@ -116,7 +116,35 @@ function checkedBoundaryPersistedEvidenceMatches(dbJournal) {
     && Array.isArray(dbJournal?.latestRows)
     && dbJournal.latestRows.length > 0
     && Array.isArray(dbJournal?.eventSummaries)
-    && dbJournal.eventSummaries.length > 0;
+    && dbJournal.eventSummaries.length > 0
+    && checkedBoundaryStaleClaimEvidenceMatches(dbJournal);
+}
+
+function checkedBoundaryStaleClaimEvidenceMatches(dbJournal) {
+  if (dbJournal?.claim?.staleClaimRejected !== true) {
+    return true;
+  }
+
+  for (const summary of Array.isArray(dbJournal?.eventSummaries) ? dbJournal.eventSummaries : []) {
+    if (checkedBoundaryStaleClaimEventMatches(summary?.event)) {
+      return true;
+    }
+  }
+
+  for (const row of Array.isArray(dbJournal?.latestRows) ? dbJournal.latestRows : []) {
+    if (checkedBoundaryStaleClaimEventMatches(row?.event)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+function checkedBoundaryStaleClaimEventMatches(event) {
+  return event === 'stale-claim-abandoned'
+    || event === 'stale-claim-rejected'
+    || event === 'stale-claim-retry-started'
+    || event === 'stale-claim-retry-in-progress';
 }
 
 function checkedBoundaryStorageGuardMatches(dbJournal, productionAdapter, writerLease, nestedWriterLease, leaseFenceBoundary) {
