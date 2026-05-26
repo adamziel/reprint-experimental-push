@@ -8,14 +8,14 @@ linked implementation artifacts.
 
 <a id="2026-05-26-public-status-audit-114332"></a>
 
-- Freshness update plus reliable-head confirmation: `72b3ddce` remains the
+- Freshness update plus reliable-head confirmation: `c007bb25` remains the
   current reliable-executor head on the public page, and the visible status now
   points at this 11:43:32 audit refresh.
 - Gate posture remains conservative at `0/4`; no implementation verdict
   changed.
 - Latest blocker summary remains the same: real WordPress executor/auth and
   durable journal ownership still block any production push claim, and the
-  auth/session lifecycle trace is evidence but not a gate movement.
+  support-only readiness diagnostic work is evidence but not a gate movement.
 
 ## 2026-05-26 - Public Status Audit 11:41:58
 
