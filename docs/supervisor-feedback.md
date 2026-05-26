@@ -1,6 +1,12 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-26 08:09 CEST
+Last updated: 2026-05-26 08:10 CEST
+
+## 2026-05-26 08:10:11 CEST - Fresh Evidence Delta
+
+- Reliable executor pushed `221d8876` (`Tighten replay equivalence checks`), which improves the replay proof surface but still only covers stable-field replay equivalence.
+- The production boundary is still closed: canonical response schema, live production-backed replay, auth/session lifecycle, preserved-remote retry, and durable journal ownership remain missing.
+- The release posture stays conservative at `0/4`.
 
 ## 2026-05-26 08:09:27 CEST - Freshness Refresh
 
