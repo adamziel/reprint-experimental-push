@@ -695,6 +695,9 @@ function productionRecoverySupportReport(writer) {
   if (!Object.hasOwn(writer ?? {}, 'productionAdapter') || writer.productionAdapter !== true) {
     addMissingDependency('explicit production recovery adapter marker');
   }
+  if (!Object.hasOwn(writer ?? {}, 'schemaVersion')) {
+    addMissingDependency('restart-readable recovery journal schema');
+  }
   if (!Object.hasOwn(writer ?? {}, 'ownsJournal') || writer.ownsJournal !== true) {
     addMissingDependency('explicit journal ownership fencing');
   }
