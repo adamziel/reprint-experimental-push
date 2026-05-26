@@ -4039,6 +4039,62 @@ test('blocks _menu_item_object_id metadata from referencing a same-plan wp_navig
   assert.throws(() => applyPlan(baseSite(), plan), /Refusing to apply/);
 });
 
+test('blocks _menu_item_object_id metadata when the same-plan post target is itself blocked by a revision parent', () => {
+  const revisionResourceKey = 'row:["wp_posts","ID:2"]';
+  const blockedTargetResourceKey = 'row:["wp_posts","ID:3"]';
+  const postmetaResourceKey = 'row:["wp_postmeta","meta_id:474"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_title: 'Local revision parent',
+    post_content: 'local-private-revision-parent-body',
+    post_status: 'inherit',
+    post_type: 'revision',
+  };
+  local.db.wp_posts['ID:3'] = {
+    ID: 3,
+    post_title: 'Local blocked target post',
+    post_content: 'local-private-blocked-target-body',
+    post_status: 'publish',
+    post_parent: 2,
+  };
+  local.db.wp_postmeta = {
+    'meta_id:474': {
+      meta_id: 474,
+      post_id: 1,
+      meta_key: '_menu_item_object_id',
+      meta_value: 3,
+    },
+  };
+
+  const plan = planFor(base, local, baseSite());
+  const targetBlocker = plan.blockers.find((entry) => entry.resourceKey === blockedTargetResourceKey);
+  const postmetaBlocker = plan.blockers.find((entry) => entry.resourceKey === postmetaResourceKey);
+  const postmetaMutation = mutationFor(plan, postmetaResourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(mutationFor(plan, revisionResourceKey), undefined);
+  assert.equal(mutationFor(plan, blockedTargetResourceKey).changeKind, 'create');
+  assert.equal(postmetaMutation.changeKind, 'create');
+  assert.equal(targetBlocker.class, 'missing-wordpress-graph-dependency');
+  assert.equal(targetBlocker.references[0].relationshipType, 'post-parent');
+  assert.equal(targetBlocker.references[0].targetResourceKey, revisionResourceKey);
+  assert.equal(postmetaBlocker.class, 'missing-wordpress-graph-dependency');
+  assert.equal(postmetaBlocker.references[0].relationshipType, 'menu-item-object-post');
+  assert.equal(postmetaBlocker.references[0].targetResourceKey, blockedTargetResourceKey);
+  assert.equal(postmetaMutation.dependsOnMutationIds, undefined);
+  assert.equal(
+    JSON.stringify(postmetaBlocker).includes('local-private-revision-parent-body'),
+    false,
+  );
+  assert.equal(
+    JSON.stringify(postmetaBlocker).includes('local-private-blocked-target-body'),
+    false,
+  );
+  assert.throws(() => applyPlan(baseSite(), plan), /Refusing to apply/);
+});
+
 test('blocks _menu_item_object_id taxonomy metadata from referencing a same-plan term when a remote nav menu taxonomy already uses the term', () => {
   const resourceKey = 'row:["wp_postmeta","meta_id:475"]';
   const targetResourceKey = 'row:["wp_terms","term_id:7"]';
