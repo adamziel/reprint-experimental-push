@@ -247,12 +247,17 @@ test('guarded benchmark refuses production throughput claims until production ga
     fileHashing: 2,
     dbBatchPerTable: 2,
   });
+  assert.equal(report.claims.productionThroughputDetails.parallelismLimitsIntegral, true);
   assert.equal(
     report.claims.productionThroughputDetails.blockers.includes('production-memory-ceiling-not-measured'),
     false,
   );
   assert.equal(
     report.claims.productionThroughputDetails.blockers.includes('production-parallelism-limits-not-measured'),
+    false,
+  );
+  assert.equal(
+    report.claims.productionThroughputDetails.blockers.includes('production-parallelism-limits-not-integral'),
     false,
   );
   assert.equal(
@@ -333,6 +338,18 @@ test('guarded benchmark refuses production throughput claims until production ga
     productionThroughputBlockers(missingAlignedBackpressureProof).includes(
       'queue-pause-without-measured-and-aligned-receipt-cursor-backpressure-proof',
     ),
+  );
+
+  const fractionalParallelismLimits = clone(report);
+  fractionalParallelismLimits.claims.productionThroughputDetails.parallelismLimits.chunkUpload = 3.5;
+  assert.ok(
+    productionThroughputBlockers(fractionalParallelismLimits).includes(
+      'production-parallelism-limits-not-integral',
+    ),
+  );
+  assert.equal(
+    productionThroughputDetails(fractionalParallelismLimits).parallelismLimitsIntegral,
+    true,
   );
   assert.equal(report.results.preCommitFailure.remoteUnchanged, true);
   assert.equal(report.results.partialFailure.remoteUnchanged, false);

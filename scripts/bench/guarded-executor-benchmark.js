@@ -271,6 +271,13 @@ export function productionThroughputBlockers(report) {
     blockers.push('production-parallelism-limits-not-measured');
   }
   if (
+    !Number.isInteger(parallelismLimits?.chunkUpload)
+    || !Number.isInteger(parallelismLimits?.fileHashing)
+    || !Number.isInteger(parallelismLimits?.dbBatchPerTable)
+  ) {
+    blockers.push('production-parallelism-limits-not-integral');
+  }
+  if (
     !Number.isFinite(report.resourceLimits?.memoryCeilingBytes)
     || !Number.isFinite(report.evidence.chunkReceipts.resumeCursor?.sizeBytes)
     || report.evidence.chunkReceipts.resumeCursor.sizeBytes > report.resourceLimits.memoryCeilingBytes
@@ -966,6 +973,10 @@ export function productionThroughputDetails(report) {
     fileHashing: DEFAULT_LIMITS.maxHashConcurrency,
     dbBatchPerTable: DEFAULT_LIMITS.maxDbConcurrencyPerTable,
   };
+  const parallelismLimitsIntegral =
+    Number.isInteger(parallelismLimits.chunkUpload)
+    && Number.isInteger(parallelismLimits.fileHashing)
+    && Number.isInteger(parallelismLimits.dbBatchPerTable);
   const wordpressGraphIdentityPostmetaReferencesMatch =
     Number.isFinite(report.evidence.wordpressGraphIdentity?.postmetaReferences)
     && Number.isFinite(report.shape?.rowCount)
@@ -1052,6 +1063,7 @@ export function productionThroughputDetails(report) {
     productionStorageReceiptsMeasured,
     productionRowBatchExecutorMeasured,
     parallelismLimits,
+    parallelismLimitsIntegral,
     wordpressGraphIdentityPostmetaReferencesMatch,
     journalSuccessRecordTypes,
     journalSuccessReceiptKindsGrouped,
@@ -1113,6 +1125,7 @@ export function productionThroughputDetails(report) {
       productionStorageReceiptsMeasured,
       productionRowBatchExecutorMeasured,
       parallelismLimits,
+      parallelismLimitsIntegral,
       wordpressGraphIdentityPostmetaReferencesMatch,
       journalSuccessRecordTypes,
       journalSuccessReceiptKindsGrouped,

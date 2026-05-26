@@ -109,6 +109,9 @@ Current executable gate:
 - The production-throughput gate also fails closed if receipt-cursor queue
   slack appears without a queue pause, so orphaned slack evidence cannot stand
   in for bounded backpressure.
+- The report now also fails closed when the surfaced parallelism caps are not
+  whole-number concurrency limits, so a fractional or otherwise malformed cap
+  cannot masquerade as a bounded fast-path proof.
 - The production-throughput gate also fails closed if the success journal no
   longer keeps receipt flushes grouped by kind, so journal lag savings cannot
   hide interleaved recovery evidence.
