@@ -1,6 +1,12 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-26 04:37 CEST
+Last updated: 2026-05-26 04:38 CEST
+
+## 2026-05-26 04:38 CEST - Freshness Refresh
+
+- Refreshed the visible supervisor page because the public stamp had slipped behind the active cycle.
+- No gate moved and no new proof landed. The release posture remains `0/4`.
+- Next nudge: wait for a real release-proof delta, not another timestamp-only update.
 
 ## 2026-05-26 04:37 CEST - Freshness Refresh
 
