@@ -6,17 +6,17 @@ Changed files:
 
 Commands run:
 - `sed -n '1,260p' audits/objective-audit.md`
+- `git for-each-ref --sort=-committerdate --format='%(refname:short) %(objectname:short) %(committerdate:iso8601) %(subject)' refs/remotes/origin/lane | head -n 20`
 - `sed -n '1,220p' supervision/lanes/independent-auditor.md`
 - `git status --short --branch`
-- `git for-each-ref --sort=-committerdate --format='%(refname:short) %(objectname:short) %(committerdate:iso8601) %(subject)' refs/remotes/origin/lane | head -n 12`
-- `rg -n "94502462|23adb4d7|feedback-supervisor|progress-followup|freshness" audits/objective-audit.md`
+- `rg -n "feedback-supervisor|progress-followup|no-data-loss-invariants-integration|reliable-executor" audits/objective-audit.md`
 
 Push result:
 - Not run
 
 Worktree status:
-- Dirty tracked files: `audits/objective-audit.md`, `.lane-output/final.md`
-- Branch: `lane/cycle-20260525-mainwindows-2349/independent-auditor...origin/main [ahead 1511, behind 341]`
+- `lane/cycle-20260525-mainwindows-2349/independent-auditor...origin/main [ahead 1512, behind 344]`
+- Dirty tracked file: `audits/objective-audit.md`
 
 Next supervisor nudge:
-- Re-poll only when a lane lands live-source production proof or the release boundary materially changes; the newest heads are still progress-freshness and proof-hardening only.
+- Re-poll only when a lane lands live-source production proof or the release boundary materially changes; the latest relevant lane heads are still timeout hardening, fail-closed planner work, or freshness updates, not production-backed push proof.

@@ -39,14 +39,14 @@ The project is **not releasable as a production WordPress push path**.
 - `origin/lane/cycle-20260525-keep-busy-loop-2/no-data-loss-recovery` -> `63e01a49`
 - `origin/lane/cycle-20260525-mainwindows-2349/critic` -> `fa0dc8a0`
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `999ff0d8`
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `bfe116c7`
-- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `432f82a9`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `5c4f60cc`
+- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `f9e95355`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `2af1ddda`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `3718bfa4`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `7c394bcc`
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` -> `0ca7b35d`
 - `origin/lane/cycle-20260525-mainwindows-2357/no-data-loss-invariants-graph-proof` -> `98c0ce26`
 - `origin/lane/cycle-20260525-restart-2340/feedback-supervisor` -> `ef3d911e`
-- `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration` -> `0b33a5f9`
+- `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration` -> `7efe180b`
 - `origin/lane/critic` -> `443dacd6`
 - `origin/lane/fast-paths` -> `8c5c2ccb`
 - `origin/lane/feedback-supervisor` -> `ee7069e6`
@@ -54,7 +54,7 @@ The project is **not releasable as a production WordPress push path**.
 - `origin/lane/no-data-loss-invariants` -> `0247563b`
 - `origin/lane/no-data-loss-recovery` -> `9e077c10`
 - `origin/lane/progress-publisher` -> `7695e1f9`
-- `origin/lane/reliable-executor` -> `d96a6c3a`
+- `origin/lane/reliable-executor` -> `5a2e50a9`
 - `origin/lane/same-plan-wordpress-graph-create` -> `8dea1ca3`
 - `origin/main` -> `56063f13`
 
@@ -65,7 +65,7 @@ real source-site mutation boundary. The release gates still stay `0/4`.
 Fresh lane proof since the last audit pass improved the local evidence floor,
 but it did not change the release conclusion:
 
-- `origin/lane/reliable-executor` now records `d96a6c3a`, hardening live proof
+- `origin/lane/reliable-executor` now records `5a2e50a9`, hardening live proof
   failure summaries, but it still does not prove production auth/session
   lifecycle or a live-source mutation boundary.
 - `origin/lane/reliable-executor` now records `3676a5ad`, tightening the
