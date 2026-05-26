@@ -634,6 +634,8 @@ test('production-shaped release verify command fails closed when production auth
     proof.stdout,
     /"boundary": \{\s*"firstRemainingProductionBoundary": "auth\/session lifecycle and durable journal semantics",\s*"status": "unimplemented",\s*"verdict": "PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED",\s*"durableJournal": \{\s*"storageLeaseFence": "production durable journal storage, lease, and fencing are not yet proven beyond the retained Playground journal path",\s*"verdict": "PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED"\s*\},\s*"authSession": \{\s*"required": "production-auth-session",\s*"observed": "unreachable-live-source",\s*"verdict": "PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED"\s*\},\s*"liveSource": \{\s*"url": "http:\/\/127\.0\.0\.1:8080",\s*"verdict": "PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED",\s*"error": "fetch failed"\s*\}\s*\}/,
   );
+  assert.match(proof.stdout, /"authSessionLifecycle": null/);
+  assert.match(proof.stdout, /"authSessionLifecycleTrace": \[\s*\]/);
   assert.match(
     proof.stdout,
     /"gateDependencies": \{\s*"productionAuthSession": "production-backed auth\/session issuance, read, expiry, rotation, revocation, and cleanup on the checked release path",\s*"durableJournal": "production durable journal storage with lease fencing, restart-readable artifacts, and release-path consumption",\s*"replayAndRetry": "checked live replay equivalence plus preserved-remote retry on the release verifier path"\s*\}/,

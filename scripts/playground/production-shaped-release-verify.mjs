@@ -337,6 +337,8 @@ if (requireProductionAuthSession) {
               type: 'missing-live-source',
             },
           },
+          authSessionLifecycle: null,
+          authSessionLifecycleTrace: [],
           releaseProof: {
             ok: false,
             status: 409,
@@ -399,6 +401,8 @@ if (requireProductionAuthSession) {
               type: 'unreachable-live-source',
             },
           },
+          authSessionLifecycle: null,
+          authSessionLifecycleTrace: [],
           releaseProof: {
             ok: false,
             status: 409,
