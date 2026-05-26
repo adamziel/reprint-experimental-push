@@ -1248,6 +1248,18 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
     'group',
   );
   assert.equal(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'skip-plugin-validators-on-package-hash')?.rejectedGate,
+    'group',
+  );
+  assert.ok(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'skip-plugin-validators-on-package-hash')?.violates.includes('atomic-groups'),
+    'cached package hashes still cannot bypass plugin validators across the atomic-group boundary',
+  );
+  assert.ok(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'skip-plugin-validators-on-package-hash')?.violates.includes('plugin-preconditions'),
+    'cached package hashes still cannot bypass plugin validators or readiness checks',
+  );
+  assert.equal(
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-file-hash-skips-large-upload-chunk-upload')?.rejectedGate,
     'recovery',
   );
