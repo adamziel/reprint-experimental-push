@@ -256,6 +256,17 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
   assert.ok(
     model.safeFastPaths.some(
       (fastPath) =>
+        fastPath.allowedShortcut === 'reuse-plan-scoped-chunk-hashes-and-receipts-for-resume-only-validation' &&
+        fastPath.area === 'file-hashing' &&
+        fastPath.guardrails.includes('chunk-hashes-stay-plan-scoped') &&
+        fastPath.gateProofs.skip.includes('skip duplicate chunk verification') &&
+        fastPath.failureEvidence.includes('chunk receipt set'),
+    ),
+    'file hashing keeps resume-only chunk hash validation bounded by durable receipts',
+  );
+  assert.ok(
+    model.safeFastPaths.some(
+      (fastPath) =>
         fastPath.allowedShortcut === 'compress-durable-receipt-logs-and-reuse-stable-receipt-keys-for-bounded-replay' &&
         fastPath.area === 'backpressure' &&
         fastPath.visibilityBoundary === 'recovery-evidence-only' &&

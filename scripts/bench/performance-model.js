@@ -108,6 +108,26 @@ export const SAFE_FAST_PATHS = Object.freeze([
   },
   {
     area: 'file-hashing',
+    reduces: ['duplicate-chunk-rehash-work', 'duplicate-resume-validation-time'],
+    allowedShortcut: 'reuse-plan-scoped-chunk-hashes-and-receipts-for-resume-only-validation',
+    guardrails: [
+      'chunk-hashes-stay-plan-scoped',
+      'durable-receipts-still-drive-resume-validation',
+    ],
+    gateProofs: {
+      skip: 'a resume can skip duplicate chunk verification when the cached chunk hashes match the plan-scoped durable receipts for the same file window',
+      live: 'the final publish still compares the live remote resource hash against the expected file precondition',
+      group: 'receipt reuse only narrows resume validation inside one file boundary and never widens an atomic group',
+      recovery: 'the chunk-hash ledger is advisory; durable chunk receipts and the guarded publish record still classify whether the upload survived failure',
+    },
+    visibilityBoundary: 'resume-validation-only',
+    failureEvidence: 'plan-scoped chunk hash ledger plus durable chunk receipt set',
+    bypassesLivePreconditions: false,
+    splitsAtomicGroup: false,
+    publishesStagedDataEarly: false,
+  },
+  {
+    area: 'file-hashing',
     reduces: ['duplicate-chunk-rehash-work', 'resume-recompute-time'],
     allowedShortcut: 'reuse-cached-chunk-ledger-for-resume-with-live-publish-check',
     guardrails: [
