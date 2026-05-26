@@ -325,8 +325,10 @@ test('guarded benchmark blocks forged memory-ceiling visibility without queue-bu
   tampered.evidence.backpressure.receiptCursorMemoryCeilingVisible = true;
   tampered.evidence.backpressure.queueBudgetVisible = false;
 
+  const details = productionThroughputDetails(tampered);
   const blockers = productionThroughputBlockers(tampered);
 
+  assert.equal(details.receiptCursorMemoryCeilingVisibleAndMeasured, false);
   assert.equal(blockers.includes('memory-ceiling-visible-without-queue-budget-visibility'), true);
   assert.equal(blockers.includes('queue-budget-visible-without-memory-ceiling-visibility'), false);
 });

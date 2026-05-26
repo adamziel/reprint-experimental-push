@@ -1525,6 +1525,11 @@ export function productionThroughputDetails(report) {
     && receiptCursorMemoryHeadroomBytes <= receiptCursorMemoryCeilingBytes - receiptCursorWindowBytes;
   const receiptCursorMemoryHeadroomVisibleAndMeasured =
     receiptCursorMemoryHeadroomVisible && Number.isFinite(receiptCursorMemoryHeadroomBytes);
+  const receiptCursorMemoryCeilingVisibleAndMeasured =
+    receiptCursorMemoryCeilingVisible
+    && queueBudgetVisible
+    && queueHeadroomVisible
+    && queueHeadroomMeasured;
   const journalSuccessRecordTypes = report.evidence.journal?.successRecordTypes ?? [];
   const journalSuccessReceiptKinds = journalSuccessRecordTypes.map((recordType) => receiptKindForRecordType(recordType));
   const journalSuccessReceiptKindLedger = summarizeReceiptKinds(journalSuccessReceiptKinds);
@@ -1668,8 +1673,7 @@ export function productionThroughputDetails(report) {
     queueHeadroomVisibleAndQueueSlackMeasured,
     queueHeadroomVisibleAndQueueSlackVisibleAndMeasured,
     receiptCursorMemoryCeilingVisible,
-    receiptCursorMemoryCeilingVisibleAndMeasured:
-      receiptCursorMemoryCeilingVisible && queueHeadroomMeasured,
+    receiptCursorMemoryCeilingVisibleAndMeasured,
     receiptCursorMemoryCeilingVisibleAndQueueHeadroomVisible,
     receiptCursorMemoryCeilingVisibleAndQueueHeadroomVisibleAndSafe,
     receiptCursorMemoryHeadroomPositive: receiptCursorMemoryHeadroomPositiveVisible,
@@ -1778,8 +1782,7 @@ export function productionThroughputDetails(report) {
       queueHeadroomVisibleAndQueueSlackMeasured,
       queueHeadroomVisibleAndQueueSlackVisibleAndMeasured,
       receiptCursorMemoryCeilingVisible,
-      receiptCursorMemoryCeilingVisibleAndMeasured:
-        receiptCursorMemoryCeilingVisible && queueHeadroomMeasured,
+      receiptCursorMemoryCeilingVisibleAndMeasured,
       receiptCursorMemoryCeilingVisibleAndQueueHeadroomVisible,
       receiptCursorMemoryCeilingVisibleAndQueueHeadroomVisibleAndSafe,
       productionAtomicGroupMetadataVisible,

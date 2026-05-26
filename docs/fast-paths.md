@@ -210,6 +210,10 @@ Current executable gate:
 - The same details also fail closed if queue-budget visibility appears without
   memory-ceiling visibility, so a partial paused-backpressure summary cannot
   look complete when the ceiling boundary is hidden.
+- The same details also fail closed if the raw memory-ceiling visibility bit
+  appears while the queue-budget or queue-headroom visibility bit is hidden,
+  so a partial pause boundary cannot still look visible-and-measured from the
+  ceiling probe alone.
 - The same details also fail closed if memory-ceiling visibility appears
   without queue-budget visibility, so the backpressure visibility boundary
   stays symmetric.
