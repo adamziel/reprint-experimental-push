@@ -1,15 +1,15 @@
 # Critic Verdict
 
-Current reliable head: `8e3fc40683844d2356398b9c9063b476d70d748a`
-(`Accept loopback auth session source origins`).
+Current reliable head: `0dabb6b78d87ff946f08343749d27e1176fabff3`
+(`Fail closed on cleaned-up auth session status`).
 
 Verdict: `0/4`
 
 Reason:
 
-- This head improves auth/session source handling by accepting loopback
-  origins, but it is still support-side source plumbing rather than a checked
-  production boundary crossing.
+- This head hardens cleaned-up auth-session status handling by failing closed
+  after session cleanup/revocation, but it is still support-side lifecycle
+  hardening rather than a checked production boundary crossing.
 - The checked release path still lacks live production auth/session
   issuance/read/expiry/rotation/revocation/cleanup evidence, and it still does
   not prove production durable-journal ownership with restart-readable replay
