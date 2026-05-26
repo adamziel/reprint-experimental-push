@@ -13,13 +13,12 @@ Commands:
 - `git status --short --branch`
 
 Push result:
-- No commit
-- No push
+- Commit `be4e9fce` pushed to `origin/lane/cycle-20260525-mainwindows-2349/progress-followup`
 
 Worktree status:
-- Modified: `.lane-output/final.md`, `docs/progress-log.md`, `progress.html`
+- Clean after commit and push
 - Branch: `lane/cycle-20260525-mainwindows-2349/progress-followup`
-- Relative to `origin/main`: `ahead 319, behind 109`
+- Relative to `origin/main`: still ahead of `origin/main` by the pushed lane commits; the public surface remains conservative at `0/4`
 
 Next supervisor nudge:
-- Push the refreshed public page so the GitHub Pages copy stays aligned with the active supervision cycle; keep the conservative `0/4` posture and wait for a real gate change before broadening claims.
+- Keep the public page aligned with the active supervision cycle; wait for a real gate change before broadening claims.
