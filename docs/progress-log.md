@@ -6,17 +6,19 @@ linked implementation artifacts.
 
 ## 2026-05-26 - Current Supervisor Snapshot
 
-- Status: the current reliable head is `e7be9812` (`Fail fast on readiness 502s`),
-  and the same-plan proof set remains intact for the existing postmeta,
-  parent-post, thumbnail, taxonomy, term-taxonomy-parent, termmeta, and
-  term-taxonomy term cases.
-- New proof: no new executable graph proof landed this pass.
+- Status: the current reliable head is `5fd9dfb4` (`Wire production recovery journal
+  into release smoke`), and the same-plan proof set remains intact for the
+  existing postmeta, parent-post, thumbnail, taxonomy, term-taxonomy-parent,
+  termmeta, and term-taxonomy term cases.
+- New proof: the release-journal smoke is now wired to the production recovery
+  journal helper, but no gate-moving production proof landed this pass.
 - Trend: the lane remains at `0/4` because the current reliable head is
-  readiness-boundary support work, not a production release proof.
+  release-journal smoke support, not a production release proof.
 - Blocker: the live release boundary still needs production auth/session,
   durable journal consumption, replay, or preserved-remote retry evidence.
 - Next nudge: keep the public page current with the reliable head while the
-  release gates stay closed.
+  release gates stay closed and wait for critic/auditor acceptance before any
+  gate movement.
 - Public page: [progress.html](../progress.html) carries the visible update
   date and keeps details behind links.
 
