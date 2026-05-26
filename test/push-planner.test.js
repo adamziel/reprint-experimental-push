@@ -405,6 +405,51 @@ test('blocks a local post author reference to a same-plan user even when an unre
   assert.equal(JSON.stringify(blocker).includes('remote-attachment-body'), false);
 });
 
+test('blocks an existing post author retarget to a same-plan user even when an unrelated remote attachment exists', () => {
+  const postResourceKey = 'row:["wp_posts","ID:1"]';
+  const userResourceKey = 'row:["wp_users","ID:2"]';
+  const base = baseSite();
+  const local = baseSite();
+  const remote = baseSite();
+
+  local.db.wp_users = {
+    'ID:2': {
+      ID: 2,
+      user_login: 'local-author',
+    },
+  };
+  local.db.wp_posts['ID:1'] = {
+    ...local.db.wp_posts['ID:1'],
+    post_title: 'Local retargeted authored post',
+    post_content: 'local-private-retargeted-post-body',
+    post_author: 2,
+  };
+  remote.db.wp_posts['ID:9'] = {
+    ID: 9,
+    post_title: 'Remote attachment noise',
+    post_content: 'remote-attachment-body',
+    post_status: 'inherit',
+    post_type: 'attachment',
+  };
+
+  const plan = planFor(base, local, remote);
+  const postMutation = mutationFor(plan, postResourceKey);
+  const userBlocker = plan.blockers.find((entry) => entry.resourceKey === userResourceKey);
+  const postBlocker = plan.blockers.find((entry) => entry.resourceKey === postResourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(postMutation.changeKind, 'update');
+  assert.equal(userBlocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(userBlocker.surface, 'users');
+  assert.equal(postBlocker.class, 'missing-wordpress-graph-dependency');
+  assert.equal(postBlocker.references[0].relationshipType, 'post-author-user');
+  assert.equal(postBlocker.references[0].targetResourceKey, userResourceKey);
+  assert.match(postBlocker.reason, /without a matching supported target create mutation/);
+  assert.equal(JSON.stringify(postBlocker).includes('local-author'), false);
+  assert.equal(JSON.stringify(postBlocker).includes('local-private-retargeted-post-body'), false);
+  assert.equal(JSON.stringify(postBlocker).includes('remote-attachment-body'), false);
+});
+
 test('blocks a local commentmeta reference owned by a same-plan comment', () => {
   const base = baseSite();
   const local = baseSite();
