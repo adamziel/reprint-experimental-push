@@ -855,6 +855,54 @@ test('production-shaped release verify prefers the consumed production auth/sess
   );
 });
 
+test('production-shaped release verify preserves an explicit live source URL unless source override is required', () => {
+  const source = {
+    ok: true,
+    sourceUrl: 'http://127.0.0.1:8080',
+    username: 'reprint_push_admin',
+    applicationPassword: 'reprint-push-admin-app-password',
+  };
+  assert.deepEqual(
+    resolveAuthSessionSourceCredentials(
+      {
+        liveSourceUrl: 'http://127.0.0.1:9090',
+        username: 'trusted-runtime-username',
+        applicationPassword: 'trusted-runtime-password',
+      },
+      source,
+    ),
+    {
+      liveSourceUrl: 'http://127.0.0.1:9090',
+      username: 'reprint_push_admin',
+      applicationPassword: 'reprint-push-admin-app-password',
+    },
+  );
+});
+
+test('production-shaped release verify fills missing direct auth/session credentials from the consumed source', () => {
+  const source = {
+    ok: true,
+    sourceUrl: 'http://127.0.0.1:8080',
+    username: 'reprint_push_admin',
+    applicationPassword: 'reprint-push-admin-app-password',
+  };
+  assert.deepEqual(
+    resolveAuthSessionSourceCredentials(
+      {
+        liveSourceUrl: '',
+        username: '',
+        applicationPassword: '',
+      },
+      source,
+    ),
+    {
+      liveSourceUrl: 'http://127.0.0.1:8080',
+      username: 'reprint_push_admin',
+      applicationPassword: 'reprint-push-admin-app-password',
+    },
+  );
+});
+
 test('production-shaped release verify can force the production auth/session source to override stale env credentials', () => {
   const source = {
     ok: true,

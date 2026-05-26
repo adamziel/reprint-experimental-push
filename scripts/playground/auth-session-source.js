@@ -110,11 +110,11 @@ export function resolveAuthSessionSourceCredentials({
   }
 
   return {
-    liveSourceUrl: preferSource ? normalizedSourceUrl : normalizedSourceUrl || liveSourceUrl,
-    username: preferSource ? normalizedUsername : normalizedUsername || username,
+    liveSourceUrl: preferSource ? normalizedSourceUrl : liveSourceUrl || normalizedSourceUrl,
+    username: normalizedUsername,
     applicationPassword: preferSource
       ? normalizedApplicationPassword
-      : normalizedApplicationPassword || applicationPassword,
+      : normalizedApplicationPassword,
   };
 }
 
