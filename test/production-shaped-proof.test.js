@@ -905,6 +905,9 @@ test('packaged production plugin readiness helper retries only startup-shaped pa
     body: {
       ok: true,
       routeProfile: {
+        profile: 'production-shaped',
+        restNamespace: 'reprint/v1',
+        routePrefix: '/push',
         labBacked: false,
       },
       auth: {
@@ -1013,6 +1016,9 @@ test('packaged production plugin readiness helper retries only startup-shaped pa
       body: {
         ok: true,
         routeProfile: {
+          profile: 'production-shaped',
+          restNamespace: 'reprint/v1',
+          routePrefix: '/push',
           labBacked: true,
         },
         auth: {
@@ -1032,6 +1038,9 @@ test('packaged production plugin readiness helper retries only startup-shaped pa
       body: {
         ok: true,
         routeProfile: {
+          profile: 'production-shaped',
+          restNamespace: 'reprint/v1',
+          routePrefix: '/push',
           labBacked: false,
         },
         auth: {
@@ -1047,6 +1056,70 @@ test('packaged production plugin readiness helper retries only startup-shaped pa
   );
   assert.equal(
     packagedProductionPluginPreflightRetryable(strictReadyPreflight),
+    false,
+  );
+  assert.equal(
+    packagedProductionPluginPreflightReady({
+      status: 200,
+      body: {
+        ok: true,
+        routeProfile: {
+          profile: 'lab-authenticated',
+          restNamespace: 'reprint/v1',
+          routePrefix: '/push',
+          labBacked: false,
+        },
+        auth: strictReadyPreflight.body.auth,
+      },
+    }),
+    false,
+  );
+  assert.equal(
+    packagedProductionPluginPreflightReady({
+      status: 200,
+      body: {
+        ok: true,
+        routeProfile: {
+          profile: 'production-shaped',
+          restNamespace: 'reprint-push-lab/v1',
+          routePrefix: '/push',
+          labBacked: false,
+        },
+        auth: strictReadyPreflight.body.auth,
+      },
+    }),
+    false,
+  );
+  assert.equal(
+    packagedProductionPluginPreflightReady({
+      status: 200,
+      body: {
+        ok: true,
+        routeProfile: {
+          profile: 'production-shaped',
+          restNamespace: 'reprint/v1',
+          routePrefix: '/authenticated',
+          labBacked: false,
+        },
+        auth: strictReadyPreflight.body.auth,
+      },
+    }),
+    false,
+  );
+  assert.equal(
+    packagedProductionPluginPreflightRetryable({
+      status: 200,
+      body: {
+        ok: true,
+        routeProfile: {
+          profile: 'lab-authenticated',
+          restNamespace: 'reprint/v1',
+          routePrefix: '/push',
+          labBacked: false,
+        },
+        auth: strictReadyPreflight.body.auth,
+      },
+    }),
     false,
   );
 });

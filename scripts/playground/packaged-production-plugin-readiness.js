@@ -1,5 +1,12 @@
 import { evaluateProductionAuthSessionLifecycle } from './production-auth-session-lifecycle.js';
 
+function packagedProductionPluginRouteProfileReady(routeProfile) {
+  return routeProfile?.profile === 'production-shaped'
+    && routeProfile?.restNamespace === 'reprint/v1'
+    && routeProfile?.routePrefix === '/push'
+    && routeProfile?.labBacked === false;
+}
+
 function packagedProductionPluginRouteNotReady(response) {
   return response?.status === 404 && response?.body?.code === 'rest_no_route';
 }
@@ -24,7 +31,7 @@ export function packagedProductionPluginPreflightReady(preflight) {
     return false;
   }
 
-  return preflight.body?.routeProfile?.labBacked === false
+  return packagedProductionPluginRouteProfileReady(preflight.body?.routeProfile)
     && evaluateProductionAuthSessionLifecycle(preflight.body?.auth?.session).ok;
 }
 
