@@ -27603,6 +27603,13 @@ test('orders same-plan user dependency references deterministically within the s
     post_status: 'publish',
     post_author: 24,
   };
+  local.db.wp_posts['ID:26'] = {
+    ID: 26,
+    post_title: 'Local later post authored by same-plan ordered bucket user',
+    post_content: 'Local later post authored by same-plan ordered bucket user body',
+    post_status: 'draft',
+    post_author: 24,
+  };
   local.db.wp_comments = {
     'comment_ID:24': {
       comment_ID: 24,
@@ -27661,6 +27668,7 @@ test('orders same-plan user dependency references deterministically within the s
       ['usermeta-user', 'row:["wp_usermeta","umeta_id:24"]'],
       ['usermeta-user', 'row:["wp_usermeta","umeta_id:25"]'],
       ['post-author', 'row:["wp_posts","ID:24"]'],
+      ['post-author', 'row:["wp_posts","ID:26"]'],
     ],
   );
   assert.equal(blocker.references.every((reference) => reference.targetResourceKey === resourceKey), true);
@@ -27675,6 +27683,8 @@ test('orders same-plan user dependency references deterministically within the s
   assert.equal(planJson.includes('Local ordered dependent locale'), false);
   assert.equal(planJson.includes('Local post authored by same-plan ordered bucket user'), false);
   assert.equal(planJson.includes('Local post authored by same-plan ordered bucket user body'), false);
+  assert.equal(planJson.includes('Local later post authored by same-plan ordered bucket user'), false);
+  assert.equal(planJson.includes('Local later post authored by same-plan ordered bucket user body'), false);
   assert.equal(planJson.includes('local-ordered-dependent-user'), false);
   assert.equal(remote.plugins.forms.description, 'remote-only plugin changes');
   assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin changes */');
