@@ -105,6 +105,10 @@ test('guarded executor benchmark moves buffers and row payloads through durable 
   assert.equal(report.evidence.atomicGroup.productionStorageReceiptsMeasured, false);
   assert.equal(report.evidence.atomicGroup.productionAtomicGroupMetadataVisible, false);
   assert.equal(report.evidence.atomicGroup.productionStorageReceiptsVisible, false);
+  assert.equal(
+    report.claims.productionThroughputDetails.atomicGroup.productionStorageReceiptsVisibleAndAtomicGroupMetadataVisible,
+    false,
+  );
   assert.equal(report.claims.productionThroughputDetails.productionStorageReceiptsVisibleAndAtomicCommitVisible, false);
   assert.equal(
     report.claims.productionThroughputDetails.atomicGroup.productionStorageReceiptsVisibleAndAtomicCommitVisible,
@@ -737,6 +741,11 @@ test('production claim gate fails closed if benchmark evidence is tampered', () 
   visibleStorageReceiptWithoutAtomicGroupMetadata.evidence.atomicGroup.productionAtomicGroupMetadataVisible = false;
   visibleStorageReceiptWithoutAtomicGroupMetadata.evidence.atomicGroup.productionStorageReceiptsMeasured = true;
   visibleStorageReceiptWithoutAtomicGroupMetadata.evidence.atomicGroup.productionStorageReceiptsVisible = true;
+  assert.equal(
+    productionThroughputDetails(visibleStorageReceiptWithoutAtomicGroupMetadata).atomicGroup
+      .productionStorageReceiptsVisibleAndAtomicGroupMetadataVisible,
+    false,
+  );
   assert.ok(
     productionThroughputBlockers(visibleStorageReceiptWithoutAtomicGroupMetadata).includes(
       'production-storage-receipts-without-atomic-group-metadata',

@@ -1213,6 +1213,8 @@ export function productionThroughputDetails(report) {
     report.evidence.atomicGroup?.productionStorageReceiptsVisible === true;
   const productionRowBatchExecutorVisible =
     report.evidence.atomicGroup?.productionRowBatchExecutorVisible === true;
+  const productionStorageReceiptsVisibleAndAtomicGroupMetadataVisible =
+    productionStorageReceiptsVisible && productionAtomicGroupMetadataVisible;
   const productionStorageReceiptsVisibleAndAtomicCommitVisible =
     productionStorageReceiptsVisible && productionAtomicCommitVisible;
   const productionRowBatchExecutorVisibleAndAtomicCommitVisible =
@@ -1348,6 +1350,7 @@ export function productionThroughputDetails(report) {
     productionRowBatchExecutorMeasured,
     productionAtomicGroupMetadataVisible,
     productionStorageReceiptsVisible,
+    productionStorageReceiptsVisibleAndAtomicGroupMetadataVisible,
     productionStorageReceiptsVisibleAndAtomicCommitVisible,
     productionRowBatchExecutorVisibleAndAtomicCommitVisible,
     productionAtomicGroupMetadataProven,
@@ -1434,6 +1437,7 @@ export function productionThroughputDetails(report) {
       productionAtomicCommitMeasured,
       productionAtomicCommitVisible,
       productionStorageReceiptsMeasured,
+      productionStorageReceiptsVisibleAndAtomicGroupMetadataVisible,
       productionStorageReceiptsVisibleAndAtomicCommitVisible,
       productionRowBatchExecutorMeasured,
       productionRowBatchExecutorVisibleAndAtomicCommitVisible,
@@ -1453,6 +1457,7 @@ export function productionThroughputDetails(report) {
       productionAtomicCommitMeasured,
       productionAtomicCommitVisible,
       productionStorageReceiptsMeasured,
+      productionStorageReceiptsVisibleAndAtomicGroupMetadataVisible,
       productionStorageReceiptsVisibleAndAtomicCommitVisible,
       productionRowBatchExecutorMeasured,
       productionRowBatchExecutorVisibleAndAtomicCommitVisible,
