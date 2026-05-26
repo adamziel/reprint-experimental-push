@@ -955,6 +955,27 @@ function persistedProductionArtifactRefs(journalPath) {
     }
   }
 
+  if (persistedJournalPath !== null && persistedJournalPath !== journalPath) {
+    return {
+      journal: null,
+      remote: null,
+      invalidReason: 'Production recovery journal persistence includes an invalid owned journal artifact path.',
+    };
+  }
+  if (
+    persistedRemoteArtifactPath !== null
+    && (
+      persistedRemoteArtifactPath === journalPath
+      || (persistedJournalPath !== null && persistedRemoteArtifactPath === persistedJournalPath)
+    )
+  ) {
+    return {
+      journal: null,
+      remote: null,
+      invalidReason: 'Production recovery journal persistence includes an invalid owned remote artifact path.',
+    };
+  }
+
   return {
     journal: persistedJournalPath,
     remote: persistedRemoteArtifactPath,
