@@ -6,9 +6,9 @@ The project is **not releasable as a production WordPress push path**.
 
 Fresh remote heads at audit time, checked on May 26, 2026:
 
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `a56a1277`
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `1fc95c16`
-- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `97bdf8ab`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `10467f73`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `540b8b24`
+- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `de494dd9`
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `016801a5`
 - `origin/lane/reliable-executor` -> `290b4d5e`
 - `origin/lane/no-data-loss-invariants` -> `eec3620e`
@@ -32,9 +32,9 @@ Fresh lane proof since the last audit pass improved the local evidence floor,
 but it did not change the release conclusion:
 
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now records
-  `fafed11b`, refreshing public progress freshness only.
+  `10467f73`, refreshing public progress freshness only.
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now records
-  `1fc95c16`, refreshing the supervisor progress surface only.
+  `540b8b24`, refreshing the supervisor progress surface only.
 - `origin/lane/reliable-executor` now records `290b4d5e`, hardening
   Playground startup failure reporting and child cleanup only.
 - `origin/lane/no-data-loss-invariants` now records `eec3620e`, adding termmeta
@@ -43,7 +43,7 @@ but it did not change the release conclusion:
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` now
   records `d121c210`, failing closed on inspected remote artifact refs. It
   still does not add production-backed journal ownership or replay proof.
-- `origin/lane/independent-auditor` now records `e89dfce4`. This refreshes the
+- `origin/lane/independent-auditor` now records `de494dd9`. This refreshes the
   audit snapshot only and does not change the release boundary.
 - `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration`
   now records `efd20c08`, adding attachment-parent invariants proof only.
