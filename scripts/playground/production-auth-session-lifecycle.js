@@ -72,7 +72,28 @@ export function evaluateProductionAuthSessionLifecycleSummary(summary, now = Dat
     };
   }
 
-  const issuedLifecycle = evaluateProductionAuthSessionLifecycle(summary.issued, now);
+  const issuedObservation = summary.issued;
+  if (!issuedObservation || typeof issuedObservation !== 'object') {
+    return {
+      ok: false,
+      required: 'issued preflight',
+      observed: 'missing',
+    };
+  }
+
+  if (
+    Object.prototype.hasOwnProperty.call(issuedObservation, 'step')
+    && issuedObservation.step !== null
+    && issuedObservation.step !== 'preflight'
+  ) {
+    return {
+      ok: false,
+      required: 'issued preflight',
+      observed: issuedObservation.step || 'missing',
+    };
+  }
+
+  const issuedLifecycle = evaluateProductionAuthSessionLifecycle(issuedObservation, now);
   if (!issuedLifecycle.ok) {
     return issuedLifecycle;
   }
@@ -205,7 +226,7 @@ export function summarizeProductionAuthSessionLifecycleTrace(trace) {
       || entry.step === 'dry-run') ?? null;
 
   return {
-    issued: observations[0] ?? null,
+    issued: observations.find((entry) => entry.step === 'preflight') ?? null,
     read: readObservation,
     expired: observations.find((entry) => entry.expired) ?? null,
     revoked: observations.find((entry) => entry.revoked) ?? null,
