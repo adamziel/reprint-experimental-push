@@ -539,11 +539,16 @@ function reprint_push_lab_rest_authenticated_recovery_inspect(WP_REST_Request $r
     $response = reprint_push_lab_rest_recovery_inspect($request);
     $result = $response->get_data();
     if (is_array($result)) {
-        $result = reprint_push_lab_rest_attach_checked_recovery_journal_evidence(
-            $result,
+        $checked_db_journal = reprint_push_lab_db_journal_summary(
+            20,
             reprint_push_lab_rest_checked_production_journal_surface($request)
         );
-        $result = reprint_push_lab_rest_attach_checked_db_journal_contract($result, true);
+        $result = reprint_push_lab_rest_attach_checked_recovery_journal_evidence(
+            $result,
+            reprint_push_lab_rest_checked_production_journal_surface($request),
+            $checked_db_journal
+        );
+        $result = reprint_push_lab_rest_attach_checked_db_journal_contract($result, true, $checked_db_journal);
         $result['responseSchemaVersion'] = 1;
         $result['auth'] = reprint_push_lab_rest_auth_evidence($request);
         $result['signedRequest'] = reprint_push_lab_rest_signed_request_evidence($request);
@@ -554,7 +559,8 @@ function reprint_push_lab_rest_authenticated_recovery_inspect(WP_REST_Request $r
 
 function reprint_push_lab_rest_attach_checked_recovery_journal_evidence(
     array $result,
-    bool $checked_surface = false
+    bool $checked_surface = false,
+    ?array $checked_db_journal = null
 ): array {
     if (!isset($result['recovery']) || !is_array($result['recovery'])) {
         return $result;
@@ -609,7 +615,9 @@ function reprint_push_lab_rest_attach_checked_recovery_journal_evidence(
 
     $result['recovery']['journal']['integrity'] = $existing_integrity;
 
-    $checked_db_journal = reprint_push_lab_db_journal_checked_boundary_contract($checked_surface);
+    $checked_db_journal = is_array($checked_db_journal)
+        ? $checked_db_journal
+        : reprint_push_lab_db_journal_checked_boundary_contract($checked_surface);
     $result['recovery']['journal'] = reprint_push_lab_rest_merge_checked_recovery_journal_contract(
         $result['recovery']['journal'],
         $checked_db_journal
