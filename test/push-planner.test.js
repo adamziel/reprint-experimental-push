@@ -20418,6 +20418,7 @@ test('production durable journal claims fail closed when restart inspection omit
 
   assert.equal(error.code, 'PRODUCTION_DURABLE_JOURNAL_UNSUPPORTED');
   assert.deepEqual(error.details.missingDependency, [
+    'supported production recovery journal adapter surface',
     'restart-readable recovery artifact references',
   ]);
 });
@@ -20467,6 +20468,7 @@ test('production durable journal claims fail closed when an advertised artifact 
 
   assert.equal(error.code, 'PRODUCTION_DURABLE_JOURNAL_UNSUPPORTED');
   assert.deepEqual(error.details.missingDependency, [
+    'restart-readable recovery journal adapter',
     'restart-readable recovery artifact references',
   ]);
 });
@@ -20515,6 +20517,7 @@ test('production durable journal claims fail closed when advertised artifact ref
 
   assert.equal(error.code, 'PRODUCTION_DURABLE_JOURNAL_UNSUPPORTED');
   assert.deepEqual(error.details.missingDependency, [
+    'restart-readable recovery journal adapter',
     'restart-readable recovery artifact references',
   ]);
 });
@@ -20566,6 +20569,7 @@ test('production durable journal claims fail closed when advertised artifact ref
 
   assert.equal(error.code, 'PRODUCTION_DURABLE_JOURNAL_UNSUPPORTED');
   assert.deepEqual(error.details.missingDependency, [
+    'restart-readable recovery journal adapter',
     'restart-readable recovery artifact references',
   ]);
 });
@@ -20617,6 +20621,7 @@ test('production durable journal claims fail closed when inspection advertises a
 
   assert.equal(error.code, 'PRODUCTION_DURABLE_JOURNAL_UNSUPPORTED');
   assert.deepEqual(error.details.missingDependency, [
+    'restart-readable recovery journal adapter',
     'restart-readable recovery artifact references',
   ]);
 });
@@ -20668,6 +20673,7 @@ test('production durable journal claims fail closed when inspection artifact ref
 
   assert.equal(error.code, 'PRODUCTION_DURABLE_JOURNAL_UNSUPPORTED');
   assert.deepEqual(error.details.missingDependency, [
+    'restart-readable recovery journal adapter',
     'restart-readable recovery artifact references',
   ]);
 });
@@ -20719,6 +20725,7 @@ test('production durable journal claims fail closed when the writer artifact pat
 
   assert.equal(error.code, 'PRODUCTION_DURABLE_JOURNAL_UNSUPPORTED');
   assert.deepEqual(error.details.missingDependency, [
+    'restart-readable recovery journal adapter',
     'restart-readable recovery artifact references',
   ]);
 });
@@ -20984,6 +20991,7 @@ test('production durable journal claims fail closed when remote artifact ownersh
   const writer = {
     kind: 'production-recovery-journal',
     productionAdapter: true,
+    supportedSurface: 'production-recovery-journal-adapter',
     ownsJournal: true,
     ownsRemoteArtifact: true,
     journalPath: '/var/lib/reprint/recovery.jsonl',
@@ -21135,6 +21143,7 @@ test('production durable journal claims fail closed when artifact references are
 
   assert.equal(error.code, 'PRODUCTION_DURABLE_JOURNAL_UNSUPPORTED');
   assert.deepEqual(error.details.missingDependency, [
+    'restart-readable recovery journal adapter',
     'restart-readable recovery artifact references',
   ]);
 });
@@ -21763,6 +21772,7 @@ test('production durable journal claims fail closed when restart inspection omit
 
   assert.equal(error.code, 'PRODUCTION_DURABLE_JOURNAL_UNSUPPORTED');
   assert.deepEqual(error.details.missingDependency, [
+    'restart-readable recovery journal adapter',
     'restart-readable recovery artifact references',
   ]);
   assert.equal(inspectCalls, 1);
@@ -21867,6 +21877,7 @@ test('production durable journal claims fail closed when the writer artifact ref
 
   assert.equal(error.code, 'PRODUCTION_DURABLE_JOURNAL_UNSUPPORTED');
   assert.deepEqual(error.details.missingDependency, [
+    'restart-readable recovery journal adapter',
     'restart-readable recovery artifact references',
   ]);
   assert.equal(error.details.inspectedJournalPath, '/var/lib/reprint/recovery.jsonl');
@@ -21932,6 +21943,7 @@ test('production durable journal claims fail closed when artifact references inc
   const writer = {
     kind: 'production-recovery-journal',
     productionAdapter: true,
+    supportedSurface: 'production-recovery-journal-adapter',
     ownsJournal: true,
     ownsRemoteArtifact: true,
     journalPath: '/var/lib/reprint/recovery.jsonl',
@@ -21992,6 +22004,7 @@ test('production durable journal claims fail closed when artifact references hid
   const writer = {
     kind: 'production-recovery-journal',
     productionAdapter: true,
+    supportedSurface: 'production-recovery-journal-adapter',
     ownsJournal: true,
     ownsRemoteArtifact: true,
     journalPath: '/var/lib/reprint/recovery.jsonl',
@@ -22408,6 +22421,7 @@ test('production durable journal claims fail closed when restart inspection adve
 
   assert.equal(error.code, 'PRODUCTION_DURABLE_JOURNAL_UNSUPPORTED');
   assert.deepEqual(error.details.missingDependency, [
+    'supported production recovery journal adapter surface',
     'restart-readable recovery remote artifact references',
   ]);
 });
@@ -22460,6 +22474,7 @@ test('production durable journal claims fail closed when restart inspection adve
 
   assert.equal(error.code, 'PRODUCTION_DURABLE_JOURNAL_UNSUPPORTED');
   assert.deepEqual(error.details.missingDependency, [
+    'supported production recovery journal adapter surface',
     'restart-readable recovery remote artifact references',
   ]);
 });
@@ -22514,6 +22529,7 @@ test('production durable journal claims fail closed when restart inspection adve
 
   assert.equal(error.code, 'PRODUCTION_DURABLE_JOURNAL_UNSUPPORTED');
   assert.deepEqual(error.details.missingDependency, [
+    'supported production recovery journal adapter surface',
     'restart-readable recovery remote artifact references',
   ]);
 });
@@ -22567,6 +22583,7 @@ test('production durable journal claims fail closed when a remote artifact refer
 
   assert.equal(error.code, 'PRODUCTION_DURABLE_JOURNAL_UNSUPPORTED');
   assert.deepEqual(error.details.missingDependency, [
+    'supported production recovery journal adapter surface',
     'restart-readable recovery remote artifact references',
   ]);
 });
@@ -22619,6 +22636,7 @@ test('production durable journal claims fail closed when the writer advertises a
 
   assert.equal(error.code, 'PRODUCTION_DURABLE_JOURNAL_UNSUPPORTED');
   assert.deepEqual(error.details.missingDependency, [
+    'supported production recovery journal adapter surface',
     'restart-readable recovery remote artifact references',
   ]);
 });
@@ -23244,6 +23262,7 @@ test('production durable journal claims fail closed when the writer advertises a
 
   assert.equal(error.code, 'PRODUCTION_DURABLE_JOURNAL_UNSUPPORTED');
   assert.deepEqual(error.details.missingDependency, [
+    'supported production recovery journal adapter surface',
     'restart-readable recovery remote artifact references',
   ]);
   assert.equal(closed, 1);
@@ -23298,6 +23317,7 @@ test('production durable journal claims fail closed when remote artifact referen
 
   assert.equal(error.code, 'PRODUCTION_DURABLE_JOURNAL_UNSUPPORTED');
   assert.deepEqual(error.details.missingDependency, [
+    'supported production recovery journal adapter surface',
     'restart-readable recovery remote artifact references',
   ]);
 });
@@ -23465,7 +23485,9 @@ test('production durable journal support probes restart inspection only once', (
   const writer = {
     kind: 'production-recovery-journal',
     productionAdapter: true,
+    supportedSurface: 'production-recovery-journal-adapter',
     ownsJournal: true,
+    restartReadable: true,
     journalPath: '/var/lib/reprint/recovery.jsonl',
     artifactRefs: {
       journal: '/var/lib/reprint/recovery.jsonl',
