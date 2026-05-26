@@ -210,6 +210,7 @@ function validateSupportedPluginOwnedMutations(remote, plan) {
 
     const driver = mutation.pluginOwnedResource?.driver || null;
     const supported = mutation.pluginOwnedResource?.pluginOwner === owner
+      && isActivePluginOwnerPresent(remote, owner, plan)
       && isSupportedPluginOwnedMutation(remote, mutation, owner, driver, plannedValue);
     if (!supported) {
       throw new PushPlanError(
@@ -224,6 +225,36 @@ function validateSupportedPluginOwnedMutations(remote, plan) {
       );
     }
   }
+}
+
+function isActivePluginOwnerPresent(remote, owner, plan) {
+  const pluginResource = {
+    type: 'plugin',
+    name: owner,
+    key: `plugin:${owner}`,
+  };
+  const plugin = getResource(remote, pluginResource);
+  if (plugin !== ABSENT && plugin?.active === true) {
+    return true;
+  }
+
+  const planHasPluginEvidence = (plan.decisions || []).some((decision) =>
+    decision.resource?.type === 'plugin'
+    && decision.resource?.name === owner,
+  ) || (plan.mutations || []).some((mutation) =>
+    mutation.resource?.type === 'plugin'
+    && mutation.resource?.name === owner,
+  );
+  if (!planHasPluginEvidence) {
+    return true;
+  }
+
+  return (plan.mutations || []).some((mutation) =>
+    mutation.resource?.type === 'plugin'
+    && mutation.resource?.name === owner
+    && mutation.action !== 'delete'
+    && deserializeResourceValue(mutation.value)?.active === true,
+  );
 }
 
 function pluginOwnedOwner(value) {

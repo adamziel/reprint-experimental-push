@@ -527,6 +527,58 @@ test('allows plugin-owned data when owner plugin context independently matches r
   assertEveryMutationHasLiveRemotePrecondition(plan);
 });
 
+test('blocks plugin-owned data when the owning plugin is missing or inactive on remote', () => {
+  const resourceKey = 'row:["wp_options","option_name:forms_settings"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_options['option_name:forms_settings'].option_value.mode = 'local-advanced';
+  local.meta = {
+    pushPolicy: pluginOwnedResourcePolicy(
+      allowedPluginOwnedResource(resourceKey, 'forms', 'wp-option'),
+    ),
+  };
+  const remote = baseSite();
+  remote.plugins.forms = { version: '1.0.0', active: false };
+
+  const plan = planFor(base, local, remote);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.blockers[0].class, 'stale-plugin-owner-context');
+  assert.equal(plan.blockers[0].pluginOwner, 'forms');
+  assert.equal(plan.blockers[0].ownerContext[0].resourceKey, 'plugin:forms');
+  assert.equal(plan.blockers[0].ownerContext[0].change.remoteChange, 'update');
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply a blocked plan/);
+});
+
+test('still blocks plugin-owned data when a same-plan plugin mutation leaves the owner inactive', () => {
+  const resourceKey = 'row:["wp_options","option_name:forms_settings"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_options['option_name:forms_settings'].option_value.mode = 'local-advanced';
+  local.meta = {
+    pushPolicy: pluginOwnedResourcePolicy(
+      allowedPluginOwnedResource(resourceKey, 'forms', 'wp-option'),
+    ),
+  };
+  local.pushIntents = [
+    {
+      id: 'update-forms-plugin',
+      kind: 'plugin-update',
+      requireAtomic: true,
+      resources: ['plugin:forms'],
+    },
+  ];
+  const remote = baseSite();
+  remote.plugins.forms = { version: '1.1.0', active: false };
+
+  const plan = planFor(base, local, remote);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.blockers[0].class, 'stale-plugin-owner-context');
+  assert.equal(plan.blockers[0].pluginOwner, 'forms');
+  assert.equal(plan.blockers[0].ownerContext[0].resourceKey, 'plugin:forms');
+});
+
 test('remote-only plugin removal blocks stale local dependency assumptions', () => {
   const base = baseSite();
   const local = baseSite();
@@ -1663,12 +1715,13 @@ test('durable apply journal classifies pre-commit failures as old remote', () =>
     {
       code: 'INJECTED_FAILURE_BEFORE_MUTATION',
       options: { failBeforeMutation: true },
-      expectedEvents: ['journal-opened', 'target-planned', 'target-planned', 'recovery-state'],
+      expectedEvents: ['recovery-claim-opened', 'journal-opened', 'target-planned', 'target-planned', 'recovery-state'],
     },
     {
       code: 'INJECTED_FAILURE_AFTER_STAGING',
       options: { failAfterStaging: true },
       expectedEvents: [
+        'recovery-claim-opened',
         'journal-opened',
         'target-planned',
         'target-planned',
@@ -1680,6 +1733,7 @@ test('durable apply journal classifies pre-commit failures as old remote', () =>
       code: 'INJECTED_FAILURE_AFTER_DEPENDENCY_VALIDATION',
       options: { failAfterDependencyValidation: true },
       expectedEvents: [
+        'recovery-claim-opened',
         'journal-opened',
         'target-planned',
         'target-planned',
@@ -1805,6 +1859,13 @@ test('retrying an old-remote journal appends durable retry state without duplica
   const retryWriter = openRecoveryJournal(journalPath, {
     now: fixedNow,
     claimId: 'retrying-old-remote-retry-writer',
+  });
+  appendStaleClaimAdvanced(retryWriter, {
+    plan,
+    current: remote,
+    previousClaimId: 'retrying-old-remote-first-writer',
+    claimId: 'retrying-old-remote-retry-writer',
+    previousClaimAgeMs: 1,
   });
   const retry = applyPlan(remote, plan, {
     journal: firstError.details.recovery.artifacts.journal,
