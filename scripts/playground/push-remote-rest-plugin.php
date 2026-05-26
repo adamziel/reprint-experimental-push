@@ -514,9 +514,16 @@ function reprint_push_lab_rest_authenticated_recovery_inspect(WP_REST_Request $r
         if (isset($result['recovery']) && is_array($result['recovery']) && !isset($result['recovery']['journal'])) {
             $result['recovery']['journal'] = reprint_push_lab_rest_recovery_journal_evidence();
         }
+        $db_journal = reprint_push_lab_db_journal_summary(20, true);
         if (!isset($result['dbJournal']) || !is_array($result['dbJournal'])) {
-            $db_journal = reprint_push_lab_db_journal_summary(20, true);
             $result['dbJournal'] = $db_journal;
+        } else {
+            $result['dbJournal'] = reprint_push_lab_rest_merge_checked_db_journal_contract(
+                $result['dbJournal'],
+                $db_journal
+            );
+        }
+        if (!isset($result['storageGuard']) || !is_array($result['storageGuard'])) {
             $storage_guard = reprint_push_lab_rest_db_journal_storage_guard($db_journal);
             if (is_array($storage_guard)) {
                 $result['storageGuard'] = $storage_guard;
@@ -528,6 +535,26 @@ function reprint_push_lab_rest_authenticated_recovery_inspect(WP_REST_Request $r
         $response->set_data($result);
     }
     return $response;
+}
+
+function reprint_push_lab_rest_merge_checked_db_journal_contract(array $db_journal, array $checked_summary): array
+{
+    foreach ([
+        'acceptedOnCheckedBoundary',
+        'ownership',
+        'leaseFence',
+        'scope',
+        'rowCount',
+        'latestRows',
+        'eventSummaries',
+        'idempotencyEvidence',
+    ] as $key) {
+        if (!array_key_exists($key, $db_journal) && array_key_exists($key, $checked_summary)) {
+            $db_journal[$key] = $checked_summary[$key];
+        }
+    }
+
+    return $db_journal;
 }
 
 function reprint_push_lab_rest_authenticated_db_journal(WP_REST_Request $request): WP_REST_Response

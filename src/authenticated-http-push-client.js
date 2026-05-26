@@ -474,6 +474,13 @@ export async function runAuthenticatedHttpPush({
     setDurableJournalBoundary(summary, 'recovery-inspect');
     return summary;
   }
+  const recoveryInspectDbJournal = summarizeDbJournalBody(recoveryInspect.body, {
+    status: recoveryInspect.status,
+    retryAttempts: recoveryInspect.retryAttempts || 1,
+  });
+  if (recoveryInspectDbJournal) {
+    summary.recoveryInspect.dbJournal = recoveryInspectDbJournal;
+  }
 
   const replay = await client.signedPost(withAuthSessionDrift('/apply'), applyPayload, {
     session,
@@ -548,70 +555,79 @@ export async function runAuthenticatedHttpPush({
   summary.after = summarizeSnapshot(afterApply, local);
   updateRetryAttempts(summary, summary.after);
   summary.afterObject = afterApply.body.snapshot;
-  const dbJournal = await client.signedGet(withAuthSessionDrift('/db-journal?limit=80'), {
-    session,
-    idempotencyKey,
-    retryable: true,
-  });
-  summary.dbJournal = summarizeDbJournal(dbJournal);
-  updateRetryAttempts(summary, summary.dbJournal);
-  recordAuthSessionLifecycle(summary, 'journal', dbJournal.body?.auth?.session);
-  const dbJournalAuthSessionDrift = requireProductionAuthSession && (
-    hasProductionAuthSessionTypeDrift(dbJournal)
-    || hasProductionAuthSessionStatusDrift(dbJournal)
-    || hasMissingProductionAuthSessionExpiry(dbJournal)
-    || hasProductionAuthSessionExpiryDrift(dbJournal)
-  );
-  if (dbJournal.status !== 200 || dbJournal.body?.ok !== true) {
-    summary.code = dbJournal.body?.code || 'DURABLE_JOURNAL_NOT_PROVEN';
-    setDurableJournalBoundary(summary, 'journal-inspect');
-    return summary;
-  }
-  if (requireProductionAuthSession && hasProductionAuthSessionRevocationDrift(dbJournal)) {
-    summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
-    summary.authSession = {
-      required: 'unrevoked',
-      observed: dbJournal.body?.auth?.session?.revoked ? 'revoked' : 'cleaned-up',
-      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
-    };
-    summary.boundary = {
-      firstRemainingProductionBoundary: 'auth/session lifecycle and durable journal semantics',
-      status: 'unimplemented',
-      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
-      authSession: summary.authSession,
-    };
-    return summary;
-  }
-  if (hasExpiredAuthSession(dbJournal)) {
-    summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
-    summary.authSession = {
-      required: 'unexpired',
-      observed: dbJournal.body?.auth?.session?.expiresAt || 'missing',
-      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
-    };
-    setDurableJournalBoundary(summary, 'journal-inspect');
-    return summary;
-  }
-  if (dbJournalAuthSessionDrift) {
-    summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
-    summary.authSession = {
-      required: 'production-auth-session',
-      observed: dbJournal.body?.auth?.session?.type || 'missing',
-      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
-    };
-    setDurableJournalBoundary(summary, 'journal-inspect');
-    return summary;
-  }
-  const dbJournalAuthEnvelopeDrift = hasAuthEnvelopeDrift(preflightAuthEnvelope, dbJournal);
-  if (dbJournalAuthEnvelopeDrift) {
-    summary.code = 'AUTH_SESSION_LIFECYCLE_DRIFT';
-    summary.authSession = {
-      required: preflightAuthEnvelope.sessionType || 'auth-session',
-      observed: dbJournal.body?.auth?.session?.type || 'missing',
-      verdict: 'AUTH_SESSION_LIFECYCLE_DRIFT',
-    };
-    setDurableJournalBoundary(summary, 'journal-inspect');
-    return summary;
+  let dbJournal = recoveryInspect;
+  if (recoveryInspectDbJournal
+    && dbJournalProofIsAcceptable(recoveryInspectDbJournal)
+    && dbJournalCheckedBoundaryContractIsPresent(recoveryInspectDbJournal)
+  ) {
+    summary.dbJournal = recoveryInspectDbJournal;
+    updateRetryAttempts(summary, summary.dbJournal);
+  } else {
+    dbJournal = await client.signedGet(withAuthSessionDrift('/db-journal?limit=80'), {
+      session,
+      idempotencyKey,
+      retryable: true,
+    });
+    summary.dbJournal = summarizeDbJournal(dbJournal);
+    updateRetryAttempts(summary, summary.dbJournal);
+    recordAuthSessionLifecycle(summary, 'journal', dbJournal.body?.auth?.session);
+    const dbJournalAuthSessionDrift = requireProductionAuthSession && (
+      hasProductionAuthSessionTypeDrift(dbJournal)
+      || hasProductionAuthSessionStatusDrift(dbJournal)
+      || hasMissingProductionAuthSessionExpiry(dbJournal)
+      || hasProductionAuthSessionExpiryDrift(dbJournal)
+    );
+    if (dbJournal.status !== 200 || dbJournal.body?.ok !== true) {
+      summary.code = dbJournal.body?.code || 'DURABLE_JOURNAL_NOT_PROVEN';
+      setDurableJournalBoundary(summary, 'journal-inspect');
+      return summary;
+    }
+    if (requireProductionAuthSession && hasProductionAuthSessionRevocationDrift(dbJournal)) {
+      summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
+      summary.authSession = {
+        required: 'unrevoked',
+        observed: dbJournal.body?.auth?.session?.revoked ? 'revoked' : 'cleaned-up',
+        verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+      };
+      summary.boundary = {
+        firstRemainingProductionBoundary: 'auth/session lifecycle and durable journal semantics',
+        status: 'unimplemented',
+        verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+        authSession: summary.authSession,
+      };
+      return summary;
+    }
+    if (hasExpiredAuthSession(dbJournal)) {
+      summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
+      summary.authSession = {
+        required: 'unexpired',
+        observed: dbJournal.body?.auth?.session?.expiresAt || 'missing',
+        verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+      };
+      setDurableJournalBoundary(summary, 'journal-inspect');
+      return summary;
+    }
+    if (dbJournalAuthSessionDrift) {
+      summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
+      summary.authSession = {
+        required: 'production-auth-session',
+        observed: dbJournal.body?.auth?.session?.type || 'missing',
+        verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+      };
+      setDurableJournalBoundary(summary, 'journal-inspect');
+      return summary;
+    }
+    const dbJournalAuthEnvelopeDrift = hasAuthEnvelopeDrift(preflightAuthEnvelope, dbJournal);
+    if (dbJournalAuthEnvelopeDrift) {
+      summary.code = 'AUTH_SESSION_LIFECYCLE_DRIFT';
+      summary.authSession = {
+        required: preflightAuthEnvelope.sessionType || 'auth-session',
+        observed: dbJournal.body?.auth?.session?.type || 'missing',
+        verdict: 'AUTH_SESSION_LIFECYCLE_DRIFT',
+      };
+      setDurableJournalBoundary(summary, 'journal-inspect');
+      return summary;
+    }
   }
 
   summary.ok = apply.status === 200
@@ -954,25 +970,38 @@ function summarizeDbJournal(response) {
   if (response.status !== 200 || response.body?.ok !== true) {
     return summarizeResponse(response);
   }
-  const rows = response.body.dbJournal?.latestRows || [];
-  const storageGuard = summarizeDbJournalStorageGuard(response.body);
-  return {
+  return summarizeDbJournalBody(response.body, {
     status: response.status,
-    ok: true,
     retryAttempts: response.retryAttempts || 1,
-    scope: response.body?.dbJournal?.scope,
+  });
+}
+
+function summarizeDbJournalBody(body, {
+  status = 200,
+  retryAttempts = 1,
+} = {}) {
+  if (!body?.dbJournal || typeof body.dbJournal !== 'object') {
+    return undefined;
+  }
+  const rows = body.dbJournal?.latestRows || [];
+  const storageGuard = summarizeDbJournalStorageGuard(body);
+  return {
+    status,
+    ok: true,
+    retryAttempts,
+    scope: body?.dbJournal?.scope,
     rows: rows.length,
     applyCommitted: rows.some((entry) => entry.event === 'apply-committed'),
     mutationApplied: rows.filter((entry) => entry.event === 'mutation-applied').length,
     idempotencyOpened: rows.filter((entry) => entry.event === 'idempotency-opened').length,
     storageGuard,
-    ownership: summarizeDbJournalOwnership(response.body?.dbJournal),
-    leaseFence: summarizeDbJournalLeaseFence(response.body?.dbJournal),
-    authUser: response.body?.auth?.identity?.userLogin,
-    authSessionId: response.body?.auth?.session?.id,
-    sessionType: response.body?.auth?.session?.type,
-    sessionStatus: response.body?.auth?.session?.status,
-    sessionExpiresAt: response.body?.auth?.session?.expiresAt,
+    ownership: summarizeDbJournalOwnership(body?.dbJournal),
+    leaseFence: summarizeDbJournalLeaseFence(body?.dbJournal),
+    authUser: body?.auth?.identity?.userLogin,
+    authSessionId: body?.auth?.session?.id,
+    sessionType: body?.auth?.session?.type,
+    sessionStatus: body?.auth?.session?.status,
+    sessionExpiresAt: body?.auth?.session?.expiresAt,
   };
 }
 
@@ -981,6 +1010,18 @@ function dbJournalProofIsAcceptable(dbJournal) {
     && dbJournal?.idempotencyOpened > 0
     && dbJournal?.mutationApplied > 0
     && dbJournalStorageGuardIsTrusted(dbJournal?.storageGuard);
+}
+
+function dbJournalCheckedBoundaryContractIsPresent(dbJournal) {
+  return dbJournal?.ownership?.ownsJournal === true
+    && dbJournal?.ownership?.restartReadable === true
+    && typeof dbJournal?.ownership?.productionAdapter === 'string'
+    && dbJournal.ownership.productionAdapter.length > 0
+    && typeof dbJournal?.leaseFence?.boundary === 'string'
+    && dbJournal.leaseFence.boundary.length > 0
+    && dbJournal?.leaseFence?.claimKeyUnique === true
+    && dbJournal?.leaseFence?.monotonicSequence === true
+    && dbJournal?.leaseFence?.restartReadable === true;
 }
 
 function dbJournalStorageGuardIsTrusted(storageGuard) {
