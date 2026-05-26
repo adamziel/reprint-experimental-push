@@ -863,9 +863,14 @@ test('production claim gate fails closed if benchmark evidence is tampered', () 
   );
 
   const hiddenParallelismLimits = clone(report);
-  hiddenParallelismLimits.claims.productionThroughputDetails.parallelismLimitsVisible = false;
-  assert.ok(
-    productionThroughputBlockers(hiddenParallelismLimits).includes('production-parallelism-limits-not-visible'),
+  hiddenParallelismLimits.evidence.parallelism.parallelismLimitsVisible = false;
+  assert.equal(
+    productionThroughputDetails(hiddenParallelismLimits).parallelismLimitsVisible,
+    false,
+  );
+  assert.equal(
+    productionThroughputDetails(hiddenParallelismLimits).atomicGroup.parallelismLimitsVisible,
+    false,
   );
 
   const visibleParallelismLimitsWithoutMeasurement = clone(report);

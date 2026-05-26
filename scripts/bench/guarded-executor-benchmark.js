@@ -1398,7 +1398,7 @@ export function productionThroughputDetails(report) {
         fileHashing: DEFAULT_LIMITS.maxHashConcurrency,
         dbBatchPerTable: DEFAULT_LIMITS.maxDbConcurrencyPerTable,
       },
-      parallelismLimitsVisible: true,
+      parallelismLimitsVisible: parallelismLimitsVisibleOnReport,
     },
     blockers: productionThroughputBlockers(report),
   };
