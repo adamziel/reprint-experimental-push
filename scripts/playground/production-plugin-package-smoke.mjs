@@ -11,7 +11,7 @@ import { digest } from '../../src/stable-json.js';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const cliPath = path.join(repoRoot, 'bin/reprint-push-lab.js');
-const serverStartupTimeoutMs = 120_000;
+const serverStartupTimeoutMs = 20_000;
 const transientFetchRetryDelayMs = 250;
 const transientFetchAttempts = 4;
 
@@ -408,6 +408,8 @@ async function startPlaygroundServer(name, blueprintPath, mountedPluginDir) {
 async function waitForServer(child, baseUrl, logs) {
   const deadline = Date.now() + serverStartupTimeoutMs;
   let lastError = null;
+  let lastStatus = null;
+  let lastBody = null;
 
   while (Date.now() < deadline) {
     if (child.exitCode !== null) {
@@ -427,6 +429,8 @@ async function waitForServer(child, baseUrl, logs) {
         return;
       }
       lastError = new Error(`Production plugin package snapshot readiness HTTP ${response.status}`);
+      lastStatus = response.status;
+      lastBody = response.body;
     } catch (error) {
       lastError = error;
     }
@@ -434,7 +438,10 @@ async function waitForServer(child, baseUrl, logs) {
     await sleep(500);
   }
 
-  throw new Error(`Timed out waiting for Playground server at ${baseUrl}: ${lastError?.message || 'unknown'}\n${logs.join('')}`);
+  const lastResponse = lastStatus === null
+    ? ''
+    : `\nLast snapshot probe status: ${lastStatus}\nLast snapshot probe body: ${JSON.stringify(lastBody, null, 2)}`;
+  throw new Error(`Timed out waiting for Playground server at ${baseUrl}: ${lastError?.message || 'unknown'}${lastResponse}\n${logs.join('')}`);
 }
 
 async function stopPlaygroundServer(server) {
