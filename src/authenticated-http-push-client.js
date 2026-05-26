@@ -569,15 +569,15 @@ function assertSupportedSourceUrlForRouteProfile(baseUrl, profile) {
     return;
   }
 
-  if (baseUrl.protocol === 'http:' && isLoopbackHost(baseUrl.hostname)) {
+  if (baseUrl.protocol === 'http:' && isLoopbackHost(baseUrl.hostname) && isSandboxIngressPort(baseUrl.port)) {
     return;
   }
-  if (baseUrl.protocol === 'https:' && baseUrl.hostname === 'localhost') {
+  if (baseUrl.protocol === 'https:' && baseUrl.hostname === 'localhost' && isSandboxIngressPort(baseUrl.port)) {
     return;
   }
 
   throw new Error(
-    `Unsupported production-shaped sourceUrl host: ${baseUrl.hostname}. Use a local Playground loopback origin or fail closed.`,
+    `Unsupported production-shaped sourceUrl origin: ${baseUrl.origin}. Use the sandbox-provided 8080 ingress or fail closed.`,
   );
 }
 
@@ -586,6 +586,10 @@ function isLoopbackHost(hostname) {
     || hostname === '127.0.0.1'
     || hostname === '::1'
     || hostname.startsWith('127.');
+}
+
+function isSandboxIngressPort(port) {
+  return port === '' || port === '8080';
 }
 
 function redactUrl(sourceUrl) {

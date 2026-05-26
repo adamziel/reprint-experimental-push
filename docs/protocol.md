@@ -20,6 +20,13 @@ The production push extension is the same in Docker and Playground:
 | `push_recover inspect` | Read the journal and fresh live hashes before any mutating repair. |
 | `push_recover auto|finish|rollback` | Mutate only after inspect proves the branch safe and the auth floor still holds. |
 
+This release-candidate slice is intentionally narrow:
+
+- it only claims the one-remote, one-local, one-drift topology
+- it only claims the preflight, snapshot-hash, dry-run, apply, journal, and inspect-first recovery ladder defined here
+- it does not claim arbitrary production WordPress site support
+- unsupported production surfaces fail closed instead of being implied by the docs or fixtures
+
 The contract is intentionally production-shaped:
 
 - preflight is the first live binding after importer provenance exists
@@ -97,6 +104,7 @@ Unsupported production surfaces stay explicitly blocked in this release-candidat
 - dry-run never gains write authority
 - apply must revalidate fresh live evidence before every batch and at the storage boundary
 - journal inspect and recovery inspect remain read-only until the durable ownership proof exists
+- broader production claims outside the constrained topology are not supported by this lane
 
 The topology proof is intentionally minimal and stable:
 

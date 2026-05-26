@@ -19,6 +19,12 @@ harness the fixtures model:
   through a local-only proxy
 - remote tunnels are disallowed
 
+This lane only claims that constrained release-candidate slice:
+
+- one remote source, one imported local edit site, and one later drift observation of the same remote identity
+- preflight, snapshot listing, dry-run, apply, journal inspect, and inspect-first recovery
+- fail-closed rejection for unsupported production surfaces outside that topology
+
 ## Executor Summary
 
 The executor runs one fixed production ladder in both Docker and Playground:

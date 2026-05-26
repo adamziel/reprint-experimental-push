@@ -299,6 +299,14 @@ function spawnReleaseVerifySlowPathBounded(env = {}, options = {}) {
   if (proof.error || proof.signal || proof.status === null) {
     stopAllPlaygroundChildrenSync();
     logBoundedSpawnProofFailure(process.execPath, ['scripts/playground/production-shaped-release-verify.mjs'], proof);
+    if (proof.error) {
+      const timeoutNote = proof.error.code === 'ETIMEDOUT' ? ` after ${boundedTimeout}ms` : '';
+      throw new Error(formatSpawnFailure(`retained-source release verify failed${timeoutNote} with bounded spawn handling`, proof));
+    }
+    if (proof.signal) {
+      throw new Error(formatSpawnFailure(`retained-source release verify terminated by ${proof.signal} with bounded spawn handling`, proof));
+    }
+    throw new Error(formatSpawnFailure('retained-source release verify exited without a status with bounded spawn handling', proof));
   }
   return proof;
 }
@@ -553,8 +561,8 @@ test('production-shaped release verify command fails closed when production dura
 test('production-shaped release verify command fails closed when production auth/session lifecycle is explicitly required', () => {
   const proof = spawnProductionShapedReleaseVerify(
     {
-      REPRINT_PUSH_SOURCE_URL: 'http://127.0.0.1:1',
-      REPRINT_PUSH_REMOTE_URL: 'http://127.0.0.1:1',
+      REPRINT_PUSH_SOURCE_URL: 'http://127.0.0.1:8080',
+      REPRINT_PUSH_REMOTE_URL: 'http://127.0.0.1:8080',
       REPRINT_PUSH_LAB_AUTH_ADMIN_USER: liveCredentials.username,
       REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD: liveCredentials.password,
       REPRINT_PUSH_REQUIRE_PRODUCTION_AUTH_SESSION: '1',
@@ -568,7 +576,7 @@ test('production-shaped release verify command fails closed when production auth
   assert.match(proof.stdout, /"ok": false/);
   assert.match(
     proof.stdout,
-    /"boundary": \{\s*"firstRemainingProductionBoundary": "auth\/session lifecycle and durable journal semantics",\s*"status": "unimplemented",\s*"verdict": "PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED",\s*"durableJournal": \{\s*"storageLeaseFence": "production durable journal storage, lease, and fencing are not yet proven beyond the retained Playground journal path",\s*"verdict": "PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED"\s*\},\s*"authSession": \{\s*"required": "production-auth-session",\s*"observed": "unreachable-live-source",\s*"verdict": "PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED"\s*\},\s*"liveSource": \{\s*"url": "http:\/\/127\.0\.0\.1:1",\s*"verdict": "PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED",\s*"error": "fetch failed"\s*\}\s*\}/,
+    /"boundary": \{\s*"firstRemainingProductionBoundary": "auth\/session lifecycle and durable journal semantics",\s*"status": "unimplemented",\s*"verdict": "PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED",\s*"durableJournal": \{\s*"storageLeaseFence": "production durable journal storage, lease, and fencing are not yet proven beyond the retained Playground journal path",\s*"verdict": "PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED"\s*\},\s*"authSession": \{\s*"required": "production-auth-session",\s*"observed": "unreachable-live-source",\s*"verdict": "PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED"\s*\},\s*"liveSource": \{\s*"url": "http:\/\/127\.0\.0\.1:8080",\s*"verdict": "PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED",\s*"error": "fetch failed"\s*\}\s*\}/,
   );
   assert.match(
     proof.stdout,

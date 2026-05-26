@@ -32,7 +32,18 @@ test('authenticated push client fails closed for unsupported production-shaped o
       credential,
       routeProfile: 'production-shaped',
     }),
-    /Unsupported production-shaped sourceUrl host: example\.com/,
+    /Unsupported production-shaped sourceUrl origin: https:\/\/example\.com/,
+  );
+});
+
+test('authenticated push client fails closed for production-shaped loopback ports outside the sandbox ingress', () => {
+  assert.throws(
+    () => authenticatedHttpClient({
+      sourceUrl: 'http://127.0.0.1:3000',
+      credential,
+      routeProfile: 'production-shaped',
+    }),
+    /Unsupported production-shaped sourceUrl origin: http:\/\/127\.0\.0\.1:3000/,
   );
 });
 
