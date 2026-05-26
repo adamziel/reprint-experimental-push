@@ -8,25 +8,60 @@ import { fileURLToPath } from 'node:url';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const muPluginDir = path.join(repoRoot, 'scripts/playground/rest-mu-plugins');
-const serverStartupTimeoutMs = 120_000;
+const serverStartupTimeoutMs = 45_000;
+const serverFetchTimeoutMs = 3_000;
 const runLivePlaygroundTopologyTests = process.env.REPRINT_RUN_PLAYGROUND_LIVE_TESTS === '1';
 const packageJson = JSON.parse(readFileSync(path.join(repoRoot, 'package.json'), 'utf8'));
 const liveCredentials = {
   username: 'reprint_push_admin',
   password: 'reprint-push-admin-app-password',
 };
+const proofSubprocessTimeoutMs = 90_000;
+
+function spawnReleaseVerify(env = {}, timeout = 90_000) {
+  return spawnBoundedSync(process.execPath, ['scripts/playground/production-shaped-release-verify.mjs'], {
+    cwd: repoRoot,
+    timeout,
+    killSignal: 'SIGKILL',
+    env: {
+      ...process.env,
+      ...env,
+    },
+    encoding: 'utf8',
+    maxBuffer: 1024 * 1024 * 20,
+  }, 'release verify');
+}
+
+function spawnBoundedSync(command, args, options, label) {
+  const proof = spawnSync(command, args, options);
+
+  if (proof.error) {
+    assert.fail(
+      `${label} failed with ${proof.error.name ?? 'Error'}: ${proof.error.message}\n${proof.stdout ?? ''}${proof.stderr ?? ''}`,
+    );
+  }
+  if (proof.signal) {
+    assert.fail(`${label} terminated by ${proof.signal}\n${proof.stdout}${proof.stderr}`);
+  }
+  if (proof.status === null) {
+    assert.fail(`${label} exited without a status\n${proof.stdout ?? ''}${proof.stderr ?? ''}`);
+  }
+
+  return proof;
+}
 
 test('production-shaped proof wrapper emits the checked proof summary and exact missing-secret gate', () => {
-  const proof = spawnSync(process.execPath, ['scripts/playground/production-shaped-proof.mjs'], {
+  const proof = spawnBoundedSync(process.execPath, ['scripts/playground/production-shaped-proof.mjs'], {
     cwd: repoRoot,
+    timeout: proofSubprocessTimeoutMs,
+    killSignal: 'SIGKILL',
     env: {
       ...process.env,
       REPRINT_PUSH_SIGNING_SECRET: '',
       REPRINT_PUSH_APPLICATION_PASSWORD: '',
     },
     encoding: 'utf8',
-  });
-
+  }, 'production-shaped proof wrapper');
   assert.equal(proof.status, 0);
   assert.match(proof.stdout, /"protocol": \{\s*"status": 0\s*\}/);
   assert.match(
@@ -44,8 +79,10 @@ test('production-shaped proof wrapper emits the checked proof summary and exact 
 });
 
 test('production-shaped live preflight smoke fails fast when the live source or auth inputs are missing', () => {
-  const livePreflightScript = spawnSync('npm', ['run', 'test:playground:production-shaped-live-preflight'], {
+  const livePreflightScript = spawnBoundedSync('npm', ['run', 'test:playground:production-shaped-live-preflight'], {
     cwd: repoRoot,
+    timeout: proofSubprocessTimeoutMs,
+    killSignal: 'SIGKILL',
     env: {
       ...process.env,
       REPRINT_PUSH_SOURCE_URL: '',
@@ -55,16 +92,17 @@ test('production-shaped live preflight smoke fails fast when the live source or 
     },
     encoding: 'utf8',
     shell: false,
-  });
-
+  }, 'live preflight script');
   assert.equal(livePreflightScript.status, 1);
   assert.equal(
     livePreflightScript.stderr.trim(),
     'REPRINT_PUSH_LIVE_SOURCE_REQUIRED: production push requires a live source URL; provide REPRINT_PUSH_SOURCE_URL before running preflight, dry-run, or apply.',
   );
 
-  const missingSource = spawnSync(process.execPath, ['scripts/playground/production-shaped-live-preflight-smoke.mjs'], {
+  const missingSource = spawnBoundedSync(process.execPath, ['scripts/playground/production-shaped-live-preflight-smoke.mjs'], {
     cwd: repoRoot,
+    timeout: proofSubprocessTimeoutMs,
+    killSignal: 'SIGKILL',
     env: {
       ...process.env,
       REPRINT_PUSH_SOURCE_URL: '',
@@ -73,16 +111,17 @@ test('production-shaped live preflight smoke fails fast when the live source or 
       REPRINT_PUSH_APPLICATION_PASSWORD: 'reprint-push-admin-app-password',
     },
     encoding: 'utf8',
-  });
-
+  }, 'missing-source smoke');
   assert.equal(missingSource.status, 1);
   assert.equal(
     missingSource.stderr.trim(),
     'REPRINT_PUSH_LIVE_SOURCE_REQUIRED: production push requires a live source URL; provide REPRINT_PUSH_SOURCE_URL before running preflight, dry-run, or apply.',
   );
 
-  const missingAuth = spawnSync(process.execPath, ['scripts/playground/production-shaped-live-preflight-smoke.mjs'], {
+  const missingAuth = spawnBoundedSync(process.execPath, ['scripts/playground/production-shaped-live-preflight-smoke.mjs'], {
     cwd: repoRoot,
+    timeout: proofSubprocessTimeoutMs,
+    killSignal: 'SIGKILL',
     env: {
       ...process.env,
       REPRINT_PUSH_SOURCE_URL: 'http://127.0.0.1:8080',
@@ -91,8 +130,7 @@ test('production-shaped live preflight smoke fails fast when the live source or 
       REPRINT_PUSH_APPLICATION_PASSWORD: '',
     },
     encoding: 'utf8',
-  });
-
+  }, 'missing-auth smoke');
   assert.equal(missingAuth.status, 1);
   assert.equal(
     missingAuth.stderr.trim(),
@@ -101,22 +139,16 @@ test('production-shaped live preflight smoke fails fast when the live source or 
 });
 
 test('production-shaped release verify command fails closed when production durable journal ownership is explicitly required', () => {
-  const proof = spawnSync(process.execPath, ['scripts/playground/production-shaped-release-verify.mjs'], {
-    cwd: repoRoot,
-    env: {
-      ...process.env,
-      REPRINT_PUSH_SOURCE_URL: '',
-      REPRINT_PUSH_REMOTE_URL: '',
-      REPRINT_PUSH_USERNAME: '',
-      REPRINT_PUSH_APPLICATION_PASSWORD: '',
-      REPRINT_PUSH_LAB_AUTH_ADMIN_USER: '',
-      REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD: '',
-      REPRINT_PUSH_SIGNING_SECRET: '',
-      REPRINT_PUSH_REQUIRE_PRODUCTION_DURABLE_JOURNAL: '1',
-      NODE_NO_WARNINGS: '1',
-    },
-    encoding: 'utf8',
-    maxBuffer: 1024 * 1024 * 20,
+  const proof = spawnReleaseVerify({
+    REPRINT_PUSH_SOURCE_URL: '',
+    REPRINT_PUSH_REMOTE_URL: '',
+    REPRINT_PUSH_USERNAME: '',
+    REPRINT_PUSH_APPLICATION_PASSWORD: '',
+    REPRINT_PUSH_LAB_AUTH_ADMIN_USER: '',
+    REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD: '',
+    REPRINT_PUSH_SIGNING_SECRET: '',
+    REPRINT_PUSH_REQUIRE_PRODUCTION_DURABLE_JOURNAL: '1',
+    NODE_NO_WARNINGS: '1',
   });
 
   assert.equal(proof.status, 1, proof.stderr);
@@ -124,19 +156,13 @@ test('production-shaped release verify command fails closed when production dura
 });
 
 test('production-shaped release verify command fails closed when production auth/session lifecycle is explicitly required', () => {
-  const proof = spawnSync(process.execPath, ['scripts/playground/production-shaped-release-verify.mjs'], {
-    cwd: repoRoot,
-    env: {
-      ...process.env,
-      REPRINT_PUSH_SOURCE_URL: 'http://127.0.0.1:1',
-      REPRINT_PUSH_REMOTE_URL: 'http://127.0.0.1:1',
-      REPRINT_PUSH_LAB_AUTH_ADMIN_USER: liveCredentials.username,
-      REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD: liveCredentials.password,
-      REPRINT_PUSH_REQUIRE_PRODUCTION_AUTH_SESSION: '1',
-      NODE_NO_WARNINGS: '1',
-    },
-    encoding: 'utf8',
-    maxBuffer: 1024 * 1024 * 20,
+  const proof = spawnReleaseVerify({
+    REPRINT_PUSH_SOURCE_URL: 'http://127.0.0.1:1',
+    REPRINT_PUSH_REMOTE_URL: 'http://127.0.0.1:1',
+    REPRINT_PUSH_LAB_AUTH_ADMIN_USER: liveCredentials.username,
+    REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD: liveCredentials.password,
+    REPRINT_PUSH_REQUIRE_PRODUCTION_AUTH_SESSION: '1',
+    NODE_NO_WARNINGS: '1',
   });
 
   assert.equal(proof.status, 1, proof.stderr);
@@ -152,8 +178,10 @@ test('production-shaped release verify command fails closed when production auth
 });
 
 test('production-shaped release proof emits the exact gate output when no live source is supplied', () => {
-  const proof = spawnSync(process.execPath, ['scripts/playground/production-shaped-release-proof.mjs'], {
+  const proof = spawnBoundedSync(process.execPath, ['scripts/playground/production-shaped-release-proof.mjs'], {
     cwd: repoRoot,
+    timeout: proofSubprocessTimeoutMs,
+    killSignal: 'SIGKILL',
     env: {
       ...process.env,
       REPRINT_PUSH_SOURCE_URL: '',
@@ -164,8 +192,7 @@ test('production-shaped release proof emits the exact gate output when no live s
       REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD: '',
     },
     encoding: 'utf8',
-  });
-
+  }, 'release proof');
   assert.equal(proof.status, 0);
   assert.match(proof.stdout, /"releaseProof": \{\s*"status": 0\s*\}/);
   assert.match(
@@ -182,8 +209,10 @@ const maybeTest = runLivePlaygroundTopologyTests ? test : test.skip;
 
 maybeTest('production-shaped release proof runs the live preflight branch against a local Playground source', async () => {
   await withPlaygroundServer('remote-base', path.join(repoRoot, 'fixtures/playground/remote-base.blueprint.json'), async (remoteServer) => {
-    const proof = spawnSync(process.execPath, ['scripts/playground/production-shaped-release-proof.mjs'], {
+    const proof = spawnBoundedSync(process.execPath, ['scripts/playground/production-shaped-release-proof.mjs'], {
       cwd: repoRoot,
+      timeout: proofSubprocessTimeoutMs,
+      killSignal: 'SIGKILL',
       env: {
         ...process.env,
         REPRINT_PUSH_SOURCE_URL: remoteServer.baseUrl,
@@ -193,8 +222,7 @@ maybeTest('production-shaped release proof runs the live preflight branch agains
       },
       encoding: 'utf8',
       maxBuffer: 1024 * 1024 * 20,
-    });
-
+    }, 'live release proof');
     assert.equal(proof.status, 0, proof.stderr);
     assert.match(proof.stdout, /"releaseProof": \{\s*"status": 0,\s*"code": "LIVE_PREFLIGHT_OK"\s*\}/);
     assert.match(proof.stdout, /"sourceUrl": "http:\/\/127\.0\.0\.1:\d+"/);
@@ -205,18 +233,12 @@ maybeTest('production-shaped release proof runs the live preflight branch agains
 
 maybeTest('production-shaped release verify command runs the live protocol branch with local Playground source and local edited site', () => {
   return withPlaygroundServer('remote-base', path.join(repoRoot, 'fixtures/playground/remote-base.blueprint.json'), async (remoteServer) => {
-    const proof = spawnSync(process.execPath, ['scripts/playground/production-shaped-release-verify.mjs'], {
-      cwd: repoRoot,
-      env: {
-        ...process.env,
-        REPRINT_PUSH_SOURCE_URL: remoteServer.baseUrl,
-        REPRINT_PUSH_REMOTE_URL: remoteServer.baseUrl,
-        REPRINT_PUSH_LAB_AUTH_ADMIN_USER: liveCredentials.username,
-        REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD: liveCredentials.password,
-        NODE_NO_WARNINGS: '1',
-      },
-      encoding: 'utf8',
-      maxBuffer: 1024 * 1024 * 20,
+    const proof = spawnReleaseVerify({
+      REPRINT_PUSH_SOURCE_URL: remoteServer.baseUrl,
+      REPRINT_PUSH_REMOTE_URL: remoteServer.baseUrl,
+      REPRINT_PUSH_LAB_AUTH_ADMIN_USER: liveCredentials.username,
+      REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD: liveCredentials.password,
+      NODE_NO_WARNINGS: '1',
     });
 
     assert.equal(proof.status, 0, proof.stderr);
@@ -249,19 +271,13 @@ maybeTest('production-shaped release verify command runs the live protocol branc
 
 maybeTest('production-shaped release verify command fails closed when remote drift appears after the authenticated snapshot', () => {
   return withPlaygroundServer('remote-base', path.join(repoRoot, 'fixtures/playground/remote-base.blueprint.json'), async (remoteServer) => {
-    const proof = spawnSync(process.execPath, ['scripts/playground/production-shaped-release-verify.mjs'], {
-      cwd: repoRoot,
-      env: {
-        ...process.env,
-        REPRINT_PUSH_SOURCE_URL: remoteServer.baseUrl,
-        REPRINT_PUSH_REMOTE_URL: remoteServer.baseUrl,
-        REPRINT_PUSH_LAB_AUTH_ADMIN_USER: liveCredentials.username,
-        REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD: liveCredentials.password,
-        REPRINT_PUSH_LAB_DRIFT_AFTER_SNAPSHOT: 'post-title',
-        NODE_NO_WARNINGS: '1',
-      },
-      encoding: 'utf8',
-      maxBuffer: 1024 * 1024 * 20,
+    const proof = spawnReleaseVerify({
+      REPRINT_PUSH_SOURCE_URL: remoteServer.baseUrl,
+      REPRINT_PUSH_REMOTE_URL: remoteServer.baseUrl,
+      REPRINT_PUSH_LAB_AUTH_ADMIN_USER: liveCredentials.username,
+      REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD: liveCredentials.password,
+      REPRINT_PUSH_LAB_DRIFT_AFTER_SNAPSHOT: 'post-title',
+      NODE_NO_WARNINGS: '1',
     });
 
     assert.equal(proof.status, 1, proof.stderr);
@@ -275,16 +291,17 @@ maybeTest('production-shaped release verify command fails closed when remote dri
 });
 
 test('production-shaped apply revalidation smoke fails closed on mid-apply drift with production routes', () => {
-  const proof = spawnSync('npm', ['run', 'test:playground:production-shaped-apply-revalidation'], {
+  const proof = spawnBoundedSync('npm', ['run', 'test:playground:production-shaped-apply-revalidation'], {
     cwd: repoRoot,
+    timeout: proofSubprocessTimeoutMs,
+    killSignal: 'SIGKILL',
     env: {
       ...process.env,
       NODE_NO_WARNINGS: '1',
     },
     encoding: 'utf8',
     maxBuffer: 1024 * 1024 * 20,
-  });
-
+  }, 'apply revalidation');
   assert.equal(proof.status, 0, proof.stderr);
   assert.match(proof.stdout, /"ok": true/);
   assert.match(proof.stdout, /"sourceUrl": "http:\/\/127\.0\.0\.1:\d+"/);
@@ -302,8 +319,10 @@ test('production-shaped apply revalidation smoke fails closed on mid-apply drift
 });
 
 test('production-shaped release verify command reports the checked retained-source proof summary', () => {
-  const proof = spawnSync(process.execPath, ['scripts/playground/production-shaped-release-verify.mjs'], {
+  const proof = spawnBoundedSync(process.execPath, ['scripts/playground/production-shaped-release-verify.mjs'], {
     cwd: repoRoot,
+    timeout: proofSubprocessTimeoutMs,
+    killSignal: 'SIGKILL',
     env: {
       ...process.env,
       REPRINT_PUSH_SOURCE_URL: '',
@@ -317,8 +336,7 @@ test('production-shaped release verify command reports the checked retained-sour
     },
     encoding: 'utf8',
     maxBuffer: 1024 * 1024 * 20,
-  });
-
+  }, 'retained-source release verify');
   assert.equal(proof.status, 0, proof.stderr);
   assert.match(proof.stdout, /"releaseProof": \{/);
   assert.match(proof.stdout, /"ok": true/);
@@ -335,16 +353,17 @@ test('production-shaped release verify command reports the checked retained-sour
 });
 
 maybeTest('production-shaped live topology proof runs preflight against a local Playground source and reports the topology', () => {
-  const proof = spawnSync(process.execPath, ['scripts/playground/production-shaped-live-topology-proof.mjs'], {
+  const proof = spawnBoundedSync(process.execPath, ['scripts/playground/production-shaped-live-topology-proof.mjs'], {
     cwd: repoRoot,
+    timeout: proofSubprocessTimeoutMs,
+    killSignal: 'SIGKILL',
     env: {
       ...process.env,
       NODE_NO_WARNINGS: '1',
     },
     encoding: 'utf8',
     maxBuffer: 1024 * 1024 * 20,
-  });
-
+  }, 'live topology proof');
   assert.equal(proof.status, 0, proof.stderr);
   assert.match(proof.stdout, /"ok": true/);
   assert.match(proof.stdout, /"remoteBase": "remote-base"/);
@@ -357,16 +376,17 @@ maybeTest('production-shaped live topology proof runs preflight against a local 
 });
 
 maybeTest('production-shaped live protocol proof runs the real preflight plus snapshot, dry-run, and apply boundary', () => {
-  const proof = spawnSync(process.execPath, ['scripts/playground/production-shaped-live-protocol-proof.mjs'], {
+  const proof = spawnBoundedSync(process.execPath, ['scripts/playground/production-shaped-live-protocol-proof.mjs'], {
     cwd: repoRoot,
+    timeout: proofSubprocessTimeoutMs,
+    killSignal: 'SIGKILL',
     env: {
       ...process.env,
       NODE_NO_WARNINGS: '1',
     },
     encoding: 'utf8',
     maxBuffer: 1024 * 1024 * 20,
-  });
-
+  }, 'live protocol proof');
   assert.equal(proof.status, 0, proof.stderr);
   assert.match(proof.stdout, /"ok": true/);
   assert.match(proof.stdout, /"mode": "apply"/);
@@ -379,15 +399,16 @@ maybeTest('production-shaped live protocol proof runs the real preflight plus sn
 });
 
 test('production-shaped topology proof wrapper emits the fixed one-remote one-local one-drift harness', () => {
-  const proof = spawnSync(process.execPath, ['scripts/playground/production-shaped-topology-proof.mjs'], {
+  const proof = spawnBoundedSync(process.execPath, ['scripts/playground/production-shaped-topology-proof.mjs'], {
     cwd: repoRoot,
+    timeout: proofSubprocessTimeoutMs,
+    killSignal: 'SIGKILL',
     env: {
       ...process.env,
       NODE_NO_WARNINGS: '1',
     },
     encoding: 'utf8',
-  });
-
+  }, 'topology proof');
   assert.equal(proof.status, 0);
   assert.match(proof.stdout, /"remoteBase": "remote-base"/);
   assert.match(proof.stdout, /"localEdited": "local-edited"/);
@@ -444,7 +465,12 @@ async function startPlaygroundServer(name, blueprintPath) {
     output += chunk;
   });
 
-  await waitForServer(child, baseUrl, () => output);
+  try {
+    await waitForServer(child, baseUrl, () => output);
+  } catch (error) {
+    await stopExitedServer(child);
+    throw error;
+  }
 
   return { name, baseUrl, port, child };
 }
@@ -459,20 +485,63 @@ async function stopPlaygroundServer(server) {
 
 async function waitForServer(child, baseUrl, getLogs) {
   const deadline = Date.now() + serverStartupTimeoutMs;
+  let lastError = null;
+  const lastProbes = [];
   while (Date.now() < deadline) {
     if (child.exitCode !== null) {
       throw new Error(`Playground server exited early with ${child.exitCode}\n${getLogs()}`);
     }
     try {
-      const response = await fetch(`${baseUrl}/wp-json/`);
+      const response = await fetchWithTimeout(`${baseUrl}/wp-json/`, {
+        headers: { connection: 'close' },
+      });
+      const responseBody = await response.clone().text().catch(() => '');
+      lastProbes.push({
+        route: '/wp-json/',
+        status: response.status,
+        ok: response.ok,
+        body: responseBody.slice(0, 500),
+      });
       if (response.status === 200) {
         await response.arrayBuffer();
-        return;
+        const snapshot = await fetchWithTimeout(`${baseUrl}/wp-json/reprint-push-lab/v1/snapshot`, {
+          headers: {
+            Authorization: `Basic ${Buffer.from(`${liveCredentials.username}:${liveCredentials.password}`).toString('base64')}`,
+            connection: 'close',
+          },
+        });
+        const snapshotBody = await snapshot.clone().text().catch(() => '');
+        lastProbes.push({
+          route: '/wp-json/reprint-push-lab/v1/snapshot',
+          status: snapshot.status,
+          ok: snapshot.ok,
+          body: snapshotBody.slice(0, 500),
+        });
+        if (snapshot.status === 200) {
+          await snapshot.arrayBuffer();
+          return;
+        }
+        lastError = new Error(`Playground lab snapshot readiness HTTP ${snapshot.status}`);
+      } else {
+        lastError = new Error(`Playground index readiness HTTP ${response.status}`);
       }
-    } catch {}
+    } catch (error) {
+      lastError = error;
+    }
     await new Promise((resolve) => setTimeout(resolve, 500));
   }
-  throw new Error(`Timed out waiting for Playground server at ${baseUrl}\n${getLogs()}`);
+  const probeText = lastProbes.length ? `\nProbe trail: ${JSON.stringify(lastProbes.slice(-4), null, 2)}` : '';
+  throw new Error(`Timed out waiting for Playground server at ${baseUrl}: ${lastError?.message || 'unknown'}${probeText}\n${getLogs()}`);
+}
+
+async function fetchWithTimeout(url, init = {}) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(new Error(`Timed out fetching ${url}`)), serverFetchTimeoutMs);
+  try {
+    return await fetch(url, { ...init, signal: controller.signal });
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 async function waitForExit(child, timeoutMs) {

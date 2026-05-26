@@ -9,7 +9,8 @@ import { authenticatedHttpClient, runAuthenticatedHttpPush } from '../../src/aut
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const muPluginDir = path.join(repoRoot, 'scripts/playground/rest-mu-plugins');
-const serverStartupTimeoutMs = 120_000;
+const serverStartupTimeoutMs = 20_000;
+const serverFetchTimeoutMs = 3_000;
 const credentials = {
   username: 'reprint_push_admin',
   password: 'reprint-push-admin-app-password',
@@ -447,6 +448,8 @@ try {
 
       const durableJournalProof = spawnSync(process.execPath, ['scripts/recovery/file-journal-restart-smoke.mjs'], {
         cwd: process.cwd(),
+        timeout: 30_000,
+        killSignal: 'SIGKILL',
         encoding: 'utf8',
         maxBuffer: 1024 * 1024 * 20,
         env: {
@@ -454,6 +457,21 @@ try {
           NODE_NO_WARNINGS: '1',
         },
       });
+      if (durableJournalProof.error) {
+        throw new Error(
+          `durable journal smoke failed with ${durableJournalProof.error.name ?? 'Error'}: ${durableJournalProof.error.message}\n${durableJournalProof.stdout}${durableJournalProof.stderr}`,
+        );
+      }
+      if (durableJournalProof.signal) {
+        throw new Error(
+          `durable journal smoke terminated by ${durableJournalProof.signal}\n${durableJournalProof.stdout}${durableJournalProof.stderr}`,
+        );
+      }
+      if (durableJournalProof.status === null) {
+        throw new Error(
+          `durable journal smoke exited without a status\n${durableJournalProof.stdout}${durableJournalProof.stderr}`,
+        );
+      }
       assert.equal(durableJournalProof.status, 0, durableJournalProof.stderr || durableJournalProof.stdout);
 
       const durableJournalSummary = JSON.parse(durableJournalProof.stdout);
@@ -743,20 +761,71 @@ function snapshotHash(snapshot) {
 
 async function waitForServer(child, baseUrl, getLogs) {
   const deadline = Date.now() + serverStartupTimeoutMs;
+  let lastError = null;
+  const lastProbes = [];
   while (Date.now() < deadline) {
     if (child.exitCode !== null) {
       throw new Error(`Playground server exited early with ${child.exitCode}\n${getLogs()}`);
     }
     try {
-      const response = await fetch(`${baseUrl}/wp-json/`);
+      const response = await fetchWithTimeout(`${baseUrl}/wp-json/`, {
+        headers: { connection: 'close' },
+      });
+      const responseBody = await response.clone().text().catch(() => '');
+      lastProbes.push({
+        route: '/wp-json/',
+        status: response.status,
+        ok: response.ok,
+        body: responseBody.slice(0, 500),
+      });
       if (response.status === 200) {
         await response.arrayBuffer();
-        return;
+        const snapshot = await fetchWithTimeout(`${baseUrl}/wp-json/reprint-push-lab/v1/snapshot`, {
+          headers: {
+            Authorization: `Basic ${Buffer.from(`${credentials.username}:${credentials.password}`).toString('base64')}`,
+            connection: 'close',
+          },
+        });
+        const snapshotBody = await snapshot.clone().text().catch(() => '');
+        lastProbes.push({
+          route: '/wp-json/reprint-push-lab/v1/snapshot',
+          status: snapshot.status,
+          ok: snapshot.ok,
+          body: snapshotBody.slice(0, 500),
+        });
+        if (snapshot.status === 200) {
+          await snapshot.arrayBuffer();
+          return;
+        }
+        lastError = new Error(`Playground lab snapshot readiness HTTP ${snapshot.status}`);
+      } else {
+        lastError = new Error(`Playground index readiness HTTP ${response.status}`);
       }
-    } catch {}
+    } catch (error) {
+      lastError = error;
+    }
     await new Promise((resolve) => setTimeout(resolve, 500));
   }
-  throw new Error(`Timed out waiting for Playground server at ${baseUrl}\n${getLogs()}`);
+  const probeText = lastProbes.length
+    ? `\nProbe trail: ${JSON.stringify(lastProbes.slice(-4), null, 2)}`
+    : '';
+  const diagnostic = `Timed out waiting for Playground server at ${baseUrl}: ${lastError?.message || 'unknown'}${probeText}\n${getLogs()}`;
+  process.stderr.write(`${diagnostic}\n`);
+  child.kill('SIGTERM');
+  await waitForExit(child, 12_000).catch(() => {
+    child.kill('SIGKILL');
+  });
+  throw new Error(diagnostic);
+}
+
+async function fetchWithTimeout(url, init = {}) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(new Error(`Timed out fetching ${url}`)), serverFetchTimeoutMs);
+  try {
+    return await fetch(url, { ...init, signal: controller.signal });
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 async function waitForExit(child, timeoutMs) {
