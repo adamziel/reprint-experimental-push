@@ -795,6 +795,19 @@ export function productionRecoverySupportReport(writer) {
   ) {
     addMissingDependency('durable journal append ownership fencing');
   }
+  if (
+    !Object.hasOwn(writer ?? {}, 'assertCurrentClaim')
+    || typeof writer.assertCurrentClaim !== 'function'
+  ) {
+    addMissingDependency('stale-worker rejection fencing');
+  }
+  if (Array.isArray(writer?.missingDependency)) {
+    for (const missing of writer.missingDependency) {
+      if (typeof missing === 'string' && missing.length > 0) {
+        addMissingDependency(missing);
+      }
+    }
+  }
   const { writerJournalArtifactRef, writerRemoteArtifactRef, inspectedArtifactRefs, inspectedRemoteArtifactRef } = artifactRefs;
   if (
     isStrictPlainObject(writer?.artifactRefs)

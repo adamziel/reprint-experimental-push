@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import {
+  assertProductionRecoveryJournalClaim,
   appendJournalCompleted,
   appendMutationObserved,
   appendRecoveryClaimOpened,
@@ -151,6 +152,7 @@ test('unsupported production recovery journal stub fails closed on every operati
     'owned restart-readable recovery journal path',
     'restart-readable recovery journal schema',
     'fencing or lease ownership for the journal writer',
+    'stale-worker rejection fencing',
     'journal-readable inspection records with sequence and type',
   ]);
 
@@ -168,6 +170,39 @@ test('production recovery journal lease validation is available to release-path 
   assert.equal(isValidProductionWriterLease(null), false);
   assert.equal(isValidProductionWriterLease({}), false);
   assert.equal(isValidProductionWriterLease({ id: 1 }), false);
+});
+
+test('production recovery journal claim assertion rejects stale workers through the exported helper', () => {
+  const filePath = tempJournalPath();
+  const activeJournal = openProductionRecoveryJournal(filePath, {
+    truncate: true,
+    now: fixedNow,
+    claimId: 'claim-active-1',
+    writerLease: { id: 'lease-active-1' },
+  });
+  appendRecoveryClaimOpened(activeJournal, {
+    plan: { id: 'plan-active-1' },
+    current: { files: {}, plugins: {}, db: {} },
+    claimId: 'claim-active-1',
+    staleThresholdMs: 1000,
+  });
+  assert.doesNotThrow(() => assertProductionRecoveryJournalClaim(activeJournal, 'journal-append'));
+
+  const staleJournal = openProductionRecoveryJournal(filePath, {
+    now: fixedNow,
+    claimId: 'claim-stale-1',
+    writerLease: { id: 'lease-stale-1' },
+  });
+  assert.throws(
+    () => assertProductionRecoveryJournalClaim(staleJournal, 'journal-append'),
+    {
+      name: 'RecoveryJournalClaimStaleError',
+      code: 'RECOVERY_CLAIM_STALE',
+    },
+  );
+
+  activeJournal.close();
+  staleJournal.close();
 });
 
 test('production recovery journal inspection is exported for release-path consumers', () => {
@@ -198,6 +233,7 @@ test('production recovery support report exposes the release-path dependency sur
   assert.equal(unsupportedReport.supported, false);
   assert.ok(unsupportedReport.missingDependency.includes('restart-readable recovery inspection'));
   assert.ok(unsupportedReport.missingDependency.includes('fencing or lease ownership for the journal writer'));
+  assert.ok(unsupportedReport.missingDependency.includes('stale-worker rejection fencing'));
 
   const filePath = tempJournalPath();
   const journal = openProductionRecoveryJournal(filePath, {

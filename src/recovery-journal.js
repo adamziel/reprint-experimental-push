@@ -81,6 +81,7 @@ export function createUnsupportedProductionRecoveryJournal(reason = 'Production 
     'owned restart-readable recovery journal path',
     'restart-readable recovery journal schema',
     'fencing or lease ownership for the journal writer',
+    'stale-worker rejection fencing',
     'journal-readable inspection records with sequence and type',
   ]);
 
@@ -316,6 +317,20 @@ export function inspectProductionRecoveryJournal(writer) {
   } catch (error) {
     return { error };
   }
+}
+
+export function assertProductionRecoveryJournalClaim(writer, eventType = 'journal-append') {
+  if (!writer || typeof writer.assertCurrentClaim !== 'function') {
+    throw new UnsupportedProductionRecoveryJournalError(
+      'Production recovery journal support requires a stale-worker rejection surface.',
+      {
+        ...productionRecoveryJournalDetails(),
+        eventType,
+      },
+    );
+  }
+
+  return writer.assertCurrentClaim(eventType);
 }
 
 export function isValidProductionWriterLease(writerLease) {
