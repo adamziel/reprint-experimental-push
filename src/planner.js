@@ -333,7 +333,7 @@ function buildPluginOwnedResourcePolicy({ base, local, remote, intents }) {
       }
 
       const supported = candidates.find((entry) =>
-        SUPPORTED_PLUGIN_DATA_DRIVERS.has(entry.driver)
+        (SUPPORTED_PLUGIN_DATA_DRIVERS.has(entry.driver) || (entry.driver && entry.table))
         && pluginOwnedPolicyEntryMatchesResource(entry, resource, owner));
       if (!supported) {
         return {
@@ -435,6 +435,7 @@ function normalizePluginOwnedPolicyEntry(entry, source) {
     resourceKey: entry.resourceKey || entry.key || entry.resource?.key || null,
     pluginOwner: entry.pluginOwner || entry.owner || entry.plugin || null,
     driver: entry.driver || entry.supportedDriver || entry.resourceDriver || null,
+    table: entry.table || entry.resource?.table || null,
     supportsDelete: entry.supportsDelete === true || entry.delete === true || entry.allowDelete === true,
     source,
   };
@@ -443,6 +444,10 @@ function normalizePluginOwnedPolicyEntry(entry, source) {
 function pluginOwnedPolicyEntryMatchesResource(entry, resource, owner) {
   if (entry.pluginOwner !== owner) {
     return false;
+  }
+
+  if (entry.table) {
+    return resource.type === 'row' && resource.table === entry.table;
   }
 
   if (entry.driver !== 'fixture-forms-lab-table') {

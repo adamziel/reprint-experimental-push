@@ -119,8 +119,8 @@ function pluginResource(name) {
   return { type: 'plugin', name, key: `plugin:${name}` };
 }
 
-function allowedPluginOwnedResource(resourceKey, pluginOwner, driver = 'wp-option') {
-  return { pluginOwner, resourceKey, driver };
+function allowedPluginOwnedResource(resourceKey, pluginOwner, driver = 'wp-option', extra = {}) {
+  return { pluginOwner, resourceKey, driver, ...extra };
 }
 
 function pluginOwnedResourcePolicy(...allowedResources) {
@@ -797,6 +797,39 @@ test('blocks unknown plugin-owned custom table rows without leaking values', () 
   assert.equal(blocker.resourceKey, resourceKey);
   assert.equal(blockerJson.includes('base-private-entry'), false);
   assert.equal(blockerJson.includes('local-private-entry'), false);
+});
+
+test('allows plugin-owned custom table rows with explicit driver table policy', () => {
+  const resourceKey = 'row:["wp_reprint_push_driver_fixture","entry_id:1"]';
+  const base = baseSite();
+  base.db.wp_reprint_push_driver_fixture = {
+    'entry_id:1': {
+      entry_id: 1,
+      payload: { owner: 'driver-fixture', mode: 'base', version: 1 },
+      updated_marker: 'base',
+      __pluginOwner: 'driver-fixture',
+    },
+  };
+  const local = JSON.parse(JSON.stringify(base));
+  local.db.wp_reprint_push_driver_fixture['entry_id:1'].payload.mode = 'local-update';
+  local.db.wp_reprint_push_driver_fixture['entry_id:1'].payload.version = 2;
+  local.db.wp_reprint_push_driver_fixture['entry_id:1'].updated_marker = 'local-update';
+  local.meta = {
+    pushPolicy: pluginOwnedResourcePolicy(
+      allowedPluginOwnedResource(resourceKey, 'driver-fixture', 'fixture-arbitrary-plugin-table', {
+        table: 'wp_reprint_push_driver_fixture',
+        supportsDelete: false,
+      }),
+    ),
+  };
+  const remote = JSON.parse(JSON.stringify(base));
+
+  const plan = planFor(base, local, remote);
+
+  assert.equal(plan.status, 'ready');
+  const mutation = mutationFor(plan, resourceKey);
+  assert.equal(mutation.pluginOwnedResource.driver, 'fixture-arbitrary-plugin-table');
+  assert.equal(mutation.pluginOwnedResource.supportsDelete, false);
 });
 
 test('fixture forms lab table requires exact driver and active fixture plugin evidence', () => {

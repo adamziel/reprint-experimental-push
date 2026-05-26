@@ -63,6 +63,7 @@ function reprint_push_export_snapshot(): array
     reprint_push_export_fixture_postmeta($snapshot);
     reprint_push_export_fixture_plugin_metadata($snapshot);
     reprint_push_export_fixture_custom_table($snapshot);
+    reprint_push_export_registered_plugin_owned_rows($snapshot);
     reprint_push_add_fixture_plugin_owned_policy($snapshot);
 
     $fixture_root = WP_CONTENT_DIR . '/uploads/reprint-push';
@@ -187,6 +188,23 @@ function reprint_push_add_fixture_plugin_owned_policy(array &$snapshot): void
             'driver' => 'fixture-forms-lab-table',
             'supportsDelete' => false,
         ];
+    }
+    foreach (reprint_push_registered_plugin_owned_row_drivers() as $driver) {
+        $table = (string) ($driver['table'] ?? '');
+        $plugin_owner = (string) ($driver['pluginOwner'] ?? '');
+        $driver_name = (string) ($driver['driver'] ?? '');
+        if ($table === '' || $plugin_owner === '' || $driver_name === '') {
+            continue;
+        }
+        foreach (array_keys($snapshot['db'][$table] ?? []) as $row_id) {
+            $allowed_resources[] = [
+                'resourceKey' => 'row:' . wp_json_encode([$table, $row_id], JSON_UNESCAPED_SLASHES),
+                'pluginOwner' => $plugin_owner,
+                'driver' => $driver_name,
+                'table' => $table,
+                'supportsDelete' => !empty($driver['supportsDelete']),
+            ];
+        }
     }
 
     usort($allowed_resources, static function (array $left, array $right): int {
@@ -1039,6 +1057,13 @@ function reprint_push_assert_supported_apply_resource(array $resource): void
             reprint_push_forms_lab_row_id($id);
             return;
         }
+        $driver = reprint_push_plugin_owned_row_driver_for_table($table);
+        if (is_array($driver)) {
+            if ($id === '' || strpos($id, ':') === false) {
+                throw new RuntimeException('Unsupported plugin-owned row id: ' . $id);
+            }
+            return;
+        }
         throw new RuntimeException('Unsupported apply table: ' . $table);
     }
     throw new RuntimeException('Unsupported apply resource type: ' . (string) $type);
@@ -1092,6 +1117,15 @@ function reprint_push_apply_row_resource(string $table, string $id, bool $is_del
     }
     if ($table === 'wp_reprint_push_forms_lab') {
         reprint_push_apply_forms_lab_row($id, $is_delete, $value);
+        return;
+    }
+    $driver = reprint_push_plugin_owned_row_driver_for_table($table);
+    if (is_array($driver)) {
+        $callback = $driver['applyRowCallback'] ?? null;
+        if (!is_string($callback) || $callback === '' || !is_callable($callback)) {
+            throw new RuntimeException('Unsupported apply callback for plugin-owned driver table: ' . $table);
+        }
+        $callback($id, $is_delete, $value, $driver);
         return;
     }
     throw new RuntimeException('Unsupported table: ' . $table);
@@ -1432,6 +1466,61 @@ function reprint_push_allowed_plugin_options(): array
         'reprint_push_forms_fixture' => 'forms',
         'reprint_push_atomic_fixture_data' => 'reprint-push-atomic-dependent-fixture',
     ];
+}
+
+function reprint_push_registered_plugin_owned_row_drivers(): array
+{
+    $drivers = apply_filters('reprint_push_plugin_owned_row_drivers', []);
+    if (!is_array($drivers)) {
+        return [];
+    }
+
+    $normalized = [];
+    foreach ($drivers as $key => $driver) {
+        if (!is_array($driver)) {
+            continue;
+        }
+        $driver_name = (string) ($driver['driver'] ?? (is_string($key) ? $key : ''));
+        $table = (string) ($driver['table'] ?? '');
+        $plugin_owner = (string) ($driver['pluginOwner'] ?? '');
+        if ($driver_name === '' || $table === '' || $plugin_owner === '') {
+            continue;
+        }
+        $normalized[$driver_name] = $driver + [
+            'driver' => $driver_name,
+            'table' => $table,
+            'pluginOwner' => $plugin_owner,
+        ];
+    }
+
+    return $normalized;
+}
+
+function reprint_push_plugin_owned_row_driver_for_table(string $table): ?array
+{
+    foreach (reprint_push_registered_plugin_owned_row_drivers() as $driver) {
+        if ((string) ($driver['table'] ?? '') === $table) {
+            return $driver;
+        }
+    }
+    return null;
+}
+
+function reprint_push_plugin_owned_row_driver_by_name(string $name): ?array
+{
+    $drivers = reprint_push_registered_plugin_owned_row_drivers();
+    return $drivers[$name] ?? null;
+}
+
+function reprint_push_export_registered_plugin_owned_rows(array &$snapshot): void
+{
+    foreach (reprint_push_registered_plugin_owned_row_drivers() as $driver) {
+        $callback = $driver['exportRowsCallback'] ?? null;
+        if (!is_string($callback) || $callback === '' || !is_callable($callback)) {
+            continue;
+        }
+        $callback($snapshot, $driver);
+    }
 }
 
 function reprint_push_allowed_fixture_plugins(): array
@@ -1831,6 +1920,23 @@ function reprint_push_assert_supported_plugin_owned_mutation(array $mutation, ar
         return;
     }
     if (in_array($driver, ['wp-usermeta', 'wp-user-meta'], true) && (string) ($resource['table'] ?? '') === 'wp_usermeta') {
+        return;
+    }
+    $registered_driver = reprint_push_plugin_owned_row_driver_by_name($driver);
+    if (is_array($registered_driver)
+        && (string) ($registered_driver['pluginOwner'] ?? '') === (string) $owner
+        && (string) ($registered_driver['table'] ?? '') === (string) ($resource['table'] ?? '')
+    ) {
+        if (!empty($mutation['value']['absent']) && empty($registered_driver['supportsDelete'])) {
+            throw new RuntimeException('Unsupported plugin-owned mutation delete for ' . (string) ($mutation['resourceKey'] ?? 'unknown'));
+        }
+        $callback = $registered_driver['validateMutationCallback'] ?? null;
+        if (!is_string($callback) || $callback === '' || !is_callable($callback)) {
+            throw new RuntimeException('Unsupported plugin-owned mutation driver for ' . (string) ($mutation['resourceKey'] ?? 'unknown'));
+        }
+        if (!$callback($mutation, $snapshot, $registered_driver)) {
+            throw new RuntimeException('Unsupported plugin-owned mutation driver for ' . (string) ($mutation['resourceKey'] ?? 'unknown'));
+        }
         return;
     }
 
