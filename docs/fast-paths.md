@@ -71,6 +71,9 @@ Current executable gate:
   measured receipt-cursor queue slack, so the pause evidence cannot stand in
   for the companion slack measurement.
 - The production-throughput gate also fails closed if the explicit measured
+  receipt-cursor queue-slack proof bit is missing, so a paused record cannot
+  look complete when the slack measurement proof itself is absent.
+- The production-throughput gate also fails closed if the explicit measured
   receipt-cursor backpressure bit is missing, so a paused record cannot look
   complete when the backpressure measurement itself is absent.
 - The production-throughput gate also fails closed if a paused sender reports
