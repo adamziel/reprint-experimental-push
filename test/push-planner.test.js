@@ -8431,6 +8431,122 @@ test('blocks _menu_item_menu_item_parent metadata owned by an existing wp_naviga
   assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
 });
 
+test('blocks menu item parent metadata owned by an existing nav_menu_item post even when it targets a same-plan post', () => {
+  const resourceKey = 'row:["wp_postmeta","meta_id:5071"]';
+  const menuItemResourceKey = 'row:["wp_posts","ID:4"]';
+  const targetResourceKey = 'row:["wp_posts","ID:5"]';
+  const base = baseSite();
+  const local = baseSite();
+  const remote = baseSite();
+
+  base.db.wp_posts['ID:4'] = {
+    ID: 4,
+    post_title: 'Existing nav_menu_item owner',
+    post_content: 'base-private-existing-nav-menu-item-owner-body',
+    post_status: 'publish',
+    post_type: 'nav_menu_item',
+  };
+  local.db.wp_posts['ID:4'] = {
+    ...base.db.wp_posts['ID:4'],
+  };
+  remote.db.wp_posts['ID:4'] = {
+    ...base.db.wp_posts['ID:4'],
+  };
+  local.db.wp_posts['ID:5'] = {
+    ID: 5,
+    post_title: 'Local menu parent target',
+    post_content: 'local-private-existing-nav-menu-item-target-body',
+    post_status: 'publish',
+  };
+  local.db.wp_postmeta = {
+    'meta_id:5071': {
+      meta_id: 5071,
+      post_id: 4,
+      meta_key: 'menu_item_parent',
+      meta_value: 5,
+    },
+  };
+
+  const plan = planFor(base, local, remote);
+  const menuItemMutation = mutationFor(plan, menuItemResourceKey);
+  const targetMutation = mutationFor(plan, targetResourceKey);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(menuItemMutation, undefined);
+  assert.equal(targetMutation.changeKind, 'create');
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(blocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(blocker.surface, 'nav_menu_item');
+  assert.equal(
+    JSON.stringify(blocker).includes('base-private-existing-nav-menu-item-owner-body'),
+    false,
+  );
+  assert.equal(
+    JSON.stringify(blocker).includes('local-private-existing-nav-menu-item-target-body'),
+    false,
+  );
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
+});
+
+test('blocks _menu_item_menu_item_parent metadata owned by an existing nav_menu_item post even when it targets a same-plan post', () => {
+  const resourceKey = 'row:["wp_postmeta","meta_id:5072"]';
+  const menuItemResourceKey = 'row:["wp_posts","ID:4"]';
+  const targetResourceKey = 'row:["wp_posts","ID:5"]';
+  const base = baseSite();
+  const local = baseSite();
+  const remote = baseSite();
+
+  base.db.wp_posts['ID:4'] = {
+    ID: 4,
+    post_title: 'Existing nav_menu_item alias owner',
+    post_content: 'base-private-existing-nav-menu-item-alias-owner-body',
+    post_status: 'publish',
+    post_type: 'nav_menu_item',
+  };
+  local.db.wp_posts['ID:4'] = {
+    ...base.db.wp_posts['ID:4'],
+  };
+  remote.db.wp_posts['ID:4'] = {
+    ...base.db.wp_posts['ID:4'],
+  };
+  local.db.wp_posts['ID:5'] = {
+    ID: 5,
+    post_title: 'Local alias menu parent target',
+    post_content: 'local-private-existing-nav-menu-item-alias-target-body',
+    post_status: 'publish',
+  };
+  local.db.wp_postmeta = {
+    'meta_id:5072': {
+      meta_id: 5072,
+      post_id: 4,
+      meta_key: '_menu_item_menu_item_parent',
+      meta_value: 5,
+    },
+  };
+
+  const plan = planFor(base, local, remote);
+  const menuItemMutation = mutationFor(plan, menuItemResourceKey);
+  const targetMutation = mutationFor(plan, targetResourceKey);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(menuItemMutation, undefined);
+  assert.equal(targetMutation.changeKind, 'create');
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(blocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(blocker.surface, 'nav_menu_item');
+  assert.equal(
+    JSON.stringify(blocker).includes('base-private-existing-nav-menu-item-alias-owner-body'),
+    false,
+  );
+  assert.equal(
+    JSON.stringify(blocker).includes('local-private-existing-nav-menu-item-alias-target-body'),
+    false,
+  );
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
+});
+
 test('blocks _menu_item_menu_item_parent metadata owned by a wp_navigation post even when it targets a same-plan post', () => {
   const resourceKey = 'row:["wp_postmeta","meta_id:501"]';
   const navigationResourceKey = 'row:["wp_posts","ID:4"]';
