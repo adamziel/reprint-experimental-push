@@ -1,30 +1,26 @@
-2026-05-26 10:55:35 CEST (+0200) - Critic lane verification pass
+2026-05-26 11:14:49 CEST (+0200) - Critic lane verification pass
 
-No audit update was needed on this pass.
-
-The critic audit still reflects the newest reliable head `9ff7b997` and keeps
-the release gate closed at `0/4`. This pass only verified the lane-owned audit
-state and confirmed there was no new evidence delta to classify.
+Updated the critic audit to classify the new reliable head `1c8a658b` as
+release-smoke boundary evidence and keep the release gate at `0/4`.
 
 Changed files:
+- [`audits/critic.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/critic/audits/critic.md)
 - [`.lane-output/final.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/critic/.lane-output/final.md)
 
 Commands run:
-- `git status --short --branch`
-- `sed -n '1,220p' .lane-output/final.md`
-- `sed -n '1,260p' audits/critic.md`
-- `sed -n '1,220p' AGENTS.md`
-- `sed -n '1,240p' supervision/README.md`
-- `find supervision/lanes -maxdepth 1 -type f | sort | xargs -r -I{} sh -c 'printf "\\n### %s\\n" "$1"; sed -n "1,220p" "$1"' sh {}`
 - `date '+%Y-%m-%d %H:%M:%S %Z (%z)'`
+- `grep -RIn --exclude-dir=.git '1c8a658b\\|5fd9dfb4\\|9ff7b997' audits progress.html docs .lane-output | head -200`
+- `git status --short --branch`
+- `sed -n '1,260p' audits/critic.md`
+- `sed -n '1,220p' supervision/lanes/critic.md`
+- `sed -n '1,220p' supervision/README.md`
 
 Push result:
 - Not attempted
 
 Worktree status:
-- Branch remains `lane/cycle-20260525-mainwindows-2349/critic...origin/main [ahead 1603, behind 614]`
-- Only `.lane-output/final.md` changed on this pass
-- `audits/critic.md` stayed unchanged and already names `9ff7b997`
+- `audits/critic.md` and `.lane-output/final.md` are modified
+- Branch is `lane/cycle-20260525-mainwindows-2349/critic...origin/main [ahead 1609, behind 623]`
 
 Next supervisor nudge:
-- Re-poll `reliable-executor` only when it lands a concrete new proof delta beyond the current bounded readiness failure, especially exact replay-equivalence evidence or a production-backed mutation path.
+- Keep `critic` on the current verdict unless `reliable-executor` lands a live production-backed release-path proof, exact replay equivalence, or durable journal ownership that changes the gate posture.
