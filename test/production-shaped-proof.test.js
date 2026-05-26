@@ -378,7 +378,9 @@ function writeSpawnOutputTail(proof, commandLabel = '') {
   }
 
   if (structuredTail) {
-    process.stderr.write(`Last route/status/body: ${JSON.stringify(structuredTail, null, 2)}\n`);
+    const structuredTailText = `Last route/status/body: ${JSON.stringify(structuredTail, null, 2)}\n`;
+    process.stderr.write(structuredTailText);
+    process.stdout.write(structuredTailText);
   }
 }
 
