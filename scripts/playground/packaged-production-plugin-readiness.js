@@ -329,3 +329,11 @@ export function packagedProductionPluginTimedOutRouteProbeWhilePackagedRouteStar
     && indexStatus === 200
     && !packagedProductionPluginReadinessBodyRetryable(indexStatus, indexBodyText);
 }
+
+export function packagedProductionPluginRetryableRouteProbeWhileIndexProbeTimedOut(
+  routeProbe,
+  indexProbe,
+) {
+  return routeProbe?.retryable === true
+    && indexProbe?.timedOut === true;
+}

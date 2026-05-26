@@ -43,6 +43,7 @@ import {
   packagedProductionPluginPreflightRetryable,
   packagedProductionPluginReadinessProbeTimedOut,
   packagedProductionPluginResetRouteNotReadyProbeCounts,
+  packagedProductionPluginRetryableRouteProbeWhileIndexProbeTimedOut,
   packagedProductionPluginRouteRetryableWhilePackagedRouteStarting,
   packagedProductionPluginRouteRetryableWhileWordPressStarting,
   packagedProductionPluginServerReady,
@@ -1869,6 +1870,27 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
                   childPid: child.pid ?? null,
                   packagedProductionPlugin: true,
                   packagedRouteStartup: true,
+                },
+                lastTimeoutFallbackProbes,
+              );
+            }
+            if (
+              packagedProductionPluginRetryableRouteProbeWhileIndexProbeTimedOut(
+                preflightProbe,
+                indexProbe,
+              )
+            ) {
+              lastError = error;
+              await throwPlaygroundReadinessFailure(
+                child,
+                `Packaged production plugin preflight stayed startup-shaped while /wp-json/ timed out after the snapshot probe timed out at ${baseUrl}`,
+                lastError,
+                lastProbes,
+                getOutput(),
+                {
+                  childPid: child.pid ?? null,
+                  packagedProductionPlugin: true,
+                  indexProbeTimedOut: true,
                 },
                 lastTimeoutFallbackProbes,
               );

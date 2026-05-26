@@ -2302,6 +2302,10 @@ test('packaged readiness timeout fallback classifies global WordPress versus pac
   );
   assert.match(
     smokeSource,
+    /preflight stayed startup-shaped while \/wp-json\/ timed out after the snapshot probe timed out/,
+  );
+  assert.match(
+    smokeSource,
     /preflight probe timed out after global WordPress startup HTTP \$\{indexProbe\.status\} while the snapshot probe timed out/,
   );
   assert.match(
@@ -2318,10 +2322,16 @@ test('packaged readiness timeout fallback classifies global WordPress versus pac
   );
   assert.match(
     verifierSource,
+    /preflight stayed startup-shaped while \/wp-json\/ timed out after the snapshot probe timed out[\s\S]*?indexProbeTimedOut:\s*true/s,
+  );
+  assert.match(
+    verifierSource,
     /preflight probe timed out after global WordPress startup HTTP \$\{indexProbe\.status\} while the snapshot probe timed out[\s\S]*?packagedRouteStartup:\s*true/s,
   );
+  assert.match(smokeSource, /packagedProductionPluginRetryableRouteProbeWhileIndexProbeTimedOut\(/);
   assert.match(smokeSource, /packagedProductionPluginTimedOutRouteProbeWhileWordPressStarting\(/);
   assert.match(smokeSource, /packagedProductionPluginTimedOutRouteProbeWhilePackagedRouteStarting\(/);
+  assert.match(verifierSource, /packagedProductionPluginRetryableRouteProbeWhileIndexProbeTimedOut\(/);
   assert.match(verifierSource, /packagedProductionPluginTimedOutRouteProbeWhileWordPressStarting\(/);
   assert.match(verifierSource, /packagedProductionPluginTimedOutRouteProbeWhilePackagedRouteStarting\(/);
 });

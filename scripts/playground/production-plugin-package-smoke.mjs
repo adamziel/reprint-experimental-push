@@ -24,6 +24,7 @@ import {
   packagedProductionPluginReadinessErrorRetryable,
   packagedProductionPluginReadinessProbeTimedOut,
   packagedProductionPluginResetRouteNotReadyProbeCounts,
+  packagedProductionPluginRetryableRouteProbeWhileIndexProbeTimedOut,
   packagedProductionPluginRouteRetryableWhilePackagedRouteStarting,
   packagedProductionPluginRouteRetryableWhileWordPressStarting,
   packagedProductionPluginServerReady,
@@ -966,6 +967,22 @@ async function waitForServer(child, baseUrl, logs) {
               throw new Error(
                 formatPackagedReadinessFailure(
                   `Packaged production plugin preflight stayed startup-shaped after global WordPress startup HTTP ${indexProbe?.status ?? 0} while the snapshot probe timed out at ${baseUrl}`,
+                  error,
+                  lastProbes,
+                  logs,
+                  lastTimeoutFallbackProbes,
+                ),
+              );
+            }
+            if (
+              packagedProductionPluginRetryableRouteProbeWhileIndexProbeTimedOut(
+                preflightProbe,
+                indexProbe,
+              )
+            ) {
+              throw new Error(
+                formatPackagedReadinessFailure(
+                  `Packaged production plugin preflight stayed startup-shaped while /wp-json/ timed out after the snapshot probe timed out at ${baseUrl}`,
                   error,
                   lastProbes,
                   logs,
