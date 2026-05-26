@@ -125,6 +125,11 @@ test('guarded benchmark refuses production throughput claims until production ga
   assert.equal(report.claims.productionThroughputDetails.queueHeadroomPositive, true);
   assert.equal(report.claims.productionThroughputDetails.queueBudgetPositive, true);
   assert.equal(report.claims.productionThroughputDetails.receiptCursorMemoryCeilingMatchesQueueBudget, true);
+  assert.equal(
+    report.claims.productionThroughputDetails.backpressureConsistency
+      .receiptCursorMemoryCeilingMatchesQueueBudgetVisible,
+    true,
+  );
   assert.equal(report.claims.productionThroughputDetails.receiptCursorMemoryHeadroomPositive, true);
   assert.equal(report.claims.productionThroughputDetails.receiptCursorQueueHeadroomPositive, true);
   assert.equal(report.claims.productionThroughputDetails.backpressureConsistency.queueBudgetMatchesResourceCeiling, true);
@@ -295,6 +300,14 @@ test('guarded benchmark refuses production throughput claims until production ga
   assert.ok(
     productionThroughputBlockers(tamperedQueueSlackSummary).includes(
       'queue-pause-without-measured-receipt-cursor-queue-slack',
+    ),
+  );
+
+  const tamperedQueueSlackAlignment = clone(report);
+  tamperedQueueSlackAlignment.evidence.backpressure.receiptCursorQueueSlackBytes -= 1;
+  assert.ok(
+    productionThroughputBlockers(tamperedQueueSlackAlignment).includes(
+      'queue-pause-without-resource-headroom-safe-receipt-cursor-slack',
     ),
   );
   assert.equal(report.results.preCommitFailure.remoteUnchanged, true);
@@ -910,6 +923,11 @@ test('production claim gate fails closed if benchmark evidence is tampered', () 
   assert.equal(
     productionThroughputDetails(missingMemoryCeilingProof).backpressureConsistency
       .receiptCursorMemoryCeilingMatchesQueueBudget,
+    false,
+  );
+  assert.equal(
+    productionThroughputDetails(missingMemoryCeilingProof).backpressureConsistency
+      .receiptCursorMemoryCeilingMatchesQueueBudgetVisible,
     false,
   );
   assert.ok(

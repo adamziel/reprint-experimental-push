@@ -246,6 +246,12 @@ export function productionThroughputBlockers(report) {
   if (!report.evidence.atomicGroup.preCommitFailureLeavesRemoteUnchanged) {
     blockers.push('atomic-group-pre-commit-visibility-not-proven');
   }
+  if (
+    report.evidence.backpressure?.queuePausedBeforeOverflow === true
+    && !backpressureAlignment.aligned
+  ) {
+    blockers.push('queue-pause-without-resource-headroom-safe-receipt-cursor-slack');
+  }
   if (!Number.isFinite(report.resourceLimits?.memoryCeilingBytes) || report.resourceLimits.memoryCeilingBytes <= 0) {
     blockers.push('production-memory-ceiling-not-measured');
   }
@@ -791,6 +797,7 @@ export function productionThroughputDetails(report) {
     && Number.isFinite(receiptCursorMemoryCeilingBytes)
     && report.evidence.backpressure?.receiptCursorMemoryCeilingMatchesQueueBudget === true
     && receiptCursorQueueBudgetBytes === receiptCursorMemoryCeilingBytes;
+  const receiptCursorMemoryCeilingMatchesQueueBudgetVisible = receiptCursorMemoryCeilingMatchesQueueBudget;
   const backpressureAlignment = {
     queueBudgetBytes: receiptCursorQueueBudgetBytes,
     queueHeadroomBytes: receiptCursorQueueHeadroomBytes,
@@ -961,6 +968,7 @@ export function productionThroughputDetails(report) {
     receiptCursorMemoryHeadroomBytes,
     receiptCursorMemoryHeadroomPositive: receiptCursorMemoryHeadroomPositiveVisible,
     receiptCursorMemoryCeilingMatchesQueueBudget,
+    receiptCursorMemoryCeilingMatchesQueueBudgetVisible,
     queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack,
     successInspectionClaimStatus,
     successInspectionClaimReason,
@@ -1025,6 +1033,7 @@ export function productionThroughputDetails(report) {
       receiptCursorMemoryHeadroomBytes,
       receiptCursorMemoryHeadroomPositive: receiptCursorMemoryHeadroomPositiveVisible,
       receiptCursorMemoryCeilingMatchesQueueBudget,
+      receiptCursorMemoryCeilingMatchesQueueBudgetVisible,
       successInspectionClaimStatus,
       successInspectionClaimReason,
       successInspectionClaimRecognized,
