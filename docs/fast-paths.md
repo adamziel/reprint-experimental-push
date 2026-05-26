@@ -122,6 +122,9 @@ Current executable gate:
 - The report now also fails closed when a blocked success inspection claim has
   no reason, so a recovery claim cannot look complete without a concrete
   explanation.
+- The report now also fails closed when a blocked success inspection claim
+  has only whitespace reason text, so a placeholder explanation cannot look
+  concrete.
 - The report now also fails closed if receipt-cursor queue slack is missing on
   any path, so the benchmark cannot quietly accept an under-instrumented
   backpressure record.

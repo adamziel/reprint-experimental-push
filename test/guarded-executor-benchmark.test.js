@@ -409,6 +409,22 @@ test('production claim gate fails closed if benchmark evidence is tampered', () 
     false,
   );
 
+  const blockedSuccessClaimWithWhitespaceReason = clone(report);
+  blockedSuccessClaimWithWhitespaceReason.results.successInspection.claim = {
+    ...blockedSuccessClaimWithWhitespaceReason.results.successInspection.claim,
+    status: 'blocked',
+    reason: '   ',
+  };
+  assert.ok(
+    productionThroughputBlockers(blockedSuccessClaimWithWhitespaceReason).includes(
+      'success-inspection-claim-reason-not-proven',
+    ),
+  );
+  assert.equal(
+    productionThroughputDetails(blockedSuccessClaimWithWhitespaceReason).successInspectionClaimReasonProven,
+    false,
+  );
+
   const missingCursorHeadroom = clone(report);
   missingCursorHeadroom.evidence.chunkReceipts.resumeCursor.sizeBytes =
     missingCursorHeadroom.resourceLimits.memoryCeilingBytes + 1;

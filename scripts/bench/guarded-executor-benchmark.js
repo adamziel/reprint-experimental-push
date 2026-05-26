@@ -554,7 +554,7 @@ export function productionThroughputBlockers(report) {
     report.results?.successInspection?.claim?.status === 'blocked'
     && (
       typeof report.results.successInspection?.claim?.reason !== 'string'
-      || report.results.successInspection.claim.reason.length === 0
+      || report.results.successInspection.claim.reason.trim().length === 0
     )
   ) {
     blockers.push('success-inspection-claim-reason-not-proven');
@@ -710,7 +710,7 @@ export function productionThroughputDetails(report) {
     || successInspectionClaimStatus === 'blocked';
   const successInspectionClaimReasonProven =
     successInspectionClaimStatus !== 'blocked'
-    || (typeof successInspectionClaimReason === 'string' && successInspectionClaimReason.length > 0);
+    || (typeof successInspectionClaimReason === 'string' && successInspectionClaimReason.trim().length > 0);
   const successInspectionClaimMatchesInspectionStatus =
     successInspectionClaimRecognized
     && (
