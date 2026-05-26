@@ -18649,6 +18649,7 @@ test('blocks local same-plan created comment parent identity while preserving re
 
 test('blocks local same-plan created comment user identity while preserving remote-only plugin drift', () => {
   const resourceKey = 'row:["wp_comments","comment_ID:20"]';
+  const targetResourceKey = 'row:["wp_users","ID:9"]';
   const base = baseSite();
   base.db.wp_comments = {
     'comment_ID:20': {
@@ -18669,7 +18670,7 @@ test('blocks local same-plan created comment user identity while preserving remo
     },
   };
   local.db.wp_users = {
-    'id:9': {
+    'ID:9': {
       ID: 9,
       user_login: 'local-same-plan-user',
       user_email: 'local@example.test',
@@ -18682,16 +18683,29 @@ test('blocks local same-plan created comment user identity while preserving remo
   remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin drift */';
 
   const plan = planFor(base, local, remote);
-  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === targetResourceKey);
+  const reference = blocker.references[0];
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
   const planJson = JSON.stringify(plan);
 
   assert.equal(plan.status, 'blocked');
   assert.equal(plan.summary.mutations, 0);
-  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(mutationFor(plan, targetResourceKey), undefined);
+  assert.equal(decisionFor(plan, resourceKey), undefined);
   assert.equal(plan.conflicts.length, 0);
   assert.equal(blocker.class, 'unsupported-comments-users-resource');
-  assert.equal(blocker.resourceKey, resourceKey);
-  assert.equal(blocker.reason, 'Comments graph resources are not yet supported by the planner.');
+  assert.equal(blocker.resourceKey, targetResourceKey);
+  assert.equal(blocker.unsupportedState, 'same-plan-reference');
+  assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_users","ID:9"] is created in the same plan as a comment user identity that depends on it, and identity rewriting is not yet supported.');
+  assert.equal(reference.relationshipKey, 'wp_comments.user_id');
+  assert.equal(reference.relationshipType, 'comment-user');
+  assert.equal(reference.sourceResourceKey, resourceKey);
+  assert.equal(reference.targetResourceKey, targetResourceKey);
+  assert.equal(reference.targetChange.remote.state, 'absent');
+  assert.equal(reference.targetChange.local.state, 'present');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
   assert.equal(planJson.includes('Local user-linked comment content'), false);
   assert.equal(planJson.includes('Base user-linked comment content'), false);
   assert.equal(planJson.includes('local-same-plan-user'), false);
