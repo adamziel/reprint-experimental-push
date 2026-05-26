@@ -34086,30 +34086,14 @@ test('closes a durable journal writer when apply fails before commit', () => {
 });
 
 test('closes an owned production recovery journal writer after a successful apply', () => {
-  const events = [];
-  let closed = 0;
-  const writer = {
-    kind: 'production-recovery-journal',
-    ownsJournal: true,
-    nextSequence: 1,
-    schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
-    appendEvent(type, payload) {
-      events.push({ type, payload });
-      this.nextSequence += 1;
-      return { sequence: this.nextSequence - 1, type, payload };
-    },
-    flush() {},
-    close() {
-      closed += 1;
-    },
-    inspect() {
-      return {
-        filePath: '/var/lib/reprint/recovery.jsonl',
-        records: events.slice(),
-      };
-    },
-    assertCurrentClaim() {},
-  };
+  const filePath = tempRecoveryJournalPath();
+  const claimId = 'claim-close-after-success';
+  const writer = openProductionRecoveryJournal(filePath, {
+    truncate: true,
+    now: fixedNow,
+    claimId,
+    writerLease: { id: claimId },
+  });
   const plan = planFor(baseSite(), baseSite(), {
     ...baseSite(),
     db: {
@@ -34120,42 +34104,41 @@ test('closes an owned production recovery journal writer after a successful appl
       },
     },
   });
+  appendRecoveryClaimOpened(writer, {
+    plan,
+    current: baseSite(),
+    claimId,
+    artifactRefs: {
+      journal: filePath,
+    },
+  });
 
   const result = applyPlan(baseSite(), plan, {
     durableJournal: writer,
   });
 
   assert.equal(result.recoveryState.status, 'fully-updated-remote');
-  assert.equal(closed, 1);
-  assert.ok(events.some((event) => event.type === 'journal-completed'));
+  assert.equal(isDurableJournalClosed(writer), true);
+  assert.throws(() => writer.appendEvent('journal-opened', {
+    planId: plan.id,
+    state: 'reopened',
+    observedHash: 'snapshot-hash-only',
+    artifactRefs: {
+      journal: filePath,
+    },
+  }), /Recovery journal is closed/);
 });
 
 test('closes an owned production recovery journal writer even when the writer is frozen', () => {
-  const events = [];
-  let closed = 0;
-  const writer = {
-    kind: 'production-recovery-journal',
-    ownsJournal: true,
-    nextSequence: 1,
-    schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
-    appendEvent(type, payload) {
-      events.push({ type, payload });
-      this.nextSequence += 1;
-      return { sequence: this.nextSequence - 1, type, payload };
-    },
-    flush() {},
-    close() {
-      closed += 1;
-    },
-    inspect() {
-      return {
-        filePath: '/var/lib/reprint/recovery.jsonl',
-        records: events.slice(),
-      };
-    },
-    assertCurrentClaim() {},
-  };
-  Object.preventExtensions(writer);
+  const filePath = tempRecoveryJournalPath();
+  const claimId = 'claim-close-frozen-success';
+  const writer = openProductionRecoveryJournal(filePath, {
+    truncate: true,
+    now: fixedNow,
+    claimId,
+    writerLease: { id: claimId },
+  });
+  assert.equal(Object.isExtensible(writer), false);
   const plan = planFor(baseSite(), baseSite(), {
     ...baseSite(),
     db: {
@@ -34166,14 +34149,29 @@ test('closes an owned production recovery journal writer even when the writer is
       },
     },
   });
+  appendRecoveryClaimOpened(writer, {
+    plan,
+    current: baseSite(),
+    claimId,
+    artifactRefs: {
+      journal: filePath,
+    },
+  });
 
   const result = applyPlan(baseSite(), plan, {
     durableJournal: writer,
   });
 
   assert.equal(result.recoveryState.status, 'fully-updated-remote');
-  assert.equal(closed, 1);
-  assert.ok(events.some((event) => event.type === 'journal-completed'));
+  assert.equal(isDurableJournalClosed(writer), true);
+  assert.throws(() => writer.appendEvent('journal-opened', {
+    planId: plan.id,
+    state: 'reopened',
+    observedHash: 'snapshot-hash-only',
+    artifactRefs: {
+      journal: filePath,
+    },
+  }), /Recovery journal is closed/);
 });
 
 test('closes an owned production recovery journal writer after replaying a completed plan fails closed in this worktree', () => {

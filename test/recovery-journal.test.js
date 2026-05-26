@@ -629,7 +629,7 @@ test('production recovery journal adapter fails closed when persisted journal ow
   }, {
     name: 'UnsupportedProductionRecoveryJournalError',
     code: 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL',
-    message: 'Production recovery journal persistence includes an invalid owned journal artifact path.',
+    message: 'Production recovery journal persistence rewrote the owned journal artifact path.',
   });
 });
 
@@ -1466,7 +1466,7 @@ test('production recovery journal consumption fails closed when explicit owned r
   }, {
     name: 'UnsupportedProductionRecoveryJournalError',
     code: 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL',
-    message: 'Production recovery journal consumption requires a distinct owned remote artifact path.',
+    message: 'Production recovery journal consumption requires the persisted remote artifact ownership state.',
   });
 });
 
@@ -1513,7 +1513,7 @@ test('production recovery journal consumption fails closed when persisted remote
   }, {
     name: 'UnsupportedProductionRecoveryJournalError',
     code: 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL',
-    message: 'Production recovery journal persistence includes an invalid owned remote artifact path.',
+    message: 'Production recovery journal persistence dropped an owned journal artifact path.',
   });
 });
 
@@ -1566,7 +1566,7 @@ test('production recovery journal reopen fails closed when persisted remote owne
   }, {
     name: 'UnsupportedProductionRecoveryJournalError',
     code: 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL',
-    message: 'Production recovery journal persistence includes an invalid owned remote artifact path.',
+    message: 'Production recovery journal persistence rewrote the owned remote artifact path.',
   });
 });
 
@@ -1619,7 +1619,7 @@ test('production recovery journal consumption fails closed when persisted remote
   }, {
     name: 'UnsupportedProductionRecoveryJournalError',
     code: 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL',
-    message: 'Production recovery journal persistence includes an invalid owned remote artifact path.',
+    message: 'Production recovery journal persistence rewrote the owned remote artifact path.',
   });
 });
 

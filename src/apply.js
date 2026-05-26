@@ -654,7 +654,7 @@ function getDurableJournalWriter(options) {
   if (!writer) {
     return null;
   }
-  if (!Object.hasOwn(writer, 'appendEvent') || typeof writer.appendEvent !== 'function') {
+  if (typeof writer.appendEvent !== 'function') {
     throw new PushPlanError(
       'JOURNAL_WRITER_INVALID',
       'Durable recovery journal writer must expose appendEvent(type, payload).',
