@@ -189,6 +189,9 @@ the resource key, the live remote hash observed during planning, and the
 - WordPress graph mutations that reference a graph target absent from the live
   remote. Creating new target identities and rewriting relationship rows in the
   same plan remains blocked until an identity-map/rewrite proof exists.
+- WordPress graph mutations that reference a missing live remote parent term
+  identity through `wp_term_taxonomy.parent`. The planner must stop rather
+  than assume the parent term can be recreated or remapped safely.
 - WordPress revision graph rows. The planner must stop on `post_type =
   revision` instead of pretending revision history is a regular post resource.
 - WordPress navigation menu item rows. The planner must stop on
