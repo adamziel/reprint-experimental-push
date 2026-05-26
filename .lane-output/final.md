@@ -1,10 +1,11 @@
 Recovery lane handoff:
 
-- Timestamp: 2026-05-26 11:01:16 CEST (+0200)
-- I did not land a recovery code patch this pass.
-- I verified the recovery adapter surface is already present in `src/recovery-journal.js`: `openProductionRecoveryJournal()` exposes `productionAdapter`, `supportedSurface`, `restartReadable`, `ownsJournal`, `journalPath`, `writerLease`, `artifactRefs`, `inspect()`, `flush()`, `close()`, and `assertCurrentClaim()`.
-- I also verified this tree does not expose a local `verify:release` npm script entry to wire, so the remaining blocker is not in the recovery adapter itself. The missing dependency is the checked release-path consumer in the reliable lane, not another recovery-side journal change.
-- Exact blocker: `reliable-executor` must wire `openProductionRecoveryJournal()` into the release verifier entrypoint that owns `verify:release`; if that consumer is absent from its worktree, the named file/API boundary is still missing and should be reported concretely.
+- Timestamp: 2026-05-26 11:18:50 CEST (+0200)
+- No recovery-side code patch was needed this pass.
+- The checked recovery adapter surface is still present in `src/recovery-journal.js` via `openProductionRecoveryJournal()`, including `productionAdapter`, `supportedSurface`, `restartReadable`, `ownsJournal`, `journalPath`, `writerLease`, `artifactRefs`, `inspect()`, `flush()`, `close()`, and `assertCurrentClaim()`.
+- `package.json` already exposes `verify:release`; the missing consumer wiring is in the release-verifier owner lane, not here.
+- Exact blocker: `reliable-executor` must wire `openProductionRecoveryJournal()` into the checked release verifier entrypoint that owns `verify:release`; if that consumer is absent from its worktree, it should name the missing file/API boundary concretely instead of handing this lane another recovery-side change request.
+- Current reliable head to classify/publicize: `1c8a658b` (`Wire recovery journal into release verify`).
 
 Changed files:
 
@@ -13,11 +14,12 @@ Changed files:
 Commands:
 
 - `date '+%Y-%m-%d %H:%M:%S %Z (%z)'`
-- `rg -n "openProductionRecoveryJournal|productionAdapter|supportedSurface|restartReadable|ownsJournal|writerLease|journalPath|assertCurrentClaim|inspect\\(|flush\\(|close\\(" src test docs -g '!node_modules'`
-- `sed -n '1,260p' src/recovery-journal.js`
-- `sed -n '1,260p' src/recovery-inspect.js`
-- `rg -n 'verify:release|production-shaped-release-verify|release-verify|openProductionRecoveryJournal|openRecoveryJournal' package.json scripts test src -g '!node_modules'`
-- `sed -n '1,220p' package.json`
+- `git status --short --branch`
+- `sed -n '1,220p' AGENTS.md`
+- `sed -n '1,220p' supervision/README.md`
+- `sed -n '1,240p' supervision/lanes/no-data-loss-recovery.md`
+- `sed -n '1,240p' .lane-output/final.md`
+- `rg -n "openProductionRecoveryJournal\\(|productionAdapter|supportedSurface|restartReadable|ownsJournal|writerLease|assertCurrentClaim|verify:release" -S src package.json scripts test docs`
 
 Push result:
 
@@ -25,7 +27,7 @@ Push result:
 
 Worktree status:
 
-- Branch: `lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery...origin/main [ahead 774, behind 417]`
+- Branch: `lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery...origin/main [ahead 779, behind 425]`
 - Dirty tracked files: `.lane-output/final.md`
 
 Next supervisor nudge:
