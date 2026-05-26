@@ -6,10 +6,11 @@ Changed files:
 
 Commands:
 - `date '+%Y-%m-%d %H:%M:%S %Z'`
-- `git diff -- progress.html docs/progress-log.md && git status --short --branch`
-- `rg -n "Last updated|Newest audit|02:58:56|025856" progress.html docs/progress-log.md`
+- `rg -n "Last updated|Freshness update only|04:00:36|040036" progress.html docs/progress-log.md`
 - `sed -n '1,40p' docs/progress-log.md`
 - `sed -n '498,520p' progress.html`
+- `git diff -- progress.html docs/progress-log.md | sed -n '1,220p'`
+- `git status --short --branch`
 
 Push result:
 - Not yet pushed
@@ -17,7 +18,7 @@ Push result:
 Worktree status:
 - Tracked files are dirty for the freshness republish
 - Branch: `lane/cycle-20260525-mainwindows-2349/progress-followup`
-- Current branch remains `ahead 145, behind 33` relative to `origin/main`
+- Current branch remains `ahead 184, behind 45` relative to `origin/main`
 
 Next supervisor nudge:
 - Republish again only when the visible `Last updated` stamp falls behind the active supervision cycle, or when a real gate verdict changes.
