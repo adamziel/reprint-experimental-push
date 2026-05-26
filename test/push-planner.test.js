@@ -316,6 +316,36 @@ test('blocks serialized block post content in the release-candidate slice', () =
   assert.match(blocker.reason, /outside the supported release-candidate slice/);
 });
 
+test('blocks serialized block post content even when it references a same-plan parent post', () => {
+  const base = baseSite();
+  const local = baseSite();
+  const remote = baseSite();
+
+  local.db.wp_posts['ID:12'] = {
+    ID: 12,
+    post_type: 'post',
+    post_title: 'Block content post',
+    post_parent: 13,
+    post_content: '<!-- wp:paragraph -->\n<p>Serialized block content</p>\n<!-- /wp:paragraph -->',
+  };
+  local.db.wp_posts['ID:13'] = {
+    ID: 13,
+    post_type: 'post',
+    post_title: 'Parent post',
+    post_content: 'Parent post body',
+  };
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === 'row:["wp_posts","ID:12"]');
+
+  assert.equal(plan.status, 'blocked');
+  assert.ok(blocker);
+  assert.equal(blocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(blocker.surface, 'serialized-blocks');
+  assert.match(blocker.reason, /outside the supported release-candidate slice/);
+  assert.equal(plan.mutations.some((mutation) => mutation.resourceKey === 'row:["wp_posts","ID:13"]'), true);
+});
+
 test('blocks post GUID graph surfaces in the release-candidate slice', () => {
   const base = baseSite();
   const local = baseSite();
