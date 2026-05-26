@@ -16977,6 +16977,187 @@ test('allows an existing term-taxonomy row to reference a term created by the sa
   assert.equal(result.site.db.wp_term_taxonomy['term_taxonomy_id:5'].description, 'local term taxonomy description');
 });
 
+test('allows an existing term-relationship row to reference a term taxonomy created by the same plan', () => {
+  const taxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:5"]';
+  const relationshipResourceKey = 'row:["wp_term_relationships","object_id:7,term_taxonomy_id:5"]';
+  const base = baseSite();
+  base.db.wp_terms = {
+    'term_id:2': { term_id: 2, name: 'Base taxonomy term', slug: 'base-taxonomy-term' },
+  };
+  base.db.wp_posts['ID:7'] = {
+    ID: 7,
+    post_title: 'Base relationship post',
+    post_status: 'publish',
+  };
+  base.db.wp_term_taxonomy = {};
+  base.db.wp_term_relationships = {
+    'object_id:7,term_taxonomy_id:5': {
+      object_id: 7,
+      term_taxonomy_id: 5,
+      term_order: 0,
+      note: 'base relationship note',
+    },
+  };
+
+  const local = baseSite();
+  local.db.wp_terms = JSON.parse(JSON.stringify(base.db.wp_terms));
+  local.db.wp_posts['ID:7'] = JSON.parse(JSON.stringify(base.db.wp_posts['ID:7']));
+  local.db.wp_term_taxonomy = {
+    'term_taxonomy_id:5': {
+      term_taxonomy_id: 5,
+      term_id: 2,
+      taxonomy: 'category',
+      description: 'local taxonomy',
+      parent: 0,
+    },
+  };
+  local.db.wp_term_relationships = {
+    'object_id:7,term_taxonomy_id:5': {
+      object_id: 7,
+      term_taxonomy_id: 5,
+      term_order: 1,
+      note: 'local relationship note',
+    },
+  };
+
+  const remote = baseSite();
+  remote.db.wp_terms = JSON.parse(JSON.stringify(base.db.wp_terms));
+  remote.db.wp_posts['ID:7'] = JSON.parse(JSON.stringify(base.db.wp_posts['ID:7']));
+  remote.db.wp_term_taxonomy = {};
+  remote.db.wp_term_relationships = JSON.parse(JSON.stringify(base.db.wp_term_relationships));
+  remote.plugins.forms.description = 'remote-only plugin drift';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin drift */';
+
+  const plan = planFor(base, local, remote);
+  const taxonomyMutation = mutationFor(plan, taxonomyResourceKey);
+  const relationshipMutation = mutationFor(plan, relationshipResourceKey);
+  const taxonomyReference = relationshipMutation.wordpressGraphReferences.find((reference) =>
+    reference.relationshipType === 'term-relationship-taxonomy');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.blockers, 0);
+  assert.equal(taxonomyMutation.changeKind, 'create');
+  assert.equal(relationshipMutation.changeKind, 'update');
+  assert.ok(
+    plan.mutations.indexOf(taxonomyMutation) < plan.mutations.indexOf(relationshipMutation),
+    'taxonomy create must be ordered before dependent existing term-relationship update',
+  );
+  assert.deepEqual(relationshipMutation.dependsOnMutationIds, [taxonomyMutation.id]);
+  assert.equal(plan.summary.graphDependencies, 1);
+  assert.deepEqual(plan.graphDependencies, [
+    {
+      sourceMutationId: relationshipMutation.id,
+      sourceResourceKey: relationshipResourceKey,
+      relationshipKey: 'wp_term_relationships.term_taxonomy_id',
+      relationshipType: 'term-relationship-taxonomy',
+      targetMutationId: taxonomyMutation.id,
+      targetResourceKey: taxonomyResourceKey,
+      resolutionPolicy: 'same-plan-local-create',
+      source: 'same-plan-local-create',
+      targetLocalHash: taxonomyMutation.localHash,
+    },
+  ]);
+  assert.equal(taxonomyReference.relationshipKey, 'wp_term_relationships.term_taxonomy_id');
+  assert.equal(taxonomyReference.relationshipType, 'term-relationship-taxonomy');
+  assert.equal(taxonomyReference.sourceResourceKey, relationshipResourceKey);
+  assert.equal(taxonomyReference.targetResourceKey, taxonomyResourceKey);
+  assert.equal(taxonomyReference.resolutionPolicy, 'same-plan-local-create');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+
+  const result = applyPlan(remote, plan);
+  assert.equal(result.site.db.wp_term_taxonomy['term_taxonomy_id:5'].description, 'local taxonomy');
+  assert.equal(result.site.db.wp_term_relationships['object_id:7,term_taxonomy_id:5'].term_order, 1);
+  assert.equal(result.site.db.wp_term_relationships['object_id:7,term_taxonomy_id:5'].note, 'local relationship note');
+});
+
+test('blocks an existing term-relationship row when its same-plan term taxonomy still depends on a blocked same-plan term create', () => {
+  const termResourceKey = 'row:["wp_terms","term_id:9"]';
+  const taxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:5"]';
+  const relationshipResourceKey = 'row:["wp_term_relationships","object_id:7,term_taxonomy_id:5"]';
+  const base = baseSite();
+  base.db.wp_posts['ID:7'] = {
+    ID: 7,
+    post_title: 'Base relationship post',
+    post_status: 'publish',
+  };
+  base.db.wp_term_taxonomy = {};
+  base.db.wp_term_relationships = {
+    'object_id:7,term_taxonomy_id:5': {
+      object_id: 7,
+      term_taxonomy_id: 5,
+      term_order: 0,
+      note: 'base relationship note',
+    },
+  };
+
+  const local = baseSite();
+  local.db.wp_terms = {
+    'term_id:9': {
+      term_id: 9,
+      name: 'Local same-plan taxonomy term',
+      slug: 'local-same-plan-taxonomy-term',
+    },
+  };
+  local.db.wp_posts['ID:7'] = JSON.parse(JSON.stringify(base.db.wp_posts['ID:7']));
+  local.db.wp_term_taxonomy = {
+    'term_taxonomy_id:5': {
+      term_taxonomy_id: 5,
+      term_id: 9,
+      taxonomy: 'category',
+      description: 'local taxonomy',
+      parent: 0,
+    },
+  };
+  local.db.wp_term_relationships = {
+    'object_id:7,term_taxonomy_id:5': {
+      object_id: 7,
+      term_taxonomy_id: 5,
+      term_order: 1,
+      note: 'local relationship note',
+    },
+  };
+
+  const remote = baseSite();
+  remote.db.wp_posts['ID:7'] = JSON.parse(JSON.stringify(base.db.wp_posts['ID:7']));
+  remote.db.wp_term_taxonomy = {};
+  remote.db.wp_term_relationships = JSON.parse(JSON.stringify(base.db.wp_term_relationships));
+  remote.plugins.forms.description = 'remote-only plugin drift';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin drift */';
+
+  const plan = planFor(base, local, remote);
+  const termBlocker = plan.blockers.find((entry) => entry.resourceKey === termResourceKey);
+  const taxonomyBlocker = plan.blockers.find((entry) => entry.resourceKey === taxonomyResourceKey);
+  const relationshipBlocker = plan.blockers.find((entry) => entry.resourceKey === relationshipResourceKey);
+  const taxonomyReference = taxonomyBlocker.references.find((reference) =>
+    reference.relationshipType === 'term-taxonomy-term');
+  const relationshipReference = relationshipBlocker.references.find((reference) =>
+    reference.relationshipType === 'term-relationship-taxonomy');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, taxonomyResourceKey), undefined);
+  assert.equal(mutationFor(plan, relationshipResourceKey), undefined);
+  assert.equal(termBlocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(taxonomyBlocker.class, 'unsupported-term-taxonomy-resource');
+  assert.equal(relationshipBlocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(taxonomyBlocker.reason, `WordPress graph mutation ${taxonomyResourceKey} is created in the same plan as a term identity that depends on it, and identity rewriting is not yet supported.`);
+  assert.equal(relationshipBlocker.resolutionPolicy, 'preserve-remote-wordpress-graph-and-stop');
+  assert.equal(taxonomyReference.relationshipType, 'term-taxonomy-term');
+  assert.equal(relationshipReference.relationshipType, 'term-relationship-taxonomy');
+  assert.equal(relationshipReference.targetResourceKey, taxonomyResourceKey);
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('Local same-plan taxonomy term'), false);
+  assert.equal(planJson.includes('local taxonomy'), false);
+  assert.equal(planJson.includes('local relationship note'), false);
+});
+
 test('blocks an existing term-taxonomy row when its same-plan term belongs to a nav menu taxonomy', () => {
   const termResourceKey = 'row:["wp_terms","term_id:9"]';
   const taxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:5"]';

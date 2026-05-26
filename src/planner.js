@@ -2183,8 +2183,43 @@ function wordpressGraphIdentitySupport({
         reference,
         local,
         remote,
+      })
+      || isSupportedSamePlanTermRelationshipTaxonomyReference({
+        baseValue,
+        localValue,
+        reference,
       }))
     .map((reference) => samePlanWordPressGraphReferenceEvidence(reference));
+  const samePlanCreatedTermRelationshipTaxonomyReferences = referenceEvidence.filter((reference) =>
+    reference.relationshipType === 'term-relationship-taxonomy'
+    && isSamePlanWordPressGraphCreate(reference));
+  if (samePlanCreatedTermRelationshipTaxonomyReferences.length > 0) {
+    const supportedSamePlanTermRelationshipTaxonomyReferences = samePlanCreatedTermRelationshipTaxonomyReferences
+      .filter((reference) =>
+        isSupportedSamePlanTermRelationshipTaxonomyReference({
+          baseValue,
+          localValue,
+          reference,
+        })
+        && unsupportedTermTaxonomyResourceSupport({
+          resource: reference.targetResource,
+          baseValue: getResource(base, reference.targetResource),
+          localValue: getResource(local, reference.targetResource),
+          remoteValue: getResource(remote, reference.targetResource),
+          resources,
+          base,
+          local,
+          remote,
+        }).supported);
+    if (supportedSamePlanTermRelationshipTaxonomyReferences.length !== samePlanCreatedTermRelationshipTaxonomyReferences.length) {
+      return {
+        supported: false,
+        className: 'stale-wordpress-graph-identity',
+        reason: `WordPress graph mutation ${resource.key} references graph identities without proven identity mapping or reference rewriting.`,
+        references: samePlanCreatedTermRelationshipTaxonomyReferences,
+      };
+    }
+  }
   if (resource.table === 'wp_postmeta') {
     const samePlanCreatedRevisionReferences = referenceEvidence.find((reference) =>
       reference.relationshipType === 'postmeta-post'
@@ -2488,6 +2523,32 @@ function isSupportedSamePlanTermTaxonomyReference({
     && baseValue?.taxonomy !== 'nav_menu';
 }
 
+function isSupportedSamePlanTermRelationshipTaxonomyReference({
+  baseValue,
+  localValue,
+  reference,
+}) {
+  if (
+    baseValue === ABSENT
+    || localValue === ABSENT
+    || reference.relationshipType !== 'term-relationship-taxonomy'
+    || !isSamePlanWordPressGraphCreate(reference)
+  ) {
+    return false;
+  }
+
+  const targetTaxonomyId = normalizeWordPressGraphReferenceTargetIntegerId(reference);
+  if (
+    targetTaxonomyId == null
+    || normalizePositiveInteger(baseValue?.term_taxonomy_id) !== targetTaxonomyId
+    || normalizePositiveInteger(localValue?.term_taxonomy_id) !== targetTaxonomyId
+  ) {
+    return false;
+  }
+
+  return true;
+}
+
 function finalizeWordPressGraphDependencies(plan, local, remote) {
   const mutationByResourceKey = new Map(
     plan.mutations.map((mutation) => [mutation.resourceKey, mutation]),
@@ -2581,21 +2642,21 @@ function isValidSamePlanWordPressGraphTarget(
     return false;
   }
 
-  if (
-    targetMutation.resource?.type !== 'row'
-    || targetMutation.resource.table !== 'wp_terms'
-  ) {
+  if (targetMutation.resource?.type !== 'row') {
     return false;
   }
 
-  const supportedReference = (
+  const supportsTermTarget = targetMutation.resource.table === 'wp_terms' && (
     reference.relationshipType === 'termmeta-term'
     && reference.sourceTable === 'wp_termmeta'
   ) || (
     reference.relationshipType === 'term-taxonomy-term'
     && reference.sourceTable === 'wp_term_taxonomy'
   );
-  if (!supportedReference) {
+  const supportsTermTaxonomyTarget = targetMutation.resource.table === 'wp_term_taxonomy'
+    && reference.relationshipType === 'term-relationship-taxonomy'
+    && reference.sourceTable === 'wp_term_relationships';
+  if (!supportsTermTarget && !supportsTermTaxonomyTarget) {
     return false;
   }
 
@@ -2604,20 +2665,26 @@ function isValidSamePlanWordPressGraphTarget(
     return false;
   }
 
-  const ownerTermTaxonomy = [...mutationByResourceKey.values()].find((candidate) => {
-    if (candidate.resource?.type !== 'row' || candidate.resource.table !== 'wp_term_taxonomy') {
+  if (targetMutation.resource.table === 'wp_terms') {
+    const ownerTermTaxonomy = [...mutationByResourceKey.values()].find((candidate) => {
+      if (candidate.resource?.type !== 'row' || candidate.resource.table !== 'wp_term_taxonomy') {
+        return false;
+      }
+      const candidateValue = deserializeResourceValue(candidate.value);
+      return candidateValue
+        && typeof candidateValue === 'object'
+        && normalizePositiveInteger(candidateValue.term_id) === normalizePositiveInteger(targetValue.term_id)
+        && candidateValue.taxonomy === 'nav_menu';
+    });
+    const remoteTermTaxonomy = [...(remote?.db?.wp_term_taxonomy ? Object.values(remote.db.wp_term_taxonomy) : [])]
+      .find((candidate) => normalizePositiveInteger(candidate?.term_id) === normalizePositiveInteger(targetValue.term_id)
+        && candidate?.taxonomy === 'nav_menu');
+    if (ownerTermTaxonomy || remoteTermTaxonomy) {
       return false;
     }
-    const candidateValue = deserializeResourceValue(candidate.value);
-    return candidateValue
-      && typeof candidateValue === 'object'
-      && normalizePositiveInteger(candidateValue.term_id) === normalizePositiveInteger(targetValue.term_id)
-      && candidateValue.taxonomy === 'nav_menu';
-  });
-  const remoteTermTaxonomy = [...(remote?.db?.wp_term_taxonomy ? Object.values(remote.db.wp_term_taxonomy) : [])]
-    .find((candidate) => normalizePositiveInteger(candidate?.term_id) === normalizePositiveInteger(targetValue.term_id)
-      && candidate?.taxonomy === 'nav_menu');
-  if (ownerTermTaxonomy || remoteTermTaxonomy) {
+  }
+
+  if (targetMutation.resource.table === 'wp_term_taxonomy' && targetValue.taxonomy === 'nav_menu') {
     return false;
   }
 
@@ -2956,6 +3023,27 @@ function samePlanCreatedGraphIdentitySupport({ resource, resources, base, local,
                 remote,
               })
             ))
+      ) {
+        continue;
+      }
+      if (
+        resource.table === 'wp_term_taxonomy'
+        && sourceResource.table === 'wp_term_relationships'
+        && isSupportedSamePlanTermRelationshipTaxonomyReference({
+          baseValue: getResource(base, sourceResource),
+          localValue: sourceLocalValue,
+          reference: evidence,
+        })
+        && unsupportedTermTaxonomyResourceSupport({
+          resource,
+          baseValue,
+          localValue,
+          remoteValue,
+          resources,
+          base,
+          local,
+          remote,
+        }).supported
       ) {
         continue;
       }
@@ -4415,10 +4503,22 @@ function unsupportedTermTaxonomyResourceSupport({ resource, baseValue, localValu
       local,
       remote,
     }));
+  const supportedSamePlanTaxonomyRelationshipReferences = samePlanCreatedTaxonomyRelationshipReferences.filter((reference) =>
+    {
+      const sourceResource = resources.find((candidate) => candidate.key === reference.sourceResourceKey);
+      if (!sourceResource) {
+        return false;
+      }
+      return isSupportedSamePlanTermRelationshipTaxonomyReference({
+        baseValue: getResource(base, sourceResource),
+        localValue: getResource(local, sourceResource),
+        reference,
+      });
+    });
   if (
     samePlanReferences.length > 0
     && supportedSamePlanTermReferences.length === samePlanCreatedTermReferences.length
-    && samePlanCreatedTaxonomyRelationshipReferences.length === 0
+    && supportedSamePlanTaxonomyRelationshipReferences.length === samePlanCreatedTaxonomyRelationshipReferences.length
   ) {
     return { supported: true };
   }
