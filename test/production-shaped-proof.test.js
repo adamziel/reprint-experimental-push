@@ -1454,6 +1454,20 @@ test('packaged production plugin readiness helper does not retry terminal readin
   );
   assert.equal(
     packagedProductionPluginReadinessBodyRetryable(
+      502,
+      'Warning: startup wrapper\n{"error":{"code":"wordpress_not_ready"}}',
+    ),
+    true,
+  );
+  assert.equal(
+    packagedProductionPluginReadinessBodyRetryable(
+      404,
+      'Notice: startup wrapper\n{"details":{"error_code":"rest_no_route"}}',
+    ),
+    true,
+  );
+  assert.equal(
+    packagedProductionPluginReadinessBodyRetryable(
       200,
       '<!doctype html><html><body>fatal startup mismatch</body></html>',
     ),
@@ -1791,6 +1805,20 @@ test('lab Playground readiness helper rejects malformed ready responses and retr
     labReadinessBodyRetryable(
       500,
       '<!doctype html><html><body>No route was found matching the URL and request method.</body></html>',
+    ),
+    true,
+  );
+  assert.equal(
+    labReadinessBodyRetryable(
+      502,
+      'Warning: startup wrapper\n{"error":{"code":"wordpress_not_ready"}}',
+    ),
+    true,
+  );
+  assert.equal(
+    labReadinessBodyRetryable(
+      404,
+      'Notice: startup wrapper\n{"details":{"error_code":"rest_no_route"}}',
     ),
     true,
   );

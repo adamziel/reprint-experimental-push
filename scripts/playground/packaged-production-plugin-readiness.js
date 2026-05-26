@@ -249,7 +249,9 @@ export function packagedProductionPluginResetRouteNotReadyProbeCounts(currentCou
 export function packagedProductionPluginReadinessBodyRetryable(status, bodyText = '') {
   return (
     packagedProductionPluginReadinessWordPressNotReady(status, bodyText)
+    || packagedProductionPluginWordPressNotReadyCodePattern.test(bodyText)
     || packagedProductionPluginRouteNotReadyPattern.test(bodyText)
+    || packagedProductionPluginRouteNotReadyCodePattern.test(bodyText)
   );
 }
 

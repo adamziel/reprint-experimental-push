@@ -136,6 +136,8 @@ export function labReadinessErrorRetryable(error) {
 export function labReadinessBodyRetryable(status, bodyText = '') {
   return (
     labWordPressNotReadyPattern.test(bodyText)
+    || labWordPressNotReadyCodePattern.test(bodyText)
     || labRouteNotReadyPattern.test(bodyText)
+    || labRouteNotReadyCodePattern.test(bodyText)
   );
 }
