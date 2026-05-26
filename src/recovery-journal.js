@@ -105,6 +105,19 @@ export function openProductionRecoveryJournal({
   journal.schemaVersion = RECOVERY_JOURNAL_SCHEMA_VERSION;
   journal.inspect = function inspectProductionRecoveryJournal() {
     const persisted = readRecoveryJournal(filePath);
+    const claimHash = claimId ? recoveryClaimHash(claimId) : null;
+    const restartReadable = persisted.integrity.status === 'ok';
+    const staleClaimRejected = hasStaleClaimRejectionEvidence(persisted.records);
+    const writerLease = {
+      strategy: 'claim-fenced-single-writer',
+      claimId,
+      claimHash,
+      storageGuard: 'filesystem-compare-rename',
+      fsyncEvidence: true,
+      monotonicSequence: true,
+      restartReadable,
+      staleClaimRejected,
+    };
     return {
       journal: {
         path: filePath,
@@ -113,19 +126,22 @@ export function openProductionRecoveryJournal({
         productionAdapter: 'openProductionRecoveryJournal',
         claimId,
         ownsJournal: true,
-        claimHash: claimId ? recoveryClaimHash(claimId) : null,
+        claimHash,
         consumed: persisted.records.some((record) => record.type === 'recovery-journal-consumed'),
-        restartReadable: persisted.integrity.status === 'ok',
+        restartReadable,
         schemaVersion: persisted.records[0]?.schemaVersion ?? null,
         integrity: persisted.integrity,
         records: persisted.records.length,
-        staleClaimRejected: hasStaleClaimRejectionEvidence(persisted.records),
+        staleClaimRejected,
+        writerLease,
       },
       leaseFence: {
         storageGuard: 'filesystem-compare-rename',
         fsyncEvidence: true,
         monotonicSequence: true,
-        staleClaimRejected: hasStaleClaimRejectionEvidence(persisted.records),
+        restartReadable,
+        staleClaimRejected,
+        writerLease,
       },
     };
   };

@@ -308,6 +308,17 @@ test('production recovery journal wrapper writes a restart-readable claim-fenced
   assert.equal(inspection.journal.consumed, false);
   assert.equal(inspection.journal.restartReadable, true);
   assert.equal(inspection.journal.schemaVersion, 1);
+  assert.deepEqual(inspection.journal.writerLease, {
+    strategy: 'claim-fenced-single-writer',
+    claimId: 'production-claim-01',
+    claimHash: recoveryClaimHash('production-claim-01'),
+    storageGuard: 'filesystem-compare-rename',
+    fsyncEvidence: true,
+    monotonicSequence: true,
+    restartReadable: true,
+    staleClaimRejected: false,
+  });
+  assert.deepEqual(inspection.leaseFence.writerLease, inspection.journal.writerLease);
   assert.equal(inspection.leaseFence.staleClaimRejected, false);
 
   journal.close();
@@ -384,6 +395,18 @@ test('checked release path consumes the production recovery journal inspection s
   assert.equal(inspection.journal.consumed, true);
   assert.equal(inspection.journal.restartReadable, true);
   assert.equal(inspection.journal.staleClaimRejected, true);
+  assert.deepEqual(inspection.journal.writerLease, {
+    strategy: 'claim-fenced-single-writer',
+    claimId: activeClaimId,
+    claimHash: recoveryClaimHash(activeClaimId),
+    storageGuard: 'filesystem-compare-rename',
+    fsyncEvidence: true,
+    monotonicSequence: true,
+    restartReadable: true,
+    staleClaimRejected: true,
+  });
+  assert.deepEqual(inspection.leaseFence.writerLease, inspection.journal.writerLease);
   assert.equal(inspection.leaseFence.storageGuard, 'filesystem-compare-rename');
+  assert.equal(inspection.leaseFence.restartReadable, true);
   assert.equal(inspection.leaseFence.staleClaimRejected, true);
 });
