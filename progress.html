@@ -500,21 +500,21 @@
       <div>
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
-        <time class="update-stamp" datetime="2026-05-26T14:15:07+02:00">Last updated: May 26, 2026, 14:15:07 CEST</time>
-        <p class="lead">Freshness update: the public page is current as of the active supervision cycle. Release gates still remain `0/4`. The runtime anchor remains `npm run verify:release` from commit `3089aee2`. `77da166e031a32700ddaf388bde378e1c58b0f63` is the current reliable-executor head and surfaces auth-session source evidence for `REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND` (`authSessionSource`) on the checked path without moving a gate. The checked-release proof remains support-side evidence, but it still does not move a release gate. Production WordPress auth/session lifecycle and durable journal storage with lease/fencing remain pending. Evidence links now point to the 2026-05-26 14:15:07 CEST audit refresh.</p>
+        <time class="update-stamp" datetime="2026-05-26T14:17:54+02:00">Last updated: May 26, 2026, 14:17:54 CEST</time>
+        <p class="lead">Freshness update: the public page is current as of the active supervision cycle. Release gates still remain `0/4`. The runtime anchor remains `npm run verify:release` from commit `3089aee2`. `ce7560bef4cce2ef5b9f8ae629de0bc54d116ca5` is the current reliable-executor head and surfaces auth-session source evidence for `REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND` (`authSessionSource`) on the checked path without moving a gate. The checked-release proof remains support-side evidence, but it still does not move a release gate. Production WordPress auth/session lifecycle and durable journal storage with lease/fencing remain pending. Evidence links now point to the 2026-05-26 14:17:54 CEST audit refresh.</p>
         <div class="meta" aria-label="Project status">
           <span class="pill">Evidence class: lab-only</span>
-          <span class="pill">Trend: `77da166e031a32700ddaf388bde378e1c58b0f63` is the current checked-release auth-session source evidence head for `REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND` (`authSessionSource`)</span>
+          <span class="pill">Trend: `ce7560bef4cce2ef5b9f8ae629de0bc54d116ca5` is the current checked-release auth-session source evidence head for `REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND` (`authSessionSource`)</span>
           <span class="pill">Top blocker: real WordPress executor/auth plus durable journal storage and lease/fencing still block any production push claim</span>
           <span class="pill">Gate status: 0/4 verified; 4 pending</span>
           <span class="pill">Open gates: executor/auth, recovery journal, Docker/Playground, plugin drivers</span>
           <span class="pill">Supervised scope: 8 fast/low worker lanes plus the dedicated live progress watcher</span>
-          <span class="pill">Previous audit: <a href="docs/progress-log.md#2026-05-26-public-status-audit-140924">2026-05-26 14:09:24</a></span>
-          <span class="pill">Newest audit: <a href="docs/progress-log.md#2026-05-26-public-status-audit-141507">2026-05-26 14:15:07</a></span>
+          <span class="pill">Previous audit: <a href="docs/progress-log.md#2026-05-26-public-status-audit-141507">2026-05-26 14:15:07</a></span>
+          <span class="pill">Newest audit: <a href="docs/progress-log.md#2026-05-26-public-status-audit-141754">2026-05-26 14:17:54</a></span>
         </div>
       </div>
       <div class="header-actions" aria-label="Progress evidence">
-        <a class="log-link" href="docs/progress-log.md#2026-05-26-public-status-audit-141507">Open newest audit</a>
+        <a class="log-link" href="docs/progress-log.md#2026-05-26-public-status-audit-141754">Open newest audit</a>
         <a class="log-link" href="#proof-gates">Open release-gate checklist</a>
         <p><strong>Evidence trail:</strong> <a href="docs/progress-log.md">log</a>, <a href="audits/objective-audit.md">objective audit</a>, <a href="#proof-gates">gate checklist</a>.</p>
       </div>
@@ -523,7 +523,7 @@
     <section class="summary" aria-label="Current evidence summary">
         <div class="metric">
           <strong><a href="audits/objective-audit.md">Lab proof</a></strong>
-          <span>Latest lane evidence keeps the checked release boundary, the explicit `PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED` verdict, the production auth/session release boundary, and the supporting no-data-loss, recovery, same-plan, critic, and no-data-loss-invariants proofs visible without changing the 0/4 release gates; the latest reliable-executor head now surfaces checked-release auth-session source evidence for `REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND` at `77da166e031a32700ddaf388bde378e1c58b0f63`. Evidence links now point at the 2026-05-26 14:15:07 CEST audit refresh.</span>
+          <span>Latest lane evidence keeps the checked release boundary, the explicit `PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED` verdict, the production auth/session release boundary, and the supporting no-data-loss, recovery, same-plan, critic, and no-data-loss-invariants proofs visible without changing the 0/4 release gates; the latest reliable-executor head now surfaces checked-release auth-session source evidence for `REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND` at `ce7560bef4cce2ef5b9f8ae629de0bc54d116ca5`. Evidence links now point at the 2026-05-26 14:17:54 CEST audit refresh.</span>
         </div>
       <div class="metric">
         <strong>Pending</strong>
@@ -584,7 +584,7 @@
             <li><strong>Lab evidence</strong><span>89 Node tests pass in lab evidence; see the <a href="audits/objective-audit.md">objective audit</a> and linked executor, recovery, playground, protocol, and feedback docs.</span></li>
             <li><strong>Top blocker</strong><span>Real WordPress executor/auth still blocks any production push claim.</span></li>
             <li><strong>Release gates</strong><span>Four pending gates stay explicit below: executor/auth, recovery journal, Docker/Playground, and plugin drivers.</span></li>
-          <li><strong>Audit note</strong><span>The newest dated entry above is the public audit; the checklist below stays the source of truth for open gates and evidence gaps, with the current reliable-executor checked-release auth-session source evidence for `REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND` at `77da166e031a32700ddaf388bde378e1c58b0f63`, and the durability boundary at fenced journal ownership plus restart-readable artifacts.</span></li>
+            <li><strong>Audit note</strong><span>The newest dated entry above is the public audit; the checklist below stays the source of truth for open gates and evidence gaps, with the current reliable-executor checked-release auth-session source evidence for `REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND` at `ce7560bef4cce2ef5b9f8ae629de0bc54d116ca5`, and the durability boundary at fenced journal ownership plus restart-readable artifacts.</span></li>
           </ul>
           <p class="note"><a href="docs/supervisor-feedback.md">Open full feedback log</a></p>
         </section>
@@ -613,6 +613,9 @@
           <summary id="recent-audits">Recent Public Audits</summary>
           <div class="details-body">
             <ul class="link-list">
+            <li><a href="docs/progress-log.md#2026-05-26-public-status-audit-141754">2026-05-26 14:17:54</a></li>
+            <li><a href="docs/progress-log.md#2026-05-26-public-status-audit-141507">2026-05-26 14:15:07</a></li>
+            <li><a href="docs/progress-log.md#2026-05-26-public-status-audit-140924">2026-05-26 14:09:24</a></li>
             <li><a href="docs/progress-log.md#2026-05-25-public-status-audit-145837">2026-05-25 14:58:37</a></li>
             <li><a href="docs/progress-log.md#2026-05-25-public-status-audit-145345">2026-05-25 14:53:45</a></li>
               <li><a href="docs/progress-log.md#2026-05-25-public-status-audit-131748">2026-05-25 13:17:48</a></li>
