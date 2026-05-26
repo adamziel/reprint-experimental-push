@@ -2177,6 +2177,12 @@ function wordpressGraphIdentitySupport({
         reference,
         local,
       })
+      || isSupportedSamePlanTermRelationshipObjectReference({
+        baseValue,
+        localValue,
+        reference,
+        local,
+      })
       || isSupportedSamePlanTermmetaReference({
         baseValue,
         reference,
@@ -2277,6 +2283,63 @@ function wordpressGraphIdentitySupport({
         supported: false,
         className: 'stale-wordpress-graph-identity',
         reason: `WordPress graph mutation ${resource.key} references a post meta target identity without proven identity mapping or reference rewriting.`,
+        references: [unsupportedSamePlanPostReference],
+      };
+    }
+  }
+  if (resource.table === 'wp_term_relationships') {
+    const samePlanCreatedPostReferences = referenceEvidence.filter((reference) =>
+      reference.relationshipType === 'term-relationship-object'
+      && reference.targetResource?.table === 'wp_posts'
+      && reference.targetChange.remote.state === 'absent'
+      && reference.targetChange.local.state === 'present');
+    const samePlanCreatedRevisionReference = samePlanCreatedPostReferences.find((reference) =>
+      getResource(local, reference.targetResource)?.post_type === 'revision');
+    if (samePlanCreatedRevisionReference) {
+      return {
+        supported: false,
+        className: 'unsupported-revision-resource',
+        reason: 'Revision graph resources are not yet supported by the planner.',
+        references: [samePlanCreatedRevisionReference],
+      };
+    }
+
+    const samePlanCreatedAttachmentReference = samePlanCreatedPostReferences.find((reference) =>
+      getResource(local, reference.targetResource)?.post_type === 'attachment');
+    if (samePlanCreatedAttachmentReference) {
+      return {
+        supported: false,
+        className: 'unsupported-attachment-resource',
+        reason: 'Attachment graph resources are not yet supported by the planner.',
+        references: [samePlanCreatedAttachmentReference],
+      };
+    }
+
+    const samePlanCreatedNavigationReference = samePlanCreatedPostReferences.find((reference) =>
+      ['nav_menu_item', 'wp_navigation'].includes(
+        getResource(local, reference.targetResource)?.post_type,
+      ));
+    if (samePlanCreatedNavigationReference) {
+      return {
+        supported: false,
+        className: 'unsupported-navigation-resource',
+        reason: 'Navigation and menu graph resources are not yet supported by the planner.',
+        references: [samePlanCreatedNavigationReference],
+      };
+    }
+
+    const unsupportedSamePlanPostReference = samePlanCreatedPostReferences.find((reference) =>
+      !isSupportedSamePlanTermRelationshipObjectReference({
+        baseValue,
+        localValue,
+        reference,
+        local,
+      }));
+    if (unsupportedSamePlanPostReference) {
+      return {
+        supported: false,
+        className: 'stale-wordpress-graph-identity',
+        reason: `WordPress graph mutation ${resource.key} references a term relationship post identity without proven identity mapping or reference rewriting.`,
         references: [unsupportedSamePlanPostReference],
       };
     }
@@ -2561,6 +2624,34 @@ function isSupportedSamePlanPostmetaReference({
   return !['attachment', 'revision', 'nav_menu_item', 'wp_navigation'].includes(targetPostType);
 }
 
+function isSupportedSamePlanTermRelationshipObjectReference({
+  baseValue,
+  localValue,
+  reference,
+  local,
+}) {
+  if (
+    baseValue === ABSENT
+    || localValue === ABSENT
+    || reference.relationshipType !== 'term-relationship-object'
+    || !isSamePlanWordPressGraphCreate(reference)
+  ) {
+    return false;
+  }
+
+  const targetPostId = normalizeWordPressGraphReferenceTargetIntegerId(reference);
+  if (
+    targetPostId == null
+    || normalizePositiveInteger(baseValue?.object_id) !== targetPostId
+    || normalizePositiveInteger(localValue?.object_id) !== targetPostId
+  ) {
+    return false;
+  }
+
+  const targetPostType = getResource(local, reference.targetResource)?.post_type ?? 'post';
+  return !['attachment', 'revision', 'nav_menu_item', 'wp_navigation'].includes(targetPostType);
+}
+
 function isSupportedSamePlanTermTaxonomyReference({
   baseValue,
   localValue,
@@ -2767,8 +2858,16 @@ function isValidSamePlanWordPressGraphTarget(
     && reference.sourceTable === 'wp_term_taxonomy'
   );
   const supportsPostTarget = targetMutation.resource.table === 'wp_posts'
-    && reference.relationshipType === 'postmeta-post'
-    && reference.sourceTable === 'wp_postmeta';
+    && (
+      (
+        reference.relationshipType === 'postmeta-post'
+        && reference.sourceTable === 'wp_postmeta'
+      )
+      || (
+        reference.relationshipType === 'term-relationship-object'
+        && reference.sourceTable === 'wp_term_relationships'
+      )
+    );
   const supportsTermTaxonomyTarget = targetMutation.resource.table === 'wp_term_taxonomy'
     && reference.relationshipType === 'term-relationship-taxonomy'
     && reference.sourceTable === 'wp_term_relationships';
@@ -3119,6 +3218,53 @@ function samePlanCreatedGraphIdentitySupport({ resource, resources, base, local,
           reference: evidence,
           local,
         })
+      ) {
+        continue;
+      }
+      if (
+        resource.table === 'wp_posts'
+        && sourceResource.table === 'wp_term_relationships'
+        && isSupportedSamePlanTermRelationshipObjectReference({
+          baseValue: getResource(base, sourceResource),
+          localValue: sourceLocalValue,
+          reference: evidence,
+          local,
+        })
+        && !wordpressGraphReferences(sourceResource, sourceLocalValue)
+          .map((sourceReference) =>
+            wordpressGraphReferenceEvidence(sourceReference, resources, base, local, remote))
+          .some((sourceReferenceEvidence) =>
+            sourceReferenceEvidence.targetChange.remote.state === 'absent'
+            && sourceReferenceEvidence.targetChange.local.state === 'present'
+            && (
+              (
+                sourceReferenceEvidence.relationshipType !== 'term-relationship-object'
+                || !isSupportedSamePlanTermRelationshipObjectReference({
+                  baseValue: getResource(base, sourceResource),
+                  localValue: sourceLocalValue,
+                  reference: sourceReferenceEvidence,
+                  local,
+                })
+              )
+              && (
+                sourceReferenceEvidence.relationshipType !== 'term-relationship-taxonomy'
+                || !isSupportedSamePlanTermRelationshipTaxonomyReference({
+                  baseValue: getResource(base, sourceResource),
+                  localValue: sourceLocalValue,
+                  reference: sourceReferenceEvidence,
+                })
+                || !unsupportedTermTaxonomyResourceSupport({
+                  resource: sourceReferenceEvidence.targetResource,
+                  baseValue: getResource(base, sourceReferenceEvidence.targetResource),
+                  localValue: getResource(local, sourceReferenceEvidence.targetResource),
+                  remoteValue: getResource(remote, sourceReferenceEvidence.targetResource),
+                  resources,
+                  base,
+                  local,
+                  remote,
+                }).supported
+              )
+            ))
       ) {
         continue;
       }
