@@ -162,6 +162,20 @@ test('benchmark model covers large uploads and plugin installs', () => {
     'plugin install keeps the group barrier intact during finalize',
   );
   assert.ok(
+    largeUpload.actions.some(
+      (action) =>
+        action.type === 'chunk-window-sizing' &&
+        action.memoryCeilingBytes === DEFAULT_LIMITS.maxBufferedUploadBytes &&
+        action.queueBudgetBytes === DEFAULT_LIMITS.maxBufferedUploadBytes,
+    ),
+    'large upload surfaces the memory ceiling and queue budget on window sizing',
+  );
+  assert.ok(
+    largeUpload.backpressure.memoryCeilingBytes === DEFAULT_LIMITS.maxBufferedUploadBytes &&
+    largeUpload.backpressure.queueBudgetBytes === DEFAULT_LIMITS.maxBufferedUploadBytes,
+    'large upload keeps backpressure memory and queue budgets aligned',
+  );
+  assert.ok(
     pluginInstall.actions.some(
       (action) =>
         action.type === 'db-batch-parallelism' &&
