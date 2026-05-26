@@ -8,12 +8,14 @@ const routeProfiles = {
     namespace: 'reprint-push-lab/v1',
     routePrefix: '/authenticated',
     namespacePath: '/wp-json/reprint-push-lab/v1/authenticated',
+    packageSource: 'lab',
   },
   'production-shaped': {
     name: 'production-shaped',
     namespace: 'reprint/v1',
     routePrefix: '/push',
     namespacePath: '/wp-json/reprint/v1/push',
+    packageSource: 'production-plugin-package',
   },
 };
 const idempotencyHeader = 'X-Reprint-Push-Idempotency-Key';
@@ -154,6 +156,21 @@ export async function runAuthenticatedHttpPush({
     summary.code = apply.body?.code || 'APPLY_FAILED';
   }
   return summary;
+}
+
+export function resolveAuthenticatedHttpPushRouteProfile(routeProfile = 'lab-authenticated') {
+  return resolveRouteProfile(routeProfile);
+}
+
+export function productionPluginPackageSourceCommand(routeProfile = 'production-shaped') {
+  const profile = resolveRouteProfile(routeProfile);
+  return {
+    routeProfile: profile.name,
+    namespace: profile.namespace,
+    routePrefix: profile.routePrefix,
+    namespacePath: profile.namespacePath,
+    packageSource: profile.packageSource,
+  };
 }
 
 export function authenticatedHttpClient({ sourceUrl, credential, routeProfile = 'lab-authenticated' }) {

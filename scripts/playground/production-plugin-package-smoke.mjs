@@ -7,6 +7,7 @@ import net from 'node:net';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createHmac } from 'node:crypto';
+import { productionPluginPackageSourceCommand } from '../../src/authenticated-http-push-client.js';
 import { digest } from '../../src/stable-json.js';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
@@ -60,6 +61,7 @@ try {
     package: {
       plugin: 'reprint-push/reprint-push.php',
       mountedAs: '/wordpress/wp-content/plugins/reprint-push',
+      sourceCommand: productionPluginPackageSourceCommand(),
       copiedFiles: fs.readdirSync(path.join(pluginDir, 'includes')).sort(),
     },
     routes: {},
@@ -108,6 +110,10 @@ try {
     assert.equal(preflight.body.routeProfile.profile, 'production-shaped');
     assert.equal(preflight.body.routeProfile.restNamespace, 'reprint/v1');
     assert.equal(preflight.body.routeProfile.labBacked, true);
+    assert.equal(summary.package.sourceCommand.packageSource, 'production-plugin-package');
+    assert.equal(summary.package.sourceCommand.namespace, 'reprint/v1');
+    assert.equal(summary.package.sourceCommand.routePrefix, '/push');
+    assert.equal(summary.package.sourceCommand.namespacePath, '/wp-json/reprint/v1/push');
     assert.equal(preflight.body.auth.session.credentialScope, 'reprint-push-lab:authenticated-http-push');
     assert.equal(preflight.body.auth.session.credentialType, 'push-application-password');
     assertSignedStoreCleanup(preflight.body.sessionStore?.cleanup);
@@ -155,6 +161,7 @@ try {
       labNamespaceDisabled: labRoute.status === 404,
       profile: preflight.body.routeProfile.profile,
       authBootstrapDisabled: true,
+      sourceCommand: summary.package.sourceCommand,
       unprovisionedAlternateStatus: unprovisionedAlternatePreflight.status,
       unscopedApplicationPasswordStatus: unscopedPreflight.status,
       credentialScope: preflight.body.auth.session.credentialScope,
