@@ -13,7 +13,10 @@ import {
   buildAuthSessionSourceCommand,
   resolveAuthSessionSourceCommand,
 } from '../scripts/playground/auth-session-source-command.js';
-import { resolvePackagedProductionPluginSourceCommand } from '../scripts/playground/packaged-production-plugin-source-command.js';
+import {
+  resolvePackagedProductionPluginAuthSessionSource,
+  resolvePackagedProductionPluginSourceCommand,
+} from '../scripts/playground/packaged-production-plugin-source-command.js';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const muPluginDir = path.join(repoRoot, 'scripts/playground/rest-mu-plugins');
@@ -812,6 +815,27 @@ maybeTest('production-shaped release verify command surfaces the consumed produc
     );
     assertSpawnCompletedWithoutSpawnError(proof, 'auth/session source evidence release verify', liveProofInnerTimeoutMs);
     assert.match(proof.stdout, /"authSessionSource": \{\s*"command": "[^"]+REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND[^"]+",\s*"ok": true,\s*"sourceUrl": "http:\/\/127\.0\.0\.1:\d+"/);
+  });
+});
+
+test('packaged production plugin auth/session source helper resolves and loads the packaged source command', () => {
+  const expectedCommand = buildAuthSessionSourceCommand({
+    sourceUrl: 'http://127.0.0.1:8080',
+    username: 'reprint_push_admin',
+    applicationPassword: 'reprint-push-admin-app-password',
+  });
+  const packaged = resolvePackagedProductionPluginAuthSessionSource({
+    sourceUrl: 'http://127.0.0.1:8080',
+    username: 'reprint_push_admin',
+    applicationPassword: 'reprint-push-admin-app-password',
+  });
+
+  assert.equal(packaged.command, expectedCommand);
+  assert.deepEqual(packaged.source, {
+    ok: true,
+    sourceUrl: 'http://127.0.0.1:8080',
+    username: 'reprint_push_admin',
+    applicationPassword: 'reprint-push-admin-app-password',
   });
 });
 

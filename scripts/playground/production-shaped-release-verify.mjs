@@ -13,7 +13,10 @@ import {
   loadAuthSessionSource,
   resolveAuthSessionSourceCredentials,
 } from './auth-session-source.js';
-import { resolvePackagedProductionPluginSourceCommand } from './packaged-production-plugin-source-command.js';
+import {
+  resolvePackagedProductionPluginAuthSessionSource,
+  resolvePackagedProductionPluginSourceCommand,
+} from './packaged-production-plugin-source-command.js';
 import {
   appendRecoveryClaimOpened,
   consumeProductionRecoveryJournal,
@@ -43,7 +46,7 @@ const liveAuthSessionSourceBlocker = {
   verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
 };
 let authSessionSourceCommand = process.env.REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND || '';
-const authSessionSource = authSessionSourceCommand ? loadAuthSessionSource(authSessionSourceCommand) : null;
+let authSessionSource = authSessionSourceCommand ? loadAuthSessionSource(authSessionSourceCommand) : null;
 
 if (authSessionSource?.ok) {
   const resolvedAuthSessionSource = resolveAuthSessionSourceCredentials({
@@ -64,14 +67,16 @@ if (
   requireProductionAuthSession &&
   !authSessionSourceCommand &&
   liveSourceUrl &&
-  username &&
-  applicationPassword
+  credentials.username &&
+  credentials.password
 ) {
-  authSessionSourceCommand = resolvePackagedProductionPluginSourceCommand({
+  const packagedAuthSessionSource = resolvePackagedProductionPluginAuthSessionSource({
     sourceUrl: liveSourceUrl,
-    username,
-    applicationPassword,
+    username: credentials.username,
+    applicationPassword: credentials.password,
   });
+  authSessionSourceCommand = packagedAuthSessionSource.command;
+  authSessionSource = packagedAuthSessionSource.source;
 }
 
 function summarizeAuthSessionSource(command, source) {
