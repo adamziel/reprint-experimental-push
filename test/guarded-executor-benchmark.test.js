@@ -302,6 +302,8 @@ test('guarded benchmark refuses production throughput claims until production ga
   assert.equal(report.claims.productionThroughputDetails.successInspectionClaimReason, null);
   assert.equal(report.claims.productionThroughputDetails.successInspectionClaimReasonProven, true);
   assert.equal(report.claims.productionThroughputDetails.successInspectionClaimMatchesInspectionStatus, true);
+  assert.equal(report.claims.productionThroughputDetails.successInspectionClaimCanonical, true);
+  assert.equal(report.claims.productionThroughputDetails.successInspectionClaimReasonCanonical, true);
   assert.equal(report.results.preCommitFailure.inspectionStatus, 'old-remote');
   assert.equal(report.results.partialFailure.inspectionStatus, 'blocked-recovery');
   assert.ok(Array.isArray(report.results.preCommitFailure.journalRecordTypes));
@@ -1448,6 +1450,30 @@ test('production claim gate fails closed if benchmark evidence is tampered', () 
   );
   assert.equal(
     productionThroughputDetails(unrecognizedSuccessClaim).successInspectionClaimRecognized,
+    false,
+  );
+
+  const nonCanonicalSuccessClaim = clone(report);
+  nonCanonicalSuccessClaim.results.successInspection.claim.status = 'active';
+  assert.ok(
+    productionThroughputBlockers(nonCanonicalSuccessClaim).includes(
+      'success-inspection-claim-status-not-canonical',
+    ),
+  );
+  assert.equal(
+    productionThroughputDetails(nonCanonicalSuccessClaim).successInspectionClaimCanonical,
+    false,
+  );
+
+  const noneStatusWithReason = clone(report);
+  noneStatusWithReason.results.successInspection.claim.reason = 'unexpected reason';
+  assert.ok(
+    productionThroughputBlockers(noneStatusWithReason).includes(
+      'success-inspection-claim-reason-not-canonical',
+    ),
+  );
+  assert.equal(
+    productionThroughputDetails(noneStatusWithReason).successInspectionClaimReasonCanonical,
     false,
   );
 });

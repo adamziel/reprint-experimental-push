@@ -595,6 +595,19 @@ export function productionThroughputBlockers(report) {
     blockers.push('success-inspection-claim-status-mismatch');
   }
   if (
+    report.evidence.recovery.successInspectionStatus === 'fully-updated-remote'
+    && report.results?.successInspection?.claim?.status != null
+    && report.results.successInspection.claim.status !== 'none'
+  ) {
+    blockers.push('success-inspection-claim-status-not-canonical');
+  }
+  if (
+    report.results?.successInspection?.claim?.status === 'none'
+    && report.results.successInspection?.claim?.reason != null
+  ) {
+    blockers.push('success-inspection-claim-reason-not-canonical');
+  }
+  if (
     Number.isFinite(report.results?.successInspection?.counts?.new)
     && Number.isFinite(report.shape?.mutations)
     && report.results.successInspection.counts.new !== report.shape.mutations
@@ -764,6 +777,13 @@ export function productionThroughputDetails(report) {
       successInspectionClaimStatus !== 'blocked'
       || report.evidence.recovery.successInspectionStatus !== 'fully-updated-remote'
     );
+  const successInspectionClaimCanonical =
+    report.evidence.recovery.successInspectionStatus !== 'fully-updated-remote'
+    || successInspectionClaimStatus == null
+    || successInspectionClaimStatus === 'none';
+  const successInspectionClaimReasonCanonical =
+    successInspectionClaimStatus !== 'none'
+    || successInspectionClaimReason == null;
   const successInspectionCountsNewMatchesMutations =
     Number.isFinite(report.results.successInspection?.counts?.new)
     && Number.isFinite(report.shape?.mutations)
@@ -899,6 +919,8 @@ export function productionThroughputDetails(report) {
     successInspectionClaimRecognized,
     successInspectionClaimReasonProven,
     successInspectionClaimMatchesInspectionStatus,
+    successInspectionClaimCanonical,
+    successInspectionClaimReasonCanonical,
     successInspectionCountsNewMatchesMutations,
     receiptCursorMemoryHeadroomMatchesResourceHeadroom,
     receiptCursorMemoryHeadroomWithinResourceHeadroom,
@@ -958,6 +980,8 @@ export function productionThroughputDetails(report) {
       successInspectionClaimReason,
       successInspectionClaimRecognized,
       successInspectionClaimMatchesInspectionStatus,
+      successInspectionClaimCanonical,
+      successInspectionClaimReasonCanonical,
       successInspectionCountsNewMatchesMutations,
       receiptCursorMemoryHeadroomMatchesResourceHeadroom,
       receiptCursorMemoryHeadroomWithinResourceHeadroom,
