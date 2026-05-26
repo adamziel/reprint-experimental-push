@@ -107,9 +107,11 @@ test('guarded benchmark refuses production throughput claims until production ga
   assert.equal(report.claims.productionThroughputDetails.queueBudgetBytes, 32 * 1024 * 1024);
   assert.equal(report.claims.productionThroughputDetails.queueBudgetMatchesResourceCeiling, true);
   assert.equal(report.claims.productionThroughputDetails.queueHeadroomMatchesResourceHeadroom, true);
+  assert.equal(report.claims.productionThroughputDetails.queueHeadroomMatchesMemoryHeadroom, true);
   assert.equal(report.claims.productionThroughputDetails.queueHeadroomWithinResourceCeiling, true);
   assert.equal(report.claims.productionThroughputDetails.backpressureConsistency.queueBudgetMatchesResourceCeiling, true);
   assert.equal(report.claims.productionThroughputDetails.backpressureConsistency.queueHeadroomMatchesResourceHeadroom, true);
+  assert.equal(report.claims.productionThroughputDetails.backpressureConsistency.queueHeadroomMatchesMemoryHeadroom, true);
   assert.equal(report.claims.productionThroughputDetails.backpressureConsistency.queueHeadroomWithinResourceCeiling, true);
   assert.equal(report.claims.productionThroughputDetails.backpressureConsistency.queuePausedBeforeOverflow, true);
   assert.equal(report.claims.productionThroughputDetails.backpressureConsistency.receiptCursorWithinQueueBudget, true);
@@ -505,6 +507,12 @@ test('production claim gate fails closed if benchmark evidence is tampered', () 
     productionThroughputDetails(mismatchedMemorySlack).backpressureConsistency.receiptCursorQueueSlackMatchesMemoryHeadroom,
     false,
   );
+  assert.equal(
+    productionThroughputBlockers(mismatchedMemorySlack).includes(
+      'queue-headroom-memory-headroom-mismatch',
+    ),
+    true,
+  );
 
   const zeroQueueCursor = clone(report);
   zeroQueueCursor.evidence.backpressure.receiptCursorBytes = 0;
@@ -538,6 +546,10 @@ test('production claim gate fails closed if benchmark evidence is tampered', () 
     false,
   );
   assert.equal(
+    productionThroughputDetails(mismatchedQueueHeadroom).backpressureConsistency.queueHeadroomMatchesMemoryHeadroom,
+    false,
+  );
+  assert.equal(
     productionThroughputDetails(mismatchedQueueHeadroom).backpressureConsistency.queuePausedBeforeOverflow,
     true,
   );
@@ -567,6 +579,10 @@ test('production claim gate fails closed if benchmark evidence is tampered', () 
   );
   assert.equal(
     productionThroughputDetails(mismatchedReceiptCursorHeadroom).backpressureConsistency.receiptCursorHeadroomMatchesQueueHeadroom,
+    false,
+  );
+  assert.equal(
+    productionThroughputDetails(mismatchedReceiptCursorHeadroom).backpressureConsistency.queueHeadroomMatchesMemoryHeadroom,
     false,
   );
 

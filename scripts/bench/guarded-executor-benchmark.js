@@ -291,6 +291,14 @@ export function productionThroughputBlockers(report) {
     blockers.push('receipt-cursor-headroom-mismatch');
   }
   if (
+    Number.isFinite(report.evidence.backpressure?.queueHeadroomBytes)
+    && Number.isFinite(report.evidence.backpressure?.receiptCursorMemoryHeadroomBytes)
+    && report.evidence.backpressure.queueHeadroomBytes
+      !== report.evidence.backpressure.receiptCursorMemoryHeadroomBytes
+  ) {
+    blockers.push('queue-headroom-memory-headroom-mismatch');
+  }
+  if (
     Number.isFinite(report.evidence.backpressure?.receiptCursorQueueSlackBytes)
     && Number.isFinite(report.evidence.backpressure?.receiptCursorMemoryHeadroomBytes)
     && report.evidence.backpressure.receiptCursorQueueSlackBytes
@@ -376,6 +384,10 @@ export function productionThroughputDetails(report) {
     && Number.isFinite(report.resourceLimits?.maxBufferedUploadBytes)
     && receiptCursorQueueBudgetBytes === report.resourceLimits.maxBufferedUploadBytes
     && receiptCursorQueueHeadroomBytes === receiptCursorQueueBudgetBytes - report.shape.chunkSizeBytes;
+  const queueHeadroomMatchesMemoryHeadroom =
+    Number.isFinite(receiptCursorQueueHeadroomBytes)
+    && Number.isFinite(receiptCursorMemoryHeadroomBytes)
+    && receiptCursorQueueHeadroomBytes === receiptCursorMemoryHeadroomBytes;
   const receiptCursorBackpressureWithinQueueBudget =
     Number.isFinite(receiptCursorBackpressureBytes)
     && Number.isFinite(receiptCursorQueueBudgetBytes)
@@ -444,6 +456,7 @@ export function productionThroughputDetails(report) {
     queueHeadroomBytes: receiptCursorQueueHeadroomBytes,
     queueBudgetMatchesResourceCeiling,
     queueHeadroomMatchesResourceHeadroom,
+    queueHeadroomMatchesMemoryHeadroom,
     queueHeadroomWithinResourceCeiling,
     queuePausedBeforeOverflow: report.evidence.backpressure?.queuePausedBeforeOverflow ?? false,
     receiptCursorWithinQueueBudget: report.evidence.backpressure?.receiptCursorWithinQueueBudget ?? false,
@@ -469,6 +482,7 @@ export function productionThroughputDetails(report) {
     backpressureConsistency: {
       queueBudgetMatchesResourceCeiling,
       queueHeadroomMatchesResourceHeadroom,
+      queueHeadroomMatchesMemoryHeadroom,
       queueHeadroomWithinResourceCeiling,
       queuePausedBeforeOverflow: report.evidence.backpressure?.queuePausedBeforeOverflow ?? false,
       receiptCursorMemoryCeilingBytes,
