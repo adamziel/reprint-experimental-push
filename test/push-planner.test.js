@@ -19838,9 +19838,24 @@ test('unsupported production recovery journal adapters remain fenced and restart
 
   assert.equal(journal.kind, 'production-recovery-journal');
   assert.equal(journal.productionAdapter, true);
+  assert.equal(journal.supportedSurface, 'production-recovery-journal-adapter');
   assert.equal(journal.ownsJournal, false);
   assert.equal(journal.journalPath, null);
   assert.deepEqual(journal.artifactRefs, { journal: null, remote: null });
+  assert.deepEqual(journal.missingDependency, [
+    'production recovery journal adapter marker',
+    'explicit production recovery adapter marker',
+    'explicit journal ownership fencing',
+    'stable-storage flush or fsync semantics',
+    'durable writer cleanup',
+    'restart-readable recovery inspection',
+    'restart-readable recovery artifact references',
+    'restart-readable remote recovery artifact ownership',
+    'owned restart-readable recovery journal path',
+    'restart-readable recovery journal schema',
+    'fencing or lease ownership for the journal writer',
+    'journal-readable inspection records with sequence and type',
+  ]);
   assert.equal(typeof journal.inspect, 'function');
   assert.throws(() => journal.inspect(), /Production recovery journal support is not available/);
 });
@@ -21276,6 +21291,7 @@ test('production durable journal claims fail closed when the writer advertises a
 
   assert.equal(error.code, 'PRODUCTION_DURABLE_JOURNAL_UNSUPPORTED');
   assert.deepEqual(error.details.missingDependency, [
+    'restart-readable remote recovery artifact ownership',
     'restart-readable recovery remote artifact references',
   ]);
 });
@@ -21328,6 +21344,7 @@ test('production durable journal claims fail closed when restart inspection adve
   assert.equal(error.code, 'PRODUCTION_DURABLE_JOURNAL_UNSUPPORTED');
   assert.deepEqual(error.details.missingDependency, [
     'restart-readable recovery remote artifact references',
+    'restart-readable remote recovery artifact ownership',
   ]);
 });
 

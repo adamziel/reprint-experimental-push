@@ -47,6 +47,7 @@ export function createUnsupportedProductionRecoveryJournal(reason = 'Production 
     kind: 'production-recovery-journal',
     productionAdapter: true,
     ownsJournal: false,
+    ownsRemoteArtifact: false,
     journalPath: null,
     artifactRefs: Object.freeze({
       journal: null,
@@ -54,6 +55,20 @@ export function createUnsupportedProductionRecoveryJournal(reason = 'Production 
     }),
     schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
   };
+  const missingDependency = Object.freeze([
+    'production recovery journal adapter marker',
+    'explicit production recovery adapter marker',
+    'explicit journal ownership fencing',
+    'stable-storage flush or fsync semantics',
+    'durable writer cleanup',
+    'restart-readable recovery inspection',
+    'restart-readable recovery artifact references',
+    'restart-readable remote recovery artifact ownership',
+    'owned restart-readable recovery journal path',
+    'restart-readable recovery journal schema',
+    'fencing or lease ownership for the journal writer',
+    'journal-readable inspection records with sequence and type',
+  ]);
 
   const throwUnsupported = (method) => {
     throw new UnsupportedProductionRecoveryJournalError(reason, {
@@ -64,6 +79,8 @@ export function createUnsupportedProductionRecoveryJournal(reason = 'Production 
 
   return Object.freeze({
     ...details,
+    supportedSurface: 'production-recovery-journal-adapter',
+    missingDependency,
     appendEvent() {
       return throwUnsupported('appendEvent');
     },
