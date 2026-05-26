@@ -29,6 +29,40 @@ const RAW_VALUE_KEYS = new Set([
   'afterValue',
 ]);
 
+const PRODUCTION_RECOVERY_JOURNAL_COMPATIBILITY_OPTION_KEYS = new Set([
+  'filePath',
+  'plan',
+  'current',
+  'artifactRefs',
+  'now',
+  'truncate',
+  'claimId',
+  'writerLease',
+  'ownsRemoteArtifact',
+  'remoteArtifactPath',
+]);
+
+const PRODUCTION_RECOVERY_JOURNAL_DIRECT_OPTION_KEYS = new Set([
+  'artifactRefs',
+  'now',
+  'truncate',
+  'claimId',
+  'writerLease',
+  'ownsRemoteArtifact',
+  'remoteArtifactPath',
+]);
+
+const PRODUCTION_RECOVERY_JOURNAL_CONSUME_OPTION_KEYS = new Set([
+  'filePath',
+  'plan',
+  'current',
+  'artifactRefs',
+  'claimId',
+  'writerLease',
+  'ownsRemoteArtifact',
+  'remoteArtifactPath',
+]);
+
 export class RecoveryJournalClaimStaleError extends Error {
   constructor(message, details = {}) {
     super(message);
@@ -44,6 +78,18 @@ export class UnsupportedProductionRecoveryJournalError extends Error {
     this.name = 'UnsupportedProductionRecoveryJournalError';
     this.code = 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL';
     this.details = details;
+  }
+}
+
+function assertAllowedOptionKeys(options, allowedKeys, operationName) {
+  const providedOptions = options && typeof options === 'object'
+    ? options
+    : {};
+  const unexpectedKeys = Object.keys(providedOptions).filter((key) => !allowedKeys.has(key));
+  if (unexpectedKeys.length > 0) {
+    throw new Error(
+      `${operationName} received unsupported option keys: ${unexpectedKeys.sort().join(', ')}`,
+    );
   }
 }
 
@@ -530,6 +576,11 @@ export function openProductionRecoveryJournal(filePathOrOptions, options = {}) {
 }
 
 export function consumeProductionRecoveryJournal(options) {
+  assertAllowedOptionKeys(
+    options,
+    PRODUCTION_RECOVERY_JOURNAL_CONSUME_OPTION_KEYS,
+    'consumeProductionRecoveryJournal()',
+  );
   const normalized = normalizeProductionRecoveryJournalOptions(options);
   const {
     filePath,
@@ -781,6 +832,11 @@ function normalizeProductionRecoveryJournalOptions(filePathOrOptions, options = 
       || Object.hasOwn(filePathOrOptions, 'artifactRefs')
     )
   ) {
+    assertAllowedOptionKeys(
+      filePathOrOptions,
+      PRODUCTION_RECOVERY_JOURNAL_COMPATIBILITY_OPTION_KEYS,
+      'openProductionRecoveryJournal()',
+    );
     if (hasHiddenOwnStringKeys(filePathOrOptions)) {
       throw new UnsupportedProductionRecoveryJournalError(
         'Production recovery journal compatibility overload requires enumerable top-level options.',
@@ -931,6 +987,12 @@ function normalizeProductionRecoveryJournalOptions(filePathOrOptions, options = 
       remoteArtifactPath,
     };
   }
+
+  assertAllowedOptionKeys(
+    options,
+    PRODUCTION_RECOVERY_JOURNAL_DIRECT_OPTION_KEYS,
+    'openProductionRecoveryJournal()',
+  );
 
   if (options && typeof options === 'object' && !isStrictPlainObject(options)) {
     throw new UnsupportedProductionRecoveryJournalError(

@@ -1041,6 +1041,71 @@ test('production recovery journal compatibility overload supports reliable relea
   });
 });
 
+test('production recovery journal open fails closed on unsupported compatibility option keys', () => {
+  const filePath = tempJournalPath();
+  const remote = baseSite();
+  const plan = planFor(baseSite(), localSite(), remote);
+
+  assert.throws(() => {
+    openProductionRecoveryJournal({
+      filePath,
+      plan,
+      current: remote,
+      artifactRefs: {
+        journal: filePath,
+      },
+      claimId: 'claim-open-unsupported-option',
+      writerLease: { id: 'claim-open-unsupported-option' },
+      claim: {
+        id: 'shadow-claim',
+      },
+    });
+  }, /openProductionRecoveryJournal\(\) received unsupported option keys: claim/);
+
+  assert.equal(fs.existsSync(filePath), false);
+});
+
+test('production recovery journal consume fails closed on unsupported option keys', () => {
+  const filePath = tempJournalPath();
+  const remote = baseSite();
+  const plan = planFor(baseSite(), localSite(), remote);
+  const claimId = 'claim-consume-unsupported-option';
+  const journal = openProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs: {
+      journal: filePath,
+    },
+    claimId,
+    writerLease: { id: claimId },
+  });
+
+  appendRecoveryClaimOpened(journal, {
+    plan,
+    current: remote,
+    claimId,
+    artifactRefs: {
+      journal: filePath,
+    },
+  });
+  journal.close();
+
+  assert.throws(() => {
+    consumeProductionRecoveryJournal({
+      filePath,
+      plan,
+      current: remote,
+      artifactRefs: {
+        journal: filePath,
+      },
+      claimId,
+      writerLease: { id: claimId },
+      truncate: false,
+    });
+  }, /consumeProductionRecoveryJournal\(\) received unsupported option keys: truncate/);
+});
+
 test('production recovery journal consumption derives claim identity from the fenced writer lease when claimId is omitted', () => {
   const filePath = tempJournalPath();
   const remote = baseSite();
