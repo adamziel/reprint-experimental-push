@@ -107,10 +107,35 @@ try {
     assert.equal(preflight.body.ok, true);
     assert.equal(preflight.body.routeProfile.profile, 'production-shaped');
     assert.equal(preflight.body.routeProfile.restNamespace, 'reprint/v1');
-    assert.equal(preflight.body.routeProfile.labBacked, true);
+    assert.equal(preflight.body.routeProfile.labBacked, false);
+    assert.match(preflight.body.routeProfile.warning, /packaged production deployment mode/i);
     assert.equal(preflight.body.auth.session.credentialScope, 'reprint-push-lab:authenticated-http-push');
     assert.equal(preflight.body.auth.session.credentialType, 'push-application-password');
+    assert.equal(preflight.body.auth.session.type, 'production-auth-session');
+    assert.equal(preflight.body.auth.session.warning, null);
     assertSignedStoreCleanup(preflight.body.sessionStore?.cleanup);
+
+    const dbJournalSchema = await requestJson(
+      server.baseUrl,
+      'GET',
+      '/wp-json/reprint/v1/push/db-journal/schema',
+      undefined,
+      authHeaders(),
+    );
+    assert.equal(dbJournalSchema.status, 200);
+    assert.equal(dbJournalSchema.body.ok, true);
+    assert.match(dbJournalSchema.body.dbJournalSchema.scope, /packaged production plugin journal surface/i);
+
+    const dbJournal = await requestJson(
+      server.baseUrl,
+      'GET',
+      '/wp-json/reprint/v1/push/db-journal?limit=1',
+      undefined,
+      authHeaders(),
+    );
+    assert.equal(dbJournal.status, 200);
+    assert.equal(dbJournal.body.ok, true);
+    assert.match(dbJournal.body.dbJournal.scope, /packaged production plugin journal surface/i);
 
     const result = runCli([
       'push-authenticated',

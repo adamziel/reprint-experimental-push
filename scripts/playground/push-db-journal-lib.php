@@ -77,11 +77,14 @@ function reprint_push_lab_db_journal_ensure_table(): void
 function reprint_push_lab_db_journal_schema(): array
 {
     reprint_push_lab_db_journal_ensure_table();
+    $package_mode = reprint_push_lab_db_journal_package_mode_enabled();
 
     return [
         'schemaVersion' => 1,
         'table' => reprint_push_lab_db_journal_table_name(),
-        'scope' => 'local Playground fixture only; not production durability',
+        'scope' => $package_mode
+            ? 'packaged production plugin journal surface; not local Playground fixture only'
+            : 'local Playground fixture only; not production durability',
         'appendOnlyEvents' => true,
         'columns' => [
             'id' => 'append-only event sequence',
@@ -118,6 +121,14 @@ function reprint_push_lab_db_journal_schema(): array
             ],
         ],
     ];
+}
+
+function reprint_push_lab_db_journal_package_mode_enabled(): bool
+{
+    return defined('REPRINT_PUSH_DISABLE_LAB_ROUTES')
+        && REPRINT_PUSH_DISABLE_LAB_ROUTES === true
+        && defined('REPRINT_PUSH_DISABLE_AUTH_BOOTSTRAP')
+        && REPRINT_PUSH_DISABLE_AUTH_BOOTSTRAP === true;
 }
 
 function reprint_push_lab_db_journal_key_hash(string $key): string
@@ -456,6 +467,7 @@ function reprint_push_lab_db_journal_summary(int $limit = 20): array
     global $wpdb;
 
     reprint_push_lab_db_journal_ensure_table();
+    $package_mode = reprint_push_lab_db_journal_package_mode_enabled();
 
     $limit = max(1, min(500, $limit));
     $quoted_table = reprint_push_lab_db_journal_quoted_table_name();
@@ -481,7 +493,9 @@ function reprint_push_lab_db_journal_summary(int $limit = 20): array
     return [
         'schemaVersion' => 1,
         'table' => reprint_push_lab_db_journal_table_name(),
-        'scope' => 'local Playground fixture only; not production durability',
+        'scope' => $package_mode
+            ? 'packaged production plugin journal surface; not local Playground fixture only'
+            : 'local Playground fixture only; not production durability',
         'rowCount' => $row_count,
         'latestRows' => array_map('reprint_push_lab_db_journal_public_row', array_reverse($latest)),
         'eventSummaries' => array_map(static function (array $row): array {

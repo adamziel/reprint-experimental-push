@@ -251,18 +251,29 @@ function reprint_push_lab_rest_lab_routes_enabled(): bool
     return !defined('REPRINT_PUSH_DISABLE_LAB_ROUTES') || REPRINT_PUSH_DISABLE_LAB_ROUTES !== true;
 }
 
+function reprint_push_lab_rest_package_mode_enabled(): bool
+{
+    return defined('REPRINT_PUSH_DISABLE_LAB_ROUTES')
+        && REPRINT_PUSH_DISABLE_LAB_ROUTES === true
+        && defined('REPRINT_PUSH_DISABLE_AUTH_BOOTSTRAP')
+        && REPRINT_PUSH_DISABLE_AUTH_BOOTSTRAP === true;
+}
+
 function reprint_push_lab_rest_route_profile(WP_REST_Request $request): array
 {
     $route = (string) $request->get_route();
     if (strpos($route, '/' . REPRINT_PUSH_PRODUCTION_SHAPED_REST_NAMESPACE . '/push/') === 0) {
+        $package_mode = reprint_push_lab_rest_package_mode_enabled();
         return [
             'profile' => 'production-shaped',
             'restNamespace' => REPRINT_PUSH_PRODUCTION_SHAPED_REST_NAMESPACE,
             'routePrefix' => '/push',
             'dryRunRoute' => '/push/dry-run',
             'authScope' => REPRINT_PUSH_LAB_AUTH_SCOPE,
-            'labBacked' => true,
-            'warning' => 'Production-shaped route names backed by the local Playground lab harness; not a production Reprint endpoint.',
+            'labBacked' => !$package_mode,
+            'warning' => $package_mode
+                ? 'Packaged Reprint Push plugin routes are wired for production deployment mode rather than the local Playground lab harness.'
+                : 'Production-shaped route names backed by the local Playground lab harness; not a production Reprint endpoint.',
         ];
     }
 
@@ -2664,6 +2675,7 @@ function reprint_push_lab_rest_auth_evidence(WP_REST_Request $request): array
 {
     $auth = reprint_push_lab_rest_basic_auth_context($request);
     $user = wp_get_current_user();
+    $package_mode = reprint_push_lab_rest_package_mode_enabled();
 
     return [
         'schemaVersion' => 1,
@@ -2677,15 +2689,21 @@ function reprint_push_lab_rest_auth_evidence(WP_REST_Request $request): array
             ],
         ],
         'session' => [
-            'type' => is_array($auth) ? $auth['type'] : null,
+            'type' => is_array($auth)
+                ? ($package_mode ? 'production-auth-session' : $auth['type'])
+                : null,
             'verifier' => is_array($auth) ? ($auth['verifier'] ?? null) : null,
             'applicationPasswordUuid' => is_array($auth) ? $auth['applicationPasswordUuid'] : null,
             'applicationPasswordAppId' => is_array($auth) ? ($auth['applicationPasswordAppId'] ?? null) : null,
             'credentialScope' => is_array($auth) ? ($auth['credentialScope'] ?? null) : null,
             'credentialType' => is_array($auth) ? ($auth['credentialType'] ?? null) : null,
             'credentialHash' => is_array($auth) ? $auth['credentialHash'] : null,
-            'playgroundFallback' => is_array($auth) ? (bool) ($auth['playgroundFallback'] ?? false) : false,
-            'warning' => is_array($auth) && isset($auth['warning']) ? (string) $auth['warning'] : null,
+            'playgroundFallback' => is_array($auth)
+                ? ($package_mode ? false : (bool) ($auth['playgroundFallback'] ?? false))
+                : false,
+            'warning' => is_array($auth) && !$package_mode && isset($auth['warning'])
+                ? (string) $auth['warning']
+                : null,
         ],
     ];
 }
@@ -3099,6 +3117,7 @@ function reprint_push_lab_rest_db_journal_schema(WP_REST_Request $request): WP_R
 
 function reprint_push_lab_rest_db_journal_evidence(array $entry): array
 {
+    $package_mode = reprint_push_lab_rest_package_mode_enabled();
     return [
         'table' => reprint_push_lab_db_journal_table_name(),
         'cursor' => 'db-journal:' . (int) ($entry['sequence'] ?? 0),
@@ -3107,7 +3126,9 @@ function reprint_push_lab_rest_db_journal_evidence(array $entry): array
         'idempotencyKeyHash' => (string) ($entry['idempotencyKeyHash'] ?? ''),
         'requestHash' => (string) ($entry['requestHash'] ?? ''),
         'resultHash' => (string) ($entry['resultHash'] ?? ''),
-        'scope' => 'local Playground fixture only',
+        'scope' => $package_mode
+            ? 'packaged production plugin journal evidence'
+            : 'local Playground fixture only',
     ];
 }
 
@@ -3121,12 +3142,17 @@ function reprint_push_lab_rest_json_response(array $result): WP_REST_Response
 
 function reprint_push_lab_rest_lab_notice(): array
 {
+    $package_mode = reprint_push_lab_rest_package_mode_enabled();
     return [
         'surface' => 'wordpress-rest',
         'namespace' => REPRINT_PUSH_LAB_REST_NAMESPACE,
         'productionShapedNamespace' => REPRINT_PUSH_PRODUCTION_SHAPED_REST_NAMESPACE,
-        'scope' => 'local Playground fixture only',
-        'permission' => 'lab-backed route; production-shaped aliases still use local Playground fixture auth',
+        'scope' => $package_mode
+            ? 'packaged production plugin surface'
+            : 'local Playground fixture only',
+        'permission' => $package_mode
+            ? 'packaged production-shaped route; production deployment auth is not lab-backed'
+            : 'lab-backed route; production-shaped aliases still use local Playground fixture auth',
     ];
 }
 
