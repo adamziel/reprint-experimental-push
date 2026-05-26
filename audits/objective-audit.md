@@ -4,7 +4,7 @@
 
 The project is **not releasable as a production WordPress push path**.
 
-- Fresh remote heads at audit time, checked on 2026-05-26 07:37:02 CEST (+0200):
+- Fresh remote heads at audit time, checked on 2026-05-26 07:37:53 CEST (+0200):
 
 - `origin/lane/cycle-20260524-auth-graph-hardening/critic` -> `e413f7a8`
 - `origin/lane/cycle-20260524-auth-graph-hardening/fast-paths` -> `ad7d82a4`
@@ -44,7 +44,7 @@ The project is **not releasable as a production WordPress push path**.
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `a6359b91`
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `8e3f0289`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `f641b166`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `516e58ea`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `d36faa9f`
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` -> `0ca7b35d`
 - `origin/lane/cycle-20260525-mainwindows-2349/same-plan-wordpress-graph-create` -> `af493c80`
 - `origin/lane/cycle-20260525-mainwindows-2357/no-data-loss-invariants-graph-proof` -> `98c0ce26`
@@ -55,7 +55,7 @@ The project is **not releasable as a production WordPress push path**.
 - `origin/lane/fast-paths` -> `8c5c2ccb`
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `a6359b91`
 - `origin/lane/independent-auditor` -> `8e3f0289`
-- `origin/lane/no-data-loss-invariants` -> `d87858d7`
+- `origin/lane/no-data-loss-invariants` -> `f7501d92`
 - `origin/lane/no-data-loss-recovery` -> `f641b166`
 - `origin/lane/progress-publisher` -> `7695e1f9`
 - `origin/lane/reliable-executor` -> `34e9c7c1`
@@ -70,9 +70,9 @@ Fresh visibility-lane and invariants heads moved again, but they still do not ch
 - The current public-refresh branch heads remain:
 `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` ->
 `a6359b91` and `origin/lane/cycle-20260525-mainwindows-2349/progress-followup`
--> `516e58ea`.
-- `origin/lane/reliable-executor` -> `5c75c43b`
-- `origin/lane/no-data-loss-invariants` -> `d87858d7`
+-> `d36faa9f`.
+- `origin/lane/reliable-executor` -> `34e9c7c1`
+- `origin/lane/no-data-loss-invariants` -> `f7501d92`
 - `origin/lane/no-data-loss-recovery` -> `6d08dd6c`
 - `origin/main` -> `2c8d52cb`
 
@@ -146,11 +146,14 @@ but it did not change the release conclusion:
   records `f2d32e1d`, refreshing progress visibility only. It still does not
   change the release verdict.
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now records
-  `3b3c05e7`, refreshing public progress freshness only. It still does not add
+  `d36faa9f`, refreshing public progress freshness only. It still does not add
   production-backed gate movement.
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now records
-  `3769f63a`, refreshing public progress freshness only. It still does not add
-  production-backed gate movement.
+- `origin/lane/no-data-loss-invariants` now records `f7501d92`, adding an
+  attachment relationship blocker proof. It still does not prove the live
+  release boundary or any production-backed source mutation.
+- `origin/lane/reliable-executor` now records `34e9c7c1`, hardening durable
+  journal ownership. It still does not prove production auth/session
+  lifecycle or a live-source mutation boundary.
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` now records
   `9abe8414`, tightening parallelism limit proof only. It still does not prove
   a production speed claim.
