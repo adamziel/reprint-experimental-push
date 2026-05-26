@@ -1,6 +1,12 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-26 10:35 CEST
+Last updated: 2026-05-26 10:36 CEST
+
+## 2026-05-26 10:36:39 CEST - Fresh Evidence Delta
+
+- Recovery's `351b6bbd` adapter work is still valid evidence, and reliable's newest readiness diagnostic patch is `e725e749`, which fixes the readiness failure so it is not swallowed by the broad `waitForServer()` retry catch.
+- The gate is still closed because the new readiness behavior has not yet been proven past the outer release-verifier boundary.
+- The release posture stays conservative at `0/4`.
 
 ## 2026-05-26 10:35:19 CEST - Fresh Evidence Delta
 
