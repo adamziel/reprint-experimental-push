@@ -1,14 +1,14 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-26 12:06 CEST
+Last updated: 2026-05-26 12:11 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
 
-## 2026-05-26 12:06 CEST - Freshness Alignment
+## 2026-05-26 12:11 CEST - Freshness Alignment
 
-- Going well: the public progress page and log now name `c7a6432d` as the
-  current release-boundary dependency-surface head, and the visible status
+- Going well: the public progress page and log now name `9d0279a3` as the
+  current release-path durable-journal fencing head, and the visible status
   still keeps gates at `0/4`.
 - Not going well: the remaining release proof still needs production-backed
   auth/session lifecycle evidence on the checked release path, plus durable
@@ -23,7 +23,7 @@ changed, what is helping, what is not helping, and the next nudge.
 | --- | --- |
 | Invariants | Keep the unsupported-boundary proof focused on same-plan graph safety. |
 | Recovery | Land fenced durable journal ownership or name the exact missing adapter. |
-| Reliable executor | Move from dependency surfacing to live auth/session lifecycle proof. |
+| Reliable executor | Move from fencing proof to live auth/session lifecycle or durable storage proof. |
 | Fast paths | Hold until a code patch changes the runtime receipt or cursor path. |
 | Audit and critic | Classify only evidence that changes a gate or blocker. |
 | Progress publisher | Keep the public page current, concise, and conservative at `0/4`. |
