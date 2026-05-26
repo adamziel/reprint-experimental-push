@@ -3871,6 +3871,121 @@ test('blocks _menu_item_object_id taxonomy metadata from referencing a same-plan
   assert.throws(() => applyPlan(baseSite(), plan), /Refusing to apply/);
 });
 
+test('blocks _menu_item_object_id metadata owned by an attachment even when it targets a same-plan post', () => {
+  const resourceKey = 'row:["wp_postmeta","meta_id:481"]';
+  const attachmentResourceKey = 'row:["wp_posts","ID:2"]';
+  const targetResourceKey = 'row:["wp_posts","ID:3"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_title: 'Local attachment owner',
+    post_content: 'local-private-attachment-owner-body',
+    post_status: 'inherit',
+    post_type: 'attachment',
+  };
+  local.db.wp_posts['ID:3'] = {
+    ID: 3,
+    post_title: 'Local menu object post target',
+    post_content: 'local-private-menu-object-post-target-body',
+    post_status: 'publish',
+  };
+  local.db.wp_postmeta = {
+    'meta_id:481': {
+      meta_id: 481,
+      post_id: 2,
+      meta_key: '_menu_item_object_id',
+      meta_value: 3,
+    },
+  };
+
+  const plan = planFor(base, local, baseSite());
+  const attachmentMutation = mutationFor(plan, attachmentResourceKey);
+  const targetMutation = mutationFor(plan, targetResourceKey);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.ok(plan.summary.mutations > 0);
+  assert.equal(attachmentMutation.changeKind, 'create');
+  assert.equal(targetMutation.changeKind, 'create');
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.ok(blocker);
+  assert.equal(blocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(blocker.surface, 'attachment');
+  assert.equal(
+    JSON.stringify(blocker).includes('local-private-attachment-owner-body'),
+    false,
+  );
+  assert.equal(
+    JSON.stringify(blocker).includes('local-private-menu-object-post-target-body'),
+    false,
+  );
+});
+
+test('blocks _menu_item_object_id taxonomy metadata owned by an attachment even when it targets a same-plan term', () => {
+  const resourceKey = 'row:["wp_postmeta","meta_id:482"]';
+  const attachmentResourceKey = 'row:["wp_posts","ID:2"]';
+  const targetResourceKey = 'row:["wp_terms","term_id:7"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_title: 'Local attachment owner',
+    post_content: 'local-private-attachment-owner-body',
+    post_status: 'inherit',
+    post_type: 'attachment',
+  };
+  local.db.wp_terms = {
+    'term_id:7': {
+      term_id: 7,
+      name: 'Local menu object term',
+      slug: 'local-menu-object-term',
+    },
+  };
+  local.db.wp_postmeta = {
+    'meta_id:482': {
+      meta_id: 482,
+      post_id: 2,
+      meta_key: '_menu_item_object_id',
+      meta_value: 7,
+    },
+    'meta_id:483': {
+      meta_id: 483,
+      post_id: 2,
+      meta_key: '_menu_item_type',
+      meta_value: 'taxonomy',
+    },
+    'meta_id:484': {
+      meta_id: 484,
+      post_id: 2,
+      meta_key: '_menu_item_object',
+      meta_value: 'category',
+    },
+  };
+
+  const plan = planFor(base, local, baseSite());
+  const attachmentMutation = mutationFor(plan, attachmentResourceKey);
+  const targetMutation = mutationFor(plan, targetResourceKey);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.ok(plan.summary.mutations > 0);
+  assert.equal(attachmentMutation.changeKind, 'create');
+  assert.equal(targetMutation.changeKind, 'create');
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.ok(blocker);
+  assert.equal(blocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(blocker.surface, 'attachment');
+  assert.equal(
+    JSON.stringify(blocker).includes('local-private-attachment-owner-body'),
+    false,
+  );
+  assert.equal(
+    JSON.stringify(blocker).includes('local-menu-object-term'),
+    false,
+  );
+});
+
 test('blocks menu item parent metadata owned by an attachment even when it targets a same-plan post', () => {
   const resourceKey = 'row:["wp_postmeta","meta_id:48"]';
   const attachmentResourceKey = 'row:["wp_posts","ID:2"]';
