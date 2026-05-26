@@ -61,18 +61,18 @@ The project is **not releasable as a production WordPress push path**.
 - `origin/lane/reliable-executor` -> `9658b415`
 - `origin/lane/same-plan-wordpress-graph-create` -> `8dea1ca3`
 
-Fresh visibility-lane heads moved again, but they still only refresh public status surfaces:
+Fresh visibility-lane and invariants heads moved again, but they still do not change the release gate:
 
 - Since the last audit pass, the visible progress lanes advanced again:
 `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` ->
 `196ae0b2` and `origin/lane/cycle-20260525-mainwindows-2349/progress-followup`
--> `b8c25fd6`. That changes the freshness surface, not the release gate.
+-> `e36c0906`. That changes the freshness surface, not the release gate.
 - The current public-refresh branch heads remain:
 `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` ->
 `196ae0b2` and `origin/lane/cycle-20260525-mainwindows-2349/progress-followup`
--> `b8c25fd6`.
+-> `e36c0906`.
 - `origin/lane/reliable-executor` -> `9658b415`
-- `origin/lane/no-data-loss-invariants` -> `c55aab49`
+- `origin/lane/no-data-loss-invariants` -> `7dfb897d`
 - `origin/lane/no-data-loss-recovery` -> `2af1ddda`
 - `origin/main` -> `2c8d52cb`
 

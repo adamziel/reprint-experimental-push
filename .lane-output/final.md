@@ -1,24 +1,21 @@
-Updated `audits/objective-audit.md` to reflect the latest visible lane-head movement while keeping the release verdict at `0/4`.
+Updated the objective audit for the newest visible heads in `progress-followup` and `no-data-loss-invariants`, while keeping the release verdict at `0/4`.
 
 Changed files:
-- `audits/objective-audit.md`
-- `.lane-output/final.md`
+- [`audits/objective-audit.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/independent-auditor/audits/objective-audit.md)
+- [`.lane-output/final.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/independent-auditor/.lane-output/final.md)
 
 Commands run:
 - `date '+%Y-%m-%d %H:%M:%S %Z (%z)'`
-- `git status --short --branch`
-- `git for-each-ref --format='%(refname:short) %(objectname:short) %(committerdate:iso8601) %(subject)' refs/remotes/origin/lane | sort | tail -n 25`
-- `sed -n '1,260p' audits/objective-audit.md`
-- `sed -n '1,220p' .lane-output/final.md`
+- `git for-each-ref --format='%(refname:short) %(objectname:short) %(subject)' refs/remotes/origin/lane/cycle-20260525-mainwindows-2349/{feedback-supervisor,progress-followup,independent-auditor} refs/remotes/origin/lane/{reliable-executor,no-data-loss-invariants,no-data-loss-recovery} 2>/dev/null | sort`
+- `sed -n '56,96p' audits/objective-audit.md`
 - `git diff -- audits/objective-audit.md`
-- `git log --oneline -n 2 -- audits/objective-audit.md`
+- `git status --short --branch`
 
 Push result:
 - Not run yet this pass
 
 Worktree status:
-- `lane/cycle-20260525-mainwindows-2349/independent-auditor...origin/main [ahead 1565, behind 425]`
-- Dirty tracked files before commit: `audits/objective-audit.md`, `.lane-output/final.md`
+- Branch remains ahead of `origin/main` with no new tracked-file changes beyond the audit refresh
 
 Next supervisor nudge:
-- Push the audit refresh, then re-poll only when `reliable-executor` or `no-data-loss-invariants` lands production-backed proof that changes the live release boundary.
+- Re-poll only when production-backed auth/session or durable-journal proof changes the release boundary; the audit still supports `0/4`.
