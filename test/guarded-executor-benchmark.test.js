@@ -478,6 +478,36 @@ test('guarded benchmark exposes memory-headroom commit authorization shortcuts a
   );
 });
 
+test('guarded benchmark exposes queue-headroom commit authorization shortcuts as rejected', () => {
+  const fastPath = findRejectedFastPathById(
+    'cached-receipt-cursor-queue-headroom-authorizes-atomic-group-commit-after-retry',
+  );
+
+  assert.ok(fastPath);
+  assert.equal(fastPath.rejectedGate, 'recovery');
+  assert.match(fastPath.proposal, /queue headroom/);
+  assert.match(fastPath.rejectedBecause, /survived the retry well enough to authorize commit/);
+  assert.deepEqual(
+    fastPath.violates,
+    ['backpressure', 'atomic-groups', 'durable-progress', 'live-preconditions'],
+  );
+});
+
+test('guarded benchmark exposes queue-slack commit authorization shortcuts as rejected', () => {
+  const fastPath = findRejectedFastPathById(
+    'cached-receipt-cursor-queue-slack-authorizes-commit-after-pause',
+  );
+
+  assert.ok(fastPath);
+  assert.equal(fastPath.rejectedGate, 'recovery');
+  assert.match(fastPath.proposal, /queue slack/);
+  assert.match(fastPath.rejectedBecause, /survived the pause well enough to authorize commit/);
+  assert.deepEqual(
+    fastPath.violates,
+    ['backpressure', 'atomic-groups', 'durable-progress', 'live-preconditions'],
+  );
+});
+
 test('guarded benchmark blocks row-batch executor claims when the measured surface is not visible', () => {
   const report = smallBenchmark();
   const tampered = clone(report);
