@@ -1,18 +1,18 @@
 # Critic Verdict
 
-Current reliable head: `5701c777fc27c985e79012dc4ad18206ab0b786a`
-(`Pin plugin driver guards in release verify`).
+Current reliable head: `75668b81a33078611be1b8bb1f2e09da159ece10`
+(`Pin trusted scopes in journal client fixtures`).
 
 Verdict: `0/4`
 
 Reason:
 
-- This head is useful plugin-driver guard pinning in the checked release
-  verifier, but it still does not prove the production-owned boundary the gate
-  is waiting for.
+- This head is useful fixture hardening in the authenticated client tests, but
+  it still does not prove the production-owned boundary the gate is waiting
+  for.
 - The missing primitive remains production-backed auth/session and
-  durable-journal ownership on the checked release path, not just plugin
-  guard or packaged smoke hardening.
+  durable-journal ownership on the checked release path, not just trusted
+  fixture scope pinning or packaged smoke hardening.
 - Because that production boundary is still not proven directly, the
   supervised release gate remains closed at `0/4`.
 
