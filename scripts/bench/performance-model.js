@@ -709,6 +709,26 @@ export const SAFE_FAST_PATHS = Object.freeze([
   },
   {
     area: 'backpressure',
+    reduces: ['queue-drain-time', 'duplicate-recovery-writes'],
+    allowedShortcut: 'reuse-durable-receipt-cursor-to-size-the-next-journal-batch-after-a-pause',
+    guardrails: [
+      'receipt-cursor-stays-advisory-and-kind-scoped',
+      'pause-boundary-stays-explicit-before-resume',
+    ],
+    gateProofs: {
+      skip: 'a durable receipt cursor can size the next journal batch without rescanning already-recorded receipts after a pause',
+      live: 'the storage-boundary write still keeps the same live preconditions for each receipt-producing mutation',
+      group: 'cursor reuse only changes journal sizing and never moves an atomic-group or file-publish boundary',
+      recovery: 'the cursor, ordered raw receipts, and journal records still classify whether the pause happened before or after any durable writes',
+    },
+    visibilityBoundary: 'kind-scoped-journal-planning-only',
+    failureEvidence: 'durable receipt cursor plus ordered raw durable receipts and journal records',
+    bypassesLivePreconditions: false,
+    splitsAtomicGroup: false,
+    publishesStagedDataEarly: false,
+  },
+  {
+    area: 'backpressure',
     reduces: ['overflow-thrash', 'duplicate-retry-work', 'failed-spill-write-time'],
     allowedShortcut: 'pause-upstream-producers-when-staging-disk-headroom-falls-below-plan-reserve',
     guardrails: [
@@ -3029,6 +3049,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     rejectedBecause: 'planning evidence and a cached manifest can reduce scans, but they cannot prove the dependent plugin files, row batches, and atomic-group commit survived failure',
     rejectedGate: 'group',
     violates: ['remote-index-planning-only', 'compression', 'atomic-groups', 'plugin-preconditions', 'row-preconditions', 'durable-progress'],
+  },
+  {
+    id: 'compressed-remote-index-and-cached-release-manifest-and-batched-receipt-flush-skips-release-bundle-commit-after-pause',
+    proposal: 'use a compressed remote index plus a cached release manifest and batched receipt flushes to skip the release-bundle commit barrier after a pause',
+    rejectedBecause: 'planning evidence, a cached release manifest, and batched receipt flushes can trim replay cost, but they still cannot prove the dependent plugin files, row batches, or atomic-group commit survived the pause',
+    rejectedGate: 'group',
+    violates: ['remote-index-planning-only', 'compression', 'backpressure', 'atomic-groups', 'plugin-preconditions', 'row-preconditions', 'durable-progress'],
   },
   {
     id: 'compressed-remote-index-and-cached-release-manifest-skips-release-bundle-planning',

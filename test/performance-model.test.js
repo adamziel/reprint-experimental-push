@@ -307,6 +307,16 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
   assert.ok(
     model.safeFastPaths.some(
       (fastPath) =>
+        fastPath.allowedShortcut === 'reuse-durable-receipt-cursor-to-size-the-next-journal-batch-after-a-pause' &&
+        fastPath.area === 'backpressure' &&
+        fastPath.visibilityBoundary === 'kind-scoped-journal-planning-only' &&
+        fastPath.gateProofs.recovery.includes('classify whether the pause happened before or after any durable writes'),
+    ),
+    'durable receipt cursors can size the next journal batch without weakening the pause boundary',
+  );
+  assert.ok(
+    model.safeFastPaths.some(
+      (fastPath) =>
         fastPath.allowedShortcut === 'compress-planning-evidence-and-batch-raw-receipts-for-bounded-replay' &&
         fastPath.area === 'backpressure' &&
         fastPath.visibilityBoundary === 'transport-and-journal-flush-only' &&
@@ -1569,6 +1579,14 @@ test('fast-path fixture isolates the release-safety benchmark shape', () => {
       fastPath.id === 'compressed-remote-index-and-cached-release-manifest-skips-release-bundle-commit' &&
       fastPath.rejectedGate === 'group' &&
       fastPath.violates.includes('plugin-preconditions')
+    ),
+  );
+  assert.ok(
+    fixture.rejectedFastPaths.some((fastPath) =>
+      fastPath.id === 'compressed-remote-index-and-cached-release-manifest-and-batched-receipt-flush-skips-release-bundle-commit-after-pause' &&
+      fastPath.rejectedGate === 'group' &&
+      fastPath.violates.includes('backpressure') &&
+      fastPath.violates.includes('atomic-groups')
     ),
   );
   assert.ok(

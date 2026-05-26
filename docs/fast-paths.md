@@ -79,6 +79,10 @@ Current executable gate:
 - The report now also exposes a `backpressureConsistency` summary for queue
   budget, receipt cursor, and headroom alignment so tampering shows up as a
   named evidence mismatch rather than a silent detail drift.
+- The report now also allows a durable receipt cursor to size the next journal
+  batch after a pause, but only as planning evidence. The pause boundary, raw
+  receipt order, and journal records still decide whether recovery can resume
+  without ambiguity.
 - The same summary now also cross-checks queue headroom against the measured
   resource ceiling, so a forged queue budget cannot leave the backpressure
   proof looking internally consistent.
@@ -212,6 +216,7 @@ Concrete failure modes stay rejected even when the throughput gain looks temptin
 - A compressed remote index plus a cached dependency graph still cannot skip plugin-install activation after a pause and backpressure event, because planning evidence and cached structure do not prove the activation change, staged rows, backpressure state, or the atomic-group barrier survived failure.
 - A compressed remote index plus a cached file hash still cannot skip plugin-update finalize after a pause, because planning evidence and cached hashes do not prove the live row compares, dependency checks, or the atomic-group finalize survived failure.
 - A compressed remote index plus a cached release manifest still cannot skip a release-bundle commit, because planning evidence and cached manifests do not prove the dependent plugin files, row batches, or atomic-group barrier survived failure.
+- A compressed remote index plus a cached release manifest and batched receipt flushes still cannot skip a release-bundle commit after a pause, because planning evidence, cached manifests, and fsync savings do not prove the dependent plugin files, row batches, or atomic-group barrier survived failure.
 - A compressed remote index plus a cached release manifest still cannot skip release-bundle planning, because a planning cursor does not become apply authorization and cached manifests do not prove the dependent files or rows survived failure.
 - A compressed remote index plus batched row receipts still cannot skip a release-bundle commit, because planning evidence and compressed receipts do not prove the dependent plugin files, row batches, or atomic-group barrier survived failure.
 - A compressed remote index plus batched receipt flushes still cannot skip a release-bundle commit after a pause, because fsync savings do not prove the dependent plugin files, row batches, or atomic-group barrier survived failure.
