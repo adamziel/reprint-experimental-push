@@ -11,6 +11,7 @@ import {
 } from '../scripts/bench/performance-model.js';
 import {
   runGuardedExecutorBenchmark,
+  productionThroughputBlockers,
 } from '../scripts/bench/guarded-executor-benchmark.js';
 
 test('benchmark model covers large uploads and plugin installs', () => {
@@ -4780,6 +4781,21 @@ test('production throughput details expose fail-closed receipt cursor and queue 
   assert.equal(details.backpressureConsistency.queueHeadroomVisibleAndQueueSlackMeasured, true);
   assert.equal(details.queueHeadroomVisibleAndQueueSlackVisibleAndMeasured, true);
   assert.equal(details.backpressureConsistency.queueHeadroomVisibleAndQueueSlackVisibleAndMeasured, true);
+});
+
+test('production throughput blocks malformed parallelism limits before faster execution can be claimed', () => {
+  const report = runGuardedExecutorBenchmark({
+    profile: 'ci',
+    maxUploadConcurrency: 3.5,
+  });
+  const details = report.claims.productionThroughputDetails;
+  const blockers = productionThroughputBlockers(report);
+
+  assert.equal(details.parallelismLimitsVisible, false);
+  assert.equal(details.parallelismLimitsIntegral, true);
+  assert.equal(details.parallelismLimitsCanonical, true);
+  assert.ok(blockers.includes('production-parallelism-limits-not-visible'));
+  assert.ok(report.claims.productionThroughput.blockers.includes('production-parallelism-limits-not-visible'));
 });
 
 test('failure injection boundaries include every durable transition in the benchmark shape', () => {
