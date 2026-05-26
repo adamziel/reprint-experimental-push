@@ -49,12 +49,12 @@ The project is **not releasable as a production WordPress push path**.
 - `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration` -> `29fff11d`
 - `origin/lane/critic` -> `443dacd6`
 - `origin/lane/fast-paths` -> `863075c1`
-- `origin/lane/feedback-supervisor` -> `b4eeed32`
+- `origin/lane/feedback-supervisor` -> `ca91c444`
 - `origin/lane/independent-auditor` -> `6351130f`
-- `origin/lane/no-data-loss-invariants` -> `56b2667a`
+- `origin/lane/no-data-loss-invariants` -> `27184b85`
 - `origin/lane/no-data-loss-recovery` -> `435f2d1e`
 - `origin/lane/progress-publisher` -> `7695e1f9`
-- `origin/lane/reliable-executor` -> `a9e5d4e2`
+- `origin/lane/reliable-executor` -> `f58b9566`
 - `origin/lane/same-plan-wordpress-graph-create` -> `0d2178e9`
 - `origin/main` -> `56063f13`
 
@@ -65,10 +65,12 @@ real source-site mutation boundary. The release gates still stay `0/4`.
 Fresh lane proof since the last audit pass improved the local evidence floor,
 but it did not change the release conclusion:
 
-- `origin/lane/reliable-executor` now records `a9e5d4e2`, tightening release
-  verify cleanup again, but still not proving production auth/session
-  lifecycle or a live-source mutation boundary.
-- `origin/lane/no-data-loss-invariants` now records `56b2667a`, adding term
+- `origin/lane/reliable-executor` now records `f58b9566`, clarifying the
+  durable-journal release boundary again, but still not proving production
+  auth/session lifecycle or a live-source mutation boundary.
+- `origin/lane/no-data-loss-invariants` now records `27184b85`, adding
+  attachment-parent same-plan proof again, but still not proving the live
+  release boundary.
   graph blocker coverage to the unsupported-surface boundary set.
 - `origin/lane/progress-publisher` now records `7695e1f9`, refreshing public
   progress freshness only.
