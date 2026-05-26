@@ -810,8 +810,31 @@ test('auth-session source command builder emits a shell-safe node snippet', () =
 
   assert.equal(
     command,
-    `/opt/node/bin/node -e "process.stdout.write(JSON.stringify({sourceUrl:'http://127.0.0.1:8080/path?label=owner'\\''s', username:'reprint_push_owner'\\''oops', applicationPassword:'p@ss'\\''word'}))"`,
+    "REPRINT_PUSH_SOURCE_COMMAND_SOURCE_URL='http://127.0.0.1:8080/path?label=owner'\\''s' REPRINT_PUSH_SOURCE_COMMAND_USERNAME='reprint_push_owner'\\''oops' REPRINT_PUSH_SOURCE_COMMAND_APPLICATION_PASSWORD='p@ss'\\''word' /opt/node/bin/node -e 'process.stdout.write(JSON.stringify({sourceUrl: process.env.REPRINT_PUSH_SOURCE_COMMAND_SOURCE_URL, username: process.env.REPRINT_PUSH_SOURCE_COMMAND_USERNAME, applicationPassword: process.env.REPRINT_PUSH_SOURCE_COMMAND_APPLICATION_PASSWORD}))'",
   );
+});
+
+test('auth-session source command builder preserves shell-sensitive credential characters when loaded', () => {
+  const sourceUrl = 'http://127.0.0.1:8080/path?label=$USER&quote="double"&tick=`cmd`';
+  const username = 'reprint "owner" $USER `tick`';
+  const applicationPassword = "p@ss'word \"$HOME\" `danger`";
+  const command = buildAuthSessionSourceCommand({
+    sourceUrl,
+    username,
+    applicationPassword,
+  });
+
+  const source = loadAuthSessionSource(command, {
+    ...process.env,
+    NODE_NO_WARNINGS: '1',
+  }, repoRoot);
+
+  assert.deepEqual(source, {
+    ok: true,
+    sourceUrl,
+    username,
+    applicationPassword,
+  });
 });
 
 test('production-shaped release proof emits the exact gate output when no live source is supplied', () => {

@@ -14,11 +14,16 @@ export function buildAuthSessionSourceCommand({
     throw new Error('Missing applicationPassword for auth-session source command');
   }
 
-  return `${nodePath} -e "process.stdout.write(JSON.stringify({sourceUrl:'${escapeShellSingleQuotedString(sourceUrl)}', username:'${escapeShellSingleQuotedString(username)}', applicationPassword:'${escapeShellSingleQuotedString(applicationPassword)}'}))"`;
+  return [
+    `REPRINT_PUSH_SOURCE_COMMAND_SOURCE_URL=${escapeShellEnvValue(sourceUrl)}`,
+    `REPRINT_PUSH_SOURCE_COMMAND_USERNAME=${escapeShellEnvValue(username)}`,
+    `REPRINT_PUSH_SOURCE_COMMAND_APPLICATION_PASSWORD=${escapeShellEnvValue(applicationPassword)}`,
+    `${nodePath} -e ${escapeShellEnvValue('process.stdout.write(JSON.stringify({sourceUrl: process.env.REPRINT_PUSH_SOURCE_COMMAND_SOURCE_URL, username: process.env.REPRINT_PUSH_SOURCE_COMMAND_USERNAME, applicationPassword: process.env.REPRINT_PUSH_SOURCE_COMMAND_APPLICATION_PASSWORD}))')}`,
+  ].join(' ');
 }
 
-function escapeShellSingleQuotedString(value) {
-  return String(value).replace(/'/g, `'\\''`);
+function escapeShellEnvValue(value) {
+  return `'${String(value).replace(/'/g, `'\\''`)}'`;
 }
 
 export function resolveAuthSessionSourceCommand({
