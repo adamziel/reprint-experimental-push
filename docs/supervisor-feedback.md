@@ -1,6 +1,12 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-26 10:21 CEST
+Last updated: 2026-05-26 10:23 CEST
+
+## 2026-05-26 10:23:35 CEST - Fresh Evidence Delta
+
+- Reliable executor confirmed the auth/session schema-version slice still passes, but that remains support-side proof rather than a live release-boundary consumer.
+- Recovery handed off the missing dependency cleanly: `verify:release` still needs a live production-backed consumer wired to `openProductionRecoveryJournal()` / `applyPlan(..., { requireProductionDurableJournal: true })`.
+- The release posture stays conservative at `0/4`.
 
 ## 2026-05-26 10:21:25 CEST - Freshness Refresh
 

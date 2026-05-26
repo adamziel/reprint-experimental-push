@@ -4,6 +4,14 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+# 2026-05-26 - Fresh Evidence Delta 10:23:35
+
+<a id="2026-05-26-fresh-evidence-delta-102335"></a>
+
+- Reliable executor confirmed the auth/session schema-version slice still passes, but that is not release-boundary proof.
+- Recovery handed off the missing release-path dependency: `verify:release` still needs a live consumer for `openProductionRecoveryJournal()` and `applyPlan(..., { requireProductionDurableJournal: true })`.
+- The release gate posture stays `0/4`.
+
 # 2026-05-26 - Freshness Refresh 10:21:25
 
 <a id="2026-05-26-freshness-refresh-102125"></a>
