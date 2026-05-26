@@ -40,7 +40,9 @@ The project is **not releasable as a production WordPress push path**.
 - `origin/lane/cycle-20260525-mainwindows-2349/critic` -> `fa0dc8a0`
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `999ff0d8`
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `d7813094`
+- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `8a7f4edd`
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `3d198310`
+- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `8cd234a9`
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `0ac76c38`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `2af1ddda`
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `4d11356b`
@@ -163,6 +165,13 @@ but it did not change the release conclusion:
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` now records
   `0ac76c38`, refreshing the audit snapshot only and not changing the release
   boundary.
+- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` now records
+  `8cd234a9`, refreshing the objective audit with the newest visible
+  fast-paths and durable-journal proof heads, but it still does not change the
+  release verdict.
+- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` now records
+  `8a7f4edd`, tightening fast-path parallelism limits only. It still does not
+  prove a production speed claim.
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now records
   `0f47e1c0`, refreshing the public progress freshness only.
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now records
