@@ -6,18 +6,20 @@ Changed files:
 
 Commands:
 - `date '+%Y-%m-%d %H:%M:%S %Z (%z)'`
-- `git fetch origin --prune && git for-each-ref --sort=-committerdate --format='%(refname:short) %(objectname:short) %(committerdate:iso8601) %(subject)' refs/remotes/origin/lane/{reliable-executor,no-data-loss-recovery,no-data-loss-invariants,critic,progress-publisher,feedback-supervisor}`
+- `git fetch origin --prune`
+- `git log --oneline --decorate -1 origin/lane/reliable-executor`
+- `git log --oneline --decorate -1 origin/lane/no-data-loss-recovery`
+- `git log --oneline --decorate -1 origin/lane/no-data-loss-invariants`
 - `sed -n '1,260p' audits/objective-audit.md`
-- `git status --short --branch`
 - `git diff -- audits/objective-audit.md`
 - `git status --short --branch`
 
 Push result:
-- Pending
+- Not attempted
 
 Worktree status:
 - Tracked change present in `audits/objective-audit.md`
 - Verdict remains `0/4`
 
 Next supervisor nudge:
-- Re-poll only when a lane lands fresh production-boundary proof: live auth/session lifecycle, restart-readable durable journal ownership, or a live release-path mutation boundary. The new `no-data-loss-invariants`, `reliable-executor`, and `no-data-loss-recovery` heads are still support-side and do not move the release verdict.
+- Re-poll only when a lane lands fresh production-boundary proof: live auth/session lifecycle, restart-readable durable journal ownership, or a live release-path mutation boundary. The new `685b1186` and `1d933be5` heads are still support-side and do not move the release verdict.
