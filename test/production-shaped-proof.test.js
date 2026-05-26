@@ -692,6 +692,27 @@ test('production-shaped release proof emits the exact gate output when no live s
 
 const maybeTest = runLivePlaygroundTopologyTests ? test : test.skip;
 
+maybeTest('production-shaped release verify command surfaces the consumed production auth/session source evidence', async () => {
+  await withPlaygroundServer('remote-base', path.join(repoRoot, 'fixtures/playground/remote-base.blueprint.json'), async (remoteServer) => {
+    const proof = spawnProductionShapedReleaseVerifySync(
+      {
+        ...process.env,
+        REPRINT_PUSH_SOURCE_URL: remoteServer.baseUrl,
+        REPRINT_PUSH_REMOTE_URL: remoteServer.baseUrl,
+        REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND: `${process.execPath} -e "process.stdout.write(JSON.stringify({sourceUrl:'${remoteServer.baseUrl}', username:'${liveCredentials.username}', applicationPassword:'${liveCredentials.password}'}))"`,
+        NODE_NO_WARNINGS: '1',
+      },
+      {
+        timeout: liveProofInnerTimeoutMs,
+        killSignal: liveProofSubprocessKillSignal,
+      },
+      'auth/session source evidence release verify',
+    );
+    assertSpawnCompletedWithoutSpawnError(proof, 'auth/session source evidence release verify', liveProofInnerTimeoutMs);
+    assert.match(proof.stdout, /"authSessionSource": \{\s*"command": "[^"]+REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND[^"]+",\s*"ok": true,\s*"sourceUrl": "http:\/\/127\.0\.0\.1:\d+"/);
+  });
+});
+
 maybeTest('production-shaped release proof runs the live preflight branch against a local Playground source', async () => {
   await withPlaygroundServer('remote-base', path.join(repoRoot, 'fixtures/playground/remote-base.blueprint.json'), async (remoteServer) => {
     const proof = spawnProductionShapedReleaseVerifySync(

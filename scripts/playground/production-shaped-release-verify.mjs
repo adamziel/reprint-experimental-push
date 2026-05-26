@@ -35,6 +35,23 @@ const liveAuthSessionSourceBlocker = {
   requiredCommand: 'REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND',
   verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
 };
+const authSessionSourceCommand = process.env.REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND || '';
+const authSessionSource = authSessionSourceCommand ? loadAuthSessionSource(authSessionSourceCommand) : null;
+
+function summarizeAuthSessionSource(command, source) {
+  if (!command) {
+    return null;
+  }
+
+  return {
+    command,
+    ok: Boolean(source?.ok),
+    sourceUrl: source?.sourceUrl || '',
+    username: source?.username || '',
+    applicationPasswordPresent: Boolean(source?.applicationPassword),
+    error: source?.error || '',
+  };
+}
 
 class ProofFailure extends Error {
   constructor() {
@@ -93,11 +110,9 @@ const protocolExtension = {
 let liveSourceUrl = process.env.REPRINT_PUSH_SOURCE_URL || process.env.REPRINT_PUSH_REMOTE_URL || '';
 let username = process.env.REPRINT_PUSH_LAB_AUTH_ADMIN_USER || process.env.REPRINT_PUSH_USERNAME || '';
 let applicationPassword = process.env.REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD || process.env.REPRINT_PUSH_APPLICATION_PASSWORD || '';
-const authSessionSourceCommand = process.env.REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND || '';
 const labDriftAfterSnapshot = process.env.REPRINT_PUSH_LAB_DRIFT_AFTER_SNAPSHOT || '';
 
 if ((!liveSourceUrl || !username || !applicationPassword) && authSessionSourceCommand) {
-  const authSessionSource = loadAuthSessionSource(authSessionSourceCommand);
   if (!liveSourceUrl) {
     liveSourceUrl = authSessionSource.sourceUrl || liveSourceUrl;
   }
@@ -153,6 +168,7 @@ if (liveSourceUrl && (!username || !applicationPassword)) {
           status: 1,
           code: 'REPRINT_PUSH_SECRET_REQUIRED',
         },
+        authSessionSource: summarizeAuthSessionSource(authSessionSourceCommand, authSessionSource),
       },
       null,
       2,
@@ -188,6 +204,7 @@ if (requireProductionDurableJournal && !liveSourceUrl) {
           status: 501,
           code: 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED',
         },
+        authSessionSource: summarizeAuthSessionSource(authSessionSourceCommand, authSessionSource),
       },
       null,
       2,
@@ -265,6 +282,7 @@ if (retainedSourceSummaryRequested) {
           status: 0,
           code: 'RETAINED_SOURCE_SUMMARY_OK',
         },
+        authSessionSource: summarizeAuthSessionSource(authSessionSourceCommand, authSessionSource),
         durableJournal: {
           proof: {
             status: 0,
@@ -315,6 +333,7 @@ if (!username || !applicationPassword) {
           status: 1,
           code: 'REPRINT_PUSH_SECRET_REQUIRED',
         },
+        authSessionSource: summarizeAuthSessionSource(authSessionSourceCommand, authSessionSource),
       },
       null,
       2,
@@ -371,6 +390,7 @@ if (requireProductionAuthSession) {
             status: 409,
             code: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
           },
+          authSessionSource: summarizeAuthSessionSource(authSessionSourceCommand, authSessionSource),
         },
         null,
         2,
@@ -590,6 +610,7 @@ try {
                 status: proof.dryRun?.status || proof.apply?.status || 1,
                 code: proof.code || proof.apply?.body?.code || proof.dryRun?.body?.code || 'APPLY_FAILED',
               },
+              authSessionSource: summarizeAuthSessionSource(authSessionSourceCommand, authSessionSource),
               dryRun: proof.dryRun,
               apply: proof.apply,
               recoveryInspect: proof.recoveryInspect,
@@ -650,6 +671,7 @@ try {
                 status: 409,
                 code: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
               },
+              authSessionSource: summarizeAuthSessionSource(authSessionSourceCommand, authSessionSource),
               dryRun: proof.dryRun,
               apply: proof.apply,
               recoveryInspect: proof.recoveryInspect,
@@ -737,6 +759,7 @@ try {
                 status: 501,
                 code: 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED',
               },
+              authSessionSource: summarizeAuthSessionSource(authSessionSourceCommand, authSessionSource),
               durableJournal: {
                 proof: {
                   status: 0,
@@ -815,6 +838,7 @@ try {
               },
             },
             releaseProof: proof,
+            authSessionSource: summarizeAuthSessionSource(authSessionSourceCommand, authSessionSource),
             authSessionLifecycle: proof.authSessionLifecycle,
             authSessionLifecycleTrace: proof.authSessionLifecycleTrace,
             authSessionLifecycleSummary,
@@ -884,6 +908,7 @@ try {
               status: 412,
               code: 'PRECONDITION_FAILED',
             },
+            authSessionSource: summarizeAuthSessionSource(authSessionSourceCommand, authSessionSource),
             error: error instanceof Error ? error.message : String(error),
             authSessionLifecycle: null,
             authSessionLifecycleTrace: [],
