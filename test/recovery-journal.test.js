@@ -4026,6 +4026,138 @@ test('production recovery journal records stale-claim rejection evidence before 
   assert.equal(rejection.previousClaimHash, recoveryClaimHash('claim-active'));
 });
 
+test('production recovery journal consumption ignores stale-claim rejection evidence when its previous claim hash no longer matches the active claim', () => {
+  const filePath = tempJournalPath();
+  const remote = baseSite();
+  const plan = planFor(baseSite(), localSite(), remote);
+  const artifactRefs = {
+    journal: filePath,
+  };
+
+  const activeJournal = openProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs,
+    claimId: 'claim-active',
+  });
+  appendRecoveryClaimOpened(activeJournal, {
+    plan,
+    current: remote,
+    claimId: 'claim-active',
+    artifactRefs,
+  });
+  activeJournal.close();
+
+  const staleJournal = openProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs,
+    truncate: false,
+    claimId: 'claim-stale',
+  });
+
+  assert.throws(() => {
+    appendRecoveryClaimOpened(staleJournal, {
+      plan,
+      current: remote,
+      claimId: 'claim-stale',
+      artifactRefs,
+    });
+  }, {
+    name: 'RecoveryJournalClaimStaleError',
+    code: 'RECOVERY_CLAIM_STALE',
+  });
+  staleJournal.close();
+
+  const persisted = readRecoveryJournal(filePath);
+  const rejection = persisted.records.findLast((record) => record.type === 'stale-claim-rejected');
+  rejection.previousClaimHash = recoveryClaimHash('claim-other');
+  fs.writeFileSync(filePath, `${persisted.records.map((record) => JSON.stringify(record)).join('\n')}\n`);
+
+  const inspection = consumeProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs,
+    claimId: 'claim-active',
+  });
+
+  assert.equal(inspection.consumed, true);
+  assert.equal(inspection.journal.staleClaimRejected, false);
+  assert.equal(inspection.journal.writerLeaseContract.staleClaimRejected, false);
+  assert.equal(inspection.journal.leaseFenceContract.staleClaimRejected, false);
+  assert.equal(inspection.leaseFence.staleClaimRejected, false);
+  assert.equal(inspection.leaseFence.writerLease.staleClaimRejected, false);
+});
+
+test('production recovery journal consumption ignores stale-claim rejection evidence when the rejected claim lease diverges from its claim hash', () => {
+  const filePath = tempJournalPath();
+  const remote = baseSite();
+  const plan = planFor(baseSite(), localSite(), remote);
+  const artifactRefs = {
+    journal: filePath,
+  };
+
+  const activeJournal = openProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs,
+    claimId: 'claim-active',
+  });
+  appendRecoveryClaimOpened(activeJournal, {
+    plan,
+    current: remote,
+    claimId: 'claim-active',
+    artifactRefs,
+  });
+  activeJournal.close();
+
+  const staleJournal = openProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs,
+    truncate: false,
+    claimId: 'claim-stale',
+  });
+
+  assert.throws(() => {
+    appendRecoveryClaimOpened(staleJournal, {
+      plan,
+      current: remote,
+      claimId: 'claim-stale',
+      artifactRefs,
+    });
+  }, {
+    name: 'RecoveryJournalClaimStaleError',
+    code: 'RECOVERY_CLAIM_STALE',
+  });
+  staleJournal.close();
+
+  const persisted = readRecoveryJournal(filePath);
+  const rejection = persisted.records.findLast((record) => record.type === 'stale-claim-rejected');
+  rejection.claimLease = { id: 'claim-stale-drifted' };
+  fs.writeFileSync(filePath, `${persisted.records.map((record) => JSON.stringify(record)).join('\n')}\n`);
+
+  const inspection = consumeProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs,
+    claimId: 'claim-active',
+  });
+
+  assert.equal(inspection.consumed, true);
+  assert.equal(inspection.journal.staleClaimRejected, false);
+  assert.equal(inspection.journal.writerLeaseContract.staleClaimRejected, false);
+  assert.equal(inspection.journal.leaseFenceContract.staleClaimRejected, false);
+  assert.equal(inspection.leaseFence.staleClaimRejected, false);
+  assert.equal(inspection.leaseFence.writerLease.staleClaimRejected, false);
+});
+
 test('production recovery journal consumption fails closed when stale claim advancement reuses the same claim hash', () => {
   const filePath = tempJournalPath();
   const remote = baseSite();

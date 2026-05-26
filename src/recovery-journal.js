@@ -93,12 +93,6 @@ function assertAllowedOptionKeys(options, allowedKeys, operationName) {
   }
 }
 
-function hasStaleClaimRejectionEvidence(records) {
-  return (Array.isArray(records) ? records : []).some(
-    (record) => record.type === 'stale-claim-advanced' || record.type === 'stale-claim-rejected',
-  );
-}
-
 export function checkedDurableJournalBoundarySatisfied(dbJournal) {
   const writerLease = dbJournal?.writerLease;
   const nestedWriterLease = dbJournal?.leaseFence?.writerLease;
@@ -2185,6 +2179,39 @@ export function classifyRecoveryJournalClaims(records) {
     previousClaimAgeMs: latest.previousClaimAgeMs ?? null,
     reason: latest.reason || null,
   };
+}
+
+function hasStaleClaimRejectionEvidence(records) {
+  const persistedRecords = Array.isArray(records) ? records : [];
+  const claim = classifyRecoveryJournalClaims(persistedRecords);
+  if (claim.status === 'advanced') {
+    return true;
+  }
+  if (claim.status !== 'active' || !CLAIM_HASH_PATTERN.test(claim.activeClaimHash || '')) {
+    return false;
+  }
+
+  return persistedRecords.some((record) =>
+    staleClaimRejectionRecordMatches(record, claim.activeClaimHash),
+  );
+}
+
+function staleClaimRejectionRecordMatches(record, activeClaimHash) {
+  return isStrictPlainObject(record)
+    && !hasHiddenOwnStringKeys(record)
+    && record.type === 'stale-claim-rejected'
+    && Object.hasOwn(record, 'sequence')
+    && Number.isInteger(record.sequence)
+    && record.sequence >= 1
+    && Object.hasOwn(record, 'claimHash')
+    && CLAIM_HASH_PATTERN.test(record.claimHash || '')
+    && Object.hasOwn(record, 'previousClaimHash')
+    && CLAIM_HASH_PATTERN.test(record.previousClaimHash || '')
+    && record.previousClaimHash === activeClaimHash
+    && record.claimHash !== activeClaimHash
+    && Object.hasOwn(record, 'claimLease')
+    && isValidProductionWriterLease(record.claimLease)
+    && record.claimHash === recoveryClaimHash(record.claimLease.id);
 }
 
 class RecoveryJournalWriter {
