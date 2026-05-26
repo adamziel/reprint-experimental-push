@@ -270,6 +270,15 @@ export function inspectProductionRecoveryJournal(writer) {
       ? writer.artifactRefs
       : null;
 
+    const fallbackArtifactRefs = {
+      journal: writerArtifactRefs && Object.hasOwn(writerArtifactRefs, 'journal')
+        ? writerArtifactRefs.journal
+        : writer.journalPath ?? null,
+      remote: writerArtifactRefs && Object.hasOwn(writerArtifactRefs, 'remote')
+        ? writerArtifactRefs.remote
+        : null,
+    };
+
     return {
       ...inspected,
       productionAdapter: Object.hasOwn(inspected, 'productionAdapter')
@@ -299,13 +308,9 @@ export function inspectProductionRecoveryJournal(writer) {
       schemaVersion: Object.hasOwn(inspected, 'schemaVersion')
         ? inspected.schemaVersion
         : writer.schemaVersion ?? RECOVERY_JOURNAL_SCHEMA_VERSION,
-      artifactRefs: inspectedArtifactRefs || {
-        journal: writerArtifactRefs && Object.hasOwn(writerArtifactRefs, 'journal')
-          ? writerArtifactRefs.journal
-          : null,
-        remote: writerArtifactRefs && Object.hasOwn(writerArtifactRefs, 'remote')
-          ? writerArtifactRefs.remote
-          : null,
+      artifactRefs: {
+        ...fallbackArtifactRefs,
+        ...(inspectedArtifactRefs || {}),
       },
     };
   } catch (error) {

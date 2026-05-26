@@ -226,6 +226,38 @@ test('production recovery journal inspection normalizes restart-readable lease a
   assert.equal(inspected.claimHash, 'a'.repeat(64));
   assert.deepEqual(inspected.artifactRefs, {
     journal: '/var/lib/reprint/recovery.jsonl',
+    remote: '/var/lib/reprint/recovery-remote.jsonl',
+  });
+});
+
+test('production recovery journal inspection fills in missing remote artifact refs from the writer', () => {
+  const inspected = inspectProductionRecoveryJournal({
+    productionAdapter: true,
+    supportedSurface: 'production-recovery-journal-adapter',
+    restartReadable: true,
+    ownsJournal: true,
+    ownsRemoteArtifact: true,
+    journalPath: '/var/lib/reprint/recovery.jsonl',
+    artifactRefs: {
+      journal: '/var/lib/reprint/recovery.jsonl',
+      remote: '/var/lib/reprint/recovery-remote.jsonl',
+    },
+    schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+    writerLease: { id: 'lease-partial-1' },
+    inspect() {
+      return {
+        filePath: '/var/lib/reprint/recovery.jsonl',
+        schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+        artifactRefs: {
+          journal: '/var/lib/reprint/recovery.jsonl',
+        },
+      };
+    },
+  });
+
+  assert.deepEqual(inspected.artifactRefs, {
+    journal: '/var/lib/reprint/recovery.jsonl',
+    remote: '/var/lib/reprint/recovery-remote.jsonl',
   });
 });
 
