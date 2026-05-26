@@ -11,9 +11,10 @@ linked implementation artifacts.
 - Refreshed [progress.html](../progress.html) to the current `date` output
   (`2026-05-26 15:25:42 CEST`) after the reliable head advanced to
   `e82e3b1af126f62688f617a3fb4cc0baeb698d57`.
-- `e82e3b1af126f62688f617a3fb4cc0baeb698d57` is now the newest release-surface
-  evidence on the public page: the checked release verifier consumes the
-  packaged auth session source on the release path. Release gates remain `0/4`.
+- `e82e3b1af126f62688f617a3fb4cc0baeb698d57` is now the current
+  reliable-executor head and the newest release-surface evidence on the public
+  page: the checked release verifier consumes the packaged auth session source
+  on the release path. Release gates remain `0/4`.
 - Evidence trail: [progress.html](../progress.html),
   [objective audit](../audits/objective-audit.md),
   [release-gate checklist](../progress.html#proof-gates).
