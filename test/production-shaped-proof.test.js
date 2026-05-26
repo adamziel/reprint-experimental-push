@@ -2521,6 +2521,33 @@ test('production auth/session lifecycle summary fails closed when direct issued 
   );
 });
 
+test('production auth/session lifecycle summary fails closed when direct issued phase metadata is not a string', () => {
+  assert.deepEqual(
+    evaluateProductionAuthSessionLifecycleSummary({
+      issued: {
+        step: ['preflight'],
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+      },
+      read: {
+        step: 'apply',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+        preserved: true,
+      },
+    }),
+    {
+      ok: false,
+      required: 'issued preflight',
+      observed: 'invalid-step',
+    },
+  );
+});
+
 test('production auth/session lifecycle summary fails closed when direct preserved-read metadata is an array', () => {
   assert.deepEqual(
     evaluateProductionAuthSessionLifecycleSummary({
@@ -2544,6 +2571,33 @@ test('production auth/session lifecycle summary fails closed when direct preserv
       ok: false,
       required: 'preserved read',
       observed: 'invalid-read',
+    },
+  );
+});
+
+test('production auth/session lifecycle summary fails closed when direct preserved-read phase metadata is not a string', () => {
+  assert.deepEqual(
+    evaluateProductionAuthSessionLifecycleSummary({
+      issued: {
+        step: 'preflight',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+      },
+      read: {
+        step: ['apply'],
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+        preserved: true,
+      },
+    }),
+    {
+      ok: false,
+      required: 'preserved read',
+      observed: 'invalid-step',
     },
   );
 });
@@ -2572,6 +2626,51 @@ test('production auth/session lifecycle summary fails closed when direct observa
       ok: false,
       required: 'preserved read',
       observed: 'invalid-observation',
+    },
+  );
+});
+
+test('production auth/session lifecycle summary fails closed when an intermediate observation phase is not a string', () => {
+  assert.deepEqual(
+    evaluateProductionAuthSessionLifecycleSummary({
+      issued: {
+        step: 'preflight',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+      },
+      read: {
+        step: 'apply',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+        preserved: true,
+      },
+      observations: [
+        {
+          step: 'preflight',
+          id: 'session-01',
+          type: 'production-auth-session',
+          status: 'active',
+          expiresAt: '2099-01-01T00:00:00Z',
+          preserved: false,
+        },
+        {
+          step: ['apply'],
+          id: 'session-01',
+          type: 'production-auth-session',
+          status: 'active',
+          expiresAt: '2099-01-01T00:00:00Z',
+          preserved: true,
+        },
+      ],
+    }),
+    {
+      ok: false,
+      required: 'preserved read',
+      observed: 'invalid-step',
     },
   );
 });

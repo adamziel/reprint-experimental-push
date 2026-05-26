@@ -111,7 +111,7 @@ export function evaluateProductionAuthSessionLifecycleSummary(summary, now = Dat
     return {
       ok: false,
       required: 'issued preflight',
-      observed: issuedObservation.step || 'missing',
+      observed: normalizeAuthSessionObservationStep(issuedObservation.step),
     };
   }
 
@@ -170,7 +170,7 @@ export function evaluateProductionAuthSessionLifecycleSummary(summary, now = Dat
     return {
       ok: false,
       required: 'preserved read',
-      observed: readObservation.step || 'missing',
+      observed: normalizeAuthSessionObservationStep(readObservation.step),
     };
   }
 
@@ -238,6 +238,14 @@ export function evaluateProductionAuthSessionLifecycleSummary(summary, now = Dat
       };
     }
 
+    if (typeof observation.step !== 'string') {
+      return {
+        ok: false,
+        required: 'preserved read',
+        observed: 'invalid-step',
+      };
+    }
+
     const observationSessionId = normalizeAuthSessionObservationId(observation.id);
     if (
       observation.step !== 'preflight'
@@ -292,7 +300,7 @@ export function evaluateProductionAuthSessionLifecycleSummary(summary, now = Dat
       return {
         ok: false,
         required: 'preserved read',
-        observed: observation.step || 'missing',
+        observed: normalizeAuthSessionObservationStep(observation.step),
       };
     }
   }
@@ -381,6 +389,18 @@ function normalizeAuthSessionObservationId(id) {
   }
 
   return normalized;
+}
+
+function normalizeAuthSessionObservationStep(step) {
+  if (step === null || step === undefined || step === '') {
+    return 'missing';
+  }
+
+  if (typeof step !== 'string') {
+    return 'invalid-step';
+  }
+
+  return step;
 }
 
 function resolveInvalidAuthSessionLifecycleFlag(observation) {
