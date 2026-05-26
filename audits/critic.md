@@ -1,6 +1,6 @@
 # Critic Verdict
 
-Current reliable head: `c704e8cae9e99ca98d6006076e7efdd22aaa031c`
+Current reliable head: `ab020198f934bd15265617be4a845065ddf7d991`
 (`current release-executor head`).
 
 Verdict: `0/4`
@@ -11,16 +11,14 @@ Reason:
   the checked release path.
 - The checked proof is still missing live issuance/read/expiry/rotation/
   revocation/cleanup evidence for `production-auth-session`, and it still does
-  not establish stricter durable-journal ownership/restart semantics consumed
-  by the checked release path.
+  not establish production durable-journal ownership/restart semantics
+  consumed by the checked release path.
 - That keeps the release gate closed at `0/4`.
 
 Next owner / command:
 
 - `main:reliable-exec` should keep working in
-  `scripts/playground/production-shaped-release-verify.mjs`,
-  `scripts/playground/push-remote-rest-plugin.php`, and
-  `test/production-shaped-proof.test.js`, with the next useful result being
-  the production-backed auth/session lifecycle boundary, durable-journal
-  ownership consumed by the checked release path, or an exact
-  `GATE CODE BLOCKED:` handoff naming the missing file/function/command.
+  `scripts/playground/production-shaped-release-verify.mjs` with the checked
+  command `timeout 180s npm run verify:release`, or hand off the exact
+  missing release-path file/function/command if the verifier still cannot
+  consume the journal ownership proof and production auth/session lifecycle.
