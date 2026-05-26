@@ -348,6 +348,26 @@ export const SAFE_FAST_PATHS = Object.freeze([
     publishesStagedDataEarly: false,
   },
   {
+    area: 'parallelism-limits',
+    reduces: ['idle-time', 'head-of-line-blocking', 'duplicate-planning-work'],
+    allowedShortcut: 'keep-mixed-release-bundle-fanout-within-per-kind-budgets',
+    guardrails: [
+      'mixed-bundle-fanout-stays-within-per-kind-and-per-site-budgets',
+      'atomic-group-barriers-stay-fixed-for-coupled-work',
+    ],
+    gateProofs: {
+      skip: 'independent upload, hash, and row work may overlap when each kind keeps its own budget and receipt trail',
+      live: 'each mutating file or row still rechecks its live precondition at the storage boundary',
+      group: 'mixed fan-out can only overlap staging inside the same planned bundle and never merges coupled owners',
+      recovery: 'per-kind receipts and the group staging record still classify pause, retry, or crash without guessing which work completed',
+    },
+    visibilityBoundary: 'bounded-mixed-fanout-only',
+    failureEvidence: 'per-kind receipt trails plus bundle staging record',
+    bypassesLivePreconditions: false,
+    splitsAtomicGroup: false,
+    publishesStagedDataEarly: false,
+  },
+  {
     area: 'remote-indexes',
     reduces: ['remote-body-fetches', 'planning-round-trips'],
     allowedShortcut: 'plan-from-indexed-strong-hash-listing',

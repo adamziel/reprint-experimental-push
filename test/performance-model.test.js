@@ -232,6 +232,16 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
       fastPath.publishesStagedDataEarly === false,
     ),
   );
+  assert.ok(
+    model.safeFastPaths.some(
+      (fastPath) =>
+        fastPath.area === 'parallelism-limits' &&
+        fastPath.allowedShortcut === 'keep-mixed-release-bundle-fanout-within-per-kind-budgets' &&
+        fastPath.guardrails.includes('mixed-bundle-fanout-stays-within-per-kind-and-per-site-budgets') &&
+        fastPath.gateProofs.group.includes('mixed fan-out can only overlap staging inside the same planned bundle'),
+    ),
+    'mixed bundle fanout stays fail-closed within the parallelism budget',
+  );
   assert.deepEqual(
     FAST_PATH_GATES.map((gate) => gate.id),
     ['skip', 'live', 'group', 'recovery'],
