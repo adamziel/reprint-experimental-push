@@ -217,6 +217,7 @@ export function openProductionRecoveryJournal(options) {
         checked: [filePath],
         artifactRefs: { ...artifactRefs },
         productionAdapter: 'openProductionRecoveryJournal',
+        claim,
         claimId: persistedClaimId,
         ownsJournal: true,
         claimHash,
@@ -237,6 +238,7 @@ export function openProductionRecoveryJournal(options) {
         staleClaimRejected,
         writerLease,
       },
+      claim,
     };
   };
 

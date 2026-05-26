@@ -6,6 +6,7 @@ import path from 'node:path';
 import {
   appendJournalCompleted,
   appendRecoveryClaimOpened,
+  appendStaleClaimAdvanced,
   appendMutationObserved,
   assertJournalRecordHasNoRawValues,
   checkedDurableJournalBoundarySatisfied,
@@ -303,6 +304,18 @@ test('production recovery journal wrapper writes a restart-readable claim-fenced
     releaseProof: 'artifact://release-proof-1',
   });
   assert.equal(inspection.journal.productionAdapter, 'openProductionRecoveryJournal');
+  assert.deepEqual(inspection.journal.claim, {
+    status: 'active',
+    activeClaimId: 'production-claim-01',
+    activeClaimHash: recoveryClaimHash('production-claim-01'),
+    previousClaimId: null,
+    previousClaimHash: null,
+    sequence: plan.mutations.length + 2,
+    type: 'recovery-claim-opened',
+    staleThresholdMs: null,
+    previousClaimAgeMs: null,
+    reason: 'Production recovery journal claim opened.',
+  });
   assert.equal(inspection.journal.ownsJournal, true);
   assert.equal(inspection.journal.claimId, 'production-claim-01');
   assert.equal(inspection.journal.claimHash, recoveryClaimHash('production-claim-01'));
@@ -323,6 +336,7 @@ test('production recovery journal wrapper writes a restart-readable claim-fenced
   assert.deepEqual(inspection.leaseFence.writerLease, inspection.journal.writerLease);
   assert.equal(inspection.leaseFence.claimKeyUnique, true);
   assert.equal(inspection.leaseFence.staleClaimRejected, false);
+  assert.deepEqual(inspection.claim, inspection.journal.claim);
 
   journal.close();
 
@@ -415,6 +429,10 @@ test('checked release path consumes the production recovery journal inspection s
   assert.equal(inspection.journal.consumed, true);
   assert.equal(inspection.journal.restartReadable, true);
   assert.equal(inspection.journal.staleClaimRejected, true);
+  assert.equal(inspection.journal.claim.activeClaimId, activeClaimId);
+  assert.equal(inspection.journal.claim.activeClaimHash, recoveryClaimHash(activeClaimId));
+  assert.equal(inspection.journal.claim.previousClaimId, null);
+  assert.equal(inspection.claim.activeClaimId, activeClaimId);
   assert.deepEqual(inspection.journal.writerLease, {
     strategy: 'claim-fenced-single-writer',
     claimId: activeClaimId,
@@ -437,6 +455,68 @@ test('checked release path consumes the production recovery journal inspection s
     ...recordsBeforeConsume,
     'recovery-journal-consumed',
   ]);
+});
+
+test('production recovery journal inspection preserves advanced previous-claim identity on restart', () => {
+  const filePath = tempJournalPath();
+  const remote = baseSite();
+  const plan = planFor(baseSite(), localSite(), remote);
+  const previousClaimId = 'production-claim-previous-01';
+  const activeClaimId = 'production-claim-active-02';
+
+  const journal = openProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs: {
+      releaseProof: 'artifact://release-proof-advanced-claim',
+    },
+    now: fixedNow,
+    claimId: previousClaimId,
+  });
+  appendStaleClaimAdvanced(journal, {
+    plan,
+    current: remote,
+    previousClaimId,
+    claimId: activeClaimId,
+    staleThresholdMs: 30_000,
+    previousClaimAgeMs: 45_000,
+    artifactRefs: {
+      releaseProof: 'artifact://release-proof-advanced-claim',
+    },
+  });
+  journal.close();
+
+  const reopened = openProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs: {
+      releaseProof: 'artifact://release-proof-advanced-claim',
+    },
+    now: fixedNow,
+    truncate: false,
+    claimId: activeClaimId,
+  });
+  const inspection = reopened.inspect();
+  reopened.close();
+
+  assert.deepEqual(inspection.claim, {
+    status: 'advanced',
+    activeClaimId,
+    activeClaimHash: recoveryClaimHash(activeClaimId),
+    previousClaimId,
+    previousClaimHash: recoveryClaimHash(previousClaimId),
+    sequence: plan.mutations.length + 3,
+    type: 'stale-claim-advanced',
+    staleThresholdMs: 30_000,
+    previousClaimAgeMs: 45_000,
+    reason: 'Previous recovery claim exceeded the stale threshold.',
+  });
+  assert.deepEqual(inspection.journal.claim, inspection.claim);
+  assert.equal(inspection.journal.claimId, activeClaimId);
+  assert.equal(inspection.journal.claimHash, recoveryClaimHash(activeClaimId));
+  assert.equal(inspection.journal.writerLease.claimId, activeClaimId);
 });
 
 test('production recovery journal wrapper rejects hidden open options', () => {
