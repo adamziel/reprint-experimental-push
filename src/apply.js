@@ -111,12 +111,13 @@ export function applyPlan(remote, plan, options = {}) {
 
   const durableJournalInput = options.durableJournal || options.recoveryJournal || null;
   let durableJournal = null;
+  let durableJournalSupportReport = null;
   let shouldCloseDurableJournal = false;
   const preserveWriterForReplay = Boolean(options.journal);
   try {
     durableJournal = getDurableJournalWriter(options);
     shouldCloseDurableJournal = shouldCloseOwnedDurableJournal(durableJournal);
-    assertProductionDurableJournalSupport(options, durableJournal);
+    durableJournalSupportReport = assertProductionDurableJournalSupport(options, durableJournal);
     const hasPreviousJournal = Boolean(options.journal);
     let previousJournalState = null;
     let journal = prepareJournal(remote, plan, options.journal);
@@ -125,11 +126,11 @@ export function applyPlan(remote, plan, options = {}) {
       try {
         replayResult = replayCompletedPlan(remote, plan, journal);
         assertRecoveryStateEnvelope(replayResult.recoveryState);
-        recordDurableReplay(durableJournal, remote, plan, replayResult.recoveryState, journal);
+        recordDurableReplay(durableJournal, remote, plan, replayResult.recoveryState, journal, durableJournalSupportReport);
         return replayResult;
       } catch (error) {
         if (error?.details?.recovery?.status === 'blocked-recovery') {
-          recordDurableRecoveryStateBestEffort(durableJournal, remote, plan, error.details.recovery);
+          recordDurableRecoveryStateBestEffort(durableJournal, remote, plan, error.details.recovery, durableJournalSupportReport);
           throw error;
         }
         throw journalWriteFailureFullyUpdated(
@@ -155,8 +156,8 @@ export function applyPlan(remote, plan, options = {}) {
         );
         try {
           assertRecoveryStateEnvelope(recoveryState);
-          recordDurableReplay(durableJournal, remote, plan, recoveryState, completedJournal);
-          recordDurableRecoveryState(durableJournal, remote, plan, recoveryState);
+          recordDurableReplay(durableJournal, remote, plan, recoveryState, completedJournal, durableJournalSupportReport);
+          recordDurableRecoveryState(durableJournal, remote, plan, recoveryState, durableJournalSupportReport);
         } catch (error) {
           throw journalWriteFailureFullyUpdated(error, remote, plan, completedJournal, 'journal-replayed');
         }
@@ -188,7 +189,7 @@ export function applyPlan(remote, plan, options = {}) {
       const durableJournalError = recordDurableRecoveryStateBestEffort(durableJournal, remote, plan, {
         status: 'old-remote',
         reason: 'Injected failure before staging any mutation.',
-      });
+      }, durableJournalSupportReport);
       throw injectedFailure(
         'INJECTED_FAILURE_BEFORE_MUTATION',
         'Injected failure before staging any mutation.',
@@ -230,7 +231,7 @@ export function applyPlan(remote, plan, options = {}) {
       const durableJournalError = recordDurableRecoveryStateBestEffort(durableJournal, remote, plan, {
         status: 'old-remote',
         reason: 'Injected failure after staging all mutations.',
-      });
+      }, durableJournalSupportReport);
       throw injectedFailure(
         'INJECTED_FAILURE_AFTER_STAGING',
         'Injected failure after staging all mutations.',
@@ -256,7 +257,7 @@ export function applyPlan(remote, plan, options = {}) {
       const durableJournalError = recordDurableRecoveryStateBestEffort(durableJournal, remote, plan, {
         status: 'old-remote',
         reason: 'Injected failure after dependency validation.',
-      });
+      }, durableJournalSupportReport);
       throw injectedFailure(
         'INJECTED_FAILURE_AFTER_DEPENDENCY_VALIDATION',
         'Injected failure after dependency validation.',
@@ -267,7 +268,7 @@ export function applyPlan(remote, plan, options = {}) {
       );
     }
 
-    const commitResult = commitStagedSite(remote, staged, plan, journal, options, durableJournal);
+    const commitResult = commitStagedSite(remote, staged, plan, journal, options, durableJournal, durableJournalSupportReport);
     if (commitResult.failure) {
       throw commitResult.failure;
     }
@@ -663,12 +664,12 @@ function getDurableJournalWriter(options) {
 
 function assertProductionDurableJournalSupport(options, writer) {
   if (!options?.requireProductionDurableJournal) {
-    return;
+    return null;
   }
 
   const supportReport = productionRecoverySupportReport(writer);
   if (supportReport.supported) {
-    return;
+    return supportReport;
   }
 
   closeUnsupportedProductionRecoveryWriter(writer);
@@ -1659,7 +1660,7 @@ function durableJournalHasPriorRecords(writer) {
   return Number.isInteger(writer.nextSequence) && writer.nextSequence > 1;
 }
 
-function recordDurableReplay(writer, remote, plan, recoveryState, journal = null) {
+function recordDurableReplay(writer, remote, plan, recoveryState, journal = null, supportReport = null) {
   if (!writer) {
     return;
   }
@@ -1672,7 +1673,7 @@ function recordDurableReplay(writer, remote, plan, recoveryState, journal = null
     });
     recordDurableTargets(writer, remote, plan, journal);
   }
-  recordDurableRecoveryState(writer, remote, plan, recoveryState);
+  recordDurableRecoveryState(writer, remote, plan, recoveryState, supportReport);
   recordDurableBoundary(writer, 'journal-replayed', remote, plan, {
     state: recoveryState.status,
     reason: recoveryState.reason,
@@ -1706,7 +1707,7 @@ function recordDurableMutationObserved(writer, plan, mutation, current, state) {
   });
 }
 
-function recordDurableRecoveryState(writer, current, plan, recoveryState) {
+function recordDurableRecoveryState(writer, current, plan, recoveryState, supportReport = null) {
   if (!writer) {
     return;
   }
@@ -1715,15 +1716,15 @@ function recordDurableRecoveryState(writer, current, plan, recoveryState) {
     journal: typeof writer?.journalPath === 'string' ? writer.journalPath : null,
   };
   const writerRemoteArtifactRef = durableJournalArtifactRemoteRef(writer);
-  const supportReport = writer?.kind === 'production-recovery-journal'
-    ? productionRecoverySupportReport(writer)
+  const resolvedSupportReport = writer?.kind === 'production-recovery-journal'
+    ? (supportReport || productionRecoverySupportReport(writer))
     : null;
 
   if (
     writer?.kind === 'production-recovery-journal'
     && (
-      supportReport?.missingDependency.includes('restart-readable recovery artifact references')
-      || supportReport?.missingDependency.includes('restart-readable recovery artifact location')
+      resolvedSupportReport?.missingDependency.includes('restart-readable recovery artifact references')
+      || resolvedSupportReport?.missingDependency.includes('restart-readable recovery artifact location')
     )
   ) {
     throw new PushPlanError(
@@ -1742,11 +1743,11 @@ function recordDurableRecoveryState(writer, current, plan, recoveryState) {
     && recoveryState.status === 'blocked-recovery'
     && (
       !writerRemoteArtifactRef
-      || supportReport?.missingDependency.includes('restart-readable remote recovery artifact ownership')
-      || supportReport?.missingDependency.includes('restart-readable recovery remote artifact references')
+      || resolvedSupportReport?.missingDependency.includes('restart-readable remote recovery artifact ownership')
+      || resolvedSupportReport?.missingDependency.includes('restart-readable recovery remote artifact references')
     )
   ) {
-    const missingDependency = supportReport?.missingDependency.includes('restart-readable remote recovery artifact ownership')
+    const missingDependency = resolvedSupportReport?.missingDependency.includes('restart-readable remote recovery artifact ownership')
       ? ['restart-readable remote recovery artifact ownership']
       : ['restart-readable recovery remote artifact references'];
     const causeMessage = missingDependency[0] === 'restart-readable remote recovery artifact ownership'
@@ -1844,9 +1845,9 @@ function sanitizedDurableArtifactRefs(artifactRefs) {
   return sanitized;
 }
 
-function recordDurableRecoveryStateBestEffort(writer, current, plan, recoveryState) {
+function recordDurableRecoveryStateBestEffort(writer, current, plan, recoveryState, supportReport = null) {
   try {
-    recordDurableRecoveryState(writer, current, plan, recoveryState);
+    recordDurableRecoveryState(writer, current, plan, recoveryState, supportReport);
     return null;
   } catch (error) {
     return durableJournalFailureDetails(error);
@@ -1953,7 +1954,7 @@ function claimFenceFailure(error, remote, plan, journal, mutation) {
   );
 }
 
-function commitStagedSite(remote, staged, plan, journal, options, durableJournal) {
+function commitStagedSite(remote, staged, plan, journal, options, durableJournal, durableJournalSupportReport = null) {
   let committed = options.mutateRemote ? remote : deepClone(remote);
   let committedJournal = markJournalStatus(journal, 'committing');
   let appliedMutations = 0;
@@ -2013,7 +2014,7 @@ function commitStagedSite(remote, staged, plan, journal, options, durableJournal
         recordDurableRecoveryState(durableJournal, committed, plan, {
           status: 'blocked-recovery',
           reason: `Injected failure while committing mutation ${mutation.id}.`,
-        });
+        }, durableJournalSupportReport);
       } catch (error) {
         durableJournalError = durableJournalFailureDetails(error);
       }
@@ -2045,7 +2046,7 @@ function commitStagedSite(remote, staged, plan, journal, options, durableJournal
     recordDurableRecoveryState(durableJournal, committed, plan, {
       status: 'fully-updated-remote',
       reason: 'All planned mutations were committed.',
-    });
+    }, durableJournalSupportReport);
   } catch (error) {
     return {
       failure: recoveryBlocked(

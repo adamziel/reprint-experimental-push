@@ -22755,6 +22755,7 @@ test('production durable journal support checks close a writer when restart insp
     'explicit production recovery adapter marker',
     'restart-readable recovery inspection',
     'restart-readable recovery artifact references',
+    'fencing or lease ownership for the journal writer',
   ]);
   assert.equal(error.details.inspectionErrorMessage, 'injected inspect failure');
 });
@@ -22803,7 +22804,7 @@ test('production durable journal support checks close a writer when the support 
   assert.equal(error.code, 'PRODUCTION_DURABLE_JOURNAL_UNSUPPORTED');
   assert.equal(closed, 1);
   assert.ok(error.details.missingDependency.includes('explicit production recovery adapter marker'));
-  assert.ok(error.details.missingDependency.includes('restart-readable recovery remote artifact references'));
+  assert.ok(error.details.missingDependency.includes('restart-readable recovery artifact references'));
   assert.ok(error.details.missingDependency.includes('fencing or lease ownership for the journal writer'));
 });
 
@@ -27355,37 +27356,9 @@ test('production durable journal claims fail closed when close is inherited thro
 });
 
 test('production durable journal support probes restart inspection only once', () => {
+  const filePath = tempRecoveryJournalPath();
   let inspectCalls = 0;
-  const writer = {
-    kind: 'production-recovery-journal',
-    productionAdapter: true,
-    supportedSurface: 'production-recovery-journal-adapter',
-    ownsJournal: true,
-    writerLease: { id: 'lease-1' },
-    restartReadable: true,
-    journalPath: '/var/lib/reprint/recovery.jsonl',
-    artifactRefs: {
-      journal: '/var/lib/reprint/recovery.jsonl',
-    },
-    schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
-    appendEvent() {
-      return { sequence: 1, type: 'journal-opened' };
-    },
-    flush() {},
-    close() {},
-    inspect() {
-      inspectCalls += 1;
-      return {
-        filePath: '/var/lib/reprint/recovery.jsonl',
-        schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
-        artifactRefs: {
-          journal: '/var/lib/reprint/recovery.jsonl',
-        },
-        records: [{ sequence: 1, type: 'journal-opened' }],
-      };
-    },
-    assertCurrentClaim() {},
-  };
+  const remote = baseSite();
   const plan = planFor(baseSite(), baseSite(), {
     ...baseSite(),
     db: {
@@ -27396,14 +27369,36 @@ test('production durable journal support probes restart inspection only once', (
       },
     },
   });
+  const baseWriter = openProductionRecoveryJournal(filePath, {
+    truncate: true,
+    now: fixedNow,
+    claimId: 'claim-inspect-once',
+    writerLease: { id: 'claim-inspect-once' },
+  });
+  appendRecoveryClaimOpened(baseWriter, {
+    plan,
+    current: remote,
+    claimId: 'claim-inspect-once',
+    artifactRefs: {
+      journal: filePath,
+    },
+  });
+  const writer = {
+    ...baseWriter,
+    inspect() {
+      inspectCalls += 1;
+      return baseWriter.inspect();
+    },
+  };
 
-  const result = applyPlan(baseSite(), plan, {
+  const result = applyPlan(remote, plan, {
     requireProductionDurableJournal: true,
     durableJournal: writer,
   });
 
   assert.equal(result.recoveryState.status, 'fully-updated-remote');
   assert.equal(inspectCalls, 1);
+  baseWriter.close();
 });
 
 test('production durable journal claims fail closed when inspection records hide symbol keys', () => {
