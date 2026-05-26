@@ -878,7 +878,7 @@ test('packaged production plugin auth/session source helper resolves and loads t
   });
 });
 
-test('packaged production plugin readiness helper waits for signed preflight readiness after the snapshot is stable', () => {
+test('packaged production plugin readiness helper retries only startup-shaped packaged preflight failures', () => {
   const readySnapshot = {
     status: 200,
     body: {
@@ -994,7 +994,7 @@ test('packaged production plugin readiness helper waits for signed preflight rea
         },
       },
     }),
-    true,
+    false,
   );
   assert.equal(
     packagedProductionPluginPreflightRetryable({
@@ -1013,7 +1013,7 @@ test('packaged production plugin readiness helper waits for signed preflight rea
         },
       },
     }),
-    true,
+    false,
   );
   assert.equal(
     packagedProductionPluginPreflightRetryable(strictReadyPreflight),

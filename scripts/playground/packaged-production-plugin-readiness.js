@@ -33,15 +33,9 @@ export function packagedProductionPluginPreflightRetryable(preflight) {
     return true;
   }
 
-  if (preflight?.status !== 200 || preflight?.body?.ok !== true) {
-    return false;
-  }
-
-  if (preflight.body?.routeProfile?.labBacked !== false) {
-    return true;
-  }
-
-  return !evaluateProductionAuthSessionLifecycle(preflight.body?.auth?.session).ok;
+  // Once the packaged preflight responds normally, a wrong route profile or
+  // invalid production session is a ready-but-broken boundary, not startup lag.
+  return false;
 }
 
 export function packagedProductionPluginServerReady({ snapshot, preflight = null } = {}) {
