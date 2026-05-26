@@ -837,6 +837,18 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
   assert.ok(
     model.safeFastPaths.some(
       (fastPath) =>
+        fastPath.area === 'compression' &&
+        fastPath.allowedShortcut === 'compress-canonical-per-kind-budget-summaries-and-reuse-planned-dependency-graph-to-size-bounded-plugin-install-fanout' &&
+        fastPath.guardrails.includes('planned-dependency-graph-stays-planning-evidence-only') &&
+        fastPath.guardrails.includes('plugin-install-fanout-revalidates-before-write') &&
+        fastPath.gateProofs.skip.includes('planned dependency graph can shorten plugin-install fanout planning') &&
+        fastPath.gateProofs.recovery.includes('plugin-install staging record'),
+    ),
+    'compressed budget summaries can reuse the planned dependency graph for plugin-install fanout without widening the visibility boundary',
+  );
+  assert.ok(
+    model.safeFastPaths.some(
+      (fastPath) =>
         fastPath.area === 'backpressure' &&
         fastPath.allowedShortcut === 'compress-kind-scoped-receipt-ledgers-and-reuse-canonical-per-kind-budget-summary-for-bounded-replay' &&
         fastPath.guardrails.includes('compressed-ledgers-stay-recovery-evidence-only') &&

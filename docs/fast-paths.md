@@ -61,6 +61,10 @@ It also includes a compressed row-batch manifest plus canonical row-digest
 shortcut for plugin-install batches, so repeat batch sizing can skip duplicate
 planning work without weakening row preconditions or the atomic-group
 barrier.
+It also includes a compressed per-kind budget summary plus planned
+dependency-graph shortcut for plugin-install fanout, so repeat fanout sizing
+can skip duplicate planning work without weakening live revalidation or the
+atomic-group barrier.
 It also includes a memory-headroom-aware release-bundle retry-window shortcut,
 so retry planning can reuse the same bounded shape without turning headroom
 into mutation authority.
