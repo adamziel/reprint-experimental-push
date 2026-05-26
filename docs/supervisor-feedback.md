@@ -1,9 +1,27 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-26 15:58 CEST
+Last updated: 2026-05-26 16:01 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-26 16:01 CEST - Reliable Head and Readiness Blocker Refresh
+
+- Going well: the live reliable head is now `50751002253e7ba1a0256261ea903dea78f4e5a5`, so the checked
+  release path has the packaged source bound to the runtime server.
+- Not going well: the gate is still `0/4`; the packaged release verifier is still timing out in the readiness
+  wait on `GET /wp-json/reprint/v1/push/snapshot` with repeated `502 "WordPress is not ready yet"`.
+- Progress change: the recent release-path work improved source binding, but it still does not prove
+  production-backed auth/session lifecycle or durable-journal ownership on the checked boundary.
+- Next nudge: keep `reliable-executor` on the packaged readiness fix in
+  `scripts/playground/production-shaped-release-verify.mjs`, and have `progress-publisher` keep the public head
+  aligned with `50751002253e7ba1a0256261ea903dea78f4e5a5` while leaving the gate posture at `0/4`.
+
+| Lane | Nudge |
+| --- | --- |
+| Reliable executor | Fix the packaged readiness wait in `scripts/playground/production-shaped-release-verify.mjs`, not another proof-field surface. |
+| Progress publisher | Keep the public page aligned with the live `50751002253e7ba1a0256261ea903dea78f4e5a5` head; keep the gate posture at `0/4`. |
+| Audit and critic | Keep the verdict at `0/4` unless production-backed lifecycle or durable ownership is proven. |
 
 ## 2026-05-26 15:56 CEST - Reliable Head Advanced Again
 
