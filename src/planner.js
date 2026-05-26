@@ -2801,6 +2801,7 @@ function addUnsupportedTermmetaResourceBlocker(plan, {
     resource,
     resourceKey: resource.key,
     reason: support.reason || `Term meta graph resource ${resource.key} is not yet supported by the planner.`,
+    unsupportedState: support.unsupportedState || null,
     baseHash,
     localHash,
     remoteHash,
@@ -3224,6 +3225,25 @@ function unsupportedTermmetaResourceSupport({ resource, baseValue, localValue, r
   if (!candidate || candidate === ABSENT) {
     return { supported: true };
   }
+  const remoteOnlyDrift = (
+    stableStringify(localValue) === stableStringify(baseValue)
+    && stableStringify(remoteValue) !== stableStringify(baseValue)
+  );
+  const convergedDrift = (
+    localValue !== ABSENT
+    && remoteValue !== ABSENT
+    && stableStringify(localValue) === stableStringify(remoteValue)
+    && stableStringify(localValue) !== stableStringify(baseValue)
+  );
+
+  if (localValue === ABSENT) {
+    return {
+      supported: false,
+      className: 'unsupported-termmeta-resource',
+      unsupportedState: 'delete',
+      reason: 'Term meta graph resource deletes are not yet supported by the planner.',
+    };
+  }
 
   const references = wordpressGraphReferences(resource, candidate);
   const referenceEvidence = references.map((reference) =>
@@ -3236,7 +3256,16 @@ function unsupportedTermmetaResourceSupport({ resource, baseValue, localValue, r
   return {
     supported: false,
     className: 'unsupported-termmeta-resource',
-    reason: `WordPress graph mutation ${resource.key} is created in the same plan as a term identity that depends on it, and identity rewriting is not yet supported.`,
+    unsupportedState: termReference
+      ? 'same-plan-reference'
+      : convergedDrift
+        ? 'converged-drift'
+        : remoteOnlyDrift
+          ? 'remote-only-drift'
+          : 'local-or-divergent-drift',
+    reason: termReference
+      ? `WordPress graph mutation ${resource.key} is created in the same plan as a term identity that depends on it, and identity rewriting is not yet supported.`
+      : 'Term meta graph resources are not yet supported by the planner.',
     references: termReference ? [termReference] : referenceEvidence,
   };
 }
