@@ -512,11 +512,10 @@ function reprint_push_lab_rest_authenticated_recovery_inspect(WP_REST_Request $r
     $response = reprint_push_lab_rest_recovery_inspect($request);
     $result = $response->get_data();
     if (is_array($result)) {
-        if (isset($result['recovery']) && is_array($result['recovery']) && !isset($result['recovery']['journal'])) {
-            $result['recovery']['journal'] = reprint_push_lab_rest_recovery_journal_evidence(
-                reprint_push_lab_rest_checked_production_journal_surface($request)
-            );
-        }
+        $result = reprint_push_lab_rest_attach_checked_recovery_journal_evidence(
+            $result,
+            reprint_push_lab_rest_checked_production_journal_surface($request)
+        );
         $result = reprint_push_lab_rest_attach_checked_db_journal_contract($result, true);
         $result['responseSchemaVersion'] = 1;
         $result['auth'] = reprint_push_lab_rest_auth_evidence($request);
@@ -524,6 +523,65 @@ function reprint_push_lab_rest_authenticated_recovery_inspect(WP_REST_Request $r
         $response->set_data($result);
     }
     return $response;
+}
+
+function reprint_push_lab_rest_attach_checked_recovery_journal_evidence(
+    array $result,
+    bool $checked_surface = false
+): array {
+    if (!isset($result['recovery']) || !is_array($result['recovery'])) {
+        return $result;
+    }
+
+    $checked_journal = reprint_push_lab_rest_recovery_journal_evidence($checked_surface);
+    if (!isset($result['recovery']['journal']) || !is_array($result['recovery']['journal'])) {
+        $result['recovery']['journal'] = $checked_journal;
+        return $result;
+    }
+
+    $existing_integrity = isset($result['recovery']['journal']['integrity']) && is_array($result['recovery']['journal']['integrity'])
+        ? $result['recovery']['journal']['integrity']
+        : [];
+    $checked_integrity = isset($checked_journal['integrity']) && is_array($checked_journal['integrity'])
+        ? $checked_journal['integrity']
+        : [];
+
+    if ($existing_integrity === []) {
+        $result['recovery']['journal']['integrity'] = $checked_integrity;
+        return $result;
+    }
+
+    foreach (['schemaVersion', 'status'] as $key) {
+        if (
+            array_key_exists($key, $checked_integrity)
+            && (
+                !array_key_exists($key, $existing_integrity)
+                || $existing_integrity[$key] === null
+                || $existing_integrity[$key] === ''
+            )
+        ) {
+            $existing_integrity[$key] = $checked_integrity[$key];
+        }
+    }
+
+    $existing_scope = isset($existing_integrity['scope']) && is_string($existing_integrity['scope'])
+        ? $existing_integrity['scope']
+        : '';
+    $checked_scope = isset($checked_integrity['scope']) && is_string($checked_integrity['scope'])
+        ? $checked_integrity['scope']
+        : '';
+    if (
+        $checked_scope !== ''
+        && (
+            $existing_scope === ''
+            || preg_match('/fixture-scoped|local Playground fixture only|not production durability/i', $existing_scope) === 1
+        )
+    ) {
+        $existing_integrity['scope'] = $checked_scope;
+    }
+
+    $result['recovery']['journal']['integrity'] = $existing_integrity;
+    return $result;
 }
 
 function reprint_push_lab_rest_attach_checked_db_journal_contract(

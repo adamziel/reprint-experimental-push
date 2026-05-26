@@ -232,6 +232,41 @@ function runRecoveryJournalEvidence({ checkedSurface = false, packageMode = fals
   });
 }
 
+function runAttachCheckedRecoveryJournalEvidence(result, checkedSurface = false, packageMode = false) {
+  return spawnSync('php', [
+    '-r',
+    [
+      'define("ABSPATH", dirname($argv[1]));',
+      'if (($argv[4] ?? "0") === "1") {',
+      '  define("REPRINT_PUSH_DISABLE_LAB_ROUTES", true);',
+      '  define("REPRINT_PUSH_DISABLE_AUTH_BOOTSTRAP", true);',
+      '}',
+      'function add_filter(...$args) {}',
+      'function add_action(...$args) {}',
+      'function register_rest_route(...$args) {}',
+      'class WP_REST_Server { const CREATABLE = "POST"; const READABLE = "GET"; }',
+      'class WP_REST_Response {',
+      '  private $data;',
+      '  public function __construct($data = null, $status = null) { $this->data = $data; }',
+      '  public function get_data() { return $this->data; }',
+      '  public function set_data($data) { $this->data = $data; }',
+      '}',
+      'class WP_REST_Request {}',
+      'require $argv[1];',
+      '$result = json_decode($argv[2], true);',
+      '$checkedSurface = ($argv[3] ?? "0") === "1";',
+      'echo json_encode(reprint_push_lab_rest_attach_checked_recovery_journal_evidence($result, $checkedSurface));',
+    ].join(' '),
+    pluginFile,
+    JSON.stringify(result),
+    checkedSurface ? '1' : '0',
+    packageMode ? '1' : '0',
+  ], {
+    cwd: repoRoot,
+    encoding: 'utf8',
+  });
+}
+
 test('checked db journal merge fills nested ownership and lease fence gaps', { skip: !hasPhp }, () => {
   const result = runMerge(
     {
@@ -347,6 +382,103 @@ test('recovery inspect journal evidence upgrades scope on checked and packaged b
       schemaVersion: 1,
       status: 'ok',
       scope: 'packaged production plugin recovery inspect journal evidence; not local Playground fixture only',
+    },
+  });
+});
+
+test('checked recovery inspect evidence upgrades an existing fixture-scoped journal on the checked boundary', { skip: !hasPhp }, () => {
+  const result = runAttachCheckedRecoveryJournalEvidence(
+    {
+      ok: true,
+      recovery: {
+        journal: {
+          integrity: {
+            schemaVersion: 1,
+            status: 'ok',
+            scope: 'fixture-scoped recovery inspect journal evidence; not production durability',
+          },
+        },
+      },
+    },
+    true,
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  assert.deepEqual(JSON.parse(result.stdout), {
+    ok: true,
+    recovery: {
+      journal: {
+        integrity: {
+          schemaVersion: 1,
+          status: 'ok',
+          scope: 'checked live production-shaped recovery inspect journal evidence; not local Playground fixture only',
+        },
+      },
+    },
+  });
+});
+
+test('checked recovery inspect evidence upgrades an existing fixture-scoped journal in packaged mode', { skip: !hasPhp }, () => {
+  const result = runAttachCheckedRecoveryJournalEvidence(
+    {
+      ok: true,
+      recovery: {
+        journal: {
+          integrity: {
+            schemaVersion: 1,
+            status: 'ok',
+            scope: 'fixture-scoped recovery inspect journal evidence; not production durability',
+          },
+        },
+      },
+    },
+    true,
+    true,
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  assert.deepEqual(JSON.parse(result.stdout), {
+    ok: true,
+    recovery: {
+      journal: {
+        integrity: {
+          schemaVersion: 1,
+          status: 'ok',
+          scope: 'packaged production plugin recovery inspect journal evidence; not local Playground fixture only',
+        },
+      },
+    },
+  });
+});
+
+test('checked recovery inspect evidence preserves a stronger existing non-fixture scope', { skip: !hasPhp }, () => {
+  const result = runAttachCheckedRecoveryJournalEvidence(
+    {
+      ok: true,
+      recovery: {
+        journal: {
+          integrity: {
+            schemaVersion: 1,
+            status: 'ok',
+            scope: 'production recovery inspect journal evidence from external durable adapter',
+          },
+        },
+      },
+    },
+    true,
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  assert.deepEqual(JSON.parse(result.stdout), {
+    ok: true,
+    recovery: {
+      journal: {
+        integrity: {
+          schemaVersion: 1,
+          status: 'ok',
+          scope: 'production recovery inspect journal evidence from external durable adapter',
+        },
+      },
     },
   });
 });
