@@ -26,6 +26,7 @@ const pushSignatureHeader = 'X-Reprint-Push-Signature';
 const transientFetchRetryDelayMs = 250;
 const transientFetchAttempts = 4;
 const retryableReadOnlyGetPaths = new Set(Object.values(routeProfiles).flatMap((profile) => [
+  `${profile.namespacePath}/preflight`,
   `${profile.namespacePath}/snapshot`,
   `${profile.namespacePath}/db-journal`,
 ]));
@@ -85,7 +86,7 @@ export async function runAuthenticatedHttpPush({
     retryAttempts: 1,
   };
 
-  const preflight = await client.signedGet('/preflight');
+  const preflight = await client.signedGet('/preflight', { retryable: true });
   summary.preflight = summarizeResponse(preflight);
   updateRetryAttempts(summary, summary.preflight);
   if (preflight.status !== 200 || preflight.body?.ok !== true) {
@@ -627,6 +628,7 @@ export function authenticatedHttpClient({
         undefined,
         signedRequestHeaders(credential, 'GET', pathname, '', options),
         requestTimeoutMs,
+        { retryable: options.retryable === true },
       );
     },
     signedPost(pathSuffix, body, options = {}) {
@@ -1051,8 +1053,8 @@ async function requestJson(baseUrl, method, pathname, body = undefined, headers 
   );
 }
 
-async function requestJsonRaw(baseUrl, method, pathname, rawBody = undefined, headers = {}, requestTimeoutMs = 10_000) {
-  const retryable = isRetryableReadOnlyGet(baseUrl, method, pathname, headers);
+async function requestJsonRaw(baseUrl, method, pathname, rawBody = undefined, headers = {}, requestTimeoutMs = 10_000, options = {}) {
+  const retryable = options.retryable === true || isRetryableReadOnlyGet(baseUrl, method, pathname, headers);
   const attempts = retryable ? transientFetchAttempts : 1;
   let lastError;
   for (let attempt = 1; attempt <= attempts; attempt++) {

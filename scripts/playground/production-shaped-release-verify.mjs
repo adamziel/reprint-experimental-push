@@ -360,7 +360,7 @@ if (requireProductionAuthSession) {
   });
   let preflight;
   try {
-    preflight = await client.signedGet('/preflight');
+    preflight = await client.signedGet('/preflight', { retryable: true });
   } catch (error) {
     process.stdout.write(
       JSON.stringify(
@@ -489,7 +489,7 @@ try {
         routeProfile: 'production-shaped',
       });
 
-      const preflight = await client.signedGet('/preflight');
+      const preflight = await client.signedGet('/preflight', { retryable: true });
       assert.equal(preflight.status, 200, `production-shaped release verify preflight HTTP ${preflight.status}`);
       assert.equal(preflight.body.ok, true);
 
