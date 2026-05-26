@@ -6153,6 +6153,8 @@ test('guarded benchmark keeps paused queue-headroom summaries false when raw res
   assert.equal(details.queueHeadroomVisible, true);
   assert.equal(details.queueHeadroomMeasured, true);
   assert.equal(details.queueHeadroomWithinResourceCeiling, false);
+  assert.equal(details.queueHeadroomMatchesResourceHeadroom, false);
+  assert.equal(details.queueHeadroomMatchesMemoryHeadroom, false);
   assert.equal(details.receiptCursorPauseFootprintVisible, false);
   assert.equal(details.queueHeadroomVisibleAndMeasured, false);
   assert.equal(details.queueHeadroomVisibleAndMeasuredAndAligned, false);
@@ -6172,6 +6174,8 @@ test('guarded benchmark keeps paused queue-headroom summaries false when raw res
   assert.equal(details.stagingDiskHeadroomVisibleAndMeasuredAfterPause, false);
   assert.equal(details.backpressureEvidenceComplete, false);
   assert.equal(details.backpressureConsistency.receiptCursorPauseFootprintVisible, false);
+  assert.equal(details.backpressureConsistency.queueHeadroomMatchesResourceHeadroom, false);
+  assert.equal(details.backpressureConsistency.queueHeadroomMatchesMemoryHeadroom, false);
   assert.equal(details.backpressureConsistency.queueHeadroomVisibleAndMeasured, false);
   assert.equal(details.backpressureConsistency.queueHeadroomVisibleAndMeasuredAndAligned, false);
   assert.equal(details.backpressureConsistency.queueHeadroomVisibleAndQueueSlackMeasured, false);
