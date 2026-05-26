@@ -1377,9 +1377,15 @@ export function productionThroughputDetails(report) {
     journalSuccessReceiptKindLedger.length > 0
     && journalSuccessReceiptKindLedger.every((entry, index) => entry.kind === journalSuccessReceiptKinds[index]);
   const journalSuccessReceiptKindsGrouped = areReceiptKindsGrouped(journalSuccessRecordTypes);
-  const productionAtomicCommitMeasured = report.executorCapabilities.productionAtomicCommit === 'production-atomic-group-commit';
-  const productionStorageReceiptsMeasured = report.executorCapabilities.fileReceipts === 'production-storage-receipts';
-  const productionRowBatchExecutorMeasured = report.executorCapabilities.rowApply === 'production-batched-compare-and-swap';
+  const productionAtomicCommitMeasured =
+    report.executorCapabilities.productionAtomicCommit === 'production-atomic-group-commit'
+    && report.evidence.atomicGroup?.productionAtomicCommitMeasured === true;
+  const productionStorageReceiptsMeasured =
+    report.executorCapabilities.fileReceipts === 'production-storage-receipts'
+    && report.evidence.atomicGroup?.productionStorageReceiptsMeasured === true;
+  const productionRowBatchExecutorMeasured =
+    report.executorCapabilities.rowApply === 'production-batched-compare-and-swap'
+    && report.evidence.atomicGroup?.productionRowBatchExecutorMeasured === true;
   const productionAtomicCommitVisible =
     report.evidence.atomicGroup?.productionAtomicCommitVisible === true;
   const productionAtomicGroupMetadataVisible =

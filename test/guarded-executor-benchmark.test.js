@@ -700,6 +700,44 @@ test('guarded benchmark blocks row-batch executor visibility without visible mea
   assert.equal(blockers.includes('production-parallelism-limits-not-visible'), true);
 });
 
+test('guarded benchmark details fail closed when atomic commit capability is present but the evidence bit is hidden', () => {
+  const report = smallBenchmark();
+  const tampered = clone(report);
+
+  tampered.executorCapabilities.productionAtomicCommit = 'production-atomic-group-commit';
+  tampered.evidence.atomicGroup.productionAtomicCommitMeasured = false;
+  tampered.evidence.atomicGroup.productionAtomicCommitVisible = true;
+  tampered.evidence.atomicGroup.productionAtomicGroupMetadataVisible = true;
+
+  const details = productionThroughputDetails(tampered);
+
+  assert.equal(details.productionAtomicCommitMeasured, false);
+  assert.equal(details.atomicGroup.productionAtomicCommitMeasured, false);
+  assert.equal(details.productionAtomicGroupMetadataVisibleAndMeasured, false);
+  assert.equal(details.backpressureConsistency.productionAtomicGroupMetadataVisibleAndMeasured, false);
+});
+
+test('guarded benchmark details fail closed when storage and row-batch capabilities are present but evidence bits are hidden', () => {
+  const report = smallBenchmark();
+  const tampered = clone(report);
+
+  tampered.executorCapabilities.fileReceipts = 'production-storage-receipts';
+  tampered.executorCapabilities.rowApply = 'production-batched-compare-and-swap';
+  tampered.evidence.atomicGroup.productionStorageReceiptsMeasured = false;
+  tampered.evidence.atomicGroup.productionRowBatchExecutorMeasured = false;
+  tampered.evidence.atomicGroup.productionStorageReceiptsVisible = true;
+  tampered.evidence.atomicGroup.productionRowBatchExecutorVisible = true;
+
+  const details = productionThroughputDetails(tampered);
+
+  assert.equal(details.productionStorageReceiptsMeasured, false);
+  assert.equal(details.productionRowBatchExecutorMeasured, false);
+  assert.equal(details.atomicGroup.productionStorageReceiptsMeasured, false);
+  assert.equal(details.atomicGroup.productionRowBatchExecutorMeasured, false);
+  assert.equal(details.productionStorageReceiptsVisibleAndAtomicCommitVisibleAndMeasured, false);
+  assert.equal(details.atomicGroup.productionRowBatchExecutorVisibleAndStorageReceiptsVisible, true);
+});
+
 test('guarded benchmark accepts visible canonical parallelism caps for row-batch proof without precomputed claim details', () => {
   const report = smallBenchmark();
   const tampered = clone(report);
