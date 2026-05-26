@@ -1794,7 +1794,8 @@ function recordDurableRecoveryState(writer, current, plan, recoveryState, suppor
   const missingDependency = resolvedSupportReport?.missingDependency || [];
   const missingJournalArtifactSurface = missingDependency.includes('restart-readable recovery artifact references')
     || missingDependency.includes('restart-readable recovery artifact location')
-    || missingDependency.includes('journal-readable inspection records with sequence and type');
+    || missingDependency.includes('journal-readable inspection records with sequence and type')
+    || missingDependency.includes('explicit journal ownership fencing');
   const missingRemoteArtifactOwnership = missingDependency.includes('restart-readable remote recovery artifact ownership');
   const missingRemoteArtifactRefs = missingDependency.includes('restart-readable recovery remote artifact references');
   const blockedRemoteArtifactHistoryInvalid = [
