@@ -24,7 +24,6 @@ const liveProofSubprocessTimeoutMs = 9_000;
 const liveProofSubprocessKillSignal = 'SIGKILL';
 const liveProofInnerTimeoutMs = Math.max(1_000, Math.min(4_000, liveProofSubprocessTimeoutMs - 4_500));
 const releaseVerifySlowPathTimeoutMs = 9_000;
-const liveReleaseVerifyTimeoutMs = liveProofSubprocessTimeoutMs;
 const proofSubprocessOptions = {
   timeout: proofSubprocessTimeoutMs,
   killSignal: proofSubprocessKillSignal,
@@ -34,13 +33,6 @@ const proofSubprocessOptions = {
 const releaseVerifyProofSubprocessOptions = {
   timeout: proofSubprocessTimeoutMs,
   killSignal: proofSubprocessKillSignal,
-  encoding: 'utf8',
-  maxBuffer: 1024 * 1024 * 20,
-  shell: false,
-};
-const releaseVerifyLiveSubprocessOptions = {
-  timeout: liveReleaseVerifyTimeoutMs,
-  killSignal: liveProofSubprocessKillSignal,
   encoding: 'utf8',
   maxBuffer: 1024 * 1024 * 20,
   shell: false,
@@ -126,24 +118,36 @@ function spawnLiveReleaseVerify(env = {}, options = {}) {
   const timeout = options.timeout ?? liveProofSubprocessTimeoutMs;
   const boundedTimeout = Math.max(1_000, Math.min(timeout, liveProofInnerTimeoutMs));
   const killSignal = options.killSignal ?? liveProofSubprocessKillSignal;
-  const proof = spawnReleaseVerifyBounded(
+  const proof = spawnSync(
     process.execPath,
     ['scripts/playground/production-shaped-release-verify.mjs'],
     {
       cwd: repoRoot,
-      ...releaseVerifyLiveSubprocessOptions,
       timeout: boundedTimeout,
       killSignal,
+      encoding: 'utf8',
+      maxBuffer: 1024 * 1024 * 20,
+      shell: false,
       env: {
         ...process.env,
         ...env,
       },
     },
-    'live release verify',
   );
   if (proof.error || proof.signal || proof.status === null || proof.status !== 0) {
     stopAllPlaygroundChildrenSync();
-    reportSpawnFailure(proof);
+    reportBoundedSpawnFailure(proof, process.execPath, ['scripts/playground/production-shaped-release-verify.mjs']);
+    if (proof.error) {
+      const timeoutNote = proof.error.code === 'ETIMEDOUT' && boundedTimeout ? ` after ${boundedTimeout}ms` : '';
+      throw new Error(formatSpawnFailure(`live release verify failed${timeoutNote}`, proof));
+    }
+    if (proof.signal) {
+      throw new Error(formatSpawnFailure(`live release verify terminated by ${proof.signal}${boundedTimeout ? ` after ${boundedTimeout}ms` : ''}`, proof));
+    }
+    if (proof.status === null) {
+      throw new Error(formatSpawnFailure('live release verify exited without a status', proof));
+    }
+    throw new Error(formatSpawnFailure('live release verify failed with non-zero status', proof));
   }
   return proof;
 }
