@@ -771,6 +771,23 @@ test('production plugin package smoke seeds signed session and nonce options wit
   );
 });
 
+test('production plugin package smoke leaves one expired signed session for preflight cleanup to delete', () => {
+  const smokeSource = readFileSync(
+    path.join(repoRoot, 'scripts/playground/production-plugin-package-smoke.mjs'),
+    'utf8',
+  );
+
+  assert.ok(
+    smokeSource.includes("$cleanup_expired_session_id = str_repeat('e', 64);")
+    || smokeSource.includes("$cleanup_expired_session_id = str_repeat(\\'e\\', 64);"),
+    'expected packaged smoke blueprint to seed an untouched expired session for cleanup',
+  );
+  assert.ok(
+    smokeSource.includes("add_option('reprint_push_lab_signed_session_' . hash('sha256', $cleanup_expired_session_id), array('schemaVersion'=>1,'expiresAtUnix'=>$past,'fixture'=>'cleanup-expired-session'), '', 'no');"),
+    'expected packaged smoke blueprint to leave one expired signed session for preflight cleanup',
+  );
+});
+
 test('production-shaped release verify consumes the packaged production auth/session source command on the checked release path', () => {
   const sourceUrl = 'http://127.0.0.1:8080';
   const packagedSource = resolvePackagedProductionPluginAuthSessionSource({
