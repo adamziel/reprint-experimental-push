@@ -519,6 +519,19 @@ test('production claim gate fails closed if benchmark evidence is tampered', () 
     false,
   );
 
+  const memoryHeadroomOutsideQueueBudget = clone(report);
+  memoryHeadroomOutsideQueueBudget.evidence.backpressure.receiptCursorMemoryHeadroomBytes =
+    memoryHeadroomOutsideQueueBudget.evidence.backpressure.queueBudgetBytes + 1;
+  assert.ok(
+    productionThroughputBlockers(memoryHeadroomOutsideQueueBudget).includes(
+      'receipt-cursor-memory-headroom-not-covered-by-queue-budget',
+    ),
+  );
+  assert.equal(
+    productionThroughputDetails(memoryHeadroomOutsideQueueBudget).receiptCursorMemoryHeadroomWithinQueueBudget,
+    false,
+  );
+
   const missingQueuePause = clone(report);
   missingQueuePause.evidence.backpressure.queuePausedBeforeOverflow = false;
   assert.ok(

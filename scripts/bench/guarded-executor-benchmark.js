@@ -520,6 +520,9 @@ export function productionThroughputBlockers(report) {
   if (report.evidence.backpressure?.receiptCursorHeadroomWithinQueueBudget !== true) {
     blockers.push('receipt-cursor-headroom-not-covered-by-queue-budget');
   }
+  if (report.evidence.backpressure?.receiptCursorMemoryHeadroomWithinQueueBudget !== true) {
+    blockers.push('receipt-cursor-memory-headroom-not-covered-by-queue-budget');
+  }
   if (
     report.evidence.backpressure?.receiptCursorBytes !== null
     && report.evidence.backpressure?.receiptCursorBytes !== report.evidence.chunkReceipts.resumeCursor?.sizeBytes

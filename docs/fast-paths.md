@@ -130,6 +130,9 @@ Current executable gate:
   headroom values drift apart.
 - The report now also fails closed if queue slack and memory headroom disagree,
   so a tampered slack record cannot make the backpressure summary look stable.
+- The report now also fails closed if the measured memory headroom no longer
+  fits inside the queue budget, so a forged buffer-budget record cannot make
+  the pause proof look stronger than the available queue window.
 - The report now also fails closed if queue slack and queue headroom disagree,
   so a tampered queue view cannot make the backpressure summary look stable.
 - The report now also fails closed if queue slack is measured as zero or
