@@ -2166,13 +2166,18 @@ function wordpressGraphIdentitySupport({
     return { supported: true };
   }
 
+  const baseValue = getResource(base, resource);
   const referenceEvidence = references.map((reference) =>
     wordpressGraphReferenceEvidence(reference, resources, base, local, remote));
   const samePlanGraphReferences = resource.table === 'wp_termmeta'
     ? referenceEvidence
       .filter((reference) =>
-        reference.relationshipType === 'termmeta-term'
-        && isSamePlanWordPressGraphCreate(reference))
+        isSupportedSamePlanTermmetaReference({
+          baseValue,
+          reference,
+          local,
+          remote,
+        }))
       .map((reference) => samePlanWordPressGraphReferenceEvidence(reference))
     : [];
   if (resource.table === 'wp_postmeta') {
@@ -2413,6 +2418,33 @@ function samePlanWordPressGraphReferenceEvidence(reference) {
       targetLocalHash: reference.targetLocalHash,
     },
   };
+}
+
+function isSupportedSamePlanTermmetaReference({
+  baseValue,
+  reference,
+  local,
+  remote,
+}) {
+  if (
+    baseValue === ABSENT
+    || reference.relationshipType !== 'termmeta-term'
+    || !isSamePlanWordPressGraphCreate(reference)
+  ) {
+    return false;
+  }
+
+  if (normalizePositiveInteger(baseValue?.term_id) != null) {
+    return false;
+  }
+
+  const targetTermId = normalizePositiveInteger(reference.targetId);
+  const localNavMenuTaxonomy = [...(local?.db?.wp_term_taxonomy ? Object.values(local.db.wp_term_taxonomy) : [])]
+    .find((entry) => normalizePositiveInteger(entry?.term_id) === targetTermId && entry?.taxonomy === 'nav_menu');
+  const remoteNavMenuTaxonomy = [...(remote?.db?.wp_term_taxonomy ? Object.values(remote.db.wp_term_taxonomy) : [])]
+    .find((entry) => normalizePositiveInteger(entry?.term_id) === targetTermId && entry?.taxonomy === 'nav_menu');
+
+  return !localNavMenuTaxonomy && !remoteNavMenuTaxonomy;
 }
 
 function finalizeWordPressGraphDependencies(plan, local, remote) {
@@ -2835,13 +2867,19 @@ function samePlanCreatedGraphIdentitySupport({ resource, resources, base, local,
       if (reference.targetResourceKey !== resource.key) {
         continue;
       }
+      const evidence = wordpressGraphReferenceEvidence(reference, resources, base, local, remote);
       if (
         resource.table === 'wp_terms'
-        && reference.relationshipType === 'termmeta-term'
+        && sourceResource.table === 'wp_termmeta'
+        && isSupportedSamePlanTermmetaReference({
+          baseValue: getResource(base, sourceResource),
+          reference: evidence,
+          local,
+          remote,
+        })
       ) {
         continue;
       }
-      const evidence = wordpressGraphReferenceEvidence(reference, resources, base, local, remote);
       if (evidence.targetChange.remote.state === 'absent') {
         inboundReferences.push(evidence);
       }
@@ -4153,6 +4191,23 @@ function unsupportedTermmetaResourceSupport({ resource, baseValue, localValue, r
         className: 'unsupported-navigation-resource',
         unsupportedState: 'same-plan-reference',
         reason: 'Navigation and menu graph resources are not yet supported by the planner.',
+        references: [termReference],
+      };
+    }
+
+    if (
+      !isSupportedSamePlanTermmetaReference({
+        baseValue,
+        reference: termReference,
+        local,
+        remote,
+      })
+    ) {
+      return {
+        supported: false,
+        className: 'unsupported-termmeta-resource',
+        unsupportedState: 'same-plan-reference',
+        reason: `WordPress graph mutation ${resource.key} is created in the same plan as a term identity that depends on it, and identity rewriting is not yet supported.`,
         references: [termReference],
       };
     }

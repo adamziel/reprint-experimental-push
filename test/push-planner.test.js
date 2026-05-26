@@ -28320,7 +28320,6 @@ test('blocks local termmeta references to a same-plan created term identity whil
   base.db.wp_terms = {
     'term_id:13': { term_id: 13, name: 'Base term', slug: 'base-term' },
   };
-  base.files['about.php'] = '<?php echo "Base about";';
   base.db.wp_termmeta = {
     'meta_id:12': {
       meta_id: 12,
@@ -28339,7 +28338,6 @@ test('blocks local termmeta references to a same-plan created term identity whil
       slug: 'local-same-plan-term',
     },
   };
-  local.files['about.php'] = '<?php echo "Shared about";';
   local.db.wp_termmeta = {
     'meta_id:12': {
       meta_id: 12,
