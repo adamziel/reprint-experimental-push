@@ -595,6 +595,7 @@ function summarizeResponse(response) {
   return {
     status: response.status,
     ok: body.ok === true,
+    retryAttempts: response.retryAttempts || 1,
     mode: body.mode,
     code: body.code,
     applied: body.applied,
@@ -681,6 +682,7 @@ function summarizeSnapshot(response, local) {
   return {
     status: response.status,
     ok: true,
+    retryAttempts: response.retryAttempts || 1,
     snapshotHash: digest(snapshotContent(snapshot)),
     visibleSurfaceHash: digest(visibleSurface(snapshot)),
     finalMatchesLocal: digest(visibleSurface(snapshot)) === digest(visibleSurface(local)),
@@ -695,6 +697,7 @@ function summarizeDbJournal(response) {
   return {
     status: response.status,
     ok: true,
+    retryAttempts: response.retryAttempts || 1,
     rows: rows.length,
     applyCommitted: rows.some((entry) => entry.event === 'apply-committed'),
     mutationApplied: rows.filter((entry) => entry.event === 'mutation-applied').length,
@@ -902,7 +905,12 @@ async function requestJsonRaw(baseUrl, method, pathname, rawBody = undefined, he
   let lastError;
   for (let attempt = 1; attempt <= attempts; attempt++) {
     try {
-      return await requestJsonRawOnce(baseUrl, method, pathname, rawBody, headers, requestTimeoutMs);
+      const response = await requestJsonRawOnce(baseUrl, method, pathname, rawBody, headers, requestTimeoutMs);
+      return {
+        ...response,
+        attempts,
+        retryAttempts: attempt,
+      };
     } catch (error) {
       lastError = error;
       if (!retryable || !isTransientFetchError(error) || attempt === attempts) {
