@@ -65,7 +65,12 @@ const readinessFailureBodyLimit = 240;
 // smoke path.
 const serverStartupTimeoutMs = 120_000;
 const serverFetchTimeoutMs = 1_000;
-const packagedPlaygroundTimeoutSeconds = 30;
+// The packaged plugin path still has to boot WordPress, mount the packaged
+// plugin, and clear signed preflight readiness before the verifier can move on
+// to the release boundary. Keep a slightly wider packaged startup budget than
+// the earlier smoke-era default so the checked verifier does not fail at the
+// last avoidable startup boundary first.
+const packagedPlaygroundTimeoutSeconds = 45;
 const packagedServerStartupTimeoutMs = packagedPlaygroundTimeoutSeconds * 1_000;
 const packagedServerFetchTimeoutMs = 3_000;
 const maxReadinessProbes = Math.max(10, Math.ceil(serverStartupTimeoutMs / readinessProbeIntervalMs));
