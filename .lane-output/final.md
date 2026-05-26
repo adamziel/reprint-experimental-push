@@ -1,4 +1,4 @@
-Refreshed the public progress surface so the visible timestamp and newest-audit link stay current with the active supervision cycle, then pushed the lane branch.
+Refreshed the public progress surface so the visible timestamp and newest-audit link stay current with the active supervision cycle.
 
 Changed files:
 - [progress.html](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/progress-publisher/progress.html)
@@ -16,7 +16,7 @@ Commands:
 - `git status --short --branch`
 
 Push result:
-- Commit: pending from the next push step
+- Commit: not yet created
 
 Worktree status:
 - Branch: `lane/cycle-20260525-mainwindows-2349/progress-followup`
