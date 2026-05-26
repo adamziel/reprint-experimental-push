@@ -706,6 +706,9 @@ function productionRecoverySupportReport(writer) {
     && typeof inspected.artifactRefs.remote === 'string'
   ) {
     addMissingDependency('restart-readable recovery remote artifact references');
+    if (!isCanonicalAbsolutePath(inspected.artifactRefs.remote)) {
+      addMissingDependency('restart-readable recovery remote artifact references');
+    }
   }
   if (
     writerRemoteArtifactRef
@@ -717,6 +720,14 @@ function productionRecoverySupportReport(writer) {
   }
   if (writerRemoteArtifactRef) {
     addMissingDependency('restart-readable recovery remote artifact references');
+    if (!isCanonicalAbsolutePath(writerRemoteArtifactRef)) {
+      addMissingDependency('restart-readable recovery remote artifact references');
+    }
+    if (!durableJournalInspectArtifactRefs(inspected) || typeof inspected.artifactRefs.remote !== 'string') {
+      addMissingDependency('restart-readable recovery remote artifact references');
+    } else if (inspected.artifactRefs.remote !== writerRemoteArtifactRef) {
+      addMissingDependency('restart-readable recovery remote artifact references');
+    }
   }
   if (typeof writer?.journalPath !== 'string' || writer.journalPath.length === 0) {
     addMissingDependency('owned restart-readable recovery journal path');
