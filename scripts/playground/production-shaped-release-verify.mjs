@@ -9,14 +9,25 @@ import { authenticatedHttpClient, runAuthenticatedHttpPush } from '../../src/aut
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const muPluginDir = path.join(repoRoot, 'scripts/playground/rest-mu-plugins');
-const serverStartupTimeoutMs = 4_000;
-const serverFetchTimeoutMs = 3_000;
+const serverStartupTimeoutMs = 1_500;
+const serverFetchTimeoutMs = 1_000;
 const credentials = {
   username: 'reprint_push_admin',
   password: 'reprint-push-admin-app-password',
 };
 const requireProductionDurableJournal = process.env.REPRINT_PUSH_REQUIRE_PRODUCTION_DURABLE_JOURNAL === '1';
 const requireProductionAuthSession = process.env.REPRINT_PUSH_REQUIRE_PRODUCTION_AUTH_SESSION === '1';
+
+class ProofFailure extends Error {
+  constructor() {
+    super('production-shaped release verify failed closed');
+    this.name = 'ProofFailure';
+  }
+}
+
+let topLevelError = null;
+
+try {
 
 const protocolExtension = {
   stages: [
@@ -101,7 +112,7 @@ if (liveSourceUrl && (!username || !applicationPassword)) {
     ),
   );
   process.stdout.write('\n');
-  process.exit(1);
+  throw new ProofFailure();
 }
 
 if (!username || !applicationPassword) {
@@ -156,7 +167,7 @@ if (requireProductionAuthSession) {
       ),
     );
     process.stdout.write('\n');
-    process.exit(1);
+    throw new ProofFailure();
   }
 
   const client = authenticatedHttpClient({
@@ -218,7 +229,7 @@ if (requireProductionAuthSession) {
       ),
     );
     process.stdout.write('\n');
-    process.exit(1);
+    throw new ProofFailure();
   }
   process.stdout.write(
     JSON.stringify(
@@ -265,7 +276,7 @@ if (requireProductionAuthSession) {
     ),
   );
   process.stdout.write('\n');
-  process.exit(1);
+  throw new ProofFailure();
 }
 
 const remoteServer = await startPlaygroundServer(
@@ -365,7 +376,7 @@ try {
           ),
         );
         process.stdout.write('\n');
-        process.exit(1);
+        throw new ProofFailure();
       }
 
       if (requireProductionAuthSession && preflight.body.auth.session.type !== 'production-auth-session') {
@@ -420,7 +431,7 @@ try {
           ),
         );
         process.stdout.write('\n');
-        process.exit(1);
+        throw new ProofFailure();
       }
 
       assert.equal(proof.ok, true, JSON.stringify(proof, null, 2));
@@ -521,7 +532,7 @@ try {
           ),
         );
         process.stdout.write('\n');
-        process.exit(1);
+        throw new ProofFailure();
       }
 
       const remoteChangedSnapshot = await exportSnapshot('remote-changed', remoteChangedServer.baseUrl);
@@ -656,7 +667,7 @@ try {
 }
 
 async function startPlaygroundServer(name, blueprintPath) {
-  for (let attempt = 1; attempt <= 3; attempt += 1) {
+  for (let attempt = 1; attempt <= 1; attempt += 1) {
     const port = await findLocalPort();
     const baseUrl = `http://127.0.0.1:${port}`;
     const args = [
@@ -681,7 +692,7 @@ async function startPlaygroundServer(name, blueprintPath) {
 
     const child = spawn(
       'timeout',
-      ['--preserve-status', '--kill-after=2s', '6s', 'npx', ...args],
+      ['--preserve-status', '--kill-after=1s', '8s', 'npx', ...args],
       {
         cwd: repoRoot,
         env: process.env,
@@ -893,4 +904,15 @@ function isPortFree(port) {
     socket.once('listening', () => socket.close(() => resolve(true)));
     socket.listen(port, '127.0.0.1');
   });
+}
+
+} catch (error) {
+  topLevelError = error;
+} finally {
+  if (topLevelError && !(topLevelError instanceof ProofFailure)) {
+    throw topLevelError;
+  }
+  if (topLevelError instanceof ProofFailure) {
+    process.exitCode = 1;
+  }
 }

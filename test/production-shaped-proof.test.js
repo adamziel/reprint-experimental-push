@@ -16,24 +16,29 @@ const liveCredentials = {
   username: 'reprint_push_admin',
   password: 'reprint-push-admin-app-password',
 };
-const proofSubprocessTimeoutMs = 20_000;
+const proofSubprocessTimeoutMs = 30_000;
+const proofSubprocessKillSignal = 'SIGKILL';
 const proofSubprocessOptions = {
   timeout: proofSubprocessTimeoutMs,
-  killSignal: 'SIGKILL',
+  killSignal: proofSubprocessKillSignal,
   encoding: 'utf8',
   maxBuffer: 1024 * 1024 * 20,
 };
 
 function spawnReleaseVerify(env = {}, timeout = proofSubprocessTimeoutMs) {
-  return spawnBoundedSync(process.execPath, ['scripts/playground/production-shaped-release-verify.mjs'], {
+  const proof = spawnBoundedSync(process.execPath, ['scripts/playground/production-shaped-release-verify.mjs'], {
     cwd: repoRoot,
-    ...proofSubprocessOptions,
     timeout,
+    killSignal: proofSubprocessKillSignal,
+    encoding: 'utf8',
+    maxBuffer: 1024 * 1024 * 20,
     env: {
       ...process.env,
       ...env,
     },
   }, 'release verify');
+
+  return proof;
 }
 
 function spawnBoundedSync(command, args, options, label) {
@@ -450,6 +455,7 @@ async function startPlaygroundServer(name, blueprintPath) {
   try {
     await waitForServer(child, baseUrl, () => output);
   } catch (error) {
+    process.stderr.write(`${output}\n`);
     await stopPlaygroundChild(child);
     throw error;
   }
