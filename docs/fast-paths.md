@@ -88,6 +88,9 @@ Current executable gate:
 - The same details also expose whether the measured memory ceiling still
   matches the queue budget, so a tampered headroom summary cannot drift away
   from the recorded backpressure budget.
+- The same details also let a compressed kind-scoped receipt ledger reuse the
+  canonical per-kind budget summary for bounded replay, but only as planning
+  evidence while raw receipt keys and journal records still decide recovery.
 - The same details also let measured queue headroom size a bounded
   plugin-install retry window, but only as planning evidence while durable row
   receipts, metadata staging records, and the guarded finalize record still

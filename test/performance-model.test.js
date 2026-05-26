@@ -728,6 +728,16 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
     'compressed kind-scoped receipt ledgers can stay recovery-only while reusing canonical budgets for replay sizing',
   );
   assert.ok(
+    model.safeFastPaths.some(
+      (fastPath) =>
+        fastPath.area === 'compression' &&
+        fastPath.allowedShortcut === 'compress-durable-receipt-logs-with-stable-receipt-keys' &&
+        fastPath.guardrails.includes('compressed-receipts-still-preserve-raw-receipt-keys') &&
+        fastPath.gateProofs.recovery.includes('stable receipt keys and journal records still classify the exact chunk, row, or group state'),
+    ),
+    'compressed durable receipt logs stay recovery-only and preserve raw receipt keys',
+  );
+  assert.ok(
     model.rejectedFastPaths.some(
       (fastPath) =>
         fastPath.id === 'compressed-remote-index-and-cached-chunk-hashes-skips-large-upload-window-sizing-after-pause' &&
