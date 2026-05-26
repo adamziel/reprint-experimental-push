@@ -260,6 +260,43 @@ test('production recovery journal descriptor normalizes lease and artifact evide
   journal.close();
 });
 
+test('production recovery journal descriptor fails closed on prototype-inherited marker and artifact fields', () => {
+  const writer = {
+    kind: 'production-recovery-journal',
+    schemaVersion: 1,
+  };
+  Object.setPrototypeOf(writer, {
+    productionAdapter: true,
+    supportedSurface: 'production-recovery-journal-adapter',
+    restartReadable: true,
+    ownsJournal: true,
+    ownsRemoteArtifact: true,
+    leaseFence: { id: 'lease-prototype' },
+    writerLease: { id: 'lease-prototype' },
+    journalPath: '/var/lib/reprint/recovery.jsonl',
+    artifactRefs: {
+      journal: '/var/lib/reprint/recovery.jsonl',
+      remote: '/var/lib/reprint/recovery.remote.jsonl',
+    },
+  });
+
+  const descriptor = describeProductionRecoveryJournal(writer);
+
+  assert.deepEqual(descriptor, {
+    kind: 'production-recovery-journal',
+    productionAdapter: false,
+    supportedSurface: null,
+    restartReadable: false,
+    ownsJournal: false,
+    ownsRemoteArtifact: false,
+    leaseFence: null,
+    writerLease: null,
+    journalPath: null,
+    artifactRefs: { journal: null, remote: null },
+    schemaVersion: 1,
+  });
+});
+
 test('production recovery journal adapter reopens with a new claim and rejects stale fenced writers', () => {
   const filePath = tempJournalPath();
   const remote = baseSite();

@@ -382,11 +382,15 @@ export function consumeProductionRecoveryJournal(options) {
 }
 
 export function describeProductionRecoveryJournal(writer) {
-  if (!writer || writer.kind !== 'production-recovery-journal') {
+  if (
+    !writer
+    || !Object.hasOwn(writer, 'kind')
+    || writer.kind !== 'production-recovery-journal'
+  ) {
     return null;
   }
 
-  const artifactRefs = isStrictPlainObject(writer.artifactRefs)
+  const artifactRefs = Object.hasOwn(writer, 'artifactRefs') && isStrictPlainObject(writer.artifactRefs)
     ? Object.freeze({
         journal: Object.hasOwn(writer.artifactRefs, 'journal') ? writer.artifactRefs.journal : null,
         remote: Object.hasOwn(writer.artifactRefs, 'remote') ? writer.artifactRefs.remote : null,
@@ -398,18 +402,18 @@ export function describeProductionRecoveryJournal(writer) {
 
   return Object.freeze({
     kind: writer.kind,
-    productionAdapter: writer.productionAdapter === true,
-    supportedSurface: writer.supportedSurface || null,
-    restartReadable: writer.restartReadable === true,
-    ownsJournal: writer.ownsJournal === true,
-    ownsRemoteArtifact: writer.ownsRemoteArtifact === true,
-    leaseFence: isStrictPlainObject(writer.leaseFence)
+    productionAdapter: Object.hasOwn(writer, 'productionAdapter') && writer.productionAdapter === true,
+    supportedSurface: Object.hasOwn(writer, 'supportedSurface') ? writer.supportedSurface || null : null,
+    restartReadable: Object.hasOwn(writer, 'restartReadable') && writer.restartReadable === true,
+    ownsJournal: Object.hasOwn(writer, 'ownsJournal') && writer.ownsJournal === true,
+    ownsRemoteArtifact: Object.hasOwn(writer, 'ownsRemoteArtifact') && writer.ownsRemoteArtifact === true,
+    leaseFence: Object.hasOwn(writer, 'leaseFence') && isStrictPlainObject(writer.leaseFence)
       ? Object.freeze({ ...writer.leaseFence })
       : null,
-    writerLease: isStrictPlainObject(writer.writerLease)
+    writerLease: Object.hasOwn(writer, 'writerLease') && isStrictPlainObject(writer.writerLease)
       ? Object.freeze({ ...writer.writerLease })
       : null,
-    journalPath: typeof writer.journalPath === 'string' ? writer.journalPath : null,
+    journalPath: Object.hasOwn(writer, 'journalPath') && typeof writer.journalPath === 'string' ? writer.journalPath : null,
     artifactRefs,
     schemaVersion: Object.hasOwn(writer, 'schemaVersion') ? writer.schemaVersion : null,
   });
