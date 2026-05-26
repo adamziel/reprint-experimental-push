@@ -1011,6 +1011,16 @@ export function productionRecoverySupportReport(writer) {
     if (inspectedRemoteArtifactRef && inspectedRemoteArtifactRef !== persistedArtifactRefs.remote) {
       addMissingDependency('restart-readable recovery remote artifact references');
     }
+  } else if (
+    persistedArtifactRefs.hasRecords === true
+    && (
+      writerRemoteArtifactRef
+      || inspectedRemoteArtifactRef
+      || writer?.ownsRemoteArtifact === true
+    )
+  ) {
+    addMissingDependency('restart-readable recovery remote artifact references');
+    addMissingDependency('restart-readable remote recovery artifact ownership');
   }
   if (!Object.hasOwn(writer ?? {}, 'journalPath') || typeof writer.journalPath !== 'string' || writer.journalPath.length === 0) {
     addMissingDependency('owned restart-readable recovery journal path');
@@ -1288,6 +1298,7 @@ function durableJournalInspectArtifactRefs(inspected) {
 function durableJournalPersistedArtifactRefs(inspected) {
   if (!durableJournalInspectRecords(inspected)) {
     return {
+      hasRecords: false,
       journal: null,
       remote: null,
       invalidReason: null,
@@ -1302,29 +1313,29 @@ function durableJournalPersistedArtifactRefs(inspected) {
     const record = inspected.records[index];
     if (!Object.hasOwn(record ?? {}, 'artifactRefs')) {
       if (recordRequiresPersistedArtifactRefs(record)) {
-        return { journal: null, remote: null, invalidReason: 'missing journal artifact ref' };
+        return { hasRecords: true, journal: null, remote: null, invalidReason: 'missing journal artifact ref' };
       }
       if (typeof record?.artifactRefs !== 'undefined') {
-        return { journal: null, remote: null, invalidReason: 'invalid artifact ref keys' };
+        return { hasRecords: true, journal: null, remote: null, invalidReason: 'invalid artifact ref keys' };
       }
       continue;
     }
     const artifactRefs = record.artifactRefs;
     if (!isStrictPlainObject(artifactRefs)) {
-      return { journal: null, remote: null, invalidReason: 'invalid artifact ref keys' };
+      return { hasRecords: true, journal: null, remote: null, invalidReason: 'invalid artifact ref keys' };
     }
     const hasAnyArtifactRefKeys = Reflect.ownKeys(artifactRefs).length > 0;
     if (!hasAnyArtifactRefKeys) {
-      return { journal: null, remote: null, invalidReason: 'missing journal artifact ref' };
+      return { hasRecords: true, journal: null, remote: null, invalidReason: 'missing journal artifact ref' };
     }
     if (Reflect.ownKeys(artifactRefs).some((key) => key !== 'journal' && key !== 'remote')) {
-      return { journal: null, remote: null, invalidReason: 'invalid artifact ref keys' };
+      return { hasRecords: true, journal: null, remote: null, invalidReason: 'invalid artifact ref keys' };
     }
     if (
       Object.hasOwn(artifactRefs, 'journal')
       && !isCanonicalAbsolutePath(artifactRefs.journal)
     ) {
-      return { journal: null, remote: null, invalidReason: 'invalid journal artifact ref' };
+      return { hasRecords: true, journal: null, remote: null, invalidReason: 'invalid journal artifact ref' };
     }
     if (Object.hasOwn(artifactRefs, 'remote')) {
       if (
@@ -1332,7 +1343,7 @@ function durableJournalPersistedArtifactRefs(inspected) {
         || !isCanonicalAbsolutePath(artifactRefs.remote)
         || artifactRefs.remote === artifactRefs.journal
       ) {
-        return { journal: null, remote: null, invalidReason: 'invalid remote artifact ref' };
+        return { hasRecords: true, journal: null, remote: null, invalidReason: 'invalid remote artifact ref' };
       }
     }
     if (
@@ -1340,7 +1351,7 @@ function durableJournalPersistedArtifactRefs(inspected) {
       && hasAnyArtifactRefKeys
       && persistedJournalPath !== null
     ) {
-      return { journal: null, remote: null, invalidReason: 'missing journal artifact ref' };
+      return { hasRecords: true, journal: null, remote: null, invalidReason: 'missing journal artifact ref' };
     }
     if (
       !Object.hasOwn(artifactRefs, 'journal')
@@ -1355,25 +1366,25 @@ function durableJournalPersistedArtifactRefs(inspected) {
       && isCanonicalAbsolutePath(artifactRefs.journal)
     ) {
       if (sawRecordWithoutJournalArtifactRef) {
-        return { journal: null, remote: null, invalidReason: 'missing journal artifact ref' };
+        return { hasRecords: true, journal: null, remote: null, invalidReason: 'missing journal artifact ref' };
       }
       persistedJournalPath = artifactRefs.journal;
       if (persistedRemoteArtifactPath === persistedJournalPath) {
-        return { journal: null, remote: null, invalidReason: 'invalid remote artifact ref' };
+        return { hasRecords: true, journal: null, remote: null, invalidReason: 'invalid remote artifact ref' };
       }
     } else if (
       Object.hasOwn(artifactRefs, 'journal')
       && isCanonicalAbsolutePath(artifactRefs.journal)
       && persistedJournalPath !== artifactRefs.journal
     ) {
-      return { journal: null, remote: null, invalidReason: 'rewritten journal artifact ref' };
+      return { hasRecords: true, journal: null, remote: null, invalidReason: 'rewritten journal artifact ref' };
     }
     if (
       !Object.hasOwn(artifactRefs, 'remote')
       && hasAnyArtifactRefKeys
       && persistedRemoteArtifactPath !== null
     ) {
-      return { journal: null, remote: null, invalidReason: 'missing remote artifact ref' };
+      return { hasRecords: true, journal: null, remote: null, invalidReason: 'missing remote artifact ref' };
     }
     if (
       !Object.hasOwn(artifactRefs, 'remote')
@@ -1388,22 +1399,23 @@ function durableJournalPersistedArtifactRefs(inspected) {
       && artifactRefs.remote !== artifactRefs.journal
     ) {
       if (artifactRefs.remote === persistedJournalPath) {
-        return { journal: null, remote: null, invalidReason: 'invalid remote artifact ref' };
+        return { hasRecords: true, journal: null, remote: null, invalidReason: 'invalid remote artifact ref' };
       }
       if (sawRecordWithoutRemoteArtifactRef) {
-        return { journal: null, remote: null, invalidReason: 'missing remote artifact ref' };
+        return { hasRecords: true, journal: null, remote: null, invalidReason: 'missing remote artifact ref' };
       }
       if (
         persistedRemoteArtifactPath !== null
         && persistedRemoteArtifactPath !== artifactRefs.remote
       ) {
-        return { journal: null, remote: null, invalidReason: 'rewritten remote artifact ref' };
+        return { hasRecords: true, journal: null, remote: null, invalidReason: 'rewritten remote artifact ref' };
       }
       persistedRemoteArtifactPath = artifactRefs.remote;
     }
   }
 
   return {
+    hasRecords: inspected.records.length > 0,
     journal: persistedJournalPath,
     remote: persistedRemoteArtifactPath,
     invalidReason: null,

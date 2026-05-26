@@ -20744,6 +20744,87 @@ test('production recovery support report accepts a fenced restart-readable journ
   assert.equal(report.inspectionErrorMessage, null);
 });
 
+test('production recovery support report fails closed when a reopen introduces unpersisted remote artifact ownership', () => {
+  const filePath = tempRecoveryJournalPath();
+  const introducedRemoteArtifactPath = `${path.dirname(filePath)}/introduced-remote.jsonl`;
+  const claimId = 'claim-introduced-remote-ownership';
+  const claimHash = digest({ recoveryJournalClaim: claimId });
+  const journal = openProductionRecoveryJournal(filePath, {
+    truncate: true,
+    now: fixedNow,
+    claimId,
+    writerLease: { id: claimId },
+  });
+  appendRecoveryClaimOpened(journal, {
+    plan: { id: 'plan-introduced-remote-ownership' },
+    current: baseSite(),
+    claimId,
+    artifactRefs: {
+      journal: filePath,
+    },
+  });
+  journal.close();
+
+  const report = productionRecoverySupportReport({
+    kind: 'production-recovery-journal',
+    productionAdapter: true,
+    supportedSurface: 'production-recovery-journal-adapter',
+    restartReadable: true,
+    ownsJournal: true,
+    ownsRemoteArtifact: true,
+    claimHash,
+    writerLease: { id: claimId },
+    leaseFence: { id: claimId },
+    journalPath: filePath,
+    artifactRefs: {
+      journal: filePath,
+      remote: introducedRemoteArtifactPath,
+    },
+    schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+    appendEvent() {
+      return null;
+    },
+    flush() {},
+    close() {},
+    inspect() {
+      return {
+        filePath,
+        schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+        artifactRefs: {
+          journal: filePath,
+          remote: introducedRemoteArtifactPath,
+        },
+        writerLease: { id: claimId },
+        leaseFence: { id: claimId },
+        ownsRemoteArtifact: true,
+        records: [
+          {
+            sequence: 1,
+            type: 'recovery-claim-opened',
+            claimHash,
+            claimLease: { id: claimId },
+            artifactRefs: {
+              journal: filePath,
+            },
+          },
+          {
+            sequence: 2,
+            type: 'journal-opened',
+            artifactRefs: {
+              journal: filePath,
+            },
+          },
+        ],
+      };
+    },
+    assertCurrentClaim() {},
+  });
+
+  assert.equal(report.supported, false);
+  assert.ok(report.missingDependency.includes('restart-readable recovery remote artifact references'));
+  assert.ok(report.missingDependency.includes('restart-readable remote recovery artifact ownership'));
+});
+
 test('production recovery support report fails closed when the writer omits its explicit claim hash', () => {
   const filePath = tempRecoveryJournalPath();
   const remoteArtifactPath = `${path.dirname(filePath)}/remote.jsonl`;

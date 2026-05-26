@@ -291,6 +291,34 @@ export function openProductionRecoveryJournal(filePathOrOptions, options = {}) {
     );
   }
   if (
+    remoteArtifactPath !== null
+    && persistedArtifactRefs.remote === null
+    && persistedArtifactRefs.hasRecords === true
+  ) {
+    throw new UnsupportedProductionRecoveryJournalError(
+      'Production recovery journal support requires reopening with the persisted remote artifact ownership state.',
+      {
+        kind: 'production-recovery-journal',
+        productionAdapter: true,
+        supportedSurface: 'production-recovery-journal-adapter',
+        restartReadable: true,
+        ownsJournal: true,
+        ownsRemoteArtifact,
+        writerLease,
+        journalPath: filePath,
+        artifactRefs: Object.freeze({
+          journal: filePath,
+          remote: remoteArtifactPath,
+        }),
+        persistedArtifactRefs: Object.freeze({
+          journal: persistedArtifactRefs.journal,
+          remote: persistedArtifactRefs.remote,
+        }),
+        schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+      },
+    );
+  }
+  if (
     persistedArtifactRefs.remote !== null
     && remoteArtifactPath !== persistedArtifactRefs.remote
   ) {
@@ -741,6 +769,33 @@ function normalizeProductionArtifactRefs(artifactRefs, journalPath, remoteArtifa
     );
   }
   if (
+    remoteArtifactPath !== null
+    && persistedArtifactRefs.remote === null
+    && persistedArtifactRefs.hasRecords === true
+  ) {
+    throw new UnsupportedProductionRecoveryJournalError(
+      'Production recovery journal consumption requires the persisted remote artifact ownership state.',
+      {
+        kind: 'production-recovery-journal',
+        productionAdapter: true,
+        supportedSurface: 'production-recovery-journal-adapter',
+        restartReadable: true,
+        ownsJournal: true,
+        ownsRemoteArtifact: true,
+        journalPath,
+        artifactRefs: Object.freeze({
+          journal: Object.hasOwn(writerArtifactRefs, 'journal') ? writerArtifactRefs.journal : journalPath,
+          remote: Object.hasOwn(writerArtifactRefs, 'remote') ? writerArtifactRefs.remote : remoteArtifactPath,
+        }),
+        persistedArtifactRefs: Object.freeze({
+          journal: persistedArtifactRefs.journal,
+          remote: persistedArtifactRefs.remote,
+        }),
+        schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+      },
+    );
+  }
+  if (
     persistedArtifactRefs.remote !== null
     && remoteArtifactPath !== persistedArtifactRefs.remote
   ) {
@@ -879,13 +934,19 @@ function persistedProductionArtifactRefs(journalPath) {
   const persisted = readRecoveryJournal(journalPath);
   if (persisted.integrity?.status === 'blocked') {
     return {
+      hasRecords: Array.isArray(persisted.records) && persisted.records.length > 0,
       journal: null,
       remote: null,
       invalidReason: 'Production recovery journal persistence is corrupt or truncated.',
     };
   }
   if (persisted.integrity?.status !== 'ok') {
-    return { journal: null, remote: null, invalidReason: null };
+    return {
+      hasRecords: Array.isArray(persisted.records) && persisted.records.length > 0,
+      journal: null,
+      remote: null,
+      invalidReason: null,
+    };
   }
 
   let persistedJournalPath = null;
@@ -898,6 +959,7 @@ function persistedProductionArtifactRefs(journalPath) {
     if (!Object.hasOwn(record ?? {}, 'artifactRefs')) {
       if (typeof record?.artifactRefs !== 'undefined') {
         return {
+          hasRecords: true,
           journal: null,
           remote: null,
           invalidReason: 'Production recovery journal persistence includes invalid artifact references.',
@@ -908,6 +970,7 @@ function persistedProductionArtifactRefs(journalPath) {
     const artifactRefs = record.artifactRefs;
     if (!isStrictPlainObject(artifactRefs)) {
       return {
+        hasRecords: true,
         journal: null,
         remote: null,
         invalidReason: 'Production recovery journal persistence includes invalid artifact references.',
@@ -917,6 +980,7 @@ function persistedProductionArtifactRefs(journalPath) {
 
     if (Reflect.ownKeys(artifactRefs).some((key) => key !== 'journal' && key !== 'remote')) {
       return {
+        hasRecords: true,
         journal: null,
         remote: null,
         invalidReason: 'Production recovery journal persistence includes undeclared artifact reference keys.',
@@ -929,12 +993,14 @@ function persistedProductionArtifactRefs(journalPath) {
     ) {
       if (artifactRefs.journal === null) {
         return {
+          hasRecords: true,
           journal: null,
           remote: null,
           invalidReason: 'Production recovery journal persistence cleared an owned journal artifact path.',
         };
       }
       return {
+        hasRecords: true,
         journal: null,
         remote: null,
         invalidReason: 'Production recovery journal persistence includes an invalid owned journal artifact path.',
@@ -943,6 +1009,7 @@ function persistedProductionArtifactRefs(journalPath) {
     if (Object.hasOwn(artifactRefs, 'remote')) {
       if (artifactRefs.remote === null) {
         return {
+          hasRecords: true,
           journal: null,
           remote: null,
           invalidReason: 'Production recovery journal persistence cleared an owned remote artifact path.',
@@ -953,6 +1020,7 @@ function persistedProductionArtifactRefs(journalPath) {
         || artifactRefs.remote === artifactRefs.journal
       ) {
         return {
+          hasRecords: true,
           journal: null,
           remote: null,
           invalidReason: 'Production recovery journal persistence includes an invalid owned remote artifact path.',
@@ -966,6 +1034,7 @@ function persistedProductionArtifactRefs(journalPath) {
       && persistedJournalPath !== null
     ) {
       return {
+        hasRecords: true,
         journal: null,
         remote: null,
         invalidReason: 'Production recovery journal persistence dropped an owned journal artifact path.',
@@ -986,6 +1055,7 @@ function persistedProductionArtifactRefs(journalPath) {
     ) {
       if (sawRecordWithoutJournalArtifactRef) {
         return {
+          hasRecords: true,
           journal: null,
           remote: null,
           invalidReason: 'Production recovery journal persistence dropped an owned journal artifact path.',
@@ -998,6 +1068,7 @@ function persistedProductionArtifactRefs(journalPath) {
       && persistedJournalPath !== artifactRefs.journal
     ) {
       return {
+        hasRecords: true,
         journal: null,
         remote: null,
         invalidReason: 'Production recovery journal persistence rewrote the owned journal artifact path.',
@@ -1010,6 +1081,7 @@ function persistedProductionArtifactRefs(journalPath) {
       && persistedRemoteArtifactPath !== null
     ) {
       return {
+        hasRecords: true,
         journal: null,
         remote: null,
         invalidReason: 'Production recovery journal persistence dropped an owned remote artifact path.',
@@ -1031,6 +1103,7 @@ function persistedProductionArtifactRefs(journalPath) {
     ) {
       if (sawRecordWithoutRemoteArtifactRef) {
         return {
+          hasRecords: true,
           journal: null,
           remote: null,
           invalidReason: 'Production recovery journal persistence dropped an owned remote artifact path.',
@@ -1041,6 +1114,7 @@ function persistedProductionArtifactRefs(journalPath) {
         && persistedRemoteArtifactPath !== artifactRefs.remote
       ) {
         return {
+          hasRecords: true,
           journal: null,
           remote: null,
           invalidReason: 'Production recovery journal persistence rewrote the owned remote artifact path.',
@@ -1052,6 +1126,7 @@ function persistedProductionArtifactRefs(journalPath) {
 
   if (persistedJournalPath !== null && persistedJournalPath !== journalPath) {
     return {
+      hasRecords: true,
       journal: null,
       remote: null,
       invalidReason: 'Production recovery journal persistence includes an invalid owned journal artifact path.',
@@ -1065,6 +1140,7 @@ function persistedProductionArtifactRefs(journalPath) {
     )
   ) {
     return {
+      hasRecords: true,
       journal: null,
       remote: null,
       invalidReason: 'Production recovery journal persistence includes an invalid owned remote artifact path.',
@@ -1072,6 +1148,7 @@ function persistedProductionArtifactRefs(journalPath) {
   }
 
   return {
+    hasRecords: persisted.records.length > 0,
     journal: persistedJournalPath,
     remote: persistedRemoteArtifactPath,
     invalidReason: null,

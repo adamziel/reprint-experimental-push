@@ -1544,6 +1544,47 @@ test('production recovery journal reopen fails closed when persisted remote arti
   });
 });
 
+test('production recovery journal reopen fails closed when a reopen introduces unpersisted remote artifact ownership', () => {
+  const filePath = tempJournalPath();
+  const remote = baseSite();
+  const plan = planFor(baseSite(), localSite(), remote);
+  const claimId = 'claim-introduced-remote-ref';
+  const introducedRemoteArtifactPath = `${filePath}.remote`;
+  const journal = openProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs: {
+      journal: filePath,
+    },
+    claimId,
+  });
+  appendRecoveryClaimOpened(journal, {
+    plan,
+    current: remote,
+    claimId,
+    artifactRefs: {
+      journal: filePath,
+    },
+  });
+  journal.close();
+
+  assert.throws(() => {
+    openProductionRecoveryJournal(filePath, {
+      truncate: false,
+      now: fixedNow,
+      claimId,
+      writerLease: { id: claimId },
+      ownsRemoteArtifact: true,
+      remoteArtifactPath: introducedRemoteArtifactPath,
+    });
+  }, {
+    name: 'UnsupportedProductionRecoveryJournalError',
+    code: 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL',
+    message: 'Production recovery journal support requires reopening with the persisted remote artifact ownership state.',
+  });
+});
+
 test('production recovery journal consumption fails closed when persisted remote artifact ownership is omitted', () => {
   const filePath = tempJournalPath();
   const remote = baseSite();
@@ -1579,6 +1620,52 @@ test('production recovery journal consumption fails closed when persisted remote
   }, {
     name: 'UnsupportedProductionRecoveryJournalError',
     code: 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL',
+  });
+});
+
+test('production recovery journal consumption fails closed when consume introduces unpersisted remote artifact ownership', () => {
+  const filePath = tempJournalPath();
+  const remote = baseSite();
+  const plan = planFor(baseSite(), localSite(), remote);
+  const claimId = 'claim-consume-introduced-remote-ref';
+  const introducedRemoteArtifactPath = `${filePath}.remote`;
+  const journal = openProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs: {
+      journal: filePath,
+    },
+    claimId,
+  });
+  appendRecoveryClaimOpened(journal, {
+    plan,
+    current: remote,
+    claimId,
+    artifactRefs: {
+      journal: filePath,
+    },
+  });
+  journal.close();
+
+  assert.throws(() => {
+    consumeProductionRecoveryJournal({
+      filePath,
+      plan,
+      current: remote,
+      claimId,
+      writerLease: { id: claimId },
+      ownsRemoteArtifact: true,
+      remoteArtifactPath: introducedRemoteArtifactPath,
+      artifactRefs: {
+        journal: filePath,
+        remote: introducedRemoteArtifactPath,
+      },
+    });
+  }, {
+    name: 'UnsupportedProductionRecoveryJournalError',
+    code: 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL',
+    message: 'Production recovery journal consumption requires the persisted remote artifact ownership state.',
   });
 });
 
