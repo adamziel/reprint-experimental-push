@@ -261,6 +261,12 @@ export function productionThroughputBlockers(report) {
     blockers.push('receipt-cursor-queue-slack-not-measured');
   }
   if (
+    Number.isFinite(report.evidence.backpressure?.receiptCursorQueueSlackBytes)
+    && report.evidence.backpressure.receiptCursorQueueSlackBytes <= 0
+  ) {
+    blockers.push('receipt-cursor-queue-slack-not-positive');
+  }
+  if (
     !Number.isFinite(report.evidence.backpressure?.queueBudgetBytes)
     || report.evidence.backpressure.queueBudgetBytes <= 0
   ) {
@@ -444,6 +450,11 @@ export function productionThroughputDetails(report) {
     && receiptCursorQueueSlackBytes === receiptCursorMemoryCeilingBytes - receiptCursorWindowBytes;
   const receiptCursorQueueSlackMeasured =
     Number.isFinite(receiptCursorQueueSlackBytes);
+  const receiptCursorQueueSlackWithinQueueBudget =
+    Number.isFinite(receiptCursorQueueSlackBytes)
+    && Number.isFinite(receiptCursorQueueBudgetBytes)
+    && receiptCursorQueueSlackBytes > 0
+    && receiptCursorQueueSlackBytes <= receiptCursorQueueBudgetBytes;
   const queuePauseHasMeasuredReceiptCursorQueueSlack =
     report.evidence.backpressure?.queuePausedBeforeOverflow !== true
     || receiptCursorQueueSlackMeasured;
@@ -525,6 +536,7 @@ export function productionThroughputDetails(report) {
     receiptCursorQueueSlackMatchesQueueHeadroom,
     receiptCursorQueueSlackMatchesResourceHeadroom,
     receiptCursorQueueSlackMeasured,
+    receiptCursorQueueSlackWithinQueueBudget,
     receiptCursorMemoryHeadroomWithinQueueBudget,
     receiptCursorMemoryHeadroomBytes,
     receiptCursorMemoryHeadroomMatchesResourceHeadroom,
@@ -562,6 +574,7 @@ export function productionThroughputDetails(report) {
       receiptCursorQueueSlackMatchesQueueHeadroom,
       receiptCursorQueueSlackMatchesResourceHeadroom,
       receiptCursorQueueSlackMeasured,
+      receiptCursorQueueSlackWithinQueueBudget,
       receiptCursorMemoryHeadroomWithinQueueBudget,
       receiptCursorMemoryHeadroomBytes,
       receiptCursorMemoryHeadroomMatchesResourceHeadroom,
