@@ -723,6 +723,12 @@ function productionRecoverySupportReport(writer) {
       addMissingDependency('restart-readable recovery artifact location');
     }
   }
+  if (
+    !Object.hasOwn(writer ?? {}, 'appendEvent')
+    || typeof writer.appendEvent !== 'function'
+  ) {
+    addMissingDependency('durable journal append ownership fencing');
+  }
   const { writerJournalArtifactRef, writerRemoteArtifactRef, inspectedArtifactRefs, inspectedRemoteArtifactRef } = artifactRefs;
   if (
     isStrictPlainObject(writer?.artifactRefs)
