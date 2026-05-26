@@ -95,6 +95,21 @@ export async function runAuthenticatedHttpPush({
     summary.code = 'PREFLIGHT_SESSION_MISSING';
     return summary;
   }
+  if (preflight.body.auth?.session?.id && preflight.body.auth.session.id !== session) {
+    summary.code = 'PREFLIGHT_SESSION_MISMATCH';
+    summary.authSession = {
+      required: session,
+      observed: preflight.body.auth.session.id,
+      verdict: 'PREFLIGHT_SESSION_MISMATCH',
+    };
+    summary.boundary = {
+      firstRemainingProductionBoundary: 'auth/session lifecycle and durable journal semantics',
+      status: 'unimplemented',
+      verdict: 'PREFLIGHT_SESSION_MISMATCH',
+      authSession: summary.authSession,
+    };
+    return summary;
+  }
   if (requireProductionAuthSession && preflight.body.auth?.session?.type !== 'production-auth-session') {
     summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
     summary.authSession = {

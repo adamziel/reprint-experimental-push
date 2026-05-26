@@ -167,6 +167,62 @@ test('production-shaped authenticated push fails closed when production auth ses
   }
 });
 
+test('production-shaped authenticated push fails closed when preflight auth session id does not match the minted session', async () => {
+  const originalFetch = global.fetch;
+  const seen = [];
+  global.fetch = async (url, options) => {
+    seen.push({ url: String(url), options });
+    if (String(url).includes('/preflight')) {
+      return new Response(JSON.stringify({
+        ok: true,
+        auth: {
+          identity: { userLogin: 'reprint_push_admin' },
+          session: { type: 'production-auth-session', id: 'psh_01j00000000000000000000001' },
+        },
+        session: { id: 'psh_01j00000000000000000000000' },
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+    throw new Error(`unexpected fetch to ${url}`);
+  };
+
+  try {
+    const summary = await runAuthenticatedHttpPush({
+      sourceUrl: 'http://127.0.0.1:8080',
+      base: { resources: [] },
+      local: { resources: [] },
+      username: credential.username,
+      applicationPassword: credential.password,
+      idempotencyKey: 'idem-03',
+      routeProfile: 'production-shaped',
+    });
+
+    assert.equal(summary.ok, false);
+    assert.equal(summary.code, 'PREFLIGHT_SESSION_MISMATCH');
+    assert.deepEqual(summary.authSession, {
+      required: 'psh_01j00000000000000000000000',
+      observed: 'psh_01j00000000000000000000001',
+      verdict: 'PREFLIGHT_SESSION_MISMATCH',
+    });
+    assert.deepEqual(summary.boundary, {
+      firstRemainingProductionBoundary: 'auth/session lifecycle and durable journal semantics',
+      status: 'unimplemented',
+      verdict: 'PREFLIGHT_SESSION_MISMATCH',
+      authSession: {
+        required: 'psh_01j00000000000000000000000',
+        observed: 'psh_01j00000000000000000000001',
+        verdict: 'PREFLIGHT_SESSION_MISMATCH',
+      },
+    });
+    assert.equal(seen.length, 1);
+    assert.match(seen[0].url, /\/wp-json\/reprint\/v1\/push\/preflight$/);
+  } finally {
+    global.fetch = originalFetch;
+  }
+});
+
 test('production-shaped authenticated push exposes the durable journal boundary when journal readback fails after apply', async () => {
   const originalFetch = global.fetch;
   const seen = [];
