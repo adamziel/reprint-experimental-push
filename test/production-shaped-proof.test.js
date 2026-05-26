@@ -2951,6 +2951,22 @@ test('release verifier keeps the extended shared Playground startup budget for r
   );
 });
 
+test('packaged production plugin smoke keeps the extended packaged startup budget aligned with release verify', () => {
+  const smokeSource = readFileSync(
+    path.join(repoRoot, 'scripts/playground/production-plugin-package-smoke.mjs'),
+    'utf8',
+  );
+
+  assert.match(
+    smokeSource,
+    /const serverStartupTimeoutMs = 30_000;/,
+  );
+  assert.match(
+    smokeSource,
+    /keep the smoke aligned with the packaged release[\s\S]*does not fail early on the same bounded readiness path/,
+  );
+});
+
 test('shared lab waitForServer tolerates more than four startup-shaped /wp-json/ responses inside the bounded startup window', async () => {
   let indexCalls = 0;
   let snapshotCalls = 0;

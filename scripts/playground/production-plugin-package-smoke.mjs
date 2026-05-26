@@ -33,7 +33,10 @@ import { resolvePackagedProductionPluginSourceCommand } from './packaged-product
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const cliPath = path.join(repoRoot, 'bin/reprint-push-lab.js');
-const serverStartupTimeoutMs = 20_000;
+// The packaged plugin route can stay startup-shaped longer than the earlier
+// single-server smoke budget; keep the smoke aligned with the packaged release
+// verifier so it does not fail early on the same bounded readiness path.
+const serverStartupTimeoutMs = 30_000;
 const readinessProbeIntervalMs = 500;
 const readinessProbeFetchTimeoutMs = 3_000;
 const readinessFailureBodyLimit = 500;
