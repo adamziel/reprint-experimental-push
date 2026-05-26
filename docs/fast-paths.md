@@ -47,6 +47,9 @@ batch commits.
 The model now also exposes a direct shortcut lookup helper for pinning a single
 planning-only fast path in tests. That keeps the release-bundle retry-window
 compression case explicit without turning the helper into mutation authority.
+It also includes a compressed per-kind budget summary plus cached release-
+manifest digest shortcut for retry windows, so the retry planner can trim
+duplicate scanning without weakening live revalidation or durable recovery.
 It also includes a row-batch manifest compression shortcut that reuses
 canonical row digests only for planning, so batch sizing can skip duplicate
 digest recomputation without weakening row preconditions or the atomic-group

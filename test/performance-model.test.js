@@ -241,6 +241,16 @@ test('benchmark model covers large uploads and plugin installs', () => {
   assert.ok(
     model.safeFastPaths.some(
       (fastPath) =>
+        fastPath.allowedShortcut === 'compress-canonical-per-kind-budget-summaries-and-reuse-cached-release-manifest-digest-to-size-bounded-release-bundle-retry-windows' &&
+        fastPath.visibilityBoundary === 'planning-only-for-release-bundle-retry-windows' &&
+        fastPath.guardrails.includes('cached-release-manifest-digest-stays-planning-evidence-only') &&
+        fastPath.gateProofs.skip.includes('trim repeat retry-window planning'),
+    ),
+    'compressed budget summaries and cached release manifests can size retry windows without weakening release recovery evidence',
+  );
+  assert.ok(
+    model.safeFastPaths.some(
+      (fastPath) =>
         fastPath.allowedShortcut === 'reuse-cached-release-manifest-digest-to-size-bounded-release-bundle-retry-windows' &&
         fastPath.guardrails.includes('cached-release-manifest-remains-planning-evidence-only') &&
         fastPath.gateProofs.skip.includes('trim repeat planning scans') &&
