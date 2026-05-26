@@ -4,7 +4,7 @@
 
 The project is **not releasable as a production WordPress push path**.
 
-- Fresh remote heads at audit time, checked on 2026-05-26 07:32:20 CEST (+0200):
+- Fresh remote heads at audit time, checked on 2026-05-26 07:33:30 CEST (+0200):
 
 - `origin/lane/cycle-20260524-auth-graph-hardening/critic` -> `e413f7a8`
 - `origin/lane/cycle-20260524-auth-graph-hardening/fast-paths` -> `ad7d82a4`
@@ -41,10 +41,10 @@ The project is **not releasable as a production WordPress push path**.
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `4bed4db3`
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `d7813094`
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `8a7f4edd`
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `b9fd44bf`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `a6359b91`
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `168eb9a8`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `2af1ddda`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `7cd095c0`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `f32f8293`
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` -> `0ca7b35d`
 - `origin/lane/cycle-20260525-mainwindows-2349/same-plan-wordpress-graph-create` -> `af493c80`
 - `origin/lane/cycle-20260525-mainwindows-2357/no-data-loss-invariants-graph-proof` -> `98c0ce26`
@@ -53,9 +53,9 @@ The project is **not releasable as a production WordPress push path**.
 - `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration` -> `c55aab49`
 - `origin/lane/critic` -> `e5130a9e`
 - `origin/lane/fast-paths` -> `8c5c2ccb`
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `b9fd44bf`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `a6359b91`
 - `origin/lane/independent-auditor` -> `876e1156`
-- `origin/lane/no-data-loss-invariants` -> `18c1df11`
+- `origin/lane/no-data-loss-invariants` -> `71e60796`
 - `origin/lane/no-data-loss-recovery` -> `0ff46819`
 - `origin/lane/progress-publisher` -> `7695e1f9`
 - `origin/lane/reliable-executor` -> `d14c9fef`
