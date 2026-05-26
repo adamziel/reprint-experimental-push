@@ -2566,6 +2566,18 @@ test('packaged production plugin smoke preserves timeout fallback probes when le
   );
 });
 
+test('release verifier preserves timeout fallback probes when legacy failure calls pass them in the context slot', () => {
+  const verifierSource = readFileSync(
+    path.join(repoRoot, 'scripts/playground/production-shaped-release-verify.mjs'),
+    'utf8',
+  );
+
+  assert.match(
+    verifierSource,
+    /lastTimeoutFallbackProbes === null[\s\S]*'preflightProbe' in context \|\| 'indexProbe' in context[\s\S]*lastTimeoutFallbackProbes = context;[\s\S]*context = null;/,
+  );
+});
+
 test('packaged readiness timeout fallback classifier distinguishes terminal index failures', () => {
   assert.deepEqual(
     packagedProductionPluginClassifyBoundedStartup(

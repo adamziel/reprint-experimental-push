@@ -3181,6 +3181,18 @@ function formatPlaygroundStartupFailure(
   context = {},
   lastTimeoutFallbackProbes = null,
 ) {
+  // Older packaged-readiness branches passed timeout fallback probes as the
+  // fifth argument. Preserve those diagnostics instead of misreporting them as
+  // generic context.
+  if (
+    lastTimeoutFallbackProbes === null
+    && context
+    && typeof context === 'object'
+    && ('preflightProbe' in context || 'indexProbe' in context)
+  ) {
+    lastTimeoutFallbackProbes = context;
+    context = null;
+  }
   const probeText = lastProbes.length
     ? `\nProbe trail: ${JSON.stringify(lastProbes.slice(-4), null, 2)}`
     : '';
