@@ -2798,6 +2798,8 @@ function reprint_push_lab_rest_auth_evidence(WP_REST_Request $request): array
     }
     $session_revoked = is_array($auth) ? (bool) ($auth['revoked'] ?? false) : false;
     $session_cleaned_up = is_array($auth) ? (bool) ($auth['cleanedUp'] ?? false) : false;
+    $session_expired = null;
+    $session_rotated = null;
     if ($production_session) {
         $session_revoked = is_array($lifecycle_drift) && ($lifecycle_drift['mode'] ?? '') === 'revoked';
         $session_cleaned_up = is_array($lifecycle_drift) && ($lifecycle_drift['mode'] ?? '') === 'cleaned-up';
@@ -2806,6 +2808,12 @@ function reprint_push_lab_rest_auth_evidence(WP_REST_Request $request): array
         }
         if (($lifecycle_drift['mode'] ?? '') === 'cleaned-up-invalid') {
             $session_cleaned_up = ['lab-cleaned-up'];
+        }
+        if (($lifecycle_drift['mode'] ?? '') === 'expired-invalid') {
+            $session_expired = ['lab-expired'];
+        }
+        if (($lifecycle_drift['mode'] ?? '') === 'rotated-invalid') {
+            $session_rotated = ['lab-rotated'];
         }
     }
 
@@ -2822,6 +2830,8 @@ function reprint_push_lab_rest_auth_evidence(WP_REST_Request $request): array
         'revoked' => $session_revoked,
         'cleanedUp' => $session_cleaned_up,
         'expiresAt' => $session_expires_at,
+        'expired' => $session_expired,
+        'rotated' => $session_rotated,
         'playgroundFallback' => is_array($auth)
             ? ($production_session ? $production_session_playground_fallback : (bool) ($auth['playgroundFallback'] ?? false))
             : false,
@@ -2870,7 +2880,7 @@ function reprint_push_lab_rest_auth_session_lifecycle_drift(WP_REST_Request $req
         return null;
     }
 
-    if (!in_array($drift_mode, ['revoked', 'revoked-invalid', 'cleaned-up', 'cleaned-up-invalid', 'expired', 'rotated', 'unpreserved', 'preserved-invalid', 'playground-fallback', 'playground-fallback-invalid', 'warning', 'warning-invalid'], true)) {
+    if (!in_array($drift_mode, ['revoked', 'revoked-invalid', 'cleaned-up', 'cleaned-up-invalid', 'expired', 'expired-invalid', 'rotated', 'rotated-invalid', 'unpreserved', 'preserved-invalid', 'playground-fallback', 'playground-fallback-invalid', 'warning', 'warning-invalid'], true)) {
         return null;
     }
 
