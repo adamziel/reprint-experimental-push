@@ -11389,6 +11389,7 @@ test('blocks unknown plugin-owned custom table rows without leaking values', () 
   assert.equal(blocker.pluginOwner, 'forms');
   assert.equal(blocker.resourceKind, 'custom-table');
   assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.unsupportedState, 'local-or-divergent-drift');
   assert.equal(blockerJson.includes('base-private-entry'), false);
   assert.equal(blockerJson.includes('local-private-entry'), false);
 });
@@ -11417,6 +11418,7 @@ test('blocks unknown plugin-owned custom table rows even when the row already ma
   assert.equal(blocker.class, 'unsupported-plugin-owned-resource');
   assert.equal(blocker.pluginOwner, 'forms');
   assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.unsupportedState, 'converged-drift');
   assert.equal(blockerJson.includes('pull-base-private-entry'), false);
 });
 
@@ -11527,6 +11529,7 @@ test('blocks unknown plugin-owned custom table deletes while preserving matching
 
   const plan = planFor(base, local, remote);
   const blocker = plan.blockers[0];
+  const matchingEdit = decisionFor(plan, 'file:about.php');
   const pluginDecision = decisionFor(plan, 'plugin:forms');
   const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
   const blockerJson = JSON.stringify(blocker);
@@ -11536,6 +11539,7 @@ test('blocks unknown plugin-owned custom table deletes while preserving matching
   assert.equal(blocker.class, 'unsupported-plugin-owned-resource');
   assert.equal(blocker.resourceKey, resourceKey);
   assert.equal(blocker.resourceKind, 'custom-table');
+  assert.equal(blocker.unsupportedState, 'delete');
   assert.equal(blocker.reason, 'Plugin-owned custom tables, including deletes, are not yet supported by the planner.');
   assert.equal(blockerJson.includes('base-private-entry'), false);
   assert.equal(matchingEdit.decision, 'already-in-sync');
@@ -11985,6 +11989,7 @@ test('blocks plugin-owned rows with missing driver metadata while preserving rem
   assert.equal(blocker.pluginOwner, 'forms');
   assert.equal(blocker.resourceKey, resourceKey);
   assert.equal(blocker.driver, null);
+  assert.equal(blocker.unsupportedState, 'local-or-divergent-drift');
   assert.equal(blockerJson.includes('local-advanced'), false);
 });
 
@@ -12078,6 +12083,7 @@ test('blocks plugin-owned custom tables with missing policy candidates while pre
   assert.equal(plan.summary.mutations, 0);
   assert.equal(blocker.class, 'unsupported-plugin-owned-resource');
   assert.equal(blocker.resourceKind, 'custom-table');
+  assert.equal(blocker.unsupportedState, 'local-or-divergent-drift');
   assert.equal(
     blocker.reason,
     'Plugin-owned custom tables, including deletes, are not yet supported by the planner.',
@@ -13169,6 +13175,7 @@ test('fixture forms lab table delete remains blocked without driver delete opt-i
 
   assert.equal(plan.status, 'blocked');
   assert.equal(plan.blockers[0].class, 'unsupported-plugin-owned-resource');
+  assert.equal(plan.blockers[0].unsupportedState, 'delete');
   assert.equal(
     plan.blockers[0].reason,
     'Fixture forms lab table driver does not support delete mutations without explicit delete opt-in.',
@@ -13210,6 +13217,7 @@ test('fixture forms lab table delete remains blocked without driver delete opt-i
   assert.equal(plan.conflicts.length, 0);
   assert.equal(blocker.class, 'unsupported-plugin-owned-resource');
   assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.unsupportedState, 'delete');
   assert.equal(
     blocker.reason,
     'Fixture forms lab table driver does not support delete mutations without explicit delete opt-in.',
@@ -13256,6 +13264,7 @@ test('fixture forms lab table delete remains blocked after remote plugin removal
   assert.equal(mutationFor(plan, resourceKey), undefined);
   assert.equal(blocker.class, 'unsupported-plugin-owned-resource');
   assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.unsupportedState, 'delete');
   assert.equal(blocker.reason, 'Fixture forms lab table driver requires unchanged active reprint-push-forms-fixture evidence.');
   assert.equal(remoteOnlyPluginDecision.decision, 'keep-remote');
   assert.equal(remoteOnlyPluginFileDecision.decision, 'keep-remote');
