@@ -654,13 +654,6 @@ export async function runAuthenticatedHttpPush({
     setAuthSessionBoundary(summary, summary.authSession);
     return summary;
   }
-  const dbJournalAuthEnvelopeDrift = describeAuthEnvelopeDrift(preflightAuthEnvelope, dbJournal);
-  if (dbJournalAuthEnvelopeDrift) {
-    summary.code = 'AUTH_SESSION_LIFECYCLE_DRIFT';
-    summary.authSession = dbJournalAuthEnvelopeDrift;
-    setDurableJournalBoundary(summary, 'journal-inspect');
-    return summary;
-  }
   const dbJournalLifecycleSummaryDrift = requireProductionAuthSession
     ? resolveRequiredProductionAuthSessionSummary(summary)
     : null;
@@ -668,6 +661,13 @@ export async function runAuthenticatedHttpPush({
     summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
     summary.authSession = dbJournalLifecycleSummaryDrift;
     setAuthSessionBoundary(summary, summary.authSession);
+    return summary;
+  }
+  const dbJournalAuthEnvelopeDrift = describeAuthEnvelopeDrift(preflightAuthEnvelope, dbJournal);
+  if (dbJournalAuthEnvelopeDrift) {
+    summary.code = 'AUTH_SESSION_LIFECYCLE_DRIFT';
+    summary.authSession = dbJournalAuthEnvelopeDrift;
+    setDurableJournalBoundary(summary, 'journal-inspect');
     return summary;
   }
 
