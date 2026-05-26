@@ -27,11 +27,14 @@ const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../
 const muPluginDir = path.join(repoRoot, 'scripts/playground/rest-mu-plugins');
 const serverStartupTimeoutMs = 4_500;
 const serverFetchTimeoutMs = 250;
+const packagedServerStartupTimeoutMs = 20_000;
+const packagedServerFetchTimeoutMs = 3_000;
 const readinessProbeIntervalMs = 200;
 const readinessFailureBodyLimit = 240;
 const maxReadinessProbes = 10;
 const maxNotReadyReadinessProbes = 1;
 const spawnedPlaygroundTimeoutSeconds = 12;
+const packagedPlaygroundTimeoutSeconds = 30;
 const credentials = {
   username: 'reprint_push_admin',
   password: 'reprint-push-admin-app-password',
@@ -48,6 +51,9 @@ const liveAuthSessionSourceBlocker = {
 let authSessionSourceCommand = process.env.REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND || '';
 let authSessionSource = authSessionSourceCommand ? loadAuthSessionSource(authSessionSourceCommand) : null;
 let packagedProductionPluginAuthSessionSource = null;
+const packagedProductionPluginRequested = /\bREPRINT_PUSH_PACKAGED_PRODUCTION_PLUGIN=1\b/.test(
+  String(authSessionSourceCommand || ''),
+);
 
 if (authSessionSource?.ok) {
   const resolvedAuthSessionSource = resolveAuthSessionSourceCredentials({
@@ -393,7 +399,7 @@ if (!username || !applicationPassword) {
   throw new ProofFailure();
 }
 
-if (requireProductionAuthSession) {
+if (requireProductionAuthSession && !packagedProductionPluginRequested) {
   if (!liveSourceUrl) {
     process.stdout.write(
       JSON.stringify(
@@ -518,66 +524,72 @@ if (requireProductionAuthSession) {
     process.stdout.write('\n');
     throw new ProofFailure();
   }
-  process.stdout.write(
-    JSON.stringify(
-      {
-        ok: false,
-        topology: {
-          sourceUrl: liveSourceUrl,
-          remoteBase: null,
-          remoteChanged: null,
-          localEdited: null,
-        },
-        boundary: {
-          firstRemainingProductionBoundary: 'auth/session lifecycle and durable journal semantics',
-          status: 'unimplemented',
-          verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
-          liveAuthSessionSource: {
-            ...liveAuthSessionSourceBlocker,
-            observed: 'missing-live-source',
-          },
-          durableJournal: {
-            storageLeaseFence: 'production durable journal storage, lease, and fencing are not yet proven beyond the retained Playground journal path',
-            verdict: 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED',
-          },
-          authSession: {
-            required: 'production-auth-session',
-            observed: preflight.body.auth.session.type,
-            verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
-          },
-          liveAuthSessionSource: {
-            ...liveAuthSessionSourceBlocker,
-            observed: preflight.body.auth.session.type,
-          },
-        },
-        protocolExtension,
-        preflight: {
-          status: preflight.status,
-          authSessionType: preflight.body.auth.session.type,
-          routeProfile: preflight.body.routeProfile,
-          session: {
-            id: preflight.body.session.id,
-            type: preflight.body.session.type,
-          },
-        },
-        releaseProof: {
+  if (preflight.status !== 200 || preflight.body?.ok !== true || preflight.body?.auth?.session?.type !== 'production-auth-session') {
+    process.stdout.write(
+      JSON.stringify(
+        {
           ok: false,
-          status: 409,
-          code: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+          topology: {
+            sourceUrl: liveSourceUrl,
+            remoteBase: null,
+            remoteChanged: null,
+            localEdited: null,
+          },
+          boundary: {
+            firstRemainingProductionBoundary: 'auth/session lifecycle and durable journal semantics',
+            status: 'unimplemented',
+            verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+            durableJournal: {
+              storageLeaseFence: 'production durable journal storage, lease, and fencing are not yet proven beyond the retained Playground journal path',
+              verdict: 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED',
+            },
+            authSession: {
+              required: 'production-auth-session',
+              observed: preflight.body?.auth?.session?.type || 'missing',
+              verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+            },
+            liveAuthSessionSource: {
+              ...liveAuthSessionSourceBlocker,
+              observed: preflight.body?.auth?.session?.type || 'missing',
+            },
+          },
+          protocolExtension,
+          preflight: {
+            status: preflight.status,
+            authSessionType: preflight.body?.auth?.session?.type || 'missing',
+            routeProfile: preflight.body?.routeProfile || 'production-shaped',
+            session: {
+              id: preflight.body?.session?.id || '',
+              type: preflight.body?.session?.type || 'missing',
+            },
+          },
+          releaseProof: {
+            ok: false,
+            status: 409,
+            code: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+          },
         },
-      },
-      null,
-      2,
-    ),
-  );
-  process.stdout.write('\n');
-  throw new ProofFailure();
+        null,
+        2,
+      ),
+    );
+    process.stdout.write('\n');
+    throw new ProofFailure();
+  }
 }
 
-const remoteServer = await startPlaygroundServer(
-  'remote-base',
-  path.join(repoRoot, 'fixtures/playground/remote-base.blueprint.json'),
-);
+const remoteBaseFixturePath = path.join(repoRoot, 'fixtures/playground/remote-base.blueprint.json');
+const localEditedFixturePath = path.join(repoRoot, 'fixtures/playground/local-edited.blueprint.json');
+const remoteChangedFixturePath = path.join(repoRoot, 'fixtures/playground/remote-changed.blueprint.json');
+const packagedSourceFixture = packagedProductionPluginRequested
+  ? createPackagedProductionPluginFixture()
+  : null;
+const remoteServer = packagedSourceFixture
+  ? await startPackagedProductionPluginServer('remote-base', packagedSourceFixture)
+  : await startPlaygroundServer(
+    'remote-base',
+    remoteBaseFixturePath,
+  );
 try {
   if (!liveSourceUrl) {
     liveSourceUrl = remoteServer.baseUrl;
@@ -585,12 +597,12 @@ try {
 
   const remoteChangedServer = await startPlaygroundServer(
     'remote-changed',
-    path.join(repoRoot, 'fixtures/playground/remote-changed.blueprint.json'),
+    remoteChangedFixturePath,
   );
   try {
     const localServer = await startPlaygroundServer(
       'local-edited',
-      path.join(repoRoot, 'fixtures/playground/local-edited.blueprint.json'),
+      localEditedFixturePath,
     );
     try {
       const client = authenticatedHttpClient({
@@ -603,9 +615,12 @@ try {
       assert.equal(preflight.status, 200, `production-shaped release verify preflight HTTP ${preflight.status}`);
       assert.equal(preflight.body.ok, true);
 
+      const remoteBaseSnapshot = packagedSourceFixture
+        ? exportSnapshotFromBlueprint('remote-base', packagedSourceFixture.blueprintPath)
+        : await exportSnapshot('remote-base', liveSourceUrl);
       const proof = await runAuthenticatedHttpPush({
         sourceUrl: liveSourceUrl,
-        base: await exportSnapshot('remote-base', liveSourceUrl),
+        base: remoteBaseSnapshot,
         local: withoutUnmappedGraphPostmeta(await exportSnapshot('local-edited', localServer.baseUrl)),
         username: credentials.username,
         applicationPassword: credentials.password,
@@ -638,13 +653,7 @@ try {
                 sameRemoteIdentity: true,
               },
               boundary: {
-                firstRemainingProductionBoundary: 'auth/session lifecycle and durable journal semantics',
-                status: 'unimplemented',
-                verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
-                durableJournal: {
-                  storageLeaseFence: 'production durable journal storage, lease, and fencing are not yet proven beyond the retained Playground journal path',
-                  verdict: 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED',
-                },
+                ...resolveReleaseBoundary(proof),
               },
               protocolExtension,
               preflight: {
@@ -743,8 +752,14 @@ try {
 
       assert.equal(proof.ok, true, JSON.stringify(proof, null, 2));
       assert.equal(proof.preflight.status, 200);
-      assert.equal(preflight.body.auth.session.type, 'application-password-basic');
-      assert.equal(preflight.body.session.type, 'lab-signed-push-session');
+      assert.equal(
+        preflight.body.auth.session.type,
+        packagedSourceFixture ? 'production-auth-session' : 'application-password-basic',
+      );
+      assert.equal(
+        preflight.body.session.type,
+        packagedSourceFixture ? 'production-auth-session' : 'lab-signed-push-session',
+      );
       assert.match(preflight.body.session.id, /^[A-Za-z0-9_-]{32,160}$/);
       assert.equal(proof.dryRun.status, 200);
       assert.equal(proof.apply.status, 200);
@@ -837,7 +852,6 @@ try {
       }
 
       const remoteChangedSnapshot = await exportSnapshot('remote-changed', remoteChangedServer.baseUrl);
-      const remoteBaseSnapshot = await exportSnapshot('remote-base', remoteServer.baseUrl);
       const liveDrift = {
         sameRemoteIdentity: true,
         baseHash: snapshotHash(remoteBaseSnapshot),
@@ -978,6 +992,9 @@ try {
   }
 } finally {
   await stopPlaygroundServer(remoteServer);
+  if (packagedSourceFixture) {
+    packagedSourceFixture.cleanup();
+  }
 }
 
 async function startPlaygroundServer(name, blueprintPath) {
@@ -1052,6 +1069,117 @@ async function stopPlaygroundServer(server) {
     return;
   }
   await stopSpawnedServer(server.child);
+}
+
+async function startPackagedProductionPluginServer(name, packagedFixture) {
+  const port = await findLocalPort();
+  const baseUrl = `http://127.0.0.1:${port}`;
+  process.stderr.write(`Starting Playground server ${name} at ${baseUrl} from ${path.basename(packagedFixture.blueprintPath)}\n`);
+  const args = [
+    '--yes',
+    '@wp-playground/cli@latest',
+    'server',
+    '--blueprint',
+    packagedFixture.blueprintPath,
+    '--mount',
+    `${packagedFixture.pluginDir}:/wordpress/wp-content/plugins/reprint-push`,
+    '--site-url',
+    baseUrl,
+    '--port',
+    String(port),
+    '--workers',
+    '1',
+    '--verbosity',
+    'quiet',
+  ];
+  const child = spawn(
+    'timeout',
+    ['--preserve-status', '--kill-after=1s', `${packagedPlaygroundTimeoutSeconds}s`, 'npx', ...args],
+    {
+      cwd: repoRoot,
+      env: {
+        ...process.env,
+        REPRINT_PUSH_LAB_AUTH_BOOTSTRAP: '1',
+        REPRINT_PUSH_LAB_AUTH_ADMIN_USER: credentials.username,
+        REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD: credentials.password,
+        NODE_OPTIONS: appendNodeOption(process.env.NODE_OPTIONS, localhostListenPreloadOption()),
+      },
+      timeout: serverStartupTimeoutMs + 2_000,
+      killSignal: 'SIGKILL',
+      detached: true,
+      stdio: ['ignore', 'pipe', 'pipe'],
+    },
+  );
+  activePlaygroundChildren.add(child);
+  let output = '';
+  child.stdout.on('data', (chunk) => {
+    output += chunk;
+  });
+  child.stderr.on('data', (chunk) => {
+    output += chunk;
+  });
+  try {
+    await waitForPackagedProductionPluginServer(child, baseUrl, () => output);
+    process.stderr.write(`Playground server ${name} is ready at ${baseUrl}\n`);
+    return { name, baseUrl, child };
+  } catch (error) {
+    const logs = `${output}\n${error instanceof Error ? error.message : String(error)}`;
+    process.stderr.write(`Playground server ${name} failed to become ready at ${baseUrl}\n`);
+    process.stderr.write(`${logs.trimEnd()}\n`);
+    await stopSpawnedServer(child);
+    throw error;
+  } finally {
+    activePlaygroundChildren.delete(child);
+  }
+}
+
+async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) {
+  const deadline = Date.now() + packagedServerStartupTimeoutMs;
+  let lastError = null;
+  let lastStatus = null;
+  let lastBody = null;
+  while (Date.now() < deadline) {
+    if (child.exitCode !== null) {
+      throw new Error(`Playground server exited early with ${child.exitCode}\n${getOutput()}`);
+    }
+    try {
+      const response = await fetch(`${baseUrl}/wp-json/reprint/v1/push/snapshot`, {
+        method: 'GET',
+        headers: {
+          connection: 'close',
+          authorization: `Basic ${Buffer.from(`${credentials.username}:${credentials.password}`).toString('base64')}`,
+        },
+        signal: AbortSignal.timeout(packagedServerFetchTimeoutMs),
+      });
+      const text = await response.text();
+      let body = null;
+      try {
+        body = JSON.parse(text);
+      } catch (error) {
+        if (isWordPressNotReadyResponse(response.status, text)) {
+          lastError = new Error(`Production plugin package snapshot readiness HTTP ${response.status}`);
+          lastStatus = response.status;
+          lastBody = text.slice(0, readinessFailureBodyLimit);
+          await sleep(readinessProbeIntervalMs);
+          continue;
+        }
+        throw error;
+      }
+      if (response.status === 200 && body?.ok === true) {
+        return;
+      }
+      lastError = new Error(`Production plugin package snapshot readiness HTTP ${response.status}`);
+      lastStatus = response.status;
+      lastBody = body;
+    } catch (error) {
+      lastError = error;
+    }
+    await sleep(readinessProbeIntervalMs);
+  }
+  const lastResponse = lastStatus === null
+    ? ''
+    : `\nLast snapshot probe status: ${lastStatus}\nLast snapshot probe body: ${JSON.stringify(lastBody, null, 2)}`;
+  throw new Error(`Timed out waiting for Playground server at ${baseUrl}: ${lastError?.message || 'unknown'}${lastResponse}\n${getOutput()}`);
 }
 
 async function stopExitedServer(child) {
@@ -1302,6 +1430,170 @@ function writeSpawnOutputTail(proof, commandLabel = '') {
 
 function snapshotHash(snapshot) {
   return createHash('sha256').update(JSON.stringify(snapshot), 'utf8').digest('hex');
+}
+
+function authSessionSourceCommandIncludesPackagedProductionPlugin(command) {
+  return /\bREPRINT_PUSH_PACKAGED_PRODUCTION_PLUGIN=1\b/.test(String(command || ''));
+}
+
+function createPackagedProductionPluginFixture() {
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'reprint-release-packaged-plugin-'));
+  const packageRoot = path.join(tmpDir, 'package');
+  const pluginDir = path.join(packageRoot, 'reprint-push');
+  const blueprintPath = path.join(tmpDir, 'remote-base-with-reprint-push-plugin.blueprint.json');
+  buildPluginPackage(pluginDir);
+  writePackagedProductionPluginBlueprint(remoteBaseFixturePath, blueprintPath);
+  return {
+    tmpDir,
+    pluginDir,
+    blueprintPath,
+    cleanup() {
+      fs.rmSync(tmpDir, { recursive: true, force: true });
+    },
+  };
+}
+
+function buildPluginPackage(targetDir) {
+  fs.mkdirSync(targetDir, { recursive: true });
+  fs.cpSync(path.join(repoRoot, 'plugins/reprint-push'), targetDir, { recursive: true });
+  const includesDir = path.join(targetDir, 'includes');
+  fs.mkdirSync(includesDir, { recursive: true });
+  for (const file of [
+    'push-remote-rest-plugin.php',
+    'push-remote-lib.php',
+    'push-db-journal-lib.php',
+    'snapshot-lib.php',
+  ]) {
+    fs.copyFileSync(
+      path.join(repoRoot, 'scripts/playground', file),
+      path.join(includesDir, file),
+    );
+  }
+}
+
+function writePackagedProductionPluginBlueprint(sourceBlueprintPath, targetBlueprintPath) {
+  const blueprint = JSON.parse(fs.readFileSync(sourceBlueprintPath, 'utf8'));
+  blueprint.meta = {
+    ...blueprint.meta,
+    title: 'Reprint Push Production Plugin Package',
+    description: 'Remote base fixture with the packaged Reprint Push plugin activated.',
+  };
+  blueprint.steps.push({
+    step: 'runPHP',
+    code: [
+      '<?php',
+      "require_once '/wordpress/wp-load.php';",
+      '$stable_uuid = static function (string $seed): string { $hex = md5($seed); return substr($hex, 0, 8) . \'-\' . substr($hex, 8, 4) . \'-\' . substr($hex, 12, 4) . \'-\' . substr($hex, 16, 4) . \'-\' . substr($hex, 20, 12); };',
+      "$login = 'reprint_push_unscoped_admin';",
+      "$app_password = 'reprint-push-unscoped-app-password';",
+      "$slug = 'unscoped-admin';",
+      '$user_id = wp_insert_user(array(\'user_login\' => $login, \'user_pass\' => wp_generate_password(32, true, true), \'user_email\' => sanitize_user($login, true) . \'@example.test\', \'display_name\' => $login, \'role\' => \'administrator\'));',
+      'if (is_wp_error($user_id)) { throw new RuntimeException($user_id->get_error_message()); }',
+      '$uuid = $stable_uuid(\'reprint-push-unscoped-\' . $slug);',
+      '$app_id = $stable_uuid(\'reprint-push-unscoped-app-\' . $slug);',
+      '$items = get_user_meta($user_id, \'_application_passwords\', true);',
+      '$items = is_array($items) ? array_values($items) : array();',
+      '$items[] = array(\'uuid\' => $uuid, \'app_id\' => $app_id, \'name\' => \'Unscoped Application Password\', \'password\' => wp_hash_password(preg_replace(\'/[^a-zA-Z0-9]/\', \'\', $app_password)), \'created\' => time(), \'last_used\' => null, \'last_ip\' => null);',
+      'update_user_meta($user_id, \'_application_passwords\', $items);',
+    ].join(' '),
+  });
+  blueprint.steps.push({
+    step: 'runPHP',
+    code: [
+      '<?php',
+      "require_once '/wordpress/wp-load.php';",
+      "require_once ABSPATH . 'wp-admin/includes/plugin.php';",
+      "$result = activate_plugin('reprint-push/reprint-push.php');",
+      'if (is_wp_error($result)) { throw new RuntimeException($result->get_error_message()); }',
+    ].join(' '),
+  });
+  blueprint.steps.push({
+    step: 'runPHP',
+    code: [
+      '<?php',
+      "require_once '/wordpress/wp-load.php';",
+      '$result = reprint_push_lab_rest_provision_push_application_password(array(\'login\' => \'reprint_push_admin\', \'appPassword\' => \'reprint-push-admin-app-password\', \'role\' => \'administrator\', \'slug\' => \'primary-admin\', \'name\' => \'Reprint Push Package Smoke\', \'createUser\' => true, \'updateRole\' => true));',
+      'if (empty($result[\'ok\'])) { throw new RuntimeException((string) ($result[\'message\'] ?? \'push credential provisioning failed\')); }',
+    ].join(' '),
+  });
+  fs.writeFileSync(targetBlueprintPath, `${JSON.stringify(blueprint, null, 2)}\n`);
+}
+
+function exportSnapshotFromBlueprint(name, blueprintPath) {
+  const result = spawnSync('npx', [
+    '--yes',
+    '@wp-playground/cli@latest',
+    'php',
+    '--blueprint',
+    blueprintPath,
+    '--mount',
+    `${repoRoot}:/workspace`,
+    '--verbosity',
+    'quiet',
+    '--',
+    '/workspace/scripts/playground/export-site-snapshot.php',
+  ], {
+    cwd: repoRoot,
+    encoding: 'utf8',
+    maxBuffer: 1024 * 1024 * 20,
+  });
+  if (result.status !== 0) {
+    throw new Error(`Playground snapshot export failed for ${name}\nSTDOUT:\n${result.stdout}\nSTDERR:\n${result.stderr}`);
+  }
+  return parseMarkedJson(
+    result.stdout,
+    'REPRINT_PUSH_SNAPSHOT_JSON_BEGIN',
+    'REPRINT_PUSH_SNAPSHOT_JSON_END',
+    `Snapshot markers missing for ${name}\nSTDOUT:\n${result.stdout}\nSTDERR:\n${result.stderr}`,
+  );
+}
+
+function parseMarkedJson(stdout, startMarker, endMarker, errorMessage) {
+  const startIndex = stdout.indexOf(startMarker);
+  const endIndex = stdout.indexOf(endMarker);
+  if (startIndex === -1 || endIndex === -1 || endIndex <= startIndex) {
+    throw new Error(errorMessage);
+  }
+  return JSON.parse(stdout.slice(startIndex + startMarker.length, endIndex).trim());
+}
+
+function resolveReleaseBoundary(proof) {
+  return proof?.boundary || {
+    firstRemainingProductionBoundary: 'auth/session lifecycle and durable journal semantics',
+    status: 'unimplemented',
+    verdict: proof?.code === 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED'
+      ? 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED'
+      : 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED',
+    durableJournal: {
+      storageLeaseFence: 'production durable journal storage, lease, and fencing are not yet proven beyond the retained Playground journal path',
+      verdict: 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED',
+    },
+  };
+}
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function appendNodeOption(existing, option) {
+  return [existing, option].filter(Boolean).join(' ');
+}
+
+function localhostListenPreloadOption() {
+  const source = `
+import http from 'node:http';
+const originalListen = http.Server.prototype.listen;
+http.Server.prototype.listen = function reprintPushLocalhostListen(...args) {
+  if (typeof args[0] === 'number' && (args.length === 1 || typeof args[1] === 'function')) {
+    return originalListen.call(this, args[0], '127.0.0.1', ...args.slice(1));
+  }
+  if (typeof args[0] === 'number' && typeof args[1] === 'number') {
+    return originalListen.call(this, args[0], '127.0.0.1', ...args.slice(1));
+  }
+  return Reflect.apply(originalListen, this, args);
+};
+`;
+  return `--import=data:text/javascript,${encodeURIComponent(source)}`;
 }
 
 function summarizeAuthSessionLifecycle(trace) {
