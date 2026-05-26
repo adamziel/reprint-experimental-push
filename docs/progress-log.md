@@ -12,6 +12,14 @@ linked implementation artifacts.
 - This remains a visibility-only update. The release gate posture stays `0/4`.
 - Evidence trail: [progress.html](../progress.html), [supervisor feedback](supervisor-feedback.md).
 
+## 2026-05-26 - Freshness Refresh 08:25:12
+
+<a id="2026-05-26-freshness-refresh-082512"></a>
+
+- Refreshed [progress.html](../progress.html) so the visible last-updated date stays aligned with the live supervision clock.
+- This remains a visibility-only update. The release gate posture stays `0/4`.
+- Evidence trail: [progress.html](../progress.html), [supervisor feedback](supervisor-feedback.md).
+
 ## 2026-05-26 - Fresh Evidence Delta 08:24:19
 
 <a id="2026-05-26-fresh-evidence-delta-082419"></a>
