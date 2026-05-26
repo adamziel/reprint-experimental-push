@@ -1457,3 +1457,17 @@ test('guarded benchmark keeps pause detail flags false when the chunk exceeds th
   assert.equal(report.evidence.backpressure.queuePauseHasBackpressureAlignedReceiptCursorQueueSlack, false);
   assert.equal(report.claims.productionThroughput.status, 'blocked');
 });
+
+test('guarded benchmark blocks when queue headroom measurement is missing', () => {
+  const report = smallBenchmark();
+  const mutated = clone(report);
+
+  mutated.evidence.backpressure.queueHeadroomMeasured = false;
+
+  const details = productionThroughputDetails(mutated);
+  const blockers = productionThroughputBlockers(mutated);
+
+  assert.equal(details.backpressureConsistency.queueHeadroomMeasured, false);
+  assert.equal(details.backpressureConsistency.backpressureEvidenceComplete, false);
+  assert.ok(blockers.includes('queue-headroom-not-measured'));
+});

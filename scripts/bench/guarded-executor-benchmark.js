@@ -274,6 +274,9 @@ export function productionThroughputBlockers(report) {
   if (report.evidence.backpressure?.queuePausedBeforeOverflow !== true) {
     blockers.push('queue-did-not-pause-before-overflow');
   }
+  if (report.evidence.backpressure?.queueHeadroomMeasured !== true) {
+    blockers.push('queue-headroom-not-measured');
+  }
   if (
     report.evidence.backpressure?.queuePausedBeforeOverflow === true
     && report.evidence.chunkReceipts.cursorConsistency?.canResumeFromCursor !== true
