@@ -1348,18 +1348,23 @@ function isValidSamePlanWordPressGraphTarget(targetMutation, reference, sourceMu
         targetValue.post_type === 'nav_menu_item'
         || targetValue.post_type === 'wp_navigation'
         || targetValue.post_type === 'revision'
-        || (
-          targetValue.post_type === 'attachment'
-          && (
-            !sourceValue
-            || typeof sourceValue !== 'object'
-            || sourceValue.post_type !== 'attachment'
-            || !hasRemoteWordPressNavigationPost(remote)
-          )
-        )
       )
     ) {
       return false;
+    }
+    if (
+      targetValue
+      && typeof targetValue === 'object'
+      && targetValue.post_type === 'attachment'
+    ) {
+      if (
+        !sourceValue
+        || typeof sourceValue !== 'object'
+        || sourceValue.post_type !== 'attachment'
+        || !hasRemoteWordPressNavigationPost(remote)
+      ) {
+        return false;
+      }
     }
   }
 

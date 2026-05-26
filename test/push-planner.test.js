@@ -3246,6 +3246,75 @@ test('allows a local attachment parent reference to a same-plan attachment even 
   assert.equal(result.site.db.wp_posts['ID:5'].post_type, 'wp_navigation');
 });
 
+test('blocks a local attachment parent reference to a same-plan attachment when no remote navigation post exists', () => {
+  const attachmentResourceKey = 'row:["wp_posts","ID:2"]';
+  const childResourceKey = 'row:["wp_posts","ID:3"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_title: 'Local attachment parent',
+    post_content: 'local-private-attachment-parent-body',
+    post_status: 'inherit',
+    post_type: 'attachment',
+  };
+  local.db.wp_posts['ID:3'] = {
+    ID: 3,
+    post_title: 'Local attachment child',
+    post_content: 'local-private-attachment-child-body',
+    post_status: 'inherit',
+    post_type: 'attachment',
+    post_parent: 2,
+  };
+
+  const plan = planFor(base, local, baseSite());
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === childResourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 2);
+  assert.equal(mutationFor(plan, attachmentResourceKey).changeKind, 'create');
+  assert.equal(mutationFor(plan, childResourceKey).changeKind, 'create');
+  assert.equal(blocker.class, 'missing-wordpress-graph-dependency');
+  assert.equal(blocker.references[0].relationshipType, 'post-parent');
+  assert.equal(blocker.references[0].targetResourceKey, attachmentResourceKey);
+  assert.equal(JSON.stringify(blocker).includes('local-private-attachment-parent-body'), false);
+  assert.equal(JSON.stringify(blocker).includes('local-private-attachment-child-body'), false);
+});
+
+test('blocks a local post parent reference to a same-plan attachment when no remote navigation post exists', () => {
+  const attachmentResourceKey = 'row:["wp_posts","ID:2"]';
+  const childResourceKey = 'row:["wp_posts","ID:3"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_title: 'Local attachment target',
+    post_content: 'local-private-attachment-target-body',
+    post_status: 'inherit',
+    post_type: 'attachment',
+  };
+  local.db.wp_posts['ID:3'] = {
+    ID: 3,
+    post_title: 'Local post child',
+    post_content: 'local-private-post-child-body',
+    post_status: 'publish',
+    post_parent: 2,
+  };
+
+  const plan = planFor(base, local, baseSite());
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === childResourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 2);
+  assert.equal(mutationFor(plan, attachmentResourceKey).changeKind, 'create');
+  assert.equal(mutationFor(plan, childResourceKey).changeKind, 'create');
+  assert.equal(blocker.class, 'missing-wordpress-graph-dependency');
+  assert.equal(blocker.references[0].relationshipType, 'post-parent');
+  assert.equal(blocker.references[0].targetResourceKey, attachmentResourceKey);
+  assert.equal(JSON.stringify(blocker).includes('local-private-attachment-target-body'), false);
+  assert.equal(JSON.stringify(blocker).includes('local-private-post-child-body'), false);
+});
+
 test('allows a local page parent reference to a same-plan post even when a remote navigation post exists', () => {
   const parentResourceKey = 'row:["wp_posts","ID:2"]';
   const pageResourceKey = 'row:["wp_posts","ID:3"]';
@@ -6114,7 +6183,7 @@ test('allows term taxonomy and relationships to reference same-plan terms and po
   const termResourceKey = 'row:["wp_terms","term_id:7"]';
   const taxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:9"]';
   const postResourceKey = 'row:["wp_posts","ID:3"]';
-  const relationshipResourceKey = 'row:["wp_term_relationships","object_id:4|term_taxonomy_id:9"]';
+  const relationshipResourceKey = 'row:["wp_term_relationships","object_id:3|term_taxonomy_id:9"]';
   const base = baseSite();
   const local = baseSite();
   local.db.wp_terms = {
@@ -6844,7 +6913,7 @@ test('allows a term relationship taxonomy reference to a term taxonomy created b
   const postResourceKey = 'row:["wp_posts","ID:3"]';
   const termResourceKey = 'row:["wp_terms","term_id:7"]';
   const taxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:9"]';
-  const relationshipResourceKey = 'row:["wp_term_relationships","object_id:4|term_taxonomy_id:9"]';
+  const relationshipResourceKey = 'row:["wp_term_relationships","object_id:3|term_taxonomy_id:9"]';
   const base = baseSite();
   const local = baseSite();
   local.db.wp_posts['ID:3'] = {
