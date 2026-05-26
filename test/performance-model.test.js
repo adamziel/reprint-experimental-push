@@ -545,6 +545,14 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
     'receipt-cursor headroom still cannot bypass the backpressure pause boundary',
   );
   assert.equal(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'cached-receipt-cursor-and-queue-budget-match-skips-backpressure-pause-after-retry')?.rejectedGate,
+    'recovery',
+  );
+  assert.ok(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'cached-receipt-cursor-and-queue-budget-match-skips-backpressure-pause-after-retry')?.violates.includes('chunk-receipts'),
+    'queue-budget matches still cannot bypass durable chunk-receipt checks after a retry',
+  );
+  assert.equal(
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'cached-receipt-cursor-and-journal-lag-skips-backpressure-pause-after-retry')?.rejectedGate,
     'recovery',
   );
