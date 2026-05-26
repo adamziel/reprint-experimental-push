@@ -38,19 +38,19 @@ The project is **not releasable as a production WordPress push path**.
 - `origin/lane/cycle-20260525-keep-busy-loop-2/independent-auditor` -> `1d6cb6fd`
 - `origin/lane/cycle-20260525-keep-busy-loop-2/no-data-loss-recovery` -> `63e01a49`
 - `origin/lane/cycle-20260525-mainwindows-2349/critic` -> `fa0dc8a0`
-- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `761d1c03`
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `3d9725ea`
-- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `f46b424b`
+- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `51d203fc`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `ee7069e6`
+- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `40652574`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `91424e5b`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `37c0f126`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `a84b14ce`
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` -> `c4103594`
 - `origin/lane/cycle-20260525-mainwindows-2357/no-data-loss-invariants-graph-proof` -> `98c0ce26`
 - `origin/lane/cycle-20260525-restart-2340/feedback-supervisor` -> `ef3d911e`
 - `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration` -> `0b33a5f9`
 - `origin/lane/critic` -> `443dacd6`
-- `origin/lane/fast-paths` -> `fdf30894`
-- `origin/lane/feedback-supervisor` -> `8af2c127`
-- `origin/lane/independent-auditor` -> `fad9b731`
+- `origin/lane/fast-paths` -> `8c5c2ccb`
+- `origin/lane/feedback-supervisor` -> `ee7069e6`
+- `origin/lane/independent-auditor` -> `6351130f`
 - `origin/lane/no-data-loss-invariants` -> `1d6bf421`
 - `origin/lane/no-data-loss-recovery` -> `91424e5b`
 - `origin/lane/progress-publisher` -> `7695e1f9`
@@ -78,6 +78,19 @@ but it did not change the release conclusion:
 - `origin/lane/no-data-loss-invariants` now records `1d6bf421`, adding hard-
   link sibling proof. It still does not prove the live release boundary or any
   production-backed source mutation.
+- `origin/lane/reliable-executor` now records `d6f65f9a`, adding a fail-closed
+  expired-session check in the packaging smoke and the REST plugin, but still
+  not proving production auth/session lifecycle or a live-source mutation
+  boundary.
+- `origin/lane/fast-paths` now records `8c5c2ccb`, tightening backpressure
+  evidence checks only.
+- `origin/lane/feedback-supervisor` now records `ee7069e6`, refreshing the
+  supervisor progress surface only.
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now records
+  `a84b14ce`, refreshing the public progress freshness only.
+- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` now records
+  `40652574`, refreshing the audit snapshot only and not changing the release
+  boundary.
 - `origin/lane/no-data-loss-invariants` now records `b5e199f0`, adding special
   file sibling proof again, but still not proving the live release boundary or
   any production-backed source mutation.
@@ -92,23 +105,11 @@ but it did not change the release conclusion:
   `37c0f126`, refreshing the public progress freshness only.
 - `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration`
   now records `0b33a5f9`, adding plugin-owned delete-guard coverage only.
-- `origin/lane/independent-auditor` now records `fad9b731`. This refreshes the
-  audit snapshot only and does not change the release boundary.
-- `origin/lane/fast-paths` now records `fdf30894`, tightening guarded
-  benchmark and pause-reporting evidence checks only.
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` now
   records `9e077c10`, tightening blocked recovery validation. It still does
   not add production-backed journal ownership or replay proof.
-- `origin/lane/feedback-supervisor` now records `8af2c127`, refreshing the
-  supervisor progress surface only.
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now records
-  `bc1da366`, refreshing the public progress freshness only.
-- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` now records
-  `0de570a8`, tightening pause detail reporting only.
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` now records
   `c4103594`, hardening live proof cleanup and timeouts only.
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now records
-  `5ad48f2a`, refreshing the public progress freshness only.
 - `origin/lane/no-data-loss-recovery` now records `9e077c10`, tightening
   unsupported recovery journal boundaries only.
 - `origin/lane/same-plan-wordpress-graph-create` now records `52be8d87`,
