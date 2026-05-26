@@ -2,7 +2,7 @@
 
 No audit update was needed on this pass.
 
-The critic audit still reflects the newest reliable head `e7be9812` and keeps
+The critic audit still reflects the newest reliable head `9ff7b997` and keeps
 the release gate closed at `0/4`. This pass only verified the lane-owned audit
 state and confirmed there was no new evidence delta to classify.
 
@@ -24,7 +24,7 @@ Push result:
 Worktree status:
 - Branch remains `lane/cycle-20260525-mainwindows-2349/critic...origin/main [ahead 1603, behind 614]`
 - Only `.lane-output/final.md` changed on this pass
-- `audits/critic.md` stayed unchanged and already names `e7be9812`
+- `audits/critic.md` stayed unchanged and already names `9ff7b997`
 
 Next supervisor nudge:
 - Re-poll `reliable-executor` only when it lands a concrete new proof delta beyond the current bounded readiness failure, especially exact replay-equivalence evidence or a production-backed mutation path.
