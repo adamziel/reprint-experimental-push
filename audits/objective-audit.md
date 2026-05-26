@@ -4,7 +4,7 @@
 
 The project is **not releasable as a production WordPress push path**.
 
-- Audit time: 2026-05-26 13:02:50 CEST (+0200)
+- Audit time: 2026-05-26 13:04:15 CEST (+0200)
 - Fresh remote heads re-polled at audit time:
   - `origin/lane/reliable-executor` -> `3a64aef6773c3c82ad3a5b91a6ea0ca53c3942fb` (`Fail closed on revoked production auth sessions`)
   - `origin/lane/no-data-loss-recovery` -> `0a28d046`
