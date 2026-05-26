@@ -288,6 +288,26 @@ export const SAFE_FAST_PATHS = Object.freeze([
   },
   {
     area: 'chunk-upload',
+    reduces: ['duplicate-body-transfer', 'idle-time', 'staging-round-trips'],
+    allowedShortcut: 'upload-plan-scoped-file-bodies-to-digest-addressed-staging-chunks-with-cas-finalize',
+    guardrails: [
+      'chunk-writes-stay-plan-scoped-and-digest-addressed',
+      'finalize-still-revalidates-the-live-remote-resource-hash',
+    ],
+    gateProofs: {
+      skip: 'large file bodies can be uploaded in digest-addressed plan-scoped staging chunks so retries avoid resending already-acknowledged bytes',
+      live: 'the final publish still compares the live remote resource hash before staged bytes become visible',
+      group: 'chunk staging only narrows work inside the same file boundary and never widens the atomic-group barrier',
+      recovery: 'plan-scoped chunk receipts and the guarded publish record still classify pause, retry, or crash without guessing which bytes advanced',
+    },
+    visibilityBoundary: 'plan-scoped-staging-with-cas-finalize',
+    failureEvidence: 'plan-scoped chunk receipts plus guarded publish record and digest-addressed staging chunks',
+    bypassesLivePreconditions: false,
+    splitsAtomicGroup: false,
+    publishesStagedDataEarly: false,
+  },
+  {
+    area: 'chunk-upload',
     reduces: ['idle-time', 'lost-response-retries', 'duplicate-body-transfer'],
     allowedShortcut: 'pipeline-independent-chunks-within-byte-and-receipt-budgets',
     guardrails: [

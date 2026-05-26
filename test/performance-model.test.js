@@ -680,6 +680,16 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
       ],
     },
   );
+  assert.ok(
+    model.safeFastPaths.some(
+      (fastPath) =>
+        fastPath.area === 'chunk-upload' &&
+        fastPath.allowedShortcut === 'upload-plan-scoped-file-bodies-to-digest-addressed-staging-chunks-with-cas-finalize' &&
+        fastPath.guardrails.includes('chunk-writes-stay-plan-scoped-and-digest-addressed') &&
+        fastPath.gateProofs.recovery.includes('plan-scoped chunk receipts and the guarded publish record still classify pause, retry, or crash'),
+    ),
+    'digest-addressed staging chunks can upload plan-scoped file bodies without weakening the live compare or recovery record',
+  );
   assert.deepEqual(
     FAST_PATH_GATES.map((gate) => gate.id),
     ['skip', 'live', 'group', 'recovery'],
