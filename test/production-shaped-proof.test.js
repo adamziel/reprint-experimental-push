@@ -1993,6 +1993,13 @@ test('packaged production plugin readiness helper does not retry terminal readin
     '{"ok":true}',
   );
   assert.deepEqual(routeProbeCounts, { snapshot: 0, preflight: 1 });
+  routeProbeCounts = packagedProductionPluginNextRouteNotReadyProbeCounts(
+    routeProbeCounts,
+    'unknown-route',
+    502,
+    '<!doctype html><html><body>WordPress is not ready yet</body></html>',
+  );
+  assert.deepEqual(routeProbeCounts, { snapshot: 0, preflight: 1 });
   routeProbeCounts = packagedProductionPluginResetRouteNotReadyProbeCounts(
     routeProbeCounts,
     'preflight',
