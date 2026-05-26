@@ -9613,6 +9613,125 @@ test('applies an allowed plugin-owned option delete at the live release boundary
   );
 });
 
+test('blocks plugin-owned rows with missing driver metadata while preserving a matching independent edit and remote-only plugin drift', () => {
+  const resourceKey = 'row:["wp_options","option_name:forms_settings"]';
+  const base = baseSite();
+  base.files['about.php'] = '<?php echo "base about";';
+  base.db.wp_options['option_name:forms_settings'] = {
+    option_name: 'forms_settings',
+    option_value: { mode: 'base' },
+    __pluginOwner: 'forms',
+  };
+
+  const local = baseSite();
+  local.files['about.php'] = '<?php echo "shared about";';
+  local.db.wp_options['option_name:forms_settings'] = {
+    option_name: 'forms_settings',
+    option_value: { mode: 'local-advanced' },
+    __pluginOwner: 'forms',
+  };
+  local.meta = {
+    pushPolicy: pluginOwnedResourcePolicy({
+      resourceKey,
+      pluginOwner: 'forms',
+    }),
+  };
+
+  const remote = baseSite();
+  remote.files['about.php'] = '<?php echo "shared about";';
+  remote.db.wp_options['option_name:forms_settings'] = JSON.parse(JSON.stringify(base.db.wp_options['option_name:forms_settings']));
+  remote.plugins.seo = { version: '1.0.0', active: true, description: 'remote-only plugin drift' };
+  remote.files['wp-content/plugins/seo/seo.php'] = '<?php /* remote-only plugin drift */';
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers[0];
+  const matchingEdit = decisionFor(plan, 'file:about.php');
+  const pluginDecision = decisionFor(plan, 'plugin:seo');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/seo/seo.php');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(blocker.class, 'missing-plugin-driver');
+  assert.equal(blocker.pluginOwner, 'forms');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.driver, null);
+  assert.equal(blocker.reason, 'Plugin-owned resource row:["wp_options","option_name:forms_settings"] is missing explicit driver metadata for plugin forms.');
+  assert.equal(matchingEdit.decision, 'already-in-sync');
+  assert.equal(matchingEdit.change.localChange, 'update');
+  assert.equal(matchingEdit.change.remoteChange, 'update');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('local-advanced'), false);
+  assert.equal(planJson.includes('remote-only plugin drift'), false);
+  assert.equal(remote.plugins.seo.description, 'remote-only plugin drift');
+  assert.equal(remote.files['wp-content/plugins/seo/seo.php'], '<?php /* remote-only plugin drift */');
+});
+
+test('blocks plugin-owned rows with missing driver metadata while preserving a matching independent file type swap and remote-only plugin changes', () => {
+  const resourceKey = 'row:["wp_options","option_name:forms_settings"]';
+  const base = baseSite();
+  base.files['about.php'] = '<?php echo "base about";';
+  base.files['wp-content/uploads/gallery'] = 'base gallery bytes';
+  base.db.wp_options['option_name:forms_settings'] = {
+    option_name: 'forms_settings',
+    option_value: { mode: 'base' },
+    __pluginOwner: 'forms',
+  };
+
+  const local = baseSite();
+  local.files['about.php'] = '<?php echo "shared about";';
+  local.files['wp-content/uploads/gallery'] = { type: 'directory' };
+  local.db.wp_options['option_name:forms_settings'] = {
+    option_name: 'forms_settings',
+    option_value: { mode: 'local-advanced' },
+    __pluginOwner: 'forms',
+  };
+  local.meta = {
+    pushPolicy: pluginOwnedResourcePolicy({
+      resourceKey,
+      pluginOwner: 'forms',
+    }),
+  };
+
+  const remote = baseSite();
+  remote.files['about.php'] = '<?php echo "shared about";';
+  remote.files['wp-content/uploads/gallery'] = { type: 'directory' };
+  remote.db.wp_options['option_name:forms_settings'] = JSON.parse(JSON.stringify(base.db.wp_options['option_name:forms_settings']));
+  remote.plugins.seo = { version: '1.0.0', active: true, description: 'remote-only plugin change' };
+  remote.files['wp-content/plugins/seo/seo.php'] = '<?php /* remote-only plugin change */';
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers[0];
+  const matchingEdit = decisionFor(plan, 'file:about.php');
+  const matchingTypeSwap = decisionFor(plan, 'file:wp-content/uploads/gallery');
+  const pluginDecision = decisionFor(plan, 'plugin:seo');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/seo/seo.php');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(blocker.class, 'missing-plugin-driver');
+  assert.equal(blocker.pluginOwner, 'forms');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.driver, null);
+  assert.equal(blocker.reason, 'Plugin-owned resource row:["wp_options","option_name:forms_settings"] is missing explicit driver metadata for plugin forms.');
+  assert.equal(matchingEdit.decision, 'already-in-sync');
+  assert.equal(matchingEdit.change.localChange, 'update');
+  assert.equal(matchingEdit.change.remoteChange, 'update');
+  assert.equal(matchingTypeSwap.decision, 'already-in-sync');
+  assert.equal(matchingTypeSwap.change.localChange, 'type-change');
+  assert.equal(matchingTypeSwap.change.remoteChange, 'type-change');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('local-advanced'), false);
+  assert.equal(planJson.includes('remote-only plugin change'), false);
+  assert.equal(remote.plugins.seo.description, 'remote-only plugin change');
+  assert.equal(remote.files['wp-content/plugins/seo/seo.php'], '<?php /* remote-only plugin change */');
+});
+
 test('blocks plugin-owned option updates when the owning plugin was removed remotely and only the dependency is declared', () => {
   const resourceKey = 'row:["wp_options","option_name:forms_settings"]';
   const base = baseSite();
@@ -13613,6 +13732,76 @@ test('blocks local postmeta references to a same-plan created revision while pre
   assert.equal(planJson.includes('local revision meta value'), false);
   assert.equal(remote.plugins.forms.description, 'remote-only plugin change');
   assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin change */');
+});
+
+test('blocks local postmeta references to a same-plan created revision while preserving a matching independent edit and remote-only plugin drift', () => {
+  const resourceKey = 'row:["wp_postmeta","meta_id:55"]';
+  const targetResourceKey = 'row:["wp_posts","ID:47"]';
+  const base = baseSite();
+  base.db.wp_posts['ID:1'].post_title = 'Base shared title';
+  base.db.wp_postmeta = {
+    'meta_id:55': {
+      meta_id: 55,
+      post_id: 47,
+      meta_key: 'revision_note',
+      meta_value: 'base revision meta value',
+    },
+  };
+
+  const local = baseSite();
+  local.db.wp_posts['ID:1'].post_title = 'Shared title';
+  local.db.wp_posts['ID:47'] = {
+    ID: 47,
+    post_title: 'Local same-plan revision',
+    post_content: 'Local same-plan revision content',
+    post_status: 'inherit',
+    post_type: 'revision',
+  };
+  local.db.wp_postmeta = {
+    'meta_id:55': {
+      meta_id: 55,
+      post_id: 47,
+      meta_key: 'revision_note',
+      meta_value: 'local revision meta value',
+    },
+  };
+
+  const remote = baseSite();
+  remote.db.wp_posts['ID:1'].post_title = 'Shared title';
+  remote.db.wp_postmeta = JSON.parse(JSON.stringify(base.db.wp_postmeta));
+  remote.plugins.forms.description = 'remote-only plugin drift';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin drift */';
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  const matchingEdit = decisionFor(plan, 'row:["wp_posts","ID:1"]');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(decisionFor(plan, targetResourceKey), undefined);
+  assert.equal(blocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.resolutionPolicy, 'preserve-remote-wordpress-graph-and-stop');
+  assert.equal(blocker.references[0].relationshipKey, 'wp_postmeta.post_id');
+  assert.equal(blocker.references[0].relationshipType, 'postmeta-post');
+  assert.equal(blocker.references[0].sourceResourceKey, resourceKey);
+  assert.equal(blocker.references[0].targetResourceKey, targetResourceKey);
+  assert.equal(blocker.references[0].targetChange.remote.state, 'absent');
+  assert.equal(blocker.references[0].targetRemoteHash.length, 64);
+  assert.equal(matchingEdit.decision, 'already-in-sync');
+  assert.equal(matchingEdit.change.localChange, 'update');
+  assert.equal(matchingEdit.change.remoteChange, 'update');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('Local same-plan revision'), false);
+  assert.equal(planJson.includes('Local same-plan revision content'), false);
+  assert.equal(planJson.includes('local revision meta value'), false);
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin drift');
+  assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin drift */');
 });
 
 test('blocks local postmeta references to a same-plan created revision while preserving a matching independent edit and remote-only plugin removals', () => {
