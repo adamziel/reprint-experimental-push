@@ -2539,6 +2539,10 @@ test('packaged readiness helpers fall back to signed preflight and index probes 
     assert.match(source, /packagedStartup:\s*true/);
     assert.match(source, /if \(preflightProbe\.ready\) \{\s*return;\s*\}/);
     assert.match(source, /packagedProductionPluginReadinessBodyRetryable\(indexProbe\?\.status, indexProbe\?\.body \|\| ''\)/);
+    assert.match(
+      source,
+      /packagedProductionPluginPreflightRetryable\(\s*\{\s*status:\s*preflightProbe\.status,\s*body:\s*preflightProbe\.parsedBody \?\? preflightProbe\.body,\s*\},\s*\{\s*\.\.\.readinessContext,\s*indexProbe\s*\},\s*\)/s,
+    );
     assert.match(source, /timeoutProbeCount = 0;\s*await sleepUnlessChildExit\(readinessProbeIntervalMs, child\);\s*continue;/);
   }
 });
