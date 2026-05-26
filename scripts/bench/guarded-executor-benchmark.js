@@ -557,6 +557,14 @@ export function productionThroughputBlockers(report) {
     blockers.push('production-atomic-group-commit-not-measured');
   }
   if (
+    !(
+      report.evidence.atomicGroup.productionAtomicCommitMeasured
+      && report.executorCapabilities.rowApply === 'production-batched-compare-and-swap'
+    )
+  ) {
+    blockers.push('production-capability-measurement-not-aligned');
+  }
+  if (
     report.results?.successInspection?.claim?.status != null
     && !['none', 'active', 'advanced', 'blocked'].includes(report.results.successInspection.claim.status)
   ) {

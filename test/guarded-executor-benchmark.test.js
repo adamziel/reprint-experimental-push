@@ -254,6 +254,9 @@ test('guarded benchmark refuses production throughput claims until production ga
     report.claims.productionThroughput.blockers.includes('production-row-batch-executor-not-measured'),
   );
   assert.ok(
+    report.claims.productionThroughput.blockers.includes('production-capability-measurement-not-aligned'),
+  );
+  assert.ok(
     !report.claims.productionThroughput.blockers.includes('receipt-flushes-not-kind-scoped'),
   );
   assert.ok(
@@ -338,6 +341,7 @@ test('guarded benchmark refuses production throughput claims until production ga
       && error.details.receiptCursor.chunkIndex === report.shape.chunkCount - 1
       && error.details.productionThroughputDetails.blockers.includes('production-storage-receipts-not-measured')
       && error.details.productionThroughputDetails.executorCapabilities.rowApply === 'per-row-apply-model'
+      && error.details.productionThroughputDetails.blockers.includes('production-capability-measurement-not-aligned')
       && error.details.blockers.includes('production-atomic-group-commit-not-measured'),
   );
 });
