@@ -1191,6 +1191,27 @@ test('packaged production plugin readiness helper retries only startup-shaped pa
     true,
   );
   assert.equal(
+    packagedProductionPluginSnapshotRetryable({
+      status: 500,
+      body: {
+        warning: {
+          response: {
+            payload: {
+              issue: {
+                details: {
+                  nested: {
+                    errorCode: 'wordpress_not_ready',
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    }),
+    true,
+  );
+  assert.equal(
     packagedProductionPluginPreflightRetryable({
       status: 503,
       body: {
@@ -1200,6 +1221,27 @@ test('packaged production plugin readiness helper retries only startup-shaped pa
               issue: {
                 details: {
                   error_description: 'No route was found matching the URL and request method.',
+                },
+              },
+            },
+          },
+        },
+      },
+    }),
+    true,
+  );
+  assert.equal(
+    packagedProductionPluginPreflightRetryable({
+      status: 503,
+      body: {
+        warning: {
+          response: {
+            payload: {
+              issue: {
+                details: {
+                  nested: {
+                    error_description: 'No route was found matching the URL and request method.',
+                  },
                 },
               },
             },
@@ -1839,6 +1881,27 @@ test('lab Playground readiness helper rejects malformed ready responses and retr
   );
   assert.equal(
     labSnapshotRetryable({
+      status: 503,
+      body: {
+        warning: {
+          response: {
+            payload: {
+              issue: {
+                details: {
+                  nested: {
+                    errorCode: 'wordpress_not_ready',
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    }),
+    true,
+  );
+  assert.equal(
+    labSnapshotRetryable({
       status: 500,
       body: {
         warning: {
@@ -1847,6 +1910,27 @@ test('lab Playground readiness helper rejects malformed ready responses and retr
               issue: {
                 details: {
                   error_description: 'No route was found matching the URL and request method.',
+                },
+              },
+            },
+          },
+        },
+      },
+    }),
+    true,
+  );
+  assert.equal(
+    labSnapshotRetryable({
+      status: 500,
+      body: {
+        warning: {
+          response: {
+            payload: {
+              issue: {
+                details: {
+                  nested: {
+                    error_description: 'No route was found matching the URL and request method.',
+                  },
                 },
               },
             },

@@ -5,7 +5,7 @@ const packagedProductionPluginWordPressNotReadyPattern = /WordPress is not ready
 const packagedProductionPluginRouteNotReadyPattern = /No route was found matching the URL and request method\.?/i;
 const packagedProductionPluginWordPressNotReadyCodePattern = /wordpress_not_ready/i;
 const packagedProductionPluginRouteNotReadyCodePattern = /rest_no_route/i;
-const packagedProductionPluginMaxNestedReadinessDepth = 6;
+const packagedProductionPluginMaxNestedReadinessDepth = 8;
 
 function packagedProductionPluginFindMessage(value, depth = 0) {
   if (depth > packagedProductionPluginMaxNestedReadinessDepth || value == null) {

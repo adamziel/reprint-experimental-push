@@ -2,7 +2,7 @@ const labWordPressNotReadyPattern = /WordPress is not ready yet/i;
 const labRouteNotReadyPattern = /No route was found matching the URL and request method\.?/i;
 const labWordPressNotReadyCodePattern = /wordpress_not_ready/i;
 const labRouteNotReadyCodePattern = /rest_no_route/i;
-const labMaxNestedReadinessDepth = 6;
+const labMaxNestedReadinessDepth = 8;
 
 function labFindMessage(value, depth = 0) {
   if (depth > labMaxNestedReadinessDepth || value == null) {
