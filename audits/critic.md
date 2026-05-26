@@ -1,13 +1,13 @@
 # Critic Verdict
 
-Current reliable head: `83fcb63cfe58d617fbe10aad02fec075909d7671`
-(`Require exact preserved read retry proof`).
+Current reliable head: `128458d3befb621713bff3881e45db21f6ad3b7e`
+(`Expose gated production auth session source`).
 
 Verdict: `0/4`
 
 Reason:
 
-- This head adds an exact preserved-read retry assertion on the release
+- This head exposes the gated production auth/session source on the release
   verifier path, but it still does not prove a production-backed lifecycle on
   the checked release path.
 - The checked proof is still missing live issuance/read/expiry/rotation/
