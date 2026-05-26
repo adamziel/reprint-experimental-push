@@ -1,9 +1,36 @@
-Updated the objective audit to record that the sibling reliable-executor
-worktree now has the `spawnSync` timeout-hardening edits in progress, but
-they are still dirty and unpublished, so they are not release evidence yet.
-The release verdict stays closed. The remote heads still only strengthen
-fail-closed boundaries; they do not supply production-backed auth/session,
-durable journal ownership, or a live source mutation boundary.
+Refreshed the objective audit snapshot to the current live remote heads and
+kept the release verdict closed at `0/4`.
+
+Changed files:
+- [`audits/objective-audit.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/independent-auditor/audits/objective-audit.md)
+- [`.lane-output/final.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/independent-auditor/.lane-output/final.md)
+
+What changed:
+- Updated the stale remote-head snapshot for `origin/lane/critic`,
+  `origin/lane/same-plan-wordpress-graph-create`,
+  `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor`,
+  `origin/lane/cycle-20260525-mainwindows-2349/progress-followup`,
+  `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery`, and
+  `origin/main`.
+- Kept the blocker classification unchanged because the live production
+  boundary is still unproven.
+
+Commands run:
+- `git status --short --branch`
+- `git for-each-ref --format='%(refname:short) %(objectname:short) %(committerdate:iso8601) %(subject)' refs/remotes/origin/lane | sort`
+- `sed -n '1,320p' audits/objective-audit.md`
+- `git diff -- audits/objective-audit.md`
+
+Push result:
+- Pending
+
+Worktree status:
+- Branch: `lane/cycle-20260525-mainwindows-2349/independent-auditor...origin/main [ahead 1300, behind 207]`
+- Tracked files are dirty only from this audit refresh
+
+Next supervisor nudge:
+- Re-poll only when a lane lands non-freshness proof that changes the live
+  production release boundary; the current audit still holds `0/4`.
 
 Changed files:
 - [`audits/objective-audit.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/independent-auditor/audits/objective-audit.md)
