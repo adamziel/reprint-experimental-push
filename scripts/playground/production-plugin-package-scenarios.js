@@ -53,18 +53,24 @@ const knownScenarioNames = new Set([
   ...Object.keys(scenarioGroups),
 ]);
 
-export function parseProductionPluginPackageSelectedScenarios(argv, envValue) {
+export function resolveProductionPluginPackageScenarios(argv, envValue) {
   const explicitArg = argv.find((arg) => arg.startsWith('--scenario='));
   const rawValue = explicitArg ? explicitArg.slice('--scenario='.length) : envValue;
   if (!rawValue) {
-    return null;
+    return {
+      requestedScenarios: null,
+      selectedScenarios: null,
+    };
   }
   const requestedNames = rawValue
     .split(',')
     .map((name) => name.trim())
     .filter(Boolean);
   if (requestedNames.length === 0) {
-    return null;
+    return {
+      requestedScenarios: null,
+      selectedScenarios: null,
+    };
   }
 
   const unknownNames = requestedNames.filter((name) => !knownScenarioNames.has(name));
@@ -75,7 +81,14 @@ export function parseProductionPluginPackageSelectedScenarios(argv, envValue) {
   }
 
   const expandedNames = requestedNames.flatMap((name) => scenarioGroups[name] ?? [name]);
-  return new Set(expandedNames);
+  return {
+    requestedScenarios: requestedNames,
+    selectedScenarios: new Set(expandedNames),
+  };
 }
 
-export { scenarioGroups, scenarioNames };
+export function parseProductionPluginPackageSelectedScenarios(argv, envValue) {
+  return resolveProductionPluginPackageScenarios(argv, envValue).selectedScenarios;
+}
+
+export { knownScenarioNames, scenarioGroups, scenarioNames };

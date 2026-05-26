@@ -102,7 +102,10 @@ function summarizeScenario(selected, passed) {
   return passed ? 'passed' : 'missing';
 }
 
-export function buildProductionPluginPackageProofSummary(summary, { selectedScenarios = null } = {}) {
+export function buildProductionPluginPackageProofSummary(
+  summary,
+  { requestedScenarios = null, selectedScenarios = null } = {},
+) {
   const scenarioResults = {};
   let checkedScenarioCount = 0;
   let passedScenarioCount = 0;
@@ -129,6 +132,7 @@ export function buildProductionPluginPackageProofSummary(summary, { selectedScen
     checkedScenarioCount,
     passedScenarioCount,
     skippedScenarioCount,
+    requestedScenarios: requestedScenarios === null ? 'all' : requestedScenarios.slice(),
     selectedScenarios: selectedScenarios === null ? 'all' : Array.from(selectedScenarios).sort(),
     package: {
       plugin: summary?.package?.plugin ?? null,

@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   parseProductionPluginPackageSelectedScenarios,
+  resolveProductionPluginPackageScenarios,
   scenarioGroups,
 } from '../scripts/playground/production-plugin-package-scenarios.js';
 
@@ -41,6 +42,25 @@ test('scenario parser expands the verifier alias into receipt and registration g
   assert.deepEqual(
     Array.from(selected).sort(),
     scenarioGroups['driver-verifier-guards'].slice().sort(),
+  );
+});
+
+test('scenario resolver preserves requested aliases alongside expanded scenarios', () => {
+  const resolved = resolveProductionPluginPackageScenarios(
+    ['--scenario=driver-verifier-guards,driver-delete-apply'],
+    undefined,
+  );
+
+  assert.deepEqual(resolved.requestedScenarios, [
+    'driver-verifier-guards',
+    'driver-delete-apply',
+  ]);
+  assert.deepEqual(
+    Array.from(resolved.selectedScenarios).sort(),
+    [
+      ...scenarioGroups['driver-verifier-guards'],
+      'driver-delete-apply',
+    ].sort(),
   );
 });
 

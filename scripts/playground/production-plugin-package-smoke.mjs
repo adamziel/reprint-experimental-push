@@ -11,14 +11,14 @@ import { createPushPlan } from '../../src/planner.js';
 import { authenticatedHttpClient } from '../../src/authenticated-http-push-client.js';
 import { deepClone, digest } from '../../src/stable-json.js';
 import { buildProductionPluginPackageProofSummary } from './production-plugin-package-proof-summary.js';
-import { parseProductionPluginPackageSelectedScenarios } from './production-plugin-package-scenarios.js';
+import { resolveProductionPluginPackageScenarios } from './production-plugin-package-scenarios.js';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const cliPath = path.join(repoRoot, 'bin/reprint-push-lab.js');
 const serverStartupTimeoutMs = 120_000;
 const transientFetchRetryDelayMs = 250;
 const transientFetchAttempts = 4;
-const selectedScenarios = parseProductionPluginPackageSelectedScenarios(
+const { requestedScenarios, selectedScenarios } = resolveProductionPluginPackageScenarios(
   process.argv.slice(2),
   process.env.REPRINT_PUSH_PACKAGE_SMOKE_SCENARIO,
 );
@@ -1181,7 +1181,10 @@ echo "REPRINT_PUSH_DRIVER_GUARD_JSON_END\\n";
     };
   });
 
-  summary.pluginDriverProof = buildProductionPluginPackageProofSummary(summary, { selectedScenarios });
+  summary.pluginDriverProof = buildProductionPluginPackageProofSummary(summary, {
+    requestedScenarios,
+    selectedScenarios,
+  });
   console.log(JSON.stringify(summary, null, 2));
 } finally {
   fs.rmSync(tmpDir, { recursive: true, force: true });

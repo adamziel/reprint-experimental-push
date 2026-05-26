@@ -84,6 +84,7 @@ test('plugin-driver proof summary reports full packaged guard coverage', () => {
   assert.equal(summary.checkedScenarioCount, 11);
   assert.equal(summary.passedScenarioCount, 11);
   assert.equal(summary.skippedScenarioCount, 0);
+  assert.equal(summary.requestedScenarios, 'all');
   assert.equal(summary.selectedScenarios, 'all');
   assert.equal(summary.receiptGuards.revokedCredential, 'reprint_push_lab_auth_required');
   assert.equal(summary.mutationProof.deleteRejected, true);
@@ -105,6 +106,10 @@ test('plugin-driver proof summary reports full packaged guard coverage', () => {
 test('plugin-driver proof summary marks unselected scenarios as skipped', () => {
   const summary = buildProductionPluginPackageProofSummary(
     {
+      package: {
+        plugin: 'reprint-push/reprint-push.php',
+        mountedAs: '/wordpress/wp-content/plugins/reprint-push',
+      },
       routes: {
         namespace: 'reprint/v1',
         profile: 'production-shaped',
@@ -144,25 +149,67 @@ test('plugin-driver proof summary marks unselected scenarios as skipped', () => 
       driverReceiptRevokedCredentialGuard: {
         applyRejectedCode: 'reprint_push_lab_auth_required',
       },
+      driverExportGuard: {
+        missingExportRowsCallback: true,
+      },
+      driverApplyGuard: {
+        missingApplyRowCallback: true,
+      },
+      driverValidateGuard: {
+        missingValidateMutationCallback: true,
+      },
+      driverMissingNameGuard: {
+        missingDriverName: true,
+      },
+      driverPluginOwnerGuard: {
+        missingPluginOwner: true,
+      },
+      driverMissingTableGuard: {
+        missingTable: true,
+      },
+      driverDuplicateNameGuard: {
+        duplicateDriverName: true,
+      },
+      driverDuplicateTableGuard: {
+        duplicateTable: true,
+      },
     },
     {
+      requestedScenarios: [
+        'driver-verifier-guards',
+      ],
       selectedScenarios: new Set([
-        'core-package-routes',
         'driver-receipt-guards',
+        'driver-missing-export-guard',
+        'driver-missing-apply-guard',
+        'driver-missing-validate-guard',
+        'driver-missing-name-guard',
+        'driver-missing-plugin-owner-guard',
+        'driver-missing-table-guard',
+        'driver-duplicate-name-guard',
+        'driver-duplicate-table-guard',
       ]),
     },
   );
 
   assert.equal(summary.ok, true);
-  assert.equal(summary.checkedScenarioCount, 2);
-  assert.equal(summary.passedScenarioCount, 2);
-  assert.equal(summary.skippedScenarioCount, 9);
+  assert.equal(summary.checkedScenarioCount, 9);
+  assert.equal(summary.passedScenarioCount, 9);
+  assert.equal(summary.skippedScenarioCount, 2);
+  assert.deepEqual(summary.requestedScenarios, ['driver-verifier-guards']);
   assert.deepEqual(summary.selectedScenarios, [
-    'core-package-routes',
+    'driver-duplicate-name-guard',
+    'driver-duplicate-table-guard',
+    'driver-missing-apply-guard',
+    'driver-missing-export-guard',
+    'driver-missing-name-guard',
+    'driver-missing-plugin-owner-guard',
+    'driver-missing-table-guard',
+    'driver-missing-validate-guard',
     'driver-receipt-guards',
   ]);
-  assert.equal(summary.scenarios.corePackageRoutes, 'passed');
+  assert.equal(summary.scenarios.corePackageRoutes, 'skipped');
   assert.equal(summary.scenarios.driverReceiptGuards, 'passed');
   assert.equal(summary.scenarios.driverDeleteApply, 'skipped');
-  assert.equal(summary.scenarios.driverDuplicateTableGuard, 'skipped');
+  assert.equal(summary.scenarios.driverDuplicateTableGuard, 'passed');
 });
