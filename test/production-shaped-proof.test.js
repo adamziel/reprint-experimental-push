@@ -70,19 +70,20 @@ function stopAllPlaygroundChildrenSync() {
 }
 
 function spawnReleaseVerify(env = {}, timeout = proofSubprocessTimeoutMs) {
+  const options = {
+    cwd: repoRoot,
+    ...releaseVerifyProofSubprocessOptions,
+    killSignal: proofSubprocessKillSignal,
+    timeout,
+    env: {
+      ...process.env,
+      ...env,
+    },
+  };
   return spawnBoundedSync(
     process.execPath,
     ['scripts/playground/production-shaped-release-verify.mjs'],
-    {
-      cwd: repoRoot,
-      ...releaseVerifyProofSubprocessOptions,
-      killSignal: proofSubprocessKillSignal,
-      timeout,
-      env: {
-        ...process.env,
-        ...env,
-      },
-    },
+    options,
     'production-shaped release verify',
   );
 }
@@ -108,6 +109,7 @@ function spawnReleaseVerifyBounded(command, args, options, label) {
   }
   if (proof.status !== 0) {
     stopAllPlaygroundChildrenSync();
+    reportSpawnFailure(proof);
     process.stderr.write(`${describeSpawnProof(proof)}\n`);
   }
 
@@ -115,18 +117,19 @@ function spawnReleaseVerifyBounded(command, args, options, label) {
 }
 
 function spawnLiveReleaseVerify(env = {}, timeout = liveProofSubprocessTimeoutMs) {
+  const options = {
+    cwd: repoRoot,
+    ...releaseVerifyLiveSubprocessOptions,
+    timeout,
+    env: {
+      ...process.env,
+      ...env,
+    },
+  };
   return spawnReleaseVerifyBounded(
     process.execPath,
     ['scripts/playground/production-shaped-release-verify.mjs'],
-    {
-      cwd: repoRoot,
-      ...releaseVerifyLiveSubprocessOptions,
-      timeout,
-      env: {
-        ...process.env,
-        ...env,
-      },
-    },
+    options,
     'live release verify',
   );
 }
@@ -919,7 +922,7 @@ function stopParentProcesses(child, signal) {
       timeout: 2_000,
       killSignal: 'SIGKILL',
     }, `process cleanup ${command}`);
-    if (proof.status !== 0) {
+    if (proof.error || proof.signal || proof.status === null || proof.status !== 0) {
       logBoundedSpawnProofFailure(command, args, proof);
     }
   }
