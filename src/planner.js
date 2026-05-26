@@ -249,6 +249,10 @@ export function createPushPlan({ base, local, remote, now = new Date() }) {
         baseValue,
         localValue,
         remoteValue,
+        resources,
+        base,
+        local,
+        remote,
       });
       if (!steadyRevisionSupport.supported) {
         addUnsupportedRevisionResourceBlocker(plan, {
@@ -385,6 +389,10 @@ export function createPushPlan({ base, local, remote, now = new Date() }) {
         baseValue,
         localValue,
         remoteValue,
+        resources,
+        base,
+        local,
+        remote,
       });
       if (!remoteRevisionSupport.supported) {
         addUnsupportedRevisionResourceBlocker(plan, {
@@ -733,6 +741,10 @@ export function createPushPlan({ base, local, remote, now = new Date() }) {
         baseValue,
         localValue,
         remoteValue,
+        resources,
+        base,
+        local,
+        remote,
       });
       if (!revisionSupport.supported) {
         addUnsupportedRevisionResourceBlocker(plan, {
@@ -1119,6 +1131,10 @@ export function createPushPlan({ base, local, remote, now = new Date() }) {
         baseValue,
         localValue,
         remoteValue,
+        resources,
+        base,
+        local,
+        remote,
       });
       if (!revisionSupport.supported) {
         addUnsupportedRevisionResourceBlocker(plan, {
@@ -3070,6 +3086,7 @@ function addUnsupportedRevisionResourceBlocker(plan, {
       localHash,
       remoteHash,
     ),
+    references: support.references || [],
   });
 }
 
@@ -3512,7 +3529,7 @@ function unsupportedAttachmentResourceSupport({ resource, baseValue, localValue,
   };
 }
 
-function unsupportedRevisionResourceSupport({ resource, baseValue, localValue, remoteValue }) {
+function unsupportedRevisionResourceSupport({ resource, baseValue, localValue, remoteValue, resources, base, local, remote }) {
   if (resource.type !== 'row' || resource.table !== 'wp_posts') {
     return { supported: true };
   }
@@ -3523,6 +3540,23 @@ function unsupportedRevisionResourceSupport({ resource, baseValue, localValue, r
   }
 
   const samePlanCreatedRevision = localValue !== ABSENT && baseValue === ABSENT && remoteValue === ABSENT;
+  const references = samePlanCreatedRevision
+    ? resources
+      .filter((sourceResource) => sourceResource.type === 'row')
+      .flatMap((sourceResource) => {
+        const sourceLocalValue = getResource(local, sourceResource);
+        if (sourceLocalValue === ABSENT) {
+          return [];
+        }
+        return wordpressGraphReferences(sourceResource, sourceLocalValue)
+          .filter((reference) => reference.targetResourceKey === resource.key)
+          .map((reference) =>
+            wordpressGraphReferenceEvidence(reference, resources, base, local, remote));
+      })
+      .filter((reference) =>
+        reference.relationshipType === 'post-parent'
+        || reference.relationshipType === 'postmeta-post')
+    : [];
   return {
     supported: false,
     className: 'unsupported-revision-resource',
@@ -3541,6 +3575,7 @@ function unsupportedRevisionResourceSupport({ resource, baseValue, localValue, r
       : localValue === ABSENT
         ? 'Revision graph resource deletes are not yet supported by the planner.'
         : 'Revision graph resources are not yet supported by the planner.',
+    references,
   };
 }
 

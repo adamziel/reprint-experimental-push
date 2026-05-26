@@ -14853,6 +14853,7 @@ test('blocks local postmeta references to a same-plan created revision while pre
   const plan = planFor(base, local, remote);
   const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
   const revisionBlocker = plan.blockers.find((entry) => entry.resourceKey === targetResourceKey);
+  const revisionReference = revisionBlocker.references[0];
   const matchingEdit = decisionFor(plan, 'row:["wp_posts","ID:1"]');
   const pluginDecision = decisionFor(plan, 'plugin:forms');
   const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
@@ -14868,6 +14869,12 @@ test('blocks local postmeta references to a same-plan created revision while pre
   assert.equal(revisionBlocker.class, 'unsupported-revision-resource');
   assert.equal(revisionBlocker.resourceKey, targetResourceKey);
   assert.equal(revisionBlocker.reason, 'WordPress graph mutation row:["wp_posts","ID:47"] is created in the same plan as a revision identity that depends on it, and identity rewriting is not yet supported.');
+  assert.equal(revisionReference.relationshipKey, 'wp_postmeta.post_id');
+  assert.equal(revisionReference.relationshipType, 'postmeta-post');
+  assert.equal(revisionReference.sourceResourceKey, resourceKey);
+  assert.equal(revisionReference.targetResourceKey, targetResourceKey);
+  assert.equal(revisionReference.targetChange.remote.state, 'absent');
+  assert.equal(revisionReference.targetRemoteHash.length, 64);
   assert.equal(matchingEdit.decision, 'already-in-sync');
   assert.equal(pluginDecision.decision, 'keep-remote');
   assert.equal(pluginFileDecision.decision, 'keep-remote');
@@ -23316,7 +23323,6 @@ test('blocks local post-parent references to a same-plan created revision while 
 
   const plan = planFor(base, local, remote);
   const blocker = plan.blockers[0];
-  const reference = blocker.references[0];
   const planJson = JSON.stringify(plan);
 
   assert.equal(plan.status, 'blocked');
