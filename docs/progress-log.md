@@ -4,6 +4,21 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-05-26 - Public Status Audit 14:57:35
+
+<a id="2026-05-26-public-status-audit-145735"></a>
+
+- Refreshed [progress.html](../progress.html) to the current `date` output
+  (`2026-05-26 14:57:35 CEST`) and promoted `7e983661ed4c4dc18059854456665b72dff7be66` as the current
+  reliable head on the public page for the release-verify timeout buffer.
+- `7e983661ed4c4dc18059854456665b72dff7be66` keeps the release-verify timeout
+  buffer on the checked release path; the release gate stays at `0/4` because
+  production-backed auth/session lifecycle and durable journal ownership with
+  lease/fencing remain blocked.
+- Evidence trail: [progress.html](../progress.html),
+  [objective audit](../audits/objective-audit.md),
+  [release-gate checklist](../progress.html#proof-gates).
+
 ## 2026-05-26 - Public Status Audit 14:56:28
 
 <a id="2026-05-26-public-status-audit-145628"></a>
