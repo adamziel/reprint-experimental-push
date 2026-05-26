@@ -475,6 +475,59 @@ test('guarded benchmark keeps chunk-upload rollout visibility hidden when backpr
   assert.equal(blockers.includes('receipt-cursor-backpressure-not-measured'), true);
 });
 
+test('guarded benchmark keeps rollout summaries pinned to hidden storage-receipts visibility blockers', () => {
+  const report = smallBenchmark();
+  const tampered = clone(report);
+
+  tampered.executorCapabilities.productionAtomicCommit = 'production-atomic-group-commit';
+  tampered.executorCapabilities.fileReceipts = 'production-storage-receipts';
+  tampered.executorCapabilities.rowApply = 'production-batched-compare-and-swap';
+  tampered.evidence.parallelism.parallelismLimitsVisible = true;
+  tampered.evidence.parallelism.parallelismLimitsMeasured = true;
+  tampered.evidence.atomicGroup.productionAtomicCommitMeasured = true;
+  tampered.evidence.atomicGroup.productionAtomicCommitVisible = true;
+  tampered.evidence.atomicGroup.productionAtomicGroupMetadataVisible = true;
+  tampered.evidence.atomicGroup.productionStorageReceiptsMeasured = true;
+  tampered.evidence.atomicGroup.productionStorageReceiptsVisible = false;
+  tampered.evidence.atomicGroup.productionRowBatchExecutorMeasured = true;
+  tampered.evidence.atomicGroup.productionRowBatchExecutorVisible = true;
+
+  const details = productionThroughputDetails(tampered);
+
+  assert.deepEqual(
+    details.productionCapabilityRolloutSummary.find(
+      (entry) => entry.surface === 'chunk-upload-concurrency',
+    ),
+    {
+      surface: 'chunk-upload-concurrency',
+      status: 'blocked',
+      measured: false,
+      visible: false,
+      blockerRefs: [
+        'backpressure-evidence-incomplete',
+        'production-storage-receipts-not-visible',
+      ],
+    },
+  );
+  assert.deepEqual(
+    details.productionCapabilityRolloutSummary.find(
+      (entry) => entry.surface === 'row-batch-concurrency',
+    ),
+    {
+      surface: 'row-batch-concurrency',
+      status: 'blocked',
+      measured: true,
+      visible: false,
+      blockerRefs: [
+        'production-storage-receipts-not-visible',
+        'production-row-batch-executor-without-storage-receipts',
+      ],
+    },
+  );
+  assert.equal(details.atomicGroup.productionStorageReceiptsVisible, false);
+  assert.equal(details.atomicGroup.productionRowBatchExecutorVisibleAndStorageReceiptsVisible, false);
+});
+
 test('guarded benchmark blocks staging-disk headroom claims when the reserve no longer matches the chunk window', () => {
   const report = smallBenchmark();
   const tampered = clone(report);
