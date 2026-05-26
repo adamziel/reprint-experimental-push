@@ -197,6 +197,12 @@ Current executable gate:
   also fail closed when the aligned receipt-cursor slack proof bit is hidden,
   so partial pause-boundary pairs cannot still look measured from raw
   visibility alone.
+- The same paired queue-budget plus memory-ceiling, queue-budget plus
+  queue-headroom, memory-ceiling plus queue-budget, queue-slack plus memory-
+  headroom, and memory-headroom plus queue-budget visibility surfaces now also
+  fail closed when that aligned receipt-cursor slack proof bit is hidden, so
+  partial paused-backpressure pairs cannot still look complete from raw
+  visibility flags alone.
 - The same details also expose whether the measured memory ceiling still
   matches the queue budget, so a tampered headroom summary cannot drift away
   from the recorded backpressure budget.
