@@ -6,10 +6,10 @@ The project is **not releasable as a production WordPress push path**.
 
 Fresh remote heads at audit time, checked on May 26, 2026:
 
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `90ac80b8`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `1fc95c16`
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `f79384ee`
-- `origin/lane/reliable-executor` -> `e7f49767`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `2335170d`
+- `origin/lane/reliable-executor` -> `290b4d5e`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `fafed11b`
 - `origin/lane/no-data-loss-invariants` -> `eec3620e`
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `59fe13d4`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `d121c210`
@@ -32,11 +32,11 @@ Fresh lane proof since the last audit pass improved the local evidence floor,
 but it did not change the release conclusion:
 
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now records
-  `2335170d`, refreshing public progress freshness only.
+  `fafed11b`, refreshing public progress freshness only.
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now records
-  `90ac80b8`, refreshing the supervisor progress surface only.
-- `origin/lane/reliable-executor` now records `e7f49767`, hardening release
-  verify cleanup logging and failure handling only.
+  `1fc95c16`, refreshing the supervisor progress surface only.
+- `origin/lane/reliable-executor` now records `290b4d5e`, hardening
+  Playground startup failure reporting and child cleanup only.
 - `origin/lane/no-data-loss-invariants` now records `eec3620e`, adding termmeta
   preservation proofs. That remains fail-closed boundary work, not live source
   mutation proof.
@@ -45,6 +45,8 @@ but it did not change the release conclusion:
   still does not add production-backed journal ownership or replay proof.
 - `origin/lane/independent-auditor` now records `e89dfce4`. This refreshes the
   audit snapshot only and does not change the release boundary.
+- `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration`
+  now records `efd20c08`, adding attachment-parent invariants proof only.
 
 Those changes strengthen the lab evidence for protocol safety and no-loss
 planning, but they still do not prove the production-backed push path.
