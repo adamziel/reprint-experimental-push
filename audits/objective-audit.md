@@ -4,10 +4,10 @@
 
 The project is **not releasable as a production WordPress push path**.
 
-- Audit time: 2026-05-26 08:56:39 CEST (+0200)
+- Audit time: 2026-05-26 08:57:39 CEST (+0200)
 - Fresh remote heads re-polled at audit time:
   - `origin/lane/critic` -> `e6e7f202`
-  - `origin/lane/no-data-loss-invariants` -> `9f9803c1`
+  - `origin/lane/no-data-loss-invariants` -> `d576196d`
   - `origin/lane/no-data-loss-recovery` -> `9e077c10`
   - `origin/lane/progress-publisher` -> `7695e1f9`
   - `origin/lane/feedback-supervisor` -> `f386dfa6`
@@ -27,7 +27,7 @@ The project is **not releasable as a production WordPress push path**.
 
 1. `reliable-executor` still only proves fail-closed support behavior. The new head `5b3240fb` closes journal readback auth, but it still does not establish production-backed auth/session lifecycle, canonical replay on a live source, or durable journal ownership on the release path.
 2. `no-data-loss-recovery` still fences recovery paths, but `9e077c10` only tightens remote ownership fencing and does not prove restart-readable durable artifacts owned by the production release path.
-3. `no-data-loss-invariants` now shows additional unsupported-surface blocking, but `9f9803c1` still does not prove the live production mutation boundary.
+3. `no-data-loss-invariants` now shows additional unsupported-surface blocking, but `d576196d` still does not prove the live production mutation boundary.
 4. `critic` refined the audit wording in `e6e7f202`, but that is still a critique update rather than release proof.
 5. `progress-publisher` and `feedback-supervisor` only moved visible freshness. That is useful for visibility, but it does not move a release gate.
 
