@@ -12,6 +12,7 @@ import {
   isAcceptableRecoveryState,
   isDurableJournalClosed,
   PushPlanError,
+  productionRecoverySupportReport,
   validateRecoveryArtifacts,
 } from '../src/apply.js';
 import { createPushPlan } from '../src/planner.js';
@@ -20607,6 +20608,48 @@ test('unsupported production recovery journal adapters remain fenced and restart
   ]);
   assert.equal(typeof journal.inspect, 'function');
   assert.throws(() => journal.inspect(), /Production recovery journal support is not available/);
+});
+
+test('production recovery support report exposes the remaining release-path blocker', () => {
+  const filePath = tempRecoveryJournalPath();
+  const remoteArtifactPath = `${path.dirname(filePath)}/remote.jsonl`;
+  const journal = openProductionRecoveryJournal(filePath, {
+    truncate: true,
+    now: fixedNow,
+    claimId: 'claim-1',
+    writerLease: { id: 'lease-1' },
+    ownsRemoteArtifact: true,
+    remoteArtifactPath,
+  });
+  appendRecoveryClaimOpened(journal, {
+    plan: { id: 'plan-1' },
+    current: baseSite(),
+    claimId: 'claim-1',
+    artifactRefs: {
+      journal: filePath,
+      remote: remoteArtifactPath,
+    },
+  });
+  journal.appendEvent('journal-opened', {
+    planId: 'plan-1',
+    state: 'opened',
+    observedHash: 'snapshot-hash-only',
+    artifactRefs: {
+      journal: filePath,
+      remote: remoteArtifactPath,
+    },
+  });
+  journal.close();
+
+  const report = productionRecoverySupportReport(journal);
+
+  assert.equal(report.supported, false);
+  assert.deepEqual(report.missingDependency, [
+    'journal-readable inspection records with sequence and type',
+  ]);
+  assert.equal(report.inspectedJournalPath, filePath);
+  assert.equal(report.writerJournalPath, filePath);
+  assert.equal(report.inspectionErrorMessage, null);
 });
 
 test('production durable journal claims fail closed when artifactRefs are inherited through the prototype', () => {
