@@ -66,20 +66,13 @@ function stopAllPlaygroundChildrenSync() {
 function spawnReleaseVerify(env = {}, options = {}) {
   const timeout = options.timeout ?? proofSubprocessTimeoutMs;
   const killSignal = options.killSignal ?? proofSubprocessKillSignal;
-  return spawnReleaseVerifyBounded(
-    process.execPath,
-    ['scripts/playground/production-shaped-release-verify.mjs'],
+  return runReleaseVerifySync(
     {
-      cwd: repoRoot,
-      timeout,
-      killSignal,
-      encoding: 'utf8',
-      maxBuffer: 1024 * 1024 * 20,
-      env: {
-        ...process.env,
-        ...env,
-      },
+      ...process.env,
+      ...env,
     },
+    timeout,
+    killSignal,
     'production-shaped release verify',
   );
 }
@@ -114,25 +107,35 @@ function spawnReleaseVerifyBounded(command, args, options, label) {
   return proof;
 }
 
-function spawnLiveReleaseVerify(env = {}, options = {}) {
-  const timeout = options.timeout ?? liveProofSubprocessTimeoutMs;
-  const boundedTimeout = Math.max(1_000, Math.min(timeout, liveProofInnerTimeoutMs));
-  const killSignal = options.killSignal ?? liveProofSubprocessKillSignal;
-  return spawnReleaseVerifyBounded(
+function runReleaseVerifySync(env, timeout, killSignal, label) {
+  const proof = spawnReleaseVerifyBounded(
     process.execPath,
     ['scripts/playground/production-shaped-release-verify.mjs'],
     {
       cwd: repoRoot,
-      timeout: boundedTimeout,
+      timeout,
       killSignal,
       encoding: 'utf8',
       maxBuffer: 1024 * 1024 * 20,
-      shell: false,
-      env: {
-        ...process.env,
-        ...env,
-      },
+      env,
     },
+    label,
+  );
+  assertReleaseVerifyProof(proof, label);
+  return proof;
+}
+
+function spawnLiveReleaseVerify(env = {}, options = {}) {
+  const timeout = options.timeout ?? liveProofSubprocessTimeoutMs;
+  const boundedTimeout = Math.max(1_000, Math.min(timeout, liveProofInnerTimeoutMs));
+  const killSignal = options.killSignal ?? liveProofSubprocessKillSignal;
+  return runReleaseVerifySync(
+    {
+      ...process.env,
+      ...env,
+    },
+    boundedTimeout,
+    killSignal,
     'live release verify',
   );
 }
