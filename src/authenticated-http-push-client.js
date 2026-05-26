@@ -131,11 +131,11 @@ export async function runAuthenticatedHttpPush({
     };
     return summary;
   }
-  if (requireProductionAuthSession && preflight.body.auth?.session?.status && preflight.body.auth.session.status !== 'active') {
+  if (requireProductionAuthSession && preflight.body.auth?.session?.status !== 'active') {
     summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
     summary.authSession = {
       required: 'active',
-      observed: preflight.body.auth.session.status,
+      observed: preflight.body.auth?.session?.status || 'missing',
       verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
     };
     summary.boundary = {

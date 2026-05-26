@@ -214,6 +214,58 @@ test('production-shaped authenticated push fails closed when production auth ses
   }
 });
 
+test('production-shaped authenticated push fails closed when production auth session is minted without status', async () => {
+  const originalFetch = global.fetch;
+  const seen = [];
+  global.fetch = async (url, options) => {
+    seen.push({ url: String(url), options });
+    if (String(url).includes('/preflight')) {
+      return new Response(JSON.stringify({
+        ok: true,
+        auth: {
+          identity: { userLogin: 'reprint_push_admin' },
+          session: { type: 'production-auth-session', id: 'psh_01j00000000000000000000000' },
+        },
+        session: { id: 'psh_01j00000000000000000000000' },
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+    throw new Error(`unexpected fetch to ${url}`);
+  };
+
+  try {
+    const summary = await runAuthenticatedHttpPush({
+      sourceUrl: 'http://127.0.0.1:8080',
+      base: { resources: [] },
+      local: { resources: [] },
+      username: credential.username,
+      applicationPassword: credential.password,
+      idempotencyKey: 'idem-01-no-status',
+      routeProfile: 'production-shaped',
+      requireProductionAuthSession: true,
+    });
+
+    assert.equal(summary.ok, false);
+    assert.equal(summary.code, 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED');
+    assert.deepEqual(summary.boundary, {
+      firstRemainingProductionBoundary: 'auth/session lifecycle and durable journal semantics',
+      status: 'unimplemented',
+      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+      authSession: {
+        required: 'active',
+        observed: 'missing',
+        verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+      },
+    });
+    assert.equal(seen.length, 1);
+    assert.match(seen[0].url, /\/wp-json\/reprint\/v1\/push\/preflight$/);
+  } finally {
+    global.fetch = originalFetch;
+  }
+});
+
 test('production-shaped authenticated push fails closed when preflight auth session id does not match the minted session', async () => {
   const originalFetch = global.fetch;
   const seen = [];
@@ -301,6 +353,10 @@ test('production-shaped authenticated push exposes the durable journal boundary 
     if (pathname.includes('/dry-run')) {
       return new Response(JSON.stringify({
         ok: true,
+        auth: {
+          identity: { userLogin: 'reprint_push_admin' },
+          session: { type: 'production-auth-session', status: 'active', id: 'psh_01j00000000000000000000000' },
+        },
         receipt: { receiptHash: 'receipt-01' },
       }), {
         status: 200,
@@ -312,7 +368,7 @@ test('production-shaped authenticated push exposes the durable journal boundary 
         ok: true,
         auth: {
           identity: { userLogin: 'reprint_push_admin' },
-          session: { type: 'production-auth-session', id: 'psh_01j00000000000000000000000' },
+          session: { type: 'production-auth-session', status: 'active', id: 'psh_01j00000000000000000000000' },
         },
       }), {
         status: 200,
@@ -380,7 +436,7 @@ test('production-shaped authenticated push fails closed when recovery inspect dr
         ok: true,
         auth: {
           identity: { userLogin: 'reprint_push_admin' },
-          session: { type: 'production-auth-session', id: 'psh_01j00000000000000000000000' },
+          session: { type: 'production-auth-session', status: 'active', id: 'psh_01j00000000000000000000000' },
         },
         session: { id: 'psh_01j00000000000000000000000' },
       }), {
@@ -400,6 +456,10 @@ test('production-shaped authenticated push fails closed when recovery inspect dr
     if (pathname.includes('/dry-run')) {
       return new Response(JSON.stringify({
         ok: true,
+        auth: {
+          identity: { userLogin: 'reprint_push_admin' },
+          session: { type: 'production-auth-session', status: 'active', id: 'psh_01j00000000000000000000000' },
+        },
         receipt: { receiptHash: 'receipt-01' },
       }), {
         status: 200,
@@ -428,7 +488,7 @@ test('production-shaped authenticated push fails closed when recovery inspect dr
         ok: true,
         auth: {
           identity: { userLogin: 'reprint_push_admin' },
-          session: { type: 'production-auth-session', id: 'psh_01j00000000000000000000000' },
+          session: { type: 'production-auth-session', status: 'active', id: 'psh_01j00000000000000000000000' },
         },
         idempotency: {
           replayed: true,
@@ -492,7 +552,7 @@ test('production-shaped authenticated push fails closed when recovery inspect om
         ok: true,
         auth: {
           identity: { userLogin: 'reprint_push_admin' },
-          session: { type: 'production-auth-session', id: 'psh_01j00000000000000000000000' },
+          session: { type: 'production-auth-session', status: 'active', id: 'psh_01j00000000000000000000000' },
         },
         session: { id: 'psh_01j00000000000000000000000' },
       }), {
@@ -536,7 +596,7 @@ test('production-shaped authenticated push fails closed when recovery inspect om
         ok: true,
         auth: {
           identity: { userLogin: 'reprint_push_admin' },
-          session: { type: 'production-auth-session', id: 'psh_01j00000000000000000000000' },
+          session: { type: 'production-auth-session', status: 'active', id: 'psh_01j00000000000000000000000' },
         },
         idempotency: {
           replayed: true,
@@ -591,7 +651,7 @@ test('production-shaped authenticated push fails closed when recovery inspect re
         ok: true,
         auth: {
           identity: { userLogin: 'reprint_push_admin' },
-          session: { type: 'production-auth-session', id: 'psh_01j00000000000000000000000' },
+          session: { type: 'production-auth-session', status: 'active', id: 'psh_01j00000000000000000000000' },
         },
         session: { id: 'psh_01j00000000000000000000000' },
       }), {
@@ -622,7 +682,7 @@ test('production-shaped authenticated push fails closed when recovery inspect re
         ok: true,
         auth: {
           identity: { userLogin: 'reprint_push_admin' },
-          session: { type: 'production-auth-session', id: 'psh_01j00000000000000000000000' },
+          session: { type: 'production-auth-session', status: 'active', id: 'psh_01j00000000000000000000000' },
         },
         recovery: {
           state: 'available',
@@ -639,7 +699,7 @@ test('production-shaped authenticated push fails closed when recovery inspect re
         ok: true,
         auth: {
           identity: { userLogin: 'reprint_push_admin' },
-          session: { type: 'production-auth-session', id: 'psh_01j00000000000000000000000' },
+          session: { type: 'production-auth-session', status: 'active', id: 'psh_01j00000000000000000000000' },
         },
         idempotency: {
           replayed: true,
@@ -655,7 +715,7 @@ test('production-shaped authenticated push fails closed when recovery inspect re
         ok: true,
         auth: {
           identity: { userLogin: 'reprint_push_admin' },
-          session: { type: 'production-auth-session', id: 'psh_01j00000000000000000000000' },
+          session: { type: 'production-auth-session', status: 'active', id: 'psh_01j00000000000000000000000' },
         },
         dbJournal: { latestRows: [] },
       }), {
@@ -810,7 +870,7 @@ test('production-shaped authenticated push fails closed when recovery inspect om
         ok: true,
         auth: {
           identity: { userLogin: 'reprint_push_admin' },
-          session: { type: 'production-auth-session', id: 'psh_01j00000000000000000000000' },
+          session: { type: 'production-auth-session', status: 'active', id: 'psh_01j00000000000000000000000' },
         },
         session: { id: 'psh_01j00000000000000000000000' },
       }), {
@@ -853,7 +913,7 @@ test('production-shaped authenticated push fails closed when recovery inspect om
         ok: true,
         auth: {
           identity: { userLogin: 'reprint_push_admin' },
-          session: { type: 'production-auth-session', id: 'psh_01j00000000000000000000000' },
+          session: { type: 'production-auth-session', status: 'active', id: 'psh_01j00000000000000000000000' },
         },
         idempotency: {
           replayed: true,
@@ -921,7 +981,7 @@ test('production-shaped authenticated push fails closed when db journal readback
         ok: true,
         auth: {
           identity: { userLogin: 'reprint_push_admin' },
-          session: { type: 'production-auth-session', id: 'psh_01j00000000000000000000000' },
+          session: { type: 'production-auth-session', status: 'active', id: 'psh_01j00000000000000000000000' },
         },
         session: { id: 'psh_01j00000000000000000000000' },
       }), {
@@ -1047,7 +1107,7 @@ test('production-shaped authenticated push fails closed when db journal readback
         ok: true,
         auth: {
           identity: { userLogin: 'reprint_push_admin' },
-          session: { type: 'production-auth-session', id: 'psh_01j00000000000000000000000' },
+          session: { type: 'production-auth-session', status: 'active', id: 'psh_01j00000000000000000000000' },
         },
         session: { id: 'psh_01j00000000000000000000000' },
       }), {
@@ -1165,7 +1225,7 @@ test('production-shaped authenticated push fails closed when recovery inspect re
         ok: true,
         auth: {
           identity: { userLogin: 'reprint_push_admin' },
-          session: { type: 'production-auth-session', id: 'psh_01j00000000000000000000000' },
+          session: { type: 'production-auth-session', status: 'active', id: 'psh_01j00000000000000000000000' },
         },
         session: { id: 'psh_01j00000000000000000000000' },
       }), {
@@ -1194,6 +1254,10 @@ test('production-shaped authenticated push fails closed when recovery inspect re
     if (pathname.includes('/recovery/inspect')) {
       return new Response(JSON.stringify({
         ok: true,
+        auth: {
+          identity: { userLogin: 'reprint_push_admin' },
+          session: { type: 'production-auth-session', status: 'active', id: 'psh_01j00000000000000000000000' },
+        },
         recovery: {
           state: 'blocked-recovery',
           counts: { old: 0, new: 0, blockedUnknown: 1, total: 1 },
@@ -1227,7 +1291,7 @@ test('production-shaped authenticated push fails closed when recovery inspect re
     });
 
     assert.equal(summary.ok, false);
-    assert.equal(summary.code, 'AUTH_SESSION_LIFECYCLE_DRIFT');
+    assert.equal(summary.code, 'RECOVERY_INSPECT_JOURNAL_UNTRUSTED');
     assert.equal(summary.recoveryInspect.recovery.state, 'blocked-recovery');
     assert.deepEqual(summary.recoveryInspect.recovery.counts, {
       old: 0,
@@ -1236,9 +1300,9 @@ test('production-shaped authenticated push fails closed when recovery inspect re
       total: 1,
     });
     assert.equal(summary.recoveryInspect.recovery.journalState, 'ok');
-    assert.equal(summary.recoveryInspect.authUser, undefined);
-    assert.equal(summary.recoveryInspect.authSessionId, undefined);
-    assert.equal(summary.recoveryInspect.sessionType, undefined);
+    assert.equal(summary.recoveryInspect.authUser, 'reprint_push_admin');
+    assert.equal(summary.recoveryInspect.authSessionId, 'psh_01j00000000000000000000000');
+    assert.equal(summary.recoveryInspect.sessionType, 'production-auth-session');
     assert.deepEqual(summary.boundary, {
       firstRemainingProductionBoundary: 'auth/session lifecycle and durable journal semantics',
       status: 'unimplemented',
@@ -1342,8 +1406,17 @@ test('production-shaped authenticated push fails closed when apply drops the pro
     });
 
     assert.equal(summary.ok, false);
-    assert.equal(summary.code, 'AUTH_SESSION_LIFECYCLE_DRIFT');
-    assert.equal(summary.boundary.durableJournal.phase, 'dry-run');
+    assert.equal(summary.code, 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED');
+    assert.deepEqual(summary.boundary, {
+      firstRemainingProductionBoundary: 'auth/session lifecycle and durable journal semantics',
+      status: 'unimplemented',
+      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+      authSession: {
+        required: 'active',
+        observed: 'missing',
+        verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+      },
+    });
     assert.ok(!seen.some(({ url }) => url.includes('/apply')));
   } finally {
     global.fetch = originalFetch;
@@ -2906,6 +2979,10 @@ test('production-shaped authenticated push fails closed when replay changes the 
     if (pathname.includes('/recovery/inspect')) {
       return new Response(JSON.stringify({
         ok: true,
+        auth: {
+          identity: { userLogin: 'reprint_push_admin' },
+          session: { type: 'production-auth-session', status: 'active', id: 'psh_01j00000000000000000000000' },
+        },
         recovery: {
           state: 'available',
           counts: { old: 0, new: 1, blockedUnknown: 0, total: 1 },
@@ -2961,8 +3038,7 @@ test('production-shaped authenticated push fails closed when replay changes the 
     });
 
     assert.equal(summary.ok, false);
-    assert.equal(summary.code, 'AUTH_SESSION_LIFECYCLE_DRIFT');
-    assert.equal(summary.code, 'AUTH_SESSION_LIFECYCLE_DRIFT');
+    assert.equal(summary.code, 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED');
     assert.ok(!seen.some(({ url }) => url.includes('/db-journal')));
     assert.ok(seen.some(({ url }) => url.includes('/apply')));
   } finally {
