@@ -897,14 +897,20 @@ export function productionRecoverySupportReport(writer) {
   if (
     isStrictPlainObject(writer?.artifactRefs)
     && Object.hasOwn(writer.artifactRefs, 'remote')
-    && typeof writer.artifactRefs.remote !== 'string'
+    && (
+      typeof writer.artifactRefs.remote !== 'string'
+      || writer.artifactRefs.remote.length === 0
+    )
   ) {
     addMissingDependency('restart-readable recovery remote artifact references');
   }
   if (
     isStrictPlainObject(inspectedArtifactRefs)
     && Object.hasOwn(inspectedArtifactRefs, 'remote')
-    && typeof inspectedArtifactRefs.remote !== 'string'
+    && (
+      typeof inspectedArtifactRefs.remote !== 'string'
+      || inspectedArtifactRefs.remote.length === 0
+    )
   ) {
     addMissingDependency('restart-readable recovery remote artifact references');
   }
