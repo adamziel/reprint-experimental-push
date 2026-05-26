@@ -1,5 +1,26 @@
 # Critic Audit
 
+## 2026-05-26 13:39:34 CEST (+0200)
+
+No gate movement. `a618c206` is the current reliable head from `git ls-remote`; it is still release-probe support and retry hardening rather than a checked-path production auth/session lifecycle or fully closed durable-journal ownership proof on the release command. The verdict remains `0/4`.
+
+Changed files:
+- [`audits/critic.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/critic/audits/critic.md)
+
+Commands run:
+- `date '+%Y-%m-%d %H:%M:%S %Z (%z)'`
+- `git ls-remote origin refs/heads/lane/reliable-executor`
+
+Push result:
+- Not attempted
+
+Worktree status:
+- Modified tracked files: `audits/critic.md`, `.lane-output/final.md`
+- Branch: `lane/cycle-20260525-mainwindows-2349/critic...origin/main [ahead 1644, behind 692]`
+
+Next supervisor nudge:
+- Keep critic narrow and only reclassify again when `reliable-executor` lands checked-path production-backed auth/session lifecycle, durable-journal ownership, or preserved-remote retry proof that reaches the release boundary.
+
 ## 2026-05-26 13:36:18 CEST (+0200)
 
 No gate movement. `66492522` is the current reliable head from `git ls-remote`; it retries transient release probes in the preflight path, but it still stays on release-probe support rather than proving a checked-path production auth/session lifecycle or fully closed durable-journal ownership on the release command. The verdict remains `0/4`.
