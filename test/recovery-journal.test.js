@@ -1283,6 +1283,44 @@ test('production recovery journal consumption fails closed when a later persiste
   });
 });
 
+test('production recovery journal reopen fails closed when persisted journal integrity is blocked', () => {
+  const filePath = tempJournalPath();
+  fs.writeFileSync(filePath, '{"sequence":1,"schemaVersion":1,"type":"journal-opened"}');
+
+  assert.throws(() => {
+    openProductionRecoveryJournal(filePath, {
+      truncate: false,
+      now: fixedNow,
+      claimId: 'claim-corrupt-reopen',
+      writerLease: { id: 'claim-corrupt-reopen' },
+    });
+  }, {
+    name: 'UnsupportedProductionRecoveryJournalError',
+    code: 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL',
+    message: 'Production recovery journal persistence is corrupt or truncated.',
+  });
+});
+
+test('production recovery journal consumption fails closed when persisted journal integrity is blocked', () => {
+  const filePath = tempJournalPath();
+  const remote = baseSite();
+  const plan = planFor(baseSite(), localSite(), remote);
+  fs.writeFileSync(filePath, '{"sequence":1,"schemaVersion":1,"type":"journal-opened"}');
+
+  assert.throws(() => {
+    consumeProductionRecoveryJournal({
+      filePath,
+      plan,
+      current: remote,
+      claimId: 'claim-corrupt-consume',
+    });
+  }, {
+    name: 'UnsupportedProductionRecoveryJournalError',
+    code: 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL',
+    message: 'Production recovery journal persistence is corrupt or truncated.',
+  });
+});
+
 test('restart inspection classifies fail-before mutation journal as old remote', () => {
   const filePath = tempJournalPath();
   const remote = baseSite();

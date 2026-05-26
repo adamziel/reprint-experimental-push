@@ -689,6 +689,13 @@ function normalizeProductionArtifactRefs(artifactRefs, journalPath, remoteArtifa
 
 function persistedProductionArtifactRefs(journalPath) {
   const persisted = readRecoveryJournal(journalPath);
+  if (persisted.integrity?.status === 'blocked') {
+    return {
+      journal: null,
+      remote: null,
+      invalidReason: 'Production recovery journal persistence is corrupt or truncated.',
+    };
+  }
   if (persisted.integrity?.status !== 'ok') {
     return { journal: null, remote: null, invalidReason: null };
   }
