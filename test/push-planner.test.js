@@ -20649,6 +20649,61 @@ test('production durable journal claims fail closed when inspected artifactRefs 
   assert.ok(error.details.missingDependency.includes('restart-readable recovery artifact references'));
 });
 
+test('production durable journal claims fail closed when supportedSurface is inherited through the prototype', () => {
+  const writer = Object.create({
+    supportedSurface: 'production-recovery-journal-adapter',
+  });
+  Object.assign(writer, {
+    kind: 'production-recovery-journal',
+    productionAdapter: true,
+    ownsJournal: true,
+    ownsRemoteArtifact: false,
+    restartReadable: true,
+    journalPath: '/var/lib/reprint/recovery.jsonl',
+    schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+    artifactRefs: {
+      journal: '/var/lib/reprint/recovery.jsonl',
+    },
+    nextSequence: 1,
+    appendEvent(type, payload) {
+      this.nextSequence += 1;
+      return { sequence: this.nextSequence - 1, type, payload };
+    },
+    flush() {},
+    close() {},
+    inspect() {
+      return {
+        filePath: '/var/lib/reprint/recovery.jsonl',
+        schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+        artifactRefs: {
+          journal: '/var/lib/reprint/recovery.jsonl',
+        },
+        records: [{ sequence: 1, type: 'journal-opened' }],
+      };
+    },
+    assertCurrentClaim() {},
+  });
+
+  const plan = planFor(baseSite(), baseSite(), {
+    ...baseSite(),
+    db: {
+      ...baseSite().db,
+      wp_options: {
+        ...baseSite().db.wp_options,
+        'option_name:blogname': { option_name: 'blogname', option_value: 'New Site' },
+      },
+    },
+  });
+
+  const error = captureError(() => applyPlan(baseSite(), plan, {
+    requireProductionDurableJournal: true,
+    durableJournal: writer,
+  }));
+
+  assert.equal(error.code, 'PRODUCTION_DURABLE_JOURNAL_UNSUPPORTED');
+  assert.ok(error.details.missingDependency.includes('supported production recovery journal adapter surface'));
+});
+
 test('production durable journal claims fail closed when the writer advertises the production surface but stays restart-opaque', () => {
   const writer = {
     kind: 'production-recovery-journal',

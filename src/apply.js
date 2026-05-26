@@ -665,6 +665,13 @@ function productionRecoverySupportReport(writer) {
     addMissingDependency('supported production recovery journal adapter surface');
   }
   if (
+    writer?.productionAdapter === true
+    && !Object.hasOwn(writer ?? {}, 'supportedSurface')
+    && writer?.supportedSurface === 'production-recovery-journal-adapter'
+  ) {
+    addMissingDependency('supported production recovery journal adapter surface');
+  }
+  if (
     Object.hasOwn(writer ?? {}, 'supportedSurface')
     && writer.supportedSurface === 'production-recovery-journal-adapter'
     && (!Object.hasOwn(writer, 'restartReadable') || writer.restartReadable !== true)
