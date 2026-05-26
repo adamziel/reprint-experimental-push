@@ -842,6 +842,17 @@ function reprint_push_lab_db_journal_storage_guard_contract_matches($storage_gua
         && reprint_push_lab_db_journal_non_empty_string($storage_guard['outcome'] ?? null);
 }
 
+function reprint_push_lab_db_journal_checked_boundary_persisted_evidence_matches($journal): bool
+{
+    return is_array($journal)
+        && reprint_push_lab_db_journal_non_empty_string($journal['table'] ?? null)
+        && reprint_push_lab_db_journal_is_positive_int($journal['rowCount'] ?? null)
+        && is_array($journal['latestRows'] ?? null)
+        && count($journal['latestRows']) > 0
+        && is_array($journal['eventSummaries'] ?? null)
+        && count($journal['eventSummaries']) > 0;
+}
+
 function reprint_push_lab_db_journal_checked_boundary_storage_guard_is_coherent($journal): bool
 {
     if (!is_array($journal) || !array_key_exists('storageGuard', $journal)) {
@@ -946,6 +957,7 @@ function reprint_push_lab_db_journal_checked_boundary_contract_matches($journal)
         && reprint_push_lab_db_journal_ownership_contract_matches($journal['ownership'] ?? null)
         && reprint_push_lab_db_journal_writer_lease_contract_matches($journal['writerLease'] ?? null)
         && reprint_push_lab_db_journal_lease_fence_contract_matches($journal['leaseFence'] ?? null)
+        && reprint_push_lab_db_journal_checked_boundary_persisted_evidence_matches($journal)
         && $production_adapter === 'wpdb-single-statement-cas'
         && $lease_fence_boundary === 'wpdb-single-statement-cas'
         && $writer_lease_storage_guard === 'wpdb-single-statement-cas'

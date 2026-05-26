@@ -96,6 +96,7 @@ export function checkedDurableJournalBoundarySatisfied(dbJournal) {
     && writerLeaseContractMatches(writerLease)
     && writerLeaseContractMatches(nestedWriterLease)
     && writerLeaseContractsAgree(writerLease, nestedWriterLease)
+    && checkedBoundaryPersistedEvidenceMatches(dbJournal)
     && checkedBoundaryStorageGuardMatches(dbJournal, productionAdapter, writerLease, nestedWriterLease, leaseFenceBoundary)
     && leaseFenceBoundary === 'wpdb-single-statement-cas'
     && writerLease?.storageGuard === leaseFenceBoundary
@@ -107,6 +108,15 @@ export function checkedDurableJournalBoundarySatisfied(dbJournal) {
     && dbJournal?.leaseFence?.monotonicSequence === true
     && dbJournal?.leaseFence?.restartReadable === true
     && dbJournal?.leaseFence?.staleClaimRejected === true;
+}
+
+function checkedBoundaryPersistedEvidenceMatches(dbJournal) {
+  return hasNonEmptyString(dbJournal?.table)
+    && isPositiveInteger(dbJournal?.rowCount)
+    && Array.isArray(dbJournal?.latestRows)
+    && dbJournal.latestRows.length > 0
+    && Array.isArray(dbJournal?.eventSummaries)
+    && dbJournal.eventSummaries.length > 0;
 }
 
 function checkedBoundaryStorageGuardMatches(dbJournal, productionAdapter, writerLease, nestedWriterLease, leaseFenceBoundary) {

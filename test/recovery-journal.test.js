@@ -619,7 +619,22 @@ test('checked durable journal boundary stays closed until stale-claim rejection 
   const baseContract = {
     schemaVersion: 1,
     acceptedOnCheckedBoundary: true,
+    table: 'wp_reprint_push_lab_push_journal',
+    rowCount: 1,
     scope: 'checked live production-shaped journal surface; not local Playground fixture only',
+    latestRows: [
+      {
+        event: 'stale-claim-rejected',
+        sequence: 20,
+      },
+    ],
+    eventSummaries: [
+      {
+        event: 'stale-claim-rejected',
+        count: 1,
+        latestId: 20,
+      },
+    ],
     claim: {
       status: 'stale-claim-rejected',
       activeClaimKeyHash: 'retry-claim-hash-02',
@@ -668,6 +683,78 @@ test('checked durable journal boundary stays closed until stale-claim rejection 
     },
   };
 
+  assert.equal(
+    checkedDurableJournalBoundarySatisfied({
+      ...baseContract,
+      rowCount: 0,
+      storageGuard: {
+        boundary: 'wpdb-single-statement-cas',
+        operation: 'update',
+        outcome: 'applied',
+      },
+      writerLease: {
+        ...baseContract.writerLease,
+        staleClaimRejected: true,
+      },
+      leaseFence: {
+        ...baseContract.leaseFence,
+        staleClaimRejected: true,
+        writerLease: {
+          ...baseContract.leaseFence.writerLease,
+          staleClaimRejected: true,
+        },
+      },
+    }),
+    false,
+  );
+  assert.equal(
+    checkedDurableJournalBoundarySatisfied({
+      ...baseContract,
+      latestRows: [],
+      storageGuard: {
+        boundary: 'wpdb-single-statement-cas',
+        operation: 'update',
+        outcome: 'applied',
+      },
+      writerLease: {
+        ...baseContract.writerLease,
+        staleClaimRejected: true,
+      },
+      leaseFence: {
+        ...baseContract.leaseFence,
+        staleClaimRejected: true,
+        writerLease: {
+          ...baseContract.leaseFence.writerLease,
+          staleClaimRejected: true,
+        },
+      },
+    }),
+    false,
+  );
+  assert.equal(
+    checkedDurableJournalBoundarySatisfied({
+      ...baseContract,
+      eventSummaries: [],
+      storageGuard: {
+        boundary: 'wpdb-single-statement-cas',
+        operation: 'update',
+        outcome: 'applied',
+      },
+      writerLease: {
+        ...baseContract.writerLease,
+        staleClaimRejected: true,
+      },
+      leaseFence: {
+        ...baseContract.leaseFence,
+        staleClaimRejected: true,
+        writerLease: {
+          ...baseContract.leaseFence.writerLease,
+          staleClaimRejected: true,
+        },
+      },
+    }),
+    false,
+  );
   assert.equal(
     checkedDurableJournalBoundarySatisfied({
       ...baseContract,

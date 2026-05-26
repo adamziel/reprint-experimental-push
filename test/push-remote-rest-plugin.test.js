@@ -3175,6 +3175,82 @@ test('checked authenticated apply evidence fails closed on accepted checked jour
   assert.equal(parsed.dbJournal.leaseFence.writerLease.storageGuard, 'wpdb-single-statement-cas');
 });
 
+test('checked authenticated apply evidence fails closed on accepted checked journal summaries that still omit persisted journal evidence', { skip: !hasPhp }, () => {
+  const checkedSummary = {
+    acceptedOnCheckedBoundary: true,
+    scope: 'packaged production journal scope',
+    claim: {
+      status: 'stale-claim-rejected',
+      activeClaimKeyHash: 'authoritative-claim-hash-02',
+      activeClaimSequence: 33,
+      activeClaimEvent: 'stale-claim-rejected',
+      idempotencyKeyHash: 'idem-hash-01',
+      requestHash: 'request-hash-01',
+      staleClaimRejected: true,
+      abandonedSequence: 24,
+      abandonedEvent: 'stale-claim-abandoned',
+      previousStartedSequence: 19,
+      previousClaimKeyHash: 'retry-claim-hash-01',
+      previousClaimSequence: 18,
+      previousClaimEvent: 'idempotency-opened',
+    },
+    ownership: {
+      ownsJournal: true,
+      restartReadable: true,
+      productionAdapter: 'wpdb-single-statement-cas',
+    },
+    writerLease: {
+      strategy: 'claim-fenced-single-writer',
+      claimKeyUnique: true,
+      fsyncEvidence: true,
+      storageGuard: 'wpdb-single-statement-cas',
+      monotonicSequence: true,
+      restartReadable: true,
+      staleClaimRejected: true,
+    },
+    leaseFence: {
+      boundary: 'wpdb-single-statement-cas',
+      claimKeyUnique: true,
+      fsyncEvidence: true,
+      monotonicSequence: true,
+      restartReadable: true,
+      staleClaimRejected: true,
+      writerLease: {
+        strategy: 'claim-fenced-single-writer',
+        claimKeyUnique: true,
+        fsyncEvidence: true,
+        storageGuard: 'wpdb-single-statement-cas',
+        monotonicSequence: true,
+        restartReadable: true,
+        staleClaimRejected: true,
+      },
+    },
+    storageGuard: {
+      boundary: 'wpdb-single-statement-cas',
+      operation: 'update',
+      outcome: 'applied',
+    },
+  };
+  const result = runAttachCheckedDbJournalContract(
+    {
+      ok: true,
+      dbJournal: {
+        acceptedOnCheckedBoundary: true,
+        scope: 'local Playground fixture only',
+      },
+    },
+    checkedSummary,
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.dbJournal.acceptedOnCheckedBoundary, false);
+  assert.equal(parsed.dbJournal.table, undefined);
+  assert.equal(parsed.dbJournal.rowCount, undefined);
+  assert.equal(parsed.dbJournal.latestRows, undefined);
+  assert.equal(parsed.dbJournal.eventSummaries, undefined);
+});
+
 test('checked authenticated apply evidence fails closed on accepted checked journal summaries that still omit schema version evidence', { skip: !hasPhp }, () => {
   const checkedSummary = {
     acceptedOnCheckedBoundary: true,
