@@ -23049,6 +23049,24 @@ test('blocked recovery artifacts fail closed when a nested remote artifact hides
   assert.match(error.message, /must not hide unsupported symbol keys inside preserved artifacts/);
 });
 
+test('blocked recovery artifacts are insulated from later remote mutation', () => {
+  const base = baseSite();
+  const local = baseSite();
+  const remote = baseSite();
+  local.files['index.php'] = '<?php echo "local recovery title";';
+  remote.db.wp_posts['ID:1'].post_title = 'Remote recovery title';
+
+  const plan = planFor(base, local, remote);
+  const error = captureError(() => applyPlan(remote, plan, { failDuringCommitAtMutation: 1 }));
+  const capturedRemoteTitle = error.details.recovery.artifacts.remote.db.wp_posts['ID:1'].post_title;
+
+  remote.db.wp_posts['ID:1'].post_title = 'Mutated after failure';
+
+  assert.equal(error.code, 'INJECTED_FAILURE_DURING_COMMIT');
+  assert.equal(capturedRemoteTitle, 'Remote recovery title');
+  assert.equal(error.details.recovery.artifacts.remote.db.wp_posts['ID:1'].post_title, 'Remote recovery title');
+});
+
 test('recovery artifacts fail closed when the artifact envelope is not a plain object', () => {
   const recovery = {
     status: 'blocked-recovery',
