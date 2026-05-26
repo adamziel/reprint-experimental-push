@@ -705,6 +705,10 @@ test('production claim gate fails closed if benchmark evidence is tampered', () 
     false,
   );
   assert.equal(
+    productionThroughputDetails(pausedWithoutMeasuredQueueSlack).backpressureConsistency.backpressureEvidenceComplete,
+    false,
+  );
+  assert.equal(
     productionThroughputDetails(pausedWithoutMeasuredQueueSlack).backpressureConsistency.queuePauseHasBackpressureAlignedReceiptCursorQueueSlack,
     false,
   );

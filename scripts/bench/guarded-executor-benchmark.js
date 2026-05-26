@@ -783,6 +783,9 @@ function hasCompleteBackpressureEvidence(report) {
   const receiptCursorMemoryHeadroomPositive =
     Number.isFinite(receiptCursorMemoryHeadroomBytes)
     && receiptCursorMemoryHeadroomBytes > 0;
+  const queuePauseHasMeasuredReceiptCursorQueueSlack =
+    report.evidence.backpressure?.queuePausedBeforeOverflow !== true
+    || (Number.isFinite(receiptCursorQueueSlackBytes) && receiptCursorQueueSlackBytes > 0);
   const receiptCursorQueueSlackWithinResourceHeadroom =
     Number.isFinite(receiptCursorQueueSlackBytes)
     && Number.isFinite(receiptCursorMemoryCeilingBytes)
@@ -810,6 +813,7 @@ function hasCompleteBackpressureEvidence(report) {
     && receiptCursorMemoryHeadroomBytes === receiptCursorMemoryCeilingBytes - receiptCursorWindowBytes
     && report.evidence.backpressure?.queuePausedBeforeOverflow === true
     && report.evidence.backpressure?.receiptCursorWithinQueueBudget === true
+    && queuePauseHasMeasuredReceiptCursorQueueSlack
     && receiptCursorBackpressureBytes === receiptCursorWindowBytes
     && receiptCursorBackpressureBytes <= receiptCursorQueueBudgetBytes
     && receiptCursorQueueSlackBytes === receiptCursorQueueBudgetBytes - receiptCursorBackpressureBytes
