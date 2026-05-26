@@ -6,6 +6,7 @@ Verdict: the design still cannot claim production-grade push support.
 
 Current head classification:
 
+- `fc2de1bd` is material preserved-remote retry evidence: the client now records retry attempts and the focused test covers a transient `/snapshot` retry that succeeds on a later attempt. It still does not move a gate, because the proof is product/test code only and is not tied to a checked release-path command against a production backend. The missing production proof is the release verifier or equivalent checked command that exercises preserved-remote retry on the live push path and surfaces `retryAttempts` from the production-backed `/snapshot` flow.
 - `9d0279a3` is the current reliable head. It proves recovery claim fencing, but it does not move the durable-journal/recovery gate; the checked path still lacks a live production-backed auth/session lifecycle, durable-journal ownership on the release path, or preserved-remote retry, so the gate stays at `0/4`. Next owner: `reliable-executor`, with the next bounded command needing to prove one of those remaining release-path dependencies or name the exact missing file/API/command if blocked.
 - `0bf0c1a1` is off-lane progress churn on the reliable branch. It refreshes `docs/progress-log.md` and `progress.html`, so it should not be treated as product proof or a gate movement.
 - The remaining gap is production durable-journal semantics on the real push path, plus issuance/read/rotation/revocation/replay rejection/cleanup for auth/session state.
