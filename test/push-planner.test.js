@@ -2208,6 +2208,48 @@ test('durable apply refuses a claim-fenced journal writer without a valid claim 
   );
 });
 
+test('durable apply refuses a claim-fenced journal writer when persisted claim ownership is stale', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:1'].post_title = 'Local title';
+  const remote = baseSite();
+  const plan = planFor(base, local, remote);
+
+  const filePath = tempRecoveryJournalPath();
+  const currentClaimJournal = openRecoveryJournal(filePath, {
+    truncate: true,
+    now: fixedNow,
+    claimId: 'psh_01j00000000000000000000000',
+  });
+  appendRecoveryClaimOpened(currentClaimJournal, {
+    plan,
+    current: remote,
+    claimId: 'psh_01j00000000000000000000000',
+  });
+  currentClaimJournal.close();
+
+  const staleWriter = openRecoveryJournal(filePath, {
+    truncate: false,
+    now: fixedNow,
+    claimId: 'psh_01j00000000000000000000001',
+  });
+
+  const error = captureError(() =>
+    applyPlan(remote, plan, {
+      durableJournal: staleWriter,
+    }));
+
+  staleWriter.close();
+
+  assert.ok(error instanceof PushPlanError);
+  assert.equal(error.code, 'RECOVERY_CLAIM_STALE');
+  assert.match(
+    error.message,
+    /Durable recovery journal claim was superseded before journal-opened\./,
+  );
+});
+
 test('durable recovery stays within old remote, fully updated remote, or blocked recovery', () => {
   const base = baseSite();
   const local = baseSite();

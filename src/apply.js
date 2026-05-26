@@ -585,6 +585,7 @@ function ensureDurableJournalClaimOpened(writer, remote, plan) {
     : [];
   const hasClaimRecords = existingRecords.some((record) => record.type === 'recovery-claim-opened' || record.type === 'stale-claim-advanced');
   if (hasClaimRecords) {
+    assertDurableClaimCurrent(writer, 'journal-opened');
     writer.claimOpened = true;
     return;
   }
