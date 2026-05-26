@@ -436,7 +436,8 @@ export function evaluateProductionAuthSessionLifecycleSummary(summary, now = Dat
   if (summary.rotated) {
     return {
       ok: false,
-      field: summary.rotated.status === 'rotated' ? 'auth.session.status' : 'auth.session.rotated',
+      field: normalizeAuthSessionObservationField(summary.rotated.rotatedField)
+        || (summary.rotated.status === 'rotated' ? 'auth.session.status' : 'auth.session.rotated'),
       required: 'preserved read',
       observed: 'rotated',
     };
@@ -446,9 +447,15 @@ export function evaluateProductionAuthSessionLifecycleSummary(summary, now = Dat
     return {
       ok: false,
       field: summary.revoked
-        ? (summary.revoked.status === 'revoked' ? 'auth.session.status' : 'auth.session.revoked')
+        ? (
+          normalizeAuthSessionObservationField(summary.revoked.unrevokedField)
+          || (summary.revoked.status === 'revoked' ? 'auth.session.status' : 'auth.session.revoked')
+        )
         : summary.cleanedUp
-          ? (summary.cleanedUp.status === 'cleaned-up' ? 'auth.session.status' : 'auth.session.cleanedUp')
+          ? (
+            normalizeAuthSessionObservationField(summary.cleanedUp.unrevokedField)
+            || (summary.cleanedUp.status === 'cleaned-up' ? 'auth.session.status' : 'auth.session.cleanedUp')
+          )
           : 'auth.session.cleanup',
       required: 'unrevoked',
       observed: summary.revoked ? 'revoked' : 'cleaned-up',
@@ -458,7 +465,8 @@ export function evaluateProductionAuthSessionLifecycleSummary(summary, now = Dat
   if (summary.expired) {
     return {
       ok: false,
-      field: summary.expired.status === 'expired' ? 'auth.session.status' : 'auth.session.expired',
+      field: normalizeAuthSessionObservationField(summary.expired.expiredField)
+        || (summary.expired.status === 'expired' ? 'auth.session.status' : 'auth.session.expired'),
       required: 'unexpired',
       observed: summary.expired.expiresAt || 'expired',
     };
