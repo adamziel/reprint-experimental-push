@@ -1915,6 +1915,21 @@ test('guarded benchmark fails closed when the buffered queue budget drifts from 
   );
 });
 
+test('guarded benchmark treats queue-budget visibility without memory-ceiling visibility as incomplete backpressure evidence', () => {
+  const report = smallBenchmark();
+  const mutated = clone(report);
+
+  mutated.evidence.backpressure.receiptCursorMemoryCeilingVisible = false;
+  mutated.evidence.backpressure.queueBudgetVisible = true;
+
+  const details = productionThroughputDetails(mutated);
+  const blockers = productionThroughputBlockers(mutated);
+
+  assert.equal(details.queueBudgetVisibleAndMemoryCeilingVisible, false);
+  assert.equal(details.backpressureConsistency.queueBudgetVisibleAndMemoryCeilingVisible, false);
+  assert.ok(blockers.includes('queue-budget-visible-without-memory-ceiling-visibility'));
+});
+
 test('guarded benchmark treats missing measured queue-slack proof as incomplete backpressure evidence', () => {
   const report = smallBenchmark();
   const mutated = clone(report);

@@ -581,6 +581,12 @@ export function productionThroughputBlockers(report) {
     blockers.push('queue-budget-not-visible');
   }
   if (
+    report.evidence.backpressure?.queueBudgetVisible === true
+    && report.evidence.backpressure?.receiptCursorMemoryCeilingVisible !== true
+  ) {
+    blockers.push('queue-budget-visible-without-memory-ceiling-visibility');
+  }
+  if (
     !Number.isFinite(report.evidence.backpressure?.queueHeadroomBytes)
     || report.evidence.backpressure.queueHeadroomBytes < 0
   ) {
@@ -1188,6 +1194,8 @@ export function productionThroughputDetails(report) {
     queueHeadroomPositive,
     queueBudgetPositive,
     queueBudgetVisible,
+    queueBudgetVisibleAndMemoryCeilingVisible:
+      queueBudgetVisible && receiptCursorMemoryCeilingVisible,
     queueHeadroomVisible,
     receiptCursorMemoryHeadroomPositive: receiptCursorMemoryHeadroomPositiveVisible,
     queuePausedBeforeOverflow: report.evidence.backpressure?.queuePausedBeforeOverflow ?? false,
@@ -1261,6 +1269,8 @@ export function productionThroughputDetails(report) {
       queueHeadroomPositive,
       queueBudgetPositive,
       queueBudgetVisible,
+      queueBudgetVisibleAndMemoryCeilingVisible:
+        queueBudgetVisible && receiptCursorMemoryCeilingVisible,
       queueHeadroomVisible,
       productionAtomicGroupMetadataVisible,
       productionStorageReceiptsVisible,

@@ -67,6 +67,9 @@ Current executable gate:
   visible on the raw backpressure evidence surface, so the audit view can
   reject a queue-budget drift without reconstructing the bit from derived
   details alone.
+- The same details also fail closed if queue-budget visibility appears without
+  memory-ceiling visibility, so a partial paused-backpressure summary cannot
+  look complete when the ceiling boundary is hidden.
 - The current supported production-plumbing surface is narrow:
   - file-hash reuse is allowed only as resume evidence when the strong digest
     and fingerprint still line up;
