@@ -1476,6 +1476,7 @@ function reprint_push_registered_plugin_owned_row_drivers(): array
     }
 
     $normalized = [];
+    $table_map = [];
     foreach ($drivers as $key => $driver) {
         if (!is_array($driver)) {
             continue;
@@ -1484,13 +1485,35 @@ function reprint_push_registered_plugin_owned_row_drivers(): array
         $table = (string) ($driver['table'] ?? '');
         $plugin_owner = (string) ($driver['pluginOwner'] ?? '');
         if ($driver_name === '' || $table === '' || $plugin_owner === '') {
-            continue;
+            if ($driver_name === '') {
+                throw new RuntimeException('missing driver name for table: ' . $table);
+            }
+            if ($table === '') {
+                throw new RuntimeException('missing table for driver: ' . $driver_name);
+            }
+            throw new RuntimeException('missing pluginOwner for driver: ' . $driver_name);
+        }
+        if (!isset($driver['exportRowsCallback']) || !is_callable($driver['exportRowsCallback'])) {
+            throw new RuntimeException('missing exportRowsCallback for driver: ' . $driver_name);
+        }
+        if (!isset($driver['applyRowCallback']) || !is_callable($driver['applyRowCallback'])) {
+            throw new RuntimeException('missing applyRowCallback for driver: ' . $driver_name);
+        }
+        if (!isset($driver['validateMutationCallback']) || !is_callable($driver['validateMutationCallback'])) {
+            throw new RuntimeException('missing validateMutationCallback for driver: ' . $driver_name);
+        }
+        if (array_key_exists($driver_name, $normalized)) {
+            throw new RuntimeException('duplicate driver name: ' . $driver_name);
+        }
+        if (array_key_exists($table, $table_map)) {
+            throw new RuntimeException('duplicate table mapping for table: ' . $table);
         }
         $normalized[$driver_name] = $driver + [
             'driver' => $driver_name,
             'table' => $table,
             'pluginOwner' => $plugin_owner,
         ];
+        $table_map[$table] = $driver_name;
     }
 
     return $normalized;
