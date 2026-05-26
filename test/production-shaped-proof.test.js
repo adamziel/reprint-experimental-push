@@ -2911,6 +2911,35 @@ test('shared lab waitForServer keeps index and snapshot body reads child-aware',
   assert.doesNotMatch(sharedWaitSource, /await new Promise\(\(resolve\) => setTimeout\(resolve, readinessProbeIntervalMs\)\)/);
 });
 
+test('live Playground proof helpers keep lab readiness probes child-aware', () => {
+  const liveSources = [
+    readFileSync(
+      path.join(repoRoot, 'scripts/playground/production-shaped-live-topology-proof.mjs'),
+      'utf8',
+    ),
+    readFileSync(
+      path.join(repoRoot, 'scripts/playground/production-shaped-live-protocol-proof.mjs'),
+      'utf8',
+    ),
+  ];
+
+  for (const source of liveSources) {
+    assert.match(source, /async function fetchTextWithTimeout\(url, options = \{\}, timeoutMs = [^,]+, child = null\)/);
+    assert.match(source, /const bodyTextPromise = response\.text\(\)/);
+    assert.match(source, /Promise\.race\(\[bodyTextPromise, childExitWatcher\.promise\]\)/);
+    assert.match(source, /createChildExitWatcher\(child, url, controller\)/);
+    assert.match(source, /error\.isPlaygroundReadinessFailure = true/);
+    assert.match(source, /timeoutProbeCount = labNextTimeoutProbeCount\(timeoutProbeCount, error\);/);
+    assert.match(source, /if \(labReadinessProbeTimedOut\(error\) && timeoutProbeCount >= maxConsecutiveTimeoutProbes\)/);
+    assert.match(source, /await sleepUnlessChildExit\(readinessProbeIntervalMs, child\)/);
+    assert.match(source, /const \{ response, bodyText: responseBody \} = await fetchTextWithTimeout\([\s\S]*serverFetchTimeoutMs,\s*child\);/);
+    assert.match(source, /const \{ response: snapshot, bodyText: snapshotBody \} = await fetchTextWithTimeout\([\s\S]*serverFetchTimeoutMs,\s*child\);/);
+    assert.doesNotMatch(source, /await response\.arrayBuffer\(\)/);
+    assert.doesNotMatch(source, /await snapshot\.arrayBuffer\(\)/);
+    assert.doesNotMatch(source, /await new Promise\(\(resolve\) => setTimeout\(resolve, readinessProbeIntervalMs\)\)/);
+  }
+});
+
 async function withPlaygroundServer(name, blueprintPath, run) {
   const server = await startPlaygroundServer(name, blueprintPath);
   try {

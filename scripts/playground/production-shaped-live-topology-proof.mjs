@@ -7,6 +7,9 @@ import { fileURLToPath } from 'node:url';
 import { authenticatedHttpClient } from '../../src/authenticated-http-push-client.js';
 import {
   labReadinessBodyRetryable,
+  labReadinessErrorRetryable,
+  labNextTimeoutProbeCount,
+  labReadinessProbeTimedOut,
   labSnapshotReady,
   labSnapshotRetryable,
 } from './lab-playground-readiness.js';
@@ -17,6 +20,7 @@ const serverStartupTimeoutMs = 120_000;
 const serverFetchTimeoutMs = 3_000;
 const readinessProbeIntervalMs = 500;
 const readinessFailureBodyLimit = 500;
+const maxConsecutiveTimeoutProbes = 4;
 const credentials = {
   username: 'reprint_push_admin',
   password: 'reprint-push-admin-app-password',
@@ -169,31 +173,34 @@ async function stopPlaygroundServer(server) {
 async function waitForServer(child, baseUrl, getLogs) {
   const deadline = Date.now() + serverStartupTimeoutMs;
   let lastError = null;
+  let timeoutProbeCount = 0;
   while (Date.now() < deadline) {
-    if (child.exitCode !== null) {
-      throw new Error(`Playground server exited early with ${child.exitCode}\n${getLogs()}`);
+    if (child.exitCode !== null || child.signalCode !== null) {
+      const exitLabel = child.exitCode !== null
+        ? `exited early with ${child.exitCode}`
+        : `terminated by ${child.signalCode}`;
+      throw new Error(`Playground server ${exitLabel}\n${getLogs()}`);
     }
     try {
-      const response = await fetchWithTimeout(`${baseUrl}/wp-json/`, {
+      const { response, bodyText: responseBody } = await fetchTextWithTimeout(`${baseUrl}/wp-json/`, {
         headers: { connection: 'close' },
-      }, serverFetchTimeoutMs);
-      const responseBody = await response.clone().text().catch(() => '');
+      }, serverFetchTimeoutMs, child);
+      timeoutProbeCount = 0;
       if (response.status === 200) {
-        await response.arrayBuffer();
-        const snapshot = await fetchWithTimeout(`${baseUrl}/wp-json/reprint-push-lab/v1/snapshot`, {
+        const { response: snapshot, bodyText: snapshotBody } = await fetchTextWithTimeout(`${baseUrl}/wp-json/reprint-push-lab/v1/snapshot`, {
           headers: {
             Authorization: `Basic ${Buffer.from(`${credentials.username}:${credentials.password}`).toString('base64')}`,
             connection: 'close',
           },
-        }, serverFetchTimeoutMs);
-        const snapshotBody = await snapshot.clone().text().catch(() => '');
+        }, serverFetchTimeoutMs, child);
+        timeoutProbeCount = 0;
         let snapshotJson = null;
         try {
           snapshotJson = JSON.parse(snapshotBody);
         } catch (error) {
           if (labReadinessBodyRetryable(snapshot.status, snapshotBody)) {
             lastError = new Error(`Snapshot readiness HTTP ${snapshot.status}`);
-            await new Promise((resolve) => setTimeout(resolve, readinessProbeIntervalMs));
+            await sleepUnlessChildExit(readinessProbeIntervalMs, child);
             continue;
           }
           throw new Error(
@@ -206,7 +213,6 @@ async function waitForServer(child, baseUrl, getLogs) {
           status: snapshot.status,
           body: snapshotJson,
         })) {
-          await snapshot.arrayBuffer();
           return;
         }
         lastError = new Error(`Snapshot readiness HTTP ${snapshot.status}`);
@@ -214,7 +220,7 @@ async function waitForServer(child, baseUrl, getLogs) {
           status: snapshot.status,
           body: snapshotJson,
         })) {
-          await new Promise((resolve) => setTimeout(resolve, readinessProbeIntervalMs));
+          await sleepUnlessChildExit(readinessProbeIntervalMs, child);
           continue;
         }
         throw new Error(
@@ -224,18 +230,42 @@ async function waitForServer(child, baseUrl, getLogs) {
       }
       lastError = new Error(`HTTP ${response.status}: ${responseBody.slice(0, readinessFailureBodyLimit)}`);
     } catch (error) {
+      if (!labReadinessErrorRetryable(error)) {
+        throw error;
+      }
       lastError = error;
+      timeoutProbeCount = labNextTimeoutProbeCount(timeoutProbeCount, error);
+      if (labReadinessProbeTimedOut(error) && timeoutProbeCount >= maxConsecutiveTimeoutProbes) {
+        throw new Error(
+          `Playground server hit ${timeoutProbeCount} consecutive readiness probe timeout${timeoutProbeCount === 1 ? '' : 's'} at ${baseUrl}: ${lastError?.message ?? 'unknown'}\n${getLogs()}`,
+        );
+      }
     }
-    await new Promise((resolve) => setTimeout(resolve, readinessProbeIntervalMs));
+    await sleepUnlessChildExit(readinessProbeIntervalMs, child);
   }
   throw new Error(
     `Timed out waiting for Playground server at ${baseUrl}: ${lastError?.message ?? 'unknown'}\n${getLogs()}`,
   );
 }
 
-async function fetchWithTimeout(url, options = {}, timeoutMs = serverFetchTimeoutMs) {
+async function fetchTextWithTimeout(url, options = {}, timeoutMs = serverFetchTimeoutMs, child = null) {
+  const response = await fetchWithTimeout(url, options, timeoutMs, child);
+  const bodyTextPromise = response.text();
+  const childExitWatcher = createChildExitPromise(child, url);
+  try {
+    const bodyText = childExitWatcher
+      ? await Promise.race([bodyTextPromise, childExitWatcher.promise])
+      : await bodyTextPromise;
+    return { response, bodyText };
+  } finally {
+    childExitWatcher?.cleanup();
+  }
+}
+
+async function fetchWithTimeout(url, options = {}, timeoutMs = serverFetchTimeoutMs, child = null) {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  const timer = setTimeout(() => controller.abort(new Error(`Timed out fetching ${url}`)), timeoutMs);
+  const childExitWatcher = createChildExitWatcher(child, url, controller);
   try {
     return await fetch(url, {
       ...options,
@@ -243,7 +273,108 @@ async function fetchWithTimeout(url, options = {}, timeoutMs = serverFetchTimeou
     });
   } finally {
     clearTimeout(timer);
+    childExitWatcher?.cleanup();
   }
+}
+
+function createChildExitWatcher(child, url, controller) {
+  const childExitError = buildChildExitFetchError(child, url);
+  if (!child) {
+    return null;
+  }
+
+  const failForExit = () => {
+    controller.abort(childExitError());
+  };
+
+  if (child.exitCode !== null || child.signalCode !== null) {
+    failForExit();
+    return { cleanup() {} };
+  }
+
+  const onExit = () => failForExit();
+  const cleanup = () => {
+    child.off('exit', onExit);
+    child.off('close', onExit);
+  };
+  child.once('exit', onExit);
+  child.once('close', onExit);
+  return { cleanup };
+}
+
+function createChildExitPromise(child, url) {
+  if (!child) {
+    return null;
+  }
+
+  const childExitError = buildChildExitFetchError(child, url);
+  if (child.exitCode !== null || child.signalCode !== null) {
+    return {
+      promise: Promise.reject(childExitError()),
+      cleanup() {},
+    };
+  }
+
+  let cleanup = () => {};
+  const promise = new Promise((_, reject) => {
+    const onExit = () => {
+      cleanup();
+      reject(childExitError());
+    };
+    cleanup = () => {
+      child.off('exit', onExit);
+      child.off('close', onExit);
+    };
+    child.once('exit', onExit);
+    child.once('close', onExit);
+  });
+  return { promise, cleanup };
+}
+
+function buildChildExitFetchError(child, url) {
+  return () => {
+    const exitLabel = child.exitCode !== null
+      ? `exited with ${child.exitCode}`
+      : child.signalCode !== null
+        ? `terminated by ${child.signalCode}`
+        : 'terminated unexpectedly';
+    const error = new Error(`Playground child ${exitLabel} while fetching ${url}`);
+    error.isPlaygroundReadinessFailure = true;
+    return error;
+  };
+}
+
+async function sleepUnlessChildExit(ms, child) {
+  if (!child) {
+    await sleep(ms);
+    return;
+  }
+
+  if (child.exitCode !== null || child.signalCode !== null) {
+    throw buildChildExitFetchError(child, 'sleep')();
+  }
+
+  await new Promise((resolve, reject) => {
+    const onExit = () => {
+      cleanup();
+      reject(buildChildExitFetchError(child, 'sleep')());
+    };
+    const timer = setTimeout(() => {
+      cleanup();
+      resolve();
+    }, ms);
+    const cleanup = () => {
+      clearTimeout(timer);
+      child.off('exit', onExit);
+      child.off('close', onExit);
+    };
+    child.once('exit', onExit);
+    child.once('close', onExit);
+  });
+}
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 async function waitForExit(child, timeoutMs) {
