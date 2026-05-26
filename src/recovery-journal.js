@@ -49,6 +49,7 @@ export function createUnsupportedProductionRecoveryJournal(reason = 'Production 
     ownsJournal: false,
     ownsRemoteArtifact: false,
     restartReadable: false,
+    writerLease: null,
     journalPath: null,
     artifactRefs: Object.freeze({
       journal: null,

@@ -7,6 +7,7 @@ import {
   appendJournalCompleted,
   appendMutationObserved,
   assertJournalRecordHasNoRawValues,
+  createUnsupportedProductionRecoveryJournal,
   openPlanRecoveryJournal,
   openRecoveryJournal,
   readRecoveryJournal,
@@ -116,6 +117,41 @@ test('file-backed journal records hashes and metadata without raw values', () =>
     assert.equal(Object.hasOwn(record, 'beforeValue'), false);
     assert.equal(Object.hasOwn(record, 'afterValue'), false);
     assert.equal(Object.hasOwn(record, 'value'), false);
+  }
+});
+
+test('unsupported production recovery journal stub fails closed on every operation', () => {
+  const journal = createUnsupportedProductionRecoveryJournal('production recovery is unavailable here.');
+
+  assert.equal(journal.kind, 'production-recovery-journal');
+  assert.equal(journal.productionAdapter, true);
+  assert.equal(journal.ownsJournal, false);
+  assert.equal(journal.ownsRemoteArtifact, false);
+  assert.equal(journal.restartReadable, false);
+  assert.equal(journal.writerLease, null);
+  assert.equal(journal.journalPath, null);
+  assert.deepEqual(journal.artifactRefs, { journal: null, remote: null });
+  assert.deepEqual(journal.missingDependency, [
+    'production recovery journal adapter marker',
+    'explicit production recovery adapter marker',
+    'restart-readable recovery journal adapter',
+    'explicit journal ownership fencing',
+    'stable-storage flush or fsync semantics',
+    'durable writer cleanup',
+    'restart-readable recovery inspection',
+    'restart-readable recovery artifact references',
+    'restart-readable remote recovery artifact ownership',
+    'owned restart-readable recovery journal path',
+    'restart-readable recovery journal schema',
+    'fencing or lease ownership for the journal writer',
+    'journal-readable inspection records with sequence and type',
+  ]);
+
+  for (const method of ['appendEvent', 'inspect', 'assertCurrentClaim', 'flush', 'close']) {
+    assert.throws(() => journal[method](), {
+      name: 'UnsupportedProductionRecoveryJournalError',
+      code: 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL',
+    });
   }
 });
 
