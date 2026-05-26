@@ -1264,6 +1264,27 @@ test('packaged production plugin runtime source binding ignores malformed runtim
   );
 });
 
+test('packaged production plugin runtime source binding ignores non-local runtime source URLs', () => {
+  const authSessionSource = {
+    ok: true,
+    sourceUrl: 'http://127.0.0.1:8080',
+    username: 'reprint_push_admin',
+    applicationPassword: 'reprint-push-admin-app-password',
+  };
+
+  assert.deepEqual(
+    bindPackagedProductionPluginRuntimeSource({
+      sourceUrl: 'http://127.0.0.1:8080',
+      authSessionSource,
+      runtimeSourceUrl: 'https://example.com/push',
+    }),
+    {
+      sourceUrl: 'http://127.0.0.1:8080',
+      authSessionSource,
+    },
+  );
+});
+
 test('production auth/session lifecycle helper requires an active unexpired packaged session', () => {
   assert.deepEqual(
     evaluateProductionAuthSessionLifecycle({

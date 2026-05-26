@@ -118,6 +118,19 @@ export function resolveAuthSessionSourceCredentials({
   };
 }
 
+export function normalizeSupportedAuthSessionSourceUrl(value) {
+  const sourceUrl = normalizeAuthSessionSourceField(value);
+  if (!sourceUrl) {
+    return '';
+  }
+
+  if (!isSupportedAuthSessionSourceUrl(sourceUrl)) {
+    return '';
+  }
+
+  return sourceUrl;
+}
+
 function normalizeAuthSessionSourceField(value) {
   if (typeof value !== 'string') {
     return '';

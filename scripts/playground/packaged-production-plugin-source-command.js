@@ -1,5 +1,5 @@
 import { resolveAuthSessionSourceCommand } from './auth-session-source-command.js';
-import { loadAuthSessionSource } from './auth-session-source.js';
+import { loadAuthSessionSource, normalizeSupportedAuthSessionSourceUrl } from './auth-session-source.js';
 
 export function resolvePackagedProductionPluginSourceCommand({
   sourceUrl,
@@ -84,14 +84,5 @@ export function bindPackagedProductionPluginRuntimeSource({
 }
 
 function normalizeRuntimeSourceUrl(value) {
-  if (typeof value !== 'string') {
-    return '';
-  }
-
-  const normalized = value.trim();
-  if (!normalized || normalized !== value || /[\u0000-\u001f\u007f]/.test(normalized)) {
-    return '';
-  }
-
-  return normalized;
+  return normalizeSupportedAuthSessionSourceUrl(value);
 }
