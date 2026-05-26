@@ -226,6 +226,14 @@ export function productionThroughputBlockers(report) {
     blockers.push('missing-queue-budget-evidence');
   }
   if (
+    Number.isFinite(report.evidence.backpressure?.queueBudgetBytes)
+    && Number.isFinite(report.evidence.backpressure?.queueHeadroomBytes)
+    && report.evidence.backpressure.queueHeadroomBytes
+      !== report.evidence.backpressure.queueBudgetBytes - report.shape.chunkSizeBytes
+  ) {
+    blockers.push('queue-headroom-backpressure-mismatch');
+  }
+  if (
     report.evidence.backpressure?.receiptCursorBytes !== null
     && report.evidence.backpressure?.receiptCursorBytes !== report.evidence.chunkReceipts.resumeCursor?.sizeBytes
   ) {

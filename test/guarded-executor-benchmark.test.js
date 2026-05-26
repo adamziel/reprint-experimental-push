@@ -323,6 +323,14 @@ test('production claim gate fails closed if benchmark evidence is tampered', () 
     ),
   );
 
+  const mismatchedQueueHeadroom = clone(report);
+  mismatchedQueueHeadroom.evidence.backpressure.queueHeadroomBytes = 0;
+  assert.ok(
+    productionThroughputBlockers(mismatchedQueueHeadroom).includes(
+      'queue-headroom-backpressure-mismatch',
+    ),
+  );
+
   const oversizedChunkWindow = clone(report);
   oversizedChunkWindow.shape.chunkSizeBytes = oversizedChunkWindow.resourceLimits.maxBufferedUploadBytes + 1;
   assert.ok(
