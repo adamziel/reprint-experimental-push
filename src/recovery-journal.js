@@ -149,7 +149,7 @@ function durableJournalClaimContractMatches(claim) {
 
   return hasNonEmptyString(claim.status)
     && hasNonEmptyString(claim.activeClaimKeyHash)
-    && Number.isInteger(claim.activeClaimSequence)
+    && isPositiveInteger(claim.activeClaimSequence)
     && hasNonEmptyString(claim.activeClaimEvent)
     && hasNonEmptyString(claim.idempotencyKeyHash)
     && hasNonEmptyString(claim.requestHash)
@@ -158,27 +158,31 @@ function durableJournalClaimContractMatches(claim) {
     && eventMatchesStaleClaim
     && (!hasPreviousClaimIdentity || (
       hasNonEmptyString(claim.previousClaimKeyHash)
-      && Number.isInteger(claim.previousClaimSequence)
+      && isPositiveInteger(claim.previousClaimSequence)
       && hasNonEmptyString(claim.previousClaimEvent)
     ))
     && (!hasAbandonedClaimIdentity || (
-      Number.isInteger(claim.abandonedSequence)
+      isPositiveInteger(claim.abandonedSequence)
       && hasNonEmptyString(claim.abandonedEvent)
     ))
-    && (!Number.isInteger(claim.previousStartedSequence) || hasPreviousClaimIdentity)
+    && (!isPositiveInteger(claim.previousStartedSequence) || hasPreviousClaimIdentity)
     && (claim.staleClaimRejected !== true || hasPreviousClaimIdentity)
     && (!requiresConsumedRetryLineage || (
-      Number.isInteger(claim.previousStartedSequence)
-      && Number.isInteger(claim.abandonedSequence)
+      isPositiveInteger(claim.previousStartedSequence)
+      && isPositiveInteger(claim.abandonedSequence)
       && hasNonEmptyString(claim.abandonedEvent)
       && hasNonEmptyString(claim.previousClaimKeyHash)
-      && Number.isInteger(claim.previousClaimSequence)
+      && isPositiveInteger(claim.previousClaimSequence)
       && hasNonEmptyString(claim.previousClaimEvent)
     ));
 }
 
 function hasNonEmptyString(value) {
   return typeof value === 'string' && value.length > 0;
+}
+
+function isPositiveInteger(value) {
+  return Number.isInteger(value) && value > 0;
 }
 
 function writerLeaseContractMatches(candidate) {
