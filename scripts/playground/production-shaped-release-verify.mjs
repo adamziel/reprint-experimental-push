@@ -1118,12 +1118,21 @@ async function waitForServer(child, baseUrl, getLogs) {
 }
 
 function writePlaygroundFailure(message, lastProbes, logs, lastError) {
+  const lastProbe = lastProbes.at(-1) ?? null;
+  const lastRouteStatusBody = lastProbe
+    ? {
+        route: lastProbe.route ?? null,
+        status: lastProbe.status ?? null,
+        body: lastProbe.body ?? null,
+      }
+    : null;
   const summary = {
     message,
-    lastProbe: lastProbes.at(-1) ?? null,
+    lastProbe,
+    lastProbeSummary: lastRouteStatusBody,
+    lastRouteStatusBody,
     lastError: lastError?.message ?? null,
   };
-  const lastProbe = lastProbes.at(-1);
   const flatLastProbe = lastProbe
     ? `\nLast route/status/body: ${JSON.stringify(
         {
