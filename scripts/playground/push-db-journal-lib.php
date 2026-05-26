@@ -541,6 +541,9 @@ function reprint_push_lab_db_journal_summary(int $limit = 20, bool $checked_surf
             ];
         }, $idempotency),
     ];
+    $summary['applyCommitted'] = reprint_push_lab_db_journal_event_count($summary['eventSummaries'], 'apply-committed') > 0;
+    $summary['mutationApplied'] = reprint_push_lab_db_journal_event_count($summary['eventSummaries'], 'mutation-applied');
+    $summary['idempotencyOpened'] = reprint_push_lab_db_journal_event_count($summary['eventSummaries'], 'idempotency-opened');
 
     if ($accepted_on_checked_boundary) {
         $stale_claim_rejected = reprint_push_lab_db_journal_has_stale_claim_rejection_evidence(
@@ -567,6 +570,20 @@ function reprint_push_lab_db_journal_summary(int $limit = 20, bool $checked_surf
     }
 
     return $summary;
+}
+
+function reprint_push_lab_db_journal_event_count(array $event_summaries, string $event): int
+{
+    foreach ($event_summaries as $event_summary) {
+        if (!is_array($event_summary)) {
+            continue;
+        }
+        if ((string) ($event_summary['event'] ?? '') === $event) {
+            return max(0, (int) ($event_summary['count'] ?? 0));
+        }
+    }
+
+    return 0;
 }
 
 function reprint_push_lab_db_journal_writer_lease_contract(bool $stale_claim_rejected): array

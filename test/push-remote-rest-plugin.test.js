@@ -689,6 +689,9 @@ test('checked db journal merge upgrades partial top-level evidence arrays and ze
     {
       acceptedOnCheckedBoundary: true,
       rowCount: 0,
+      applyCommitted: false,
+      mutationApplied: 0,
+      idempotencyOpened: 0,
       latestRows: [
         { event: 'apply-committed' },
       ],
@@ -705,6 +708,9 @@ test('checked db journal merge upgrades partial top-level evidence arrays and ze
     {
       acceptedOnCheckedBoundary: true,
       rowCount: 3,
+      applyCommitted: true,
+      mutationApplied: 1,
+      idempotencyOpened: 1,
       latestRows: [
         { event: 'idempotency-opened' },
         { event: 'mutation-applied' },
@@ -737,6 +743,9 @@ test('checked db journal merge upgrades partial top-level evidence arrays and ze
   assert.deepEqual(JSON.parse(result.stdout), {
     acceptedOnCheckedBoundary: true,
     rowCount: 3,
+    applyCommitted: true,
+    mutationApplied: 1,
+    idempotencyOpened: 1,
     latestRows: [
       { event: 'idempotency-opened' },
       { event: 'mutation-applied' },
@@ -749,6 +758,97 @@ test('checked db journal merge upgrades partial top-level evidence arrays and ze
     idempotencyEvidence: [
       { idempotencyKeyHash: 'idem-hash-01', events: 3, requestHashes: 1, latestId: 3 },
       { idempotencyKeyHash: 'idem-hash-02', events: 1, requestHashes: 1, latestId: 4 },
+    ],
+    ownership: {
+      ownsJournal: true,
+      restartReadable: true,
+      productionAdapter: 'wpdb-single-statement-cas',
+    },
+    leaseFence: {
+      boundary: 'wpdb-single-statement-cas',
+      claimKeyUnique: true,
+      monotonicSequence: true,
+      restartReadable: true,
+      staleClaimRejected: false,
+    },
+  });
+});
+
+test('checked db journal merge keeps durable proof counters visible when checked event summaries outlive the trimmed latest row window', { skip: !hasPhp }, () => {
+  const result = runMerge(
+    {
+      acceptedOnCheckedBoundary: true,
+      applyCommitted: false,
+      mutationApplied: 0,
+      idempotencyOpened: 0,
+      latestRows: [
+        { event: 'apply-replayed', id: 24 },
+        { event: 'idempotency-in-progress', id: 25 },
+      ],
+      eventSummaries: [
+        { event: 'idempotency-in-progress', count: 1, latestId: 25 },
+        { event: 'apply-replayed', count: 1, latestId: 24 },
+      ],
+      idempotencyEvidence: [
+        { idempotencyKeyHash: 'idem-hash-01', events: 2, requestHashes: 1, latestId: 25 },
+      ],
+      ownership: {
+        ownsJournal: true,
+      },
+    },
+    {
+      acceptedOnCheckedBoundary: true,
+      applyCommitted: true,
+      mutationApplied: 1,
+      idempotencyOpened: 1,
+      latestRows: [
+        { event: 'apply-replayed', id: 24 },
+        { event: 'idempotency-in-progress', id: 25 },
+      ],
+      eventSummaries: [
+        { event: 'idempotency-in-progress', count: 1, latestId: 25 },
+        { event: 'apply-replayed', count: 1, latestId: 24 },
+        { event: 'apply-committed', count: 1, latestId: 20 },
+        { event: 'mutation-applied', count: 1, latestId: 19 },
+        { event: 'idempotency-opened', count: 1, latestId: 18 },
+      ],
+      idempotencyEvidence: [
+        { idempotencyKeyHash: 'idem-hash-01', events: 5, requestHashes: 1, latestId: 25 },
+      ],
+      ownership: {
+        ownsJournal: true,
+        restartReadable: true,
+        productionAdapter: 'wpdb-single-statement-cas',
+      },
+      leaseFence: {
+        boundary: 'wpdb-single-statement-cas',
+        claimKeyUnique: true,
+        monotonicSequence: true,
+        restartReadable: true,
+        staleClaimRejected: false,
+      },
+    },
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  assert.deepEqual(JSON.parse(result.stdout), {
+    acceptedOnCheckedBoundary: true,
+    applyCommitted: true,
+    mutationApplied: 1,
+    idempotencyOpened: 1,
+    latestRows: [
+      { event: 'apply-replayed', id: 24 },
+      { event: 'idempotency-in-progress', id: 25 },
+    ],
+    eventSummaries: [
+      { event: 'idempotency-in-progress', count: 1, latestId: 25 },
+      { event: 'apply-replayed', count: 1, latestId: 24 },
+      { event: 'apply-committed', count: 1, latestId: 20 },
+      { event: 'mutation-applied', count: 1, latestId: 19 },
+      { event: 'idempotency-opened', count: 1, latestId: 18 },
+    ],
+    idempotencyEvidence: [
+      { idempotencyKeyHash: 'idem-hash-01', events: 5, requestHashes: 1, latestId: 25 },
     ],
     ownership: {
       ownsJournal: true,
