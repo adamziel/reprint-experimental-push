@@ -68,11 +68,13 @@ function resolveScenarioMode(modeValue) {
 export function resolveProductionPluginPackageScenarios(argv, envValue, modeValue) {
   const explicitArg = argv.find((arg) => arg.startsWith('--scenario='));
   const modeScenario = resolveScenarioMode(modeValue);
+  const resolvedFromMode = !explicitArg && !envValue && Boolean(modeScenario);
   const rawValue = explicitArg
     ? explicitArg.slice('--scenario='.length)
     : envValue ?? modeScenario;
   if (!rawValue) {
     return {
+      resolvedMode: null,
       requestedScenarios: null,
       selectedScenarios: null,
     };
@@ -83,6 +85,7 @@ export function resolveProductionPluginPackageScenarios(argv, envValue, modeValu
     .filter(Boolean);
   if (requestedNames.length === 0) {
     return {
+      resolvedMode: null,
       requestedScenarios: null,
       selectedScenarios: null,
     };
@@ -98,6 +101,7 @@ export function resolveProductionPluginPackageScenarios(argv, envValue, modeValu
   const uniqueRequestedNames = Array.from(new Set(requestedNames));
   const expandedNames = uniqueRequestedNames.flatMap((name) => scenarioGroups[name] ?? [name]);
   return {
+    resolvedMode: resolvedFromMode ? modeValue : null,
     requestedScenarios: uniqueRequestedNames,
     selectedScenarios: new Set(expandedNames),
   };

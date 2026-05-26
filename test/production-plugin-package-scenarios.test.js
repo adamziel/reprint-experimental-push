@@ -55,6 +55,7 @@ test('scenario resolver preserves requested aliases alongside expanded scenarios
     'driver-verifier-guards',
     'driver-delete-apply',
   ]);
+  assert.equal(resolved.resolvedMode, null);
   assert.deepEqual(
     Array.from(resolved.selectedScenarios).sort(),
     [
@@ -74,6 +75,7 @@ test('scenario resolver dedupes repeated aliases before returning requested scen
     'driver-verifier-guards',
     'driver-delete-apply',
   ]);
+  assert.equal(resolved.resolvedMode, null);
   assert.deepEqual(
     Array.from(resolved.selectedScenarios).sort(),
     [
@@ -101,9 +103,25 @@ test('scenario resolver maps driver-guard-only mode to the bounded receipt guard
   );
 
   assert.deepEqual(resolved.requestedScenarios, ['driver-receipt-guards']);
+  assert.equal(resolved.resolvedMode, 'driver-guard-only');
   assert.deepEqual(
     Array.from(resolved.selectedScenarios).sort(),
     ['driver-receipt-guards'],
+  );
+});
+
+test('scenario resolver clears mode metadata when explicit scenario input overrides the bounded mode', () => {
+  const resolved = resolveProductionPluginPackageScenarios(
+    ['--scenario=driver-delete-apply'],
+    undefined,
+    'driver-guard-only',
+  );
+
+  assert.deepEqual(resolved.requestedScenarios, ['driver-delete-apply']);
+  assert.equal(resolved.resolvedMode, null);
+  assert.deepEqual(
+    Array.from(resolved.selectedScenarios).sort(),
+    ['driver-delete-apply'],
   );
 });
 

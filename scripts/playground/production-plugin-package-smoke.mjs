@@ -18,7 +18,7 @@ const cliPath = path.join(repoRoot, 'bin/reprint-push-lab.js');
 const serverStartupTimeoutMs = 120_000;
 const transientFetchRetryDelayMs = 250;
 const transientFetchAttempts = 4;
-const { requestedScenarios, selectedScenarios } = resolveProductionPluginPackageScenarios(
+const { requestedScenarios, selectedScenarios, resolvedMode } = resolveProductionPluginPackageScenarios(
   process.argv.slice(2),
   process.env.REPRINT_PUSH_PACKAGE_SMOKE_SCENARIO,
   process.env.REPRINT_PUSH_PACKAGE_SMOKE_MODE,
@@ -358,6 +358,9 @@ echo "REPRINT_PUSH_DRIVER_GUARD_JSON_END\\n";
   }
 
   const summary = {
+    mode: resolvedMode,
+    requestedScenarios: requestedScenarios === null ? 'all' : requestedScenarios.slice(),
+    selectedScenarios: selectedScenarios === null ? 'all' : Array.from(selectedScenarios).sort(),
     package: {
       plugin: 'reprint-push/reprint-push.php',
       mountedAs: '/wordpress/wp-content/plugins/reprint-push',
