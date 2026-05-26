@@ -59,6 +59,7 @@ The project is **not releasable as a production WordPress push path**.
 - `origin/lane/no-data-loss-recovery` -> `9e077c10`
 - `origin/lane/progress-publisher` -> `7695e1f9`
 - `origin/lane/reliable-executor` -> `f1783e10`
+- `origin/lane/reliable-executor` -> `e5419417`
 - `origin/lane/same-plan-wordpress-graph-create` -> `8dea1ca3`
 
 Fresh visibility-lane heads moved, but they still only refresh public status surfaces:
@@ -94,6 +95,9 @@ but it did not change the release conclusion:
 - `origin/lane/reliable-executor` now records `f1783e10`, hardening durable
   journal ownership. It still does not prove production auth/session
   lifecycle or a live-source mutation boundary.
+- `origin/lane/reliable-executor` now records `e5419417`, hardening
+  production proof subprocess bounds. It still does not prove production
+  auth/session lifecycle or a live-source mutation boundary.
 - `origin/lane/reliable-executor` now records `79f31269`, hardening release
   verify timeouts. It still does not prove production auth/session lifecycle or
   a live-source mutation boundary.
