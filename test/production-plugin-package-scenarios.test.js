@@ -64,6 +64,25 @@ test('scenario resolver preserves requested aliases alongside expanded scenarios
   );
 });
 
+test('scenario resolver dedupes repeated aliases before returning requested scenarios', () => {
+  const resolved = resolveProductionPluginPackageScenarios(
+    ['--scenario=driver-verifier-guards,driver-verifier-guards,driver-delete-apply'],
+    undefined,
+  );
+
+  assert.deepEqual(resolved.requestedScenarios, [
+    'driver-verifier-guards',
+    'driver-delete-apply',
+  ]);
+  assert.deepEqual(
+    Array.from(resolved.selectedScenarios).sort(),
+    [
+      ...scenarioGroups['driver-verifier-guards'],
+      'driver-delete-apply',
+    ].sort(),
+  );
+});
+
 test('scenario parser rejects unknown plugin-driver smoke scenarios', () => {
   assert.throws(
     () => parseProductionPluginPackageSelectedScenarios(

@@ -80,9 +80,10 @@ export function resolveProductionPluginPackageScenarios(argv, envValue) {
     );
   }
 
-  const expandedNames = requestedNames.flatMap((name) => scenarioGroups[name] ?? [name]);
+  const uniqueRequestedNames = Array.from(new Set(requestedNames));
+  const expandedNames = uniqueRequestedNames.flatMap((name) => scenarioGroups[name] ?? [name]);
   return {
-    requestedScenarios: requestedNames,
+    requestedScenarios: uniqueRequestedNames,
     selectedScenarios: new Set(expandedNames),
   };
 }

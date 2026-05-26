@@ -399,3 +399,114 @@ test('plugin-driver proof summary fails requested bundle verdict when a requeste
   assert.equal(summary.bundles.driverVerifierGuards, 'missing');
   assert.equal(summary.scenarios.driverMissingValidateGuard, 'missing');
 });
+
+test('plugin-driver proof summary dedupes repeated requested bundle aliases', () => {
+  const summary = buildProductionPluginPackageProofSummary(
+    {
+      package: {
+        plugin: 'reprint-push/reprint-push.php',
+        mountedAs: '/wordpress/wp-content/plugins/reprint-push',
+      },
+      routes: {
+        namespace: 'reprint/v1',
+        profile: 'production-shaped',
+        labNamespaceDisabled: true,
+        authBootstrapDisabled: true,
+      },
+      cli: {
+        ok: true,
+      },
+      final: {
+        finalMatchesLocal: true,
+      },
+      driverUpdateApply: {
+        applied: 1,
+      },
+      driverDeleteGuard: {
+        dryRunRejectedCode: 'INVALID_PLAN',
+      },
+      driverUpdateValidationGuard: {
+        dryRunRejectedCode: 'INVALID_PLAN',
+      },
+      driverReceiptPlanBindingGuard: {
+        applyRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+      },
+      driverReceiptExpiryGuard: {
+        applyRejectedCode: 'AUTH_RECEIPT_EXPIRED',
+      },
+      driverReceiptIdentityGuard: {
+        applyRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+      },
+      driverReceiptRotatedCredentialGuard: {
+        rotatedCredentialRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+      },
+      driverReceiptRevokedCredentialGuard: {
+        applyRejectedCode: 'reprint_push_lab_auth_required',
+      },
+      driverExportGuard: {
+        missingExportRowsCallback: true,
+      },
+      driverApplyGuard: {
+        missingApplyRowCallback: true,
+      },
+      driverValidateGuard: {
+        missingValidateMutationCallback: true,
+      },
+      driverMissingNameGuard: {
+        missingDriverName: true,
+      },
+      driverPluginOwnerGuard: {
+        missingPluginOwner: true,
+      },
+      driverMissingTableGuard: {
+        missingTable: true,
+      },
+      driverDuplicateNameGuard: {
+        duplicateDriverName: true,
+      },
+      driverDuplicateTableGuard: {
+        duplicateTable: true,
+      },
+    },
+    {
+      requestedScenarios: [
+        'driver-verifier-guards',
+        'driver-verifier-guards',
+        'driver-registration-guards',
+      ],
+      selectedScenarios: new Set([
+        'driver-receipt-guards',
+        'driver-missing-export-guard',
+        'driver-missing-apply-guard',
+        'driver-missing-validate-guard',
+        'driver-missing-name-guard',
+        'driver-missing-plugin-owner-guard',
+        'driver-missing-table-guard',
+        'driver-duplicate-name-guard',
+        'driver-duplicate-table-guard',
+      ]),
+    },
+  );
+
+  assert.deepEqual(summary.requestedScenarios, [
+    'driver-verifier-guards',
+    'driver-registration-guards',
+  ]);
+  assert.deepEqual(summary.requestedBundles, [
+    'driverVerifierGuards',
+    'driverRegistrationGuards',
+  ]);
+  assert.deepEqual(summary.checkedBundles, [
+    'driverRegistrationGuards',
+    'driverVerifierGuards',
+  ]);
+  assert.deepEqual(summary.passedBundles, [
+    'driverRegistrationGuards',
+    'driverVerifierGuards',
+  ]);
+  assert.deepEqual(summary.failedBundles, []);
+  assert.equal(summary.checkedBundleCount, 2);
+  assert.equal(summary.passedBundleCount, 2);
+  assert.equal(summary.failedBundleCount, 0);
+  assert.equal(summary.requestedBundlesSatisfied, true);
+});

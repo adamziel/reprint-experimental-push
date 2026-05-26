@@ -112,6 +112,9 @@ export function buildProductionPluginPackageProofSummary(
   summary,
   { requestedScenarios = null, selectedScenarios = null } = {},
 ) {
+  const normalizedRequestedScenarios = requestedScenarios === null
+    ? null
+    : Array.from(new Set(requestedScenarios));
   const scenarioResults = {};
   const bundleResults = {};
   const checkedBundles = [];
@@ -150,9 +153,9 @@ export function buildProductionPluginPackageProofSummary(
   }
 
   for (const [bundleName, bundleScenarios] of Object.entries(scenarioGroups)) {
-    const selected = requestedScenarios === null
+    const selected = normalizedRequestedScenarios === null
       ? selectedScenarios === null || bundleScenarios.some((scenario) => selectedScenarios.has(scenario))
-      : requestedScenarios.includes(bundleName);
+      : normalizedRequestedScenarios.includes(bundleName);
     const passed = bundleScenarios.every((scenario) => scenarioPasses.get(scenario) === true);
     const bundleKey = toBundleKey(bundleName);
     bundleResults[bundleKey] = summarizeScenario(selected, passed);
@@ -173,9 +176,9 @@ export function buildProductionPluginPackageProofSummary(
     }
   }
 
-  const requestedBundles = requestedScenarios === null
+  const requestedBundles = normalizedRequestedScenarios === null
     ? 'all'
-    : requestedScenarios
+    : normalizedRequestedScenarios
       .filter((scenario) => Object.hasOwn(scenarioGroups, scenario))
       .map((bundleName) => toBundleKey(bundleName));
 
@@ -189,12 +192,12 @@ export function buildProductionPluginPackageProofSummary(
     passedBundleCount,
     failedBundleCount,
     skippedBundleCount,
-    requestedScenarios: requestedScenarios === null ? 'all' : requestedScenarios.slice(),
+    requestedScenarios: normalizedRequestedScenarios === null ? 'all' : normalizedRequestedScenarios.slice(),
     requestedBundles,
-    checkedScenarios: requestedScenarios === null && selectedScenarios === null ? 'all' : checkedScenarios.sort(),
+    checkedScenarios: normalizedRequestedScenarios === null && selectedScenarios === null ? 'all' : checkedScenarios.sort(),
     passedScenarios: passedScenarios.sort(),
     failedScenarios: failedScenarios.sort(),
-    checkedBundles: requestedScenarios === null && selectedScenarios === null ? 'all' : checkedBundles.sort(),
+    checkedBundles: normalizedRequestedScenarios === null && selectedScenarios === null ? 'all' : checkedBundles.sort(),
     passedBundles: passedBundles.sort(),
     failedBundles: failedBundles.sort(),
     requestedBundlesSatisfied: checkedBundleCount > 0 && checkedBundleCount === passedBundleCount,
