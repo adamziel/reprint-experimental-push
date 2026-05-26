@@ -1635,6 +1635,12 @@ export function productionThroughputDetails(report) {
     && receiptCursorQueueSlackPositive
     && receiptCursorQueueSlackMeasured
     && queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack;
+  const queueHeadroomVisibleAndMemoryHeadroomVisible =
+    receiptCursorPauseFootprintComplete
+    && queueHeadroomVisible
+    && queueHeadroomMeasured
+    && receiptCursorMemoryHeadroomVisible
+    && queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack;
   const receiptCursorPauseFootprintVisible =
     receiptCursorPauseFootprintComplete
     && queueBudgetVisible
@@ -1900,6 +1906,7 @@ export function productionThroughputDetails(report) {
     queueHeadroomVisibleAndMeasuredAndAligned,
     queueHeadroomVisibleAndQueueSlackMeasured,
     queueHeadroomVisibleAndQueueSlackVisibleAndMeasured,
+    queueHeadroomVisibleAndMemoryHeadroomVisible,
     receiptCursorMemoryCeilingVisible,
     receiptCursorMemoryCeilingVisibleAndMeasured,
     receiptCursorMemoryCeilingVisibleAndQueueHeadroomVisible,
@@ -2014,6 +2021,7 @@ export function productionThroughputDetails(report) {
       queueHeadroomVisibleAndMeasuredAndAligned,
       queueHeadroomVisibleAndQueueSlackMeasured,
       queueHeadroomVisibleAndQueueSlackVisibleAndMeasured,
+      queueHeadroomVisibleAndMemoryHeadroomVisible,
       receiptCursorMemoryCeilingVisible,
       receiptCursorMemoryCeilingVisibleAndMeasured,
       receiptCursorMemoryCeilingVisibleAndQueueHeadroomVisible,
