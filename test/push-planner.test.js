@@ -26853,6 +26853,57 @@ test('production durable journal adapter satisfies the release-path support prob
   durableJournal.close();
 });
 
+test('production durable journal adapter preserves remote artifact ownership on blocked recovery', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  const remote = baseSite();
+  remote.db.wp_posts['ID:1'].post_title = 'Remote editorial update';
+  const plan = planFor(base, local, remote);
+  const durableJournalPath = tempRecoveryJournalPath();
+  const remoteArtifactPath = `${durableJournalPath}.remote`;
+  const durableJournal = openProductionRecoveryJournal(durableJournalPath, {
+    truncate: true,
+    now: fixedNow,
+    ownsRemoteArtifact: true,
+    remoteArtifactPath,
+    writerLease: { id: 'lease-1' },
+  });
+  durableJournal.appendEvent('journal-opened', {
+    planId: plan.id,
+    state: 'opened',
+    observedHash: 'snapshot-hash-only',
+    artifactRefs: {
+      journal: durableJournalPath,
+      remote: remoteArtifactPath,
+    },
+  });
+
+  const error = captureError(() =>
+    applyPlan(remote, plan, {
+      durableJournal,
+      requireProductionDurableJournal: true,
+      failAfterDependencyValidation: true,
+    }),
+  );
+
+  durableJournal.close();
+
+  const persisted = readRecoveryJournal(durableJournalPath);
+
+  assert.equal(error.code, 'INJECTED_FAILURE_AFTER_DEPENDENCY_VALIDATION');
+  assert.equal(error.details.recovery.status, 'old-remote');
+  assert.equal(error.details.recovery.artifacts.remote, undefined);
+  assert.equal(
+    persisted.records.find((record) => record.type === 'recovery-state').artifactRefs.remote,
+    remoteArtifactPath,
+  );
+  assert.equal(
+    persisted.records[persisted.records.length - 1].state,
+    'old-remote',
+  );
+});
+
 test('production durable journal claims fail closed when writerLease is inherited through the prototype', () => {
   const events = [];
   const writerLease = Object.create({
