@@ -162,11 +162,12 @@ test('production recovery journal adapter is restart-readable and release-path c
   const filePath = tempJournalPath();
   const remote = baseSite();
   const plan = planFor(baseSite(), localSite(), remote);
+  const writerLease = { id: 'lease-1', epoch: 7 };
   const journal = openProductionRecoveryJournal(filePath, {
     truncate: true,
     now: fixedNow,
     claimId: 'claim-1',
-    writerLease: { id: 'lease-1' },
+    writerLease,
   });
 
   assert.equal(journal.kind, 'production-recovery-journal');
@@ -177,7 +178,14 @@ test('production recovery journal adapter is restart-readable and release-path c
   assert.equal(journal.claimHash, recoveryClaimHash('claim-1'));
   assert.equal(journal.journalPath, filePath);
   assert.equal(journal.schemaVersion, 1);
+  assert.notEqual(journal.writerLease, writerLease);
+  assert.deepEqual(journal.writerLease, { id: 'lease-1', epoch: 7 });
+  assert.equal(Object.isFrozen(journal.writerLease), true);
   assert.deepEqual(journal.artifactRefs, { journal: filePath, remote: null });
+
+  writerLease.id = 'lease-mutated';
+  writerLease.epoch = 9;
+  assert.deepEqual(journal.writerLease, { id: 'lease-1', epoch: 7 });
 
   journal.flush();
   appendRecoveryClaimOpened(journal, {
@@ -203,6 +211,8 @@ test('production recovery journal adapter is restart-readable and release-path c
   assert.equal(inspected.ownsRemoteArtifact, false);
   assert.equal(inspected.claimHash, journal.claimHash);
   assert.equal(inspected.writerLease.id, 'lease-1');
+  assert.equal(inspected.writerLease.epoch, 7);
+  assert.equal(Object.isFrozen(inspected.writerLease), true);
   assert.equal(inspected.journalPath, filePath);
   assert.equal(inspected.filePath, filePath);
   assert.equal(inspected.schemaVersion, 1);

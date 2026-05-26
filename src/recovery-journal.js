@@ -105,6 +105,9 @@ export function createUnsupportedProductionRecoveryJournal(reason = 'Production 
 export function openProductionRecoveryJournal(filePath, options = {}) {
   const claimId = options.claimId || options.claim?.id || null;
   const claimHash = claimId ? recoveryClaimHash(claimId) : null;
+  const writerLease = Object.hasOwn(options, 'writerLease')
+    ? freezeProductionWriterLease(options.writerLease)
+    : null;
   const ownsRemoteArtifact = Object.hasOwn(options, 'ownsRemoteArtifact')
     ? options.ownsRemoteArtifact === true
     : false;
@@ -121,7 +124,7 @@ export function openProductionRecoveryJournal(filePath, options = {}) {
         restartReadable: true,
         ownsJournal: true,
         ownsRemoteArtifact,
-        writerLease: Object.hasOwn(options, 'writerLease') ? options.writerLease : null,
+        writerLease,
         journalPath: filePath,
         artifactRefs: Object.freeze({
           journal: filePath,
@@ -131,7 +134,6 @@ export function openProductionRecoveryJournal(filePath, options = {}) {
       },
     );
   }
-  const writerLease = Object.hasOwn(options, 'writerLease') ? options.writerLease : null;
   if (ownsRemoteArtifact && remoteArtifactPath === null) {
     throw new UnsupportedProductionRecoveryJournalError(
       'Production recovery journal support requires an explicit remote artifact path when remote ownership is claimed.',
@@ -285,6 +287,16 @@ function isStrictPlainObject(value) {
 
   const prototype = Object.getPrototypeOf(value);
   return prototype === Object.prototype || prototype === null;
+}
+
+function freezeProductionWriterLease(writerLease) {
+  if (!isValidProductionWriterLease(writerLease)) {
+    return writerLease;
+  }
+
+  return Object.freeze({
+    ...writerLease,
+  });
 }
 
 function isCanonicalAbsolutePath(filePath) {
