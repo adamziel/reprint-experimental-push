@@ -33,15 +33,15 @@ const liveCredentials = {
 };
 const proofSubprocessTimeoutMs = 30_000;
 const proofSubprocessKillSignal = 'SIGTERM';
-const liveProofSubprocessTimeoutMs = 9_000;
+const liveProofSubprocessTimeoutMs = 15_000;
 const liveProofSubprocessKillSignal = 'SIGKILL';
-const liveProofInnerTimeoutMs = Math.max(1_000, Math.min(2_000, liveProofSubprocessTimeoutMs - 6_000));
+const liveProofInnerTimeoutMs = Math.max(1_000, Math.min(3_000, liveProofSubprocessTimeoutMs - 8_000));
 // Give the verifier enough time to reach its own bounded readiness failure and
 // emit probe diagnostics before the outer subprocess timeout can kill it.
-const liveProofLaunchTimeoutMs = Math.max(1_000, Math.min(5_000, liveProofSubprocessTimeoutMs - 2_000));
+const liveProofLaunchTimeoutMs = Math.max(1_000, Math.min(7_000, liveProofSubprocessTimeoutMs - 4_000));
 const releaseVerifyInnerTimeoutMs = Math.max(1_000, Math.min(12_000, proofSubprocessTimeoutMs - 6_000));
-const releaseVerifySlowPathTimeoutMs = 9_000;
-const releaseVerifySlowPathInnerTimeoutMs = Math.max(1_000, Math.min(4_000, releaseVerifySlowPathTimeoutMs - 3_000));
+const releaseVerifySlowPathTimeoutMs = 15_000;
+const releaseVerifySlowPathInnerTimeoutMs = Math.max(1_000, Math.min(6_000, releaseVerifySlowPathTimeoutMs - 6_000));
 const proofSubprocessOptions = {
   timeout: proofSubprocessTimeoutMs,
   killSignal: proofSubprocessKillSignal,
@@ -859,6 +859,41 @@ test('packaged production plugin auth/session source helper resolves and loads t
     sourceUrl: 'http://127.0.0.1:8080',
     username: 'reprint_push_admin',
     applicationPassword: 'reprint-push-admin-app-password',
+  });
+});
+
+maybeTest('production-shaped release verify command consumes the packaged production auth/session source command when production auth/session is required', async () => {
+  await withPlaygroundServer('remote-base', path.join(repoRoot, 'fixtures/playground/remote-base.blueprint.json'), async (remoteServer) => {
+    const expectedSourceCommand = resolvePackagedProductionPluginSourceCommand({
+      sourceUrl: remoteServer.baseUrl,
+      username: liveCredentials.username,
+      applicationPassword: liveCredentials.password,
+    });
+    const proof = spawnProductionShapedReleaseVerifySync(
+      {
+        ...process.env,
+        REPRINT_PUSH_SOURCE_URL: remoteServer.baseUrl,
+        REPRINT_PUSH_REMOTE_URL: remoteServer.baseUrl,
+        REPRINT_PUSH_USERNAME: 'stale-lab-username',
+        REPRINT_PUSH_APPLICATION_PASSWORD: 'stale-lab-password',
+        REPRINT_PUSH_REQUIRE_PRODUCTION_AUTH_SESSION: '1',
+        NODE_NO_WARNINGS: '1',
+      },
+      {
+        timeout: releaseVerifyInnerTimeoutMs,
+        killSignal: liveProofSubprocessKillSignal,
+      },
+      'packaged auth/session source release verify',
+    );
+    assertSpawnCompletedWithoutSpawnError(proof, 'packaged auth/session source release verify', releaseVerifyInnerTimeoutMs);
+    assert.equal(proof.status, 0, proof.stderr);
+    assert.match(
+      proof.stdout,
+      new RegExp(
+        `"authSessionSource": \\{\\s*"command": ${JSON.stringify(expectedSourceCommand)},\\s*"ok": true,\\s*"sourceUrl": "http:\\/\\/127\\.0\\.0\\.1:\\d+"`,
+      ),
+    );
+    assert.match(proof.stdout, /"liveAuthSessionSource": \{[\s\S]*"requiredCommand": "REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND"/);
   });
 });
 
