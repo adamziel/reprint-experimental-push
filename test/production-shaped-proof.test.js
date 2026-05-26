@@ -3871,6 +3871,88 @@ test('shared lab waitForServer tolerates more than four startup-shaped /wp-json/
   assert.equal(snapshotCalls, readyAfterIndexCalls);
 });
 
+test('shared lab waitForServer tolerates more than four startup-shaped no-route responses inside the bounded startup window', async () => {
+  let indexCalls = 0;
+  let snapshotCalls = 0;
+  const readyAfterIndexCalls = labMaxConsecutiveNotReadyProbes + 2;
+  const server = createServer((request, response) => {
+    if (request.url === '/wp-json/') {
+      indexCalls += 1;
+      if (indexCalls < readyAfterIndexCalls) {
+        response.statusCode = 404;
+        response.setHeader('content-type', 'application/json; charset=utf-8');
+        response.end(JSON.stringify({
+          code: 'rest_no_route',
+          message: 'No route was found matching the URL and request method.',
+        }));
+        return;
+      }
+      response.statusCode = 200;
+      response.setHeader('content-type', 'application/json; charset=utf-8');
+      response.end(JSON.stringify({ namespaces: ['reprint-push-lab/v1'] }));
+      return;
+    }
+
+    if (request.url === '/wp-json/reprint-push-lab/v1/snapshot') {
+      snapshotCalls += 1;
+      if (indexCalls < readyAfterIndexCalls) {
+        response.statusCode = 404;
+        response.setHeader('content-type', 'application/json; charset=utf-8');
+        response.end(JSON.stringify({
+          code: 'rest_no_route',
+          message: 'No route was found matching the URL and request method.',
+        }));
+        return;
+      }
+      response.statusCode = 200;
+      response.setHeader('content-type', 'application/json; charset=utf-8');
+      response.end(JSON.stringify({ ok: true, snapshot: {} }));
+      return;
+    }
+
+    response.statusCode = 404;
+    response.end('not found');
+  });
+
+  await new Promise((resolve, reject) => {
+    server.listen(0, '127.0.0.1', (error) => {
+      if (error) {
+        reject(error);
+        return;
+      }
+      resolve();
+    });
+  });
+
+  const address = server.address();
+  assert.ok(address && typeof address === 'object' && typeof address.port === 'number');
+
+  try {
+    await waitForServer(
+      {
+        exitCode: null,
+        signalCode: null,
+        pid: null,
+      },
+      `http://127.0.0.1:${address.port}`,
+      () => '',
+    );
+  } finally {
+    await new Promise((resolve, reject) => {
+      server.close((error) => {
+        if (error) {
+          reject(error);
+          return;
+        }
+        resolve();
+      });
+    });
+  }
+
+  assert.equal(indexCalls, readyAfterIndexCalls);
+  assert.equal(snapshotCalls, readyAfterIndexCalls);
+});
+
 test('shared lab waitForServer accepts a ready snapshot even while /wp-json/ still reports startup-shaped 502s', async () => {
   let indexCalls = 0;
   let snapshotCalls = 0;
