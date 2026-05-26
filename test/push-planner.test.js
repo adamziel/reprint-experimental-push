@@ -13174,6 +13174,48 @@ test('blocks local comments and users graph resources while preserving remote-on
   assert.equal(remote.plugins.forms.description, 'remote-only plugin drift');
 });
 
+test('blocks local users graph resources while preserving remote-only plugin drift', () => {
+  const resourceKey = 'row:["wp_users","ID:7"]';
+  const base = baseSite();
+  base.db.wp_users = {
+    'ID:7': {
+      ID: 7,
+      user_login: 'base-user',
+      user_email: 'base@example.test',
+    },
+  };
+
+  const local = baseSite();
+  local.db.wp_users = {
+    'ID:7': {
+      ID: 7,
+      user_login: 'local-user',
+      user_email: 'local@example.test',
+    },
+  };
+
+  const remote = baseSite();
+  remote.db.wp_users = JSON.parse(JSON.stringify(base.db.wp_users));
+  remote.plugins.forms.description = 'remote-only plugin drift';
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers[0];
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(plan.conflicts.length, 0);
+  assert.equal(blocker.class, 'unsupported-comments-users-resource');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.reason, 'User graph resources are not yet supported by the planner.');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('local-user'), false);
+  assert.equal(planJson.includes('base-user'), false);
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin drift');
+});
+
 test('blocks local serialized block references while preserving remote-only plugin drift', () => {
   const resourceKey = 'row:["wp_posts","ID:57"]';
   const base = baseSite();

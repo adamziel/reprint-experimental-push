@@ -1930,7 +1930,9 @@ function unsupportedCommentsUsersResourceSupport({ resource, baseValue, localVal
   return {
     supported: false,
     className: 'unsupported-comments-users-resource',
-    reason: 'Comments and users graph resources are not yet supported by the planner.',
+    reason: resource.table === 'wp_users'
+      ? 'User graph resources are not yet supported by the planner.'
+      : 'Comments graph resources are not yet supported by the planner.',
   };
 }
 
