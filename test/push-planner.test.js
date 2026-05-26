@@ -19945,9 +19945,10 @@ test('blocks an existing attachment parent reference when the same-plan post tar
   assert.equal(blockedParentBlocker.class, 'missing-wordpress-graph-dependency');
   assert.equal(blockedParentBlocker.references[0].relationshipType, 'post-parent');
   assert.equal(blockedParentBlocker.references[0].targetResourceKey, revisionResourceKey);
-  assert.equal(childBlocker.class, 'missing-wordpress-graph-dependency');
+  assert.equal(childBlocker.class, 'stale-wordpress-graph-identity');
   assert.equal(childBlocker.references[0].relationshipType, 'post-parent');
   assert.equal(childBlocker.references[0].targetResourceKey, blockedParentResourceKey);
+  assert.match(childBlocker.reason, /existing attachment source without a supported merge policy/);
   assert.equal(JSON.stringify(childBlocker).includes('base-private-existing-attachment-child-body'), false);
   assert.equal(JSON.stringify(childBlocker).includes('local-private-revision-parent-body'), false);
   assert.equal(JSON.stringify(childBlocker).includes('local-private-blocked-parent-body'), false);
@@ -20008,9 +20009,10 @@ test('blocks an existing attachment parent reference when the same-plan post tar
   assert.equal(blockedParentBlocker.class, 'missing-wordpress-graph-dependency');
   assert.equal(blockedParentBlocker.references[0].relationshipType, 'post-parent');
   assert.equal(blockedParentBlocker.references[0].targetResourceKey, navigationResourceKey);
-  assert.equal(childBlocker.class, 'missing-wordpress-graph-dependency');
+  assert.equal(childBlocker.class, 'stale-wordpress-graph-identity');
   assert.equal(childBlocker.references[0].relationshipType, 'post-parent');
   assert.equal(childBlocker.references[0].targetResourceKey, blockedParentResourceKey);
+  assert.match(childBlocker.reason, /existing attachment source without a supported merge policy/);
   assert.equal(JSON.stringify(childBlocker).includes('base-private-existing-attachment-child-body'), false);
   assert.equal(JSON.stringify(childBlocker).includes('local-private-navigation-parent-body'), false);
   assert.equal(JSON.stringify(childBlocker).includes('local-private-blocked-parent-body'), false);
@@ -20071,9 +20073,10 @@ test('blocks an existing attachment parent reference when the same-plan post tar
   assert.equal(blockedParentBlocker.class, 'missing-wordpress-graph-dependency');
   assert.equal(blockedParentBlocker.references[0].relationshipType, 'post-parent');
   assert.equal(blockedParentBlocker.references[0].targetResourceKey, menuItemResourceKey);
-  assert.equal(childBlocker.class, 'missing-wordpress-graph-dependency');
+  assert.equal(childBlocker.class, 'stale-wordpress-graph-identity');
   assert.equal(childBlocker.references[0].relationshipType, 'post-parent');
   assert.equal(childBlocker.references[0].targetResourceKey, blockedParentResourceKey);
+  assert.match(childBlocker.reason, /existing attachment source without a supported merge policy/);
   assert.equal(JSON.stringify(childBlocker).includes('base-private-existing-attachment-child-body'), false);
   assert.equal(JSON.stringify(childBlocker).includes('local-private-nav-menu-item-parent-body'), false);
   assert.equal(JSON.stringify(childBlocker).includes('local-private-blocked-parent-body'), false);
