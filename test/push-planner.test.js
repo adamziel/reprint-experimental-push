@@ -27040,3 +27040,21 @@ test('closes an owned production recovery journal writer only when close is owne
   assert.equal(closeCalls, 0);
   assert.equal(isDurableJournalClosed(writer), true);
 });
+
+test('skips closing a writer that is not an owned production recovery journal', () => {
+  let closeCalls = 0;
+  const writer = {
+    kind: 'unsupported-journal',
+    productionAdapter: true,
+    ownsJournal: false,
+    ownsRemoteArtifact: false,
+    close() {
+      closeCalls += 1;
+    },
+  };
+
+  closeOwnedDurableJournal(writer);
+
+  assert.equal(closeCalls, 0);
+  assert.equal(isDurableJournalClosed(writer), true);
+});

@@ -1069,7 +1069,7 @@ export function closeOwnedDurableJournal(writer) {
   if (isDurableJournalClosed(writer)) {
     return;
   }
-  if (!Object.hasOwn(writer ?? {}, 'close') || typeof writer.close !== 'function') {
+  if (!shouldCloseOwnedDurableJournal(writer)) {
     markDurableJournalClosed(writer);
     return;
   }
