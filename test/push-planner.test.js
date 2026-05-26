@@ -298,6 +298,47 @@ test('blocks a local usermeta reference owned by a user in the release-candidate
   assert.match(usermetaBlocker.reason, /outside the supported release-candidate slice/);
 });
 
+test('blocks a local usermeta reference owned by a same-plan user', () => {
+  const base = baseSite();
+  const local = baseSite();
+  const remote = baseSite();
+
+  local.db.wp_users = {
+    'ID:2': {
+      ID: 2,
+      user_login: 'local-user',
+    },
+  };
+  local.db.wp_usermeta = {
+    'meta_id:9': {
+      meta_id: 9,
+      user_id: 2,
+      meta_key: 'profile-note',
+      meta_value: 'local-private-user-meta',
+    },
+  };
+  remote.db.wp_posts['ID:21'] = {
+    ID: 21,
+    post_title: 'Remote attachment noise',
+    post_content: 'remote-attachment-body',
+    post_status: 'inherit',
+    post_type: 'attachment',
+  };
+
+  const plan = planFor(base, local, remote);
+  const userBlocker = plan.blockers.find((blocker) => blocker.resourceKey === 'row:["wp_users","ID:2"]');
+  const usermetaBlocker = plan.blockers.find((blocker) => blocker.resourceKey === 'row:["wp_usermeta","meta_id:9"]');
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(userBlocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(userBlocker.surface, 'users');
+  assert.equal(usermetaBlocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(usermetaBlocker.surface, 'users');
+  assert.match(usermetaBlocker.reason, /outside the supported release-candidate slice/);
+  assert.equal(JSON.stringify(usermetaBlocker).includes('local-private-user-meta'), false);
+  assert.equal(JSON.stringify(usermetaBlocker).includes('remote-attachment-body'), false);
+});
+
 test('blocks unsupported menu and navigation post graph surfaces in the release-candidate slice', () => {
   const base = baseSite();
   const local = baseSite();
