@@ -126,6 +126,20 @@ export function evaluateProductionAuthSessionLifecycleSummary(summary, now = Dat
         };
       }
     }
+
+    const subsequentIssuedObservation = issuedIndex >= 0
+      ? observations.slice(issuedIndex + 1).find((observation) =>
+        observation
+        && typeof observation === 'object'
+        && observation.step === 'preflight')
+      : null;
+    if (subsequentIssuedObservation) {
+      return {
+        ok: false,
+        required: 'preserved read',
+        observed: 'reissued',
+      };
+    }
   }
 
   const readObservation = summary.read;
