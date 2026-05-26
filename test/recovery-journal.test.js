@@ -323,12 +323,50 @@ test('production recovery journal descriptor fails closed on non-canonical owner
     supportedSurface: 'production-recovery-journal-adapter',
     restartReadable: true,
     ownsJournal: true,
-    ownsRemoteArtifact: true,
+    ownsRemoteArtifact: false,
     leaseFence: null,
     writerLease: { id: 'lease-writer' },
     journalPath: null,
     artifactRefs: {
       journal: null,
+      remote: null,
+    },
+    schemaVersion: 1,
+  });
+});
+
+test('production recovery journal descriptor fails closed when remote ownership collapses to the journal path', () => {
+  const writer = {
+    kind: 'production-recovery-journal',
+    productionAdapter: true,
+    supportedSurface: 'production-recovery-journal-adapter',
+    restartReadable: true,
+    ownsJournal: true,
+    ownsRemoteArtifact: true,
+    leaseFence: { id: 'lease-shared' },
+    writerLease: { id: 'lease-shared' },
+    journalPath: '/var/lib/reprint/recovery.jsonl',
+    artifactRefs: {
+      journal: '/var/lib/reprint/recovery.jsonl',
+      remote: '/var/lib/reprint/recovery.jsonl',
+    },
+    schemaVersion: 1,
+  };
+
+  const descriptor = describeProductionRecoveryJournal(writer);
+
+  assert.deepEqual(descriptor, {
+    kind: 'production-recovery-journal',
+    productionAdapter: true,
+    supportedSurface: 'production-recovery-journal-adapter',
+    restartReadable: true,
+    ownsJournal: true,
+    ownsRemoteArtifact: false,
+    leaseFence: { id: 'lease-shared' },
+    writerLease: { id: 'lease-shared' },
+    journalPath: '/var/lib/reprint/recovery.jsonl',
+    artifactRefs: {
+      journal: '/var/lib/reprint/recovery.jsonl',
       remote: null,
     },
     schemaVersion: 1,

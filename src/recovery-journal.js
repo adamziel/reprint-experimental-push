@@ -479,7 +479,7 @@ export function describeProductionRecoveryJournal(writer) {
     : null;
   const restartReadable = Object.hasOwn(writer, 'restartReadable') && writer.restartReadable === true;
   const ownsJournal = Object.hasOwn(writer, 'ownsJournal') && writer.ownsJournal === true;
-  const ownsRemoteArtifact = Object.hasOwn(writer, 'ownsRemoteArtifact') && writer.ownsRemoteArtifact === true;
+  const claimsRemoteArtifactOwnership = Object.hasOwn(writer, 'ownsRemoteArtifact') && writer.ownsRemoteArtifact === true;
   const journalPath = Object.hasOwn(writer, 'journalPath') && isCanonicalAbsolutePath(writer.journalPath)
     ? writer.journalPath
     : null;
@@ -504,7 +504,7 @@ export function describeProductionRecoveryJournal(writer) {
       ? rawArtifactRefs.journal
       : null,
     remote: rawArtifactRefs
-      && ownsRemoteArtifact
+      && claimsRemoteArtifactOwnership
       && Object.hasOwn(rawArtifactRefs, 'remote')
       && isCanonicalAbsolutePath(rawArtifactRefs.remote)
       && rawArtifactRefs.remote !== journalPath
@@ -512,6 +512,7 @@ export function describeProductionRecoveryJournal(writer) {
       ? rawArtifactRefs.remote
       : null,
   });
+  const ownsRemoteArtifact = claimsRemoteArtifactOwnership && artifactRefs.remote !== null;
 
   return Object.freeze({
     kind: writer.kind,
