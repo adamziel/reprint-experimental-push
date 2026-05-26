@@ -5257,6 +5257,52 @@ test('production throughput details fail closed when memory-ceiling match visibi
   assert.ok(blockers.includes('queue-budget-visible-without-memory-ceiling-match-visibility'));
 });
 
+test('production throughput details fail closed when aligned queue-slack proof disappears from the pause boundary', () => {
+  const report = runGuardedExecutorBenchmark({ profile: 'ci' });
+
+  report.evidence.backpressure.queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack = false;
+  const details = productionThroughputDetails(report);
+  const blockers = productionThroughputBlockers(report);
+
+  assert.equal(details.queueBudgetVisible, true);
+  assert.equal(details.receiptCursorMemoryCeilingVisible, true);
+  assert.equal(details.queueHeadroomVisible, true);
+  assert.equal(details.receiptCursorPauseFootprintVisible, false);
+  assert.equal(details.queueBudgetVisibleAndMemoryCeilingVisible, false);
+  assert.equal(details.queueBudgetVisibleAndQueueHeadroomVisible, false);
+  assert.equal(details.receiptCursorMemoryCeilingVisibleAndQueueBudgetVisible, false);
+  assert.equal(details.queueHeadroomVisibleAndQueueSlackMeasured, false);
+  assert.equal(details.queueHeadroomVisibleAndQueueSlackVisibleAndMeasured, false);
+  assert.equal(details.receiptCursorQueueSlackVisibleAndMeasured, false);
+  assert.equal(details.receiptCursorMemoryHeadroomVisibleAndMeasured, false);
+  assert.equal(details.backpressureConsistency.receiptCursorPauseFootprintVisible, false);
+  assert.equal(details.backpressureConsistency.queueBudgetVisibleAndMemoryCeilingVisible, false);
+  assert.equal(details.backpressureConsistency.queueBudgetVisibleAndQueueHeadroomVisible, false);
+  assert.equal(details.backpressureConsistency.receiptCursorMemoryCeilingVisibleAndQueueBudgetVisible, false);
+  assert.equal(details.backpressureConsistency.queueHeadroomVisibleAndQueueSlackMeasured, false);
+  assert.equal(
+    details.backpressureConsistency.queueHeadroomVisibleAndQueueSlackVisibleAndMeasured,
+    false,
+  );
+  assert.equal(details.backpressureConsistency.receiptCursorQueueSlackVisibleAndMeasured, false);
+  assert.equal(details.backpressureConsistency.receiptCursorMemoryHeadroomVisibleAndMeasured, false);
+  assert.ok(
+    blockers.includes(
+      'queue-pause-with-complete-footprint-without-measured-and-aligned-receipt-cursor-queue-slack',
+    ),
+  );
+  assert.ok(
+    blockers.includes(
+      'queue-budget-visible-and-memory-ceiling-visible-without-aligned-receipt-cursor-queue-slack-proof',
+    ),
+  );
+  assert.ok(
+    blockers.includes(
+      'queue-budget-visible-and-queue-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof',
+    ),
+  );
+});
+
 test('production throughput blocks malformed parallelism limits before faster execution can be claimed', () => {
   const report = runGuardedExecutorBenchmark({
     profile: 'ci',
