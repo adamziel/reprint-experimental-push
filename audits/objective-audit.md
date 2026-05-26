@@ -7,9 +7,9 @@ The project is **not releasable as a production WordPress push path**.
 - Fresh remote heads at audit time, checked on May 26, 2026:
 
 - `origin/lane/reliable-executor` -> `618d4694`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `6fa43e62`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `b1eabc4e`
 - `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration` -> `29fff11d`
-- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `6c9e7d36`
+- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `6b6d4e00`
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `0a50d5b3`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `e8e3224e`
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `2d233260`
