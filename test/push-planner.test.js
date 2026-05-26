@@ -21436,6 +21436,124 @@ test('blocks local nav menu item graph resources while preserving remote-only pl
   assert.equal(remote.plugins.forms.description, 'remote-only plugin drift');
 });
 
+test('blocks local nav menu item postmeta resources while preserving a matching independent edit and remote-only plugin drift', () => {
+  const resourceKey = 'row:["wp_postmeta","meta_id:144"]';
+  const targetResourceKey = 'row:["wp_posts","ID:44"]';
+  const base = baseSite();
+  base.db.wp_posts['ID:44'] = {
+    ID: 44,
+    post_title: 'Base nav menu item',
+    post_content: 'Base nav menu item content',
+    post_status: 'publish',
+    post_type: 'nav_menu_item',
+  };
+  base.db.wp_posts['ID:1'].post_title = 'Base shared post title';
+  base.db.wp_postmeta = {};
+
+  const local = baseSite();
+  local.db.wp_posts['ID:44'] = JSON.parse(JSON.stringify(base.db.wp_posts['ID:44']));
+  local.db.wp_posts['ID:1'].post_title = 'Shared post title';
+  local.db.wp_postmeta = {
+    'meta_id:144': {
+      meta_id: 144,
+      post_id: 44,
+      meta_key: '_menu_item_note',
+      meta_value: 'local-private-nav-meta',
+    },
+  };
+
+  const remote = baseSite();
+  remote.db.wp_posts['ID:44'] = JSON.parse(JSON.stringify(base.db.wp_posts['ID:44']));
+  remote.db.wp_posts['ID:1'].post_title = 'Shared post title';
+  remote.db.wp_postmeta = {};
+  remote.plugins.forms.description = 'remote-only plugin drift';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin drift */';
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.class === 'unsupported-navigation-resource' && entry.resourceKey === resourceKey);
+  const matchingEdit = decisionFor(plan, 'row:["wp_posts","ID:1"]');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const reference = blocker.references[0];
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(plan.conflicts.length, 0);
+  assert.equal(blocker.class, 'unsupported-navigation-resource');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.reason, 'Navigation and menu graph resources are not yet supported by the planner.');
+  assert.equal(reference.relationshipKey, 'wp_postmeta.post_id');
+  assert.equal(reference.relationshipType, 'postmeta-post');
+  assert.equal(reference.targetResourceKey, targetResourceKey);
+  assert.equal(matchingEdit.decision, 'already-in-sync');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('local-private-nav-meta'), false);
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin drift');
+  assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin drift */');
+});
+
+test('blocks local nav menu item postmeta references to a same-plan created navigation identity while preserving a matching independent edit and remote-only plugin removals', () => {
+  const resourceKey = 'row:["wp_postmeta","meta_id:145"]';
+  const targetResourceKey = 'row:["wp_posts","ID:45"]';
+  const base = baseSite();
+  base.db.wp_posts['ID:1'].post_title = 'Base shared post title';
+  base.db.wp_postmeta = {};
+
+  const local = baseSite();
+  local.db.wp_posts['ID:1'].post_title = 'Shared post title';
+  local.db.wp_posts['ID:45'] = {
+    ID: 45,
+    post_title: 'Local same-plan nav menu item',
+    post_content: 'Local same-plan nav menu item content',
+    post_status: 'publish',
+    post_type: 'nav_menu_item',
+  };
+  local.db.wp_postmeta = {
+    'meta_id:145': {
+      meta_id: 145,
+      post_id: 45,
+      meta_key: '_menu_item_note',
+      meta_value: 'local-private-same-plan-nav-meta',
+    },
+  };
+
+  const remote = baseSite();
+  remote.db.wp_posts['ID:1'].post_title = 'Shared post title';
+  remote.db.wp_postmeta = {};
+  delete remote.plugins.forms;
+  delete remote.files['wp-content/plugins/forms/forms.php'];
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.class === 'unsupported-navigation-resource' && entry.resourceKey === resourceKey);
+  const navigationBlocker = plan.blockers.find((entry) => entry.class === 'unsupported-navigation-resource' && entry.resourceKey === targetResourceKey);
+  const matchingEdit = decisionFor(plan, 'row:["wp_posts","ID:1"]');
+  const reference = blocker.references[0];
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(decisionFor(plan, targetResourceKey), undefined);
+  assert.equal(blocker.class, 'unsupported-navigation-resource');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.unsupportedState, 'same-plan-reference');
+  assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_postmeta","meta_id:145"] references a navigation identity without proven identity mapping or reference rewriting.');
+  assert.equal(reference.relationshipKey, 'wp_postmeta.post_id');
+  assert.equal(reference.relationshipType, 'postmeta-post');
+  assert.equal(reference.targetResourceKey, targetResourceKey);
+  assert.equal(reference.targetChange.remote.state, 'absent');
+  assert.equal(navigationBlocker.class, 'unsupported-navigation-resource');
+  assert.equal(navigationBlocker.resourceKey, targetResourceKey);
+  assert.equal(matchingEdit.decision, 'already-in-sync');
+  assert.equal(planJson.includes('Local same-plan nav menu item content'), false);
+  assert.equal(planJson.includes('local-private-same-plan-nav-meta'), false);
+  assert.equal(Object.hasOwn(remote.plugins, 'forms'), false);
+  assert.equal(Object.hasOwn(remote.files, 'wp-content/plugins/forms/forms.php'), false);
+});
+
 test('blocks local post-parent references to a same-plan created nav menu item while preserving remote-only plugin drift', () => {
   const resourceKey = 'row:["wp_posts","ID:47"]';
   const targetResourceKey = 'row:["wp_posts","ID:11"]';

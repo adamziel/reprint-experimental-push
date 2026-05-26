@@ -3496,6 +3496,73 @@ function addConflict(plan, {
 }
 
 function unsupportedNavigationResourceSupport({ resource, baseValue, localValue, remoteValue, resources, base, local, remote }) {
+  if (resource.type === 'row' && resource.table === 'wp_postmeta') {
+    const candidate = localValue !== ABSENT ? localValue : (baseValue !== ABSENT ? baseValue : remoteValue);
+    if (!candidate || candidate === ABSENT) {
+      return { supported: true };
+    }
+
+    const ownerPostId = normalizePositiveInteger(candidate.post_id);
+    if (ownerPostId == null) {
+      return { supported: true };
+    }
+
+    const navigationTarget = wordpressGraphTargetResource({
+      sourceTable: resource.table,
+      targetSuffix: 'posts',
+      id: ownerPostId,
+    });
+    const navigationTargetBaseValue = getResource(base, navigationTarget);
+    const navigationTargetLocalValue = getResource(local, navigationTarget);
+    const navigationTargetRemoteValue = getResource(remote, navigationTarget);
+    const navigationCandidate = navigationTargetLocalValue !== ABSENT
+      ? navigationTargetLocalValue
+      : (navigationTargetBaseValue !== ABSENT ? navigationTargetBaseValue : navigationTargetRemoteValue);
+
+    if (
+      !navigationCandidate
+      || navigationCandidate === ABSENT
+      || !['wp_navigation', 'nav_menu_item'].includes(navigationCandidate.post_type)
+    ) {
+      return { supported: true };
+    }
+
+    const navigationReference = wordpressGraphReferenceEvidence({
+      relationshipKey: 'wp_postmeta.post_id',
+      relationshipType: 'postmeta-post',
+      sourceResourceKey: resource.key,
+      sourceTable: resource.table,
+      sourceRowId: resource.id,
+      targetResource: navigationTarget,
+      targetResourceKey: navigationTarget.key,
+      targetTable: navigationTarget.table,
+      targetId: navigationTarget.id,
+    }, resources, base, local, remote);
+    const samePlanNavigationTarget = navigationReference.targetChange.remote.state === 'absent'
+      && navigationReference.targetChange.local.state === 'present';
+
+    return {
+      supported: false,
+      className: 'unsupported-navigation-resource',
+      unsupportedState: localValue === ABSENT
+        ? 'delete'
+        : samePlanNavigationTarget
+          ? 'same-plan-reference'
+          : classifyUnsupportedDriftState({
+            baseValue,
+            localValue,
+            remoteValue,
+            allowSteadyUnsupported: true,
+          }),
+      reason: samePlanNavigationTarget
+        ? `WordPress graph mutation ${resource.key} references a navigation identity without proven identity mapping or reference rewriting.`
+        : localValue === ABSENT
+          ? 'Navigation and menu graph resource deletes are not yet supported by the planner.'
+          : 'Navigation and menu graph resources are not yet supported by the planner.',
+      references: [navigationReference],
+    };
+  }
+
   if (resource.type !== 'row' || resource.table !== 'wp_posts') {
     return { supported: true };
   }
