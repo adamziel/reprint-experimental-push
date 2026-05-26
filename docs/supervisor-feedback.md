@@ -1,11 +1,11 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-26 16:58 CEST
+Last updated: 2026-05-26 16:59 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
 
-## 2026-05-26 16:58 CEST - Reliable Head Advanced to `a4b9c689`
+## 2026-05-26 16:59 CEST - Reliable Head Advanced to `a4b9c689`
 
 - Going well: the live reliable head is now `a4b9c689c565b42e79cd835ec060a9b7e1fc605a`, so the checked release path advanced again.
 - Not going well: the shared `waitForServer()` readiness boundary still ends at `GET /wp-json/ -> 502 "WordPress is not ready yet"`, so the gate stays `0/4`.
