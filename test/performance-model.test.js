@@ -5445,8 +5445,11 @@ test('production throughput details fail closed when aligned queue-slack proof d
   assert.equal(details.queueHeadroomVisibleAndMemoryHeadroomVisible, false);
   assert.equal(details.queueHeadroomVisibleAndQueueSlackMeasured, false);
   assert.equal(details.queueHeadroomVisibleAndQueueSlackVisibleAndMeasured, false);
+  assert.equal(details.queueBudgetVisibleAndMemoryCeilingVisibleAndMeasured, false);
+  assert.equal(details.queueBudgetVisibleAndQueueHeadroomVisibleAndMeasured, false);
   assert.equal(details.receiptCursorQueueSlackVisibleAndMeasured, false);
   assert.equal(details.receiptCursorMemoryHeadroomVisibleAndMeasured, false);
+  assert.equal(details.receiptCursorMemoryCeilingVisibleAndMeasured, false);
   assert.equal(details.backpressureConsistency.receiptCursorPauseFootprintVisible, false);
   assert.equal(details.backpressureConsistency.queueBudgetVisibleAndMemoryCeilingVisible, false);
   assert.equal(details.backpressureConsistency.queueBudgetVisibleAndQueueHeadroomVisible, false);
@@ -5472,12 +5475,15 @@ test('production throughput details fail closed when aligned queue-slack proof d
     false,
   );
   assert.equal(details.backpressureConsistency.queueHeadroomVisibleAndQueueSlackMeasured, false);
+  assert.equal(details.backpressureConsistency.queueBudgetVisibleAndMemoryCeilingVisibleAndMeasured, false);
+  assert.equal(details.backpressureConsistency.queueBudgetVisibleAndQueueHeadroomVisibleAndMeasured, false);
   assert.equal(
     details.backpressureConsistency.queueHeadroomVisibleAndQueueSlackVisibleAndMeasured,
     false,
   );
   assert.equal(details.backpressureConsistency.receiptCursorQueueSlackVisibleAndMeasured, false);
   assert.equal(details.backpressureConsistency.receiptCursorMemoryHeadroomVisibleAndMeasured, false);
+  assert.equal(details.backpressureConsistency.receiptCursorMemoryCeilingVisibleAndMeasured, false);
   assert.ok(
     blockers.includes(
       'queue-pause-with-complete-footprint-without-measured-and-aligned-receipt-cursor-queue-slack',
