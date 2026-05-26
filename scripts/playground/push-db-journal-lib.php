@@ -126,22 +126,10 @@ function reprint_push_lab_db_journal_schema(bool $checked_surface = false): arra
     ];
 
     if ($accepted_on_checked_boundary) {
-        $writer_lease = reprint_push_lab_db_journal_writer_lease_contract(false);
-        $schema['acceptedOnCheckedBoundary'] = true;
-        $schema['ownership'] = [
-            'ownsJournal' => true,
-            'restartReadable' => true,
-            'productionAdapter' => 'wpdb-single-statement-cas',
-        ];
-        $schema['writerLease'] = $writer_lease;
-        $schema['leaseFence'] = [
-            'boundary' => 'wpdb-single-statement-cas',
-            'claimKeyUnique' => true,
-            'fsyncEvidence' => true,
-            'monotonicSequence' => true,
-            'restartReadable' => true,
-            'writerLease' => $writer_lease,
-        ];
+        $schema = array_merge(
+            $schema,
+            reprint_push_lab_db_journal_checked_boundary_contract($checked_surface)
+        );
     }
 
     return $schema;
@@ -153,6 +141,49 @@ function reprint_push_lab_db_journal_package_mode_enabled(): bool
         && REPRINT_PUSH_DISABLE_LAB_ROUTES === true
         && defined('REPRINT_PUSH_DISABLE_AUTH_BOOTSTRAP')
         && REPRINT_PUSH_DISABLE_AUTH_BOOTSTRAP === true;
+}
+
+function reprint_push_lab_db_journal_checked_boundary_contract(
+    bool $checked_surface = false,
+    bool $stale_claim_rejected = false,
+    bool $claim_key_unique = true,
+    bool $monotonic_sequence = true,
+    bool $restart_readable = true
+): array {
+    $package_mode = reprint_push_lab_db_journal_package_mode_enabled();
+    $accepted_on_checked_boundary = $package_mode || $checked_surface;
+    if (!$accepted_on_checked_boundary) {
+        return [];
+    }
+
+    $writer_lease = reprint_push_lab_db_journal_writer_lease_contract(
+        $stale_claim_rejected,
+        $claim_key_unique,
+        $monotonic_sequence,
+        $restart_readable
+    );
+
+    return [
+        'acceptedOnCheckedBoundary' => true,
+        'scope' => $package_mode
+            ? 'packaged production plugin journal surface; not local Playground fixture only'
+            : 'checked live production-shaped journal surface; not local Playground fixture only',
+        'ownership' => [
+            'ownsJournal' => true,
+            'restartReadable' => true,
+            'productionAdapter' => 'wpdb-single-statement-cas',
+        ],
+        'writerLease' => $writer_lease,
+        'leaseFence' => [
+            'boundary' => 'wpdb-single-statement-cas',
+            'claimKeyUnique' => $claim_key_unique,
+            'fsyncEvidence' => true,
+            'monotonicSequence' => $monotonic_sequence,
+            'restartReadable' => $restart_readable,
+            'staleClaimRejected' => $stale_claim_rejected,
+            'writerLease' => $writer_lease,
+        ],
+    ];
 }
 
 function reprint_push_lab_db_journal_key_hash(string $key): string
@@ -552,27 +583,15 @@ function reprint_push_lab_db_journal_summary(int $limit = 20, bool $checked_surf
             $summary['latestRows'],
             $summary['eventSummaries']
         );
-        $writer_lease = reprint_push_lab_db_journal_writer_lease_contract(
-            $stale_claim_rejected,
-            $claim_key_unique,
-            $monotonic_sequence
+        $summary = array_merge(
+            $summary,
+            reprint_push_lab_db_journal_checked_boundary_contract(
+                $checked_surface,
+                $stale_claim_rejected,
+                $claim_key_unique,
+                $monotonic_sequence
+            )
         );
-        $summary['acceptedOnCheckedBoundary'] = true;
-        $summary['ownership'] = [
-            'ownsJournal' => true,
-            'restartReadable' => true,
-            'productionAdapter' => 'wpdb-single-statement-cas',
-        ];
-        $summary['writerLease'] = $writer_lease;
-        $summary['leaseFence'] = [
-            'boundary' => 'wpdb-single-statement-cas',
-            'claimKeyUnique' => $claim_key_unique,
-            'fsyncEvidence' => true,
-            'monotonicSequence' => $monotonic_sequence,
-            'restartReadable' => true,
-            'staleClaimRejected' => $stale_claim_rejected,
-            'writerLease' => $writer_lease,
-        ];
     }
 
     return $summary;

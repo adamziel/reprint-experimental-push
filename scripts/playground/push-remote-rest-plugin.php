@@ -608,7 +608,40 @@ function reprint_push_lab_rest_attach_checked_recovery_journal_evidence(
     }
 
     $result['recovery']['journal']['integrity'] = $existing_integrity;
+
+    $checked_db_journal = reprint_push_lab_db_journal_checked_boundary_contract($checked_surface);
+    $result['recovery']['journal'] = reprint_push_lab_rest_merge_checked_recovery_journal_contract(
+        $result['recovery']['journal'],
+        $checked_db_journal
+    );
     return $result;
+}
+
+function reprint_push_lab_rest_merge_checked_recovery_journal_contract(
+    array $journal,
+    array $checked_db_journal
+): array {
+    if (($checked_db_journal['acceptedOnCheckedBoundary'] ?? false) !== true) {
+        return $journal;
+    }
+
+    if (!array_key_exists('acceptedOnCheckedBoundary', $journal) || $journal['acceptedOnCheckedBoundary'] !== true) {
+        $journal['acceptedOnCheckedBoundary'] = true;
+    }
+
+    foreach (['ownership', 'writerLease', 'leaseFence'] as $nested_key) {
+        if (!isset($checked_db_journal[$nested_key]) || !is_array($checked_db_journal[$nested_key])) {
+            continue;
+        }
+        $journal[$nested_key] = reprint_push_lab_rest_merge_checked_contract_fields(
+            isset($journal[$nested_key]) && is_array($journal[$nested_key]) ? $journal[$nested_key] : [],
+            $checked_db_journal[$nested_key],
+            false,
+            true
+        );
+    }
+
+    return $journal;
 }
 
 function reprint_push_lab_rest_attach_checked_db_journal_contract(
