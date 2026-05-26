@@ -1,11 +1,10 @@
 # Critic Lane Classification Pass
 
-## 2026-05-26 12:06:44 CEST (+0200)
+## 2026-05-26 12:20:20 CEST (+0200)
 
-No gate movement. `c7a6432d` is the current reliable head, but it only clarifies release-gate dependencies in the checked release verifier output. The production-backed auth/session lifecycle gate and the durable-journal ownership gate remain closed, so the critic verdict stays `0/4`.
+No gate movement. `9d0279a3` is the current reliable head, but it only proves recovery claim fencing on the checked release path. The production-backed auth/session lifecycle gate and the durable-journal ownership gate remain closed, so the critic verdict stays `0/4`.
 
 Changed files:
-- [`audits/critic.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/critic/audits/critic.md)
 - [`.lane-output/final.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/critic/.lane-output/final.md)
 
 Commands run:
@@ -21,7 +20,7 @@ Commands run:
 - `git diff --check`
 
 Push result:
-- Not attempted yet
+- Not attempted
 
 Worktree status:
 - Dirty: `audits/critic.md`, `.lane-output/final.md`
