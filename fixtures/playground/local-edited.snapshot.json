@@ -1,0 +1,232 @@
+{
+    "meta": {
+        "source": "wordpress-playground",
+        "fixture": "local-edited",
+        "site_url": "http://127.0.0.1:44319",
+        "home_url": "http://127.0.0.1:44319",
+        "table_prefix": "wp_",
+        "pluginOwnedResources": {
+            "allowedResources": [
+                {
+                    "resourceKey": "row:[\"wp_options\",\"option_name:reprint_push_forms_fixture\"]",
+                    "pluginOwner": "forms",
+                    "driver": "wp-option"
+                },
+                {
+                    "resourceKey": "row:[\"wp_options\",\"option_name:reprint_push_plugin_payload\"]",
+                    "pluginOwner": "forms",
+                    "driver": "wp-option"
+                },
+                {
+                    "resourceKey": "row:[\"wp_postmeta\",\"post_id:1001:meta_key:_reprint_push_forms_schema\"]",
+                    "pluginOwner": "forms",
+                    "driver": "wp-postmeta"
+                },
+                {
+                    "resourceKey": "row:[\"wp_postmeta\",\"post_id:2001:meta_key:_reprint_push_forms_schema\"]",
+                    "pluginOwner": "forms",
+                    "driver": "wp-postmeta"
+                },
+                {
+                    "resourceKey": "row:[\"wp_reprint_push_forms_lab\",\"id:1\"]",
+                    "pluginOwner": "forms",
+                    "driver": "fixture-forms-lab-table",
+                    "supportsDelete": false
+                }
+            ]
+        }
+    },
+    "files": {
+        "wp-content/plugins/reprint-push-forms-fixture/reprint-push-forms-fixture.php": "<?php\n/*\nPlugin Name: Reprint Push Forms Fixture\nVersion: 1.0.0\n*/\n",
+        "wp-content/uploads/reprint-push/local-only.txt": "local-only upload content",
+        "wp-content/uploads/reprint-push/shared.txt": "local upload content"
+    },
+    "plugins": {
+        "reprint-push-forms-fixture": {
+            "name": "Reprint Push Forms Fixture",
+            "version": "1.0.0",
+            "pluginFile": "reprint-push-forms-fixture/reprint-push-forms-fixture.php",
+            "active": true,
+            "__pluginOwner": "forms"
+        }
+    },
+    "db": {
+        "wp_posts": {
+            "ID:1001": {
+                "ID": 1001,
+                "post_title": "Shared base post",
+                "post_name": "shared-base-post",
+                "post_content": "Local edited content",
+                "post_status": "publish",
+                "post_type": "post",
+                "post_parent": 0,
+                "post_author": 1
+            },
+            "ID:2001": {
+                "ID": 2001,
+                "post_title": "Local-only draft",
+                "post_name": "local-only-draft",
+                "post_content": "Created locally after pull",
+                "post_status": "draft",
+                "post_type": "post",
+                "post_parent": 0,
+                "post_author": 1
+            }
+        },
+        "wp_options": {
+            "option_name:reprint_push_forms_fixture": {
+                "option_name": "reprint_push_forms_fixture",
+                "option_value": {
+                    "enabled": true,
+                    "flags": {
+                        "captcha": true,
+                        "honeypot": true
+                    },
+                    "forms": {
+                        "contact": {
+                            "active": true,
+                            "fields": [
+                                "email",
+                                "message",
+                                "phone"
+                            ],
+                            "limits": {
+                                "daily": "40",
+                                "perIp": "4"
+                            },
+                            "title": "Contact the studio",
+                            "version": "2"
+                        },
+                        "newsletter": {
+                            "active": true,
+                            "fields": [
+                                "email",
+                                "source"
+                            ],
+                            "segments": [
+                                "general",
+                                "product",
+                                "local"
+                            ],
+                            "title": "Newsletter",
+                            "version": "1"
+                        }
+                    },
+                    "owner": "forms",
+                    "revision": "002-local",
+                    "routing": {
+                        "notify": [
+                            "local-admin@example.test",
+                            "ops@example.test"
+                        ],
+                        "storeSubmissions": true
+                    }
+                },
+                "__pluginOwner": "forms"
+            },
+            "option_name:reprint_push_plugin_payload": {
+                "option_name": "reprint_push_plugin_payload",
+                "option_value": {
+                    "mode": "local-edited",
+                    "owner": "forms",
+                    "version": 2
+                },
+                "__pluginOwner": "forms"
+            }
+        },
+        "wp_postmeta": {
+            "post_id:1001:meta_key:_reprint_push_forms_schema": {
+                "post_id": 1001,
+                "meta_key": "_reprint_push_forms_schema",
+                "meta_value": {
+                    "fields": [
+                        {
+                            "enabled": true,
+                            "key": "email",
+                            "label": "Email address",
+                            "type": "email"
+                        },
+                        {
+                            "enabled": true,
+                            "key": "message",
+                            "label": "Project brief",
+                            "type": "textarea"
+                        },
+                        {
+                            "enabled": false,
+                            "key": "phone",
+                            "label": "Phone",
+                            "type": "tel"
+                        }
+                    ],
+                    "form": "contact",
+                    "notifications": {
+                        "admin": true,
+                        "copyToSender": true
+                    },
+                    "owner": "forms",
+                    "required": [
+                        "email",
+                        "message",
+                        "phone"
+                    ],
+                    "schemaVersion": "2-local"
+                },
+                "__pluginOwner": "forms"
+            },
+            "post_id:2001:meta_key:_reprint_push_forms_schema": {
+                "post_id": 2001,
+                "meta_key": "_reprint_push_forms_schema",
+                "meta_value": {
+                    "fields": [
+                        {
+                            "enabled": true,
+                            "key": "email",
+                            "label": "Email",
+                            "type": "email"
+                        },
+                        {
+                            "choices": [
+                                "small",
+                                "medium",
+                                "large"
+                            ],
+                            "enabled": true,
+                            "key": "budget",
+                            "label": "Budget",
+                            "type": "select"
+                        }
+                    ],
+                    "form": "intake",
+                    "notifications": {
+                        "admin": false,
+                        "copyToSender": true
+                    },
+                    "owner": "forms",
+                    "required": [
+                        "email"
+                    ],
+                    "schemaVersion": "1-local-only"
+                },
+                "__pluginOwner": "forms"
+            }
+        },
+        "wp_reprint_push_forms_lab": {
+            "id:1": {
+                "id": 1,
+                "form_slug": "contact",
+                "payload": {
+                    "mode": "base",
+                    "owner": "forms",
+                    "rules": {
+                        "maxAttachments": "2",
+                        "requireConsent": true
+                    },
+                    "version": "1"
+                },
+                "updated_marker": "base",
+                "__pluginOwner": "forms"
+            }
+        }
+    }
+}

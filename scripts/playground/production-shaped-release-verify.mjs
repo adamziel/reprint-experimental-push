@@ -19,6 +19,7 @@ import {
   resolvePackagedProductionPluginAuthSessionRequest,
   resolvePackagedProductionPluginAuthSessionSource,
 } from './packaged-production-plugin-source-command.js';
+import { loadBlueprintSnapshotFixture } from './blueprint-snapshot-fixture.js';
 import {
   appendRecoveryClaimOpened,
   consumeProductionRecoveryJournal,
@@ -1589,6 +1590,10 @@ function writePackagedProductionPluginBlueprint(sourceBlueprintPath, targetBluep
 }
 
 function exportSnapshotFromBlueprint(name, blueprintPath) {
+  const trackedSnapshot = loadBlueprintSnapshotFixture(name, blueprintPath);
+  if (trackedSnapshot) {
+    return trackedSnapshot;
+  }
   const result = spawnSync('npx', [
     '--yes',
     '@wp-playground/cli@latest',

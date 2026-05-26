@@ -1,0 +1,226 @@
+{
+    "meta": {
+        "source": "wordpress-playground",
+        "fixture": "remote-changed",
+        "site_url": "http://127.0.0.1:35239",
+        "home_url": "http://127.0.0.1:35239",
+        "table_prefix": "wp_",
+        "pluginOwnedResources": {
+            "allowedResources": [
+                {
+                    "resourceKey": "row:[\"wp_options\",\"option_name:reprint_push_forms_fixture\"]",
+                    "pluginOwner": "forms",
+                    "driver": "wp-option"
+                },
+                {
+                    "resourceKey": "row:[\"wp_options\",\"option_name:reprint_push_plugin_payload\"]",
+                    "pluginOwner": "forms",
+                    "driver": "wp-option"
+                },
+                {
+                    "resourceKey": "row:[\"wp_postmeta\",\"post_id:1001:meta_key:_reprint_push_forms_schema\"]",
+                    "pluginOwner": "forms",
+                    "driver": "wp-postmeta"
+                },
+                {
+                    "resourceKey": "row:[\"wp_postmeta\",\"post_id:3001:meta_key:_reprint_push_forms_schema\"]",
+                    "pluginOwner": "forms",
+                    "driver": "wp-postmeta"
+                },
+                {
+                    "resourceKey": "row:[\"wp_reprint_push_forms_lab\",\"id:1\"]",
+                    "pluginOwner": "forms",
+                    "driver": "fixture-forms-lab-table",
+                    "supportsDelete": false
+                }
+            ]
+        }
+    },
+    "files": {
+        "wp-content/plugins/reprint-push-forms-fixture/reprint-push-forms-fixture.php": "<?php\n/*\nPlugin Name: Reprint Push Forms Fixture\nVersion: 1.1.0\n*/\n",
+        "wp-content/uploads/reprint-push/remote-only.txt": "remote-only upload content",
+        "wp-content/uploads/reprint-push/shared.txt": "remote upload content"
+    },
+    "plugins": {
+        "reprint-push-forms-fixture": {
+            "name": "Reprint Push Forms Fixture",
+            "version": "1.1.0",
+            "pluginFile": "reprint-push-forms-fixture/reprint-push-forms-fixture.php",
+            "active": true,
+            "__pluginOwner": "forms"
+        }
+    },
+    "db": {
+        "wp_posts": {
+            "ID:1001": {
+                "ID": 1001,
+                "post_title": "Shared base post",
+                "post_name": "shared-base-post",
+                "post_content": "Remote edited content",
+                "post_status": "publish",
+                "post_type": "post",
+                "post_parent": 0,
+                "post_author": 1
+            },
+            "ID:3001": {
+                "ID": 3001,
+                "post_title": "Remote-only announcement",
+                "post_name": "remote-only-announcement",
+                "post_content": "Created on source after pull",
+                "post_status": "publish",
+                "post_type": "post",
+                "post_parent": 0,
+                "post_author": 1
+            }
+        },
+        "wp_options": {
+            "option_name:reprint_push_forms_fixture": {
+                "option_name": "reprint_push_forms_fixture",
+                "option_value": {
+                    "enabled": false,
+                    "flags": {
+                        "captcha": true,
+                        "honeypot": true
+                    },
+                    "forms": {
+                        "contact": {
+                            "active": true,
+                            "fields": [
+                                "email",
+                                "message",
+                                "company"
+                            ],
+                            "limits": {
+                                "daily": "30",
+                                "perIp": "2"
+                            },
+                            "title": "Contact sales",
+                            "version": "3"
+                        },
+                        "newsletter": {
+                            "active": true,
+                            "fields": [
+                                "email",
+                                "interest"
+                            ],
+                            "segments": [
+                                "product",
+                                "beta"
+                            ],
+                            "title": "Product updates",
+                            "version": "2"
+                        }
+                    },
+                    "owner": "forms",
+                    "revision": "003-remote",
+                    "routing": {
+                        "notify": [
+                            "remote-admin@example.test"
+                        ],
+                        "storeSubmissions": false
+                    }
+                },
+                "__pluginOwner": "forms"
+            },
+            "option_name:reprint_push_plugin_payload": {
+                "option_name": "reprint_push_plugin_payload",
+                "option_value": {
+                    "mode": "remote-edited",
+                    "owner": "forms",
+                    "version": 3
+                },
+                "__pluginOwner": "forms"
+            }
+        },
+        "wp_postmeta": {
+            "post_id:1001:meta_key:_reprint_push_forms_schema": {
+                "post_id": 1001,
+                "meta_key": "_reprint_push_forms_schema",
+                "meta_value": {
+                    "fields": [
+                        {
+                            "enabled": true,
+                            "key": "email",
+                            "label": "Work email",
+                            "type": "email"
+                        },
+                        {
+                            "enabled": true,
+                            "key": "message",
+                            "label": "Question",
+                            "type": "textarea"
+                        },
+                        {
+                            "enabled": true,
+                            "key": "company",
+                            "label": "Company",
+                            "type": "text"
+                        }
+                    ],
+                    "form": "contact",
+                    "notifications": {
+                        "admin": true,
+                        "copyToSender": false
+                    },
+                    "owner": "forms",
+                    "required": [
+                        "email",
+                        "message",
+                        "company"
+                    ],
+                    "schemaVersion": "2-remote"
+                },
+                "__pluginOwner": "forms"
+            },
+            "post_id:3001:meta_key:_reprint_push_forms_schema": {
+                "post_id": 3001,
+                "meta_key": "_reprint_push_forms_schema",
+                "meta_value": {
+                    "fields": [
+                        {
+                            "enabled": true,
+                            "key": "email",
+                            "label": "Email",
+                            "type": "email"
+                        },
+                        {
+                            "enabled": true,
+                            "key": "topic",
+                            "label": "Topic",
+                            "type": "text"
+                        }
+                    ],
+                    "form": "announcement",
+                    "notifications": {
+                        "admin": true,
+                        "copyToSender": false
+                    },
+                    "owner": "forms",
+                    "required": [
+                        "email",
+                        "topic"
+                    ],
+                    "schemaVersion": "1-remote-only"
+                },
+                "__pluginOwner": "forms"
+            }
+        },
+        "wp_reprint_push_forms_lab": {
+            "id:1": {
+                "id": 1,
+                "form_slug": "contact",
+                "payload": {
+                    "mode": "remote-edited",
+                    "owner": "forms",
+                    "rules": {
+                        "maxAttachments": "4",
+                        "requireConsent": false
+                    },
+                    "version": "2"
+                },
+                "updated_marker": "remote",
+                "__pluginOwner": "forms"
+            }
+        }
+    }
+}

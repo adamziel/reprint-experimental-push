@@ -20,6 +20,10 @@ import {
   resolvePackagedProductionPluginAuthSessionSource,
   resolvePackagedProductionPluginSourceCommand,
 } from '../scripts/playground/packaged-production-plugin-source-command.js';
+import {
+  loadBlueprintSnapshotFixture,
+  resolveBlueprintSnapshotFixturePath,
+} from '../scripts/playground/blueprint-snapshot-fixture.js';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const muPluginDir = path.join(repoRoot, 'scripts/playground/rest-mu-plugins');
@@ -1151,6 +1155,28 @@ test('production-shaped topology proof wrapper emits the fixed one-remote one-lo
   assert.match(proof.stdout, /"ingressPort": 8080/);
   assert.match(proof.stdout, /"proxyPolicy": "local-only"/);
   assert.match(proof.stdout, /"tunnels": "disallowed"/);
+});
+
+test('production-shaped release verify tracks distinct cached blueprint snapshots for local and remote drift fixtures', () => {
+  const localBlueprintPath = path.join(repoRoot, 'fixtures/playground/local-edited.blueprint.json');
+  const remoteBlueprintPath = path.join(repoRoot, 'fixtures/playground/remote-changed.blueprint.json');
+  const localFixture = loadBlueprintSnapshotFixture('local-edited', localBlueprintPath);
+  const remoteFixture = loadBlueprintSnapshotFixture('remote-changed', remoteBlueprintPath);
+
+  assert.equal(
+    resolveBlueprintSnapshotFixturePath(localBlueprintPath),
+    path.join(repoRoot, 'fixtures/playground/local-edited.snapshot.json'),
+  );
+  assert.equal(
+    resolveBlueprintSnapshotFixturePath(remoteBlueprintPath),
+    path.join(repoRoot, 'fixtures/playground/remote-changed.snapshot.json'),
+  );
+  assert.equal(localFixture.meta.fixture, 'local-edited');
+  assert.equal(remoteFixture.meta.fixture, 'remote-changed');
+  assert.equal(localFixture.db.wp_posts['ID:1001'].post_content, 'Local edited content');
+  assert.equal(remoteFixture.db.wp_posts['ID:1001'].post_content, 'Remote edited content');
+  assert.equal(localFixture.files['wp-content/uploads/reprint-push/local-only.txt'], 'local-only upload content');
+  assert.equal(remoteFixture.files['wp-content/uploads/reprint-push/remote-only.txt'], 'remote-only upload content');
 });
 
 async function withPlaygroundServer(name, blueprintPath, run) {
