@@ -359,6 +359,18 @@ test('benchmark model covers large uploads and plugin installs', () => {
   assert.ok(
     model.safeFastPaths.some(
       (fastPath) =>
+        fastPath.area === 'parallelism-limits' &&
+        fastPath.allowedShortcut === 'reuse-measured-upload-concurrency-and-compressed-release-manifest-digest-to-size-bounded-release-bundle-fanout' &&
+        fastPath.guardrails.includes('measured-upload-concurrency-stays-planning-evidence-only') &&
+        fastPath.guardrails.includes('compressed-release-manifest-digest-remains-planning-evidence-only') &&
+        fastPath.gateProofs.skip.includes('measured upload concurrency together with a compressed release-manifest digest') &&
+        fastPath.gateProofs.recovery.includes('durable release receipts and the guarded release record still classify pause, retry, or crash'),
+    ),
+    'measured upload concurrency and compressed release-manifest digests can size release-bundle fanout without weakening recovery evidence',
+  );
+  assert.ok(
+    model.safeFastPaths.some(
+      (fastPath) =>
         fastPath.area === 'compression' &&
         fastPath.allowedShortcut === 'compress-canonical-per-kind-budget-summaries-to-size-bounded-release-bundle-fanout' &&
         fastPath.guardrails.includes('release-bundle-fanout-revalidates-before-write') &&

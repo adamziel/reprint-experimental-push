@@ -1031,6 +1031,27 @@ export const SAFE_FAST_PATHS = Object.freeze([
     publishesStagedDataEarly: false,
   },
   {
+    area: 'parallelism-limits',
+    reduces: ['idle-time', 'planning-round-trips', 'duplicate-budget-recomputation'],
+    allowedShortcut: 'reuse-measured-upload-concurrency-and-compressed-release-manifest-digest-to-size-bounded-release-bundle-fanout',
+    guardrails: [
+      'measured-upload-concurrency-stays-planning-evidence-only',
+      'compressed-release-manifest-digest-remains-planning-evidence-only',
+      'bounded-release-bundle-fanout-stays-within-per-site-and-per-kind-budgets',
+    ],
+    gateProofs: {
+      skip: 'measured upload concurrency together with a compressed release-manifest digest can trim repeat release-bundle fanout sizing without changing the live compare',
+      live: 'each later release-bundle write still rechecks its own live resource precondition at the storage boundary before visibility changes',
+      group: 'the concurrency signal and compressed digest only narrow planning inside the same planned bundle and never merge coupled owners',
+      recovery: 'durable release receipts and the guarded release record still classify pause, retry, or crash',
+    },
+    visibilityBoundary: 'planning-only-for-release-bundle-fanout',
+    failureEvidence: 'compressed release-manifest digest plus measured upload concurrency and durable release receipts',
+    bypassesLivePreconditions: false,
+    splitsAtomicGroup: false,
+    publishesStagedDataEarly: false,
+  },
+  {
     area: 'remote-indexes',
     reduces: ['planning-round-trips', 'repeat-scanning', 'retry-window-recomputation'],
     allowedShortcut: 'reuse-cached-release-manifest-digest-and-cursor-to-size-bounded-release-bundle-fanout',

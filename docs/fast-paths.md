@@ -107,6 +107,9 @@ scans without weakening live preconditions or the atomic-group barrier.
 It also includes a cached release-manifest digest plus cursor shortcut for
 release-bundle fanout, so the planner can trim repeat fanout scans without
 changing the guarded release boundary.
+It also includes measured upload concurrency plus a compressed release-manifest
+digest for release-bundle fanout, so the planner can trim duplicate fanout
+sizing without turning either signal into mutation authority.
 It also includes measured upload concurrency plus a cached release-manifest
 cursor for release-bundle fanout, so bounded release planning can skip repeat
 fanout sizing without turning concurrency reuse into mutation authority.
