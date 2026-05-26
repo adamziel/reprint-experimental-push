@@ -15156,6 +15156,111 @@ test('orders same-plan revision dependency references deterministically within t
   assert.equal(planJson.includes('Local early revision meta'), false);
 });
 
+test('orders same-plan revision term-relationship references deterministically within the same priority bucket', () => {
+  const revisionResourceKey = 'row:["wp_posts","ID:74"]';
+  const earlyRelationshipResourceKey = 'row:["wp_term_relationships","object_id:74,term_taxonomy_id:11"]';
+  const lateRelationshipResourceKey = 'row:["wp_term_relationships","object_id:74,term_taxonomy_id:90"]';
+  const base = baseSite();
+  base.db.wp_terms = {
+    'term_id:11': {
+      term_id: 11,
+      name: 'Base early revision relationship term',
+      slug: 'base-early-revision-relationship-term',
+    },
+    'term_id:90': {
+      term_id: 90,
+      name: 'Base late revision relationship term',
+      slug: 'base-late-revision-relationship-term',
+    },
+  };
+  base.db.wp_term_taxonomy = {
+    'term_taxonomy_id:90': {
+      term_taxonomy_id: 90,
+      term_id: 90,
+      taxonomy: 'category',
+      description: 'Base late revision relationship taxonomy',
+      parent: 0,
+    },
+    'term_taxonomy_id:11': {
+      term_taxonomy_id: 11,
+      term_id: 11,
+      taxonomy: 'category',
+      description: 'Base early revision relationship taxonomy',
+      parent: 0,
+    },
+  };
+  base.db.wp_term_relationships = {};
+
+  const local = baseSite();
+  local.db.wp_posts['ID:74'] = {
+    ID: 74,
+    post_title: 'Local deterministic revision relationship target',
+    post_content: 'Local deterministic revision relationship body',
+    post_status: 'inherit',
+    post_type: 'revision',
+  };
+  local.db.wp_terms = JSON.parse(JSON.stringify(base.db.wp_terms));
+  local.db.wp_term_taxonomy = JSON.parse(JSON.stringify(base.db.wp_term_taxonomy));
+  local.db.wp_term_relationships = {
+    'object_id:74,term_taxonomy_id:90': {
+      object_id: 74,
+      term_taxonomy_id: 90,
+      term_order: 2,
+      note: 'Local late revision relationship note',
+    },
+    'object_id:74,term_taxonomy_id:11': {
+      object_id: 74,
+      term_taxonomy_id: 11,
+      term_order: 1,
+      note: 'Local early revision relationship note',
+    },
+  };
+  local.db.wp_posts['ID:1'].post_title = 'Shared deterministic revision relationship post';
+
+  const remote = baseSite();
+  remote.db.wp_terms = JSON.parse(JSON.stringify(base.db.wp_terms));
+  remote.db.wp_term_taxonomy = JSON.parse(JSON.stringify(base.db.wp_term_taxonomy));
+  remote.db.wp_term_relationships = {};
+  remote.db.wp_posts['ID:1'].post_title = 'Shared deterministic revision relationship post';
+  remote.plugins.forms.description = 'remote-only plugin revision relationship drift';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin revision relationship drift */';
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === revisionResourceKey);
+  const earlyRelationshipBlocker = plan.blockers.find((entry) => entry.resourceKey === earlyRelationshipResourceKey);
+  const lateRelationshipBlocker = plan.blockers.find((entry) => entry.resourceKey === lateRelationshipResourceKey);
+  const matchingEdit = decisionFor(plan, 'row:["wp_posts","ID:1"]');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, revisionResourceKey), undefined);
+  assert.equal(decisionFor(plan, revisionResourceKey), undefined);
+  assert.equal(blocker.class, 'unsupported-revision-resource');
+  assert.equal(
+    blocker.reason,
+    'WordPress graph mutation row:["wp_posts","ID:74"] is created in the same plan as a term relationship revision target that depends on it, and identity rewriting is not yet supported.',
+  );
+  assert.deepEqual(
+    blocker.references.map((reference) => [reference.relationshipType, reference.sourceResourceKey]),
+    [
+      ['term-relationship-object', earlyRelationshipResourceKey],
+      ['term-relationship-object', lateRelationshipResourceKey],
+    ],
+  );
+  assert.equal(earlyRelationshipBlocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(lateRelationshipBlocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(matchingEdit.decision, 'already-in-sync');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('Local deterministic revision relationship target'), false);
+  assert.equal(planJson.includes('Local deterministic revision relationship body'), false);
+  assert.equal(planJson.includes('Local early revision relationship note'), false);
+  assert.equal(planJson.includes('Local late revision relationship note'), false);
+});
+
 test('blocks local postmeta references to a same-plan created revision while preserving a matching independent edit and remote-only plugin removals', () => {
   const resourceKey = 'row:["wp_postmeta","meta_id:54"]';
   const targetResourceKey = 'row:["wp_posts","ID:48"]';
