@@ -8,8 +8,8 @@ import { fileURLToPath } from 'node:url';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const muPluginDir = path.join(repoRoot, 'scripts/playground/rest-mu-plugins');
-const serverStartupTimeoutMs = 10_000;
-const playgroundServerTimeoutMs = 12;
+const serverStartupTimeoutMs = 6_000;
+const playgroundServerTimeoutMs = 8;
 const serverFetchTimeoutMs = 3_000;
 const runLivePlaygroundTopologyTests = process.env.REPRINT_RUN_PLAYGROUND_LIVE_TESTS === '1';
 const packageJson = JSON.parse(readFileSync(path.join(repoRoot, 'package.json'), 'utf8'));
@@ -20,7 +20,7 @@ const liveCredentials = {
 const proofSubprocessTimeoutMs = 45_000;
 const proofSubprocessKillSignal = 'SIGKILL';
 const releaseVerifySlowPathTimeoutMs = 12_000;
-const liveReleaseVerifyTimeoutMs = 12_000;
+const liveReleaseVerifyTimeoutMs = 7_000;
 const proofSubprocessOptions = {
   timeout: proofSubprocessTimeoutMs,
   killSignal: proofSubprocessKillSignal,
@@ -29,7 +29,7 @@ const proofSubprocessOptions = {
 };
 
 function spawnReleaseVerify(env = {}, timeout = proofSubprocessTimeoutMs) {
-  return spawnSync(
+  const proof = spawnSync(
     process.execPath,
     ['scripts/playground/production-shaped-release-verify.mjs'],
     {
@@ -44,6 +44,18 @@ function spawnReleaseVerify(env = {}, timeout = proofSubprocessTimeoutMs) {
       },
     },
   );
+  if (proof.error) {
+    const timeoutNote = proof.error.code === 'ETIMEDOUT' && timeout ? ` after ${timeout}ms` : '';
+    throw new Error(
+      `production-shaped release verify failed${timeoutNote} with ${proof.error.name ?? 'Error'}${proof.error.code ? ` code=${proof.error.code}` : ''}${proof.error.errno ? ` errno=${proof.error.errno}` : ''}${proof.signal ? ` signal=${proof.signal}` : ''}${proof.status !== null ? ` status=${proof.status}` : ''}: ${proof.error.message}\nstdout:\n${proof.stdout ?? ''}\nstderr:\n${proof.stderr ?? ''}`,
+    );
+  }
+  if (proof.signal) {
+    throw new Error(
+      `production-shaped release verify terminated by ${proof.signal}${timeout ? ` after ${timeout}ms` : ''}\nstdout:\n${proof.stdout ?? ''}\nstderr:\n${proof.stderr ?? ''}`,
+    );
+  }
+  return proof;
 }
 
 function assertReleaseVerifyProof(proof, label) {

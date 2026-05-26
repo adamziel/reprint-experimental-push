@@ -215,6 +215,7 @@ export function authenticatedHttpClient({
     signedPost(pathSuffix, body, options = {}) {
       const pathname = `${profile.namespacePath}${pathSuffix}`;
       const rawBody = JSON.stringify(body);
+      assertMutatingRequestOptions(pathname, options);
       return requestJsonRaw(
         baseUrl,
         'POST',
@@ -514,6 +515,15 @@ function authHeaders(credential) {
   return {
     authorization: `Basic ${Buffer.from(`${credential.username}:${credential.password}`, 'utf8').toString('base64')}`,
   };
+}
+
+function assertMutatingRequestOptions(pathname, options) {
+  if (options.session === undefined || options.session === '') {
+    throw new Error(`Missing push session for mutating request: ${pathname}`);
+  }
+  if (options.idempotencyKey === undefined || options.idempotencyKey === '') {
+    throw new Error(`Missing push idempotencyKey for mutating request: ${pathname}`);
+  }
 }
 
 function hmacHex(key, data) {
