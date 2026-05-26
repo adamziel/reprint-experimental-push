@@ -1,5 +1,7 @@
 const labWordPressNotReadyPattern = /WordPress is not ready yet/i;
 const labRouteNotReadyPattern = /No route was found matching the URL and request method\.?/i;
+const labWordPressNotReadyCodePattern = /wordpress_not_ready/i;
+const labRouteNotReadyCodePattern = /rest_no_route/i;
 
 function labFindMessage(value, depth = 0) {
   if (depth > 4 || value == null) {
@@ -55,13 +57,60 @@ function labResponseMessage(response) {
   return labFindMessage(response?.body);
 }
 
+function labFindCode(value, depth = 0) {
+  if (depth > 4 || value == null) {
+    return '';
+  }
+
+  if (typeof value === 'string') {
+    return value;
+  }
+
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      const code = labFindCode(item, depth + 1);
+      if (code) {
+        return code;
+      }
+    }
+    return '';
+  }
+
+  if (typeof value !== 'object') {
+    return '';
+  }
+
+  for (const key of ['code', 'error_code', 'errorCode']) {
+    const code = labFindCode(value[key], depth + 1);
+    if (code) {
+      return code;
+    }
+  }
+
+  for (const [key, nestedValue] of Object.entries(value)) {
+    if (['code', 'error_code', 'errorCode'].includes(key)) {
+      continue;
+    }
+    const code = labFindCode(nestedValue, depth + 1);
+    if (code) {
+      return code;
+    }
+  }
+
+  return '';
+}
+
+function labResponseCode(response) {
+  return labFindCode(response?.body);
+}
+
 function labWordPressNotReady(response) {
-  return response?.body?.code === 'wordpress_not_ready'
+  return labWordPressNotReadyCodePattern.test(labResponseCode(response))
     || labWordPressNotReadyPattern.test(labResponseMessage(response));
 }
 
 function labRouteNotReady(response) {
-  return response?.body?.code === 'rest_no_route'
+  return labRouteNotReadyCodePattern.test(labResponseCode(response))
     || labRouteNotReadyPattern.test(labResponseMessage(response));
 }
 

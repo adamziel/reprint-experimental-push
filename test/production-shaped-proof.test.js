@@ -1127,6 +1127,54 @@ test('packaged production plugin readiness helper retries only startup-shaped pa
     packagedProductionPluginSnapshotRetryable({
       status: 500,
       body: {
+        error: {
+          code: 'wordpress_not_ready',
+        },
+      },
+    }),
+    true,
+  );
+  assert.equal(
+    packagedProductionPluginPreflightRetryable({
+      status: 503,
+      body: {
+        details: {
+          code: 'rest_no_route',
+        },
+      },
+    }),
+    true,
+  );
+  assert.equal(
+    packagedProductionPluginSnapshotRetryable({
+      status: 500,
+      body: {
+        payload: {
+          issue: {
+            errorCode: 'wordpress_not_ready',
+          },
+        },
+      },
+    }),
+    true,
+  );
+  assert.equal(
+    packagedProductionPluginPreflightRetryable({
+      status: 503,
+      body: {
+        payload: {
+          issue: {
+            error_code: 'rest_no_route',
+          },
+        },
+      },
+    }),
+    true,
+  );
+  assert.equal(
+    packagedProductionPluginSnapshotRetryable({
+      status: 500,
+      body: {
         errors: [
           {
             detail: {
@@ -1665,6 +1713,54 @@ test('lab Playground readiness helper rejects malformed ready responses and retr
               text: 'WordPress is not ready yet',
             },
           ],
+        },
+      },
+    }),
+    true,
+  );
+  assert.equal(
+    labSnapshotRetryable({
+      status: 503,
+      body: {
+        error: {
+          code: 'wordpress_not_ready',
+        },
+      },
+    }),
+    true,
+  );
+  assert.equal(
+    labSnapshotRetryable({
+      status: 500,
+      body: {
+        details: {
+          code: 'rest_no_route',
+        },
+      },
+    }),
+    true,
+  );
+  assert.equal(
+    labSnapshotRetryable({
+      status: 503,
+      body: {
+        payload: {
+          issue: {
+            errorCode: 'wordpress_not_ready',
+          },
+        },
+      },
+    }),
+    true,
+  );
+  assert.equal(
+    labSnapshotRetryable({
+      status: 500,
+      body: {
+        payload: {
+          issue: {
+            error_code: 'rest_no_route',
+          },
         },
       },
     }),

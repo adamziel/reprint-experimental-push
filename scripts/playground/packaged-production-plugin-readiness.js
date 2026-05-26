@@ -3,6 +3,8 @@ import { evaluateProductionAuthSessionLifecycle } from './production-auth-sessio
 export const packagedProductionPluginMaxConsecutiveNotReadyProbes = 4;
 const packagedProductionPluginWordPressNotReadyPattern = /WordPress is not ready yet/i;
 const packagedProductionPluginRouteNotReadyPattern = /No route was found matching the URL and request method\.?/i;
+const packagedProductionPluginWordPressNotReadyCodePattern = /wordpress_not_ready/i;
+const packagedProductionPluginRouteNotReadyCodePattern = /rest_no_route/i;
 
 function packagedProductionPluginFindMessage(value, depth = 0) {
   if (depth > 4 || value == null) {
@@ -58,8 +60,57 @@ function packagedProductionPluginResponseMessage(response) {
   return packagedProductionPluginFindMessage(response?.body);
 }
 
+function packagedProductionPluginFindCode(value, depth = 0) {
+  if (depth > 4 || value == null) {
+    return '';
+  }
+
+  if (typeof value === 'string') {
+    return value;
+  }
+
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      const code = packagedProductionPluginFindCode(item, depth + 1);
+      if (code) {
+        return code;
+      }
+    }
+    return '';
+  }
+
+  if (typeof value !== 'object') {
+    return '';
+  }
+
+  for (const key of ['code', 'error_code', 'errorCode']) {
+    const code = packagedProductionPluginFindCode(value[key], depth + 1);
+    if (code) {
+      return code;
+    }
+  }
+
+  for (const [key, nestedValue] of Object.entries(value)) {
+    if (['code', 'error_code', 'errorCode'].includes(key)) {
+      continue;
+    }
+    const code = packagedProductionPluginFindCode(nestedValue, depth + 1);
+    if (code) {
+      return code;
+    }
+  }
+
+  return '';
+}
+
+function packagedProductionPluginResponseCode(response) {
+  return packagedProductionPluginFindCode(response?.body);
+}
+
 function packagedProductionPluginWordPressNotReadyResponse(response) {
-  return response?.body?.code === 'wordpress_not_ready'
+  return packagedProductionPluginWordPressNotReadyCodePattern.test(
+    packagedProductionPluginResponseCode(response),
+  )
     || packagedProductionPluginReadinessWordPressNotReady(
       response?.status,
       packagedProductionPluginResponseMessage(response),
@@ -67,7 +118,9 @@ function packagedProductionPluginWordPressNotReadyResponse(response) {
 }
 
 function packagedProductionPluginRouteNotReadyBody(response) {
-  return response?.body?.code === 'rest_no_route'
+  return packagedProductionPluginRouteNotReadyCodePattern.test(
+    packagedProductionPluginResponseCode(response),
+  )
     || packagedProductionPluginRouteNotReadyPattern.test(
       packagedProductionPluginResponseMessage(response),
     );
