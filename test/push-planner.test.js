@@ -17508,6 +17508,42 @@ test('allows term taxonomy and relationships to reference same-plan terms and po
     relationshipMutation.dependsOnMutationIds.slice().sort(),
     [postMutation.id, taxonomyMutation.id].sort(),
   );
+  assert.equal(plan.summary.graphDependencies, 3);
+  assert.deepEqual(plan.graphDependencies, [
+    {
+      sourceMutationId: taxonomyMutation.id,
+      sourceResourceKey: taxonomyResourceKey,
+      relationshipKey: 'wp_term_taxonomy.term_id',
+      relationshipType: 'term-taxonomy-term',
+      targetMutationId: termMutation.id,
+      targetResourceKey: termResourceKey,
+      resolutionPolicy: 'same-plan-local-create',
+      source: 'same-plan-local-create',
+      targetLocalHash: termMutation.localHash,
+    },
+    {
+      sourceMutationId: relationshipMutation.id,
+      sourceResourceKey: relationshipResourceKey,
+      relationshipKey: 'wp_term_relationships.object_id',
+      relationshipType: 'term-relationship-object',
+      targetMutationId: postMutation.id,
+      targetResourceKey: postResourceKey,
+      resolutionPolicy: 'same-plan-local-create',
+      source: 'same-plan-local-create',
+      targetLocalHash: postMutation.localHash,
+    },
+    {
+      sourceMutationId: relationshipMutation.id,
+      sourceResourceKey: relationshipResourceKey,
+      relationshipKey: 'wp_term_relationships.term_taxonomy_id',
+      relationshipType: 'term-relationship-taxonomy',
+      targetMutationId: taxonomyMutation.id,
+      targetResourceKey: taxonomyResourceKey,
+      resolutionPolicy: 'same-plan-local-create',
+      source: 'same-plan-local-create',
+      targetLocalHash: taxonomyMutation.localHash,
+    },
+  ]);
   assert.deepEqual(relationshipReferenceTypes, [
     'term-relationship-object',
     'term-relationship-taxonomy',
@@ -26516,6 +26552,8 @@ test('blocks a local post parent reference when the same-plan post target is its
   assert.equal(childBlocker.class, 'missing-wordpress-graph-dependency');
   assert.equal(childBlocker.references[0].relationshipType, 'post-parent');
   assert.equal(childBlocker.references[0].targetResourceKey, blockedParentResourceKey);
+  assert.equal(plan.summary.graphDependencies, 0);
+  assert.deepEqual(plan.graphDependencies, []);
   assert.equal(JSON.stringify(childBlocker).includes('local-private-revision-parent-body'), false);
   assert.equal(JSON.stringify(childBlocker).includes('local-private-blocked-parent-body'), false);
   assert.equal(JSON.stringify(childBlocker).includes('local-private-child-body'), false);

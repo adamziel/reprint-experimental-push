@@ -42,6 +42,7 @@ export function createPushPlan({ base, local, remote, now = new Date() }) {
       conflicts: 0,
       blockers: 0,
       atomicGroups: 0,
+      graphDependencies: 0,
     },
     mutations: [],
     preconditions: [],
@@ -49,6 +50,7 @@ export function createPushPlan({ base, local, remote, now = new Date() }) {
     conflicts: [],
     blockers: [],
     atomicGroups: [],
+    graphDependencies: [],
   };
 
   const resources = enumerateResources(base, local, remote);
@@ -311,12 +313,14 @@ export function createPushPlan({ base, local, remote, now = new Date() }) {
     }
   }
   enforceMutationPreconditionInvariant(plan);
+  plan.graphDependencies = collectWordPressGraphDependencies(plan);
 
   plan.summary.mutations = plan.mutations.length;
   plan.summary.decisions = plan.decisions.length;
   plan.summary.conflicts = plan.conflicts.length;
   plan.summary.blockers = plan.blockers.length;
   plan.summary.atomicGroups = plan.atomicGroups.length;
+  plan.summary.graphDependencies = plan.graphDependencies.length;
   plan.status = plan.conflicts.length > 0
     ? 'conflict'
     : plan.blockers.length > 0
@@ -2003,6 +2007,46 @@ function orderMutationsByDependencies(mutations) {
   }
 
   return ordered;
+}
+
+function collectWordPressGraphDependencies(plan) {
+  const mutationById = new Map(
+    (Array.isArray(plan.mutations) ? plan.mutations : [])
+      .map((mutation) => [mutation.id, mutation]),
+  );
+  const dependencies = [];
+
+  for (const mutation of Array.isArray(plan.mutations) ? plan.mutations : []) {
+    const references = Array.isArray(mutation.wordpressGraphReferences)
+      ? mutation.wordpressGraphReferences
+      : [];
+    for (const reference of references) {
+      const dependency = reference?.dependency;
+      if (
+        reference?.resolutionPolicy !== 'same-plan-local-create'
+        || !dependency
+        || dependency.source !== 'same-plan-local-create'
+        || typeof dependency.targetMutationId !== 'string'
+        || !mutationById.has(dependency.targetMutationId)
+      ) {
+        continue;
+      }
+
+      dependencies.push({
+        sourceMutationId: mutation.id,
+        sourceResourceKey: mutation.resourceKey,
+        relationshipKey: reference.relationshipKey,
+        relationshipType: reference.relationshipType,
+        targetMutationId: dependency.targetMutationId,
+        targetResourceKey: dependency.targetResourceKey,
+        resolutionPolicy: reference.resolutionPolicy,
+        source: dependency.source,
+        targetLocalHash: dependency.targetLocalHash,
+      });
+    }
+  }
+
+  return dependencies;
 }
 
 function wordpressGraphReferences(resource, value, local = null) {
