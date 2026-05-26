@@ -20,7 +20,7 @@ const liveCredentials = {
 const proofSubprocessTimeoutMs = 45_000;
 const proofSubprocessKillSignal = 'SIGKILL';
 const releaseVerifySlowPathTimeoutMs = 12_000;
-const liveReleaseVerifyTimeoutMs = 15_000;
+const liveReleaseVerifyTimeoutMs = 12_000;
 const proofSubprocessOptions = {
   timeout: proofSubprocessTimeoutMs,
   killSignal: proofSubprocessKillSignal,
@@ -42,6 +42,11 @@ function spawnReleaseVerify(env = {}, timeout = proofSubprocessTimeoutMs) {
   }, 'release verify');
 
   return proof;
+}
+
+function assertReleaseVerifyProof(proof, label) {
+  assert.equal(proof.error, undefined, `${label} must not expose a spawn error`);
+  assert.equal(proof.signal, null, `${label} must not terminate from an external signal`);
 }
 
 function spawnBoundedSync(command, args, options, label) {
@@ -170,6 +175,7 @@ test('production-shaped release verify command fails closed when production dura
     NODE_NO_WARNINGS: '1',
   }, releaseVerifySlowPathTimeoutMs);
 
+  assertReleaseVerifyProof(proof, 'durable journal release verify');
   assert.equal(proof.status, 1, proof.stderr);
   assert.match(proof.stdout, /"code": "PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED"/);
 });
@@ -184,6 +190,7 @@ test('production-shaped release verify command fails closed when production auth
     NODE_NO_WARNINGS: '1',
   }, releaseVerifySlowPathTimeoutMs);
 
+  assertReleaseVerifyProof(proof, 'auth/session release verify');
   assert.equal(proof.status, 1, proof.stderr);
   assert.match(proof.stdout, /"ok": false/);
   assert.match(
@@ -255,6 +262,7 @@ maybeTest('production-shaped release verify command runs the live protocol branc
       NODE_NO_WARNINGS: '1',
     }, liveReleaseVerifyTimeoutMs);
 
+    assertReleaseVerifyProof(proof, 'live release verify');
     assert.equal(proof.status, 0, proof.stderr);
     assert.match(proof.stdout, /"ok": true/);
     assert.match(proof.stdout, /"sourceUrl": "http:\/\/127\.0\.0\.1:\d+"/);
@@ -335,6 +343,7 @@ test('production-shaped release verify command reports the checked retained-sour
     REPRINT_PUSH_SIGNING_SECRET: '',
     NODE_NO_WARNINGS: '1',
   }, releaseVerifySlowPathTimeoutMs);
+  assertReleaseVerifyProof(proof, 'retained-source release verify');
   assert.equal(proof.status, 1, proof.stderr);
   assert.match(proof.stdout, /"releaseProof": \{/);
   assert.match(proof.stdout, /"ok": true/);
