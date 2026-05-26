@@ -1,5 +1,26 @@
 # Critic Audit
 
+## 2026-05-26 13:29:12 CEST (+0200)
+
+No gate movement. `0facd973` is the current reliable head from `git ls-remote`, but it still sits in the checked release-verify durable-journal path rather than proving a production-backed auth/session lifecycle or fully closed durable-journal ownership on the release command. The verdict remains `0/4`.
+
+Changed files:
+- [`audits/critic.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/critic/audits/critic.md)
+
+Commands run:
+- `date '+%Y-%m-%d %H:%M:%S %Z (%z)'`
+- `git ls-remote origin refs/heads/lane/reliable-executor`
+
+Push result:
+- Not attempted
+
+Worktree status:
+- Modified tracked files: `audits/critic.md`, `.lane-output/final.md`
+- Branch: `lane/cycle-20260525-mainwindows-2349/critic...origin/main [ahead 1639, behind 684]`
+
+Next supervisor nudge:
+- Keep critic narrow and only reclassify again when `reliable-executor` lands checked-path production-backed auth/session lifecycle, durable-journal ownership, or preserved-remote retry proof.
+
 ## 2026-05-26 13:25:05 CEST (+0200)
 
 No gate movement. `eeaea30d` now consumes the production recovery journal in release verify and asserts the consumer reports `consumed: true`, which is stronger checked-path durable-journal evidence than the earlier inspection-only head. It still does not prove a production-backed auth/session lifecycle on the checked release path or fully closed durable-journal ownership on the release command, so the verdict remains `0/4`.
