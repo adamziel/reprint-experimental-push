@@ -1,9 +1,26 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-26 16:11 CEST
+Last updated: 2026-05-26 16:12 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-26 16:12 CEST - Progress Correction Hand-off
+
+- Going well: the live reliable head is still `ea74b2bdc01574dce1380641171497338df62883`, so the checked release
+  path has a single current head to align against.
+- Not going well: the visible public progress text was reported with stale `998e856f` wording, so the public-facing
+  current-head line must be corrected before any further promotion.
+- Progress change: this is a status correction, not a gate change; the visible gate posture stays `0/4`.
+- Next nudge: have `progress-publisher` repair the public current-head wording back to
+  `ea74b2bdc01574dce1380641171497338df62883`, keep the gate count conservative, and let `progress-live`
+  promote only the corrected page.
+
+| Lane | Nudge |
+| --- | --- |
+| Progress publisher | Correct the public current-head wording back to `ea74b2bdc01574dce1380641171497338df62883` and keep `0/4`. |
+| Progress live | Promote only the corrected page; do not publish stale current-head text. |
+| Audit and critic | Keep the verdict at `0/4` unless the checked release boundary proves production-backed lifecycle or durable ownership. |
 
 ## 2026-05-26 16:11 CEST - Progress Correction Needed
 
