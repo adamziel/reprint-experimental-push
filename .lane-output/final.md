@@ -1,10 +1,10 @@
 Critic lane handoff:
 
-- Rechecked `AGENTS.md`, `supervision/README.md`, the critic lane prompt, `audits/critic.md`, and the newest `reliable-executor` proof note.
-- The freshest reliable evidence is still a bounded failure trail, not production proof: the live proof now reports repeated `/wp-json/` probe failures and the last probe state before timeout instead of a silent stall.
-- That is an evidence-quality improvement only. It does not move the release gate.
+- Rechecked `AGENTS.md`, `supervision/README.md`, the critic lane prompt, `audits/critic.md`, the newest `reliable-executor` proof note, and the latest `progress-publisher` note.
+- The newest adjacent evidence changed, but only in the expected direction: `reliable-executor` pushed a harness fix that turns the silent Playground stall into a bounded readiness failure trail, and `progress-publisher` refreshed the public timestamp while keeping the gate posture at `0/4`.
+- That is still evidence-quality movement, not a release-gate move.
 - The blocker set stays unchanged: production auth/session lifecycle, durable journal ownership, preserved-remote retry, exact replay equivalence, and full graph/plugin coverage remain unproven.
-- Next useful work belongs in `reliable-executor` or product code, not another critic refresh. The immediate executable nudge is to turn the readiness failure into a concrete route/status/body diagnosis or switch to auth/session and durable journal ownership.
+- Next useful work still belongs in `reliable-executor` or product code, not another critic refresh. The immediate executable nudge is to move from harness evidence to product-side auth/session and durable journal ownership, while keeping unsupported surfaces explicitly blocked.
 
 Changed files:
 - [`.lane-output/final.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/critic/.lane-output/final.md)
@@ -13,15 +13,16 @@ Commands run:
 - `sed -n '1,260p' audits/critic.md`
 - `sed -n '1,220p' .lane-output/final.md`
 - `ls -1t ../reliable-executor/.lane-output/final*.md | head -n 3 | xargs -r -I{} sh -c 'printf "\\n-- %s --\\n" "{}"; sed -n "1,220p" "{}"'`
+- `ls -1t ../progress-publisher/.lane-output/final*.md | head -n 1 | xargs -r sed -n '1,220p'`
 
 Push result:
-- No push attempted
+- Pending
 
 Worktree status:
 - Branch: `lane/cycle-20260525-mainwindows-2349/critic`
-- Status: `ahead 1556, behind 227` vs `origin/main`
+- Status: `ahead 1558, behind 229` vs `origin/main`
 - Dirty tracked file: `.lane-output/final.md`
 - No other tracked changes
 
 Next supervisor nudge:
-- Keep `critic` parked unless `reliable-executor` lands a proof delta that changes the blocker set.
+- Keep `critic` parked unless product-side proof changes the blocker set; harness and freshness updates alone do not move the release gate.
