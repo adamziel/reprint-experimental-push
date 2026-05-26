@@ -98,6 +98,10 @@ Current executable gate:
     the commit boundary;
   - production storage receipts, atomic-group commit proof, and row-batch
     executor proof remain blocked until they are measured on the live surface.
+- The production throughput claim stays `blocked` until `reliable-executor`
+  supplies live production-backed atomic-group commit, storage receipts, and
+  row-batch executor evidence on the release path; this lane should not
+  broaden the claim surface before that dependency lands.
 - The same details now also surface the atomic-group metadata visibility bit on
   the backpressure consistency summary, so the production throughput proof can
   keep the atomic-group context visible next to the queue-boundary evidence.
