@@ -5067,6 +5067,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['backpressure', 'chunk-receipts', 'durable-progress'],
   },
   {
+    id: 'cached-receipt-cursor-queue-budget-memory-ceiling-and-queue-headroom-skips-backpressure-pause-after-retry',
+    proposal: 'use a cached receipt cursor plus queue budget, memory ceiling, and queue headroom to skip the backpressure pause after a retry',
+    rejectedBecause: 'budget and headroom evidence can size the next bounded replay, but without aligned receipt-cursor slack it still cannot prove the pause happened before overflow or that the ordered raw receipts survived the retry without guessing which acknowledgements were durable',
+    rejectedGate: 'recovery',
+    violates: ['backpressure', 'chunk-receipts', 'durable-progress'],
+  },
+  {
     id: 'cached-receipt-cursor-and-journal-lag-skips-backpressure-pause-after-retry',
     proposal: 'use a cached receipt cursor plus journal lag to skip the backpressure pause after a retry',
     rejectedBecause: 'journal lag can summarize flush timing, but it still cannot prove the pause happened before overflow or that the raw receipt order survived the retry without guessing which acknowledgements were durable',
