@@ -9993,7 +9993,7 @@ test('blocks plugin-owned rows with missing driver metadata while preserving a m
   remote.files['wp-content/plugins/seo/seo.php'] = '<?php /* remote-only plugin drift */';
 
   const plan = planFor(base, local, remote);
-  const blocker = plan.blockers[0];
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
   const matchingEdit = decisionFor(plan, 'file:about.php');
   const pluginDecision = decisionFor(plan, 'plugin:seo');
   const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/seo/seo.php');
@@ -26632,8 +26632,8 @@ test('blocks local post-parent references to a same-plan created revision while 
   assert.equal(decisionFor(plan, targetResourceKey), undefined);
   assert.equal(plan.conflicts.length, 0);
   assert.equal(blocker.class, 'unsupported-revision-resource');
-  assert.equal(blocker.resourceKey, targetResourceKey);
-  assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_posts","ID:47"] is created in the same plan as a post parent revision target that depends on it, and identity rewriting is not yet supported.');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.reason, 'Revision graph resources are not yet supported by the planner.');
   assert.equal(planJson.includes('Local revision target content'), false);
   assert.equal(planJson.includes('remote-only plugin drift'), false);
   assert.equal(remote.plugins.forms.description, 'remote-only plugin drift');
@@ -26684,8 +26684,8 @@ test('blocks local post-parent references to a same-plan created revision while 
   assert.equal(decisionFor(plan, targetResourceKey), undefined);
   assert.equal(plan.conflicts.length, 0);
   assert.equal(blocker.class, 'unsupported-revision-resource');
-  assert.equal(blocker.resourceKey, targetResourceKey);
-  assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_posts","ID:47"] is created in the same plan as a post parent revision target that depends on it, and identity rewriting is not yet supported.');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.reason, 'Revision graph resources are not yet supported by the planner.');
   assert.equal(planJson.includes('Local revision target content'), false);
   assert.equal(planJson.includes('remote-only plugin drift'), false);
   assert.equal(remote.plugins.forms.description, 'remote-only plugin drift');
@@ -26886,6 +26886,66 @@ test('blocks local post-parent references to a same-plan created revision while 
   assert.equal(matchingEdit.decision, 'already-in-sync');
   assert.equal(planJson.includes('Local revision target content'), false);
   assert.equal(planJson.includes('Shared matching post content'), false);
+  assert.equal(Object.hasOwn(remote.plugins, 'forms'), false);
+  assert.equal(Object.hasOwn(remote.files, 'wp-content/plugins/forms/forms.php'), false);
+});
+
+test('blocks local post-parent references to a same-plan created revision while preserving a matching independent delete and remote-only plugin removals', () => {
+  const resourceKey = 'row:["wp_posts","ID:46"]';
+  const targetResourceKey = 'row:["wp_posts","ID:47"]';
+  const base = baseSite();
+  base.db.wp_posts['ID:46'] = {
+    ID: 46,
+    post_title: 'Base child post',
+    post_content: 'Base child post content',
+    post_status: 'publish',
+    post_parent: 0,
+    post_type: 'post',
+  };
+  base.files['obsolete.txt'] = 'legacy payload';
+
+  const local = baseSite();
+  local.db.wp_posts['ID:46'] = {
+    ID: 46,
+    post_title: 'Local child post',
+    post_content: 'Local child post content',
+    post_status: 'publish',
+    post_parent: 47,
+    post_type: 'post',
+  };
+  local.db.wp_posts['ID:47'] = {
+    ID: 47,
+    post_title: 'Local revision delete target',
+    post_content: 'Local revision delete target content',
+    post_status: 'inherit',
+    post_type: 'revision',
+  };
+  delete local.files['obsolete.txt'];
+
+  const remote = baseSite();
+  remote.db.wp_posts['ID:46'] = JSON.parse(JSON.stringify(base.db.wp_posts['ID:46']));
+  delete remote.files['obsolete.txt'];
+  delete remote.plugins.forms;
+  delete remote.files['wp-content/plugins/forms/forms.php'];
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  const matchingDelete = decisionFor(plan, 'file:obsolete.txt');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(decisionFor(plan, targetResourceKey), undefined);
+  assert.equal(plan.conflicts.length, 0);
+  assert.equal(blocker.class, 'unsupported-revision-resource');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.reason, 'Revision graph resources are not yet supported by the planner.');
+  assert.equal(matchingDelete.decision, 'already-in-sync');
+  assert.equal(matchingDelete.change.localChange, 'delete');
+  assert.equal(matchingDelete.change.remoteChange, 'delete');
+  assert.equal(planJson.includes('Local revision delete target content'), false);
+  assert.equal(Object.hasOwn(remote.files, 'obsolete.txt'), false);
   assert.equal(Object.hasOwn(remote.plugins, 'forms'), false);
   assert.equal(Object.hasOwn(remote.files, 'wp-content/plugins/forms/forms.php'), false);
 });
