@@ -78,10 +78,17 @@ function reprint_push_lab_db_journal_schema(): array
 {
     reprint_push_lab_db_journal_ensure_table();
 
+    $package_mode = defined('REPRINT_PUSH_DISABLE_LAB_ROUTES')
+        && REPRINT_PUSH_DISABLE_LAB_ROUTES === true
+        && defined('REPRINT_PUSH_DISABLE_AUTH_BOOTSTRAP')
+        && REPRINT_PUSH_DISABLE_AUTH_BOOTSTRAP === true;
+
     return [
         'schemaVersion' => 1,
         'table' => reprint_push_lab_db_journal_table_name(),
-        'scope' => 'local Playground fixture only; not production durability',
+        'scope' => $package_mode
+            ? 'packaged production journal scope'
+            : 'local Playground fixture only; not production durability',
         'appendOnlyEvents' => true,
         'columns' => [
             'id' => 'append-only event sequence',

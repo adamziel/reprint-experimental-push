@@ -11,7 +11,7 @@ import { digest } from '../../src/stable-json.js';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const cliPath = path.join(repoRoot, 'bin/reprint-push-lab.js');
-const serverStartupTimeoutMs = 120_000;
+const serverStartupTimeoutMs = 45_000;
 const transientFetchRetryDelayMs = 250;
 const transientFetchAttempts = 4;
 
@@ -107,9 +107,11 @@ try {
     assert.equal(preflight.body.ok, true);
     assert.equal(preflight.body.routeProfile.profile, 'production-shaped');
     assert.equal(preflight.body.routeProfile.restNamespace, 'reprint/v1');
-    assert.equal(preflight.body.routeProfile.labBacked, true);
+    assert.equal(preflight.body.routeProfile.labBacked, false);
+    assert.equal(preflight.body.auth.session.type, 'production-auth-session');
     assert.equal(preflight.body.auth.session.credentialScope, 'reprint-push-lab:authenticated-http-push');
     assert.equal(preflight.body.auth.session.credentialType, 'push-application-password');
+    assert.equal(preflight.body.journal.dbJournal.scope, 'packaged production journal scope');
     assertSignedStoreCleanup(preflight.body.sessionStore?.cleanup);
 
     const result = runCli([
@@ -154,10 +156,13 @@ try {
       namespace: preflight.body.routeProfile.restNamespace,
       labNamespaceDisabled: labRoute.status === 404,
       profile: preflight.body.routeProfile.profile,
+      labBacked: preflight.body.routeProfile.labBacked,
       authBootstrapDisabled: true,
       unprovisionedAlternateStatus: unprovisionedAlternatePreflight.status,
       unscopedApplicationPasswordStatus: unscopedPreflight.status,
       credentialScope: preflight.body.auth.session.credentialScope,
+      sessionType: preflight.body.auth.session.type,
+      journalScope: preflight.body.journal.dbJournal.scope,
       signedStoreCleanup: {
         deletedExpiredTotal: preflight.body.sessionStore.cleanup.deletedExpiredTotal,
         sessionsDeleted: preflight.body.sessionStore.cleanup.sessionOptions.deletedExpired,
@@ -386,18 +391,19 @@ async function waitForServer(child, baseUrl, logs) {
     }
 
     try {
-      const response = await requestJson(
+      const response = await requestJsonOnce(
         baseUrl,
         'GET',
         '/wp-json/reprint/v1/push/snapshot',
         undefined,
         authHeaders(),
-        { attempts: 2 },
       );
       if (response.status === 200 && response.body?.ok === true) {
         return;
       }
-      lastError = new Error(`Production plugin package snapshot readiness HTTP ${response.status}`);
+      lastError = new Error(
+        `Production plugin package snapshot readiness failed at GET /wp-json/reprint/v1/push/snapshot with HTTP ${response.status} and body ${JSON.stringify(response.body)}`,
+      );
     } catch (error) {
       lastError = error;
     }
