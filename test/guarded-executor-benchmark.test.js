@@ -224,6 +224,7 @@ test('guarded benchmark refuses production throughput claims until production ga
     report.claims.productionThroughputDetails.recovery.partialCommitInspectionStatus,
     'blocked-recovery',
   );
+  assert.equal(report.claims.productionThroughputDetails.atomicGroup.productionAtomicCommitMeasured, false);
   assert.equal(
     report.claims.productionThroughputDetails.blockers.includes('production-memory-ceiling-not-measured'),
     false,

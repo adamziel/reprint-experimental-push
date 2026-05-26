@@ -918,7 +918,10 @@ export function productionThroughputDetails(report) {
       journalSuccessReceiptKindsGrouped,
     },
     recovery: report.evidence.recovery,
-    atomicGroup: report.evidence.atomicGroup,
+    atomicGroup: {
+      ...report.evidence.atomicGroup,
+      productionAtomicCommitMeasured,
+    },
     blockers: productionThroughputBlockers(report),
   };
 }
