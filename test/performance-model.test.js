@@ -95,6 +95,16 @@ test('benchmark model covers large uploads and plugin installs', () => {
     'cached release manifests can size release-bundle fanout without weakening the live compare',
   );
   assert.ok(
+    model.safeFastPaths.some(
+      (fastPath) =>
+        fastPath.allowedShortcut === 'reuse-cached-release-manifest-digest-to-size-bounded-release-bundle-fanout' &&
+        fastPath.visibilityBoundary === 'planning-only-for-release-bundle-fanout' &&
+        fastPath.failureEvidence.includes('guarded release record') &&
+        fastPath.gateProofs.recovery.includes('durable receipts'),
+    ),
+    'cached release-manifest fanout stays planning-only and still depends on durable release receipts',
+  );
+  assert.ok(
     pluginInstall.actions.some((action) => action.type === 'db-batch-parallelism'),
     'plugin install includes bounded row-batch parallelism',
   );
