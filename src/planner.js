@@ -2835,6 +2835,7 @@ function addUnsupportedTermTaxonomyResourceBlocker(plan, {
     resource,
     resourceKey: resource.key,
     reason: support.reason || `Term taxonomy graph resource ${resource.key} is not yet supported by the planner.`,
+    unsupportedState: support.unsupportedState || null,
     baseHash,
     localHash,
     remoteHash,
@@ -3324,6 +3325,11 @@ function unsupportedTermTaxonomyResourceSupport({ resource, baseValue, localValu
   return {
     supported: false,
     className: 'unsupported-term-taxonomy-resource',
+    unsupportedState: samePlanCreatedTermReferences.length > 0
+      ? 'same-plan-reference'
+      : convergedDrift
+        ? 'converged-drift'
+        : 'remote-only-drift',
     reason: remoteOnlyDrift || convergedDrift
       ? 'Term taxonomy graph resources are not yet supported by the planner.'
       : samePlanCreatedTermReferences.some((reference) => reference.relationshipType === 'term-taxonomy-parent')

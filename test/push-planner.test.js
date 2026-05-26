@@ -15872,6 +15872,7 @@ test('blocks local term-taxonomy parent references to a same-plan created term i
   assert.equal(blocker.class, 'unsupported-term-taxonomy-resource');
   assert.equal(blocker.resourceKind, 'term-taxonomy');
   assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.unsupportedState, 'same-plan-reference');
   assert.equal(
     blocker.reason,
     'WordPress graph mutation row:["wp_term_taxonomy","term_taxonomy_id:5"] is created in the same plan as a parent term identity that depends on it, and identity rewriting is not yet supported.',
@@ -18457,6 +18458,7 @@ test('blocks remote-only term taxonomy drift while preserving a matching indepen
   assert.equal(blocker.class, 'unsupported-term-taxonomy-resource');
   assert.equal(blocker.resourceKind, 'term-taxonomy');
   assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.unsupportedState, 'remote-only-drift');
   assert.equal(blocker.reason, 'Term taxonomy graph resources are not yet supported by the planner.');
   assert.equal(matchingEdit.decision, 'already-in-sync');
   assert.equal(matchingEdit.change.localChange, 'update');
@@ -18527,6 +18529,7 @@ test('blocks converged term taxonomy drift while preserving a matching independe
   assert.equal(blocker.class, 'unsupported-term-taxonomy-resource');
   assert.equal(blocker.resourceKind, 'term-taxonomy');
   assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.unsupportedState, 'converged-drift');
   assert.equal(blocker.reason, 'Term taxonomy graph resources are not yet supported by the planner.');
   assert.equal(matchingEdit.decision, 'already-in-sync');
   assert.equal(matchingEdit.change.localChange, 'update');
