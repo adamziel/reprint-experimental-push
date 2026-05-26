@@ -17801,6 +17801,98 @@ test('blocks an existing term-taxonomy row when its same-plan parent term still 
   assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
 });
 
+test('blocks an existing term-taxonomy row when its same-plan parent term still belongs to a blocked nav menu taxonomy while preserving a matching independent file type swap and remote-only plugin drift', () => {
+  const parentResourceKey = 'row:["wp_terms","term_id:9"]';
+  const taxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:5"]';
+  const navMenuTaxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:8"]';
+  const matchingTypeSwapResourceKey = 'file:wp-content/uploads/navigation-cover';
+  const base = baseSite();
+  base.files['wp-content/uploads/navigation-cover'] = 'base navigation cover bytes';
+  base.db.wp_terms = {
+    'term_id:2': {
+      term_id: 2,
+      name: 'Base existing term',
+      slug: 'base-existing-term',
+    },
+  };
+  base.db.wp_term_taxonomy = {
+    'term_taxonomy_id:5': {
+      term_taxonomy_id: 5,
+      term_id: 2,
+      taxonomy: 'category',
+      parent: 9,
+      description: 'base term taxonomy description',
+    },
+  };
+
+  const local = baseSite();
+  local.files['wp-content/uploads/navigation-cover'] = { type: 'directory' };
+  local.db.wp_terms = {
+    ...JSON.parse(JSON.stringify(base.db.wp_terms)),
+    'term_id:9': {
+      term_id: 9,
+      name: 'Local same-plan parent term',
+      slug: 'local-same-plan-parent-term',
+    },
+  };
+  local.db.wp_term_taxonomy = {
+    'term_taxonomy_id:5': {
+      term_taxonomy_id: 5,
+      term_id: 2,
+      taxonomy: 'category',
+      parent: 9,
+      description: 'local parent-linked taxonomy description',
+    },
+    'term_taxonomy_id:8': {
+      term_taxonomy_id: 8,
+      term_id: 9,
+      taxonomy: 'nav_menu',
+      description: 'local nav menu taxonomy description',
+      parent: 0,
+      count: 0,
+    },
+  };
+
+  const remote = baseSite();
+  remote.files['wp-content/uploads/navigation-cover'] = { type: 'directory' };
+  remote.db.wp_terms = JSON.parse(JSON.stringify(base.db.wp_terms));
+  remote.db.wp_term_taxonomy = JSON.parse(JSON.stringify(base.db.wp_term_taxonomy));
+  remote.plugins.forms.description = 'remote-only plugin drift';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin drift */';
+
+  const plan = planFor(base, local, remote);
+  const parentBlocker = plan.blockers.find((entry) => entry.resourceKey === parentResourceKey);
+  const taxonomyBlocker = plan.blockers.find((entry) => entry.resourceKey === taxonomyResourceKey);
+  const navMenuTaxonomyBlocker = plan.blockers.find((entry) => entry.resourceKey === navMenuTaxonomyResourceKey);
+  const matchingTypeSwap = decisionFor(plan, matchingTypeSwapResourceKey);
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, parentResourceKey), undefined);
+  assert.equal(mutationFor(plan, taxonomyResourceKey), undefined);
+  assert.equal(matchingTypeSwap.decision, 'already-in-sync');
+  assert.equal(matchingTypeSwap.change.localChange, 'type-change');
+  assert.equal(matchingTypeSwap.change.remoteChange, 'type-change');
+  assert.equal(parentBlocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(parentBlocker.reason, 'WordPress graph mutation row:["wp_terms","term_id:9"] is created in the same plan as a parent term identity that depends on it, and identity rewriting is not yet supported.');
+  assert.equal(taxonomyBlocker.class, 'unsupported-term-taxonomy-resource');
+  assert.equal(taxonomyBlocker.unsupportedState, 'same-plan-reference');
+  assert.equal(taxonomyBlocker.reason, 'WordPress graph mutation row:["wp_term_taxonomy","term_taxonomy_id:5"] is created in the same plan as a parent term identity that depends on it, and identity rewriting is not yet supported.');
+  assert.equal(navMenuTaxonomyBlocker.class, 'unsupported-navigation-resource');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('Local same-plan parent term'), false);
+  assert.equal(planJson.includes('local parent-linked taxonomy description'), false);
+  assert.equal(planJson.includes('local nav menu taxonomy description'), false);
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
+  assert.equal(remote.files['wp-content/uploads/navigation-cover'].type, 'directory');
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin drift');
+  assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin drift */');
+});
+
 test('allows an existing term-relationship row to reference a term taxonomy created by the same plan', () => {
   const taxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:5"]';
   const relationshipResourceKey = 'row:["wp_term_relationships","object_id:7,term_taxonomy_id:5"]';
