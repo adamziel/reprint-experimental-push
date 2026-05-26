@@ -6,21 +6,20 @@ The project is **not releasable as a production WordPress push path**.
 
 Fresh remote heads at audit time, checked on May 26, 2026:
 
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `c83e4907`
-- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `e89dfce4`
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `a5b597e9`
-- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `59fe13d4`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `407c256e`
+- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `35ba5a8c`
+- `origin/lane/reliable-executor` -> `acb309b3`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `63734587`
 - `origin/lane/no-data-loss-invariants` -> `f3c8fe4f`
+- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `59fe13d4`
+- `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `d121c210`
+- `origin/lane/no-data-loss-recovery` -> `aec5d04b`
 - `origin/lane/cycle-20260525-mainwindows-2349/critic` -> `fa0dc8a0`
 - `origin/lane/critic` -> `5b61693d`
-- `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `d121c210`
-- `origin/lane/reliable-executor` -> `831e8134`
 - `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration` -> `efd20c08`
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` -> `db36753e`
 - `origin/lane/same-plan-wordpress-graph-create` -> `0d2178e9`
 - `origin/lane/progress-publisher` -> `7695e1f9`
-- `origin/lane/independent-auditor` -> `e89dfce4`
-- `origin/lane/no-data-loss-recovery` -> `aec5d04b`
 - `origin/lane/fast-paths` -> `59fe13d4`
 - `origin/lane/cycle-20260525-mainwindows-2357/no-data-loss-invariants-graph-proof` -> `98c0ce26`
 - `origin/main` -> `e55864f4`
@@ -33,9 +32,11 @@ Fresh lane proof since the last audit pass improved the local evidence floor,
 but it did not change the release conclusion:
 
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now records
-  `c83e4907`, refreshing public progress freshness only.
+  `63734587`, refreshing public progress freshness only.
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now records
-  `a5b597e9`, refreshing the supervisor progress surface only.
+  `407c256e`, refreshing the supervisor progress surface only.
+- `origin/lane/reliable-executor` now records `acb309b3`, hardening Playground
+  cleanup handling only.
 - `origin/lane/no-data-loss-invariants` now records `f3c8fe4f`, adding
   attachment reference blocker proof. That remains fail-closed boundary work,
   not live source mutation proof.
