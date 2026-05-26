@@ -650,6 +650,30 @@ test('checked durable journal boundary stays closed until stale-claim rejection 
       previousClaimKeyHash: 'retry-claim-hash-01',
       previousClaimEvent: 'idempotency-opened',
     },
+    claimEvidence: {
+      activeRow: {
+        sequence: 20,
+        event: 'stale-claim-retry-started',
+        claimKeyHash: 'retry-claim-hash-02',
+        idempotencyKeyHash: 'idempotency-hash-01',
+        requestHash: 'request-hash-01',
+      },
+      abandonedRow: {
+        sequence: 18,
+        event: 'stale-claim-abandoned',
+        idempotencyKeyHash: 'idempotency-hash-01',
+        requestHash: 'request-hash-01',
+        startedCursor: 'db-journal:12',
+        claimCursor: 'db-journal:11',
+      },
+      previousRow: {
+        sequence: 11,
+        event: 'idempotency-opened',
+        claimKeyHash: 'retry-claim-hash-01',
+        idempotencyKeyHash: 'idempotency-hash-01',
+        requestHash: 'request-hash-01',
+      },
+    },
     ownership: {
       ownsJournal: true,
       restartReadable: true,
@@ -683,6 +707,50 @@ test('checked durable journal boundary stays closed until stale-claim rejection 
     },
   };
 
+  assert.equal(
+    checkedDurableJournalBoundarySatisfied({
+      ...baseContract,
+      claimEvidence: undefined,
+      writerLease: {
+        ...baseContract.writerLease,
+        staleClaimRejected: true,
+      },
+      leaseFence: {
+        ...baseContract.leaseFence,
+        staleClaimRejected: true,
+        writerLease: {
+          ...baseContract.leaseFence.writerLease,
+          staleClaimRejected: true,
+        },
+      },
+    }),
+    false,
+  );
+  assert.equal(
+    checkedDurableJournalBoundarySatisfied({
+      ...baseContract,
+      claimEvidence: {
+        ...baseContract.claimEvidence,
+        activeRow: {
+          ...baseContract.claimEvidence.activeRow,
+          sequence: 21,
+        },
+      },
+      writerLease: {
+        ...baseContract.writerLease,
+        staleClaimRejected: true,
+      },
+      leaseFence: {
+        ...baseContract.leaseFence,
+        staleClaimRejected: true,
+        writerLease: {
+          ...baseContract.leaseFence.writerLease,
+          staleClaimRejected: true,
+        },
+      },
+    }),
+    false,
+  );
   assert.equal(
     checkedDurableJournalBoundarySatisfied({
       ...baseContract,
@@ -1046,6 +1114,15 @@ test('checked durable journal boundary stays closed until stale-claim rejection 
         previousClaimSequence: undefined,
         previousClaimKeyHash: undefined,
         previousClaimEvent: undefined,
+      },
+      claimEvidence: {
+        activeRow: {
+          sequence: 20,
+          event: 'idempotency-opened',
+          claimKeyHash: 'retry-claim-hash-02',
+          idempotencyKeyHash: 'idempotency-hash-01',
+          requestHash: 'request-hash-01',
+        },
       },
       writerLease: {
         ...baseContract.writerLease,

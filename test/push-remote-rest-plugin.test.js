@@ -752,6 +752,30 @@ test('checked db journal merge fills missing claim ownership evidence from the a
       previousClaimKeyHash: 'retry-claim-hash-01',
       previousClaimEvent: 'idempotency-opened',
     },
+    claimEvidence: {
+      activeRow: {
+        sequence: 20,
+        event: 'stale-claim-retry-started',
+        claimKeyHash: 'retry-claim-hash-02',
+        idempotencyKeyHash: 'idempotency-hash-01',
+        requestHash: 'request-hash-01',
+      },
+      abandonedRow: {
+        sequence: 18,
+        event: 'stale-claim-abandoned',
+        idempotencyKeyHash: 'idempotency-hash-01',
+        requestHash: 'request-hash-01',
+        startedCursor: 'db-journal:12',
+        claimCursor: 'db-journal:11',
+      },
+      previousRow: {
+        sequence: 11,
+        event: 'idempotency-opened',
+        claimKeyHash: 'retry-claim-hash-01',
+        idempotencyKeyHash: 'idempotency-hash-01',
+        requestHash: 'request-hash-01',
+      },
+    },
   });
 });
 
@@ -2895,6 +2919,30 @@ test('checked recovery inspect evidence fails closed when accepted checked summa
       previousClaimSequence: 11,
       previousClaimKeyHash: 'retry-claim-hash-01',
       previousClaimEvent: 'idempotency-opened',
+    },
+    claimEvidence: {
+      activeRow: {
+        sequence: 20,
+        event: 'stale-claim-retry-started',
+        claimKeyHash: 'retry-claim-hash-02',
+        idempotencyKeyHash: 'idempotency-hash-01',
+        requestHash: 'request-hash-01',
+      },
+      abandonedRow: {
+        sequence: 18,
+        event: 'stale-claim-abandoned',
+        idempotencyKeyHash: 'idempotency-hash-01',
+        requestHash: 'request-hash-01',
+        startedCursor: 'db-journal:12',
+        claimCursor: 'db-journal:11',
+      },
+      previousRow: {
+        sequence: 11,
+        event: 'idempotency-opened',
+        claimKeyHash: 'retry-claim-hash-01',
+        idempotencyKeyHash: 'idempotency-hash-01',
+        requestHash: 'request-hash-01',
+      },
     },
     ownership: {
       ownsJournal: true,
@@ -6254,6 +6302,30 @@ test('checked db journal boundary contract fails closed when the checked claim c
       previousClaimKeyHash: 'retry-claim-hash-01',
       previousClaimEvent: 'idempotency-opened',
     },
+    claimEvidence: {
+      activeRow: {
+        sequence: 20,
+        event: 'stale-claim-retry-started',
+        claimKeyHash: 'retry-claim-hash-02',
+        idempotencyKeyHash: 'idempotency-hash-01',
+        requestHash: 'request-hash-01',
+      },
+      abandonedRow: {
+        sequence: 18,
+        event: 'stale-claim-abandoned',
+        idempotencyKeyHash: 'idempotency-hash-01',
+        requestHash: 'request-hash-01',
+        startedCursor: 'db-journal:12',
+        claimCursor: 'db-journal:11',
+      },
+      previousRow: {
+        sequence: 11,
+        event: 'idempotency-opened',
+        claimKeyHash: 'retry-claim-hash-01',
+        idempotencyKeyHash: 'idempotency-hash-01',
+        requestHash: 'request-hash-01',
+      },
+    },
     ownership: {
       ownsJournal: true,
       restartReadable: true,
@@ -6292,6 +6364,7 @@ test('checked db journal boundary contract fails closed when the checked claim c
     },
     latestRows: [
       {
+        id: 20,
         sequence: 20,
         event: 'stale-claim-rejected',
       },
@@ -6318,9 +6391,29 @@ test('checked db journal boundary contract fails closed when the checked claim c
 
   result = runCheckedBoundaryContractMatches({
     ...baseJournal,
+    claimEvidence: undefined,
+  });
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(JSON.parse(result.stdout), false);
+
+  result = runCheckedBoundaryContractMatches({
+    ...baseJournal,
     claim: {
       ...baseJournal.claim,
       activeClaimSequence: 0,
+    },
+  });
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(JSON.parse(result.stdout), false);
+
+  result = runCheckedBoundaryContractMatches({
+    ...baseJournal,
+    claimEvidence: {
+      ...baseJournal.claimEvidence,
+      activeRow: {
+        ...baseJournal.claimEvidence.activeRow,
+        sequence: 21,
+      },
     },
   });
   assert.equal(result.status, 0, result.stderr);

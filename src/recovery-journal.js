@@ -103,6 +103,7 @@ export function checkedDurableJournalBoundarySatisfied(dbJournal) {
     && nestedWriterLease?.storageGuard === leaseFenceBoundary
     && productionAdapter === leaseFenceBoundary
     && durableJournalClaimContractMatches(dbJournal?.claim)
+    && durableJournalClaimEvidenceContractMatches(dbJournal?.claim, dbJournal?.claimEvidence)
     && dbJournal?.leaseFence?.claimKeyUnique === true
     && dbJournal?.leaseFence?.fsyncEvidence === true
     && dbJournal?.leaseFence?.monotonicSequence === true
@@ -240,6 +241,95 @@ function durableJournalClaimContractMatches(claim) {
       && isPositiveInteger(claim.previousClaimSequence)
       && hasNonEmptyString(claim.previousClaimEvent)
     ));
+}
+
+function durableJournalClaimEvidenceContractMatches(claim, claimEvidence) {
+  if (!claim || typeof claim !== 'object') {
+    return false;
+  }
+  if (!claimEvidence || typeof claimEvidence !== 'object') {
+    return false;
+  }
+
+  const activeRow = claimEvidence.activeRow;
+  if (!durableJournalClaimEvidenceRowMatches(activeRow, {
+    sequence: claim.activeClaimSequence,
+    event: claim.activeClaimEvent,
+    claimKeyHash: claim.activeClaimKeyHash,
+    idempotencyKeyHash: claim.idempotencyKeyHash,
+    requestHash: claim.requestHash,
+  })) {
+    return false;
+  }
+
+  const needsAbandonedRow = isPositiveInteger(claim.abandonedSequence)
+    || hasNonEmptyString(claim.abandonedEvent)
+    || isPositiveInteger(claim.previousStartedSequence)
+    || isPositiveInteger(claim.previousClaimSequence);
+  if (needsAbandonedRow) {
+    if (!durableJournalClaimEvidenceRowMatches(claimEvidence.abandonedRow, {
+      sequence: claim.abandonedSequence,
+      event: claim.abandonedEvent,
+      idempotencyKeyHash: claim.idempotencyKeyHash,
+      requestHash: claim.requestHash,
+    })) {
+      return false;
+    }
+  }
+
+  if (
+    isPositiveInteger(claim.previousStartedSequence)
+    && cursorSequence(claimEvidence?.abandonedRow?.startedCursor) !== claim.previousStartedSequence
+  ) {
+    return false;
+  }
+
+  const needsPreviousRow = isPositiveInteger(claim.previousClaimSequence)
+    || hasNonEmptyString(claim.previousClaimKeyHash)
+    || hasNonEmptyString(claim.previousClaimEvent);
+  if (needsPreviousRow) {
+    if (!durableJournalClaimEvidenceRowMatches(claimEvidence.previousRow, {
+      sequence: claim.previousClaimSequence,
+      event: claim.previousClaimEvent,
+      claimKeyHash: claim.previousClaimKeyHash,
+      idempotencyKeyHash: claim.idempotencyKeyHash,
+      requestHash: claim.requestHash,
+    })) {
+      return false;
+    }
+  }
+
+  if (
+    isPositiveInteger(claim.previousClaimSequence)
+    && cursorSequence(claimEvidence?.abandonedRow?.claimCursor) !== claim.previousClaimSequence
+  ) {
+    return false;
+  }
+
+  return true;
+}
+
+function durableJournalClaimEvidenceRowMatches(row, expected) {
+  if (!row || typeof row !== 'object') {
+    return false;
+  }
+  return (!isPositiveInteger(expected.sequence) || row.sequence === expected.sequence)
+    && (!hasNonEmptyString(expected.event) || row.event === expected.event)
+    && (!hasNonEmptyString(expected.claimKeyHash) || row.claimKeyHash === expected.claimKeyHash)
+    && (!hasNonEmptyString(expected.idempotencyKeyHash) || row.idempotencyKeyHash === expected.idempotencyKeyHash)
+    && (!hasNonEmptyString(expected.requestHash) || row.requestHash === expected.requestHash);
+}
+
+function cursorSequence(cursor) {
+  if (typeof cursor !== 'string') {
+    return null;
+  }
+  const match = /^db-journal:(\d+)$/.exec(cursor);
+  if (!match) {
+    return null;
+  }
+  const sequence = Number.parseInt(match[1], 10);
+  return Number.isInteger(sequence) && sequence > 0 ? sequence : null;
 }
 
 function hasNonEmptyString(value) {
