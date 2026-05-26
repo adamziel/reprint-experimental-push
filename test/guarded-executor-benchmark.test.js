@@ -3259,11 +3259,54 @@ test('guarded benchmark refuses production throughput claims until production ga
   assert.equal(missingAlignedBackpressureDetails.receiptCursorPauseFootprintBaseComplete, true);
   assert.equal(missingAlignedBackpressureDetails.receiptCursorPauseFootprintComplete, false);
   assert.equal(missingAlignedBackpressureDetails.receiptCursorPauseFootprintVisible, false);
+  assert.equal(missingAlignedBackpressureDetails.receiptCursorBackpressureWithinQueueBudget, false);
+  assert.equal(missingAlignedBackpressureDetails.receiptCursorBackpressureWithinResourceHeadroom, false);
+  assert.equal(missingAlignedBackpressureDetails.receiptCursorHeadroomMatchesResourceHeadroom, false);
+  assert.equal(missingAlignedBackpressureDetails.queueHeadroomMatchesResourceHeadroom, false);
+  assert.equal(missingAlignedBackpressureDetails.queueHeadroomMatchesMemoryHeadroom, false);
+  assert.equal(
+    missingAlignedBackpressureDetails.receiptCursorMemoryHeadroomMatchesResourceHeadroom,
+    false,
+  );
+  assert.equal(
+    missingAlignedBackpressureDetails.receiptCursorMemoryHeadroomWithinResourceHeadroom,
+    false,
+  );
   assert.equal(missingAlignedBackpressureDetails.queueHeadroomVisibleAndMeasured, false);
   assert.equal(missingAlignedBackpressureDetails.queueHeadroomVisibleAndMeasuredAndAligned, false);
   assert.equal(
     missingAlignedBackpressureDetails.backpressureConsistency.receiptCursorPauseFootprintBaseComplete,
     true,
+  );
+  assert.equal(
+    missingAlignedBackpressureDetails.backpressureConsistency.receiptCursorBackpressureWithinQueueBudget,
+    false,
+  );
+  assert.equal(
+    missingAlignedBackpressureDetails.backpressureConsistency.receiptCursorBackpressureWithinResourceHeadroom,
+    false,
+  );
+  assert.equal(
+    missingAlignedBackpressureDetails.backpressureConsistency.receiptCursorHeadroomMatchesResourceHeadroom,
+    false,
+  );
+  assert.equal(
+    missingAlignedBackpressureDetails.backpressureConsistency.queueHeadroomMatchesResourceHeadroom,
+    false,
+  );
+  assert.equal(
+    missingAlignedBackpressureDetails.backpressureConsistency.queueHeadroomMatchesMemoryHeadroom,
+    false,
+  );
+  assert.equal(
+    missingAlignedBackpressureDetails.backpressureConsistency
+      .receiptCursorMemoryHeadroomMatchesResourceHeadroom,
+    false,
+  );
+  assert.equal(
+    missingAlignedBackpressureDetails.backpressureConsistency
+      .receiptCursorMemoryHeadroomWithinResourceHeadroom,
+    false,
   );
 
   const missingBackpressureAlignedSlackProof = clone(report);
@@ -5894,6 +5937,13 @@ test('guarded benchmark keeps pause-footprint details false when the raw complet
 
   assert.equal(details.receiptCursorPauseFootprintComplete, false);
   assert.equal(details.receiptCursorPauseFootprintVisible, false);
+  assert.equal(details.receiptCursorBackpressureWithinQueueBudget, false);
+  assert.equal(details.receiptCursorBackpressureWithinResourceHeadroom, false);
+  assert.equal(details.receiptCursorHeadroomMatchesResourceHeadroom, false);
+  assert.equal(details.queueHeadroomMatchesResourceHeadroom, false);
+  assert.equal(details.queueHeadroomMatchesMemoryHeadroom, false);
+  assert.equal(details.receiptCursorMemoryHeadroomMatchesResourceHeadroom, false);
+  assert.equal(details.receiptCursorMemoryHeadroomWithinResourceHeadroom, false);
   assert.equal(details.queueHeadroomVisibleAndMeasuredAndAligned, false);
   assert.equal(details.queueHeadroomVisibleAndQueueSlackMeasured, false);
   assert.equal(details.queueHeadroomVisibleAndQueueSlackVisibleAndMeasured, false);
@@ -5908,6 +5958,22 @@ test('guarded benchmark keeps pause-footprint details false when the raw complet
   assert.equal(details.receiptCursorMemoryHeadroomVisibleAndMeasured, false);
   assert.equal(details.receiptCursorMemoryCeilingVisibleAndMeasured, false);
   assert.equal(details.backpressureConsistency.receiptCursorPauseFootprintComplete, false);
+  assert.equal(details.backpressureConsistency.receiptCursorBackpressureWithinQueueBudget, false);
+  assert.equal(
+    details.backpressureConsistency.receiptCursorBackpressureWithinResourceHeadroom,
+    false,
+  );
+  assert.equal(details.backpressureConsistency.receiptCursorHeadroomMatchesResourceHeadroom, false);
+  assert.equal(details.backpressureConsistency.queueHeadroomMatchesResourceHeadroom, false);
+  assert.equal(details.backpressureConsistency.queueHeadroomMatchesMemoryHeadroom, false);
+  assert.equal(
+    details.backpressureConsistency.receiptCursorMemoryHeadroomMatchesResourceHeadroom,
+    false,
+  );
+  assert.equal(
+    details.backpressureConsistency.receiptCursorMemoryHeadroomWithinResourceHeadroom,
+    false,
+  );
   assert.equal(details.backpressureConsistency.queueHeadroomVisibleAndMeasuredAndAligned, false);
   assert.equal(details.backpressureConsistency.queueHeadroomVisibleAndQueueSlackMeasured, false);
   assert.equal(details.backpressureConsistency.queueHeadroomVisibleAndQueueSlackVisibleAndMeasured, false);

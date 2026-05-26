@@ -1538,7 +1538,7 @@ export function productionThroughputDetails(report) {
     && receiptCursorBackpressureBytes <= receiptCursorQueueHeadroomBytes
     && report.evidence.backpressure?.receiptCursorQueueSlackMatchesQueueHeadroom === true
     && report.evidence.backpressure?.queueHeadroomWithinResourceCeiling === true;
-  const receiptCursorBackpressureWithinResourceHeadroom =
+  const receiptCursorBackpressureWithinResourceHeadroomBase =
     Number.isFinite(receiptCursorBackpressureBytes)
     && Number.isFinite(receiptCursorMemoryCeilingBytes)
     && Number.isFinite(receiptCursorWindowBytes)
@@ -1551,12 +1551,12 @@ export function productionThroughputDetails(report) {
     && receiptCursorQueueBudgetBytes === report.resourceLimits.maxBufferedUploadBytes
     && receiptCursorQueueHeadroomBytes === receiptCursorQueueBudgetBytes - report.shape.chunkSizeBytes
     && report.evidence.backpressure?.queueHeadroomWithinResourceCeiling === true;
-  const queueHeadroomMatchesMemoryHeadroom =
+  const queueHeadroomMatchesMemoryHeadroomBase =
     Number.isFinite(receiptCursorQueueHeadroomBytes)
     && Number.isFinite(receiptCursorMemoryHeadroomBytes)
     && receiptCursorQueueHeadroomBytes === receiptCursorMemoryHeadroomBytes
     && queueHeadroomWithinResourceCeiling;
-  const receiptCursorBackpressureWithinQueueBudget =
+  const receiptCursorBackpressureWithinQueueBudgetBase =
     Number.isFinite(receiptCursorBackpressureBytes)
     && Number.isFinite(receiptCursorQueueBudgetBytes)
     && receiptCursorBackpressureBytes <= receiptCursorQueueBudgetBytes;
@@ -1702,7 +1702,7 @@ export function productionThroughputDetails(report) {
     Number.isFinite(report.results.successInspection?.counts?.new)
     && Number.isFinite(report.shape?.mutations)
     && report.results.successInspection.counts.new === report.shape.mutations;
-  const receiptCursorHeadroomMatchesResourceHeadroom =
+  const receiptCursorHeadroomMatchesResourceHeadroomBase =
     receiptCursorWithinMemoryCeiling
     && receiptCursorMemoryHeadroomBytes === receiptCursorMemoryCeilingBytes - receiptCursorWindowBytes
     && queueHeadroomWithinResourceCeiling;
@@ -1734,7 +1734,7 @@ export function productionThroughputDetails(report) {
     Number.isFinite(receiptCursorQueueBudgetBytes)
     && Number.isFinite(report.resourceLimits?.maxBufferedUploadBytes)
     && receiptCursorQueueBudgetBytes === report.resourceLimits.maxBufferedUploadBytes;
-  const queueHeadroomMatchesResourceHeadroom =
+  const queueHeadroomMatchesResourceHeadroomBase =
     Number.isFinite(receiptCursorQueueBudgetBytes)
     && Number.isFinite(receiptCursorQueueHeadroomBytes)
     && Number.isFinite(report.resourceLimits?.maxBufferedUploadBytes)
@@ -1937,11 +1937,11 @@ export function productionThroughputDetails(report) {
     queuePauseHasBackpressureAlignedReceiptCursorQueueSlack,
     queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack,
   };
-  const receiptCursorMemoryHeadroomMatchesResourceHeadroom =
+  const receiptCursorMemoryHeadroomMatchesResourceHeadroomBase =
     receiptCursorWithinMemoryCeiling
     && receiptCursorMemoryHeadroomBytes === receiptCursorMemoryCeilingBytes - receiptCursorWindowBytes
     && queueHeadroomWithinResourceCeiling;
-  const receiptCursorMemoryHeadroomWithinResourceHeadroom =
+  const receiptCursorMemoryHeadroomWithinResourceHeadroomBase =
     Number.isFinite(receiptCursorMemoryHeadroomBytes)
     && Number.isFinite(receiptCursorMemoryCeilingBytes)
     && Number.isFinite(receiptCursorWindowBytes)
@@ -1966,6 +1966,27 @@ export function productionThroughputDetails(report) {
     && queueHeadroomVisible
     && queueHeadroomMeasured
     && queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack;
+  const receiptCursorBackpressureWithinQueueBudget =
+    receiptCursorPauseFootprintComplete
+    && receiptCursorBackpressureWithinQueueBudgetBase;
+  const receiptCursorBackpressureWithinResourceHeadroom =
+    receiptCursorPauseFootprintComplete
+    && receiptCursorBackpressureWithinResourceHeadroomBase;
+  const receiptCursorHeadroomMatchesResourceHeadroom =
+    receiptCursorPauseFootprintComplete
+    && receiptCursorHeadroomMatchesResourceHeadroomBase;
+  const queueHeadroomMatchesResourceHeadroom =
+    receiptCursorPauseFootprintComplete
+    && queueHeadroomMatchesResourceHeadroomBase;
+  const queueHeadroomMatchesMemoryHeadroom =
+    receiptCursorPauseFootprintComplete
+    && queueHeadroomMatchesMemoryHeadroomBase;
+  const receiptCursorMemoryHeadroomMatchesResourceHeadroom =
+    receiptCursorPauseFootprintComplete
+    && receiptCursorMemoryHeadroomMatchesResourceHeadroomBase;
+  const receiptCursorMemoryHeadroomWithinResourceHeadroom =
+    receiptCursorPauseFootprintComplete
+    && receiptCursorMemoryHeadroomWithinResourceHeadroomBase;
   const journalSuccessRecordTypes = report.evidence.journal?.successRecordTypes ?? [];
   const journalSuccessReceiptKinds = journalSuccessRecordTypes.map((recordType) => receiptKindForRecordType(recordType));
   const journalSuccessReceiptKindLedger = summarizeReceiptKinds(journalSuccessReceiptKinds);
