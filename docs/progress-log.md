@@ -4,39 +4,18 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
-## 2026-05-26 - Public Status Audit 19:25:02
+## 2026-05-26 - Public Status Audit 19:26:51
 
-<a id="2026-05-26-public-status-audit-192502"></a>
-
-- Refreshed [progress.html](../progress.html) to the current `date` output
-  (`2026-05-26 19:25:02 CEST`) and kept
-  `e3a689602768a97e91ad7027418a94d647efd397` as the current reliable head on
-  the public page and current latest checked release-path support evidence.
-  The visible current-head rows stay aligned on that head, and the stale
-  `23e0ddbed805f76a7b1a887c744497a59792c825` display remains corrected
-  forward in this audit refresh.
-- `e3a689602768a97e91ad7027418a94d647efd397` remains support-side evidence;
-  the release gate stays at `0/4` because production-backed auth/session
-  lifecycle and durable journal ownership with lease/fencing remain blocked.
-- The checked release-path fencing evidence still includes
-  `staleClaimRejected: true`, but that still does not move a gate until the
-  production boundary is proven.
-- Evidence trail: [progress.html](../progress.html),
-  [objective audit](../audits/objective-audit.md),
-  [release-gate checklist](../progress.html#proof-gates).
-
-## 2026-05-26 - Public Status Audit 19:21:29
-
-<a id="2026-05-26-public-status-audit-192129"></a>
+<a id="2026-05-26-public-status-audit-192651"></a>
 
 - Refreshed [progress.html](../progress.html) to the current `date` output
-  (`2026-05-26 19:21:29 CEST`) and kept
-  `23e0ddbed805f76a7b1a887c744497a59792c825` as the current reliable head on
+  (`2026-05-26 19:26:51 CEST`) and kept
+  `1167736383a8763fc87fb9bd3a6d74811dc611f5` as the current reliable head on
   the public page and current latest checked release-path support evidence.
   The visible current-head rows stay aligned on that head, and the stale
-  `36319a06601482046cb8d911c12ec99df7ba4ea4` display remains corrected
+  `e3a689602768a97e91ad7027418a94d647efd397` display remains corrected
   forward in this audit refresh.
-- `23e0ddbed805f76a7b1a887c744497a59792c825` remains support-side evidence;
+- `1167736383a8763fc87fb9bd3a6d74811dc611f5` remains support-side evidence;
   the release gate stays at `0/4` because production-backed auth/session
   lifecycle and durable journal ownership with lease/fencing remain blocked.
 - The checked release-path fencing evidence still includes
