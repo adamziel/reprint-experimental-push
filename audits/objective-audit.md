@@ -7,10 +7,10 @@ The project is **not releasable as a production WordPress push path**.
 Fresh remote heads at audit time, checked on May 26, 2026:
 
 - `origin/lane/critic` -> `49af85aa`
-- `origin/lane/independent-auditor` -> `f0e077b5`
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `10f83177`
-- `origin/lane/reliable-executor` -> `ee099fff`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `1bcb70b3`
+- `origin/lane/independent-auditor` -> `43bef106`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `839007d1`
+- `origin/lane/reliable-executor` -> `ec45b13a`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `a2f433e2`
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `b122ae5c`
 - `origin/lane/no-data-loss-recovery` -> `1214c397`
 - `origin/lane/same-plan-wordpress-graph-create` -> `0d2178e9`
@@ -18,7 +18,7 @@ Fresh remote heads at audit time, checked on May 26, 2026:
 - `origin/lane/fast-paths` -> `cd0fddad`
 - `origin/lane/progress-publisher` -> `7695e1f9`
 - `origin/lane/cycle-20260525-mainwindows-2349/critic` -> `49af85aa`
-- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `f0e077b5`
+- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `43bef106`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `e84ce6e9`
 - `origin/lane/cycle-20260525-mainwindows-2349/same-plan-wordpress-graph-create` -> `0d2178e9`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-invariants` -> `b5c81374`
@@ -37,20 +37,20 @@ Fresh lane proof since the last audit pass improved the local evidence floor,
 but it did not change the release conclusion:
 
 - `origin/lane/reliable-executor` now hardens release verify spawn checks at
-  `c83266ee`. A follow-up cycle head at `aa743242` further hardens subprocess
+  `ec45b13a`. A follow-up cycle head at `aa743242` further hardens subprocess
   cleanup, but the live proof path is still not release-grade source mutation
   evidence.
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` has advanced to
   `855789dd`, which continues the fail-closed queue-slack tightening. It is
   still not release-grade live-source evidence.
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` has
-  advanced to `70b96c1c`, refreshing the audit snapshot. That updates the
+  advanced to `43bef106`, refreshing the audit snapshot. That updates the
   evidence surface but does not change the release boundary.
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now records
-  a public freshness refresh at `43948627`. This is visibility only, not
+  a public freshness refresh at `a2f433e2`. This is visibility only, not
   release-grade live-source evidence.
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now
-  refreshes the progress visibility handoff at `94d67549`. This is freshness
+  refreshes the progress visibility handoff at `839007d1`. This is freshness
   and visibility only, not release-grade live-source evidence.
 - `origin/lane/no-data-loss-invariants` now tightens navigation blocker proof
   at `eee31c44`. A separate cycle-branch proof at `98c0ce26`
@@ -74,9 +74,9 @@ but it did not change the release conclusion:
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now records
   the latest progress freshness handoff at `eed9fdd8`.
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` now
-  refreshes the audit snapshot at `f0e077b5`.
+  refreshes the audit snapshot at `43bef106`.
 - `origin/lane/reliable-executor` now hardens release verify spawn checks at
-  `c83266ee`, with a cycle follow-up at `aa743242` that further cleans up
+  `ec45b13a`, with a cycle follow-up at `aa743242` that further cleans up
   subprocesses. This is still failure-path hardening, not live-source proof.
 - `origin/lane/critic` now refreshes the critic handoff at `49af85aa`.
 - `origin/lane/progress-publisher` now refreshes the public progress evidence
