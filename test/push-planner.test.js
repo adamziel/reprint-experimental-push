@@ -18865,6 +18865,77 @@ test('blocks an existing nav_menu_item parent reference when the same-plan post 
   assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
 });
 
+test('blocks an existing nav_menu_item parent reference when the same-plan post target is itself blocked by a nav_menu_item parent even when unrelated remote attachment noise exists', () => {
+  const sourceMenuItemResourceKey = 'row:["wp_posts","ID:2"]';
+  const menuItemResourceKey = 'row:["wp_posts","ID:3"]';
+  const blockedTargetResourceKey = 'row:["wp_posts","ID:4"]';
+  const base = baseSite();
+  const local = baseSite();
+  const remote = baseSite();
+
+  base.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_title: 'Existing menu item child',
+    post_content: 'base-private-existing-menu-item-child-body',
+    post_status: 'publish',
+    post_type: 'nav_menu_item',
+    post_parent: 0,
+  };
+  local.db.wp_posts['ID:2'] = {
+    ...base.db.wp_posts['ID:2'],
+    post_parent: 4,
+  };
+  remote.db.wp_posts['ID:2'] = {
+    ...base.db.wp_posts['ID:2'],
+  };
+  local.db.wp_posts['ID:3'] = {
+    ID: 3,
+    post_type: 'nav_menu_item',
+    post_title: 'Local nav menu item parent',
+    post_content: 'local-private-nav-menu-item-parent-body',
+    post_status: 'publish',
+  };
+  local.db.wp_posts['ID:4'] = {
+    ID: 4,
+    post_type: 'post',
+    post_title: 'Blocked same-plan parent post',
+    post_content: 'local-private-blocked-parent-body',
+    post_status: 'publish',
+    post_parent: 3,
+  };
+  remote.db.wp_posts['ID:21'] = {
+    ID: 21,
+    post_title: 'Remote attachment noise',
+    post_content: 'remote-attachment-noise-body',
+    post_status: 'inherit',
+    post_type: 'attachment',
+  };
+
+  const plan = planFor(base, local, remote);
+  const menuItemBlocker = plan.blockers.find((entry) => entry.resourceKey === menuItemResourceKey);
+  const blockedTargetMutation = mutationFor(plan, blockedTargetResourceKey);
+  const blockedTargetBlocker = plan.blockers.find((entry) => entry.resourceKey === blockedTargetResourceKey);
+  const sourceBlocker = plan.blockers.find((entry) => entry.resourceKey === sourceMenuItemResourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(mutationFor(plan, sourceMenuItemResourceKey), undefined);
+  assert.equal(mutationFor(plan, menuItemResourceKey), undefined);
+  assert.equal(blockedTargetMutation.changeKind, 'create');
+  assert.equal(blockedTargetMutation.dependsOnMutationIds, undefined);
+  assert.equal(menuItemBlocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(menuItemBlocker.surface, 'nav_menu_item');
+  assert.equal(blockedTargetBlocker.class, 'missing-wordpress-graph-dependency');
+  assert.equal(blockedTargetBlocker.references[0].relationshipType, 'post-parent');
+  assert.equal(blockedTargetBlocker.references[0].targetResourceKey, menuItemResourceKey);
+  assert.equal(sourceBlocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(sourceBlocker.surface, 'nav_menu_item');
+  assert.equal(JSON.stringify(sourceBlocker).includes('base-private-existing-menu-item-child-body'), false);
+  assert.equal(JSON.stringify(sourceBlocker).includes('local-private-nav-menu-item-parent-body'), false);
+  assert.equal(JSON.stringify(sourceBlocker).includes('local-private-blocked-parent-body'), false);
+  assert.equal(JSON.stringify(plan).includes('remote-attachment-noise-body'), false);
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
+});
+
 test('allows a local attachment parent reference to a same-plan post even when a remote navigation post exists', () => {
   const targetResourceKey = 'row:["wp_posts","ID:2"]';
   const attachmentResourceKey = 'row:["wp_posts","ID:3"]';
