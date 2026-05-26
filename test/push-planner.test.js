@@ -18457,7 +18457,7 @@ test('blocks local same-plan created comment post identity while preserving remo
   assert.equal(remote.plugins.forms.description, 'remote-only plugin drift');
 });
 
-test('blocks local same-plan created user identity when a comment references it while preserving a matching independent edit and remote-only plugin drift', () => {
+test('blocks local same-plan created comment user target identity while preserving a matching independent edit and remote-only plugin drift', () => {
   const resourceKey = 'row:["wp_comments","comment_ID:21"]';
   const targetResourceKey = 'row:["wp_users","ID:5"]';
   const base = baseSite();
@@ -18498,7 +18498,8 @@ test('blocks local same-plan created user identity when a comment references it 
   remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin drift */';
 
   const plan = planFor(base, local, remote);
-  const blocker = plan.blockers.find((entry) => entry.class === 'unsupported-comments-users-resource' && entry.resourceKey === resourceKey);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === targetResourceKey);
+  const commentBlocker = plan.blockers.find((entry) => entry.class === 'unsupported-comments-users-resource' && entry.resourceKey === resourceKey);
   const reference = blocker.references[0];
   const matchingEdit = decisionFor(plan, 'row:["wp_posts","ID:1"]');
   const pluginDecision = decisionFor(plan, 'plugin:forms');
@@ -18507,15 +18508,23 @@ test('blocks local same-plan created user identity when a comment references it 
 
   assert.equal(plan.status, 'blocked');
   assert.equal(plan.summary.mutations, 0);
-  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(mutationFor(plan, targetResourceKey), undefined);
   assert.equal(decisionFor(plan, targetResourceKey), undefined);
   assert.equal(plan.conflicts.length, 0);
+  assert.equal(commentBlocker.class, 'unsupported-comments-users-resource');
+  assert.equal(commentBlocker.resourceKey, resourceKey);
+  assert.equal(commentBlocker.unsupportedState, 'same-plan-reference');
+  assert.equal(commentBlocker.reason, 'WordPress graph mutation row:["wp_comments","comment_ID:21"] is created in the same plan as a comment user identity that depends on it, and identity rewriting is not yet supported.');
+  assert.equal(commentBlocker.references[0].relationshipKey, 'wp_comments.user_id');
+  assert.equal(commentBlocker.references[0].relationshipType, 'comment-user');
+  assert.equal(commentBlocker.references[0].targetResourceKey, targetResourceKey);
   assert.equal(blocker.class, 'unsupported-comments-users-resource');
-  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.resourceKey, targetResourceKey);
   assert.equal(blocker.unsupportedState, 'same-plan-reference');
-  assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_comments","comment_ID:21"] is created in the same plan as a comment user identity that depends on it, and identity rewriting is not yet supported.');
+  assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_users","ID:5"] is created in the same plan as a comment user identity that depends on it, and identity rewriting is not yet supported.');
   assert.equal(reference.relationshipKey, 'wp_comments.user_id');
   assert.equal(reference.relationshipType, 'comment-user');
+  assert.equal(reference.sourceResourceKey, resourceKey);
   assert.equal(reference.targetResourceKey, targetResourceKey);
   assert.equal(reference.targetChange.remote.state, 'absent');
   assert.equal(reference.targetChange.local.state, 'present');
@@ -27616,7 +27625,7 @@ test('blocks local comments graph resources while preserving a matching independ
   assert.equal(Object.hasOwn(remote.files, 'wp-content/plugins/forms/forms.php'), false);
 });
 
-test('blocks local same-plan created user identity when a comment references it while preserving remote-only plugin drift', () => {
+test('blocks local same-plan created comment user target identity while preserving remote-only plugin drift', () => {
   const resourceKey = 'row:["wp_comments","comment_ID:22"]';
   const targetResourceKey = 'row:["wp_users","ID:7"]';
   const base = baseSite();
@@ -27653,6 +27662,8 @@ test('blocks local same-plan created user identity when a comment references it 
 
   const plan = planFor(base, local, remote);
   const blocker = plan.blockers.find((entry) => entry.resourceKey === targetResourceKey);
+  const commentBlocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  const reference = blocker.references[0];
   const planJson = JSON.stringify(plan);
 
   assert.equal(plan.status, 'blocked');
@@ -27660,10 +27671,23 @@ test('blocks local same-plan created user identity when a comment references it 
   assert.equal(mutationFor(plan, targetResourceKey), undefined);
   assert.equal(decisionFor(plan, resourceKey), undefined);
   assert.equal(plan.conflicts.length, 0);
+  assert.equal(commentBlocker.class, 'unsupported-comments-users-resource');
+  assert.equal(commentBlocker.resourceKey, resourceKey);
+  assert.equal(commentBlocker.unsupportedState, 'same-plan-reference');
+  assert.equal(commentBlocker.reason, 'WordPress graph mutation row:["wp_comments","comment_ID:22"] is created in the same plan as a comment user identity that depends on it, and identity rewriting is not yet supported.');
+  assert.equal(commentBlocker.references[0].relationshipKey, 'wp_comments.user_id');
+  assert.equal(commentBlocker.references[0].relationshipType, 'comment-user');
+  assert.equal(commentBlocker.references[0].targetResourceKey, targetResourceKey);
   assert.equal(blocker.class, 'unsupported-comments-users-resource');
   assert.equal(blocker.resourceKey, targetResourceKey);
   assert.equal(blocker.unsupportedState, 'same-plan-reference');
   assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_users","ID:7"] is created in the same plan as a comment user identity that depends on it, and identity rewriting is not yet supported.');
+  assert.equal(reference.relationshipKey, 'wp_comments.user_id');
+  assert.equal(reference.relationshipType, 'comment-user');
+  assert.equal(reference.sourceResourceKey, resourceKey);
+  assert.equal(reference.targetResourceKey, targetResourceKey);
+  assert.equal(reference.targetChange.remote.state, 'absent');
+  assert.equal(reference.targetChange.local.state, 'present');
   assert.equal(planJson.includes('Local comment content'), false);
   assert.equal(planJson.includes('Base comment content'), false);
   assert.equal(remote.plugins.forms.description, 'remote-only plugin drift');
