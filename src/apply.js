@@ -993,6 +993,13 @@ export function productionRecoverySupportReport(writer) {
     }
     if (persistedArtifactRefs.invalidReason.includes('journal artifact ref')) {
       addMissingDependency('restart-readable recovery artifact references');
+      if (
+        writer?.ownsRemoteArtifact === true
+        || writerRemoteArtifactRef
+        || inspectedRemoteArtifactRef
+      ) {
+        addMissingDependency('restart-readable recovery remote artifact references');
+      }
     }
     if (persistedArtifactRefs.invalidReason.includes('remote artifact ref')) {
       addMissingDependency('restart-readable recovery remote artifact references');
@@ -1294,6 +1301,9 @@ function durableJournalPersistedArtifactRefs(inspected) {
   for (let index = inspected.records.length - 1; index >= 0; index -= 1) {
     const record = inspected.records[index];
     if (!Object.hasOwn(record ?? {}, 'artifactRefs')) {
+      if (recordRequiresPersistedArtifactRefs(record)) {
+        return { journal: null, remote: null, invalidReason: 'missing journal artifact ref' };
+      }
       if (typeof record?.artifactRefs !== 'undefined') {
         return { journal: null, remote: null, invalidReason: 'invalid artifact ref keys' };
       }
@@ -1500,6 +1510,11 @@ function durableJournalInspectRecords(inspected) {
     .slice(0, durableOpenedIndex)
     .every((record) => CLAIM_FENCE_RECORD_TYPES.has(record.type))
   && !claimFenceAfterOpened;
+}
+
+function recordRequiresPersistedArtifactRefs(record) {
+  return CLAIM_FENCE_RECORD_TYPES.has(record?.type)
+    || DURABLE_OPEN_RECORD_TYPES.has(record?.type);
 }
 
 function recordDurablePlanOpened(writer, remote, plan, options = {}) {
