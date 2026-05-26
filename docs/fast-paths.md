@@ -1467,6 +1467,9 @@ atomic-group evidence record and in the throughput details. The claim gate
 keeps that bit fail-closed: row-batch executor evidence must be present, and
 it must match the row-apply capability before the production throughput claim
 can advance.
+The claim gate also fails closed if atomic-group commit evidence is present
+without a ready required group record, so a staged or optional group cannot
+masquerade as a production atomic commit.
 
 That means the measured evidence is useful for guarded-executor cost and safety
 shape, not production throughput. It also remains deliberately narrow on

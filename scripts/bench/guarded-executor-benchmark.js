@@ -662,6 +662,15 @@ export function productionThroughputBlockers(report) {
     blockers.push('production-atomic-group-commit-not-measured');
   }
   if (
+    report.evidence.atomicGroup.productionAtomicCommitMeasured === true
+    && (
+      report.evidence.atomicGroup.groupStatus !== 'ready'
+      || report.evidence.atomicGroup.requireAtomic !== true
+    )
+  ) {
+    blockers.push('production-atomic-group-metadata-not-proven');
+  }
+  if (
     !(
       report.evidence.atomicGroup.productionAtomicCommitMeasured
       && report.executorCapabilities.rowApply === 'production-batched-compare-and-swap'
@@ -987,6 +996,12 @@ export function productionThroughputDetails(report) {
   const productionAtomicCommitMeasured = report.executorCapabilities.productionAtomicCommit === 'production-atomic-group-commit';
   const productionStorageReceiptsMeasured = report.executorCapabilities.fileReceipts === 'production-storage-receipts';
   const productionRowBatchExecutorMeasured = report.executorCapabilities.rowApply === 'production-batched-compare-and-swap';
+  const productionAtomicGroupMetadataProven =
+    report.evidence.atomicGroup?.productionAtomicCommitMeasured !== true
+    || (
+      report.evidence.atomicGroup?.groupStatus === 'ready'
+      && report.evidence.atomicGroup?.requireAtomic === true
+    );
   const parallelismLimits = {
     chunkUpload: DEFAULT_LIMITS.maxUploadConcurrency,
     fileHashing: DEFAULT_LIMITS.maxHashConcurrency,
@@ -1082,6 +1097,7 @@ export function productionThroughputDetails(report) {
     productionAtomicCommitMeasured,
     productionStorageReceiptsMeasured,
     productionRowBatchExecutorMeasured,
+    productionAtomicGroupMetadataProven,
     parallelismLimits,
     parallelismLimitsIntegral,
     wordpressGraphIdentityPostmetaReferencesMatch,
@@ -1145,6 +1161,7 @@ export function productionThroughputDetails(report) {
       productionAtomicCommitMeasured,
       productionStorageReceiptsMeasured,
       productionRowBatchExecutorMeasured,
+      productionAtomicGroupMetadataProven,
       parallelismLimits,
       parallelismLimitsIntegral,
       wordpressGraphIdentityPostmetaReferencesMatch,
@@ -1157,6 +1174,7 @@ export function productionThroughputDetails(report) {
       productionAtomicCommitMeasured,
       productionStorageReceiptsMeasured,
       productionRowBatchExecutorMeasured,
+      productionAtomicGroupMetadataProven,
     },
     blockers: productionThroughputBlockers(report),
   };

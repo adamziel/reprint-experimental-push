@@ -91,6 +91,10 @@ test('guarded executor benchmark moves buffers and row payloads through durable 
     report.claims.productionThroughputDetails.atomicGroup.productionStorageReceiptsMeasured,
   );
   assert.equal(
+    report.claims.productionThroughputDetails.atomicGroup.productionAtomicGroupMetadataProven,
+    true,
+  );
+  assert.equal(
     report.evidence.atomicGroup.productionRowBatchExecutorMeasured,
     report.claims.productionThroughputDetails.atomicGroup.productionRowBatchExecutorMeasured,
   );
@@ -217,6 +221,7 @@ test('guarded benchmark refuses production throughput claims until production ga
   assert.equal(report.claims.productionThroughputDetails.productionAtomicCommitMeasured, false);
   assert.equal(report.claims.productionThroughputDetails.productionStorageReceiptsMeasured, false);
   assert.equal(report.claims.productionThroughputDetails.productionRowBatchExecutorMeasured, false);
+  assert.equal(report.claims.productionThroughputDetails.atomicGroup.productionAtomicGroupMetadataProven, true);
   assert.equal(report.claims.productionThroughputDetails.journalSuccessReceiptKindsGrouped, true);
   assert.equal(
     report.claims.productionThroughputDetails.receiptCursor.resourceKey,
@@ -288,6 +293,9 @@ test('guarded benchmark refuses production throughput claims until production ga
     report.claims.productionThroughput.blockers.includes('production-atomic-group-commit-not-measured'),
   );
   assert.ok(
+    !report.claims.productionThroughput.blockers.includes('production-atomic-group-metadata-not-proven'),
+  );
+  assert.ok(
     report.claims.productionThroughput.blockers.includes('production-storage-receipts-not-measured'),
   );
   assert.ok(
@@ -324,6 +332,15 @@ test('guarded benchmark refuses production throughput claims until production ga
   const mismatchedLedger = clone(report);
   mismatchedLedger.evidence.journal.successReceiptKindLedger.pop();
   assert.ok(productionThroughputBlockers(mismatchedLedger).includes('receipt-ledger-kind-summary-mismatch'));
+
+  const mismatchedAtomicGroupMetadata = clone(report);
+  mismatchedAtomicGroupMetadata.evidence.atomicGroup.productionAtomicCommitMeasured = true;
+  mismatchedAtomicGroupMetadata.evidence.atomicGroup.groupStatus = 'staged';
+  assert.ok(
+    productionThroughputBlockers(mismatchedAtomicGroupMetadata).includes(
+      'production-atomic-group-metadata-not-proven',
+    ),
+  );
 
   const tamperedQueueSlackSummary = clone(report);
   tamperedQueueSlackSummary.evidence.backpressure.receiptCursorQueueSlackBytes = null;
