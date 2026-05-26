@@ -20764,6 +20764,40 @@ test('blocks unsupported special file aliases while preserving remote-only plugi
   }
 });
 
+test('blocks unsupported pipe special file entries while preserving remote-only plugin changes', () => {
+  const resourceKey = 'file:wp-content/uploads/pipe';
+  const base = baseSite();
+  base.files['wp-content/uploads/pipe'] = { type: 'pipe', mode: '0600' };
+
+  const local = baseSite();
+  local.files['wp-content/uploads/pipe'] = { type: 'pipe', mode: '0644' };
+
+  const remote = baseSite();
+  remote.files['wp-content/uploads/pipe'] = JSON.parse(JSON.stringify(base.files['wp-content/uploads/pipe']));
+  remote.plugins.forms.description = 'remote-only plugin change';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin change */';
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers[0];
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(plan.conflicts.length, 0);
+  assert.equal(blocker.class, 'unsupported-special-file-resource');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.reason, 'Special file entries are not yet supported by the planner.');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('0644'), false);
+  assert.equal(planJson.includes('0600'), false);
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin change');
+  assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin change */');
+});
+
 test('blocks unsupported submodule special file entries while preserving remote-only plugin removals', () => {
   const resourceKey = 'file:wp-content/uploads/submodule';
   const base = baseSite();

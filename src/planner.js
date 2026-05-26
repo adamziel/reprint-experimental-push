@@ -2476,6 +2476,7 @@ function isUnsupportedSpecialFileValue(value) {
     'char',
     'char-device',
     'named-pipe',
+    'pipe',
     'hardlink',
     'hard-link',
   ]);
