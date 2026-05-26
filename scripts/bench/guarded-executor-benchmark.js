@@ -1565,6 +1565,13 @@ export function productionThroughputDetails(report) {
     report.evidence.parallelism?.parallelismLimitsVisible === true;
   const parallelismLimitsMeasuredOnReport =
     report.evidence.parallelism?.parallelismLimitsMeasured === true;
+  const parallelismLimitsPositive =
+    Number.isFinite(parallelismLimits.chunkUpload)
+    && Number.isFinite(parallelismLimits.fileHashing)
+    && Number.isFinite(parallelismLimits.dbBatchPerTable)
+    && parallelismLimits.chunkUpload > 0
+    && parallelismLimits.fileHashing > 0
+    && parallelismLimits.dbBatchPerTable > 0;
   const parallelismLimitsIntegral =
     Number.isInteger(parallelismLimits.chunkUpload)
     && Number.isInteger(parallelismLimits.fileHashing)
@@ -1581,6 +1588,7 @@ export function productionThroughputDetails(report) {
   const parallelismLimitsVisibleAndMeasured =
     parallelismLimitsVisibleOnReport
     && parallelismLimitsMeasuredOnReport
+    && parallelismLimitsPositive
     && parallelismLimitsIntegral;
   const parallelismLimitsVisibleAndCanonical =
     parallelismLimitsVisibleOnReport
@@ -1717,6 +1725,7 @@ export function productionThroughputDetails(report) {
     productionAtomicGroupMetadataProven,
     parallelismLimits,
     parallelismLimitsMeasured: parallelismLimitsMeasuredOnReport,
+    parallelismLimitsPositive,
     parallelismLimitsVisible: parallelismLimitsVisibleOnReport,
     parallelismLimitsVisibleAndMeasured,
     parallelismLimitsVisibleAndCanonical,
@@ -1827,6 +1836,7 @@ export function productionThroughputDetails(report) {
       productionRowBatchExecutorVisibleAndAtomicCommitVisible,
       productionAtomicGroupMetadataProven,
       parallelismLimits,
+      parallelismLimitsPositive,
       parallelismLimitsVisible,
       parallelismLimitsVisibleAndMeasured,
       parallelismLimitsVisibleAndCanonical,

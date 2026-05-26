@@ -754,6 +754,25 @@ test('guarded benchmark blocks visible measured parallelism limits when they are
   assert.equal(blockers.includes('production-parallelism-limits-not-integral'), true);
 });
 
+test('guarded benchmark details fail closed when visible measured parallelism caps are non-positive', () => {
+  const report = smallBenchmark();
+  const tampered = clone(report);
+
+  tampered.evidence.parallelism.parallelismLimitsVisible = true;
+  tampered.evidence.parallelism.parallelismLimitsMeasured = true;
+  tampered.evidence.parallelism.parallelismLimits.dbBatchPerTable = 0;
+
+  const details = productionThroughputDetails(tampered);
+  const blockers = productionThroughputBlockers(tampered);
+
+  assert.equal(details.parallelismLimitsPositive, false);
+  assert.equal(details.parallelismLimitsIntegral, true);
+  assert.equal(details.parallelismLimitsVisibleAndMeasured, false);
+  assert.equal(details.atomicGroup.parallelismLimitsVisibleAndMeasured, false);
+  assert.equal(details.backpressureConsistency.parallelismLimitsVisibleAndMeasured, false);
+  assert.equal(blockers.includes('production-parallelism-limits-not-measured'), true);
+});
+
 test('guarded benchmark blocks atomic-commit visibility when the metadata surface is hidden', () => {
   const report = smallBenchmark();
   const tampered = clone(report);
@@ -1687,6 +1706,14 @@ test('production claim gate fails closed if benchmark evidence is tampered', () 
 
   const invalidParallelismLimits = clone(report);
   invalidParallelismLimits.evidence.parallelism.parallelismLimits.dbBatchPerTable = 0;
+  assert.equal(
+    productionThroughputDetails(invalidParallelismLimits).parallelismLimitsPositive,
+    false,
+  );
+  assert.equal(
+    productionThroughputDetails(invalidParallelismLimits).parallelismLimitsVisibleAndMeasured,
+    false,
+  );
   assert.ok(
     productionThroughputBlockers(invalidParallelismLimits).includes('production-parallelism-limits-not-measured'),
   );
