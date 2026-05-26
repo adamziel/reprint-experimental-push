@@ -13236,7 +13236,6 @@ test('blocks local featured-image references when the remote deleted the referen
 
   const plan = planFor(base, local, remote);
   const blocker = plan.blockers.find((entry) => entry.resourceKey === targetResourceKey);
-  const reference = blocker.references[0];
   const planJson = JSON.stringify(plan);
 
   assert.equal(plan.status, 'blocked');
@@ -20262,6 +20261,59 @@ test('blocks local comments and users graph resources while preserving remote-on
   assert.equal(planJson.includes('Local comment content'), false);
   assert.equal(planJson.includes('Base comment content'), false);
   assert.equal(remote.plugins.forms.description, 'remote-only plugin drift');
+});
+
+test('blocks local same-plan created user identity when a comment references it while preserving remote-only plugin drift', () => {
+  const resourceKey = 'row:["wp_comments","comment_ID:22"]';
+  const targetResourceKey = 'row:["wp_users","ID:7"]';
+  const base = baseSite();
+  base.db.wp_comments = {
+    'comment_ID:22': {
+      comment_ID: 22,
+      comment_post_ID: 1,
+      user_id: 7,
+      comment_content: 'Base comment content',
+    },
+  };
+
+  const local = baseSite();
+  local.db.wp_users = {
+    'ID:7': {
+      ID: 7,
+      user_login: 'local-user',
+      user_email: 'local@example.com',
+    },
+  };
+  local.db.wp_comments = {
+    'comment_ID:22': {
+      comment_ID: 22,
+      comment_post_ID: 1,
+      user_id: 7,
+      comment_content: 'Local comment content',
+    },
+  };
+
+  const remote = baseSite();
+  remote.db.wp_comments = JSON.parse(JSON.stringify(base.db.wp_comments));
+  remote.plugins.forms.description = 'remote-only plugin drift';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin drift */';
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === targetResourceKey);
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, targetResourceKey), undefined);
+  assert.equal(decisionFor(plan, resourceKey), undefined);
+  assert.equal(plan.conflicts.length, 0);
+  assert.equal(blocker.class, 'unsupported-comments-users-resource');
+  assert.equal(blocker.resourceKey, targetResourceKey);
+  assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_users","ID:7"] is created in the same plan as a comment user identity that depends on it, and identity rewriting is not yet supported.');
+  assert.equal(planJson.includes('Local comment content'), false);
+  assert.equal(planJson.includes('Base comment content'), false);
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin drift');
+  assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin drift */');
 });
 
 test('blocks local comments and users graph resources while preserving remote-only plugin removals', () => {

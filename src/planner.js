@@ -1684,6 +1684,12 @@ function samePlanCreatedGraphIdentitySupport({ resource, resources, base, local,
   const postAuthorInboundReference = inboundReferences.find((reference) =>
     reference.relationshipType === 'post-author'
     && reference.targetResource?.table === 'wp_users');
+  const commentUserInboundReference = inboundReferences.find((reference) =>
+    reference.relationshipType === 'comment-user'
+    && reference.targetResource?.table === 'wp_users');
+  const usermetaUserInboundReference = inboundReferences.find((reference) =>
+    reference.relationshipType === 'usermeta-user'
+    && reference.targetResource?.table === 'wp_users');
   return {
     supported: false,
     className: 'stale-wordpress-graph-identity',
@@ -1695,6 +1701,10 @@ function samePlanCreatedGraphIdentitySupport({ resource, resources, base, local,
         ? `WordPress graph mutation ${resource.key} is created in the same plan as a term relationship post target that depends on it, and identity rewriting is not yet supported.`
         : postAuthorInboundReference
           ? `WordPress graph mutation ${resource.key} is created in the same plan as a post author target that depends on it, and identity rewriting is not yet supported.`
+          : commentUserInboundReference
+            ? `WordPress graph mutation ${resource.key} is created in the same plan as a comment user target that depends on it, and identity rewriting is not yet supported.`
+            : usermetaUserInboundReference
+              ? `WordPress graph mutation ${resource.key} is created in the same plan as a user meta target that depends on it, and identity rewriting is not yet supported.`
       : `WordPress graph mutation ${resource.key} is created in the same plan as a relationship that depends on it, and identity rewriting is not yet supported.`,
     references: inboundReferences,
   };
@@ -2597,6 +2607,39 @@ function unsupportedCommentsUsersResourceSupport({ resource, baseValue, localVal
           : commentGraphReference.relationshipType === 'comment-post'
             ? `WordPress graph mutation ${resource.key} is created in the same plan as a comment post identity that depends on it, and identity rewriting is not yet supported.`
             : `WordPress graph mutation ${resource.key} is created in the same plan as a comment user identity that depends on it, and identity rewriting is not yet supported.`,
+      };
+    }
+  }
+
+  if (resource.table === 'wp_users') {
+    const inboundUserReferences = resources
+      .filter((sourceResource) => sourceResource.type === 'row')
+      .flatMap((sourceResource) => {
+        const sourceLocalValue = getResource(local, sourceResource);
+        if (sourceLocalValue === ABSENT) {
+          return [];
+        }
+        return wordpressGraphReferences(sourceResource, sourceLocalValue)
+          .filter((reference) => reference.targetResourceKey === resource.key)
+          .map((reference) =>
+            wordpressGraphReferenceEvidence(reference, resources, base, local, remote));
+      })
+      .filter((reference) =>
+        (
+          reference.relationshipType === 'comment-user'
+          || reference.relationshipType === 'usermeta-user'
+        )
+        && reference.targetChange.remote.state === 'absent'
+        && reference.targetChange.local.state === 'present');
+
+    if (inboundUserReferences.length > 0) {
+      const userReference = inboundUserReferences[0];
+      return {
+        supported: false,
+        className: 'unsupported-comments-users-resource',
+        reason: userReference.relationshipType === 'comment-user'
+          ? `WordPress graph mutation ${resource.key} is created in the same plan as a comment user identity that depends on it, and identity rewriting is not yet supported.`
+          : `WordPress graph mutation ${resource.key} is created in the same plan as a user meta identity that depends on it, and identity rewriting is not yet supported.`,
       };
     }
   }
