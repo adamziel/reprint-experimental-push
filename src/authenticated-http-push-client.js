@@ -981,7 +981,7 @@ function summarizeAuthSessionLifecycle(session) {
     expiresAt: session.expiresAt || null,
     expired: isExpiredSession(session),
     revoked: session.revoked === true || session.status === 'revoked',
-    cleanedUp: session.cleanedUp === true || session.cleanup === true,
+    cleanedUp: session.cleanedUp === true || session.cleanup === true || session.status === 'cleaned-up',
     rotated: session.rotated === true ? true : session.rotated === false ? false : null,
     preserved: session.preserved === true ? true : session.preserved === false ? false : null,
   };
@@ -1498,11 +1498,17 @@ function resolveObservedProductionAuthSessionLifecycleDrift(response) {
     };
   }
 
-  if (session?.revoked === true || session?.status === 'revoked' || session?.cleanedUp === true || session?.cleanup === true) {
+  if (
+    session?.revoked === true
+    || session?.status === 'revoked'
+    || session?.cleanedUp === true
+    || session?.cleanup === true
+    || session?.status === 'cleaned-up'
+  ) {
     return {
       field: session?.revoked === true || session?.status === 'revoked'
         ? 'auth.session.status'
-        : session?.cleanedUp === true
+        : session?.cleanedUp === true || session?.status === 'cleaned-up'
           ? 'auth.session.cleanedUp'
           : 'auth.session.cleanup',
       required: 'unrevoked',
@@ -1584,11 +1590,17 @@ function describeRequiredProductionAuthSession(response) {
     };
   }
 
-  if (session?.revoked === true || session?.status === 'revoked' || session?.cleanedUp === true || session?.cleanup === true) {
+  if (
+    session?.revoked === true
+    || session?.status === 'revoked'
+    || session?.cleanedUp === true
+    || session?.cleanup === true
+    || session?.status === 'cleaned-up'
+  ) {
     return {
       field: session?.revoked === true || session?.status === 'revoked'
         ? 'auth.session.status'
-        : session?.cleanedUp === true
+        : session?.cleanedUp === true || session?.status === 'cleaned-up'
           ? 'auth.session.cleanedUp'
           : 'auth.session.cleanup',
       required: 'unrevoked',
@@ -1626,11 +1638,11 @@ function describeRequiredProductionAuthSession(response) {
 
 function describeRequiredUnrevokedProductionAuthSession(response) {
   const session = response?.body?.auth?.session;
-  const cleanedUp = session?.cleanedUp === true || session?.cleanup === true;
+  const cleanedUp = session?.cleanedUp === true || session?.cleanup === true || session?.status === 'cleaned-up';
   return {
     field: session?.revoked === true || session?.status === 'revoked'
       ? 'auth.session.status'
-      : cleanedUp && session?.cleanedUp === true
+      : cleanedUp && (session?.cleanedUp === true || session?.status === 'cleaned-up')
         ? 'auth.session.cleanedUp'
         : 'auth.session.cleanup',
     required: 'unrevoked',
@@ -1667,7 +1679,11 @@ function hasProductionAuthSessionRevocationDrift(response) {
   if (!session || typeof session !== 'object') {
     return false;
   }
-  return session.revoked === true || session.status === 'revoked' || session.cleanedUp === true || session.cleanup === true;
+  return session.revoked === true
+    || session.status === 'revoked'
+    || session.cleanedUp === true
+    || session.cleanup === true
+    || session.status === 'cleaned-up';
 }
 
 function resolveInvalidProductionAuthSessionIdentityField(session) {

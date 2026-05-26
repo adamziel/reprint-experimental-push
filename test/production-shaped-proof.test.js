@@ -1942,6 +1942,20 @@ test('production auth/session lifecycle helper requires an active unexpired pack
       observed: 'revoked',
     },
   );
+
+  assert.deepEqual(
+    evaluateProductionAuthSessionLifecycle({
+      id: 'psh_01j00000000000000000000000',
+      type: 'production-auth-session',
+      status: 'cleaned-up',
+      expiresAt: '2099-01-01T00:00:00Z',
+    }),
+    {
+      ok: false,
+      required: 'unrevoked',
+      observed: 'cleaned-up',
+    },
+  );
 });
 
 test('production auth/session lifecycle helper treats invalid or past expiry as expired', () => {
