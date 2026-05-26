@@ -1010,6 +1010,26 @@ export const SAFE_FAST_PATHS = Object.freeze([
   {
     area: 'backpressure',
     reduces: ['memory-pressure', 'queue-drain-time', 'duplicate-replay-work'],
+    allowedShortcut: 'reuse-receipt-cursor-queue-slack-and-memory-ceiling-to-size-bounded-replay',
+    guardrails: [
+      'receipt-cursor-remains-advisory',
+      'queue-slack-and-memory-ceiling-stay-aligned',
+    ],
+    gateProofs: {
+      skip: 'a receipt cursor can size the next bounded replay window when measured queue slack and the memory ceiling still align with the recorded pause footprint',
+      live: 'the storage-boundary write still rechecks the same live preconditions for each receipt-producing mutation',
+      group: 'cursor-guided replay only shortens queue planning inside the same atomic-group boundary and never widens visibility',
+      recovery: 'the receipt cursor, queue slack, memory ceiling, and journal records still classify pause, retry, or crash without guessing which receipts survived',
+    },
+    visibilityBoundary: 'kind-scoped-memory-and-journal-planning-only',
+    failureEvidence: 'receipt cursor plus queue slack, memory ceiling, and journal records',
+    bypassesLivePreconditions: false,
+    splitsAtomicGroup: false,
+    publishesStagedDataEarly: false,
+  },
+  {
+    area: 'backpressure',
+    reduces: ['memory-pressure', 'queue-drain-time', 'duplicate-replay-work'],
     allowedShortcut: 'reuse-receipt-cursor-queue-headroom-and-journal-lag-to-size-bounded-replay',
     guardrails: [
       'receipt-cursor-remains-advisory',

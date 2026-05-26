@@ -48,6 +48,16 @@ test('benchmark model covers large uploads and plugin installs', () => {
     model.safeFastPaths.some(
       (fastPath) =>
         fastPath.area === 'backpressure' &&
+        fastPath.allowedShortcut === 'reuse-receipt-cursor-queue-slack-and-memory-ceiling-to-size-bounded-replay' &&
+        fastPath.guardrails.includes('queue-slack-and-memory-ceiling-stay-aligned') &&
+        fastPath.gateProofs.skip.includes('measured queue slack and the memory ceiling still align with the recorded pause footprint'),
+    ),
+    'queue slack and memory ceiling can bound replay sizing without weakening recovery classification',
+  );
+  assert.ok(
+    model.safeFastPaths.some(
+      (fastPath) =>
+        fastPath.area === 'backpressure' &&
         fastPath.allowedShortcut === 'reuse-receipt-cursor-queue-headroom-and-journal-lag-to-size-bounded-replay' &&
         fastPath.guardrails.includes('queue-headroom-and-journal-lag-stay-bounded') &&
         fastPath.gateProofs.skip.includes('queue headroom and journal lag stay inside the recorded pause footprint'),
