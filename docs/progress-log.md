@@ -6,16 +6,17 @@ linked implementation artifacts.
 
 ## 2026-05-26 - Current Supervisor Snapshot
 
-- Status: the current reliable head is `c7a6432d` (`Expose release gate
-  dependencies`), and the same-plan proof set remains intact for the existing
+- Status: the current reliable head is `9d0279a3` (`Prove recovery claim
+  fencing`), and the same-plan proof set remains intact for the existing
   postmeta, parent-post, thumbnail, taxonomy, term-taxonomy-parent, termmeta,
   and term-taxonomy term cases.
-- New proof: the release verifier now makes the gate dependencies explicit, but
-  the checked path still reports the production auth/session lifecycle and
-  durable-journal semantic gaps, so no gate-moving production proof landed
-  this pass.
-- Trend: the lane remains at `0/4` because the current reliable head clarifies
-  release-verifier dependencies, not production release readiness.
+- New proof: the release verifier now exposes `staleClaimRejected: true` and
+  the fenced stale-claim path on `9d0279a3` (`Prove recovery claim fencing`)
+  rejects stale claims after restart, but the checked path still reports the
+  production auth/session lifecycle gap.
+- Trend: the lane remains at `0/4` because the current reliable head surfaces
+  recovery claim fencing on the release verifier, not production release
+  readiness.
 - Blocker: the live release boundary still needs production auth/session,
   durable journal consumption, replay, or preserved-remote retry evidence.
 - Next nudge: keep the public page current with the reliable head while the
