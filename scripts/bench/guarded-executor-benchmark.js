@@ -1349,10 +1349,14 @@ export function productionThroughputDetails(report) {
     report.evidence.backpressure?.receiptCursorQueueSlackVisible === true;
   const receiptCursorMemoryHeadroomVisible =
     report.evidence.backpressure?.receiptCursorMemoryHeadroomVisible === true;
+  const stagingDiskHeadroomPositive =
+    Number.isFinite(stagingDiskHeadroomBytes)
+    && stagingDiskHeadroomBytes > 0;
   const stagingDiskHeadroomVisibleAndMeasured =
     stagingDiskHeadroomVisible
     && stagingDiskHeadroomMeasured
-    && stagingDiskHeadroomWithinPlanReserve;
+    && stagingDiskHeadroomWithinPlanReserve
+    && stagingDiskHeadroomPositive;
   const receiptCursorMemoryHeadroomPositive =
     Number.isFinite(receiptCursorMemoryHeadroomBytes)
     && receiptCursorMemoryHeadroomBytes > 0;
@@ -1441,9 +1445,6 @@ export function productionThroughputDetails(report) {
     && Number.isFinite(receiptCursorWindowBytes)
     && receiptCursorQueueSlackBytes <= receiptCursorMemoryCeilingBytes - receiptCursorWindowBytes;
   const queueHeadroomPositive = receiptCursorQueueHeadroomPositive;
-  const stagingDiskHeadroomPositive =
-    Number.isFinite(stagingDiskHeadroomBytes)
-    && stagingDiskHeadroomBytes > 0;
   const receiptCursorMemoryHeadroomPositiveVisible = receiptCursorMemoryHeadroomPositive;
   const queuePauseHasMeasuredReceiptCursorQueueSlack =
     report.evidence.backpressure?.queuePausedBeforeOverflow !== true
@@ -1639,6 +1640,7 @@ export function productionThroughputDetails(report) {
     stagingDiskHeadroomVisible
     && stagingDiskHeadroomMeasured
     && stagingDiskHeadroomWithinPlanReserve
+    && stagingDiskHeadroomPositive
     && receiptCursorPauseFootprintVisible;
   const queueBudgetVisibleAndMemoryCeilingVisibleAndMeasured =
     receiptCursorPauseFootprintComplete

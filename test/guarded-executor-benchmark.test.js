@@ -659,7 +659,14 @@ test('guarded benchmark blocks when staging-disk headroom is not positive', () =
   const blockers = productionThroughputBlockers(tampered);
 
   assert.equal(details.stagingDiskHeadroomPositive, false);
+  assert.equal(details.stagingDiskHeadroomVisibleAndMeasured, false);
+  assert.equal(details.stagingDiskHeadroomVisibleAndMeasuredAfterPause, false);
   assert.equal(details.backpressureConsistency.stagingDiskHeadroomPositive, false);
+  assert.equal(details.backpressureConsistency.stagingDiskHeadroomVisibleAndMeasured, false);
+  assert.equal(
+    details.backpressureConsistency.stagingDiskHeadroomVisibleAndMeasuredAfterPause,
+    false,
+  );
   assert.equal(blockers.includes('staging-disk-headroom-not-positive'), true);
 });
 

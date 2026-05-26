@@ -191,6 +191,9 @@ Current executable gate:
 - The same measured queue-headroom summary now also fails closed when the raw
   headroom bytes drift outside the resource ceiling, so advisory backpressure
   cannot still look bounded from visibility and measurement bits alone.
+- The same staged-disk visible-and-measured summaries now also fail closed
+  when the remaining disk headroom is not positive, so a zero-byte reserve
+  cannot still look complete from raw visibility and measurement bits alone.
 - The same queue-budget plus measured-headroom summary now also fails closed
   when the aligned paused-slack proof is hidden, so advisory headroom bytes
   cannot still look release-safe without the receipt-cursor pause evidence
