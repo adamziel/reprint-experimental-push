@@ -1224,6 +1224,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['compression', 'backpressure', 'chunk-receipts', 'durable-progress'],
   },
   {
+    id: 'compressed-receipt-log-skip-pause-recovery',
+    proposal: 'treat a compressed receipt log as enough proof to skip replaying a paused upload or journal recovery',
+    rejectedBecause: 'compression can shrink recovery bytes, but it cannot prove which acknowledgements survived the pause or restore the guarded publish record',
+    rejectedGate: 'recovery',
+    violates: ['compression', 'backpressure', 'chunk-receipts', 'durable-progress'],
+  },
+  {
     id: 'batched-receipt-journal-flush',
     proposal: 'batch durable chunk, row, or group receipts into fewer journal fsyncs while keeping the raw receipts intact',
     rejectedBecause: 'journaling can be batched for speed, but it cannot replace the raw receipt records needed to classify recovery after a pause or crash',

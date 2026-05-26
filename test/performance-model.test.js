@@ -1582,11 +1582,18 @@ test('unsafe shortcuts stay rejected when they would bypass live preconditions o
   const skipReleasePlanning = model.rejectedFastPaths.find(
     (fastPath) => fastPath.id === 'compressed-remote-index-and-cached-release-manifest-and-batched-receipt-flush-skips-release-bundle-planning-after-pause',
   );
+  const skipCompressedPauseReplay = model.rejectedFastPaths.find(
+    (fastPath) => fastPath.id === 'compressed-receipt-log-skip-pause-recovery',
+  );
 
   assert.ok(skipReleasePlanning, 'release-bundle planning shortcut is modeled as a rejected fast path');
   assert.equal(skipReleasePlanning.rejectedGate, 'skip');
   assert.ok(skipReleasePlanning.violates.includes('remote-indexes'));
   assert.ok(skipReleasePlanning.violates.includes('plugin-preconditions'));
+
+  assert.ok(skipCompressedPauseReplay, 'compressed receipt logs cannot skip paused recovery');
+  assert.equal(skipCompressedPauseReplay.rejectedGate, 'recovery');
+  assert.deepEqual(skipCompressedPauseReplay.violates, ['compression', 'backpressure', 'chunk-receipts', 'durable-progress']);
 });
 
 test('fast-path fixture isolates the release-safety benchmark shape', () => {
