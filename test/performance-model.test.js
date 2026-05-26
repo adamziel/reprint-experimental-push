@@ -78,6 +78,16 @@ test('benchmark model covers large uploads and plugin installs', () => {
   assert.ok(
     model.safeFastPaths.some(
       (fastPath) =>
+        fastPath.area === 'file-hashing' &&
+        fastPath.allowedShortcut === 'reuse-cached-chunk-ledger-for-resume-with-live-publish-check' &&
+        fastPath.guardrails.includes('chunk-ledger-is-resume-evidence-only') &&
+        fastPath.gateProofs.recovery.includes('durable chunk receipts and the publish record still classify whether the upload survived failure'),
+    ),
+    'cached chunk ledgers stay resume-only and keep the live publish check intact',
+  );
+  assert.ok(
+    model.safeFastPaths.some(
+      (fastPath) =>
         fastPath.area === 'backpressure' &&
         fastPath.allowedShortcut === 'reuse-receipt-cursor-queue-slack-and-memory-ceiling-to-size-bounded-replay' &&
         fastPath.guardrails.includes('queue-slack-and-memory-ceiling-stay-aligned') &&
