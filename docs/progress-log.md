@@ -4,6 +4,15 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+# 2026-05-26 - Public Status Audit 02:50:28
+
+<a id="2026-05-26-public-status-audit-025028"></a>
+
+- Refreshed [progress.html](../progress.html) so the visible public page stays
+  current for the active supervision cycle.
+- Kept the conservative `0/4` posture and blocker summary unchanged.
+- The newest audit link on `progress.html` now points here.
+
 # 2026-05-26 - Public Status Audit 02:49:13
 
 <a id="2026-05-26-public-status-audit-024913"></a>
