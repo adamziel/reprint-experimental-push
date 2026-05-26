@@ -2387,9 +2387,11 @@ function summarizeProductionCapabilityRollout({
         && backpressureEvidenceComplete
         && productionStorageReceiptsMeasured,
       parallelismLimitsVisible
+        && backpressureEvidenceComplete
         && productionStorageReceiptsMeasured
         && productionStorageReceiptsVisible,
       [
+        'backpressure-evidence-incomplete',
         'production-parallelism-limits-not-measured',
         'production-parallelism-limits-not-integral',
         'production-parallelism-limits-not-canonical',

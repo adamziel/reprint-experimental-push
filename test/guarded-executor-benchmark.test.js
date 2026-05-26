@@ -365,6 +365,35 @@ test('guarded benchmark keeps rollout capability summary blocked when row-batch 
   ]);
 });
 
+test('guarded benchmark keeps chunk-upload rollout visibility hidden when backpressure proof is incomplete', () => {
+  const report = smallBenchmark();
+  const tampered = clone(report);
+
+  tampered.executorCapabilities.fileReceipts = 'production-storage-receipts';
+  tampered.evidence.parallelism.parallelismLimitsVisible = true;
+  tampered.evidence.parallelism.parallelismLimitsMeasured = true;
+  tampered.evidence.atomicGroup.productionStorageReceiptsMeasured = true;
+  tampered.evidence.atomicGroup.productionStorageReceiptsVisible = true;
+  tampered.evidence.backpressure.receiptCursorBytes = null;
+
+  const details = productionThroughputDetails(tampered);
+  const chunkUploadSummary = details.productionCapabilityRolloutSummary.find(
+    (entry) => entry.surface === 'chunk-upload-concurrency',
+  );
+  const blockers = productionThroughputBlockers(tampered);
+
+  assert.deepEqual(chunkUploadSummary, {
+    surface: 'chunk-upload-concurrency',
+    status: 'blocked',
+    measured: false,
+    visible: false,
+    blockerRefs: ['backpressure-evidence-incomplete'],
+  });
+  assert.equal(details.parallelismLimitsVisibleAndMeasured, true);
+  assert.equal(blockers.includes('backpressure-evidence-incomplete'), true);
+  assert.equal(blockers.includes('receipt-cursor-backpressure-not-measured'), true);
+});
+
 test('guarded benchmark blocks staging-disk headroom claims when the reserve no longer matches the chunk window', () => {
   const report = smallBenchmark();
   const tampered = clone(report);
