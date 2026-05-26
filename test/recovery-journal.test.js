@@ -4075,6 +4075,43 @@ test('production recovery journal consumption fails closed when stale claim adva
   });
 });
 
+test('production recovery journal adapter fails closed when a claimed writer appends without a persisted active claim', () => {
+  const filePath = tempJournalPath();
+  const remote = baseSite();
+  const plan = planFor(baseSite(), localSite(), remote);
+  const remoteArtifactPath = `${filePath}.remote`;
+  const artifactRefs = {
+    journal: filePath,
+    remote: remoteArtifactPath,
+  };
+  const journal = openProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs,
+    claimId: 'claim-without-open',
+    writerLease: { id: 'claim-without-open' },
+  });
+
+  assert.throws(() => {
+    journal.appendEvent('journal-opened', {
+      planId: plan.id,
+      state: 'opened',
+      observedHash: 'snapshot-hash-only',
+      artifactRefs,
+    });
+  }, {
+    name: 'RecoveryJournalClaimStaleError',
+    code: 'RECOVERY_CLAIM_STALE',
+    message: 'Recovery journal has no active claim for this fenced writer.',
+  });
+
+  journal.close();
+
+  const persisted = readRecoveryJournal(filePath);
+  assert.deepEqual(persisted.records, []);
+});
+
 test('production recovery journal consumption fails closed when stale claim advancement omits its previous claim hash', () => {
   const filePath = tempJournalPath();
   const remote = baseSite();
