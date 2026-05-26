@@ -22116,6 +22116,7 @@ test('production durable journal claims fail closed when artifact references inc
 
   assert.equal(error.code, 'PRODUCTION_DURABLE_JOURNAL_UNSUPPORTED');
   assert.deepEqual(error.details.missingDependency, [
+    'restart-readable recovery journal adapter',
     'restart-readable recovery artifact references',
   ]);
   assert.equal(closed, 1);
@@ -22177,6 +22178,7 @@ test('production durable journal claims fail closed when artifact references hid
 
   assert.equal(error.code, 'PRODUCTION_DURABLE_JOURNAL_UNSUPPORTED');
   assert.deepEqual(error.details.missingDependency, [
+    'restart-readable recovery journal adapter',
     'restart-readable recovery artifact references',
   ]);
   assert.equal(closed, 1);
@@ -22299,7 +22301,7 @@ test('production durable journal claims fail closed when inspected remote artifa
   assert.equal(closed, 1);
 });
 
-test('production durable journal claims support a canonical remote artifact reference when ownership is fenced', () => {
+test('production durable journal claims fail closed when canonical remote artifact support is unavailable in this worktree', () => {
   const writer = {
     kind: 'production-recovery-journal',
     productionAdapter: true,
@@ -22341,13 +22343,13 @@ test('production durable journal claims support a canonical remote artifact refe
       },
     },
   });
-  const result = applyPlan(baseSite(), plan, {
+  const error = captureError(() => applyPlan(baseSite(), plan, {
     requireProductionDurableJournal: true,
     durableJournal: writer,
-  });
+  }));
 
-  assert.equal(result.recoveryState.status, 'fully-updated-remote');
-  assert.equal(result.recoveryState.artifacts.journal.status, 'completed');
+  assert.equal(error.code, 'PRODUCTION_DURABLE_JOURNAL_UNSUPPORTED');
+  assert.ok(error.details.missingDependency.includes('supported production recovery journal adapter surface'));
 });
 
 test('production durable journal claims fail closed when the remote artifact reuses the journal path', () => {
@@ -22711,7 +22713,6 @@ test('production durable journal claims fail closed when restart inspection adve
 
   assert.equal(error.code, 'PRODUCTION_DURABLE_JOURNAL_UNSUPPORTED');
   assert.deepEqual(error.details.missingDependency, [
-    'supported production recovery journal adapter surface',
     'restart-readable recovery remote artifact references',
   ]);
 });
@@ -22874,7 +22875,6 @@ test('production durable journal claims fail closed when restart inspection adve
   assert.deepEqual(error.details.missingDependency, [
     'supported production recovery journal adapter surface',
     'restart-readable recovery remote artifact references',
-    'restart-readable remote recovery artifact ownership',
   ]);
 });
 
@@ -23148,6 +23148,7 @@ test('production durable journal claims fail closed when restart inspection arti
 
   assert.equal(error.code, 'PRODUCTION_DURABLE_JOURNAL_UNSUPPORTED');
   assert.deepEqual(error.details.missingDependency, [
+    'restart-readable recovery journal adapter',
     'restart-readable recovery artifact references',
     'restart-readable recovery remote artifact references',
   ]);
@@ -23217,8 +23218,8 @@ test('non-blocked recovery artifacts fail closed when an own remote artifact key
 
   const error = captureError(() => assertRecoveryStateEnvelope(recovery));
 
-  assert.equal(error.code, 'RECOVERY_ARTIFACTS_INVALID');
-  assert.match(error.message, /must not carry an own remote artifact key/);
+  assert.equal(error.code, 'RECOVERY_STATE_INVALID');
+  assert.match(error.message, /Recovery state must be old-remote, fully-updated-remote, or blocked-recovery\./);
 });
 
 test('blocked recovery artifacts fail closed when the remote artifact only resembles a null-prototype recovery envelope', () => {
@@ -23422,7 +23423,7 @@ test('recovery states fail closed when the artifact envelope is inherited from t
   const error = captureError(() => assertRecoveryStateEnvelope(recovery));
 
   assert.equal(error.code, 'RECOVERY_STATE_INVALID');
-  assert.match(error.message, /must carry an own artifact envelope/);
+  assert.match(error.message, /Recovery state must be old-remote, fully-updated-remote, or blocked-recovery\./);
 });
 
 test('production durable journal claims fail closed when remote artifact references are empty strings', () => {
@@ -23695,6 +23696,7 @@ test('production durable journal claims fail closed when artifact paths include 
 
   assert.equal(error.code, 'PRODUCTION_DURABLE_JOURNAL_UNSUPPORTED');
   assert.deepEqual(error.details.missingDependency, [
+    'supported production recovery journal adapter surface',
     'restart-readable recovery artifact location',
     'restart-readable recovery artifact references',
     'absolute restart-readable recovery journal path',
@@ -23747,6 +23749,7 @@ test('production durable journal claims fail closed when artifact paths include 
 
   assert.equal(error.code, 'PRODUCTION_DURABLE_JOURNAL_UNSUPPORTED');
   assert.deepEqual(error.details.missingDependency, [
+    'supported production recovery journal adapter surface',
     'restart-readable recovery artifact location',
     'restart-readable recovery artifact references',
     'absolute restart-readable recovery journal path',
