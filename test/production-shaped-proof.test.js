@@ -1604,6 +1604,28 @@ test('lab Playground readiness helper rejects malformed ready responses and retr
     false,
   );
   assert.equal(
+    labSnapshotRetryable({
+      status: 503,
+      body: {
+        error: {
+          message: 'WordPress is not ready yet',
+        },
+      },
+    }),
+    true,
+  );
+  assert.equal(
+    labSnapshotRetryable({
+      status: 500,
+      body: {
+        details: {
+          error: 'No route was found matching the URL and request method.',
+        },
+      },
+    }),
+    true,
+  );
+  assert.equal(
     labReadinessBodyRetryable(
       502,
       '<!doctype html><html><body>WordPress is not ready yet</body></html>',
@@ -1613,6 +1635,20 @@ test('lab Playground readiness helper rejects malformed ready responses and retr
   assert.equal(
     labReadinessBodyRetryable(
       404,
+      '<!doctype html><html><body>No route was found matching the URL and request method.</body></html>',
+    ),
+    true,
+  );
+  assert.equal(
+    labReadinessBodyRetryable(
+      503,
+      '<!doctype html><html><body>WordPress is not ready yet</body></html>',
+    ),
+    true,
+  );
+  assert.equal(
+    labReadinessBodyRetryable(
+      500,
       '<!doctype html><html><body>No route was found matching the URL and request method.</body></html>',
     ),
     true,
@@ -2239,17 +2275,20 @@ async function waitForServer(child, baseUrl, getLogs) {
           { childPid: child.pid ?? null },
         );
       } else {
-        const readinessHint = isWordPressNotReadyResponse(response.status, responseBody)
-          ? 'WordPress is not ready yet'
+        const readinessRetryable = labReadinessBodyRetryable(response.status, responseBody);
+        const readinessHint = readinessRetryable
+          ? responseBody.match(/WordPress is not ready yet/i)?.[0]
+            ?? responseBody.match(/No route was found matching the URL and request method\.?/i)?.[0]
+            ?? 'startup route is not ready yet'
           : null;
         const routeSummary = describeLastProbe(lastProbes.at(-1));
         lastError = new Error(
-          readinessHint
-            ? `Playground index readiness HTTP 502: ${readinessHint}; ${routeSummary}`
+          readinessRetryable
+            ? `Playground index readiness HTTP ${response.status}: ${readinessHint}; ${routeSummary}`
             : `Playground index readiness HTTP ${response.status}; ${routeSummary}`,
         );
         const readinessProbeCount = lastProbes.filter((probe) => probe.route === '/wp-json/').length;
-        if (readinessHint) {
+        if (readinessRetryable) {
           notReadyProbeCount += 1;
           if (notReadyProbeCount >= maxNotReadyReadinessProbes) {
             await throwPlaygroundReadinessFailure(
@@ -2380,10 +2419,6 @@ function formatPlaygroundStartupFailure(prefix, lastError, lastProbes, logs, con
     ? `\nContext: ${JSON.stringify(context, null, 2)}`
     : '';
   return `${prefix}: ${errorText}${probeText}${lastProbeText}${contextText}\n${logs}`;
-}
-
-function isWordPressNotReadyResponse(status, body) {
-  return status === 502 && /WordPress is not ready yet/i.test(body);
 }
 
 function appendNodeOption(existing, option) {
