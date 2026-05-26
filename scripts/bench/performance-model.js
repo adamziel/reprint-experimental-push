@@ -850,6 +850,26 @@ export const SAFE_FAST_PATHS = Object.freeze([
   {
     area: 'backpressure',
     reduces: ['memory-pressure', 'queue-drain-time', 'duplicate-replay-work'],
+    allowedShortcut: 'compress-kind-scoped-receipt-ledgers-for-bounded-replay-without-changing-raw-order',
+    guardrails: [
+      'compressed-ledgers-stay-kind-scoped-and-plan-scoped',
+      'raw-receipt-order-still-drives-replay',
+    ],
+    gateProofs: {
+      skip: 'kind-scoped receipt ledgers can be compressed for replay planning when the compressed form still carries the exact raw receipt keys and kind scope',
+      live: 'ledger compression never authorizes a new write; the storage-boundary live precondition still decides visibility',
+      group: 'compressed ledgers only reduce replay overhead inside the same atomic-group boundary and never merge owners',
+      recovery: 'compressed ledgers remain advisory while ordered raw receipt keys and journal records still classify pause, retry, or crash',
+    },
+    visibilityBoundary: 'kind-scoped-memory-and-journal-planning-only',
+    failureEvidence: 'compressed kind-scoped receipt ledger plus ordered raw durable receipt keys',
+    bypassesLivePreconditions: false,
+    splitsAtomicGroup: false,
+    publishesStagedDataEarly: false,
+  },
+  {
+    area: 'backpressure',
+    reduces: ['memory-pressure', 'queue-drain-time', 'duplicate-replay-work'],
     allowedShortcut: 'reuse-receipt-cursor-memory-headroom-to-size-bounded-replay-within-ceiling',
     guardrails: [
       'receipt-cursor-memory-headroom-stays-advisory',

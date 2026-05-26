@@ -276,6 +276,16 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
     model.safeFastPaths.some(
       (fastPath) =>
         fastPath.area === 'backpressure' &&
+        fastPath.allowedShortcut === 'compress-kind-scoped-receipt-ledgers-for-bounded-replay-without-changing-raw-order' &&
+        fastPath.guardrails.includes('compressed-ledgers-stay-kind-scoped-and-plan-scoped') &&
+        fastPath.gateProofs.recovery.includes('ordered raw receipt keys and journal records'),
+    ),
+    'compressed kind-scoped receipt ledgers stay fail-closed for bounded replay',
+  );
+  assert.ok(
+    model.safeFastPaths.some(
+      (fastPath) =>
+        fastPath.area === 'backpressure' &&
         fastPath.allowedShortcut === 'reuse-receipt-cursor-memory-headroom-to-size-bounded-replay-within-ceiling' &&
         fastPath.guardrails.includes('receipt-cursor-memory-headroom-stays-advisory') &&
         fastPath.gateProofs.recovery.includes('memory headroom, and journal records still classify pause, retry, or crash'),
