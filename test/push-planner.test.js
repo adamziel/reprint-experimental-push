@@ -15777,6 +15777,67 @@ test('blocks local menu item parent references to a same-plan created wp navigat
   assert.equal(remote.plugins.forms.description, 'remote-only plugin drift');
 });
 
+test('blocks local menu item parent references to a same-plan created wp navigation while preserving a matching independent edit and remote-only plugin changes', () => {
+  const resourceKey = 'row:["wp_posts","ID:61"]';
+  const targetResourceKey = 'row:["wp_posts","ID:62"]';
+  const base = baseSite();
+  base.db.wp_posts['ID:61'] = {
+    ID: 61,
+    post_title: 'Base child menu item',
+    post_content: 'Base child menu item content',
+    post_status: 'publish',
+    post_type: 'nav_menu_item',
+    menu_item_parent: 0,
+  };
+  base.db.wp_posts['ID:1'].post_title = 'Base post title';
+
+  const local = baseSite();
+  local.db.wp_posts['ID:61'] = {
+    ID: 61,
+    post_title: 'Local child menu item',
+    post_content: 'Local child menu item content',
+    post_status: 'publish',
+    post_type: 'nav_menu_item',
+    menu_item_parent: 62,
+  };
+  local.db.wp_posts['ID:62'] = {
+    ID: 62,
+    post_title: 'Local same-plan wp navigation',
+    post_content: 'Local same-plan wp navigation content',
+    post_status: 'publish',
+    post_type: 'wp_navigation',
+  };
+  local.db.wp_posts['ID:1'].post_title = 'Shared post title';
+
+  const remote = baseSite();
+  remote.db.wp_posts['ID:61'] = JSON.parse(JSON.stringify(base.db.wp_posts['ID:61']));
+  remote.db.wp_posts['ID:1'].post_title = 'Shared post title';
+  remote.plugins.forms.description = 'remote-only plugin changes';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin changes */';
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.class === 'unsupported-navigation-resource' && entry.resourceKey === targetResourceKey);
+  const matchingEdit = decisionFor(plan, 'row:["wp_posts","ID:1"]');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(decisionFor(plan, targetResourceKey), undefined);
+  assert.equal(plan.conflicts.length, 0);
+  assert.equal(blocker.class, 'unsupported-navigation-resource');
+  assert.equal(blocker.resourceKey, targetResourceKey);
+  assert.equal(blocker.reason, 'Navigation and menu graph resources are not yet supported by the planner.');
+  assert.equal(matchingEdit.decision, 'already-in-sync');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('Local same-plan wp navigation content'), false);
+  assert.equal(planJson.includes('Local child menu item content'), false);
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin changes');
+});
+
 test('blocks local menu item parent references to a same-plan created wp navigation while preserving remote-only plugin removals', () => {
   const resourceKey = 'row:["wp_posts","ID:57"]';
   const targetResourceKey = 'row:["wp_posts","ID:58"]';
