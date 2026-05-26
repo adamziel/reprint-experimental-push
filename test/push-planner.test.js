@@ -24529,10 +24529,8 @@ test('blocks local attachment graph resources while preserving remote-only plugi
   assert.equal(plan.conflicts.length, 0);
   assert.equal(blocker.class, 'unsupported-attachment-resource');
   assert.equal(blocker.resourceKey, resourceKey);
-  assert.equal(
-    blocker.reason,
-    'WordPress graph mutation row:["wp_posts","ID:9"] is created in the same plan as a post parent attachment target that depends on it, and identity rewriting is not yet supported.',
-  );
+  assert.equal(blocker.unsupportedState, 'local-or-divergent-drift');
+  assert.equal(blocker.reason, 'Attachment graph resources are not yet supported by the planner.');
   assert.equal(pluginDecision.decision, 'keep-remote');
   assert.equal(planJson.includes('Local attachment content'), false);
   assert.equal(planJson.includes('Base attachment content'), false);
@@ -24575,6 +24573,7 @@ test('blocks local attachment graph resources while preserving remote-only plugi
   assert.equal(plan.conflicts.length, 0);
   assert.equal(blocker.class, 'unsupported-attachment-resource');
   assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.unsupportedState, 'local-or-divergent-drift');
   assert.equal(blocker.reason, 'Attachment graph resources are not yet supported by the planner.');
   assert.equal(planJson.includes('Local attachment removal content'), false);
   assert.equal(planJson.includes('Base attachment removal content'), false);
