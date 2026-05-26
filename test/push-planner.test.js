@@ -19102,6 +19102,99 @@ test('allows an existing term taxonomy row to retarget its term reference to a s
   assert.equal(result.site.db.wp_term_taxonomy['term_taxonomy_id:9'].term_id, 7);
 });
 
+test('allows an existing term taxonomy row to retarget its term reference to a same-plan term create even when a navigation menu taxonomy is blocked elsewhere', () => {
+  const termResourceKey = 'row:["wp_terms","term_id:7"]';
+  const blockedNavMenuTermResourceKey = 'row:["wp_terms","term_id:11"]';
+  const taxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:9"]';
+  const blockedNavMenuTaxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:10"]';
+  const base = baseSite();
+  const local = baseSite();
+  const remote = baseSite();
+
+  base.db.wp_term_taxonomy = {
+    'term_taxonomy_id:9': {
+      term_taxonomy_id: 9,
+      term_id: 0,
+      taxonomy: 'category',
+      description: 'Base taxonomy description',
+      parent: 0,
+      count: 0,
+    },
+  };
+  remote.db.wp_term_taxonomy = {
+    'term_taxonomy_id:9': {
+      ...base.db.wp_term_taxonomy['term_taxonomy_id:9'],
+    },
+  };
+  local.db.wp_terms = {
+    'term_id:7': {
+      term_id: 7,
+      name: 'Local existing taxonomy term',
+      slug: 'local-existing-taxonomy-term',
+    },
+    'term_id:11': {
+      term_id: 11,
+      name: 'Local blocked elsewhere nav menu term',
+      slug: 'local-blocked-elsewhere-nav-menu-term',
+    },
+  };
+  local.db.wp_term_taxonomy = {
+    'term_taxonomy_id:9': {
+      ...base.db.wp_term_taxonomy['term_taxonomy_id:9'],
+      term_id: 7,
+    },
+    'term_taxonomy_id:10': {
+      term_taxonomy_id: 10,
+      term_id: 11,
+      taxonomy: 'nav_menu',
+      description: '',
+      parent: 0,
+      count: 0,
+    },
+  };
+
+  const plan = planFor(base, local, remote);
+  const termMutation = mutationFor(plan, termResourceKey);
+  const blockedNavMenuTermMutation = mutationFor(plan, blockedNavMenuTermResourceKey);
+  const taxonomyMutation = mutationFor(plan, taxonomyResourceKey);
+  const blockedNavMenuTaxonomyMutation = mutationFor(plan, blockedNavMenuTaxonomyResourceKey);
+  const blockedNavMenuTaxonomyBlocker = plan.blockers.find(
+    (entry) => entry.resourceKey === blockedNavMenuTaxonomyResourceKey,
+  );
+  const reference = taxonomyMutation.wordpressGraphReferences.find(
+    (entry) => entry.relationshipType === 'term-taxonomy-term',
+  );
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(termMutation.changeKind, 'create');
+  assert.equal(blockedNavMenuTermMutation.changeKind, 'create');
+  assert.equal(taxonomyMutation.changeKind, 'update');
+  assert.equal(blockedNavMenuTaxonomyMutation, undefined);
+  assert.equal(blockedNavMenuTaxonomyBlocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(blockedNavMenuTaxonomyBlocker.surface, 'nav_menu');
+  assert.deepEqual(taxonomyMutation.dependsOnMutationIds, [termMutation.id]);
+  assert.equal(plan.summary.graphDependencies, 1);
+  assert.deepEqual(plan.graphDependencies, [
+    {
+      sourceMutationId: taxonomyMutation.id,
+      sourceResourceKey: taxonomyResourceKey,
+      relationshipKey: 'wp_term_taxonomy.term_id',
+      relationshipType: 'term-taxonomy-term',
+      targetMutationId: termMutation.id,
+      targetResourceKey: termResourceKey,
+      resolutionPolicy: 'same-plan-local-create',
+      source: 'same-plan-local-create',
+      targetLocalHash: termMutation.localHash,
+    },
+  ]);
+  assert.equal(reference.resolutionPolicy, 'same-plan-local-create');
+  assert.equal(reference.relationshipKey, 'wp_term_taxonomy.term_id');
+  assert.equal(reference.relationshipType, 'term-taxonomy-term');
+  assert.equal(reference.targetResourceKey, termResourceKey);
+  assert.equal(JSON.stringify(reference).includes('Local existing taxonomy term'), false);
+  assert.equal(JSON.stringify(reference).includes('Local blocked elsewhere nav menu term'), false);
+});
+
 test('allows an existing term taxonomy row to retarget its parent reference to a same-plan term create', () => {
   const termResourceKey = 'row:["wp_terms","term_id:7"]';
   const taxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:9"]';
