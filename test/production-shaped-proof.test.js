@@ -2135,6 +2135,27 @@ test('packaged readiness helpers fail fast when both the packaged route and /wp-
   }
 });
 
+test('packaged release verifier tags packaged-route startup failures after global WordPress readiness', () => {
+  const verifierSource = readFileSync(
+    path.join(repoRoot, 'scripts/playground/production-shaped-release-verify.mjs'),
+    'utf8',
+  );
+  const start = verifierSource.indexOf('async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) {');
+  assert.notEqual(start, -1, 'expected packaged verifier readiness helper in verifier source');
+  const end = verifierSource.indexOf('async function fetchPackagedPreflightProbe(', start);
+  assert.notEqual(end, -1, 'expected packaged verifier readiness helper boundary in verifier source');
+  const helperSource = verifierSource.slice(start, end);
+
+  assert.match(
+    helperSource,
+    /snapshot stayed startup-shaped after global WordPress startup HTTP[\s\S]*?packagedProductionPlugin:\s*true,\s*packagedRouteStartup:\s*true,\s*snapshotNotReadyProbeCount/s,
+  );
+  assert.match(
+    helperSource,
+    /preflight stayed startup-shaped after global WordPress startup HTTP[\s\S]*?packagedProductionPlugin:\s*true,\s*packagedRouteStartup:\s*true,\s*preflightNotReadyProbeCount/s,
+  );
+});
+
 test('packaged readiness helpers retry bounded port collisions before failing startup', () => {
   const smokeSource = readFileSync(
     path.join(repoRoot, 'scripts/playground/production-plugin-package-smoke.mjs'),

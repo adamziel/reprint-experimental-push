@@ -1423,6 +1423,8 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
                   getOutput(),
                   {
                     childPid: child.pid ?? null,
+                    packagedProductionPlugin: true,
+                    packagedRouteStartup: true,
                     snapshotNotReadyProbeCount,
                   },
                 );
@@ -1545,6 +1547,8 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
                   getOutput(),
                   {
                     childPid: child.pid ?? null,
+                    packagedProductionPlugin: true,
+                    packagedRouteStartup: true,
                     snapshotNotReadyProbeCount,
                   },
                 );
@@ -1665,6 +1669,8 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
                   getOutput(),
                   {
                     childPid: child.pid ?? null,
+                    packagedProductionPlugin: true,
+                    packagedRouteStartup: true,
                     preflightNotReadyProbeCount,
                   },
                 );
@@ -1765,11 +1771,13 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
                 lastError,
                 lastProbes,
                 getOutput(),
-                {
-                  childPid: child.pid ?? null,
-                  preflightNotReadyProbeCount,
-                },
-              );
+                  {
+                    childPid: child.pid ?? null,
+                    packagedProductionPlugin: true,
+                    packagedRouteStartup: true,
+                    preflightNotReadyProbeCount,
+                  },
+                );
             }
           }
           await throwPlaygroundReadinessFailure(
