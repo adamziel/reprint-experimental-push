@@ -3,17 +3,17 @@
 This log records evidence present in this repository. Public status should use
 release gates and named evidence gaps rather than stale percentage estimates.
 
-# 2026-05-26 - Public Status Audit 23:55:50
+# 2026-05-27 - Public Status Audit 00:02:07
 
-<a id="2026-05-26-public-status-audit-235550"></a>
+<a id="2026-05-27-public-status-audit-000207"></a>
 
 - Refreshed [progress.html](../progress.html) to the current `date` output
-  (`2026-05-26 23:55:50 CEST`) and kept
-  `8e3fc40683844d2356398b9c9063b476d70d748a` as the current
+  (`2026-05-27 00:02:07 CEST`) and kept
+  `0dabb6b78d87ff946f08343749d27e1176fabff3` as the current
   reliable-executor head on the public page. The visible status surface keeps
   the evidence/gap labels and release-gate posture, not the stale percentage
   bars.
-- `8e3fc40683844d2356398b9c9063b476d70d748a` remains support-side evidence;
+- `0dabb6b78d87ff946f08343749d27e1176fabff3` remains support-side evidence;
   the release gate stays at `0/4` because production-backed auth/session
   lifecycle and durable journal ownership with lease/fencing remain blocked.
 - The checked release-path fencing evidence still includes
