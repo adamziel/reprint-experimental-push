@@ -2225,6 +2225,108 @@ test('allows an existing postmeta row to retarget to a same-plan post create', (
   assert.equal(result.site.db.wp_postmeta['meta_id:62'].meta_value, 'local-private-existing-postmeta-payload');
 });
 
+test('allows an existing postmeta row to retarget to a same-plan post create even when a navigation menu taxonomy is blocked elsewhere', () => {
+  const existingPostResourceKey = 'row:["wp_posts","ID:1"]';
+  const samePlanPostResourceKey = 'row:["wp_posts","ID:4"]';
+  const blockedTermResourceKey = 'row:["wp_terms","term_id:9"]';
+  const blockedTaxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:9"]';
+  const postmetaResourceKey = 'row:["wp_postmeta","meta_id:62"]';
+  const base = baseSite();
+  const local = baseSite();
+  const remote = baseSite();
+
+  base.db.wp_postmeta = {
+    'meta_id:62': {
+      meta_id: 62,
+      post_id: 1,
+      meta_key: '_local_graph_note',
+      meta_value: 'base-private-existing-postmeta-payload',
+    },
+  };
+  local.db.wp_postmeta = {
+    'meta_id:62': {
+      meta_id: 62,
+      post_id: 4,
+      meta_key: '_local_graph_note',
+      meta_value: 'local-private-existing-postmeta-payload',
+    },
+  };
+  remote.db.wp_postmeta = {
+    'meta_id:62': {
+      ...base.db.wp_postmeta['meta_id:62'],
+    },
+  };
+  local.db.wp_posts['ID:4'] = {
+    ID: 4,
+    post_title: 'Local retargeted postmeta target',
+    post_content: 'local-private-retargeted-postmeta-target-body',
+    post_status: 'publish',
+  };
+  local.db.wp_terms = {
+    'term_id:9': {
+      term_id: 9,
+      name: 'Local blocked elsewhere navigation term',
+      slug: 'local-blocked-elsewhere-navigation-term',
+    },
+  };
+  local.db.wp_term_taxonomy = {
+    'term_taxonomy_id:9': {
+      term_taxonomy_id: 9,
+      term_id: 9,
+      taxonomy: 'nav_menu',
+      description: '',
+      parent: 0,
+      count: 0,
+    },
+  };
+
+  const plan = planFor(base, local, remote);
+  const existingPostMutation = mutationFor(plan, existingPostResourceKey);
+  const samePlanPostMutation = mutationFor(plan, samePlanPostResourceKey);
+  const blockedTermMutation = mutationFor(plan, blockedTermResourceKey);
+  const blockedTaxonomyMutation = mutationFor(plan, blockedTaxonomyResourceKey);
+  const blockedTaxonomy = plan.blockers.find((entry) => entry.resourceKey === blockedTaxonomyResourceKey);
+  const postmetaMutation = mutationFor(plan, postmetaResourceKey);
+  const reference = postmetaMutation.wordpressGraphReferences.find((entry) => entry.relationshipType === 'postmeta-post');
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(existingPostMutation, undefined);
+  assert.equal(samePlanPostMutation.changeKind, 'create');
+  assert.equal(blockedTermMutation.changeKind, 'create');
+  assert.equal(blockedTaxonomyMutation, undefined);
+  assert.equal(blockedTaxonomy.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(blockedTaxonomy.surface, 'nav_menu');
+  assert.equal(postmetaMutation.changeKind, 'update');
+  assert.ok(
+    plan.mutations.indexOf(samePlanPostMutation) < plan.mutations.indexOf(postmetaMutation),
+    'post create must be ordered before dependent existing postmeta update',
+  );
+  assert.deepEqual(postmetaMutation.dependsOnMutationIds, [samePlanPostMutation.id]);
+  assert.equal(plan.summary.graphDependencies, 1);
+  assert.deepEqual(plan.graphDependencies, [
+    {
+      sourceMutationId: postmetaMutation.id,
+      sourceResourceKey: postmetaResourceKey,
+      relationshipKey: 'wp_postmeta.post_id',
+      relationshipType: 'postmeta-post',
+      targetMutationId: samePlanPostMutation.id,
+      targetResourceKey: samePlanPostResourceKey,
+      resolutionPolicy: 'same-plan-local-create',
+      source: 'same-plan-local-create',
+      targetLocalHash: samePlanPostMutation.localHash,
+    },
+  ]);
+  assert.equal(reference.resolutionPolicy, 'same-plan-local-create');
+  assert.equal(reference.relationshipKey, 'wp_postmeta.post_id');
+  assert.equal(reference.relationshipType, 'postmeta-post');
+  assert.equal(reference.targetResourceKey, samePlanPostResourceKey);
+  assert.equal(reference.dependency.targetMutationId, samePlanPostMutation.id);
+  assert.equal(reference.dependency.targetLocalHash, samePlanPostMutation.localHash);
+  assert.equal(JSON.stringify(reference).includes('local-private-existing-postmeta-payload'), false);
+  assert.equal(JSON.stringify(reference).includes('local-private-retargeted-postmeta-target-body'), false);
+  assert.equal(JSON.stringify(reference).includes('Local blocked elsewhere navigation term'), false);
+});
+
 test('blocks an existing postmeta row when the same-plan post target is itself blocked by a revision parent', () => {
   const blockedParentResourceKey = 'row:["wp_posts","ID:4"]';
   const blockedPostResourceKey = 'row:["wp_posts","ID:5"]';
