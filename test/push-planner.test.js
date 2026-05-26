@@ -17642,6 +17642,62 @@ test('blocks local termmeta references to a same-plan created term identity whil
   assert.equal(Object.hasOwn(remote.files, 'wp-content/plugins/forms/forms.php'), false);
 });
 
+test('blocks local termmeta references to a same-plan created term identity while preserving remote-only plugin drift', () => {
+  const resourceKey = 'row:["wp_termmeta","meta_id:12"]';
+  const base = baseSite();
+  base.db.wp_terms = {
+    'term_id:13': { term_id: 13, name: 'Base term', slug: 'base-term' },
+  };
+  base.db.wp_termmeta = {
+    'meta_id:12': {
+      meta_id: 12,
+      term_id: 13,
+      meta_key: 'base-term-meta',
+      meta_value: 'base-term-value',
+    },
+  };
+
+  const local = baseSite();
+  local.db.wp_terms = {
+    'term_id:13': { term_id: 13, name: 'Base term', slug: 'base-term' },
+    'term_id:17': {
+      term_id: 17,
+      name: 'Local same-plan term',
+      slug: 'local-same-plan-term',
+    },
+  };
+  local.db.wp_termmeta = {
+    'meta_id:12': {
+      meta_id: 12,
+      term_id: 17,
+      meta_key: 'local-term-meta',
+      meta_value: 'local-term-meta-value',
+    },
+  };
+
+  const remote = baseSite();
+  remote.db.wp_terms = JSON.parse(JSON.stringify(base.db.wp_terms));
+  remote.db.wp_termmeta = JSON.parse(JSON.stringify(base.db.wp_termmeta));
+  remote.plugins.forms.description = 'remote-only plugin drift';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin drift */';
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers[0];
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(plan.conflicts.length, 0);
+  assert.equal(blocker.class, 'unsupported-termmeta-resource');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.reason, 'Term meta graph resources are not yet supported by the planner.');
+  assert.equal(planJson.includes('Local same-plan term'), false);
+  assert.equal(planJson.includes('local-term-meta-value'), false);
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin drift');
+  assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin drift */');
+});
+
 test('blocks local post GUID changes while preserving remote-only plugin drift', () => {
   const resourceKey = 'row:["wp_posts","ID:46"]';
   const base = baseSite();
