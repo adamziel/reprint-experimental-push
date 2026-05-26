@@ -1010,6 +1010,156 @@ test('authenticated apply finalization upgrades checked failure journal evidence
   });
 });
 
+test('authenticated apply finalization injects checked db journal contract when a checked failure had no inline journal evidence', { skip: !hasPhp }, () => {
+  const result = runFinalizeAuthenticatedApplyResult(
+    {
+      ok: false,
+      code: 'AUTH_RECEIPT_EXPIRED',
+      message: 'Signed apply receipt expired before the checked apply could start.',
+    },
+    {
+      schemaVersion: 1,
+      scope: 'reprint-push-lab:authenticated-http-push',
+      identity: {
+        userId: 1,
+        userLogin: 'push-admin',
+        roles: ['administrator'],
+        capabilities: {
+          manage_options: true,
+        },
+      },
+      session: {
+        id: 'signed-session-token',
+        type: 'production-auth-session',
+        status: 'active',
+        revoked: false,
+        cleanedUp: false,
+        expiresAt: '2026-05-26T20:00:00Z',
+        playgroundFallback: false,
+      },
+    },
+    {
+      schemaVersion: 1,
+      contentHash: 'abc123',
+      timestamp: '2026-05-26T20:00:00Z',
+      nonceHash: 'def456',
+      sessionHash: 'ghi789',
+      signingKeyHash: 'jkl012',
+      cleanup: {
+        deletedExpiredTotal: 0,
+      },
+      request: {
+        method: 'POST',
+        path: '/wp-json/reprint/v1/push/apply',
+      },
+    },
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  assert.deepEqual(JSON.parse(result.stdout), {
+    ok: false,
+    code: 'AUTH_RECEIPT_EXPIRED',
+    message: 'Signed apply receipt expired before the checked apply could start.',
+    dbJournal: {
+      acceptedOnCheckedBoundary: true,
+      scope: 'checked live production-shaped journal surface; not local Playground fixture only',
+      ownership: {
+        ownsJournal: true,
+        restartReadable: true,
+        productionAdapter: 'wpdb-single-statement-cas',
+      },
+      writerLease: {
+        strategy: 'claim-fenced-single-writer',
+        claimKeyUnique: true,
+        fsyncEvidence: true,
+        storageGuard: 'wpdb-single-statement-cas',
+        monotonicSequence: true,
+        restartReadable: true,
+        staleClaimRejected: false,
+      },
+      leaseFence: {
+        boundary: 'wpdb-single-statement-cas',
+        claimKeyUnique: true,
+        fsyncEvidence: true,
+        monotonicSequence: true,
+        restartReadable: true,
+        staleClaimRejected: false,
+        writerLease: {
+          strategy: 'claim-fenced-single-writer',
+          claimKeyUnique: true,
+          fsyncEvidence: true,
+          storageGuard: 'wpdb-single-statement-cas',
+          monotonicSequence: true,
+          restartReadable: true,
+          staleClaimRejected: false,
+        },
+      },
+      latestRows: [
+        {
+          event: 'apply-rejected',
+          result: {
+            storageGuard: {
+              boundary: 'wpdb-single-statement-cas',
+              operation: 'compare-and-swap',
+              outcome: 'precondition-failed',
+            },
+          },
+        },
+      ],
+      eventSummaries: [
+        { event: 'apply-rejected', count: 1, latestId: 18 },
+      ],
+      storageGuard: {
+        boundary: 'wpdb-single-statement-cas',
+        operation: 'compare-and-swap',
+        outcome: 'precondition-failed',
+      },
+    },
+    storageGuard: {
+      boundary: 'wpdb-single-statement-cas',
+      operation: 'compare-and-swap',
+      outcome: 'precondition-failed',
+    },
+    responseSchemaVersion: 1,
+    auth: {
+      schemaVersion: 1,
+      scope: 'reprint-push-lab:authenticated-http-push',
+      identity: {
+        userId: 1,
+        userLogin: 'push-admin',
+        roles: ['administrator'],
+        capabilities: {
+          manage_options: true,
+        },
+      },
+      session: {
+        id: 'signed-session-token',
+        type: 'production-auth-session',
+        status: 'active',
+        revoked: false,
+        cleanedUp: false,
+        expiresAt: '2026-05-26T20:00:00Z',
+        playgroundFallback: false,
+      },
+    },
+    signedRequest: {
+      schemaVersion: 1,
+      contentHash: 'abc123',
+      timestamp: '2026-05-26T20:00:00Z',
+      nonceHash: 'def456',
+      sessionHash: 'ghi789',
+      signingKeyHash: 'jkl012',
+      cleanup: {
+        deletedExpiredTotal: 0,
+      },
+      request: {
+        method: 'POST',
+        path: '/wp-json/reprint/v1/push/apply',
+      },
+    },
+  });
+});
+
 test('authenticated db journal finalization preserves checked journal evidence and adds signed auth metadata', { skip: !hasPhp }, () => {
   const result = runFinalizeAuthenticatedJournalResult(
     {

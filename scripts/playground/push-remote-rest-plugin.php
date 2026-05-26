@@ -509,7 +509,7 @@ function reprint_push_lab_rest_finalize_authenticated_apply_result(
     array $signed_request_evidence,
     ?array $checked_db_journal = null
 ): array {
-    $result = reprint_push_lab_rest_attach_checked_db_journal_contract($result, false, $checked_db_journal);
+    $result = reprint_push_lab_rest_attach_checked_db_journal_contract($result, true, $checked_db_journal);
     $result['responseSchemaVersion'] = 1;
     $result['auth'] = $auth_evidence;
     $result['signedRequest'] = $signed_request_evidence;
