@@ -6,32 +6,22 @@ The project is **not releasable as a production WordPress push path**.
 
 Fresh remote heads at audit time, checked on May 26, 2026:
 
+- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `4b4474a3`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `0e853863`
+- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `7709c7f4`
+- `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration` -> `efd20c08`
+- `origin/lane/no-data-loss-invariants` -> `efd20c08`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `b8fd9b15`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `04753bdc`
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `b8fd9b15`
-- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `1b3fdc70`
-- `origin/lane/critic` -> `2b608e9e`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `3c7c96bf`
-- `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration` -> `0a448b37`
-- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `e013512e`
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `b8fd9b15`
-- `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `95d20044`
-- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `1b3fdc70`
-- `origin/lane/independent-auditor` -> `6351130f`
-- `origin/lane/reliable-executor` -> `447c203b`
-- `origin/lane/no-data-loss-invariants` -> `22ac71bb`
+- `origin/lane/cycle-20260525-mainwindows-2349/critic` -> `2b608e9e`
+- `origin/lane/reliable-executor` -> `8019706f`
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` -> `db36753e`
-- `origin/lane/critic` -> `a0b89723`
-- `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `95d20044`
 - `origin/lane/same-plan-wordpress-graph-create` -> `0d2178e9`
-- `origin/lane/no-data-loss-recovery` -> `95d20044`
-- `origin/lane/fast-paths` -> `fba292d0`
 - `origin/lane/progress-publisher` -> `7695e1f9`
-- `origin/lane/cycle-20260525-mainwindows-2349/critic` -> `a0b89723`
-- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `a489f4cb`
-- `origin/lane/cycle-20260525-mainwindows-2349/same-plan-wordpress-graph-create` -> `0d2178e9`
-- `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-invariants` -> `22ac71bb`
-- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `fba292d0`
-- `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration` -> `22ac71bb`
+- `origin/lane/independent-auditor` -> `6351130f`
+- `origin/lane/no-data-loss-recovery` -> `04753bdc`
+- `origin/lane/fast-paths` -> `3d685cfa`
+- `origin/lane/critic` -> `a0b89723`
 - `origin/lane/cycle-20260525-mainwindows-2357/no-data-loss-invariants-graph-proof` -> `98c0ce26`
 - `origin/main` -> `e55864f4`
 
@@ -43,7 +33,8 @@ Fresh lane proof since the last audit pass improved the local evidence floor,
 but it did not change the release conclusion:
 
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` now advances to
-  `fba292d0`, pinning transport frame compression proof. This remains
+  `4b4474a3`, tightening orphaned backpressure slack guard evidence. This
+  remains
   fail-closed boundary work, not release-grade live-source evidence.
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` now
   advances to `04753bdc`, closing unsupported recovery writers. That remains
@@ -55,9 +46,9 @@ but it did not change the release conclusion:
 - `origin/lane/critic` now advances to `2b608e9e`, refreshing the critique
   readiness audit only.
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now records
-  `3c7c96bf`, refreshing the public progress freshness surface only.
+  `0e853863`, refreshing the public progress freshness surface only.
 - `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration`
-  now records `0a448b37`, adding termmeta same-plan drift proof. That is
+  now records `efd20c08`, adding attachment parent invariants proof. That is
   stronger boundary hardening, but it still does not produce live source
   mutation evidence.
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now
@@ -67,9 +58,9 @@ but it did not change the release conclusion:
   release boundary.
 - `origin/lane/independent-auditor` now records `6351130f`, which refreshes
   the audit snapshot but does not change the release boundary.
-- `origin/lane/reliable-executor` now advances to `447c203b`, which tightens
-  live proof startup diagnostics and timeout handling but still does not prove a production-backed
-  source mutation boundary.
+- `origin/lane/reliable-executor` now advances to `8019706f`, which hardens
+  release verify shutdown paths and subprocess cleanup, but still does not
+  prove a production-backed source mutation boundary.
 - `origin/lane/no-data-loss-invariants` now advances to `22ac71bb`, adding
   same-plan post-parent/post proof coverage. That remains fail-closed boundary
   evidence, not live source mutation proof.
@@ -79,15 +70,16 @@ but it did not change the release conclusion:
 - `origin/lane/no-data-loss-recovery` now lands an unsupported production
   recovery journal stub at `1d0dbbbc`. It still does not add production-backed
   journal ownership or replay proof.
-- `origin/lane/fast-paths` now advances to `fba292d0`, pinning transport frame
-  compression proof. That is still a fail-closed implementation improvement,
-  not production release proof.
+- `origin/lane/fast-paths` now advances to `4b4474a3`, tightening orphaned
+  backpressure slack guard evidence. That is still a fail-closed
+  implementation improvement, not production release proof.
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` now
   fails closed on artifact ref drift at `1d0dbbbc`, but still does not add
   production-backed journal ownership or replay proof.
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` now advances to
-  `e013512e`, pinning transport frame compression proof. That is still a
-  fail-closed implementation improvement, not production release proof.
+  `4b4474a3`, tightening orphaned backpressure slack guard evidence. That is
+  still a fail-closed implementation improvement, not production release
+  proof.
 - `origin/lane/same-plan-wordpress-graph-create` now blocks unsupported graph
   surfaces at `a719e09c`, including revision posts, menu/navigation posts,
   serialized blocks, thumbnail parent references, and other same-plan graph
@@ -97,14 +89,14 @@ but it did not change the release conclusion:
   `origin/lane/cycle-20260525-mainwindows-2349/same-plan-wordpress-graph-create`
   now tracks the same `a719e09c` boundary hardening, which further narrows
   unsupported graph writes but still does not add live source mutation proof.
-- `origin/lane/no-data-loss-invariants` now advances to `22ac71bb`, adding
-  same-plan post-parent/post proof coverage. That remains fail-closed boundary
+- `origin/lane/no-data-loss-invariants` now advances to `efd20c08`, adding
+  attachment parent invariants proof. That remains fail-closed boundary
   evidence, not a live production mutation proof.
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now records
-  `3c7c96bf`, refreshing the public progress freshness surface only.
+  `0e853863`, refreshing the public progress freshness surface only.
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now records
   `b8fd9b15`, also a freshness-only update.
-- `origin/lane/no-data-loss-invariants` now advances to `22ac71bb`, and the
+- `origin/lane/no-data-loss-invariants` now advances to `efd20c08`, and the
   broader graph blocker coverage still remains fail-closed boundary evidence,
   not live production mutation proof.
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` now
