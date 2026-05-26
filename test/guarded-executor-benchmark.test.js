@@ -783,6 +783,81 @@ test('guarded benchmark exposes compressed remote-index and cached chunk-receipt
   );
 });
 
+test('guarded benchmark exposes mixed large-upload and plugin-update recovery shortcuts as rejected', () => {
+  const fastPath = findRejectedFastPathById(
+    'compressed-remote-index-and-parallel-chunk-and-row-fanout-skips-large-upload-and-plugin-update-recovery-after-pause',
+  );
+
+  assert.ok(fastPath);
+  assert.equal(fastPath.rejectedGate, 'recovery');
+  assert.match(fastPath.proposal, /large upload and a plugin update after a pause/i);
+  assert.match(fastPath.rejectedBecause, /chunk acknowledgements, row receipts, live compares, or atomic-group barriers survived the pause/i);
+  assert.deepEqual(
+    fastPath.violates,
+    ['remote-index-planning-only', 'compression', 'parallelism-limits', 'backpressure', 'chunk-receipts', 'row-preconditions', 'live-preconditions', 'atomic-file-publish', 'atomic-groups', 'durable-progress'],
+  );
+});
+
+test('guarded benchmark exposes compressed remote-index and parallel row-batch pause shortcuts as rejected', () => {
+  const fastPath = findRejectedFastPathById(
+    'compressed-remote-index-and-parallel-row-batches-skips-plugin-update-backpressure-after-pause',
+  );
+
+  assert.ok(fastPath);
+  assert.equal(fastPath.rejectedGate, 'recovery');
+  assert.match(fastPath.proposal, /skip plugin-update backpressure after pause/i);
+  assert.match(fastPath.rejectedBecause, /paused row receipts, idempotency keys, or atomic-group commit record survived failure/i);
+  assert.deepEqual(
+    fastPath.violates,
+    ['remote-index-planning-only', 'compression', 'parallelism-limits', 'backpressure', 'row-preconditions', 'plugin-preconditions', 'atomic-groups', 'durable-progress'],
+  );
+});
+
+test('guarded benchmark exposes compressed remote-index and parallel row-batch commit shortcuts as rejected', () => {
+  const fastPath = findRejectedFastPathById(
+    'compressed-remote-index-and-parallel-row-batches-skips-plugin-update-commit',
+  );
+
+  assert.ok(fastPath);
+  assert.equal(fastPath.rejectedGate, 'group');
+  assert.match(fastPath.proposal, /skip the plugin-update commit barrier/i);
+  assert.match(fastPath.rejectedBecause, /live compares, staged metadata writes, or atomic-group barrier survived failure/i);
+  assert.deepEqual(
+    fastPath.violates,
+    ['remote-index-planning-only', 'compression', 'parallelism-limits', 'row-preconditions', 'atomic-groups', 'durable-progress'],
+  );
+});
+
+test('guarded benchmark exposes compressed remote-index and cached row-batch receipt commit shortcuts as rejected', () => {
+  const fastPath = findRejectedFastPathById(
+    'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-commit-after-pause',
+  );
+
+  assert.ok(fastPath);
+  assert.equal(fastPath.rejectedGate, 'recovery');
+  assert.match(fastPath.proposal, /cached row batch receipts/i);
+  assert.match(fastPath.rejectedBecause, /paused group still has its live compares, staged metadata writes, or atomic-group commit record intact/i);
+  assert.deepEqual(
+    fastPath.violates,
+    ['remote-index-planning-only', 'compression', 'backpressure', 'row-preconditions', 'plugin-preconditions', 'atomic-groups', 'durable-progress'],
+  );
+});
+
+test('guarded benchmark exposes compressed remote-index and cached row-receipt row-batching shortcuts as rejected', () => {
+  const fastPath = findRejectedFastPathById(
+    'compressed-remote-index-and-cached-row-receipts-skips-plugin-update-row-batching-after-pause',
+  );
+
+  assert.ok(fastPath);
+  assert.equal(fastPath.rejectedGate, 'recovery');
+  assert.match(fastPath.proposal, /skip plugin-update row-batch recovery after a pause/i);
+  assert.match(fastPath.rejectedBecause, /live row compares, batch ordering, or the atomic-group barrier survived failure/i);
+  assert.deepEqual(
+    fastPath.violates,
+    ['remote-index-planning-only', 'compression', 'row-preconditions', 'backpressure', 'atomic-groups', 'durable-progress'],
+  );
+});
+
 test('guarded benchmark blocks row-batch executor claims when the measured surface is not visible', () => {
   const report = smallBenchmark();
   const tampered = clone(report);
