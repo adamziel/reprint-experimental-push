@@ -10,6 +10,7 @@ import {
   appendStaleClaimAdvanced,
   assertJournalRecordHasNoRawValues,
   checkedDurableJournalBoundarySatisfied,
+  classifyRecoveryJournalClaims,
   consumeProductionRecoveryJournal,
   createUnsupportedProductionRecoveryJournal,
   describeProductionRecoveryJournal,
@@ -100,6 +101,39 @@ test('file-backed journal appends monotonic sequences and reads after restart', 
     Array.from({ length: 10 }, (_, index) => index + 1),
   );
   assert.ok(restarted.records.every((record) => record.fsync.requested));
+});
+
+test('file-backed plan journal preserves optional claim identity before planned targets', () => {
+  const filePath = tempJournalPath();
+  const remote = baseSite();
+  const plan = planFor(baseSite(), localSite(), remote);
+  const claimId = 'plan-claim-1';
+  const journal = openPlanRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    now: fixedNow,
+    claimId,
+    artifactRefs: { journal: filePath },
+  });
+
+  journal.close();
+
+  const restarted = readRecoveryJournal(filePath);
+  assert.equal(restarted.integrity.status, 'ok');
+  assert.equal(restarted.records[0].type, 'recovery-claim-opened');
+  assert.equal(restarted.records[0].claimHash, recoveryClaimHash(claimId));
+  assert.deepEqual(restarted.records[0].claimLease, { id: claimId });
+  assert.equal(restarted.records[1].type, 'journal-opened');
+  assert.deepEqual(
+    restarted.records.slice(2).map((record) => record.type),
+    Array.from({ length: plan.mutations.length }, () => 'target-planned'),
+  );
+
+  const claim = classifyRecoveryJournalClaims(restarted.records);
+  assert.equal(claim.status, 'active');
+  assert.equal(claim.activeClaimHash, recoveryClaimHash(claimId));
+  assert.deepEqual(claim.activeClaimLease, { id: claimId });
 });
 
 test('file-backed journal records hashes and metadata without raw values', () => {

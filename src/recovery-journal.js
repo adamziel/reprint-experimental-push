@@ -1530,11 +1530,21 @@ export function openPlanRecoveryJournal({
   filePath,
   plan,
   current,
+  claimId = null,
   artifactRefs = {},
   now,
   truncate = true,
 }) {
-  const journal = openRecoveryJournal(filePath, { truncate, now });
+  const journal = openRecoveryJournal(filePath, { truncate, now, claimId });
+  if (typeof claimId === 'string' && claimId.length > 0) {
+    appendRecoveryClaimOpened(journal, {
+      plan,
+      current,
+      claimId,
+      artifactRefs,
+      reason: 'Recovery plan journal claim opened.',
+    });
+  }
   journal.appendEvent('journal-opened', {
     planId: plan.id,
     state: 'opened',

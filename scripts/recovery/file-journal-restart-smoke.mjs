@@ -58,6 +58,14 @@ summary.journal = assertJournalFiles();
 
 console.log(JSON.stringify(summary, null, 2));
 
+function claimIdForScenario(name, remote) {
+  return digest({
+    scenario: name,
+    planId: plan.id,
+    observedHash: digest(remote),
+  });
+}
+
 async function scenarioFailBeforeMutation() {
   const journalPath = path.join(workDir, 'fail-before-mutation.journal.jsonl');
   const remote = clone(fixture.base);
@@ -67,6 +75,7 @@ async function scenarioFailBeforeMutation() {
     plan,
     current: remote,
     now: fixedNow,
+    claimId: claimIdForScenario('fail-before-mutation', remote),
   });
 
   const failure = captureApply(() => applyPlan(remote, plan, { failBeforeMutation: true }));
@@ -102,6 +111,7 @@ async function scenarioFailAfter2() {
     plan,
     current: remote,
     now: fixedNow,
+    claimId: claimIdForScenario('fail-after-2', remote),
   });
 
   const failure = captureApply(() =>
@@ -165,6 +175,7 @@ async function scenarioCompletedReplay() {
     plan,
     current: remote,
     now: fixedNow,
+    claimId: claimIdForScenario('completed-replay', remote),
   });
   const result = applyPlan(remote, plan, { mutateRemote: true });
   appendJournalCompleted(journal, {
@@ -207,6 +218,7 @@ async function scenarioDrift() {
     plan,
     current: remote,
     now: fixedNow,
+    claimId: claimIdForScenario('drift', remote),
   });
   applyPlan(remote, plan, { mutateRemote: true });
   appendJournalCompleted(journal, {
