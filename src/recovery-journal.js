@@ -208,6 +208,7 @@ export function openProductionRecoveryJournal(options) {
       },
       leaseFence: {
         storageGuard: 'filesystem-compare-rename',
+        claimKeyUnique: true,
         fsyncEvidence: true,
         monotonicSequence: true,
         restartReadable,

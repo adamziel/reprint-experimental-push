@@ -321,6 +321,7 @@ test('production recovery journal wrapper writes a restart-readable claim-fenced
     staleClaimRejected: false,
   });
   assert.deepEqual(inspection.leaseFence.writerLease, inspection.journal.writerLease);
+  assert.equal(inspection.leaseFence.claimKeyUnique, true);
   assert.equal(inspection.leaseFence.staleClaimRejected, false);
 
   journal.close();
@@ -409,6 +410,7 @@ test('checked release path consumes the production recovery journal inspection s
     staleClaimRejected: true,
   });
   assert.deepEqual(inspection.leaseFence.writerLease, inspection.journal.writerLease);
+  assert.equal(inspection.leaseFence.claimKeyUnique, true);
   assert.equal(inspection.leaseFence.storageGuard, 'filesystem-compare-rename');
   assert.equal(inspection.leaseFence.restartReadable, true);
   assert.equal(inspection.leaseFence.staleClaimRejected, true);
