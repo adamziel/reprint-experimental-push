@@ -281,6 +281,13 @@ export function productionThroughputBlockers(report) {
   if (
     report.evidence.backpressure?.queuePausedBeforeOverflow === true
     && report.evidence.backpressure?.receiptCursorMemoryCeilingVisible === true
+    && report.evidence.backpressure?.queueHeadroomMeasured !== true
+  ) {
+    blockers.push('memory-ceiling-visible-without-queue-headroom-measurement');
+  }
+  if (
+    report.evidence.backpressure?.queuePausedBeforeOverflow === true
+    && report.evidence.backpressure?.receiptCursorMemoryCeilingVisible === true
     && report.evidence.backpressure?.queueBudgetVisible !== true
   ) {
     blockers.push('memory-ceiling-visible-without-queue-budget-visible');
@@ -1426,6 +1433,8 @@ export function productionThroughputDetails(report) {
     queueHeadroomVisible,
     queueHeadroomVisibleAndMeasured,
     receiptCursorMemoryCeilingVisible,
+    receiptCursorMemoryCeilingVisibleAndMeasured:
+      receiptCursorMemoryCeilingVisible && queueHeadroomMeasured,
     receiptCursorMemoryCeilingVisibleAndQueueHeadroomVisible,
     receiptCursorMemoryCeilingVisibleAndQueueHeadroomVisibleAndSafe,
     receiptCursorMemoryHeadroomPositive: receiptCursorMemoryHeadroomPositiveVisible,
@@ -1522,6 +1531,8 @@ export function productionThroughputDetails(report) {
       queueHeadroomVisible,
       queueHeadroomVisibleAndMeasured,
       receiptCursorMemoryCeilingVisible,
+      receiptCursorMemoryCeilingVisibleAndMeasured:
+        receiptCursorMemoryCeilingVisible && queueHeadroomMeasured,
       receiptCursorMemoryCeilingVisibleAndQueueHeadroomVisible,
       receiptCursorMemoryCeilingVisibleAndQueueHeadroomVisibleAndSafe,
       productionAtomicGroupMetadataVisible,

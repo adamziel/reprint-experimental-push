@@ -298,6 +298,21 @@ test('guarded benchmark blocks memory-ceiling visibility when queue-headroom vis
   assert.equal(blockers.includes('queue-headroom-visible-without-queue-budget-visibility'), false);
 });
 
+test('guarded benchmark blocks forged memory-ceiling visibility without queue-headroom measurement', () => {
+  const report = smallBenchmark();
+  const tampered = clone(report);
+
+  tampered.evidence.backpressure.receiptCursorMemoryCeilingVisible = true;
+  tampered.evidence.backpressure.queueHeadroomMeasured = false;
+  tampered.evidence.backpressure.queueHeadroomVisible = true;
+
+  const details = productionThroughputDetails(tampered);
+  const blockers = productionThroughputBlockers(tampered);
+
+  assert.equal(details.receiptCursorMemoryCeilingVisibleAndMeasured, false);
+  assert.equal(blockers.includes('memory-ceiling-visible-without-queue-headroom-measurement'), true);
+});
+
 test('guarded benchmark treats queue-headroom visibility as incomplete without a measurement', () => {
   const report = smallBenchmark();
   const tampered = clone(report);
