@@ -2482,6 +2482,7 @@ function summarizeProductionCapabilityRollout({
         && backpressureEvidenceComplete
         && productionStorageReceiptsMeasured
         && productionAtomicCommitMeasured
+        && productionAtomicCommitVisible
         && productionAtomicGroupMetadataVisibleAndMeasured,
       parallelismLimitsVisible
         && queueBudgetMatchesResourceCeiling

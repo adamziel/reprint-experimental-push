@@ -438,8 +438,45 @@ test('guarded benchmark keeps chunk-upload rollout summary pinned to atomic visi
       measured: false,
       visible: false,
       blockerRefs: [
+        'backpressure-evidence-incomplete',
+        'queue-memory-ceiling-does-not-match-queue-budget',
         'production-atomic-group-commit-not-measured',
         'production-storage-receipts-without-atomic-group-metadata',
+        'production-storage-receipts-without-atomic-commit',
+      ],
+    },
+  );
+});
+
+test('guarded benchmark keeps chunk-upload rollout summary pinned to hidden atomic-commit blockers', () => {
+  const report = smallBenchmark();
+  const tampered = clone(report);
+
+  tampered.executorCapabilities.fileReceipts = 'production-storage-receipts';
+  tampered.evidence.parallelism.parallelismLimitsVisible = true;
+  tampered.evidence.parallelism.parallelismLimitsMeasured = true;
+  tampered.evidence.atomicGroup.productionStorageReceiptsMeasured = true;
+  tampered.evidence.atomicGroup.productionStorageReceiptsVisible = true;
+  tampered.evidence.atomicGroup.productionAtomicCommitMeasured = true;
+  tampered.evidence.atomicGroup.productionAtomicCommitVisible = false;
+  tampered.evidence.atomicGroup.productionAtomicGroupMetadataVisible = true;
+
+  const details = productionThroughputDetails(tampered);
+
+  assert.deepEqual(
+    details.productionCapabilityRolloutSummary.find(
+      (entry) => entry.surface === 'chunk-upload-concurrency',
+    ),
+    {
+      surface: 'chunk-upload-concurrency',
+      status: 'blocked',
+      measured: false,
+      visible: false,
+      blockerRefs: [
+        'backpressure-evidence-incomplete',
+        'queue-memory-ceiling-does-not-match-queue-budget',
+        'production-atomic-group-commit-not-visible',
+        'production-atomic-group-metadata-visible-without-atomic-commit',
         'production-storage-receipts-without-atomic-commit',
       ],
     },
