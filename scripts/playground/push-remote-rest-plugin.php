@@ -569,7 +569,6 @@ function reprint_push_lab_rest_attach_checked_recovery_journal_evidence(
     $checked_journal = reprint_push_lab_rest_recovery_journal_evidence($checked_surface);
     if (!isset($result['recovery']['journal']) || !is_array($result['recovery']['journal'])) {
         $result['recovery']['journal'] = $checked_journal;
-        return $result;
     }
 
     $existing_integrity = isset($result['recovery']['journal']['integrity']) && is_array($result['recovery']['journal']['integrity'])
