@@ -569,6 +569,18 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-row-batch-receipts-skips-release-bundle-commit-after-pause')?.violates.includes('atomic-groups'),
     'cached row-batch receipts still cannot bypass the release-bundle atomic-group barrier',
   );
+  assert.equal(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-row-batch-receipts-skips-release-bundle-commit-after-pause-and-backpressure')?.rejectedGate,
+    'recovery',
+  );
+  assert.ok(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-row-batch-receipts-skips-release-bundle-commit-after-pause-and-backpressure')?.violates.includes('backpressure'),
+    'cached row-batch receipts still cannot bypass release-bundle backpressure after a pause',
+  );
+  assert.ok(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-row-batch-receipts-skips-release-bundle-commit-after-pause-and-backpressure')?.violates.includes('atomic-groups'),
+    'cached row-batch receipts still cannot bypass the release-bundle atomic-group barrier after a pause',
+  );
   assert.ok(
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-dependency-graph-skips-release-bundle-commit-after-pause')?.violates.includes('plugin-preconditions'),
     'cached dependency graphs still cannot bypass release-bundle plugin preconditions',

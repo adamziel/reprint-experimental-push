@@ -3107,6 +3107,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['remote-index-planning-only', 'compression', 'database-row-batching', 'row-preconditions', 'chunk-receipts', 'atomic-groups', 'backpressure', 'durable-progress'],
   },
   {
+    id: 'compressed-remote-index-and-cached-row-batch-receipts-skips-release-bundle-commit-after-pause-and-backpressure',
+    proposal: 'use a compressed remote index plus cached row-batch receipts to skip the release-bundle commit barrier after a pause and backpressure event',
+    rejectedBecause: 'planning evidence and cached row-batch receipts can trim replay, but they cannot prove the mixed upload-and-database bundle, live row preconditions, backpressure state, or atomic-group commit barrier survived the pause',
+    rejectedGate: 'recovery',
+    violates: ['remote-index-planning-only', 'compression', 'database-row-batching', 'row-preconditions', 'chunk-receipts', 'atomic-groups', 'backpressure', 'durable-progress'],
+  },
+  {
     id: 'compressed-remote-index-and-cached-dependency-graph-skips-release-bundle-commit-after-pause',
     proposal: 'use a compressed remote index plus a cached dependency graph to skip the release-bundle commit barrier after a pause',
     rejectedBecause: 'planning evidence and cached dependency graphs can trim rediscovery work, but they cannot prove the mixed upload-and-database bundle, live row preconditions, or atomic-group commit barrier survived the pause',
