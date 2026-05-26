@@ -32,6 +32,7 @@ const retryableReadOnlyGetPaths = new Set(Object.values(routeProfiles).flatMap((
 ]));
 const sideEffectQueryParams = new Set([
   'reprint_push_lab_drift_after_snapshot',
+  'reprint_push_lab_auth_session_drift',
 ]);
 
 export async function runAuthenticatedHttpPush({
@@ -47,6 +48,7 @@ export async function runAuthenticatedHttpPush({
   requireProductionAuthSession = false,
   simulateStaleClaimRetry = false,
   simulatePreservedRemoteRetryPath = '',
+  labAuthSessionDrift = '',
   authSessionSource = null,
   now = new Date(),
 }) {
@@ -233,6 +235,10 @@ export async function runAuthenticatedHttpPush({
   const snapshotPath = labDriftAfterSnapshot
     ? `/snapshot?reprint_push_lab_drift_after_snapshot=${encodeURIComponent(labDriftAfterSnapshot)}`
     : '/snapshot';
+  const authSessionDriftQuery = labAuthSessionDrift
+    ? `reprint_push_lab_auth_session_drift=${encodeURIComponent(labAuthSessionDrift)}`
+    : '';
+  const withAuthSessionDrift = (pathname) => appendQueryParam(pathname, authSessionDriftQuery);
   const remoteSnapshot = await client.get(snapshotPath);
   if (remoteSnapshot.status !== 200 || remoteSnapshot.body?.ok !== true) {
     summary.code = remoteSnapshot.body?.code || 'SNAPSHOT_FAILED';
@@ -260,7 +266,7 @@ export async function runAuthenticatedHttpPush({
     return summary;
   }
 
-  const dryRun = await client.signedPost('/dry-run', { plan }, {
+  const dryRun = await client.signedPost(withAuthSessionDrift('/dry-run'), { plan }, {
     session,
     idempotencyKey,
   });
@@ -315,7 +321,7 @@ export async function runAuthenticatedHttpPush({
 
   let apply = null;
   if (simulateStaleClaimRetry) {
-    const staleClaimAttempt = await client.signedPost('/apply', applyPayload, {
+    const staleClaimAttempt = await client.signedPost(withAuthSessionDrift('/apply'), applyPayload, {
       session,
       idempotencyKey,
     });
@@ -331,7 +337,7 @@ export async function runAuthenticatedHttpPush({
     }
   }
 
-  apply = await client.signedPost('/apply', applyPayload, {
+  apply = await client.signedPost(withAuthSessionDrift('/apply'), applyPayload, {
     session,
     idempotencyKey,
   });
@@ -385,7 +391,7 @@ export async function runAuthenticatedHttpPush({
     return summary;
   }
 
-  const recoveryInspect = await client.signedPost('/recovery/inspect', {
+  const recoveryInspect = await client.signedPost(withAuthSessionDrift('/recovery/inspect'), {
     plan,
     receipt: dryRun.body.receipt,
   }, {
@@ -469,7 +475,7 @@ export async function runAuthenticatedHttpPush({
     return summary;
   }
 
-  const replay = await client.signedPost('/apply', applyPayload, {
+  const replay = await client.signedPost(withAuthSessionDrift('/apply'), applyPayload, {
     session,
     idempotencyKey,
   });
@@ -542,7 +548,7 @@ export async function runAuthenticatedHttpPush({
   summary.after = summarizeSnapshot(afterApply, local);
   updateRetryAttempts(summary, summary.after);
   summary.afterObject = afterApply.body.snapshot;
-  const dbJournal = await client.signedGet('/db-journal?limit=80', {
+  const dbJournal = await client.signedGet(withAuthSessionDrift('/db-journal?limit=80'), {
     session,
     idempotencyKey,
     retryable: true,
@@ -726,7 +732,7 @@ export function authenticatedHttpClient({
         signedRequestHeaders(credential, 'GET', pathname, '', options),
         requestTimeoutMs,
         {
-          retryable: options.retryable === true,
+          retryable: options.retryable === true && !hasSideEffectQueryParam(pathname),
           beforeAttempt: maybeSimulateTransientReadFailure,
         },
       );
@@ -1449,6 +1455,29 @@ function rawUrlDecodeQueryPart(value) {
 
 function rawUrlEncode(value) {
   return encodeURIComponent(value).replace(/[!'()*]/g, (char) => `%${char.charCodeAt(0).toString(16).toUpperCase()}`);
+}
+
+function appendQueryParam(pathname, rawQueryPart) {
+  if (!rawQueryPart) {
+    return pathname;
+  }
+  return `${pathname}${pathname.includes('?') ? '&' : '?'}${rawQueryPart}`;
+}
+
+function hasSideEffectQueryParam(pathname) {
+  const [, rawQuery = ''] = pathname.split('?', 2);
+  if (!rawQuery) {
+    return false;
+  }
+
+  const searchParams = new URLSearchParams(rawQuery);
+  for (const key of sideEffectQueryParams) {
+    if (searchParams.has(key)) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 function labSigningKey(credential) {

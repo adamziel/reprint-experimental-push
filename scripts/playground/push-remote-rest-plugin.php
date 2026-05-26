@@ -2726,6 +2726,7 @@ function reprint_push_lab_rest_auth_evidence(WP_REST_Request $request): array
     $package_mode = reprint_push_lab_rest_package_mode_enabled();
     $profile = reprint_push_lab_rest_route_profile($request);
     $signature = reprint_push_lab_rest_signature_context($request);
+    $lifecycle_drift = reprint_push_lab_rest_auth_session_lifecycle_drift($request);
     $signed_production_session = is_array($auth)
         && (string) ($profile['profile'] ?? '') === 'production-shaped'
         && isset($signature['session'])
@@ -2744,6 +2745,20 @@ function reprint_push_lab_rest_auth_evidence(WP_REST_Request $request): array
     $session_expires_at = is_array($auth)
         ? ($production_session ? ($signature['session']['expiresAt'] ?? null) : ($auth['expiresAt'] ?? null))
         : null;
+    if ($production_session && is_array($lifecycle_drift)) {
+        if (($lifecycle_drift['mode'] ?? '') === 'expired') {
+            $session_expires_at = gmdate('Y-m-d\\TH:i:s\\Z', time() - 60);
+        }
+        if (($lifecycle_drift['mode'] ?? '') === 'rotated' && !empty($session_id)) {
+            $session_id .= '-rotated';
+        }
+    }
+    $session_revoked = is_array($auth) ? (bool) ($auth['revoked'] ?? false) : false;
+    $session_cleaned_up = is_array($auth) ? (bool) ($auth['cleanedUp'] ?? false) : false;
+    if ($production_session) {
+        $session_revoked = is_array($lifecycle_drift) && ($lifecycle_drift['mode'] ?? '') === 'revoked';
+        $session_cleaned_up = is_array($lifecycle_drift) && ($lifecycle_drift['mode'] ?? '') === 'cleaned-up';
+    }
 
     return [
         'schemaVersion' => 1,
@@ -2766,8 +2781,8 @@ function reprint_push_lab_rest_auth_evidence(WP_REST_Request $request): array
             'credentialType' => is_array($auth) ? ($auth['credentialType'] ?? null) : null,
             'credentialHash' => is_array($auth) ? $auth['credentialHash'] : null,
             'status' => $session_status,
-            'revoked' => is_array($auth) ? ($production_session ? false : (bool) ($auth['revoked'] ?? false)) : false,
-            'cleanedUp' => is_array($auth) ? ($production_session ? false : (bool) ($auth['cleanedUp'] ?? false)) : false,
+            'revoked' => $session_revoked,
+            'cleanedUp' => $session_cleaned_up,
             'expiresAt' => $session_expires_at,
             'playgroundFallback' => is_array($auth)
                 ? ($production_session ? false : (bool) ($auth['playgroundFallback'] ?? false))
@@ -2777,6 +2792,49 @@ function reprint_push_lab_rest_auth_evidence(WP_REST_Request $request): array
                 : null,
         ],
     ];
+}
+
+function reprint_push_lab_rest_auth_session_lifecycle_drift(WP_REST_Request $request): ?array
+{
+    if (!is_array(reprint_push_lab_rest_get_auth_context($request))) {
+        return null;
+    }
+
+    $mode = (string) $request->get_param('reprint_push_lab_auth_session_drift');
+    if ($mode === '') {
+        $mode = (string) getenv('REPRINT_PUSH_LAB_AUTH_SESSION_DRIFT');
+    }
+    if ($mode === '' || !str_contains($mode, ':')) {
+        return null;
+    }
+
+    [$expected_step, $drift_mode] = explode(':', $mode, 2);
+    $current_step = reprint_push_lab_rest_auth_session_lifecycle_step($request);
+    if ($expected_step === '' || $drift_mode === '' || $current_step === null || $expected_step !== $current_step) {
+        return null;
+    }
+
+    if (!in_array($drift_mode, ['revoked', 'cleaned-up', 'expired', 'rotated'], true)) {
+        return null;
+    }
+
+    return [
+        'step' => $current_step,
+        'mode' => $drift_mode,
+    ];
+}
+
+function reprint_push_lab_rest_auth_session_lifecycle_step(WP_REST_Request $request): ?string
+{
+    $route = (string) $request->get_route();
+    return match (true) {
+        str_ends_with($route, '/preflight') => 'preflight',
+        str_ends_with($route, '/dry-run') => 'dry-run',
+        str_ends_with($route, '/apply') => 'apply',
+        str_ends_with($route, '/recovery/inspect') => 'recovery-inspect',
+        str_ends_with($route, '/db-journal') => 'journal',
+        default => null,
+    };
 }
 
 function reprint_push_lab_rest_checked_production_journal_surface(WP_REST_Request $request): bool
