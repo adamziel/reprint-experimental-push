@@ -83,11 +83,17 @@ but it did not change the release conclusion:
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now records
   `c49f4eae`, refreshing progress visibility only. It still does not change
   the release verdict.
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now records
+  `f3bf7e4f`, refreshing progress visibility only. It still does not change
+  the release verdict.
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now records
   `b717124c`, refreshing public progress freshness only. It still does not
   add production-backed gate movement.
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now records
   `ee9d4e2d`, refreshing the public progress freshness only. It still does not
+  add production-backed gate movement.
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now records
+  `3cc2df77`, refreshing the public progress freshness only. It still does not
   add production-backed gate movement.
 - `origin/lane/reliable-executor` now records `41ea37b9`, hardening Playground startup timeout handling. It still does not prove production auth/session lifecycle or a live-source mutation boundary.
 - `origin/lane/reliable-executor` now records `ff94457a`, failing closed on unsupported production origins. It still does not prove production auth/session lifecycle or a live-source mutation boundary.
