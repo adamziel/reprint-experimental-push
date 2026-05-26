@@ -702,6 +702,20 @@ function productionRecoverySupportReport(writer) {
     addMissingDependency('restart-readable recovery artifact references');
   }
   if (
+    writer?.artifactRefs
+    && Object.hasOwn(writer.artifactRefs, 'remote')
+    && typeof writer.artifactRefs.remote !== 'string'
+  ) {
+    addMissingDependency('restart-readable recovery remote artifact references');
+  }
+  if (
+    durableJournalInspectArtifactRefs(inspected)
+    && Object.hasOwn(inspected.artifactRefs, 'remote')
+    && typeof inspected.artifactRefs.remote !== 'string'
+  ) {
+    addMissingDependency('restart-readable recovery remote artifact references');
+  }
+  if (
     durableJournalInspectArtifactRefs(inspected)
     && typeof inspected.artifactRefs.remote === 'string'
   ) {
