@@ -27148,6 +27148,77 @@ test('blocks local postmeta references to a same-plan created revision while pre
   assert.equal(Object.hasOwn(remote.files, 'wp-content/plugins/forms/forms.php'), false);
 });
 
+test('blocks local postmeta references to a same-plan created revision while preserving a matching independent delete and remote-only plugin removals', () => {
+  const resourceKey = 'row:["wp_postmeta","meta_id:55"]';
+  const targetResourceKey = 'row:["wp_posts","ID:49"]';
+  const base = baseSite();
+  base.files['obsolete.txt'] = 'legacy revision sidecar';
+  base.db.wp_postmeta = {
+    'meta_id:55': {
+      meta_id: 55,
+      post_id: 49,
+      meta_key: 'revision_note',
+      meta_value: 'base revision delete meta value',
+    },
+  };
+
+  const local = baseSite();
+  local.db.wp_posts['ID:49'] = {
+    ID: 49,
+    post_title: 'Local same-plan revision delete',
+    post_content: 'Local same-plan revision delete content',
+    post_status: 'inherit',
+    post_type: 'revision',
+  };
+  local.db.wp_postmeta = {
+    'meta_id:55': {
+      meta_id: 55,
+      post_id: 49,
+      meta_key: 'revision_note',
+      meta_value: 'local revision delete meta value',
+    },
+  };
+  delete local.files['obsolete.txt'];
+
+  const remote = baseSite();
+  remote.db.wp_postmeta = JSON.parse(JSON.stringify(base.db.wp_postmeta));
+  delete remote.files['obsolete.txt'];
+  delete remote.plugins.forms;
+  delete remote.files['wp-content/plugins/forms/forms.php'];
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  const revisionBlocker = plan.blockers.find((entry) => entry.resourceKey === targetResourceKey);
+  const reference = blocker.references[0];
+  const matchingDelete = decisionFor(plan, 'file:obsolete.txt');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(decisionFor(plan, targetResourceKey), undefined);
+  assert.equal(blocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.resolutionPolicy, 'preserve-remote-wordpress-graph-and-stop');
+  assert.equal(revisionBlocker.class, 'unsupported-revision-resource');
+  assert.equal(revisionBlocker.resourceKey, targetResourceKey);
+  assert.equal(reference.relationshipKey, 'wp_postmeta.post_id');
+  assert.equal(reference.relationshipType, 'postmeta-post');
+  assert.equal(reference.sourceResourceKey, resourceKey);
+  assert.equal(reference.targetResourceKey, targetResourceKey);
+  assert.equal(reference.targetChange.remote.state, 'absent');
+  assert.equal(reference.targetRemoteHash.length, 64);
+  assert.equal(matchingDelete.decision, 'already-in-sync');
+  assert.equal(matchingDelete.change.localChange, 'delete');
+  assert.equal(matchingDelete.change.remoteChange, 'delete');
+  assert.equal(planJson.includes('Local same-plan revision delete'), false);
+  assert.equal(planJson.includes('Local same-plan revision delete content'), false);
+  assert.equal(planJson.includes('local revision delete meta value'), false);
+  assert.equal(Object.hasOwn(remote.files, 'obsolete.txt'), false);
+  assert.equal(Object.hasOwn(remote.plugins, 'forms'), false);
+  assert.equal(Object.hasOwn(remote.files, 'wp-content/plugins/forms/forms.php'), false);
+});
+
 test('blocks local termmeta references to a same-plan created term while preserving remote-only plugin drift', () => {
   const resourceKey = 'row:["wp_termmeta","meta_id:12"]';
   const targetResourceKey = 'row:["wp_terms","term_id:13"]';
