@@ -6,19 +6,19 @@ The project is **not releasable as a production WordPress push path**.
 
 Fresh remote heads at audit time, checked on May 26, 2026:
 
-- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `2690b912`
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `864ba33f`
+- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `44873b39`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `658a735d`
 - `origin/lane/reliable-executor` -> `b8d91776`
 - `origin/lane/no-data-loss-invariants` -> `c718a4af`
 - `origin/lane/no-data-loss-recovery` -> `4372167e`
 - `origin/lane/fast-paths` -> `74b44338`
-- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `9d74af17`
+- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `76edd508`
 - `origin/lane/critic` -> `cba0890b`
 - `origin/lane/progress-publisher` -> `7695e1f9`
 - `origin/lane/cycle-20260525-mainwindows-2349/critic` -> `cba0890b`
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `864ba33f`
-- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `2690b912`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `148f9bd5`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `658a735d`
+- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `44873b39`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `b415d269`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `4372167e`
 - `origin/lane/same-plan-wordpress-graph-create` -> `a719e09c`
 - `origin/lane/cycle-20260525-mainwindows-2349/same-plan-wordpress-graph-create` -> `a719e09c`
@@ -58,12 +58,12 @@ but it did not change the release conclusion:
   `cd0fddad`. That is still a fail-closed implementation improvement, not
   production release proof.
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` now adds receipt
-  cursor headroom rejection at `bd7d8686`, which is still boundary plumbing
+  cursor headroom rejection at `44873b39`, which is still boundary plumbing
   rather than measured speed proof.
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now
-  records the latest progress freshness handoff at `164a705b`.
+  records the latest progress freshness handoff at `b415d269`.
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` now refreshes the audit snapshot at
-  `afb0fcf6`.
+  `76edd508`.
 - `origin/lane/critic` now refreshes the critic handoff at `cba0890b`.
 - `origin/lane/progress-publisher` now refreshes the public progress evidence
   at `7695e1f9`.
