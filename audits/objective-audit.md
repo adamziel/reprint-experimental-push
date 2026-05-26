@@ -7,11 +7,11 @@ The project is **not releasable as a production WordPress push path**.
 Fresh remote heads at audit time, checked on May 26, 2026:
 
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `5b4706b5`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `bac396e2`
-- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `ff20e4db`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `41e90e60`
+- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `0e5e701d`
 - `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration` -> `efd20c08`
 - `origin/lane/no-data-loss-invariants` -> `efd20c08`
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `b8fd9b15`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `70bb32e9`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `9f8f1eed`
 - `origin/lane/cycle-20260525-mainwindows-2349/critic` -> `2b608e9e`
 - `origin/lane/reliable-executor` -> `8019706f`
@@ -39,21 +39,21 @@ but it did not change the release conclusion:
   advances to `9f8f1eed`, hardening recovery artifact refs. That remains
   fail-closed boundary work, not production-backed durable journal proof.
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now
-  advances to `bac396e2`, refreshing public progress freshness only.
+  advances to `41e90e60`, refreshing public progress freshness only.
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` now
-  advances to `ff20e4db`, refreshing the audit snapshot only.
+  advances to `0e5e701d`, refreshing the audit snapshot only.
 - `origin/lane/critic` now advances to `2b608e9e`, refreshing the critique
   readiness audit only.
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now records
-  `bac396e2`, refreshing the public progress freshness surface only.
+  `41e90e60`, refreshing the public progress freshness surface only.
 - `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration`
   now records `efd20c08`, adding attachment parent invariants proof. That is
   stronger boundary hardening, but it still does not produce live source
   mutation evidence.
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now
-  records `b8fd9b15`, also a freshness-only update.
+  records `70bb32e9`, also a freshness-only update.
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` now records
-  `ff20e4db`, which refreshes the audit snapshot but does not change the
+  `0e5e701d`, which refreshes the audit snapshot but does not change the
   release boundary.
 - `origin/lane/independent-auditor` now records `6351130f`, which refreshes
   the audit snapshot but does not change the release boundary.
