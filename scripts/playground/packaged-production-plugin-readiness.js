@@ -4,20 +4,48 @@ export const packagedProductionPluginMaxConsecutiveNotReadyProbes = 4;
 const packagedProductionPluginWordPressNotReadyPattern = /WordPress is not ready yet/i;
 const packagedProductionPluginRouteNotReadyPattern = /No route was found matching the URL and request method\.?/i;
 
-function packagedProductionPluginResponseMessage(response) {
-  if (typeof response?.body === 'string') {
-    return response.body;
+function packagedProductionPluginFindMessage(value, depth = 0) {
+  if (depth > 4 || value == null) {
+    return '';
   }
 
-  if (typeof response?.body?.message === 'string') {
-    return response.body.message;
+  if (typeof value === 'string') {
+    return value;
   }
 
-  if (typeof response?.body?.data?.message === 'string') {
-    return response.body.data.message;
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      const message = packagedProductionPluginFindMessage(item, depth + 1);
+      if (message) {
+        return message;
+      }
+    }
+    return '';
+  }
+
+  if (typeof value !== 'object') {
+    return '';
+  }
+
+  for (const key of ['message', 'error', 'error_description', 'reason']) {
+    const message = packagedProductionPluginFindMessage(value[key], depth + 1);
+    if (message) {
+      return message;
+    }
+  }
+
+  for (const key of ['data', 'details']) {
+    const message = packagedProductionPluginFindMessage(value[key], depth + 1);
+    if (message) {
+      return message;
+    }
   }
 
   return '';
+}
+
+function packagedProductionPluginResponseMessage(response) {
+  return packagedProductionPluginFindMessage(response?.body);
 }
 
 function packagedProductionPluginWordPressNotReadyResponse(response) {
