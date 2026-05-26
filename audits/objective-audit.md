@@ -6,10 +6,10 @@ The project is **not releasable as a production WordPress push path**.
 
 Fresh remote heads at audit time, checked on May 26, 2026:
 
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `bbf4376d`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `7c2234be`
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `df87ddfd`
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `b98558b9`
-- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `ade295b9`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `cad63d79`
+- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `59fe13d4`
 - `origin/lane/no-data-loss-invariants` -> `56c21314`
 - `origin/lane/cycle-20260525-mainwindows-2349/critic` -> `fa0dc8a0`
 - `origin/lane/critic` -> `5b61693d`
@@ -33,9 +33,9 @@ Fresh lane proof since the last audit pass improved the local evidence floor,
 but it did not change the release conclusion:
 
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now records
-  `bbf4376d`, refreshing public progress freshness only.
+  `7c2234be`, refreshing public progress freshness only.
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now records
-  `6dcd59c9`, refreshing the supervisor progress surface only.
+  `cad63d79`, refreshing the supervisor progress surface only.
 - `origin/lane/no-data-loss-invariants` now records `db03ed0d`, adding postmeta
   attachment blocker proof. That remains fail-closed boundary work, not live
   source mutation proof.
