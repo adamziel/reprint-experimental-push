@@ -282,5 +282,6 @@ export function packagedProductionPluginRouteRetryableWhilePackagedRouteStarting
   indexBodyText = '',
 ) {
   return packagedProductionPluginReadinessBodyRetryable(routeStatus, routeBodyText)
+    && indexStatus === 200
     && !packagedProductionPluginReadinessBodyRetryable(indexStatus, indexBodyText);
 }

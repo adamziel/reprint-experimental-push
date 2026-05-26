@@ -1801,6 +1801,24 @@ test('packaged production plugin readiness helper does not retry terminal readin
     false,
   );
   assert.equal(
+    packagedProductionPluginRouteRetryableWhilePackagedRouteStarting(
+      502,
+      '<!doctype html><html><body>WordPress is not ready yet</body></html>',
+      401,
+      '<!doctype html><html><body>unauthorized index probe</body></html>',
+    ),
+    false,
+  );
+  assert.equal(
+    packagedProductionPluginRouteRetryableWhilePackagedRouteStarting(
+      404,
+      '<!doctype html><html><body>No route was found matching the URL and request method.</body></html>',
+      500,
+      '<!doctype html><html><body>fatal index bootstrap mismatch</body></html>',
+    ),
+    false,
+  );
+  assert.equal(
     packagedProductionPluginRouteRetryableWhileWordPressStarting(
       401,
       '<!doctype html><html><body>unauthorized packaged route</body></html>',
