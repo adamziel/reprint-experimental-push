@@ -4,17 +4,33 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
-## 2026-05-26 - Public Status Audit 15:24:30
+## 2026-05-26 - Public Status Audit 15:31:53
 
-<a id="2026-05-26-public-status-audit-152230"></a>
+<a id="2026-05-26-public-status-audit-153153"></a>
 
 - Refreshed [progress.html](../progress.html) to the current `date` output
-  (`2026-05-26 15:25:42 CEST`) after the reliable head advanced to
-  `e82e3b1af126f62688f617a3fb4cc0baeb698d57`.
-- `e82e3b1af126f62688f617a3fb4cc0baeb698d57` is now the current
-  reliable-executor head and the newest release-surface evidence on the public
-  page: the checked release verifier consumes the packaged auth session source
-  on the release path. Release gates remain `0/4`.
+  (`2026-05-26 15:31:53 CEST`) and kept
+  `e82e3b1af126f62688f617a3fb4cc0baeb698d57` as the current reliable head on
+  the public page and current latest checked release-path auth/session source
+  evidence. The visible current-head rows now align on that head.
+- `e82e3b1af126f62688f617a3fb4cc0baeb698d57` remains support-side evidence;
+  the release gate stays at `0/4` because production-backed auth/session
+  lifecycle and durable journal ownership with lease/fencing remain blocked.
+- Evidence trail: [progress.html](../progress.html),
+  [objective audit](../audits/objective-audit.md),
+  [release-gate checklist](../progress.html#proof-gates).
+
+## 2026-05-26 - Public Status Audit 15:14:21
+
+<a id="2026-05-26-public-status-audit-151421"></a>
+
+- Refreshed [progress.html](../progress.html) to the current `date` output
+  (`2026-05-26 15:14:21 CEST`) and kept
+  `cdea46fdb51cb46d56def6147e6dd815cb3b2757` as the current reliable head on
+  the public page.
+- `cdea46fdb51cb46d56def6147e6dd815cb3b2757` remains support-side evidence;
+  the release gate stays at `0/4` because production-backed auth/session
+  lifecycle and durable journal ownership with lease/fencing remain blocked.
 - Evidence trail: [progress.html](../progress.html),
   [objective audit](../audits/objective-audit.md),
   [release-gate checklist](../progress.html#proof-gates).
