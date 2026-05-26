@@ -69,7 +69,7 @@ but it did not change the release conclusion:
   expired-session check in the packaging smoke and the REST plugin, but still
   not proving production auth/session lifecycle or a live-source mutation
   boundary.
-- `origin/lane/no-data-loss-invariants` now records `c271a83b`, adding
+- `origin/lane/no-data-loss-invariants` now records `e33c19df`, adding
   term-relationship identity sibling proof again, but still not proving the
   live release boundary or any production-backed source mutation.
 - `origin/lane/progress-publisher` now records `7695e1f9`, refreshing public
@@ -78,21 +78,21 @@ but it did not change the release conclusion:
   now records `0b33a5f9`, adding plugin-owned delete-guard coverage only.
 - `origin/lane/independent-auditor` now records `6351130f`. This refreshes the
   audit snapshot only and does not change the release boundary.
-- `origin/lane/fast-paths` now records `7098b26d`, tightening guarded
+- `origin/lane/fast-paths` now records `8c5c2ccb`, tightening guarded
   benchmark and pause-reporting evidence checks only.
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` now
   records `9e077c10`, tightening blocked recovery validation. It still does
   not add production-backed journal ownership or replay proof.
-- `origin/lane/feedback-supervisor` now records `90bdf7b0`, refreshing the
+- `origin/lane/feedback-supervisor` now records `8af2c127`, refreshing the
   supervisor progress surface only.
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now records
-  `90bdf7b0`, refreshing the public progress freshness only.
+  `bc1da366`, refreshing the public progress freshness only.
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` now records
-  `7098b26d`, tightening pause detail reporting only.
+  `0de570a8`, tightening pause detail reporting only.
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` now records
   `c4103594`, hardening live proof cleanup and timeouts only.
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now records
-  `76830624`, refreshing the public progress freshness only.
+  `5ad48f2a`, refreshing the public progress freshness only.
 - `origin/lane/no-data-loss-recovery` now records `9e077c10`, tightening
   unsupported recovery journal boundaries only.
 - `origin/lane/same-plan-wordpress-graph-create` now records `52be8d87`,
