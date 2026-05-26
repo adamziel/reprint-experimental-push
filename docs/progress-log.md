@@ -4,6 +4,46 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-05-26 - Public Status Audit 10:54:14
+
+<a id="2026-05-26-public-status-audit-105414"></a>
+
+- Freshness update plus reliable-head correction: `e7be9812` remains the
+  newest reliable-executor head, and the public page stays aligned with that
+  wording for the current supervision cycle.
+- Gate posture remains conservative at `0/4`; no implementation verdict
+  changed.
+- Latest blocker summary remains the same: real WordPress executor/auth and
+  durable journal ownership still block any production push claim.
+
+## 2026-05-26 - Public Status Audit 10:50:22
+
+<a id="2026-05-26-public-status-audit-105022"></a>
+
+- Freshness update plus reliable-head correction: `e7be9812` is now the newest
+  reliable-executor head, replacing the stale `0f36d838` wording on the public
+  page.
+- Gate posture remains conservative at `0/4`; no implementation verdict
+  changed.
+- Latest blocker summary remains the same: real WordPress executor/auth and
+  durable journal ownership still block any production push claim.
+
+---
+
+## 2026-05-26 - Public Status Audit 10:53:00
+
+<a id="2026-05-26-public-status-audit-105300"></a>
+
+- Freshness update plus reliable-head correction: `e7be9812` remains the
+  newest reliable-executor head, and the public page now keeps that wording at
+  the top of the visible status copy for the current supervision cycle.
+- Gate posture remains conservative at `0/4`; no implementation verdict
+  changed.
+- Latest blocker summary remains the same: real WordPress executor/auth and
+  durable journal ownership still block any production push claim.
+
+---
+
 ## 2026-05-26 - Public Status Audit 10:48:50
 
 <a id="2026-05-26-public-status-audit-104850"></a>
