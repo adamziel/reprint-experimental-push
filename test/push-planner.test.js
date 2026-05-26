@@ -27071,6 +27071,55 @@ test('production durable journal adapter preserves remote artifact ownership on 
   );
 });
 
+test('production durable journal adapter preserves remote artifact ownership on partial commits', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const plan = planFor(base, local, baseSite());
+  const durableJournalPath = tempRecoveryJournalPath();
+  const remoteArtifactPath = `${durableJournalPath}.remote`;
+  const durableJournal = openProductionRecoveryJournal(durableJournalPath, {
+    truncate: true,
+    now: fixedNow,
+    ownsRemoteArtifact: true,
+    remoteArtifactPath,
+    writerLease: { id: 'lease-1' },
+  });
+  const remote = baseSite();
+  durableJournal.appendEvent('journal-opened', {
+    planId: plan.id,
+    state: 'opened',
+    observedHash: 'snapshot-hash-only',
+    artifactRefs: {
+      journal: durableJournalPath,
+      remote: remoteArtifactPath,
+    },
+  });
+
+  const error = captureError(() =>
+    applyPlan(remote, plan, {
+      durableJournal,
+      requireProductionDurableJournal: true,
+      mutateRemote: true,
+      failDuringCommitAtMutation: 1,
+    }),
+  );
+
+  durableJournal.close();
+
+  const persisted = readRecoveryJournal(durableJournalPath);
+  const persistedRecoveryState = persisted.records.find(
+    (record) => record.type === 'recovery-state' && record.state === 'blocked-recovery',
+  );
+
+  assert.equal(error.code, 'INJECTED_FAILURE_DURING_COMMIT');
+  assert.equal(error.details.recovery.status, 'blocked-recovery');
+  assert.ok(error.details.recovery.artifacts.remote, 'partial commit must keep remote artifacts');
+  assert.equal(persistedRecoveryState.artifactRefs.remote, remoteArtifactPath);
+  assert.equal(persistedRecoveryState.state, 'blocked-recovery');
+});
+
 test('production durable journal claims fail closed when writerLease is inherited through the prototype', () => {
   const events = [];
   const writerLease = Object.create({

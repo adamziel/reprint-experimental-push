@@ -1303,10 +1303,10 @@ function recordDurableRecoveryState(writer, current, plan, recoveryState) {
   };
   const writerRemoteArtifactRef = durableJournalArtifactRemoteRef(writer);
 
-  if (recoveryState.status === 'blocked-recovery') {
-    artifactRefs.remote = recoveryState.artifacts?.remote ? digest(recoveryState.artifacts.remote) : null;
-  } else if (writerRemoteArtifactRef) {
+  if (writerRemoteArtifactRef) {
     artifactRefs.remote = writerRemoteArtifactRef;
+  } else if (recoveryState.status === 'blocked-recovery') {
+    artifactRefs.remote = recoveryState.artifacts?.remote ? digest(recoveryState.artifacts.remote) : null;
   }
 
   appendDurableEvent(writer, 'recovery-state', {
