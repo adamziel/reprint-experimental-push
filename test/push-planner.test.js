@@ -25387,3 +25387,24 @@ test('idempotently skips closing an already closed owned production recovery jou
   assert.equal(closeCalls.length, 1);
   assert.equal(isDurableJournalClosed(writer), true);
 });
+
+test('marks an owned production recovery journal writer closed even when close throws', () => {
+  let closeCalls = 0;
+  const writer = {
+    kind: 'production-recovery-journal',
+    productionAdapter: true,
+    supportedSurface: 'production-recovery-journal-adapter',
+    ownsJournal: true,
+    ownsRemoteArtifact: true,
+    close() {
+      closeCalls += 1;
+      throw new Error('injected close failure');
+    },
+  };
+
+  closeOwnedDurableJournal(writer);
+  closeOwnedDurableJournal(writer);
+
+  assert.equal(closeCalls, 1);
+  assert.equal(isDurableJournalClosed(writer), true);
+});

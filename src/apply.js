@@ -958,9 +958,10 @@ export function closeOwnedDurableJournal(writer) {
   }
   try {
     writer.close();
-    markDurableJournalClosed(writer);
   } catch {
     // Owned recovery writers are best-effort closed; failures remain fail-closed.
+  } finally {
+    markDurableJournalClosed(writer);
   }
 }
 
