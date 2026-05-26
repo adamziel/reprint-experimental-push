@@ -179,6 +179,19 @@ test('guarded benchmark blocks atomic-group metadata visibility when the atomic 
   assert.equal(blockers.includes('production-atomic-group-metadata-not-visible'), false);
 });
 
+test('guarded benchmark blocks forged atomic-commit visibility without a measurement', () => {
+  const report = smallBenchmark();
+  const tampered = clone(report);
+
+  tampered.evidence.atomicGroup.productionAtomicCommitMeasured = false;
+  tampered.evidence.atomicGroup.productionAtomicCommitVisible = true;
+
+  const blockers = productionThroughputBlockers(tampered);
+
+  assert.equal(blockers.includes('production-atomic-group-commit-visible-without-measurement'), true);
+  assert.equal(blockers.includes('production-atomic-group-commit-not-visible'), false);
+});
+
 test('guarded benchmark refuses production throughput claims until production gaps are measured', () => {
   const report = smallBenchmark();
 
