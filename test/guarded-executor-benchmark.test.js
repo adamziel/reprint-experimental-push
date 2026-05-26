@@ -5244,15 +5244,21 @@ test('guarded benchmark keeps queue-headroom plus queue-slack visibility detail 
   mutated.evidence.backpressure.receiptCursorQueueSlackVisible = false;
 
   const details = productionThroughputDetails(mutated);
+  const blockers = productionThroughputBlockers(mutated);
 
   assert.equal(details.queueHeadroomVisible, true);
   assert.equal(details.receiptCursorQueueSlackVisible, false);
+  assert.equal(details.queueHeadroomVisibleAndMeasured, false);
+  assert.equal(details.queueHeadroomVisibleAndMeasuredAndAligned, false);
   assert.equal(details.queueHeadroomVisibleAndQueueSlackMeasured, true);
   assert.equal(details.queueHeadroomVisibleAndQueueSlackVisibleAndMeasured, false);
+  assert.equal(details.backpressureConsistency.queueHeadroomVisibleAndMeasured, false);
+  assert.equal(details.backpressureConsistency.queueHeadroomVisibleAndMeasuredAndAligned, false);
   assert.equal(
     details.backpressureConsistency.queueHeadroomVisibleAndQueueSlackVisibleAndMeasured,
     false,
   );
+  assert.ok(blockers.includes('queue-headroom-visible-without-queue-slack-visibility'));
 });
 
 test('guarded benchmark keeps queue-headroom plus queue-slack visibility detail fail closed when queue-headroom measurement is hidden', () => {

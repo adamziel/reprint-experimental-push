@@ -829,6 +829,12 @@ export function productionThroughputBlockers(report) {
     blockers.push('queue-headroom-visible-without-receipt-cursor-memory-headroom-visibility');
   }
   if (
+    report.evidence.backpressure?.queueHeadroomVisible === true
+    && receiptCursorQueueSlackVisible !== true
+  ) {
+    blockers.push('queue-headroom-visible-without-queue-slack-visibility');
+  }
+  if (
     report.evidence.backpressure?.receiptCursorMemoryCeilingVisible === true
     && report.evidence.backpressure?.queueBudgetVisible !== true
     && report.evidence.backpressure?.queueHeadroomVisible === true
@@ -1749,12 +1755,14 @@ export function productionThroughputDetails(report) {
     && queueHeadroomPositive
     && queueHeadroomVisible
     && queueHeadroomMeasured
+    && receiptCursorQueueSlackVisible
     && queueHeadroomWithinResourceCeiling;
   const queueHeadroomVisibleAndMeasuredAndAligned =
     receiptCursorPauseFootprintComplete
     && queueHeadroomWithinResourceCeiling
     && queueHeadroomVisible
     && queueHeadroomMeasured
+    && receiptCursorQueueSlackVisible
     && queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack;
   const receiptCursorQueueSlackVisibleAndMeasured =
     receiptCursorPauseFootprintComplete
