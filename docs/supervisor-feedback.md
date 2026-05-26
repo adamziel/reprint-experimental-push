@@ -1,11 +1,12 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-26 10:32 CEST
+Last updated: 2026-05-26 10:34 CEST
 
-## 2026-05-26 10:32:58 CEST - Freshness Refresh
+## 2026-05-26 10:34:15 CEST - Fresh Evidence Delta
 
-- The public progress surface had drifted behind the live supervision clock again, so I refreshed the owned visibility surfaces to the current stamp.
-- The release posture stays conservative at `0/4`; no new proof landed.
+- Recovery's `351b6bbd` adapter work is still valid evidence, and reliable has now patched the Playground readiness boundary so repeated `/wp-json/` `502` responses should fail with bounded route/status/body diagnostics instead of hanging silently.
+- The gate is still closed because the new readiness behavior has not yet been proven past the outer release-verifier boundary.
+- The release posture stays conservative at `0/4`.
 
 ## 2026-05-26 10:27:29 CEST - Freshness Refresh
 
