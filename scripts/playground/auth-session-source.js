@@ -131,12 +131,20 @@ export function resolveAuthSessionRequestCredentials({
   const normalizedFallbackApplicationPassword = normalizeAuthSessionSourceField(fallbackApplicationPassword);
   const hasExplicitCredentialField = hasExplicitAuthSessionCredentialField(username)
     || hasExplicitAuthSessionCredentialField(applicationPassword);
+  const normalizedSourceUrl = normalizeSupportedAuthSessionSourceUrl(source?.sourceUrl);
   const resolvedUsername = hasExplicitCredentialField
     ? normalizedUsername
     : normalizedFallbackUsername;
   const resolvedApplicationPassword = hasExplicitCredentialField
     ? normalizedApplicationPassword
     : normalizedFallbackApplicationPassword;
+  if (hasExplicitCredentialField && !preferSource) {
+    return {
+      liveSourceUrl: liveSourceUrl || normalizedSourceUrl,
+      username: resolvedUsername,
+      applicationPassword: resolvedApplicationPassword,
+    };
+  }
 
   return resolveAuthSessionSourceCredentials(
     {

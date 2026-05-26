@@ -1124,6 +1124,68 @@ test('production-shaped release verify lets a required production auth/session s
   );
 });
 
+test('production-shaped release verify keeps explicit direct credentials ahead of the source command before override is required', () => {
+  const source = {
+    ok: true,
+    sourceUrl: 'http://127.0.0.1:8080',
+    username: 'reprint_push_admin',
+    applicationPassword: 'reprint-push-admin-app-password',
+  };
+
+  assert.deepEqual(
+    resolveAuthSessionRequestState(
+      {
+        liveSourceUrl: '',
+        username: 'trusted-runtime-username',
+        applicationPassword: 'trusted-runtime-password',
+        fallbackUsername: 'stale-fallback-username',
+        fallbackApplicationPassword: 'stale-fallback-password',
+      },
+      source,
+    ),
+    {
+      liveSourceUrl: 'http://127.0.0.1:8080',
+      username: 'trusted-runtime-username',
+      applicationPassword: 'trusted-runtime-password',
+      credentials: {
+        username: 'trusted-runtime-username',
+        password: 'trusted-runtime-password',
+      },
+    },
+  );
+});
+
+test('production-shaped release verify does not replace malformed explicit direct credentials with source-command credentials before override is required', () => {
+  const source = {
+    ok: true,
+    sourceUrl: 'http://127.0.0.1:8080',
+    username: 'reprint_push_admin',
+    applicationPassword: 'reprint-push-admin-app-password',
+  };
+
+  assert.deepEqual(
+    resolveAuthSessionRequestState(
+      {
+        liveSourceUrl: '',
+        username: ' trusted-runtime-username ',
+        applicationPassword: '\treliable-runtime-password',
+        fallbackUsername: 'stale-fallback-username',
+        fallbackApplicationPassword: 'stale-fallback-password',
+      },
+      source,
+    ),
+    {
+      liveSourceUrl: 'http://127.0.0.1:8080',
+      username: '',
+      applicationPassword: '',
+      credentials: {
+        username: '',
+        password: '',
+      },
+    },
+  );
+});
+
 test('auth-session source command builder emits a shell-safe node snippet', () => {
   const command = buildAuthSessionSourceCommand({
     nodePath: '/opt/node/bin/node',
