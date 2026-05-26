@@ -1,26 +1,26 @@
 # Critic Verdict
 
-Current reliable head: `7ced165440266ef14e92a0e26abfd5bc886cdf79`
-(`Widen packaged release verify test budget`).
+Current reliable head: `01f2a247d59b499b01986b0bcd9d80a9ae05c410`
+(`Require checked preserved-remote retry proof`).
 
 Verdict: `0/4`
 
 Reason:
 
-- This head widens the release-verifier test budget only. It changes the
-  bounded package test harness, but it still does not prove a production-backed
-  auth/session lifecycle on the checked release path.
-- The checked proof is still missing live issuance/read/expiry/rotation/
-  revocation/cleanup evidence for `production-auth-session`, and it still does
-  not establish production durable-journal ownership/restart semantics
-  consumed by the checked release path.
+- This head proves a checked preserved-remote retry surface, but it is still
+  support-side release evidence rather than a production-backed gate crossing.
+- The checked release path still lacks live production auth/session
+  issuance/read/expiry/rotation/revocation/cleanup evidence, and it still does
+  not prove production durable-journal ownership with restart-readable replay
+  consumed by `verify:release`.
 - That keeps the release gate closed at `0/4`.
 
 Next owner / command:
 
 - `main:reliable-exec` should keep working in
-  `scripts/playground/production-shaped-release-verify.mjs` and
-  `test/production-shaped-proof.test.js` with the checked command
+  `scripts/playground/production-shaped-release-verify.mjs`,
+  `src/authenticated-http-push-client.js`, and
+  `src/recovery-journal.js` with the checked command
   `timeout 180s npm run verify:release`, or hand off the exact missing
   release-path file/function/command if the verifier still cannot consume the
-  journal ownership proof and production auth/session lifecycle.
+  production auth/session lifecycle or journal ownership proof.
