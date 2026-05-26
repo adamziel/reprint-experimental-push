@@ -690,6 +690,7 @@ export function productionRecoverySupportReport(writer) {
   const inspectedClaimState = durableJournalInspectRecords(inspected)
     ? classifyRecoveryJournalClaims(inspected.records)
     : null;
+  const persistedArtifactRefs = durableJournalPersistedArtifactRefs(inspected);
   const artifactRefs = productionRecoveryArtifactRefs(writer, inspected);
   const addMissingDependency = (item) => {
     if (!missingDependency.includes(item)) {
@@ -972,6 +973,16 @@ export function productionRecoverySupportReport(writer) {
   }
   if (inspectedRemoteArtifactRef && writerRemoteArtifactRef && inspectedRemoteArtifactRef !== writerRemoteArtifactRef) {
     addMissingDependency('restart-readable recovery remote artifact references');
+  }
+  if (persistedArtifactRefs.invalidReason) {
+    addMissingDependency('restart-readable recovery remote artifact references');
+  } else if (persistedArtifactRefs.remote) {
+    if (writerRemoteArtifactRef && writerRemoteArtifactRef !== persistedArtifactRefs.remote) {
+      addMissingDependency('restart-readable recovery remote artifact references');
+    }
+    if (inspectedRemoteArtifactRef && inspectedRemoteArtifactRef !== persistedArtifactRefs.remote) {
+      addMissingDependency('restart-readable recovery remote artifact references');
+    }
   }
   if (!Object.hasOwn(writer ?? {}, 'journalPath') || typeof writer.journalPath !== 'string' || writer.journalPath.length === 0) {
     addMissingDependency('owned restart-readable recovery journal path');
@@ -1257,6 +1268,67 @@ function durableJournalInspectArtifactRefs(inspected) {
   );
 }
 
+function durableJournalPersistedArtifactRefs(inspected) {
+  if (!durableJournalInspectRecords(inspected)) {
+    return {
+      journal: null,
+      remote: null,
+      invalidReason: null,
+    };
+  }
+
+  let persistedJournalPath = null;
+  let persistedRemoteArtifactPath = null;
+  for (let index = inspected.records.length - 1; index >= 0; index -= 1) {
+    const artifactRefs = inspected.records[index]?.artifactRefs;
+    if (!isStrictPlainObject(artifactRefs)) {
+      continue;
+    }
+    if (
+      Object.hasOwn(artifactRefs, 'journal')
+      && !isCanonicalAbsolutePath(artifactRefs.journal)
+    ) {
+      return { journal: null, remote: null, invalidReason: 'invalid journal artifact ref' };
+    }
+    if (Object.hasOwn(artifactRefs, 'remote')) {
+      if (
+        artifactRefs.remote === null
+        || !isCanonicalAbsolutePath(artifactRefs.remote)
+        || artifactRefs.remote === artifactRefs.journal
+      ) {
+        return { journal: null, remote: null, invalidReason: 'invalid remote artifact ref' };
+      }
+    }
+    if (
+      persistedJournalPath === null
+      && Object.hasOwn(artifactRefs, 'journal')
+      && isCanonicalAbsolutePath(artifactRefs.journal)
+    ) {
+      persistedJournalPath = artifactRefs.journal;
+    }
+    if (
+      Object.hasOwn(artifactRefs, 'remote')
+      && isCanonicalAbsolutePath(artifactRefs.remote)
+      && artifactRefs.remote !== artifactRefs.journal
+      && artifactRefs.remote !== persistedJournalPath
+    ) {
+      if (
+        persistedRemoteArtifactPath !== null
+        && persistedRemoteArtifactPath !== artifactRefs.remote
+      ) {
+        return { journal: null, remote: null, invalidReason: 'rewritten remote artifact ref' };
+      }
+      persistedRemoteArtifactPath = artifactRefs.remote;
+    }
+  }
+
+  return {
+    journal: persistedJournalPath,
+    remote: persistedRemoteArtifactPath,
+    invalidReason: null,
+  };
+}
+
 function isCanonicalAbsolutePath(filePath) {
   return typeof filePath === 'string'
     && path.isAbsolute(filePath)
@@ -1441,11 +1513,17 @@ function recordDurableRecoveryState(writer, current, plan, recoveryState) {
     journal: typeof writer?.journalPath === 'string' ? writer.journalPath : null,
   };
   const writerRemoteArtifactRef = durableJournalArtifactRemoteRef(writer);
+  const supportReport = writer?.kind === 'production-recovery-journal'
+    ? productionRecoverySupportReport(writer)
+    : null;
 
   if (
     writer?.kind === 'production-recovery-journal'
     && recoveryState.status === 'blocked-recovery'
-    && !writerRemoteArtifactRef
+    && (
+      !writerRemoteArtifactRef
+      || supportReport?.missingDependency.includes('restart-readable recovery remote artifact references')
+    )
   ) {
     throw new PushPlanError(
       'JOURNAL_WRITER_INVALID',
