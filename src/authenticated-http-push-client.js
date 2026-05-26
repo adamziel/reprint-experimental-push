@@ -209,7 +209,10 @@ export async function runAuthenticatedHttpPush({
     idempotencyKey,
   });
   summary.apply = summarizeResponse(apply);
-  const applyAuthSessionTypeDrift = requireProductionAuthSession && hasProductionAuthSessionTypeDrift(apply);
+  const applyAuthSessionDrift = requireProductionAuthSession && (
+    hasProductionAuthSessionTypeDrift(apply)
+    || hasProductionAuthSessionStatusDrift(apply)
+  );
 
   const recoveryInspect = await client.signedPost('/recovery/inspect', {
     plan,
@@ -220,7 +223,10 @@ export async function runAuthenticatedHttpPush({
   });
   summary.recoveryInspect = summarizeResponse(recoveryInspect);
   summary.recoveryInspect.recovery = summarizeRecoveryInspect(recoveryInspect);
-  const recoveryInspectAuthSessionTypeDrift = requireProductionAuthSession && hasProductionAuthSessionTypeDrift(recoveryInspect);
+  const recoveryInspectAuthSessionDrift = requireProductionAuthSession && (
+    hasProductionAuthSessionTypeDrift(recoveryInspect)
+    || hasProductionAuthSessionStatusDrift(recoveryInspect)
+  );
   if (recoveryInspect.status !== 200 || recoveryInspect.body?.ok !== true) {
     summary.code = recoveryInspect.body?.code || 'RECOVERY_INSPECT_FAILED';
     setDurableJournalBoundary(summary, 'recovery-inspect');
@@ -247,11 +253,11 @@ export async function runAuthenticatedHttpPush({
     setDurableJournalBoundary(summary, 'recovery-inspect');
     return summary;
   }
-  if (applyAuthSessionTypeDrift || recoveryInspectAuthSessionTypeDrift) {
+  if (applyAuthSessionDrift || recoveryInspectAuthSessionDrift) {
     summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
     summary.authSession = {
       required: 'production-auth-session',
-      observed: applyAuthSessionTypeDrift
+      observed: applyAuthSessionDrift
         ? apply.body?.auth?.session?.type || 'missing'
         : recoveryInspect.body?.auth?.session?.type || 'missing',
       verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
@@ -272,7 +278,10 @@ export async function runAuthenticatedHttpPush({
   const replayEquivalent = isReplayEquivalent(apply, replay);
   const applyAuthEnvelopeDrift = hasAuthEnvelopeDrift(preflightAuthEnvelope, apply);
   const replayAuthEnvelopeDrift = hasAuthEnvelopeDrift(preflightAuthEnvelope, replay);
-  const replayAuthSessionTypeDrift = requireProductionAuthSession && hasProductionAuthSessionTypeDrift(replay);
+  const replayAuthSessionDrift = requireProductionAuthSession && (
+    hasProductionAuthSessionTypeDrift(replay)
+    || hasProductionAuthSessionStatusDrift(replay)
+  );
   if (applyAuthEnvelopeDrift || recoveryInspectAuthEnvelopeDrift || replayAuthEnvelopeDrift) {
     summary.code = 'AUTH_SESSION_LIFECYCLE_DRIFT';
     summary.authSession = {
@@ -287,7 +296,7 @@ export async function runAuthenticatedHttpPush({
     setDurableJournalBoundary(summary, 'replay');
     return summary;
   }
-  if (replayAuthSessionTypeDrift) {
+  if (replayAuthSessionDrift) {
     summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
     summary.authSession = {
       required: 'production-auth-session',
@@ -302,6 +311,20 @@ export async function runAuthenticatedHttpPush({
   summary.after = summarizeSnapshot(afterApply, local);
   const dbJournal = await client.get('/db-journal?limit=80');
   summary.dbJournal = summarizeDbJournal(dbJournal);
+  const dbJournalAuthSessionDrift = requireProductionAuthSession && (
+    hasProductionAuthSessionTypeDrift(dbJournal)
+    || hasProductionAuthSessionStatusDrift(dbJournal)
+  );
+  if (dbJournalAuthSessionDrift) {
+    summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
+    summary.authSession = {
+      required: 'production-auth-session',
+      observed: dbJournal.body?.auth?.session?.type || 'missing',
+      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+    };
+    setDurableJournalBoundary(summary, 'journal-inspect');
+    return summary;
+  }
   const dbJournalAuthEnvelopeDrift = hasAuthEnvelopeDrift(preflightAuthEnvelope, dbJournal);
   if (dbJournalAuthEnvelopeDrift) {
     summary.code = 'AUTH_SESSION_LIFECYCLE_DRIFT';
@@ -602,6 +625,10 @@ function hasAuthEnvelopeDrift(expected, response) {
 
 function hasProductionAuthSessionTypeDrift(response) {
   return response?.body?.auth?.session?.type !== 'production-auth-session';
+}
+
+function hasProductionAuthSessionStatusDrift(response) {
+  return response?.body?.auth?.session?.status !== 'active';
 }
 
 function setDurableJournalBoundary(summary, phase) {
