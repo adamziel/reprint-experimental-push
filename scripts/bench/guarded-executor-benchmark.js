@@ -152,11 +152,7 @@ export function runGuardedExecutorBenchmark(options = {}) {
 export function productionThroughputBlockers(report) {
   const blockers = [];
   const backpressureEvidenceComplete = hasCompleteBackpressureEvidence(report);
-  const parallelismLimits = report.claims?.productionThroughputDetails?.parallelismLimits ?? {
-    chunkUpload: report.resourceLimits?.maxBufferedUploadBytes,
-    fileHashing: report.resourceLimits?.maxBufferedUploadBytes,
-    dbBatchPerTable: report.resourceLimits?.maxBufferedUploadBytes,
-  };
+  const parallelismLimits = report.evidence.parallelism?.parallelismLimits ?? null;
   const receiptCursorBackpressureBytes = report.evidence.backpressure?.receiptCursorBytes ?? null;
   const receiptCursorQueueSlackBytes = report.evidence.backpressure?.receiptCursorQueueSlackBytes ?? null;
   const receiptCursorQueueBudgetBytes = report.evidence.backpressure?.queueBudgetBytes ?? null;
@@ -266,7 +262,8 @@ export function productionThroughputBlockers(report) {
     blockers.push('production-memory-ceiling-not-measured');
   }
   if (
-    !Number.isFinite(parallelismLimits?.chunkUpload)
+    !parallelismLimits
+    || !Number.isFinite(parallelismLimits?.chunkUpload)
     || !Number.isFinite(parallelismLimits?.fileHashing)
     || !Number.isFinite(parallelismLimits?.dbBatchPerTable)
     || parallelismLimits.chunkUpload <= 0
@@ -1176,7 +1173,7 @@ export function productionThroughputDetails(report) {
       report.evidence.atomicGroup?.groupStatus === 'ready'
       && report.evidence.atomicGroup?.requireAtomic === true
     );
-  const parallelismLimits = report.claims?.productionThroughputDetails?.parallelismLimits ?? {
+  const parallelismLimits = report.evidence.parallelism?.parallelismLimits ?? {
     chunkUpload: DEFAULT_LIMITS.maxUploadConcurrency,
     fileHashing: DEFAULT_LIMITS.maxHashConcurrency,
     dbBatchPerTable: DEFAULT_LIMITS.maxDbConcurrencyPerTable,
@@ -1393,11 +1390,7 @@ export function productionThroughputDetails(report) {
       productionAtomicGroupMetadataProven,
       productionStorageReceiptsVisible,
       productionRowBatchExecutorVisible,
-      parallelismLimits: {
-        chunkUpload: DEFAULT_LIMITS.maxUploadConcurrency,
-        fileHashing: DEFAULT_LIMITS.maxHashConcurrency,
-        dbBatchPerTable: DEFAULT_LIMITS.maxDbConcurrencyPerTable,
-      },
+      parallelismLimits,
       parallelismLimitsVisible: parallelismLimitsVisibleOnReport,
     },
     blockers: productionThroughputBlockers(report),

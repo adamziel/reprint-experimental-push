@@ -478,19 +478,21 @@ test('guarded benchmark refuses production throughput claims until production ga
   );
 
   const fractionalParallelismLimits = clone(report);
-  fractionalParallelismLimits.claims.productionThroughputDetails.parallelismLimits.chunkUpload = 3.5;
+  fractionalParallelismLimits.evidence.parallelism.parallelismLimits.chunkUpload = 3.5;
   assert.ok(
     productionThroughputBlockers(fractionalParallelismLimits).includes(
       'production-parallelism-limits-not-integral',
     ),
   );
+  const fractionalParallelismDetails = clone(report);
+  fractionalParallelismDetails.evidence.parallelism.parallelismLimits.chunkUpload = 3.5;
   assert.equal(
-    productionThroughputDetails(fractionalParallelismLimits).parallelismLimitsIntegral,
+    productionThroughputDetails(fractionalParallelismDetails).parallelismLimitsIntegral,
     false,
   );
 
   const nonCanonicalParallelismLimits = clone(report);
-  nonCanonicalParallelismLimits.claims.productionThroughputDetails.parallelismLimits.dbBatchPerTable = 3;
+  nonCanonicalParallelismLimits.evidence.parallelism.parallelismLimits.dbBatchPerTable = 3;
   assert.equal(
     productionThroughputDetails(nonCanonicalParallelismLimits).parallelismLimitsCanonical,
     false,
@@ -847,17 +849,19 @@ test('production claim gate fails closed if benchmark evidence is tampered', () 
   );
 
   const missingParallelismLimits = clone(report);
-  delete missingParallelismLimits.claims.productionThroughputDetails.parallelismLimits.chunkUpload;
+  delete missingParallelismLimits.evidence.parallelism.parallelismLimits.chunkUpload;
   assert.ok(
     productionThroughputBlockers(missingParallelismLimits).includes('production-parallelism-limits-not-measured'),
   );
-  assert.equal(
-    productionThroughputDetails(missingParallelismLimits).parallelismLimitsVisible,
-    false,
+
+  const removedParallelismLimits = clone(report);
+  delete removedParallelismLimits.evidence.parallelism.parallelismLimits;
+  assert.ok(
+    productionThroughputBlockers(removedParallelismLimits).includes('production-parallelism-limits-not-measured'),
   );
 
   const invalidParallelismLimits = clone(report);
-  invalidParallelismLimits.claims.productionThroughputDetails.parallelismLimits.dbBatchPerTable = 0;
+  invalidParallelismLimits.evidence.parallelism.parallelismLimits.dbBatchPerTable = 0;
   assert.ok(
     productionThroughputBlockers(invalidParallelismLimits).includes('production-parallelism-limits-not-measured'),
   );
