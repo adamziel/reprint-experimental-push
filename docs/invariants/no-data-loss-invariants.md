@@ -195,6 +195,15 @@ This note captures the planner boundary in plain language.
   remote-only plugin drift is present; the matching edit stays
   `already-in-sync`, the plugin drift stays `keep-remote`, and the graph
   blocker evidence stays bounded.
+- A same-plan-created `wp_postmeta` reference to a new post must still stop
+  even when a matching independent edit is already in sync and remote-only
+  plugin removals are present; the matching edit stays `already-in-sync`,
+  the plugin removals stay `keep-remote`, and the graph blocker evidence
+  stays bounded.
+- A local comments row must still stop when comments graph resources are
+  unsupported, even if unrelated remote-only plugin drift is present; the
+  comments blocker evidence stays bounded and the plugin drift stays
+  `keep-remote`.
 - A mixed ready plan must still fail closed when one mutation loses its live
   remote precondition, even if a matching independent edit and a file type
   swap remain safe in the same plan; the remote stays unchanged and the

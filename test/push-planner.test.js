@@ -5812,7 +5812,7 @@ test('blocks local plugin metadata changes when remote plugin files changed', ()
   remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-private-forms-code */';
 
   const plan = planFor(base, local, remote);
-  const blocker = plan.blockers.find((entry) => entry.resourceKey === targetResourceKey);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
   const blockerJson = JSON.stringify(blocker);
 
   assert.equal(plan.status, 'blocked');
@@ -6071,7 +6071,7 @@ test('blocks plugin-owned option deletions when the live remote removed the owne
   delete remote.files['wp-content/plugins/forms/forms.php'];
 
   const plan = planFor(base, local, remote);
-  const blocker = plan.blockers.find((entry) => entry.resourceKey === targetResourceKey);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
   const blockerJson = JSON.stringify(blocker);
 
   assert.equal(plan.status, 'blocked');
@@ -12368,6 +12368,73 @@ test('blocks local postmeta references to a same-plan created post identity whil
   assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin drift */');
 });
 
+test('blocks local postmeta references to a same-plan created post identity while preserving a matching independent edit and remote-only plugin removals', () => {
+  const resourceKey = 'row:["wp_postmeta","meta_id:54"]';
+  const targetResourceKey = 'row:["wp_posts","ID:3"]';
+  const base = baseSite();
+  base.db.wp_posts['ID:30'] = {
+    ID: 30,
+    post_title: 'Base matching independent post',
+    post_content: 'Base matching independent body',
+    post_status: 'publish',
+  };
+
+  const local = baseSite();
+  local.db.wp_posts['ID:30'] = {
+    ID: 30,
+    post_title: 'Matching independent post',
+    post_content: 'Matching independent body',
+    post_status: 'publish',
+  };
+  local.db.wp_posts['ID:30'].post_excerpt = 'Matching independent excerpt';
+  local.db.wp_posts['ID:3'] = {
+    ID: 3,
+    post_title: 'local-created post title',
+    post_content: 'local-created post body',
+    post_status: 'publish',
+  };
+  local.db.wp_postmeta = {
+    'meta_id:54': {
+      meta_id: 54,
+      post_id: 3,
+      meta_key: '_local_graph_note',
+      meta_value: 'local-private-meta-payload',
+    },
+  };
+
+  const remote = baseSite();
+  remote.db.wp_posts['ID:30'] = {
+    ID: 30,
+    post_title: 'Matching independent post',
+    post_content: 'Matching independent body',
+    post_status: 'publish',
+  };
+  remote.db.wp_posts['ID:30'].post_excerpt = 'Matching independent excerpt';
+  delete remote.plugins.forms;
+  delete remote.files['wp-content/plugins/forms/forms.php'];
+
+  const plan = planFor(base, local, remote);
+  const termmetaBlocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  const independentEdit = decisionFor(plan, 'row:["wp_posts","ID:30"]');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(decisionFor(plan, targetResourceKey), undefined);
+  assert.equal(termmetaBlocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(termmetaBlocker.resourceKey, resourceKey);
+  assert.equal(termmetaBlocker.resolutionPolicy, 'preserve-remote-wordpress-graph-and-stop');
+  assert.equal(independentEdit.decision, 'already-in-sync');
+  assert.equal(independentEdit.change.localChange, 'update');
+  assert.equal(independentEdit.change.remoteChange, 'update');
+  assert.equal(planJson.includes('local-created post title'), false);
+  assert.equal(planJson.includes('local-created post body'), false);
+  assert.equal(planJson.includes('local-private-meta-payload'), false);
+  assert.equal(Object.hasOwn(remote.plugins, 'forms'), false);
+  assert.equal(Object.hasOwn(remote.files, 'wp-content/plugins/forms/forms.php'), false);
+});
+
 test('blocks local postmeta references to a same-plan created attachment identity while preserving remote-only plugin removals', () => {
   const resourceKey = 'row:["wp_postmeta","meta_id:50"]';
   const targetResourceKey = 'row:["wp_posts","ID:50"]';
@@ -14511,7 +14578,7 @@ test('blocks local comments and users graph resources while preserving remote-on
   delete remote.files['wp-content/plugins/forms/forms.php'];
 
   const plan = planFor(base, local, remote);
-  const blocker = plan.blockers.find((entry) => entry.resourceKey === targetResourceKey);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
   const planJson = JSON.stringify(plan);
 
   assert.equal(plan.status, 'blocked');
@@ -14525,6 +14592,51 @@ test('blocks local comments and users graph resources while preserving remote-on
   assert.equal(planJson.includes('Base comment'), false);
   assert.equal(Object.hasOwn(remote.plugins, 'forms'), false);
   assert.equal(Object.hasOwn(remote.files, 'wp-content/plugins/forms/forms.php'), false);
+});
+
+test('blocks local comments graph resources while preserving remote-only plugin drift', () => {
+  const resourceKey = 'row:["wp_comments","comment_ID:12"]';
+  const base = baseSite();
+  base.db.wp_comments = {
+    'comment_ID:12': {
+      comment_ID: 12,
+      comment_post_ID: 1,
+      comment_author: 'Base commenter',
+      comment_content: 'Base comment content',
+    },
+  };
+
+  const local = baseSite();
+  local.db.wp_comments = {
+    'comment_ID:12': {
+      comment_ID: 12,
+      comment_post_ID: 1,
+      comment_author: 'Local commenter',
+      comment_content: 'Local comment content',
+    },
+  };
+
+  const remote = baseSite();
+  remote.db.wp_comments = JSON.parse(JSON.stringify(base.db.wp_comments));
+  remote.plugins.forms.description = 'remote-only plugin drift';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin drift */';
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(plan.conflicts.length, 0);
+  assert.equal(blocker.class, 'unsupported-comments-users-resource');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.reason, 'Comments graph resources are not yet supported by the planner.');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('Local comment content'), false);
+  assert.equal(planJson.includes('Base comment content'), false);
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin drift');
 });
 
 test('blocks local term-relationship object references when the live remote post identity disappears while preserving remote-only plugin drift', () => {
