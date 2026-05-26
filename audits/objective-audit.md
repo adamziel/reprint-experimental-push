@@ -4,7 +4,7 @@
 
 The project is **not releasable as a production WordPress push path**.
 
-- Fresh remote heads at audit time, checked on 2026-05-26 07:41:59 CEST (+0200):
+- Fresh remote heads at audit time, checked on 2026-05-26 07:44:27 CEST (+0200):
 
 - `origin/lane/cycle-20260524-auth-graph-hardening/critic` -> `e413f7a8`
 - `origin/lane/cycle-20260524-auth-graph-hardening/fast-paths` -> `ad7d82a4`
@@ -60,6 +60,17 @@ The project is **not releasable as a production WordPress push path**.
 - `origin/lane/progress-publisher` -> `7695e1f9`
 - `origin/lane/reliable-executor` -> `5d163dd7`
 - `origin/lane/same-plan-wordpress-graph-create` -> `8dea1ca3`
+
+Fresh remote heads re-polled after the last audit note:
+
+- `origin/lane/reliable-executor` -> `2df7cd195d70e0fef9b5d1050e9fc49fb832254a`
+- `origin/lane/no-data-loss-recovery` -> `9e077c10c2899bcaab4895627686a99d41070a3f`
+- `origin/lane/no-data-loss-invariants` -> `7be60dfa3d26006062c6ad0bb158897e88b81f20`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `220057086a9337e5006df8cd74357d9b619ecdc5`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `528a1b4dceb3212df92442c9c71a2f7f6e65400e`
+
+These fresh heads still do not add production-backed auth/session lifecycle or
+durable journal ownership evidence. The release gates remain `0/4`.
 
 Fresh visibility-lane and supporting heads moved again, but they still do not change the release gate:
 
