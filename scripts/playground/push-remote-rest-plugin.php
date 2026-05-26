@@ -632,6 +632,9 @@ function reprint_push_lab_rest_merge_checked_recovery_journal_contract(
         return $journal;
     }
 
+    $upgrade_scope = array_key_exists('scope', $checked_db_journal)
+        && reprint_push_lab_rest_should_upgrade_checked_db_journal_scope($journal, $checked_db_journal);
+
     if (!array_key_exists('acceptedOnCheckedBoundary', $journal) || $journal['acceptedOnCheckedBoundary'] !== true) {
         $journal['acceptedOnCheckedBoundary'] = true;
     }
@@ -666,6 +669,10 @@ function reprint_push_lab_rest_merge_checked_recovery_journal_contract(
         ) {
             $journal[$key] = $checked_db_journal[$key];
         }
+    }
+
+    if ($upgrade_scope) {
+        $journal['scope'] = $checked_db_journal['scope'];
     }
 
     foreach (['ownership', 'writerLease', 'leaseFence'] as $nested_key) {

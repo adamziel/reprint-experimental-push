@@ -563,6 +563,7 @@ test('checked recovery inspect evidence upgrades an existing fixture-scoped jour
           scope: 'checked live production-shaped recovery inspect journal evidence; not local Playground fixture only',
         },
         acceptedOnCheckedBoundary: true,
+        scope: 'checked live production-shaped journal surface; not local Playground fixture only',
         ownership: {
           ownsJournal: true,
           restartReadable: true,
@@ -628,6 +629,7 @@ test('checked recovery inspect evidence upgrades an existing fixture-scoped jour
           scope: 'packaged production plugin recovery inspect journal evidence; not local Playground fixture only',
         },
         acceptedOnCheckedBoundary: true,
+        scope: 'packaged production plugin journal surface; not local Playground fixture only',
         ownership: {
           ownsJournal: true,
           restartReadable: true,
@@ -692,6 +694,7 @@ test('checked recovery inspect evidence preserves a stronger existing non-fixtur
           scope: 'production recovery inspect journal evidence from external durable adapter',
         },
         acceptedOnCheckedBoundary: true,
+        scope: 'checked live production-shaped journal surface; not local Playground fixture only',
         ownership: {
           ownsJournal: true,
           restartReadable: true,
@@ -758,6 +761,7 @@ test('checked recovery inspect evidence preserves existing recovery journal stor
           status: 'ok',
           scope: 'checked live production-shaped recovery inspect journal evidence; not local Playground fixture only',
         },
+        scope: 'checked live production-shaped journal surface; not local Playground fixture only',
         storage: 'wp-options+journal-evidence',
         planHash: 'plan-hash-123',
         receiptHash: 'receipt-hash-456',
@@ -1120,6 +1124,7 @@ test('checked recovery inspect evidence injects the full checked durable journal
           scope: 'checked live production-shaped recovery inspect journal evidence; not local Playground fixture only',
         },
         acceptedOnCheckedBoundary: true,
+        scope: 'checked live production-shaped journal surface; not local Playground fixture only',
         latestRows: [
           {
             event: 'stale-claim-rejected',
@@ -1187,6 +1192,7 @@ test('checked recovery inspect evidence fills nested checked counters and summar
             status: 'ok',
             scope: 'fixture-scoped recovery inspect journal evidence; not production durability',
           },
+          scope: 'local Playground fixture only; not production durability',
           storage: 'wp-options+journal-evidence',
           planHash: 'plan-hash-123',
           receiptHash: 'receipt-hash-456',
@@ -1231,6 +1237,7 @@ test('checked recovery inspect evidence fills nested checked counters and summar
         { idempotencyKeyHash: 'idem-hash-01', events: 3, requestHashes: 1, latestId: 3 },
         { idempotencyKeyHash: 'idem-hash-02', events: 1, requestHashes: 1, latestId: 4 },
       ],
+      scope: 'checked live production-shaped journal surface; not local Playground fixture only',
       ownership: {
         ownsJournal: true,
         restartReadable: true,
@@ -1275,6 +1282,7 @@ test('checked recovery inspect evidence fills nested checked counters and summar
           status: 'ok',
           scope: 'checked live production-shaped recovery inspect journal evidence; not local Playground fixture only',
         },
+        scope: 'checked live production-shaped journal surface; not local Playground fixture only',
         storage: 'wp-options+journal-evidence',
         planHash: 'plan-hash-123',
         receiptHash: 'receipt-hash-456',
