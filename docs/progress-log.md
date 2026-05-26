@@ -1,8 +1,25 @@
 # Progress Log
 
-This log records evidence present in this repository. Percentages must remain
-conservative until they are backed by executable tests, integration runs, or
-linked implementation artifacts.
+This log records evidence present in this repository. Public status should use
+release gates and named evidence gaps rather than stale percentage estimates.
+
+# 2026-05-26 - Public Status Audit 23:38:29
+
+<a id="2026-05-26-public-status-audit-233829"></a>
+
+- Refreshed [progress.html](../progress.html) to the current `date` output
+  (`2026-05-26 23:38:29 CEST`) and kept
+  `e6dd77c1e5f88d734f1953f7de7a112c42f741ae` as the current
+  reliable-executor head on the public page. The stale percentage bars in the
+  lane panel were removed and replaced with explicit evidence/gate gap labels.
+- Release gates remain `0/4`. The old percentage estimates are not treated as
+  current evidence; the authoritative blockers remain production-backed
+  auth/session lifecycle, durable journal ownership with lease/fencing and
+  restart-readable replay, Playground readiness, and plugin-driver proof
+  consumed by `verify:release`.
+- Evidence trail: [progress.html](../progress.html),
+  [objective audit](../audits/objective-audit.md),
+  [release-gate checklist](../progress.html#proof-gates).
 
 # 2026-05-26 - Public Status Audit 23:30:23
 
