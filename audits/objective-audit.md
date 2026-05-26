@@ -6,12 +6,13 @@ The project is **not releasable as a production WordPress push path**.
 
 - Fresh remote heads at audit time, checked on May 26, 2026:
 
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `5ed260f8`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `44545922`
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `ffd3832f`
-- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `b363d13c`
+- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `9bb1add2`
+- `origin/lane/fast-paths` -> `8c5c2ccb`
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `44fd27f9`
 - `origin/lane/reliable-executor` -> `39ded935`
-- `origin/lane/no-data-loss-invariants` -> `9ddd48b4`
+- `origin/lane/no-data-loss-invariants` -> `f99d6eed`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `9e077c10`
 - `origin/lane/no-data-loss-recovery` -> `aec5d04b`
 - `origin/lane/cycle-20260525-mainwindows-2349/critic` -> `fa0dc8a0`
@@ -20,7 +21,6 @@ The project is **not releasable as a production WordPress push path**.
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` -> `db36753e`
 - `origin/lane/same-plan-wordpress-graph-create` -> `0d2178e9`
 - `origin/lane/progress-publisher` -> `7695e1f9`
-- `origin/lane/fast-paths` -> `5d0487a3`
 - `origin/lane/cycle-20260525-mainwindows-2357/no-data-loss-invariants-graph-proof` -> `98c0ce26`
 - `origin/main` -> `e55864f4`
 
@@ -32,19 +32,19 @@ Fresh lane proof since the last audit pass improved the local evidence floor,
 but it did not change the release conclusion:
 
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now records
-  `5ed260f8`, refreshing public progress freshness only.
+  `44545922`, refreshing public progress freshness only.
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` still
   records `ffd3832f`, refreshing the supervisor progress surface only.
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` now records
-  `b363d13c`. This refreshes the audit snapshot only and does not change the
+  `9bb1add2`. This refreshes the audit snapshot only and does not change the
   release boundary.
-- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` now records
-  `5d0487a3`, tightening guarded executor headroom detail only.
+- `origin/lane/fast-paths` now records `8c5c2ccb`, tightening backpressure
+  evidence checks only.
 - `origin/lane/reliable-executor` now records `39ded935`, tightening release
   proof timeout logging and child cleanup again, but still not proving
   production auth/session lifecycle or a live-source mutation boundary.
-- `origin/lane/no-data-loss-invariants` now records `9ddd48b4`, adding same-plan
-  nav menu item parent blocking only.
+- `origin/lane/no-data-loss-invariants` now records `f99d6eed`, adding special-
+  file descendant delete guarding only.
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` now
   records `9e077c10`, tightening durable recovery remote ownership fencing. It
   still does not add production-backed journal ownership or replay proof.
@@ -75,7 +75,7 @@ The release requirements implied by that objective are:
 
 1. Persist a complete pull-base manifest with stable resource identities, hashes, ownership hints, schema fingerprints, and protocol metadata.
 2. Read the current live remote state before planning and compare base, local, and remote in a three-way plan.
-3. Preserve remote-only changes by default, including deletes, plugin state, files, rows, and related resources.
+3. Preserve remote-only changes by default, including deletes, plugin state, files, rows, related resources, and now special-file descendants blocked by fail-closed guards.
 4. Stop on local/remote conflicts with durable, redacted evidence that an operator can inspect.
 5. Apply every mutation only behind a live precondition that is rechecked immediately before the write.
 6. Enforce storage-boundary guarded writes, or an equivalent compare-and-swap primitive, for every production DB and filesystem mutation.
