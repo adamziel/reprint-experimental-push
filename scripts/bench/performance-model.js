@@ -2092,6 +2092,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['backpressure', 'durable-progress'],
   },
   {
+    id: 'reuse-canonical-per-kind-budgets-to-skip-plugin-update-row-batch-revalidation-after-pause',
+    proposal: 'reuse canonical per-kind budgets to skip plugin-update row-batch revalidation after a pause',
+    rejectedBecause: 'canonical budget summaries can shorten planning, but they cannot prove the live row compares, atomic-group barrier, or durable receipt trail survived the pause',
+    rejectedGate: 'recovery',
+    violates: ['parallelism-limits', 'row-preconditions', 'atomic-groups', 'durable-progress'],
+  },
+  {
     id: 'compressed-receipts-replace-durable-progress',
     proposal: 'compress chunk or batch receipts into a summary and treat the summary as the durable record',
     rejectedBecause: 'a compressed summary can save space, but it can also erase the per-chunk or per-row evidence needed to classify partial failure after a crash or lost response',

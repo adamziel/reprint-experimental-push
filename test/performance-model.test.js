@@ -4454,6 +4454,22 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
   );
   assert.ok(rejectedById.get('batched-receipt-journal-flush').violates.includes('backpressure'));
   assert.ok(rejectedById.get('batched-receipt-journal-flush').violates.includes('durable-progress'));
+  assert.equal(
+    rejectedById.get('reuse-canonical-per-kind-budgets-to-skip-plugin-update-row-batch-revalidation-after-pause').rejectedGate,
+    'recovery',
+  );
+  assert.ok(
+    rejectedById.get('reuse-canonical-per-kind-budgets-to-skip-plugin-update-row-batch-revalidation-after-pause').violates.includes('parallelism-limits'),
+  );
+  assert.ok(
+    rejectedById.get('reuse-canonical-per-kind-budgets-to-skip-plugin-update-row-batch-revalidation-after-pause').violates.includes('row-preconditions'),
+  );
+  assert.ok(
+    rejectedById.get('reuse-canonical-per-kind-budgets-to-skip-plugin-update-row-batch-revalidation-after-pause').violates.includes('atomic-groups'),
+  );
+  assert.ok(
+    rejectedById.get('reuse-canonical-per-kind-budgets-to-skip-plugin-update-row-batch-revalidation-after-pause').violates.includes('durable-progress'),
+  );
   assert.equal(rejectedById.get('receipt-cursor-headroom-completes-replay').rejectedGate, 'recovery');
   assert.ok(
     rejectedById.get('receipt-cursor-headroom-completes-replay').violates.includes('chunk-receipts'),

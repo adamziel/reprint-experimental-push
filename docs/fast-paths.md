@@ -112,6 +112,9 @@ Current executable gate:
     still gates the mutation;
   - queue budgeting may bound retries only when the memory ceiling, queue
     budget, and pause footprint all remain aligned;
+  - canonical per-kind budgets may only trim row-batch planning; they do not
+    replace live row preconditions, atomic-group commit, or durable recovery
+    evidence;
   - storage-receipt visibility is only acceptable when the atomic-group
     metadata surface is visible too, so a forged visibility bit cannot stand in
     for the production commit boundary;
