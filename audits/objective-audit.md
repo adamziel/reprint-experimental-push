@@ -68,6 +68,9 @@ but it did not change the release conclusion:
 - `origin/lane/reliable-executor` now records `03cf6917`, hardening bounded
   release-verify spawn handling. It still does not prove production
   auth/session lifecycle or a live-source mutation boundary.
+- `origin/lane/reliable-executor` now records `97eaa4df`, hardening durable
+  journal ownership. It still does not prove production auth/session
+  lifecycle or a live-source mutation boundary.
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now records
   `c49f4eae`, refreshing progress visibility only. It still does not change
   the release verdict.
