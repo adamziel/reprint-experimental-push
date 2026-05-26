@@ -254,7 +254,6 @@ function failBoundedSpawnProof(proof, command, args) {
 
 function failReleaseVerifySpawnProof(proof, command, args, label = 'release verify', timeoutMs = null) {
   failBoundedSpawnProof(proof, command, args);
-  writeSpawnOutputTail(proof, `${command} ${args.join(' ')}`);
   assertReleaseVerifySpawnFailure(proof, label, timeoutMs);
 }
 
