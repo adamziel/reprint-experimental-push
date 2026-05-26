@@ -310,6 +310,12 @@ export function productionThroughputBlockers(report) {
   ) {
     blockers.push('queue-pause-without-measured-and-aligned-receipt-cursor-backpressure-proof');
   }
+  if (
+    report.evidence.backpressure?.queuePausedBeforeOverflow === true
+    && report.evidence.backpressure?.queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack !== true
+  ) {
+    blockers.push('queue-pause-without-measured-and-aligned-receipt-cursor-queue-slack-proof');
+  }
   if (report.evidence.backpressure?.receiptCursorQueueSlackBytes == null) {
     blockers.push('receipt-cursor-queue-slack-not-measured');
   }

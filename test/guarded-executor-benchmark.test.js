@@ -739,6 +739,14 @@ test('production claim gate fails closed if benchmark evidence is tampered', () 
     false,
   );
 
+  const spoofedQueueSlackProof = clone(report);
+  spoofedQueueSlackProof.evidence.backpressure.queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack = false;
+  assert.ok(
+    productionThroughputBlockers(spoofedQueueSlackProof).includes(
+      'queue-pause-without-measured-and-aligned-receipt-cursor-queue-slack-proof',
+    ),
+  );
+
   const spoofedQueueSlackAlignment = clone(report);
   spoofedQueueSlackAlignment.evidence.backpressure.receiptCursorQueueSlackBytes = null;
   spoofedQueueSlackAlignment.evidence.backpressure.queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack = true;

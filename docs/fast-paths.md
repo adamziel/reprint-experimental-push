@@ -913,6 +913,9 @@ under load:
   guards and can silently overwrite concurrent remote edits.
 - backpressure evidence dropping is rejected because a pause must preserve the
   exact rows, chunks, and validators needed to resume or classify failure.
+- paused queue-slack proof spoofing is rejected because a paused sender must
+  still show measured and aligned queue slack before the backpressure claim can
+  move.
 - compressed-buffer-completes-work is rejected because shrinking buffered
   evidence does not create the missing receipt or commit record.
 - compressed-upload-queue-completes-large-upload is rejected because a drained
