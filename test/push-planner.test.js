@@ -14975,7 +14975,7 @@ test('blocks local term-taxonomy parent references to a same-plan created term i
   assert.equal(plan.conflicts.length, 0);
   assert.equal(blocker.class, 'unsupported-term-taxonomy-resource');
   assert.equal(blocker.resourceKey, resourceKey);
-  assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_term_taxonomy","term_taxonomy_id:5"] is created in the same plan as a parent term identity that depends on it, and identity rewriting is not yet supported.');
+  assert.equal(blocker.reason, `WordPress graph mutation ${resourceKey} is created in the same plan as a parent term identity that depends on it, and identity rewriting is not yet supported.`);
   assert.equal(matchingEdit.decision, 'already-in-sync');
   assert.equal(planJson.includes('Local same-plan parent term'), false);
   assert.equal(planJson.includes('local term taxonomy description'), false);
