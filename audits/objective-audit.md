@@ -6,14 +6,14 @@ The project is **not releasable as a production WordPress push path**.
 
 Fresh remote heads at audit time, checked on May 26, 2026:
 
-- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `12d9134b`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `cbae3db5`
-- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `b3010641`
+- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `7b7ee3a7`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `905ca21f`
+- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `30a71eb8`
 - `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration` -> `efd20c08`
-- `origin/lane/no-data-loss-invariants` -> `db39b0ef`
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `b52170aa`
-- `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `47b675c0`
-- `origin/lane/cycle-20260525-mainwindows-2349/critic` -> `5b61693d`
+- `origin/lane/no-data-loss-invariants` -> `5f0e4e01`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `05307e38`
+- `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `9f8f1eed`
+- `origin/lane/cycle-20260525-mainwindows-2349/critic` -> `fa0dc8a0`
 - `origin/lane/reliable-executor` -> `8019706f`
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` -> `db36753e`
 - `origin/lane/same-plan-wordpress-graph-create` -> `0d2178e9`
@@ -33,16 +33,16 @@ Fresh lane proof since the last audit pass improved the local evidence floor,
 but it did not change the release conclusion:
 
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` now advances to
-  `12d9134b`, rejecting dependency-graph pause cases. This remains
+  `7b7ee3a7`, tightening the backpressure summary guard. This remains
   fail-closed boundary work, not release-grade live-source evidence.
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` now
-  advances to `47b675c0`, reconciling the recovery lane and preserving the
+  advances to `9f8f1eed`, hardening recovery artifact refs and preserving the
   recovery proofs. That remains
   fail-closed boundary work, not production-backed durable journal proof.
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now
-  advances to `cbae3db5`, refreshing public progress freshness only.
+  advances to `905ca21f`, refreshing public progress freshness only.
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` now
-  advances to `b3010641`, refreshing the audit snapshot only.
+  advances to `30a71eb8`, refreshing the audit snapshot only.
 - `origin/lane/critic` now advances to `5b61693d`, refreshing the critique
   readiness audit only.
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now records
@@ -52,13 +52,13 @@ but it did not change the release conclusion:
   stronger boundary hardening, but it still does not produce live source
   mutation evidence.
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now
-  records `b52170aa`, also a freshness-only update.
+  records `05307e38`, also a freshness-only update.
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` now records
   `b3010641`, which refreshes the audit snapshot but does not change the
   release boundary.
-- `origin/lane/no-data-loss-invariants` now advances to `db39b0ef`, tightening
-  attachment reference blocker assertions. That remains fail-closed boundary
-  work, not live source mutation proof.
+- `origin/lane/no-data-loss-invariants` now advances to `5f0e4e01`, adding
+  attachment postmeta blocker proof. That remains fail-closed boundary work,
+  not live source mutation proof.
 - `origin/lane/independent-auditor` now records `6351130f`, which refreshes
   the audit snapshot but does not change the release boundary.
 - `origin/lane/reliable-executor` now advances to `8019706f`, which hardens
