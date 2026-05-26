@@ -727,6 +727,26 @@ export const SAFE_FAST_PATHS = Object.freeze([
     splitsAtomicGroup: false,
     publishesStagedDataEarly: false,
   },
+  {
+    area: 'backpressure',
+    reduces: ['fsync-count', 'queue-drain-time', 'duplicate-recovery-writes'],
+    allowedShortcut: 'compress-durable-receipt-logs-and-reuse-stable-receipt-keys-for-bounded-replay',
+    guardrails: [
+      'receipt-compression-stays-recovery-evidence-only',
+      'raw-receipt-keys-remain-available-for-replay',
+    ],
+    gateProofs: {
+      skip: 'receipt logs can be compressed after they are durably recorded, so replay can skip duplicate fsync work without discarding the underlying receipt keys',
+      live: 'compressed receipt logs never authorize a write; the original live precondition still guards the storage boundary',
+      group: 'receipt compression does not split or widen the atomic-group barrier',
+      recovery: 'stable receipt keys and journal records still classify the exact chunk, row, or group state after a crash or pause',
+    },
+    visibilityBoundary: 'recovery-evidence-only',
+    failureEvidence: 'compressed receipt log plus original durable receipt key',
+    bypassesLivePreconditions: false,
+    splitsAtomicGroup: false,
+    publishesStagedDataEarly: false,
+  },
 ]);
 
 export const FAILURE_INJECTION_BOUNDARIES = Object.freeze([

@@ -244,6 +244,16 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
     'every safe fast path carries exactly the four gate proofs',
   );
   assert.ok(
+    model.safeFastPaths.some(
+      (fastPath) =>
+        fastPath.allowedShortcut === 'compress-durable-receipt-logs-and-reuse-stable-receipt-keys-for-bounded-replay' &&
+        fastPath.area === 'backpressure' &&
+        fastPath.visibilityBoundary === 'recovery-evidence-only' &&
+        fastPath.failureEvidence === 'compressed receipt log plus original durable receipt key',
+    ),
+    'compressed durable receipt logs stay bounded and preserve replay keys',
+  );
+  assert.ok(
     model.rejectedFastPaths.every((fastPath) =>
       typeof fastPath.rejectedGate === 'string' &&
       Array.isArray(fastPath.violates) &&
