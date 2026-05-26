@@ -130,6 +130,18 @@ export function evaluateProductionAuthSessionLifecycleSummary(summary, now = Dat
     };
   }
 
+  if (
+    Object.prototype.hasOwnProperty.call(readObservation, 'step')
+    && readObservation.step !== null
+    && !isAuthSessionReadStep(readObservation.step)
+  ) {
+    return {
+      ok: false,
+      required: 'preserved read',
+      observed: readObservation.step || 'missing',
+    };
+  }
+
   const readLifecycle = evaluateProductionAuthSessionLifecycle(readObservation, now);
   if (!readLifecycle.ok) {
     return readLifecycle;
