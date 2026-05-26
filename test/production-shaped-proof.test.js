@@ -3750,15 +3750,21 @@ test('shared lab waitForServer keeps index and snapshot body reads child-aware',
   );
   assert.match(sharedWaitSource, /if \(labReadinessProbeTimedOut\(error\) && labNotReadyProbeLimitReached\(timeoutProbeCount\)\)/);
   assert.match(sharedWaitSource, /if \(labNotReadyProbeLimitReached\(notReadyProbeCount, maxNotReadyReadinessProbes\)\)/);
+  assert.match(sharedWaitSource, /if \(response\.status !== 200 && readinessProbeCount >= maxReadinessProbes\)/);
   assert.match(
     sharedWaitSource,
     /Playground server reported the bounded readiness failure \$\{response\.status\} after \$\{readinessProbeCount\} \/wp-json\/ probes \(\$\{notReadyProbeCount\} consecutive not-ready response\$\{notReadyProbeCount === 1 \? '' : 's'\}; limit \$\{maxNotReadyReadinessProbes\}\)/,
   );
   assert.match(
     sharedWaitSource,
+    /Playground server stayed in readiness response \$\{response\.status\} after \$\{readinessProbeCount\} \/wp-json\/ probes/,
+  );
+  assert.match(
+    sharedWaitSource,
     /Playground index readiness HTTP \$\{response\.status\}: \$\{readinessHint\}; \$\{routeSummary\}/,
   );
   assert.match(sharedWaitSource, /notReadyProbeCount,\s*readinessProbeCount,/);
+  assert.match(sharedWaitSource, /childPid:\s*child\.pid\s*\?\?\s*null,\s*readinessProbeCount,/);
   assert.match(sharedWaitSource, /await sleepUnlessChildExit\(readinessProbeIntervalMs, child\)/);
   assert.doesNotMatch(sharedWaitSource, /await response\.arrayBuffer\(\)/);
   assert.doesNotMatch(sharedWaitSource, /await snapshot\.arrayBuffer\(\)/);
