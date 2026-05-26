@@ -15053,6 +15053,109 @@ test('prioritizes post-parent revision blocker wording while carrying bounded po
   assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin changes */');
 });
 
+test('orders same-plan revision dependency references deterministically within the same priority bucket', () => {
+  const revisionResourceKey = 'row:["wp_posts","ID:72"]';
+  const childPostResourceKey = 'row:["wp_posts","ID:73"]';
+  const earlyMetaResourceKey = 'row:["wp_postmeta","meta_id:11"]';
+  const lateMetaResourceKey = 'row:["wp_postmeta","meta_id:90"]';
+  const base = baseSite();
+  base.db.wp_posts['ID:73'] = {
+    ID: 73,
+    post_title: 'Base child revision dependency post',
+    post_content: 'Base child revision dependency body',
+    post_status: 'publish',
+    post_parent: 0,
+  };
+  base.db.wp_postmeta = {
+    'meta_id:90': {
+      meta_id: 90,
+      post_id: 72,
+      meta_key: 'late_revision_note',
+      meta_value: 'Base late revision meta',
+    },
+    'meta_id:11': {
+      meta_id: 11,
+      post_id: 72,
+      meta_key: 'early_revision_note',
+      meta_value: 'Base early revision meta',
+    },
+  };
+
+  const local = baseSite();
+  local.db.wp_posts['ID:72'] = {
+    ID: 72,
+    post_title: 'Local deterministic revision identity',
+    post_content: 'Local deterministic revision body',
+    post_status: 'inherit',
+    post_type: 'revision',
+  };
+  local.db.wp_posts['ID:73'] = {
+    ID: 73,
+    post_title: 'Local child revision dependency post',
+    post_content: 'Local child revision dependency body',
+    post_status: 'publish',
+    post_parent: 72,
+  };
+  local.db.wp_postmeta = {
+    'meta_id:90': {
+      meta_id: 90,
+      post_id: 72,
+      meta_key: 'late_revision_note',
+      meta_value: 'Local late revision meta',
+    },
+    'meta_id:11': {
+      meta_id: 11,
+      post_id: 72,
+      meta_key: 'early_revision_note',
+      meta_value: 'Local early revision meta',
+    },
+  };
+  local.db.wp_posts['ID:1'].post_title = 'Shared deterministic revision dependency post';
+
+  const remote = baseSite();
+  remote.db.wp_posts['ID:73'] = JSON.parse(JSON.stringify(base.db.wp_posts['ID:73']));
+  remote.db.wp_postmeta = JSON.parse(JSON.stringify(base.db.wp_postmeta));
+  remote.db.wp_posts['ID:1'].post_title = 'Shared deterministic revision dependency post';
+  remote.plugins.forms.description = 'remote-only plugin drift';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin drift */';
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === revisionResourceKey);
+  const earlyMetaBlocker = plan.blockers.find((entry) => entry.resourceKey === earlyMetaResourceKey);
+  const lateMetaBlocker = plan.blockers.find((entry) => entry.resourceKey === lateMetaResourceKey);
+  const matchingEdit = decisionFor(plan, 'row:["wp_posts","ID:1"]');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, revisionResourceKey), undefined);
+  assert.equal(decisionFor(plan, revisionResourceKey), undefined);
+  assert.equal(blocker.class, 'unsupported-revision-resource');
+  assert.equal(
+    blocker.reason,
+    'WordPress graph mutation row:["wp_posts","ID:72"] is created in the same plan as a post parent revision target that depends on it, and identity rewriting is not yet supported.',
+  );
+  assert.deepEqual(
+    blocker.references.map((reference) => [reference.relationshipType, reference.sourceResourceKey]),
+    [
+      ['post-parent', childPostResourceKey],
+      ['postmeta-post', earlyMetaResourceKey],
+      ['postmeta-post', lateMetaResourceKey],
+    ],
+  );
+  assert.equal(earlyMetaBlocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(lateMetaBlocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(matchingEdit.decision, 'already-in-sync');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('Local deterministic revision identity'), false);
+  assert.equal(planJson.includes('Local deterministic revision body'), false);
+  assert.equal(planJson.includes('Local late revision meta'), false);
+  assert.equal(planJson.includes('Local early revision meta'), false);
+});
+
 test('blocks local postmeta references to a same-plan created revision while preserving a matching independent edit and remote-only plugin removals', () => {
   const resourceKey = 'row:["wp_postmeta","meta_id:54"]';
   const targetResourceKey = 'row:["wp_posts","ID:48"]';

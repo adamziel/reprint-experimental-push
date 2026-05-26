@@ -2561,6 +2561,15 @@ function wordpressGraphReferenceEvidence(reference, resources, base, local, remo
   };
 }
 
+function compareReferenceEvidenceByPriority(priorityMap, left, right) {
+  const leftPriority = priorityMap.get(left.relationshipType) ?? Number.MAX_SAFE_INTEGER;
+  const rightPriority = priorityMap.get(right.relationshipType) ?? Number.MAX_SAFE_INTEGER;
+  return (leftPriority - rightPriority)
+    || left.sourceResourceKey.localeCompare(right.sourceResourceKey)
+    || left.relationshipType.localeCompare(right.relationshipType)
+    || left.relationshipKey.localeCompare(right.relationshipKey);
+}
+
 function samePlanCreatedGraphIdentitySupport({ resource, resources, base, local, remote }) {
   const localValue = getResource(local, resource);
   const baseValue = getResource(base, resource);
@@ -3664,14 +3673,10 @@ function unsupportedNavigationResourceSupport({ resource, baseValue, localValue,
   const samePlanNavigationReferences = inboundReferences.filter((reference) =>
     reference.targetChange.remote.state === 'absent'
     && reference.targetChange.local.state === 'present')
-    .sort((left, right) => {
-      const priority = new Map([
-        ['menu-item-parent', 0],
-        ['post-parent', 1],
-      ]);
-      return (priority.get(left.relationshipType) ?? Number.MAX_SAFE_INTEGER)
-        - (priority.get(right.relationshipType) ?? Number.MAX_SAFE_INTEGER);
-    });
+    .sort((left, right) => compareReferenceEvidenceByPriority(new Map([
+      ['menu-item-parent', 0],
+      ['post-parent', 1],
+    ]), left, right));
   const navigationReference = samePlanNavigationReferences[0];
   const samePlanNavigationReason = samePlanNavigationReferences.some((reference) => reference.relationshipType === 'menu-item-parent')
     ? `WordPress graph mutation ${resource.key} is created in the same plan as a menu item parent target that depends on it, and identity rewriting is not yet supported.`
@@ -3732,15 +3737,11 @@ function unsupportedAttachmentResourceSupport({ resource, baseValue, localValue,
           || reference.relationshipType === 'post-parent'
           || reference.relationshipType === 'term-relationship-object'
         ))
-      .sort((left, right) => {
-        const priority = new Map([
-          ['featured-image-attachment', 0],
-          ['post-parent', 1],
-          ['term-relationship-object', 2],
-        ]);
-        return (priority.get(left.relationshipType) ?? Number.MAX_SAFE_INTEGER)
-          - (priority.get(right.relationshipType) ?? Number.MAX_SAFE_INTEGER);
-      });
+      .sort((left, right) => compareReferenceEvidenceByPriority(new Map([
+        ['featured-image-attachment', 0],
+        ['post-parent', 1],
+        ['term-relationship-object', 2],
+      ]), left, right));
     const samePlanAttachmentReason = inboundReferences.some((reference) =>
       reference.relationshipType === 'featured-image-attachment')
       ? `WordPress graph mutation ${resource.key} is created in the same plan as a featured image attachment target that depends on it, and identity rewriting is not yet supported.`
@@ -3809,15 +3810,11 @@ function unsupportedRevisionResourceSupport({ resource, baseValue, localValue, r
         reference.relationshipType === 'post-parent'
         || reference.relationshipType === 'postmeta-post'
         || reference.relationshipType === 'term-relationship-object')
-      .sort((left, right) => {
-        const priority = new Map([
-          ['post-parent', 0],
-          ['postmeta-post', 1],
-          ['term-relationship-object', 2],
-        ]);
-        return (priority.get(left.relationshipType) ?? Number.MAX_SAFE_INTEGER)
-          - (priority.get(right.relationshipType) ?? Number.MAX_SAFE_INTEGER);
-      })
+      .sort((left, right) => compareReferenceEvidenceByPriority(new Map([
+        ['post-parent', 0],
+        ['postmeta-post', 1],
+        ['term-relationship-object', 2],
+      ]), left, right))
     : [];
   const samePlanRevisionReason = references.some((reference) => reference.relationshipType === 'post-parent')
     ? `WordPress graph mutation ${resource.key} is created in the same plan as a post parent revision target that depends on it, and identity rewriting is not yet supported.`
@@ -3918,14 +3915,10 @@ function unsupportedTermTaxonomyResourceSupport({ resource, baseValue, localValu
     (reference.relationshipType === 'term-taxonomy-term' || reference.relationshipType === 'term-taxonomy-parent')
     && reference.targetChange.remote.state === 'absent'
     && reference.targetChange.local.state === 'present'
-  )).sort((left, right) => {
-    const priority = new Map([
-      ['term-taxonomy-parent', 0],
-      ['term-taxonomy-term', 1],
-    ]);
-    return (priority.get(left.relationshipType) ?? Number.MAX_SAFE_INTEGER)
-      - (priority.get(right.relationshipType) ?? Number.MAX_SAFE_INTEGER);
-  });
+  )).sort((left, right) => compareReferenceEvidenceByPriority(new Map([
+    ['term-taxonomy-parent', 0],
+    ['term-taxonomy-term', 1],
+  ]), left, right));
   const unsupportedState = samePlanCreatedTermReferences.length > 0
     ? 'same-plan-reference'
     : classifyUnsupportedDriftState({
@@ -4059,15 +4052,11 @@ function unsupportedCommentsUsersResourceSupport({ resource, baseValue, localVal
           && reference.targetChange.remote.state === 'absent'
           && reference.targetChange.local.state === 'present'
         ))
-      .sort((left, right) => {
-        const priority = new Map([
-          ['comment-parent', 0],
-          ['comment-post', 1],
-          ['comment-user', 2],
-        ]);
-        return (priority.get(left.relationshipType) ?? Number.MAX_SAFE_INTEGER)
-          - (priority.get(right.relationshipType) ?? Number.MAX_SAFE_INTEGER);
-      });
+      .sort((left, right) => compareReferenceEvidenceByPriority(new Map([
+        ['comment-parent', 0],
+        ['comment-post', 1],
+        ['comment-user', 2],
+      ]), left, right));
 
     if (commentGraphReferences.length > 0) {
       return {
@@ -4104,14 +4093,11 @@ function unsupportedCommentsUsersResourceSupport({ resource, baseValue, localVal
         && reference.targetChange.local.state === 'present');
 
     if (inboundCommentReferences.length > 0) {
-      const orderedInboundCommentReferences = inboundCommentReferences.slice().sort((left, right) => {
-        const priority = new Map([
+      const orderedInboundCommentReferences = inboundCommentReferences.slice().sort((left, right) =>
+        compareReferenceEvidenceByPriority(new Map([
           ['comment-parent', 0],
           ['commentmeta-comment', 1],
-        ]);
-        return (priority.get(left.relationshipType) ?? Number.MAX_SAFE_INTEGER)
-          - (priority.get(right.relationshipType) ?? Number.MAX_SAFE_INTEGER);
-      });
+        ]), left, right));
       const commentReference = orderedInboundCommentReferences[0];
       return {
         supported: false,
@@ -4148,15 +4134,12 @@ function unsupportedCommentsUsersResourceSupport({ resource, baseValue, localVal
         && reference.targetChange.local.state === 'present');
 
     if (inboundUserReferences.length > 0) {
-      const orderedInboundUserReferences = inboundUserReferences.slice().sort((left, right) => {
-        const priority = new Map([
+      const orderedInboundUserReferences = inboundUserReferences.slice().sort((left, right) =>
+        compareReferenceEvidenceByPriority(new Map([
           ['comment-user', 0],
           ['usermeta-user', 1],
           ['post-author', 2],
-        ]);
-        return (priority.get(left.relationshipType) ?? Number.MAX_SAFE_INTEGER)
-          - (priority.get(right.relationshipType) ?? Number.MAX_SAFE_INTEGER);
-      });
+        ]), left, right));
       const userReference = orderedInboundUserReferences[0];
       return {
         supported: false,
