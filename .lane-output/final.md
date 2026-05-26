@@ -1,6 +1,6 @@
 Recovery lane handoff:
 
-- Timestamp: 2026-05-26 11:18:50 CEST (+0200)
+- Timestamp: 2026-05-26 11:22:13 CEST (+0200)
 - No recovery-side code patch was needed this pass.
 - The checked recovery adapter surface is still present in `src/recovery-journal.js` via `openProductionRecoveryJournal()`, including `productionAdapter`, `supportedSurface`, `restartReadable`, `ownsJournal`, `journalPath`, `writerLease`, `artifactRefs`, `inspect()`, `flush()`, `close()`, and `assertCurrentClaim()`.
 - `package.json` already exposes `verify:release`; the missing consumer wiring is in the release-verifier owner lane, not here.
