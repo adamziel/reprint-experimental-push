@@ -11,12 +11,12 @@ Fresh remote heads at audit time, checked on May 26, 2026:
 - `origin/lane/reliable-executor` -> `ffdc0a9b`
 - `origin/lane/no-data-loss-invariants` -> `9c70eba6`
 - `origin/lane/no-data-loss-recovery` -> `4372167e`
-- `origin/lane/fast-paths` -> `9be664b2`
+- `origin/lane/fast-paths` -> `cd0fddad`
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `596c7b31`
-- `origin/lane/independent-auditor` -> `815ee959`
+- `origin/lane/independent-auditor` -> `52b257aa`
 - `origin/lane/critic` -> `6828861f`
 - `origin/lane/progress-publisher` -> `7695e1f9`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `6ab59037`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `327eb7ee`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `4372167e`
 - `origin/lane/cycle-20260525-mainwindows-2349/critic` -> `3b9a9c46`
 - `origin/lane/same-plan-wordpress-graph-create` -> `09e6706d`
@@ -24,13 +24,13 @@ Fresh remote heads at audit time, checked on May 26, 2026:
 - `origin/lane/cycle-20260525-mainwindows-2349/same-plan-wordpress-graph-create` -> `e9cbf9d4`
 - `origin/lane/cycle-20260525-mainwindows-2357/no-data-loss-invariants-graph-proof` -> `98c0ce26`
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `20a83c09`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `6ab59037`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `327eb7ee`
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` -> `5f256171`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-invariants` -> `9c70eba6`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `4372167e`
-- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `337eb2ff`
+- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `596c7b31`
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `20a83c09`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `6ab59037`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `327eb7ee`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `4372167e`
 - `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration` -> `a3a900d7`
 - `origin/main` -> `e55864f4`
@@ -59,18 +59,18 @@ but it did not change the release conclusion:
   and claim fencing at `b0949e57`. That narrows unsupported recovery claims,
   but it still does not add production-backed journal ownership or replay
   proof.
-- `origin/lane/fast-paths` now tightens cursor headroom drift checks at `adb53f6d`.
-  That is still a fail-closed implementation improvement, not production
-  release proof.
+- `origin/lane/fast-paths` now tightens backpressure evidence checks at
+  `cd0fddad`. That is still a fail-closed implementation improvement, not
+  production release proof.
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` now covers bounded
-  receipt log replay and backpressure completeness at `337eb2ff`, which is
+  receipt log replay and backpressure completeness at `596c7b31`, which is
   still boundary plumbing rather than measured speed proof.
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now
   refreshes the supervisor evidence snapshot at `20a83c09`.
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now
-  records the latest progress freshness handoff at `6ab59037`.
+  records the latest progress freshness handoff at `327eb7ee`.
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` now refreshes the audit snapshot at
-  `815ee959`.
+  `52b257aa`.
 - `origin/lane/critic` now refreshes the critic handoff at `6828861f`.
 - `origin/lane/progress-publisher` now refreshes the public progress evidence
   at `7695e1f9`.
@@ -80,7 +80,7 @@ but it did not change the release conclusion:
   fails closed on artifact ref drift at `4372167e`, but still does not add
   production-backed journal ownership or replay proof.
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` now tightens the
-  bounded receipt log replay path at `337eb2ff`.
+  bounded receipt log replay path at `596c7b31`.
 - `origin/lane/same-plan-wordpress-graph-create` now blocks unsupported graph
   surfaces at `7bf5d421`, including revision posts, menu/navigation posts,
   serialized blocks, thumbnail parent references, and other same-plan graph
