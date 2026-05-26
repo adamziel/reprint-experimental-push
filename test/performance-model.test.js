@@ -420,6 +420,12 @@ test('benchmark model covers large uploads and plugin installs', () => {
     ),
     'release bundle keeps remote-index planning separate from apply authorization',
   );
+  assert.ok(
+    releaseBundle.actions.some(
+      (action) => action.type === 'remote-index-probe' && action.authorizesApply === false && action.bodyFetched === false,
+    ),
+    'release bundle keeps remote-index planning advisory and body-free',
+  );
   assert.ok(releaseBundle.actions.some((action) => action.type === 'compression-decision'), 'release bundle models compression decisions');
   assert.ok(releaseBundle.actions.some((action) => action.type === 'backpressure-pause'), 'release bundle models backpressure pauses');
   assert.ok(releaseBundle.actions.some((action) => action.type === 'group-staging-finalize'), 'release bundle preserves atomic-group finalization');
@@ -506,6 +512,12 @@ test('benchmark model covers large uploads and plugin installs', () => {
     'large upload keeps remote-index planning separate from apply authorization',
   );
   assert.ok(
+    largeUpload.actions.some(
+      (action) => action.type === 'remote-index-probe' && action.authorizesApply === false && action.bodyFetched === false,
+    ),
+    'large upload keeps remote-index planning advisory and body-free',
+  );
+  assert.ok(
     largeUpload.actions.some((action) => action.type === 'file-publish' && action.publishMode === 'compare-and-swap'),
     'large upload uses guarded file publish',
   );
@@ -520,6 +532,12 @@ test('benchmark model covers large uploads and plugin installs', () => {
   assert.ok(
     pluginInstall.actions.some((action) => action.type === 'remote-index-probe' && action.applyMustRevalidate === true),
     'plugin install keeps remote-index planning separate from apply authorization',
+  );
+  assert.ok(
+    pluginInstall.actions.some(
+      (action) => action.type === 'remote-index-probe' && action.authorizesApply === false && action.bodyFetched === false,
+    ),
+    'plugin install keeps remote-index planning advisory and body-free',
   );
   assert.ok(
     pluginInstall.actions.some((action) => action.type === 'durable-receipt-flush'),
