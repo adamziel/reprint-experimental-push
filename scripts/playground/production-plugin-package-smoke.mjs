@@ -64,6 +64,7 @@ const driverGuardSnapshotBlueprintPath = path.join(tmpDir, 'remote-base-with-dri
 const driverGuardServerBlueprintPath = path.join(tmpDir, 'remote-base-with-driver-fixture-guard-server.blueprint.json');
 const driverDeleteSnapshotBlueprintPath = path.join(tmpDir, 'remote-base-with-driver-fixture-delete-snapshot.blueprint.json');
 const driverDeleteServerBlueprintPath = path.join(tmpDir, 'remote-base-with-driver-fixture-delete-server.blueprint.json');
+const driverMissingExportServerBlueprintPath = path.join(tmpDir, 'remote-base-with-driver-fixture-missing-export-server.blueprint.json');
 const basePath = path.join(tmpDir, 'base.json');
 const localPath = path.join(tmpDir, 'local.json');
 
@@ -82,6 +83,11 @@ try {
     activatePackagedPlugin: true,
     provisionAuth: true,
     supportsDelete: true,
+  });
+  writeDriverFixtureBlueprint(path.join(repoRoot, fixtures.base), driverMissingExportServerBlueprintPath, {
+    activatePackagedPlugin: true,
+    provisionAuth: true,
+    omitExportRowsCallback: true,
   });
   fs.writeFileSync(basePath, `${JSON.stringify(snapshots.base, null, 2)}\n`);
   fs.writeFileSync(localPath, `${JSON.stringify(packageLocalSnapshot, null, 2)}\n`);
@@ -114,6 +120,7 @@ try {
     driverReceiptExpiryGuard: {},
     driverReceiptPlanBindingGuard: {},
     driverReceiptRotatedCredentialGuard: {},
+    driverExportGuard: {},
     final: {},
   };
 
@@ -722,6 +729,28 @@ try {
     };
   });
 
+  await withPlaygroundServer('production-plugin-driver-missing-export-guard', driverMissingExportServerBlueprintPath, pluginDir, async (server) => {
+    const malformedSnapshot = await requestText(
+      server.baseUrl,
+      'GET',
+      '/wp-json/reprint/v1/push/snapshot',
+      undefined,
+      authHeaders(),
+    );
+    assert.equal(malformedSnapshot.status, 500);
+    assert.match(
+      malformedSnapshot.text,
+      /missing exportRowsCallback for table: wp_reprint_push_driver_fixture/i,
+      'packaged snapshot did not fail closed on a malformed arbitrary plugin-owned driver export registration',
+    );
+
+    summary.driverExportGuard = {
+      resourceKey: driverFixture.resourceKey,
+      status: malformedSnapshot.status,
+      missingExportRowsCallback: /missing exportRowsCallback for table: wp_reprint_push_driver_fixture/i.test(malformedSnapshot.text),
+    };
+  });
+
   console.log(JSON.stringify(summary, null, 2));
 } finally {
   fs.rmSync(tmpDir, { recursive: true, force: true });
@@ -822,6 +851,7 @@ function writeDriverFixtureBlueprint(
     activatePackagedPlugin = false,
     provisionAuth = false,
     supportsDelete = false,
+    omitExportRowsCallback = false,
   } = {},
 ) {
   const blueprint = JSON.parse(fs.readFileSync(sourceBlueprintPath, 'utf8'));
@@ -830,7 +860,7 @@ function writeDriverFixtureBlueprint(
     title: 'Reprint Push Driver Fixture Package Guard',
     description: 'Remote base fixture with packaged Reprint Push plus an arbitrary plugin-owned row driver fixture.',
   };
-  const pluginCodeBase64 = Buffer.from(driverFixturePluginPhp({ supportsDelete }), 'utf8').toString('base64');
+  const pluginCodeBase64 = Buffer.from(driverFixturePluginPhp({ supportsDelete, omitExportRowsCallback }), 'utf8').toString('base64');
   blueprint.steps.push({
     step: 'runPHP',
     code: [
@@ -894,7 +924,10 @@ function writeDriverFixtureBlueprint(
   fs.writeFileSync(targetBlueprintPath, `${JSON.stringify(blueprint, null, 2)}\n`);
 }
 
-function driverFixturePluginPhp({ supportsDelete }) {
+function driverFixturePluginPhp({ supportsDelete, omitExportRowsCallback = false }) {
+  const exportRowsCallback = omitExportRowsCallback
+    ? ''
+    : "        'exportRowsCallback' => 'reprint_push_driver_fixture_export_rows',\n";
   return `<?php
 /*
 Plugin Name: Reprint Push Driver Fixture
@@ -908,8 +941,7 @@ add_filter('reprint_push_plugin_owned_row_drivers', static function (array $driv
         'table' => '${driverFixture.table}',
         'pluginOwner' => '${driverFixture.pluginOwner}',
         'supportsDelete' => ${supportsDelete ? 'true' : 'false'},
-        'exportRowsCallback' => 'reprint_push_driver_fixture_export_rows',
-        'applyRowCallback' => 'reprint_push_driver_fixture_apply_row',
+${exportRowsCallback}        'applyRowCallback' => 'reprint_push_driver_fixture_apply_row',
         'validateMutationCallback' => 'reprint_push_driver_fixture_validate_mutation',
     ];
     return $drivers;
@@ -1210,6 +1242,26 @@ async function requestJson(baseUrl, method, pathname, body = undefined, headers 
     }
   }
   throw lastError;
+}
+
+async function requestText(baseUrl, method, pathname, body = undefined, headers = {}) {
+  const requestHeaders = body === undefined ? {
+    connection: 'close',
+    ...headers,
+  } : {
+    'content-type': 'application/json',
+    connection: 'close',
+    ...headers,
+  };
+  const response = await fetch(`${baseUrl}${pathname}`, {
+    method,
+    headers: requestHeaders,
+    body: body === undefined ? undefined : JSON.stringify(body),
+  });
+  return {
+    status: response.status,
+    text: await response.text(),
+  };
 }
 
 async function requestJsonOnce(baseUrl, method, pathname, body = undefined, headers = {}) {

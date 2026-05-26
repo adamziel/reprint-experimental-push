@@ -135,7 +135,8 @@ function reprint_push_export_plugin_owned_row_driver_tables(array &$snapshot): v
     foreach (reprint_push_plugin_owned_row_drivers() as $driver) {
         $export_callback = $driver['exportRowsCallback'] ?? null;
         if (!is_callable($export_callback)) {
-            continue;
+            $table = (string) ($driver['table'] ?? '');
+            throw new RuntimeException('Plugin-owned driver is missing exportRowsCallback for table: ' . $table);
         }
         $table = (string) ($driver['table'] ?? '');
         if ($table !== '' && !array_key_exists($table, $snapshot['db'])) {
