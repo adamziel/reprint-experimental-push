@@ -29,33 +29,23 @@ const proofSubprocessOptions = {
 };
 
 function spawnReleaseVerify(env = {}, timeout = proofSubprocessTimeoutMs) {
-  const proof = spawnSync(
+  const spawnOptions = {
+    cwd: repoRoot,
+    timeout,
+    killSignal: proofSubprocessKillSignal,
+    encoding: 'utf8',
+    maxBuffer: 1024 * 1024 * 20,
+    env: {
+      ...process.env,
+      ...env,
+    },
+  };
+  return spawnBoundedSync(
     process.execPath,
     ['scripts/playground/production-shaped-release-verify.mjs'],
-    {
-      cwd: repoRoot,
-      timeout,
-      killSignal: proofSubprocessKillSignal,
-      encoding: 'utf8',
-      maxBuffer: 1024 * 1024 * 20,
-      env: {
-        ...process.env,
-        ...env,
-      },
-    },
+    spawnOptions,
+    'production-shaped release verify',
   );
-  if (proof.error) {
-    const timeoutNote = proof.error.code === 'ETIMEDOUT' && timeout ? ` after ${timeout}ms` : '';
-    throw new Error(
-      `production-shaped release verify failed${timeoutNote} with ${proof.error.name ?? 'Error'}${proof.error.code ? ` code=${proof.error.code}` : ''}${proof.error.errno ? ` errno=${proof.error.errno}` : ''}${proof.signal ? ` signal=${proof.signal}` : ''}${proof.status !== null ? ` status=${proof.status}` : ''}: ${proof.error.message}\nstdout:\n${proof.stdout ?? ''}\nstderr:\n${proof.stderr ?? ''}`,
-    );
-  }
-  if (proof.signal) {
-    throw new Error(
-      `production-shaped release verify terminated by ${proof.signal}${timeout ? ` after ${timeout}ms` : ''}\nstdout:\n${proof.stdout ?? ''}\nstderr:\n${proof.stderr ?? ''}`,
-    );
-  }
-  return proof;
 }
 
 function assertReleaseVerifyProof(proof, label) {
