@@ -128,6 +128,13 @@ function durableJournalClaimContractMatches(claim) {
     return false;
   }
 
+  const statusMatchesStaleClaim = (
+    (claim.status === 'active' && claim.staleClaimRejected === false)
+    || (claim.status === 'stale-claim-rejected' && claim.staleClaimRejected === true)
+  );
+  const eventMatchesStaleClaim = hasNonEmptyString(claim.activeClaimEvent)
+    && !(claim.staleClaimRejected === false && claim.activeClaimEvent === 'stale-claim-rejected')
+    && !(claim.staleClaimRejected === true && claim.activeClaimEvent === 'idempotency-opened');
   const requiresConsumedRetryLineage = claim.staleClaimRejected === true
     && (
       claim.activeClaimEvent === 'stale-claim-retry-started'
@@ -147,6 +154,8 @@ function durableJournalClaimContractMatches(claim) {
     && hasNonEmptyString(claim.idempotencyKeyHash)
     && hasNonEmptyString(claim.requestHash)
     && typeof claim.staleClaimRejected === 'boolean'
+    && statusMatchesStaleClaim
+    && eventMatchesStaleClaim
     && (!hasPreviousClaimIdentity || (
       hasNonEmptyString(claim.previousClaimKeyHash)
       && Number.isInteger(claim.previousClaimSequence)

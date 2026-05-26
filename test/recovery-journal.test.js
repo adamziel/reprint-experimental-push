@@ -908,6 +908,59 @@ test('checked durable journal boundary stays closed until stale-claim rejection 
   assert.equal(
     checkedDurableJournalBoundarySatisfied({
       ...baseContract,
+      claim: {
+        ...baseContract.claim,
+        status: 'active',
+        activeClaimEvent: 'stale-claim-rejected',
+        staleClaimRejected: false,
+        abandonedSequence: undefined,
+        abandonedEvent: undefined,
+        previousStartedSequence: undefined,
+        previousClaimSequence: undefined,
+        previousClaimKeyHash: undefined,
+        previousClaimEvent: undefined,
+      },
+      writerLease: {
+        ...baseContract.writerLease,
+        staleClaimRejected: true,
+      },
+      leaseFence: {
+        ...baseContract.leaseFence,
+        staleClaimRejected: true,
+        writerLease: {
+          ...baseContract.leaseFence.writerLease,
+          staleClaimRejected: true,
+        },
+      },
+    }),
+    false,
+  );
+  assert.equal(
+    checkedDurableJournalBoundarySatisfied({
+      ...baseContract,
+      claim: {
+        ...baseContract.claim,
+        status: 'stale-claim-rejected',
+        activeClaimEvent: 'idempotency-opened',
+      },
+      writerLease: {
+        ...baseContract.writerLease,
+        staleClaimRejected: true,
+      },
+      leaseFence: {
+        ...baseContract.leaseFence,
+        staleClaimRejected: true,
+        writerLease: {
+          ...baseContract.leaseFence.writerLease,
+          staleClaimRejected: true,
+        },
+      },
+    }),
+    false,
+  );
+  assert.equal(
+    checkedDurableJournalBoundarySatisfied({
+      ...baseContract,
       acceptedOnCheckedBoundary: false,
       writerLease: {
         ...baseContract.writerLease,
