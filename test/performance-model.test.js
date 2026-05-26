@@ -1585,6 +1585,14 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
     'planning-only-with-site-budgets',
   );
   assert.equal(
+    model.safeFastPaths.find((fastPath) => fastPath.allowedShortcut === 'compress-owner-partition-index-scans-and-reuse-cursor-to-size-bounded-plugin-update-fanout')?.visibilityBoundary,
+    'planning-only-with-site-budgets',
+  );
+  assert.ok(
+    model.safeFastPaths.find((fastPath) => fastPath.allowedShortcut === 'compress-owner-partition-index-scans-and-reuse-cursor-to-size-bounded-plugin-update-fanout')?.gateProofs.recovery.includes('later durable receipts'),
+    'compressed owner-partition scans stay advisory until later durable receipts classify the outcome',
+  );
+  assert.equal(
     model.safeFastPaths.find((fastPath) => fastPath.allowedShortcut === 'parallelize-independent-owner-index-scans-to-size-bounded-batches')?.visibilityBoundary,
     'planning-only-with-site-budgets',
   );

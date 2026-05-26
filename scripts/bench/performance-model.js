@@ -529,6 +529,26 @@ export const SAFE_FAST_PATHS = Object.freeze([
   },
   {
     area: 'remote-indexes',
+    reduces: ['wire-bytes-for-planning', 'planning-round-trips', 'idle-time'],
+    allowedShortcut: 'compress-owner-partition-index-scans-and-reuse-cursor-to-size-bounded-plugin-update-fanout',
+    guardrails: [
+      'compressed-owner-partition-index-scans-stay-planning-only',
+      'bounded-fanout-stays-within-per-site-and-per-kind-budgets',
+    ],
+    gateProofs: {
+      skip: 'compressed owner-partition index scans can reduce planning traffic while the cursor is reused only to size the next bounded plugin-update fanout',
+      live: 'each later plugin update still rechecks its own live resource precondition at the storage boundary before visibility changes',
+      group: 'the compressed scan and cursor only narrow planning work inside the same planned bundle and never widen the atomic-group barrier',
+      recovery: 'the compressed scan cursor, partitioned strong hashes, and later durable receipts still classify pause or crash without guessing which owner advanced',
+    },
+    visibilityBoundary: 'planning-only-with-site-budgets',
+    failureEvidence: 'compressed owner-partition index cursor plus partitioned strong-hash listing and later durable receipts',
+    bypassesLivePreconditions: false,
+    splitsAtomicGroup: false,
+    publishesStagedDataEarly: false,
+  },
+  {
+    area: 'remote-indexes',
     reduces: ['planning-round-trips', 'idle-time'],
     allowedShortcut: 'parallelize-independent-owner-index-scans-to-size-bounded-batches',
     guardrails: [
