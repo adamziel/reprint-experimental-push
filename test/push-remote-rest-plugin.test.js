@@ -38,6 +38,38 @@ function runMerge(dbJournal, checkedSummary) {
   });
 }
 
+function runStorageGuardMerge(storageGuard, checkedStorageGuard, preferChecked = false) {
+  return spawnSync('php', [
+    '-r',
+    [
+      'define("ABSPATH", dirname($argv[1]));',
+      'function add_filter(...$args) {}',
+      'function add_action(...$args) {}',
+      'function register_rest_route(...$args) {}',
+      'class WP_REST_Server { const CREATABLE = "POST"; const READABLE = "GET"; }',
+      'class WP_REST_Response {',
+      '  private $data;',
+      '  public function __construct($data = null, $status = null) { $this->data = $data; }',
+      '  public function get_data() { return $this->data; }',
+      '  public function set_data($data) { $this->data = $data; }',
+      '}',
+      'class WP_REST_Request {}',
+      'require $argv[1];',
+      '$storageGuard = json_decode($argv[2], true);',
+      '$checkedStorageGuard = json_decode($argv[3], true);',
+      '$preferChecked = ($argv[4] ?? "0") === "1";',
+      'echo json_encode(reprint_push_lab_rest_merge_checked_storage_guard($storageGuard, $checkedStorageGuard, $preferChecked));',
+    ].join(' '),
+    pluginFile,
+    JSON.stringify(storageGuard),
+    JSON.stringify(checkedStorageGuard),
+    preferChecked ? '1' : '0',
+  ], {
+    cwd: repoRoot,
+    encoding: 'utf8',
+  });
+}
+
 test('checked db journal merge fills nested ownership and lease fence gaps', { skip: !hasPhp }, () => {
   const result = runMerge(
     {
@@ -544,6 +576,52 @@ test('checked db journal merge upgrades partial top-level evidence arrays and ze
       restartReadable: true,
       staleClaimRejected: false,
     },
+  });
+});
+
+test('checked storage guard merge replaces stale checked-boundary values when the inline contract was not accepted yet', { skip: !hasPhp }, () => {
+  const result = runStorageGuardMerge(
+    {
+      boundary: 'local-fixture-write',
+      operation: 'option-update',
+      outcome: 'fixture-only',
+    },
+    {
+      boundary: 'wpdb-single-statement-cas',
+      operation: 'insert-or-update',
+      outcome: 'claim-fenced',
+    },
+    true,
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  assert.deepEqual(JSON.parse(result.stdout), {
+    boundary: 'wpdb-single-statement-cas',
+    operation: 'insert-or-update',
+    outcome: 'claim-fenced',
+  });
+});
+
+test('checked storage guard merge preserves more specific inline values when checked replacement is not required', { skip: !hasPhp }, () => {
+  const result = runStorageGuardMerge(
+    {
+      boundary: 'custom-inline-boundary',
+      operation: 'compare-and-swap',
+      outcome: 'custom-proof',
+    },
+    {
+      boundary: 'wpdb-single-statement-cas',
+      operation: 'insert-or-update',
+      outcome: 'claim-fenced',
+    },
+    false,
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  assert.deepEqual(JSON.parse(result.stdout), {
+    boundary: 'custom-inline-boundary',
+    operation: 'compare-and-swap',
+    outcome: 'custom-proof',
   });
 });
 

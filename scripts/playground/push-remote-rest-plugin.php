@@ -518,6 +518,13 @@ function reprint_push_lab_rest_authenticated_recovery_inspect(WP_REST_Request $r
         if (!isset($result['dbJournal']) || !is_array($result['dbJournal'])) {
             $result['dbJournal'] = $db_journal;
         } else {
+            $upgrade_checked_storage_guard = reprint_push_lab_rest_should_upgrade_checked_db_journal_scope(
+                $result['dbJournal'],
+                $db_journal
+            ) || reprint_push_lab_rest_should_upgrade_checked_boundary_acceptance(
+                $result['dbJournal'],
+                $db_journal
+            );
             $result['dbJournal'] = reprint_push_lab_rest_merge_checked_db_journal_contract(
                 $result['dbJournal'],
                 $db_journal
@@ -530,7 +537,8 @@ function reprint_push_lab_rest_authenticated_recovery_inspect(WP_REST_Request $r
             } else {
                 $result['storageGuard'] = reprint_push_lab_rest_merge_checked_storage_guard(
                     $result['storageGuard'],
-                    $storage_guard
+                    $storage_guard,
+                    isset($upgrade_checked_storage_guard) && $upgrade_checked_storage_guard
                 );
             }
         }
@@ -663,11 +671,20 @@ function reprint_push_lab_rest_merge_checked_contract_fields(array $existing, ar
     return $merged;
 }
 
-function reprint_push_lab_rest_merge_checked_storage_guard(array $storage_guard, array $checked_storage_guard): array
+function reprint_push_lab_rest_merge_checked_storage_guard(
+    array $storage_guard,
+    array $checked_storage_guard,
+    bool $prefer_checked = false
+): array
 {
     foreach (['boundary', 'operation', 'outcome'] as $key) {
         if (
-            (!array_key_exists($key, $storage_guard) || $storage_guard[$key] === null || $storage_guard[$key] === '')
+            (
+                !array_key_exists($key, $storage_guard)
+                || $storage_guard[$key] === null
+                || $storage_guard[$key] === ''
+                || ($prefer_checked && $storage_guard[$key] !== ($checked_storage_guard[$key] ?? null))
+            )
             && array_key_exists($key, $checked_storage_guard)
         ) {
             $storage_guard[$key] = $checked_storage_guard[$key];
