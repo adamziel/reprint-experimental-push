@@ -910,6 +910,35 @@ test('auth-session source command builder preserves shell-sensitive credential c
   });
 });
 
+test('auth-session source command builder fails closed when required fields contain surrounding whitespace or control characters', () => {
+  assert.throws(
+    () => buildAuthSessionSourceCommand({
+      sourceUrl: ' http://127.0.0.1:8080 ',
+      username: 'reprint_push_admin',
+      applicationPassword: 'reprint-push-admin-app-password',
+    }),
+    /Missing sourceUrl/,
+  );
+
+  assert.throws(
+    () => buildAuthSessionSourceCommand({
+      sourceUrl: 'http://127.0.0.1:8080',
+      username: 'reprint_push_admin\n',
+      applicationPassword: 'reprint-push-admin-app-password',
+    }),
+    /Missing username/,
+  );
+
+  assert.throws(
+    () => buildAuthSessionSourceCommand({
+      sourceUrl: 'http://127.0.0.1:8080',
+      username: 'reprint_push_admin',
+      applicationPassword: ' secret-value ',
+    }),
+    /Missing applicationPassword/,
+  );
+});
+
 test('auth-session source loader fails closed when the source command times out', () => {
   const source = loadAuthSessionSource(
     `${process.execPath} -e "setTimeout(() => process.stdout.write('{}'), 250)"`,

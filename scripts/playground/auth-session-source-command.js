@@ -4,26 +4,42 @@ export function buildAuthSessionSourceCommand({
   username,
   applicationPassword,
 }) {
-  if (!sourceUrl) {
+  const normalizedSourceUrl = normalizeAuthSessionSourceCommandField(sourceUrl);
+  if (!normalizedSourceUrl) {
     throw new Error('Missing sourceUrl for auth-session source command');
   }
-  if (!username) {
+  const normalizedUsername = normalizeAuthSessionSourceCommandField(username);
+  if (!normalizedUsername) {
     throw new Error('Missing username for auth-session source command');
   }
-  if (!applicationPassword) {
+  const normalizedApplicationPassword = normalizeAuthSessionSourceCommandField(applicationPassword);
+  if (!normalizedApplicationPassword) {
     throw new Error('Missing applicationPassword for auth-session source command');
   }
 
   return [
-    `REPRINT_PUSH_SOURCE_COMMAND_SOURCE_URL=${escapeShellEnvValue(sourceUrl)}`,
-    `REPRINT_PUSH_SOURCE_COMMAND_USERNAME=${escapeShellEnvValue(username)}`,
-    `REPRINT_PUSH_SOURCE_COMMAND_APPLICATION_PASSWORD=${escapeShellEnvValue(applicationPassword)}`,
+    `REPRINT_PUSH_SOURCE_COMMAND_SOURCE_URL=${escapeShellEnvValue(normalizedSourceUrl)}`,
+    `REPRINT_PUSH_SOURCE_COMMAND_USERNAME=${escapeShellEnvValue(normalizedUsername)}`,
+    `REPRINT_PUSH_SOURCE_COMMAND_APPLICATION_PASSWORD=${escapeShellEnvValue(normalizedApplicationPassword)}`,
     `${nodePath} -e ${escapeShellEnvValue('process.stdout.write(JSON.stringify({sourceUrl: process.env.REPRINT_PUSH_SOURCE_COMMAND_SOURCE_URL, username: process.env.REPRINT_PUSH_SOURCE_COMMAND_USERNAME, applicationPassword: process.env.REPRINT_PUSH_SOURCE_COMMAND_APPLICATION_PASSWORD}))')}`,
   ].join(' ');
 }
 
 function escapeShellEnvValue(value) {
   return `'${String(value).replace(/'/g, `'\\''`)}'`;
+}
+
+function normalizeAuthSessionSourceCommandField(value) {
+  if (typeof value !== 'string') {
+    return '';
+  }
+
+  const normalized = value.trim();
+  if (!normalized || normalized !== value || /[\u0000-\u001f\u007f]/.test(normalized)) {
+    return '';
+  }
+
+  return normalized;
 }
 
 export function resolveAuthSessionSourceCommand({
