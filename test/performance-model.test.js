@@ -553,6 +553,18 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
     'queue-budget matches still cannot bypass durable chunk-receipt checks after a retry',
   );
   assert.equal(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'cached-receipt-cursor-and-queue-budget-match-skips-backpressure-replay-after-retry')?.rejectedGate,
+    'recovery',
+  );
+  assert.ok(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'cached-receipt-cursor-and-queue-budget-match-skips-backpressure-replay-after-retry')?.violates.includes('backpressure'),
+    'queue-budget matches still cannot bypass the backpressure replay boundary after a retry',
+  );
+  assert.ok(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'cached-receipt-cursor-and-queue-budget-match-skips-backpressure-replay-after-retry')?.violates.includes('durable-progress'),
+    'queue-budget matches still cannot bypass the durable replay trail after a retry',
+  );
+  assert.equal(
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'cached-receipt-cursor-and-journal-lag-skips-backpressure-pause-after-retry')?.rejectedGate,
     'recovery',
   );
