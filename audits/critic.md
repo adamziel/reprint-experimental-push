@@ -1,17 +1,16 @@
 # Critic Verdict
 
-Current reliable head: `a04bf58e22c259ffd5fe652dd988f4f69ca4d586`
-(`Tighten checked auth and journal boundaries`).
+Current reliable head: `2928549f37a38f4e39b913b75e5ec04021c120e0`
+(`Finish checked auth summary merge`).
 
 Verdict: `0/4`
 
 Reason:
 
-- This head tightens checked auth/session and durable-journal boundaries by
-  adding stricter packaged-source handling, a production recovery journal
-  boundary check, and focused stale-preserved-summary coverage, but it is
-  still support-side release evidence rather than a production-backed gate
-  crossing.
+- This head merges checked auth-session summary handling into the lifecycle
+  helper and expands the auth-session test surface, but it still reads as
+  support-side lifecycle/summarization hardening rather than a production
+  gate crossing.
 - The checked release path still lacks live production auth/session
   issuance/read/expiry/rotation/revocation/cleanup evidence, and it still does
   not prove production durable-journal ownership with restart-readable replay
@@ -22,7 +21,7 @@ Next owner / command:
 
 - `main:reliable-exec` should keep working in
   `scripts/playground/production-shaped-release-verify.mjs`,
-  `src/authenticated-http-push-client.js`, and
+  `scripts/playground/production-auth-session-lifecycle.js`, and
   `src/recovery-journal.js` with the checked command
   `timeout 180s npm run verify:release`, or hand off the exact missing
   production auth/session lifecycle primitive or durable-journal ownership
