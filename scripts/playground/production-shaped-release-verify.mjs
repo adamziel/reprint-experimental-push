@@ -1153,7 +1153,7 @@ async function waitForServer(child, baseUrl, getLogs) {
           notReadyProbeCount += 1;
           throwPlaygroundReadinessFailure(
             child,
-            `Playground server stayed in readiness response ${response.status} after ${readinessProbeCount} /wp-json/ probes (${notReadyProbeCount} consecutive not-ready response${notReadyProbeCount === 1 ? '' : 's'})`,
+            `Playground server reported the bounded readiness failure ${response.status} after ${readinessProbeCount} /wp-json/ probes (${notReadyProbeCount} consecutive not-ready response${notReadyProbeCount === 1 ? '' : 's'}; limit ${maxNotReadyReadinessProbes})`,
             lastError,
             lastProbes,
             getLogs(),
