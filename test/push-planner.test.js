@@ -26649,6 +26649,122 @@ test('production durable journal claims fail closed when claimHash is inherited 
   assert.ok(error.details.missingDependency.includes('fencing or lease ownership for the journal writer'));
 });
 
+test('production durable journal claims fail closed when writerLease hides identity fields behind non-enumerable keys', () => {
+  const filePath = tempRecoveryJournalPath();
+  const remoteArtifactPath = `${path.dirname(filePath)}/remote.jsonl`;
+  const remote = {
+    ...baseSite(),
+    db: {
+      ...baseSite().db,
+      wp_options: {
+        ...baseSite().db.wp_options,
+        'option_name:blogname': { option_name: 'blogname', option_value: 'New Site' },
+      },
+    },
+  };
+  const plan = planFor(baseSite(), baseSite(), remote);
+  const journal = openProductionRecoveryJournal(filePath, {
+    truncate: true,
+    now: fixedNow,
+    claimId: 'hidden-writer-lease',
+    writerLease: { id: 'hidden-writer-lease', epoch: 3 },
+    ownsRemoteArtifact: true,
+    remoteArtifactPath,
+  });
+  appendRecoveryClaimOpened(journal, {
+    plan: { id: plan.id },
+    current: baseSite(),
+    claimId: 'hidden-writer-lease',
+    artifactRefs: {
+      journal: filePath,
+      remote: remoteArtifactPath,
+    },
+  });
+
+  const hiddenWriterLease = {};
+  Object.defineProperty(hiddenWriterLease, 'id', {
+    value: 'hidden-writer-lease',
+    enumerable: false,
+    configurable: true,
+    writable: true,
+  });
+  Object.defineProperty(hiddenWriterLease, 'epoch', {
+    value: 3,
+    enumerable: false,
+    configurable: true,
+    writable: true,
+  });
+
+  const error = captureError(() => applyPlan(baseSite(), plan, {
+    requireProductionDurableJournal: true,
+    durableJournal: {
+      ...journal,
+      writerLease: hiddenWriterLease,
+    },
+  }));
+
+  assert.equal(error.code, 'PRODUCTION_DURABLE_JOURNAL_UNSUPPORTED');
+  assert.ok(error.details.missingDependency.includes('fencing or lease ownership for the journal writer'));
+});
+
+test('production durable journal claims fail closed when leaseFence hides identity fields behind non-enumerable keys', () => {
+  const filePath = tempRecoveryJournalPath();
+  const remoteArtifactPath = `${path.dirname(filePath)}/remote.jsonl`;
+  const remote = {
+    ...baseSite(),
+    db: {
+      ...baseSite().db,
+      wp_options: {
+        ...baseSite().db.wp_options,
+        'option_name:blogname': { option_name: 'blogname', option_value: 'New Site' },
+      },
+    },
+  };
+  const plan = planFor(baseSite(), baseSite(), remote);
+  const journal = openProductionRecoveryJournal(filePath, {
+    truncate: true,
+    now: fixedNow,
+    claimId: 'hidden-lease-fence',
+    writerLease: { id: 'hidden-lease-fence', epoch: 5 },
+    ownsRemoteArtifact: true,
+    remoteArtifactPath,
+  });
+  appendRecoveryClaimOpened(journal, {
+    plan: { id: plan.id },
+    current: baseSite(),
+    claimId: 'hidden-lease-fence',
+    artifactRefs: {
+      journal: filePath,
+      remote: remoteArtifactPath,
+    },
+  });
+
+  const hiddenLeaseFence = {};
+  Object.defineProperty(hiddenLeaseFence, 'id', {
+    value: 'hidden-lease-fence',
+    enumerable: false,
+    configurable: true,
+    writable: true,
+  });
+  Object.defineProperty(hiddenLeaseFence, 'epoch', {
+    value: 5,
+    enumerable: false,
+    configurable: true,
+    writable: true,
+  });
+
+  const error = captureError(() => applyPlan(baseSite(), plan, {
+    requireProductionDurableJournal: true,
+    durableJournal: {
+      ...journal,
+      leaseFence: hiddenLeaseFence,
+    },
+  }));
+
+  assert.equal(error.code, 'PRODUCTION_DURABLE_JOURNAL_UNSUPPORTED');
+  assert.ok(error.details.missingDependency.includes('fencing or lease ownership for the journal writer'));
+});
+
 test('openProductionRecoveryJournal fails closed when writerLease epoch is negative', () => {
   const filePath = tempRecoveryJournalPath();
   const error = captureError(() => openProductionRecoveryJournal(filePath, {

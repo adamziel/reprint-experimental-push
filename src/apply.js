@@ -1544,6 +1544,7 @@ function isCanonicalAbsolutePath(filePath) {
 function hasValidProductionLeaseIdentity(value) {
   const ownKeys = Reflect.ownKeys(value ?? {});
   return isStrictPlainObject(value)
+    && !hasHiddenOwnStringKeys(value)
     && ownKeys.every((key) => key === 'id' || key === 'epoch')
     && Object.hasOwn(value, 'id')
     && typeof value.id === 'string'
