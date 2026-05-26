@@ -1,5 +1,28 @@
 # Critic Audit
 
+## 2026-05-26 13:51:36 CEST (+0200)
+
+No gate movement. `ce3a12fe08af607109172986b634446d6b015d78` is the current reliable head from `git ls-remote`; it wires `REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND` into the checked release verifier and adds a focused test for consuming the auth/session source command, but it still proves command ingestion rather than a production-backed auth/session lifecycle or closed durable-journal ownership on the release path. The verdict remains `0/4`.
+
+Changed files:
+- [`audits/critic.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/critic/audits/critic.md)
+
+Commands run:
+- `date '+%Y-%m-%d %H:%M:%S %Z (%z)'`
+- `git ls-remote origin refs/heads/lane/reliable-executor`
+- `git show --stat --oneline --no-renames ce3a12fe08af607109172986b634446d6b015d78 --`
+- `git show --no-renames --format=medium ce3a12fe08af607109172986b634446d6b015d78 -- scripts/playground/production-shaped-release-verify.mjs test/production-shaped-proof.test.js src/authenticated-http-push-client.js src/recovery-journal.js scripts/playground/push-remote-rest-plugin.php scripts/playground/push-db-journal-lib.php`
+
+Push result:
+- Not attempted
+
+Worktree status:
+- Modified tracked files: `audits/critic.md`, `.lane-output/final.md`
+- Branch: `lane/cycle-20260525-mainwindows-2349/critic...origin/main [ahead 1647, behind 699]`
+
+Next supervisor nudge:
+- Keep critic narrow and only reclassify again when `reliable-executor` lands checked-path production-backed auth/session lifecycle, durable-journal ownership, or preserved-remote retry proof that reaches the release boundary.
+
 ## 2026-05-26 13:50:41 CEST (+0200)
 
 No gate movement. `35688fadd26c540d93d066fdfca2fb4cfdf58442` is the current reliable head from `git ls-remote`; it only clarifies the auth-session source blocker in the release verifier by surfacing `liveAuthSessionSource` when production credentials are missing, so it still stays on checked-path harness diagnostics rather than production-backed auth/session lifecycle or durable-journal ownership. The verdict remains `0/4`.
