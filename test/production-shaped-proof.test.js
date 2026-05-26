@@ -870,7 +870,7 @@ test('packaged production plugin auth/session source helper resolves and loads t
   });
 });
 
-test('packaged production plugin readiness helper accepts a stable snapshot before signed preflight is ready', () => {
+test('packaged production plugin readiness helper waits for signed preflight readiness after the snapshot is stable', () => {
   const readySnapshot = {
     status: 200,
     body: {
@@ -907,7 +907,7 @@ test('packaged production plugin readiness helper accepts a stable snapshot befo
       snapshot: readySnapshot,
       preflight: notReadyPreflight,
     }),
-    true,
+    false,
   );
   assert.equal(
     packagedProductionPluginServerReady({

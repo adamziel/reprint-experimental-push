@@ -1335,9 +1335,13 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
         preflightBody = JSON.parse(preflightText);
       } catch (error) {
         if (isWordPressNotReadyResponse(preflight.status, preflightText)) {
-          return;
+          lastError = new Error(`Production plugin package preflight readiness HTTP ${preflight.status}`);
+          await sleep(readinessProbeIntervalMs);
+          continue;
         }
-        return;
+        lastError = error;
+        await sleep(readinessProbeIntervalMs);
+        continue;
       }
       if (packagedProductionPluginPreflightReady({
         status: preflight.status,
@@ -1345,7 +1349,9 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
       })) {
         return;
       }
-      return;
+      lastError = new Error(`Production plugin package preflight readiness HTTP ${preflight.status}`);
+      await sleep(readinessProbeIntervalMs);
+      continue;
     } catch (error) {
       lastError = error;
     }

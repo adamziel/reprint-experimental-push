@@ -22,6 +22,5 @@ export function packagedProductionPluginServerReady({ snapshot, preflight = null
     return true;
   }
 
-  return packagedProductionPluginPreflightReady(preflight)
-    || preflight.status !== 200;
+  return packagedProductionPluginPreflightReady(preflight);
 }
