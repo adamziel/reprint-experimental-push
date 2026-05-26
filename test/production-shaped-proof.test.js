@@ -708,31 +708,36 @@ function stopParentProcesses(child, signal) {
   if (typeof child.pid !== 'number') {
     return;
   }
-  try {
-    const signalFlag = signal === 'SIGKILL' ? '-KILL' : '-TERM';
-    spawnSync('pkill', [signalFlag, '-g', String(child.pid)], {
+  const signalFlag = signal === 'SIGKILL' ? '-KILL' : '-TERM';
+  for (const [command, args] of [
+    ['pkill', [signalFlag, '-g', String(child.pid)]],
+    ['pkill', [signalFlag, '-P', String(child.pid)]],
+    ['kill', [signalFlag, String(child.pid)]],
+  ]) {
+    const proof = spawnSync(command, args, {
       cwd: repoRoot,
       env: process.env,
       encoding: 'utf8',
       timeout: 2_000,
       killSignal: 'SIGKILL',
     });
-    spawnSync('pkill', [signalFlag, '-P', String(child.pid)], {
-      cwd: repoRoot,
-      env: process.env,
-      encoding: 'utf8',
-      timeout: 2_000,
-      killSignal: 'SIGKILL',
-    });
-    spawnSync('kill', [signalFlag, String(child.pid)], {
-      cwd: repoRoot,
-      env: process.env,
-      encoding: 'utf8',
-      timeout: 2_000,
-      killSignal: 'SIGKILL',
-    });
-  } catch {
-    // Best effort only.
+    if (proof.error) {
+      process.stderr.write(
+        `${command} ${args.join(' ')} failed with ${proof.error.code || proof.error.name}: ${proof.error.message}\n`,
+      );
+      continue;
+    }
+    if (proof.signal) {
+      process.stderr.write(
+        `${command} ${args.join(' ')} terminated by ${proof.signal}\nstdout:\n${proof.stdout ?? ''}\nstderr:\n${proof.stderr ?? ''}\n`,
+      );
+      continue;
+    }
+    if (proof.status !== 0) {
+      process.stderr.write(
+        `${command} ${args.join(' ')} exited with ${proof.status}\nstdout:\n${proof.stdout ?? ''}\nstderr:\n${proof.stderr ?? ''}\n`,
+      );
+    }
   }
 }
 
