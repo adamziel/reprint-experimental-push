@@ -188,7 +188,7 @@ export function evaluateProductionAuthSessionLifecycleSummary(summary, now = Dat
     };
   }
 
-  if (summary.revoked || summary.cleanedUp) {
+  if (summary.revoked || summary.cleanedUp || summary.cleanup) {
     return {
       ok: false,
       required: 'unrevoked',
@@ -314,7 +314,7 @@ export function summarizeProductionAuthSessionLifecycleTrace(trace) {
       invalidLifecycleFlag: resolveInvalidAuthSessionLifecycleFlag(entry),
       expired: entry.expired === true,
       revoked: entry.revoked === true,
-      cleanedUp: entry.cleanedUp === true,
+      cleanedUp: entry.cleanedUp === true || entry.cleanup === true,
       rotated: entry.rotated === true,
       preserved: entry.preserved === true,
     };
