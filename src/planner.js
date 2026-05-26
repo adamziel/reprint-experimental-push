@@ -102,6 +102,78 @@ export function createPushPlan({ base, local, remote, now = new Date() }) {
     }
 
     if (localHash === baseHash && remoteHash === baseHash) {
+      const steadyCommentsUsersSupport = unsupportedCommentsUsersResourceSupport({
+        resource,
+        baseValue,
+        localValue,
+        remoteValue,
+        resources,
+        base,
+        local,
+        remote,
+      });
+      if (!steadyCommentsUsersSupport.supported) {
+        addUnsupportedCommentsUsersResourceBlocker(plan, {
+          resource,
+          support: steadyCommentsUsersSupport,
+          baseValue,
+          localValue,
+          remoteValue,
+          baseHash,
+          localHash,
+          remoteHash,
+        });
+        continue;
+      }
+
+      const steadyCommentmetaSupport = unsupportedCommentmetaResourceSupport({
+        resource,
+        baseValue,
+        localValue,
+        remoteValue,
+        resources,
+        base,
+        local,
+        remote,
+      });
+      if (!steadyCommentmetaSupport.supported) {
+        addUnsupportedCommentmetaResourceBlocker(plan, {
+          resource,
+          support: steadyCommentmetaSupport,
+          baseValue,
+          localValue,
+          remoteValue,
+          baseHash,
+          localHash,
+          remoteHash,
+        });
+        continue;
+      }
+
+      const steadyUsermetaSupport = unsupportedUsermetaResourceSupport({
+        resource,
+        baseValue,
+        localValue,
+        remoteValue,
+        resources,
+        base,
+        local,
+        remote,
+      });
+      if (!steadyUsermetaSupport.supported) {
+        addUnsupportedUsermetaResourceBlocker(plan, {
+          resource,
+          support: steadyUsermetaSupport,
+          baseValue,
+          localValue,
+          remoteValue,
+          baseHash,
+          localHash,
+          remoteHash,
+        });
+        continue;
+      }
+
       continue;
     }
 
@@ -3331,17 +3403,6 @@ function unsupportedTermmetaResourceSupport({ resource, baseValue, localValue, r
   if (!candidate || candidate === ABSENT) {
     return { supported: true };
   }
-  const remoteOnlyDrift = (
-    stableStringify(localValue) === stableStringify(baseValue)
-    && stableStringify(remoteValue) !== stableStringify(baseValue)
-  );
-  const convergedDrift = (
-    localValue !== ABSENT
-    && remoteValue !== ABSENT
-    && stableStringify(localValue) === stableStringify(remoteValue)
-    && stableStringify(localValue) !== stableStringify(baseValue)
-  );
-
   if (localValue === ABSENT) {
     return {
       supported: false,
@@ -3585,11 +3646,12 @@ function unsupportedCommentsUsersResourceSupport({ resource, baseValue, localVal
   return {
     supported: false,
     className: 'unsupported-comments-users-resource',
-    unsupportedState: convergedDrift
-      ? 'converged-drift'
-      : remoteOnlyDrift
-        ? 'remote-only-drift'
-        : 'local-or-divergent-drift',
+    unsupportedState: classifyUnsupportedDriftState({
+      baseValue,
+      localValue,
+      remoteValue,
+      allowSteadyUnsupported: true,
+    }),
     reason: resource.table === 'wp_users'
       ? 'User graph resources are not yet supported by the planner.'
       : 'Comments graph resources are not yet supported by the planner.',
@@ -3605,17 +3667,6 @@ function unsupportedCommentmetaResourceSupport({ resource, baseValue, localValue
   if (!candidate || candidate === ABSENT) {
     return { supported: true };
   }
-  const remoteOnlyDrift = (
-    stableStringify(localValue) === stableStringify(baseValue)
-    && stableStringify(remoteValue) !== stableStringify(baseValue)
-  );
-  const convergedDrift = (
-    localValue !== ABSENT
-    && remoteValue !== ABSENT
-    && stableStringify(localValue) === stableStringify(remoteValue)
-    && stableStringify(localValue) !== stableStringify(baseValue)
-  );
-
   if (localValue === ABSENT) {
     return {
       supported: false,
@@ -3644,11 +3695,12 @@ function unsupportedCommentmetaResourceSupport({ resource, baseValue, localValue
   return {
     supported: false,
     className: 'unsupported-commentmeta-resource',
-    unsupportedState: convergedDrift
-      ? 'converged-drift'
-      : remoteOnlyDrift
-        ? 'remote-only-drift'
-        : 'local-or-divergent-drift',
+    unsupportedState: classifyUnsupportedDriftState({
+      baseValue,
+      localValue,
+      remoteValue,
+      allowSteadyUnsupported: true,
+    }),
     reason: 'Comment meta graph resources are not yet supported by the planner.',
   };
 }
@@ -3662,17 +3714,6 @@ function unsupportedUsermetaResourceSupport({ resource, baseValue, localValue, r
   if (!candidate || candidate === ABSENT) {
     return { supported: true };
   }
-  const remoteOnlyDrift = (
-    stableStringify(localValue) === stableStringify(baseValue)
-    && stableStringify(remoteValue) !== stableStringify(baseValue)
-  );
-  const convergedDrift = (
-    localValue !== ABSENT
-    && remoteValue !== ABSENT
-    && stableStringify(localValue) === stableStringify(remoteValue)
-    && stableStringify(localValue) !== stableStringify(baseValue)
-  );
-
   if (localValue === ABSENT) {
     return {
       supported: false,
@@ -3701,11 +3742,12 @@ function unsupportedUsermetaResourceSupport({ resource, baseValue, localValue, r
   return {
     supported: false,
     className: 'unsupported-usermeta-resource',
-    unsupportedState: convergedDrift
-      ? 'converged-drift'
-      : remoteOnlyDrift
-        ? 'remote-only-drift'
-        : 'local-or-divergent-drift',
+    unsupportedState: classifyUnsupportedDriftState({
+      baseValue,
+      localValue,
+      remoteValue,
+      allowSteadyUnsupported: true,
+    }),
     reason: 'User meta graph resources are not yet supported by the planner.',
   };
 }
