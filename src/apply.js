@@ -1442,6 +1442,67 @@ function durableJournalPersistedArtifactRefs(inspected) {
   };
 }
 
+function blockedRecoveryRemoteArtifactHistoryReason(
+  inspected,
+  writerJournalPath,
+  writerRemoteArtifactRef,
+  expectsOwnedRemoteArtifact,
+) {
+  const records = Array.isArray(inspected?.records) ? inspected.records : [];
+  let sawRemoteArtifactRef = false;
+  let sawArtifactEnvelopeWithoutRemote = false;
+
+  for (const record of records) {
+    if (!Object.hasOwn(record ?? {}, 'artifactRefs')) {
+      continue;
+    }
+    const artifactRefs = record.artifactRefs;
+    if (!isStrictPlainObject(artifactRefs)) {
+      continue;
+    }
+    const hasArtifactKeys = Reflect.ownKeys(artifactRefs).length > 0;
+    if (!hasArtifactKeys) {
+      continue;
+    }
+    if (!Object.hasOwn(artifactRefs, 'remote')) {
+      if (sawRemoteArtifactRef) {
+        return 'missing remote artifact ref';
+      }
+      sawArtifactEnvelopeWithoutRemote = true;
+      continue;
+    }
+    if (
+      artifactRefs.remote === null
+      || typeof artifactRefs.remote !== 'string'
+      || !isCanonicalAbsolutePath(artifactRefs.remote)
+    ) {
+      return 'invalid remote artifact ref';
+    }
+    if (
+      artifactRefs.remote === writerJournalPath
+      || (
+        Object.hasOwn(artifactRefs, 'journal')
+        && artifactRefs.remote === artifactRefs.journal
+      )
+    ) {
+      return 'invalid remote artifact ref';
+    }
+    if (sawArtifactEnvelopeWithoutRemote) {
+      return 'missing remote artifact ref';
+    }
+    if (writerRemoteArtifactRef && artifactRefs.remote !== writerRemoteArtifactRef) {
+      return 'rewritten remote artifact ref';
+    }
+    sawRemoteArtifactRef = true;
+  }
+
+  if (expectsOwnedRemoteArtifact && !sawRemoteArtifactRef) {
+    return 'missing remote artifact ref';
+  }
+
+  return null;
+}
+
 function isCanonicalAbsolutePath(filePath) {
   return typeof filePath === 'string'
     && path.isAbsolute(filePath)
@@ -1717,40 +1778,55 @@ function recordDurableRecoveryState(writer, current, plan, recoveryState, suppor
   };
   const writerRemoteArtifactRef = durableJournalArtifactRemoteRef(writer);
   const resolvedSupportReport = writer?.kind === 'production-recovery-journal'
-    ? (supportReport || productionRecoverySupportReport(writer))
-    : null;
-
-  if (
-    writer?.kind === 'production-recovery-journal'
-    && (
-      resolvedSupportReport?.missingDependency.includes('restart-readable recovery artifact references')
-      || resolvedSupportReport?.missingDependency.includes('restart-readable recovery artifact location')
+    ? (
+      recoveryState.status === 'blocked-recovery'
+        ? productionRecoverySupportReport(writer)
+        : (supportReport || productionRecoverySupportReport(writer))
     )
-  ) {
-    throw new PushPlanError(
-      'JOURNAL_WRITER_INVALID',
-      'Production durable journal lost its owned restart-readable journal artifact reference before recording recovery state.',
-      {
-        eventType: 'recovery-state',
-        causeMessage: 'Production durable journal lost its owned restart-readable journal artifact reference before recording recovery state.',
-        missingDependency: ['restart-readable recovery artifact references'],
-      },
-    );
-  }
+    : null;
+  const blockedInspection = writer?.kind === 'production-recovery-journal'
+    && recoveryState.status === 'blocked-recovery'
+    ? inspectProductionRecoveryJournal(writer)
+    : null;
+  const blockedPersistedArtifactRefs = blockedInspection
+    ? durableJournalPersistedArtifactRefs(blockedInspection)
+    : null;
+  const missingDependency = resolvedSupportReport?.missingDependency || [];
+  const missingJournalArtifactSurface = missingDependency.includes('restart-readable recovery artifact references')
+    || missingDependency.includes('restart-readable recovery artifact location')
+    || missingDependency.includes('journal-readable inspection records with sequence and type');
+  const missingRemoteArtifactOwnership = missingDependency.includes('restart-readable remote recovery artifact ownership');
+  const missingRemoteArtifactRefs = missingDependency.includes('restart-readable recovery remote artifact references');
+  const blockedRemoteArtifactHistoryInvalid = [
+    'invalid remote artifact ref',
+    'rewritten remote artifact ref',
+    'missing remote artifact ref',
+  ].includes(blockedPersistedArtifactRefs?.invalidReason);
+  const blockedRemoteArtifactHistoryReason = writer?.kind === 'production-recovery-journal'
+    && recoveryState.status === 'blocked-recovery'
+    ? blockedRecoveryRemoteArtifactHistoryReason(
+      blockedInspection,
+      typeof writer?.journalPath === 'string' ? writer.journalPath : null,
+      writerRemoteArtifactRef,
+      writer?.ownsRemoteArtifact === true,
+    )
+    : null;
 
   if (
     writer?.kind === 'production-recovery-journal'
     && recoveryState.status === 'blocked-recovery'
     && (
       !writerRemoteArtifactRef
-      || resolvedSupportReport?.missingDependency.includes('restart-readable remote recovery artifact ownership')
-      || resolvedSupportReport?.missingDependency.includes('restart-readable recovery remote artifact references')
+      || missingRemoteArtifactOwnership
+      || missingRemoteArtifactRefs
+      || blockedRemoteArtifactHistoryInvalid
+      || blockedRemoteArtifactHistoryReason
     )
   ) {
-    const missingDependency = resolvedSupportReport?.missingDependency.includes('restart-readable remote recovery artifact ownership')
+    const remoteMissingDependency = missingRemoteArtifactOwnership
       ? ['restart-readable remote recovery artifact ownership']
       : ['restart-readable recovery remote artifact references'];
-    const causeMessage = missingDependency[0] === 'restart-readable remote recovery artifact ownership'
+    const causeMessage = remoteMissingDependency[0] === 'restart-readable remote recovery artifact ownership'
       ? 'Production durable journal lost its distinct restart-readable remote artifact reference ownership before recording blocked recovery state.'
       : 'Production durable journal lost its distinct restart-readable remote artifact reference before recording blocked recovery state.';
     throw new PushPlanError(
@@ -1759,7 +1835,24 @@ function recordDurableRecoveryState(writer, current, plan, recoveryState, suppor
       {
         eventType: 'recovery-state',
         causeMessage,
-        missingDependency,
+        missingDependency: remoteMissingDependency,
+      },
+    );
+  }
+
+  if (
+    writer?.kind === 'production-recovery-journal'
+    && missingJournalArtifactSurface
+  ) {
+    throw new PushPlanError(
+      'JOURNAL_WRITER_INVALID',
+      'Production durable journal lost its owned restart-readable journal artifact reference before recording recovery state.',
+      {
+        eventType: 'recovery-state',
+        causeMessage: 'Production durable journal lost its owned restart-readable journal artifact reference before recording recovery state.',
+        missingDependency: missingDependency.includes('restart-readable recovery artifact location')
+          ? ['restart-readable recovery artifact references', 'restart-readable recovery artifact location']
+          : ['restart-readable recovery artifact references'],
       },
     );
   }
