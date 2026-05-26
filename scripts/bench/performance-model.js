@@ -1959,6 +1959,26 @@ export const SAFE_FAST_PATHS = Object.freeze([
     publishesStagedDataEarly: false,
   },
   {
+    area: 'remote-indexes',
+    reduces: ['wire-bytes', 'planning-round-trips', 'duplicate-retry-window-sizing'],
+    allowedShortcut: 'compress-remote-index-listings-and-reuse-cursor-to-size-bounded-plugin-install-retry-windows',
+    guardrails: [
+      'compressed-index-remains-planning-evidence-only',
+      'plugin-install-retry-window-revalidates-before-write',
+    ],
+    gateProofs: {
+      skip: 'a compressed remote-index listing can shorten plugin-install retry window sizing while the planning cursor is reused to avoid rescanning the same remote index',
+      live: 'the later plugin-install write still rechecks the live resource precondition before visibility changes',
+      group: 'the retry window only narrows planning inside the same plugin-install bundle and never widens the atomic-group barrier',
+      recovery: 'compressed planning evidence stays advisory while durable row receipts, metadata staging records, and the guarded finalize record still classify pause, retry, or crash',
+    },
+    visibilityBoundary: 'planning-only-for-plugin-install-retry-windows',
+    failureEvidence: 'compressed remote-index listing plus plugin-install retry window and guarded finalize record',
+    bypassesLivePreconditions: false,
+    splitsAtomicGroup: false,
+    publishesStagedDataEarly: false,
+  },
+  {
     area: 'compression',
     reduces: ['wire-bytes', 'planning-round-trips', 'duplicate-budget-recomputation'],
     allowedShortcut: 'compress-canonical-per-kind-budget-summaries-for-bounded-resume-planning',

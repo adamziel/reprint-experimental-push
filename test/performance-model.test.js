@@ -826,6 +826,17 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
   assert.ok(
     model.safeFastPaths.some(
       (fastPath) =>
+        fastPath.area === 'remote-indexes' &&
+        fastPath.allowedShortcut === 'compress-remote-index-listings-and-reuse-cursor-to-size-bounded-plugin-install-retry-windows' &&
+        fastPath.guardrails.includes('compressed-index-remains-planning-evidence-only') &&
+        fastPath.gateProofs.skip.includes('compressed remote-index listing can shorten plugin-install retry window sizing') &&
+        fastPath.gateProofs.recovery.includes('durable row receipts, metadata staging records, and the guarded finalize record still classify pause, retry, or crash'),
+    ),
+    'compressed remote-index listings can size plugin-install retry windows without weakening recovery evidence',
+  );
+  assert.ok(
+    model.safeFastPaths.some(
+      (fastPath) =>
         fastPath.area === 'compression' &&
         fastPath.allowedShortcut === 'compress-canonical-per-kind-budget-summaries-to-size-bounded-plugin-install-retry-windows' &&
         fastPath.guardrails.includes('plugin-install-retry-window-revalidates-before-write') &&
