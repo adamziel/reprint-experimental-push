@@ -4,7 +4,7 @@
 
 The project is **not releasable as a production WordPress push path**.
 
-- Fresh remote heads at audit time, checked on 2026-05-26 08:03:06 CEST (+0200):
+- Fresh remote heads at audit time, checked on 2026-05-26 08:06:02 CEST (+0200):
 
 - `origin/lane/cycle-20260524-auth-graph-hardening/critic` -> `e413f7a8`
 - `origin/lane/cycle-20260524-auth-graph-hardening/fast-paths` -> `ad7d82a4`
@@ -107,6 +107,9 @@ The newest visible heads continue that same pattern:
 
 - `origin/lane/reliable-executor` now records `1a169e1f`, failing closed on
   replay mutation work. It still does not prove production auth/session
+  lifecycle or a live-source mutation boundary.
+- `origin/lane/reliable-executor` now records `221d8876`, tightening replay
+  equivalence checks. It still does not prove production auth/session
   lifecycle or a live-source mutation boundary.
 - `origin/lane/no-data-loss-invariants` now records `eff8b208`, blocking user
   meta graph identity drift. It still does not prove the live release
