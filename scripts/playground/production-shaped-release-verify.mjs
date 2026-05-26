@@ -984,8 +984,12 @@ async function waitForServer(child, baseUrl, getLogs) {
   let consecutiveIndex502s = 0;
   while (Date.now() < deadline) {
     if (child.exitCode !== null) {
-      const logs = getLogs();
-      const message = `Playground server exited early with ${child.exitCode}\n${logs}`;
+      const message = formatPlaygroundStartupFailure(
+        `Playground server exited early with ${child.exitCode}`,
+        lastError,
+        lastProbes,
+        getLogs(),
+      );
       process.stderr.write(`${message}\n`);
       throw new Error(message);
     }
@@ -1040,13 +1044,24 @@ async function waitForServer(child, baseUrl, getLogs) {
     }
     await new Promise((resolve) => setTimeout(resolve, 250));
   }
+  const diagnostic = formatPlaygroundStartupFailure(
+    `Timed out waiting for Playground server at ${baseUrl}`,
+    lastError,
+    lastProbes,
+    getLogs(),
+  );
+  process.stderr.write(`${diagnostic}\n`);
+  await stopSpawnedServer(child);
+  await waitForExit(child, 2_000).catch(() => {});
+  throw new Error(diagnostic);
+}
+
+function formatPlaygroundStartupFailure(prefix, lastError, lastProbes, logs) {
   const probeText = lastProbes.length
     ? `\nProbe trail: ${JSON.stringify(lastProbes.slice(-4), null, 2)}`
     : '';
-  const diagnostic = `Timed out waiting for Playground server at ${baseUrl}: ${lastError?.message || 'unknown'}${probeText}\n${getLogs()}`;
-  process.stderr.write(`${diagnostic}\n`);
-  await stopSpawnedServer(child);
-  throw new Error(diagnostic);
+  const errorText = lastError?.message || 'unknown';
+  return `${prefix}: ${errorText}${probeText}\n${logs}`;
 }
 
 async function fetchWithTimeout(url, init = {}) {

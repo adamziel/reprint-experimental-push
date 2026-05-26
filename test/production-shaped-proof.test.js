@@ -36,6 +36,7 @@ function spawnReleaseVerify(env = {}, timeout = proofSubprocessTimeoutMs) {
     killSignal: proofSubprocessKillSignal,
     encoding: 'utf8',
     maxBuffer: 1024 * 1024 * 20,
+    shell: false,
     env: {
       ...process.env,
       ...env,
@@ -294,13 +295,16 @@ maybeTest('production-shaped release proof runs the live preflight branch agains
 
 maybeTest('production-shaped release verify command runs the live protocol branch with local Playground source and local edited site', () => {
   return withPlaygroundServer('remote-base', path.join(repoRoot, 'fixtures/playground/remote-base.blueprint.json'), async (remoteServer) => {
-    const proof = spawnReleaseVerify({
-      REPRINT_PUSH_SOURCE_URL: remoteServer.baseUrl,
-      REPRINT_PUSH_REMOTE_URL: remoteServer.baseUrl,
-      REPRINT_PUSH_LAB_AUTH_ADMIN_USER: liveCredentials.username,
-      REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD: liveCredentials.password,
-      NODE_NO_WARNINGS: '1',
-    }, liveProofSubprocessTimeoutMs);
+    const proof = spawnReleaseVerify(
+      {
+        REPRINT_PUSH_SOURCE_URL: remoteServer.baseUrl,
+        REPRINT_PUSH_REMOTE_URL: remoteServer.baseUrl,
+        REPRINT_PUSH_LAB_AUTH_ADMIN_USER: liveCredentials.username,
+        REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD: liveCredentials.password,
+        NODE_NO_WARNINGS: '1',
+      },
+      liveProofSubprocessTimeoutMs,
+    );
     assertLiveReleaseVerifyProof(proof, 'live release verify', liveReleaseVerifyTimeoutMs);
     assert.equal(proof.status, 0, proof.stderr);
     assert.match(proof.stdout, /"ok": true/);
