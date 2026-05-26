@@ -372,9 +372,32 @@ export function productionThroughputBlockers(report) {
   }
   if (
     report.evidence.backpressure?.queuePausedBeforeOverflow === true
+    && report.evidence.backpressure?.queuePauseHasMeasuredAndAlignedReceiptCursorBackpressure === true
+    && (
+      report.evidence.backpressure?.queuePauseHasMeasuredReceiptCursorBackpressure !== true
+      || report.evidence.backpressure?.queuePauseHasMeasuredReceiptCursorQueueSlack !== true
+      || report.evidence.backpressure?.queuePauseHasMeasuredAndAlignedReceiptCursorBackpressure !== true
+    )
+  ) {
+    blockers.push('queue-pause-without-consistent-measured-and-aligned-receipt-cursor-backpressure');
+  }
+  if (
+    report.evidence.backpressure?.queuePausedBeforeOverflow === true
     && report.evidence.backpressure?.queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack !== true
   ) {
     blockers.push('queue-pause-without-measured-and-aligned-receipt-cursor-queue-slack-proof');
+  }
+  if (
+    report.evidence.backpressure?.queuePausedBeforeOverflow === true
+    && report.evidence.backpressure?.queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack === true
+    && (
+      report.evidence.backpressure?.queueHeadroomMeasured !== true
+      || report.evidence.backpressure?.receiptCursorQueueSlackMeasured !== true
+      || report.evidence.backpressure?.queuePauseHasMeasuredReceiptCursorQueueSlack !== true
+      || report.evidence.backpressure?.queuePauseHasBackpressureAlignedReceiptCursorQueueSlack !== true
+    )
+  ) {
+    blockers.push('queue-pause-without-consistent-measured-and-aligned-receipt-cursor-queue-slack');
   }
   if (
     report.evidence.backpressure?.queuePausedBeforeOverflow === true
