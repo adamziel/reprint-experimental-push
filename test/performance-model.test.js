@@ -67,6 +67,16 @@ test('benchmark model covers large uploads and plugin installs', () => {
   assert.ok(
     model.safeFastPaths.some(
       (fastPath) =>
+        fastPath.area === 'database-row-batching' &&
+        fastPath.allowedShortcut === 'compress-planning-row-batch-manifests-and-reuse-dependency-graph-to-size-bounded-plugin-install-batches' &&
+        fastPath.guardrails.includes('compressed-manifest-remains-planning-evidence-only') &&
+        fastPath.gateProofs.skip.includes('each row still keeps its own precondition'),
+    ),
+    'compressed row-batch manifests can size plugin-install batches without weakening row preconditions',
+  );
+  assert.ok(
+    model.safeFastPaths.some(
+      (fastPath) =>
         fastPath.area === 'backpressure' &&
         fastPath.allowedShortcut === 'reuse-receipt-cursor-queue-slack-and-memory-ceiling-to-size-bounded-replay' &&
         fastPath.guardrails.includes('queue-slack-and-memory-ceiling-stay-aligned') &&

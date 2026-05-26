@@ -869,6 +869,27 @@ export const SAFE_FAST_PATHS = Object.freeze([
     publishesStagedDataEarly: false,
   },
   {
+    area: 'database-row-batching',
+    reduces: ['wire-bytes-for-planning', 'planning-round-trips', 'duplicate-batch-shape-recomputation'],
+    allowedShortcut: 'compress-planning-row-batch-manifests-and-reuse-dependency-graph-to-size-bounded-plugin-install-batches',
+    guardrails: [
+      'compressed-manifest-remains-planning-evidence-only',
+      'dependency-graph-remains-planning-evidence-only',
+      'batch-bounds-still-honor-row-preconditions',
+    ],
+    gateProofs: {
+      skip: 'a compressed row-batch manifest and dependency graph can reduce repeat planning work when sizing bounded plugin-install batches, and each row still keeps its own precondition',
+      live: 'every row in the batch still rechecks its live compare at the storage boundary before visibility changes',
+      group: 'the compressed manifest and dependency graph only narrow planning work inside the same atomic group and never widen visibility across owners',
+      recovery: 'the compressed manifest, dependency graph, and batch receipts still classify retry, pause, or crash without guessing',
+    },
+    visibilityBoundary: 'planning-only-until-batch-commit',
+    failureEvidence: 'compressed row-batch manifest, dependency graph, and batch idempotency key',
+    bypassesLivePreconditions: false,
+    splitsAtomicGroup: false,
+    publishesStagedDataEarly: false,
+  },
+  {
     area: 'compression',
     reduces: ['wire-bytes', 'staging-io-for-text-payloads'],
     allowedShortcut: 'compress-transport-frames-with-canonical-uncompressed-digest',
