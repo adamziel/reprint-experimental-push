@@ -91,6 +91,20 @@ export function evaluateProductionAuthSessionLifecycleSummary(summary, now = Dat
     return readLifecycle;
   }
 
+  const issuedSessionId = typeof summary.issued?.id === 'string' && summary.issued.id.trim()
+    ? summary.issued.id
+    : null;
+  const readSessionId = typeof readObservation.id === 'string' && readObservation.id.trim()
+    ? readObservation.id
+    : null;
+  if (!issuedSessionId || !readSessionId || issuedSessionId !== readSessionId) {
+    return {
+      ok: false,
+      required: 'preserved read',
+      observed: 'rotated',
+    };
+  }
+
   if (readObservation.preserved !== true) {
     return {
       ok: false,
