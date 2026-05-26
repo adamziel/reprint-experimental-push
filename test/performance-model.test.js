@@ -3445,6 +3445,8 @@ test('production throughput details expose fail-closed receipt cursor and queue 
   assert.equal(details.backpressureConsistency.receiptCursorHeadroomWithinQueueBudget, true);
   assert.equal(details.receiptCursorHeadroomCoveredByQueueBudget, true);
   assert.equal(details.backpressureConsistency.receiptCursorHeadroomCoveredByQueueBudget, true);
+  assert.equal(details.receiptCursorMatchesBackpressure, true);
+  assert.equal(details.backpressureConsistency.receiptCursorMatchesBackpressure, true);
   assert.equal(
     details.receiptCursorHeadroomMatchesQueueHeadroom,
     details.backpressureConsistency.receiptCursorHeadroomMatchesQueueHeadroom,
