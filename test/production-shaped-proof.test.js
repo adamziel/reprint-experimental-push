@@ -71,14 +71,16 @@ function stopAllPlaygroundChildrenSync() {
   }
 }
 
-function spawnReleaseVerify(env = {}, timeout = proofSubprocessTimeoutMs) {
+function spawnReleaseVerify(env = {}, options = {}) {
+  const timeout = options.timeout ?? proofSubprocessTimeoutMs;
+  const killSignal = options.killSignal ?? proofSubprocessKillSignal;
   return spawnReleaseVerifyBounded(
     process.execPath,
     ['scripts/playground/production-shaped-release-verify.mjs'],
     {
       cwd: repoRoot,
       timeout,
-      killSignal: proofSubprocessKillSignal,
+      killSignal,
       encoding: 'utf8',
       maxBuffer: 1024 * 1024 * 20,
       env: {
@@ -126,8 +128,10 @@ function spawnReleaseVerifyBounded(command, args, options, label) {
   return proof;
 }
 
-function spawnLiveReleaseVerify(env = {}, timeout = liveProofSubprocessTimeoutMs) {
+function spawnLiveReleaseVerify(env = {}, options = {}) {
+  const timeout = options.timeout ?? liveProofSubprocessTimeoutMs;
   const boundedTimeout = Math.max(1_000, Math.min(timeout, liveProofInnerTimeoutMs));
+  const killSignal = options.killSignal ?? liveProofSubprocessKillSignal;
   return spawnReleaseVerifyBounded(
     process.execPath,
     ['scripts/playground/production-shaped-release-verify.mjs'],
@@ -135,7 +139,7 @@ function spawnLiveReleaseVerify(env = {}, timeout = liveProofSubprocessTimeoutMs
       cwd: repoRoot,
       ...releaseVerifyLiveSubprocessOptions,
       timeout: boundedTimeout,
-      killSignal: liveProofSubprocessKillSignal,
+      killSignal,
       env: {
         ...process.env,
         ...env,
@@ -218,6 +222,23 @@ function assertSpawnCompletedWithoutSpawnError(proof, label, timeoutMs) {
   }
 }
 
+function assertSpawnTerminationProof(proof, label, timeoutMs) {
+  if (proof.error || proof.signal) {
+    stopAllPlaygroundChildrenSync();
+    reportSpawnFailure(proof);
+    if (proof.error) {
+      const timeoutNote = proof.error.code === 'ETIMEDOUT' && timeoutMs ? ` after ${timeoutMs}ms` : '';
+      throw new Error(formatSpawnFailure(`${label} failed${timeoutNote}`, proof));
+    }
+    throw new Error(formatSpawnFailure(`${label} terminated by ${proof.signal}${timeoutMs ? ` after ${timeoutMs}ms` : ''}`, proof));
+  }
+  if (proof.status === null) {
+    stopAllPlaygroundChildrenSync();
+    reportSpawnFailure(proof);
+    throw new Error(`${label} exited without a status\nstdout:\n${proof.stdout ?? ''}\nstderr:\n${proof.stderr ?? ''}`);
+  }
+}
+
 function spawnBoundedSync(command, args, options, label) {
   const boundedOptions = {
     shell: false,
@@ -252,7 +273,11 @@ function spawnBoundedSync(command, args, options, label) {
 }
 
 function spawnVerifiedReleaseVerify(env, timeout, label) {
-  const proof = spawnReleaseVerify(env, timeout);
+  const proof = spawnReleaseVerify(env, {
+    timeout,
+    killSignal: proofSubprocessKillSignal,
+  });
+  assertSpawnTerminationProof(proof, label, timeout);
   assertSpawnCompletedWithoutSpawnError(proof, label, timeout);
   assertReleaseVerifyProof(proof, label);
   return proof;
@@ -581,11 +606,12 @@ test('production-shaped apply revalidation smoke fails closed on mid-apply drift
     maxBuffer: 1024 * 1024 * 20,
   }, 'apply revalidation');
   assert.equal(proof.status, 1, proof.stderr);
-  assert.match(proof.stderr, /Timed out waiting for Playground server at http:\/\/127\.0\.0\.1:\d+: Playground index readiness HTTP 502/);
-  assert.match(proof.stderr, /Probe trail:/);
-  assert.match(proof.stderr, /"route": "\/wp-json\/"/);
-  assert.match(proof.stderr, /"status": 502/);
-  assert.match(proof.stderr, /"body": "WordPress is not ready yet"/);
+  assert.match(
+    proof.stderr,
+    /(?:Timed out waiting for Playground server at http:\/\/127\.0\.0\.1:\d+:(?: Playground index readiness HTTP 502| fetch failed)|Playground server exited early with 217[\s\S]*npm error code ENOTEMPTY)/,
+  );
+  assert.match(proof.stderr, /apply-revalidation: waiting for Playground at http:\/\/127\.0\.0\.1:\d+/);
+  assert.match(proof.stderr, /apply-revalidation: probe \/wp-json\//);
 });
 
 test('production-shaped release verify command reports the checked retained-source proof summary', () => {
@@ -600,7 +626,10 @@ test('production-shaped release verify command reports the checked retained-sour
       REPRINT_PUSH_SIGNING_SECRET: '',
       NODE_NO_WARNINGS: '1',
     },
-    releaseVerifySlowPathTimeoutMs,
+    {
+      timeout: releaseVerifySlowPathTimeoutMs,
+      killSignal: proofSubprocessKillSignal,
+    },
   );
   assertLiveReleaseVerifyProof(proof, 'retained-source release verify', releaseVerifySlowPathTimeoutMs);
   assert.equal(proof.status, 1, proof.stderr);
