@@ -2971,11 +2971,17 @@ test('production-shaped topology proof wrapper emits the fixed one-remote one-lo
 });
 
 test('production-shaped release verify tracks distinct cached blueprint snapshots for local and remote drift fixtures', () => {
+  const baseBlueprintPath = path.join(repoRoot, 'fixtures/playground/remote-base.blueprint.json');
   const localBlueprintPath = path.join(repoRoot, 'fixtures/playground/local-edited.blueprint.json');
   const remoteBlueprintPath = path.join(repoRoot, 'fixtures/playground/remote-changed.blueprint.json');
+  const baseFixture = loadBlueprintSnapshotFixture('remote-base', baseBlueprintPath);
   const localFixture = loadBlueprintSnapshotFixture('local-edited', localBlueprintPath);
   const remoteFixture = loadBlueprintSnapshotFixture('remote-changed', remoteBlueprintPath);
 
+  assert.equal(
+    resolveBlueprintSnapshotFixturePath(baseBlueprintPath),
+    path.join(repoRoot, 'fixtures/playground/remote-base.snapshot.json'),
+  );
   assert.equal(
     resolveBlueprintSnapshotFixturePath(localBlueprintPath),
     path.join(repoRoot, 'fixtures/playground/local-edited.snapshot.json'),
@@ -2984,12 +2990,31 @@ test('production-shaped release verify tracks distinct cached blueprint snapshot
     resolveBlueprintSnapshotFixturePath(remoteBlueprintPath),
     path.join(repoRoot, 'fixtures/playground/remote-changed.snapshot.json'),
   );
+  assert.equal(baseFixture.meta.fixture, 'remote-base');
   assert.equal(localFixture.meta.fixture, 'local-edited');
   assert.equal(remoteFixture.meta.fixture, 'remote-changed');
+  assert.equal(baseFixture.db.wp_posts['ID:1001'].post_content, 'Base content from source');
   assert.equal(localFixture.db.wp_posts['ID:1001'].post_content, 'Local edited content');
   assert.equal(remoteFixture.db.wp_posts['ID:1001'].post_content, 'Remote edited content');
+  assert.equal(baseFixture.files['wp-content/uploads/reprint-push/shared.txt'], 'base upload content');
   assert.equal(localFixture.files['wp-content/uploads/reprint-push/local-only.txt'], 'local-only upload content');
   assert.equal(remoteFixture.files['wp-content/uploads/reprint-push/remote-only.txt'], 'remote-only upload content');
+});
+
+test('packaged production plugin smoke derives the tracked fixture name from the blueprint path', () => {
+  const smokeSource = readFileSync(
+    path.join(repoRoot, 'scripts/playground/production-plugin-package-smoke.mjs'),
+    'utf8',
+  );
+
+  assert.match(
+    smokeSource,
+    /const expectedFixture = path\.basename\(blueprintPath\)\.replace\(\/\\\.blueprint\\\.json\$\/u, ''\);/,
+  );
+  assert.match(
+    smokeSource,
+    /loadBlueprintSnapshotFixture\(expectedFixture, blueprintPath\)/,
+  );
 });
 
 test('shared lab waitForServer probes snapshot even when /wp-json/ returns a startup-shaped HTTP 200 body', async () => {

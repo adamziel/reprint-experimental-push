@@ -384,7 +384,8 @@ function runCli(args, { expectStatus = 0 } = {}) {
 }
 
 function exportSnapshot(name, blueprintPath) {
-  const trackedSnapshot = loadBlueprintSnapshotFixture(name, blueprintPath);
+  const expectedFixture = path.basename(blueprintPath).replace(/\.blueprint\.json$/u, '');
+  const trackedSnapshot = loadBlueprintSnapshotFixture(expectedFixture, blueprintPath);
   if (trackedSnapshot) {
     writeStageProgress(`using tracked snapshot fixture for ${name}`);
     return trackedSnapshot;
