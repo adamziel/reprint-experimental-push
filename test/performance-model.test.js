@@ -5198,12 +5198,27 @@ test('production throughput details fail closed when queue headroom visibility d
 
   assert.equal(details.queueBudgetVisible, true);
   assert.equal(details.receiptCursorMemoryCeilingVisible, true);
+  assert.equal(details.queueHeadroomVisible, false);
   assert.equal(details.queueBudgetVisibleAndMemoryCeilingVisible, false);
+  assert.equal(details.queueBudgetVisibleAndQueueHeadroomMeasured, false);
+  assert.equal(details.queueBudgetVisibleAndQueueHeadroomVisible, false);
   assert.equal(details.receiptCursorMemoryCeilingVisibleAndQueueBudgetVisible, false);
+  assert.equal(details.queueHeadroomVisibleAndQueueSlackMeasured, false);
+  assert.equal(details.queueHeadroomVisibleAndQueueSlackVisibleAndMeasured, false);
+  assert.equal(details.receiptCursorQueueSlackVisibleAndMeasured, false);
+  assert.equal(details.receiptCursorMemoryHeadroomVisibleAndMeasured, false);
   assert.equal(details.backpressureConsistency.queueBudgetVisibleAndMemoryCeilingVisible, false);
+  assert.equal(details.backpressureConsistency.queueBudgetVisibleAndQueueHeadroomMeasured, false);
+  assert.equal(details.backpressureConsistency.queueBudgetVisibleAndQueueHeadroomVisible, false);
   assert.equal(details.backpressureConsistency.receiptCursorMemoryCeilingVisibleAndQueueBudgetVisible, false);
+  assert.equal(details.backpressureConsistency.queueHeadroomVisibleAndQueueSlackMeasured, false);
+  assert.equal(details.backpressureConsistency.queueHeadroomVisibleAndQueueSlackVisibleAndMeasured, false);
+  assert.equal(details.backpressureConsistency.receiptCursorQueueSlackVisibleAndMeasured, false);
+  assert.equal(details.backpressureConsistency.receiptCursorMemoryHeadroomVisibleAndMeasured, false);
   assert.ok(blockers.includes('queue-budget-visible-without-queue-headroom-visible'));
   assert.ok(blockers.includes('memory-ceiling-visible-without-queue-headroom-visible'));
+  assert.ok(blockers.includes('receipt-cursor-queue-slack-visible-without-queue-headroom-visibility'));
+  assert.ok(blockers.includes('receipt-cursor-memory-headroom-visible-without-queue-headroom-visibility'));
 });
 
 test('production throughput blocks malformed parallelism limits before faster execution can be claimed', () => {
