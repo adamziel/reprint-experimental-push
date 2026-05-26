@@ -17,6 +17,32 @@ linked implementation artifacts.
   durable journal ownership still block any production push claim, and the
   product-side replay diagnostics remain evidence but not a gate movement.
 
+## 2026-05-26 - Public Status Audit 11:52:33
+
+<a id="2026-05-26-public-status-audit-115233"></a>
+
+- Freshness update plus reliable-head confirmation: `e0c3fcf8` is the current
+  reliable-executor head on the public page, and the visible status now points
+  at this 11:52:33 audit refresh.
+- Gate posture remains conservative at `0/4`; no implementation verdict
+  changed.
+- Latest blocker summary remains the same: real WordPress executor/auth and
+  durable journal ownership still block any production push claim, and the
+  product-side replay diagnostics remain evidence but not a gate movement.
+
+## 2026-05-26 - Public Status Audit 11:52:21
+
+<a id="2026-05-26-public-status-audit-115221"></a>
+
+- Freshness update plus reliable-head confirmation: `e0c3fcf8` is the current
+  reliable-executor head on the public page, and the visible status now points
+  at this 11:52:21 audit refresh.
+- Gate posture remains conservative at `0/4`; no implementation verdict
+  changed.
+- Latest blocker summary remains the same: real WordPress executor/auth and
+  durable journal ownership still block any production push claim, and the
+  product-side replay diagnostics remain evidence but not a gate movement.
+
 ## 2026-05-26 - Public Status Audit 11:51:24
 
 <a id="2026-05-26-public-status-audit-115124"></a>
@@ -44,19 +70,6 @@ linked implementation artifacts.
   durable journal ownership still block any production push claim, and the
   support-only release-diagnostic work remains evidence but not a gate
   movement.
-
-## 2026-05-26 - Public Status Audit 11:52:21
-
-<a id="2026-05-26-public-status-audit-115221"></a>
-
-- Freshness update plus reliable-head confirmation: `e0c3fcf8` is the current
-  reliable-executor head on the public page, and the visible status now points
-  at this 11:52:21 audit refresh.
-- Gate posture remains conservative at `0/4`; no implementation verdict
-  changed.
-- Latest blocker summary remains the same: real WordPress executor/auth and
-  durable journal ownership still block any production push claim, and the
-  product-side replay diagnostics remain evidence but not a gate movement.
 
 ## 2026-05-26 - Public Status Audit 11:48:49
 
