@@ -464,6 +464,25 @@ function normalizeProductionRecoveryJournalOptions(filePathOrOptions, options = 
     )
   ) {
     const legacyOptions = { ...filePathOrOptions };
+    if (Object.hasOwn(legacyOptions, 'artifactRefs') && !isStrictPlainObject(legacyOptions.artifactRefs)) {
+      throw new UnsupportedProductionRecoveryJournalError(
+        'Production recovery journal compatibility overload requires strict plain artifact refs.',
+        {
+          kind: 'production-recovery-journal',
+          productionAdapter: true,
+          supportedSurface: 'production-recovery-journal-adapter',
+          restartReadable: false,
+          ownsJournal: false,
+          ownsRemoteArtifact: false,
+          journalPath: typeof legacyOptions.filePath === 'string' ? legacyOptions.filePath : null,
+          artifactRefs: Object.freeze({
+            journal: null,
+            remote: null,
+          }),
+          schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+        },
+      );
+    }
     const legacyArtifactRefs = Object.hasOwn(legacyOptions, 'artifactRefs') && isStrictPlainObject(legacyOptions.artifactRefs)
       ? legacyOptions.artifactRefs
       : null;
@@ -598,7 +617,7 @@ function isStrictPlainObject(value) {
   }
 
   const prototype = Object.getPrototypeOf(value);
-  return prototype === Object.prototype || prototype === null;
+  return prototype === Object.prototype;
 }
 
 function freezeProductionWriterLease(writerLease) {
