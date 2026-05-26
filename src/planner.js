@@ -1333,7 +1333,7 @@ function finalizeWordPressGraphDependencies(plan, local, remote) {
             class: 'stale-wordpress-graph-identity',
             resource: mutation.resource,
             resourceKey: mutation.resourceKey,
-            reason: `WordPress graph mutation ${mutation.resourceKey} references a same-plan thumbnail target from an attachment source without a supported merge policy.`,
+            reason: blockedSamePlanWordPressGraphSourceReason(mutation, reference),
             resolutionPolicy: 'preserve-remote-wordpress-graph-and-stop',
             references: [reference],
           });
@@ -1915,6 +1915,20 @@ function isBlockedSamePlanWordPressGraphSource(sourceMutation, reference, mutati
       || ownerValue.post_type === 'wp_navigation';
   }
 
+  if (reference.relationshipType === 'post-parent') {
+    if (sourceMutation?.resource?.type !== 'row' || sourceMutation?.resource?.table !== 'wp_posts') {
+      return false;
+    }
+    if (sourceMutation.action !== 'put' || sourceMutation.changeKind === 'create') {
+      return false;
+    }
+    const sourceValue = deserializeResourceValue(sourceMutation.value);
+    if (!sourceValue || typeof sourceValue !== 'object') {
+      return false;
+    }
+    return sourceValue.post_type === 'attachment';
+  }
+
   if (reference.relationshipType === 'term-relationship-object') {
     if (sourceMutation?.resource?.type !== 'row' || sourceMutation?.resource?.table !== 'wp_term_relationships') {
       return false;
@@ -1954,6 +1968,16 @@ function isBlockedSamePlanWordPressGraphSource(sourceMutation, reference, mutati
   }
 
   return false;
+}
+
+function blockedSamePlanWordPressGraphSourceReason(sourceMutation, reference) {
+  if (reference.relationshipType === 'featured-image-attachment') {
+    return `WordPress graph mutation ${sourceMutation.resourceKey} references a same-plan thumbnail target from an attachment source without a supported merge policy.`;
+  }
+  if (reference.relationshipType === 'post-parent') {
+    return `WordPress graph mutation ${sourceMutation.resourceKey} references a same-plan parent target from an existing attachment source without a supported merge policy.`;
+  }
+  return `WordPress graph mutation ${sourceMutation.resourceKey} references a same-plan target from a blocked source without a supported merge policy.`;
 }
 
 function orderMutationsByDependencies(mutations) {

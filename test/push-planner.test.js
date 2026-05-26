@@ -8781,6 +8781,59 @@ test('allows a local attachment parent reference to a same-plan post', () => {
   assert.equal(result.site.db.wp_posts['ID:3'].post_parent, 2);
 });
 
+test('blocks an existing attachment parent reference to a same-plan post', () => {
+  const targetResourceKey = 'row:["wp_posts","ID:2"]';
+  const attachmentResourceKey = 'row:["wp_posts","ID:3"]';
+  const base = baseSite();
+  const local = baseSite();
+  const remote = baseSite();
+
+  base.db.wp_posts['ID:3'] = {
+    ID: 3,
+    post_title: 'Existing attachment child',
+    post_content: 'base-private-existing-attachment-child-body',
+    post_status: 'inherit',
+    post_type: 'attachment',
+    post_parent: 0,
+  };
+  local.db.wp_posts['ID:3'] = {
+    ...base.db.wp_posts['ID:3'],
+    post_parent: 2,
+  };
+  remote.db.wp_posts['ID:3'] = {
+    ...base.db.wp_posts['ID:3'],
+  };
+  local.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_title: 'Local parent post',
+    post_content: 'local-private-parent-post-body',
+    post_status: 'publish',
+  };
+
+  const plan = planFor(base, local, remote);
+  const targetMutation = mutationFor(plan, targetResourceKey);
+  const attachmentMutation = mutationFor(plan, attachmentResourceKey);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === attachmentResourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(targetMutation.changeKind, 'create');
+  assert.equal(attachmentMutation.changeKind, 'update');
+  assert.equal(blocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(blocker.references[0].relationshipType, 'post-parent');
+  assert.equal(blocker.references[0].targetResourceKey, targetResourceKey);
+  assert.match(blocker.reason, /existing attachment source without a supported merge policy/);
+  assert.equal(attachmentMutation.dependsOnMutationIds, undefined);
+  assert.equal(
+    JSON.stringify(blocker).includes('base-private-existing-attachment-child-body'),
+    false,
+  );
+  assert.equal(
+    JSON.stringify(blocker).includes('local-private-parent-post-body'),
+    false,
+  );
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
+});
+
 test('allows a local attachment parent reference to a same-plan post even when a remote navigation post exists', () => {
   const targetResourceKey = 'row:["wp_posts","ID:2"]';
   const attachmentResourceKey = 'row:["wp_posts","ID:3"]';
