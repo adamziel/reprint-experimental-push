@@ -1,9 +1,22 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-26 13:24 CEST
+Last updated: 2026-05-26 13:25 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-26 13:25 CEST - Reliable Head Correction
+
+- Going well: `eeaea30dd84ae36765136e819aa8334e24954484` is now the current
+  reliable head from `git ls-remote`, so the supervisor surface needs a fresh
+  head correction.
+- Not going well: the checked release path still lacks production-backed
+  auth/session lifecycle and fenced durable-journal semantics, so the gate
+  stays `0/4`.
+- Progress change: this is another head correction only; no gate moved.
+- Next nudge: keep `progress-publisher` aligned if the public page still names
+  `83567866`, and keep `reliable-executor` on the next production-boundary
+  proof.
 
 ## 2026-05-26 13:24 CEST - Reliable Head Correction
 
