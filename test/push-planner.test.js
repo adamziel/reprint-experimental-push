@@ -27456,6 +27456,92 @@ test('closes an owned production recovery journal writer after replaying a compl
   assert.equal(events.some((event) => event.type === 'journal-replayed'), false);
 });
 
+test('replaying a completed plan remains blocked until the production recovery journal exposes claim-fenced inspection records', () => {
+  const events = [];
+  let closed = 0;
+  const durableJournal = openProductionRecoveryJournal(tempRecoveryJournalPath(), {
+    truncate: true,
+    now: fixedNow,
+    claimId: 'claim-1',
+    ownsRemoteArtifact: true,
+    remoteArtifactPath: `${tempRecoveryJournalPath()}.remote`,
+    writerLease: { id: 'lease-1' },
+  });
+  const writer = {
+    ...durableJournal,
+    assertCurrentClaim(type) {
+      return writer._assertCurrentClaim(type);
+    },
+    _assertCurrentClaim(type) {
+      throw new PushPlanError('RECOVERY_CLAIM_STALE', 'Injected stale claim before replay.', {
+        eventType: type,
+        staleClaimHash: 'a'.repeat(64),
+        activeClaimHash: 'b'.repeat(64),
+      });
+    },
+  };
+  writer.appendEvent = (type, payload) => {
+    events.push({ type, payload });
+    return durableJournal.appendEvent(type, payload);
+  };
+  writer.close = () => {
+    closed += 1;
+    return durableJournal.close();
+  };
+  writer.flush = () => durableJournal.flush();
+  writer.inspect = () => durableJournal.inspect();
+  writer.kind = durableJournal.kind;
+  writer.productionAdapter = durableJournal.productionAdapter;
+  writer.supportedSurface = durableJournal.supportedSurface;
+  writer.restartReadable = durableJournal.restartReadable;
+  writer.ownsJournal = durableJournal.ownsJournal;
+  writer.ownsRemoteArtifact = durableJournal.ownsRemoteArtifact;
+  writer.journalPath = durableJournal.journalPath;
+  writer.artifactRefs = durableJournal.artifactRefs;
+  writer.writerLease = durableJournal.writerLease;
+  writer.schemaVersion = durableJournal.schemaVersion;
+  writer.claimHash = durableJournal.claimHash;
+  const completedPlan = planFor(baseSite(), baseSite(), baseSite());
+  writer.assertCurrentClaim = (type) => {
+    throw new PushPlanError('RECOVERY_CLAIM_STALE', 'Injected stale claim before replay.', {
+      eventType: type,
+      staleClaimHash: 'a'.repeat(64),
+      activeClaimHash: 'b'.repeat(64),
+    });
+  };
+  appendRecoveryClaimOpened(writer, {
+    plan: completedPlan,
+    current: baseSite(),
+    claimId: 'claim-1',
+    artifactRefs: writer.artifactRefs,
+  });
+  writer.flush();
+  const completedJournal = {
+    status: 'completed',
+    id: `journal-${completedPlan.id}`,
+    planId: completedPlan.id,
+    entries: completedPlan.mutations.map((mutation) => ({
+      mutationId: mutation.id,
+      resourceKey: mutation.resourceKey,
+      status: 'applied',
+      beforeValue: null,
+      afterValue: null,
+    })),
+  };
+  const replayRemote = JSON.parse(JSON.stringify(baseSite()));
+
+  const error = captureError(() => applyPlan(replayRemote, completedPlan, {
+    journal: completedJournal,
+    requireProductionDurableJournal: true,
+    durableJournal: writer,
+  }));
+
+  assert.equal(error.code, 'PRODUCTION_DURABLE_JOURNAL_UNSUPPORTED');
+  assert.ok(error.details.missingDependency.includes('fencing or lease ownership for the journal writer'));
+  assert.ok(error.details.missingDependency.includes('journal-readable inspection records with sequence and type'));
+  assert.equal(closed, 1);
+});
+
 test('idempotently skips closing an already closed owned production recovery journal writer', () => {
   const closeCalls = [];
   const writer = {
