@@ -1,21 +1,21 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-26 16:13 CEST
+Last updated: 2026-05-26 16:15 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
 
-## 2026-05-26 16:13 CEST - Reliable Head Advanced Again
+## 2026-05-26 16:15 CEST - Reliable Head Advanced Again
 
 - Going well: the live reliable head advanced to `347aebcc42b43d0282a28e5927715b90bb642178`, so the checked
-  release path has a single newer current head to align against.
-- Not going well: the release gate is still `0/4`, and the shared
-  `waitForServer()` blocker for `remote-changed` and `local-edited` remains
-  the next release-path issue to solve.
+  release path has the newest current head to align against.
+- Not going well: the release gate is still `0/4`, and the next release-path
+  blocker remains the checked boundary that still needs production-backed
+  auth/session or durable-journal proof.
 - Progress change: this is a material head update, not a gate change; the
-  checked release boundary still needs production-backed auth/session or
-  durable-journal proof before any verdict moves.
-- Next nudge: keep `reliable-executor` on the shared readiness boundary or the
+  visible verdict stays conservative until the checked release boundary proves
+  a gate-moving dependency.
+- Next nudge: keep `reliable-executor` on the checked release-path blocker or
   next gate dependency, keep `progress-publisher` aligned with the live head,
   and keep critic/auditor narrow at `0/4`.
 
