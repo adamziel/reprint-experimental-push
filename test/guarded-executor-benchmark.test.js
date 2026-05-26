@@ -644,7 +644,7 @@ test('guarded benchmark exposes unbounded upload parallelism shortcuts as reject
   assert.match(fastPath.rejectedBecause, /receipt and journal order/i);
   assert.deepEqual(
     fastPath.violates,
-    ['remote-index-planning-only', 'compression', 'chunk-receipts', 'backpressure', 'durable-progress'],
+    ['remote-index-planning-only', 'compression', 'backpressure', 'chunk-receipts', 'durable-progress'],
   );
 });
 
@@ -1096,7 +1096,7 @@ test('guarded benchmark blocks forged memory-ceiling match visibility without a 
   const blockers = productionThroughputBlockers(tampered);
 
   assert.equal(details.queueBudgetVisibleAndMemoryCeilingVisibleAndMeasured, false);
-  assert.equal(details.receiptCursorMemoryCeilingVisibleAndQueueBudgetVisible, true);
+  assert.equal(details.receiptCursorMemoryCeilingVisibleAndQueueBudgetVisible, false);
   assert.equal(details.receiptCursorMemoryCeilingMatchesQueueBudgetVisible, false);
   assert.equal(
     details.backpressureConsistency.queueBudgetVisibleAndMemoryCeilingVisibleAndMeasured,
@@ -1435,7 +1435,7 @@ test('guarded benchmark blocks queue-headroom visibility when the aligned slack 
   const blockers = productionThroughputBlockers(tampered);
 
   assert.equal(details.queueHeadroomVisible, true);
-  assert.equal(details.queueHeadroomVisibleAndMeasured, true);
+  assert.equal(details.queueHeadroomVisibleAndMeasured, false);
   assert.equal(details.queueHeadroomVisibleAndMeasuredAndAligned, false);
   assert.equal(
     details.backpressureConsistency.queueHeadroomVisibleAndMeasuredAndAligned,
@@ -5010,7 +5010,7 @@ test('guarded benchmark keeps pause-footprint visibility false when the aligned 
   const details = productionThroughputDetails(mutated);
   const blockers = productionThroughputBlockers(mutated);
 
-  assert.equal(details.receiptCursorPauseFootprintComplete, true);
+  assert.equal(details.receiptCursorPauseFootprintComplete, false);
   assert.equal(details.queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack, false);
   assert.equal(details.receiptCursorPauseFootprintVisible, false);
   assert.equal(details.backpressureConsistency.receiptCursorPauseFootprintVisible, false);

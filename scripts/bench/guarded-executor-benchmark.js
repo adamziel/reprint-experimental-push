@@ -405,10 +405,24 @@ export function productionThroughputBlockers(report) {
   ) {
     blockers.push('chunk-window-exceeds-memory-ceiling');
   }
-  if (report.evidence.backpressure?.queueBudgetMatchesResourceCeiling !== true) {
+  if (
+    report.evidence.backpressure?.queueBudgetMatchesResourceCeiling !== true
+    || !(
+      Number.isFinite(receiptCursorQueueBudgetBytes)
+      && Number.isFinite(report.resourceLimits?.maxBufferedUploadBytes)
+      && receiptCursorQueueBudgetBytes === report.resourceLimits.maxBufferedUploadBytes
+    )
+  ) {
     blockers.push('queue-budget-does-not-match-resource-ceiling');
   }
-  if (report.evidence.backpressure?.receiptCursorWithinQueueBudget !== true) {
+  if (
+    report.evidence.backpressure?.receiptCursorWithinQueueBudget !== true
+    || !(
+      Number.isFinite(receiptCursorBackpressureBytes)
+      && Number.isFinite(receiptCursorQueueBudgetBytes)
+      && receiptCursorBackpressureBytes <= receiptCursorQueueBudgetBytes
+    )
+  ) {
     blockers.push('receipt-cursor-exceeds-queue-budget');
   }
   if (
@@ -439,7 +453,14 @@ export function productionThroughputBlockers(report) {
   ) {
     blockers.push('backpressure-alignment-not-proven');
   }
-  if (report.evidence.backpressure?.receiptCursorBackpressureWithinQueueHeadroom !== true) {
+  if (
+    report.evidence.backpressure?.receiptCursorBackpressureWithinQueueHeadroom !== true
+    || !(
+      Number.isFinite(receiptCursorBackpressureBytes)
+      && Number.isFinite(receiptCursorQueueHeadroomBytes)
+      && receiptCursorBackpressureBytes <= receiptCursorQueueHeadroomBytes
+    )
+  ) {
     blockers.push('receipt-cursor-exceeds-queue-headroom');
   }
   if (
@@ -534,7 +555,13 @@ export function productionThroughputBlockers(report) {
   if (
     report.evidence.backpressure?.queuePausedBeforeOverflow === true
     && report.evidence.backpressure?.queuePauseHasMeasuredAndAlignedReceiptCursorBackpressure === true
-    && report.evidence.backpressure?.receiptCursorBackpressureWithinResourceHeadroom !== true
+    && !(
+      report.evidence.backpressure?.receiptCursorBackpressureWithinResourceHeadroom === true
+      && Number.isFinite(receiptCursorBackpressureBytes)
+      && Number.isFinite(receiptCursorMemoryCeilingBytes)
+      && Number.isFinite(receiptCursorWindowBytes)
+      && receiptCursorBackpressureBytes <= receiptCursorMemoryCeilingBytes - receiptCursorWindowBytes
+    )
   ) {
     blockers.push('queue-pause-without-resource-headroom-safe-receipt-cursor-backpressure');
   }
@@ -658,14 +685,25 @@ export function productionThroughputBlockers(report) {
   if (
     report.evidence.backpressure?.queuePausedBeforeOverflow === true
     && report.evidence.backpressure?.receiptCursorQueueSlackBytes != null
-    && report.evidence.backpressure.receiptCursorQueueSlackWithinMemoryCeiling !== true
+    && !(
+      report.evidence.backpressure.receiptCursorQueueSlackWithinMemoryCeiling === true
+      && Number.isFinite(receiptCursorQueueSlackBytes)
+      && Number.isFinite(receiptCursorMemoryCeilingBytes)
+      && receiptCursorQueueSlackBytes <= receiptCursorMemoryCeilingBytes
+    )
   ) {
     blockers.push('queue-pause-without-memory-safe-receipt-cursor-slack');
   }
   if (
     report.evidence.backpressure?.queuePausedBeforeOverflow === true
     && report.evidence.backpressure?.receiptCursorQueueSlackBytes != null
-    && report.evidence.backpressure.receiptCursorQueueSlackWithinResourceHeadroom !== true
+    && !(
+      report.evidence.backpressure.receiptCursorQueueSlackWithinResourceHeadroom === true
+      && Number.isFinite(receiptCursorQueueSlackBytes)
+      && Number.isFinite(receiptCursorMemoryCeilingBytes)
+      && Number.isFinite(receiptCursorWindowBytes)
+      && receiptCursorQueueSlackBytes <= receiptCursorMemoryCeilingBytes - receiptCursorWindowBytes
+    )
   ) {
     blockers.push('queue-pause-without-resource-headroom-safe-receipt-cursor-slack');
   }
@@ -808,7 +846,17 @@ export function productionThroughputBlockers(report) {
   ) {
     blockers.push('staging-disk-headroom-not-positive');
   }
-  if (report.evidence.backpressure?.queueHeadroomMeasured === true && report.evidence.backpressure?.queueHeadroomWithinResourceCeiling !== true) {
+  if (
+    report.evidence.backpressure?.queueHeadroomMeasured === true
+    && !(
+      report.evidence.backpressure?.queueHeadroomWithinResourceCeiling === true
+      && Number.isFinite(receiptCursorQueueBudgetBytes)
+      && Number.isFinite(receiptCursorQueueHeadroomBytes)
+      && Number.isFinite(report.resourceLimits?.maxBufferedUploadBytes)
+      && receiptCursorQueueBudgetBytes === report.resourceLimits.maxBufferedUploadBytes
+      && receiptCursorQueueHeadroomBytes === receiptCursorQueueBudgetBytes - report.shape.chunkSizeBytes
+    )
+  ) {
     blockers.push('queue-headroom-exceeds-resource-ceiling');
   }
   if (
@@ -1068,10 +1116,26 @@ export function productionThroughputBlockers(report) {
   ) {
     blockers.push('receipt-cursor-queue-slack-not-measured');
   }
-  if (report.evidence.backpressure?.receiptCursorHeadroomWithinQueueBudget !== true) {
+  if (
+    report.evidence.backpressure?.receiptCursorHeadroomWithinQueueBudget !== true
+    || !(
+      Number.isFinite(receiptCursorMemoryHeadroomBytes)
+      && Number.isFinite(receiptCursorQueueHeadroomBytes)
+      && receiptCursorMemoryHeadroomBytes <= receiptCursorQueueHeadroomBytes
+      && receiptCursorMemoryHeadroomBytes === receiptCursorQueueHeadroomBytes
+    )
+  ) {
     blockers.push('receipt-cursor-headroom-not-covered-by-queue-budget');
   }
-  if (report.evidence.backpressure?.receiptCursorMemoryHeadroomWithinQueueBudget !== true) {
+  if (
+    report.evidence.backpressure?.receiptCursorMemoryHeadroomWithinQueueBudget !== true
+    || !(
+      Number.isFinite(receiptCursorMemoryHeadroomBytes)
+      && Number.isFinite(receiptCursorQueueHeadroomBytes)
+      && receiptCursorMemoryHeadroomBytes <= receiptCursorQueueHeadroomBytes
+      && receiptCursorMemoryHeadroomBytes === receiptCursorQueueHeadroomBytes
+    )
+  ) {
     blockers.push('receipt-cursor-memory-headroom-not-covered-by-queue-budget');
   }
   if (
