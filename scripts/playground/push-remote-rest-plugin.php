@@ -2780,6 +2780,9 @@ function reprint_push_lab_rest_auth_evidence(WP_REST_Request $request): array
         if (($lifecycle_drift['mode'] ?? '') === 'id-invalid') {
             $session_id = ['lab-session-id'];
         }
+        if (($lifecycle_drift['mode'] ?? '') === 'type-invalid') {
+            $session_type = ['lab-production-auth-session'];
+        }
         if (($lifecycle_drift['mode'] ?? '') === 'status-invalid') {
             $session_status = ['lab-active'];
         }
@@ -2889,7 +2892,7 @@ function reprint_push_lab_rest_auth_session_lifecycle_drift(WP_REST_Request $req
         return null;
     }
 
-    if (!in_array($drift_mode, ['revoked', 'revoked-invalid', 'cleaned-up', 'cleaned-up-invalid', 'expired', 'expired-invalid', 'rotated', 'rotated-invalid', 'unpreserved', 'preserved-invalid', 'playground-fallback', 'playground-fallback-invalid', 'warning', 'warning-invalid', 'id-invalid', 'status-invalid', 'expires-at-invalid'], true)) {
+    if (!in_array($drift_mode, ['revoked', 'revoked-invalid', 'cleaned-up', 'cleaned-up-invalid', 'expired', 'expired-invalid', 'rotated', 'rotated-invalid', 'unpreserved', 'preserved-invalid', 'playground-fallback', 'playground-fallback-invalid', 'warning', 'warning-invalid', 'id-invalid', 'type-invalid', 'status-invalid', 'expires-at-invalid'], true)) {
         return null;
     }
 
