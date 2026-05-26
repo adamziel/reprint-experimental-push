@@ -2733,6 +2733,14 @@ function unsupportedUsermetaResourceSupport({ resource, baseValue, localValue, r
     return { supported: true };
   }
 
+  if (localValue === ABSENT) {
+    return {
+      supported: false,
+      className: 'unsupported-usermeta-resource',
+      reason: 'User meta graph resource deletes are not yet supported by the planner.',
+    };
+  }
+
   const references = wordpressGraphReferences(resource, candidate);
   const userGraphReference = references.find((reference) =>
     reference.relationshipType === 'usermeta-user'
