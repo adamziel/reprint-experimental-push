@@ -912,19 +912,32 @@ try {
 
       const recoveryInspectJournal = proof.recoveryInspect?.recovery?.journal || null;
       const recoveryInspectJournalAccepted = checkedDurableJournalBoundarySatisfied(recoveryInspectJournal);
-      const durableJournalSummary = recoveryInspectJournalAccepted
+      const liveDbJournalAccepted = checkedDurableJournalBoundarySatisfied(proof.dbJournal);
+      const durableJournalSummary = liveDbJournalAccepted
         ? {
-            journal: recoveryInspectJournal,
+            journal: proof.dbJournal,
             leaseFence: {
-              ...(recoveryInspectJournal.leaseFence || {}),
-              storageGuard: recoveryInspectJournal.leaseFence?.boundary || null,
-              fsyncEvidence: recoveryInspectJournal.leaseFence?.fsyncEvidence === true,
-              staleClaimRejected: recoveryInspectJournal.leaseFence?.staleClaimRejected === true,
+              ...(proof.dbJournal.leaseFence || {}),
+              storageGuard: proof.dbJournal.leaseFence?.boundary || null,
+              fsyncEvidence: proof.dbJournal.leaseFence?.fsyncEvidence === true,
+              staleClaimRejected: proof.dbJournal.leaseFence?.staleClaimRejected === true,
             },
             consumed: true,
-            productionOwnedBySource: true,
+            productionOwnedBySource: false,
           }
-        : runProductionRecoveryJournalProof({
+        : recoveryInspectJournalAccepted
+          ? {
+              journal: recoveryInspectJournal,
+              leaseFence: {
+                ...(recoveryInspectJournal.leaseFence || {}),
+                storageGuard: recoveryInspectJournal.leaseFence?.boundary || null,
+                fsyncEvidence: recoveryInspectJournal.leaseFence?.fsyncEvidence === true,
+                staleClaimRejected: recoveryInspectJournal.leaseFence?.staleClaimRejected === true,
+              },
+              consumed: true,
+              productionOwnedBySource: true,
+            }
+          : runProductionRecoveryJournalProof({
             plan: proof.planObject,
             current: proof.remoteSnapshotObject,
             artifactRefs: {
@@ -932,7 +945,20 @@ try {
             },
           });
 
-      if (recoveryInspectJournalAccepted) {
+      if (liveDbJournalAccepted) {
+        assert.equal(
+          durableJournalSummary.journal?.ownership?.productionAdapter,
+          'wpdb-single-statement-cas',
+          'live db journal must expose the production-owned journal adapter',
+        );
+        assert.equal(durableJournalSummary.journal?.ownership?.ownsJournal, true);
+        assert.equal(durableJournalSummary.journal?.ownership?.restartReadable, true);
+        assert.equal(durableJournalSummary.leaseFence?.boundary, 'wpdb-single-statement-cas');
+        assert.equal(durableJournalSummary.leaseFence?.claimKeyUnique, true);
+        assert.equal(durableJournalSummary.leaseFence?.monotonicSequence, true);
+        assert.equal(durableJournalSummary.leaseFence?.restartReadable, true);
+        assert.equal(durableJournalSummary.leaseFence?.staleClaimRejected, true);
+      } else if (recoveryInspectJournalAccepted) {
         assert.equal(
           durableJournalSummary.journal?.ownership?.productionAdapter,
           'wpdb-single-statement-cas',
@@ -964,8 +990,7 @@ try {
         : null;
       const checkedDurableJournalAccepted = packagedSourceFixture !== null
         ? checkedDurableJournalBoundarySatisfied(proof.dbJournal)
-        : dbJournalProofIsAcceptable(proof.dbJournal)
-          && recoveryInspectJournalAccepted;
+        : liveDbJournalAccepted;
 
       if (requireProductionDurableJournal && !checkedDurableJournalAccepted) {
         process.stdout.write(
@@ -1156,7 +1181,7 @@ try {
                   verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_PROVEN',
                 },
                 durableJournal: {
-                  storageLeaseFence: 'live production-shaped auth/session is proven, but the signed recovery inspect path is still missing production-owned durable journal storage, lease fencing, restart-readable artifacts, or stale-claim rejection on the live source boundary',
+                  storageLeaseFence: 'live production-shaped auth/session is proven, but the live db-journal boundary is still missing production-owned durable journal storage, lease fencing, restart-readable artifacts, or stale-claim rejection on the checked release path',
                   verdict: 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED',
                 },
               },
@@ -1222,7 +1247,7 @@ try {
           durableJournal: {
             storageLeaseFence: packagedSourceFixture
               ? 'packaged production plugin journal surface accepted on the checked release boundary'
-            : 'live production-shaped recovery inspect and journal surfaces accepted on the checked release boundary',
+              : 'live production-shaped db-journal surface accepted on the checked release boundary',
             verdict: checkedDurableJournalAccepted
               ? (packagedSourceFixture ? 'PACKAGED_RELEASE_BOUNDARY_OK' : 'LIVE_RELEASE_BOUNDARY_OK')
               : 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED',
