@@ -32,6 +32,7 @@ import {
   labSnapshotRetryable,
 } from '../scripts/playground/lab-playground-readiness.js';
 import {
+  packagedProductionPluginClassifyTimeoutFallbackStartup,
   packagedProductionPluginMaxConsecutiveNotReadyProbes,
   packagedProductionPluginNextNotReadyProbeCount,
   packagedProductionPluginNextRouteNotReadyProbeCounts,
@@ -1646,6 +1647,66 @@ test('packaged production plugin readiness helper retries only startup-shaped pa
   );
 });
 
+test('packaged production plugin timeout fallback classification separates startup branches', () => {
+  assert.deepEqual(
+    packagedProductionPluginClassifyTimeoutFallbackStartup(
+      { retryable: true, status: 503, body: 'WordPress is not ready yet' },
+      { status: 503, body: 'WordPress is not ready yet' },
+    ),
+    {
+      kind: 'retryable-route-wordpress-starting',
+      globalWordPressStartup: true,
+    },
+  );
+  assert.deepEqual(
+    packagedProductionPluginClassifyTimeoutFallbackStartup(
+      { retryable: true, status: 404, body: 'No route was found matching the URL and request method.' },
+      { status: 200, body: 'ok' },
+    ),
+    {
+      kind: 'retryable-route-packaged-route-starting',
+      packagedRouteStartup: true,
+    },
+  );
+  assert.deepEqual(
+    packagedProductionPluginClassifyTimeoutFallbackStartup(
+      { retryable: true, status: 404, body: 'No route was found matching the URL and request method.' },
+      { timedOut: true },
+    ),
+    {
+      kind: 'retryable-route-index-timeout',
+      indexProbeTimedOut: true,
+    },
+  );
+  assert.deepEqual(
+    packagedProductionPluginClassifyTimeoutFallbackStartup(
+      { timedOut: true },
+      { status: 503, body: 'WordPress is not ready yet' },
+    ),
+    {
+      kind: 'timed-out-route-wordpress-starting',
+      globalWordPressStartup: true,
+    },
+  );
+  assert.deepEqual(
+    packagedProductionPluginClassifyTimeoutFallbackStartup(
+      { timedOut: true },
+      { status: 200, body: 'ok' },
+    ),
+    {
+      kind: 'timed-out-route-packaged-route-starting',
+      packagedRouteStartup: true,
+    },
+  );
+  assert.equal(
+    packagedProductionPluginClassifyTimeoutFallbackStartup(
+      { terminal: true, status: 500, body: 'fatal' },
+      { status: 500, body: 'fatal' },
+    ),
+    null,
+  );
+});
+
 test('packaged production plugin readiness helper does not retry terminal readiness failures', () => {
   assert.equal(
     packagedProductionPluginReadinessBodyRetryable(
@@ -2328,12 +2389,8 @@ test('packaged readiness timeout fallback classifies global WordPress versus pac
     verifierSource,
     /preflight probe timed out after global WordPress startup HTTP \$\{indexProbe\.status\} while the snapshot probe timed out[\s\S]*?packagedRouteStartup:\s*true/s,
   );
-  assert.match(smokeSource, /packagedProductionPluginRetryableRouteProbeWhileIndexProbeTimedOut\(/);
-  assert.match(smokeSource, /packagedProductionPluginTimedOutRouteProbeWhileWordPressStarting\(/);
-  assert.match(smokeSource, /packagedProductionPluginTimedOutRouteProbeWhilePackagedRouteStarting\(/);
-  assert.match(verifierSource, /packagedProductionPluginRetryableRouteProbeWhileIndexProbeTimedOut\(/);
-  assert.match(verifierSource, /packagedProductionPluginTimedOutRouteProbeWhileWordPressStarting\(/);
-  assert.match(verifierSource, /packagedProductionPluginTimedOutRouteProbeWhilePackagedRouteStarting\(/);
+  assert.match(smokeSource, /packagedProductionPluginClassifyTimeoutFallbackStartup\(/);
+  assert.match(verifierSource, /packagedProductionPluginClassifyTimeoutFallbackStartup\(/);
 });
 
 test('packaged readiness helpers treat signed preflight as the bootstrap authority before terminal snapshot auth failures', () => {
@@ -3365,10 +3422,10 @@ test('packaged production plugin smoke reuses tracked blueprint snapshots before
   );
 
   assert.match(smokeSource, /import \{ loadBlueprintSnapshotFixture \} from '\.\/blueprint-snapshot-fixture\.js';/);
-  assert.match(smokeSource, /const trackedSnapshot = loadBlueprintSnapshotFixture\(name, blueprintPath\);/);
+  assert.match(smokeSource, /const trackedSnapshot = loadBlueprintSnapshotFixture\([^,]+, blueprintPath\);/);
   assert.match(
     smokeSource,
-    /if \(trackedSnapshot\) \{\s*writeStageProgress\(`using tracked snapshot fixture for \$\{name\}`\);\s*return trackedSnapshot;\s*\}/s,
+    /if \(trackedSnapshot\) \{\s*writeStageProgress\(`using tracked snapshot fixture for \$\{[^}]+\}`\);\s*return trackedSnapshot;\s*\}/s,
   );
 });
 

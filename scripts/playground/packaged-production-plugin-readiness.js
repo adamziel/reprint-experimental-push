@@ -337,3 +337,76 @@ export function packagedProductionPluginRetryableRouteProbeWhileIndexProbeTimedO
   return routeProbe?.retryable === true
     && indexProbe?.timedOut === true;
 }
+
+export function packagedProductionPluginClassifyTimeoutFallbackStartup(
+  routeProbe,
+  indexProbe,
+) {
+  if (
+    packagedProductionPluginRetryableRouteProbeWhileIndexProbeTimedOut(
+      routeProbe,
+      indexProbe,
+    )
+  ) {
+    return {
+      kind: 'retryable-route-index-timeout',
+      indexProbeTimedOut: true,
+    };
+  }
+
+  if (
+    packagedProductionPluginRouteRetryableWhileWordPressStarting(
+      routeProbe?.status,
+      routeProbe?.body || '',
+      indexProbe?.status,
+      indexProbe?.body || '',
+    )
+  ) {
+    return {
+      kind: 'retryable-route-wordpress-starting',
+      globalWordPressStartup: true,
+    };
+  }
+
+  if (
+    packagedProductionPluginRouteRetryableWhilePackagedRouteStarting(
+      routeProbe?.status,
+      routeProbe?.body || '',
+      indexProbe?.status,
+      indexProbe?.body || '',
+    )
+  ) {
+    return {
+      kind: 'retryable-route-packaged-route-starting',
+      packagedRouteStartup: true,
+    };
+  }
+
+  if (
+    packagedProductionPluginTimedOutRouteProbeWhileWordPressStarting(
+      routeProbe,
+      indexProbe?.status,
+      indexProbe?.body || '',
+    )
+  ) {
+    return {
+      kind: 'timed-out-route-wordpress-starting',
+      globalWordPressStartup: true,
+    };
+  }
+
+  if (
+    packagedProductionPluginTimedOutRouteProbeWhilePackagedRouteStarting(
+      routeProbe,
+      indexProbe?.status,
+      indexProbe?.body || '',
+    )
+  ) {
+    return {
+      kind: 'timed-out-route-packaged-route-starting',
+      packagedRouteStartup: true,
+    };
+  }
+
+  return null;
+}

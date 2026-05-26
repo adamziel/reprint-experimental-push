@@ -13,6 +13,7 @@ import {
   resolveAuthSessionSourceCredentials,
 } from './auth-session-source.js';
 import {
+  packagedProductionPluginClassifyTimeoutFallbackStartup,
   packagedProductionPluginMaxConsecutiveNotReadyProbes,
   packagedProductionPluginNextRouteNotReadyProbeCounts,
   packagedProductionPluginNextTimeoutProbeCount,
@@ -24,13 +25,8 @@ import {
   packagedProductionPluginReadinessErrorRetryable,
   packagedProductionPluginReadinessProbeTimedOut,
   packagedProductionPluginResetRouteNotReadyProbeCounts,
-  packagedProductionPluginRetryableRouteProbeWhileIndexProbeTimedOut,
-  packagedProductionPluginRouteRetryableWhilePackagedRouteStarting,
-  packagedProductionPluginRouteRetryableWhileWordPressStarting,
   packagedProductionPluginServerReady,
   packagedProductionPluginSnapshotRetryable,
-  packagedProductionPluginTimedOutRouteProbeWhilePackagedRouteStarting,
-  packagedProductionPluginTimedOutRouteProbeWhileWordPressStarting,
 } from './packaged-production-plugin-readiness.js';
 import { loadBlueprintSnapshotFixture } from './blueprint-snapshot-fixture.js';
 import { resolvePackagedProductionPluginSourceCommand } from './packaged-production-plugin-source-command.js';
@@ -938,14 +934,11 @@ async function waitForServer(child, baseUrl, logs) {
             return;
           }
           if (preflightProbe.retryable) {
-            if (
-              packagedProductionPluginRouteRetryableWhileWordPressStarting(
-                preflightProbe.status,
-                preflightProbe.body,
-                indexProbe?.status,
-                indexProbe?.body || '',
-              )
-            ) {
+            const startupBranch = packagedProductionPluginClassifyTimeoutFallbackStartup(
+              preflightProbe,
+              indexProbe,
+            );
+            if (startupBranch?.kind === 'retryable-route-wordpress-starting') {
               throw new Error(
                 formatPackagedReadinessFailure(
                   `Packaged production plugin preflight stayed startup-shaped while /wp-json/ kept reporting global WordPress startup HTTP ${indexProbe?.status ?? 0} after the snapshot probe timed out at ${baseUrl}`,
@@ -956,14 +949,7 @@ async function waitForServer(child, baseUrl, logs) {
                 ),
               );
             }
-            if (
-              packagedProductionPluginRouteRetryableWhilePackagedRouteStarting(
-                preflightProbe.status,
-                preflightProbe.body,
-                indexProbe?.status,
-                indexProbe?.body || '',
-              )
-            ) {
+            if (startupBranch?.kind === 'retryable-route-packaged-route-starting') {
               throw new Error(
                 formatPackagedReadinessFailure(
                   `Packaged production plugin preflight stayed startup-shaped after global WordPress startup HTTP ${indexProbe?.status ?? 0} while the snapshot probe timed out at ${baseUrl}`,
@@ -974,12 +960,7 @@ async function waitForServer(child, baseUrl, logs) {
                 ),
               );
             }
-            if (
-              packagedProductionPluginRetryableRouteProbeWhileIndexProbeTimedOut(
-                preflightProbe,
-                indexProbe,
-              )
-            ) {
+            if (startupBranch?.kind === 'retryable-route-index-timeout') {
               throw new Error(
                 formatPackagedReadinessFailure(
                   `Packaged production plugin preflight stayed startup-shaped while /wp-json/ timed out after the snapshot probe timed out at ${baseUrl}`,
@@ -1007,13 +988,11 @@ async function waitForServer(child, baseUrl, logs) {
             );
           }
           if (indexProbe) {
-            if (
-              packagedProductionPluginTimedOutRouteProbeWhileWordPressStarting(
-                preflightProbe,
-                indexProbe.status,
-                indexProbe.body || '',
-              )
-            ) {
+            const startupBranch = packagedProductionPluginClassifyTimeoutFallbackStartup(
+              preflightProbe,
+              indexProbe,
+            );
+            if (startupBranch?.kind === 'timed-out-route-wordpress-starting') {
               throw new Error(
                 formatPackagedReadinessFailure(
                   `Packaged production plugin preflight probe timed out while /wp-json/ kept reporting global WordPress startup HTTP ${indexProbe.status} after the snapshot probe timed out at ${baseUrl}`,
@@ -1024,13 +1003,7 @@ async function waitForServer(child, baseUrl, logs) {
                 ),
               );
             }
-            if (
-              packagedProductionPluginTimedOutRouteProbeWhilePackagedRouteStarting(
-                preflightProbe,
-                indexProbe.status,
-                indexProbe.body || '',
-              )
-            ) {
+            if (startupBranch?.kind === 'timed-out-route-packaged-route-starting') {
               throw new Error(
                 formatPackagedReadinessFailure(
                   `Packaged production plugin preflight probe timed out after global WordPress startup HTTP ${indexProbe.status} while the snapshot probe timed out at ${baseUrl}`,

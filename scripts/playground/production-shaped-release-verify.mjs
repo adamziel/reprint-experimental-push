@@ -32,6 +32,7 @@ import {
   labSnapshotRetryable,
 } from './lab-playground-readiness.js';
 import {
+  packagedProductionPluginClassifyTimeoutFallbackStartup,
   packagedProductionPluginMaxConsecutiveNotReadyProbes,
   packagedProductionPluginReadinessBodyRetryable,
   packagedProductionPluginReadinessErrorRetryable,
@@ -43,13 +44,8 @@ import {
   packagedProductionPluginPreflightRetryable,
   packagedProductionPluginReadinessProbeTimedOut,
   packagedProductionPluginResetRouteNotReadyProbeCounts,
-  packagedProductionPluginRetryableRouteProbeWhileIndexProbeTimedOut,
-  packagedProductionPluginRouteRetryableWhilePackagedRouteStarting,
-  packagedProductionPluginRouteRetryableWhileWordPressStarting,
   packagedProductionPluginServerReady,
   packagedProductionPluginSnapshotRetryable,
-  packagedProductionPluginTimedOutRouteProbeWhilePackagedRouteStarting,
-  packagedProductionPluginTimedOutRouteProbeWhileWordPressStarting,
 } from './packaged-production-plugin-readiness.js';
 import { loadBlueprintSnapshotFixture } from './blueprint-snapshot-fixture.js';
 import {
@@ -1828,14 +1824,11 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
             return;
           }
           if (preflightProbe.retryable) {
-            if (
-              packagedProductionPluginRouteRetryableWhileWordPressStarting(
-                preflightProbe.status,
-                preflightProbe.body,
-                indexProbe?.status,
-                indexProbe?.body || '',
-              )
-            ) {
+            const startupBranch = packagedProductionPluginClassifyTimeoutFallbackStartup(
+              preflightProbe,
+              indexProbe,
+            );
+            if (startupBranch?.kind === 'retryable-route-wordpress-starting') {
               lastError = error;
               await throwPlaygroundReadinessFailure(
                 child,
@@ -1851,14 +1844,7 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
                 lastTimeoutFallbackProbes,
               );
             }
-            if (
-              packagedProductionPluginRouteRetryableWhilePackagedRouteStarting(
-                preflightProbe.status,
-                preflightProbe.body,
-                indexProbe?.status,
-                indexProbe?.body || '',
-              )
-            ) {
+            if (startupBranch?.kind === 'retryable-route-packaged-route-starting') {
               lastError = error;
               await throwPlaygroundReadinessFailure(
                 child,
@@ -1874,12 +1860,7 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
                 lastTimeoutFallbackProbes,
               );
             }
-            if (
-              packagedProductionPluginRetryableRouteProbeWhileIndexProbeTimedOut(
-                preflightProbe,
-                indexProbe,
-              )
-            ) {
+            if (startupBranch?.kind === 'retryable-route-index-timeout') {
               lastError = error;
               await throwPlaygroundReadinessFailure(
                 child,
@@ -1916,13 +1897,11 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
             );
           }
           if (indexProbe) {
-            if (
-              packagedProductionPluginTimedOutRouteProbeWhileWordPressStarting(
-                preflightProbe,
-                indexProbe.status,
-                indexProbe.body || '',
-              )
-            ) {
+            const startupBranch = packagedProductionPluginClassifyTimeoutFallbackStartup(
+              preflightProbe,
+              indexProbe,
+            );
+            if (startupBranch?.kind === 'timed-out-route-wordpress-starting') {
               lastError = error;
               await throwPlaygroundReadinessFailure(
                 child,
@@ -1938,13 +1917,7 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
                 lastTimeoutFallbackProbes,
               );
             }
-            if (
-              packagedProductionPluginTimedOutRouteProbeWhilePackagedRouteStarting(
-                preflightProbe,
-                indexProbe.status,
-                indexProbe.body || '',
-              )
-            ) {
+            if (startupBranch?.kind === 'timed-out-route-packaged-route-starting') {
               lastError = error;
               await throwPlaygroundReadinessFailure(
                 child,
