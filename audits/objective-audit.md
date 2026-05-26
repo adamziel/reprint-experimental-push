@@ -4,11 +4,11 @@
 
 The project is **not releasable as a production WordPress push path**.
 
-- Audit time: 2026-05-26 09:39:17 CEST (+0200)
+- Audit time: 2026-05-26 09:40:06 CEST (+0200)
 - Fresh remote heads re-polled at audit time:
   - `origin/lane/no-data-loss-invariants` -> `ad57d11a`
   - `origin/lane/reliable-executor` -> `35532d06`
-  - `origin/lane/critic` -> `55ba3ab7`
+  - `origin/lane/critic` -> `2312a594`
   - `origin/lane/no-data-loss-recovery` -> `9e077c10`
   - `origin/lane/progress-publisher` -> `7695e1f9`
   - `origin/lane/feedback-supervisor` -> `f386dfa6`
@@ -28,7 +28,7 @@ The project is **not releasable as a production WordPress push path**.
 1. `reliable-executor` still only proves fail-closed support behavior. The new head `35532d06` tightens auth-session proof counts, with earlier support-side auth drift and replay schema version tracking still in scope, but none establishes production-backed auth/session lifecycle, canonical replay on a live source, or durable journal ownership on the release path.
 2. `no-data-loss-recovery` still fences recovery paths, but `9e077c10` only tightens remote ownership fencing and does not prove restart-readable durable artifacts owned by the production release path.
 3. `no-data-loss-invariants` now shows additional unsupported-surface blocking, but `ad57d11a`, `93a4a4eb`, `8b6c8bca`, `3f5e4919`, `60d398ba`, `22ac2d21`, `56fd6a3a`, `7d614106`, `38e14784`, `b12d7401`, `ff1c8e35`, and `5e76166e` still do not prove the live production mutation boundary.
-4. `critic` tightened the auth-session blocker in `55ba3ab7`, but that is still a critique update rather than release proof.
+4. `critic` refreshed the auth-session evidence in `2312a594`, but that is still a critique update rather than release proof.
 5. `progress-publisher` and `feedback-supervisor` only moved visible freshness. That is useful for visibility, but it does not move a release gate.
 
 ## Conclusion
