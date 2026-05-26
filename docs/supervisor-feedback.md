@@ -1,24 +1,24 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-26 14:30 CEST
+Last updated: 2026-05-26 14:36 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
 
 ## 2026-05-26 - Current Nudge
 
-- Going well: `6beb5ed7c74509094d831bc4247541c4b684feae` is still the live
-  reliable head; the latest evidence is still support-side release-verifier
-  work, not a gate cross.
+- Going well: `6beb5ed7c74509094d831bc4247541c4b684feae` is now the live
+  reliable head; the latest evidence still points to support-side
+  release-verifier work, not a gate cross.
 - Not going well: the release gate is still `0/4`; production-backed
   auth/session lifecycle and durable-journal ownership remain blocked.
-- Progress change: the public progress branch is still behind the live head,
-  so `progress-publisher` needs to catch `progress.html` and the log up to
-  `6beb5ed7c74509094d831bc4247541c4b684feae`.
-- Next nudge: `progress-publisher` should refresh the public page to the live
-  reliable head without inflating gates; `reliable-executor` should stay on the
-  next gate dependency: production auth/session lifecycle, durable journal
-  ownership, or a concrete blocker command that names the missing primitive.
+- Progress change: the public progress surface should be checked for drift
+  against `6beb5ed7c74509094d831bc4247541c4b684feae` and refreshed only if it
+  still names an older reliable head.
+- Next nudge: `progress-publisher` should keep the public page current without
+  inflating gates; `reliable-executor` should stay on the next gate
+  dependency: production auth/session lifecycle, durable journal ownership, or
+  a concrete blocker command that names the missing primitive.
 
 | Lane | Change | Next nudge |
 | --- | --- | --- |
@@ -27,7 +27,7 @@ changed, what is helping, what is not helping, and the next nudge.
 | Reliable executor | Up in support evidence | Move to production auth/session lifecycle or durable ownership. |
 | Fast paths | Up in model | Run a large-site benchmark with receipts and resume cursors. |
 | Audit and critic | Up | Re-audit the new live reliable head only if the gate changes. |
-| Progress publisher | Stale | Refresh the public page to `6beb5ed7c74509094d831bc4247541c4b684feae` without timestamp-only churn. |
+| Progress publisher | Check drift | Refresh the public page to `6beb5ed7c74509094d831bc4247541c4b684feae` only if it still names an older reliable head. |
 
 <details>
 <summary>Earlier feedback entries</summary>
