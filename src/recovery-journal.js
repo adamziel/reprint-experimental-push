@@ -942,16 +942,22 @@ function persistedProductionArtifactRefs(journalPath) {
       persistedJournalPath = artifactRefs.journal;
     }
     if (
-      persistedRemoteArtifactPath === null
-      && Object.hasOwn(artifactRefs, 'remote')
+      Object.hasOwn(artifactRefs, 'remote')
       && isCanonicalAbsolutePath(artifactRefs.remote)
       && artifactRefs.remote !== persistedJournalPath
       && artifactRefs.remote !== artifactRefs.journal
     ) {
+      if (
+        persistedRemoteArtifactPath !== null
+        && persistedRemoteArtifactPath !== artifactRefs.remote
+      ) {
+        return {
+          journal: null,
+          remote: null,
+          invalidReason: 'Production recovery journal persistence includes an invalid owned remote artifact path.',
+        };
+      }
       persistedRemoteArtifactPath = artifactRefs.remote;
-    }
-    if (persistedJournalPath !== null && persistedRemoteArtifactPath !== null) {
-      break;
     }
   }
 

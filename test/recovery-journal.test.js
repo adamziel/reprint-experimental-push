@@ -1128,6 +1128,112 @@ test('production recovery journal consumption fails closed when persisted remote
   });
 });
 
+test('production recovery journal reopen fails closed when persisted remote ownership changes across records', () => {
+  const filePath = tempJournalPath();
+  const remote = baseSite();
+  const plan = planFor(baseSite(), localSite(), remote);
+  const remoteArtifactPath = `${filePath}.remote`;
+  const rewrittenRemoteArtifactPath = `${filePath}.rewritten-remote`;
+  const claimId = 'claim-remote-ref-rewritten';
+  const journal = openProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs: {
+      journal: filePath,
+      remote: remoteArtifactPath,
+    },
+    claimId,
+  });
+  appendRecoveryClaimOpened(journal, {
+    plan,
+    current: remote,
+    claimId,
+    artifactRefs: {
+      journal: filePath,
+      remote: remoteArtifactPath,
+    },
+  });
+  journal.appendEvent('recovery-state', {
+    planId: plan.id,
+    state: 'blocked-recovery',
+    observedHash: 'snapshot-hash-only',
+    artifactRefs: {
+      journal: filePath,
+      remote: rewrittenRemoteArtifactPath,
+    },
+  });
+  journal.close();
+
+  assert.throws(() => {
+    openProductionRecoveryJournal(filePath, {
+      truncate: false,
+      now: fixedNow,
+      claimId,
+      writerLease: { id: claimId },
+      ownsRemoteArtifact: true,
+      remoteArtifactPath: rewrittenRemoteArtifactPath,
+    });
+  }, {
+    name: 'UnsupportedProductionRecoveryJournalError',
+    code: 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL',
+    message: 'Production recovery journal persistence includes an invalid owned remote artifact path.',
+  });
+});
+
+test('production recovery journal consumption fails closed when persisted remote ownership changes across records', () => {
+  const filePath = tempJournalPath();
+  const remote = baseSite();
+  const plan = planFor(baseSite(), localSite(), remote);
+  const remoteArtifactPath = `${filePath}.remote`;
+  const rewrittenRemoteArtifactPath = `${filePath}.rewritten-remote`;
+  const claimId = 'claim-consume-remote-ref-rewritten';
+  const artifactRefs = {
+    journal: filePath,
+    remote: remoteArtifactPath,
+  };
+  const journal = openProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs,
+    claimId,
+  });
+  appendRecoveryClaimOpened(journal, {
+    plan,
+    current: remote,
+    claimId,
+    artifactRefs,
+  });
+  journal.appendEvent('recovery-state', {
+    planId: plan.id,
+    state: 'blocked-recovery',
+    observedHash: 'snapshot-hash-only',
+    artifactRefs: {
+      journal: filePath,
+      remote: rewrittenRemoteArtifactPath,
+    },
+  });
+  journal.close();
+
+  assert.throws(() => {
+    consumeProductionRecoveryJournal({
+      filePath,
+      plan,
+      current: remote,
+      artifactRefs: {
+        journal: filePath,
+        remote: rewrittenRemoteArtifactPath,
+      },
+      claimId,
+    });
+  }, {
+    name: 'UnsupportedProductionRecoveryJournalError',
+    code: 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL',
+    message: 'Production recovery journal persistence includes an invalid owned remote artifact path.',
+  });
+});
+
 test('production recovery journal adapter fails closed when writer leases use a null prototype', () => {
   const filePath = tempJournalPath();
 
