@@ -270,6 +270,12 @@ export async function runAuthenticatedHttpPush({
   summary.after = summarizeSnapshot(afterApply, local);
   const dbJournal = await client.get('/db-journal?limit=80');
   summary.dbJournal = summarizeDbJournal(dbJournal);
+  const dbJournalAuthEnvelopeDrift = hasAuthEnvelopeDrift(preflightAuthEnvelope, dbJournal);
+  if (dbJournalAuthEnvelopeDrift) {
+    summary.code = 'AUTH_SESSION_LIFECYCLE_DRIFT';
+    setDurableJournalBoundary(summary, 'journal-inspect');
+    return summary;
+  }
 
   summary.ok = apply.status === 200
     && apply.body?.ok === true
