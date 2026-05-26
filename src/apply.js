@@ -759,6 +759,14 @@ function productionRecoverySupportReport(writer) {
     addMissingDependency('restart-readable recovery remote artifact references');
   }
   if (
+    inspectedArtifactRefs
+    && Object.hasOwn(inspectedArtifactRefs, 'remote')
+    && Object.hasOwn(inspectedArtifactRefs, 'journal')
+    && inspectedArtifactRefs.remote === inspectedArtifactRefs.journal
+  ) {
+    addMissingDependency('restart-readable recovery remote artifact references');
+  }
+  if (
     !isStrictPlainObject(writer?.artifactRefs)
     || !Object.hasOwn(writer.artifactRefs, 'journal')
     || !writer.artifactRefs.journal
