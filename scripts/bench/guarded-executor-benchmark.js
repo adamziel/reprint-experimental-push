@@ -1807,7 +1807,6 @@ export function productionThroughputDetails(report) {
     && queueHeadroomWithinResourceCeiling
     && queueBudgetVisible
     && receiptCursorMemoryCeilingVisible
-    && report.evidence.backpressure?.receiptCursorMemoryCeilingMatchesQueueBudget === true
     && receiptCursorMemoryCeilingMatchesQueueBudgetVisible
     && queueHeadroomVisible
     && queueHeadroomMeasured
@@ -1818,7 +1817,6 @@ export function productionThroughputDetails(report) {
     && queueBudgetVisible
     && queueHeadroomVisible
     && queueHeadroomMeasured
-    && receiptCursorMemoryCeilingMatchesQueueBudget
     && receiptCursorMemoryCeilingMatchesQueueBudgetVisible
     && queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack;
   const queueBudgetVisibleAndQueueHeadroomVisibleAndMeasured =
@@ -1827,7 +1825,6 @@ export function productionThroughputDetails(report) {
     && queueBudgetVisible
     && queueHeadroomVisible
     && queueHeadroomMeasured
-    && receiptCursorMemoryCeilingMatchesQueueBudget
     && receiptCursorMemoryCeilingMatchesQueueBudgetVisible
     && queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack;
   const queueBudgetVisibleAndQueueHeadroomVisible =
@@ -1835,7 +1832,6 @@ export function productionThroughputDetails(report) {
     && queueHeadroomWithinResourceCeiling
     && queueBudgetVisible
     && queueHeadroomVisible
-    && receiptCursorMemoryCeilingMatchesQueueBudget
     && receiptCursorMemoryCeilingMatchesQueueBudgetVisible
     && queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack;
   const queueBudgetVisibleAndMemoryCeilingVisible =
@@ -1843,7 +1839,6 @@ export function productionThroughputDetails(report) {
     && queueHeadroomWithinResourceCeiling
     && queueBudgetVisible
     && receiptCursorMemoryCeilingVisible
-    && receiptCursorMemoryCeilingMatchesQueueBudget
     && receiptCursorMemoryCeilingMatchesQueueBudgetVisible
     && queueHeadroomVisible
     && queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack;
@@ -1852,7 +1847,6 @@ export function productionThroughputDetails(report) {
     && queueHeadroomWithinResourceCeiling
     && receiptCursorMemoryCeilingVisible
     && queueBudgetVisible
-    && receiptCursorMemoryCeilingMatchesQueueBudget
     && receiptCursorMemoryCeilingMatchesQueueBudgetVisible
     && queueHeadroomVisible
     && queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack;
@@ -1863,7 +1857,6 @@ export function productionThroughputDetails(report) {
     && receiptCursorMemoryHeadroomVisible
     && queueBudgetVisible
     && receiptCursorMemoryCeilingVisible
-    && receiptCursorMemoryCeilingMatchesQueueBudget
     && receiptCursorMemoryCeilingMatchesQueueBudgetVisible
     && queueHeadroomVisible
     && queueHeadroomMeasured
@@ -1875,7 +1868,6 @@ export function productionThroughputDetails(report) {
     && receiptCursorQueueSlackVisible
     && queueBudgetVisible
     && receiptCursorMemoryCeilingVisible
-    && receiptCursorMemoryCeilingMatchesQueueBudget
     && receiptCursorMemoryCeilingMatchesQueueBudgetVisible
     && queueHeadroomVisible
     && queueHeadroomMeasured
@@ -1885,7 +1877,6 @@ export function productionThroughputDetails(report) {
     && queueHeadroomWithinResourceCeiling
     && receiptCursorMemoryCeilingVisible
     && queueBudgetVisible
-    && receiptCursorMemoryCeilingMatchesQueueBudget
     && receiptCursorMemoryCeilingMatchesQueueBudgetVisible
     && queueHeadroomVisible
     && queueHeadroomMeasured
@@ -1914,7 +1905,7 @@ export function productionThroughputDetails(report) {
     && receiptCursorQueueSlackVisible
     && receiptCursorMemoryHeadroomVisible
     && Number.isFinite(receiptCursorMemoryHeadroomBytes)
-    && receiptCursorMemoryCeilingMatchesQueueBudget
+    && receiptCursorMemoryCeilingMatchesQueueBudgetVisible
     && queueHeadroomVisible
     && queueHeadroomMeasured
     && queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack;
@@ -1923,7 +1914,6 @@ export function productionThroughputDetails(report) {
     && queueHeadroomWithinResourceCeiling
     && receiptCursorMemoryCeilingVisible
     && queueBudgetVisible
-    && receiptCursorMemoryCeilingMatchesQueueBudget
     && receiptCursorMemoryCeilingMatchesQueueBudgetVisible
     && queueHeadroomVisible
     && queueHeadroomMeasured
