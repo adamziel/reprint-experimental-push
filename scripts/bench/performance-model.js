@@ -3267,6 +3267,27 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['remote-index-planning-only', 'compression', 'file-hashing', 'backpressure', 'chunk-receipts', 'atomic-file-publish', 'durable-progress'],
   },
   {
+    id: 'cached-receipt-cursor-memory-headroom-skips-large-upload-live-revalidation',
+    proposal: 'use a cached receipt cursor plus memory headroom to skip large-upload live revalidation',
+    rejectedBecause: 'cursor headroom can size the next replay window, but it cannot prove the live file compare, guarded publish barrier, or durable chunk receipts survived the pause',
+    rejectedGate: 'recovery',
+    violates: ['backpressure', 'chunk-receipts', 'file-hashing', 'atomic-file-publish', 'durable-progress'],
+  },
+  {
+    id: 'cached-receipt-cursor-and-journal-lag-skips-large-upload-live-revalidation',
+    proposal: 'use a cached receipt cursor plus journal lag to skip large-upload live revalidation',
+    rejectedBecause: 'journal lag can summarize flush timing, but it cannot prove the live file compare, guarded publish barrier, or durable chunk receipts survived the pause without guessing which acknowledgements remained valid',
+    rejectedGate: 'recovery',
+    violates: ['backpressure', 'chunk-receipts', 'file-hashing', 'atomic-file-publish', 'durable-progress'],
+  },
+  {
+    id: 'cached-receipt-cursor-and-queue-slack-skips-large-upload-live-revalidation',
+    proposal: 'use a cached receipt cursor plus queue slack to skip large-upload live revalidation',
+    rejectedBecause: 'queue slack can help size replay, but it cannot prove the live file compare, guarded publish barrier, or durable chunk receipts survived the pause',
+    rejectedGate: 'recovery',
+    violates: ['backpressure', 'chunk-receipts', 'file-hashing', 'atomic-file-publish', 'durable-progress'],
+  },
+  {
     id: 'compressed-remote-index-and-bounded-chunk-parallelism-skips-large-upload-publish-after-pause',
     proposal: 'use a compressed remote index plus bounded chunk parallelism to publish a large upload immediately after a pause',
     rejectedBecause: 'a paused upload still needs durable chunk receipts and the live publish compare; planning compression does not prove the staged bytes are safe to expose',

@@ -325,6 +325,16 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
   assert.ok(
     model.safeFastPaths.some(
       (fastPath) =>
+        fastPath.allowedShortcut === 'compress-durable-receipt-logs-with-stable-receipt-keys' &&
+        fastPath.area === 'compression' &&
+        fastPath.visibilityBoundary === 'recovery-evidence-only' &&
+        fastPath.gateProofs.recovery.includes('exact chunk, row, or group state'),
+    ),
+    'compressed durable receipt logs stay recovery-only and preserve classification keys',
+  );
+  assert.ok(
+    model.safeFastPaths.some(
+      (fastPath) =>
         fastPath.allowedShortcut === 'reuse-durable-receipt-cursor-to-size-the-next-journal-batch-after-a-pause' &&
         fastPath.area === 'backpressure' &&
         fastPath.visibilityBoundary === 'kind-scoped-journal-planning-only' &&
@@ -2544,6 +2554,27 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
   assert.ok(rejectedById.get('compressed-remote-index-and-cached-file-digest-skips-large-upload-publish').violates.includes('live-preconditions'));
   assert.ok(rejectedById.get('compressed-remote-index-and-cached-file-digest-skips-large-upload-publish').violates.includes('atomic-file-publish'));
   assert.ok(rejectedById.get('compressed-remote-index-and-cached-file-digest-skips-large-upload-publish').violates.includes('durable-progress'));
+  assert.equal(
+    rejectedById.get('cached-receipt-cursor-memory-headroom-skips-large-upload-live-revalidation').rejectedGate,
+    'recovery',
+  );
+  assert.ok(rejectedById.get('cached-receipt-cursor-memory-headroom-skips-large-upload-live-revalidation').violates.includes('file-hashing'));
+  assert.ok(rejectedById.get('cached-receipt-cursor-memory-headroom-skips-large-upload-live-revalidation').violates.includes('atomic-file-publish'));
+  assert.ok(rejectedById.get('cached-receipt-cursor-memory-headroom-skips-large-upload-live-revalidation').violates.includes('backpressure'));
+  assert.equal(
+    rejectedById.get('cached-receipt-cursor-and-journal-lag-skips-large-upload-live-revalidation').rejectedGate,
+    'recovery',
+  );
+  assert.ok(rejectedById.get('cached-receipt-cursor-and-journal-lag-skips-large-upload-live-revalidation').violates.includes('file-hashing'));
+  assert.ok(rejectedById.get('cached-receipt-cursor-and-journal-lag-skips-large-upload-live-revalidation').violates.includes('atomic-file-publish'));
+  assert.ok(rejectedById.get('cached-receipt-cursor-and-journal-lag-skips-large-upload-live-revalidation').violates.includes('durable-progress'));
+  assert.equal(
+    rejectedById.get('cached-receipt-cursor-and-queue-slack-skips-large-upload-live-revalidation').rejectedGate,
+    'recovery',
+  );
+  assert.ok(rejectedById.get('cached-receipt-cursor-and-queue-slack-skips-large-upload-live-revalidation').violates.includes('backpressure'));
+  assert.ok(rejectedById.get('cached-receipt-cursor-and-queue-slack-skips-large-upload-live-revalidation').violates.includes('chunk-receipts'));
+  assert.ok(rejectedById.get('cached-receipt-cursor-and-queue-slack-skips-large-upload-live-revalidation').violates.includes('atomic-file-publish'));
   assert.ok(rejectedById.get('compressed-remote-index-and-cached-chunk-ledger-skips-large-upload-publish').violates.includes('remote-index-planning-only'));
   assert.ok(rejectedById.get('compressed-remote-index-and-cached-chunk-ledger-skips-large-upload-publish').violates.includes('compression'));
   assert.ok(rejectedById.get('compressed-remote-index-and-cached-chunk-ledger-skips-large-upload-publish').violates.includes('file-hashing'));

@@ -1658,3 +1658,9 @@ group barrier that keeps coupled work visible together.
   acknowledgements survived or preserve journal order for recovery.
 - Backpressure is rejected whenever it drops receipts, treats an empty queue as
   completion, or lets a drained buffer bypass the guarded publish barrier.
+- Cached receipt cursor headroom is rejected when it tries to skip the live
+  file compare before publish, because replay sizing does not replace the live
+  precondition or the guarded publish barrier.
+- Cached receipt cursor plus queue slack is rejected for the same reason:
+  replay slack can help size recovery, but it does not prove the live compare
+  or the durable receipts needed to publish safely after a pause.
