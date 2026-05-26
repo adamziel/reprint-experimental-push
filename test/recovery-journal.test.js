@@ -504,6 +504,23 @@ test('production recovery journal adapter fails closed when writerLease epoch is
   });
 });
 
+test('production recovery journal adapter fails closed when writerLease id is padded with surrounding whitespace', () => {
+  const filePath = tempJournalPath();
+
+  assert.throws(() => {
+    openProductionRecoveryJournal(filePath, {
+      truncate: true,
+      now: fixedNow,
+      claimId: ' claim-1 ',
+      writerLease: { id: ' claim-1 ', epoch: 1 },
+    });
+  }, {
+    name: 'UnsupportedProductionRecoveryJournalError',
+    code: 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL',
+    message: 'Production recovery journal support requires an explicit fenced writer lease.',
+  });
+});
+
 test('production recovery journal adapter fails closed when claimId and writerLease identity diverge', () => {
   const filePath = tempJournalPath();
 

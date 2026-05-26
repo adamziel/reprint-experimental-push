@@ -585,6 +585,7 @@ function isValidProductionWriterLease(writerLease) {
     && Object.hasOwn(writerLease, 'id')
     && typeof writerLease.id === 'string'
     && writerLease.id.trim().length > 0
+    && writerLease.id.trim() === writerLease.id
     && (
       !Object.hasOwn(writerLease, 'epoch')
       || (Number.isInteger(writerLease.epoch) && writerLease.epoch >= 0)
