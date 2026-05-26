@@ -1189,6 +1189,20 @@ test('production auth/session lifecycle helper fails closed on string-valued cle
 test('production auth/session lifecycle helper fails closed on non-string lifecycle identity fields', () => {
   assert.deepEqual(
     evaluateProductionAuthSessionLifecycle({
+      id: ['psh_01j00000000000000000000000'],
+      type: 'production-auth-session',
+      status: 'active',
+      expiresAt: '2099-01-01T00:00:00Z',
+    }),
+    {
+      ok: false,
+      required: 'string lifecycle fields',
+      observed: 'invalid-id',
+    },
+  );
+
+  assert.deepEqual(
+    evaluateProductionAuthSessionLifecycle({
       id: 'psh_01j00000000000000000000000',
       type: ['production-auth-session'],
       status: 'active',
@@ -2622,6 +2636,31 @@ test('production auth/session lifecycle summary fails closed when direct issued 
     evaluateProductionAuthSessionLifecycleSummary({
       issued: {
         step: 'preflight',
+        id: ['session-01'],
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+      },
+      read: {
+        step: 'apply',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+        preserved: true,
+      },
+    }),
+    {
+      ok: false,
+      required: 'string lifecycle fields',
+      observed: 'invalid-id',
+    },
+  );
+
+  assert.deepEqual(
+    evaluateProductionAuthSessionLifecycleSummary({
+      issued: {
+        step: 'preflight',
         id: 'session-01',
         type: ['production-auth-session'],
         status: 'active',
@@ -2699,6 +2738,49 @@ test('production auth/session lifecycle summary fails closed when direct preserv
 });
 
 test('production auth/session lifecycle summary fails closed when an intermediate preserved-read lifecycle identity field is not a string', () => {
+  assert.deepEqual(
+    evaluateProductionAuthSessionLifecycleSummary({
+      issued: {
+        step: 'preflight',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+      },
+      read: {
+        step: 'apply',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+        preserved: true,
+      },
+      observations: [
+        {
+          step: 'preflight',
+          id: 'session-01',
+          type: 'production-auth-session',
+          status: 'active',
+          expiresAt: '2099-01-01T00:00:00Z',
+          preserved: false,
+        },
+        {
+          step: 'apply',
+          id: ' session-01 ',
+          type: 'production-auth-session',
+          status: 'active',
+          expiresAt: '2099-01-01T00:00:00Z',
+          preserved: true,
+        },
+      ],
+    }),
+    {
+      ok: false,
+      required: 'string lifecycle fields',
+      observed: 'invalid-id',
+    },
+  );
+
   assert.deepEqual(
     evaluateProductionAuthSessionLifecycleSummary({
       issued: {
@@ -2988,8 +3070,8 @@ test('production auth/session lifecycle summary fails closed when preserved-read
     evaluateProductionAuthSessionLifecycleSummary(summary),
     {
       ok: false,
-      required: 'preserved read',
-      observed: 'rotated',
+      required: 'string lifecycle fields',
+      observed: 'invalid-id',
     },
   );
 });
@@ -3026,8 +3108,8 @@ test('production auth/session lifecycle summary fails closed when preserved-read
     evaluateProductionAuthSessionLifecycleSummary(summary),
     {
       ok: false,
-      required: 'preserved read',
-      observed: 'rotated',
+      required: 'string lifecycle fields',
+      observed: 'invalid-id',
     },
   );
 });

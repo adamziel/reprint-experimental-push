@@ -256,6 +256,14 @@ export function evaluateProductionAuthSessionLifecycleSummary(summary, now = Dat
     }
 
     const observationSessionId = normalizeAuthSessionObservationId(observation.id);
+    if (observation.id !== undefined && observation.id !== null && !observationSessionId) {
+      return {
+        ok: false,
+        required: 'string lifecycle fields',
+        observed: 'invalid-id',
+      };
+    }
+
     if (
       observation.step !== 'preflight'
       && isAuthSessionReadStep(observation.step)
@@ -435,6 +443,10 @@ function resolveInvalidAuthSessionLifecycleFlag(observation) {
 function resolveInvalidAuthSessionIdentityField(observation) {
   if (!observation || typeof observation !== 'object') {
     return null;
+  }
+
+  if (observation.id !== undefined && observation.id !== null && !normalizeAuthSessionObservationId(observation.id)) {
+    return 'id';
   }
 
   const identityFields = [
