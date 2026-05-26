@@ -3934,6 +3934,72 @@ test('shared lab waitForServer accepts a ready snapshot even while /wp-json/ sti
   assert.equal(snapshotCalls, 1);
 });
 
+test('shared lab waitForServer accepts a ready snapshot even while /wp-json/ still reports startup-shaped no-route failures', async () => {
+  let indexCalls = 0;
+  let snapshotCalls = 0;
+  const server = createServer((request, response) => {
+    if (request.url === '/wp-json/') {
+      indexCalls += 1;
+      response.statusCode = 404;
+      response.setHeader('content-type', 'application/json; charset=utf-8');
+      response.end(JSON.stringify({
+        code: 'rest_no_route',
+        message: 'No route was found matching the URL and request method.',
+      }));
+      return;
+    }
+
+    if (request.url === '/wp-json/reprint-push-lab/v1/snapshot') {
+      snapshotCalls += 1;
+      response.statusCode = 200;
+      response.setHeader('content-type', 'application/json; charset=utf-8');
+      response.end(JSON.stringify({ ok: true, snapshot: { source: 'ready-before-index-no-route' } }));
+      return;
+    }
+
+    response.statusCode = 404;
+    response.end('not found');
+  });
+
+  await new Promise((resolve, reject) => {
+    server.listen(0, '127.0.0.1', (error) => {
+      if (error) {
+        reject(error);
+        return;
+      }
+      resolve();
+    });
+  });
+
+  const address = server.address();
+  assert.ok(address && typeof address === 'object' && typeof address.port === 'number');
+
+  try {
+    await waitForServer(
+      {
+        exitCode: null,
+        signalCode: null,
+        pid: null,
+      },
+      `http://127.0.0.1:${address.port}`,
+      () => '',
+    );
+  } finally {
+    await new Promise((resolve, reject) => {
+      server.close((error) => {
+        if (error) {
+          reject(error);
+          return;
+        }
+        resolve();
+      });
+    });
+  }
+
+  assert.equal(indexCalls, 1);
+  assert.equal(snapshotCalls, 1);
+});
+
 test('live Playground proof helpers keep lab readiness probes child-aware', () => {
   const liveSources = [
     readFileSync(
