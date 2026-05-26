@@ -3135,15 +3135,21 @@ function unsupportedTermTaxonomyResourceSupport({ resource, baseValue, localValu
     stableStringify(localValue) === stableStringify(baseValue)
     && stableStringify(remoteValue) !== stableStringify(baseValue)
   );
+  const convergedDrift = (
+    localValue !== ABSENT
+    && remoteValue !== ABSENT
+    && stableStringify(localValue) === stableStringify(remoteValue)
+    && stableStringify(localValue) !== stableStringify(baseValue)
+  );
 
-  if (samePlanCreatedTermReferences.length === 0 && !remoteOnlyDrift) {
+  if (samePlanCreatedTermReferences.length === 0 && !remoteOnlyDrift && !convergedDrift) {
     return { supported: true };
   }
 
   return {
     supported: false,
     className: 'unsupported-term-taxonomy-resource',
-    reason: remoteOnlyDrift
+    reason: remoteOnlyDrift || convergedDrift
       ? 'Term taxonomy graph resources are not yet supported by the planner.'
       : samePlanCreatedTermReferences.some((reference) => reference.relationshipType === 'term-taxonomy-parent')
       ? `WordPress graph mutation ${resource.key} is created in the same plan as a parent term identity that depends on it, and identity rewriting is not yet supported.`
