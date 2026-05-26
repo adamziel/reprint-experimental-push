@@ -4242,6 +4242,14 @@ test('safe fast paths retain all gate proofs and stay non-rejectable', () => {
   );
   assert.ok(
     model.safeFastPaths.some((fastPath) =>
+      fastPath.allowedShortcut === 'compress-plan-scoped-chunk-receipt-ledgers-to-size-bounded-retry-windows' &&
+      fastPath.guardrails.includes('compressed-ledger-stays-planning-evidence-only') &&
+      fastPath.gateProofs.recovery.includes('compressed receipt evidence stays advisory')
+    ),
+    'compressed chunk-receipt ledgers stay planning-only and still depend on durable recovery evidence',
+  );
+  assert.ok(
+    model.safeFastPaths.some((fastPath) =>
       fastPath.allowedShortcut === 'reuse-planned-dependency-graph-for-plugin-update-with-live-finalize' &&
       fastPath.gateProofs.group.includes('atomic-group commit barrier')
     ),
