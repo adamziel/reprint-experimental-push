@@ -46,8 +46,31 @@ function spawnReleaseVerify(env = {}, timeout = proofSubprocessTimeoutMs) {
 }
 
 function assertReleaseVerifyProof(proof, label) {
-  assert.equal(proof.error, undefined, `${label} must not expose a spawn error`);
-  assert.equal(proof.signal, null, `${label} must not terminate from an external signal`);
+  if (proof.error) {
+    const detailParts = [
+      proof.error.name ?? 'Error',
+      proof.error.code ? `code=${proof.error.code}` : null,
+      proof.error.errno ? `errno=${proof.error.errno}` : null,
+      proof.killed ? 'killed=true' : null,
+      proof.status !== null ? `status=${proof.status}` : null,
+      proof.signal ? `signal=${proof.signal}` : null,
+    ].filter(Boolean);
+    assert.fail(
+      `${label} exposed a spawn error with ${detailParts.join(' ')}: ${proof.error.message}\nstdout:\n${proof.stdout ?? ''}\nstderr:\n${proof.stderr ?? ''}`,
+    );
+  }
+
+  if (proof.signal) {
+    assert.fail(
+      `${label} terminated by ${proof.signal}\nstdout:\n${proof.stdout ?? ''}\nstderr:\n${proof.stderr ?? ''}`,
+    );
+  }
+
+  if (proof.status === null) {
+    assert.fail(
+      `${label} exited without a status\nstdout:\n${proof.stdout ?? ''}\nstderr:\n${proof.stderr ?? ''}`,
+    );
+  }
 }
 
 function spawnBoundedSync(command, args, options, label) {
