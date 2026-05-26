@@ -8,8 +8,8 @@ Commands:
 - `date '+%Y-%m-%d %H:%M:%S %Z (%z)'`
 - `sed -n '498,520p' progress.html`
 - `sed -n '1,18p' docs/progress-log.md`
-- `rg -n "Last updated|Public Status Audit|Gate status: 0/4|latest audit|newest-audit|blocker summary|2026-05-26 09:21" progress.html docs/progress-log.md`
-- `git diff -- progress.html docs/progress-log.md .lane-output/final.md`
+- `rg -n "10:48:50|104850|0f36d838|e725e749|27ad6f6f|0c4fd10f" progress.html docs/progress-log.md`
+- `git diff -- progress.html docs/progress-log.md`
 - `git status --short --branch`
 
 Push result:
