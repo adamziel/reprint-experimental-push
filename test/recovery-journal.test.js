@@ -203,6 +203,42 @@ test('production recovery journal adapter fails closed when no explicit fenced w
   });
 });
 
+test('production recovery journal adapter fails closed when remote artifact path is not canonical', () => {
+  const filePath = tempJournalPath();
+
+  assert.throws(() => {
+    openProductionRecoveryJournal(filePath, {
+      truncate: true,
+      now: fixedNow,
+      writerLease: { id: 'lease-1' },
+      remoteArtifactPath: 'relative/remote-artifact.jsonl',
+    });
+  }, {
+    name: 'UnsupportedProductionRecoveryJournalError',
+    code: 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL',
+  });
+});
+
+test('production recovery journal adapter accepts canonical remote artifact ownership metadata', () => {
+  const filePath = tempJournalPath();
+  const remoteArtifactPath = `${filePath}.remote`;
+  const journal = openProductionRecoveryJournal(filePath, {
+    truncate: true,
+    now: fixedNow,
+    writerLease: { id: 'lease-1' },
+    ownsRemoteArtifact: true,
+    remoteArtifactPath,
+  });
+
+  assert.equal(journal.ownsRemoteArtifact, true);
+  assert.deepEqual(journal.artifactRefs, { journal: filePath, remote: remoteArtifactPath });
+
+  const inspected = journal.inspect();
+  assert.deepEqual(inspected.artifactRefs, { journal: filePath, remote: remoteArtifactPath });
+
+  journal.close();
+});
+
 test('restart inspection classifies fail-before mutation journal as old remote', () => {
   const filePath = tempJournalPath();
   const remote = baseSite();
