@@ -3114,6 +3114,7 @@ function addUnsupportedCommentsUsersResourceBlocker(plan, {
     resourceKey: resource.key,
     reason: support.reason || `Comments and users graph resource ${resource.key} is not yet supported by the planner.`,
     unsupportedState: support.unsupportedState || null,
+    references: support.references || [],
     baseHash,
     localHash,
     remoteHash,
@@ -3147,6 +3148,7 @@ function addUnsupportedCommentmetaResourceBlocker(plan, {
     resourceKey: resource.key,
     reason: support.reason || `Comment meta resource ${resource.key} is not yet supported by the planner.`,
     unsupportedState: support.unsupportedState || null,
+    references: support.references || [],
     baseHash,
     localHash,
     remoteHash,
@@ -3180,6 +3182,7 @@ function addUnsupportedUsermetaResourceBlocker(plan, {
     resourceKey: resource.key,
     reason: support.reason || `User meta resource ${resource.key} is not yet supported by the planner.`,
     unsupportedState: support.unsupportedState || null,
+    references: support.references || [],
     baseHash,
     localHash,
     remoteHash,
@@ -3697,25 +3700,27 @@ function unsupportedCommentsUsersResourceSupport({ resource, baseValue, localVal
 
   if (resource.table === 'wp_comments') {
     const references = wordpressGraphReferences(resource, candidate);
-    const commentGraphReference = references.find((reference) =>
-      (
-        reference.relationshipType === 'comment-parent'
-        && reference.targetResource?.table === 'wp_comments'
-        && getResource(remote, reference.targetResource) === ABSENT
-        && getResource(local, reference.targetResource) !== ABSENT
-      )
-      || (
-        reference.relationshipType === 'comment-post'
-        && reference.targetResource?.table === 'wp_posts'
-        && getResource(remote, reference.targetResource) === ABSENT
-        && getResource(local, reference.targetResource) !== ABSENT
-      )
-      || (
-        reference.relationshipType === 'comment-user'
-        && reference.targetResource?.table === 'wp_users'
-        && getResource(remote, reference.targetResource) === ABSENT
-        && getResource(local, reference.targetResource) !== ABSENT
-      ));
+    const commentGraphReference = references
+      .map((reference) => wordpressGraphReferenceEvidence(reference, resources, base, local, remote))
+      .find((reference) =>
+        (
+          reference.relationshipType === 'comment-parent'
+          && reference.targetResource?.table === 'wp_comments'
+          && reference.targetChange.remote.state === 'absent'
+          && reference.targetChange.local.state === 'present'
+        )
+        || (
+          reference.relationshipType === 'comment-post'
+          && reference.targetResource?.table === 'wp_posts'
+          && reference.targetChange.remote.state === 'absent'
+          && reference.targetChange.local.state === 'present'
+        )
+        || (
+          reference.relationshipType === 'comment-user'
+          && reference.targetResource?.table === 'wp_users'
+          && reference.targetChange.remote.state === 'absent'
+          && reference.targetChange.local.state === 'present'
+        ));
 
     if (commentGraphReference) {
       return {
@@ -3725,8 +3730,9 @@ function unsupportedCommentsUsersResourceSupport({ resource, baseValue, localVal
         reason: commentGraphReference.relationshipType === 'comment-parent'
           ? `WordPress graph mutation ${resource.key} is created in the same plan as a parent comment identity that depends on it, and identity rewriting is not yet supported.`
           : commentGraphReference.relationshipType === 'comment-post'
-            ? `WordPress graph mutation ${resource.key} is created in the same plan as a comment post identity that depends on it, and identity rewriting is not yet supported.`
+          ? `WordPress graph mutation ${resource.key} is created in the same plan as a comment post identity that depends on it, and identity rewriting is not yet supported.`
             : `WordPress graph mutation ${resource.key} is created in the same plan as a comment user identity that depends on it, and identity rewriting is not yet supported.`,
+        references: [commentGraphReference],
       };
     }
   }
@@ -3761,6 +3767,7 @@ function unsupportedCommentsUsersResourceSupport({ resource, baseValue, localVal
         reason: userReference.relationshipType === 'comment-user'
           ? `WordPress graph mutation ${resource.key} is created in the same plan as a comment user identity that depends on it, and identity rewriting is not yet supported.`
           : `WordPress graph mutation ${resource.key} is created in the same plan as a user meta identity that depends on it, and identity rewriting is not yet supported.`,
+        references: [userReference],
       };
     }
   }
@@ -3799,11 +3806,13 @@ function unsupportedCommentmetaResourceSupport({ resource, baseValue, localValue
   }
 
   const references = wordpressGraphReferences(resource, candidate);
-  const commentGraphReference = references.find((reference) =>
-    reference.relationshipType === 'commentmeta-comment'
-    && reference.targetResource?.table === 'wp_comments'
-    && getResource(remote, reference.targetResource) === ABSENT
-    && getResource(local, reference.targetResource) !== ABSENT);
+  const commentGraphReference = references
+    .map((reference) => wordpressGraphReferenceEvidence(reference, resources, base, local, remote))
+    .find((reference) =>
+      reference.relationshipType === 'commentmeta-comment'
+      && reference.targetResource?.table === 'wp_comments'
+      && reference.targetChange.remote.state === 'absent'
+      && reference.targetChange.local.state === 'present');
 
   if (commentGraphReference) {
     return {
@@ -3811,6 +3820,7 @@ function unsupportedCommentmetaResourceSupport({ resource, baseValue, localValue
       className: 'unsupported-commentmeta-resource',
       unsupportedState: 'same-plan-reference',
       reason: `WordPress graph mutation ${resource.key} is created in the same plan as a comment identity that depends on it, and identity rewriting is not yet supported.`,
+      references: [commentGraphReference],
     };
   }
 
@@ -3846,11 +3856,13 @@ function unsupportedUsermetaResourceSupport({ resource, baseValue, localValue, r
   }
 
   const references = wordpressGraphReferences(resource, candidate);
-  const userGraphReference = references.find((reference) =>
-    reference.relationshipType === 'usermeta-user'
-    && reference.targetResource?.table === 'wp_users'
-    && getResource(remote, reference.targetResource) === ABSENT
-    && getResource(local, reference.targetResource) !== ABSENT);
+  const userGraphReference = references
+    .map((reference) => wordpressGraphReferenceEvidence(reference, resources, base, local, remote))
+    .find((reference) =>
+      reference.relationshipType === 'usermeta-user'
+      && reference.targetResource?.table === 'wp_users'
+      && reference.targetChange.remote.state === 'absent'
+      && reference.targetChange.local.state === 'present');
 
   if (userGraphReference) {
     return {
@@ -3858,6 +3870,7 @@ function unsupportedUsermetaResourceSupport({ resource, baseValue, localValue, r
       className: 'unsupported-usermeta-resource',
       unsupportedState: 'same-plan-reference',
       reason: `WordPress graph mutation ${resource.key} is created in the same plan as a user identity that depends on it, and identity rewriting is not yet supported.`,
+      references: [userGraphReference],
     };
   }
 

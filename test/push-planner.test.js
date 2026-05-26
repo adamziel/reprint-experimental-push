@@ -17565,6 +17565,7 @@ test('blocks local same-plan created user identity when a comment references it 
 
   const plan = planFor(base, local, remote);
   const blocker = plan.blockers.find((entry) => entry.class === 'unsupported-comments-users-resource' && entry.resourceKey === resourceKey);
+  const reference = blocker.references[0];
   const matchingEdit = decisionFor(plan, 'row:["wp_posts","ID:1"]');
   const pluginDecision = decisionFor(plan, 'plugin:forms');
   const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
@@ -17578,6 +17579,11 @@ test('blocks local same-plan created user identity when a comment references it 
   assert.equal(blocker.class, 'unsupported-comments-users-resource');
   assert.equal(blocker.resourceKey, resourceKey);
   assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_comments","comment_ID:21"] is created in the same plan as a comment user identity that depends on it, and identity rewriting is not yet supported.');
+  assert.equal(reference.relationshipKey, 'wp_comments.user_id');
+  assert.equal(reference.relationshipType, 'comment-user');
+  assert.equal(reference.targetResourceKey, targetResourceKey);
+  assert.equal(reference.targetChange.remote.state, 'absent');
+  assert.equal(reference.targetChange.local.state, 'present');
   assert.equal(matchingEdit.decision, 'already-in-sync');
   assert.equal(matchingEdit.change.localChange, 'update');
   assert.equal(matchingEdit.change.remoteChange, 'update');
@@ -17780,7 +17786,7 @@ test('blocks local same-plan created comment user identity while preserving a ma
   base.db.wp_posts['ID:1'].post_title = 'Base matching post title';
 
   const local = baseSite();
-  local.db.wp_links = JSON.parse(JSON.stringify(base.db.wp_links));
+  local.db.wp_links = JSON.parse(JSON.stringify(base.db.wp_links || {}));
   local.db.wp_posts['ID:1'].post_title = 'Shared matching post title';
   local.db.wp_comments = {
     'comment_ID:20': {
@@ -17806,6 +17812,7 @@ test('blocks local same-plan created comment user identity while preserving a ma
 
   const plan = planFor(base, local, remote);
   const blocker = plan.blockers.find((entry) => entry.resourceKey === targetResourceKey);
+  const reference = blocker.references[0];
   const matchingEdit = decisionFor(plan, 'row:["wp_posts","ID:1"]');
   const pluginDecision = decisionFor(plan, 'plugin:forms');
   const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
@@ -17819,6 +17826,11 @@ test('blocks local same-plan created comment user identity while preserving a ma
   assert.equal(blocker.class, 'unsupported-comments-users-resource');
   assert.equal(blocker.resourceKey, targetResourceKey);
   assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_users","ID:9"] is created in the same plan as a comment user identity that depends on it, and identity rewriting is not yet supported.');
+  assert.equal(reference.relationshipKey, 'wp_comments.user_id');
+  assert.equal(reference.relationshipType, 'comment-user');
+  assert.equal(reference.targetResourceKey, targetResourceKey);
+  assert.equal(reference.targetChange.remote.state, 'absent');
+  assert.equal(reference.targetChange.local.state, 'present');
   assert.equal(matchingEdit.decision, 'already-in-sync');
   assert.equal(matchingEdit.change.localChange, 'update');
   assert.equal(matchingEdit.change.remoteChange, 'update');
@@ -17989,6 +18001,7 @@ test('blocks local same-plan created comment meta identity while preserving remo
   const plan = planFor(base, local, remote);
   const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
   const targetBlocker = plan.blockers.find((entry) => entry.resourceKey === targetResourceKey);
+  const reference = blocker.references[0];
   const planJson = JSON.stringify(plan);
 
   assert.equal(plan.status, 'blocked');
@@ -17999,6 +18012,11 @@ test('blocks local same-plan created comment meta identity while preserving remo
   assert.equal(blocker.class, 'unsupported-commentmeta-resource');
   assert.equal(blocker.resourceKey, resourceKey);
   assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_commentmeta","meta_id:43"] is created in the same plan as a comment identity that depends on it, and identity rewriting is not yet supported.');
+  assert.equal(reference.relationshipKey, 'wp_commentmeta.comment_id');
+  assert.equal(reference.relationshipType, 'commentmeta-comment');
+  assert.equal(reference.targetResourceKey, targetResourceKey);
+  assert.equal(reference.targetChange.remote.state, 'absent');
+  assert.equal(reference.targetChange.local.state, 'present');
   assert.equal(targetBlocker.class, 'unsupported-comments-users-resource');
   assert.equal(targetBlocker.resourceKey, targetResourceKey);
   assert.equal(targetBlocker.reason, 'Comments graph resources are not yet supported by the planner.');
@@ -18298,6 +18316,7 @@ test('blocks local same-plan created user meta identity while preserving remote-
 
   const plan = planFor(base, local, remote);
   const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  const reference = blocker.references[0];
   const planJson = JSON.stringify(plan);
 
   assert.equal(plan.status, 'blocked');
@@ -18308,6 +18327,11 @@ test('blocks local same-plan created user meta identity while preserving remote-
   assert.equal(blocker.resourceKind, 'user-meta');
   assert.equal(blocker.resourceKey, resourceKey);
   assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_usermeta","umeta_id:77"] is created in the same plan as a user identity that depends on it, and identity rewriting is not yet supported.');
+  assert.equal(reference.relationshipKey, 'wp_usermeta.user_id');
+  assert.equal(reference.relationshipType, 'usermeta-user');
+  assert.equal(reference.targetResourceKey, 'row:["wp_users","ID:11"]');
+  assert.equal(reference.targetChange.remote.state, 'absent');
+  assert.equal(reference.targetChange.local.state, 'present');
   assert.equal(planJson.includes('Local nickname'), false);
   assert.equal(planJson.includes('Base nickname'), false);
   assert.equal(planJson.includes('local-same-plan-user'), false);
