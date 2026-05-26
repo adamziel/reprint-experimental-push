@@ -3190,6 +3190,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['remote-index-planning-only', 'compression', 'file-hashing', 'backpressure', 'chunk-receipts', 'atomic-file-publish', 'durable-progress'],
   },
   {
+    id: 'compressed-remote-index-and-cached-file-fingerprint-skips-large-upload-chunk-hash-backpressure-after-pause',
+    proposal: 'use a compressed remote index plus a cached file fingerprint to skip chunk-hash backpressure for a large upload after a pause',
+    rejectedBecause: 'planning evidence and cached fingerprints can trim duplicate hashing, but they cannot prove which chunk acknowledgements survived the pause or that the guarded publish barrier still has the durable chunk receipts needed to recover',
+    rejectedGate: 'recovery',
+    violates: ['remote-index-planning-only', 'compression', 'file-hashing', 'chunk-receipts', 'backpressure', 'durable-progress', 'atomic-file-publish'],
+  },
+  {
     id: 'compressed-remote-index-and-cached-file-fingerprint-skips-large-upload-publish-after-pause-and-backpressure',
     proposal: 'use a compressed remote index plus a cached file fingerprint to skip large-upload publish after a pause and backpressure event',
     rejectedBecause: 'planning evidence and cached fingerprints can trim duplicate rehashing, but they cannot prove the chunk acknowledgements, live compare, or guarded publish barrier survived the pause, so the upload would become ambiguous after failure',
