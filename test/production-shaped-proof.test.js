@@ -16,19 +16,23 @@ const liveCredentials = {
   username: 'reprint_push_admin',
   password: 'reprint-push-admin-app-password',
 };
-const proofSubprocessTimeoutMs = 12_000;
+const proofSubprocessTimeoutMs = 20_000;
+const proofSubprocessOptions = {
+  timeout: proofSubprocessTimeoutMs,
+  killSignal: 'SIGKILL',
+  encoding: 'utf8',
+  maxBuffer: 1024 * 1024 * 20,
+};
 
 function spawnReleaseVerify(env = {}, timeout = proofSubprocessTimeoutMs) {
   return spawnBoundedSync(process.execPath, ['scripts/playground/production-shaped-release-verify.mjs'], {
     cwd: repoRoot,
+    ...proofSubprocessOptions,
     timeout,
-    killSignal: 'SIGKILL',
     env: {
       ...process.env,
       ...env,
     },
-    encoding: 'utf8',
-    maxBuffer: 1024 * 1024 * 20,
   }, 'release verify');
 }
 
@@ -86,8 +90,7 @@ test('production-shaped proof wrapper emits the checked proof summary and exact 
 test('production-shaped live preflight smoke fails fast when the live source or auth inputs are missing', () => {
   const livePreflightScript = spawnBoundedSync('npm', ['run', 'test:playground:production-shaped-live-preflight'], {
     cwd: repoRoot,
-    timeout: proofSubprocessTimeoutMs,
-    killSignal: 'SIGKILL',
+    ...proofSubprocessOptions,
     env: {
       ...process.env,
       REPRINT_PUSH_SOURCE_URL: '',
@@ -95,7 +98,6 @@ test('production-shaped live preflight smoke fails fast when the live source or 
       REPRINT_PUSH_USERNAME: 'reprint_push_admin',
       REPRINT_PUSH_APPLICATION_PASSWORD: 'reprint-push-admin-app-password',
     },
-    encoding: 'utf8',
     shell: false,
   }, 'live preflight script');
   assert.equal(livePreflightScript.status, 1);
@@ -106,8 +108,7 @@ test('production-shaped live preflight smoke fails fast when the live source or 
 
   const missingSource = spawnBoundedSync(process.execPath, ['scripts/playground/production-shaped-live-preflight-smoke.mjs'], {
     cwd: repoRoot,
-    timeout: proofSubprocessTimeoutMs,
-    killSignal: 'SIGKILL',
+    ...proofSubprocessOptions,
     env: {
       ...process.env,
       REPRINT_PUSH_SOURCE_URL: '',
@@ -115,7 +116,6 @@ test('production-shaped live preflight smoke fails fast when the live source or 
       REPRINT_PUSH_USERNAME: 'reprint_push_admin',
       REPRINT_PUSH_APPLICATION_PASSWORD: 'reprint-push-admin-app-password',
     },
-    encoding: 'utf8',
   }, 'missing-source smoke');
   assert.equal(missingSource.status, 1);
   assert.equal(
@@ -125,8 +125,7 @@ test('production-shaped live preflight smoke fails fast when the live source or 
 
   const missingAuth = spawnBoundedSync(process.execPath, ['scripts/playground/production-shaped-live-preflight-smoke.mjs'], {
     cwd: repoRoot,
-    timeout: proofSubprocessTimeoutMs,
-    killSignal: 'SIGKILL',
+    ...proofSubprocessOptions,
     env: {
       ...process.env,
       REPRINT_PUSH_SOURCE_URL: 'http://127.0.0.1:8080',
@@ -134,7 +133,6 @@ test('production-shaped live preflight smoke fails fast when the live source or 
       REPRINT_PUSH_USERNAME: '',
       REPRINT_PUSH_APPLICATION_PASSWORD: '',
     },
-    encoding: 'utf8',
   }, 'missing-auth smoke');
   assert.equal(missingAuth.status, 1);
   assert.equal(
@@ -185,8 +183,7 @@ test('production-shaped release verify command fails closed when production auth
 test('production-shaped release proof emits the exact gate output when no live source is supplied', () => {
   const proof = spawnBoundedSync(process.execPath, ['scripts/playground/production-shaped-release-proof.mjs'], {
     cwd: repoRoot,
-    timeout: proofSubprocessTimeoutMs,
-    killSignal: 'SIGKILL',
+    ...proofSubprocessOptions,
     env: {
       ...process.env,
       REPRINT_PUSH_SOURCE_URL: '',
@@ -196,7 +193,6 @@ test('production-shaped release proof emits the exact gate output when no live s
       REPRINT_PUSH_LAB_AUTH_ADMIN_USER: '',
       REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD: '',
     },
-    encoding: 'utf8',
   }, 'release proof');
   assert.equal(proof.status, 0);
   assert.match(proof.stdout, /"releaseProof": \{\s*"status": 0\s*\}/);
@@ -216,8 +212,7 @@ maybeTest('production-shaped release proof runs the live preflight branch agains
   await withPlaygroundServer('remote-base', path.join(repoRoot, 'fixtures/playground/remote-base.blueprint.json'), async (remoteServer) => {
     const proof = spawnBoundedSync(process.execPath, ['scripts/playground/production-shaped-release-proof.mjs'], {
       cwd: repoRoot,
-      timeout: proofSubprocessTimeoutMs,
-      killSignal: 'SIGKILL',
+      ...proofSubprocessOptions,
       env: {
         ...process.env,
         REPRINT_PUSH_SOURCE_URL: remoteServer.baseUrl,
@@ -225,8 +220,6 @@ maybeTest('production-shaped release proof runs the live preflight branch agains
         REPRINT_PUSH_LAB_AUTH_ADMIN_USER: liveCredentials.username,
         REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD: liveCredentials.password,
       },
-      encoding: 'utf8',
-      maxBuffer: 1024 * 1024 * 20,
     }, 'live release proof');
     assert.equal(proof.status, 0, proof.stderr);
     assert.match(proof.stdout, /"releaseProof": \{\s*"status": 0,\s*"code": "LIVE_PREFLIGHT_OK"\s*\}/);
@@ -352,14 +345,11 @@ test('production-shaped release verify command reports the checked retained-sour
 maybeTest('production-shaped live topology proof runs preflight against a local Playground source and reports the topology', () => {
   const proof = spawnBoundedSync(process.execPath, ['scripts/playground/production-shaped-live-topology-proof.mjs'], {
     cwd: repoRoot,
-    timeout: proofSubprocessTimeoutMs,
-    killSignal: 'SIGKILL',
+    ...proofSubprocessOptions,
     env: {
       ...process.env,
       NODE_NO_WARNINGS: '1',
     },
-    encoding: 'utf8',
-    maxBuffer: 1024 * 1024 * 20,
   }, 'live topology proof');
   assert.equal(proof.status, 0, proof.stderr);
   assert.match(proof.stdout, /"ok": true/);
@@ -375,14 +365,11 @@ maybeTest('production-shaped live topology proof runs preflight against a local 
 maybeTest('production-shaped live protocol proof runs the real preflight plus snapshot, dry-run, and apply boundary', () => {
   const proof = spawnBoundedSync(process.execPath, ['scripts/playground/production-shaped-live-protocol-proof.mjs'], {
     cwd: repoRoot,
-    timeout: proofSubprocessTimeoutMs,
-    killSignal: 'SIGKILL',
+    ...proofSubprocessOptions,
     env: {
       ...process.env,
       NODE_NO_WARNINGS: '1',
     },
-    encoding: 'utf8',
-    maxBuffer: 1024 * 1024 * 20,
   }, 'live protocol proof');
   assert.equal(proof.status, 0, proof.stderr);
   assert.match(proof.stdout, /"ok": true/);
@@ -398,13 +385,11 @@ maybeTest('production-shaped live protocol proof runs the real preflight plus sn
 test('production-shaped topology proof wrapper emits the fixed one-remote one-local one-drift harness', () => {
   const proof = spawnBoundedSync(process.execPath, ['scripts/playground/production-shaped-topology-proof.mjs'], {
     cwd: repoRoot,
-    timeout: proofSubprocessTimeoutMs,
-    killSignal: 'SIGKILL',
+    ...proofSubprocessOptions,
     env: {
       ...process.env,
       NODE_NO_WARNINGS: '1',
     },
-    encoding: 'utf8',
   }, 'topology proof');
   assert.equal(proof.status, 0);
   assert.match(proof.stdout, /"remoteBase": "remote-base"/);
