@@ -105,6 +105,12 @@ export function createUnsupportedProductionRecoveryJournal(reason = 'Production 
 export function openProductionRecoveryJournal(filePath, options = {}) {
   const claimId = options.claimId || options.claim?.id || null;
   const claimHash = claimId ? recoveryClaimHash(claimId) : null;
+  const ownsRemoteArtifact = Object.hasOwn(options, 'ownsRemoteArtifact')
+    ? options.ownsRemoteArtifact === true
+    : false;
+  const remoteArtifactPath = Object.hasOwn(options, 'remoteArtifactPath')
+    ? options.remoteArtifactPath
+    : null;
   if (!isCanonicalAbsolutePath(filePath)) {
     throw new UnsupportedProductionRecoveryJournalError(
       'Production recovery journal support requires a canonical absolute journal path.',
@@ -114,22 +120,38 @@ export function openProductionRecoveryJournal(filePath, options = {}) {
         supportedSurface: 'production-recovery-journal-adapter',
         restartReadable: true,
         ownsJournal: true,
-        ownsRemoteArtifact: Boolean(options.ownsRemoteArtifact),
+        ownsRemoteArtifact,
         writerLease: Object.hasOwn(options, 'writerLease') ? options.writerLease : null,
         journalPath: filePath,
         artifactRefs: Object.freeze({
           journal: filePath,
-          remote: Object.hasOwn(options, 'remoteArtifactPath') ? options.remoteArtifactPath : null,
+          remote: remoteArtifactPath,
         }),
         schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
       },
     );
   }
   const writerLease = Object.hasOwn(options, 'writerLease') ? options.writerLease : null;
-  const remoteArtifactPath = Object.hasOwn(options, 'remoteArtifactPath')
-    ? options.remoteArtifactPath
-    : null;
-  const ownsRemoteArtifact = Boolean(options.ownsRemoteArtifact);
+  if (ownsRemoteArtifact && remoteArtifactPath === null) {
+    throw new UnsupportedProductionRecoveryJournalError(
+      'Production recovery journal support requires an explicit remote artifact path when remote ownership is claimed.',
+      {
+        kind: 'production-recovery-journal',
+        productionAdapter: true,
+        supportedSurface: 'production-recovery-journal-adapter',
+        restartReadable: true,
+        ownsJournal: true,
+        ownsRemoteArtifact,
+        writerLease,
+        journalPath: filePath,
+        artifactRefs: Object.freeze({
+          journal: filePath,
+          remote: remoteArtifactPath,
+        }),
+        schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+      },
+    );
+  }
   if (remoteArtifactPath !== null && !ownsRemoteArtifact) {
     throw new UnsupportedProductionRecoveryJournalError(
       'Production recovery journal support requires owned remote artifact references.',

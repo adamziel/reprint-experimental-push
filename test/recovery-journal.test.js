@@ -324,6 +324,43 @@ test('production recovery journal adapter fails closed when remote artifact owne
   });
 });
 
+test('production recovery journal adapter fails closed when remote artifact ownership is inherited through the prototype', () => {
+  const filePath = tempJournalPath();
+  const remoteArtifactPath = `${filePath}.remote`;
+  const options = {
+    truncate: true,
+    now: fixedNow,
+    writerLease: { id: 'lease-1' },
+    remoteArtifactPath,
+  };
+  Object.setPrototypeOf(options, {
+    ownsRemoteArtifact: true,
+  });
+
+  assert.throws(() => {
+    openProductionRecoveryJournal(filePath, options);
+  }, {
+    name: 'UnsupportedProductionRecoveryJournalError',
+    code: 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL',
+  });
+});
+
+test('production recovery journal adapter fails closed when remote ownership is claimed without a remote artifact path', () => {
+  const filePath = tempJournalPath();
+
+  assert.throws(() => {
+    openProductionRecoveryJournal(filePath, {
+      truncate: true,
+      now: fixedNow,
+      writerLease: { id: 'lease-1' },
+      ownsRemoteArtifact: true,
+    });
+  }, {
+    name: 'UnsupportedProductionRecoveryJournalError',
+    code: 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL',
+  });
+});
+
 test('production recovery journal adapter accepts canonical remote artifact ownership metadata', () => {
   const filePath = tempJournalPath();
   const remoteArtifactPath = `${filePath}.remote`;
