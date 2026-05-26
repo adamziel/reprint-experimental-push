@@ -3,13 +3,14 @@ Changed files:
 - [`.lane-output/final.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/critic/.lane-output/final.md)
 
 What changed:
-- Reclassified the current reliable head as `ce7560bef4cce2ef5b9f8ae629de0bc54d116ca5` from `git ls-remote`.
-- Kept the verdict at `0/4` because the commit now prefers the consumed auth-session source over stale environment credentials, but it still proves source precedence rather than a production-backed auth/session lifecycle or closed durable-journal ownership boundary.
+- Reclassified the current reliable head as `21818064ecf416ba195b9c2da8eca96287812fc7` from `git ls-remote`.
+- Kept the verdict at `0/4` because the commit only fixes auth source precedence initialization in the release verifier; it makes live auth-session source selection win over stale environment credentials, but it still does not prove a production-backed auth/session lifecycle or closed durable-journal ownership boundary.
 
 Commands run:
 - `date '+%Y-%m-%d %H:%M:%S %Z (%z)'`
 - `git ls-remote origin refs/heads/lane/reliable-executor`
-- `git show --no-renames --format=medium ce7560bef4cce2ef5b9f8ae629de0bc54d116ca5 -- scripts/playground/auth-session-source.js scripts/playground/production-shaped-release-verify.mjs test/production-shaped-proof.test.js`
+- `git show --stat --summary --oneline --decorate=short 21818064ecf416ba195b9c2da8eca96287812fc7`
+- `git show --no-renames --format=medium --unified=40 21818064ecf416ba195b9c2da8eca96287812fc7 -- scripts/playground/production-shaped-release-verify.mjs test/production-shaped-proof.test.js src/authenticated-http-push-client.js src/recovery-journal.js scripts/playground/push-remote-rest-plugin.php scripts/playground/push-db-journal-lib.php`
 - `git diff --check -- audits/critic.md .lane-output/final.md`
 - `git status --short --branch`
 
