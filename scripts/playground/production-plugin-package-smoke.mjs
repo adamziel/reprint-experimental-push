@@ -74,6 +74,16 @@ const packagedDriverRegistryGuardScriptPath = path.join(tmpDir, 'packaged-driver
 const basePath = path.join(tmpDir, 'base.json');
 const localPath = path.join(tmpDir, 'local.json');
 let packagedDriverRegistryGuardResults = null;
+const packagedDriverRegistryGuardScenarioNames = new Set([
+  'driver-missing-export-guard',
+  'driver-missing-apply-guard',
+  'driver-missing-validate-guard',
+  'driver-missing-name-guard',
+  'driver-missing-plugin-owner-guard',
+  'driver-missing-table-guard',
+  'driver-duplicate-name-guard',
+  'driver-duplicate-table-guard',
+]);
 
 logSmokeStage('start', formatSelectedScenarioNames(selectedScenarios));
 
@@ -228,14 +238,19 @@ $scenarios['driver-duplicate-table-guard'] = static function (array $drivers) us
     return $drivers;
 };
 
-$selected = isset($argv[1]) ? trim((string) $argv[1]) : '';
+$selected = array_values(array_filter(array_map(
+    static fn ($value): string => trim((string) $value),
+    array_slice($argv, 1),
+), static fn (string $value): bool => $value !== ''));
 $results = [];
-if ($selected !== '') {
-    if (!array_key_exists($selected, $scenarios)) {
-        fwrite(STDERR, 'Unknown packaged driver registry guard scenario: ' . $selected . PHP_EOL);
-        exit(1);
+if ($selected !== []) {
+    foreach ($selected as $selected_name) {
+        if (!array_key_exists($selected_name, $scenarios)) {
+            fwrite(STDERR, 'Unknown packaged driver registry guard scenario: ' . $selected_name . PHP_EOL);
+            exit(1);
+        }
+        $results[$selected_name] = reprint_push_packaged_driver_guard_capture($scenarios[$selected_name]);
     }
-    $results[$selected] = reprint_push_packaged_driver_guard_capture($scenarios[$selected]);
 } else {
     foreach ($scenarios as $name => $scenario) {
         $results[$name] = reprint_push_packaged_driver_guard_capture($scenario);
@@ -1295,13 +1310,36 @@ function runPackagedDriverRegistryGuard(scenarioName, mountedPluginDir) {
       : {};
   }
   if (!Object.hasOwn(packagedDriverRegistryGuardResults, scenarioName)) {
-    const singleScenarioResult = runPackagedDriverRegistryGuards(mountedPluginDir, scenarioName);
-    packagedDriverRegistryGuardResults[scenarioName] = singleScenarioResult[scenarioName];
+    const pendingScenarioNames = getPendingPackagedDriverRegistryGuardScenarios(scenarioName);
+    const guardResults = runPackagedDriverRegistryGuards(mountedPluginDir, pendingScenarioNames);
+    Object.assign(packagedDriverRegistryGuardResults, guardResults);
   }
   return packagedDriverRegistryGuardResults[scenarioName];
 }
 
-function runPackagedDriverRegistryGuards(mountedPluginDir, scenarioName = null) {
+function getPendingPackagedDriverRegistryGuardScenarios(scenarioName) {
+  if (selectedScenarios === null) {
+    return [scenarioName];
+  }
+
+  const pendingScenarioNames = Array.from(selectedScenarios).filter(
+    (name) =>
+      packagedDriverRegistryGuardScenarioNames.has(name)
+      && !Object.hasOwn(packagedDriverRegistryGuardResults, name),
+  );
+  if (pendingScenarioNames.length > 0) {
+    return pendingScenarioNames.sort();
+  }
+
+  return [scenarioName];
+}
+
+function runPackagedDriverRegistryGuards(mountedPluginDir, scenarioNames = null) {
+  const scenarioArgs = Array.isArray(scenarioNames)
+    ? scenarioNames
+    : scenarioNames === null
+      ? []
+      : [scenarioNames];
   const result = spawnSync('npx', [
     '--yes',
     '@wp-playground/cli@latest',
@@ -1316,7 +1354,7 @@ function runPackagedDriverRegistryGuards(mountedPluginDir, scenarioName = null) 
     'quiet',
     '--',
     '/tmp/reprint-production-plugin-package/packaged-driver-registry-guards.php',
-    ...(scenarioName === null ? [] : [scenarioName]),
+    ...scenarioArgs,
   ], {
     cwd: repoRoot,
     encoding: 'utf8',
