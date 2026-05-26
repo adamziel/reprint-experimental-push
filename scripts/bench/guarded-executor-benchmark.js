@@ -278,6 +278,16 @@ export function productionThroughputBlockers(report) {
   }
   if (
     report.evidence.backpressure?.queuePausedBeforeOverflow === true
+    && Number.isFinite(report.evidence.backpressure?.receiptCursorQueueSlackBytes)
+    && Number.isFinite(report.evidence.backpressure?.receiptCursorBytes)
+    && Number.isFinite(report.evidence.backpressure?.queueBudgetBytes)
+    && report.evidence.backpressure.receiptCursorQueueSlackBytes
+      !== report.evidence.backpressure.queueBudgetBytes - report.evidence.backpressure.receiptCursorBytes
+  ) {
+    blockers.push('queue-pause-without-backpressure-aligned-receipt-cursor-slack');
+  }
+  if (
+    report.evidence.backpressure?.queuePausedBeforeOverflow === true
     && report.evidence.backpressure?.receiptCursorQueueSlackBytes != null
     && report.evidence.backpressure.receiptCursorQueueSlackWithinMemoryCeiling !== true
   ) {
@@ -519,6 +529,14 @@ export function productionThroughputDetails(report) {
   const queuePauseHasMeasuredReceiptCursorQueueSlack =
     report.evidence.backpressure?.queuePausedBeforeOverflow !== true
     || (receiptCursorQueueSlackMeasured && receiptCursorQueueSlackWithinQueueBudget);
+  const queuePauseHasBackpressureAlignedReceiptCursorQueueSlack =
+    report.evidence.backpressure?.queuePausedBeforeOverflow !== true
+    || (
+      Number.isFinite(receiptCursorQueueSlackBytes)
+      && Number.isFinite(receiptCursorQueueBudgetBytes)
+      && Number.isFinite(receiptCursorBackpressureBytes)
+      && receiptCursorQueueSlackBytes === receiptCursorQueueBudgetBytes - receiptCursorBackpressureBytes
+    );
   const receiptCursorHeadroomCoveredByQueueBudget =
     Number.isFinite(receiptCursorMemoryHeadroomBytes)
     && Number.isFinite(receiptCursorQueueHeadroomBytes)
@@ -595,6 +613,7 @@ export function productionThroughputDetails(report) {
     receiptCursorBackpressureMeasured,
     queuePauseHasMeasuredReceiptCursorBackpressure,
     queuePauseHasMeasuredReceiptCursorQueueSlack,
+    queuePauseHasBackpressureAlignedReceiptCursorQueueSlack,
     receiptCursorQueueSlackBytes,
     receiptCursorQueueSlackPositive,
     receiptCursorQueueSlackMatchesBackpressure,
@@ -639,6 +658,7 @@ export function productionThroughputDetails(report) {
       receiptCursorBackpressureMeasured,
       queuePauseHasMeasuredReceiptCursorBackpressure,
       queuePauseHasMeasuredReceiptCursorQueueSlack,
+      queuePauseHasBackpressureAlignedReceiptCursorQueueSlack,
       receiptCursorQueueSlackBytes,
       receiptCursorQueueSlackPositive,
       receiptCursorQueueSlackMatchesBackpressure,

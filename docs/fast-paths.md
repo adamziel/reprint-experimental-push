@@ -66,6 +66,9 @@ Current executable gate:
   records, so a partial pause record cannot masquerade as bounded backpressure
   evidence.
 - The production-throughput gate also fails closed if paused queue slack no
+  longer aligns with the recorded backpressure bytes, so a tampered pause
+  record cannot mix a valid-looking slack value with a mismatched cursor.
+- The production-throughput gate also fails closed if paused queue slack no
   longer fits inside the measured memory ceiling, so a tampered pause record
   cannot reuse an impossible slack value.
 - The report now also fails closed if receipt-cursor queue slack is missing on
