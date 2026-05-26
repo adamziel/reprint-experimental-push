@@ -1679,8 +1679,12 @@ function describeRequiredUnrevokedProductionAuthSession(response) {
 }
 
 function resolveProductionAuthSessionUnrevokedField(session) {
-  if (session?.revoked === true || session?.status === 'revoked') {
+  if (session?.status === 'revoked') {
     return 'auth.session.status';
+  }
+
+  if (session?.revoked === true) {
+    return 'auth.session.revoked';
   }
 
   if (session?.status === 'cleaned-up') {

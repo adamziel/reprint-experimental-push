@@ -1784,7 +1784,7 @@ test('production-shaped authenticated push fails closed when a required producti
       status: 'unimplemented',
       verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
       authSession: {
-        field: 'auth.session.status',
+        field: 'auth.session.revoked',
         required: 'unrevoked',
         observed: 'revoked',
         verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
@@ -3647,14 +3647,14 @@ test('production-shaped authenticated push fails closed on replay-only revoked a
       status: 'unimplemented',
       verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
       authSession: {
-        field: 'auth.session.status',
+        field: 'auth.session.revoked',
         required: 'unrevoked',
         observed: 'revoked',
         verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
       },
     });
     assert.deepEqual(summary.authSession, {
-      field: 'auth.session.status',
+      field: 'auth.session.revoked',
       required: 'unrevoked',
       observed: 'revoked',
       verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
