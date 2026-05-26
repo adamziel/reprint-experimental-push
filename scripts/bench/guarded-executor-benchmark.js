@@ -415,9 +415,15 @@ export function productionThroughputDetails(report) {
   const receiptCursorQueueHeadroomPositive =
     Number.isFinite(receiptCursorQueueHeadroomBytes)
     && receiptCursorQueueHeadroomBytes > 0;
+  const queueBudgetPositive =
+    Number.isFinite(receiptCursorQueueBudgetBytes)
+    && receiptCursorQueueBudgetBytes > 0;
   const receiptCursorMemoryHeadroomPositive =
     Number.isFinite(receiptCursorMemoryHeadroomBytes)
     && receiptCursorMemoryHeadroomBytes > 0;
+  const receiptCursorQueueSlackPositive =
+    Number.isFinite(receiptCursorQueueSlackBytes)
+    && receiptCursorQueueSlackBytes > 0;
   const backpressureEvidenceComplete = hasCompleteBackpressureEvidence(report);
   const receiptCursorIsTerminalChunk =
     report.evidence.chunkReceipts.cursorConsistency?.canResumeFromCursor === true
@@ -550,6 +556,7 @@ export function productionThroughputDetails(report) {
     queueHeadroomMatchesMemoryHeadroom,
     queueHeadroomWithinResourceCeiling,
     queueHeadroomPositive,
+    queueBudgetPositive,
     receiptCursorMemoryHeadroomPositive: receiptCursorMemoryHeadroomPositiveVisible,
     queuePausedBeforeOverflow: report.evidence.backpressure?.queuePausedBeforeOverflow ?? false,
     receiptCursorWithinQueueBudget: report.evidence.backpressure?.receiptCursorWithinQueueBudget ?? false,
@@ -563,6 +570,7 @@ export function productionThroughputDetails(report) {
     queuePauseHasMeasuredReceiptCursorBackpressure,
     queuePauseHasMeasuredReceiptCursorQueueSlack,
     receiptCursorQueueSlackBytes,
+    receiptCursorQueueSlackPositive,
     receiptCursorQueueSlackMatchesBackpressure,
     receiptCursorQueueSlackMatchesMemoryHeadroom,
     receiptCursorQueueSlackMatchesQueueHeadroom,
@@ -587,6 +595,7 @@ export function productionThroughputDetails(report) {
       queueHeadroomMatchesMemoryHeadroom,
       queueHeadroomWithinResourceCeiling,
       queueHeadroomPositive,
+      queueBudgetPositive,
       queuePausedBeforeOverflow: report.evidence.backpressure?.queuePausedBeforeOverflow ?? false,
       receiptCursorMemoryCeilingBytes,
       receiptCursorQueueBudgetBytes,
@@ -603,6 +612,7 @@ export function productionThroughputDetails(report) {
       queuePauseHasMeasuredReceiptCursorBackpressure,
       queuePauseHasMeasuredReceiptCursorQueueSlack,
       receiptCursorQueueSlackBytes,
+      receiptCursorQueueSlackPositive,
       receiptCursorQueueSlackMatchesBackpressure,
       receiptCursorQueueSlackMatchesMemoryHeadroom,
       receiptCursorQueueSlackMatchesQueueHeadroom,

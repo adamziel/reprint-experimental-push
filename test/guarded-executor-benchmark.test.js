@@ -111,6 +111,7 @@ test('guarded benchmark refuses production throughput claims until production ga
   assert.equal(report.claims.productionThroughputDetails.queueHeadroomMatchesMemoryHeadroom, true);
   assert.equal(report.claims.productionThroughputDetails.queueHeadroomWithinResourceCeiling, true);
   assert.equal(report.claims.productionThroughputDetails.queueHeadroomPositive, true);
+  assert.equal(report.claims.productionThroughputDetails.queueBudgetPositive, true);
   assert.equal(report.claims.productionThroughputDetails.receiptCursorMemoryHeadroomPositive, true);
   assert.equal(report.claims.productionThroughputDetails.receiptCursorQueueHeadroomPositive, true);
   assert.equal(report.claims.productionThroughputDetails.backpressureConsistency.queueBudgetMatchesResourceCeiling, true);
@@ -118,6 +119,7 @@ test('guarded benchmark refuses production throughput claims until production ga
   assert.equal(report.claims.productionThroughputDetails.backpressureConsistency.queueHeadroomMatchesMemoryHeadroom, true);
   assert.equal(report.claims.productionThroughputDetails.backpressureConsistency.queueHeadroomWithinResourceCeiling, true);
   assert.equal(report.claims.productionThroughputDetails.backpressureConsistency.queueHeadroomPositive, true);
+  assert.equal(report.claims.productionThroughputDetails.backpressureConsistency.queueBudgetPositive, true);
   assert.equal(report.claims.productionThroughputDetails.backpressureConsistency.queuePausedBeforeOverflow, true);
   assert.equal(
     report.claims.productionThroughputDetails.backpressureConsistency.queuePauseHasMeasuredReceiptCursorBackpressure,
@@ -135,6 +137,7 @@ test('guarded benchmark refuses production throughput claims until production ga
   assert.equal(report.claims.productionThroughputDetails.backpressureConsistency.receiptCursorBackpressureBytes, 512 * 1024);
   assert.equal(report.claims.productionThroughputDetails.backpressureConsistency.receiptCursorBackpressureMeasured, true);
   assert.equal(report.claims.productionThroughputDetails.backpressureConsistency.receiptCursorQueueSlackBytes, 31.5 * 1024 * 1024);
+  assert.equal(report.claims.productionThroughputDetails.backpressureConsistency.receiptCursorQueueSlackPositive, true);
   assert.equal(report.claims.productionThroughputDetails.backpressureConsistency.receiptCursorQueueSlackMatchesBackpressure, true);
   assert.equal(report.claims.productionThroughputDetails.backpressureConsistency.receiptCursorQueueSlackMatchesMemoryHeadroom, true);
   assert.equal(report.claims.productionThroughputDetails.backpressureConsistency.receiptCursorQueueSlackMatchesResourceHeadroom, true);
