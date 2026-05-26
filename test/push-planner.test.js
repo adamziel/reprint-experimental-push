@@ -17252,6 +17252,7 @@ test('blocks local navigation graph resources while preserving remote-only plugi
   assert.equal(mutationFor(plan, resourceKey), undefined);
   assert.equal(plan.conflicts.length, 0);
   assert.equal(blocker.class, 'unsupported-navigation-resource');
+  assert.equal(blocker.resourceKind, 'navigation');
   assert.equal(blocker.resourceKey, resourceKey);
   assert.equal(blocker.reason, 'Navigation and menu graph resources are not yet supported by the planner.');
   assert.equal(pluginDecision.decision, 'keep-remote');

@@ -2064,6 +2064,7 @@ function addUnsupportedNavigationResourceBlocker(plan, {
   plan.blockers.push({
     id: `blocker-unsupported-navigation-resource-${plan.blockers.length + 1}`,
     class: support.className || 'unsupported-navigation-resource',
+    resourceKind: 'navigation',
     resource,
     resourceKey: resource.key,
     reason: support.reason || `Navigation and menu graph resource ${resource.key} is not yet supported by the planner.`,
