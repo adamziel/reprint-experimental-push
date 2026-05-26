@@ -25,6 +25,7 @@ const playgroundServerTimeoutMs = 8;
 const serverFetchTimeoutMs = 3_000;
 const playgroundStopTimeoutMs = 3_000;
 const runLivePlaygroundTopologyTests = process.env.REPRINT_RUN_PLAYGROUND_LIVE_TESTS === '1';
+const maybeTest = runLivePlaygroundTopologyTests ? test : test.skip;
 const packageJson = JSON.parse(readFileSync(path.join(repoRoot, 'package.json'), 'utf8'));
 const liveCredentials = {
   username: 'reprint_push_admin',
@@ -692,6 +693,28 @@ test('production-shaped release verify synthesizes the packaged production auth/
   assert.equal(sourceCommand, expectedSourceCommand);
 });
 
+test('production-shaped release verify consumes the packaged production auth/session source command on the checked release path', () => {
+  const sourceUrl = 'http://127.0.0.1:8080';
+  const packagedSource = resolvePackagedProductionPluginAuthSessionSource({
+    sourceUrl,
+    username: 'reprint_push_admin',
+    applicationPassword: 'reprint-push-admin-app-password',
+  });
+
+  assert.equal(packagedSource.command, buildAuthSessionSourceCommand({
+    sourceUrl,
+    username: 'reprint_push_admin',
+    applicationPassword: 'reprint-push-admin-app-password',
+  }));
+  assert.deepEqual(packagedSource.source, {
+    ok: true,
+    sourceUrl,
+    username: 'reprint_push_admin',
+    applicationPassword: 'reprint-push-admin-app-password',
+  });
+  assert.equal(packagedSource.source.applicationPassword, 'reprint-push-admin-app-password');
+});
+
 test('packaged production plugin source command preserves an explicit command override', () => {
   const sourceCommand = resolvePackagedProductionPluginSourceCommand({
     sourceUrl: 'http://127.0.0.1:8080',
@@ -790,8 +813,6 @@ test('production-shaped release proof emits the exact gate output when no live s
     /"missingLiveSource": \{\s*"status": 1,\s*"code": "REPRINT_PUSH_LIVE_SOURCE_REQUIRED",\s*"stderr": "REPRINT_PUSH_LIVE_SOURCE_REQUIRED: production push requires a live source URL; provide REPRINT_PUSH_SOURCE_URL before running preflight, dry-run, or apply\."\s*\}/,
   );
 });
-
-const maybeTest = runLivePlaygroundTopologyTests ? test : test.skip;
 
 maybeTest('production-shaped release verify command surfaces the consumed production auth/session source evidence', async () => {
   await withPlaygroundServer('remote-base', path.join(repoRoot, 'fixtures/playground/remote-base.blueprint.json'), async (remoteServer) => {
