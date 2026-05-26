@@ -1700,11 +1700,36 @@ export function appendStaleClaimAdvanced(journal, {
   artifactRefs = {},
   reason = 'Previous recovery claim exceeded the stale threshold.',
 }) {
+  const journalPath = typeof journal?.filePath === 'string' ? journal.filePath : journal?.journalPath;
+  const previousClaimHash = recoveryClaimHash(previousClaimId);
+  const nextClaimHash = recoveryClaimHash(claimId);
+  const persisted = readRecoveryJournal(journalPath);
+  if (persisted.integrity.status !== 'ok') {
+    throw new Error(`Refusing to append to invalid recovery journal: ${persisted.integrity.reason}`);
+  }
+  const claim = classifyRecoveryJournalClaims(persisted.records);
+  if (claim.status === 'none' || claim.status === 'blocked' || claim.activeClaimHash !== previousClaimHash) {
+    throw new RecoveryJournalClaimStaleError(
+      'Recovery journal claim could not advance because the previous active claim was missing or superseded.',
+      {
+        filePath: journalPath,
+        eventType: 'stale-claim-advanced',
+        staleClaimHash: nextClaimHash,
+        previousClaimHash,
+        activeClaimHash: claim.activeClaimHash,
+        activeClaimLease: claim.activeClaimLease,
+        activeClaimSequence: claim.sequence,
+        activeClaimType: claim.type,
+        reason: claim.reason || null,
+      },
+    );
+  }
+
   return journal.appendEvent('stale-claim-advanced', {
     planId: plan.id,
     state: 'advanced',
-    previousClaimHash: recoveryClaimHash(previousClaimId),
-    claimHash: recoveryClaimHash(claimId),
+    previousClaimHash,
+    claimHash: nextClaimHash,
     claimLease: claimLeasePayloadForJournal(journal, claimId),
     observedHash: digest(current),
     staleThresholdMs: normalizeOptionalNonNegativeInteger(staleThresholdMs),

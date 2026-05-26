@@ -3308,6 +3308,111 @@ test('production recovery journal consumption surfaces stale claim advancement a
   });
 });
 
+test('production recovery journal stale-claim advancement fails closed when no active claim has been opened yet', () => {
+  const filePath = tempJournalPath();
+  const remote = baseSite();
+  const plan = planFor(baseSite(), localSite(), remote);
+  const remoteArtifactPath = `${filePath}.remote`;
+  const artifactRefs = {
+    journal: filePath,
+    remote: remoteArtifactPath,
+  };
+  const journal = openProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs,
+    claimId: 'claim-2',
+  });
+
+  assert.throws(() => {
+    appendStaleClaimAdvanced(journal, {
+      plan,
+      current: remote,
+      previousClaimId: 'claim-1',
+      claimId: 'claim-2',
+      staleThresholdMs: 30_000,
+      previousClaimAgeMs: 30_001,
+      artifactRefs,
+    });
+  }, (error) => {
+    assert.equal(error?.name, 'RecoveryJournalClaimStaleError');
+    assert.equal(error?.code, 'RECOVERY_CLAIM_STALE');
+    assert.equal(
+      error?.message,
+      'Recovery journal claim could not advance because the previous active claim was missing or superseded.',
+    );
+    assert.equal(error?.details?.previousClaimHash, recoveryClaimHash('claim-1'));
+    assert.equal(error?.details?.staleClaimHash, recoveryClaimHash('claim-2'));
+    assert.equal(error?.details?.activeClaimHash, null);
+    assert.equal(error?.details?.activeClaimType, null);
+    assert.equal(error?.details?.reason, null);
+    return true;
+  });
+  journal.close();
+});
+
+test('production recovery journal stale-claim advancement fails closed when the previous active claim hash no longer matches', () => {
+  const filePath = tempJournalPath();
+  const remote = baseSite();
+  const plan = planFor(baseSite(), localSite(), remote);
+  const remoteArtifactPath = `${filePath}.remote`;
+  const artifactRefs = {
+    journal: filePath,
+    remote: remoteArtifactPath,
+  };
+
+  const firstJournal = openProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs,
+    claimId: 'claim-1',
+  });
+  appendRecoveryClaimOpened(firstJournal, {
+    plan,
+    current: remote,
+    claimId: 'claim-1',
+    artifactRefs,
+  });
+  firstJournal.close();
+
+  const secondJournal = openProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs,
+    truncate: false,
+    claimId: 'claim-2',
+  });
+
+  assert.throws(() => {
+    appendStaleClaimAdvanced(secondJournal, {
+      plan,
+      current: remote,
+      previousClaimId: 'claim-missing',
+      claimId: 'claim-2',
+      staleThresholdMs: 30_000,
+      previousClaimAgeMs: 30_001,
+      artifactRefs,
+    });
+  }, (error) => {
+    assert.equal(error?.name, 'RecoveryJournalClaimStaleError');
+    assert.equal(error?.code, 'RECOVERY_CLAIM_STALE');
+    assert.equal(
+      error?.message,
+      'Recovery journal claim could not advance because the previous active claim was missing or superseded.',
+    );
+    assert.equal(error?.details?.previousClaimHash, recoveryClaimHash('claim-missing'));
+    assert.equal(error?.details?.staleClaimHash, recoveryClaimHash('claim-2'));
+    assert.equal(error?.details?.activeClaimHash, recoveryClaimHash('claim-1'));
+    assert.equal(error?.details?.activeClaimType, 'recovery-claim-opened');
+    assert.equal(error?.details?.reason, 'Recovery claim opened.');
+    return true;
+  });
+  secondJournal.close();
+});
+
 test('production recovery journal records stale-claim rejection evidence before a stale writer can reopen the active claim', () => {
   const filePath = tempJournalPath();
   const remote = baseSite();
