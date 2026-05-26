@@ -2974,6 +2974,14 @@ test('production claim gate fails closed if benchmark evidence is tampered', () 
     false,
   );
   assert.equal(
+    productionThroughputDetails(zeroQueueSlackEvidence).queueHeadroomVisibleAndMeasured,
+    false,
+  );
+  assert.equal(
+    productionThroughputDetails(zeroQueueSlackEvidence).backpressureConsistency.queueHeadroomVisibleAndMeasured,
+    false,
+  );
+  assert.equal(
     productionThroughputDetails(zeroQueueSlackEvidence).backpressureConsistency.queuePauseHasMeasuredReceiptCursorQueueSlack,
     false,
   );
@@ -3073,6 +3081,14 @@ test('production claim gate fails closed if benchmark evidence is tampered', () 
   );
   assert.equal(
     productionThroughputDetails(zeroMemoryHeadroom).backpressureConsistency.backpressureEvidenceComplete,
+    false,
+  );
+  assert.equal(
+    productionThroughputDetails(zeroMemoryHeadroom).queueHeadroomVisibleAndMeasured,
+    false,
+  );
+  assert.equal(
+    productionThroughputDetails(zeroMemoryHeadroom).backpressureConsistency.queueHeadroomVisibleAndMeasured,
     false,
   );
 

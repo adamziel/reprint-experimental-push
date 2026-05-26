@@ -1394,10 +1394,6 @@ export function productionThroughputDetails(report) {
     && Number.isFinite(report.resourceLimits?.maxBufferedUploadBytes)
     && receiptCursorQueueBudgetBytes === report.resourceLimits.maxBufferedUploadBytes
     && receiptCursorQueueHeadroomBytes === receiptCursorQueueBudgetBytes - report.shape.chunkSizeBytes;
-  const queueHeadroomVisibleAndMeasured =
-    queueHeadroomVisible
-    && queueHeadroomMeasured
-    && queueHeadroomWithinResourceCeiling;
   const queueHeadroomMatchesMemoryHeadroom =
     Number.isFinite(receiptCursorQueueHeadroomBytes)
     && Number.isFinite(receiptCursorMemoryHeadroomBytes)
@@ -1602,6 +1598,12 @@ export function productionThroughputDetails(report) {
       && receiptCursorQueueSlackMatchesQueueHeadroom
       && receiptCursorQueueSlackMatchesResourceHeadroom
     );
+  const queueHeadroomVisibleAndMeasured =
+    receiptCursorPauseFootprintComplete
+    && queueHeadroomPositive
+    && queueHeadroomVisible
+    && queueHeadroomMeasured
+    && queueHeadroomWithinResourceCeiling;
   const queueHeadroomVisibleAndMeasuredAndAligned =
     receiptCursorPauseFootprintComplete
     && queueHeadroomVisible
