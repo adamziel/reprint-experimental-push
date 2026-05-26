@@ -8,21 +8,21 @@ Fresh remote heads at audit time, checked on May 26, 2026:
 
 - `origin/lane/reliable-executor` -> `0c4fd10f`
 - `origin/lane/no-data-loss-invariants` -> `9c70eba6`
-- `origin/lane/no-data-loss-recovery` -> `a546a36b`
+- `origin/lane/no-data-loss-recovery` -> `1d0146b5`
 - `origin/lane/fast-paths` -> `9be664b2`
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `ff2131c3`
-- `origin/lane/independent-auditor` -> `6b343dd6`
-- `origin/lane/critic` -> `f8591f9d`
+- `origin/lane/independent-auditor` -> `985f6801`
+- `origin/lane/critic` -> `68569c0b`
 - `origin/lane/progress-publisher` -> `7695e1f9`
-- `origin/lane/same-plan-wordpress-graph-create` -> `fc8308c4`
-- `origin/lane/cycle-20260525-mainwindows-2349/same-plan-wordpress-graph-create` -> `fc8308c4`
+- `origin/lane/same-plan-wordpress-graph-create` -> `7bf5d421`
+- `origin/lane/cycle-20260525-mainwindows-2349/same-plan-wordpress-graph-create` -> `7bf5d421`
 - `origin/lane/cycle-20260525-mainwindows-2349/same-plan-wordpress-graph-create` -> `e9cbf9d4`
 - `origin/lane/cycle-20260525-mainwindows-2357/no-data-loss-invariants-graph-proof` -> `98c0ce26`
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `08e327b7`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `eafb7f6d`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `5cebfe50`
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` -> `5f256171`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-invariants` -> `9c70eba6`
-- `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `ba49bb8d`
+- `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `1d0146b5`
 - `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration` -> `a3a900d7`
 - `origin/main` -> `e55864f4`
 
@@ -52,8 +52,8 @@ but it did not change the release conclusion:
   production gate at `a546a36b` while preserving the earlier recovery
   evidence.
   `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` now
-  tightens the durable journal cleanup gate at `ba49bb8d`, but it still does
-  not add production-backed journal ownership or replay proof.
+  fences journal path mismatches at `1d0146b5`, but it still does not add
+  production-backed journal ownership or replay proof.
 - `origin/lane/fast-paths` now refreshes benchmark evidence at `9be664b2`.
   This remains a safe fast-path implementation detail, but it still does not
   prove the live production push boundary.
@@ -72,12 +72,12 @@ but it did not change the release conclusion:
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` now
   hardens the live proof timeout diagnostics at `5f256171`.
 - `origin/lane/same-plan-wordpress-graph-create` now blocks unsupported graph
-  surfaces at `fc8308c4`, including revision posts, menu/navigation posts,
-  serialized blocks, and thumbnail parent references. That is a stronger
-  fail-closed proof, but it still stops short of release-grade live mutation
-  evidence.
+  surfaces at `7bf5d421`, including revision posts, menu/navigation posts,
+  serialized blocks, thumbnail parent references, and other same-plan graph
+  blockers. That is a stronger fail-closed proof, but it still stops short of
+  release-grade live mutation evidence.
 - `origin/lane/cycle-20260525-mainwindows-2349/same-plan-wordpress-graph-create`
-  now adds same-plan graph edge hardening at `fc8308c4`. It tightens the
+  now adds same-plan graph edge hardening at `7bf5d421`. It tightens the
   planner boundary further, but it still does not add live source mutation
   evidence.
 - The cycle-scoped same-plan graph lane at
