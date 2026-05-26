@@ -103,7 +103,14 @@ export async function runAuthenticatedHttpPush({
     dbJournal: null,
     authSessionLifecycleTrace: [],
     retryAttempts: 1,
+    readRetryEvidence: {},
   };
+  const requiredPreservedRemoteRetryPath = simulatePreservedRemoteRetryPath
+    ? (() => {
+      const url = new URL(`${profile.namespacePath}${simulatePreservedRemoteRetryPath}`, resolvedSource.sourceUrl);
+      return `${url.pathname}${url.search}`;
+    })()
+    : '';
 
   let preflight;
   try {
@@ -819,12 +826,15 @@ export async function runAuthenticatedHttpPush({
   summary.dbJournal = summarizeDbJournal(dbJournal);
   updateRetryAttempts(summary, summary.dbJournal);
   recordAuthSessionLifecycle(summary, 'journal', dbJournal.body?.auth?.session);
-  if (simulatePreservedRemoteRetryPath && (summary.retryAttempts || 1) < 2) {
+  const requiredPreservedRemoteRetryAttempts = requiredPreservedRemoteRetryPath
+    ? summary.readRetryEvidence?.[requiredPreservedRemoteRetryPath] || 1
+    : 1;
+  if (simulatePreservedRemoteRetryPath && requiredPreservedRemoteRetryAttempts < 2) {
     summary.code = 'PRESERVED_REMOTE_RETRY_REQUIRED';
     summary.replayAndRetry = {
       required: simulatePreservedRemoteRetryPath,
       observed: 'missing-transient-retry',
-      retryAttempts: summary.retryAttempts || 1,
+      retryAttempts: requiredPreservedRemoteRetryAttempts,
       verdict: 'PRESERVED_REMOTE_RETRY_REQUIRED',
     };
     setReplayAndRetryBoundary(summary);
@@ -1159,6 +1169,11 @@ function summarizeResponse(response) {
       operation: body.storageGuard.operation,
       outcome: body.storageGuard.outcome,
     } : undefined,
+    request: response.request ? {
+      method: response.request.method || null,
+      pathname: response.request.pathname || null,
+      retryable: response.request.retryable === true,
+    } : undefined,
   };
 }
 
@@ -1184,6 +1199,14 @@ function updateRetryAttempts(summary, responseSummary) {
   }
 
   summary.retryAttempts = Math.max(summary.retryAttempts || 1, responseSummary.retryAttempts);
+  if (responseSummary.request?.retryable === true && responseSummary.request?.pathname) {
+    const pathname = responseSummary.request.pathname;
+    summary.readRetryEvidence = summary.readRetryEvidence || {};
+    summary.readRetryEvidence[pathname] = Math.max(
+      summary.readRetryEvidence[pathname] || 1,
+      responseSummary.retryAttempts,
+    );
+  }
 }
 
 function captureTransportFailure(summary, field, error, code, phase) {
@@ -1712,6 +1735,11 @@ async function requestJsonRaw(baseUrl, method, pathname, rawBody = undefined, he
         ...response,
         attempts,
         retryAttempts: attempt,
+        request: {
+          method,
+          pathname,
+          retryable,
+        },
       };
     } catch (error) {
       lastError = error;

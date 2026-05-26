@@ -3385,6 +3385,189 @@ test('production-shaped authenticated push records preserved-remote retry on pre
   }
 });
 
+test('production-shaped authenticated push fails closed when a different read retries than the required preserved remote path', async () => {
+  const originalFetch = global.fetch;
+  let preflightAttempts = 0;
+  global.fetch = async (url) => {
+    const pathname = String(url);
+    if (pathname.includes('/preflight')) {
+      preflightAttempts++;
+      if (preflightAttempts === 1) {
+        throw Object.assign(new TypeError('socket closed'), { cause: { code: 'ECONNRESET' } });
+      }
+      return new Response(JSON.stringify({
+        ok: true,
+        auth: {
+          identity: { userLogin: 'reprint_push_admin' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
+        },
+        session: { id: 'psh_01j00000000000000000000000' },
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+    if (pathname.includes('/snapshot')) {
+      return new Response(JSON.stringify({
+        ok: true,
+        snapshot: { resources: [] },
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+    if (pathname.includes('/dry-run')) {
+      return new Response(JSON.stringify({
+        ok: true,
+        auth: {
+          identity: { userLogin: 'reprint_push_admin' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
+        },
+        receipt: { receiptHash: 'receipt-01' },
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+    if (pathname.includes('/apply')) {
+      return new Response(JSON.stringify({
+        ok: true,
+        mode: 'apply',
+        applied: true,
+        code: 'APPLIED',
+        responseSchemaVersion: 1,
+        auth: {
+          identity: { userLogin: 'reprint_push_admin' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
+        },
+        receipt: { receiptHash: 'receipt-01' },
+        storageGuard: {
+          boundary: 'filesystem-compare-rename',
+          operation: 'update',
+          outcome: 'applied',
+        },
+        signedRequest: {
+          signed: true,
+          schemaVersion: 1,
+          contentHash: 'content-01',
+          timestamp: '2026-05-26T10:00:00.000Z',
+          nonceHash: 'nonce-01',
+          sessionHash: 'session-01',
+          signingKeyHash: 'signing-key-01',
+          request: { a: 1, b: 2 },
+        },
+        idempotency: {
+          replayed: true,
+          freshMutationWork: false,
+          status: 'replayed',
+          conflict: false,
+        },
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+    if (pathname.includes('/recovery/inspect')) {
+      return new Response(JSON.stringify({
+        ok: true,
+        auth: {
+          identity: { userLogin: 'reprint_push_admin' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
+        },
+        recovery: {
+          state: 'ready',
+          journal: { integrity: { status: 'ok' } },
+          counts: { old: 0, new: 1, blockedUnknown: 0, total: 1 },
+        },
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+    if (pathname.includes('/db-journal')) {
+      return new Response(JSON.stringify({
+        ok: true,
+        auth: {
+          identity: { userLogin: 'reprint_push_admin' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
+        },
+        dbJournal: {
+          latestRows: [
+            { event: 'idempotency-opened' },
+            { event: 'mutation-applied' },
+            { event: 'apply-committed' },
+          ],
+        },
+        storageGuard: {
+          boundary: 'filesystem-compare-rename',
+          operation: 'update',
+          outcome: 'applied',
+        },
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+    throw new Error(`unexpected fetch to ${url}`);
+  };
+
+  try {
+    const summary = await runAuthenticatedHttpPush({
+      sourceUrl: 'http://127.0.0.1:8080',
+      base: { resources: [] },
+      local: { resources: [] },
+      username: credential.username,
+      applicationPassword: credential.password,
+      idempotencyKey: 'idem-01-required-db-journal-retry',
+      routeProfile: 'production-shaped',
+      simulatePreservedRemoteRetryPath: '/db-journal?limit=80',
+    });
+
+    assert.equal(summary.ok, false);
+    assert.equal(summary.code, 'PRESERVED_REMOTE_RETRY_REQUIRED');
+    assert.equal(summary.retryAttempts, 2);
+    assert.equal(preflightAttempts, 2);
+    assert.deepEqual(summary.replayAndRetry, {
+      required: '/db-journal?limit=80',
+      observed: 'missing-transient-retry',
+      retryAttempts: 1,
+      verdict: 'PRESERVED_REMOTE_RETRY_REQUIRED',
+    });
+    assert.equal(
+      summary.boundary?.firstRemainingProductionBoundary,
+      'replay and preserved-remote retry on the checked release path',
+    );
+    assert.equal(summary.boundary?.verdict, 'PRESERVED_REMOTE_RETRY_REQUIRED');
+  } finally {
+    global.fetch = originalFetch;
+  }
+});
+
 test('production-shaped authenticated push fails closed when a preserved remote snapshot exhausts transient retries', async () => {
   const originalFetch = global.fetch;
   const seen = [];
