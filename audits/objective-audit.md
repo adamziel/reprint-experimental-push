@@ -183,6 +183,9 @@ but it did not change the release conclusion:
   verify helper bounds and keeping the live proof wrapper fail-closed. It still
   does not prove production auth/session lifecycle or a live-source mutation
   boundary.
+- `origin/lane/reliable-executor` now records `e5419417`, hardening production
+  proof subprocess bounds. It still does not prove production auth/session
+  lifecycle or a live-source mutation boundary.
 - `origin/lane/no-data-loss-invariants` now records `8fab9c35`, adding an
   unsupported plugin version range proof. It still does not prove the live
   release boundary or any production-backed source mutation.
@@ -256,6 +259,9 @@ but it did not change the release conclusion:
 - `origin/lane/no-data-loss-invariants` now records `47223e20`, adding GUID
   removal sibling proof. It still does not prove the live release boundary or
   any production-backed source mutation.
+- `origin/lane/no-data-loss-invariants` now records `30040cee`, adding a wp
+  navigation removal boundary proof. It still does not prove the live release
+  boundary or any production-backed source mutation.
 - `origin/lane/progress-publisher` now records `7695e1f9`, refreshing public
   progress freshness only.
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now records
