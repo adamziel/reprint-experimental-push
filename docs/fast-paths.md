@@ -796,6 +796,9 @@ The benchmark shape must stay realistic:
 - A compressed release-manifest digest can also size bounded release-bundle
   retry windows, but only as planning evidence while durable receipts and the
   guarded release record still decide recovery.
+- A compressed release-manifest cursor can also size bounded release-bundle
+  retry windows, but only as planning evidence while durable receipts and the
+  guarded release record still decide recovery.
 - Compressed per-kind budget summaries and a cached release-manifest digest can
   also size bounded release-bundle fanout, but only as planning evidence while
   durable receipts and the guarded release record still decide recovery.

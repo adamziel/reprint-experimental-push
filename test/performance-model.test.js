@@ -551,6 +551,17 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
   assert.ok(
     model.safeFastPaths.some(
       (fastPath) =>
+        fastPath.area === 'compression' &&
+        fastPath.allowedShortcut === 'compress-release-manifest-and-reuse-cursor-to-size-bounded-release-bundle-retry-windows' &&
+        fastPath.guardrails.includes('compressed-release-manifest-stays-planning-evidence-only') &&
+        fastPath.gateProofs.skip.includes('trim repeat retry-window planning') &&
+        fastPath.gateProofs.recovery.includes('guarded release record'),
+    ),
+    'compressed release-manifest cursors can size release-bundle retry windows without widening recovery evidence',
+  );
+  assert.ok(
+    model.safeFastPaths.some(
+      (fastPath) =>
         fastPath.area === 'parallelism-limits' &&
         fastPath.allowedShortcut === 'run-partitioned-index-and-hash-planning-within-per-site-budgets' &&
         fastPath.guardrails.includes('partitioned-planning-stays-within-per-site-and-per-kind-budgets') &&
@@ -593,6 +604,14 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
     fs.readFileSync(new URL('../docs/fast-paths.md', import.meta.url), 'utf8'),
     /\| Parallelism limits \| Reuse canonical per-kind budgets to size bounded release-bundle resume work so retries can reuse the same concurrency shape before the live compare\./,
     'fast-path docs include the release-bundle resume shortcut',
+  );
+  assert.ok(
+    fs.readFileSync(new URL('../docs/fast-paths.md', import.meta.url), 'utf8').includes(
+      'A compressed release-manifest cursor can also size bounded release-bundle\n' +
+        '  retry windows, but only as planning evidence while durable receipts and the\n' +
+        '  guarded release record still decide recovery.',
+    ),
+    'fast-path docs include the compressed release-manifest retry-window shortcut',
   );
   assert.ok(
     model.safeFastPaths.some(

@@ -951,6 +951,26 @@ export const SAFE_FAST_PATHS = Object.freeze([
     publishesStagedDataEarly: false,
   },
   {
+    area: 'compression',
+    reduces: ['wire-bytes', 'planning-round-trips', 'retry-window-recomputation'],
+    allowedShortcut: 'compress-release-manifest-and-reuse-cursor-to-size-bounded-release-bundle-retry-windows',
+    guardrails: [
+      'compressed-release-manifest-stays-planning-evidence-only',
+      'release-bundle-retry-window-revalidates-before-write',
+    ],
+    gateProofs: {
+      skip: 'a compressed release-manifest cursor can trim repeat retry-window planning without recomputing the same release-bundle shape',
+      live: 'the eventual release still revalidates live file and row preconditions before anything becomes visible',
+      group: 'the compressed cursor only narrows planning inside the same planned release bundle and never widens the atomic-group barrier',
+      recovery: 'compressed planning evidence is advisory while durable receipts and the guarded release record still classify pause, retry, or crash',
+    },
+    visibilityBoundary: 'planning-only-for-release-bundle-retry-windows',
+    failureEvidence: 'compressed release-manifest cursor plus bounded retry-window record and guarded release record',
+    bypassesLivePreconditions: false,
+    splitsAtomicGroup: false,
+    publishesStagedDataEarly: false,
+  },
+  {
     area: 'remote-indexes',
     reduces: ['planning-round-trips', 'idle-time'],
     allowedShortcut: 'parallelize-independent-owner-index-scans-to-size-bounded-batches',
