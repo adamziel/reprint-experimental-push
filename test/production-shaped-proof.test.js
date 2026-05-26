@@ -843,6 +843,18 @@ test('production plugin package smoke includes the revoked packaged driver crede
   assert.match(smokeSource, /payloadModeAfterReject/);
 });
 
+test('production plugin package smoke supports driver-guard-only mode', () => {
+  const smokeSource = readFileSync(
+    path.join(repoRoot, 'scripts/playground/production-plugin-package-smoke.mjs'),
+    'utf8',
+  );
+
+  assert.match(smokeSource, /const smokeMode = process\.env\.REPRINT_PUSH_PACKAGE_SMOKE_MODE \|\| 'full';/);
+  assert.match(smokeSource, /const runDriverGuardOnly = smokeMode === 'driver-guard-only';/);
+  assert.match(smokeSource, /mode: smokeMode,/);
+  assert.match(smokeSource, /if \(!runDriverGuardOnly\) \{/);
+});
+
 maybeTest('production plugin package smoke rejects revoked packaged driver credentials without mutating the remote row', () => {
   const proof = spawnBoundedSync(process.execPath, ['scripts/playground/production-plugin-package-smoke.mjs'], {
     cwd: repoRoot,
@@ -862,6 +874,19 @@ maybeTest('production plugin package smoke rejects revoked packaged driver crede
   assert.match(proof.stdout, /"rowRetainedAfterReject": true/);
   assert.match(proof.stdout, /"updatedMarkerAfterReject": "base"/);
   assert.match(proof.stdout, /"payloadModeAfterReject": "base"/);
+});
+
+test('production-shaped release verify source runs the packaged plugin driver revoked credential guard in bounded mode', () => {
+  const verifySource = readFileSync(
+    path.join(repoRoot, 'scripts/playground/production-shaped-release-verify.mjs'),
+    'utf8',
+  );
+
+  assert.match(verifySource, /REPRINT_PUSH_PACKAGE_SMOKE_MODE: 'driver-guard-only'/);
+  assert.match(verifySource, /timeout: 45_000/);
+  assert.match(verifySource, /packagedRevokedCredentialGuard: summary\.driverReceiptRevokedCredentialGuard \|\| null/);
+  assert.match(verifySource, /const packagedPluginDriverProof = packagedSourceFixture\s*\?\s*summarizePackagedPluginDriverProof\(\)\s*:\s*null;/);
+  assert.match(verifySource, /\.\.\.\(packagedPluginDriverProof \? \{ pluginDriver: packagedPluginDriverProof \} : \{\}\)/);
 });
 
 test('production-shaped release verify consumes the packaged production auth/session source command on the checked release path', () => {

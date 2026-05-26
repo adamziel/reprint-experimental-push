@@ -19,6 +19,7 @@ import { resolvePackagedProductionPluginSourceCommand } from './packaged-product
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const cliPath = path.join(repoRoot, 'bin/reprint-push-lab.js');
 const serverStartupTimeoutMs = 20_000;
+const packagedDriverGuardStartupTimeoutMs = 45_000;
 const transientFetchRetryDelayMs = 250;
 const transientFetchAttempts = 4;
 
@@ -27,6 +28,8 @@ const credentials = {
   password: 'reprint-push-admin-app-password',
 };
 const authSessionSourceCommand = process.env.REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND || '';
+const smokeMode = process.env.REPRINT_PUSH_PACKAGE_SMOKE_MODE || 'full';
+const runDriverGuardOnly = smokeMode === 'driver-guard-only';
 const authSessionSource = authSessionSourceCommand ? loadAuthSessionSource(authSessionSourceCommand) : null;
 const resolvedCredentials = resolveAuthSessionSourceCredentials(credentials, authSessionSource, {
   preferSource: true,
@@ -60,13 +63,15 @@ const fixtures = {
   local: 'fixtures/playground/local-edited.blueprint.json',
 };
 
-const snapshots = Object.fromEntries(
-  Object.entries(fixtures).map(([name, fixture]) => [
-    name,
-    exportSnapshot(name, path.join(repoRoot, fixture)),
-  ]),
-);
-const packageLocalSnapshot = withoutUnmappedGraphPostmeta(snapshots.local);
+const snapshots = runDriverGuardOnly
+  ? null
+  : Object.fromEntries(
+      Object.entries(fixtures).map(([name, fixture]) => [
+        name,
+        exportSnapshot(name, path.join(repoRoot, fixture)),
+      ]),
+    );
+const packageLocalSnapshot = snapshots ? withoutUnmappedGraphPostmeta(snapshots.local) : null;
 
 const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'reprint-production-plugin-package-'));
 const packageRoot = path.join(tmpDir, 'package');
@@ -84,25 +89,19 @@ const driverFixture = {
 
 try {
   buildPluginPackage(pluginDir);
-  writeActivationBlueprint(path.join(repoRoot, fixtures.base), blueprintPath);
   writeDriverFixtureBlueprint(path.join(repoRoot, fixtures.base), driverGuardSnapshotBlueprintPath);
   writeDriverFixtureBlueprint(path.join(repoRoot, fixtures.base), driverGuardServerBlueprintPath, {
     activatePackagedPlugin: true,
     provisionAuth: true,
     enableCredentialRevocationRoute: true,
   });
-  fs.writeFileSync(basePath, `${JSON.stringify(snapshots.base, null, 2)}\n`);
-  fs.writeFileSync(localPath, `${JSON.stringify(packageLocalSnapshot, null, 2)}\n`);
-  const driverGuardBaseSnapshot = exportSnapshot('driver-fixture-guard-base', driverGuardSnapshotBlueprintPath);
-  const driverFixtureTableKey = Object.keys(driverGuardBaseSnapshot.db || {}).find((key) => key.endsWith('reprint_push_driver_fixture'));
-  assert.ok(driverFixtureTableKey, 'driver fixture snapshot did not expose the arbitrary plugin-owned table');
-  const driverFixtureResourceKey = `row:[${JSON.stringify(driverFixtureTableKey)},"entry_id:1"]`;
-  const driverLocalUpdateSnapshot = deepClone(driverGuardBaseSnapshot);
-  driverLocalUpdateSnapshot.db[driverFixtureTableKey]['entry_id:1'].payload.mode = 'local-update';
-  driverLocalUpdateSnapshot.db[driverFixtureTableKey]['entry_id:1'].payload.version = 2;
-  driverLocalUpdateSnapshot.db[driverFixtureTableKey]['entry_id:1'].updated_marker = 'local-update';
-
+  if (!runDriverGuardOnly) {
+    writeActivationBlueprint(path.join(repoRoot, fixtures.base), blueprintPath);
+    fs.writeFileSync(basePath, `${JSON.stringify(snapshots.base, null, 2)}\n`);
+    fs.writeFileSync(localPath, `${JSON.stringify(packageLocalSnapshot, null, 2)}\n`);
+  }
   const summary = {
+    mode: smokeMode,
     package: {
       plugin: 'reprint-push/reprint-push.php',
       mountedAs: '/wordpress/wp-content/plugins/reprint-push',
@@ -114,7 +113,8 @@ try {
     final: {},
   };
 
-  await withPlaygroundServer('production-plugin-package', blueprintPath, pluginDir, async (server) => {
+  if (!runDriverGuardOnly) {
+    await withPlaygroundServer('production-plugin-package', blueprintPath, pluginDir, async (server) => {
     const index = await requestJson(server.baseUrl, 'GET', '/wp-json/');
     assert.equal(index.status, 200);
     assertRouteNamespace(index.body);
@@ -250,13 +250,14 @@ try {
       finalMatchesLocal: result.after.finalMatchesLocal,
       visibleSurfaceHash: digest(visibleSurface(after.body.snapshot)),
     };
-  });
+    });
+  }
 
   await withPlaygroundServer(
     'production-plugin-driver-revoked-credential-guard',
     driverGuardServerBlueprintPath,
     pluginDir,
-    { authBootstrap: false },
+    { authBootstrap: false, startupTimeoutMs: packagedDriverGuardStartupTimeoutMs },
     async (server) => {
       const client = authenticatedHttpClient({
         sourceUrl: server.baseUrl,
@@ -279,6 +280,9 @@ try {
       const remoteSnapshot = await client.get('/snapshot');
       assert.equal(remoteSnapshot.status, 200);
       assert.equal(remoteSnapshot.body?.ok, true);
+      const driverFixtureTableKey = Object.keys(remoteSnapshot.body.snapshot?.db || {}).find((key) => key.endsWith('reprint_push_driver_fixture'));
+      assert.ok(driverFixtureTableKey, 'packaged snapshot did not expose the arbitrary plugin-owned driver table');
+      const driverFixtureResourceKey = `row:[${JSON.stringify(driverFixtureTableKey)},"entry_id:1"]`;
       const allowedEntry = remoteSnapshot.body.snapshot?.meta?.pluginOwnedResources?.allowedResources?.find?.(
         (entry) => entry?.resourceKey === driverFixtureResourceKey,
       );
@@ -286,9 +290,13 @@ try {
       assert.equal(allowedEntry.driver, driverFixture.driver);
       assert.equal(allowedEntry.table, driverFixture.table);
       assert.equal(allowedEntry.pluginOwner, driverFixture.pluginOwner);
+      const driverLocalUpdateSnapshot = deepClone(remoteSnapshot.body.snapshot);
+      driverLocalUpdateSnapshot.db[driverFixtureTableKey]['entry_id:1'].payload.mode = 'local-update';
+      driverLocalUpdateSnapshot.db[driverFixtureTableKey]['entry_id:1'].payload.version = 2;
+      driverLocalUpdateSnapshot.db[driverFixtureTableKey]['entry_id:1'].updated_marker = 'local-update';
 
       const updatePlan = createPushPlan({
-        base: driverGuardBaseSnapshot,
+        base: remoteSnapshot.body.snapshot,
         local: driverLocalUpdateSnapshot,
         remote: remoteSnapshot.body.snapshot,
         now: new Date('2026-05-26T18:05:00.000Z'),
@@ -727,7 +735,7 @@ async function withPlaygroundServer(name, blueprintPath, mountedPluginDir, optio
   }
 }
 
-async function startPlaygroundServer(name, blueprintPath, mountedPluginDir, { authBootstrap = true } = {}) {
+async function startPlaygroundServer(name, blueprintPath, mountedPluginDir, { authBootstrap = true, startupTimeoutMs = serverStartupTimeoutMs } = {}) {
   const port = await findLocalPort();
   const baseUrl = `http://127.0.0.1:${port}`;
   const logs = [];
@@ -765,7 +773,7 @@ async function startPlaygroundServer(name, blueprintPath, mountedPluginDir, { au
   child.stderr.on('data', (chunk) => pushLog(logs, chunk));
 
   try {
-    await waitForServer(child, baseUrl, logs);
+    await waitForServer(child, baseUrl, logs, startupTimeoutMs);
   } catch (error) {
     await stopChildProcess(child);
     throw error;
@@ -774,8 +782,8 @@ async function startPlaygroundServer(name, blueprintPath, mountedPluginDir, { au
   return { name, port, baseUrl, child, logs };
 }
 
-async function waitForServer(child, baseUrl, logs) {
-  const deadline = Date.now() + serverStartupTimeoutMs;
+async function waitForServer(child, baseUrl, logs, startupTimeoutMs = serverStartupTimeoutMs) {
+  const deadline = Date.now() + startupTimeoutMs;
   let lastError = null;
   let lastStatus = null;
   let lastBody = null;

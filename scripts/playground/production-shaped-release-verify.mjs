@@ -918,6 +918,9 @@ try {
       );
       assert.equal(durableJournalSummary.leaseFence?.fsyncEvidence, true);
       assert.equal(durableJournalSummary.leaseFence?.monotonicSequence, true);
+      const packagedPluginDriverProof = packagedSourceFixture
+        ? summarizePackagedPluginDriverProof()
+        : null;
       const checkedDurableJournalAccepted = packagedSourceFixture !== null
         ? checkedDurableJournalBoundarySatisfied(proof.dbJournal)
         : dbJournalProofIsAcceptable(proof.dbJournal);
@@ -969,6 +972,7 @@ try {
               },
               authSessionLifecycle: proof.authSessionLifecycle,
               authSessionLifecycleTrace: proof.authSessionLifecycleTrace,
+              ...(packagedPluginDriverProof ? { pluginDriver: packagedPluginDriverProof } : {}),
             },
             null,
             2,
@@ -1066,6 +1070,7 @@ try {
                 liveLeaseFence: proof.dbJournal.leaseFence || null,
                 checkedAccepted: checkedDurableJournalAccepted,
               },
+              ...(packagedPluginDriverProof ? { pluginDriver: packagedPluginDriverProof } : {}),
             },
             null,
             2,
@@ -1153,6 +1158,7 @@ try {
                 liveLeaseFence: proof.dbJournal.leaseFence || null,
                 checkedAccepted: checkedDurableJournalAccepted,
               },
+              ...(packagedPluginDriverProof ? { pluginDriver: packagedPluginDriverProof } : {}),
             },
             null,
             2,
@@ -1239,6 +1245,7 @@ try {
               liveLeaseFence: proof.dbJournal.leaseFence || null,
               checkedAccepted: checkedDurableJournalAccepted,
             },
+            ...(packagedPluginDriverProof ? { pluginDriver: packagedPluginDriverProof } : {}),
           },
           null,
           2,
@@ -1918,6 +1925,41 @@ function runBoundedSync(command, args, options, label) {
     );
   }
   return proof;
+}
+
+function summarizePackagedPluginDriverProof() {
+  try {
+    const proof = runBoundedSync(
+      process.execPath,
+      ['scripts/playground/production-plugin-package-smoke.mjs'],
+      {
+        cwd: repoRoot,
+        timeout: 45_000,
+        killSignal: 'SIGKILL',
+        encoding: 'utf8',
+        maxBuffer: 1024 * 1024 * 20,
+        env: {
+          ...process.env,
+          NODE_NO_WARNINGS: '1',
+          REPRINT_PUSH_PACKAGE_SMOKE_MODE: 'driver-guard-only',
+        },
+      },
+      'packaged plugin driver revoked-credential guard smoke',
+    );
+    const summary = JSON.parse(proof.stdout);
+    return {
+      status: proof.status,
+      mode: summary.mode || 'driver-guard-only',
+      packagedRevokedCredentialGuard: summary.driverReceiptRevokedCredentialGuard || null,
+    };
+  } catch (error) {
+    return {
+      status: 1,
+      mode: 'driver-guard-only',
+      packagedRevokedCredentialGuard: null,
+      error: error instanceof Error ? error.message : String(error),
+    };
+  }
 }
 
 function runProductionRecoveryJournalProof({ plan, current, artifactRefs = {} }) {
