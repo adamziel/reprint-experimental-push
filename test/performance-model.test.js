@@ -210,6 +210,42 @@ test('benchmark model covers large uploads and plugin installs', () => {
   assert.ok(
     model.safeFastPaths.some(
       (fastPath) =>
+        fastPath.area === 'chunk-upload' &&
+        fastPath.allowedShortcut === 'pipeline-independent-chunks-within-byte-and-receipt-budgets' &&
+        fastPath.guardrails.includes('chunks-remain-plan-scoped-and-addressed-by-digest') &&
+        fastPath.guardrails.includes('finalize-still-requires-complete-durable-receipts') &&
+        fastPath.gateProofs.skip.includes('independent chunk sends may overlap') &&
+        fastPath.gateProofs.recovery.includes('durable chunk receipts and the guarded publish record'),
+    ),
+    'bounded chunk pipelining stays plan-scoped and keeps durable receipt recovery evidence intact',
+  );
+  assert.ok(
+    model.safeFastPaths.some(
+      (fastPath) =>
+        fastPath.area === 'database-row-batching' &&
+        fastPath.allowedShortcut === 'reuse-one-prepared-statement-per-table-and-batch-shape-within-an-atomic-group' &&
+        fastPath.guardrails.includes('prepared-statements-do-not-override-row-preconditions') &&
+        fastPath.guardrails.includes('atomic-group-barrier-stays-fixed') &&
+        fastPath.gateProofs.skip.includes('prepared SQL lowers duplicate parse and bind work') &&
+        fastPath.gateProofs.recovery.includes('batch receipts and plan-scoped idempotency keys'),
+    ),
+    'prepared row-batch statements stay inside one atomic group and preserve recovery evidence',
+  );
+  assert.ok(
+    model.safeFastPaths.some(
+      (fastPath) =>
+        fastPath.area === 'database-row-batching' &&
+        fastPath.allowedShortcut === 'run-bounded-row-batch-parallelism-within-an-atomic-group-and-per-table-budget' &&
+        fastPath.guardrails.includes('parallel-row-batches-stay-within-per-table-and-per-site-budgets') &&
+        fastPath.guardrails.includes('atomic-group-barrier-stays-fixed') &&
+        fastPath.gateProofs.skip.includes('independent row batches may overlap inside one group') &&
+        fastPath.gateProofs.recovery.includes('batch receipts and the group staging record'),
+    ),
+    'bounded row-batch parallelism keeps per-table budgets and the atomic-group barrier intact',
+  );
+  assert.ok(
+    model.safeFastPaths.some(
+      (fastPath) =>
         fastPath.area === 'backpressure' &&
         fastPath.allowedShortcut === 'reuse-receipt-cursor-queue-slack-and-memory-ceiling-to-size-bounded-replay' &&
         fastPath.guardrails.includes('queue-slack-and-memory-ceiling-stay-aligned') &&
@@ -269,6 +305,18 @@ test('benchmark model covers large uploads and plugin installs', () => {
         fastPath.gateProofs.recovery.includes('staging-disk headroom, and journal records still classify pause, retry, or crash'),
     ),
     'receipt cursor and staging-disk headroom can size journal batches after a pause without weakening recovery evidence',
+  );
+  assert.ok(
+    model.safeFastPaths.some(
+      (fastPath) =>
+        fastPath.area === 'backpressure' &&
+        fastPath.allowedShortcut === 'compress-planning-evidence-and-pause-producers-within-budgets' &&
+        fastPath.guardrails.includes('compression-stays-transport-only') &&
+        fastPath.guardrails.includes('pause-does-not-authorize-apply-or-finalize') &&
+        fastPath.gateProofs.skip.includes('compressed planning evidence can reduce queue-drain traffic') &&
+        fastPath.gateProofs.recovery.includes('durable receipts and journal records classify pause, retry, or crash'),
+    ),
+    'compressed planning evidence can shrink paused buffers without weakening durable pause recovery evidence',
   );
   assert.ok(
     model.safeFastPaths.some(
