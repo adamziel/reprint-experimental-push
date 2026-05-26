@@ -3074,6 +3074,29 @@ test('guarded benchmark keeps queue-headroom plus queue-slack visibility detail 
   );
 });
 
+test('guarded benchmark keeps queue-headroom plus queue-slack visibility detail fail closed when queue-headroom measurement is hidden', () => {
+  const report = smallBenchmark();
+  const mutated = clone(report);
+
+  mutated.evidence.backpressure.queueHeadroomVisible = true;
+  mutated.evidence.backpressure.queueHeadroomMeasured = false;
+  mutated.evidence.backpressure.receiptCursorQueueSlackVisible = true;
+
+  const details = productionThroughputDetails(mutated);
+  const blockers = productionThroughputBlockers(mutated);
+
+  assert.equal(details.queueHeadroomVisible, true);
+  assert.equal(details.queueHeadroomMeasured, false);
+  assert.equal(details.receiptCursorQueueSlackVisible, true);
+  assert.equal(details.receiptCursorQueueSlackMeasured, true);
+  assert.equal(details.queueHeadroomVisibleAndQueueSlackVisibleAndMeasured, false);
+  assert.equal(
+    details.backpressureConsistency.queueHeadroomVisibleAndQueueSlackVisibleAndMeasured,
+    false,
+  );
+  assert.ok(blockers.includes('queue-headroom-visible-without-measurement'));
+});
+
 test('guarded benchmark treats queue-headroom visibility without measurement as incomplete backpressure evidence', () => {
   const report = smallBenchmark();
   const mutated = clone(report);

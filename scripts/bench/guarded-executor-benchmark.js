@@ -1331,6 +1331,7 @@ export function productionThroughputDetails(report) {
     queueHeadroomVisible && receiptCursorQueueSlackMeasured;
   const queueHeadroomVisibleAndQueueSlackVisibleAndMeasured =
     queueHeadroomVisible
+    && queueHeadroomMeasured
     && receiptCursorQueueSlackVisible
     && receiptCursorQueueSlackPositive
     && receiptCursorQueueSlackMeasured;

@@ -220,6 +220,10 @@ Current executable gate:
   without receipt-cursor memory-headroom visibility, so a partial bounded-
   backpressure surface cannot claim visible pause headroom while hiding the
   paired receipt-cursor headroom proof.
+- The same details also fail closed if queue headroom is visible but its
+  measurement bit is hidden, even when receipt-cursor queue slack stays
+  visible and measured, so a forged pause-footprint summary cannot look fully
+  measured from queue-slack evidence alone.
 - The same details also fail closed if the raw memory-ceiling-match bit appears
   while queue-headroom visibility is hidden, so the audit surface cannot mark
   the queue-budget match complete while the paired headroom boundary is absent.
