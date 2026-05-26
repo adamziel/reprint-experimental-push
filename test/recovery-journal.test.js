@@ -1119,6 +1119,70 @@ test('production recovery journal reopen fails closed when the persisted consume
   });
 });
 
+test('production recovery journal reopen fails closed when the persisted consumed claim lease is inherited instead of owned', () => {
+  const filePath = tempJournalPath();
+  const remote = baseSite();
+  const plan = planFor(baseSite(), localSite(), remote);
+  const claimId = 'claim-consumed-inherited-lease';
+  const writerLease = { id: claimId, epoch: 4 };
+  const remoteArtifactPath = `${filePath}.remote`;
+  const artifactRefs = {
+    journal: filePath,
+    remote: remoteArtifactPath,
+  };
+  const journal = openProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs,
+    claimId,
+    writerLease,
+  });
+  appendRecoveryClaimOpened(journal, {
+    plan,
+    current: remote,
+    claimId,
+    artifactRefs,
+  });
+  journal.close();
+
+  consumeProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs,
+    writerLease,
+  });
+
+  const persisted = readRecoveryJournal(filePath);
+  const consumedRecord = persisted.records.at(-1);
+  const inheritedConsumedRecord = Object.create({
+    claimLease: { id: claimId, epoch: 4 },
+  });
+  inheritedConsumedRecord.schemaVersion = consumedRecord.schemaVersion;
+  inheritedConsumedRecord.sequence = consumedRecord.sequence;
+  inheritedConsumedRecord.type = consumedRecord.type;
+  inheritedConsumedRecord.timestamp = consumedRecord.timestamp;
+  inheritedConsumedRecord.claimHash = consumedRecord.claimHash;
+  inheritedConsumedRecord.artifactRefs = consumedRecord.artifactRefs;
+  inheritedConsumedRecord.fsync = consumedRecord.fsync;
+  persisted.records[persisted.records.length - 1] = inheritedConsumedRecord;
+  fs.writeFileSync(filePath, `${persisted.records.map((record) => JSON.stringify(record)).join('\n')}\n`);
+
+  assert.throws(() => {
+    openProductionRecoveryJournal(filePath, {
+      claimId,
+      writerLease,
+      ownsRemoteArtifact: true,
+      remoteArtifactPath,
+    });
+  }, {
+    name: 'UnsupportedProductionRecoveryJournalError',
+    code: 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL',
+    message: 'Production recovery journal support requires reopening with the persisted consumed claim identity.',
+  });
+});
+
 test('production recovery journal reopen fails closed when a later persisted claim record reopens after consumption', () => {
   const filePath = tempJournalPath();
   const remote = baseSite();
