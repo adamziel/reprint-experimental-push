@@ -1522,6 +1522,99 @@ test('production auth/session lifecycle summary helper requires a preserved acti
       observed: '2000-01-01T00:00:00Z',
     },
   );
+
+  assert.deepEqual(
+    evaluateProductionAuthSessionLifecycleSummary({
+      issued: {
+        step: 'apply',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+      },
+      read: {
+        step: 'apply',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+        preserved: true,
+      },
+    }),
+    {
+      ok: false,
+      required: 'issued preflight',
+      observed: 'apply',
+    },
+  );
+
+  assert.deepEqual(
+    evaluateProductionAuthSessionLifecycleSummary({
+      issued: {
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+      },
+      read: {
+        step: 'preflight',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+        preserved: true,
+      },
+    }),
+    {
+      ok: false,
+      required: 'preserved read',
+      observed: 'preflight',
+    },
+  );
+
+  assert.deepEqual(
+    evaluateProductionAuthSessionLifecycleSummary({
+      issued: {
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+      },
+      read: {
+        step: 'apply',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+        preserved: true,
+      },
+      observations: [
+        {
+          step: 'apply',
+          id: 'session-01',
+          type: 'production-auth-session',
+          status: 'active',
+          expiresAt: '2099-01-01T00:00:00Z',
+          preserved: true,
+          rotated: false,
+        },
+        {
+          step: 'preflight',
+          id: 'session-01',
+          type: 'production-auth-session',
+          status: 'active',
+          expiresAt: '2099-01-01T00:00:00Z',
+          preserved: false,
+          rotated: false,
+        },
+      ],
+    }),
+    {
+      ok: false,
+      required: 'issued preflight',
+      observed: 'apply',
+    },
+  );
 });
 
 test('production auth/session lifecycle trace summary preserves issued and read session evidence', () => {
@@ -1619,6 +1712,174 @@ test('production auth/session lifecycle trace summary preserves issued and read 
           preserved: true,
         },
       ],
+    },
+  );
+});
+
+test('production auth/session lifecycle trace summary does not treat preflight as a preserved read', () => {
+  const summary = summarizeProductionAuthSessionLifecycleTrace([
+    {
+      step: 'preflight',
+      id: 'session-01',
+      type: 'production-auth-session',
+      status: 'active',
+      expiresAt: '2099-01-01T00:00:00Z',
+      expired: false,
+      revoked: false,
+      cleanedUp: false,
+      rotated: false,
+      preserved: true,
+    },
+  ]);
+
+  assert.deepEqual(summary, {
+    issued: {
+      step: 'preflight',
+      id: 'session-01',
+      type: 'production-auth-session',
+      status: 'active',
+      expiresAt: '2099-01-01T00:00:00Z',
+      expired: false,
+      revoked: false,
+      cleanedUp: false,
+      rotated: false,
+      preserved: true,
+    },
+    read: null,
+    expired: null,
+    revoked: null,
+    cleanedUp: null,
+    rotated: null,
+    preserved: {
+      step: 'preflight',
+      id: 'session-01',
+      type: 'production-auth-session',
+      status: 'active',
+      expiresAt: '2099-01-01T00:00:00Z',
+      expired: false,
+      revoked: false,
+      cleanedUp: false,
+      rotated: false,
+      preserved: true,
+    },
+    observations: [
+      {
+        step: 'preflight',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+        expired: false,
+        revoked: false,
+        cleanedUp: false,
+        rotated: false,
+        preserved: true,
+      },
+    ],
+  });
+
+  assert.deepEqual(
+    evaluateProductionAuthSessionLifecycleSummary(summary),
+    {
+      ok: false,
+      required: 'preserved read',
+      observed: 'missing',
+    },
+  );
+});
+
+test('production auth/session lifecycle trace summary fails closed when no preflight-issued session exists', () => {
+  const summary = summarizeProductionAuthSessionLifecycleTrace([
+    {
+      step: 'apply',
+      id: 'session-01',
+      type: 'production-auth-session',
+      status: 'active',
+      expiresAt: '2099-01-01T00:00:00Z',
+      expired: false,
+      revoked: false,
+      cleanedUp: false,
+      rotated: false,
+      preserved: true,
+    },
+    {
+      step: 'replay',
+      id: 'session-01',
+      type: 'production-auth-session',
+      status: 'active',
+      expiresAt: '2099-01-01T00:00:00Z',
+      expired: false,
+      revoked: false,
+      cleanedUp: false,
+      rotated: false,
+      preserved: true,
+    },
+  ]);
+
+  assert.deepEqual(summary, {
+    issued: null,
+    read: {
+      step: 'replay',
+      id: 'session-01',
+      type: 'production-auth-session',
+      status: 'active',
+      expiresAt: '2099-01-01T00:00:00Z',
+      expired: false,
+      revoked: false,
+      cleanedUp: false,
+      rotated: false,
+      preserved: true,
+    },
+    expired: null,
+    revoked: null,
+    cleanedUp: null,
+    rotated: null,
+    preserved: {
+      step: 'apply',
+      id: 'session-01',
+      type: 'production-auth-session',
+      status: 'active',
+      expiresAt: '2099-01-01T00:00:00Z',
+      expired: false,
+      revoked: false,
+      cleanedUp: false,
+      rotated: false,
+      preserved: true,
+    },
+    observations: [
+      {
+        step: 'apply',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+        expired: false,
+        revoked: false,
+        cleanedUp: false,
+        rotated: false,
+        preserved: true,
+      },
+      {
+        step: 'replay',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+        expired: false,
+        revoked: false,
+        cleanedUp: false,
+        rotated: false,
+        preserved: true,
+      },
+    ],
+  });
+
+  assert.deepEqual(
+    evaluateProductionAuthSessionLifecycleSummary(summary),
+    {
+      ok: false,
+      required: 'issued preflight',
+      observed: 'missing',
     },
   );
 });
