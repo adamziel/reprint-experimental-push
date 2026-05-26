@@ -983,7 +983,12 @@ export function productionRecoverySupportReport(writer) {
     addMissingDependency('restart-readable recovery remote artifact references');
   }
   if (persistedArtifactRefs.invalidReason) {
-    addMissingDependency('restart-readable recovery remote artifact references');
+    if (persistedArtifactRefs.invalidReason.includes('journal artifact ref')) {
+      addMissingDependency('restart-readable recovery artifact references');
+    }
+    if (persistedArtifactRefs.invalidReason.includes('remote artifact ref')) {
+      addMissingDependency('restart-readable recovery remote artifact references');
+    }
   } else if (persistedArtifactRefs.remote) {
     if (writerRemoteArtifactRef && writerRemoteArtifactRef !== persistedArtifactRefs.remote) {
       addMissingDependency('restart-readable recovery remote artifact references');
@@ -1287,11 +1292,14 @@ function durableJournalPersistedArtifactRefs(inspected) {
 
   let persistedJournalPath = null;
   let persistedRemoteArtifactPath = null;
+  let sawRecordWithoutJournalArtifactRef = false;
+  let sawRecordWithoutRemoteArtifactRef = false;
   for (let index = inspected.records.length - 1; index >= 0; index -= 1) {
     const artifactRefs = inspected.records[index]?.artifactRefs;
     if (!isStrictPlainObject(artifactRefs)) {
       continue;
     }
+    const hasAnyArtifactRefKeys = Reflect.ownKeys(artifactRefs).length > 0;
     if (
       Object.hasOwn(artifactRefs, 'journal')
       && !isCanonicalAbsolutePath(artifactRefs.journal)
@@ -1308,10 +1316,27 @@ function durableJournalPersistedArtifactRefs(inspected) {
       }
     }
     if (
+      !Object.hasOwn(artifactRefs, 'journal')
+      && hasAnyArtifactRefKeys
+      && persistedJournalPath !== null
+    ) {
+      return { journal: null, remote: null, invalidReason: 'missing journal artifact ref' };
+    }
+    if (
+      !Object.hasOwn(artifactRefs, 'journal')
+      && hasAnyArtifactRefKeys
+      && persistedJournalPath === null
+    ) {
+      sawRecordWithoutJournalArtifactRef = true;
+    }
+    if (
       persistedJournalPath === null
       && Object.hasOwn(artifactRefs, 'journal')
       && isCanonicalAbsolutePath(artifactRefs.journal)
     ) {
+      if (sawRecordWithoutJournalArtifactRef) {
+        return { journal: null, remote: null, invalidReason: 'missing journal artifact ref' };
+      }
       persistedJournalPath = artifactRefs.journal;
     } else if (
       Object.hasOwn(artifactRefs, 'journal')
@@ -1321,11 +1346,28 @@ function durableJournalPersistedArtifactRefs(inspected) {
       return { journal: null, remote: null, invalidReason: 'rewritten journal artifact ref' };
     }
     if (
+      !Object.hasOwn(artifactRefs, 'remote')
+      && hasAnyArtifactRefKeys
+      && persistedRemoteArtifactPath !== null
+    ) {
+      return { journal: null, remote: null, invalidReason: 'missing remote artifact ref' };
+    }
+    if (
+      !Object.hasOwn(artifactRefs, 'remote')
+      && hasAnyArtifactRefKeys
+      && persistedRemoteArtifactPath === null
+    ) {
+      sawRecordWithoutRemoteArtifactRef = true;
+    }
+    if (
       Object.hasOwn(artifactRefs, 'remote')
       && isCanonicalAbsolutePath(artifactRefs.remote)
       && artifactRefs.remote !== artifactRefs.journal
       && artifactRefs.remote !== persistedJournalPath
     ) {
+      if (sawRecordWithoutRemoteArtifactRef) {
+        return { journal: null, remote: null, invalidReason: 'missing remote artifact ref' };
+      }
       if (
         persistedRemoteArtifactPath !== null
         && persistedRemoteArtifactPath !== artifactRefs.remote
