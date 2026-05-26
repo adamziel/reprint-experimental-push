@@ -1223,7 +1223,7 @@ test('packaged production plugin readiness helper does not retry terminal readin
       404,
       '<!doctype html><html><body>No route was found matching the URL and request method.</body></html>',
     ),
-    0,
+    4,
   );
   assert.equal(
     packagedProductionPluginNextNotReadyProbeCount(

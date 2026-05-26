@@ -82,7 +82,7 @@ export function packagedProductionPluginReadinessWordPressNotReady(status, bodyT
 }
 
 export function packagedProductionPluginNextNotReadyProbeCount(currentCount, status, bodyText = '') {
-  return packagedProductionPluginReadinessWordPressNotReady(status, bodyText)
+  return packagedProductionPluginReadinessBodyRetryable(status, bodyText)
     ? currentCount + 1
     : 0;
 }
