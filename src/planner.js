@@ -1334,7 +1334,17 @@ function isValidSamePlanWordPressGraphTarget(targetMutation, reference, sourceMu
     if (
       sourceValue
       && typeof sourceValue === 'object'
-      && sourceValue.post_type === 'revision'
+      && sourceValue.post_type === 'attachment'
+    ) {
+      return false;
+    }
+    if (
+      sourceValue
+      && typeof sourceValue === 'object'
+      && (
+        sourceValue.post_type === 'revision'
+        || sourceValue.post_type === 'wp_navigation'
+      )
     ) {
       return false;
     }
@@ -1342,7 +1352,8 @@ function isValidSamePlanWordPressGraphTarget(targetMutation, reference, sourceMu
       targetValue
       && typeof targetValue === 'object'
       && (
-        targetValue.post_type === 'nav_menu_item'
+        targetValue.post_type === 'attachment'
+        || targetValue.post_type === 'nav_menu_item'
         || targetValue.post_type === 'wp_navigation'
         || targetValue.post_type === 'revision'
       )
@@ -1404,6 +1415,9 @@ function isValidSamePlanWordPressGraphTarget(targetMutation, reference, sourceMu
       || !targetValue
       || typeof targetValue !== 'object'
     ) {
+      return false;
+    }
+    if (targetValue.taxonomy === 'nav_menu') {
       return false;
     }
   }
@@ -1691,6 +1705,17 @@ function isBlockedSamePlanWordPressGraphSource(sourceMutation, reference, mutati
     return ownerValue.post_type === 'revision'
       || ownerValue.post_type === 'nav_menu_item'
       || ownerValue.post_type === 'wp_navigation';
+  }
+
+  if (reference.relationshipType === 'term-taxonomy-parent') {
+    if (sourceMutation?.resource?.type !== 'row' || sourceMutation?.resource?.table !== 'wp_term_taxonomy') {
+      return false;
+    }
+    const sourceValue = deserializeResourceValue(sourceMutation.value);
+    if (!sourceValue || typeof sourceValue !== 'object') {
+      return false;
+    }
+    return sourceValue.taxonomy === 'nav_menu';
   }
 
   return false;
