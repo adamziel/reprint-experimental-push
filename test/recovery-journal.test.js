@@ -1067,6 +1067,36 @@ test('production recovery journal compatibility overload fails closed when artif
   });
 });
 
+test('production recovery journal compatibility overload fails closed when artifact refs hide journal and remote behind non-enumerable keys', () => {
+  const filePath = tempJournalPath();
+  const remote = baseSite();
+  const plan = planFor(baseSite(), localSite(), remote);
+  const remoteArtifactPath = `${filePath}.remote`;
+  const artifactRefs = {};
+  Object.defineProperty(artifactRefs, 'journal', {
+    value: filePath,
+    enumerable: false,
+  });
+  Object.defineProperty(artifactRefs, 'remote', {
+    value: remoteArtifactPath,
+    enumerable: false,
+  });
+
+  assert.throws(() => {
+    openProductionRecoveryJournal({
+      filePath,
+      plan,
+      current: remote,
+      claimId: 'claim-hidden-compat-artifact-refs',
+      artifactRefs,
+    });
+  }, {
+    name: 'UnsupportedProductionRecoveryJournalError',
+    code: 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL',
+    message: 'Production recovery journal support requires enumerable artifactRefs keys.',
+  });
+});
+
 test('production recovery journal consumption fails closed when compatibility overload artifact refs are inherited through the prototype', () => {
   const filePath = tempJournalPath();
   const remote = baseSite();
@@ -1146,6 +1176,56 @@ test('production recovery journal consumption fails closed when compatibility ov
   }, {
     name: 'UnsupportedProductionRecoveryJournalError',
     code: 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL',
+  });
+});
+
+test('production recovery journal consumption fails closed when compatibility overload artifact refs hide journal and remote behind non-enumerable keys', () => {
+  const filePath = tempJournalPath();
+  const remote = baseSite();
+  const plan = planFor(baseSite(), localSite(), remote);
+  const remoteArtifactPath = `${filePath}.remote`;
+  const claimId = 'claim-consume-hidden-artifact-refs';
+  const artifactRefs = {
+    journal: filePath,
+    remote: remoteArtifactPath,
+  };
+  const journal = openProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs,
+    claimId,
+  });
+  appendRecoveryClaimOpened(journal, {
+    plan,
+    current: remote,
+    claimId,
+    artifactRefs,
+  });
+  journal.close();
+
+  const hiddenArtifactRefs = {};
+  Object.defineProperty(hiddenArtifactRefs, 'journal', {
+    value: filePath,
+    enumerable: false,
+  });
+  Object.defineProperty(hiddenArtifactRefs, 'remote', {
+    value: remoteArtifactPath,
+    enumerable: false,
+  });
+
+  assert.throws(() => {
+    consumeProductionRecoveryJournal({
+      filePath,
+      plan,
+      current: remote,
+      claimId,
+      artifactRefs: hiddenArtifactRefs,
+    });
+  }, {
+    name: 'UnsupportedProductionRecoveryJournalError',
+    code: 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL',
+    message: 'Production recovery journal support requires enumerable artifactRefs keys.',
   });
 });
 

@@ -689,6 +689,25 @@ function normalizeProductionRecoveryJournalOptions(filePathOrOptions, options = 
     const legacyArtifactRefs = Object.hasOwn(legacyOptions, 'artifactRefs') && isStrictPlainObject(legacyOptions.artifactRefs)
       ? legacyOptions.artifactRefs
       : null;
+    if (legacyArtifactRefs && hasHiddenOwnStringKeys(legacyArtifactRefs)) {
+      throw new UnsupportedProductionRecoveryJournalError(
+        'Production recovery journal support requires enumerable artifactRefs keys.',
+        {
+          kind: 'production-recovery-journal',
+          productionAdapter: true,
+          supportedSurface: 'production-recovery-journal-adapter',
+          restartReadable: false,
+          ownsJournal: false,
+          ownsRemoteArtifact: Object.hasOwn(legacyArtifactRefs, 'remote'),
+          journalPath: typeof legacyOptions.filePath === 'string' ? legacyOptions.filePath : null,
+          artifactRefs: Object.freeze({
+            journal: Object.hasOwn(legacyArtifactRefs, 'journal') ? legacyArtifactRefs.journal : null,
+            remote: Object.hasOwn(legacyArtifactRefs, 'remote') ? legacyArtifactRefs.remote : null,
+          }),
+          schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+        },
+      );
+    }
     if (
       legacyArtifactRefs
       && Reflect.ownKeys(legacyArtifactRefs).some((key) => key !== 'journal' && key !== 'remote')
@@ -787,6 +806,25 @@ function normalizeProductionRecoveryJournalOptions(filePathOrOptions, options = 
 
 function normalizeProductionArtifactRefs(artifactRefs, journalPath, remoteArtifactPath = null) {
   const writerArtifactRefs = isStrictPlainObject(artifactRefs) ? artifactRefs : {};
+  if (hasHiddenOwnStringKeys(writerArtifactRefs)) {
+    throw new UnsupportedProductionRecoveryJournalError(
+      'Production recovery journal support requires enumerable artifactRefs keys.',
+      {
+        kind: 'production-recovery-journal',
+        productionAdapter: true,
+        supportedSurface: 'production-recovery-journal-adapter',
+        restartReadable: true,
+        ownsJournal: true,
+        ownsRemoteArtifact: remoteArtifactPath !== null,
+        journalPath,
+        artifactRefs: Object.freeze({
+          journal: Object.hasOwn(writerArtifactRefs, 'journal') ? writerArtifactRefs.journal : journalPath,
+          remote: Object.hasOwn(writerArtifactRefs, 'remote') ? writerArtifactRefs.remote : remoteArtifactPath,
+        }),
+        schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+      },
+    );
+  }
   if (Reflect.ownKeys(writerArtifactRefs).some((key) => key !== 'journal' && key !== 'remote')) {
     throw new UnsupportedProductionRecoveryJournalError(
       'Production recovery journal consumption allows only artifactRefs.journal and artifactRefs.remote.',
