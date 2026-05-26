@@ -21,8 +21,10 @@ import {
   resolvePackagedProductionPluginSourceCommand,
 } from '../scripts/playground/packaged-production-plugin-source-command.js';
 import {
+  packagedProductionPluginPreflightRetryable,
   packagedProductionPluginPreflightReady,
   packagedProductionPluginServerReady,
+  packagedProductionPluginSnapshotRetryable,
   packagedProductionPluginSnapshotReady,
 } from '../scripts/playground/packaged-production-plugin-readiness.js';
 import {
@@ -952,7 +954,7 @@ test('packaged production plugin readiness helper accepts a stable snapshot befo
       snapshot: readySnapshot,
       preflight: notReadyPreflight,
     }),
-    true,
+    false,
   );
   assert.equal(
     packagedProductionPluginServerReady({
@@ -970,6 +972,37 @@ test('packaged production plugin readiness helper accepts a stable snapshot befo
         },
       },
       preflight: strictReadyPreflight,
+    }),
+    false,
+  );
+  assert.equal(packagedProductionPluginSnapshotRetryable(notReadyPreflight), true);
+  assert.equal(packagedProductionPluginPreflightRetryable(notReadyPreflight), true);
+  assert.equal(
+    packagedProductionPluginSnapshotRetryable({
+      status: 404,
+      body: {
+        code: 'rest_no_route',
+        message: 'No route was found matching the URL and request method.',
+      },
+    }),
+    true,
+  );
+  assert.equal(
+    packagedProductionPluginPreflightRetryable({
+      status: 404,
+      body: {
+        code: 'rest_no_route',
+        message: 'No route was found matching the URL and request method.',
+      },
+    }),
+    true,
+  );
+  assert.equal(
+    packagedProductionPluginPreflightRetryable({
+      status: 401,
+      body: {
+        code: 'reprint_push_lab_auth_required',
+      },
     }),
     false,
   );
