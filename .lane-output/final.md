@@ -12,10 +12,10 @@ Commands:
 - `git diff -- audits/objective-audit.md`
 
 Push result:
-- Pending
+- Not run this pass
 
 Worktree status:
-- Clean tracked state expected after commit
+- Tracked change present in `audits/objective-audit.md`
 - Verdict remains `0/4`
 
 Next supervisor nudge:
