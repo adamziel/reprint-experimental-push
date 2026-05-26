@@ -828,6 +828,66 @@ test('guarded benchmark exposes compressed remote-index and parallel row-batch c
   );
 });
 
+test('guarded benchmark exposes cached dependency-graph plugin-update finalize shortcuts as rejected', () => {
+  const fastPath = findRejectedFastPathById(
+    'index-and-cached-dependency-graph-skips-plugin-update-finalize',
+  );
+
+  assert.ok(fastPath);
+  assert.equal(fastPath.rejectedGate, 'group');
+  assert.match(fastPath.proposal, /cached dependency graph/i);
+  assert.match(fastPath.rejectedBecause, /atomic-group finalize survived failure/i);
+  assert.deepEqual(
+    fastPath.violates,
+    ['remote-index-planning-only', 'plugin-preconditions', 'row-preconditions', 'atomic-groups', 'durable-progress'],
+  );
+});
+
+test('guarded benchmark exposes compressed cached dependency-graph plugin-update finalize shortcuts as rejected', () => {
+  const fastPath = findRejectedFastPathById(
+    'compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-finalize',
+  );
+
+  assert.ok(fastPath);
+  assert.equal(fastPath.rejectedGate, 'group');
+  assert.match(fastPath.proposal, /compressed remote index plus a cached dependency graph/i);
+  assert.match(fastPath.rejectedBecause, /member metadata writes, or the atomic-group finalize survived failure/i);
+  assert.deepEqual(
+    fastPath.violates,
+    ['remote-index-planning-only', 'compression', 'plugin-preconditions', 'row-preconditions', 'atomic-groups', 'durable-progress'],
+  );
+});
+
+test('guarded benchmark exposes compressed cached dependency-graph plugin-update activation pause shortcuts as rejected', () => {
+  const fastPath = findRejectedFastPathById(
+    'compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-activation-after-pause-and-backpressure',
+  );
+
+  assert.ok(fastPath);
+  assert.equal(fastPath.rejectedGate, 'group');
+  assert.match(fastPath.proposal, /skip plugin-update activation after pause and backpressure/i);
+  assert.match(fastPath.rejectedBecause, /activation change, live row compares, or atomic-group barrier survived the pause/i);
+  assert.deepEqual(
+    fastPath.violates,
+    ['remote-index-planning-only', 'compression', 'backpressure', 'plugin-preconditions', 'row-preconditions', 'atomic-groups', 'durable-progress'],
+  );
+});
+
+test('guarded benchmark exposes compressed cached dependency-graph plugin-update dependency shortcuts as rejected', () => {
+  const fastPath = findRejectedFastPathById(
+    'compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-dependency-checks',
+  );
+
+  assert.ok(fastPath);
+  assert.equal(fastPath.rejectedGate, 'live');
+  assert.match(fastPath.proposal, /skip plugin-update dependency checks/i);
+  assert.match(fastPath.rejectedBecause, /live dependency checks, row preconditions, or the atomic-group barrier survived failure/i);
+  assert.deepEqual(
+    fastPath.violates,
+    ['remote-index-planning-only', 'compression', 'plugin-preconditions', 'row-preconditions', 'atomic-groups', 'durable-progress'],
+  );
+});
+
 test('guarded benchmark exposes compressed remote-index and cached row-batch receipt commit shortcuts as rejected', () => {
   const fastPath = findRejectedFastPathById(
     'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-commit-after-pause',
