@@ -58,6 +58,10 @@ It also includes a compressed per-kind budget summary plus a planned
 dependency-graph shortcut for plugin-install retry windows, so bounded retry
 planning can reuse known batch shape without changing the live compare or the
 atomic-group barrier.
+It also includes a compressed per-kind budget summary plus a planned
+dependency-graph shortcut for plugin-update fanout, so bounded retry planning
+can reuse known bundle shape without changing the live compare or the
+atomic-group barrier.
 It also includes a receipt-cursor plus staging-disk-headroom shortcut for
 post-pause journal batching, so the recovery planner can trim flush timing
 without weakening live preconditions or the atomic-group barrier.

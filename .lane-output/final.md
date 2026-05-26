@@ -2,18 +2,17 @@
 
 ## Result
 
-I added a new planning-only fast path for compressing canonical per-kind budget
-summaries to size bounded release-bundle retry windows. It stays fail-closed
-because live preconditions still guard writes, atomic groups stay intact, and
-recovery still depends on durable receipts plus the release-bundle staging
-record.
+Added a new fail-closed planning shortcut for compressing canonical per-kind
+budget summaries while reusing a planned dependency graph to size bounded
+plugin-update fanout. The shortcut stays planning-only and keeps live
+preconditions, atomic-group boundaries, and durable recovery evidence intact.
 
 ## Changed Files
 
-- [`docs/fast-paths.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/fast-paths/docs/fast-paths.md)
-- [`scripts/bench/performance-model.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/fast-paths/scripts/bench/performance-model.js)
-- [`test/performance-model.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/fast-paths/test/performance-model.test.js)
-- [`.lane-output/final.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/fast-paths/.lane-output/final.md)
+- [`docs/fast-paths.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/fast-paths-current-20260526-1415/docs/fast-paths.md)
+- [`scripts/bench/performance-model.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/fast-paths-current-20260526-1415/scripts/bench/performance-model.js)
+- [`test/performance-model.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/fast-paths-current-20260526-1415/test/performance-model.test.js)
+- [`.lane-output/final.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/fast-paths-current-20260526-1415/.lane-output/final.md)
 
 ## Verification
 
@@ -24,7 +23,7 @@ Commands run:
 
 Result:
 
-- `node --test` passed `20/20` subtests.
+- `node --test` passed `21/21` subtests.
 - `git diff --check` passed cleanly for the touched files.
 
 ## Push Result
@@ -33,13 +32,12 @@ Result:
 
 ## Worktree Status
 
-- Branch: `lane/cycle-20260525-mainwindows-2349/fast-paths`
+- Branch: `lane/cycle-20260525-mainwindows-2349/fast-paths-current-20260526-1415`
 - Working tree: dirty until commit and push
 
 ## Next Supervisor Nudge
 
 - Keep fast-path work focused on bounded, fail-closed planning shortcuts that
-  do not weaken live preconditions or recovery evidence. If the lane gets
-  another pass, the next useful change is another genuinely new safe speedup
-  edge with an executable proof in the benchmark model, not another status
-  refresh.
+  do not weaken live preconditions or recovery evidence. The next useful change
+  is another genuinely new safe speedup edge with executable proof, not a
+  status refresh.

@@ -2021,6 +2021,27 @@ export const SAFE_FAST_PATHS = Object.freeze([
   },
   {
     area: 'compression',
+    reduces: ['wire-bytes', 'planning-round-trips', 'duplicate-fanout-recomputation'],
+    allowedShortcut: 'compress-canonical-per-kind-budget-summaries-and-reuse-planned-dependency-graph-to-size-bounded-plugin-update-fanout',
+    guardrails: [
+      'budget-summaries-stay-planning-evidence-only',
+      'planned-dependency-graph-stays-planning-evidence-only',
+      'plugin-update-fanout-revalidates-before-write',
+    ],
+    gateProofs: {
+      skip: 'compressed per-kind budget summaries and a planned dependency graph can shorten plugin-update fanout planning without recomputing the same canonical limits',
+      live: 'each later plugin update still rechecks its own live resource precondition before visibility changes',
+      group: 'budget-summary compression and dependency-graph reuse only narrow planning inside the same planned plugin-update bundle and never widen the atomic-group barrier',
+      recovery: 'compressed budget summaries, the planned dependency graph, and the plugin-update staging record still classify pause, retry, or crash',
+    },
+    visibilityBoundary: 'planning-only-budget-summary',
+    failureEvidence: 'compressed per-kind budget summary plus planned dependency graph and plugin-update staging record',
+    bypassesLivePreconditions: false,
+    splitsAtomicGroup: false,
+    publishesStagedDataEarly: false,
+  },
+  {
+    area: 'compression',
     reduces: ['wire-bytes', 'planning-round-trips', 'duplicate-retry-window-recomputation'],
     allowedShortcut: 'compress-canonical-per-kind-budget-summaries-to-size-bounded-plugin-install-retry-windows',
     guardrails: [
