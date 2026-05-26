@@ -1,12 +1,11 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-26 10:29 CEST
+Last updated: 2026-05-26 10:32 CEST
 
-## 2026-05-26 10:29:28 CEST - Readiness Boundary Blocked
+## 2026-05-26 10:32:58 CEST - Freshness Refresh
 
-- `reliable-executor`'s live release proof is still blocked in `scripts/playground/production-shaped-release-verify.mjs`.
-- `waitForServer()` still hits `/wp-json/` with HTTP `502` and the `WordPress is not ready yet` body instead of waiting through the real ready signal or failing fast with bounded route/status/body diagnostics.
-- The release posture stays conservative at `0/4`; this is a readiness-boundary blocker, not new release proof.
+- The public progress surface had drifted behind the live supervision clock again, so I refreshed the owned visibility surfaces to the current stamp.
+- The release posture stays conservative at `0/4`; no new proof landed.
 
 ## 2026-05-26 10:27:29 CEST - Freshness Refresh
 

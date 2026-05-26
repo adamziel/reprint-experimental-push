@@ -4,13 +4,13 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
-# 2026-05-26 - Readiness Boundary Blocked 10:29:28
+# 2026-05-26 - Freshness Refresh 10:32:58
 
-<a id="2026-05-26-readiness-boundary-blocked-102928"></a>
+<a id="2026-05-26-freshness-refresh-103258"></a>
 
-- The live release proof is still blocked in `scripts/playground/production-shaped-release-verify.mjs`.
-- `waitForServer()` still sees `/wp-json/` return HTTP `502` with the `WordPress is not ready yet` body instead of waiting through the real ready signal or failing with bounded route/status/body diagnostics.
-- The release gate posture stays `0/4`.
+- Refreshed [progress.html](../progress.html) so the visible last-updated date stays aligned with the live supervision clock.
+- This remains a visibility-only update. The release gate posture stays `0/4`.
+- Evidence trail: [progress.html](../progress.html), [supervisor feedback](supervisor-feedback.md).
 
 # 2026-05-26 - Freshness Refresh 10:27:29
 
