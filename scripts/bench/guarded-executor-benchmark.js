@@ -1664,17 +1664,20 @@ export function productionThroughputDetails(report) {
     && queueBudgetVisible
     && queueHeadroomVisible
     && queueHeadroomMeasured
+    && report.evidence.backpressure?.receiptCursorMemoryCeilingMatchesQueueBudgetVisible === true
     && queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack;
   const queueBudgetVisibleAndQueueHeadroomVisibleAndMeasured =
     receiptCursorPauseFootprintComplete
     && queueBudgetVisible
     && queueHeadroomVisible
     && queueHeadroomMeasured
+    && report.evidence.backpressure?.receiptCursorMemoryCeilingMatchesQueueBudgetVisible === true
     && queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack;
   const queueBudgetVisibleAndQueueHeadroomVisible =
     receiptCursorPauseFootprintComplete
     && queueBudgetVisible
     && queueHeadroomVisible
+    && report.evidence.backpressure?.receiptCursorMemoryCeilingMatchesQueueBudgetVisible === true
     && queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack;
   const queueBudgetVisibleAndMemoryCeilingVisible =
     receiptCursorPauseFootprintComplete
