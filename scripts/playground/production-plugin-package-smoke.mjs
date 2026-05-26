@@ -88,6 +88,10 @@ try {
   driverLocalUpdateSnapshot.db[driverFixture.table]['entry_id:1'].payload.mode = 'local-update';
   driverLocalUpdateSnapshot.db[driverFixture.table]['entry_id:1'].payload.version = 2;
   driverLocalUpdateSnapshot.db[driverFixture.table]['entry_id:1'].updated_marker = 'local-update';
+  const driverLocalInvalidUpdateSnapshot = deepClone(driverGuardBaseSnapshot);
+  driverLocalInvalidUpdateSnapshot.db[driverFixture.table]['entry_id:1'].payload.mode = 'invalid-update';
+  driverLocalInvalidUpdateSnapshot.db[driverFixture.table]['entry_id:1'].payload.version = 3;
+  driverLocalInvalidUpdateSnapshot.db[driverFixture.table]['entry_id:1'].updated_marker = 'INVALID marker!';
 
   const summary = {
     package: {
@@ -100,6 +104,7 @@ try {
     driverUpdateApply: {},
     driverDeleteApply: {},
     driverDeleteGuard: {},
+    driverUpdateValidationGuard: {},
     final: {},
   };
 
@@ -368,6 +373,66 @@ try {
       dryRunRejectedMessage: dryRun.body?.message,
       rowRetainedAfterReject: afterRejectedApply.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1'] !== undefined,
     };
+
+    const invalidUpdatePlan = createPushPlan({
+      base: driverGuardBaseSnapshot,
+      local: driverLocalInvalidUpdateSnapshot,
+      remote: remoteSnapshot.body.snapshot,
+      now: new Date('2026-05-26T18:11:00.000Z'),
+    });
+    assert.equal(invalidUpdatePlan.status, 'ready');
+    assert.equal(invalidUpdatePlan.mutations.length, 1);
+    assert.equal(invalidUpdatePlan.mutations[0].resourceKey, driverFixture.resourceKey);
+    assert.equal(invalidUpdatePlan.mutations[0].action, 'put');
+    assert.equal(invalidUpdatePlan.mutations[0].pluginOwnedResource?.driver, driverFixture.driver);
+    assert.equal(invalidUpdatePlan.mutations[0].pluginOwnedResource?.table, driverFixture.table);
+
+    const invalidUpdateDryRun = await client.signedPost(
+      '/dry-run',
+      { plan: invalidUpdatePlan },
+      {
+        session,
+        idempotencyKey: 'production-plugin-driver-invalid-update-dry-run',
+      },
+    );
+    assert.equal(invalidUpdateDryRun.status, 400);
+    assert.equal(invalidUpdateDryRun.body?.ok, false);
+    assert.ok(
+      invalidUpdateDryRun.body?.code === 'INVALID_PLAN' || invalidUpdateDryRun.body?.code === 'PUSH_PROTOCOL_ERROR',
+      `unexpected invalid driver update dry-run code: ${invalidUpdateDryRun.body?.code}`,
+    );
+    assert.match(
+      invalidUpdateDryRun.body?.message || '',
+      /updated_marker|unsupported plugin-owned mutation driver|invalid/i,
+      'packaged dry-run route did not reject the invalid arbitrary driver update',
+    );
+
+    const afterInvalidUpdateReject = await client.get('/snapshot');
+    assert.equal(afterInvalidUpdateReject.status, 200);
+    assert.equal(afterInvalidUpdateReject.body?.ok, true);
+    assert.equal(
+      afterInvalidUpdateReject.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1']?.updated_marker,
+      'local-update',
+      'rejected packaged driver update still mutated the remote snapshot',
+    );
+    assert.deepEqual(
+      afterInvalidUpdateReject.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1']?.payload,
+      {
+        owner: driverFixture.pluginOwner,
+        mode: 'local-update',
+        version: 2,
+      },
+      'rejected packaged driver update changed the arbitrary driver payload',
+    );
+
+    summary.driverUpdateValidationGuard = {
+      resourceKey: driverFixture.resourceKey,
+      invalidUpdatedMarker: driverLocalInvalidUpdateSnapshot.db?.[driverFixture.table]?.['entry_id:1']?.updated_marker,
+      dryRunRejectedCode: invalidUpdateDryRun.body?.code,
+      dryRunRejectedMessage: invalidUpdateDryRun.body?.message,
+      rowRetainedAfterReject: afterInvalidUpdateReject.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1'] !== undefined,
+      updatedMarkerAfterReject: afterInvalidUpdateReject.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1']?.updated_marker,
+    };
   });
 
   await withPlaygroundServer('production-plugin-driver-delete-apply', driverDeleteServerBlueprintPath, pluginDir, async (server) => {
@@ -624,6 +689,7 @@ add_filter('reprint_push_plugin_owned_row_drivers', static function (array $driv
         'supportsDelete' => ${supportsDelete ? 'true' : 'false'},
         'exportRowsCallback' => 'reprint_push_driver_fixture_export_rows',
         'applyRowCallback' => 'reprint_push_driver_fixture_apply_row',
+        'validateMutationCallback' => 'reprint_push_driver_fixture_validate_mutation',
     ];
     return $drivers;
 });
@@ -697,6 +763,37 @@ function reprint_push_driver_fixture_apply_row(string $id, bool $is_delete, $val
     if ($wpdb->query($sql) === false) {
         throw new RuntimeException('Could not apply driver fixture row: ' . $wpdb->last_error);
     }
+}
+
+function reprint_push_driver_fixture_validate_mutation(array $mutation, array $snapshot, array $driver): bool {
+    $resource = is_array($mutation['resource'] ?? null) ? $mutation['resource'] : [];
+    $value = is_array($mutation['value']['value'] ?? null) ? $mutation['value']['value'] : null;
+    if (($resource['table'] ?? '') !== '${driverFixture.table}' || ($driver['pluginOwner'] ?? '') !== '${driverFixture.pluginOwner}') {
+        return false;
+    }
+    if (!preg_match('/^entry_id:([1-9]\\d*)$/', (string) ($resource['id'] ?? ''))) {
+        throw new RuntimeException('Unsupported driver fixture row id: ' . (string) ($resource['id'] ?? ''));
+    }
+    if (!empty($mutation['value']['absent'])) {
+        return ${supportsDelete ? 'true' : 'false'};
+    }
+    if (!is_array($value) || array_is_list($value)) {
+        throw new RuntimeException('Driver fixture mutation payload must be an object.');
+    }
+    if ((int) ($value['entry_id'] ?? 0) < 1) {
+        throw new RuntimeException('Driver fixture mutation payload is missing a valid entry_id.');
+    }
+    if ((string) ($value['__pluginOwner'] ?? '') !== '${driverFixture.pluginOwner}') {
+        throw new RuntimeException('Driver fixture mutation payload owner does not match the registered plugin owner.');
+    }
+    if (!is_array($value['payload'] ?? null) || array_is_list($value['payload'])) {
+        throw new RuntimeException('Driver fixture mutation payload must include an object payload.');
+    }
+    $updated_marker = (string) ($value['updated_marker'] ?? '');
+    if (!preg_match('/^[a-z0-9_-]{1,32}$/', $updated_marker)) {
+        throw new RuntimeException('Driver fixture updated_marker must match /^[a-z0-9_-]{1,32}$/.');
+    }
+    return true;
 }
 `;
 }
