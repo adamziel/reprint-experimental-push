@@ -4,10 +4,10 @@
 
 The project is **not releasable as a production WordPress push path**.
 
-- Audit time: 2026-05-26 08:42:11 CEST (+0200)
+- Audit time: 2026-05-26 08:43:13 CEST (+0200)
 - Fresh remote heads re-polled at audit time:
-  - `origin/lane/critic` -> `567743c2`
-  - `origin/lane/no-data-loss-invariants` -> `7491bae4`
+  - `origin/lane/critic` -> `87f204f6`
+  - `origin/lane/no-data-loss-invariants` -> `85bca4c0`
   - `origin/lane/no-data-loss-recovery` -> `9e077c10`
   - `origin/lane/progress-publisher` -> `7695e1f9`
   - `origin/lane/feedback-supervisor` -> `f386dfa6`
@@ -17,15 +17,15 @@ The project is **not releasable as a production WordPress push path**.
 
 | Requirement | Current proof | Missing proof | Verdict impact |
 | --- | --- | --- | --- |
-| Production-backed auth/session lifecycle | Support-side fail-closed auth and replay checks in `reliable-executor` | Live production-backed auth/session lifecycle on the release path | Blocked |
-| Durable journal ownership | Fail-closed recovery fencing and restart-readability checks in `no-data-loss-recovery` | Restart-readable durable journal ownership with production artifacts | Blocked |
+| Production-backed auth/session lifecycle | Support-side fail-closed auth and replay checks in `reliable-executor`, including durable-journal proof rejection | Live production-backed auth/session lifecycle on the release path | Blocked |
+| Durable journal ownership | Fail-closed recovery fencing and restart-readability checks in `no-data-loss-recovery` | Restart-readable durable journal ownership with production artifacts on the release path | Blocked |
 | Live mutation boundary | Unsupported-surface blocking in `no-data-loss-invariants` | A live production mutation boundary proving source changes are safe | Blocked |
 | Production speed claim | Visibility and support-path proof only | A release-grade production speed proof tied to the real push path | Blocked |
 | Public progress freshness | Freshness-only updates in `progress-publisher` and `feedback-supervisor` | Freshness does not change release readiness | Not a gate |
 
 ## Release Blockers
 
-1. `reliable-executor` still only proves fail-closed support behavior. The new head `dc6eba60` is not enough to establish production-backed auth/session lifecycle, canonical replay on a live source, or durable journal ownership.
+1. `reliable-executor` still only proves fail-closed support behavior. The new head `dc6eba60` tightens durable-journal proof rejection, but it still does not establish production-backed auth/session lifecycle, canonical replay on a live source, or durable journal ownership on the release path.
 2. `no-data-loss-recovery` still fences recovery paths, but `9e077c10` does not prove restart-readable durable artifacts owned by the production release path.
 3. `no-data-loss-invariants` now shows additional unsupported-surface blocking, but `7491bae4` still does not prove the live production mutation boundary.
 4. `progress-publisher` and `feedback-supervisor` only moved visible freshness. That is useful for visibility, but it does not move a release gate.
