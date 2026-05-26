@@ -2234,6 +2234,49 @@ test('blocks a local postmeta reference owned by a wp_navigation post even when 
   assert.throws(() => applyPlan(baseSite(), plan), /Refusing to apply/);
 });
 
+test('blocks a local postmeta reference owned by a revision even when it targets a same-plan wp_navigation post', () => {
+  const resourceKey = 'row:["wp_postmeta","meta_id:53"]';
+  const targetResourceKey = 'row:["wp_posts","ID:14"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_posts['ID:13'] = {
+    ID: 13,
+    post_title: 'Local revision owner',
+    post_content: 'local-private-revision-owner-body',
+    post_status: 'inherit',
+    post_type: 'revision',
+  };
+  local.db.wp_posts['ID:14'] = {
+    ID: 14,
+    post_title: 'Local navigation target',
+    post_content: 'local-private-navigation-target-body',
+    post_status: 'publish',
+    post_type: 'wp_navigation',
+  };
+  local.db.wp_postmeta = {
+    'meta_id:53': {
+      meta_id: 53,
+      post_id: 13,
+      meta_key: 'revision-note',
+      meta_value: 14,
+    },
+  };
+
+  const plan = planFor(base, local, baseSite());
+  const targetMutation = mutationFor(plan, targetResourceKey);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(targetMutation, undefined);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(blocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(blocker.surface, 'revision');
+  assert.equal(JSON.stringify(blocker).includes('local-private-revision-owner-body'), false);
+  assert.equal(JSON.stringify(blocker).includes('local-private-navigation-target-body'), false);
+  assert.throws(() => applyPlan(baseSite(), plan), /Refusing to apply/);
+});
+
 test('allows a local postmeta reference to a same-plan revision', () => {
   const resourceKey = 'row:["wp_postmeta","meta_id:52"]';
   const targetResourceKey = 'row:["wp_posts","ID:5"]';
