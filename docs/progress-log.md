@@ -4,15 +4,15 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
-## 2026-05-26 - Public Status Audit 15:22:30
+## 2026-05-26 - Public Status Audit 15:24:30
 
 <a id="2026-05-26-public-status-audit-152230"></a>
 
 - Refreshed [progress.html](../progress.html) to the current `date` output
-  (`2026-05-26 15:22:30 CEST`) and kept
+  (`2026-05-26 15:24:30 CEST`) and kept
   `e82e3b1af126f62688f617a3fb4cc0baeb698d57` as the current reliable head on
   the public page, replacing the older
-  `ac41777479f04355b0017e77c2107d89dd66c01a` wording in the visible
+  `e82e3b1af126f62688f617a3fb4cc0baeb698d57` wording in the visible
   current-head rows.
 - `e82e3b1af126f62688f617a3fb4cc0baeb698d57` remains support-side evidence;
   the release gate stays at `0/4` because production-backed auth/session
@@ -27,9 +27,9 @@ linked implementation artifacts.
 
 - Refreshed [progress.html](../progress.html) to the current `date` output
   (`2026-05-26 15:16:28 CEST`) and kept
-  `ac41777479f04355b0017e77c2107d89dd66c01a` as the current reliable head on
+  `e82e3b1af126f62688f617a3fb4cc0baeb698d57` as the current reliable head on
   the public page.
-- `ac41777479f04355b0017e77c2107d89dd66c01a` remains support-side evidence;
+- `e82e3b1af126f62688f617a3fb4cc0baeb698d57` remains support-side evidence;
   the release gate stays at `0/4` because production-backed auth/session
   lifecycle and durable journal ownership with lease/fencing remain blocked.
 - Evidence trail: [progress.html](../progress.html),
@@ -394,7 +394,7 @@ linked implementation artifacts.
 
 - Freshness update plus reliable-head confirmation: `ce3a12fe08af607109172986b634446d6b015d78` is the current reliable-executor head on the public page, and the visible status now points at this 13:54:19 audit refresh.
 - Gate posture remains conservative at `0/4`; no implementation verdict changed.
-- Latest blocker summary remains the same: production-backed auth/session lifecycle on the checked release path and fenced durable journal ownership still block any production push claim, while `ce3a12fe08af607109172986b634446d6b015d78` is checked-release replay-equivalence evidence and does not move a release gate.
+- Latest blocker summary remains the same: production-backed auth/session lifecycle on the checked release path and fenced durable journal ownership still block any production push claim, while `ce3a12fe08af607109172986b634446d6b015d78` is checked-release auth session source evidence and does not move a release gate.
 
 ## 2026-05-26 - Public Status Audit 13:52:31
 
@@ -402,7 +402,7 @@ linked implementation artifacts.
 
 - Freshness update plus reliable-head confirmation: `ce3a12fe08af607109172986b634446d6b015d78` is the current reliable-executor head on the public page, and the visible status now points at this 13:52:31 audit refresh.
 - Gate posture remains conservative at `0/4`; no implementation verdict changed.
-- Latest blocker summary remains the same: production-backed auth/session lifecycle on the checked release path and fenced durable journal ownership still block any production push claim, while `ce3a12fe08af607109172986b634446d6b015d78` is checked-release replay-equivalence evidence and does not move a release gate.
+- Latest blocker summary remains the same: production-backed auth/session lifecycle on the checked release path and fenced durable journal ownership still block any production push claim, while `ce3a12fe08af607109172986b634446d6b015d78` is checked-release auth session source evidence and does not move a release gate.
 
 ## 2026-05-26 - Public Status Audit 13:50:27
 
@@ -903,14 +903,14 @@ linked implementation artifacts.
 
 <a id="2026-05-26-public-status-audit-120838"></a>
 
-- Freshness update plus reliable-head confirmation: `998e856f` is the current
+- Freshness update plus reliable-head confirmation: `e82e3b1af126f62688f617a3fb4cc0baeb698d57` is the current
   reliable-executor head on the public page, and the visible status now points
   at this 12:08:38 audit refresh.
 - Gate posture remains conservative at `0/4`; no implementation verdict
   changed.
 - Latest blocker summary remains the same: production-backed auth/session
   lifecycle on the checked release path and fenced durable journal ownership
-  still block any production push claim, while the checked replay-equivalence
+  still block any production push claim, while the checked auth session source
   evidence is now visible but still below a gate movement.
 
 ## 2026-05-26 - Public Status Audit 12:08:27
