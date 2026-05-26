@@ -1,6 +1,6 @@
 # Current Head Audit: cdea46fd
 
-- Audit time: 2026-05-26 15:12:01 CEST (+0200)
+- Audit time: 2026-05-26 15:13:59 CEST (+0200)
 - Head reviewed: `origin/lane/reliable-executor` -> `cdea46fdb51cb46d56def6147e6dd815cb3b2757` (`Prefer packaged auth session source`)
 
 ## Verdict

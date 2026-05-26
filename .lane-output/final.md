@@ -1,6 +1,6 @@
 `cdea46fd` stays `0/4`.
 
-Audit time: 2026-05-26 15:08:58 CEST (+0200)
+Audit time: 2026-05-26 15:13:59 CEST (+0200)
 
 Current verdict:
 - `cdea46fd` prefers packaged auth session source wiring on the release verifier test surface.
@@ -15,9 +15,9 @@ Changed files:
 
 Commands run:
 - `date '+%Y-%m-%d %H:%M:%S %Z (%z)'`
-- `git ls-remote origin refs/heads/lane/reliable-executor refs/heads/lane/independent-auditor`
-- `sed -n '1,260p' audits/objective-audit.md`
-- `git show --stat --oneline cdea46fdb51cb46d56def6147e6dd815cb3b2757 --`
+- `git ls-remote origin refs/heads/lane/reliable-executor`
+- `sed -n '1,220p' audits/objective-audit.md`
+- `sed -n '1,220p' audits/current-head-cdea46fd.md`
 - `git diff --check -- audits/objective-audit.md audits/current-head-cdea46fd.md .lane-output/final.md`
 
 Push result:
