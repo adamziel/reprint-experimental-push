@@ -6,20 +6,20 @@ The project is **not releasable as a production WordPress push path**.
 
 Fresh remote heads at audit time, checked on May 26, 2026:
 
-- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `5598d25b`
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `f2a4f694`
+- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `e50e9452`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `783692b7`
 - `origin/lane/reliable-executor` -> `b8d91776`
 - `origin/lane/no-data-loss-invariants` -> `9c70eba6`
 - `origin/lane/no-data-loss-recovery` -> `4372167e`
 - `origin/lane/fast-paths` -> `cd0fddad`
-- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `5598d25b`
-- `origin/lane/independent-auditor` -> `bf70b5a1`
+- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `e50e9452`
+- `origin/lane/independent-auditor` -> `c43d0870`
 - `origin/lane/critic` -> `956bbeb8`
 - `origin/lane/progress-publisher` -> `7695e1f9`
 - `origin/lane/cycle-20260525-mainwindows-2349/critic` -> `3b9a9c46`
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `f2a4f694`
-- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `7a0f7454`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `55c63437`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `783692b7`
+- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `e50e9452`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `9a54aa67`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `4372167e`
 - `origin/lane/same-plan-wordpress-graph-create` -> `09e6706d`
 - `origin/lane/cycle-20260525-mainwindows-2349/same-plan-wordpress-graph-create` -> `09e6706d`
@@ -70,9 +70,9 @@ but it did not change the release conclusion:
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now
   refreshes supervisor progress visibility at `4a9b19e0`.
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now
-  records the latest progress freshness handoff at `55c63437`.
+  records the latest progress freshness handoff at `9a54aa67`.
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` now refreshes the audit snapshot at
-  `e076d384`.
+  `c43d0870`.
 - `origin/lane/critic` now refreshes the critic handoff at `6828861f`.
 - `origin/lane/progress-publisher` now refreshes the public progress evidence
   at `7695e1f9`.
