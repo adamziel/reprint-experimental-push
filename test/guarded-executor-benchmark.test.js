@@ -64,6 +64,7 @@ test('guarded executor benchmark moves buffers and row payloads through durable 
   assert.equal(report.evidence.backpressure.queuePausedBeforeOverflow, true);
   assert.equal(report.evidence.backpressure.receiptCursorWithinQueueBudget, true);
   assert.equal(report.evidence.backpressure.backpressureEvidenceComplete, true);
+  assert.equal(report.evidence.backpressure.receiptCursorMemoryHeadroomBytes, 31.5 * 1024 * 1024);
   assert.equal(report.evidence.backpressure.queueHeadroomBytes, 31.5 * 1024 * 1024);
   assert.equal(report.evidence.recovery.successInspectionStatus, 'fully-updated-remote');
   assert.equal(report.evidence.recovery.preCommitFailureInspectionStatus, 'old-remote');
@@ -648,9 +649,14 @@ test('production claim gate fails closed if benchmark evidence is tampered', () 
     tamperedResourceHeadroom.resourceLimits.memoryCeilingBytes
       - tamperedResourceHeadroom.evidence.chunkReceipts.resumeCursor.sizeBytes
       + 1;
+  tamperedResourceHeadroom.evidence.backpressure.receiptCursorMemoryHeadroomBytes = 0;
   assert.equal(
     productionThroughputDetails(tamperedResourceHeadroom).receiptCursorBackpressureWithinResourceHeadroom,
     false,
+  );
+  assert.equal(
+    productionThroughputDetails(tamperedResourceHeadroom).receiptCursorMemoryHeadroomBytes,
+    0,
   );
   assert.equal(
     productionThroughputDetails(tamperedResourceHeadroom).backpressureConsistency.receiptCursorBackpressureWithinResourceHeadroom,
@@ -658,6 +664,10 @@ test('production claim gate fails closed if benchmark evidence is tampered', () 
   );
   assert.equal(
     productionThroughputDetails(tamperedResourceHeadroom).backpressureConsistency.backpressureEvidenceComplete,
+    false,
+  );
+  assert.equal(
+    productionThroughputDetails(tamperedResourceHeadroom).backpressureEvidenceComplete,
     false,
   );
 

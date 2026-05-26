@@ -332,6 +332,7 @@ export function productionThroughputClaim(report) {
 export function productionThroughputDetails(report) {
   const receiptCursorWindowBytes = report.evidence.chunkReceipts.resumeCursor?.sizeBytes ?? null;
   const receiptCursorBackpressureBytes = report.evidence.backpressure?.receiptCursorBytes ?? null;
+  const receiptCursorMemoryHeadroomBytes = report.evidence.backpressure?.receiptCursorMemoryHeadroomBytes ?? null;
   const receiptCursorMemoryCeilingBytes = report.resourceLimits?.memoryCeilingBytes ?? null;
   const receiptCursorQueueBudgetBytes = report.evidence.backpressure?.queueBudgetBytes ?? null;
   const receiptCursorQueueHeadroomBytes = report.evidence.backpressure?.queueHeadroomBytes ?? null;
@@ -347,10 +348,6 @@ export function productionThroughputDetails(report) {
     Number.isFinite(receiptCursorWindowBytes)
     && Number.isFinite(receiptCursorMemoryCeilingBytes)
     && receiptCursorWindowBytes <= receiptCursorMemoryCeilingBytes;
-  const receiptCursorMemoryHeadroomBytes =
-    receiptCursorWithinMemoryCeiling
-      ? receiptCursorMemoryCeilingBytes - receiptCursorWindowBytes
-      : null;
   const receiptCursorHeadroomMatchesQueueHeadroom =
     Number.isFinite(receiptCursorMemoryHeadroomBytes)
     && Number.isFinite(receiptCursorQueueHeadroomBytes)
@@ -399,6 +396,9 @@ export function productionThroughputDetails(report) {
   const receiptCursorBackpressureMeasured =
     Number.isFinite(receiptCursorBackpressureBytes)
     && receiptCursorBackpressureBytes > 0;
+  const receiptCursorMemoryHeadroomMatchesResourceHeadroom =
+    receiptCursorWithinMemoryCeiling
+    && receiptCursorMemoryHeadroomBytes === receiptCursorMemoryCeilingBytes - receiptCursorWindowBytes;
   const productionAtomicCommitMeasured = report.executorCapabilities.productionAtomicCommit === 'production-atomic-group-commit';
   const productionRowBatchExecutorMeasured = report.executorCapabilities.rowApply === 'production-batched-compare-and-swap';
   return {
@@ -435,6 +435,8 @@ export function productionThroughputDetails(report) {
     receiptCursorHeadroomMatchesQueueHeadroom,
     receiptCursorBackpressureBytes,
     receiptCursorBackpressureMeasured,
+    receiptCursorMemoryHeadroomBytes,
+    receiptCursorMemoryHeadroomMatchesResourceHeadroom,
     receiptCursorMatchesBackpressure,
     receiptCursorBackpressureWithinResourceHeadroom,
     receiptCursorBackpressureWithinQueueBudget,
@@ -460,6 +462,8 @@ export function productionThroughputDetails(report) {
       receiptCursorHeadroomWithinQueueBudget,
       receiptCursorBackpressureBytes,
       receiptCursorBackpressureMeasured,
+      receiptCursorMemoryHeadroomBytes,
+      receiptCursorMemoryHeadroomMatchesResourceHeadroom,
       receiptCursorBackpressureWithinResourceHeadroom,
       receiptCursorBackpressureWithinQueueBudget,
       backpressureEvidenceComplete,
@@ -476,6 +480,7 @@ function hasCompleteBackpressureEvidence(report) {
   const receiptCursorBackpressureBytes = report.evidence.backpressure?.receiptCursorBytes ?? null;
   const receiptCursorQueueBudgetBytes = report.evidence.backpressure?.queueBudgetBytes ?? null;
   const receiptCursorQueueHeadroomBytes = report.evidence.backpressure?.queueHeadroomBytes ?? null;
+  const receiptCursorMemoryHeadroomBytes = report.evidence.backpressure?.receiptCursorMemoryHeadroomBytes ?? null;
   const receiptCursorWindowBytes = report.evidence.chunkReceipts.resumeCursor?.sizeBytes ?? null;
   const receiptCursorMemoryCeilingBytes = report.resourceLimits?.memoryCeilingBytes ?? null;
   const receiptCursorBackpressureWithinResourceHeadroom =
@@ -495,8 +500,10 @@ function hasCompleteBackpressureEvidence(report) {
     && receiptCursorQueueBudgetBytes > 0
     && Number.isFinite(receiptCursorQueueHeadroomBytes)
     && receiptCursorQueueHeadroomBytes >= 0
+    && Number.isFinite(receiptCursorMemoryHeadroomBytes)
     && Number.isFinite(receiptCursorMemoryCeilingBytes)
     && queueHeadroomWithinResourceCeiling
+    && receiptCursorMemoryHeadroomBytes === receiptCursorMemoryCeilingBytes - receiptCursorWindowBytes
     && report.evidence.backpressure?.queuePausedBeforeOverflow === true
     && report.evidence.backpressure?.receiptCursorWithinQueueBudget === true
     && receiptCursorBackpressureBytes === receiptCursorWindowBytes
@@ -926,6 +933,12 @@ function buildReport({
         queuePausedBeforeOverflow: config.chunkSizeBytes <= config.maxBufferedUploadBytes,
         chunkWindowBytes: config.chunkSizeBytes,
         receiptCursorBytes: lastChunkReceipt?.sizeBytes ?? null,
+        receiptCursorMemoryHeadroomBytes:
+          Number.isFinite(lastChunkReceipt?.sizeBytes)
+          && Number.isFinite(config.maxBufferedUploadBytes)
+          && lastChunkReceipt.sizeBytes <= config.maxBufferedUploadBytes
+            ? config.maxBufferedUploadBytes - lastChunkReceipt.sizeBytes
+            : null,
         receiptCursorWithinQueueBudget:
           Number.isFinite(lastChunkReceipt?.sizeBytes)
           && lastChunkReceipt.sizeBytes <= config.maxBufferedUploadBytes,
