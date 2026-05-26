@@ -1,20 +1,20 @@
 # Critic Verdict
 
-Current reliable head: `9d70048dd67701bf20d4f24099bd343ac7631f41`
-(`Revalidate production session receipt binding`).
+Current reliable head: `4368d2aa91657895db25900cb5216beec464dc1c`
+(`Fail closed on fallback receipt drift`).
 
 Verdict: `0/4`
 
 Reason:
 
-- This head revalidates the bound production session receipt on the checked
-  path, including `id`, `status`, `expiresAt`, `revoked`, and `cleanedUp`, and
-  it moves the protected `db-journal` and `recovery/inspect` smoke calls onto
-  signed routes. That is stronger release-path hardening, but it still does
-  not prove the checked `verify:release` path has live production-backed
-  auth/session issuance/read/expiry/rotation/revocation/cleanup, nor
-  durable-journal ownership with restart-readable replay consumed by
-  `verify:release`.
+- This head fails closed when a dry-run receipt drifts to a fallback session
+  shape after issuance by rejecting mismatched `playgroundFallback` and
+  `warning` fields, while also extending the protected route smoke to carry the
+  signed request boundary. That is stronger release-path hardening, but it
+  still does not prove the checked `verify:release` path has live
+  production-backed auth/session issuance/read/expiry/rotation/revocation/
+  cleanup, nor durable-journal ownership with restart-readable replay
+  consumed by `verify:release`.
 - That keeps the release gate closed at `0/4`.
 
 Next owner / command:
