@@ -258,6 +258,21 @@ test('benchmark model covers large uploads and plugin installs', () => {
     'release bundle keeps replay-sizing visibility explicit on the backpressure summary',
   );
   assert.deepEqual(
+    releaseBundle.backpressure.replaySizing,
+    largeUpload.backpressure.replaySizing,
+    'release bundle keeps the same bounded replay-sizing summary as large uploads',
+  );
+  assert.equal(
+    releaseBundle.backpressure.memoryCeilingBytes,
+    DEFAULT_LIMITS.maxBufferedUploadBytes,
+    'release bundle surfaces the memory ceiling on the backpressure summary',
+  );
+  assert.equal(
+    releaseBundle.backpressure.queueBudgetBytes,
+    DEFAULT_LIMITS.maxBufferedUploadBytes,
+    'release bundle keeps queue budget aligned with the memory ceiling',
+  );
+  assert.deepEqual(
     pluginInstall.backpressure.replaySizing,
     largeUpload.backpressure.replaySizing,
     'plugin install reuses the same bounded replay-sizing summary as large uploads',
