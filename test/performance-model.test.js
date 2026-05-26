@@ -336,6 +336,17 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
     model.safeFastPaths.some(
       (fastPath) =>
         fastPath.area === 'parallelism-limits' &&
+        fastPath.allowedShortcut === 'compress-release-manifest-and-reuse-cursor-to-size-bounded-release-bundle-fanout' &&
+        fastPath.guardrails.includes('compressed-release-manifest-stays-planning-evidence-only') &&
+        fastPath.gateProofs.skip.includes('compressed release manifest') &&
+        fastPath.gateProofs.recovery.includes('bundle staging record'),
+    ),
+    'compressed release-manifest fanout stays fail-closed within the parallelism budget',
+  );
+  assert.ok(
+    model.safeFastPaths.some(
+      (fastPath) =>
+        fastPath.area === 'parallelism-limits' &&
         fastPath.allowedShortcut === 'run-partitioned-index-and-hash-planning-within-per-site-budgets' &&
         fastPath.guardrails.includes('partitioned-planning-stays-within-per-site-and-per-kind-budgets') &&
         fastPath.gateProofs.live.includes('each later mutation still rechecks its own live resource precondition'),
