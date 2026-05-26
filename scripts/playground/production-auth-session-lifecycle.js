@@ -285,9 +285,23 @@ export function summarizeProductionAuthSessionLifecycleTrace(trace) {
     return null;
   }
 
-  const observations = trace
-    .filter((entry) => entry && typeof entry === 'object')
-    .map((entry) => ({
+  const observations = trace.map((entry) => {
+    if (!entry || typeof entry !== 'object') {
+      return {
+        step: null,
+        id: null,
+        type: null,
+        status: null,
+        expiresAt: null,
+        expired: false,
+        revoked: false,
+        cleanedUp: false,
+        rotated: false,
+        preserved: false,
+      };
+    }
+
+    return {
       step: entry.step ?? null,
       id: entry.id ?? null,
       type: entry.type ?? null,
@@ -298,7 +312,8 @@ export function summarizeProductionAuthSessionLifecycleTrace(trace) {
       cleanedUp: Boolean(entry.cleanedUp),
       rotated: Boolean(entry.rotated),
       preserved: Boolean(entry.preserved),
-    }));
+    };
+  });
   const readObservation = [...observations]
     .reverse()
     .find((entry) => entry.step === 'journal'
