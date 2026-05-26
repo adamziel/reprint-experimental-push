@@ -898,6 +898,12 @@ export function productionThroughputBlockers(report) {
   ) {
     blockers.push('production-row-batch-executor-without-storage-receipts');
   }
+  if (
+    report.evidence.atomicGroup.productionRowBatchExecutorVisible === true
+    && report.evidence.atomicGroup.productionAtomicCommitVisible !== true
+  ) {
+    blockers.push('production-row-batch-executor-without-atomic-commit');
+  }
   return blockers;
 }
 
@@ -1190,6 +1196,8 @@ export function productionThroughputDetails(report) {
     report.evidence.atomicGroup?.productionRowBatchExecutorVisible === true;
   const productionStorageReceiptsVisibleAndAtomicCommitVisible =
     productionStorageReceiptsVisible && productionAtomicCommitVisible;
+  const productionRowBatchExecutorVisibleAndAtomicCommitVisible =
+    productionRowBatchExecutorVisible && productionAtomicCommitVisible;
   const productionAtomicGroupMetadataProven =
     report.evidence.atomicGroup?.productionAtomicCommitMeasured !== true
     || (
@@ -1317,6 +1325,7 @@ export function productionThroughputDetails(report) {
     productionAtomicGroupMetadataVisible,
     productionStorageReceiptsVisible,
     productionStorageReceiptsVisibleAndAtomicCommitVisible,
+    productionRowBatchExecutorVisibleAndAtomicCommitVisible,
     productionAtomicGroupMetadataProven,
     parallelismLimits,
     parallelismLimitsMeasured: parallelismLimitsMeasuredOnReport,
@@ -1400,6 +1409,7 @@ export function productionThroughputDetails(report) {
       productionStorageReceiptsMeasured,
       productionStorageReceiptsVisibleAndAtomicCommitVisible,
       productionRowBatchExecutorMeasured,
+      productionRowBatchExecutorVisibleAndAtomicCommitVisible,
       productionAtomicGroupMetadataProven,
       parallelismLimits,
       parallelismLimitsVisible: parallelismLimitsVisibleOnReport,
@@ -1418,6 +1428,7 @@ export function productionThroughputDetails(report) {
       productionStorageReceiptsMeasured,
       productionStorageReceiptsVisibleAndAtomicCommitVisible,
       productionRowBatchExecutorMeasured,
+      productionRowBatchExecutorVisibleAndAtomicCommitVisible,
       productionAtomicGroupMetadataVisible,
       productionAtomicGroupMetadataProven,
       productionStorageReceiptsVisible,

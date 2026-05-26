@@ -227,6 +227,26 @@ test('guarded benchmark blocks forged atomic-commit visibility without a measure
   assert.equal(blockers.includes('production-atomic-group-commit-not-visible'), false);
 });
 
+test('guarded benchmark blocks row-batch executor visibility without atomic-commit visibility', () => {
+  const report = smallBenchmark();
+  const tampered = clone(report);
+
+  tampered.evidence.atomicGroup.productionRowBatchExecutorMeasured = true;
+  tampered.evidence.atomicGroup.productionRowBatchExecutorVisible = true;
+  tampered.evidence.atomicGroup.productionAtomicCommitVisible = false;
+
+  const details = productionThroughputDetails(tampered);
+  const blockers = productionThroughputBlockers(tampered);
+
+  assert.equal(details.atomicGroup.productionRowBatchExecutorVisibleAndAtomicCommitVisible, false);
+  assert.equal(
+    details.backpressureConsistency.productionRowBatchExecutorVisibleAndAtomicCommitVisible,
+    false,
+  );
+  assert.equal(blockers.includes('production-row-batch-executor-without-atomic-commit'), true);
+  assert.equal(blockers.includes('production-row-batch-executor-not-visible'), false);
+});
+
 test('guarded benchmark refuses production throughput claims until production gaps are measured', () => {
   const report = smallBenchmark();
 
