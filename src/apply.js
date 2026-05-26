@@ -537,7 +537,7 @@ function replayCompletedPlan(remote, plan, journal) {
   return {
     site: deepClone(remote),
     appliedMutations: 0,
-    journal,
+    journal: deepClone(journal),
     recoveryState: completedReplayRecoveryState(remote, plan, journal),
   };
 }

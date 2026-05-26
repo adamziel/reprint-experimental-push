@@ -23266,6 +23266,26 @@ test('recovery artifacts are insulated from later journal mutation after replay'
   assert.equal(completed.recoveryState.artifacts.journal.entries.some((entry) => entry.status === 'tampered'), false);
 });
 
+test('replay journal mutations do not bleed into the preserved recovery artifact', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local recovery title";';
+  const plan = planFor(base, local, baseSite());
+  const completed = applyPlan(baseSite(), plan);
+
+  completed.recoveryState.artifacts.journal.entries[0].status = 'tampered-after-artifact';
+  completed.recoveryState.artifacts.journal.entries.push({
+    mutationId: 'mut-1000',
+    resourceKey: 'file:index.php',
+    status: 'tampered',
+  });
+
+  assert.equal(completed.journal.status, 'completed');
+  assert.equal(completed.journal.entries[0].status, 'applied');
+  assert.equal(completed.journal.entries.some((entry) => entry.status === 'tampered-after-artifact'), false);
+  assert.equal(completed.journal.entries.some((entry) => entry.status === 'tampered'), false);
+});
+
 test('recovery artifacts fail closed when the artifact envelope is not a plain object', () => {
   const recovery = {
     status: 'blocked-recovery',
