@@ -210,6 +210,32 @@ test('production recovery journal adapter is restart-readable and release-path c
   assert.deepEqual(inspected.artifactRefs, { journal: filePath, remote: null });
 });
 
+test('production recovery journal adapter preserves explicit remote artifact ownership metadata', () => {
+  const journalPath = tempJournalPath();
+  const remoteArtifactPath = path.join(path.dirname(journalPath), 'remote-artifact.jsonl');
+  const journal = openProductionRecoveryJournal(journalPath, {
+    truncate: true,
+    now: fixedNow,
+    claimId: 'claim-remote-1',
+    writerLease: { id: 'lease-remote-1' },
+    ownsRemoteArtifact: true,
+    remoteArtifactPath,
+  });
+
+  assert.equal(journal.ownsRemoteArtifact, true);
+  assert.deepEqual(journal.artifactRefs, {
+    journal: journalPath,
+    remote: remoteArtifactPath,
+  });
+
+  const inspected = journal.inspect();
+  assert.equal(inspected.ownsRemoteArtifact, true);
+  assert.deepEqual(inspected.artifactRefs, {
+    journal: journalPath,
+    remote: remoteArtifactPath,
+  });
+});
+
 test('production recovery journal adapter reopens with a new claim and rejects stale fenced writers', () => {
   const filePath = tempJournalPath();
   const remote = baseSite();

@@ -23,6 +23,31 @@ const RAW_VALUE_KEYS = new Set([
   'afterValue',
 ]);
 
+function productionRecoveryJournalDetails({
+  journalPath = null,
+  remoteArtifactPath = null,
+  ownsJournal = false,
+  ownsRemoteArtifact = false,
+  restartReadable = false,
+  writerLease = null,
+} = {}) {
+  return {
+    kind: 'production-recovery-journal',
+    productionAdapter: true,
+    supportedSurface: 'production-recovery-journal-adapter',
+    restartReadable,
+    ownsJournal,
+    ownsRemoteArtifact,
+    writerLease,
+    journalPath,
+    artifactRefs: Object.freeze({
+      journal: journalPath,
+      remote: remoteArtifactPath,
+    }),
+    schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+  };
+}
+
 export class RecoveryJournalClaimStaleError extends Error {
   constructor(message, details = {}) {
     super(message);
@@ -42,21 +67,7 @@ export class UnsupportedProductionRecoveryJournalError extends Error {
 }
 
 export function createUnsupportedProductionRecoveryJournal(reason = 'Production recovery journal support is not available in this worktree.') {
-  const details = {
-    reason,
-    kind: 'production-recovery-journal',
-    productionAdapter: true,
-    ownsJournal: false,
-    ownsRemoteArtifact: false,
-    restartReadable: false,
-    writerLease: null,
-    journalPath: null,
-    artifactRefs: Object.freeze({
-      journal: null,
-      remote: null,
-    }),
-    schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
-  };
+  const details = productionRecoveryJournalDetails();
   const missingDependency = Object.freeze([
     'production recovery journal adapter marker',
     'explicit production recovery adapter marker',
@@ -115,19 +126,14 @@ export function openProductionRecoveryJournal(filePath, options = {}) {
     throw new UnsupportedProductionRecoveryJournalError(
       'Production recovery journal support requires a canonical absolute journal path.',
       {
-        kind: 'production-recovery-journal',
-        productionAdapter: true,
-        supportedSurface: 'production-recovery-journal-adapter',
-        restartReadable: true,
-        ownsJournal: true,
-        ownsRemoteArtifact,
-        writerLease: Object.hasOwn(options, 'writerLease') ? options.writerLease : null,
-        journalPath: filePath,
-        artifactRefs: Object.freeze({
-          journal: filePath,
-          remote: remoteArtifactPath,
+        ...productionRecoveryJournalDetails({
+          journalPath: filePath,
+          remoteArtifactPath,
+          ownsJournal: true,
+          ownsRemoteArtifact,
+          restartReadable: true,
+          writerLease: Object.hasOwn(options, 'writerLease') ? options.writerLease : null,
         }),
-        schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
       },
     );
   }
@@ -136,19 +142,14 @@ export function openProductionRecoveryJournal(filePath, options = {}) {
     throw new UnsupportedProductionRecoveryJournalError(
       'Production recovery journal support requires an explicit remote artifact path when remote ownership is claimed.',
       {
-        kind: 'production-recovery-journal',
-        productionAdapter: true,
-        supportedSurface: 'production-recovery-journal-adapter',
-        restartReadable: true,
-        ownsJournal: true,
-        ownsRemoteArtifact,
-        writerLease,
-        journalPath: filePath,
-        artifactRefs: Object.freeze({
-          journal: filePath,
-          remote: remoteArtifactPath,
+        ...productionRecoveryJournalDetails({
+          journalPath: filePath,
+          remoteArtifactPath,
+          ownsJournal: true,
+          ownsRemoteArtifact,
+          restartReadable: true,
+          writerLease,
         }),
-        schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
       },
     );
   }
@@ -156,19 +157,14 @@ export function openProductionRecoveryJournal(filePath, options = {}) {
     throw new UnsupportedProductionRecoveryJournalError(
       'Production recovery journal support requires owned remote artifact references.',
       {
-        kind: 'production-recovery-journal',
-        productionAdapter: true,
-        supportedSurface: 'production-recovery-journal-adapter',
-        restartReadable: true,
-        ownsJournal: true,
-        ownsRemoteArtifact,
-        writerLease,
-        journalPath: filePath,
-        artifactRefs: Object.freeze({
-          journal: filePath,
-          remote: remoteArtifactPath,
+        ...productionRecoveryJournalDetails({
+          journalPath: filePath,
+          remoteArtifactPath,
+          ownsJournal: true,
+          ownsRemoteArtifact,
+          restartReadable: true,
+          writerLease,
         }),
-        schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
       },
     );
   }
@@ -176,19 +172,14 @@ export function openProductionRecoveryJournal(filePath, options = {}) {
     throw new UnsupportedProductionRecoveryJournalError(
       'Production recovery journal support requires a canonical remote artifact path.',
       {
-        kind: 'production-recovery-journal',
-        productionAdapter: true,
-        supportedSurface: 'production-recovery-journal-adapter',
-        restartReadable: true,
-        ownsJournal: true,
-        ownsRemoteArtifact,
-        writerLease,
-        journalPath: filePath,
-        artifactRefs: Object.freeze({
-          journal: filePath,
-          remote: remoteArtifactPath,
+        ...productionRecoveryJournalDetails({
+          journalPath: filePath,
+          remoteArtifactPath,
+          ownsJournal: true,
+          ownsRemoteArtifact,
+          restartReadable: true,
+          writerLease,
         }),
-        schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
       },
     );
   }
@@ -196,19 +187,14 @@ export function openProductionRecoveryJournal(filePath, options = {}) {
     throw new UnsupportedProductionRecoveryJournalError(
       'Production recovery journal support requires an explicit fenced writer lease.',
       {
-        kind: 'production-recovery-journal',
-        productionAdapter: true,
-        supportedSurface: 'production-recovery-journal-adapter',
-        restartReadable: true,
-        ownsJournal: true,
-        ownsRemoteArtifact,
-        writerLease,
-        journalPath: filePath,
-        artifactRefs: Object.freeze({
-          journal: filePath,
-          remote: remoteArtifactPath,
+        ...productionRecoveryJournalDetails({
+          journalPath: filePath,
+          remoteArtifactPath,
+          ownsJournal: true,
+          ownsRemoteArtifact,
+          restartReadable: true,
+          writerLease,
         }),
-        schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
       },
     );
   }
@@ -220,20 +206,15 @@ export function openProductionRecoveryJournal(filePath, options = {}) {
   });
 
   return Object.freeze({
-    kind: 'production-recovery-journal',
-    productionAdapter: true,
-    supportedSurface: 'production-recovery-journal-adapter',
-    restartReadable: true,
-    ownsJournal: true,
-    ownsRemoteArtifact,
-    writerLease,
     claimHash,
-    journalPath: journal.filePath,
-    artifactRefs: Object.freeze({
-      journal: journal.filePath,
-      remote: remoteArtifactPath,
+    ...productionRecoveryJournalDetails({
+      journalPath: journal.filePath,
+      remoteArtifactPath,
+      ownsJournal: true,
+      ownsRemoteArtifact,
+      restartReadable: true,
+      writerLease,
     }),
-    schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
     appendEvent(type, payload) {
       return journal.appendEvent(type, payload);
     },
