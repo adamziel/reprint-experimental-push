@@ -1473,7 +1473,8 @@ function durableJournalInspectRecords(inspected) {
     && Object.hasOwn(record, 'type')
     && Number.isInteger(record.sequence)
     && typeof record.type === 'string'
-    && record.type.trim().length > 0,
+    && record.type.trim().length > 0
+    && record.type.trim() === record.type,
   ) && records.every((record, index, recordsList) => (
     index === 0
       ? record.sequence === 1

@@ -30237,6 +30237,60 @@ test('production durable journal claims fail closed when an inspected record typ
   assert.equal(events.some((event) => event.type === 'journal-completed'), false);
 });
 
+test('production durable journal claims fail closed when an inspected record type is padded with whitespace', () => {
+  const filePath = tempRecoveryJournalPath();
+  const remoteArtifactPath = `${filePath}.remote`;
+  const remote = baseSite();
+  const plan = planFor(baseSite(), baseSite(), {
+    ...baseSite(),
+    db: {
+      ...baseSite().db,
+      wp_options: {
+        ...baseSite().db.wp_options,
+        'option_name:blogname': { option_name: 'blogname', option_value: 'New Site' },
+      },
+    },
+  });
+  const productionWriter = openProductionRecoveryJournal(filePath, {
+    truncate: true,
+    now: fixedNow,
+    claimId: 'claim-whitespace-type',
+    writerLease: { id: 'claim-whitespace-type', epoch: 5 },
+    ownsRemoteArtifact: true,
+    remoteArtifactPath,
+  });
+  appendRecoveryClaimOpened(productionWriter, {
+    plan,
+    current: remote,
+    claimId: 'claim-whitespace-type',
+    artifactRefs: { journal: filePath, remote: remoteArtifactPath },
+  });
+  productionWriter.appendEvent('journal-opened', {
+    planId: plan.id,
+    state: 'opened',
+    observedHash: 'snapshot-hash-only',
+    artifactRefs: { journal: filePath, remote: remoteArtifactPath },
+  });
+
+  const inspected = productionWriter.inspect();
+  inspected.records[1].type = ' journal-opened ';
+  const writer = Object.assign({}, productionWriter, {
+    inspect() {
+      return inspected;
+    },
+  });
+
+  const error = captureError(() => applyPlan(baseSite(), plan, {
+    requireProductionDurableJournal: true,
+    durableJournal: writer,
+  }));
+
+  productionWriter.close();
+
+  assert.equal(error.code, 'PRODUCTION_DURABLE_JOURNAL_UNSUPPORTED');
+  assert.ok(error.details.missingDependency.includes('journal-readable inspection records with sequence and type'));
+});
+
 test('production durable journal claims fail closed when restart inspection uses an array envelope', () => {
   const filePath = tempRecoveryJournalPath();
   const remoteArtifactPath = `${filePath}.remote`;
