@@ -200,6 +200,48 @@ test('authenticated push source ignores unsupported auth/session source URLs', (
   );
 });
 
+test('authenticated push source accepts https loopback auth/session source URLs', () => {
+  assert.deepEqual(
+    resolveAuthenticatedHttpPushSource({
+      sourceUrl: '',
+      username: '',
+      applicationPassword: '',
+      authSessionSource: {
+        ok: true,
+        sourceUrl: 'https://127.0.0.1:8443',
+        username: 'reprint_push_admin',
+        applicationPassword: 'reprint-push-admin-app-password',
+      },
+    }),
+    {
+      sourceUrl: 'https://127.0.0.1:8443',
+      username: 'reprint_push_admin',
+      applicationPassword: 'reprint-push-admin-app-password',
+    },
+  );
+});
+
+test('authenticated push source accepts ipv6 loopback auth/session source URLs', () => {
+  assert.deepEqual(
+    resolveAuthenticatedHttpPushSource({
+      sourceUrl: '',
+      username: '',
+      applicationPassword: '',
+      authSessionSource: {
+        ok: true,
+        sourceUrl: 'http://[::1]:8080',
+        username: 'reprint_push_admin',
+        applicationPassword: 'reprint-push-admin-app-password',
+      },
+    }),
+    {
+      sourceUrl: 'http://[::1]:8080',
+      username: 'reprint_push_admin',
+      applicationPassword: 'reprint-push-admin-app-password',
+    },
+  );
+});
+
 test('authenticated push client signs mutating requests when session and idempotency are present', async () => {
   const originalFetch = global.fetch;
   const seen = [];
