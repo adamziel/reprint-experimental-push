@@ -4,13 +4,13 @@
 
 The project is **not releasable as a production WordPress push path**.
 
-- Fresh remote heads at audit time, checked on 2026-05-26 08:27:34 CEST (+0200):
-- Fresh production-side lane heads re-polled at 2026-05-26 08:27:34 CEST (+0200):
+- Fresh remote heads at audit time, checked on 2026-05-26 08:28:38 CEST (+0200):
+- Fresh production-side lane heads re-polled at 2026-05-26 08:28:38 CEST (+0200):
 
 - `origin/lane/critic` -> `567743c2`
-- `origin/lane/no-data-loss-invariants` -> `5f93c5f7`
-- `origin/lane/no-data-loss-recovery` -> `75971bbc`
-- `origin/lane/reliable-executor` -> `17f9a6a5`
+- `origin/lane/no-data-loss-invariants` -> `d75b1315`
+- `origin/lane/no-data-loss-recovery` -> `baa005fd`
+- `origin/lane/reliable-executor` -> `5622e975`
 
 - These heads still do not change the release verdict. They remain fail-closed support evidence, not production-backed auth/session lifecycle, durable journal ownership on the release path, or a live production mutation boundary.
 
@@ -114,16 +114,17 @@ Fresh remote heads re-polled after the last audit note:
 The newest visible lane heads since the prior audit snapshot still do not
 change the release verdict:
 
-- `origin/lane/reliable-executor` now records `17f9a6a5`, tightening release
-  verify spawn handling. This is still harness/support work, not production-
-  backed auth/session lifecycle or durable journal ownership on the release
+- `origin/lane/reliable-executor` now records `5622e975`, hardening recovery
+  inspect auth drift. This is still support-side auth-envelope and recovery
+  validation, not production-backed auth/session lifecycle, live production
+  replay, or durable journal ownership on the release path.
+- `origin/lane/no-data-loss-recovery` now records `baa005fd`, failing closed
+  on hidden recovery artifact metadata. This is still fail-closed support
+  evidence, not restart-readable durable journal ownership on the release
   path.
-- `origin/lane/no-data-loss-recovery` now records `75971bbc`, failing closed
-  on inherited journal cleanup. This is still fail-closed support evidence,
-  not restart-readable durable journal ownership on the release path.
-- `origin/lane/no-data-loss-invariants` now records `5f93c5f7`, tightening
-  the plugin custom table blocker. This is still unsupported-surface
-  blocking, not production-backed source mutation proof.
+- `origin/lane/no-data-loss-invariants` now records `d75b1315`, failing closed
+  on conflicting plugin drivers. This is still unsupported-surface blocking,
+  not production-backed source mutation proof.
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now
   records `bd95dc7c`, refreshing progress visibility only. It still does not
   change the release verdict.
