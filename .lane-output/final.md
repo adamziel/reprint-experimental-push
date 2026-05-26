@@ -1,8 +1,8 @@
 # Critic Lane Classification Pass
 
-## 2026-05-26 12:27:58 CEST (+0200)
+## 2026-05-26 12:30:53 CEST (+0200)
 
-No gate movement. `9d0279a3` is the current reliable head: it proves recovery claim fencing on the checked path, but it still does not move the durable-journal/recovery gate. The critic verdict stays `0/4` because the separate auth/session lifecycle and durable-journal ownership proofs remain unproven; `fc2de1bd` is material preserved-remote retry evidence, but it is still product/test-only and not tied to a checked production backend or release-path command.
+No gate movement. `a3393194` is the current reliable head: it surfaces aggregate retry-attempt reporting, but it still does not tie to the checked production route boundary. The critic verdict stays `0/4` because the production-package `reprint/v1` route/auth/session/journal implementation is still the next bounded dependency, and `fc2de1bd` remains preserved-remote retry evidence without a checked production backend command.
 
 Changed files:
 - [`audits/critic.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/critic/audits/critic.md)
