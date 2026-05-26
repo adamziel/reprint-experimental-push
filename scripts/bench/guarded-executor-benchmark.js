@@ -229,6 +229,12 @@ export function productionThroughputBlockers(report) {
     blockers.push('missing-queue-budget-evidence');
   }
   if (
+    !Number.isFinite(report.evidence.backpressure?.queueHeadroomBytes)
+    || report.evidence.backpressure.queueHeadroomBytes < 0
+  ) {
+    blockers.push('missing-queue-headroom-evidence');
+  }
+  if (
     Number.isFinite(report.evidence.backpressure?.queueBudgetBytes)
     && Number.isFinite(report.resourceLimits?.maxBufferedUploadBytes)
     && report.evidence.backpressure.queueBudgetBytes !== report.resourceLimits.maxBufferedUploadBytes
@@ -242,6 +248,15 @@ export function productionThroughputBlockers(report) {
       !== report.evidence.backpressure.queueBudgetBytes - report.shape.chunkSizeBytes
   ) {
     blockers.push('queue-headroom-backpressure-mismatch');
+  }
+  if (
+    Number.isFinite(report.evidence.backpressure?.queueHeadroomBytes)
+    && Number.isFinite(report.evidence.chunkReceipts.resumeCursor?.sizeBytes)
+    && Number.isFinite(report.resourceLimits?.memoryCeilingBytes)
+    && report.evidence.backpressure.queueHeadroomBytes
+      !== report.resourceLimits.memoryCeilingBytes - report.evidence.chunkReceipts.resumeCursor.sizeBytes
+  ) {
+    blockers.push('receipt-cursor-headroom-mismatch');
   }
   if (
     Number.isFinite(report.evidence.backpressure?.queueHeadroomBytes)

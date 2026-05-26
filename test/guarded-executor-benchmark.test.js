@@ -387,6 +387,18 @@ test('production claim gate fails closed if benchmark evidence is tampered', () 
     false,
   );
 
+  const missingQueueHeadroom = clone(report);
+  delete missingQueueHeadroom.evidence.backpressure.queueHeadroomBytes;
+  assert.ok(
+    productionThroughputBlockers(missingQueueHeadroom).includes(
+      'missing-queue-headroom-evidence',
+    ),
+  );
+  assert.equal(
+    productionThroughputDetails(missingQueueHeadroom).backpressureConsistency.queueHeadroomMatchesResourceHeadroom,
+    false,
+  );
+
   const oversizedChunkWindow = clone(report);
   oversizedChunkWindow.shape.chunkSizeBytes = oversizedChunkWindow.resourceLimits.maxBufferedUploadBytes + 1;
   assert.ok(
