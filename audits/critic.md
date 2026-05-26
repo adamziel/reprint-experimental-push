@@ -1,19 +1,18 @@
 # Critic Verdict
 
-Current reliable head: `e3a0be0e6f2310bb5f51ddc947c124e245cf61ff`
-(`Trim release verify Playground topology`).
+Current reliable head: `a4b9c689c565b42e79cd835ec060a9b7e1fc605a`
+(`Surface reliability probe cleanup`).
 
 Verdict: `0/4`
 
 Reason:
 
-- This head trims the Playground topology on the checked release verifier
-  path, but it still does not prove production-backed auth/session lifecycle,
-  durable journal ownership, or preserved-remote retry on the real release
-  boundary.
+- This head is still release-verifier support work on the checked path, but it
+  does not prove production-backed auth/session lifecycle, durable journal
+  ownership, or preserved-remote retry on the real release boundary.
 - The remaining blocker is still a checked release-path proof, not another
-  topology/support refinement. The release verifier needs one exact failing or
-  passing boundary command that crosses production-backed auth/session or
+  support refinement. The release verifier needs one exact failing or passing
+  boundary command that crosses production-backed auth/session or
   durable-journal semantics before any gate can move.
 
 Next owner / command:
