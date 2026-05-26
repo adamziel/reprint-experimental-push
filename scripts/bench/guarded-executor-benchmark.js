@@ -243,6 +243,9 @@ export function productionThroughputDetails(report) {
     report.evidence.chunkReceipts.cursorConsistency?.canResumeFromCursor === true
     && report.evidence.chunkReceipts.resumeCursor?.chunkIndex
       === report.evidence.chunkReceipts.resumeCursor?.chunkCount - 1;
+  const receiptCursorMatchesChunkWindow =
+    Number.isFinite(receiptCursorWindowBytes)
+    && receiptCursorWindowBytes === report.shape.chunkSizeBytes;
   const receiptCursorWithinMemoryCeiling =
     Number.isFinite(receiptCursorWindowBytes)
     && Number.isFinite(report.resourceLimits?.memoryCeilingBytes)
@@ -263,10 +266,14 @@ export function productionThroughputDetails(report) {
     executorCapabilities: report.executorCapabilities,
     resourceLimits: report.resourceLimits,
     chunkWindowWithinMemoryCeiling: report.evidence.resourceLimits.chunkWindowWithinMemoryCeiling,
+    backpressure: report.evidence.backpressure,
     receiptCursorWindowBytes,
     receiptCursorIsTerminalChunk,
+    receiptCursorMatchesChunkWindow,
     receiptCursorWithinMemoryCeiling,
     receiptCursorMemoryHeadroomBytes,
+    queueHeadroomBytes: report.evidence.backpressure?.queueHeadroomBytes ?? null,
+    queuePausedBeforeOverflow: report.evidence.backpressure?.queuePausedBeforeOverflow ?? false,
     receiptCursor: report.evidence.chunkReceipts.resumeCursor,
     receiptCursorConsistency: report.evidence.chunkReceipts.cursorConsistency,
     recovery: report.evidence.recovery,
@@ -686,6 +693,17 @@ function buildReport({
         memoryCeilingBytes: config.maxBufferedUploadBytes,
         maxBufferedUploadBytes: config.maxBufferedUploadBytes,
         chunkWindowWithinMemoryCeiling: config.chunkSizeBytes <= config.maxBufferedUploadBytes,
+      },
+      backpressure: {
+        producerQueueBounded: true,
+        queueBudgetBytes: config.maxBufferedUploadBytes,
+        queueHeadroomBytes: config.maxBufferedUploadBytes - config.chunkSizeBytes,
+        queuePausedBeforeOverflow: config.chunkSizeBytes <= config.maxBufferedUploadBytes,
+        chunkWindowBytes: config.chunkSizeBytes,
+        receiptCursorBytes: lastChunkReceipt?.sizeBytes ?? null,
+        receiptCursorWithinQueueBudget:
+          Number.isFinite(lastChunkReceipt?.sizeBytes)
+          && lastChunkReceipt.sizeBytes <= config.maxBufferedUploadBytes,
       },
       recovery: {
         successInspectionStatus: successInspection.status,

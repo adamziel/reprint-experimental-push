@@ -59,6 +59,10 @@ test('guarded executor benchmark moves buffers and row payloads through durable 
   assert.equal(report.evidence.redaction.durableJournalsContainNoRawValues, true);
   assert.equal(report.resourceLimits.memoryCeilingBytes, 32 * 1024 * 1024);
   assert.equal(report.evidence.resourceLimits.chunkWindowWithinMemoryCeiling, true);
+  assert.equal(report.evidence.backpressure.producerQueueBounded, true);
+  assert.equal(report.evidence.backpressure.queuePausedBeforeOverflow, true);
+  assert.equal(report.evidence.backpressure.receiptCursorWithinQueueBudget, true);
+  assert.equal(report.evidence.backpressure.queueHeadroomBytes, 31.5 * 1024 * 1024);
   assert.equal(report.evidence.recovery.successInspectionStatus, 'fully-updated-remote');
   assert.equal(report.evidence.recovery.preCommitFailureInspectionStatus, 'old-remote');
   assert.equal(report.evidence.recovery.partialCommitInspectionStatus, 'blocked-recovery');
@@ -94,8 +98,12 @@ test('guarded benchmark refuses production throughput claims until production ga
     32 * 1024 * 1024,
   );
   assert.equal(report.claims.productionThroughputDetails.chunkWindowWithinMemoryCeiling, true);
+  assert.equal(report.claims.productionThroughputDetails.queuePausedBeforeOverflow, true);
+  assert.equal(report.claims.productionThroughputDetails.queueHeadroomBytes, 31.5 * 1024 * 1024);
+  assert.equal(report.claims.productionThroughputDetails.backpressure.producerQueueBounded, true);
   assert.equal(report.claims.productionThroughputDetails.receiptCursorWindowBytes, 512 * 1024);
   assert.equal(report.claims.productionThroughputDetails.receiptCursorIsTerminalChunk, true);
+  assert.equal(report.claims.productionThroughputDetails.receiptCursorMatchesChunkWindow, true);
   assert.equal(report.claims.productionThroughputDetails.receiptCursorWithinMemoryCeiling, true);
   assert.equal(report.claims.productionThroughputDetails.receiptCursorMemoryHeadroomBytes, 31.5 * 1024 * 1024);
   assert.equal(
@@ -172,6 +180,7 @@ test('guarded benchmark refuses production throughput claims until production ga
       && error.details.executorCapabilities.fileReceipts === 'lab-file-journal-receipts'
       && error.details.resourceLimits.memoryCeilingBytes === 32 * 1024 * 1024
       && error.details.productionThroughputDetails.receiptCursorWithinMemoryCeiling === true
+      && error.details.productionThroughputDetails.receiptCursorMatchesChunkWindow === true
       && error.details.receiptCursor.chunkIndex === report.shape.chunkCount - 1
       && error.details.productionThroughputDetails.blockers.includes('production-storage-receipts-not-measured')
       && error.details.productionThroughputDetails.executorCapabilities.rowApply === 'per-row-apply-model'
