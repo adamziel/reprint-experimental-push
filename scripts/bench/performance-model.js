@@ -3268,6 +3268,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     rejectedGate: 'recovery',
     violates: ['backpressure', 'chunk-receipts', 'durable-progress'],
   },
+  {
+    id: 'cached-receipt-cursor-and-queue-headroom-skips-backpressure-pause-after-retry',
+    proposal: 'use a cached receipt cursor plus queue headroom to skip the backpressure pause after a retry',
+    rejectedBecause: 'headroom evidence can size the next bounded queue, but it still cannot prove the pause happened before overflow or that the journal trail is durable enough to recover without guessing which receipts survived the retry',
+    rejectedGate: 'recovery',
+    violates: ['backpressure', 'chunk-receipts', 'durable-progress'],
+  },
 ]);
 
 export function buildBenchmarkModel(overrides = {}) {

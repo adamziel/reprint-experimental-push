@@ -399,6 +399,14 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'cached-receipt-cursor-skips-backpressure-pause-after-retry')?.violates.includes('backpressure'),
     'cached receipt cursors still cannot bypass the backpressure pause boundary',
   );
+  assert.equal(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'cached-receipt-cursor-and-queue-headroom-skips-backpressure-pause-after-retry')?.rejectedGate,
+    'recovery',
+  );
+  assert.ok(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'cached-receipt-cursor-and-queue-headroom-skips-backpressure-pause-after-retry')?.violates.includes('backpressure'),
+    'receipt-cursor headroom still cannot bypass the backpressure pause boundary',
+  );
   assert.ok(
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-chunk-receipts-skips-large-upload-window-sizing-after-pause-and-backpressure')?.violates.includes('backpressure'),
     'cached chunk receipts still cannot bypass backpressure-aware window sizing',
