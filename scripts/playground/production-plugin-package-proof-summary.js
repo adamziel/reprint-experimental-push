@@ -129,6 +129,8 @@ export function buildProductionPluginPackageProofSummary(
   const requestedBundleSet = requestedBundles === 'all'
     ? null
     : new Set(requestedBundles);
+  const hasRequestedBundles = requestedBundles === 'all'
+    || requestedBundles.length > 0;
   const scenarioResults = {};
   const bundleResults = {};
   const checkedBundles = [];
@@ -241,7 +243,9 @@ export function buildProductionPluginPackageProofSummary(
     passedBundles: passedBundles.sort(),
     failedBundles: failedBundles.sort(),
     requestedScenariosSatisfied: checkedScenarioCount > 0 && checkedScenarioCount === passedScenarioCount,
-    requestedBundlesSatisfied: checkedBundleCount > 0 && checkedBundleCount === passedBundleCount,
+    requestedBundlesSatisfied: hasRequestedBundles
+      ? checkedBundleCount > 0 && checkedBundleCount === passedBundleCount
+      : true,
     requestedConcreteScenariosSatisfied: requestedConcreteScenarios === 'all'
       ? checkedScenarioCount > 0 && checkedScenarioCount === passedScenarioCount
       : failedRequestedConcreteScenarios.length === 0,

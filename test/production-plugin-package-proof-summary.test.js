@@ -766,6 +766,54 @@ test('plugin-driver proof summary exposes failing requested concrete scenarios w
   assert.deepEqual(summary.failedRequestedConcreteScenarios, ['driver-delete-apply']);
 });
 
+test('plugin-driver proof summary treats bundle verdicts as satisfied when only concrete scenarios were requested', () => {
+  const summary = buildProductionPluginPackageProofSummary(
+    {
+      package: {
+        plugin: 'reprint-push/reprint-push.php',
+        mountedAs: '/wordpress/wp-content/plugins/reprint-push',
+      },
+      routes: {
+        namespace: 'reprint/v1',
+        profile: 'production-shaped',
+        labNamespaceDisabled: true,
+        authBootstrapDisabled: true,
+      },
+      cli: {
+        ok: true,
+      },
+      final: {
+        finalMatchesLocal: true,
+      },
+      driverDeleteApply: {
+        deletedAfterApply: true,
+      },
+    },
+    {
+      requestedScenarios: ['driver-delete-apply'],
+      selectedScenarios: new Set(['driver-delete-apply']),
+    },
+  );
+
+  assert.equal(summary.requestedScenariosSatisfied, true);
+  assert.equal(summary.requestedBundlesSatisfied, true);
+  assert.equal(summary.requestedConcreteScenariosSatisfied, true);
+  assert.equal(summary.checkedBundleCount, 0);
+  assert.equal(summary.passedBundleCount, 0);
+  assert.equal(summary.failedBundleCount, 0);
+  assert.deepEqual(summary.requestedBundles, []);
+  assert.deepEqual(summary.passedRequestedBundles, []);
+  assert.deepEqual(summary.failedRequestedBundles, []);
+  assert.deepEqual(summary.requestedConcreteScenarios, ['driver-delete-apply']);
+  assert.deepEqual(summary.passedRequestedConcreteScenarios, ['driver-delete-apply']);
+  assert.deepEqual(summary.failedRequestedConcreteScenarios, []);
+  assert.deepEqual(summary.checkedScenarios, ['driver-delete-apply']);
+  assert.deepEqual(summary.passedScenarios, ['driver-delete-apply']);
+  assert.deepEqual(summary.failedScenarios, []);
+  assert.equal(summary.bundles.driverVerifierGuards, 'skipped');
+  assert.equal(summary.scenarios.driverDeleteApply, 'passed');
+});
+
 test('plugin-driver proof summary exposes failed requested bundles directly', () => {
   const summary = buildProductionPluginPackageProofSummary(
     {
