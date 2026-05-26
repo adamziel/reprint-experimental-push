@@ -99,11 +99,11 @@ export function evaluateProductionAuthSessionLifecycleSummary(summary, now = Dat
   }
 
   const issuedObservation = summary.issued;
-  if (!issuedObservation || typeof issuedObservation !== 'object') {
+  if (!issuedObservation || typeof issuedObservation !== 'object' || Array.isArray(issuedObservation)) {
     return {
       ok: false,
       required: 'issued preflight',
-      observed: 'missing',
+      observed: issuedObservation ? 'invalid-issued' : 'missing',
     };
   }
 
@@ -158,11 +158,11 @@ export function evaluateProductionAuthSessionLifecycleSummary(summary, now = Dat
   }
 
   const readObservation = summary.read;
-  if (!readObservation || typeof readObservation !== 'object') {
+  if (!readObservation || typeof readObservation !== 'object' || Array.isArray(readObservation)) {
     return {
       ok: false,
       required: 'preserved read',
-      observed: 'missing',
+      observed: readObservation ? 'invalid-read' : 'missing',
     };
   }
 
