@@ -99,7 +99,7 @@ test('guarded executor benchmark moves buffers and row payloads through durable 
   assert.equal(report.evidence.atomicGroup.preCommitFailureLeavesRemoteUnchanged, true);
   assert.equal(report.evidence.atomicGroup.productionAtomicCommitMeasured, false);
   assert.equal(report.evidence.atomicGroup.productionStorageReceiptsMeasured, false);
-  assert.equal(report.evidence.atomicGroup.productionAtomicGroupMetadataVisible, true);
+  assert.equal(report.evidence.atomicGroup.productionAtomicGroupMetadataVisible, false);
   assert.equal(report.evidence.atomicGroup.productionStorageReceiptsVisible, false);
   assert.equal(report.evidence.atomicGroup.productionRowBatchExecutorVisible, false);
   assert.equal(report.claims.productionThroughputDetails.productionStorageReceiptsVisible, false);
@@ -113,7 +113,7 @@ test('guarded executor benchmark moves buffers and row payloads through durable 
   );
   assert.equal(
     report.claims.productionThroughputDetails.atomicGroup.productionAtomicGroupMetadataVisible,
-    true,
+    false,
   );
   assert.equal(
     report.evidence.atomicGroup.productionRowBatchExecutorMeasured,
@@ -220,7 +220,7 @@ test('guarded benchmark refuses production throughput claims until production ga
   assert.equal(report.claims.productionThroughputDetails.backpressureConsistency.queueHeadroomPositive, true);
   assert.equal(report.claims.productionThroughputDetails.backpressureConsistency.queueBudgetPositive, true);
   assert.equal(report.claims.productionThroughputDetails.backpressureConsistency.queuePausedBeforeOverflow, true);
-  assert.equal(report.claims.productionThroughputDetails.backpressureConsistency.productionAtomicGroupMetadataVisible, true);
+  assert.equal(report.claims.productionThroughputDetails.backpressureConsistency.productionAtomicGroupMetadataVisible, false);
   assert.equal(report.claims.productionThroughputDetails.backpressureConsistency.productionStorageReceiptsVisible, false);
   assert.equal(
     report.claims.productionThroughputDetails.backpressureConsistency.queuePauseHasMeasuredReceiptCursorBackpressure,

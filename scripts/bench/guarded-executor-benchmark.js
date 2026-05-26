@@ -1794,7 +1794,8 @@ function buildReport({
   const productionStorageReceiptsMeasured = false;
   const productionRowBatchExecutorMeasured = false;
   const productionAtomicGroupMetadataVisible =
-    atomicGroup?.status === 'ready'
+    productionAtomicCommitMeasured
+    && atomicGroup?.status === 'ready'
     && atomicGroup?.requireAtomic === true;
   const productionStorageReceiptsVisible =
     productionStorageReceiptsMeasured && productionAtomicGroupMetadataVisible;
