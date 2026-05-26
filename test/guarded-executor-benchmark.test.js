@@ -2298,6 +2298,25 @@ test('guarded benchmark keeps row-batch and atomic-commit visible detail hidden 
   );
 });
 
+test('guarded benchmark keeps row-batch and atomic-commit visible detail hidden when atomic commit measurement is missing', () => {
+  const report = smallBenchmark();
+  const tampered = clone(report);
+
+  tampered.evidence.atomicGroup.productionRowBatchExecutorMeasured = true;
+  tampered.evidence.atomicGroup.productionRowBatchExecutorVisible = true;
+  tampered.evidence.atomicGroup.productionAtomicCommitMeasured = false;
+  tampered.evidence.atomicGroup.productionAtomicCommitVisible = true;
+  tampered.evidence.atomicGroup.productionAtomicGroupMetadataVisible = true;
+
+  const details = productionThroughputDetails(tampered);
+
+  assert.equal(details.atomicGroup.productionRowBatchExecutorVisibleAndAtomicCommitVisible, false);
+  assert.equal(
+    details.backpressureConsistency.productionRowBatchExecutorVisibleAndAtomicCommitVisible,
+    false,
+  );
+});
+
 test('guarded benchmark blocks row-batch executor visibility without visible measured parallelism caps', () => {
   const report = smallBenchmark();
   const tampered = clone(report);

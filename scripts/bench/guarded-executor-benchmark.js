@@ -1968,7 +1968,7 @@ export function productionThroughputDetails(report) {
   const productionRowBatchExecutorVisibleAndAtomicCommitVisible =
     productionRowBatchExecutorVisible
     && productionAtomicCommitVisible
-    && productionAtomicGroupMetadataVisible;
+    && productionAtomicGroupMetadataVisibleAndMeasured;
   const productionAtomicGroupMetadataProven =
     report.evidence.atomicGroup?.productionAtomicCommitMeasured !== true
     || (
