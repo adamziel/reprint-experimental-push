@@ -59,6 +59,27 @@ export function resolvePackagedProductionPluginAuthSessionRequest({
   };
 }
 
+export function shouldRequestPackagedProductionPluginAuthSession({
+  requireProductionAuthSession = false,
+  authSessionSourceCommand = '',
+  liveSourceUrl = '',
+  username = '',
+  applicationPassword = '',
+  fixtureUsername = '',
+  fixtureApplicationPassword = '',
+}) {
+  if (!requireProductionAuthSession) {
+    return false;
+  }
+  if (!fixtureUsername || !fixtureApplicationPassword) {
+    return false;
+  }
+  if (authSessionSourceCommand) {
+    return false;
+  }
+  return !liveSourceUrl && !username && !applicationPassword;
+}
+
 export function bindPackagedProductionPluginRuntimeSource({
   sourceUrl,
   authSessionSource,

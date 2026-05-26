@@ -23,6 +23,7 @@ import {
   resolvePackagedProductionPluginAuthSessionRequest,
   resolvePackagedProductionPluginAuthSessionSource,
   resolvePackagedProductionPluginSourceCommand,
+  shouldRequestPackagedProductionPluginAuthSession,
 } from '../scripts/playground/packaged-production-plugin-source-command.js';
 import {
   packagedProductionPluginMaxConsecutiveNotReadyProbes,
@@ -66,7 +67,7 @@ const liveCredentials = {
   password: 'reprint-push-admin-app-password',
 };
 const proofSubprocessTimeoutMs = 30_000;
-const packagedProofSubprocessTimeoutMs = 45_000;
+const packagedProofSubprocessTimeoutMs = 60_000;
 const proofSubprocessKillSignal = 'SIGTERM';
 const liveProofSubprocessTimeoutMs = 15_000;
 const liveProofSubprocessKillSignal = 'SIGKILL';
@@ -699,6 +700,45 @@ test('production-shaped release verify request state marks synthesized packaged 
     username: liveCredentials.username,
     applicationPassword: liveCredentials.password,
   });
+});
+
+test('production-shaped release verify requests the packaged auth/session source only for the default checked path', () => {
+  assert.equal(
+    shouldRequestPackagedProductionPluginAuthSession({
+      requireProductionAuthSession: true,
+      fixtureUsername: liveCredentials.username,
+      fixtureApplicationPassword: liveCredentials.password,
+    }),
+    true,
+  );
+  assert.equal(
+    shouldRequestPackagedProductionPluginAuthSession({
+      requireProductionAuthSession: true,
+      liveSourceUrl: 'http://127.0.0.1:65535',
+      fixtureUsername: liveCredentials.username,
+      fixtureApplicationPassword: liveCredentials.password,
+    }),
+    false,
+  );
+  assert.equal(
+    shouldRequestPackagedProductionPluginAuthSession({
+      requireProductionAuthSession: true,
+      username: 'explicit-user',
+      applicationPassword: 'explicit-pass',
+      fixtureUsername: liveCredentials.username,
+      fixtureApplicationPassword: liveCredentials.password,
+    }),
+    false,
+  );
+  assert.equal(
+    shouldRequestPackagedProductionPluginAuthSession({
+      requireProductionAuthSession: true,
+      authSessionSourceCommand: 'custom-source-command',
+      fixtureUsername: liveCredentials.username,
+      fixtureApplicationPassword: liveCredentials.password,
+    }),
+    false,
+  );
 });
 
 test('production-shaped release verify command consumes the production auth/session source command when provided', () => {

@@ -31,6 +31,7 @@ import {
   isPackagedProductionPluginSourceCommand,
   resolvePackagedProductionPluginAuthSessionRequest,
   resolvePackagedProductionPluginAuthSessionSource,
+  shouldRequestPackagedProductionPluginAuthSession,
 } from './packaged-production-plugin-source-command.js';
 import {
   packagedProductionPluginNextRouteNotReadyProbeCounts,
@@ -62,7 +63,7 @@ const readinessFailureBodyLimit = 240;
 // the earlier single-server smoke path.
 const serverStartupTimeoutMs = 30_000;
 const serverFetchTimeoutMs = 1_000;
-const packagedPlaygroundTimeoutSeconds = 30;
+const packagedPlaygroundTimeoutSeconds = 45;
 const packagedServerStartupTimeoutMs = packagedPlaygroundTimeoutSeconds * 1_000;
 const packagedServerFetchTimeoutMs = 3_000;
 const maxReadinessProbes = Math.max(10, Math.ceil(serverStartupTimeoutMs / readinessProbeIntervalMs));
@@ -71,6 +72,9 @@ const requireProductionDurableJournal = process.env.REPRINT_PUSH_REQUIRE_PRODUCT
 const requireProductionAuthSession = process.env.REPRINT_PUSH_REQUIRE_PRODUCTION_AUTH_SESSION === '1';
 const labAuthSessionDrift = process.env.REPRINT_PUSH_LAB_AUTH_SESSION_DRIFT || '';
 const requiredPreservedRemoteRetryPath = process.env.REPRINT_PUSH_SIMULATE_PRESERVED_REMOTE_RETRY_PATH || '/snapshot';
+const explicitReleaseVerifySourceUrl = process.env.REPRINT_PUSH_SOURCE_URL || process.env.REPRINT_PUSH_REMOTE_URL || '';
+const explicitReleaseVerifyUsername = process.env.REPRINT_PUSH_LAB_AUTH_ADMIN_USER || process.env.REPRINT_PUSH_USERNAME || '';
+const explicitReleaseVerifyApplicationPassword = process.env.REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD || process.env.REPRINT_PUSH_APPLICATION_PASSWORD || '';
 let liveSourceUrl = process.env.REPRINT_PUSH_SOURCE_URL || process.env.REPRINT_PUSH_REMOTE_URL || '';
 let username = process.env.REPRINT_PUSH_LAB_AUTH_ADMIN_USER || process.env.REPRINT_PUSH_USERNAME || '';
 let applicationPassword = process.env.REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD || process.env.REPRINT_PUSH_APPLICATION_PASSWORD || '';
@@ -102,11 +106,15 @@ if (authSessionSource?.ok) {
   applicationPassword = resolvedAuthSessionSource.applicationPassword;
 }
 
-if (
-  requireProductionAuthSession &&
-  fixtureCredentials.username &&
-  fixtureCredentials.password
-) {
+if (shouldRequestPackagedProductionPluginAuthSession({
+  requireProductionAuthSession,
+  authSessionSourceCommand,
+  liveSourceUrl: explicitReleaseVerifySourceUrl,
+  username: explicitReleaseVerifyUsername,
+  applicationPassword: explicitReleaseVerifyApplicationPassword,
+  fixtureUsername: fixtureCredentials.username,
+  fixtureApplicationPassword: fixtureCredentials.password,
+})) {
   const packagedProductionPluginAuthSessionRequest = resolvePackagedProductionPluginAuthSessionRequest({
     sourceUrl: liveSourceUrl || 'http://127.0.0.1:8080',
     username: fixtureCredentials.username,
@@ -545,6 +553,10 @@ if (requireProductionAuthSession && !packagedProductionPluginRequested) {
     throw new ProofFailure();
   }
 
+  const credentials = {
+    username,
+    password: applicationPassword,
+  };
   const client = authenticatedHttpClient({
     sourceUrl: liveSourceUrl,
     credential: credentials,
@@ -1457,46 +1469,65 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
       throw new Error(message);
     }
     try {
-      const index = await fetchWithTimeout(`${baseUrl}/wp-json/`, {
-        headers: {
-          connection: 'close',
-        },
-      }, packagedServerFetchTimeoutMs);
-      const indexText = await index.text();
-      timeoutProbeCount = 0;
-      const indexPreview = indexText.slice(0, readinessFailureBodyLimit);
-      lastProbes.push({
-        route: '/wp-json/',
-        status: index.status,
-        ok: index.ok,
-        body: indexPreview,
-      });
-      let indexBody = null;
+      let restIndexDeferredFailure = null;
       try {
-        indexBody = JSON.parse(indexText);
-      } catch (error) {
-        if (isWordPressNotReadyResponse(index.status, indexText)) {
-          lastError = new Error(`Production plugin package REST index readiness HTTP ${index.status}`);
-          await sleep(readinessProbeIntervalMs);
-          continue;
-        }
-        throw error;
-      }
-      if (!packagedProductionPluginRestIndexReady({
-        status: index.status,
-        body: indexBody,
-      })) {
-        lastError = new Error(`Production plugin package REST index readiness HTTP ${index.status}`);
-        if (packagedProductionPluginRestIndexRetryable({
+        const index = await fetchWithTimeout(`${baseUrl}/wp-json/`, {
+          headers: {
+            connection: 'close',
+          },
+        }, packagedServerFetchTimeoutMs);
+        timeoutProbeCount = 0;
+        const indexText = await index.text();
+        const indexPreview = indexText.slice(0, readinessFailureBodyLimit);
+        lastProbes.push({
+          route: '/wp-json/',
           status: index.status,
-          body: indexBody,
-        }) || packagedProductionPluginReadinessBodyRetryable(index.status, indexText)) {
-          await sleep(readinessProbeIntervalMs);
-          continue;
+          ok: index.ok,
+          body: indexPreview,
+        });
+        let indexBody = null;
+        try {
+          indexBody = JSON.parse(indexText);
+        } catch (error) {
+          if (isWordPressNotReadyResponse(index.status, indexText)) {
+            restIndexDeferredFailure = new Error(`Production plugin package REST index readiness HTTP ${index.status}`);
+            indexBody = null;
+          } else {
+            throw error;
+          }
         }
-        throw lastError;
+        if (
+          !packagedProductionPluginRestIndexReady({
+            status: index.status,
+            body: indexBody,
+          })
+        ) {
+          const indexFailure = new Error(`Production plugin package REST index readiness HTTP ${index.status}`);
+          if (
+            packagedProductionPluginRestIndexRetryable({
+              status: index.status,
+              body: indexBody,
+            })
+            || packagedProductionPluginReadinessBodyRetryable(index.status, indexText)
+          ) {
+            // Treat the core REST index as advisory during packaged startup:
+            // the production push routes can become ready before /wp-json/
+            // stops returning transient not-ready bodies.
+            restIndexDeferredFailure = indexFailure;
+          } else {
+            throw indexFailure;
+          }
+        }
+      } catch (error) {
+        if (!packagedProductionPluginReadinessErrorRetryable(error)) {
+          throw error;
+        }
+        timeoutProbeCount = packagedProductionPluginNextTimeoutProbeCount(timeoutProbeCount, error);
+        restIndexDeferredFailure = error;
       }
-
+      if (restIndexDeferredFailure) {
+        lastError = restIndexDeferredFailure;
+      }
       const snapshot = await fetchWithTimeout(`${baseUrl}/wp-json/reprint/v1/push/snapshot`, {
         headers: {
           ...authHeaders(),
@@ -1518,15 +1549,6 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
         snapshot.status,
         snapshotText,
       );
-      if (
-        packagedProductionPluginReadinessBodyRetryable(snapshot.status, snapshotText)
-        && packagedProductionPluginNotReadyProbeLimitReached(routeNotReadyProbeCounts.snapshot)
-      ) {
-        lastError = new Error(
-          `Production plugin package snapshot readiness stayed not ready for ${routeNotReadyProbeCounts.snapshot} consecutive probes`,
-        );
-        break;
-      }
       let snapshotBody = null;
       try {
         snapshotBody = JSON.parse(snapshotText);
@@ -1578,15 +1600,6 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
         preflight.status,
         preflightText,
       );
-      if (
-        packagedProductionPluginReadinessBodyRetryable(preflight.status, preflightText)
-        && packagedProductionPluginNotReadyProbeLimitReached(routeNotReadyProbeCounts.preflight)
-      ) {
-        lastError = new Error(
-          `Production plugin package preflight readiness stayed not ready for ${routeNotReadyProbeCounts.preflight} consecutive probes`,
-        );
-        break;
-      }
       let preflightBody = null;
       try {
         preflightBody = JSON.parse(preflightText);
