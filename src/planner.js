@@ -2314,6 +2314,7 @@ function addUnsupportedGuidResourceBlocker(plan, {
   plan.blockers.push({
     id: `blocker-unsupported-guid-resource-${plan.blockers.length + 1}`,
     class: support.className || 'unsupported-guid-resource',
+    resourceKind: 'post-guid',
     resource,
     resourceKey: resource.key,
     reason: support.reason || `Post GUID resource ${resource.key} is not yet supported by the planner.`,

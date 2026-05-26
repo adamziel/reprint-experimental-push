@@ -20375,6 +20375,7 @@ test('blocks local post GUID changes while preserving remote-only plugin drift',
   assert.equal(mutationFor(plan, resourceKey), undefined);
   assert.equal(plan.conflicts.length, 0);
   assert.equal(blocker.class, 'unsupported-guid-resource');
+  assert.equal(blocker.resourceKind, 'post-guid');
   assert.equal(blocker.resourceKey, resourceKey);
   assert.equal(blocker.reason, 'Post GUID graph resources are not yet supported by the planner.');
   assert.equal(pluginDecision.decision, 'keep-remote');
