@@ -118,11 +118,6 @@ if (liveSourceUrl && (!username || !applicationPassword)) {
   throw new ProofFailure();
 }
 
-if (!username || !applicationPassword) {
-  username = credentials.username;
-  applicationPassword = credentials.password;
-}
-
 if (requireProductionDurableJournal && !liveSourceUrl) {
   process.stdout.write(
     JSON.stringify(
@@ -236,6 +231,42 @@ if (retainedSourceSummaryRequested) {
           applyCommitted: true,
           mutationApplied: 7,
           idempotencyOpened: 1,
+        },
+      },
+      null,
+      2,
+    ),
+  );
+  process.stdout.write('\n');
+  throw new ProofFailure();
+}
+
+if (!username || !applicationPassword) {
+  process.stdout.write(
+    JSON.stringify(
+      {
+        ok: false,
+        topology: {
+          sourceUrl: liveSourceUrl || null,
+          remoteBase: null,
+          remoteChanged: null,
+          localEdited: null,
+        },
+        boundary: {
+          firstRemainingProductionBoundary: 'auth/session lifecycle and durable journal semantics',
+          status: 'unimplemented',
+          verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+          authSession: {
+            required: 'production-auth-session',
+            observed: 'missing-production-credentials',
+            verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+          },
+        },
+        protocolExtension,
+        releaseProof: {
+          ok: false,
+          status: 1,
+          code: 'REPRINT_PUSH_SECRET_REQUIRED',
         },
       },
       null,
