@@ -83,6 +83,9 @@ Current executable gate:
   - storage-receipt visibility is only acceptable when the atomic-group
     metadata surface is visible too, so a forged visibility bit cannot stand in
     for the production commit boundary;
+  - storage-receipt visibility is only acceptable when the atomic commit
+    surface is visible too, so a forged storage summary cannot stand in for
+    the commit boundary;
   - production storage receipts, atomic-group commit proof, and row-batch
     executor proof remain blocked until they are measured on the live surface.
 - The same details now also surface the atomic-group metadata visibility bit on

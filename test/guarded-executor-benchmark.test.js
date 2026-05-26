@@ -641,6 +641,17 @@ test('production claim gate fails closed if benchmark evidence is tampered', () 
     ),
   );
 
+  const visibleStorageReceiptWithoutAtomicCommit = clone(report);
+  visibleStorageReceiptWithoutAtomicCommit.evidence.atomicGroup.productionAtomicGroupMetadataVisible = true;
+  visibleStorageReceiptWithoutAtomicCommit.evidence.atomicGroup.productionStorageReceiptsMeasured = true;
+  visibleStorageReceiptWithoutAtomicCommit.evidence.atomicGroup.productionStorageReceiptsVisible = true;
+  visibleStorageReceiptWithoutAtomicCommit.evidence.atomicGroup.productionAtomicCommitVisible = false;
+  assert.ok(
+    productionThroughputBlockers(visibleStorageReceiptWithoutAtomicCommit).includes(
+      'production-storage-receipts-without-atomic-commit',
+    ),
+  );
+
   const visibleAtomicCommitWithoutMeasurement = clone(report);
   visibleAtomicCommitWithoutMeasurement.evidence.atomicGroup.productionAtomicCommitVisible = true;
   assert.ok(
