@@ -7438,6 +7438,110 @@ test('blocks an existing _menu_item_object_id taxonomy row when its same-plan te
   assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
 });
 
+test('blocks an existing _menu_item_object_id taxonomy row when its same-plan term is claimed by a nav menu taxonomy and a sibling category taxonomy depends on the same blocked term even when unrelated remote attachment noise exists', () => {
+  const targetResourceKey = 'row:["wp_terms","term_id:7"]';
+  const categoryTaxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:9"]';
+  const navMenuTaxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:20"]';
+  const postmetaResourceKey = 'row:["wp_postmeta","meta_id:4781"]';
+  const base = baseSite();
+  const local = baseSite();
+  const remote = baseSite();
+
+  base.db.wp_postmeta = {
+    'meta_id:4781': {
+      meta_id: 4781,
+      post_id: 1,
+      meta_key: '_menu_item_object_id',
+      meta_value: 1,
+    },
+  };
+  local.db.wp_postmeta = {
+    'meta_id:4781': {
+      meta_id: 4781,
+      post_id: 1,
+      meta_key: '_menu_item_object_id',
+      meta_value: 7,
+    },
+    'meta_id:4782': {
+      meta_id: 4782,
+      post_id: 1,
+      meta_key: '_menu_item_type',
+      meta_value: 'taxonomy',
+    },
+    'meta_id:4783': {
+      meta_id: 4783,
+      post_id: 1,
+      meta_key: '_menu_item_object',
+      meta_value: 'category',
+    },
+  };
+  remote.db.wp_postmeta = {
+    'meta_id:4781': {
+      ...base.db.wp_postmeta['meta_id:4781'],
+    },
+  };
+  remote.db.wp_posts['ID:21'] = {
+    ID: 21,
+    post_title: 'Remote unrelated attachment',
+    post_content: 'remote-private-unrelated-menu-object-attachment-body',
+    post_status: 'inherit',
+    post_type: 'attachment',
+  };
+  local.db.wp_terms = {
+    'term_id:7': {
+      term_id: 7,
+      name: 'Local shared menu taxonomy term',
+      slug: 'local-shared-menu-taxonomy-term',
+    },
+  };
+  local.db.wp_term_taxonomy = {
+    'term_taxonomy_id:9': {
+      term_taxonomy_id: 9,
+      term_id: 7,
+      taxonomy: 'category',
+      description: '',
+      parent: 0,
+      count: 0,
+    },
+    'term_taxonomy_id:20': {
+      term_taxonomy_id: 20,
+      term_id: 7,
+      taxonomy: 'nav_menu',
+      description: '',
+      parent: 0,
+      count: 0,
+    },
+  };
+
+  const plan = planFor(base, local, remote);
+  const categoryTaxonomyMutation = mutationFor(plan, categoryTaxonomyResourceKey);
+  const navMenuTaxonomyBlocker = plan.blockers.find((entry) => entry.resourceKey === navMenuTaxonomyResourceKey);
+  const categoryTaxonomyBlocker = plan.blockers.find((entry) => entry.resourceKey === categoryTaxonomyResourceKey);
+  const postmetaMutation = mutationFor(plan, postmetaResourceKey);
+  const postmetaBlocker = plan.blockers.find((entry) => entry.resourceKey === postmetaResourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(mutationFor(plan, targetResourceKey).changeKind, 'create');
+  assert.equal(categoryTaxonomyMutation.changeKind, 'create');
+  assert.equal(mutationFor(plan, navMenuTaxonomyResourceKey), undefined);
+  assert.equal(postmetaMutation.changeKind, 'update');
+  assert.equal(navMenuTaxonomyBlocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(navMenuTaxonomyBlocker.surface, 'nav_menu');
+  assert.equal(categoryTaxonomyBlocker.class, 'missing-wordpress-graph-dependency');
+  assert.equal(categoryTaxonomyBlocker.references[0].relationshipType, 'term-taxonomy-term');
+  assert.equal(categoryTaxonomyBlocker.references[0].targetResourceKey, targetResourceKey);
+  assert.equal(postmetaBlocker.class, 'missing-wordpress-graph-dependency');
+  assert.equal(postmetaBlocker.references[0].relationshipType, 'menu-item-object-term');
+  assert.equal(postmetaBlocker.references[0].targetResourceKey, targetResourceKey);
+  assert.equal(postmetaMutation.dependsOnMutationIds, undefined);
+  assert.equal(JSON.stringify(postmetaBlocker).includes('local-shared-menu-taxonomy-term'), false);
+  assert.equal(
+    JSON.stringify(postmetaBlocker).includes('remote-private-unrelated-menu-object-attachment-body'),
+    false,
+  );
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
+});
+
 test('blocks _menu_item_object_id taxonomy metadata from referencing a same-plan nav_menu term even when no term taxonomy row is present', () => {
   const resourceKey = 'row:["wp_postmeta","meta_id:478"]';
   const targetResourceKey = 'row:["wp_terms","term_id:8"]';
