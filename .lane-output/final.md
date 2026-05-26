@@ -1,15 +1,15 @@
 Changed files:
 - [`audits/critic.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/critic/audits/critic.md)
+- [`.lane-output/final.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/critic/.lane-output/final.md)
 
 What changed:
-- Reclassified the current reliable head as `5cb7738afd2af7c63d5116007ed0096f3b9a8f1a` from `git ls-remote`.
-- Kept the verdict at `0/4` because the commit adds a checked-path packaged auth/session source consumption test, which improves release-boundary coverage but still does not prove a production-backed auth/session lifecycle or a closed durable-journal ownership boundary on the release path.
+- Reclassified the current reliable head as `cdea46fdb51cb46d56def6147e6dd815cb3b2757` from `git ls-remote`.
+- Kept the verdict at `0/4` because the commit prefers the packaged auth/session source on the checked release-verify path, which tightens release-boundary source selection but still does not prove a production-backed auth/session lifecycle or a closed durable-journal ownership boundary on the release path.
 
 Commands run:
 - `date '+%Y-%m-%d %H:%M:%S %Z (%z)'`
 - `git ls-remote origin refs/heads/lane/reliable-executor`
-- `git show --stat --oneline --no-renames --summary 5cb7738afd2af7c63d5116007ed0096f3b9a8f1a`
-- `git show --no-renames --format=medium --unified=40 5cb7738afd2af7c63d5116007ed0096f3b9a8f1a -- scripts/playground/production-shaped-release-verify.mjs test/production-shaped-proof.test.js src/authenticated-http-push-client.js src/recovery-journal.js`
+- `git show --stat --oneline --no-renames --decorate=short --summary cdea46fdb51cb46d56def6147e6dd815cb3b2757 --`
 
 Push result:
 - Not attempted
