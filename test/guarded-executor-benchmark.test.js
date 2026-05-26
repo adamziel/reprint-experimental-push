@@ -6760,6 +6760,64 @@ test('guarded benchmark keeps paused backpressure summaries false when raw recei
   assert.ok(blockers.includes('backpressure-evidence-incomplete'));
 });
 
+test('guarded benchmark keeps paused chunk-window summaries false when raw receipt-cursor size bytes drift below the bounded pause footprint', () => {
+  const report = smallBenchmark();
+  const mutated = clone(report);
+
+  mutated.evidence.chunkReceipts.resumeCursor.sizeBytes -= 1;
+
+  const details = productionThroughputDetails(mutated);
+  const blockers = productionThroughputBlockers(mutated);
+
+  assert.equal(details.receiptCursorMatchesChunkWindow, false);
+  assert.equal(details.receiptCursorMatchesBackpressure, false);
+  assert.equal(details.receiptCursorPauseFootprintComplete, false);
+  assert.equal(details.receiptCursorPauseFootprintVisible, false);
+  assert.equal(details.receiptCursorBackpressureWithinResourceHeadroom, false);
+  assert.equal(details.receiptCursorQueueSlackMatchesResourceHeadroom, false);
+  assert.equal(details.receiptCursorQueueSlackWithinResourceHeadroom, false);
+  assert.equal(details.receiptCursorHeadroomMatchesResourceHeadroom, false);
+  assert.equal(details.receiptCursorMemoryHeadroomMatchesResourceHeadroom, false);
+  assert.equal(details.queueHeadroomVisibleAndMeasured, false);
+  assert.equal(details.queueHeadroomVisibleAndMeasuredAndAligned, false);
+  assert.equal(details.backpressureEvidenceComplete, false);
+  assert.equal(details.backpressureConsistency.receiptCursorMatchesBackpressure, false);
+  assert.equal(details.backpressureConsistency.receiptCursorPauseFootprintComplete, false);
+  assert.equal(details.backpressureConsistency.receiptCursorPauseFootprintVisible, false);
+  assert.equal(
+    details.backpressureConsistency.receiptCursorBackpressureWithinResourceHeadroom,
+    false,
+  );
+  assert.equal(
+    details.backpressureConsistency.receiptCursorQueueSlackMatchesResourceHeadroom,
+    false,
+  );
+  assert.equal(
+    details.backpressureConsistency.receiptCursorQueueSlackWithinResourceHeadroom,
+    false,
+  );
+  assert.equal(
+    details.backpressureConsistency.receiptCursorHeadroomMatchesResourceHeadroom,
+    false,
+  );
+  assert.equal(
+    details.backpressureConsistency.receiptCursorMemoryHeadroomMatchesResourceHeadroom,
+    false,
+  );
+  assert.equal(details.backpressureConsistency.queueHeadroomVisibleAndMeasured, false);
+  assert.equal(
+    details.backpressureConsistency.queueHeadroomVisibleAndMeasuredAndAligned,
+    false,
+  );
+  assert.equal(details.backpressureConsistency.backpressureEvidenceComplete, false);
+  assert.ok(blockers.includes('missing-valid-receipt-cursor'));
+  assert.ok(blockers.includes('receipt-cursor-backpressure-mismatch'));
+  assert.ok(blockers.includes('receipt-cursor-headroom-mismatch'));
+  assert.ok(blockers.includes('receipt-cursor-queue-slack-resource-headroom-mismatch'));
+  assert.ok(blockers.includes('receipt-cursor-memory-headroom-resource-headroom-mismatch'));
+  assert.ok(blockers.includes('backpressure-evidence-incomplete'));
+});
+
 test('guarded benchmark keeps paused memory-boundary pair summaries false when raw memory-headroom drifts below the bounded pause footprint', () => {
   const report = smallBenchmark();
   const mutated = clone(report);
