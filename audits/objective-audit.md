@@ -43,7 +43,7 @@ The project is **not releasable as a production WordPress push path**.
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `f7f2fae9`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `91424e5b`
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `a7c3d3af`
-- `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` -> `c4103594`
+- `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` -> `2d7ed103`
 - `origin/lane/cycle-20260525-mainwindows-2357/no-data-loss-invariants-graph-proof` -> `98c0ce26`
 - `origin/lane/cycle-20260525-restart-2340/feedback-supervisor` -> `ef3d911e`
 - `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration` -> `0b33a5f9`
@@ -51,7 +51,7 @@ The project is **not releasable as a production WordPress push path**.
 - `origin/lane/fast-paths` -> `8c5c2ccb`
 - `origin/lane/feedback-supervisor` -> `ee7069e6`
 - `origin/lane/independent-auditor` -> `6351130f`
-- `origin/lane/no-data-loss-invariants` -> `829e8e78`
+- `origin/lane/no-data-loss-invariants` -> `5c4cb015`
 - `origin/lane/no-data-loss-recovery` -> `91424e5b`
 - `origin/lane/progress-publisher` -> `7695e1f9`
 - `origin/lane/reliable-executor` -> `d6f65f9a`
@@ -69,11 +69,11 @@ but it did not change the release conclusion:
   expired-session check in the packaging smoke and the REST plugin, but still
   not proving production auth/session lifecycle or a live-source mutation
   boundary.
-- `origin/lane/no-data-loss-invariants` now records `6b5fd23e`, adding
-  comments/users sibling proof. It still does not prove the live release
-  boundary or any production-backed source mutation.
 - `origin/lane/no-data-loss-invariants` now records `5c4cb015`, adding
   revision parent-removal proof. It still does not prove the live release
+  boundary or any production-backed source mutation.
+- `origin/lane/no-data-loss-invariants` now records `6b5fd23e`, adding
+  comments/users sibling proof. It still does not prove the live release
   boundary or any production-backed source mutation.
 - `origin/lane/no-data-loss-invariants` now records `0d3a148f`, adding
   custom-table sibling proof. It still does not prove the live release
@@ -119,7 +119,7 @@ but it did not change the release conclusion:
   records `9e077c10`, tightening blocked recovery validation. It still does
   not add production-backed journal ownership or replay proof.
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` now records
-  `c4103594`, hardening live proof cleanup and timeouts only.
+  `2d7ed103`, hardening production-shaped proof timeouts only.
 - `origin/lane/no-data-loss-recovery` now records `9e077c10`, tightening
   unsupported recovery journal boundaries only.
 - `origin/lane/same-plan-wordpress-graph-create` now records `52be8d87`,
