@@ -256,6 +256,12 @@ export function productionThroughputBlockers(report) {
   }
   if (
     report.evidence.backpressure?.queuePausedBeforeOverflow === true
+    && report.evidence.chunkReceipts.cursorConsistency?.canResumeFromCursor !== true
+  ) {
+    blockers.push('queue-pause-without-terminal-receipt-cursor');
+  }
+  if (
+    report.evidence.backpressure?.queuePausedBeforeOverflow === true
     && report.evidence.backpressure?.receiptCursorBackpressureMeasured !== true
   ) {
     blockers.push('queue-pause-without-measured-receipt-cursor-backpressure');

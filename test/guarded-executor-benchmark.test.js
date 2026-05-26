@@ -1057,6 +1057,19 @@ test('production claim gate fails closed if benchmark evidence is tampered', () 
   assert.ok(
     productionThroughputBlockers(missingGraphIdentity).includes('wordpress-graph-identity-evidence-not-proven'),
   );
+
+  const nonTerminalPausedQueue = clone(report);
+  nonTerminalPausedQueue.evidence.backpressure.queuePausedBeforeOverflow = true;
+  nonTerminalPausedQueue.evidence.chunkReceipts.cursorConsistency.canResumeFromCursor = false;
+  assert.ok(
+    productionThroughputBlockers(nonTerminalPausedQueue).includes(
+      'queue-pause-without-terminal-receipt-cursor',
+    ),
+  );
+  assert.equal(
+    productionThroughputDetails(nonTerminalPausedQueue).receiptCursorIsTerminalChunk,
+    false,
+  );
 });
 
 test('guarded benchmark fails closed when the buffered queue budget drifts from the default ceiling', () => {
