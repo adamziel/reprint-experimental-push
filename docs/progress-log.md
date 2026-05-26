@@ -6,21 +6,21 @@ linked implementation artifacts.
 
 ## 2026-05-26 - Current Supervisor Snapshot
 
-- Status: `88674b4bdd8f936f9aab4c1938a3ae3e5267b315` is the live reliable head and the latest
-  support-side release-verifier evidence.
+- Status: `50751002253e7ba1a0256261ea903dea78f4e5a5` is the live reliable head and the latest
+  checked release-path support evidence.
 - Trend: the public progress page now needs a freshness catch-up to the new live
-  head; the gate posture remains conservative.
-- Blocker: this is still support evidence, not production-backed auth/session
-  lifecycle or durable-journal ownership on the release boundary.
+  head; the gate posture remains conservative at `0/4`.
+- Blocker: the checked packaged verifier is still timing out in the readiness
+  wait on `GET /wp-json/reprint/v1/push/snapshot` with repeated
+  `502 "WordPress is not ready yet"`, so production-backed auth/session
+  lifecycle and durable-journal ownership remain unproven.
 - Next nudge: `progress-publisher` should refresh the public head to
-  `88674b4bdd8f936f9aab4c1938a3ae3e5267b315`, and reliable executor should
-  move to the next gate dependency: production auth/session lifecycle,
-  durable journal ownership, or a concrete blocking command naming the missing
-  primitive.
+  `50751002253e7ba1a0256261ea903dea78f4e5a5`, and reliable executor should
+  fix the packaged readiness wait before moving to the next gate dependency.
 - Public page: [progress.html](../progress.html) shows a visible last-updated
   date and keeps the supervisor view short.
 - Feedback-lane verification after checking the live head: `git ls-remote`
-  reports `88674b4bdd8f936f9aab4c1938a3ae3e5267b315` for
+  reports `50751002253e7ba1a0256261ea903dea78f4e5a5` for
   `lane/reliable-executor`, and the public page should reflect that head.
 
 <details>
