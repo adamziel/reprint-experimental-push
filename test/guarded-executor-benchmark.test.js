@@ -142,6 +142,13 @@ test('guarded executor benchmark moves buffers and row payloads through durable 
   assert.equal(report.throughput.productionThroughput, 'not-claimed');
 });
 
+test('guarded executor benchmark keeps the published throughput details in sync with computed details', () => {
+  const report = smallBenchmark();
+  const computed = productionThroughputDetails(report);
+
+  assert.deepEqual(report.claims.productionThroughputDetails, computed);
+});
+
 test('guarded benchmark blocks row-batch executor claims when the measured surface is not visible', () => {
   const report = smallBenchmark();
   const tampered = clone(report);
