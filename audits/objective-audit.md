@@ -7,24 +7,24 @@ The project is **not releasable as a production WordPress push path**.
 Fresh remote heads at audit time, checked on May 26, 2026:
 
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `c9a0e53d`
-- `origin/lane/reliable-executor` -> `27c9bdd0`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `c8614f52`
+- `origin/lane/reliable-executor` -> `5e422878`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `f62cbbd8`
 - `origin/lane/same-plan-wordpress-graph-create` -> `0d2178e9`
-- `origin/lane/no-data-loss-recovery` -> `e84ce6e9`
+- `origin/lane/no-data-loss-recovery` -> `1214c397`
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `270d8cc6`
 - `origin/lane/no-data-loss-invariants` -> `b5c81374`
-- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `4c32012a`
+- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `e9fa3af2`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `e84ce6e9`
-- `origin/lane/critic` -> `9f93f0c4`
+- `origin/lane/critic` -> `702041bc`
 - `origin/lane/fast-paths` -> `cd0fddad`
 - `origin/lane/progress-publisher` -> `7695e1f9`
-- `origin/lane/cycle-20260525-mainwindows-2349/critic` -> `9f93f0c4`
-- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `f574ab87`
+- `origin/lane/cycle-20260525-mainwindows-2349/critic` -> `702041bc`
+- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `270d8cc6`
 - `origin/lane/cycle-20260525-mainwindows-2349/same-plan-wordpress-graph-create` -> `0d2178e9`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-invariants` -> `b5c81374`
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `c9a0e53d`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `c8614f52`
-- `origin/lane/no-data-loss-recovery` -> `e84ce6e9`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `f62cbbd8`
+- `origin/lane/no-data-loss-recovery` -> `1214c397`
 - `origin/lane/cycle-20260525-mainwindows-2357/no-data-loss-invariants-graph-proof` -> `98c0ce26`
 - `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration` -> `a3a900d7`
 - `origin/main` -> `e55864f4`
@@ -37,7 +37,7 @@ Fresh lane proof since the last audit pass improved the local evidence floor,
 but it did not change the release conclusion:
 
 - `origin/lane/reliable-executor` now tightens live proof failure reporting at
-  `27c9bdd0`. That improves the wrapper boundary, but the live proof path is
+  `33c0958b`. That improves the wrapper boundary, but the live proof path is
   still lab-backed and the verdict does not move.
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` has advanced to
   `270d8cc6`, which continues the fail-closed headroom tightening. It is still
