@@ -1811,10 +1811,17 @@ function summarizeAuthSessionLifecycle(trace) {
       rotated: Boolean(entry.rotated),
       preserved: Boolean(entry.preserved),
     }));
+  const readObservation = [...observations]
+    .reverse()
+    .find((entry) => entry.step === 'journal'
+      || entry.step === 'replay'
+      || entry.step === 'apply'
+      || entry.step === 'dry-run'
+      || entry.step === 'preflight') ?? null;
 
   return {
     issued: observations[0] ?? null,
-    read: observations.find((entry) => entry.step === 'preflight' || entry.step === 'dry-run' || entry.step === 'apply') ?? null,
+    read: readObservation,
     expired: observations.find((entry) => entry.expired) ?? null,
     revoked: observations.find((entry) => entry.revoked) ?? null,
     cleanedUp: observations.find((entry) => entry.cleanedUp) ?? null,
