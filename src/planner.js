@@ -639,7 +639,7 @@ function buildPluginOwnedResourcePolicy({ base, local, remote, intents }) {
           className: 'unsupported-plugin-owned-resource',
           resourceKind: customTable ? 'custom-table' : null,
           reason: customTable
-            ? 'Plugin-owned custom tables are not yet supported by the planner.'
+            ? 'Plugin-owned custom tables, including deletes, are not yet supported by the planner.'
             : 'Plugin-owned resource has no explicit driver metadata and cannot be applied safely.',
         };
       }

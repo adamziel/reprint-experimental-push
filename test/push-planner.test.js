@@ -11259,6 +11259,49 @@ test('blocks unknown plugin-owned custom table rows while preserving matching in
   assert.equal(pluginFileDecision.decision, 'keep-remote');
 });
 
+test('blocks unknown plugin-owned custom table deletes while preserving matching independent edit and remote-only plugin drift', () => {
+  const resourceKey = 'row:["wp_forms_entries","entry_id:10"]';
+  const base = baseSite();
+  base.db.wp_forms_entries = {
+    'entry_id:10': { entry_id: 10, payload: 'base-private-entry', __pluginOwner: 'forms' },
+  };
+  base.db.wp_posts['ID:1'] = { ID: 1, post_title: 'Shared title', post_status: 'publish' };
+  base.files['about.php'] = '<?php echo "base about";';
+
+  const local = baseSite();
+  local.db.wp_forms_entries = {
+    'entry_id:10': { entry_id: 10, payload: 'base-private-entry', __pluginOwner: 'forms' },
+  };
+  delete local.db.wp_forms_entries['entry_id:10'];
+  local.files['about.php'] = '<?php echo "shared about";';
+
+  const remote = baseSite();
+  remote.db.wp_forms_entries = {
+    'entry_id:10': { entry_id: 10, payload: 'base-private-entry', __pluginOwner: 'forms' },
+  };
+  remote.files['about.php'] = '<?php echo "shared about";';
+  remote.plugins.forms.description = 'remote-only plugin drift';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin drift */';
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers[0];
+  const matchingEdit = decisionFor(plan, 'file:about.php');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const blockerJson = JSON.stringify(blocker);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(blocker.class, 'unsupported-plugin-owned-resource');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.resourceKind, 'custom-table');
+  assert.equal(blocker.reason, 'Plugin-owned custom tables, including deletes, are not yet supported by the planner.');
+  assert.equal(blockerJson.includes('base-private-entry'), false);
+  assert.equal(matchingEdit.decision, 'already-in-sync');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+});
+
 test('blocks forged generic drivers on unknown plugin-owned custom table rows while preserving matching independent edits and remote-only plugin drift', () => {
   const resourceKey = 'row:["wp_forms_entries","entry_id:9"]';
   const base = baseSite();
@@ -11753,6 +11796,85 @@ test('blocks plugin-owned custom tables with missing policy candidates while pre
   assert.equal(planJson.includes('remote-only plugin drift'), false);
   assert.equal(remote.plugins.seo.description, 'remote-only plugin drift');
   assert.equal(remote.files['wp-content/plugins/seo/seo.php'], '<?php /* remote-only plugin drift */');
+});
+
+test('blocks conflicting plugin-owned custom table driver metadata while preserving remote-only plugin drift', () => {
+  const resourceKey = 'row:["wp_forms_archive","ID:7"]';
+  const base = baseSite();
+  base.db.wp_forms_archive = {
+    'ID:7': {
+      ID: 7,
+      __pluginOwner: 'forms',
+      label: 'Base forms archive row',
+    },
+  };
+  base.meta = {
+    pushPolicy: {
+      allowedResources: {
+        [resourceKey]: {
+          pluginOwner: 'forms',
+          driver: 'wp-option',
+        },
+      },
+    },
+  };
+
+  const local = baseSite();
+  local.db.wp_forms_archive = {
+    'ID:7': {
+      ID: 7,
+      __pluginOwner: 'forms',
+      label: 'Local forms archive row',
+    },
+  };
+  local.meta = {
+    pushPolicy: {
+      allowedResources: {
+        [resourceKey]: {
+          pluginOwner: 'forms',
+          driver: 'wp-postmeta',
+        },
+      },
+    },
+  };
+
+  const remote = baseSite();
+  remote.db.wp_forms_archive = {
+    'ID:7': {
+      ID: 7,
+      __pluginOwner: 'forms',
+      label: 'Base forms archive row',
+    },
+  };
+  remote.meta = {
+    pushPolicy: {
+      allowedResources: {
+        [resourceKey]: {
+          pluginOwner: 'forms',
+          driver: 'wp-option',
+        },
+      },
+    },
+  };
+  remote.plugins.forms.description = 'remote-only plugin drift';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin drift */';
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers[0];
+  const blockerJson = JSON.stringify(blocker);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(plan.conflicts.length, 0);
+  assert.equal(blocker.class, 'unsupported-plugin-owned-resource');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.resourceKind, 'custom-table');
+  assert.equal(blocker.reason, 'Plugin-owned resource has conflicting driver metadata and cannot be applied safely.');
+  assert.equal(blockerJson.includes('Local forms archive row'), false);
+  assert.equal(blockerJson.includes('Remote forms archive row'), false);
+  assert.equal(decisionFor(plan, 'plugin:forms').decision, 'keep-remote');
+  assert.equal(decisionFor(plan, 'file:wp-content/plugins/forms/forms.php').decision, 'keep-remote');
 });
 
 test('blocks plugin-owned deletes with missing driver metadata while preserving matching independent delete, restore, and remote-only plugin drift', () => {
@@ -17672,6 +17794,7 @@ test('blocks local post-parent references to a same-plan created nav menu item w
   };
 
   const local = baseSite();
+  local.db.wp_posts['ID:1'].post_title = 'Shared post title';
   local.db.wp_posts['ID:47'] = {
     ID: 47,
     post_title: 'Local child post',
@@ -17690,6 +17813,7 @@ test('blocks local post-parent references to a same-plan created nav menu item w
 
   const remote = baseSite();
   remote.db.wp_posts['ID:47'] = JSON.parse(JSON.stringify(base.db.wp_posts['ID:47']));
+  remote.db.wp_posts['ID:1'].post_title = 'Shared post title';
   remote.plugins.forms.description = 'remote-only plugin drift';
 
   const plan = planFor(base, local, remote);
