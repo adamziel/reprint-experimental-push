@@ -24322,6 +24322,47 @@ test('blocks unsupported linkTarget-only special file entries while preserving r
   assert.equal(remote.plugins.forms.description, 'remote-only plugin drift');
 });
 
+test('blocks unsupported linkTarget-only special file entries while preserving a matching independent delete and remote-only plugin removals', () => {
+  const resourceKey = 'file:wp-content/uploads/link-target-delete';
+  const base = baseSite();
+  base.files['wp-content/uploads/link-target-delete'] = { linkTarget: '../shared/link-target-delete' };
+  base.files['about.php'] = '<?php echo "base about";';
+
+  const local = baseSite();
+  local.files['wp-content/uploads/link-target-delete'] = { linkTarget: '../shared/local-link-target-delete' };
+  delete local.files['about.php'];
+
+  const remote = baseSite();
+  remote.files['wp-content/uploads/link-target-delete'] = JSON.parse(JSON.stringify(base.files['wp-content/uploads/link-target-delete']));
+  delete remote.files['about.php'];
+  delete remote.plugins.forms;
+  delete remote.files['wp-content/plugins/forms/forms.php'];
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers[0];
+  const matchingDelete = decisionFor(plan, 'file:about.php');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(plan.conflicts.length, 0);
+  assert.equal(blocker.class, 'unsupported-special-file-resource');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.reason, 'Special file entries are not yet supported by the planner.');
+  assert.equal(matchingDelete.decision, 'already-in-sync');
+  assert.equal(matchingDelete.change.localChange, 'delete');
+  assert.equal(matchingDelete.change.remoteChange, 'delete');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('../shared/local-link-target-delete'), false);
+  assert.equal(planJson.includes('../shared/link-target-delete'), false);
+  assert.equal(remote.plugins.forms, undefined);
+  assert.equal(remote.files['wp-content/plugins/forms/forms.php'], undefined);
+});
+
 test('blocks unsupported pipe special file entries while preserving remote-only plugin changes', () => {
   const resourceKey = 'file:wp-content/uploads/pipe';
   const base = baseSite();
