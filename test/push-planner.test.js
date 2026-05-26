@@ -12486,6 +12486,16 @@ test('fixture forms lab table requires exact driver and active fixture plugin ev
 
   local.meta = {
     pushPolicy: pluginOwnedResourcePolicy(
+      allowedPluginOwnedResource(resourceKey, 'forms', 'wp-option'),
+    ),
+  };
+  const forgedGenericDriver = planFor(base, local, remote);
+  assert.equal(forgedGenericDriver.status, 'blocked');
+  assert.equal(forgedGenericDriver.blockers[0].class, 'unsupported-plugin-owned-resource');
+  assert.equal(forgedGenericDriver.blockers[0].resourceKind, 'custom-table');
+
+  local.meta = {
+    pushPolicy: pluginOwnedResourcePolicy(
       allowedPluginOwnedResource(resourceKey, 'forms', 'fixture-forms-lab-table'),
     ),
   };

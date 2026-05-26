@@ -30,6 +30,8 @@ const PLUGIN_DATA_DRIVER_TABLES = new Map([
   ['wp-user-meta', 'wp_usermeta'],
 ]);
 
+const PLUGIN_DATA_DRIVER_TABLE_NAMES = new Set(PLUGIN_DATA_DRIVER_TABLES.values());
+
 export function createPushPlan({ base, local, remote, now = new Date() }) {
   const plan = {
     schemaVersion: 1,
@@ -648,13 +650,15 @@ function buildPluginOwnedResourcePolicy({ base, local, remote, intents }) {
         SUPPORTED_PLUGIN_DATA_DRIVERS.has(entry.driver)
         && pluginOwnedPolicyEntryMatchesResource(entry, resource, owner));
       if (!supported) {
-        const unsupportedCustomTable = withDriver.driver !== 'fixture-forms-lab-table'
-          && resource.type === 'row'
+        const supportedDriverTable = PLUGIN_DATA_DRIVER_TABLES.get(withDriver.driver);
+        const unsupportedCustomTable = resource.type === 'row'
           && typeof resource.table === 'string'
-          && !PLUGIN_DATA_DRIVER_TABLES.has(withDriver.driver);
+          && resource.table !== supportedDriverTable
+          && !PLUGIN_DATA_DRIVER_TABLE_NAMES.has(resource.table);
         return {
           supported: false,
           className: 'unsupported-plugin-owned-resource',
+          resourceKind: unsupportedCustomTable ? 'custom-table' : 'row',
           driver: withDriver.driver,
           policySource: withDriver.source,
           reason: unsupportedCustomTable
@@ -1944,6 +1948,7 @@ function addPluginOwnedResourceBlocker(plan, {
     resource,
     resourceKey: resource.key,
     pluginOwner: owner,
+    resourceKind: support.resourceKind || null,
     driver: support.driver || null,
     policySource: support.policySource || null,
     ...(ownerContext.length > 0 ? { ownerContext, ownerContextTruncated: Boolean((support.ownerContext || []).length > ownerContext.length) } : {}),
