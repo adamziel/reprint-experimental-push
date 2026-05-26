@@ -7,11 +7,11 @@ The project is **not releasable as a production WordPress push path**.
 - Fresh remote heads at audit time, checked on May 26, 2026:
 
 - `origin/lane/reliable-executor` -> `618d4694`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `15be9462`
-- `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration` -> `68f98ff8`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `6fa43e62`
+- `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration` -> `29fff11d`
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `6c9e7d36`
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `0a50d5b3`
-- `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `4f6468b8`
+- `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `e8e3224e`
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `2d233260`
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` -> `9e05da5e`
 - `origin/lane/no-data-loss-invariants` -> `8596e3be`
@@ -34,9 +34,9 @@ but it did not change the release conclusion:
   shaped proof timeout handling again, but still not proving production
   auth/session lifecycle or a live-source mutation boundary.
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now records
-  `15be9462`, refreshing public progress freshness only.
+  `6fa43e62`, refreshing public progress freshness only.
 - `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration`
-  now records `68f98ff8`, tightening stale graph-identity assertions only.
+  now records `29fff11d`, adding featured image attachment drift proof only.
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` now records
   `6c9e7d36`. This refreshes the audit snapshot only and does not change the
   release boundary.
@@ -45,7 +45,7 @@ but it did not change the release conclusion:
 - `origin/lane/no-data-loss-invariants` now records `8596e3be`, adding special-
   file descendant delete guarding only.
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` now
-  records `4f6468b8`, tightening remote recovery path traversal blocking. It still does
+  records `e8e3224e`, tightening recovery artifact path fencing. It still does
   not add production-backed journal ownership or replay proof.
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now records
   `2d233260`, refreshing the supervisor progress surface only.
