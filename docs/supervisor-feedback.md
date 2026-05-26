@@ -1,22 +1,22 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-26 13:35 CEST
+Last updated: 2026-05-26 13:41 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
 
-## 2026-05-26 13:35 CEST - Reliable Head Correction
+## 2026-05-26 13:41 CEST - Reliable Head Correction
 
-- Going well: `66492522086b05d808b1fe64aa8b1b1433012000` is now the current
-  reliable head from `git ls-remote`, but the public progress page is still
-  lagging behind it.
+- Going well: `f770a1ec3cfc77ab020781536b52b75f1ca38afc` is the current
+  reliable head from `git ls-remote`, and the public progress page is now
+  aligned with it.
 - Not going well: the checked release path still lacks production-backed
   auth/session lifecycle and fenced durable-journal semantics, so the gate
   stays `0/4`.
-- Progress change: this is another head correction only; no gate moved.
+- Progress change: the public freshness correction landed; no gate moved.
 - Next nudge: keep `progress-publisher` quiet unless the public page falls
-  behind `66492522086b05d808b1fe64aa8b1b1433012000`, and keep `reliable-executor` on the next
-  production-boundary proof.
+  behind `f770a1ec3cfc77ab020781536b52b75f1ca38afc`, and keep
+  `reliable-executor` on the next production-boundary proof.
 
 ## 2026-05-26 13:24 CEST - Reliable Head Correction
 
