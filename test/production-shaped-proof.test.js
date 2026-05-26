@@ -21,6 +21,10 @@ import {
   resolvePackagedProductionPluginSourceCommand,
 } from '../scripts/playground/packaged-production-plugin-source-command.js';
 import {
+  evaluateProductionAuthSessionLifecycle,
+  isExpiredAuthSession,
+} from '../scripts/playground/production-auth-session-lifecycle.js';
+import {
   loadBlueprintSnapshotFixture,
   resolveBlueprintSnapshotFixturePath,
 } from '../scripts/playground/blueprint-snapshot-fixture.js';
@@ -884,6 +888,64 @@ test('packaged production plugin runtime source binding replaces the stale comma
   });
 });
 
+test('production auth/session lifecycle helper requires an active unexpired packaged session', () => {
+  assert.deepEqual(
+    evaluateProductionAuthSessionLifecycle({
+      id: 'psh_01j00000000000000000000000',
+      type: 'production-auth-session',
+      status: 'active',
+      expiresAt: '2099-01-01T00:00:00Z',
+    }),
+    {
+      ok: true,
+      required: 'production-auth-session lifecycle',
+      observed: 'production-auth-session',
+    },
+  );
+
+  assert.deepEqual(
+    evaluateProductionAuthSessionLifecycle({
+      id: 'psh_01j00000000000000000000000',
+      type: 'production-auth-session',
+      status: 'active',
+    }),
+    {
+      ok: false,
+      required: 'unexpired',
+      observed: 'missing',
+    },
+  );
+
+  assert.deepEqual(
+    evaluateProductionAuthSessionLifecycle({
+      id: 'psh_01j00000000000000000000000',
+      type: 'production-auth-session',
+      status: 'revoked',
+      expiresAt: '2099-01-01T00:00:00Z',
+    }),
+    {
+      ok: false,
+      required: 'active',
+      observed: 'revoked',
+    },
+  );
+});
+
+test('production auth/session lifecycle helper treats invalid or past expiry as expired', () => {
+  assert.equal(
+    isExpiredAuthSession({ expiresAt: '2000-01-01T00:00:00Z' }, new Date('2000-01-01T00:00:01Z')),
+    true,
+  );
+  assert.equal(
+    isExpiredAuthSession({ expiresAt: 'not-a-date' }, new Date('2000-01-01T00:00:01Z')),
+    true,
+  );
+  assert.equal(
+    isExpiredAuthSession({ expiresAt: '2099-01-01T00:00:00Z' }, new Date('2000-01-01T00:00:01Z')),
+    false,
+  );
+});
+
 maybeTest('production-shaped release verify command consumes the packaged production auth/session source command when production auth/session is required', async () => {
   await withPlaygroundServer('remote-base', path.join(repoRoot, 'fixtures/playground/remote-base.blueprint.json'), async (remoteServer) => {
     const expectedSourceCommand = resolvePackagedProductionPluginSourceCommand({
@@ -919,6 +981,15 @@ maybeTest('production-shaped release verify command consumes the packaged produc
       new RegExp(`"authSessionSource": \\{\\s*"command": ${JSON.stringify(expectedSourceCommand)},\\s*"ok": true,\\s*"sourceUrl": "http:\\/\\/127\\.0\\.0\\.1:\\d+"`),
     );
     assert.match(proof.stdout, /"liveAuthSessionSource": \{[\s\S]*"requiredCommand": "REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND"/);
+    assert.match(proof.stdout, /"preflight": \{\s*"status": 200,\s*"authSessionType": "production-auth-session"/);
+    assert.match(
+      proof.stdout,
+      /"authSessionLifecycle": \{\s*"history": \[[\s\S]*?"minted": \{\s*"id": "[^"]+",\s*"type": "production-auth-session",\s*"status": "active",\s*"expiresAt": "[^"]+",\s*"expired": false,\s*"revoked": false,\s*"cleanedUp": false\s*\}/,
+    );
+    assert.match(
+      proof.stdout,
+      /"authSessionLifecycleSummary": \{\s*"issued": \{\s*"step": "preflight",\s*"status": "active",\s*"expired": false,\s*"revoked": false,\s*"cleanedUp": false,\s*"rotated": false,\s*"preserved": false\s*\}/,
+    );
   });
 });
 

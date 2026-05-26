@@ -14,6 +14,7 @@ import {
   loadAuthSessionSource,
   resolveAuthSessionSourceCredentials,
 } from './auth-session-source.js';
+import { evaluateProductionAuthSessionLifecycle } from './production-auth-session-lifecycle.js';
 import {
   bindPackagedProductionPluginRuntimeSource,
   isPackagedProductionPluginSourceCommand,
@@ -530,7 +531,8 @@ if (requireProductionAuthSession && !packagedProductionPluginRequested) {
     process.stdout.write('\n');
     throw new ProofFailure();
   }
-  if (preflight.status !== 200 || preflight.body?.ok !== true || preflight.body?.auth?.session?.type !== 'production-auth-session') {
+  const livePreflightLifecycle = evaluateProductionAuthSessionLifecycle(preflight.body?.auth?.session);
+  if (preflight.status !== 200 || preflight.body?.ok !== true || !livePreflightLifecycle.ok) {
     process.stdout.write(
       JSON.stringify(
         {
@@ -550,13 +552,13 @@ if (requireProductionAuthSession && !packagedProductionPluginRequested) {
               verdict: 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED',
             },
             authSession: {
-              required: 'production-auth-session',
-              observed: preflight.body?.auth?.session?.type || 'missing',
+              required: livePreflightLifecycle.required,
+              observed: livePreflightLifecycle.observed,
               verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
             },
             liveAuthSessionSource: {
               ...liveAuthSessionSourceBlocker,
-              observed: preflight.body?.auth?.session?.type || 'missing',
+              observed: livePreflightLifecycle.observed,
             },
           },
           protocolExtension,
@@ -623,6 +625,7 @@ try {
       });
 
       const preflight = await client.signedGet('/preflight', { retryable: true });
+      const checkedPreflightLifecycle = evaluateProductionAuthSessionLifecycle(preflight.body?.auth?.session);
       assert.equal(preflight.status, 200, `production-shaped release verify preflight HTTP ${preflight.status}`);
       assert.equal(preflight.body.ok, true);
 
@@ -697,7 +700,7 @@ try {
         throw new ProofFailure();
       }
 
-      if (requireProductionAuthSession && preflight.body.auth.session.type !== 'production-auth-session') {
+      if (requireProductionAuthSession && !checkedPreflightLifecycle.ok) {
         process.stdout.write(
           JSON.stringify(
             {
@@ -717,13 +720,13 @@ try {
                   verdict: 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED',
                 },
                 authSession: {
-                  required: 'production-auth-session',
-                  observed: preflight.body.auth.session.type,
+                  required: checkedPreflightLifecycle.required,
+                  observed: checkedPreflightLifecycle.observed,
                   verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
                 },
                 liveAuthSessionSource: {
                   ...liveAuthSessionSourceBlocker,
-                  observed: preflight.body.auth.session.type,
+                  observed: checkedPreflightLifecycle.observed,
                 },
               },
               protocolExtension,
@@ -766,6 +769,11 @@ try {
         preflight.body.auth.session.type,
         packagedSourceFixture ? 'production-auth-session' : 'application-password-basic',
       );
+      if (packagedSourceFixture) {
+        assert.equal(preflight.body.auth.session.status, 'active');
+        assert.equal(checkedPreflightLifecycle.ok, true);
+        assert.match(preflight.body.auth.session.expiresAt, /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/);
+      }
       assert.equal(
         preflight.body.session.type,
         packagedSourceFixture ? 'production-auth-session' : 'lab-signed-push-session',
@@ -1214,10 +1222,11 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
         }
         throw error;
       }
+      const packagedPreflightLifecycle = evaluateProductionAuthSessionLifecycle(preflightBody?.auth?.session);
       if (preflight.status === 200
         && preflightBody?.ok === true
         && preflightBody?.routeProfile?.labBacked === false
-        && preflightBody?.auth?.session?.type === 'production-auth-session') {
+        && packagedPreflightLifecycle.ok) {
         return;
       }
       if (isWordPressNotReadyResponse(preflight.status, preflightText)) {
