@@ -1924,6 +1924,7 @@ test('production auth/session lifecycle helper requires an active unexpired pack
     }),
     {
       ok: false,
+      field: 'auth.session.expiresAt',
       required: 'unexpired',
       observed: 'missing',
     },
@@ -1938,6 +1939,7 @@ test('production auth/session lifecycle helper requires an active unexpired pack
     }),
     {
       ok: false,
+      field: 'auth.session.status',
       required: 'unrevoked',
       observed: 'revoked',
     },
@@ -1952,6 +1954,7 @@ test('production auth/session lifecycle helper requires an active unexpired pack
     }),
     {
       ok: false,
+      field: 'auth.session.status',
       required: 'unrevoked',
       observed: 'cleaned-up',
     },
@@ -1966,6 +1969,7 @@ test('production auth/session lifecycle helper requires an active unexpired pack
     }),
     {
       ok: false,
+      field: 'auth.session.status',
       required: 'preserved read',
       observed: 'rotated',
     },
@@ -1998,6 +2002,7 @@ test('production auth/session lifecycle helper fails closed on string-valued cle
     }),
     {
       ok: false,
+      field: 'auth.session.cleanup',
       required: 'boolean lifecycle flags',
       observed: 'invalid-cleanup',
     },
@@ -2014,6 +2019,7 @@ test('production auth/session lifecycle helper fails closed on malformed lifecyc
     }),
     {
       ok: false,
+      field: 'auth.session.id',
       required: 'string lifecycle fields',
       observed: 'invalid-id',
     },
@@ -2028,6 +2034,7 @@ test('production auth/session lifecycle helper fails closed on malformed lifecyc
     }),
     {
       ok: false,
+      field: 'auth.session.type',
       required: 'string lifecycle fields',
       observed: 'invalid-type',
     },
@@ -2042,6 +2049,7 @@ test('production auth/session lifecycle helper fails closed on malformed lifecyc
     }),
     {
       ok: false,
+      field: 'auth.session.status',
       required: 'string lifecycle fields',
       observed: 'invalid-status',
     },
@@ -2056,6 +2064,7 @@ test('production auth/session lifecycle helper fails closed on malformed lifecyc
     }),
     {
       ok: false,
+      field: 'auth.session.expiresAt',
       required: 'string lifecycle fields',
       observed: 'invalid-expires-at',
     },
@@ -2070,6 +2079,7 @@ test('production auth/session lifecycle helper fails closed on malformed lifecyc
     }),
     {
       ok: false,
+      field: 'auth.session.type',
       required: 'string lifecycle fields',
       observed: 'invalid-type',
     },
@@ -2084,6 +2094,7 @@ test('production auth/session lifecycle helper fails closed on malformed lifecyc
     }),
     {
       ok: false,
+      field: 'auth.session.status',
       required: 'string lifecycle fields',
       observed: 'invalid-status',
     },
@@ -2098,6 +2109,7 @@ test('production auth/session lifecycle helper fails closed on malformed lifecyc
     }),
     {
       ok: false,
+      field: 'auth.session.expiresAt',
       required: 'string lifecycle fields',
       observed: 'invalid-expires-at',
     },
@@ -2151,6 +2163,7 @@ test('production auth/session lifecycle summary helper requires a preserved acti
     }),
     {
       ok: false,
+      field: 'auth.session.rotated',
       required: 'preserved read',
       observed: 'rotated',
     },
@@ -2205,6 +2218,7 @@ test('production auth/session lifecycle summary helper requires a preserved acti
     }),
     {
       ok: false,
+      field: 'auth.session.rotated',
       required: 'preserved read',
       observed: 'rotated',
     },
@@ -2250,6 +2264,7 @@ test('production auth/session lifecycle summary helper requires a preserved acti
     }),
     {
       ok: false,
+      field: 'auth.session.rotated',
       required: 'preserved read',
       observed: 'rotated',
     },
@@ -2276,6 +2291,7 @@ test('production auth/session lifecycle summary helper requires a preserved acti
     }),
     {
       ok: false,
+      field: 'auth.session.cleanedUp',
       required: 'unrevoked',
       observed: 'cleaned-up',
     },
@@ -2334,6 +2350,7 @@ test('production auth/session lifecycle summary helper requires a preserved acti
     }),
     {
       ok: false,
+      field: 'auth.session.rotated',
       required: 'preserved read',
       observed: 'rotated',
     },
@@ -2392,6 +2409,7 @@ test('production auth/session lifecycle summary helper requires a preserved acti
     }),
     {
       ok: false,
+      field: 'auth.session.status',
       required: 'unrevoked',
       observed: 'revoked',
     },
@@ -2436,6 +2454,7 @@ test('production auth/session lifecycle summary helper requires a preserved acti
     }),
     {
       ok: false,
+      field: 'auth.session.cleanedUp',
       required: 'unrevoked',
       observed: 'cleaned-up',
     },
@@ -2479,6 +2498,7 @@ test('production auth/session lifecycle summary helper requires a preserved acti
     }),
     {
       ok: false,
+      field: 'auth.session.expiresAt',
       required: 'unexpired',
       observed: '2000-01-01T00:00:00Z',
     },
@@ -2778,6 +2798,7 @@ test('production auth/session lifecycle trace summary preserves status-only revo
     evaluateProductionAuthSessionLifecycleSummary(revokedSummary),
     {
       ok: false,
+      field: 'auth.session.status',
       required: 'unrevoked',
       observed: 'revoked',
     },
@@ -2815,6 +2836,7 @@ test('production auth/session lifecycle trace summary preserves status-only revo
     evaluateProductionAuthSessionLifecycleSummary(cleanedUpSummary),
     {
       ok: false,
+      field: 'auth.session.status',
       required: 'unrevoked',
       observed: 'cleaned-up',
     },
@@ -2854,6 +2876,7 @@ test('production auth/session lifecycle trace summary preserves status-only expi
     evaluateProductionAuthSessionLifecycleSummary(expiredSummary),
     {
       ok: false,
+      field: 'auth.session.status',
       required: 'unexpired',
       observed: 'expired',
     },
@@ -3266,6 +3289,7 @@ test('production auth/session lifecycle summary fails closed when an intermediat
     evaluateProductionAuthSessionLifecycleSummary(summary),
     {
       ok: false,
+      field: 'auth.session.type',
       required: 'production-auth-session',
       observed: 'lab-auth-session',
     },
@@ -3542,6 +3566,7 @@ test('production auth/session lifecycle summary fails closed when preserved-read
     evaluateProductionAuthSessionLifecycleSummary(summary),
     {
       ok: false,
+      field: 'auth.session.preserved',
       required: 'boolean lifecycle flags',
       observed: 'invalid-preserved',
     },
@@ -3591,6 +3616,7 @@ test('production auth/session lifecycle summary fails closed when an intermediat
     evaluateProductionAuthSessionLifecycleSummary(summary),
     {
       ok: false,
+      field: 'auth.session.rotated',
       required: 'preserved read',
       observed: 'rotated',
     },
@@ -3618,6 +3644,7 @@ test('production auth/session lifecycle summary fails closed when direct preserv
     }),
     {
       ok: false,
+      field: 'auth.session.preserved',
       required: 'boolean lifecycle flags',
       observed: 'invalid-preserved',
     },
@@ -3766,6 +3793,7 @@ test('production auth/session lifecycle summary fails closed when direct issued 
     }),
     {
       ok: false,
+      field: 'auth.session.id',
       required: 'string lifecycle fields',
       observed: 'invalid-id',
     },
@@ -3791,6 +3819,7 @@ test('production auth/session lifecycle summary fails closed when direct issued 
     }),
     {
       ok: false,
+      field: 'auth.session.type',
       required: 'string lifecycle fields',
       observed: 'invalid-type',
     },
@@ -3816,6 +3845,7 @@ test('production auth/session lifecycle summary fails closed when direct issued 
     }),
     {
       ok: false,
+      field: 'auth.session.status',
       required: 'string lifecycle fields',
       observed: 'invalid-status',
     },
@@ -3897,6 +3927,7 @@ test('production auth/session lifecycle summary fails closed when direct preserv
     }),
     {
       ok: false,
+      field: 'auth.session.id',
       required: 'string lifecycle fields',
       observed: 'invalid-id',
     },
@@ -3922,6 +3953,7 @@ test('production auth/session lifecycle summary fails closed when direct preserv
     }),
     {
       ok: false,
+      field: 'auth.session.type',
       required: 'string lifecycle fields',
       observed: 'invalid-type',
     },
@@ -3947,6 +3979,7 @@ test('production auth/session lifecycle summary fails closed when direct preserv
     }),
     {
       ok: false,
+      field: 'auth.session.status',
       required: 'string lifecycle fields',
       observed: 'invalid-status',
     },
@@ -3972,6 +4005,7 @@ test('production auth/session lifecycle summary fails closed when direct preserv
     }),
     {
       ok: false,
+      field: 'auth.session.expiresAt',
       required: 'string lifecycle fields',
       observed: 'invalid-expires-at',
     },
@@ -4000,6 +4034,7 @@ test('production auth/session lifecycle summary fails closed when direct issued 
     }),
     {
       ok: false,
+      field: 'auth.session.cleanup',
       required: 'boolean lifecycle flags',
       observed: 'invalid-cleanup',
     },
@@ -4026,6 +4061,7 @@ test('production auth/session lifecycle summary fails closed when direct issued 
     }),
     {
       ok: false,
+      field: 'auth.session.rotated',
       required: 'boolean lifecycle flags',
       observed: 'invalid-rotated',
     },
@@ -4052,6 +4088,7 @@ test('production auth/session lifecycle summary fails closed when direct issued 
     }),
     {
       ok: false,
+      field: 'auth.session.preserved',
       required: 'boolean lifecycle flags',
       observed: 'invalid-preserved',
     },
@@ -4140,6 +4177,7 @@ test('production auth/session lifecycle summary fails closed when an intermediat
     }),
     {
       ok: false,
+      field: 'auth.session.status',
       required: 'string lifecycle fields',
       observed: 'invalid-status',
     },
@@ -4183,6 +4221,7 @@ test('production auth/session lifecycle summary fails closed when an intermediat
     }),
     {
       ok: false,
+      field: 'auth.session.expiresAt',
       required: 'string lifecycle fields',
       observed: 'invalid-expires-at',
     },
@@ -4284,6 +4323,7 @@ test('production auth/session lifecycle summary fails closed when direct preserv
     }),
     {
       ok: false,
+      field: 'auth.session.cleanup',
       required: 'boolean lifecycle flags',
       observed: 'invalid-cleanup',
     },
@@ -4658,6 +4698,7 @@ test('production auth/session lifecycle summary fails closed when top-level summ
     }),
     {
       ok: false,
+      field: 'auth.session.rotated',
       required: 'preserved read',
       observed: 'rotated',
     },
@@ -4692,6 +4733,7 @@ test('production auth/session lifecycle summary fails closed when top-level summ
     }),
     {
       ok: false,
+      field: 'auth.session.rotated',
       required: 'preserved read',
       observed: 'rotated',
     },
@@ -4895,6 +4937,7 @@ test('production auth/session lifecycle summary fails closed when a top-level pr
     }),
     {
       ok: false,
+      field: 'auth.session.rotated',
       required: 'preserved read',
       observed: 'rotated',
     },
@@ -4929,6 +4972,7 @@ test('production auth/session lifecycle summary fails closed when a top-level pr
     }),
     {
       ok: false,
+      field: 'auth.session.expired',
       required: 'unexpired',
       observed: 'expired',
     },
@@ -4963,6 +5007,7 @@ test('production auth/session lifecycle summary fails closed when a top-level pr
     }),
     {
       ok: false,
+      field: 'auth.session.cleanup',
       required: 'unrevoked',
       observed: 'cleaned-up',
     },
@@ -5017,6 +5062,7 @@ test('production auth/session lifecycle summary fails closed when direct issued/
     }),
     {
       ok: false,
+      field: 'auth.session.rotated',
       required: 'preserved read',
       observed: 'rotated',
     },
@@ -5043,6 +5089,7 @@ test('production auth/session lifecycle summary fails closed when direct issued/
     }),
     {
       ok: false,
+      field: 'auth.session.expired',
       required: 'unexpired',
       observed: 'expired',
     },
@@ -5295,6 +5342,7 @@ test('production auth/session lifecycle summary fails closed when a direct summa
     }),
     {
       ok: false,
+      field: 'auth.session.cleanup',
       required: 'unrevoked',
       observed: 'cleaned-up',
     },
@@ -5355,6 +5403,7 @@ test('production auth/session lifecycle summary fails closed when a direct clean
     }),
     {
       ok: false,
+      field: 'auth.session.cleanup',
       required: 'unrevoked',
       observed: 'cleaned-up',
     },
@@ -5469,6 +5518,7 @@ test('production auth/session lifecycle summary fails closed when a preserved re
     evaluateProductionAuthSessionLifecycleSummary(summary),
     {
       ok: false,
+      field: 'auth.session.cleanedUp',
       required: 'unrevoked',
       observed: 'cleaned-up',
     },
@@ -5808,6 +5858,7 @@ test('production auth/session lifecycle summary fails closed when direct issued 
     evaluateProductionAuthSessionLifecycleSummary(summary),
     {
       ok: false,
+      field: 'auth.session.revoked',
       required: 'unrevoked',
       observed: 'revoked',
     },
@@ -5953,8 +6004,9 @@ test('production auth/session lifecycle summary fails closed when direct expired
     evaluateProductionAuthSessionLifecycleSummary(summary),
     {
       ok: false,
+      field: 'auth.session.expired',
       required: 'unexpired',
-      observed: 'stale-expired-summary',
+      observed: '2098-01-01T00:00:00Z',
     },
   );
 });

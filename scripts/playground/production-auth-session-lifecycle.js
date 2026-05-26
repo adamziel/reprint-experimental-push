@@ -22,6 +22,7 @@ export function evaluateProductionAuthSessionLifecycle(session, now = Date.now()
   if (invalidLifecycleFlag) {
     return {
       ok: false,
+      field: `auth.session.${invalidLifecycleFlag}`,
       required: 'boolean lifecycle flags',
       observed: `invalid-${invalidLifecycleFlag}`,
     };
@@ -31,6 +32,7 @@ export function evaluateProductionAuthSessionLifecycle(session, now = Date.now()
   if (invalidIdentityField) {
     return {
       ok: false,
+      field: `auth.session.${invalidIdentityField === 'expires-at' ? 'expiresAt' : invalidIdentityField}`,
       required: 'string lifecycle fields',
       observed: `invalid-${invalidIdentityField}`,
     };
@@ -47,6 +49,7 @@ export function evaluateProductionAuthSessionLifecycle(session, now = Date.now()
   if (observedType !== 'production-auth-session') {
     return {
       ok: false,
+      field: 'auth.session.type',
       required: 'production-auth-session',
       observed: observedType,
     };
@@ -55,6 +58,7 @@ export function evaluateProductionAuthSessionLifecycle(session, now = Date.now()
   if (revoked || cleanedUp) {
     return {
       ok: false,
+      field: resolveProductionAuthSessionUnrevokedField(session),
       required: 'unrevoked',
       observed: revoked ? 'revoked' : 'cleaned-up',
     };
@@ -63,6 +67,7 @@ export function evaluateProductionAuthSessionLifecycle(session, now = Date.now()
   if (rotated) {
     return {
       ok: false,
+      field: session?.rotated === true ? 'auth.session.rotated' : 'auth.session.status',
       required: 'preserved read',
       observed: 'rotated',
     };
@@ -71,6 +76,7 @@ export function evaluateProductionAuthSessionLifecycle(session, now = Date.now()
   if (expired) {
     return {
       ok: false,
+      field: resolveProductionAuthSessionExpiredField(session),
       required: 'unexpired',
       observed: observedStatus === 'expired' ? 'expired' : observedExpiresAt,
     };
@@ -79,6 +85,7 @@ export function evaluateProductionAuthSessionLifecycle(session, now = Date.now()
   if (observedStatus !== 'active') {
     return {
       ok: false,
+      field: 'auth.session.status',
       required: 'active',
       observed: observedStatus,
     };
@@ -87,6 +94,7 @@ export function evaluateProductionAuthSessionLifecycle(session, now = Date.now()
   if (!session?.expiresAt) {
     return {
       ok: false,
+      field: 'auth.session.expiresAt',
       required: 'unexpired',
       observed: observedExpiresAt,
     };
@@ -245,6 +253,7 @@ export function evaluateProductionAuthSessionLifecycleSummary(summary, now = Dat
   if (!issuedSessionId || !readSessionId || issuedSessionId !== readSessionId) {
     return {
       ok: false,
+      field: readObservation.status === 'rotated' ? 'auth.session.status' : 'auth.session.rotated',
       required: 'preserved read',
       observed: 'rotated',
     };
@@ -305,6 +314,7 @@ export function evaluateProductionAuthSessionLifecycleSummary(summary, now = Dat
     ) {
       return {
         ok: false,
+        field: observation.status === 'rotated' ? 'auth.session.status' : 'auth.session.rotated',
         required: 'preserved read',
         observed: 'rotated',
       };
@@ -312,6 +322,7 @@ export function evaluateProductionAuthSessionLifecycleSummary(summary, now = Dat
     if (observationSessionId && observationSessionId !== issuedSessionId) {
       return {
         ok: false,
+        field: observation.status === 'rotated' ? 'auth.session.status' : 'auth.session.rotated',
         required: 'preserved read',
         observed: 'rotated',
       };
@@ -415,6 +426,7 @@ export function evaluateProductionAuthSessionLifecycleSummary(summary, now = Dat
   if (summary.rotated) {
     return {
       ok: false,
+      field: summary.rotated.status === 'rotated' ? 'auth.session.status' : 'auth.session.rotated',
       required: 'preserved read',
       observed: 'rotated',
     };
@@ -423,6 +435,11 @@ export function evaluateProductionAuthSessionLifecycleSummary(summary, now = Dat
   if (summary.revoked || summary.cleanedUp || summary.cleanup) {
     return {
       ok: false,
+      field: summary.revoked
+        ? (summary.revoked.status === 'revoked' ? 'auth.session.status' : 'auth.session.revoked')
+        : summary.cleanedUp
+          ? (summary.cleanedUp.status === 'cleaned-up' ? 'auth.session.status' : 'auth.session.cleanedUp')
+          : 'auth.session.cleanup',
       required: 'unrevoked',
       observed: summary.revoked ? 'revoked' : 'cleaned-up',
     };
@@ -431,6 +448,7 @@ export function evaluateProductionAuthSessionLifecycleSummary(summary, now = Dat
   if (summary.expired) {
     return {
       ok: false,
+      field: summary.expired.status === 'expired' ? 'auth.session.status' : 'auth.session.expired',
       required: 'unexpired',
       observed: summary.expired.expiresAt || 'expired',
     };
@@ -547,6 +565,38 @@ function normalizeAuthSessionObservationStep(step) {
   }
 
   return step;
+}
+
+function resolveProductionAuthSessionUnrevokedField(observation) {
+  if (observation?.status === 'revoked') {
+    return 'auth.session.status';
+  }
+
+  if (observation?.revoked === true) {
+    return 'auth.session.revoked';
+  }
+
+  if (observation?.status === 'cleaned-up') {
+    return 'auth.session.status';
+  }
+
+  if (observation?.cleanedUp === true) {
+    return 'auth.session.cleanedUp';
+  }
+
+  return 'auth.session.cleanup';
+}
+
+function resolveProductionAuthSessionExpiredField(observation) {
+  if (observation?.status === 'expired') {
+    return 'auth.session.status';
+  }
+
+  if (observation?.expired === true) {
+    return 'auth.session.expired';
+  }
+
+  return 'auth.session.expiresAt';
 }
 
 function resolveInvalidAuthSessionLifecycleFlag(observation) {
@@ -711,6 +761,7 @@ function resolveMismatchedSummaryObservationSession(summary, issuedSessionId) {
     if (observationSessionId && observationSessionId !== issuedSessionId) {
       return {
         ok: false,
+        field: 'auth.session.rotated',
         required: 'preserved read',
         observed: 'rotated',
       };
@@ -737,6 +788,7 @@ function resolveMismatchedSummaryReadObservation(readObservation, observations) 
   if (readSessionId && lastObservedReadSessionId && readSessionId !== lastObservedReadSessionId) {
     return {
       ok: false,
+      field: 'auth.session.rotated',
       required: 'preserved read',
       observed: 'rotated',
     };
@@ -876,9 +928,37 @@ function resolveInvalidReadLifecycleOutcome(observation, required) {
     return null;
   }
 
+  if (observation.status === 'revoked') {
+    return {
+      ok: false,
+      field: 'auth.session.status',
+      required: 'unrevoked',
+      observed: 'revoked',
+    };
+  }
+
+  if (observation.status === 'cleaned-up') {
+    return {
+      ok: false,
+      field: 'auth.session.status',
+      required: 'unrevoked',
+      observed: 'cleaned-up',
+    };
+  }
+
+  if (observation.status === 'expired') {
+    return {
+      ok: false,
+      field: 'auth.session.status',
+      required: 'unexpired',
+      observed: 'expired',
+    };
+  }
+
   if (observation.expired === true) {
     return {
       ok: false,
+      field: 'auth.session.expired',
       required: 'unexpired',
       observed: 'expired',
     };
@@ -887,6 +967,7 @@ function resolveInvalidReadLifecycleOutcome(observation, required) {
   if (observation.revoked === true) {
     return {
       ok: false,
+      field: 'auth.session.revoked',
       required: 'unrevoked',
       observed: 'revoked',
     };
@@ -895,6 +976,7 @@ function resolveInvalidReadLifecycleOutcome(observation, required) {
   if (observation.cleanedUp === true || observation.cleanup === true) {
     return {
       ok: false,
+      field: observation.cleanedUp === true ? 'auth.session.cleanedUp' : 'auth.session.cleanup',
       required: 'unrevoked',
       observed: 'cleaned-up',
     };
@@ -903,6 +985,7 @@ function resolveInvalidReadLifecycleOutcome(observation, required) {
   if (observation.rotated === true || observation.status === 'rotated') {
     return {
       ok: false,
+      field: observation.status === 'rotated' ? 'auth.session.status' : 'auth.session.rotated',
       required,
       observed: 'rotated',
     };
