@@ -1443,3 +1443,17 @@ test('guarded benchmark treats missing measured backpressure proof as incomplete
   assert.equal(details.backpressureConsistency.backpressureEvidenceComplete, false);
   assert.ok(blockers.includes('queue-pause-without-measured-receipt-cursor-backpressure-proof'));
 });
+
+test('guarded benchmark keeps pause detail flags false when the chunk exceeds the queue budget', () => {
+  const report = smallBenchmark({
+    fileBytes: 64 * 1024 * 1024,
+    chunkSizeBytes: 64 * 1024 * 1024,
+  });
+
+  assert.equal(report.evidence.backpressure.queuePausedBeforeOverflow, false);
+  assert.equal(report.evidence.backpressure.queuePauseHasMeasuredReceiptCursorQueueSlack, false);
+  assert.equal(report.evidence.backpressure.queuePauseHasMeasuredReceiptCursorBackpressure, false);
+  assert.equal(report.evidence.backpressure.queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack, false);
+  assert.equal(report.evidence.backpressure.queuePauseHasBackpressureAlignedReceiptCursorQueueSlack, false);
+  assert.equal(report.claims.productionThroughput.status, 'blocked');
+});

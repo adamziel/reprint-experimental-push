@@ -959,24 +959,24 @@ function hasCompleteBackpressureEvidence(report) {
     Number.isFinite(receiptCursorMemoryHeadroomBytes)
     && receiptCursorMemoryHeadroomBytes > 0;
   const queuePauseHasMeasuredReceiptCursorQueueSlack =
-    report.evidence.backpressure?.queuePausedBeforeOverflow !== true
-    || (
+    report.evidence.backpressure?.queuePausedBeforeOverflow === true
+    && (
       queueHeadroomMeasured
       && Number.isFinite(receiptCursorQueueSlackBytes)
       && receiptCursorQueueSlackBytes > 0
       && report.evidence.backpressure?.queuePauseHasMeasuredReceiptCursorQueueSlack === true
     );
   const queuePauseHasMeasuredReceiptCursorBackpressure =
-    report.evidence.backpressure?.queuePausedBeforeOverflow !== true
-    || (
+    report.evidence.backpressure?.queuePausedBeforeOverflow === true
+    && (
       queueHeadroomMeasured
       && Number.isFinite(receiptCursorBackpressureBytes)
       && receiptCursorBackpressureBytes > 0
       && report.evidence.backpressure?.queuePauseHasMeasuredReceiptCursorBackpressure === true
     );
   const queuePauseHasBackpressureAlignedReceiptCursorQueueSlack =
-    report.evidence.backpressure?.queuePausedBeforeOverflow !== true
-    || (
+    report.evidence.backpressure?.queuePausedBeforeOverflow === true
+    && (
       Number.isFinite(receiptCursorQueueSlackBytes)
       && Number.isFinite(receiptCursorQueueBudgetBytes)
       && Number.isFinite(receiptCursorBackpressureBytes)
@@ -987,8 +987,8 @@ function hasCompleteBackpressureEvidence(report) {
     Number.isFinite(receiptCursorQueueBudgetBytes)
     && report.evidence.backpressure?.receiptCursorMemoryCeilingMatchesQueueBudget === true;
   const queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack =
-    report.evidence.backpressure?.queuePausedBeforeOverflow !== true
-    || (
+    report.evidence.backpressure?.queuePausedBeforeOverflow === true
+    && (
       queuePauseHasMeasuredReceiptCursorQueueSlack
       && queuePauseHasBackpressureAlignedReceiptCursorQueueSlack
       && report.evidence.backpressure?.queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack === true
@@ -1404,6 +1404,7 @@ function buildReport({
     Number.isFinite(config.maxBufferedUploadBytes)
     && Number.isFinite(config.chunkSizeBytes)
     && config.maxBufferedUploadBytes - config.chunkSizeBytes > 0;
+  const queuePausedBeforeOverflow = config.chunkSizeBytes <= config.maxBufferedUploadBytes;
 
   return {
     schemaVersion: 1,
@@ -1518,7 +1519,7 @@ function buildReport({
         queueHeadroomMeasured,
         queueBudgetMatchesResourceCeiling:
           config.maxBufferedUploadBytes === DEFAULT_LIMITS.maxBufferedUploadBytes,
-        queuePausedBeforeOverflow: config.chunkSizeBytes <= config.maxBufferedUploadBytes,
+        queuePausedBeforeOverflow,
         chunkWindowBytes: config.chunkSizeBytes,
         receiptCursorBytes: lastChunkReceipt?.sizeBytes ?? null,
         receiptCursorQueueSlackBytes:
@@ -1542,51 +1543,41 @@ function buildReport({
           Number.isFinite(lastChunkReceipt?.sizeBytes)
           && lastChunkReceipt.sizeBytes <= config.maxBufferedUploadBytes,
         queuePauseHasMeasuredReceiptCursorQueueSlack:
-          config.chunkSizeBytes > config.maxBufferedUploadBytes
-          || (
-            queueHeadroomMeasured
-            && Number.isFinite(lastChunkReceipt?.sizeBytes)
-            && Number.isFinite(config.maxBufferedUploadBytes)
-            && config.maxBufferedUploadBytes - lastChunkReceipt.sizeBytes > 0
-          ),
+          queuePausedBeforeOverflow === true
+          && queueHeadroomMeasured
+          && Number.isFinite(lastChunkReceipt?.sizeBytes)
+          && Number.isFinite(config.maxBufferedUploadBytes)
+          && config.maxBufferedUploadBytes - lastChunkReceipt.sizeBytes > 0,
         queuePauseHasMeasuredReceiptCursorBackpressure:
-          config.chunkSizeBytes > config.maxBufferedUploadBytes
-          || (
-            queueHeadroomMeasured
-            && Number.isFinite(lastChunkReceipt?.sizeBytes)
-            && Number.isFinite(config.maxBufferedUploadBytes)
-            && lastChunkReceipt.sizeBytes > 0
-          ),
+          queuePausedBeforeOverflow === true
+          && queueHeadroomMeasured
+          && Number.isFinite(lastChunkReceipt?.sizeBytes)
+          && Number.isFinite(config.maxBufferedUploadBytes)
+          && lastChunkReceipt.sizeBytes > 0,
         queuePauseHasMeasuredAndAlignedReceiptCursorBackpressure:
-          config.chunkSizeBytes > config.maxBufferedUploadBytes
-          || (
-            Number.isFinite(lastChunkReceipt?.sizeBytes)
-            && Number.isFinite(config.maxBufferedUploadBytes)
-            && Number.isFinite(config.chunkSizeBytes)
-            && lastChunkReceipt.sizeBytes === config.chunkSizeBytes
-            && config.maxBufferedUploadBytes - lastChunkReceipt.sizeBytes > 0
-          ),
+          queuePausedBeforeOverflow === true
+          && Number.isFinite(lastChunkReceipt?.sizeBytes)
+          && Number.isFinite(config.maxBufferedUploadBytes)
+          && Number.isFinite(config.chunkSizeBytes)
+          && lastChunkReceipt.sizeBytes === config.chunkSizeBytes
+          && config.maxBufferedUploadBytes - lastChunkReceipt.sizeBytes > 0,
         queuePauseHasBackpressureAlignedReceiptCursorQueueSlack:
-          config.chunkSizeBytes > config.maxBufferedUploadBytes
-          || (
-            Number.isFinite(lastChunkReceipt?.sizeBytes)
-            && Number.isFinite(config.maxBufferedUploadBytes)
-            && Number.isFinite(config.chunkSizeBytes)
-            && config.maxBufferedUploadBytes - lastChunkReceipt.sizeBytes
-              === config.maxBufferedUploadBytes - config.chunkSizeBytes
-          ),
+          queuePausedBeforeOverflow === true
+          && Number.isFinite(lastChunkReceipt?.sizeBytes)
+          && Number.isFinite(config.maxBufferedUploadBytes)
+          && Number.isFinite(config.chunkSizeBytes)
+          && config.maxBufferedUploadBytes - lastChunkReceipt.sizeBytes
+            === config.maxBufferedUploadBytes - config.chunkSizeBytes,
         receiptCursorMemoryCeilingMatchesQueueBudget:
           config.maxBufferedUploadBytes === DEFAULT_LIMITS.maxBufferedUploadBytes,
         queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack:
-          config.chunkSizeBytes > config.maxBufferedUploadBytes
-          || (
-            Number.isFinite(lastChunkReceipt?.sizeBytes)
-            && Number.isFinite(config.maxBufferedUploadBytes)
-            && Number.isFinite(config.chunkSizeBytes)
-            && config.maxBufferedUploadBytes - lastChunkReceipt.sizeBytes > 0
-            && config.maxBufferedUploadBytes - lastChunkReceipt.sizeBytes
-              === config.maxBufferedUploadBytes - config.chunkSizeBytes
-          ),
+          queuePausedBeforeOverflow === true
+          && Number.isFinite(lastChunkReceipt?.sizeBytes)
+          && Number.isFinite(config.maxBufferedUploadBytes)
+          && Number.isFinite(config.chunkSizeBytes)
+          && config.maxBufferedUploadBytes - lastChunkReceipt.sizeBytes > 0
+          && config.maxBufferedUploadBytes - lastChunkReceipt.sizeBytes
+            === config.maxBufferedUploadBytes - config.chunkSizeBytes,
         backpressureEvidenceComplete:
           Number.isFinite(lastChunkReceipt?.sizeBytes)
           && Number.isFinite(config.maxBufferedUploadBytes)
