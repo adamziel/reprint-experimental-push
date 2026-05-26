@@ -3550,6 +3550,22 @@ test('guarded benchmark treats queue-budget visibility without queue-headroom me
   assert.ok(blockers.includes('queue-budget-visible-without-queue-headroom-measurement'));
 });
 
+test('guarded benchmark treats queue-budget plus measured headroom detail as incomplete when queue-headroom visibility is hidden', () => {
+  const report = smallBenchmark();
+  const mutated = clone(report);
+
+  mutated.evidence.backpressure.queueBudgetVisible = true;
+  mutated.evidence.backpressure.queueHeadroomVisible = false;
+  mutated.evidence.backpressure.queueHeadroomMeasured = true;
+
+  const details = productionThroughputDetails(mutated);
+  const blockers = productionThroughputBlockers(mutated);
+
+  assert.equal(details.queueBudgetVisibleAndQueueHeadroomMeasured, false);
+  assert.equal(details.backpressureConsistency.queueBudgetVisibleAndQueueHeadroomMeasured, false);
+  assert.ok(blockers.includes('queue-budget-visible-without-queue-headroom-visible'));
+});
+
 test('guarded benchmark treats queue-budget plus measured headroom detail as incomplete when the aligned slack proof is hidden', () => {
   const report = smallBenchmark();
   const mutated = clone(report);

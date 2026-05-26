@@ -206,6 +206,9 @@ Current executable gate:
   when the aligned paused-slack proof is hidden, so advisory headroom bytes
   cannot still look release-safe without the receipt-cursor pause evidence
   that makes the budget meaningful.
+- The same queue-budget plus measured-headroom summary now also fails closed
+  when queue-headroom visibility is hidden, so measured bytes cannot still
+  look complete after the raw pause-headroom surface disappears.
 - The same details also fail closed when receipt-cursor queue-slack or memory-
   headroom visibility appears without the queue-headroom measurement bit, so a
   partial pause-footprint surface cannot still look visible-and-measured from

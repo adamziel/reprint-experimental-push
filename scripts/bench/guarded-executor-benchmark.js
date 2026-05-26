@@ -1662,6 +1662,7 @@ export function productionThroughputDetails(report) {
   const queueBudgetVisibleAndQueueHeadroomMeasured =
     receiptCursorPauseFootprintComplete
     && queueBudgetVisible
+    && queueHeadroomVisible
     && queueHeadroomMeasured
     && queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack;
   const queueBudgetVisibleAndQueueHeadroomVisibleAndMeasured =
