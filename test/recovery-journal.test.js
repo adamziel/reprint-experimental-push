@@ -297,6 +297,44 @@ test('production recovery journal descriptor fails closed on prototype-inherited
   });
 });
 
+test('production recovery journal descriptor fails closed on non-canonical ownership paths and divergent lease ids', () => {
+  const writer = {
+    kind: 'production-recovery-journal',
+    productionAdapter: true,
+    supportedSurface: 'production-recovery-journal-adapter',
+    restartReadable: true,
+    ownsJournal: true,
+    ownsRemoteArtifact: true,
+    leaseFence: { id: 'lease-fence' },
+    writerLease: { id: 'lease-writer' },
+    journalPath: 'relative/recovery.jsonl',
+    artifactRefs: {
+      journal: '/var/lib/reprint/recovery.jsonl',
+      remote: '/var/lib/reprint/recovery.jsonl',
+    },
+    schemaVersion: 1,
+  };
+
+  const descriptor = describeProductionRecoveryJournal(writer);
+
+  assert.deepEqual(descriptor, {
+    kind: 'production-recovery-journal',
+    productionAdapter: true,
+    supportedSurface: 'production-recovery-journal-adapter',
+    restartReadable: true,
+    ownsJournal: true,
+    ownsRemoteArtifact: true,
+    leaseFence: null,
+    writerLease: { id: 'lease-writer' },
+    journalPath: null,
+    artifactRefs: {
+      journal: null,
+      remote: null,
+    },
+    schemaVersion: 1,
+  });
+});
+
 test('production recovery journal adapter reopens with a new claim and rejects stale fenced writers', () => {
   const filePath = tempJournalPath();
   const remote = baseSite();

@@ -390,30 +390,57 @@ export function describeProductionRecoveryJournal(writer) {
     return null;
   }
 
-  const artifactRefs = Object.hasOwn(writer, 'artifactRefs') && isStrictPlainObject(writer.artifactRefs)
-    ? Object.freeze({
-        journal: Object.hasOwn(writer.artifactRefs, 'journal') ? writer.artifactRefs.journal : null,
-        remote: Object.hasOwn(writer.artifactRefs, 'remote') ? writer.artifactRefs.remote : null,
-      })
-    : Object.freeze({
-        journal: null,
-        remote: null,
-      });
+  const productionAdapter = Object.hasOwn(writer, 'productionAdapter') && writer.productionAdapter === true;
+  const supportedSurface = Object.hasOwn(writer, 'supportedSurface')
+    && writer.supportedSurface === 'production-recovery-journal-adapter'
+    ? writer.supportedSurface
+    : null;
+  const restartReadable = Object.hasOwn(writer, 'restartReadable') && writer.restartReadable === true;
+  const ownsJournal = Object.hasOwn(writer, 'ownsJournal') && writer.ownsJournal === true;
+  const ownsRemoteArtifact = Object.hasOwn(writer, 'ownsRemoteArtifact') && writer.ownsRemoteArtifact === true;
+  const journalPath = Object.hasOwn(writer, 'journalPath') && isCanonicalAbsolutePath(writer.journalPath)
+    ? writer.journalPath
+    : null;
+  const writerLease = Object.hasOwn(writer, 'writerLease') && isValidProductionWriterLease(writer.writerLease)
+    ? Object.freeze({ ...writer.writerLease })
+    : null;
+  const rawLeaseFence = Object.hasOwn(writer, 'leaseFence') && isValidProductionWriterLease(writer.leaseFence)
+    ? writer.leaseFence
+    : null;
+  const leaseFence = rawLeaseFence && writerLease && rawLeaseFence.id === writerLease.id
+    ? Object.freeze({ ...rawLeaseFence })
+    : null;
+  const rawArtifactRefs = Object.hasOwn(writer, 'artifactRefs') && isStrictPlainObject(writer.artifactRefs)
+    ? writer.artifactRefs
+    : null;
+  const artifactRefs = Object.freeze({
+    journal: rawArtifactRefs
+      && journalPath
+      && Object.hasOwn(rawArtifactRefs, 'journal')
+      && isCanonicalAbsolutePath(rawArtifactRefs.journal)
+      && rawArtifactRefs.journal === journalPath
+      ? rawArtifactRefs.journal
+      : null,
+    remote: rawArtifactRefs
+      && ownsRemoteArtifact
+      && Object.hasOwn(rawArtifactRefs, 'remote')
+      && isCanonicalAbsolutePath(rawArtifactRefs.remote)
+      && rawArtifactRefs.remote !== journalPath
+      && rawArtifactRefs.remote !== rawArtifactRefs.journal
+      ? rawArtifactRefs.remote
+      : null,
+  });
 
   return Object.freeze({
     kind: writer.kind,
-    productionAdapter: Object.hasOwn(writer, 'productionAdapter') && writer.productionAdapter === true,
-    supportedSurface: Object.hasOwn(writer, 'supportedSurface') ? writer.supportedSurface || null : null,
-    restartReadable: Object.hasOwn(writer, 'restartReadable') && writer.restartReadable === true,
-    ownsJournal: Object.hasOwn(writer, 'ownsJournal') && writer.ownsJournal === true,
-    ownsRemoteArtifact: Object.hasOwn(writer, 'ownsRemoteArtifact') && writer.ownsRemoteArtifact === true,
-    leaseFence: Object.hasOwn(writer, 'leaseFence') && isStrictPlainObject(writer.leaseFence)
-      ? Object.freeze({ ...writer.leaseFence })
-      : null,
-    writerLease: Object.hasOwn(writer, 'writerLease') && isStrictPlainObject(writer.writerLease)
-      ? Object.freeze({ ...writer.writerLease })
-      : null,
-    journalPath: Object.hasOwn(writer, 'journalPath') && typeof writer.journalPath === 'string' ? writer.journalPath : null,
+    productionAdapter,
+    supportedSurface,
+    restartReadable,
+    ownsJournal,
+    ownsRemoteArtifact,
+    leaseFence,
+    writerLease,
+    journalPath,
     artifactRefs,
     schemaVersion: Object.hasOwn(writer, 'schemaVersion') ? writer.schemaVersion : null,
   });
