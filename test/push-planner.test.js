@@ -462,7 +462,7 @@ test('blocks plugin-owned custom tables while preserving a matching independent 
   const pluginDecision = decisionFor(plan, 'plugin:forms');
   const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
 
-  assert.equal(plan.status, 'conflict');
+  assert.equal(plan.status, 'blocked');
   assert.equal(blocker.class, 'unsupported-plugin-owned-resource');
   assert.equal(blocker.resourceKind, 'custom-table');
   assert.equal(
@@ -11939,7 +11939,10 @@ test('blocks plugin-owned custom tables with missing policy candidates while pre
   assert.equal(plan.summary.mutations, 0);
   assert.equal(blocker.class, 'unsupported-plugin-owned-resource');
   assert.equal(blocker.resourceKind, 'custom-table');
-  assert.equal(blocker.reason, 'Plugin-owned custom tables are not yet supported by the planner.');
+  assert.equal(
+    blocker.reason,
+    'Plugin-owned custom tables, including deletes, are not yet supported by the planner.',
+  );
   assert.equal(pluginDecision.decision, 'keep-remote');
   assert.equal(pluginFileDecision.decision, 'keep-remote');
   assert.equal(planJson.includes('local custom-table payload'), false);
