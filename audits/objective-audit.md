@@ -6,22 +6,24 @@ The project is **not releasable as a production WordPress push path**.
 
 Fresh remote heads at audit time, checked on May 26, 2026:
 
-- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `ecc9fc20`
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `3cbca73f`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `d702c908`
 - `origin/lane/reliable-executor` -> `27c9bdd0`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `e02107dc`
+- `origin/lane/same-plan-wordpress-graph-create` -> `0d2178e9`
+- `origin/lane/no-data-loss-recovery` -> `9dc4a1f8`
+- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `f574ab87`
 - `origin/lane/no-data-loss-invariants` -> `b5c81374`
-- `origin/lane/no-data-loss-recovery` -> `47b675c0`
-- `origin/lane/fast-paths` -> `f574ab87`
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `27d0c72e`
+- `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `9dc4a1f8`
 - `origin/lane/critic` -> `cba0890b`
+- `origin/lane/fast-paths` -> `cd0fddad`
 - `origin/lane/progress-publisher` -> `7695e1f9`
 - `origin/lane/cycle-20260525-mainwindows-2349/critic` -> `cba0890b`
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `3cbca73f`
-- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `c5db1aac`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `da528416`
-- `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `4372167e`
-- `origin/lane/same-plan-wordpress-graph-create` -> `a719e09c`
-- `origin/lane/cycle-20260525-mainwindows-2349/same-plan-wordpress-graph-create` -> `a719e09c`
+- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `f574ab87`
+- `origin/lane/cycle-20260525-mainwindows-2349/same-plan-wordpress-graph-create` -> `0d2178e9`
+- `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-invariants` -> `b5c81374`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `d702c908`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `e02107dc`
 - `origin/lane/cycle-20260525-mainwindows-2357/no-data-loss-invariants-graph-proof` -> `98c0ce26`
 - `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration` -> `a3a900d7`
 - `origin/main` -> `e55864f4`
@@ -37,19 +39,18 @@ but it did not change the release conclusion:
   `27c9bdd0`. That improves the wrapper boundary, but the live proof path is
   still lab-backed and the verdict does not move.
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` has advanced to
-  `c5db1aac`, which continues the fail-closed headroom tightening. It is still
+  `f574ab87`, which continues the fail-closed headroom tightening. It is still
   not release-grade live-source evidence.
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` has
   advanced to `27d0c72e`, refreshing the audit snapshot. That updates the
   evidence surface but does not change the release boundary.
-- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` now tightens queue
-  headroom evidence at `c5db1aac`, and `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor`
-  now refreshes the progress visibility handoff at `3cbca73f`. These are both
-  freshness or fail-closed updates, not release-grade live-source evidence.
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now
+  refreshes the progress visibility handoff at `d702c908`. This is freshness
+  and visibility only, not release-grade live-source evidence.
 - `origin/lane/no-data-loss-invariants` now tightens navigation blocker proof
   at `b5c81374`. A separate cycle-branch proof at `98c0ce26`
   extends that blocker coverage to missing graph identity references, and the
-  same-plan graph lane at `a719e09c` now blocks unsupported graph surfaces
+  same-plan graph lane at `0d2178e9` now blocks unsupported graph surfaces
   including revision posts, menu/navigation posts, serialized blocks, and
   thumbnail parent references, but none of these produce live source mutation
   evidence.
@@ -57,7 +58,7 @@ but it did not change the release conclusion:
   coverage, which strengthens the fail-closed boundary but still does not
   prove live source mutation on unsupported surfaces.
 - `origin/lane/no-data-loss-recovery` now lands a large recovery-contract and
-  durable-journal documentation bundle at `47b675c0`. It materially expands
+  durable-journal documentation bundle at `9dc4a1f8`. It materially expands
   the recovery boundary notes, but the evidence is still documentation- and
   fixture-bound rather than production-backed journal ownership or replay
   proof.
