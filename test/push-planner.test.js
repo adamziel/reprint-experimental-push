@@ -22462,6 +22462,45 @@ test('blocks unsupported mode-encoded special file entries while preserving remo
   assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin changes */');
 });
 
+test('blocks unsupported special file entries while preserving a matching independent file type swap and remote-only plugin drift', () => {
+  const resourceKey = 'file:wp-content/uploads/socket';
+  const base = baseSite();
+  base.files['wp-content/uploads/socket'] = { type: 'socket', linkTarget: '/tmp/base-socket' };
+  base.files['about.php'] = '<?php echo "base about";';
+
+  const local = baseSite();
+  local.files['wp-content/uploads/socket'] = { type: 'socket', linkTarget: '/tmp/local-socket' };
+  local.files['about.php'] = { type: 'directory' };
+
+  const remote = baseSite();
+  remote.files['wp-content/uploads/socket'] = JSON.parse(JSON.stringify(base.files['wp-content/uploads/socket']));
+  remote.files['about.php'] = { type: 'directory' };
+  remote.plugins.forms.description = 'remote-only plugin drift';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin drift */';
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  const matchingTypeSwap = decisionFor(plan, 'file:about.php');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(plan.conflicts.length, 0);
+  assert.equal(blocker.class, 'unsupported-special-file-resource');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.reason, 'Special file entries are not yet supported by the planner.');
+  assert.equal(matchingTypeSwap.decision, 'already-in-sync');
+  assert.equal(matchingTypeSwap.change.localChange, 'type-change');
+  assert.equal(matchingTypeSwap.change.remoteChange, 'type-change');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('/tmp/local-socket'), false);
+  assert.equal(planJson.includes('/tmp/base-socket'), false);
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin drift');
+  assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin drift */');
+});
+
 test('blocks deletion of unsupported special file entries while preserving remote-only plugin removals', () => {
   const resourceKey = 'file:wp-content/uploads/reparse-point';
   const base = baseSite();
