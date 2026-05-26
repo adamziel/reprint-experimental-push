@@ -1,29 +1,29 @@
-Updated the critic audit to reflect the latest reliable-executor evidence without broadening the production claim.
+Updated the critic audit to reflect the newest reliable-executor proof and the freshness-only progress refresh without widening the production claim.
+
+Changed files:
+- [`audits/critic.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/critic/audits/critic.md)
+- [`.lane-output/final.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/critic/.lane-output/final.md)
 
 What changed:
-- [`audits/critic.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/critic/audits/critic.md)
+- Kept the verdict at `0/4`.
+- Updated the reliable-executor summary to say the release verifier now fails closed with a visible `HTTP 502` readiness trail instead of hanging silently.
+- Noted that the public progress refresh was freshness-only and did not move the gate posture.
 
-What changed in the audit:
-- Kept the production verdict unchanged.
-- Updated the reliable-executor summary to reflect the latest bounded pass on the release verifier and the fail-closed mutating-request guard.
-- Kept the remaining production blockers in place: live auth/session lifecycle, durable journal ownership, preserved-remote retry, and exact replay equivalence are still unproven.
-
-Commands run:
-- `sed -n '1,260p' audits/critic.md`
-- `sed -n '1,240p' .lane-output/final.md`
+Commands:
+- `sed -n '1,240p' ../reliable-executor/.lane-output/final-loop-20260526-044044.md`
+- `sed -n '1,240p' ../progress-publisher/.lane-output/final-loop-20260526-044325.md`
+- `sed -n '1,240p' ../independent-auditor/.lane-output/final.md`
+- `sed -n '1,240p' audits/critic.md`
 - `git diff -- audits/critic.md .lane-output/final.md`
-- `git status --short --branch`
 
 Push result:
 - Not run
 
 Worktree status:
 - Branch: `lane/cycle-20260525-mainwindows-2349/critic`
-- Dirty tracked files:
-  - `.lane-output/final.md`
-  - `audits/critic.md`
-- No untracked files
-- `HEAD` remains aligned with `origin/lane/critic`
+- `HEAD`: `fa0dc8a0`
+- `origin/lane/critic`: `5b61693d`
+- Dirty tracked files: `audits/critic.md`, `.lane-output/final.md`
 
 Next supervisor nudge:
-- Keep `critic` parked until a live release-gate result changes the constrained release-candidate verdict or the audit scope materially changes.
+- Re-poll `reliable-executor` only when it lands a concrete proof delta that changes the release-gate verdict, especially exact replay-equivalence evidence or a production-backed auth/journal path.
