@@ -116,6 +116,9 @@ export function buildProductionPluginPackageProofSummary(
   const bundleResults = {};
   const checkedBundles = [];
   const passedBundles = [];
+  let checkedBundleCount = 0;
+  let passedBundleCount = 0;
+  let skippedBundleCount = 0;
   const scenarioPasses = new Map();
   let checkedScenarioCount = 0;
   let passedScenarioCount = 0;
@@ -145,7 +148,13 @@ export function buildProductionPluginPackageProofSummary(
     const bundleKey = toBundleKey(bundleName);
     bundleResults[bundleKey] = summarizeScenario(selected, passed);
     if (selected) {
+      checkedBundleCount += 1;
       checkedBundles.push(bundleKey);
+      if (passed) {
+        passedBundleCount += 1;
+      }
+    } else {
+      skippedBundleCount += 1;
     }
     if (selected && passed) {
       passedBundles.push(bundleKey);
@@ -164,10 +173,14 @@ export function buildProductionPluginPackageProofSummary(
     checkedScenarioCount,
     passedScenarioCount,
     skippedScenarioCount,
+    checkedBundleCount,
+    passedBundleCount,
+    skippedBundleCount,
     requestedScenarios: requestedScenarios === null ? 'all' : requestedScenarios.slice(),
     requestedBundles,
     checkedBundles: requestedScenarios === null && selectedScenarios === null ? 'all' : checkedBundles.sort(),
     passedBundles: passedBundles.sort(),
+    requestedBundlesSatisfied: checkedBundleCount > 0 && checkedBundleCount === passedBundleCount,
     selectedScenarios: selectedScenarios === null ? 'all' : Array.from(selectedScenarios).sort(),
     package: {
       plugin: summary?.package?.plugin ?? null,
