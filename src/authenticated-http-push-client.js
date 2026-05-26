@@ -567,6 +567,11 @@ function summarizeDbJournal(response) {
     applyCommitted: rows.some((entry) => entry.event === 'apply-committed'),
     mutationApplied: rows.filter((entry) => entry.event === 'mutation-applied').length,
     idempotencyOpened: rows.filter((entry) => entry.event === 'idempotency-opened').length,
+    storageGuard: response.body.storageGuard ? {
+      boundary: response.body.storageGuard.boundary,
+      operation: response.body.storageGuard.operation,
+      outcome: response.body.storageGuard.outcome,
+    } : undefined,
     authUser: response.body?.auth?.identity?.userLogin,
     authSessionId: response.body?.auth?.session?.id,
     sessionType: response.body?.auth?.session?.type,
@@ -577,7 +582,14 @@ function summarizeDbJournal(response) {
 function dbJournalProofIsAcceptable(dbJournal) {
   return dbJournal?.applyCommitted === true
     && dbJournal?.idempotencyOpened > 0
-    && dbJournal?.mutationApplied > 0;
+    && dbJournal?.mutationApplied > 0
+    && dbJournalStorageGuardIsTrusted(dbJournal?.storageGuard);
+}
+
+function dbJournalStorageGuardIsTrusted(storageGuard) {
+  return storageGuard?.boundary === 'filesystem-compare-rename'
+    && storageGuard?.operation === 'update'
+    && storageGuard?.outcome === 'applied';
 }
 
 function summarizeRecoveryInspect(response) {
