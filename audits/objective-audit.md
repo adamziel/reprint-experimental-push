@@ -39,7 +39,7 @@ The project is **not releasable as a production WordPress push path**.
 - `origin/lane/cycle-20260525-keep-busy-loop-2/no-data-loss-recovery` -> `63e01a49`
 - `origin/lane/cycle-20260525-mainwindows-2349/critic` -> `fa0dc8a0`
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `999ff0d8`
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `5118572a`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `c49f4eae`
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `0ac76c38`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `2af1ddda`
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `b717124c`
@@ -48,7 +48,7 @@ The project is **not releasable as a production WordPress push path**.
 - `origin/lane/cycle-20260525-restart-2340/feedback-supervisor` -> `ef3d911e`
 - `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration` -> `7efe180b`
 - `origin/lane/critic` -> `443dacd6`
-- `origin/lane/fast-paths` -> `d57b15f1`
+- `origin/lane/fast-paths` -> `8476474d`
 - `origin/lane/feedback-supervisor` -> `2a67a6b8`
 - `origin/lane/independent-auditor` -> `6351130f`
 - `origin/lane/no-data-loss-invariants` -> `0247563b`
@@ -69,7 +69,7 @@ but it did not change the release conclusion:
   release-verify spawn handling. It still does not prove production
   auth/session lifecycle or a live-source mutation boundary.
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now records
-  `5118572a`, refreshing progress visibility only. It still does not change
+  `c49f4eae`, refreshing progress visibility only. It still does not change
   the release verdict.
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now records
   `b717124c`, refreshing public progress freshness only. It still does not
@@ -123,6 +123,8 @@ but it did not change the release conclusion:
   verify helper bounds and keeping the live proof wrapper fail-closed. It still
   does not prove production auth/session lifecycle or a live-source mutation
   boundary.
+- `origin/lane/fast-paths` now records `8476474d`, tightening queue slack
+  consistency checks only. It still does not prove a production speed claim.
 - `origin/lane/fast-paths` now records `d4abfce3`, rejecting queue slack
   commit shortcuts only.
 - `origin/lane/fast-paths` now records `999ff0d8`, adding chunk digest resume
