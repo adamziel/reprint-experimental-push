@@ -705,6 +705,12 @@ export function productionThroughputBlockers(report) {
     blockers.push('queue-headroom-visible-without-measurement');
   }
   if (
+    report.evidence.backpressure?.queueHeadroomVisible === true
+    && report.evidence.backpressure?.queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack !== true
+  ) {
+    blockers.push('queue-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof');
+  }
+  if (
     report.evidence.backpressure?.queueBudgetVisible === true
     && report.evidence.backpressure?.queueHeadroomVisible === true
     && report.evidence.backpressure?.queueHeadroomMeasured !== true
@@ -1321,11 +1327,16 @@ export function productionThroughputDetails(report) {
       queueHeadroomMeasured
       && queuePauseHasMeasuredReceiptCursorQueueSlack
       && queuePauseHasBackpressureAlignedReceiptCursorQueueSlack
+      && report.evidence.backpressure?.queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack === true
       && receiptCursorQueueSlackMatchesBackpressure
       && receiptCursorQueueSlackMatchesMemoryHeadroom
       && receiptCursorQueueSlackMatchesQueueHeadroom
       && receiptCursorQueueSlackMatchesResourceHeadroom
     );
+  const queueHeadroomVisibleAndMeasuredAndAligned =
+    queueHeadroomVisible
+    && queueHeadroomMeasured
+    && queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack;
   const pausedQueueSlackEvidence = {
     queuePauseHasMeasuredReceiptCursorQueueSlack,
     queuePauseHasBackpressureAlignedReceiptCursorQueueSlack,
@@ -1458,6 +1469,7 @@ export function productionThroughputDetails(report) {
       receiptCursorMemoryCeilingVisible && queueBudgetVisible,
     queueHeadroomVisible,
     queueHeadroomVisibleAndMeasured,
+    queueHeadroomVisibleAndMeasuredAndAligned,
     queueHeadroomVisibleAndQueueSlackMeasured,
     queueHeadroomVisibleAndQueueSlackVisibleAndMeasured,
     receiptCursorMemoryCeilingVisible,
@@ -1559,6 +1571,7 @@ export function productionThroughputDetails(report) {
         receiptCursorMemoryCeilingVisible && queueBudgetVisible,
       queueHeadroomVisible,
       queueHeadroomVisibleAndMeasured,
+      queueHeadroomVisibleAndMeasuredAndAligned,
       queueHeadroomVisibleAndQueueSlackMeasured,
       queueHeadroomVisibleAndQueueSlackVisibleAndMeasured,
       receiptCursorMemoryCeilingVisible,

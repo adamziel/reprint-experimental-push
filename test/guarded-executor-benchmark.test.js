@@ -401,6 +401,30 @@ test('guarded benchmark treats queue-headroom visibility as incomplete without a
   assert.equal(details.backpressureConsistency.queueHeadroomVisibleAndMeasured, false);
 });
 
+test('guarded benchmark blocks queue-headroom visibility when the aligned slack proof is hidden', () => {
+  const report = smallBenchmark();
+  const tampered = clone(report);
+
+  tampered.evidence.backpressure.queueHeadroomVisible = true;
+  tampered.evidence.backpressure.queueHeadroomMeasured = true;
+  tampered.evidence.backpressure.queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack = false;
+
+  const details = productionThroughputDetails(tampered);
+  const blockers = productionThroughputBlockers(tampered);
+
+  assert.equal(details.queueHeadroomVisible, true);
+  assert.equal(details.queueHeadroomVisibleAndMeasured, true);
+  assert.equal(details.queueHeadroomVisibleAndMeasuredAndAligned, false);
+  assert.equal(
+    details.backpressureConsistency.queueHeadroomVisibleAndMeasuredAndAligned,
+    false,
+  );
+  assert.equal(
+    blockers.includes('queue-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof'),
+    true,
+  );
+});
+
 test('guarded benchmark blocks paired memory-ceiling and queue-headroom visibility when the headroom probe is hidden', () => {
   const report = smallBenchmark();
   const tampered = clone(report);
