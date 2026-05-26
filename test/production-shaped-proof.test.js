@@ -114,6 +114,9 @@ function runReleaseVerifySync(env, timeout, killSignal, label) {
     },
     label,
   );
+  if (proof.error || proof.signal || proof.status === null) {
+    failReleaseVerifySpawnProof(proof, command, args);
+  }
   assertReleaseVerifyProof(proof, label, timeout);
   return proof;
 }
@@ -145,9 +148,11 @@ function spawnProductionShapedReleaseVerify(env, options, label) {
 function spawnProductionShapedReleaseVerifyCommand(env, options, label) {
   const timeout = options.timeout ?? releaseVerifyInnerTimeoutMs;
   const killSignal = options.killSignal ?? proofSubprocessKillSignal;
+  const command = process.execPath;
+  const args = ['scripts/playground/production-shaped-release-verify.mjs'];
   const proof = spawnReleaseVerifyBounded(
-    process.execPath,
-    ['scripts/playground/production-shaped-release-verify.mjs'],
+    command,
+    args,
     {
       cwd: repoRoot,
       timeout,
@@ -158,6 +163,9 @@ function spawnProductionShapedReleaseVerifyCommand(env, options, label) {
     },
     label,
   );
+  if (proof.error || proof.signal || proof.status === null) {
+    failReleaseVerifySpawnProof(proof, command, args);
+  }
   assertReleaseVerifyProof(proof, label, timeout);
   return proof;
 }
@@ -268,6 +276,10 @@ function failBoundedSpawnProof(proof, command, args) {
   stopAllPlaygroundChildrenSync();
   reportBoundedSpawnFailure(proof, command, args);
   writeSpawnOutputTail(proof, `${command} ${args.join(' ')}`);
+}
+
+function failReleaseVerifySpawnProof(proof, command, args) {
+  failBoundedSpawnProof(proof, command, args);
 }
 
 function assertBoundedSpawnProof(proof, command, args, label, timeoutMs) {
