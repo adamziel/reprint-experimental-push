@@ -2,9 +2,10 @@ const labWordPressNotReadyPattern = /WordPress is not ready yet/i;
 const labRouteNotReadyPattern = /No route was found matching the URL and request method\.?/i;
 const labWordPressNotReadyCodePattern = /wordpress_not_ready/i;
 const labRouteNotReadyCodePattern = /rest_no_route/i;
+const labMaxNestedReadinessDepth = 6;
 
 function labFindMessage(value, depth = 0) {
-  if (depth > 4 || value == null) {
+  if (depth > labMaxNestedReadinessDepth || value == null) {
     return '';
   }
 
@@ -58,7 +59,7 @@ function labResponseMessage(response) {
 }
 
 function labFindCode(value, depth = 0) {
-  if (depth > 4 || value == null) {
+  if (depth > labMaxNestedReadinessDepth || value == null) {
     return '';
   }
 

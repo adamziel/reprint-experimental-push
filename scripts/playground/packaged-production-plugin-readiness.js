@@ -5,9 +5,10 @@ const packagedProductionPluginWordPressNotReadyPattern = /WordPress is not ready
 const packagedProductionPluginRouteNotReadyPattern = /No route was found matching the URL and request method\.?/i;
 const packagedProductionPluginWordPressNotReadyCodePattern = /wordpress_not_ready/i;
 const packagedProductionPluginRouteNotReadyCodePattern = /rest_no_route/i;
+const packagedProductionPluginMaxNestedReadinessDepth = 6;
 
 function packagedProductionPluginFindMessage(value, depth = 0) {
-  if (depth > 4 || value == null) {
+  if (depth > packagedProductionPluginMaxNestedReadinessDepth || value == null) {
     return '';
   }
 
@@ -61,7 +62,7 @@ function packagedProductionPluginResponseMessage(response) {
 }
 
 function packagedProductionPluginFindCode(value, depth = 0) {
-  if (depth > 4 || value == null) {
+  if (depth > packagedProductionPluginMaxNestedReadinessDepth || value == null) {
     return '';
   }
 
