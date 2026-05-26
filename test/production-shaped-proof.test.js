@@ -1672,6 +1672,20 @@ test('packaged production plugin readiness helper retries only startup-shaped pa
     false,
   );
   assert.equal(
+    packagedProductionPluginPreflightTerminal(
+      {
+        status: 401,
+        body: {
+          code: 'reprint_push_lab_auth_required',
+        },
+      },
+      {
+        packagedStartup: true,
+      },
+    ),
+    false,
+  );
+  assert.equal(
     packagedProductionPluginPreflightReady({
       status: 200,
       body: {

@@ -218,9 +218,9 @@ export function packagedProductionPluginPreflightRetryable(preflight, context = 
   return false;
 }
 
-export function packagedProductionPluginPreflightTerminal(preflight) {
+export function packagedProductionPluginPreflightTerminal(preflight, context = {}) {
   return !packagedProductionPluginPreflightReady(preflight)
-    && !packagedProductionPluginPreflightRetryable(preflight);
+    && !packagedProductionPluginPreflightRetryable(preflight, context);
 }
 
 export function packagedProductionPluginServerReady({ snapshot, preflight = null } = {}) {
