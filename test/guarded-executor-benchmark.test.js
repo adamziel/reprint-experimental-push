@@ -274,7 +274,7 @@ test('guarded benchmark refuses production throughput claims until production ga
   assert.ok(productionThroughputBlockers(mismatchedLedger).includes('receipt-ledger-kind-summary-mismatch'));
 
   const tamperedQueueSlackSummary = clone(report);
-  tamperedQueueSlackSummary.evidence.backpressure.queuePauseHasMeasuredReceiptCursorQueueSlack = false;
+  tamperedQueueSlackSummary.evidence.backpressure.receiptCursorQueueSlackBytes = null;
   assert.ok(
     productionThroughputBlockers(tamperedQueueSlackSummary).includes(
       'queue-pause-without-measured-receipt-cursor-queue-slack',
@@ -731,6 +731,35 @@ test('production claim gate fails closed if benchmark evidence is tampered', () 
   );
   assert.equal(
     productionThroughputDetails(pausedWithoutMeasuredQueueSlack).backpressureConsistency.queuePauseHasBackpressureAlignedReceiptCursorQueueSlack,
+    false,
+  );
+  assert.equal(
+    productionThroughputDetails(pausedWithoutMeasuredQueueSlack).backpressureConsistency.queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack,
+    false,
+  );
+
+  const spoofedQueueSlackAlignment = clone(report);
+  spoofedQueueSlackAlignment.evidence.backpressure.receiptCursorQueueSlackBytes = null;
+  spoofedQueueSlackAlignment.evidence.backpressure.queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack = true;
+  assert.ok(
+    productionThroughputBlockers(spoofedQueueSlackAlignment).includes(
+      'queue-pause-without-measured-receipt-cursor-queue-slack',
+    ),
+  );
+  assert.equal(
+    productionThroughputDetails(spoofedQueueSlackAlignment).backpressureConsistency.queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack,
+    false,
+  );
+
+  const spoofedBackpressureAlignment = clone(report);
+  spoofedBackpressureAlignment.evidence.backpressure.queuePauseHasMeasuredAndAlignedReceiptCursorBackpressure = false;
+  assert.ok(
+    productionThroughputBlockers(spoofedBackpressureAlignment).includes(
+      'queue-pause-without-measured-and-aligned-receipt-cursor-backpressure-proof',
+    ),
+  );
+  assert.equal(
+    productionThroughputDetails(spoofedBackpressureAlignment).backpressureConsistency.queuePauseHasMeasuredAndAlignedReceiptCursorBackpressure,
     false,
   );
 

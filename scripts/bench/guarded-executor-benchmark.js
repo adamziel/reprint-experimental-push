@@ -281,7 +281,10 @@ export function productionThroughputBlockers(report) {
   }
   if (
     report.evidence.backpressure?.queuePausedBeforeOverflow === true
-    && report.evidence.backpressure?.queuePauseHasMeasuredReceiptCursorQueueSlack !== true
+    && (
+      !Number.isFinite(report.evidence.backpressure?.receiptCursorQueueSlackBytes)
+      || report.evidence.backpressure.receiptCursorQueueSlackBytes <= 0
+    )
   ) {
     blockers.push('queue-pause-without-measured-receipt-cursor-queue-slack');
   }
@@ -293,6 +296,12 @@ export function productionThroughputBlockers(report) {
     )
   ) {
     blockers.push('queue-pause-without-measured-and-aligned-receipt-cursor-backpressure');
+  }
+  if (
+    report.evidence.backpressure?.queuePausedBeforeOverflow === true
+    && report.evidence.backpressure?.queuePauseHasMeasuredAndAlignedReceiptCursorBackpressure !== true
+  ) {
+    blockers.push('queue-pause-without-measured-and-aligned-receipt-cursor-backpressure-proof');
   }
   if (report.evidence.backpressure?.receiptCursorQueueSlackBytes == null) {
     blockers.push('receipt-cursor-queue-slack-not-measured');
@@ -334,7 +343,13 @@ export function productionThroughputBlockers(report) {
   }
   if (
     report.evidence.backpressure?.queuePausedBeforeOverflow === true
-    && report.evidence.backpressure?.queuePauseHasBackpressureAlignedReceiptCursorQueueSlack !== true
+    && (
+      !Number.isFinite(report.evidence.backpressure?.receiptCursorQueueSlackBytes)
+      || !Number.isFinite(report.evidence.backpressure?.queueBudgetBytes)
+      || !Number.isFinite(report.evidence.backpressure?.receiptCursorBytes)
+      || report.evidence.backpressure.receiptCursorQueueSlackBytes
+        !== report.evidence.backpressure.queueBudgetBytes - report.evidence.backpressure.receiptCursorBytes
+    )
   ) {
     blockers.push('queue-pause-without-backpressure-aligned-receipt-cursor-queue-slack');
   }
@@ -661,7 +676,13 @@ export function productionThroughputDetails(report) {
     || (
       queuePauseHasMeasuredReceiptCursorBackpressure
       && queuePauseHasMeasuredReceiptCursorQueueSlack
+      && report.evidence.backpressure?.queuePauseHasMeasuredAndAlignedReceiptCursorBackpressure === true
     );
+  const pausedQueueSlackEvidence = {
+    queuePauseHasMeasuredReceiptCursorQueueSlack,
+    queuePauseHasBackpressureAlignedReceiptCursorQueueSlack,
+    queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack,
+  };
   const receiptCursorMemoryHeadroomMatchesResourceHeadroom =
     receiptCursorWithinMemoryCeiling
     && receiptCursorMemoryHeadroomBytes === receiptCursorMemoryCeilingBytes - receiptCursorWindowBytes;
@@ -714,8 +735,7 @@ export function productionThroughputDetails(report) {
     receiptCursorBackpressureBytes,
     receiptCursorBackpressureMeasured,
     queuePauseHasMeasuredReceiptCursorBackpressure,
-    queuePauseHasMeasuredReceiptCursorQueueSlack,
-    queuePauseHasBackpressureAlignedReceiptCursorQueueSlack,
+    ...pausedQueueSlackEvidence,
     queuePauseHasMeasuredAndAlignedReceiptCursorBackpressure,
     receiptCursorQueueSlackBytes,
     receiptCursorQueueSlackPositive,
@@ -728,7 +748,6 @@ export function productionThroughputDetails(report) {
     receiptCursorQueueSlackMeasured,
     receiptCursorQueueSlackWithinQueueBudget,
     receiptCursorQueueSlackWithinQueueHeadroom,
-    queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack,
     receiptCursorMemoryHeadroomWithinQueueBudget,
     receiptCursorMemoryHeadroomBytes,
     receiptCursorMemoryHeadroomPositive: receiptCursorMemoryHeadroomPositiveVisible,
@@ -764,8 +783,7 @@ export function productionThroughputDetails(report) {
       receiptCursorBackpressureBytes,
       receiptCursorBackpressureMeasured,
       queuePauseHasMeasuredReceiptCursorBackpressure,
-      queuePauseHasMeasuredReceiptCursorQueueSlack,
-      queuePauseHasBackpressureAlignedReceiptCursorQueueSlack,
+      ...pausedQueueSlackEvidence,
       queuePauseHasMeasuredAndAlignedReceiptCursorBackpressure,
       receiptCursorQueueSlackBytes,
       receiptCursorQueueSlackPositive,
@@ -814,6 +832,12 @@ function hasCompleteBackpressureEvidence(report) {
   const queuePauseHasMeasuredReceiptCursorQueueSlack =
     report.evidence.backpressure?.queuePausedBeforeOverflow !== true
     || (Number.isFinite(receiptCursorQueueSlackBytes) && receiptCursorQueueSlackBytes > 0);
+  const queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack =
+    report.evidence.backpressure?.queuePausedBeforeOverflow !== true
+    || (
+      queuePauseHasMeasuredReceiptCursorQueueSlack
+      && report.evidence.backpressure?.queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack === true
+    );
   const receiptCursorQueueSlackWithinResourceHeadroom =
     Number.isFinite(receiptCursorQueueSlackBytes)
     && Number.isFinite(receiptCursorMemoryCeilingBytes)
@@ -846,6 +870,7 @@ function hasCompleteBackpressureEvidence(report) {
     && receiptCursorBackpressureBytes <= receiptCursorQueueBudgetBytes
     && receiptCursorQueueSlackBytes === receiptCursorQueueBudgetBytes - receiptCursorBackpressureBytes
     && receiptCursorQueueSlackBytes > 0
+    && queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack
     && receiptCursorQueueSlackWithinResourceHeadroom
     && receiptCursorQueueSlackBytes === receiptCursorMemoryHeadroomBytes
     && receiptCursorQueueHeadroomBytes === receiptCursorQueueBudgetBytes - report.shape.chunkSizeBytes
@@ -1352,6 +1377,41 @@ function buildReport({
         receiptCursorWithinQueueBudget:
           Number.isFinite(lastChunkReceipt?.sizeBytes)
           && lastChunkReceipt.sizeBytes <= config.maxBufferedUploadBytes,
+        queuePauseHasMeasuredReceiptCursorQueueSlack:
+          config.chunkSizeBytes > config.maxBufferedUploadBytes
+          || (
+            Number.isFinite(lastChunkReceipt?.sizeBytes)
+            && Number.isFinite(config.maxBufferedUploadBytes)
+            && config.maxBufferedUploadBytes - lastChunkReceipt.sizeBytes > 0
+          ),
+        queuePauseHasMeasuredAndAlignedReceiptCursorBackpressure:
+          config.chunkSizeBytes > config.maxBufferedUploadBytes
+          || (
+            Number.isFinite(lastChunkReceipt?.sizeBytes)
+            && Number.isFinite(config.maxBufferedUploadBytes)
+            && Number.isFinite(config.chunkSizeBytes)
+            && lastChunkReceipt.sizeBytes === config.chunkSizeBytes
+            && config.maxBufferedUploadBytes - lastChunkReceipt.sizeBytes > 0
+          ),
+        queuePauseHasBackpressureAlignedReceiptCursorQueueSlack:
+          config.chunkSizeBytes > config.maxBufferedUploadBytes
+          || (
+            Number.isFinite(lastChunkReceipt?.sizeBytes)
+            && Number.isFinite(config.maxBufferedUploadBytes)
+            && Number.isFinite(config.chunkSizeBytes)
+            && config.maxBufferedUploadBytes - lastChunkReceipt.sizeBytes
+              === config.maxBufferedUploadBytes - config.chunkSizeBytes
+          ),
+        queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack:
+          config.chunkSizeBytes > config.maxBufferedUploadBytes
+          || (
+            Number.isFinite(lastChunkReceipt?.sizeBytes)
+            && Number.isFinite(config.maxBufferedUploadBytes)
+            && Number.isFinite(config.chunkSizeBytes)
+            && config.maxBufferedUploadBytes - lastChunkReceipt.sizeBytes > 0
+            && config.maxBufferedUploadBytes - lastChunkReceipt.sizeBytes
+              === config.maxBufferedUploadBytes - config.chunkSizeBytes
+          ),
         backpressureEvidenceComplete:
           Number.isFinite(lastChunkReceipt?.sizeBytes)
           && Number.isFinite(config.maxBufferedUploadBytes)
