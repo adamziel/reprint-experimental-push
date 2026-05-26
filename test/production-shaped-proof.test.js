@@ -72,20 +72,20 @@ function stopAllPlaygroundChildrenSync() {
 }
 
 function spawnReleaseVerify(env = {}, timeout = proofSubprocessTimeoutMs) {
-  const options = {
-    cwd: repoRoot,
-    ...releaseVerifyProofSubprocessOptions,
-    killSignal: proofSubprocessKillSignal,
-    timeout,
-    env: {
-      ...process.env,
-      ...env,
-    },
-  };
-  return spawnBoundedSync(
+  return spawnReleaseVerifyBounded(
     process.execPath,
     ['scripts/playground/production-shaped-release-verify.mjs'],
-    options,
+    {
+      cwd: repoRoot,
+      timeout,
+      killSignal: proofSubprocessKillSignal,
+      encoding: 'utf8',
+      maxBuffer: 1024 * 1024 * 20,
+      env: {
+        ...process.env,
+        ...env,
+      },
+    },
     'production-shaped release verify',
   );
 }
@@ -95,6 +95,7 @@ function spawnReleaseVerifyBounded(command, args, options, label) {
   const killSignal = options.killSignal ?? proofSubprocessKillSignal;
   const boundedOptions = {
     shell: false,
+    cwd: repoRoot,
     ...options,
     timeout,
     killSignal,
@@ -127,20 +128,19 @@ function spawnReleaseVerifyBounded(command, args, options, label) {
 
 function spawnLiveReleaseVerify(env = {}, timeout = liveProofSubprocessTimeoutMs) {
   const boundedTimeout = Math.max(1_000, Math.min(timeout, liveProofInnerTimeoutMs));
-  const options = {
-    cwd: repoRoot,
-    ...releaseVerifyLiveSubprocessOptions,
-    timeout: boundedTimeout,
-    killSignal: liveProofSubprocessKillSignal,
-    env: {
-      ...process.env,
-      ...env,
-    },
-  };
   return spawnReleaseVerifyBounded(
     process.execPath,
     ['scripts/playground/production-shaped-release-verify.mjs'],
-    options,
+    {
+      cwd: repoRoot,
+      ...releaseVerifyLiveSubprocessOptions,
+      timeout: boundedTimeout,
+      killSignal: liveProofSubprocessKillSignal,
+      env: {
+        ...process.env,
+        ...env,
+      },
+    },
     'live release verify',
   );
 }
@@ -981,21 +981,29 @@ function stopParentProcesses(child, signal) {
     return;
   }
   const signalFlag = signal === 'SIGKILL' ? '-KILL' : '-TERM';
+  const cleanupFailures = [];
   for (const [command, args] of [
     ['pkill', [signalFlag, '-g', String(child.pid)]],
     ['pkill', [signalFlag, '-P', String(child.pid)]],
     ['kill', [signalFlag, String(child.pid)]],
   ]) {
-    const proof = spawnBoundedSync(command, args, {
-      cwd: repoRoot,
-      env: process.env,
-      encoding: 'utf8',
-      timeout: 2_000,
-      killSignal: 'SIGKILL',
-    }, `process cleanup ${command}`);
-    if (proof.error || proof.signal || proof.status === null) {
-      throw new Error(formatSpawnFailure(`process cleanup ${command} failed`, proof));
+    try {
+      const proof = spawnBoundedSync(command, args, {
+        cwd: repoRoot,
+        env: process.env,
+        encoding: 'utf8',
+        timeout: 2_000,
+        killSignal: 'SIGKILL',
+      }, `process cleanup ${command}`);
+      if (proof.error || proof.signal || proof.status === null || proof.status !== 0) {
+        cleanupFailures.push(formatSpawnFailure(`process cleanup ${command} failed`, proof));
+      }
+    } catch (error) {
+      cleanupFailures.push(error instanceof Error ? error.message : String(error));
     }
+  }
+  if (cleanupFailures.length > 0) {
+    throw new Error(`process cleanup failed for pid ${child.pid}\n${cleanupFailures.join('\n')}`);
   }
 }
 
