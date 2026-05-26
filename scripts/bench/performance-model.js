@@ -3358,6 +3358,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['remote-index-planning-only', 'compression', 'file-hashing', 'row-preconditions', 'plugin-preconditions', 'atomic-groups', 'durable-progress'],
   },
   {
+    id: 'compressed-remote-index-and-cached-dependency-graph-skips-plugin-install-finalize-after-pause',
+    proposal: 'use a compressed remote index plus a cached dependency graph to skip plugin-install finalize after a pause',
+    rejectedBecause: 'planning evidence and dependency shape can reduce replay work, but they cannot prove the dependency checks, staged rows, or atomic-group finalize survived the pause',
+    rejectedGate: 'recovery',
+    violates: ['remote-index-planning-only', 'compression', 'row-preconditions', 'plugin-preconditions', 'atomic-groups', 'backpressure', 'durable-progress'],
+  },
+  {
     id: 'compressed-remote-index-and-cached-package-hash-skips-plugin-install-activation-after-pause-and-backpressure',
     proposal: 'use a compressed remote index plus a cached package hash to skip plugin-install activation after a pause and backpressure event',
     rejectedBecause: 'planning evidence and cached package hashes can reduce duplicate inspection, but they cannot prove the activation checks, staged metadata writes, backpressure state, or atomic-group barrier survived the pause',
