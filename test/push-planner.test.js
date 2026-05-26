@@ -12946,6 +12946,7 @@ test('fixture forms lab table requires exact driver and active fixture plugin ev
   const resourceKey = 'row:["wp_reprint_push_forms_lab","id:1"]';
   const base = baseSite();
   base.plugins['reprint-push-forms-fixture'] = { version: '1.0.0', active: true };
+  base.files['about.php'] = '<?php echo "base about";';
   base.db.wp_reprint_push_forms_lab = {
     'id:1': {
       id: 1,
@@ -13004,6 +13005,7 @@ test('fixture forms lab table delete remains blocked without driver delete opt-i
   const resourceKey = 'row:["wp_reprint_push_forms_lab","id:1"]';
   const base = baseSite();
   base.plugins['reprint-push-forms-fixture'] = { version: '1.0.0', active: true };
+  base.plugins.seo = { version: '2.0.0', active: true, description: 'base seo' };
   base.db.wp_reprint_push_forms_lab = {
     'id:1': {
       id: 1,
@@ -13028,6 +13030,49 @@ test('fixture forms lab table delete remains blocked without driver delete opt-i
     plan.blockers[0].reason,
     'Fixture forms lab table driver does not support delete mutations without explicit delete opt-in.',
   );
+});
+
+test('fixture forms lab table delete remains blocked without driver delete opt-in while remote-only plugin drift stays preserved', () => {
+  const resourceKey = 'row:["wp_reprint_push_forms_lab","id:1"]';
+  const base = baseSite();
+  base.plugins['reprint-push-forms-fixture'] = { version: '1.0.0', active: true };
+  base.db.wp_reprint_push_forms_lab = {
+    'id:1': {
+      id: 1,
+      form_slug: 'contact',
+      payload: { owner: 'forms', mode: 'base' },
+      updated_marker: 'base',
+      __pluginOwner: 'forms',
+    },
+  };
+
+  const local = JSON.parse(JSON.stringify(base));
+  delete local.db.wp_reprint_push_forms_lab['id:1'];
+  local.meta = {
+    pushPolicy: pluginOwnedResourcePolicy(
+      allowedPluginOwnedResource(resourceKey, 'forms', 'fixture-forms-lab-table'),
+    ),
+  };
+
+  const remote = JSON.parse(JSON.stringify(base));
+  remote.files['about.php'] = '<?php echo "remote about";';
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers[0];
+  const fileDecision = decisionFor(plan, 'file:about.php');
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(plan.conflicts.length, 0);
+  assert.equal(blocker.class, 'unsupported-plugin-owned-resource');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(
+    blocker.reason,
+    'Fixture forms lab table driver does not support delete mutations without explicit delete opt-in.',
+  );
+  assert.equal(fileDecision.decision, 'keep-remote');
+  assert.equal(remote.files['about.php'], '<?php echo "remote about";');
 });
 
 test('executor rejects forged ready custom table plans without valid fixture driver evidence', () => {
