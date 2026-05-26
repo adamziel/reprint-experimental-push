@@ -1,15 +1,17 @@
 # Critic Verdict
 
-Current reliable head: `66c24931c6674378a479bef58294375f1d2a088a`
-(`Prove packaged release boundary continuity`).
+Current reliable head: `37ff5f49fafd5fd074ede720d79a40ca0b5a824f`
+(`Stabilize checked release verify entrypoint`).
 
 Verdict: `0/4`
 
 Reason:
 
-- This head proves packaged release-boundary continuity, authenticated
-  session-store response evidence, and readiness gating, but it is still
-  support-side release evidence rather than a production-backed gate crossing.
+- This head probes signed packaged production routes through transient
+  `/wp-json/` not-ready responses, avoids synthesizing packaged fixture auth
+  when explicit live-source env is provided, and corrects the unreachable-live
+  source fail-closed contract, but it is still support-side release evidence
+  rather than a production-backed gate crossing.
 - The checked release path still lacks live production auth/session
   issuance/read/expiry/rotation/revocation/cleanup evidence, and it still does
   not prove production durable-journal ownership with restart-readable replay
