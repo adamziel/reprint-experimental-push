@@ -7,19 +7,19 @@ The project is **not releasable as a production WordPress push path**.
 Fresh remote heads at audit time, checked on May 26, 2026:
 
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `4b4474a3`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `0e853863`
-- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `7709c7f4`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `a4ddc5e1`
+- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `4f1f5d72`
 - `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration` -> `efd20c08`
 - `origin/lane/no-data-loss-invariants` -> `efd20c08`
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `b8fd9b15`
-- `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `04753bdc`
+- `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `b3910253`
 - `origin/lane/cycle-20260525-mainwindows-2349/critic` -> `2b608e9e`
 - `origin/lane/reliable-executor` -> `8019706f`
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` -> `db36753e`
 - `origin/lane/same-plan-wordpress-graph-create` -> `0d2178e9`
 - `origin/lane/progress-publisher` -> `7695e1f9`
 - `origin/lane/independent-auditor` -> `6351130f`
-- `origin/lane/no-data-loss-recovery` -> `04753bdc`
+- `origin/lane/no-data-loss-recovery` -> `b3910253`
 - `origin/lane/fast-paths` -> `3d685cfa`
 - `origin/lane/critic` -> `a0b89723`
 - `origin/lane/cycle-20260525-mainwindows-2357/no-data-loss-invariants-graph-proof` -> `98c0ce26`
@@ -37,16 +37,17 @@ but it did not change the release conclusion:
   remains
   fail-closed boundary work, not release-grade live-source evidence.
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` now
-  advances to `04753bdc`, closing unsupported recovery writers. That remains
-  fail-closed boundary work, not production-backed durable journal proof.
+  advances to `b3910253`, tightening recovery journal restart checks. That
+  remains fail-closed boundary work, not production-backed durable journal
+  proof.
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now
   advances to `b8fd9b15`, refreshing public progress visibility only.
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` now
-  advances to `1b3fdc70`, refreshing the audit snapshot only.
+  advances to `4f1f5d72`, refreshing the audit snapshot only.
 - `origin/lane/critic` now advances to `2b608e9e`, refreshing the critique
   readiness audit only.
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now records
-  `0e853863`, refreshing the public progress freshness surface only.
+  `a4ddc5e1`, refreshing the public progress freshness surface only.
 - `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration`
   now records `efd20c08`, adding attachment parent invariants proof. That is
   stronger boundary hardening, but it still does not produce live source
@@ -54,7 +55,7 @@ but it did not change the release conclusion:
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now
   records `b8fd9b15`, also a freshness-only update.
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` now records
-  `1b3fdc70`, which refreshes the audit snapshot but does not change the
+  `4f1f5d72`, which refreshes the audit snapshot but does not change the
   release boundary.
 - `origin/lane/independent-auditor` now records `6351130f`, which refreshes
   the audit snapshot but does not change the release boundary.
