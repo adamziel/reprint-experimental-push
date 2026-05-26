@@ -98,6 +98,17 @@ test('benchmark model covers large uploads and plugin installs', () => {
   assert.ok(
     model.safeFastPaths.some(
       (fastPath) =>
+        fastPath.allowedShortcut === 'reuse-ordered-receipt-keys-and-journal-lag-to-size-bounded-post-pause-replay' &&
+        fastPath.area === 'backpressure' &&
+        fastPath.visibilityBoundary === 'kind-scoped-replay-planning-only' &&
+        fastPath.guardrails.includes('ordered-receipt-keys-stay-durable-and-kind-scoped') &&
+        fastPath.gateProofs.recovery.includes('ordered raw receipt keys, journal lag, and journal records still classify pause, retry, or crash'),
+    ),
+    'ordered raw receipt keys and journal lag can size post-pause replay without weakening recovery classification',
+  );
+  assert.ok(
+    model.safeFastPaths.some(
+      (fastPath) =>
         fastPath.area === 'remote-indexes' &&
         fastPath.allowedShortcut === 'compress-owner-partition-index-scans-and-reuse-cursor-to-size-bounded-plugin-install-fanout' &&
         fastPath.guardrails.includes('bounded-plugin-install-fanout-stays-within-per-site-and-per-kind-budgets') &&

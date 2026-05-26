@@ -65,6 +65,9 @@ Current executable gate:
   later durable receipts still deciding pause or crash.
 - The same details also carry the explicit queue-headroom measurement bit, so a
   paused sender cannot look bounded when the headroom probe itself is missing.
+- The same details also let ordered raw receipt keys and journal lag size the
+  next bounded replay window after a pause, but only as planning evidence
+  while live preconditions and durable journal records still decide recovery.
 - The same details also expose whether queue headroom is visible on the raw
   backpressure surface, so a paused sender cannot hide the headroom bit and
   still look auditable.
