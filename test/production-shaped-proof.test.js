@@ -1998,6 +1998,15 @@ test('packaged production plugin readiness helper does not retry terminal readin
     'preflight',
   );
   assert.deepEqual(routeProbeCounts, { snapshot: 0, preflight: 0 });
+  assert.deepEqual(
+    packagedProductionPluginResetRouteNotReadyProbeCounts(
+      { snapshot: 2, preflight: 3 },
+      'snapshot',
+      'unknown-route',
+      'preflight',
+    ),
+    { snapshot: 0, preflight: 0 },
+  );
   assert.equal(packagedProductionPluginReadinessErrorRetryable(new Error('transient fetch failure')), true);
   assert.equal(
     packagedProductionPluginReadinessErrorRetryable({
