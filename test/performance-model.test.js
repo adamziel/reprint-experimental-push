@@ -80,6 +80,17 @@ test('benchmark model covers large uploads and plugin installs', () => {
     model.safeFastPaths.some(
       (fastPath) =>
         fastPath.area === 'database-row-batching' &&
+        fastPath.allowedShortcut === 'compress-planning-row-batch-manifests-and-reuse-canonical-row-digests-to-size-bounded-plugin-install-batches' &&
+        fastPath.guardrails.includes('compressed-manifest-remains-planning-evidence-only') &&
+        fastPath.guardrails.includes('canonical-row-digests-stay-plan-scoped-and-revalidated-before-write') &&
+        fastPath.gateProofs.recovery.includes('batch receipts still classify retry, pause, or crash'),
+    ),
+    'compressed row-batch manifests can reuse canonical row digests for plugin-install batches without weakening recovery evidence',
+  );
+  assert.ok(
+    model.safeFastPaths.some(
+      (fastPath) =>
+        fastPath.area === 'database-row-batching' &&
         fastPath.allowedShortcut === 'compress-planning-row-batch-manifests-and-reuse-canonical-row-digests-to-size-bounded-plugin-update-batches' &&
         fastPath.guardrails.includes('compressed-manifest-remains-planning-evidence-only') &&
         fastPath.gateProofs.skip.includes('canonical row digests can trim repeat planning work') &&

@@ -1278,6 +1278,26 @@ export const SAFE_FAST_PATHS = Object.freeze([
   {
     area: 'database-row-batching',
     reduces: ['wire-bytes-for-planning', 'planning-round-trips', 'duplicate-row-digest-recomputation'],
+    allowedShortcut: 'compress-planning-row-batch-manifests-and-reuse-canonical-row-digests-to-size-bounded-plugin-install-batches',
+    guardrails: [
+      'compressed-manifest-remains-planning-evidence-only',
+      'canonical-row-digests-stay-plan-scoped-and-revalidated-before-write',
+    ],
+    gateProofs: {
+      skip: 'a compressed row-batch manifest and canonical row digests can reduce repeat planning work when sizing bounded plugin-install batches, and each row still keeps its own precondition',
+      live: 'every row in the batch still rechecks its live compare at the storage boundary before visibility changes',
+      group: 'the compressed manifest and canonical digests only narrow planning work inside the same atomic group and never widen visibility across owners',
+      recovery: 'the compressed manifest, canonical row digests, and batch receipts still classify retry, pause, or crash without guessing',
+    },
+    visibilityBoundary: 'planning-only-until-batch-commit',
+    failureEvidence: 'compressed row-batch manifest, canonical row digests, and batch idempotency key',
+    bypassesLivePreconditions: false,
+    splitsAtomicGroup: false,
+    publishesStagedDataEarly: false,
+  },
+  {
+    area: 'database-row-batching',
+    reduces: ['wire-bytes-for-planning', 'planning-round-trips', 'duplicate-row-digest-recomputation'],
     allowedShortcut: 'compress-planning-row-batch-manifests-and-reuse-canonical-row-digests-to-size-bounded-plugin-update-batches',
     guardrails: [
       'compressed-manifest-remains-planning-evidence-only',
