@@ -63,6 +63,7 @@ test('guarded executor benchmark moves buffers and row payloads through durable 
   assert.equal(report.evidence.backpressure.producerQueueBounded, true);
   assert.equal(report.evidence.backpressure.queuePausedBeforeOverflow, true);
   assert.equal(report.evidence.backpressure.receiptCursorWithinQueueBudget, true);
+  assert.equal(report.evidence.backpressure.backpressureEvidenceComplete, true);
   assert.equal(report.evidence.backpressure.queueHeadroomBytes, 31.5 * 1024 * 1024);
   assert.equal(report.evidence.recovery.successInspectionStatus, 'fully-updated-remote');
   assert.equal(report.evidence.recovery.preCommitFailureInspectionStatus, 'old-remote');
@@ -112,6 +113,7 @@ test('guarded benchmark refuses production throughput claims until production ga
   assert.equal(report.claims.productionThroughputDetails.backpressureConsistency.receiptCursorBackpressureBytes, 512 * 1024);
   assert.equal(report.claims.productionThroughputDetails.backpressureConsistency.receiptCursorBackpressureMeasured, true);
   assert.equal(report.claims.productionThroughputDetails.backpressureConsistency.backpressureEvidenceComplete, true);
+  assert.equal(report.claims.productionThroughputDetails.blockers.includes('backpressure-evidence-incomplete'), false);
   assert.equal(report.claims.productionThroughputDetails.backpressureConsistency.receiptCursorBackpressureWithinQueueHeadroom, true);
   assert.equal(report.claims.productionThroughputDetails.backpressure.producerQueueBounded, true);
   assert.equal(report.claims.productionThroughputDetails.receiptCursorWindowBytes, 512 * 1024);
@@ -401,6 +403,7 @@ test('production claim gate fails closed if benchmark evidence is tampered', () 
     productionThroughputDetails(missingQueueCursor).backpressureConsistency.backpressureEvidenceComplete,
     false,
   );
+  assert.ok(productionThroughputBlockers(missingQueueCursor).includes('backpressure-evidence-incomplete'));
 
   const mismatchedQueueHeadroom = clone(report);
   mismatchedQueueHeadroom.evidence.backpressure.queueHeadroomBytes = 0;

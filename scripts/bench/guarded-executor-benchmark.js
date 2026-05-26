@@ -151,6 +151,7 @@ export function runGuardedExecutorBenchmark(options = {}) {
 
 export function productionThroughputBlockers(report) {
   const blockers = [];
+  const backpressureEvidenceComplete = hasCompleteBackpressureEvidence(report);
   if (report.evidence.chunkReceipts.recorded !== report.evidence.chunkReceipts.expected) {
     blockers.push('missing-durable-chunk-receipts');
   }
@@ -234,6 +235,9 @@ export function productionThroughputBlockers(report) {
   ) {
     blockers.push('missing-queue-headroom-evidence');
   }
+  if (backpressureEvidenceComplete !== true) {
+    blockers.push('backpressure-evidence-incomplete');
+  }
   if (
     Number.isFinite(report.evidence.backpressure?.queueBudgetBytes)
     && Number.isFinite(report.resourceLimits?.maxBufferedUploadBytes)
@@ -297,6 +301,7 @@ export function productionThroughputDetails(report) {
   const receiptCursorMemoryCeilingBytes = report.resourceLimits?.memoryCeilingBytes ?? null;
   const receiptCursorQueueBudgetBytes = report.evidence.backpressure?.queueBudgetBytes ?? null;
   const receiptCursorQueueHeadroomBytes = report.evidence.backpressure?.queueHeadroomBytes ?? null;
+  const backpressureEvidenceComplete = hasCompleteBackpressureEvidence(report);
   const receiptCursorIsTerminalChunk =
     report.evidence.chunkReceipts.cursorConsistency?.canResumeFromCursor === true
     && report.evidence.chunkReceipts.resumeCursor?.chunkIndex
@@ -342,12 +347,6 @@ export function productionThroughputDetails(report) {
     receiptCursorBackpressureBytes !== null
     && receiptCursorBackpressureBytes === receiptCursorWindowBytes;
   const receiptCursorBackpressureMeasured = Number.isFinite(receiptCursorBackpressureBytes);
-  const backpressureEvidenceComplete =
-    receiptCursorBackpressureMeasured
-    && Number.isFinite(receiptCursorQueueBudgetBytes)
-    && Number.isFinite(receiptCursorQueueHeadroomBytes)
-    && report.evidence.backpressure?.queuePausedBeforeOverflow === true
-    && report.evidence.backpressure?.receiptCursorWithinQueueBudget === true;
   const productionAtomicCommitMeasured = report.executorCapabilities.productionAtomicCommit === 'production-atomic-group-commit';
   const productionRowBatchExecutorMeasured = report.executorCapabilities.rowApply === 'production-batched-compare-and-swap';
   return {
@@ -409,6 +408,19 @@ export function productionThroughputDetails(report) {
     atomicGroup: report.evidence.atomicGroup,
     blockers: productionThroughputBlockers(report),
   };
+}
+
+function hasCompleteBackpressureEvidence(report) {
+  const receiptCursorBackpressureBytes = report.evidence.backpressure?.receiptCursorBytes ?? null;
+  const receiptCursorQueueBudgetBytes = report.evidence.backpressure?.queueBudgetBytes ?? null;
+  const receiptCursorQueueHeadroomBytes = report.evidence.backpressure?.queueHeadroomBytes ?? null;
+  return (
+    Number.isFinite(receiptCursorBackpressureBytes)
+    && Number.isFinite(receiptCursorQueueBudgetBytes)
+    && Number.isFinite(receiptCursorQueueHeadroomBytes)
+    && report.evidence.backpressure?.queuePausedBeforeOverflow === true
+    && report.evidence.backpressure?.receiptCursorWithinQueueBudget === true
+  );
 }
 
 export function assertCanClaimProductionThroughput(report) {
@@ -833,6 +845,11 @@ function buildReport({
         receiptCursorWithinQueueBudget:
           Number.isFinite(lastChunkReceipt?.sizeBytes)
           && lastChunkReceipt.sizeBytes <= config.maxBufferedUploadBytes,
+        backpressureEvidenceComplete:
+          Number.isFinite(lastChunkReceipt?.sizeBytes)
+          && Number.isFinite(config.maxBufferedUploadBytes)
+          && Number.isFinite(config.maxBufferedUploadBytes - config.chunkSizeBytes)
+          && config.chunkSizeBytes <= config.maxBufferedUploadBytes,
       },
       recovery: {
         successInspectionStatus: successInspection.status,
