@@ -9723,6 +9723,104 @@ test('allows an existing _thumbnail_id row to retarget to an attachment created 
   assert.equal(result.site.db.wp_postmeta['meta_id:45'].meta_value, 2);
 });
 
+test('allows an existing _thumbnail_id row to reference an attachment created by the same plan even when a navigation menu taxonomy is blocked elsewhere', () => {
+  const attachmentResourceKey = 'row:["wp_posts","ID:2"]';
+  const blockedTaxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:9"]';
+  const postmetaResourceKey = 'row:["wp_postmeta","meta_id:45"]';
+  const base = baseSite();
+  base.db.wp_postmeta = {
+    'meta_id:45': {
+      meta_id: 45,
+      post_id: 1,
+      meta_key: '_thumbnail_id',
+      meta_value: 9,
+    },
+  };
+  const local = baseSite();
+  local.db.wp_postmeta = {
+    'meta_id:45': {
+      meta_id: 45,
+      post_id: 1,
+      meta_key: '_thumbnail_id',
+      meta_value: 2,
+    },
+  };
+  local.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_title: 'Local attachment',
+    post_content: 'local-private-retargeted-thumbnail-attachment-body',
+    post_status: 'inherit',
+    post_type: 'attachment',
+  };
+  local.db.wp_terms = {
+    'term_id:9': {
+      term_id: 9,
+      name: 'Local navigation term',
+      slug: 'local-navigation-term',
+    },
+  };
+  local.db.wp_term_taxonomy = {
+    'term_taxonomy_id:9': {
+      term_taxonomy_id: 9,
+      term_id: 9,
+      taxonomy: 'nav_menu',
+      description: '',
+      parent: 0,
+      count: 0,
+    },
+  };
+  const remote = baseSite();
+  remote.db.wp_postmeta = {
+    'meta_id:45': {
+      meta_id: 45,
+      post_id: 1,
+      meta_key: '_thumbnail_id',
+      meta_value: 9,
+    },
+  };
+
+  const plan = planFor(base, local, remote);
+  const attachmentMutation = mutationFor(plan, attachmentResourceKey);
+  const blockedTaxonomyMutation = mutationFor(plan, blockedTaxonomyResourceKey);
+  const blockedTaxonomy = plan.blockers.find((entry) => entry.resourceKey === blockedTaxonomyResourceKey);
+  const postmetaMutation = mutationFor(plan, postmetaResourceKey);
+  const reference = postmetaMutation.wordpressGraphReferences.find((entry) => entry.relationshipType === 'featured-image-attachment');
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(attachmentMutation.changeKind, 'create');
+  assert.equal(blockedTaxonomyMutation, undefined);
+  assert.equal(blockedTaxonomy.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(blockedTaxonomy.surface, 'nav_menu');
+  assert.equal(postmetaMutation.changeKind, 'update');
+  assert.ok(
+    plan.mutations.indexOf(attachmentMutation) < plan.mutations.indexOf(postmetaMutation),
+    'attachment create must be ordered before dependent existing thumbnail metadata update',
+  );
+  assert.deepEqual(postmetaMutation.dependsOnMutationIds, [attachmentMutation.id]);
+  assert.equal(plan.summary.graphDependencies, 1);
+  assert.deepEqual(plan.graphDependencies, [
+    {
+      sourceMutationId: postmetaMutation.id,
+      sourceResourceKey: postmetaResourceKey,
+      relationshipKey: 'wp_postmeta.meta_value',
+      relationshipType: 'featured-image-attachment',
+      targetMutationId: attachmentMutation.id,
+      targetResourceKey: attachmentResourceKey,
+      resolutionPolicy: 'same-plan-local-create',
+      source: 'same-plan-local-create',
+      targetLocalHash: attachmentMutation.localHash,
+    },
+  ]);
+  assert.equal(reference.resolutionPolicy, 'same-plan-local-create');
+  assert.equal(reference.relationshipKey, 'wp_postmeta.meta_value');
+  assert.equal(reference.relationshipType, 'featured-image-attachment');
+  assert.equal(reference.targetResourceKey, attachmentResourceKey);
+  assert.equal(
+    JSON.stringify(reference).includes('local-private-retargeted-thumbnail-attachment-body'),
+    false,
+  );
+});
+
 test('blocks an existing _thumbnail_id row owned by an attachment when it targets a same-plan attachment', () => {
   const ownerResourceKey = 'row:["wp_posts","ID:1"]';
   const attachmentResourceKey = 'row:["wp_posts","ID:2"]';
