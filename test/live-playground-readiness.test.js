@@ -42,5 +42,10 @@ for (const scriptName of [
       source,
       /if \(labNotReadyProbeLimitReached\(notReadyProbeCount, maxNotReadyReadinessProbes\)\)/,
     );
+    assert.match(source, /const lastProbes = \[\];/);
+    assert.match(source, /describeLastProbe\(lastProbes\.at\(-1\)\)/);
+    assert.match(source, /await throwPlaygroundReadinessFailure\(/);
+    assert.match(source, /writeSync\(2, `\$\{message\}\\n`\);/);
+    assert.match(source, /child\.kill\('SIGTERM'\);/);
   });
 }

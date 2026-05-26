@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
+import { writeSync } from 'node:fs';
 import net from 'node:net';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -180,6 +181,7 @@ async function waitForServer(child, baseUrl, getLogs) {
   let notReadyProbeCount = 0;
   let readinessProbeCount = 0;
   let timeoutProbeCount = 0;
+  const lastProbes = [];
   while (Date.now() < deadline) {
     if (child.exitCode !== null || child.signalCode !== null) {
       const exitLabel = child.exitCode !== null
@@ -193,6 +195,13 @@ async function waitForServer(child, baseUrl, getLogs) {
       }, serverFetchTimeoutMs, child);
       readinessProbeCount += 1;
       timeoutProbeCount = 0;
+      const responsePreview = responseBody.slice(0, readinessFailureBodyLimit);
+      lastProbes.push({
+        route: '/wp-json/',
+        status: response.status,
+        ok: response.ok,
+        body: responsePreview,
+      });
       const readinessRetryable = labReadinessBodyRetryable(response.status, responseBody);
       if (response.status === 200 && !readinessRetryable) {
         notReadyProbeCount = 0;
@@ -203,19 +212,31 @@ async function waitForServer(child, baseUrl, getLogs) {
           },
         }, serverFetchTimeoutMs, child);
         timeoutProbeCount = 0;
+        const snapshotPreview = snapshotBody.slice(0, readinessFailureBodyLimit);
+        lastProbes.push({
+          route: '/wp-json/reprint-push-lab/v1/snapshot',
+          status: snapshot.status,
+          ok: snapshot.ok,
+          body: snapshotPreview,
+        });
         let snapshotJson = null;
         try {
           snapshotJson = JSON.parse(snapshotBody);
         } catch (error) {
           if (labReadinessBodyRetryable(snapshot.status, snapshotBody)) {
-            lastError = new Error(`Snapshot readiness HTTP ${snapshot.status}`);
+            lastError = new Error(
+              `Snapshot readiness HTTP ${snapshot.status}; ${describeLastProbe(lastProbes.at(-1))}`,
+            );
             await sleepUnlessChildExit(readinessProbeIntervalMs, child);
             continue;
           }
-          throw new Error(
-            `Playground lab snapshot returned an invalid readiness body at ${baseUrl}: `
-            + `${snapshotBody.slice(0, readinessFailureBodyLimit)}\n${getLogs()}`,
-            { cause: error },
+          lastError = error;
+          await throwPlaygroundReadinessFailure(
+            child,
+            `Playground lab snapshot returned an invalid readiness body at ${baseUrl}`,
+            lastError,
+            lastProbes,
+            getLogs(),
           );
         }
         if (labSnapshotReady({
@@ -224,7 +245,9 @@ async function waitForServer(child, baseUrl, getLogs) {
         })) {
           return;
         }
-        lastError = new Error(`Snapshot readiness HTTP ${snapshot.status}`);
+        lastError = new Error(
+          `Snapshot readiness HTTP ${snapshot.status}; ${describeLastProbe(lastProbes.at(-1))}`,
+        );
         if (labSnapshotRetryable({
           status: snapshot.status,
           body: snapshotJson,
@@ -232,12 +255,17 @@ async function waitForServer(child, baseUrl, getLogs) {
           await sleepUnlessChildExit(readinessProbeIntervalMs, child);
           continue;
         }
-        throw new Error(
-          `Playground lab snapshot returned a terminal readiness failure at ${baseUrl}: `
-          + `${snapshotBody.slice(0, readinessFailureBodyLimit)}\n${getLogs()}`,
+        await throwPlaygroundReadinessFailure(
+          child,
+          `Playground lab snapshot returned a terminal readiness failure at ${baseUrl}`,
+          lastError,
+          lastProbes,
+          getLogs(),
         );
       }
-      lastError = new Error(`HTTP ${response.status}: ${responseBody.slice(0, readinessFailureBodyLimit)}`);
+      lastError = new Error(
+        `HTTP ${response.status}: ${responsePreview}; ${describeLastProbe(lastProbes.at(-1))}`,
+      );
       if (readinessRetryable) {
         const { response: snapshot, bodyText: snapshotBody } = await fetchTextWithTimeout(`${baseUrl}/wp-json/reprint-push-lab/v1/snapshot`, {
           headers: {
@@ -246,15 +274,25 @@ async function waitForServer(child, baseUrl, getLogs) {
           },
         }, serverFetchTimeoutMs, child);
         timeoutProbeCount = 0;
+        const snapshotPreview = snapshotBody.slice(0, readinessFailureBodyLimit);
+        lastProbes.push({
+          route: '/wp-json/reprint-push-lab/v1/snapshot',
+          status: snapshot.status,
+          ok: snapshot.ok,
+          body: snapshotPreview,
+        });
         let snapshotJson = null;
         try {
           snapshotJson = JSON.parse(snapshotBody);
         } catch (error) {
           if (!labReadinessBodyRetryable(snapshot.status, snapshotBody)) {
-            throw new Error(
-              `Playground lab snapshot returned an invalid readiness body at ${baseUrl}: `
-              + `${snapshotBody.slice(0, readinessFailureBodyLimit)}\n${getLogs()}`,
-              { cause: error },
+            lastError = error;
+            await throwPlaygroundReadinessFailure(
+              child,
+              `Playground lab snapshot returned an invalid readiness body at ${baseUrl}`,
+              lastError,
+              lastProbes,
+              getLogs(),
             );
           }
         }
@@ -262,33 +300,46 @@ async function waitForServer(child, baseUrl, getLogs) {
           if (labSnapshotReady({
             status: snapshot.status,
             body: snapshotJson,
-          })) {
+            })) {
             return;
           }
           if (!labSnapshotRetryable({
             status: snapshot.status,
             body: snapshotJson,
           })) {
-            throw new Error(
-              `Playground lab snapshot returned a terminal readiness failure at ${baseUrl}: `
-              + `${snapshotBody.slice(0, readinessFailureBodyLimit)}\n${getLogs()}`,
+            lastError = new Error(
+              `Snapshot readiness HTTP ${snapshot.status}; ${describeLastProbe(lastProbes.at(-1))}`,
+            );
+            await throwPlaygroundReadinessFailure(
+              child,
+              `Playground lab snapshot returned a terminal readiness failure at ${baseUrl}`,
+              lastError,
+              lastProbes,
+              getLogs(),
             );
           }
         }
         notReadyProbeCount += 1;
         if (labNotReadyProbeLimitReached(notReadyProbeCount, maxNotReadyReadinessProbes)) {
-          throw new Error(
+          await throwPlaygroundReadinessFailure(
+            child,
             `Playground server reported the bounded readiness failure ${response.status} after ${readinessProbeCount} /wp-json/ probes `
-            + `(${notReadyProbeCount} consecutive not-ready response${notReadyProbeCount === 1 ? '' : 's'}; `
-            + `limit ${maxNotReadyReadinessProbes}) at ${baseUrl}: ${lastError?.message ?? 'unknown'}\n${getLogs()}`,
+              + `(${notReadyProbeCount} consecutive not-ready response${notReadyProbeCount === 1 ? '' : 's'}; `
+              + `limit ${maxNotReadyReadinessProbes}) at ${baseUrl}`,
+            lastError,
+            lastProbes,
+            getLogs(),
           );
         }
       } else {
         notReadyProbeCount = 0;
         if (response.status !== 200 && readinessProbeCount >= maxReadinessProbes) {
-          throw new Error(
-            `Playground server stayed in readiness response ${response.status} after ${readinessProbeCount} /wp-json/ probes at ${baseUrl}: `
-            + `${lastError?.message ?? 'unknown'}\n${getLogs()}`,
+          await throwPlaygroundReadinessFailure(
+            child,
+            `Playground server stayed in readiness response ${response.status} after ${readinessProbeCount} /wp-json/ probes at ${baseUrl}`,
+            lastError,
+            lastProbes,
+            getLogs(),
           );
         }
       }
@@ -299,16 +350,114 @@ async function waitForServer(child, baseUrl, getLogs) {
       lastError = error;
       timeoutProbeCount = labNextTimeoutProbeCount(timeoutProbeCount, error);
       if (labReadinessProbeTimedOut(error) && timeoutProbeCount >= maxConsecutiveTimeoutProbes) {
-        throw new Error(
-          `Playground server hit ${timeoutProbeCount} consecutive readiness probe timeout${timeoutProbeCount === 1 ? '' : 's'} at ${baseUrl}: ${lastError?.message ?? 'unknown'}\n${getLogs()}`,
+        await throwPlaygroundReadinessFailure(
+          child,
+          `Playground server hit ${timeoutProbeCount} consecutive readiness probe timeout${timeoutProbeCount === 1 ? '' : 's'} at ${baseUrl}`,
+          lastError,
+          lastProbes,
+          getLogs(),
         );
       }
     }
     await sleepUnlessChildExit(readinessProbeIntervalMs, child);
   }
-  throw new Error(
-    `Timed out waiting for Playground server at ${baseUrl}: ${lastError?.message ?? 'unknown'}\n${getLogs()}`,
+  await throwPlaygroundReadinessFailure(
+    child,
+    `Timed out waiting for Playground server at ${baseUrl}`,
+    lastError,
+    lastProbes,
+    getLogs(),
   );
+}
+
+function describeLastProbe(probe) {
+  if (!probe) {
+    return 'route/status/body: unavailable';
+  }
+  return describeLastRouteStatusBody({
+    route: probe.route ?? null,
+    status: probe.status ?? null,
+    body: probe.body ?? null,
+  });
+}
+
+function describeLastRouteStatusBody(lastRouteStatusBody) {
+  return `route/status/body: ${JSON.stringify(
+    {
+      route: lastRouteStatusBody?.route ?? null,
+      status: lastRouteStatusBody?.status ?? null,
+      body: lastRouteStatusBody?.body ?? null,
+    },
+    null,
+    2,
+  )}`;
+}
+
+function writePlaygroundFailure(message, lastProbes, logs, lastError) {
+  const lastProbe = lastProbes.at(-1) ?? null;
+  const summary = {
+    message,
+    lastProbe,
+    lastRouteStatusBody: lastProbe
+      ? {
+          route: lastProbe.route ?? null,
+          status: lastProbe.status ?? null,
+          body: lastProbe.body ?? null,
+        }
+      : null,
+    lastError: lastError?.message ?? null,
+  };
+  writeSync(2, `${message}\n`);
+  writeSync(2, `${JSON.stringify(summary)}\n`);
+  writeSync(1, `${JSON.stringify(summary)}\n`);
+  if (logs) {
+    writeSync(2, `${logs}\n`);
+  }
+}
+
+async function throwPlaygroundReadinessFailure(child, prefix, lastError, lastProbes, logs) {
+  const diagnostic = formatPlaygroundStartupFailure(prefix, lastError, lastProbes, logs);
+  writePlaygroundFailure(diagnostic, lastProbes, logs, lastError);
+  await stopSpawnedServer(child);
+  const finalError = new Error(diagnostic);
+  finalError.isPlaygroundReadinessFailure = true;
+  finalError.cause = lastError ?? null;
+  finalError.lastProbe = lastProbes.at(-1) ?? null;
+  finalError.lastRouteStatusBody = finalError.lastProbe
+    ? {
+        route: finalError.lastProbe.route ?? null,
+        status: finalError.lastProbe.status ?? null,
+        body: finalError.lastProbe.body ?? null,
+      }
+    : null;
+  throw finalError;
+}
+
+function formatPlaygroundStartupFailure(prefix, lastError, lastProbes, logs) {
+  const lastProbe = lastProbes.at(-1);
+  const probeText = lastProbes.length
+    ? `\nProbe trail: ${JSON.stringify(lastProbes.slice(-4), null, 2)}`
+    : '';
+  const lastProbeText = lastProbe
+    ? `\nLast route/status/body: ${JSON.stringify(
+        {
+          route: lastProbe.route ?? null,
+          status: lastProbe.status ?? null,
+          body: lastProbe.body ?? null,
+        },
+        null,
+        2,
+      )}`
+    : '';
+  return `${prefix}: ${lastError?.message ?? 'unknown'}${probeText}${lastProbeText}\n${logs}`;
+}
+
+async function stopSpawnedServer(child) {
+  if (!child || child.exitCode !== null || child.signalCode !== null) {
+    return;
+  }
+  child.kill('SIGTERM');
+  await waitForExit(child, 12_000);
 }
 
 async function fetchTextWithTimeout(url, options = {}, timeoutMs = serverFetchTimeoutMs, child = null) {
