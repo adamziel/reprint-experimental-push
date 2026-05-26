@@ -447,7 +447,8 @@ test('production-shaped authenticated push fails closed when production auth ses
         revoked: false,
         cleanedUp: false,
       },
-      read: {
+      read: null,
+      expired: {
         id: 'psh_01j00000000000000000000000',
         type: 'production-auth-session',
         status: 'active',
@@ -456,17 +457,14 @@ test('production-shaped authenticated push fails closed when production auth ses
         expired: true,
         revoked: false,
         cleanedUp: false,
+        rotated: false,
+        preserved: false,
+        step: 'preflight',
       },
-        expired: {
-          id: 'psh_01j00000000000000000000000',
-          type: 'production-auth-session',
-          status: 'active',
-          expiresAt: '2000-01-01T00:00:00Z',
-          authUser: 'reprint_push_admin',
-          expired: true,
-          revoked: false,
-          cleanedUp: false,
-        },
+      revoked: null,
+      cleanedUp: null,
+      rotated: null,
+      preserved: null,
     });
     assert.deepEqual(summary.authSessionLifecycleSummary, {
       issued: {
@@ -1714,6 +1712,7 @@ test('production-shaped authenticated push fails closed when production auth ses
       type: 'production-auth-session',
       status: 'active',
       expiresAt: '2030-01-01T00:00:00Z',
+      authUser: 'reprint_push_admin',
       expired: true,
       revoked: false,
       cleanedUp: false,
@@ -2210,8 +2209,9 @@ test('production-shaped authenticated push records revoked and cleaned-up auth s
       step: 'dry-run',
       id: 'psh_01j00000000000000000000000',
       type: 'production-auth-session',
-      status: 'revoked',
+      status: 'active',
       expiresAt: '2030-01-01T00:00:00Z',
+      authUser: 'reprint_push_admin',
       expired: false,
       revoked: true,
       cleanedUp: false,
@@ -2224,6 +2224,7 @@ test('production-shaped authenticated push records revoked and cleaned-up auth s
       type: 'production-auth-session',
       status: 'active',
       expiresAt: '2030-01-01T00:00:00Z',
+      authUser: 'reprint_push_admin',
       expired: false,
       revoked: false,
       cleanedUp: true,
@@ -2234,8 +2235,9 @@ test('production-shaped authenticated push records revoked and cleaned-up auth s
       step: 'dry-run',
       id: 'psh_01j00000000000000000000000',
       type: 'production-auth-session',
-      status: 'revoked',
+      status: 'active',
       expiresAt: '2030-01-01T00:00:00Z',
+      authUser: 'reprint_push_admin',
       expired: false,
       revoked: true,
       cleanedUp: false,
@@ -2552,6 +2554,7 @@ test('production-shaped authenticated push threads auth-session drift on the che
       type: 'production-auth-session',
       status: 'active',
       expiresAt: '2030-01-01T00:00:00Z',
+      authUser: 'reprint_push_admin',
       expired: false,
       revoked: false,
       cleanedUp: false,
@@ -7576,8 +7579,8 @@ test('production-shaped authenticated push fails closed when replay changes the 
     assert.equal(summary.ok, false);
     assert.equal(summary.code, 'AUTH_SESSION_LIFECYCLE_DRIFT');
     assert.deepEqual(summary.authSession, {
-      required: 'production-auth-session',
-      observed: 'production-auth-session',
+      required: 'reprint_push_admin',
+      observed: 'different-user',
       verdict: 'AUTH_SESSION_LIFECYCLE_DRIFT',
     });
     assert.ok(!seen.some(({ url }) => url.includes('/db-journal')));

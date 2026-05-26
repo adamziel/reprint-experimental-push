@@ -392,6 +392,97 @@ function isAuthSessionReadStep(step) {
     || step === 'journal';
 }
 
+function normalizeAuthSessionObservationId(id) {
+  if (typeof id !== 'string') {
+    return null;
+  }
+
+  const normalized = id.trim();
+  if (
+    !normalized
+    || normalized !== id
+    || /[\u0000-\u001f\u007f]/.test(normalized)
+  ) {
+    return null;
+  }
+
+  return normalized;
+}
+
+function normalizeAuthSessionObservationField(value) {
+  if (typeof value !== 'string') {
+    return null;
+  }
+
+  const normalized = value.trim();
+  if (
+    !normalized
+    || normalized !== value
+    || /[\u0000-\u001f\u007f]/.test(normalized)
+  ) {
+    return null;
+  }
+
+  return normalized;
+}
+
+function normalizeAuthSessionObservationStep(step) {
+  if (step === null || step === undefined || step === '') {
+    return 'missing';
+  }
+
+  if (typeof step !== 'string') {
+    return 'invalid-step';
+  }
+
+  return step;
+}
+
+function resolveInvalidAuthSessionLifecycleFlag(observation) {
+  if (!observation || typeof observation !== 'object') {
+    return null;
+  }
+
+  if (typeof observation.invalidLifecycleFlag === 'string' && observation.invalidLifecycleFlag) {
+    return observation.invalidLifecycleFlag;
+  }
+
+  const lifecycleFlags = ['expired', 'revoked', 'cleanedUp', 'cleanup', 'rotated', 'preserved'];
+  for (const flag of lifecycleFlags) {
+    const value = observation[flag];
+    if (value !== undefined && value !== null && typeof value !== 'boolean') {
+      return flag;
+    }
+  }
+
+  return null;
+}
+
+function resolveInvalidAuthSessionIdentityField(observation) {
+  if (!observation || typeof observation !== 'object') {
+    return null;
+  }
+
+  if (observation.id !== undefined && observation.id !== null && !normalizeAuthSessionObservationId(observation.id)) {
+    return 'id';
+  }
+
+  const identityFields = [
+    ['type', 'type'],
+    ['status', 'status'],
+    ['expiresAt', 'expires-at'],
+  ];
+
+  for (const [field, label] of identityFields) {
+    const value = observation[field];
+    if (value !== undefined && value !== null && !normalizeAuthSessionObservationField(value)) {
+      return label;
+    }
+  }
+
+  return null;
+}
+
 function hasTraceBackedPostPreflightReadObservation(observations, issuedIndex) {
   for (let index = observations.length - 1; index > issuedIndex; index -= 1) {
     const observation = observations[index];
