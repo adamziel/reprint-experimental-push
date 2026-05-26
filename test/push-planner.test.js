@@ -22193,6 +22193,28 @@ test('production durable journal support checks close an invalid writer before f
   assert.equal(closed, 0);
 });
 
+test('durable recovery journal writers fail closed when appendEvent is inherited through the prototype', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  const remote = baseSite();
+  const plan = planFor(base, local, remote);
+  let inheritedAppendCalls = 0;
+  const writer = Object.create({
+    appendEvent() {
+      inheritedAppendCalls += 1;
+    },
+  });
+
+  const error = captureError(() => applyPlan(remote, plan, {
+    durableJournal: writer,
+  }));
+
+  assert.equal(error.code, 'JOURNAL_WRITER_INVALID');
+  assert.equal(inheritedAppendCalls, 0);
+  assert.equal(remote.files['index.php'], '<?php echo "base";');
+});
+
 test('production durable journal support checks close a writer when restart inspection throws', () => {
   let closed = 0;
   const writer = {
