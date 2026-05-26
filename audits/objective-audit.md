@@ -69,9 +69,9 @@ but it did not change the release conclusion:
   expired-session check in the packaging smoke and the REST plugin, but still
   not proving production auth/session lifecycle or a live-source mutation
   boundary.
-- `origin/lane/no-data-loss-invariants` now records `e33c19df`, adding
-  term-relationship identity sibling proof again, but still not proving the
-  live release boundary or any production-backed source mutation.
+- `origin/lane/no-data-loss-invariants` now records `b5e199f0`, adding special
+  file sibling proof again, but still not proving the live release boundary or
+  any production-backed source mutation.
 - `origin/lane/progress-publisher` now records `7695e1f9`, refreshing public
   progress freshness only.
 - `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration`
