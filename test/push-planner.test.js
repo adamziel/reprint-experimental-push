@@ -21094,6 +21094,75 @@ test('blocks local same-plan created comment parent identity while preserving a 
   assert.equal(Object.hasOwn(remote.files, 'wp-content/plugins/forms/forms.php'), false);
 });
 
+test('blocks local same-plan created comment parent identity while preserving a matching independent file type swap and remote-only plugin removals', () => {
+  const resourceKey = 'row:["wp_comments","comment_ID:18"]';
+  const targetResourceKey = 'row:["wp_comments","comment_ID:19"]';
+  const matchingResourceKey = 'file:wp-content/uploads/comment-cover';
+  const base = baseSite();
+  base.files['wp-content/uploads/comment-cover'] = 'base comment cover bytes';
+  base.db.wp_comments = {
+    'comment_ID:18': {
+      comment_ID: 18,
+      comment_post_ID: 1,
+      comment_parent: 19,
+      comment_content: 'Base child comment content',
+    },
+  };
+
+  const local = baseSite();
+  local.files['wp-content/uploads/comment-cover'] = { type: 'directory' };
+  local.db.wp_comments = {
+    'comment_ID:18': {
+      comment_ID: 18,
+      comment_post_ID: 1,
+      comment_parent: 19,
+      comment_content: 'Local child comment content',
+    },
+  };
+  local.db.wp_comments['comment_ID:19'] = {
+    comment_ID: 19,
+    comment_post_ID: 1,
+    comment_parent: 0,
+    comment_content: 'Local same-plan parent comment',
+  };
+
+  const remote = baseSite();
+  remote.files['wp-content/uploads/comment-cover'] = { type: 'directory' };
+  remote.db.wp_comments = JSON.parse(JSON.stringify(base.db.wp_comments));
+  delete remote.plugins.forms;
+  delete remote.files['wp-content/plugins/forms/forms.php'];
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  const matchingTypeSwap = decisionFor(plan, matchingResourceKey);
+  const reference = blocker.references[0];
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, targetResourceKey), undefined);
+  assert.equal(decisionFor(plan, targetResourceKey), undefined);
+  assert.equal(plan.conflicts.length, 0);
+  assert.equal(blocker.class, 'unsupported-comments-users-resource');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.unsupportedState, 'same-plan-reference');
+  assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_comments","comment_ID:18"] is created in the same plan as a parent comment identity that depends on it, and identity rewriting is not yet supported.');
+  assert.equal(reference.relationshipKey, 'wp_comments.comment_parent');
+  assert.equal(reference.relationshipType, 'comment-parent');
+  assert.equal(reference.sourceResourceKey, resourceKey);
+  assert.equal(reference.targetResourceKey, targetResourceKey);
+  assert.equal(reference.targetChange.remote.state, 'absent');
+  assert.equal(reference.targetChange.local.state, 'present');
+  assert.equal(matchingTypeSwap.decision, 'already-in-sync');
+  assert.equal(matchingTypeSwap.change.localChange, 'type-change');
+  assert.equal(matchingTypeSwap.change.remoteChange, 'type-change');
+  assert.equal(planJson.includes('Local child comment content'), false);
+  assert.equal(planJson.includes('Base child comment content'), false);
+  assert.equal(planJson.includes('Local same-plan parent comment'), false);
+  assert.equal(Object.hasOwn(remote.plugins, 'forms'), false);
+  assert.equal(Object.hasOwn(remote.files, 'wp-content/plugins/forms/forms.php'), false);
+});
+
 test('blocks local term-relationship object references when the live remote post identity disappears while preserving remote-only plugin drift', () => {
   const resourceKey = 'row:["wp_term_relationships","object_id:7,term_taxonomy_id:5"]';
   const targetResourceKey = 'row:["wp_posts","ID:7"]';
