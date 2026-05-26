@@ -990,6 +990,7 @@ function summarizeDbJournalBody(body, {
     ok: true,
     retryAttempts,
     scope: body?.dbJournal?.scope,
+    acceptedOnCheckedBoundary: body?.dbJournal?.acceptedOnCheckedBoundary === true,
     rows: rows.length,
     applyCommitted: rows.some((entry) => entry.event === 'apply-committed'),
     mutationApplied: rows.filter((entry) => entry.event === 'mutation-applied').length,
@@ -1013,7 +1014,8 @@ function dbJournalProofIsAcceptable(dbJournal) {
 }
 
 function dbJournalCheckedBoundaryContractIsPresent(dbJournal) {
-  return dbJournal?.ownership?.ownsJournal === true
+  return dbJournal?.acceptedOnCheckedBoundary === true
+    && dbJournal?.ownership?.ownsJournal === true
     && dbJournal?.ownership?.restartReadable === true
     && typeof dbJournal?.ownership?.productionAdapter === 'string'
     && dbJournal.ownership.productionAdapter.length > 0

@@ -81,6 +81,32 @@ await withPlaygroundServer('remote-base', path.join(repoRoot, 'fixtures/playgrou
       proof.after?.status === 200,
       JSON.stringify({ code: proof.code, apply: proof.apply, after: proof.after }, null, 2),
     );
+    assert.equal(proof.recoveryInspect?.dbJournal?.acceptedOnCheckedBoundary, true);
+    assert.deepEqual(proof.recoveryInspect?.dbJournal?.ownership, {
+      ownsJournal: true,
+      restartReadable: true,
+      productionAdapter: 'wpdb-single-statement-cas',
+    });
+    assert.deepEqual(proof.recoveryInspect?.dbJournal?.leaseFence, {
+      boundary: 'wpdb-single-statement-cas',
+      claimKeyUnique: true,
+      monotonicSequence: true,
+      restartReadable: true,
+      staleClaimRejected: false,
+    });
+    assert.equal(proof.dbJournal?.acceptedOnCheckedBoundary, true);
+    assert.deepEqual(proof.dbJournal?.ownership, {
+      ownsJournal: true,
+      restartReadable: true,
+      productionAdapter: 'wpdb-single-statement-cas',
+    });
+    assert.deepEqual(proof.dbJournal?.leaseFence, {
+      boundary: 'wpdb-single-statement-cas',
+      claimKeyUnique: true,
+      monotonicSequence: true,
+      restartReadable: true,
+      staleClaimRejected: false,
+    });
 
     process.stdout.write(
       JSON.stringify(
