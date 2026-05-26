@@ -34,6 +34,8 @@ import {
   packagedProductionPluginReadinessBodyRetryable,
   packagedProductionPluginReadinessErrorRetryable,
   packagedProductionPluginReadinessProbeTimedOut,
+  packagedProductionPluginRestIndexReady,
+  packagedProductionPluginRestIndexRetryable,
   packagedProductionPluginResetRouteNotReadyProbeCounts,
   packagedProductionPluginServerReady,
   packagedProductionPluginSnapshotRetryable,
@@ -1089,6 +1091,67 @@ test('packaged production plugin readiness helper accepts a stable snapshot befo
             expiresAt: '2099-01-01T00:00:00Z',
             revoked: true,
           },
+        },
+      },
+    }),
+    false,
+  );
+});
+
+test('packaged production plugin readiness helper waits for the packaged REST index before route probes', () => {
+  assert.equal(
+    packagedProductionPluginRestIndexRetryable({
+      status: 502,
+      body: {
+        code: 'wordpress_not_ready',
+      },
+    }),
+    true,
+  );
+  assert.equal(
+    packagedProductionPluginRestIndexReady({
+      status: 200,
+      body: {
+        namespaces: ['wp/v2'],
+        routes: {
+          '/wp/v2/posts': {},
+        },
+      },
+    }),
+    false,
+  );
+  assert.equal(
+    packagedProductionPluginRestIndexRetryable({
+      status: 200,
+      body: {
+        namespaces: ['wp/v2'],
+        routes: {
+          '/wp/v2/posts': {},
+        },
+      },
+    }),
+    true,
+  );
+  assert.equal(
+    packagedProductionPluginRestIndexReady({
+      status: 200,
+      body: {
+        namespaces: ['wp/v2', 'reprint/v1'],
+        routes: {
+          '/reprint/v1/push/snapshot': {},
+        },
+      },
+    }),
+    true,
+  );
+  assert.equal(
+    packagedProductionPluginRestIndexReady({
+      status: 200,
+      body: {
+        namespaces: ['wp/v2', 'reprint/v1', 'reprint-push-lab/v1'],
+        routes: {
+          '/reprint/v1/push/snapshot': {},
+          '/reprint-push-lab/v1/snapshot': {},
         },
       },
     }),

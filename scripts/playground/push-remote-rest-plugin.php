@@ -450,9 +450,7 @@ function reprint_push_lab_rest_authenticated_dry_run(WP_REST_Request $request): 
             $payload,
             $plan
         );
-        $result['responseSchemaVersion'] = 1;
-        $result['auth'] = reprint_push_lab_rest_auth_evidence($request);
-        $result['signedRequest'] = reprint_push_lab_rest_signed_request_evidence($request);
+        $result = reprint_push_lab_rest_attach_authenticated_response_evidence($result, $request);
     }
     return reprint_push_lab_rest_json_response($result);
 }
@@ -494,9 +492,7 @@ function reprint_push_lab_rest_authenticated_apply(WP_REST_Request $request): WP
     $response = reprint_push_lab_rest_apply_with_db_journal($request, true);
     $result = $response->get_data();
     if (($result['ok'] ?? false) === true || isset($result['idempotency'])) {
-        $result['responseSchemaVersion'] = 1;
-        $result['auth'] = reprint_push_lab_rest_auth_evidence($request);
-        $result['signedRequest'] = reprint_push_lab_rest_signed_request_evidence($request);
+        $result = reprint_push_lab_rest_attach_authenticated_response_evidence($result, $request);
     }
     return reprint_push_lab_rest_json_response($result);
 }
@@ -514,9 +510,7 @@ function reprint_push_lab_rest_authenticated_recovery_inspect(WP_REST_Request $r
         if (isset($result['recovery']) && is_array($result['recovery']) && !isset($result['recovery']['journal'])) {
             $result['recovery']['journal'] = reprint_push_lab_rest_recovery_journal_evidence();
         }
-        $result['responseSchemaVersion'] = 1;
-        $result['auth'] = reprint_push_lab_rest_auth_evidence($request);
-        $result['signedRequest'] = reprint_push_lab_rest_signed_request_evidence($request);
+        $result = reprint_push_lab_rest_attach_authenticated_response_evidence($result, $request);
         $response->set_data($result);
     }
     return $response;
@@ -532,7 +526,7 @@ function reprint_push_lab_rest_authenticated_db_journal(WP_REST_Request $request
     $response = reprint_push_lab_rest_db_journal($request);
     $result = $response->get_data();
     if (is_array($result)) {
-        $result['signedRequest'] = reprint_push_lab_rest_signed_request_evidence($request);
+        $result = reprint_push_lab_rest_attach_authenticated_response_evidence($result, $request);
         $response->set_data($result);
     }
     return $response;
@@ -2383,6 +2377,45 @@ function reprint_push_lab_rest_signed_request_evidence(WP_REST_Request $request)
             ? $signature['request']
             : [],
     ];
+}
+
+function reprint_push_lab_rest_authenticated_session_store_evidence(WP_REST_Request $request): array
+{
+    $signature = reprint_push_lab_rest_signature_context($request);
+
+    return [
+        'type' => 'wp-options',
+        'cleanup' => isset($signature['cleanup']) && is_array($signature['cleanup'])
+            ? $signature['cleanup']
+            : [],
+        'retention' => [
+            'sessionTtlSeconds' => REPRINT_PUSH_LAB_SIGNED_SESSION_TTL,
+            'nonceTtlSeconds' => REPRINT_PUSH_LAB_SIGNED_TIMESTAMP_SKEW,
+        ],
+    ];
+}
+
+function reprint_push_lab_rest_attach_authenticated_response_evidence(array $result, WP_REST_Request $request): array
+{
+    $auth = reprint_push_lab_rest_auth_evidence($request);
+    $result['responseSchemaVersion'] = 1;
+    $result['auth'] = $auth;
+    $result['signedRequest'] = reprint_push_lab_rest_signed_request_evidence($request);
+
+    $session_type = is_array($auth['session'] ?? null)
+        ? (string) ($auth['session']['type'] ?? '')
+        : '';
+    if ($session_type === 'production-auth-session') {
+        $existing_session_store = isset($result['sessionStore']) && is_array($result['sessionStore'])
+            ? $result['sessionStore']
+            : [];
+        $result['sessionStore'] = array_merge(
+            $existing_session_store,
+            reprint_push_lab_rest_authenticated_session_store_evidence($request)
+        );
+    }
+
+    return $result;
 }
 
 function reprint_push_lab_rest_maybe_bootstrap_auth_users(): void

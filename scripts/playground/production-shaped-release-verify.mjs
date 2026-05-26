@@ -40,6 +40,8 @@ import {
   packagedProductionPluginPreflightReady,
   packagedProductionPluginReadinessBodyRetryable,
   packagedProductionPluginReadinessErrorRetryable,
+  packagedProductionPluginRestIndexReady,
+  packagedProductionPluginRestIndexRetryable,
   packagedProductionPluginResetRouteNotReadyProbeCounts,
   packagedProductionPluginSnapshotRetryable,
   packagedProductionPluginServerReady,
@@ -1455,6 +1457,46 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
       throw new Error(message);
     }
     try {
+      const index = await fetchWithTimeout(`${baseUrl}/wp-json/`, {
+        headers: {
+          connection: 'close',
+        },
+      }, packagedServerFetchTimeoutMs);
+      const indexText = await index.text();
+      timeoutProbeCount = 0;
+      const indexPreview = indexText.slice(0, readinessFailureBodyLimit);
+      lastProbes.push({
+        route: '/wp-json/',
+        status: index.status,
+        ok: index.ok,
+        body: indexPreview,
+      });
+      let indexBody = null;
+      try {
+        indexBody = JSON.parse(indexText);
+      } catch (error) {
+        if (isWordPressNotReadyResponse(index.status, indexText)) {
+          lastError = new Error(`Production plugin package REST index readiness HTTP ${index.status}`);
+          await sleep(readinessProbeIntervalMs);
+          continue;
+        }
+        throw error;
+      }
+      if (!packagedProductionPluginRestIndexReady({
+        status: index.status,
+        body: indexBody,
+      })) {
+        lastError = new Error(`Production plugin package REST index readiness HTTP ${index.status}`);
+        if (packagedProductionPluginRestIndexRetryable({
+          status: index.status,
+          body: indexBody,
+        }) || packagedProductionPluginReadinessBodyRetryable(index.status, indexText)) {
+          await sleep(readinessProbeIntervalMs);
+          continue;
+        }
+        throw lastError;
+      }
+
       const snapshot = await fetchWithTimeout(`${baseUrl}/wp-json/reprint/v1/push/snapshot`, {
         headers: {
           ...authHeaders(),

@@ -3,9 +3,44 @@ import { evaluateProductionAuthSessionLifecycle } from './production-auth-sessio
 export const packagedProductionPluginMaxConsecutiveNotReadyProbes = 4;
 const packagedProductionPluginWordPressNotReadyPattern = /WordPress is not ready yet/i;
 const packagedProductionPluginRouteNotReadyPattern = /No route was found matching the URL and request method\.?/i;
+const packagedProductionPluginProductionNamespace = 'reprint/v1';
+const packagedProductionPluginLabNamespace = 'reprint-push-lab/v1';
 
 function packagedProductionPluginRouteNotReady(response) {
   return response?.status === 404 && response?.body?.code === 'rest_no_route';
+}
+
+export function packagedProductionPluginRestIndexReady(index) {
+  if (index?.status !== 200 || !index?.body || typeof index.body !== 'object') {
+    return false;
+  }
+
+  const namespaces = Array.isArray(index.body.namespaces) ? index.body.namespaces : [];
+  const routeKeys = index.body.routes && typeof index.body.routes === 'object'
+    ? Object.keys(index.body.routes)
+    : [];
+  const hasProductionNamespace = namespaces.includes(packagedProductionPluginProductionNamespace)
+    || routeKeys.some((route) => route.startsWith(`/${packagedProductionPluginProductionNamespace}/push/`));
+  const hasLabNamespace = namespaces.includes(packagedProductionPluginLabNamespace)
+    || routeKeys.some((route) => route.startsWith(`/${packagedProductionPluginLabNamespace}/`));
+
+  return hasProductionNamespace && !hasLabNamespace;
+}
+
+export function packagedProductionPluginRestIndexRetryable(index) {
+  if (index?.status === 502 && index?.body?.code === 'wordpress_not_ready') {
+    return true;
+  }
+
+  if (packagedProductionPluginRouteNotReady(index)) {
+    return true;
+  }
+
+  if (index?.status !== 200) {
+    return false;
+  }
+
+  return !packagedProductionPluginRestIndexReady(index);
 }
 
 export function packagedProductionPluginSnapshotReady(snapshot) {
