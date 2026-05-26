@@ -1842,6 +1842,26 @@ test('rejects recovery states that hide symbol-keyed artifact metadata', () => {
   );
 });
 
+test('rejects blocked recovery states that reuse the same journal and remote artifact object', () => {
+  const sharedArtifact = {
+    status: 'blocked',
+    path: '/var/lib/reprint/recovery.jsonl',
+  };
+  const recoveryState = {
+    status: 'blocked-recovery',
+    reason: 'Blocked recovery must preserve distinct artifact ownership.',
+    artifacts: {
+      journal: sharedArtifact,
+      remote: sharedArtifact,
+    },
+  };
+
+  assert.throws(
+    () => assertRecoveryStateEnvelope(recoveryState),
+    (error) => error.code === 'RECOVERY_STATE_INVALID',
+  );
+});
+
 test('keeps the durable old-remote contract intact when failure happens before mutation', () => {
   const base = baseSite();
   const local = baseSite();
