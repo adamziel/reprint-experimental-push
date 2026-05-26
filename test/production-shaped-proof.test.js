@@ -955,6 +955,31 @@ test('production-shaped release verify ignores malformed direct auth/session sou
   );
 });
 
+test('production-shaped release verify ignores unsupported auth/session source URLs', () => {
+  const source = {
+    ok: true,
+    sourceUrl: 'https://example.com',
+    username: 'reprint_push_admin',
+    applicationPassword: 'reprint-push-admin-app-password',
+  };
+  assert.deepEqual(
+    resolveAuthSessionSourceCredentials(
+      {
+        liveSourceUrl: 'http://127.0.0.1:9999',
+        username: 'stale-lab-username',
+        applicationPassword: 'stale-lab-password',
+      },
+      source,
+      { preferSource: true },
+    ),
+    {
+      liveSourceUrl: 'http://127.0.0.1:9999',
+      username: 'stale-lab-username',
+      applicationPassword: 'stale-lab-password',
+    },
+  );
+});
+
 test('production-shaped release verify prefers explicit direct credentials over fallback auth defaults before source override', () => {
   assert.deepEqual(
     resolveAuthSessionRequestCredentials(

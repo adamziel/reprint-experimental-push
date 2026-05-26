@@ -748,7 +748,7 @@ function normalizeAuthenticatedHttpPushSource(authSessionSource) {
     return null;
   }
 
-  const sourceUrl = normalizeAuthenticatedHttpPushSourceField(authSessionSource.sourceUrl);
+  const sourceUrl = normalizeSupportedAuthenticatedHttpPushSourceUrl(authSessionSource.sourceUrl);
   const username = normalizeAuthenticatedHttpPushSourceField(authSessionSource.username);
   const applicationPassword = normalizeAuthenticatedHttpPushSourceField(authSessionSource.applicationPassword);
   if (!sourceUrl || !username || !applicationPassword) {
@@ -773,6 +773,35 @@ function normalizeAuthenticatedHttpPushSourceField(value) {
   }
 
   return normalized;
+}
+
+function normalizeSupportedAuthenticatedHttpPushSourceUrl(value) {
+  const sourceUrl = normalizeAuthenticatedHttpPushSourceField(value);
+  if (!sourceUrl) {
+    return '';
+  }
+
+  return isSupportedAuthenticatedHttpPushSourceUrl(sourceUrl)
+    ? sourceUrl
+    : '';
+}
+
+function isSupportedAuthenticatedHttpPushSourceUrl(sourceUrl) {
+  let parsed;
+  try {
+    parsed = new URL(sourceUrl);
+  } catch {
+    return false;
+  }
+
+  if (parsed.protocol === 'http:' && isLoopbackHost(parsed.hostname)) {
+    return true;
+  }
+  if (parsed.protocol === 'https:' && parsed.hostname === 'localhost') {
+    return true;
+  }
+
+  return false;
 }
 
 export function authenticatedHttpClient({

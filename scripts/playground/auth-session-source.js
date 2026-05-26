@@ -98,7 +98,7 @@ export function resolveAuthSessionSourceCredentials({
     };
   }
 
-  const normalizedSourceUrl = normalizeAuthSessionSourceField(source.sourceUrl);
+  const normalizedSourceUrl = normalizeSupportedAuthSessionSourceUrl(source.sourceUrl);
   const normalizedUsername = normalizeAuthSessionSourceField(source.username);
   const normalizedApplicationPassword = normalizeAuthSessionSourceField(source.applicationPassword);
   if (!normalizedSourceUrl || !normalizedUsername || !normalizedApplicationPassword) {
