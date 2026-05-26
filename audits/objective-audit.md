@@ -7,8 +7,8 @@ The project is **not releasable as a production WordPress push path**.
 - Fresh remote heads at audit time, checked on May 26, 2026:
 
 - `origin/lane/reliable-executor` -> `8e9683b3`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `43351bd6`
-- `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration` -> `29fff11d`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `3a9ef4f2`
+- `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration` -> `7800a2a4`
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `6b6d4e00`
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `0a50d5b3`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `e8e3224e`
@@ -34,9 +34,9 @@ but it did not change the release conclusion:
   shaped proof timeout handling again, but still not proving production
   auth/session lifecycle or a live-source mutation boundary.
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now records
-  `22e9d2c5`, refreshing public progress freshness only.
+  `3a9ef4f2`, refreshing public progress freshness only.
 - `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration`
-  now records `29fff11d`, adding featured image attachment drift proof only.
+  now records `7800a2a4`, adding postmeta post-identity proof only.
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` now records
   `6c9e7d36`. This refreshes the audit snapshot only and does not change the
   release boundary.
