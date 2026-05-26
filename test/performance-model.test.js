@@ -78,6 +78,17 @@ test('benchmark model covers large uploads and plugin installs', () => {
   assert.ok(
     model.safeFastPaths.some(
       (fastPath) =>
+        fastPath.area === 'database-row-batching' &&
+        fastPath.allowedShortcut === 'compress-planning-row-batch-manifests-and-reuse-canonical-row-digests-to-size-bounded-plugin-update-batches' &&
+        fastPath.guardrails.includes('compressed-manifest-remains-planning-evidence-only') &&
+        fastPath.gateProofs.skip.includes('canonical row digests can trim repeat planning work') &&
+        fastPath.gateProofs.recovery.includes('canonical row digests, and batch receipts still classify retry, pause, or crash'),
+    ),
+    'compressed row-batch manifests can reuse canonical row digests without weakening plugin-update recovery evidence',
+  );
+  assert.ok(
+    model.safeFastPaths.some(
+      (fastPath) =>
         fastPath.area === 'file-hashing' &&
         fastPath.allowedShortcut === 'reuse-cached-chunk-ledger-for-resume-with-live-publish-check' &&
         fastPath.guardrails.includes('chunk-ledger-is-resume-evidence-only') &&

@@ -41,6 +41,10 @@ the safe list even when they improve a throughput metric.
 The model now also exposes a direct shortcut lookup helper for pinning a single
 planning-only fast path in tests. That keeps the release-bundle retry-window
 compression case explicit without turning the helper into mutation authority.
+It also includes a row-batch manifest compression shortcut that reuses
+canonical row digests only for planning, so batch sizing can skip duplicate
+digest recomputation without weakening row preconditions or the atomic-group
+barrier.
 
 Current executable gate:
 
