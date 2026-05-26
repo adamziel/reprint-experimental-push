@@ -2777,6 +2777,15 @@ function reprint_push_lab_rest_auth_evidence(WP_REST_Request $request): array
         if (($lifecycle_drift['mode'] ?? '') === 'rotated' && !empty($session_id)) {
             $session_id .= '-rotated';
         }
+        if (($lifecycle_drift['mode'] ?? '') === 'id-invalid') {
+            $session_id = ['lab-session-id'];
+        }
+        if (($lifecycle_drift['mode'] ?? '') === 'status-invalid') {
+            $session_status = ['lab-active'];
+        }
+        if (($lifecycle_drift['mode'] ?? '') === 'expires-at-invalid') {
+            $session_expires_at = ['lab-expiry'];
+        }
         if (($lifecycle_drift['mode'] ?? '') === 'unpreserved') {
             $production_session_preserved = false;
         }
@@ -2880,7 +2889,7 @@ function reprint_push_lab_rest_auth_session_lifecycle_drift(WP_REST_Request $req
         return null;
     }
 
-    if (!in_array($drift_mode, ['revoked', 'revoked-invalid', 'cleaned-up', 'cleaned-up-invalid', 'expired', 'expired-invalid', 'rotated', 'rotated-invalid', 'unpreserved', 'preserved-invalid', 'playground-fallback', 'playground-fallback-invalid', 'warning', 'warning-invalid'], true)) {
+    if (!in_array($drift_mode, ['revoked', 'revoked-invalid', 'cleaned-up', 'cleaned-up-invalid', 'expired', 'expired-invalid', 'rotated', 'rotated-invalid', 'unpreserved', 'preserved-invalid', 'playground-fallback', 'playground-fallback-invalid', 'warning', 'warning-invalid', 'id-invalid', 'status-invalid', 'expires-at-invalid'], true)) {
         return null;
     }
 
