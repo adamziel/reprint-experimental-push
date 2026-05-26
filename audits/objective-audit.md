@@ -4,7 +4,7 @@
 
 The project is **not releasable as a production WordPress push path**.
 
-- Audit time: 2026-05-26 15:36:43 CEST (+0200)
+- Audit time: 2026-05-26 15:41:59 CEST (+0200)
 - Fresh remote heads re-polled at audit time:
   - `origin/lane/reliable-executor` -> `325950822499a32663371ed99a487d3faa0e0d4c` (`Tighten release verifier startup diagnostics`)
   - `origin/lane/no-data-loss-recovery` -> `0a28d046`
@@ -17,7 +17,7 @@ The project is **not releasable as a production WordPress push path**.
 | Requirement | Current proof | Missing proof | Verdict impact |
 | --- | --- | --- | --- |
 | Live mutation boundary | `no-data-loss-invariants` continues unsupported-surface blocking, but still no live production mutation boundary proof. | A live production mutation boundary proving source changes are safe. | Blocked |
-| Production auth/session lifecycle | Packaged auth session source verification now reaches the release verifier on the checked path, and the packaged source command is explicitly preferred. | Production-backed issuance, read, expiry, rotation, revocation, replay rejection, and cleanup on the live `verify:release` boundary. | Blocked |
+| Production auth/session lifecycle | The release verifier now reaches the packaged auth session source on the checked path, and the packaged source command is explicitly preferred. | Production-backed issuance, read, expiry, rotation, revocation, replay rejection, and cleanup on the live `verify:release` boundary. | Blocked |
 | Production durable-journal ownership | The release verifier still surfaces support-side durable-journal evidence only. | Production durable-journal storage consumed by the release path with restart-readable artifacts and lease/fencing semantics proven end to end. | Blocked |
 | Public progress freshness | Freshness-only updates in `progress-publisher` and `feedback-supervisor`. | Freshness does not change release readiness. | Not a gate |
 

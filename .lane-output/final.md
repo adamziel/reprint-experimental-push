@@ -1,6 +1,6 @@
 `325950822499a32663371ed99a487d3faa0e0d4c` stays `0/4`.
 
-Audit time: 2026-05-26 15:36:43 CEST (+0200)
+Audit time: 2026-05-26 15:41:59 CEST (+0200)
 
 Current verdict:
 - The checked release verifier has clearer release-path startup diagnostics, but it still does not prove production-backed auth/session lifecycle on the live `verify:release` boundary.
@@ -24,13 +24,14 @@ Commands run:
 - `grep -n 'e82e3b1\\|3259508\\|Audit time\\|Fresh remote heads' audits/objective-audit.md`
 - `git log --oneline -1 325950822499a32663371ed99a487d3faa0e0d4c`
 - `sed -n '1,120p' audits/objective-audit.md`
+- `git diff -- audits/objective-audit.md .lane-output/final.md`
 
 Push result:
-- Not pushed yet
+- `git push origin HEAD:lane/independent-auditor`
 
 Worktree status:
-- Dirty: [`audits/objective-audit.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/independent-auditor-current-20260526-1424/audits/objective-audit.md), [`.lane-output/final.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/independent-auditor-current-20260526-1424/.lane-output/final.md)
-- Branch: `lane/cycle-20260525-mainwindows-2349/independent-auditor-current-20260526-1424...origin/lane/independent-auditor [ahead 2]`
+- Clean after push.
+- Branch: `lane/cycle-20260525-mainwindows-2349/independent-auditor-current-20260526-1424...origin/lane/independent-auditor`
 
 Next supervisor nudge:
 - Keep the verdict at `0/4`; the release gate is still blocked on production-backed auth/session lifecycle or durable-journal semantics on the checked release path.
