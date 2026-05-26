@@ -1865,6 +1865,32 @@ function validateRecoveryStateEnvelopeKeys(recoveryState) {
       },
     );
   }
+  if (recoveryState.status === 'blocked-recovery') {
+    if (!Object.hasOwn(recoveryState, 'driftedResources')) {
+      throw new PushPlanError(
+        'RECOVERY_STATE_INVALID',
+        'Blocked recovery states must carry own drifted resources.',
+        {
+          status: recoveryState.status,
+          planId: recoveryState.planId,
+        },
+      );
+    }
+    if (
+      !Array.isArray(recoveryState.driftedResources)
+      || recoveryState.driftedResources.length === 0
+      || recoveryState.driftedResources.some((resourceKey) => typeof resourceKey !== 'string' || resourceKey.length === 0)
+    ) {
+      throw new PushPlanError(
+        'RECOVERY_STATE_INVALID',
+        'Blocked recovery states must carry a non-empty list of drifted resource keys.',
+        {
+          status: recoveryState.status,
+          planId: recoveryState.planId,
+        },
+      );
+    }
+  }
 
   const unexpectedKeys = Reflect.ownKeys(recoveryState).filter((key) => typeof key === 'symbol' || !allowedKeys.includes(key));
   if (unexpectedKeys.length === 0) {

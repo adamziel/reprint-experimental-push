@@ -23996,6 +23996,24 @@ test('blocked recovery artifacts fail closed when the remote artifact uses a nul
   assert.match(error.message, /must preserve both plain-object journal and remote artifacts/);
 });
 
+test('blocked recovery states fail closed when drifted resources are inherited through the prototype', () => {
+  const recovery = Object.create({
+    driftedResources: ['file:index.php'],
+  });
+  recovery.status = 'blocked-recovery';
+  recovery.planId = 'plan-123';
+  recovery.reason = 'stale remote recovery';
+  recovery.artifacts = {
+    journal: { schemaVersion: 1 },
+    remote: { schemaVersion: 1 },
+  };
+
+  const error = captureError(() => assertRecoveryStateEnvelope(recovery));
+
+  assert.equal(error.code, 'RECOVERY_STATE_INVALID');
+  assert.match(error.message, /must carry own drifted resources/);
+});
+
 test('blocked recovery artifacts fail closed when the envelope hides unsupported symbol keys', () => {
   const hiddenKey = Symbol('hidden');
   const recovery = {
