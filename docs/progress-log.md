@@ -4,6 +4,14 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-05-26 - Public Status Audit 13:28:37
+
+<a id="2026-05-26-public-status-audit-132837"></a>
+
+- Freshness update plus reliable-head confirmation: `0facd97348b0d05802f17a9fdb2ec5af14bd1afe` is the current reliable-executor head on the public page, and the visible status now points at this 13:28:37 audit refresh.
+- Gate posture remains conservative at `0/4`; no implementation verdict changed.
+- Latest blocker summary remains the same: production-backed auth/session lifecycle on the checked release path and fenced durable journal ownership still block any production push claim, while `0facd97348b0d05802f17a9fdb2ec5af14bd1afe` is checked-release evidence and does not move a release gate.
+
 ## 2026-05-26 - Public Status Audit 13:26:24
 
 <a id="2026-05-26-public-status-audit-132624"></a>
