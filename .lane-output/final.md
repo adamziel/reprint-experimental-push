@@ -6,11 +6,11 @@ Changed files:
 
 Commands:
 - `date '+%Y-%m-%d %H:%M:%S %Z (%z)'`
-- `sed -n '1,80p' docs/progress-log.md`
-- `sed -n '490,545p' progress.html`
+- `sed -n '498,520p' progress.html`
+- `sed -n '1,18p' docs/progress-log.md`
+- `rg -n "Last updated|Public Status Audit|Gate status: 0/4|latest audit|newest-audit|blocker summary|2026-05-26 09:21" progress.html docs/progress-log.md`
 - `git diff -- progress.html docs/progress-log.md .lane-output/final.md`
 - `git status --short --branch`
-- `rg -n "Last updated|Public Status Audit|Gate status: 0/4|latest audit|newest-audit|blocker summary" progress.html docs/progress-log.md`
 
 Push result:
 - Not pushed in this pass.
@@ -22,3 +22,4 @@ Worktree status:
 
 Next supervisor nudge:
 - Keep the public page aligned with the active supervision cycle; refresh `progress.html` and `docs/progress-log.md` together again when the visible timestamp lags or a real gate/blocker verdict changes.
+- If there is no new evidence from `reliable-executor` or `no-data-loss-recovery`, do not republish; the next useful step is a code or proof delta, not another timestamp-only refresh.
