@@ -6,11 +6,10 @@ Changed files
 
 Commands run
 - `git fetch origin --prune`
-- `git for-each-ref --sort=-committerdate --format='%(refname:short) %(objectname:short) %(committerdate:iso8601) %(subject)' refs/remotes/origin/lane | head -n 12`
-- `sed -n '1,220p' supervision/lanes/independent-auditor.md`
+- `git for-each-ref --sort=-committerdate --format='%(refname:short) %(objectname:short) %(committerdate:iso8601) %(subject)' refs/remotes/origin/lane | head -n 20`
 - `sed -n '1,260p' audits/objective-audit.md`
-- `git status --short --branch`
 - `git diff -- audits/objective-audit.md`
+- `git status --short --branch`
 
 Push result
 - Pending
