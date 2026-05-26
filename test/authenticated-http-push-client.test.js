@@ -1875,6 +1875,19 @@ test('production-shaped authenticated push accepts nested db journal storage gua
           },
         },
         dbJournal: {
+          scope: 'packaged production plugin journal surface; not local Playground fixture only',
+          ownership: {
+            ownsJournal: true,
+            restartReadable: true,
+            productionAdapter: 'wpdb-single-statement-cas',
+          },
+          leaseFence: {
+            boundary: 'wpdb-single-statement-cas',
+            claimKeyUnique: true,
+            monotonicSequence: true,
+            restartReadable: true,
+            staleClaimRejected: false,
+          },
           latestRows: [
             { event: 'idempotency-opened' },
             {
@@ -1916,6 +1929,19 @@ test('production-shaped authenticated push accepts nested db journal storage gua
       boundary: 'wpdb-single-statement-cas',
       operation: 'update',
       outcome: 'applied',
+    });
+    assert.equal(summary.dbJournal?.scope, 'packaged production plugin journal surface; not local Playground fixture only');
+    assert.deepEqual(summary.dbJournal?.ownership, {
+      ownsJournal: true,
+      restartReadable: true,
+      productionAdapter: 'wpdb-single-statement-cas',
+    });
+    assert.deepEqual(summary.dbJournal?.leaseFence, {
+      boundary: 'wpdb-single-statement-cas',
+      claimKeyUnique: true,
+      monotonicSequence: true,
+      restartReadable: true,
+      staleClaimRejected: false,
     });
     assert.ok(seen.some(({ url }) => url.includes('/db-journal')));
   } finally {

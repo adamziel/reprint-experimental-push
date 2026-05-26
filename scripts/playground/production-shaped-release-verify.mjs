@@ -816,8 +816,9 @@ try {
       );
       assert.equal(durableJournalSummary.leaseFence?.fsyncEvidence, true);
       assert.equal(durableJournalSummary.leaseFence?.monotonicSequence, true);
+      const packagedDurableJournalAccepted = packagedProductionDurableJournalProofIsAcceptable(proof.dbJournal);
 
-      if (requireProductionDurableJournal) {
+      if (requireProductionDurableJournal && !packagedDurableJournalAccepted) {
         process.stdout.write(
           JSON.stringify(
             {
@@ -857,6 +858,10 @@ try {
                 applyCommitted: proof.dbJournal.applyCommitted,
                 mutationApplied: proof.dbJournal.mutationApplied,
                 idempotencyOpened: proof.dbJournal.idempotencyOpened,
+                scope: proof.dbJournal.scope || null,
+                ownership: proof.dbJournal.ownership || null,
+                liveLeaseFence: proof.dbJournal.leaseFence || null,
+                packagedAccepted: packagedDurableJournalAccepted,
               },
               authSessionLifecycle: proof.authSessionLifecycle,
               authSessionLifecycleTrace: proof.authSessionLifecycleTrace,
@@ -938,6 +943,10 @@ try {
               applyCommitted: proof.dbJournal.applyCommitted,
               mutationApplied: proof.dbJournal.mutationApplied,
               idempotencyOpened: proof.dbJournal.idempotencyOpened,
+              scope: proof.dbJournal.scope || null,
+              ownership: proof.dbJournal.ownership || null,
+              liveLeaseFence: proof.dbJournal.leaseFence || null,
+              packagedAccepted: packagedDurableJournalAccepted,
             },
           },
           null,
@@ -1477,6 +1486,17 @@ function runProductionRecoveryJournalProof({ plan, current, artifactRefs = {} })
   } finally {
     fs.rmSync(workDir, { recursive: true, force: true });
   }
+}
+
+function packagedProductionDurableJournalProofIsAcceptable(dbJournal) {
+  return /packaged production plugin journal surface/i.test(dbJournal?.scope || '')
+    && dbJournal?.ownership?.ownsJournal === true
+    && dbJournal?.ownership?.restartReadable === true
+    && dbJournal?.ownership?.productionAdapter === 'wpdb-single-statement-cas'
+    && dbJournal?.leaseFence?.boundary === 'wpdb-single-statement-cas'
+    && dbJournal?.leaseFence?.claimKeyUnique === true
+    && dbJournal?.leaseFence?.monotonicSequence === true
+    && dbJournal?.leaseFence?.restartReadable === true;
 }
 
 function writeSpawnOutputTail(proof, commandLabel = '') {

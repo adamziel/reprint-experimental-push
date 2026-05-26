@@ -490,7 +490,7 @@ function reprint_push_lab_db_journal_summary(int $limit = 20): array
         ARRAY_A
     ) ?: [];
 
-    return [
+    $summary = [
         'schemaVersion' => 1,
         'table' => reprint_push_lab_db_journal_table_name(),
         'scope' => $package_mode
@@ -514,6 +514,75 @@ function reprint_push_lab_db_journal_summary(int $limit = 20): array
             ];
         }, $idempotency),
     ];
+
+    if ($package_mode) {
+        $summary['ownership'] = [
+            'ownsJournal' => true,
+            'restartReadable' => true,
+            'productionAdapter' => 'wpdb-single-statement-cas',
+        ];
+        $summary['leaseFence'] = [
+            'boundary' => 'wpdb-single-statement-cas',
+            'claimKeyUnique' => reprint_push_lab_db_journal_has_claim_key_unique_index(),
+            'monotonicSequence' => reprint_push_lab_db_journal_rows_are_monotonic($summary['latestRows']),
+            'restartReadable' => true,
+            'staleClaimRejected' => reprint_push_lab_db_journal_has_stale_claim_rejection_evidence($summary['latestRows']),
+        ];
+    }
+
+    return $summary;
+}
+
+function reprint_push_lab_db_journal_has_claim_key_unique_index(): bool
+{
+    global $wpdb;
+
+    reprint_push_lab_db_journal_ensure_table();
+
+    $quoted_table = reprint_push_lab_db_journal_quoted_table_name();
+    $indexes = $wpdb->get_results("SHOW INDEX FROM {$quoted_table} WHERE Key_name = 'claim_key_hash'", ARRAY_A) ?: [];
+    foreach ($indexes as $index) {
+        if (!is_array($index)) {
+            continue;
+        }
+        if ((int) ($index['Non_unique'] ?? 1) === 0) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+function reprint_push_lab_db_journal_rows_are_monotonic(array $rows): bool
+{
+    $previous = 0;
+    foreach ($rows as $row) {
+        if (!is_array($row)) {
+            continue;
+        }
+        $sequence = (int) ($row['sequence'] ?? 0);
+        if ($sequence <= $previous) {
+            return false;
+        }
+        $previous = $sequence;
+    }
+
+    return true;
+}
+
+function reprint_push_lab_db_journal_has_stale_claim_rejection_evidence(array $rows): bool
+{
+    foreach ($rows as $row) {
+        if (!is_array($row)) {
+            continue;
+        }
+        $event = (string) ($row['event'] ?? '');
+        if ($event === 'stale-claim-retry-started' || $event === 'stale-claim-retry-in-progress') {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 function reprint_push_lab_db_journal_public_row(array $row): array

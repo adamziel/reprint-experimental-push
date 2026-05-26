@@ -902,11 +902,14 @@ function summarizeDbJournal(response) {
     status: response.status,
     ok: true,
     retryAttempts: response.retryAttempts || 1,
+    scope: response.body?.dbJournal?.scope,
     rows: rows.length,
     applyCommitted: rows.some((entry) => entry.event === 'apply-committed'),
     mutationApplied: rows.filter((entry) => entry.event === 'mutation-applied').length,
     idempotencyOpened: rows.filter((entry) => entry.event === 'idempotency-opened').length,
     storageGuard,
+    ownership: summarizeDbJournalOwnership(response.body?.dbJournal),
+    leaseFence: summarizeDbJournalLeaseFence(response.body?.dbJournal),
     authUser: response.body?.auth?.identity?.userLogin,
     authSessionId: response.body?.auth?.session?.id,
     sessionType: response.body?.auth?.session?.type,
@@ -952,6 +955,34 @@ function summarizeDbJournalStorageGuard(body) {
   }
 
   return undefined;
+}
+
+function summarizeDbJournalOwnership(dbJournal) {
+  const ownership = dbJournal?.ownership;
+  if (!ownership || typeof ownership !== 'object') {
+    return undefined;
+  }
+
+  return {
+    ownsJournal: ownership.ownsJournal === true,
+    restartReadable: ownership.restartReadable === true,
+    productionAdapter: ownership.productionAdapter || null,
+  };
+}
+
+function summarizeDbJournalLeaseFence(dbJournal) {
+  const leaseFence = dbJournal?.leaseFence;
+  if (!leaseFence || typeof leaseFence !== 'object') {
+    return undefined;
+  }
+
+  return {
+    boundary: leaseFence.boundary || null,
+    claimKeyUnique: leaseFence.claimKeyUnique === true,
+    monotonicSequence: leaseFence.monotonicSequence === true,
+    restartReadable: leaseFence.restartReadable === true,
+    staleClaimRejected: leaseFence.staleClaimRejected === true,
+  };
 }
 
 function sanitizeStorageGuard(storageGuard) {
