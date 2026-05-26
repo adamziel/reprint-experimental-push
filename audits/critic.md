@@ -4,7 +4,7 @@
 
 Verdict: the design still cannot claim production-grade push support.
 
-The current evidence is still narrow and lab-shaped. The recent reliable-lane work improves the release-verifier timeout/cleanup boundary, and the recovery/invariants lanes now hard-block a few more unsupported surfaces, but the proof is still release-gated rather than live production proof. It does not yet prove a live production auth/session lifecycle, durable journal ownership with lease/fencing, preserved-remote retry, or exact replay equivalence on the real push path. For the next 24 hours, the claim must stay cut to a constrained release-candidate slice, not broad production support. The latest retained-source run now fails with a concrete startup trail: repeated `502 WordPress is not ready yet` responses on `/wp-json/`, with the last probe state surfaced before timeout. That is better diagnosis, but it is still harness evidence rather than production proof.
+The current evidence is still narrow and lab-shaped. The recent reliable-lane work improves the release-verifier timeout/cleanup boundary, the recovery/invariants lanes now hard-block a few more unsupported surfaces, and the public progress surface has been refreshed, but the proof is still release-gated rather than live production proof. It does not yet prove a live production auth/session lifecycle, durable journal ownership with lease/fencing, preserved-remote retry, or exact replay equivalence on the real push path. For the next 24 hours, the claim must stay cut to a constrained release-candidate slice, not broad production support. The latest retained-source run now fails with a concrete startup trail: repeated `502 WordPress is not ready yet` responses on `/wp-json/`, with the last probe state surfaced before timeout. That is better diagnosis, but it is still harness evidence rather than production proof.
 
 ## What The Source Notes Actually Support
 
@@ -62,6 +62,7 @@ Three blockers can still move in this window:
 1. Reliable executor: finish the live release proof with a concrete readiness result or prove the packaged route is still lab-backed.
 2. No-data-loss recovery: convert the fail-closed durable-journal boundary into a real preserved-remote retry with lease/fencing and restart-readable artifacts, or keep the production claim blocked.
 3. No-data-loss invariants: extend the hard-block coverage to the next unsupported boundary such as menu/navigation or revision posts, and keep the fail path executable in a test or planner hook.
+4. Progress visibility: keep the public freshness surface current, but do not let timestamp-only updates alter the release verdict.
 
 One claim must be cut:
 
