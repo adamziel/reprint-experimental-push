@@ -8,6 +8,7 @@ import {
   appendRecoveryClaimOpened,
   appendMutationObserved,
   assertJournalRecordHasNoRawValues,
+  checkedDurableJournalBoundarySatisfied,
   recoveryClaimHash,
   RecoveryJournalClaimStaleError,
   consumeProductionRecoveryJournal,
@@ -464,5 +465,35 @@ test('production recovery journal consumer rejects hidden open options', () => {
       truncate: false,
     }),
     /consumeProductionRecoveryJournal\(\) received unsupported option keys: truncate/,
+  );
+});
+
+test('checked durable journal boundary stays closed until stale-claim rejection is proven on the lease fence', () => {
+  const baseContract = {
+    scope: 'checked live production-shaped journal surface; not local Playground fixture only',
+    ownership: {
+      ownsJournal: true,
+      restartReadable: true,
+      productionAdapter: 'wpdb-single-statement-cas',
+    },
+    leaseFence: {
+      boundary: 'wpdb-single-statement-cas',
+      claimKeyUnique: true,
+      monotonicSequence: true,
+      restartReadable: true,
+      staleClaimRejected: false,
+    },
+  };
+
+  assert.equal(checkedDurableJournalBoundarySatisfied(baseContract), false);
+  assert.equal(
+    checkedDurableJournalBoundarySatisfied({
+      ...baseContract,
+      leaseFence: {
+        ...baseContract.leaseFence,
+        staleClaimRejected: true,
+      },
+    }),
+    true,
   );
 });

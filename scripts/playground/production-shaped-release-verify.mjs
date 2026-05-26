@@ -34,6 +34,7 @@ import {
 import { loadBlueprintSnapshotFixture } from './blueprint-snapshot-fixture.js';
 import {
   appendRecoveryClaimOpened,
+  checkedDurableJournalBoundarySatisfied,
   consumeProductionRecoveryJournal,
   openProductionRecoveryJournal,
 } from '../../src/recovery-journal.js';
@@ -1749,14 +1750,7 @@ function runProductionRecoveryJournalProof({ plan, current, artifactRefs = {} })
 }
 
 function checkedReleaseDurableJournalProofIsAcceptable(dbJournal) {
-  return /(packaged production plugin|checked live production-shaped) journal surface/i.test(dbJournal?.scope || '')
-    && dbJournal?.ownership?.ownsJournal === true
-    && dbJournal?.ownership?.restartReadable === true
-    && dbJournal?.ownership?.productionAdapter === 'wpdb-single-statement-cas'
-    && dbJournal?.leaseFence?.boundary === 'wpdb-single-statement-cas'
-    && dbJournal?.leaseFence?.claimKeyUnique === true
-    && dbJournal?.leaseFence?.monotonicSequence === true
-    && dbJournal?.leaseFence?.restartReadable === true;
+  return checkedDurableJournalBoundarySatisfied(dbJournal);
 }
 
 function writeSpawnOutputTail(proof, commandLabel = '') {
