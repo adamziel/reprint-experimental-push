@@ -3516,6 +3516,19 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
     rejectedById.get('compressed-remote-index-and-cached-upload-buffer-skips-large-upload-publish-after-pause').rejectedGate,
     'recovery',
   );
+  assert.equal(
+    rejectedById.get('compressed-remote-index-and-cached-upload-buffer-skips-large-upload-windowing-after-pause').rejectedGate,
+    'recovery',
+  );
+  assert.ok(
+    rejectedById.get('compressed-remote-index-and-cached-upload-buffer-skips-large-upload-windowing-after-pause').violates.includes('backpressure'),
+  );
+  assert.ok(
+    rejectedById.get('compressed-remote-index-and-cached-upload-buffer-skips-large-upload-windowing-after-pause').violates.includes('chunk-receipts'),
+  );
+  assert.ok(
+    rejectedById.get('compressed-remote-index-and-cached-upload-buffer-skips-large-upload-windowing-after-pause').violates.includes('live-preconditions'),
+  );
   assert.ok(
     rejectedById.get('compressed-remote-index-and-compressed-upload-buffer-completes-large-upload').violates.includes('live-preconditions'),
   );
