@@ -3693,7 +3693,9 @@ function unsupportedNavigationResourceSupport({ resource, baseValue, localValue,
         }),
     reason: navigationReference
       ? samePlanNavigationReason
-      : 'Navigation and menu graph resources are not yet supported by the planner.',
+      : localValue === ABSENT
+        ? 'Navigation and menu graph resource deletes are not yet supported by the planner.'
+        : 'Navigation and menu graph resources are not yet supported by the planner.',
     references: navigationReference ? samePlanNavigationReferences : [],
   };
 }
