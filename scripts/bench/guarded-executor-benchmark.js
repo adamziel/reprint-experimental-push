@@ -754,6 +754,18 @@ export function productionThroughputBlockers(report) {
     blockers.push('production-atomic-group-metadata-visible-without-measurement');
   }
   if (
+    report.evidence.atomicGroup.productionAtomicCommitVisible === true
+    && report.evidence.atomicGroup.productionAtomicCommitMeasured !== true
+  ) {
+    blockers.push('production-atomic-group-commit-visible-without-measurement');
+  }
+  if (
+    report.evidence.atomicGroup.productionAtomicCommitMeasured === true
+    && report.evidence.atomicGroup.productionAtomicCommitVisible !== true
+  ) {
+    blockers.push('production-atomic-group-commit-not-visible');
+  }
+  if (
     report.results?.successInspection?.claim?.status != null
     && !['none', 'active', 'advanced', 'blocked'].includes(report.results.successInspection.claim.status)
   ) {
@@ -1138,6 +1150,8 @@ export function productionThroughputDetails(report) {
   const productionAtomicCommitMeasured = report.executorCapabilities.productionAtomicCommit === 'production-atomic-group-commit';
   const productionStorageReceiptsMeasured = report.executorCapabilities.fileReceipts === 'production-storage-receipts';
   const productionRowBatchExecutorMeasured = report.executorCapabilities.rowApply === 'production-batched-compare-and-swap';
+  const productionAtomicCommitVisible =
+    report.evidence.atomicGroup?.productionAtomicCommitVisible === true;
   const productionAtomicGroupMetadataVisible =
     report.evidence.atomicGroup?.productionAtomicGroupMetadataVisible === true;
   const productionStorageReceiptsVisible =
@@ -1343,6 +1357,7 @@ export function productionThroughputDetails(report) {
       receiptCursorBackpressureWithinQueueBudget,
       backpressureEvidenceComplete,
       productionAtomicCommitMeasured,
+      productionAtomicCommitVisible,
       productionStorageReceiptsMeasured,
       productionRowBatchExecutorMeasured,
       productionAtomicGroupMetadataProven,
@@ -1359,6 +1374,7 @@ export function productionThroughputDetails(report) {
     atomicGroup: {
       ...report.evidence.atomicGroup,
       productionAtomicCommitMeasured,
+      productionAtomicCommitVisible,
       productionStorageReceiptsMeasured,
       productionRowBatchExecutorMeasured,
       productionAtomicGroupMetadataVisible,
@@ -1967,6 +1983,7 @@ function buildReport({
         partialCommitGroupNewTargets: partialFailure.groupNewTargets,
         partialCommitStatus: partialFailure.inspectionStatus,
         productionAtomicCommitMeasured,
+        productionAtomicCommitVisible: false,
         productionStorageReceiptsMeasured,
         productionRowBatchExecutorMeasured,
         productionAtomicGroupMetadataVisible,

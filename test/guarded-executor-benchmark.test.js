@@ -98,6 +98,7 @@ test('guarded executor benchmark moves buffers and row payloads through durable 
   assert.equal(report.evidence.atomicGroup.requireAtomic, true);
   assert.equal(report.evidence.atomicGroup.preCommitFailureLeavesRemoteUnchanged, true);
   assert.equal(report.evidence.atomicGroup.productionAtomicCommitMeasured, false);
+  assert.equal(report.evidence.atomicGroup.productionAtomicCommitVisible, false);
   assert.equal(report.evidence.atomicGroup.productionStorageReceiptsMeasured, false);
   assert.equal(report.evidence.atomicGroup.productionAtomicGroupMetadataVisible, false);
   assert.equal(report.evidence.atomicGroup.productionStorageReceiptsVisible, false);
@@ -624,6 +625,14 @@ test('production claim gate fails closed if benchmark evidence is tampered', () 
   assert.ok(
     productionThroughputBlockers(visibleStorageReceiptWithoutAtomicGroupMetadata).includes(
       'production-storage-receipts-without-atomic-group-metadata',
+    ),
+  );
+
+  const visibleAtomicCommitWithoutMeasurement = clone(report);
+  visibleAtomicCommitWithoutMeasurement.evidence.atomicGroup.productionAtomicCommitVisible = true;
+  assert.ok(
+    productionThroughputBlockers(visibleAtomicCommitWithoutMeasurement).includes(
+      'production-atomic-group-commit-visible-without-measurement',
     ),
   );
 
