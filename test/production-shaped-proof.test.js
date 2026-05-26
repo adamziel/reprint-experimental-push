@@ -1976,6 +1976,25 @@ test('packaged readiness helpers fail fast when both the packaged route and /wp-
   }
 });
 
+test('packaged readiness helpers retry bounded port collisions before failing startup', () => {
+  const smokeSource = readFileSync(
+    path.join(repoRoot, 'scripts/playground/production-plugin-package-smoke.mjs'),
+    'utf8',
+  );
+  const verifierSource = readFileSync(
+    path.join(repoRoot, 'scripts/playground/production-shaped-release-verify.mjs'),
+    'utf8',
+  );
+
+  assert.match(smokeSource, /for \(let attempt = 1; attempt <= 3; attempt \+= 1\) \{/);
+  assert.match(smokeSource, /if \(!\/EADDRINUSE\/i\.test\(combinedLogs\) \|\| attempt === 3\) \{/);
+  assert.match(smokeSource, /Unable to start Playground server for \$\{name\} after retrying port collisions/);
+
+  assert.match(verifierSource, /for \(let attempt = 1; attempt <= 3; attempt \+= 1\) \{/);
+  assert.match(verifierSource, /if \(!\/EADDRINUSE\/i\.test\(logs\) \|\| attempt === 3\) \{/);
+  assert.match(verifierSource, /Unable to start packaged Playground server for \$\{name\} after retrying port collisions/);
+});
+
 test('packaged readiness helpers reset snapshot startup counters before signed preflight probes', () => {
   const smokeSource = readFileSync(
     path.join(repoRoot, 'scripts/playground/production-plugin-package-smoke.mjs'),

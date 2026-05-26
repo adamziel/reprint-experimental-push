@@ -400,50 +400,56 @@ async function withPlaygroundServer(name, blueprintPath, mountedPluginDir, run) 
 }
 
 async function startPlaygroundServer(name, blueprintPath, mountedPluginDir) {
-  const port = await findLocalPort();
-  const baseUrl = `http://127.0.0.1:${port}`;
-  const logs = [];
-  const child = spawn('npx', [
-    '--yes',
-    '@wp-playground/cli@latest',
-    'server',
-    '--blueprint',
-    blueprintPath,
-    '--mount',
-    `${mountedPluginDir}:/wordpress/wp-content/plugins/reprint-push`,
-    '--site-url',
-    baseUrl,
-    '--port',
-    String(port),
-    '--workers',
-    '1',
-    '--verbosity',
-    'quiet',
-  ], {
-    cwd: repoRoot,
-    env: {
-      ...process.env,
-      REPRINT_PUSH_LAB_AUTH_BOOTSTRAP: '1',
-      REPRINT_PUSH_LAB_AUTH_ADMIN_USER: credentials.username,
-      REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD: credentials.password,
-      NODE_OPTIONS: appendNodeOption(process.env.NODE_OPTIONS, localhostListenPreloadOption()),
-    },
-    stdio: ['ignore', 'pipe', 'pipe'],
-  });
+  for (let attempt = 1; attempt <= 3; attempt += 1) {
+    const port = await findLocalPort();
+    const baseUrl = `http://127.0.0.1:${port}`;
+    const logs = [];
+    const child = spawn('npx', [
+      '--yes',
+      '@wp-playground/cli@latest',
+      'server',
+      '--blueprint',
+      blueprintPath,
+      '--mount',
+      `${mountedPluginDir}:/wordpress/wp-content/plugins/reprint-push`,
+      '--site-url',
+      baseUrl,
+      '--port',
+      String(port),
+      '--workers',
+      '1',
+      '--verbosity',
+      'quiet',
+    ], {
+      cwd: repoRoot,
+      env: {
+        ...process.env,
+        REPRINT_PUSH_LAB_AUTH_BOOTSTRAP: '1',
+        REPRINT_PUSH_LAB_AUTH_ADMIN_USER: credentials.username,
+        REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD: credentials.password,
+        NODE_OPTIONS: appendNodeOption(process.env.NODE_OPTIONS, localhostListenPreloadOption()),
+      },
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
 
-  child.stdout.setEncoding('utf8');
-  child.stderr.setEncoding('utf8');
-  child.stdout.on('data', (chunk) => pushLog(logs, chunk));
-  child.stderr.on('data', (chunk) => pushLog(logs, chunk));
+    child.stdout.setEncoding('utf8');
+    child.stderr.setEncoding('utf8');
+    child.stdout.on('data', (chunk) => pushLog(logs, chunk));
+    child.stderr.on('data', (chunk) => pushLog(logs, chunk));
 
-  try {
-    await waitForServer(child, baseUrl, logs);
-  } catch (error) {
-    await stopChildProcess(child);
-    throw error;
+    try {
+      await waitForServer(child, baseUrl, logs);
+      return { name, port, baseUrl, child, logs };
+    } catch (error) {
+      await stopChildProcess(child);
+      const combinedLogs = logs.join('');
+      if (!/EADDRINUSE/i.test(combinedLogs) || attempt === 3) {
+        throw error;
+      }
+    }
   }
 
-  return { name, port, baseUrl, child, logs };
+  throw new Error(`Unable to start Playground server for ${name} after retrying port collisions`);
 }
 
 async function waitForServer(child, baseUrl, logs) {

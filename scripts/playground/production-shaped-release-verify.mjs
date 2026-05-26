@@ -1220,63 +1220,71 @@ async function stopPlaygroundServer(server) {
 }
 
 async function startPackagedProductionPluginServer(name, packagedFixture) {
-  const port = await findLocalPort();
-  const baseUrl = `http://127.0.0.1:${port}`;
-  process.stderr.write(`Starting Playground server ${name} at ${baseUrl} from ${path.basename(packagedFixture.blueprintPath)}\n`);
-  const args = [
-    '--yes',
-    '@wp-playground/cli@latest',
-    'server',
-    '--blueprint',
-    packagedFixture.blueprintPath,
-    '--mount',
-    `${packagedFixture.pluginDir}:/wordpress/wp-content/plugins/reprint-push`,
-    '--site-url',
-    baseUrl,
-    '--port',
-    String(port),
-    '--workers',
-    '1',
-    '--verbosity',
-    'quiet',
-  ];
-  const child = spawn(
-    'npx',
-    args,
-    {
-      cwd: repoRoot,
-      env: {
-        ...process.env,
-        REPRINT_PUSH_LAB_AUTH_BOOTSTRAP: '1',
-        REPRINT_PUSH_LAB_AUTH_ADMIN_USER: credentials.username,
-        REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD: credentials.password,
-        NODE_OPTIONS: appendNodeOption(process.env.NODE_OPTIONS, localhostListenPreloadOption()),
+  for (let attempt = 1; attempt <= 3; attempt += 1) {
+    const port = await findLocalPort();
+    const baseUrl = `http://127.0.0.1:${port}`;
+    process.stderr.write(
+      `Starting Playground server ${name} at ${baseUrl} from ${path.basename(packagedFixture.blueprintPath)} attempt ${attempt}/3\n`,
+    );
+    const args = [
+      '--yes',
+      '@wp-playground/cli@latest',
+      'server',
+      '--blueprint',
+      packagedFixture.blueprintPath,
+      '--mount',
+      `${packagedFixture.pluginDir}:/wordpress/wp-content/plugins/reprint-push`,
+      '--site-url',
+      baseUrl,
+      '--port',
+      String(port),
+      '--workers',
+      '1',
+      '--verbosity',
+      'quiet',
+    ];
+    const child = spawn(
+      'npx',
+      args,
+      {
+        cwd: repoRoot,
+        env: {
+          ...process.env,
+          REPRINT_PUSH_LAB_AUTH_BOOTSTRAP: '1',
+          REPRINT_PUSH_LAB_AUTH_ADMIN_USER: credentials.username,
+          REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD: credentials.password,
+          NODE_OPTIONS: appendNodeOption(process.env.NODE_OPTIONS, localhostListenPreloadOption()),
+        },
+        detached: true,
+        stdio: ['ignore', 'pipe', 'pipe'],
       },
-      detached: true,
-      stdio: ['ignore', 'pipe', 'pipe'],
-    },
-  );
-  activePlaygroundChildren.add(child);
-  let output = '';
-  child.stdout.on('data', (chunk) => {
-    output += chunk;
-  });
-  child.stderr.on('data', (chunk) => {
-    output += chunk;
-  });
-  try {
-    await waitForPackagedProductionPluginServer(child, baseUrl, () => output);
-    process.stderr.write(`Playground server ${name} is ready at ${baseUrl}\n`);
-    return { name, baseUrl, child };
-  } catch (error) {
-    const logs = `${output}\n${error instanceof Error ? error.message : String(error)}`;
-    process.stderr.write(`Playground server ${name} failed to become ready at ${baseUrl}\n`);
-    process.stderr.write(`${logs.trimEnd()}\n`);
-    await stopSpawnedServer(child);
-    throw error;
-  } finally {
-    activePlaygroundChildren.delete(child);
+    );
+    activePlaygroundChildren.add(child);
+    let output = '';
+    child.stdout.on('data', (chunk) => {
+      output += chunk;
+    });
+    child.stderr.on('data', (chunk) => {
+      output += chunk;
+    });
+    try {
+      await waitForPackagedProductionPluginServer(child, baseUrl, () => output);
+      process.stderr.write(`Playground server ${name} is ready at ${baseUrl}\n`);
+      return { name, baseUrl, child };
+    } catch (error) {
+      const logs = `${output}\n${error instanceof Error ? error.message : String(error)}`;
+      process.stderr.write(`Playground server ${name} failed to become ready at ${baseUrl}\n`);
+      process.stderr.write(`${logs.trimEnd()}\n`);
+      await stopSpawnedServer(child);
+      if (!/EADDRINUSE/i.test(logs) || attempt === 3) {
+        throw error;
+      }
+    } finally {
+      activePlaygroundChildren.delete(child);
+    }
   }
+
+  throw new Error(`Unable to start packaged Playground server for ${name} after retrying port collisions`);
 }
 
 async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) {
