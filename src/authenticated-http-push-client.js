@@ -1020,7 +1020,7 @@ function dbJournalCheckedBoundaryContractIsPresent(dbJournal) {
     && dbJournal?.ownership?.restartReadable === true
     && typeof dbJournal?.ownership?.productionAdapter === 'string'
     && dbJournal.ownership.productionAdapter.length > 0
-    && dbJournalWriterLeaseContractIsPresent(dbJournal)
+    && dbJournalWriterLeaseContractsArePresent(dbJournal)
     && typeof dbJournal?.leaseFence?.boundary === 'string'
     && dbJournal.leaseFence.boundary.length > 0
     && dbJournal?.leaseFence?.claimKeyUnique === true
@@ -1029,15 +1029,15 @@ function dbJournalCheckedBoundaryContractIsPresent(dbJournal) {
     && dbJournal?.leaseFence?.restartReadable === true;
 }
 
-function dbJournalWriterLeaseContractIsPresent(dbJournal) {
+function dbJournalWriterLeaseContractsArePresent(dbJournal) {
   const writerLease = dbJournal?.writerLease;
   const nestedWriterLease = dbJournal?.leaseFence?.writerLease;
-  const candidate = writerLease && typeof writerLease === 'object'
-    ? writerLease
-    : nestedWriterLease && typeof nestedWriterLease === 'object'
-      ? nestedWriterLease
-      : null;
+  return dbJournalWriterLeaseContractMatches(writerLease)
+    && dbJournalWriterLeaseContractMatches(nestedWriterLease)
+    && dbJournalWriterLeaseContractsAgree(writerLease, nestedWriterLease);
+}
 
+function dbJournalWriterLeaseContractMatches(candidate) {
   return typeof candidate?.strategy === 'string'
     && candidate.strategy.length > 0
     && candidate?.claimKeyUnique === true
@@ -1046,6 +1046,23 @@ function dbJournalWriterLeaseContractIsPresent(dbJournal) {
     && candidate.storageGuard.length > 0
     && candidate?.monotonicSequence === true
     && candidate?.restartReadable === true;
+}
+
+function dbJournalWriterLeaseContractsAgree(writerLease, nestedWriterLease) {
+  for (const key of [
+    'strategy',
+    'claimKeyUnique',
+    'fsyncEvidence',
+    'storageGuard',
+    'monotonicSequence',
+    'restartReadable',
+  ]) {
+    if (writerLease?.[key] !== nestedWriterLease?.[key]) {
+      return false;
+    }
+  }
+
+  return true;
 }
 
 function dbJournalStorageGuardIsTrusted(storageGuard) {
@@ -1121,7 +1138,7 @@ function summarizeDbJournalLeaseFence(dbJournal) {
     return undefined;
   }
 
-  return {
+  const summary = {
     boundary: leaseFence.boundary || null,
     claimKeyUnique: leaseFence.claimKeyUnique === true,
     fsyncEvidence: leaseFence.fsyncEvidence === true,
@@ -1129,6 +1146,13 @@ function summarizeDbJournalLeaseFence(dbJournal) {
     restartReadable: leaseFence.restartReadable === true,
     staleClaimRejected: leaseFence.staleClaimRejected === true,
   };
+
+  const nestedWriterLease = summarizeDbJournalWriterLease({ leaseFence });
+  if (nestedWriterLease) {
+    summary.writerLease = nestedWriterLease;
+  }
+
+  return summary;
 }
 
 function summarizeDbJournalWriterLease(dbJournal) {
