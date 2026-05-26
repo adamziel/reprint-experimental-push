@@ -2800,3 +2800,18 @@ test('guarded benchmark keeps aligned paused queue-slack details false when queu
   assert.equal(details.queuePauseHasBackpressureAlignedReceiptCursorQueueSlack, false);
   assert.equal(details.queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack, false);
 });
+
+test('guarded benchmark keeps pause-footprint details false when the raw completeness bit is hidden', () => {
+  const report = smallBenchmark();
+  const mutated = clone(report);
+
+  mutated.evidence.backpressure.receiptCursorPauseFootprintComplete = false;
+
+  const details = productionThroughputDetails(mutated);
+  const blockers = productionThroughputBlockers(mutated);
+
+  assert.equal(details.receiptCursorPauseFootprintComplete, false);
+  assert.equal(details.receiptCursorPauseFootprintVisible, false);
+  assert.equal(details.backpressureConsistency.receiptCursorPauseFootprintComplete, false);
+  assert.ok(blockers.includes('queue-pause-footprint-not-proven'));
+});

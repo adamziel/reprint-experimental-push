@@ -1279,7 +1279,7 @@ export function productionThroughputDetails(report) {
     memoryCeilingBytes: receiptCursorMemoryCeilingBytes,
     memoryHeadroomBytes: receiptCursorMemoryHeadroomBytes,
   };
-  const receiptCursorPauseFootprintComplete =
+  const receiptCursorPauseFootprintMeasuredComplete =
     Number.isFinite(receiptCursorBackpressureBytes)
     && Number.isFinite(receiptCursorQueueBudgetBytes)
     && Number.isFinite(receiptCursorQueueHeadroomBytes)
@@ -1291,6 +1291,9 @@ export function productionThroughputDetails(report) {
     && receiptCursorQueueHeadroomBytes === receiptCursorQueueBudgetBytes - report.shape.chunkSizeBytes
     && receiptCursorQueueSlackBytes === receiptCursorQueueBudgetBytes - receiptCursorBackpressureBytes
     && receiptCursorQueueSlackBytes === receiptCursorMemoryHeadroomBytes;
+  const receiptCursorPauseFootprintComplete =
+    receiptCursorPauseFootprintMeasuredComplete
+    && report.evidence.backpressure?.receiptCursorPauseFootprintComplete === true;
   const receiptCursorPauseFootprintVisible = receiptCursorPauseFootprintComplete;
   const queueBudgetMatchesResourceCeiling =
     Number.isFinite(receiptCursorQueueBudgetBytes)

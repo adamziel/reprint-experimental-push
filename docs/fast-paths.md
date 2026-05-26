@@ -380,6 +380,9 @@ Current executable gate:
   does not expose the complete receipt-cursor pause-footprint bit, so the
   composite backpressure summary cannot masquerade as complete when one of the
   linked measurements is missing.
+- The derived production-throughput details now honor that same raw
+  pause-footprint completeness bit, so the audit view cannot reconstruct a
+  complete paused-backpressure proof from the footprint numbers alone.
 - The production-throughput gate now also fails closed when the pause-footprint
   summary says complete but the measured-and-aligned queue-slack proof bit is
   missing, so a tampered summary cannot reuse raw footprint numbers without
