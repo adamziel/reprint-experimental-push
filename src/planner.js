@@ -2775,6 +2775,7 @@ function addUnsupportedCommentsUsersResourceBlocker(plan, {
     resource,
     resourceKey: resource.key,
     reason: support.reason || `Comments and users graph resource ${resource.key} is not yet supported by the planner.`,
+    unsupportedState: support.unsupportedState || null,
     baseHash,
     localHash,
     remoteHash,
@@ -2807,6 +2808,7 @@ function addUnsupportedUsermetaResourceBlocker(plan, {
     resource,
     resourceKey: resource.key,
     reason: support.reason || `User meta resource ${resource.key} is not yet supported by the planner.`,
+    unsupportedState: support.unsupportedState || null,
     baseHash,
     localHash,
     remoteHash,
@@ -3209,6 +3211,16 @@ function unsupportedCommentsUsersResourceSupport({ resource, baseValue, localVal
   if (!candidate || candidate === ABSENT) {
     return { supported: true };
   }
+  const remoteOnlyDrift = (
+    stableStringify(localValue) === stableStringify(baseValue)
+    && stableStringify(remoteValue) !== stableStringify(baseValue)
+  );
+  const convergedDrift = (
+    localValue !== ABSENT
+    && remoteValue !== ABSENT
+    && stableStringify(localValue) === stableStringify(remoteValue)
+    && stableStringify(localValue) !== stableStringify(baseValue)
+  );
 
   if (resource.table === 'wp_comments') {
     const references = wordpressGraphReferences(resource, candidate);
@@ -3236,6 +3248,7 @@ function unsupportedCommentsUsersResourceSupport({ resource, baseValue, localVal
       return {
         supported: false,
         className: 'unsupported-comments-users-resource',
+        unsupportedState: 'same-plan-reference',
         reason: commentGraphReference.relationshipType === 'comment-parent'
           ? `WordPress graph mutation ${resource.key} is created in the same plan as a parent comment identity that depends on it, and identity rewriting is not yet supported.`
           : commentGraphReference.relationshipType === 'comment-post'
@@ -3271,6 +3284,7 @@ function unsupportedCommentsUsersResourceSupport({ resource, baseValue, localVal
       return {
         supported: false,
         className: 'unsupported-comments-users-resource',
+        unsupportedState: 'same-plan-reference',
         reason: userReference.relationshipType === 'comment-user'
           ? `WordPress graph mutation ${resource.key} is created in the same plan as a comment user identity that depends on it, and identity rewriting is not yet supported.`
           : `WordPress graph mutation ${resource.key} is created in the same plan as a user meta identity that depends on it, and identity rewriting is not yet supported.`,
@@ -3281,6 +3295,13 @@ function unsupportedCommentsUsersResourceSupport({ resource, baseValue, localVal
   return {
     supported: false,
     className: 'unsupported-comments-users-resource',
+    unsupportedState: localValue === ABSENT
+      ? 'delete'
+      : convergedDrift
+        ? 'converged-drift'
+        : remoteOnlyDrift
+          ? 'remote-only-drift'
+          : 'local-or-divergent-drift',
     reason: resource.table === 'wp_users'
       ? 'User graph resources are not yet supported by the planner.'
       : 'Comments graph resources are not yet supported by the planner.',
@@ -3296,11 +3317,22 @@ function unsupportedUsermetaResourceSupport({ resource, baseValue, localValue, r
   if (!candidate || candidate === ABSENT) {
     return { supported: true };
   }
+  const remoteOnlyDrift = (
+    stableStringify(localValue) === stableStringify(baseValue)
+    && stableStringify(remoteValue) !== stableStringify(baseValue)
+  );
+  const convergedDrift = (
+    localValue !== ABSENT
+    && remoteValue !== ABSENT
+    && stableStringify(localValue) === stableStringify(remoteValue)
+    && stableStringify(localValue) !== stableStringify(baseValue)
+  );
 
   if (localValue === ABSENT) {
     return {
       supported: false,
       className: 'unsupported-usermeta-resource',
+      unsupportedState: 'delete',
       reason: 'User meta graph resource deletes are not yet supported by the planner.',
     };
   }
@@ -3316,6 +3348,7 @@ function unsupportedUsermetaResourceSupport({ resource, baseValue, localValue, r
     return {
       supported: false,
       className: 'unsupported-usermeta-resource',
+      unsupportedState: 'same-plan-reference',
       reason: `WordPress graph mutation ${resource.key} is created in the same plan as a user identity that depends on it, and identity rewriting is not yet supported.`,
     };
   }
@@ -3323,6 +3356,11 @@ function unsupportedUsermetaResourceSupport({ resource, baseValue, localValue, r
   return {
     supported: false,
     className: 'unsupported-usermeta-resource',
+    unsupportedState: convergedDrift
+      ? 'converged-drift'
+      : remoteOnlyDrift
+        ? 'remote-only-drift'
+        : 'local-or-divergent-drift',
     reason: 'User meta graph resources are not yet supported by the planner.',
   };
 }
