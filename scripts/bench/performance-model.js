@@ -1308,6 +1308,26 @@ export const SAFE_FAST_PATHS = Object.freeze([
     splitsAtomicGroup: false,
     publishesStagedDataEarly: false,
   },
+  {
+    area: 'compression',
+    reduces: ['wire-bytes', 'planning-round-trips', 'duplicate-budget-recomputation'],
+    allowedShortcut: 'compress-canonical-per-kind-budget-summaries-to-size-bounded-plugin-install-fanout',
+    guardrails: [
+      'budget-summaries-stay-planning-evidence-only',
+      'plugin-install-fanout-revalidates-before-write',
+    ],
+    gateProofs: {
+      skip: 'compressed per-kind budget summaries can shorten plugin-install fanout planning without recomputing the same canonical limits',
+      live: 'each later plugin install still rechecks its own live resource precondition before visibility changes',
+      group: 'budget-summary compression only narrows planning inside the same planned plugin-install bundle and never widens the atomic-group barrier',
+      recovery: 'compressed budget summaries are advisory while durable receipts and the group staging record still classify pause, retry, or crash',
+    },
+    visibilityBoundary: 'planning-only-budget-summary',
+    failureEvidence: 'compressed per-kind budget summary plus later durable receipts and plugin-install staging record',
+    bypassesLivePreconditions: false,
+    splitsAtomicGroup: false,
+    publishesStagedDataEarly: false,
+  },
 ]);
 
 export const FAILURE_INJECTION_BOUNDARIES = Object.freeze([
