@@ -18,6 +18,15 @@ export function isExpiredAuthSession(session, now = Date.now()) {
 }
 
 export function evaluateProductionAuthSessionLifecycle(session, now = Date.now()) {
+  const invalidLifecycleFlag = resolveInvalidAuthSessionLifecycleFlag(session);
+  if (invalidLifecycleFlag) {
+    return {
+      ok: false,
+      required: 'boolean lifecycle flags',
+      observed: `invalid-${invalidLifecycleFlag}`,
+    };
+  }
+
   const observedType = session?.type || 'missing';
   const observedStatus = session?.status || 'missing';
   const observedExpiresAt = session?.expiresAt || 'missing';
@@ -287,6 +296,7 @@ export function summarizeProductionAuthSessionLifecycleTrace(trace) {
         type: null,
         status: null,
         expiresAt: null,
+        invalidLifecycleFlag: null,
         expired: false,
         revoked: false,
         cleanedUp: false,
@@ -301,11 +311,12 @@ export function summarizeProductionAuthSessionLifecycleTrace(trace) {
       type: entry.type ?? null,
       status: entry.status ?? null,
       expiresAt: entry.expiresAt ?? null,
-      expired: Boolean(entry.expired),
-      revoked: Boolean(entry.revoked),
-      cleanedUp: Boolean(entry.cleanedUp),
-      rotated: Boolean(entry.rotated),
-      preserved: Boolean(entry.preserved),
+      invalidLifecycleFlag: resolveInvalidAuthSessionLifecycleFlag(entry),
+      expired: entry.expired === true,
+      revoked: entry.revoked === true,
+      cleanedUp: entry.cleanedUp === true,
+      rotated: entry.rotated === true,
+      preserved: entry.preserved === true,
     };
   });
   const readObservation = [...observations]
@@ -349,4 +360,24 @@ function normalizeAuthSessionObservationId(id) {
   }
 
   return normalized;
+}
+
+function resolveInvalidAuthSessionLifecycleFlag(observation) {
+  if (!observation || typeof observation !== 'object') {
+    return null;
+  }
+
+  if (typeof observation.invalidLifecycleFlag === 'string' && observation.invalidLifecycleFlag) {
+    return observation.invalidLifecycleFlag;
+  }
+
+  const lifecycleFlags = ['expired', 'revoked', 'cleanedUp', 'rotated', 'preserved'];
+  for (const flag of lifecycleFlags) {
+    const value = observation[flag];
+    if (value !== undefined && value !== null && typeof value !== 'boolean') {
+      return flag;
+    }
+  }
+
+  return null;
 }

@@ -2317,6 +2317,44 @@ test('production auth/session lifecycle summary fails closed when an intermediat
   );
 });
 
+test('production auth/session lifecycle summary fails closed when preserved-read preservation flags are string values', () => {
+  const summary = summarizeProductionAuthSessionLifecycleTrace([
+    {
+      step: 'preflight',
+      id: 'session-01',
+      type: 'production-auth-session',
+      status: 'active',
+      expiresAt: '2099-01-01T00:00:00Z',
+      expired: false,
+      revoked: false,
+      cleanedUp: false,
+      rotated: false,
+      preserved: false,
+    },
+    {
+      step: 'journal',
+      id: 'session-01',
+      type: 'production-auth-session',
+      status: 'active',
+      expiresAt: '2099-01-01T00:00:00Z',
+      expired: false,
+      revoked: false,
+      cleanedUp: false,
+      rotated: false,
+      preserved: 'false',
+    },
+  ]);
+
+  assert.deepEqual(
+    evaluateProductionAuthSessionLifecycleSummary(summary),
+    {
+      ok: false,
+      required: 'boolean lifecycle flags',
+      observed: 'invalid-preserved',
+    },
+  );
+});
+
 test('production auth/session lifecycle summary fails closed when an intermediate preserved read omits the session id', () => {
   const summary = summarizeProductionAuthSessionLifecycleTrace([
     {
@@ -2362,6 +2400,33 @@ test('production auth/session lifecycle summary fails closed when an intermediat
       ok: false,
       required: 'preserved read',
       observed: 'rotated',
+    },
+  );
+});
+
+test('production auth/session lifecycle summary fails closed when direct preserved-read preservation flags are string values', () => {
+  assert.deepEqual(
+    evaluateProductionAuthSessionLifecycleSummary({
+      issued: {
+        step: 'preflight',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+      },
+      read: {
+        step: 'journal',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+        preserved: 'true',
+      },
+    }),
+    {
+      ok: false,
+      required: 'boolean lifecycle flags',
+      observed: 'invalid-preserved',
     },
   );
 });
