@@ -18155,7 +18155,7 @@ test('recovery states fail closed when plan identity and remote hash are inherit
   const error = captureError(() => assertRecoveryStateEnvelope(recovery));
 
   assert.equal(error.code, 'RECOVERY_STATE_INVALID');
-  assert.match(error.message, /Recovery state must be old-remote, fully-updated-remote, or blocked-recovery\./);
+  assert.match(error.message, /Recovery state must carry an own plan identifier\./);
 });
 
 test('recovery states fail closed when plan identifiers are not non-empty strings', () => {
@@ -24142,7 +24142,7 @@ test('non-blocked recovery states fail closed when the artifact envelope is not 
   const error = captureError(() => assertRecoveryStateEnvelope(recovery));
 
   assert.equal(error.code, 'RECOVERY_STATE_INVALID');
-  assert.match(error.message, /Recovery state must be old-remote, fully-updated-remote, or blocked-recovery\./);
+  assert.match(error.message, /Recovery state must carry an own remote hash\./);
 });
 
 test('non-blocked recovery artifacts fail closed when an own remote artifact key is present', () => {
@@ -24158,7 +24158,7 @@ test('non-blocked recovery artifacts fail closed when an own remote artifact key
   const error = captureError(() => assertRecoveryStateEnvelope(recovery));
 
   assert.equal(error.code, 'RECOVERY_STATE_INVALID');
-  assert.match(error.message, /Recovery state must be old-remote, fully-updated-remote, or blocked-recovery\./);
+  assert.match(error.message, /Recovery state must carry an own remote hash\./);
 });
 
 test('blocked recovery artifacts fail closed when the remote artifact only resembles a null-prototype recovery envelope', () => {
@@ -24169,6 +24169,9 @@ test('blocked recovery artifacts fail closed when the remote artifact only resem
   const recovery = {
     status: 'blocked-recovery',
     planId: 'plan-123',
+    reason: 'stale remote recovery',
+    remoteHash: 'a'.repeat(64),
+    driftedResources: ['file:index.php'],
     artifacts: {
       journal: { schemaVersion: 1 },
       remote: remoteArtifact,
@@ -24177,8 +24180,8 @@ test('blocked recovery artifacts fail closed when the remote artifact only resem
 
   const error = captureError(() => assertRecoveryStateEnvelope(recovery));
 
-  assert.equal(error.code, 'RECOVERY_STATE_INVALID');
-  assert.match(error.message, /Recovery state must be old-remote, fully-updated-remote, or blocked-recovery\./);
+  assert.equal(error.code, 'RECOVERY_ARTIFACTS_INVALID');
+  assert.match(error.message, /must preserve both plain-object journal and remote artifacts/);
 });
 
 test('blocked recovery artifacts fail closed when the remote artifact uses a null prototype', () => {
