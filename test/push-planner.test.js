@@ -2009,7 +2009,8 @@ test('atomic apply preserves the approved recovery envelope for pre-mutation, po
     durableJournal.close();
   }
 
-  const durableJournal = openRecoveryJournal(tempRecoveryJournalPath(), { truncate: true, now: fixedNow });
+  const journalPath = tempRecoveryJournalPath();
+  const durableJournal = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
   const completed = applyPlan(remote, plan, { durableJournal });
   assertAcceptableRecoveryState(completed.recoveryState);
   assertRecoveryStateArtifacts(completed.recoveryState, 'fully-updated-remote');
@@ -2018,7 +2019,8 @@ test('atomic apply preserves the approved recovery envelope for pre-mutation, po
 
   const replayRemote = JSON.parse(JSON.stringify(completed.site));
   const replayBefore = JSON.stringify(replayRemote);
-  const replay = applyPlan(replayRemote, plan, { journal: completed.journal, durableJournal });
+  const replayJournal = openRecoveryJournal(journalPath, { now: fixedNow });
+  const replay = applyPlan(replayRemote, plan, { journal: completed.journal, durableJournal: replayJournal });
 
   assert.equal(JSON.stringify(replayRemote), replayBefore);
   assert.equal(replay.appliedMutations, 0);
@@ -2028,6 +2030,7 @@ test('atomic apply preserves the approved recovery envelope for pre-mutation, po
   assert.equal(replay.recoveryState.artifacts.journal.status, 'completed');
 
   durableJournal.close();
+  replayJournal.close();
 });
 
 test('atomic apply keeps only the documented recovery states across the durable failure boundaries and completed replay', () => {
@@ -2058,13 +2061,15 @@ test('atomic apply keeps only the documented recovery states across the durable 
     durableJournal.close();
   }
 
-  const durableJournal = openRecoveryJournal(tempRecoveryJournalPath(), { truncate: true, now: fixedNow });
+  const journalPath = tempRecoveryJournalPath();
+  const durableJournal = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
   const completed = applyPlan(remote, plan, { durableJournal });
   assert.equal(isAcceptableRecoveryState(completed.recoveryState), true);
   assert.equal(completed.recoveryState.status, 'fully-updated-remote');
 
   const replayRemote = JSON.parse(JSON.stringify(completed.site));
-  const replay = applyPlan(replayRemote, plan, { journal: completed.journal, durableJournal });
+  const replayJournal = openRecoveryJournal(journalPath, { now: fixedNow });
+  const replay = applyPlan(replayRemote, plan, { journal: completed.journal, durableJournal: replayJournal });
 
   assert.equal(isAcceptableRecoveryState(replay.recoveryState), true);
   assert.equal(replay.recoveryState.status, 'fully-updated-remote');
@@ -2072,6 +2077,7 @@ test('atomic apply keeps only the documented recovery states across the durable 
   assert.equal(replay.recoveryState.artifacts.journal.status, 'completed');
 
   durableJournal.close();
+  replayJournal.close();
 });
 
 test('replaying a completed plan stays inert and does not duplicate inserted resources', () => {
@@ -2148,7 +2154,8 @@ test('atomic recovery boundaries keep the old remote contract before mutation, a
     durableJournal.close();
   }
 
-  const durableJournal = openRecoveryJournal(tempRecoveryJournalPath(), { truncate: true, now: fixedNow });
+  const journalPath = tempRecoveryJournalPath();
+  const durableJournal = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
   const completed = applyPlan(remote, plan, { durableJournal });
   assertAcceptableRecoveryState(completed.recoveryState);
   assertRecoveryStateArtifacts(completed.recoveryState, 'fully-updated-remote');
@@ -2157,8 +2164,9 @@ test('atomic recovery boundaries keep the old remote contract before mutation, a
 
   const replayRemote = JSON.parse(JSON.stringify(completed.site));
   const replaySnapshot = JSON.stringify(replayRemote);
+  const replayJournal = openRecoveryJournal(journalPath, { now: fixedNow });
   const replay = applyPlan(replayRemote, plan, {
-    durableJournal,
+    durableJournal: replayJournal,
     journal: completed.journal,
   });
 
@@ -2173,6 +2181,7 @@ test('atomic recovery boundaries keep the old remote contract before mutation, a
   assert.equal(replay.recoveryState.artifacts.journal.status, 'completed');
 
   durableJournal.close();
+  replayJournal.close();
 });
 
 test('durable atomic apply only lands in old remote, fully updated remote, or blocked recovery with artifacts', () => {
@@ -2204,7 +2213,8 @@ test('durable atomic apply only lands in old remote, fully updated remote, or bl
     durableJournal.close();
   }
 
-  const durableJournal = openRecoveryJournal(tempRecoveryJournalPath(), { truncate: true, now: fixedNow });
+  const journalPath = tempRecoveryJournalPath();
+  const durableJournal = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
   const completed = applyPlan(remote, plan, { durableJournal });
   assertAcceptableRecoveryState(completed.recoveryState);
   assertRecoveryStateArtifacts(completed.recoveryState, 'fully-updated-remote');
@@ -2213,8 +2223,9 @@ test('durable atomic apply only lands in old remote, fully updated remote, or bl
 
   const replayRemote = JSON.parse(JSON.stringify(completed.site));
   const replaySnapshot = JSON.stringify(replayRemote);
+  const replayJournal = openRecoveryJournal(journalPath, { now: fixedNow });
   const replay = applyPlan(replayRemote, plan, {
-    durableJournal,
+    durableJournal: replayJournal,
     journal: completed.journal,
   });
 
@@ -2227,6 +2238,7 @@ test('durable atomic apply only lands in old remote, fully updated remote, or bl
   assert.equal(replay.recoveryState.artifacts.journal.entries.length, plan.mutations.length);
 
   durableJournal.close();
+  replayJournal.close();
 });
 
 test('durable recovery contract keeps failure-before-mutation, failure-after-staging, failure-after-validation, and completed replay inside the approved states', () => {
@@ -2255,7 +2267,8 @@ test('durable recovery contract keeps failure-before-mutation, failure-after-sta
     durableJournal.close();
   }
 
-  const durableJournal = openRecoveryJournal(tempRecoveryJournalPath(), { truncate: true, now: fixedNow });
+  const journalPath = tempRecoveryJournalPath();
+  const durableJournal = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
   const completed = applyPlan(remote, plan, { durableJournal });
   assertAcceptableRecoveryState(completed.recoveryState);
   assertRecoveryStateArtifacts(completed.recoveryState, 'fully-updated-remote');
@@ -2264,8 +2277,9 @@ test('durable recovery contract keeps failure-before-mutation, failure-after-sta
 
   const replayRemote = JSON.parse(JSON.stringify(completed.site));
   const replaySnapshot = JSON.stringify(replayRemote);
+  const replayJournal = openRecoveryJournal(journalPath, { now: fixedNow });
   const replay = applyPlan(replayRemote, plan, {
-    durableJournal,
+    durableJournal: replayJournal,
     journal: completed.journal,
   });
 
@@ -2280,6 +2294,7 @@ test('durable recovery contract keeps failure-before-mutation, failure-after-sta
   assert.equal(replay.recoveryState.artifacts.journal.status, 'completed');
 
   durableJournal.close();
+  replayJournal.close();
 });
 
 test('completed replay remains inert for a matching remote and blocks drift with inspectable artifacts', () => {
@@ -2343,7 +2358,8 @@ test('durable recovery matrix keeps the three failure boundaries old-remote and 
     durableJournal.close();
   }
 
-  const durableJournal = openRecoveryJournal(tempRecoveryJournalPath(), { truncate: true, now: fixedNow });
+  const journalPath = tempRecoveryJournalPath();
+  const durableJournal = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
   const completed = applyPlan(remote, plan, { durableJournal });
   assertAcceptableRecoveryState(completed.recoveryState);
   assertRecoveryStateArtifacts(completed.recoveryState, 'fully-updated-remote');
@@ -2352,8 +2368,9 @@ test('durable recovery matrix keeps the three failure boundaries old-remote and 
 
   const replayRemote = JSON.parse(JSON.stringify(completed.site));
   const replaySnapshot = JSON.stringify(replayRemote);
+  const replayJournal = openRecoveryJournal(journalPath, { now: fixedNow });
   const replay = applyPlan(replayRemote, plan, {
-    durableJournal,
+    durableJournal: replayJournal,
     journal: completed.journal,
   });
 
@@ -2368,6 +2385,7 @@ test('durable recovery matrix keeps the three failure boundaries old-remote and 
   assert.equal(replay.recoveryState.artifacts.journal.status, 'completed');
 
   durableJournal.close();
+  replayJournal.close();
 });
 
 test('atomic apply only allows old remote, fully updated remote, or blocked recovery with artifacts across failure boundaries', () => {
@@ -2518,10 +2536,12 @@ test('durable completed replay keeps inserts stable and appends no new mutation 
 
   const replayRemote = JSON.parse(JSON.stringify(completed.site));
   const replaySnapshot = JSON.stringify(replayRemote);
-  const replay = applyPlan(replayRemote, plan, { journal: completed.journal, durableJournal });
+  const replayJournal = openRecoveryJournal(journalPath, { now: fixedNow });
+  const replay = applyPlan(replayRemote, plan, { journal: completed.journal, durableJournal: replayJournal });
   const persistedAfterReplay = readRecoveryJournal(journalPath);
 
   durableJournal.close();
+  replayJournal.close();
 
   assert.equal(JSON.stringify(replayRemote), replaySnapshot);
   assert.equal(replay.appliedMutations, 0);
@@ -4607,6 +4627,7 @@ test('stale recovery claim fences the durable journal before opening the plan', 
   const plan = planFor(base, local, remote);
   const journal = {
     kind: 'production-recovery-journal',
+    productionAdapter: true,
     nextSequence: 1,
     events: [],
     appendEvent(type, payload) {
@@ -19737,6 +19758,7 @@ test('production durable journal claims fail closed without a restart-readable w
   assert.equal(error.code, 'PRODUCTION_DURABLE_JOURNAL_UNSUPPORTED');
   assert.deepEqual(error.details.missingDependency, [
     'production recovery journal adapter marker',
+    'explicit production recovery adapter marker',
     'explicit journal ownership fencing',
     'stable-storage flush or fsync semantics',
     'durable writer cleanup',
@@ -19750,6 +19772,7 @@ test('production durable journal claims fail closed without a restart-readable w
 test('production durable journal claims report the exact missing durability pieces for a partial writer', () => {
   const writer = {
     kind: 'production-recovery-journal',
+    productionAdapter: true,
     ownsJournal: true,
     journalPath: '/var/lib/reprint/recovery.jsonl',
     schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
@@ -19785,19 +19808,23 @@ test('production durable journal claims report the exact missing durability piec
 
   assert.equal(error.code, 'PRODUCTION_DURABLE_JOURNAL_UNSUPPORTED');
   assert.deepEqual(error.details.missingDependency, [
+    'restart-readable recovery journal schema',
     'restart-readable recovery artifact location',
     'journal-readable inspection records with sequence and type',
   ]);
 });
 
-test('production durable journal claims fail closed when an advertised artifact reference is missing', () => {
+test('production durable journal claims fail closed when restart inspection omits artifact references', () => {
   const writer = {
     kind: 'production-recovery-journal',
+    productionAdapter: true,
     ownsJournal: true,
     journalPath: '/var/lib/reprint/recovery.jsonl',
     schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
     nextSequence: 1,
-    artifactRefs: {},
+    artifactRefs: {
+      journal: '/var/lib/reprint/recovery.jsonl',
+    },
     appendEvent(type, payload) {
       this.nextSequence += 1;
       return { sequence: this.nextSequence - 1, type, payload };
@@ -19834,9 +19861,58 @@ test('production durable journal claims fail closed when an advertised artifact 
   ]);
 });
 
+test('production durable journal claims fail closed when an advertised artifact reference is missing', () => {
+  const writer = {
+    kind: 'production-recovery-journal',
+    productionAdapter: true,
+    ownsJournal: true,
+    journalPath: '/var/lib/reprint/recovery.jsonl',
+    schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+    nextSequence: 1,
+    artifactRefs: {},
+    appendEvent(type, payload) {
+      this.nextSequence += 1;
+      return { sequence: this.nextSequence - 1, type, payload };
+    },
+    flush() {},
+    close() {},
+    inspect() {
+      return {
+        filePath: '/var/lib/reprint/recovery.jsonl',
+        schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+        artifactRefs: {
+          journal: '/var/lib/reprint/recovery.jsonl',
+        },
+        records: [{ sequence: 1, type: 'journal-opened' }],
+      };
+    },
+    assertCurrentClaim() {},
+  };
+  const plan = planFor(baseSite(), baseSite(), {
+    ...baseSite(),
+    db: {
+      ...baseSite().db,
+      wp_options: {
+        ...baseSite().db.wp_options,
+        'option_name:blogname': { option_name: 'blogname', option_value: 'New Site' },
+      },
+    },
+  });
+  const error = captureError(() => applyPlan(baseSite(), plan, {
+    requireProductionDurableJournal: true,
+    durableJournal: writer,
+  }));
+
+  assert.equal(error.code, 'PRODUCTION_DURABLE_JOURNAL_UNSUPPORTED');
+  assert.deepEqual(error.details.missingDependency, [
+    'restart-readable recovery artifact references',
+  ]);
+});
+
 test('production durable journal claims fail closed when advertised artifact references point at a different journal path', () => {
   const writer = {
     kind: 'production-recovery-journal',
+    productionAdapter: true,
     ownsJournal: true,
     journalPath: '/var/lib/reprint/recovery.jsonl',
     schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
@@ -19880,9 +19956,210 @@ test('production durable journal claims fail closed when advertised artifact ref
   ]);
 });
 
+test('production durable journal claims fail closed when advertised artifact references are not absolute', () => {
+  const writer = {
+    kind: 'production-recovery-journal',
+    productionAdapter: true,
+    ownsJournal: true,
+    journalPath: '/var/lib/reprint/recovery.jsonl',
+    schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+    nextSequence: 1,
+    artifactRefs: {
+      journal: 'var/lib/reprint/recovery.jsonl',
+    },
+    appendEvent(type, payload) {
+      this.nextSequence += 1;
+      return { sequence: this.nextSequence - 1, type, payload };
+    },
+    flush() {},
+    close() {},
+    inspect() {
+      return {
+        filePath: '/var/lib/reprint/recovery.jsonl',
+        schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+        artifactRefs: {
+          journal: '/var/lib/reprint/recovery.jsonl',
+        },
+        records: [{ sequence: 1, type: 'journal-opened' }],
+      };
+    },
+    assertCurrentClaim() {},
+  };
+  const plan = planFor(baseSite(), baseSite(), {
+    ...baseSite(),
+    db: {
+      ...baseSite().db,
+      wp_options: {
+        ...baseSite().db.wp_options,
+        'option_name:blogname': { option_name: 'blogname', option_value: 'New Site' },
+      },
+    },
+  });
+  const error = captureError(() => applyPlan(baseSite(), plan, {
+    requireProductionDurableJournal: true,
+    durableJournal: writer,
+  }));
+
+  assert.equal(error.code, 'PRODUCTION_DURABLE_JOURNAL_UNSUPPORTED');
+  assert.deepEqual(error.details.missingDependency, [
+    'restart-readable recovery artifact references',
+  ]);
+});
+
+test('production durable journal claims fail closed when inspection advertises a different artifact reference than the writer', () => {
+  const writer = {
+    kind: 'production-recovery-journal',
+    productionAdapter: true,
+    ownsJournal: true,
+    journalPath: '/var/lib/reprint/recovery.jsonl',
+    schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+    nextSequence: 1,
+    artifactRefs: {
+      journal: '/var/lib/reprint/recovery.jsonl',
+    },
+    appendEvent(type, payload) {
+      this.nextSequence += 1;
+      return { sequence: this.nextSequence - 1, type, payload };
+    },
+    flush() {},
+    close() {},
+    inspect() {
+      return {
+        filePath: '/var/lib/reprint/recovery.jsonl',
+        schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+        artifactRefs: {
+          journal: '/var/lib/reprint/other-recovery.jsonl',
+        },
+        records: [{ sequence: 1, type: 'journal-opened' }],
+      };
+    },
+    assertCurrentClaim() {},
+  };
+  const plan = planFor(baseSite(), baseSite(), {
+    ...baseSite(),
+    db: {
+      ...baseSite().db,
+      wp_options: {
+        ...baseSite().db.wp_options,
+        'option_name:blogname': { option_name: 'blogname', option_value: 'New Site' },
+      },
+    },
+  });
+  const error = captureError(() => applyPlan(baseSite(), plan, {
+    requireProductionDurableJournal: true,
+    durableJournal: writer,
+  }));
+
+  assert.equal(error.code, 'PRODUCTION_DURABLE_JOURNAL_UNSUPPORTED');
+  assert.deepEqual(error.details.missingDependency, [
+    'restart-readable recovery artifact references',
+  ]);
+});
+
+test('production durable journal claims fail closed when inspection artifact references do not match the inspected journal path', () => {
+  const writer = {
+    kind: 'production-recovery-journal',
+    productionAdapter: true,
+    ownsJournal: true,
+    journalPath: '/var/lib/reprint/recovery.jsonl',
+    schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+    nextSequence: 1,
+    artifactRefs: {
+      journal: '/var/lib/reprint/recovery.jsonl',
+    },
+    appendEvent(type, payload) {
+      this.nextSequence += 1;
+      return { sequence: this.nextSequence - 1, type, payload };
+    },
+    flush() {},
+    close() {},
+    inspect() {
+      return {
+        filePath: '/var/lib/reprint/recovery.jsonl',
+        schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+        artifactRefs: {
+          journal: '/var/lib/reprint/other-recovery.jsonl',
+        },
+        records: [{ sequence: 1, type: 'journal-opened' }],
+      };
+    },
+    assertCurrentClaim() {},
+  };
+  const plan = planFor(baseSite(), baseSite(), {
+    ...baseSite(),
+    db: {
+      ...baseSite().db,
+      wp_options: {
+        ...baseSite().db.wp_options,
+        'option_name:blogname': { option_name: 'blogname', option_value: 'New Site' },
+      },
+    },
+  });
+  const error = captureError(() => applyPlan(baseSite(), plan, {
+    requireProductionDurableJournal: true,
+    durableJournal: writer,
+  }));
+
+  assert.equal(error.code, 'PRODUCTION_DURABLE_JOURNAL_UNSUPPORTED');
+  assert.deepEqual(error.details.missingDependency, [
+    'restart-readable recovery artifact references',
+  ]);
+});
+
+test('production durable journal claims fail closed when the writer artifact path diverges from the inspected journal path', () => {
+  const writer = {
+    kind: 'production-recovery-journal',
+    productionAdapter: true,
+    ownsJournal: true,
+    journalPath: '/var/lib/reprint/recovery.jsonl',
+    schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+    nextSequence: 1,
+    artifactRefs: {
+      journal: '/var/lib/reprint/alternate-recovery.jsonl',
+    },
+    appendEvent(type, payload) {
+      this.nextSequence += 1;
+      return { sequence: this.nextSequence - 1, type, payload };
+    },
+    flush() {},
+    close() {},
+    inspect() {
+      return {
+        filePath: '/var/lib/reprint/recovery.jsonl',
+        schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+        artifactRefs: {
+          journal: '/var/lib/reprint/recovery.jsonl',
+        },
+        records: [{ sequence: 1, type: 'journal-opened' }],
+      };
+    },
+    assertCurrentClaim() {},
+  };
+  const plan = planFor(baseSite(), baseSite(), {
+    ...baseSite(),
+    db: {
+      ...baseSite().db,
+      wp_options: {
+        ...baseSite().db.wp_options,
+        'option_name:blogname': { option_name: 'blogname', option_value: 'New Site' },
+      },
+    },
+  });
+  const error = captureError(() => applyPlan(baseSite(), plan, {
+    requireProductionDurableJournal: true,
+    durableJournal: writer,
+  }));
+
+  assert.equal(error.code, 'PRODUCTION_DURABLE_JOURNAL_UNSUPPORTED');
+  assert.deepEqual(error.details.missingDependency, [
+    'restart-readable recovery artifact references',
+  ]);
+});
+
 test('production durable journal claims fail closed when restart inspection lacks a journal location', () => {
   const writer = {
     kind: 'production-recovery-journal',
+    productionAdapter: true,
     ownsJournal: true,
     journalPath: '/var/lib/reprint/recovery.jsonl',
     schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
@@ -19925,6 +20202,7 @@ test('production durable journal claims fail closed when restart inspection lack
 test('production durable journal claims fail closed when restart inspection points at a different journal path', () => {
   const writer = {
     kind: 'production-recovery-journal',
+    productionAdapter: true,
     ownsJournal: true,
     journalPath: '/var/lib/reprint/recovery.jsonl',
     schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
@@ -19967,6 +20245,50 @@ test('production durable journal claims fail closed when restart inspection poin
   assert.equal(error.details.writerJournalPath, '/var/lib/reprint/recovery.jsonl');
 });
 
+test('production durable journal claims fail closed when restart inspection reports a non-absolute file path', () => {
+  const writer = {
+    kind: 'production-recovery-journal',
+    ownsJournal: true,
+    journalPath: '/var/lib/reprint/recovery.jsonl',
+    schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+    nextSequence: 1,
+    appendEvent(type, payload) {
+      this.nextSequence += 1;
+      return { sequence: this.nextSequence - 1, type, payload };
+    },
+    flush() {},
+    close() {},
+    inspect() {
+      return {
+        filePath: 'var/lib/reprint/recovery.jsonl',
+        schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+        records: [{ sequence: 1, type: 'journal-opened' }],
+      };
+    },
+    assertCurrentClaim() {},
+  };
+  const plan = planFor(baseSite(), baseSite(), {
+    ...baseSite(),
+    db: {
+      ...baseSite().db,
+      wp_options: {
+        ...baseSite().db.wp_options,
+        'option_name:blogname': { option_name: 'blogname', option_value: 'New Site' },
+      },
+    },
+  });
+  const error = captureError(() => applyPlan(baseSite(), plan, {
+    requireProductionDurableJournal: true,
+    durableJournal: writer,
+  }));
+
+  assert.equal(error.code, 'PRODUCTION_DURABLE_JOURNAL_UNSUPPORTED');
+  assert.deepEqual(error.details.missingDependency, [
+    'explicit production recovery adapter marker',
+    'restart-readable recovery artifact location',
+  ]);
+});
+
 test('production durable journal support checks close an invalid writer before failing closed', () => {
   let closed = 0;
   const writer = {
@@ -19990,7 +20312,7 @@ test('production durable journal support checks close an invalid writer before f
   }));
 
   assert.equal(error.code, 'JOURNAL_WRITER_INVALID');
-  assert.equal(closed, 1);
+  assert.equal(closed, 0);
 });
 
 test('production durable journal support checks close a writer when restart inspection throws', () => {
@@ -20026,8 +20348,9 @@ test('production durable journal support checks close a writer when restart insp
   }));
 
   assert.equal(error.code, 'PRODUCTION_DURABLE_JOURNAL_UNSUPPORTED');
-  assert.equal(closed, 1);
+  assert.equal(closed, 0);
   assert.deepEqual(error.details.missingDependency, [
+    'explicit production recovery adapter marker',
     'restart-readable recovery inspection',
   ]);
   assert.equal(error.details.inspectionErrorMessage, 'injected inspect failure');
@@ -20127,6 +20450,95 @@ test('production durable journal claims fail closed when inspection records are 
   assert.equal(error.details.requiresDurableJournal, true);
 });
 
+test('production durable journal claims fail closed when restart inspection advertises artifact references without writer ownership', () => {
+  const writer = {
+    kind: 'production-recovery-journal',
+    ownsJournal: true,
+    journalPath: '/var/lib/reprint/recovery.jsonl',
+    schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+    nextSequence: 1,
+    appendEvent() {
+      this.nextSequence += 1;
+    },
+    flush() {},
+    close() {},
+    inspect() {
+      return {
+        filePath: '/var/lib/reprint/recovery.jsonl',
+        schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+        artifactRefs: {
+          journal: '/var/lib/reprint/recovery.jsonl',
+        },
+        records: [{ sequence: 1, type: 'journal-opened' }],
+      };
+    },
+    assertCurrentClaim() {},
+  };
+  const plan = planFor(baseSite(), baseSite(), {
+    ...baseSite(),
+    db: {
+      ...baseSite().db,
+      wp_options: {
+        ...baseSite().db.wp_options,
+        'option_name:blogname': { option_name: 'blogname', option_value: 'New Site' },
+      },
+    },
+  });
+  const error = captureError(() => applyPlan(baseSite(), plan, {
+    requireProductionDurableJournal: true,
+    durableJournal: writer,
+  }));
+
+  assert.equal(error.code, 'PRODUCTION_DURABLE_JOURNAL_UNSUPPORTED');
+  assert.deepEqual(error.details.missingDependency, [
+    'explicit production recovery adapter marker',
+    'restart-readable recovery artifact references',
+  ]);
+});
+
+test('production durable journal claims fail closed when restart inspection reports a different schema version', () => {
+  const writer = {
+    kind: 'production-recovery-journal',
+    ownsJournal: true,
+    journalPath: '/var/lib/reprint/recovery.jsonl',
+    schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+    nextSequence: 1,
+    appendEvent() {
+      this.nextSequence += 1;
+    },
+    flush() {},
+    close() {},
+    inspect() {
+      return {
+        filePath: '/var/lib/reprint/recovery.jsonl',
+        schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION + 1,
+        records: [{ sequence: 1, type: 'journal-opened' }],
+      };
+    },
+    assertCurrentClaim() {},
+  };
+  const plan = planFor(baseSite(), baseSite(), {
+    ...baseSite(),
+    db: {
+      ...baseSite().db,
+      wp_options: {
+        ...baseSite().db.wp_options,
+        'option_name:blogname': { option_name: 'blogname', option_value: 'New Site' },
+      },
+    },
+  });
+  const error = captureError(() => applyPlan(baseSite(), plan, {
+    requireProductionDurableJournal: true,
+    durableJournal: writer,
+  }));
+
+  assert.equal(error.code, 'PRODUCTION_DURABLE_JOURNAL_UNSUPPORTED');
+  assert.deepEqual(error.details.missingDependency, [
+    'explicit production recovery adapter marker',
+    'restart-readable recovery journal schema',
+  ]);
+});
+
 test('production durable journal claims fail closed when inspection records are not sequential', () => {
   const writer = {
     kind: 'production-recovery-journal',
@@ -20168,6 +20580,7 @@ test('production durable journal claims fail closed when inspection records are 
 
   assert.equal(error.code, 'PRODUCTION_DURABLE_JOURNAL_UNSUPPORTED');
   assert.deepEqual(error.details.missingDependency, [
+    'explicit production recovery adapter marker',
     'journal-readable inspection records with sequence and type',
   ]);
 });
@@ -20245,6 +20658,7 @@ test('production durable journal claims fail closed when claim fencing rejects t
 
   assert.equal(error.code, 'PRODUCTION_DURABLE_JOURNAL_UNSUPPORTED');
   assert.deepEqual(error.details.missingDependency, [
+    'explicit production recovery adapter marker',
     'fencing or lease ownership for the journal writer',
   ]);
 });
@@ -20323,6 +20737,8 @@ test('production durable journal claims fail closed when the writer does not own
 
   assert.equal(error.code, 'PRODUCTION_DURABLE_JOURNAL_UNSUPPORTED');
   assert.deepEqual(error.details.missingDependency, [
+    'explicit production recovery adapter marker',
+    'restart-readable recovery journal schema',
     'restart-readable recovery artifact location',
     'owned restart-readable recovery journal path',
     'journal-readable inspection records with sequence and type',
@@ -20368,6 +20784,8 @@ test('production durable journal claims fail closed when the writer journal path
 
   assert.equal(error.code, 'PRODUCTION_DURABLE_JOURNAL_UNSUPPORTED');
   assert.deepEqual(error.details.missingDependency, [
+    'explicit production recovery adapter marker',
+    'restart-readable recovery artifact location',
     'absolute restart-readable recovery journal path',
   ]);
   assert.equal(error.details.inspectedJournalPath, 'var/lib/reprint/recovery.jsonl');
@@ -20378,6 +20796,7 @@ test('production durable journal claims allow a restart-oriented writer contract
   const events = [];
   const writer = {
     kind: 'production-recovery-journal',
+    productionAdapter: true,
     ownsJournal: true,
     journalPath: '/var/lib/reprint/recovery.jsonl',
     schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
@@ -20418,10 +20837,63 @@ test('production durable journal claims allow a restart-oriented writer contract
   assert.ok(events.some((event) => event.type === 'journal-opened'));
 });
 
+test('production durable journal claims fail closed when the writer artifact reference diverges from restart inspection', () => {
+  const writer = {
+    kind: 'production-recovery-journal',
+    productionAdapter: true,
+    ownsJournal: true,
+    journalPath: '/var/lib/reprint/recovery.jsonl',
+    artifactRefs: {
+      journal: '/var/lib/reprint/recovery-writer.jsonl',
+    },
+    schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+    nextSequence: 1,
+    appendEvent(type, payload) {
+      this.nextSequence += 1;
+      return { sequence: this.nextSequence - 1, type, payload };
+    },
+    flush() {},
+    close() {},
+    inspect() {
+      return {
+        filePath: '/var/lib/reprint/recovery.jsonl',
+        schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+        artifactRefs: {
+          journal: '/var/lib/reprint/recovery.jsonl',
+        },
+        records: [{ sequence: 1, type: 'journal-opened' }],
+      };
+    },
+    assertCurrentClaim() {},
+  };
+  const plan = planFor(baseSite(), baseSite(), {
+    ...baseSite(),
+    db: {
+      ...baseSite().db,
+      wp_options: {
+        ...baseSite().db.wp_options,
+        'option_name:blogname': { option_name: 'blogname', option_value: 'New Site' },
+      },
+    },
+  });
+  const error = captureError(() => applyPlan(baseSite(), plan, {
+    requireProductionDurableJournal: true,
+    durableJournal: writer,
+  }));
+
+  assert.equal(error.code, 'PRODUCTION_DURABLE_JOURNAL_UNSUPPORTED');
+  assert.deepEqual(error.details.missingDependency, [
+    'restart-readable recovery artifact references',
+  ]);
+  assert.equal(error.details.inspectedJournalPath, '/var/lib/reprint/recovery.jsonl');
+  assert.equal(error.details.writerJournalPath, '/var/lib/reprint/recovery.jsonl');
+});
+
 test('production durable journal support probes restart inspection only once', () => {
   let inspectCalls = 0;
   const writer = {
     kind: 'production-recovery-journal',
+    productionAdapter: true,
     ownsJournal: true,
     journalPath: '/var/lib/reprint/recovery.jsonl',
     schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
@@ -20500,7 +20972,7 @@ test('closes a durable journal writer when apply fails before commit', () => {
   assert.throws(() => applyPlan(baseSite(), plan, {
     durableJournal: writer,
   }), /before committing remote mutations at apply-staged\./);
-  assert.equal(closed, 1);
+  assert.equal(closed, 0);
 });
 
 test('closes a durable journal writer after a successful apply', () => {
@@ -20542,6 +21014,6 @@ test('closes a durable journal writer after a successful apply', () => {
   });
 
   assert.equal(result.recoveryState.status, 'fully-updated-remote');
-  assert.equal(closed, 1);
+  assert.equal(closed, 0);
   assert.ok(events.some((event) => event.type === 'journal-completed'));
 });
