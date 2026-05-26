@@ -979,6 +979,10 @@ function productionRecoveryArtifactRefs(writer, inspected) {
   const inspectedArtifactRefs = durableJournalInspectArtifactRefs(inspected)
     ? inspected.artifactRefs
     : null;
+  const inspectedHasOwnRemoteArtifactRef = Boolean(
+    inspectedArtifactRefs
+    && Object.hasOwn(inspectedArtifactRefs, 'remote'),
+  );
 
   return {
     writerJournalArtifactRef: writerArtifactRefs && Object.hasOwn(writerArtifactRefs, 'journal')
@@ -992,12 +996,12 @@ function productionRecoveryArtifactRefs(writer, inspected) {
       : null,
     inspectedArtifactRefs,
     inspectedRemoteArtifactRef: inspectedArtifactRefs && (
-      (Object.hasOwn(inspectedArtifactRefs, 'remote')
+      (inspectedHasOwnRemoteArtifactRef
         && typeof inspectedArtifactRefs.remote === 'string'
         && inspectedArtifactRefs.remote.length > 0)
       || (
-        !Object.hasOwn(inspectedArtifactRefs, 'remote')
-        && inspectedArtifactRefs.remote !== undefined
+        !inspectedHasOwnRemoteArtifactRef
+        && inspectedArtifactRefs.remote === undefined
       )
     )
       && typeof inspectedArtifactRefs.remote === 'string'
