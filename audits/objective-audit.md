@@ -11,19 +11,19 @@ Fresh remote heads at audit time, checked on May 26, 2026:
 - `origin/lane/no-data-loss-recovery` -> `47b675c0`
 - `origin/lane/fast-paths` -> `9be664b2`
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `ff2131c3`
-- `origin/lane/independent-auditor` -> `5abd1f65`
+- `origin/lane/independent-auditor` -> `7191fbc6`
 - `origin/lane/critic` -> `68569c0b`
 - `origin/lane/progress-publisher` -> `7695e1f9`
 - `origin/lane/same-plan-wordpress-graph-create` -> `7bf5d421`
 - `origin/lane/cycle-20260525-mainwindows-2349/same-plan-wordpress-graph-create` -> `7bf5d421`
 - `origin/lane/cycle-20260525-mainwindows-2349/same-plan-wordpress-graph-create` -> `e9cbf9d4`
 - `origin/lane/cycle-20260525-mainwindows-2357/no-data-loss-invariants-graph-proof` -> `98c0ce26`
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `08e327b7`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `4008b08c`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `f042a3e3`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `e253cb89`
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` -> `5f256171`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-invariants` -> `9c70eba6`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `9fa23221`
-- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `6d739320`
+- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `6f3148a6`
 - `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration` -> `a3a900d7`
 - `origin/main` -> `e55864f4`
 
