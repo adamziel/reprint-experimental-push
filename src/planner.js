@@ -249,6 +249,10 @@ export function createPushPlan({ base, local, remote, now = new Date() }) {
         baseValue,
         localValue,
         remoteValue,
+        resources,
+        base,
+        local,
+        remote,
       });
       if (!termmetaSupport.supported) {
         addUnsupportedTermmetaResourceBlocker(plan, {
@@ -1526,10 +1530,21 @@ function samePlanCreatedGraphIdentitySupport({ resource, resources, base, local,
     return { supported: true };
   }
 
+  const termTaxonomyInboundReference = inboundReferences.find((reference) =>
+    reference.relationshipType === 'term-relationship-taxonomy'
+    && reference.targetResource?.table === 'wp_term_taxonomy');
+  const postInboundReference = inboundReferences.find((reference) =>
+    reference.relationshipType === 'term-relationship-object'
+    && reference.targetResource?.table === 'wp_posts');
+
   return {
     supported: false,
     className: 'stale-wordpress-graph-identity',
-    reason: `WordPress graph mutation ${resource.key} is created in the same plan as a relationship that depends on it, and identity rewriting is not yet supported.`,
+    reason: termTaxonomyInboundReference
+      ? `WordPress graph mutation ${resource.key} is created in the same plan as a term relationship taxonomy target that depends on it, and identity rewriting is not yet supported.`
+      : postInboundReference
+        ? `WordPress graph mutation ${resource.key} is created in the same plan as a term relationship post target that depends on it, and identity rewriting is not yet supported.`
+      : `WordPress graph mutation ${resource.key} is created in the same plan as a relationship that depends on it, and identity rewriting is not yet supported.`,
     references: inboundReferences,
   };
 }
@@ -2231,7 +2246,7 @@ function unsupportedRevisionResourceSupport({ resource, baseValue, localValue, r
   };
 }
 
-function unsupportedTermmetaResourceSupport({ resource, baseValue, localValue, remoteValue }) {
+function unsupportedTermmetaResourceSupport({ resource, baseValue, localValue, remoteValue, resources, base, local, remote }) {
   if (resource.type !== 'row' || resource.table !== 'wp_termmeta') {
     return { supported: true };
   }
@@ -2241,10 +2256,20 @@ function unsupportedTermmetaResourceSupport({ resource, baseValue, localValue, r
     return { supported: true };
   }
 
+  const references = wordpressGraphReferences(resource, candidate);
+  const referenceEvidence = references.map((reference) =>
+    wordpressGraphReferenceEvidence(reference, resources, base, local, remote));
+  const termReference = referenceEvidence.find((reference) =>
+    reference.relationshipType === 'termmeta-term'
+    && reference.targetChange.remote.state === 'absent'
+    && reference.targetChange.local.state === 'present');
+
   return {
     supported: false,
     className: 'unsupported-termmeta-resource',
-    reason: 'Term meta graph resources are not yet supported by the planner.',
+    reason: termReference
+      ? `WordPress graph mutation ${resource.key} is created in the same plan as a term relationship target that depends on it, and identity rewriting is not yet supported.`
+      : 'Term meta graph resources are not yet supported by the planner.',
   };
 }
 
