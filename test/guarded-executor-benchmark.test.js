@@ -4233,10 +4233,51 @@ test('production claim gate fails closed if benchmark evidence is tampered', () 
 
   const missingMeasuredQueueSlackProof = clone(report);
   delete missingMeasuredQueueSlackProof.evidence.backpressure.queuePauseHasMeasuredReceiptCursorQueueSlack;
+  const missingMeasuredQueueSlackProofDetails = productionThroughputDetails(missingMeasuredQueueSlackProof);
   assert.ok(
     productionThroughputBlockers(missingMeasuredQueueSlackProof).includes(
       'queue-pause-without-measured-receipt-cursor-queue-slack-proof',
     ),
+  );
+  assert.equal(
+    missingMeasuredQueueSlackProofDetails.backpressureConsistency.queuePauseHasMeasuredReceiptCursorQueueSlack,
+    false,
+  );
+  assert.equal(
+    missingMeasuredQueueSlackProofDetails.backpressureConsistency.queuePauseHasBackpressureAlignedReceiptCursorQueueSlack,
+    false,
+  );
+  assert.equal(
+    missingMeasuredQueueSlackProofDetails.backpressureConsistency.queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack,
+    false,
+  );
+  assert.equal(
+    missingMeasuredQueueSlackProofDetails.backpressureConsistency.receiptCursorPauseFootprintComplete,
+    false,
+  );
+  assert.equal(
+    missingMeasuredQueueSlackProofDetails.backpressureConsistency.queueHeadroomVisibleAndMeasured,
+    false,
+  );
+  assert.equal(
+    missingMeasuredQueueSlackProofDetails.backpressureConsistency.queueHeadroomVisibleAndMeasuredAndAligned,
+    false,
+  );
+  assert.equal(
+    missingMeasuredQueueSlackProofDetails.backpressureConsistency.queueHeadroomVisibleAndQueueSlackMeasured,
+    false,
+  );
+  assert.equal(
+    missingMeasuredQueueSlackProofDetails.backpressureConsistency.queueHeadroomVisibleAndQueueSlackVisibleAndMeasured,
+    false,
+  );
+  assert.equal(
+    missingMeasuredQueueSlackProofDetails.backpressureConsistency.receiptCursorQueueSlackVisibleAndMeasured,
+    false,
+  );
+  assert.equal(
+    missingMeasuredQueueSlackProofDetails.backpressureConsistency.queueBudgetVisibleAndMemoryCeilingVisibleAndMeasured,
+    false,
   );
 
   const missingMemoryCeilingProof = clone(report);

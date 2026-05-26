@@ -1593,14 +1593,16 @@ export function productionThroughputDetails(report) {
   const queuePauseHasMeasuredReceiptCursorQueueSlack =
     report.evidence.backpressure?.queuePausedBeforeOverflow !== true
     || (
-      queueHeadroomMeasured
+      report.evidence.backpressure?.queuePauseHasMeasuredReceiptCursorQueueSlack === true
+      && queueHeadroomMeasured
       && receiptCursorQueueSlackPositive
       && receiptCursorQueueSlackWithinQueueBudget
     );
   const queuePauseHasBackpressureAlignedReceiptCursorQueueSlack =
     report.evidence.backpressure?.queuePausedBeforeOverflow !== true
     || (
-      queueHeadroomMeasured
+      queuePauseHasMeasuredReceiptCursorQueueSlack
+      && queueHeadroomMeasured
       && Number.isFinite(receiptCursorQueueSlackBytes)
       && Number.isFinite(receiptCursorQueueBudgetBytes)
       && Number.isFinite(receiptCursorBackpressureBytes)
