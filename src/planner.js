@@ -1385,6 +1385,19 @@ function isValidSamePlanWordPressGraphTarget(targetMutation, reference, sourceMu
     if (targetValue && typeof targetValue === 'object' && targetValue.post_type === 'attachment') {
       return false;
     }
+    if (targetValue && typeof targetValue === 'object' && targetValue.post_type === 'revision') {
+      return false;
+    }
+    if (
+      targetValue
+      && typeof targetValue === 'object'
+      && (
+        targetValue.post_type === 'nav_menu_item'
+        || targetValue.post_type === 'wp_navigation'
+      )
+    ) {
+      return false;
+    }
   }
 
   if (
@@ -1626,7 +1639,16 @@ function isBlockedSamePlanWordPressGraphSource(sourceMutation, reference, mutati
         ? null
         : mutationByResourceKey.get(`row:${JSON.stringify(['wp_posts', `ID:${ownerId}`])}`);
       const ownerValue = ownerMutation ? deserializeResourceValue(ownerMutation.value) : null;
-      if (ownerValue && typeof ownerValue === 'object' && ownerValue.post_type === 'attachment') {
+      if (
+        ownerValue
+        && typeof ownerValue === 'object'
+        && (
+          ownerValue.post_type === 'attachment'
+          || ownerValue.post_type === 'revision'
+          || ownerValue.post_type === 'nav_menu_item'
+          || ownerValue.post_type === 'wp_navigation'
+        )
+      ) {
         return true;
       }
     }
@@ -1643,7 +1665,10 @@ function isBlockedSamePlanWordPressGraphSource(sourceMutation, reference, mutati
     if (!ownerValue || typeof ownerValue !== 'object') {
       return false;
     }
-    return ownerValue.post_type === 'attachment';
+    return ownerValue.post_type === 'attachment'
+      || ownerValue.post_type === 'revision'
+      || ownerValue.post_type === 'nav_menu_item'
+      || ownerValue.post_type === 'wp_navigation';
   }
 
   if (reference.relationshipType === 'term-relationship-object') {
@@ -1667,7 +1692,9 @@ function isBlockedSamePlanWordPressGraphSource(sourceMutation, reference, mutati
     if (!ownerValue || typeof ownerValue !== 'object') {
       return false;
     }
-    return ownerValue.post_type === 'revision';
+    return ownerValue.post_type === 'revision'
+      || ownerValue.post_type === 'nav_menu_item'
+      || ownerValue.post_type === 'wp_navigation';
   }
 
   return false;
