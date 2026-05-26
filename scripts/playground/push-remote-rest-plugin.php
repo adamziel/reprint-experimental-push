@@ -636,6 +636,38 @@ function reprint_push_lab_rest_merge_checked_recovery_journal_contract(
         $journal['acceptedOnCheckedBoundary'] = true;
     }
 
+    $prefer_authoritative_checked_top_level = reprint_push_lab_rest_checked_boundary_contract_is_authoritative(
+        $journal,
+        $checked_db_journal
+    );
+
+    foreach ([
+        'schemaVersion',
+        'table',
+        'rowCount',
+        'applyCommitted',
+        'mutationApplied',
+        'idempotencyOpened',
+        'latestRows',
+        'eventSummaries',
+        'idempotencyEvidence',
+    ] as $key) {
+        if (
+            (
+                reprint_push_lab_rest_should_fill_checked_db_journal_field($journal, $checked_db_journal, $key)
+                || (
+                    $prefer_authoritative_checked_top_level
+                    && array_key_exists($key, $journal)
+                    && array_key_exists($key, $checked_db_journal)
+                    && $journal[$key] !== $checked_db_journal[$key]
+                )
+            )
+            && array_key_exists($key, $checked_db_journal)
+        ) {
+            $journal[$key] = $checked_db_journal[$key];
+        }
+    }
+
     foreach (['ownership', 'writerLease', 'leaseFence'] as $nested_key) {
         if (!isset($checked_db_journal[$nested_key]) || !is_array($checked_db_journal[$nested_key])) {
             continue;

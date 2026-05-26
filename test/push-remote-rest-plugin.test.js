@@ -991,6 +991,21 @@ test('checked recovery inspect evidence carries authoritative checked storage gu
         storage: 'wp-options+journal-evidence',
         planHash: 'plan-hash-123',
         receiptHash: 'receipt-hash-456',
+        latestRows: [
+          {
+            event: 'apply-committed',
+            result: {
+              storageGuard: {
+                boundary: 'wpdb-single-statement-cas',
+                operation: 'update',
+                outcome: 'applied',
+              },
+            },
+          },
+        ],
+        eventSummaries: [
+          { event: 'apply-committed', count: 1, latestId: 14 },
+        ],
         acceptedOnCheckedBoundary: true,
         ownership: {
           ownsJournal: true,
@@ -1105,6 +1120,21 @@ test('checked recovery inspect evidence injects the full checked durable journal
           scope: 'checked live production-shaped recovery inspect journal evidence; not local Playground fixture only',
         },
         acceptedOnCheckedBoundary: true,
+        latestRows: [
+          {
+            event: 'stale-claim-rejected',
+            result: {
+              storageGuard: {
+                boundary: 'wpdb-single-statement-cas',
+                operation: 'compare-and-swap',
+                outcome: 'precondition-failed',
+              },
+            },
+          },
+        ],
+        eventSummaries: [
+          { event: 'stale-claim-rejected', count: 1, latestId: 33 },
+        ],
         ownership: {
           ownsJournal: true,
           restartReadable: true,
@@ -1140,6 +1170,170 @@ test('checked recovery inspect evidence injects the full checked durable journal
           boundary: 'wpdb-single-statement-cas',
           operation: 'compare-and-swap',
           outcome: 'precondition-failed',
+        },
+      },
+    },
+  });
+});
+
+test('checked recovery inspect evidence fills nested checked counters and summary arrays from the authoritative db journal summary', { skip: !hasPhp }, () => {
+  const result = runAttachCheckedRecoveryJournalEvidence(
+    {
+      ok: true,
+      recovery: {
+        journal: {
+          integrity: {
+            schemaVersion: 1,
+            status: 'ok',
+            scope: 'fixture-scoped recovery inspect journal evidence; not production durability',
+          },
+          storage: 'wp-options+journal-evidence',
+          planHash: 'plan-hash-123',
+          receiptHash: 'receipt-hash-456',
+          acceptedOnCheckedBoundary: true,
+          rowCount: 0,
+          applyCommitted: false,
+          mutationApplied: 0,
+          idempotencyOpened: 0,
+          latestRows: [
+            { event: 'apply-committed', id: 3 },
+          ],
+          eventSummaries: [
+            { event: 'apply-committed', count: 1, latestId: 3 },
+          ],
+          idempotencyEvidence: [
+            { idempotencyKeyHash: 'idem-hash-01', events: 1, requestHashes: 1, latestId: 3 },
+          ],
+        },
+      },
+    },
+    true,
+    false,
+    {
+      acceptedOnCheckedBoundary: true,
+      schemaVersion: 1,
+      table: 'wp_reprint_push_lab_push_journal',
+      rowCount: 3,
+      applyCommitted: true,
+      mutationApplied: 1,
+      idempotencyOpened: 1,
+      latestRows: [
+        { event: 'idempotency-opened', id: 1 },
+        { event: 'mutation-applied', id: 2 },
+        { event: 'apply-committed', id: 3 },
+      ],
+      eventSummaries: [
+        { event: 'apply-committed', count: 1, latestId: 3 },
+        { event: 'mutation-applied', count: 1, latestId: 2 },
+        { event: 'idempotency-opened', count: 1, latestId: 1 },
+      ],
+      idempotencyEvidence: [
+        { idempotencyKeyHash: 'idem-hash-01', events: 3, requestHashes: 1, latestId: 3 },
+        { idempotencyKeyHash: 'idem-hash-02', events: 1, requestHashes: 1, latestId: 4 },
+      ],
+      ownership: {
+        ownsJournal: true,
+        restartReadable: true,
+        productionAdapter: 'wpdb-single-statement-cas',
+      },
+      writerLease: {
+        strategy: 'claim-fenced-single-writer',
+        claimKeyUnique: true,
+        fsyncEvidence: true,
+        storageGuard: 'wpdb-single-statement-cas',
+        monotonicSequence: true,
+        restartReadable: true,
+        staleClaimRejected: true,
+      },
+      leaseFence: {
+        boundary: 'wpdb-single-statement-cas',
+        claimKeyUnique: true,
+        fsyncEvidence: true,
+        monotonicSequence: true,
+        restartReadable: true,
+        staleClaimRejected: true,
+        writerLease: {
+          strategy: 'claim-fenced-single-writer',
+          claimKeyUnique: true,
+          fsyncEvidence: true,
+          storageGuard: 'wpdb-single-statement-cas',
+          monotonicSequence: true,
+          restartReadable: true,
+          staleClaimRejected: true,
+        },
+      },
+    },
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  assert.deepEqual(JSON.parse(result.stdout), {
+    ok: true,
+    recovery: {
+      journal: {
+        integrity: {
+          schemaVersion: 1,
+          status: 'ok',
+          scope: 'checked live production-shaped recovery inspect journal evidence; not local Playground fixture only',
+        },
+        storage: 'wp-options+journal-evidence',
+        planHash: 'plan-hash-123',
+        receiptHash: 'receipt-hash-456',
+        acceptedOnCheckedBoundary: true,
+        schemaVersion: 1,
+        table: 'wp_reprint_push_lab_push_journal',
+        rowCount: 3,
+        applyCommitted: true,
+        mutationApplied: 1,
+        idempotencyOpened: 1,
+        latestRows: [
+          { event: 'idempotency-opened', id: 1 },
+          { event: 'mutation-applied', id: 2 },
+          { event: 'apply-committed', id: 3 },
+        ],
+        eventSummaries: [
+          { event: 'apply-committed', count: 1, latestId: 3 },
+          { event: 'mutation-applied', count: 1, latestId: 2 },
+          { event: 'idempotency-opened', count: 1, latestId: 1 },
+        ],
+        idempotencyEvidence: [
+          { idempotencyKeyHash: 'idem-hash-01', events: 3, requestHashes: 1, latestId: 3 },
+          { idempotencyKeyHash: 'idem-hash-02', events: 1, requestHashes: 1, latestId: 4 },
+        ],
+        storageGuard: {
+          boundary: 'wpdb-single-statement-cas',
+          operation: 'update',
+          outcome: 'applied',
+        },
+        ownership: {
+          ownsJournal: true,
+          restartReadable: true,
+          productionAdapter: 'wpdb-single-statement-cas',
+        },
+        writerLease: {
+          strategy: 'claim-fenced-single-writer',
+          claimKeyUnique: true,
+          fsyncEvidence: true,
+          storageGuard: 'wpdb-single-statement-cas',
+          monotonicSequence: true,
+          restartReadable: true,
+          staleClaimRejected: true,
+        },
+        leaseFence: {
+          boundary: 'wpdb-single-statement-cas',
+          claimKeyUnique: true,
+          fsyncEvidence: true,
+          monotonicSequence: true,
+          restartReadable: true,
+          staleClaimRejected: true,
+          writerLease: {
+            strategy: 'claim-fenced-single-writer',
+            claimKeyUnique: true,
+            fsyncEvidence: true,
+            storageGuard: 'wpdb-single-statement-cas',
+            monotonicSequence: true,
+            restartReadable: true,
+            staleClaimRejected: true,
+          },
         },
       },
     },
