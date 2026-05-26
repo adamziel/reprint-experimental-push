@@ -22,7 +22,7 @@ const proofSubprocessTimeoutMs = 45_000;
 const proofSubprocessKillSignal = 'SIGTERM';
 const liveProofSubprocessTimeoutMs = 9_000;
 const liveProofSubprocessKillSignal = 'SIGKILL';
-const liveProofInnerTimeoutMs = Math.max(1_000, Math.min(5_000, liveProofSubprocessTimeoutMs - 4_000));
+const liveProofInnerTimeoutMs = Math.max(1_000, Math.min(4_000, liveProofSubprocessTimeoutMs - 4_500));
 const releaseVerifySlowPathTimeoutMs = 9_000;
 const liveReleaseVerifyTimeoutMs = liveProofSubprocessTimeoutMs;
 const proofSubprocessOptions = {
@@ -315,35 +315,57 @@ function reportBoundedSpawnFailure(proof, command, args) {
 }
 
 function writeSpawnOutputTail(proof, commandLabel = '') {
-  const stdout = (proof.stdout ?? '').trimEnd();
-  if (!stdout) {
+  const tails = [
+    ['stdout', (proof.stdout ?? '').trimEnd()],
+    ['stderr', (proof.stderr ?? '').trimEnd()],
+  ].filter(([, tail]) => tail);
+  if (tails.length === 0) {
     return;
   }
-  const stdoutTail = stdout.slice(-4000);
+
   let structuredTail = null;
+  for (const [channel, tail] of tails) {
+    const slicedTail = tail.slice(-4000);
+    const parsedTail = parseStructuredTail(slicedTail);
+    if (commandLabel) {
+      process.stderr.write(`${commandLabel} ${channel} tail:\n${slicedTail}\n`);
+    } else {
+      process.stderr.write(`${channel} tail:\n${slicedTail}\n`);
+    }
+    if (
+      !structuredTail &&
+      parsedTail &&
+      (parsedTail.route !== null || parsedTail.status !== null || parsedTail.body !== null)
+    ) {
+      structuredTail = parsedTail;
+    }
+  }
+
+  if (structuredTail) {
+    process.stderr.write(`Last route/status/body: ${JSON.stringify(structuredTail, null, 2)}\n`);
+  }
+}
+
+function parseStructuredTail(text) {
+  const start = text.lastIndexOf('{');
+  if (start === -1) {
+    return null;
+  }
   try {
-    const parsed = JSON.parse(stdoutTail.slice(stdoutTail.indexOf('{')));
+    const parsed = JSON.parse(text.slice(start));
     const lastProbe = parsed.lastProbe ?? parsed.lastProbeSummary ?? parsed.lastProbeResult ?? null;
     const topLevel = parsed.lastProbe
       ? parsed
       : parsed?.summary
         ? parsed.summary
         : parsed;
-    structuredTail = {
+    return {
       route: lastProbe?.route ?? topLevel?.route ?? parsed?.route ?? null,
       status: lastProbe?.status ?? topLevel?.status ?? parsed?.status ?? null,
       body: lastProbe?.body ?? topLevel?.body ?? parsed?.body ?? null,
     };
   } catch {
-    structuredTail = null;
-  }
-  if (commandLabel) {
-    process.stderr.write(`${commandLabel} stdout tail:\n${stdoutTail}\n`);
-  } else {
-    process.stderr.write(`stdout tail:\n${stdoutTail}\n`);
-  }
-  if (structuredTail && (structuredTail.route !== null || structuredTail.status !== null || structuredTail.body !== null)) {
-    process.stderr.write(`Last route/status/body: ${JSON.stringify(structuredTail, null, 2)}\n`);
+    return null;
   }
 }
 
