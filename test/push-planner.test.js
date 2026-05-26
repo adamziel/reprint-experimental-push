@@ -375,6 +375,52 @@ test('blocks a local commentmeta reference owned by a same-plan comment', () => 
   assert.equal(JSON.stringify(commentmetaBlocker).includes('local-private-comment-body'), false);
 });
 
+test('blocks a local commentmeta reference owned by a same-plan comment even when an unrelated remote attachment exists', () => {
+  const base = baseSite();
+  const local = baseSite();
+  const remote = baseSite();
+
+  local.db.wp_comments = {
+    'comment_ID:1': {
+      comment_ID: 1,
+      comment_post_ID: 1,
+      comment_author: 'Local comment',
+      comment_content: 'local-private-comment-body',
+    },
+  };
+  local.db.wp_commentmeta = {
+    'meta_id:9': {
+      meta_id: 9,
+      comment_id: 1,
+      meta_key: 'comment-note',
+      meta_value: 'local-private-comment-meta',
+    },
+  };
+  remote.db.wp_posts = {
+    'ID:9': {
+      ID: 9,
+      post_title: 'Remote attachment noise',
+      post_content: 'remote-attachment-body',
+      post_status: 'inherit',
+      post_type: 'attachment',
+    },
+  };
+
+  const plan = planFor(base, local, remote);
+  const commentBlocker = plan.blockers.find((blocker) => blocker.resourceKey === 'row:["wp_comments","comment_ID:1"]');
+  const commentmetaBlocker = plan.blockers.find((blocker) => blocker.resourceKey === 'row:["wp_commentmeta","meta_id:9"]');
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(commentBlocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(commentBlocker.surface, 'comments');
+  assert.equal(commentmetaBlocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(commentmetaBlocker.surface, 'comments');
+  assert.match(commentmetaBlocker.reason, /outside the supported release-candidate slice/);
+  assert.equal(JSON.stringify(commentmetaBlocker).includes('local-private-comment-meta'), false);
+  assert.equal(JSON.stringify(commentmetaBlocker).includes('local-private-comment-body'), false);
+  assert.equal(JSON.stringify(commentmetaBlocker).includes('remote-attachment-body'), false);
+});
+
 test('blocks a local comment parent reference owned by a same-plan comment', () => {
   const base = baseSite();
   const local = baseSite();
