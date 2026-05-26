@@ -839,6 +839,7 @@ async function startPlaygroundServer(name, blueprintPath) {
       return { name, baseUrl, child };
     } catch (error) {
       const logs = `${output}\n${error instanceof Error ? error.message : String(error)}`;
+      process.stderr.write(`${logs.trimEnd()}\n`);
       await stopSpawnedServer(child);
       if (!/EADDRINUSE/i.test(logs) || attempt === 3) {
         throw error;

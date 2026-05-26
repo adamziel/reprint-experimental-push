@@ -29,7 +29,7 @@ const proofSubprocessOptions = {
 };
 
 function spawnReleaseVerify(env = {}, timeout = proofSubprocessTimeoutMs) {
-  const proof = spawnBoundedSync(process.execPath, ['scripts/playground/production-shaped-release-verify.mjs'], {
+  const proof = spawnSync(process.execPath, ['scripts/playground/production-shaped-release-verify.mjs'], {
     cwd: repoRoot,
     timeout,
     killSignal: proofSubprocessKillSignal,
@@ -39,9 +39,20 @@ function spawnReleaseVerify(env = {}, timeout = proofSubprocessTimeoutMs) {
       ...process.env,
       ...env,
     },
-  }, 'release verify');
+  });
 
-  assertReleaseVerifyProof(proof, 'release verify');
+  if (proof.error) {
+    throw new Error(formatSpawnFailure(`release verify failed after ${timeout}ms`, proof));
+  }
+  if (proof.signal) {
+    throw new Error(formatSpawnFailure(`release verify terminated by ${proof.signal}${timeout ? ` after ${timeout}ms` : ''}`, proof));
+  }
+  if (proof.status === null) {
+    assert.fail(
+      `release verify exited without a status\nstdout:\n${proof.stdout ?? ''}\nstderr:\n${proof.stderr ?? ''}`,
+    );
+  }
+
   return proof;
 }
 
