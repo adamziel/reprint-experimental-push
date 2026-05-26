@@ -621,6 +621,12 @@ export function productionThroughputBlockers(report) {
     blockers.push('queue-budget-visible-without-memory-ceiling-visibility');
   }
   if (
+    report.evidence.backpressure?.receiptCursorMemoryCeilingVisible === true
+    && report.evidence.backpressure?.queueHeadroomVisible !== true
+  ) {
+    blockers.push('memory-ceiling-visible-without-queue-headroom-visible');
+  }
+  if (
     report.evidence.backpressure?.queueHeadroomVisible === true
     && report.evidence.backpressure?.queueBudgetVisible !== true
   ) {
@@ -971,6 +977,8 @@ export function productionThroughputDetails(report) {
     report.evidence.backpressure?.queueBudgetVisible === true;
   const queueHeadroomVisible =
     report.evidence.backpressure?.queueHeadroomVisible === true;
+  const receiptCursorMemoryCeilingVisibleAndQueueHeadroomVisible =
+    receiptCursorMemoryCeilingVisible && queueHeadroomVisible;
   const receiptCursorMemoryHeadroomPositive =
     Number.isFinite(receiptCursorMemoryHeadroomBytes)
     && receiptCursorMemoryHeadroomBytes > 0;
@@ -1313,6 +1321,7 @@ export function productionThroughputDetails(report) {
       receiptCursorMemoryCeilingVisible && queueBudgetVisible,
     queueHeadroomVisible,
     receiptCursorMemoryCeilingVisible,
+    receiptCursorMemoryCeilingVisibleAndQueueHeadroomVisible,
     receiptCursorMemoryHeadroomPositive: receiptCursorMemoryHeadroomPositiveVisible,
     queuePausedBeforeOverflow: report.evidence.backpressure?.queuePausedBeforeOverflow ?? false,
     receiptCursorWithinQueueBudget: report.evidence.backpressure?.receiptCursorWithinQueueBudget ?? false,
@@ -1399,6 +1408,7 @@ export function productionThroughputDetails(report) {
         receiptCursorMemoryCeilingVisible && queueBudgetVisible,
       queueHeadroomVisible,
       receiptCursorMemoryCeilingVisible,
+      receiptCursorMemoryCeilingVisibleAndQueueHeadroomVisible,
       productionAtomicGroupMetadataVisible,
       productionStorageReceiptsVisible,
       queuePausedBeforeOverflow: report.evidence.backpressure?.queuePausedBeforeOverflow ?? false,
