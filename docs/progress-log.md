@@ -6,7 +6,15 @@ linked implementation artifacts.
 
 ---
 
-# 2026-05-26 - Public Status Audit 10:15:48
+## 2026-05-26 - Public Status Audit 10:16:47
+
+<a id="2026-05-26-public-status-audit-101647"></a>
+
+- Freshness update only: the public page was behind the active lane clock, so the header timestamp and newest-audit link were refreshed together again.
+- Gate posture remains conservative at `0/4`; no implementation verdict changed.
+- Latest blocker summary remains the same: real WordPress executor/auth and durable journal ownership still block any production push claim.
+
+## 2026-05-26 - Public Status Audit 10:15:48
 
 <a id="2026-05-26-public-status-audit-101548"></a>
 
@@ -14,7 +22,7 @@ linked implementation artifacts.
 - Gate posture remains conservative at `0/4`; no implementation verdict changed.
 - Latest blocker summary remains the same: real WordPress executor/auth and durable journal ownership still block any production push claim.
 
-# 2026-05-26 - Public Status Audit 10:14:14
+## 2026-05-26 - Public Status Audit 10:14:14
 
 <a id="2026-05-26-public-status-audit-101414"></a>
 
