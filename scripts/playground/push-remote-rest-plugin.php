@@ -349,6 +349,7 @@ function reprint_push_lab_rest_authenticated_preflight(WP_REST_Request $request)
     $auth = reprint_push_lab_rest_auth_evidence($request);
     $signature = reprint_push_lab_rest_signature_context($request);
     $profile = reprint_push_lab_rest_route_profile($request);
+    $checked_db_journal = reprint_push_lab_db_journal_schema((string) ($profile['profile'] ?? '') === 'production-shaped');
     $session_type = (string) ($profile['profile'] ?? '') === 'production-shaped'
         ? 'production-auth-session'
         : 'lab-signed-push-session';
@@ -422,11 +423,10 @@ function reprint_push_lab_rest_authenticated_preflight(WP_REST_Request $request)
                 'available' => true,
                 'option' => 'reprint_push_protocol_journal',
             ],
-            'dbJournal' => [
-                'available' => true,
-                'table' => reprint_push_lab_db_journal_table_name(),
-                'scope' => 'local Playground fixture only; not production durability',
-            ],
+            'dbJournal' => array_merge(
+                ['available' => true],
+                $checked_db_journal
+            ),
         ],
         'snapshotHash' => hash('sha256', reprint_push_stable_json(reprint_push_export_snapshot())),
     ]);

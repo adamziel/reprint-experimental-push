@@ -39,6 +39,20 @@ await withPlaygroundServer('remote-base', path.join(repoRoot, 'fixtures/playgrou
     assert.equal(preflight.body.routeProfile.restNamespace, 'reprint/v1');
     assert.equal(preflight.body.routeProfile.routePrefix, '/push');
     assert.match(preflight.body.session.id, /^[A-Za-z0-9_-]{32,160}$/);
+    assert.equal(preflight.body.journal.dbJournal.available, true);
+    assert.equal(preflight.body.journal.dbJournal.acceptedOnCheckedBoundary, true);
+    assert.deepEqual(preflight.body.journal.dbJournal.ownership, {
+      ownsJournal: true,
+      restartReadable: true,
+      productionAdapter: 'wpdb-single-statement-cas',
+    });
+    assert.deepEqual(preflight.body.journal.dbJournal.leaseFence, {
+      boundary: 'wpdb-single-statement-cas',
+      claimKeyUnique: true,
+      monotonicSequence: true,
+      restartReadable: true,
+    });
+    assert.match(preflight.body.journal.dbJournal.scope, /checked live production-shaped journal surface/i);
 
     const proof = await runAuthenticatedHttpPush({
       sourceUrl: remoteServer.baseUrl,
