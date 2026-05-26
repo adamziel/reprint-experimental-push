@@ -167,6 +167,19 @@ test('guarded benchmark blocks forged atomic-group metadata visibility without a
   assert.equal(blockers.includes('production-atomic-group-metadata-not-visible'), false);
 });
 
+test('guarded benchmark blocks forged queue-budget visibility without memory-ceiling visibility', () => {
+  const report = smallBenchmark();
+  const tampered = clone(report);
+
+  tampered.evidence.backpressure.queueBudgetVisible = true;
+  tampered.evidence.backpressure.receiptCursorMemoryCeilingVisible = false;
+
+  const blockers = productionThroughputBlockers(tampered);
+
+  assert.equal(blockers.includes('queue-budget-visible-without-memory-ceiling-visibility'), true);
+  assert.equal(blockers.includes('queue-budget-not-visible'), false);
+});
+
 test('guarded benchmark blocks atomic-group metadata visibility when the atomic commit is hidden', () => {
   const report = smallBenchmark();
   const tampered = clone(report);
