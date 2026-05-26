@@ -801,6 +801,53 @@ test('production recovery journal adapter accepts canonical remote artifact owne
   journal.close();
 });
 
+test('production recovery journal direct options infer canonical remote artifact ownership from artifact refs', () => {
+  const filePath = tempJournalPath();
+  const remoteArtifactPath = `${filePath}.remote`;
+  const journal = openProductionRecoveryJournal(filePath, {
+    truncate: true,
+    now: fixedNow,
+    claimId: 'lease-direct-refs',
+    writerLease: { id: 'lease-direct-refs' },
+    artifactRefs: {
+      journal: filePath,
+      remote: remoteArtifactPath,
+    },
+  });
+
+  assert.equal(journal.ownsRemoteArtifact, true);
+  assert.deepEqual(journal.artifactRefs, { journal: filePath, remote: remoteArtifactPath });
+
+  const inspected = journal.inspect();
+  assert.equal(inspected.ownsRemoteArtifact, true);
+  assert.deepEqual(inspected.artifactRefs, { journal: filePath, remote: remoteArtifactPath });
+
+  journal.close();
+});
+
+test('production recovery journal direct options fail closed when explicit remote ownership contradicts artifact refs', () => {
+  const filePath = tempJournalPath();
+  const remoteArtifactPath = `${filePath}.remote`;
+
+  assert.throws(() => {
+    openProductionRecoveryJournal(filePath, {
+      truncate: true,
+      now: fixedNow,
+      claimId: 'lease-direct-refs-contradict',
+      writerLease: { id: 'lease-direct-refs-contradict' },
+      ownsRemoteArtifact: false,
+      artifactRefs: {
+        journal: filePath,
+        remote: remoteArtifactPath,
+      },
+    });
+  }, {
+    name: 'UnsupportedProductionRecoveryJournalError',
+    code: 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL',
+    message: 'Production recovery journal support requires owned remote artifact references.',
+  });
+});
+
 test('production recovery journal compatibility overload supports reliable release consumer shape', () => {
   const filePath = tempJournalPath();
   const remote = baseSite();
