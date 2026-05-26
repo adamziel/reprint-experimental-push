@@ -39,6 +39,7 @@ The project is **not releasable as a production WordPress push path**.
 - `origin/lane/cycle-20260525-keep-busy-loop-2/no-data-loss-recovery` -> `63e01a49`
 - `origin/lane/cycle-20260525-mainwindows-2349/critic` -> `fa0dc8a0`
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `999ff0d8`
+- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `d7813094`
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `3d198310`
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `0ac76c38`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `2af1ddda`
@@ -47,6 +48,7 @@ The project is **not releasable as a production WordPress push path**.
 - `origin/lane/cycle-20260525-mainwindows-2357/no-data-loss-invariants-graph-proof` -> `98c0ce26`
 - `origin/lane/cycle-20260525-restart-2340/feedback-supervisor` -> `ef3d911e`
 - `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration` -> `7efe180b`
+- `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration` -> `8cfc4f6c`
 - `origin/lane/critic` -> `443dacd6`
 - `origin/lane/fast-paths` -> `8476474d`
 - `origin/lane/feedback-supervisor` -> `2a67a6b8`
@@ -71,6 +73,13 @@ but it did not change the release conclusion:
 - `origin/lane/reliable-executor` now records `97eaa4df`, hardening durable
   journal ownership. It still does not prove production auth/session
   lifecycle or a live-source mutation boundary.
+- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` now records
+  `d7813094`, tightening backpressure headroom checks only. It still does not
+  prove a production speed claim.
+- `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration`
+  now records `8cfc4f6c`, tightening termmeta graph hardening only. It still
+  does not prove the live release boundary or any production-backed source
+  mutation.
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now records
   `c49f4eae`, refreshing progress visibility only. It still does not change
   the release verdict.
