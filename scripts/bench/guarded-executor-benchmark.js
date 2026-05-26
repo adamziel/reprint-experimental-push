@@ -316,6 +316,9 @@ export function productionThroughputBlockers(report) {
   if (!Number.isFinite(report.resourceLimits?.memoryCeilingBytes) || report.resourceLimits.memoryCeilingBytes <= 0) {
     blockers.push('production-memory-ceiling-not-measured');
   }
+  if (!Number.isFinite(report.resourceLimits?.maxStagingDiskBytes) || report.resourceLimits.maxStagingDiskBytes <= 0) {
+    blockers.push('production-staging-disk-ceiling-not-measured');
+  }
   if (
     !parallelismLimits
     || !Number.isFinite(parallelismLimits?.chunkUpload)
@@ -776,10 +779,22 @@ export function productionThroughputBlockers(report) {
     blockers.push('missing-queue-headroom-evidence');
   }
   if (
+    !Number.isFinite(report.evidence.backpressure?.stagingDiskHeadroomBytes)
+    || report.evidence.backpressure.stagingDiskHeadroomBytes < 0
+  ) {
+    blockers.push('missing-staging-disk-headroom-evidence');
+  }
+  if (
     Number.isFinite(report.evidence.backpressure?.queueHeadroomBytes)
     && report.evidence.backpressure.queueHeadroomBytes <= 0
   ) {
     blockers.push('queue-headroom-not-positive');
+  }
+  if (
+    Number.isFinite(report.evidence.backpressure?.stagingDiskHeadroomBytes)
+    && report.evidence.backpressure.stagingDiskHeadroomBytes <= 0
+  ) {
+    blockers.push('staging-disk-headroom-not-positive');
   }
   if (report.evidence.backpressure?.queueHeadroomMeasured === true && report.evidence.backpressure?.queueHeadroomWithinResourceCeiling !== true) {
     blockers.push('queue-headroom-exceeds-resource-ceiling');
@@ -809,10 +824,28 @@ export function productionThroughputBlockers(report) {
     blockers.push('queue-headroom-visible-without-measurement');
   }
   if (
+    report.evidence.backpressure?.stagingDiskHeadroomVisible === true
+    && report.evidence.backpressure?.stagingDiskHeadroomMeasured !== true
+  ) {
+    blockers.push('staging-disk-headroom-visible-without-measurement');
+  }
+  if (
     report.evidence.backpressure?.queueHeadroomVisible === true
     && report.evidence.backpressure?.queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack !== true
   ) {
     blockers.push('queue-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof');
+  }
+  if (
+    report.evidence.backpressure?.stagingDiskHeadroomVisible === true
+    && report.evidence.backpressure?.queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack !== true
+  ) {
+    blockers.push('staging-disk-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof');
+  }
+  if (
+    report.evidence.backpressure?.stagingDiskHeadroomMeasured === true
+    && report.evidence.backpressure?.stagingDiskHeadroomWithinPlanReserve !== true
+  ) {
+    blockers.push('staging-disk-headroom-outside-plan-reserve');
   }
   if (
     report.evidence.backpressure?.queueBudgetVisible === true
@@ -1264,6 +1297,8 @@ export function productionThroughputDetails(report) {
   const receiptCursorMemoryHeadroomBytes = report.evidence.backpressure?.receiptCursorMemoryHeadroomBytes ?? null;
   const receiptCursorMemoryCeilingBytes = report.resourceLimits?.memoryCeilingBytes ?? null;
   const receiptCursorQueueBudgetBytes = report.evidence.backpressure?.queueBudgetBytes ?? null;
+  const stagingDiskHeadroomBytes = report.evidence.backpressure?.stagingDiskHeadroomBytes ?? null;
+  const stagingDiskReserveBytes = report.evidence.backpressure?.stagingDiskReserveBytes ?? null;
   const receiptCursorMemoryCeilingVisible =
     report.evidence.backpressure?.receiptCursorMemoryCeilingVisible === true;
   const receiptCursorQueueHeadroomBytes = report.evidence.backpressure?.queueHeadroomBytes ?? null;
@@ -1279,12 +1314,20 @@ export function productionThroughputDetails(report) {
   const queueHeadroomVisible =
     report.evidence.backpressure?.queueHeadroomVisible === true;
   const queueHeadroomMeasured = report.evidence.backpressure?.queueHeadroomMeasured === true;
+  const stagingDiskHeadroomVisible =
+    report.evidence.backpressure?.stagingDiskHeadroomVisible === true;
+  const stagingDiskHeadroomMeasured =
+    report.evidence.backpressure?.stagingDiskHeadroomMeasured === true;
+  const stagingDiskHeadroomWithinPlanReserve =
+    report.evidence.backpressure?.stagingDiskHeadroomWithinPlanReserve === true;
   const receiptCursorQueueSlackVisible =
     report.evidence.backpressure?.receiptCursorQueueSlackVisible === true;
   const receiptCursorMemoryHeadroomVisible =
     report.evidence.backpressure?.receiptCursorMemoryHeadroomVisible === true;
   const queueHeadroomVisibleAndMeasured =
     queueHeadroomVisible && queueHeadroomMeasured;
+  const stagingDiskHeadroomVisibleAndMeasured =
+    stagingDiskHeadroomVisible && stagingDiskHeadroomMeasured;
   const queueBudgetVisibleAndQueueHeadroomMeasured =
     queueBudgetVisible && queueHeadroomMeasured;
   const receiptCursorMemoryHeadroomPositive =
@@ -1371,6 +1414,9 @@ export function productionThroughputDetails(report) {
     && Number.isFinite(receiptCursorWindowBytes)
     && receiptCursorQueueSlackBytes <= receiptCursorMemoryCeilingBytes - receiptCursorWindowBytes;
   const queueHeadroomPositive = receiptCursorQueueHeadroomPositive;
+  const stagingDiskHeadroomPositive =
+    Number.isFinite(stagingDiskHeadroomBytes)
+    && stagingDiskHeadroomBytes > 0;
   const receiptCursorMemoryHeadroomPositiveVisible = receiptCursorMemoryHeadroomPositive;
   const queuePauseHasMeasuredReceiptCursorQueueSlack =
     report.evidence.backpressure?.queuePausedBeforeOverflow !== true
@@ -1530,6 +1576,11 @@ export function productionThroughputDetails(report) {
   const queueHeadroomVisibleAndMeasuredAndAligned =
     queueHeadroomVisible
     && queueHeadroomMeasured
+    && queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack;
+  const stagingDiskHeadroomVisibleAndMeasuredAfterPause =
+    stagingDiskHeadroomVisible
+    && stagingDiskHeadroomMeasured
+    && stagingDiskHeadroomWithinPlanReserve
     && queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack;
   const receiptCursorQueueSlackVisibleAndMeasured =
     receiptCursorQueueSlackVisible
@@ -1748,6 +1799,14 @@ export function productionThroughputDetails(report) {
     queueHeadroomMatchesMemoryHeadroom,
     queueHeadroomWithinResourceCeiling,
     queueHeadroomPositive,
+    stagingDiskHeadroomBytes,
+    stagingDiskReserveBytes,
+    stagingDiskHeadroomPositive,
+    stagingDiskHeadroomVisible,
+    stagingDiskHeadroomMeasured,
+    stagingDiskHeadroomWithinPlanReserve,
+    stagingDiskHeadroomVisibleAndMeasured,
+    stagingDiskHeadroomVisibleAndMeasuredAfterPause,
     queueBudgetPositive,
     queueBudgetVisible,
     queueBudgetVisibleAndMemoryCeilingVisibleAndMeasured,
@@ -1863,6 +1922,14 @@ export function productionThroughputDetails(report) {
       queueHeadroomMatchesMemoryHeadroom,
       queueHeadroomWithinResourceCeiling,
       queueHeadroomPositive,
+      stagingDiskHeadroomBytes,
+      stagingDiskReserveBytes,
+      stagingDiskHeadroomPositive,
+      stagingDiskHeadroomVisible,
+      stagingDiskHeadroomMeasured,
+      stagingDiskHeadroomWithinPlanReserve,
+      stagingDiskHeadroomVisibleAndMeasured,
+      stagingDiskHeadroomVisibleAndMeasuredAfterPause,
       queueBudgetPositive,
       queueBudgetVisible,
       queueBudgetVisibleAndMemoryCeilingVisibleAndMeasured,
@@ -2006,9 +2073,12 @@ function hasCompleteBackpressureEvidence(report) {
   const receiptCursorQueueSlackBytes = report.evidence.backpressure?.receiptCursorQueueSlackBytes ?? null;
   const receiptCursorQueueBudgetBytes = report.evidence.backpressure?.queueBudgetBytes ?? null;
   const receiptCursorQueueHeadroomBytes = report.evidence.backpressure?.queueHeadroomBytes ?? null;
+  const stagingDiskHeadroomBytes = report.evidence.backpressure?.stagingDiskHeadroomBytes ?? null;
+  const stagingDiskReserveBytes = report.evidence.backpressure?.stagingDiskReserveBytes ?? null;
   const receiptCursorMemoryHeadroomBytes = report.evidence.backpressure?.receiptCursorMemoryHeadroomBytes ?? null;
   const receiptCursorWindowBytes = report.evidence.chunkReceipts.resumeCursor?.sizeBytes ?? null;
   const receiptCursorMemoryCeilingBytes = report.resourceLimits?.memoryCeilingBytes ?? null;
+  const maxStagingDiskBytes = report.resourceLimits?.maxStagingDiskBytes ?? null;
   const backpressureAlignment = {
     queueBudgetBytes: receiptCursorQueueBudgetBytes,
     queueHeadroomBytes: receiptCursorQueueHeadroomBytes,
@@ -2093,6 +2163,18 @@ function hasCompleteBackpressureEvidence(report) {
     && Number.isFinite(receiptCursorMemoryCeilingBytes)
     && receiptCursorQueueBudgetBytes === receiptCursorMemoryCeilingBytes
     && receiptCursorQueueHeadroomBytes === receiptCursorQueueBudgetBytes - report.shape.chunkSizeBytes;
+  const stagingDiskHeadroomMeasured =
+    Number.isFinite(stagingDiskHeadroomBytes)
+    && stagingDiskHeadroomBytes > 0;
+  const stagingDiskHeadroomVisible =
+    report.evidence.backpressure?.stagingDiskHeadroomVisible === true;
+  const stagingDiskHeadroomWithinPlanReserve =
+    stagingDiskHeadroomMeasured
+    && Number.isFinite(stagingDiskReserveBytes)
+    && Number.isFinite(maxStagingDiskBytes)
+    && stagingDiskHeadroomBytes === maxStagingDiskBytes - report.shape.bytesMovedThroughStaging
+    && stagingDiskHeadroomBytes >= stagingDiskReserveBytes
+    && report.evidence.backpressure?.stagingDiskHeadroomWithinPlanReserve === true;
   return (
     Number.isFinite(receiptCursorBackpressureBytes)
     && Number.isFinite(receiptCursorQueueBudgetBytes)
@@ -2122,6 +2204,9 @@ function hasCompleteBackpressureEvidence(report) {
     && receiptCursorQueueHeadroomBytes >= receiptCursorBackpressureBytes
     && receiptCursorBackpressureWithinResourceHeadroom
     && report.evidence.backpressure?.queuePauseHasMeasuredAndAlignedReceiptCursorBackpressure === true
+    && stagingDiskHeadroomVisible
+    && stagingDiskHeadroomMeasured
+    && stagingDiskHeadroomWithinPlanReserve
   );
 }
 
@@ -2203,6 +2288,7 @@ function benchmarkConfig(options) {
   return {
     ...profile,
     maxBufferedUploadBytes: DEFAULT_LIMITS.maxBufferedUploadBytes,
+    maxStagingDiskBytes: DEFAULT_LIMITS.maxStagingDiskBytes,
     ...options,
     profile: profileName,
     now: options.now || FIXED_NOW,
@@ -2492,6 +2578,21 @@ function buildReport({
     && Number.isFinite(config.chunkSizeBytes)
     && config.maxBufferedUploadBytes - config.chunkSizeBytes > 0;
   const queuePausedBeforeOverflow = config.chunkSizeBytes <= config.maxBufferedUploadBytes;
+  const stagingDiskReserveBytes = config.chunkSizeBytes;
+  const stagingDiskHeadroomBytes =
+    Number.isFinite(config.maxStagingDiskBytes)
+    && Number.isFinite(stagedFile?.bytesMoved)
+      ? config.maxStagingDiskBytes - stagedFile.bytesMoved
+      : null;
+  const stagingDiskHeadroomMeasured =
+    Number.isFinite(stagingDiskHeadroomBytes)
+    && stagingDiskHeadroomBytes > 0;
+  const stagingDiskHeadroomVisible =
+    config.maxStagingDiskBytes === DEFAULT_LIMITS.maxStagingDiskBytes;
+  const stagingDiskHeadroomWithinPlanReserve =
+    stagingDiskHeadroomMeasured
+    && Number.isFinite(stagingDiskReserveBytes)
+    && stagingDiskHeadroomBytes >= stagingDiskReserveBytes;
   const productionAtomicCommitMeasured = false;
   const productionStorageReceiptsMeasured = false;
   const productionRowBatchExecutorMeasured = false;
@@ -2540,6 +2641,8 @@ function buildReport({
     resourceLimits: {
       memoryCeilingBytes: config.maxBufferedUploadBytes,
       maxBufferedUploadBytes: config.maxBufferedUploadBytes,
+      maxStagingDiskBytes: config.maxStagingDiskBytes,
+      stagingDiskReserveBytes,
     },
     evidence: {
       chunkReceipts: {
@@ -2623,7 +2726,12 @@ function buildReport({
       resourceLimits: {
         memoryCeilingBytes: config.maxBufferedUploadBytes,
         maxBufferedUploadBytes: config.maxBufferedUploadBytes,
+        maxStagingDiskBytes: config.maxStagingDiskBytes,
+        stagingDiskReserveBytes,
         chunkWindowWithinMemoryCeiling: config.chunkSizeBytes <= config.maxBufferedUploadBytes,
+        bytesMovedWithinStagingDiskCeiling:
+          Number.isFinite(config.maxStagingDiskBytes)
+          && stagedFile.bytesMoved <= config.maxStagingDiskBytes,
       },
       backpressure: {
         producerQueueBounded: true,
@@ -2636,6 +2744,11 @@ function buildReport({
           config.maxBufferedUploadBytes === DEFAULT_LIMITS.maxBufferedUploadBytes,
         queueHeadroomVisible:
           config.maxBufferedUploadBytes === DEFAULT_LIMITS.maxBufferedUploadBytes,
+        stagingDiskHeadroomBytes,
+        stagingDiskReserveBytes,
+        stagingDiskHeadroomMeasured,
+        stagingDiskHeadroomVisible,
+        stagingDiskHeadroomWithinPlanReserve,
         queuePausedBeforeOverflow,
         chunkWindowBytes: config.chunkSizeBytes,
         receiptCursorBytes: lastChunkReceipt?.sizeBytes ?? null,

@@ -67,7 +67,9 @@ test('guarded executor benchmark moves buffers and row payloads through durable 
   assert.equal(report.evidence.journal.successReceiptKindLedgerComplete, true);
   assert.equal(report.evidence.redaction.durableJournalsContainNoRawValues, true);
   assert.equal(report.resourceLimits.memoryCeilingBytes, 32 * 1024 * 1024);
+  assert.equal(report.resourceLimits.maxStagingDiskBytes, 4 * 1024 * 1024 * 1024);
   assert.equal(report.evidence.resourceLimits.chunkWindowWithinMemoryCeiling, true);
+  assert.equal(report.evidence.resourceLimits.bytesMovedWithinStagingDiskCeiling, true);
   assert.equal(report.evidence.backpressure.producerQueueBounded, true);
   assert.equal(report.evidence.backpressure.queueBudgetMatchesResourceCeiling, true);
   assert.equal(report.evidence.backpressure.queueBudgetVisible, true);
@@ -83,6 +85,19 @@ test('guarded executor benchmark moves buffers and row payloads through durable 
   assert.equal(report.evidence.backpressure.receiptCursorMemoryHeadroomBytes, 31.5 * 1024 * 1024);
   assert.equal(report.evidence.backpressure.receiptCursorMemoryHeadroomVisible, true);
   assert.equal(report.evidence.backpressure.queueHeadroomBytes, 31.5 * 1024 * 1024);
+  assert.equal(
+    report.evidence.backpressure.stagingDiskHeadroomBytes,
+    report.resourceLimits.maxStagingDiskBytes - report.shape.bytesMovedThroughStaging,
+  );
+  assert.equal(report.evidence.backpressure.stagingDiskReserveBytes, 512 * 1024);
+  assert.equal(report.evidence.backpressure.stagingDiskHeadroomMeasured, true);
+  assert.equal(report.evidence.backpressure.stagingDiskHeadroomVisible, true);
+  assert.equal(report.evidence.backpressure.stagingDiskHeadroomWithinPlanReserve, true);
+  assert.equal(report.claims.productionThroughputDetails.stagingDiskHeadroomVisibleAndMeasured, true);
+  assert.equal(
+    report.claims.productionThroughputDetails.stagingDiskHeadroomVisibleAndMeasuredAfterPause,
+    true,
+  );
   assert.deepEqual(report.claims.productionThroughputDetails.receiptCursorPauseFootprint, {
     receiptCursorBytes: 512 * 1024,
     queueBudgetBytes: 32 * 1024 * 1024,
@@ -92,6 +107,13 @@ test('guarded executor benchmark moves buffers and row payloads through durable 
     memoryHeadroomBytes: 31.5 * 1024 * 1024,
   });
   assert.equal(report.claims.productionThroughputDetails.backpressureAlignment.aligned, true);
+  assert.equal(report.claims.productionThroughputDetails.backpressureConsistency.stagingDiskHeadroomPositive, true);
+  assert.equal(report.claims.productionThroughputDetails.backpressureConsistency.stagingDiskHeadroomVisible, true);
+  assert.equal(report.claims.productionThroughputDetails.backpressureConsistency.stagingDiskHeadroomMeasured, true);
+  assert.equal(
+    report.claims.productionThroughputDetails.backpressureConsistency.stagingDiskHeadroomWithinPlanReserve,
+    true,
+  );
   assert.equal(
     report.claims.productionThroughputDetails.backpressureAlignment.receiptCursorQueueSlackBytes,
     31.5 * 1024 * 1024,
@@ -586,6 +608,22 @@ test('guarded benchmark treats queue-headroom visibility as incomplete without a
   assert.equal(details.backpressureConsistency.queueHeadroomVisibleAndMeasured, false);
 });
 
+test('guarded benchmark blocks staged-disk headroom visibility without a measurement', () => {
+  const report = smallBenchmark();
+  const tampered = clone(report);
+
+  tampered.evidence.backpressure.stagingDiskHeadroomVisible = true;
+  tampered.evidence.backpressure.stagingDiskHeadroomMeasured = false;
+
+  const details = productionThroughputDetails(tampered);
+  const blockers = productionThroughputBlockers(tampered);
+
+  assert.equal(details.stagingDiskHeadroomVisible, true);
+  assert.equal(details.stagingDiskHeadroomVisibleAndMeasured, false);
+  assert.equal(details.backpressureConsistency.stagingDiskHeadroomVisibleAndMeasured, false);
+  assert.equal(blockers.includes('staging-disk-headroom-visible-without-measurement'), true);
+});
+
 test('guarded benchmark blocks queue-headroom visibility when the aligned slack proof is hidden', () => {
   const report = smallBenchmark();
   const tampered = clone(report);
@@ -608,6 +646,47 @@ test('guarded benchmark blocks queue-headroom visibility when the aligned slack 
     blockers.includes('queue-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof'),
     true,
   );
+});
+
+test('guarded benchmark blocks staged-disk headroom visibility when the aligned pause proof is hidden', () => {
+  const report = smallBenchmark();
+  const tampered = clone(report);
+
+  tampered.evidence.backpressure.stagingDiskHeadroomVisible = true;
+  tampered.evidence.backpressure.stagingDiskHeadroomMeasured = true;
+  tampered.evidence.backpressure.queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack = false;
+
+  const details = productionThroughputDetails(tampered);
+  const blockers = productionThroughputBlockers(tampered);
+
+  assert.equal(details.stagingDiskHeadroomVisibleAndMeasured, true);
+  assert.equal(details.stagingDiskHeadroomVisibleAndMeasuredAfterPause, false);
+  assert.equal(
+    details.backpressureConsistency.stagingDiskHeadroomVisibleAndMeasuredAfterPause,
+    false,
+  );
+  assert.equal(
+    blockers.includes('staging-disk-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof'),
+    true,
+  );
+});
+
+test('guarded benchmark blocks staged-disk headroom evidence outside the plan reserve', () => {
+  const report = smallBenchmark();
+  const tampered = clone(report);
+
+  tampered.evidence.backpressure.stagingDiskHeadroomWithinPlanReserve = false;
+
+  const details = productionThroughputDetails(tampered);
+  const blockers = productionThroughputBlockers(tampered);
+
+  assert.equal(details.stagingDiskHeadroomWithinPlanReserve, false);
+  assert.equal(details.stagingDiskHeadroomVisibleAndMeasuredAfterPause, false);
+  assert.equal(
+    details.backpressureConsistency.stagingDiskHeadroomWithinPlanReserve,
+    false,
+  );
+  assert.equal(blockers.includes('staging-disk-headroom-outside-plan-reserve'), true);
 });
 
 test('guarded benchmark blocks paired queue-budget and memory-ceiling detail when the aligned slack proof is hidden', () => {

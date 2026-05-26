@@ -165,6 +165,9 @@ Current executable gate:
 - The same details also let ordered raw receipt keys and journal lag size the
   next bounded replay window after a pause, but only as planning evidence
   while live preconditions and durable journal records still decide recovery.
+- The same details also keep staging-disk reserve headroom explicit for
+  post-pause journal batching, so a forged disk-budget shortcut cannot look
+  complete without the paused receipt-cursor proof that makes it safe.
 - The same details also let a compressed pause-footprint summary size the next
   bounded replay window, but only as planning evidence while the cached
   receipt cursor, journal lag, and durable journal records still decide
