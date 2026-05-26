@@ -260,6 +260,9 @@ Current executable gate:
 - The report also fails closed if atomic-group commit visibility appears
   without a measured production atomic commit, so a forged visibility bit
   cannot stand in for the commit boundary.
+- The report also fails closed if atomic-group metadata visibility appears
+  without atomic-group commit visibility, so the wrapper cannot look complete
+  when the commit surface itself is hidden.
 - Latest measured lab throughput:
   - `labStagedMiBPerSecond: 59.54`
   - `labApplyMutationsPerSecond: 62.29`
