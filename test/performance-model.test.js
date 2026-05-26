@@ -255,6 +255,17 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
   assert.ok(
     model.safeFastPaths.some(
       (fastPath) =>
+        fastPath.area === 'parallelism-limits' &&
+        fastPath.allowedShortcut === 'reuse-canonical-per-kind-budgets-for-planning-only-resume-sizing' &&
+        fastPath.visibilityBoundary === 'planning-only-budget-resume' &&
+        fastPath.guardrails.includes('per-kind-budgets-stay-canonical') &&
+        fastPath.gateProofs.recovery.includes('durable receipts and the group staging record still classify pause, retry, or crash'),
+    ),
+    'canonical per-kind budgets can be reused for planning-only resume sizing without widening visibility',
+  );
+  assert.ok(
+    model.safeFastPaths.some(
+      (fastPath) =>
         fastPath.area === 'backpressure' &&
         fastPath.allowedShortcut === 'flush-upload-and-row-receipts-in-separate-kind-scoped-journal-batches' &&
         fastPath.guardrails.includes('kind-scoped-receipt-batches-stay-ordered') &&
