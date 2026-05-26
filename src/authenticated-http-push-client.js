@@ -102,6 +102,13 @@ export async function runAuthenticatedHttpPush({
     sessionStatus: preflight.body.auth?.session?.status,
     sessionExpiresAt: preflight.body.auth?.session?.expiresAt,
   };
+  summary.authSessionLifecycle = {
+    minted: summarizeAuthSessionLifecycle(preflight.body.auth?.session),
+    read: summarizeAuthSessionLifecycle(preflight.body.auth?.session),
+    expired: isExpiredSession(preflight.body.auth?.session)
+      ? summarizeAuthSessionLifecycle(preflight.body.auth?.session)
+      : null,
+  };
   if (preflight.body.auth?.session?.id && preflight.body.auth.session.id !== session) {
     summary.code = 'PREFLIGHT_SESSION_MISMATCH';
     summary.authSession = {
@@ -195,6 +202,10 @@ export async function runAuthenticatedHttpPush({
     idempotencyKey,
   });
   summary.dryRun = summarizeResponse(dryRun);
+  summary.authSessionLifecycle = {
+    ...summary.authSessionLifecycle,
+    dryRun: summarizeAuthSessionLifecycle(dryRun.body?.auth?.session),
+  };
   const dryRunAuthEnvelopeDrift = requireProductionAuthSession && hasAuthEnvelopeDrift(preflightAuthEnvelope, dryRun);
   if (dryRun.status !== 200 || dryRun.body?.ok !== true || !dryRun.body?.receipt) {
     summary.code = dryRun.body?.code || 'DRY_RUN_FAILED';
@@ -225,6 +236,10 @@ export async function runAuthenticatedHttpPush({
     idempotencyKey,
   });
   summary.apply = summarizeResponse(apply);
+  summary.authSessionLifecycle = {
+    ...summary.authSessionLifecycle,
+    apply: summarizeAuthSessionLifecycle(apply.body?.auth?.session),
+  };
   if (apply.status !== 200 || apply.body?.ok !== true) {
     summary.code = apply.body?.code || 'APPLY_FAILED';
     setDurableJournalBoundary(summary, 'apply');
@@ -254,6 +269,10 @@ export async function runAuthenticatedHttpPush({
     idempotencyKey,
   });
   summary.recoveryInspect = summarizeResponse(recoveryInspect);
+  summary.authSessionLifecycle = {
+    ...summary.authSessionLifecycle,
+    recoveryInspect: summarizeAuthSessionLifecycle(recoveryInspect.body?.auth?.session),
+  };
   summary.recoveryInspect.recovery = summarizeRecoveryInspect(recoveryInspect);
   const recoveryInspectAuthSessionDrift = requireProductionAuthSession && (
     hasProductionAuthSessionTypeDrift(recoveryInspect)
@@ -310,6 +329,10 @@ export async function runAuthenticatedHttpPush({
     idempotencyKey,
   });
   summary.replay = summarizeResponse(replay);
+  summary.authSessionLifecycle = {
+    ...summary.authSessionLifecycle,
+    replay: summarizeAuthSessionLifecycle(replay.body?.auth?.session),
+  };
   summary.replay.responseSchemaVersion = replay.body?.responseSchemaVersion;
   const replayEquivalent = isReplayEquivalent(apply, replay);
   const applyAuthEnvelopeDrift = hasAuthEnvelopeDrift(preflightAuthEnvelope, apply);
@@ -348,6 +371,10 @@ export async function runAuthenticatedHttpPush({
   summary.after = summarizeSnapshot(afterApply, local);
   const dbJournal = await client.get('/db-journal?limit=80');
   summary.dbJournal = summarizeDbJournal(dbJournal);
+  summary.authSessionLifecycle = {
+    ...summary.authSessionLifecycle,
+    journal: summarizeAuthSessionLifecycle(dbJournal.body?.auth?.session),
+  };
   const dbJournalAuthSessionDrift = requireProductionAuthSession && (
     hasProductionAuthSessionTypeDrift(dbJournal)
     || hasProductionAuthSessionStatusDrift(dbJournal)
@@ -559,6 +586,20 @@ function summarizeResponse(response) {
       operation: body.storageGuard.operation,
       outcome: body.storageGuard.outcome,
     } : undefined,
+  };
+}
+
+function summarizeAuthSessionLifecycle(session) {
+  if (!session || typeof session !== 'object') {
+    return null;
+  }
+
+  return {
+    id: session.id || null,
+    type: session.type || null,
+    status: session.status || null,
+    expiresAt: session.expiresAt || null,
+    expired: isExpiredSession(session),
   };
 }
 

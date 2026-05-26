@@ -264,6 +264,29 @@ test('production-shaped authenticated push fails closed when production auth ses
         verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
       },
     });
+    assert.deepEqual(summary.authSessionLifecycle, {
+      minted: {
+        id: 'psh_01j00000000000000000000000',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2000-01-01T00:00:00Z',
+        expired: true,
+      },
+      read: {
+        id: 'psh_01j00000000000000000000000',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2000-01-01T00:00:00Z',
+        expired: true,
+      },
+      expired: {
+        id: 'psh_01j00000000000000000000000',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2000-01-01T00:00:00Z',
+        expired: true,
+      },
+    });
     assert.equal(seen.length, 1);
     assert.match(seen[0].url, /\/wp-json\/reprint\/v1\/push\/preflight$/);
   } finally {
