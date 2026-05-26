@@ -23383,6 +23383,7 @@ test('blocks local comment-post references to a same-plan created post identity 
   assert.equal(plan.conflicts.length, 1);
   assert.equal(blockers[0].class, 'unsupported-comments-users-resource');
   assert.equal(blockers[0].resourceKey, resourceKey);
+  assert.equal(blockers[0].unsupportedState, 'same-plan-reference');
   assert.equal(blockers[0].reason, 'WordPress graph mutation row:["wp_comments","comment_ID:27"] is created in the same plan as a comment post identity that depends on it, and identity rewriting is not yet supported.');
   assert.equal(blockers[1].class, 'stale-wordpress-graph-identity');
   assert.equal(blockers[1].resourceKey, targetResourceKey);
@@ -27589,6 +27590,7 @@ test('blocks local same-plan created user identity when a comment references it 
   assert.equal(plan.conflicts.length, 0);
   assert.equal(blocker.class, 'unsupported-comments-users-resource');
   assert.equal(blocker.resourceKey, targetResourceKey);
+  assert.equal(blocker.unsupportedState, 'same-plan-reference');
   assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_users","ID:7"] is created in the same plan as a comment user identity that depends on it, and identity rewriting is not yet supported.');
   assert.equal(planJson.includes('Local comment content'), false);
   assert.equal(planJson.includes('Base comment content'), false);
@@ -28317,6 +28319,7 @@ test('orders same-plan user dependency references deterministically within the s
   assert.equal(plan.conflicts.length, 0);
   assert.equal(blocker.class, 'unsupported-comments-users-resource');
   assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.unsupportedState, 'same-plan-reference');
   assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_users","ID:24"] is created in the same plan as a comment user identity that depends on it, and identity rewriting is not yet supported.');
   assert.deepEqual(
     blocker.references.map((reference) => [reference.relationshipType, reference.sourceResourceKey]),
@@ -28620,6 +28623,7 @@ test('blocks local comments graph references to a same-plan created parent comme
   assert.equal(plan.conflicts.length, 0);
   assert.equal(blocker.class, 'unsupported-comments-users-resource');
   assert.equal(blocker.resourceKey, targetResourceKey);
+  assert.equal(blocker.unsupportedState, 'same-plan-reference');
   assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_comments","comment_ID:15"] is created in the same plan as a parent comment identity that depends on it, and identity rewriting is not yet supported.');
   assert.equal(blocker.references[0].relationshipType, 'comment-parent');
   assert.equal(blocker.references[0].sourceResourceKey, resourceKey);
