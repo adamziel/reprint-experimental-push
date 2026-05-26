@@ -1,4 +1,4 @@
-Refreshed the objective audit for the newest visible `progress-followup`, `reliable-executor`, `no-data-loss-invariants`, and `no-data-loss-recovery` heads, while keeping the release verdict at `0/4`.
+Refreshed the objective audit for the newest visible `progress-followup`, `reliable-executor`, `feedback-supervisor`, `independent-auditor`, and `no-data-loss-recovery` heads, while keeping the release verdict at `0/4`.
 
 Changed files:
 - [`audits/objective-audit.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/independent-auditor/audits/objective-audit.md)
