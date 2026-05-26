@@ -1519,6 +1519,9 @@ function isValidSamePlanWordPressGraphTarget(targetMutation, reference, sourceMu
     ) {
       return false;
     }
+    if (hasRemoteWordPressNavigationPost(remote)) {
+      return false;
+    }
 
     const targetTaxonomyValue = [...(local?.db?.wp_term_taxonomy ? Object.values(local.db.wp_term_taxonomy) : [])]
       .find((candidate) => normalizePositiveInteger(candidate?.term_id) === normalizePositiveInteger(targetValue.term_id)

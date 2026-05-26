@@ -6808,6 +6808,54 @@ test('allows a term taxonomy parent to reference a term created by the same plan
   assert.equal(JSON.stringify(reference).includes('remote-attachment-body'), false);
 });
 
+test('blocks a term taxonomy parent reference to a same-plan term when a remote wp_navigation post exists', () => {
+  const parentTermResourceKey = 'row:["wp_terms","term_id:7"]';
+  const childTaxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:9"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_terms = {
+    'term_id:7': {
+      term_id: 7,
+      name: 'Local parent term',
+      slug: 'local-parent-term',
+    },
+  };
+  local.db.wp_term_taxonomy = {
+    'term_taxonomy_id:9': {
+      term_taxonomy_id: 9,
+      term_id: 7,
+      taxonomy: 'category',
+      description: '',
+      parent: 7,
+      count: 0,
+    },
+  };
+  const remote = baseSite();
+  remote.db.wp_posts = {
+    'ID:21': {
+      ID: 21,
+      post_title: 'Remote navigation post',
+      post_content: 'remote-navigation-body',
+      post_type: 'wp_navigation',
+      post_status: 'publish',
+    },
+  };
+
+  const plan = planFor(base, local, remote);
+  const termMutation = mutationFor(plan, parentTermResourceKey);
+  const taxonomyMutation = mutationFor(plan, childTaxonomyResourceKey);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === childTaxonomyResourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(termMutation.changeKind, 'create');
+  assert.equal(taxonomyMutation.changeKind, 'create');
+  assert.equal(blocker.class, 'missing-wordpress-graph-dependency');
+  assert.equal(blocker.references[0].relationshipType, 'term-taxonomy-parent');
+  assert.equal(blocker.references[0].targetResourceKey, parentTermResourceKey);
+  assert.equal(JSON.stringify(blocker).includes('remote-navigation-body'), false);
+  assert.throws(() => applyPlan(baseSite(), plan), /Refusing to apply/);
+});
+
 test('allows a term taxonomy to reference its same-plan term through the term relationship edge', () => {
   const termResourceKey = 'row:["wp_terms","term_id:7"]';
   const taxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:9"]';
