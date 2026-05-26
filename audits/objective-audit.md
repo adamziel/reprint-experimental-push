@@ -4,7 +4,7 @@
 
 The project is **not releasable as a production WordPress push path**.
 
-- Fresh remote heads at audit time, checked on 2026-05-26 08:02:04 CEST (+0200):
+- Fresh remote heads at audit time, checked on 2026-05-26 08:03:06 CEST (+0200):
 
 - `origin/lane/cycle-20260524-auth-graph-hardening/critic` -> `e413f7a8`
 - `origin/lane/cycle-20260524-auth-graph-hardening/fast-paths` -> `ad7d82a4`
@@ -83,6 +83,8 @@ Fresh remote heads re-polled after the last audit note:
 - `origin/lane/reliable-executor` -> `1a169e1f`
 - `origin/lane/no-data-loss-invariants` -> `eff8b208`
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `364cb1ae`
+- `origin/lane/reliable-executor` -> `b45bfc17`
+- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `8184e6c3`
 
 These heads are still fail-closed support evidence and freshness work. They
 improve unsupported-surface blocking and public visibility, but they still do
@@ -105,6 +107,12 @@ The newest visible heads continue that same pattern:
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` now records
   `364cb1ae`, reusing planning-only parallelism budget evidence. It still does
   not prove a production speed claim.
+- `origin/lane/reliable-executor` now records `b45bfc17`, failing closed on
+  journal readback. It still does not prove production auth/session lifecycle
+  or a live-source mutation boundary.
+- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` now
+  records `8184e6c3`, refreshing audit freshness only. It still does not
+  change the release verdict.
 
 Fresh lane proof since the last audit pass improved the local evidence floor,
 but it did not change the release conclusion:
