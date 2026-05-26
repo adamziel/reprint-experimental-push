@@ -1502,17 +1502,12 @@ function resolveObservedProductionAuthSessionLifecycleDrift(response) {
     };
   }
 
-  if (
-    session?.revoked === true
-    || session?.status === 'revoked'
-    || session?.cleanedUp === true
-    || session?.cleanup === true
-    || session?.status === 'cleaned-up'
-  ) {
+  const unrevokedObservation = resolveProductionAuthSessionUnrevokedObservation(session);
+  if (unrevokedObservation) {
     return {
-      field: resolveProductionAuthSessionUnrevokedField(session),
+      field: unrevokedObservation.field,
       required: 'unrevoked',
-      observed: session?.revoked === true || session?.status === 'revoked' ? 'revoked' : 'cleaned-up',
+      observed: unrevokedObservation.observed,
     };
   }
 
@@ -1606,19 +1601,12 @@ function describeRequiredProductionAuthSession(response) {
     };
   }
 
-  if (
-    session?.revoked === true
-    || session?.status === 'revoked'
-    || session?.cleanedUp === true
-    || session?.cleanup === true
-    || session?.status === 'cleaned-up'
-  ) {
+  const unrevokedObservation = resolveProductionAuthSessionUnrevokedObservation(session);
+  if (unrevokedObservation) {
     return {
-      field: resolveProductionAuthSessionUnrevokedField(session),
+      field: unrevokedObservation.field,
       required: 'unrevoked',
-      observed: session?.revoked === true || session?.status === 'revoked'
-        ? 'revoked'
-        : 'cleaned-up',
+      observed: unrevokedObservation.observed,
       verdict,
     };
   }
@@ -1668,13 +1656,31 @@ function describeRequiredProductionAuthSession(response) {
 
 function describeRequiredUnrevokedProductionAuthSession(response) {
   const session = response?.body?.auth?.session;
+  const unrevokedObservation = resolveProductionAuthSessionUnrevokedObservation(session);
+  return {
+    field: unrevokedObservation?.field || resolveProductionAuthSessionUnrevokedField(session),
+    required: 'unrevoked',
+    observed: unrevokedObservation?.observed || 'cleaned-up',
+    verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+  };
+}
+
+function resolveProductionAuthSessionUnrevokedObservation(session) {
+  if (
+    session?.revoked !== true
+    && session?.status !== 'revoked'
+    && session?.cleanedUp !== true
+    && session?.cleanup !== true
+    && session?.status !== 'cleaned-up'
+  ) {
+    return null;
+  }
+
   return {
     field: resolveProductionAuthSessionUnrevokedField(session),
-    required: 'unrevoked',
     observed: session?.revoked === true || session?.status === 'revoked'
       ? 'revoked'
       : 'cleaned-up',
-    verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
   };
 }
 
