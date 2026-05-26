@@ -689,6 +689,7 @@ maybeTest('production-shaped release verify command runs the live protocol branc
       },
       'live release verify',
     );
+    assertSpawnCompletedWithoutSpawnError(proof, 'live release verify', liveProofInnerTimeoutMs);
     assert.equal(proof.status, 0, proof.stderr);
     assert.match(proof.stdout, /"ok": true/);
     assert.match(proof.stdout, /"sourceUrl": "http:\/\/127\.0\.0\.1:\d+"/);
@@ -731,6 +732,7 @@ maybeTest('production-shaped release verify command fails closed when remote dri
       boundedLiveReleaseVerifyOptions({ timeout: liveProofInnerTimeoutMs }),
       'drift release verify',
     );
+    assertSpawnCompletedWithoutSpawnError(proof, 'drift release verify', liveProofInnerTimeoutMs);
     assert.equal(proof.status, 1, proof.stderr);
     assert.match(proof.stdout, /"ok": false/);
     assert.match(proof.stdout, /"sourceUrl": "http:\/\/127\.0\.0\.1:\d+"/);
