@@ -22868,6 +22868,68 @@ test('blocks local comments graph references to a same-plan created parent comme
   assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin drift */');
 });
 
+test('blocks local comments graph references to a same-plan created post identity while preserving a matching independent edit and remote-only plugin removals', () => {
+  const resourceKey = 'row:["wp_comments","comment_ID:13"]';
+  const targetResourceKey = 'row:["wp_posts","ID:17"]';
+  const base = baseSite();
+  base.db.wp_comments = {
+    'comment_ID:13': {
+      comment_ID: 13,
+      comment_post_ID: 17,
+      comment_content: 'Base comment content',
+    },
+  };
+
+  const local = baseSite();
+  local.db.wp_posts['ID:1'].post_title = 'Shared independent edit';
+  local.db.wp_posts['ID:17'] = {
+    ID: 17,
+    post_title: 'Local same-plan post',
+    post_content: 'Local same-plan post content',
+    post_status: 'publish',
+    post_type: 'post',
+  };
+  local.db.wp_comments = {
+    'comment_ID:13': {
+      comment_ID: 13,
+      comment_post_ID: 17,
+      comment_content: 'Local comment content',
+    },
+  };
+
+  const remote = baseSite();
+  remote.db.wp_comments = JSON.parse(JSON.stringify(base.db.wp_comments));
+  remote.db.wp_posts['ID:1'].post_title = 'Shared independent edit';
+  delete remote.plugins.forms;
+  delete remote.files['wp-content/plugins/forms/forms.php'];
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === targetResourceKey);
+  const independentEditDecision = decisionFor(plan, 'row:["wp_posts","ID:1"]');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, targetResourceKey), undefined);
+  assert.equal(decisionFor(plan, resourceKey), undefined);
+  assert.equal(plan.conflicts.length, 0);
+  assert.equal(blocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(blocker.resourceKey, targetResourceKey);
+  assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_posts","ID:17"] is created in the same plan as a relationship that depends on it, and identity rewriting is not yet supported.');
+  assert.equal(independentEditDecision.decision, 'already-in-sync');
+  assert.equal(independentEditDecision.change.localChange, 'update');
+  assert.equal(independentEditDecision.change.remoteChange, 'update');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('Local comment content'), false);
+  assert.equal(planJson.includes('Base comment content'), false);
+  assert.equal(planJson.includes('Local same-plan post'), false);
+  assert.equal(Object.hasOwn(remote.plugins, 'forms'), false);
+  assert.equal(Object.hasOwn(remote.files, 'wp-content/plugins/forms/forms.php'), false);
+});
+
 test('blocks local users graph resources while preserving a matching independent edit and remote-only plugin changes', () => {
   const resourceKey = 'row:["wp_users","ID:9"]';
   const base = baseSite();
