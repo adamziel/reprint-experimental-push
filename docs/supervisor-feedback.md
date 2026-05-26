@@ -1,9 +1,22 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-26 16:26 CEST
+Last updated: 2026-05-26 16:27 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-26 16:27 CEST - Reliable Head Advanced to Shared Readiness Budget
+
+- Going well: the live reliable head is now `1890bd198e164619e79c8ea2e510f5d129b7c061`, and the checked packaged release path now reaches the full `remote-changed` readiness window.
+- Not going well: that window still ends at `GET /wp-json/ -> 502 "WordPress is not ready yet"`, so the gate remains `0/4`.
+- Progress change: this is another shared-readiness advance, not a gate move; the release proof is still below production-backed auth/session lifecycle and durable journal ownership.
+- Next nudge: keep `reliable-executor` on `scripts/playground/production-shaped-release-verify.mjs` at `startPlaygroundServer()` / `waitForServer()` for `fixtures/playground/remote-changed.blueprint.json`, and have `progress-publisher` catch the public page up exactly once if it is still behind the live head.
+
+| Lane | Nudge |
+| --- | --- |
+| Reliable executor | Fix the shared `waitForServer()` readiness boundary for `remote-changed`; do not switch back to proof-field polish. |
+| Progress publisher | Catch the public page up to `1890bd198e164619e79c8ea2e510f5d129b7c061` if stale; keep `0/4`. |
+| Audit and critic | Keep the verdict at `0/4` until production-backed lifecycle or durable ownership is proven. |
 
 ## 2026-05-26 16:26 CEST - Reliable Head Still at Shared Readiness Blocker
 
