@@ -80,38 +80,18 @@ function spawnReleaseVerify(env = {}, options = {}) {
   );
 }
 
-function spawnReleaseVerifyBounded(command, args, options, label) {
-  const timeout = options.timeout ?? releaseVerifyInnerTimeoutMs;
-  const killSignal = options.killSignal ?? proofSubprocessKillSignal;
-  return spawnBoundedSync(
-    command,
-    args,
-    {
-      cwd: repoRoot,
-      ...options,
-      timeout,
-      killSignal,
-    },
-    label,
-  );
-}
-
 function runReleaseVerifySync(env, timeout, killSignal, label) {
   const command = process.execPath;
   const args = ['scripts/playground/production-shaped-release-verify.mjs'];
-  const proof = spawnReleaseVerifyBounded(
-    command,
-    args,
-    {
-      cwd: repoRoot,
-      timeout,
-      killSignal,
-      encoding: 'utf8',
-      maxBuffer: 1024 * 1024 * 20,
-      env,
-    },
-    label,
-  );
+  const proof = spawnSync(command, args, {
+    cwd: repoRoot,
+    shell: false,
+    timeout,
+    killSignal,
+    encoding: 'utf8',
+    maxBuffer: 1024 * 1024 * 20,
+    env,
+  });
   if (proof.error || proof.signal || proof.status === null) {
     failReleaseVerifySpawnProof(proof, command, args, label, timeout);
   }
@@ -148,19 +128,15 @@ function spawnProductionShapedReleaseVerifyCommand(env, options, label) {
   const killSignal = options.killSignal ?? proofSubprocessKillSignal;
   const command = process.execPath;
   const args = ['scripts/playground/production-shaped-release-verify.mjs'];
-  const proof = spawnReleaseVerifyBounded(
-    command,
-    args,
-    {
-      cwd: repoRoot,
-      timeout,
-      killSignal,
-      encoding: 'utf8',
-      maxBuffer: 1024 * 1024 * 20,
-      env,
-    },
-    label,
-  );
+  const proof = spawnSync(command, args, {
+    cwd: repoRoot,
+    shell: false,
+    timeout,
+    killSignal,
+    encoding: 'utf8',
+    maxBuffer: 1024 * 1024 * 20,
+    env,
+  });
   if (proof.error || proof.signal || proof.status === null) {
     failReleaseVerifySpawnProof(proof, command, args, label, timeout);
   }
@@ -278,6 +254,7 @@ function failBoundedSpawnProof(proof, command, args) {
 
 function failReleaseVerifySpawnProof(proof, command, args, label = 'release verify', timeoutMs = null) {
   failBoundedSpawnProof(proof, command, args);
+  writeSpawnOutputTail(proof, `${command} ${args.join(' ')}`);
   assertReleaseVerifySpawnFailure(proof, label, timeoutMs);
 }
 
@@ -316,27 +293,24 @@ function assertReleaseVerifySpawnFailure(proof, label, timeoutMs) {
 function spawnReleaseVerifySlowPathBounded(env = {}, options = {}) {
   const timeout = options.timeout ?? releaseVerifySlowPathTimeoutMs;
   const boundedTimeout = Math.max(1_000, Math.min(timeout, releaseVerifySlowPathInnerTimeoutMs));
-  const proof = spawnReleaseVerifyBounded(
-    process.execPath,
-    ['scripts/playground/production-shaped-release-verify.mjs'],
-    {
-      cwd: repoRoot,
-      timeout: boundedTimeout,
-      killSignal: options.killSignal ?? proofSubprocessKillSignal,
-      encoding: 'utf8',
-      maxBuffer: 1024 * 1024 * 20,
-      shell: false,
-      env: {
-        ...process.env,
-        ...env,
-      },
+  const command = process.execPath;
+  const args = ['scripts/playground/production-shaped-release-verify.mjs'];
+  const proof = spawnSync(command, args, {
+    cwd: repoRoot,
+    timeout: boundedTimeout,
+    killSignal: options.killSignal ?? proofSubprocessKillSignal,
+    encoding: 'utf8',
+    maxBuffer: 1024 * 1024 * 20,
+    shell: false,
+    env: {
+      ...process.env,
+      ...env,
     },
-    'retained-source release verify',
-  );
+  });
   if (proof.error || proof.signal || proof.status === null) {
     stopAllPlaygroundChildrenSync();
-    logBoundedSpawnProofFailure(process.execPath, ['scripts/playground/production-shaped-release-verify.mjs'], proof);
-    writeSpawnOutputTail(proof, `${process.execPath} scripts/playground/production-shaped-release-verify.mjs`);
+    logBoundedSpawnProofFailure(command, args, proof);
+    writeSpawnOutputTail(proof, `${command} ${args.join(' ')}`);
     if (proof.error) {
       const timeoutNote = proof.error.code === 'ETIMEDOUT' ? ` after ${boundedTimeout}ms` : '';
       throw new Error(formatSpawnFailure(`retained-source release verify failed${timeoutNote} with bounded spawn handling`, proof));
