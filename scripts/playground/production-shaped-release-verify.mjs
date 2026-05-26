@@ -796,6 +796,7 @@ async function startPlaygroundServer(name, blueprintPath) {
   for (let attempt = 1; attempt <= 3; attempt += 1) {
     const port = await findLocalPort();
     const baseUrl = `http://127.0.0.1:${port}`;
+    process.stderr.write(`Starting Playground server ${name} at ${baseUrl} from ${path.basename(blueprintPath)} attempt ${attempt}/3\n`);
     const args = [
       '--yes',
       '@wp-playground/cli@latest',
@@ -838,9 +839,11 @@ async function startPlaygroundServer(name, blueprintPath) {
 
     try {
       await waitForServer(child, baseUrl, () => output);
+      process.stderr.write(`Playground server ${name} is ready at ${baseUrl}\n`);
       return { name, baseUrl, child };
     } catch (error) {
       const logs = `${output}\n${error instanceof Error ? error.message : String(error)}`;
+      process.stderr.write(`Playground server ${name} failed to become ready at ${baseUrl}\n`);
       process.stderr.write(`${logs.trimEnd()}\n`);
       await stopSpawnedServer(child);
       if (!/EADDRINUSE/i.test(logs) || attempt === 3) {
@@ -1081,8 +1084,21 @@ function formatPlaygroundStartupFailure(prefix, lastError, lastProbes, logs) {
   const probeText = lastProbes.length
     ? `\nProbe trail: ${JSON.stringify(lastProbes.slice(-4), null, 2)}`
     : '';
+  const lastProbe = lastProbes.at(-1);
+  const lastProbeText = lastProbe
+    ? `\nLast probe: ${JSON.stringify(
+        {
+          route: lastProbe.route,
+          status: lastProbe.status,
+          ok: lastProbe.ok,
+          body: lastProbe.body,
+        },
+        null,
+        2,
+      )}`
+    : '';
   const errorText = lastError?.message || 'unknown';
-  return `${prefix}: ${errorText}${probeText}\n${logs}`;
+  return `${prefix}: ${errorText}${probeText}${lastProbeText}\n${logs}`;
 }
 
 async function fetchWithTimeout(url, init = {}) {

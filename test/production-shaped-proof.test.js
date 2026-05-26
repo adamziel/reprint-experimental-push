@@ -75,6 +75,10 @@ function spawnReleaseVerify(env = {}, timeout = proofSubprocessTimeoutMs) {
   return proof;
 }
 
+function spawnLiveReleaseVerify(env = {}) {
+  return spawnReleaseVerify(env, liveReleaseVerifyTimeoutMs);
+}
+
 function assertReleaseVerifyProof(proof, label) {
   if (proof.error) {
     const detailParts = [
@@ -373,7 +377,7 @@ maybeTest('production-shaped release proof runs the live preflight branch agains
 
 maybeTest('production-shaped release verify command runs the live protocol branch with local Playground source and local edited site', () => {
   return withPlaygroundServer('remote-base', path.join(repoRoot, 'fixtures/playground/remote-base.blueprint.json'), async (remoteServer) => {
-    const proof = spawnReleaseVerify(
+    const proof = spawnLiveReleaseVerify(
       {
         REPRINT_PUSH_SOURCE_URL: remoteServer.baseUrl,
         REPRINT_PUSH_REMOTE_URL: remoteServer.baseUrl,
@@ -381,7 +385,6 @@ maybeTest('production-shaped release verify command runs the live protocol branc
         REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD: liveCredentials.password,
         NODE_NO_WARNINGS: '1',
       },
-      liveProofSubprocessTimeoutMs,
     );
     assertLiveReleaseVerifyProof(proof, 'live release verify', liveReleaseVerifyTimeoutMs);
     assert.equal(proof.status, 0, proof.stderr);
@@ -414,7 +417,7 @@ maybeTest('production-shaped release verify command runs the live protocol branc
 
 maybeTest('production-shaped release verify command fails closed when remote drift appears after the authenticated snapshot', () => {
   return withPlaygroundServer('remote-base', path.join(repoRoot, 'fixtures/playground/remote-base.blueprint.json'), async (remoteServer) => {
-    const proof = spawnReleaseVerify(
+    const proof = spawnLiveReleaseVerify(
       {
         REPRINT_PUSH_SOURCE_URL: remoteServer.baseUrl,
         REPRINT_PUSH_REMOTE_URL: remoteServer.baseUrl,
@@ -423,7 +426,6 @@ maybeTest('production-shaped release verify command fails closed when remote dri
         REPRINT_PUSH_LAB_DRIFT_AFTER_SNAPSHOT: 'post-title',
         NODE_NO_WARNINGS: '1',
       },
-      liveProofSubprocessTimeoutMs,
     );
     assertLiveReleaseVerifyProof(proof, 'drift release verify', liveProofSubprocessTimeoutMs);
     assert.equal(proof.status, 1, proof.stderr);
