@@ -6,6 +6,12 @@ The project is **not releasable as a production WordPress push path**.
 
 Fresh remote heads at audit time, checked on May 26, 2026:
 
+- `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `04753bdc`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `4a857b41`
+- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `9e791650`
+- `origin/lane/critic` -> `2b608e9e`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `2a447f26`
+- `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration` -> `0a448b37`
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `fba292d0`
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `1e61f98f`
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `60d3b4c6`
@@ -40,6 +46,21 @@ but it did not change the release conclusion:
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` now advances to
   `fba292d0`, pinning transport frame compression proof. This remains
   fail-closed boundary work, not release-grade live-source evidence.
+- `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` now
+  advances to `04753bdc`, closing unsupported recovery writers. That remains
+  fail-closed boundary work, not production-backed durable journal proof.
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now
+  advances to `4a857b41`, refreshing public progress visibility only.
+- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` now
+  advances to `9e791650`, refreshing the audit snapshot only.
+- `origin/lane/critic` now advances to `2b608e9e`, refreshing the critique
+  readiness audit only.
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now records
+  `2a447f26`, refreshing the public progress freshness surface only.
+- `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration`
+  now records `0a448b37`, adding termmeta same-plan drift proof. That is
+  stronger boundary hardening, but it still does not produce live source
+  mutation evidence.
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now records
   `1e61f98f`, refreshing the public progress freshness surface only.
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now

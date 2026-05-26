@@ -11,6 +11,7 @@ Commands run
 - `sed -n '1,260p' audits/objective-audit.md`
 - `git status --short --branch && git branch --show-current && git rev-parse --short HEAD`
 - `git for-each-ref --sort=-committerdate --format='%(refname:short) %(objectname:short) %(committerdate:iso8601) %(subject)' refs/remotes/origin/lane | head -n 12`
+- `git diff -- audits/objective-audit.md .lane-output/final.md`
 
 Push result
 - Not pushed this pass
