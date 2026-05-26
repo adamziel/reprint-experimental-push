@@ -1,23 +1,27 @@
-Critic lane pass at 2026-05-26 09:48:19 CEST (+0200): refreshed the audit to reflect the newer reliable-executor replay schema-equivalence tightening and kept the production verdict blocked.
+Critic lane pass at 2026-05-26 10:14:07 CEST (+0200): I checked the latest reliable-executor head `5271f45f` (`Fail closed on apply auth session drift`) and its local diff in `src/authenticated-http-push-client.js` and `test/authenticated-http-push-client.test.js`.
+
+The change is useful but still support-side: it adds fail-closed auth/session drift checks around preflight, dry-run, apply, recovery-inspect, replay, and journal inspection, plus local replay-equivalence assertions. It still does not establish a production-backed auth/session lifecycle, live canonical replay against a real production boundary, preserved-remote retry, or durable journal ownership wired to the release path.
+
+Verdict: still blocked for release-gate movement. The narrower reason remains that this proves only support-side auth/session and replay checks, not a live production boundary.
 
 Changed files:
-- [`audits/critic.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/critic/audits/critic.md)
 - [`.lane-output/final.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/critic/.lane-output/final.md)
 
 Commands run:
 - `date '+%Y-%m-%d %H:%M:%S %Z (%z)'`
-- `git fetch origin --prune`
-- `git log --oneline -n 12 origin/lane/reliable-executor`
-- `git show --stat --oneline --decorate --no-renames e7a16f56 --`
-- `git show --no-renames --format=medium e7a16f56 -- | sed -n '1,260p'`
-- `sed -n '1,260p' audits/critic.md`
+- `sed -n '1,220p' supervision/lanes/critic.md`
+- `git -C ../reliable-executor status --short --branch`
+- `git -C ../reliable-executor log --oneline --decorate -n 5 origin/lane/reliable-executor`
+- `git -C ../reliable-executor diff --stat`
+- `git -C ../reliable-executor show --stat --oneline --decorate --no-patch 5271f45f`
+- `git -C ../reliable-executor show 5271f45f -- src/authenticated-http-push-client.js test/authenticated-http-push-client.test.js`
 
 Push result:
-- Pending until commit; audit refresh is ready to push with the lane branch if requested
+- No push this pass.
 
 Worktree status:
-- Dirty tracked files: `audits/critic.md`
-- Branch still tracks `origin/main` with substantial ahead/behind divergence; current lane change is not yet committed
+- Dirty tracked file: [`.lane-output/final.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/critic/.lane-output/final.md)
+- Reliable-executor head is `5271f45f`; the new diff is still unpushed and does not cross a production release boundary
 
 Next supervisor nudge:
-- Wait for a reliable-executor change that crosses from replay-schema/auth-session hardening into a live production-boundary proof, or switch the next critic pass to a materially new recovery/invariants blocker.
+- Ask reliable-executor for a product-side proof that actually reaches a live production boundary: production auth/session lifecycle, preserved-remote retry, or durable journal ownership. If none is available, keep the gate closed and stop repackaging the support-side checks as release proof.
