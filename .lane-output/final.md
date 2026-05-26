@@ -1,4 +1,6 @@
-Refreshed the objective audit snapshot for the newest remote heads. The verdict stays at `0/4`; the newest proof is still freshness-only progress updates and fail-closed sibling coverage, not live-source production proof.
+Refreshed the objective audit for the new `origin/lane/no-data-loss-invariants` head `5c4cb015`.
+The verdict stays at `0/4`; the new revision-parent-removal proof is still fail-closed
+graph coverage, not live-source production proof.
 
 Changed files
 - [`audits/objective-audit.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/independent-auditor/audits/objective-audit.md)
@@ -7,8 +9,11 @@ Changed files
 Commands run
 - `sed -n '1,260p' audits/objective-audit.md`
 - `git for-each-ref --sort=-committerdate --format='%(refname:short) %(objectname:short) %(committerdate:iso8601) %(subject)' refs/remotes/origin/lane | head -n 20`
+- `git fetch origin refs/heads/lane/no-data-loss-invariants:refs/remotes/origin/lane/no-data-loss-invariants`
+- `git fetch origin refs/heads/lane/reliable-executor:refs/remotes/origin/lane/reliable-executor`
+- `git show --stat --oneline --decorate=short --no-patch origin/lane/no-data-loss-invariants`
+- `git show --stat --oneline --decorate=short --no-patch origin/lane/reliable-executor`
 - `git status --short --branch`
-- `git diff -- audits/objective-audit.md .lane-output/final.md`
 
 Push result
 - Not pushed yet

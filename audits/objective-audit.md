@@ -72,6 +72,9 @@ but it did not change the release conclusion:
 - `origin/lane/no-data-loss-invariants` now records `6b5fd23e`, adding
   comments/users sibling proof. It still does not prove the live release
   boundary or any production-backed source mutation.
+- `origin/lane/no-data-loss-invariants` now records `5c4cb015`, adding
+  revision parent-removal proof. It still does not prove the live release
+  boundary or any production-backed source mutation.
 - `origin/lane/no-data-loss-invariants` now records `0d3a148f`, adding
   custom-table sibling proof. It still does not prove the live release
   boundary or any production-backed source mutation.
@@ -227,7 +230,7 @@ These tests are still lab-bound. They mostly prove carefully controlled fixtures
 7. Auth is lab-auth, not production-auth.
 8. Plugin safety is intentionally hard-coded.
 9. The strongest unsupported production-slice gap is still the boundary coverage for menu/navigation, serialized block references, comments/users, and plugin-owned custom tables. The current proof in [`test/push-planner.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/independent-auditor/test/push-planner.test.js) is refusal-backed for plugin-owned resources, not live-boundary proof for those graph surfaces. The newer same-plan graph proof at `a719e09c` strengthens the fail-closed side for revision posts, menu/navigation posts, serialized blocks, and thumbnail parent references, the newer same-plan post-parent/post proof at `22ac71bb` narrows unsupported graph edges, and the attachment-parent sibling proof at `829e8e78` extends that fail-closed coverage to attachment parents, but none produce live source mutation evidence.
-10. The repository script surface still lacks a checked-in `verify`, `verify:release`, or `release` command in [`package.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/independent-auditor/package.json:10), even though it does expose a broad `test:playground` family for lab smokes. There is still no enforced live-source gate that could own the verdict even if the missing proof appeared. The planner tests in [`test/push-planner.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/independent-auditor/test/push-planner.test.js:131) remain strong fixture evidence, but they still stop at local/remote simulation rather than the live release boundary. The exact missing command is a checked entrypoint that runs the live-source preflight, aborts on stale or unsupported boundaries, and exits non-zero before any apply step when the unsupported surface set is hit.
+10. The repository script surface still lacks a checked-in `verify`, `verify:release`, or `release` command in [`package.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/independent-auditor/package.json:10), even though it does expose a broad `test:playground` family for lab smokes. There is still no enforced live-source gate that could own the verdict even if the missing proof appeared. The planner tests in [`test/push-planner.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/independent-auditor/test/push-planner.test.js:131) remain strong fixture evidence, but they still stop at local/remote simulation rather than the live release boundary. The exact missing command is a checked entrypoint that runs the live-source preflight, aborts on stale or unsupported boundaries, and exits non-zero before any apply step when the unsupported surface set is hit. The newer revision-parent-removal proof tightens unsupported graph handling, but it still stays below that live-source gate.
 11. Speed has no measured evidence.
 
 ## Required Release Gates
