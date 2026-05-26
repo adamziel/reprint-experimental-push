@@ -1299,6 +1299,9 @@ function durableJournalPersistedArtifactRefs(inspected) {
       return { journal: null, remote: null, invalidReason: 'invalid artifact ref keys' };
     }
     const hasAnyArtifactRefKeys = Reflect.ownKeys(artifactRefs).length > 0;
+    if (!hasAnyArtifactRefKeys) {
+      return { journal: null, remote: null, invalidReason: 'missing journal artifact ref' };
+    }
     if (Reflect.ownKeys(artifactRefs).some((key) => key !== 'journal' && key !== 'remote')) {
       return { journal: null, remote: null, invalidReason: 'invalid artifact ref keys' };
     }

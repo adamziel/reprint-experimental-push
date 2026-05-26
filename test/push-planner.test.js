@@ -30360,6 +30360,65 @@ test('production durable journal claims fail closed when persisted inspected art
   assert.equal(events.some((event) => event.type === 'journal-completed'), false);
 });
 
+test('production durable journal claims fail closed when an inspected record carries an empty artifactRefs envelope', () => {
+  const filePath = tempRecoveryJournalPath();
+  const remoteArtifactPath = `${filePath}.remote`;
+  const remote = baseSite();
+  const plan = planFor(baseSite(), baseSite(), {
+    ...baseSite(),
+    db: {
+      ...baseSite().db,
+      wp_options: {
+        ...baseSite().db.wp_options,
+        'option_name:blogname': { option_name: 'blogname', option_value: 'New Site' },
+      },
+    },
+  });
+  const productionWriter = openProductionRecoveryJournal(filePath, {
+    truncate: true,
+    now: fixedNow,
+    claimId: 'claim-empty-artifact-envelope',
+    writerLease: { id: 'claim-empty-artifact-envelope', epoch: 5 },
+    ownsRemoteArtifact: true,
+    remoteArtifactPath,
+  });
+  appendRecoveryClaimOpened(productionWriter, {
+    plan,
+    current: remote,
+    claimId: 'claim-empty-artifact-envelope',
+    artifactRefs: { journal: filePath, remote: remoteArtifactPath },
+  });
+  productionWriter.appendEvent('journal-opened', {
+    planId: plan.id,
+    state: 'opened',
+    observedHash: 'snapshot-hash-only',
+    artifactRefs: { journal: filePath, remote: remoteArtifactPath },
+  });
+
+  const inspected = productionWriter.inspect();
+  const emptyArtifactEnvelope = {
+    sequence: 2,
+    type: 'journal-opened',
+    artifactRefs: {},
+  };
+  inspected.records = [inspected.records[0], emptyArtifactEnvelope];
+  const writer = Object.assign({}, productionWriter, {
+    inspect() {
+      return inspected;
+    },
+  });
+
+  const error = captureError(() => applyPlan(baseSite(), plan, {
+    requireProductionDurableJournal: true,
+    durableJournal: writer,
+  }));
+
+  productionWriter.close();
+
+  assert.equal(error.code, 'PRODUCTION_DURABLE_JOURNAL_UNSUPPORTED');
+  assert.ok(error.details.missingDependency.includes('restart-readable recovery artifact references'));
+});
+
 test('closes a durable journal writer when apply fails before commit', () => {
   const events = [];
   let closed = 0;
