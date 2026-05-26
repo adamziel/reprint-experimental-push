@@ -1001,6 +1001,7 @@ export function productionThroughputDetails(report) {
     && receiptCursorQueueHeadroomBytes === receiptCursorQueueBudgetBytes - report.shape.chunkSizeBytes
     && receiptCursorQueueSlackBytes === receiptCursorQueueBudgetBytes - receiptCursorBackpressureBytes
     && receiptCursorQueueSlackBytes === receiptCursorMemoryHeadroomBytes;
+  const receiptCursorPauseFootprintVisible = receiptCursorPauseFootprintComplete;
   const queueBudgetMatchesResourceCeiling =
     Number.isFinite(receiptCursorQueueBudgetBytes)
     && Number.isFinite(report.resourceLimits?.maxBufferedUploadBytes)
@@ -1088,6 +1089,7 @@ export function productionThroughputDetails(report) {
     parallelismLimits.chunkUpload === DEFAULT_LIMITS.maxUploadConcurrency
     && parallelismLimits.fileHashing === DEFAULT_LIMITS.maxHashConcurrency
     && parallelismLimits.dbBatchPerTable === DEFAULT_LIMITS.maxDbConcurrencyPerTable;
+  const parallelismLimitsVisible = parallelismLimitsIntegral && parallelismLimitsCanonical;
   const wordpressGraphIdentityPostmetaReferencesMatch =
     Number.isFinite(report.evidence.wordpressGraphIdentity?.postmetaReferences)
     && Number.isFinite(report.shape?.rowCount)
@@ -1114,6 +1116,7 @@ export function productionThroughputDetails(report) {
     receiptCursorHeadroomMatchesResourceHeadroom,
     receiptCursorPauseFootprint,
     receiptCursorPauseFootprintComplete,
+    receiptCursorPauseFootprintVisible,
     receiptCursorHeadroomCoveredByQueueBudget,
     queueBudgetBytes: receiptCursorQueueBudgetBytes,
     queueHeadroomBytes: receiptCursorQueueHeadroomBytes,
@@ -1184,6 +1187,7 @@ export function productionThroughputDetails(report) {
     parallelismLimits,
     parallelismLimitsIntegral,
     parallelismLimitsCanonical,
+    parallelismLimitsVisible,
     wordpressGraphIdentityPostmetaReferencesMatch,
     journalSuccessRecordTypes,
     journalSuccessReceiptKindsGrouped,
@@ -1246,6 +1250,7 @@ export function productionThroughputDetails(report) {
       receiptCursorMemoryHeadroomWithinResourceHeadroom,
       receiptCursorPauseFootprint,
       receiptCursorPauseFootprintComplete,
+      receiptCursorPauseFootprintVisible,
       receiptCursorBackpressureWithinResourceHeadroom,
       receiptCursorBackpressureWithinQueueBudget,
       backpressureEvidenceComplete,
@@ -1256,6 +1261,7 @@ export function productionThroughputDetails(report) {
       parallelismLimits,
       parallelismLimitsIntegral,
       parallelismLimitsCanonical,
+      parallelismLimitsVisible,
       wordpressGraphIdentityPostmetaReferencesMatch,
       journalSuccessRecordTypes,
       journalSuccessReceiptKindsGrouped,

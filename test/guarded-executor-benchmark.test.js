@@ -74,6 +74,7 @@ test('guarded executor benchmark moves buffers and row payloads through durable 
   assert.equal(report.evidence.backpressure.receiptCursorWithinQueueBudget, true);
   assert.equal(report.evidence.backpressure.backpressureEvidenceComplete, true);
   assert.equal(report.evidence.backpressure.receiptCursorPauseFootprintComplete, true);
+  assert.equal(report.claims.productionThroughputDetails.receiptCursorPauseFootprintVisible, true);
   assert.equal(report.evidence.backpressure.receiptCursorQueueSlackBytes, 31.5 * 1024 * 1024);
   assert.equal(report.evidence.backpressure.receiptCursorMemoryHeadroomBytes, 31.5 * 1024 * 1024);
   assert.equal(report.evidence.backpressure.queueHeadroomBytes, 31.5 * 1024 * 1024);
@@ -90,6 +91,7 @@ test('guarded executor benchmark moves buffers and row payloads through durable 
     report.claims.productionThroughputDetails.backpressureAlignment.receiptCursorQueueSlackBytes,
     31.5 * 1024 * 1024,
   );
+  assert.equal(report.claims.productionThroughputDetails.parallelismLimitsVisible, true);
   assert.equal(report.evidence.recovery.successInspectionStatus, 'fully-updated-remote');
   assert.equal(report.evidence.recovery.preCommitFailureInspectionStatus, 'old-remote');
   assert.equal(report.evidence.recovery.partialCommitInspectionStatus, 'blocked-recovery');
@@ -287,6 +289,7 @@ test('guarded benchmark refuses production throughput claims until production ga
   });
   assert.equal(report.claims.productionThroughputDetails.parallelismLimitsIntegral, true);
   assert.equal(report.claims.productionThroughputDetails.parallelismLimitsCanonical, true);
+  assert.equal(report.claims.productionThroughputDetails.parallelismLimitsVisible, true);
   assert.equal(report.claims.productionThroughputDetails.receiptCursorPauseFootprintComplete, true);
   assert.equal(
     report.claims.productionThroughputDetails.blockers.includes('production-memory-ceiling-not-measured'),
