@@ -220,10 +220,16 @@ export async function runAuthenticatedHttpPush({
     && replay.body?.ok === true
     && replay.body?.idempotency?.replayed === true
     && replay.body?.idempotency?.freshMutationWork === false
+    && dbJournal.status === 200
+    && dbJournal.body?.ok === true
     && summary.after?.finalMatchesLocal === true;
   if (!summary.ok) {
-    summary.code = apply.body?.code || recoveryInspect.body?.code || replay.body?.code || 'APPLY_FAILED';
-    setDurableJournalBoundary(summary, replay.status === 200 ? 'replay' : 'apply');
+    summary.code = apply.body?.code
+      || recoveryInspect.body?.code
+      || replay.body?.code
+      || dbJournal.body?.code
+      || 'APPLY_FAILED';
+    setDurableJournalBoundary(summary, dbJournal.status === 200 ? (replay.status === 200 ? 'replay' : 'apply') : 'journal-inspect');
   }
   return summary;
 }
