@@ -7,12 +7,12 @@ The project is **not releasable as a production WordPress push path**.
 Fresh remote heads at audit time, checked on May 26, 2026:
 
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `a987a664`
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `e2439ecb`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `1832a967`
 - `origin/lane/reliable-executor` -> `ffdc0a9b`
 - `origin/lane/no-data-loss-invariants` -> `9c70eba6`
 - `origin/lane/no-data-loss-recovery` -> `b0949e57`
-- `origin/lane/fast-paths` -> `adb53f6d`
-- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `adb53f6d`
+- `origin/lane/fast-paths` -> `9be664b2`
+- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `5e11833a`
 - `origin/lane/independent-auditor` -> `5abd1f65`
 - `origin/lane/critic` -> `6828861f`
 - `origin/lane/progress-publisher` -> `7695e1f9`
@@ -23,13 +23,13 @@ Fresh remote heads at audit time, checked on May 26, 2026:
 - `origin/lane/cycle-20260525-mainwindows-2349/same-plan-wordpress-graph-create` -> `09e6706d`
 - `origin/lane/cycle-20260525-mainwindows-2349/same-plan-wordpress-graph-create` -> `e9cbf9d4`
 - `origin/lane/cycle-20260525-mainwindows-2357/no-data-loss-invariants-graph-proof` -> `98c0ce26`
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `b9bc7c95`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `1832a967`
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `143e07d9`
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` -> `5f256171`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-invariants` -> `9c70eba6`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `b0949e57`
-- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `adb53f6d`
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `e2439ecb`
+- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `5e11833a`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `1832a967`
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `38f53062`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `4372167e`
 - `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration` -> `a3a900d7`
@@ -71,15 +71,15 @@ but it did not change the release conclusion:
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now refreshes
   the visible freshness surface at `4be97ee9`, but that remains status
   evidence, not release proof.
-- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` now exposes
-  production measurement flags at `a987a664`, which is still boundary plumbing
-  rather than measured speed proof.
+- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` now covers bounded
+  receipt log replay at `5e11833a`, which is still boundary plumbing rather
+  than measured speed proof.
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now aligns
-  the newest audit link at `e2439ecb`, which updates visibility only.
+  the newest audit link at `1832a967`, which updates visibility only.
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` now refreshes the audit snapshot at
   `5abd1f65`.
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now
-  refreshes the supervisor evidence snapshot at `b9bc7c95`.
+  refreshes the supervisor evidence snapshot at `1832a967`.
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now
   records the latest progress freshness handoff at `143e07d9`.
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` now
@@ -87,7 +87,7 @@ but it did not change the release conclusion:
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` now
   surfaces the journal ownership mismatch evidence at `9fa23221`.
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` now tightens the
-  guarded benchmark backpressure details at `adb53f6d`.
+  bounded receipt log replay path at `5e11833a`.
 - `origin/lane/same-plan-wordpress-graph-create` now blocks unsupported graph
   surfaces at `7bf5d421`, including revision posts, menu/navigation posts,
   serialized blocks, thumbnail parent references, and other same-plan graph
