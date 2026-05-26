@@ -175,6 +175,10 @@ Current executable gate:
   receipt-cursor pause footprint is not visibly present, so hidden queue-
   budget or headroom bits cannot still make the disk-budget surface look
   complete after a pause.
+- The same staged-disk post-pause summary now also fails closed when the
+  memory-ceiling-match visibility bit is hidden, so a forged disk-budget
+  surface cannot still look complete when the queue budget and memory ceiling
+  stop proving the same pause boundary.
 - The same details also let a compressed pause-footprint summary size the next
   bounded replay window, but only as planning evidence while the cached
   receipt cursor, journal lag, and durable journal records still decide

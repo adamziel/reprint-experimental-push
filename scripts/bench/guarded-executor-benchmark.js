@@ -843,6 +843,12 @@ export function productionThroughputBlockers(report) {
   }
   if (
     report.evidence.backpressure?.stagingDiskHeadroomVisible === true
+    && report.evidence.backpressure?.receiptCursorMemoryCeilingMatchesQueueBudgetVisible !== true
+  ) {
+    blockers.push('staging-disk-headroom-visible-without-memory-ceiling-match-visibility');
+  }
+  if (
+    report.evidence.backpressure?.stagingDiskHeadroomVisible === true
     && (
       report.evidence.backpressure?.receiptCursorPauseFootprintComplete !== true
       || report.evidence.backpressure?.queueBudgetVisible !== true

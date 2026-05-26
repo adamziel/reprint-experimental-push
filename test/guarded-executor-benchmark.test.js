@@ -739,6 +739,32 @@ test('guarded benchmark keeps staged-disk post-pause visibility fail closed when
   );
 });
 
+test('guarded benchmark blocks staged-disk headroom visibility when memory-ceiling-match visibility is hidden', () => {
+  const report = smallBenchmark();
+  const tampered = clone(report);
+
+  tampered.evidence.backpressure.receiptCursorMemoryCeilingMatchesQueueBudgetVisible = false;
+
+  const details = productionThroughputDetails(tampered);
+  const blockers = productionThroughputBlockers(tampered);
+
+  assert.equal(details.stagingDiskHeadroomVisibleAndMeasured, true);
+  assert.equal(details.receiptCursorPauseFootprintVisible, false);
+  assert.equal(details.stagingDiskHeadroomVisibleAndMeasuredAfterPause, false);
+  assert.equal(
+    details.backpressureConsistency.stagingDiskHeadroomVisibleAndMeasuredAfterPause,
+    false,
+  );
+  assert.equal(
+    blockers.includes('staging-disk-headroom-visible-without-memory-ceiling-match-visibility'),
+    true,
+  );
+  assert.equal(
+    blockers.includes('staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint'),
+    true,
+  );
+});
+
 test('guarded benchmark keeps pause-footprint and staged-disk-after-pause details hidden when the queue never paused', () => {
   const report = smallBenchmark();
   const tampered = clone(report);
