@@ -386,6 +386,7 @@ maybeTest('production-shaped release verify command runs the live protocol branc
         NODE_NO_WARNINGS: '1',
       },
     );
+    process.stderr.write(`${describeSpawnProof(proof)}\n`);
     assertLiveReleaseVerifyProof(proof, 'live release verify', liveReleaseVerifyTimeoutMs);
     assert.equal(proof.status, 0, proof.stderr);
     assert.match(proof.stdout, /"ok": true/);
@@ -427,6 +428,7 @@ maybeTest('production-shaped release verify command fails closed when remote dri
         NODE_NO_WARNINGS: '1',
       },
     );
+    process.stderr.write(`${describeSpawnProof(proof)}\n`);
     assertLiveReleaseVerifyProof(proof, 'drift release verify', liveProofSubprocessTimeoutMs);
     assert.equal(proof.status, 1, proof.stderr);
     assert.match(proof.stdout, /"ok": false/);
