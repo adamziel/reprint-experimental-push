@@ -1716,6 +1716,7 @@ export function productionThroughputDetails(report) {
     receiptCursorPauseFootprintComplete
     && receiptCursorMemoryCeilingVisible
     && queueBudgetVisible
+    && report.evidence.backpressure?.receiptCursorMemoryCeilingMatchesQueueBudgetVisible === true
     && queueHeadroomVisible
     && queueHeadroomMeasured
     && receiptCursorQueueSlackVisible

@@ -213,6 +213,10 @@ Current executable gate:
   closed when the memory-ceiling-match visibility bit is hidden, so advisory
   pause-boundary pairs cannot still look complete after the queue budget stops
   visibly proving the same ceiling as the bounded receipt cursor.
+- The same memory-ceiling plus queue-headroom pair summaries now also fail
+  closed when the memory-ceiling-match visibility bit is hidden, so partial
+  pause-boundary pairs cannot still look complete after the bounded receipt
+  cursor stops visibly proving the same queue budget and memory ceiling.
 - The same details also fail closed when receipt-cursor queue-slack or memory-
   headroom visibility appears without the queue-headroom measurement bit, so a
   partial pause-footprint surface cannot still look visible-and-measured from
