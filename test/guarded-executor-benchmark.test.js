@@ -34,6 +34,15 @@ function smallBenchmark(overrides = {}) {
   });
 }
 
+function largeBenchmark(overrides = {}) {
+  return runGuardedExecutorBenchmark({
+    profile: 'guardedLarge',
+    now: fixedNow,
+    tempDir: tempBenchmarkDir(),
+    ...overrides,
+  });
+}
+
 function clone(value) {
   return JSON.parse(JSON.stringify(value));
 }
@@ -188,6 +197,47 @@ test('guarded executor benchmark keeps the published throughput details in sync 
   const computed = productionThroughputDetails(report);
 
   assert.deepEqual(report.claims.productionThroughputDetails, computed);
+});
+
+test('guarded executor benchmark keeps large-site rollout proof bounded and names explicit remaining blockers', () => {
+  const report = largeBenchmark();
+
+  assert.equal(report.shape.fileBytes, 32 * 1024 * 1024);
+  assert.equal(report.shape.chunkSizeBytes, 8 * 1024 * 1024);
+  assert.equal(report.shape.chunkCount, 4);
+  assert.equal(report.shape.rowCount, 256);
+  assert.equal(report.evidence.chunkReceipts.recorded, 4);
+  assert.equal(report.evidence.chunkReceipts.resumeCursor.chunkIndex, 3);
+  assert.equal(report.evidence.backpressure.queuePausedBeforeOverflow, true);
+  assert.equal(report.evidence.backpressure.queueBudgetBytes, report.resourceLimits.maxBufferedUploadBytes);
+  assert.equal(
+    report.evidence.backpressure.queueHeadroomBytes,
+    report.resourceLimits.maxBufferedUploadBytes - report.shape.chunkSizeBytes,
+  );
+  assert.equal(
+    report.evidence.backpressure.receiptCursorQueueSlackBytes,
+    report.resourceLimits.memoryCeilingBytes - report.shape.chunkSizeBytes,
+  );
+  assert.equal(report.claims.productionThroughputDetails.backpressureConsistency.backpressureEvidenceComplete, true);
+  assert.equal(report.claims.productionThroughputDetails.parallelismLimitsCanonical, true);
+  assert.equal(report.claims.productionThroughput.status, 'blocked');
+  assert.ok(
+    report.claims.productionThroughput.blockers.includes('production-atomic-group-commit-not-measured'),
+  );
+  assert.ok(
+    report.claims.productionThroughput.blockers.includes('production-storage-receipts-not-measured'),
+  );
+  assert.ok(
+    report.claims.productionThroughput.blockers.includes('production-row-batch-executor-not-measured'),
+  );
+  assert.ok(
+    !report.claims.productionThroughput.blockers.includes('backpressure-evidence-incomplete'),
+  );
+  assert.ok(
+    !report.claims.productionThroughput.blockers.includes(
+      'queue-pause-without-resource-headroom-safe-receipt-cursor-slack',
+    ),
+  );
 });
 
 test('guarded benchmark blocks staging-disk headroom claims when the reserve no longer matches the chunk window', () => {
