@@ -3752,23 +3752,27 @@ function unsupportedAttachmentResourceSupport({ resource, baseValue, localValue,
         reference.targetChange.remote.state === 'absent'
         && reference.targetChange.local.state === 'present'
         && (
-          reference.relationshipType === 'featured-image-attachment'
+          reference.relationshipType === 'postmeta-post'
+          || reference.relationshipType === 'featured-image-attachment'
           || reference.relationshipType === 'post-parent'
           || reference.relationshipType === 'term-relationship-object'
         ))
       .sort((left, right) => compareReferenceEvidenceByPriority(new Map([
-        ['featured-image-attachment', 0],
-        ['post-parent', 1],
-        ['term-relationship-object', 2],
+        ['postmeta-post', 0],
+        ['featured-image-attachment', 1],
+        ['post-parent', 2],
+        ['term-relationship-object', 3],
       ]), left, right));
     const samePlanAttachmentReason = inboundReferences.some((reference) =>
-      reference.relationshipType === 'featured-image-attachment')
-      ? `WordPress graph mutation ${resource.key} is created in the same plan as a featured image attachment target that depends on it, and identity rewriting is not yet supported.`
-      : inboundReferences.some((reference) => reference.relationshipType === 'post-parent')
-        ? `WordPress graph mutation ${resource.key} is created in the same plan as a post parent attachment target that depends on it, and identity rewriting is not yet supported.`
-        : inboundReferences.some((reference) => reference.relationshipType === 'term-relationship-object')
-          ? `WordPress graph mutation ${resource.key} is created in the same plan as a term relationship attachment target that depends on it, and identity rewriting is not yet supported.`
-          : 'Attachment graph resources are not yet supported by the planner.';
+      reference.relationshipType === 'postmeta-post')
+      ? `WordPress graph mutation ${resource.key} is created in the same plan as a post meta attachment target that depends on it, and identity rewriting is not yet supported.`
+      : inboundReferences.some((reference) => reference.relationshipType === 'featured-image-attachment')
+        ? `WordPress graph mutation ${resource.key} is created in the same plan as a featured image attachment target that depends on it, and identity rewriting is not yet supported.`
+        : inboundReferences.some((reference) => reference.relationshipType === 'post-parent')
+          ? `WordPress graph mutation ${resource.key} is created in the same plan as a post parent attachment target that depends on it, and identity rewriting is not yet supported.`
+          : inboundReferences.some((reference) => reference.relationshipType === 'term-relationship-object')
+            ? `WordPress graph mutation ${resource.key} is created in the same plan as a term relationship attachment target that depends on it, and identity rewriting is not yet supported.`
+            : 'Attachment graph resources are not yet supported by the planner.';
     const references = inboundReferences.length > 0
       ? inboundReferences
       : wordpressGraphReferences(resource, candidate).map((reference) =>

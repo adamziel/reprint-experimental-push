@@ -6818,7 +6818,8 @@ test('blocks plugin-owned deletions while preserving remote-only plugin drift an
   remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-private-forms-code */';
 
   const plan = planFor(base, local, remote);
-  const blocker = plan.blockers[0];
+  const blocker = plan.blockers.find((entry) =>
+    entry.class === 'unsupported-attachment-resource' && entry.resourceKey === targetResourceKey);
 
   assert.equal(plan.status, 'blocked');
   assert.equal(plan.summary.mutations, 0);
@@ -6856,7 +6857,8 @@ test('blocks plugin-owned deletions while preserving remote-only plugin drift an
   remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin drift */';
 
   const plan = planFor(base, local, remote);
-  const blocker = plan.blockers[0];
+  const blocker = plan.blockers.find((entry) =>
+    entry.class === 'unsupported-attachment-resource' && entry.resourceKey === targetResourceKey);
 
   assert.equal(plan.status, 'blocked');
   assert.equal(plan.summary.mutations, 0);
@@ -9739,7 +9741,8 @@ test('blocks plugin-owned option deletions without explicit delete opt-in', () =
   };
 
   const plan = planFor(base, local, baseSite());
-  const blocker = plan.blockers[0];
+  const blocker = plan.blockers.find((entry) =>
+    entry.class === 'unsupported-attachment-resource' && entry.resourceKey === targetResourceKey);
 
   assert.equal(plan.status, 'blocked');
   assert.equal(plan.summary.mutations, 0);
@@ -9781,7 +9784,8 @@ test('blocks plugin-owned option deletions without explicit delete opt-in while 
   remote.files['wp-content/plugins/seo/seo.php'] = '<?php /* remote-only plugin drift */';
 
   const plan = planFor(base, local, remote);
-  const blocker = plan.blockers[0];
+  const blocker = plan.blockers.find((entry) =>
+    entry.class === 'unsupported-attachment-resource' && entry.resourceKey === targetResourceKey);
   const matchingFileEdit = decisionFor(plan, 'file:about.php');
   const matchingFileTypeSwap = decisionFor(plan, 'file:wp-content/uploads/gallery/photo.txt');
   const matchingRowEdit = decisionFor(plan, 'row:["wp_posts","ID:2"]');
@@ -14021,9 +14025,12 @@ test('blocks local postmeta references to a same-plan created attachment identit
   assert.equal(plan.summary.mutations, 0);
   assert.equal(mutationFor(plan, resourceKey), undefined);
   assert.equal(decisionFor(plan, targetResourceKey), undefined);
-  assert.equal(blocker.class, 'unsupported-attachment-resource');
-  assert.equal(blocker.resourceKey, targetResourceKey);
-  assert.equal(blocker.reason, 'Attachment graph resources are not yet supported by the planner.');
+  assert.equal(blocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(
+    blocker.reason,
+    'WordPress graph mutation row:["wp_postmeta","meta_id:52"] references graph identities without proven identity mapping or reference rewriting.',
+  );
   assert.equal(pluginDecision.decision, 'keep-remote');
   assert.equal(pluginFileDecision.decision, 'keep-remote');
   assert.equal(planJson.includes('local-created attachment target edit'), false);
@@ -14199,7 +14206,10 @@ test('blocks local attachment graph resources while preserving a matching indepe
   assert.equal(blocker.resourceKind, 'attachment');
   assert.equal(blocker.resourceKey, resourceKey);
   assert.equal(blocker.unsupportedState, 'local-or-divergent-drift');
-  assert.equal(blocker.reason, 'Attachment graph resources are not yet supported by the planner.');
+  assert.equal(
+    blocker.reason,
+    'WordPress graph mutation row:["wp_posts","ID:8"] is created in the same plan as a featured image attachment target that depends on it, and identity rewriting is not yet supported.',
+  );
   assert.equal(matchingEdit.decision, 'already-in-sync');
   assert.equal(matchingEdit.change.localChange, 'update');
   assert.equal(matchingEdit.change.remoteChange, 'update');
@@ -14248,7 +14258,10 @@ test('blocks steady unsupported attachment rows before they can be treated as al
   assert.equal(blocker.resourceKind, 'attachment');
   assert.equal(blocker.resourceKey, resourceKey);
   assert.equal(blocker.unsupportedState, 'steady-unsupported');
-  assert.equal(blocker.reason, 'Attachment graph resources are not yet supported by the planner.');
+  assert.equal(
+    blocker.reason,
+    'WordPress graph mutation row:["wp_posts","ID:11"] is created in the same plan as a featured image attachment target that depends on it, and identity rewriting is not yet supported.',
+  );
   assert.equal(matchingEdit.decision, 'already-in-sync');
   assert.equal(matchingEdit.change.localChange, 'update');
   assert.equal(matchingEdit.change.remoteChange, 'update');
@@ -14401,7 +14414,10 @@ test('flags local featured-image attachment references as a conflict when the li
   assert.equal(blocker.class, 'unsupported-attachment-resource');
   assert.equal(blocker.resourceKey, resourceKey);
   assert.equal(blocker.unsupportedState, 'delete');
-  assert.equal(blocker.reason, 'Attachment graph resources are not yet supported by the planner.');
+  assert.equal(
+    blocker.reason,
+    'WordPress graph mutation row:["wp_posts","ID:9"] is created in the same plan as a featured image attachment target that depends on it, and identity rewriting is not yet supported.',
+  );
   assert.equal(plan.conflicts.length, 1);
   assert.equal(pluginDecision.decision, 'keep-remote');
   assert.equal(pluginFileDecision.decision, 'keep-remote');
@@ -14481,7 +14497,10 @@ test('flags local featured-image attachment references as a conflict when the li
   assert.equal(mutationFor(plan, resourceKey), undefined);
   assert.equal(blocker.class, 'unsupported-attachment-resource');
   assert.equal(blocker.resourceKey, resourceKey);
-  assert.equal(blocker.reason, 'Attachment graph resources are not yet supported by the planner.');
+  assert.equal(
+    blocker.reason,
+    'WordPress graph mutation row:["wp_posts","ID:10"] is created in the same plan as a featured image attachment target that depends on it, and identity rewriting is not yet supported.',
+  );
   assert.equal(plan.conflicts.length, 1);
   assert.equal(pluginDecision.decision, 'keep-remote');
   assert.equal(pluginFileDecision.decision, 'keep-remote');
@@ -14574,7 +14593,10 @@ test('flags local featured-image attachment references as a conflict when the li
   assert.equal(mutationFor(plan, resourceKey), undefined);
   assert.equal(blocker.class, 'unsupported-attachment-resource');
   assert.equal(blocker.resourceKey, resourceKey);
-  assert.equal(blocker.reason, 'Attachment graph resources are not yet supported by the planner.');
+  assert.equal(
+    blocker.reason,
+    'WordPress graph mutation row:["wp_posts","ID:8"] is created in the same plan as a featured image attachment target that depends on it, and identity rewriting is not yet supported.',
+  );
   assert.equal(plan.conflicts.length, 1);
   assert.equal(pluginDecision.decision, 'keep-remote');
   assert.equal(pluginFileDecision.decision, 'keep-remote');
@@ -14826,7 +14848,10 @@ test('blocks local post-parent references to a live attachment identity while pr
   assert.equal(mutationFor(plan, resourceKey).action, 'put');
   assert.equal(blocker.class, 'unsupported-attachment-resource');
   assert.equal(blocker.resourceKey, 'row:["wp_posts","ID:8"]');
-  assert.equal(blocker.reason, 'Attachment graph resources are not yet supported by the planner.');
+  assert.equal(
+    blocker.reason,
+    'WordPress graph mutation row:["wp_posts","ID:8"] is created in the same plan as a post parent attachment target that depends on it, and identity rewriting is not yet supported.',
+  );
   assert.equal(pluginDecision.decision, 'keep-remote');
   assert.equal(pluginFileDecision.decision, 'keep-remote');
   assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
@@ -14884,7 +14909,10 @@ test('blocks local post-parent references to a live attachment identity while pr
   assert.equal(mutationFor(plan, resourceKey).action, 'put');
   assert.equal(blocker.class, 'unsupported-attachment-resource');
   assert.equal(blocker.resourceKey, 'row:["wp_posts","ID:8"]');
-  assert.equal(blocker.reason, 'Attachment graph resources are not yet supported by the planner.');
+  assert.equal(
+    blocker.reason,
+    'WordPress graph mutation row:["wp_posts","ID:8"] is created in the same plan as a post parent attachment target that depends on it, and identity rewriting is not yet supported.',
+  );
   assert.equal(planJson.includes('Local attachment target'), false);
   assert.equal(planJson.includes('Local attachment body'), false);
   assert.equal(Object.hasOwn(remote.plugins, 'forms'), false);
@@ -15451,7 +15479,10 @@ test('blocks local featured-image references to a same-plan created attachment i
   assert.equal(decisionFor(plan, targetResourceKey), undefined);
   assert.equal(blocker.class, 'unsupported-attachment-resource');
   assert.equal(blocker.resourceKey, targetResourceKey);
-  assert.equal(blocker.reason, 'Attachment graph resources are not yet supported by the planner.');
+  assert.equal(
+    blocker.reason,
+    'WordPress graph mutation row:["wp_posts","ID:8"] is created in the same plan as a featured image attachment target that depends on it, and identity rewriting is not yet supported.',
+  );
   assert.equal(pluginDecision.decision, 'keep-remote');
   assert.equal(pluginFileDecision.decision, 'keep-remote');
   assert.equal(planJson.includes('Local same-plan attachment'), false);
@@ -15515,7 +15546,10 @@ test('blocks local featured-image references to a same-plan created attachment i
   assert.equal(decisionFor(plan, targetResourceKey), undefined);
   assert.equal(blocker.class, 'unsupported-attachment-resource');
   assert.equal(blocker.resourceKey, targetResourceKey);
-  assert.equal(blocker.reason, 'Attachment graph resources are not yet supported by the planner.');
+  assert.equal(
+    blocker.reason,
+    'WordPress graph mutation row:["wp_posts","ID:8"] is created in the same plan as a featured image attachment target that depends on it, and identity rewriting is not yet supported.',
+  );
   assert.equal(matchingTypeSwap.decision, 'already-in-sync');
   assert.equal(pluginDecision.decision, 'keep-remote');
   assert.equal(pluginFileDecision.decision, 'keep-remote');
@@ -15579,7 +15613,10 @@ test('blocks local featured-image references to a same-plan created attachment i
   assert.equal(decisionFor(plan, targetResourceKey), undefined);
   assert.equal(blocker.class, 'unsupported-attachment-resource');
   assert.equal(blocker.resourceKey, targetResourceKey);
-  assert.equal(blocker.reason, 'Attachment graph resources are not yet supported by the planner.');
+  assert.equal(
+    blocker.reason,
+    'WordPress graph mutation row:["wp_posts","ID:11"] is created in the same plan as a featured image attachment target that depends on it, and identity rewriting is not yet supported.',
+  );
   assert.equal(matchingDelete.decision, 'already-in-sync');
   assert.equal(pluginDecision.decision, 'keep-remote');
   assert.equal(pluginFileDecision.decision, 'keep-remote');
@@ -15637,7 +15674,10 @@ test('blocks local featured-image references to a same-plan created attachment i
   assert.equal(decisionFor(plan, targetResourceKey), undefined);
   assert.equal(blocker.class, 'unsupported-attachment-resource');
   assert.equal(blocker.resourceKey, targetResourceKey);
-  assert.equal(blocker.reason, 'Attachment graph resources are not yet supported by the planner.');
+  assert.equal(
+    blocker.reason,
+    'WordPress graph mutation row:["wp_posts","ID:9"] is created in the same plan as a featured image attachment target that depends on it, and identity rewriting is not yet supported.',
+  );
   assert.equal(planJson.includes('Local same-plan attachment removal'), false);
   assert.equal(planJson.includes('Local same-plan attachment removal body'), false);
   assert.equal(planJson.includes('local featured image removal note'), false);
@@ -15694,7 +15734,10 @@ test('blocks local featured-image references to a same-plan created attachment i
   assert.equal(decisionFor(plan, targetResourceKey), undefined);
   assert.equal(blocker.class, 'unsupported-attachment-resource');
   assert.equal(blocker.resourceKey, targetResourceKey);
-  assert.equal(blocker.reason, 'Attachment graph resources are not yet supported by the planner.');
+  assert.equal(
+    blocker.reason,
+    'WordPress graph mutation row:["wp_posts","ID:9"] is created in the same plan as a featured image attachment target that depends on it, and identity rewriting is not yet supported.',
+  );
   assert.equal(pluginDecision.decision, 'keep-remote');
   assert.equal(pluginFileDecision.decision, 'keep-remote');
   assert.equal(planJson.includes('Local same-plan attachment change'), false);
@@ -15757,7 +15800,10 @@ test('blocks local featured-image references to a same-plan created attachment i
   assert.equal(decisionFor(plan, targetResourceKey), undefined);
   assert.equal(blocker.class, 'unsupported-attachment-resource');
   assert.equal(blocker.resourceKey, targetResourceKey);
-  assert.equal(blocker.reason, 'Attachment graph resources are not yet supported by the planner.');
+  assert.equal(
+    blocker.reason,
+    'WordPress graph mutation row:["wp_posts","ID:10"] is created in the same plan as a featured image attachment target that depends on it, and identity rewriting is not yet supported.',
+  );
   assert.equal(matchingEdit.decision, 'already-in-sync');
   assert.equal(matchingEdit.change.localChange, 'update');
   assert.equal(matchingEdit.change.remoteChange, 'update');
@@ -15806,7 +15852,10 @@ test('blocks local post-parent references to a same-plan created attachment iden
   assert.equal(decisionFor(plan, targetResourceKey), undefined);
   assert.equal(blocker.class, 'unsupported-attachment-resource');
   assert.equal(blocker.resourceKey, targetResourceKey);
-  assert.equal(blocker.reason, 'Attachment graph resources are not yet supported by the planner.');
+  assert.equal(
+    blocker.reason,
+    'WordPress graph mutation row:["wp_posts","ID:8"] is created in the same plan as a post parent attachment target that depends on it, and identity rewriting is not yet supported.',
+  );
   assert.equal(pluginDecision.decision, 'keep-remote');
   assert.equal(pluginFileDecision.decision, 'keep-remote');
   assert.equal(planJson.includes('local-created attachment target'), false);
@@ -15866,10 +15915,13 @@ test('blocks local post-parent references to a same-plan created attachment iden
   assert.equal(decisionFor(plan, targetResourceKey), undefined);
   assert.equal(blocker.class, 'unsupported-attachment-resource');
   assert.equal(blocker.resourceKey, targetResourceKey);
-  assert.equal(blocker.reason, 'Attachment graph resources are not yet supported by the planner.');
+  assert.equal(
+    blocker.reason,
+    'WordPress graph mutation row:["wp_posts","ID:8"] is created in the same plan as a post parent attachment target that depends on it, and identity rewriting is not yet supported.',
+  );
   assert.equal(matchingEditDecision.decision, 'already-in-sync');
-  assert.equal(matchingEditDecision.change.localChange, 'update');
-  assert.equal(matchingEditDecision.change.remoteChange, 'update');
+  assert.equal(matchingEditDecision.change.localChange, 'create');
+  assert.equal(matchingEditDecision.change.remoteChange, 'create');
   assert.equal(fileTypeDecision.decision, 'already-in-sync');
   assert.equal(fileTypeDecision.change.localChange, 'type-change');
   assert.equal(fileTypeDecision.change.remoteChange, 'type-change');
@@ -21847,7 +21899,10 @@ test('blocks local featured image references to a same-plan created attachment i
   assert.equal(mutationFor(plan, attachmentResourceKey), undefined);
   assert.equal(attachmentBlocker.class, 'unsupported-attachment-resource');
   assert.equal(attachmentBlocker.resourceKey, attachmentResourceKey);
-  assert.equal(attachmentBlocker.reason, 'Attachment graph resources are not yet supported by the planner.');
+  assert.equal(
+    attachmentBlocker.reason,
+    'WordPress graph mutation row:["wp_posts","ID:8"] is created in the same plan as a featured image attachment target that depends on it, and identity rewriting is not yet supported.',
+  );
   assert.equal(metaBlocker.class, 'unsupported-attachment-resource');
   assert.equal(metaBlocker.resourceKey, featuredImageResourceKey);
   assert.equal(matchingTypeSwap.decision, 'already-in-sync');
@@ -24716,7 +24771,10 @@ test('blocks local attachment graph resources while preserving remote-only plugi
   assert.equal(blocker.class, 'unsupported-attachment-resource');
   assert.equal(blocker.resourceKey, resourceKey);
   assert.equal(blocker.unsupportedState, 'local-or-divergent-drift');
-  assert.equal(blocker.reason, 'Attachment graph resources are not yet supported by the planner.');
+  assert.equal(
+    blocker.reason,
+    'WordPress graph mutation row:["wp_posts","ID:8"] is created in the same plan as a post parent attachment target that depends on it, and identity rewriting is not yet supported.',
+  );
   assert.equal(pluginDecision.decision, 'keep-remote');
   assert.equal(planJson.includes('Local attachment content'), false);
   assert.equal(planJson.includes('Base attachment content'), false);
@@ -24760,7 +24818,10 @@ test('blocks local attachment graph resources while preserving remote-only plugi
   assert.equal(blocker.class, 'unsupported-attachment-resource');
   assert.equal(blocker.resourceKey, resourceKey);
   assert.equal(blocker.unsupportedState, 'local-or-divergent-drift');
-  assert.equal(blocker.reason, 'Attachment graph resources are not yet supported by the planner.');
+  assert.equal(
+    blocker.reason,
+    'WordPress graph mutation row:["wp_posts","ID:8"] is created in the same plan as a post parent attachment target that depends on it, and identity rewriting is not yet supported.',
+  );
   assert.equal(planJson.includes('Local attachment removal content'), false);
   assert.equal(planJson.includes('Base attachment removal content'), false);
   assert.equal(Object.hasOwn(remote.plugins, 'forms'), false);
@@ -24853,7 +24914,10 @@ test('blocks remote-only attachment drift while preserving a matching independen
   assert.equal(blocker.class, 'unsupported-attachment-resource');
   assert.equal(blocker.resourceKey, resourceKey);
   assert.equal(blocker.unsupportedState, 'remote-only-drift');
-  assert.equal(blocker.reason, 'Attachment graph resources are not yet supported by the planner.');
+  assert.equal(
+    blocker.reason,
+    'WordPress graph mutation row:["wp_posts","ID:8"] is created in the same plan as a post parent attachment target that depends on it, and identity rewriting is not yet supported.',
+  );
   assert.equal(matchingEdit.decision, 'already-in-sync');
   assert.equal(matchingEdit.change.localChange, 'update');
   assert.equal(matchingEdit.change.remoteChange, 'update');
@@ -24908,7 +24972,10 @@ test('blocks converged attachment drift while preserving a matching independent 
   assert.equal(blocker.class, 'unsupported-attachment-resource');
   assert.equal(blocker.resourceKey, resourceKey);
   assert.equal(blocker.unsupportedState, 'converged-drift');
-  assert.equal(blocker.reason, 'Attachment graph resources are not yet supported by the planner.');
+  assert.equal(
+    blocker.reason,
+    'WordPress graph mutation row:["wp_posts","ID:8"] is created in the same plan as a post parent attachment target that depends on it, and identity rewriting is not yet supported.',
+  );
   assert.equal(matchingEdit.decision, 'already-in-sync');
   assert.equal(matchingEdit.change.localChange, 'update');
   assert.equal(matchingEdit.change.remoteChange, 'update');
@@ -24976,7 +25043,10 @@ test('blocks local featured-image attachment references that point at a live att
   assert.equal(plan.conflicts.length, 0);
   assert.equal(blocker.class, 'unsupported-attachment-resource');
   assert.equal(blocker.resourceKey, resourceKey);
-  assert.equal(blocker.reason, 'Attachment graph resources are not yet supported by the planner.');
+  assert.equal(
+    blocker.reason,
+    'WordPress graph mutation row:["wp_posts","ID:8"] is created in the same plan as a post parent attachment target that depends on it, and identity rewriting is not yet supported.',
+  );
   assert.equal(blocker.references.length, 1);
   assert.equal(blocker.references[0].relationshipType, 'featured-image-attachment');
   assert.equal(blocker.references[0].targetResourceKey, 'row:["wp_posts","ID:8"]');
@@ -31493,7 +31563,10 @@ test('blocks local post-parent references to a same-plan created attachment iden
   assert.equal(decisionFor(plan, targetResourceKey), undefined);
   assert.equal(blocker.class, 'unsupported-attachment-resource');
   assert.equal(blocker.resourceKey, targetResourceKey);
-  assert.equal(blocker.reason, 'Attachment graph resources are not yet supported by the planner.');
+  assert.equal(
+    blocker.reason,
+    'WordPress graph mutation row:["wp_posts","ID:8"] is created in the same plan as a post parent attachment target that depends on it, and identity rewriting is not yet supported.',
+  );
   assert.equal(matchingEdit.decision, 'already-in-sync');
   assert.equal(matchingEdit.change.localChange, 'update');
   assert.equal(matchingEdit.change.remoteChange, 'update');
