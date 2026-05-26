@@ -629,6 +629,26 @@ export const SAFE_FAST_PATHS = Object.freeze([
     publishesStagedDataEarly: false,
   },
   {
+    area: 'backpressure',
+    reduces: ['idle-time', 'planning-round-trips', 'duplicate-budget-recomputation'],
+    allowedShortcut: 'reuse-receipt-cursor-queue-headroom-and-journal-lag-to-size-bounded-release-bundle-replay-windows',
+    guardrails: [
+      'receipt-cursor-stays-advisory-and-plan-scoped',
+      'queue-headroom-and-journal-lag-stay-bounded',
+    ],
+    gateProofs: {
+      skip: 'the planner can reuse the receipt cursor together with queue headroom and journal lag to size a bounded release-bundle replay window without rescanning the same pause evidence',
+      live: 'each later release-bundle write still rechecks its own live resource precondition before visibility changes',
+      group: 'the replay window only narrows planning inside the same planned release bundle and never widens the atomic-group barrier',
+      recovery: 'the receipt cursor, queue headroom, journal lag, and release-bundle staging record still classify pause, retry, or crash without guessing which work advanced',
+    },
+    visibilityBoundary: 'planning-only-budget-resume',
+    failureEvidence: 'receipt cursor plus queue-headroom summary, journal-lag summary, and release-bundle staging record',
+    bypassesLivePreconditions: false,
+    splitsAtomicGroup: false,
+    publishesStagedDataEarly: false,
+  },
+  {
     area: 'remote-indexes',
     reduces: ['remote-body-fetches', 'planning-round-trips'],
     allowedShortcut: 'plan-from-indexed-strong-hash-listing',

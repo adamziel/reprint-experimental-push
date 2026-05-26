@@ -132,6 +132,17 @@ test('benchmark model covers large uploads and plugin installs', () => {
     model.safeFastPaths.some(
       (fastPath) =>
         fastPath.area === 'backpressure' &&
+        fastPath.allowedShortcut === 'reuse-receipt-cursor-queue-headroom-and-journal-lag-to-size-bounded-release-bundle-replay-windows' &&
+        fastPath.guardrails.includes('receipt-cursor-stays-advisory-and-plan-scoped') &&
+        fastPath.gateProofs.skip.includes('queue headroom and journal lag') &&
+        fastPath.gateProofs.recovery.includes('release-bundle staging record'),
+    ),
+    'receipt cursor, queue headroom, and journal lag can bound release-bundle replay windows without weakening recovery evidence',
+  );
+  assert.ok(
+    model.safeFastPaths.some(
+      (fastPath) =>
+        fastPath.area === 'backpressure' &&
         fastPath.allowedShortcut === 'compress-pause-footprint-summaries-to-size-bounded-replay-windows' &&
         fastPath.guardrails.includes('pause-footprint-summary-stays-planning-evidence-only') &&
         fastPath.gateProofs.recovery.includes('compressed summary, cached receipt cursor, journal lag, and journal records'),
@@ -2576,6 +2587,13 @@ test('fast-path fixture isolates the release-safety benchmark shape', () => {
       fastPath.violates.includes('backpressure') &&
       fastPath.violates.includes('plugin-preconditions') &&
       fastPath.violates.includes('row-preconditions')
+    ),
+  );
+  assert.ok(
+    fixture.rejectedFastPaths.some((fastPath) =>
+      fastPath.id === 'compressed-remote-index-and-cached-release-manifest-and-journal-lag-skips-release-bundle-commit-after-pause' &&
+      fastPath.rejectedGate === 'group' &&
+      fastPath.violates.includes('durable-progress')
     ),
   );
   assert.ok(
