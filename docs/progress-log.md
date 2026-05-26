@@ -4,33 +4,20 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
-## 2026-05-26 - Public Status Audit 12:27:41
+## 2026-05-26 - Public Status Audit 12:30:04
 
-<a id="2026-05-26-public-status-audit-122741"></a>
+<a id="2026-05-26-public-status-audit-123004"></a>
 
-- Freshness update plus reliable-head confirmation: `fc2de1bd` is the current
+- Freshness update plus reliable-head correction: `a3393194` is the current
   reliable-executor head on the public page, and the visible status now points
-  at this 12:27:41 audit refresh.
+  at this 12:30:04 audit refresh.
 - Gate posture remains conservative at `0/4`; no implementation verdict
   changed.
 - Latest blocker summary remains the same: production-backed auth/session
   lifecycle on the checked release path and fenced durable journal ownership
-  still block any production push claim, while the preserved-remote retry proof
-  (`retryAttempts`) remains evidence but not a gate movement.
-
-## 2026-05-26 - Public Status Audit 12:25:58
-
-<a id="2026-05-26-public-status-audit-122558"></a>
-
-- Freshness update plus reliable-head confirmation: `fc2de1bd` is the current
-  reliable-executor head on the public page, and the visible status now points
-  at this 12:25:58 audit refresh.
-- Gate posture remains conservative at `0/4`; no implementation verdict
-  changed.
-- Latest blocker summary remains the same: production-backed auth/session
-  lifecycle on the checked release path and fenced durable journal ownership
-  still block any production push claim, while the preserved-remote retry proof
-  (`retryAttempts`) remains evidence but not a gate movement.
+  still block any production push claim, while the release-verifier retry
+  aggregation evidence (`retryAttempts`) remains support-only and does not
+  move a gate.
 
 ## 2026-05-26 - Public Status Audit 12:24:23
 
@@ -47,21 +34,6 @@ linked implementation artifacts.
   (`retryAttempts`) remains evidence but not a gate movement.
 
 ## 2026-05-26 - Public Status Audit 12:20:57
-
-<a id="2026-05-26-public-status-audit-122057"></a>
-
-- Freshness update plus reliable-head confirmation: `9d0279a3` is the current
-  reliable-executor head on the public page, and the visible status now points
-  at this 12:20:57 audit refresh.
-- Gate posture remains conservative at `0/4`; no implementation verdict
-  changed.
-- Latest blocker summary remains the same: production-backed auth/session
-  lifecycle on the checked release path and fenced durable journal ownership
-  still block any production push claim, while the release-verifier stale-claim
-  fencing proof (`staleClaimRejected: true`) remains evidence but not a gate
-  movement.
-
-## 2026-05-26 - Public Status Audit 12:16:38
 
 <a id="2026-05-26-public-status-audit-121638"></a>
 
@@ -134,6 +106,20 @@ linked implementation artifacts.
   lifecycle on the checked release path and fenced durable journal ownership
   still block any production push claim, while the release-verifier stale-claim
   fencing proof remains evidence but not a gate movement.
+
+## 2026-05-26 - Public Status Audit 12:08:38
+
+<a id="2026-05-26-public-status-audit-120838"></a>
+
+- Freshness update plus reliable-head confirmation: `998e856f` is the current
+  reliable-executor head on the public page, and the visible status now points
+  at this 12:08:38 audit refresh.
+- Gate posture remains conservative at `0/4`; no implementation verdict
+  changed.
+- Latest blocker summary remains the same: production-backed auth/session
+  lifecycle on the checked release path and fenced durable journal ownership
+  still block any production push claim, while the checked replay-equivalence
+  evidence is now visible but still below a gate movement.
 
 ## 2026-05-26 - Public Status Audit 12:08:27
 
