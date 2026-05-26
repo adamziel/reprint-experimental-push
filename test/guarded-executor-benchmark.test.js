@@ -74,6 +74,11 @@ test('guarded executor benchmark moves buffers and row payloads through durable 
   assert.equal(report.evidence.backpressure.receiptCursorQueueSlackBytes, 31.5 * 1024 * 1024);
   assert.equal(report.evidence.backpressure.receiptCursorMemoryHeadroomBytes, 31.5 * 1024 * 1024);
   assert.equal(report.evidence.backpressure.queueHeadroomBytes, 31.5 * 1024 * 1024);
+  assert.equal(report.claims.productionThroughputDetails.backpressureAlignment.aligned, true);
+  assert.equal(
+    report.claims.productionThroughputDetails.backpressureAlignment.receiptCursorQueueSlackBytes,
+    31.5 * 1024 * 1024,
+  );
   assert.equal(report.evidence.recovery.successInspectionStatus, 'fully-updated-remote');
   assert.equal(report.evidence.recovery.preCommitFailureInspectionStatus, 'old-remote');
   assert.equal(report.evidence.recovery.partialCommitInspectionStatus, 'blocked-recovery');
@@ -619,6 +624,31 @@ test('production claim gate fails closed if benchmark evidence is tampered', () 
   assert.equal(
     productionThroughputDetails(slackWithoutQueuePause).backpressureConsistency.receiptCursorQueueSlackMeasured,
     true,
+  );
+
+  const backpressureWithoutQueuePause = clone(report);
+  backpressureWithoutQueuePause.evidence.backpressure.queuePausedBeforeOverflow = false;
+  delete backpressureWithoutQueuePause.evidence.backpressure.receiptCursorQueueSlackBytes;
+  assert.ok(
+    productionThroughputBlockers(backpressureWithoutQueuePause).includes(
+      'receipt-cursor-backpressure-without-queue-pause',
+    ),
+  );
+  assert.equal(
+    productionThroughputDetails(backpressureWithoutQueuePause).backpressureConsistency.queuePausedBeforeOverflow,
+    false,
+  );
+
+  const brokenBackpressureAlignment = clone(report);
+  brokenBackpressureAlignment.evidence.backpressure.receiptCursorQueueSlackBytes -= 1024;
+  assert.ok(
+    productionThroughputBlockers(brokenBackpressureAlignment).includes(
+      'backpressure-alignment-not-proven',
+    ),
+  );
+  assert.equal(
+    productionThroughputDetails(brokenBackpressureAlignment).backpressureAlignment.aligned,
+    false,
   );
 
   const unmeasuredQueueHeadroom = clone(report);
