@@ -2329,7 +2329,10 @@ test('packaged production plugin smoke readiness helper preserves timeout fallba
   assert.match(helperSource, /lastTimeoutFallbackProbes = \{ preflightProbe, indexProbe \};/);
   assert.match(helperSource, /Last timeout fallback preflight route:/);
   assert.match(helperSource, /Last timeout fallback index route:/);
-  assert.match(helperSource, /describePackagedReadinessFailure\(\s*lastProbes\.at\(-1\) \?\? null,\s*lastTimeoutFallbackProbes,\s*lastProbes,\s*\)/);
+  assert.match(
+    helperSource,
+    /describePackagedReadinessFailure\(\s*lastProbes\.at\(-1\) \?\? null,\s*lastTimeoutFallbackProbes,\s*lastProbes,\s*context,\s*\)/,
+  );
 });
 
 test('packaged release verifier readiness helper preserves timeout fallback probe details', () => {
@@ -2492,7 +2495,7 @@ test('packaged readiness helpers reset snapshot startup counters before signed p
   for (const source of [smokeSource, verifierSource]) {
     assert.match(
       source,
-      /packagedProductionPluginResetRouteNotReadyProbeCounts\(\s*notReadyProbeCounts,\s*'snapshot',\s*\);\s*(?:const\s+\{\s*response:\s*preflight|const\s+\{\s*response:\s*preflightResponse)/s,
+      /packagedProductionPluginResetRouteNotReadyProbeCounts\(\s*notReadyProbeCounts,\s*'snapshot',\s*\);[\s\S]*?(?:const\s+preflightProbe\s*=\s*await\s+fetchPackagedPreflightProbe|const\s+\{\s*response:\s*preflight|const\s+\{\s*response:\s*preflightResponse)/s,
     );
   }
 });
@@ -2508,7 +2511,10 @@ test('packaged readiness helpers can accept signed preflight readiness before sn
   );
 
   for (const source of [smokeSource, verifierSource]) {
-    assert.match(source, /const preflightProbe = await fetchPackagedPreflightProbe\(baseUrl, child\);/);
+    assert.match(
+      source,
+      /const preflightProbe = await fetchPackagedPreflightProbe\(\s*baseUrl,\s*child(?:,\s*\{[\s\S]*?packagedStartup:\s*true[\s\S]*?\})?\s*\);/s,
+    );
     assert.match(source, /if \(preflightProbe\.ready\) \{\s*return;\s*\}/);
     assert.match(source, /preflight became terminal while snapshot still reported startup-shaped readiness/);
   }
@@ -2597,7 +2603,7 @@ test('packaged readiness timeout fallback classifies global WordPress versus pac
   );
   assert.match(
     smokeSource,
-    /preflight stayed startup-shaped while \/wp-json\/ returned a terminal readiness failure HTTP \$\{indexProbe\?\.status \?\? 0\} after the snapshot probe timed out/,
+    /preflight stayed startup-shaped while \/wp-json\/ returned a terminal readiness failure HTTP \$\{indexProbe(?:\?\.status \?\? 0|\.status)\} after the snapshot probe timed out/,
   );
   assert.match(
     smokeSource,
@@ -2629,7 +2635,7 @@ test('packaged readiness timeout fallback classifies global WordPress versus pac
   );
   assert.match(
     verifierSource,
-    /preflight stayed startup-shaped while \/wp-json\/ returned a terminal readiness failure HTTP \$\{indexProbe\?\.status \?\? 0\} after the snapshot probe timed out[\s\S]*?indexTerminal:\s*true/s,
+    /preflight stayed startup-shaped while \/wp-json\/ returned a terminal readiness failure HTTP \$\{indexProbe(?:\?\.status \?\? 0|\.status)\} after the snapshot probe timed out[\s\S]*?indexTerminal:\s*true/s,
   );
   assert.match(
     verifierSource,
@@ -2645,11 +2651,11 @@ test('packaged readiness timeout fallback classifies global WordPress versus pac
   );
   assert.match(
     smokeSource,
-    /preflight became terminal while the snapshot probe timed out[\s\S]*?preflightTerminal:\s*true[\s\S]*?timeoutFallback:\s*true/s,
+    /preflight became terminal while the snapshot probe timed out[\s\S]*?packagedProductionPluginPreflightTerminalContext\([\s\S]*?timeoutFallback:\s*true[\s\S]*?\)/s,
   );
   assert.match(
     verifierSource,
-    /preflight became terminal while the snapshot probe timed out[\s\S]*?preflightTerminal:\s*true[\s\S]*?timeoutFallback:\s*true/s,
+    /preflight became terminal while the snapshot probe timed out[\s\S]*?packagedProductionPluginPreflightTerminalContext\([\s\S]*?childPid:\s*child\.pid\s*\?\?\s*null[\s\S]*?timeoutFallback:\s*true[\s\S]*?\)/s,
   );
   assert.match(
     smokeSource,
@@ -2934,11 +2940,11 @@ test('packaged snapshot readiness helper enforces the bounded classifier before 
   );
   assert.match(
     smokeSource,
-    /preflightProbe\.retryable = packagedProductionPluginPreflightRetryable\(\s*\{ status: preflightProbe\.status, body: preflightProbe\.body \},\s*\{ indexProbe \},\s*\);/s,
+    /preflightProbe\.retryable = packagedProductionPluginPreflightRetryable\(\s*\{\s*status:\s*preflightProbe\.status,\s*body:\s*preflightProbe\.parsedBody \?\? preflightProbe\.body,\s*\},\s*\{\s*\.\.\.readinessContext,\s*indexProbe\s*\},\s*\);/s,
   );
   assert.match(
     verifierSource,
-    /preflightProbe\.retryable = packagedProductionPluginPreflightRetryable\(\s*\{ status: preflightProbe\.status, body: preflightProbe\.body \},\s*\{ indexProbe \},\s*\);/s,
+    /preflightProbe\.retryable = packagedProductionPluginPreflightRetryable\(\s*\{\s*status:\s*preflightProbe\.status,\s*body:\s*preflightProbe\.parsedBody \?\? preflightProbe\.body,\s*\},\s*\{\s*\.\.\.readinessContext,\s*indexProbe\s*\},\s*\);/s,
   );
 });
 
