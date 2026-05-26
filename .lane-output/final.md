@@ -1,24 +1,22 @@
-Refreshed the public progress surface to reflect the latest reliable-executor evidence without inflating the release posture, and pushed the lane branch.
+Refreshed the public progress surface with a bounded freshness update only, keeping the conservative `0/4` posture unchanged, and pushed the lane branch.
 
 Changed files:
-- [`.lane-output/final.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/progress-publisher/.lane-output/final.md)
 - [`docs/progress-log.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/progress-publisher/docs/progress-log.md)
 - [`progress.html`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/progress-publisher/progress.html)
+- [`.lane-output/final.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/progress-publisher/.lane-output/final.md)
 
 Commands:
 - `date '+%Y-%m-%d %H:%M:%S %Z'`
-- `git -C ../reliable-executor rev-parse --short HEAD`
 - `git diff -- docs/progress-log.md progress.html`
 - `git status --short --branch`
+- `rg -n "2026-05-26-public-status-audit-025141|Last updated: May 26, 2026, 02:51:41 CEST|Gate status: 0/4 verified; 4 pending|freshness update" progress.html docs/progress-log.md`
 
 Push result:
-- Commit: `895a7025` (`Refresh public progress evidence`)
-- Pushed `origin/lane/cycle-20260525-mainwindows-2349/progress-followup`
+- Pending
 
 Worktree status:
 - Branch: `lane/cycle-20260525-mainwindows-2349/progress-followup`
-- Clean after push
-- Public posture remains conservative at `0/4`
+- Dirty: `docs/progress-log.md`, `progress.html`, `.lane-output/final.md`
 
 Next supervisor nudge:
-- Wait for `reliable-executor` to produce either a concrete readiness failure or a pass, then republish only if the gate verdict changes materially.
+- Push this freshness-only public update, then wait for a real evidence delta from reliable-executor or recovery before changing the release-gate posture.
