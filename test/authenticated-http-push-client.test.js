@@ -65,6 +65,26 @@ test('authenticated push client allows production-shaped loopback runtime ports'
   assert.equal(typeof client.get, 'function');
 });
 
+test('authenticated push client allows production-shaped https loopback runtime ports', () => {
+  const client = authenticatedHttpClient({
+    sourceUrl: 'https://127.0.0.1:3443',
+    credential,
+    routeProfile: 'production-shaped',
+    requestTimeoutMs: 1,
+  });
+  assert.equal(typeof client.get, 'function');
+});
+
+test('authenticated push client allows production-shaped ipv6 loopback runtime ports', () => {
+  const client = authenticatedHttpClient({
+    sourceUrl: 'http://[::1]:3000',
+    credential,
+    routeProfile: 'production-shaped',
+    requestTimeoutMs: 1,
+  });
+  assert.equal(typeof client.get, 'function');
+});
+
 test('db journal proof requires stale claim rejection when explicitly requested', () => {
   const proof = {
     applyCommitted: true,
@@ -150,6 +170,48 @@ test('authenticated push source does not mix partial auth/session source fields 
       sourceUrl: 'http://127.0.0.1:9090',
       username: 'trusted-runtime-username',
       applicationPassword: 'trusted-runtime-password',
+    },
+  );
+});
+
+test('authenticated push source accepts https loopback auth/session source URLs', () => {
+  assert.deepEqual(
+    resolveAuthenticatedHttpPushSource({
+      sourceUrl: '',
+      username: '',
+      applicationPassword: '',
+      authSessionSource: {
+        ok: true,
+        sourceUrl: 'https://127.0.0.1:8443',
+        username: 'reprint_push_admin',
+        applicationPassword: 'reprint-push-admin-app-password',
+      },
+    }),
+    {
+      sourceUrl: 'https://127.0.0.1:8443',
+      username: 'reprint_push_admin',
+      applicationPassword: 'reprint-push-admin-app-password',
+    },
+  );
+});
+
+test('authenticated push source accepts ipv6 loopback auth/session source URLs', () => {
+  assert.deepEqual(
+    resolveAuthenticatedHttpPushSource({
+      sourceUrl: '',
+      username: '',
+      applicationPassword: '',
+      authSessionSource: {
+        ok: true,
+        sourceUrl: 'http://[::1]:8080',
+        username: 'reprint_push_admin',
+        applicationPassword: 'reprint-push-admin-app-password',
+      },
+    }),
+    {
+      sourceUrl: 'http://[::1]:8080',
+      username: 'reprint_push_admin',
+      applicationPassword: 'reprint-push-admin-app-password',
     },
   );
 });

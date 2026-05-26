@@ -776,6 +776,117 @@ test('production auth/session source loader fails closed when required fields ar
   });
 });
 
+test('production auth/session source loader fails closed when required fields are non-string values', () => {
+  const source = loadAuthSessionSource(
+    `${process.execPath} -e "process.stdout.write(JSON.stringify({sourceUrl:'http://127.0.0.1:8080', username:{owner:'reprint_push_admin'}, applicationPassword:['secret']}))"`,
+    {
+      ...process.env,
+      NODE_NO_WARNINGS: '1',
+    },
+    repoRoot,
+  );
+
+  assert.deepEqual(source, {
+    ok: false,
+    error: 'Auth session source command must return username',
+  });
+});
+
+test('production auth/session source loader fails closed when required fields contain control characters', () => {
+  const source = loadAuthSessionSource(
+    `${process.execPath} -e "process.stdout.write(JSON.stringify({sourceUrl:'http://127.0.0.1:8080/\\npath', username:'reprint_push_admin', applicationPassword:'secret-value'}))"`,
+    {
+      ...process.env,
+      NODE_NO_WARNINGS: '1',
+    },
+    repoRoot,
+  );
+
+  assert.deepEqual(source, {
+    ok: false,
+    error: 'Auth session source command must return sourceUrl',
+  });
+});
+
+test('production auth/session source loader fails closed when required fields contain surrounding whitespace', () => {
+  const source = loadAuthSessionSource(
+    `${process.execPath} -e "process.stdout.write(JSON.stringify({sourceUrl:' http://127.0.0.1:8080 ', username:' reprint_push_admin ', applicationPassword:' secret-value '}))"`,
+    {
+      ...process.env,
+      NODE_NO_WARNINGS: '1',
+    },
+    repoRoot,
+  );
+
+  assert.deepEqual(source, {
+    ok: false,
+    error: 'Auth session source command must return sourceUrl',
+  });
+});
+
+test('production auth/session source loader fails closed when sourceUrl is malformed', () => {
+  const source = loadAuthSessionSource(
+    `${process.execPath} -e "process.stdout.write(JSON.stringify({sourceUrl:'not-a-url', username:'reprint_push_admin', applicationPassword:'secret-value'}))"`,
+    {
+      ...process.env,
+      NODE_NO_WARNINGS: '1',
+    },
+    repoRoot,
+  );
+
+  assert.deepEqual(source, {
+    ok: false,
+    error: 'Auth session source command must return a supported local sourceUrl',
+  });
+});
+
+test('production auth/session source loader fails closed when sourceUrl is not local', () => {
+  const source = loadAuthSessionSource(
+    `${process.execPath} -e "process.stdout.write(JSON.stringify({sourceUrl:'https://example.com/push', username:'reprint_push_admin', applicationPassword:'secret-value'}))"`,
+    {
+      ...process.env,
+      NODE_NO_WARNINGS: '1',
+    },
+    repoRoot,
+  );
+
+  assert.deepEqual(source, {
+    ok: false,
+    error: 'Auth session source command must return a supported local sourceUrl',
+  });
+});
+
+test('production auth/session source loader accepts local https and ipv6 loopback sourceUrl values', () => {
+  const httpsLoopbackSource = loadAuthSessionSource(
+    `${process.execPath} -e "process.stdout.write(JSON.stringify({sourceUrl:'https://127.0.0.1:8443/push', username:'reprint_push_admin', applicationPassword:'secret-value'}))"`,
+    {
+      ...process.env,
+      NODE_NO_WARNINGS: '1',
+    },
+    repoRoot,
+  );
+  assert.deepEqual(httpsLoopbackSource, {
+    ok: true,
+    sourceUrl: 'https://127.0.0.1:8443/push',
+    username: 'reprint_push_admin',
+    applicationPassword: 'secret-value',
+  });
+
+  const ipv6LoopbackSource = loadAuthSessionSource(
+    `${process.execPath} -e "process.stdout.write(JSON.stringify({sourceUrl:'http://[::1]:8080/push', username:'reprint_push_admin', applicationPassword:'secret-value'}))"`,
+    {
+      ...process.env,
+      NODE_NO_WARNINGS: '1',
+    },
+    repoRoot,
+  );
+  assert.deepEqual(ipv6LoopbackSource, {
+    ok: true,
+    sourceUrl: 'http://[::1]:8080/push',
+    username: 'reprint_push_admin',
+    applicationPassword: 'secret-value',
+  });
+});
 test('production-shaped release verify synthesizes the packaged production auth/session source command on the checked release path', () => {
   const expectedSourceCommand = buildAuthSessionSourceCommand({
     sourceUrl: 'http://127.0.0.1:8080',

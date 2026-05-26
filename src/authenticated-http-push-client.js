@@ -1347,7 +1347,8 @@ export function resolveAuthenticatedHttpPushSource({
   applicationPassword = '',
   authSessionSource = null,
 }) {
-  if (!hasCompleteAuthSessionSource(authSessionSource)) {
+  const normalizedAuthSessionSource = normalizeAuthenticatedHttpPushSource(authSessionSource);
+  if (!normalizedAuthSessionSource) {
     return {
       sourceUrl,
       username,
@@ -1356,19 +1357,71 @@ export function resolveAuthenticatedHttpPushSource({
   }
 
   return {
-    sourceUrl: authSessionSource.sourceUrl || sourceUrl,
-    username: authSessionSource.username || username,
-    applicationPassword: authSessionSource.applicationPassword || applicationPassword,
+    sourceUrl: normalizedAuthSessionSource.sourceUrl,
+    username: normalizedAuthSessionSource.username,
+    applicationPassword: normalizedAuthSessionSource.applicationPassword,
   };
 }
 
-function hasCompleteAuthSessionSource(authSessionSource) {
-  return Boolean(
-    authSessionSource?.ok
-    && authSessionSource.sourceUrl
-    && authSessionSource.username
-    && authSessionSource.applicationPassword
-  );
+function normalizeAuthenticatedHttpPushSource(authSessionSource) {
+  if (!authSessionSource?.ok) {
+    return null;
+  }
+
+  const sourceUrl = normalizeSupportedAuthenticatedHttpPushSourceUrl(authSessionSource.sourceUrl);
+  const username = normalizeAuthenticatedHttpPushSourceField(authSessionSource.username);
+  const applicationPassword = normalizeAuthenticatedHttpPushSourceField(authSessionSource.applicationPassword);
+  if (!sourceUrl || !username || !applicationPassword) {
+    return null;
+  }
+
+  return {
+    sourceUrl,
+    username,
+    applicationPassword,
+  };
+}
+
+function normalizeAuthenticatedHttpPushSourceField(value) {
+  if (typeof value !== 'string') {
+    return '';
+  }
+
+  const normalized = value.trim();
+  if (!normalized || normalized !== value || /[\u0000-\u001f\u007f]/.test(normalized)) {
+    return '';
+  }
+
+  return normalized;
+}
+
+function normalizeSupportedAuthenticatedHttpPushSourceUrl(value) {
+  const sourceUrl = normalizeAuthenticatedHttpPushSourceField(value);
+  if (!sourceUrl) {
+    return '';
+  }
+
+  return isSupportedAuthenticatedHttpPushSourceUrl(sourceUrl)
+    ? sourceUrl
+    : '';
+}
+
+function isSupportedAuthenticatedHttpPushSourceUrl(sourceUrl) {
+  let parsed;
+  try {
+    parsed = new URL(sourceUrl);
+  } catch {
+    return false;
+  }
+
+  if (
+    (parsed.protocol === 'http:' || parsed.protocol === 'https:')
+    && isLoopbackHost(parsed.hostname)
+  ) {
+    return true;
+  }
+
+  return false;
 }
 
 export function authenticatedHttpClient({
@@ -2649,10 +2702,10 @@ function assertSupportedSourceUrlForRouteProfile(baseUrl, profile) {
     return;
   }
 
-  if (baseUrl.protocol === 'http:' && isLoopbackHost(baseUrl.hostname)) {
-    return;
-  }
-  if (baseUrl.protocol === 'https:' && baseUrl.hostname === 'localhost') {
+  if (
+    (baseUrl.protocol === 'http:' || baseUrl.protocol === 'https:')
+    && isLoopbackHost(baseUrl.hostname)
+  ) {
     return;
   }
 
@@ -2665,6 +2718,7 @@ function isLoopbackHost(hostname) {
   return hostname === 'localhost'
     || hostname === '127.0.0.1'
     || hostname === '::1'
+    || hostname === '[::1]'
     || hostname.startsWith('127.');
 }
 
