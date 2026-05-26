@@ -258,6 +258,10 @@ function spawnVerifiedReleaseVerify(env, timeout, label) {
     timeout,
     killSignal: proofSubprocessKillSignal,
   });
+  if (proof.error || proof.signal || proof.status === null) {
+    stopAllPlaygroundChildrenSync();
+    reportSpawnFailure(proof);
+  }
   assertSpawnTerminationProof(proof, label, timeout);
   assertSpawnCompletedWithoutSpawnError(proof, label, timeout);
   assertReleaseVerifyProof(proof, label);
@@ -658,8 +662,15 @@ test('production-shaped apply revalidation smoke fails closed on mid-apply drift
 });
 
 test('production-shaped release verify command reports the checked retained-source proof summary', () => {
-  const proof = spawnReleaseVerify(
-    {
+  const proof = spawnBoundedSync(process.execPath, ['scripts/playground/production-shaped-release-verify.mjs'], {
+    cwd: repoRoot,
+    timeout: releaseVerifySlowPathTimeoutMs,
+    killSignal: proofSubprocessKillSignal,
+    encoding: 'utf8',
+    maxBuffer: 1024 * 1024 * 20,
+    shell: false,
+    env: {
+      ...process.env,
       REPRINT_PUSH_SOURCE_URL: '',
       REPRINT_PUSH_REMOTE_URL: '',
       REPRINT_PUSH_LAB_AUTH_ADMIN_USER: '',
@@ -669,11 +680,7 @@ test('production-shaped release verify command reports the checked retained-sour
       REPRINT_PUSH_SIGNING_SECRET: '',
       NODE_NO_WARNINGS: '1',
     },
-    {
-      timeout: releaseVerifySlowPathTimeoutMs,
-      killSignal: proofSubprocessKillSignal,
-    },
-  );
+  }, 'retained-source release verify');
   assertLiveReleaseVerifyProof(proof, 'retained-source release verify', releaseVerifySlowPathTimeoutMs);
   assert.equal(proof.status, 1, proof.stderr);
   assert.match(proof.stdout, /"releaseProof": \{/);
