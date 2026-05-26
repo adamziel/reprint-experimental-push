@@ -6,10 +6,10 @@ The project is **not releasable as a production WordPress push path**.
 
 - Fresh remote heads at audit time, checked on May 26, 2026:
 
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `0354c9f1`
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `7c843eba`
-- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `14c76694`
-- `origin/lane/fast-paths` -> `8c5c2ccb`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `5d60e641`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `f1261d66`
+- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `b2c9e512`
+- `origin/lane/fast-paths` -> `2d335a29`
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `4ba8fb91`
 - `origin/lane/reliable-executor` -> `97eca6ce`
 - `origin/lane/no-data-loss-invariants` -> `f99d6eed`
@@ -32,14 +32,14 @@ Fresh lane proof since the last audit pass improved the local evidence floor,
 but it did not change the release conclusion:
 
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now records
-  `0354c9f1`, refreshing public progress freshness only.
+  `5d60e641`, refreshing public progress freshness only.
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now records
-  `7c843eba`, refreshing the supervisor progress surface only.
+  `f1261d66`, refreshing the supervisor progress surface only.
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` now records
-  `14c76694`. This refreshes the audit snapshot only and does not change the
+  `b2c9e512`. This refreshes the audit snapshot only and does not change the
   release boundary.
-- `origin/lane/fast-paths` now records `8c5c2ccb`, tightening backpressure
-  evidence checks only.
+- `origin/lane/fast-paths` now records `2d335a29`, tightening backpressure
+  proof checks only.
 - `origin/lane/reliable-executor` now records `97eca6ce`, tightening release
   proof timeout logging and child cleanup again, but still not proving
   production auth/session lifecycle or a live-source mutation boundary.
