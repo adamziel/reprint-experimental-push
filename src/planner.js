@@ -2480,7 +2480,7 @@ function unsupportedRevisionResourceSupport({ resource, baseValue, localValue, r
   return {
     supported: false,
     className: 'unsupported-revision-resource',
-    reason: 'Revision graph resources are not yet supported by the planner.',
+    reason: `WordPress graph mutation ${resource.key} is created in the same plan as a revision identity that depends on it, and identity rewriting is not yet supported.`,
   };
 }
 
@@ -2505,7 +2505,7 @@ function unsupportedTermmetaResourceSupport({ resource, baseValue, localValue, r
   return {
     supported: false,
     className: 'unsupported-termmeta-resource',
-    reason: 'Term meta graph resources are not yet supported by the planner.',
+    reason: `WordPress graph mutation ${resource.key} is created in the same plan as a term identity that depends on it, and identity rewriting is not yet supported.`,
   };
 }
 
