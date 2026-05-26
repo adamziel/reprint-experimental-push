@@ -1195,6 +1195,89 @@ test('production auth/session lifecycle summary helper requires a preserved acti
       observed: 'revoked',
     },
   );
+
+  assert.deepEqual(
+    evaluateProductionAuthSessionLifecycleSummary({
+      issued: {
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+      },
+      read: {
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+        preserved: true,
+      },
+      observations: [
+        {
+          step: 'preflight',
+          id: 'session-01',
+          type: 'production-auth-session',
+          status: 'active',
+          expiresAt: '2099-01-01T00:00:00Z',
+          preserved: false,
+        },
+        {
+          step: 'cleanup',
+          id: 'session-01',
+          type: 'production-auth-session',
+          status: 'active',
+          expiresAt: '2099-01-01T00:00:00Z',
+          cleanedUp: true,
+          preserved: true,
+        },
+      ],
+    }),
+    {
+      ok: false,
+      required: 'unrevoked',
+      observed: 'cleaned-up',
+    },
+  );
+
+  assert.deepEqual(
+    evaluateProductionAuthSessionLifecycleSummary({
+      issued: {
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+      },
+      read: {
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+        preserved: true,
+      },
+      observations: [
+        {
+          step: 'preflight',
+          id: 'session-01',
+          type: 'production-auth-session',
+          status: 'active',
+          expiresAt: '2099-01-01T00:00:00Z',
+          preserved: false,
+        },
+        {
+          step: 'replay',
+          id: 'session-01',
+          type: 'production-auth-session',
+          status: 'active',
+          expiresAt: '2000-01-01T00:00:00Z',
+          preserved: true,
+        },
+      ],
+    }),
+    {
+      ok: false,
+      required: 'unexpired',
+      observed: '2000-01-01T00:00:00Z',
+    },
+  );
 });
 
 maybeTest('production-shaped release verify command consumes the packaged production auth/session source command when production auth/session is required', async () => {

@@ -123,6 +123,29 @@ export function evaluateProductionAuthSessionLifecycleSummary(summary, now = Dat
     };
   }
 
+  for (const observation of Array.isArray(summary.observations) ? summary.observations : []) {
+    if (!observation || typeof observation !== 'object') {
+      continue;
+    }
+
+    if (observation.rotated) {
+      return {
+        ok: false,
+        required: 'preserved read',
+        observed: 'rotated',
+      };
+    }
+
+    const lifecycle = evaluateProductionAuthSessionLifecycle(observation, now);
+    if (!lifecycle.ok && (
+      lifecycle.required === 'active' ||
+      lifecycle.required === 'unexpired' ||
+      lifecycle.required === 'unrevoked'
+    )) {
+      return lifecycle;
+    }
+  }
+
   return {
     ok: true,
     required: 'production-auth-session lifecycle',
