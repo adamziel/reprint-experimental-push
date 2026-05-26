@@ -1,6 +1,6 @@
-`3a64aef6773c3c82ad3a5b91a6ea0ca53c3942fb` stays `0/4`.
+`fd7d3a540996d51a459d9358126a3cb3e4a59a2e` stays `0/4`.
 
-It fails closed on revoked production auth sessions in `src/authenticated-http-push-client.js` and `test/authenticated-http-push-client.test.js`, but it still does not prove production-backed auth/session lifecycle or production durable-journal semantics on the checked `verify:release` boundary.
+It records production recovery journal claims in `src/recovery-journal.js` and `test/recovery-journal.test.js`, but it still does not prove production-backed auth/session lifecycle or production durable-journal semantics on the checked `verify:release` boundary.
 
 Changed files:
 - [audits/objective-audit.md](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/independent-auditor/audits/objective-audit.md)
