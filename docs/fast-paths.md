@@ -1402,7 +1402,10 @@ That means the measured evidence is useful for guarded-executor cost and safety
 shape, not production throughput. It also remains deliberately narrow on
 WordPress graph identity: the report records stable post targets under
 `evidence.wordpressGraphIdentity`, and the production claim gate fails closed if
-those stable-reference checks are missing or false. The next proof needed is a
+those stable-reference checks are missing or false. The claim gate now also
+fails closed if the postmeta reference count no longer matches the row count,
+so a partial graph-identity summary cannot masquerade as a complete same-site
+proof. The next proof needed is a
 production-shaped executor that returns storage-backed receipts for chunk
 staging, commits plugin-owned row batches with per-row hashes inside a bounded
 batch primitive, and exposes one atomic group commit record that recovery can

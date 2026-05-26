@@ -56,6 +56,7 @@ test('guarded executor benchmark moves buffers and row payloads through durable 
   );
   assert.equal(report.evidence.wordpressGraphIdentity.allPostmetaReferencesUseStableRemoteIdentity, true);
   assert.equal(report.evidence.wordpressGraphIdentity.graphIdentityBlockers, 0);
+  assert.equal(report.claims.productionThroughputDetails.wordpressGraphIdentityPostmetaReferencesMatch, true);
   assert.equal(report.evidence.journal.allJournalsIntegrityOk, true);
   assert.equal(report.evidence.journal.successReceiptKindsGrouped, true);
   assert.equal(report.evidence.journal.successReceiptKindLedger.length, report.evidence.journal.successRecords);
@@ -1176,6 +1177,18 @@ test('production claim gate fails closed if benchmark evidence is tampered', () 
   missingGraphIdentity.evidence.wordpressGraphIdentity.allPostmetaReferencesUseStableRemoteIdentity = false;
   assert.ok(
     productionThroughputBlockers(missingGraphIdentity).includes('wordpress-graph-identity-evidence-not-proven'),
+  );
+
+  const mismatchedGraphIdentityPostmeta = clone(report);
+  mismatchedGraphIdentityPostmeta.evidence.wordpressGraphIdentity.postmetaReferences -= 1;
+  assert.ok(
+    productionThroughputBlockers(mismatchedGraphIdentityPostmeta).includes(
+      'wordpress-graph-identity-postmeta-count-mismatch',
+    ),
+  );
+  assert.equal(
+    productionThroughputDetails(mismatchedGraphIdentityPostmeta).wordpressGraphIdentityPostmetaReferencesMatch,
+    false,
   );
 
   const nonTerminalPausedQueue = clone(report);

@@ -200,6 +200,13 @@ export function productionThroughputBlockers(report) {
   ) {
     blockers.push('wordpress-graph-identity-evidence-not-proven');
   }
+  if (
+    Number.isFinite(report.evidence.wordpressGraphIdentity?.postmetaReferences)
+    && Number.isFinite(report.shape?.rowCount)
+    && report.evidence.wordpressGraphIdentity.postmetaReferences !== report.shape.rowCount
+  ) {
+    blockers.push('wordpress-graph-identity-postmeta-count-mismatch');
+  }
   if (!report.evidence.recovery.successReplayInspectable) {
     blockers.push('missing-success-recovery-evidence');
   }
@@ -695,6 +702,10 @@ export function productionThroughputDetails(report) {
   const journalSuccessReceiptKindsGrouped = areReceiptKindsGrouped(journalSuccessRecordTypes);
   const productionAtomicCommitMeasured = report.executorCapabilities.productionAtomicCommit === 'production-atomic-group-commit';
   const productionRowBatchExecutorMeasured = report.executorCapabilities.rowApply === 'production-batched-compare-and-swap';
+  const wordpressGraphIdentityPostmetaReferencesMatch =
+    Number.isFinite(report.evidence.wordpressGraphIdentity?.postmetaReferences)
+    && Number.isFinite(report.shape?.rowCount)
+    && report.evidence.wordpressGraphIdentity.postmetaReferences === report.shape.rowCount;
   return {
     shape: {
       fileBytes: report.shape.fileBytes,
@@ -760,6 +771,7 @@ export function productionThroughputDetails(report) {
     backpressureEvidenceComplete,
     productionAtomicCommitMeasured,
     productionRowBatchExecutorMeasured,
+    wordpressGraphIdentityPostmetaReferencesMatch,
     journalSuccessRecordTypes,
     journalSuccessReceiptKindsGrouped,
     backpressureConsistency: {
@@ -806,6 +818,7 @@ export function productionThroughputDetails(report) {
       backpressureEvidenceComplete,
       productionAtomicCommitMeasured,
       productionRowBatchExecutorMeasured,
+      wordpressGraphIdentityPostmetaReferencesMatch,
       journalSuccessRecordTypes,
       journalSuccessReceiptKindsGrouped,
     },
