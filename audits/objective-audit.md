@@ -7,9 +7,9 @@ The project is **not releasable as a production WordPress push path**.
 Fresh remote heads at audit time, checked on May 26, 2026:
 
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `b069d46c`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `3dcd9321`
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `7b4dda17`
-- `origin/lane/independent-auditor` -> `6351130f`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `e4c81460`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `5f6f5c8c`
+- `origin/lane/independent-auditor` -> `f52a738c`
 - `origin/lane/reliable-executor` -> `1820de31`
 - `origin/lane/no-data-loss-invariants` -> `2f92065d`
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` -> `db36753e`
@@ -20,7 +20,7 @@ Fresh remote heads at audit time, checked on May 26, 2026:
 - `origin/lane/fast-paths` -> `b069d46c`
 - `origin/lane/progress-publisher` -> `7695e1f9`
 - `origin/lane/cycle-20260525-mainwindows-2349/critic` -> `49af85aa`
-- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `c38dda9d`
+- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `f52a738c`
 - `origin/lane/cycle-20260525-mainwindows-2349/same-plan-wordpress-graph-create` -> `0d2178e9`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-invariants` -> `67597696`
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `b069d46c`
@@ -81,8 +81,8 @@ but it did not change the release conclusion:
   featured image removal proof. That remains fail-closed boundary evidence,
   not a live production mutation proof.
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` advances to
-  `e1cabd23`, and `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor`
-  advances to `a8b5e451`; both are freshness updates only and do not move the
+  `e4c81460`, and `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor`
+  advances to `5f6f5c8c`; both are freshness updates only and do not move the
   live production release boundary.
 - `origin/lane/no-data-loss-invariants` now advances to `2f92065d`, adding
   termmeta removal proof. That remains fail-closed boundary evidence, not a
