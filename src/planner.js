@@ -2641,6 +2641,9 @@ function samePlanCreatedGraphIdentitySupport({ resource, resources, base, local,
   const postInboundReference = orderedInboundReferences.find((reference) =>
     reference.relationshipType === 'term-relationship-object'
     && reference.targetResource?.table === 'wp_posts');
+  const postmetaPostInboundReference = orderedInboundReferences.find((reference) =>
+    reference.relationshipType === 'postmeta-post'
+    && reference.targetResource?.table === 'wp_posts');
   const postAuthorInboundReference = orderedInboundReferences.find((reference) =>
     reference.relationshipType === 'post-author'
     && reference.targetResource?.table === 'wp_users');
@@ -2673,6 +2676,8 @@ function samePlanCreatedGraphIdentitySupport({ resource, resources, base, local,
     reason = `WordPress graph mutation ${resource.key} is created in the same plan as a comment post target that depends on it, and identity rewriting is not yet supported.`;
   } else if (postInboundReference) {
     reason = `WordPress graph mutation ${resource.key} is created in the same plan as a term relationship post target that depends on it, and identity rewriting is not yet supported.`;
+  } else if (postmetaPostInboundReference) {
+    reason = `WordPress graph mutation ${resource.key} is created in the same plan as a post meta target that depends on it, and identity rewriting is not yet supported.`;
   } else if (postAuthorInboundReference) {
     reason = `WordPress graph mutation ${resource.key} is created in the same plan as a post author target that depends on it, and identity rewriting is not yet supported.`;
   } else if (attachmentInboundReference) {

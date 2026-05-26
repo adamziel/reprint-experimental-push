@@ -22686,6 +22686,97 @@ test('prioritizes post-parent blocker wording while carrying bounded post-parent
   assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin changes */');
 });
 
+test('orders same-plan postmeta dependency references deterministically for a same-plan created post identity', () => {
+  const targetResourceKey = 'row:["wp_posts","ID:89"]';
+  const earlyMetaResourceKey = 'row:["wp_postmeta","meta_id:14"]';
+  const lateMetaResourceKey = 'row:["wp_postmeta","meta_id:99"]';
+  const base = baseSite();
+  base.db.wp_posts['ID:1'].post_title = 'Base shared post title';
+  base.db.wp_postmeta = {
+    'meta_id:99': {
+      meta_id: 99,
+      post_id: 89,
+      meta_key: '_late_graph_note',
+      meta_value: 'Base late same-plan post meta',
+    },
+    'meta_id:14': {
+      meta_id: 14,
+      post_id: 89,
+      meta_key: '_early_graph_note',
+      meta_value: 'Base early same-plan post meta',
+    },
+  };
+
+  const local = baseSite();
+  local.db.wp_posts['ID:1'].post_title = 'Shared post title';
+  local.db.wp_posts['ID:89'] = {
+    ID: 89,
+    post_title: 'Local same-plan post identity',
+    post_content: 'Local same-plan post body',
+    post_status: 'publish',
+    post_type: 'post',
+  };
+  local.db.wp_postmeta = {
+    'meta_id:99': {
+      meta_id: 99,
+      post_id: 89,
+      meta_key: '_late_graph_note',
+      meta_value: 'Local late same-plan post meta',
+    },
+    'meta_id:14': {
+      meta_id: 14,
+      post_id: 89,
+      meta_key: '_early_graph_note',
+      meta_value: 'Local early same-plan post meta',
+    },
+  };
+
+  const remote = baseSite();
+  remote.db.wp_posts['ID:1'].post_title = 'Shared post title';
+  remote.db.wp_postmeta = JSON.parse(JSON.stringify(base.db.wp_postmeta));
+  remote.plugins.forms.description = 'remote-only plugin drift';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin drift */';
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === targetResourceKey);
+  const earlyMetaBlocker = plan.blockers.find((entry) => entry.resourceKey === earlyMetaResourceKey);
+  const lateMetaBlocker = plan.blockers.find((entry) => entry.resourceKey === lateMetaResourceKey);
+  const matchingEdit = decisionFor(plan, 'row:["wp_posts","ID:1"]');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, targetResourceKey), undefined);
+  assert.equal(decisionFor(plan, targetResourceKey), undefined);
+  assert.equal(blocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(
+    blocker.reason,
+    'WordPress graph mutation row:["wp_posts","ID:89"] is created in the same plan as a post meta target that depends on it, and identity rewriting is not yet supported.',
+  );
+  assert.deepEqual(
+    blocker.references.map((reference) => [reference.relationshipType, reference.sourceResourceKey]),
+    [
+      ['postmeta-post', earlyMetaResourceKey],
+      ['postmeta-post', lateMetaResourceKey],
+    ],
+  );
+  assert.equal(earlyMetaBlocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(lateMetaBlocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(matchingEdit.decision, 'already-in-sync');
+  assert.equal(matchingEdit.change.localChange, 'update');
+  assert.equal(matchingEdit.change.remoteChange, 'update');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('Local same-plan post identity'), false);
+  assert.equal(planJson.includes('Local same-plan post body'), false);
+  assert.equal(planJson.includes('Local early same-plan post meta'), false);
+  assert.equal(planJson.includes('Local late same-plan post meta'), false);
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin drift');
+  assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin drift */');
+});
+
 test('blocks local menu item parent references to a same-plan created nav menu item while preserving remote-only plugin drift', () => {
   const resourceKey = 'row:["wp_posts","ID:49"]';
   const targetResourceKey = 'row:["wp_posts","ID:13"]';
