@@ -17526,6 +17526,53 @@ test('blocks legacy links graph resources while preserving a matching independen
   assert.equal(remote.plugins.forms.description, 'remote-only plugin changes');
 });
 
+test('blocks legacy links graph resources while preserving a matching independent file type swap and remote-only plugin removals', () => {
+  const resourceKey = 'row:["wp_links","link_id:21"]';
+  const base = baseSite();
+  base.db.wp_links = {
+    'link_id:21': {
+      link_id: 21,
+      link_url: 'https://base.example.test',
+      link_name: 'Base link',
+    },
+  };
+  base.files['wp-content/uploads/cover'] = 'base cover bytes';
+
+  const local = baseSite();
+  local.db.wp_links = {
+    'link_id:21': {
+      link_id: 21,
+      link_url: 'https://local.example.test',
+      link_name: 'Local link',
+    },
+  };
+  local.files['wp-content/uploads/cover'] = { type: 'directory' };
+
+  const remote = baseSite();
+  remote.db.wp_links = JSON.parse(JSON.stringify(base.db.wp_links));
+  remote.files['wp-content/uploads/cover'] = { type: 'directory' };
+  delete remote.plugins.forms;
+  delete remote.files['wp-content/plugins/forms/forms.php'];
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers[0];
+  const matchingTypeSwap = decisionFor(plan, 'file:wp-content/uploads/cover');
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(plan.conflicts.length, 0);
+  assert.equal(blocker.class, 'unsupported-legacy-links-resource');
+  assert.equal(blocker.resourceKind, 'legacy-link');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.reason, 'Legacy link graph resources are not yet supported by the planner.');
+  assert.equal(matchingTypeSwap.decision, 'already-in-sync');
+  assert.equal(matchingTypeSwap.change.localChange, 'type-change');
+  assert.equal(matchingTypeSwap.change.remoteChange, 'type-change');
+  assert.equal(Object.hasOwn(remote.plugins, 'forms'), false);
+  assert.equal(Object.hasOwn(remote.files, 'wp-content/plugins/forms/forms.php'), false);
+});
+
 test('blocks local term-relationship object references to a same-plan created attachment identity while preserving a matching independent edit and remote-only plugin changes', () => {
   const resourceKey = 'row:["wp_term_relationships","object_id:8,term_taxonomy_id:5"]';
   const targetResourceKey = 'row:["wp_posts","ID:8"]';
