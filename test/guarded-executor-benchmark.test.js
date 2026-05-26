@@ -3732,3 +3732,21 @@ test('guarded benchmark keeps pause-footprint visibility false when memory-ceili
   assert.equal(details.receiptCursorMemoryCeilingMatchesQueueBudgetVisible, false);
   assert.ok(blockers.includes('queue-pause-with-complete-footprint-without-memory-ceiling-match-visibility'));
 });
+
+test('guarded benchmark keeps pause-footprint visibility false when the aligned queue-slack proof is hidden', () => {
+  const report = smallBenchmark();
+  const mutated = clone(report);
+
+  mutated.evidence.backpressure.queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack = false;
+
+  const details = productionThroughputDetails(mutated);
+  const blockers = productionThroughputBlockers(mutated);
+
+  assert.equal(details.receiptCursorPauseFootprintComplete, true);
+  assert.equal(details.queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack, false);
+  assert.equal(details.receiptCursorPauseFootprintVisible, false);
+  assert.equal(details.backpressureConsistency.receiptCursorPauseFootprintVisible, false);
+  assert.ok(
+    blockers.includes('queue-pause-with-complete-footprint-without-measured-and-aligned-receipt-cursor-queue-slack'),
+  );
+});
