@@ -4,14 +4,14 @@
 
 The project is **not releasable as a production WordPress push path**.
 
-- Audit time: 2026-05-26 10:37:21 CEST (+0200)
+- Audit time: 2026-05-26 10:39:09 CEST (+0200)
 - Fresh remote heads re-polled at audit time:
   - `origin/lane/reliable-executor` -> `0f36d838`
   - `origin/lane/no-data-loss-invariants` -> `e884c34d`
   - `origin/lane/no-data-loss-recovery` -> `351b6bbd`
   - `origin/lane/critic` -> `228d2429`
   - `origin/lane/progress-publisher` -> `72c00be9`
-  - `origin/lane/feedback-supervisor` -> `247b33a7`
+  - `origin/lane/feedback-supervisor` -> `7c432571`
 
 ## Evidence Table
 
@@ -30,7 +30,7 @@ The project is **not releasable as a production WordPress push path**.
 3. `reliable-executor` advanced the readiness harness in `e725e749` and `0f36d838` so the readiness failure now fails fast with bounded route/status/body diagnostics instead of hanging. That is a better failure, but it is still a readiness boundary, not live release-proof past readiness, so no downstream release-boundary evidence can count yet.
 4. `no-data-loss-invariants` now shows additional unsupported-surface blocking, but `19c32bb9`, `5f5a2f8a`, `6cd23be4`, `3998cb83`, `7400e3eb`, `eed6af9f`, `63baa64d`, `c1cc6e93`, `ad57d11a`, `93a4a4eb`, `8b6c8bca`, `3f5e4919`, `60d398ba`, `22ac2d21`, `56fd6a3a`, `7d614106`, `38e14784`, `b12d7401`, `ff1c8e35`, `5e76166e`, `10cb1368`, and `e884c34d` still do not prove the live production mutation boundary.
 5. `critic` refreshed the auth-session evidence in `228d2429`, but that is still a critique update rather than release proof.
-6. `progress-publisher` and `feedback-supervisor` only moved visible freshness in `7695e1f9` and `fd3b339b`. That is useful for visibility, but it does not move a release gate.
+6. `progress-publisher` and `feedback-supervisor` only moved visible freshness in `72c00be9` and `7c432571`. That is useful for visibility, but it does not move a release gate.
 
 ## Conclusion
 
