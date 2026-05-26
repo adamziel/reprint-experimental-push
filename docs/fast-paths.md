@@ -77,6 +77,9 @@ Current executable gate:
 - The production-throughput gate also fails closed if paused queue slack no
   longer fits inside the measured memory ceiling, so a tampered pause record
   cannot reuse an impossible slack value.
+- The production-throughput gate also fails closed if receipt-cursor queue
+  slack appears without a queue pause, so orphaned slack evidence cannot stand
+  in for bounded backpressure.
 - The report now also fails closed if receipt-cursor queue slack is missing on
   any path, so the benchmark cannot quietly accept an under-instrumented
   backpressure record.
@@ -240,6 +243,7 @@ Concrete failure modes stay rejected even when the throughput gain looks temptin
 - A compressed remote index plus cached chunk receipts still cannot skip large-upload backpressure after a pause, because cached receipts do not prove the queue stayed bounded, which chunk acknowledgements survived the pause, or that the guarded publish barrier remained intact.
 - A compressed remote index plus cached chunk receipts still cannot skip large-upload backpressure after a pause, because cached receipts do not prove the paused sender can resume or abort without ambiguity, or that the guarded publish barrier survived failure.
 - A compressed remote index plus extra chunk parallelism still cannot skip large-upload backpressure after a pause, because wider fan-out and planning evidence cannot prove the bounded queue order, which acknowledgements survived the pause, or that the guarded publish barrier survived failure.
+- Orphaned receipt-cursor slack still cannot prove bounded backpressure, because slack without a real queue pause does not show the sender was actually held below overflow.
 - A compressed remote index plus cached file hashes still cannot skip backpressure during chunk hashing, because planning evidence and cached hashes do not prove the bounded queue order or journal evidence needed to recover after pause or crash.
 - A cached receipt cursor plus queue headroom still cannot skip the backpressure pause after a retry, because headroom evidence can size the next bounded queue, but it cannot prove the pause happened before overflow or that the journal trail is durable enough to recover without guessing which receipts survived the retry.
 - A paused queue still cannot claim bounded backpressure unless the receipt-cursor backpressure was actually measured, because a pause without measured receipt-cursor pressure does not prove the queue stayed within the supported release-candidate envelope.

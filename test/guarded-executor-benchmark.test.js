@@ -467,6 +467,14 @@ test('production claim gate fails closed if benchmark evidence is tampered', () 
     false,
   );
 
+  const slackWithoutQueuePause = clone(report);
+  slackWithoutQueuePause.evidence.backpressure.queuePausedBeforeOverflow = false;
+  assert.ok(
+    productionThroughputBlockers(slackWithoutQueuePause).includes(
+      'receipt-cursor-queue-slack-without-queue-pause',
+    ),
+  );
+
   const pausedWithoutMeasuredBackpressure = clone(report);
   pausedWithoutMeasuredBackpressure.evidence.backpressure.receiptCursorBytes = null;
   pausedWithoutMeasuredBackpressure.evidence.backpressure.queuePausedBeforeOverflow = true;

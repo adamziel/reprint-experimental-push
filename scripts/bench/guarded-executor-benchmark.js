@@ -270,6 +270,12 @@ export function productionThroughputBlockers(report) {
     blockers.push('receipt-cursor-queue-slack-not-measured');
   }
   if (
+    report.evidence.backpressure?.queuePausedBeforeOverflow !== true
+    && Number.isFinite(report.evidence.backpressure?.receiptCursorQueueSlackBytes)
+  ) {
+    blockers.push('receipt-cursor-queue-slack-without-queue-pause');
+  }
+  if (
     report.evidence.backpressure?.queuePausedBeforeOverflow === true
     && (
       report.evidence.backpressure?.receiptCursorQueueSlackBytes == null
