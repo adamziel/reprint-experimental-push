@@ -139,6 +139,7 @@ export async function runAuthenticatedHttpPush({
   if (preflightObservedLifecycleDrift) {
     summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
     summary.authSession = {
+      ...(preflightObservedLifecycleDrift.field ? { field: preflightObservedLifecycleDrift.field } : {}),
       required: preflightObservedLifecycleDrift.required,
       observed: preflightObservedLifecycleDrift.observed,
       verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
@@ -263,11 +264,7 @@ export async function runAuthenticatedHttpPush({
   }
   if (requireProductionAuthSession && hasProductionAuthSessionRevocationDrift(preflight)) {
     summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
-    summary.authSession = {
-      required: 'unrevoked',
-      observed: preflight.body.auth?.session?.revoked ? 'revoked' : 'cleaned-up',
-      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
-    };
+    summary.authSession = describeRequiredUnrevokedProductionAuthSession(preflight);
     summary.boundary = {
       firstRemainingProductionBoundary: 'auth/session lifecycle and durable journal semantics',
       status: 'unimplemented',
@@ -393,6 +390,7 @@ export async function runAuthenticatedHttpPush({
   if (dryRunObservedLifecycleDrift) {
     summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
     summary.authSession = {
+      ...(dryRunObservedLifecycleDrift.field ? { field: dryRunObservedLifecycleDrift.field } : {}),
       required: dryRunObservedLifecycleDrift.required,
       observed: dryRunObservedLifecycleDrift.observed,
       verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
@@ -402,11 +400,7 @@ export async function runAuthenticatedHttpPush({
   }
   if (requireProductionAuthSession && hasProductionAuthSessionRevocationDrift(dryRun)) {
     summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
-    summary.authSession = {
-      required: 'unrevoked',
-      observed: dryRun.body?.auth?.session?.revoked ? 'revoked' : 'cleaned-up',
-      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
-    };
+    summary.authSession = describeRequiredUnrevokedProductionAuthSession(dryRun);
     summary.boundary = {
       firstRemainingProductionBoundary: 'auth/session lifecycle and durable journal semantics',
       status: 'unimplemented',
@@ -587,6 +581,7 @@ export async function runAuthenticatedHttpPush({
   if (applyObservedLifecycleDrift) {
     summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
     summary.authSession = {
+      ...(applyObservedLifecycleDrift.field ? { field: applyObservedLifecycleDrift.field } : {}),
       required: applyObservedLifecycleDrift.required,
       observed: applyObservedLifecycleDrift.observed,
       verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
@@ -596,11 +591,7 @@ export async function runAuthenticatedHttpPush({
   }
   if (requireProductionAuthSession && hasProductionAuthSessionRevocationDrift(apply)) {
     summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
-    summary.authSession = {
-      required: 'unrevoked',
-      observed: apply.body?.auth?.session?.revoked ? 'revoked' : 'cleaned-up',
-      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
-    };
+    summary.authSession = describeRequiredUnrevokedProductionAuthSession(apply);
     summary.boundary = {
       firstRemainingProductionBoundary: 'auth/session lifecycle and durable journal semantics',
       status: 'unimplemented',
@@ -758,6 +749,7 @@ export async function runAuthenticatedHttpPush({
   if (recoveryInspectObservedLifecycleDrift) {
     summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
     summary.authSession = {
+      ...(recoveryInspectObservedLifecycleDrift.field ? { field: recoveryInspectObservedLifecycleDrift.field } : {}),
       required: recoveryInspectObservedLifecycleDrift.required,
       observed: recoveryInspectObservedLifecycleDrift.observed,
       verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
@@ -767,11 +759,7 @@ export async function runAuthenticatedHttpPush({
   }
   if (requireProductionAuthSession && hasProductionAuthSessionRevocationDrift(recoveryInspect)) {
     summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
-    summary.authSession = {
-      required: 'unrevoked',
-      observed: recoveryInspect.body?.auth?.session?.revoked ? 'revoked' : 'cleaned-up',
-      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
-    };
+    summary.authSession = describeRequiredUnrevokedProductionAuthSession(recoveryInspect);
     summary.boundary = {
       firstRemainingProductionBoundary: 'auth/session lifecycle and durable journal semantics',
       status: 'unimplemented',
@@ -955,6 +943,7 @@ export async function runAuthenticatedHttpPush({
   if (replayObservedLifecycleDrift) {
     summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
     summary.authSession = {
+      ...(replayObservedLifecycleDrift.field ? { field: replayObservedLifecycleDrift.field } : {}),
       required: replayObservedLifecycleDrift.required,
       observed: replayObservedLifecycleDrift.observed,
       verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
@@ -974,11 +963,7 @@ export async function runAuthenticatedHttpPush({
   }
   if (requireProductionAuthSession && hasProductionAuthSessionRevocationDrift(replay)) {
     summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
-    summary.authSession = {
-      required: 'unrevoked',
-      observed: replay.body?.auth?.session?.revoked ? 'revoked' : 'cleaned-up',
-      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
-    };
+    summary.authSession = describeRequiredUnrevokedProductionAuthSession(replay);
     summary.boundary = {
       firstRemainingProductionBoundary: 'auth/session lifecycle and durable journal semantics',
       status: 'unimplemented',
@@ -1149,6 +1134,7 @@ export async function runAuthenticatedHttpPush({
   if (dbJournalObservedLifecycleDrift) {
     summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
     summary.authSession = {
+      ...(dbJournalObservedLifecycleDrift.field ? { field: dbJournalObservedLifecycleDrift.field } : {}),
       required: dbJournalObservedLifecycleDrift.required,
       observed: dbJournalObservedLifecycleDrift.observed,
       verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
@@ -1158,11 +1144,7 @@ export async function runAuthenticatedHttpPush({
   }
   if (requireProductionAuthSession && hasProductionAuthSessionRevocationDrift(dbJournal)) {
     summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
-    summary.authSession = {
-      required: 'unrevoked',
-      observed: dbJournal.body?.auth?.session?.revoked ? 'revoked' : 'cleaned-up',
-      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
-    };
+    summary.authSession = describeRequiredUnrevokedProductionAuthSession(dbJournal);
     summary.boundary = {
       firstRemainingProductionBoundary: 'auth/session lifecycle and durable journal semantics',
       status: 'unimplemented',
@@ -1643,7 +1625,9 @@ function summarizeAuthSessionLifecycle(auth) {
     expiresAt: session.expiresAt || null,
     expired: isExpiredSession(session),
     revoked: session.revoked === true || session.status === 'revoked',
-    cleanedUp: session.cleanedUp === true || session.cleanup === true,
+    cleanedUp: session.cleanedUp === true || session.cleanup === true || session.status === 'cleaned-up',
+    rotated: session.rotated === true ? true : session.rotated === false ? false : null,
+    preserved: session.preserved === true ? true : session.preserved === false ? false : null,
     ...(authUser ? { authUser } : {}),
   };
 }
@@ -2248,6 +2232,23 @@ function resolveObservedProductionAuthSessionLifecycleDrift(response) {
     };
   }
 
+  if (
+    session?.revoked === true
+    || session?.status === 'revoked'
+    || session?.cleanedUp === true
+    || session?.cleanup === true
+    || session?.status === 'cleaned-up'
+  ) {
+    return {
+      field: session?.revoked === true || session?.status === 'revoked'
+        ? 'auth.session.status'
+        : session?.cleanedUp === true || session?.status === 'cleaned-up'
+          ? 'auth.session.cleanedUp'
+          : 'auth.session.cleanup',
+      required: 'unrevoked',
+      observed: session?.revoked === true || session?.status === 'revoked' ? 'revoked' : 'cleaned-up',
+    };
+  }
   if (session?.status !== 'active') {
     return {
       required: 'active',
@@ -2259,13 +2260,6 @@ function resolveObservedProductionAuthSessionLifecycleDrift(response) {
     return {
       required: 'unexpired',
       observed: session?.expiresAt || 'missing',
-    };
-  }
-
-  if (session?.revoked === true || session?.status === 'revoked' || session?.cleanedUp === true || session?.cleanup === true) {
-    return {
-      required: 'unrevoked',
-      observed: session?.revoked === true || session?.status === 'revoked' ? 'revoked' : 'cleaned-up',
     };
   }
 
@@ -2312,12 +2306,33 @@ function setProductionAuthSessionBoundary(summary) {
   };
 }
 
+function describeRequiredUnrevokedProductionAuthSession(response) {
+  const session = response?.body?.auth?.session;
+  const cleanedUp = session?.cleanedUp === true || session?.cleanup === true || session?.status === 'cleaned-up';
+  return {
+    field: session?.revoked === true || session?.status === 'revoked'
+      ? 'auth.session.status'
+      : cleanedUp && (session?.cleanedUp === true || session?.status === 'cleaned-up')
+        ? 'auth.session.cleanedUp'
+        : 'auth.session.cleanup',
+    required: 'unrevoked',
+    observed: session?.revoked === true || session?.status === 'revoked'
+      ? 'revoked'
+      : 'cleaned-up',
+    verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+  };
+}
+
 function hasProductionAuthSessionRevocationDrift(response) {
   const session = response?.body?.auth?.session;
   if (!session || typeof session !== 'object') {
     return false;
   }
-  return session.revoked === true || session.status === 'revoked' || session.cleanedUp === true || session.cleanup === true;
+  return session.revoked === true
+    || session.status === 'revoked'
+    || session.cleanedUp === true
+    || session.cleanup === true
+    || session.status === 'cleaned-up';
 }
 
 function isExpiredSession(session) {
