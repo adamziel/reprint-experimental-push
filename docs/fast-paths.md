@@ -107,6 +107,9 @@ scans without weakening live preconditions or the atomic-group barrier.
 It also includes a cached release-manifest digest plus cursor shortcut for
 release-bundle fanout, so the planner can trim repeat fanout scans without
 changing the guarded release boundary.
+It also includes measured upload concurrency plus a cached release-manifest
+cursor for release-bundle fanout, so bounded release planning can skip repeat
+fanout sizing without turning concurrency reuse into mutation authority.
 It also includes a compressed row-batch manifest plus canonical row-digest
 shortcut for plugin-install batches, so repeat batch sizing can skip duplicate
 planning work without weakening row preconditions or the atomic-group

@@ -650,6 +650,27 @@ export const SAFE_FAST_PATHS = Object.freeze([
   {
     area: 'parallelism-limits',
     reduces: ['idle-time', 'head-of-line-blocking', 'duplicate-budget-recomputation'],
+    allowedShortcut: 'reuse-measured-upload-concurrency-and-cached-release-manifest-cursor-to-size-bounded-release-bundle-fanout',
+    guardrails: [
+      'measured-upload-concurrency-stays-planning-evidence-only',
+      'cached-release-manifest-cursor-remains-planning-evidence-only',
+      'release-bundle-fanout-revalidates-before-write',
+    ],
+    gateProofs: {
+      skip: 'the planner can reuse measured upload concurrency together with a cached release-manifest cursor to avoid recomputing release-bundle fanout on a retry',
+      live: 'each later release-bundle write still rechecks its own live resource precondition before visibility changes',
+      group: 'fanout reuse only narrows planning inside the same planned release bundle and never widens the atomic-group barrier',
+      recovery: 'the measured concurrency, cached cursor, and durable release receipts still classify pause, retry, or crash',
+    },
+    visibilityBoundary: 'planning-only-budget-resume',
+    failureEvidence: 'measured upload concurrency plus cached release-manifest cursor and durable release receipts',
+    bypassesLivePreconditions: false,
+    splitsAtomicGroup: false,
+    publishesStagedDataEarly: false,
+  },
+  {
+    area: 'parallelism-limits',
+    reduces: ['idle-time', 'head-of-line-blocking', 'duplicate-budget-recomputation'],
     allowedShortcut: 'reuse-measured-db-parallelism-caps-and-canonical-per-kind-budgets-to-size-bounded-plugin-update-row-batches',
     guardrails: [
       'measured-db-parallelism-caps-stay-planning-evidence-only',
