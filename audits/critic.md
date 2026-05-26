@@ -1,16 +1,15 @@
 # Critic Verdict
 
-Current reliable head: `a630f67e325c863b9a83cadfbf0fcd441b282b0e`
-(`Accept packaged readiness timeout fallbacks`).
+Current reliable head: `6611bfe2aba4a3ebc9d42545d41e51cf610360ca`
+(`Keep packaged cleanup seed available`).
 
 Verdict: `0/4`
 
 Reason:
 
-- This head accepts packaged readiness timeout fallbacks in the release
-  verifier so the checked path can keep probing through timeout-shaped
-  readiness stalls, but it still reads as harness-side release-verify
-  hardening rather than a production gate crossing.
+- This head keeps the packaged cleanup seed available and adds proof coverage
+  for the packaged plugin smoke, but it still reads as packaged Playground
+  hardening rather than a checked production boundary crossing.
 - The checked release path still lacks live production auth/session
   issuance/read/expiry/rotation/revocation/cleanup evidence, and it still does
   not prove production durable-journal ownership with restart-readable replay
