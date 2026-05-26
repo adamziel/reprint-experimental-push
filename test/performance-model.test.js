@@ -2110,6 +2110,9 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
     rejectedById.get('compressed-remote-index-and-unbounded-hash-fanout-skips-backpressure').violates.includes('file-hashing'),
   );
   assert.ok(
+    rejectedById.get('compressed-remote-index-and-unbounded-hash-fanout-skips-backpressure').violates.includes('durable-progress'),
+  );
+  assert.ok(
     rejectedById.get('compressed-remote-index-and-unbounded-hash-fanout-skips-backpressure').violates.includes('parallelism-limits'),
   );
   assert.ok(
