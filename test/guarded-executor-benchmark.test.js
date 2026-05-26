@@ -94,6 +94,7 @@ test('guarded executor benchmark moves buffers and row payloads through durable 
   assert.equal(report.evidence.atomicGroup.preCommitFailureLeavesRemoteUnchanged, true);
   assert.equal(report.evidence.atomicGroup.productionAtomicCommitMeasured, false);
   assert.equal(report.evidence.atomicGroup.productionStorageReceiptsMeasured, false);
+  assert.equal(report.evidence.atomicGroup.productionAtomicGroupMetadataVisible, true);
   assert.equal(
     report.evidence.atomicGroup.productionStorageReceiptsMeasured,
     report.claims.productionThroughputDetails.atomicGroup.productionStorageReceiptsMeasured,
@@ -255,6 +256,7 @@ test('guarded benchmark refuses production throughput claims until production ga
     report.claims.productionThroughputDetails.backpressureConsistency.receiptCursorQueueHeadroomBytes,
     31.5 * 1024 * 1024,
   );
+  assert.equal(report.claims.productionThroughputDetails.backpressureConsistency.receiptCursorPauseFootprintComplete, true);
   assert.equal(
     report.claims.productionThroughputDetails.recovery.partialCommitInspectionStatus,
     'blocked-recovery',
@@ -266,6 +268,8 @@ test('guarded benchmark refuses production throughput claims until production ga
     dbBatchPerTable: 2,
   });
   assert.equal(report.claims.productionThroughputDetails.parallelismLimitsIntegral, true);
+  assert.equal(report.claims.productionThroughputDetails.parallelismLimitsCanonical, true);
+  assert.equal(report.claims.productionThroughputDetails.receiptCursorPauseFootprintComplete, true);
   assert.equal(
     report.claims.productionThroughputDetails.blockers.includes('production-memory-ceiling-not-measured'),
     false,
@@ -350,12 +354,25 @@ test('guarded benchmark refuses production throughput claims until production ga
     ),
   );
 
+  const hiddenAtomicGroupMetadata = clone(report);
+  hiddenAtomicGroupMetadata.evidence.atomicGroup.productionAtomicCommitMeasured = true;
+  hiddenAtomicGroupMetadata.evidence.atomicGroup.productionAtomicGroupMetadataVisible = false;
+  assert.ok(
+    productionThroughputBlockers(hiddenAtomicGroupMetadata).includes(
+      'production-atomic-group-metadata-not-visible',
+    ),
+  );
+
   const tamperedQueueSlackSummary = clone(report);
   tamperedQueueSlackSummary.evidence.backpressure.receiptCursorQueueSlackBytes = null;
   assert.ok(
     productionThroughputBlockers(tamperedQueueSlackSummary).includes(
       'queue-pause-without-measured-receipt-cursor-queue-slack',
     ),
+  );
+  assert.equal(
+    productionThroughputDetails(tamperedQueueSlackSummary).receiptCursorPauseFootprintComplete,
+    false,
   );
 
   const tamperedQueueSlackAlignment = clone(report);
@@ -383,7 +400,19 @@ test('guarded benchmark refuses production throughput claims until production ga
   );
   assert.equal(
     productionThroughputDetails(fractionalParallelismLimits).parallelismLimitsIntegral,
-    true,
+    false,
+  );
+
+  const nonCanonicalParallelismLimits = clone(report);
+  nonCanonicalParallelismLimits.claims.productionThroughputDetails.parallelismLimits.dbBatchPerTable = 3;
+  assert.equal(
+    productionThroughputDetails(nonCanonicalParallelismLimits).parallelismLimitsCanonical,
+    false,
+  );
+  assert.ok(
+    productionThroughputBlockers(nonCanonicalParallelismLimits).includes(
+      'production-parallelism-limits-not-canonical',
+    ),
   );
 
   const mismatchedCeilingAndBudget = clone(report);
@@ -391,6 +420,14 @@ test('guarded benchmark refuses production throughput claims until production ga
   assert.ok(
     productionThroughputBlockers(mismatchedCeilingAndBudget).includes(
       'queue-memory-ceiling-does-not-match-queue-budget',
+    ),
+  );
+
+  const incompletePauseFootprint = clone(report);
+  incompletePauseFootprint.evidence.backpressure.receiptCursorPauseFootprintComplete = false;
+  assert.ok(
+    productionThroughputBlockers(incompletePauseFootprint).includes(
+      'queue-pause-without-complete-receipt-cursor-pause-footprint',
     ),
   );
   assert.equal(report.results.preCommitFailure.remoteUnchanged, true);

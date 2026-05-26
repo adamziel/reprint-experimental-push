@@ -283,6 +283,13 @@ export function productionThroughputBlockers(report) {
     blockers.push('production-parallelism-limits-not-integral');
   }
   if (
+    parallelismLimits?.chunkUpload !== DEFAULT_LIMITS.maxUploadConcurrency
+    || parallelismLimits?.fileHashing !== DEFAULT_LIMITS.maxHashConcurrency
+    || parallelismLimits?.dbBatchPerTable !== DEFAULT_LIMITS.maxDbConcurrencyPerTable
+  ) {
+    blockers.push('production-parallelism-limits-not-canonical');
+  }
+  if (
     !Number.isFinite(report.resourceLimits?.memoryCeilingBytes)
     || !Number.isFinite(report.evidence.chunkReceipts.resumeCursor?.sizeBytes)
     || report.evidence.chunkReceipts.resumeCursor.sizeBytes > report.resourceLimits.memoryCeilingBytes
@@ -336,6 +343,12 @@ export function productionThroughputBlockers(report) {
   }
   if (report.evidence.backpressure?.queuePausedBeforeOverflow !== true) {
     blockers.push('queue-did-not-pause-before-overflow');
+  }
+  if (
+    report.evidence.backpressure?.queuePausedBeforeOverflow === true
+    && report.evidence.backpressure?.receiptCursorPauseFootprintComplete !== true
+  ) {
+    blockers.push('queue-pause-without-complete-receipt-cursor-pause-footprint');
   }
   if (report.evidence.backpressure?.queueHeadroomMeasured !== true) {
     blockers.push('queue-headroom-not-measured');
@@ -679,6 +692,12 @@ export function productionThroughputBlockers(report) {
     blockers.push('production-capability-measurement-not-aligned');
   }
   if (
+    report.evidence.atomicGroup.productionAtomicCommitMeasured === true
+    && report.evidence.atomicGroup.productionAtomicGroupMetadataVisible !== true
+  ) {
+    blockers.push('production-atomic-group-metadata-not-visible');
+  }
+  if (
     report.results?.successInspection?.claim?.status != null
     && !['none', 'active', 'advanced', 'blocked'].includes(report.results.successInspection.claim.status)
   ) {
@@ -942,6 +961,18 @@ export function productionThroughputDetails(report) {
     memoryCeilingBytes: receiptCursorMemoryCeilingBytes,
     memoryHeadroomBytes: receiptCursorMemoryHeadroomBytes,
   };
+  const receiptCursorPauseFootprintComplete =
+    Number.isFinite(receiptCursorBackpressureBytes)
+    && Number.isFinite(receiptCursorQueueBudgetBytes)
+    && Number.isFinite(receiptCursorQueueHeadroomBytes)
+    && Number.isFinite(receiptCursorQueueSlackBytes)
+    && Number.isFinite(receiptCursorMemoryCeilingBytes)
+    && Number.isFinite(receiptCursorMemoryHeadroomBytes)
+    && receiptCursorBackpressureBytes === receiptCursorWindowBytes
+    && receiptCursorQueueBudgetBytes === receiptCursorMemoryCeilingBytes
+    && receiptCursorQueueHeadroomBytes === receiptCursorQueueBudgetBytes - report.shape.chunkSizeBytes
+    && receiptCursorQueueSlackBytes === receiptCursorQueueBudgetBytes - receiptCursorBackpressureBytes
+    && receiptCursorQueueSlackBytes === receiptCursorMemoryHeadroomBytes;
   const queueBudgetMatchesResourceCeiling =
     Number.isFinite(receiptCursorQueueBudgetBytes)
     && Number.isFinite(report.resourceLimits?.maxBufferedUploadBytes)
@@ -1004,13 +1035,15 @@ export function productionThroughputDetails(report) {
   const productionAtomicCommitMeasured = report.executorCapabilities.productionAtomicCommit === 'production-atomic-group-commit';
   const productionStorageReceiptsMeasured = report.executorCapabilities.fileReceipts === 'production-storage-receipts';
   const productionRowBatchExecutorMeasured = report.executorCapabilities.rowApply === 'production-batched-compare-and-swap';
+  const productionAtomicGroupMetadataVisible =
+    report.evidence.atomicGroup?.productionAtomicGroupMetadataVisible === true;
   const productionAtomicGroupMetadataProven =
     report.evidence.atomicGroup?.productionAtomicCommitMeasured !== true
     || (
       report.evidence.atomicGroup?.groupStatus === 'ready'
       && report.evidence.atomicGroup?.requireAtomic === true
     );
-  const parallelismLimits = {
+  const parallelismLimits = report.claims?.productionThroughputDetails?.parallelismLimits ?? {
     chunkUpload: DEFAULT_LIMITS.maxUploadConcurrency,
     fileHashing: DEFAULT_LIMITS.maxHashConcurrency,
     dbBatchPerTable: DEFAULT_LIMITS.maxDbConcurrencyPerTable,
@@ -1019,6 +1052,10 @@ export function productionThroughputDetails(report) {
     Number.isInteger(parallelismLimits.chunkUpload)
     && Number.isInteger(parallelismLimits.fileHashing)
     && Number.isInteger(parallelismLimits.dbBatchPerTable);
+  const parallelismLimitsCanonical =
+    parallelismLimits.chunkUpload === DEFAULT_LIMITS.maxUploadConcurrency
+    && parallelismLimits.fileHashing === DEFAULT_LIMITS.maxHashConcurrency
+    && parallelismLimits.dbBatchPerTable === DEFAULT_LIMITS.maxDbConcurrencyPerTable;
   const wordpressGraphIdentityPostmetaReferencesMatch =
     Number.isFinite(report.evidence.wordpressGraphIdentity?.postmetaReferences)
     && Number.isFinite(report.shape?.rowCount)
@@ -1044,6 +1081,7 @@ export function productionThroughputDetails(report) {
     receiptCursorMemoryCeilingBytes,
     receiptCursorHeadroomMatchesResourceHeadroom,
     receiptCursorPauseFootprint,
+    receiptCursorPauseFootprintComplete,
     receiptCursorHeadroomCoveredByQueueBudget,
     queueBudgetBytes: receiptCursorQueueBudgetBytes,
     queueHeadroomBytes: receiptCursorQueueHeadroomBytes,
@@ -1106,9 +1144,11 @@ export function productionThroughputDetails(report) {
     productionAtomicCommitMeasured,
     productionStorageReceiptsMeasured,
     productionRowBatchExecutorMeasured,
+    productionAtomicGroupMetadataVisible,
     productionAtomicGroupMetadataProven,
     parallelismLimits,
     parallelismLimitsIntegral,
+    parallelismLimitsCanonical,
     wordpressGraphIdentityPostmetaReferencesMatch,
     journalSuccessRecordTypes,
     journalSuccessReceiptKindsGrouped,
@@ -1165,6 +1205,7 @@ export function productionThroughputDetails(report) {
       receiptCursorMemoryHeadroomMatchesResourceHeadroom,
       receiptCursorMemoryHeadroomWithinResourceHeadroom,
       receiptCursorPauseFootprint,
+      receiptCursorPauseFootprintComplete,
       receiptCursorBackpressureWithinResourceHeadroom,
       receiptCursorBackpressureWithinQueueBudget,
       backpressureEvidenceComplete,
@@ -1174,6 +1215,7 @@ export function productionThroughputDetails(report) {
       productionAtomicGroupMetadataProven,
       parallelismLimits,
       parallelismLimitsIntegral,
+      parallelismLimitsCanonical,
       wordpressGraphIdentityPostmetaReferencesMatch,
       journalSuccessRecordTypes,
       journalSuccessReceiptKindsGrouped,
@@ -1672,6 +1714,9 @@ function buildReport({
   const productionAtomicCommitMeasured = false;
   const productionStorageReceiptsMeasured = false;
   const productionRowBatchExecutorMeasured = false;
+  const productionAtomicGroupMetadataVisible =
+    atomicGroup?.status === 'ready'
+    && atomicGroup?.requireAtomic === true;
 
   return {
     schemaVersion: 1,
@@ -1775,6 +1820,7 @@ function buildReport({
         productionAtomicCommitMeasured,
         productionStorageReceiptsMeasured,
         productionRowBatchExecutorMeasured,
+        productionAtomicGroupMetadataVisible,
       },
       resourceLimits: {
         memoryCeilingBytes: config.maxBufferedUploadBytes,

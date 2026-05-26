@@ -119,6 +119,12 @@ Current executable gate:
 - The report now also fails closed when the surfaced parallelism caps are not
   whole-number concurrency limits, so a fractional or otherwise malformed cap
   cannot masquerade as a bounded fast-path proof.
+- The report now also fails closed when the surfaced parallelism caps drift
+  away from the canonical default concurrency limits, so an integral but
+  tampered cap summary cannot masquerade as a bounded fast-path proof.
+- The details surface now also exposes whether those parallelism caps are
+  canonical, so the audit view can reject a forged integral summary without
+  recomputing the guard from hidden defaults.
 - The production-throughput gate also fails closed if the success journal no
   longer keeps receipt flushes grouped by kind, so journal lag savings cannot
   hide interleaved recovery evidence.
@@ -153,6 +159,10 @@ Current executable gate:
   receipt cursor, queue budget, queue headroom, and memory ceiling, so the
   bounded backpressure proof can be read without reconstructing those six
   numbers from separate fields.
+- The production-throughput gate now also fails closed when a paused sender
+  does not expose the complete receipt-cursor pause-footprint bit, so the
+  composite backpressure summary cannot masquerade as complete when one of the
+  linked measurements is missing.
 - The report now also exposes a receipt-cursor memory-headroom replay check,
   so bounded replay sizing can stay advisory while the live compare and
   journal evidence still decide visibility.
@@ -214,6 +224,9 @@ Current executable gate:
   stalled wrapper does not erase the concrete failure evidence.
 - The release gate does not move on lab throughput alone; the fast-path claim
   stays off until those release receipts exist and can be replayed.
+- The report also fails closed if a surfaced atomic-group commit is marked
+  measured but its metadata visibility bit is missing, so the details view
+  cannot drift away from the atomic-group proof surface.
 - Latest measured lab throughput:
   - `labStagedMiBPerSecond: 59.54`
   - `labApplyMutationsPerSecond: 62.29`
