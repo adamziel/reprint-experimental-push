@@ -2009,6 +2009,63 @@ test('allows a local postmeta reference to a same-plan post through the generic 
   assert.equal(result.site.db.wp_postmeta['meta_id:60'].post_id, 2);
 });
 
+test('blocks a local postmeta reference when the same-plan post target is itself blocked by a revision parent', () => {
+  const revisionResourceKey = 'row:["wp_posts","ID:2"]';
+  const blockedPostResourceKey = 'row:["wp_posts","ID:3"]';
+  const postmetaResourceKey = 'row:["wp_postmeta","meta_id:61"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_type: 'revision',
+    post_title: 'Local revision parent',
+    post_content: 'local-private-revision-parent-body',
+    post_parent: 1,
+  };
+  local.db.wp_posts['ID:3'] = {
+    ID: 3,
+    post_type: 'post',
+    post_title: 'Blocked same-plan post',
+    post_content: 'local-private-blocked-post-body',
+    post_status: 'publish',
+    post_parent: 2,
+  };
+  local.db.wp_postmeta = {
+    'meta_id:61': {
+      meta_id: 61,
+      post_id: 3,
+      meta_key: '_local_graph_note',
+      meta_value: 'local-private-blocked-postmeta-payload',
+    },
+  };
+
+  const plan = planFor(base, local, baseSite());
+  const revisionMutation = mutationFor(plan, revisionResourceKey);
+  const blockedPostMutation = mutationFor(plan, blockedPostResourceKey);
+  const postmetaMutation = mutationFor(plan, postmetaResourceKey);
+  const revisionBlocker = plan.blockers.find((entry) => entry.resourceKey === revisionResourceKey);
+  const blockedPostBlocker = plan.blockers.find((entry) => entry.resourceKey === blockedPostResourceKey);
+  const postmetaBlocker = plan.blockers.find((entry) => entry.resourceKey === postmetaResourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(revisionMutation, undefined);
+  assert.equal(blockedPostMutation.changeKind, 'create');
+  assert.equal(postmetaMutation.changeKind, 'create');
+  assert.equal(revisionBlocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(revisionBlocker.surface, 'revision');
+  assert.equal(blockedPostBlocker.class, 'missing-wordpress-graph-dependency');
+  assert.equal(blockedPostBlocker.references[0].relationshipType, 'post-parent');
+  assert.equal(blockedPostBlocker.references[0].targetResourceKey, revisionResourceKey);
+  assert.equal(postmetaBlocker.class, 'missing-wordpress-graph-dependency');
+  assert.equal(postmetaBlocker.references[0].relationshipType, 'postmeta-post');
+  assert.equal(postmetaBlocker.references[0].targetResourceKey, blockedPostResourceKey);
+  assert.equal(postmetaMutation.dependsOnMutationIds, undefined);
+  assert.equal(JSON.stringify(postmetaBlocker).includes('local-private-revision-parent-body'), false);
+  assert.equal(JSON.stringify(postmetaBlocker).includes('local-private-blocked-post-body'), false);
+  assert.equal(JSON.stringify(postmetaBlocker).includes('local-private-blocked-postmeta-payload'), false);
+  assert.throws(() => applyPlan(baseSite(), plan), /Refusing to apply/);
+});
+
 test('blocks a term taxonomy parent reference to stale remote-created term identity', () => {
   const resourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:9"]';
   const targetResourceKey = 'row:["wp_terms","term_id:7"]';
