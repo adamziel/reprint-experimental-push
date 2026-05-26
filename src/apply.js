@@ -954,6 +954,12 @@ function productionRecoverySupportReport(writer) {
       addMissingDependency('fencing or lease ownership for the journal writer');
     }
   }
+  if (
+    !Object.hasOwn(writer ?? {}, 'assertCurrentClaim')
+    && typeof writer?.assertCurrentClaim === 'function'
+  ) {
+    addMissingDependency('fencing or lease ownership for the journal writer');
+  }
   if (!Object.hasOwn(writer ?? {}, 'writerLease')) {
     if (writer?.writerLease != null) {
       addMissingDependency('fencing or lease ownership for the journal writer');
