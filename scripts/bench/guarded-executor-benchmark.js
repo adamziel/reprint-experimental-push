@@ -794,6 +794,12 @@ export function productionThroughputBlockers(report) {
   }
   if (
     receiptCursorMemoryHeadroomVisible === true
+    && report.evidence.backpressure?.queueBudgetVisible !== true
+  ) {
+    blockers.push('receipt-cursor-memory-headroom-visible-without-queue-budget-visibility');
+  }
+  if (
+    receiptCursorMemoryHeadroomVisible === true
     && report.evidence.backpressure?.receiptCursorMemoryCeilingVisible !== true
   ) {
     blockers.push('receipt-cursor-memory-headroom-visible-without-memory-ceiling-visibility');
@@ -1191,6 +1197,8 @@ export function productionThroughputDetails(report) {
     report.evidence.backpressure?.receiptCursorQueueSlackVisible === true;
   const receiptCursorMemoryHeadroomVisible =
     report.evidence.backpressure?.receiptCursorMemoryHeadroomVisible === true;
+  const receiptCursorMemoryHeadroomVisibleAndQueueBudgetVisible =
+    receiptCursorMemoryHeadroomVisible && queueBudgetVisible;
   const queueHeadroomVisibleAndMeasured =
     queueHeadroomVisible && queueHeadroomMeasured;
   const queueBudgetVisibleAndMemoryCeilingVisibleAndMeasured =
@@ -1627,6 +1635,7 @@ export function productionThroughputDetails(report) {
     receiptCursorMemoryHeadroomWithinQueueBudget,
     receiptCursorMemoryHeadroomBytes,
     receiptCursorMemoryHeadroomVisible,
+    receiptCursorMemoryHeadroomVisibleAndQueueBudgetVisible,
     receiptCursorMemoryHeadroomPositive: receiptCursorMemoryHeadroomPositiveVisible,
     receiptCursorMemoryCeilingMatchesQueueBudget,
     receiptCursorMemoryCeilingMatchesQueueBudgetVisible,
@@ -1739,6 +1748,7 @@ export function productionThroughputDetails(report) {
       receiptCursorMemoryHeadroomWithinQueueBudget,
       receiptCursorMemoryHeadroomBytes,
       receiptCursorMemoryHeadroomVisible,
+      receiptCursorMemoryHeadroomVisibleAndQueueBudgetVisible,
       receiptCursorMemoryHeadroomPositive: receiptCursorMemoryHeadroomPositiveVisible,
       receiptCursorMemoryHeadroomWithinResourceHeadroom,
       receiptCursorMemoryCeilingMatchesQueueBudget,

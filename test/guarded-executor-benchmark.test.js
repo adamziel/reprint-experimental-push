@@ -2964,6 +2964,25 @@ test('guarded benchmark treats receipt-cursor memory-headroom visibility without
   assert.ok(blockers.includes('receipt-cursor-memory-headroom-visible-without-memory-ceiling-visibility'));
 });
 
+test('guarded benchmark treats receipt-cursor memory-headroom visibility without queue-budget visibility as incomplete backpressure evidence', () => {
+  const report = smallBenchmark();
+  const mutated = clone(report);
+
+  mutated.evidence.backpressure.receiptCursorMemoryHeadroomVisible = true;
+  mutated.evidence.backpressure.queueBudgetVisible = false;
+
+  const details = productionThroughputDetails(mutated);
+  const blockers = productionThroughputBlockers(mutated);
+
+  assert.equal(details.receiptCursorMemoryHeadroomVisible, true);
+  assert.equal(details.receiptCursorMemoryHeadroomVisibleAndQueueBudgetVisible, false);
+  assert.equal(
+    details.backpressureConsistency.receiptCursorMemoryHeadroomVisibleAndQueueBudgetVisible,
+    false,
+  );
+  assert.ok(blockers.includes('receipt-cursor-memory-headroom-visible-without-queue-budget-visibility'));
+});
+
 test('guarded benchmark treats receipt-cursor memory-headroom visibility without queue-headroom visibility as incomplete backpressure evidence', () => {
   const report = smallBenchmark();
   const mutated = clone(report);
