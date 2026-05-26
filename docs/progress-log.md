@@ -4,6 +4,22 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-05-26 - Freshness Refresh 02:04:00
+
+<a id="2026-05-26-freshness-refresh-020400"></a>
+
+- Refreshed the visible progress surface timestamp so the public page stays current for the active supervision cycle.
+- This is a visibility-only update. The release gate posture remains `0/4`.
+- Evidence trail: [progress.html](../progress.html), [supervisor feedback](supervisor-feedback.md).
+
+## 2026-05-26 - Release-Verify Diagnostic 02:03:00
+
+<a id="2026-05-26-release-verify-diagnostic-020300"></a>
+
+- The release-verify harness now emits a concrete blocked boundary before timeout: repeated `Playground index readiness HTTP 502` and `/wp-json/` probes returning `502` with `WordPress is not ready yet`.
+- This is a real proof improvement because it replaces the silent stall with a reportable failure trail, but it does not change the release gate posture. `progress.html` stays conservative at `0/4`.
+- Evidence trail: [progress.html](../progress.html), [supervisor feedback](supervisor-feedback.md), [reliable-executor handoff](../.lane-output/final-loop-20260526-015427.md).
+
 ## 2026-05-26 - Supervisor Lane Drift Audit 01:36:00
 
 <a id="2026-05-26-supervisor-lane-drift-audit-013600"></a>

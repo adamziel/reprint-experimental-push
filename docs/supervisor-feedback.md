@@ -1,9 +1,23 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-26 01:36 CEST
+Last updated: 2026-05-26 02:04 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-26 02:04 CEST - Freshness Refresh
+
+- Freshened the public feedback page so the visible timestamp stays current for the active supervision cycle.
+- No gate moved and no new proof landed. The release posture stays at `0/4`.
+- Next nudge: wait for `reliable-executor` to publish either a real live proof delta or an exact failing command with the missing dependency named precisely.
+
+## 2026-05-26 02:03 CEST - Release-Verify Diagnostic
+
+- `reliable-executor` finally surfaced a concrete blocked boundary instead of a bare timeout: the release-verify harness reports repeated `Playground index readiness HTTP 502` and `/wp-json/` probes returning `502` with `WordPress is not ready yet`.
+- That is useful because it proves the subprocess now emits the failure trail before the outer wrapper can kill it. It does not move the release gate, which stays closed at `0/4`.
+- `progress-publisher` should keep the public page dated and explicit about the blocked production surface, but not claim readiness from this delta alone.
+- Next nudge: let `reliable-executor` decide whether the next patch is startup stabilization or an explicit fail-closed boundary for the live proof.
+- Gate status: still closed; this is a diagnostic improvement, not a shippability jump.
 
 ## 2026-05-26 01:19 CEST - Fresh Head Sync
 
