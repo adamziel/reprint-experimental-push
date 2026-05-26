@@ -27171,6 +27171,132 @@ test('prioritizes comment-user blocker wording while carrying bounded comment, u
   assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin changes */');
 });
 
+test('orders same-plan user dependency references deterministically within the same priority bucket', () => {
+  const resourceKey = 'row:["wp_users","ID:24"]';
+  const base = baseSite();
+  base.db.wp_posts['ID:1'].post_title = 'Base shared ordered user dependency post';
+  base.db.wp_comments = {
+    'comment_ID:24': {
+      comment_ID: 24,
+      comment_post_ID: 1,
+      user_id: 24,
+      comment_content: 'Base ordered dependent comment content',
+    },
+    'comment_ID:25': {
+      comment_ID: 25,
+      comment_post_ID: 1,
+      user_id: 24,
+      comment_content: 'Base ordered dependent comment content later',
+    },
+  };
+  base.db.wp_usermeta = {
+    'umeta_id:24': {
+      umeta_id: 24,
+      user_id: 24,
+      meta_key: 'nickname',
+      meta_value: 'Base ordered dependent nickname',
+    },
+    'umeta_id:25': {
+      umeta_id: 25,
+      user_id: 24,
+      meta_key: 'locale',
+      meta_value: 'Base ordered dependent locale',
+    },
+  };
+
+  const local = baseSite();
+  local.db.wp_posts['ID:1'].post_title = 'Shared ordered user dependency post';
+  local.db.wp_users = {
+    'ID:24': {
+      ID: 24,
+      user_login: 'local-ordered-dependent-user',
+      user_email: 'local-ordered-dependent-user@example.test',
+    },
+  };
+  local.db.wp_posts['ID:24'] = {
+    ID: 24,
+    post_title: 'Local post authored by same-plan ordered bucket user',
+    post_content: 'Local post authored by same-plan ordered bucket user body',
+    post_status: 'publish',
+    post_author: 24,
+  };
+  local.db.wp_comments = {
+    'comment_ID:24': {
+      comment_ID: 24,
+      comment_post_ID: 1,
+      user_id: 24,
+      comment_content: 'Local ordered dependent comment content',
+    },
+    'comment_ID:25': {
+      comment_ID: 25,
+      comment_post_ID: 1,
+      user_id: 24,
+      comment_content: 'Local ordered dependent comment content later',
+    },
+  };
+  local.db.wp_usermeta = {
+    'umeta_id:24': {
+      umeta_id: 24,
+      user_id: 24,
+      meta_key: 'nickname',
+      meta_value: 'Local ordered dependent nickname',
+    },
+    'umeta_id:25': {
+      umeta_id: 25,
+      user_id: 24,
+      meta_key: 'locale',
+      meta_value: 'Local ordered dependent locale',
+    },
+  };
+
+  const remote = baseSite();
+  remote.db.wp_posts['ID:1'].post_title = 'Shared ordered user dependency post';
+  remote.db.wp_comments = JSON.parse(JSON.stringify(base.db.wp_comments));
+  remote.db.wp_usermeta = JSON.parse(JSON.stringify(base.db.wp_usermeta));
+  remote.plugins.forms.description = 'remote-only plugin changes';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin changes */';
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  const matchingEdit = decisionFor(plan, 'row:["wp_posts","ID:1"]');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(plan.conflicts.length, 0);
+  assert.equal(blocker.class, 'unsupported-comments-users-resource');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_users","ID:24"] is created in the same plan as a comment user identity that depends on it, and identity rewriting is not yet supported.');
+  assert.deepEqual(
+    blocker.references.map((reference) => [reference.relationshipType, reference.sourceResourceKey]),
+    [
+      ['comment-user', 'row:["wp_comments","comment_ID:24"]'],
+      ['comment-user', 'row:["wp_comments","comment_ID:25"]'],
+      ['usermeta-user', 'row:["wp_usermeta","umeta_id:24"]'],
+      ['usermeta-user', 'row:["wp_usermeta","umeta_id:25"]'],
+      ['post-author', 'row:["wp_posts","ID:24"]'],
+    ],
+  );
+  assert.equal(blocker.references.every((reference) => reference.targetResourceKey === resourceKey), true);
+  assert.equal(matchingEdit.decision, 'already-in-sync');
+  assert.equal(matchingEdit.change.localChange, 'update');
+  assert.equal(matchingEdit.change.remoteChange, 'update');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('Local ordered dependent comment content'), false);
+  assert.equal(planJson.includes('Local ordered dependent comment content later'), false);
+  assert.equal(planJson.includes('Local ordered dependent nickname'), false);
+  assert.equal(planJson.includes('Local ordered dependent locale'), false);
+  assert.equal(planJson.includes('Local post authored by same-plan ordered bucket user'), false);
+  assert.equal(planJson.includes('Local post authored by same-plan ordered bucket user body'), false);
+  assert.equal(planJson.includes('local-ordered-dependent-user'), false);
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin changes');
+  assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin changes */');
+});
+
 test('blocks local post-author references to a same-plan created user identity while preserving a matching independent edit and remote-only plugin removals', () => {
   const resourceKey = 'row:["wp_posts","ID:13"]';
   const targetResourceKey = 'row:["wp_users","ID:12"]';
