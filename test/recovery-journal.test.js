@@ -891,26 +891,20 @@ test('production recovery journal compatibility overload supports reliable relea
     staleClaimRejected: false,
   });
 
-  const staleJournal = openProductionRecoveryJournal({
-    filePath,
-    plan,
-    current: remote,
-    artifactRefs,
-    truncate: false,
-    claimId: 'claim-stale',
-  });
   assert.throws(() => {
-    staleJournal.appendEvent('journal-opened', {
-      planId: plan.id,
-      state: 'opened',
-      observedHash: 'snapshot-hash-only',
+    openProductionRecoveryJournal({
+      filePath,
+      plan,
+      current: remote,
       artifactRefs,
+      truncate: false,
+      claimId: 'claim-stale',
     });
   }, {
-    name: 'RecoveryJournalClaimStaleError',
-    code: 'RECOVERY_CLAIM_STALE',
+    name: 'UnsupportedProductionRecoveryJournalError',
+    code: 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL',
+    message: 'Production recovery journal support requires reopening with the persisted consumed claim identity.',
   });
-  staleJournal.close();
 });
 
 test('production recovery journal consumption derives claim identity from the fenced writer lease when claimId is omitted', () => {
@@ -1055,6 +1049,60 @@ test('production recovery journal reopen fails closed when the persisted consume
   const persisted = readRecoveryJournal(filePath);
   const consumedRecord = persisted.records.at(-1);
   consumedRecord.claimLease = { id: claimId, epoch: 5 };
+  fs.writeFileSync(filePath, `${persisted.records.map((record) => JSON.stringify(record)).join('\n')}\n`);
+
+  assert.throws(() => {
+    openProductionRecoveryJournal(filePath, {
+      claimId,
+      writerLease,
+      ownsRemoteArtifact: true,
+      remoteArtifactPath,
+    });
+  }, {
+    name: 'UnsupportedProductionRecoveryJournalError',
+    code: 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL',
+    message: 'Production recovery journal support requires reopening with the persisted consumed claim identity.',
+  });
+});
+
+test('production recovery journal reopen fails closed when the persisted consumed claim omits its lease identity', () => {
+  const filePath = tempJournalPath();
+  const remote = baseSite();
+  const plan = planFor(baseSite(), localSite(), remote);
+  const claimId = 'claim-consumed-missing-lease';
+  const writerLease = { id: claimId, epoch: 4 };
+  const remoteArtifactPath = `${filePath}.remote`;
+  const artifactRefs = {
+    journal: filePath,
+    remote: remoteArtifactPath,
+  };
+  const journal = openProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs,
+    claimId,
+    writerLease,
+  });
+  appendRecoveryClaimOpened(journal, {
+    plan,
+    current: remote,
+    claimId,
+    artifactRefs,
+  });
+  journal.close();
+
+  consumeProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs,
+    writerLease,
+  });
+
+  const persisted = readRecoveryJournal(filePath);
+  const consumedRecord = persisted.records.at(-1);
+  delete consumedRecord.claimLease;
   fs.writeFileSync(filePath, `${persisted.records.map((record) => JSON.stringify(record)).join('\n')}\n`);
 
   assert.throws(() => {

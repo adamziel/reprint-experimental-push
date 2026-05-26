@@ -2039,6 +2039,15 @@ function summarizeConsumedClaimRecord(records) {
   if (!consumedRecord) {
     return null;
   }
+  if (
+    !isStrictPlainObject(consumedRecord)
+    || hasHiddenOwnStringKeys(consumedRecord)
+    || !Object.hasOwn(consumedRecord, 'sequence')
+    || !Object.hasOwn(consumedRecord, 'claimHash')
+    || !Object.hasOwn(consumedRecord, 'claimLease')
+  ) {
+    return null;
+  }
 
   return Object.freeze({
     sequence: Number.isInteger(consumedRecord.sequence) ? consumedRecord.sequence : null,

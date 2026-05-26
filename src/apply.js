@@ -1433,6 +1433,15 @@ function consumedRecoveryClaimSummary(records) {
   if (!consumedRecord) {
     return null;
   }
+  if (
+    !isStrictPlainObject(consumedRecord)
+    || hasHiddenOwnStringKeys(consumedRecord)
+    || !Object.hasOwn(consumedRecord, 'sequence')
+    || !Object.hasOwn(consumedRecord, 'claimHash')
+    || !Object.hasOwn(consumedRecord, 'claimLease')
+  ) {
+    return null;
+  }
   if (!Number.isInteger(consumedRecord.sequence)) {
     return null;
   }
