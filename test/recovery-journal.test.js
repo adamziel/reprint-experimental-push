@@ -348,6 +348,14 @@ test('production recovery journal wrapper writes a restart-readable claim-fenced
     }),
     RecoveryJournalClaimStaleError,
   );
+
+  const recordsAfterStaleRetry = readRecoveryJournal(filePath).records.map((record) => record.type);
+  assert.deepEqual(recordsAfterStaleRetry, [
+    'journal-opened',
+    ...Array.from({ length: plan.mutations.length }, () => 'target-planned'),
+    'recovery-claim-opened',
+    'stale-claim-rejected',
+  ]);
 });
 
 test('checked release path consumes the production recovery journal inspection surface', () => {
@@ -380,6 +388,14 @@ test('checked release path consumes the production recovery journal inspection s
     }),
     RecoveryJournalClaimStaleError,
   );
+
+  const recordsBeforeConsume = readRecoveryJournal(filePath).records.map((record) => record.type);
+  assert.deepEqual(recordsBeforeConsume, [
+    'journal-opened',
+    ...Array.from({ length: plan.mutations.length }, () => 'target-planned'),
+    'recovery-claim-opened',
+    'stale-claim-rejected',
+  ]);
 
   const inspection = consumeProductionRecoveryJournal({
     filePath,
@@ -414,6 +430,12 @@ test('checked release path consumes the production recovery journal inspection s
   assert.equal(inspection.leaseFence.storageGuard, 'filesystem-compare-rename');
   assert.equal(inspection.leaseFence.restartReadable, true);
   assert.equal(inspection.leaseFence.staleClaimRejected, true);
+
+  const recordsAfterConsume = readRecoveryJournal(filePath).records.map((record) => record.type);
+  assert.deepEqual(recordsAfterConsume, [
+    ...recordsBeforeConsume,
+    'recovery-journal-consumed',
+  ]);
 });
 
 test('production recovery journal wrapper rejects hidden open options', () => {

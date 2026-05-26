@@ -154,24 +154,37 @@ export function openProductionRecoveryJournal(options) {
     claimId = null,
   } = options;
   assertProductionRecoveryClaimId(claimId, 'openProductionRecoveryJournal()');
-  const journal = openPlanRecoveryJournal({
-    filePath,
-    plan,
-    current,
-    artifactRefs,
-    now,
-    truncate,
-  });
+  const existingJournal = truncate ? null : readRecoveryJournal(filePath);
+  const hasExistingPlanEnvelope = Boolean(existingJournal?.exists && existingJournal.records.length > 0);
+  const journal = hasExistingPlanEnvelope
+    ? openRecoveryJournal(filePath, { truncate, now })
+    : openPlanRecoveryJournal({
+        filePath,
+        plan,
+        current,
+        artifactRefs,
+        now,
+        truncate,
+      });
 
-  appendRecoveryClaimOpened(journal, {
-    plan,
-    current,
-    claimId,
-    artifactRefs,
-    reason: 'Production recovery journal claim opened.',
-  });
+  const nextClaimHash = recoveryClaimHash(claimId);
+  const existingClaim = hasExistingPlanEnvelope
+    ? classifyRecoveryJournalClaims(existingJournal.records)
+    : { status: 'none', activeClaimHash: null };
+  const reusingActiveClaim =
+    existingClaim.status !== 'blocked' && existingClaim.activeClaimHash === nextClaimHash;
+
+  if (!reusingActiveClaim) {
+    appendRecoveryClaimOpened(journal, {
+      plan,
+      current,
+      claimId,
+      artifactRefs,
+      reason: 'Production recovery journal claim opened.',
+    });
+  }
   journal.claimId = claimId;
-  journal.claimHash = recoveryClaimHash(claimId);
+  journal.claimHash = nextClaimHash;
   journal.claimFenced = true;
 
   journal.productionAdapter = 'openProductionRecoveryJournal';
