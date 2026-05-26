@@ -3488,6 +3488,14 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
     'recovery',
   );
   assert.equal(
+    rejectedById.get('drained-upload-buffer-skips-large-upload-publish').rejectedGate,
+    'recovery',
+  );
+  assert.equal(
+    rejectedById.get('drained-upload-buffer-and-compressed-index-skips-large-upload-publish-after-pause').rejectedGate,
+    'recovery',
+  );
+  assert.equal(
     rejectedById.get('compressed-remote-index-and-cached-upload-buffer-skips-large-upload-publish-after-pause').rejectedGate,
     'recovery',
   );
@@ -3508,6 +3516,15 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
   );
   assert.ok(
     rejectedById.get('compressed-remote-index-and-compressed-upload-buffer-skips-large-upload-publish').violates.includes('atomic-file-publish'),
+  );
+  assert.ok(
+    rejectedById.get('drained-upload-buffer-skips-large-upload-publish').violates.includes('atomic-file-publish'),
+  );
+  assert.ok(
+    rejectedById.get('drained-upload-buffer-and-compressed-index-skips-large-upload-publish-after-pause').violates.includes('compression'),
+  );
+  assert.ok(
+    rejectedById.get('drained-upload-buffer-and-compressed-index-skips-large-upload-publish-after-pause').violates.includes('atomic-file-publish'),
   );
   assert.ok(
     rejectedById.get('compressed-remote-index-and-cached-upload-buffer-skips-large-upload-publish-after-pause').violates.includes('backpressure'),

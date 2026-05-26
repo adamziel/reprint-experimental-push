@@ -2268,6 +2268,20 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['remote-index-planning-only', 'compression', 'backpressure', 'chunk-receipts', 'live-preconditions', 'atomic-file-publish', 'durable-progress'],
   },
   {
+    id: 'drained-upload-buffer-skips-large-upload-publish',
+    proposal: 'treat a drained upload buffer alone as enough proof to skip the guarded large-upload publish step',
+    rejectedBecause: 'buffer drainage only shortens queue handling; it does not prove the live compare, durable chunk receipts, or guarded publish barrier survived failure',
+    rejectedGate: 'recovery',
+    violates: ['backpressure', 'chunk-receipts', 'live-preconditions', 'atomic-file-publish', 'durable-progress'],
+  },
+  {
+    id: 'drained-upload-buffer-and-compressed-index-skips-large-upload-publish-after-pause',
+    proposal: 'treat a drained upload buffer plus a compressed remote index as enough proof to skip the guarded large-upload publish step after a pause',
+    rejectedBecause: 'planning compression and queue drainage remain advisory; they still do not prove the live compare, durable chunk receipts, or guarded publish barrier survived a pause',
+    rejectedGate: 'recovery',
+    violates: ['compression', 'backpressure', 'chunk-receipts', 'live-preconditions', 'atomic-file-publish', 'durable-progress'],
+  },
+  {
     id: 'compressed-remote-index-and-cached-upload-buffer-skips-large-upload-publish-after-pause',
     proposal: 'treat a compressed remote index plus a cached upload buffer as enough proof to skip the guarded publish step for a large upload after a pause',
     rejectedBecause: 'planning evidence and a cached buffer can reduce replay work, but they cannot prove which chunk acknowledgements survived the pause or restore the guarded publish barrier',
