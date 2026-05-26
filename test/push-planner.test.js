@@ -23647,6 +23647,26 @@ test('blocked recovery artifacts fail closed when the remote artifact only resem
   assert.match(error.message, /Recovery state must be old-remote, fully-updated-remote, or blocked-recovery\./);
 });
 
+test('blocked recovery artifacts fail closed when the remote artifact uses a null prototype', () => {
+  const remoteArtifact = Object.assign(Object.create(null), {
+    schemaVersion: 1,
+    marker: 'unsupported',
+  });
+  const recovery = {
+    status: 'blocked-recovery',
+    planId: 'plan-123',
+    artifacts: {
+      journal: { schemaVersion: 1 },
+      remote: remoteArtifact,
+    },
+  };
+
+  const error = captureError(() => validateRecoveryArtifacts(recovery));
+
+  assert.equal(error.code, 'RECOVERY_ARTIFACTS_INVALID');
+  assert.match(error.message, /must preserve both plain-object journal and remote artifacts/);
+});
+
 test('blocked recovery artifacts fail closed when the envelope hides unsupported symbol keys', () => {
   const hiddenKey = Symbol('hidden');
   const recovery = {
