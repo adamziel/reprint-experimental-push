@@ -1592,20 +1592,24 @@ export function productionThroughputDetails(report) {
       && receiptCursorQueueSlackMatchesResourceHeadroom
     );
   const queueHeadroomVisibleAndMeasuredAndAligned =
-    queueHeadroomVisible
+    receiptCursorPauseFootprintComplete
+    && queueHeadroomVisible
     && queueHeadroomMeasured
     && queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack;
   const receiptCursorQueueSlackVisibleAndMeasured =
-    receiptCursorQueueSlackVisible
+    receiptCursorPauseFootprintComplete
+    && receiptCursorQueueSlackVisible
     && receiptCursorQueueSlackMeasured
     && queueHeadroomMeasured
     && queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack;
   const queueHeadroomVisibleAndQueueSlackMeasured =
-    queueHeadroomVisible
+    receiptCursorPauseFootprintComplete
+    && queueHeadroomVisible
     && receiptCursorQueueSlackMeasured
     && queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack;
   const queueHeadroomVisibleAndQueueSlackVisibleAndMeasured =
-    queueHeadroomVisible
+    receiptCursorPauseFootprintComplete
+    && queueHeadroomVisible
     && queueHeadroomMeasured
     && receiptCursorQueueSlackVisible
     && receiptCursorQueueSlackPositive
@@ -1627,7 +1631,8 @@ export function productionThroughputDetails(report) {
     && stagingDiskHeadroomWithinPlanReserve
     && receiptCursorPauseFootprintVisible;
   const queueBudgetVisibleAndMemoryCeilingVisibleAndMeasured =
-    queueBudgetVisible
+    receiptCursorPauseFootprintComplete
+    && queueBudgetVisible
     && receiptCursorMemoryCeilingVisible
     && report.evidence.backpressure?.receiptCursorMemoryCeilingMatchesQueueBudget === true
     && report.evidence.backpressure?.receiptCursorMemoryCeilingMatchesQueueBudgetVisible === true
@@ -1635,12 +1640,31 @@ export function productionThroughputDetails(report) {
     && queueHeadroomMeasured
     && queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack;
   const queueBudgetVisibleAndQueueHeadroomVisibleAndMeasured =
-    queueBudgetVisible
+    receiptCursorPauseFootprintComplete
+    && queueBudgetVisible
     && queueHeadroomVisible
     && queueHeadroomMeasured
     && queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack;
+  const queueBudgetVisibleAndQueueHeadroomVisible =
+    receiptCursorPauseFootprintComplete
+    && queueBudgetVisible
+    && queueHeadroomVisible
+    && queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack;
+  const queueBudgetVisibleAndMemoryCeilingVisible =
+    receiptCursorPauseFootprintComplete
+    && queueBudgetVisible
+    && receiptCursorMemoryCeilingVisible
+    && queueHeadroomVisible
+    && queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack;
+  const receiptCursorMemoryCeilingVisibleAndQueueBudgetVisible =
+    receiptCursorPauseFootprintComplete
+    && receiptCursorMemoryCeilingVisible
+    && queueBudgetVisible
+    && queueHeadroomVisible
+    && queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack;
   const receiptCursorQueueSlackVisibleAndMemoryHeadroomVisible =
-    receiptCursorQueueSlackVisible
+    receiptCursorPauseFootprintComplete
+    && receiptCursorQueueSlackVisible
     && receiptCursorMemoryHeadroomVisible
     && queueBudgetVisible
     && receiptCursorMemoryCeilingVisible
@@ -1648,7 +1672,8 @@ export function productionThroughputDetails(report) {
     && queueHeadroomMeasured
     && queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack;
   const receiptCursorMemoryHeadroomVisibleAndQueueBudgetVisible =
-    receiptCursorMemoryHeadroomVisible
+    receiptCursorPauseFootprintComplete
+    && receiptCursorMemoryHeadroomVisible
     && receiptCursorQueueSlackVisible
     && queueBudgetVisible
     && receiptCursorMemoryCeilingVisible
@@ -1656,7 +1681,8 @@ export function productionThroughputDetails(report) {
     && queueHeadroomMeasured
     && queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack;
   const receiptCursorMemoryCeilingVisibleAndQueueHeadroomVisible =
-    receiptCursorMemoryCeilingVisible
+    receiptCursorPauseFootprintComplete
+    && receiptCursorMemoryCeilingVisible
     && queueBudgetVisible
     && queueHeadroomVisible
     && queueHeadroomMeasured
@@ -1680,12 +1706,14 @@ export function productionThroughputDetails(report) {
     && Number.isFinite(receiptCursorWindowBytes)
     && receiptCursorMemoryHeadroomBytes <= receiptCursorMemoryCeilingBytes - receiptCursorWindowBytes;
   const receiptCursorMemoryHeadroomVisibleAndMeasured =
-    receiptCursorMemoryHeadroomVisible
+    receiptCursorPauseFootprintComplete
+    && receiptCursorMemoryHeadroomVisible
     && Number.isFinite(receiptCursorMemoryHeadroomBytes)
     && queueHeadroomMeasured
     && queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack;
   const receiptCursorMemoryCeilingVisibleAndMeasured =
-    receiptCursorMemoryCeilingVisible
+    receiptCursorPauseFootprintComplete
+    && receiptCursorMemoryCeilingVisible
     && queueBudgetVisible
     && queueHeadroomVisible
     && queueHeadroomMeasured
@@ -1830,20 +1858,9 @@ export function productionThroughputDetails(report) {
     queueBudgetVisibleAndMemoryCeilingVisibleAndMeasured,
     queueBudgetVisibleAndQueueHeadroomMeasured,
     queueBudgetVisibleAndQueueHeadroomVisibleAndMeasured,
-    queueBudgetVisibleAndQueueHeadroomVisible:
-      queueBudgetVisible
-      && queueHeadroomVisible
-      && queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack,
-    queueBudgetVisibleAndMemoryCeilingVisible:
-      queueBudgetVisible
-      && receiptCursorMemoryCeilingVisible
-      && queueHeadroomVisible
-      && queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack,
-    receiptCursorMemoryCeilingVisibleAndQueueBudgetVisible:
-      receiptCursorMemoryCeilingVisible
-      && queueBudgetVisible
-      && queueHeadroomVisible
-      && queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack,
+    queueBudgetVisibleAndQueueHeadroomVisible,
+    queueBudgetVisibleAndMemoryCeilingVisible,
+    receiptCursorMemoryCeilingVisibleAndQueueBudgetVisible,
     queueHeadroomVisible,
     queueHeadroomVisibleAndMeasured,
     queueHeadroomVisibleAndMeasuredAndAligned,
@@ -1955,20 +1972,9 @@ export function productionThroughputDetails(report) {
       queueBudgetVisibleAndMemoryCeilingVisibleAndMeasured,
       queueBudgetVisibleAndQueueHeadroomMeasured,
       queueBudgetVisibleAndQueueHeadroomVisibleAndMeasured,
-      queueBudgetVisibleAndQueueHeadroomVisible:
-        queueBudgetVisible
-        && queueHeadroomVisible
-        && queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack,
-      queueBudgetVisibleAndMemoryCeilingVisible:
-        queueBudgetVisible
-        && receiptCursorMemoryCeilingVisible
-        && queueHeadroomVisible
-        && queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack,
-      receiptCursorMemoryCeilingVisibleAndQueueBudgetVisible:
-        receiptCursorMemoryCeilingVisible
-        && queueBudgetVisible
-        && queueHeadroomVisible
-        && queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack,
+      queueBudgetVisibleAndQueueHeadroomVisible,
+      queueBudgetVisibleAndMemoryCeilingVisible,
+      receiptCursorMemoryCeilingVisibleAndQueueBudgetVisible,
       queueHeadroomVisible,
       queueHeadroomVisibleAndMeasured,
       queueHeadroomVisibleAndMeasuredAndAligned,
