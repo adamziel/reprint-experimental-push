@@ -58,6 +58,9 @@ Current executable gate:
 - The report now also cross-checks receipt-cursor memory headroom against queue
   headroom so a tampered buffer budget cannot make the production claim look
   consistent when the recorded cursor and queue view disagree.
+- The report now also rejects a backpressure budget that does not match the
+  measured resource ceiling, so a copied budget cannot make the proof look
+  stronger than the actual ceiling.
 - The report `results` payload also carries explicit failure-probe details for
   the pre-commit and partial-commit probes, including inspection status,
   journal path, remote-unchanged classification, and journal record types so a
