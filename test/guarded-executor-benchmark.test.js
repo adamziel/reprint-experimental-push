@@ -167,6 +167,22 @@ test('guarded benchmark exposes the bounded release-bundle retry-window fast pat
   assert.match(fastPath.gateProofs.recovery, /durable receipts/);
 });
 
+test('guarded benchmark exposes plan-scoped chunk-receipt resume as recovery-only', () => {
+  const fastPath = findSafeFastPathByShortcut(
+    'reuse-plan-scoped-chunk-receipts-to-resume-bounded-windowing',
+  );
+
+  assert.ok(fastPath);
+  assert.equal(fastPath.area, 'chunk-upload');
+  assert.equal(fastPath.visibilityBoundary, 'plan-staging-window-resume-only');
+  assert.equal(fastPath.bypassesLivePreconditions, false);
+  assert.equal(fastPath.splitsAtomicGroup, false);
+  assert.equal(fastPath.publishesStagedDataEarly, false);
+  assert.match(fastPath.gateProofs.skip, /plan-scoped chunk receipt set/);
+  assert.match(fastPath.gateProofs.live, /live remote resource hash/);
+  assert.match(fastPath.gateProofs.recovery, /durable chunk receipts/);
+});
+
 test('guarded benchmark blocks row-batch executor claims when the measured surface is not visible', () => {
   const report = smallBenchmark();
   const tampered = clone(report);
