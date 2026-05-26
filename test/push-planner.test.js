@@ -17745,6 +17745,61 @@ test('blocks user meta deletes while preserving a matching independent edit and 
   assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin drift */');
 });
 
+test('blocks user meta deletes while preserving a matching independent file type swap and remote-only plugin removals', () => {
+  const resourceKey = 'row:["wp_usermeta","umeta_id:82"]';
+  const swapFileKey = 'file:wp-content/uploads/usermeta-delete-cover';
+  const base = baseSite();
+  base.db.wp_usermeta = {
+    'umeta_id:82': {
+      umeta_id: 82,
+      user_id: 16,
+      meta_key: 'nickname',
+      meta_value: 'Base user meta delete value',
+    },
+  };
+  base.files['wp-content/uploads/usermeta-delete-cover'] = 'base cover bytes';
+
+  const local = baseSite();
+  local.db.wp_usermeta = {
+    'umeta_id:82': {
+      umeta_id: 82,
+      user_id: 16,
+      meta_key: 'nickname',
+      meta_value: 'Base user meta delete value',
+    },
+  };
+  delete local.db.wp_usermeta['umeta_id:82'];
+  local.files['wp-content/uploads/usermeta-delete-cover'] = { type: 'directory' };
+
+  const remote = baseSite();
+  remote.db.wp_usermeta = JSON.parse(JSON.stringify(base.db.wp_usermeta));
+  remote.files['wp-content/uploads/usermeta-delete-cover'] = { type: 'directory' };
+  delete remote.plugins.forms;
+  delete remote.files['wp-content/plugins/forms/forms.php'];
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  const matchingTypeSwap = decisionFor(plan, swapFileKey);
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(plan.conflicts.length, 0);
+  assert.equal(blocker.class, 'unsupported-usermeta-resource');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.reason, 'User meta graph resource deletes are not yet supported by the planner.');
+  assert.equal(matchingTypeSwap.decision, 'already-in-sync');
+  assert.equal(matchingTypeSwap.change.localChange, 'type-change');
+  assert.equal(matchingTypeSwap.change.remoteChange, 'type-change');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(plan.blockers.length, 1);
+  assert.equal(Object.hasOwn(remote.plugins, 'forms'), false);
+  assert.equal(Object.hasOwn(remote.files, 'wp-content/plugins/forms/forms.php'), false);
+});
+
 test('blocks local same-plan created user meta identity while preserving a matching independent file type swap and remote-only plugin changes', () => {
   const resourceKey = 'row:["wp_usermeta","umeta_id:79"]';
   const targetFileKey = 'file:wp-content/uploads/cover';
