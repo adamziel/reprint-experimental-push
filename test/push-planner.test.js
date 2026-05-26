@@ -12317,6 +12317,56 @@ test('blocks local post-parent references to a missing live remote post identity
   assert.equal(Object.hasOwn(remote.db.wp_posts, 'ID:99'), false);
 });
 
+test('flags local post-parent references as a conflict when the live remote parent identity disappears while preserving remote-only plugin drift', () => {
+  const resourceKey = 'row:["wp_posts","ID:10"]';
+  const targetResourceKey = 'row:["wp_posts","ID:99"]';
+  const base = baseSite();
+  base.db.wp_posts['ID:10'] = {
+    ID: 10,
+    post_title: 'base-private-child-post',
+    post_content: 'base-private-child-body',
+    post_status: 'publish',
+    post_parent: 99,
+  };
+
+  const local = baseSite();
+  local.db.wp_posts['ID:10'] = {
+    ID: 10,
+    post_title: 'local-private-child-post',
+    post_content: 'local-private-child-body',
+    post_status: 'publish',
+    post_parent: 99,
+  };
+
+  const remote = baseSite();
+  remote.plugins.forms.description = 'remote-only plugin drift';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin drift */';
+
+  const plan = planFor(base, local, remote);
+  const conflict = plan.conflicts[0];
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'conflict');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(decisionFor(plan, targetResourceKey), undefined);
+  assert.equal(conflict.class, 'row-conflict');
+  assert.equal(conflict.resourceKey, resourceKey);
+  assert.equal(conflict.resolutionPolicy, 'preserve-remote-and-stop');
+  assert.equal(conflict.change.remote.state, 'absent');
+  assert.equal(conflict.change.remoteChange, 'delete');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('local-private-child-post'), false);
+  assert.equal(planJson.includes('local-private-child-body'), false);
+  assert.equal(planJson.includes('remote-only plugin drift'), false);
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin drift');
+  assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin drift */');
+});
+
 test('blocks local term-relationship references when the live remote taxonomy identity disappears', () => {
   const resourceKey = 'row:["wp_term_relationships","object_id:7,term_taxonomy_id:5"]';
   const targetResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:5"]';

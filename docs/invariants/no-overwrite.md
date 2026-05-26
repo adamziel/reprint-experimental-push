@@ -193,6 +193,9 @@ the resource key, the live remote hash observed during planning, and the
   revision` instead of pretending revision history is a regular post resource.
 - WordPress navigation menu item rows. The planner must stop on
   `post_type = nav_menu_item` instead of treating menu items as ordinary posts.
+- WordPress post-parent graph rows. The planner must stop when `post_parent`
+  points at a missing live remote post identity and must still preserve any
+  unrelated remote-only plugin drift in the conflict evidence.
 - File topology conflicts where applying a local file or type change would
   require overwriting, removing, or hiding a live remote ancestor or descendant.
   The conflicting file mutation and its precondition must be suppressed rather
