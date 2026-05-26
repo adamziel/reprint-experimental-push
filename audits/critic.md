@@ -1,8 +1,8 @@
 # Critic Audit
 
-## 2026-05-26 13:35:22 CEST (+0200)
+## 2026-05-26 13:36:18 CEST (+0200)
 
-No gate movement. `c2395f82` is the current reliable head from `git ls-remote`; it adds more auth/session lifecycle observations in `src/authenticated-http-push-client.js` and `test/authenticated-http-push-client.test.js`, but it still stays on the client-side release evidence path rather than proving a production-backed auth/session lifecycle or fully closed durable-journal ownership on the release command. The verdict remains `0/4`.
+No gate movement. `66492522` is the current reliable head from `git ls-remote`; it retries transient release probes in the preflight path, but it still stays on release-probe support rather than proving a checked-path production auth/session lifecycle or fully closed durable-journal ownership on the release command. The verdict remains `0/4`.
 
 Changed files:
 - [`audits/critic.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/critic/audits/critic.md)
