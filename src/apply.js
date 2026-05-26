@@ -1036,6 +1036,24 @@ export function productionRecoverySupportReport(writer) {
   }
   if (
     hasValidProductionLeaseIdentity(writer?.writerLease)
+    && (
+      !Object.hasOwn(inspected ?? {}, 'writerLease')
+      || !hasValidProductionLeaseIdentity(inspected.writerLease)
+    )
+  ) {
+    addMissingDependency('fencing or lease ownership for the journal writer');
+  }
+  if (
+    hasValidProductionLeaseIdentity(writer?.leaseFence)
+    && (
+      !Object.hasOwn(inspected ?? {}, 'leaseFence')
+      || !hasValidProductionLeaseIdentity(inspected.leaseFence)
+    )
+  ) {
+    addMissingDependency('fencing or lease ownership for the journal writer');
+  }
+  if (
+    hasValidProductionLeaseIdentity(writer?.writerLease)
     && !productionLeaseIdentitiesMatch(inspectedClaimState?.activeClaimLease, writer.writerLease)
   ) {
     addMissingDependency('fencing or lease ownership for the journal writer');
