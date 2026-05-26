@@ -3,6 +3,23 @@
 This log records evidence present in this repository. Public status should use
 release gates and named evidence gaps rather than stale percentage estimates.
 
+# 2026-05-26 - Public Status Audit 23:40:03
+
+<a id="2026-05-26-public-status-audit-234003"></a>
+
+- Refreshed [progress.html](../progress.html) to the current `date` output
+  (`2026-05-26 23:40:03 CEST`) and kept
+  `c5502c4d065cff62b7b6120200645f4054062e0c` as the current
+  reliable-executor head on the public page. The visible status surface now
+  names evidence gaps directly instead of implying stale percentage progress.
+- Release gates remain `0/4`. The authoritative blockers remain production-
+  backed auth/session lifecycle, durable journal ownership with lease/fencing
+  and restart-readable replay, Playground readiness, and plugin-driver proof
+  consumed by `verify:release`.
+- Evidence trail: [progress.html](../progress.html),
+  [objective audit](../audits/objective-audit.md),
+  [release-gate checklist](../progress.html#proof-gates).
+
 # 2026-05-26 - Public Status Audit 23:38:29
 
 <a id="2026-05-26-public-status-audit-233829"></a>
