@@ -777,7 +777,7 @@ function productionRecoverySupportReport(writer) {
     writerRemoteArtifactRef
     || inspectedRemoteArtifactRef
   ) {
-    if (writer?.ownsRemoteArtifact !== true) {
+    if (!Object.hasOwn(writer ?? {}, 'ownsRemoteArtifact') || writer.ownsRemoteArtifact !== true) {
       addMissingDependency('restart-readable remote recovery artifact ownership');
     }
   }
