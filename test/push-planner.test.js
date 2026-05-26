@@ -24504,6 +24504,61 @@ test('production durable journal support fails closed when stale claim advanceme
   journal.close();
 });
 
+test('production durable journal support fails closed when stale claim advancement lease id diverges from its claim hash', () => {
+  const base = baseSite();
+  const local = structuredClone(base);
+  local.db.wp_options['option_name:blogname'] = {
+    option_name: 'blogname',
+    option_value: 'Local Site',
+  };
+  const remote = structuredClone(base);
+  const plan = planFor(base, local, remote);
+  const filePath = tempRecoveryJournalPath();
+  const remoteArtifactPath = `${path.dirname(filePath)}/stale-claim-advanced-lease-id-drifted-remote.jsonl`;
+  const journal = openProductionRecoveryJournal(filePath, {
+    truncate: true,
+    now: fixedNow,
+    claimId: 'claim-2',
+    writerLease: { id: 'claim-2' },
+    ownsRemoteArtifact: true,
+    remoteArtifactPath,
+  });
+  appendRecoveryClaimOpened(journal, {
+    plan: { id: plan.id },
+    current: remote,
+    claimId: 'claim-1',
+    artifactRefs: {
+      journal: filePath,
+      remote: remoteArtifactPath,
+    },
+  });
+  appendStaleClaimAdvanced(journal, {
+    plan: { id: plan.id },
+    current: remote,
+    previousClaimId: 'claim-1',
+    claimId: 'claim-2',
+    staleThresholdMs: 5_000,
+    previousClaimAgeMs: 5_001,
+    artifactRefs: {
+      journal: filePath,
+      remote: remoteArtifactPath,
+    },
+  });
+
+  const persisted = readRecoveryJournal(filePath);
+  persisted.records.at(-1).claimLease = { id: 'claim-2-drifted' };
+  fs.writeFileSync(filePath, `${persisted.records.map((record) => JSON.stringify(record)).join('\n')}\n`);
+
+  const error = captureError(() => applyPlan(remote, plan, {
+    durableJournal: journal,
+    requireProductionDurableJournal: true,
+  }));
+
+  assert.equal(error.code, 'PRODUCTION_DURABLE_JOURNAL_UNSUPPORTED');
+  assert.ok(error.details.missingDependency.includes('fencing or lease ownership for the journal writer'));
+  journal.close();
+});
+
 test('production durable journal support fails closed when a later claim reopens without stale-claim advancement', () => {
   const base = baseSite();
   const local = structuredClone(base);

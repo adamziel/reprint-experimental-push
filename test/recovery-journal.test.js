@@ -3708,6 +3708,79 @@ test('production recovery journal consumption fails closed when stale claim adva
   });
 });
 
+test('production recovery journal consumption fails closed when stale claim advancement lease id diverges from its claim hash', () => {
+  const filePath = tempJournalPath();
+  const remote = baseSite();
+  const plan = planFor(baseSite(), localSite(), remote);
+  const remoteArtifactPath = `${filePath}.remote`;
+  const artifactRefs = {
+    journal: filePath,
+    remote: remoteArtifactPath,
+  };
+
+  const firstJournal = openProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs,
+    claimId: 'claim-1',
+  });
+  appendRecoveryClaimOpened(firstJournal, {
+    plan,
+    current: remote,
+    claimId: 'claim-1',
+    artifactRefs,
+  });
+  firstJournal.close();
+
+  const secondJournal = openProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs,
+    truncate: false,
+    claimId: 'claim-2',
+  });
+  appendStaleClaimAdvanced(secondJournal, {
+    plan,
+    current: remote,
+    previousClaimId: 'claim-1',
+    claimId: 'claim-2',
+    staleThresholdMs: 30_000,
+    previousClaimAgeMs: 30_001,
+    artifactRefs,
+  });
+  secondJournal.close();
+
+  const persisted = readRecoveryJournal(filePath);
+  persisted.records.at(-1).claimLease = { id: 'claim-2-drifted' };
+  fs.writeFileSync(filePath, `${persisted.records.map((record) => JSON.stringify(record)).join('\n')}\n`);
+
+  assert.throws(() => {
+    consumeProductionRecoveryJournal({
+      filePath,
+      plan,
+      current: remote,
+      artifactRefs,
+      claimId: 'claim-2',
+    });
+  }, (error) => {
+    assert.equal(error?.name, 'RecoveryJournalClaimStaleError');
+    assert.equal(error?.code, 'RECOVERY_CLAIM_STALE');
+    assert.equal(
+      error?.message,
+      'Recovery journal claim was superseded before this fenced writer could append.',
+    );
+    assert.equal(
+      error?.details?.reason,
+      'Recovery claim record claim lease must match the persisted active claim hash.',
+    );
+    assert.equal(error?.details?.activeClaimHash, recoveryClaimHash('claim-2'));
+    assert.equal(error?.details?.activeClaimType, 'stale-claim-advanced');
+    return true;
+  });
+});
+
 test('checked durable journal boundary stays closed until stale-claim rejection is proven on the lease fence', () => {
   const baseContract = {
     acceptedOnCheckedBoundary: true,
