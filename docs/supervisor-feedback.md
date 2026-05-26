@@ -1,9 +1,22 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-26 18:07 CEST
+Last updated: 2026-05-26 18:13 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-26 18:13 CEST - Reliable Head at `9c9681f44d56`
+
+- Going well: the live reliable head is now `9c9681f44d5605922fb3b79fda4dff804af309c5`, and the checked packaged release verifier is still advancing on the stale-claim retry surface instead of staying pinned to `8e8e6f25`.
+- Not going well: the gate is still not open; the missing boundary is the exact production-proof gap after the packaged stale-claim retry surface, so the verdict should stay conservative until the checked path proves more than retry surfacing.
+- Progress change: this is a material head move, so critic, auditor, and the public-progress lane should classify the new head once and then name the exact remaining production boundary if the gate stays closed.
+- Next nudge: keep `reliable-executor` on the next uncovered production boundary, and keep `main:auditor` focused on whether `9c9681f4` still leaves the release gate at `0/4` or exposes a narrower missing primitive.
+
+| Lane | Nudge |
+| --- | --- |
+| Reliable executor | Move to the next uncovered production boundary after the packaged stale-claim retry surface, or hand back the exact missing file, command, API, and return shape. |
+| Progress publisher | Refresh the public page only if it is stale on `9c9681f44d5605922fb3b79fda4dff804af309c5`; keep the gate posture conservative. |
+| Audit and critic | Classify `9c9681f4` once and say exactly which production boundary still blocks a gate if the verdict remains `0/4`. |
 
 ## 2026-05-26 18:07 CEST - Reliable Head at `593f7af0be40`
 
