@@ -1,4 +1,4 @@
-Updated the audit snapshot to the current remote heads and kept the verdict at `0/4`.
+Updated the audit snapshot for the new `no-data-loss-recovery` head `351b6bbd` and kept the verdict at `0/4`.
 
 Changed files:
 - [`audits/objective-audit.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/independent-auditor/audits/objective-audit.md)
@@ -6,20 +6,19 @@ Changed files:
 
 Commands:
 - `date '+%Y-%m-%d %H:%M:%S %Z (%z)'`
-- `git fetch origin --prune`
-- `git log --oneline --decorate -1 origin/lane/reliable-executor`
-- `git log --oneline --decorate -1 origin/lane/no-data-loss-recovery`
-- `git log --oneline --decorate -1 origin/lane/no-data-loss-invariants`
 - `sed -n '1,260p' audits/objective-audit.md`
-- `git diff -- audits/objective-audit.md`
+- `git show --stat --summary --oneline --no-renames origin/lane/no-data-loss-recovery --`
+- `git show --no-renames --format=medium origin/lane/no-data-loss-recovery -- src/recovery-journal.js test/recovery-journal.test.js test/push-planner.test.js`
+- `rg -n "verify:release|release-verify|production-shaped-release-verify|release path" package.json scripts test src audits -g '!node_modules'`
+- `sed -n '1,220p' package.json`
 - `git status --short --branch`
 
 Push result:
-- Not attempted
+- Not attempted yet
 
 Worktree status:
 - Tracked change present in `audits/objective-audit.md`
 - Verdict remains `0/4`
 
 Next supervisor nudge:
-- Re-poll only when a lane lands fresh production-boundary proof: live auth/session lifecycle, restart-readable durable journal ownership, or a live release-path mutation boundary. The new `685b1186` and `1d933be5` heads are still support-side and do not move the release verdict.
+- Re-poll only when a lane lands fresh production-boundary proof: live auth/session lifecycle, restart-readable durable journal ownership consumed by the live release path, or a live release-path mutation boundary. `351b6bbd` is stronger adapter evidence, but it still does not wire `openProductionRecoveryJournal()` into `verify:release`.
