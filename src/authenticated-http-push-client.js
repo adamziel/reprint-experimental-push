@@ -82,10 +82,12 @@ export async function runAuthenticatedHttpPush({
     after: null,
     dbJournal: null,
     authSessionLifecycleTrace: [],
+    retryAttempts: 1,
   };
 
   const preflight = await client.signedGet('/preflight');
   summary.preflight = summarizeResponse(preflight);
+  updateRetryAttempts(summary, summary.preflight);
   if (preflight.status !== 200 || preflight.body?.ok !== true) {
     summary.code = preflight.body?.code || 'PREFLIGHT_FAILED';
     setDurableJournalBoundary(summary, 'preflight');
@@ -191,6 +193,7 @@ export async function runAuthenticatedHttpPush({
     return summary;
   }
   summary.remoteSnapshot = summarizeSnapshot(remoteSnapshot, local);
+  updateRetryAttempts(summary, summary.remoteSnapshot);
   summary.remoteSnapshotObject = remoteSnapshot.body.snapshot;
 
   const plan = createPushPlan({
@@ -214,6 +217,7 @@ export async function runAuthenticatedHttpPush({
     idempotencyKey,
   });
   summary.dryRun = summarizeResponse(dryRun);
+  updateRetryAttempts(summary, summary.dryRun);
   recordAuthSessionLifecycle(summary, 'dry-run', dryRun.body?.auth?.session);
   const dryRunAuthEnvelopeDrift = requireProductionAuthSession && hasAuthEnvelopeDrift(preflightAuthEnvelope, dryRun);
   if (dryRun.status !== 200 || dryRun.body?.ok !== true || !dryRun.body?.receipt) {
@@ -230,6 +234,7 @@ export async function runAuthenticatedHttpPush({
   if (dryRunOnly) {
     const afterDryRun = await client.get('/snapshot');
     summary.after = summarizeSnapshot(afterDryRun, local);
+    updateRetryAttempts(summary, summary.after);
     summary.ok = afterDryRun.status === 200 && afterDryRun.body?.ok === true;
     if (!summary.ok) {
       setDurableJournalBoundary(summary, 'dry-run');
@@ -245,6 +250,7 @@ export async function runAuthenticatedHttpPush({
     idempotencyKey,
   });
   summary.apply = summarizeResponse(apply);
+  updateRetryAttempts(summary, summary.apply);
   recordAuthSessionLifecycle(summary, 'apply', apply.body?.auth?.session);
   if (apply.status !== 200 || apply.body?.ok !== true) {
     summary.code = apply.body?.code || 'APPLY_FAILED';
@@ -285,6 +291,7 @@ export async function runAuthenticatedHttpPush({
     idempotencyKey,
   });
   summary.recoveryInspect = summarizeResponse(recoveryInspect);
+  updateRetryAttempts(summary, summary.recoveryInspect);
   recordAuthSessionLifecycle(summary, 'recovery-inspect', recoveryInspect.body?.auth?.session);
   summary.recoveryInspect.recovery = summarizeRecoveryInspect(recoveryInspect);
   const recoveryInspectAuthSessionDrift = requireProductionAuthSession && (
@@ -352,6 +359,7 @@ export async function runAuthenticatedHttpPush({
     idempotencyKey,
   });
   summary.replay = summarizeResponse(replay);
+  updateRetryAttempts(summary, summary.replay);
   recordAuthSessionLifecycle(summary, 'replay', replay.body?.auth?.session);
   summary.replay.responseSchemaVersion = replay.body?.responseSchemaVersion;
   const replayEquivalence = summarizeReplayEquivalence(apply, replay);
@@ -401,9 +409,11 @@ export async function runAuthenticatedHttpPush({
 
   const afterApply = await client.get('/snapshot');
   summary.after = summarizeSnapshot(afterApply, local);
+  updateRetryAttempts(summary, summary.after);
   summary.afterObject = afterApply.body.snapshot;
   const dbJournal = await client.get('/db-journal?limit=80');
   summary.dbJournal = summarizeDbJournal(dbJournal);
+  updateRetryAttempts(summary, summary.dbJournal);
   recordAuthSessionLifecycle(summary, 'journal', dbJournal.body?.auth?.session);
   const dbJournalAuthSessionDrift = requireProductionAuthSession && (
     hasProductionAuthSessionTypeDrift(dbJournal)
@@ -628,6 +638,14 @@ function summarizeResponse(response) {
       outcome: body.storageGuard.outcome,
     } : undefined,
   };
+}
+
+function updateRetryAttempts(summary, responseSummary) {
+  if (!responseSummary || typeof responseSummary.retryAttempts !== 'number') {
+    return;
+  }
+
+  summary.retryAttempts = Math.max(summary.retryAttempts || 1, responseSummary.retryAttempts);
 }
 
 function summarizeAuthSessionLifecycle(session) {

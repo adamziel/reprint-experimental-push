@@ -957,6 +957,7 @@ test('production-shaped authenticated push records preserved-remote retry on rea
     });
 
     assert.equal(summary.ok, true);
+    assert.equal(summary.retryAttempts, 2);
     assert.equal(summary.dbJournal?.retryAttempts, 1);
     assert.ok(seen.filter(({ url }) => url.includes('/snapshot')).length >= 2);
   } finally {
