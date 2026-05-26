@@ -3160,6 +3160,32 @@ test('packaged production plugin smoke keeps the extended packaged startup budge
   );
 });
 
+test('packaged production plugin smoke reuses tracked blueprint snapshots before spawning expensive exports', () => {
+  const smokeSource = readFileSync(
+    path.join(repoRoot, 'scripts/playground/production-plugin-package-smoke.mjs'),
+    'utf8',
+  );
+
+  assert.match(smokeSource, /import \{ loadBlueprintSnapshotFixture \} from '\.\/blueprint-snapshot-fixture\.js';/);
+  assert.match(smokeSource, /const trackedSnapshot = loadBlueprintSnapshotFixture\(name, blueprintPath\);/);
+  assert.match(
+    smokeSource,
+    /if \(trackedSnapshot\) \{\s*writeStageProgress\(`using tracked snapshot fixture for \$\{name\}`\);\s*return trackedSnapshot;\s*\}/s,
+  );
+});
+
+test('packaged production plugin smoke bounds snapshot exports and emits stage progress before startup probes', () => {
+  const smokeSource = readFileSync(
+    path.join(repoRoot, 'scripts/playground/production-plugin-package-smoke.mjs'),
+    'utf8',
+  );
+
+  assert.match(smokeSource, /const snapshotExportTimeoutMs = 45_000;/);
+  assert.match(smokeSource, /writeStageProgress\(`exporting snapshot fixture for \$\{name\}`\);/);
+  assert.match(smokeSource, /timeout: snapshotExportTimeoutMs,\s*killSignal: 'SIGTERM',/s);
+  assert.match(smokeSource, /writeStageProgress\(`starting packaged Playground server \$\{name\}`\);/);
+});
+
 test('shared lab waitForServer tolerates more than four startup-shaped /wp-json/ responses inside the bounded startup window', async () => {
   let indexCalls = 0;
   let snapshotCalls = 0;

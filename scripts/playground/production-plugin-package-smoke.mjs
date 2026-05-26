@@ -29,6 +29,7 @@ import {
   packagedProductionPluginServerReady,
   packagedProductionPluginSnapshotRetryable,
 } from './packaged-production-plugin-readiness.js';
+import { loadBlueprintSnapshotFixture } from './blueprint-snapshot-fixture.js';
 import { resolvePackagedProductionPluginSourceCommand } from './packaged-production-plugin-source-command.js';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
@@ -42,6 +43,7 @@ const readinessProbeFetchTimeoutMs = 3_000;
 const readinessFailureBodyLimit = 500;
 const transientFetchRetryDelayMs = 250;
 const transientFetchAttempts = 4;
+const snapshotExportTimeoutMs = 45_000;
 const maxPackagedStartupNotReadyProbeCount = Math.max(
   packagedProductionPluginMaxConsecutiveNotReadyProbes,
   Math.ceil(serverStartupTimeoutMs / readinessProbeIntervalMs),
@@ -96,7 +98,9 @@ const basePath = path.join(tmpDir, 'base.json');
 const localPath = path.join(tmpDir, 'local.json');
 
 try {
+  writeStageProgress('building packaged plugin fixture');
   buildPluginPackage(pluginDir);
+  writeStageProgress('writing packaged activation blueprint');
   writeActivationBlueprint(path.join(repoRoot, fixtures.base), blueprintPath);
   fs.writeFileSync(basePath, `${JSON.stringify(snapshots.base, null, 2)}\n`);
   fs.writeFileSync(localPath, `${JSON.stringify(packageLocalSnapshot, null, 2)}\n`);
@@ -380,6 +384,13 @@ function runCli(args, { expectStatus = 0 } = {}) {
 }
 
 function exportSnapshot(name, blueprintPath) {
+  const trackedSnapshot = loadBlueprintSnapshotFixture(name, blueprintPath);
+  if (trackedSnapshot) {
+    writeStageProgress(`using tracked snapshot fixture for ${name}`);
+    return trackedSnapshot;
+  }
+
+  writeStageProgress(`exporting snapshot fixture for ${name}`);
   const result = spawnSync('npx', [
     '--yes',
     '@wp-playground/cli@latest',
@@ -396,7 +407,18 @@ function exportSnapshot(name, blueprintPath) {
     cwd: repoRoot,
     encoding: 'utf8',
     maxBuffer: 1024 * 1024 * 20,
+    timeout: snapshotExportTimeoutMs,
+    killSignal: 'SIGTERM',
   });
+
+  if (result.error) {
+    const timeoutNote = result.error.code === 'ETIMEDOUT'
+      ? ` after ${snapshotExportTimeoutMs}ms`
+      : '';
+    throw new Error(
+      `Playground snapshot export failed for ${name}${timeoutNote}\nSTDOUT:\n${result.stdout}\nSTDERR:\n${result.stderr}\n${result.error.message}`,
+    );
+  }
 
   if (result.status !== 0) {
     throw new Error(`Playground snapshot export failed for ${name}\nSTDOUT:\n${result.stdout}\nSTDERR:\n${result.stderr}`);
@@ -411,6 +433,7 @@ function exportSnapshot(name, blueprintPath) {
 }
 
 async function withPlaygroundServer(name, blueprintPath, mountedPluginDir, run) {
+  writeStageProgress(`starting packaged Playground server ${name}`);
   const server = await startPlaygroundServer(name, blueprintPath, mountedPluginDir);
   try {
     await run(server);
@@ -1459,6 +1482,10 @@ function pushLog(logs, chunk) {
   if (logs.join('').length > 20_000) {
     logs.splice(0, logs.length, logs.join('').slice(-20_000));
   }
+}
+
+function writeStageProgress(message) {
+  process.stderr.write(`[production-plugin-package-smoke] ${message}\n`);
 }
 
 function sleep(ms) {
