@@ -39,10 +39,10 @@ The project is **not releasable as a production WordPress push path**.
 - `origin/lane/cycle-20260525-keep-busy-loop-2/no-data-loss-recovery` -> `63e01a49`
 - `origin/lane/cycle-20260525-mainwindows-2349/critic` -> `fa0dc8a0`
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `999ff0d8`
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `5c4f60cc`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `0b9f72b9`
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `f9e95355`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `2af1ddda`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `962cc2a8`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `51fec500`
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` -> `0ca7b35d`
 - `origin/lane/cycle-20260525-mainwindows-2357/no-data-loss-invariants-graph-proof` -> `98c0ce26`
 - `origin/lane/cycle-20260525-restart-2340/feedback-supervisor` -> `ef3d911e`
@@ -54,7 +54,7 @@ The project is **not releasable as a production WordPress push path**.
 - `origin/lane/no-data-loss-invariants` -> `0247563b`
 - `origin/lane/no-data-loss-recovery` -> `9e077c10`
 - `origin/lane/progress-publisher` -> `7695e1f9`
-- `origin/lane/reliable-executor` -> `ff94457a`
+- `origin/lane/reliable-executor` -> `ebfbdaeb`
 - `origin/lane/same-plan-wordpress-graph-create` -> `8dea1ca3`
 - `origin/main` -> `56063f13`
 
@@ -65,6 +65,7 @@ real source-site mutation boundary. The release gates still stay `0/4`.
 Fresh lane proof since the last audit pass improved the local evidence floor,
 but it did not change the release conclusion:
 
+- `origin/lane/reliable-executor` now records `5c5010e8`, hardening release-verify proof bounds and keeping the live proof wrapper fail-closed. It still does not prove production auth/session lifecycle or a live-source mutation boundary.
 - `origin/lane/reliable-executor` now records `ff94457a`, failing closed on unsupported production origins. It still does not prove production auth/session lifecycle or a live-source mutation boundary.
 - `origin/lane/reliable-executor` now records `5a2e50a9`, hardening live proof
   failure summaries, but it still does not prove production auth/session
@@ -102,6 +103,10 @@ but it did not change the release conclusion:
 - `origin/lane/reliable-executor` now records `0e20f204`, hardening proof
   cleanup on live failures, but still not proving production auth/session
   lifecycle or a live-source mutation boundary.
+- `origin/lane/reliable-executor` now records `ebfbdaeb`, hardening release-
+  verify helper bounds and keeping the live proof wrapper fail-closed. It still
+  does not prove production auth/session lifecycle or a live-source mutation
+  boundary.
 - `origin/lane/fast-paths` now records `8c5c2ccb`, tightening backpressure
   evidence checks only.
 - `origin/lane/fast-paths` now records `999ff0d8`, adding chunk digest resume
@@ -112,6 +117,9 @@ but it did not change the release conclusion:
   `bfe116c7`, refreshing progress visibility only.
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now records
   `962cc2a8`, refreshing the public progress freshness only.
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now records
+  `51fec500`, refreshing public progress freshness only. It still does not
+  add production-backed gate movement.
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` now records
   `432f82a9`, refreshing the audit snapshot only and not changing the release
   boundary.
@@ -120,6 +128,9 @@ but it did not change the release conclusion:
 - `origin/lane/no-data-loss-invariants` now records `b5e199f0`, adding special
   file sibling proof again, but still not proving the live release boundary or
   any production-backed source mutation.
+- `origin/lane/no-data-loss-invariants` now records `0247563b`, blocking
+  comment parent same-plan references. It still does not prove the live release
+  boundary or any production-backed source mutation.
 - `origin/lane/no-data-loss-invariants` now records `47223e20`, adding GUID
   removal sibling proof. It still does not prove the live release boundary or
   any production-backed source mutation.
