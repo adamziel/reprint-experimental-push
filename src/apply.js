@@ -610,6 +610,7 @@ function assertProductionDurableJournalSupport(options, writer) {
       missingDependency: supportReport.missingDependency,
       inspectedJournalPath: supportReport.inspectedJournalPath,
       writerJournalPath: supportReport.writerJournalPath,
+      inspectionErrorMessage: supportReport.inspectionErrorMessage,
       requiresDurableJournal: true,
     },
   );
@@ -619,6 +620,9 @@ function productionRecoverySupportReport(writer) {
   const missingDependency = [];
   const inspected = inspectProductionRecoveryJournal(writer);
   const inspectedJournalPath = durableJournalInspectPath(inspected);
+  const inspectionErrorMessage = inspected && typeof inspected === 'object' && typeof inspected.error?.message === 'string'
+    ? inspected.error.message
+    : null;
   const addMissingDependency = (item) => {
     if (!missingDependency.includes(item)) {
       missingDependency.push(item);
@@ -637,17 +641,18 @@ function productionRecoverySupportReport(writer) {
   if (typeof writer?.close !== 'function') {
     addMissingDependency('durable writer cleanup');
   }
-  if (typeof writer?.inspect !== 'function') {
+  if (typeof writer?.inspect !== 'function' || inspectionErrorMessage) {
     addMissingDependency('restart-readable recovery inspection');
-  } else if (!durableJournalInspectSurface(inspected)) {
-    addMissingDependency('restart-readable recovery artifact location');
-  }
-  if (typeof writer?.journalPath !== 'string' || writer.journalPath.length === 0) {
-    addMissingDependency('owned restart-readable recovery journal path');
   } else {
+    if (!durableJournalInspectSurface(inspected)) {
+      addMissingDependency('restart-readable recovery artifact location');
+    }
     if (inspectedJournalPath !== writer.journalPath) {
       addMissingDependency('restart-readable recovery artifact location');
     }
+  }
+  if (typeof writer?.journalPath !== 'string' || writer.journalPath.length === 0) {
+    addMissingDependency('owned restart-readable recovery journal path');
   }
   if (typeof writer?.schemaVersion !== 'number' || writer.schemaVersion !== JOURNAL_SCHEMA_VERSION) {
     addMissingDependency('restart-readable recovery journal schema');
@@ -655,7 +660,7 @@ function productionRecoverySupportReport(writer) {
   if (typeof writer?.assertCurrentClaim !== 'function') {
     addMissingDependency('fencing or lease ownership for the journal writer');
   }
-  if (writer && typeof writer.inspect === 'function' && !durableJournalInspectRecords(inspected)) {
+  if (writer && typeof writer.inspect === 'function' && !inspectionErrorMessage && !durableJournalInspectRecords(inspected)) {
     addMissingDependency('journal-readable inspection records with sequence and type');
   }
 
@@ -664,6 +669,7 @@ function productionRecoverySupportReport(writer) {
     missingDependency,
     inspectedJournalPath,
     writerJournalPath: typeof writer?.journalPath === 'string' ? writer.journalPath : null,
+    inspectionErrorMessage,
   };
 }
 
@@ -674,7 +680,7 @@ function inspectProductionRecoveryJournal(writer) {
   try {
     return writer.inspect();
   } catch (error) {
-    return null;
+    return { error };
   }
 }
 

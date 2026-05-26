@@ -19937,6 +19937,10 @@ test('production durable journal support checks close a writer when restart insp
 
   assert.equal(error.code, 'PRODUCTION_DURABLE_JOURNAL_UNSUPPORTED');
   assert.equal(closed, 1);
+  assert.deepEqual(error.details.missingDependency, [
+    'restart-readable recovery inspection',
+  ]);
+  assert.equal(error.details.inspectionErrorMessage, 'injected inspect failure');
 });
 
 test('production durable journal claims fail closed when the writer cannot inspect restart state', () => {
