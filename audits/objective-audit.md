@@ -6,9 +6,9 @@ The project is **not releasable as a production WordPress push path**.
 
 - Fresh remote heads at audit time, checked on May 26, 2026:
 
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `5d60e641`
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `97ae15d0`
-- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `57a3e623`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `052ff899`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `9954e25b`
+- `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` -> `c88a5689`
 - `origin/lane/fast-paths` -> `2d335a29`
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `4ba8fb91`
 - `origin/lane/reliable-executor` -> `97eca6ce`
@@ -16,7 +16,7 @@ The project is **not releasable as a production WordPress push path**.
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `76dc8545`
 - `origin/lane/no-data-loss-recovery` -> `9e077c10`
 - `origin/lane/cycle-20260525-mainwindows-2349/critic` -> `ade72e0d`
-- `origin/lane/critic` -> `5b61693d`
+- `origin/lane/critic` -> `4880187b`
 - `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration` -> `d388db27`
 - `origin/lane/cycle-20260525-mainwindows-2349/reliable-followup` -> `db36753e`
 - `origin/lane/same-plan-wordpress-graph-create` -> `0d2178e9`
