@@ -4282,6 +4282,83 @@ test('blocks _menu_item_object_id taxonomy metadata from referencing a same-plan
   assert.equal(JSON.stringify(postmetaBlocker).includes('local-shared-menu-taxonomy-term'), false);
 });
 
+test('blocks _menu_item_object_id taxonomy metadata when its same-plan term is claimed by a nav menu taxonomy and a sibling category taxonomy depends on the same blocked term', () => {
+  const targetResourceKey = 'row:["wp_terms","term_id:7"]';
+  const categoryTaxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:9"]';
+  const navMenuTaxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:20"]';
+  const postmetaResourceKey = 'row:["wp_postmeta","meta_id:478"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_terms = {
+    'term_id:7': {
+      term_id: 7,
+      name: 'Local shared menu taxonomy term',
+      slug: 'local-shared-menu-taxonomy-term',
+    },
+  };
+  local.db.wp_term_taxonomy = {
+    'term_taxonomy_id:9': {
+      term_taxonomy_id: 9,
+      term_id: 7,
+      taxonomy: 'category',
+      description: '',
+      parent: 0,
+      count: 0,
+    },
+    'term_taxonomy_id:20': {
+      term_taxonomy_id: 20,
+      term_id: 7,
+      taxonomy: 'nav_menu',
+      description: '',
+      parent: 0,
+      count: 0,
+    },
+  };
+  local.db.wp_postmeta = {
+    'meta_id:478': {
+      meta_id: 478,
+      post_id: 1,
+      meta_key: '_menu_item_object_id',
+      meta_value: 7,
+    },
+    'meta_id:479': {
+      meta_id: 479,
+      post_id: 1,
+      meta_key: '_menu_item_type',
+      meta_value: 'taxonomy',
+    },
+    'meta_id:480': {
+      meta_id: 480,
+      post_id: 1,
+      meta_key: '_menu_item_object',
+      meta_value: 'category',
+    },
+  };
+
+  const plan = planFor(base, local, baseSite());
+  const categoryTaxonomyMutation = mutationFor(plan, categoryTaxonomyResourceKey);
+  const navMenuTaxonomyBlocker = plan.blockers.find((entry) => entry.resourceKey === navMenuTaxonomyResourceKey);
+  const categoryTaxonomyBlocker = plan.blockers.find((entry) => entry.resourceKey === categoryTaxonomyResourceKey);
+  const postmetaMutation = mutationFor(plan, postmetaResourceKey);
+  const postmetaBlocker = plan.blockers.find((entry) => entry.resourceKey === postmetaResourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(mutationFor(plan, targetResourceKey).changeKind, 'create');
+  assert.equal(categoryTaxonomyMutation.changeKind, 'create');
+  assert.equal(mutationFor(plan, navMenuTaxonomyResourceKey), undefined);
+  assert.equal(postmetaMutation.changeKind, 'create');
+  assert.equal(navMenuTaxonomyBlocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(navMenuTaxonomyBlocker.surface, 'nav_menu');
+  assert.equal(categoryTaxonomyBlocker.class, 'missing-wordpress-graph-dependency');
+  assert.equal(categoryTaxonomyBlocker.references[0].relationshipType, 'term-taxonomy-term');
+  assert.equal(categoryTaxonomyBlocker.references[0].targetResourceKey, targetResourceKey);
+  assert.equal(postmetaBlocker.class, 'missing-wordpress-graph-dependency');
+  assert.equal(postmetaBlocker.references[0].relationshipType, 'menu-item-object-term');
+  assert.equal(postmetaBlocker.references[0].targetResourceKey, targetResourceKey);
+  assert.equal(postmetaMutation.dependsOnMutationIds, undefined);
+  assert.equal(JSON.stringify(postmetaBlocker).includes('local-shared-menu-taxonomy-term'), false);
+});
+
 test('blocks _menu_item_object_id taxonomy metadata from referencing a same-plan nav_menu term even when no term taxonomy row is present', () => {
   const resourceKey = 'row:["wp_postmeta","meta_id:478"]';
   const targetResourceKey = 'row:["wp_terms","term_id:8"]';
