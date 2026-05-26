@@ -736,6 +736,49 @@ test('checked durable journal boundary stays closed until stale-claim rejection 
       ...baseContract,
       latestRows: [
         {
+          id: 20,
+          event: 'apply-committed',
+        },
+        {
+          event: 'stale-claim-rejected',
+        },
+      ],
+      eventSummaries: [
+        {
+          event: 'apply-committed',
+          count: 1,
+          latestId: 20,
+        },
+        {
+          event: 'stale-claim-rejected',
+          count: 1,
+        },
+      ],
+      storageGuard: {
+        boundary: 'wpdb-single-statement-cas',
+        operation: 'update',
+        outcome: 'applied',
+      },
+      writerLease: {
+        ...baseContract.writerLease,
+        staleClaimRejected: true,
+      },
+      leaseFence: {
+        ...baseContract.leaseFence,
+        staleClaimRejected: true,
+        writerLease: {
+          ...baseContract.leaseFence.writerLease,
+          staleClaimRejected: true,
+        },
+      },
+    }),
+    false,
+  );
+  assert.equal(
+    checkedDurableJournalBoundarySatisfied({
+      ...baseContract,
+      latestRows: [
+        {
           event: 'stale-claim-rejected',
           sequence: 20,
         },

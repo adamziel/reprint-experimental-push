@@ -140,13 +140,19 @@ function checkedBoundaryStaleClaimEvidenceMatches(dbJournal) {
   }
 
   for (const summary of Array.isArray(dbJournal?.eventSummaries) ? dbJournal.eventSummaries : []) {
-    if (checkedBoundaryStaleClaimEventMatches(summary?.event)) {
+    if (
+      checkedBoundaryStaleClaimEventMatches(summary?.event)
+      && isPositiveInteger(summary?.latestId)
+    ) {
       return true;
     }
   }
 
   for (const row of Array.isArray(dbJournal?.latestRows) ? dbJournal.latestRows : []) {
-    if (checkedBoundaryStaleClaimEventMatches(row?.event)) {
+    if (
+      checkedBoundaryStaleClaimEventMatches(row?.event)
+      && isPositiveInteger(row?.id)
+    ) {
       return true;
     }
   }
