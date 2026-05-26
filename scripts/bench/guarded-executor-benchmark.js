@@ -477,7 +477,9 @@ function hasCompleteBackpressureEvidence(report) {
   return (
     Number.isFinite(receiptCursorBackpressureBytes)
     && Number.isFinite(receiptCursorQueueBudgetBytes)
+    && receiptCursorQueueBudgetBytes > 0
     && Number.isFinite(receiptCursorQueueHeadroomBytes)
+    && receiptCursorQueueHeadroomBytes >= 0
     && Number.isFinite(receiptCursorMemoryCeilingBytes)
     && report.evidence.backpressure?.queuePausedBeforeOverflow === true
     && report.evidence.backpressure?.receiptCursorWithinQueueBudget === true

@@ -397,6 +397,10 @@ test('production claim gate fails closed if benchmark evidence is tampered', () 
   assert.ok(
     productionThroughputBlockers(missingQueueBudget).includes('missing-queue-budget-evidence'),
   );
+  assert.equal(
+    productionThroughputDetails(missingQueueBudget).backpressureConsistency.backpressureEvidenceComplete,
+    false,
+  );
 
   const missingQueuePause = clone(report);
   missingQueuePause.evidence.backpressure.queuePausedBeforeOverflow = false;
