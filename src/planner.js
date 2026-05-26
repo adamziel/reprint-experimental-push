@@ -3483,6 +3483,11 @@ function unsupportedNavigationResourceSupport({ resource, baseValue, localValue,
     reference.targetChange.remote.state === 'absent'
     && reference.targetChange.local.state === 'present');
   const navigationReference = samePlanNavigationReferences[0];
+  const samePlanNavigationReason = samePlanNavigationReferences.some((reference) => reference.relationshipType === 'menu-item-parent')
+    ? `WordPress graph mutation ${resource.key} is created in the same plan as a menu item parent target that depends on it, and identity rewriting is not yet supported.`
+    : samePlanNavigationReferences.some((reference) => reference.relationshipType === 'post-parent')
+      ? `WordPress graph mutation ${resource.key} is created in the same plan as a post parent target that depends on it, and identity rewriting is not yet supported.`
+      : 'Navigation and menu graph resources are not yet supported by the planner.';
   return {
     supported: false,
     className: 'unsupported-navigation-resource',
@@ -3496,7 +3501,9 @@ function unsupportedNavigationResourceSupport({ resource, baseValue, localValue,
           remoteValue,
           allowSteadyUnsupported: true,
         }),
-    reason: 'Navigation and menu graph resources are not yet supported by the planner.',
+    reason: navigationReference
+      ? samePlanNavigationReason
+      : 'Navigation and menu graph resources are not yet supported by the planner.',
     references: navigationReference ? samePlanNavigationReferences : [],
   };
 }
