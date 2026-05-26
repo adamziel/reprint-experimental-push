@@ -455,6 +455,7 @@ export function productionThroughputDetails(report) {
       receiptCursorMatchesBackpressure,
       receiptCursorHeadroomMatchesQueueHeadroom,
       receiptCursorBackpressureWithinQueueHeadroom,
+      receiptCursorBackpressureWithinResourceHeadroom,
       receiptCursorHeadroomCoveredByQueueBudget,
       receiptCursorHeadroomWithinQueueBudget,
       receiptCursorBackpressureBytes,
