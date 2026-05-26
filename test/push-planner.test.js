@@ -423,6 +423,56 @@ test('keeps remote-only plugin changes while a live-preconditioned delete, match
   assert.equal(result.site.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin drift */');
 });
 
+test('blocks plugin-owned custom tables while preserving a matching independent edit and remote-only plugin drift', () => {
+  const resourceKey = 'row:["wp_custom_lanes","lane_id:7"]';
+  const base = baseSite();
+  base.db.wp_custom_lanes = {
+    'lane_id:7': {
+      lane_id: 7,
+      lane_name: 'base lane',
+      __pluginOwner: 'forms',
+    },
+  };
+
+  const local = baseSite();
+  local.db.wp_custom_lanes = {
+    'lane_id:7': {
+      lane_id: 7,
+      lane_name: 'local lane',
+      __pluginOwner: 'forms',
+    },
+  };
+  local.db.wp_posts['ID:1'].post_title = 'Shared title';
+
+  const remote = baseSite();
+  remote.db.wp_custom_lanes = {
+    'lane_id:7': {
+      lane_id: 7,
+      lane_name: 'base lane',
+      __pluginOwner: 'forms',
+    },
+  };
+  remote.db.wp_posts['ID:1'].post_title = 'Shared title';
+  remote.plugins.forms.description = 'remote-only plugin drift';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin drift */';
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  const matchingEdit = decisionFor(plan, 'row:["wp_posts","ID:1"]');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(blocker.class, 'unsupported-plugin-owned-resource');
+  assert.equal(
+    blocker.reason,
+    'Plugin-owned resource row:["wp_custom_lanes","lane_id:7"] is not covered by a supported resource driver policy for plugin forms.',
+  );
+  assert.equal(matchingEdit.decision, 'already-in-sync');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+});
+
 test('keeps remote-only plugin drift while a live-preconditioned file delete preserves a matching independent edit and matching independent type swap', () => {
   const base = baseSite();
   base.files['about.php'] = '<?php echo "base about";';
@@ -18797,6 +18847,7 @@ test('blocks local postmeta references to a same-plan created revision while pre
 
   const plan = planFor(base, local, remote);
   const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  const revisionBlocker = plan.blockers.find((entry) => entry.resourceKey === targetResourceKey);
   const reference = blocker.references[0];
   const planJson = JSON.stringify(plan);
 
@@ -18807,6 +18858,8 @@ test('blocks local postmeta references to a same-plan created revision while pre
   assert.equal(blocker.class, 'stale-wordpress-graph-identity');
   assert.equal(blocker.resourceKey, resourceKey);
   assert.equal(blocker.resolutionPolicy, 'preserve-remote-wordpress-graph-and-stop');
+  assert.equal(revisionBlocker.class, 'unsupported-revision-resource');
+  assert.equal(revisionBlocker.resourceKey, targetResourceKey);
   assert.equal(reference.relationshipKey, 'wp_postmeta.post_id');
   assert.equal(reference.relationshipType, 'postmeta-post');
   assert.equal(reference.sourceResourceKey, resourceKey);

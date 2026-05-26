@@ -1222,6 +1222,21 @@ function wordpressGraphIdentitySupport({
       };
     }
   }
+  if (resource.table === 'wp_postmeta') {
+    const samePlanCreatedRevisionReferences = referenceEvidence.find((reference) =>
+      reference.relationshipType === 'postmeta-post'
+      && reference.targetChange.targetResource?.table === 'wp_posts'
+      && reference.targetChange.local.value?.post_type === 'revision'
+      && reference.targetChange.remote.state === 'absent');
+
+    if (samePlanCreatedRevisionReferences) {
+      return {
+        supported: false,
+        className: 'unsupported-revision-resource',
+        reason: 'Revision graph resources are not yet supported by the planner.',
+      };
+    }
+  }
   if (resource.table === 'wp_posts' && localValue.post_type === 'nav_menu_item') {
     const menuItemParentReference = referenceEvidence.find((reference) =>
       reference.relationshipType === 'menu-item-parent'
