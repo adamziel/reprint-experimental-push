@@ -6,16 +6,16 @@ linked implementation artifacts.
 
 ## 2026-05-26 - Public Status Audit 21:19:19
 
-<a id="2026-05-26-public-status-audit-212203"></a>
+<a id="2026-05-26-public-status-audit-212244"></a>
 
 - Refreshed [progress.html](../progress.html) to the current `date` output
-  (`2026-05-26 21:22:03 CEST`) and kept
-  `59d0f2fd3a1a11f909df971fae7a44702ae79dbe` as the current reliable head on
+  (`2026-05-26 21:22:44 CEST`) and kept
+  `42209a94bff4375e648d1a6660f83db1106c4e9f` as the current reliable head on
   the public page and current latest checked release-path support evidence.
   The visible current-head rows stay aligned on that head, and the stale
-  `59d0f2fd3a1a11f909df971fae7a44702ae79dbe` display was corrected forward in
+  `42209a94bff4375e648d1a6660f83db1106c4e9f` display was corrected forward in
   this audit refresh.
-- `59d0f2fd3a1a11f909df971fae7a44702ae79dbe` remains support-side evidence;
+- `42209a94bff4375e648d1a6660f83db1106c4e9f` remains support-side evidence;
   the release gate stays at `0/4` because production-backed auth/session
   lifecycle and durable journal ownership with lease/fencing remain blocked.
 - The checked release-path fencing evidence still includes
