@@ -2,14 +2,14 @@ Changed files:
 - [`audits/critic.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/critic/audits/critic.md)
 
 What changed:
-- Reclassified the current reliable head as `dcacf95ed8670d10d49d93ce19fbcc81de967b76` from `git ls-remote`.
-- Kept the verdict at `0/4` because the commit aligns packaged auth-session source selection across the checked release verifier and package-smoke path, but still does not prove a production-backed auth/session lifecycle or a closed durable-journal ownership boundary on the release path.
+- Reclassified the current reliable head as `7e983661ed4c4dc18059854456665b72dff7be66` from `git ls-remote`.
+- Kept the verdict at `0/4` because the commit only adds a release-verify timeout buffer, which reduces stall risk but still does not prove a production-backed auth/session lifecycle or a closed durable-journal ownership boundary on the release path.
 
 Commands run:
 - `date '+%Y-%m-%d %H:%M:%S %Z (%z)'`
 - `git ls-remote origin refs/heads/lane/reliable-executor`
-- `git show --stat --oneline --no-renames --decorate=short --summary dcacf95ed8670d10d49d93ce19fbcc81de967b76`
-- `git show --no-renames --format=medium --unified=40 dcacf95ed8670d10d49d93ce19fbcc81de967b76 -- scripts/playground/production-shaped-release-verify.mjs test/production-shaped-proof.test.js scripts/playground/auth-session-source.js scripts/playground/production-plugin-package-smoke.mjs`
+- `git show --stat --oneline --no-renames --decorate=short --summary 7e983661ed4c4dc18059854456665b72dff7be66`
+- `git show --no-renames --format=medium --unified=40 7e983661ed4c4dc18059854456665b72dff7be66 -- test/production-shaped-proof.test.js`
 
 Push result:
 - Not attempted yet
