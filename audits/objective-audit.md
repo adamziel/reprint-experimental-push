@@ -6,20 +6,20 @@ The project is **not releasable as a production WordPress push path**.
 
 Fresh remote heads at audit time, checked on May 26, 2026:
 
-- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `0959a5ac`
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `02bccfa1`
+- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `eaa8220b`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `ed1f0417`
 - `origin/lane/reliable-executor` -> `b8d91776`
 - `origin/lane/no-data-loss-invariants` -> `9c70eba6`
 - `origin/lane/no-data-loss-recovery` -> `4372167e`
 - `origin/lane/fast-paths` -> `74b44338`
-- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `0959a5ac`
-- `origin/lane/independent-auditor` -> `5bcc0ded`
+- `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `eaa8220b`
+- `origin/lane/independent-auditor` -> `fe465ebe`
 - `origin/lane/critic` -> `cba0890b`
 - `origin/lane/progress-publisher` -> `7695e1f9`
 - `origin/lane/cycle-20260525-mainwindows-2349/critic` -> `cba0890b`
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `02bccfa1`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `ed1f0417`
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` -> `74b44338`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `ab654424`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `29c64f8e`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `4372167e`
 - `origin/lane/same-plan-wordpress-graph-create` -> `09e6706d`
 - `origin/lane/cycle-20260525-mainwindows-2349/same-plan-wordpress-graph-create` -> `09e6706d`
@@ -65,14 +65,14 @@ but it did not change the release conclusion:
   `cd0fddad`. That is still a fail-closed implementation improvement, not
   production release proof.
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` now adds receipt
-  cursor headroom rejection at `0959a5ac`, which is still boundary plumbing
+  cursor headroom rejection at `eaa8220b`, which is still boundary plumbing
   rather than measured speed proof.
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now
-  refreshes supervisor progress visibility at `b4c790d5`.
+  refreshes supervisor progress visibility at `ed1f0417`.
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now
-  records the latest progress freshness handoff at `ab654424`.
+  records the latest progress freshness handoff at `29c64f8e`.
 - `origin/lane/cycle-20260525-mainwindows-2349/independent-auditor` now refreshes the audit snapshot at
-  `5bcc0ded`.
+  `fe465ebe`.
 - `origin/lane/critic` now refreshes the critic handoff at `cba0890b`.
 - `origin/lane/progress-publisher` now refreshes the public progress evidence
   at `7695e1f9`.
@@ -82,7 +82,7 @@ but it did not change the release conclusion:
   fails closed on artifact ref drift at `4372167e`, but still does not add
   production-backed journal ownership or replay proof.
 - `origin/lane/cycle-20260525-mainwindows-2349/fast-paths` now adds receipt
-  cursor headroom rejection at `0959a5ac`.
+  cursor headroom rejection at `eaa8220b`.
 - `origin/lane/same-plan-wordpress-graph-create` now blocks unsupported graph
   surfaces at `7bf5d421`, including revision posts, menu/navigation posts,
   serialized blocks, thumbnail parent references, and other same-plan graph
