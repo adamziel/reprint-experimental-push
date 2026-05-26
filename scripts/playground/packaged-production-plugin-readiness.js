@@ -2,6 +2,14 @@ import { evaluateProductionAuthSessionLifecycle } from './production-auth-sessio
 
 export const packagedProductionPluginMaxConsecutiveNotReadyProbes = 4;
 
+function packagedProductionPluginWordPressNotReadyResponse(response) {
+  return response?.body?.code === 'wordpress_not_ready';
+}
+
+function packagedProductionPluginRouteNotReadyBody(response) {
+  return response?.body?.code === 'rest_no_route';
+}
+
 function packagedProductionPluginRouteProfileReady(routeProfile) {
   return routeProfile?.profile === 'production-shaped'
     && routeProfile?.restNamespace === 'reprint/v1'
@@ -10,7 +18,7 @@ function packagedProductionPluginRouteProfileReady(routeProfile) {
 }
 
 function packagedProductionPluginRouteNotReady(response) {
-  return response?.status === 404 && response?.body?.code === 'rest_no_route';
+  return packagedProductionPluginRouteNotReadyBody(response);
 }
 
 export function packagedProductionPluginSnapshotReady(snapshot) {
@@ -23,7 +31,7 @@ export function packagedProductionPluginSnapshotReady(snapshot) {
 
 export function packagedProductionPluginSnapshotRetryable(snapshot) {
   return (
-    (snapshot?.status === 502 && snapshot?.body?.code === 'wordpress_not_ready')
+    packagedProductionPluginWordPressNotReadyResponse(snapshot)
     || packagedProductionPluginRouteNotReady(snapshot)
   );
 }
@@ -43,7 +51,7 @@ export function packagedProductionPluginPreflightReady(preflight) {
 }
 
 export function packagedProductionPluginPreflightRetryable(preflight) {
-  if (preflight?.status === 502 && preflight?.body?.code === 'wordpress_not_ready') {
+  if (packagedProductionPluginWordPressNotReadyResponse(preflight)) {
     return true;
   }
 
