@@ -66,6 +66,10 @@ Current executable gate:
 - The same details also expose whether the measured memory ceiling still
   matches the queue budget, so a tampered headroom summary cannot drift away
   from the recorded backpressure budget.
+- The same details also let the receipt cursor reuse the aligned queue budget
+  and memory ceiling for bounded replay sizing, but only as planning evidence
+  with the live write preconditions and journal records still deciding
+  recovery.
 - The same details now also expose whether that memory-ceiling match is
   visible on the raw backpressure evidence surface, so the audit view can
   reject a queue-budget drift without reconstructing the bit from derived

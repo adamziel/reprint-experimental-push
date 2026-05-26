@@ -317,6 +317,16 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
     ),
     'receipt-cursor memory headroom can size bounded replay without widening visibility',
   );
+  assert.ok(
+    model.safeFastPaths.some(
+      (fastPath) =>
+        fastPath.area === 'backpressure' &&
+        fastPath.allowedShortcut === 'reuse-receipt-cursor-queue-budget-and-memory-ceiling-to-size-bounded-replay' &&
+        fastPath.guardrails.includes('queue-budget-and-memory-ceiling-stay-aligned') &&
+        fastPath.gateProofs.skip.includes('queue budget and memory ceiling still align with the recorded pause footprint'),
+    ),
+    'receipt-cursor planning can reuse aligned queue budget and memory ceiling without widening recovery evidence',
+  );
   assert.equal(
     model.safeFastPaths.find(
       (fastPath) =>
