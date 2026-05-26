@@ -1740,6 +1740,16 @@ function validateRecoveryStateEnvelopeKeys(recoveryState) {
 
   const unexpectedKeys = Reflect.ownKeys(recoveryState).filter((key) => typeof key === 'symbol' || !allowedKeys.includes(key));
   if (unexpectedKeys.length === 0) {
+    if (hasNestedSymbolOwnKeys(recoveryState.artifacts)) {
+      throw new PushPlanError(
+        'RECOVERY_STATE_INVALID',
+        'Recovery state artifacts must not hide unsupported symbol keys.',
+        {
+          status: recoveryState.status,
+          planId: recoveryState.planId,
+        },
+      );
+    }
     return;
   }
 

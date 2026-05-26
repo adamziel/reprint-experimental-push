@@ -1793,6 +1793,26 @@ test('supported recovery boundaries only resolve to old-remote, fully-updated-re
   }
 });
 
+test('rejects recovery states that hide symbol-keyed artifact metadata', () => {
+  const recoveryState = {
+    status: 'blocked-recovery',
+    reason: 'Symbol-keyed artifact metadata should not be accepted.',
+    remoteHash: 'a'.repeat(64),
+    planId: 'plan-symbol-artifacts',
+    artifacts: {
+      journal: { status: 'completed' },
+      remote: { status: 'blocked' },
+    },
+  };
+  const hiddenKey = Symbol('hidden');
+  recoveryState.artifacts[hiddenKey] = 'unsupported';
+
+  assert.throws(
+    () => assertRecoveryStateEnvelope(recoveryState),
+    (error) => error.code === 'RECOVERY_STATE_INVALID',
+  );
+});
+
 test('keeps the durable old-remote contract intact when failure happens before mutation', () => {
   const base = baseSite();
   const local = baseSite();
