@@ -15761,6 +15761,62 @@ test('checked db journal boundary contract accepts distinct claim ids when claim
   assert.equal(JSON.parse(result.stdout), true);
 });
 
+test('checked db journal boundary contract fails closed when a stale-claim rejected latest row omits a distinct active claim id', { skip: !hasPhp }, () => {
+  const baseJournal = structuredClone(buildAcceptedInlineDbJournal());
+  baseJournal.claim.activeClaimId = 'authoritative-claim-id-02';
+  baseJournal.claim.previousClaimId = 'retry-claim-id-01';
+  baseJournal.claimEvidence.activeRow.claimId = 'authoritative-claim-id-02';
+  baseJournal.claimEvidence.abandonedRow.claimId = 'retry-claim-id-01';
+  baseJournal.claimEvidence.previousRow.claimId = 'retry-claim-id-01';
+  baseJournal.writerLease.claimId = 'authoritative-claim-id-02';
+  baseJournal.leaseFence.writerLease.claimId = 'authoritative-claim-id-02';
+  delete baseJournal.latestRows[0].claimId;
+
+  const result = runCheckedBoundaryContractMatches(baseJournal);
+
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(JSON.parse(result.stdout), false);
+});
+
+test('checked db journal boundary contract fails closed when a stale-claim abandoned latest row omits a distinct previous claim id', { skip: !hasPhp }, () => {
+  const baseJournal = structuredClone(buildAcceptedInlineDbJournal());
+  baseJournal.claim.activeClaimId = 'authoritative-claim-id-02';
+  baseJournal.claim.previousClaimId = 'retry-claim-id-01';
+  baseJournal.claimEvidence.activeRow.claimId = 'authoritative-claim-id-02';
+  baseJournal.claimEvidence.abandonedRow.claimId = 'retry-claim-id-01';
+  baseJournal.claimEvidence.previousRow.claimId = 'retry-claim-id-01';
+  baseJournal.writerLease.claimId = 'authoritative-claim-id-02';
+  baseJournal.leaseFence.writerLease.claimId = 'authoritative-claim-id-02';
+  baseJournal.latestRows.push({
+    sequence: 24,
+    event: 'stale-claim-abandoned',
+    claimKeyHash: 'retry-claim-hash-01',
+    idempotencyKeyHash: 'idem-hash-01',
+    requestHash: 'request-hash-01',
+    resourceHashEvidence: {
+      startedCursor: 'db-journal:19',
+      claimCursor: 'db-journal:18',
+    },
+  });
+  baseJournal.eventSummaries = [
+    {
+      event: 'stale-claim-rejected',
+      count: 1,
+      latestId: 33,
+    },
+    {
+      event: 'stale-claim-abandoned',
+      count: 1,
+      latestId: 24,
+    },
+  ];
+
+  const result = runCheckedBoundaryContractMatches(baseJournal);
+
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(JSON.parse(result.stdout), false);
+});
+
 test('checked db journal boundary contract fails closed when stale-claim rejection is claimed without persisted stale-claim evidence', { skip: !hasPhp }, () => {
   const result = runCheckedBoundaryContractMatches({
     schemaVersion: 1,
