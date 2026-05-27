@@ -1791,6 +1791,12 @@ test('guarded benchmark surfaces plugin-update recovery blockers at runtime', ()
     ].sort((left, right) => left.id.localeCompare(right.id)),
   );
 
+  assert.deepEqual(summarizeRejectedGates(pluginUpdateRejectedFastPaths), [
+    { rejectedGate: 'group', count: 16 },
+    { rejectedGate: 'live', count: 3 },
+    { rejectedGate: 'recovery', count: 7 },
+  ]);
+
   assert.equal(
     details.rejectedFastPaths.filter((entry) => entry.id.includes('plugin-update')).length,
     26,
