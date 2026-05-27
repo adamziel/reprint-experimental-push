@@ -922,8 +922,15 @@ export function resolveProductionPluginPackagePluginDriverProof(
         expectedModeProof === null
           ? attachedPluginDriverProof?.mode === resolvedOptions.resolvedMode
           : attachedModeKey?.canonicalMode === expectedModeProof.canonicalMode
+            && attachedPluginDriverProof?.canonicalMode === expectedModeProof.canonicalMode
             && attachedModeKey?.proofKey === expectedModeProof.proofKey
-            && attachedModeKey?.legacyProofKey === expectedModeProof.legacyProofKey
+            && (
+              attachedModeKey?.legacyProofKey === expectedModeProof.legacyProofKey
+              || (
+                attachedPluginDriverProof?.mode === expectedModeProof.proofKey
+                && attachedModeKey?.legacyProofKey === expectedModeProof.proofKey
+              )
+            )
       )
     );
     const canonicalModeMatches = (
@@ -962,8 +969,17 @@ export function resolveProductionPluginPackagePluginDriverProof(
         && attachedPluginDriverProof?.modeProof?.canonicalMode === expectedModeProof.canonicalMode
         && attachedNestedModeKey?.proofKey === expectedModeProof.proofKey
         && attachedPluginDriverProof?.modeProof?.proofKey === expectedModeProof.proofKey
-        && attachedNestedModeKey?.legacyProofKey === expectedModeProof.legacyProofKey
-        && attachedPluginDriverProof?.modeProof?.legacyProofKey === expectedModeProof.legacyProofKey
+        && (
+          (
+            attachedNestedModeKey?.legacyProofKey === expectedModeProof.legacyProofKey
+            && attachedPluginDriverProof?.modeProof?.legacyProofKey === expectedModeProof.legacyProofKey
+          )
+          || (
+            attachedPluginDriverProof?.modeProof?.mode === expectedModeProof.proofKey
+            && attachedNestedModeKey?.legacyProofKey === expectedModeProof.proofKey
+            && attachedPluginDriverProof?.modeProof?.legacyProofKey === expectedModeProof.proofKey
+          )
+        )
         && modeProofMatchesResolvedContext(
           attachedPluginDriverProof,
           attachedPluginDriverProof?.modeProof,
