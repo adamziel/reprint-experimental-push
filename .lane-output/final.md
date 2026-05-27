@@ -1,40 +1,38 @@
-2026-05-27 08:34:06 CEST (+0200)
+2026-05-27 08:37:49 CEST (+0200)
 
 Changed files:
-- `scripts/playground/packaged-production-plugin-readiness.js`
-- `test/live-playground-readiness.test.js`
-- `.lane-output/final.md`
+- `test/production-shaped-proof.test.js`
 
 Result:
-- Fixed a packaged-readiness fail-open: signed preflight is no longer considered ready unless the top-level `session` envelope includes a non-empty `session.id` and `session.type === "production-auth-session"`.
-- Added focused coverage proving missing top-level session data, missing `session.id`, or the wrong top-level `session.type` all stay terminal instead of being treated as ready or retryable.
-- This keeps packaged startup fail-closed when the signed preflight body looks superficially healthy through `auth.session` but is still broken at the session envelope the verifier needs.
+- Added release-verifier and packaged-smoke runtime regression coverage for a packaged signed-preflight body that still looks healthy through `auth.session` but has a broken top-level `session` envelope after snapshot readiness succeeds.
+- Confirmed both runtime helpers fail closed on that shape and classify it as an invalid readiness body instead of letting packaged startup continue past a broken preflight envelope.
+- This extends the earlier helper-level fail-closed fix into the actual runtime helper surfaces that reliable consumes.
 
 Commands run:
 - `git status --short --branch`
 - `sed -n '1,220p' AGENTS.md`
 - `sed -n '1,220p' supervision/README.md`
-- `sed -n '1,240p' /home/claude/.codex/skills/wp-playground/SKILL.md`
-- `git fetch origin lane/reliable-executor`
-- `git ls-remote --heads origin refs/heads/lane/reliable-executor refs/heads/lane/playground-readiness-code-20260526-1836`
-- `git show --stat --oneline origin/lane/reliable-executor`
-- `grep -RniE "waitForPackagedProductionPluginServer|WordPress is not ready yet|signedPreflight|signed-preflight|preflight|routeProfile|authSession" scripts/playground test/live-playground-readiness.test.js test/production-shaped-proof.test.js | sed -n '1,260p'`
+- `ls supervision/lanes`
+- `find .lane-output -maxdepth 1 -type f | sort | tail -n 8 | xargs -r -I{} sh -c 'echo "--- {}"; sed -n "1,220p" "{}"'`
+- `git log --oneline --decorate -n 12`
+- `git log --oneline origin/lane/playground-readiness-code-20260526-1836 -n 8`
 - `sed -n '1,260p' scripts/playground/packaged-production-plugin-readiness.js`
-- `sed -n '1,260p' scripts/playground/production-auth-session-lifecycle.js`
-- `sed -n '1260,1455p' test/live-playground-readiness.test.js`
-- `git diff --stat HEAD..origin/lane/reliable-executor -- scripts/playground/production-shaped-release-verify.mjs scripts/playground/packaged-production-plugin-readiness.js test/live-playground-readiness.test.js test/production-shaped-proof.test.js`
-- `node --input-type=module ...` to probe `packagedProductionPluginPreflightReady()` and confirm missing/broken top-level session envelopes were incorrectly accepted as ready before the patch
-- `node --input-type=module ...` to probe `packagedProductionPluginPreflightRetryable()` / `packagedProductionPluginPreflightTerminal()` for the broken top-level session case
-- `timeout 60s node --test test/live-playground-readiness.test.js`
+- `sed -n '1,320p' scripts/playground/production-shaped-release-verify.mjs`
+- `sed -n '1,260p' test/production-shaped-proof.test.js`
+- `sed -n '1320,1575p' test/live-playground-readiness.test.js`
+- `sed -n '4888,5075p' test/production-shaped-proof.test.js`
+- `sed -n '6148,6338p' test/production-shaped-proof.test.js`
+- `timeout 60s node --test test/production-shaped-proof.test.js`
+- `timeout 60s node --test --test-name-pattern='broken top-level session envelope' test/production-shaped-proof.test.js`
 - `git diff --check`
-- `git diff -- scripts/playground/packaged-production-plugin-readiness.js test/live-playground-readiness.test.js`
+- `git diff --stat`
 - `date '+%Y-%m-%d %H:%M:%S %Z (%z)'`
 
 Push result:
 - Pending commit/push from this pass.
 
 Worktree status:
-- Branch `lane/playground-readiness-code-20260526-1836` has tracked edits in `scripts/playground/packaged-production-plugin-readiness.js`, `test/live-playground-readiness.test.js`, and this handoff file.
+- Branch `lane/playground-readiness-code-20260526-1836` has tracked edits in `test/production-shaped-proof.test.js` and this handoff file.
 
 Next supervisor nudge:
-- This lane now owns the top-level signed-preflight session envelope contract as part of packaged readiness. After this commit lands, keep the lane parked unless reliable reintroduces another packaged-startup divergence between `production-shaped-release-verify.mjs` and these readiness helpers.
+- This lane’s next useful move is to commit and push this runtime regression coverage, then stay parked unless reliable reopens another packaged preflight/runtime readiness divergence.
