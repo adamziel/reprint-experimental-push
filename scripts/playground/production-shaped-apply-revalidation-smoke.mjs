@@ -101,11 +101,17 @@ try {
       externalTopology: true,
     });
   } else {
-    await withPlaygroundServer('remote-base', remoteBlueprint, async (remoteServer) => {
-      await withPlaygroundServer('local-edited', localBlueprint, async (localServer) => {
-        await runApplyRevalidationProof({ remoteServer, localServer, externalTopology: false });
+    const defaultPlanFailure = buildDefaultTopologyPlanFailure();
+    if (defaultPlanFailure) {
+      emitPlanNotReadyProof(defaultPlanFailure);
+      process.exitCode = 1;
+    } else {
+      await withPlaygroundServer('remote-base', remoteBlueprint, async (remoteServer) => {
+        await withPlaygroundServer('local-edited', localBlueprint, async (localServer) => {
+          await runApplyRevalidationProof({ remoteServer, localServer, externalTopology: false });
+        });
       });
-    });
+    }
   }
 } catch (error) {
   stopAllPlaygroundChildrenSync();
@@ -134,9 +140,18 @@ async function runApplyRevalidationProof({ remoteServer, localServer, externalTo
   currentOperation = `export snapshot remote-base ${remoteServer.baseUrl}`;
   const base = await exportSnapshot('remote-base', remoteServer.baseUrl);
   currentOperation = `export snapshot local-edited ${localServer.baseUrl}`;
-  const local = withoutUnmappedGraphPostmeta(await exportSnapshot('local-edited', localServer.baseUrl));
+  const local = await exportSnapshot('local-edited', localServer.baseUrl);
   const plan = createPushPlan({ base, local, remote: base });
-  assert.equal(plan.status, 'ready');
+  if (plan.status !== 'ready') {
+    emitPlanNotReadyProof({
+      plan,
+      remoteServer,
+      localServer,
+      externalTopology,
+    });
+    process.exitCode = 1;
+    return;
+  }
   assert.ok(plan.mutations.length > 0, 'apply revalidation proof needs at least one mutation');
 
   const driftTarget = plan.mutations.find((mutation) => mutation.resourceKey === driftMutation.resourceKey)
@@ -306,6 +321,112 @@ function emitInvalidAuthSessionSourceProof() {
   process.stdout.write('\n');
 }
 
+function buildDefaultTopologyPlanFailure() {
+  const base = exportSnapshotFromBlueprint('remote-base', remoteBlueprint);
+  const local = exportSnapshotFromBlueprint('local-edited', localBlueprint);
+  const plan = createPushPlan({ base, local, remote: base });
+  if (plan.status === 'ready') {
+    return null;
+  }
+
+  return {
+    plan,
+    remoteServer: { name: 'remote-base', baseUrl: 'remote-base' },
+    localServer: { name: 'local-edited', baseUrl: 'local-edited' },
+    externalTopology: false,
+  };
+}
+
+function emitPlanNotReadyProof({
+  plan,
+  remoteServer,
+  localServer,
+  externalTopology,
+}) {
+  const graphIdentityBlockers = plan.blockers.filter((blocker) =>
+    (blocker.class || blocker.className) === 'stale-wordpress-graph-identity');
+  process.stdout.write(JSON.stringify({
+    ok: false,
+    code: 'PLAN_NOT_READY_LOCALLY',
+    topology: {
+      sourceUrl: remoteServer.baseUrl,
+      remoteBase: remoteServer.baseUrl,
+      remoteChanged: externalRemoteChangedUrl || null,
+      localEdited: localServer.baseUrl,
+      externalTopology,
+      proxyPolicy: 'local-only',
+      ingressPort: 8080,
+    },
+    graphFilter: {
+      removed: true,
+      formerFilter: 'withoutUnmappedGraphPostmeta',
+      blockerClass: graphIdentityBlockers.length > 0 ? 'stale-wordpress-graph-identity' : null,
+      blockerCount: graphIdentityBlockers.length,
+    },
+    plan: summarizePlan(plan),
+    boundary: {
+      firstRemainingProductionBoundary: 'WordPress graph identity mapping on the release-adjacent apply revalidation path',
+      verdict: graphIdentityBlockers.length > 0
+        ? 'STALE_WORDPRESS_GRAPH_IDENTITY_REQUIRED'
+        : 'PLAN_NOT_READY_LOCALLY',
+    },
+  }, null, 2));
+  process.stdout.write('\n');
+}
+
+function exportSnapshotFromBlueprint(name, blueprintPath) {
+  const result = spawnSync('npx', [
+    '--yes',
+    '@wp-playground/cli@latest',
+    'php',
+    '--blueprint',
+    blueprintPath,
+    '--mount',
+    `${repoRoot}:/workspace`,
+    '--verbosity',
+    'quiet',
+    '--',
+    '/workspace/scripts/playground/export-site-snapshot.php',
+  ], {
+    cwd: repoRoot,
+    encoding: 'utf8',
+    maxBuffer: 1024 * 1024 * 20,
+  });
+
+  if (result.status !== 0) {
+    throw new Error(`Playground snapshot export failed for ${name}\nSTDOUT:\n${result.stdout}\nSTDERR:\n${result.stderr}`);
+  }
+
+  const match = result.stdout.match(/REPRINT_PUSH_SNAPSHOT_JSON_BEGIN\n([\s\S]*)\nREPRINT_PUSH_SNAPSHOT_JSON_END/);
+  if (!match) {
+    throw new Error(`Snapshot markers missing for ${name}\nSTDOUT:\n${result.stdout}\nSTDERR:\n${result.stderr}`);
+  }
+
+  return JSON.parse(match[1]);
+}
+
+function summarizePlan(plan) {
+  return {
+    id: plan.id,
+    status: plan.status,
+    summary: plan.summary,
+    mutations: plan.mutations.length,
+    mutationKeys: plan.mutations.map((mutation) => mutation.resourceKey),
+    conflicts: plan.conflicts.map((conflict) => ({
+      resourceKey: conflict.resourceKey,
+      reason: conflict.reason,
+      className: conflict.className || conflict.class || null,
+      resolutionPolicy: conflict.resolutionPolicy,
+    })),
+    blockers: plan.blockers.map((blocker) => ({
+      resourceKey: blocker.resourceKey,
+      reason: blocker.reason,
+      className: blocker.className || blocker.class || null,
+      resolutionPolicy: blocker.resolutionPolicy,
+    })),
+  };
+}
+
 function buildApplyRevalidationBoundary({
   authSessionLifecycle,
   checkedDurableJournalAccepted,
@@ -414,15 +535,6 @@ async function exportSnapshot(name, baseUrl) {
   const body = await response.json();
   assert.equal(body.ok, true, `${name} snapshot body not ok`);
   return body.snapshot;
-}
-
-function withoutUnmappedGraphPostmeta(snapshot) {
-  const next = JSON.parse(JSON.stringify(snapshot));
-  delete next.db?.wp_postmeta?.['post_id:2001:meta_key:_reprint_push_forms_schema'];
-  if (next.db?.wp_postmeta && Object.keys(next.db.wp_postmeta).length === 0) {
-    delete next.db.wp_postmeta;
-  }
-  return next;
 }
 
 async function withPlaygroundServer(name, blueprintPath, run) {

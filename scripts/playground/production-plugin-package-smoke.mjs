@@ -76,7 +76,14 @@ const snapshots = runDriverGuardOnly
         exportSnapshot(name, path.join(repoRoot, fixture)),
       ]),
     );
-const packageLocalSnapshot = snapshots ? withoutUnmappedGraphPostmeta(snapshots.local) : null;
+const packageLocalSnapshot = snapshots ? snapshots.local : null;
+const packagePlan = snapshots
+  ? createPushPlan({
+      base: snapshots.base,
+      local: packageLocalSnapshot,
+      remote: snapshots.base,
+    })
+  : null;
 
 const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'reprint-production-plugin-package-'));
 const packageRoot = path.join(tmpDir, 'package');
@@ -295,7 +302,17 @@ echo "\nREPRINT_PUSH_DRIVER_GUARD_JSON_END\n";
     driverReceiptRevokedCredentialGuard: {},
     final: {},
   };
+  const packagePlanFailure = packagePlan
+    && !runDriverGuardOnly
+    && shouldRunScenario('core-package-routes')
+    && packagePlan.status !== 'ready'
+    ? buildPlanNotReadyProof(summary, packagePlan)
+    : null;
 
+  if (packagePlanFailure) {
+    console.log(JSON.stringify(packagePlanFailure, null, 2));
+    process.exitCode = 1;
+  } else {
   if (!runDriverGuardOnly && shouldRunScenario('core-package-routes')) {
     await withPlaygroundServer('production-plugin-package', blueprintPath, pluginDir, async (server) => {
     const index = await requestJson(server.baseUrl, 'GET', '/wp-json/');
@@ -683,8 +700,55 @@ echo "\nREPRINT_PUSH_DRIVER_GUARD_JSON_END\n";
   });
 
   console.log(JSON.stringify(summary, null, 2));
+  }
 } finally {
   fs.rmSync(tmpDir, { recursive: true, force: true });
+}
+
+function buildPlanNotReadyProof(summary, plan) {
+  const graphIdentityBlockers = plan.blockers.filter((blocker) =>
+    (blocker.class || blocker.className) === 'stale-wordpress-graph-identity');
+  return {
+    ok: false,
+    code: 'PLAN_NOT_READY_LOCALLY',
+    mode: summary.mode,
+    package: summary.package,
+    graphFilter: {
+      removed: true,
+      formerFilter: 'withoutUnmappedGraphPostmeta',
+      blockerClass: graphIdentityBlockers.length > 0 ? 'stale-wordpress-graph-identity' : null,
+      blockerCount: graphIdentityBlockers.length,
+    },
+    plan: summarizePlan(plan),
+    boundary: {
+      firstRemainingProductionBoundary: 'WordPress graph identity mapping on the packaged release smoke path',
+      verdict: graphIdentityBlockers.length > 0
+        ? 'STALE_WORDPRESS_GRAPH_IDENTITY_REQUIRED'
+        : 'PLAN_NOT_READY_LOCALLY',
+    },
+  };
+}
+
+function summarizePlan(plan) {
+  return {
+    id: plan.id,
+    status: plan.status,
+    summary: plan.summary,
+    mutations: plan.mutations.length,
+    mutationKeys: plan.mutations.map((mutation) => mutation.resourceKey),
+    conflicts: plan.conflicts.map((conflict) => ({
+      resourceKey: conflict.resourceKey,
+      reason: conflict.reason,
+      className: conflict.className || conflict.class || null,
+      resolutionPolicy: conflict.resolutionPolicy,
+    })),
+    blockers: plan.blockers.map((blocker) => ({
+      resourceKey: blocker.resourceKey,
+      reason: blocker.reason,
+      className: blocker.className || blocker.class || null,
+      resolutionPolicy: blocker.resolutionPolicy,
+    })),
+  };
 }
 
 function buildPluginPackage(targetDir) {
@@ -787,15 +851,6 @@ function formatSelectedScenarioNames(selected) {
   }
   return Array.from(selected).sort().join(',');
 }
-function withoutUnmappedGraphPostmeta(snapshot) {
-  const next = JSON.parse(JSON.stringify(snapshot));
-  delete next.db?.wp_postmeta?.['post_id:2001:meta_key:_reprint_push_forms_schema'];
-  if (next.db?.wp_postmeta && Object.keys(next.db.wp_postmeta).length === 0) {
-    delete next.db.wp_postmeta;
-  }
-  return next;
-}
-
 function writeActivationBlueprint(sourceBlueprintPath, targetBlueprintPath) {
   const blueprint = JSON.parse(fs.readFileSync(sourceBlueprintPath, 'utf8'));
   blueprint.meta = {

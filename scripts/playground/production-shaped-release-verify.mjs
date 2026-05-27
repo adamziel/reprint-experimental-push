@@ -941,11 +941,9 @@ try {
     explicitLocalUrl: explicitReleaseVerifyLocalUrl,
     packagedBoundaryRequested: packagedSourceFixture !== null,
   });
-  const localEditedSnapshot = withoutUnmappedGraphPostmeta(
-    explicitReleaseVerifyLocalUrl
-      ? await exportSnapshot('local-edited', explicitReleaseVerifyLocalUrl)
-      : exportSnapshotFromBlueprint('local-edited', localEditedFixturePath),
-  );
+  const localEditedSnapshot = explicitReleaseVerifyLocalUrl
+    ? await exportSnapshot('local-edited', explicitReleaseVerifyLocalUrl)
+    : exportSnapshotFromBlueprint('local-edited', localEditedFixturePath);
   const remoteChangedSnapshot = explicitReleaseVerifyRemoteChangedUrl
     ? await exportSnapshot('remote-changed', explicitReleaseVerifyRemoteChangedUrl)
     : exportSnapshotFromBlueprint('remote-changed', remoteChangedFixturePath);
@@ -2327,15 +2325,6 @@ async function exportProductionSnapshot(name, baseUrl) {
   const body = await response.json();
   assert.equal(body.ok, true, `${name} snapshot body not ok`);
   return body.snapshot;
-}
-
-function withoutUnmappedGraphPostmeta(snapshot) {
-  const next = JSON.parse(JSON.stringify(snapshot));
-  delete next.db?.wp_postmeta?.['post_id:2001:meta_key:_reprint_push_forms_schema'];
-  if (next.db?.wp_postmeta && Object.keys(next.db.wp_postmeta).length === 0) {
-    delete next.db.wp_postmeta;
-  }
-  return next;
 }
 
 function runBoundedSync(command, args, options, label) {

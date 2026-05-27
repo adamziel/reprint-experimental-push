@@ -1205,7 +1205,10 @@ test('production plugin package smoke supports driver-guard-only mode', () => {
   assert.match(smokeSource, /const smokeMode = process\.env\.REPRINT_PUSH_PACKAGE_SMOKE_MODE \|\| 'full';/);
   assert.match(smokeSource, /const runDriverGuardOnly = smokeMode === 'driver-guard-only';/);
   assert.match(smokeSource, /mode: smokeMode,/);
-  assert.match(smokeSource, /if \(!runDriverGuardOnly\) \{/);
+  assert.match(smokeSource, /const packagePlan = snapshots\s*\?\s*createPushPlan\(\{/);
+  assert.match(smokeSource, /const packagePlanFailure = packagePlan[\s\S]*?packagePlan\.status !== 'ready'/);
+  assert.match(smokeSource, /formerFilter: 'withoutUnmappedGraphPostmeta'/);
+  assert.match(smokeSource, /STALE_WORDPRESS_GRAPH_IDENTITY_REQUIRED/);
 });
 
 maybeTest('production plugin package smoke rejects revoked packaged driver credentials without mutating the remote row', () => {
