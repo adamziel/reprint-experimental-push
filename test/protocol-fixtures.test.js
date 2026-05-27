@@ -12,10 +12,9 @@ const packageJson = readJson('package.json');
 const protocolReadme = fs.readFileSync(path.join(repoRoot, 'fixtures/protocol/README.md'), 'utf8');
 const protocolDocs = fs.readFileSync(path.join(repoRoot, 'docs/protocol.md'), 'utf8');
 const executorDocs = fs.readFileSync(path.join(repoRoot, 'docs/executor.md'), 'utf8');
-// The checked release entrypoint now proves the packaged production-plugin
-// boundary end-to-end, including driver guards and recovery proof, so the
-// fixture budget must cover the full bounded release path instead of the older
-// shorter live-only wrapper.
+// The checked release entrypoint owns the real-source release gate. With no
+// live inputs it fails closed quickly; with live inputs it can run the full
+// bounded release path.
 const verifyReleaseTimeoutMs = 300_000;
 const verifyReleaseSpawnOptions = {
   cwd: repoRoot,
@@ -4609,42 +4608,30 @@ test('push fixture index keeps the production proof bundle grouped around the ne
   assert.ok(readme.includes('pull-to-push bridge proofs'));
 });
 
-test('verify:release stays pinned to the checked release entrypoint and proves the packaged release boundary', () => {
+test('verify:release stays pinned to the checked release entrypoint and fails closed without live inputs', () => {
   const proof = runVerifyReleaseWithRetry({
     NODE_NO_WARNINGS: '1',
-  }, { retries: 1 });
+  });
 
-  assert.equal(proof.status, 0, proof.stderr);
-  assert.match(proof.stdout, /"ok": true/);
-  assert.match(proof.stdout, /"preflight": \{\s*"status": 200,\s*"authSessionType": "production-auth-session"/);
-  assert.match(proof.stdout, /"routeProfile": \{\s*"profile": "production-shaped"[\s\S]*"labBacked": false/);
-  assert.match(proof.stdout, /"releaseProof": \{\s*"ok": true,\s*"mode": "apply"/);
-  assert.match(proof.stdout, /"durableJournal": \{\s*"proof": \{\s*"status": 0,\s*"journal": \{/);
+  assert.equal(proof.status, 1, proof.stderr);
+  assert.match(proof.stdout, /"ok": false/);
+  assert.match(proof.stdout, /"verdict": "REPRINT_PUSH_LIVE_SOURCE_REQUIRED"/);
+  assert.match(proof.stdout, /"checkedCommand": "npm run verify:release"/);
   assert.match(
     proof.stdout,
-    /"boundary": \{\s*"firstRemainingProductionBoundary": "explicit live production-owned release boundary",\s*"status": "support-only",\s*"verdict": "REPRINT_PUSH_LIVE_SOURCE_REQUIRED"/,
+    /"nextCommand": "REPRINT_PUSH_SOURCE_URL='<production Reprint URL>' REPRINT_PUSH_USERNAME='<WordPress application-password user>' REPRINT_PUSH_APPLICATION_PASSWORD='<application password>' npm run verify:release"/,
   );
-  assert.match(proof.stdout, /"checkedAccepted": true/);
-  assert.match(
-    proof.stdout,
-    /"liveSource": \{\s*"required": "REPRINT_PUSH_SOURCE_URL",\s*"observed": "packaged-production-plugin-fallback",\s*"verdict": "REPRINT_PUSH_LIVE_SOURCE_REQUIRED"\s*\}/,
-  );
-  assert.match(proof.stdout, /"authSessionSource": \{[\s\S]*"sourceUrl": "http:\/\/127\.0\.0\.1:\d+"/);
-  assert.match(
-    proof.stdout,
-    /"command": "REPRINT_PUSH_PACKAGED_PRODUCTION_PLUGIN=1 [\s\S]*?--source-url=http:\/\/127\.0\.0\.1:\d+[\s\S]*?"/,
-  );
-  assert.doesNotMatch(
-    proof.stdout,
-    /"command": "REPRINT_PUSH_PACKAGED_PRODUCTION_PLUGIN=1 [\s\S]*?--source-url=http:\/\/127\.0\.0\.1:8080[\s\S]*?"/,
-  );
+  assert.doesNotMatch(proof.stdout, /packaged-production-plugin-fallback/);
 });
 
 test('verify:release keeps preserved-remote retry pinned at the checked entrypoint', () => {
   assert.equal(
     packageJson.scripts['verify:release'],
-    'npm run test:playground:production-shaped-topology-proof && REPRINT_PUSH_REQUIRE_PRODUCTION_AUTH_SESSION=1 REPRINT_PUSH_REQUIRE_PRODUCTION_DURABLE_JOURNAL=1 REPRINT_PUSH_SIMULATE_PRESERVED_REMOTE_RETRY_PATH=/snapshot npm run test:playground:production-shaped-live-release-verify && npm run test:playground:production-plugin-driver-verifier-guards && npm run test:recovery:file-journal',
+    'REPRINT_PUSH_REQUIRE_REAL_RELEASE_BOUNDARY=1 REPRINT_PUSH_REQUIRE_PRODUCTION_AUTH_SESSION=1 REPRINT_PUSH_REQUIRE_PRODUCTION_DURABLE_JOURNAL=1 REPRINT_PUSH_SIMULATE_PRESERVED_REMOTE_RETRY_PATH=/snapshot npm run test:playground:production-shaped-live-release-verify',
   );
+  assert.doesNotMatch(packageJson.scripts['verify:release'], /production-shaped-topology-proof/);
+  assert.doesNotMatch(packageJson.scripts['verify:release'], /production-plugin-driver-verifier-guards/);
+  assert.doesNotMatch(packageJson.scripts['verify:release'], /test:recovery:file-journal/);
 });
 
 test('verify:release keeps the packaged driver verifier bundle in driver-guard-only mode', () => {
@@ -4670,6 +4657,8 @@ test('verify:release fails closed at the explicit missing-secret gate when a sou
     proof.stdout,
     /"releaseProof": \{\s*"ok": false,\s*"status": 1,\s*"code": "REPRINT_PUSH_SECRET_REQUIRED"\s*\}/,
   );
+  assert.match(proof.stdout, /"failClosedDiagnostics": \{/);
+  assert.match(proof.stdout, /"nextCommand": "REPRINT_PUSH_SOURCE_URL=http:\/\/127\.0\.0\.1:65535/);
 });
 
 test('verify:release fails closed when the explicit retained live source is unreachable', () => {
@@ -4699,4 +4688,6 @@ test('verify:release fails closed when the explicit retained live source is unre
     proof.stdout,
     /"durableJournal": \{\s*"storageLeaseFence": "production durable journal storage, lease, and fencing are not yet proven beyond the retained Playground journal path",\s*"verdict": "PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED"\s*\}/,
   );
+  assert.match(proof.stdout, /"failClosedDiagnostics": \{/);
+  assert.match(proof.stdout, /"nextCommand": "REPRINT_PUSH_SOURCE_URL=http:\/\/127\.0\.0\.1:65535/);
 });
