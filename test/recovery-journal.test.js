@@ -17,6 +17,7 @@ import {
   openProductionRecoveryJournal,
   openPlanRecoveryJournal,
   openRecoveryJournal,
+  productionRecoveryJournalInspectionSurfaceIsPresent,
   readRecoveryJournal,
 } from '../src/recovery-journal.js';
 import { inspectRecoveryJournal } from '../src/recovery-inspect.js';
@@ -436,6 +437,7 @@ test('checked release path consumes the production recovery journal inspection s
     claimId: activeClaimId,
   });
 
+  assert.equal(productionRecoveryJournalInspectionSurfaceIsPresent(inspection), true);
   assert.equal(inspection.journal.productionAdapter, 'openProductionRecoveryJournal');
   assert.equal(inspection.journal.kind, 'production-recovery-journal');
   assert.equal(inspection.journal.journalPath, filePath);
@@ -479,6 +481,44 @@ test('checked release path consumes the production recovery journal inspection s
     ...recordsBeforeConsume,
     'recovery-journal-consumed',
   ]);
+});
+
+test('production recovery journal inspection surface helper fails closed when lease-fence evidence diverges from the claimed durable adapter', () => {
+  const filePath = tempJournalPath();
+  const remote = baseSite();
+  const plan = planFor(baseSite(), localSite(), remote);
+  const claimId = 'production-claim-contract-01';
+
+  const journal = openProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs: {
+      releaseProof: 'artifact://release-proof-contract',
+    },
+    claimId,
+  });
+  journal.close();
+
+  const inspection = consumeProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs: {
+      releaseProof: 'artifact://release-proof-contract',
+    },
+    claimId,
+  });
+
+  assert.equal(productionRecoveryJournalInspectionSurfaceIsPresent(inspection), true);
+
+  const divergentBoundary = clone(inspection);
+  divergentBoundary.leaseFence.boundary = 'wpdb-single-statement-cas';
+  assert.equal(productionRecoveryJournalInspectionSurfaceIsPresent(divergentBoundary), false);
+
+  const divergentStorageGuard = clone(inspection);
+  divergentStorageGuard.leaseFence.writerLease.storageGuard = 'wpdb-single-statement-cas';
+  assert.equal(productionRecoveryJournalInspectionSurfaceIsPresent(divergentStorageGuard), false);
 });
 
 test('production recovery journal inspection preserves advanced previous-claim identity on restart', () => {

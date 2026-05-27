@@ -130,6 +130,47 @@ export function checkedDurableJournalBoundaryContractIsPresent(dbJournal) {
   return checkedDurableJournalBoundarySatisfied(dbJournal);
 }
 
+export function productionRecoveryJournalInspectionSurfaceIsPresent(inspection) {
+  const journal = inspection?.journal;
+  const ownership = journal?.ownership;
+  const claim = inspection?.claim;
+  const journalClaim = journal?.claim;
+  const writerLease = journal?.writerLease;
+  const leaseFence = inspection?.leaseFence;
+  const leaseFenceWriterLease = leaseFence?.writerLease;
+
+  return journal?.kind === PRODUCTION_RECOVERY_JOURNAL_KIND
+    && hasNonEmptyString(journal?.path)
+    && journal.path === journal.journalPath
+    && Array.isArray(journal?.checked)
+    && journal.checked.length > 0
+    && journal.checked.every(hasNonEmptyString)
+    && journal.checked.includes(journal.journalPath)
+    && journal?.productionAdapter === 'openProductionRecoveryJournal'
+    && journal?.supportedSurface === PRODUCTION_RECOVERY_JOURNAL_SUPPORTED_SURFACE
+    && productionRecoveryJournalOwnershipContractMatches(ownership)
+    && journal?.ownsJournal === true
+    && typeof journal?.consumed === 'boolean'
+    && typeof journal?.staleClaimRejected === 'boolean'
+    && journal?.restartReadable === true
+    && journal?.schemaVersion === RECOVERY_JOURNAL_SCHEMA_VERSION
+    && journal?.integrity?.status === 'ok'
+    && isPositiveInteger(journal?.records)
+    && productionRecoveryJournalClaimContractMatches(claim)
+    && productionRecoveryJournalClaimsAgree(journalClaim, claim)
+    && journal?.claimId === claim.activeClaimId
+    && journal?.claimHash === claim.activeClaimHash
+    && productionRecoveryJournalWriterLeaseContractMatches(writerLease, claim)
+    && productionRecoveryJournalLeaseFenceContractMatches(leaseFence)
+    && productionRecoveryJournalWriterLeaseContractMatches(leaseFenceWriterLease, claim)
+    && productionRecoveryJournalWriterLeasesAgree(writerLease, leaseFenceWriterLease)
+    && leaseFenceWriterLease?.storageGuard === PRODUCTION_RECOVERY_JOURNAL_STORAGE_ADAPTER
+    && leaseFenceWriterLease?.restartReadable === journal.restartReadable
+    && leaseFenceWriterLease?.staleClaimRejected === journal.staleClaimRejected
+    && leaseFence?.restartReadable === journal.restartReadable
+    && leaseFence?.staleClaimRejected === journal.staleClaimRejected;
+}
+
 function checkedBoundaryPersistedEvidenceMatches(dbJournal) {
   return hasNonEmptyString(dbJournal?.table)
     && isPositiveInteger(dbJournal?.rowCount)
@@ -368,6 +409,90 @@ function checkedBoundaryStorageGuardMatches(dbJournal, productionAdapter, writer
     && storageGuard.boundary === nestedWriterLease?.storageGuard
     && storageGuard.operation === 'update'
     && storageGuard.outcome === 'applied';
+}
+
+function productionRecoveryJournalOwnershipContractMatches(ownership) {
+  return ownership?.ownsJournal === true
+    && ownership?.restartReadable === true
+    && ownership?.productionAdapter === PRODUCTION_RECOVERY_JOURNAL_STORAGE_ADAPTER
+    && ownership?.supportedSurface === PRODUCTION_RECOVERY_JOURNAL_SUPPORTED_SURFACE;
+}
+
+function productionRecoveryJournalClaimContractMatches(claim) {
+  if (!claim || typeof claim !== 'object') {
+    return false;
+  }
+
+  const validStatus = claim.status === 'active' || claim.status === 'advanced';
+  const validType = claim.type === 'recovery-claim-opened' || claim.type === 'stale-claim-advanced';
+  const hasPreviousClaimIdentity = hasNonEmptyString(claim.previousClaimId)
+    || CLAIM_HASH_PATTERN.test(claim.previousClaimHash || '');
+
+  return validStatus
+    && hasNonEmptyString(claim.activeClaimId)
+    && CLAIM_HASH_PATTERN.test(claim.activeClaimHash || '')
+    && isPositiveInteger(claim.sequence)
+    && validType
+    && (claim.status !== 'advanced' || claim.type === 'stale-claim-advanced')
+    && (!hasPreviousClaimIdentity || (
+      hasNonEmptyString(claim.previousClaimId)
+      && CLAIM_HASH_PATTERN.test(claim.previousClaimHash || '')
+    ));
+}
+
+function productionRecoveryJournalClaimsAgree(journalClaim, inspectionClaim) {
+  if (!productionRecoveryJournalClaimContractMatches(journalClaim)) {
+    return false;
+  }
+
+  for (const key of [
+    'status',
+    'activeClaimId',
+    'activeClaimHash',
+    'previousClaimId',
+    'previousClaimHash',
+    'sequence',
+    'type',
+    'staleThresholdMs',
+    'previousClaimAgeMs',
+    'reason',
+  ]) {
+    if (journalClaim?.[key] !== inspectionClaim?.[key]) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+function productionRecoveryJournalWriterLeaseContractMatches(writerLease, claim) {
+  return typeof writerLease?.strategy === 'string'
+    && writerLease.strategy.length > 0
+    && writerLease?.claimKeyUnique === true
+    && writerLease?.fsyncEvidence === true
+    && writerLease?.monotonicSequence === true
+    && writerLease?.restartReadable === true
+    && typeof writerLease?.staleClaimRejected === 'boolean'
+    && writerLease?.claimId === claim?.activeClaimId
+    && writerLease?.claimHash === claim?.activeClaimHash
+    && writerLease?.storageGuard === PRODUCTION_RECOVERY_JOURNAL_STORAGE_ADAPTER;
+}
+
+function productionRecoveryJournalWriterLeasesAgree(writerLease, nestedWriterLease) {
+  return ['strategy', 'claimKeyUnique', 'fsyncEvidence', 'storageGuard', 'monotonicSequence', 'restartReadable', 'staleClaimRejected']
+    .every((key) => writerLease?.[key] === nestedWriterLease?.[key])
+    && writerLease?.claimId === nestedWriterLease?.claimId
+    && writerLease?.claimHash === nestedWriterLease?.claimHash;
+}
+
+function productionRecoveryJournalLeaseFenceContractMatches(leaseFence) {
+  return leaseFence?.boundary === PRODUCTION_RECOVERY_JOURNAL_STORAGE_ADAPTER
+    && leaseFence?.storageGuard === PRODUCTION_RECOVERY_JOURNAL_STORAGE_ADAPTER
+    && leaseFence?.claimKeyUnique === true
+    && leaseFence?.fsyncEvidence === true
+    && leaseFence?.monotonicSequence === true
+    && typeof leaseFence?.restartReadable === 'boolean'
+    && typeof leaseFence?.staleClaimRejected === 'boolean';
 }
 
 function storageGuardContractMatches(candidate) {
