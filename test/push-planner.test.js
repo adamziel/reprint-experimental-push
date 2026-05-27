@@ -48220,6 +48220,93 @@ test('allows an existing termmeta row to reference a term created by the same pl
   );
 });
 
+test('allows an existing termmeta row to reference a term created by the same plan even when a navigation menu taxonomy is blocked elsewhere and an unrelated remote wp_navigation post exists', () => {
+  const termResourceKey = 'row:["wp_terms","term_id:7"]';
+  const blockedTaxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:9"]';
+  const termmetaResourceKey = 'row:["wp_termmeta","meta_id:12"]';
+  const base = baseSite();
+  const local = baseSite();
+  const remote = baseSite();
+  base.db.wp_termmeta = {
+    'meta_id:12': {
+      meta_id: 12,
+      term_id: 0,
+      meta_key: 'term-note',
+      meta_value: 'base-private-existing-term-note',
+    },
+  };
+  remote.db.wp_termmeta = {
+    'meta_id:12': {
+      ...base.db.wp_termmeta['meta_id:12'],
+    },
+  };
+  remote.db.wp_posts['ID:21'] = {
+    ID: 21,
+    post_title: 'Remote navigation noise',
+    post_content: 'remote-private-termmeta-blocked-elsewhere-navigation-body',
+    post_status: 'publish',
+    post_type: 'wp_navigation',
+  };
+  local.db.wp_terms = {
+    'term_id:7': {
+      term_id: 7,
+      name: 'Local tagged term',
+      slug: 'local-tagged-term',
+    },
+    'term_id:9': {
+      term_id: 9,
+      name: 'Local navigation term',
+      slug: 'local-navigation-term',
+    },
+  };
+  local.db.wp_term_taxonomy = {
+    'term_taxonomy_id:9': {
+      term_taxonomy_id: 9,
+      term_id: 9,
+      taxonomy: 'nav_menu',
+      description: '',
+      parent: 0,
+      count: 0,
+    },
+  };
+  local.db.wp_termmeta = {
+    'meta_id:12': {
+      meta_id: 12,
+      term_id: 7,
+      meta_key: 'term-note',
+      meta_value: 'local-private-existing-term-note',
+    },
+  };
+
+  const plan = planFor(base, local, remote);
+  const termMutation = mutationFor(plan, termResourceKey);
+  const blockedTaxonomyMutation = mutationFor(plan, blockedTaxonomyResourceKey);
+  const blockedTaxonomy = plan.blockers.find((entry) => entry.resourceKey === blockedTaxonomyResourceKey);
+  const termmetaMutation = mutationFor(plan, termmetaResourceKey);
+  const reference = termmetaMutation.wordpressGraphReferences[0];
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(termMutation.changeKind, 'create');
+  assert.equal(blockedTaxonomyMutation, undefined);
+  assert.equal(blockedTaxonomy.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(blockedTaxonomy.surface, 'nav_menu');
+  assert.equal(termmetaMutation.changeKind, 'update');
+  assert.ok(
+    plan.mutations.indexOf(termMutation) < plan.mutations.indexOf(termmetaMutation),
+    'term create must be ordered before dependent existing termmeta update',
+  );
+  assert.deepEqual(termmetaMutation.dependsOnMutationIds, [termMutation.id]);
+  assert.equal(reference.resolutionPolicy, 'same-plan-local-create');
+  assert.equal(reference.relationshipKey, 'wp_termmeta.term_id');
+  assert.equal(reference.relationshipType, 'termmeta-term');
+  assert.equal(reference.targetResourceKey, termResourceKey);
+  assert.equal(JSON.stringify(reference).includes('local-private-existing-term-note'), false);
+  assert.equal(
+    JSON.stringify(reference).includes('remote-private-termmeta-blocked-elsewhere-navigation-body'),
+    false,
+  );
+});
+
 test('blocks local termmeta for a term that belongs to a same-plan nav menu taxonomy', () => {
   const termResourceKey = 'row:["wp_terms","term_id:7"]';
   const taxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:9"]';
