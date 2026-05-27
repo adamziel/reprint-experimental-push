@@ -29777,6 +29777,81 @@ test('blocks local nav menu item parent references to a same-plan created menu i
   assert.equal(remote.files['wp-content/plugins/forms/forms.php'], undefined);
 });
 
+test('blocks local nav menu item parent references to a same-plan created menu item while preserving a matching independent restore and remote-only plugin changes', () => {
+  const resourceKey = 'row:["wp_posts","ID:49"]';
+  const targetResourceKey = 'row:["wp_posts","ID:50"]';
+  const matchingRestoreResourceKey = 'file:about.php';
+  const base = baseSite();
+  base.plugins.forms = {
+    version: '1.0.0',
+    enabled: true,
+    description: 'base plugin forms',
+  };
+  base.files['wp-content/plugins/forms/forms.php'] = '<?php /* base plugin forms */';
+  base.files['about.php'] = '<?php echo "base about";';
+  base.db.wp_posts['ID:49'] = {
+    ID: 49,
+    post_title: 'Base child menu item restore change',
+    post_content: 'Base child menu item restore change content',
+    post_status: 'publish',
+    post_type: 'nav_menu_item',
+    menu_item_parent: 0,
+  };
+
+  const local = baseSite();
+  local.plugins.forms = JSON.parse(JSON.stringify(base.plugins.forms));
+  local.files['wp-content/plugins/forms/forms.php'] = base.files['wp-content/plugins/forms/forms.php'];
+  local.files['about.php'] = '<?php echo "shared restore";';
+  local.db.wp_posts['ID:49'] = {
+    ID: 49,
+    post_title: 'Local child menu item restore change',
+    post_content: 'Local child menu item restore change content',
+    post_status: 'publish',
+    post_type: 'nav_menu_item',
+    menu_item_parent: 50,
+  };
+  local.db.wp_posts['ID:50'] = {
+    ID: 50,
+    post_title: 'Local same-plan menu item restore change',
+    post_content: 'Local same-plan menu item restore change content',
+    post_status: 'publish',
+    post_type: 'nav_menu_item',
+  };
+
+  const remote = baseSite();
+  remote.db.wp_posts['ID:49'] = JSON.parse(JSON.stringify(base.db.wp_posts['ID:49']));
+  remote.files['about.php'] = '<?php echo "shared restore";';
+  remote.plugins.forms.description = 'remote-only plugin changes';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin changes */';
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === targetResourceKey);
+  const matchingRestore = decisionFor(plan, matchingRestoreResourceKey);
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(decisionFor(plan, targetResourceKey), undefined);
+  assert.equal(plan.conflicts.length, 0);
+  assert.equal(blocker.class, 'unsupported-navigation-resource');
+  assert.equal(blocker.resourceKey, targetResourceKey);
+  assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_posts","ID:50"] is created in the same plan as a menu item parent target that depends on it, and identity rewriting is not yet supported.');
+  assert.equal(matchingRestore.decision, 'already-in-sync');
+  assert.equal(matchingRestore.change.localChange, 'update');
+  assert.equal(matchingRestore.change.remoteChange, 'update');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('Local same-plan menu item restore change content'), false);
+  assert.equal(planJson.includes('Local child menu item restore change content'), false);
+  assert.equal(planJson.includes('base plugin forms'), false);
+  assert.equal(remote.files['about.php'], '<?php echo "shared restore";');
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin changes');
+  assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin changes */');
+});
+
 test('blocks local menu item parent references to a same-plan created wp navigation while preserving remote-only plugin drift', () => {
   const resourceKey = 'row:["wp_posts","ID:51"]';
   const targetResourceKey = 'row:["wp_posts","ID:52"]';
