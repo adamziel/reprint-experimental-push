@@ -1,32 +1,45 @@
 # Critic Verdict
 
-Current reliable head: `fed870ec97c86fd2c44962c1535a39a1e38903c1`
-(`Fix checked journal regression precedence`).
+Current reliable head: `044b7e0e88ce9caf8efa95f59bee8bf6649204f6`
+(`Prove explicit live journal claim contract`).
 
 Verdict: `0/4`
 
 Reason:
 
-- This head reorders checked journal-boundary precedence in the release
-  client: it makes apply-revalidation drift conditional on the stale-claim
-  retry path, normalizes checked DB-journal ownership/writer-lease evidence,
-  and tightens which journal evidence is treated as the checked boundary
-  versus replay or inspection. That is useful release-path hardening because
-  it removes one regression in the verifier's precedence handling.
-- It still only changes the checked client/release-verifier path. The proof
-  does not establish the missing production-owned real Reprint boundary with
-  live auth/session issuance and readback, restart-readable durable journal
-  ownership with lease fencing, preserved rejected-remote evidence, and
-  apply-time revalidation on the real endpoint. Verdict therefore remains
-  `0/4`.
+- This head is still verifier-boundary hardening. The diff threads explicit
+  live topology URLs through `resolveCheckedLiveBoundaryEnv()` and
+  `resolveLiveApplyRevalidationEnv()`, and the top-level live release verify
+  path now fails closed when the explicit verifier run does not return
+  `ok === true`.
+- It also centralizes the checked journal claim contract across
+  `scripts/playground/push-db-journal-lib.php` and
+  `scripts/playground/push-remote-rest-plugin.php`, which is useful because
+  the release proof can now carry explicit live claim evidence instead of a
+  synthesized local fallback.
+- The retained evidence is still the checked wrapper path: retained
+  `node --check`, focused verifier unit coverage, and the bounded live-wrapper
+  run. That is material support evidence, but it is not yet one
+  production-owned, non-lab-backed checked release command on the real Reprint
+  endpoint.
+- The patch does not yet prove live auth/session issuance and readback on the
+  real endpoint, restart-readable durable journal storage with lease-fenced
+  ownership, preserved rejected remote evidence on the live boundary, and
+  apply-time revalidation before the first mutation on the same production
+  boundary.
+- So the verdict remains `0/4`: `044b7e0e` is a narrow but useful explicit
+  live-claim-contract and topology plumbing commit, not a gate-closing release
+  proof.
 
 Next owner / command:
 
-- `main:reliable-exec` should move off verifier-side precedence and
-  proof-field surfacing and prove the next remaining production boundary on
-  the checked release path, using
-  `scripts/playground/production-shaped-release-verify.mjs`,
-  `scripts/playground/push-remote-rest-plugin.php`, `src/recovery-journal.js`,
-  and `src/authenticated-http-push-client.js` with `timeout 300s npm run
-  verify:release`, or return an exact `GATE CODE BLOCKED:` handoff naming the
-  missing file/API/command if that boundary is still unavailable.
+- `main:reliable-exec` should use this explicit live path to prove the next
+  exact primitive: one production-owned, non-lab-backed checked release
+  command on the real Reprint endpoint, with the same executable command and
+  same live `REPRINT_PUSH_SOURCE_URL` visibly minting and rereading a live
+  auth session, persisting durable restart-readable lease-fenced journal
+  state, preserving rejected remote evidence, and revalidating before the
+  first mutation. The relevant path remains
+  `scripts/playground/production-shaped-live-release-verify.mjs` plus the
+  journal/auth helpers it consumes, under the checked `verify:release`
+  command.
