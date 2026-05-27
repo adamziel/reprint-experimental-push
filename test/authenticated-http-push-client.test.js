@@ -1034,7 +1034,21 @@ function registerAuthSessionSourceOverrideMismatchTest(step, field) {
     ? String(runtimeAuthSessionSourceIdentity.userId)
     : runtimeAuthSessionSourceIdentity.userLogin;
   const expectedObserved = field === 'userId' ? '9' : 'different-runtime-user';
-  const expectedSeenLength = step === 'dry-run' ? 3 : (step === 'apply' ? 4 : 5);
+  const expectedSeenLength = step === 'dry-run'
+    ? 3
+    : step === 'apply'
+      ? 4
+      : step === 'recovery-inspect'
+        ? 5
+        : step === 'replay'
+          ? 6
+          : 8;
+  const expectedTraceStep = step === 'journal' ? 'journal' : step;
+  const expectedApplyCount = step === 'dry-run'
+    ? 0
+    : step === 'apply'
+      ? 1
+      : 2;
 
   test(`production-shaped authenticated push fails closed on auth/session source override ${step} auth user ${mismatchLabel} mismatches under the stricter production-session gate`, async () => {
     const originalFetch = global.fetch;
@@ -1077,13 +1091,16 @@ function registerAuthSessionSourceOverrideMismatchTest(step, field) {
         return new Response(JSON.stringify({
           ok: true,
           receipt: { receiptHash: 'receipt-01' },
-          auth: buildProductionAuthSessionResponse(field, step === 'apply'),
+          auth: buildProductionAuthSessionResponse(
+            field,
+            step === 'apply' || (step === 'replay' && applyCount > 1),
+          ),
           signedRequest: {
             signed: true,
           },
           idempotency: {
-            replayed: false,
-            freshMutationWork: true,
+            replayed: applyCount > 1,
+            freshMutationWork: applyCount === 1,
           },
         }), {
           status: 200,
@@ -1098,6 +1115,27 @@ function registerAuthSessionSourceOverrideMismatchTest(step, field) {
             state: 'available',
             counts: { old: 0, new: 1, blockedUnknown: 0, total: 1 },
             journal: { integrity: { status: 'ok' } },
+          },
+        }), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        });
+      }
+      if (pathname.includes('/db-journal')) {
+        return new Response(JSON.stringify({
+          ok: true,
+          auth: buildProductionAuthSessionResponse(field, step === 'journal'),
+          dbJournal: {
+            latestRows: [
+              { event: 'idempotency-opened' },
+              { event: 'mutation-applied' },
+              { event: 'apply-committed' },
+            ],
+          },
+          storageGuard: {
+            boundary: 'filesystem-compare-rename',
+            operation: 'update',
+            outcome: 'applied',
           },
         }), {
           status: 200,
@@ -1139,21 +1177,21 @@ function registerAuthSessionSourceOverrideMismatchTest(step, field) {
           verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
         },
       });
-      assert.equal(summary.authSessionLifecycleTrace.at(-1)?.step, step);
-      assert.equal(summary.authSessionLifecycleSummary.read?.step, step);
+      assert.equal(summary.authSessionLifecycleTrace.at(-1)?.step, expectedTraceStep);
+      assert.equal(summary.authSessionLifecycleSummary.read?.step, expectedTraceStep);
       assert.equal(summary.authSessionLifecycleSummary.read?.id, 'psh_01j00000000000000000000000');
       assert.ok(seen.every(({ url }) => url.startsWith('http://127.0.0.1:8080/wp-json/reprint/v1/push/')));
       assert.ok(seen.every(({ options }) => decodeBasicAuthorizationHeader(options.headers) === 'reprint_push_admin:reprint-push-admin-app-password'));
-      assert.ok(!seen.some(({ url }) => url.includes('/db-journal')));
+      assert.equal(seen.some(({ url }) => url.includes('/db-journal')), step === 'journal');
       assert.equal(seen.length, expectedSeenLength);
-      assert.equal(applyCount, step === 'dry-run' ? 0 : 1);
+      assert.equal(applyCount, expectedApplyCount);
     } finally {
       global.fetch = originalFetch;
     }
   });
 }
 
-for (const step of ['dry-run', 'apply', 'recovery-inspect']) {
+for (const step of ['dry-run', 'apply', 'recovery-inspect', 'replay', 'journal']) {
   registerAuthSessionSourceOverrideMismatchTest(step, 'userLogin');
   registerAuthSessionSourceOverrideMismatchTest(step, 'userId');
 }
