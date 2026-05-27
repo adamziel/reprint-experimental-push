@@ -360,10 +360,50 @@ Diff notes:
 
 These are support or test-hardening facts only. They do not move release gates.
 
+## Follow-Up Artifact-Only Check 18:29
+
+Commands:
+
+```bash
+git fetch --all --prune
+git for-each-ref --sort=-committerdate --format='%(refname:short) %(objectname:short) %(committerdate:iso8601) %(subject)' \
+  refs/remotes/origin/supervisor/release-boundary-consolidated-20260527 \
+  refs/heads/supervisor/release-boundary-consolidated-20260527 \
+  refs/remotes/origin/lane/apply-revalidation-boundary-v2-20260527 \
+  refs/heads/lane/apply-revalidation-boundary-v2-20260527 \
+  refs/remotes/origin/lane/critic-reorg-v2-20260527 \
+  refs/remotes/origin/lane/auditor-reorg-20260527
+timeout 300s npm run verify:release
+```
+
+New artifact facts since the previous auditor update:
+
+| Ref | Head | Status |
+| --- | --- | --- |
+| `origin/supervisor/release-boundary-consolidated-20260527` | `a16ba719b` | Advanced to include `Record reorg v2 auditor verdict` |
+| `origin/lane/apply-revalidation-boundary-v2-20260527` | `459f9c514` | Newly present remote v2 support branch |
+| `origin/lane/critic-reorg-v2-20260527` | `3843f6ba5` | Critic update still keeps verdict at `0/4` |
+| `lane/apply-revalidation-boundary-v2-20260527` | `25829dd1e` | Newer local-only merge head; no matching remote ref observed |
+
+The updated consolidated verifier in `/tmp/reprint-reorg-integrator-20260527`
+again exited `1` with `REPRINT_PUSH_LIVE_SOURCE_REQUIRED`,
+`packagedFallbackAllowed: false`, source/local/drift ports as `null`, and
+release movement `allowed: false`.
+
+Apply v2 artifact note: comparing
+`origin/supervisor/release-boundary-consolidated-20260527..origin/lane/apply-revalidation-boundary-v2-20260527`
+shows a focused `test/apply-revalidation-boundary.test.js` plus release
+verifier support diffs, but this audit has no real live command proving
+preserved rejected-remote evidence or apply-time revalidation before first
+mutation on a real live `REPRINT_PUSH_SOURCE_URL`.
+
+These are support, audit-publication, or test-hardening facts only. They do not
+move release gates.
+
 ## Blocker
 
 The consolidated branch requested by `NEXT_TASKS.md` now exists remotely at
-`24ec8558b14eec8fc26c049f6a2427bf261fccb9` and has a coherent fail-closed
+`a16ba719bdd522294d262343c4d86afa5c300e84` and has a coherent fail-closed
 `verify:release` command, but it correctly does not move any release gate
 without a real live `REPRINT_PUSH_SOURCE_URL`.
 
