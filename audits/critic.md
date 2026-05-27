@@ -1,41 +1,41 @@
 # Critic Verdict
 
-Current reliable head: `e4b786e516a3621e50fe15edcbfc1aa9edf313f1`
-(`Fail closed on apply revalidation readiness`).
+Current reliable head: `8e7fa53d19ebde044d20c7fd9baa50cf78c9bb29`
+(`Reuse live topology for apply revalidation`).
 
-Previous classified reliable head: `a6025438fbbdb84bf23cbad5bc34847f931c66dd`
-(`Consume apply revalidation in live verify`).
+Previous classified reliable head: `e4b786e516a3621e50fe15edcbfc1aa9edf313f1`
+(`Fail closed on apply revalidation readiness`).
 
 Verdict: `0/4`
 
 Reason:
 
 - I repolled `origin/lane/reliable-executor` and confirmed it points at
-  `e4b786e516a3621e50fe15edcbfc1aa9edf313f1`.
-- The `a6025438..e4b786e5` diff changes only
+  `8e7fa53d19ebde044d20c7fd9baa50cf78c9bb29`.
+- The `e4b786e5..8e7fa53d` diff changes only
   `scripts/playground/production-shaped-apply-revalidation-smoke.mjs` and
   `scripts/playground/production-shaped-live-release-verify.mjs`.
-- In `production-shaped-apply-revalidation-smoke.mjs`, the change makes the
-  Playground smoke fail closed on uncaught startup errors, extends readiness
-  timeouts/probes, injects `REPRINT_PUSH_LAB_AUTH_BOOTSTRAP` credentials, and
-  forces localhost listen semantics through a preload shim. In
-  `production-shaped-live-release-verify.mjs`, the wrapper retries a narrow
-  class of startup failures, increases the timeout, and parses the first
-  complete JSON object even if trailing logs are present.
-- That is still harness hardening around the same checked Playground wrapper,
-  not a new supervised proof boundary. The commit improves how the existing
-  apply-revalidation smoke fails and how the wrapper consumes its output, but
-  the proof is still emitted by the same Playground/package-mode verifier
-  scaffold rather than by a production-owned mutation boundary on the real
-  Reprint endpoint.
+- In `production-shaped-apply-revalidation-smoke.mjs`, the change extracts the
+  core proof into `runApplyRevalidationProof()`, accepts externally supplied
+  `REPRINT_PUSH_SOURCE_URL` / `REPRINT_PUSH_REMOTE_URL` plus
+  `REPRINT_PUSH_LOCAL_URL`, and otherwise still self-starts `remote-base` /
+  `local-edited` Playground servers for the same fixture-backed proof. In
+  `production-shaped-live-release-verify.mjs`, the packaged live wrapper now
+  starts both Playground servers itself and passes their URLs plus fixture
+  credentials into that same apply-revalidation smoke.
+- That is still wrapper topology reuse around the same checked
+  Playground/package-mode verifier scaffold, not a new supervised proof
+  boundary. The commit moves where the two Playground URLs are provisioned, but
+  the executable proof still comes from the same fixture-backed smoke and still
+  reports the same remaining boundary instead of crossing it.
 - The branch still does not add the missing production-owned source mutation
   boundary on the real Reprint endpoint. It does not move auth/session
   issuance and readback onto a non-lab-backed live executor boundary, does not
   prove durable restart-readable journal storage with lease fencing at that
   boundary, and does not show apply-time revalidation happening outside the
   Playground verifier scaffold.
-- The tracked reliable final note is not new commit-specific proof for
-  `e4b786e5`. `origin/lane/reliable-executor:.lane-output/final.md` still
+- The tracked reliable final note is still not new commit-specific proof for
+  `8e7fa53d`. `origin/lane/reliable-executor:.lane-output/final.md` still
   describes the earlier recovery-journal / release-verifier pass, lists only
   `scripts/playground/production-shaped-release-verify.mjs`,
   `src/recovery-journal.js`, and related tests as changed files, and says the
@@ -44,6 +44,11 @@ Reason:
   `PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED`. I did not find a separate
   reliable final artifact or checked-in reliable run log that records a new
   production-owned boundary for this commit.
+- The available reliable worktree evidence does not close the gap either. The
+  local reliable worktree is detached and conflicted in progress files rather
+  than sitting on `8e7fa53d`, and its retained `.lane-output` notes still call
+  out `auth/session lifecycle and durable journal semantics` as the first
+  remaining production boundary.
 - Under `audits/release-gate.md`, `audits/critic-release-gate.md`, and
   `audits/critic-production-checklist.md`, the proof gap is unchanged: there
   is still no single reliable-owned executable boundary on the real Reprint
@@ -54,13 +59,13 @@ Reason:
 
 Next exact reliable-owned primitive:
 
-- `main:reliable-exec` still needs to land one production-owned, non-lab-backed
+- `main:reliable-exec` still needs one production-owned, non-lab-backed
   checked release boundary on the real Reprint endpoint where the same
-  executable command mints a live auth session on the real source URL, persists
-  that session in durable restart-readable journal storage with lease-fenced
-  ownership, proves readback after restart, and performs apply-time
-  revalidation before the first mutation while preserving the rejected remote
-  for audit. Until that auth/session issuance-readback plus durable-journal
-  boundary exists outside Playground package-mode verifier scaffolding,
-  fail-closed apply-revalidation readiness remains compatibility hardening, not
-  a gate-closing release proof.
+  executable command mints a live auth session on the exact live
+  `REPRINT_PUSH_SOURCE_URL`, reads that session back from durable
+  restart-readable journal storage under lease-fenced ownership, then performs
+  apply-time revalidation before the first mutation and preserves the rejected
+  remote evidence for audit on that same boundary. Reusing the live wrapper's
+  topology for the existing apply-revalidation smoke is still compatibility
+  wiring until that auth/session mint-readback plus durable-journal primitive
+  exists outside Playground verifier scaffolding.
