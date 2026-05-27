@@ -1,11 +1,29 @@
-2026-05-26 23:14:08 CEST (+0200)
+2026-05-27 05:21:12 CEST (+0200)
 
-Changed files: [scripts/playground/push-remote-rest-plugin.php](/home/claude/reprint-experimental-push-lanes/reorg-20260526-code/durable-journal-code/scripts/playground/push-remote-rest-plugin.php), [test/push-remote-rest-plugin.test.js](/home/claude/reprint-experimental-push-lanes/reorg-20260526-code/durable-journal-code/test/push-remote-rest-plugin.test.js).
+Changed files:
+- [src/recovery-journal.js](/home/claude/reprint-experimental-push-lanes/reorg-20260526-code/durable-journal-code/src/recovery-journal.js)
+- [scripts/recovery/file-journal-restart-smoke.mjs](/home/claude/reprint-experimental-push-lanes/reorg-20260526-code/durable-journal-code/scripts/recovery/file-journal-restart-smoke.mjs)
+- [test/recovery-journal.test.js](/home/claude/reprint-experimental-push-lanes/reorg-20260526-code/durable-journal-code/test/recovery-journal.test.js)
+- [.lane-output/final.md](/home/claude/reprint-experimental-push-lanes/reorg-20260526-code/durable-journal-code/.lane-output/final.md)
 
-Pushed `4587df59` to `origin/lane/durable-journal-code-20260526-1859` (`Preserve checked recovery integrity scope drift`). The checked recovery-journal merge now uses the same negation-aware fixture-scope upgrade rule as the checked DB-journal contract, so an already-strong recovery integrity scope like `...; not local Playground fixture only` is no longer misclassified as stale fixture evidence and overwritten by the generic checked label. I added a regression proving stronger checked recovery integrity wording survives while the authoritative checked durable-journal contract still attaches underneath it.
+I kept this pass inside the durable-journal lane and tightened the production recovery-journal contract instead of adding another parity-only note. [src/recovery-journal.js](/home/claude/reprint-experimental-push-lanes/reorg-20260526-code/durable-journal-code/src/recovery-journal.js) now requires non-empty `artifactRefs` for `openProductionRecoveryJournal()` and `consumeProductionRecoveryJournal()`, and the shared `productionRecoveryJournalInspectionSurfaceIsPresent()` helper now fails closed when the inspected journal omits restart artifact references. [scripts/recovery/file-journal-restart-smoke.mjs](/home/claude/reprint-experimental-push-lanes/reorg-20260526-code/durable-journal-code/scripts/recovery/file-journal-restart-smoke.mjs) now supplies explicit per-scenario artifact refs so the local production wrapper still exercises the stricter contract. [test/recovery-journal.test.js](/home/claude/reprint-experimental-push-lanes/reorg-20260526-code/durable-journal-code/test/recovery-journal.test.js) now proves the inspection surface exposes `artifactRefs`, rejects missing artifact refs, and keeps the lease-fence divergence checks fail-closed.
 
-Commands run: `php -l scripts/playground/push-remote-rest-plugin.php`, `node --check test/push-remote-rest-plugin.test.js`, `timeout 120s node --test test/push-remote-rest-plugin.test.js`, `git diff --check`, `git commit -m "Preserve checked recovery integrity scope drift"`, `git push origin HEAD:lane/durable-journal-code-20260526-1859`.
+Commands run:
+```bash
+git status --short --branch
+date '+%Y-%m-%d %H:%M:%S %Z (%z)'
+node --check src/recovery-journal.js
+node --check scripts/recovery/file-journal-restart-smoke.mjs
+node --check test/recovery-journal.test.js
+timeout 120s node --test --test-name-pattern='production recovery journal' test/recovery-journal.test.js
+git diff --check -- src/recovery-journal.js scripts/recovery/file-journal-restart-smoke.mjs test/recovery-journal.test.js
+```
 
-Push result: `839cd709..4587df59`. Worktree status: dirty only in [.lane-output/final.md](/home/claude/reprint-experimental-push-lanes/reorg-20260526-code/durable-journal-code/.lane-output/final.md) for the handoff.
+Push result:
+- Pending commit/push from this lane worktree.
 
-Next supervisor nudge: reliable and recovery can now keep stronger checked recovery integrity wording that already rejects local-fixture scope without having it cosmetically collapsed back to the generic checked label; the next gate-moving work still belongs on production auth/session lifecycle, preserved-remote retry, or deeper release-path consumption of durable-journal semantics.
+Worktree status:
+- Dirty in the lane-owned files above plus this handoff file.
+
+Next supervisor nudge:
+- Reliable should keep using the shared recovery helper path and stop treating artifact refs as optional release-verifier decoration. If the checked release path still carries a private journal proof copy, the next reliable-owned step is to consume the stricter shared helper from [src/recovery-journal.js](/home/claude/reprint-experimental-push-lanes/reorg-20260526-code/durable-journal-code/src/recovery-journal.js) so missing restart artifacts fail the release boundary instead of passing as partial journal evidence.

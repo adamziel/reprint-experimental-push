@@ -71,6 +71,12 @@ function claimIdForScenario(name, remote) {
   });
 }
 
+function artifactRefsForScenario(name) {
+  return {
+    recoverySmoke: `artifact://recovery-smoke-${name}`,
+  };
+}
+
 async function scenarioFailBeforeMutation() {
   const journalPath = path.join(workDir, 'fail-before-mutation.journal.jsonl');
   const remote = clone(fixture.base);
@@ -79,6 +85,7 @@ async function scenarioFailBeforeMutation() {
     filePath: journalPath,
     plan,
     current: remote,
+    artifactRefs: artifactRefsForScenario('fail-before-mutation'),
     now: fixedNow,
     claimId: claimIdForScenario('fail-before-mutation', remote),
   });
@@ -115,6 +122,7 @@ async function scenarioFailAfter2() {
     filePath: journalPath,
     plan,
     current: remote,
+    artifactRefs: artifactRefsForScenario('fail-after-2'),
     now: fixedNow,
     claimId: claimIdForScenario('fail-after-2', remote),
   });
@@ -179,6 +187,7 @@ async function scenarioCompletedReplay() {
     filePath: journalPath,
     plan,
     current: remote,
+    artifactRefs: artifactRefsForScenario('completed-replay'),
     now: fixedNow,
     claimId: claimIdForScenario('completed-replay', remote),
   });
@@ -222,6 +231,7 @@ async function scenarioDrift() {
     filePath: journalPath,
     plan,
     current: remote,
+    artifactRefs: artifactRefsForScenario('drift'),
     now: fixedNow,
     claimId: claimIdForScenario('drift', remote),
   });

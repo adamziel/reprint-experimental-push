@@ -73,6 +73,20 @@ function assertAllowedOptionKeys(options, allowedKeys, operationName) {
   }
 }
 
+function artifactRefsContractMatches(artifactRefs) {
+  const entries = Object.entries(artifactRefs ?? {});
+  return entries.length > 0
+    && entries.every(([key, value]) => hasNonEmptyString(key) && hasNonEmptyString(value));
+}
+
+function assertProductionRecoveryArtifactRefs(artifactRefs, operationName) {
+  if (!artifactRefsContractMatches(artifactRefs)) {
+    throw new Error(
+      `${operationName} requires non-empty artifactRefs for claim-fenced production recovery journals.`,
+    );
+  }
+}
+
 export function openRecoveryJournal(filePath, options = {}) {
   const flags = options.truncate ? 'w+' : 'a+';
   fs.mkdirSync(path.dirname(filePath), { recursive: true });
@@ -146,6 +160,7 @@ export function productionRecoveryJournalInspectionSurfaceIsPresent(inspection) 
     && journal.checked.length > 0
     && journal.checked.every(hasNonEmptyString)
     && journal.checked.includes(journal.journalPath)
+    && artifactRefsContractMatches(journal?.artifactRefs)
     && journal?.productionAdapter === 'openProductionRecoveryJournal'
     && journal?.supportedSurface === PRODUCTION_RECOVERY_JOURNAL_SUPPORTED_SURFACE
     && productionRecoveryJournalOwnershipContractMatches(ownership)
@@ -710,6 +725,7 @@ export function openProductionRecoveryJournal(options) {
     claimId = null,
   } = options;
   assertProductionRecoveryClaimId(claimId, 'openProductionRecoveryJournal()');
+  assertProductionRecoveryArtifactRefs(artifactRefs, 'openProductionRecoveryJournal()');
   const existingJournal = truncate ? null : readRecoveryJournal(filePath);
   const hasExistingPlanEnvelope = Boolean(existingJournal?.exists && existingJournal.records.length > 0);
   const journal = hasExistingPlanEnvelope
@@ -829,6 +845,7 @@ export function consumeProductionRecoveryJournal(options) {
     claimId = null,
   } = options;
   assertProductionRecoveryClaimId(claimId, 'consumeProductionRecoveryJournal()');
+  assertProductionRecoveryArtifactRefs(artifactRefs, 'consumeProductionRecoveryJournal()');
   const journal = openProductionRecoveryJournal({
     filePath,
     plan,

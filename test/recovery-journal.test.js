@@ -310,6 +310,9 @@ test('production recovery journal wrapper writes a restart-readable claim-fenced
   });
   assert.equal(inspection.journal.kind, 'production-recovery-journal');
   assert.equal(inspection.journal.journalPath, filePath);
+  assert.deepEqual(inspection.journal.artifactRefs, {
+    releaseProof: 'artifact://release-proof-1',
+  });
   assert.equal(inspection.journal.productionAdapter, 'openProductionRecoveryJournal');
   assert.equal(inspection.journal.supportedSurface, 'claim-fenced-restart-readable');
   assert.deepEqual(inspection.journal.ownership, {
@@ -441,6 +444,9 @@ test('checked release path consumes the production recovery journal inspection s
   assert.equal(inspection.journal.productionAdapter, 'openProductionRecoveryJournal');
   assert.equal(inspection.journal.kind, 'production-recovery-journal');
   assert.equal(inspection.journal.journalPath, filePath);
+  assert.deepEqual(inspection.journal.artifactRefs, {
+    releaseProof: 'artifact://release-proof-1',
+  });
   assert.equal(inspection.journal.supportedSurface, 'claim-fenced-restart-readable');
   assert.deepEqual(inspection.journal.ownership, {
     ownsJournal: true,
@@ -519,6 +525,10 @@ test('production recovery journal inspection surface helper fails closed when le
   const divergentStorageGuard = clone(inspection);
   divergentStorageGuard.leaseFence.writerLease.storageGuard = 'wpdb-single-statement-cas';
   assert.equal(productionRecoveryJournalInspectionSurfaceIsPresent(divergentStorageGuard), false);
+
+  const missingArtifactRefs = clone(inspection);
+  missingArtifactRefs.journal.artifactRefs = {};
+  assert.equal(productionRecoveryJournalInspectionSurfaceIsPresent(missingArtifactRefs), false);
 });
 
 test('production recovery journal inspection preserves advanced previous-claim identity on restart', () => {
@@ -627,6 +637,25 @@ test('production recovery journal wrapper requires a non-empty claimId', () => {
   assert.equal(fs.existsSync(filePath), false);
 });
 
+test('production recovery journal wrapper requires non-empty artifact refs', () => {
+  const filePath = tempJournalPath();
+  const remote = baseSite();
+  const plan = planFor(baseSite(), localSite(), remote);
+
+  assert.throws(
+    () => openProductionRecoveryJournal({
+      filePath,
+      plan,
+      current: remote,
+      artifactRefs: {},
+      claimId: 'production-claim-01',
+    }),
+    /openProductionRecoveryJournal\(\) requires non-empty artifactRefs for claim-fenced production recovery journals\./,
+  );
+
+  assert.equal(fs.existsSync(filePath), false);
+});
+
 test('production recovery journal consumer rejects hidden open options', () => {
   const filePath = tempJournalPath();
   const remote = baseSite();
@@ -677,6 +706,35 @@ test('production recovery journal consumer requires a non-empty claimId', () => 
   );
 
   assert.equal(fs.existsSync(filePath), false);
+});
+
+test('production recovery journal consumer requires non-empty artifact refs', () => {
+  const filePath = tempJournalPath();
+  const remote = baseSite();
+  const plan = planFor(baseSite(), localSite(), remote);
+  const claimId = 'production-claim-consumer-01';
+
+  const journal = openProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs: {
+      releaseProof: 'artifact://release-proof-1',
+    },
+    claimId,
+  });
+  journal.close();
+
+  assert.throws(
+    () => consumeProductionRecoveryJournal({
+      filePath,
+      plan,
+      current: remote,
+      artifactRefs: {},
+      claimId,
+    }),
+    /consumeProductionRecoveryJournal\(\) requires non-empty artifactRefs for claim-fenced production recovery journals\./,
+  );
 });
 
 test('checked durable journal boundary stays closed until stale-claim rejection is proven on the lease fence', () => {
