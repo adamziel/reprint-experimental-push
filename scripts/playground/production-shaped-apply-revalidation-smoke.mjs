@@ -34,6 +34,7 @@ const credentials = {
     || 'reprint-push-admin-app-password',
 };
 const requireProductionAuthSession = process.env.REPRINT_PUSH_REQUIRE_PRODUCTION_AUTH_SESSION === '1';
+const requiredPreservedRemoteRetryPath = process.env.REPRINT_PUSH_SIMULATE_PRESERVED_REMOTE_RETRY_PATH || '/snapshot';
 const externalRemoteBaseUrl = process.env.REPRINT_PUSH_SOURCE_URL || process.env.REPRINT_PUSH_REMOTE_URL || '';
 const externalLocalEditedUrl = process.env.REPRINT_PUSH_LOCAL_URL || '';
 const authSessionSourceCommand = process.env.REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND || '';
@@ -108,6 +109,7 @@ async function runApplyRevalidationProof({ remoteServer, localServer, externalTo
     credential: resolvedCredentials,
     routeProfile: 'production-shaped',
     requestTimeoutMs,
+    simulatePreservedRemoteRetryPath: requiredPreservedRemoteRetryPath,
   });
   const authSessionLifecycleTrace = [];
 
@@ -170,13 +172,23 @@ async function runApplyRevalidationProof({ remoteServer, localServer, externalTo
   assert.ok(recoveryInspect.body.recovery?.counts?.blockedUnknown >= 1);
   recordAuthSessionLifecycle(authSessionLifecycleTrace, 'recovery-inspect', recoveryInspect.body?.auth);
 
+  process.stderr.write('apply-revalidation: preserved remote retry /snapshot\n');
+  const preservedRemoteSnapshot = await client.signedGet(requiredPreservedRemoteRetryPath, {
+    session,
+    retryable: true,
+  });
+  assert.equal(preservedRemoteSnapshot.status, 200);
+  assert.equal(preservedRemoteSnapshot.body.ok, true);
+
   const authSessionLifecycleSummary = summarizeProductionAuthSessionLifecycleTrace(authSessionLifecycleTrace);
   const authSessionLifecycle = evaluateProductionAuthSessionLifecycleSummary(authSessionLifecycleSummary);
   const recoveryJournal = recoveryInspect.body?.recovery?.journal || null;
   const checkedDurableJournalAccepted = checkedDurableJournalBoundarySatisfied(recoveryJournal);
+  const preservedRemoteRetryAttempts = preservedRemoteSnapshot.retryAttempts || 1;
   const boundary = buildApplyRevalidationBoundary({
     authSessionLifecycle,
     checkedDurableJournalAccepted,
+    preservedRemoteRetryAttempts,
   });
 
   process.stdout.write(JSON.stringify({
@@ -221,6 +233,12 @@ async function runApplyRevalidationProof({ remoteServer, localServer, externalTo
     durableJournal: {
       journal: recoveryJournal,
       checkedAccepted: checkedDurableJournalAccepted,
+    },
+    replayAndRetry: {
+      required: requiredPreservedRemoteRetryPath,
+      observed: preservedRemoteRetryAttempts > 1 ? requiredPreservedRemoteRetryPath : 'missing-transient-retry',
+      retryAttempts: preservedRemoteRetryAttempts,
+      verdict: preservedRemoteRetryAttempts > 1 ? 'PRESERVED_REMOTE_RETRY_PROVEN' : 'PRESERVED_REMOTE_RETRY_REQUIRED',
     },
     boundary,
   }, null, 2));
@@ -270,7 +288,11 @@ function emitInvalidAuthSessionSourceProof() {
   process.stdout.write('\n');
 }
 
-function buildApplyRevalidationBoundary({ authSessionLifecycle, checkedDurableJournalAccepted }) {
+function buildApplyRevalidationBoundary({
+  authSessionLifecycle,
+  checkedDurableJournalAccepted,
+  preservedRemoteRetryAttempts,
+}) {
   if (!authSessionLifecycle?.ok) {
     return {
       firstRemainingProductionBoundary: 'auth/session lifecycle and durable journal semantics',
@@ -301,21 +323,43 @@ function buildApplyRevalidationBoundary({ authSessionLifecycle, checkedDurableJo
     };
   }
 
+  if (preservedRemoteRetryAttempts < 2) {
+    return {
+      firstRemainingProductionBoundary: 'replay and preserved-remote retry on the checked release path',
+      verdict: 'PRESERVED_REMOTE_RETRY_REQUIRED',
+      authSession: {
+        required: authSessionLifecycle.required,
+        observed: authSessionLifecycle.observed,
+        verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_PROVEN',
+      },
+      durableJournal: {
+        verdict: 'LIVE_RELEASE_BOUNDARY_OK',
+      },
+      replayAndRetry: {
+        required: requiredPreservedRemoteRetryPath,
+        observed: 'missing-transient-retry',
+        retryAttempts: preservedRemoteRetryAttempts,
+        verdict: 'PRESERVED_REMOTE_RETRY_REQUIRED',
+      },
+    };
+  }
+
   return {
-    firstRemainingProductionBoundary: 'replay and preserved-remote retry on the checked release path',
-    verdict: 'PRESERVED_REMOTE_RETRY_REQUIRED',
+    firstRemainingProductionBoundary: null,
+    verdict: 'LIVE_RELEASE_BOUNDARY_OK',
     authSession: {
       required: authSessionLifecycle.required,
       observed: authSessionLifecycle.observed,
-      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_PROVEN',
+      verdict: 'LIVE_RELEASE_BOUNDARY_OK',
     },
     durableJournal: {
       verdict: 'LIVE_RELEASE_BOUNDARY_OK',
     },
     replayAndRetry: {
-      required: '/snapshot',
-      observed: 'missing-transient-retry',
-      verdict: 'PRESERVED_REMOTE_RETRY_REQUIRED',
+      required: requiredPreservedRemoteRetryPath,
+      observed: requiredPreservedRemoteRetryPath,
+      retryAttempts: preservedRemoteRetryAttempts,
+      verdict: 'LIVE_RELEASE_BOUNDARY_OK',
     },
   };
 }
