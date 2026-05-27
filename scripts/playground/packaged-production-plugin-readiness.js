@@ -160,6 +160,17 @@ function packagedProductionPluginSessionEnvelopeReady(session) {
     && session?.type === 'production-auth-session';
 }
 
+function packagedProductionPluginSessionIdentityReady(preflight) {
+  const topLevelSessionId = preflight?.body?.session?.id;
+  const authSessionId = preflight?.body?.auth?.session?.id;
+
+  if (typeof authSessionId !== 'string' || authSessionId.length === 0) {
+    return true;
+  }
+
+  return topLevelSessionId === authSessionId;
+}
+
 export function packagedProductionPluginRestIndexReady(status, bodyText = '') {
   if (status !== 200) {
     return false;
@@ -234,6 +245,7 @@ export function packagedProductionPluginPreflightReady(preflight) {
 
   return packagedProductionPluginRouteProfileReady(preflight.body?.routeProfile)
     && packagedProductionPluginSessionEnvelopeReady(preflight.body?.session)
+    && packagedProductionPluginSessionIdentityReady(preflight)
     && evaluateProductionAuthSessionLifecycle(preflight.body?.auth?.session).ok;
 }
 

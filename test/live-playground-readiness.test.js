@@ -1278,6 +1278,7 @@ test('packaged server readiness requires a production-shaped preflight when pres
       },
       auth: {
         session: {
+          id: 'session_123',
           status: 'active',
           type: 'production-auth-session',
           expiresAt: '2099-01-01T00:00:00Z',
@@ -1302,6 +1303,7 @@ test('packaged server readiness requires a production-shaped preflight when pres
       },
       auth: {
         session: {
+          id: 'session_123',
           status: 'active',
           type: 'production-auth-session',
           expiresAt: '2099-01-01T00:00:00Z',
@@ -1360,6 +1362,7 @@ test('packaged server readiness fails closed for broken top-level signed preflig
       },
       auth: {
         session: {
+          id: 'session_123',
           status: 'active',
           type: 'production-auth-session',
           expiresAt: '2099-01-01T00:00:00Z',
@@ -1449,6 +1452,7 @@ test('packaged server readiness fails closed for terminal production auth sessio
       },
       auth: {
         session: {
+          id: 'session_123',
           status: 'active',
           type: 'production-auth-session',
           expiresAt: '2099-01-01T00:00:00Z',
@@ -1548,4 +1552,52 @@ test('packaged server readiness fails closed for terminal production auth sessio
       `${label} should keep the packaged server unready`,
     );
   }
+});
+
+
+test('packaged server readiness fails closed for mismatched signed preflight session identities', () => {
+  const readySnapshot = {
+    status: 200,
+    body: {
+      ok: true,
+      snapshot: {
+        posts: [],
+      },
+    },
+  };
+  const mismatchedPreflight = {
+    status: 200,
+    body: {
+      ok: true,
+      routeProfile: {
+        profile: 'production-shaped',
+        restNamespace: 'reprint/v1',
+        routePrefix: '/push',
+        labBacked: false,
+      },
+      auth: {
+        session: {
+          id: 'session_456',
+          status: 'active',
+          type: 'production-auth-session',
+          expiresAt: '2099-01-01T00:00:00Z',
+        },
+      },
+      session: {
+        id: 'session_123',
+        type: 'production-auth-session',
+      },
+    },
+  };
+
+  assert.equal(packagedProductionPluginPreflightReady(mismatchedPreflight), false);
+  assert.equal(packagedProductionPluginPreflightRetryable(mismatchedPreflight), false);
+  assert.equal(packagedProductionPluginPreflightTerminal(mismatchedPreflight), true);
+  assert.equal(
+    packagedProductionPluginServerReady({
+      snapshot: readySnapshot,
+      preflight: mismatchedPreflight,
+    }),
+    false,
+  );
 });
