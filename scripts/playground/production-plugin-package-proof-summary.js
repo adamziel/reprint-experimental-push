@@ -72,7 +72,7 @@ function buildGuardRejectionProof(summary, codeField) {
   };
 }
 
-function buildModeGuardProof(canonicalMode, summary) {
+function buildModeGuardProof(canonicalMode, summary, scenarioPasses) {
   if (![
     'driver-proof',
     'driver-release-proof',
@@ -83,7 +83,16 @@ function buildModeGuardProof(canonicalMode, summary) {
     return null;
   }
 
-  return {
+  const guardScenarioMap = {
+    deleteGuard: 'driver-delete-guard',
+    updateValidationGuard: 'driver-update-validation-guard',
+    planBinding: 'driver-receipt-plan-binding-guard',
+    expiry: 'driver-receipt-expiry-guard',
+    identity: 'driver-receipt-identity-guard',
+    rotatedCredential: 'driver-receipt-rotated-credential-guard',
+    revokedCredential: 'driver-receipt-revoked-credential-guard',
+  };
+  const guardProof = {
     deleteGuard: buildGuardRejectionProof(summary?.driverDeleteGuard, 'dryRunRejectedCode'),
     updateValidationGuard: buildGuardRejectionProof(summary?.driverUpdateValidationGuard, 'dryRunRejectedCode'),
     planBinding: buildGuardRejectionProof(summary?.driverReceiptPlanBindingGuard, 'applyRejectedCode'),
@@ -91,6 +100,35 @@ function buildModeGuardProof(canonicalMode, summary) {
     identity: buildGuardRejectionProof(summary?.driverReceiptIdentityGuard, 'applyRejectedCode'),
     rotatedCredential: buildGuardRejectionProof(summary?.driverReceiptRotatedCredentialGuard, 'rotatedCredentialRejectedCode'),
     revokedCredential: buildGuardRejectionProof(summary?.driverReceiptRevokedCredentialGuard, 'applyRejectedCode'),
+  };
+  const guardStatuses = Object.fromEntries(
+    Object.entries(guardScenarioMap).map(([proofKey, scenarioName]) => [
+      proofKey,
+      scenarioPasses.get(scenarioName) === true ? 'passed' : 'missing',
+    ]),
+  );
+
+  for (const [proofKey, status] of Object.entries(guardStatuses)) {
+    guardProof[proofKey].status = status;
+  }
+
+  const passedGuards = Object.entries(guardStatuses)
+    .filter(([, status]) => status === 'passed')
+    .map(([proofKey]) => proofKey);
+  const failedGuards = Object.entries(guardStatuses)
+    .filter(([, status]) => status !== 'passed')
+    .map(([proofKey]) => proofKey);
+
+  return {
+    ok: failedGuards.length === 0,
+    status: failedGuards.length === 0 ? 'passed' : 'missing',
+    guardCount: Object.keys(guardScenarioMap).length,
+    passedGuardCount: passedGuards.length,
+    failedGuardCount: failedGuards.length,
+    guardStatuses,
+    passedGuards,
+    failedGuards,
+    ...guardProof,
   };
 }
 
@@ -1282,7 +1320,7 @@ export function buildProductionPluginPackageProofSummary(
     : collapseRequestedBundleStatus(modeRequestedBundleStatuses);
   const modeGuardProof = canonicalMode === null
     ? null
-    : buildModeGuardProof(canonicalMode, summary);
+    : buildModeGuardProof(canonicalMode, summary, scenarioPasses);
   proofSummary.modeProof = canonicalProof === null
     ? null
     : {

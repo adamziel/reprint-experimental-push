@@ -2304,49 +2304,179 @@ test('plugin-driver proof summary carries the full selected verifier guard proof
   assert.equal(summary.modeProof?.proof.missingExportRowsCallback, true);
   assert.equal(summary.modeProof?.proof.missingPluginOwner, true);
   assert.deepEqual(summary.modeProof?.guardProof, {
+    ok: true,
+    status: 'passed',
+    guardCount: 7,
+    passedGuardCount: 7,
+    failedGuardCount: 0,
+    guardStatuses: {
+      deleteGuard: 'passed',
+      updateValidationGuard: 'passed',
+      planBinding: 'passed',
+      expiry: 'passed',
+      identity: 'passed',
+      rotatedCredential: 'passed',
+      revokedCredential: 'passed',
+    },
+    passedGuards: [
+      'deleteGuard',
+      'updateValidationGuard',
+      'planBinding',
+      'expiry',
+      'identity',
+      'rotatedCredential',
+      'revokedCredential',
+    ],
+    failedGuards: [],
     deleteGuard: {
+      status: 'passed',
       rejectedCode: 'INVALID_PLAN',
       rowRetainedAfterReject: null,
       payloadModeAfterReject: null,
       updatedMarkerAfterReject: null,
     },
     updateValidationGuard: {
+      status: 'passed',
       rejectedCode: 'INVALID_PLAN',
       rowRetainedAfterReject: null,
       payloadModeAfterReject: null,
       updatedMarkerAfterReject: null,
     },
     planBinding: {
+      status: 'passed',
       rejectedCode: 'AUTH_RECEIPT_MISMATCH',
       rowRetainedAfterReject: true,
       payloadModeAfterReject: 'local-update',
       updatedMarkerAfterReject: 'local-update',
     },
     expiry: {
+      status: 'passed',
       rejectedCode: 'AUTH_RECEIPT_EXPIRED',
       rowRetainedAfterReject: true,
       payloadModeAfterReject: 'local-update',
       updatedMarkerAfterReject: 'local-update',
     },
     identity: {
+      status: 'passed',
       rejectedCode: 'AUTH_RECEIPT_MISMATCH',
       rowRetainedAfterReject: true,
       payloadModeAfterReject: 'local-update',
       updatedMarkerAfterReject: 'local-update',
     },
     rotatedCredential: {
+      status: 'passed',
       rejectedCode: 'AUTH_RECEIPT_MISMATCH',
       rowRetainedAfterReject: true,
       payloadModeAfterReject: 'local-update',
       updatedMarkerAfterReject: 'local-update',
     },
     revokedCredential: {
+      status: 'passed',
       rejectedCode: 'reprint_push_lab_auth_required',
       rowRetainedAfterReject: true,
       payloadModeAfterReject: 'local-update',
       updatedMarkerAfterReject: 'local-update',
     },
   });
+});
+
+test('plugin-driver proof summary marks failing selected verifier guards directly on modeProof.guardProof', () => {
+  const summary = buildProductionPluginPackageProofSummary(
+    {
+      driverUpdateApply: {
+        applied: 1,
+      },
+      driverDeleteGuard: {
+        dryRunRejectedCode: 'INVALID_PLAN',
+      },
+      driverUpdateValidationGuard: {
+        dryRunRejectedCode: 'INVALID_PLAN',
+        payloadModeAfterReject: 'local-delete',
+      },
+      driverReceiptPlanBindingGuard: {
+        applyRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+        rowRetainedAfterReject: true,
+        updatedMarkerAfterReject: 'local-update',
+        payloadModeAfterReject: 'local-update',
+      },
+      driverReceiptExpiryGuard: {
+        applyRejectedCode: 'AUTH_RECEIPT_EXPIRED',
+        rowRetainedAfterReject: true,
+        updatedMarkerAfterReject: 'local-update',
+        payloadModeAfterReject: 'local-update',
+      },
+      driverReceiptIdentityGuard: {
+        applyRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+        rowRetainedAfterReject: true,
+        updatedMarkerAfterReject: 'local-update',
+        payloadModeAfterReject: 'local-update',
+      },
+      driverReceiptRotatedCredentialGuard: {
+        rotatedCredentialRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+        rowRetainedAfterReject: true,
+        updatedMarkerAfterReject: 'local-update',
+        payloadModeAfterReject: 'local-update',
+      },
+      driverReceiptRevokedCredentialGuard: {
+        applyRejectedCode: 'reprint_push_lab_auth_required',
+        rowRetainedAfterReject: true,
+        updatedMarkerAfterReject: 'local-update',
+        payloadModeAfterReject: 'local-update',
+      },
+      driverExportGuard: {
+        missingExportRowsCallback: true,
+      },
+      driverApplyGuard: {
+        missingApplyRowCallback: true,
+      },
+      driverValidateGuard: {
+        missingValidateMutationCallback: true,
+      },
+      driverMissingNameGuard: {
+        missingDriverName: true,
+      },
+      driverPluginOwnerGuard: {
+        missingPluginOwner: true,
+      },
+      driverMissingTableGuard: {
+        missingTable: true,
+      },
+      driverDuplicateNameGuard: {
+        duplicateDriverName: true,
+      },
+      driverDuplicateTableGuard: {
+        duplicateTable: true,
+      },
+    },
+    {
+      requestedScenarios: ['driver-verifier-guards'],
+      selectedScenarios: new Set([
+        'driver-verifier-guards',
+        ...scenarioGroups['driver-verifier-guards'],
+      ]),
+      resolvedMode: 'driverVerifierGuards',
+      canonicalMode: 'driver-verifier-guards',
+    },
+  );
+
+  assert.equal(summary.modeProof?.guardProof?.ok, false);
+  assert.equal(summary.modeProof?.guardProof?.status, 'missing');
+  assert.equal(summary.modeProof?.guardProof?.passedGuardCount, 6);
+  assert.equal(summary.modeProof?.guardProof?.failedGuardCount, 1);
+  assert.deepEqual(summary.modeProof?.guardProof?.guardStatuses, {
+    deleteGuard: 'passed',
+    updateValidationGuard: 'missing',
+    planBinding: 'passed',
+    expiry: 'passed',
+    identity: 'passed',
+    rotatedCredential: 'passed',
+    revokedCredential: 'passed',
+  });
+  assert.deepEqual(summary.modeProof?.guardProof?.failedGuards, [
+    'updateValidationGuard',
+  ]);
+  assert.equal(summary.modeProof?.guardProof?.updateValidationGuard.status, 'missing');
+  assert.equal(summary.modeProof?.guardProof?.updateValidationGuard.payloadModeAfterReject, 'local-delete');
 });
 
 test('plugin-driver proof summary narrows modeProof requests to the selected canonical mode', () => {
