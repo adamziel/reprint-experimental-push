@@ -46,6 +46,20 @@ test('package scripts pin the bounded plugin-driver registration-shape guard bun
   );
 });
 
+test('package scripts pin the bounded plugin-driver delete apply scenario entrypoint', () => {
+  assert.equal(
+    packageJson.scripts['test:playground:production-plugin-driver-delete-apply'],
+    'REPRINT_PUSH_PACKAGE_SMOKE_SCENARIO=driver-delete-apply node ./scripts/playground/production-plugin-package-smoke.mjs',
+  );
+});
+
+test('package scripts pin the bounded plugin-driver positive proof scenario entrypoint', () => {
+  assert.equal(
+    packageJson.scripts['test:playground:production-plugin-driver-positive-proof'],
+    'REPRINT_PUSH_PACKAGE_SMOKE_SCENARIO=driver-positive-proof node ./scripts/playground/production-plugin-package-smoke.mjs',
+  );
+});
+
 test('package scripts pin the bounded plugin-driver release proof entrypoint', () => {
   assert.equal(
     packageJson.scripts['test:playground:production-plugin-driver-release-proof'],

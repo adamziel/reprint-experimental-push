@@ -26,6 +26,8 @@
     "test:playground:production-plugin-driver-registration-guards": "REPRINT_PUSH_PACKAGE_SMOKE_SCENARIO=driver-registration-guards node ./scripts/playground/production-plugin-package-smoke.mjs",
     "test:playground:production-plugin-driver-callback-guards": "REPRINT_PUSH_PACKAGE_SMOKE_SCENARIO=driver-callback-guards node ./scripts/playground/production-plugin-package-smoke.mjs",
     "test:playground:production-plugin-driver-registration-shape-guards": "REPRINT_PUSH_PACKAGE_SMOKE_SCENARIO=driver-registration-shape-guards node ./scripts/playground/production-plugin-package-smoke.mjs",
+    "test:playground:production-plugin-driver-delete-apply": "REPRINT_PUSH_PACKAGE_SMOKE_SCENARIO=driver-delete-apply node ./scripts/playground/production-plugin-package-smoke.mjs",
+    "test:playground:production-plugin-driver-positive-proof": "REPRINT_PUSH_PACKAGE_SMOKE_SCENARIO=driver-positive-proof node ./scripts/playground/production-plugin-package-smoke.mjs",
     "test:playground:production-plugin-driver-release-proof": "REPRINT_PUSH_PACKAGE_SMOKE_SCENARIO=driver-release-proof node ./scripts/playground/production-plugin-package-smoke.mjs",
     "test:playground:production-plugin-driver-proof": "REPRINT_PUSH_PACKAGE_SMOKE_SCENARIO=driver-delete-apply,driver-verifier-guards node ./scripts/playground/production-plugin-package-smoke.mjs",
     "test:playground:production-plugin-driver-verifier-only": "REPRINT_PUSH_PACKAGE_SMOKE_MODE=driver-verifier-only node ./scripts/playground/production-plugin-package-smoke.mjs",
