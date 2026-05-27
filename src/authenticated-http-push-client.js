@@ -226,8 +226,14 @@ export async function runAuthenticatedHttpPush({
   };
   const preflightAuthEnvelopeDrift = describeAuthEnvelopeDrift(preflightAuthEnvelope, preflight);
   if (preflightAuthEnvelopeDrift) {
-    summary.code = 'AUTH_SESSION_LIFECYCLE_DRIFT';
-    summary.authSession = preflightAuthEnvelopeDrift;
+    summary.code = requireProductionAuthSession
+      ? 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED'
+      : 'AUTH_SESSION_LIFECYCLE_DRIFT';
+    summary.authSession = {
+      ...preflightAuthEnvelopeDrift,
+      verdict: summary.code,
+    };
+    annotateAuthSessionLifecycleDrift(summary, summary.authSession);
     setAuthSessionBoundary(summary, summary.authSession);
     return summary;
   }
@@ -2061,12 +2067,22 @@ function resolveObservedProductionAuthIdentityDrift(expected, response) {
 }
 
 function resolveObservedPreflightAuthIdentityDrift(expectedUserLogin, response) {
+  const body = response?.body || {};
+  const invalidObservedIdentityField = resolveInvalidObservedAuthEnvelopeIdentityField(body.auth?.identity);
+  if (invalidObservedIdentityField) {
+    return {
+      field: `auth.identity.${invalidObservedIdentityField.field}`,
+      required: invalidObservedIdentityField.required,
+      observed: `invalid-${invalidObservedIdentityField.label}`,
+    };
+  }
+
   const normalizedExpectedUserLogin = normalizeProductionAuthSessionIdentityField(expectedUserLogin);
   if (!normalizedExpectedUserLogin) {
     return null;
   }
 
-  const observedUserLogin = response?.body?.auth?.identity?.userLogin || 'missing';
+  const observedUserLogin = body.auth?.identity?.userLogin || 'missing';
   if (observedUserLogin === normalizedExpectedUserLogin) {
     return null;
   }
