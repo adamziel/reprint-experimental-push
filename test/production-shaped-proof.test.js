@@ -5784,9 +5784,23 @@ test('packaged release verifier readiness helper fails closed when signed prefli
       },
     },
     {
+      label: 'blank auth identity userLogin',
+      identity: {
+        userLogin: '   ',
+        userId: 7,
+      },
+    },
+    {
       label: 'missing auth identity userId',
       identity: {
         userLogin: 'reprint_push_admin',
+      },
+    },
+    {
+      label: 'non-positive auth identity userId',
+      identity: {
+        userLogin: 'reprint_push_admin',
+        userId: 0,
       },
     },
   ];
@@ -9864,9 +9878,23 @@ test('packaged production plugin smoke readiness helper fails closed when signed
       },
     },
     {
+      label: 'blank auth identity userLogin',
+      identity: {
+        userLogin: '   ',
+        userId: 7,
+      },
+    },
+    {
       label: 'missing auth identity userId',
       identity: {
         userLogin: 'reprint_push_admin',
+      },
+    },
+    {
+      label: 'non-positive auth identity userId',
+      identity: {
+        userLogin: 'reprint_push_admin',
+        userId: 0,
       },
     },
   ];
