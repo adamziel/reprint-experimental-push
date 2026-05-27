@@ -8510,9 +8510,14 @@ test('guarded benchmark carries direct queue-slack visibility blockers into roll
       blockerRefs: [
         'backpressure-evidence-incomplete',
         'queue-memory-ceiling-does-not-match-queue-budget',
+        'staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint',
         'memory-ceiling-match-visible-without-queue-slack-visibility',
         'queue-headroom-visible-without-queue-slack-visibility',
         'queue-pause-without-visible-receipt-cursor-queue-slack',
+        'queue-pause-without-resource-headroom-safe-receipt-cursor-backpressure',
+        'queue-pause-without-resource-headroom-safe-receipt-cursor-slack',
+        'queue-pause-without-consistent-receipt-cursor-slack',
+        'queue-pause-without-memory-safe-receipt-cursor-slack',
         'receipt-cursor-memory-headroom-visible-without-queue-slack-visibility',
       ],
     },
@@ -8524,9 +8529,14 @@ test('guarded benchmark carries direct queue-slack visibility blockers into roll
       blockerRefs: [
         'backpressure-evidence-incomplete',
         'queue-memory-ceiling-does-not-match-queue-budget',
+        'staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint',
         'memory-ceiling-match-visible-without-queue-slack-visibility',
         'queue-headroom-visible-without-queue-slack-visibility',
         'queue-pause-without-visible-receipt-cursor-queue-slack',
+        'queue-pause-without-resource-headroom-safe-receipt-cursor-backpressure',
+        'queue-pause-without-resource-headroom-safe-receipt-cursor-slack',
+        'queue-pause-without-consistent-receipt-cursor-slack',
+        'queue-pause-without-memory-safe-receipt-cursor-slack',
         'receipt-cursor-memory-headroom-visible-without-queue-slack-visibility',
       ],
     },
@@ -8541,6 +8551,10 @@ test('guarded benchmark carries direct queue-slack visibility blockers into roll
         'memory-ceiling-match-visible-without-queue-slack-visibility',
         'queue-headroom-visible-without-queue-slack-visibility',
         'queue-pause-without-visible-receipt-cursor-queue-slack',
+        'queue-pause-without-resource-headroom-safe-receipt-cursor-backpressure',
+        'queue-pause-without-resource-headroom-safe-receipt-cursor-slack',
+        'queue-pause-without-consistent-receipt-cursor-slack',
+        'queue-pause-without-memory-safe-receipt-cursor-slack',
         'receipt-cursor-memory-headroom-visible-without-queue-slack-visibility',
       ],
     },
@@ -8549,6 +8563,45 @@ test('guarded benchmark carries direct queue-slack visibility blockers into roll
   assert.ok(blockers.includes('queue-headroom-visible-without-queue-slack-visibility'));
   assert.ok(blockers.includes('queue-pause-without-visible-receipt-cursor-queue-slack'));
   assert.ok(blockers.includes('receipt-cursor-memory-headroom-visible-without-queue-slack-visibility'));
+  assert.ok(
+    blockers.includes('staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint'),
+  );
+  assert.ok(blockers.includes('queue-pause-without-resource-headroom-safe-receipt-cursor-backpressure'));
+  assert.ok(blockers.includes('queue-pause-without-resource-headroom-safe-receipt-cursor-slack'));
+  assert.ok(blockers.includes('queue-pause-without-consistent-receipt-cursor-slack'));
+  assert.ok(blockers.includes('queue-pause-without-memory-safe-receipt-cursor-slack'));
+  assert.deepEqual(
+    details.rejectedFastPaths.map((entry) => ({
+      id: entry.id,
+      rejectedGate: entry.rejectedGate,
+      blockerRefs: entry.blockerRefs,
+    })),
+    [
+      {
+        id: 'compressed-remote-index-and-cached-row-batch-receipts-skips-release-bundle-commit-after-pause-and-backpressure',
+        rejectedGate: 'recovery',
+        blockerRefs: [
+          'queue-pause-without-resource-headroom-safe-receipt-cursor-backpressure',
+          'queue-pause-without-resource-headroom-safe-receipt-cursor-slack',
+          'queue-pause-without-consistent-receipt-cursor-slack',
+          'queue-pause-without-memory-safe-receipt-cursor-slack',
+        ],
+      },
+      {
+        id: 'cached-receipt-cursor-queue-slack-authorizes-commit-after-pause',
+        rejectedGate: 'recovery',
+        blockerRefs: [
+          'memory-ceiling-match-visible-without-queue-slack-visibility',
+          'queue-headroom-visible-without-queue-slack-visibility',
+          'queue-pause-without-visible-receipt-cursor-queue-slack',
+          'receipt-cursor-memory-headroom-visible-without-queue-slack-visibility',
+        ],
+      },
+    ],
+  );
+  assert.deepEqual(details.rejectedFastPathGateSummary, [
+    { rejectedGate: 'recovery', count: 2 },
+  ]);
 });
 
 test('guarded benchmark carries direct memory-headroom visibility blockers into rollout summaries under visible production capability evidence', () => {

@@ -5991,7 +5991,7 @@ test('rollout rejected fast-path specs stay wired to modeled rejected shortcuts'
   assert.deepEqual(details.rejectedFastPathGateSummary, [
     { rejectedGate: 'group', count: 2 },
     { rejectedGate: 'live', count: 1 },
-    { rejectedGate: 'recovery', count: 1 },
+    { rejectedGate: 'recovery', count: 2 },
   ]);
 });
 
