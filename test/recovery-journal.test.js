@@ -3325,6 +3325,70 @@ test('production recovery journal support fails closed when second-argument opti
   });
 });
 
+test('production recovery journal support fails closed when direct artifact refs use a null prototype', () => {
+  const filePath = tempJournalPath();
+
+  assert.throws(() => {
+    openProductionRecoveryJournal(filePath, {
+      truncate: true,
+      now: fixedNow,
+      claimId: 'claim-null-prototype-direct-artifact-refs',
+      writerLease: { id: 'claim-null-prototype-direct-artifact-refs' },
+      artifactRefs: Object.assign(Object.create(null), {
+        journal: filePath,
+      }),
+    });
+  }, {
+    name: 'UnsupportedProductionRecoveryJournalError',
+    code: 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL',
+    message: 'Production recovery journal support requires strict plain artifact refs.',
+  });
+});
+
+test('production recovery journal support fails closed when direct artifact refs hide owned keys behind non-enumerable properties', () => {
+  const filePath = tempJournalPath();
+  const artifactRefs = {};
+  Object.defineProperty(artifactRefs, 'journal', {
+    value: filePath,
+    enumerable: false,
+  });
+
+  assert.throws(() => {
+    openProductionRecoveryJournal(filePath, {
+      truncate: true,
+      now: fixedNow,
+      claimId: 'claim-hidden-direct-artifact-refs',
+      writerLease: { id: 'claim-hidden-direct-artifact-refs' },
+      artifactRefs,
+    });
+  }, {
+    name: 'UnsupportedProductionRecoveryJournalError',
+    code: 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL',
+    message: 'Production recovery journal support requires enumerable artifactRefs keys.',
+  });
+});
+
+test('production recovery journal support fails closed when direct artifact refs add undeclared keys', () => {
+  const filePath = tempJournalPath();
+
+  assert.throws(() => {
+    openProductionRecoveryJournal(filePath, {
+      truncate: true,
+      now: fixedNow,
+      claimId: 'claim-extra-direct-artifact-ref',
+      writerLease: { id: 'claim-extra-direct-artifact-ref' },
+      artifactRefs: {
+        journal: filePath,
+        extra: `${filePath}.extra`,
+      },
+    });
+  }, {
+    name: 'UnsupportedProductionRecoveryJournalError',
+    code: 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL',
+    message: 'Production recovery journal support allows only artifactRefs.journal and artifactRefs.remote.',
+  });
+});
+
 test('production recovery journal consumption fails closed without an explicit claimId or writerLease', () => {
   const filePath = tempJournalPath();
   const remote = baseSite();
