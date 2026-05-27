@@ -1997,12 +1997,60 @@ test('production auth/session lifecycle helper requires an active unexpired pack
     evaluateProductionAuthSessionLifecycle({
       id: 'psh_01j00000000000000000000000',
       type: 'production-auth-session',
+      status: 'active',
+      expiresAt: '2099-01-01T00:00:00Z',
+      revoked: true,
+    }),
+    {
+      ok: false,
+      field: 'auth.session.revoked',
+      required: 'unrevoked',
+      observed: 'revoked',
+    },
+  );
+
+  assert.deepEqual(
+    evaluateProductionAuthSessionLifecycle({
+      id: 'psh_01j00000000000000000000000',
+      type: 'production-auth-session',
       status: 'cleaned-up',
       expiresAt: '2099-01-01T00:00:00Z',
     }),
     {
       ok: false,
       field: 'auth.session.status',
+      required: 'unrevoked',
+      observed: 'cleaned-up',
+    },
+  );
+
+  assert.deepEqual(
+    evaluateProductionAuthSessionLifecycle({
+      id: 'psh_01j00000000000000000000000',
+      type: 'production-auth-session',
+      status: 'active',
+      expiresAt: '2099-01-01T00:00:00Z',
+      cleanup: true,
+    }),
+    {
+      ok: false,
+      field: 'auth.session.cleanup',
+      required: 'unrevoked',
+      observed: 'cleaned-up',
+    },
+  );
+
+  assert.deepEqual(
+    evaluateProductionAuthSessionLifecycle({
+      id: 'psh_01j00000000000000000000000',
+      type: 'production-auth-session',
+      status: 'active',
+      expiresAt: '2099-01-01T00:00:00Z',
+      cleanedUp: true,
+    }),
+    {
+      ok: false,
+      field: 'auth.session.cleanedUp',
       required: 'unrevoked',
       observed: 'cleaned-up',
     },
@@ -2068,6 +2116,7 @@ test('production auth/session lifecycle helper fails closed on malformed lifecyc
   const malformedFlags = [
     ['revoked', 'invalid-revoked'],
     ['cleanedUp', 'invalid-cleanedUp'],
+    ['cleanup', 'invalid-cleanup'],
     ['expired', 'invalid-expired'],
     ['rotated', 'invalid-rotated'],
     ['preserved', 'invalid-preserved'],
