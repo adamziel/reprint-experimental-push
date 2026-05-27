@@ -3,6 +3,31 @@
 This log records evidence present in this repository. Public status should use
 release gates and named evidence gaps rather than stale percentage estimates.
 
+# 2026-05-27 - Public Status Audit 06:32:58
+
+<a id="2026-05-27-public-status-audit-063258"></a>
+
+- Refreshed [progress.html](../progress.html) to keep the current reliable
+  head `bc4679930d9d27adfb84b49b075816ff2e4d9ead` visible on the public
+  status surface for the active supervision cycle.
+- Release gates remain `0/4`. The latest reliable head tightens replay
+  equivalence for auth/session lifecycle state: replay must now preserve
+  revoked, cleaned-up, rotated, preserved, and expired bits, and drift is
+  reported with field-level evidence such as `authSessionPreserved`. That is
+  material auth/session replay hardening, not a production boundary gate move,
+  and it still stops short of the missing production-owned, non-lab-backed
+  source mutation boundary on the real Reprint endpoint: one primitive that
+  owns auth/session issuance/readback, durable restart-readable journal
+  storage with lease fencing, preserved rejected remote evidence, and
+  apply-time revalidation before first mutation.
+- The public page keeps the critic and independent-auditor verdicts aligned
+  with `bc467993` while leaving the release posture conservative. The stale
+  percentage bars stay removed.
+- Evidence trail: [progress.html](../progress.html),
+  [objective audit](../audits/objective-audit.md),
+  [critic audit](../audits/critic.md),
+  [release-gate checklist](../progress.html#proof-gates).
+
 # 2026-05-27 - Public Status Audit 06:28:09
 
 <a id="2026-05-27-public-status-audit-062809"></a>
