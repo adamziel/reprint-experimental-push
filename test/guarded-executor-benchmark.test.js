@@ -1414,6 +1414,63 @@ test('guarded benchmark surfaces package-hash plugin-install blockers at runtime
   );
 });
 
+test('guarded benchmark surfaces package-cache plugin-install blockers at runtime', () => {
+  const report = smallBenchmark();
+  const details = productionThroughputDetails(report);
+
+  assert.deepEqual(
+    details.rejectedFastPaths
+      .filter((entry) => [
+        'compressed-remote-index-and-cached-package-cache-skips-plugin-install-activation',
+        'compressed-remote-index-and-cached-package-cache-skips-plugin-install-dependency-checks',
+        'compressed-remote-index-and-cached-package-cache-skips-plugin-install-finalize',
+      ].includes(entry.id))
+      .map((entry) => ({
+        id: entry.id,
+        rejectedGate: entry.rejectedGate,
+        blockerRefs: entry.blockerRefs,
+      }))
+      .sort((left, right) => left.id.localeCompare(right.id)),
+    [
+      {
+        id: 'compressed-remote-index-and-cached-package-cache-skips-plugin-install-activation',
+        rejectedGate: 'group',
+        blockerRefs: [
+          'production-atomic-group-commit-not-measured',
+          'production-parallelism-limits-not-visible',
+          'production-row-batch-executor-not-measured',
+          'production-row-batch-executor-measured-not-proven',
+        ],
+      },
+      {
+        id: 'compressed-remote-index-and-cached-package-cache-skips-plugin-install-dependency-checks',
+        rejectedGate: 'group',
+        blockerRefs: [
+          'production-atomic-group-commit-not-measured',
+          'production-parallelism-limits-not-visible',
+          'production-row-batch-executor-not-measured',
+          'production-row-batch-executor-measured-not-proven',
+        ],
+      },
+      {
+        id: 'compressed-remote-index-and-cached-package-cache-skips-plugin-install-finalize',
+        rejectedGate: 'group',
+        blockerRefs: [
+          'production-atomic-group-commit-not-measured',
+          'production-parallelism-limits-not-visible',
+          'production-row-batch-executor-not-measured',
+          'production-row-batch-executor-measured-not-proven',
+        ],
+      },
+    ].sort((left, right) => left.id.localeCompare(right.id)),
+  );
+
+  assert.equal(
+    details.rejectedFastPaths.filter((entry) => entry.id.includes('plugin-install')).length,
+    29,
+  );
+});
+
 test('guarded benchmark surfaces file-hash plugin-install blockers at runtime', () => {
   const report = smallBenchmark();
   const details = productionThroughputDetails(report);
