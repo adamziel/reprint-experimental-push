@@ -2933,7 +2933,6 @@ test('guarded benchmark keeps rollout summaries pinned to non-integral paralleli
         id: 'compressed-remote-index-and-cached-row-batch-receipts-skips-release-bundle-commit-after-pause-and-backpressure',
         rejectedGate: 'recovery',
         blockerRefs: [
-          'staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint',
           'queue-pause-without-resource-headroom-safe-receipt-cursor-backpressure',
           'queue-pause-without-resource-headroom-safe-receipt-cursor-slack',
           'queue-pause-without-consistent-receipt-cursor-slack',
@@ -3485,7 +3484,6 @@ test('guarded benchmark carries direct queue-headroom measurement blockers into 
         id: 'compressed-remote-index-and-cached-row-batch-receipts-skips-release-bundle-commit-after-pause-and-backpressure',
         rejectedGate: 'recovery',
         blockerRefs: [
-          'staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint',
           'queue-pause-without-resource-headroom-safe-receipt-cursor-backpressure',
           'queue-pause-without-resource-headroom-safe-receipt-cursor-slack',
           'queue-pause-without-consistent-receipt-cursor-slack',
@@ -3501,10 +3499,19 @@ test('guarded benchmark carries direct queue-headroom measurement blockers into 
           'queue-headroom-visible-without-measurement',
         ],
       },
+      {
+        id: 'cached-receipt-cursor-queue-headroom-authorizes-atomic-group-commit-after-retry',
+        rejectedGate: 'recovery',
+        blockerRefs: [
+          'queue-budget-visible-without-queue-headroom-measurement',
+          'memory-ceiling-visible-without-queue-headroom-measurement',
+          'queue-headroom-visible-without-measurement',
+        ],
+      },
     ],
   );
   assert.deepEqual(details.rejectedFastPathGateSummary, [
-    { rejectedGate: 'recovery', count: 3 },
+    { rejectedGate: 'recovery', count: 4 },
   ]);
 });
 
@@ -3622,7 +3629,6 @@ test('guarded benchmark keeps rollout summaries pinned to visible-without-measur
         id: 'compressed-remote-index-and-cached-row-batch-receipts-skips-release-bundle-commit-after-pause-and-backpressure',
         rejectedGate: 'recovery',
         blockerRefs: [
-          'staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint',
           'queue-pause-without-resource-headroom-safe-receipt-cursor-backpressure',
           'queue-pause-without-resource-headroom-safe-receipt-cursor-slack',
           'queue-pause-without-consistent-receipt-cursor-slack',

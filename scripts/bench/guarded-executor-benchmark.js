@@ -148,6 +148,14 @@ const ROLLOUT_REJECTED_FAST_PATH_SPECS = Object.freeze([
     ]),
   }),
   Object.freeze({
+    id: 'cached-receipt-cursor-queue-headroom-authorizes-atomic-group-commit-after-retry',
+    blockerRefs: Object.freeze([
+      'queue-budget-visible-without-queue-headroom-measurement',
+      'memory-ceiling-visible-without-queue-headroom-measurement',
+      'queue-headroom-visible-without-measurement',
+    ]),
+  }),
+  Object.freeze({
     id: 'cached-receipt-cursor-staging-disk-headroom-and-journal-lag-skips-post-pause-replay',
     blockerRefs: Object.freeze([
       'queue-pause-with-complete-footprint-without-memory-ceiling-match-visibility',
