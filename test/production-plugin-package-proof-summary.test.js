@@ -1488,6 +1488,27 @@ test('plugin-driver proof summary tracks combined receipt and registration guard
   assert.deepEqual(summary.receiptGuards.requestedBundleStatuses, {
     driverReceiptRegistrationGuards: 'passed',
   });
+  assert.deepEqual(summary.receiptRegistrationGuards, {
+    ...summary.receiptRegistrationGuards,
+    requested: true,
+    selected: true,
+    ok: true,
+    status: 'passed',
+    receiptStatus: 'passed',
+    exportStatus: 'passed',
+    applyStatus: 'passed',
+    validateStatus: 'passed',
+    missingNameStatus: 'passed',
+    missingPluginOwnerStatus: 'passed',
+    missingTableStatus: 'passed',
+    duplicateNameStatus: 'passed',
+    duplicateTableStatus: 'passed',
+    requestedStatus: 'passed',
+    requestedBundleStatus: 'passed',
+    requestedBundleStatuses: {
+      driverReceiptRegistrationGuards: 'passed',
+    },
+  });
   assert.equal(summary.registrationGuards.requested, false);
   assert.equal(summary.registrationGuards.selected, false);
   assert.equal(summary.registrationGuards.ok, false);

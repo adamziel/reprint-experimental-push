@@ -955,6 +955,46 @@ export function buildProductionPluginPackageProofSummary(
       requestedBundleStatus: buildConcreteRequestedBundleStatus('driver-verifier-guards'),
       requestedBundleStatuses: buildConcreteRequestedBundleStatuses('driver-verifier-guards'),
     },
+    receiptRegistrationGuards: {
+      requested: normalizedRequestedScenarios === null
+        ? true
+        : normalizedRequestedScenarios.includes('driver-receipt-registration-guards')
+          || concreteBundleRequests['driver-receipt-registration-guards'],
+      selected: buildObjectBundleSelected('driver-receipt-registration-guards'),
+      ok: buildObjectBundleStatus('driver-receipt-registration-guards') === 'passed',
+      status: buildObjectBundleStatus('driver-receipt-registration-guards'),
+      receiptStatus: scenarioResults.driverReceiptGuards,
+      planBinding: summary?.driverReceiptPlanBindingGuard?.applyRejectedCode ?? null,
+      identity: summary?.driverReceiptIdentityGuard?.applyRejectedCode ?? null,
+      expiry: summary?.driverReceiptExpiryGuard?.applyRejectedCode ?? null,
+      rotatedCredential: summary?.driverReceiptRotatedCredentialGuard?.rotatedCredentialRejectedCode ?? null,
+      revokedCredential: summary?.driverReceiptRevokedCredentialGuard?.applyRejectedCode ?? null,
+      exportStatus: scenarioResults.driverMissingExportGuard,
+      applyStatus: scenarioResults.driverMissingApplyGuard,
+      validateStatus: scenarioResults.driverMissingValidateGuard,
+      missingExportRowsCallback: summary?.driverExportGuard?.missingExportRowsCallback ?? false,
+      missingApplyRowCallback: summary?.driverApplyGuard?.missingApplyRowCallback ?? false,
+      missingValidateMutationCallback: summary?.driverValidateGuard?.missingValidateMutationCallback ?? false,
+      missingNameStatus: scenarioResults.driverMissingNameGuard,
+      missingPluginOwnerStatus: scenarioResults.driverMissingPluginOwnerGuard,
+      missingTableStatus: scenarioResults.driverMissingTableGuard,
+      missingDriverName: summary?.driverMissingNameGuard?.missingDriverName ?? false,
+      missingPluginOwner: summary?.driverPluginOwnerGuard?.missingPluginOwner ?? false,
+      missingTable: summary?.driverMissingTableGuard?.missingTable ?? false,
+      duplicateNameStatus: scenarioResults.driverDuplicateNameGuard,
+      duplicateTableStatus: scenarioResults.driverDuplicateTableGuard,
+      duplicateDriverName: summary?.driverDuplicateNameGuard?.duplicateDriverName ?? false,
+      duplicateTable: summary?.driverDuplicateTableGuard?.duplicateTable ?? false,
+      ...buildBundleScenarioDetails(
+        'driver-receipt-registration-guards',
+        scenarioPasses,
+        buildObjectBundleStatus('driver-receipt-registration-guards') !== 'skipped',
+      ),
+      requestedStatus: requestedScenarioStatuses['driver-receipt-registration-guards']
+        ?? buildConcreteRequestedBundleStatus('driver-receipt-registration-guards'),
+      requestedBundleStatus: buildConcreteRequestedBundleStatus('driver-receipt-registration-guards'),
+      requestedBundleStatuses: buildConcreteRequestedBundleStatuses('driver-receipt-registration-guards'),
+    },
     registrationGuards: {
       requested: normalizedRequestedScenarios === null
         ? true
