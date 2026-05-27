@@ -1,54 +1,51 @@
 # Critic Verdict
 
-Current reliable head: `8e7fa53d19ebde044d20c7fd9baa50cf78c9bb29`
-(`Reuse live topology for apply revalidation`).
+Current reliable head: `5fcb36c623ddb6eb0e49275cc1890157ed948d91`
+(`Bound driver verifier guards in release checks`).
 
-Previous classified reliable head: `e4b786e516a3621e50fe15edcbfc1aa9edf313f1`
-(`Fail closed on apply revalidation readiness`).
+Previous classified reliable head: `8e7fa53d19ebde044d20c7fd9baa50cf78c9bb29`
+(`Reuse live topology for apply revalidation`).
 
 Verdict: `0/4`
 
 Reason:
 
 - I repolled `origin/lane/reliable-executor` and confirmed it points at
-  `8e7fa53d19ebde044d20c7fd9baa50cf78c9bb29`.
-- The `e4b786e5..8e7fa53d` diff changes only
-  `scripts/playground/production-shaped-apply-revalidation-smoke.mjs` and
-  `scripts/playground/production-shaped-live-release-verify.mjs`.
-- In `production-shaped-apply-revalidation-smoke.mjs`, the change extracts the
-  core proof into `runApplyRevalidationProof()`, accepts externally supplied
-  `REPRINT_PUSH_SOURCE_URL` / `REPRINT_PUSH_REMOTE_URL` plus
-  `REPRINT_PUSH_LOCAL_URL`, and otherwise still self-starts `remote-base` /
-  `local-edited` Playground servers for the same fixture-backed proof. In
-  `production-shaped-live-release-verify.mjs`, the packaged live wrapper now
-  starts both Playground servers itself and passes their URLs plus fixture
-  credentials into that same apply-revalidation smoke.
-- That is still wrapper topology reuse around the same checked
-  Playground/package-mode verifier scaffold, not a new supervised proof
-  boundary. The commit moves where the two Playground URLs are provisioned, but
-  the executable proof still comes from the same fixture-backed smoke and still
-  reports the same remaining boundary instead of crossing it.
-- The branch still does not add the missing production-owned source mutation
-  boundary on the real Reprint endpoint. It does not move auth/session
-  issuance and readback onto a non-lab-backed live executor boundary, does not
-  prove durable restart-readable journal storage with lease fencing at that
-  boundary, and does not show apply-time revalidation happening outside the
-  Playground verifier scaffold.
-- The tracked reliable final note is still not new commit-specific proof for
-  `8e7fa53d`. `origin/lane/reliable-executor:.lane-output/final.md` still
-  describes the earlier recovery-journal / release-verifier pass, lists only
-  `scripts/playground/production-shaped-release-verify.mjs`,
-  `src/recovery-journal.js`, and related tests as changed files, and says the
-  checked release path still fails closed at
-  `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED` /
-  `PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED`. I did not find a separate
-  reliable final artifact or checked-in reliable run log that records a new
-  production-owned boundary for this commit.
-- The available reliable worktree evidence does not close the gap either. The
-  local reliable worktree is detached and conflicted in progress files rather
-  than sitting on `8e7fa53d`, and its retained `.lane-output` notes still call
-  out `auth/session lifecycle and durable journal semantics` as the first
-  remaining production boundary.
+  `5fcb36c623ddb6eb0e49275cc1890157ed948d91`.
+- The `8e7fa53d..5fcb36c6` diff changes only `package.json` and
+  `test/protocol-fixtures.test.js`.
+- In `package.json`, the only functional change is that
+  `test:playground:production-plugin-driver-verifier-guards` now runs
+  `scripts/playground/production-plugin-package-smoke.mjs` with both
+  `REPRINT_PUSH_PACKAGE_SMOKE_SCENARIO=driver-verifier-guards` and
+  `REPRINT_PUSH_PACKAGE_SMOKE_MODE=driver-guard-only`.
+- In `test/protocol-fixtures.test.js`, the new assertion only pins that same
+  `driver-guard-only` script string so `verify:release` keeps invoking the
+  packaged driver verifier bundle in that narrowed mode.
+- That is still bounded verifier scaffolding inside the packaged plugin-driver
+  smoke, not a new supervised release boundary. It removes unrelated package
+  setup from the checked verifier window so the guard scenarios can run
+  cleanly, but it does not add a real-source executor boundary, a live auth
+  session mint/readback boundary, or a production-owned mutation boundary on
+  the real Reprint endpoint.
+- The reliable lane's own retained evidence says the same thing. In
+  `origin/lane/reliable-executor:.lane-output/final.md`, the commit-specific
+  note for `5fcb36c6` says this change "is still not a gate move by itself,"
+  that it only removes an avoidable plugin-driver verifier timeout, and that
+  the next target must move back to `auth/session` and durable-journal release
+  blockers on the checked path.
+- The reliable clean worktree at
+  `/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/reliable-executor-clean-20260526-1530`
+  matches that retained note: its only tracked source changes are
+  `package.json` and `test/protocol-fixtures.test.js`, while the only dirty
+  file is `.lane-output/final.md`.
+- So the branch still does not add the missing production-owned source
+  mutation boundary on the real Reprint endpoint. It still does not show the
+  same executable command minting a live auth session on the exact live
+  `REPRINT_PUSH_SOURCE_URL`, reading that session back from durable
+  restart-readable journal storage with lease-fenced ownership, preserving the
+  rejected remote for audit, and then performing apply-time revalidation before
+  the first mutation on that same non-lab-backed boundary.
 - Under `audits/release-gate.md`, `audits/critic-release-gate.md`, and
   `audits/critic-production-checklist.md`, the proof gap is unchanged: there
   is still no single reliable-owned executable boundary on the real Reprint
@@ -63,9 +60,9 @@ Next exact reliable-owned primitive:
   checked release boundary on the real Reprint endpoint where the same
   executable command mints a live auth session on the exact live
   `REPRINT_PUSH_SOURCE_URL`, reads that session back from durable
-  restart-readable journal storage under lease-fenced ownership, then performs
-  apply-time revalidation before the first mutation and preserves the rejected
-  remote evidence for audit on that same boundary. Reusing the live wrapper's
-  topology for the existing apply-revalidation smoke is still compatibility
-  wiring until that auth/session mint-readback plus durable-journal primitive
-  exists outside Playground verifier scaffolding.
+  restart-readable journal storage under lease-fenced ownership, preserves the
+  rejected remote evidence for audit, and performs apply-time revalidation
+  before the first mutation on that same boundary. Tightening
+  `driver-guard-only` verifier mode is only prerequisite cleanup until that
+  auth/session mint-readback plus durable-journal primitive exists outside the
+  Playground/package-mode verifier scaffold.
