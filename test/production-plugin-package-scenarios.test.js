@@ -110,6 +110,21 @@ test('scenario resolver maps driver-guard-only mode to the bounded receipt guard
   );
 });
 
+test('scenario resolver maps driver-receipt-only mode to the bounded receipt guard scenario', () => {
+  const resolved = resolveProductionPluginPackageScenarios(
+    [],
+    undefined,
+    'driver-receipt-only',
+  );
+
+  assert.deepEqual(resolved.requestedScenarios, ['driver-receipt-guards']);
+  assert.equal(resolved.resolvedMode, 'driver-receipt-only');
+  assert.deepEqual(
+    Array.from(resolved.selectedScenarios).sort(),
+    ['driver-receipt-guards'],
+  );
+});
+
 test('scenario resolver maps driver-verifier-only mode to the bounded verifier bundle', () => {
   const resolved = resolveProductionPluginPackageScenarios(
     [],
@@ -137,6 +152,36 @@ test('scenario resolver maps driver-registration-only mode to the malformed regi
   assert.deepEqual(
     Array.from(resolved.selectedScenarios).sort(),
     scenarioGroups['driver-registration-guards'].slice().sort(),
+  );
+});
+
+test('scenario resolver maps driver-callback-only mode to the bounded callback guard bundle', () => {
+  const resolved = resolveProductionPluginPackageScenarios(
+    [],
+    undefined,
+    'driver-callback-only',
+  );
+
+  assert.deepEqual(resolved.requestedScenarios, ['driver-callback-guards']);
+  assert.equal(resolved.resolvedMode, 'driver-callback-only');
+  assert.deepEqual(
+    Array.from(resolved.selectedScenarios).sort(),
+    scenarioGroups['driver-callback-guards'].slice().sort(),
+  );
+});
+
+test('scenario resolver maps driver-registration-shape-only mode to the bounded registration-shape bundle', () => {
+  const resolved = resolveProductionPluginPackageScenarios(
+    [],
+    undefined,
+    'driver-registration-shape-only',
+  );
+
+  assert.deepEqual(resolved.requestedScenarios, ['driver-registration-shape-guards']);
+  assert.equal(resolved.resolvedMode, 'driver-registration-shape-only');
+  assert.deepEqual(
+    Array.from(resolved.selectedScenarios).sort(),
+    scenarioGroups['driver-registration-shape-guards'].slice().sort(),
   );
 });
 

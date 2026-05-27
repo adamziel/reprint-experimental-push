@@ -60,11 +60,20 @@ function resolveScenarioMode(modeValue) {
   if (modeValue === 'driver-guard-only') {
     return 'driver-receipt-guards';
   }
+  if (modeValue === 'driver-receipt-only') {
+    return 'driver-receipt-guards';
+  }
   if (modeValue === 'driver-verifier-only') {
     return 'driver-verifier-guards';
   }
   if (modeValue === 'driver-registration-only') {
     return 'driver-registration-guards';
+  }
+  if (modeValue === 'driver-callback-only') {
+    return 'driver-callback-guards';
+  }
+  if (modeValue === 'driver-registration-shape-only') {
+    return 'driver-registration-shape-guards';
   }
   if (modeValue === 'driver-delete-only') {
     return 'driver-delete-apply';
