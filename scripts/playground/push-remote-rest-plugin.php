@@ -723,6 +723,21 @@ function reprint_push_lab_rest_mirror_checked_recovery_contract(array $recovery)
         }
     }
 
+    if (isset($journal['storageGuard']) && is_array($journal['storageGuard'])) {
+        $current_storage_guard = isset($recovery['storageGuard']) && is_array($recovery['storageGuard'])
+            ? $recovery['storageGuard']
+            : null;
+        if (
+            !reprint_push_lab_db_journal_storage_guard_contract_matches($current_storage_guard)
+            || reprint_push_lab_rest_checked_recovery_top_level_wrapper_conflicts(
+                $current_storage_guard,
+                $journal['storageGuard']
+            )
+        ) {
+            $recovery['storageGuard'] = $journal['storageGuard'];
+        }
+    }
+
     return $recovery;
 }
 

@@ -1890,6 +1890,26 @@ test('checked recovery inspect evidence replaces structurally valid top-level re
   assert.deepEqual(parsed.leaseFence, acceptedJournal.leaseFence);
 });
 
+test('checked recovery inspect evidence replaces structurally valid top-level storage-guard wrappers when they diverge from the accepted checked journal contract', { skip: !hasPhp }, () => {
+  const acceptedJournal = buildAcceptedInlineRecoveryJournal();
+  const result = runMirrorCheckedRecoveryContract({
+    journal: acceptedJournal,
+    claim: acceptedJournal.claim,
+    writerLease: acceptedJournal.writerLease,
+    leaseFence: acceptedJournal.leaseFence,
+    ownership: acceptedJournal.ownership,
+    storageGuard: {
+      boundary: 'fixture-storage-guard',
+      operation: 'append',
+      outcome: 'fixture-only',
+    },
+  });
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.deepEqual(parsed.storageGuard, acceptedJournal.storageGuard);
+});
+
 test('checked recovery inspect evidence fails closed when checked storage-guard evidence omits a coherent claim-scoped checked journal contract', { skip: !hasPhp }, () => {
   const checkedSummary = buildCheckedDbJournalSummary();
   checkedSummary.latestRows = [
