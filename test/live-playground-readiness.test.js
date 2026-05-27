@@ -1837,6 +1837,14 @@ test('packaged server readiness fails closed for terminal production auth sessio
       },
     },
     {
+      label: 'rotated status',
+      session: {
+        status: 'rotated',
+        type: 'production-auth-session',
+        expiresAt: '2099-01-01T00:00:00Z',
+      },
+    },
+    {
       label: 'explicitly rotated',
       session: {
         status: 'active',
