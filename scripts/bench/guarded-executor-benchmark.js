@@ -1393,6 +1393,7 @@ const ROLLOUT_REJECTED_FAST_PATH_SPECS = Object.freeze([
       'receipt-cursor-queue-slack-visible-without-memory-ceiling-visibility',
       'receipt-cursor-queue-slack-visible-without-queue-budget-visibility',
       'receipt-cursor-queue-slack-visible-without-queue-headroom-visibility',
+      ...HIDDEN_STAGING_DISK_VISIBILITY_BLOCKER_REFS,
       'queue-pause-without-resource-headroom-safe-receipt-cursor-backpressure',
       'queue-pause-without-resource-headroom-safe-receipt-cursor-slack',
       'queue-pause-without-consistent-receipt-cursor-slack',

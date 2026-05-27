@@ -14701,6 +14701,45 @@ test('guarded benchmark carries hidden staging-disk visibility blockers into rel
   ]);
 });
 
+test('guarded benchmark carries hidden staging-disk visibility blockers into post-pause replay summaries under visible production capability evidence', () => {
+  const report = smallBenchmark();
+  const mutated = clone(report);
+
+  mutated.executorCapabilities.productionAtomicCommit = 'production-atomic-group-commit';
+  mutated.executorCapabilities.fileReceipts = 'production-storage-receipts';
+  mutated.executorCapabilities.rowApply = 'production-batched-compare-and-swap';
+  mutated.evidence.parallelism.parallelismLimitsMeasured = true;
+  mutated.evidence.parallelism.parallelismLimitsVisible = true;
+  mutated.evidence.parallelism.parallelismLimits = {
+    chunkUpload: 4,
+    fileHashing: 2,
+    dbBatchPerTable: 2,
+  };
+  mutated.evidence.atomicGroup.productionAtomicCommitMeasured = true;
+  mutated.evidence.atomicGroup.productionAtomicCommitVisible = true;
+  mutated.evidence.atomicGroup.productionAtomicGroupMetadataVisible = true;
+  mutated.evidence.atomicGroup.productionStorageReceiptsMeasured = true;
+  mutated.evidence.atomicGroup.productionStorageReceiptsVisible = true;
+  mutated.evidence.atomicGroup.productionRowBatchExecutorMeasured = true;
+  mutated.evidence.atomicGroup.productionRowBatchExecutorVisible = true;
+  mutated.evidence.backpressure.stagingDiskHeadroomVisible = false;
+
+  const details = productionThroughputDetails(mutated);
+  const blockers = productionThroughputBlockers(mutated);
+  const replay = details.rejectedFastPaths.find(
+    (entry) => entry.id === 'cached-receipt-cursor-staging-disk-headroom-and-journal-lag-skips-post-pause-replay',
+  );
+
+  assert.ok(blockers.includes('staging-disk-headroom-not-visible'));
+  assert.deepEqual(replay?.blockerRefs, [
+    'staging-disk-headroom-not-visible',
+    'queue-pause-without-resource-headroom-safe-receipt-cursor-backpressure',
+    'queue-pause-without-resource-headroom-safe-receipt-cursor-slack',
+    'queue-pause-without-consistent-receipt-cursor-slack',
+    'queue-pause-without-memory-safe-receipt-cursor-slack',
+  ]);
+});
+
 test('guarded benchmark surfaces receipt-flush blockers at runtime', async () => {
   const report = await runGuardedExecutorBenchmark({ profile: 'unit' });
   const details = productionThroughputDetails(report);
