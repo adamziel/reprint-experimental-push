@@ -3895,6 +3895,15 @@ test('packaged release verifier readiness helper fails closed when signed prefli
       },
     },
     {
+      label: 'non-string auth session id',
+      session: {
+        id: 123,
+        status: 'active',
+        type: 'production-auth-session',
+        expiresAt: '2099-01-01T00:00:00Z',
+      },
+    },
+    {
       label: 'wrong auth session type',
       session: {
         id: 'session_123',
@@ -3985,6 +3994,16 @@ test('packaged release verifier readiness helper fails closed when signed prefli
         type: 'production-auth-session',
         expiresAt: '2099-01-01T00:00:00Z',
         cleanup: true,
+      },
+    },
+    {
+      label: 'cleanup underscore auth session flag',
+      session: {
+        id: 'session_123',
+        status: 'active',
+        type: 'production-auth-session',
+        expiresAt: '2099-01-01T00:00:00Z',
+        cleaned_up: true,
       },
     },
     {
