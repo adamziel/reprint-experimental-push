@@ -43,7 +43,7 @@ await withPlaygroundServer('remote-base', path.join(repoRoot, 'fixtures/playgrou
     const proof = await runAuthenticatedHttpPush({
       sourceUrl: remoteServer.baseUrl,
       base: await exportSnapshot('remote-base', remoteServer.baseUrl),
-      local: withoutUnmappedGraphPostmeta(await exportSnapshot('local-edited', localServer.baseUrl)),
+      local: await exportSnapshot('local-edited', localServer.baseUrl),
       username: credentials.username,
       applicationPassword: credentials.password,
       idempotencyKey: 'production-shaped-live-protocol-proof-001',
@@ -109,15 +109,6 @@ async function exportSnapshot(name, baseUrl) {
   const body = await response.json();
   assert.equal(body.ok, true, `${name} snapshot body not ok`);
   return body.snapshot;
-}
-
-function withoutUnmappedGraphPostmeta(snapshot) {
-  const next = JSON.parse(JSON.stringify(snapshot));
-  delete next.db?.wp_postmeta?.['post_id:2001:meta_key:_reprint_push_forms_schema'];
-  if (next.db?.wp_postmeta && Object.keys(next.db.wp_postmeta).length === 0) {
-    delete next.db.wp_postmeta;
-  }
-  return next;
 }
 
 async function withPlaygroundServer(name, blueprintPath, run) {

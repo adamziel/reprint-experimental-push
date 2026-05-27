@@ -950,6 +950,8 @@ function isPluginOwnedDataResource(resource, owner) {
 }
 
 const WORDPRESS_GRAPH_TABLE_SUFFIXES = [
+  'commentmeta',
+  'comments',
   'term_relationships',
   'term_taxonomy',
   'postmeta',
@@ -1076,6 +1078,9 @@ function isSafeSamePlanWordPressGraphReference(reference) {
 }
 
 const SAME_PLAN_WORDPRESS_GRAPH_RELATIONSHIPS = new Set([
+  'comment-post',
+  'comment-parent',
+  'commentmeta-comment',
   'post-parent',
   'postmeta-post',
   'featured-image-attachment',
@@ -1122,6 +1127,30 @@ function wordpressGraphReferences(resource, value) {
       relationshipType: 'post-parent',
       targetTable: 'posts',
       targetId: value.post_parent,
+    });
+  }
+
+  if (suffix === 'comments') {
+    addReference({
+      field: 'comment_post_ID',
+      relationshipType: 'comment-post',
+      targetTable: 'posts',
+      targetId: value.comment_post_ID,
+    });
+    addReference({
+      field: 'comment_parent',
+      relationshipType: 'comment-parent',
+      targetTable: 'comments',
+      targetId: value.comment_parent,
+    });
+  }
+
+  if (suffix === 'commentmeta') {
+    addReference({
+      field: 'comment_id',
+      relationshipType: 'commentmeta-comment',
+      targetTable: 'comments',
+      targetId: value.comment_id,
     });
   }
 
@@ -1263,6 +1292,9 @@ function wordpressGraphTableSuffix(table) {
 }
 
 function wordpressGraphPrimaryIdField(suffix) {
+  if (suffix === 'comments') {
+    return 'comment_ID';
+  }
   if (suffix === 'posts') {
     return 'ID';
   }

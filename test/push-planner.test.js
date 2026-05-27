@@ -1239,6 +1239,92 @@ test('blocks featured image references when the attachment target diverged on re
   assert.equal(planJson.includes('remote-private-attachment-body'), false);
 });
 
+test('allows same-plan comment graph closure when post and comment targets are created locally', () => {
+  const postResourceKey = 'row:["wp_posts","ID:2"]';
+  const parentCommentResourceKey = 'row:["wp_comments","comment_ID:11"]';
+  const childCommentResourceKey = 'row:["wp_comments","comment_ID:12"]';
+  const commentmetaResourceKey = 'row:["wp_commentmeta","meta_id:51"]';
+  const base = baseSite();
+  base.db.wp_comments = {};
+  base.db.wp_commentmeta = {};
+  const local = JSON.parse(JSON.stringify(base));
+  const remote = JSON.parse(JSON.stringify(base));
+
+  local.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_title: 'Local commented post',
+    post_status: 'draft',
+  };
+  local.db.wp_comments['comment_ID:11'] = {
+    comment_ID: 11,
+    comment_post_ID: 2,
+    comment_parent: 0,
+    comment_content: 'Local parent comment',
+  };
+  local.db.wp_comments['comment_ID:12'] = {
+    comment_ID: 12,
+    comment_post_ID: 2,
+    comment_parent: 11,
+    comment_content: 'Local child comment',
+  };
+  local.db.wp_commentmeta['meta_id:51'] = {
+    meta_id: 51,
+    comment_id: 12,
+    meta_key: '_local_comment_flag',
+    meta_value: 'comment-private-meta',
+  };
+
+  const plan = planFor(base, local, remote);
+  const result = applyPlan(remote, plan);
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(mutationFor(plan, postResourceKey).changeKind, 'create');
+  assert.equal(mutationFor(plan, parentCommentResourceKey).changeKind, 'create');
+  assert.equal(mutationFor(plan, childCommentResourceKey).changeKind, 'create');
+  assert.equal(mutationFor(plan, commentmetaResourceKey).changeKind, 'create');
+  assertEveryMutationHasLiveRemotePrecondition(plan);
+  assert.equal(result.site.db.wp_comments['comment_ID:11'].comment_post_ID, 2);
+  assert.equal(result.site.db.wp_comments['comment_ID:12'].comment_parent, 11);
+  assert.equal(result.site.db.wp_commentmeta['meta_id:51'].comment_id, 12);
+});
+
+test('blocks comment graph references when the remote post target is missing', () => {
+  const commentResourceKey = 'row:["wp_comments","comment_ID:11"]';
+  const targetPostResourceKey = 'row:["wp_posts","ID:2"]';
+  const base = baseSite();
+  base.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_title: 'base-private-comment-post',
+    post_status: 'publish',
+  };
+  base.db.wp_comments = {};
+  const local = JSON.parse(JSON.stringify(base));
+  const remote = JSON.parse(JSON.stringify(base));
+
+  local.db.wp_comments['comment_ID:11'] = {
+    comment_ID: 11,
+    comment_post_ID: 2,
+    comment_parent: 0,
+    comment_content: 'local-private-comment-body',
+  };
+  delete remote.db.wp_posts['ID:2'];
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === commentResourceKey);
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(mutationFor(plan, commentResourceKey), undefined);
+  assert.equal(decisionFor(plan, targetPostResourceKey).decision, 'keep-remote');
+  assert.equal(blocker.references[0].relationshipKey, 'wp_comments.comment_post_ID');
+  assert.equal(blocker.references[0].relationshipType, 'comment-post');
+  assert.equal(blocker.references[0].targetResourceKey, targetPostResourceKey);
+  assert.equal(blocker.references[0].targetChange.remoteChange, 'delete');
+  assert.equal(planJson.includes('local-private-comment-body'), false);
+  assert.equal(planJson.includes('base-private-comment-post'), false);
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
+});
+
 test('plans a safe same-plan taxonomy closure for a category term, relationship, and termmeta', () => {
   const termResourceKey = 'row:["wp_terms","term_id:21"]';
   const taxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:31"]';
