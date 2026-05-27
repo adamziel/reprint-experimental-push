@@ -5971,6 +5971,36 @@ test('packaged release verifier readiness helper fails closed when signed prefli
       },
     },
     {
+      label: 'cleaned-up top-level session marker',
+      session: {
+        id: 'session_123',
+        status: 'active',
+        type: 'production-auth-session',
+        expiresAt: '2099-01-01T00:00:00Z',
+        cleanedUp: true,
+      },
+    },
+    {
+      label: 'cleanup alias top-level session marker',
+      session: {
+        id: 'session_123',
+        status: 'active',
+        type: 'production-auth-session',
+        expiresAt: '2099-01-01T00:00:00Z',
+        cleanup: true,
+      },
+    },
+    {
+      label: 'cleanup underscore top-level session marker',
+      session: {
+        id: 'session_123',
+        status: 'active',
+        type: 'production-auth-session',
+        expiresAt: '2099-01-01T00:00:00Z',
+        cleaned_up: true,
+      },
+    },
+    {
       label: 'rotated top-level session',
       session: {
         id: 'session_123',
@@ -8339,6 +8369,36 @@ test('packaged release verifier readiness helper fails closed when signed prefli
         status: 'cleaned_up',
         type: 'production-auth-session',
         expiresAt: '2099-01-01T00:00:00Z',
+      },
+    },
+    {
+      label: 'cleaned-up top-level session marker',
+      session: {
+        id: 'session_123',
+        status: 'active',
+        type: 'production-auth-session',
+        expiresAt: '2099-01-01T00:00:00Z',
+        cleanedUp: true,
+      },
+    },
+    {
+      label: 'cleanup alias top-level session marker',
+      session: {
+        id: 'session_123',
+        status: 'active',
+        type: 'production-auth-session',
+        expiresAt: '2099-01-01T00:00:00Z',
+        cleanup: true,
+      },
+    },
+    {
+      label: 'cleanup underscore top-level session marker',
+      session: {
+        id: 'session_123',
+        status: 'active',
+        type: 'production-auth-session',
+        expiresAt: '2099-01-01T00:00:00Z',
+        cleaned_up: true,
       },
     },
     {
@@ -11345,6 +11405,36 @@ test('packaged production plugin smoke readiness helper fails closed when signed
       },
     },
     {
+      label: 'cleaned-up top-level session marker',
+      session: {
+        id: 'session_123',
+        status: 'active',
+        type: 'production-auth-session',
+        expiresAt: '2099-01-01T00:00:00Z',
+        cleanedUp: true,
+      },
+    },
+    {
+      label: 'cleanup alias top-level session marker',
+      session: {
+        id: 'session_123',
+        status: 'active',
+        type: 'production-auth-session',
+        expiresAt: '2099-01-01T00:00:00Z',
+        cleanup: true,
+      },
+    },
+    {
+      label: 'cleanup underscore top-level session marker',
+      session: {
+        id: 'session_123',
+        status: 'active',
+        type: 'production-auth-session',
+        expiresAt: '2099-01-01T00:00:00Z',
+        cleaned_up: true,
+      },
+    },
+    {
       label: 'rotated top-level session',
       session: {
         id: 'session_123',
@@ -13573,6 +13663,36 @@ test('packaged production plugin smoke readiness helper fails closed when signed
         status: 'cleaned_up',
         type: 'production-auth-session',
         expiresAt: '2099-01-01T00:00:00Z',
+      },
+    },
+    {
+      label: 'cleaned-up top-level session marker',
+      session: {
+        id: 'session_123',
+        status: 'active',
+        type: 'production-auth-session',
+        expiresAt: '2099-01-01T00:00:00Z',
+        cleanedUp: true,
+      },
+    },
+    {
+      label: 'cleanup alias top-level session marker',
+      session: {
+        id: 'session_123',
+        status: 'active',
+        type: 'production-auth-session',
+        expiresAt: '2099-01-01T00:00:00Z',
+        cleanup: true,
+      },
+    },
+    {
+      label: 'cleanup underscore top-level session marker',
+      session: {
+        id: 'session_123',
+        status: 'active',
+        type: 'production-auth-session',
+        expiresAt: '2099-01-01T00:00:00Z',
+        cleaned_up: true,
       },
     },
     {
