@@ -608,6 +608,18 @@ test('production recovery journal inspection surface helper fails closed when le
   divergentConsumedClaimId.journal.consumedClaimId = 'fabricated-production-claim-id';
   assert.equal(productionRecoveryJournalInspectionSurfaceIsPresent(divergentConsumedClaimId), false);
 
+  const inheritedConsumedClaimMarkers = clone(inspection);
+  inheritedConsumedClaimMarkers.journal = Object.assign(
+    Object.create({
+      consumedClaimId: inheritedConsumedClaimMarkers.journal.consumedClaimId,
+      consumedClaimHash: inheritedConsumedClaimMarkers.journal.consumedClaimHash,
+    }),
+    inheritedConsumedClaimMarkers.journal,
+  );
+  delete inheritedConsumedClaimMarkers.journal.consumedClaimId;
+  delete inheritedConsumedClaimMarkers.journal.consumedClaimHash;
+  assert.equal(productionRecoveryJournalInspectionSurfaceIsPresent(inheritedConsumedClaimMarkers), false);
+
   const divergentActiveClaimHash = clone(inspection);
   const fabricatedActiveClaimHash = recoveryClaimHash('fabricated-production-claim-id');
   divergentActiveClaimHash.claim.activeClaimHash = fabricatedActiveClaimHash;

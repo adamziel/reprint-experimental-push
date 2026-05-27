@@ -187,6 +187,8 @@ export function productionRecoveryJournalInspectionSurfaceIsPresent(inspection) 
     'claim',
     'claimId',
     'claimHash',
+    'consumedClaimId',
+    'consumedClaimHash',
     'writerLease',
   ])
     && journal?.kind === PRODUCTION_RECOVERY_JOURNAL_KIND
