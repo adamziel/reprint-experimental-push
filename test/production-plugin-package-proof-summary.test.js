@@ -1032,6 +1032,52 @@ test('plugin-driver mode proof resolver reuses an attached top-level modeProof a
   assert.deepEqual(modeProof?.requestedBundles, ['driverReleaseProof']);
 });
 
+test('plugin-driver mode proof resolver repairs a matching top-level modeProof copy from the nested canonical cache', () => {
+  const nestedModeProof = {
+    mode: 'driverReleaseProof',
+    canonicalMode: 'driver-release-proof',
+    proofKey: 'driverReleaseProof',
+    legacyProofKey: 'driverReleaseProof',
+    requestedScenarios: ['driverReleaseProof'],
+    requestedBundles: ['driverReleaseProof'],
+    selectedScenarios: Array.from(new Set(bundleSummaryGroups['driver-release-proof'])).sort(),
+    requestedBundleStatus: 'passed',
+    marker: 'nested-canonical',
+  };
+
+  const rawSummary = {
+    modeProof: {
+      ...nestedModeProof,
+      marker: 'top-level-copy',
+    },
+    pluginDriverProof: {
+      mode: 'driverReleaseProof',
+      canonicalMode: 'driver-release-proof',
+      requestedScenarios: ['driverReleaseProof'],
+      requestedBundles: ['driverReleaseProof'],
+      selectedScenarios: Array.from(new Set(bundleSummaryGroups['driver-release-proof'])).sort(),
+      modeProof: nestedModeProof,
+    },
+    requestedScenarios: ['driverReleaseProof'],
+    requestedBundles: ['driverReleaseProof'],
+    selectedScenarios: Array.from(new Set(bundleSummaryGroups['driver-release-proof'])).sort(),
+    driverReleaseProof: {
+      status: 'passed',
+    },
+  };
+
+  const modeProof = resolveProductionPluginPackageModeProof(rawSummary, 'driverReleaseProofOnly', {
+    requestedScenarios: ['driverReleaseProof'],
+    selectedScenarios: new Set(bundleSummaryGroups['driver-release-proof']),
+    resolvedMode: 'driverReleaseProofOnly',
+    canonicalMode: 'driver-release-proof',
+  });
+
+  assert.equal(modeProof, nestedModeProof);
+  assert.equal(rawSummary.modeProof, nestedModeProof);
+  assert.equal(rawSummary.modeProof?.marker, 'nested-canonical');
+});
+
 test('plugin-driver proof summary attach helper preserves an unrelated top-level modeProof cache', () => {
   const unrelatedModeProof = {
     mode: 'releaseProof',

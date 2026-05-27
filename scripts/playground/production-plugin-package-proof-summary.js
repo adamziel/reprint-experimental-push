@@ -837,6 +837,7 @@ export function resolveProductionPluginPackageModeProof(summary, modeValue, opti
     : null;
 
   const attachedModeProof = summary?.modeProof;
+  const attachedPluginDriverModeProof = summary?.pluginDriverProof?.modeProof;
   if (
     modeProofMatchesResolvedKey(attachedModeProof, resolved)
     && (
@@ -844,10 +845,29 @@ export function resolveProductionPluginPackageModeProof(summary, modeValue, opti
       || modeProofMatchesResolvedContext(summary, attachedModeProof, resolvedModeProofOptions)
     )
   ) {
+    if (
+      modeProofMatchesResolvedKey(attachedPluginDriverModeProof, resolved)
+      && (
+        resolvedModeProofOptions === null
+        || modeProofMatchesResolvedContext(
+          summary?.pluginDriverProof,
+          attachedPluginDriverModeProof,
+          resolvedModeProofOptions,
+        )
+      )
+    ) {
+      if (
+        summary
+        && typeof summary === 'object'
+        && shouldSyncTopLevelModeProof(summary.modeProof, attachedPluginDriverModeProof)
+      ) {
+        summary.modeProof = attachedPluginDriverModeProof;
+      }
+      return attachedPluginDriverModeProof;
+    }
     return attachedModeProof;
   }
 
-  const attachedPluginDriverModeProof = summary?.pluginDriverProof?.modeProof;
   if (
     modeProofMatchesResolvedKey(attachedPluginDriverModeProof, resolved)
     && (
