@@ -5286,6 +5286,7 @@ test('production recovery journal compatibility overload fails closed when the c
   }, {
     name: 'UnsupportedProductionRecoveryJournalError',
     code: 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL',
+    message: 'Production recovery journal consumption requires the persisted owned remote artifact path.',
   });
 });
 
