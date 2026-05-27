@@ -1488,6 +1488,7 @@ test('guarded benchmark surfaces plugin-update recovery blockers at runtime', ()
   assert.deepEqual(
     details.rejectedFastPaths
       .filter((entry) => [
+        'cached-dependency-graph-and-remote-index-cursor-skips-plugin-update-row-batch-revalidation-after-pause',
         'compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-activation-after-pause-and-backpressure',
         'compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-backpressure-after-pause',
         'compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-batch-sizing',
@@ -1505,6 +1506,7 @@ test('guarded benchmark surfaces plugin-update recovery blockers at runtime', ()
         'compressed-remote-index-and-cached-row-receipts-skips-plugin-update-row-batching-after-pause',
         'compressed-remote-index-and-cached-row-receipts-skips-plugin-update-row-preconditions-after-pause',
         'compressed-remote-index-and-parallel-row-batches-skips-plugin-update-backpressure-after-pause',
+        'reuse-canonical-per-kind-budgets-to-skip-plugin-update-row-batch-revalidation-after-pause',
       ].includes(entry.id))
       .map((entry) => ({
         id: entry.id,
@@ -1513,6 +1515,19 @@ test('guarded benchmark surfaces plugin-update recovery blockers at runtime', ()
       }))
       .sort((left, right) => left.id.localeCompare(right.id)),
     [
+      {
+        id: 'cached-dependency-graph-and-remote-index-cursor-skips-plugin-update-row-batch-revalidation-after-pause',
+        rejectedGate: 'recovery',
+        blockerRefs: [
+          'production-atomic-group-commit-not-measured',
+          'production-row-batch-executor-not-measured',
+          'production-row-batch-executor-measured-not-proven',
+          'queue-pause-without-resource-headroom-safe-receipt-cursor-backpressure',
+          'queue-pause-without-resource-headroom-safe-receipt-cursor-slack',
+          'queue-pause-without-consistent-receipt-cursor-slack',
+          'queue-pause-without-memory-safe-receipt-cursor-slack',
+        ],
+      },
       {
         id: 'compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-activation-after-pause-and-backpressure',
         rejectedGate: 'group',
@@ -1683,12 +1698,22 @@ test('guarded benchmark surfaces plugin-update recovery blockers at runtime', ()
           'queue-pause-without-memory-safe-receipt-cursor-slack',
         ],
       },
+      {
+        id: 'reuse-canonical-per-kind-budgets-to-skip-plugin-update-row-batch-revalidation-after-pause',
+        rejectedGate: 'recovery',
+        blockerRefs: [
+          'production-atomic-group-commit-not-measured',
+          'production-parallelism-limits-not-visible',
+          'production-row-batch-executor-not-measured',
+          'production-row-batch-executor-measured-not-proven',
+        ],
+      },
     ].sort((left, right) => left.id.localeCompare(right.id)),
   );
 
   assert.equal(
     details.rejectedFastPaths.filter((entry) => entry.id.includes('plugin-update')).length,
-    19,
+    24,
   );
 });
 
@@ -11880,6 +11905,16 @@ test('guarded benchmark carries direct aligned backpressure proof blockers into 
           'queue-pause-without-resource-headroom-safe-receipt-cursor-slack',
           'queue-pause-without-consistent-receipt-cursor-slack',
           'queue-pause-without-memory-safe-receipt-cursor-slack',
+        ],
+      },
+      {
+        id: 'reuse-canonical-per-kind-budgets-to-skip-plugin-update-row-batch-revalidation-after-pause',
+        rejectedGate: 'recovery',
+        blockerRefs: [
+          'production-atomic-group-commit-not-measured',
+          'production-parallelism-limits-not-visible',
+          'production-row-batch-executor-not-measured',
+          'production-row-batch-executor-measured-not-proven',
         ],
       },
     ],

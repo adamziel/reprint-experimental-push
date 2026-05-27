@@ -137,6 +137,18 @@ const ROLLOUT_REJECTED_FAST_PATH_SPECS = Object.freeze([
     ]),
   }),
   Object.freeze({
+    id: 'cached-dependency-graph-and-remote-index-cursor-skips-plugin-update-row-batch-revalidation-after-pause',
+    blockerRefs: Object.freeze([
+      'production-atomic-group-commit-not-measured',
+      'production-row-batch-executor-not-measured',
+      'production-row-batch-executor-measured-not-proven',
+      'queue-pause-without-resource-headroom-safe-receipt-cursor-backpressure',
+      'queue-pause-without-resource-headroom-safe-receipt-cursor-slack',
+      'queue-pause-without-consistent-receipt-cursor-slack',
+      'queue-pause-without-memory-safe-receipt-cursor-slack',
+    ]),
+  }),
+  Object.freeze({
     id: 'compressed-remote-index-and-cached-row-batch-receipts-skips-release-bundle-commit-after-pause',
     blockerRefs: Object.freeze([
       'production-atomic-group-commit-not-measured',
@@ -439,6 +451,23 @@ const ROLLOUT_REJECTED_FAST_PATH_SPECS = Object.freeze([
       'production-atomic-group-commit-not-measured',
       'production-row-batch-executor-not-measured',
       'production-row-batch-executor-measured-not-proven',
+    ]),
+  }),
+  Object.freeze({
+    id: 'reuse-canonical-per-kind-budgets-to-skip-plugin-update-row-batch-revalidation-after-pause',
+    blockerRefs: Object.freeze([
+      'production-atomic-group-commit-not-measured',
+      'production-parallelism-limits-not-measured',
+      'production-parallelism-limits-not-integral',
+      'production-parallelism-limits-not-canonical',
+      'production-parallelism-limits-not-visible',
+      'production-parallelism-limits-visible-without-positive',
+      'production-parallelism-limits-visible-without-measurement',
+      'production-parallelism-limits-visible-without-integral',
+      'production-parallelism-limits-visible-without-canonical',
+      'production-row-batch-executor-not-measured',
+      'production-row-batch-executor-measured-not-proven',
+      'production-row-batch-executor-visible-without-parallelism-limits',
     ]),
   }),
   Object.freeze({
