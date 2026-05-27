@@ -6282,6 +6282,47 @@ test('checked release auth/session lifecycle summary fails closed when a journal
   );
 });
 
+test('checked release auth/session lifecycle summary fails closed when a journal read is revoked', () => {
+  const summary = summarizeProductionAuthSessionLifecycleTrace([
+    {
+      step: 'preflight',
+      id: 'session-01',
+      type: 'production-auth-session',
+      status: 'active',
+      expiresAt: '2099-01-01T00:00:00Z',
+      authUser: 'reprint_push_admin',
+      expired: false,
+      revoked: false,
+      cleanedUp: false,
+      rotated: false,
+      preserved: false,
+    },
+    {
+      step: 'journal',
+      id: 'session-01',
+      type: 'production-auth-session',
+      status: 'revoked',
+      expiresAt: '2099-01-01T00:00:00Z',
+      authUser: 'reprint_push_admin',
+      expired: false,
+      revoked: true,
+      cleanedUp: false,
+      rotated: false,
+      preserved: true,
+    },
+  ]);
+
+  assert.deepEqual(
+    evaluateCheckedReleaseAuthSessionLifecycleSummary(summary),
+    {
+      ok: false,
+      field: 'auth.session.status',
+      required: 'unrevoked',
+      observed: 'revoked',
+    },
+  );
+});
+
 test('checked release auth/session lifecycle summary fails closed when a replay read is rotated', () => {
   const summary = summarizeProductionAuthSessionLifecycleTrace([
     {
@@ -6319,6 +6360,47 @@ test('checked release auth/session lifecycle summary fails closed when a replay 
       field: 'auth.session.status',
       required: 'preserved read',
       observed: 'rotated',
+    },
+  );
+});
+
+test('checked release auth/session lifecycle summary fails closed when a replay read is expired', () => {
+  const summary = summarizeProductionAuthSessionLifecycleTrace([
+    {
+      step: 'preflight',
+      id: 'session-01',
+      type: 'production-auth-session',
+      status: 'active',
+      expiresAt: '2099-01-01T00:00:00Z',
+      authUser: 'reprint_push_admin',
+      expired: false,
+      revoked: false,
+      cleanedUp: false,
+      rotated: false,
+      preserved: false,
+    },
+    {
+      step: 'replay',
+      id: 'session-01',
+      type: 'production-auth-session',
+      status: 'expired',
+      expiresAt: '2099-01-01T00:00:00Z',
+      authUser: 'reprint_push_admin',
+      expired: false,
+      revoked: false,
+      cleanedUp: false,
+      rotated: false,
+      preserved: true,
+    },
+  ]);
+
+  assert.deepEqual(
+    evaluateCheckedReleaseAuthSessionLifecycleSummary(summary),
+    {
+      ok: false,
+      field: 'auth.session.status',
+      required: 'unexpired',
+      observed: 'expired',
     },
   );
 });
