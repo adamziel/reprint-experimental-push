@@ -15827,6 +15827,121 @@ test('allows existing post and postmeta rows to reference the same post created 
   assert.equal(result.site.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin drift */');
 });
 
+test('allows existing post and postmeta rows to reference the same post created by the plan while preserving a matching independent edit and remote-only plugin changes', () => {
+  const parentResourceKey = 'row:["wp_posts","ID:99"]';
+  const childResourceKey = 'row:["wp_posts","ID:10"]';
+  const postmetaResourceKey = 'row:["wp_postmeta","meta_id:55"]';
+  const matchingEditResourceKey = 'file:readme.html';
+  const base = baseSite();
+  base.files[matchingEditResourceKey.slice('file:'.length)] = '<h1>Base shared edit</h1>';
+  base.db.wp_posts['ID:10'] = {
+    ID: 10,
+    post_title: 'Base child post',
+    post_content: 'Base child body',
+    post_status: 'publish',
+    post_parent: 0,
+  };
+  base.db.wp_postmeta = {
+    'meta_id:55': {
+      meta_id: 55,
+      post_id: 0,
+      meta_key: '_shared_post_note',
+      meta_value: 'base existing shared post note',
+    },
+  };
+
+  const local = baseSite();
+  local.files[matchingEditResourceKey.slice('file:'.length)] = '<h1>Shared matching edit</h1>';
+  local.db.wp_posts['ID:10'] = {
+    ID: 10,
+    post_title: 'Local child post',
+    post_content: 'Local child body',
+    post_status: 'publish',
+    post_parent: 99,
+  };
+  local.db.wp_posts['ID:99'] = {
+    ID: 99,
+    post_title: 'Local shared parent post',
+    post_content: 'Local shared parent body',
+    post_status: 'publish',
+    post_type: 'post',
+  };
+  local.db.wp_postmeta = {
+    'meta_id:55': {
+      meta_id: 55,
+      post_id: 99,
+      meta_key: '_shared_post_note',
+      meta_value: 'local existing shared post note',
+    },
+  };
+
+  const remote = baseSite();
+  remote.files[matchingEditResourceKey.slice('file:'.length)] = '<h1>Shared matching edit</h1>';
+  remote.db.wp_posts['ID:10'] = JSON.parse(JSON.stringify(base.db.wp_posts['ID:10']));
+  remote.db.wp_postmeta = JSON.parse(JSON.stringify(base.db.wp_postmeta));
+  remote.plugins.forms.description = 'remote-only plugin changes';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin changes */';
+
+  const plan = planFor(base, local, remote);
+  const parentMutation = mutationFor(plan, parentResourceKey);
+  const childMutation = mutationFor(plan, childResourceKey);
+  const postmetaMutation = mutationFor(plan, postmetaResourceKey);
+  const childReference = childMutation.wordpressGraphReferences.find((reference) =>
+    reference.relationshipType === 'post-parent');
+  const postmetaReference = postmetaMutation.wordpressGraphReferences.find((reference) =>
+    reference.relationshipType === 'postmeta-post');
+  const matchingEdit = decisionFor(plan, matchingEditResourceKey);
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.blockers, 0);
+  assert.equal(parentMutation.changeKind, 'create');
+  assert.equal(childMutation.changeKind, 'update');
+  assert.equal(postmetaMutation.changeKind, 'update');
+  assert.ok(
+    plan.mutations.indexOf(parentMutation) < plan.mutations.indexOf(childMutation),
+    'parent create must be ordered before dependent child update',
+  );
+  assert.ok(
+    plan.mutations.indexOf(parentMutation) < plan.mutations.indexOf(postmetaMutation),
+    'parent create must be ordered before dependent existing postmeta update',
+  );
+  assert.deepEqual(childMutation.dependsOnMutationIds, [parentMutation.id]);
+  assert.deepEqual(postmetaMutation.dependsOnMutationIds, [parentMutation.id]);
+  assert.equal(plan.summary.graphDependencies, 2);
+  assert.deepEqual(
+    plan.graphDependencies.map((dependency) => [dependency.relationshipType, dependency.sourceResourceKey, dependency.targetResourceKey]),
+    [
+      ['postmeta-post', postmetaResourceKey, parentResourceKey],
+      ['post-parent', childResourceKey, parentResourceKey],
+    ],
+  );
+  assert.equal(childReference.relationshipKey, 'wp_posts.post_parent');
+  assert.equal(childReference.relationshipType, 'post-parent');
+  assert.equal(childReference.targetResourceKey, parentResourceKey);
+  assert.equal(childReference.resolutionPolicy, 'same-plan-local-create');
+  assert.equal(postmetaReference.relationshipKey, 'wp_postmeta.post_id');
+  assert.equal(postmetaReference.relationshipType, 'postmeta-post');
+  assert.equal(postmetaReference.targetResourceKey, parentResourceKey);
+  assert.equal(postmetaReference.resolutionPolicy, 'same-plan-local-create');
+  assert.equal(matchingEdit.decision, 'already-in-sync');
+  assert.equal(matchingEdit.change.localChange, 'update');
+  assert.equal(matchingEdit.change.remoteChange, 'update');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+
+  const result = applyPlan(remote, plan);
+  assert.equal(result.site.files[matchingEditResourceKey.slice('file:'.length)], '<h1>Shared matching edit</h1>');
+  assert.equal(result.site.db.wp_posts['ID:99'].post_title, 'Local shared parent post');
+  assert.equal(result.site.db.wp_posts['ID:10'].post_parent, 99);
+  assert.equal(result.site.db.wp_posts['ID:10'].post_title, 'Local child post');
+  assert.equal(result.site.db.wp_postmeta['meta_id:55'].post_id, 99);
+  assert.equal(result.site.db.wp_postmeta['meta_id:55'].meta_value, 'local existing shared post note');
+  assert.equal(result.site.plugins.forms.description, 'remote-only plugin changes');
+  assert.equal(result.site.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin changes */');
+});
+
 test('allows existing post postmeta and term-relationship rows to share same-plan post and taxonomy creates while preserving remote-only plugin drift', () => {
   const parentResourceKey = 'row:["wp_posts","ID:99"]';
   const childResourceKey = 'row:["wp_posts","ID:10"]';
