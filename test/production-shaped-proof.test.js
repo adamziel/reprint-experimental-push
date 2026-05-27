@@ -5328,6 +5328,99 @@ test('shared lab waitForServer fails with bounded timeout diagnostics after cons
   }
 });
 
+test('shared lab waitForServer fails with bounded timeout diagnostics when snapshot probes time out after global readiness', async () => {
+  let indexCalls = 0;
+  let snapshotCalls = 0;
+  const sockets = new Set();
+  const server = createServer((request, response) => {
+    if (request.url === '/wp-json/') {
+      indexCalls += 1;
+      response.statusCode = 200;
+      response.setHeader('content-type', 'application/json; charset=utf-8');
+      response.end(JSON.stringify({
+        name: 'Reprint Playground',
+      }));
+      return;
+    }
+
+    if (request.url === '/wp-json/reprint-push-lab/v1/snapshot') {
+      snapshotCalls += 1;
+      // Intentionally never respond so fetchWithTimeout() exercises the
+      // global-ready snapshot timeout path.
+      return;
+    }
+
+    response.statusCode = 404;
+    response.end('not found');
+  });
+  server.on('connection', (socket) => {
+    sockets.add(socket);
+    socket.on('close', () => {
+      sockets.delete(socket);
+    });
+  });
+
+  await new Promise((resolve, reject) => {
+    server.listen(0, '127.0.0.1', (error) => {
+      if (error) {
+        reject(error);
+        return;
+      }
+      resolve();
+    });
+  });
+
+  const address = server.address();
+  assert.ok(address && typeof address === 'object' && typeof address.port === 'number');
+
+  const child = {
+    exitCode: null,
+    signalCode: null,
+    pid: null,
+    kill() {
+      this.exitCode = 1;
+      return true;
+    },
+  };
+
+  try {
+    await assert.rejects(
+      waitForServer(
+        child,
+        `http://127.0.0.1:${address.port}`,
+        () => '',
+      ),
+      (error) => {
+        assert.match(error.message, /Playground lab snapshot probe timed out after global WordPress readiness HTTP 200 after 5 consecutive timeouts/);
+        assert.equal(error.context?.timeoutProbeCount, maxSnapshotTimeoutFallbackProbes);
+        assert.equal(error.context?.timeoutProbeLimit, maxSnapshotTimeoutFallbackProbes);
+        assert.equal(error.context?.globalWordPressReady, true);
+        assert.equal(error.context?.snapshotProbeTimedOut, true);
+        assert.equal(error.context?.childPid ?? null, null);
+        assert.equal(error.lastProbe?.route, '/wp-json/');
+        assert.equal(error.lastProbe?.status, 200);
+        return true;
+      },
+    );
+  } finally {
+    for (const socket of sockets) {
+      socket.destroy();
+    }
+    await new Promise((resolve, reject) => {
+      server.close((error) => {
+        if (error) {
+          reject(error);
+          return;
+        }
+        resolve();
+      });
+    });
+  }
+
+  assert.equal(indexCalls, maxSnapshotTimeoutFallbackProbes);
+  assert.equal(snapshotCalls, maxSnapshotTimeoutFallbackProbes);
+});
+
 test('shared lab waitForServer fails closed when the Playground child exits before readiness probing completes', async () => {
   await assert.rejects(
     waitForServer(
@@ -6835,15 +6928,46 @@ async function waitForServer(child, baseUrl, getLogs) {
       const readinessRetryable = labReadinessBodyRetryable(response.status, responseBody);
       if (response.status === 200 && !readinessRetryable) {
         notReadyProbeCount = 0;
+        await response.arrayBuffer();
+        let snapshot;
+        try {
+          snapshot = await fetchWithTimeout(`${baseUrl}/wp-json/reprint-push-lab/v1/snapshot`, {
+            headers: {
+              Authorization: `Basic ${Buffer.from(`${liveCredentials.username}:${liveCredentials.password}`).toString('base64')}`,
+              connection: 'close',
+            },
+          });
+        } catch (error) {
+          if (labReadinessProbeTimedOut(error)) {
+            lastError = error;
+            snapshotTimeoutProbeCount = labNextTimeoutProbeCount(snapshotTimeoutProbeCount, error);
+            lastSnapshotTimeoutContext = {
+              timeoutProbeCount: snapshotTimeoutProbeCount,
+              globalWordPressReady: true,
+            };
+            if (labNotReadyProbeLimitReached(snapshotTimeoutProbeCount, maxSnapshotTimeoutFallbackProbes)) {
+              await throwPlaygroundReadinessFailure(
+                child,
+                `Playground lab snapshot probe timed out after global WordPress readiness HTTP ${response.status} after ${snapshotTimeoutProbeCount} consecutive timeout${snapshotTimeoutProbeCount === 1 ? '' : 's'}`,
+                lastError,
+                lastProbes,
+                getLogs(),
+                {
+                  childPid: child.pid ?? null,
+                  timeoutProbeCount: snapshotTimeoutProbeCount,
+                  timeoutProbeLimit: maxSnapshotTimeoutFallbackProbes,
+                  globalWordPressReady: true,
+                  snapshotProbeTimedOut: true,
+                },
+              );
+            }
+            await new Promise((resolve) => setTimeout(resolve, readinessProbeIntervalMs));
+            continue;
+          }
+          throw error;
+        }
         snapshotTimeoutProbeCount = 0;
         lastSnapshotTimeoutContext = null;
-        await response.arrayBuffer();
-        const snapshot = await fetchWithTimeout(`${baseUrl}/wp-json/reprint-push-lab/v1/snapshot`, {
-          headers: {
-            Authorization: `Basic ${Buffer.from(`${liveCredentials.username}:${liveCredentials.password}`).toString('base64')}`,
-            connection: 'close',
-          },
-        });
         timeoutProbeCount = 0;
         const snapshotBody = await snapshot.clone().text().catch(() => '');
         lastProbes.push({

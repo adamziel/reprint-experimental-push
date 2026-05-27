@@ -3250,14 +3250,46 @@ async function waitForServer(child, baseUrl, getLogs) {
       const readinessRetryable = labReadinessBodyRetryable(response.status, responseBody);
       if (response.status === 200 && !readinessRetryable) {
         notReadyProbeCount = 0;
+        let snapshot;
+        let snapshotBody;
+        try {
+          ({ response: snapshot, bodyText: snapshotBody } = await fetchTextWithTimeout(`${baseUrl}/wp-json/reprint-push-lab/v1/snapshot`, {
+            headers: {
+              Authorization: `Basic ${Buffer.from(`${credentials.username}:${credentials.password}`).toString('base64')}`,
+              connection: 'close',
+            },
+          }, serverFetchTimeoutMs, child));
+        } catch (error) {
+          if (labReadinessProbeTimedOut(error)) {
+            lastError = error;
+            snapshotTimeoutProbeCount = labNextTimeoutProbeCount(snapshotTimeoutProbeCount, error);
+            lastSnapshotTimeoutContext = {
+              timeoutProbeCount: snapshotTimeoutProbeCount,
+              globalWordPressReady: true,
+            };
+            if (labNotReadyProbeLimitReached(snapshotTimeoutProbeCount, maxSnapshotTimeoutFallbackProbes)) {
+              await throwPlaygroundReadinessFailure(
+                child,
+                `Playground lab snapshot probe timed out after global WordPress readiness HTTP ${response.status} after ${snapshotTimeoutProbeCount} consecutive timeout${snapshotTimeoutProbeCount === 1 ? '' : 's'}`,
+                lastError,
+                lastProbes,
+                getLogs(),
+                {
+                  childPid: child.pid ?? null,
+                  timeoutProbeCount: snapshotTimeoutProbeCount,
+                  timeoutProbeLimit: maxSnapshotTimeoutFallbackProbes,
+                  globalWordPressReady: true,
+                  snapshotProbeTimedOut: true,
+                },
+              );
+            }
+            await sleepUnlessChildExit(readinessProbeIntervalMs, child);
+            continue;
+          }
+          throw error;
+        }
         snapshotTimeoutProbeCount = 0;
         lastSnapshotTimeoutContext = null;
-        const { response: snapshot, bodyText: snapshotBody } = await fetchTextWithTimeout(`${baseUrl}/wp-json/reprint-push-lab/v1/snapshot`, {
-          headers: {
-            Authorization: `Basic ${Buffer.from(`${credentials.username}:${credentials.password}`).toString('base64')}`,
-            connection: 'close',
-          },
-        }, serverFetchTimeoutMs, child);
         timeoutProbeCount = 0;
         const snapshotPreview = snapshotBody.slice(0, 500);
         lastProbes.push({
