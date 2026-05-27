@@ -1908,6 +1908,7 @@ function summarizeResponse(response) {
     receiptHash: body.receipt?.receiptHash,
     responseSchemaVersion: body.responseSchemaVersion,
     authUser: body.auth?.identity?.userLogin,
+    ...summarizeAuthIdentityCapabilityFields(body.auth?.identity),
     authSessionId: body.auth?.session?.id,
     sessionType: body.auth?.session?.type,
     sessionStatus: body.auth?.session?.status,
@@ -2137,6 +2138,7 @@ function summarizeAuthSessionLifecycle(auth, now = new Date()) {
     ? auth.identity.userLogin.trim()
     : '';
   const authUserId = normalizeObservedAuthIdentityUserId(auth?.identity?.userId);
+  const authCapabilities = summarizeAuthIdentityCapabilities(auth?.identity);
   const invalidLifecycleFlag = resolveInvalidProductionAuthSessionLifecycleFlag(session);
   const invalidIdentityField = resolveInvalidProductionAuthSessionIdentityField(session);
   const unrevokedObservation = (
@@ -2181,6 +2183,7 @@ function summarizeAuthSessionLifecycle(auth, now = new Date()) {
     preserved: session.preserved === true ? true : session.preserved === false ? false : null,
     ...(authUser ? { authUser } : {}),
     ...(authUserId ? { authUserId } : {}),
+    ...(Object.keys(authCapabilities).length > 0 ? { authCapabilities } : {}),
   };
 }
 
@@ -2209,6 +2212,7 @@ function recordAuthSessionLifecycle(summary, step, auth, now = new Date()) {
     expiresAt: observation?.expiresAt || null,
     ...(observation?.authUser ? { authUser: observation.authUser } : {}),
     ...(observation?.authUserId ? { authUserId: observation.authUserId } : {}),
+    ...(observation?.authCapabilities ? { authCapabilities: observation.authCapabilities } : {}),
     expired: Boolean(observation?.expired),
     revoked: Boolean(observation?.revoked),
     cleanedUp: Boolean(observation?.cleanedUp),
@@ -2330,6 +2334,7 @@ function summarizeDbJournal(response) {
     writerLease: summarizeDbJournalWriterLease(response.body?.dbJournal?.writerLease),
     leaseFence: summarizeDbJournalLeaseFence(response.body?.dbJournal),
     authUser: response.body?.auth?.identity?.userLogin,
+    ...summarizeAuthIdentityCapabilityFields(response.body?.auth?.identity),
     authSessionId: response.body?.auth?.session?.id,
     sessionType: response.body?.auth?.session?.type,
     sessionStatus: response.body?.auth?.session?.status,
@@ -2348,6 +2353,24 @@ export function dbJournalProofIsAcceptable(dbJournal, options = {}) {
     && dbJournalOwnershipIsTrusted(dbJournal?.ownership, { requireCheckedBoundary })
     && (!requireCheckedBoundary || checkedDurableJournalBoundarySatisfied(dbJournal))
     && dbJournalLeaseFenceIsTrusted(dbJournal?.leaseFence, options);
+}
+
+function summarizeAuthIdentityCapabilities(identity) {
+  const capabilities = identity?.capabilities;
+  if (!capabilities || typeof capabilities !== 'object' || Array.isArray(capabilities)) {
+    return {};
+  }
+
+  return {
+    ...(Object.prototype.hasOwnProperty.call(capabilities, 'manage_options')
+      ? { manage_options: capabilities.manage_options === true }
+      : {}),
+  };
+}
+
+function summarizeAuthIdentityCapabilityFields(identity) {
+  const authCapabilities = summarizeAuthIdentityCapabilities(identity);
+  return Object.keys(authCapabilities).length > 0 ? { authCapabilities } : {};
 }
 
 function dbJournalCheckedBoundaryIsAcceptable(dbJournal, options = {}) {

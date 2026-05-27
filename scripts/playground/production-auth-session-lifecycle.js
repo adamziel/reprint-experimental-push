@@ -506,6 +506,9 @@ export function summarizeProductionAuthSessionLifecycleTrace(trace) {
         ...(Number.isInteger(entry.authUserId) && entry.authUserId > 0
           ? { authUserId: entry.authUserId }
           : {}),
+        ...(entry.authCapabilities && typeof entry.authCapabilities === 'object' && !Array.isArray(entry.authCapabilities)
+          ? { authCapabilities: normalizeAuthSessionObservationCapabilities(entry.authCapabilities) }
+          : {}),
         ...(invalidLifecycleFlag
           ? { invalidLifecycleFlag }
           : {}),
@@ -695,6 +698,14 @@ function resolveAuthSessionIdentitySummary(observation) {
     userLogin: authUser,
     userIdMissing: !authUserId,
     userId: authUserId,
+  };
+}
+
+function normalizeAuthSessionObservationCapabilities(capabilities) {
+  return {
+    ...(Object.prototype.hasOwnProperty.call(capabilities, 'manage_options')
+      ? { manage_options: capabilities.manage_options === true }
+      : {}),
   };
 }
 

@@ -58,7 +58,10 @@ import {
   shouldRequestCheckedLivePackagedBoundary,
   shouldUseProductionSnapshotExport,
 } from '../scripts/playground/production-shaped-live-release-verify-lib.js';
-import { resolveSuccessfulReleaseBoundary } from '../scripts/playground/production-shaped-release-verify.mjs';
+import {
+  resolveAuthSessionBoundaryProof,
+  resolveSuccessfulReleaseBoundary,
+} from '../scripts/playground/production-shaped-release-verify.mjs';
 import {
   evaluateCheckedReleaseAuthSessionLifecycleSummary,
   evaluateProductionAuthSessionLifecycle,
@@ -946,6 +949,156 @@ test('production-shaped release verify command accepts the auth-session source c
   assert.doesNotMatch(proof.stdout, /"observed": "invalid-production-auth-session-source"/);
   assert.match(proof.stdout, /"liveAuthSessionSource": \{[\s\S]*"observed": "unreachable-live-source"/);
   assert.match(proof.stdout, /"liveSource": \{\s*"url": "http:\/\/127\.0\.0\.1:65535",\s*"verdict": "PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED",\s*"error": "fetch failed"\s*\}/);
+});
+
+test('production-shaped release verify requires an auth/session source command for checked live auth', () => {
+  const proof = spawnProductionShapedReleaseVerifySync(
+    {
+      ...process.env,
+      REPRINT_PUSH_SOURCE_URL: 'http://127.0.0.1:65535',
+      REPRINT_PUSH_REMOTE_URL: 'http://127.0.0.1:65535',
+      REPRINT_PUSH_USERNAME: liveCredentials.username,
+      REPRINT_PUSH_APPLICATION_PASSWORD: liveCredentials.password,
+      REPRINT_PUSH_REQUIRE_PRODUCTION_AUTH_SESSION: '1',
+      NODE_NO_WARNINGS: '1',
+    },
+    {
+      timeout: releaseVerifyInnerTimeoutMs,
+      killSignal: proofSubprocessKillSignal,
+    },
+    'missing auth/session source command release verify',
+  );
+
+  assertSpawnCompletedWithoutSpawnError(
+    proof,
+    'missing auth/session source command release verify',
+    releaseVerifyInnerTimeoutMs,
+  );
+  assert.equal(proof.status, 1, proof.stderr);
+  const summary = JSON.parse(proof.stdout);
+  assert.equal(summary.releaseProof?.code, 'PRODUCTION_AUTH_SESSION_BOUNDARY_REQUIRED');
+  assert.equal(
+    summary.boundary?.liveAuthSessionSource?.observed,
+    'missing-production-auth-session-source-command',
+  );
+  assert.equal(summary.authSessionBoundary?.exactLiveSourceUrlEnv, 'http://127.0.0.1:65535');
+  assert.equal(summary.authSessionBoundary?.sourceCommand?.issuance, '');
+  assert.equal(summary.authSessionBoundary?.packagedFixtureCredentialFallback?.acceptedForReleaseSuccess, false);
+});
+
+test('production-shaped release verify rejects an auth/session source command for a different live source', () => {
+  const authSessionSourceCommand = buildAuthSessionSourceCommand({
+    sourceUrl: 'http://127.0.0.1:65534',
+    username: liveCredentials.username,
+    applicationPassword: liveCredentials.password,
+  });
+  const proof = spawnProductionShapedReleaseVerifySync(
+    {
+      ...process.env,
+      REPRINT_PUSH_SOURCE_URL: 'http://127.0.0.1:65535',
+      REPRINT_PUSH_REMOTE_URL: 'http://127.0.0.1:65535',
+      REPRINT_PUSH_REMOTE_CHANGED_URL: 'http://127.0.0.1:65534',
+      REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND: authSessionSourceCommand,
+      REPRINT_PUSH_REQUIRE_PRODUCTION_AUTH_SESSION: '1',
+      NODE_NO_WARNINGS: '1',
+    },
+    {
+      timeout: releaseVerifyInnerTimeoutMs,
+      killSignal: proofSubprocessKillSignal,
+    },
+    'mismatched auth/session source command release verify',
+  );
+
+  assertSpawnCompletedWithoutSpawnError(
+    proof,
+    'mismatched auth/session source command release verify',
+    releaseVerifyInnerTimeoutMs,
+  );
+  assert.equal(proof.status, 1, proof.stderr);
+  const summary = JSON.parse(proof.stdout);
+  assert.equal(summary.releaseProof?.code, 'PRODUCTION_AUTH_SESSION_BOUNDARY_REQUIRED');
+  assert.equal(summary.topology?.sourceUrl, 'http://127.0.0.1:65535');
+  assert.equal(summary.boundary?.liveAuthSessionSource?.requiredSourceUrl, 'http://127.0.0.1:65535');
+  assert.equal(summary.boundary?.liveAuthSessionSource?.observedSourceUrl, 'http://127.0.0.1:65534');
+  assert.equal(summary.authSessionBoundary?.source?.matchesLiveSourceUrl, false);
+  assert.equal(summary.authSessionBoundary?.forgedSessionSourceAccepted, false);
+});
+
+test('auth/session boundary proof reports same-source readback and capability continuity', () => {
+  const sourceCommand = buildAuthSessionSourceCommand({
+    sourceUrl: 'http://127.0.0.1:65535',
+    username: liveCredentials.username,
+    applicationPassword: liveCredentials.password,
+  });
+
+  const proof = resolveAuthSessionBoundaryProof({
+    liveSourceUrlEnv: 'http://127.0.0.1:65535',
+    effectiveSourceUrl: 'http://127.0.0.1:65535',
+    authSessionSourceCommand: sourceCommand,
+    authSessionSource: {
+      ok: true,
+      sourceUrl: 'http://127.0.0.1:65535',
+      username: liveCredentials.username,
+      applicationPassword: liveCredentials.password,
+    },
+    authSessionLifecycleSummary: {
+      issued: {
+        step: 'preflight',
+        id: 'session-01',
+        authUser: liveCredentials.username,
+        authUserId: 7,
+        authCapabilities: { manage_options: true },
+      },
+      read: {
+        step: 'journal',
+        id: 'session-01',
+        authUser: liveCredentials.username,
+        authUserId: 7,
+        authCapabilities: { manage_options: true },
+      },
+    },
+  });
+
+  assert.equal(proof.verdict, 'AUTH_SESSION_BOUNDARY_OK');
+  assert.equal(proof.exactLiveSourceUrlEnv, 'http://127.0.0.1:65535');
+  assert.equal(proof.sourceCommand.issuance, sourceCommand);
+  assert.equal(proof.sourceCommand.readback, sourceCommand);
+  assert.equal(proof.source.sameSourceAtReadback, true);
+  assert.equal(proof.identityContinuity.sameUserLogin, true);
+  assert.equal(proof.identityContinuity.sameUserId, true);
+  assert.equal(proof.identityContinuity.manageOptions, true);
+  assert.equal(proof.packagedFixtureCredentialFallback.acceptedForReleaseSuccess, false);
+
+  const drifted = resolveAuthSessionBoundaryProof({
+    ...proof,
+    liveSourceUrlEnv: 'http://127.0.0.1:65535',
+    effectiveSourceUrl: 'http://127.0.0.1:65535',
+    authSessionSourceCommand: sourceCommand,
+    authSessionSource: {
+      ok: true,
+      sourceUrl: 'http://127.0.0.1:65535',
+      username: liveCredentials.username,
+      applicationPassword: liveCredentials.password,
+    },
+    authSessionLifecycleSummary: {
+      issued: {
+        step: 'preflight',
+        id: 'session-01',
+        authUser: liveCredentials.username,
+        authUserId: 7,
+        authCapabilities: { manage_options: true },
+      },
+      read: {
+        step: 'journal',
+        id: 'session-01',
+        authUser: liveCredentials.username,
+        authUserId: 7,
+        authCapabilities: { manage_options: false },
+      },
+    },
+  });
+  assert.equal(drifted.verdict, 'PRODUCTION_AUTH_SESSION_BOUNDARY_REQUIRED');
+  assert.equal(drifted.identityContinuity.manageOptions, false);
 });
 
 test('production auth/session source loader fails closed when required fields are missing', () => {
