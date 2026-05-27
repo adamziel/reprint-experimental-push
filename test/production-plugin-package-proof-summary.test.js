@@ -696,6 +696,46 @@ test('plugin-driver proof summary reuses an already attached pluginDriverProof o
   );
 });
 
+test('plugin-driver proof summary reuses an attached pluginDriverProof and repairs a matching stale top-level modeProof cache', () => {
+  const pluginDriverProof = {
+    mode: 'driverVerifierGuards',
+    canonicalMode: 'driver-verifier-guards',
+    requestedScenarios: ['driverVerifierGuards'],
+    requestedBundles: ['driverVerifierGuards'],
+    selectedScenarios: Array.from(new Set(bundleSummaryGroups['driver-verifier-guards'])).sort(),
+    modeProof: {
+      mode: 'driverVerifierGuards',
+      canonicalMode: 'driver-verifier-guards',
+      proofKey: 'driverVerifierGuards',
+      legacyProofKey: 'driverVerifierGuards',
+      requestedScenarios: ['driverVerifierGuards'],
+      requestedBundles: ['driverVerifierGuards'],
+      selectedScenarios: Array.from(new Set(bundleSummaryGroups['driver-verifier-guards'])).sort(),
+      requestedBundleStatus: 'passed',
+    },
+    ok: true,
+  };
+
+  const rawSummary = {
+    pluginDriverProof,
+    modeProof: {
+      ...pluginDriverProof.modeProof,
+      requestedBundleStatus: 'missing',
+    },
+  };
+
+  const reusedProof = resolveProductionPluginPackagePluginDriverProof(rawSummary, {
+    requestedScenarios: ['driverVerifierGuards'],
+    selectedScenarios: new Set(bundleSummaryGroups['driver-verifier-guards']),
+    resolvedMode: 'driverVerifierGuards',
+    canonicalMode: 'driver-verifier-guards',
+  });
+
+  assert.equal(reusedProof, pluginDriverProof);
+  assert.equal(rawSummary.modeProof, pluginDriverProof.modeProof);
+  assert.equal(rawSummary.modeProof?.requestedBundleStatus, 'passed');
+});
+
 test('plugin-driver proof summary rebuilds a mismatched attached pluginDriverProof for the requested alias', () => {
   const rawSummary = {
     mode: 'driverMutationProof',
@@ -782,6 +822,102 @@ test('plugin-driver proof summary rebuilds a mismatched attached pluginDriverPro
   assert.equal(rebuiltProof.canonicalMode, 'driver-verifier-guards');
   assert.equal(rebuiltProof.modeProof?.proofKey, 'driverVerifierGuards');
   assert.deepEqual(rebuiltProof.modeProof?.requestedBundles, ['driverVerifierGuards']);
+});
+
+test('plugin-driver proof summary rebuilds an attached pluginDriverProof and repairs a matching stale top-level modeProof cache', () => {
+  const rawSummary = {
+    mode: 'driverVerifierGuards',
+    canonicalMode: 'driver-verifier-guards',
+    requestedScenarios: ['driver-verifier-guards'],
+    selectedScenarios: ['core-package-routes', 'driver-missing-export-guard'],
+    routes: {
+      namespace: 'reprint/v1',
+      profile: 'production-shaped',
+      labNamespaceDisabled: true,
+      authBootstrapDisabled: true,
+      labBacked: false,
+    },
+    cli: {
+      ok: true,
+    },
+    final: {
+      finalMatchesLocal: true,
+    },
+    driverDeleteGuard: {
+      dryRunRejectedCode: 'INVALID_PLAN',
+    },
+    driverUpdateValidationGuard: {
+      dryRunRejectedCode: 'INVALID_PLAN',
+    },
+    driverReceiptPlanBindingGuard: {
+      applyRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+    },
+    driverReceiptExpiryGuard: {
+      applyRejectedCode: 'AUTH_RECEIPT_EXPIRED',
+    },
+    driverReceiptIdentityGuard: {
+      applyRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+    },
+    driverReceiptRotatedCredentialGuard: {
+      rotatedCredentialRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+    },
+    driverReceiptRevokedCredentialGuard: {
+      applyRejectedCode: 'reprint_push_lab_auth_required',
+    },
+    driverExportGuard: {
+      missingExportRowsCallback: true,
+    },
+    driverApplyGuard: {
+      missingApplyRowCallback: true,
+    },
+    driverValidateGuard: {
+      missingValidateMutationCallback: true,
+    },
+    driverMissingNameGuard: {
+      missingDriverName: true,
+    },
+    driverPluginOwnerGuard: {
+      missingPluginOwner: true,
+    },
+    driverMissingTableGuard: {
+      missingTable: true,
+    },
+    driverDuplicateNameGuard: {
+      duplicateDriverName: true,
+    },
+    driverDuplicateTableGuard: {
+      duplicateTable: true,
+    },
+  };
+
+  const narrowProof = resolveProductionPluginPackagePluginDriverProof(rawSummary, {
+    requestedScenarios: ['driver-verifier-guards'],
+    selectedScenarios: new Set(['core-package-routes', 'driver-missing-export-guard']),
+    resolvedMode: 'driverVerifierGuards',
+    canonicalMode: 'driver-verifier-guards',
+  });
+  rawSummary.modeProof = {
+    ...narrowProof.modeProof,
+    requestedBundleStatus: 'missing',
+  };
+
+  const rebuiltProof = resolveProductionPluginPackagePluginDriverProof(rawSummary, {
+    requestedScenarios: ['driver-verifier-guards'],
+    selectedScenarios: new Set([
+      'driver-verifier-guards',
+      ...scenarioGroups['driver-verifier-guards'],
+    ]),
+    resolvedMode: 'driverVerifierGuards',
+    canonicalMode: 'driver-verifier-guards',
+  });
+
+  assert.notEqual(rebuiltProof, narrowProof);
+  assert.equal(rebuiltProof, rawSummary.pluginDriverProof);
+  assert.equal(rawSummary.modeProof, rebuiltProof.modeProof);
+  assert.equal(
+    rawSummary.modeProof?.requestedBundleStatus,
+    rebuiltProof.modeProof?.requestedBundleStatus,
+  );
 });
 
 test('plugin-driver proof summary rebuilds an attached pluginDriverProof when the selected scenario scope changes', () => {
@@ -1362,9 +1498,10 @@ test('plugin-driver mode proof resolver rebuilds a narrow attached top-level mod
     rebuiltModeProof?.selectedScenarios,
     rawSummary.selectedScenarios.slice().sort(),
   );
+  assert.equal(rawSummary.modeProof, rawSummary.pluginDriverProof?.modeProof);
   assert.deepEqual(
     rawSummary.modeProof?.selectedScenarios,
-    narrowSummary.modeProof?.selectedScenarios,
+    rebuiltModeProof?.selectedScenarios,
   );
 });
 

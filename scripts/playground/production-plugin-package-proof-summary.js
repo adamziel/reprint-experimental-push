@@ -875,6 +875,13 @@ export function resolveProductionPluginPackagePluginDriverProof(
       && selectedScenariosStillMatch
       && nestedModeProofMatches
     ) {
+      if (
+        summary
+        && typeof summary === 'object'
+        && shouldSyncTopLevelModeProof(summary.modeProof, attachedPluginDriverProof?.modeProof)
+      ) {
+        summary.modeProof = attachedPluginDriverProof.modeProof;
+      }
       return attachedPluginDriverProof;
     }
   }
@@ -884,6 +891,9 @@ export function resolveProductionPluginPackagePluginDriverProof(
   );
   if (summary && typeof summary === 'object') {
     summary.pluginDriverProof = pluginDriverProof;
+    if (shouldSyncTopLevelModeProof(summary.modeProof, pluginDriverProof?.modeProof)) {
+      summary.modeProof = pluginDriverProof.modeProof;
+    }
   }
   return pluginDriverProof;
 }
@@ -898,6 +908,19 @@ export function attachProductionPluginPackagePluginDriverProof(
     summary.modeProof = pluginDriverProof?.modeProof ?? null;
   }
   return pluginDriverProof;
+}
+
+function shouldSyncTopLevelModeProof(currentModeProof, nextModeProof) {
+  if (nextModeProof === undefined || nextModeProof === null) {
+    return false;
+  }
+  if (currentModeProof === undefined || currentModeProof === null) {
+    return true;
+  }
+  return currentModeProof?.mode === nextModeProof?.mode
+    && currentModeProof?.canonicalMode === nextModeProof?.canonicalMode
+    && currentModeProof?.proofKey === nextModeProof?.proofKey
+    && currentModeProof?.legacyProofKey === nextModeProof?.legacyProofKey;
 }
 
 function normalizeSelectedScenarios(selectedScenarios) {
