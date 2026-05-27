@@ -58,6 +58,7 @@ const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'reprint-production-plugin-
 const packageRoot = path.join(tmpDir, 'package');
 const pluginDir = path.join(packageRoot, 'reprint-push');
 const blueprintPath = path.join(tmpDir, 'remote-base-with-reprint-push-plugin.blueprint.json');
+const registryGuardBlueprintPath = path.join(tmpDir, 'remote-base-with-reprint-push-plugin-registry-guards.blueprint.json');
 const driverGuardSnapshotBlueprintPath = path.join(tmpDir, 'remote-base-with-driver-fixture-guard-snapshot.blueprint.json');
 const driverGuardServerBlueprintPath = path.join(tmpDir, 'remote-base-with-driver-fixture-guard-server.blueprint.json');
 const driverDeleteSnapshotBlueprintPath = path.join(tmpDir, 'remote-base-with-driver-fixture-delete-snapshot.blueprint.json');
@@ -265,6 +266,9 @@ echo "REPRINT_PUSH_DRIVER_GUARD_JSON_END\\n";
   buildPluginPackage(pluginDir);
   logSmokeStage('write-blueprints');
   writeActivationBlueprint(path.join(repoRoot, fixtures.base), blueprintPath);
+  if (shouldRunAnyScenario(Array.from(packagedDriverRegistryGuardScenarioNames))) {
+    writePackagedPluginOnlyBlueprint(path.join(repoRoot, fixtures.base), registryGuardBlueprintPath);
+  }
   if (shouldRunAnyScenario(['driver-receipt-guards'])) {
     writeDriverFixtureBlueprint(path.join(repoRoot, fixtures.base), driverGuardSnapshotBlueprintPath, {
       enableCredentialRevocationRoute: true,
@@ -275,10 +279,12 @@ echo "REPRINT_PUSH_DRIVER_GUARD_JSON_END\\n";
       enableCredentialRevocationRoute: true,
     });
   }
-  if (shouldRunAnyScenario(['driver-delete-apply'])) {
+  if (shouldRunAnyScenario(['driver-delete-apply']) && !shouldRunAnyScenario(['driver-receipt-guards'])) {
     writeDriverFixtureBlueprint(path.join(repoRoot, fixtures.base), driverDeleteSnapshotBlueprintPath, {
       supportsDelete: true,
     });
+  }
+  if (shouldRunAnyScenario(['driver-delete-apply'])) {
     writeDriverFixtureBlueprint(path.join(repoRoot, fixtures.base), driverDeleteServerBlueprintPath, {
       activatePackagedPlugin: true,
       provisionAuth: true,
@@ -353,7 +359,9 @@ echo "REPRINT_PUSH_DRIVER_GUARD_JSON_END\\n";
     ? exportSnapshotWithStage('driver-fixture-guard-base', driverGuardSnapshotBlueprintPath)
     : null;
   const driverDeleteBaseSnapshot = shouldRunAnyScenario(['driver-delete-apply'])
-    ? exportSnapshotWithStage('driver-fixture-delete-base', driverDeleteSnapshotBlueprintPath)
+    ? (driverGuardBaseSnapshot
+        ? enableForgedDeletePolicy(deepClone(driverGuardBaseSnapshot), driverFixture.resourceKey)
+        : exportSnapshotWithStage('driver-fixture-delete-base', driverDeleteSnapshotBlueprintPath))
     : null;
   const driverLocalDeleteSnapshot = driverDeleteBaseSnapshot ? deepClone(driverDeleteBaseSnapshot) : null;
   if (driverLocalDeleteSnapshot) {
@@ -1345,7 +1353,7 @@ function runPackagedDriverRegistryGuards(mountedPluginDir, scenarioNames = null)
     '@wp-playground/cli@latest',
     'php',
     '--blueprint',
-    blueprintPath,
+    registryGuardBlueprintPath,
     '--mount',
     `${mountedPluginDir}:/wordpress/wp-content/plugins/reprint-push`,
     '--mount',
@@ -1445,6 +1453,26 @@ function writeActivationBlueprint(sourceBlueprintPath, targetBlueprintPath) {
       "add_option('reprint_push_lab_signed_session_' . str_repeat('b', 64), array('schemaVersion'=>1,'expiresAtUnix'=>$future,'fixture'=>'future-session'), '', 'no');",
       "add_option('reprint_push_lab_signed_nonce_' . str_repeat('c', 64), array('schemaVersion'=>1,'expiresAtUnix'=>$past,'fixture'=>'expired-nonce'), '', 'no');",
       "add_option('reprint_push_lab_signed_nonce_' . str_repeat('d', 64), array('schemaVersion'=>1,'expiresAtUnix'=>$future,'fixture'=>'future-nonce'), '', 'no');",
+    ].join(' '),
+  });
+  fs.writeFileSync(targetBlueprintPath, `${JSON.stringify(blueprint, null, 2)}\n`);
+}
+
+function writePackagedPluginOnlyBlueprint(sourceBlueprintPath, targetBlueprintPath) {
+  const blueprint = JSON.parse(fs.readFileSync(sourceBlueprintPath, 'utf8'));
+  blueprint.meta = {
+    ...blueprint.meta,
+    title: 'Reprint Push Production Plugin Registry Guards',
+    description: 'Remote base fixture with only the packaged Reprint Push plugin activated for registry-guard checks.',
+  };
+  blueprint.steps.push({
+    step: 'runPHP',
+    code: [
+      '<?php',
+      "require_once '/wordpress/wp-load.php';",
+      "require_once ABSPATH . 'wp-admin/includes/plugin.php';",
+      "$result = activate_plugin('reprint-push/reprint-push.php');",
+      'if (is_wp_error($result)) { throw new RuntimeException($result->get_error_message()); }',
     ].join(' '),
   });
   fs.writeFileSync(targetBlueprintPath, `${JSON.stringify(blueprint, null, 2)}\n`);

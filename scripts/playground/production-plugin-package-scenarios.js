@@ -85,6 +85,9 @@ function resolveScenarioMode(modeValue) {
   if (modeValue === 'driver-positive-only') {
     return 'driver-positive-proof';
   }
+  if (modeValue === 'driver-proof-only') {
+    return 'driver-delete-apply,driver-verifier-guards';
+  }
   throw new Error(
     `Unknown production plugin package smoke mode: ${modeValue}`,
   );
