@@ -708,8 +708,25 @@ export function resolveProductionPluginPackagePluginDriverProof(
   summary,
   options = {},
 ) {
-  if (summary?.pluginDriverProof !== undefined) {
-    return summary.pluginDriverProof;
+  const attachedPluginDriverProof = summary?.pluginDriverProof;
+  if (attachedPluginDriverProof !== undefined) {
+    const resolvedOptions = resolveProductionPluginPackageProofSummaryOptions(summary, options);
+    const requestedScenariosMatch = (
+      resolvedOptions.requestedScenarios === undefined
+      || JSON.stringify(attachedPluginDriverProof?.requestedScenarios ?? []) === JSON.stringify(resolvedOptions.requestedScenarios)
+    );
+    const modeMatches = (
+      resolvedOptions.resolvedMode === undefined
+      || attachedPluginDriverProof?.mode === resolvedOptions.resolvedMode
+    );
+    const canonicalModeMatches = (
+      resolvedOptions.canonicalMode === undefined
+      || attachedPluginDriverProof?.canonicalMode === resolvedOptions.canonicalMode
+    );
+
+    if (requestedScenariosMatch && modeMatches && canonicalModeMatches) {
+      return attachedPluginDriverProof;
+    }
   }
   const pluginDriverProof = buildProductionPluginPackageProofSummary(
     summary,

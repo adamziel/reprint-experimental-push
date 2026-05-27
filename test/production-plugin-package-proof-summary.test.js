@@ -586,7 +586,11 @@ test('plugin-driver proof summary infers build options from raw smoke metadata w
 
 test('plugin-driver proof summary reuses an already attached pluginDriverProof object without rebuilding it', () => {
   const pluginDriverProof = {
+    mode: 'driverVerifierGuards',
+    canonicalMode: 'driver-verifier-guards',
+    requestedScenarios: ['driverVerifierGuards'],
     modeProof: {
+      mode: 'driverVerifierGuards',
       canonicalMode: 'driver-verifier-guards',
       proofKey: 'driverVerifierGuards',
     },
@@ -606,6 +610,94 @@ test('plugin-driver proof summary reuses an already attached pluginDriverProof o
     }),
     pluginDriverProof,
   );
+});
+
+test('plugin-driver proof summary rebuilds a mismatched attached pluginDriverProof for the requested alias', () => {
+  const rawSummary = {
+    mode: 'driverMutationProof',
+    canonicalMode: 'driver-release-proof',
+    requestedScenarios: ['driver-release-proof'],
+    selectedScenarios: ['core-package-routes', 'driver-delete-apply', 'driver-receipt-guards'],
+    routes: {
+      namespace: 'reprint/v1',
+      profile: 'production-shaped',
+      labNamespaceDisabled: true,
+      authBootstrapDisabled: true,
+      labBacked: false,
+    },
+    cli: {
+      ok: true,
+    },
+    final: {
+      finalMatchesLocal: true,
+    },
+    driverDeleteGuard: {
+      dryRunRejectedCode: 'INVALID_PLAN',
+    },
+    driverUpdateValidationGuard: {
+      dryRunRejectedCode: 'INVALID_PLAN',
+    },
+    driverReceiptPlanBindingGuard: {
+      applyRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+    },
+    driverReceiptExpiryGuard: {
+      applyRejectedCode: 'AUTH_RECEIPT_EXPIRED',
+    },
+    driverReceiptIdentityGuard: {
+      applyRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+    },
+    driverReceiptRotatedCredentialGuard: {
+      rotatedCredentialRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+    },
+    driverReceiptRevokedCredentialGuard: {
+      applyRejectedCode: 'reprint_push_lab_auth_required',
+    },
+    driverExportGuard: {
+      missingExportRowsCallback: true,
+    },
+    driverApplyGuard: {
+      missingApplyRowCallback: true,
+    },
+    driverValidateGuard: {
+      missingValidateMutationCallback: true,
+    },
+    driverMissingNameGuard: {
+      missingDriverName: true,
+    },
+    driverPluginOwnerGuard: {
+      missingPluginOwner: true,
+    },
+    driverMissingTableGuard: {
+      missingTable: true,
+    },
+    driverDuplicateNameGuard: {
+      duplicateDriverName: true,
+    },
+    driverDuplicateTableGuard: {
+      duplicateTable: true,
+    },
+    driverDeleteApply: {
+      deletedAfterApply: true,
+    },
+  };
+
+  const originalProof = resolveProductionPluginPackagePluginDriverProof(rawSummary);
+  const rebuiltProof = resolveProductionPluginPackagePluginDriverProof(rawSummary, {
+    requestedScenarios: ['driver-verifier-guards'],
+    selectedScenarios: new Set([
+      'driver-verifier-guards',
+      ...scenarioGroups['driver-verifier-guards'],
+    ]),
+    resolvedMode: 'driverVerifierGuards',
+    canonicalMode: 'driver-verifier-guards',
+  });
+
+  assert.notEqual(rebuiltProof, originalProof);
+  assert.equal(rebuiltProof, rawSummary.pluginDriverProof);
+  assert.equal(rebuiltProof.mode, 'driverVerifierGuards');
+  assert.equal(rebuiltProof.canonicalMode, 'driver-verifier-guards');
+  assert.equal(rebuiltProof.modeProof?.proofKey, 'driverVerifierGuards');
+  assert.deepEqual(rebuiltProof.modeProof?.requestedBundles, ['driverVerifierGuards']);
 });
 
 test('plugin-driver proof summary option inference preserves explicit overrides over raw smoke metadata', () => {
