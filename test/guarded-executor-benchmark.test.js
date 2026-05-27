@@ -1401,7 +1401,11 @@ test('guarded benchmark surfaces plugin-update recovery blockers at runtime', ()
       .filter((entry) => [
         'compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-activation-after-pause-and-backpressure',
         'compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-finalize',
+        'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-activation',
         'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-commit-after-pause',
+        'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-dependency-checks',
+        'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-finalize',
+        'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-row-preconditions',
         'compressed-remote-index-and-cached-row-receipts-skips-plugin-update-row-batching-after-pause',
         'compressed-remote-index-and-parallel-row-batches-skips-plugin-update-backpressure-after-pause',
       ].includes(entry.id))
@@ -1435,8 +1439,44 @@ test('guarded benchmark surfaces plugin-update recovery blockers at runtime', ()
         ],
       },
       {
+        id: 'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-activation',
+        rejectedGate: 'group',
+        blockerRefs: [
+          'production-atomic-group-commit-not-measured',
+          'production-row-batch-executor-not-measured',
+          'production-row-batch-executor-measured-not-proven',
+        ],
+      },
+      {
         id: 'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-commit-after-pause',
         rejectedGate: 'recovery',
+        blockerRefs: [
+          'production-atomic-group-commit-not-measured',
+          'production-row-batch-executor-not-measured',
+          'production-row-batch-executor-measured-not-proven',
+        ],
+      },
+      {
+        id: 'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-dependency-checks',
+        rejectedGate: 'group',
+        blockerRefs: [
+          'production-atomic-group-commit-not-measured',
+          'production-row-batch-executor-not-measured',
+          'production-row-batch-executor-measured-not-proven',
+        ],
+      },
+      {
+        id: 'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-finalize',
+        rejectedGate: 'group',
+        blockerRefs: [
+          'production-atomic-group-commit-not-measured',
+          'production-row-batch-executor-not-measured',
+          'production-row-batch-executor-measured-not-proven',
+        ],
+      },
+      {
+        id: 'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-row-preconditions',
+        rejectedGate: 'group',
         blockerRefs: [
           'production-atomic-group-commit-not-measured',
           'production-row-batch-executor-not-measured',
@@ -1475,7 +1515,7 @@ test('guarded benchmark surfaces plugin-update recovery blockers at runtime', ()
 
   assert.equal(
     details.rejectedFastPaths.filter((entry) => entry.id.includes('plugin-update')).length,
-    7,
+    11,
   );
 });
 
@@ -2989,6 +3029,51 @@ test('guarded benchmark exposes compressed remote-index and cached row-batch rec
   assert.deepEqual(
     fastPath.violates,
     ['remote-index-planning-only', 'compression', 'backpressure', 'row-preconditions', 'plugin-preconditions', 'atomic-groups', 'durable-progress'],
+  );
+});
+
+test('guarded benchmark exposes compressed remote-index and cached row-batch receipt dependency shortcuts as rejected', () => {
+  const fastPath = findRejectedFastPathById(
+    'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-dependency-checks',
+  );
+
+  assert.ok(fastPath);
+  assert.equal(fastPath.rejectedGate, 'group');
+  assert.match(fastPath.proposal, /cached row-batch receipts/i);
+  assert.match(fastPath.rejectedBecause, /dependency checks, live row compares, or the atomic-group barrier survived failure/i);
+  assert.deepEqual(
+    fastPath.violates,
+    ['remote-index-planning-only', 'compression', 'row-preconditions', 'plugin-preconditions', 'atomic-groups', 'durable-progress'],
+  );
+});
+
+test('guarded benchmark exposes compressed remote-index and cached row-batch receipt activation shortcuts as rejected', () => {
+  const fastPath = findRejectedFastPathById(
+    'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-activation',
+  );
+
+  assert.ok(fastPath);
+  assert.equal(fastPath.rejectedGate, 'group');
+  assert.match(fastPath.proposal, /cached row-batch receipts/i);
+  assert.match(fastPath.rejectedBecause, /activation change, dependency checks, or the atomic-group commit survived failure/i);
+  assert.deepEqual(
+    fastPath.violates,
+    ['remote-index-planning-only', 'compression', 'row-preconditions', 'plugin-preconditions', 'atomic-groups', 'durable-progress'],
+  );
+});
+
+test('guarded benchmark exposes compressed remote-index and cached row-batch receipt finalize shortcuts as rejected', () => {
+  const fastPath = findRejectedFastPathById(
+    'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-finalize',
+  );
+
+  assert.ok(fastPath);
+  assert.equal(fastPath.rejectedGate, 'group');
+  assert.match(fastPath.proposal, /cached row-batch receipts/i);
+  assert.match(fastPath.rejectedBecause, /dependency checks, per-row preconditions, or the atomic-group finalize survived failure/i);
+  assert.deepEqual(
+    fastPath.violates,
+    ['remote-index-planning-only', 'compression', 'row-preconditions', 'plugin-preconditions', 'atomic-groups', 'durable-progress'],
   );
 });
 
