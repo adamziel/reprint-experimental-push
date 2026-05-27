@@ -199,6 +199,14 @@ function checkedBoundaryStaleClaimEvidenceMatches(dbJournal) {
     : [];
 
   if (staleClaimRows.length > 0) {
+    const hasRejectedRow = staleClaimRows.some(
+      (row) => row?.event === 'stale-claim-rejected'
+        && checkedBoundaryStaleClaimRowMatches(row, dbJournal?.claim),
+    );
+    if (!hasRejectedRow) {
+      return false;
+    }
+
     return staleClaimRows.some((row) => checkedBoundaryStaleClaimRowMatches(row, dbJournal?.claim));
   }
 

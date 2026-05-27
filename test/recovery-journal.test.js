@@ -722,6 +722,42 @@ test('checked durable journal boundary stays closed until stale-claim rejection 
   assert.equal(
     checkedDurableJournalBoundarySatisfied({
       ...baseContract,
+      latestRows: [
+        {
+          sequence: 18,
+          event: 'stale-claim-abandoned',
+          claimKeyHash: 'retry-claim-hash-01',
+          idempotencyKeyHash: 'idempotency-hash-01',
+          requestHash: 'request-hash-01',
+          resourceHashEvidence: {
+            startedCursor: 'db-journal:12',
+            claimCursor: 'db-journal:11',
+          },
+        },
+      ],
+      storageGuard: {
+        boundary: 'wpdb-single-statement-cas',
+        operation: 'update',
+        outcome: 'applied',
+      },
+      writerLease: {
+        ...baseContract.writerLease,
+        staleClaimRejected: true,
+      },
+      leaseFence: {
+        ...baseContract.leaseFence,
+        staleClaimRejected: true,
+        writerLease: {
+          ...baseContract.leaseFence.writerLease,
+          staleClaimRejected: true,
+        },
+      },
+    }),
+    false,
+  );
+  assert.equal(
+    checkedDurableJournalBoundarySatisfied({
+      ...baseContract,
       claimEvidence: undefined,
       writerLease: {
         ...baseContract.writerLease,
@@ -1258,7 +1294,7 @@ test('checked durable journal boundary stays closed until stale-claim rejection 
         },
       },
     }),
-    true,
+    false,
   );
   assert.equal(
     checkedDurableJournalBoundarySatisfied({

@@ -7222,6 +7222,250 @@ test('checked db journal attachment fails closed when stale-claim row omits idem
   assert.equal(parsed.dbJournal.acceptedOnCheckedBoundary, false);
 });
 
+test('checked db journal attachment fails closed when stale-claim evidence omits the rejected latest row', { skip: !hasPhp }, () => {
+  const result = runAttachCheckedDbJournalContract(
+    {
+      ok: true,
+      dbJournal: {
+        scope: 'checked live production-shaped journal surface; not local Playground fixture only',
+        acceptedOnCheckedBoundary: true,
+        schemaVersion: 1,
+        table: 'wp_reprint_push_lab_push_journal',
+        rowCount: 1,
+        claim: {
+          status: 'stale-claim-rejected',
+          activeClaimKeyHash: 'retry-claim-hash-02',
+          activeClaimSequence: 20,
+          activeClaimEvent: 'stale-claim-retry-started',
+          idempotencyKeyHash: 'idempotency-hash-01',
+          requestHash: 'request-hash-01',
+          staleClaimRejected: true,
+          abandonedSequence: 18,
+          abandonedEvent: 'stale-claim-abandoned',
+          previousStartedSequence: 12,
+          previousClaimSequence: 11,
+          previousClaimKeyHash: 'retry-claim-hash-01',
+          previousClaimEvent: 'idempotency-opened',
+        },
+        claimEvidence: {
+          activeRow: {
+            sequence: 20,
+            event: 'stale-claim-retry-started',
+            claimKeyHash: 'retry-claim-hash-02',
+            idempotencyKeyHash: 'idempotency-hash-01',
+            requestHash: 'request-hash-01',
+          },
+          abandonedRow: {
+            sequence: 18,
+            event: 'stale-claim-abandoned',
+            claimKeyHash: 'retry-claim-hash-01',
+            idempotencyKeyHash: 'idempotency-hash-01',
+            requestHash: 'request-hash-01',
+            startedCursor: 'db-journal:12',
+            claimCursor: 'db-journal:11',
+          },
+          previousRow: {
+            sequence: 11,
+            event: 'idempotency-opened',
+            claimKeyHash: 'retry-claim-hash-01',
+            idempotencyKeyHash: 'idempotency-hash-01',
+            requestHash: 'request-hash-01',
+          },
+        },
+        ownership: {
+          ownsJournal: true,
+          restartReadable: true,
+          productionAdapter: 'wpdb-single-statement-cas',
+        },
+        writerLease: {
+          strategy: 'claim-fenced-single-writer',
+          claimKeyUnique: true,
+          fsyncEvidence: true,
+          storageGuard: 'wpdb-single-statement-cas',
+          monotonicSequence: true,
+          restartReadable: true,
+          staleClaimRejected: true,
+        },
+        leaseFence: {
+          boundary: 'wpdb-single-statement-cas',
+          claimKeyUnique: true,
+          fsyncEvidence: true,
+          monotonicSequence: true,
+          restartReadable: true,
+          staleClaimRejected: true,
+          writerLease: {
+            strategy: 'claim-fenced-single-writer',
+            claimKeyUnique: true,
+            fsyncEvidence: true,
+            storageGuard: 'wpdb-single-statement-cas',
+            monotonicSequence: true,
+            restartReadable: true,
+            staleClaimRejected: true,
+          },
+        },
+        storageGuard: {
+          boundary: 'wpdb-single-statement-cas',
+          operation: 'update',
+          outcome: 'applied',
+        },
+        latestRows: [
+          {
+            sequence: 18,
+            event: 'stale-claim-abandoned',
+            claimKeyHash: 'retry-claim-hash-01',
+            idempotencyKeyHash: 'idempotency-hash-01',
+            requestHash: 'request-hash-01',
+            resourceHashEvidence: {
+              startedCursor: 'db-journal:12',
+              claimCursor: 'db-journal:11',
+            },
+          },
+        ],
+        eventSummaries: [
+          {
+            event: 'stale-claim-abandoned',
+            count: 1,
+            latestId: 18,
+          },
+          {
+            event: 'stale-claim-rejected',
+            count: 1,
+            latestId: 20,
+          },
+        ],
+        idempotencyEvidence: [
+          {
+            idempotencyKeyHash: 'idempotency-hash-01',
+            events: 3,
+            requestHashes: 1,
+            latestId: 20,
+          },
+        ],
+      },
+    },
+    {
+      acceptedOnCheckedBoundary: true,
+      schemaVersion: 1,
+      table: 'wp_reprint_push_lab_push_journal',
+      rowCount: 1,
+      scope: 'checked live production-shaped journal surface; not local Playground fixture only',
+      claim: {
+        status: 'stale-claim-rejected',
+        activeClaimKeyHash: 'retry-claim-hash-02',
+        activeClaimSequence: 20,
+        activeClaimEvent: 'stale-claim-retry-started',
+        idempotencyKeyHash: 'idempotency-hash-01',
+        requestHash: 'request-hash-01',
+        staleClaimRejected: true,
+        abandonedSequence: 18,
+        abandonedEvent: 'stale-claim-abandoned',
+        previousStartedSequence: 12,
+        previousClaimSequence: 11,
+        previousClaimKeyHash: 'retry-claim-hash-01',
+        previousClaimEvent: 'idempotency-opened',
+      },
+      claimEvidence: {
+        activeRow: {
+          sequence: 20,
+          event: 'stale-claim-retry-started',
+          claimKeyHash: 'retry-claim-hash-02',
+          idempotencyKeyHash: 'idempotency-hash-01',
+          requestHash: 'request-hash-01',
+        },
+        abandonedRow: {
+          sequence: 18,
+          event: 'stale-claim-abandoned',
+          claimKeyHash: 'retry-claim-hash-01',
+          idempotencyKeyHash: 'idempotency-hash-01',
+          requestHash: 'request-hash-01',
+          startedCursor: 'db-journal:12',
+          claimCursor: 'db-journal:11',
+        },
+        previousRow: {
+          sequence: 11,
+          event: 'idempotency-opened',
+          claimKeyHash: 'retry-claim-hash-01',
+          idempotencyKeyHash: 'idempotency-hash-01',
+          requestHash: 'request-hash-01',
+        },
+      },
+      ownership: {
+        ownsJournal: true,
+        restartReadable: true,
+        productionAdapter: 'wpdb-single-statement-cas',
+      },
+      writerLease: {
+        strategy: 'claim-fenced-single-writer',
+        claimKeyUnique: true,
+        fsyncEvidence: true,
+        storageGuard: 'wpdb-single-statement-cas',
+        monotonicSequence: true,
+        restartReadable: true,
+        staleClaimRejected: true,
+      },
+      leaseFence: {
+        boundary: 'wpdb-single-statement-cas',
+        claimKeyUnique: true,
+        fsyncEvidence: true,
+        monotonicSequence: true,
+        restartReadable: true,
+        staleClaimRejected: true,
+        writerLease: {
+          strategy: 'claim-fenced-single-writer',
+          claimKeyUnique: true,
+          fsyncEvidence: true,
+          storageGuard: 'wpdb-single-statement-cas',
+          monotonicSequence: true,
+          restartReadable: true,
+          staleClaimRejected: true,
+        },
+      },
+      storageGuard: {
+        boundary: 'wpdb-single-statement-cas',
+        operation: 'update',
+        outcome: 'applied',
+      },
+      latestRows: [
+        {
+          sequence: 18,
+          event: 'stale-claim-abandoned',
+          claimKeyHash: 'retry-claim-hash-01',
+          idempotencyKeyHash: 'idempotency-hash-01',
+          requestHash: 'request-hash-01',
+          resourceHashEvidence: {
+            startedCursor: 'db-journal:12',
+            claimCursor: 'db-journal:11',
+          },
+        },
+      ],
+      eventSummaries: [
+        {
+          event: 'stale-claim-abandoned',
+          count: 1,
+          latestId: 18,
+        },
+        {
+          event: 'stale-claim-rejected',
+          count: 1,
+          latestId: 20,
+        },
+      ],
+      idempotencyEvidence: [
+        {
+          idempotencyKeyHash: 'idempotency-hash-01',
+          events: 3,
+          requestHashes: 1,
+          latestId: 20,
+        },
+      ],
+    },
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.dbJournal.acceptedOnCheckedBoundary, false);
+});
+
 test('checked db journal attachment fails closed when stale-claim evidence omits positive row lineage', { skip: !hasPhp }, () => {
   const result = runAttachCheckedDbJournalContract(
     {
