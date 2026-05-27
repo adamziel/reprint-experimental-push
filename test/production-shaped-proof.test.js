@@ -2003,11 +2003,21 @@ test('packaged production plugin timeout fallback classification separates start
   assert.deepEqual(
     packagedProductionPluginClassifyTimeoutFallbackStartup(
       { retryable: true, status: 404, body: 'No route was found matching the URL and request method.' },
-      { status: 200, body: 'ok' },
+      { status: 200, body: '{"namespaces":["reprint/v1"]}' },
     ),
     {
       kind: 'retryable-route-packaged-route-starting',
       packagedRouteStartup: true,
+    },
+  );
+  assert.deepEqual(
+    packagedProductionPluginClassifyTimeoutFallbackStartup(
+      { retryable: true, status: 404, body: 'No route was found matching the URL and request method.' },
+      { status: 200, body: '<!doctype html><html><body>not a REST index</body></html>', parsedBody: null },
+    ),
+    {
+      kind: 'retryable-route-index-terminal',
+      indexTerminal: true,
     },
   );
   assert.deepEqual(
@@ -2030,7 +2040,7 @@ test('packaged production plugin timeout fallback classification separates start
   assert.equal(
     packagedProductionPluginRetryableRouteProbeWhileIndexProbeTimedOut(
       { retryable: true, status: 404, body: 'No route was found matching the URL and request method.' },
-      { status: 200, body: 'ok' },
+      { status: 200, body: '{"namespaces":["reprint/v1"]}' },
     ),
     false,
   );
@@ -2064,11 +2074,21 @@ test('packaged production plugin timeout fallback classification separates start
   assert.deepEqual(
     packagedProductionPluginClassifyTimeoutFallbackStartup(
       { timedOut: true },
-      { status: 200, body: 'ok' },
+      { status: 200, body: '{"namespaces":["reprint/v1"]}' },
     ),
     {
       kind: 'timed-out-route-packaged-route-starting',
       packagedRouteStartup: true,
+    },
+  );
+  assert.deepEqual(
+    packagedProductionPluginClassifyTimeoutFallbackStartup(
+      { timedOut: true },
+      { status: 200, body: '<!doctype html><html><body>not a REST index</body></html>', parsedBody: null },
+    ),
+    {
+      kind: 'timed-out-route-index-terminal',
+      indexTerminal: true,
     },
   );
   assert.equal(
@@ -2399,6 +2419,15 @@ test('packaged production plugin readiness helper does not retry terminal readin
   );
   assert.equal(
     packagedProductionPluginRouteRetryableWhilePackagedRouteStarting(
+      404,
+      '<!doctype html><html><body>No route was found matching the URL and request method.</body></html>',
+      200,
+      '<!doctype html><html><body>not a REST index</body></html>',
+    ),
+    false,
+  );
+  assert.equal(
+    packagedProductionPluginRouteRetryableWhilePackagedRouteStarting(
       502,
       '<!doctype html><html><body>WordPress is not ready yet</body></html>',
       502,
@@ -2473,6 +2502,14 @@ test('packaged production plugin readiness helper does not retry terminal readin
       '{"namespaces":["reprint/v1"]}',
     ),
     true,
+  );
+  assert.equal(
+    packagedProductionPluginTimedOutRouteProbeWhilePackagedRouteStarting(
+      { timedOut: true },
+      200,
+      '<!doctype html><html><body>not a REST index</body></html>',
+    ),
+    false,
   );
   assert.equal(
     packagedProductionPluginTimedOutRouteProbeWhilePackagedRouteStarting(
@@ -3173,6 +3210,16 @@ test('packaged bounded startup classifier distinguishes global WordPress versus 
     {
       kind: 'retryable-route-packaged-route-starting',
       packagedRouteStartup: true,
+    },
+  );
+  assert.deepEqual(
+    packagedProductionPluginClassifyBoundedStartup(
+      { retryable: true, status: 404, body: 'No route was found matching the URL and request method.' },
+      { status: 200, body: '<!doctype html><html><body>not a REST index</body></html>', parsedBody: null },
+    ),
+    {
+      kind: 'retryable-route-index-terminal',
+      indexTerminal: true,
     },
   );
 

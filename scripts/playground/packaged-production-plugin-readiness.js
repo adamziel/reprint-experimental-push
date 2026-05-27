@@ -154,6 +154,27 @@ function packagedProductionPluginRouteProfileReady(routeProfile) {
     && routeProfile?.labBacked === false;
 }
 
+function packagedProductionPluginRestIndexReady(status, bodyText = '') {
+  if (status !== 200) {
+    return false;
+  }
+
+  try {
+    const body = JSON.parse(bodyText);
+    if (!body || typeof body !== 'object' || Array.isArray(body)) {
+      return false;
+    }
+
+    const namespaces = Array.isArray(body.namespaces) ? body.namespaces : [];
+    const routes = body.routes && typeof body.routes === 'object' && !Array.isArray(body.routes)
+      ? body.routes
+      : null;
+    return namespaces.length > 0 || routes !== null;
+  } catch {
+    return false;
+  }
+}
+
 function packagedProductionPluginRouteNotReady(response) {
   return packagedProductionPluginRouteNotReadyBody(response);
 }
@@ -342,7 +363,7 @@ export function packagedProductionPluginRouteRetryableWhilePackagedRouteStarting
   indexBodyText = '',
 ) {
   return packagedProductionPluginReadinessBodyRetryable(routeStatus, routeBodyText)
-    && indexStatus === 200
+    && packagedProductionPluginRestIndexReady(indexStatus, indexBodyText)
     && !packagedProductionPluginReadinessBodyRetryable(indexStatus, indexBodyText);
 }
 
@@ -361,7 +382,7 @@ export function packagedProductionPluginTimedOutRouteProbeWhilePackagedRouteStar
   indexBodyText = '',
 ) {
   return routeProbe?.timedOut === true
-    && indexStatus === 200
+    && packagedProductionPluginRestIndexReady(indexStatus, indexBodyText)
     && !packagedProductionPluginReadinessBodyRetryable(indexStatus, indexBodyText);
 }
 
