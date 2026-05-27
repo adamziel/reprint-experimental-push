@@ -39,6 +39,8 @@ const DURABLE_TERMINAL_RECORD_TYPES = new Set([
   'recovery-journal-consumed',
 ]);
 const RECOVERY_JOURNAL_RECORD_TYPE_PATTERN = /^[a-z0-9-]+$/;
+const CHECKED_DURABLE_JOURNAL_SCOPE_PATTERN =
+  /^(?:packaged production journal scope|checked live production-shaped journal surface; not local Playground fixture only)$/i;
 export const ACCEPTABLE_RECOVERY_STATES = Object.freeze([
   'old-remote',
   'fully-updated-remote',
@@ -1393,6 +1395,7 @@ function checkedDurableJournalBoundaryProof(writer, inspected, missingDependency
         : false
     )
   ) && !checkedBoundaryBlockedByMissingDependency
+    && CHECKED_DURABLE_JOURNAL_SCOPE_PATTERN.test(scope || '')
     && inspectedOwnsJournal
     && inspectedRestartReadable
     && checkedBoundaryContractAligned
