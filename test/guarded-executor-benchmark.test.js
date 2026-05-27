@@ -11515,7 +11515,6 @@ test('guarded benchmark carries hidden raw memory-ceiling visibility blockers in
 
   assert.ok(blockers.includes('queue-budget-visible-without-memory-ceiling-visibility'));
   assert.ok(blockers.includes('queue-pause-without-visible-memory-ceiling'));
-  assert.ok(blockers.includes('memory-ceiling-match-visible-without-memory-ceiling-visibility'));
   assert.ok(blockers.includes('queue-headroom-visible-without-memory-ceiling-visibility'));
   assert.ok(blockers.includes('receipt-cursor-memory-headroom-visible-without-memory-ceiling-visibility'));
   assert.ok(blockers.includes('receipt-cursor-queue-slack-visible-without-memory-ceiling-visibility'));
@@ -12016,6 +12015,37 @@ test('guarded benchmark blocks release-bundle post-pause planning summaries when
       'queue-headroom-not-visible',
       'receipt-cursor-memory-headroom-visible-without-queue-headroom-visibility',
       'receipt-cursor-queue-slack-visible-without-queue-headroom-visibility',
+    ],
+  });
+});
+
+test('guarded benchmark blocks release-bundle post-pause planning summaries when memory-ceiling visibility is hidden', () => {
+  const report = smallBenchmark();
+  const mutated = clone(report);
+
+  mutated.evidence.backpressure.receiptCursorMemoryCeilingVisible = false;
+  mutated.evidence.backpressure.receiptCursorMemoryCeilingMatchesQueueBudgetVisible = false;
+
+  const details = productionThroughputDetails(mutated);
+  const blockers = productionThroughputBlockers(mutated);
+
+  assert.ok(blockers.includes('queue-budget-visible-without-memory-ceiling-visibility'));
+  assert.ok(blockers.includes('queue-pause-without-visible-memory-ceiling'));
+  assert.ok(blockers.includes('queue-headroom-visible-without-memory-ceiling-visibility'));
+  assert.ok(blockers.includes('receipt-cursor-memory-headroom-visible-without-memory-ceiling-visibility'));
+  assert.ok(blockers.includes('receipt-cursor-queue-slack-visible-without-memory-ceiling-visibility'));
+  assert.deepEqual(details.releaseBundlePlanningSummary, {
+    surface: 'release-bundle-post-pause-planning',
+    status: 'blocked',
+    measured: false,
+    visible: false,
+    blockerRefs: [
+      'staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint',
+      'queue-budget-visible-without-memory-ceiling-visibility',
+      'queue-pause-without-visible-memory-ceiling',
+      'queue-headroom-visible-without-memory-ceiling-visibility',
+      'receipt-cursor-memory-headroom-visible-without-memory-ceiling-visibility',
+      'receipt-cursor-queue-slack-visible-without-memory-ceiling-visibility',
     ],
   });
 });
