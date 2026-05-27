@@ -10993,12 +10993,14 @@ test('guarded benchmark carries hidden queue-budget visibility blockers into plu
     pluginUpdateAndInstallBackpressureRejectedFastPaths
       .map((entry) => ({
         id: entry.id,
+        rejectedGate: entry.rejectedGate,
         blockerRefs: entry.blockerRefs,
       }))
       .sort((left, right) => left.id.localeCompare(right.id)),
     [
       {
         id: 'compressed-remote-index-and-cached-dependency-graph-skips-plugin-install-activation-after-pause-and-backpressure',
+        rejectedGate: 'group',
         blockerRefs: [
           'production-atomic-group-commit-not-measured',
           'production-parallelism-limits-not-visible',
@@ -11014,6 +11016,7 @@ test('guarded benchmark carries hidden queue-budget visibility blockers into plu
       },
       {
         id: 'compressed-remote-index-and-cached-package-hash-skips-plugin-install-activation-after-pause-and-backpressure',
+        rejectedGate: 'group',
         blockerRefs: [
           'production-atomic-group-commit-not-measured',
           'production-parallelism-limits-not-visible',
@@ -11029,6 +11032,7 @@ test('guarded benchmark carries hidden queue-budget visibility blockers into plu
       },
       {
         id: 'compressed-remote-index-and-cached-package-hash-skips-plugin-install-finalize-after-pause-and-backpressure',
+        rejectedGate: 'group',
         blockerRefs: [
           'production-atomic-group-commit-not-measured',
           'production-parallelism-limits-not-visible',
@@ -11044,6 +11048,7 @@ test('guarded benchmark carries hidden queue-budget visibility blockers into plu
       },
       {
         id: 'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-install-backpressure',
+        rejectedGate: 'recovery',
         blockerRefs: [
           'production-atomic-group-commit-not-measured',
           'production-row-batch-executor-not-measured',
@@ -11058,6 +11063,7 @@ test('guarded benchmark carries hidden queue-budget visibility blockers into plu
       },
       {
         id: 'compressed-remote-index-and-cached-row-receipts-skips-plugin-install-backpressure-after-pause',
+        rejectedGate: 'recovery',
         blockerRefs: [
           'production-atomic-group-commit-not-measured',
           'production-row-batch-executor-not-measured',
@@ -11072,6 +11078,7 @@ test('guarded benchmark carries hidden queue-budget visibility blockers into plu
       },
       {
         id: 'compressed-remote-index-and-cached-row-receipts-skips-plugin-update-backpressure',
+        rejectedGate: 'recovery',
         blockerRefs: [
           'production-atomic-group-commit-not-measured',
           'production-row-batch-executor-not-measured',
@@ -11085,6 +11092,7 @@ test('guarded benchmark carries hidden queue-budget visibility blockers into plu
       },
       {
         id: 'compressed-remote-index-and-parallel-row-batches-skips-plugin-install-backpressure-after-pause',
+        rejectedGate: 'recovery',
         blockerRefs: [
           'production-atomic-group-commit-not-measured',
           'production-parallelism-limits-not-visible',
@@ -11100,6 +11108,7 @@ test('guarded benchmark carries hidden queue-budget visibility blockers into plu
       },
       {
         id: 'reuse-canonical-per-kind-budgets-to-skip-plugin-update-row-batch-revalidation-after-pause',
+        rejectedGate: 'recovery',
         blockerRefs: [
           'production-atomic-group-commit-not-measured',
           'production-parallelism-limits-not-visible',
