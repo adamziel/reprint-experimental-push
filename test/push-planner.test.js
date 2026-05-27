@@ -20953,6 +20953,9 @@ test('production recovery support report surfaces a satisfied checked durable-jo
         filePath,
         schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
         claimHash,
+        ownsJournal: true,
+        restartReadable: true,
+        ownsRemoteArtifact: true,
         artifactRefs: {
           journal: filePath,
           remote: remoteArtifactPath,
@@ -20985,7 +20988,10 @@ test('production recovery support report surfaces a satisfied checked durable-jo
           },
           {
             sequence: 2,
-            type: 'journal-opened',
+            type: 'stale-claim-rejected',
+            claimHash: staleClaimHash,
+            previousClaimHash: claimHash,
+            claimLease: { id: staleClaimId, epoch: 2 },
             artifactRefs: {
               journal: filePath,
               remote: remoteArtifactPath,
@@ -20994,10 +21000,7 @@ test('production recovery support report surfaces a satisfied checked durable-jo
           },
           {
             sequence: 3,
-            type: 'stale-claim-rejected',
-            claimHash: staleClaimHash,
-            previousClaimHash: claimHash,
-            claimLease: { id: staleClaimId, epoch: 2 },
+            type: 'journal-opened',
             artifactRefs: {
               journal: filePath,
               remote: remoteArtifactPath,
@@ -21550,6 +21553,9 @@ test('production recovery support report keeps checked boundary closed without s
         filePath,
         schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
         claimHash,
+        ownsJournal: true,
+        restartReadable: true,
+        ownsRemoteArtifact: true,
         artifactRefs: {
           journal: filePath,
           remote: remoteArtifactPath,
