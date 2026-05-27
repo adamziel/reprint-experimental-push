@@ -1443,32 +1443,48 @@ function recoveryInspectProductionJournalInspection(recovery) {
   const productionJournal = recovery?.productionJournal;
   const topLevelJournal = recovery?.journal;
   const nestedJournal = productionJournal?.journal;
-  const useTopLevelJournal = recoveryInspectJournalClaimsProductionRecoveryJournalSurface(topLevelJournal);
-  const journal = useTopLevelJournal
-    ? topLevelJournal
-    : nestedJournal ?? topLevelJournal;
-
-  return {
-    journal,
-    claim: useTopLevelJournal
-      ? recovery?.claim
-        ?? journal?.claim
-        ?? productionJournal?.claim
-        ?? nestedJournal?.claim
-      : productionJournal?.claim
-        ?? nestedJournal?.claim
-        ?? recovery?.claim
-        ?? journal?.claim,
-    leaseFence: useTopLevelJournal
-      ? recovery?.leaseFence
-        ?? journal?.leaseFence
-        ?? productionJournal?.leaseFence
-        ?? nestedJournal?.leaseFence
-      : productionJournal?.leaseFence
-        ?? nestedJournal?.leaseFence
-        ?? recovery?.leaseFence
-        ?? journal?.leaseFence,
+  const topLevelCandidate = {
+    journal: topLevelJournal,
+    claim: recovery?.claim
+      ?? topLevelJournal?.claim
+      ?? productionJournal?.claim
+      ?? nestedJournal?.claim,
+    leaseFence: recovery?.leaseFence
+      ?? topLevelJournal?.leaseFence
+      ?? productionJournal?.leaseFence
+      ?? nestedJournal?.leaseFence,
   };
+  const nestedCandidate = {
+    journal: nestedJournal ?? topLevelJournal,
+    claim: productionJournal?.claim
+      ?? nestedJournal?.claim
+      ?? recovery?.claim
+      ?? topLevelJournal?.claim,
+    leaseFence: productionJournal?.leaseFence
+      ?? nestedJournal?.leaseFence
+      ?? recovery?.leaseFence
+      ?? topLevelJournal?.leaseFence,
+  };
+  const topLevelClaimsProductionSurface =
+    recoveryInspectJournalClaimsProductionRecoveryJournalSurface(topLevelJournal);
+
+  if (
+    topLevelClaimsProductionSurface
+    && productionRecoveryJournalInspectionSurfaceIsPresent(topLevelCandidate)
+  ) {
+    return topLevelCandidate;
+  }
+
+  if (
+    nestedJournal
+    && productionRecoveryJournalInspectionSurfaceIsPresent(nestedCandidate)
+  ) {
+    return nestedCandidate;
+  }
+
+  return topLevelClaimsProductionSurface
+    ? topLevelCandidate
+    : nestedCandidate;
 }
 
 function summarizeReplayEquivalence(applyResponse, replayResponse) {
