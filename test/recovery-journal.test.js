@@ -357,6 +357,7 @@ test('production recovery journal wrapper writes a restart-readable claim-fenced
     restartReadable: true,
     staleClaimRejected: false,
   });
+  assert.deepEqual(inspection.journal.leaseFence, inspection.leaseFence);
   assert.deepEqual(inspection.leaseFence.writerLease, inspection.journal.writerLease);
   assert.equal(inspection.leaseFence.boundary, 'filesystem-compare-rename');
   assert.equal(inspection.leaseFence.claimKeyUnique, true);
@@ -570,6 +571,14 @@ test('production recovery journal inspection surface helper fails closed when le
   );
   delete inheritedLeaseFenceMarker.leaseFence.staleClaimRejected;
   assert.equal(productionRecoveryJournalInspectionSurfaceIsPresent(inheritedLeaseFenceMarker), false);
+
+  const missingJournalLeaseFence = clone(inspection);
+  delete missingJournalLeaseFence.journal.leaseFence;
+  assert.equal(productionRecoveryJournalInspectionSurfaceIsPresent(missingJournalLeaseFence), false);
+
+  const divergentJournalLeaseFenceBoundary = clone(inspection);
+  divergentJournalLeaseFenceBoundary.journal.leaseFence.boundary = 'wpdb-single-statement-cas';
+  assert.equal(productionRecoveryJournalInspectionSurfaceIsPresent(divergentJournalLeaseFenceBoundary), false);
 
   const inheritedLeaseFenceWriterLease = clone(inspection);
   inheritedLeaseFenceWriterLease.leaseFence = Object.assign(

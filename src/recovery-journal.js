@@ -252,8 +252,10 @@ export function productionRecoveryJournalInspectionSurfaceIsPresent(inspection) 
   const claim = inspection?.claim;
   const journalClaim = journal?.claim;
   const writerLease = journal?.writerLease;
+  const journalLeaseFence = journal?.leaseFence;
   const leaseFence = inspection?.leaseFence;
   const leaseFenceWriterLease = leaseFence?.writerLease;
+  const journalLeaseFenceWriterLease = journalLeaseFence?.writerLease;
   const consumedIdentityMatches = journal?.consumed === true
     ? journal?.consumedClaimId === claim?.activeClaimId
       && journal?.consumedClaimHash === claim?.activeClaimHash
@@ -282,6 +284,7 @@ export function productionRecoveryJournalInspectionSurfaceIsPresent(inspection) 
     'consumedClaimHash',
     'storageGuard',
     'writerLease',
+    'leaseFence',
   ])
     && journal?.kind === PRODUCTION_RECOVERY_JOURNAL_KIND
     && hasNonEmptyString(journal?.path)
@@ -313,8 +316,18 @@ export function productionRecoveryJournalInspectionSurfaceIsPresent(inspection) 
     && productionRecoveryJournalWriterLeaseContractMatches(writerLease, claim)
     && writerLease?.restartReadable === journal.restartReadable
     && writerLease?.staleClaimRejected === journal.staleClaimRejected
+    && productionRecoveryJournalLeaseFenceContractMatches(journalLeaseFence)
+    && productionRecoveryJournalWriterLeaseContractMatches(journalLeaseFenceWriterLease, claim)
+    && productionRecoveryJournalWriterLeasesAgree(writerLease, journalLeaseFenceWriterLease)
+    && journalLeaseFence?.storageGuard === journal?.storageGuard?.boundary
+    && journalLeaseFenceWriterLease?.storageGuard === PRODUCTION_RECOVERY_JOURNAL_STORAGE_ADAPTER
+    && journalLeaseFenceWriterLease?.restartReadable === journal.restartReadable
+    && journalLeaseFenceWriterLease?.staleClaimRejected === journal.staleClaimRejected
+    && journalLeaseFence?.restartReadable === journal.restartReadable
+    && journalLeaseFence?.staleClaimRejected === journal.staleClaimRejected
     && productionRecoveryJournalLeaseFenceContractMatches(leaseFence)
     && productionRecoveryJournalWriterLeaseContractMatches(leaseFenceWriterLease, claim)
+    && productionRecoveryJournalLeaseFencesAgree(journalLeaseFence, leaseFence)
     && productionRecoveryJournalWriterLeasesAgree(writerLease, leaseFenceWriterLease)
     && leaseFence?.storageGuard === journal?.storageGuard?.boundary
     && leaseFenceWriterLease?.storageGuard === PRODUCTION_RECOVERY_JOURNAL_STORAGE_ADAPTER
@@ -732,6 +745,15 @@ function productionRecoveryJournalWriterLeasesAgree(writerLease, nestedWriterLea
     .every((key) => writerLease?.[key] === nestedWriterLease?.[key])
     && writerLease?.claimId === nestedWriterLease?.claimId
     && writerLease?.claimHash === nestedWriterLease?.claimHash;
+}
+
+function productionRecoveryJournalLeaseFencesAgree(journalLeaseFence, inspectionLeaseFence) {
+  return ['boundary', 'storageGuard', 'claimKeyUnique', 'fsyncEvidence', 'monotonicSequence', 'restartReadable', 'staleClaimRejected']
+    .every((key) => journalLeaseFence?.[key] === inspectionLeaseFence?.[key])
+    && productionRecoveryJournalWriterLeasesAgree(
+      journalLeaseFence?.writerLease,
+      inspectionLeaseFence?.writerLease,
+    );
 }
 
 function productionRecoveryJournalLeaseFenceContractMatches(leaseFence) {
