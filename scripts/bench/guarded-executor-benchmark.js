@@ -182,6 +182,7 @@ const ROLLOUT_REJECTED_FAST_PATH_SPECS = Object.freeze([
       'queue-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof',
       'staging-disk-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof',
       'staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint',
+      ...HIDDEN_STAGING_DISK_VISIBILITY_BLOCKER_REFS,
     ]),
   }),
   Object.freeze({
@@ -195,6 +196,7 @@ const ROLLOUT_REJECTED_FAST_PATH_SPECS = Object.freeze([
       'queue-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof',
       'staging-disk-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof',
       'staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint',
+      ...HIDDEN_STAGING_DISK_VISIBILITY_BLOCKER_REFS,
     ]),
   }),
   Object.freeze({
@@ -217,6 +219,7 @@ const ROLLOUT_REJECTED_FAST_PATH_SPECS = Object.freeze([
       'queue-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof',
       'staging-disk-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof',
       'staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint',
+      ...HIDDEN_STAGING_DISK_VISIBILITY_BLOCKER_REFS,
     ]),
   }),
   Object.freeze({
@@ -230,6 +233,7 @@ const ROLLOUT_REJECTED_FAST_PATH_SPECS = Object.freeze([
       'queue-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof',
       'staging-disk-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof',
       'staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint',
+      ...HIDDEN_STAGING_DISK_VISIBILITY_BLOCKER_REFS,
     ]),
   }),
   Object.freeze({
@@ -257,6 +261,7 @@ const ROLLOUT_REJECTED_FAST_PATH_SPECS = Object.freeze([
       'queue-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof',
       'staging-disk-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof',
       'staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint',
+      ...HIDDEN_STAGING_DISK_VISIBILITY_BLOCKER_REFS,
     ]),
   }),
   Object.freeze({
@@ -279,6 +284,7 @@ const ROLLOUT_REJECTED_FAST_PATH_SPECS = Object.freeze([
       'queue-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof',
       'staging-disk-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof',
       'staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint',
+      ...HIDDEN_STAGING_DISK_VISIBILITY_BLOCKER_REFS,
     ]),
   }),
   Object.freeze({
@@ -292,6 +298,7 @@ const ROLLOUT_REJECTED_FAST_PATH_SPECS = Object.freeze([
       'queue-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof',
       'staging-disk-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof',
       'staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint',
+      ...HIDDEN_STAGING_DISK_VISIBILITY_BLOCKER_REFS,
     ]),
   }),
   Object.freeze({
@@ -1218,6 +1225,7 @@ const ROLLOUT_REJECTED_FAST_PATH_SPECS = Object.freeze([
       'queue-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof',
       'staging-disk-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof',
       'staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint',
+      ...HIDDEN_STAGING_DISK_VISIBILITY_BLOCKER_REFS,
     ]),
   }),
   Object.freeze({
@@ -1231,6 +1239,7 @@ const ROLLOUT_REJECTED_FAST_PATH_SPECS = Object.freeze([
       'queue-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof',
       'staging-disk-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof',
       'staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint',
+      ...HIDDEN_STAGING_DISK_VISIBILITY_BLOCKER_REFS,
     ]),
   }),
   Object.freeze({
@@ -1281,6 +1290,7 @@ const ROLLOUT_REJECTED_FAST_PATH_SPECS = Object.freeze([
       'queue-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof',
       'staging-disk-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof',
       'staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint',
+      ...HIDDEN_STAGING_DISK_VISIBILITY_BLOCKER_REFS,
     ]),
   }),
   Object.freeze({
@@ -1291,6 +1301,7 @@ const ROLLOUT_REJECTED_FAST_PATH_SPECS = Object.freeze([
       'queue-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof',
       'staging-disk-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof',
       'staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint',
+      ...HIDDEN_STAGING_DISK_VISIBILITY_BLOCKER_REFS,
     ]),
   }),
   Object.freeze({
