@@ -400,10 +400,54 @@ mutation on a real live `REPRINT_PUSH_SOURCE_URL`.
 These are support, audit-publication, or test-hardening facts only. They do not
 move release gates.
 
+## Follow-Up Artifact-Only Check 18:30
+
+Commands:
+
+```bash
+git fetch --all --prune
+git for-each-ref --sort=-committerdate --format='%(refname:short) %(objectname:short) %(committerdate:iso8601) %(subject)' \
+  refs/remotes/origin/supervisor/release-boundary-consolidated-20260527 \
+  refs/heads/supervisor/release-boundary-consolidated-20260527 \
+  refs/remotes/origin/lane/plugin-driver-boundary-v2-20260527 \
+  refs/remotes/origin/lane/topology-verifier-v2-20260527 \
+  refs/remotes/origin/lane/critic-reorg-v2-20260527 \
+  refs/remotes/origin/lane/auditor-reorg-20260527
+timeout 300s npm run verify:release
+```
+
+New artifact facts since the previous auditor update:
+
+| Ref | Head | Status |
+| --- | --- | --- |
+| `origin/supervisor/release-boundary-consolidated-20260527` | `b53ada92a` | Advanced to refresh auditor heads |
+| `origin/lane/plugin-driver-boundary-v2-20260527` | `d0fe676b8` | Advanced remote v2 support branch |
+| `origin/lane/topology-verifier-v2-20260527` | `7edf24fee` | Newly present remote v2 support branch |
+| `origin/lane/critic-reorg-v2-20260527` | `90a5c9f66` | Critic update still keeps verdict at `0/4` |
+
+The updated consolidated verifier in `/tmp/reprint-reorg-integrator-20260527`
+again exited `1` with `REPRINT_PUSH_LIVE_SOURCE_REQUIRED`,
+`packagedFallbackAllowed: false`, source/local/drift ports as `null`, and
+release movement `allowed: false`.
+
+Topology v2 artifact note: comparing
+`origin/supervisor/release-boundary-consolidated-20260527..origin/lane/topology-verifier-v2-20260527`
+shows verifier topology support and proof-test changes, but this audit has no
+real live command proving a source/local/changed production topology.
+
+Plugin v2 artifact note: comparing
+`origin/supervisor/release-boundary-consolidated-20260527..origin/lane/plugin-driver-boundary-v2-20260527`
+shows plugin-driver proof test changes plus audit-artifact drift, but this
+audit has no real live command proving plugin-driver ownership on the release
+boundary.
+
+These are support, audit-refresh, or test-hardening facts only. They do not
+move release gates.
+
 ## Blocker
 
 The consolidated branch requested by `NEXT_TASKS.md` now exists remotely at
-`a16ba719bdd522294d262343c4d86afa5c300e84` and has a coherent fail-closed
+`b53ada92ae9f3227d4de8ed8d0432db3706dcb9f` and has a coherent fail-closed
 `verify:release` command, but it correctly does not move any release gate
 without a real live `REPRINT_PUSH_SOURCE_URL`.
 
