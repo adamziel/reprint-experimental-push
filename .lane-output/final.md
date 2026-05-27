@@ -1,30 +1,31 @@
 # no-data-loss-invariants handoff
 
 Timestamp:
-- `2026-05-26 18:04:15 CEST (+0200)`
+- `2026-05-27 04:15:46 CEST (+0200)`
 
 Current lane evidence:
-- The planner now emits specific same-plan attachment target reasons instead of the generic attachment blocker text when a locally created attachment is blocked by `featured-image-attachment`, `post-parent`, or `term-relationship-object` inbound references.
-- The bounded attachment blocker evidence still preserves the exact inbound reference edge and still keeps matching independent edits and remote-only plugin drift/removals out of the blocked payload.
+- Added the missing plain unsupported `wp_users` parity case for `matching independent restore + remote-only plugin changes`.
+- The new case proves the planner still blocks the local `wp_users` row as `unsupported-comments-users-resource`, preserves the matching file restore as `already-in-sync`, keeps remote-only plugin changes as `keep-remote`, and emits no user mutation.
+- Blocker evidence remains redacted: the blocked plan JSON does not leak the local/base user identifiers or the restored file payload.
 
 Changed files:
-- [`src/planner.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/no-data-loss-invariants-clean-20260526-1530/src/planner.js)
-- [`test/push-planner.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/no-data-loss-invariants-clean-20260526-1530/test/push-planner.test.js)
-- [`.lane-output/final.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/no-data-loss-invariants-clean-20260526-1530/.lane-output/final.md)
+- [test/push-planner.test.js](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/no-data-loss-invariants-clean-20260526-1530/test/push-planner.test.js)
+- [.lane-output/final.md](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/no-data-loss-invariants-clean-20260526-1530/.lane-output/final.md)
 
-Commands run:
-- `node --check src/planner.js`
-- `node --check test/push-planner.test.js`
-- `timeout 90s node --test --test-name-pattern='blocks local term-relationship object references to a same-plan created attachment identity while preserving a matching independent edit and remote-only plugin changes|blocks local featured image references to a same-plan created attachment identity while preserving a matching independent edit and remote-only plugin changes|blocks local post-parent attachment references when the attachment is created in the same plan while preserving remote-only plugin drift' test/push-planner.test.js`
-- `git diff --check -- src/planner.js test/push-planner.test.js`
+Commands:
+- `timeout 60s node --test test/push-planner.test.js --test-name-pattern='blocks local users graph resources while preserving a matching independent restore and remote-only plugin changes'`
+- `timeout 60s sh -lc "node --test test/push-planner.test.js --test-name-pattern='blocks local users graph resources while preserving a matching independent restore and remote-only plugin changes' 2>&1 | grep -F 'blocks local users graph resources while preserving a matching independent restore and remote-only plugin changes'"`
+- `git diff --check`
+- `git add test/push-planner.test.js .lane-output/final.md && git commit -m "Cover blocked plain user restore changes" && git push origin HEAD:lane/no-data-loss-invariants`
 - `git status --short --branch`
 
 Push result:
-- Pending commit/push from this worktree at handoff write time.
+- Pending.
 
 Worktree status:
-- Dirty tracked state limited to the three lane-owned files above.
-- Branch: `lane/cycle-20260525-mainwindows-2349/ndl-invariants-clean-20260526-1530`
+- Dirty tracked state is limited to the new planner test plus this handoff refresh.
+- Branch head will advance from `ecd7ff4bc1c1b5244ee50ee54f7b6b960f687654` after commit/push.
 
 Next supervisor nudge:
-- The next useful invariants edge is another unsupported same-plan family whose target blocker still preserves bounded references but under-reports the exact dependency type, or any new ready-plan leak surfaced by reliable or same-plan graph work.
+- Treat the next invariants head as the current plain-user parity update. The plain unsupported `wp_users` matrix now covers remote-only drift/removals, matching edit with plugin removals/changes, matching delete with plugin changes, matching restore with plugin removals/changes, matching row delete with plugin removals, and matching file type swap with plugin removals/changes.
+- The next smallest plain-user parity gap is likely `matching independent delete + remote-only plugin changes`, unless a higher-value fail-closed invariant overtakes this cluster first.

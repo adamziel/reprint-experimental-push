@@ -36877,6 +36877,61 @@ test('blocks local users graph resources while preserving a matching independent
   assert.equal(Object.hasOwn(remote.files, 'wp-content/plugins/forms/forms.php'), false);
 });
 
+test('blocks local users graph resources while preserving a matching independent restore and remote-only plugin changes', () => {
+  const resourceKey = 'row:["wp_users","ID:17"]';
+  const matchingRestoreKey = 'file:wp-content/uploads/user-restore-change.txt';
+  const base = baseSite();
+  delete base.files['wp-content/uploads/user-restore-change.txt'];
+  base.db.wp_users = {
+    'ID:17': {
+      ID: 17,
+      user_login: 'base-restore-change-user',
+      user_email: 'base-restore-change@example.test',
+    },
+  };
+
+  const local = baseSite();
+  local.files['wp-content/uploads/user-restore-change.txt'] = 'shared user restore change bytes';
+  local.db.wp_users = {
+    'ID:17': {
+      ID: 17,
+      user_login: 'local-restore-change-user',
+      user_email: 'local-restore-change@example.test',
+    },
+  };
+
+  const remote = baseSite();
+  remote.files['wp-content/uploads/user-restore-change.txt'] = 'shared user restore change bytes';
+  remote.db.wp_users = JSON.parse(JSON.stringify(base.db.wp_users));
+  remote.plugins.forms.description = 'remote-only plugin changes';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin changes */';
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers[0];
+  const matchingRestore = decisionFor(plan, matchingRestoreKey);
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(plan.conflicts.length, 0);
+  assert.equal(blocker.class, 'unsupported-comments-users-resource');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.reason, 'User graph resources are not yet supported by the planner.');
+  assert.equal(matchingRestore.decision, 'already-in-sync');
+  assert.equal(matchingRestore.change.localChange, 'create');
+  assert.equal(matchingRestore.change.remoteChange, 'create');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('local-restore-change-user'), false);
+  assert.equal(planJson.includes('base-restore-change-user'), false);
+  assert.equal(planJson.includes('shared user restore change bytes'), false);
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin changes');
+  assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin changes */');
+});
+
 test('blocks local users graph resources while preserving a matching independent file type swap and remote-only plugin changes', () => {
   const resourceKey = 'row:["wp_users","ID:12"]';
   const base = baseSite();
