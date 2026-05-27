@@ -1,45 +1,42 @@
 # Critic Verdict
 
-Current reliable head: `4fec89c9d6f853bd066f0b3a58cd22a738c1c747`
-(`Fail closed on malformed auth lifecycle fields`).
+Current reliable head: `fd2028238478d4a1b3c88b1cdbf7ba104c1a9d36`
+(`Fail closed on malformed auth identity drift`).
 
 Verdict: `0/4`
 
 Reason:
 
-- This head makes the production auth/session lifecycle checks fail closed on
-  malformed string identity fields. In
-  `scripts/playground/production-auth-session-lifecycle.js` and
-  `src/authenticated-http-push-client.js`, it now rejects malformed `id`,
-  `type`, `status`, and `expiresAt` values before treating them as lifecycle
-  evidence. The added tests in
-  `test/authenticated-http-push-client.test.js` and
-  `test/production-shaped-proof.test.js` prove that array-valued or
-  whitespace-padded lifecycle fields now produce
-  `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED` with
-  `required: 'string lifecycle fields'` and observations such as
-  `invalid-status` or `invalid-id`.
-- It also improves failure reporting on the packaged verifier path only.
-  `scripts/playground/production-shaped-release-verify.mjs` now serializes the
-  plugin-driver spawn status, signal, error, stdout, and stderr through
-  `describeSpawnProof()`, which is diagnostic hardening rather than a new
-  release-boundary proof.
-- That still does not close any supervised release gate. The checked path
-  remains the packaged Playground verifier scaffolding, and this head still
-  does not prove a production-owned, non-lab-backed source mutation boundary on
-  the real Reprint endpoint with live auth/session issuance and readback,
-  restart-readable durable journal storage with lease fencing, and apply-time
-  revalidation before mutation. Verdict therefore remains `0/4`.
+- This head adds more fail-closed auth envelope validation inside
+  `src/authenticated-http-push-client.js` and extends
+  `test/authenticated-http-push-client.test.js` to cover it. The new checks now
+  reject malformed `auth.identity.userLogin` on the production-session path at
+  preflight, dry-run, apply, recovery inspect, replay, and db-journal reads,
+  and `describeAuthEnvelopeDrift()` now reports malformed observed envelope
+  fields with explicit `field` metadata for `auth.identity.userLogin` and
+  `auth.session.id/type/status/expiresAt`.
+- The added tests prove only that the checked client path fails closed sooner
+  when the response envelope is malformed. They cover array-valued
+  `auth.identity.userLogin` and whitespace-padded checked-path session ids,
+  yielding `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED` with observations such
+  as `invalid-user-login` and `invalid-id`.
+- There is no new production-owned proof artifact beyond that hardening. I did
+  not find a reliable final note/log beyond the commit itself and the code
+  diff, and neither the diff nor the tests introduce a real Reprint endpoint
+  mutation boundary, live auth/session issuance and restart readback, durable
+  journal persistence with lease fencing, or apply-time revalidation outside
+  the Playground/package-mode scaffolding. Verdict therefore remains `0/4`.
 
 Next owner / command:
 
 - `main:reliable-exec` should land the next exact primitive beyond malformed
-  auth lifecycle validation: a production-owned, non-lab-backed source
-  mutation/auth-session boundary on the real Reprint endpoint that issues a
-  live session on the endpoint, reads it back after restart from durable
-  journal storage, enforces lease-fenced ownership of those journal rows, and
-  revalidates the session at apply time before mutation without falling back to
-  Playground package-mode scaffolding. The proof should come through
+  auth identity drift hardening: a production-owned, non-lab-backed source
+  mutation boundary on the real Reprint endpoint that mints a live auth
+  session on the endpoint, reads the same session back after restart from
+  durable journal storage, proves lease-fenced ownership of those persisted
+  journal rows, and revalidates that session at apply time before the first
+  mutation without falling back to Playground package-mode scaffolding. The
+  proof should come through
   `scripts/playground/production-shaped-release-verify.mjs`,
   `scripts/playground/push-remote-rest-plugin.php`,
   `src/recovery-journal.js`, and `src/authenticated-http-push-client.js` with
