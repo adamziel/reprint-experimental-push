@@ -41940,6 +41940,69 @@ test('closes an owned production recovery journal writer after replaying a compl
   assert.equal(persisted.records.at(-1).state, 'blocked-recovery');
 });
 
+test('closes an owned production recovery journal writer after a partial commit blocks recovery', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const plan = planFor(base, local, baseSite());
+
+  const productionJournalPath = tempRecoveryJournalPath();
+  const remoteArtifactPath = `${productionJournalPath}.remote`;
+  const claimId = 'claim-close-after-blocked-partial-commit';
+  const writer = openProductionRecoveryJournal(productionJournalPath, {
+    truncate: true,
+    now: fixedNow,
+    claimId,
+    writerLease: { id: claimId },
+    ownsRemoteArtifact: true,
+    remoteArtifactPath,
+  });
+
+  const remote = baseSite();
+  appendRecoveryClaimOpened(writer, {
+    plan,
+    current: remote,
+    claimId,
+    artifactRefs: {
+      journal: productionJournalPath,
+      remote: remoteArtifactPath,
+    },
+  });
+
+  const error = captureError(() => applyPlan(remote, plan, {
+    durableJournal: writer,
+    requireProductionDurableJournal: true,
+    mutateRemote: true,
+    failDuringCommitAtMutation: 1,
+  }));
+
+  assert.equal(error.code, 'INJECTED_FAILURE_DURING_COMMIT');
+  assert.equal(error.details.recovery.status, 'blocked-recovery');
+  assert.equal(isDurableJournalClosed(writer), true);
+  assert.throws(() => writer.appendEvent('journal-opened', {
+    planId: plan.id,
+    state: 'reopened',
+    observedHash: 'snapshot-hash-only',
+    artifactRefs: {
+      journal: productionJournalPath,
+      remote: remoteArtifactPath,
+    },
+  }), /Recovery journal is closed/);
+
+  const persisted = readRecoveryJournal(productionJournalPath);
+  assert.equal(
+    persisted.records.some((record) => record.type === 'journal-replayed'),
+    false,
+  );
+  assertJournalTailTypes(
+    persisted.records,
+    ['recovery-state'],
+    'blocked partial commit must persist the blocked recovery boundary before close',
+  );
+  assert.equal(persisted.records.at(-1).state, 'blocked-recovery');
+});
+
 test('idempotently skips closing an already closed owned production recovery journal writer', () => {
   const closeCalls = [];
   const writer = {
