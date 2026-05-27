@@ -6,8 +6,10 @@ import net from 'node:net';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
+  describeAuthSessionSourceMetadataDrift,
   loadAuthSessionSource,
   loadAuthSessionSourceFromRuntimeEnvironment,
+  resolveAuthSessionRequestCredentials,
   resolveAuthSessionRequestState,
   resolveAuthSessionSourceCredentials,
 } from '../scripts/playground/auth-session-source.js';
@@ -1328,6 +1330,65 @@ test('production-shaped release verify can force a matching non-local production
   );
 });
 
+test('auth-session source metadata drift fails closed on production-source warnings', () => {
+  assert.deepEqual(
+    describeAuthSessionSourceMetadataDrift({
+      ok: true,
+      sourceUrl: 'http://127.0.0.1:8080',
+      username: 'reprint_push_admin',
+      applicationPassword: 'reprint-push-admin-app-password',
+      warning: 'lab-only-warning',
+    }),
+    {
+      field: 'auth.session.warning',
+      required: 'production-backed auth',
+      observed: 'lab-only-warning',
+    },
+  );
+});
+
+test('auth-session source metadata drift fails closed on malformed Playground fallback metadata', () => {
+  assert.deepEqual(
+    describeAuthSessionSourceMetadataDrift({
+      ok: true,
+      sourceUrl: 'http://127.0.0.1:8080',
+      username: 'reprint_push_admin',
+      applicationPassword: 'reprint-push-admin-app-password',
+      playgroundFallback: 'not-a-boolean',
+    }),
+    {
+      field: 'auth.session.playgroundFallback',
+      required: 'boolean lifecycle flags',
+      observed: 'invalid-playgroundFallback',
+    },
+  );
+});
+
+test('production-shaped release verify ignores malformed direct auth/session source credentials', () => {
+  const source = {
+    ok: true,
+    sourceUrl: ' http://127.0.0.1:8080 ',
+    username: ' reprint_push_admin ',
+    applicationPassword: ' reprint-push-admin-app-password ',
+  };
+  assert.deepEqual(
+    resolveAuthSessionSourceCredentials(
+      {
+        liveSourceUrl: 'http://127.0.0.1:9999',
+        username: 'stale-lab-username',
+        applicationPassword: 'stale-lab-password',
+      },
+      source,
+      { preferSource: true },
+    ),
+    {
+      liveSourceUrl: 'http://127.0.0.1:9999',
+      username: 'stale-lab-username',
+      applicationPassword: 'stale-lab-password',
+    },
+  );
+});
+
 test('production-shaped release verify keeps fixture bootstrap credentials separate from live source credentials', () => {
   const resolved = resolveReleaseVerifyCredentials({
     liveSourceUrl: 'http://127.0.0.1:8080',
@@ -1394,6 +1455,65 @@ test('production-shaped release verify lets a required matching non-local produc
       credentials: {
         username: 'reprint_push_admin',
         password: 'reprint-push-admin-app-password',
+      },
+    },
+  );
+});
+
+test('production-shaped release verify lets a required matching non-local production auth/session source override explicit direct credentials before request-state wrapping', () => {
+  const source = {
+    ok: true,
+    sourceUrl: 'https://example.test/wp/?session=1#preserved',
+    username: 'reprint_push_admin',
+    applicationPassword: 'reprint-push-admin-app-password',
+  };
+
+  assert.deepEqual(
+    resolveAuthSessionRequestCredentials(
+      {
+        liveSourceUrl: 'https://example.test/wp',
+        username: 'trusted-runtime-username',
+        applicationPassword: 'trusted-runtime-password',
+        fallbackUsername: 'stale-fallback-username',
+        fallbackApplicationPassword: 'stale-fallback-password',
+      },
+      source,
+      { preferSource: true },
+    ),
+    {
+      liveSourceUrl: 'https://example.test/wp/?session=1#preserved',
+      username: 'reprint_push_admin',
+      applicationPassword: 'reprint-push-admin-app-password',
+    },
+  );
+});
+
+test('production-shaped release verify keeps explicit direct credentials ahead of the source command before override is required', () => {
+  const source = {
+    ok: true,
+    sourceUrl: 'http://127.0.0.1:8080',
+    username: 'reprint_push_admin',
+    applicationPassword: 'reprint-push-admin-app-password',
+  };
+
+  assert.deepEqual(
+    resolveAuthSessionRequestState(
+      {
+        liveSourceUrl: '',
+        username: 'trusted-runtime-username',
+        applicationPassword: 'trusted-runtime-password',
+        fallbackUsername: 'stale-fallback-username',
+        fallbackApplicationPassword: 'stale-fallback-password',
+      },
+      source,
+    ),
+    {
+      liveSourceUrl: 'http://127.0.0.1:8080',
+      username: 'trusted-runtime-username',
+      applicationPassword: 'trusted-runtime-password',
+      credentials: {
+        username: 'trusted-runtime-username',
+        password: 'trusted-runtime-password',
       },
     },
   );
