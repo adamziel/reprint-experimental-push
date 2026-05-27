@@ -132,7 +132,7 @@ async function runApplyRevalidationProof({ remoteServer, localServer, externalTo
     || plan.mutations[0];
   assert.ok(driftTarget, 'apply revalidation proof needs a prepared mutation target');
   const session = preflight.body.session.id;
-  const idempotencyKey = 'production-shaped-apply-revalidation-smoke-001';
+  const idempotencyKey = `production-shaped-apply-revalidation-smoke-${Date.now()}-${process.pid}`;
 
   process.stderr.write('apply-revalidation: dry-run /dry-run\n');
   const dryRun = await client.signedPost('/dry-run', { plan }, { session, idempotencyKey });

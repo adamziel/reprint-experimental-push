@@ -84,6 +84,7 @@ const proofSubprocessKillSignal = 'SIGTERM';
 const liveProofSubprocessTimeoutMs = 15_000;
 const liveProofSubprocessKillSignal = 'SIGKILL';
 const liveProofInnerTimeoutMs = Math.max(1_000, Math.min(3_000, liveProofSubprocessTimeoutMs - 8_000));
+const liveWrapperSubprocessTimeoutMs = 180_000;
 // Give the verifier enough time to reach its own bounded readiness failure and
 // emit probe diagnostics before the outer subprocess timeout can kill it.
 const liveProofLaunchTimeoutMs = Math.max(1_000, Math.min(7_000, liveProofSubprocessTimeoutMs - 4_000));
@@ -3886,6 +3887,51 @@ test('production-shaped live release verify defaults the checked live branch to 
     }),
     false,
   );
+});
+
+maybeTest('production-shaped live release verify command proves the packaged checked boundary end to end by default', () => {
+  const proof = spawnBoundedSync(
+    process.execPath,
+    ['scripts/playground/production-shaped-live-release-verify.mjs'],
+    {
+      cwd: repoRoot,
+      timeout: liveWrapperSubprocessTimeoutMs,
+      killSignal: 'SIGKILL',
+      env: {
+        ...process.env,
+        NODE_NO_WARNINGS: '1',
+      },
+      encoding: 'utf8',
+      maxBuffer: 1024 * 1024 * 20,
+    },
+    'live release verify wrapper',
+  );
+
+  assertLiveReleaseVerifyProof(proof, 'live release verify wrapper', liveWrapperSubprocessTimeoutMs);
+  assert.equal(proof.status, 0, proof.stderr);
+  const summary = JSON.parse(proof.stdout);
+
+  assert.equal(summary.ok, true);
+  assert.equal(summary.boundary?.verdict, 'PACKAGED_RELEASE_BOUNDARY_OK');
+  assert.equal(summary.boundary?.authSession?.required, 'checked release production-auth-session lifecycle');
+  assert.equal(summary.boundary?.authSession?.observed, 'journal');
+  assert.equal(summary.boundary?.authSession?.verdict, 'PACKAGED_RELEASE_BOUNDARY_OK');
+  assert.equal(summary.preflight?.routeProfile?.profile, 'production-shaped');
+  assert.equal(summary.preflight?.routeProfile?.labBacked, false);
+  assert.equal(summary.releaseProof?.authSessionLifecycle?.minted?.type, 'production-auth-session');
+  assert.equal(summary.releaseProof?.authSessionLifecycle?.minted?.status, 'active');
+  assert.equal(summary.releaseProof?.authSessionLifecycle?.minted?.expired, false);
+  assert.equal(summary.releaseProof?.authSessionLifecycle?.read?.type, 'production-auth-session');
+  assert.equal(summary.releaseProof?.authSessionLifecycle?.read?.status, 'active');
+  assert.equal(summary.releaseProof?.authSessionLifecycle?.read?.expired, false);
+  assert.equal(summary.durableJournal?.checkedAccepted, true);
+  assert.equal(summary.boundary?.replayAndRetry?.required, '/snapshot');
+  assert.equal(summary.boundary?.replayAndRetry?.observed, '/snapshot');
+  assert.equal(summary.boundary?.replayAndRetry?.retryAttempts, 2);
+  assert.equal(summary.boundary?.replayAndRetry?.verdict, 'LIVE_RELEASE_BOUNDARY_OK');
+  assert.equal(summary.applyRevalidation?.ok, true);
+  assert.equal(summary.applyRevalidation?.boundary?.firstRemainingProductionBoundary, null);
+  assert.equal(summary.applyRevalidation?.boundary?.verdict, 'LIVE_RELEASE_BOUNDARY_OK');
 });
 
 maybeTest('production-shaped release proof runs the live preflight branch against a local Playground source', async () => {
