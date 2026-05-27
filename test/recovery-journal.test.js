@@ -4921,9 +4921,15 @@ test('production recovery journal consumption fails closed when the compatibilit
 
 test('checked durable journal boundary stays closed until stale-claim rejection is proven on the lease fence', () => {
   const claimId = 'checked-boundary-claim';
+  const journalPath = '/var/lib/reprint/recovery.jsonl';
   const baseContract = {
     acceptedOnCheckedBoundary: true,
     scope: 'checked live production-shaped journal surface; not local Playground fixture only',
+    journalPath,
+    artifactRefs: {
+      journal: journalPath,
+      remote: '/var/lib/reprint/recovery.remote.json',
+    },
     claim: {
       activeClaimId: claimId,
     },
@@ -5087,13 +5093,40 @@ test('checked durable journal boundary stays closed until stale-claim rejection 
     checkedDurableJournalBoundarySatisfied(inheritedNestedLeaseContract),
     false,
   );
+  assert.equal(
+    checkedDurableJournalBoundarySatisfied({
+      ...baseContract,
+      artifactRefs: {
+        journal: '/var/lib/reprint/recovery-drifted.jsonl',
+        remote: '/var/lib/reprint/recovery.remote.json',
+      },
+    }),
+    false,
+  );
+  const inheritedJournalPathContract = {
+    ...baseContract,
+  };
+  delete inheritedJournalPathContract.journalPath;
+  Object.setPrototypeOf(inheritedJournalPathContract, {
+    journalPath,
+  });
+  assert.equal(
+    checkedDurableJournalBoundarySatisfied(inheritedJournalPathContract),
+    false,
+  );
 });
 
 test('checked durable journal boundary accepts the packaged production journal scope', () => {
   const claimId = 'packaged-boundary-claim';
+  const journalPath = '/var/lib/reprint/packaged-recovery.jsonl';
   const packagedContract = {
     acceptedOnCheckedBoundary: true,
     scope: 'packaged production journal scope',
+    journalPath,
+    artifactRefs: {
+      journal: journalPath,
+      remote: '/var/lib/reprint/packaged-recovery.remote.json',
+    },
     claim: {
       activeClaimId: claimId,
     },
@@ -5154,9 +5187,15 @@ test('checked durable journal boundary accepts the packaged production journal s
 
 test('checked durable journal boundary accepts the explicit packaged recovery journal scope', () => {
   const claimId = 'packaged-recovery-claim';
+  const journalPath = '/var/lib/reprint/packaged-recovery-surface.jsonl';
   const packagedContract = {
     acceptedOnCheckedBoundary: true,
     scope: 'packaged production plugin recovery journal surface',
+    journalPath,
+    artifactRefs: {
+      journal: journalPath,
+      remote: '/var/lib/reprint/packaged-recovery-surface.remote.json',
+    },
     claim: {
       activeClaimId: claimId,
     },
@@ -5200,9 +5239,15 @@ test('checked durable journal boundary accepts the explicit packaged recovery jo
 
 test('checked durable journal boundary accepts the explicit live recovery journal scope', () => {
   const claimId = 'live-recovery-claim';
+  const journalPath = '/var/lib/reprint/live-recovery.jsonl';
   const liveContract = {
     acceptedOnCheckedBoundary: true,
     scope: 'checked live production-shaped recovery journal surface',
+    journalPath,
+    artifactRefs: {
+      journal: journalPath,
+      remote: '/var/lib/reprint/live-recovery.remote.json',
+    },
     claim: {
       activeClaimId: claimId,
     },
@@ -5246,9 +5291,15 @@ test('checked durable journal boundary accepts the explicit live recovery journa
 
 test('checked durable journal boundary rejects nearby stale scope wording', () => {
   const claimId = 'stale-scope-claim';
+  const journalPath = '/var/lib/reprint/stale-scope-recovery.jsonl';
   const staleScopeContract = {
     acceptedOnCheckedBoundary: true,
     scope: 'packaged production plugin journal surface',
+    journalPath,
+    artifactRefs: {
+      journal: journalPath,
+      remote: '/var/lib/reprint/stale-scope-recovery.remote.json',
+    },
     claim: {
       activeClaimId: claimId,
     },

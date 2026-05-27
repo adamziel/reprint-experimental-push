@@ -1471,6 +1471,21 @@ function checkedDurableJournalBoundaryProof(writer, inspected, missingDependency
   const inspectedRestartReadable = Object.hasOwn(inspected ?? {}, 'restartReadable')
     && !hasHiddenOwnStringProperty(inspected, 'restartReadable')
     && inspected.restartReadable === true;
+  const inspectedJournalPath = Object.hasOwn(inspected ?? {}, 'journalPath')
+    && !hasHiddenOwnStringProperty(inspected, 'journalPath')
+    && isCanonicalAbsolutePath(inspected.journalPath)
+      ? inspected.journalPath
+      : null;
+  const inspectedArtifactRefs = durableJournalInspectArtifactRefs(inspected)
+    && inspectedJournalPath !== null
+    && inspected.artifactRefs.journal === inspectedJournalPath
+      ? Object.freeze({
+        journal: inspected.artifactRefs.journal,
+        remote: Object.hasOwn(inspected.artifactRefs, 'remote')
+          ? inspected.artifactRefs.remote
+          : null,
+      })
+      : null;
   const scope = Object.hasOwn(writer ?? {}, 'scope')
     && !hasHiddenOwnStringProperty(writer, 'scope')
     && typeof writer.scope === 'string'
@@ -1523,6 +1538,8 @@ function checkedDurableJournalBoundaryProof(writer, inspected, missingDependency
   return {
     scope,
     acceptedOnCheckedBoundary,
+    journalPath: inspectedJournalPath,
+    artifactRefs: inspectedArtifactRefs,
     ownership: {
       ownsJournal: inspectedOwnsJournal,
       restartReadable: inspectedRestartReadable,

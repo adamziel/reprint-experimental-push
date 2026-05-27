@@ -98,11 +98,15 @@ export function checkedDurableJournalBoundarySatisfied(dbJournal) {
   const nestedWriterLease = dbJournal?.leaseFence?.writerLease;
   const leaseFenceBoundary = dbJournal?.leaseFence?.boundary;
   const productionAdapter = dbJournal?.ownership?.productionAdapter;
+  const journalPath = surfacedCheckedBoundaryJournalPath(dbJournal, 'journalPath');
+  const artifactRefs = surfacedCheckedBoundaryArtifactRefs(dbJournal, journalPath.path);
   const activeClaimId = surfacedCheckedBoundaryClaimId(dbJournal?.claim, 'activeClaimId');
   const writerLeaseClaimId = surfacedCheckedBoundaryClaimId(writerLease, 'claimId');
   const nestedWriterLeaseClaimId = surfacedCheckedBoundaryClaimId(nestedWriterLease, 'claimId');
   return CHECKED_DURABLE_JOURNAL_SCOPE_PATTERN.test(dbJournal?.scope || '')
     && dbJournal?.acceptedOnCheckedBoundary === true
+    && journalPath.valid
+    && artifactRefs.valid
     && dbJournal?.ownership?.ownsJournal === true
     && dbJournal?.ownership?.restartReadable === true
     && productionAdapter === 'wpdb-single-statement-cas'
@@ -188,6 +192,64 @@ function surfacedCheckedBoundaryClaimId(container, key) {
   }
 
   return { valid: true, claimId };
+}
+
+function surfacedCheckedBoundaryJournalPath(container, key) {
+  if (!container || typeof container !== 'object') {
+    return { valid: false, path: null };
+  }
+
+  if (!Object.hasOwn(container, key)) {
+    return {
+      valid: !(key in container),
+      path: null,
+    };
+  }
+
+  const filePath = container[key];
+  if (!isCanonicalAbsolutePath(filePath)) {
+    return { valid: false, path: null };
+  }
+
+  return { valid: true, path: filePath };
+}
+
+function surfacedCheckedBoundaryArtifactRefs(container, journalPath) {
+  if (!container || typeof container !== 'object') {
+    return { valid: false };
+  }
+
+  if (!Object.hasOwn(container, 'artifactRefs')) {
+    return {
+      valid: !('artifactRefs' in container),
+    };
+  }
+
+  const artifactRefs = container.artifactRefs;
+  if (
+    !isStrictPlainObject(artifactRefs)
+    || hasHiddenOwnStringKeys(artifactRefs)
+    || Reflect.ownKeys(artifactRefs).some((key) => key !== 'journal' && key !== 'remote')
+    || !Object.hasOwn(artifactRefs, 'journal')
+    || artifactRefs.journal !== journalPath
+  ) {
+    return { valid: false };
+  }
+
+  if (Object.hasOwn(artifactRefs, 'remote')) {
+    if (artifactRefs.remote === null) {
+      return { valid: true };
+    }
+
+    if (
+      !isCanonicalAbsolutePath(artifactRefs.remote)
+      || artifactRefs.remote === journalPath
+    ) {
+      return { valid: false };
+    }
+  }
+
+  return { valid: true };
 }
 
 export function createUnsupportedProductionRecoveryJournal(reason = 'Production recovery journal support is not available in this worktree.') {
