@@ -193,6 +193,7 @@ function buildPackagedReleaseVerifierWaitHelper(overrides = {}) {
     'packagedProductionPluginMalformedTerminalIndexProbe',
     'packagedProductionPluginServerReady',
     'packagedProductionPluginSnapshotRetryable',
+    'packagedProductionPluginSnapshotProbeContext',
     'packagedProductionPluginPreflightReady',
     'packagedProductionPluginPreflightRetryable',
     'fetchPackagedPreflightProbe',
@@ -236,6 +237,7 @@ function buildPackagedReleaseVerifierWaitHelper(overrides = {}) {
     packagedProductionPluginMalformedTerminalIndexProbe,
     packagedProductionPluginServerReady,
     packagedProductionPluginSnapshotRetryable,
+    packagedProductionPluginSnapshotProbeContext,
     packagedProductionPluginPreflightReady,
     packagedProductionPluginPreflightRetryable,
     overrides.fetchPackagedPreflightProbe ?? unexpectedAsyncDependency,
@@ -328,6 +330,7 @@ function buildPackagedSmokeWaitHelper(overrides = {}) {
     'packagedProductionPluginMalformedTerminalIndexProbe',
     'packagedProductionPluginServerReady',
     'packagedProductionPluginSnapshotRetryable',
+    'packagedProductionPluginSnapshotProbeContext',
     'packagedProductionPluginPreflightReady',
     'packagedProductionPluginPreflightRetryable',
     'fetchPackagedPreflightProbe',
@@ -368,6 +371,7 @@ function buildPackagedSmokeWaitHelper(overrides = {}) {
     packagedProductionPluginMalformedTerminalIndexProbe,
     packagedProductionPluginServerReady,
     packagedProductionPluginSnapshotRetryable,
+    packagedProductionPluginSnapshotProbeContext,
     packagedProductionPluginPreflightReady,
     packagedProductionPluginPreflightRetryable,
     overrides.fetchPackagedPreflightProbe ?? unexpectedAsyncDependency,
@@ -5778,6 +5782,91 @@ test('packaged production plugin smoke readiness helper waits through global Wor
     'http://127.0.0.1:65535/wp-json/reprint/v1/push/snapshot',
     'http://127.0.0.1:65535/wp-json/reprint/v1/push/preflight',
   ]);
+});
+
+test('packaged production plugin smoke readiness helper fails closed when packaged-route startup exceeds the post-global-ready budget', async () => {
+  const readySnapshotBody = JSON.stringify({
+    ok: true,
+    snapshot: {},
+  });
+  const startupPreflightBody = JSON.stringify({
+    code: 'rest_no_route',
+    message: 'No route was found matching the URL and request method.',
+  });
+  const fetchCalls = [];
+  const sleepCalls = [];
+  const helper = buildPackagedSmokeWaitHelper({
+    packagedProductionPluginRouteStartupClassificationReady: () => true,
+    fetchTextWithTimeout: async (url) => {
+      fetchCalls.push(url);
+      if (url.endsWith('/wp-json/reprint/v1/push/snapshot')) {
+        return {
+          response: {
+            status: 200,
+            ok: true,
+          },
+          bodyText: readySnapshotBody,
+        };
+      }
+      if (url.endsWith('/wp-json/reprint/v1/push/preflight')) {
+        return {
+          response: {
+            status: 404,
+            ok: false,
+          },
+          bodyText: startupPreflightBody,
+        };
+      }
+      throw new Error(`unexpected readiness fetch ${url}`);
+    },
+    fetchPackagedPreflightProbe: async () => {
+      throw new Error('unexpected snapshot-startup fallback preflight probe');
+    },
+    fetchPackagedWordPressIndexProbe: async () => ({
+      route: '/wp-json/',
+      status: 200,
+      ok: true,
+      body: JSON.stringify({ namespaces: ['reprint/v1'] }),
+      parsedBody: {
+        namespaces: ['reprint/v1'],
+      },
+      ready: true,
+      retryable: false,
+      terminal: false,
+    }),
+    sleepUnlessChildExit: async (ms, child) => {
+      sleepCalls.push({ ms, child });
+    },
+  });
+  const child = {
+    exitCode: null,
+    signalCode: null,
+    pid: 9462,
+  };
+
+  await assert.rejects(
+    helper(child, 'http://127.0.0.1:65535', ['packaged smoke boot log']),
+    (error) => {
+      assert.match(
+        error.message,
+        /Packaged production plugin signed preflight stayed startup-shaped after global WordPress startup HTTP 200 for 4 consecutive responses \(limit 4\)/,
+      );
+      assert.match(error.message, /"packagedRouteStartup": true/);
+      assert.match(error.message, /"preflightNotReadyProbeCount": 4/);
+      return true;
+    },
+  );
+
+  assert.equal(sleepCalls.length, 3);
+  assert.deepEqual(
+    sleepCalls.map(({ ms, child: sleptChild }) => ({ ms, child: sleptChild })),
+    [
+      { ms: 1, child },
+      { ms: 1, child },
+      { ms: 1, child },
+    ],
+  );
+  assert.equal(fetchCalls.length, 8);
 });
 
 test('packaged production plugin smoke readiness helper preserves timeout fallback probes when signed preflight and /wp-json/ both time out', async () => {
