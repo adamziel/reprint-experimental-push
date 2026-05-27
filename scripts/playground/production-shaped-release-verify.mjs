@@ -119,6 +119,8 @@ const fixtureCredentials = {
 };
 const resolvedAuthSessionRequest = resolveAuthSessionRequestState({
   liveSourceUrl,
+  remoteUrl: explicitReleaseVerifyRemoteChangedUrl,
+  localUrl: explicitReleaseVerifyLocalUrl,
   username,
   applicationPassword,
   fallbackUsername: fixtureCredentials.username,
