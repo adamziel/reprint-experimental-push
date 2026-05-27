@@ -624,6 +624,28 @@ function reprint_push_lab_rest_attach_checked_recovery_journal_evidence(
         $result['recovery']['journal'],
         $checked_db_journal
     );
+    if (
+        is_array($result['recovery']['journal'])
+        && (
+            reprint_push_lab_rest_checked_top_level_identity_conflicts(
+                $premerge_checked_journal,
+                $checked_db_journal
+            )
+            || reprint_push_lab_rest_checked_top_level_identity_omissions(
+                $premerge_checked_journal,
+                $checked_db_journal
+            )
+        )
+    ) {
+        $result['recovery']['journal']['acceptedOnCheckedBoundary'] = false;
+        foreach (['schemaVersion', 'table', 'scope'] as $key) {
+            if (is_array($premerge_checked_journal) && array_key_exists($key, $premerge_checked_journal)) {
+                $result['recovery']['journal'][$key] = $premerge_checked_journal[$key];
+            } else {
+                unset($result['recovery']['journal'][$key]);
+            }
+        }
+    }
     $result['recovery']['journal'] = reprint_push_lab_rest_fail_closed_checked_recovery_journal_acceptance(
         $result['recovery']['journal'],
         $checked_db_journal,
