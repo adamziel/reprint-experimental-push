@@ -41902,7 +41902,7 @@ test('blocks local termmeta references to a same-plan created term while preserv
   assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin drift */');
 });
 
-test('blocks local post-parent references to a same-plan created post while preserving remote-only plugin drift', () => {
+test('allows local post-parent references to a same-plan created post while preserving remote-only plugin drift', () => {
   const resourceKey = 'row:["wp_posts","ID:46"]';
   const targetResourceKey = 'row:["wp_posts","ID:47"]';
   const base = baseSite();
@@ -41935,22 +41935,53 @@ test('blocks local post-parent references to a same-plan created post while pres
   const remote = baseSite();
   remote.db.wp_posts['ID:46'] = JSON.parse(JSON.stringify(base.db.wp_posts['ID:46']));
   remote.plugins.forms.description = 'remote-only plugin drift';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin drift */';
 
   const plan = planFor(base, local, remote);
-  const blocker = plan.blockers[0];
-  const planJson = JSON.stringify(plan);
+  const parentMutation = mutationFor(plan, targetResourceKey);
+  const childMutation = mutationFor(plan, resourceKey);
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const reference = childMutation.wordpressGraphReferences[0];
 
-  assert.equal(plan.status, 'blocked');
-  assert.equal(plan.summary.mutations, 0);
-  assert.equal(mutationFor(plan, resourceKey), undefined);
-  assert.equal(decisionFor(plan, targetResourceKey), undefined);
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.blockers, 0);
+  assert.equal(parentMutation.changeKind, 'create');
+  assert.equal(childMutation.changeKind, 'update');
+  assert.ok(
+    plan.mutations.indexOf(parentMutation) < plan.mutations.indexOf(childMutation),
+    'parent create must be ordered before dependent child update',
+  );
+  assert.deepEqual(childMutation.dependsOnMutationIds, [parentMutation.id]);
+  assert.equal(plan.summary.graphDependencies, 1);
+  assert.deepEqual(plan.graphDependencies, [
+    {
+      sourceMutationId: childMutation.id,
+      sourceResourceKey: resourceKey,
+      relationshipKey: 'wp_posts.post_parent',
+      relationshipType: 'post-parent',
+      targetMutationId: parentMutation.id,
+      targetResourceKey,
+      resolutionPolicy: 'same-plan-local-create',
+      source: 'same-plan-local-create',
+      targetLocalHash: parentMutation.localHash,
+    },
+  ]);
   assert.equal(plan.conflicts.length, 0);
-  assert.equal(blocker.class, 'stale-wordpress-graph-identity');
-  assert.equal(blocker.resourceKey, resourceKey);
-  assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_posts","ID:46"] references a post parent identity without proven identity mapping or reference rewriting.');
-  assert.equal(planJson.includes('Local same-plan post content'), false);
-  assert.equal(planJson.includes('remote-only plugin drift'), false);
+  assert.equal(reference.relationshipKey, 'wp_posts.post_parent');
+  assert.equal(reference.relationshipType, 'post-parent');
+  assert.equal(reference.sourceResourceKey, resourceKey);
+  assert.equal(reference.targetResourceKey, targetResourceKey);
+  assert.equal(reference.resolutionPolicy, 'same-plan-local-create');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+
+  const result = applyPlan(remote, plan);
+  assert.equal(result.site.db.wp_posts['ID:47'].post_title, 'Local same-plan post');
+  assert.equal(result.site.db.wp_posts['ID:46'].post_parent, 47);
+  assert.equal(result.site.db.wp_posts['ID:46'].post_title, 'Local child post');
   assert.equal(remote.plugins.forms.description, 'remote-only plugin drift');
+  assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin drift */');
 });
 
 test('blocks local termmeta graph resources while preserving remote-only plugin drift', () => {
@@ -51227,6 +51258,7 @@ test('blocks local serialized block references while preserving a matching indep
 
 test('blocks local serialized block references while preserving a matching independent delete and remote-only plugin removals', () => {
   const resourceKey = 'row:["wp_posts","ID:62"]';
+  const matchingDeleteKey = 'row:["wp_posts","ID:63"]';
   const base = baseSite();
   base.db.wp_posts['ID:62'] = {
     ID: 62,
@@ -51262,7 +51294,7 @@ test('blocks local serialized block references while preserving a matching indep
 
   const plan = planFor(base, local, remote);
   const blocker = plan.blockers[0];
-  const matchingDelete = decisionFor(plan, 'row:["wp_posts","ID:63"]');
+  const matchingDelete = plan.blockers.find((entry) => entry.resourceKey === matchingDeleteKey);
   const pluginDecision = decisionFor(plan, 'plugin:forms');
   const planJson = JSON.stringify(plan);
 
@@ -51274,9 +51306,11 @@ test('blocks local serialized block references while preserving a matching indep
   assert.equal(blocker.resourceKind, 'serialized-blocks');
   assert.equal(blocker.resourceKey, resourceKey);
   assert.equal(blocker.reason, 'Serialized block references are not yet supported by the planner.');
-  assert.equal(matchingDelete.decision, 'already-in-sync');
-  assert.equal(matchingDelete.change.localChange, 'delete');
-  assert.equal(matchingDelete.change.remoteChange, 'delete');
+  assert.equal(matchingDelete.class, 'unsupported-serialized-blocks-resource');
+  assert.equal(matchingDelete.resourceKind, 'serialized-blocks');
+  assert.equal(matchingDelete.resourceKey, matchingDeleteKey);
+  assert.equal(matchingDelete.unsupportedState, 'delete');
+  assert.equal(matchingDelete.reason, 'Serialized block references are not yet supported by the planner.');
   assert.equal(pluginDecision.decision, 'keep-remote');
   assert.equal(planJson.includes('Local delete block content'), false);
   assert.equal(planJson.includes('Base delete block content'), false);
