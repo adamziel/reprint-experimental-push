@@ -1792,6 +1792,8 @@ test('plugin-driver proof summary carries the resolved smoke mode for bounded co
   assert.equal(summary.driverPositiveProof.status, 'passed');
   assert.deepEqual(summary.requestedBundles, ['driverPositiveProof']);
   assert.deepEqual(summary.modeProof, {
+    mode: 'driverPositiveProof',
+    canonicalMode: 'driver-positive-proof',
     proofKey: 'driverPositiveProof',
     requested: true,
     selected: true,
@@ -1810,6 +1812,7 @@ test('plugin-driver proof summary carries the resolved smoke mode for bounded co
     ],
     failedScenarios: [],
     requestedStatus: 'passed',
+    requestedSatisfied: true,
     requestedBundleStatus: 'passed',
     requestedBundleStatuses: {
       driverPositiveProof: 'passed',
@@ -1843,6 +1846,8 @@ test('plugin-driver proof summary exposes direct mode proof for scenario modes',
   );
 
   assert.deepEqual(summary.modeProof, {
+    mode: 'driverRouteProof',
+    canonicalMode: 'core-package-routes',
     proofKey: 'driverRouteProof',
     requested: true,
     selected: true,
@@ -1855,6 +1860,39 @@ test('plugin-driver proof summary exposes direct mode proof for scenario modes',
     passedScenarios: ['core-package-routes'],
     failedScenarios: [],
     requestedStatus: 'passed',
+    requestedSatisfied: true,
+    requestedBundleStatus: null,
+    requestedBundleStatuses: null,
+  });
+});
+
+test('plugin-driver proof summary fails mode proof requested satisfaction when the selected mode is missing', () => {
+  const summary = buildProductionPluginPackageProofSummary(
+    {},
+    {
+      requestedScenarios: ['core-package-routes'],
+      selectedScenarios: new Set(['core-package-routes']),
+      resolvedMode: 'driverRouteProof',
+      canonicalMode: 'core-package-routes',
+    },
+  );
+
+  assert.deepEqual(summary.modeProof, {
+    mode: 'driverRouteProof',
+    canonicalMode: 'core-package-routes',
+    proofKey: 'driverRouteProof',
+    requested: true,
+    selected: true,
+    ok: false,
+    status: 'missing',
+    requiredScenarioCount: 1,
+    passedScenarioCount: 0,
+    failedScenarioCount: 1,
+    requiredScenarios: ['core-package-routes'],
+    passedScenarios: [],
+    failedScenarios: ['core-package-routes'],
+    requestedStatus: 'missing',
+    requestedSatisfied: false,
     requestedBundleStatus: null,
     requestedBundleStatuses: null,
   });

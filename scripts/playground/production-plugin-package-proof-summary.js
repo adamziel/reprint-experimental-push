@@ -1164,6 +1164,8 @@ export function buildProductionPluginPackageProofSummary(
   proofSummary.modeProof = canonicalProof === null
     ? null
     : {
+      mode: resolvedMode,
+      canonicalMode,
       proofKey: canonicalProofKey,
       requested: canonicalProof.requested,
       selected: canonicalProof.selected,
@@ -1176,6 +1178,7 @@ export function buildProductionPluginPackageProofSummary(
       passedScenarios: canonicalProof.passedScenarios ?? canonicalModePassedScenarios,
       failedScenarios: canonicalProof.failedScenarios ?? canonicalModeFailedScenarios,
       requestedStatus: canonicalProof.requestedStatus ?? null,
+      requestedSatisfied: (canonicalProof.requestedStatus ?? null) === 'passed',
       requestedBundleStatus: canonicalProof.requestedBundleStatus ?? null,
       requestedBundleStatuses: canonicalProof.requestedBundleStatuses ?? null,
     };
