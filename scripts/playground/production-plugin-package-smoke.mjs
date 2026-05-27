@@ -54,6 +54,12 @@ const driverFixture = {
   pluginOwner: 'driver-fixture',
   resourceKey: 'row:["wp_reprint_push_driver_fixture","entry_id:1"]',
 };
+const deleteDriverFixture = {
+  driver: 'fixture-arbitrary-plugin-table-delete',
+  table: 'wp_reprint_push_driver_fixture_delete',
+  pluginOwner: 'driver-fixture',
+  resourceKey: 'row:["wp_reprint_push_driver_fixture_delete","entry_id:1"]',
+};
 const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'reprint-production-plugin-package-'));
 const packageRoot = path.join(tmpDir, 'package');
 const pluginDir = path.join(packageRoot, 'reprint-push');
@@ -272,11 +278,13 @@ echo "REPRINT_PUSH_DRIVER_GUARD_JSON_END\\n";
   if (shouldRunAnyScenario(['driver-receipt-guards'])) {
     writeDriverFixtureBlueprint(path.join(repoRoot, fixtures.base), driverGuardSnapshotBlueprintPath, {
       enableCredentialRevocationRoute: true,
+      includeDeleteDriver: shouldRunAnyScenario(['driver-delete-apply']),
     });
     writeDriverFixtureBlueprint(path.join(repoRoot, fixtures.base), driverGuardServerBlueprintPath, {
       activatePackagedPlugin: true,
       provisionAuth: true,
       enableCredentialRevocationRoute: true,
+      includeDeleteDriver: shouldRunAnyScenario(['driver-delete-apply']),
     });
   }
   if (shouldRunAnyScenario(['driver-delete-apply']) && !shouldRunAnyScenario(['driver-receipt-guards'])) {
@@ -358,14 +366,19 @@ echo "REPRINT_PUSH_DRIVER_GUARD_JSON_END\\n";
   const driverGuardBaseSnapshot = shouldRunAnyScenario(['driver-receipt-guards'])
     ? exportSnapshotWithStage('driver-fixture-guard-base', driverGuardSnapshotBlueprintPath)
     : null;
+  const reuseGuardServerForDelete = shouldRunAnyScenario(['driver-receipt-guards'])
+    && shouldRunAnyScenario(['driver-delete-apply']);
+  const activeDeleteFixture = reuseGuardServerForDelete ? deleteDriverFixture : driverFixture;
   const driverDeleteBaseSnapshot = shouldRunAnyScenario(['driver-delete-apply'])
-    ? (driverGuardBaseSnapshot
-        ? enableForgedDeletePolicy(deepClone(driverGuardBaseSnapshot), driverFixture.resourceKey)
-        : exportSnapshotWithStage('driver-fixture-delete-base', driverDeleteSnapshotBlueprintPath))
+    ? (reuseGuardServerForDelete
+        ? deepClone(driverGuardBaseSnapshot)
+        : (driverGuardBaseSnapshot
+            ? enableForgedDeletePolicy(deepClone(driverGuardBaseSnapshot), driverFixture.resourceKey)
+            : exportSnapshotWithStage('driver-fixture-delete-base', driverDeleteSnapshotBlueprintPath)))
     : null;
   const driverLocalDeleteSnapshot = driverDeleteBaseSnapshot ? deepClone(driverDeleteBaseSnapshot) : null;
   if (driverLocalDeleteSnapshot) {
-    delete driverLocalDeleteSnapshot.db?.[driverFixture.table]?.['entry_id:1'];
+    delete driverLocalDeleteSnapshot.db?.[activeDeleteFixture.table]?.['entry_id:1'];
   }
   const driverLocalUpdateSnapshot = driverGuardBaseSnapshot ? deepClone(driverGuardBaseSnapshot) : null;
   if (driverLocalUpdateSnapshot) {
@@ -410,6 +423,90 @@ echo "REPRINT_PUSH_DRIVER_GUARD_JSON_END\\n";
     driverDuplicateTableGuard: {},
     final: {},
   };
+
+  async function executeDriverDeleteApplyScenario(server, fixture, credential = credentials) {
+    const client = authenticatedHttpClient({
+      sourceUrl: server.baseUrl,
+      credential,
+      routeProfile: 'production-shaped',
+    });
+    const preflight = await client.signedGet('/preflight');
+    assert.equal(preflight.status, 200);
+    assert.equal(preflight.body?.ok, true);
+    const session = preflight.body?.session?.id;
+    assert.equal(typeof session, 'string');
+    assert.ok(session.length > 0, 'signed preflight did not return a session id for delete apply');
+
+    const remoteSnapshot = await client.get('/snapshot');
+    assert.equal(remoteSnapshot.status, 200);
+    assert.equal(remoteSnapshot.body?.ok, true);
+    const allowedEntry = remoteSnapshot.body.snapshot?.meta?.pluginOwnedResources?.allowedResources?.find?.(
+      (entry) => entry?.resourceKey === fixture.resourceKey,
+    );
+    assert.ok(allowedEntry, 'packaged snapshot did not expose the delete-enabled arbitrary plugin-owned driver policy');
+    assert.equal(allowedEntry.driver, fixture.driver);
+    assert.equal(allowedEntry.table, fixture.table);
+    assert.equal(allowedEntry.pluginOwner, fixture.pluginOwner);
+    assert.equal(allowedEntry.supportsDelete, true);
+
+    const deletePlan = createPushPlan({
+      base: driverDeleteBaseSnapshot,
+      local: driverLocalDeleteSnapshot,
+      remote: remoteSnapshot.body.snapshot,
+      now: new Date('2026-05-26T18:12:00.000Z'),
+    });
+    assert.equal(deletePlan.status, 'ready');
+    assert.equal(deletePlan.mutations.length, 1);
+    assert.equal(deletePlan.mutations[0].resourceKey, fixture.resourceKey);
+    assert.equal(deletePlan.mutations[0].action, 'delete');
+    assert.equal(deletePlan.mutations[0].pluginOwnedResource?.driver, fixture.driver);
+    assert.equal(deletePlan.mutations[0].pluginOwnedResource?.table, fixture.table);
+    assert.equal(deletePlan.mutations[0].pluginOwnedResource?.supportsDelete, true);
+
+    const deleteDryRun = await client.signedPost(
+      '/dry-run',
+      { plan: deletePlan },
+      {
+        session,
+        idempotencyKey: 'production-plugin-driver-delete-allowed-dry-run',
+      },
+    );
+    assert.equal(deleteDryRun.status, 200);
+    assert.equal(deleteDryRun.body?.ok, true);
+    assert.ok(deleteDryRun.body?.receipt?.receiptHash, 'delete-enabled driver dry-run did not produce a receipt');
+
+    const deleteApply = await client.signedPost(
+      '/apply',
+      {
+        plan: deletePlan,
+        receipt: deleteDryRun.body.receipt,
+      },
+      {
+        session,
+        idempotencyKey: 'production-plugin-driver-delete-allowed-apply',
+      },
+    );
+    assert.equal(deleteApply.status, 200);
+    assert.equal(deleteApply.body?.ok, true);
+    assert.equal(deleteApply.body?.applied, 1);
+
+    const afterDeleteApply = await client.get('/snapshot');
+    assert.equal(afterDeleteApply.status, 200);
+    assert.equal(afterDeleteApply.body?.ok, true);
+    assert.equal(
+      afterDeleteApply.body.snapshot?.db?.[fixture.table]?.['entry_id:1'],
+      undefined,
+      'packaged apply route did not delete the arbitrary driver row when the driver allowed deletes',
+    );
+
+    summary.driverDeleteApply = {
+      resourceKey: fixture.resourceKey,
+      remoteSupportsDelete: allowedEntry.supportsDelete,
+      dryRunReceiptHash: deleteDryRun.body?.receipt?.receiptHash,
+      applied: deleteApply.body?.applied,
+      deletedAfterApply: afterDeleteApply.body.snapshot?.db?.[fixture.table]?.['entry_id:1'] === undefined,
+    };
+  }
 
   await runScenario('core-package-routes', async () => {
     await withPlaygroundServer('production-plugin-package', blueprintPath, pluginDir, async (server) => {
@@ -523,13 +620,14 @@ echo "REPRINT_PUSH_DRIVER_GUARD_JSON_END\\n";
     });
   });
 
-  await runScenario('driver-receipt-guards', async () => {
+  if (shouldRunAnyScenario(['driver-receipt-guards'])) {
     await withPlaygroundServer(
       'production-plugin-driver-delete-guard',
       driverGuardServerBlueprintPath,
       pluginDir,
       { authBootstrap: false },
       async (server) => {
+        await runScenario('driver-receipt-guards', async () => {
     const client = authenticatedHttpClient({
       sourceUrl: server.baseUrl,
       credential: credentials,
@@ -1004,95 +1102,24 @@ echo "REPRINT_PUSH_DRIVER_GUARD_JSON_END\\n";
       rowRetainedAfterReject: afterRevokedCredentialReject.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1'] !== undefined,
       updatedMarkerAfterReject: afterRevokedCredentialReject.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1']?.updated_marker,
     };
+        });
+
+        if (reuseGuardServerForDelete) {
+          await runScenario('driver-delete-apply', async () => {
+            await executeDriverDeleteApplyScenario(server, activeDeleteFixture, alternateCredentials);
+          });
+        }
       },
     );
-  });
+  }
 
-  await runScenario('driver-delete-apply', async () => {
-    await withPlaygroundServer('production-plugin-driver-delete-apply', driverDeleteServerBlueprintPath, pluginDir, async (server) => {
-    const client = authenticatedHttpClient({
-      sourceUrl: server.baseUrl,
-      credential: credentials,
-      routeProfile: 'production-shaped',
+  if (shouldRunAnyScenario(['driver-delete-apply']) && !reuseGuardServerForDelete) {
+    await runScenario('driver-delete-apply', async () => {
+      await withPlaygroundServer('production-plugin-driver-delete-apply', driverDeleteServerBlueprintPath, pluginDir, async (server) => {
+        await executeDriverDeleteApplyScenario(server, activeDeleteFixture);
+      });
     });
-    const preflight = await client.signedGet('/preflight');
-    assert.equal(preflight.status, 200);
-    assert.equal(preflight.body?.ok, true);
-    const session = preflight.body?.session?.id;
-    assert.equal(typeof session, 'string');
-    assert.ok(session.length > 0, 'signed preflight did not return a session id for delete apply');
-
-    const remoteSnapshot = await client.get('/snapshot');
-    assert.equal(remoteSnapshot.status, 200);
-    assert.equal(remoteSnapshot.body?.ok, true);
-    const allowedEntry = remoteSnapshot.body.snapshot?.meta?.pluginOwnedResources?.allowedResources?.find?.(
-      (entry) => entry?.resourceKey === driverFixture.resourceKey,
-    );
-    assert.ok(allowedEntry, 'packaged snapshot did not expose the delete-enabled arbitrary plugin-owned driver policy');
-    assert.equal(allowedEntry.driver, driverFixture.driver);
-    assert.equal(allowedEntry.table, driverFixture.table);
-    assert.equal(allowedEntry.pluginOwner, driverFixture.pluginOwner);
-    assert.equal(allowedEntry.supportsDelete, true);
-
-    const deletePlan = createPushPlan({
-      base: driverDeleteBaseSnapshot,
-      local: driverLocalDeleteSnapshot,
-      remote: remoteSnapshot.body.snapshot,
-      now: new Date('2026-05-26T18:12:00.000Z'),
-    });
-    assert.equal(deletePlan.status, 'ready');
-    assert.equal(deletePlan.mutations.length, 1);
-    assert.equal(deletePlan.mutations[0].resourceKey, driverFixture.resourceKey);
-    assert.equal(deletePlan.mutations[0].action, 'delete');
-    assert.equal(deletePlan.mutations[0].pluginOwnedResource?.driver, driverFixture.driver);
-    assert.equal(deletePlan.mutations[0].pluginOwnedResource?.table, driverFixture.table);
-    assert.equal(deletePlan.mutations[0].pluginOwnedResource?.supportsDelete, true);
-
-    const deleteDryRun = await client.signedPost(
-      '/dry-run',
-      { plan: deletePlan },
-      {
-        session,
-        idempotencyKey: 'production-plugin-driver-delete-dry-run',
-      },
-    );
-    assert.equal(deleteDryRun.status, 200);
-    assert.equal(deleteDryRun.body?.ok, true);
-    assert.ok(deleteDryRun.body?.receipt?.receiptHash, 'delete-enabled driver dry-run did not produce a receipt');
-
-    const deleteApply = await client.signedPost(
-      '/apply',
-      {
-        plan: deletePlan,
-        receipt: deleteDryRun.body.receipt,
-      },
-      {
-        session,
-        idempotencyKey: 'production-plugin-driver-delete-apply',
-      },
-    );
-    assert.equal(deleteApply.status, 200);
-    assert.equal(deleteApply.body?.ok, true);
-    assert.equal(deleteApply.body?.applied, 1);
-
-    const afterDeleteApply = await client.get('/snapshot');
-    assert.equal(afterDeleteApply.status, 200);
-    assert.equal(afterDeleteApply.body?.ok, true);
-    assert.equal(
-      afterDeleteApply.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1'],
-      undefined,
-      'packaged apply route did not delete the arbitrary driver row when the driver allowed deletes',
-    );
-
-    summary.driverDeleteApply = {
-      resourceKey: driverFixture.resourceKey,
-      remoteSupportsDelete: allowedEntry.supportsDelete,
-      dryRunReceiptHash: deleteDryRun.body?.receipt?.receiptHash,
-      applied: deleteApply.body?.applied,
-      deletedAfterApply: afterDeleteApply.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1'] === undefined,
-    };
-    });
-  });
+  }
 
   await runScenario('driver-missing-export-guard', async () => {
     const malformedSnapshot = runPackagedDriverRegistryGuard('driver-missing-export-guard', pluginDir);
@@ -1487,6 +1514,7 @@ function writeDriverFixtureBlueprint(
     provisionAuth = false,
     enableCredentialRevocationRoute = false,
     supportsDelete = false,
+    includeDeleteDriver = false,
     omitExportRowsCallback = false,
     omitApplyRowCallback = false,
     omitValidateMutationCallback = false,
@@ -1506,6 +1534,7 @@ function writeDriverFixtureBlueprint(
   const pluginCodeBase64 = Buffer.from(driverFixturePluginPhp({
     enableCredentialRevocationRoute,
     supportsDelete,
+    includeDeleteDriver,
     omitExportRowsCallback,
     omitApplyRowCallback,
     omitValidateMutationCallback,
@@ -1532,6 +1561,12 @@ function writeDriverFixtureBlueprint(
       '$wpdb->query(\'CREATE TABLE \' . $table . \' (entry_id bigint(20) unsigned NOT NULL, payload_json longtext NOT NULL, updated_marker varchar(32) NOT NULL, PRIMARY KEY (entry_id)) \' . $wpdb->get_charset_collate());',
       '$payload = wp_json_encode(array(\'owner\' => \'driver-fixture\', \'mode\' => \'base\', \'version\' => 1));',
       '$wpdb->replace($table, array(\'entry_id\' => 1, \'payload_json\' => $payload, \'updated_marker\' => \'base\'), array(\'%d\', \'%s\', \'%s\'));',
+      ...(includeDeleteDriver ? [
+        '$delete_table = $wpdb->prefix . \'reprint_push_driver_fixture_delete\';',
+        '$wpdb->query(\'CREATE TABLE \' . $delete_table . \' (entry_id bigint(20) unsigned NOT NULL, payload_json longtext NOT NULL, updated_marker varchar(32) NOT NULL, PRIMARY KEY (entry_id)) \' . $wpdb->get_charset_collate());',
+        '$delete_payload = wp_json_encode(array(\'owner\' => \'driver-fixture\', \'mode\' => \'delete-base\', \'version\' => 1));',
+        '$wpdb->replace($delete_table, array(\'entry_id\' => 1, \'payload_json\' => $delete_payload, \'updated_marker\' => \'delete-base\'), array(\'%d\', \'%s\', \'%s\'));',
+      ] : []),
     ].join(' '),
   });
   if (activatePackagedPlugin) {
@@ -1581,6 +1616,7 @@ function writeDriverFixtureBlueprint(
 function driverFixturePluginPhp({
   enableCredentialRevocationRoute = false,
   supportsDelete,
+  includeDeleteDriver = false,
   omitExportRowsCallback = false,
   omitApplyRowCallback = false,
   omitValidateMutationCallback = false,
@@ -1641,12 +1677,24 @@ ${duplicateDriverName ? `    $drivers['${driverFixture.driver}-duplicate'] = [
         'applyRowCallback' => 'reprint_push_driver_fixture_apply_row',
         'validateMutationCallback' => 'reprint_push_driver_fixture_validate_mutation',
     ];
+` : ''}${includeDeleteDriver ? `    $drivers['${deleteDriverFixture.driver}'] = [
+        'driver' => '${deleteDriverFixture.driver}',
+        'table' => '${deleteDriverFixture.table}',
+        'pluginOwner' => '${deleteDriverFixture.pluginOwner}',
+        'supportsDelete' => true,
+        'exportRowsCallback' => 'reprint_push_driver_fixture_export_rows',
+        'applyRowCallback' => 'reprint_push_driver_fixture_apply_row',
+        'validateMutationCallback' => 'reprint_push_driver_fixture_validate_mutation',
+    ];
 ` : ''}    return $drivers;
 });
 
-function reprint_push_driver_fixture_table_name(): string {
-    global $wpdb;
-    return $wpdb->prefix . 'reprint_push_driver_fixture';
+function reprint_push_driver_fixture_table_name_for_driver(array $driver): string {
+    $table_name = (string) ($driver['table'] ?? '');
+    if ($table_name === '' || !preg_match('/^[A-Za-z0-9_]+$/', $table_name)) {
+        throw new RuntimeException('Unsupported driver fixture table: ' . $table_name);
+    }
+    return $table_name;
 }
 
 ${enableCredentialRevocationRoute ? `function reprint_push_driver_fixture_revoke_application_password(WP_REST_Request $request): WP_REST_Response {
@@ -1686,7 +1734,7 @@ ${enableCredentialRevocationRoute ? `function reprint_push_driver_fixture_revoke
 
 function reprint_push_driver_fixture_export_rows(array &$snapshot, array $driver): void {
     global $wpdb;
-    $table_name = reprint_push_driver_fixture_table_name();
+    $table_name = reprint_push_driver_fixture_table_name_for_driver($driver);
     $exists = $wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $table_name));
     if ($exists !== $table_name) {
         return;
@@ -1705,7 +1753,7 @@ function reprint_push_driver_fixture_export_rows(array &$snapshot, array $driver
             'entry_id' => (int) $row['entry_id'],
             'payload' => json_last_error() === JSON_ERROR_NONE ? reprint_push_normalize_snapshot_value($payload) : (string) $row['payload_json'],
             'updated_marker' => (string) $row['updated_marker'],
-            '__pluginOwner' => '${driverFixture.pluginOwner}',
+            '__pluginOwner' => (string) ($driver['pluginOwner'] ?? ''),
         ];
     }
 }
@@ -1716,7 +1764,7 @@ function reprint_push_driver_fixture_apply_row(string $id, bool $is_delete, $val
         throw new RuntimeException('Unsupported driver fixture row id: ' . $id);
     }
     $entry_id = (int) $matches[1];
-    $table_name = reprint_push_driver_fixture_table_name();
+    $table_name = reprint_push_driver_fixture_table_name_for_driver($driver);
     $wpdb->query('CREATE TABLE IF NOT EXISTS ' . $table_name . ' (entry_id bigint(20) unsigned NOT NULL, payload_json longtext NOT NULL, updated_marker varchar(32) NOT NULL, PRIMARY KEY (entry_id)) ' . $wpdb->get_charset_collate());
     if ($is_delete) {
         $wpdb->delete($table_name, ['entry_id' => $entry_id], ['%d']);
@@ -1725,7 +1773,7 @@ function reprint_push_driver_fixture_apply_row(string $id, bool $is_delete, $val
     if (!is_array($value) || (int) ($value['entry_id'] ?? 0) !== $entry_id) {
         throw new RuntimeException('Driver fixture payload does not match row id: ' . $id);
     }
-    if ((string) ($value['__pluginOwner'] ?? '') !== '${driverFixture.pluginOwner}') {
+    if ((string) ($value['__pluginOwner'] ?? '') !== (string) ($driver['pluginOwner'] ?? '')) {
         throw new RuntimeException('Driver fixture payload owner does not match registered driver: ' . $id);
     }
     if (!is_array($value['payload'] ?? null) || array_is_list($value['payload'])) {
@@ -1753,14 +1801,14 @@ function reprint_push_driver_fixture_apply_row(string $id, bool $is_delete, $val
 function reprint_push_driver_fixture_validate_mutation(array $mutation, array $snapshot, array $driver): bool {
     $resource = is_array($mutation['resource'] ?? null) ? $mutation['resource'] : [];
     $value = is_array($mutation['value']['value'] ?? null) ? $mutation['value']['value'] : null;
-    if (($resource['table'] ?? '') !== '${driverFixture.table}' || ($driver['pluginOwner'] ?? '') !== '${driverFixture.pluginOwner}') {
+    if (($resource['table'] ?? '') !== ($driver['table'] ?? '') || ($driver['pluginOwner'] ?? '') === '') {
         return false;
     }
     if (!preg_match('/^entry_id:([1-9]\\d*)$/', (string) ($resource['id'] ?? ''))) {
         throw new RuntimeException('Unsupported driver fixture row id: ' . (string) ($resource['id'] ?? ''));
     }
     if (!empty($mutation['value']['absent'])) {
-        return ${supportsDelete ? 'true' : 'false'};
+        return !empty($driver['supportsDelete']);
     }
     if (!is_array($value) || array_is_list($value)) {
         throw new RuntimeException('Driver fixture mutation payload must be an object.');
@@ -1768,7 +1816,7 @@ function reprint_push_driver_fixture_validate_mutation(array $mutation, array $s
     if ((int) ($value['entry_id'] ?? 0) < 1) {
         throw new RuntimeException('Driver fixture mutation payload is missing a valid entry_id.');
     }
-    if ((string) ($value['__pluginOwner'] ?? '') !== '${driverFixture.pluginOwner}') {
+    if ((string) ($value['__pluginOwner'] ?? '') !== (string) ($driver['pluginOwner'] ?? '')) {
         throw new RuntimeException('Driver fixture mutation payload owner does not match the registered plugin owner.');
     }
     if (!is_array($value['payload'] ?? null) || array_is_list($value['payload'])) {
