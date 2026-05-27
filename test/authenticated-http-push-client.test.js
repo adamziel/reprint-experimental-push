@@ -6021,25 +6021,55 @@ for (const {
   label,
   idempotencyKey,
   sessionPatch,
+  expectedRequired,
   expectedField,
   expectedObserved,
   expectedTraceField,
+  expectedSummaryKey,
+  expectedReadPatch,
+  expectedSummaryPatch,
 } of [
   {
     label: 'revoked status',
     idempotencyKey: 'idem-01-apply-revoked-history-unrequired',
     sessionPatch: { status: 'revoked' },
+    expectedRequired: 'unrevoked',
     expectedField: 'auth.session.status',
     expectedObserved: 'revoked',
     expectedTraceField: 'revoked',
+    expectedSummaryKey: 'revoked',
   },
   {
     label: 'cleaned-up boolean drift',
     idempotencyKey: 'idem-01-apply-cleaned-up-history-unrequired',
     sessionPatch: { cleanedUp: true },
+    expectedRequired: 'unrevoked',
     expectedField: 'auth.session.cleanedUp',
     expectedObserved: 'cleaned-up',
     expectedTraceField: 'cleanedUp',
+    expectedSummaryKey: 'cleanedUp',
+  },
+  {
+    label: 'rotated auth drift',
+    idempotencyKey: 'idem-01-apply-rotated-history-unrequired',
+    sessionPatch: { rotated: true, preserved: false },
+    expectedRequired: 'preserved read',
+    expectedField: 'auth.session.rotated',
+    expectedObserved: 'rotated',
+    expectedTraceField: 'rotated',
+    expectedSummaryKey: 'rotated',
+    expectedReadPatch: { preserved: false },
+    expectedSummaryPatch: { preserved: false },
+  },
+  {
+    label: 'expired auth drift',
+    idempotencyKey: 'idem-01-apply-expired-history-unrequired',
+    sessionPatch: { expired: true },
+    expectedRequired: 'unexpired',
+    expectedField: 'auth.session.expired',
+    expectedObserved: 'expired',
+    expectedTraceField: 'expired',
+    expectedSummaryKey: 'expired',
   },
 ]) {
   test(`production-shaped authenticated push fails closed immediately when apply reports ${label} even without the stricter production-session gate`, async () => {
@@ -6130,7 +6160,7 @@ for (const {
       assert.equal(summary.code, 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED');
       assert.deepEqual(summary.authSession, {
         field: expectedField,
-        required: 'unrevoked',
+        required: expectedRequired,
         observed: expectedObserved,
         verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
       });
@@ -6140,21 +6170,36 @@ for (const {
         verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
         authSession: {
           field: expectedField,
-          required: 'unrevoked',
+          required: expectedRequired,
           observed: expectedObserved,
           verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
         },
       });
       assert.equal(summary.authSessionLifecycleTrace.at(-1)?.step, 'apply');
       assert.equal(summary.authSessionLifecycleTrace.at(-1)?.[expectedTraceField], true);
+      if (expectedReadPatch) {
+        for (const [key, value] of Object.entries(expectedReadPatch)) {
+          assert.equal(summary.authSessionLifecycleTrace.at(-1)?.[key], value);
+        }
+      }
       assert.equal(summary.authSessionLifecycle.read?.step, 'apply');
       assert.equal(summary.authSessionLifecycle.read?.[expectedTraceField], true);
+      if (expectedReadPatch) {
+        for (const [key, value] of Object.entries(expectedReadPatch)) {
+          assert.equal(summary.authSessionLifecycle.read?.[key], value);
+        }
+      }
       assert.equal(summary.authSessionLifecycle.history?.at(-1)?.[expectedTraceField], true);
       assert.equal(summary.authSessionLifecycleSummary.issued?.step, 'preflight');
       assert.equal(summary.authSessionLifecycleSummary.read?.step, 'apply');
       assert.equal(summary.authSessionLifecycleSummary.read?.[expectedTraceField], true);
-      assert.equal(summary.authSessionLifecycleSummary[expectedTraceField]?.step, 'apply');
-      assert.equal(summary.authSessionLifecycleSummary[expectedTraceField]?.[expectedTraceField], true);
+      if (expectedSummaryPatch) {
+        for (const [key, value] of Object.entries(expectedSummaryPatch)) {
+          assert.equal(summary.authSessionLifecycleSummary.read?.[key], value);
+        }
+      }
+      assert.equal(summary.authSessionLifecycleSummary[expectedSummaryKey]?.step, 'apply');
+      assert.equal(summary.authSessionLifecycleSummary[expectedSummaryKey]?.[expectedTraceField], true);
       assert.equal(seen.length, 4);
       assert.match(seen[3].url, /\/wp-json\/reprint\/v1\/push\/apply$/);
     } finally {
