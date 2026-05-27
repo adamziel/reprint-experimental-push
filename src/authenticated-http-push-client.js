@@ -1126,7 +1126,8 @@ function dbJournalWriterLeaseContractMatches(candidate) {
     && typeof candidate?.storageGuard === 'string'
     && candidate.storageGuard.length > 0
     && candidate?.monotonicSequence === true
-    && candidate?.restartReadable === true;
+    && candidate?.restartReadable === true
+    && candidate?.staleClaimRejected === true;
 }
 
 function dbJournalWriterLeaseContractsAgree(writerLease, nestedWriterLease) {
@@ -1143,6 +1144,7 @@ function dbJournalWriterLeaseContractsAgree(writerLease, nestedWriterLease) {
     'storageGuard',
     'monotonicSequence',
     'restartReadable',
+    'staleClaimRejected',
   ]) {
     if (writerLease?.[key] !== nestedWriterLease?.[key]) {
       return false;
