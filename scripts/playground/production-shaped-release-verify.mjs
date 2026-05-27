@@ -81,6 +81,13 @@ const packagedSnapshotExportTimeoutMs = 45_000;
 const maxReadinessProbes = Math.max(10, Math.ceil(serverStartupTimeoutMs / readinessProbeIntervalMs));
 const maxNotReadyReadinessProbes = Math.max(labMaxConsecutiveNotReadyProbes, maxReadinessProbes);
 const maxSnapshotStartupAfterGlobalReadyProbes = labMaxConsecutiveNotReadyProbes;
+// Snapshot fetches can time out transiently while /wp-json/ is still clearly in
+// startup. Give that fallback a slightly wider bounded budget than the base
+// four-probe classifier without letting it consume the entire startup window.
+const maxSnapshotTimeoutFallbackProbes = Math.max(
+  labMaxConsecutiveNotReadyProbes,
+  Math.ceil(15_000 / (serverFetchTimeoutMs + readinessProbeIntervalMs)),
+);
 const maxPackagedRouteStartupAfterGlobalReadyProbes = packagedProductionPluginMaxConsecutiveNotReadyProbes;
 const maxPackagedStartupNotReadyProbeCount = Math.max(
   packagedProductionPluginMaxConsecutiveNotReadyProbes,
@@ -3372,7 +3379,7 @@ async function waitForServer(child, baseUrl, getLogs) {
                 timeoutProbeCount: snapshotTimeoutProbeCount,
                 startupIndexStatus: response.status,
               };
-              if (labNotReadyProbeLimitReached(snapshotTimeoutProbeCount)) {
+              if (labNotReadyProbeLimitReached(snapshotTimeoutProbeCount, maxSnapshotTimeoutFallbackProbes)) {
                 await throwPlaygroundReadinessFailure(
                   child,
                   `Playground lab snapshot probe timed out while /wp-json/ still reported startup-shaped readiness HTTP ${response.status} after ${snapshotTimeoutProbeCount} consecutive timeout${snapshotTimeoutProbeCount === 1 ? '' : 's'}`,
@@ -3382,6 +3389,7 @@ async function waitForServer(child, baseUrl, getLogs) {
                   {
                     childPid: child.pid ?? null,
                     timeoutProbeCount: snapshotTimeoutProbeCount,
+                    timeoutProbeLimit: maxSnapshotTimeoutFallbackProbes,
                     startupIndexStatus: response.status,
                     snapshotProbeTimedOut: true,
                   },

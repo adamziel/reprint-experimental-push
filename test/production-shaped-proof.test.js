@@ -102,6 +102,10 @@ const releaseVerifySlowPathInnerTimeoutMs = Math.max(1_000, Math.min(6_000, rele
 const maxReadinessProbes = Math.max(10, Math.ceil(serverStartupTimeoutMs / readinessProbeIntervalMs));
 const maxNotReadyReadinessProbes = Math.max(labMaxConsecutiveNotReadyProbes, maxReadinessProbes);
 const maxSnapshotStartupAfterGlobalReadyProbes = labMaxConsecutiveNotReadyProbes;
+const maxSnapshotTimeoutFallbackProbes = Math.max(
+  labMaxConsecutiveNotReadyProbes,
+  Math.ceil(15_000 / (serverFetchTimeoutMs + readinessProbeIntervalMs)),
+);
 const proofSubprocessOptions = {
   timeout: proofSubprocessTimeoutMs,
   killSignal: proofSubprocessKillSignal,
@@ -4901,8 +4905,13 @@ test('shared lab waitForServer keeps index and snapshot body reads child-aware',
     verifierSource,
     /const maxSnapshotStartupAfterGlobalReadyProbes = labMaxConsecutiveNotReadyProbes;/,
   );
+  assert.match(
+    verifierSource,
+    /const maxSnapshotTimeoutFallbackProbes = Math\.max\(\s*labMaxConsecutiveNotReadyProbes,\s*Math\.ceil\(15_000 \/ \(serverFetchTimeoutMs \+ readinessProbeIntervalMs\)\),\s*\);/s,
+  );
   assert.match(sharedWaitSource, /if \(labReadinessProbeTimedOut\(error\) && labNotReadyProbeLimitReached\(timeoutProbeCount\)\)/);
   assert.match(sharedWaitSource, /if \(labNotReadyProbeLimitReached\(notReadyProbeCount, maxNotReadyReadinessProbes\)\)/);
+  assert.match(sharedWaitSource, /if \(labNotReadyProbeLimitReached\(snapshotTimeoutProbeCount, maxSnapshotTimeoutFallbackProbes\)\)/);
   assert.match(sharedWaitSource, /if \(response\.status !== 200 && readinessProbeCount >= maxReadinessProbes\)/);
   assert.match(
     sharedWaitSource,
@@ -5806,7 +5815,8 @@ test('shared lab waitForServer fails closed after bounded snapshot timeouts whil
       (error) => {
         assert.match(error.message, /snapshot probe timed out while \/wp-json\/ still reported startup-shaped readiness HTTP 502/);
         assert.equal(error.context?.snapshotProbeTimedOut, true);
-        assert.equal(error.context?.timeoutProbeCount, 4);
+        assert.equal(error.context?.timeoutProbeCount, maxSnapshotTimeoutFallbackProbes);
+        assert.equal(error.context?.timeoutProbeLimit, maxSnapshotTimeoutFallbackProbes);
         assert.equal(error.context?.startupIndexStatus, 502);
         return true;
       },
@@ -5826,8 +5836,8 @@ test('shared lab waitForServer fails closed after bounded snapshot timeouts whil
     });
   }
 
-  assert.equal(indexCalls, 4);
-  assert.equal(snapshotCalls, 4);
+  assert.equal(indexCalls, maxSnapshotTimeoutFallbackProbes);
+  assert.equal(snapshotCalls, maxSnapshotTimeoutFallbackProbes);
 });
 
 test('shared lab waitForServer fails closed after bounded snapshot timeouts while /wp-json/ still reports startup-shaped no-route failures', async () => {
@@ -5890,7 +5900,8 @@ test('shared lab waitForServer fails closed after bounded snapshot timeouts whil
       (error) => {
         assert.match(error.message, /snapshot probe timed out while \/wp-json\/ still reported startup-shaped readiness HTTP 404/);
         assert.equal(error.context?.snapshotProbeTimedOut, true);
-        assert.equal(error.context?.timeoutProbeCount, 4);
+        assert.equal(error.context?.timeoutProbeCount, maxSnapshotTimeoutFallbackProbes);
+        assert.equal(error.context?.timeoutProbeLimit, maxSnapshotTimeoutFallbackProbes);
         assert.equal(error.context?.startupIndexStatus, 404);
         return true;
       },
@@ -5910,8 +5921,8 @@ test('shared lab waitForServer fails closed after bounded snapshot timeouts whil
     });
   }
 
-  assert.equal(indexCalls, 4);
-  assert.equal(snapshotCalls, 4);
+  assert.equal(indexCalls, maxSnapshotTimeoutFallbackProbes);
+  assert.equal(snapshotCalls, maxSnapshotTimeoutFallbackProbes);
 });
 
 test('shared lab waitForServer fails closed when snapshot stays startup-shaped after global WordPress readiness', async () => {
@@ -6578,7 +6589,7 @@ async function waitForServer(child, baseUrl, getLogs) {
                 timeoutProbeCount: snapshotTimeoutProbeCount,
                 startupIndexStatus: response.status,
               };
-              if (labNotReadyProbeLimitReached(snapshotTimeoutProbeCount)) {
+              if (labNotReadyProbeLimitReached(snapshotTimeoutProbeCount, maxSnapshotTimeoutFallbackProbes)) {
                 await throwPlaygroundReadinessFailure(
                   child,
                   `Playground lab snapshot probe timed out while /wp-json/ still reported startup-shaped readiness HTTP ${response.status} after ${snapshotTimeoutProbeCount} consecutive timeout${snapshotTimeoutProbeCount === 1 ? '' : 's'}`,
@@ -6588,6 +6599,7 @@ async function waitForServer(child, baseUrl, getLogs) {
                   {
                     childPid: child.pid ?? null,
                     timeoutProbeCount: snapshotTimeoutProbeCount,
+                    timeoutProbeLimit: maxSnapshotTimeoutFallbackProbes,
                     startupIndexStatus: response.status,
                     snapshotProbeTimedOut: true,
                   },
