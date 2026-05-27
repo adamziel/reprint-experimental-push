@@ -2630,6 +2630,36 @@ test('production auth/session lifecycle summary helper requires a preserved acti
   );
 });
 
+test('production auth/session lifecycle summary fails closed when a preserved read changes auth identity user id', () => {
+  assert.deepEqual(
+    evaluateProductionAuthSessionLifecycleSummary({
+      issued: {
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+        authUserId: 7,
+        authUser: 'reprint_push_admin',
+      },
+      read: {
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+        authUserId: 9,
+        authUser: 'reprint_push_admin',
+        preserved: true,
+      },
+    }),
+    {
+      ok: false,
+      field: 'auth.identity.userId',
+      required: 7,
+      observed: 9,
+    },
+  );
+});
+
 test('checked release auth/session lifecycle helper requires replay or journal boundary preservation', () => {
   assert.deepEqual(
     evaluateCheckedReleaseAuthSessionLifecycleSummary({
@@ -2808,6 +2838,7 @@ test('production auth/session lifecycle trace summary prefers release-boundary r
         type: 'production-auth-session',
         status: 'active',
         expiresAt: '2099-01-01T00:00:00Z',
+        authUserId: 7,
         authUser: 'reprint_push_admin',
         expired: false,
         revoked: false,
@@ -2821,6 +2852,7 @@ test('production auth/session lifecycle trace summary prefers release-boundary r
         type: 'production-auth-session',
         status: 'active',
         expiresAt: '2099-01-01T00:00:00Z',
+        authUserId: 7,
         authUser: 'reprint_push_admin',
         expired: false,
         revoked: false,
@@ -2834,6 +2866,7 @@ test('production auth/session lifecycle trace summary prefers release-boundary r
         type: 'production-auth-session',
         status: 'active',
         expiresAt: '2099-01-01T00:00:00Z',
+        authUserId: 7,
         authUser: 'reprint_push_admin',
         expired: false,
         revoked: false,
@@ -2848,6 +2881,56 @@ test('production auth/session lifecycle trace summary prefers release-boundary r
       type: 'production-auth-session',
       status: 'active',
       expiresAt: '2099-01-01T00:00:00Z',
+      authUserId: 7,
+      authUser: 'reprint_push_admin',
+      expired: false,
+      revoked: false,
+      cleanedUp: false,
+      rotated: false,
+      preserved: true,
+    },
+  );
+});
+
+test('production auth/session lifecycle trace summary keeps auth identity user id on the release-boundary read', () => {
+  assert.deepEqual(
+    summarizeProductionAuthSessionLifecycleTrace([
+      {
+        step: 'preflight',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+        authUserId: 7,
+        authUser: 'reprint_push_admin',
+        expired: false,
+        revoked: false,
+        cleanedUp: false,
+        rotated: false,
+        preserved: false,
+      },
+      {
+        step: 'journal',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+        authUserId: 7,
+        authUser: 'reprint_push_admin',
+        expired: false,
+        revoked: false,
+        cleanedUp: false,
+        rotated: false,
+        preserved: true,
+      },
+    ])?.read,
+    {
+      step: 'journal',
+      id: 'session-01',
+      type: 'production-auth-session',
+      status: 'active',
+      expiresAt: '2099-01-01T00:00:00Z',
+      authUserId: 7,
       authUser: 'reprint_push_admin',
       expired: false,
       revoked: false,

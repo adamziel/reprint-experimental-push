@@ -243,18 +243,38 @@ export function evaluateProductionAuthSessionLifecycleSummary(summary, now = Dat
   }
 
   const readAuthUser = resolveAuthSessionIdentitySummary(readObservation);
-  if (!issuedAuthUser.missing && readAuthUser.missing) {
+  if (!issuedAuthUser.userLoginMissing && readAuthUser.userLoginMissing) {
     return {
       ok: false,
       required: 'authenticated identity continuity',
       observed: 'missing-user-login',
     };
   }
-  if (!issuedAuthUser.missing && !readAuthUser.missing && readAuthUser.value !== issuedAuthUser.value) {
+  if (
+    !issuedAuthUser.userLoginMissing
+    && !readAuthUser.userLoginMissing
+    && readAuthUser.userLogin !== issuedAuthUser.userLogin
+  ) {
     return {
       ok: false,
       required: 'authenticated identity continuity',
-      observed: readAuthUser.value,
+      observed: readAuthUser.userLogin,
+    };
+  }
+  if (!issuedAuthUser.userIdMissing && readAuthUser.userIdMissing) {
+    return {
+      ok: false,
+      field: 'auth.identity.userId',
+      required: issuedAuthUser.userId,
+      observed: 'missing-user-id',
+    };
+  }
+  if (!issuedAuthUser.userIdMissing && !readAuthUser.userIdMissing && readAuthUser.userId !== issuedAuthUser.userId) {
+    return {
+      ok: false,
+      field: 'auth.identity.userId',
+      required: issuedAuthUser.userId,
+      observed: readAuthUser.userId,
     };
   }
 
@@ -351,19 +371,42 @@ export function evaluateProductionAuthSessionLifecycleSummary(summary, now = Dat
     }
 
     const observationAuthUser = resolveAuthSessionIdentitySummary(observation);
-    if (!issuedAuthUser.missing && observationAuthUser.missing) {
+    if (!issuedAuthUser.userLoginMissing && observationAuthUser.userLoginMissing) {
       return {
         ok: false,
         required: 'authenticated identity continuity',
         observed: 'missing-user-login',
       };
     }
-    if (!issuedAuthUser.missing && !observationAuthUser.missing
-      && observationAuthUser.value !== issuedAuthUser.value) {
+    if (
+      !issuedAuthUser.userLoginMissing
+      && !observationAuthUser.userLoginMissing
+      && observationAuthUser.userLogin !== issuedAuthUser.userLogin
+    ) {
       return {
         ok: false,
         required: 'authenticated identity continuity',
-        observed: observationAuthUser.value,
+        observed: observationAuthUser.userLogin,
+      };
+    }
+    if (!issuedAuthUser.userIdMissing && observationAuthUser.userIdMissing) {
+      return {
+        ok: false,
+        field: 'auth.identity.userId',
+        required: issuedAuthUser.userId,
+        observed: 'missing-user-id',
+      };
+    }
+    if (
+      !issuedAuthUser.userIdMissing
+      && !observationAuthUser.userIdMissing
+      && observationAuthUser.userId !== issuedAuthUser.userId
+    ) {
+      return {
+        ok: false,
+        field: 'auth.identity.userId',
+        required: issuedAuthUser.userId,
+        observed: observationAuthUser.userId,
       };
     }
 
@@ -389,7 +432,7 @@ export function evaluateProductionAuthSessionLifecycleSummary(summary, now = Dat
     return mismatchedPreservedObservation;
   }
 
-  if (issuedAuthUser.missing) {
+  if (issuedAuthUser.userLoginMissing) {
     return {
       ok: false,
       required: 'authenticated identity continuity',
@@ -459,6 +502,9 @@ export function summarizeProductionAuthSessionLifecycleTrace(trace) {
         expiresAt: entry.expiresAt ?? null,
         ...(typeof entry.authUser === 'string' && entry.authUser.trim()
           ? { authUser: entry.authUser.trim() }
+          : {}),
+        ...(Number.isInteger(entry.authUserId) && entry.authUserId > 0
+          ? { authUserId: entry.authUserId }
           : {}),
         ...(invalidLifecycleFlag
           ? { invalidLifecycleFlag }
@@ -630,15 +676,25 @@ function hasTraceBackedPostPreflightReadObservation(observations, issuedIndex) {
 
 function resolveAuthSessionIdentitySummary(observation) {
   if (!observation || typeof observation !== 'object') {
-    return { missing: true, value: '' };
+    return {
+      userLoginMissing: true,
+      userLogin: '',
+      userIdMissing: true,
+      userId: null,
+    };
   }
 
   const authUser = typeof observation.authUser === 'string'
     ? observation.authUser.trim()
     : '';
+  const authUserId = Number.isInteger(observation.authUserId) && observation.authUserId > 0
+    ? observation.authUserId
+    : null;
   return {
-    missing: !authUser,
-    value: authUser,
+    userLoginMissing: !authUser,
+    userLogin: authUser,
+    userIdMissing: !authUserId,
+    userId: authUserId,
   };
 }
 

@@ -2042,6 +2042,7 @@ function summarizeAuthSessionLifecycle(auth) {
   const authUser = typeof auth?.identity?.userLogin === 'string'
     ? auth.identity.userLogin.trim()
     : '';
+  const authUserId = normalizeObservedAuthIdentityUserId(auth?.identity?.userId);
   const invalidLifecycleFlag = resolveInvalidProductionAuthSessionLifecycleFlag(session);
   const invalidIdentityField = resolveInvalidProductionAuthSessionIdentityField(session);
   const unrevokedObservation = (
@@ -2085,6 +2086,7 @@ function summarizeAuthSessionLifecycle(auth) {
     rotated: session.rotated === true ? true : session.rotated === false ? false : null,
     preserved: session.preserved === true ? true : session.preserved === false ? false : null,
     ...(authUser ? { authUser } : {}),
+    ...(authUserId ? { authUserId } : {}),
   };
 }
 
@@ -2112,6 +2114,7 @@ function recordAuthSessionLifecycle(summary, step, auth) {
     status: normalizeAuthSessionLifecycleHistoryStatus(observation),
     expiresAt: observation?.expiresAt || null,
     ...(observation?.authUser ? { authUser: observation.authUser } : {}),
+    ...(observation?.authUserId ? { authUserId: observation.authUserId } : {}),
     expired: Boolean(observation?.expired),
     revoked: Boolean(observation?.revoked),
     cleanedUp: Boolean(observation?.cleanedUp),
