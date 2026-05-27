@@ -2488,8 +2488,8 @@ test('keeps remote-only plugin changes while a live-preconditioned delete, match
 
 test('keeps remote-only plugin removals while a live-preconditioned delete, matching independent restore, and type swap stay safe', () => {
   const base = baseSite();
-  base.files['wp-content/uploads/gallery'] = 'base gallery file';
-  base.files['wp-content/uploads/gallery/keep.txt'] = 'base descendant bytes';
+  base.files['wp-content/uploads/gallery/cover.txt'] = 'base cover';
+  base.files['wp-content/uploads/gallery/cover.txt/keep.txt'] = 'base keep';
   base.files['about.php'] = '<?php echo "base about";';
 
   const local = baseSite();
@@ -4039,7 +4039,7 @@ test('keeps remote-only plugin changes while a live-preconditioned delete, match
 
   const local = JSON.parse(JSON.stringify(base));
   delete local.files['index.php'];
-  local.files['wp-content/uploads/gallery'] = 'shared replacement file';
+  local.files['wp-content/uploads/gallery'] = { type: 'directory' };
   delete local.files['wp-content/uploads/gallery/keep.txt'];
   local.files['wp-content/uploads/cover'] = { type: 'directory' };
   local.db.wp_posts['ID:1'].post_title = 'Shared independent title';
@@ -11274,6 +11274,83 @@ test('blocks plugin-owned resources when the declared driver does not match the 
   const plan = planFor(base, local, remote);
   const blocker = plan.blockers[0];
   const blockerJson = JSON.stringify(blocker);
+  const pluginDecision = decisionFor(plan, 'plugin:seo');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/seo/seo.php');
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(blocker.class, 'unsupported-plugin-owned-resource');
+  assert.equal(blocker.driver, 'wp-option');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(blockerJson.includes('base-private-meta'), false);
+  assert.equal(blockerJson.includes('local-private-meta'), false);
+  assert.equal(blockerJson.includes('remote-only plugin drift'), false);
+  assert.equal(remote.plugins.seo.description, 'remote-only plugin drift');
+  assert.equal(remote.files['wp-content/plugins/seo/seo.php'], '<?php /* remote-only plugin drift */');
+});
+
+test('blocks plugin-owned resources when the declared driver does not match the table while preserving matching independent delete, edit, type swap, and remote-only plugin removals', () => {
+  const resourceKey = 'row:["wp_postmeta","meta_id:7"]';
+  const base = baseSite();
+  base.files['wp-content/uploads/gallery'] = 'base gallery file';
+  base.files['wp-content/uploads/gallery/keep.txt'] = 'base descendant bytes';
+  base.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_title: 'Base post title',
+    post_status: 'publish',
+  };
+  base.db.wp_postmeta = {
+    'meta_id:7': {
+      meta_id: 7,
+      post_id: 1,
+      meta_key: '_forms_payload',
+      meta_value: 'base-private-meta',
+      __pluginOwner: 'forms',
+    },
+  };
+
+  const local = JSON.parse(JSON.stringify(base));
+  delete local.files['index.php'];
+  local.files['wp-content/uploads/gallery/cover.txt'] = { type: 'directory' };
+  delete local.files['wp-content/uploads/gallery/cover.txt/keep.txt'];
+  local.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_title: 'Matched post title',
+    post_status: 'publish',
+  };
+  local.db.wp_postmeta['meta_id:7'].meta_value = 'local-private-meta';
+  local.pushIntents = [
+    {
+      id: 'update-forms-postmeta',
+      kind: 'plugin-data-update',
+      requireAtomic: true,
+      resources: [resourceKey],
+      resourcePolicy: pluginOwnedResourcePolicy(
+        allowedPluginOwnedResource(resourceKey, 'forms', 'wp-option'),
+      ),
+    },
+  ];
+
+  const remote = JSON.parse(JSON.stringify(base));
+  delete remote.files['index.php'];
+  remote.files['wp-content/uploads/gallery/cover.txt'] = { type: 'directory' };
+  delete remote.files['wp-content/uploads/gallery/cover.txt/keep.txt'];
+  remote.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_title: 'Matched post title',
+    post_status: 'publish',
+  };
+  delete remote.plugins.forms;
+  delete remote.files['wp-content/plugins/forms/forms.php'];
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers[0];
+  const blockerJson = JSON.stringify(blocker);
+  const deleteDecision = decisionFor(plan, 'file:index.php');
+  const typeSwapDecision = decisionFor(plan, 'file:wp-content/uploads/gallery/cover.txt');
+  const editDecision = decisionFor(plan, 'row:["wp_posts","ID:2"]');
   const pluginDecision = decisionFor(plan, 'plugin:forms');
   const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
 
@@ -11282,8 +11359,17 @@ test('blocks plugin-owned resources when the declared driver does not match the 
   assert.equal(blocker.class, 'unsupported-plugin-owned-resource');
   assert.equal(blocker.driver, 'wp-option');
   assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(deleteDecision.decision, 'already-in-sync');
+  assert.equal(typeSwapDecision.decision, 'already-in-sync');
+  assert.equal(editDecision.decision, 'already-in-sync');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
   assert.equal(blockerJson.includes('base-private-meta'), false);
   assert.equal(blockerJson.includes('local-private-meta'), false);
+  assert.equal(blockerJson.includes('base cover'), false);
+  assert.equal(blockerJson.includes('Matched post title'), false);
+  assert.equal(Object.hasOwn(remote.plugins, 'forms'), false);
+  assert.equal(Object.hasOwn(remote.files, 'wp-content/plugins/forms/forms.php'), false);
 });
 
 test('blocks unsupported plugin dependency version ranges while preserving unrelated remote-only file drift', () => {
