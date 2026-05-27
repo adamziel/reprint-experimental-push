@@ -1868,6 +1868,15 @@ function hasValidLeaseFenceWriterContract(candidate) {
       'restartReadable',
       'staleClaimRejected',
     ].includes(key))
+    && [
+      'strategy',
+      'claimKeyUnique',
+      'fsyncEvidence',
+      'storageGuard',
+      'monotonicSequence',
+      'restartReadable',
+      'staleClaimRejected',
+    ].every((key) => Object.hasOwn(candidate, key))
     && candidate.strategy === 'claim-fenced-single-writer'
     && typeof candidate.storageGuard === 'string'
     && candidate.storageGuard.length > 0
@@ -1891,6 +1900,16 @@ function hasValidLeaseFenceEnvelopeContract(candidate) {
       'staleClaimRejected',
       'writerLease',
     ].includes(key))
+    && [
+      'boundary',
+      'claimKeyUnique',
+      'storageGuard',
+      'fsyncEvidence',
+      'monotonicSequence',
+      'restartReadable',
+      'staleClaimRejected',
+      'writerLease',
+    ].every((key) => Object.hasOwn(candidate, key))
     && typeof candidate.boundary === 'string'
     && candidate.boundary.length > 0
     && typeof candidate.storageGuard === 'string'
