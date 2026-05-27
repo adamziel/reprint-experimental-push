@@ -539,6 +539,8 @@ const ROLLOUT_REJECTED_FAST_PATH_SPECS = Object.freeze([
       'production-row-batch-executor-not-measured',
       'production-row-batch-executor-measured-not-proven',
       'production-row-batch-executor-visible-without-parallelism-limits',
+      ...POST_PAUSE_ALIGNED_QUEUE_SLACK_BLOCKER_REFS,
+      ...POST_PAUSE_HIDDEN_RESOURCE_VISIBILITY_BLOCKER_REFS,
     ]),
   }),
   Object.freeze({
