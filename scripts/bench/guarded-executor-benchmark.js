@@ -310,6 +310,54 @@ const ROLLOUT_REJECTED_FAST_PATH_SPECS = Object.freeze([
     ]),
   }),
   Object.freeze({
+    id: 'compressed-remote-index-and-cached-row-receipts-skips-plugin-update-finalize',
+    blockerRefs: Object.freeze([
+      'production-atomic-group-commit-not-measured',
+      'production-row-batch-executor-not-measured',
+      'production-row-batch-executor-measured-not-proven',
+    ]),
+  }),
+  Object.freeze({
+    id: 'compressed-remote-index-and-cached-row-receipts-skips-plugin-update-finalize-after-pause',
+    blockerRefs: Object.freeze([
+      'production-atomic-group-commit-not-measured',
+      'production-row-batch-executor-not-measured',
+      'production-row-batch-executor-measured-not-proven',
+    ]),
+  }),
+  Object.freeze({
+    id: 'compressed-remote-index-and-cached-row-receipts-skips-plugin-update-activation',
+    blockerRefs: Object.freeze([
+      'production-atomic-group-commit-not-measured',
+      'production-row-batch-executor-not-measured',
+      'production-row-batch-executor-measured-not-proven',
+    ]),
+  }),
+  Object.freeze({
+    id: 'compressed-remote-index-and-cached-row-receipts-skips-plugin-update-backpressure',
+    blockerRefs: Object.freeze([
+      'production-atomic-group-commit-not-measured',
+      'production-row-batch-executor-not-measured',
+      'production-row-batch-executor-measured-not-proven',
+      'queue-pause-without-resource-headroom-safe-receipt-cursor-backpressure',
+      'queue-pause-without-resource-headroom-safe-receipt-cursor-slack',
+      'queue-pause-without-consistent-receipt-cursor-slack',
+      'queue-pause-without-memory-safe-receipt-cursor-slack',
+    ]),
+  }),
+  Object.freeze({
+    id: 'compressed-remote-index-and-cached-row-receipts-skips-plugin-update-row-preconditions-after-pause',
+    blockerRefs: Object.freeze([
+      'production-atomic-group-commit-not-measured',
+      'production-row-batch-executor-not-measured',
+      'production-row-batch-executor-measured-not-proven',
+      'queue-pause-without-resource-headroom-safe-receipt-cursor-backpressure',
+      'queue-pause-without-resource-headroom-safe-receipt-cursor-slack',
+      'queue-pause-without-consistent-receipt-cursor-slack',
+      'queue-pause-without-memory-safe-receipt-cursor-slack',
+    ]),
+  }),
+  Object.freeze({
     id: 'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-finalize',
     blockerRefs: Object.freeze([
       'production-atomic-group-commit-not-measured',
