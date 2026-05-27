@@ -949,6 +949,42 @@ test('plugin-driver mode proof resolver reuses an attached top-level modeProof w
   assert.deepEqual(modeProof?.requestedBundles, ['driverReleaseProof']);
 });
 
+test('plugin-driver mode proof resolver reuses an attached top-level modeProof across canonical alias requests', () => {
+  const attachedModeProof = {
+    mode: 'driverReleaseProof',
+    canonicalMode: 'driver-release-proof',
+    proofKey: 'driverReleaseProof',
+    legacyProofKey: 'driverReleaseProof',
+    requestedScenarios: ['driverReleaseProof'],
+    requestedBundles: ['driverReleaseProof'],
+    selectedScenarios: Array.from(new Set(bundleSummaryGroups['driver-release-proof'])).sort(),
+    requestedBundleStatus: 'passed',
+    marker: 'attached-canonical',
+  };
+
+  const rawSummary = {
+    modeProof: attachedModeProof,
+    requestedScenarios: ['driverReleaseProof'],
+    requestedBundles: ['driverReleaseProof'],
+    selectedScenarios: Array.from(new Set(bundleSummaryGroups['driver-release-proof'])).sort(),
+    driverReleaseProof: {
+      status: 'passed',
+    },
+  };
+
+  const modeProof = resolveProductionPluginPackageModeProof(rawSummary, 'driverReleaseProofOnly', {
+    requestedScenarios: ['driverReleaseProof'],
+    selectedScenarios: new Set(bundleSummaryGroups['driver-release-proof']),
+    resolvedMode: 'driverReleaseProofOnly',
+    canonicalMode: 'driver-release-proof',
+  });
+
+  assert.equal(modeProof?.marker, 'attached-canonical');
+  assert.equal(modeProof?.mode, 'driverReleaseProof');
+  assert.equal(modeProof?.proofKey, 'driverReleaseProof');
+  assert.deepEqual(modeProof?.requestedBundles, ['driverReleaseProof']);
+});
+
 test('plugin-driver proof summary attach helper preserves an unrelated top-level modeProof cache', () => {
   const unrelatedModeProof = {
     mode: 'releaseProof',

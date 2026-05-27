@@ -779,6 +779,31 @@ function modeProofMatchesResolvedContext(summary, modeProof, resolvedOptions) {
     );
 }
 
+function modeProofMatchesResolvedKey(modeProof, resolved) {
+  const attachedModeKey = modeProof?.mode === undefined || modeProof?.mode === null
+    ? null
+    : resolveProductionPluginPackageModeProofKey(modeProof.mode);
+  const canonicalProofMatches = (
+    modeProof?.canonicalMode === resolved.canonicalMode
+    && modeProof?.proofKey === resolved.proofKey
+    && attachedModeKey?.canonicalMode === resolved.canonicalMode
+    && attachedModeKey?.proofKey === resolved.proofKey
+  );
+  if (!canonicalProofMatches) {
+    return false;
+  }
+  if (
+    modeProof?.mode === resolved.mode
+    && modeProof?.legacyProofKey === resolved.legacyProofKey
+  ) {
+    return true;
+  }
+  return (
+    modeProof?.mode === resolved.proofKey
+    && modeProof?.legacyProofKey === resolved.proofKey
+  );
+}
+
 export function resolveProductionPluginPackageModeProof(summary, modeValue, options = {}) {
   const resolved = resolveProductionPluginPackageModeProofKey(modeValue);
   if (resolved === null) {
@@ -813,10 +838,7 @@ export function resolveProductionPluginPackageModeProof(summary, modeValue, opti
 
   const attachedModeProof = summary?.modeProof;
   if (
-    attachedModeProof?.mode === resolved.mode
-    && attachedModeProof?.canonicalMode === resolved.canonicalMode
-    && attachedModeProof?.proofKey === resolved.proofKey
-    && attachedModeProof?.legacyProofKey === resolved.legacyProofKey
+    modeProofMatchesResolvedKey(attachedModeProof, resolved)
     && (
       resolvedModeProofOptions === null
       || modeProofMatchesResolvedContext(summary, attachedModeProof, resolvedModeProofOptions)
@@ -832,10 +854,7 @@ export function resolveProductionPluginPackageModeProof(summary, modeValue, opti
 
   const attachedPluginDriverModeProof = summary?.pluginDriverProof?.modeProof;
   if (
-    attachedPluginDriverModeProof?.mode === resolved.mode
-    && attachedPluginDriverModeProof?.canonicalMode === resolved.canonicalMode
-    && attachedPluginDriverModeProof?.proofKey === resolved.proofKey
-    && attachedPluginDriverModeProof?.legacyProofKey === resolved.legacyProofKey
+    modeProofMatchesResolvedKey(attachedPluginDriverModeProof, resolved)
     && (
       resolvedModeProofOptions === null
       || modeProofMatchesResolvedContext(
