@@ -23237,6 +23237,240 @@ test('consumeProductionRecoveryJournal fails closed when remote ownership drifts
   assert.deepEqual(error.details.persistedArtifactRefs, artifactRefs);
 });
 
+test('consumeProductionRecoveryJournal fails closed when claimId is hidden for a persisted consumed claim', () => {
+  const base = baseSite();
+  const local = structuredClone(base);
+  local.db.wp_options['option_name:blogname'] = {
+    option_name: 'blogname',
+    option_value: 'Consumed Claim Hidden Top Level ClaimId Site',
+  };
+  const remote = structuredClone(base);
+  const plan = planFor(base, local, remote);
+  const filePath = tempRecoveryJournalPath();
+  const remoteArtifactPath = `${path.dirname(filePath)}/consumed-hidden-top-level-claim-id.jsonl`;
+  const claimId = 'claim-consumed-hidden-top-level-claim-id';
+  const writerLease = { id: claimId, epoch: 3 };
+  const artifactRefs = {
+    journal: filePath,
+    remote: remoteArtifactPath,
+  };
+  const journal = openProductionRecoveryJournal(filePath, {
+    truncate: true,
+    now: fixedNow,
+    claimId,
+    writerLease,
+    ownsRemoteArtifact: true,
+    remoteArtifactPath,
+  });
+  appendRecoveryClaimOpened(journal, {
+    plan,
+    current: remote,
+    claimId,
+    artifactRefs,
+  });
+  journal.close();
+
+  const consumeOptions = {
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs,
+    writerLease,
+  };
+  Object.defineProperty(consumeOptions, 'claimId', {
+    value: claimId,
+    enumerable: false,
+    configurable: true,
+    writable: true,
+  });
+
+  const error = captureError(() => consumeProductionRecoveryJournal(consumeOptions));
+
+  assert.equal(error.code, 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL');
+  assert.equal(
+    error.message,
+    'Production recovery journal compatibility overload requires enumerable top-level options.',
+  );
+  assert.deepEqual(error.details.artifactRefs, {
+    journal: null,
+    remote: null,
+  });
+});
+
+test('consumeProductionRecoveryJournal fails closed when claimId is sourced from the prototype for a persisted consumed claim', () => {
+  const base = baseSite();
+  const local = structuredClone(base);
+  local.db.wp_options['option_name:blogname'] = {
+    option_name: 'blogname',
+    option_value: 'Consumed Claim Prototype Top Level ClaimId Site',
+  };
+  const remote = structuredClone(base);
+  const plan = planFor(base, local, remote);
+  const filePath = tempRecoveryJournalPath();
+  const remoteArtifactPath = `${path.dirname(filePath)}/consumed-prototype-top-level-claim-id.jsonl`;
+  const claimId = 'claim-consumed-prototype-top-level-claim-id';
+  const writerLease = { id: claimId, epoch: 3 };
+  const artifactRefs = {
+    journal: filePath,
+    remote: remoteArtifactPath,
+  };
+  const journal = openProductionRecoveryJournal(filePath, {
+    truncate: true,
+    now: fixedNow,
+    claimId,
+    writerLease,
+    ownsRemoteArtifact: true,
+    remoteArtifactPath,
+  });
+  appendRecoveryClaimOpened(journal, {
+    plan,
+    current: remote,
+    claimId,
+    artifactRefs,
+  });
+  journal.close();
+
+  const consumeOptions = {
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs,
+    writerLease,
+  };
+  Object.setPrototypeOf(consumeOptions, {
+    claimId,
+  });
+
+  const error = captureError(() => consumeProductionRecoveryJournal(consumeOptions));
+
+  assert.equal(error.code, 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL');
+  assert.equal(
+    error.message,
+    'Production recovery journal compatibility overload requires a strict plain options object.',
+  );
+  assert.deepEqual(error.details.artifactRefs, {
+    journal: null,
+    remote: null,
+  });
+});
+
+test('consumeProductionRecoveryJournal fails closed when writerLease is hidden for a persisted consumed claim', () => {
+  const base = baseSite();
+  const local = structuredClone(base);
+  local.db.wp_options['option_name:blogname'] = {
+    option_name: 'blogname',
+    option_value: 'Consumed Claim Hidden Top Level Writer Lease Site',
+  };
+  const remote = structuredClone(base);
+  const plan = planFor(base, local, remote);
+  const filePath = tempRecoveryJournalPath();
+  const remoteArtifactPath = `${path.dirname(filePath)}/consumed-hidden-top-level-writer-lease.jsonl`;
+  const claimId = 'claim-consumed-hidden-top-level-writer-lease';
+  const writerLease = { id: claimId, epoch: 3 };
+  const artifactRefs = {
+    journal: filePath,
+    remote: remoteArtifactPath,
+  };
+  const journal = openProductionRecoveryJournal(filePath, {
+    truncate: true,
+    now: fixedNow,
+    claimId,
+    writerLease,
+    ownsRemoteArtifact: true,
+    remoteArtifactPath,
+  });
+  appendRecoveryClaimOpened(journal, {
+    plan,
+    current: remote,
+    claimId,
+    artifactRefs,
+  });
+  journal.close();
+
+  const consumeOptions = {
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs,
+    claimId,
+  };
+  Object.defineProperty(consumeOptions, 'writerLease', {
+    value: writerLease,
+    enumerable: false,
+    configurable: true,
+    writable: true,
+  });
+
+  const error = captureError(() => consumeProductionRecoveryJournal(consumeOptions));
+
+  assert.equal(error.code, 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL');
+  assert.equal(
+    error.message,
+    'Production recovery journal compatibility overload requires enumerable top-level options.',
+  );
+  assert.deepEqual(error.details.artifactRefs, {
+    journal: null,
+    remote: null,
+  });
+});
+
+test('consumeProductionRecoveryJournal fails closed when writerLease is sourced from the prototype for a persisted consumed claim', () => {
+  const base = baseSite();
+  const local = structuredClone(base);
+  local.db.wp_options['option_name:blogname'] = {
+    option_name: 'blogname',
+    option_value: 'Consumed Claim Prototype Top Level Writer Lease Site',
+  };
+  const remote = structuredClone(base);
+  const plan = planFor(base, local, remote);
+  const filePath = tempRecoveryJournalPath();
+  const remoteArtifactPath = `${path.dirname(filePath)}/consumed-prototype-top-level-writer-lease.jsonl`;
+  const claimId = 'claim-consumed-prototype-top-level-writer-lease';
+  const writerLease = { id: claimId, epoch: 3 };
+  const artifactRefs = {
+    journal: filePath,
+    remote: remoteArtifactPath,
+  };
+  const journal = openProductionRecoveryJournal(filePath, {
+    truncate: true,
+    now: fixedNow,
+    claimId,
+    writerLease,
+    ownsRemoteArtifact: true,
+    remoteArtifactPath,
+  });
+  appendRecoveryClaimOpened(journal, {
+    plan,
+    current: remote,
+    claimId,
+    artifactRefs,
+  });
+  journal.close();
+
+  const consumeOptions = {
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs,
+    claimId,
+  };
+  Object.setPrototypeOf(consumeOptions, {
+    writerLease,
+  });
+
+  const error = captureError(() => consumeProductionRecoveryJournal(consumeOptions));
+
+  assert.equal(error.code, 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL');
+  assert.equal(
+    error.message,
+    'Production recovery journal compatibility overload requires a strict plain options object.',
+  );
+  assert.deepEqual(error.details.artifactRefs, {
+    journal: null,
+    remote: null,
+  });
+});
+
 test('openProductionRecoveryJournal fails closed when a consumed claim is reopened with a stale lease epoch', () => {
   const base = baseSite();
   const local = structuredClone(base);
