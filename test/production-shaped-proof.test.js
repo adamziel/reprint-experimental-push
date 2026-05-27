@@ -3680,7 +3680,7 @@ test('packaged smoke readiness helper fails closed on non-retryable route respon
   );
   assert.match(
     helperSource,
-    /packagedProductionPluginResetRouteNotReadyProbeCounts\(\s*notReadyProbeCounts,\s*'preflight',\s*\);\s*throw new Error\(\s*formatPackagedReadinessFailure\(\s*`Packaged production plugin preflight returned a terminal readiness failure at \$\{baseUrl\}`/s,
+    /packagedProductionPluginResetRouteNotReadyProbeCounts\(\s*notReadyProbeCounts,\s*'preflight',\s*\);\s*throw new Error\(\s*formatPackagedReadinessFailure\(\s*`Packaged production plugin signed preflight returned a terminal readiness failure at \$\{baseUrl\}`/s,
   );
   assert.match(
     helperSource,
@@ -3692,7 +3692,43 @@ test('packaged smoke readiness helper fails closed on non-retryable route respon
   );
   assert.match(
     helperSource,
-    /Packaged production plugin preflight returned a terminal readiness failure at \$\{baseUrl\}[\s\S]*?packagedProductionPluginPreflightTerminalContext\(\{\}\)/s,
+    /Packaged production plugin signed preflight returned a terminal readiness failure at \$\{baseUrl\}[\s\S]*?packagedProductionPluginPreflightTerminalContext\(\{\}\)/s,
+  );
+  assert.match(
+    helperSource,
+    /Packaged production plugin signed preflight returned an invalid readiness body while snapshot still reported startup-shaped readiness at \$\{baseUrl\}/s,
+  );
+  assert.match(
+    helperSource,
+    /Packaged production plugin signed preflight became terminal while snapshot still reported startup-shaped readiness at \$\{baseUrl\}/s,
+  );
+  assert.match(
+    helperSource,
+    /Packaged production plugin signed preflight returned an invalid readiness body while the snapshot probe timed out at \$\{baseUrl\}/s,
+  );
+  assert.match(
+    helperSource,
+    /Packaged production plugin signed preflight became terminal while the snapshot probe timed out at \$\{baseUrl\}/s,
+  );
+  assert.doesNotMatch(
+    helperSource,
+    /Packaged production plugin preflight returned an invalid readiness body while snapshot still reported startup-shaped readiness at \$\{baseUrl\}/s,
+  );
+  assert.doesNotMatch(
+    helperSource,
+    /Packaged production plugin preflight became terminal while snapshot still reported startup-shaped readiness at \$\{baseUrl\}/s,
+  );
+  assert.doesNotMatch(
+    helperSource,
+    /Packaged production plugin preflight returned a terminal readiness failure at \$\{baseUrl\}/s,
+  );
+  assert.doesNotMatch(
+    helperSource,
+    /Packaged production plugin preflight returned an invalid readiness body while the snapshot probe timed out at \$\{baseUrl\}/s,
+  );
+  assert.doesNotMatch(
+    helperSource,
+    /Packaged production plugin preflight became terminal while the snapshot probe timed out at \$\{baseUrl\}/s,
   );
 });
 
@@ -3812,7 +3848,7 @@ test('packaged smoke readiness helper formats malformed snapshot and preflight b
   );
   assert.match(
     helperSource,
-    /Packaged production plugin preflight returned an invalid readiness body at \$\{baseUrl\}[\s\S]*?packagedProductionPluginResetRouteNotReadyProbeCounts\(\s*notReadyProbeCounts,\s*'preflight',\s*\)[\s\S]*?packagedProductionPluginPreflightTerminalContext\(\{\}\)/s,
+    /Packaged production plugin signed preflight returned an invalid readiness body at \$\{baseUrl\}[\s\S]*?packagedProductionPluginResetRouteNotReadyProbeCounts\(\s*notReadyProbeCounts,\s*'preflight',\s*\)[\s\S]*?packagedProductionPluginPreflightTerminalContext\(\{\}\)/s,
   );
   assert.match(
     helperSource,

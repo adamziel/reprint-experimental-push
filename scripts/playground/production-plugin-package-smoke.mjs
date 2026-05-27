@@ -607,8 +607,8 @@ async function waitForServer(child, baseUrl, logs) {
             throw new Error(
               formatPackagedReadinessFailure(
                 malformedSnapshotFallbackPreflightBody
-                  ? `Packaged production plugin preflight returned an invalid readiness body while snapshot still reported startup-shaped readiness at ${baseUrl}`
-                  : `Packaged production plugin preflight became terminal while snapshot still reported startup-shaped readiness at ${baseUrl}`,
+                  ? `Packaged production plugin signed preflight returned an invalid readiness body while snapshot still reported startup-shaped readiness at ${baseUrl}`
+                  : `Packaged production plugin signed preflight became terminal while snapshot still reported startup-shaped readiness at ${baseUrl}`,
                 lastError,
                 lastProbes,
                 logs,
@@ -898,8 +898,8 @@ async function waitForServer(child, baseUrl, logs) {
             throw new Error(
               formatPackagedReadinessFailure(
                 malformedSnapshotFallbackPreflightBody
-                  ? `Packaged production plugin preflight returned an invalid readiness body while snapshot still reported startup-shaped readiness at ${baseUrl}`
-                  : `Packaged production plugin preflight became terminal while snapshot still reported startup-shaped readiness at ${baseUrl}`,
+                  ? `Packaged production plugin signed preflight returned an invalid readiness body while snapshot still reported startup-shaped readiness at ${baseUrl}`
+                  : `Packaged production plugin signed preflight became terminal while snapshot still reported startup-shaped readiness at ${baseUrl}`,
                 lastError,
                 lastProbes,
                 logs,
@@ -1186,7 +1186,7 @@ async function waitForServer(child, baseUrl, logs) {
         );
         throw new Error(
           formatPackagedReadinessFailure(
-            `Packaged production plugin preflight returned an invalid readiness body at ${baseUrl}`,
+            `Packaged production plugin signed preflight returned an invalid readiness body at ${baseUrl}`,
             lastError,
             lastProbes,
             logs,
@@ -1237,7 +1237,7 @@ async function waitForServer(child, baseUrl, logs) {
             );
             throw new Error(
               formatPackagedReadinessFailure(
-                `Packaged production plugin preflight returned a terminal readiness failure at ${baseUrl}`,
+                `Packaged production plugin signed preflight returned a terminal readiness failure at ${baseUrl}`,
                 lastError,
                 lastProbes,
                 logs,
@@ -1383,7 +1383,7 @@ async function waitForServer(child, baseUrl, logs) {
       );
       throw new Error(
         formatPackagedReadinessFailure(
-          `Packaged production plugin preflight returned a terminal readiness failure at ${baseUrl}`,
+          `Packaged production plugin signed preflight returned a terminal readiness failure at ${baseUrl}`,
           lastError,
           lastProbes,
           logs,
@@ -1641,8 +1641,8 @@ async function waitForServer(child, baseUrl, logs) {
             throw new Error(
               formatPackagedReadinessFailure(
                 malformedTimeoutFallbackPreflightBody
-                  ? `Packaged production plugin preflight returned an invalid readiness body while the snapshot probe timed out at ${baseUrl}`
-                  : `Packaged production plugin preflight became terminal while the snapshot probe timed out at ${baseUrl}`,
+                  ? `Packaged production plugin signed preflight returned an invalid readiness body while the snapshot probe timed out at ${baseUrl}`
+                  : `Packaged production plugin signed preflight became terminal while the snapshot probe timed out at ${baseUrl}`,
                 error,
                 lastProbes,
                 logs,
