@@ -529,6 +529,15 @@ test('production recovery journal inspection surface helper fails closed when le
   const missingArtifactRefs = clone(inspection);
   missingArtifactRefs.journal.artifactRefs = {};
   assert.equal(productionRecoveryJournalInspectionSurfaceIsPresent(missingArtifactRefs), false);
+
+  const divergentActiveClaimHash = clone(inspection);
+  const fabricatedActiveClaimHash = recoveryClaimHash('fabricated-production-claim-id');
+  divergentActiveClaimHash.claim.activeClaimHash = fabricatedActiveClaimHash;
+  divergentActiveClaimHash.journal.claim.activeClaimHash = fabricatedActiveClaimHash;
+  divergentActiveClaimHash.journal.claimHash = fabricatedActiveClaimHash;
+  divergentActiveClaimHash.journal.writerLease.claimHash = fabricatedActiveClaimHash;
+  divergentActiveClaimHash.leaseFence.writerLease.claimHash = fabricatedActiveClaimHash;
+  assert.equal(productionRecoveryJournalInspectionSurfaceIsPresent(divergentActiveClaimHash), false);
 });
 
 test('production recovery journal inspection preserves advanced previous-claim identity on restart', () => {
@@ -591,6 +600,12 @@ test('production recovery journal inspection preserves advanced previous-claim i
   assert.equal(inspection.journal.claimId, activeClaimId);
   assert.equal(inspection.journal.claimHash, recoveryClaimHash(activeClaimId));
   assert.equal(inspection.journal.writerLease.claimId, activeClaimId);
+
+  const divergentPreviousClaimHash = clone(inspection);
+  divergentPreviousClaimHash.claim.previousClaimHash = recoveryClaimHash('fabricated-previous-claim-id');
+  divergentPreviousClaimHash.journal.claim.previousClaimHash =
+    divergentPreviousClaimHash.claim.previousClaimHash;
+  assert.equal(productionRecoveryJournalInspectionSurfaceIsPresent(divergentPreviousClaimHash), false);
 });
 
 test('production recovery journal wrapper rejects hidden open options', () => {

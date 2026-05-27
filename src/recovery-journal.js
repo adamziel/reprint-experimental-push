@@ -483,12 +483,14 @@ function productionRecoveryJournalClaimContractMatches(claim) {
   return validStatus
     && hasNonEmptyString(claim.activeClaimId)
     && CLAIM_HASH_PATTERN.test(claim.activeClaimHash || '')
+    && claim.activeClaimHash === recoveryClaimHash(claim.activeClaimId)
     && isPositiveInteger(claim.sequence)
     && validType
     && (claim.status !== 'advanced' || claim.type === 'stale-claim-advanced')
     && (!hasPreviousClaimIdentity || (
       hasNonEmptyString(claim.previousClaimId)
       && CLAIM_HASH_PATTERN.test(claim.previousClaimHash || '')
+      && claim.previousClaimHash === recoveryClaimHash(claim.previousClaimId)
     ));
 }
 
