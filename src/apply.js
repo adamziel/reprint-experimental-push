@@ -733,6 +733,9 @@ export function productionRecoverySupportReport(writer) {
   const writerOwnsRemoteArtifact = Object.hasOwn(writer ?? {}, 'ownsRemoteArtifact')
     && !writerOwnsRemoteArtifactHidden
     && writer.ownsRemoteArtifact === true;
+  const inspectedOwnsRemoteArtifact = Object.hasOwn(inspected ?? {}, 'ownsRemoteArtifact')
+    && !hasHiddenOwnStringProperty(inspected, 'ownsRemoteArtifact')
+    && inspected.ownsRemoteArtifact === true;
   const consumedClaimConfirmsWriterLease = Boolean(
     consumedClaim
     && hasValidProductionLeaseIdentity(writer?.writerLease)
@@ -1037,6 +1040,12 @@ export function productionRecoverySupportReport(writer) {
     writerOwnsRemoteArtifact
     && writerRemoteArtifactRef
     && !inspectedRemoteArtifactRef
+  ) {
+    addMissingDependency('restart-readable remote recovery artifact ownership');
+  }
+  if (
+    (writerOwnsRemoteArtifact || writerRemoteArtifactRef || inspectedRemoteArtifactRef)
+    && !inspectedOwnsRemoteArtifact
   ) {
     addMissingDependency('restart-readable remote recovery artifact ownership');
   }
