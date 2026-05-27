@@ -48,6 +48,7 @@ import {
   hasExplicitCheckedBoundaryRequest,
   resolveCheckedLiveBoundaryEnv,
   resolveLiveApplyRevalidationEnv,
+  shouldUseProductionSnapshotExport,
 } from '../scripts/playground/production-shaped-live-release-verify-lib.js';
 import {
   evaluateCheckedReleaseAuthSessionLifecycleSummary,
@@ -1268,6 +1269,30 @@ test('packaged production plugin auth/session source helper resolves and loads t
     username: 'reprint_push_admin',
     applicationPassword: 'reprint-push-admin-app-password',
   });
+});
+
+test('checked release verifier uses the production snapshot export for packaged or explicit live sources', () => {
+  assert.equal(
+    shouldUseProductionSnapshotExport({
+      packagedBoundaryRequested: true,
+      explicitSourceUrl: '',
+    }),
+    true,
+  );
+  assert.equal(
+    shouldUseProductionSnapshotExport({
+      packagedBoundaryRequested: false,
+      explicitSourceUrl: 'https://example.test',
+    }),
+    true,
+  );
+  assert.equal(
+    shouldUseProductionSnapshotExport({
+      packagedBoundaryRequested: false,
+      explicitSourceUrl: '',
+    }),
+    false,
+  );
 });
 
 test('packaged production plugin readiness helper accepts a stable snapshot before signed preflight is ready', () => {

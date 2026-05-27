@@ -102,3 +102,10 @@ export function resolveLiveApplyRevalidationEnv({
       : {}),
   };
 }
+
+export function shouldUseProductionSnapshotExport({
+  packagedBoundaryRequested = false,
+  explicitSourceUrl = '',
+} = {}) {
+  return Boolean(packagedBoundaryRequested || explicitSourceUrl);
+}

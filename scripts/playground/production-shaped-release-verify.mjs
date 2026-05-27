@@ -50,6 +50,7 @@ import {
   packagedProductionPluginSnapshotRetryable,
   packagedProductionPluginServerReady,
 } from './packaged-production-plugin-readiness.js';
+import { shouldUseProductionSnapshotExport } from './production-shaped-live-release-verify-lib.js';
 import { loadBlueprintSnapshotFixture } from './blueprint-snapshot-fixture.js';
 import {
   appendRecoveryClaimOpened,
@@ -738,7 +739,10 @@ try {
       assert.equal(preflight.status, 200, `production-shaped release verify preflight HTTP ${preflight.status}`);
       assert.equal(preflight.body.ok, true);
 
-      const remoteBaseSnapshot = packagedSourceFixture
+      const remoteBaseSnapshot = shouldUseProductionSnapshotExport({
+        packagedBoundaryRequested: packagedSourceFixture !== null,
+        explicitSourceUrl: explicitReleaseVerifySourceUrl,
+      })
         ? await exportProductionSnapshot('remote-base', liveSourceUrl)
         : await exportSnapshot('remote-base', liveSourceUrl);
       const proof = await runAuthenticatedHttpPush({
