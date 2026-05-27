@@ -25736,6 +25736,66 @@ test('blocks steady unsupported comment meta rows before they can be treated as 
   assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin changes */');
 });
 
+test('blocks steady unsupported comment meta rows before they can be treated as already in sync while preserving a matching independent file type swap and remote-only plugin removals', () => {
+  const resourceKey = 'row:["wp_commentmeta","meta_id:148"]';
+  const swapFileKey = 'file:wp-content/uploads/steady-commentmeta-cover';
+  const base = baseSite();
+  base.db.wp_commentmeta = {
+    'meta_id:148': {
+      meta_id: 148,
+      comment_id: 124,
+      meta_key: 'note',
+      meta_value: 'Steady unsupported comment meta removals',
+    },
+  };
+  base.db.wp_comments = {
+    'comment_ID:124': {
+      comment_ID: 124,
+      comment_post_ID: 1,
+      comment_content: 'Steady unsupported referenced comment removals',
+    },
+  };
+  base.files['wp-content/uploads/steady-commentmeta-cover'] = 'steady commentmeta cover bytes';
+
+  const local = baseSite();
+  local.db.wp_commentmeta = JSON.parse(JSON.stringify(base.db.wp_commentmeta));
+  local.db.wp_comments = JSON.parse(JSON.stringify(base.db.wp_comments));
+  local.files['wp-content/uploads/steady-commentmeta-cover'] = { type: 'directory' };
+
+  const remote = baseSite();
+  remote.db.wp_commentmeta = JSON.parse(JSON.stringify(base.db.wp_commentmeta));
+  remote.db.wp_comments = JSON.parse(JSON.stringify(base.db.wp_comments));
+  remote.files['wp-content/uploads/steady-commentmeta-cover'] = { type: 'directory' };
+  delete remote.plugins.forms;
+  delete remote.files['wp-content/plugins/forms/forms.php'];
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  const matchingTypeSwap = decisionFor(plan, swapFileKey);
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(decisionFor(plan, resourceKey), undefined);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(plan.conflicts.length, 0);
+  assert.equal(blocker.class, 'unsupported-commentmeta-resource');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.unsupportedState, 'steady-unsupported');
+  assert.equal(blocker.reason, 'Comment meta graph resources are not yet supported by the planner.');
+  assert.equal(matchingTypeSwap.decision, 'already-in-sync');
+  assert.equal(matchingTypeSwap.change.localChange, 'type-change');
+  assert.equal(matchingTypeSwap.change.remoteChange, 'type-change');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('Steady unsupported comment meta removals'), false);
+  assert.equal(planJson.includes('Steady unsupported referenced comment removals'), false);
+  assert.equal(Object.hasOwn(remote.plugins, 'forms'), false);
+  assert.equal(Object.hasOwn(remote.files, 'wp-content/plugins/forms/forms.php'), false);
+});
+
 test('blocks local same-plan created user meta identity while preserving remote-only plugin drift', () => {
   const resourceKey = 'row:["wp_usermeta","umeta_id:77"]';
   const base = baseSite();
