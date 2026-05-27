@@ -920,6 +920,8 @@ export function consumeProductionRecoveryJournal(options) {
     journal.appendEvent('recovery-journal-consumed', {
       planId: plan.id,
       state: 'consumed',
+      claimId,
+      claimHash: recoveryClaimHash(claimId),
       observedHash: digest(current),
       artifactRefs,
     });
