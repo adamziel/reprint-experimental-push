@@ -2113,9 +2113,7 @@ function summarizeAuthSessionLifecycle(auth) {
   const unrevokedObservation = (
     session.revoked === true
     || session.status === 'revoked'
-    || session.cleanedUp === true
-    || session.cleanup === true
-    || session.status === 'cleaned-up'
+    || productionAuthSessionIsCleanedUp(session)
   )
     ? { field: resolveProductionAuthSessionUnrevokedField(session) }
     : null;
@@ -2147,7 +2145,7 @@ function summarizeAuthSessionLifecycle(auth) {
       : {}),
     expired: session.expired === true || session.status === 'expired' || isExpiredSession(session),
     revoked: session.revoked === true || session.status === 'revoked',
-    cleanedUp: session.cleanedUp === true || session.cleanup === true || session.status === 'cleaned-up',
+    cleanedUp: productionAuthSessionIsCleanedUp(session),
     rotated: session.rotated === true ? true : session.rotated === false ? false : null,
     preserved: session.preserved === true ? true : session.preserved === false ? false : null,
     ...(authUser ? { authUser } : {}),
@@ -2791,7 +2789,7 @@ function summarizeReplayAuthSessionLifecycle(session) {
 
   return {
     revoked: session.revoked === true || session.status === 'revoked',
-    cleanedUp: session.cleanedUp === true || session.cleanup === true || session.status === 'cleaned-up',
+    cleanedUp: productionAuthSessionIsCleanedUp(session),
     rotated: session.rotated === true || session.status === 'rotated',
     preserved: session.preserved === true,
     expired: session.expired === true || session.status === 'expired' || isExpiredSession(session),
@@ -3226,9 +3224,7 @@ function resolveObservedProductionAuthSessionLifecycleDrift(response) {
   if (
     session?.revoked === true
     || session?.status === 'revoked'
-    || session?.cleanedUp === true
-    || session?.cleanup === true
-    || session?.status === 'cleaned-up'
+    || productionAuthSessionIsCleanedUp(session)
   ) {
     return {
       field: resolveProductionAuthSessionUnrevokedField(session),
@@ -3325,6 +3321,7 @@ function resolveInvalidProductionAuthSessionLifecycleFlag(session) {
     ['revoked', session.revoked],
     ['cleanedUp', session.cleanedUp],
     ['cleanup', session.cleanup],
+    ['cleaned_up', session.cleaned_up],
     ['expired', session.expired],
     ['rotated', session.rotated],
     ['preserved', session.preserved],
@@ -3456,8 +3453,20 @@ function resolveProductionAuthSessionUnrevokedField(session) {
     return 'auth.session.cleanedUp';
   }
 
+  if (session?.cleaned_up === true) {
+    return 'auth.session.cleaned_up';
+  }
+
   return 'auth.session.cleanup';
 }
+
+function productionAuthSessionIsCleanedUp(session) {
+  return session?.cleanedUp === true
+    || session?.cleanup === true
+    || session?.cleaned_up === true
+    || session?.status === 'cleaned-up';
+}
+
 function hasProductionAuthSessionRevocationDrift(response) {
   const session = response?.body?.auth?.session;
   if (!session || typeof session !== 'object') {
@@ -3465,9 +3474,7 @@ function hasProductionAuthSessionRevocationDrift(response) {
   }
   return session.revoked === true
     || session.status === 'revoked'
-    || session.cleanedUp === true
-    || session.cleanup === true
-    || session.status === 'cleaned-up';
+    || productionAuthSessionIsCleanedUp(session);
 }
 
 function isExpiredSession(session) {

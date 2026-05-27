@@ -398,10 +398,17 @@ function recordAuthSessionLifecycle(trace, step, auth) {
     authUser: auth?.identity?.userLogin ?? null,
     expired: session.expired === true || session.status === 'expired',
     revoked: session.revoked === true || session.status === 'revoked',
-    cleanedUp: session.cleanedUp === true || session.cleanup === true || session.status === 'cleaned-up',
+    cleanedUp: authSessionIsCleanedUp(session),
     rotated: Boolean(previous?.id && session.id && previous.id !== session.id),
     preserved: Boolean(previous?.id && session.id && previous.id === session.id),
   });
+}
+
+function authSessionIsCleanedUp(session) {
+  return session?.cleanedUp === true
+    || session?.cleanup === true
+    || session?.cleaned_up === true
+    || session?.status === 'cleaned-up';
 }
 
 async function exportSnapshot(name, baseUrl) {

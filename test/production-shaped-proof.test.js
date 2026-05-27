@@ -2065,6 +2065,21 @@ test('production auth/session lifecycle helper requires an active unexpired pack
       observed: 'cleaned-up',
     },
   );
+
+  assert.deepEqual(
+    evaluateProductionAuthSessionLifecycle({
+      id: 'psh_01j00000000000000000000000',
+      type: 'production-auth-session',
+      status: 'active',
+      expiresAt: '2099-01-01T00:00:00Z',
+      cleaned_up: true,
+    }),
+    {
+      ok: false,
+      required: 'unrevoked',
+      observed: 'cleaned-up',
+    },
+  );
 });
 
 test('production auth/session lifecycle helper treats invalid or past expiry as expired', () => {
@@ -2095,6 +2110,21 @@ test('production auth/session lifecycle helper fails closed on malformed lifecyc
       ok: false,
       required: 'boolean lifecycle flags',
       observed: 'invalid-cleanup',
+    },
+  );
+
+  assert.deepEqual(
+    evaluateProductionAuthSessionLifecycle({
+      id: 'psh_01j00000000000000000000000',
+      type: 'production-auth-session',
+      status: 'active',
+      expiresAt: '2099-01-01T00:00:00Z',
+      cleaned_up: 'yes',
+    }),
+    {
+      ok: false,
+      required: 'boolean lifecycle flags',
+      observed: 'invalid-cleaned_up',
     },
   );
 
@@ -2807,6 +2837,32 @@ test('production auth/session lifecycle summary helper requires a preserved acti
       ok: false,
       required: 'issued preflight',
       observed: 'apply',
+    },
+  );
+});
+
+test('production auth/session lifecycle summary helper fails closed on underscore cleanup flags', () => {
+  assert.deepEqual(
+    evaluateProductionAuthSessionLifecycleSummary({
+      issued: {
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+      },
+      read: {
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+        cleaned_up: true,
+        preserved: true,
+      },
+    }),
+    {
+      ok: false,
+      required: 'unrevoked',
+      observed: 'cleaned-up',
     },
   );
 });
@@ -3540,6 +3596,43 @@ test('production auth/session lifecycle trace summary preserves status-only revo
   assert.equal(cleanedUpSummary.cleanedUp?.status, 'cleaned-up');
   assert.deepEqual(
     evaluateProductionAuthSessionLifecycleSummary(cleanedUpSummary),
+    {
+      ok: false,
+      required: 'unrevoked',
+      observed: 'cleaned-up',
+    },
+  );
+
+  const cleanedUpUnderscoreSummary = summarizeProductionAuthSessionLifecycleTrace([
+    {
+      step: 'preflight',
+      id: 'session-01',
+      type: 'production-auth-session',
+      status: 'active',
+      expiresAt: '2099-01-01T00:00:00Z',
+      expired: false,
+      revoked: false,
+      cleanedUp: false,
+      rotated: false,
+      preserved: false,
+    },
+    {
+      step: 'apply',
+      id: 'session-01',
+      type: 'production-auth-session',
+      status: 'active',
+      expiresAt: '2099-01-01T00:00:00Z',
+      expired: false,
+      revoked: false,
+      cleaned_up: true,
+      rotated: false,
+      preserved: true,
+    },
+  ]);
+
+  assert.equal(cleanedUpUnderscoreSummary.cleanedUp?.cleanedUp, true);
+  assert.deepEqual(
+    evaluateProductionAuthSessionLifecycleSummary(cleanedUpUnderscoreSummary),
     {
       ok: false,
       required: 'unrevoked',
