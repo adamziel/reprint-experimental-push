@@ -23,6 +23,9 @@ import {
   packagedProductionPluginSnapshotReady,
   packagedProductionPluginSnapshotRetryable,
   packagedProductionPluginSnapshotTerminal,
+  packagedProductionPluginTimedOutRouteProbeWhilePackagedRouteStarting,
+  packagedProductionPluginTimedOutRouteProbeWhileWordPressStarting,
+  packagedProductionPluginRetryableRouteProbeWhileIndexProbeTimedOut,
 } from '../scripts/playground/packaged-production-plugin-readiness.js';
 
 const repoRoot = path.resolve(import.meta.dirname, '..');
@@ -443,6 +446,71 @@ test('packaged malformed index helper and bounded startup classifier fail closed
       kind: 'retryable-route-index-terminal',
       indexTerminal: true,
     },
+  );
+});
+
+test('packaged timeout and malformed-index helpers preserve retryable startup evidence', () => {
+  const retryableWordPressIndexProbe = {
+    status: 503,
+    body: {
+      details: {
+        error: {
+          code: 'wordpress_not_ready',
+          message: 'WordPress is not ready yet',
+        },
+      },
+    },
+    parsedBody: null,
+  };
+
+  assert.equal(
+    packagedProductionPluginMalformedTerminalIndexProbe(retryableWordPressIndexProbe),
+    false,
+  );
+  assert.equal(
+    packagedProductionPluginTimedOutRouteProbeWhileWordPressStarting(
+      { timedOut: true },
+      retryableWordPressIndexProbe.status,
+      retryableWordPressIndexProbe.body,
+    ),
+    true,
+  );
+  assert.deepEqual(
+    packagedProductionPluginClassifyTimeoutFallbackStartup(
+      { timedOut: true },
+      retryableWordPressIndexProbe,
+    ),
+    {
+      kind: 'timed-out-route-wordpress-starting',
+      globalWordPressStartup: true,
+    },
+  );
+
+  const readyIndexProbe = {
+    status: 200,
+    body: JSON.stringify({
+      namespaces: ['reprint/v1'],
+      routes: {
+        '/reprint/v1/push/preflight': {},
+      },
+    }),
+    parsedBody: null,
+  };
+
+  assert.equal(
+    packagedProductionPluginTimedOutRouteProbeWhilePackagedRouteStarting(
+      { timedOut: true },
+      readyIndexProbe.status,
+      readyIndexProbe.body,
+    ),
+    true,
+  );
+  assert.equal(
+    packagedProductionPluginRetryableRouteProbeWhileIndexProbeTimedOut(
+      { retryable: true },
+      { timedOut: true },
+    ),
+    true,
   );
 });
 
