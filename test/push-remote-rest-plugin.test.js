@@ -6296,6 +6296,28 @@ test('checked recovery inspect evidence fails closed on missing accepted inline 
   });
 });
 
+test('checked recovery inspect evidence fails closed on conflicting accepted inline ownership supported surface', { skip: !hasPhp }, () => {
+  const inlineJournal = buildAcceptedInlineRecoveryJournal();
+  inlineJournal.ownership.supportedSurface = 'weakened-inline-surface';
+
+  const result = runAttachCheckedRecoveryJournalEvidence(
+    { recovery: { journal: inlineJournal } },
+    true,
+    false,
+    buildCheckedRecoveryJournalSummary(),
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.recovery.journal.acceptedOnCheckedBoundary, false);
+  assert.deepEqual(parsed.recovery.journal.ownership, {
+    ownsJournal: true,
+    restartReadable: true,
+    productionAdapter: 'wpdb-single-statement-cas',
+    supportedSurface: 'weakened-inline-surface',
+  });
+});
+
 test('checked recovery inspect evidence fails closed on missing accepted inline ownership journal-ownership flag instead of backfilling it from checked evidence', { skip: !hasPhp }, () => {
   const inlineJournal = buildAcceptedInlineRecoveryJournal();
   delete inlineJournal.ownership.ownsJournal;
@@ -11850,6 +11872,26 @@ test('checked db journal attachment fails closed on missing accepted inline owne
     ownsJournal: true,
     restartReadable: true,
     productionAdapter: 'wpdb-single-statement-cas',
+  });
+});
+
+test('checked db journal attachment fails closed on conflicting accepted inline ownership supported surface', { skip: !hasPhp }, () => {
+  const inlineJournal = buildAcceptedInlineDbJournal();
+  inlineJournal.ownership.supportedSurface = 'weakened-inline-surface';
+
+  const result = runAttachCheckedDbJournalContract(
+    { ok: true, dbJournal: inlineJournal },
+    buildCheckedDbJournalSummary(),
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.dbJournal.acceptedOnCheckedBoundary, false);
+  assert.deepEqual(parsed.dbJournal.ownership, {
+    ownsJournal: true,
+    restartReadable: true,
+    productionAdapter: 'wpdb-single-statement-cas',
+    supportedSurface: 'weakened-inline-surface',
   });
 });
 
