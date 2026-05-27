@@ -1270,6 +1270,7 @@ export function productionRecoverySupportReport(writer) {
     (openedInspectionRecords || claimInspectionRecords)
     && (
       !Object.hasOwn(inspected ?? {}, 'claimHash')
+      || hasHiddenOwnStringProperty(inspected, 'claimHash')
       || typeof inspected.claimHash !== 'string'
       || !/^[a-f0-9]{64}$/.test(inspected.claimHash)
       || (
