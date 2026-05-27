@@ -587,6 +587,23 @@ export const proofKeyByCanonicalMode = Object.freeze({
   'driver-registration-shape-guards': 'driverRegistrationShapeGuards',
 });
 
+const legacyProofKeyByResolvedMode = Object.freeze({
+  'driver-mutation-proof': 'driverMutationProof',
+  'driver-mutation-proof-only': 'driverMutationProof',
+  driverMutationProof: 'driverMutationProof',
+  driverMutationProofOnly: 'driverMutationProof',
+});
+
+function legacyProofKeyForResolvedMode(modeValue, canonicalProofKey) {
+  if (!modeValue) {
+    return canonicalProofKey;
+  }
+  if (Object.hasOwn(legacyProofKeyByResolvedMode, modeValue)) {
+    return legacyProofKeyByResolvedMode[modeValue];
+  }
+  return canonicalProofKey;
+}
+
 export function resolveProductionPluginPackageModeProofKey(modeValue) {
   if (!modeValue) {
     return null;
@@ -601,6 +618,10 @@ export function resolveProductionPluginPackageModeProofKey(modeValue) {
     mode: resolved.resolvedMode,
     canonicalMode: resolved.canonicalMode,
     proofKey: proofKeyByCanonicalMode[resolved.canonicalMode] ?? null,
+    legacyProofKey: legacyProofKeyForResolvedMode(
+      resolved.resolvedMode,
+      proofKeyByCanonicalMode[resolved.canonicalMode] ?? null,
+    ),
   };
 }
 
@@ -613,6 +634,7 @@ export function resolveProductionPluginPackageModeProof(summary, modeValue) {
   return {
     ...resolved,
     proof: summary?.[resolved.proofKey] ?? null,
+    legacyProof: summary?.[resolved.legacyProofKey] ?? null,
   };
 }
 
@@ -1521,6 +1543,8 @@ export function buildProductionPluginPackageProofSummary(
       canonicalMode,
       proofKey: canonicalProofKey,
       proof: canonicalProof,
+      legacyProofKey: legacyProofKeyForResolvedMode(resolvedMode, canonicalProofKey),
+      legacyProof: proofSummary?.[legacyProofKeyForResolvedMode(resolvedMode, canonicalProofKey)] ?? null,
       requestedScenarios: modeRequestedScenarios,
       requestedBundles: modeRequestedBundles,
       requestedConcreteScenarios: modeRequestedConcreteScenarios,

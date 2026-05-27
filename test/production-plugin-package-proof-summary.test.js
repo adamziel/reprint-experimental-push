@@ -93,11 +93,13 @@ test('plugin-driver proof summary resolves runtime mode aliases to the canonical
     mode: 'driverMutationProof',
     canonicalMode: 'driver-release-proof',
     proofKey: 'driverReleaseProof',
+    legacyProofKey: 'driverMutationProof',
   });
   assert.deepEqual(resolveProductionPluginPackageModeProofKey('driverVerifierGuardsOnly'), {
     mode: 'driverVerifierGuardsOnly',
     canonicalMode: 'driver-verifier-guards',
     proofKey: 'driverVerifierGuards',
+    legacyProofKey: 'driverVerifierGuards',
   });
   assert.equal(resolveProductionPluginPackageModeProofKey(null), null);
 });
@@ -147,6 +149,9 @@ test('plugin-driver proof summary resolves every exported runtime mode alias to 
         mode,
         canonicalMode: expected.canonicalMode,
         proofKey: expected.proofKey,
+        legacyProofKey: mode.startsWith('driverMutationProof')
+          ? 'driverMutationProof'
+          : expected.proofKey,
       },
       `${mode} should resolve to one canonical proof key`,
     );
@@ -212,13 +217,17 @@ test('plugin-driver proof summary resolves runtime mode aliases directly to proo
     mode: 'driverMutationProof',
     canonicalMode: 'driver-release-proof',
     proofKey: 'driverReleaseProof',
+    legacyProofKey: 'driverMutationProof',
     proof: summary.driverReleaseProof,
+    legacyProof: summary.driverMutationProof,
   });
   assert.deepEqual(resolveProductionPluginPackageModeProof(summary, 'driverVerifierGuardsOnly'), {
     mode: 'driverVerifierGuardsOnly',
     canonicalMode: 'driver-verifier-guards',
     proofKey: 'driverVerifierGuards',
+    legacyProofKey: 'driverVerifierGuards',
     proof: summary.driverVerifierGuards,
+    legacyProof: summary.driverVerifierGuards,
   });
   assert.equal(resolveProductionPluginPackageModeProof(summary, null), null);
 });
@@ -2247,6 +2256,8 @@ test('plugin-driver proof summary carries the resolved smoke mode for bounded co
     canonicalMode: 'driver-positive-proof',
     proofKey: 'driverPositiveProof',
     proof: summary.driverPositiveProof,
+    legacyProofKey: 'driverPositiveProof',
+    legacyProof: summary.driverPositiveProof,
     requestedScenarios: ['driver-positive-proof'],
     requestedBundles: ['driverPositiveProof'],
     requestedConcreteScenarios: [],
@@ -2317,6 +2328,8 @@ test('plugin-driver proof summary exposes direct mode proof for scenario modes',
     canonicalMode: 'core-package-routes',
     proofKey: 'driverRouteProof',
     proof: summary.driverRouteProof,
+    legacyProofKey: 'driverRouteProof',
+    legacyProof: summary.driverRouteProof,
     requestedScenarios: ['core-package-routes'],
     requestedBundles: [],
     requestedConcreteScenarios: ['core-package-routes'],
@@ -2366,6 +2379,8 @@ test('plugin-driver proof summary fails mode proof requested satisfaction when t
     canonicalMode: 'core-package-routes',
     proofKey: 'driverRouteProof',
     proof: summary.driverRouteProof,
+    legacyProofKey: 'driverRouteProof',
+    legacyProof: summary.driverRouteProof,
     requestedScenarios: ['core-package-routes'],
     requestedBundles: [],
     requestedConcreteScenarios: ['core-package-routes'],
@@ -2397,6 +2412,68 @@ test('plugin-driver proof summary fails mode proof requested satisfaction when t
     requestedBundleStatus: null,
     requestedBundleStatuses: null,
   });
+});
+
+test('plugin-driver proof summary distinguishes canonical and legacy proof objects for mutation aliases', () => {
+  const summary = buildProductionPluginPackageProofSummary(
+    {
+      routes: {
+        namespace: 'reprint/v1',
+        profile: 'production-shaped',
+        labNamespaceDisabled: true,
+        authBootstrapDisabled: true,
+        labBacked: false,
+      },
+      cli: {
+        ok: true,
+      },
+      final: {
+        finalMatchesLocal: true,
+      },
+      driverUpdateApply: {
+        applied: 1,
+      },
+      driverDeleteGuard: {
+        dryRunRejectedCode: 'INVALID_PLAN',
+      },
+      driverUpdateValidationGuard: {
+        dryRunRejectedCode: 'INVALID_PLAN',
+      },
+      driverReceiptPlanBindingGuard: {
+        applyRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+      },
+      driverReceiptExpiryGuard: {
+        applyRejectedCode: 'AUTH_RECEIPT_EXPIRED',
+      },
+      driverReceiptIdentityGuard: {
+        applyRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+      },
+      driverReceiptRotatedCredentialGuard: {
+        rotatedCredentialRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+      },
+      driverReceiptRevokedCredentialGuard: {
+        applyRejectedCode: 'reprint_push_lab_auth_required',
+      },
+      driverDeleteApply: {
+        deletedAfterApply: true,
+      },
+    },
+    {
+      requestedScenarios: ['driver-release-proof'],
+      selectedScenarios: new Set([
+        'driver-release-proof',
+        ...scenarioGroups['driver-release-proof'],
+      ]),
+      resolvedMode: 'driverMutationProof',
+      canonicalMode: 'driver-release-proof',
+    },
+  );
+
+  assert.equal(summary.modeProof?.proofKey, 'driverReleaseProof');
+  assert.equal(summary.modeProof?.proof, summary.driverReleaseProof);
+  assert.equal(summary.modeProof?.legacyProofKey, 'driverMutationProof');
+  assert.equal(summary.modeProof?.legacyProof, summary.driverMutationProof);
+  assert.notEqual(summary.modeProof?.proof, summary.modeProof?.legacyProof);
 });
 
 test('plugin-driver proof summary leaves mode proof null without a canonical mode', () => {
