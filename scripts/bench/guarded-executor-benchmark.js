@@ -217,7 +217,9 @@ const ROLLOUT_REJECTED_FAST_PATH_SPECS = Object.freeze([
   Object.freeze({
     id: 'cached-receipt-cursor-staging-disk-headroom-and-journal-lag-skips-post-pause-replay',
     blockerRefs: Object.freeze([
+      'queue-pause-with-complete-footprint-without-measured-and-aligned-receipt-cursor-queue-slack',
       'queue-pause-without-measured-and-aligned-receipt-cursor-backpressure-proof',
+      'queue-pause-without-measured-and-aligned-receipt-cursor-queue-slack-proof',
       'queue-budget-not-visible',
       'queue-budget-visible-without-memory-ceiling-visibility',
       'queue-budget-visible-without-queue-headroom-visible',
@@ -236,7 +238,9 @@ const ROLLOUT_REJECTED_FAST_PATH_SPECS = Object.freeze([
       'queue-headroom-not-visible',
       'queue-headroom-visible-without-memory-ceiling-visibility',
       'queue-headroom-visible-without-queue-budget-visibility',
+      'queue-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof',
       'staging-disk-headroom-visible-without-measurement',
+      'staging-disk-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof',
       'staging-disk-headroom-visible-without-memory-ceiling-match-visibility',
       'staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint',
       'receipt-cursor-memory-headroom-visible-without-memory-ceiling-visibility',
