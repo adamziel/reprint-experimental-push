@@ -1632,6 +1632,68 @@ test('plugin-driver proof summary reuses attached pluginDriverProof across alias
   assert.ok(reusedProof.selectedScenarios.includes('driver-release-proof'));
 });
 
+test('plugin-driver proof summary reuses attached pluginDriverProof for mode-only aliases under the same canonical mode', () => {
+  const rawSummary = {
+    mode: 'driverReleaseProof',
+    canonicalMode: 'driver-release-proof',
+    requestedScenarios: ['driver-release-proof'],
+    selectedScenarios: [
+      'driver-release-proof',
+      ...scenarioGroups['driver-release-proof'],
+    ],
+    routes: {
+      namespace: 'reprint/v1',
+      profile: 'production-shaped',
+      labNamespaceDisabled: true,
+      authBootstrapDisabled: true,
+      labBacked: false,
+    },
+    cli: {
+      ok: true,
+    },
+    final: {
+      finalMatchesLocal: true,
+    },
+    driverDeleteGuard: {
+      dryRunRejectedCode: 'INVALID_PLAN',
+    },
+    driverUpdateValidationGuard: {
+      dryRunRejectedCode: 'INVALID_PLAN',
+    },
+    driverReceiptPlanBindingGuard: {
+      applyRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+    },
+    driverReceiptExpiryGuard: {
+      applyRejectedCode: 'AUTH_RECEIPT_EXPIRED',
+    },
+    driverReceiptIdentityGuard: {
+      applyRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+    },
+    driverReceiptRotatedCredentialGuard: {
+      rotatedCredentialRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+    },
+    driverReceiptRevokedCredentialGuard: {
+      applyRejectedCode: 'reprint_push_lab_auth_required',
+    },
+    driverDeleteApply: {
+      deletedAfterApply: true,
+    },
+  };
+
+  const originalProof = resolveProductionPluginPackagePluginDriverProof(rawSummary);
+  const reusedProof = resolveProductionPluginPackagePluginDriverProof(rawSummary, {
+    requestedScenarios: ['driverReleaseProofOnly'],
+    selectedScenarios: ['driverReleaseProofOnly'],
+    resolvedMode: 'driverReleaseProofOnly',
+    canonicalMode: 'driver-release-proof',
+  });
+
+  assert.equal(reusedProof, originalProof);
+  assert.equal(reusedProof, rawSummary.pluginDriverProof);
+  assert.deepEqual(reusedProof.requestedScenarios, ['driver-release-proof']);
+  assert.deepEqual(reusedProof.modeProof?.requestedBundles, ['driverReleaseProof']);
+});
+
 test('plugin-driver proof summary reuses attached pluginDriverProof for direct scenario aliases under the same canonical mode', () => {
   const rawSummary = {
     mode: 'driverRouteProof',

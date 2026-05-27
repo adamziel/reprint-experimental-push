@@ -724,7 +724,7 @@ function normalizeSelectedScenarioNamesForComparison(selectedScenarios) {
     selectedScenarios
       .values()
       .reduce((expandedNames, scenarioName) => {
-        const canonicalScenarioName = canonicalizeScenarioName(scenarioName);
+        const canonicalScenarioName = normalizeRequestedScenarioName(scenarioName);
         const expandedScenarioNames = scenarioGroups[canonicalScenarioName] ?? [canonicalScenarioName];
         for (const expandedScenarioName of expandedScenarioNames) {
           expandedNames.add(expandedScenarioName);
@@ -884,6 +884,12 @@ export function resolveProductionPluginPackagePluginDriverProof(
   const attachedPluginDriverProof = summary?.pluginDriverProof;
   if (attachedPluginDriverProof !== undefined) {
     const resolvedOptions = resolveProductionPluginPackageProofSummaryOptions(summary, options);
+    const expectedModeProof = resolvedOptions.resolvedMode === undefined || resolvedOptions.resolvedMode === null
+      ? null
+      : resolveProductionPluginPackageModeProofKey(resolvedOptions.resolvedMode);
+    const attachedModeKey = attachedPluginDriverProof?.mode === undefined || attachedPluginDriverProof?.mode === null
+      ? null
+      : resolveProductionPluginPackageModeProofKey(attachedPluginDriverProof.mode);
     const requestedScenariosMatch = (
       resolvedOptions.requestedScenarios === undefined
       || requestedScenarioListsMatch(
@@ -893,7 +899,13 @@ export function resolveProductionPluginPackagePluginDriverProof(
     );
     const modeMatches = (
       resolvedOptions.resolvedMode === undefined
-      || attachedPluginDriverProof?.mode === resolvedOptions.resolvedMode
+      || (
+        expectedModeProof === null
+          ? attachedPluginDriverProof?.mode === resolvedOptions.resolvedMode
+          : attachedModeKey?.canonicalMode === expectedModeProof.canonicalMode
+            && attachedModeKey?.proofKey === expectedModeProof.proofKey
+            && attachedModeKey?.legacyProofKey === expectedModeProof.legacyProofKey
+      )
     );
     const canonicalModeMatches = (
       resolvedOptions.canonicalMode === undefined
@@ -904,9 +916,6 @@ export function resolveProductionPluginPackagePluginDriverProof(
         attachedPluginDriverProof?.selectedScenarios,
         resolvedOptions.selectedScenarios,
       );
-    const expectedModeProof = resolvedOptions.resolvedMode === undefined || resolvedOptions.resolvedMode === null
-      ? null
-      : resolveProductionPluginPackageModeProofKey(resolvedOptions.resolvedMode);
     const resolvedModeProofOptions = expectedModeProof === null
       ? null
       : (() => {
@@ -924,11 +933,17 @@ export function resolveProductionPluginPackagePluginDriverProof(
           ),
       };
       })();
+    const attachedNestedModeKey = attachedPluginDriverProof?.modeProof?.mode === undefined
+      || attachedPluginDriverProof?.modeProof?.mode === null
+      ? null
+      : resolveProductionPluginPackageModeProofKey(attachedPluginDriverProof.modeProof.mode);
     const nestedModeProofMatches = expectedModeProof === null
       || (
-        attachedPluginDriverProof?.modeProof?.mode === expectedModeProof.mode
+        attachedNestedModeKey?.canonicalMode === expectedModeProof.canonicalMode
         && attachedPluginDriverProof?.modeProof?.canonicalMode === expectedModeProof.canonicalMode
+        && attachedNestedModeKey?.proofKey === expectedModeProof.proofKey
         && attachedPluginDriverProof?.modeProof?.proofKey === expectedModeProof.proofKey
+        && attachedNestedModeKey?.legacyProofKey === expectedModeProof.legacyProofKey
         && attachedPluginDriverProof?.modeProof?.legacyProofKey === expectedModeProof.legacyProofKey
         && modeProofMatchesResolvedContext(
           attachedPluginDriverProof,
