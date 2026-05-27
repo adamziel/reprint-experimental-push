@@ -3911,6 +3911,33 @@ test('production-shaped live release verify forces checked release requirements 
   );
 });
 
+test('production-shaped live release verify bounds repeated startup-shaped 502 responses before the outer wrapper times out', () => {
+  const source = readFileSync(
+    path.join(repoRoot, 'scripts/playground/production-shaped-live-release-verify.mjs'),
+    'utf8',
+  );
+
+  assert.match(source, /const maxNotReadyReadinessProbes = Math\.max\(4,/);
+  assert.match(source, /isWordPressNotReadyResponse\(response\.status, responseBody\)/);
+  assert.match(source, /consecutiveNotReadyResponses >= maxNotReadyReadinessProbes/);
+  assert.match(source, /Playground server reported the bounded readiness failure/);
+  assert.match(source, /Probe trail:/);
+  assert.match(source, /Last probe:/);
+});
+
+test('production-shaped live release verify stops failed Playground children during startup before rethrowing', () => {
+  const source = readFileSync(
+    path.join(repoRoot, 'scripts/playground/production-shaped-live-release-verify.mjs'),
+    'utf8',
+  );
+
+  assert.match(source, /async function stopPlaygroundChild\(child\)/);
+  assert.match(
+    source,
+    /try \{\s*await waitForServer\(child, baseUrl, \(\) => output\);\s*\} catch \(error\) \{\s*await stopPlaygroundChild\(child\)\.catch\(\(\) => \{\}\);\s*throw error;\s*\}/s,
+  );
+});
+
 test('production-shaped live release verify defaults the checked live branch to the packaged auth/session boundary', () => {
   assert.equal(
     shouldRequestCheckedLivePackagedBoundary({

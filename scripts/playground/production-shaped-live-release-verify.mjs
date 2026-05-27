@@ -21,6 +21,8 @@ const remoteBaseFixturePath = path.join(repoRoot, 'fixtures/playground/remote-ba
 const localEditedFixturePath = path.join(repoRoot, 'fixtures/playground/local-edited.blueprint.json');
 const serverStartupTimeoutMs = 30_000;
 const readinessProbeIntervalMs = 500;
+const readinessFailureBodyLimit = 240;
+const maxNotReadyReadinessProbes = Math.max(4, Math.ceil(serverStartupTimeoutMs / readinessProbeIntervalMs));
 
 const credentials = {
   username: releaseVerifyFixtureCredentials.username,
@@ -319,35 +321,87 @@ async function startPlaygroundServer(name, blueprintPath) {
     output += chunk;
   });
 
-  await waitForServer(child, baseUrl, () => output);
+  try {
+    await waitForServer(child, baseUrl, () => output);
+  } catch (error) {
+    await stopPlaygroundChild(child).catch(() => {});
+    throw error;
+  }
 
   return { name, baseUrl, child };
 }
 
 async function stopPlaygroundServer(server) {
-  if (server.child.exitCode !== null) {
+  await stopPlaygroundChild(server.child);
+}
+
+async function stopPlaygroundChild(child) {
+  if (child.exitCode !== null || child.signalCode !== null) {
     return;
   }
-  server.child.kill('SIGTERM');
-  await waitForExit(server.child, 12_000);
+  child.kill('SIGTERM');
+  await waitForExit(child, 12_000);
 }
 
 async function waitForServer(child, baseUrl, getLogs) {
   const deadline = Date.now() + serverStartupTimeoutMs;
+  let lastError = null;
+  const lastProbes = [];
+  let consecutiveNotReadyResponses = 0;
   while (Date.now() < deadline) {
-    if (child.exitCode !== null) {
-      throw new Error(`Playground server exited early with ${child.exitCode}\n${getLogs()}`);
+    if (child.exitCode !== null || child.signalCode !== null) {
+      const exitLabel =
+        child.exitCode !== null ? `exited early with ${child.exitCode}` : `terminated by ${child.signalCode}`;
+      throw createPlaygroundStartupError(
+        `Playground server ${exitLabel}`,
+        lastError,
+        lastProbes,
+        getLogs(),
+      );
     }
     try {
-      const response = await fetch(`${baseUrl}/wp-json/`);
+      const response = await fetch(`${baseUrl}/wp-json/`, {
+        headers: { connection: 'close' },
+      });
+      const responseBody = await response.text();
+      lastProbes.push({
+        route: '/wp-json/',
+        status: response.status,
+        ok: response.ok,
+        body: responseBody.slice(0, readinessFailureBodyLimit),
+      });
       if (response.status === 200) {
-        await response.arrayBuffer();
         return;
       }
-    } catch {}
+      lastError = new Error(`Playground index readiness HTTP ${response.status}`);
+      if (isWordPressNotReadyResponse(response.status, responseBody)) {
+        consecutiveNotReadyResponses += 1;
+        if (consecutiveNotReadyResponses >= maxNotReadyReadinessProbes) {
+          throw createPlaygroundStartupError(
+            `Playground server reported the bounded readiness failure ${response.status} after ${lastProbes.length} /wp-json/ probes (${consecutiveNotReadyResponses} consecutive not-ready responses; limit ${maxNotReadyReadinessProbes})`,
+            lastError,
+            lastProbes,
+            getLogs(),
+          );
+        }
+      } else {
+        consecutiveNotReadyResponses = 0;
+      }
+    } catch (error) {
+      if (error?.isPlaygroundStartupFailure === true) {
+        throw error;
+      }
+      lastError = error;
+      consecutiveNotReadyResponses = 0;
+    }
     await new Promise((resolve) => setTimeout(resolve, readinessProbeIntervalMs));
   }
-  throw new Error(`Timed out waiting for Playground server at ${baseUrl}\n${getLogs()}`);
+  throw createPlaygroundStartupError(
+    `Timed out waiting for Playground server at ${baseUrl}`,
+    lastError,
+    lastProbes,
+    getLogs(),
+  );
 }
 
 async function waitForExit(child, timeoutMs) {
@@ -384,6 +438,24 @@ function isPortFree(port) {
 
 function appendNodeOption(existing, option) {
   return [existing, option].filter(Boolean).join(' ');
+}
+
+function isWordPressNotReadyResponse(status, body = '') {
+  return status === 502 && /WordPress is not ready yet/i.test(body);
+}
+
+function createPlaygroundStartupError(prefix, lastError, lastProbes, logs) {
+  const probeTrail = lastProbes.length
+    ? `\nProbe trail: ${JSON.stringify(lastProbes.slice(-4), null, 2)}`
+    : '';
+  const lastProbe = lastProbes.at(-1) ?? null;
+  const lastProbeText = lastProbe
+    ? `\nLast probe: ${JSON.stringify(lastProbe, null, 2)}`
+    : '';
+  const message = `${prefix}: ${lastError?.message || 'unknown'}${probeTrail}${lastProbeText}\n${logs}`;
+  const error = new Error(message);
+  error.isPlaygroundStartupFailure = true;
+  return error;
 }
 
 function localhostListenPreloadOption() {
