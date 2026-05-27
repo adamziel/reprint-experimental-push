@@ -40,7 +40,7 @@ export function evaluateProductionAuthSessionLifecycle(session, now = Date.now()
   const observedStatus = normalizeAuthSessionObservationField(session?.status) ?? 'missing';
   const observedExpiresAt = normalizeAuthSessionObservationField(session?.expiresAt) ?? 'missing';
   const revoked = session?.revoked === true || session?.status === 'revoked';
-  const cleanedUp = session?.cleanedUp === true || session?.cleanup === true || session?.status === 'cleaned-up';
+  const cleanedUp = authSessionObservationIsCleanedUp(session);
   const rotated = session?.rotated === true || session?.status === 'rotated';
   const expired = session?.expired === true || session?.status === 'expired' || isExpiredAuthSession(session, now);
 
@@ -515,7 +515,7 @@ export function summarizeProductionAuthSessionLifecycleTrace(trace) {
         ...(typeof entry.expiredField === 'string' ? { expiredField: entry.expiredField } : {}),
         expired: entry.expired === true || entry.status === 'expired' || isExpiredAuthSession(entry),
         revoked: entry.revoked === true || entry.status === 'revoked',
-        cleanedUp: entry.cleanedUp === true || entry.cleanup === true || entry.status === 'cleaned-up',
+        cleanedUp: authSessionObservationIsCleanedUp(entry),
         rotated: entry.rotated === true || entry.status === 'rotated',
         preserved: isAuthSessionReadStep(entry.step) && entry.preserved === true,
       };
@@ -625,7 +625,7 @@ function resolveInvalidAuthSessionLifecycleFlag(observation) {
     return observation.invalidLifecycleFlag;
   }
 
-  const lifecycleFlags = ['expired', 'revoked', 'cleanedUp', 'cleanup', 'rotated', 'preserved'];
+  const lifecycleFlags = ['expired', 'revoked', 'cleanedUp', 'cleanup', 'cleaned_up', 'rotated', 'preserved'];
   for (const flag of lifecycleFlags) {
     const value = observation[flag];
     if (value !== undefined && value !== null && typeof value !== 'boolean') {
@@ -718,6 +718,7 @@ function resolveInvalidProductionAuthSessionLifecycleFlag(session) {
     ['revoked', session.revoked],
     ['cleanedUp', session.cleanedUp],
     ['cleanup', session.cleanup],
+    ['cleaned_up', session.cleaned_up],
     ['expired', session.expired],
     ['rotated', session.rotated],
     ['preserved', session.preserved],
@@ -995,7 +996,7 @@ function resolveInvalidReadLifecycleOutcome(observation, required) {
     };
   }
 
-  if (observation.cleanedUp === true || observation.cleanup === true) {
+  if (authSessionObservationIsCleanedUp(observation)) {
     return {
       ok: false,
       required: 'unrevoked',
@@ -1024,7 +1025,7 @@ function authSessionObservationEquals(left, right) {
     && normalizeLifecycleBoolean(left?.revoked) === normalizeLifecycleBoolean(right?.revoked)
     && normalizeLifecycleBoolean(left?.rotated) === normalizeLifecycleBoolean(right?.rotated)
     && normalizeLifecycleBoolean(left?.preserved) === normalizeLifecycleBoolean(right?.preserved)
-    && normalizeLifecycleBoolean(left?.cleanedUp ?? left?.cleanup) === normalizeLifecycleBoolean(right?.cleanedUp ?? right?.cleanup);
+    && authSessionObservationIsCleanedUp(left) === authSessionObservationIsCleanedUp(right);
 }
 
 function normalizeLifecycleBoolean(value) {
@@ -1038,7 +1039,7 @@ function summaryObservationCarriesExpectedFlag(field, observation) {
     case 'revoked':
       return observation.revoked === true;
     case 'cleanedUp':
-      return observation.cleanedUp === true || observation.cleanup === true;
+      return authSessionObservationIsCleanedUp(observation);
     case 'rotated':
       return observation.rotated === true;
     case 'preserved':
@@ -1072,11 +1073,18 @@ function summaryMarkerMatchesDirectReadLifecycleOutcome(summary, field, observat
     return false;
   }
 
-  if (directRead.cleanedUp !== true && directRead.cleanup !== true) {
+  if (!authSessionObservationIsCleanedUp(directRead)) {
     return false;
   }
 
   const directReadSessionId = normalizeAuthSessionObservationId(directRead.id);
   const observationSessionId = normalizeAuthSessionObservationId(observation?.id);
   return !directReadSessionId || !observationSessionId || directReadSessionId === observationSessionId;
+}
+
+function authSessionObservationIsCleanedUp(observation) {
+  return observation?.cleanedUp === true
+    || observation?.cleanup === true
+    || observation?.cleaned_up === true
+    || observation?.status === 'cleaned-up';
 }
