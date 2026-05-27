@@ -27077,6 +27077,217 @@ test('production-shaped authenticated push fails closed on malformed recovery-in
   }
 });
 
+for (const {
+  fieldName,
+  invalidValue,
+  observed,
+  keySuffix,
+  required,
+  invalidMarkerKey,
+  invalidMarkerValue,
+} of [
+  {
+    fieldName: 'status',
+    invalidValue: ['lab-active'],
+    observed: 'invalid-status',
+    keySuffix: 'status',
+    required: 'string lifecycle fields',
+    invalidMarkerKey: 'invalidIdentityField',
+    invalidMarkerValue: 'status',
+  },
+  {
+    fieldName: 'id',
+    invalidValue: ['psh_01j00000000000000000000000'],
+    observed: 'invalid-id',
+    keySuffix: 'id',
+    required: 'string lifecycle fields',
+    invalidMarkerKey: 'invalidIdentityField',
+    invalidMarkerValue: 'id',
+  },
+  {
+    fieldName: 'type',
+    invalidValue: ['production-auth-session'],
+    observed: 'invalid-type',
+    keySuffix: 'type',
+    required: 'string lifecycle fields',
+    invalidMarkerKey: 'invalidIdentityField',
+    invalidMarkerValue: 'type',
+  },
+  {
+    fieldName: 'expiresAt',
+    invalidValue: ['2030-01-01T00:00:00Z'],
+    observed: 'invalid-expires-at',
+    keySuffix: 'expires-at',
+    required: 'string lifecycle fields',
+    invalidMarkerKey: 'invalidIdentityField',
+    invalidMarkerValue: 'expires-at',
+  },
+  {
+    fieldName: 'cleanup',
+    invalidValue: ['lab-cleanup'],
+    observed: 'invalid-cleanup',
+    keySuffix: 'cleanup',
+    required: 'boolean lifecycle flags',
+    invalidMarkerKey: 'invalidLifecycleFlag',
+    invalidMarkerValue: 'cleanup',
+  },
+  {
+    fieldName: 'cleanedUp',
+    invalidValue: ['lab-cleaned-up'],
+    observed: 'invalid-cleanedUp',
+    keySuffix: 'cleaned-up',
+    required: 'boolean lifecycle flags',
+    invalidMarkerKey: 'invalidLifecycleFlag',
+    invalidMarkerValue: 'cleanedUp',
+  },
+  {
+    fieldName: 'expired',
+    invalidValue: ['lab-expired'],
+    observed: 'invalid-expired',
+    keySuffix: 'expired',
+    required: 'boolean lifecycle flags',
+    invalidMarkerKey: 'invalidLifecycleFlag',
+    invalidMarkerValue: 'expired',
+  },
+]) {
+  test(`production-shaped authenticated push fails closed on malformed recovery-inspect auth-session ${keySuffix} drift even without the stricter production-session gate`, async () => {
+    const originalFetch = global.fetch;
+    const seen = [];
+    global.fetch = async (url, options) => {
+      seen.push({ url: String(url), options });
+      const pathname = String(url);
+      if (pathname.includes('/preflight')) {
+        return new Response(JSON.stringify({
+          ok: true,
+          auth: {
+            identity: { userLogin: 'reprint_push_admin' },
+            session: {
+              type: 'production-auth-session',
+              status: 'active',
+              id: 'psh_01j00000000000000000000000',
+              expiresAt: '2030-01-01T00:00:00Z',
+            },
+          },
+          session: { id: 'psh_01j00000000000000000000000' },
+        }), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        });
+      }
+      if (pathname.includes('/snapshot')) {
+        return new Response(JSON.stringify({
+          ok: true,
+          snapshot: { resources: [] },
+        }), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        });
+      }
+      if (pathname.includes('/dry-run')) {
+        return new Response(JSON.stringify({
+          ok: true,
+          auth: {
+            identity: { userLogin: 'reprint_push_admin' },
+            session: {
+              type: 'production-auth-session',
+              status: 'active',
+              id: 'psh_01j00000000000000000000000',
+              expiresAt: '2030-01-01T00:00:00Z',
+            },
+          },
+          receipt: { receiptHash: 'receipt-01' },
+        }), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        });
+      }
+      if (pathname.includes('/apply')) {
+        return new Response(JSON.stringify({
+          ok: true,
+          receipt: { receiptHash: 'receipt-01' },
+          auth: {
+            identity: { userLogin: 'reprint_push_admin' },
+            session: {
+              type: 'production-auth-session',
+              status: 'active',
+              id: 'psh_01j00000000000000000000000',
+              expiresAt: '2030-01-01T00:00:00Z',
+            },
+          },
+          signedRequest: {
+            signed: true,
+          },
+          idempotency: {
+            replayed: false,
+            freshMutationWork: true,
+          },
+        }), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        });
+      }
+      if (pathname.includes('/recovery/inspect')) {
+        return new Response(JSON.stringify({
+          ok: true,
+          auth: {
+            identity: { userLogin: 'reprint_push_admin' },
+            session: {
+              type: 'production-auth-session',
+              status: 'active',
+              id: 'psh_01j00000000000000000000000',
+              expiresAt: '2030-01-01T00:00:00Z',
+              [fieldName]: invalidValue,
+            },
+          },
+          recovery: {
+            state: 'available',
+            counts: { old: 0, new: 1, blockedUnknown: 0, total: 1 },
+            journal: { integrity: { status: 'ok' } },
+          },
+        }), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        });
+      }
+      throw new Error(`unexpected fetch to ${url}`);
+    };
+
+    try {
+      const summary = await runAuthenticatedHttpPush({
+        sourceUrl: 'http://127.0.0.1:8080',
+        base: { resources: [] },
+        local: { resources: [] },
+        username: credential.username,
+        applicationPassword: credential.password,
+        idempotencyKey: `idem-08-recovery-invalid-${keySuffix}-unrequired`,
+        routeProfile: 'production-shaped',
+      });
+
+      assert.equal(summary.ok, false);
+      assert.equal(summary.code, 'AUTH_SESSION_LIFECYCLE_DRIFT');
+      assert.deepEqual(summary.authSession, {
+        field: `auth.session.${fieldName}`,
+        required,
+        observed,
+        verdict: 'AUTH_SESSION_LIFECYCLE_DRIFT',
+      });
+      assert.equal(summary.boundary.firstRemainingProductionBoundary, 'auth/session lifecycle and durable journal semantics');
+      assert.equal(summary.boundary.status, 'unimplemented');
+      assert.equal(summary.boundary.verdict, 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED');
+      assert.equal(summary.boundary.durableJournal.phase, 'recovery-inspect');
+      assert.equal(summary.authSessionLifecycleTrace.at(-1)?.step, 'recovery-inspect');
+      assert.equal(summary.authSessionLifecycleTrace.at(-1)?.[invalidMarkerKey], invalidMarkerValue);
+      assert.equal(summary.authSessionLifecycleSummary.read?.step, 'recovery-inspect');
+      assert.equal(summary.authSessionLifecycleSummary.read?.[invalidMarkerKey], invalidMarkerValue);
+      assert.ok(seen.some(({ url }) => url.includes('/recovery/inspect')));
+      assert.ok(!seen.some(({ url }) => url.includes('/db-journal')));
+      assert.equal(seen.length, 5);
+    } finally {
+      global.fetch = originalFetch;
+    }
+  });
+}
+
 test('production-shaped authenticated push fails closed when replay changes the auth session status', async () => {
   const originalFetch = global.fetch;
   const seen = [];
