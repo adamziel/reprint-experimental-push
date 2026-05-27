@@ -7283,6 +7283,45 @@ test('guarded benchmark refuses production throughput claims until production ga
 
 test('guarded benchmark carries receipt-ledger blockers into receipt-driven rejected summaries', () => {
   const report = smallBenchmark();
+  const expectedReceiptLedgerFamilies = [
+    ['compressed-remote-index-and-batched-receipt-flush-skips-plugin-install-finalize-after-pause', 'group'],
+    ['compressed-remote-index-and-batched-receipt-flush-skips-plugin-update-activation', 'group'],
+    ['compressed-remote-index-and-batched-receipt-flush-skips-plugin-update-writeback', 'group'],
+    ['compressed-remote-index-and-batched-receipt-flush-skips-release-bundle-commit-after-pause', 'recovery'],
+    ['compressed-remote-index-and-batched-row-receipt-flush-skips-plugin-install-finalize-after-pause', 'recovery'],
+    ['compressed-remote-index-and-batched-row-receipts-skips-release-bundle-commit', 'group'],
+    ['compressed-remote-index-and-cached-chunk-receipts-skips-plugin-install-activation', 'group'],
+    ['compressed-remote-index-and-cached-chunk-receipts-skips-plugin-install-finalize', 'group'],
+    ['compressed-remote-index-and-cached-chunk-receipts-skips-plugin-install-finalize-after-pause', 'group'],
+    ['compressed-remote-index-and-cached-chunk-receipts-skips-plugin-install-writeback', 'group'],
+    ['compressed-remote-index-and-cached-chunk-receipts-skips-plugin-install-writeback-after-pause', 'group'],
+    ['compressed-remote-index-and-cached-release-manifest-and-batched-receipt-flush-skips-release-bundle-commit-after-pause', 'group'],
+    ['compressed-remote-index-and-cached-release-manifest-and-batched-receipt-flush-skips-release-bundle-planning-after-pause', 'skip'],
+    ['compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-install-activation', 'group'],
+    ['compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-install-backpressure', 'recovery'],
+    ['compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-install-finalize-after-pause', 'group'],
+    ['compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-install-writeback', 'group'],
+    ['compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-activation', 'group'],
+    ['compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-commit-after-pause', 'recovery'],
+    ['compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-commit-after-pause-variant-b', 'group'],
+    ['compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-dependency-checks', 'group'],
+    ['compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-finalize', 'group'],
+    ['compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-finalize-variant-b', 'group'],
+    ['compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-row-preconditions', 'group'],
+    ['compressed-remote-index-and-cached-row-batch-receipts-skips-release-bundle-commit-after-pause', 'group'],
+    ['compressed-remote-index-and-cached-row-batch-receipts-skips-release-bundle-commit-after-pause-and-backpressure', 'recovery'],
+    ['compressed-remote-index-and-cached-row-receipts-skips-plugin-install-activation', 'group'],
+    ['compressed-remote-index-and-cached-row-receipts-skips-plugin-install-backpressure-after-pause', 'recovery'],
+    ['compressed-remote-index-and-cached-row-receipts-skips-plugin-install-finalize-after-pause', 'group'],
+    ['compressed-remote-index-and-cached-row-receipts-skips-plugin-install-writeback', 'group'],
+    ['compressed-remote-index-and-cached-row-receipts-skips-plugin-update-activation', 'group'],
+    ['compressed-remote-index-and-cached-row-receipts-skips-plugin-update-backpressure', 'recovery'],
+    ['compressed-remote-index-and-cached-row-receipts-skips-plugin-update-finalize', 'group'],
+    ['compressed-remote-index-and-cached-row-receipts-skips-plugin-update-finalize-after-pause', 'group'],
+    ['compressed-remote-index-and-cached-row-receipts-skips-plugin-update-row-batching-after-pause', 'recovery'],
+    ['compressed-remote-index-and-cached-row-receipts-skips-plugin-update-row-preconditions-after-pause', 'group'],
+    ['compressed-remote-index-and-cached-row-receipts-skips-release-bundle-commit-after-pause', 'group'],
+  ];
   const tamperedLedger = clone(report);
   tamperedLedger.evidence.journal.successReceiptKindLedgerComplete = false;
 
@@ -7298,9 +7337,19 @@ test('guarded benchmark carries receipt-ledger blockers into receipt-driven reje
   assert.ok(tamperedLedgerReceiptFamilies.some((entry) => entry.id.includes('row-receipts')));
   assert.ok(tamperedLedgerReceiptFamilies.some((entry) => entry.id.includes('row-batch-receipts')));
   assert.ok(tamperedLedgerReceiptFamilies.some((entry) => entry.id.includes('chunk-receipts')));
-  assert.ok(
-    tamperedLedgerReceiptFamilies.every((entry) =>
-      entry.blockerRefs.includes('receipt-ledger-kind-summary-not-proven')),
+  assert.deepEqual(
+    tamperedLedgerReceiptFamilies
+      .map(({ id, rejectedGate, blockerRefs }) => ({
+        id,
+        rejectedGate,
+        blockerRefs: blockerRefs.filter((entry) => entry === 'receipt-ledger-kind-summary-not-proven'),
+      }))
+      .sort((left, right) => left.id.localeCompare(right.id)),
+    expectedReceiptLedgerFamilies.map(([id, rejectedGate]) => ({
+      id,
+      rejectedGate,
+      blockerRefs: ['receipt-ledger-kind-summary-not-proven'],
+    })),
   );
   assert.deepEqual(summarizeRejectedGates(tamperedLedgerReceiptFamilies), [
     { rejectedGate: 'group', count: 28 },
@@ -7319,9 +7368,19 @@ test('guarded benchmark carries receipt-ledger blockers into receipt-driven reje
     || entry.id.includes('chunk-receipts'),
   );
 
-  assert.ok(
-    mismatchedLedgerReceiptFamilies.every((entry) =>
-      entry.blockerRefs.includes('receipt-ledger-kind-summary-mismatch')),
+  assert.deepEqual(
+    mismatchedLedgerReceiptFamilies
+      .map(({ id, rejectedGate, blockerRefs }) => ({
+        id,
+        rejectedGate,
+        blockerRefs: blockerRefs.filter((entry) => entry === 'receipt-ledger-kind-summary-mismatch'),
+      }))
+      .sort((left, right) => left.id.localeCompare(right.id)),
+    expectedReceiptLedgerFamilies.map(([id, rejectedGate]) => ({
+      id,
+      rejectedGate,
+      blockerRefs: ['receipt-ledger-kind-summary-mismatch'],
+    })),
   );
   assert.deepEqual(summarizeRejectedGates(mismatchedLedgerReceiptFamilies), [
     { rejectedGate: 'group', count: 28 },
