@@ -782,6 +782,7 @@ echo "REPRINT_PUSH_DRIVER_GUARD_JSON_END\\n";
           dryRunRejectedCode: dryRun.body?.code,
           dryRunRejectedMessage: dryRun.body?.message,
           rowRetainedAfterReject: afterRejectedApply.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1'] !== undefined,
+          payloadModeAfterReject: afterRejectedApply.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1']?.payload?.mode,
         };
       });
     }
@@ -845,6 +846,7 @@ echo "REPRINT_PUSH_DRIVER_GUARD_JSON_END\\n";
           dryRunRejectedCode: invalidUpdateDryRun.body?.code,
           dryRunRejectedMessage: invalidUpdateDryRun.body?.message,
           rowRetainedAfterReject: afterInvalidUpdateReject.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1'] !== undefined,
+          payloadModeAfterReject: afterInvalidUpdateReject.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1']?.payload?.mode,
           updatedMarkerAfterReject: afterInvalidUpdateReject.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1']?.updated_marker,
         };
       });

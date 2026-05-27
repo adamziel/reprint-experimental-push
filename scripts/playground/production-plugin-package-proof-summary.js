@@ -82,8 +82,10 @@ const scenarioDefinitions = [
       return summary?.driverUpdateApply?.applied === 1
         && summary?.driverDeleteGuard?.dryRunRejectedCode !== undefined
         && rowRetainedAfterReject(summary?.driverDeleteGuard)
+        && payloadModeRetainedAfterReject(summary?.driverDeleteGuard)
         && summary?.driverUpdateValidationGuard?.dryRunRejectedCode !== undefined
         && rowRetainedAfterReject(summary?.driverUpdateValidationGuard)
+        && payloadModeRetainedAfterReject(summary?.driverUpdateValidationGuard)
         && updatedMarkerRetainedAfterReject(summary?.driverUpdateValidationGuard)
         && summary?.driverReceiptPlanBindingGuard?.applyRejectedCode === 'AUTH_RECEIPT_MISMATCH'
         && rowRetainedAfterReject(summary?.driverReceiptPlanBindingGuard)
@@ -113,7 +115,8 @@ const scenarioDefinitions = [
     counted: 'explicit-only',
     evaluate(summary) {
       return summary?.driverDeleteGuard?.dryRunRejectedCode !== undefined
-        && rowRetainedAfterReject(summary?.driverDeleteGuard);
+        && rowRetainedAfterReject(summary?.driverDeleteGuard)
+        && payloadModeRetainedAfterReject(summary?.driverDeleteGuard);
     },
   },
   {
@@ -123,6 +126,7 @@ const scenarioDefinitions = [
     evaluate(summary) {
       return summary?.driverUpdateValidationGuard?.dryRunRejectedCode !== undefined
         && rowRetainedAfterReject(summary?.driverUpdateValidationGuard)
+        && payloadModeRetainedAfterReject(summary?.driverUpdateValidationGuard)
         && updatedMarkerRetainedAfterReject(summary?.driverUpdateValidationGuard);
     },
   },
