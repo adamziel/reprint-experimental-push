@@ -1,33 +1,32 @@
 # Critic Verdict
 
-Current reliable head: `e9c9e36980b738f584eadf113ff5599ce885cd39`
-(`Fail closed on stale-claim lifecycle drift`).
+Current reliable head: `4c4e769f903e6b00cbf6a0ddf50a0a993302d741`
+(`Fail closed on unchecked auth metadata drift`).
 
 Verdict: `0/4`
 
 Reason:
 
-- This head tightens the checked auth/session and durable-journal lifecycle
-  surfaces so stale-claim drift now fails closed in the client summary and in
-  the recovery-journal contract. The new coverage rejects mismatched stale
-  claim status/event combinations and proves the checked boundary stays closed
-  when the observed claim says `stale-claim-rejected` but the surrounding
-  lifecycle metadata is inconsistent.
-- That is useful release-path hardening, but it still does not prove a
-  production-owned, non-lab-backed source mutation boundary on the real
-  Reprint endpoint. The checked path remains the production-shaped verifier
-  scaffolding; it still lacks live auth/session issuance and readback on the
-  real endpoint, restart-readable durable journal storage with lease fencing
-  on that same boundary, preserved rejected-remote evidence, and apply-time
-  revalidation before mutation. Verdict therefore remains `0/4`.
+- This head adds fail-closed checks for unchecked auth metadata drift in the
+  production-shaped push client and extends the playground auth-session
+  lifecycle verifier to treat `warning` and `playgroundFallback` as identity
+  inputs. The new tests exercise malformed auth metadata at dry-run, apply,
+  recovery-inspect, replay, and journal readback and confirm the client stops
+  before proceeding when those fields drift.
+- That is support-only hardening, not proof of the production-owned real
+  Reprint endpoint boundary. The evidence still comes from mocked or
+  production-shaped flows rather than live auth/session issuance and readback,
+  durable restart-readable journal ownership with lease fencing, preserved
+  rejected-remote evidence, and apply-time revalidation before the first
+  mutation on that same boundary. Verdict therefore remains `0/4`.
 
 Next owner / command:
 
-- `main:reliable-exec` should move from stale-claim lifecycle hardening to the
-  real production boundary on the checked release path: live auth/session
+- `main:reliable-exec` should move from unchecked-auth-metadata hardening to
+  the real production boundary on the checked release path: live auth/session
   issuance and readback, restart-readable durable journal storage with lease
   fencing, preserved rejected-remote evidence, and apply-time revalidation
-  before mutation. The proof should come through
+  before the first mutation. The proof should come through
   `scripts/playground/production-shaped-release-verify.mjs`,
   `scripts/playground/push-remote-rest-plugin.php`,
   `src/recovery-journal.js`, and `src/authenticated-http-push-client.js` with
