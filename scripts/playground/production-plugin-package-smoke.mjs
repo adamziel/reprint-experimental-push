@@ -1208,6 +1208,28 @@ async function waitForServer(child, baseUrl, logs) {
         );
         return;
       }
+      const malformedReadyPreflightBody =
+        preflightResponse.status === 200
+        && preflightBody?.ok === true;
+      if (malformedReadyPreflightBody) {
+        lastError = new Error(`Production plugin package preflight readiness HTTP ${preflightResponse.status}`);
+        notReadyProbeCounts = packagedProductionPluginResetRouteNotReadyProbeCounts(
+          notReadyProbeCounts,
+          'preflight',
+        );
+        throw new Error(
+          formatPackagedReadinessFailure(
+            `Packaged production plugin signed preflight returned an invalid readiness body at ${baseUrl}`,
+            lastError,
+            lastProbes,
+            logs,
+            packagedProductionPluginPreflightTerminalContext({
+              invalidReadinessBody: true,
+            }),
+            lastTimeoutFallbackProbes,
+          ),
+        );
+      }
 
       lastError = new Error(`Production plugin package preflight readiness HTTP ${preflightResponse.status}`);
       const packagedPreflightReadinessContext = { packagedStartup: true };

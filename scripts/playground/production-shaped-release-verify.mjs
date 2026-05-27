@@ -2008,6 +2008,27 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
         );
         return;
       }
+      const malformedReadyPreflightBody =
+        preflight.status === 200
+        && preflightBody?.ok === true;
+      if (malformedReadyPreflightBody) {
+        lastError = new Error(`Production plugin package preflight readiness HTTP ${preflight.status}`);
+        notReadyProbeCounts = packagedProductionPluginResetRouteNotReadyProbeCounts(
+          notReadyProbeCounts,
+          'preflight',
+        );
+        await throwPlaygroundReadinessFailure(
+          child,
+          `Packaged production plugin signed preflight returned an invalid readiness body at ${baseUrl}`,
+          lastError,
+          lastProbes,
+          getOutput(),
+          packagedProductionPluginPreflightTerminalContext({
+            childPid: child.pid ?? null,
+            invalidReadinessBody: true,
+          }),
+        );
+      }
       lastError = new Error(`Production plugin package preflight readiness HTTP ${preflight.status}`);
       const packagedPreflightReadinessContext = { packagedStartup: true };
       if (packagedProductionPluginPreflightRetryable(
