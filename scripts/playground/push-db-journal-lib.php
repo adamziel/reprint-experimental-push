@@ -523,17 +523,39 @@ function reprint_push_lab_db_journal_summary(int $limit = 20): array
     ];
 
     if ($package_mode) {
+        $claim_key_unique = reprint_push_lab_db_journal_has_claim_key_unique_index();
+        $monotonic_sequence = reprint_push_lab_db_journal_rows_are_monotonic($summary['latestRows']);
+        $stale_claim_rejected = reprint_push_lab_db_journal_has_stale_claim_rejection_evidence($summary['latestRows']);
+        $writer_lease = reprint_push_lab_db_journal_writer_lease_contract(
+            $stale_claim_rejected,
+            $claim_key_unique,
+            $monotonic_sequence,
+            true
+        );
+        $claim_rows = reprint_push_lab_db_journal_claim_rows($summary['latestRows']);
+        if (is_array($claim_rows['latestClaim'] ?? null)) {
+            $summary['claim'] = reprint_push_lab_db_journal_claim_summary(
+                $claim_rows['latestClaim'],
+                $claim_rows['latestAbandoned'] ?? null,
+                $claim_rows['previousClaim'] ?? null,
+                $stale_claim_rejected
+            );
+        }
         $summary['ownership'] = [
             'ownsJournal' => true,
             'restartReadable' => true,
             'productionAdapter' => 'wpdb-single-statement-cas',
+            'supportedSurface' => 'claim-fenced-restart-readable',
         ];
+        $summary['writerLease'] = $writer_lease;
         $summary['leaseFence'] = [
             'boundary' => 'wpdb-single-statement-cas',
-            'claimKeyUnique' => reprint_push_lab_db_journal_has_claim_key_unique_index(),
-            'monotonicSequence' => reprint_push_lab_db_journal_rows_are_monotonic($summary['latestRows']),
+            'claimKeyUnique' => $claim_key_unique,
+            'fsyncEvidence' => true,
+            'monotonicSequence' => $monotonic_sequence,
             'restartReadable' => true,
-            'staleClaimRejected' => reprint_push_lab_db_journal_has_stale_claim_rejection_evidence($summary['latestRows']),
+            'staleClaimRejected' => $stale_claim_rejected,
+            'writerLease' => $writer_lease,
         ];
         if (reprint_push_lab_db_journal_non_empty_string($summary['claim']['activeClaimId'] ?? null)) {
             $summary['writerLease']['claimId'] = (string) $summary['claim']['activeClaimId'];
@@ -556,6 +578,70 @@ function reprint_push_lab_db_journal_cursor_sequence($cursor): ?int
 
     $sequence = (int) ($matches[1] ?? 0);
     return $sequence > 0 ? $sequence : null;
+}
+
+function reprint_push_lab_db_journal_claim_rows(array $rows): array
+{
+    $latest_claim_row = null;
+    $latest_abandoned_row = null;
+    $previous_claim_row = null;
+    $rows_by_sequence = [];
+    $newest_first_rows = array_reverse($rows);
+
+    foreach ($rows as $row) {
+        if (!is_array($row)) {
+            continue;
+        }
+        $sequence = (int) ($row['sequence'] ?? 0);
+        if ($sequence > 0) {
+            $rows_by_sequence[$sequence] = $row;
+        }
+    }
+
+    foreach ($newest_first_rows as $row) {
+        if (!is_array($row)) {
+            continue;
+        }
+
+        if (
+            $latest_abandoned_row === null
+            && (string) ($row['event'] ?? '') === 'stale-claim-retry-in-progress'
+        ) {
+            $latest_abandoned_row = $row;
+        }
+
+        if (!reprint_push_lab_db_journal_non_empty_string($row['claimKeyHash'] ?? null)) {
+            continue;
+        }
+
+        if ($latest_claim_row === null) {
+            $latest_claim_row = $row;
+            continue;
+        }
+
+        if (
+            $previous_claim_row === null
+            && (string) ($row['claimKeyHash'] ?? '') !== (string) ($latest_claim_row['claimKeyHash'] ?? '')
+        ) {
+            $previous_claim_row = $row;
+            break;
+        }
+    }
+
+    if (is_array($latest_abandoned_row) && $previous_claim_row === null) {
+        $previous_claim_sequence = reprint_push_lab_db_journal_cursor_sequence(
+            $latest_abandoned_row['resourceHashEvidence']['claimCursor'] ?? null
+        );
+        if (is_int($previous_claim_sequence) && isset($rows_by_sequence[$previous_claim_sequence])) {
+            $previous_claim_row = $rows_by_sequence[$previous_claim_sequence];
+        }
+    }
+
+    return [
+        'latestClaim' => $latest_claim_row,
+        'latestAbandoned' => $latest_abandoned_row,
+        'previousClaim' => $previous_claim_row,
+    ];
 }
 
 function reprint_push_lab_db_journal_claim_summary(

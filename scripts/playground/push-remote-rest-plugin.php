@@ -575,6 +575,14 @@ function reprint_push_lab_rest_recovery_journal_evidence(WP_REST_Request $reques
             'staleClaimRejected' => $stale_claim_rejected,
             'writerLease' => $writer_lease,
         ];
+        if (reprint_push_lab_db_journal_non_empty_string($journal['claim']['activeClaimId'] ?? null)) {
+            $journal['writerLease']['claimId'] = (string) $journal['claim']['activeClaimId'];
+            $journal['leaseFence']['writerLease']['claimId'] = (string) $journal['claim']['activeClaimId'];
+        }
+        if (reprint_push_lab_db_journal_non_empty_string($journal['claim']['activeClaimKeyHash'] ?? null)) {
+            $journal['writerLease']['claimKeyHash'] = (string) $journal['claim']['activeClaimKeyHash'];
+            $journal['leaseFence']['writerLease']['claimKeyHash'] = (string) $journal['claim']['activeClaimKeyHash'];
+        }
         $journal['integrity'] = [
             'schemaVersion' => (int) ($journal['schemaVersion'] ?? 1),
             'status' => 'ok',

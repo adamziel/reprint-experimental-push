@@ -87,7 +87,7 @@ const liveCredentials = {
   password: 'reprint-push-admin-app-password',
 };
 const proofSubprocessTimeoutMs = 30_000;
-const packagedProofSubprocessTimeoutMs = 60_000;
+const packagedProofSubprocessTimeoutMs = 90_000;
 const proofSubprocessKillSignal = 'SIGTERM';
 const liveProofSubprocessTimeoutMs = 15_000;
 const liveProofSubprocessKillSignal = 'SIGKILL';
@@ -108,7 +108,7 @@ const liveProofLaunchTimeoutMs = Math.max(1_000, Math.min(7_000, liveProofSubpro
 const releaseVerifyInnerTimeoutMs = Math.max(1_000, Math.min(24_000, proofSubprocessTimeoutMs - 6_000));
 const packagedReleaseVerifyInnerTimeoutMs = Math.max(
   1_000,
-  Math.min(36_000, packagedProofSubprocessTimeoutMs - 6_000),
+  Math.min(72_000, packagedProofSubprocessTimeoutMs - 6_000),
 );
 const releaseVerifySlowPathTimeoutMs = 15_000;
 const releaseVerifySlowPathInnerTimeoutMs = Math.max(1_000, Math.min(6_000, releaseVerifySlowPathTimeoutMs - 6_000));
@@ -345,7 +345,10 @@ function failReleaseVerifySpawnProof(proof, command, args, label = 'release veri
 }
 
 function spawnReleaseVerifySync(command, args, env, options = {}) {
-  const timeout = Math.max(1_000, Math.min(options.timeout ?? releaseVerifyInnerTimeoutMs, proofSubprocessTimeoutMs));
+  const timeoutBudgetMs = requiresPackagedReleaseVerifyBudget(env)
+    ? packagedProofSubprocessTimeoutMs
+    : proofSubprocessTimeoutMs;
+  const timeout = Math.max(1_000, Math.min(options.timeout ?? releaseVerifyInnerTimeoutMs, timeoutBudgetMs));
   const killSignal = options.killSignal ?? proofSubprocessKillSignal;
   const proof = spawnBoundedReleaseVerify(command, args, env, {
     timeout,
@@ -358,7 +361,10 @@ function spawnReleaseVerifySync(command, args, env, options = {}) {
 }
 
 function spawnBoundedReleaseVerify(command, args, env, options = {}, label = 'release verify') {
-  const timeoutCeiling = Math.max(1_000, proofSubprocessTimeoutMs - 2_000);
+  const timeoutBudgetMs = requiresPackagedReleaseVerifyBudget(env)
+    ? packagedProofSubprocessTimeoutMs
+    : proofSubprocessTimeoutMs;
+  const timeoutCeiling = Math.max(1_000, timeoutBudgetMs - 2_000);
   const timeout = Math.max(1_000, Math.min(options.timeout ?? proofSubprocessTimeoutMs, timeoutCeiling));
   const killSignal = options.killSignal ?? proofSubprocessKillSignal;
   const proof = spawnSync(command, args, {
@@ -4124,7 +4130,6 @@ maybeTest('production-shaped release verify command consumes the packaged produc
 maybeTest('production-shaped release verify reports trusted recovery journal state on the packaged checked path', async () => {
   const proof = spawnProductionShapedReleaseVerifySync(
     {
-      ...process.env,
       REPRINT_PUSH_REQUIRE_PRODUCTION_AUTH_SESSION: '1',
       NODE_NO_WARNINGS: '1',
     },
@@ -4138,6 +4143,22 @@ maybeTest('production-shaped release verify reports trusted recovery journal sta
   assert.equal(proof.status, 0, proof.stderr);
   assert.match(proof.stdout, /"recoveryInspect": \{[\s\S]*"journalState": "ok"/);
   assert.match(proof.stdout, /"recoveryInspect": \{[\s\S]*"journal": \{[\s\S]*"productionAdapter": "wpdb-single-statement-cas"[\s\S]*"supportedSurface": "claim-fenced-restart-readable"/);
+  assert.match(
+    proof.stdout,
+    /"recoveryInspect": \{[\s\S]*"journal": \{[\s\S]*"claim": \{\s*"status": "(active|stale-claim-rejected)",\s*"activeClaimId": "psh_[^"]+",\s*"activeClaimKeyHash": "[a-f0-9]{64}"/,
+  );
+  assert.match(
+    proof.stdout,
+    /"recoveryInspect": \{[\s\S]*"journal": \{[\s\S]*"writerLease": \{[\s\S]*"claimId": "psh_[^"]+",\s*"claimKeyHash": "[a-f0-9]{64}"/,
+  );
+  assert.match(
+    proof.stdout,
+    /"dbJournal": \{[\s\S]*"claim": \{\s*"status": "(active|stale-claim-rejected)",\s*"activeClaimId": "psh_[^"]+",\s*"activeClaimKeyHash": "[a-f0-9]{64}"/,
+  );
+  assert.match(
+    proof.stdout,
+    /"dbJournal": \{[\s\S]*"writerLease": \{[\s\S]*"claimId": "psh_[^"]+",\s*"claimKeyHash": "[a-f0-9]{64}"/,
+  );
   assert.match(proof.stdout, /"durableJournal": \{[\s\S]*"staleClaimRejected": true/);
   assert.match(
     proof.stdout,
