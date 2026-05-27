@@ -441,6 +441,66 @@ test('scenario resolver accepts bundle-aligned driver mode aliases without kebab
   );
 });
 
+test('scenario resolver accepts bundle-aligned driver mode names without only-suffix translation', () => {
+  const releaseProof = resolveProductionPluginPackageScenarios(
+    [],
+    undefined,
+    'driverReleaseProof',
+  );
+
+  assert.deepEqual(releaseProof.requestedScenarios, ['driver-release-proof']);
+  assert.equal(releaseProof.resolvedMode, 'driverReleaseProof');
+  assert.deepEqual(
+    Array.from(releaseProof.selectedScenarios).sort(),
+    [
+      'driver-release-proof',
+      ...scenarioGroups['driver-release-proof'],
+    ].sort(),
+  );
+
+  const verifierGuards = resolveProductionPluginPackageScenarios(
+    [],
+    undefined,
+    'driverVerifierGuards',
+  );
+
+  assert.deepEqual(verifierGuards.requestedScenarios, ['driver-verifier-guards']);
+  assert.equal(verifierGuards.resolvedMode, 'driverVerifierGuards');
+  assert.deepEqual(
+    Array.from(verifierGuards.selectedScenarios).sort(),
+    [
+      'driver-verifier-guards',
+      ...scenarioGroups['driver-verifier-guards'],
+    ].sort(),
+  );
+
+  const deleteApply = resolveProductionPluginPackageScenarios(
+    [],
+    undefined,
+    'driverDeleteApplyProof',
+  );
+
+  assert.deepEqual(deleteApply.requestedScenarios, ['driver-delete-apply']);
+  assert.equal(deleteApply.resolvedMode, 'driverDeleteApplyProof');
+  assert.deepEqual(
+    Array.from(deleteApply.selectedScenarios).sort(),
+    ['driver-delete-apply'],
+  );
+
+  const routeProof = resolveProductionPluginPackageScenarios(
+    [],
+    undefined,
+    'driverRouteProof',
+  );
+
+  assert.deepEqual(routeProof.requestedScenarios, ['core-package-routes']);
+  assert.equal(routeProof.resolvedMode, 'driverRouteProof');
+  assert.deepEqual(
+    Array.from(routeProof.selectedScenarios).sort(),
+    ['core-package-routes'],
+  );
+});
+
 test('scenario resolver clears mode metadata when explicit scenario input overrides the bounded mode', () => {
   const resolved = resolveProductionPluginPackageScenarios(
     ['--scenario=driver-delete-apply'],
