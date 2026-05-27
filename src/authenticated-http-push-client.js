@@ -1846,6 +1846,7 @@ function summarizeDbJournal(response) {
     applyCommitted: rows.some((entry) => entry.event === 'apply-committed'),
     mutationApplied: rows.filter((entry) => entry.event === 'mutation-applied').length,
     idempotencyOpened: rows.filter((entry) => entry.event === 'idempotency-opened').length,
+    claim: summarizeDbJournalClaim(response.body?.dbJournal?.claim),
     storageGuard,
     ownership: summarizeDbJournalOwnership(response.body?.dbJournal),
     writerLease: summarizeDbJournalWriterLease(response.body?.dbJournal?.writerLease),
@@ -1986,6 +1987,56 @@ function summarizeDbJournalWriterLease(writerLease) {
   };
 }
 
+function summarizeDbJournalClaim(claim) {
+  if (!claim || typeof claim !== 'object') {
+    return undefined;
+  }
+
+  return {
+    status: typeof claim.status === 'string' && claim.status.trim().length > 0
+      ? claim.status.trim()
+      : null,
+    activeClaimId: typeof claim.activeClaimId === 'string' && claim.activeClaimId.trim().length > 0
+      ? claim.activeClaimId.trim()
+      : null,
+    activeClaimKeyHash: typeof claim.activeClaimKeyHash === 'string' && claim.activeClaimKeyHash.trim().length > 0
+      ? claim.activeClaimKeyHash.trim()
+      : null,
+    activeClaimSequence: Number.isInteger(claim.activeClaimSequence) ? claim.activeClaimSequence : null,
+    activeClaimEvent: typeof claim.activeClaimEvent === 'string' && claim.activeClaimEvent.trim().length > 0
+      ? claim.activeClaimEvent.trim()
+      : null,
+    previousClaimId: typeof claim.previousClaimId === 'string' && claim.previousClaimId.trim().length > 0
+      ? claim.previousClaimId.trim()
+      : null,
+    previousClaimKeyHash: typeof claim.previousClaimKeyHash === 'string' && claim.previousClaimKeyHash.trim().length > 0
+      ? claim.previousClaimKeyHash.trim()
+      : null,
+    previousClaimSequence: Number.isInteger(claim.previousClaimSequence) ? claim.previousClaimSequence : null,
+    previousClaimEvent: typeof claim.previousClaimEvent === 'string' && claim.previousClaimEvent.trim().length > 0
+      ? claim.previousClaimEvent.trim()
+      : null,
+    idempotencyKeyHash: typeof claim.idempotencyKeyHash === 'string' && claim.idempotencyKeyHash.trim().length > 0
+      ? claim.idempotencyKeyHash.trim()
+      : null,
+    requestHash: typeof claim.requestHash === 'string' && claim.requestHash.trim().length > 0
+      ? claim.requestHash.trim()
+      : null,
+    planHash: typeof claim.planHash === 'string' && claim.planHash.trim().length > 0
+      ? claim.planHash.trim()
+      : null,
+    receiptHash: typeof claim.receiptHash === 'string' && claim.receiptHash.trim().length > 0
+      ? claim.receiptHash.trim()
+      : null,
+    planFingerprint: typeof claim.planFingerprint === 'string' && claim.planFingerprint.trim().length > 0
+      ? claim.planFingerprint.trim()
+      : null,
+    mutationCount: Number.isInteger(claim.mutationCount) ? claim.mutationCount : null,
+    appliedCount: Number.isInteger(claim.appliedCount) ? claim.appliedCount : null,
+    staleClaimRejected: claim.staleClaimRejected === true,
+  };
+}
+
 function sanitizeStorageGuard(storageGuard) {
   if (!storageGuard || typeof storageGuard !== 'object') {
     return undefined;
@@ -2042,6 +2093,8 @@ function summarizeRecoveryInspectJournal(journal) {
   return {
     scope: journal.scope || integrity?.scope || null,
     integrity,
+    claim: summarizeDbJournalClaim(journal.claim),
+    storageGuard: sanitizeStorageGuard(journal.storageGuard),
     ownership: summarizeDbJournalOwnership(journal),
     writerLease: summarizeDbJournalWriterLease(journal.writerLease),
     leaseFence: summarizeDbJournalLeaseFence(journal),

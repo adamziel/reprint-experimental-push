@@ -4847,6 +4847,25 @@ test('production-shaped authenticated push accepts nested db journal storage gua
         },
         dbJournal: {
           scope: 'packaged production plugin journal surface; not local Playground fixture only',
+          claim: {
+            status: 'stale-claim-rejected',
+            activeClaimId: 'psh_01j00000000000000000000000',
+            activeClaimKeyHash: 'psh_01j00000000000000000000000',
+            activeClaimSequence: 2,
+            activeClaimEvent: 'stale-claim-rejected',
+            previousClaimId: 'psh_01i99999999999999999999999',
+            previousClaimKeyHash: 'psh_01i99999999999999999999999',
+            previousClaimSequence: 1,
+            previousClaimEvent: 'recovery-claim-opened',
+            idempotencyKeyHash: 'idempotency-claim-01',
+            requestHash: 'request-claim-01',
+            planHash: 'plan-claim-01',
+            receiptHash: 'receipt-claim-01',
+            planFingerprint: 'plan-fingerprint-01',
+            mutationCount: 1,
+            appliedCount: 1,
+            staleClaimRejected: false,
+          },
           ownership: {
             ownsJournal: true,
             restartReadable: true,
@@ -4929,6 +4948,25 @@ test('production-shaped authenticated push accepts nested db journal storage gua
       productionAdapter: 'wpdb-single-statement-cas',
       supportedSurface: 'claim-fenced-restart-readable',
     });
+    assert.deepEqual(summary.dbJournal?.claim, {
+      status: 'stale-claim-rejected',
+      activeClaimId: 'psh_01j00000000000000000000000',
+      activeClaimKeyHash: 'psh_01j00000000000000000000000',
+      activeClaimSequence: 2,
+      activeClaimEvent: 'stale-claim-rejected',
+      previousClaimId: 'psh_01i99999999999999999999999',
+      previousClaimKeyHash: 'psh_01i99999999999999999999999',
+      previousClaimSequence: 1,
+      previousClaimEvent: 'recovery-claim-opened',
+      idempotencyKeyHash: 'idempotency-claim-01',
+      requestHash: 'request-claim-01',
+      planHash: 'plan-claim-01',
+      receiptHash: 'receipt-claim-01',
+      planFingerprint: 'plan-fingerprint-01',
+      mutationCount: 1,
+      appliedCount: 1,
+      staleClaimRejected: false,
+    });
     assert.deepEqual(summary.dbJournal?.writerLease, {
       strategy: 'claim-fenced-single-writer',
       claimId: 'psh_01j00000000000000000000000',
@@ -4958,6 +4996,192 @@ test('production-shaped authenticated push accepts nested db journal storage gua
       },
     });
     assert.ok(seen.some(({ url }) => url.includes('/db-journal')));
+  } finally {
+    global.fetch = originalFetch;
+  }
+});
+
+test('production-shaped authenticated push preserves recovery inspect claim and storage-guard evidence', async () => {
+  const originalFetch = global.fetch;
+  global.fetch = async (url) => {
+    const pathname = String(url);
+    if (pathname.includes('/preflight')) {
+      return new Response(JSON.stringify({
+        ok: true,
+        auth: {
+          identity: { userLogin: 'reprint_push_admin' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
+        },
+        session: { id: 'psh_01j00000000000000000000000' },
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+    if (pathname.includes('/snapshot')) {
+      return new Response(JSON.stringify({
+        ok: true,
+        snapshot: { resources: [] },
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+    if (pathname.includes('/dry-run')) {
+      return new Response(JSON.stringify({
+        ok: true,
+        auth: {
+          identity: { userLogin: 'reprint_push_admin' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
+        },
+        receipt: { receiptHash: 'receipt-01' },
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+    if (pathname.includes('/recovery/inspect')) {
+      return new Response(JSON.stringify({
+        ok: true,
+        auth: {
+          identity: { userLogin: 'reprint_push_admin' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
+        },
+        recovery: {
+          state: 'blocked-recovery',
+          counts: { old: 0, new: 0, blockedUnknown: 1, total: 1 },
+          journal: {
+            scope: 'checked live production-shaped recovery journal surface; not local Playground fixture only',
+            integrity: {
+              schemaVersion: 1,
+              status: 'ok',
+              scope: 'checked live production-shaped recovery journal surface; not local Playground fixture only',
+            },
+            claim: {
+              status: 'stale-claim-rejected',
+              activeClaimId: 'claim-live-02',
+              activeClaimKeyHash: 'claim-live-02',
+              activeClaimSequence: 2,
+              activeClaimEvent: 'stale-claim-rejected',
+              previousClaimId: 'claim-live-01',
+              previousClaimKeyHash: 'claim-live-01',
+              previousClaimSequence: 1,
+              previousClaimEvent: 'recovery-claim-opened',
+              idempotencyKeyHash: 'idem-live',
+              requestHash: 'request-live',
+              staleClaimRejected: true,
+            },
+            storageGuard: {
+              boundary: 'wpdb-single-statement-cas',
+              operation: 'update',
+              outcome: 'applied',
+            },
+            ownership: {
+              ownsJournal: true,
+              restartReadable: true,
+              productionAdapter: 'wpdb-single-statement-cas',
+              supportedSurface: 'claim-fenced-restart-readable',
+            },
+            writerLease: {
+              strategy: 'claim-fenced-single-writer',
+              claimId: 'claim-live-02',
+              claimKeyUnique: true,
+              fsyncEvidence: true,
+              storageGuard: 'wpdb-single-statement-cas',
+              monotonicSequence: true,
+              restartReadable: true,
+              staleClaimRejected: true,
+            },
+            leaseFence: {
+              boundary: 'wpdb-single-statement-cas',
+              claimKeyUnique: true,
+              fsyncEvidence: true,
+              monotonicSequence: true,
+              restartReadable: true,
+              staleClaimRejected: true,
+              writerLease: {
+                strategy: 'claim-fenced-single-writer',
+                claimId: 'claim-live-02',
+                claimKeyUnique: true,
+                fsyncEvidence: true,
+                storageGuard: 'wpdb-single-statement-cas',
+                monotonicSequence: true,
+                restartReadable: true,
+                staleClaimRejected: true,
+              },
+            },
+          },
+        },
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+    if (pathname.includes('/apply')) {
+      return new Response(JSON.stringify({
+        ok: true,
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+    throw new Error(`unexpected fetch to ${url}`);
+  };
+
+  try {
+    const summary = await runAuthenticatedHttpPush({
+      sourceUrl: 'http://127.0.0.1:8080',
+      base: { resources: [] },
+      local: { resources: [] },
+      username: credential.username,
+      applicationPassword: credential.password,
+      idempotencyKey: 'idem-recovery-claim-evidence',
+      routeProfile: 'production-shaped',
+    });
+
+    assert.equal(summary.ok, false);
+    assert.equal(summary.code, 'RECOVERY_INSPECT_JOURNAL_UNTRUSTED');
+    assert.deepEqual(summary.recoveryInspect?.recovery?.journal?.claim, {
+      status: 'stale-claim-rejected',
+      activeClaimId: 'claim-live-02',
+      activeClaimKeyHash: 'claim-live-02',
+      activeClaimSequence: 2,
+      activeClaimEvent: 'stale-claim-rejected',
+      previousClaimId: 'claim-live-01',
+      previousClaimKeyHash: 'claim-live-01',
+      previousClaimSequence: 1,
+      previousClaimEvent: 'recovery-claim-opened',
+      idempotencyKeyHash: 'idem-live',
+      requestHash: 'request-live',
+      planHash: null,
+      receiptHash: null,
+      planFingerprint: null,
+      mutationCount: null,
+      appliedCount: null,
+      staleClaimRejected: true,
+    });
+    assert.deepEqual(summary.recoveryInspect?.recovery?.journal?.storageGuard, {
+      boundary: 'wpdb-single-statement-cas',
+      operation: 'update',
+      outcome: 'applied',
+    });
+    assert.equal(summary.recoveryInspect?.recovery?.journal?.writerLease?.claimId, 'claim-live-02');
+    assert.equal(summary.recoveryInspect?.recovery?.journal?.leaseFence?.writerLease?.claimId, 'claim-live-02');
   } finally {
     global.fetch = originalFetch;
   }

@@ -942,19 +942,7 @@ try {
       const recoveryInspectJournal = proof.recoveryInspect?.recovery?.journal || null;
       const recoveryInspectJournalAccepted = checkedDurableJournalBoundarySatisfied(recoveryInspectJournal);
       const liveDbJournalAccepted = checkedDurableJournalBoundarySatisfied(proof.dbJournal);
-      const durableJournalSummary = liveDbJournalAccepted
-        ? {
-            journal: proof.dbJournal,
-            leaseFence: {
-              ...(proof.dbJournal.leaseFence || {}),
-              storageGuard: proof.dbJournal.leaseFence?.boundary || null,
-              fsyncEvidence: proof.dbJournal.leaseFence?.fsyncEvidence === true,
-              staleClaimRejected: proof.dbJournal.leaseFence?.staleClaimRejected === true,
-            },
-            consumed: true,
-            productionOwnedBySource: false,
-          }
-        : recoveryInspectJournalAccepted
+      const durableJournalSummary = recoveryInspectJournalAccepted
           ? {
               journal: recoveryInspectJournal,
               leaseFence: {
@@ -966,6 +954,18 @@ try {
               consumed: true,
               productionOwnedBySource: true,
             }
+          : liveDbJournalAccepted
+            ? {
+                journal: proof.dbJournal,
+                leaseFence: {
+                  ...(proof.dbJournal.leaseFence || {}),
+                  storageGuard: proof.dbJournal.leaseFence?.boundary || null,
+                  fsyncEvidence: proof.dbJournal.leaseFence?.fsyncEvidence === true,
+                  staleClaimRejected: proof.dbJournal.leaseFence?.staleClaimRejected === true,
+                },
+                consumed: true,
+                productionOwnedBySource: false,
+              }
           : runProductionRecoveryJournalProof({
             plan: proof.planObject,
             current: proof.remoteSnapshotObject,
@@ -1029,8 +1029,8 @@ try {
         ? summarizePackagedPluginDriverProof()
         : null;
       const checkedDurableJournalAccepted = packagedSourceFixture !== null
-        ? checkedDurableJournalBoundarySatisfied(proof.dbJournal)
-        : liveDbJournalAccepted;
+        ? checkedDurableJournalBoundarySatisfied(proof.dbJournal) || recoveryInspectJournalAccepted
+        : liveDbJournalAccepted || recoveryInspectJournalAccepted;
 
       if (requireProductionDurableJournal && !checkedDurableJournalAccepted) {
         process.stdout.write(
