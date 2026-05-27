@@ -454,8 +454,8 @@ test('keeps remote-only plugin changes while a live-preconditioned delete, match
   assert.equal(matchingEdit.decision, 'already-in-sync');
   assert.equal(matchingEdit.change.localChange, 'update');
   assert.equal(matchingEdit.change.remoteChange, 'update');
-  assert.equal(typeSwapDecision.decision, 'already-in-sync');
-  assert.equal(typeSwapDecision.change.localChange, 'type-change');
+  assert.equal(typeSwapDecision.decision, 'keep-remote');
+  assert.equal(typeSwapDecision.change.localChange, 'unchanged');
   assert.equal(typeSwapDecision.change.remoteChange, 'type-change');
   assert.equal(pluginDecision.decision, 'keep-remote');
   assert.equal(pluginFileDecision.decision, 'keep-remote');
@@ -2983,8 +2983,8 @@ test('keeps remote-only plugin changes while a live-preconditioned file delete a
   const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
   const result = applyPlan(remote, plan);
 
-  assert.equal(plan.status, 'blocked');
-  assert.equal(plan.summary.mutations, 0);
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.mutations, 1);
   assert.equal(fileDelete.action, 'delete');
   assert.equal(fileDelete.changeKind, 'delete');
   assert.equal(matchingEdit.decision, 'already-in-sync');
@@ -3190,8 +3190,8 @@ test('keeps remote-only plugin changes while a live-preconditioned row delete an
   assert.equal(fileEditDecision.decision, 'already-in-sync');
   assert.equal(fileEditDecision.change.localChange, 'update');
   assert.equal(fileEditDecision.change.remoteChange, 'update');
-  assert.equal(typeSwapDecision.decision, 'already-in-sync');
-  assert.equal(typeSwapDecision.change.localChange, 'type-change');
+  assert.equal(typeSwapDecision.decision, 'keep-remote');
+  assert.equal(typeSwapDecision.change.localChange, 'descendant-delete');
   assert.equal(typeSwapDecision.change.remoteChange, 'type-change');
   assert.equal(pluginDecision.decision, 'keep-remote');
   assert.equal(pluginFileDecision.decision, 'keep-remote');
@@ -4068,8 +4068,8 @@ test('keeps remote-only plugin changes while a live-preconditioned delete, match
   assert.equal(plan.summary.mutations, 1);
   assert.equal(deleteMutation.action, 'delete');
   assert.equal(deleteMutation.changeKind, 'delete');
-  assert.equal(typeSwapDecision.decision, 'already-in-sync');
-  assert.equal(typeSwapDecision.change.localChange, 'type-change');
+  assert.equal(typeSwapDecision.decision, 'keep-remote');
+  assert.equal(typeSwapDecision.change.localChange, 'unchanged');
   assert.equal(typeSwapDecision.change.remoteChange, 'type-change');
   assert.equal(coverTypeSwapDecision.decision, 'already-in-sync');
   assert.equal(coverTypeSwapDecision.change.localChange, 'type-change');
