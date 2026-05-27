@@ -612,6 +612,14 @@ test('production recovery journal inspection surface helper fails closed when le
   delete inheritedOwnershipMarkers.journal.ownership.supportedSurface;
   assert.equal(productionRecoveryJournalInspectionSurfaceIsPresent(inheritedOwnershipMarkers), false);
 
+  const divergentOwnershipAdapter = clone(inspection);
+  divergentOwnershipAdapter.journal.ownership.productionAdapter = 'wpdb-single-statement-cas';
+  assert.equal(productionRecoveryJournalInspectionSurfaceIsPresent(divergentOwnershipAdapter), false);
+
+  const divergentOwnershipSurface = clone(inspection);
+  divergentOwnershipSurface.journal.ownership.supportedSurface = 'fixture-scoped';
+  assert.equal(productionRecoveryJournalInspectionSurfaceIsPresent(divergentOwnershipSurface), false);
+
   const inheritedJournalMarker = clone(inspection);
   inheritedJournalMarker.journal = Object.assign(
     Object.create({ staleClaimRejected: inheritedJournalMarker.journal.staleClaimRejected }),
