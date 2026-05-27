@@ -23269,6 +23269,94 @@ test('blocks a local thumbnail reference owned by an existing wp_navigation post
   assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
 });
 
+test('blocks a local thumbnail reference owned by an existing wp_navigation post when the same-plan attachment target is itself blocked by a wp_navigation parent even when unrelated remote wp_navigation noise exists', () => {
+  const sourceNavigationResourceKey = 'row:["wp_posts","ID:1"]';
+  const blockedParentResourceKey = 'row:["wp_posts","ID:2"]';
+  const targetAttachmentResourceKey = 'row:["wp_posts","ID:3"]';
+  const postmetaResourceKey = 'row:["wp_postmeta","meta_id:1572"]';
+  const base = baseSite();
+  const local = baseSite();
+  const remote = baseSite();
+
+  base.db.wp_posts['ID:1'] = {
+    ID: 1,
+    post_title: 'Existing source navigation',
+    post_content: 'base-private-source-navigation-body',
+    post_status: 'publish',
+    post_type: 'wp_navigation',
+  };
+  local.db.wp_posts['ID:1'] = {
+    ...base.db.wp_posts['ID:1'],
+  };
+  remote.db.wp_posts['ID:1'] = {
+    ...base.db.wp_posts['ID:1'],
+  };
+  local.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_title: 'Local blocked navigation parent',
+    post_content: 'local-private-blocked-navigation-parent-body',
+    post_status: 'publish',
+    post_type: 'wp_navigation',
+  };
+  local.db.wp_posts['ID:3'] = {
+    ID: 3,
+    post_title: 'Local blocked attachment target',
+    post_content: 'local-private-blocked-attachment-target-body',
+    post_status: 'inherit',
+    post_type: 'attachment',
+    post_parent: 2,
+  };
+  local.db.wp_postmeta = {
+    'meta_id:1572': {
+      meta_id: 1572,
+      post_id: 1,
+      meta_key: '_thumbnail_id',
+      meta_value: 3,
+    },
+  };
+  remote.db.wp_posts['ID:21'] = {
+    ID: 21,
+    post_title: 'Remote wp_navigation noise',
+    post_content: 'remote-wp-navigation-noise-body',
+    post_status: 'publish',
+    post_type: 'wp_navigation',
+  };
+
+  const plan = planFor(base, local, remote);
+  const navigationBlocker = plan.blockers.find((entry) => entry.resourceKey === blockedParentResourceKey);
+  const targetAttachmentMutation = mutationFor(plan, targetAttachmentResourceKey);
+  const targetAttachmentBlocker = plan.blockers.find((entry) => entry.resourceKey === targetAttachmentResourceKey);
+  const postmetaBlocker = plan.blockers.find((entry) => entry.resourceKey === postmetaResourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(mutationFor(plan, sourceNavigationResourceKey), undefined);
+  assert.equal(mutationFor(plan, blockedParentResourceKey), undefined);
+  assert.equal(targetAttachmentMutation.changeKind, 'create');
+  assert.equal(targetAttachmentMutation.dependsOnMutationIds, undefined);
+  assert.equal(mutationFor(plan, postmetaResourceKey), undefined);
+  assert.equal(navigationBlocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(navigationBlocker.surface, 'wp_navigation');
+  assert.equal(targetAttachmentBlocker.class, 'missing-wordpress-graph-dependency');
+  assert.equal(targetAttachmentBlocker.references[0].relationshipType, 'post-parent');
+  assert.equal(targetAttachmentBlocker.references[0].targetResourceKey, blockedParentResourceKey);
+  assert.equal(postmetaBlocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(postmetaBlocker.surface, 'wp_navigation');
+  assert.equal(
+    JSON.stringify(postmetaBlocker).includes('base-private-source-navigation-body'),
+    false,
+  );
+  assert.equal(
+    JSON.stringify(postmetaBlocker).includes('local-private-blocked-navigation-parent-body'),
+    false,
+  );
+  assert.equal(
+    JSON.stringify(postmetaBlocker).includes('local-private-blocked-attachment-target-body'),
+    false,
+  );
+  assert.equal(JSON.stringify(plan).includes('remote-wp-navigation-noise-body'), false);
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
+});
+
 test('blocks a local thumbnail reference owned by an existing wp_navigation post when the same-plan attachment target is itself blocked by a nav_menu_item parent', () => {
   const sourceNavigationResourceKey = 'row:["wp_posts","ID:1"]';
   const blockedParentResourceKey = 'row:["wp_posts","ID:2"]';
