@@ -1,36 +1,26 @@
 Audit handoff for `main:auditor`.
 
 Current assessment
-- `origin/lane/reliable-executor` is `75668b81a33078611be1b8bb1f2e09da159ece10` (`Pin trusted scopes in journal client fixtures`).
+- `origin/lane/reliable-executor` is `f378246a0a06425416c57ac636dfb1a663c8f7af` (`Prove apply revalidation auth boundary`).
 - Release verdict remains `0/4`.
-- The current reliable head is fixture hardening in `test/authenticated-http-push-client.test.js`; it does not change `verify:release` or prove production-owned durable-journal storage, lease/fencing, restart-readable replay, or production-backed auth/session lifecycle on the checked release path.
+- The current reliable head strengthens the checked release verifier with deeper apply-revalidation/auth-session boundary evidence, but it still does not prove a production-owned real-endpoint boundary on the actual Reprint source URL, nor preserved-remote retry on that same boundary.
 
 Changed files
 - [`audits/objective-audit.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/independent-auditor-current-20260526-1424/audits/objective-audit.md)
-- [`audits/current-head-75668b81.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/independent-auditor-current-20260526-1424/audits/current-head-75668b81.md)
+- [`audits/current-head-f378246a.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/independent-auditor-current-20260526-1424/audits/current-head-f378246a.md)
 - [`.lane-output/final.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/independent-auditor-current-20260526-1424/.lane-output/final.md)
 
 Commands
 - `date '+%Y-%m-%d %H:%M:%S %Z (%z)'`
 - `git ls-remote origin refs/heads/lane/reliable-executor`
-- `sed -n '1,260p' audits/objective-audit.md`
-- `git show --stat --oneline --decorate=short --summary 75668b81a33078611be1b8bb1f2e09da159ece10 --`
-- `git show --unified=80 --no-ext-diff 75668b81a33078611be1b8bb1f2e09da159ece10 -- scripts/playground/production-shaped-release-verify.mjs test/production-shaped-proof.test.js`
+- `git show --stat --oneline --decorate=short --summary f378246a0a06425416c57ac636dfb1a663c8f7af --`
+- `git show --unified=80 --no-ext-diff f378246a0a06425416c57ac636dfb1a663c8f7af -- scripts/playground/production-shaped-apply-revalidation-smoke.mjs test/production-shaped-proof.test.js`
 
 Push result
-- Not pushed yet; ready for commit after verification.
+- Not pushed yet; pending verification.
 
 Worktree status
-- Modified: `audits/objective-audit.md`, `audits/current-head-75668b81.md`, `.lane-output/final.md`
+- Modified: `audits/objective-audit.md`, `audits/current-head-f378246a.md`, `.lane-output/final.md`
 
 Next supervisor nudge
-- Keep `main:reliable-exec` on the remaining production-owned durable-journal primitive: storage, lease/fencing, and restart-readable replay on the live boundary. The gate is still `0/4`.
-
-Push result
-- Not pushed yet; ready for commit after verification.
-
-Worktree status
-- Modified: `audits/objective-audit.md`, `audits/current-head-87822a0b.md`, `.lane-output/final.md`
-
-Next supervisor nudge
-- Keep `main:reliable-exec` on the remaining production-owned durable-journal primitive: storage, lease/fencing, and restart-readable replay on the live boundary. The gate is still `0/4`.
+- Keep `main:reliable-exec` on the remaining production boundary: one checked real-endpoint command that mints and reads back a live auth session on the exact production `REPRINT_PUSH_SOURCE_URL`, persists it in durable restart-readable journal storage with lease-fenced ownership, preserves rejected remote evidence, and proves preserved-remote retry plus apply-time revalidation before first mutation. The gate is still `0/4`.
