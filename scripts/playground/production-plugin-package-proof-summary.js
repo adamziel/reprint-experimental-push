@@ -690,6 +690,28 @@ function requestedBundleListsMatch(left, right) {
   );
 }
 
+function requestedBundleStatusMapsMatch(left, right) {
+  if (left === undefined || right === undefined) {
+    return left === right;
+  }
+  if (left === null || right === null || left === 'all' || right === 'all') {
+    return left === right;
+  }
+  return JSON.stringify(
+    Object.fromEntries(
+      Object.entries(left)
+        .map(([bundleName, status]) => [normalizeRequestedBundleName(bundleName), status])
+        .sort(([leftBundle], [rightBundle]) => leftBundle.localeCompare(rightBundle)),
+    ),
+  ) === JSON.stringify(
+    Object.fromEntries(
+      Object.entries(right)
+        .map(([bundleName, status]) => [normalizeRequestedBundleName(bundleName), status])
+        .sort(([leftBundle], [rightBundle]) => leftBundle.localeCompare(rightBundle)),
+    ),
+  );
+}
+
 function filterRequestedBundleListForModeComparison(requestedValues, allowedValues) {
   if (requestedValues === 'all') {
     return Array.from(allowedValues).sort();
@@ -701,6 +723,66 @@ function filterRequestedBundleListForModeComparison(requestedValues, allowedValu
         .filter((value) => allowedValues.has(value)),
     ),
   ).sort();
+}
+
+function pluginDriverProofTopLevelBundleViewMatchesNestedModeProof(pluginDriverProof) {
+  const nestedModeProof = pluginDriverProof?.modeProof;
+  if (nestedModeProof === undefined || nestedModeProof === null) {
+    return false;
+  }
+
+  if (
+    nestedModeProof?.requestedBundles === undefined
+    || nestedModeProof?.requestedBundles === null
+    || (Array.isArray(nestedModeProof.requestedBundles) && nestedModeProof.requestedBundles.length === 0)
+  ) {
+    return true;
+  }
+
+  if (
+    !requestedScenarioListsMatch(
+      pluginDriverProof?.requestedScenarios,
+      nestedModeProof?.requestedScenarios,
+    )
+  ) {
+    return true;
+  }
+
+  if (
+    pluginDriverProof?.requestedBundles !== undefined
+    && !requestedBundleListsMatch(
+      pluginDriverProof?.requestedBundles,
+      nestedModeProof?.requestedBundles,
+    )
+  ) {
+    return false;
+  }
+
+  if (
+    pluginDriverProof?.requestedBundleStatus !== undefined
+    && pluginDriverProof?.requestedBundleStatus !== nestedModeProof?.requestedBundleStatus
+  ) {
+    return false;
+  }
+
+  if (
+    pluginDriverProof?.requestedBundleStatuses !== undefined
+    && !requestedBundleStatusMapsMatch(
+      pluginDriverProof?.requestedBundleStatuses,
+      nestedModeProof?.requestedBundleStatuses,
+    )
+  ) {
+    return false;
+  }
+
+  if (
+    pluginDriverProof?.requestedBundlesSatisfied !== undefined
+    && pluginDriverProof?.requestedBundlesSatisfied !== nestedModeProof?.requestedBundlesSatisfied
+  ) {
+    return false;
+  }
+
+  return true;
 }
 
 function selectedScenariosMatch(left, right) {
@@ -1026,6 +1108,8 @@ export function resolveProductionPluginPackagePluginDriverProof(
           resolvedModeProofOptions,
         )
       );
+    const topLevelBundleViewMatches = expectedModeProof === null
+      || pluginDriverProofTopLevelBundleViewMatchesNestedModeProof(attachedPluginDriverProof);
 
     if (
       requestedScenariosMatch
@@ -1033,6 +1117,7 @@ export function resolveProductionPluginPackagePluginDriverProof(
       && canonicalModeMatches
       && selectedScenariosStillMatch
       && nestedModeProofMatches
+      && topLevelBundleViewMatches
     ) {
       if (
         summary
