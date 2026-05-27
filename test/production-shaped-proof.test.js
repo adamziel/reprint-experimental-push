@@ -1741,6 +1741,60 @@ test('production-shaped release verify fails closed when a required production a
   assert.match(proof.stdout, /"authSessionType": "invalid-production-auth-session-source"/);
 });
 
+test('production-shaped release verify fails closed when a required production auth/session source command returns invalid JSON', () => {
+  const proof = spawnProductionShapedReleaseVerifySync(
+    {
+      ...process.env,
+      REPRINT_PUSH_SOURCE_URL: 'http://127.0.0.1:8080',
+      REPRINT_PUSH_REMOTE_URL: 'http://127.0.0.1:8080',
+      REPRINT_PUSH_USERNAME: 'stale-lab-username',
+      REPRINT_PUSH_APPLICATION_PASSWORD: 'stale-lab-password',
+      REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND: `${process.execPath} -e "process.stdout.write('not-json')"`,
+      REPRINT_PUSH_REQUIRE_PRODUCTION_AUTH_SESSION: '1',
+      NODE_NO_WARNINGS: '1',
+    },
+    {
+      timeout: releaseVerifyInnerTimeoutMs,
+      killSignal: proofSubprocessKillSignal,
+    },
+    'invalid-json auth/session source release verify',
+  );
+  assertSpawnCompletedWithoutSpawnError(proof, 'invalid-json auth/session source release verify', releaseVerifyInnerTimeoutMs);
+  assert.equal(proof.status, 1, proof.stderr);
+  assert.match(proof.stdout, /"ok": false/);
+  assert.match(proof.stdout, /"verdict": "PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED"/);
+  assert.match(proof.stdout, /"observed": "invalid-production-auth-session-source"/);
+  assert.match(proof.stdout, /"error": "Auth session source command must return valid JSON:/);
+  assert.match(proof.stdout, /"authSessionType": "invalid-production-auth-session-source"/);
+});
+
+test('production-shaped release verify fails closed when a required production auth/session source command returns a non-object JSON payload', () => {
+  const proof = spawnProductionShapedReleaseVerifySync(
+    {
+      ...process.env,
+      REPRINT_PUSH_SOURCE_URL: 'http://127.0.0.1:8080',
+      REPRINT_PUSH_REMOTE_URL: 'http://127.0.0.1:8080',
+      REPRINT_PUSH_USERNAME: 'stale-lab-username',
+      REPRINT_PUSH_APPLICATION_PASSWORD: 'stale-lab-password',
+      REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND: `${process.execPath} -e "process.stdout.write(JSON.stringify(['not-an-object']))"`,
+      REPRINT_PUSH_REQUIRE_PRODUCTION_AUTH_SESSION: '1',
+      NODE_NO_WARNINGS: '1',
+    },
+    {
+      timeout: releaseVerifyInnerTimeoutMs,
+      killSignal: proofSubprocessKillSignal,
+    },
+    'non-object auth/session source release verify',
+  );
+  assertSpawnCompletedWithoutSpawnError(proof, 'non-object auth/session source release verify', releaseVerifyInnerTimeoutMs);
+  assert.equal(proof.status, 1, proof.stderr);
+  assert.match(proof.stdout, /"ok": false/);
+  assert.match(proof.stdout, /"verdict": "PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED"/);
+  assert.match(proof.stdout, /"observed": "invalid-production-auth-session-source"/);
+  assert.match(proof.stdout, /"error": "Auth session source command must return a JSON object"/);
+  assert.match(proof.stdout, /"authSessionType": "invalid-production-auth-session-source"/);
+});
+
 test('production-shaped release verify fails closed when a required production auth/session source command returns a non-local sourceUrl', () => {
   const proof = spawnProductionShapedReleaseVerifySync(
     {
