@@ -21663,6 +21663,273 @@ test('production recovery support report keeps the checked boundary closed when 
   assert.equal(report.checkedBoundaryProof.leaseFence.writerLease.claimKeyHash, claimKeyHash);
 });
 
+test('production recovery support report fails closed when the surfaced lease fence hides a checked claimKeyHash marker', () => {
+  const filePath = '/var/lib/reprint/recovery.jsonl';
+  const remoteArtifactPath = '/var/lib/reprint/recovery-remote.jsonl';
+  const claimId = 'claim-checked-boundary-hidden-surfaced-lease-fence-claim-key-hash';
+  const staleClaimId = 'claim-checked-boundary-hidden-surfaced-lease-fence-claim-key-hash-stale';
+  const claimHash = digest({ recoveryJournalClaim: claimId });
+  const staleClaimHash = digest({ recoveryJournalClaim: staleClaimId });
+  const claimKeyHash = 'a'.repeat(64);
+  const writerLeaseContract = {
+    strategy: 'claim-fenced-single-writer',
+    claimKeyUnique: true,
+    fsyncEvidence: true,
+    storageGuard: 'wpdb-single-statement-cas',
+    monotonicSequence: true,
+    restartReadable: true,
+    staleClaimRejected: true,
+    claimKeyHash,
+  };
+  const surfacedLeaseFence = {
+    id: claimId,
+    epoch: 3,
+    storageGuard: 'wpdb-single-statement-cas',
+  };
+  Object.defineProperty(surfacedLeaseFence, 'claimKeyHash', {
+    value: claimKeyHash,
+    enumerable: false,
+    configurable: true,
+    writable: true,
+  });
+
+  const report = productionRecoverySupportReport({
+    kind: 'production-recovery-journal',
+    productionAdapter: true,
+    supportedSurface: 'production-recovery-journal-adapter',
+    restartReadable: true,
+    ownsJournal: true,
+    ownsRemoteArtifact: true,
+    acceptedOnCheckedBoundary: true,
+    scope: 'packaged production journal scope',
+    claimId,
+    claimHash,
+    writerLease: { id: claimId, epoch: 3, claimKeyHash },
+    leaseFence: surfacedLeaseFence,
+    journalPath: filePath,
+    artifactRefs: {
+      journal: filePath,
+      remote: remoteArtifactPath,
+    },
+    schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+    appendEvent() {
+      return null;
+    },
+    flush() {},
+    close() {},
+    inspect() {
+      return {
+        filePath,
+        schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+        productionAdapter: true,
+        supportedSurface: 'production-recovery-journal-adapter',
+        claimId,
+        claimHash,
+        ownsJournal: true,
+        restartReadable: true,
+        ownsRemoteArtifact: true,
+        artifactRefs: {
+          journal: filePath,
+          remote: remoteArtifactPath,
+        },
+        writerLease: { id: claimId, epoch: 3, claimKeyHash },
+        leaseFence: {
+          id: claimId,
+          epoch: 3,
+          storageGuard: 'wpdb-single-statement-cas',
+          claimKeyHash,
+        },
+        writerLeaseContract,
+        leaseFenceContract: {
+          boundary: 'wpdb-single-statement-cas',
+          claimKeyUnique: true,
+          storageGuard: 'wpdb-single-statement-cas',
+          fsyncEvidence: true,
+          monotonicSequence: true,
+          restartReadable: true,
+          staleClaimRejected: true,
+          writerLease: writerLeaseContract,
+        },
+        integrity: { status: 'ok' },
+        records: [
+          {
+            sequence: 1,
+            type: 'recovery-claim-opened',
+            claimId,
+            claimHash,
+            claimLease: { id: claimId, epoch: 3 },
+            artifactRefs: {
+              journal: filePath,
+              remote: remoteArtifactPath,
+            },
+            fsync: { requested: true },
+          },
+          {
+            sequence: 2,
+            type: 'stale-claim-rejected',
+            claimId: staleClaimId,
+            claimHash: staleClaimHash,
+            previousClaimHash: claimHash,
+            claimLease: { id: staleClaimId, epoch: 2 },
+            artifactRefs: {
+              journal: filePath,
+              remote: remoteArtifactPath,
+            },
+            fsync: { requested: true },
+          },
+          {
+            sequence: 3,
+            type: 'journal-opened',
+            artifactRefs: {
+              journal: filePath,
+              remote: remoteArtifactPath,
+            },
+            fsync: { requested: true },
+          },
+        ],
+      };
+    },
+    assertCurrentClaim() {},
+  });
+
+  assert.equal(report.supported, false);
+  assert.equal(report.checkedBoundarySatisfied, false);
+  assert.equal(report.checkedBoundaryProof.acceptedOnCheckedBoundary, false);
+  assert.equal(report.checkedBoundaryProof.claim, null);
+  assert.ok(report.missingDependency.includes('fencing or lease ownership for the journal writer'));
+});
+
+test('production recovery support report fails closed when the surfaced lease fence inherits a checked claimKeyHash marker', () => {
+  const filePath = '/var/lib/reprint/recovery.jsonl';
+  const remoteArtifactPath = '/var/lib/reprint/recovery-remote.jsonl';
+  const claimId = 'claim-checked-boundary-inherited-surfaced-lease-fence-claim-key-hash';
+  const staleClaimId = 'claim-checked-boundary-inherited-surfaced-lease-fence-claim-key-hash-stale';
+  const claimHash = digest({ recoveryJournalClaim: claimId });
+  const staleClaimHash = digest({ recoveryJournalClaim: staleClaimId });
+  const claimKeyHash = 'a'.repeat(64);
+  const writerLeaseContract = {
+    strategy: 'claim-fenced-single-writer',
+    claimKeyUnique: true,
+    fsyncEvidence: true,
+    storageGuard: 'wpdb-single-statement-cas',
+    monotonicSequence: true,
+    restartReadable: true,
+    staleClaimRejected: true,
+    claimKeyHash,
+  };
+  const surfacedLeaseFence = Object.create({
+    claimKeyHash,
+  });
+  surfacedLeaseFence.id = claimId;
+  surfacedLeaseFence.epoch = 3;
+  surfacedLeaseFence.storageGuard = 'wpdb-single-statement-cas';
+
+  const report = productionRecoverySupportReport({
+    kind: 'production-recovery-journal',
+    productionAdapter: true,
+    supportedSurface: 'production-recovery-journal-adapter',
+    restartReadable: true,
+    ownsJournal: true,
+    ownsRemoteArtifact: true,
+    acceptedOnCheckedBoundary: true,
+    scope: 'packaged production journal scope',
+    claimId,
+    claimHash,
+    writerLease: { id: claimId, epoch: 3, claimKeyHash },
+    leaseFence: surfacedLeaseFence,
+    journalPath: filePath,
+    artifactRefs: {
+      journal: filePath,
+      remote: remoteArtifactPath,
+    },
+    schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+    appendEvent() {
+      return null;
+    },
+    flush() {},
+    close() {},
+    inspect() {
+      return {
+        filePath,
+        schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+        productionAdapter: true,
+        supportedSurface: 'production-recovery-journal-adapter',
+        claimId,
+        claimHash,
+        ownsJournal: true,
+        restartReadable: true,
+        ownsRemoteArtifact: true,
+        artifactRefs: {
+          journal: filePath,
+          remote: remoteArtifactPath,
+        },
+        writerLease: { id: claimId, epoch: 3, claimKeyHash },
+        leaseFence: {
+          id: claimId,
+          epoch: 3,
+          storageGuard: 'wpdb-single-statement-cas',
+          claimKeyHash,
+        },
+        writerLeaseContract,
+        leaseFenceContract: {
+          boundary: 'wpdb-single-statement-cas',
+          claimKeyUnique: true,
+          storageGuard: 'wpdb-single-statement-cas',
+          fsyncEvidence: true,
+          monotonicSequence: true,
+          restartReadable: true,
+          staleClaimRejected: true,
+          writerLease: writerLeaseContract,
+        },
+        integrity: { status: 'ok' },
+        records: [
+          {
+            sequence: 1,
+            type: 'recovery-claim-opened',
+            claimId,
+            claimHash,
+            claimLease: { id: claimId, epoch: 3 },
+            artifactRefs: {
+              journal: filePath,
+              remote: remoteArtifactPath,
+            },
+            fsync: { requested: true },
+          },
+          {
+            sequence: 2,
+            type: 'stale-claim-rejected',
+            claimId: staleClaimId,
+            claimHash: staleClaimHash,
+            previousClaimHash: claimHash,
+            claimLease: { id: staleClaimId, epoch: 2 },
+            artifactRefs: {
+              journal: filePath,
+              remote: remoteArtifactPath,
+            },
+            fsync: { requested: true },
+          },
+          {
+            sequence: 3,
+            type: 'journal-opened',
+            artifactRefs: {
+              journal: filePath,
+              remote: remoteArtifactPath,
+            },
+            fsync: { requested: true },
+          },
+        ],
+      };
+    },
+    assertCurrentClaim() {},
+  });
+
+  assert.equal(report.supported, false);
+  assert.equal(report.checkedBoundarySatisfied, false);
+  assert.equal(report.checkedBoundaryProof.acceptedOnCheckedBoundary, false);
+  assert.equal(report.checkedBoundaryProof.claim, null);
+  assert.ok(report.missingDependency.includes('fencing or lease ownership for the journal writer'));
+});
+
 test('production recovery support report keeps the checked boundary closed when the surfaced writer lease fence omits its own storageGuard marker', () => {
   const filePath = '/var/lib/reprint/recovery.jsonl';
   const remoteArtifactPath = '/var/lib/reprint/recovery-remote.jsonl';
