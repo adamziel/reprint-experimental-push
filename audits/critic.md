@@ -1,17 +1,17 @@
 # Critic Verdict
 
-Current reliable head: `fd2028238478d4a1b3c88b1cdbf7ba104c1a9d36`
-(`Fail closed on malformed auth identity drift`).
+Current reliable head: `13367763db66c5b145d507c5cf91c476b4b72efc`
+(`Infer checked journal storage guards`).
 
 Verdict: `0/4`
 
 Reason:
 
-- This head tightens checked auth identity handling on the production-session
-  path. The diff adds malformed `auth.identity.userLogin` rejection and
-  expands checked drift reporting so malformed observed auth-envelope identity
-  fields are surfaced as `invalid-*` across preflight, dry-run, apply,
-  recovery inspect, replay, and db-journal checks.
+- This head lets the authenticated client infer a checked DB-journal storage
+  guard when the ownership, lease-fence, writer-lease, and nested writer-lease
+  boundaries all agree on the same trusted storage boundary. The new regression
+  also rejects mixed boundaries instead of silently accepting contradictory
+  checked storage evidence.
 - That is still support-side checked-path hardening, not proof of the
   production-owned real Reprint endpoint boundary. The evidence still comes
   from the packaged checked verifier and recovery-journal flows rather than
@@ -22,7 +22,7 @@ Reason:
 
 Next owner / command:
 
-- `main:reliable-exec` should move off malformed auth identity drift
+- `main:reliable-exec` should move off inferred checked storage-guard
   hardening and prove the next remaining production boundary on the checked
   release path, using `scripts/playground/production-shaped-release-verify.mjs`,
   `scripts/playground/push-remote-rest-plugin.php`, `src/recovery-journal.js`,
