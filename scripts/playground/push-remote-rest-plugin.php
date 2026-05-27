@@ -1724,6 +1724,108 @@ function reprint_push_lab_rest_fail_closed_checked_recovery_journal_acceptance(
         }
     }
 
+    if (
+        is_array($checked_summary)
+        && reprint_push_lab_rest_checked_latest_row_conflicts(
+            $premerge_journal,
+            $checked_summary
+        )
+    ) {
+        $journal['acceptedOnCheckedBoundary'] = false;
+        if (is_array($premerge_journal)) {
+            foreach (['claimEvidence', 'latestRows', 'eventSummaries', 'idempotencyEvidence'] as $key) {
+                if (array_key_exists($key, $premerge_journal)) {
+                    $journal[$key] = $premerge_journal[$key];
+                } else {
+                    unset($journal[$key]);
+                }
+            }
+        }
+    }
+
+    if (
+        is_array($checked_summary)
+        && reprint_push_lab_rest_checked_claim_evidence_conflicts(
+            $premerge_journal,
+            $checked_summary
+        )
+    ) {
+        $journal['acceptedOnCheckedBoundary'] = false;
+        if (is_array($premerge_journal) && array_key_exists('claimEvidence', $premerge_journal)) {
+            $journal['claimEvidence'] = $premerge_journal['claimEvidence'];
+        } else {
+            unset($journal['claimEvidence']);
+        }
+    }
+
+    if (
+        is_array($checked_summary)
+        && reprint_push_lab_rest_checked_event_summary_conflicts(
+            $premerge_journal,
+            $checked_summary
+        )
+    ) {
+        $journal['acceptedOnCheckedBoundary'] = false;
+        if (is_array($premerge_journal) && array_key_exists('eventSummaries', $premerge_journal)) {
+            $journal['eventSummaries'] = $premerge_journal['eventSummaries'];
+        } else {
+            unset($journal['eventSummaries']);
+        }
+    }
+
+    if (
+        is_array($checked_summary)
+        && reprint_push_lab_rest_checked_idempotency_evidence_conflicts(
+            $premerge_journal,
+            $checked_summary
+        )
+    ) {
+        $journal['acceptedOnCheckedBoundary'] = false;
+        if (is_array($premerge_journal) && array_key_exists('idempotencyEvidence', $premerge_journal)) {
+            $journal['idempotencyEvidence'] = $premerge_journal['idempotencyEvidence'];
+        } else {
+            unset($journal['idempotencyEvidence']);
+        }
+    }
+
+    if (
+        is_array($checked_summary)
+        && reprint_push_lab_rest_checked_top_level_counter_conflicts(
+            $premerge_journal,
+            $checked_summary
+        )
+    ) {
+        $journal['acceptedOnCheckedBoundary'] = false;
+        if (is_array($premerge_journal)) {
+            foreach (['rowCount', 'applyCommitted', 'mutationApplied', 'idempotencyOpened'] as $key) {
+                if (array_key_exists($key, $premerge_journal)) {
+                    $journal[$key] = $premerge_journal[$key];
+                } else {
+                    unset($journal[$key]);
+                }
+            }
+        }
+    }
+
+    if (
+        is_array($checked_summary)
+        && reprint_push_lab_rest_checked_top_level_identity_conflicts(
+            $premerge_journal,
+            $checked_summary
+        )
+    ) {
+        $journal['acceptedOnCheckedBoundary'] = false;
+        if (is_array($premerge_journal)) {
+            foreach (['schemaVersion', 'table', 'scope'] as $key) {
+                if (array_key_exists($key, $premerge_journal)) {
+                    $journal[$key] = $premerge_journal[$key];
+                } else {
+                    unset($journal[$key]);
+                }
+            }
+        }
+    }
+
     if (!reprint_push_lab_db_journal_checked_boundary_contract_matches($journal)) {
         $journal['acceptedOnCheckedBoundary'] = false;
         return $journal;
