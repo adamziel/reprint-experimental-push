@@ -1,6 +1,6 @@
 # Reorg Auditor V2 - 2026-05-27
 
-Audit time: 2026-05-27 18:47 CEST (+0200)
+Audit time: 2026-05-27 18:51 CEST (+0200)
 
 Verdict: `0/4`
 
@@ -11,24 +11,26 @@ No release gate moves without a checked command that uses a real live
 
 | Ref | Head | Current proof |
 | --- | --- | --- |
-| `origin/supervisor/release-boundary-consolidated-20260527` | `9a5ce75a7` | Consolidated support branch exists, includes the latest auditor release-boundary-head refresh, and fails closed when the live source is absent. |
-| `origin/lane/auth-session-boundary-v2-20260527` | `fb2b01dab` | Auth/session support branch merged the consolidated release-boundary base; support evidence only. |
-| `origin/lane/durable-journal-boundary-v2-20260527` | `655247813` | Durable support branch merged the consolidated release-boundary base; no live durable proof. |
+| `origin/supervisor/release-boundary-consolidated-20260527` | `2c5681b0f` | Consolidated support branch exists, includes the latest auditor support-branch-head refresh, and fails closed when the live source is absent. |
+| `origin/lane/auth-session-boundary-v2-20260527` | `e2e2e391a` | Auth/session support branch merged the consolidated release-boundary base; support evidence only. |
+| `origin/lane/durable-journal-boundary-v2-20260527` | `702adf8ae` | Durable support branch merged the consolidated release-boundary base; no live durable proof. |
 | `origin/lane/apply-revalidation-boundary-v2-20260527` | `c84629f82` | Focused apply-revalidation boundary test hardening plus consolidated branch merge; support evidence only. |
 | `origin/lane/plugin-driver-boundary-v2-20260527` | `9e943390e` | Plugin-driver test hardening on origin; support evidence only. |
-| `origin/lane/topology-verifier-v2-20260527` | `eac254071` | Topology fail-closed behavior proof plus consolidated base merge; support evidence only. |
-| `origin/lane/critic-reorg-v2-20260527` | `8cf049508` | Critic follow-up rejects gate movement without live source evidence. |
-| `origin/lane/auditor-reorg-20260527` | `d210f2eee` | Separate auditor lane artifact refreshed; not live release proof. |
+| `origin/lane/topology-verifier-v2-20260527` | `2ce3df0f3` | Topology fail-closed behavior proof plus consolidated base merge; support evidence only. |
+| `origin/lane/critic-reorg-v2-20260527` | `110d3c970` | Critic follow-up rejects gate movement without live source evidence. |
+| `origin/lane/auditor-reorg-20260527` | `88a4249ac` | Separate auditor lane artifact refreshed; not live release proof. |
 
 Local refs not matching same-name origin, or local-only refs observed:
 
 - `lane/plugin-driver-boundary-v2-20260527` at `979d680cd`
-- `lane/plugin-driver-boundary-v2-consolidated-20260527` at `9e943390e`
+- `lane/apply-revalidation-boundary-v2-20260527` at `e90030040`
+- `lane/plugin-driver-boundary-v2-consolidated-20260527` at `88330602b`
+- `lane/topology-verifier-v2-20260527` at `eac254071`
 
 ## Command Evidence
 
 Run from `/tmp/reprint-reorg-integrator-20260527` on
-`supervisor/release-boundary-consolidated-20260527` at `9a5ce75a7`:
+`supervisor/release-boundary-consolidated-20260527` at `2c5681b0f`:
 
 ```bash
 timeout 300s npm run verify:release
