@@ -3,6 +3,31 @@
 This log records evidence present in this repository. Public status should use
 release gates and named evidence gaps rather than stale percentage estimates.
 
+# 2026-05-27 - Public Status Audit 02:56:34
+
+<a id="2026-05-27-public-status-audit-025634"></a>
+
+- Refreshed [progress.html](../progress.html) to keep the current reliable
+  head `a6025438fbbdb84bf23cbad5bc34847f931c66dd` visible on the public
+  status surface for the active supervision cycle.
+- Release gates remain `0/4`. `verify:release` now includes
+  `npm run test:playground:production-shaped-apply-revalidation` in the
+  checked release path and still defaults to the packaged production-plugin
+  source boundary with `routeProfile.labBacked: false` plus
+  `PACKAGED_RELEASE_BOUNDARY_OK`, but the remaining classifier-named blocker
+  is still a production-owned, non-lab-backed source mutation boundary on the
+  real Reprint endpoint: one primitive that owns auth/session
+  issuance/readback, durable restart-readable journal storage with lease
+  fencing, and apply-time revalidation outside Playground package-mode
+  verifier scaffolding.
+- The public page keeps packaged plugin-driver guards pinned into
+  `verify:release` as support evidence, while the apply-revalidation release
+  leg and the production-owned source mutation boundary still block gate
+  movement. The stale percentage bars stay removed.
+- Evidence trail: [progress.html](../progress.html),
+  [objective audit](../audits/objective-audit.md),
+  [release-gate checklist](../progress.html#proof-gates).
+
 # 2026-05-27 - Public Status Audit 02:55:01
 
 <a id="2026-05-27-public-status-audit-025501"></a>
