@@ -1366,6 +1366,138 @@ test('plugin-driver proof summary treats fully requested concrete receipt guards
   });
 });
 
+test('plugin-driver proof summary treats fully requested concrete release proof as a requested release bundle on the object', () => {
+  const concreteReleaseScenarios = scenarioGroups['driver-release-proof'].slice();
+  const summary = buildProductionPluginPackageProofSummary(
+    {
+      package: {
+        plugin: 'reprint-push/reprint-push.php',
+        mountedAs: '/wordpress/wp-content/plugins/reprint-push',
+      },
+      routes: {
+        namespace: 'reprint/v1',
+        profile: 'production-shaped',
+        labNamespaceDisabled: true,
+        authBootstrapDisabled: true,
+        labBacked: false,
+      },
+      cli: {
+        ok: true,
+      },
+      final: {
+        finalMatchesLocal: true,
+      },
+      driverUpdateApply: {
+        applied: 1,
+      },
+      driverDeleteGuard: {
+        dryRunRejectedCode: 'INVALID_PLAN',
+      },
+      driverUpdateValidationGuard: {
+        dryRunRejectedCode: 'INVALID_PLAN',
+      },
+      driverReceiptPlanBindingGuard: {
+        applyRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+      },
+      driverReceiptExpiryGuard: {
+        applyRejectedCode: 'AUTH_RECEIPT_EXPIRED',
+      },
+      driverReceiptIdentityGuard: {
+        applyRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+      },
+      driverReceiptRotatedCredentialGuard: {
+        rotatedCredentialRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+      },
+      driverReceiptRevokedCredentialGuard: {
+        applyRejectedCode: 'reprint_push_lab_auth_required',
+      },
+      driverDeleteApply: {
+        deletedAfterApply: true,
+      },
+    },
+    {
+      requestedScenarios: concreteReleaseScenarios,
+      selectedScenarios: new Set(concreteReleaseScenarios),
+    },
+  );
+
+  assert.deepEqual(summary.requestedBundleStatuses, {});
+  assert.equal(summary.releaseProof.requested, true);
+  assert.equal(summary.releaseProof.requestedStatus, 'passed');
+  assert.equal(summary.releaseProof.requestedBundleStatus, 'passed');
+  assert.deepEqual(summary.releaseProof.requestedBundleStatuses, {
+    driverReleaseProof: 'passed',
+  });
+});
+
+test('plugin-driver proof summary treats fully requested concrete verifier guards as a requested verifier bundle on the object', () => {
+  const concreteVerifierScenarios = scenarioGroups['driver-verifier-guards'].slice();
+  const summary = buildProductionPluginPackageProofSummary(
+    {
+      driverUpdateApply: {
+        applied: 1,
+      },
+      driverDeleteGuard: {
+        dryRunRejectedCode: 'INVALID_PLAN',
+      },
+      driverUpdateValidationGuard: {
+        dryRunRejectedCode: 'INVALID_PLAN',
+      },
+      driverReceiptPlanBindingGuard: {
+        applyRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+      },
+      driverReceiptExpiryGuard: {
+        applyRejectedCode: 'AUTH_RECEIPT_EXPIRED',
+      },
+      driverReceiptIdentityGuard: {
+        applyRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+      },
+      driverReceiptRotatedCredentialGuard: {
+        rotatedCredentialRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+      },
+      driverReceiptRevokedCredentialGuard: {
+        applyRejectedCode: 'reprint_push_lab_auth_required',
+      },
+      driverExportGuard: {
+        missingExportRowsCallback: true,
+      },
+      driverApplyGuard: {
+        missingApplyRowCallback: true,
+      },
+      driverValidateGuard: {
+        missingValidateMutationCallback: true,
+      },
+      driverMissingNameGuard: {
+        missingDriverName: true,
+      },
+      driverPluginOwnerGuard: {
+        missingPluginOwner: true,
+      },
+      driverMissingTableGuard: {
+        missingTable: true,
+      },
+      driverDuplicateNameGuard: {
+        duplicateDriverName: true,
+      },
+      driverDuplicateTableGuard: {
+        duplicateTable: true,
+      },
+    },
+    {
+      requestedScenarios: concreteVerifierScenarios,
+      selectedScenarios: new Set(concreteVerifierScenarios),
+    },
+  );
+
+  assert.deepEqual(summary.requestedBundleStatuses, {});
+  assert.equal(summary.verifierGuards.requested, true);
+  assert.equal(summary.verifierGuards.requestedStatus, 'passed');
+  assert.equal(summary.verifierGuards.requestedBundleStatus, 'passed');
+  assert.deepEqual(summary.verifierGuards.requestedBundleStatuses, {
+    driverVerifierGuards: 'passed',
+  });
+});
+
 test('plugin-driver proof summary reports requested registration-shape bundle verdicts directly', () => {
   const summary = buildProductionPluginPackageProofSummary(
     {

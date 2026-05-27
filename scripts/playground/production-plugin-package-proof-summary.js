@@ -236,6 +236,13 @@ function hasFullConcreteReceiptGuardRequest(normalizedRequestedScenarios) {
     );
 }
 
+function hasFullConcreteBundleRequest(normalizedRequestedScenarios, bundleName) {
+  return normalizedRequestedScenarios !== null
+    && scenarioGroups[bundleName].every(
+      (scenario) => normalizedRequestedScenarios.includes(scenario),
+    );
+}
+
 function summarizeRequestedScenario(selected, passed) {
   return selected && passed ? 'passed' : 'missing';
 }
@@ -503,6 +510,44 @@ export function buildProductionPluginPackageProofSummary(
         : null;
   const receiptRequestedBundleStatus = requestedBundleStatuses.driverReceiptGuards
     ?? (hasConcreteReceiptGuardRequest ? receiptRequestedStatus : null);
+  const concreteBundleRequests = Object.fromEntries(
+    Object.keys(bundleSummaryGroups).map((bundleName) => [
+      bundleName,
+      hasFullConcreteBundleRequest(normalizedRequestedScenarios, bundleName),
+    ]),
+  );
+  function buildConcreteRequestedBundleStatus(bundleName) {
+    const bundleKey = toBundleKey(bundleName);
+    if (requestedBundleStatuses[bundleKey] !== undefined) {
+      return requestedBundleStatuses[bundleKey];
+    }
+    if (!concreteBundleRequests[bundleName]) {
+      return null;
+    }
+    const concreteBundlePassed = bundleSummaryGroups[bundleName].every(
+      (scenario) => scenarioPasses.get(scenario) === true,
+    );
+    return summarizeRequestedScenario(
+      isBundleSelected(selectedScenarios, bundleName),
+      concreteBundlePassed,
+    );
+  }
+  function buildConcreteRequestedBundleStatuses(bundleName) {
+    const aliasStatuses = buildRequestedBundleStatusesForScenario(
+      requestedScenarioAliases(normalizedRequestedScenarios, bundleName),
+      requestedBundleStatuses,
+    );
+    if (aliasStatuses !== null) {
+      return aliasStatuses;
+    }
+    const requestedBundleStatus = buildConcreteRequestedBundleStatus(bundleName);
+    if (requestedBundleStatus === null) {
+      return null;
+    }
+    return {
+      [toBundleKey(bundleName)]: requestedBundleStatus,
+    };
+  }
 
   return {
     kind: 'production-plugin-package-driver-proof',
@@ -704,7 +749,8 @@ export function buildProductionPluginPackageProofSummary(
     positiveProof: {
       requested: normalizedRequestedScenarios === null
         ? true
-        : normalizedRequestedScenarios.includes('driver-positive-proof'),
+        : normalizedRequestedScenarios.includes('driver-positive-proof')
+          || concreteBundleRequests['driver-positive-proof'],
       selected: isBundleSelected(selectedScenarios, 'driver-positive-proof'),
       ok: bundleResults.driverPositiveProof === 'passed',
       status: bundleResults.driverPositiveProof,
@@ -724,17 +770,16 @@ export function buildProductionPluginPackageProofSummary(
         scenarioPasses,
         bundleResults.driverPositiveProof !== 'skipped',
       ),
-      requestedStatus: requestedScenarioStatuses['driver-positive-proof'] ?? null,
-      requestedBundleStatus: requestedBundleStatuses.driverPositiveProof ?? null,
-      requestedBundleStatuses: buildRequestedBundleStatusesForScenario(
-        requestedScenarioAliases(normalizedRequestedScenarios, 'driver-positive-proof'),
-        requestedBundleStatuses,
-      ),
+      requestedStatus: requestedScenarioStatuses['driver-positive-proof']
+        ?? buildConcreteRequestedBundleStatus('driver-positive-proof'),
+      requestedBundleStatus: buildConcreteRequestedBundleStatus('driver-positive-proof'),
+      requestedBundleStatuses: buildConcreteRequestedBundleStatuses('driver-positive-proof'),
     },
     releaseProof: {
       requested: normalizedRequestedScenarios === null
         ? true
-        : normalizedRequestedScenarios.includes('driver-release-proof'),
+        : normalizedRequestedScenarios.includes('driver-release-proof')
+          || concreteBundleRequests['driver-release-proof'],
       selected: isBundleSelected(selectedScenarios, 'driver-release-proof'),
       ok: bundleResults.driverReleaseProof === 'passed',
       status: bundleResults.driverReleaseProof,
@@ -760,17 +805,16 @@ export function buildProductionPluginPackageProofSummary(
         scenarioPasses,
         bundleResults.driverReleaseProof !== 'skipped',
       ),
-      requestedStatus: requestedScenarioStatuses['driver-release-proof'] ?? null,
-      requestedBundleStatus: requestedBundleStatuses.driverReleaseProof ?? null,
-      requestedBundleStatuses: buildRequestedBundleStatusesForScenario(
-        requestedScenarioAliases(normalizedRequestedScenarios, 'driver-release-proof'),
-        requestedBundleStatuses,
-      ),
+      requestedStatus: requestedScenarioStatuses['driver-release-proof']
+        ?? buildConcreteRequestedBundleStatus('driver-release-proof'),
+      requestedBundleStatus: buildConcreteRequestedBundleStatus('driver-release-proof'),
+      requestedBundleStatuses: buildConcreteRequestedBundleStatuses('driver-release-proof'),
     },
     verifierGuards: {
       requested: normalizedRequestedScenarios === null
         ? true
-        : normalizedRequestedScenarios.includes('driver-verifier-guards'),
+        : normalizedRequestedScenarios.includes('driver-verifier-guards')
+          || concreteBundleRequests['driver-verifier-guards'],
       selected: isBundleSelected(selectedScenarios, 'driver-verifier-guards'),
       ok: bundleResults.driverVerifierGuards === 'passed',
       status: bundleResults.driverVerifierGuards,
@@ -801,17 +845,16 @@ export function buildProductionPluginPackageProofSummary(
         scenarioPasses,
         bundleResults.driverVerifierGuards !== 'skipped',
       ),
-      requestedStatus: requestedScenarioStatuses['driver-verifier-guards'] ?? null,
-      requestedBundleStatus: requestedBundleStatuses.driverVerifierGuards ?? null,
-      requestedBundleStatuses: buildRequestedBundleStatusesForScenario(
-        requestedScenarioAliases(normalizedRequestedScenarios, 'driver-verifier-guards'),
-        requestedBundleStatuses,
-      ),
+      requestedStatus: requestedScenarioStatuses['driver-verifier-guards']
+        ?? buildConcreteRequestedBundleStatus('driver-verifier-guards'),
+      requestedBundleStatus: buildConcreteRequestedBundleStatus('driver-verifier-guards'),
+      requestedBundleStatuses: buildConcreteRequestedBundleStatuses('driver-verifier-guards'),
     },
     registrationGuards: {
       requested: normalizedRequestedScenarios === null
         ? true
-        : normalizedRequestedScenarios.includes('driver-registration-guards'),
+        : normalizedRequestedScenarios.includes('driver-registration-guards')
+          || concreteBundleRequests['driver-registration-guards'],
       selected: isBundleSelected(selectedScenarios, 'driver-registration-guards'),
       ok: bundleResults.driverRegistrationGuards === 'passed',
       status: bundleResults.driverRegistrationGuards,
@@ -836,17 +879,16 @@ export function buildProductionPluginPackageProofSummary(
         scenarioPasses,
         bundleResults.driverRegistrationGuards !== 'skipped',
       ),
-      requestedStatus: requestedScenarioStatuses['driver-registration-guards'] ?? null,
-      requestedBundleStatus: requestedBundleStatuses.driverRegistrationGuards ?? null,
-      requestedBundleStatuses: buildRequestedBundleStatusesForScenario(
-        requestedScenarioAliases(normalizedRequestedScenarios, 'driver-registration-guards'),
-        requestedBundleStatuses,
-      ),
+      requestedStatus: requestedScenarioStatuses['driver-registration-guards']
+        ?? buildConcreteRequestedBundleStatus('driver-registration-guards'),
+      requestedBundleStatus: buildConcreteRequestedBundleStatus('driver-registration-guards'),
+      requestedBundleStatuses: buildConcreteRequestedBundleStatuses('driver-registration-guards'),
     },
     callbackGuards: {
       requested: normalizedRequestedScenarios === null
         ? true
-        : normalizedRequestedScenarios.includes('driver-callback-guards'),
+        : normalizedRequestedScenarios.includes('driver-callback-guards')
+          || concreteBundleRequests['driver-callback-guards'],
       selected: isBundleSelected(selectedScenarios, 'driver-callback-guards'),
       ok: bundleResults.driverCallbackGuards === 'passed',
       status: bundleResults.driverCallbackGuards,
@@ -861,17 +903,16 @@ export function buildProductionPluginPackageProofSummary(
         scenarioPasses,
         bundleResults.driverCallbackGuards !== 'skipped',
       ),
-      requestedStatus: requestedScenarioStatuses['driver-callback-guards'] ?? null,
-      requestedBundleStatus: requestedBundleStatuses.driverCallbackGuards ?? null,
-      requestedBundleStatuses: buildRequestedBundleStatusesForScenario(
-        requestedScenarioAliases(normalizedRequestedScenarios, 'driver-callback-guards'),
-        requestedBundleStatuses,
-      ),
+      requestedStatus: requestedScenarioStatuses['driver-callback-guards']
+        ?? buildConcreteRequestedBundleStatus('driver-callback-guards'),
+      requestedBundleStatus: buildConcreteRequestedBundleStatus('driver-callback-guards'),
+      requestedBundleStatuses: buildConcreteRequestedBundleStatuses('driver-callback-guards'),
     },
     registrationShapeGuards: {
       requested: normalizedRequestedScenarios === null
         ? true
-        : normalizedRequestedScenarios.includes('driver-registration-shape-guards'),
+        : normalizedRequestedScenarios.includes('driver-registration-shape-guards')
+          || concreteBundleRequests['driver-registration-shape-guards'],
       selected: isBundleSelected(selectedScenarios, 'driver-registration-shape-guards'),
       ok: bundleResults.driverRegistrationShapeGuards === 'passed',
       status: bundleResults.driverRegistrationShapeGuards,
@@ -890,12 +931,10 @@ export function buildProductionPluginPackageProofSummary(
         scenarioPasses,
         bundleResults.driverRegistrationShapeGuards !== 'skipped',
       ),
-      requestedStatus: requestedScenarioStatuses['driver-registration-shape-guards'] ?? null,
-      requestedBundleStatus: requestedBundleStatuses.driverRegistrationShapeGuards ?? null,
-      requestedBundleStatuses: buildRequestedBundleStatusesForScenario(
-        requestedScenarioAliases(normalizedRequestedScenarios, 'driver-registration-shape-guards'),
-        requestedBundleStatuses,
-      ),
+      requestedStatus: requestedScenarioStatuses['driver-registration-shape-guards']
+        ?? buildConcreteRequestedBundleStatus('driver-registration-shape-guards'),
+      requestedBundleStatus: buildConcreteRequestedBundleStatus('driver-registration-shape-guards'),
+      requestedBundleStatuses: buildConcreteRequestedBundleStatuses('driver-registration-shape-guards'),
     },
     bundles: bundleResults,
     scenarios: scenarioResults,
