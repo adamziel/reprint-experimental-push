@@ -740,6 +740,34 @@ function runAttachCheckedRecoveryJournalEvidence(
   });
 }
 
+function runMirrorCheckedRecoveryContract(recovery) {
+  return spawnSync('php', [
+    '-r',
+    [
+      'define("ABSPATH", dirname($argv[1]));',
+      'function add_filter(...$args) {}',
+      'function add_action(...$args) {}',
+      'function register_rest_route(...$args) {}',
+      'class WP_REST_Server { const CREATABLE = "POST"; const READABLE = "GET"; }',
+      'class WP_REST_Response {',
+      '  private $data;',
+      '  public function __construct($data = null, $status = null) { $this->data = $data; }',
+      '  public function get_data() { return $this->data; }',
+      '  public function set_data($data) { $this->data = $data; }',
+      '}',
+      'class WP_REST_Request {}',
+      'require $argv[1];',
+      '$recovery = json_decode($argv[2], true);',
+      'echo json_encode(reprint_push_lab_rest_mirror_checked_recovery_contract($recovery));',
+    ].join(' '),
+    pluginFile,
+    JSON.stringify(recovery),
+  ], {
+    cwd: repoRoot,
+    encoding: 'utf8',
+  });
+}
+
 function buildAcceptedInlineRecoveryJournal() {
   return {
     integrity: {
@@ -1803,6 +1831,25 @@ test('checked recovery inspect evidence carries authoritative stale-claim fencin
       },
     },
   });
+});
+
+test('checked recovery inspect evidence mirrors the accepted checked contract onto top-level recovery fields when wrappers are missing or invalid', { skip: !hasPhp }, () => {
+  const acceptedJournal = buildAcceptedInlineRecoveryJournal();
+  const result = runMirrorCheckedRecoveryContract({
+    journal: acceptedJournal,
+    claim: {},
+    leaseFence: {},
+    writerLease: {},
+    ownership: {},
+  });
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.journal.acceptedOnCheckedBoundary, true);
+  assert.deepEqual(parsed.ownership, acceptedJournal.ownership);
+  assert.deepEqual(parsed.writerLease, acceptedJournal.writerLease);
+  assert.deepEqual(parsed.claim, acceptedJournal.claim);
+  assert.deepEqual(parsed.leaseFence, acceptedJournal.leaseFence);
 });
 
 test('checked recovery inspect evidence fails closed when checked storage-guard evidence omits a coherent claim-scoped checked journal contract', { skip: !hasPhp }, () => {
