@@ -888,6 +888,18 @@ export function resolveProductionPluginPackagePluginDriverProof(
   return pluginDriverProof;
 }
 
+export function attachProductionPluginPackagePluginDriverProof(
+  summary,
+  options = {},
+) {
+  const pluginDriverProof = resolveProductionPluginPackagePluginDriverProof(summary, options);
+  if (summary && typeof summary === 'object') {
+    summary.pluginDriverProof = pluginDriverProof;
+    summary.modeProof = pluginDriverProof?.modeProof ?? null;
+  }
+  return pluginDriverProof;
+}
+
 function normalizeSelectedScenarios(selectedScenarios) {
   if (selectedScenarios === undefined) {
     return undefined;
@@ -1023,6 +1035,12 @@ export function buildProductionPluginPackageProofSummary(
   const normalizedRequestedScenarios = requestedScenarios === null
     ? null
     : Array.from(new Set(requestedScenarios));
+  const normalizedSelectedScenarios = selectedScenarios === null
+    ? null
+    : normalizeSelectedScenarios(selectedScenarios);
+  const canonicalSelectedScenarios = normalizedSelectedScenarios === null
+    ? null
+    : new Set(normalizeSelectedScenarioNamesForComparison(normalizedSelectedScenarios));
   const canonicalRequestedScenarios = normalizedRequestedScenarios === null
     ? null
     : Array.from(new Set(normalizedRequestedScenarios.map(canonicalizeScenarioName)));
@@ -1079,7 +1097,7 @@ export function buildProductionPluginPackageProofSummary(
       definition.scenario,
       requestedScenarioAliases(canonicalRequestedScenarios, definition.scenario),
     );
-    const selected = isScenarioSelected(selectedScenarios, definition.scenario);
+    const selected = isScenarioSelected(canonicalSelectedScenarios, definition.scenario);
     const countScenario = definition.counted !== 'explicit-only'
       || requestedConcreteScenarioSet?.has(definition.scenario) === true;
     const passed = definition.evaluate(summary);
@@ -1113,10 +1131,11 @@ export function buildProductionPluginPackageProofSummary(
 
   for (const [bundleName, bundleScenarios] of Object.entries(bundleSummaryGroups)) {
     const selected = canonicalRequestedScenarios === null
-      ? selectedScenarios === null || bundleScenarios.some((scenario) => isScenarioSelected(selectedScenarios, scenario))
+      ? canonicalSelectedScenarios === null
+        || bundleScenarios.some((scenario) => isScenarioSelected(canonicalSelectedScenarios, scenario))
       : canonicalRequestedScenarios.includes(bundleName);
-    const bundleCoverageSatisfied = selectedScenarios === null
-      || bundleScenarios.every((scenario) => isScenarioSelected(selectedScenarios, scenario));
+    const bundleCoverageSatisfied = canonicalSelectedScenarios === null
+      || bundleScenarios.every((scenario) => isScenarioSelected(canonicalSelectedScenarios, scenario));
     const passed = bundleCoverageSatisfied
       && bundleScenarios.every((scenario) => scenarioPasses.get(scenario) === true);
     const bundleKey = toBundleKey(bundleName);
@@ -1155,7 +1174,7 @@ export function buildProductionPluginPackageProofSummary(
   }
 
   const directReceiptBundleSelected = requestedBundleSet?.has('driverReceiptGuards') === true
-    && isScenarioSelected(selectedScenarios, 'driver-receipt-guards');
+    && isScenarioSelected(canonicalSelectedScenarios, 'driver-receipt-guards');
   if (directReceiptBundleSelected) {
     const passed = scenarioPasses.get('driver-receipt-guards') === true;
     bundleResults.driverReceiptGuards = summarizeScenario(true, passed);
@@ -1172,7 +1191,7 @@ export function buildProductionPluginPackageProofSummary(
 
   if (requestedBundleSet?.has('driverReceiptGuards')) {
     requestedBundleCount += 1;
-    const selected = isScenarioSelected(selectedScenarios, 'driver-receipt-guards');
+    const selected = isScenarioSelected(canonicalSelectedScenarios, 'driver-receipt-guards');
     const passed = selected && scenarioPasses.get('driver-receipt-guards') === true;
     requestedBundleStatuses.driverReceiptGuards = passed ? 'passed' : 'missing';
     requestedScenarioStatuses['driver-receipt-guards'] = passed ? 'passed' : 'missing';
@@ -1211,7 +1230,7 @@ export function buildProductionPluginPackageProofSummary(
     || hasConcreteReceiptGuardRequest;
   const receiptRequestedStatus = receiptRequested
     ? summarizeRequestedScenario(
-      isScenarioSelected(selectedScenarios, 'driver-receipt-guards'),
+      isScenarioSelected(canonicalSelectedScenarios, 'driver-receipt-guards'),
       scenarioPasses.get('driver-receipt-guards') === true,
     )
     : null;
@@ -1247,7 +1266,7 @@ export function buildProductionPluginPackageProofSummary(
       (scenario) => scenarioPasses.get(scenario) === true,
     );
     return summarizeRequestedScenario(
-      isBundleSelected(selectedScenarios, bundleName),
+      isBundleSelected(canonicalSelectedScenarios, bundleName),
       concreteBundlePassed,
     );
   }
@@ -1491,7 +1510,9 @@ export function buildProductionPluginPackageProofSummary(
     requestedConcreteScenariosSatisfied: requestedConcreteScenarios === 'all'
       ? checkedScenarioCount > 0 && checkedScenarioCount === passedScenarioCount
       : failedRequestedConcreteScenarios.length === 0,
-    selectedScenarios: selectedScenarios === null ? 'all' : Array.from(selectedScenarios).sort(),
+    selectedScenarios: normalizedSelectedScenarios === null
+      ? 'all'
+      : Array.from(normalizedSelectedScenarios).sort(),
     package: {
       plugin: summary?.package?.plugin ?? null,
       mountedAs: summary?.package?.mountedAs ?? null,
@@ -1514,8 +1535,8 @@ export function buildProductionPluginPackageProofSummary(
     routeProof: {
       requested: requestedScenarioAliasMap.get('core-package-routes') === 'all'
         || requestedScenarioAliasMap.get('core-package-routes').length > 0,
-      selected: selectedScenarios === null
-        || selectedScenarios.has('core-package-routes'),
+      selected: canonicalSelectedScenarios === null
+        || canonicalSelectedScenarios.has('core-package-routes'),
       ok: scenarioResults.corePackageRoutes === 'passed',
       status: scenarioResults.corePackageRoutes,
       namespace: summary?.routes?.namespace ?? null,
@@ -1528,7 +1549,7 @@ export function buildProductionPluginPackageProofSummary(
       requestedStatus: requestedScenarioAliasMap.get('core-package-routes') === 'all'
         || requestedScenarioAliasMap.get('core-package-routes').length > 0
         ? summarizeRequestedScenario(
-          selectedScenarios === null || selectedScenarios.has('core-package-routes'),
+          canonicalSelectedScenarios === null || canonicalSelectedScenarios.has('core-package-routes'),
           scenarioPasses.get('core-package-routes') === true,
         )
         : null,
@@ -1537,7 +1558,7 @@ export function buildProductionPluginPackageProofSummary(
     },
     receiptGuards: {
       requested: receiptRequested,
-      selected: isScenarioSelected(selectedScenarios, 'driver-receipt-guards'),
+      selected: isScenarioSelected(canonicalSelectedScenarios, 'driver-receipt-guards'),
       ok: scenarioResults.driverReceiptGuards === 'passed',
       status: scenarioResults.driverReceiptGuards,
       planBinding: summary?.driverReceiptPlanBindingGuard?.applyRejectedCode ?? null,
@@ -1552,8 +1573,8 @@ export function buildProductionPluginPackageProofSummary(
     deleteApplyProof: {
       requested: requestedScenarioAliasMap.get('driver-delete-apply') === 'all'
         || requestedScenarioAliasMap.get('driver-delete-apply').length > 0,
-      selected: selectedScenarios === null
-        || selectedScenarios.has('driver-delete-apply'),
+      selected: canonicalSelectedScenarios === null
+        || canonicalSelectedScenarios.has('driver-delete-apply'),
       ok: scenarioResults.driverDeleteApply === 'passed',
       status: scenarioResults.driverDeleteApply,
       resourceKey: summary?.driverDeleteApply?.resourceKey ?? null,
@@ -1562,7 +1583,7 @@ export function buildProductionPluginPackageProofSummary(
       requestedStatus: requestedScenarioAliasMap.get('driver-delete-apply') === 'all'
         || requestedScenarioAliasMap.get('driver-delete-apply').length > 0
         ? summarizeRequestedScenario(
-          selectedScenarios === null || selectedScenarios.has('driver-delete-apply'),
+          canonicalSelectedScenarios === null || canonicalSelectedScenarios.has('driver-delete-apply'),
           scenarioPasses.get('driver-delete-apply') === true,
         )
         : null,

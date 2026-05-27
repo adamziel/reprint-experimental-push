@@ -10,7 +10,7 @@ import { createHmac } from 'node:crypto';
 import { createPushPlan } from '../../src/planner.js';
 import { authenticatedHttpClient } from '../../src/authenticated-http-push-client.js';
 import { deepClone, digest } from '../../src/stable-json.js';
-import { buildProductionPluginPackageProofSummary } from './production-plugin-package-proof-summary.js';
+import { attachProductionPluginPackagePluginDriverProof } from './production-plugin-package-proof-summary.js';
 import {
   receiptGuardScenarioNames,
   resolveProductionPluginPackageScenarios,
@@ -1220,7 +1220,7 @@ echo "REPRINT_PUSH_DRIVER_GUARD_JSON_END\\n";
     };
   });
 
-  summary.pluginDriverProof = buildProductionPluginPackageProofSummary(summary, {
+  attachProductionPluginPackagePluginDriverProof(summary, {
     requestedScenarios,
     selectedScenarios,
     resolvedMode,

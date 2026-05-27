@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  attachProductionPluginPackagePluginDriverProof,
   buildProductionPluginPackageProofSummary,
   bundleSummaryGroups,
   proofKeyByCanonicalMode,
@@ -281,6 +282,9 @@ test('plugin-driver mode proof resolver infers the full bounded modeProof view f
     driverReceiptRevokedCredentialGuard: {
       applyRejectedCode: 'reprint_push_lab_auth_required',
     },
+    driverUpdateApply: {
+      applied: 1,
+    },
     driverDeleteApply: {
       deletedAfterApply: true,
     },
@@ -292,12 +296,12 @@ test('plugin-driver mode proof resolver infers the full bounded modeProof view f
   assert.equal(modeProof?.canonicalMode, 'driver-release-proof');
   assert.equal(modeProof?.proofKey, 'driverReleaseProof');
   assert.equal(modeProof?.legacyProofKey, 'driverMutationProof');
-  assert.equal(modeProof?.requestedBundleStatus, 'missing');
+  assert.equal(modeProof?.requestedBundleStatus, 'passed');
   assert.deepEqual(modeProof?.requestedBundleStatuses, {
-    driverReleaseProof: 'missing',
+    driverReleaseProof: 'passed',
   });
   assert.deepEqual(modeProof?.legacyRequestedBundleStatuses, {
-    driverMutationProof: 'missing',
+    driverMutationProof: 'passed',
   });
   assert.deepEqual(modeProof?.guardProof, {
     ok: true,
@@ -507,6 +511,9 @@ test('plugin-driver proof summary resolves the bounded pluginDriverProof object 
     driverReceiptRevokedCredentialGuard: {
       applyRejectedCode: 'reprint_push_lab_auth_required',
     },
+    driverUpdateApply: {
+      applied: 1,
+    },
     driverDeleteApply: {
       deletedAfterApply: true,
     },
@@ -569,6 +576,9 @@ test('plugin-driver proof summary infers build options from raw smoke metadata w
     driverReceiptRevokedCredentialGuard: {
       applyRejectedCode: 'reprint_push_lab_auth_required',
     },
+    driverUpdateApply: {
+      applied: 1,
+    },
     driverDeleteApply: {
       deletedAfterApply: true,
     },
@@ -582,6 +592,75 @@ test('plugin-driver proof summary infers build options from raw smoke metadata w
   assert.equal(pluginDriverProof.modeProof?.proofKey, 'driverReleaseProof');
   assert.deepEqual(pluginDriverProof.modeProof?.requestedBundles, ['driverReleaseProof']);
   assert.deepEqual(pluginDriverProof.modeProof?.legacyRequestedBundles, ['driverMutationProof']);
+});
+
+test('plugin-driver proof summary attach helper persists top-level modeProof on raw smoke summaries', () => {
+  const rawSummary = {
+    mode: 'driverMutationProof',
+    canonicalMode: 'driver-release-proof',
+    requestedScenarios: ['driverReleaseProof'],
+    selectedScenarios: ['core-package-routes', 'driver-delete-apply', 'driver-receipt-guards'],
+    routes: {
+      namespace: 'reprint/v1',
+      profile: 'production-shaped',
+      labNamespaceDisabled: true,
+      authBootstrapDisabled: true,
+      labBacked: false,
+    },
+    cli: {
+      ok: true,
+    },
+    final: {
+      finalMatchesLocal: true,
+    },
+    driverDeleteGuard: {
+      dryRunRejectedCode: 'INVALID_PLAN',
+    },
+    driverUpdateValidationGuard: {
+      dryRunRejectedCode: 'INVALID_PLAN',
+    },
+    driverReceiptPlanBindingGuard: {
+      applyRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+    },
+    driverReceiptExpiryGuard: {
+      applyRejectedCode: 'AUTH_RECEIPT_EXPIRED',
+    },
+    driverReceiptIdentityGuard: {
+      applyRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+    },
+    driverReceiptRotatedCredentialGuard: {
+      rotatedCredentialRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+    },
+    driverReceiptRevokedCredentialGuard: {
+      applyRejectedCode: 'reprint_push_lab_auth_required',
+    },
+    driverUpdateApply: {
+      applied: 1,
+    },
+    driverDeleteApply: {
+      deletedAfterApply: true,
+    },
+  };
+
+  const pluginDriverProof = attachProductionPluginPackagePluginDriverProof(rawSummary, {
+    requestedScenarios: ['driverReleaseProof'],
+    selectedScenarios: new Set([
+      'driverReleaseProof',
+      ...scenarioGroups['driver-release-proof'],
+    ]),
+    resolvedMode: 'driverReleaseProof',
+    canonicalMode: 'driver-release-proof',
+  });
+
+  assert.equal(rawSummary.pluginDriverProof, pluginDriverProof);
+  assert.equal(rawSummary.modeProof, pluginDriverProof.modeProof);
+  assert.equal(rawSummary.modeProof?.mode, 'driverReleaseProof');
+  assert.equal(rawSummary.modeProof?.canonicalMode, 'driver-release-proof');
+  assert.equal(rawSummary.modeProof?.proofKey, 'driverReleaseProof');
+  assert.deepEqual(rawSummary.modeProof?.requestedBundles, ['driverReleaseProof']);
+  assert.deepEqual(rawSummary.modeProof?.requestedBundleStatuses, {
+    driverReleaseProof: 'passed',
+  });
 });
 
 test('plugin-driver proof summary reuses an already attached pluginDriverProof object without rebuilding it', () => {
