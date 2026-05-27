@@ -280,6 +280,27 @@ test('authenticated push source accepts a non-local auth/session source when it 
   );
 });
 
+test('authenticated push source accepts a canonical non-local auth/session source when it matches the explicit runtime source URL', () => {
+  assert.deepEqual(
+    resolveAuthenticatedHttpPushSource({
+      sourceUrl: 'https://example.test/wp',
+      username: 'trusted-runtime-username',
+      applicationPassword: 'trusted-runtime-password',
+      authSessionSource: {
+        ok: true,
+        sourceUrl: 'https://example.test/wp/?session=1#preserved',
+        username: 'reprint_push_admin',
+        applicationPassword: 'reprint-push-admin-app-password',
+      },
+    }),
+    {
+      sourceUrl: 'https://example.test/wp/?session=1#preserved',
+      username: 'reprint_push_admin',
+      applicationPassword: 'reprint-push-admin-app-password',
+    },
+  );
+});
+
 test('authenticated push source ignores a non-local auth/session source when it does not match the explicit runtime source URL', () => {
   assert.deepEqual(
     resolveAuthenticatedHttpPushSource({
@@ -383,6 +404,57 @@ test('production-shaped authenticated push accepts a non-local auth/session sour
     assert.equal(summary.code, 'PREFLIGHT_FAILED');
     assert.deepEqual(summary.source, {
       url: 'https://example.test/wp',
+      namespace: 'reprint/v1',
+      routePrefix: '/push',
+      routeProfile: 'production-shaped',
+      labBacked: false,
+    });
+    assert.equal(seen.length, 1);
+    assert.match(seen[0].url, /^https:\/\/example\.test\/wp-json\/reprint\/v1\/push\/preflight$/);
+    assert.equal(
+      decodeBasicAuthorizationHeader(seen[0].options.headers),
+      'reprint_push_admin:reprint-push-admin-app-password',
+    );
+  } finally {
+    global.fetch = originalFetch;
+  }
+});
+
+test('production-shaped authenticated push accepts a canonical non-local auth/session source when it matches the explicit runtime source URL', async () => {
+  const originalFetch = global.fetch;
+  const seen = [];
+  global.fetch = async (url, options) => {
+    seen.push({ url: String(url), options });
+    return new Response(JSON.stringify({
+      ok: false,
+      code: 'PREFLIGHT_FAILED',
+    }), {
+      status: 503,
+      headers: { 'content-type': 'application/json' },
+    });
+  };
+
+  try {
+    const summary = await runAuthenticatedHttpPush({
+      sourceUrl: 'https://example.test/wp',
+      base: { resources: [] },
+      local: { resources: [] },
+      username: 'trusted-runtime-username',
+      applicationPassword: 'trusted-runtime-password',
+      idempotencyKey: 'idem-01-explicit-live-auth-session-source-canonical-summary',
+      routeProfile: 'production-shaped',
+      authSessionSource: {
+        ok: true,
+        sourceUrl: 'https://example.test/wp/?session=1#preserved',
+        username: 'reprint_push_admin',
+        applicationPassword: 'reprint-push-admin-app-password',
+      },
+    });
+
+    assert.equal(summary.ok, false);
+    assert.equal(summary.code, 'PREFLIGHT_FAILED');
+    assert.deepEqual(summary.source, {
+      url: 'https://example.test/wp/?session=1#preserved',
       namespace: 'reprint/v1',
       routePrefix: '/push',
       routeProfile: 'production-shaped',

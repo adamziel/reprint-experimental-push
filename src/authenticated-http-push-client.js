@@ -901,12 +901,28 @@ function isSupportedAuthenticatedHttpPushSourceUrl(sourceUrl, allowedSourceUrl =
     return true;
   }
 
-  const normalizedAllowedSourceUrl = normalizeAuthenticatedHttpPushSourceField(allowedSourceUrl);
-  if (normalizedAllowedSourceUrl && sourceUrl === normalizedAllowedSourceUrl) {
+  if (matchesAllowedAuthenticatedHttpPushSourceUrl(sourceUrl, allowedSourceUrl)) {
     return true;
   }
 
   return false;
+}
+
+function matchesAllowedAuthenticatedHttpPushSourceUrl(sourceUrl, allowedSourceUrl = '') {
+  const normalizedAllowedSourceUrl = normalizeAuthenticatedHttpPushSourceField(allowedSourceUrl);
+  if (!normalizedAllowedSourceUrl) {
+    return false;
+  }
+
+  try {
+    const sourceBaseUrl = normalizeBaseUrl(sourceUrl);
+    const allowedBaseUrl = normalizeBaseUrl(normalizedAllowedSourceUrl);
+    return sourceBaseUrl.protocol === allowedBaseUrl.protocol
+      && sourceBaseUrl.host === allowedBaseUrl.host
+      && sourceBaseUrl.pathname === allowedBaseUrl.pathname;
+  } catch {
+    return false;
+  }
 }
 
 export function authenticatedHttpClient({
@@ -2506,22 +2522,8 @@ function assertSupportedSourceUrlForRouteProfile(baseUrl, profile, allowedSource
     return;
   }
 
-  const normalizedAllowedSourceUrl = normalizeAuthenticatedHttpPushSourceField(allowedSourceUrl);
-  if (normalizedAllowedSourceUrl) {
-    let allowedBaseUrl;
-    try {
-      allowedBaseUrl = normalizeBaseUrl(normalizedAllowedSourceUrl);
-    } catch {
-      allowedBaseUrl = null;
-    }
-    if (
-      allowedBaseUrl
-      && allowedBaseUrl.protocol === baseUrl.protocol
-      && allowedBaseUrl.host === baseUrl.host
-      && allowedBaseUrl.pathname === baseUrl.pathname
-    ) {
-      return;
-    }
+  if (matchesAllowedAuthenticatedHttpPushSourceUrl(baseUrl.toString(), allowedSourceUrl)) {
+    return;
   }
 
   throw new Error(
