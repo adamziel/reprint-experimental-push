@@ -232,6 +232,10 @@ export function evaluateProductionAuthSessionLifecycleSummary(summary, now = Dat
   }
 
   const readObservation = summary.read;
+  const lifecycleBoundaryObservations = observations.slice(
+    0,
+    resolveLifecycleBoundaryObservationCount(observations, readObservation),
+  );
   if (!readObservation || typeof readObservation !== 'object' || Array.isArray(readObservation)) {
     return {
       ok: false,
@@ -283,7 +287,7 @@ export function evaluateProductionAuthSessionLifecycleSummary(summary, now = Dat
     };
   }
 
-  for (const observation of observations) {
+  for (const observation of lifecycleBoundaryObservations) {
     if (!observation || typeof observation !== 'object') {
       return {
         ok: false,
@@ -479,6 +483,44 @@ export function evaluateProductionAuthSessionLifecycleSummary(summary, now = Dat
   };
 }
 
+export function evaluateCheckedReleaseAuthSessionLifecycleSummary(summary, now = Date.now()) {
+  const lifecycle = evaluateProductionAuthSessionLifecycleSummary(summary, now);
+  if (!lifecycle.ok) {
+    return lifecycle;
+  }
+
+  const releaseBoundaryRead = summary?.read;
+  if (!releaseBoundaryRead || typeof releaseBoundaryRead !== 'object') {
+    return {
+      ok: false,
+      required: 'release-boundary preserved read',
+      observed: 'missing',
+    };
+  }
+
+  if (releaseBoundaryRead.step !== 'replay' && releaseBoundaryRead.step !== 'journal') {
+    return {
+      ok: false,
+      required: 'release-boundary preserved read',
+      observed: releaseBoundaryRead.step || 'missing',
+    };
+  }
+
+  if (releaseBoundaryRead.preserved !== true) {
+    return {
+      ok: false,
+      required: 'release-boundary preserved read',
+      observed: releaseBoundaryRead.rotated ? 'rotated' : 'unpreserved',
+    };
+  }
+
+  return {
+    ok: true,
+    required: 'checked release production-auth-session lifecycle',
+    observed: releaseBoundaryRead.step,
+  };
+}
+
 export function summarizeProductionAuthSessionLifecycleTrace(trace) {
   if (!Array.isArray(trace) || trace.length === 0) {
     return null;
@@ -525,17 +567,19 @@ export function summarizeProductionAuthSessionLifecycleTrace(trace) {
       ...(typeof entry.warning === 'string' ? { warning: entry.warning } : {}),
     };
   });
-  const readObservation = [...observations]
-    .reverse()
-    .find((entry) => isAuthSessionReadStep(entry.step)) ?? null;
+  const readObservation = resolvePreferredAuthSessionReadObservation(observations);
+  const lifecycleBoundaryObservations = observations.slice(
+    0,
+    resolveLifecycleBoundaryObservationCount(observations, readObservation),
+  );
 
   return {
     issued: observations.find((entry) => entry.step === 'preflight') ?? null,
     read: readObservation,
-    expired: observations.find((entry) => entry.expired) ?? null,
-    revoked: observations.find((entry) => entry.revoked) ?? null,
-    cleanedUp: observations.find((entry) => entry.cleanedUp) ?? null,
-    rotated: observations.find((entry) => entry.rotated) ?? null,
+    expired: lifecycleBoundaryObservations.find((entry) => entry.expired) ?? null,
+    revoked: lifecycleBoundaryObservations.find((entry) => entry.revoked) ?? null,
+    cleanedUp: lifecycleBoundaryObservations.find((entry) => entry.cleanedUp) ?? null,
+    rotated: lifecycleBoundaryObservations.find((entry) => entry.rotated) ?? null,
     preserved: observations.find((entry) => entry.preserved) ?? null,
     observations,
   };
@@ -547,6 +591,30 @@ function isAuthSessionReadStep(step) {
     || step === 'recovery-inspect'
     || step === 'replay'
     || step === 'journal';
+}
+
+function resolvePreferredAuthSessionReadObservation(observations) {
+  const reversed = [...observations].reverse();
+  return reversed.find((entry) => entry.step === 'journal' || entry.step === 'replay')
+    || reversed.find((entry) => isAuthSessionReadStep(entry.step))
+    || null;
+}
+
+function resolveLifecycleBoundaryObservationCount(observations, readObservation) {
+  if (!Array.isArray(observations) || observations.length === 0) {
+    return 0;
+  }
+
+  if (!readObservation || typeof readObservation !== 'object') {
+    return observations.length;
+  }
+
+  const readIndex = observations.findIndex((entry) => authSessionObservationEquals(entry, readObservation));
+  if (readIndex === -1) {
+    return observations.length;
+  }
+
+  return readIndex + 1;
 }
 
 function normalizeAuthSessionObservationId(id) {
@@ -841,16 +909,18 @@ function resolveMismatchedSummaryReadObservation(readObservation, observations) 
     return null;
   }
 
-  const lastObservedRead = [...observations]
-    .reverse()
-    .find((observation) => observation && typeof observation === 'object' && isAuthSessionReadStep(observation.step));
-  if (!lastObservedRead) {
+  const preferredObservedRead = resolvePreferredAuthSessionReadObservation(observations);
+  if (!preferredObservedRead) {
     return null;
   }
 
   const readSessionId = normalizeAuthSessionObservationId(readObservation.id);
-  const lastObservedReadSessionId = normalizeAuthSessionObservationId(lastObservedRead.id);
-  if (readSessionId && lastObservedReadSessionId && readSessionId !== lastObservedReadSessionId) {
+  const preferredObservedReadSessionId = normalizeAuthSessionObservationId(preferredObservedRead.id);
+  if (
+    readSessionId
+    && preferredObservedReadSessionId
+    && readSessionId !== preferredObservedReadSessionId
+  ) {
     return {
       ok: false,
       field: 'auth.session.rotated',
@@ -859,15 +929,15 @@ function resolveMismatchedSummaryReadObservation(readObservation, observations) 
     };
   }
 
-  if (readObservation.step !== lastObservedRead.step) {
+  if (readObservation.step !== preferredObservedRead.step) {
     return {
       ok: false,
       required: 'preserved read',
-      observed: normalizeAuthSessionObservationStep(lastObservedRead.step),
+      observed: normalizeAuthSessionObservationStep(preferredObservedRead.step),
     };
   }
 
-  if (!authSessionObservationEquals(readObservation, lastObservedRead)) {
+  if (!authSessionObservationEquals(readObservation, preferredObservedRead)) {
     return {
       ok: false,
       required: 'preserved read',

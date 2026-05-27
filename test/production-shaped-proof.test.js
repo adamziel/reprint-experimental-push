@@ -30,6 +30,7 @@ import {
   packagedProductionPluginSnapshotReady,
 } from '../scripts/playground/packaged-production-plugin-readiness.js';
 import {
+  evaluateCheckedReleaseAuthSessionLifecycleSummary,
   evaluateProductionAuthSessionLifecycle,
   evaluateProductionAuthSessionLifecycleSummary,
   isExpiredAuthSession,
@@ -4406,6 +4407,7 @@ test('production auth/session lifecycle trace summary does not treat preflight a
       expired: false,
       revoked: false,
       cleanedUp: false,
+      cleanup: false,
       rotated: false,
       preserved: false,
     },
@@ -4426,6 +4428,7 @@ test('production auth/session lifecycle trace summary does not treat preflight a
         expired: false,
         revoked: false,
         cleanedUp: false,
+        cleanup: false,
         rotated: false,
         preserved: false,
       },
@@ -4438,6 +4441,114 @@ test('production auth/session lifecycle trace summary does not treat preflight a
       ok: false,
       required: 'preserved read',
       observed: 'missing',
+    },
+  );
+});
+
+test('production auth/session lifecycle summary ignores later recovery-inspect cleanup after a release-boundary read', () => {
+  const summary = summarizeProductionAuthSessionLifecycleTrace([
+    {
+      step: 'preflight',
+      id: 'session-01',
+      type: 'production-auth-session',
+      status: 'active',
+      expiresAt: '2099-01-01T00:00:00Z',
+      authUser: 'reprint_push_admin',
+      expired: false,
+      revoked: false,
+      cleanedUp: false,
+      rotated: false,
+      preserved: false,
+    },
+    {
+      step: 'journal',
+      id: 'session-01',
+      type: 'production-auth-session',
+      status: 'active',
+      expiresAt: '2099-01-01T00:00:00Z',
+      authUser: 'reprint_push_admin',
+      expired: false,
+      revoked: false,
+      cleanedUp: false,
+      rotated: false,
+      preserved: true,
+    },
+    {
+      step: 'recovery-inspect',
+      id: 'session-01',
+      type: 'production-auth-session',
+      status: 'cleaned-up',
+      expiresAt: '2099-01-01T00:00:00Z',
+      authUser: 'reprint_push_admin',
+      expired: false,
+      revoked: false,
+      cleanedUp: false,
+      rotated: false,
+      preserved: true,
+    },
+  ]);
+
+  assert.equal(summary.cleanedUp, null);
+  assert.deepEqual(
+    evaluateCheckedReleaseAuthSessionLifecycleSummary(summary),
+    {
+      ok: true,
+      required: 'checked release production-auth-session lifecycle',
+      observed: 'journal',
+    },
+  );
+});
+
+test('production auth/session lifecycle summary ignores later recovery-inspect revocation after a release-boundary read', () => {
+  const summary = summarizeProductionAuthSessionLifecycleTrace([
+    {
+      step: 'preflight',
+      id: 'session-01',
+      type: 'production-auth-session',
+      status: 'active',
+      expiresAt: '2099-01-01T00:00:00Z',
+      authUser: 'reprint_push_admin',
+      expired: false,
+      revoked: false,
+      cleanedUp: false,
+      rotated: false,
+      preserved: false,
+    },
+    {
+      step: 'journal',
+      id: 'session-01',
+      type: 'production-auth-session',
+      status: 'active',
+      expiresAt: '2099-01-01T00:00:00Z',
+      authUser: 'reprint_push_admin',
+      expired: false,
+      revoked: false,
+      cleanedUp: false,
+      rotated: false,
+      preserved: true,
+    },
+    {
+      step: 'recovery-inspect',
+      id: 'session-01',
+      type: 'production-auth-session',
+      status: 'revoked',
+      expiresAt: '2099-01-01T00:00:00Z',
+      authUser: 'reprint_push_admin',
+      expired: false,
+      revoked: false,
+      cleanedUp: false,
+      rotated: false,
+      preserved: true,
+    },
+  ]);
+
+  assert.equal(summary.revoked, null);
+  assert.deepEqual(
+    evaluateCheckedReleaseAuthSessionLifecycleSummary(summary),
+    {
+      ok: true,
+      required: 'checked release production-auth-session lifecycle',
+      observed: 'journal',
     },
   );
 });
