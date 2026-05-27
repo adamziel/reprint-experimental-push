@@ -1438,6 +1438,7 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
                 packagedProductionPluginPreflightTerminalContext(
                   {
                     childPid: child.pid ?? null,
+                    snapshotNotReadyProbeCount,
                     ...(malformedSnapshotFallbackPreflightBody ? { invalidReadinessBody: true } : {}),
                   },
                   { snapshotStartupFallback: true },
@@ -1727,6 +1728,7 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
                 packagedProductionPluginPreflightTerminalContext(
                   {
                     childPid: child.pid ?? null,
+                    snapshotNotReadyProbeCount,
                     ...(malformedSnapshotFallbackPreflightBody ? { invalidReadinessBody: true } : {}),
                   },
                   { snapshotStartupFallback: true },

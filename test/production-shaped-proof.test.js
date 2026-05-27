@@ -3055,6 +3055,8 @@ test('packaged release verifier readiness helper preserves timeout fallback prob
     childPid: 9452,
     packagedProductionPlugin: true,
     indexTerminal: true,
+    preflightTerminal: true,
+    timeoutFallback: true,
   });
 });
 
@@ -3506,6 +3508,8 @@ test('packaged release verifier readiness helper preserves invalid timeout fallb
     packagedProductionPlugin: true,
     invalidReadinessBody: true,
     indexTerminal: true,
+    preflightTerminal: true,
+    timeoutFallback: true,
   });
 });
 
@@ -3609,6 +3613,7 @@ test('packaged release verifier readiness helper fails closed when signed prefli
   assert.deepEqual(captured.lastProbes, [captured.lastTimeoutFallbackProbes.preflightProbe]);
   assert.deepEqual(captured.context, {
     childPid: 94545,
+    invalidReadinessBody: true,
     packagedProductionPlugin: true,
     preflightTerminal: true,
     timeoutFallback: true,
@@ -3795,6 +3800,8 @@ test('packaged release verifier readiness helper preserves terminal timeout fall
     childPid: 9455,
     packagedProductionPlugin: true,
     indexTerminal: true,
+    preflightTerminal: true,
+    timeoutFallback: true,
   });
 });
 
@@ -4870,6 +4877,7 @@ test('packaged release verifier readiness helper fails closed when signed prefli
   ]);
   assert.equal(capturedContext?.invalidReadinessBody, true);
   assert.equal(capturedContext?.snapshotStartupFallback, true);
+  assert.equal(capturedContext?.snapshotNotReadyProbeCount, 1);
   assert.equal(capturedContext?.preflightTerminal, true);
 });
 
@@ -7239,7 +7247,7 @@ test('packaged readiness timeout fallback classifies global WordPress versus pac
   );
   assert.match(
     smokeSource,
-    /preflight returned an invalid readiness body while snapshot still reported startup-shaped readiness at \$\{baseUrl\}[\s\S]*?packagedProductionPluginResetRouteNotReadyProbeCounts\(\s*notReadyProbeCounts,\s*'preflight',\s*\)[\s\S]*?packagedProductionPluginPreflightTerminalContext\([\s\S]*?invalidReadinessBody:\s*true[\s\S]*?snapshotStartupFallback:\s*true[\s\S]*?\)/s,
+    /preflight returned an invalid readiness body while snapshot still reported startup-shaped readiness at \$\{baseUrl\}[\s\S]*?packagedProductionPluginResetRouteNotReadyProbeCounts\(\s*notReadyProbeCounts,\s*'preflight',\s*\)[\s\S]*?packagedProductionPluginPreflightTerminalContext\([\s\S]*?snapshotNotReadyProbeCount,[\s\S]*?invalidReadinessBody:\s*true[\s\S]*?snapshotStartupFallback:\s*true[\s\S]*?\)/s,
   );
   assert.match(
     verifierSource,
@@ -7259,7 +7267,7 @@ test('packaged readiness timeout fallback classifies global WordPress versus pac
   );
   assert.match(
     verifierSource,
-    /preflight returned an invalid readiness body while snapshot still reported startup-shaped readiness at \$\{baseUrl\}[\s\S]*?packagedProductionPluginResetRouteNotReadyProbeCounts\(\s*notReadyProbeCounts,\s*'preflight',\s*\)[\s\S]*?packagedProductionPluginPreflightTerminalContext\([\s\S]*?childPid:\s*child\.pid\s*\?\?\s*null[\s\S]*?invalidReadinessBody:\s*true[\s\S]*?snapshotStartupFallback:\s*true[\s\S]*?\)/s,
+    /preflight returned an invalid readiness body while snapshot still reported startup-shaped readiness at \$\{baseUrl\}[\s\S]*?packagedProductionPluginResetRouteNotReadyProbeCounts\(\s*notReadyProbeCounts,\s*'preflight',\s*\)[\s\S]*?packagedProductionPluginPreflightTerminalContext\([\s\S]*?childPid:\s*child\.pid\s*\?\?\s*null[\s\S]*?snapshotNotReadyProbeCount,[\s\S]*?invalidReadinessBody:\s*true[\s\S]*?snapshotStartupFallback:\s*true[\s\S]*?\)/s,
   );
   assert.match(
     smokeSource,
@@ -7528,7 +7536,9 @@ test('packaged readiness helpers recompute parsed signed preflight retryability 
 
   for (const source of [smokeSource, verifierSource]) {
     assert.ok(
-      source.includes('const packagedPreflightReadinessContext = { packagedStartup: true };'),
+      source.includes('const packagedPreflightReadinessContext = {')
+      && source.includes('packagedStartup: true')
+      && source.includes('snapshotProbe: packagedProductionPluginSnapshotProbeContext(activeSnapshotProbe)'),
       'expected packaged signed preflight parsed-body path to keep an explicit readiness context',
     );
     assert.ok(

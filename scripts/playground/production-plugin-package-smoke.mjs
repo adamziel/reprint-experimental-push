@@ -619,6 +619,7 @@ async function waitForServer(child, baseUrl, logs) {
                 logs,
                 packagedProductionPluginPreflightTerminalContext(
                   {
+                    snapshotNotReadyProbeCount,
                     ...(malformedSnapshotFallbackPreflightBody ? { invalidReadinessBody: true } : {}),
                   },
                   { snapshotStartupFallback: true },
@@ -912,6 +913,7 @@ async function waitForServer(child, baseUrl, logs) {
                 logs,
                 packagedProductionPluginPreflightTerminalContext(
                   {
+                    snapshotNotReadyProbeCount,
                     ...(malformedSnapshotFallbackPreflightBody ? { invalidReadinessBody: true } : {}),
                   },
                   { snapshotStartupFallback: true },
