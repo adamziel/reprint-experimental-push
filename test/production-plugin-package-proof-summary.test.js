@@ -7078,6 +7078,30 @@ test('plugin-driver proof summary fails revoked credential receipt guards when t
   assert.deepEqual(summary.failedRequestedBundles, ['driverReceiptGuards']);
 });
 
+test('plugin-driver proof summary reports blank row id receipt guards when packaged dry-run rejects empty and whitespace ids', () => {
+  const summary = buildProductionPluginPackageProofSummary(
+    {
+      driverReceiptBlankRowIdGuard: {
+        blankRejectedCode: 'INVALID_PLAN',
+        whitespaceRejectedCode: 'PUSH_PROTOCOL_ERROR',
+        rowRetainedAfterReject: true,
+        payloadModeAfterReject: 'local-update',
+        updatedMarkerAfterReject: 'local-update',
+      },
+    },
+    {
+      requestedScenarios: ['driver-receipt-blank-row-id-guard'],
+      selectedScenarios: new Set(['driver-receipt-blank-row-id-guard']),
+    },
+  );
+
+  assert.equal(summary.scenarios.driverReceiptBlankRowIdGuard, 'passed');
+  assert.equal(summary.requestedScenarioStatuses['driver-receipt-blank-row-id-guard'], 'passed');
+  assert.equal(summary.requestedConcreteScenarioStatuses['driver-receipt-blank-row-id-guard'], 'passed');
+  assert.equal(summary.failedScenarios.length, 0);
+  assert.equal(summary.failedRequestedScenarios.length, 0);
+});
+
 test('plugin-driver proof summary fails receipt guards when the forged delete payload mutates after rejection', () => {
   const summary = buildProductionPluginPackageProofSummary(
     {

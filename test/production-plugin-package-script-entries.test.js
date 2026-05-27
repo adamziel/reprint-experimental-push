@@ -134,6 +134,13 @@ test('package scripts pin the bounded plugin-driver update validation guard entr
   );
 });
 
+test('package scripts pin the bounded plugin-driver blank row id guard entrypoint', () => {
+  assert.equal(
+    packageJson.scripts['test:playground:production-plugin-driver-receipt-blank-row-id-guard'],
+    'REPRINT_PUSH_PACKAGE_SMOKE_SCENARIO=driver-receipt-blank-row-id-guard node ./scripts/playground/production-plugin-package-smoke.mjs',
+  );
+});
+
 test('package scripts pin the bounded plugin-driver receipt plan binding guard entrypoint', () => {
   assert.equal(
     packageJson.scripts['test:playground:production-plugin-driver-receipt-plan-binding-guard'],

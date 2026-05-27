@@ -1,6 +1,7 @@
 const receiptGuardScenarioNames = [
   'driver-delete-guard',
   'driver-update-validation-guard',
+  'driver-receipt-blank-row-id-guard',
   'driver-receipt-plan-binding-guard',
   'driver-receipt-expiry-guard',
   'driver-receipt-identity-guard',

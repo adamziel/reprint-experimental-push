@@ -564,6 +564,7 @@ echo "REPRINT_PUSH_DRIVER_GUARD_JSON_END\\n";
         const runBundledReceiptGuards = shouldRunScenario('driver-receipt-guards');
         const runDeleteGuard = runBundledReceiptGuards || shouldRunScenario('driver-delete-guard');
         const runUpdateValidationGuard = runBundledReceiptGuards || shouldRunScenario('driver-update-validation-guard');
+        const runBlankRowIdGuard = runBundledReceiptGuards || shouldRunScenario('driver-receipt-blank-row-id-guard');
         const runPlanBindingGuard = runBundledReceiptGuards || shouldRunScenario('driver-receipt-plan-binding-guard');
         const runExpiryGuard = runBundledReceiptGuards || shouldRunScenario('driver-receipt-expiry-guard');
         const runIdentityGuard = runBundledReceiptGuards || shouldRunScenario('driver-receipt-identity-guard');
@@ -848,6 +849,85 @@ echo "REPRINT_PUSH_DRIVER_GUARD_JSON_END\\n";
           rowRetainedAfterReject: afterInvalidUpdateReject.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1'] !== undefined,
           payloadModeAfterReject: afterInvalidUpdateReject.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1']?.payload?.mode,
           updatedMarkerAfterReject: afterInvalidUpdateReject.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1']?.updated_marker,
+        };
+      });
+    }
+
+    const blankRowIdPlan = deepClone(updatePlan);
+    blankRowIdPlan.mutations[0].resource.id = '';
+    blankRowIdPlan.mutations[0].resourceKey = `row:["${driverFixture.table}",""]`;
+    const blankRowIdDryRun = await client.signedPost(
+      '/dry-run',
+      { plan: blankRowIdPlan },
+      {
+        session,
+        idempotencyKey: 'production-plugin-driver-blank-row-id-dry-run',
+      },
+    );
+    assert.equal(blankRowIdDryRun.status, 400);
+    assert.equal(blankRowIdDryRun.body?.ok, false);
+    assert.ok(
+      blankRowIdDryRun.body?.code === 'INVALID_PLAN' || blankRowIdDryRun.body?.code === 'PUSH_PROTOCOL_ERROR',
+      `unexpected blank row id dry-run code: ${blankRowIdDryRun.body?.code}`,
+    );
+    assert.match(
+      blankRowIdDryRun.body?.message || '',
+      /row id must not be empty|unsupported driver fixture row id|invalid/i,
+      'packaged dry-run route did not reject the blank arbitrary driver row id',
+    );
+
+    const whitespaceRowIdPlan = deepClone(updatePlan);
+    whitespaceRowIdPlan.mutations[0].resource.id = '   ';
+    whitespaceRowIdPlan.mutations[0].resourceKey = `row:["${driverFixture.table}","   "]`;
+    const whitespaceRowIdDryRun = await client.signedPost(
+      '/dry-run',
+      { plan: whitespaceRowIdPlan },
+      {
+        session,
+        idempotencyKey: 'production-plugin-driver-whitespace-row-id-dry-run',
+      },
+    );
+    assert.equal(whitespaceRowIdDryRun.status, 400);
+    assert.equal(whitespaceRowIdDryRun.body?.ok, false);
+    assert.ok(
+      whitespaceRowIdDryRun.body?.code === 'INVALID_PLAN' || whitespaceRowIdDryRun.body?.code === 'PUSH_PROTOCOL_ERROR',
+      `unexpected whitespace row id dry-run code: ${whitespaceRowIdDryRun.body?.code}`,
+    );
+    assert.match(
+      whitespaceRowIdDryRun.body?.message || '',
+      /row id must not be empty|unsupported driver fixture row id|invalid/i,
+      'packaged dry-run route did not reject the whitespace-only arbitrary driver row id',
+    );
+
+    const afterBlankRowIdReject = await client.get('/snapshot');
+    assert.equal(afterBlankRowIdReject.status, 200);
+    assert.equal(afterBlankRowIdReject.body?.ok, true);
+    assert.equal(
+      afterBlankRowIdReject.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1']?.updated_marker,
+      'local-update',
+      'blank-row-id packaged dry-run still mutated the remote snapshot',
+    );
+    assert.deepEqual(
+      afterBlankRowIdReject.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1']?.payload,
+      {
+        owner: driverFixture.pluginOwner,
+        mode: 'local-update',
+        version: 2,
+      },
+      'blank-row-id packaged dry-run changed the arbitrary driver payload',
+    );
+
+    if (runBlankRowIdGuard) {
+      await runScenario('driver-receipt-blank-row-id-guard', async () => {
+        summary.driverReceiptBlankRowIdGuard = {
+          resourceKey: driverFixture.resourceKey,
+          blankRejectedCode: blankRowIdDryRun.body?.code,
+          blankRejectedMessage: blankRowIdDryRun.body?.message,
+          whitespaceRejectedCode: whitespaceRowIdDryRun.body?.code,
+          whitespaceRejectedMessage: whitespaceRowIdDryRun.body?.message,
+          rowRetainedAfterReject: afterBlankRowIdReject.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1'] !== undefined,
+          payloadModeAfterReject: afterBlankRowIdReject.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1']?.payload?.mode,
+          updatedMarkerAfterReject: afterBlankRowIdReject.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1']?.updated_marker,
         };
       });
     }

@@ -321,6 +321,16 @@ const scenarioDefinitions = [
         && rowRetainedAfterReject(summary?.driverUpdateValidationGuard)
         && payloadModeRetainedAfterReject(summary?.driverUpdateValidationGuard)
         && updatedMarkerRetainedAfterReject(summary?.driverUpdateValidationGuard)
+        && (
+          summary?.driverReceiptBlankRowIdGuard === undefined
+          || (
+            summary?.driverReceiptBlankRowIdGuard?.blankRejectedCode !== undefined
+            && summary?.driverReceiptBlankRowIdGuard?.whitespaceRejectedCode !== undefined
+            && rowRetainedAfterReject(summary?.driverReceiptBlankRowIdGuard)
+            && payloadModeRetainedAfterReject(summary?.driverReceiptBlankRowIdGuard)
+            && updatedMarkerRetainedAfterReject(summary?.driverReceiptBlankRowIdGuard)
+          )
+        )
         && summary?.driverReceiptPlanBindingGuard?.applyRejectedCode === 'AUTH_RECEIPT_MISMATCH'
         && rowRetainedAfterReject(summary?.driverReceiptPlanBindingGuard)
         && updatedMarkerRetainedAfterReject(summary?.driverReceiptPlanBindingGuard)
@@ -362,6 +372,18 @@ const scenarioDefinitions = [
         && rowRetainedAfterReject(summary?.driverUpdateValidationGuard)
         && payloadModeRetainedAfterReject(summary?.driverUpdateValidationGuard)
         && updatedMarkerRetainedAfterReject(summary?.driverUpdateValidationGuard);
+    },
+  },
+  {
+    key: 'driverReceiptBlankRowIdGuard',
+    scenario: 'driver-receipt-blank-row-id-guard',
+    counted: 'explicit-only',
+    evaluate(summary) {
+      return summary?.driverReceiptBlankRowIdGuard?.blankRejectedCode !== undefined
+        && summary?.driverReceiptBlankRowIdGuard?.whitespaceRejectedCode !== undefined
+        && rowRetainedAfterReject(summary?.driverReceiptBlankRowIdGuard)
+        && payloadModeRetainedAfterReject(summary?.driverReceiptBlankRowIdGuard)
+        && updatedMarkerRetainedAfterReject(summary?.driverReceiptBlankRowIdGuard);
     },
   },
   {
@@ -1963,6 +1985,9 @@ export function buildProductionPluginPackageProofSummary(
     labBacked: summary?.routes?.labBacked ?? null,
     labNamespaceDisabled: summary?.routes?.labNamespaceDisabled ?? null,
     authBootstrapDisabled: summary?.routes?.authBootstrapDisabled ?? null,
+    ...(summary?.driverReceiptBlankRowIdGuard !== undefined
+      ? { blankRowId: summary?.driverReceiptBlankRowIdGuard?.blankRejectedCode ?? null }
+      : {}),
     planBinding: summary?.driverReceiptPlanBindingGuard?.applyRejectedCode ?? null,
     identity: summary?.driverReceiptIdentityGuard?.applyRejectedCode ?? null,
     expiry: summary?.driverReceiptExpiryGuard?.applyRejectedCode ?? null,
@@ -2154,6 +2179,9 @@ export function buildProductionPluginPackageProofSummary(
       selected: isScenarioSelected(canonicalSelectedScenarios, 'driver-receipt-guards'),
       ok: scenarioResults.driverReceiptGuards === 'passed',
       status: scenarioResults.driverReceiptGuards,
+      ...(summary?.driverReceiptBlankRowIdGuard !== undefined
+        ? { blankRowId: summary?.driverReceiptBlankRowIdGuard?.blankRejectedCode ?? null }
+        : {}),
       planBinding: summary?.driverReceiptPlanBindingGuard?.applyRejectedCode ?? null,
       identity: summary?.driverReceiptIdentityGuard?.applyRejectedCode ?? null,
       expiry: summary?.driverReceiptExpiryGuard?.applyRejectedCode ?? null,
@@ -2233,6 +2261,9 @@ export function buildProductionPluginPackageProofSummary(
       ok: buildObjectBundleStatus('driver-verifier-guards') === 'passed',
       status: buildObjectBundleStatus('driver-verifier-guards'),
       receiptStatus: scenarioResults.driverReceiptGuards,
+      ...(summary?.driverReceiptBlankRowIdGuard !== undefined
+        ? { blankRowId: summary?.driverReceiptBlankRowIdGuard?.blankRejectedCode ?? null }
+        : {}),
       planBinding: summary?.driverReceiptPlanBindingGuard?.applyRejectedCode ?? null,
       identity: summary?.driverReceiptIdentityGuard?.applyRejectedCode ?? null,
       expiry: summary?.driverReceiptExpiryGuard?.applyRejectedCode ?? null,
@@ -2273,6 +2304,9 @@ export function buildProductionPluginPackageProofSummary(
       ok: buildObjectBundleStatus('driver-receipt-registration-guards') === 'passed',
       status: buildObjectBundleStatus('driver-receipt-registration-guards'),
       receiptStatus: scenarioResults.driverReceiptGuards,
+      ...(summary?.driverReceiptBlankRowIdGuard !== undefined
+        ? { blankRowId: summary?.driverReceiptBlankRowIdGuard?.blankRejectedCode ?? null }
+        : {}),
       planBinding: summary?.driverReceiptPlanBindingGuard?.applyRejectedCode ?? null,
       identity: summary?.driverReceiptIdentityGuard?.applyRejectedCode ?? null,
       expiry: summary?.driverReceiptExpiryGuard?.applyRejectedCode ?? null,
