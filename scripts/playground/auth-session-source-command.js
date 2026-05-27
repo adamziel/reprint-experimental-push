@@ -8,6 +8,8 @@ export function buildAuthSessionSourceCommand({
   sourceUrl,
   username,
   applicationPassword,
+  warning,
+  playgroundFallback,
   allowedSourceUrl = '',
 }) {
   const normalizedNodePath = normalizeAuthSessionSourceCommandField(nodePath);
@@ -27,11 +29,24 @@ export function buildAuthSessionSourceCommand({
     throw new Error('Missing applicationPassword for auth-session source command');
   }
 
+  const metadataEnv = [];
+  if (warning !== undefined) {
+    metadataEnv.push(
+      `REPRINT_PUSH_SOURCE_COMMAND_WARNING_JSON=${escapeShellEnvValue(JSON.stringify(warning))}`,
+    );
+  }
+  if (playgroundFallback !== undefined) {
+    metadataEnv.push(
+      `REPRINT_PUSH_SOURCE_COMMAND_PLAYGROUND_FALLBACK_JSON=${escapeShellEnvValue(JSON.stringify(playgroundFallback))}`,
+    );
+  }
+
   return [
     `REPRINT_PUSH_SOURCE_COMMAND_SOURCE_URL=${escapeShellEnvValue(normalizedSourceUrl)}`,
     `REPRINT_PUSH_SOURCE_COMMAND_USERNAME=${escapeShellEnvValue(normalizedUsername)}`,
     `REPRINT_PUSH_SOURCE_COMMAND_APPLICATION_PASSWORD=${escapeShellEnvValue(normalizedApplicationPassword)}`,
-    `${escapeShellEnvValue(normalizedNodePath)} -e ${escapeShellEnvValue('process.stdout.write(JSON.stringify({sourceUrl: process.env.REPRINT_PUSH_SOURCE_COMMAND_SOURCE_URL, username: process.env.REPRINT_PUSH_SOURCE_COMMAND_USERNAME, applicationPassword: process.env.REPRINT_PUSH_SOURCE_COMMAND_APPLICATION_PASSWORD}))')}`,
+    ...metadataEnv,
+    `${escapeShellEnvValue(normalizedNodePath)} -e ${escapeShellEnvValue("const source = {sourceUrl: process.env.REPRINT_PUSH_SOURCE_COMMAND_SOURCE_URL, username: process.env.REPRINT_PUSH_SOURCE_COMMAND_USERNAME, applicationPassword: process.env.REPRINT_PUSH_SOURCE_COMMAND_APPLICATION_PASSWORD}; if (Object.prototype.hasOwnProperty.call(process.env, 'REPRINT_PUSH_SOURCE_COMMAND_WARNING_JSON')) { source.warning = JSON.parse(process.env.REPRINT_PUSH_SOURCE_COMMAND_WARNING_JSON); } if (Object.prototype.hasOwnProperty.call(process.env, 'REPRINT_PUSH_SOURCE_COMMAND_PLAYGROUND_FALLBACK_JSON')) { source.playgroundFallback = JSON.parse(process.env.REPRINT_PUSH_SOURCE_COMMAND_PLAYGROUND_FALLBACK_JSON); } process.stdout.write(JSON.stringify(source));")}`,
   ].join(' ');
 }
 

@@ -1561,6 +1561,54 @@ test('auth-session source command builder preserves shell-sensitive credential c
   });
 });
 
+test('auth-session source command builder preserves optional auth metadata when loaded', () => {
+  const command = buildAuthSessionSourceCommand({
+    sourceUrl: 'http://127.0.0.1:8080',
+    username: 'reprint_push_admin',
+    applicationPassword: 'reprint-push-admin-app-password',
+    warning: 'lab-only-warning',
+    playgroundFallback: true,
+  });
+
+  const source = loadAuthSessionSource(command, {
+    ...process.env,
+    NODE_NO_WARNINGS: '1',
+  }, repoRoot);
+
+  assert.deepEqual(source, {
+    ok: true,
+    sourceUrl: 'http://127.0.0.1:8080',
+    username: 'reprint_push_admin',
+    applicationPassword: 'reprint-push-admin-app-password',
+    warning: 'lab-only-warning',
+    playgroundFallback: true,
+  });
+});
+
+test('auth-session source command builder preserves malformed auth metadata when loaded', () => {
+  const command = buildAuthSessionSourceCommand({
+    sourceUrl: 'http://127.0.0.1:8080',
+    username: 'reprint_push_admin',
+    applicationPassword: 'reprint-push-admin-app-password',
+    warning: ['lab-only-warning'],
+    playgroundFallback: 'not-a-boolean',
+  });
+
+  const source = loadAuthSessionSource(command, {
+    ...process.env,
+    NODE_NO_WARNINGS: '1',
+  }, repoRoot);
+
+  assert.deepEqual(source, {
+    ok: true,
+    sourceUrl: 'http://127.0.0.1:8080',
+    username: 'reprint_push_admin',
+    applicationPassword: 'reprint-push-admin-app-password',
+    warning: ['lab-only-warning'],
+    playgroundFallback: 'not-a-boolean',
+  });
+});
+
 test('auth-session source command builder fails closed when required fields contain surrounding whitespace or control characters', () => {
   assert.throws(
     () => buildAuthSessionSourceCommand({
@@ -2513,6 +2561,31 @@ test('packaged production plugin auth/session source helper resolves and loads t
     sourceUrl: 'http://127.0.0.1:8080',
     username: 'reprint_push_admin',
     applicationPassword: 'reprint-push-admin-app-password',
+  });
+});
+
+test('packaged production plugin auth/session source helper preserves malformed auth metadata from the source command', () => {
+  const packaged = resolvePackagedProductionPluginAuthSessionSource({
+    sourceUrl: 'http://127.0.0.1:8080',
+    username: 'reprint_push_admin',
+    applicationPassword: 'reprint-push-admin-app-password',
+    authSessionSourceCommand: `REPRINT_PUSH_PACKAGED_PRODUCTION_PLUGIN=1 ${buildAuthSessionSourceCommand({
+      sourceUrl: 'http://127.0.0.1:8080',
+      username: 'reprint_push_admin',
+      applicationPassword: 'reprint-push-admin-app-password',
+      warning: ['lab-only-warning'],
+      playgroundFallback: 'not-a-boolean',
+    })}`,
+  });
+
+  assert.equal(packaged.source?.ok, true);
+  assert.deepEqual(packaged.source, {
+    ok: true,
+    sourceUrl: 'http://127.0.0.1:8080',
+    username: 'reprint_push_admin',
+    applicationPassword: 'reprint-push-admin-app-password',
+    warning: ['lab-only-warning'],
+    playgroundFallback: 'not-a-boolean',
   });
 });
 

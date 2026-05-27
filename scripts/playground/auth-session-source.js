@@ -82,6 +82,12 @@ export function loadAuthSessionSource(
     sourceUrl,
     username,
     applicationPassword,
+    ...(Object.prototype.hasOwnProperty.call(parsed, 'warning')
+      ? { warning: parsed.warning }
+      : {}),
+    ...(Object.prototype.hasOwnProperty.call(parsed, 'playgroundFallback')
+      ? { playgroundFallback: parsed.playgroundFallback }
+      : {}),
   };
 }
 
