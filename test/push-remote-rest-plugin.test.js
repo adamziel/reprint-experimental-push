@@ -3947,6 +3947,46 @@ test('checked recovery inspect evidence fails closed when authoritative checked 
   assert.equal(parsed.recovery.journal.acceptedOnCheckedBoundary, false);
 });
 
+test('checked recovery inspect evidence fails closed when authoritative checked summaries omit accepted writer-lease storage guard', { skip: !hasPhp }, () => {
+  const checkedSummary = buildCheckedRecoveryJournalSummary();
+  delete checkedSummary.writerLease.storageGuard;
+
+  const result = runAttachCheckedRecoveryJournalEvidence(
+    {
+      recovery: {
+        journal: buildAcceptedInlineRecoveryJournal(),
+      },
+    },
+    true,
+    false,
+    checkedSummary,
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.recovery.journal.acceptedOnCheckedBoundary, false);
+});
+
+test('checked recovery inspect evidence fails closed when authoritative checked summaries omit accepted writer-lease strategy', { skip: !hasPhp }, () => {
+  const checkedSummary = buildCheckedRecoveryJournalSummary();
+  delete checkedSummary.writerLease.strategy;
+
+  const result = runAttachCheckedRecoveryJournalEvidence(
+    {
+      recovery: {
+        journal: buildAcceptedInlineRecoveryJournal(),
+      },
+    },
+    true,
+    false,
+    checkedSummary,
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.recovery.journal.acceptedOnCheckedBoundary, false);
+});
+
 test('checked recovery inspect evidence fails closed when authoritative checked summaries omit accepted nested writer-lease claim identity', { skip: !hasPhp }, () => {
   const checkedSummary = buildCheckedRecoveryJournalSummary();
   delete checkedSummary.leaseFence.writerLease.claimId;
@@ -5139,6 +5179,36 @@ test('checked authenticated apply evidence fails closed on accepted checked jour
   assert.equal(parsed.dbJournal.acceptedOnCheckedBoundary, false);
   assert.equal(parsed.dbJournal.writerLease.storageGuard, undefined);
   assert.equal(parsed.dbJournal.leaseFence.writerLease.storageGuard, 'wpdb-single-statement-cas');
+});
+
+test('checked db journal attachment fails closed when authoritative checked summaries omit accepted writer-lease storage guard', { skip: !hasPhp }, () => {
+  const inlineJournal = buildAcceptedInlineDbJournal();
+  const checkedSummary = buildCheckedDbJournalSummary();
+  delete checkedSummary.writerLease.storageGuard;
+
+  const result = runAttachCheckedDbJournalContract(
+    { dbJournal: inlineJournal },
+    checkedSummary,
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.dbJournal.acceptedOnCheckedBoundary, false);
+});
+
+test('checked db journal attachment fails closed when authoritative checked summaries omit accepted writer-lease strategy', { skip: !hasPhp }, () => {
+  const inlineJournal = buildAcceptedInlineDbJournal();
+  const checkedSummary = buildCheckedDbJournalSummary();
+  delete checkedSummary.writerLease.strategy;
+
+  const result = runAttachCheckedDbJournalContract(
+    { dbJournal: inlineJournal },
+    checkedSummary,
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.dbJournal.acceptedOnCheckedBoundary, false);
 });
 
 test('checked authenticated apply evidence fails closed on accepted checked journal summaries that still omit persisted journal evidence', { skip: !hasPhp }, () => {
