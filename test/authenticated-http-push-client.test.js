@@ -155,6 +155,7 @@ test('db journal proof requires the checked durable-journal contract when explic
     writerLease: {
       strategy: 'claim-fenced-single-writer',
       claimId: 'psh_01j00000000000000000000000',
+      claimKeyHash: 'psh_01j00000000000000000000000',
       claimKeyUnique: true,
       fsyncEvidence: true,
       storageGuard: 'wpdb-single-statement-cas',
@@ -172,6 +173,7 @@ test('db journal proof requires the checked durable-journal contract when explic
       writerLease: {
         strategy: 'claim-fenced-single-writer',
         claimId: 'psh_01j00000000000000000000000',
+        claimKeyHash: 'psh_01j00000000000000000000000',
         claimKeyUnique: true,
         fsyncEvidence: true,
         storageGuard: 'wpdb-single-statement-cas',
@@ -206,10 +208,22 @@ test('db journal proof requires the checked durable-journal contract when explic
     dbJournalProofIsAcceptable(proof, { requireCheckedBoundary: true }),
     false,
   );
-  proof.writerLease.staleClaimRejected = true;
+  proof.writerLease.claimKeyHash = 'unexpected-claim-key-hash';
   proof.leaseFence.staleClaimRejected = true;
   proof.leaseFence.writerLease.staleClaimRejected = true;
   proof.claim.staleClaimRejected = true;
+  assert.equal(
+    dbJournalProofIsAcceptable(proof, { requireCheckedBoundary: true }),
+    false,
+  );
+  proof.writerLease.claimKeyHash = 'psh_01j00000000000000000000000';
+  proof.leaseFence.writerLease.claimKeyHash = 'unexpected-claim-key-hash';
+  assert.equal(
+    dbJournalProofIsAcceptable(proof, { requireCheckedBoundary: true }),
+    false,
+  );
+  proof.leaseFence.writerLease.claimKeyHash = 'psh_01j00000000000000000000000';
+  proof.writerLease.staleClaimRejected = true;
   assert.equal(
     dbJournalProofIsAcceptable(proof, { requireCheckedBoundary: true }),
     true,

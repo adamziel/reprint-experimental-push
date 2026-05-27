@@ -113,6 +113,7 @@ function durableJournalWriterLeaseMatchesBoundary(writerLease, boundary, claim) 
 
   return writerLease.strategy === 'claim-fenced-single-writer'
     && (!hasNonEmptyString(claim?.activeClaimId) || writerLease.claimId === claim.activeClaimId)
+    && (!hasNonEmptyString(claim?.activeClaimKeyHash) || writerLease.claimKeyHash === claim.activeClaimKeyHash)
     && writerLease.claimKeyUnique === true
     && writerLease.fsyncEvidence === true
     && writerLease.storageGuard === boundary

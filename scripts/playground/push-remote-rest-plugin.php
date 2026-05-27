@@ -3423,6 +3423,10 @@ function reprint_push_lab_rest_db_journal(WP_REST_Request $request): WP_REST_Res
             $db_journal['writerLease']['claimId'] = (string) $db_journal['claim']['activeClaimId'];
             $db_journal['leaseFence']['writerLease']['claimId'] = (string) $db_journal['claim']['activeClaimId'];
         }
+        if (reprint_push_lab_db_journal_non_empty_string($db_journal['claim']['activeClaimKeyHash'] ?? null)) {
+            $db_journal['writerLease']['claimKeyHash'] = (string) $db_journal['claim']['activeClaimKeyHash'];
+            $db_journal['leaseFence']['writerLease']['claimKeyHash'] = (string) $db_journal['claim']['activeClaimKeyHash'];
+        }
     }
     $result = [
         'ok' => true,

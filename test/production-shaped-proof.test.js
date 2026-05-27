@@ -4087,8 +4087,16 @@ maybeTest('production-shaped live release verify command proves the packaged che
     summary.durableJournal?.proof?.journal?.claim?.activeClaimId,
   );
   assert.equal(
+    summary.durableJournal?.proof?.journal?.writerLease?.claimKeyHash,
+    summary.durableJournal?.proof?.journal?.claim?.activeClaimKeyHash,
+  );
+  assert.equal(
     summary.durableJournal?.proof?.journal?.leaseFence?.writerLease?.claimId,
     summary.durableJournal?.proof?.journal?.claim?.activeClaimId,
+  );
+  assert.equal(
+    summary.durableJournal?.proof?.journal?.leaseFence?.writerLease?.claimKeyHash,
+    summary.durableJournal?.proof?.journal?.claim?.activeClaimKeyHash,
   );
   assert.equal(summary.boundary?.replayAndRetry?.required, '/snapshot');
   assert.equal(summary.boundary?.replayAndRetry?.observed, '/snapshot');
@@ -4308,8 +4316,16 @@ maybeTest('production-shaped live release verify command proves the explicit che
           summary.durableJournal?.proof?.journal?.claim?.activeClaimId,
         );
         assert.equal(
+          summary.durableJournal?.proof?.journal?.writerLease?.claimKeyHash,
+          summary.durableJournal?.proof?.journal?.claim?.activeClaimKeyHash,
+        );
+        assert.equal(
           summary.durableJournal?.proof?.journal?.leaseFence?.writerLease?.claimId,
           summary.durableJournal?.proof?.journal?.claim?.activeClaimId,
+        );
+        assert.equal(
+          summary.durableJournal?.proof?.journal?.leaseFence?.writerLease?.claimKeyHash,
+          summary.durableJournal?.proof?.journal?.claim?.activeClaimKeyHash,
         );
         assert.equal(summary.applyRevalidation?.ok, true);
         assert.equal(summary.applyRevalidation?.boundary?.firstRemainingProductionBoundary, null);

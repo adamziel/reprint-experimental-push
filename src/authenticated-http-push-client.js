@@ -1987,10 +1987,14 @@ function summarizeDbJournalWriterLease(writerLease) {
   const claimId = typeof writerLease.claimId === 'string' && writerLease.claimId.trim().length > 0
     ? writerLease.claimId.trim()
     : null;
+  const claimKeyHash = typeof writerLease.claimKeyHash === 'string' && writerLease.claimKeyHash.trim().length > 0
+    ? writerLease.claimKeyHash.trim()
+    : null;
 
   return {
     strategy: writerLease.strategy || null,
     claimId,
+    claimKeyHash,
     claimKeyUnique: writerLease.claimKeyUnique === true,
     fsyncEvidence: writerLease.fsyncEvidence === true,
     storageGuard: writerLease.storageGuard || null,

@@ -490,6 +490,7 @@ test('checked durable journal boundary stays closed until stale-claim rejection 
     writerLease: {
       strategy: 'claim-fenced-single-writer',
       claimId: 'retry-claim-id-02',
+      claimKeyHash: 'retry-claim-id-02',
       claimKeyUnique: true,
       fsyncEvidence: true,
       storageGuard: 'wpdb-single-statement-cas',
@@ -507,6 +508,7 @@ test('checked durable journal boundary stays closed until stale-claim rejection 
       writerLease: {
         strategy: 'claim-fenced-single-writer',
         claimId: 'retry-claim-id-02',
+        claimKeyHash: 'retry-claim-id-02',
         claimKeyUnique: true,
         fsyncEvidence: true,
         storageGuard: 'wpdb-single-statement-cas',
@@ -559,12 +561,40 @@ test('checked durable journal boundary stays closed until stale-claim rejection 
   assert.equal(
     checkedDurableJournalBoundarySatisfied({
       ...baseContract,
+      writerLease: {
+        ...baseContract.writerLease,
+        claimKeyHash: 'unexpected-claim-key-hash',
+      },
+      leaseFence: {
+        ...baseContract.leaseFence,
+        staleClaimRejected: true,
+      },
+    }),
+    false,
+  );
+  assert.equal(
+    checkedDurableJournalBoundarySatisfied({
+      ...baseContract,
       leaseFence: {
         ...baseContract.leaseFence,
         staleClaimRejected: true,
         writerLease: {
           ...baseContract.leaseFence.writerLease,
           claimId: 'unexpected-claim-id',
+        },
+      },
+    }),
+    false,
+  );
+  assert.equal(
+    checkedDurableJournalBoundarySatisfied({
+      ...baseContract,
+      leaseFence: {
+        ...baseContract.leaseFence,
+        staleClaimRejected: true,
+        writerLease: {
+          ...baseContract.leaseFence.writerLease,
+          claimKeyHash: 'unexpected-claim-key-hash',
         },
       },
     }),
