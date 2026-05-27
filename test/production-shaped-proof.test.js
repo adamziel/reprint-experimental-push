@@ -15002,6 +15002,60 @@ test('packaged production plugin smoke readiness helper fails closed when signed
         },
       },
     },
+    {
+      label: 'cleanup underscore auth session flag',
+      body: {
+        ok: true,
+        routeProfile: {
+          profile: 'production-shaped',
+          restNamespace: 'reprint/v1',
+          routePrefix: '/push',
+          labBacked: false,
+        },
+        auth: {
+          identity: {
+            userLogin: 'admin',
+            userId: 1,
+          },
+          session: {
+            id: 'session_123',
+            status: 'active',
+            type: 'production-auth-session',
+            expiresAt: '2099-01-01T00:00:00Z',
+            cleaned_up: true,
+          },
+        },
+        session: {
+          id: 'session_123',
+          type: 'production-auth-session',
+        },
+      },
+    },
+    {
+      label: 'cleanup underscore auth session flag',
+      body: {
+        ok: true,
+        routeProfile: {
+          profile: 'production-shaped',
+          restNamespace: 'reprint/v1',
+          routePrefix: '/push',
+          labBacked: false,
+        },
+        auth: {
+          session: {
+            id: 'session_123',
+            status: 'active',
+            type: 'production-auth-session',
+            expiresAt: '2099-01-01T00:00:00Z',
+            cleaned_up: true,
+          },
+        },
+        session: {
+          id: 'session_123',
+          type: 'production-auth-session',
+        },
+      },
+    },
   ];
 
   for (const { label, body } of brokenAuthSessionEnvelopes) {
