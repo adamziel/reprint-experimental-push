@@ -537,10 +537,51 @@ apply-time revalidation before first mutation on the same live boundary.
 These are support, audit-refresh, or test-hardening facts only. They do not
 move release gates.
 
+## Follow-Up Artifact-Only Check 18:38
+
+Commands:
+
+```bash
+git fetch --all --prune
+git worktree add --detach /tmp/reprint-audit-consolidated-1838 \
+  origin/supervisor/release-boundary-consolidated-20260527
+cd /tmp/reprint-audit-consolidated-1838
+timeout 300s npm run verify:release
+```
+
+New artifact facts since the previous auditor update:
+
+| Ref | Head | Status |
+| --- | --- | --- |
+| `origin/supervisor/release-boundary-consolidated-20260527` | `8d9a53f88` | Advanced to refresh auditor consolidated base merges |
+| `origin/lane/auth-session-boundary-v2-20260527` | `df906f07d` | Advanced remote v2 support branch |
+| `origin/lane/durable-journal-boundary-v2-20260527` | `876214854` | Advanced remote v2 support branch |
+| `origin/lane/apply-revalidation-boundary-v2-20260527` | `5d987234a` | Advanced remote v2 support branch |
+| `origin/lane/plugin-driver-boundary-v2-20260527` | `0473cebc8` | Advanced remote v2 support branch |
+| `origin/lane/topology-verifier-v2-20260527` | `605881b87` | Advanced remote v2 support branch |
+
+The clean detached consolidated verifier run from `8d9a53f88` exited `1` with
+`REPRINT_PUSH_LIVE_SOURCE_REQUIRED`, `packagedFallbackAllowed: false`,
+source/local/drift/apply-revalidation ports as `null`, and release movement
+`allowed: false`.
+
+Package script evidence: `verify:release` still chains the topology proof,
+live-release verifier with required production auth/session and durable journal
+flags, plugin-driver verifier guards, and file-journal smoke. In this run the
+chain stopped at the live-release verifier because `REPRINT_PUSH_SOURCE_URL`
+was absent.
+
+Critic/progress artifact evidence: `audits/critic.md`, `progress.html`, and
+`docs/progress-log.md` still classify production release movement as blocked;
+the consolidated artifact set does not contain `audits/critic-reorg-v2-20260527.md`.
+
+These are support, audit-refresh, or test-hardening facts only. They do not
+move release gates.
+
 ## Blocker
 
 The consolidated branch requested by `NEXT_TASKS.md` now exists remotely at
-`8c6b9afb8913ffc8f064eb85ba836e2a638c32a1` and has a coherent fail-closed
+`8d9a53f88617ce613d739d1e111639c639ed8ca6` and has a coherent fail-closed
 `verify:release` command, but it correctly does not move any release gate
 without a real live `REPRINT_PUSH_SOURCE_URL`.
 
