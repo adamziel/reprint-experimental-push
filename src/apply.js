@@ -733,6 +733,7 @@ export function productionRecoverySupportReport(writer) {
     : null;
   const persistedArtifactRefs = durableJournalPersistedArtifactRefs(inspected);
   const artifactRefs = productionRecoveryArtifactRefs(writer, inspected);
+  const writerClaimIdHidden = hasHiddenOwnStringProperty(writer, 'claimId');
   const writerKindHidden = hasHiddenOwnStringProperty(writer, 'kind');
   const writerProductionAdapterHidden = hasHiddenOwnStringProperty(writer, 'productionAdapter');
   const writerSupportedSurfaceHidden = hasHiddenOwnStringProperty(writer, 'supportedSurface');
@@ -1230,6 +1231,34 @@ export function productionRecoverySupportReport(writer) {
     addMissingDependency('fencing or lease ownership for the journal writer');
   }
   if (
+    Object.hasOwn(writer ?? {}, 'claimId')
+    && (
+      writerClaimIdHidden
+      || typeof writer.claimId !== 'string'
+      || writer.claimId.trim().length === 0
+      || writer.claimId.trim() !== writer.claimId
+      || (
+        hasValidProductionLeaseIdentity(writer?.writerLease)
+        && writer.claimId !== writer.writerLease.id
+      )
+      || (
+        typeof writer?.claimHash === 'string'
+        && /^[a-f0-9]{64}$/.test(writer.claimHash)
+        && writer.claimHash !== digest({ recoveryJournalClaim: writer.claimId })
+      )
+    )
+  ) {
+    addMissingDependency('fencing or lease ownership for the journal writer');
+  }
+  if (
+    writer !== null
+    && typeof writer === 'object'
+    && !Object.hasOwn(writer, 'claimId')
+    && 'claimId' in writer
+  ) {
+    addMissingDependency('fencing or lease ownership for the journal writer');
+  }
+  if (
     (openedInspectionRecords || claimInspectionRecords)
     && (
       !Object.hasOwn(inspected ?? {}, 'claimHash')
@@ -1290,6 +1319,41 @@ export function productionRecoverySupportReport(writer) {
     hasValidProductionLeaseIdentity(writer?.leaseFence)
     && Object.hasOwn(inspected ?? {}, 'leaseFence')
     && !productionLeaseIdentitiesMatch(inspected.leaseFence, writer.leaseFence)
+  ) {
+    addMissingDependency('fencing or lease ownership for the journal writer');
+  }
+  if (
+    (openedInspectionRecords || claimInspectionRecords)
+    && (
+      !Object.hasOwn(inspected ?? {}, 'claimId')
+      || hasHiddenOwnStringProperty(inspected, 'claimId')
+      || typeof inspected.claimId !== 'string'
+      || inspected.claimId.trim().length === 0
+      || inspected.claimId.trim() !== inspected.claimId
+      || (
+        Object.hasOwn(inspected ?? {}, 'writerLease')
+        && hasValidProductionLeaseIdentity(inspected.writerLease)
+        && inspected.claimId !== inspected.writerLease.id
+      )
+      || (
+        Object.hasOwn(inspected ?? {}, 'leaseFence')
+        && hasValidProductionLeaseIdentity(inspected.leaseFence)
+        && inspected.claimId !== inspected.leaseFence.id
+      )
+      || (
+        typeof inspected?.claimHash === 'string'
+        && /^[a-f0-9]{64}$/.test(inspected.claimHash)
+        && inspected.claimHash !== digest({ recoveryJournalClaim: inspected.claimId })
+      )
+      || (
+        inspectedClaimState
+        && inspectedClaimState.status !== 'none'
+        && (
+          !hasValidProductionLeaseIdentity(inspectedClaimState.activeClaimLease)
+          || inspected.claimId !== inspectedClaimState.activeClaimLease.id
+        )
+      )
+    )
   ) {
     addMissingDependency('fencing or lease ownership for the journal writer');
   }

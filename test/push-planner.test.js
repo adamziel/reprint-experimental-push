@@ -26341,6 +26341,96 @@ test('production recovery support report fails closed when claimHash is inherite
   assert.ok(report.missingDependency.includes('fencing or lease ownership for the journal writer'));
 });
 
+test('production recovery support report fails closed when a surfaced writer claimId diverges from the fenced lease identity', () => {
+  const filePath = tempRecoveryJournalPath();
+  const remoteArtifactPath = `${path.dirname(filePath)}/remote.jsonl`;
+  const journal = openProductionRecoveryJournal(filePath, {
+    truncate: true,
+    now: fixedNow,
+    claimId: 'lease-drifted-claim-id',
+    writerLease: { id: 'lease-drifted-claim-id' },
+    ownsRemoteArtifact: true,
+    remoteArtifactPath,
+  });
+  appendRecoveryClaimOpened(journal, {
+    plan: { id: 'plan-drifted-claim-id' },
+    current: baseSite(),
+    claimId: 'lease-drifted-claim-id',
+    artifactRefs: {
+      journal: filePath,
+      remote: remoteArtifactPath,
+    },
+  });
+  journal.appendEvent('journal-opened', {
+    planId: 'plan-drifted-claim-id',
+    state: 'opened',
+    observedHash: 'hash-drifted-claim-id',
+    artifactRefs: {
+      journal: filePath,
+      remote: remoteArtifactPath,
+    },
+  });
+  journal.close();
+
+  const driftedWriterClaimId = {
+    ...journal,
+    claimId: 'lease-drifted-claim-id-other',
+  };
+
+  const report = productionRecoverySupportReport(driftedWriterClaimId);
+
+  assert.equal(report.supported, false);
+  assert.ok(report.missingDependency.includes('fencing or lease ownership for the journal writer'));
+});
+
+test('production recovery support report fails closed when inspected claimId diverges from the active fenced lease identity', () => {
+  const filePath = tempRecoveryJournalPath();
+  const remoteArtifactPath = `${path.dirname(filePath)}/remote.jsonl`;
+  const journal = openProductionRecoveryJournal(filePath, {
+    truncate: true,
+    now: fixedNow,
+    claimId: 'inspected-drifted-claim-id',
+    writerLease: { id: 'inspected-drifted-claim-id' },
+    ownsRemoteArtifact: true,
+    remoteArtifactPath,
+  });
+  appendRecoveryClaimOpened(journal, {
+    plan: { id: 'plan-inspected-drifted-claim-id' },
+    current: baseSite(),
+    claimId: 'inspected-drifted-claim-id',
+    artifactRefs: {
+      journal: filePath,
+      remote: remoteArtifactPath,
+    },
+  });
+  journal.appendEvent('journal-opened', {
+    planId: 'plan-inspected-drifted-claim-id',
+    state: 'opened',
+    observedHash: 'hash-inspected-drifted-claim-id',
+    artifactRefs: {
+      journal: filePath,
+      remote: remoteArtifactPath,
+    },
+  });
+  journal.close();
+
+  const writerWithSurfacedClaimId = {
+    ...journal,
+    claimId: 'inspected-drifted-claim-id',
+    inspect() {
+      return {
+        ...journal.inspect(),
+        claimId: 'inspected-drifted-claim-id-other',
+      };
+    },
+  };
+
+  const report = productionRecoverySupportReport(writerWithSurfacedClaimId);
+
+  assert.equal(report.supported, false);
+  assert.ok(report.missingDependency.includes('fencing or lease ownership for the journal writer'));
+});
+
 test('production recovery support report fails closed when the persisted claim omits its lease identity', () => {
   const claimId = 'lease-without-persisted-claim-lease';
   const claimHash = digest({ recoveryJournalClaim: claimId });
