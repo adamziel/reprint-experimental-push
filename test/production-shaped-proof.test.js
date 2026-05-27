@@ -3235,6 +3235,46 @@ test('production auth/session lifecycle trace summary preserves status-only expi
   );
 });
 
+test('production auth/session lifecycle trace summary preserves status-only rotated markers', () => {
+  const rotatedSummary = summarizeProductionAuthSessionLifecycleTrace([
+    {
+      step: 'preflight',
+      id: 'session-01',
+      type: 'production-auth-session',
+      status: 'active',
+      expiresAt: '2099-01-01T00:00:00Z',
+      expired: false,
+      revoked: false,
+      cleanedUp: false,
+      rotated: false,
+      preserved: false,
+    },
+    {
+      step: 'apply',
+      id: 'session-01',
+      type: 'production-auth-session',
+      status: 'rotated',
+      expiresAt: '2099-01-01T00:00:00Z',
+      expired: false,
+      revoked: false,
+      cleanedUp: false,
+      rotated: false,
+      preserved: true,
+    },
+  ]);
+
+  assert.equal(rotatedSummary.rotated?.status, 'rotated');
+  assert.deepEqual(
+    evaluateProductionAuthSessionLifecycleSummary(rotatedSummary),
+    {
+      ok: false,
+      field: 'auth.session.status',
+      required: 'preserved read',
+      observed: 'rotated',
+    },
+  );
+});
+
 test('production auth/session lifecycle trace summary does not treat preflight as a preserved read', () => {
   const summary = summarizeProductionAuthSessionLifecycleTrace([
     {
