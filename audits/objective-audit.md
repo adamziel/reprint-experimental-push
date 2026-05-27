@@ -2,46 +2,35 @@
 
 ## Verdict
 
-- Audited commit: `7c4010cfa42fe5513c1d0942b78a295d7495a76f` (`Cover checked cleanup evidence continuity`)
-- Previous audited reliable head: `3a9e010e368d3d24a00171e7e5a98b6ff65bc289`
-- Critic reference: `8fe9fa046ac1bf879f6cb980852a666eafa2c248` (`critic pending/external for 7c4010cf; fetched critic ref does not name this head`)
+- Audited commit: `3161b049e885694f8fbd5127050a8c45330ad50d` (`Accept matching runtime auth session sources`)
+- Previous audited reliable head: `7c4010cfa42fe5513c1d0942b78a295d7495a76f`
 - Release-gate verdict: `0/4`
 - The project is **not yet releasable as a production WordPress push path**.
 
-- Audit time: 2026-05-27 12:08:20 CEST (+0200)
+- Audit time: 2026-05-27 12:09:19 CEST (+0200)
 - Release-classification heads verified before write-up:
-  - `origin/lane/reliable-executor` -> `7c4010cfa42fe5513c1d0942b78a295d7495a76f` (`Cover checked cleanup evidence continuity`)
-  - `origin/lane/critic` -> `8fe9fa046ac1bf879f6cb980852a666eafa2c248` (`does not name 7c4010cf`)
-  - `origin/lane/independent-auditor` -> `18837abb07ef4a65e8a9bbdfaf649bf8e4942b73`
+  - `origin/lane/reliable-executor` -> `3161b049e885694f8fbd5127050a8c45330ad50d` (`Accept matching runtime auth session sources`)
+  - `origin/lane/critic` -> `3cdc8b2420d63bea9f8f28817fcd4737d7cc48a7`
+  - `origin/lane/independent-auditor` -> `e675b7f3ec3506cdb8ad5a613dfbb48934d41463`
 
 ## Evidence Table
 
 | Requirement | Current proof | Missing proof | Verdict impact |
 | --- | --- | --- | --- |
-| Packaged/live-wrapper boundary | `7c4010cf` adds checked cleanup evidence continuity regressions in `test/authenticated-http-push-client.test.js` for replay and DB-journal readback. The coverage is useful, but it is still lab-shaped test evidence rather than proof from the release boundary. | A production-owned, non-lab `REPRINT_PUSH_SOURCE_URL` using the real `/wp-json/reprint/v1/push/*` endpoint boundary. | Support-only |
-| Production source boundary | The new tests fail closed when mocked production-shaped responses drop required `sessionStore.cleanup` continuity, which hardens auth/session lifecycle expectations. They still do not prove that the production release path owns the source endpoint being audited. | One checked command against the real production-owned `/wp-json/reprint/v1/push/*` path proving the source is not a lab wrapper. | Blocked |
-| Auth/session issuance and continuity | The commit verifies continuity of cleanup evidence across preflight, dry-run, apply, recovery inspect, replay, and DB-journal readback inside mocked fetch flows. | Real endpoint proof that the release boundary issues auth/session state and preserves cleanup continuity on the production-owned path. | Blocked |
-| Durable journal ownership | The DB-journal readback regression checks that missing cleanup continuity still fails closed even when mocked lease-fence and writer-lease details are present. | Durable restart-readable journal ownership with lease/fencing, demonstrated by the release path that owns the real endpoint. | Blocked |
-| Plugin-driver release ownership | No production plugin-driven endpoint ownership is established; the change only extends authenticated HTTP push client tests. | Evidence that the plugin-driven release path owns the real boundary instead of a support harness or lab wrapper. | Blocked |
-| Rejected remote evidence and revalidation | The commit strengthens lifecycle continuity checks, but it does not prove preserved rejected remote evidence or apply-time revalidation before first mutation on the real release boundary. | Preserved rejected remote evidence and apply-time revalidation before first mutation on the production-owned release path. | Blocked |
+| Runtime source matching | `3161b049` now accepts a matching explicit runtime auth-session source URL in `loadAuthSessionSourceFromRuntimeEnvironment()` and adds a focused test for runtime source matching. | A production-owned, non-lab `REPRINT_PUSH_SOURCE_URL` boundary on the checked release path backed by a real `/wp-json/reprint/v1/push/*` endpoint. | Support-only |
+| Production source boundary | The commit improves support-side authenticated-push source matching, but it still does not prove that the audited release path owns a real production `/wp-json/reprint/v1/push/*` endpoint rather than a lab wrapper. | One checked command on the real production-owned endpoint proving the source is not a lab wrapper and is owned by the release path being audited. | Blocked |
+| Auth/session issuance and readback | The new regression exercises source selection and query-string preservation in a fixture-driven runtime environment; it is not production endpoint evidence. | Real endpoint proof of auth/session issuance plus readback on the same production-owned `/wp-json/reprint/v1/push/*` path. | Blocked |
+| Durable journal ownership | The reliable head still does not prove restart-readable journal ownership with lease/fencing on the real boundary; it only broadens runtime source acceptance. | Durable restart-readable journal ownership with lease/fencing, demonstrated by the release path that owns the real endpoint. | Blocked |
+| Plugin-driver release ownership | No part of the change establishes plugin-driver ownership on the release boundary; the evidence remains confined to source-selection hardening. | Evidence that the plugin-driven release path owns the real boundary instead of a support harness or lab wrapper. | Blocked |
+| Rejected remote evidence and revalidation | The new regression coverage is useful, but it still does not prove preserved rejected remote evidence or apply-time revalidation before first mutation on the real boundary. | Preserved rejected remote evidence and apply-time revalidation before first mutation on the production-owned release path. | Blocked |
 
 ## Change Assessment
 
-1. `7c4010cf` is checked cleanup evidence continuity coverage in `test/authenticated-http-push-client.test.js`.
-2. It adds support-only regressions that force `runAuthenticatedHttpPush()` to fail closed when replay or DB-journal readback drops required `sessionStore.cleanup` evidence continuity.
-3. That is useful auth/session lifecycle hardening, but it still does not prove the production-owned, non-lab `REPRINT_PUSH_SOURCE_URL` and `/wp-json/reprint/v1/push/*` endpoint boundary.
-4. No release gate moved. The project remains `0/4`. The fetched critic ref is still external to this head.
+1. `3161b049` is runtime auth-session source matching hardening, not release-boundary proof.
+2. Its concrete effect is to add regressions that accept a matching explicit runtime source URL in the harness path.
+3. That is useful, but it still does not prove a production-owned, non-lab `REPRINT_PUSH_SOURCE_URL` endpoint boundary.
+4. No release gate moved. The project remains `0/4`.
 
 ## Conclusion
 
-`7c4010cfa42fe5513c1d0942b78a295d7495a76f` is useful auth/session lifecycle hardening. It adds checked cleanup evidence continuity tests in `test/authenticated-http-push-client.test.js`, including failure-closed replay and DB-journal readback cases when mocked production-shaped responses drop required `sessionStore.cleanup` evidence.
-
-That remains support-only evidence. The commit does not prove the production-owned, non-lab `REPRINT_PUSH_SOURCE_URL` or the real `/wp-json/reprint/v1/push/*` release boundary, so it cannot advance the release classification beyond `0/4`.
-
-The missing proof is still a production-owned, non-lab `/wp-json/reprint/v1/push/*` endpoint that demonstrates:
-
-- auth/session issuance plus cleanup evidence continuity on the real boundary
-- durable restart-readable journal ownership with lease/fencing on that boundary
-- plugin-driver ownership of the release path
-- preserved rejected remote evidence
-- apply-time revalidation before the first mutation
+`3161b049e885694f8fbd5127050a8c45330ad50d` is runtime auth-session source matching support hardening. It adds regressions that accept a matching explicit runtime source URL in the harness path. That is useful, but it still does not prove the production-owned, non-lab `REPRINT_PUSH_SOURCE_URL` endpoint boundary, so it does not close any release gate.
