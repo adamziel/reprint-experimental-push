@@ -7280,6 +7280,102 @@ test('packaged release verifier readiness helper fails closed when signed prefli
       },
     },
     {
+      label: 'cleaned-up auth session',
+      body: {
+        ok: true,
+        routeProfile: {
+          profile: 'production-shaped',
+          restNamespace: 'reprint/v1',
+          routePrefix: '/push',
+          labBacked: false,
+        },
+        auth: {
+          session: {
+            id: 'session_123',
+            status: 'cleaned-up',
+            type: 'production-auth-session',
+            expiresAt: '2099-01-01T00:00:00Z',
+          },
+        },
+        session: {
+          id: 'session_123',
+          type: 'production-auth-session',
+        },
+      },
+    },
+    {
+      label: 'cleanup alias auth session',
+      body: {
+        ok: true,
+        routeProfile: {
+          profile: 'production-shaped',
+          restNamespace: 'reprint/v1',
+          routePrefix: '/push',
+          labBacked: false,
+        },
+        auth: {
+          session: {
+            id: 'session_123',
+            status: 'cleaned_up',
+            type: 'production-auth-session',
+            expiresAt: '2099-01-01T00:00:00Z',
+          },
+        },
+        session: {
+          id: 'session_123',
+          type: 'production-auth-session',
+        },
+      },
+    },
+    {
+      label: 'expired auth session',
+      body: {
+        ok: true,
+        routeProfile: {
+          profile: 'production-shaped',
+          restNamespace: 'reprint/v1',
+          routePrefix: '/push',
+          labBacked: false,
+        },
+        auth: {
+          session: {
+            id: 'session_123',
+            status: 'active',
+            type: 'production-auth-session',
+            expiresAt: '2000-01-01T00:00:00Z',
+          },
+        },
+        session: {
+          id: 'session_123',
+          type: 'production-auth-session',
+        },
+      },
+    },
+    {
+      label: 'invalid auth session expiry',
+      body: {
+        ok: true,
+        routeProfile: {
+          profile: 'production-shaped',
+          restNamespace: 'reprint/v1',
+          routePrefix: '/push',
+          labBacked: false,
+        },
+        auth: {
+          session: {
+            id: 'session_123',
+            status: 'active',
+            type: 'production-auth-session',
+            expiresAt: 'not-a-timestamp',
+          },
+        },
+        session: {
+          id: 'session_123',
+          type: 'production-auth-session',
+        },
+      },
+    },
+    {
       label: 'missing auth session expiry',
       body: {
         ok: true,
@@ -10580,6 +10676,102 @@ test('packaged production plugin smoke readiness helper fails closed when signed
             type: 'production-auth-session',
             expiresAt: '2099-01-01T00:00:00Z',
             rotated: true,
+          },
+        },
+        session: {
+          id: 'session_123',
+          type: 'production-auth-session',
+        },
+      },
+    },
+    {
+      label: 'cleaned-up auth session',
+      body: {
+        ok: true,
+        routeProfile: {
+          profile: 'production-shaped',
+          restNamespace: 'reprint/v1',
+          routePrefix: '/push',
+          labBacked: false,
+        },
+        auth: {
+          session: {
+            id: 'session_123',
+            status: 'cleaned-up',
+            type: 'production-auth-session',
+            expiresAt: '2099-01-01T00:00:00Z',
+          },
+        },
+        session: {
+          id: 'session_123',
+          type: 'production-auth-session',
+        },
+      },
+    },
+    {
+      label: 'cleanup alias auth session',
+      body: {
+        ok: true,
+        routeProfile: {
+          profile: 'production-shaped',
+          restNamespace: 'reprint/v1',
+          routePrefix: '/push',
+          labBacked: false,
+        },
+        auth: {
+          session: {
+            id: 'session_123',
+            status: 'cleaned_up',
+            type: 'production-auth-session',
+            expiresAt: '2099-01-01T00:00:00Z',
+          },
+        },
+        session: {
+          id: 'session_123',
+          type: 'production-auth-session',
+        },
+      },
+    },
+    {
+      label: 'expired auth session',
+      body: {
+        ok: true,
+        routeProfile: {
+          profile: 'production-shaped',
+          restNamespace: 'reprint/v1',
+          routePrefix: '/push',
+          labBacked: false,
+        },
+        auth: {
+          session: {
+            id: 'session_123',
+            status: 'active',
+            type: 'production-auth-session',
+            expiresAt: '2000-01-01T00:00:00Z',
+          },
+        },
+        session: {
+          id: 'session_123',
+          type: 'production-auth-session',
+        },
+      },
+    },
+    {
+      label: 'invalid auth session expiry',
+      body: {
+        ok: true,
+        routeProfile: {
+          profile: 'production-shaped',
+          restNamespace: 'reprint/v1',
+          routePrefix: '/push',
+          labBacked: false,
+        },
+        auth: {
+          session: {
+            id: 'session_123',
+            status: 'active',
+            type: 'production-auth-session',
+            expiresAt: 'not-a-timestamp',
           },
         },
         session: {
