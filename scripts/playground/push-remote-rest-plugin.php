@@ -1354,6 +1354,13 @@ function reprint_push_lab_rest_checked_claim_evidence_row_conflicts(
 
         if (in_array($key, ['sequence'], true)) {
             if (
+                !array_key_exists($key, $existing_row)
+                && reprint_push_lab_db_journal_is_positive_int($checked_value)
+            ) {
+                return true;
+            }
+
+            if (
                 reprint_push_lab_db_journal_is_positive_int($existing_value)
                 && reprint_push_lab_db_journal_is_positive_int($checked_value)
                 && (int) $existing_value !== (int) $checked_value
@@ -1365,6 +1372,10 @@ function reprint_push_lab_rest_checked_claim_evidence_row_conflicts(
 
         $existing_value = is_string($existing_value) ? $existing_value : '';
         $checked_value = is_string($checked_value) ? $checked_value : '';
+        if (!array_key_exists($key, $existing_row) && $checked_value !== '') {
+            return true;
+        }
+
         if ($existing_value !== '' && $checked_value !== '' && $existing_value !== $checked_value) {
             return true;
         }
