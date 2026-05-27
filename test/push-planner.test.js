@@ -42461,6 +42461,70 @@ test('blocks converged post GUID changes while preserving a matching independent
   assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin changes */');
 });
 
+test('blocks converged post GUID changes while preserving a matching independent file type swap and remote-only plugin removals', () => {
+  const resourceKey = 'row:["wp_posts","ID:153"]';
+  const base = baseSite();
+  base.db.wp_posts['ID:153'] = {
+    ID: 153,
+    guid: 'https://example.test/?p=153',
+    post_title: 'Base converged GUID post',
+    post_content: 'Base converged GUID content',
+    post_status: 'publish',
+    post_type: 'post',
+  };
+  base.files['wp-content/uploads/converged-guid-asset'] = 'base converged guid asset';
+
+  const local = baseSite();
+  local.db.wp_posts['ID:153'] = {
+    ID: 153,
+    guid: 'https://example.test/?p=153&converged=1',
+    post_title: 'Converged GUID post',
+    post_content: 'Converged GUID content',
+    post_status: 'publish',
+    post_type: 'post',
+  };
+  local.files['wp-content/uploads/converged-guid-asset'] = { type: 'directory' };
+
+  const remote = baseSite();
+  remote.db.wp_posts['ID:153'] = {
+    ID: 153,
+    guid: 'https://example.test/?p=153&converged=1',
+    post_title: 'Converged GUID post',
+    post_content: 'Converged GUID content',
+    post_status: 'publish',
+    post_type: 'post',
+  };
+  remote.files['wp-content/uploads/converged-guid-asset'] = { type: 'directory' };
+  delete remote.plugins.forms;
+  delete remote.files['wp-content/plugins/forms/forms.php'];
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers[0];
+  const matchingTypeSwap = decisionFor(plan, 'file:wp-content/uploads/converged-guid-asset');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(plan.conflicts.length, 0);
+  assert.equal(blocker.class, 'unsupported-guid-resource');
+  assert.equal(blocker.resourceKind, 'post-guid');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.unsupportedState, 'converged-drift');
+  assert.equal(blocker.reason, 'Post GUID graph resources are not yet supported by the planner.');
+  assert.equal(matchingTypeSwap.decision, 'already-in-sync');
+  assert.equal(matchingTypeSwap.change.localChange, 'type-change');
+  assert.equal(matchingTypeSwap.change.remoteChange, 'type-change');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('Converged GUID content'), false);
+  assert.equal(planJson.includes('Base converged GUID content'), false);
+  assert.equal(remote.plugins.forms, undefined);
+  assert.equal(remote.files['wp-content/plugins/forms/forms.php'], undefined);
+});
+
 test('blocks local same-plan created post GUIDs while preserving a matching independent edit and remote-only plugin drift', () => {
   const resourceKey = 'row:["wp_posts","ID:54"]';
   const base = baseSite();
