@@ -2033,14 +2033,16 @@ test('guarded benchmark surfaces package-hash plugin-install blockers at runtime
 test('guarded benchmark surfaces package-cache plugin-install blockers at runtime', () => {
   const report = smallBenchmark();
   const details = productionThroughputDetails(report);
+  const packageCachePluginInstallRejectedFastPaths = details.rejectedFastPaths.filter((entry) =>
+    [
+      'compressed-remote-index-and-cached-package-cache-skips-plugin-install-activation',
+      'compressed-remote-index-and-cached-package-cache-skips-plugin-install-dependency-checks',
+      'compressed-remote-index-and-cached-package-cache-skips-plugin-install-finalize',
+    ].includes(entry.id),
+  );
 
   assert.deepEqual(
-    details.rejectedFastPaths
-      .filter((entry) => [
-        'compressed-remote-index-and-cached-package-cache-skips-plugin-install-activation',
-        'compressed-remote-index-and-cached-package-cache-skips-plugin-install-dependency-checks',
-        'compressed-remote-index-and-cached-package-cache-skips-plugin-install-finalize',
-      ].includes(entry.id))
+    packageCachePluginInstallRejectedFastPaths
       .map((entry) => ({
         id: entry.id,
         rejectedGate: entry.rejectedGate,
@@ -2081,6 +2083,10 @@ test('guarded benchmark surfaces package-cache plugin-install blockers at runtim
     ].sort((left, right) => left.id.localeCompare(right.id)),
   );
 
+  assert.deepEqual(summarizeRejectedGates(packageCachePluginInstallRejectedFastPaths), [
+    { rejectedGate: 'group', count: 3 },
+  ]);
+
   assert.equal(
     details.rejectedFastPaths.filter((entry) => entry.id.includes('plugin-install')).length,
     40,
@@ -2090,13 +2096,15 @@ test('guarded benchmark surfaces package-cache plugin-install blockers at runtim
 test('guarded benchmark surfaces manifest-hash plugin-install blockers at runtime', () => {
   const report = smallBenchmark();
   const details = productionThroughputDetails(report);
+  const manifestHashPluginInstallRejectedFastPaths = details.rejectedFastPaths.filter((entry) =>
+    [
+      'compressed-remote-index-and-cached-manifest-hash-skips-plugin-install-finalize',
+      'compressed-remote-index-and-cached-manifest-hash-skips-plugin-install-writeback',
+    ].includes(entry.id),
+  );
 
   assert.deepEqual(
-    details.rejectedFastPaths
-      .filter((entry) => [
-        'compressed-remote-index-and-cached-manifest-hash-skips-plugin-install-finalize',
-        'compressed-remote-index-and-cached-manifest-hash-skips-plugin-install-writeback',
-      ].includes(entry.id))
+    manifestHashPluginInstallRejectedFastPaths
       .map((entry) => ({
         id: entry.id,
         rejectedGate: entry.rejectedGate,
@@ -2126,20 +2134,26 @@ test('guarded benchmark surfaces manifest-hash plugin-install blockers at runtim
       },
     ].sort((left, right) => left.id.localeCompare(right.id)),
   );
+
+  assert.deepEqual(summarizeRejectedGates(manifestHashPluginInstallRejectedFastPaths), [
+    { rejectedGate: 'group', count: 2 },
+  ]);
 });
 
 test('guarded benchmark surfaces file-hash plugin-install blockers at runtime', () => {
   const report = smallBenchmark();
   const details = productionThroughputDetails(report);
+  const fileHashPluginInstallRejectedFastPaths = details.rejectedFastPaths.filter((entry) =>
+    [
+      'compressed-remote-index-and-cached-file-hash-skips-plugin-install-activation',
+      'compressed-remote-index-and-cached-file-hash-skips-plugin-install-finalize',
+      'compressed-remote-index-and-cached-file-hash-skips-plugin-install-finalize-after-pause',
+      'compressed-remote-index-and-cached-file-hash-skips-plugin-install-writeback',
+    ].includes(entry.id),
+  );
 
   assert.deepEqual(
-    details.rejectedFastPaths
-      .filter((entry) => [
-        'compressed-remote-index-and-cached-file-hash-skips-plugin-install-activation',
-        'compressed-remote-index-and-cached-file-hash-skips-plugin-install-finalize',
-        'compressed-remote-index-and-cached-file-hash-skips-plugin-install-finalize-after-pause',
-        'compressed-remote-index-and-cached-file-hash-skips-plugin-install-writeback',
-      ].includes(entry.id))
+    fileHashPluginInstallRejectedFastPaths
       .map((entry) => ({
         id: entry.id,
         rejectedGate: entry.rejectedGate,
@@ -2189,21 +2203,27 @@ test('guarded benchmark surfaces file-hash plugin-install blockers at runtime', 
       },
     ].sort((left, right) => left.id.localeCompare(right.id)),
   );
+
+  assert.deepEqual(summarizeRejectedGates(fileHashPluginInstallRejectedFastPaths), [
+    { rejectedGate: 'group', count: 4 },
+  ]);
 });
 
 test('guarded benchmark surfaces dependency-graph plugin-install blockers at runtime', () => {
   const report = smallBenchmark();
   const details = productionThroughputDetails(report);
+  const dependencyGraphPluginInstallRejectedFastPaths = details.rejectedFastPaths.filter((entry) =>
+    [
+      'compressed-remote-index-and-cached-dependency-graph-skips-plugin-install-activation',
+      'compressed-remote-index-and-cached-dependency-graph-skips-plugin-install-activation-after-pause',
+      'compressed-remote-index-and-cached-dependency-graph-skips-plugin-install-activation-after-pause-and-backpressure',
+      'compressed-remote-index-and-cached-dependency-graph-skips-plugin-install-dependency-checks',
+      'compressed-remote-index-and-cached-dependency-graph-skips-plugin-install-finalize',
+    ].includes(entry.id),
+  );
 
   assert.deepEqual(
-    details.rejectedFastPaths
-      .filter((entry) => [
-        'compressed-remote-index-and-cached-dependency-graph-skips-plugin-install-activation',
-        'compressed-remote-index-and-cached-dependency-graph-skips-plugin-install-activation-after-pause',
-        'compressed-remote-index-and-cached-dependency-graph-skips-plugin-install-activation-after-pause-and-backpressure',
-        'compressed-remote-index-and-cached-dependency-graph-skips-plugin-install-dependency-checks',
-        'compressed-remote-index-and-cached-dependency-graph-skips-plugin-install-finalize',
-      ].includes(entry.id))
+    dependencyGraphPluginInstallRejectedFastPaths
       .map((entry) => ({
         id: entry.id,
         rejectedGate: entry.rejectedGate,
@@ -2267,6 +2287,10 @@ test('guarded benchmark surfaces dependency-graph plugin-install blockers at run
       },
     ].sort((left, right) => left.id.localeCompare(right.id)),
   );
+
+  assert.deepEqual(summarizeRejectedGates(dependencyGraphPluginInstallRejectedFastPaths), [
+    { rejectedGate: 'group', count: 5 },
+  ]);
 });
 
 test('guarded benchmark surfaces chunk-receipts plugin-install blockers at runtime', () => {
