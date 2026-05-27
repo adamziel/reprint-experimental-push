@@ -3,9 +3,9 @@
 This log records evidence present in this repository. Public status should use
 release gates and named evidence gaps rather than stale percentage estimates.
 
-# 2026-05-27 - Public Status Audit 11:32:58
+# 2026-05-27 - Public Status Audit 11:37:01
 
-<a id="2026-05-27-public-status-audit-113258"></a>
+<a id="2026-05-27-public-status-audit-113701"></a>
 
 - Refreshed [progress.html](../progress.html) to keep the current reliable
   head `bf495d928e18a1021ff2401b44b503ffbc97cd01` visible on the public
