@@ -103,38 +103,53 @@ function resolveScenarioMode(modeValue) {
   if (!modeValue) {
     return null;
   }
-  if (modeValue === 'driver-guard-only') {
-    return 'driver-receipt-guards';
-  }
-  if (modeValue === 'driver-receipt-only') {
-    return 'driver-receipt-guards';
-  }
-  if (modeValue === 'driver-verifier-only') {
-    return 'driver-verifier-guards';
-  }
-  if (modeValue === 'driver-registration-only') {
-    return 'driver-registration-guards';
-  }
-  if (modeValue === 'driver-receipt-registration-only') {
-    return 'driver-receipt-registration-guards';
-  }
-  if (modeValue === 'driver-callback-only') {
-    return 'driver-callback-guards';
-  }
-  if (modeValue === 'driver-registration-shape-only') {
-    return 'driver-registration-shape-guards';
-  }
-  if (modeValue === 'driver-delete-only') {
-    return 'driver-delete-apply';
-  }
-  if (modeValue === 'driver-positive-only') {
-    return 'driver-positive-proof';
-  }
-  if (modeValue === 'driver-release-proof-only') {
-    return 'driver-release-proof';
-  }
-  if (modeValue === 'driver-proof-only') {
-    return 'driver-proof';
+  const scenario = new Map([
+    ['driver-guard-only', 'driver-receipt-guards'],
+    ['driverGuardOnly', 'driver-receipt-guards'],
+    ['driver-receipt-only', 'driver-receipt-guards'],
+    ['driverReceiptOnly', 'driver-receipt-guards'],
+    ['driver-receipt-guards-only', 'driver-receipt-guards'],
+    ['driverReceiptGuardsOnly', 'driver-receipt-guards'],
+    ['driver-verifier-only', 'driver-verifier-guards'],
+    ['driverVerifierOnly', 'driver-verifier-guards'],
+    ['driver-verifier-guards-only', 'driver-verifier-guards'],
+    ['driverVerifierGuardsOnly', 'driver-verifier-guards'],
+    ['driver-registration-only', 'driver-registration-guards'],
+    ['driverRegistrationOnly', 'driver-registration-guards'],
+    ['driver-registration-guards-only', 'driver-registration-guards'],
+    ['driverRegistrationGuardsOnly', 'driver-registration-guards'],
+    ['driver-receipt-registration-only', 'driver-receipt-registration-guards'],
+    ['driverReceiptRegistrationOnly', 'driver-receipt-registration-guards'],
+    ['driver-receipt-registration-guards-only', 'driver-receipt-registration-guards'],
+    ['driverReceiptRegistrationGuardsOnly', 'driver-receipt-registration-guards'],
+    ['driver-callback-only', 'driver-callback-guards'],
+    ['driverCallbackOnly', 'driver-callback-guards'],
+    ['driver-callback-guards-only', 'driver-callback-guards'],
+    ['driverCallbackGuardsOnly', 'driver-callback-guards'],
+    ['driver-registration-shape-only', 'driver-registration-shape-guards'],
+    ['driverRegistrationShapeOnly', 'driver-registration-shape-guards'],
+    ['driver-registration-shape-guards-only', 'driver-registration-shape-guards'],
+    ['driverRegistrationShapeGuardsOnly', 'driver-registration-shape-guards'],
+    ['driver-delete-only', 'driver-delete-apply'],
+    ['driverDeleteOnly', 'driver-delete-apply'],
+    ['driver-delete-apply-only', 'driver-delete-apply'],
+    ['driverDeleteApplyOnly', 'driver-delete-apply'],
+    ['driverDeleteApplyProofOnly', 'driver-delete-apply'],
+    ['driver-route-only', 'core-package-routes'],
+    ['driverRouteOnly', 'core-package-routes'],
+    ['driver-route-proof-only', 'core-package-routes'],
+    ['driverRouteProofOnly', 'core-package-routes'],
+    ['driver-positive-only', 'driver-positive-proof'],
+    ['driverPositiveOnly', 'driver-positive-proof'],
+    ['driver-positive-proof-only', 'driver-positive-proof'],
+    ['driverPositiveProofOnly', 'driver-positive-proof'],
+    ['driver-release-proof-only', 'driver-release-proof'],
+    ['driverReleaseProofOnly', 'driver-release-proof'],
+    ['driver-proof-only', 'driver-proof'],
+    ['driverProofOnly', 'driver-proof'],
+  ]).get(modeValue);
+  if (scenario) {
+    return scenario;
   }
   throw new Error(
     `Unknown production plugin package smoke mode: ${modeValue}`,

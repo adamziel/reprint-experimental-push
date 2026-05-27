@@ -381,6 +381,66 @@ test('scenario resolver maps driver-proof-only mode to the bounded driver delete
   );
 });
 
+test('scenario resolver accepts bundle-aligned driver mode aliases without kebab-case translation', () => {
+  const releaseProof = resolveProductionPluginPackageScenarios(
+    [],
+    undefined,
+    'driverReleaseProofOnly',
+  );
+
+  assert.deepEqual(releaseProof.requestedScenarios, ['driver-release-proof']);
+  assert.equal(releaseProof.resolvedMode, 'driverReleaseProofOnly');
+  assert.deepEqual(
+    Array.from(releaseProof.selectedScenarios).sort(),
+    [
+      'driver-release-proof',
+      ...scenarioGroups['driver-release-proof'],
+    ].sort(),
+  );
+
+  const verifierGuards = resolveProductionPluginPackageScenarios(
+    [],
+    undefined,
+    'driverVerifierGuardsOnly',
+  );
+
+  assert.deepEqual(verifierGuards.requestedScenarios, ['driver-verifier-guards']);
+  assert.equal(verifierGuards.resolvedMode, 'driverVerifierGuardsOnly');
+  assert.deepEqual(
+    Array.from(verifierGuards.selectedScenarios).sort(),
+    [
+      'driver-verifier-guards',
+      ...scenarioGroups['driver-verifier-guards'],
+    ].sort(),
+  );
+
+  const deleteApply = resolveProductionPluginPackageScenarios(
+    [],
+    undefined,
+    'driverDeleteApplyProofOnly',
+  );
+
+  assert.deepEqual(deleteApply.requestedScenarios, ['driver-delete-apply']);
+  assert.equal(deleteApply.resolvedMode, 'driverDeleteApplyProofOnly');
+  assert.deepEqual(
+    Array.from(deleteApply.selectedScenarios).sort(),
+    ['driver-delete-apply'],
+  );
+
+  const routeProof = resolveProductionPluginPackageScenarios(
+    [],
+    undefined,
+    'driverRouteProofOnly',
+  );
+
+  assert.deepEqual(routeProof.requestedScenarios, ['core-package-routes']);
+  assert.equal(routeProof.resolvedMode, 'driverRouteProofOnly');
+  assert.deepEqual(
+    Array.from(routeProof.selectedScenarios).sort(),
+    ['core-package-routes'],
+  );
+});
+
 test('scenario resolver clears mode metadata when explicit scenario input overrides the bounded mode', () => {
   const resolved = resolveProductionPluginPackageScenarios(
     ['--scenario=driver-delete-apply'],
