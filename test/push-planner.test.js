@@ -35269,6 +35269,112 @@ test('blocks a local post parent reference owned by an existing wp_navigation po
   assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
 });
 
+test('blocks a local post parent reference owned by an existing nav_menu_item post even when it targets a same-plan post', () => {
+  const menuItemResourceKey = 'row:["wp_posts","ID:3"]';
+  const parentResourceKey = 'row:["wp_posts","ID:4"]';
+  const base = baseSite();
+  const local = baseSite();
+  const remote = baseSite();
+
+  base.db.wp_posts['ID:3'] = {
+    ID: 3,
+    post_title: 'Existing menu item child',
+    post_content: 'base-private-existing-menu-item-child-body',
+    post_status: 'publish',
+    post_type: 'nav_menu_item',
+  };
+  local.db.wp_posts['ID:3'] = {
+    ...base.db.wp_posts['ID:3'],
+    post_parent: 4,
+  };
+  remote.db.wp_posts['ID:3'] = {
+    ...base.db.wp_posts['ID:3'],
+  };
+  local.db.wp_posts['ID:4'] = {
+    ID: 4,
+    post_title: 'Local parent post',
+    post_content: 'local-private-parent-body',
+    post_status: 'publish',
+  };
+
+  const plan = planFor(base, local, remote);
+  const menuItemMutation = mutationFor(plan, menuItemResourceKey);
+  const parentMutation = mutationFor(plan, parentResourceKey);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === menuItemResourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(menuItemMutation, undefined);
+  assert.equal(parentMutation.changeKind, 'create');
+  assert.equal(blocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(blocker.surface, 'nav_menu_item');
+  assert.equal(
+    JSON.stringify(blocker).includes('base-private-existing-menu-item-child-body'),
+    false,
+  );
+  assert.equal(
+    JSON.stringify(blocker).includes('local-private-parent-body'),
+    false,
+  );
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
+});
+
+test('blocks a local post parent reference owned by an existing nav_menu_item post even when it targets a same-plan post and unrelated remote attachment noise exists', () => {
+  const menuItemResourceKey = 'row:["wp_posts","ID:3"]';
+  const parentResourceKey = 'row:["wp_posts","ID:4"]';
+  const base = baseSite();
+  const local = baseSite();
+  const remote = baseSite();
+
+  base.db.wp_posts['ID:3'] = {
+    ID: 3,
+    post_title: 'Existing menu item child',
+    post_content: 'base-private-existing-menu-item-child-body',
+    post_status: 'publish',
+    post_type: 'nav_menu_item',
+  };
+  local.db.wp_posts['ID:3'] = {
+    ...base.db.wp_posts['ID:3'],
+    post_parent: 4,
+  };
+  remote.db.wp_posts['ID:3'] = {
+    ...base.db.wp_posts['ID:3'],
+  };
+  local.db.wp_posts['ID:4'] = {
+    ID: 4,
+    post_title: 'Local parent post',
+    post_content: 'local-private-parent-body',
+    post_status: 'publish',
+  };
+  remote.db.wp_posts['ID:8'] = {
+    ID: 8,
+    post_title: 'Remote attachment noise',
+    post_content: 'remote-attachment-body',
+    post_status: 'inherit',
+    post_type: 'attachment',
+  };
+
+  const plan = planFor(base, local, remote);
+  const menuItemMutation = mutationFor(plan, menuItemResourceKey);
+  const parentMutation = mutationFor(plan, parentResourceKey);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === menuItemResourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(menuItemMutation, undefined);
+  assert.equal(parentMutation.changeKind, 'create');
+  assert.equal(blocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(blocker.surface, 'nav_menu_item');
+  assert.equal(
+    JSON.stringify(blocker).includes('base-private-existing-menu-item-child-body'),
+    false,
+  );
+  assert.equal(
+    JSON.stringify(blocker).includes('local-private-parent-body'),
+    false,
+  );
+  assert.equal(JSON.stringify(plan).includes('remote-attachment-body'), false);
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
+});
+
 test('blocks a local post parent reference owned by an existing attachment even when it targets a same-plan post', () => {
   const attachmentResourceKey = 'row:["wp_posts","ID:3"]';
   const parentResourceKey = 'row:["wp_posts","ID:4"]';
