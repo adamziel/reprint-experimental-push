@@ -43,6 +43,7 @@ import {
   packagedProductionPluginSnapshotRetryable,
   packagedProductionPluginSnapshotReady,
 } from '../scripts/playground/packaged-production-plugin-readiness.js';
+import { applyRevalidationRetryable } from '../scripts/playground/production-shaped-live-release-verify-lib.js';
 import {
   evaluateCheckedReleaseAuthSessionLifecycleSummary,
   evaluateProductionAuthSessionLifecycle,
@@ -3869,6 +3870,30 @@ maybeTest('production-shaped release verify command fails closed when preserved-
     );
     assert.match(proof.stdout, /"releaseProof": \{\s*"ok": false,\s*"status": 1,\s*"code": "PRESERVED_REMOTE_RETRY_REQUIRED"/);
   });
+});
+
+test('production-shaped live release verify retries transient apply revalidation timeouts after the apply step starts', () => {
+  assert.equal(
+    applyRevalidationRetryable({
+      status: 1,
+      stdout: '',
+      stderr: [
+        'apply-revalidation: waiting for Playground at http://127.0.0.1:8080',
+        'apply-revalidation: apply /apply',
+        'TimeoutError: The operation was aborted due to timeout',
+      ].join('\n'),
+    }),
+    true,
+  );
+
+  assert.equal(
+    applyRevalidationRetryable({
+      status: 1,
+      stdout: '',
+      stderr: 'TimeoutError: The operation was aborted due to timeout',
+    }),
+    false,
+  );
 });
 
 test('production-shaped apply revalidation smoke fails closed on mid-apply drift with production routes', () => {
