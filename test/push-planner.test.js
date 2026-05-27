@@ -41295,6 +41295,112 @@ test('blocks a local term relationship taxonomy reference owned by a nav_menu_it
   assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
 });
 
+test('blocks a local term relationship taxonomy reference owned by a nav_menu_item post when the same-plan term taxonomy target is itself blocked by a blocked same-plan parent term and unrelated remote revision noise exists', () => {
+  const navMenuItemResourceKey = 'row:["wp_posts","ID:3"]';
+  const blockedParentTermResourceKey = 'row:["wp_terms","term_id:7"]';
+  const childTermResourceKey = 'row:["wp_terms","term_id:8"]';
+  const blockedNavMenuTaxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:9"]';
+  const samePlanTaxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:10"]';
+  const relationshipResourceKey = 'row:["wp_term_relationships","object_id:3|term_taxonomy_id:10"]';
+  const base = baseSite();
+  const local = baseSite();
+  const remote = baseSite();
+  local.db.wp_posts['ID:3'] = {
+    ID: 3,
+    post_title: 'Local nav menu item relationship owner',
+    post_content: 'local-private-nav-menu-item-relationship-owner-body',
+    post_status: 'publish',
+    post_type: 'nav_menu_item',
+  };
+  local.db.wp_terms = {
+    'term_id:7': {
+      term_id: 7,
+      name: 'Local blocked nav menu item parent term',
+      slug: 'local-blocked-nav-menu-item-parent-term',
+    },
+    'term_id:8': {
+      term_id: 8,
+      name: 'Local replacement nav menu item category term',
+      slug: 'local-replacement-nav-menu-item-category-term',
+    },
+  };
+  local.db.wp_term_taxonomy = {
+    'term_taxonomy_id:9': {
+      term_taxonomy_id: 9,
+      term_id: 7,
+      taxonomy: 'nav_menu',
+      description: '',
+      parent: 0,
+      count: 0,
+    },
+    'term_taxonomy_id:10': {
+      term_taxonomy_id: 10,
+      term_id: 8,
+      taxonomy: 'category',
+      description: '',
+      parent: 7,
+      count: 0,
+    },
+  };
+  local.db.wp_term_relationships = {
+    'object_id:3|term_taxonomy_id:10': {
+      object_id: 3,
+      term_taxonomy_id: 10,
+      term_order: 0,
+    },
+  };
+  remote.db.wp_posts['ID:21'] = {
+    ID: 21,
+    post_title: 'Remote unrelated revision noise',
+    post_content: 'remote-private-unrelated-nav-menu-item-revision-body',
+    post_status: 'inherit',
+    post_type: 'revision',
+    post_parent: 1,
+  };
+
+  const plan = planFor(base, local, remote);
+  const navMenuItemMutation = mutationFor(plan, navMenuItemResourceKey);
+  const blockedParentTermMutation = mutationFor(plan, blockedParentTermResourceKey);
+  const childTermMutation = mutationFor(plan, childTermResourceKey);
+  const samePlanTaxonomyMutation = mutationFor(plan, samePlanTaxonomyResourceKey);
+  const relationshipMutation = mutationFor(plan, relationshipResourceKey);
+  const navMenuTaxonomyBlocker = plan.blockers.find((entry) => entry.resourceKey === blockedNavMenuTaxonomyResourceKey);
+  const samePlanTaxonomyBlocker = plan.blockers.find((entry) => entry.resourceKey === samePlanTaxonomyResourceKey);
+  const relationshipBlocker = plan.blockers.find((entry) => entry.resourceKey === relationshipResourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(navMenuItemMutation, undefined);
+  assert.equal(blockedParentTermMutation.changeKind, 'create');
+  assert.equal(childTermMutation.changeKind, 'create');
+  assert.equal(samePlanTaxonomyMutation.changeKind, 'create');
+  assert.equal(navMenuTaxonomyBlocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(navMenuTaxonomyBlocker.surface, 'nav_menu');
+  assert.equal(samePlanTaxonomyBlocker.class, 'missing-wordpress-graph-dependency');
+  assert.equal(samePlanTaxonomyBlocker.references[0].relationshipType, 'term-taxonomy-parent');
+  assert.equal(samePlanTaxonomyBlocker.references[0].targetResourceKey, blockedParentTermResourceKey);
+  assert.equal(samePlanTaxonomyMutation.dependsOnMutationIds, undefined);
+  assert.equal(relationshipMutation, undefined);
+  assert.equal(relationshipBlocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(relationshipBlocker.surface, 'nav_menu_item');
+  assert.equal(
+    JSON.stringify(relationshipBlocker).includes('local-private-nav-menu-item-relationship-owner-body'),
+    false,
+  );
+  assert.equal(
+    JSON.stringify(relationshipBlocker).includes('local-blocked-nav-menu-item-parent-term'),
+    false,
+  );
+  assert.equal(
+    JSON.stringify(relationshipBlocker).includes('local-replacement-nav-menu-item-category-term'),
+    false,
+  );
+  assert.equal(
+    JSON.stringify(relationshipBlocker).includes('remote-private-unrelated-nav-menu-item-revision-body'),
+    false,
+  );
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
+});
+
 test('blocks a local term relationship taxonomy reference owned by a wp_navigation post even when it targets a same-plan term taxonomy and unrelated remote attachment noise exists', () => {
   const navigationResourceKey = 'row:["wp_posts","ID:3"]';
   const termResourceKey = 'row:["wp_terms","term_id:7"]';
