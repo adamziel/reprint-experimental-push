@@ -1528,27 +1528,35 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
                 },
               );
             }
+            const malformedSnapshotFallbackPreflightBody = preflightProbe.invalidReadinessBody === true
+              || (
+                preflightProbe.parsedBody === null
+                && !packagedProductionPluginReadinessBodyRetryable(
+                  preflightProbe.status,
+                  preflightProbe.body || '',
+                )
+              );
             notReadyProbeCounts = packagedProductionPluginResetRouteNotReadyProbeCounts(
               notReadyProbeCounts,
               'preflight',
             );
             await throwPlaygroundReadinessFailure(
               child,
-                malformedSnapshotFallbackPreflightBody
-                  ? `Packaged production plugin signed preflight returned an invalid readiness body while snapshot still reported startup-shaped readiness at ${baseUrl}`
-                  : `Packaged production plugin signed preflight became terminal while snapshot still reported startup-shaped readiness at ${baseUrl}`,
-                lastError,
-                lastProbes,
-                getOutput(),
-                packagedProductionPluginPreflightTerminalContext(
-                  {
-                    childPid: child.pid ?? null,
-                    snapshotNotReadyProbeCount,
-                    ...(malformedSnapshotFallbackPreflightBody ? { invalidReadinessBody: true } : {}),
-                  },
-                  { snapshotStartupFallback: true },
-                ),
-              );
+              malformedSnapshotFallbackPreflightBody
+                ? `Packaged production plugin signed preflight returned an invalid readiness body while snapshot still reported startup-shaped readiness at ${baseUrl}`
+                : `Packaged production plugin signed preflight became terminal while snapshot still reported startup-shaped readiness at ${baseUrl}`,
+              lastError,
+              lastProbes,
+              getOutput(),
+              packagedProductionPluginPreflightTerminalContext(
+                {
+                  childPid: child.pid ?? null,
+                  snapshotNotReadyProbeCount,
+                  ...(malformedSnapshotFallbackPreflightBody ? { invalidReadinessBody: true } : {}),
+                },
+                { snapshotStartupFallback: true },
+              ),
+            );
             }
           if (
             packagedProductionPluginRouteStartupClassificationReady(
