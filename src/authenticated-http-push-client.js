@@ -1565,6 +1565,11 @@ export async function runAuthenticatedHttpPush({
   const dbJournalCheckedBoundaryAccepted = requireCheckedDurableJournalBoundary
     ? dbJournalStrictBoundaryAccepted
     : dbJournalAccepted;
+  const recoveryInspectProductionJournalAccepted = productionRecoveryJournalProofIsAcceptable(
+    summary.recoveryInspect?.recovery?.productionJournal,
+  );
+  const durableJournalBoundaryAccepted = dbJournalCheckedBoundaryAccepted
+    || recoveryInspectProductionJournalAccepted;
   if (simulatePreservedRemoteRetryPath && requiredPreservedRemoteRetryAttempts < 2) {
     summary.replayAndRetry = {
       required: simulatePreservedRemoteRetryPath,
@@ -1574,10 +1579,10 @@ export async function runAuthenticatedHttpPush({
     };
     if ((summary.retryAttempts || 1) > requiredPreservedRemoteRetryAttempts) {
       summary.code = 'PRESERVED_REMOTE_RETRY_REQUIRED';
-      setReplayAndRetryBoundary(summary, { durableJournalProven: dbJournalCheckedBoundaryAccepted });
+      setReplayAndRetryBoundary(summary, { durableJournalProven: durableJournalBoundaryAccepted });
       return summary;
     }
-    if (!dbJournalCheckedBoundaryAccepted) {
+    if (!durableJournalBoundaryAccepted) {
       summary.code = 'DURABLE_JOURNAL_NOT_PROVEN';
       setDurableJournalBoundary(summary, 'journal-inspect');
       return summary;
@@ -1609,17 +1614,17 @@ export async function runAuthenticatedHttpPush({
     && !replayAuthEnvelopeDrift
     && dbJournal.status === 200
     && dbJournal.body?.ok === true
-    && dbJournalAccepted
+    && durableJournalBoundaryAccepted
     && summary.after?.finalMatchesLocal === true;
   if (!summary.ok) {
     const replayIdempotency = replay.body?.idempotency;
     const authEnvelopeDrift = applyAuthEnvelopeDrift || replayAuthEnvelopeDrift;
     const journalProofFailed = dbJournal.status === 200
       && dbJournal.body?.ok === true
-      && !dbJournalAccepted;
+      && !durableJournalBoundaryAccepted;
     const journalCheckedBoundaryFailed = dbJournal.status === 200
       && dbJournal.body?.ok === true
-      && !dbJournalCheckedBoundaryAccepted;
+      && !durableJournalBoundaryAccepted;
     const journalStrictBoundaryFailed = dbJournal.status === 200
       && dbJournal.body?.ok === true
       && !dbJournalStrictBoundaryAccepted;
@@ -2295,6 +2300,14 @@ function dbJournalCheckedBoundaryIsAcceptable(dbJournal, options = {}) {
     ...options,
     requireCheckedBoundary: true,
   });
+}
+
+export function productionRecoveryJournalProofIsAcceptable(productionJournal) {
+  return productionRecoveryJournalInspectionSurfaceIsPresent(productionJournal)
+    && productionJournal?.journal?.consumed === true
+    && productionJournal?.journal?.ownership?.ownsJournal === true
+    && productionJournal?.journal?.ownership?.restartReadable === true
+    && productionJournal?.leaseFence?.restartReadable === true;
 }
 
 function normalizeCheckedBoundaryDbJournal(dbJournal) {

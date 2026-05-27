@@ -9698,6 +9698,20 @@ test('production-shaped authenticated push preserves consumed claim identity fro
     });
 
     assert.equal(summary.ok, false);
+    assert.equal(summary.code, 'APPLY_REVALIDATION_REQUIRED');
+    assert.equal(
+      summary.boundary?.firstRemainingProductionBoundary,
+      'apply-time revalidation before first mutation on the checked release path',
+    );
+    assert.equal(summary.boundary?.status, 'unimplemented');
+    assert.equal(summary.boundary?.verdict, 'APPLY_REVALIDATION_REQUIRED');
+    assert.deepEqual(summary.boundary?.applyRevalidation, {
+      field: 'planHash',
+      required: summary.boundary?.applyRevalidation?.required,
+      observed: null,
+      verdict: 'APPLY_REVALIDATION_REQUIRED',
+    });
+    assert.match(summary.boundary?.applyRevalidation?.required || '', /^[a-f0-9]{64}$/);
     assert.equal(summary.recoveryInspect.recovery.journal.kind, 'production-recovery-journal');
     assert.equal(summary.recoveryInspect.recovery.journal.consumed, true);
     assert.equal(summary.recoveryInspect.recovery.journal.consumedClaimId, claimId);
@@ -9708,6 +9722,8 @@ test('production-shaped authenticated push preserves consumed claim identity fro
     assert.equal(summary.recoveryInspect.recovery.productionJournal.journal.consumedClaimId, claimId);
     assert.equal(summary.recoveryInspect.recovery.productionJournal.journal.consumedClaimHash, claimHash);
     assert.equal(summary.recoveryInspect.recovery.productionJournal.claim.activeClaimId, claimId);
+    assert.equal(summary.dbJournal?.ownership?.ownsJournal, true);
+    assert.equal(summary.replayEquivalence?.equivalent, true);
     assert.ok(seen.some(({ url }) => url.includes('/db-journal?limit=80')));
   } finally {
     global.fetch = originalFetch;
