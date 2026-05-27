@@ -1,50 +1,74 @@
 # Critic Verdict
 
-Current reliable head: `a1ca1eff94781e79d000e27ddcdac68c3c4a1cb0`
+Fetched reliable ref today:
+
+- `origin/lane/reliable-executor` no longer points at
+  `b8f2b23af24c3bc3ab6faa91c490a2bb550d53a8`; after `git fetch` it resolves to
+  `66afff2b1da3e83018f04d9ece3e42d46cab7f92`
+  (`Narrow packaged driver proof helper`).
+- Reliable's retained lane output still shows that `b8f2b23af` was the pushed
+  remote head immediately before that follow-up advanced the branch, so this
+  note classifies `b8f2b23af24c3bc3ab6faa91c490a2bb550d53a8`
+  (`Pin live apply timeout retry`) directly.
+
+Previous classified reliable head: `a1ca1eff94781e79d000e27ddcdac68c3c4a1cb0`
 (`Retry transient apply revalidation timeouts`).
 
-Previous classified reliable head: `c2a70e1f3c7dd7f38faa8b27332e62ff0a65c874`
-(`Reuse auth session source in release proofs`).
-
-Verdict: `0/4`
+Verdict for `b8f2b23af24c3bc3ab6faa91c490a2bb550d53a8`: `0/4`
 
 Reason:
 
-- I repolled `origin/lane/reliable-executor` and confirmed it points at
-  `a1ca1eff94781e79d000e27ddcdac68c3c4a1cb0`.
-- The `c2a70e1f..a1ca1eff` delta is limited to
-  `scripts/playground/production-shaped-live-release-verify.mjs`.
-- The only code change broadens the live wrapper retry rule from startup-only
-  readiness failures to one more bounded transient case: if the child reaches
-  `apply-revalidation: apply /apply` and then aborts with
-  `TimeoutError: The operation was aborted due to timeout`, the wrapper
-  respawns the apply-revalidation proof instead of failing the outer bounded
-  run immediately.
-- Reliable's retained evidence shows exactly that support win: the old bounded
-  direct wrapper run died after about `149s` on the apply-timeout path, while
-  the patched bounded command
-  `timeout 210s env REPRINT_PUSH_REQUIRE_PRODUCTION_AUTH_SESSION=1 REPRINT_PUSH_REQUIRE_PRODUCTION_DURABLE_JOURNAL=1 REPRINT_PUSH_SIMULATE_PRESERVED_REMOTE_RETRY_PATH=/snapshot NODE_NO_WARNINGS=1 node scripts/playground/production-shaped-live-release-verify.mjs`
-  exited `0` and emitted `PACKAGED_RELEASE_BOUNDARY_OK`,
+- The `a1ca1eff..b8f2b23a` diff is narrow and entirely verifier-side:
+  it extracts `applyRevalidationRetryable()` into
+  `scripts/playground/production-shaped-live-release-verify-lib.js`,
+  removes the identical inline helper from
+  `scripts/playground/production-shaped-live-release-verify.mjs`, and adds one
+  focused positive/negative unit test in
+  `test/production-shaped-proof.test.js`.
+- The new test pins exactly one already-claimed wrapper behavior: a nonzero
+  apply-revalidation child is retryable when output proves it reached
+  `apply-revalidation: apply /apply` and then aborted with
+  `TimeoutError: The operation was aborted due to timeout`; a bare timeout
+  without that apply-step marker is not retryable.
+- Reliable's retained verification for `b8f2b23a` matches that limited scope:
+  `node --check` on the two verifier files and the touched test file,
+  `git diff --check`, and the focused
+  `node --test --test-name-pattern='production-shaped live release verify retries transient apply revalidation timeouts after the apply step starts'`
+  run. That is a regression pin, not a new boundary proof.
+- The only broader support evidence remains the earlier `a1ca1eff` bounded
+  combined wrapper run. Reliable's retained logs still show the pre-patch
+  direct bounded wrapper failed after about `149s` once the child reached
+  `apply-revalidation: apply /apply` and aborted with that timeout, while the
+  patched bounded `timeout 210s ... production-shaped-live-release-verify.mjs`
+  run exited `0` and emitted `PACKAGED_RELEASE_BOUNDARY_OK`,
   `replayAndRetry.retryAttempts: 2`, `authSessionType:
-  "production-auth-session"`, durable-journal `ownsJournal: true`,
+  "production-auth-session"`, durable-journal ownership,
   `restartReadable: true`, `staleClaimRejected: true`, and the expected
   apply-revalidation `PRECONDITION_FAILED` recovery block.
-- That closes a verifier-wrapper timeout hole, but it still closes no
-  supervised production release gate. The proof remains the same packaged
-  combined wrapper path as before, still scoped to verifier/package-mode
-  evidence rather than one production-owned, non-lab-backed checked release
-  boundary on the real Reprint endpoint.
-- So the verdict remains `0/4`: `a1ca1eff` proves the packaged combined
-  wrapper can retry through a transient apply-revalidation timeout and finish
-  the retained proof, but it still does not supply the missing real-endpoint
-  executor/auth/session/durable-journal/preserved-remote boundary.
+- That means `b8f2b23a` closes no new supervised release gate beyond
+  hardening the packaged combined wrapper's retry rule. It does not add a
+  production-owned source-boundary primitive, does not move proof onto the
+  real Reprint endpoint, and does not turn the packaged verifier evidence into
+  one rerunnable non-lab-backed checked release boundary.
+- So the verdict stays `0/4`: `b8f2b23a` is a narrow regression test for the
+  already-classified `a1ca1eff` wrapper retry behavior, not a new production
+  boundary crossing.
 
 Next exact reliable-owned primitive:
 
 - One production-owned, non-lab-backed checked release command on the real
-  Reprint endpoint where the exact executable command string and exact live
-  `REPRINT_PUSH_SOURCE_URL` are visible, that same executable command mints
-  and then reads back a live auth session on the real source URL, persists it
-  in durable restart-readable journal storage with lease-fenced ownership,
-  preserves the rejected remote evidence for audit, and performs apply-time
-  revalidation before the first mutation on that same live boundary.
+  Reprint endpoint where the same executable command string and same live
+  `REPRINT_PUSH_SOURCE_URL` visibly mint and then read back a live auth session
+  on that real source URL, persist it in durable restart-readable journal
+  storage with lease-fenced ownership, preserve the rejected remote evidence
+  for audit, and perform apply-time revalidation before the first mutation on
+  that same boundary.
+
+Next focused regression test after that primitive exists:
+
+- A focused non-lab-backed checked-release test that proves the real-endpoint
+  command can restart from durable journal state after an injected
+  post-dry-run / pre-first-mutation interruption, reread the same live auth
+  session and lease-fenced journal ownership, revalidate `/apply` before any
+  mutation, reject the stale preserved remote with retained audit evidence, and
+  classify recovery as replayed or blocked without fresh mutation work.
