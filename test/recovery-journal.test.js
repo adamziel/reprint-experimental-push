@@ -1149,6 +1149,60 @@ test('checked durable journal boundary stays closed until stale-claim rejection 
     }),
     false,
   );
+  const inheritedClaimEvidenceRows = {
+    ...baseContract,
+    claimEvidence: {
+      ...baseContract.claimEvidence,
+      activeRow: Object.assign(
+        Object.create({
+          claimId: baseContract.claimEvidence.activeRow.claimId,
+          sequence: baseContract.claimEvidence.activeRow.sequence,
+          event: baseContract.claimEvidence.activeRow.event,
+          claimKeyHash: baseContract.claimEvidence.activeRow.claimKeyHash,
+          idempotencyKeyHash: baseContract.claimEvidence.activeRow.idempotencyKeyHash,
+          requestHash: baseContract.claimEvidence.activeRow.requestHash,
+        }),
+        baseContract.claimEvidence.activeRow,
+      ),
+      abandonedRow: Object.assign(
+        Object.create({
+          startedCursor: baseContract.claimEvidence.abandonedRow.startedCursor,
+          claimCursor: baseContract.claimEvidence.abandonedRow.claimCursor,
+        }),
+        baseContract.claimEvidence.abandonedRow,
+      ),
+    },
+    latestRows: matchedStaleClaimLatestRows,
+    storageGuard: {
+      boundary: 'wpdb-single-statement-cas',
+      operation: 'update',
+      outcome: 'applied',
+    },
+    writerLease: {
+      ...baseContract.writerLease,
+      staleClaimRejected: true,
+    },
+    leaseFence: {
+      ...baseContract.leaseFence,
+      staleClaimRejected: true,
+      writerLease: {
+        ...baseContract.leaseFence.writerLease,
+        staleClaimRejected: true,
+      },
+    },
+  };
+  delete inheritedClaimEvidenceRows.claimEvidence.activeRow.claimId;
+  delete inheritedClaimEvidenceRows.claimEvidence.activeRow.sequence;
+  delete inheritedClaimEvidenceRows.claimEvidence.activeRow.event;
+  delete inheritedClaimEvidenceRows.claimEvidence.activeRow.claimKeyHash;
+  delete inheritedClaimEvidenceRows.claimEvidence.activeRow.idempotencyKeyHash;
+  delete inheritedClaimEvidenceRows.claimEvidence.activeRow.requestHash;
+  delete inheritedClaimEvidenceRows.claimEvidence.abandonedRow.startedCursor;
+  delete inheritedClaimEvidenceRows.claimEvidence.abandonedRow.claimCursor;
+  assert.equal(
+    checkedDurableJournalBoundarySatisfied(inheritedClaimEvidenceRows),
+    false,
+  );
   assert.equal(
     checkedDurableJournalBoundarySatisfied({
       ...baseContract,

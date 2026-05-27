@@ -769,6 +769,13 @@ function durableJournalClaimEvidenceContractMatches(claim, claimEvidence) {
 
   if (
     isPositiveInteger(claim.previousStartedSequence)
+    && !Object.hasOwn(claimEvidence?.abandonedRow ?? {}, 'startedCursor')
+  ) {
+    return false;
+  }
+
+  if (
+    isPositiveInteger(claim.previousStartedSequence)
     && cursorSequence(claimEvidence?.abandonedRow?.startedCursor) !== claim.previousStartedSequence
   ) {
     return false;
@@ -792,6 +799,13 @@ function durableJournalClaimEvidenceContractMatches(claim, claimEvidence) {
 
   if (
     isPositiveInteger(claim.previousClaimSequence)
+    && !Object.hasOwn(claimEvidence?.abandonedRow ?? {}, 'claimCursor')
+  ) {
+    return false;
+  }
+
+  if (
+    isPositiveInteger(claim.previousClaimSequence)
     && cursorSequence(claimEvidence?.abandonedRow?.claimCursor) !== claim.previousClaimSequence
   ) {
     return false;
@@ -804,7 +818,28 @@ function durableJournalClaimEvidenceRowMatches(row, expected) {
   if (!row || typeof row !== 'object') {
     return false;
   }
-  return (!hasNonEmptyString(expected.claimId) || row.claimId === expected.claimId)
+  const requiredKeys = [];
+  if (hasNonEmptyString(expected.claimId)) {
+    requiredKeys.push('claimId');
+  }
+  if (isPositiveInteger(expected.sequence)) {
+    requiredKeys.push('sequence');
+  }
+  if (hasNonEmptyString(expected.event)) {
+    requiredKeys.push('event');
+  }
+  if (hasNonEmptyString(expected.claimKeyHash)) {
+    requiredKeys.push('claimKeyHash');
+  }
+  if (hasNonEmptyString(expected.idempotencyKeyHash)) {
+    requiredKeys.push('idempotencyKeyHash');
+  }
+  if (hasNonEmptyString(expected.requestHash)) {
+    requiredKeys.push('requestHash');
+  }
+
+  return hasOwnProperties(row, requiredKeys)
+    && (!hasNonEmptyString(expected.claimId) || row.claimId === expected.claimId)
     && (!isPositiveInteger(expected.sequence) || row.sequence === expected.sequence)
     && (!hasNonEmptyString(expected.event) || row.event === expected.event)
     && (!hasNonEmptyString(expected.claimKeyHash) || row.claimKeyHash === expected.claimKeyHash)
