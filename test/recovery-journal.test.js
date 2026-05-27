@@ -7204,6 +7204,97 @@ test('production recovery journal consumption fails closed when a later persiste
   });
 });
 
+test('production recovery journal reopen fails closed when a later persisted record sets the owned journal artifact ref to an empty string', () => {
+  const filePath = tempJournalPath();
+  const remote = baseSite();
+  const plan = planFor(baseSite(), localSite(), remote);
+  const claimId = 'claim-late-undefined-journal-ref';
+  const artifactRefs = {
+    journal: filePath,
+  };
+  const journal = openProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs,
+    claimId,
+  });
+  appendRecoveryClaimOpened(journal, {
+    plan,
+    current: remote,
+    claimId,
+    artifactRefs,
+  });
+  journal.appendEvent('recovery-state', {
+    planId: plan.id,
+    state: 'blocked-recovery',
+    observedHash: 'snapshot-hash-only',
+    artifactRefs: {
+      journal: '',
+    },
+  });
+  journal.close();
+
+  assert.throws(() => {
+    openProductionRecoveryJournal(filePath, {
+      truncate: false,
+      now: fixedNow,
+      claimId,
+      writerLease: { id: claimId },
+    });
+  }, {
+    name: 'UnsupportedProductionRecoveryJournalError',
+    code: 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL',
+    message: 'Production recovery journal persistence includes an invalid owned journal artifact path.',
+  });
+});
+
+test('production recovery journal consumption fails closed when a later persisted record sets the owned journal artifact ref to an empty string', () => {
+  const filePath = tempJournalPath();
+  const remote = baseSite();
+  const plan = planFor(baseSite(), localSite(), remote);
+  const claimId = 'claim-consume-late-undefined-journal-ref';
+  const artifactRefs = {
+    journal: filePath,
+  };
+  const journal = openProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs,
+    claimId,
+  });
+  appendRecoveryClaimOpened(journal, {
+    plan,
+    current: remote,
+    claimId,
+    artifactRefs,
+  });
+  journal.appendEvent('recovery-state', {
+    planId: plan.id,
+    state: 'blocked-recovery',
+    observedHash: 'snapshot-hash-only',
+    artifactRefs: {
+      journal: '',
+    },
+  });
+  journal.close();
+
+  assert.throws(() => {
+    consumeProductionRecoveryJournal({
+      filePath,
+      plan,
+      current: remote,
+      artifactRefs,
+      claimId,
+    });
+  }, {
+    name: 'UnsupportedProductionRecoveryJournalError',
+    code: 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL',
+    message: 'Production recovery journal persistence includes an invalid owned journal artifact path.',
+  });
+});
+
 test('production recovery journal reopen fails closed when a later persisted record rewrites the owned journal artifact path', () => {
   const filePath = tempJournalPath();
   const remote = baseSite();
