@@ -95,6 +95,27 @@ test('package scripts pin the bounded plugin-driver registration-shape guard bun
   );
 });
 
+test('package scripts pin the bounded plugin-driver registration-whitespace guard bundle entrypoint', () => {
+  assert.equal(
+    packageJson.scripts['test:playground:production-plugin-driver-registration-whitespace-guards'],
+    'REPRINT_PUSH_PACKAGE_SMOKE_MODE=driverRegistrationWhitespaceGuards node ./scripts/playground/production-plugin-package-smoke.mjs',
+  );
+});
+
+test('package scripts pin the bounded plugin-driver registration-whitespace guard alias entrypoint', () => {
+  assert.equal(
+    packageJson.scripts['test:playground:production-plugin-driver-registration-whitespace-guards-only'],
+    'REPRINT_PUSH_PACKAGE_SMOKE_MODE=driverRegistrationWhitespaceGuardsOnly node ./scripts/playground/production-plugin-package-smoke.mjs',
+  );
+});
+
+test('package scripts pin the bounded plugin-driver registration-whitespace-only mode entrypoint', () => {
+  assert.equal(
+    packageJson.scripts['test:playground:production-plugin-driver-registration-whitespace-only'],
+    'REPRINT_PUSH_PACKAGE_SMOKE_MODE=driverRegistrationWhitespaceOnly node ./scripts/playground/production-plugin-package-smoke.mjs',
+  );
+});
+
 test('package scripts pin the bounded plugin-driver delete apply scenario entrypoint', () => {
   assert.equal(
     packageJson.scripts['test:playground:production-plugin-driver-delete-apply'],
@@ -340,6 +361,13 @@ test('package scripts pin the exact plugin-driver registration-shape-guards-only
   );
 });
 
+test('package scripts pin the exact plugin-driver registration-whitespace-guards-only mode alias entrypoint', () => {
+  assert.equal(
+    packageJson.scripts['test:playground:production-plugin-driver-registration-whitespace-guards-only'],
+    'REPRINT_PUSH_PACKAGE_SMOKE_MODE=driverRegistrationWhitespaceGuardsOnly node ./scripts/playground/production-plugin-package-smoke.mjs',
+  );
+});
+
 test('package scripts pin the bounded plugin-driver receipt-only mode entrypoint', () => {
   assert.equal(
     packageJson.scripts['test:playground:production-plugin-driver-receipt-only'],
@@ -546,6 +574,7 @@ test('package scripts keep every guard-proof canonical mode reachable through ru
     'driver-receipt-registration-guards',
     'driver-registration-guards',
     'driver-registration-shape-guards',
+    'driver-registration-whitespace-guards',
     'driver-release-proof',
     'driver-verifier-guards',
   ]);

@@ -184,6 +184,7 @@ test('plugin-driver proof summary exports guard-proof mode aliases for every can
     'driver-receipt-registration-guards',
     'driver-registration-guards',
     'driver-registration-shape-guards',
+    'driver-registration-whitespace-guards',
     'driver-release-proof',
     'driver-verifier-guards',
   ]);
@@ -212,6 +213,7 @@ test('plugin-driver proof summary exports canonical proof keys for downstream mo
     'driver-receipt-registration-guards': 'driverReceiptRegistrationGuards',
     'driver-registration-guards': 'driverRegistrationGuards',
     'driver-registration-shape-guards': 'driverRegistrationShapeGuards',
+    'driver-registration-whitespace-guards': 'driverRegistrationWhitespaceGuards',
     'driver-release-proof': 'driverReleaseProof',
     'driver-verifier-guards': 'driverVerifierGuards',
   });
@@ -269,6 +271,9 @@ test('plugin-driver proof summary resolves every exported runtime mode alias to 
     ['driverRegistrationShapeOnly', { canonicalMode: 'driver-registration-shape-guards', proofKey: 'driverRegistrationShapeGuards' }],
     ['driverRegistrationShapeGuards', { canonicalMode: 'driver-registration-shape-guards', proofKey: 'driverRegistrationShapeGuards' }],
     ['driverRegistrationShapeGuardsOnly', { canonicalMode: 'driver-registration-shape-guards', proofKey: 'driverRegistrationShapeGuards' }],
+    ['driverRegistrationWhitespaceOnly', { canonicalMode: 'driver-registration-whitespace-guards', proofKey: 'driverRegistrationWhitespaceGuards' }],
+    ['driverRegistrationWhitespaceGuards', { canonicalMode: 'driver-registration-whitespace-guards', proofKey: 'driverRegistrationWhitespaceGuards' }],
+    ['driverRegistrationWhitespaceGuardsOnly', { canonicalMode: 'driver-registration-whitespace-guards', proofKey: 'driverRegistrationWhitespaceGuards' }],
   ]);
 
   for (const [mode, expected] of expectations) {
@@ -395,6 +400,91 @@ test('plugin-driver proof summary resolves runtime mode aliases directly to proo
   assert.equal(verifierModeProof?.requestedBundleStatus, null);
   assert.equal(verifierModeProof?.guardProof?.guardCount, 16);
   assert.equal(resolveProductionPluginPackageModeProof(summary, null), null);
+});
+
+test('plugin-driver proof summary resolves dedicated whitespace registration guard mode payloads', () => {
+  const summary = buildProductionPluginPackageProofSummary(
+    {
+      driverWhitespaceNameGuard: {
+        missingDriverName: true,
+      },
+      driverWhitespacePluginOwnerGuard: {
+        missingPluginOwner: true,
+      },
+      driverWhitespaceTableGuard: {
+        missingTable: true,
+      },
+    },
+    {
+      requestedScenarios: ['driverRegistrationWhitespaceGuards'],
+      selectedScenarios: new Set([
+        'driverRegistrationWhitespaceGuards',
+        ...scenarioGroups['driver-registration-whitespace-guards'],
+      ]),
+      resolvedMode: 'driverRegistrationWhitespaceGuards',
+      canonicalMode: 'driver-registration-whitespace-guards',
+    },
+  );
+
+  const whitespaceModeProof = resolveProductionPluginPackageModeProof(
+    summary,
+    'driverRegistrationWhitespaceGuards',
+  );
+
+  assert.equal(whitespaceModeProof?.mode, 'driverRegistrationWhitespaceGuards');
+  assert.equal(
+    whitespaceModeProof?.canonicalMode,
+    'driver-registration-whitespace-guards',
+  );
+  assert.equal(
+    whitespaceModeProof?.proofKey,
+    'driverRegistrationWhitespaceGuards',
+  );
+  assert.equal(
+    whitespaceModeProof?.legacyProofKey,
+    'driverRegistrationWhitespaceGuards',
+  );
+  assert.equal(
+    whitespaceModeProof?.proof,
+    summary.driverRegistrationWhitespaceGuards,
+  );
+  assert.equal(
+    whitespaceModeProof?.requestedBundleStatus,
+    'passed',
+  );
+  assert.deepEqual(whitespaceModeProof?.requestedBundleStatuses, {
+    driverRegistrationWhitespaceGuards: 'passed',
+  });
+  assert.deepEqual(whitespaceModeProof?.guardProof, {
+    ok: true,
+    status: 'passed',
+    guardCount: 3,
+    passedGuardCount: 3,
+    failedGuardCount: 0,
+    guardStatuses: {
+      whitespaceName: 'passed',
+      whitespacePluginOwner: 'passed',
+      whitespaceTable: 'passed',
+    },
+    passedGuards: [
+      'whitespaceName',
+      'whitespacePluginOwner',
+      'whitespaceTable',
+    ],
+    failedGuards: [],
+    whitespaceName: {
+      observed: true,
+      status: 'passed',
+    },
+    whitespacePluginOwner: {
+      observed: true,
+      status: 'passed',
+    },
+    whitespaceTable: {
+      observed: true,
+      status: 'passed',
+    },
+  });
 });
 
 test('plugin-driver mode proof resolver infers the full bounded modeProof view from raw smoke metadata', () => {
@@ -597,10 +687,19 @@ test('plugin-driver mode proof resolver rebuilds a mismatched attached pluginDri
     driverMissingNameGuard: {
       missingDriverName: true,
     },
+    driverWhitespaceNameGuard: {
+      missingDriverName: true,
+    },
     driverPluginOwnerGuard: {
       missingPluginOwner: true,
     },
+    driverWhitespacePluginOwnerGuard: {
+      missingPluginOwner: true,
+    },
     driverMissingTableGuard: {
+      missingTable: true,
+    },
+    driverWhitespaceTableGuard: {
       missingTable: true,
     },
     driverDuplicateNameGuard: {
@@ -1536,10 +1635,19 @@ test('plugin-driver proof summary rebuilds a verifier alias proof when its top-l
     driverMissingNameGuard: {
       missingDriverName: true,
     },
+    driverWhitespaceNameGuard: {
+      missingDriverName: true,
+    },
     driverPluginOwnerGuard: {
       missingPluginOwner: true,
     },
+    driverWhitespacePluginOwnerGuard: {
+      missingPluginOwner: true,
+    },
     driverMissingTableGuard: {
+      missingTable: true,
+    },
+    driverWhitespaceTableGuard: {
       missingTable: true,
     },
     driverDuplicateNameGuard: {
@@ -1663,10 +1771,19 @@ test('plugin-driver proof summary rebuilds a verifier alias proof when stale top
     driverMissingNameGuard: {
       missingDriverName: true,
     },
+    driverWhitespaceNameGuard: {
+      missingDriverName: true,
+    },
     driverPluginOwnerGuard: {
       missingPluginOwner: true,
     },
+    driverWhitespacePluginOwnerGuard: {
+      missingPluginOwner: true,
+    },
     driverMissingTableGuard: {
+      missingTable: true,
+    },
+    driverWhitespaceTableGuard: {
       missingTable: true,
     },
     driverDuplicateNameGuard: {
@@ -1964,10 +2081,19 @@ test('plugin-driver mode proof resolver rebuilds a stale attached top-level mode
     driverMissingNameGuard: {
       missingDriverName: true,
     },
+    driverWhitespaceNameGuard: {
+      missingDriverName: true,
+    },
     driverPluginOwnerGuard: {
       missingPluginOwner: true,
     },
+    driverWhitespacePluginOwnerGuard: {
+      missingPluginOwner: true,
+    },
     driverMissingTableGuard: {
+      missingTable: true,
+    },
+    driverWhitespaceTableGuard: {
       missingTable: true,
     },
     driverDuplicateNameGuard: {
@@ -2071,10 +2197,19 @@ test('plugin-driver mode proof resolver rebuilds a stale attached nested modePro
     driverMissingNameGuard: {
       missingDriverName: true,
     },
+    driverWhitespaceNameGuard: {
+      missingDriverName: true,
+    },
     driverPluginOwnerGuard: {
       missingPluginOwner: true,
     },
+    driverWhitespacePluginOwnerGuard: {
+      missingPluginOwner: true,
+    },
     driverMissingTableGuard: {
+      missingTable: true,
+    },
+    driverWhitespaceTableGuard: {
       missingTable: true,
     },
     driverDuplicateNameGuard: {
@@ -6553,10 +6688,19 @@ test('plugin-driver proof summary reports full packaged guard coverage', () => {
     driverMissingNameGuard: {
       missingDriverName: true,
     },
+    driverWhitespaceNameGuard: {
+      missingDriverName: true,
+    },
     driverPluginOwnerGuard: {
       missingPluginOwner: true,
     },
+    driverWhitespacePluginOwnerGuard: {
+      missingPluginOwner: true,
+    },
     driverMissingTableGuard: {
+      missingTable: true,
+    },
+    driverWhitespaceTableGuard: {
       missingTable: true,
     },
     driverDuplicateNameGuard: {
@@ -6569,12 +6713,12 @@ test('plugin-driver proof summary reports full packaged guard coverage', () => {
 
   assert.equal(summary.kind, 'production-plugin-package-driver-proof');
   assert.equal(summary.ok, true);
-  assert.equal(summary.checkedScenarioCount, 11);
-  assert.equal(summary.passedScenarioCount, 11);
+  assert.equal(summary.checkedScenarioCount, 14);
+  assert.equal(summary.passedScenarioCount, 14);
   assert.equal(summary.failedScenarioCount, 0);
   assert.equal(summary.skippedScenarioCount, 0);
-  assert.equal(summary.checkedBundleCount, 8);
-  assert.equal(summary.passedBundleCount, 8);
+  assert.equal(summary.checkedBundleCount, 9);
+  assert.equal(summary.passedBundleCount, 9);
   assert.equal(summary.failedBundleCount, 0);
   assert.equal(summary.skippedBundleCount, 0);
   assert.equal(summary.requestedScenarioCount, 'all');
@@ -6611,6 +6755,9 @@ test('plugin-driver proof summary reports full packaged guard coverage', () => {
     'driver-missing-table-guard',
     'driver-missing-validate-guard',
     'driver-receipt-guards',
+    'driver-whitespace-name-guard',
+    'driver-whitespace-plugin-owner-guard',
+    'driver-whitespace-table-guard',
   ]);
   assert.deepEqual(summary.failedScenarios, []);
   assert.equal(summary.checkedBundles, 'all');
@@ -6621,6 +6768,7 @@ test('plugin-driver proof summary reports full packaged guard coverage', () => {
     'driverReceiptRegistrationGuards',
     'driverRegistrationGuards',
     'driverRegistrationShapeGuards',
+    'driverRegistrationWhitespaceGuards',
     'driverReleaseProof',
     'driverVerifierGuards',
   ]);
@@ -6685,6 +6833,7 @@ test('plugin-driver proof summary reports full packaged guard coverage', () => {
     driverRegistrationGuards: 'passed',
     driverCallbackGuards: 'passed',
     driverRegistrationShapeGuards: 'passed',
+    driverRegistrationWhitespaceGuards: 'passed',
   });
   assert.deepEqual(summary.scenarios, {
     corePackageRoutes: 'passed',
@@ -6698,7 +6847,13 @@ test('plugin-driver proof summary reports full packaged guard coverage', () => {
     driverMissingTableGuard: 'passed',
     driverDuplicateNameGuard: 'passed',
     driverDuplicateTableGuard: 'passed',
+    driverWhitespaceNameGuard: 'passed',
+    driverWhitespacePluginOwnerGuard: 'passed',
+    driverWhitespaceTableGuard: 'passed',
   });
+  assert.equal(summary.registrationWhitespaceGuards.ok, true);
+  assert.equal(summary.registrationWhitespaceGuards.status, 'passed');
+  assert.deepEqual(summary.registrationWhitespaceGuards.requestedBundleStatuses, 'all');
 });
 
 test('plugin-driver proof summary marks unselected scenarios as skipped', () => {
@@ -6795,11 +6950,11 @@ test('plugin-driver proof summary marks unselected scenarios as skipped', () => 
   assert.equal(summary.checkedScenarioCount, 9);
   assert.equal(summary.passedScenarioCount, 9);
   assert.equal(summary.failedScenarioCount, 0);
-  assert.equal(summary.skippedScenarioCount, 2);
+  assert.equal(summary.skippedScenarioCount, 5);
   assert.equal(summary.checkedBundleCount, 1);
   assert.equal(summary.passedBundleCount, 1);
   assert.equal(summary.failedBundleCount, 0);
-  assert.equal(summary.skippedBundleCount, 7);
+  assert.equal(summary.skippedBundleCount, 8);
   assert.equal(summary.requestedScenarioCount, 1);
   assert.equal(summary.passedRequestedScenarioCount, 1);
   assert.equal(summary.failedRequestedScenarioCount, 0);
@@ -6872,6 +7027,7 @@ test('plugin-driver proof summary marks unselected scenarios as skipped', () => 
     driverRegistrationGuards: 'skipped',
     driverCallbackGuards: 'skipped',
     driverRegistrationShapeGuards: 'skipped',
+    driverRegistrationWhitespaceGuards: 'skipped',
   });
   assert.equal(summary.scenarios.corePackageRoutes, 'skipped');
   assert.equal(summary.scenarios.driverReceiptGuards, 'passed');
@@ -7112,7 +7268,7 @@ test('plugin-driver proof summary fails requested bundle verdict when a requeste
   assert.equal(summary.checkedBundleCount, 1);
   assert.equal(summary.passedBundleCount, 0);
   assert.equal(summary.failedBundleCount, 1);
-  assert.equal(summary.skippedBundleCount, 7);
+  assert.equal(summary.skippedBundleCount, 8);
   assert.equal(summary.checkedScenarioCount, 9);
   assert.equal(summary.passedScenarioCount, 8);
   assert.equal(summary.failedScenarioCount, 1);
@@ -8282,6 +8438,7 @@ test('plugin-driver proof summary tracks combined receipt and registration guard
     driverRegistrationGuards: 'skipped',
     driverCallbackGuards: 'skipped',
     driverRegistrationShapeGuards: 'skipped',
+    driverRegistrationWhitespaceGuards: 'skipped',
   });
 });
 

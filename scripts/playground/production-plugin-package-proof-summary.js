@@ -14,6 +14,9 @@ const callbackGuardScenarioNames = [
 const registrationShapeGuardScenarioNames = [
   ...scenarioGroups['driver-registration-shape-guards'],
 ];
+const registrationWhitespaceGuardScenarioNames = [
+  ...scenarioGroups['driver-registration-whitespace-guards'],
+];
 
 const bundleSummaryGroups = {
   'driver-positive-proof': [
@@ -45,6 +48,9 @@ const bundleSummaryGroups = {
   ],
   'driver-registration-shape-guards': [
     ...registrationShapeGuardScenarioNames,
+  ],
+  'driver-registration-whitespace-guards': [
+    ...registrationWhitespaceGuardScenarioNames,
   ],
 };
 
@@ -141,6 +147,11 @@ const guardProofScenarioMaps = Object.freeze({
     missingTable: 'driver-missing-table-guard',
     duplicateName: 'driver-duplicate-name-guard',
     duplicateTable: 'driver-duplicate-table-guard',
+  }),
+  'driver-registration-whitespace-guards': Object.freeze({
+    whitespaceName: 'driver-whitespace-name-guard',
+    whitespacePluginOwner: 'driver-whitespace-plugin-owner-guard',
+    whitespaceTable: 'driver-whitespace-table-guard',
   }),
 });
 
@@ -245,6 +256,14 @@ function buildRegistrationShapeGuardProofMap(summary) {
   };
 }
 
+function buildRegistrationWhitespaceGuardProofMap(summary) {
+  return {
+    whitespaceName: buildBooleanGuardProof(summary?.driverWhitespaceNameGuard, 'missingDriverName'),
+    whitespacePluginOwner: buildBooleanGuardProof(summary?.driverWhitespacePluginOwnerGuard, 'missingPluginOwner'),
+    whitespaceTable: buildBooleanGuardProof(summary?.driverWhitespaceTableGuard, 'missingTable'),
+  };
+}
+
 function buildModeGuardProof(canonicalMode, summary, scenarioPasses) {
   const baseGuardScenarioMap = guardProofScenarioMaps[canonicalMode];
   if (!baseGuardScenarioMap) {
@@ -292,6 +311,9 @@ function buildModeGuardProof(canonicalMode, summary, scenarioPasses) {
       break;
     case 'driver-registration-shape-guards':
       guardProof = buildRegistrationShapeGuardProofMap(summary);
+      break;
+    case 'driver-registration-whitespace-guards':
+      guardProof = buildRegistrationWhitespaceGuardProofMap(summary);
       break;
     default:
       return null;
@@ -660,6 +682,7 @@ export const proofKeyByCanonicalMode = Object.freeze({
   'driver-registration-guards': 'driverRegistrationGuards',
   'driver-callback-guards': 'driverCallbackGuards',
   'driver-registration-shape-guards': 'driverRegistrationShapeGuards',
+  'driver-registration-whitespace-guards': 'driverRegistrationWhitespaceGuards',
 });
 
 const legacyProofKeyByResolvedMode = Object.freeze({
@@ -2573,6 +2596,30 @@ export function buildProductionPluginPackageProofSummary(
       requestedBundleStatus: buildConcreteRequestedBundleStatus('driver-registration-shape-guards'),
       requestedBundleStatuses: buildConcreteRequestedBundleStatuses('driver-registration-shape-guards'),
     },
+    registrationWhitespaceGuards: {
+      requested: normalizedRequestedScenarios === null
+        ? true
+        : canonicalRequestedScenarios.includes('driver-registration-whitespace-guards')
+          || concreteBundleRequests['driver-registration-whitespace-guards'],
+      selected: buildObjectBundleSelected('driver-registration-whitespace-guards'),
+      ok: buildObjectBundleStatus('driver-registration-whitespace-guards') === 'passed',
+      status: buildObjectBundleStatus('driver-registration-whitespace-guards'),
+      whitespaceNameStatus: scenarioResults.driverWhitespaceNameGuard,
+      whitespacePluginOwnerStatus: scenarioResults.driverWhitespacePluginOwnerGuard,
+      whitespaceTableStatus: scenarioResults.driverWhitespaceTableGuard,
+      whitespaceDriverName: summary?.driverWhitespaceNameGuard?.missingDriverName ?? false,
+      whitespacePluginOwner: summary?.driverWhitespacePluginOwnerGuard?.missingPluginOwner ?? false,
+      whitespaceTable: summary?.driverWhitespaceTableGuard?.missingTable ?? false,
+      ...buildBundleScenarioDetails(
+        'driver-registration-whitespace-guards',
+        scenarioPasses,
+        buildObjectBundleStatus('driver-registration-whitespace-guards') !== 'skipped',
+      ),
+      requestedStatus: requestedScenarioStatuses['driver-registration-whitespace-guards']
+        ?? buildConcreteRequestedBundleStatus('driver-registration-whitespace-guards'),
+      requestedBundleStatus: buildConcreteRequestedBundleStatus('driver-registration-whitespace-guards'),
+      requestedBundleStatuses: buildConcreteRequestedBundleStatuses('driver-registration-whitespace-guards'),
+    },
     bundles: bundleResults,
     scenarios: scenarioResults,
   };
@@ -2586,6 +2633,7 @@ export function buildProductionPluginPackageProofSummary(
   proofSummary.driverRegistrationGuards = proofSummary.registrationGuards;
   proofSummary.driverCallbackGuards = proofSummary.callbackGuards;
   proofSummary.driverRegistrationShapeGuards = proofSummary.registrationShapeGuards;
+  proofSummary.driverRegistrationWhitespaceGuards = proofSummary.registrationWhitespaceGuards;
   const canonicalProofKey = canonicalMode === null
     ? null
     : proofKeyByCanonicalMode[canonicalMode] ?? null;

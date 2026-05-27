@@ -60,6 +60,11 @@ const scenarioGroups = {
     'driver-duplicate-name-guard',
     'driver-duplicate-table-guard',
   ],
+  'driver-registration-whitespace-guards': [
+    'driver-whitespace-name-guard',
+    'driver-whitespace-plugin-owner-guard',
+    'driver-whitespace-table-guard',
+  ],
 };
 
 const scenarioNames = [
@@ -101,6 +106,7 @@ const scenarioNameAliases = new Map([
   ['driverRegistrationGuards', 'driver-registration-guards'],
   ['driverCallbackGuards', 'driver-callback-guards'],
   ['driverRegistrationShapeGuards', 'driver-registration-shape-guards'],
+  ['driverRegistrationWhitespaceGuards', 'driver-registration-whitespace-guards'],
 ]);
 
 const modeNameMappings = new Map([
@@ -142,6 +148,12 @@ const modeNameMappings = new Map([
   ['driverRegistrationShapeGuards', 'driver-registration-shape-guards'],
   ['driver-registration-shape-guards-only', 'driver-registration-shape-guards'],
   ['driverRegistrationShapeGuardsOnly', 'driver-registration-shape-guards'],
+  ['driver-registration-whitespace-only', 'driver-registration-whitespace-guards'],
+  ['driverRegistrationWhitespaceOnly', 'driver-registration-whitespace-guards'],
+  ['driver-registration-whitespace-guards', 'driver-registration-whitespace-guards'],
+  ['driverRegistrationWhitespaceGuards', 'driver-registration-whitespace-guards'],
+  ['driver-registration-whitespace-guards-only', 'driver-registration-whitespace-guards'],
+  ['driverRegistrationWhitespaceGuardsOnly', 'driver-registration-whitespace-guards'],
   ['driver-delete-only', 'driver-delete-apply'],
   ['driverDeleteOnly', 'driver-delete-apply'],
   ['driver-delete-apply', 'driver-delete-apply'],

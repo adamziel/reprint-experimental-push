@@ -33,3 +33,20 @@ test('packaged plugin-driver scenario resolver accepts dedicated whitespace regi
     assert.deepEqual(resolved.selectedScenarios, new Set([scenarioName]));
   }
 });
+
+test('packaged plugin-driver scenario resolver exposes a dedicated whitespace registration bundle mode', () => {
+  const resolved = resolveProductionPluginPackageScenarios([], undefined, 'driverRegistrationWhitespaceGuards');
+
+  assert.equal(resolved.resolvedMode, 'driverRegistrationWhitespaceGuards');
+  assert.equal(resolved.canonicalMode, 'driver-registration-whitespace-guards');
+  assert.deepEqual(resolved.requestedScenarios, ['driver-registration-whitespace-guards']);
+  assert.deepEqual(
+    resolved.selectedScenarios,
+    new Set([
+      'driver-registration-whitespace-guards',
+      'driver-whitespace-name-guard',
+      'driver-whitespace-plugin-owner-guard',
+      'driver-whitespace-table-guard',
+    ]),
+  );
+});
