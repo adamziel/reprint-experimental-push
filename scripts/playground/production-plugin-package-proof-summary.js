@@ -731,6 +731,14 @@ export function resolveProductionPluginPackageModeProof(summary, modeValue, opti
     && attachedPluginDriverModeProof?.canonicalMode === resolved.canonicalMode
     && attachedPluginDriverModeProof?.proofKey === resolved.proofKey
     && attachedPluginDriverModeProof?.legacyProofKey === resolved.legacyProofKey
+    && (
+      resolvedModeProofOptions === null
+      || modeProofMatchesResolvedContext(
+        summary?.pluginDriverProof,
+        attachedPluginDriverModeProof,
+        resolvedModeProofOptions,
+      )
+    )
   ) {
     return {
       ...baseModeProof,
