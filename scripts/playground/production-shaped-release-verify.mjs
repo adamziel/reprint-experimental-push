@@ -1331,7 +1331,7 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
       const exitLabel =
         child.exitCode !== null ? `exited early with ${child.exitCode}` : `terminated by ${child.signalCode}`;
       const message = formatPlaygroundStartupFailure(
-        `Packaged Playground server ${exitLabel}`,
+        `Packaged production plugin server ${exitLabel}`,
         lastError,
         lastProbes,
         getOutput(),
@@ -1509,7 +1509,7 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
             }
             await throwPlaygroundReadinessFailure(
               child,
-              `Packaged Playground server reported the bounded readiness failure ${snapshot.status} after ${snapshotNotReadyProbeCount} consecutive startup-shaped snapshot response${snapshotNotReadyProbeCount === 1 ? '' : 's'} (limit ${maxPackagedStartupNotReadyProbeCount})`,
+              `Packaged production plugin server reported the bounded readiness failure ${snapshot.status} after ${snapshotNotReadyProbeCount} consecutive startup-shaped snapshot response${snapshotNotReadyProbeCount === 1 ? '' : 's'} (limit ${maxPackagedStartupNotReadyProbeCount})`,
               lastError,
               lastProbes,
               getOutput(),
@@ -1527,7 +1527,7 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
         lastError = error;
         await throwPlaygroundReadinessFailure(
           child,
-          `Packaged Playground snapshot returned an invalid readiness body at ${baseUrl}`,
+          `Packaged production plugin snapshot returned an invalid readiness body at ${baseUrl}`,
           lastError,
           lastProbes,
           getOutput(),
@@ -1657,7 +1657,7 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
             }
             await throwPlaygroundReadinessFailure(
               child,
-              `Packaged Playground server reported the bounded readiness failure ${snapshot.status} after ${snapshotNotReadyProbeCount} consecutive startup-shaped snapshot response${snapshotNotReadyProbeCount === 1 ? '' : 's'} (limit ${maxPackagedStartupNotReadyProbeCount})`,
+              `Packaged production plugin server reported the bounded readiness failure ${snapshot.status} after ${snapshotNotReadyProbeCount} consecutive startup-shaped snapshot response${snapshotNotReadyProbeCount === 1 ? '' : 's'} (limit ${maxPackagedStartupNotReadyProbeCount})`,
               lastError,
               lastProbes,
               getOutput(),
@@ -1778,7 +1778,7 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
             }
             await throwPlaygroundReadinessFailure(
               child,
-              `Packaged Playground server reported the bounded readiness failure ${snapshot.status} after ${snapshotNotReadyProbeCount} consecutive startup-shaped snapshot response${snapshotNotReadyProbeCount === 1 ? '' : 's'} (limit ${maxPackagedStartupNotReadyProbeCount})`,
+              `Packaged production plugin server reported the bounded readiness failure ${snapshot.status} after ${snapshotNotReadyProbeCount} consecutive startup-shaped snapshot response${snapshotNotReadyProbeCount === 1 ? '' : 's'} (limit ${maxPackagedStartupNotReadyProbeCount})`,
               lastError,
               lastProbes,
               getOutput(),
@@ -1799,7 +1799,7 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
         );
         await throwPlaygroundReadinessFailure(
           child,
-          `Packaged Playground snapshot returned a terminal readiness failure at ${baseUrl}`,
+          `Packaged production plugin snapshot returned a terminal readiness failure at ${baseUrl}`,
           lastError,
           lastProbes,
           getOutput(),
@@ -1934,7 +1934,7 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
             }
             await throwPlaygroundReadinessFailure(
               child,
-              `Packaged Playground server reported the bounded readiness failure ${preflight.status} after ${preflightNotReadyProbeCount} consecutive startup-shaped preflight response${preflightNotReadyProbeCount === 1 ? '' : 's'} (limit ${maxPackagedStartupNotReadyProbeCount})`,
+              `Packaged production plugin server reported the bounded readiness failure ${preflight.status} after ${preflightNotReadyProbeCount} consecutive startup-shaped preflight response${preflightNotReadyProbeCount === 1 ? '' : 's'} (limit ${maxPackagedStartupNotReadyProbeCount})`,
               lastError,
               lastProbes,
               getOutput(),
@@ -1952,7 +1952,7 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
         lastError = error;
         await throwPlaygroundReadinessFailure(
           child,
-          `Packaged Playground signed preflight returned an invalid readiness body at ${baseUrl}`,
+          `Packaged production plugin signed preflight returned an invalid readiness body at ${baseUrl}`,
           lastError,
           lastProbes,
           getOutput(),
@@ -2131,7 +2131,7 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
           }
           await throwPlaygroundReadinessFailure(
             child,
-            `Packaged Playground server reported the bounded readiness failure ${preflight.status} after ${preflightNotReadyProbeCount} consecutive startup-shaped preflight response${preflightNotReadyProbeCount === 1 ? '' : 's'} (limit ${maxPackagedStartupNotReadyProbeCount})`,
+            `Packaged production plugin server reported the bounded readiness failure ${preflight.status} after ${preflightNotReadyProbeCount} consecutive startup-shaped preflight response${preflightNotReadyProbeCount === 1 ? '' : 's'} (limit ${maxPackagedStartupNotReadyProbeCount})`,
             lastError,
             lastProbes,
             getOutput(),
@@ -2152,7 +2152,7 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
       );
       await throwPlaygroundReadinessFailure(
         child,
-        `Packaged Playground signed preflight returned a terminal readiness failure at ${baseUrl}`,
+        `Packaged production plugin signed preflight returned a terminal readiness failure at ${baseUrl}`,
         lastError,
         lastProbes,
         getOutput(),
@@ -2520,7 +2520,7 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
       ) {
         await throwPlaygroundReadinessFailure(
           child,
-          `Packaged Playground server hit ${timeoutProbeCount} consecutive readiness probe timeout${timeoutProbeCount === 1 ? '' : 's'}`,
+          `Packaged production plugin server hit ${timeoutProbeCount} consecutive readiness probe timeout${timeoutProbeCount === 1 ? '' : 's'}`,
           lastError,
           lastProbes,
           getOutput(),

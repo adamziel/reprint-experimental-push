@@ -2640,7 +2640,7 @@ test('packaged release verifier readiness helper reports early child exit codes'
   const helperSource = verifierSource.slice(start, end);
 
   assert.match(helperSource, /child\.exitCode !== null \?\s*`exited early with \$\{child\.exitCode\}`\s*:\s*`terminated by \$\{child\.signalCode\}`/);
-  assert.match(helperSource, /Packaged Playground server \$\{exitLabel\}/);
+  assert.match(helperSource, /Packaged production plugin server \$\{exitLabel\}/);
   assert.match(helperSource, /writePlaygroundFailure\(message, lastProbes, getOutput\(\), lastError, lastTimeoutFallbackProbes\);/);
 });
 
@@ -3711,15 +3711,15 @@ test('packaged release verifier readiness helper fails closed on non-retryable r
   assert.doesNotMatch(helperSource, /if \(packagedProductionPluginPreflightTerminal/);
   assert.match(
     helperSource,
-    /packagedProductionPluginResetRouteNotReadyProbeCounts\(\s*notReadyProbeCounts,\s*'snapshot',\s*\);\s*await throwPlaygroundReadinessFailure\(\s*child,\s*`Packaged Playground snapshot returned a terminal readiness failure at \$\{baseUrl\}/s,
+    /packagedProductionPluginResetRouteNotReadyProbeCounts\(\s*notReadyProbeCounts,\s*'snapshot',\s*\);\s*await throwPlaygroundReadinessFailure\(\s*child,\s*`Packaged production plugin snapshot returned a terminal readiness failure at \$\{baseUrl\}/s,
   );
   assert.match(
     helperSource,
-    /packagedProductionPluginResetRouteNotReadyProbeCounts\(\s*notReadyProbeCounts,\s*'preflight',\s*\);\s*await throwPlaygroundReadinessFailure\(\s*child,\s*`Packaged Playground signed preflight returned a terminal readiness failure at \$\{baseUrl\}/s,
+    /packagedProductionPluginResetRouteNotReadyProbeCounts\(\s*notReadyProbeCounts,\s*'preflight',\s*\);\s*await throwPlaygroundReadinessFailure\(\s*child,\s*`Packaged production plugin signed preflight returned a terminal readiness failure at \$\{baseUrl\}/s,
   );
   assert.match(
     helperSource,
-    /Packaged Playground signed preflight returned a terminal readiness failure at \$\{baseUrl\}[\s\S]*?packagedProductionPluginPreflightTerminalContext\(\{\s*childPid:\s*child\.pid\s*\?\?\s*null,\s*\}\)/s,
+    /Packaged production plugin signed preflight returned a terminal readiness failure at \$\{baseUrl\}[\s\S]*?packagedProductionPluginPreflightTerminalContext\(\{\s*childPid:\s*child\.pid\s*\?\?\s*null,\s*\}\)/s,
   );
   assert.match(
     helperSource,
@@ -3728,6 +3728,22 @@ test('packaged release verifier readiness helper fails closed on non-retryable r
   assert.match(
     helperSource,
     /preflight stayed startup-shaped while \/wp-json\/ returned a terminal readiness failure HTTP \$\{indexProbe\.status\} after \$\{preflightNotReadyProbeCount\} consecutive response[\s\S]*?await throwPlaygroundReadinessFailure\(\s*child,/s,
+  );
+  assert.match(
+    helperSource,
+    /Packaged production plugin snapshot returned an invalid readiness body at \$\{baseUrl\}/s,
+  );
+  assert.match(
+    helperSource,
+    /Packaged production plugin signed preflight returned an invalid readiness body at \$\{baseUrl\}/s,
+  );
+  assert.match(
+    helperSource,
+    /Packaged production plugin server reported the bounded readiness failure \$\{snapshot\.status\} after \$\{snapshotNotReadyProbeCount\} consecutive startup-shaped snapshot response/s,
+  );
+  assert.match(
+    helperSource,
+    /Packaged production plugin server reported the bounded readiness failure \$\{preflight\.status\} after \$\{preflightNotReadyProbeCount\} consecutive startup-shaped preflight response/s,
   );
 });
 
