@@ -4012,6 +4012,54 @@ test('db journal claim summary preserves active and previous claim identity for 
   });
 });
 
+test('db journal claim summary omits synthesized checked-surface claim ids when persisted claim_id is missing', { skip: !hasPhp }, () => {
+  const result = runDbJournalClaimSummary(
+    {
+      sequence: 20,
+      event: 'stale-claim-retry-started',
+      idempotencyKeyHash: 'idempotency-hash-01',
+      requestHash: 'request-hash-01',
+      claimKeyHash: 'retry-claim-hash-02',
+      labScope: 'checked-live-production-shaped',
+    },
+    {
+      sequence: 18,
+      event: 'stale-claim-abandoned',
+      resourceHashEvidence: {
+        claimCursor: 'db-journal:11',
+        startedCursor: 'db-journal:12',
+      },
+      labScope: 'checked-live-production-shaped',
+    },
+    {
+      sequence: 11,
+      event: 'idempotency-opened',
+      claimKeyHash: 'retry-claim-hash-01',
+      labScope: 'checked-live-production-shaped',
+    },
+    true,
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  assert.deepEqual(JSON.parse(result.stdout), {
+    status: 'stale-claim-rejected',
+    activeClaimId: null,
+    activeClaimKeyHash: 'retry-claim-hash-02',
+    activeClaimSequence: 20,
+    activeClaimEvent: 'stale-claim-retry-started',
+    idempotencyKeyHash: 'idempotency-hash-01',
+    requestHash: 'request-hash-01',
+    staleClaimRejected: true,
+    abandonedSequence: 18,
+    abandonedEvent: 'stale-claim-abandoned',
+    previousStartedSequence: 12,
+    previousClaimId: null,
+    previousClaimSequence: 11,
+    previousClaimKeyHash: 'retry-claim-hash-01',
+    previousClaimEvent: 'idempotency-opened',
+  });
+});
+
 test('db journal claim evidence preserves distinct claim ids from checked rows', { skip: !hasPhp }, () => {
   const result = runDbJournalClaimEvidenceRow({
     sequence: 24,
@@ -4030,6 +4078,33 @@ test('db journal claim evidence preserves distinct claim ids from checked rows',
   assert.deepEqual(JSON.parse(result.stdout), {
     sequence: 24,
     claimId: 'retry-claim-id-01',
+    event: 'stale-claim-abandoned',
+    claimKeyHash: 'retry-claim-hash-01',
+    idempotencyKeyHash: 'idem-hash-01',
+    requestHash: 'request-hash-01',
+    startedCursor: 'db-journal:19',
+    claimCursor: 'db-journal:18',
+  });
+});
+
+test('db journal claim evidence row omits synthesized checked-surface claim ids when persisted claim_id is missing', { skip: !hasPhp }, () => {
+  const result = runDbJournalClaimEvidenceRow({
+    sequence: 24,
+    event: 'stale-claim-abandoned',
+    claimKeyHash: 'retry-claim-hash-01',
+    idempotencyKeyHash: 'idem-hash-01',
+    requestHash: 'request-hash-01',
+    labScope: 'packaged-production-plugin',
+    resourceHashEvidence: {
+      startedCursor: 'db-journal:19',
+      claimCursor: 'db-journal:18',
+    },
+  });
+
+  assert.equal(result.status, 0, result.stderr);
+  assert.deepEqual(JSON.parse(result.stdout), {
+    sequence: 24,
+    claimId: null,
     event: 'stale-claim-abandoned',
     claimKeyHash: 'retry-claim-hash-01',
     idempotencyKeyHash: 'idem-hash-01',
@@ -4079,6 +4154,50 @@ test('db journal public row preserves distinct persisted claim ids', { skip: !ha
     errorCode: '',
     claimKeyHash: 'authoritative-claim-hash-02',
     labScope: 'packaged-production-plugin',
+    createdAt: '2026-05-27 04:00:00',
+    updatedAt: '2026-05-27 04:00:00',
+  });
+});
+
+test('db journal public row omits synthesized checked-surface claim ids when persisted claim_id is missing', { skip: !hasPhp }, () => {
+  const result = runDbJournalPublicRow({
+    id: 33,
+    event: 'stale-claim-rejected',
+    claim_key_hash: 'authoritative-claim-hash-02',
+    idempotency_key_hash: 'idem-hash-01',
+    request_hash: 'request-hash-01',
+    plan_hash: '',
+    receipt_hash: '',
+    plan_fingerprint: '',
+    mutation_count: 0,
+    applied_count: 0,
+    result_hash: '',
+    result_json: null,
+    resource_hash_evidence_json: null,
+    error_code: '',
+    lab_scope: 'checked-live-production-shaped',
+    created_at: '2026-05-27 04:00:00',
+    updated_at: '2026-05-27 04:00:00',
+  });
+
+  assert.equal(result.status, 0, result.stderr);
+  assert.deepEqual(JSON.parse(result.stdout), {
+    sequence: 33,
+    event: 'stale-claim-rejected',
+    claimId: null,
+    idempotencyKeyHash: 'idem-hash-01',
+    requestHash: 'request-hash-01',
+    planHash: '',
+    receiptHash: '',
+    planFingerprint: '',
+    mutationCount: 0,
+    appliedCount: 0,
+    resultHash: '',
+    result: null,
+    resourceHashEvidence: null,
+    errorCode: '',
+    claimKeyHash: 'authoritative-claim-hash-02',
+    labScope: 'checked-live-production-shaped',
     createdAt: '2026-05-27 04:00:00',
     updatedAt: '2026-05-27 04:00:00',
   });

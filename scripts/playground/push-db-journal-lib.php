@@ -228,11 +228,36 @@ function reprint_push_lab_db_journal_claim_id_from_key_hash($claim_key_hash): ?s
         : null;
 }
 
-function reprint_push_lab_db_journal_claim_id_from_row(array $row): ?string
+function reprint_push_lab_db_journal_explicit_claim_id_from_row(array $row): ?string
 {
     $claim_id = $row['claimId'] ?? $row['claim_id'] ?? null;
     if (reprint_push_lab_db_journal_non_empty_string($claim_id)) {
         return (string) $claim_id;
+    }
+
+    return null;
+}
+
+function reprint_push_lab_db_journal_row_requires_explicit_claim_id(array $row): bool
+{
+    $scope = $row['labScope'] ?? $row['lab_scope'] ?? null;
+    if (!reprint_push_lab_db_journal_non_empty_string($scope)) {
+        return false;
+    }
+
+    return $scope === 'packaged-production-plugin'
+        || $scope === 'checked-live-production-shaped';
+}
+
+function reprint_push_lab_db_journal_claim_id_from_row(array $row): ?string
+{
+    $claim_id = reprint_push_lab_db_journal_explicit_claim_id_from_row($row);
+    if ($claim_id !== null) {
+        return $claim_id;
+    }
+
+    if (reprint_push_lab_db_journal_row_requires_explicit_claim_id($row)) {
+        return null;
     }
 
     return reprint_push_lab_db_journal_claim_id_from_key_hash($row['claimKeyHash'] ?? $row['claim_key_hash'] ?? null);
