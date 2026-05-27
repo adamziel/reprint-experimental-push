@@ -1169,6 +1169,31 @@ test('production-shaped release verify can force the production auth/session sou
   );
 });
 
+test('production-shaped release verify can force a matching non-local production auth/session source to override stale env credentials', () => {
+  const source = {
+    ok: true,
+    sourceUrl: 'https://example.test/wp/?session=1#preserved',
+    username: 'reprint_push_admin',
+    applicationPassword: 'reprint-push-admin-app-password',
+  };
+  assert.deepEqual(
+    resolveAuthSessionSourceCredentials(
+      {
+        liveSourceUrl: 'https://example.test/wp',
+        username: 'stale-lab-username',
+        applicationPassword: 'stale-lab-password',
+      },
+      source,
+      { preferSource: true },
+    ),
+    {
+      liveSourceUrl: 'https://example.test/wp/?session=1#preserved',
+      username: 'reprint_push_admin',
+      applicationPassword: 'reprint-push-admin-app-password',
+    },
+  );
+});
+
 test('auth-session source metadata drift fails closed on production-source warnings', () => {
   assert.deepEqual(
     describeAuthSessionSourceMetadataDrift({
@@ -1391,6 +1416,34 @@ test('production-shaped release verify lets a required production auth/session s
     ),
     {
       liveSourceUrl: 'http://127.0.0.1:8080',
+      username: 'reprint_push_admin',
+      applicationPassword: 'reprint-push-admin-app-password',
+    },
+  );
+});
+
+test('production-shaped release verify lets a required matching non-local production auth/session source override explicit direct credentials', () => {
+  const source = {
+    ok: true,
+    sourceUrl: 'https://example.test/wp/?session=1#preserved',
+    username: 'reprint_push_admin',
+    applicationPassword: 'reprint-push-admin-app-password',
+  };
+
+  assert.deepEqual(
+    resolveAuthSessionRequestCredentials(
+      {
+        liveSourceUrl: 'https://example.test/wp',
+        username: 'trusted-runtime-username',
+        applicationPassword: 'trusted-runtime-password',
+        fallbackUsername: 'stale-fallback-username',
+        fallbackApplicationPassword: 'stale-fallback-password',
+      },
+      source,
+      { preferSource: true },
+    ),
+    {
+      liveSourceUrl: 'https://example.test/wp/?session=1#preserved',
       username: 'reprint_push_admin',
       applicationPassword: 'reprint-push-admin-app-password',
     },
