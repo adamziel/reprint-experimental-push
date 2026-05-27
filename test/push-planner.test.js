@@ -45402,6 +45402,111 @@ test('blocks a local term relationship taxonomy reference owned by a revision po
   assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
 });
 
+test('blocks a local term relationship taxonomy reference owned by a revision post when the same-plan term taxonomy target is itself blocked by a blocked same-plan parent term and unrelated remote nav_menu_item noise exists', () => {
+  const revisionResourceKey = 'row:["wp_posts","ID:3"]';
+  const blockedParentTermResourceKey = 'row:["wp_terms","term_id:7"]';
+  const childTermResourceKey = 'row:["wp_terms","term_id:8"]';
+  const blockedNavMenuTaxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:9"]';
+  const samePlanTaxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:10"]';
+  const relationshipResourceKey = 'row:["wp_term_relationships","object_id:3|term_taxonomy_id:10"]';
+  const base = baseSite();
+  const local = baseSite();
+  const remote = baseSite();
+  local.db.wp_posts['ID:3'] = {
+    ID: 3,
+    post_title: 'Local revision relationship owner',
+    post_content: 'local-private-revision-relationship-owner-body',
+    post_status: 'inherit',
+    post_type: 'revision',
+  };
+  local.db.wp_terms = {
+    'term_id:7': {
+      term_id: 7,
+      name: 'Local blocked revision parent term',
+      slug: 'local-blocked-revision-parent-term',
+    },
+    'term_id:8': {
+      term_id: 8,
+      name: 'Local replacement revision category term',
+      slug: 'local-replacement-revision-category-term',
+    },
+  };
+  local.db.wp_term_taxonomy = {
+    'term_taxonomy_id:9': {
+      term_taxonomy_id: 9,
+      term_id: 7,
+      taxonomy: 'nav_menu',
+      description: '',
+      parent: 0,
+      count: 0,
+    },
+    'term_taxonomy_id:10': {
+      term_taxonomy_id: 10,
+      term_id: 8,
+      taxonomy: 'category',
+      description: '',
+      parent: 7,
+      count: 0,
+    },
+  };
+  local.db.wp_term_relationships = {
+    'object_id:3|term_taxonomy_id:10': {
+      object_id: 3,
+      term_taxonomy_id: 10,
+      term_order: 0,
+    },
+  };
+  remote.db.wp_posts['ID:21'] = {
+    ID: 21,
+    post_title: 'Remote unrelated nav menu item noise',
+    post_content: 'remote-private-unrelated-revision-nav-menu-item-body',
+    post_status: 'publish',
+    post_type: 'nav_menu_item',
+  };
+
+  const plan = planFor(base, local, remote);
+  const revisionMutation = mutationFor(plan, revisionResourceKey);
+  const blockedParentTermMutation = mutationFor(plan, blockedParentTermResourceKey);
+  const childTermMutation = mutationFor(plan, childTermResourceKey);
+  const samePlanTaxonomyMutation = mutationFor(plan, samePlanTaxonomyResourceKey);
+  const relationshipMutation = mutationFor(plan, relationshipResourceKey);
+  const navMenuTaxonomyBlocker = plan.blockers.find((entry) => entry.resourceKey === blockedNavMenuTaxonomyResourceKey);
+  const samePlanTaxonomyBlocker = plan.blockers.find((entry) => entry.resourceKey === samePlanTaxonomyResourceKey);
+  const relationshipBlocker = plan.blockers.find((entry) => entry.resourceKey === relationshipResourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(revisionMutation, undefined);
+  assert.equal(blockedParentTermMutation.changeKind, 'create');
+  assert.equal(childTermMutation.changeKind, 'create');
+  assert.equal(samePlanTaxonomyMutation.changeKind, 'create');
+  assert.equal(navMenuTaxonomyBlocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(navMenuTaxonomyBlocker.surface, 'nav_menu');
+  assert.equal(samePlanTaxonomyBlocker.class, 'missing-wordpress-graph-dependency');
+  assert.equal(samePlanTaxonomyBlocker.references[0].relationshipType, 'term-taxonomy-parent');
+  assert.equal(samePlanTaxonomyBlocker.references[0].targetResourceKey, blockedParentTermResourceKey);
+  assert.equal(samePlanTaxonomyMutation.dependsOnMutationIds, undefined);
+  assert.equal(relationshipMutation, undefined);
+  assert.equal(relationshipBlocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(relationshipBlocker.surface, 'revision');
+  assert.equal(
+    JSON.stringify(relationshipBlocker).includes('local-private-revision-relationship-owner-body'),
+    false,
+  );
+  assert.equal(
+    JSON.stringify(relationshipBlocker).includes('local-blocked-revision-parent-term'),
+    false,
+  );
+  assert.equal(
+    JSON.stringify(relationshipBlocker).includes('local-replacement-revision-category-term'),
+    false,
+  );
+  assert.equal(
+    JSON.stringify(relationshipBlocker).includes('remote-private-unrelated-revision-nav-menu-item-body'),
+    false,
+  );
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
+});
+
 test('blocks a local term relationship taxonomy reference owned by a revision post when the same-plan term taxonomy target is itself blocked by a blocked same-plan parent term and unrelated remote revision noise exists', () => {
   const revisionResourceKey = 'row:["wp_posts","ID:3"]';
   const blockedParentTermResourceKey = 'row:["wp_terms","term_id:7"]';
