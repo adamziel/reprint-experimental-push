@@ -1810,6 +1810,13 @@ function reprint_push_lab_rest_checked_contract_field_omissions(
 
     foreach ($keys as $key) {
         if (!array_key_exists($key, $checked_fields)) {
+            if (
+                $key === 'claimId'
+                && array_key_exists($key, $existing_fields)
+                && reprint_push_lab_db_journal_non_empty_string($existing_fields[$key] ?? null)
+            ) {
+                return true;
+            }
             continue;
         }
 
