@@ -151,6 +151,7 @@ export async function runAuthenticatedHttpPush({
     return summary;
   }
   const preflightAuthEnvelope = {
+    userId: preflight.body.auth?.identity?.userId,
     userLogin: preflight.body.auth?.identity?.userLogin,
     sessionId: preflight.body.auth?.session?.id,
     sessionType: preflight.body.auth?.session?.type,
@@ -1561,7 +1562,7 @@ function describeAuthEnvelopeDrift(expected, response) {
   if (invalidObservedIdentityField) {
     return {
       field: `auth.identity.${invalidObservedIdentityField.field}`,
-      required: 'string auth identity fields',
+      required: invalidObservedIdentityField.required,
       observed: `invalid-${invalidObservedIdentityField.label}`,
       verdict: 'AUTH_SESSION_LIFECYCLE_DRIFT',
     };
@@ -1625,6 +1626,19 @@ function resolveInvalidObservedAuthEnvelopeIdentityField(identity) {
     return null;
   }
 
+  const observedUserId = normalizeProductionAuthSessionIdentityUserId(identity.userId);
+  if (
+    identity.userId !== undefined
+    && identity.userId !== null
+    && observedUserId === null
+  ) {
+    return {
+      field: 'userId',
+      label: 'user-id',
+      required: 'integer auth identity fields',
+    };
+  }
+
   const observedUserLogin = identity.userLogin;
   if (
     observedUserLogin !== undefined
@@ -1634,6 +1648,7 @@ function resolveInvalidObservedAuthEnvelopeIdentityField(identity) {
     return {
       field: 'userLogin',
       label: 'user-login',
+      required: 'string auth identity fields',
     };
   }
 
@@ -1749,9 +1764,25 @@ function resolveObservedProductionAuthIdentityDrift(expected, response) {
   if (invalidObservedIdentityField) {
     return {
       field: `auth.identity.${invalidObservedIdentityField.field}`,
-      required: 'string auth identity fields',
+      required: invalidObservedIdentityField.required,
       observed: `invalid-${invalidObservedIdentityField.label}`,
     };
+  }
+
+  const expectedUserId = normalizeProductionAuthSessionIdentityUserId(expected?.userId);
+  if (expected?.userId !== undefined && expected?.userId !== null && expectedUserId === null) {
+    return null;
+  }
+
+  if (expectedUserId !== null) {
+    const observedUserId = normalizeProductionAuthSessionIdentityUserId(body.auth?.identity?.userId);
+    if (observedUserId !== expectedUserId) {
+      return {
+        field: 'auth.identity.userId',
+        required: String(expectedUserId),
+        observed: observedUserId === null ? 'missing' : String(observedUserId),
+      };
+    }
   }
 
   const expectedUserLogin = expected?.userLogin;
@@ -2075,6 +2106,24 @@ function normalizeProductionAuthSessionIdentityField(value) {
   }
 
   return normalized;
+}
+
+function normalizeProductionAuthSessionIdentityUserId(value) {
+  if (typeof value === 'number') {
+    return Number.isInteger(value) && value > 0 ? value : null;
+  }
+
+  if (typeof value === 'string') {
+    const normalized = value.trim();
+    if (!/^[1-9]\d*$/.test(normalized)) {
+      return null;
+    }
+
+    const parsed = Number.parseInt(normalized, 10);
+    return Number.isSafeInteger(parsed) ? parsed : null;
+  }
+
+  return null;
 }
 
 function isExpiredSession(session) {
