@@ -1331,6 +1331,12 @@ function checkedDurableJournalBoundaryProof(writer, inspected) {
     && typeof inspected.leaseFenceContract.boundary === 'string'
     ? inspected.leaseFenceContract.boundary
     : null;
+  const inspectedOwnsJournal = Object.hasOwn(inspected ?? {}, 'ownsJournal')
+    && !hasHiddenOwnStringProperty(inspected, 'ownsJournal')
+    && inspected.ownsJournal === true;
+  const inspectedRestartReadable = Object.hasOwn(inspected ?? {}, 'restartReadable')
+    && !hasHiddenOwnStringProperty(inspected, 'restartReadable')
+    && inspected.restartReadable === true;
   const scope = Object.hasOwn(writer ?? {}, 'scope')
     && !hasHiddenOwnStringProperty(writer, 'scope')
     && typeof writer.scope === 'string'
@@ -1356,12 +1362,8 @@ function checkedDurableJournalBoundaryProof(writer, inspected) {
     scope,
     acceptedOnCheckedBoundary,
     ownership: {
-      ownsJournal: Object.hasOwn(writer ?? {}, 'ownsJournal')
-        && !hasHiddenOwnStringProperty(writer, 'ownsJournal')
-        && writer.ownsJournal === true,
-      restartReadable: Object.hasOwn(writer ?? {}, 'restartReadable')
-        && !hasHiddenOwnStringProperty(writer, 'restartReadable')
-        && writer.restartReadable === true,
+      ownsJournal: inspectedOwnsJournal,
+      restartReadable: inspectedRestartReadable,
       productionAdapter: inspectedBoundary,
     },
     writerLease: hasValidLeaseFenceWriterContract(inspected?.writerLeaseContract)
