@@ -798,6 +798,28 @@ function reprint_push_lab_rest_attach_checked_db_journal_contract(
             $result['dbJournal'],
             $db_journal
         );
+        if (
+            is_array($result['dbJournal'])
+            && (
+                reprint_push_lab_rest_checked_top_level_identity_conflicts(
+                    $premerge_checked_db_journal,
+                    $db_journal
+                )
+                || reprint_push_lab_rest_checked_top_level_identity_omissions(
+                    $premerge_checked_db_journal,
+                    $db_journal
+                )
+            )
+        ) {
+            $result['dbJournal']['acceptedOnCheckedBoundary'] = false;
+            foreach (['schemaVersion', 'table', 'scope'] as $key) {
+                if (array_key_exists($key, $premerge_checked_db_journal)) {
+                    $result['dbJournal'][$key] = $premerge_checked_db_journal[$key];
+                } else {
+                    unset($result['dbJournal'][$key]);
+                }
+            }
+        }
     }
 
     $storage_guard = reprint_push_lab_rest_db_journal_storage_guard($db_journal);
@@ -987,6 +1009,31 @@ function reprint_push_lab_rest_fail_closed_checked_db_journal_acceptance(
         }
     }
 
+    if (
+        is_array($checked_summary)
+        && (
+            reprint_push_lab_rest_checked_top_level_identity_conflicts(
+                $premerge_db_journal,
+                $checked_summary
+            )
+            || reprint_push_lab_rest_checked_top_level_identity_omissions(
+                $premerge_db_journal,
+                $checked_summary
+            )
+        )
+    ) {
+        $db_journal['acceptedOnCheckedBoundary'] = false;
+        if (is_array($premerge_db_journal)) {
+            foreach (['schemaVersion', 'table', 'scope'] as $key) {
+                if (array_key_exists($key, $premerge_db_journal)) {
+                    $db_journal[$key] = $premerge_db_journal[$key];
+                } else {
+                    unset($db_journal[$key]);
+                }
+            }
+        }
+    }
+
     if (!reprint_push_lab_db_journal_checked_boundary_contract_matches($db_journal)) {
         $db_journal['acceptedOnCheckedBoundary'] = false;
         return $db_journal;
@@ -1022,31 +1069,6 @@ function reprint_push_lab_rest_fail_closed_checked_db_journal_acceptance(
         $db_journal['acceptedOnCheckedBoundary'] = false;
         if (is_array($premerge_db_journal)) {
             foreach (['rowCount', 'applyCommitted', 'mutationApplied', 'idempotencyOpened'] as $key) {
-                if (array_key_exists($key, $premerge_db_journal)) {
-                    $db_journal[$key] = $premerge_db_journal[$key];
-                } else {
-                    unset($db_journal[$key]);
-                }
-            }
-        }
-    }
-
-    if (
-        is_array($checked_summary)
-        && (
-            reprint_push_lab_rest_checked_top_level_identity_conflicts(
-                $premerge_db_journal,
-                $checked_summary
-            )
-            || reprint_push_lab_rest_checked_top_level_identity_omissions(
-                $premerge_db_journal,
-                $checked_summary
-            )
-        )
-    ) {
-        $db_journal['acceptedOnCheckedBoundary'] = false;
-        if (is_array($premerge_db_journal)) {
-            foreach (['schemaVersion', 'table', 'scope'] as $key) {
                 if (array_key_exists($key, $premerge_db_journal)) {
                     $db_journal[$key] = $premerge_db_journal[$key];
                 } else {

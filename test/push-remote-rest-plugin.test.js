@@ -13959,6 +13959,100 @@ test('checked db journal attachment fails closed on missing accepted inline scop
   assert.equal(parsed.dbJournal.scope, undefined);
 });
 
+test('checked db journal attachment fails closed when authoritative checked summaries conflict on accepted top-level counters', { skip: !hasPhp }, () => {
+  const inlineJournal = buildAcceptedInlineDbJournal();
+  inlineJournal.rowCount = 3;
+  inlineJournal.applyCommitted = true;
+  inlineJournal.mutationApplied = 1;
+  inlineJournal.idempotencyOpened = 1;
+
+  const checkedSummary = structuredClone(inlineJournal);
+  checkedSummary.rowCount = 4;
+  checkedSummary.applyCommitted = false;
+  checkedSummary.mutationApplied = 2;
+  checkedSummary.idempotencyOpened = 2;
+
+  const result = runAttachCheckedDbJournalContract(
+    { ok: true, dbJournal: inlineJournal },
+    checkedSummary,
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.dbJournal.acceptedOnCheckedBoundary, false);
+  assert.equal(parsed.dbJournal.rowCount, 3);
+  assert.equal(parsed.dbJournal.applyCommitted, true);
+  assert.equal(parsed.dbJournal.mutationApplied, 1);
+  assert.equal(parsed.dbJournal.idempotencyOpened, 1);
+});
+
+test('checked db journal attachment fails closed when authoritative checked summaries omit accepted top-level counters', { skip: !hasPhp }, () => {
+  const inlineJournal = buildAcceptedInlineDbJournal();
+  inlineJournal.rowCount = 3;
+  inlineJournal.applyCommitted = true;
+  inlineJournal.mutationApplied = 1;
+  inlineJournal.idempotencyOpened = 1;
+
+  const checkedSummary = structuredClone(inlineJournal);
+  delete checkedSummary.rowCount;
+  delete checkedSummary.applyCommitted;
+  delete checkedSummary.mutationApplied;
+  delete checkedSummary.idempotencyOpened;
+
+  const result = runAttachCheckedDbJournalContract(
+    { ok: true, dbJournal: inlineJournal },
+    checkedSummary,
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.dbJournal.acceptedOnCheckedBoundary, false);
+  assert.equal(parsed.dbJournal.rowCount, 3);
+  assert.equal(parsed.dbJournal.applyCommitted, true);
+  assert.equal(parsed.dbJournal.mutationApplied, 1);
+  assert.equal(parsed.dbJournal.idempotencyOpened, 1);
+});
+
+test('checked db journal attachment fails closed when authoritative checked summaries conflict on accepted top-level identity fields', { skip: !hasPhp }, () => {
+  const inlineJournal = buildAcceptedInlineDbJournal();
+  const checkedSummary = structuredClone(inlineJournal);
+  checkedSummary.schemaVersion = 2;
+  checkedSummary.table = 'wp_conflicting_push_journal';
+  checkedSummary.scope = 'conflicting checked journal scope';
+
+  const result = runAttachCheckedDbJournalContract(
+    { ok: true, dbJournal: inlineJournal },
+    checkedSummary,
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.dbJournal.acceptedOnCheckedBoundary, false);
+  assert.equal(parsed.dbJournal.schemaVersion, 1);
+  assert.equal(parsed.dbJournal.table, 'wp_reprint_push_lab_push_journal');
+  assert.equal(parsed.dbJournal.scope, 'checked live production-shaped journal surface; not local Playground fixture only');
+});
+
+test('checked db journal attachment fails closed when authoritative checked summaries omit accepted top-level identity fields', { skip: !hasPhp }, () => {
+  const inlineJournal = buildAcceptedInlineDbJournal();
+  const checkedSummary = structuredClone(inlineJournal);
+  delete checkedSummary.schemaVersion;
+  delete checkedSummary.table;
+  delete checkedSummary.scope;
+
+  const result = runAttachCheckedDbJournalContract(
+    { ok: true, dbJournal: inlineJournal },
+    checkedSummary,
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.dbJournal.acceptedOnCheckedBoundary, false);
+  assert.equal(parsed.dbJournal.schemaVersion, 1);
+  assert.equal(parsed.dbJournal.table, 'wp_reprint_push_lab_push_journal');
+  assert.equal(parsed.dbJournal.scope, 'checked live production-shaped journal surface; not local Playground fixture only');
+});
+
 test('checked db journal attachment fails closed on conflicting accepted inline top-level claim id', { skip: !hasPhp }, () => {
   const inlineJournal = buildAcceptedInlineDbJournal();
   inlineJournal.claimId = 'different-active-claim-id';
