@@ -1494,6 +1494,7 @@ test('guarded benchmark surfaces plugin-update recovery blockers at runtime', ()
         'compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-batch-sizing',
         'compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-finalize',
         'compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-row-preconditions',
+        'compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-writeback',
         'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-activation',
         'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-commit-after-pause',
         'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-dependency-checks',
@@ -1572,6 +1573,15 @@ test('guarded benchmark surfaces plugin-update recovery blockers at runtime', ()
         id: 'compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-row-preconditions',
         rejectedGate: 'live',
         blockerRefs: ['production-capability-measurement-not-aligned'],
+      },
+      {
+        id: 'compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-writeback',
+        rejectedGate: 'group',
+        blockerRefs: [
+          'production-atomic-group-commit-not-measured',
+          'production-row-batch-executor-not-measured',
+          'production-row-batch-executor-measured-not-proven',
+        ],
       },
       {
         id: 'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-activation',
@@ -3242,6 +3252,24 @@ test('guarded benchmark exposes compressed cached dependency-graph plugin-update
   assert.deepEqual(
     fastPath.violates,
     ['remote-index-planning-only', 'compression', 'row-preconditions', 'plugin-preconditions', 'atomic-groups', 'durable-progress'],
+  );
+});
+
+test('guarded benchmark exposes compressed cached dependency-graph plugin-update writeback shortcuts as rejected', () => {
+  const fastPath = findRejectedFastPathById(
+    'compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-writeback',
+  );
+
+  assert.ok(fastPath);
+  assert.equal(fastPath.rejectedGate, 'group');
+  assert.match(fastPath.proposal, /skip plugin update writeback/i);
+  assert.match(
+    fastPath.rejectedBecause,
+    /live row compares, metadata writes, or the atomic-group barrier survived failure/i,
+  );
+  assert.deepEqual(
+    fastPath.violates,
+    ['remote-index-planning-only', 'compression', 'plugin-preconditions', 'row-preconditions', 'atomic-groups', 'durable-progress'],
   );
 });
 
