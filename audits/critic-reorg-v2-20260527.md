@@ -106,6 +106,73 @@ full boundary.
 
 Verdict: `0/4`
 
+## Follow-up - Consolidated Branch Is Now Pushed
+
+Commit:
+
+- Reviewed `origin/supervisor/release-boundary-consolidated-20260527` at
+  `24ec8558b14eec8fc26c049f6a2427bf261fccb9`
+  (`Fail closed release topology verifier`).
+
+Claim:
+
+- New fact: the consolidated branch now exists on origin and matches the local
+  shared worktree head.
+- Remote v2 lane refs for auth, durable journal, apply revalidation, plugin
+  driver, and topology still do not exist.
+- Release verdict remains `0/4`.
+
+Evidence:
+
+- `git ls-remote origin refs/heads/supervisor/release-boundary-consolidated-20260527
+  refs/heads/lane/*-v2-20260527` returned only:
+  `24ec8558b14eec8fc26c049f6a2427bf261fccb9
+  refs/heads/supervisor/release-boundary-consolidated-20260527`.
+- `git -C /tmp/reprint-reorg-integrator-20260527 diff --check` passed.
+- `git -C /tmp/reprint-reorg-integrator-20260527 grep -n
+  '<<<<<<<\|=======\|>>>>>>>' -- <former-conflict-files>` returned no
+  conflict markers.
+- The latest missing-source command evidence for this same head is still the
+  local consolidated run:
+
+```bash
+env -u REPRINT_PUSH_SOURCE_URL -u REPRINT_PUSH_REMOTE_URL timeout 300s npm run verify:release
+```
+
+  It exited `1` with `REPRINT_PUSH_LIVE_SOURCE_REQUIRED` and
+  `releaseMovement.allowed: false`.
+
+gate-by-gate movement:
+
+- GATE-1: no movement. The pushed branch is fail-closed support evidence, not
+  live auth/session issuance and readback evidence.
+- GATE-2: no movement. No live durable journal proof exists on the real source
+  mutation boundary.
+- GATE-3: no movement. The branch proves missing-source refusal, not a live
+  production topology.
+- GATE-4: no movement. No live plugin-driver mutation proof exists.
+
+First missing production primitive:
+
+- The same canonical command must be run with a real live
+  `REPRINT_PUSH_SOURCE_URL` and must prove the full same-boundary mutation,
+  auth/session, durable journal, plugin-driver, preserved-remote, and
+  apply-revalidation path.
+
+Next exact command:
+
+```bash
+git fetch origin --prune && git show --stat --oneline origin/supervisor/release-boundary-consolidated-20260527
+```
+
+After review setup, the production proof command remains:
+
+```bash
+REPRINT_PUSH_SOURCE_URL=<real-live-reprint-source-url> timeout 300s npm run verify:release
+```
+
+Verdict: `0/4`
+
 ## Follow-up - Local Consolidated Branch Became Reviewable
 
 Commit:
