@@ -549,6 +549,22 @@ test('production recovery journal inspection surface helper fails closed when le
   delete inheritedLeaseFenceMarker.leaseFence.staleClaimRejected;
   assert.equal(productionRecoveryJournalInspectionSurfaceIsPresent(inheritedLeaseFenceMarker), false);
 
+  const inheritedLeaseFenceWriterLease = clone(inspection);
+  inheritedLeaseFenceWriterLease.leaseFence = Object.assign(
+    {},
+    inheritedLeaseFenceWriterLease.leaseFence,
+    {
+      writerLease: Object.assign(
+        Object.create({
+          claimId: inheritedLeaseFenceWriterLease.leaseFence.writerLease.claimId,
+        }),
+        inheritedLeaseFenceWriterLease.leaseFence.writerLease,
+      ),
+    },
+  );
+  delete inheritedLeaseFenceWriterLease.leaseFence.writerLease.claimId;
+  assert.equal(productionRecoveryJournalInspectionSurfaceIsPresent(inheritedLeaseFenceWriterLease), false);
+
   const inheritedOwnershipMarkers = clone(inspection);
   inheritedOwnershipMarkers.journal.ownership = Object.assign(
     Object.create({

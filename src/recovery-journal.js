@@ -637,6 +637,7 @@ function productionRecoveryJournalLeaseFenceContractMatches(leaseFence) {
     'monotonicSequence',
     'restartReadable',
     'staleClaimRejected',
+    'writerLease',
   ])
     && leaseFence?.boundary === PRODUCTION_RECOVERY_JOURNAL_STORAGE_ADAPTER
     && leaseFence?.storageGuard === PRODUCTION_RECOVERY_JOURNAL_STORAGE_ADAPTER
