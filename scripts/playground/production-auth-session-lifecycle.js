@@ -3,6 +3,10 @@ export function isExpiredAuthSession(session, now = Date.now()) {
     return false;
   }
 
+  if (session.expired === true) {
+    return true;
+  }
+
   const expiresAt = session.expiresAt;
   if (!expiresAt) {
     return false;
