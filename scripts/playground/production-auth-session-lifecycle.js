@@ -175,6 +175,11 @@ export function evaluateProductionAuthSessionLifecycleSummary(summary, now = Dat
     return issuedLifecycle;
   }
 
+  const invalidIssuedAuthUser = resolveInvalidAuthSessionAuthUserObservation(issuedObservation);
+  if (invalidIssuedAuthUser) {
+    return invalidIssuedAuthUser;
+  }
+
   const observations = Array.isArray(summary.observations) ? summary.observations : [];
   if (observations.length > 0) {
     const issuedIndex = observations.findIndex((observation) =>
@@ -257,6 +262,11 @@ export function evaluateProductionAuthSessionLifecycleSummary(summary, now = Dat
     return invalidReadObservation;
   }
 
+  const invalidReadAuthUser = resolveInvalidAuthSessionAuthUserObservation(readObservation);
+  if (invalidReadAuthUser) {
+    return invalidReadAuthUser;
+  }
+
   const readLifecycle = evaluateProductionAuthSessionLifecycle(readObservation, now);
   if (!readLifecycle.ok) {
     return readLifecycle;
@@ -270,6 +280,17 @@ export function evaluateProductionAuthSessionLifecycleSummary(summary, now = Dat
       field: readObservation.status === 'rotated' ? 'auth.session.status' : 'auth.session.rotated',
       required: 'preserved read',
       observed: 'rotated',
+    };
+  }
+
+  const issuedAuthUser = normalizeAuthSessionObservationField(issuedObservation.authUser);
+  const readAuthUser = normalizeAuthSessionObservationField(readObservation.authUser);
+  if (issuedAuthUser && readAuthUser !== issuedAuthUser) {
+    return {
+      ok: false,
+      field: 'auth.identity.userLogin',
+      required: issuedAuthUser,
+      observed: readAuthUser || 'missing',
     };
   }
 
@@ -351,6 +372,11 @@ export function evaluateProductionAuthSessionLifecycleSummary(summary, now = Dat
       };
     }
 
+    const invalidObservationAuthUser = resolveInvalidAuthSessionAuthUserObservation(observation);
+    if (invalidObservationAuthUser) {
+      return invalidObservationAuthUser;
+    }
+
     if (observation.rotated) {
       return {
         ok: false,
@@ -369,6 +395,21 @@ export function evaluateProductionAuthSessionLifecycleSummary(summary, now = Dat
         field: 'auth.session.preserved',
         required: 'preserved read',
         observed: observation.rotated ? 'rotated' : 'unpreserved',
+      };
+    }
+
+    const observationAuthUser = normalizeAuthSessionObservationField(observation.authUser);
+    if (
+      issuedAuthUser
+      && observation.step !== 'preflight'
+      && isAuthSessionReadStep(observation.step)
+      && observationAuthUser !== issuedAuthUser
+    ) {
+      return {
+        ok: false,
+        field: 'auth.identity.userLogin',
+        required: issuedAuthUser,
+        observed: observationAuthUser || 'missing',
       };
     }
 
@@ -557,6 +598,7 @@ export function summarizeProductionAuthSessionLifecycleTrace(trace) {
       ...(typeof entry.unrevokedField === 'string' ? { unrevokedField: entry.unrevokedField } : {}),
       ...(typeof entry.expiredField === 'string' ? { expiredField: entry.expiredField } : {}),
       ...(typeof entry.rotatedField === 'string' ? { rotatedField: entry.rotatedField } : {}),
+      ...(typeof entry.authUser === 'string' ? { authUser: entry.authUser } : {}),
       expired: entry.expired === true || entry.status === 'expired' || isExpiredAuthSession(entry),
       revoked: entry.revoked === true || entry.status === 'revoked',
       cleanedUp: entry.cleanedUp === true || entry.cleanup === true || entry.status === 'cleaned-up',
@@ -1134,6 +1176,7 @@ function authSessionObservationEquals(left, right) {
     && normalizeAuthSessionObservationField(left?.type) === normalizeAuthSessionObservationField(right?.type)
     && normalizeAuthSessionObservationField(left?.status) === normalizeAuthSessionObservationField(right?.status)
     && normalizeAuthSessionObservationField(left?.expiresAt) === normalizeAuthSessionObservationField(right?.expiresAt)
+    && normalizeAuthSessionObservationField(left?.authUser) === normalizeAuthSessionObservationField(right?.authUser)
     && normalizeAuthSessionObservationField(left?.invalidIdentityField) === normalizeAuthSessionObservationField(right?.invalidIdentityField)
     && normalizeAuthSessionObservationField(left?.unrevokedField) === normalizeAuthSessionObservationField(right?.unrevokedField)
     && normalizeAuthSessionObservationField(left?.expiredField) === normalizeAuthSessionObservationField(right?.expiredField)
@@ -1150,6 +1193,27 @@ function authSessionObservationEquals(left, right) {
 
 function normalizeLifecycleBoolean(value) {
   return value === true;
+}
+
+function resolveInvalidAuthSessionAuthUserObservation(observation) {
+  if (!observation || typeof observation !== 'object') {
+    return null;
+  }
+
+  if (
+    observation.authUser !== undefined
+    && observation.authUser !== null
+    && !normalizeAuthSessionObservationField(observation.authUser)
+  ) {
+    return {
+      ok: false,
+      field: 'auth.identity.userLogin',
+      required: 'string lifecycle fields',
+      observed: 'invalid-user-login',
+    };
+  }
+
+  return null;
 }
 
 function summaryObservationCarriesExpectedFlag(field, observation) {

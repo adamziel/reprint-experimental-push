@@ -6485,6 +6485,87 @@ test('checked release auth/session lifecycle summary fails closed when a replay 
   );
 });
 
+test('checked release auth/session lifecycle summary fails closed when a replay read changes auth identity', () => {
+  const summary = summarizeProductionAuthSessionLifecycleTrace([
+    {
+      step: 'preflight',
+      id: 'session-01',
+      type: 'production-auth-session',
+      status: 'active',
+      expiresAt: '2099-01-01T00:00:00Z',
+      authUser: 'reprint_push_admin',
+      expired: false,
+      revoked: false,
+      cleanedUp: false,
+      rotated: false,
+      preserved: false,
+    },
+    {
+      step: 'replay',
+      id: 'session-01',
+      type: 'production-auth-session',
+      status: 'active',
+      expiresAt: '2099-01-01T00:00:00Z',
+      authUser: 'different-runtime-user',
+      expired: false,
+      revoked: false,
+      cleanedUp: false,
+      rotated: false,
+      preserved: true,
+    },
+  ]);
+
+  assert.deepEqual(
+    evaluateCheckedReleaseAuthSessionLifecycleSummary(summary),
+    {
+      ok: false,
+      field: 'auth.identity.userLogin',
+      required: 'reprint_push_admin',
+      observed: 'different-runtime-user',
+    },
+  );
+});
+
+test('checked release auth/session lifecycle summary fails closed when a journal read drops auth identity', () => {
+  const summary = summarizeProductionAuthSessionLifecycleTrace([
+    {
+      step: 'preflight',
+      id: 'session-01',
+      type: 'production-auth-session',
+      status: 'active',
+      expiresAt: '2099-01-01T00:00:00Z',
+      authUser: 'reprint_push_admin',
+      expired: false,
+      revoked: false,
+      cleanedUp: false,
+      rotated: false,
+      preserved: false,
+    },
+    {
+      step: 'journal',
+      id: 'session-01',
+      type: 'production-auth-session',
+      status: 'active',
+      expiresAt: '2099-01-01T00:00:00Z',
+      expired: false,
+      revoked: false,
+      cleanedUp: false,
+      rotated: false,
+      preserved: true,
+    },
+  ]);
+
+  assert.deepEqual(
+    evaluateCheckedReleaseAuthSessionLifecycleSummary(summary),
+    {
+      ok: false,
+      field: 'auth.identity.userLogin',
+      required: 'reprint_push_admin',
+      observed: 'missing',
+    },
+  );
+});
+
 test('production auth/session lifecycle trace summary fails closed when no preflight-issued session exists', () => {
   const summary = summarizeProductionAuthSessionLifecycleTrace([
     {
