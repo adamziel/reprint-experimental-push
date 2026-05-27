@@ -11,6 +11,9 @@ const registrationGuardScenarioNames = [
 const callbackGuardScenarioNames = [
   ...scenarioGroups['driver-callback-guards'],
 ];
+const receiptAuthGuardScenarioNames = [
+  ...scenarioGroups['driver-receipt-auth-guards'],
+];
 const registrationShapeGuardScenarioNames = [
   ...scenarioGroups['driver-registration-shape-guards'],
 ];
@@ -31,6 +34,9 @@ const bundleSummaryGroups = {
     'core-package-routes',
     'driver-receipt-guards',
     'driver-delete-apply',
+  ],
+  'driver-receipt-auth-guards': [
+    ...receiptAuthGuardScenarioNames,
   ],
   'driver-verifier-guards': [
     'driver-receipt-guards',
@@ -120,6 +126,13 @@ const guardProofScenarioMaps = Object.freeze({
   'driver-receipt-guards': Object.freeze({
     deleteGuard: 'driver-delete-guard',
     updateValidationGuard: 'driver-update-validation-guard',
+    planBinding: 'driver-receipt-plan-binding-guard',
+    expiry: 'driver-receipt-expiry-guard',
+    identity: 'driver-receipt-identity-guard',
+    rotatedCredential: 'driver-receipt-rotated-credential-guard',
+    revokedCredential: 'driver-receipt-revoked-credential-guard',
+  }),
+  'driver-receipt-auth-guards': Object.freeze({
     planBinding: 'driver-receipt-plan-binding-guard',
     expiry: 'driver-receipt-expiry-guard',
     identity: 'driver-receipt-identity-guard',
@@ -236,6 +249,17 @@ function buildRegistrationGuardProofMap(summary) {
   };
 }
 
+function buildReceiptAuthGuardProofMap(summary) {
+  const receiptGuardProof = buildReceiptGuardProofMap(summary);
+  return {
+    planBinding: receiptGuardProof.planBinding,
+    expiry: receiptGuardProof.expiry,
+    identity: receiptGuardProof.identity,
+    rotatedCredential: receiptGuardProof.rotatedCredential,
+    revokedCredential: receiptGuardProof.revokedCredential,
+  };
+}
+
 function buildRegistrationCallbackGuardProofMap(summary) {
   const registrationGuardProof = buildRegistrationGuardProofMap(summary);
   return {
@@ -302,6 +326,9 @@ function buildModeGuardProof(canonicalMode, summary, scenarioPasses) {
     case 'driver-release-proof':
     case 'driver-receipt-guards':
       guardProof = buildReceiptGuardProofMap(summary);
+      break;
+    case 'driver-receipt-auth-guards':
+      guardProof = buildReceiptAuthGuardProofMap(summary);
       break;
     case 'driver-registration-guards':
       guardProof = buildRegistrationGuardProofMap(summary);
@@ -385,6 +412,32 @@ const scenarioDefinitions = [
           )
         )
         && summary?.driverReceiptPlanBindingGuard?.applyRejectedCode === 'AUTH_RECEIPT_MISMATCH'
+        && rowRetainedAfterReject(summary?.driverReceiptPlanBindingGuard)
+        && updatedMarkerRetainedAfterReject(summary?.driverReceiptPlanBindingGuard)
+        && payloadModeRetainedAfterReject(summary?.driverReceiptPlanBindingGuard)
+        && summary?.driverReceiptExpiryGuard?.applyRejectedCode === 'AUTH_RECEIPT_EXPIRED'
+        && rowRetainedAfterReject(summary?.driverReceiptExpiryGuard)
+        && updatedMarkerRetainedAfterReject(summary?.driverReceiptExpiryGuard)
+        && payloadModeRetainedAfterReject(summary?.driverReceiptExpiryGuard)
+        && summary?.driverReceiptIdentityGuard?.applyRejectedCode === 'AUTH_RECEIPT_MISMATCH'
+        && rowRetainedAfterReject(summary?.driverReceiptIdentityGuard)
+        && updatedMarkerRetainedAfterReject(summary?.driverReceiptIdentityGuard)
+        && payloadModeRetainedAfterReject(summary?.driverReceiptIdentityGuard)
+        && summary?.driverReceiptRotatedCredentialGuard?.rotatedCredentialRejectedCode === 'AUTH_RECEIPT_MISMATCH'
+        && rowRetainedAfterReject(summary?.driverReceiptRotatedCredentialGuard)
+        && updatedMarkerRetainedAfterReject(summary?.driverReceiptRotatedCredentialGuard)
+        && payloadModeRetainedAfterReject(summary?.driverReceiptRotatedCredentialGuard)
+        && summary?.driverReceiptRevokedCredentialGuard?.applyRejectedCode === 'reprint_push_lab_auth_required'
+        && rowRetainedAfterReject(summary?.driverReceiptRevokedCredentialGuard)
+        && updatedMarkerRetainedAfterReject(summary?.driverReceiptRevokedCredentialGuard)
+        && payloadModeRetainedAfterReject(summary?.driverReceiptRevokedCredentialGuard);
+    },
+  },
+  {
+    key: 'driverReceiptAuthGuards',
+    scenario: 'driver-receipt-auth-guards',
+    evaluate(summary) {
+      return summary?.driverReceiptPlanBindingGuard?.applyRejectedCode === 'AUTH_RECEIPT_MISMATCH'
         && rowRetainedAfterReject(summary?.driverReceiptPlanBindingGuard)
         && updatedMarkerRetainedAfterReject(summary?.driverReceiptPlanBindingGuard)
         && payloadModeRetainedAfterReject(summary?.driverReceiptPlanBindingGuard)
@@ -673,6 +726,7 @@ function collapseRequestedBundleStatus(requestedBundleStatusesForScenario) {
 export const proofKeyByCanonicalMode = Object.freeze({
   'core-package-routes': 'driverRouteProof',
   'driver-receipt-guards': 'driverReceiptGuards',
+  'driver-receipt-auth-guards': 'driverReceiptAuthGuards',
   'driver-delete-apply': 'driverDeleteApplyProof',
   'driver-positive-proof': 'driverPositiveProof',
   'driver-proof': 'driverProof',
@@ -2363,6 +2417,29 @@ export function buildProductionPluginPackageProofSummary(
       requestedBundleStatus: receiptRequestedBundleStatus,
       requestedBundleStatuses: receiptRequestedBundleStatuses,
     },
+    receiptAuthGuards: {
+      requested: normalizedRequestedScenarios === null
+        ? true
+        : canonicalRequestedScenarios.includes('driver-receipt-auth-guards')
+          || concreteBundleRequests['driver-receipt-auth-guards'],
+      selected: buildObjectBundleSelected('driver-receipt-auth-guards'),
+      ok: buildObjectBundleStatus('driver-receipt-auth-guards') === 'passed',
+      status: buildObjectBundleStatus('driver-receipt-auth-guards'),
+      planBinding: summary?.driverReceiptPlanBindingGuard?.applyRejectedCode ?? null,
+      identity: summary?.driverReceiptIdentityGuard?.applyRejectedCode ?? null,
+      expiry: summary?.driverReceiptExpiryGuard?.applyRejectedCode ?? null,
+      rotatedCredential: summary?.driverReceiptRotatedCredentialGuard?.rotatedCredentialRejectedCode ?? null,
+      revokedCredential: summary?.driverReceiptRevokedCredentialGuard?.applyRejectedCode ?? null,
+      ...buildBundleScenarioDetails(
+        'driver-receipt-auth-guards',
+        scenarioPasses,
+        buildObjectBundleStatus('driver-receipt-auth-guards') !== 'skipped',
+      ),
+      requestedStatus: requestedScenarioStatuses['driver-receipt-auth-guards']
+        ?? buildConcreteRequestedBundleStatus('driver-receipt-auth-guards'),
+      requestedBundleStatus: buildConcreteRequestedBundleStatus('driver-receipt-auth-guards'),
+      requestedBundleStatuses: buildConcreteRequestedBundleStatuses('driver-receipt-auth-guards'),
+    },
     deleteApplyProof: {
       requested: requestedScenarioAliasMap.get('driver-delete-apply') === 'all'
         || requestedScenarioAliasMap.get('driver-delete-apply').length > 0,
@@ -2626,6 +2703,7 @@ export function buildProductionPluginPackageProofSummary(
 
   proofSummary.driverRouteProof = proofSummary.routeProof;
   proofSummary.driverReceiptGuards = proofSummary.receiptGuards;
+  proofSummary.driverReceiptAuthGuards = proofSummary.receiptAuthGuards;
   proofSummary.driverDeleteApplyProof = proofSummary.deleteApplyProof;
   proofSummary.driverMutationProof = proofSummary.mutationProof;
   proofSummary.driverVerifierGuards = proofSummary.verifierGuards;

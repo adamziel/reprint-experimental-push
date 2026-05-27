@@ -67,6 +67,13 @@ test('package scripts pin the bounded plugin-driver receipt guard scenario entry
   );
 });
 
+test('package scripts pin the bounded plugin-driver receipt auth guard bundle entrypoint', () => {
+  assert.equal(
+    packageJson.scripts['test:playground:production-plugin-driver-receipt-auth-guards'],
+    'REPRINT_PUSH_PACKAGE_SMOKE_MODE=driverReceiptAuthGuards node ./scripts/playground/production-plugin-package-smoke.mjs',
+  );
+});
+
 test('package scripts pin the bounded plugin-driver registration guard bundle entrypoint', () => {
   assert.equal(
     packageJson.scripts['test:playground:production-plugin-driver-registration-guards'],
@@ -368,10 +375,24 @@ test('package scripts pin the exact plugin-driver registration-whitespace-guards
   );
 });
 
+test('package scripts pin the bounded plugin-driver receipt auth-only mode entrypoint', () => {
+  assert.equal(
+    packageJson.scripts['test:playground:production-plugin-driver-receipt-auth-only'],
+    'REPRINT_PUSH_PACKAGE_SMOKE_MODE=driverReceiptAuthOnly node ./scripts/playground/production-plugin-package-smoke.mjs',
+  );
+});
+
 test('package scripts pin the bounded plugin-driver receipt-only mode entrypoint', () => {
   assert.equal(
     packageJson.scripts['test:playground:production-plugin-driver-receipt-only'],
     'REPRINT_PUSH_PACKAGE_SMOKE_MODE=driverReceiptOnly node ./scripts/playground/production-plugin-package-smoke.mjs',
+  );
+});
+
+test('package scripts pin the exact plugin-driver receipt-auth-guards-only mode alias entrypoint', () => {
+  assert.equal(
+    packageJson.scripts['test:playground:production-plugin-driver-receipt-auth-guards-only'],
+    'REPRINT_PUSH_PACKAGE_SMOKE_MODE=driverReceiptAuthGuardsOnly node ./scripts/playground/production-plugin-package-smoke.mjs',
   );
 });
 
@@ -570,6 +591,7 @@ test('package scripts keep every guard-proof canonical mode reachable through ru
   assert.deepEqual(guardProofModeNames, [
     'driver-callback-guards',
     'driver-proof',
+    'driver-receipt-auth-guards',
     'driver-receipt-guards',
     'driver-receipt-registration-guards',
     'driver-registration-guards',
