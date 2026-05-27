@@ -1756,6 +1756,29 @@ test('auth-session source loader derives allowedSourceUrl from explicit local ru
   });
 });
 
+test('auth-session source loader derives allowedSourceUrl from explicit remote runtime env', () => {
+  const sourceUrl = 'https://example.com/remote';
+  const command = buildAuthSessionSourceCommand({
+    sourceUrl,
+    username: 'reprint_push_admin',
+    applicationPassword: 'reprint-push-admin-app-password',
+    allowedSourceUrl: sourceUrl,
+  });
+
+  const source = loadAuthSessionSourceFromRuntimeEnvironment(command, {
+    ...process.env,
+    NODE_NO_WARNINGS: '1',
+    REPRINT_PUSH_REMOTE_URL: sourceUrl,
+  }, repoRoot);
+
+  assert.deepEqual(source, {
+    ok: true,
+    sourceUrl,
+    username: 'reprint_push_admin',
+    applicationPassword: 'reprint-push-admin-app-password',
+  });
+});
+
 test('auth-session source loader falls back to runtime env when explicit option values are empty', () => {
   const sourceUrl = 'https://example.com/local';
   const command = buildAuthSessionSourceCommand({
