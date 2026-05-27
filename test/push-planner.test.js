@@ -44216,6 +44216,69 @@ test('blocks a local term taxonomy when its same-plan term target is itself bloc
   assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
 });
 
+test('blocks a local term taxonomy when its same-plan term target is itself blocked by a same-plan nav menu taxonomy even when unrelated remote attachment noise exists', () => {
+  const termResourceKey = 'row:["wp_terms","term_id:7"]';
+  const navMenuTaxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:9"]';
+  const categoryTaxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:10"]';
+  const base = baseSite();
+  const local = baseSite();
+  const remote = baseSite();
+  local.db.wp_terms = {
+    'term_id:7': {
+      term_id: 7,
+      name: 'Local shared term',
+      slug: 'local-shared-term',
+    },
+  };
+  local.db.wp_term_taxonomy = {
+    'term_taxonomy_id:9': {
+      term_taxonomy_id: 9,
+      term_id: 7,
+      taxonomy: 'nav_menu',
+      description: '',
+      parent: 0,
+      count: 0,
+    },
+    'term_taxonomy_id:10': {
+      term_taxonomy_id: 10,
+      term_id: 7,
+      taxonomy: 'category',
+      description: '',
+      parent: 0,
+      count: 0,
+    },
+  };
+  remote.db.wp_posts['ID:21'] = {
+    ID: 21,
+    post_title: 'Remote unrelated attachment',
+    post_content: 'remote-private-unrelated-term-taxonomy-attachment-body',
+    post_status: 'inherit',
+    post_type: 'attachment',
+  };
+
+  const plan = planFor(base, local, remote);
+  const termMutation = mutationFor(plan, termResourceKey);
+  const categoryTaxonomyMutation = mutationFor(plan, categoryTaxonomyResourceKey);
+  const navMenuTaxonomyBlocker = plan.blockers.find((entry) => entry.resourceKey === navMenuTaxonomyResourceKey);
+  const categoryTaxonomyBlocker = plan.blockers.find((entry) => entry.resourceKey === categoryTaxonomyResourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(termMutation.changeKind, 'create');
+  assert.equal(categoryTaxonomyMutation.changeKind, 'create');
+  assert.equal(navMenuTaxonomyBlocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(navMenuTaxonomyBlocker.surface, 'nav_menu');
+  assert.equal(categoryTaxonomyBlocker.class, 'missing-wordpress-graph-dependency');
+  assert.equal(categoryTaxonomyBlocker.references[0].relationshipType, 'term-taxonomy-term');
+  assert.equal(categoryTaxonomyBlocker.references[0].targetResourceKey, termResourceKey);
+  assert.equal(categoryTaxonomyMutation.dependsOnMutationIds, undefined);
+  assert.equal(JSON.stringify(categoryTaxonomyBlocker).includes('local-shared-term'), false);
+  assert.equal(
+    JSON.stringify(categoryTaxonomyBlocker).includes('remote-private-unrelated-term-taxonomy-attachment-body'),
+    false,
+  );
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
+});
+
 test('blocks a local term relationship when its same-plan category taxonomy target is itself blocked by a same-plan nav menu taxonomy', () => {
   const postResourceKey = 'row:["wp_posts","ID:3"]';
   const termResourceKey = 'row:["wp_terms","term_id:7"]';
