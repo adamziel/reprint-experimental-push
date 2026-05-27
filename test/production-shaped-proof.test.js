@@ -4326,6 +4326,83 @@ test('packaged release verifier readiness helper waits through global WordPress 
   ]);
 });
 
+test('packaged release verifier readiness helper fails closed when the snapshot route returns a terminal response', async () => {
+  const terminalSnapshotBody = JSON.stringify({
+    code: 'rest_forbidden',
+    message: 'forbidden',
+  });
+  const fetchCalls = [];
+  const helper = buildPackagedReleaseVerifierWaitHelper({
+    packagedProductionPluginRouteStartupClassificationReady: () => {
+      throw new Error('unexpected route startup classification during terminal snapshot runtime proof');
+    },
+    fetchPackagedWordPressIndexProbe: async () => {
+      throw new Error('unexpected /wp-json/ probe during terminal snapshot runtime proof');
+    },
+    packagedProductionPluginRouteStartupClassificationReady: () => false,
+    sleepUnlessChildExit: async () => {
+      throw new Error('unexpected readiness sleep during terminal snapshot runtime proof');
+    },
+    fetchPackagedTimeoutFallbackProbes: async () => {
+      throw new Error('unexpected timeout fallback probes during terminal snapshot runtime proof');
+    },
+    fetchPackagedPreflightProbe: async () => {
+      return {
+        route: '/wp-json/reprint/v1/push/preflight',
+        status: 200,
+        ok: true,
+        body: JSON.stringify({
+          ok: false,
+        }),
+        parsedBody: {
+          ok: false,
+        },
+        ready: false,
+        retryable: false,
+        terminal: false,
+      };
+    },
+    fetchTextWithTimeout: async (url) => {
+      fetchCalls.push(url);
+      if (url.endsWith('/wp-json/reprint/v1/push/snapshot')) {
+        return {
+          response: {
+            status: 401,
+            ok: false,
+          },
+          bodyText: terminalSnapshotBody,
+        };
+      }
+      throw new Error(`unexpected readiness fetch ${url}`);
+    },
+    throwPlaygroundReadinessFailure: async (child, prefix) => {
+      const error = new Error(prefix);
+      error.isPlaygroundReadinessFailure = true;
+      throw error;
+    },
+  });
+  const child = {
+    exitCode: null,
+    signalCode: null,
+    pid: 9462,
+  };
+
+  await assert.rejects(
+    helper(child, 'http://127.0.0.1:65535', () => 'packaged server boot log'),
+    (error) => {
+      assert.match(
+        error.message,
+        /Packaged production plugin snapshot returned a terminal readiness failure at http:\/\/127\.0\.0\.1:65535/,
+      );
+      return true;
+    },
+  );
+
+  assert.deepEqual(fetchCalls, [
+    'http://127.0.0.1:65535/wp-json/reprint/v1/push/snapshot',
+  ]);
+});
+
 test('packaged release verifier readiness helper fails closed when signed preflight returns a terminal response after snapshot readiness succeeds', async () => {
   const readySnapshotBody = JSON.stringify({
     ok: true,
@@ -5127,6 +5204,78 @@ test('packaged production plugin smoke readiness helper waits through packaged-r
     'http://127.0.0.1:65535/wp-json/reprint/v1/push/preflight',
     'http://127.0.0.1:65535/wp-json/reprint/v1/push/snapshot',
     'http://127.0.0.1:65535/wp-json/reprint/v1/push/preflight',
+  ]);
+});
+
+test('packaged production plugin smoke readiness helper fails closed when the snapshot route returns a terminal response', async () => {
+  const terminalSnapshotBody = JSON.stringify({
+    code: 'rest_forbidden',
+    message: 'forbidden',
+  });
+  const fetchCalls = [];
+  const helper = buildPackagedSmokeWaitHelper({
+    packagedProductionPluginRouteStartupClassificationReady: () => {
+      throw new Error('unexpected route startup classification during terminal snapshot runtime proof');
+    },
+    fetchPackagedWordPressIndexProbe: async () => {
+      throw new Error('unexpected /wp-json/ probe during terminal snapshot runtime proof');
+    },
+    packagedProductionPluginRouteStartupClassificationReady: () => false,
+    sleepUnlessChildExit: async () => {
+      throw new Error('unexpected readiness sleep during terminal snapshot runtime proof');
+    },
+    fetchPackagedTimeoutFallbackProbes: async () => {
+      throw new Error('unexpected timeout fallback probes during terminal snapshot runtime proof');
+    },
+    fetchPackagedPreflightProbe: async () => {
+      return {
+        route: '/wp-json/reprint/v1/push/preflight',
+        status: 200,
+        ok: true,
+        body: JSON.stringify({
+          ok: false,
+        }),
+        parsedBody: {
+          ok: false,
+        },
+        ready: false,
+        retryable: false,
+        terminal: false,
+      };
+    },
+    fetchTextWithTimeout: async (url) => {
+      fetchCalls.push(url);
+      if (url.endsWith('/wp-json/reprint/v1/push/snapshot')) {
+        return {
+          response: {
+            status: 401,
+            ok: false,
+          },
+          bodyText: terminalSnapshotBody,
+        };
+      }
+      throw new Error(`unexpected readiness fetch ${url}`);
+    },
+  });
+  const child = {
+    exitCode: null,
+    signalCode: null,
+    pid: 9463,
+  };
+
+  await assert.rejects(
+    helper(child, 'http://127.0.0.1:65535', ['packaged smoke boot log']),
+    (error) => {
+      assert.match(
+        error.message,
+        /Packaged production plugin snapshot returned a terminal readiness failure at http:\/\/127\.0\.0\.1:65535/,
+      );
+      return true;
+    },
+  );
+
+  assert.deepEqual(fetchCalls, [
+    'http://127.0.0.1:65535/wp-json/reprint/v1/push/snapshot',
   ]);
 });
 
