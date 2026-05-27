@@ -9216,6 +9216,35 @@ test('packaged release verifier readiness helper fails closed when signed prefli
       },
     },
     {
+      label: 'cleanup underscore auth session flag',
+      body: {
+        ok: true,
+        routeProfile: {
+          profile: 'production-shaped',
+          restNamespace: 'reprint/v1',
+          routePrefix: '/push',
+          labBacked: false,
+        },
+        auth: {
+          identity: {
+            userLogin: 'admin',
+            userId: 1,
+          },
+          session: {
+            id: 'session_123',
+            status: 'active',
+            type: 'production-auth-session',
+            expiresAt: '2099-01-01T00:00:00Z',
+            cleaned_up: true,
+          },
+        },
+        session: {
+          id: 'session_123',
+          type: 'production-auth-session',
+        },
+      },
+    },
+    {
       label: 'cleanup marker auth session',
       body: {
         ok: true,
@@ -9257,6 +9286,31 @@ test('packaged release verifier readiness helper fails closed when signed prefli
             type: 'production-auth-session',
             expiresAt: '2099-01-01T00:00:00Z',
             cleanup: true,
+          },
+        },
+        session: {
+          id: 'session_123',
+          type: 'production-auth-session',
+        },
+      },
+    },
+    {
+      label: 'cleanup underscore auth session flag',
+      body: {
+        ok: true,
+        routeProfile: {
+          profile: 'production-shaped',
+          restNamespace: 'reprint/v1',
+          routePrefix: '/push',
+          labBacked: false,
+        },
+        auth: {
+          session: {
+            id: 'session_123',
+            status: 'active',
+            type: 'production-auth-session',
+            expiresAt: '2099-01-01T00:00:00Z',
+            cleaned_up: true,
           },
         },
         session: {
