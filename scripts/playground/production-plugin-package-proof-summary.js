@@ -1001,6 +1001,41 @@ function modeProofMatchesResolvedContext(summary, modeProof, resolvedOptions) {
     );
 }
 
+function modeProofMatchesTopLevelProofPayload(modeProof, proof, legacyProof) {
+  if (modeProof?.proof !== proof || modeProof?.legacyProof !== legacyProof) {
+    return false;
+  }
+
+  if (
+    proof?.requestedStatus !== undefined
+    && modeProof?.requestedStatus !== undefined
+    && modeProof?.requestedStatus !== proof?.requestedStatus
+  ) {
+    return false;
+  }
+
+  if (
+    proof?.requestedBundleStatus !== undefined
+    && modeProof?.requestedBundleStatus !== undefined
+    && modeProof?.requestedBundleStatus !== proof?.requestedBundleStatus
+  ) {
+    return false;
+  }
+
+  if (
+    proof?.requestedBundleStatuses !== undefined
+    && modeProof?.requestedBundleStatuses !== undefined
+    && !requestedBundleStatusMapsMatch(
+      modeProof?.requestedBundleStatuses,
+      proof?.requestedBundleStatuses,
+    )
+  ) {
+    return false;
+  }
+
+  return true;
+}
+
 function modeProofTopLevelViewMatchesExpectedModeProof(modeProof, expectedModeProof) {
   if (expectedModeProof === undefined || expectedModeProof === null) {
     return false;
@@ -1226,7 +1261,10 @@ export function resolveProductionPluginPackageModeProof(summary, modeValue, opti
       resolvedModeProofOptions === null
       || modeProofMatchesResolvedContext(summary, attachedModeProof, resolvedModeProofOptions)
     )
-    && reuseCandidateMatchesExpectedModeProof(summary, attachedModeProof)
+    && (
+      modeProofMatchesTopLevelProofPayload(attachedModeProof, proof, legacyProof)
+      || reuseCandidateMatchesExpectedModeProof(summary, attachedModeProof)
+    )
   ) {
     if (
       modeProofMatchesResolvedKey(attachedPluginDriverModeProof, resolved)
