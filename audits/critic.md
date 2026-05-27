@@ -1,44 +1,34 @@
 # Critic Verdict
 
-Fetched reliable ref today:
+Current reliable head: `ae3916a76d20712d276c4a438464f809157c1ffe`
+(`Require checked journal supported surface`).
 
-- `origin/lane/reliable-executor` resolves to
-  `89f735c71a1c728136ae1492357543e7d1b037f9`
-  (`Tighten checked journal claim id boundary`).
-
-Previous classified reliable head:
-
-- `441ee66ae0d9415be59a72afc7be5ec9d3c0d261` (`Isolate explicit live apply
-  revalidation proof`).
-
-Verdict for `89f735c71a1c728136ae1492357543e7d1b037f9`: `0/4`
+Verdict: `0/4`
 
 Reason:
 
-- The `441ee66a..89f735c7` delta stays in the checked journal and recovery
-  path (`scripts/playground/push-db-journal-lib.php`,
+- This head stays in the checked journal/recovery/auth-session path
+  (`scripts/playground/push-remote-rest-plugin.php`,
+  `src/recovery-journal.js`, `src/authenticated-http-push-client.js`, and
+  the related tests). The new `supportedSurface: "claim-fenced-restart-readable"`
+  marker makes the checked recovery journal surface explicit, and the auth
+  client gains another fail-closed supported-surface check.
+- That is still verifier-side checked journal support, not a releasable
+  production source-mutation boundary on the real Reprint endpoint. The change
+  does not prove live auth/session issuance and readback on the real source
+  URL, durable restart-readable journal ownership consumed by the checked
+  release path, preserved rejected-remote evidence, or apply-time
+  revalidation before the first mutation outside Playground/package-mode
+  scaffolding.
+- So the supervised gate remains closed at `0/4`.
+
+Next owner / command:
+
+- `main:reliable-exec` should move off journal supported-surface surfacing and
+  prove the next checked release-path primitive: production-backed
+  auth/session lifecycle plus durable-journal ownership/restart-readable
+  replay on the real source boundary, using
+  `scripts/playground/production-shaped-release-verify.mjs`,
   `scripts/playground/push-remote-rest-plugin.php`,
-  `src/recovery-journal.js`, `test/production-shaped-proof.test.js`, and
-  `test/recovery-journal.test.js`).
-- It tightens checked journal claim-id handling and restart-readable recovery
-  surface, but the change is still production-shaped journal plumbing. It does
-  not introduce the missing production-owned source mutation boundary on the
-  real Reprint endpoint.
-- The retained evidence still points at the same missing boundary: one
-  rerunnable checked release command on the real source URL that mints and
-  rereads a live auth session, persists it in durable restart-readable journal
-  storage with lease-fenced ownership, preserves rejected remote evidence for
-  audit, and performs apply-time revalidation before the first mutation.
-- So the verdict remains `0/4`: `89f735c7` narrows the durable-journal and
-  recovery path, but it does not prove the missing production-owned,
-  non-lab-backed checked release boundary.
-
-Next exact reliable-owned primitive:
-
-- One production-owned, non-lab-backed checked release command on the real
-  Reprint endpoint where the exact executable command string and exact live
-  `REPRINT_PUSH_SOURCE_URL` are visible, that same executable command mints and
-  then reads back a live auth session on that real source URL, persists it in
-  durable restart-readable journal storage with lease-fenced ownership,
-  preserves the rejected remote evidence for audit, and performs apply-time
-  revalidation before the first mutation on that same live boundary.
+  `src/recovery-journal.js`, and `src/authenticated-http-push-client.js` with
+  `timeout 180s npm run verify:release`.
