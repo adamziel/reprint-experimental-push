@@ -9746,12 +9746,12 @@ test('blocks plugin-owned option deletions without explicit delete opt-in', () =
 
   const plan = planFor(base, local, baseSite());
   const blocker = plan.blockers.find((entry) =>
-    entry.class === 'unsupported-attachment-resource' && entry.resourceKey === targetResourceKey);
+    entry.class === 'unsupported-plugin-owned-resource' && entry.resourceKey === resourceKey);
 
   assert.equal(plan.status, 'blocked');
   assert.equal(plan.summary.mutations, 0);
   assert.equal(blocker.class, 'unsupported-plugin-owned-resource');
-  assert.equal(blocker.resourceKey, targetResourceKey);
+  assert.equal(blocker.resourceKey, resourceKey);
   assert.equal(blocker.pluginOwner, 'forms');
   assert.match(blocker.reason, /delete mutations/);
   assert.throws(() => applyPlan(baseSite(), plan), /Refusing to apply/);
@@ -9789,7 +9789,7 @@ test('blocks plugin-owned option deletions without explicit delete opt-in while 
 
   const plan = planFor(base, local, remote);
   const blocker = plan.blockers.find((entry) =>
-    entry.class === 'unsupported-attachment-resource' && entry.resourceKey === targetResourceKey);
+    entry.class === 'unsupported-plugin-owned-resource' && entry.resourceKey === resourceKey);
   const matchingFileEdit = decisionFor(plan, 'file:about.php');
   const matchingFileTypeSwap = decisionFor(plan, 'file:wp-content/uploads/gallery/photo.txt');
   const matchingRowEdit = decisionFor(plan, 'row:["wp_posts","ID:2"]');
@@ -9800,7 +9800,7 @@ test('blocks plugin-owned option deletions without explicit delete opt-in while 
   assert.equal(plan.summary.mutations, 0);
   assert.equal(mutationFor(plan, resourceKey), undefined);
   assert.equal(blocker.class, 'unsupported-plugin-owned-resource');
-  assert.equal(blocker.resourceKey, targetResourceKey);
+  assert.equal(blocker.resourceKey, resourceKey);
   assert.equal(blocker.pluginOwner, 'forms');
   assert.match(blocker.reason, /delete mutations/);
   assert.equal(matchingFileEdit.decision, 'already-in-sync');

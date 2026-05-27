@@ -357,6 +357,20 @@ export function createPushPlan({ base, local, remote, now = new Date() }) {
       }
 
       if (isPluginOwnedDataResource(resource, owner)) {
+        const support = pluginOwnedResourcePolicy.supportFor(resource, owner);
+        if (!support.supported && support.allowSteadyUnsupported) {
+          addPluginOwnedResourceBlocker(plan, {
+            resource,
+            owner,
+            support,
+            baseValue,
+            localValue,
+            remoteValue,
+            baseHash,
+            localHash,
+            remoteHash,
+          });
+        }
         continue;
       }
 
@@ -1090,6 +1104,20 @@ export function createPushPlan({ base, local, remote, now = new Date() }) {
     if (localHash === remoteHash) {
       if (isPluginOwnedDataResource(resource, owner)) {
         if (baseHash === localHash) {
+          const support = pluginOwnedResourcePolicy.supportFor(resource, owner);
+          if (!support.supported && support.allowSteadyUnsupported) {
+            addPluginOwnedResourceBlocker(plan, {
+              resource,
+              owner,
+              support,
+              baseValue,
+              localValue,
+              remoteValue,
+              baseHash,
+              localHash,
+              remoteHash,
+            });
+          }
           continue;
         }
         const support = pluginOwnedResourcePolicy.supportFor(resource, owner);
