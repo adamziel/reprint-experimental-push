@@ -149,6 +149,12 @@ export async function runAuthenticatedHttpPush({
   const uncheckedPreflightAuthSessionTermination = requireProductionAuthSession
     ? null
     : resolveUncheckedPreflightAuthSessionTermination(preflight);
+  const preflightObservedAuthLifecycleFlagDrift = requireProductionAuthSession
+    ? null
+    : resolveObservedAuthSessionLifecycleFlagDrift(preflight);
+  const preflightObservedAuthSourceMetadataDrift = requireProductionAuthSession
+    ? null
+    : resolveObservedAuthSessionSourceMetadataDrift(preflight);
   if (uncheckedPreflightAuthSessionTermination) {
     summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
     summary.authSession = {
@@ -163,6 +169,18 @@ export async function runAuthenticatedHttpPush({
       verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
       authSession: summary.authSession,
     };
+    return summary;
+  }
+  if (preflightObservedAuthLifecycleFlagDrift) {
+    summary.code = 'AUTH_SESSION_LIFECYCLE_DRIFT';
+    summary.authSession = preflightObservedAuthLifecycleFlagDrift;
+    setAuthSessionBoundary(summary, summary.authSession);
+    return summary;
+  }
+  if (preflightObservedAuthSourceMetadataDrift) {
+    summary.code = 'AUTH_SESSION_LIFECYCLE_DRIFT';
+    summary.authSession = preflightObservedAuthSourceMetadataDrift;
+    setAuthSessionBoundary(summary, summary.authSession);
     return summary;
   }
   const preflightAuthEnvelope = {
