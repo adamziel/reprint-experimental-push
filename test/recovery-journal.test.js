@@ -5242,6 +5242,51 @@ test('checked durable journal boundary stays closed until stale-claim rejection 
     checkedDurableJournalBoundarySatisfied(inheritedJournalPathContract),
     false,
   );
+  const hiddenJournalPathContract = {
+    ...baseContract,
+  };
+  Object.defineProperty(hiddenJournalPathContract, 'journalPath', {
+    value: journalPath,
+    enumerable: false,
+    writable: true,
+    configurable: true,
+  });
+  assert.equal(
+    checkedDurableJournalBoundarySatisfied(hiddenJournalPathContract),
+    false,
+  );
+  const hiddenClaimHashContract = {
+    ...baseContract,
+    claim: {
+      ...baseContract.claim,
+    },
+  };
+  Object.defineProperty(hiddenClaimHashContract.claim, 'activeClaimHash', {
+    value: recoveryClaimHash(claimId),
+    enumerable: false,
+    writable: true,
+    configurable: true,
+  });
+  assert.equal(
+    checkedDurableJournalBoundarySatisfied(hiddenClaimHashContract),
+    false,
+  );
+  const hiddenWriterLeaseContract = {
+    ...baseContract,
+    writerLease: {
+      ...baseContract.writerLease,
+    },
+  };
+  Object.defineProperty(hiddenWriterLeaseContract.writerLease, 'storageGuard', {
+    value: baseContract.writerLease.storageGuard,
+    enumerable: false,
+    writable: true,
+    configurable: true,
+  });
+  assert.equal(
+    checkedDurableJournalBoundarySatisfied(hiddenWriterLeaseContract),
+    false,
+  );
 });
 
 test('checked durable journal boundary accepts the packaged production journal scope', () => {

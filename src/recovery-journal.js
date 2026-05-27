@@ -136,7 +136,9 @@ export function checkedDurableJournalBoundarySatisfied(dbJournal) {
 }
 
 function writerLeaseContractMatches(candidate) {
-  return typeof candidate?.strategy === 'string'
+  return isStrictPlainObject(candidate)
+    && !hasHiddenOwnStringKeys(candidate)
+    && typeof candidate?.strategy === 'string'
     && candidate.strategy.length > 0
     && candidate?.claimKeyUnique === true
     && candidate?.fsyncEvidence === true
@@ -205,6 +207,10 @@ function checkedBoundaryLeaseClaimHashMatches(contract, fallbackClaimId) {
     return false;
   }
 
+  if (hasHiddenOwnStringProperty(contract, 'claimHash')) {
+    return false;
+  }
+
   return checkedBoundaryClaimHashMatches(normalizedClaimId, contract.claimHash);
 }
 
@@ -224,6 +230,10 @@ function surfacedCheckedBoundaryClaim(container) {
       claimId: claimId.claimId,
       claimHash: null,
     };
+  }
+
+  if (hasHiddenOwnStringProperty(container, 'activeClaimHash')) {
+    return { valid: false, claimId: claimId.claimId, claimHash: null };
   }
 
   const claimHash = container.activeClaimHash;
@@ -250,6 +260,10 @@ function surfacedCheckedBoundaryClaimId(container, key) {
     };
   }
 
+  if (hasHiddenOwnStringProperty(container, key)) {
+    return { valid: false, claimId: null };
+  }
+
   const claimId = container[key];
   if (typeof claimId !== 'string' || claimId.trim().length === 0 || claimId.trim() !== claimId) {
     return { valid: false, claimId: null };
@@ -268,6 +282,10 @@ function surfacedCheckedBoundaryJournalPath(container, key) {
       valid: !(key in container),
       path: null,
     };
+  }
+
+  if (hasHiddenOwnStringProperty(container, key)) {
+    return { valid: false, path: null };
   }
 
   const filePath = container[key];
