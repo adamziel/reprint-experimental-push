@@ -15227,6 +15227,58 @@ test('blocks steady unsupported attachment rows before they can be treated as al
   assert.equal(Object.hasOwn(remote.files, 'wp-content/plugins/forms/forms.php'), false);
 });
 
+test('blocks steady unsupported attachment rows before they can be treated as already in sync while preserving a matching independent delete and remote-only plugin removals', () => {
+  const resourceKey = 'row:["wp_posts","ID:8"]';
+  const deleteFileKey = 'file:wp-content/uploads/steady-unsupported-attachment-delete.txt';
+  const base = baseSite();
+  base.files[deleteFileKey.slice('file:'.length)] = 'base steady attachment delete bytes';
+  base.db.wp_posts['ID:8'] = {
+    ID: 8,
+    post_title: 'Base steady attachment title',
+    post_content: 'Base steady attachment body',
+    post_type: 'attachment',
+    post_status: 'inherit',
+  };
+
+  const local = baseSite();
+  delete local.files[deleteFileKey.slice('file:'.length)];
+  local.db.wp_posts['ID:8'] = JSON.parse(JSON.stringify(base.db.wp_posts['ID:8']));
+
+  const remote = baseSite();
+  delete remote.files[deleteFileKey.slice('file:'.length)];
+  remote.db.wp_posts['ID:8'] = JSON.parse(JSON.stringify(base.db.wp_posts['ID:8']));
+  delete remote.plugins.forms;
+  delete remote.files['wp-content/plugins/forms/forms.php'];
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  const matchingDelete = decisionFor(plan, deleteFileKey);
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(decisionFor(plan, resourceKey), undefined);
+  assert.equal(blocker.class, 'unsupported-attachment-resource');
+  assert.equal(blocker.resourceKind, 'attachment');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.unsupportedState, 'steady-unsupported');
+  assert.equal(blocker.reason, 'Attachment graph resources are not yet supported by the planner.');
+  assert.equal(matchingDelete.decision, 'already-in-sync');
+  assert.equal(matchingDelete.change.localChange, 'delete');
+  assert.equal(matchingDelete.change.remoteChange, 'delete');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('Base steady attachment title'), false);
+  assert.equal(planJson.includes('Base steady attachment body'), false);
+  assert.equal(planJson.includes('base steady attachment delete bytes'), false);
+  assert.equal(Object.hasOwn(remote.files, deleteFileKey.slice('file:'.length)), false);
+  assert.equal(Object.hasOwn(remote.plugins, 'forms'), false);
+  assert.equal(Object.hasOwn(remote.files, 'wp-content/plugins/forms/forms.php'), false);
+});
+
 test('blocks local featured-image references when the remote deleted the referenced post', () => {
   const resourceKey = 'row:["wp_postmeta","meta_id:46"]';
   const targetResourceKey = 'row:["wp_posts","ID:2"]';
