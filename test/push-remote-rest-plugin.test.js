@@ -14211,6 +14211,27 @@ test('checked db journal attachment fails closed on conflicting accepted inline 
   assert.equal(parsed.dbJournal.claimKeyHash, 'different-active-claim-key-hash');
 });
 
+test('checked db journal attachment fails closed on conflicting accepted inline claim contract instead of silently normalizing it', { skip: !hasPhp }, () => {
+  const inlineJournal = buildAcceptedInlineDbJournal();
+  inlineJournal.claim = {
+    ...inlineJournal.claim,
+    activeClaimId: 'inline-claim-id-02',
+    activeClaimKeyHash: 'inline-claim-key-hash-02',
+  };
+
+  const checkedSummary = buildCheckedDbJournalSummary();
+
+  const result = runAttachCheckedDbJournalContract(
+    { ok: true, dbJournal: inlineJournal },
+    checkedSummary,
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.dbJournal.acceptedOnCheckedBoundary, false);
+  assert.deepEqual(parsed.dbJournal.claim, inlineJournal.claim);
+});
+
 test('checked db journal attachment fails closed on accepted inline top-level claim id without a matching top-level claim-key hash', { skip: !hasPhp }, () => {
   const inlineJournal = buildAcceptedInlineDbJournal();
   inlineJournal.claimId = inlineJournal.claim.activeClaimId;

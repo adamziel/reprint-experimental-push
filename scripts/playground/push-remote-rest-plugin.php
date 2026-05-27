@@ -1099,6 +1099,11 @@ function reprint_push_lab_rest_fail_closed_checked_db_journal_acceptance(
         )
     ) {
         $db_journal['acceptedOnCheckedBoundary'] = false;
+        if (is_array($premerge_db_journal) && array_key_exists('claim', $premerge_db_journal)) {
+            $db_journal['claim'] = $premerge_db_journal['claim'];
+        } else {
+            unset($db_journal['claim']);
+        }
     }
 
     if (
