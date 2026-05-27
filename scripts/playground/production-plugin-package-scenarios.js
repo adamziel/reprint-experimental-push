@@ -85,6 +85,9 @@ function resolveScenarioMode(modeValue) {
   if (modeValue === 'driver-positive-only') {
     return 'driver-positive-proof';
   }
+  if (modeValue === 'driver-release-proof-only') {
+    return 'core-package-routes,driver-receipt-guards,driver-delete-apply';
+  }
   if (modeValue === 'driver-proof-only') {
     return 'driver-delete-apply,driver-verifier-guards';
   }

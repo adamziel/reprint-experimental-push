@@ -235,6 +235,29 @@ test('scenario resolver maps driver-positive-only mode to the bounded packaged p
   );
 });
 
+test('scenario resolver maps driver-release-proof-only mode to the bounded route, receipt, and delete proof set', () => {
+  const resolved = resolveProductionPluginPackageScenarios(
+    [],
+    undefined,
+    'driver-release-proof-only',
+  );
+
+  assert.deepEqual(resolved.requestedScenarios, [
+    'core-package-routes',
+    'driver-receipt-guards',
+    'driver-delete-apply',
+  ]);
+  assert.equal(resolved.resolvedMode, 'driver-release-proof-only');
+  assert.deepEqual(
+    Array.from(resolved.selectedScenarios).sort(),
+    [
+      'core-package-routes',
+      'driver-receipt-guards',
+      'driver-delete-apply',
+    ].sort(),
+  );
+});
+
 test('scenario resolver maps driver-proof-only mode to the bounded driver delete and verifier proof set', () => {
   const resolved = resolveProductionPluginPackageScenarios(
     [],
