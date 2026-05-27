@@ -6445,9 +6445,43 @@ test('checked recovery inspect evidence fails closed on missing accepted inline 
   assert.deepEqual(parsed.recovery.journal.leaseFence.writerLease, inlineJournal.leaseFence.writerLease);
 });
 
+test('checked recovery inspect evidence fails closed on missing accepted inline nested writer-lease claim identity instead of backfilling it from checked evidence', { skip: !hasPhp }, () => {
+  const inlineJournal = buildAcceptedInlineRecoveryJournal();
+  delete inlineJournal.leaseFence.writerLease.claimId;
+
+  const result = runAttachCheckedRecoveryJournalEvidence(
+    { recovery: { journal: inlineJournal } },
+    true,
+    false,
+    buildCheckedRecoveryJournalSummary(),
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.recovery.journal.acceptedOnCheckedBoundary, false);
+  assert.deepEqual(parsed.recovery.journal.leaseFence.writerLease, inlineJournal.leaseFence.writerLease);
+});
+
 test('checked recovery inspect evidence fails closed on missing accepted inline writer-lease storage guard instead of backfilling it from checked evidence', { skip: !hasPhp }, () => {
   const inlineJournal = buildAcceptedInlineRecoveryJournal();
   delete inlineJournal.writerLease.storageGuard;
+
+  const result = runAttachCheckedRecoveryJournalEvidence(
+    { recovery: { journal: inlineJournal } },
+    true,
+    false,
+    buildCheckedRecoveryJournalSummary(),
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.recovery.journal.acceptedOnCheckedBoundary, false);
+  assert.deepEqual(parsed.recovery.journal.writerLease, inlineJournal.writerLease);
+});
+
+test('checked recovery inspect evidence fails closed on missing accepted inline writer-lease claim identity instead of backfilling it from checked evidence', { skip: !hasPhp }, () => {
+  const inlineJournal = buildAcceptedInlineRecoveryJournal();
+  delete inlineJournal.writerLease.claimId;
 
   const result = runAttachCheckedRecoveryJournalEvidence(
     { recovery: { journal: inlineJournal } },
@@ -11933,6 +11967,36 @@ test('checked db journal attachment fails closed on missing accepted inline owne
     restartReadable: true,
     productionAdapter: 'wpdb-single-statement-cas',
   });
+});
+
+test('checked db journal attachment fails closed on missing accepted inline writer-lease claim identity instead of backfilling it from checked evidence', { skip: !hasPhp }, () => {
+  const inlineJournal = buildAcceptedInlineDbJournal();
+  delete inlineJournal.writerLease.claimId;
+
+  const result = runAttachCheckedDbJournalContract(
+    { ok: true, dbJournal: inlineJournal },
+    buildCheckedDbJournalSummary(),
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.dbJournal.acceptedOnCheckedBoundary, false);
+  assert.deepEqual(parsed.dbJournal.writerLease, inlineJournal.writerLease);
+});
+
+test('checked db journal attachment fails closed on missing accepted inline nested writer-lease claim identity instead of backfilling it from checked evidence', { skip: !hasPhp }, () => {
+  const inlineJournal = buildAcceptedInlineDbJournal();
+  delete inlineJournal.leaseFence.writerLease.claimId;
+
+  const result = runAttachCheckedDbJournalContract(
+    { ok: true, dbJournal: inlineJournal },
+    buildCheckedDbJournalSummary(),
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.dbJournal.acceptedOnCheckedBoundary, false);
+  assert.deepEqual(parsed.dbJournal.leaseFence.writerLease, inlineJournal.leaseFence.writerLease);
 });
 
 test('checked db journal attachment fails closed on missing accepted inline schema version instead of backfilling it from checked evidence', { skip: !hasPhp }, () => {
