@@ -8623,6 +8623,27 @@ test('checked recovery inspect evidence fails closed on conflicting accepted inl
   assert.equal(parsed.recovery.journal.claimKeyHash, 'drifted-top-level-claim-key-hash');
 });
 
+test('checked recovery inspect evidence fails closed on conflicting accepted inline claim contract instead of silently normalizing it', { skip: !hasPhp }, () => {
+  const inlineJournal = buildAcceptedInlineRecoveryJournal();
+  inlineJournal.claim = {
+    ...inlineJournal.claim,
+    activeClaimId: 'inline-claim-id-02',
+    activeClaimKeyHash: 'inline-claim-key-hash-02',
+  };
+
+  const result = runAttachCheckedRecoveryJournalEvidence(
+    { recovery: { journal: inlineJournal } },
+    true,
+    false,
+    buildCheckedRecoveryJournalSummary(),
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.recovery.journal.acceptedOnCheckedBoundary, false);
+  assert.deepEqual(parsed.recovery.journal.claim, inlineJournal.claim);
+});
+
 test('checked recovery inspect evidence fails closed on accepted inline top-level claim id without a matching top-level claim-key hash', { skip: !hasPhp }, () => {
   const inlineJournal = buildAcceptedInlineRecoveryJournal();
   inlineJournal.claimId = inlineJournal.claim.activeClaimId;

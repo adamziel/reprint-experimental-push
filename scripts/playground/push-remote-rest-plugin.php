@@ -630,6 +630,19 @@ function reprint_push_lab_rest_attach_checked_recovery_journal_evidence(
         $premerge_checked_claim,
         $premerge_checked_journal
     );
+    if (
+        is_array($premerge_checked_journal)
+        && reprint_push_lab_rest_checked_claim_contract_conflicts(
+            $premerge_checked_claim,
+            $checked_db_journal['claim'] ?? null
+        )
+    ) {
+        if (array_key_exists('claim', $premerge_checked_journal)) {
+            $result['recovery']['journal']['claim'] = $premerge_checked_journal['claim'];
+        } else {
+            unset($result['recovery']['journal']['claim']);
+        }
+    }
     return $result;
 }
 
@@ -2353,6 +2366,11 @@ function reprint_push_lab_rest_fail_closed_checked_recovery_journal_acceptance(
         )
     ) {
         $journal['acceptedOnCheckedBoundary'] = false;
+        if (is_array($premerge_journal) && array_key_exists('claim', $premerge_journal)) {
+            $journal['claim'] = $premerge_journal['claim'];
+        } else {
+            unset($journal['claim']);
+        }
     }
 
     return $journal;
