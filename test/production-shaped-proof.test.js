@@ -39,6 +39,7 @@ import {
   packagedProductionPluginNextRouteNotReadyProbeCounts,
   packagedProductionPluginNextTimeoutProbeCount,
   packagedProductionPluginNotReadyProbeLimitReached,
+  packagedProductionPluginPackagedRouteStartupStillWithinBudget,
   packagedProductionPluginPackagedRouteStartupLimitReached,
   packagedProductionPluginPreflightTerminalContext,
   packagedProductionPluginPreflightTerminal,
@@ -2222,6 +2223,18 @@ test('packaged production plugin readiness helper does not retry terminal readin
     ),
     true,
   );
+  assert.equal(
+    packagedProductionPluginPackagedRouteStartupStillWithinBudget(
+      packagedProductionPluginMaxConsecutiveNotReadyProbes - 1,
+    ),
+    true,
+  );
+  assert.equal(
+    packagedProductionPluginPackagedRouteStartupStillWithinBudget(
+      packagedProductionPluginMaxConsecutiveNotReadyProbes,
+    ),
+    false,
+  );
   let routeProbeCounts = { snapshot: 0, preflight: 0 };
   routeProbeCounts = packagedProductionPluginNextRouteNotReadyProbeCounts(
     routeProbeCounts,
@@ -3224,6 +3237,24 @@ test('packaged readiness helpers recompute parsed signed preflight retryability 
     assert.ok(
       source.includes('if (!preflightRetryableWithIndex) {'),
       'expected packaged signed preflight parsed-body path to fail closed when the recomputed retryability turns terminal',
+    );
+  }
+});
+
+test('packaged readiness helpers keep packaged-route startup on the tighter post-global-startup budget', () => {
+  const smokeSource = readFileSync(
+    path.join(repoRoot, 'scripts/playground/production-plugin-package-smoke.mjs'),
+    'utf8',
+  );
+  const verifierSource = readFileSync(
+    path.join(repoRoot, 'scripts/playground/production-shaped-release-verify.mjs'),
+    'utf8',
+  );
+
+  for (const source of [smokeSource, verifierSource]) {
+    assert.match(
+      source,
+      /startupBranch\?\.kind === 'retryable-route-packaged-route-starting'[\s\S]*?packagedProductionPluginPackagedRouteStartupStillWithinBudget\([\s\S]*?await sleepUnlessChildExit\(readinessProbeIntervalMs, child\);[\s\S]*?continue;/s,
     );
   }
 });

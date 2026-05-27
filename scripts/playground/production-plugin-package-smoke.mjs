@@ -20,6 +20,7 @@ import {
   packagedProductionPluginNextRouteNotReadyProbeCounts,
   packagedProductionPluginNextTimeoutProbeCount,
   packagedProductionPluginNotReadyProbeLimitReached,
+  packagedProductionPluginPackagedRouteStartupStillWithinBudget,
   packagedProductionPluginPackagedRouteStartupLimitReached,
   packagedProductionPluginPreflightTerminalContext,
   packagedProductionPluginPreflightReady,
@@ -660,6 +661,15 @@ async function waitForServer(child, baseUrl, logs) {
                   ),
                 );
               }
+              if (
+                packagedProductionPluginPackagedRouteStartupStillWithinBudget(
+                  snapshotNotReadyProbeCount,
+                  maxPackagedRouteStartupAfterGlobalReadyProbes,
+                )
+              ) {
+                await sleepUnlessChildExit(readinessProbeIntervalMs, child);
+                continue;
+              }
             }
             if (startupBranch?.kind === 'retryable-route-index-terminal') {
               const malformedIndexBody =
@@ -793,6 +803,15 @@ async function waitForServer(child, baseUrl, logs) {
                     lastTimeoutFallbackProbes,
                   ),
                 );
+              }
+              if (
+                packagedProductionPluginPackagedRouteStartupStillWithinBudget(
+                  snapshotNotReadyProbeCount,
+                  maxPackagedRouteStartupAfterGlobalReadyProbes,
+                )
+              ) {
+                await sleepUnlessChildExit(readinessProbeIntervalMs, child);
+                continue;
               }
             }
             if (startupBranch?.kind === 'retryable-route-index-terminal') {
@@ -1072,6 +1091,15 @@ async function waitForServer(child, baseUrl, logs) {
                   ),
                 );
               }
+              if (
+                packagedProductionPluginPackagedRouteStartupStillWithinBudget(
+                  preflightNotReadyProbeCount,
+                  maxPackagedRouteStartupAfterGlobalReadyProbes,
+                )
+              ) {
+                await sleepUnlessChildExit(readinessProbeIntervalMs, child);
+                continue;
+              }
             }
             if (startupBranch?.kind === 'retryable-route-index-terminal') {
               const malformedIndexBody =
@@ -1205,11 +1233,11 @@ async function waitForServer(child, baseUrl, logs) {
               ),
             );
           }
-          if (startupBranch?.kind === 'retryable-route-packaged-route-starting') {
-            if (
-              packagedProductionPluginPackagedRouteStartupLimitReached(
-                preflightNotReadyProbeCount,
-                maxPackagedRouteStartupAfterGlobalReadyProbes,
+            if (startupBranch?.kind === 'retryable-route-packaged-route-starting') {
+              if (
+                packagedProductionPluginPackagedRouteStartupLimitReached(
+                  preflightNotReadyProbeCount,
+                  maxPackagedRouteStartupAfterGlobalReadyProbes,
               )
             ) {
               throw new Error(
@@ -1224,10 +1252,19 @@ async function waitForServer(child, baseUrl, logs) {
                     preflightNotReadyProbeCount,
                   },
                   lastTimeoutFallbackProbes,
-                ),
-              );
+                  ),
+                );
+              }
+              if (
+                packagedProductionPluginPackagedRouteStartupStillWithinBudget(
+                  preflightNotReadyProbeCount,
+                  maxPackagedRouteStartupAfterGlobalReadyProbes,
+                )
+              ) {
+                await sleepUnlessChildExit(readinessProbeIntervalMs, child);
+                continue;
+              }
             }
-          }
           if (startupBranch?.kind === 'retryable-route-index-terminal') {
             const malformedIndexBody =
               packagedProductionPluginMalformedTerminalIndexProbe(indexProbe);
