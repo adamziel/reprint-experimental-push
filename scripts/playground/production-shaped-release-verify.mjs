@@ -669,10 +669,12 @@ try {
     const packagedRuntimeSource = bindPackagedProductionPluginRuntimeSource({
       sourceUrl: liveSourceUrl,
       authSessionSource,
+      authSessionSourceCommand,
       runtimeSourceUrl: remoteServer.baseUrl,
     });
     liveSourceUrl = packagedRuntimeSource.sourceUrl;
     authSessionSource = packagedRuntimeSource.authSessionSource;
+    authSessionSourceCommand = packagedRuntimeSource.authSessionSourceCommand || authSessionSourceCommand;
   }
 
   if (!liveSourceUrl) {
