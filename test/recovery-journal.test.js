@@ -4994,6 +4994,7 @@ test('checked durable journal boundary stays closed until stale-claim rejection 
     },
     claim: {
       activeClaimId: claimId,
+      activeClaimHash: recoveryClaimHash(claimId),
     },
     ownership: {
       ownsJournal: true,
@@ -5053,6 +5054,28 @@ test('checked durable journal boundary stays closed until stale-claim rejection 
     checkedDurableJournalBoundarySatisfied({
       ...baseContract,
       acceptedOnCheckedBoundary: false,
+      writerLease: {
+        ...baseContract.writerLease,
+        staleClaimRejected: true,
+      },
+      leaseFence: {
+        ...baseContract.leaseFence,
+        staleClaimRejected: true,
+        writerLease: {
+          ...baseContract.leaseFence.writerLease,
+          staleClaimRejected: true,
+        },
+      },
+    }),
+    false,
+  );
+  assert.equal(
+    checkedDurableJournalBoundarySatisfied({
+      ...baseContract,
+      claim: {
+        ...baseContract.claim,
+        activeClaimHash: recoveryClaimHash(`${claimId}-drifted`),
+      },
       writerLease: {
         ...baseContract.writerLease,
         staleClaimRejected: true,
@@ -5191,6 +5214,7 @@ test('checked durable journal boundary accepts the packaged production journal s
     },
     claim: {
       activeClaimId: claimId,
+      activeClaimHash: recoveryClaimHash(claimId),
     },
     ownership: {
       ownsJournal: true,
@@ -5260,6 +5284,7 @@ test('checked durable journal boundary accepts the explicit packaged recovery jo
     },
     claim: {
       activeClaimId: claimId,
+      activeClaimHash: recoveryClaimHash(claimId),
     },
     ownership: {
       ownsJournal: true,
@@ -5312,6 +5337,7 @@ test('checked durable journal boundary accepts the explicit live recovery journa
     },
     claim: {
       activeClaimId: claimId,
+      activeClaimHash: recoveryClaimHash(claimId),
     },
     ownership: {
       ownsJournal: true,
@@ -5364,6 +5390,7 @@ test('checked durable journal boundary rejects nearby stale scope wording', () =
     },
     claim: {
       activeClaimId: claimId,
+      activeClaimHash: recoveryClaimHash(claimId),
     },
     ownership: {
       ownsJournal: true,

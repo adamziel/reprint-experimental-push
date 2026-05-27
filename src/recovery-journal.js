@@ -100,7 +100,7 @@ export function checkedDurableJournalBoundarySatisfied(dbJournal) {
   const productionAdapter = dbJournal?.ownership?.productionAdapter;
   const journalPath = surfacedCheckedBoundaryJournalPath(dbJournal, 'journalPath');
   const artifactRefs = surfacedCheckedBoundaryArtifactRefs(dbJournal, journalPath.path);
-  const activeClaimId = surfacedCheckedBoundaryClaimId(dbJournal?.claim, 'activeClaimId');
+  const activeClaim = surfacedCheckedBoundaryClaim(dbJournal?.claim);
   const writerLeaseClaimId = surfacedCheckedBoundaryClaimId(writerLease, 'claimId');
   const nestedWriterLeaseClaimId = surfacedCheckedBoundaryClaimId(nestedWriterLease, 'claimId');
   return CHECKED_DURABLE_JOURNAL_SCOPE_PATTERN.test(dbJournal?.scope || '')
@@ -122,14 +122,15 @@ export function checkedDurableJournalBoundarySatisfied(dbJournal) {
     && dbJournal?.leaseFence?.monotonicSequence === true
     && dbJournal?.leaseFence?.restartReadable === true
     && dbJournal?.leaseFence?.staleClaimRejected === true
-    && activeClaimId.valid
+    && activeClaim.valid
     && writerLeaseClaimId.valid
     && nestedWriterLeaseClaimId.valid
     && checkedBoundaryClaimIdentityMatches(
-      activeClaimId.claimId,
+      activeClaim.claimId,
       writerLeaseClaimId.claimId,
       nestedWriterLeaseClaimId.claimId,
-    );
+    )
+    && checkedBoundaryClaimHashMatches(activeClaim.claimId, activeClaim.claimHash);
 }
 
 function writerLeaseContractMatches(candidate) {
@@ -172,6 +173,45 @@ function checkedBoundaryClaimIdentityMatches(...claimIds) {
   }
 
   return surfacedClaimIds.every((claimId) => claimId === surfacedClaimIds[0]);
+}
+
+function checkedBoundaryClaimHashMatches(claimId, claimHash) {
+  return typeof claimId === 'string'
+    && claimId.trim().length > 0
+    && claimId.trim() === claimId
+    && typeof claimHash === 'string'
+    && CLAIM_HASH_PATTERN.test(claimHash)
+    && claimHash === digest({ recoveryJournalClaim: claimId });
+}
+
+function surfacedCheckedBoundaryClaim(container) {
+  if (!container || typeof container !== 'object') {
+    return { valid: false, claimId: null, claimHash: null };
+  }
+
+  const claimId = surfacedCheckedBoundaryClaimId(container, 'activeClaimId');
+  if (!claimId.valid || claimId.claimId === null) {
+    return { valid: false, claimId: null, claimHash: null };
+  }
+
+  if (!Object.hasOwn(container, 'activeClaimHash')) {
+    return {
+      valid: !('activeClaimHash' in container),
+      claimId: claimId.claimId,
+      claimHash: null,
+    };
+  }
+
+  const claimHash = container.activeClaimHash;
+  if (typeof claimHash !== 'string' || !CLAIM_HASH_PATTERN.test(claimHash)) {
+    return { valid: false, claimId: claimId.claimId, claimHash: null };
+  }
+
+  return {
+    valid: true,
+    claimId: claimId.claimId,
+    claimHash,
+  };
 }
 
 function surfacedCheckedBoundaryClaimId(container, key) {

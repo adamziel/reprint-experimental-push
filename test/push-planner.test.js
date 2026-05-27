@@ -21081,6 +21081,7 @@ test('production recovery support report surfaces a satisfied checked durable-jo
   assert.equal(report.checkedBoundaryProof.scope, 'packaged production journal scope');
   assert.equal(report.checkedBoundaryProof.acceptedOnCheckedBoundary, true);
   assert.equal(report.checkedBoundaryProof.claim.activeClaimId, claimId);
+  assert.equal(report.checkedBoundaryProof.claim.activeClaimHash, claimHash);
   assert.equal(report.checkedBoundaryProof.ownership.productionAdapter, 'wpdb-single-statement-cas');
   assert.equal(report.checkedBoundaryProof.writerLease.claimId, claimId);
   assert.equal(report.checkedBoundaryProof.leaseFence.writerLease.claimId, claimId);
@@ -21962,6 +21963,7 @@ test('production recovery support report keeps checked boundary closed without s
   assert.equal(report.checkedBoundaryProof.scope, 'packaged production journal scope');
   assert.equal(report.checkedBoundaryProof.acceptedOnCheckedBoundary, false);
   assert.equal(report.checkedBoundaryProof.claim.activeClaimId, claimId);
+  assert.equal(report.checkedBoundaryProof.claim.activeClaimHash, claimHash);
   assert.equal(report.checkedBoundaryProof.ownership.productionAdapter, 'wpdb-single-statement-cas');
   assert.equal(report.checkedBoundaryProof.writerLease.claimId, claimId);
   assert.equal(report.checkedBoundaryProof.leaseFence.writerLease.claimId, claimId);

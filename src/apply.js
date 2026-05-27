@@ -1549,6 +1549,16 @@ function checkedDurableJournalBoundaryProof(
   const checkedBoundaryActiveClaimId = inspectedClaimIdentity?.valid === true
     ? inspectedClaimIdentity.claimId
     : null;
+  const checkedBoundaryActiveClaimHash = (
+    checkedBoundaryActiveClaimId !== null
+    && Object.hasOwn(inspected ?? {}, 'claimHash')
+    && !hasHiddenOwnStringProperty(inspected, 'claimHash')
+    && typeof inspected.claimHash === 'string'
+    && /^[a-f0-9]{64}$/.test(inspected.claimHash)
+    && inspected.claimHash === digest({ recoveryJournalClaim: checkedBoundaryActiveClaimId })
+  )
+    ? inspected.claimHash
+    : null;
   const checkedBoundaryWriterClaimId = hasValidProductionLeaseIdentity(inspected?.writerLease)
     ? inspected.writerLease.id
     : null;
@@ -1611,6 +1621,7 @@ function checkedDurableJournalBoundaryProof(
       ? null
       : {
         activeClaimId: checkedBoundaryActiveClaimId,
+        activeClaimHash: checkedBoundaryActiveClaimHash,
       },
     journalPath: inspectedJournalPath,
     artifactRefs: inspectedArtifactRefs,
