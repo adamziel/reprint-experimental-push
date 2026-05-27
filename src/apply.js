@@ -1585,9 +1585,16 @@ function checkedDurableJournalBoundaryProof(
   )
     ? checkedBoundaryActiveClaimHash
     : null;
-  const scope = Object.hasOwn(writer ?? {}, 'scope')
-    && !hasHiddenOwnStringProperty(writer, 'scope')
-    && typeof writer.scope === 'string'
+  const writerScopeHidden = hasHiddenOwnStringProperty(writer, 'scope');
+  const writerScopeInherited =
+    writer !== null
+    && typeof writer === 'object'
+    && !Object.hasOwn(writer, 'scope')
+    && 'scope' in writer;
+  const writerSurfacedScope = Object.hasOwn(writer ?? {}, 'scope')
+    && !writerScopeHidden
+    && typeof writer.scope === 'string';
+  const scope = writerSurfacedScope
     ? writer.scope
     : (
       Object.hasOwn(inspected ?? {}, 'scope')
@@ -1639,6 +1646,9 @@ function checkedDurableJournalBoundaryProof(
   ) && !writerAcceptedOnCheckedBoundaryHidden
     && !writerAcceptedOnCheckedBoundaryInherited
     && !inspectedAcceptedOnCheckedBoundaryInherited
+    && writerSurfacedScope
+    && !writerScopeHidden
+    && !writerScopeInherited
     && inspectedAcceptedOnCheckedBoundary !== false
     && !checkedBoundaryBlockedByMissingDependency
     && CHECKED_DURABLE_JOURNAL_SCOPE_PATTERN.test(scope || '')
