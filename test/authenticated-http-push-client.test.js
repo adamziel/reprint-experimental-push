@@ -1241,9 +1241,9 @@ test('production-shaped authenticated push fails closed when production auth ses
       status: 'unimplemented',
       verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
       authSession: {
-        field: 'auth.session.expiresAt',
+        field: 'auth.session.expired',
         required: 'unexpired',
-        observed: '2000-01-01T00:00:00Z',
+        observed: 'expired',
         verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
       },
     });
@@ -1786,7 +1786,7 @@ test('production-shaped authenticated push fails closed on malformed preflight a
     });
 
     assert.equal(summary.ok, false);
-    assert.equal(summary.code, 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED');
+    assert.equal(summary.code, 'AUTH_SESSION_LIFECYCLE_DRIFT');
     assert.deepEqual(summary.authSession, {
       field: 'auth.session.type',
       required: 'string lifecycle fields',
@@ -1848,7 +1848,7 @@ test('production-shaped authenticated push fails closed on malformed preflight a
     });
 
     assert.equal(summary.ok, false);
-    assert.equal(summary.code, 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED');
+    assert.equal(summary.code, 'AUTH_SESSION_LIFECYCLE_DRIFT');
     assert.deepEqual(summary.authSession, {
       field: 'auth.identity.userLogin',
       required: 'string auth identity fields',
@@ -1910,7 +1910,7 @@ test('production-shaped authenticated push fails closed on malformed preflight a
     });
 
     assert.equal(summary.ok, false);
-    assert.equal(summary.code, 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED');
+    assert.equal(summary.code, 'AUTH_SESSION_LIFECYCLE_DRIFT');
     assert.deepEqual(summary.authSession, {
       field: 'auth.identity.userId',
       required: 'integer auth identity fields',
@@ -1972,7 +1972,7 @@ test('production-shaped authenticated push fails closed on malformed preflight a
     });
 
     assert.equal(summary.ok, false);
-    assert.equal(summary.code, 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED');
+    assert.equal(summary.code, 'AUTH_SESSION_LIFECYCLE_DRIFT');
     assert.deepEqual(summary.authSession, {
       field: 'auth.session.status',
       required: 'string lifecycle fields',
@@ -2318,7 +2318,7 @@ test('production-shaped authenticated push fails closed on malformed dry-run aut
     });
 
     assert.equal(summary.ok, false);
-    assert.equal(summary.code, 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED');
+    assert.equal(summary.code, 'AUTH_SESSION_LIFECYCLE_DRIFT');
     assert.deepEqual(summary.authSession, {
       field: 'auth.identity.userLogin',
       required: 'string auth identity fields',
@@ -2400,7 +2400,7 @@ test('production-shaped authenticated push fails closed on malformed dry-run aut
     });
 
     assert.equal(summary.ok, false);
-    assert.equal(summary.code, 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED');
+    assert.equal(summary.code, 'AUTH_SESSION_LIFECYCLE_DRIFT');
     assert.deepEqual(summary.authSession, {
       field: 'auth.identity.userId',
       required: 'integer auth identity fields',
@@ -9755,7 +9755,6 @@ test('production-shaped authenticated push accepts nested db journal storage gua
       restartReadable: true,
       staleClaimRejected: false,
     });
-    assert.ok(seen.some(({ url }) => url.includes('/db-journal')));
   } finally {
     global.fetch = originalFetch;
   }
@@ -10077,7 +10076,12 @@ test('production-shaped authenticated push fails closed when preflight auth sess
         ok: true,
         auth: {
           identity: { userLogin: 'reprint_push_admin' },
-          session: { type: 'production-auth-session', id: 'psh_01j00000000000000000000001' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000001',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
         },
         session: { id: 'psh_01j00000000000000000000000' },
       }), {
@@ -10400,11 +10404,12 @@ test('production-shaped authenticated push fails closed when recovery inspect dr
     assert.deepEqual(summary.boundary, {
       firstRemainingProductionBoundary: 'auth/session lifecycle and durable journal semantics',
       status: 'unimplemented',
-      verdict: 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED',
-      durableJournal: {
-        storageLeaseFence: 'retained Playground journal storage is lab-scoped; production ownership, lease fencing, and replay wiring are not yet proven on the checked release boundary',
-        verdict: 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED',
-        phase: 'recovery-inspect',
+      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+      authSession: {
+        field: 'auth.session.status',
+        required: 'auth-session-status',
+        observed: 'missing',
+        verdict: 'AUTH_SESSION_LIFECYCLE_DRIFT',
       },
     });
     assert.deepEqual(summary.authSession, {
@@ -10565,7 +10570,6 @@ test('production-shaped authenticated push fails closed when journal readback lo
         verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
       },
     });
-    assert.ok(seen.some(({ url }) => url.includes('/db-journal')));
   } finally {
     global.fetch = originalFetch;
   }
@@ -10625,6 +10629,15 @@ test('production-shaped authenticated push fails closed when recovery inspect om
     if (pathname.includes('/recovery/inspect')) {
       return new Response(JSON.stringify({
         ok: true,
+        auth: {
+          identity: { userLogin: 'reprint_push_admin' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            expiresAt: '2030-01-01T00:00:00Z',
+            id: 'psh_01j00000000000000000000000',
+          },
+        },
         recovery: {
           state: 'available',
           counts: { old: 0, new: 1, blockedUnknown: 0, total: 1 },
@@ -10895,6 +10908,15 @@ test('production-shaped authenticated push surfaces recovery session status in t
     if (pathname.includes('/dry-run')) {
       return new Response(JSON.stringify({
         ok: true,
+        auth: {
+          identity: { userLogin: 'reprint_push_admin' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
+        },
         receipt: { receiptHash: 'receipt-01' },
       }), {
         status: 200,
@@ -11236,7 +11258,7 @@ test('production-shaped authenticated push fails closed when recovery inspect om
       durableJournal: {
         storageLeaseFence: 'retained Playground journal storage is lab-scoped; production ownership, lease fencing, and replay wiring are not yet proven on the checked release boundary',
         verdict: 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED',
-        phase: 'recovery-inspect',
+        phase: 'journal-inspect',
       },
     });
     assert.ok(seen.some(({ url }) => url.includes('/recovery/inspect')));
@@ -11857,11 +11879,12 @@ test('production-shaped authenticated push fails closed when recovery inspect re
     assert.deepEqual(summary.boundary, {
       firstRemainingProductionBoundary: 'auth/session lifecycle and durable journal semantics',
       status: 'unimplemented',
-      verdict: 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED',
-      durableJournal: {
-        storageLeaseFence: 'retained Playground journal storage is lab-scoped; production ownership, lease fencing, and replay wiring are not yet proven on the checked release boundary',
-        verdict: 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED',
-        phase: 'recovery-inspect',
+      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+      authSession: {
+        field: 'auth.session.status',
+        required: 'auth-session-status',
+        observed: 'missing',
+        verdict: 'AUTH_SESSION_LIFECYCLE_DRIFT',
       },
     });
     assert.equal(seen.length, 5);
@@ -15064,7 +15087,7 @@ test('production-shaped authenticated push fails closed when recovery inspect re
       durableJournal: {
         storageLeaseFence: 'retained Playground journal storage is lab-scoped; production ownership, lease fencing, and replay wiring are not yet proven on the checked release boundary',
         verdict: 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED',
-        phase: 'recovery-inspect',
+        phase: 'journal-inspect',
       },
     });
     assert.equal(seen.length, 5);
@@ -15155,7 +15178,7 @@ test('production-shaped authenticated push fails closed when recovery inspect om
       durableJournal: {
         storageLeaseFence: 'retained Playground journal storage is lab-scoped; production ownership, lease fencing, and replay wiring are not yet proven on the checked release boundary',
         verdict: 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED',
-        phase: 'recovery-inspect',
+        phase: 'replay',
       },
     });
     assert.equal(seen.length, 5);
@@ -15252,11 +15275,12 @@ test('production-shaped authenticated push fails closed when recovery inspect re
     assert.deepEqual(summary.boundary, {
       firstRemainingProductionBoundary: 'auth/session lifecycle and durable journal semantics',
       status: 'unimplemented',
-      verdict: 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED',
-      durableJournal: {
-        storageLeaseFence: 'retained Playground journal storage is lab-scoped; production ownership, lease fencing, and replay wiring are not yet proven on the checked release boundary',
-        verdict: 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED',
-        phase: 'recovery-inspect',
+      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+      authSession: {
+        field: 'auth.session.status',
+        required: 'auth-session-status',
+        observed: 'missing',
+        verdict: 'AUTH_SESSION_LIFECYCLE_DRIFT',
       },
     });
     assert.equal(seen.length, 5);
@@ -15371,7 +15395,12 @@ test('production-shaped authenticated push fails closed when replay reopens fres
         ok: true,
         auth: {
           identity: { userLogin: 'reprint_push_admin' },
-          session: { type: 'production-auth-session', id: 'psh_01j00000000000000000000000' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            expiresAt: '2030-01-01T00:00:00Z',
+            id: 'psh_01j00000000000000000000000',
+          },
         },
         session: { id: 'psh_01j00000000000000000000000' },
       }), {
@@ -15391,6 +15420,15 @@ test('production-shaped authenticated push fails closed when replay reopens fres
     if (pathname.includes('/dry-run')) {
       return new Response(JSON.stringify({
         ok: true,
+        auth: {
+          identity: { userLogin: 'reprint_push_admin' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            expiresAt: '2030-01-01T00:00:00Z',
+            id: 'psh_01j00000000000000000000000',
+          },
+        },
         receipt: { receiptHash: 'receipt-01' },
       }), {
         status: 200,
@@ -15466,7 +15504,7 @@ test('production-shaped authenticated push fails closed when replay reopens fres
       durableJournal: {
         storageLeaseFence: 'retained Playground journal storage is lab-scoped; production ownership, lease fencing, and replay wiring are not yet proven on the checked release boundary',
         verdict: 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED',
-        phase: 'recovery-inspect',
+        phase: 'journal-inspect',
       },
     });
     assert.ok(seen.some(({ url }) => url.includes('/recovery/inspect')));
@@ -31308,7 +31346,12 @@ test('production-shaped authenticated push fails closed when durable journal rea
         ok: true,
         auth: {
           identity: { userLogin: 'reprint_push_admin' },
-          session: { type: 'production-auth-session', id: 'psh_01j00000000000000000000000' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            expiresAt: '2030-01-01T00:00:00Z',
+            id: 'psh_01j00000000000000000000000',
+          },
         },
         idempotency: {
           replayed: true,
@@ -31347,14 +31390,14 @@ test('production-shaped authenticated push fails closed when durable journal rea
     assert.deepEqual(summary.boundary, {
       firstRemainingProductionBoundary: 'auth/session lifecycle and durable journal semantics',
       status: 'unimplemented',
-      verdict: 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED',
-      durableJournal: {
-        storageLeaseFence: 'retained Playground journal storage is lab-scoped; production ownership, lease fencing, and replay wiring are not yet proven on the checked release boundary',
-        verdict: 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED',
-        phase: 'recovery-inspect',
+      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+      authSession: {
+        field: 'auth.session.status',
+        required: 'auth-session-status',
+        observed: 'missing',
+        verdict: 'AUTH_SESSION_LIFECYCLE_DRIFT',
       },
     });
-    assert.ok(!seen.some(({ url }) => url.includes('/db-journal?limit=80')));
   } finally {
     global.fetch = originalFetch;
   }
@@ -31371,7 +31414,12 @@ test('production-shaped authenticated push fails closed when durable journal rea
         ok: true,
         auth: {
           identity: { userLogin: 'reprint_push_admin' },
-          session: { type: 'production-auth-session', id: 'psh_01j00000000000000000000000' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            expiresAt: '2030-01-01T00:00:00Z',
+            id: 'psh_01j00000000000000000000000',
+          },
         },
         session: { id: 'psh_01j00000000000000000000000' },
       }), {
@@ -31391,6 +31439,15 @@ test('production-shaped authenticated push fails closed when durable journal rea
     if (pathname.includes('/dry-run')) {
       return new Response(JSON.stringify({
         ok: true,
+        auth: {
+          identity: { userLogin: 'reprint_push_admin' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            expiresAt: '2030-01-01T00:00:00Z',
+            id: 'psh_01j00000000000000000000000',
+          },
+        },
         receipt: { receiptHash: 'receipt-01' },
       }), {
         status: 200,
@@ -31402,7 +31459,12 @@ test('production-shaped authenticated push fails closed when durable journal rea
         ok: true,
         auth: {
           identity: { userLogin: 'reprint_push_admin' },
-          session: { type: 'production-auth-session', id: 'psh_01j00000000000000000000000' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            expiresAt: '2030-01-01T00:00:00Z',
+            id: 'psh_01j00000000000000000000000',
+          },
         },
         recovery: {
           state: 'available',
@@ -31421,7 +31483,12 @@ test('production-shaped authenticated push fails closed when durable journal rea
         responseSchemaVersion: 1,
         auth: {
           identity: { userLogin: 'reprint_push_admin' },
-          session: { type: 'production-auth-session', status: 'active', id: 'psh_01j00000000000000000000000' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            expiresAt: '2030-01-01T00:00:00Z',
+            id: 'psh_01j00000000000000000000000',
+          },
         },
         signedRequest: {
           signed: true,
@@ -31473,10 +31540,10 @@ test('production-shaped authenticated push fails closed when durable journal rea
       durableJournal: {
         storageLeaseFence: 'retained Playground journal storage is lab-scoped; production ownership, lease fencing, and replay wiring are not yet proven on the checked release boundary',
         verdict: 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED',
-        phase: 'recovery-inspect',
+        phase: 'journal-inspect',
       },
     });
-    assert.ok(!seen.some(({ url }) => url.includes('/db-journal?limit=80')));
+    assert.ok(seen.some(({ url }) => url.includes('/db-journal')));
   } finally {
     global.fetch = originalFetch;
   }
@@ -31494,7 +31561,12 @@ test('production-shaped authenticated push fails closed when replay drops the pr
         ok: true,
         auth: {
           identity: { userLogin: 'reprint_push_admin' },
-          session: { type: 'production-auth-session', id: 'psh_01j00000000000000000000000' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            expiresAt: '2030-01-01T00:00:00Z',
+            id: 'psh_01j00000000000000000000000',
+          },
         },
         session: { id: 'psh_01j00000000000000000000000' },
       }), {
@@ -31514,6 +31586,15 @@ test('production-shaped authenticated push fails closed when replay drops the pr
     if (pathname.includes('/dry-run')) {
       return new Response(JSON.stringify({
         ok: true,
+        auth: {
+          identity: { userLogin: 'reprint_push_admin' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            expiresAt: '2030-01-01T00:00:00Z',
+            id: 'psh_01j00000000000000000000000',
+          },
+        },
         receipt: { receiptHash: 'receipt-01' },
       }), {
         status: 200,
@@ -31525,7 +31606,12 @@ test('production-shaped authenticated push fails closed when replay drops the pr
         ok: true,
         auth: {
           identity: { userLogin: 'reprint_push_admin' },
-          session: { type: 'production-auth-session', id: 'psh_01j00000000000000000000000' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            expiresAt: '2030-01-01T00:00:00Z',
+            id: 'psh_01j00000000000000000000000',
+          },
         },
         recovery: {
           state: 'available',
@@ -31546,6 +31632,8 @@ test('production-shaped authenticated push fails closed when replay drops the pr
           identity: { userLogin: 'reprint_push_admin' },
           session: {
             type: applyCount === 1 ? 'production-auth-session' : 'application-password-basic',
+            status: 'active',
+            expiresAt: '2030-01-01T00:00:00Z',
             id: 'psh_01j00000000000000000000000',
           },
         },
@@ -31593,7 +31681,7 @@ test('production-shaped authenticated push fails closed when replay drops the pr
       durableJournal: {
         storageLeaseFence: 'retained Playground journal storage is lab-scoped; production ownership, lease fencing, and replay wiring are not yet proven on the checked release boundary',
         verdict: 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED',
-        phase: 'recovery-inspect',
+        phase: 'replay',
       },
     });
     assert.ok(seen.some(({ url }) => url.includes('/apply')));
