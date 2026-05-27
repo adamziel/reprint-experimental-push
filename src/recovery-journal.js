@@ -132,26 +132,18 @@ export function checkedDurableJournalBoundarySatisfied(dbJournal) {
   return dbJournal?.schemaVersion === RECOVERY_JOURNAL_SCHEMA_VERSION
     && /(packaged production plugin|checked live production-shaped) journal surface/i.test(dbJournal?.scope || '')
     && dbJournal?.acceptedOnCheckedBoundary === true
-    && dbJournal?.ownership?.ownsJournal === true
-    && dbJournal?.ownership?.restartReadable === true
-    && productionAdapter === 'wpdb-single-statement-cas'
-    && dbJournal?.ownership?.supportedSurface === CHECKED_DB_JOURNAL_SUPPORTED_SURFACE
+    && checkedBoundaryOwnershipContractMatches(dbJournal?.ownership)
     && writerLeaseContractMatches(writerLease, claim)
     && writerLeaseContractMatches(nestedWriterLease, claim)
     && writerLeaseContractsAgree(writerLease, nestedWriterLease)
     && checkedBoundaryPersistedEvidenceMatches(dbJournal)
     && checkedBoundaryStorageGuardMatches(dbJournal, productionAdapter, writerLease, nestedWriterLease, leaseFenceBoundary)
-    && leaseFenceBoundary === 'wpdb-single-statement-cas'
+    && checkedBoundaryLeaseFenceContractMatches(dbJournal?.leaseFence, leaseFenceBoundary)
     && writerLease?.storageGuard === leaseFenceBoundary
     && nestedWriterLease?.storageGuard === leaseFenceBoundary
     && productionAdapter === leaseFenceBoundary
     && durableJournalClaimContractMatches(claim)
     && durableJournalClaimEvidenceContractMatches(claim, dbJournal?.claimEvidence)
-    && dbJournal?.leaseFence?.claimKeyUnique === true
-    && dbJournal?.leaseFence?.fsyncEvidence === true
-    && dbJournal?.leaseFence?.monotonicSequence === true
-    && dbJournal?.leaseFence?.restartReadable === true
-    && dbJournal?.leaseFence?.staleClaimRejected === true
     && checkedBoundaryClaimIdentityMatches(
       dbJournal?.claim?.activeClaimId,
       writerLease?.claimId,
@@ -479,6 +471,38 @@ function checkedBoundaryStorageGuardMatches(dbJournal, productionAdapter, writer
     && storageGuard.outcome === 'applied';
 }
 
+function checkedBoundaryOwnershipContractMatches(ownership) {
+  return hasOwnProperties(ownership, [
+    'ownsJournal',
+    'restartReadable',
+    'productionAdapter',
+    'supportedSurface',
+  ])
+    && ownership?.ownsJournal === true
+    && ownership?.restartReadable === true
+    && ownership?.productionAdapter === 'wpdb-single-statement-cas'
+    && ownership?.supportedSurface === CHECKED_DB_JOURNAL_SUPPORTED_SURFACE;
+}
+
+function checkedBoundaryLeaseFenceContractMatches(leaseFence, boundary) {
+  return hasOwnProperties(leaseFence, [
+    'boundary',
+    'claimKeyUnique',
+    'fsyncEvidence',
+    'monotonicSequence',
+    'restartReadable',
+    'staleClaimRejected',
+    'writerLease',
+  ])
+    && boundary === 'wpdb-single-statement-cas'
+    && leaseFence?.boundary === boundary
+    && leaseFence?.claimKeyUnique === true
+    && leaseFence?.fsyncEvidence === true
+    && leaseFence?.monotonicSequence === true
+    && leaseFence?.restartReadable === true
+    && leaseFence?.staleClaimRejected === true;
+}
+
 function productionRecoveryJournalOwnershipContractMatches(ownership) {
   return ownership?.ownsJournal === true
     && ownership?.restartReadable === true
@@ -536,7 +560,18 @@ function productionRecoveryJournalClaimsAgree(journalClaim, inspectionClaim) {
 }
 
 function productionRecoveryJournalWriterLeaseContractMatches(writerLease, claim) {
-  return typeof writerLease?.strategy === 'string'
+  return hasOwnProperties(writerLease, [
+    'strategy',
+    'claimKeyUnique',
+    'fsyncEvidence',
+    'monotonicSequence',
+    'restartReadable',
+    'staleClaimRejected',
+    'claimId',
+    'claimHash',
+    'storageGuard',
+  ])
+    && typeof writerLease?.strategy === 'string'
     && writerLease.strategy.length > 0
     && writerLease?.claimKeyUnique === true
     && writerLease?.fsyncEvidence === true
@@ -556,7 +591,16 @@ function productionRecoveryJournalWriterLeasesAgree(writerLease, nestedWriterLea
 }
 
 function productionRecoveryJournalLeaseFenceContractMatches(leaseFence) {
-  return leaseFence?.boundary === PRODUCTION_RECOVERY_JOURNAL_STORAGE_ADAPTER
+  return hasOwnProperties(leaseFence, [
+    'boundary',
+    'storageGuard',
+    'claimKeyUnique',
+    'fsyncEvidence',
+    'monotonicSequence',
+    'restartReadable',
+    'staleClaimRejected',
+  ])
+    && leaseFence?.boundary === PRODUCTION_RECOVERY_JOURNAL_STORAGE_ADAPTER
     && leaseFence?.storageGuard === PRODUCTION_RECOVERY_JOURNAL_STORAGE_ADAPTER
     && leaseFence?.claimKeyUnique === true
     && leaseFence?.fsyncEvidence === true
@@ -566,7 +610,8 @@ function productionRecoveryJournalLeaseFenceContractMatches(leaseFence) {
 }
 
 function storageGuardContractMatches(candidate) {
-  return typeof candidate?.boundary === 'string'
+  return hasOwnProperties(candidate, ['boundary', 'operation', 'outcome'])
+    && typeof candidate?.boundary === 'string'
     && candidate.boundary.length > 0
     && typeof candidate?.operation === 'string'
     && candidate.operation.length > 0
@@ -729,12 +774,30 @@ function hasNonEmptyString(value) {
   return typeof value === 'string' && value.length > 0;
 }
 
+function hasOwnProperties(candidate, keys) {
+  return candidate !== null
+    && typeof candidate === 'object'
+    && !Array.isArray(candidate)
+    && keys.every((key) => Object.hasOwn(candidate, key));
+}
+
 function isPositiveInteger(value) {
   return Number.isInteger(value) && value > 0;
 }
 
 function writerLeaseContractMatches(candidate, claim) {
-  return typeof candidate?.strategy === 'string'
+  return hasOwnProperties(candidate, [
+    'strategy',
+    'claimId',
+    'claimKeyHash',
+    'claimKeyUnique',
+    'fsyncEvidence',
+    'storageGuard',
+    'monotonicSequence',
+    'restartReadable',
+    'staleClaimRejected',
+  ])
+    && typeof candidate?.strategy === 'string'
     && candidate.strategy.length > 0
     && candidate?.claimId === claim?.activeClaimId
     && candidate?.claimKeyHash === claim?.activeClaimKeyHash
