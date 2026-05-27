@@ -53,7 +53,16 @@ export const ACCEPTABLE_RECOVERY_STATES = Object.freeze([
 
 function hasStaleClaimRejectionEvidence(records) {
   return (Array.isArray(records) ? records : []).some(
-    (record) => record?.type === 'stale-claim-advanced' || record?.type === 'stale-claim-rejected',
+    (record) => (
+      record !== null
+      && typeof record === 'object'
+      && Object.hasOwn(record, 'type')
+      && !hasHiddenOwnStringProperty(record, 'type')
+      && (
+        record.type === 'stale-claim-advanced'
+        || record.type === 'stale-claim-rejected'
+      )
+    ),
   );
 }
 
