@@ -41810,6 +41810,67 @@ test('closes an owned production recovery journal writer after replaying a compl
   assert.equal(events.some((event) => event.type === 'journal-replayed'), false);
 });
 
+test('closes an owned production recovery journal writer after replaying a completed plan successfully', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const plan = planFor(base, local, baseSite());
+
+  const completedJournalPath = tempRecoveryJournalPath();
+  const completedWriter = openRecoveryJournal(completedJournalPath, { truncate: true, now: fixedNow });
+  const completed = applyPlan(baseSite(), plan, { durableJournal: completedWriter });
+  completedWriter.close();
+
+  const productionJournalPath = tempRecoveryJournalPath();
+  const remoteArtifactPath = `${path.dirname(productionJournalPath)}/remote.jsonl`;
+  const claimId = 'claim-close-after-replay-success';
+  const writer = openProductionRecoveryJournal(productionJournalPath, {
+    truncate: true,
+    now: fixedNow,
+    claimId,
+    writerLease: { id: claimId },
+    ownsRemoteArtifact: true,
+    remoteArtifactPath,
+  });
+
+  appendRecoveryClaimOpened(writer, {
+    plan,
+    current: completed.site,
+    claimId,
+    artifactRefs: {
+      journal: productionJournalPath,
+      remote: remoteArtifactPath,
+    },
+  });
+
+  const replay = applyPlan(completed.site, plan, {
+    journal: completed.journal,
+    durableJournal: writer,
+    requireProductionDurableJournal: true,
+  });
+
+  assert.equal(replay.recoveryState.status, 'fully-updated-remote');
+  assert.equal(replay.appliedMutations, 0);
+  assert.equal(isDurableJournalClosed(writer), true);
+  assert.throws(() => writer.appendEvent('journal-opened', {
+    planId: plan.id,
+    state: 'reopened',
+    observedHash: 'snapshot-hash-only',
+    artifactRefs: {
+      journal: productionJournalPath,
+      remote: remoteArtifactPath,
+    },
+  }), /Recovery journal is closed/);
+
+  const persisted = readRecoveryJournal(productionJournalPath);
+  assertJournalTailTypes(persisted.records, ['recovery-state', 'journal-replayed'], 'successful replay must persist replay boundaries before close');
+  assert.equal(
+    persisted.records.filter((record) => record.type === 'journal-replayed').length,
+    1,
+  );
+});
+
 test('idempotently skips closing an already closed owned production recovery journal writer', () => {
   const closeCalls = [];
   const writer = {
