@@ -4062,6 +4062,231 @@ test('packaged release verifier readiness helper fails closed when signed prefli
   }
 });
 
+test('packaged release verifier readiness helper fails closed when signed preflight keeps a broken auth identity envelope after the snapshot probe times out', async () => {
+  const timeoutError = new Error('Timed out fetching http://127.0.0.1:65535/wp-json/reprint/v1/push/snapshot');
+  const brokenAuthIdentityEnvelopes = [
+    {
+      label: 'missing auth identity',
+      identity: undefined,
+    },
+    {
+      label: 'missing auth identity userLogin',
+      identity: {
+        userId: 7,
+      },
+    },
+    {
+      label: 'blank auth identity userLogin',
+      identity: {
+        userLogin: '   ',
+        userId: 7,
+      },
+    },
+    {
+      label: 'missing auth identity userId',
+      identity: {
+        userLogin: 'reprint_push_admin',
+      },
+    },
+    {
+      label: 'non-positive auth identity userId',
+      identity: {
+        userLogin: 'reprint_push_admin',
+        userId: 0,
+      },
+    },
+    {
+      label: 'non-string auth identity userLogin',
+      identity: {
+        userLogin: 7,
+        userId: 7,
+      },
+    },
+    {
+      label: 'string auth identity userId',
+      identity: {
+        userLogin: 'reprint_push_admin',
+        userId: '7',
+      },
+    },
+  ];
+
+  for (const { label, identity } of brokenAuthIdentityEnvelopes) {
+    const parsedBody = {
+      ok: true,
+      routeProfile: {
+        profile: 'production-shaped',
+        restNamespace: 'reprint/v1',
+        routePrefix: '/push',
+        labBacked: false,
+      },
+      auth: {
+        session: {
+          id: 'session_123',
+          status: 'active',
+          type: 'production-auth-session',
+          expiresAt: '2099-01-01T00:00:00Z',
+        },
+        ...(identity === undefined ? {} : { identity }),
+      },
+      session: {
+        id: 'session_123',
+        type: 'production-auth-session',
+      },
+    };
+    const helper = buildPackagedReleaseVerifierWaitHelper({
+      packagedProductionPluginClassifyTimeoutFallbackStartup: () => {
+        throw new Error(`unexpected timeout fallback startup classification during ${label} runtime proof`);
+      },
+      sleepUnlessChildExit: async () => {
+        throw new Error(`unexpected readiness sleep during ${label} runtime proof`);
+      },
+      fetchTextWithTimeout: async (url) => {
+        if (url.endsWith('/wp-json/reprint/v1/push/snapshot')) {
+          throw timeoutError;
+        }
+        throw new Error(`unexpected readiness fetch ${url}`);
+      },
+      fetchPackagedTimeoutFallbackProbes: async () => ({
+        preflightProbe: {
+          route: '/wp-json/reprint/v1/push/preflight',
+          status: 200,
+          ok: true,
+          body: JSON.stringify(parsedBody),
+          parsedBody,
+          invalidReadinessBody: true,
+          ready: false,
+          retryable: false,
+          terminal: true,
+        },
+        indexProbe: null,
+      }),
+      throwPlaygroundReadinessFailure: async (child, prefix) => {
+        const error = new Error(prefix);
+        error.isPlaygroundReadinessFailure = true;
+        throw error;
+      },
+    });
+    const child = {
+      exitCode: null,
+      signalCode: null,
+      pid: 94548,
+    };
+
+    await assert.rejects(
+      helper(child, 'http://127.0.0.1:65535', () => 'packaged server boot log'),
+      (error) => {
+        assert.match(
+          error.message,
+          /Packaged production plugin signed preflight returned an invalid readiness body while the snapshot probe timed out at http:\/\/127\.0\.0\.1:65535/,
+          label,
+        );
+        return true;
+      },
+    );
+  }
+});
+
+test('packaged release verifier readiness helper fails closed when signed preflight session identities diverge after the snapshot probe times out', async () => {
+  const timeoutError = new Error('Timed out fetching http://127.0.0.1:65535/wp-json/reprint/v1/push/snapshot');
+  const identityCases = [
+    {
+      label: 'mismatched ids',
+      authSessionId: 'session_456',
+      topLevelSessionId: 'session_123',
+    },
+    {
+      label: 'missing auth session id',
+      authSessionId: undefined,
+      topLevelSessionId: 'session_123',
+    },
+    {
+      label: 'non-string auth session id',
+      authSessionId: 123,
+      topLevelSessionId: 'session_123',
+    },
+    {
+      label: 'non-string top-level session id',
+      authSessionId: 'session_123',
+      topLevelSessionId: 123,
+    },
+  ];
+
+  for (const { label, authSessionId, topLevelSessionId } of identityCases) {
+    const parsedBody = {
+      ok: true,
+      routeProfile: {
+        profile: 'production-shaped',
+        restNamespace: 'reprint/v1',
+        routePrefix: '/push',
+        labBacked: false,
+      },
+      auth: {
+        session: {
+          ...(authSessionId === undefined ? {} : { id: authSessionId }),
+          status: 'active',
+          type: 'production-auth-session',
+          expiresAt: '2099-01-01T00:00:00Z',
+        },
+      },
+      session: {
+        id: topLevelSessionId,
+        type: 'production-auth-session',
+      },
+    };
+    const helper = buildPackagedReleaseVerifierWaitHelper({
+      packagedProductionPluginClassifyTimeoutFallbackStartup: () => {
+        throw new Error(`unexpected timeout fallback startup classification during ${label} runtime proof`);
+      },
+      sleepUnlessChildExit: async () => {
+        throw new Error(`unexpected readiness sleep during ${label} runtime proof`);
+      },
+      fetchTextWithTimeout: async (url) => {
+        if (url.endsWith('/wp-json/reprint/v1/push/snapshot')) {
+          throw timeoutError;
+        }
+        throw new Error(`unexpected readiness fetch ${url}`);
+      },
+      fetchPackagedTimeoutFallbackProbes: async () => ({
+        preflightProbe: {
+          route: '/wp-json/reprint/v1/push/preflight',
+          status: 200,
+          ok: true,
+          body: JSON.stringify(parsedBody),
+          parsedBody,
+          invalidReadinessBody: true,
+          ready: false,
+          retryable: false,
+          terminal: true,
+        },
+        indexProbe: null,
+      }),
+      throwPlaygroundReadinessFailure: async (child, prefix) => {
+        const error = new Error(prefix);
+        error.isPlaygroundReadinessFailure = true;
+        throw error;
+      },
+    });
+    const child = {
+      exitCode: null,
+      signalCode: null,
+      pid: 94549,
+    };
+
+    await assert.rejects(
+      helper(child, 'http://127.0.0.1:65535', () => 'packaged server boot log'),
+      (error) => {
+        assert.match(
+          error.message,
+          /Packaged production plugin signed preflight returned an invalid readiness body while the snapshot probe timed out at http:\/\/127\.0\.0\.1:65535/,
+          label,
+        );
+        return true;
+      },
+    );
+  }
+});
+
 test('packaged release verifier readiness helper fails closed when signed preflight returns a terminal response after the snapshot probe times out', async () => {
   const timeoutError = new Error('Timed out fetching http://127.0.0.1:65535/wp-json/reprint/v1/push/snapshot');
   const captured = {
@@ -9048,6 +9273,221 @@ test('packaged production plugin smoke readiness helper fails closed when signed
       exitCode: null,
       signalCode: null,
       pid: 9469,
+    };
+
+    await assert.rejects(
+      helper(child, 'http://127.0.0.1:65535', ['packaged smoke boot log']),
+      (error) => {
+        assert.match(
+          error.message,
+          /Packaged production plugin signed preflight returned an invalid readiness body while the snapshot probe timed out at http:\/\/127\.0\.0\.1:65535/,
+          label,
+        );
+        return true;
+      },
+    );
+  }
+});
+
+test('packaged production plugin smoke readiness helper fails closed when signed preflight keeps a broken auth identity envelope after the snapshot probe times out', async () => {
+  const timeoutError = new Error('Timed out fetching http://127.0.0.1:65535/wp-json/reprint/v1/push/snapshot');
+  const brokenAuthIdentityEnvelopes = [
+    {
+      label: 'missing auth identity',
+      identity: undefined,
+    },
+    {
+      label: 'missing auth identity userLogin',
+      identity: {
+        userId: 7,
+      },
+    },
+    {
+      label: 'blank auth identity userLogin',
+      identity: {
+        userLogin: '   ',
+        userId: 7,
+      },
+    },
+    {
+      label: 'missing auth identity userId',
+      identity: {
+        userLogin: 'reprint_push_admin',
+      },
+    },
+    {
+      label: 'non-positive auth identity userId',
+      identity: {
+        userLogin: 'reprint_push_admin',
+        userId: 0,
+      },
+    },
+    {
+      label: 'non-string auth identity userLogin',
+      identity: {
+        userLogin: 7,
+        userId: 7,
+      },
+    },
+    {
+      label: 'string auth identity userId',
+      identity: {
+        userLogin: 'reprint_push_admin',
+        userId: '7',
+      },
+    },
+  ];
+
+  for (const { label, identity } of brokenAuthIdentityEnvelopes) {
+    const parsedBody = {
+      ok: true,
+      routeProfile: {
+        profile: 'production-shaped',
+        restNamespace: 'reprint/v1',
+        routePrefix: '/push',
+        labBacked: false,
+      },
+      auth: {
+        session: {
+          id: 'session_123',
+          status: 'active',
+          type: 'production-auth-session',
+          expiresAt: '2099-01-01T00:00:00Z',
+        },
+        ...(identity === undefined ? {} : { identity }),
+      },
+      session: {
+        id: 'session_123',
+        type: 'production-auth-session',
+      },
+    };
+    const helper = buildPackagedSmokeWaitHelper({
+      packagedProductionPluginClassifyTimeoutFallbackStartup: () => {
+        throw new Error(`unexpected timeout fallback startup classification during ${label} runtime proof`);
+      },
+      sleepUnlessChildExit: async () => {
+        throw new Error(`unexpected readiness sleep during ${label} runtime proof`);
+      },
+      fetchTextWithTimeout: async (url) => {
+        if (url.endsWith('/wp-json/reprint/v1/push/snapshot')) {
+          throw timeoutError;
+        }
+        throw new Error(`unexpected readiness fetch ${url}`);
+      },
+      fetchPackagedTimeoutFallbackProbes: async () => ({
+        preflightProbe: {
+          route: '/wp-json/reprint/v1/push/preflight',
+          status: 200,
+          ok: true,
+          body: JSON.stringify(parsedBody),
+          parsedBody,
+          invalidReadinessBody: true,
+          ready: false,
+          retryable: false,
+          terminal: true,
+        },
+        indexProbe: null,
+      }),
+    });
+    const child = {
+      exitCode: null,
+      signalCode: null,
+      pid: 9470,
+    };
+
+    await assert.rejects(
+      helper(child, 'http://127.0.0.1:65535', ['packaged smoke boot log']),
+      (error) => {
+        assert.match(
+          error.message,
+          /Packaged production plugin signed preflight returned an invalid readiness body while the snapshot probe timed out at http:\/\/127\.0\.0\.1:65535/,
+          label,
+        );
+        return true;
+      },
+    );
+  }
+});
+
+test('packaged production plugin smoke readiness helper fails closed when signed preflight session identities diverge after the snapshot probe times out', async () => {
+  const timeoutError = new Error('Timed out fetching http://127.0.0.1:65535/wp-json/reprint/v1/push/snapshot');
+  const identityCases = [
+    {
+      label: 'mismatched ids',
+      authSessionId: 'session_456',
+      topLevelSessionId: 'session_123',
+    },
+    {
+      label: 'missing auth session id',
+      authSessionId: undefined,
+      topLevelSessionId: 'session_123',
+    },
+    {
+      label: 'non-string auth session id',
+      authSessionId: 123,
+      topLevelSessionId: 'session_123',
+    },
+    {
+      label: 'non-string top-level session id',
+      authSessionId: 'session_123',
+      topLevelSessionId: 123,
+    },
+  ];
+
+  for (const { label, authSessionId, topLevelSessionId } of identityCases) {
+    const parsedBody = {
+      ok: true,
+      routeProfile: {
+        profile: 'production-shaped',
+        restNamespace: 'reprint/v1',
+        routePrefix: '/push',
+        labBacked: false,
+      },
+      auth: {
+        session: {
+          ...(authSessionId === undefined ? {} : { id: authSessionId }),
+          status: 'active',
+          type: 'production-auth-session',
+          expiresAt: '2099-01-01T00:00:00Z',
+        },
+      },
+      session: {
+        id: topLevelSessionId,
+        type: 'production-auth-session',
+      },
+    };
+    const helper = buildPackagedSmokeWaitHelper({
+      packagedProductionPluginClassifyTimeoutFallbackStartup: () => {
+        throw new Error(`unexpected timeout fallback startup classification during ${label} runtime proof`);
+      },
+      sleepUnlessChildExit: async () => {
+        throw new Error(`unexpected readiness sleep during ${label} runtime proof`);
+      },
+      fetchTextWithTimeout: async (url) => {
+        if (url.endsWith('/wp-json/reprint/v1/push/snapshot')) {
+          throw timeoutError;
+        }
+        throw new Error(`unexpected readiness fetch ${url}`);
+      },
+      fetchPackagedTimeoutFallbackProbes: async () => ({
+        preflightProbe: {
+          route: '/wp-json/reprint/v1/push/preflight',
+          status: 200,
+          ok: true,
+          body: JSON.stringify(parsedBody),
+          parsedBody,
+          invalidReadinessBody: true,
+          ready: false,
+          retryable: false,
+          terminal: true,
+        },
+        indexProbe: null,
+      }),
+    });
+    const child = {
+      exitCode: null,
+      signalCode: null,
+      pid: 9471,
     };
 
     await assert.rejects(
