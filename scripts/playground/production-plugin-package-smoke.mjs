@@ -1216,6 +1216,7 @@ echo "REPRINT_PUSH_DRIVER_GUARD_JSON_END\\n";
   summary.pluginDriverProof = buildProductionPluginPackageProofSummary(summary, {
     requestedScenarios,
     selectedScenarios,
+    resolvedMode,
   });
   console.log(JSON.stringify(summary, null, 2));
 } finally {

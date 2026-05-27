@@ -608,6 +608,11 @@ test('plugin-driver proof summary exposes direct requested route-proof state', (
       final: {
         finalMatchesLocal: true,
       },
+      driverDeleteApply: {
+        resourceKey: 'row:["wp_reprint_push_driver_fixture_delete","entry_id:1"]',
+        remoteSupportsDelete: true,
+        deletedAfterApply: true,
+      },
     },
     {
       requestedScenarios: ['core-package-routes'],
@@ -1730,6 +1735,43 @@ test('plugin-driver proof summary exposes release and positive proof aliases alo
   assert.equal(summary.driverRegistrationGuards, summary.registrationGuards);
   assert.equal(summary.driverCallbackGuards, summary.callbackGuards);
   assert.equal(summary.driverRegistrationShapeGuards, summary.registrationShapeGuards);
+});
+
+test('plugin-driver proof summary carries the resolved smoke mode for bounded consumers', () => {
+  const summary = buildProductionPluginPackageProofSummary(
+    {
+      routes: {
+        namespace: 'reprint/v1',
+        profile: 'production-shaped',
+        labNamespaceDisabled: true,
+        authBootstrapDisabled: true,
+        labBacked: false,
+      },
+      cli: {
+        ok: true,
+      },
+      final: {
+        finalMatchesLocal: true,
+      },
+      driverDeleteApply: {
+        resourceKey: 'row:["wp_reprint_push_driver_fixture_delete","entry_id:1"]',
+        remoteSupportsDelete: true,
+        deletedAfterApply: true,
+      },
+    },
+    {
+      requestedScenarios: ['driver-positive-proof'],
+      selectedScenarios: new Set([
+        'driver-positive-proof',
+        ...scenarioGroups['driver-positive-proof'],
+      ]),
+      resolvedMode: 'driverPositiveProof',
+    },
+  );
+
+  assert.equal(summary.mode, 'driverPositiveProof');
+  assert.equal(summary.driverPositiveProof.status, 'passed');
+  assert.deepEqual(summary.requestedBundles, ['driverPositiveProof']);
 });
 
 test('plugin-driver proof summary reports requested verifier bundle verdicts directly', () => {
