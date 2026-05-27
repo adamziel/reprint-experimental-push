@@ -645,11 +645,64 @@ export function resolveProductionPluginPackagePluginDriverProof(
   if (summary?.pluginDriverProof !== undefined) {
     return summary.pluginDriverProof;
   }
-  const pluginDriverProof = buildProductionPluginPackageProofSummary(summary, options);
+  const pluginDriverProof = buildProductionPluginPackageProofSummary(
+    summary,
+    resolveProductionPluginPackageProofSummaryOptions(summary, options),
+  );
   if (summary && typeof summary === 'object') {
     summary.pluginDriverProof = pluginDriverProof;
   }
   return pluginDriverProof;
+}
+
+function normalizeSelectedScenarios(selectedScenarios) {
+  if (selectedScenarios === undefined) {
+    return undefined;
+  }
+  if (selectedScenarios === null || selectedScenarios === 'all') {
+    return null;
+  }
+  if (selectedScenarios instanceof Set) {
+    return selectedScenarios;
+  }
+  if (Array.isArray(selectedScenarios)) {
+    return new Set(selectedScenarios);
+  }
+  return undefined;
+}
+
+function normalizeRequestedScenarios(requestedScenarios) {
+  if (requestedScenarios === undefined) {
+    return undefined;
+  }
+  if (requestedScenarios === null || requestedScenarios === 'all') {
+    return null;
+  }
+  if (Array.isArray(requestedScenarios)) {
+    return requestedScenarios.slice();
+  }
+  return undefined;
+}
+
+export function resolveProductionPluginPackageProofSummaryOptions(
+  summary,
+  {
+    requestedScenarios,
+    selectedScenarios,
+    resolvedMode,
+    canonicalMode,
+  } = {},
+) {
+  return {
+    requestedScenarios: normalizeRequestedScenarios(requestedScenarios)
+      ?? normalizeRequestedScenarios(summary?.requestedScenarios)
+      ?? null,
+    selectedScenarios: normalizeSelectedScenarios(selectedScenarios)
+      ?? normalizeSelectedScenarios(summary?.selectedScenarios)
+      ?? null,
+    resolvedMode: resolvedMode ?? summary?.mode ?? null,
+    canonicalMode: canonicalMode ?? summary?.canonicalMode ?? null,
+  };
 }
 
 function buildBundleScenarioDetails(bundleName, scenarioPasses, includeCoverageDetails = true) {
