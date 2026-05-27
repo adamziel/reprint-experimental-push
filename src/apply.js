@@ -1131,7 +1131,12 @@ export function productionRecoverySupportReport(writer) {
     addMissingDependency('restart-readable recovery remote artifact references');
     addMissingDependency('restart-readable remote recovery artifact ownership');
   }
-  if (!Object.hasOwn(writer ?? {}, 'journalPath') || typeof writer.journalPath !== 'string' || writer.journalPath.length === 0) {
+  if (
+    !Object.hasOwn(writer ?? {}, 'journalPath')
+    || writerJournalPathHidden
+    || typeof writer.journalPath !== 'string'
+    || writer.journalPath.length === 0
+  ) {
     addMissingDependency('owned restart-readable recovery journal path');
   } else if (!isCanonicalAbsolutePath(writer.journalPath)) {
     addMissingDependency('absolute restart-readable recovery journal path');

@@ -27192,6 +27192,64 @@ test('production durable journal claims fail closed when journalPath is inherite
   assert.ok(error.details.missingDependency.includes('owned restart-readable recovery journal path'));
 });
 
+test('production durable journal claims fail closed when journalPath hides behind a non-enumerable key', () => {
+  const writer = {
+    kind: 'production-recovery-journal',
+    productionAdapter: true,
+    supportedSurface: 'production-recovery-journal-adapter',
+    ownsJournal: true,
+    ownsRemoteArtifact: false,
+    restartReadable: true,
+    schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+    artifactRefs: {
+      journal: '/var/lib/reprint/recovery.jsonl',
+    },
+    nextSequence: 1,
+    appendEvent(type, payload) {
+      this.nextSequence += 1;
+      return { sequence: this.nextSequence - 1, type, payload };
+    },
+    flush() {},
+    close() {},
+    inspect() {
+      return {
+        filePath: '/var/lib/reprint/recovery.jsonl',
+        schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+        artifactRefs: {
+          journal: '/var/lib/reprint/recovery.jsonl',
+        },
+        records: [{ sequence: 1, type: 'journal-opened' }],
+      };
+    },
+    assertCurrentClaim() {},
+  };
+  Object.defineProperty(writer, 'journalPath', {
+    value: '/var/lib/reprint/recovery.jsonl',
+    enumerable: false,
+    configurable: true,
+    writable: true,
+  });
+
+  const plan = planFor(baseSite(), baseSite(), {
+    ...baseSite(),
+    db: {
+      ...baseSite().db,
+      wp_options: {
+        ...baseSite().db.wp_options,
+        'option_name:blogname': { option_name: 'blogname', option_value: 'New Site' },
+      },
+    },
+  });
+
+  const error = captureError(() => applyPlan(baseSite(), plan, {
+    requireProductionDurableJournal: true,
+    durableJournal: writer,
+  }));
+
+  assert.equal(error.code, 'PRODUCTION_DURABLE_JOURNAL_UNSUPPORTED');
+  assert.ok(error.details.missingDependency.includes('owned restart-readable recovery journal path'));
+});
+
 test('production durable journal claims fail closed when schemaVersion is inherited through the prototype', () => {
   const events = [];
   const writer = Object.create({
@@ -29077,6 +29135,7 @@ test('production durable journal claims fail closed when the writer does not own
     'restart-readable recovery artifact location',
     'restart-readable recovery artifact references',
     'owned restart-readable recovery journal path',
+    'fencing or lease ownership for the journal writer',
     'journal-readable inspection records with sequence and type',
   ]);
 });
