@@ -740,6 +740,8 @@ try {
   const remoteChangedSnapshot = explicitReleaseVerifyRemoteChangedUrl
     ? await exportSnapshot('remote-changed', explicitReleaseVerifyRemoteChangedUrl)
     : exportSnapshotFromBlueprint('remote-changed', remoteChangedFixturePath);
+  const checkedLiveRetryProofRequested = packagedSourceFixture !== null
+    || Boolean(explicitReleaseVerifyRemoteChangedUrl || explicitReleaseVerifyLocalUrl);
   try {
       const client = authenticatedHttpClient({
         sourceUrl: liveSourceUrl,
@@ -771,7 +773,7 @@ try {
         routeProfile: 'production-shaped',
         dryRunOnly: false,
         requireProductionAuthSession: true,
-        simulateStaleClaimRetry: packagedSourceFixture !== null,
+        simulateStaleClaimRetry: checkedLiveRetryProofRequested,
         // Require preserved-read retry proof on the checked verifier path and
         // allow focused tests to fail closed against a mismatched path.
         simulatePreservedRemoteRetryPath: requiredPreservedRemoteRetryPath,

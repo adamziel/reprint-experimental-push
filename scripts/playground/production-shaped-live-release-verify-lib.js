@@ -59,6 +59,8 @@ export function hasExplicitCheckedBoundaryRequest({
 
 export function resolveCheckedLiveBoundaryEnv({
   sourceUrl = '',
+  remoteChangedUrl = '',
+  localUrl = '',
   username = '',
   applicationPassword = '',
   authSessionSourceCommand = '',
@@ -87,6 +89,8 @@ export function resolveCheckedLiveBoundaryEnv({
           REPRINT_PUSH_REMOTE_URL: sourceUrl,
         }
       : {}),
+    ...(remoteChangedUrl ? { REPRINT_PUSH_REMOTE_CHANGED_URL: remoteChangedUrl } : {}),
+    ...(localUrl ? { REPRINT_PUSH_LOCAL_URL: localUrl } : {}),
     REPRINT_PUSH_USERNAME: resolvedUsername,
     REPRINT_PUSH_APPLICATION_PASSWORD: resolvedApplicationPassword,
     REPRINT_PUSH_LAB_AUTH_ADMIN_USER: resolvedUsername,

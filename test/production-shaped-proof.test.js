@@ -4222,6 +4222,8 @@ test('production-shaped live release verify preserves explicit checked-boundary 
   assert.deepEqual(
     resolveCheckedLiveBoundaryEnv({
       sourceUrl: 'http://127.0.0.1:49152',
+      remoteChangedUrl: 'http://127.0.0.1:49154',
+      localUrl: 'http://127.0.0.1:49153',
       fallbackUsername: liveCredentials.username,
       fallbackApplicationPassword: liveCredentials.password,
       allowCredentialFallback: true,
@@ -4231,6 +4233,8 @@ test('production-shaped live release verify preserves explicit checked-boundary 
       REPRINT_PUSH_REQUIRE_PRODUCTION_DURABLE_JOURNAL: '1',
       REPRINT_PUSH_SOURCE_URL: 'http://127.0.0.1:49152',
       REPRINT_PUSH_REMOTE_URL: 'http://127.0.0.1:49152',
+      REPRINT_PUSH_REMOTE_CHANGED_URL: 'http://127.0.0.1:49154',
+      REPRINT_PUSH_LOCAL_URL: 'http://127.0.0.1:49153',
       REPRINT_PUSH_USERNAME: liveCredentials.username,
       REPRINT_PUSH_APPLICATION_PASSWORD: liveCredentials.password,
       REPRINT_PUSH_LAB_AUTH_ADMIN_USER: liveCredentials.username,
@@ -4292,6 +4296,8 @@ test('production-shaped live release verify preserves explicit checked-boundary 
   assert.deepEqual(
     resolveCheckedLiveBoundaryEnv({
       sourceUrl: 'http://127.0.0.1:49152',
+      remoteChangedUrl: 'http://127.0.0.1:49154',
+      localUrl: 'http://127.0.0.1:49153',
       username: 'explicit-user',
       applicationPassword: 'explicit-app-password',
       fallbackUsername: liveCredentials.username,
@@ -4302,6 +4308,8 @@ test('production-shaped live release verify preserves explicit checked-boundary 
       REPRINT_PUSH_REQUIRE_PRODUCTION_DURABLE_JOURNAL: '1',
       REPRINT_PUSH_SOURCE_URL: 'http://127.0.0.1:49152',
       REPRINT_PUSH_REMOTE_URL: 'http://127.0.0.1:49152',
+      REPRINT_PUSH_REMOTE_CHANGED_URL: 'http://127.0.0.1:49154',
+      REPRINT_PUSH_LOCAL_URL: 'http://127.0.0.1:49153',
       REPRINT_PUSH_USERNAME: 'explicit-user',
       REPRINT_PUSH_APPLICATION_PASSWORD: 'explicit-app-password',
       REPRINT_PUSH_LAB_AUTH_ADMIN_USER: 'explicit-user',

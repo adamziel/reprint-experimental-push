@@ -86,6 +86,8 @@ if (packagedBoundaryRequested) {
 
   const liveBoundaryEnv = resolveCheckedLiveBoundaryEnv({
     sourceUrl: explicitLiveSourceUrl,
+    remoteChangedUrl: explicitLiveRemoteChangedUrl,
+    localUrl: explicitLiveLocalUrl,
     username: explicitLiveUsername,
     applicationPassword: explicitLiveApplicationPassword,
     authSessionSourceCommand: explicitAuthSessionSourceCommand,
@@ -94,7 +96,7 @@ if (packagedBoundaryRequested) {
     allowCredentialFallback: false,
   });
   const verify = runCheckedReleaseVerify(liveBoundaryEnv);
-  if (verify.status !== 0) {
+  if (verify.status !== 0 || verify.proof?.ok !== true) {
     emitReleaseFailureAndExit(verify);
   }
   const applyRevalidation = runApplyRevalidationProof(resolveApplyRevalidationAuthEnv({

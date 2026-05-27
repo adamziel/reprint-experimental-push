@@ -523,48 +523,64 @@ function reprint_push_lab_db_journal_summary(int $limit = 20): array
     ];
 
     if ($package_mode) {
-        $claim_key_unique = reprint_push_lab_db_journal_has_claim_key_unique_index();
-        $monotonic_sequence = reprint_push_lab_db_journal_rows_are_monotonic($summary['latestRows']);
-        $stale_claim_rejected = reprint_push_lab_db_journal_has_stale_claim_rejection_evidence($summary['latestRows']);
-        $writer_lease = reprint_push_lab_db_journal_writer_lease_contract(
-            $stale_claim_rejected,
-            $claim_key_unique,
-            $monotonic_sequence,
-            true
+        $summary = reprint_push_lab_db_journal_attach_checked_contract(
+            $summary,
+            'packaged production plugin journal surface; not local Playground fixture only',
+            'claim-fenced-restart-readable'
         );
-        $claim_rows = reprint_push_lab_db_journal_claim_rows($summary['latestRows']);
-        if (is_array($claim_rows['latestClaim'] ?? null)) {
-            $summary['claim'] = reprint_push_lab_db_journal_claim_summary(
-                $claim_rows['latestClaim'],
-                $claim_rows['latestAbandoned'] ?? null,
-                $claim_rows['previousClaim'] ?? null,
-                $stale_claim_rejected
-            );
-        }
-        $summary['ownership'] = [
-            'ownsJournal' => true,
-            'restartReadable' => true,
-            'productionAdapter' => 'wpdb-single-statement-cas',
-            'supportedSurface' => 'claim-fenced-restart-readable',
-        ];
-        $summary['writerLease'] = $writer_lease;
-        $summary['leaseFence'] = [
-            'boundary' => 'wpdb-single-statement-cas',
-            'claimKeyUnique' => $claim_key_unique,
-            'fsyncEvidence' => true,
-            'monotonicSequence' => $monotonic_sequence,
-            'restartReadable' => true,
-            'staleClaimRejected' => $stale_claim_rejected,
-            'writerLease' => $writer_lease,
-        ];
-        if (reprint_push_lab_db_journal_non_empty_string($summary['claim']['activeClaimId'] ?? null)) {
-            $summary['writerLease']['claimId'] = (string) $summary['claim']['activeClaimId'];
-            $summary['leaseFence']['writerLease']['claimId'] = (string) $summary['claim']['activeClaimId'];
-        }
-        if (reprint_push_lab_db_journal_non_empty_string($summary['claim']['activeClaimKeyHash'] ?? null)) {
-            $summary['writerLease']['claimKeyHash'] = (string) $summary['claim']['activeClaimKeyHash'];
-            $summary['leaseFence']['writerLease']['claimKeyHash'] = (string) $summary['claim']['activeClaimKeyHash'];
-        }
+    }
+
+    return $summary;
+}
+
+function reprint_push_lab_db_journal_attach_checked_contract(
+    array $summary,
+    string $scope,
+    string $supported_surface = 'claim-fenced-restart-readable'
+): array {
+    $claim_key_unique = reprint_push_lab_db_journal_has_claim_key_unique_index();
+    $monotonic_sequence = reprint_push_lab_db_journal_rows_are_monotonic($summary['latestRows'] ?? []);
+    $stale_claim_rejected = reprint_push_lab_db_journal_has_stale_claim_rejection_evidence($summary['latestRows'] ?? []);
+    $writer_lease = reprint_push_lab_db_journal_writer_lease_contract(
+        $stale_claim_rejected,
+        $claim_key_unique,
+        $monotonic_sequence,
+        true
+    );
+    $claim_rows = reprint_push_lab_db_journal_claim_rows($summary['latestRows'] ?? []);
+    if (is_array($claim_rows['latestClaim'] ?? null)) {
+        $summary['claim'] = reprint_push_lab_db_journal_claim_summary(
+            $claim_rows['latestClaim'],
+            $claim_rows['latestAbandoned'] ?? null,
+            $claim_rows['previousClaim'] ?? null,
+            $stale_claim_rejected
+        );
+    }
+
+    $summary['scope'] = $scope;
+    $summary['ownership'] = [
+        'ownsJournal' => true,
+        'restartReadable' => true,
+        'productionAdapter' => 'wpdb-single-statement-cas',
+        'supportedSurface' => $supported_surface,
+    ];
+    $summary['writerLease'] = $writer_lease;
+    $summary['leaseFence'] = [
+        'boundary' => 'wpdb-single-statement-cas',
+        'claimKeyUnique' => $claim_key_unique,
+        'fsyncEvidence' => true,
+        'monotonicSequence' => $monotonic_sequence,
+        'restartReadable' => true,
+        'staleClaimRejected' => $stale_claim_rejected,
+        'writerLease' => $writer_lease,
+    ];
+    if (reprint_push_lab_db_journal_non_empty_string($summary['claim']['activeClaimId'] ?? null)) {
+        $summary['writerLease']['claimId'] = (string) $summary['claim']['activeClaimId'];
+        $summary['leaseFence']['writerLease']['claimId'] = (string) $summary['claim']['activeClaimId'];
+    }
+    if (reprint_push_lab_db_journal_non_empty_string($summary['claim']['activeClaimKeyHash'] ?? null)) {
+        $summary['writerLease']['claimKeyHash'] = (string) $summary['claim']['activeClaimKeyHash'];
+        $summary['leaseFence']['writerLease']['claimKeyHash'] = (string) $summary['claim']['activeClaimKeyHash'];
     }
 
     return $summary;
