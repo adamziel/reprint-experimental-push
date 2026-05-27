@@ -518,6 +518,18 @@ export async function runAuthenticatedHttpPush({
     };
     return summary;
   }
+  const dryRunSessionIdentityDrift = requireProductionAuthSession
+    ? resolveProductionAuthSessionIdentityDrift(preflightAuthEnvelope, dryRun)
+    : null;
+  if (dryRunSessionIdentityDrift) {
+    summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
+    summary.authSession = {
+      ...dryRunSessionIdentityDrift,
+      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+    };
+    setProductionAuthSessionBoundary(summary);
+    return summary;
+  }
   const dryRunSessionPreservationDrift = requireProductionAuthSession
     ? resolveProductionAuthSessionPreservationDrift(preflightAuthEnvelope, dryRun)
     : null;
@@ -739,6 +751,18 @@ export async function runAuthenticatedHttpPush({
     };
     return summary;
   }
+  const applySessionIdentityDrift = requireProductionAuthSession
+    ? resolveProductionAuthSessionIdentityDrift(preflightAuthEnvelope, apply)
+    : null;
+  if (applySessionIdentityDrift) {
+    summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
+    summary.authSession = {
+      ...applySessionIdentityDrift,
+      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+    };
+    setProductionAuthSessionBoundary(summary);
+    return summary;
+  }
   const applySessionPreservationDrift = requireProductionAuthSession
     ? resolveProductionAuthSessionPreservationDrift(preflightAuthEnvelope, apply)
     : null;
@@ -942,6 +966,18 @@ export async function runAuthenticatedHttpPush({
       verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
       authSession: summary.authSession,
     };
+    return summary;
+  }
+  const recoveryInspectSessionIdentityDrift = requireProductionAuthSession
+    ? resolveProductionAuthSessionIdentityDrift(preflightAuthEnvelope, recoveryInspect)
+    : null;
+  if (recoveryInspectSessionIdentityDrift) {
+    summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
+    summary.authSession = {
+      ...recoveryInspectSessionIdentityDrift,
+      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+    };
+    setProductionAuthSessionBoundary(summary);
     return summary;
   }
   const recoveryInspectSessionPreservationDrift = requireProductionAuthSession
@@ -1167,6 +1203,18 @@ export async function runAuthenticatedHttpPush({
     };
     return summary;
   }
+  const replaySessionIdentityDrift = requireProductionAuthSession
+    ? resolveProductionAuthSessionIdentityDrift(preflightAuthEnvelope, replay)
+    : null;
+  if (replaySessionIdentityDrift) {
+    summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
+    summary.authSession = {
+      ...replaySessionIdentityDrift,
+      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+    };
+    setProductionAuthSessionBoundary(summary);
+    return summary;
+  }
   const replaySessionPreservationDrift = requireProductionAuthSession
     ? resolveProductionAuthSessionPreservationDrift(preflightAuthEnvelope, replay)
     : null;
@@ -1351,6 +1399,18 @@ export async function runAuthenticatedHttpPush({
       verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
       authSession: summary.authSession,
     };
+    return summary;
+  }
+  const dbJournalSessionIdentityDrift = requireProductionAuthSession
+    ? resolveProductionAuthSessionIdentityDrift(preflightAuthEnvelope, dbJournal)
+    : null;
+  if (dbJournalSessionIdentityDrift) {
+    summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
+    summary.authSession = {
+      ...dbJournalSessionIdentityDrift,
+      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+    };
+    setProductionAuthSessionBoundary(summary);
     return summary;
   }
   const dbJournalSessionPreservationDrift = requireProductionAuthSession
@@ -2841,6 +2901,33 @@ function resolveProductionAuthSessionIdentityContinuityDrift(expected, response)
   }
 
   return observedUserLogin;
+}
+
+function resolveProductionAuthSessionIdentityDrift(expected, response) {
+  const expectedSessionId = typeof expected?.sessionId === 'string'
+    ? expected.sessionId.trim()
+    : '';
+  if (!expectedSessionId) {
+    return null;
+  }
+
+  const session = response?.body?.auth?.session;
+  if (session?.type !== 'production-auth-session') {
+    return null;
+  }
+
+  const observedSessionId = typeof session.id === 'string'
+    ? session.id.trim()
+    : '';
+  if (!observedSessionId || observedSessionId === expectedSessionId) {
+    return null;
+  }
+
+  return {
+    field: 'auth.session.id',
+    required: expectedSessionId,
+    observed: observedSessionId,
+  };
 }
 
 function resolveProductionAuthSessionCleanupEvidenceDrift(response) {

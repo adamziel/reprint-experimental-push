@@ -3483,8 +3483,9 @@ test('production-shaped authenticated push threads auth-session drift on the che
     assert.equal(summary.ok, false);
     assert.equal(summary.code, 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED');
     assert.deepEqual(summary.authSession, {
-      required: 'preserved read',
-      observed: 'rotated',
+      field: 'auth.session.id',
+      required: 'psh_01j00000000000000000000000',
+      observed: 'psh_01j00000000000000000000000-rotated',
       verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
     });
     assert.deepEqual(summary.boundary, {
@@ -3492,8 +3493,9 @@ test('production-shaped authenticated push threads auth-session drift on the che
       status: 'unimplemented',
       verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
       authSession: {
-        required: 'preserved read',
-        observed: 'rotated',
+        field: 'auth.session.id',
+        required: 'psh_01j00000000000000000000000',
+        observed: 'psh_01j00000000000000000000000-rotated',
         verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
       },
     });
@@ -3794,8 +3796,9 @@ test('production-shaped authenticated push keeps the auth/session boundary when 
     assert.equal(summary.ok, false);
     assert.equal(summary.code, 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED');
     assert.deepEqual(summary.authSession, {
-      required: 'preserved read',
-      observed: 'rotated',
+      field: 'auth.session.id',
+      required: 'psh_01j00000000000000000000000',
+      observed: 'psh_01j00000000000000000000000-rotated',
       verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
     });
     assert.deepEqual(summary.boundary, {
@@ -3803,8 +3806,9 @@ test('production-shaped authenticated push keeps the auth/session boundary when 
       status: 'unimplemented',
       verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
       authSession: {
-        required: 'preserved read',
-        observed: 'rotated',
+        field: 'auth.session.id',
+        required: 'psh_01j00000000000000000000000',
+        observed: 'psh_01j00000000000000000000000-rotated',
         verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
       },
     });
