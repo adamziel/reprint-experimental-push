@@ -21737,6 +21737,83 @@ test('blocks local same-plan created comment user identity while preserving a ma
   assert.equal(Object.hasOwn(remote.files, 'wp-content/plugins/forms/forms.php'), false);
 });
 
+test('blocks local same-plan created comment user identity while preserving a matching independent restore and remote-only plugin changes', () => {
+  const resourceKey = 'row:["wp_comments","comment_ID:24"]';
+  const targetResourceKey = 'row:["wp_users","ID:14"]';
+  const restoreFileKey = 'file:wp-content/uploads/comment-user-restore-changes.txt';
+  const base = baseSite();
+  base.db.wp_comments = {
+    'comment_ID:24': {
+      comment_ID: 24,
+      comment_post_ID: 1,
+      user_id: 14,
+      comment_content: 'Base user restore changes content',
+    },
+  };
+  delete base.files['wp-content/uploads/comment-user-restore-changes.txt'];
+
+  const local = baseSite();
+  local.files['wp-content/uploads/comment-user-restore-changes.txt'] =
+    'shared comment user restore changes bytes';
+  local.db.wp_comments = {
+    'comment_ID:24': {
+      comment_ID: 24,
+      comment_post_ID: 1,
+      user_id: 14,
+      comment_content: 'Local user restore changes content',
+    },
+  };
+  local.db.wp_users = {
+    'ID:14': {
+      ID: 14,
+      user_login: 'local-same-plan-user-restore-changes',
+      user_email: 'local-restore-changes@example.test',
+    },
+  };
+
+  const remote = baseSite();
+  remote.files['wp-content/uploads/comment-user-restore-changes.txt'] =
+    'shared comment user restore changes bytes';
+  remote.db.wp_comments = JSON.parse(JSON.stringify(base.db.wp_comments));
+  remote.plugins.forms.description = 'remote-only plugin changes';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin changes */';
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === targetResourceKey);
+  const reference = blocker.references[0];
+  const matchingRestore = decisionFor(plan, restoreFileKey);
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, targetResourceKey), undefined);
+  assert.equal(decisionFor(plan, resourceKey), undefined);
+  assert.equal(plan.conflicts.length, 0);
+  assert.equal(blocker.class, 'unsupported-comments-users-resource');
+  assert.equal(blocker.resourceKey, targetResourceKey);
+  assert.equal(blocker.unsupportedState, 'same-plan-reference');
+  assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_users","ID:14"] is created in the same plan as a comment user identity that depends on it, and identity rewriting is not yet supported.');
+  assert.equal(reference.relationshipKey, 'wp_comments.user_id');
+  assert.equal(reference.relationshipType, 'comment-user');
+  assert.equal(reference.sourceResourceKey, resourceKey);
+  assert.equal(reference.targetResourceKey, targetResourceKey);
+  assert.equal(reference.targetChange.remote.state, 'absent');
+  assert.equal(reference.targetChange.local.state, 'present');
+  assert.equal(matchingRestore.decision, 'already-in-sync');
+  assert.equal(matchingRestore.change.localChange, 'create');
+  assert.equal(matchingRestore.change.remoteChange, 'create');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('Local user restore changes content'), false);
+  assert.equal(planJson.includes('Base user restore changes content'), false);
+  assert.equal(planJson.includes('local-same-plan-user-restore-changes'), false);
+  assert.equal(planJson.includes('shared comment user restore changes bytes'), false);
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin changes');
+  assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin changes */');
+});
+
 test('blocks local same-plan created comment user identity while preserving a matching independent restore and remote-only plugin removals', () => {
   const resourceKey = 'row:["wp_comments","comment_ID:25"]';
   const targetResourceKey = 'row:["wp_users","ID:15"]';
