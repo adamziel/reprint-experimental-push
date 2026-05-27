@@ -19,6 +19,8 @@ import {
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const cliPath = path.join(repoRoot, 'bin/reprint-push-lab.js');
 const serverStartupTimeoutMs = 120_000;
+const syncChildTimeoutMs = 120_000;
+const syncChildKillSignal = 'SIGKILL';
 const transientFetchRetryDelayMs = 250;
 const transientFetchAttempts = 4;
 const { requestedScenarios, selectedScenarios, resolvedMode } = resolveProductionPluginPackageScenarios(
@@ -1289,6 +1291,24 @@ function logSmokeStage(stage, detail = '') {
   console.error(`[plugin-driver-smoke:${stage}]${suffix}`);
 }
 
+function assertSyncChildCompleted(result, label) {
+  if (!result.error && result.signal === null) {
+    return;
+  }
+
+  const errorMessage = result.error instanceof Error
+    ? result.error.stack ?? result.error.message
+    : String(result.error ?? 'unknown error');
+  throw new Error(
+    `${label} did not complete cleanly`
+    + `\nSTATUS: ${result.status}`
+    + `\nSIGNAL: ${result.signal}`
+    + `\nERROR: ${errorMessage}`
+    + `\nSTDOUT:\n${result.stdout}`
+    + `\nSTDERR:\n${result.stderr}`,
+  );
+}
+
 function exportSnapshotWithStage(name, blueprintPath) {
   logSmokeStage('export-snapshot:start', name);
   const snapshot = exportSnapshot(name, blueprintPath);
@@ -1366,8 +1386,11 @@ function runPackagedDriverRegistryGuards(mountedPluginDir, scenarioNames = null)
     cwd: repoRoot,
     encoding: 'utf8',
     maxBuffer: 1024 * 1024 * 20,
+    timeout: syncChildTimeoutMs,
+    killSignal: syncChildKillSignal,
   });
 
+  assertSyncChildCompleted(result, 'Packaged driver registry guard export');
   if (result.status !== 0) {
     throw new Error(`Packaged driver registry guard export failed\nSTDOUT:\n${result.stdout}\nSTDERR:\n${result.stderr}`);
   }
@@ -1807,8 +1830,11 @@ function runCli(args, { expectStatus = 0 } = {}) {
     cwd: repoRoot,
     encoding: 'utf8',
     maxBuffer: 1024 * 1024 * 20,
+    timeout: syncChildTimeoutMs,
+    killSignal: syncChildKillSignal,
   });
 
+  assertSyncChildCompleted(result, `CLI command ${args.join(' ')}`);
   assert.equal(
     result.status,
     expectStatus,
@@ -1839,8 +1865,11 @@ function exportSnapshot(name, blueprintPath) {
     cwd: repoRoot,
     encoding: 'utf8',
     maxBuffer: 1024 * 1024 * 20,
+    timeout: syncChildTimeoutMs,
+    killSignal: syncChildKillSignal,
   });
 
+  assertSyncChildCompleted(result, `Playground snapshot export for ${name}`);
   if (result.status !== 0) {
     throw new Error(`Playground snapshot export failed for ${name}\nSTDOUT:\n${result.stdout}\nSTDERR:\n${result.stderr}`);
   }
