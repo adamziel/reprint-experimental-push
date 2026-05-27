@@ -25797,6 +25797,167 @@ test('production recovery support report keeps checked boundary closed when rest
   assert.equal(report.checkedBoundaryProof.ownership.productionAdapter, 'wpdb-single-statement-cas');
 });
 
+test('production recovery support report keeps checked boundary closed when restart inspection hides or prototype-inherits its surfaced scope', () => {
+  const filePath = '/var/lib/reprint/recovery.jsonl';
+  const remoteArtifactPath = '/var/lib/reprint/recovery-remote.jsonl';
+  const writerLeaseContract = {
+    strategy: 'claim-fenced-single-writer',
+    claimKeyUnique: true,
+    fsyncEvidence: true,
+    storageGuard: 'wpdb-single-statement-cas',
+    monotonicSequence: true,
+    restartReadable: true,
+    staleClaimRejected: true,
+  };
+
+  const cases = [
+    {
+      label: 'hidden inspected scope',
+      claimId: 'claim-checked-boundary-hidden-inspected-scope',
+      staleClaimId: 'claim-checked-boundary-hidden-inspected-scope-stale',
+      expectedJournalPath: filePath,
+      expectedArtifactRefs: {
+        journal: filePath,
+        remote: remoteArtifactPath,
+      },
+      expectedMissingDependency: 'restart-readable recovery inspection',
+      buildInspectedScope() {
+        const inspected = {};
+        Object.defineProperty(inspected, 'scope', {
+          value: 'packaged production journal scope',
+          enumerable: false,
+          writable: true,
+          configurable: true,
+        });
+        return inspected;
+      },
+    },
+    {
+      label: 'prototype-inherited inspected scope',
+      claimId: 'claim-checked-boundary-prototype-inspected-scope',
+      staleClaimId: 'claim-checked-boundary-prototype-inspected-scope-stale',
+      expectedJournalPath: null,
+      expectedArtifactRefs: null,
+      expectedMissingDependency: 'restart-readable recovery artifact location',
+      buildInspectedScope() {
+        return Object.create({ scope: 'packaged production journal scope' });
+      },
+    },
+  ];
+
+  for (const {
+    label,
+    claimId,
+    staleClaimId,
+    expectedJournalPath,
+    expectedArtifactRefs,
+    expectedMissingDependency,
+    buildInspectedScope,
+  } of cases) {
+    const claimHash = digest({ recoveryJournalClaim: claimId });
+    const staleClaimHash = digest({ recoveryJournalClaim: staleClaimId });
+
+    const report = productionRecoverySupportReport({
+      kind: 'production-recovery-journal',
+      productionAdapter: true,
+      supportedSurface: 'production-recovery-journal-adapter',
+      restartReadable: true,
+      ownsJournal: true,
+      ownsRemoteArtifact: true,
+      acceptedOnCheckedBoundary: true,
+      claimHash,
+      writerLease: { id: claimId, epoch: 3 },
+      leaseFence: { id: claimId, epoch: 3 },
+      journalPath: filePath,
+      artifactRefs: {
+        journal: filePath,
+        remote: remoteArtifactPath,
+      },
+      schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+      appendEvent() {
+        return null;
+      },
+      flush() {},
+      close() {},
+      inspect() {
+        return Object.assign(buildInspectedScope(), {
+          filePath,
+          schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+          claimHash,
+          ownsJournal: true,
+          restartReadable: true,
+          ownsRemoteArtifact: true,
+          artifactRefs: {
+            journal: filePath,
+            remote: remoteArtifactPath,
+          },
+          writerLease: { id: claimId, epoch: 3 },
+          leaseFence: { id: claimId, epoch: 3 },
+          writerLeaseContract,
+          leaseFenceContract: {
+            boundary: 'wpdb-single-statement-cas',
+            claimKeyUnique: true,
+            storageGuard: 'wpdb-single-statement-cas',
+            fsyncEvidence: true,
+            monotonicSequence: true,
+            restartReadable: true,
+            staleClaimRejected: true,
+            writerLease: writerLeaseContract,
+          },
+          integrity: { status: 'ok' },
+          records: [
+            {
+              sequence: 1,
+              type: 'recovery-claim-opened',
+              claimHash,
+              claimLease: { id: claimId, epoch: 3 },
+              artifactRefs: {
+                journal: filePath,
+                remote: remoteArtifactPath,
+              },
+              fsync: { requested: true },
+            },
+            {
+              sequence: 2,
+              type: 'stale-claim-rejected',
+              claimHash: staleClaimHash,
+              previousClaimHash: claimHash,
+              claimLease: { id: staleClaimId, epoch: 2 },
+              artifactRefs: {
+                journal: filePath,
+                remote: remoteArtifactPath,
+              },
+              fsync: { requested: true },
+            },
+            {
+              sequence: 3,
+              type: 'journal-opened',
+              artifactRefs: {
+                journal: filePath,
+                remote: remoteArtifactPath,
+              },
+              fsync: { requested: true },
+            },
+          ],
+        });
+      },
+      assertCurrentClaim() {},
+    });
+
+    assert.equal(report.supported, false, label);
+    assert.equal(report.checkedBoundarySatisfied, false, label);
+    assert.equal(report.checkedBoundaryProof.scope, null, label);
+    assert.equal(report.checkedBoundaryProof.acceptedOnCheckedBoundary, false, label);
+    assert.ok(report.missingDependency.includes(expectedMissingDependency), label);
+    assert.ok(report.missingDependency.includes('supported production recovery journal adapter surface'), label);
+    assert.ok(report.missingDependency.includes('explicit production recovery adapter marker'), label);
+    assert.equal(report.checkedBoundaryProof.ownership.productionAdapter, null, label);
+    assert.equal(report.checkedBoundaryProof.ownership.supportedSurface, null, label);
+    assert.deepEqual(report.checkedBoundaryProof.journalPath, expectedJournalPath, label);
+    assert.deepEqual(report.checkedBoundaryProof.artifactRefs, expectedArtifactRefs, label);
+  }
+});
+
 test('production recovery support report keeps checked boundary closed when the surfaced writer acceptance marker is hidden', () => {
   const filePath = '/var/lib/reprint/recovery.jsonl';
   const remoteArtifactPath = '/var/lib/reprint/recovery-remote.jsonl';
