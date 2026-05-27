@@ -44476,6 +44476,57 @@ test('blocks steady unsupported users graph rows before they can be treated as a
   assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin changes */');
 });
 
+test('blocks steady unsupported users graph rows before they can be treated as already in sync while preserving a matching independent file type swap and remote-only plugin removals', () => {
+  const resourceKey = 'row:["wp_users","ID:20"]';
+  const swapFileKey = 'file:wp-content/uploads/steady-unsupported-user-cover';
+  const base = baseSite();
+  base.db.wp_users = {
+    'ID:20': {
+      ID: 20,
+      user_login: 'steady-removal-user',
+      user_email: 'steady-removal@example.test',
+      display_name: 'Steady Unsupported Removal User',
+    },
+  };
+  base.files[swapFileKey.slice('file:'.length)] = 'base steady unsupported user cover bytes';
+
+  const local = baseSite();
+  local.db.wp_users = JSON.parse(JSON.stringify(base.db.wp_users));
+  local.files[swapFileKey.slice('file:'.length)] = { type: 'directory' };
+
+  const remote = baseSite();
+  remote.db.wp_users = JSON.parse(JSON.stringify(base.db.wp_users));
+  remote.files[swapFileKey.slice('file:'.length)] = { type: 'directory' };
+  delete remote.plugins.forms;
+  delete remote.files['wp-content/plugins/forms/forms.php'];
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  const matchingTypeSwap = decisionFor(plan, swapFileKey);
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(decisionFor(plan, resourceKey), undefined);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(plan.conflicts.length, 0);
+  assert.equal(blocker.class, 'unsupported-comments-users-resource');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.unsupportedState, 'steady-unsupported');
+  assert.equal(blocker.reason, 'User graph resources are not yet supported by the planner.');
+  assert.equal(matchingTypeSwap.decision, 'already-in-sync');
+  assert.equal(matchingTypeSwap.change.localChange, 'type-change');
+  assert.equal(matchingTypeSwap.change.remoteChange, 'type-change');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('Steady Unsupported Removal User'), false);
+  assert.equal(planJson.includes('base steady unsupported user cover bytes'), false);
+  assert.equal(Object.hasOwn(remote.plugins, 'forms'), false);
+  assert.equal(Object.hasOwn(remote.files, 'wp-content/plugins/forms/forms.php'), false);
+});
+
 test('blocks remote-only comments graph drift while preserving a matching independent edit and remote-only plugin changes', () => {
   const resourceKey = 'row:["wp_comments","comment_ID:15"]';
   const base = baseSite();
