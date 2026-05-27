@@ -426,6 +426,84 @@ test('packaged preflight retryability preserves malformed parsed startup probes 
   );
 });
 
+test('packaged preflight retryability preserves malformed parsed snapshot fallback startup evidence', () => {
+  const labAuthRequiredPreflight = {
+    status: 401,
+    body: {
+      code: 'reprint_push_lab_auth_required',
+      message: 'Authenticated push routes require WordPress Application Password basic auth.',
+    },
+  };
+
+  assert.equal(
+    packagedProductionPluginPreflightRetryable(labAuthRequiredPreflight, {
+      indexProbe: {
+        timedOut: true,
+      },
+      snapshotProbe: {
+        status: 503,
+        body: {
+          details: {
+            error: {
+              code: 'wordpress_not_ready',
+              message: 'WordPress is not ready yet',
+            },
+          },
+        },
+        parsedBody: null,
+      },
+    }),
+    true,
+  );
+  assert.equal(
+    packagedProductionPluginPreflightTerminal(labAuthRequiredPreflight, {
+      indexProbe: {
+        timedOut: true,
+      },
+      snapshotProbe: {
+        status: 503,
+        body: {
+          details: {
+            error: {
+              code: 'wordpress_not_ready',
+              message: 'WordPress is not ready yet',
+            },
+          },
+        },
+        parsedBody: null,
+      },
+    }),
+    false,
+  );
+
+  assert.equal(
+    packagedProductionPluginPreflightRetryable(labAuthRequiredPreflight, {
+      indexProbe: {
+        timedOut: true,
+      },
+      snapshotProbe: {
+        status: 200,
+        body: '<!doctype html><html><body>not a snapshot</body></html>',
+        parsedBody: null,
+      },
+    }),
+    false,
+  );
+  assert.equal(
+    packagedProductionPluginPreflightTerminal(labAuthRequiredPreflight, {
+      indexProbe: {
+        timedOut: true,
+      },
+      snapshotProbe: {
+        status: 200,
+        body: '<!doctype html><html><body>not a snapshot</body></html>',
+        parsedBody: null,
+      },
+    }),
+    true,
+  );
+});
+
 test('packaged preflight retryability prefers the freshest index probe over conflicting snapshot fallback signals', () => {
   const labAuthRequiredPreflight = {
     status: 401,
