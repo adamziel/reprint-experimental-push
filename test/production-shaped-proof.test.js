@@ -3376,6 +3376,24 @@ test('packaged readiness helpers recompute parsed signed preflight retryability 
   }
 });
 
+test('packaged readiness helpers preserve bounded index timeout probes during snapshot startup fallback', () => {
+  const smokeSource = readFileSync(
+    path.join(repoRoot, 'scripts/playground/production-plugin-package-smoke.mjs'),
+    'utf8',
+  );
+  const verifierSource = readFileSync(
+    path.join(repoRoot, 'scripts/playground/production-shaped-release-verify.mjs'),
+    'utf8',
+  );
+
+  for (const source of [smokeSource, verifierSource]) {
+    assert.match(
+      source,
+      /snapshot is still startup-shaped; probing signed preflight readiness at \$\{baseUrl\}[\s\S]*?const indexProbe = await fetchPackagedWordPressIndexProbe\(baseUrl, child\)\.catch\(\(indexError\) =>[\s\S]*?buildPackagedTimeoutFallbackProbe\('\/wp-json\/', indexError\),[\s\S]*?\);/s,
+    );
+  }
+});
+
 test('packaged snapshot probe context preserves timed-out fallback probes', () => {
   assert.deepEqual(
     packagedProductionPluginSnapshotProbeContext({

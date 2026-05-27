@@ -1,32 +1,33 @@
-2026-05-26 12:02:24 CEST (+0200)
+2026-05-27 03:35:13 CEST (+0200)
 
 Changed files:
-- [`scripts/playground/production-shaped-release-verify.mjs`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/reliable-executor/scripts/playground/production-shaped-release-verify.mjs)
-- [`src/recovery-journal.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/reliable-executor/src/recovery-journal.js)
-- [`test/production-shaped-proof.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/reliable-executor/test/production-shaped-proof.test.js)
-- [`test/recovery-journal.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/reliable-executor/test/recovery-journal.test.js)
-
-Checks run:
-- `node --check src/recovery-journal.js`
-- `node --check scripts/playground/production-shaped-release-verify.mjs`
-- `node --check test/recovery-journal.test.js`
-- `node --check test/production-shaped-proof.test.js`
-- `timeout 120s node --test test/recovery-journal.test.js`
-- `timeout 120s node --test --test-name-pattern='production-shaped release verify command fails closed when production auth/session lifecycle is explicitly required|production-shaped release proof emits the exact gate output when no live source is supplied' test/production-shaped-proof.test.js`
+- `scripts/playground/production-plugin-package-smoke.mjs`
+- `scripts/playground/production-shaped-release-verify.mjs`
+- `test/production-shaped-proof.test.js`
 
 Result:
-- The recovery journal now fences stale claims on restart, and the release verifier surfaces that fence in the production-shaped proof path.
-- The focused recovery-journal suite passed `10/10`.
-- The focused release-proof slice passed `2/2`.
-- The checked release path still fails closed at `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED` / `PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED`.
+- Fixed the remaining packaged snapshot-startup fallback branch where both packaged callers fetched `/wp-json/` directly and let index-probe timeouts escape raw instead of converting them into bounded fallback probes.
+- The smoke path and the checked release verifier now both wrap those snapshot-fallback `/wp-json/` fetches with `buildPackagedTimeoutFallbackProbe('/wp-json/', indexError)`, so the branch keeps the same bounded timeout classification used by the parsed preflight path.
+- Added a focused proof test that asserts both packaged callers preserve bounded index-timeout probes during snapshot-startup fallback.
+
+Commands run:
+- `git status --short --branch`
+- `sed -n '1,240p' .lane-output/final.md`
+- `grep` reads across packaged readiness helpers, packaged callers, and `test/production-shaped-proof.test.js`
+- `node --check scripts/playground/production-plugin-package-smoke.mjs`
+- `node --check scripts/playground/production-shaped-release-verify.mjs`
+- `node --check test/production-shaped-proof.test.js`
+- `timeout 90s node --test --test-name-pattern='packaged readiness helpers preserve bounded index timeout probes during snapshot startup fallback|packaged readiness helpers recompute parsed signed preflight retryability with the current index probe|packaged snapshot probe context preserves timed-out fallback probes' test/production-shaped-proof.test.js`
+- `git diff --check -- scripts/playground/production-plugin-package-smoke.mjs scripts/playground/production-shaped-release-verify.mjs test/production-shaped-proof.test.js`
+- `git diff --stat -- scripts/playground/production-plugin-package-smoke.mjs scripts/playground/production-shaped-release-verify.mjs test/production-shaped-proof.test.js`
+- `date '+%Y-%m-%d %H:%M:%S %Z (%z)'`
 
 Push result:
-- Not pushed yet in this pass.
+- Pending commit/push for this pass.
 
 Worktree status:
-- Dirty tracked files only in the four files above.
-- Branch: `lane/cycle-20260525-mainwindows-2349/reliable-followup`
-- `HEAD` and `origin/lane/reliable-executor` were aligned before this pass.
+- Branch `lane/playground-readiness-code-20260526-1836` is dirty in the three tracked readiness files above plus this handoff file.
 
 Next supervisor nudge:
-- Move the next reliable pass to the remaining gate blockers only: production-backed auth/session lifecycle on the checked release path, durable journal ownership with lease/fencing beyond the retained Playground journal boundary, or preserved-remote retry.
+- If reliable still hits packaged readiness after consuming `9df91b7d2`, consume this follow-up so snapshot-startup fallback treats `/wp-json/` probe timeouts as bounded readiness evidence instead of uncaught fetch errors.
+- The next readiness-owned gap should be a different packaged startup branch than dropped timeout context or raw `/wp-json/` timeout escape during snapshot-startup fallback.

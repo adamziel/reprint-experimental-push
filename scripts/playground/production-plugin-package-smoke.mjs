@@ -621,7 +621,9 @@ async function waitForServer(child, baseUrl, logs) {
               snapshotNotReadyProbeCount,
             )
           ) {
-            const indexProbe = await fetchPackagedWordPressIndexProbe(baseUrl, child);
+            const indexProbe = await fetchPackagedWordPressIndexProbe(baseUrl, child).catch((indexError) =>
+              buildPackagedTimeoutFallbackProbe('/wp-json/', indexError),
+            );
             lastProbe = indexProbe;
             lastProbes.push(indexProbe);
             const startupBranch = packagedProductionPluginClassifyBoundedStartup(
@@ -765,7 +767,9 @@ async function waitForServer(child, baseUrl, logs) {
               snapshotNotReadyProbeCount,
             )
           ) {
-            const indexProbe = await fetchPackagedWordPressIndexProbe(baseUrl, child);
+            const indexProbe = await fetchPackagedWordPressIndexProbe(baseUrl, child).catch((indexError) =>
+              buildPackagedTimeoutFallbackProbe('/wp-json/', indexError),
+            );
             lastProbe = indexProbe;
             lastProbes.push(indexProbe);
             const startupBranch = packagedProductionPluginClassifyBoundedStartup(
