@@ -589,6 +589,7 @@ test('plugin-driver proof summary reuses an already attached pluginDriverProof o
     mode: 'driverVerifierGuards',
     canonicalMode: 'driver-verifier-guards',
     requestedScenarios: ['driverVerifierGuards'],
+    selectedScenarios: Array.from(new Set(bundleSummaryGroups['driver-verifier-guards'])).sort(),
     modeProof: {
       mode: 'driverVerifierGuards',
       canonicalMode: 'driver-verifier-guards',
@@ -696,6 +697,76 @@ test('plugin-driver proof summary rebuilds a mismatched attached pluginDriverPro
   assert.equal(rebuiltProof, rawSummary.pluginDriverProof);
   assert.equal(rebuiltProof.mode, 'driverVerifierGuards');
   assert.equal(rebuiltProof.canonicalMode, 'driver-verifier-guards');
+  assert.equal(rebuiltProof.modeProof?.proofKey, 'driverVerifierGuards');
+  assert.deepEqual(rebuiltProof.modeProof?.requestedBundles, ['driverVerifierGuards']);
+});
+
+test('plugin-driver proof summary rebuilds an attached pluginDriverProof when the selected scenario scope changes', () => {
+  const rawSummary = {
+    mode: 'driverVerifierGuards',
+    canonicalMode: 'driver-verifier-guards',
+    requestedScenarios: ['driver-verifier-guards'],
+    selectedScenarios: ['core-package-routes', 'driver-export-guard'],
+    routes: {
+      namespace: 'reprint/v1',
+      profile: 'production-shaped',
+      labNamespaceDisabled: true,
+      authBootstrapDisabled: true,
+      labBacked: false,
+    },
+    cli: {
+      ok: true,
+    },
+    final: {
+      finalMatchesLocal: true,
+    },
+    driverExportGuard: {
+      missingExportRowsCallback: true,
+    },
+    driverApplyGuard: {
+      missingApplyRowCallback: true,
+    },
+    driverValidateGuard: {
+      missingValidateMutationCallback: true,
+    },
+    driverMissingNameGuard: {
+      missingDriverName: true,
+    },
+    driverPluginOwnerGuard: {
+      missingPluginOwner: true,
+    },
+    driverMissingTableGuard: {
+      missingTable: true,
+    },
+    driverDuplicateNameGuard: {
+      duplicateDriverName: true,
+    },
+    driverDuplicateTableGuard: {
+      duplicateTable: true,
+    },
+  };
+
+  const narrowProof = resolveProductionPluginPackagePluginDriverProof(rawSummary, {
+    requestedScenarios: ['driver-verifier-guards'],
+    selectedScenarios: new Set(['core-package-routes', 'driver-export-guard']),
+    resolvedMode: 'driverVerifierGuards',
+    canonicalMode: 'driver-verifier-guards',
+  });
+
+  const fullVerifierSelection = new Set([
+    'driver-verifier-guards',
+    ...scenarioGroups['driver-verifier-guards'],
+  ]);
+  const rebuiltProof = resolveProductionPluginPackagePluginDriverProof(rawSummary, {
+    requestedScenarios: ['driver-verifier-guards'],
+    selectedScenarios: fullVerifierSelection,
+    resolvedMode: 'driverVerifierGuards',
+    canonicalMode: 'driver-verifier-guards',
+  });
+
+  assert.notEqual(rebuiltProof, narrowProof);
+  assert.equal(rebuiltProof, rawSummary.pluginDriverProof);
+  assert.deepEqual(rebuiltProof.selectedScenarios, Array.from(fullVerifierSelection).sort());
   assert.equal(rebuiltProof.modeProof?.proofKey, 'driverVerifierGuards');
   assert.deepEqual(rebuiltProof.modeProof?.requestedBundles, ['driverVerifierGuards']);
 });
