@@ -273,10 +273,25 @@ function checkedBoundaryStaleClaimEvidenceMatches(dbJournal) {
       return false;
     }
 
-    return staleClaimRows.some((row) => checkedBoundaryStaleClaimRowMatches(row, dbJournal?.claim));
+    if (checkedBoundaryRequiresAbandonedLatestRow(dbJournal?.claim)) {
+      return staleClaimRows.some(
+        (row) => row?.event === 'stale-claim-abandoned'
+          && checkedBoundaryStaleClaimRowMatches(row, dbJournal?.claim),
+      );
+    }
+
+    return true;
   }
 
   return false;
+}
+
+function checkedBoundaryRequiresAbandonedLatestRow(claim) {
+  return hasNonEmptyString(claim?.previousClaimId)
+    || isPositiveInteger(claim?.abandonedSequence)
+    || isPositiveInteger(claim?.previousStartedSequence)
+    || isPositiveInteger(claim?.previousClaimSequence)
+    || hasNonEmptyString(claim?.previousClaimKeyHash);
 }
 
 function checkedBoundaryStaleClaimRowMatches(row, claim) {
