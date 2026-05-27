@@ -155,6 +155,7 @@ test('plugin-driver proof summary reports full packaged guard coverage', () => {
     cliOk: true,
     finalMatchesLocal: true,
     requestedStatus: 'passed',
+    requestedBundleStatuses: 'all',
   });
   assert.deepEqual(summary.receiptGuards, {
     requested: true,
@@ -168,6 +169,7 @@ test('plugin-driver proof summary reports full packaged guard coverage', () => {
     revokedCredential: 'reprint_push_lab_auth_required',
     requestedStatus: 'passed',
     requestedBundleStatus: null,
+    requestedBundleStatuses: 'all',
   });
   assert.deepEqual(summary.deleteApplyProof, {
     requested: true,
@@ -178,6 +180,7 @@ test('plugin-driver proof summary reports full packaged guard coverage', () => {
     remoteSupportsDelete: true,
     deletedAfterApply: true,
     requestedStatus: 'passed',
+    requestedBundleStatuses: 'all',
   });
   assert.equal(summary.mutationProof.deleteRejected, true);
   assert.deepEqual(summary.bundles, {
@@ -426,6 +429,7 @@ test('plugin-driver proof summary exposes direct requested route-proof state', (
     cliOk: true,
     finalMatchesLocal: true,
     requestedStatus: 'passed',
+    requestedBundleStatuses: null,
   });
   assert.deepEqual(summary.positiveProof, {
     ...summary.positiveProof,
@@ -485,6 +489,7 @@ test('plugin-driver proof summary marks missing requested route-proof state dire
     cliOk: null,
     finalMatchesLocal: null,
     requestedStatus: 'missing',
+    requestedBundleStatuses: null,
   });
 });
 
@@ -803,6 +808,9 @@ test('plugin-driver proof summary scopes requested bundle verdicts to requested 
     cliOk: true,
     finalMatchesLocal: true,
     requestedStatus: 'passed',
+    requestedBundleStatuses: {
+      driverPositiveProof: 'passed',
+    },
   });
 });
 
@@ -872,6 +880,9 @@ test('plugin-driver proof summary reports requested receipt guard verdicts direc
     revokedCredential: 'reprint_push_lab_auth_required',
     requestedStatus: 'passed',
     requestedBundleStatus: 'passed',
+    requestedBundleStatuses: {
+      driverReceiptGuards: 'passed',
+    },
   });
 });
 
@@ -1057,6 +1068,9 @@ test('plugin-driver proof summary exposes bounded release-proof bundle status', 
     cliOk: true,
     finalMatchesLocal: true,
     requestedStatus: 'passed',
+    requestedBundleStatuses: {
+      driverReleaseProof: 'passed',
+    },
   });
   assert.deepEqual(summary.receiptGuards, {
     requested: true,
@@ -1070,6 +1084,9 @@ test('plugin-driver proof summary exposes bounded release-proof bundle status', 
     revokedCredential: 'reprint_push_lab_auth_required',
     requestedStatus: 'passed',
     requestedBundleStatus: null,
+    requestedBundleStatuses: {
+      driverReleaseProof: 'passed',
+    },
   });
   assert.deepEqual(summary.deleteApplyProof, {
     requested: true,
@@ -1080,6 +1097,9 @@ test('plugin-driver proof summary exposes bounded release-proof bundle status', 
     remoteSupportsDelete: null,
     deletedAfterApply: true,
     requestedStatus: 'passed',
+    requestedBundleStatuses: {
+      driverReleaseProof: 'passed',
+    },
   });
 });
 
@@ -1841,6 +1861,7 @@ test('plugin-driver proof summary treats bundle verdicts as satisfied when only 
     remoteSupportsDelete: null,
     deletedAfterApply: true,
     requestedStatus: 'passed',
+    requestedBundleStatuses: null,
   });
   assert.deepEqual(summary.checkedScenarios, ['driver-delete-apply']);
   assert.deepEqual(summary.passedScenarios, ['driver-delete-apply']);
@@ -1899,6 +1920,7 @@ test('plugin-driver proof summary fails requested concrete scenarios omitted fro
     remoteSupportsDelete: null,
     deletedAfterApply: false,
     requestedStatus: 'missing',
+    requestedBundleStatuses: null,
   });
 });
 
@@ -2556,6 +2578,9 @@ test('plugin-driver proof summary marks incomplete requested verifier bundle as 
     revokedCredential: 'reprint_push_lab_auth_required',
     requestedStatus: 'passed',
     requestedBundleStatus: null,
+    requestedBundleStatuses: {
+      driverVerifierGuards: 'missing',
+    },
   });
 });
 
@@ -2591,5 +2616,8 @@ test('plugin-driver proof summary marks incomplete requested receipt guard scena
     revokedCredential: null,
     requestedStatus: 'missing',
     requestedBundleStatus: 'missing',
+    requestedBundleStatuses: {
+      driverReceiptGuards: 'missing',
+    },
   });
 });

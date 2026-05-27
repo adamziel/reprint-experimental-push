@@ -233,6 +233,27 @@ function summarizeRequestedScenario(selected, passed) {
   return selected && passed ? 'passed' : 'missing';
 }
 
+function buildRequestedBundleStatusesForScenario(
+  requestedScenarioAliases,
+  requestedBundleStatuses,
+) {
+  if (requestedScenarioAliases === 'all') {
+    return 'all';
+  }
+  const bundleStatuses = Object.fromEntries(
+    requestedScenarioAliases
+      .filter(
+        (requestedScenario) => Object.hasOwn(bundleSummaryGroups, requestedScenario)
+          || requestedScenario === 'driver-receipt-guards',
+      )
+      .map((requestedScenario) => {
+        const bundleKey = toBundleKey(requestedScenario);
+        return [bundleKey, requestedBundleStatuses[bundleKey] ?? 'missing'];
+      }),
+  );
+  return Object.keys(bundleStatuses).length > 0 ? bundleStatuses : null;
+}
+
 function buildBundleScenarioDetails(bundleName, scenarioPasses, includeCoverageDetails = true) {
   const requiredScenarios = bundleSummaryGroups[bundleName].slice().sort();
   if (!includeCoverageDetails) {
@@ -592,6 +613,10 @@ export function buildProductionPluginPackageProofSummary(
           scenarioPasses.get('core-package-routes') === true,
         )
         : null,
+      requestedBundleStatuses: buildRequestedBundleStatusesForScenario(
+        requestedScenarioAliasMap.get('core-package-routes'),
+        requestedBundleStatuses,
+      ),
     },
     receiptGuards: {
       requested: requestedScenarioAliasMap.get('driver-receipt-guards') === 'all'
@@ -612,6 +637,10 @@ export function buildProductionPluginPackageProofSummary(
         )
         : null,
       requestedBundleStatus: requestedBundleStatuses.driverReceiptGuards ?? null,
+      requestedBundleStatuses: buildRequestedBundleStatusesForScenario(
+        requestedScenarioAliasMap.get('driver-receipt-guards'),
+        requestedBundleStatuses,
+      ),
     },
     deleteApplyProof: {
       requested: requestedScenarioAliasMap.get('driver-delete-apply') === 'all'
@@ -630,6 +659,10 @@ export function buildProductionPluginPackageProofSummary(
           scenarioPasses.get('driver-delete-apply') === true,
         )
         : null,
+      requestedBundleStatuses: buildRequestedBundleStatusesForScenario(
+        requestedScenarioAliasMap.get('driver-delete-apply'),
+        requestedBundleStatuses,
+      ),
     },
     mutationProof: {
       updateApplied: summary?.driverUpdateApply?.applied ?? 0,
