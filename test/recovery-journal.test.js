@@ -808,6 +808,146 @@ test('production recovery journal inspection scopes consumed evidence to the act
   assert.equal(productionRecoveryJournalInspectionSurfaceIsPresent(advancedInspection), true);
 });
 
+test('production recovery journal inspection ignores stale-claim rejection evidence that drifts artifact refs from the active claim evidence', () => {
+  const filePath = tempJournalPath();
+  const remote = baseSite();
+  const plan = planFor(baseSite(), localSite(), remote);
+  const activeClaimId = 'production-claim-stale-rejected-artifact-01';
+
+  const journal = openProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs: {
+      releaseProof: 'artifact://release-proof-stale-rejected-artifact',
+    },
+    now: fixedNow,
+    claimId: activeClaimId,
+  });
+  journal.close();
+
+  const staleJournal = openRecoveryJournal(filePath, {
+    now: fixedNow,
+    claimId: 'stale-claim-for-artifact-rejection',
+  });
+  assert.throws(
+    () => appendRecoveryClaimOpened(staleJournal, {
+      plan,
+      current: remote,
+      claimId: 'stale-claim-for-artifact-rejection',
+      artifactRefs: {
+        releaseProof: 'artifact://release-proof-stale-rejected-artifact',
+      },
+    }),
+    RecoveryJournalClaimStaleError,
+  );
+  staleJournal.close();
+
+  const persisted = readRecoveryJournal(filePath);
+  const staleRejectionRecord = persisted.records.find(
+    (record) => record.type === 'stale-claim-rejected',
+  );
+  assert.ok(staleRejectionRecord);
+  staleRejectionRecord.artifactRefs = {
+    releaseProof: 'artifact://release-proof-stale-rejected-artifact-drifted',
+  };
+  fs.writeFileSync(
+    filePath,
+    `${persisted.records.map((record) => JSON.stringify(record)).join('\n')}\n`,
+  );
+
+  const reopened = openProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs: {
+      releaseProof: 'artifact://release-proof-stale-rejected-artifact',
+    },
+    now: fixedNow,
+    truncate: false,
+    claimId: activeClaimId,
+  });
+  const inspection = reopened.inspect();
+  reopened.close();
+
+  assert.equal(inspection.claim.activeClaimId, activeClaimId);
+  assert.equal(inspection.claim.status, 'active');
+  assert.equal(inspection.journal.staleClaimRejected, false);
+  assert.equal(inspection.journal.writerLease.staleClaimRejected, false);
+  assert.equal(inspection.leaseFence.staleClaimRejected, false);
+  assert.equal(inspection.leaseFence.writerLease.staleClaimRejected, false);
+  assert.equal(productionRecoveryJournalInspectionSurfaceIsPresent(inspection), true);
+});
+
+test('production recovery journal inspection ignores stale-claim rejection evidence that drifts plan identity from the active claim evidence', () => {
+  const filePath = tempJournalPath();
+  const remote = baseSite();
+  const plan = planFor(baseSite(), localSite(), remote);
+  const activeClaimId = 'production-claim-stale-rejected-01';
+
+  const journal = openProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs: {
+      releaseProof: 'artifact://release-proof-stale-rejected-scope',
+    },
+    now: fixedNow,
+    claimId: activeClaimId,
+  });
+  journal.close();
+
+  const staleJournal = openRecoveryJournal(filePath, {
+    now: fixedNow,
+    claimId: 'stale-claim-for-rejection',
+  });
+  assert.throws(
+    () => appendRecoveryClaimOpened(staleJournal, {
+      plan,
+      current: remote,
+      claimId: 'stale-claim-for-rejection',
+      artifactRefs: {
+        releaseProof: 'artifact://release-proof-stale-rejected-scope',
+      },
+    }),
+    RecoveryJournalClaimStaleError,
+  );
+  staleJournal.close();
+
+  const persisted = readRecoveryJournal(filePath);
+  const staleRejectionRecord = persisted.records.find(
+    (record) => record.type === 'stale-claim-rejected',
+  );
+  assert.ok(staleRejectionRecord);
+  staleRejectionRecord.planId = `${plan.id}-drifted`;
+  fs.writeFileSync(
+    filePath,
+    `${persisted.records.map((record) => JSON.stringify(record)).join('\n')}\n`,
+  );
+
+  const reopened = openProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs: {
+      releaseProof: 'artifact://release-proof-stale-rejected-scope',
+    },
+    now: fixedNow,
+    truncate: false,
+    claimId: activeClaimId,
+  });
+  const inspection = reopened.inspect();
+  reopened.close();
+
+  assert.equal(inspection.claim.activeClaimId, activeClaimId);
+  assert.equal(inspection.claim.status, 'active');
+  assert.equal(inspection.journal.staleClaimRejected, false);
+  assert.equal(inspection.journal.writerLease.staleClaimRejected, false);
+  assert.equal(inspection.leaseFence.staleClaimRejected, false);
+  assert.equal(inspection.leaseFence.writerLease.staleClaimRejected, false);
+  assert.equal(productionRecoveryJournalInspectionSurfaceIsPresent(inspection), true);
+});
+
 test('production recovery journal inspection ignores consumed records that omit the active claim identity', () => {
   const filePath = tempJournalPath();
   const remote = baseSite();

@@ -53,14 +53,41 @@ function hasStaleClaimRejectionEvidence(records) {
 }
 
 function claimScopedStaleClaimRejectionEvidence(records, claim) {
-  if (!CLAIM_HASH_PATTERN.test(claim?.activeClaimHash || '')) {
+  if (
+    !CLAIM_HASH_PATTERN.test(claim?.activeClaimHash || '')
+    || typeof claim?.activeClaimId !== 'string'
+    || claim.activeClaimId.length === 0
+  ) {
     return false;
   }
 
+  const activeClaimRecord = claimScopedActiveClaimRecord(records, claim);
+  const activeClaimPlanId = activeClaimRecord?.planId || null;
+  const activeClaimArtifactRefs = artifactRefsContractMatches(activeClaimRecord?.artifactRefs)
+    ? activeClaimRecord.artifactRefs
+    : null;
+
   return (Array.isArray(records) ? records : []).some(
-    (record) => (record.type === 'stale-claim-advanced' || record.type === 'stale-claim-rejected')
-      && (record.claimHash === claim.activeClaimHash
-        || record.previousClaimHash === claim.activeClaimHash),
+    (record) => {
+      if (record.type !== 'stale-claim-advanced' && record.type !== 'stale-claim-rejected') {
+        return false;
+      }
+
+      if (
+        record.planId !== activeClaimPlanId
+        || !artifactRefsEqual(record.artifactRefs, activeClaimArtifactRefs)
+      ) {
+        return false;
+      }
+
+      if (record.type === 'stale-claim-advanced') {
+        return record.claimHash === claim.activeClaimHash
+          && record.claimId === claim.activeClaimId;
+      }
+
+      return record.previousClaimHash === claim.activeClaimHash
+        && (!Object.hasOwn(record, 'previousClaimId') || record.previousClaimId === claim.activeClaimId);
+    },
   );
 }
 
@@ -1612,8 +1639,13 @@ function summarizeProductionRecoveryJournalClaim(persisted) {
     return undefined;
   }
 
+  const staleClaimRejected = claimScopedStaleClaimRejectionEvidence(
+    persisted.records,
+    claimState,
+  );
+
   return {
-    status: hasStaleClaimRejectionEvidence(persisted.records) ? 'advanced' : 'active',
+    status: staleClaimRejected ? 'advanced' : 'active',
     activeClaimId: claimState.activeClaimId || null,
     activeClaimHash: claimState.activeClaimHash || null,
     previousClaimId: claimState.previousClaimId || null,
@@ -1627,6 +1659,11 @@ function summarizeProductionRecoveryJournalClaim(persisted) {
 }
 
 function productionRecoveryJournalWriterLease(persisted, claimSummary) {
+  const staleClaimRejected = claimScopedStaleClaimRejectionEvidence(
+    persisted.records,
+    claimSummary,
+  );
+
   return {
     strategy: 'claim-fenced-single-writer',
     claimId: claimSummary?.activeClaimId || null,
@@ -1636,7 +1673,7 @@ function productionRecoveryJournalWriterLease(persisted, claimSummary) {
     fsyncEvidence: true,
     monotonicSequence: persisted.integrity.status === 'ok',
     restartReadable: persisted.integrity.status === 'ok',
-    staleClaimRejected: hasStaleClaimRejectionEvidence(persisted.records),
+    staleClaimRejected,
   };
 }
 
