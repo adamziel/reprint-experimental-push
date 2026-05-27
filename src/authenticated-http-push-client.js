@@ -2025,7 +2025,52 @@ function summarizeDbJournalStorageGuard(body) {
     }
   }
 
+  const inferredStorageGuard = inferTrustedDbJournalStorageGuard(body?.dbJournal);
+  if (inferredStorageGuard) {
+    return inferredStorageGuard;
+  }
+
   return undefined;
+}
+
+export function inferTrustedDbJournalStorageGuard(dbJournal) {
+  if (!dbJournal || typeof dbJournal !== 'object') {
+    return undefined;
+  }
+
+  if (dbJournal?.ownership?.ownsJournal !== true || dbJournal?.ownership?.restartReadable !== true) {
+    return undefined;
+  }
+
+  const boundaries = [
+    typeof dbJournal?.ownership?.productionAdapter === 'string'
+      ? dbJournal.ownership.productionAdapter.trim()
+      : '',
+    typeof dbJournal?.leaseFence?.boundary === 'string'
+      ? dbJournal.leaseFence.boundary.trim()
+      : '',
+    typeof dbJournal?.writerLease?.storageGuard === 'string'
+      ? dbJournal.writerLease.storageGuard.trim()
+      : '',
+    typeof dbJournal?.leaseFence?.writerLease?.storageGuard === 'string'
+      ? dbJournal.leaseFence.writerLease.storageGuard.trim()
+      : '',
+  ].filter(Boolean);
+
+  if (boundaries.length === 0) {
+    return undefined;
+  }
+
+  const uniqueBoundaries = [...new Set(boundaries)];
+  if (uniqueBoundaries.length !== 1) {
+    return undefined;
+  }
+
+  return {
+    boundary: uniqueBoundaries[0],
+    operation: 'update',
+    outcome: 'applied',
+  };
 }
 
 function summarizeDbJournalOwnership(dbJournal) {
@@ -2193,7 +2238,7 @@ function summarizeRecoveryInspectJournal(journal) {
     scope: journal.scope || integrity?.scope || null,
     integrity,
     claim: summarizeDbJournalClaim(journal.claim),
-    storageGuard: sanitizeStorageGuard(journal.storageGuard),
+    storageGuard: sanitizeStorageGuard(journal.storageGuard) || inferTrustedDbJournalStorageGuard(journal),
     ownership: summarizeDbJournalOwnership(journal),
     writerLease: summarizeDbJournalWriterLease(journal.writerLease),
     leaseFence: summarizeDbJournalLeaseFence(journal),

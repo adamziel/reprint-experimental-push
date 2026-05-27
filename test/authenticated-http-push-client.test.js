@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {
   authenticatedHttpClient,
   dbJournalProofIsAcceptable,
+  inferTrustedDbJournalStorageGuard,
   resolveAuthenticatedHttpPushSource,
   runAuthenticatedHttpPush,
 } from '../src/authenticated-http-push-client.js';
@@ -133,6 +134,35 @@ test('db journal proof requires stale claim rejection when explicitly requested'
     dbJournalProofIsAcceptable(proof, { requireStaleClaimRejected: true }),
     true,
   );
+});
+
+test('db journal summary infers a trusted storage guard from the checked boundary contract', () => {
+  const proof = {
+    ownership: {
+      ownsJournal: true,
+      restartReadable: true,
+      productionAdapter: 'wpdb-single-statement-cas',
+      supportedSurface: 'claim-fenced-restart-readable',
+    },
+    writerLease: {
+      storageGuard: 'wpdb-single-statement-cas',
+    },
+    leaseFence: {
+      boundary: 'wpdb-single-statement-cas',
+      writerLease: {
+        storageGuard: 'wpdb-single-statement-cas',
+      },
+    },
+  };
+
+  assert.deepEqual(inferTrustedDbJournalStorageGuard(proof), {
+    boundary: 'wpdb-single-statement-cas',
+    operation: 'update',
+    outcome: 'applied',
+  });
+
+  proof.leaseFence.boundary = 'filesystem-compare-rename';
+  assert.equal(inferTrustedDbJournalStorageGuard(proof), undefined);
 });
 
 test('db journal proof requires the checked durable-journal contract when explicitly requested', () => {
