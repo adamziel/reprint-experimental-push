@@ -1379,6 +1379,20 @@ function reprint_push_lab_rest_checked_top_level_counter_conflicts(
     foreach (['rowCount', 'applyCommitted', 'mutationApplied', 'idempotencyOpened'] as $key) {
         if (
             array_key_exists($key, $premerge_db_journal)
+            && !array_key_exists($key, $checked_summary)
+        ) {
+            return true;
+        }
+
+        if (
+            !array_key_exists($key, $premerge_db_journal)
+            && array_key_exists($key, $checked_summary)
+        ) {
+            return true;
+        }
+
+        if (
+            array_key_exists($key, $premerge_db_journal)
             && array_key_exists($key, $checked_summary)
             && $premerge_db_journal[$key] !== $checked_summary[$key]
         ) {
