@@ -257,6 +257,20 @@ function checkedBoundaryStaleClaimRowMatches(row, claim) {
     ) {
       return false;
     }
+
+    if (
+      hasNonEmptyString(claim?.previousClaimKeyHash)
+      && !hasNonEmptyString(row.claimKeyHash)
+    ) {
+      return false;
+    }
+
+    if (
+      hasNonEmptyString(claim?.previousClaimKeyHash)
+      && row.claimKeyHash !== claim.previousClaimKeyHash
+    ) {
+      return false;
+    }
   }
 
   if (!claim || typeof claim !== 'object') {

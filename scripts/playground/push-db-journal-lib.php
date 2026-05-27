@@ -267,7 +267,12 @@ function reprint_push_lab_db_journal_mutation_count_from_payload(array $payload)
 
 function reprint_push_lab_db_journal_append_event(string $event, array $context = []): array
 {
-    return reprint_push_lab_db_journal_insert_event($event, $context);
+    $claim_key_hash = isset($context['claimKeyHash']) && is_string($context['claimKeyHash'])
+        && $context['claimKeyHash'] !== ''
+        ? $context['claimKeyHash']
+        : null;
+
+    return reprint_push_lab_db_journal_insert_event($event, $context, $claim_key_hash);
 }
 
 function reprint_push_lab_db_journal_try_open_idempotency(array $context): array
@@ -1216,6 +1221,20 @@ function reprint_push_lab_db_journal_checked_boundary_stale_claim_row_matches($r
             reprint_push_lab_db_journal_is_positive_int($claim['previousClaimSequence'] ?? null)
             && reprint_push_lab_db_journal_cursor_sequence($row['resourceHashEvidence']['claimCursor'] ?? null)
                 !== (int) ($claim['previousClaimSequence'] ?? 0)
+        ) {
+            return false;
+        }
+
+        if (
+            reprint_push_lab_db_journal_non_empty_string($claim['previousClaimKeyHash'] ?? null)
+            && !reprint_push_lab_db_journal_non_empty_string($row['claimKeyHash'] ?? null)
+        ) {
+            return false;
+        }
+
+        if (
+            reprint_push_lab_db_journal_non_empty_string($claim['previousClaimKeyHash'] ?? null)
+            && (string) ($row['claimKeyHash'] ?? '') !== (string) ($claim['previousClaimKeyHash'] ?? '')
         ) {
             return false;
         }

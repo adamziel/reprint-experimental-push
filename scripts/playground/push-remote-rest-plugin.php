@@ -1862,6 +1862,7 @@ function reprint_push_lab_rest_run_db_journal_apply(
         ];
         $abandoned_entry = reprint_push_lab_db_journal_append_event('stale-claim-abandoned', $context + [
             'appliedCount' => 0,
+            'claimKeyHash' => (string) ($claim_entry['claimKeyHash'] ?? ''),
             'errorCode' => 'LAB_SIMULATED_STALE_CLAIM_ALL_OLD',
             'result' => reprint_push_lab_db_journal_compact_result($abandoned_result),
             'resourceHashEvidence' => [
