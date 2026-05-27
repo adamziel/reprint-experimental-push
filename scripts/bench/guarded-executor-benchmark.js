@@ -43,6 +43,14 @@ const INCOMPLETE_PAUSE_FOOTPRINT_BLOCKER_REFS = Object.freeze([
 const HIDDEN_STAGING_DISK_VISIBILITY_BLOCKER_REFS = Object.freeze([
   'staging-disk-headroom-not-visible',
 ]);
+const HIDDEN_QUEUE_BUDGET_VISIBILITY_BLOCKER_REFS = Object.freeze([
+  'queue-budget-not-visible',
+  'memory-ceiling-match-visible-without-queue-budget-visibility',
+  'memory-ceiling-visible-without-queue-budget-visibility',
+  'queue-headroom-visible-without-queue-budget-visibility',
+  'receipt-cursor-memory-headroom-visible-without-queue-budget-visibility',
+  'receipt-cursor-queue-slack-visible-without-queue-budget-visibility',
+]);
 
 export const GUARDED_EXECUTOR_BENCHMARK_PROFILES = Object.freeze({
   unit: Object.freeze({
@@ -432,6 +440,7 @@ const ROLLOUT_REJECTED_FAST_PATH_SPECS = Object.freeze([
       'production-atomic-group-commit-not-measured',
       'production-row-batch-executor-not-measured',
       'production-row-batch-executor-measured-not-proven',
+      ...HIDDEN_QUEUE_BUDGET_VISIBILITY_BLOCKER_REFS,
       'queue-pause-without-resource-headroom-safe-receipt-cursor-backpressure',
       'queue-pause-without-resource-headroom-safe-receipt-cursor-slack',
       'queue-pause-without-consistent-receipt-cursor-slack',
@@ -934,6 +943,7 @@ const ROLLOUT_REJECTED_FAST_PATH_SPECS = Object.freeze([
       'production-row-batch-executor-not-measured',
       'production-row-batch-executor-measured-not-proven',
       'production-row-batch-executor-visible-without-parallelism-limits',
+      ...HIDDEN_QUEUE_BUDGET_VISIBILITY_BLOCKER_REFS,
       ...INCOMPLETE_PAUSE_FOOTPRINT_BLOCKER_REFS,
       'queue-pause-without-resource-headroom-safe-receipt-cursor-backpressure',
       'queue-pause-without-resource-headroom-safe-receipt-cursor-slack',
@@ -990,6 +1000,7 @@ const ROLLOUT_REJECTED_FAST_PATH_SPECS = Object.freeze([
       'production-row-batch-executor-not-measured',
       'production-row-batch-executor-measured-not-proven',
       'production-row-batch-executor-visible-without-parallelism-limits',
+      ...HIDDEN_QUEUE_BUDGET_VISIBILITY_BLOCKER_REFS,
       ...INCOMPLETE_PAUSE_FOOTPRINT_BLOCKER_REFS,
       'queue-pause-without-resource-headroom-safe-receipt-cursor-backpressure',
       'queue-pause-without-resource-headroom-safe-receipt-cursor-slack',
@@ -1150,6 +1161,7 @@ const ROLLOUT_REJECTED_FAST_PATH_SPECS = Object.freeze([
       'production-row-batch-executor-not-measured',
       'production-row-batch-executor-measured-not-proven',
       'production-row-batch-executor-visible-without-parallelism-limits',
+      ...HIDDEN_QUEUE_BUDGET_VISIBILITY_BLOCKER_REFS,
       ...INCOMPLETE_PAUSE_FOOTPRINT_BLOCKER_REFS,
       'queue-pause-without-resource-headroom-safe-receipt-cursor-backpressure',
       'queue-pause-without-resource-headroom-safe-receipt-cursor-slack',
@@ -1180,6 +1192,7 @@ const ROLLOUT_REJECTED_FAST_PATH_SPECS = Object.freeze([
       'production-atomic-group-commit-not-measured',
       'production-row-batch-executor-not-measured',
       'production-row-batch-executor-measured-not-proven',
+      ...HIDDEN_QUEUE_BUDGET_VISIBILITY_BLOCKER_REFS,
       ...INCOMPLETE_PAUSE_FOOTPRINT_BLOCKER_REFS,
       'queue-pause-without-resource-headroom-safe-receipt-cursor-backpressure',
       'queue-pause-without-resource-headroom-safe-receipt-cursor-slack',
@@ -1194,6 +1207,7 @@ const ROLLOUT_REJECTED_FAST_PATH_SPECS = Object.freeze([
       'production-atomic-group-commit-not-measured',
       'production-row-batch-executor-not-measured',
       'production-row-batch-executor-measured-not-proven',
+      ...HIDDEN_QUEUE_BUDGET_VISIBILITY_BLOCKER_REFS,
       ...INCOMPLETE_PAUSE_FOOTPRINT_BLOCKER_REFS,
       'queue-pause-without-resource-headroom-safe-receipt-cursor-backpressure',
       'queue-pause-without-resource-headroom-safe-receipt-cursor-slack',
@@ -1217,6 +1231,7 @@ const ROLLOUT_REJECTED_FAST_PATH_SPECS = Object.freeze([
       'production-row-batch-executor-not-measured',
       'production-row-batch-executor-measured-not-proven',
       'production-row-batch-executor-visible-without-parallelism-limits',
+      ...HIDDEN_QUEUE_BUDGET_VISIBILITY_BLOCKER_REFS,
       ...INCOMPLETE_PAUSE_FOOTPRINT_BLOCKER_REFS,
       'queue-pause-without-resource-headroom-safe-receipt-cursor-backpressure',
       'queue-pause-without-resource-headroom-safe-receipt-cursor-slack',
