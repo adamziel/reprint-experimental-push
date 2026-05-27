@@ -1662,6 +1662,8 @@ function summarizeRecoveryInspect(response) {
 function summarizeReplayEquivalence(applyResponse, replayResponse) {
   const applyBody = applyResponse?.body || {};
   const replayBody = replayResponse?.body || {};
+  const applyAuthUserId = normalizeProductionAuthSessionIdentityUserId(applyBody.auth?.identity?.userId);
+  const replayAuthUserId = normalizeProductionAuthSessionIdentityUserId(replayBody.auth?.identity?.userId);
   const hasResponseSchemaVersion = applyBody.responseSchemaVersion !== undefined
     && replayBody.responseSchemaVersion !== undefined;
   const applySignedRequestDigest = digest(applyBody.signedRequest?.request || null);
@@ -1687,6 +1689,7 @@ function summarizeReplayEquivalence(applyResponse, replayResponse) {
     && hasResponseSchemaVersion
     && applyBody.responseSchemaVersion === replayBody.responseSchemaVersion
     && isStorageGuardEquivalent(applyBody.storageGuard, replayBody.storageGuard)
+    && applyAuthUserId === replayAuthUserId
     && applyBody.auth?.identity?.userLogin === replayBody.auth?.identity?.userLogin
     && applyBody.auth?.session?.id === replayBody.auth?.session?.id
     && applyBody.auth?.session?.type === replayBody.auth?.session?.type
@@ -1707,6 +1710,7 @@ function summarizeReplayEquivalence(applyResponse, replayResponse) {
     ['applied', applyBody.applied, replayBody.applied],
     replayReceiptEquivalent ? ['receiptHash', undefined, undefined] : ['receiptHash', applyBody.receipt?.receiptHash, replayBody.receipt?.receiptHash],
     ['responseSchemaVersion', hasResponseSchemaVersion ? applyBody.responseSchemaVersion : undefined, hasResponseSchemaVersion ? replayBody.responseSchemaVersion : undefined],
+    ['authUserId', applyAuthUserId, replayAuthUserId],
     ['authUser', applyBody.auth?.identity?.userLogin, replayBody.auth?.identity?.userLogin],
     ['authSessionId', applyBody.auth?.session?.id, replayBody.auth?.session?.id],
     ['authSessionType', applyBody.auth?.session?.type, replayBody.auth?.session?.type],
@@ -1784,6 +1788,19 @@ function describeAuthEnvelopeDrift(expected, response) {
       observed: observedUserLogin,
       verdict: 'AUTH_SESSION_LIFECYCLE_DRIFT',
     };
+  }
+
+  const expectedUserId = normalizeProductionAuthSessionIdentityUserId(expected?.userId);
+  if (expected?.userId !== undefined && expected?.userId !== null && expectedUserId !== null) {
+    const observedUserId = normalizeProductionAuthSessionIdentityUserId(body.auth?.identity?.userId);
+    if (observedUserId !== expectedUserId) {
+      return {
+        field: 'auth.identity.userId',
+        required: String(expectedUserId),
+        observed: observedUserId === null ? 'missing' : String(observedUserId),
+        verdict: 'AUTH_SESSION_LIFECYCLE_DRIFT',
+      };
+    }
   }
 
   const observedSessionId = body.auth?.session?.id || 'missing';
