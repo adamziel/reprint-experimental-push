@@ -2663,6 +2663,7 @@ test('guarded benchmark keeps rollout summaries pinned to visible-without-positi
   tampered.evidence.atomicGroup.productionRowBatchExecutorVisible = true;
 
   const details = productionThroughputDetails(tampered);
+  const blockers = productionThroughputBlockers(tampered);
 
   assert.deepEqual(
     details.productionCapabilityRolloutSummary.find(
@@ -2674,6 +2675,12 @@ test('guarded benchmark keeps rollout summaries pinned to visible-without-positi
       measured: false,
       visible: false,
       blockerRefs: [
+        'backpressure-evidence-incomplete',
+        'queue-memory-ceiling-does-not-match-queue-budget',
+        'queue-pause-without-resource-headroom-safe-receipt-cursor-backpressure',
+        'queue-pause-without-resource-headroom-safe-receipt-cursor-slack',
+        'queue-pause-without-consistent-receipt-cursor-slack',
+        'queue-pause-without-memory-safe-receipt-cursor-slack',
         'production-parallelism-limits-not-measured',
         'production-parallelism-limits-not-canonical',
         'production-parallelism-limits-visible-without-positive',
@@ -2691,6 +2698,12 @@ test('guarded benchmark keeps rollout summaries pinned to visible-without-positi
       measured: false,
       visible: false,
       blockerRefs: [
+        'backpressure-evidence-incomplete',
+        'queue-memory-ceiling-does-not-match-queue-budget',
+        'queue-pause-without-resource-headroom-safe-receipt-cursor-backpressure',
+        'queue-pause-without-resource-headroom-safe-receipt-cursor-slack',
+        'queue-pause-without-consistent-receipt-cursor-slack',
+        'queue-pause-without-memory-safe-receipt-cursor-slack',
         'production-parallelism-limits-not-measured',
         'production-parallelism-limits-not-canonical',
         'production-parallelism-limits-visible-without-positive',
@@ -2708,6 +2721,12 @@ test('guarded benchmark keeps rollout summaries pinned to visible-without-positi
       measured: false,
       visible: false,
       blockerRefs: [
+        'backpressure-evidence-incomplete',
+        'queue-memory-ceiling-does-not-match-queue-budget',
+        'queue-pause-without-resource-headroom-safe-receipt-cursor-backpressure',
+        'queue-pause-without-resource-headroom-safe-receipt-cursor-slack',
+        'queue-pause-without-consistent-receipt-cursor-slack',
+        'queue-pause-without-memory-safe-receipt-cursor-slack',
         'production-parallelism-limits-not-measured',
         'production-parallelism-limits-not-canonical',
         'production-parallelism-limits-visible-without-positive',
@@ -2716,6 +2735,64 @@ test('guarded benchmark keeps rollout summaries pinned to visible-without-positi
       ],
     },
   );
+  assert.ok(blockers.includes('production-parallelism-limits-not-measured'));
+  assert.ok(blockers.includes('production-parallelism-limits-not-canonical'));
+  assert.ok(blockers.includes('production-parallelism-limits-visible-without-positive'));
+  assert.ok(blockers.includes('production-parallelism-limits-visible-without-canonical'));
+  assert.deepEqual(
+    details.rejectedFastPaths.map((entry) => ({
+      id: entry.id,
+      rejectedGate: entry.rejectedGate,
+      blockerRefs: entry.blockerRefs,
+    })),
+    [
+      {
+        id: 'compressed-remote-index-and-parallel-chunk-sends-skips-large-upload-backpressure-after-pause',
+        rejectedGate: 'recovery',
+        blockerRefs: [
+          'production-parallelism-limits-not-measured',
+          'production-parallelism-limits-not-canonical',
+          'production-parallelism-limits-visible-without-positive',
+          'production-parallelism-limits-visible-without-canonical',
+        ],
+      },
+      {
+        id: 'compressed-remote-index-and-parallel-row-batches-skips-plugin-update-commit',
+        rejectedGate: 'group',
+        blockerRefs: [
+          'production-parallelism-limits-not-measured',
+          'production-parallelism-limits-not-canonical',
+          'production-parallelism-limits-visible-without-positive',
+          'production-parallelism-limits-visible-without-canonical',
+          'production-row-batch-executor-visible-without-parallelism-limits',
+        ],
+      },
+      {
+        id: 'compressed-remote-index-and-cached-row-batch-receipts-skips-release-bundle-commit-after-pause-and-backpressure',
+        rejectedGate: 'recovery',
+        blockerRefs: [
+          'queue-pause-without-resource-headroom-safe-receipt-cursor-backpressure',
+          'queue-pause-without-resource-headroom-safe-receipt-cursor-slack',
+          'queue-pause-without-consistent-receipt-cursor-slack',
+          'queue-pause-without-memory-safe-receipt-cursor-slack',
+        ],
+      },
+      {
+        id: 'cached-receipt-cursor-staging-disk-headroom-and-journal-lag-skips-post-pause-replay',
+        rejectedGate: 'recovery',
+        blockerRefs: [
+          'queue-pause-without-resource-headroom-safe-receipt-cursor-backpressure',
+          'queue-pause-without-resource-headroom-safe-receipt-cursor-slack',
+          'queue-pause-without-consistent-receipt-cursor-slack',
+          'queue-pause-without-memory-safe-receipt-cursor-slack',
+        ],
+      },
+    ],
+  );
+  assert.deepEqual(details.rejectedFastPathGateSummary, [
+    { rejectedGate: 'group', count: 1 },
+    { rejectedGate: 'recovery', count: 3 },
+  ]);
 });
 
 test('guarded benchmark keeps rollout summaries pinned to non-integral parallelism blockers', () => {
@@ -2737,6 +2814,7 @@ test('guarded benchmark keeps rollout summaries pinned to non-integral paralleli
   tampered.evidence.atomicGroup.productionRowBatchExecutorVisible = true;
 
   const details = productionThroughputDetails(tampered);
+  const blockers = productionThroughputBlockers(tampered);
 
   assert.equal(details.parallelismLimitsIntegral, false);
   assert.equal(details.parallelismLimitsVisible, false);
@@ -2760,6 +2838,10 @@ test('guarded benchmark keeps rollout summaries pinned to non-integral paralleli
       blockerRefs: [
         'backpressure-evidence-incomplete',
         'queue-memory-ceiling-does-not-match-queue-budget',
+        'queue-pause-without-resource-headroom-safe-receipt-cursor-backpressure',
+        'queue-pause-without-resource-headroom-safe-receipt-cursor-slack',
+        'queue-pause-without-consistent-receipt-cursor-slack',
+        'queue-pause-without-memory-safe-receipt-cursor-slack',
         'production-parallelism-limits-not-integral',
         'production-parallelism-limits-not-canonical',
         'production-parallelism-limits-visible-without-integral',
@@ -2779,6 +2861,10 @@ test('guarded benchmark keeps rollout summaries pinned to non-integral paralleli
       blockerRefs: [
         'backpressure-evidence-incomplete',
         'queue-memory-ceiling-does-not-match-queue-budget',
+        'queue-pause-without-resource-headroom-safe-receipt-cursor-backpressure',
+        'queue-pause-without-resource-headroom-safe-receipt-cursor-slack',
+        'queue-pause-without-consistent-receipt-cursor-slack',
+        'queue-pause-without-memory-safe-receipt-cursor-slack',
         'production-parallelism-limits-not-integral',
         'production-parallelism-limits-not-canonical',
         'production-parallelism-limits-visible-without-integral',
@@ -2798,6 +2884,10 @@ test('guarded benchmark keeps rollout summaries pinned to non-integral paralleli
       blockerRefs: [
         'backpressure-evidence-incomplete',
         'queue-memory-ceiling-does-not-match-queue-budget',
+        'queue-pause-without-resource-headroom-safe-receipt-cursor-backpressure',
+        'queue-pause-without-resource-headroom-safe-receipt-cursor-slack',
+        'queue-pause-without-consistent-receipt-cursor-slack',
+        'queue-pause-without-memory-safe-receipt-cursor-slack',
         'production-parallelism-limits-not-integral',
         'production-parallelism-limits-not-canonical',
         'production-parallelism-limits-visible-without-integral',
@@ -2806,6 +2896,64 @@ test('guarded benchmark keeps rollout summaries pinned to non-integral paralleli
       ],
     },
   );
+  assert.ok(blockers.includes('production-parallelism-limits-not-integral'));
+  assert.ok(blockers.includes('production-parallelism-limits-not-canonical'));
+  assert.ok(blockers.includes('production-parallelism-limits-visible-without-integral'));
+  assert.ok(blockers.includes('production-parallelism-limits-visible-without-canonical'));
+  assert.deepEqual(
+    details.rejectedFastPaths.map((entry) => ({
+      id: entry.id,
+      rejectedGate: entry.rejectedGate,
+      blockerRefs: entry.blockerRefs,
+    })),
+    [
+      {
+        id: 'compressed-remote-index-and-parallel-chunk-sends-skips-large-upload-backpressure-after-pause',
+        rejectedGate: 'recovery',
+        blockerRefs: [
+          'production-parallelism-limits-not-integral',
+          'production-parallelism-limits-not-canonical',
+          'production-parallelism-limits-visible-without-integral',
+          'production-parallelism-limits-visible-without-canonical',
+        ],
+      },
+      {
+        id: 'compressed-remote-index-and-parallel-row-batches-skips-plugin-update-commit',
+        rejectedGate: 'group',
+        blockerRefs: [
+          'production-parallelism-limits-not-integral',
+          'production-parallelism-limits-not-canonical',
+          'production-parallelism-limits-visible-without-integral',
+          'production-parallelism-limits-visible-without-canonical',
+          'production-row-batch-executor-visible-without-parallelism-limits',
+        ],
+      },
+      {
+        id: 'compressed-remote-index-and-cached-row-batch-receipts-skips-release-bundle-commit-after-pause-and-backpressure',
+        rejectedGate: 'recovery',
+        blockerRefs: [
+          'queue-pause-without-resource-headroom-safe-receipt-cursor-backpressure',
+          'queue-pause-without-resource-headroom-safe-receipt-cursor-slack',
+          'queue-pause-without-consistent-receipt-cursor-slack',
+          'queue-pause-without-memory-safe-receipt-cursor-slack',
+        ],
+      },
+      {
+        id: 'cached-receipt-cursor-staging-disk-headroom-and-journal-lag-skips-post-pause-replay',
+        rejectedGate: 'recovery',
+        blockerRefs: [
+          'queue-pause-without-resource-headroom-safe-receipt-cursor-backpressure',
+          'queue-pause-without-resource-headroom-safe-receipt-cursor-slack',
+          'queue-pause-without-consistent-receipt-cursor-slack',
+          'queue-pause-without-memory-safe-receipt-cursor-slack',
+        ],
+      },
+    ],
+  );
+  assert.deepEqual(details.rejectedFastPathGateSummary, [
+    { rejectedGate: 'group', count: 1 },
+    { rejectedGate: 'recovery', count: 3 },
+  ]);
 });
 
 test('guarded benchmark keeps paired row-batch and storage detail hidden when parallelism caps are noncanonical', () => {
@@ -3374,6 +3522,7 @@ test('guarded benchmark keeps rollout summaries pinned to visible-without-measur
   tampered.evidence.parallelism.parallelismLimitsVisible = true;
 
   const details = productionThroughputDetails(tampered);
+  const blockers = productionThroughputBlockers(tampered);
 
   assert.deepEqual(
     details.productionCapabilityRolloutSummary.find(
@@ -3387,6 +3536,10 @@ test('guarded benchmark keeps rollout summaries pinned to visible-without-measur
       blockerRefs: [
         'backpressure-evidence-incomplete',
         'queue-memory-ceiling-does-not-match-queue-budget',
+        'queue-pause-without-resource-headroom-safe-receipt-cursor-backpressure',
+        'queue-pause-without-resource-headroom-safe-receipt-cursor-slack',
+        'queue-pause-without-consistent-receipt-cursor-slack',
+        'queue-pause-without-memory-safe-receipt-cursor-slack',
         'production-parallelism-limits-not-visible',
         'production-parallelism-limits-visible-without-measurement',
       ],
@@ -3404,6 +3557,10 @@ test('guarded benchmark keeps rollout summaries pinned to visible-without-measur
       blockerRefs: [
         'backpressure-evidence-incomplete',
         'queue-memory-ceiling-does-not-match-queue-budget',
+        'queue-pause-without-resource-headroom-safe-receipt-cursor-backpressure',
+        'queue-pause-without-resource-headroom-safe-receipt-cursor-slack',
+        'queue-pause-without-consistent-receipt-cursor-slack',
+        'queue-pause-without-memory-safe-receipt-cursor-slack',
         'production-parallelism-limits-not-visible',
         'production-parallelism-limits-visible-without-measurement',
       ],
@@ -3421,12 +3578,68 @@ test('guarded benchmark keeps rollout summaries pinned to visible-without-measur
       blockerRefs: [
         'backpressure-evidence-incomplete',
         'queue-memory-ceiling-does-not-match-queue-budget',
+        'queue-pause-without-resource-headroom-safe-receipt-cursor-backpressure',
+        'queue-pause-without-resource-headroom-safe-receipt-cursor-slack',
+        'queue-pause-without-consistent-receipt-cursor-slack',
+        'queue-pause-without-memory-safe-receipt-cursor-slack',
         'production-parallelism-limits-not-visible',
         'production-parallelism-limits-visible-without-measurement',
         'production-row-batch-executor-visible-without-parallelism-limits',
       ],
     },
   );
+  assert.ok(blockers.includes('production-parallelism-limits-not-visible'));
+  assert.ok(blockers.includes('production-parallelism-limits-visible-without-measurement'));
+  assert.deepEqual(
+    details.rejectedFastPaths.map((entry) => ({
+      id: entry.id,
+      rejectedGate: entry.rejectedGate,
+      blockerRefs: entry.blockerRefs,
+    })),
+    [
+      {
+        id: 'compressed-remote-index-and-parallel-chunk-sends-skips-large-upload-backpressure-after-pause',
+        rejectedGate: 'recovery',
+        blockerRefs: [
+          'production-parallelism-limits-not-visible',
+          'production-parallelism-limits-visible-without-measurement',
+        ],
+      },
+      {
+        id: 'compressed-remote-index-and-parallel-row-batches-skips-plugin-update-commit',
+        rejectedGate: 'group',
+        blockerRefs: [
+          'production-parallelism-limits-not-visible',
+          'production-parallelism-limits-visible-without-measurement',
+          'production-row-batch-executor-visible-without-parallelism-limits',
+        ],
+      },
+      {
+        id: 'compressed-remote-index-and-cached-row-batch-receipts-skips-release-bundle-commit-after-pause-and-backpressure',
+        rejectedGate: 'recovery',
+        blockerRefs: [
+          'queue-pause-without-resource-headroom-safe-receipt-cursor-backpressure',
+          'queue-pause-without-resource-headroom-safe-receipt-cursor-slack',
+          'queue-pause-without-consistent-receipt-cursor-slack',
+          'queue-pause-without-memory-safe-receipt-cursor-slack',
+        ],
+      },
+      {
+        id: 'cached-receipt-cursor-staging-disk-headroom-and-journal-lag-skips-post-pause-replay',
+        rejectedGate: 'recovery',
+        blockerRefs: [
+          'queue-pause-without-resource-headroom-safe-receipt-cursor-backpressure',
+          'queue-pause-without-resource-headroom-safe-receipt-cursor-slack',
+          'queue-pause-without-consistent-receipt-cursor-slack',
+          'queue-pause-without-memory-safe-receipt-cursor-slack',
+        ],
+      },
+    ],
+  );
+  assert.deepEqual(details.rejectedFastPathGateSummary, [
+    { rejectedGate: 'group', count: 1 },
+    { rejectedGate: 'recovery', count: 3 },
+  ]);
 });
 
 test('guarded benchmark details fail closed when atomic commit capability is present but the evidence bit is hidden', () => {
