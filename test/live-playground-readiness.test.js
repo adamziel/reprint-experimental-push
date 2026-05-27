@@ -426,6 +426,102 @@ test('packaged preflight retryability preserves malformed parsed startup probes 
   );
 });
 
+test('packaged preflight retryability prefers the freshest index probe over conflicting snapshot fallback signals', () => {
+  const labAuthRequiredPreflight = {
+    status: 401,
+    body: {
+      code: 'reprint_push_lab_auth_required',
+      message: 'Authenticated push routes require WordPress Application Password basic auth.',
+    },
+  };
+
+  assert.equal(
+    packagedProductionPluginPreflightRetryable(labAuthRequiredPreflight, {
+      indexProbe: {
+        status: 200,
+        body: '<!doctype html><html><body>not a REST index</body></html>',
+        parsedBody: null,
+      },
+      snapshotProbe: {
+        status: 503,
+        body: {
+          details: {
+            error: {
+              code: 'wordpress_not_ready',
+              message: 'WordPress is not ready yet',
+            },
+          },
+        },
+      },
+    }),
+    false,
+  );
+  assert.equal(
+    packagedProductionPluginPreflightTerminal(labAuthRequiredPreflight, {
+      indexProbe: {
+        status: 200,
+        body: '<!doctype html><html><body>not a REST index</body></html>',
+        parsedBody: null,
+      },
+      snapshotProbe: {
+        status: 503,
+        body: {
+          details: {
+            error: {
+              code: 'wordpress_not_ready',
+              message: 'WordPress is not ready yet',
+            },
+          },
+        },
+      },
+    }),
+    true,
+  );
+
+  assert.equal(
+    packagedProductionPluginPreflightRetryable(labAuthRequiredPreflight, {
+      indexProbe: {
+        status: 404,
+        body: {
+          details: {
+            error_code: 'rest_no_route',
+            reason: 'No route was found matching the URL and request method.',
+          },
+        },
+      },
+      snapshotProbe: {
+        status: 200,
+        body: {
+          ok: true,
+          note: 'missing snapshot payload should not override a fresher retryable index probe',
+        },
+      },
+    }),
+    true,
+  );
+  assert.equal(
+    packagedProductionPluginPreflightTerminal(labAuthRequiredPreflight, {
+      indexProbe: {
+        status: 404,
+        body: {
+          details: {
+            error_code: 'rest_no_route',
+            reason: 'No route was found matching the URL and request method.',
+          },
+        },
+      },
+      snapshotProbe: {
+        status: 200,
+        body: {
+          ok: true,
+          note: 'missing snapshot payload should not override a fresher retryable index probe',
+        },
+      },
+    }),
+    false,
+  );
+});
+
 test('packaged timeout fallback helper separates WordPress, packaged-route, timeout, and terminal index branches', () => {
   assert.deepEqual(
     packagedProductionPluginClassifyTimeoutFallbackStartup(
