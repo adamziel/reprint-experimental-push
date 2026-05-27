@@ -28869,6 +28869,117 @@ test('production recovery support report fails closed when a later claim reopen 
   assert.ok(report.missingDependency.includes('restart-readable recovery journal adapter'));
 });
 
+test('production recovery support report fails closed when a later claim reopen hash is hidden instead of enumerable', () => {
+  const filePath = tempRecoveryJournalPath();
+  const remoteArtifactPath = `${path.dirname(filePath)}/consumed-reopened-hash-hidden-remote.jsonl`;
+  const claimId = 'claim-consumed-reopened-hash-hidden';
+  const claimHash = digest({ recoveryJournalClaim: claimId });
+  const writerLeaseContract = {
+    strategy: 'claim-fenced-single-writer',
+    claimKeyUnique: true,
+    fsyncEvidence: true,
+    storageGuard: 'filesystem-compare-rename',
+    monotonicSequence: true,
+    restartReadable: true,
+    staleClaimRejected: false,
+  };
+  const laterReopen = {
+    sequence: 3,
+    type: 'recovery-claim-opened',
+    claimLease: { id: claimId, epoch: 3 },
+    artifactRefs: {
+      journal: filePath,
+      remote: remoteArtifactPath,
+    },
+    fsync: { requested: true },
+  };
+  Object.defineProperty(laterReopen, 'claimHash', {
+    value: claimHash,
+    enumerable: false,
+    configurable: true,
+    writable: true,
+  });
+
+  const report = productionRecoverySupportReport({
+    kind: 'production-recovery-journal',
+    productionAdapter: true,
+    supportedSurface: 'production-recovery-journal-adapter',
+    restartReadable: true,
+    ownsJournal: true,
+    ownsRemoteArtifact: true,
+    claimHash,
+    writerLease: { id: claimId, epoch: 3 },
+    leaseFence: { id: claimId, epoch: 3 },
+    journalPath: filePath,
+    artifactRefs: {
+      journal: filePath,
+      remote: remoteArtifactPath,
+    },
+    schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+    appendEvent() {
+      return null;
+    },
+    flush() {},
+    close() {},
+    inspect() {
+      return {
+        filePath,
+        schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+        claimHash,
+        artifactRefs: {
+          journal: filePath,
+          remote: remoteArtifactPath,
+        },
+        writerLease: { id: claimId, epoch: 3 },
+        leaseFence: { id: claimId, epoch: 3 },
+        writerLeaseContract,
+        leaseFenceContract: {
+          boundary: 'filesystem-compare-rename',
+          claimKeyUnique: true,
+          storageGuard: 'filesystem-compare-rename',
+          fsyncEvidence: true,
+          monotonicSequence: true,
+          restartReadable: true,
+          staleClaimRejected: false,
+          writerLease: writerLeaseContract,
+        },
+        integrity: { status: 'ok' },
+        records: [
+          {
+            sequence: 1,
+            type: 'recovery-claim-opened',
+            claimHash,
+            claimLease: { id: claimId, epoch: 3 },
+            artifactRefs: {
+              journal: filePath,
+              remote: remoteArtifactPath,
+            },
+            fsync: { requested: true },
+          },
+          {
+            sequence: 2,
+            type: 'recovery-journal-consumed',
+            claimHash,
+            claimLease: { id: claimId, epoch: 3 },
+            artifactRefs: {
+              journal: filePath,
+              remote: remoteArtifactPath,
+            },
+            fsync: { requested: true },
+          },
+          laterReopen,
+        ],
+      };
+    },
+    assertCurrentClaim() {},
+  });
+
+  assert.equal(report.supported, false);
+  assert.ok(report.missingDependency.includes('fencing or lease ownership for the journal writer'));
+  assert.ok(report.missingDependency.includes('journal-readable inspection records with sequence and type'));
+  assert.ok(report.missingDependency.includes('restart-readable recovery journal adapter'));
+});
+
 test('production recovery support report fails closed when a later claim reopen lease is inherited instead of owned', () => {
   const filePath = tempRecoveryJournalPath();
   const remoteArtifactPath = `${path.dirname(filePath)}/consumed-reopened-lease-inherited-remote.jsonl`;
@@ -28894,6 +29005,117 @@ test('production recovery support report fails closed when a later claim reopen 
     remote: remoteArtifactPath,
   };
   laterReopen.fsync = { requested: true };
+
+  const report = productionRecoverySupportReport({
+    kind: 'production-recovery-journal',
+    productionAdapter: true,
+    supportedSurface: 'production-recovery-journal-adapter',
+    restartReadable: true,
+    ownsJournal: true,
+    ownsRemoteArtifact: true,
+    claimHash,
+    writerLease: { id: claimId, epoch: 3 },
+    leaseFence: { id: claimId, epoch: 3 },
+    journalPath: filePath,
+    artifactRefs: {
+      journal: filePath,
+      remote: remoteArtifactPath,
+    },
+    schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+    appendEvent() {
+      return null;
+    },
+    flush() {},
+    close() {},
+    inspect() {
+      return {
+        filePath,
+        schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+        claimHash,
+        artifactRefs: {
+          journal: filePath,
+          remote: remoteArtifactPath,
+        },
+        writerLease: { id: claimId, epoch: 3 },
+        leaseFence: { id: claimId, epoch: 3 },
+        writerLeaseContract,
+        leaseFenceContract: {
+          boundary: 'filesystem-compare-rename',
+          claimKeyUnique: true,
+          storageGuard: 'filesystem-compare-rename',
+          fsyncEvidence: true,
+          monotonicSequence: true,
+          restartReadable: true,
+          staleClaimRejected: false,
+          writerLease: writerLeaseContract,
+        },
+        integrity: { status: 'ok' },
+        records: [
+          {
+            sequence: 1,
+            type: 'recovery-claim-opened',
+            claimHash,
+            claimLease: { id: claimId, epoch: 3 },
+            artifactRefs: {
+              journal: filePath,
+              remote: remoteArtifactPath,
+            },
+            fsync: { requested: true },
+          },
+          {
+            sequence: 2,
+            type: 'recovery-journal-consumed',
+            claimHash,
+            claimLease: { id: claimId, epoch: 3 },
+            artifactRefs: {
+              journal: filePath,
+              remote: remoteArtifactPath,
+            },
+            fsync: { requested: true },
+          },
+          laterReopen,
+        ],
+      };
+    },
+    assertCurrentClaim() {},
+  });
+
+  assert.equal(report.supported, false);
+  assert.ok(report.missingDependency.includes('fencing or lease ownership for the journal writer'));
+  assert.ok(report.missingDependency.includes('journal-readable inspection records with sequence and type'));
+  assert.ok(report.missingDependency.includes('restart-readable recovery journal adapter'));
+});
+
+test('production recovery support report fails closed when a later claim reopen lease is hidden instead of enumerable', () => {
+  const filePath = tempRecoveryJournalPath();
+  const remoteArtifactPath = `${path.dirname(filePath)}/consumed-reopened-lease-hidden-remote.jsonl`;
+  const claimId = 'claim-consumed-reopened-lease-hidden';
+  const claimHash = digest({ recoveryJournalClaim: claimId });
+  const writerLeaseContract = {
+    strategy: 'claim-fenced-single-writer',
+    claimKeyUnique: true,
+    fsyncEvidence: true,
+    storageGuard: 'filesystem-compare-rename',
+    monotonicSequence: true,
+    restartReadable: true,
+    staleClaimRejected: false,
+  };
+  const laterReopen = {
+    sequence: 3,
+    type: 'recovery-claim-opened',
+    claimHash,
+    artifactRefs: {
+      journal: filePath,
+      remote: remoteArtifactPath,
+    },
+    fsync: { requested: true },
+  };
+  Object.defineProperty(laterReopen, 'claimLease', {
+    value: { id: claimId, epoch: 3 },
+    enumerable: false,
+    configurable: true,
+    writable: true,
+  });
 
   const report = productionRecoverySupportReport({
     kind: 'production-recovery-journal',
