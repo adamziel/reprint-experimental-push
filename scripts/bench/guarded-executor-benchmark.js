@@ -3402,7 +3402,7 @@ export function productionThroughputDetails(report) {
     && queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack;
   const receiptCursorMemoryCeilingVisibleAndQueueHeadroomVisibleAndSafe =
     receiptCursorMemoryCeilingVisibleAndQueueHeadroomVisible
-    && receiptCursorBackpressureWithinResourceHeadroom;
+    && receiptCursorBackpressureWithinResourceHeadroomBase;
   const pausedQueueSlackEvidence = {
     queuePauseHasMeasuredReceiptCursorQueueSlack,
     queuePauseHasBackpressureAlignedReceiptCursorQueueSlack,

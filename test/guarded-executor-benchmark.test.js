@@ -11993,6 +11993,25 @@ test('guarded benchmark keeps release-bundle post-pause planning summaries pendi
   });
 });
 
+test('guarded benchmark marks release-bundle post-pause planning summaries ready when the full pause footprint is proven', () => {
+  const report = smallBenchmark();
+  const mutated = clone(report);
+
+  mutated.evidence.backpressure.receiptCursorMemoryCeilingBytes =
+    mutated.evidence.backpressure.queueBudgetBytes;
+  mutated.evidence.backpressure.receiptCursorQueueSlackMatchesQueueHeadroom = true;
+
+  const details = productionThroughputDetails(mutated);
+
+  assert.deepEqual(details.releaseBundlePlanningSummary, {
+    surface: 'release-bundle-post-pause-planning',
+    status: 'ready',
+    measured: true,
+    visible: true,
+    blockerRefs: [],
+  });
+});
+
 test('guarded benchmark blocks release-bundle post-pause planning summaries when queue-headroom visibility is hidden', () => {
   const report = smallBenchmark();
   const mutated = clone(report);
