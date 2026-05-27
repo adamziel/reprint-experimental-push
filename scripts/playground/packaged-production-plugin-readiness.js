@@ -160,6 +160,28 @@ function packagedProductionPluginSessionEnvelopeReady(session) {
     && session?.type === 'production-auth-session';
 }
 
+function packagedProductionPluginSessionEnvelopeCarriesLifecycle(session) {
+  if (!session || typeof session !== 'object') {
+    return false;
+  }
+
+  return (
+    Object.prototype.hasOwnProperty.call(session, 'status')
+    || Object.prototype.hasOwnProperty.call(session, 'expiresAt')
+    || Object.prototype.hasOwnProperty.call(session, 'expired')
+    || Object.prototype.hasOwnProperty.call(session, 'revoked')
+    || Object.prototype.hasOwnProperty.call(session, 'cleanedUp')
+    || Object.prototype.hasOwnProperty.call(session, 'cleaned_up')
+    || Object.prototype.hasOwnProperty.call(session, 'cleanup')
+    || Object.prototype.hasOwnProperty.call(session, 'rotated')
+  );
+}
+
+function packagedProductionPluginSessionEnvelopeLifecycleReady(session) {
+  return !packagedProductionPluginSessionEnvelopeCarriesLifecycle(session)
+    || evaluateProductionAuthSessionLifecycle(session).ok;
+}
+
 function packagedProductionPluginSessionIdentityReady(preflight) {
   const topLevelSessionId = preflight?.body?.session?.id;
   const authSessionId = preflight?.body?.auth?.session?.id;
@@ -256,6 +278,7 @@ export function packagedProductionPluginPreflightReady(preflight) {
 
   return packagedProductionPluginRouteProfileReady(preflight.body?.routeProfile)
     && packagedProductionPluginSessionEnvelopeReady(preflight.body?.session)
+    && packagedProductionPluginSessionEnvelopeLifecycleReady(preflight.body?.session)
     && packagedProductionPluginSessionIdentityReady(preflight)
     && packagedProductionPluginAuthIdentityReady(preflight)
     && evaluateProductionAuthSessionLifecycle(preflight.body?.auth?.session).ok;
