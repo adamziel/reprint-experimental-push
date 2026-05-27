@@ -2,50 +2,50 @@
 
 ## Verdict
 
-- Audited commit: `66afff2b1da3e83018f04d9ece3e42d46cab7f92` (`Narrow packaged driver proof helper`)
-- Previous audited reliable head: `b8f2b23af24c3bc3ab6faa91c490a2bb550d53a8`
+- Audited commit: `d9ec5130979968098ac7b16b93220bd0d3fdbe38` (`Preserve live source in release wrapper`)
+- Previous audited reliable head: `66afff2b1da3e83018f04d9ece3e42d46cab7f92`
 - Release-gate verdict: `0/4`
 - The project is **not yet releasable as a production WordPress push path**.
 
-- Audit time: 2026-05-27 03:56:13 CEST (+0200)
+- Audit time: 2026-05-27 04:01:19 CEST (+0200)
 - Fresh remote heads re-polled at audit time:
-  - `origin/lane/reliable-executor` -> `66afff2b1da3e83018f04d9ece3e42d46cab7f92` (`Narrow packaged driver proof helper`)
-  - `origin/lane/critic` -> `9cedfee0c2d16c621cfe038b9a49090fc4ac4b19`
-  - `origin/lane/independent-auditor` -> `4517af2857a8c63706e490c9941c558dc5b72118` (`Audit reliable head b8f2b23a`)
-  - `origin/lane/progress-publisher` -> `51636064019c9ca0a81bfec2aa491928fa28327c`
+  - `origin/lane/reliable-executor` -> `d9ec5130979968098ac7b16b93220bd0d3fdbe38` (`Preserve live source in release wrapper`)
+  - `origin/lane/critic` -> `037e5b55828340e9fc9bfbb42eeb8bff8a525b54` (`Classify reliable head d9ec5130`)
+  - `origin/lane/independent-auditor` -> `1b98cdc0d86e929620f46e4fbbbe9f559a09d500` (`Audit reliable head 66afff2b`)
+  - `origin/lane/progress-publisher` -> `ff6ada235356b77a1000a790c202d1ab9cc226b0` (`Refresh progress for current reliable head`)
   - `origin/main` -> `fb313455efba84627ca33402dd32e8992e5be904` (`Refresh live progress page`)
 
 ## Evidence Table
 
 | Requirement | Current proof | Missing proof | Verdict impact |
 | --- | --- | --- | --- |
-| Live mutation boundary | `66afff2b` changes only the inline packaged helper inside `scripts/playground/production-shaped-release-verify.mjs`; it does not add any new real-endpoint mutation execution. The strongest retained evidence is still the earlier packaged/live combined verifier proof noted in the prior audit. | One production-owned, non-lab-backed checked mutation boundary on the real Reprint endpoint. | Blocked |
-| Production auth/session lifecycle | The release verifier still consumes packaged or live-source auth/session evidence through helper scaffolding. `66afff2b` does not add a proof where the same executable command visibly mints and then reads back a live auth session on the exact real `REPRINT_PUSH_SOURCE_URL`. | One checked real-endpoint command proving issuance and readback on the same production-owned source boundary. | Blocked |
-| Durable restart-readable journal ownership | No new journal primitive was added. The retained support evidence for `ownsJournal: true`, `restartReadable: true`, and stale-claim fencing still comes from the broader packaged/live verifier path, not from a newly isolated production-owned release boundary. | Durable journal proof on the real endpoint with lease-fenced ownership and restart-readable recovery outside Playground/package-only scaffolding. | Blocked |
-| Apply-time revalidation before first mutation | `66afff2b` does not add any new apply-time revalidation execution. It only narrows which packaged driver smoke scenario the verifier summarizes. | A checked real-endpoint proof showing apply-time revalidation runs before the first mutation on the production-owned boundary. | Blocked |
-| Packaged driver helper scope | The diff narrows `summarizePackagedPluginDriverProof()` from `REPRINT_PUSH_PACKAGE_SMOKE_SCENARIO=driver-verifier-guards` to `driver-receipt-guards`, the only scenario whose `driverReceiptRevokedCredentialGuard` output the verifier actually reads, and lowers the helper timeout from `130_000` to `90_000`. The focused test now pins that exact contract. | Proof that this helper cleanup closes a supervised release gate instead of only reducing packaged verifier cost and surface area. | Support-only |
-| Release-boundary proof | Reliable’s own final for `66afff2b` explicitly classifies the change as bounded verifier-helper cleanup and says the next step should return to a direct gate dependency. The retained verification is limited to `node --check`, one focused `node --test --test-name-pattern=...`, and `git diff --check`. | One production-owned checked release artifact on the real Reprint endpoint tying together auth issuance/readback, durable journal ownership, rejected-remote preservation, and pre-mutation apply-time revalidation. | Blocked |
+| Live mutation boundary | `d9ec5130` adds helper plumbing in [production-shaped-live-release-verify-lib.js](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/reliable-executor-clean-20260526-1530/scripts/playground/production-shaped-live-release-verify-lib.js:19) and a new explicit checked-boundary branch in [production-shaped-live-release-verify.mjs](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/reliable-executor-clean-20260526-1530/scripts/playground/production-shaped-live-release-verify.mjs:68) so caller-supplied live env is preserved instead of being replaced by a local `remote-base` source. That still does not execute or record any new real-endpoint mutation boundary. | One production-owned, non-lab-backed checked mutation boundary on the real Reprint endpoint. | Blocked |
+| Production auth/session lifecycle | The wrapper now passes an explicit `REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND` through to both checked verify and apply revalidation env builders, and the deterministic test in [production-shaped-proof.test.js](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/reliable-executor-clean-20260526-1530/test/production-shaped-proof.test.js:3700) pins that preservation contract. It still does not show one executable real-endpoint command minting and reading back a live auth session on the exact production-owned `REPRINT_PUSH_SOURCE_URL`. | One checked real-endpoint command proving issuance and readback on the same production-owned source boundary. | Blocked |
+| Durable restart-readable journal ownership | No new journal primitive or real-boundary journal artifact was added. The wrapper can now preserve caller-provided live source/session inputs, but the evidence for `ownsJournal: true`, `restartReadable: true`, and stale-claim fencing remains inherited from the broader verifier path rather than a newly proven production-owned boundary. | Durable journal proof on the real endpoint with lease-fenced ownership and restart-readable recovery outside Playground/package-only scaffolding. | Blocked |
+| Apply-time revalidation before first mutation | `resolveLiveApplyRevalidationEnv()` now preserves an explicit checked-boundary source URL and auth-session source command for the apply revalidation smoke path, and the retained retry test still passes. That improves fidelity of a future live proof, but it does not add a new checked real-endpoint artifact showing apply-time revalidation before the first mutation. | A checked real-endpoint proof showing apply-time revalidation runs before the first mutation on the production-owned boundary. | Blocked |
+| Wrapper preservation proof | The new helpers distinguish explicit checked-boundary requests from the default local Playground branch and keep the local branch unchanged. The focused test proves the wrapper no longer silently synthesizes its own local source when the caller already supplied live boundary inputs. | Proof that this wrapper preservation path is exercised by a production-owned release primitive instead of only a deterministic unit contract. | Support-only |
+| Release-boundary proof | Reliable retained verification stays narrow: `node --check` on the three touched files, one focused `node --test --test-name-pattern=...`, and `git diff --check`. I re-ran the syntax checks and focused proof test in the `d9ec5130` reliable clean worktree because these touched files are not present in the auditor checkout. The patch prepares the wrapper for a future direct gate dependency, but it still does not emit the missing single real-endpoint release artifact. | One production-owned checked release artifact on the real Reprint endpoint tying together auth issuance/readback, durable journal ownership, rejected-remote preservation, and pre-mutation apply-time revalidation. | Blocked |
 
 ## Change Assessment
 
-1. The `b8f2b23a..66afff2b` diff is narrower than the prior retry-hardening follow-up. It touches only `scripts/playground/production-shaped-release-verify.mjs` and `test/production-shaped-proof.test.js`.
-2. In `scripts/playground/production-shaped-release-verify.mjs`, the inline packaged proof helper still runs `scripts/playground/production-plugin-package-smoke.mjs` in `driver-guard-only` mode, but it now scopes `REPRINT_PUSH_PACKAGE_SMOKE_SCENARIO` down to `driver-receipt-guards` and reduces the timeout to `90_000`.
-3. In `test/production-shaped-proof.test.js`, the focused proof test was updated to assert `timeout: 90_000` and `REPRINT_PUSH_PACKAGE_SMOKE_SCENARIO: 'driver-receipt-guards'`.
-4. That is a legitimate cleanup. It removes unnecessary packaged smoke coverage from a helper whose output contract only reads `summary.driverReceiptRevokedCredentialGuard`.
-5. It still does not create a new supervised primitive. The change does not move evidence from packaged/helper scope onto the missing production-owned real endpoint boundary. No new command, artifact, or test proves the same executable auth command issues and reads back a live session on the exact source URL, persists it durably with fenced ownership, preserves rejected remote evidence, and revalidates before first mutation.
-6. Reliable’s own final for `66afff2b` confirms the same interpretation: the commit is “bounded verifier-helper cleanup,” verification stayed intentionally narrow, and the next supervisor nudge is to move back to a direct gate dependency rather than more plugin-driver helper tuning.
+1. The `66afff2b..d9ec5130` diff touches only `scripts/playground/production-shaped-live-release-verify-lib.js`, `scripts/playground/production-shaped-live-release-verify.mjs`, and `test/production-shaped-proof.test.js`.
+2. In [production-shaped-live-release-verify-lib.js](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/reliable-executor-clean-20260526-1530/scripts/playground/production-shaped-live-release-verify-lib.js:19), the new helper layer detects whether the caller made an explicit checked-boundary request and centralizes env resolution for both checked verify and apply revalidation.
+3. In [production-shaped-live-release-verify.mjs](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/reliable-executor-clean-20260526-1530/scripts/playground/production-shaped-live-release-verify.mjs:54), the wrapper now has three paths: packaged boundary, explicit checked boundary, and the unchanged default local-Playground branch. The explicit checked-boundary path preserves caller-provided `REPRINT_PUSH_SOURCE_URL`, credentials, and `REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND` instead of replacing them with a local `remote-base` source.
+4. In [production-shaped-proof.test.js](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/reliable-executor-clean-20260526-1530/test/production-shaped-proof.test.js:3700), the new deterministic proof asserts that both the checked-verify env and apply-revalidation env preserve the explicit live source and auth-session source command. The existing transient apply revalidation timeout retry test remains intact and passes.
+5. This is real progress on wrapper correctness, but it is still support-only. The change preserves inputs for a future production proof; it does not itself produce that proof. No new command output shows the same executable command minting and reading back a live auth session on the real source URL, persisting it durably with lease-fenced ownership, preserving rejected remote evidence, and revalidating before first mutation.
+6. Because the supervised release gates depend on that single production-owned artifact, not just on internal wrapper fidelity, the release verdict stays `0/4`.
 
 ## Conclusion
 
-`66afff2b` closes no supervised release gate. It is a scoped packaged-helper cleanup that makes the release verifier’s inline package-smoke summary cheaper and more exact, but it leaves all four production gates closed. The verdict remains `0/4`.
+`d9ec5130` closes no supervised release gate. It fixes an important release-wrapper correctness issue by preserving caller-provided live source and auth-session command inputs across the explicit checked-boundary path, but it still leaves all four production gates closed because the repo does not yet prove that path on the real Reprint endpoint. The verdict remains `0/4`.
 
-The next exact production primitive beyond verifier-helper cleanup is still:
+The next exact production primitive that should use this preserved wrapper path is:
 
-- one checked production-owned release command on the real Reprint endpoint
-- using the exact live `REPRINT_PUSH_SOURCE_URL`
-- where the same executable auth-session source command both mints and reads back a live auth session
-- persists that session in durable restart-readable journal storage with lease-fenced ownership
+- one checked production-owned invocation of `scripts/playground/production-shaped-live-release-verify.mjs` on the real Reprint endpoint
+- with explicit `REPRINT_PUSH_SOURCE_URL`, production credentials, and one caller-supplied `REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND`
+- where that same command both mints and reads back a live auth session on the exact source boundary
+- persists the session in durable restart-readable journal storage with lease-fenced ownership
 - preserves rejected remote evidence for audit
 - and performs apply-time revalidation before the first mutation on that same boundary
 
-The next focused regression proof should pin that artifact directly and fail unless those fields appear together in one real-endpoint release-boundary result.
+The next focused regression proof should pin that real-endpoint wrapper invocation directly and fail unless those fields appear together in one release-boundary result.
