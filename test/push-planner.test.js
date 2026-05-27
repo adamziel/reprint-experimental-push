@@ -28285,6 +28285,79 @@ test('blocks local nav menu item parent references to a same-plan created menu i
   assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin changes */');
 });
 
+test('blocks local nav menu item parent references to a same-plan created menu item while preserving a matching independent file type swap and remote-only plugin removals', () => {
+  const resourceKey = 'row:["wp_posts","ID:49"]';
+  const targetResourceKey = 'row:["wp_posts","ID:50"]';
+  const base = baseSite();
+  base.plugins.forms = {
+    version: '1.0.0',
+    enabled: true,
+    description: 'base plugin forms',
+  };
+  base.files['wp-content/plugins/forms/forms.php'] = '<?php /* base plugin forms */';
+  base.files['wp-content/uploads/banner'] = 'base banner bytes';
+  base.db.wp_posts['ID:49'] = {
+    ID: 49,
+    post_title: 'Base child menu item swap removal',
+    post_content: 'Base child menu item swap removal content',
+    post_status: 'publish',
+    post_type: 'nav_menu_item',
+    menu_item_parent: 0,
+  };
+
+  const local = baseSite();
+  local.plugins.forms = JSON.parse(JSON.stringify(base.plugins.forms));
+  local.files['wp-content/plugins/forms/forms.php'] = base.files['wp-content/plugins/forms/forms.php'];
+  local.files['wp-content/uploads/banner'] = { type: 'directory' };
+  local.db.wp_posts['ID:49'] = {
+    ID: 49,
+    post_title: 'Local child menu item swap removal',
+    post_content: 'Local child menu item swap removal content',
+    post_status: 'publish',
+    post_type: 'nav_menu_item',
+    menu_item_parent: 50,
+  };
+  local.db.wp_posts['ID:50'] = {
+    ID: 50,
+    post_title: 'Local same-plan menu item swap removal',
+    post_content: 'Local same-plan menu item swap removal content',
+    post_status: 'publish',
+    post_type: 'nav_menu_item',
+  };
+
+  const remote = baseSite();
+  remote.files['wp-content/uploads/banner'] = { type: 'directory' };
+  remote.db.wp_posts['ID:49'] = JSON.parse(JSON.stringify(base.db.wp_posts['ID:49']));
+  delete remote.plugins.forms;
+  delete remote.files['wp-content/plugins/forms/forms.php'];
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.class === 'unsupported-navigation-resource' && entry.resourceKey === targetResourceKey);
+  const matchingSwap = decisionFor(plan, 'file:wp-content/uploads/banner');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(decisionFor(plan, targetResourceKey), undefined);
+  assert.equal(plan.conflicts.length, 0);
+  assert.equal(blocker.class, 'unsupported-navigation-resource');
+  assert.equal(blocker.resourceKey, targetResourceKey);
+  assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_posts","ID:50"] is created in the same plan as a menu item parent target that depends on it, and identity rewriting is not yet supported.');
+  assert.equal(matchingSwap.decision, 'already-in-sync');
+  assert.equal(matchingSwap.change.localChange, 'type-change');
+  assert.equal(matchingSwap.change.remoteChange, 'type-change');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('Local same-plan menu item swap removal content'), false);
+  assert.equal(planJson.includes('Local child menu item swap removal content'), false);
+  assert.equal(planJson.includes('base plugin forms'), false);
+  assert.equal(remote.plugins.forms, undefined);
+  assert.equal(remote.files['wp-content/plugins/forms/forms.php'], undefined);
+});
+
 test('blocks local nav menu item parent references to a same-plan created menu item while preserving remote-only plugin removals', () => {
   const resourceKey = 'row:["wp_posts","ID:49"]';
   const targetResourceKey = 'row:["wp_posts","ID:50"]';
