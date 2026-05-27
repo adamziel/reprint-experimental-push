@@ -899,6 +899,21 @@ function reprint_push_lab_rest_fail_closed_checked_db_journal_acceptance(
         }
     }
 
+    if (
+        is_array($checked_summary)
+        && reprint_push_lab_rest_checked_claim_evidence_conflicts(
+            $premerge_db_journal,
+            $checked_summary
+        )
+    ) {
+        $db_journal['acceptedOnCheckedBoundary'] = false;
+        if (is_array($premerge_db_journal) && array_key_exists('claimEvidence', $premerge_db_journal)) {
+            $db_journal['claimEvidence'] = $premerge_db_journal['claimEvidence'];
+        } else {
+            unset($db_journal['claimEvidence']);
+        }
+    }
+
     return $db_journal;
 }
 
@@ -982,6 +997,83 @@ function reprint_push_lab_rest_checked_latest_row_field_conflicts(
     foreach ($keys as $key) {
         $existing_value = isset($existing_row[$key]) ? (string) $existing_row[$key] : '';
         $checked_value = isset($checked_row[$key]) ? (string) $checked_row[$key] : '';
+        if ($existing_value !== '' && $checked_value !== '' && $existing_value !== $checked_value) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+function reprint_push_lab_rest_checked_claim_evidence_conflicts(
+    ?array $premerge_db_journal,
+    ?array $checked_summary
+): bool {
+    if (!is_array($premerge_db_journal) || !is_array($checked_summary)) {
+        return false;
+    }
+
+    if (
+        ($premerge_db_journal['acceptedOnCheckedBoundary'] ?? false) !== true
+        || ($checked_summary['acceptedOnCheckedBoundary'] ?? false) !== true
+    ) {
+        return false;
+    }
+
+    $premerge_claim_evidence = isset($premerge_db_journal['claimEvidence']) && is_array($premerge_db_journal['claimEvidence'])
+        ? $premerge_db_journal['claimEvidence']
+        : null;
+    $checked_claim_evidence = isset($checked_summary['claimEvidence']) && is_array($checked_summary['claimEvidence'])
+        ? $checked_summary['claimEvidence']
+        : null;
+    if (!is_array($premerge_claim_evidence) || !is_array($checked_claim_evidence)) {
+        return false;
+    }
+
+    foreach ([
+        'activeRow' => ['sequence', 'event', 'claimKeyHash', 'idempotencyKeyHash', 'requestHash'],
+        'abandonedRow' => ['sequence', 'event', 'claimKeyHash', 'idempotencyKeyHash', 'requestHash', 'startedCursor', 'claimCursor'],
+        'previousRow' => ['sequence', 'event', 'claimKeyHash', 'idempotencyKeyHash', 'requestHash'],
+    ] as $evidence_key => $keys) {
+        $premerge_row = isset($premerge_claim_evidence[$evidence_key]) && is_array($premerge_claim_evidence[$evidence_key])
+            ? $premerge_claim_evidence[$evidence_key]
+            : null;
+        $checked_row = isset($checked_claim_evidence[$evidence_key]) && is_array($checked_claim_evidence[$evidence_key])
+            ? $checked_claim_evidence[$evidence_key]
+            : null;
+
+        if (is_array($premerge_row) && is_array($checked_row)) {
+            if (reprint_push_lab_rest_checked_claim_evidence_row_conflicts($premerge_row, $checked_row, $keys)) {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
+function reprint_push_lab_rest_checked_claim_evidence_row_conflicts(
+    array $existing_row,
+    array $checked_row,
+    array $keys
+): bool {
+    foreach ($keys as $key) {
+        $existing_value = $existing_row[$key] ?? null;
+        $checked_value = $checked_row[$key] ?? null;
+
+        if (in_array($key, ['sequence'], true)) {
+            if (
+                reprint_push_lab_db_journal_is_positive_int($existing_value)
+                && reprint_push_lab_db_journal_is_positive_int($checked_value)
+                && (int) $existing_value !== (int) $checked_value
+            ) {
+                return true;
+            }
+            continue;
+        }
+
+        $existing_value = is_string($existing_value) ? $existing_value : '';
+        $checked_value = is_string($checked_value) ? $checked_value : '';
         if ($existing_value !== '' && $checked_value !== '' && $existing_value !== $checked_value) {
             return true;
         }
