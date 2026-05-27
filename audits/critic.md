@@ -1,43 +1,46 @@
 # Critic Verdict
 
-Current reliable head: `fd2028238478d4a1b3c88b1cdbf7ba104c1a9d36`
+Current reliable head: `e74532ecc4027ce0ab28aa86f2b167cda217dfc5`
+(`Include apply revalidation in verify release`).
+
+Previous classified reliable head: `fd2028238478d4a1b3c88b1cdbf7ba104c1a9d36`
 (`Fail closed on malformed auth identity drift`).
 
 Verdict: `0/4`
 
 Reason:
 
-- This head adds more fail-closed auth envelope validation inside
-  `src/authenticated-http-push-client.js` and extends
-  `test/authenticated-http-push-client.test.js` to cover it. The new checks now
-  reject malformed `auth.identity.userLogin` on the production-session path at
-  preflight, dry-run, apply, recovery inspect, replay, and db-journal reads,
-  and `describeAuthEnvelopeDrift()` now reports malformed observed envelope
-  fields with explicit `field` metadata for `auth.identity.userLogin` and
-  `auth.session.id/type/status/expiresAt`.
-- The added tests prove only that the checked client path fails closed sooner
-  when the response envelope is malformed. They cover array-valued
-  `auth.identity.userLogin` and whitespace-padded checked-path session ids,
-  yielding `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED` with observations such
-  as `invalid-user-login` and `invalid-id`.
-- There is no new production-owned proof artifact beyond that hardening. I did
-  not find a reliable final note/log beyond the commit itself and the code
-  diff, and neither the diff nor the tests introduce a real Reprint endpoint
-  mutation boundary, live auth/session issuance and restart readback, durable
-  journal persistence with lease fencing, or apply-time revalidation outside
-  the Playground/package-mode scaffolding. Verdict therefore remains `0/4`.
+- I repolled `origin/lane/reliable-executor` and confirmed it points at
+  `e74532ecc4027ce0ab28aa86f2b167cda217dfc5`.
+- The `fd202823..e74532ec` diff changes only `package.json` and
+  `test/protocol-fixtures.test.js`. It inserts
+  `npm run test:playground:production-shaped-apply-revalidation` into the
+  `verify:release` script and updates the fixture pin so the checked release
+  entrypoint asserts that exact command string.
+- That is real harness tightening for `R16` style release-suite coverage, but
+  it does not close a supervised release gate by itself. The newly pinned leg
+  is still a Playground/package-mode smoke (`production-shaped-apply-revalidation-smoke.mjs`)
+  under the same compatibility-evidence boundary called out in
+  `audits/release-gate.md`, `audits/critic-release-gate.md`, and
+  `audits/critic-production-checklist.md`.
+- The blocker that kept `fd202823` at `0/4` is still open. This head does not
+  add the missing production-owned source mutation boundary on the real Reprint
+  endpoint, does not prove live auth/session issuance and readback on that
+  endpoint, does not prove restart-readable durable journal storage with
+  lease fencing at the production-owned boundary, and does not move
+  apply-time revalidation outside Playground verifier scaffolding.
+- The tracked reliable final note is not a new proof artifact for this head.
+  `e74532ec:.lane-output/final.md` still describes the earlier recovery-journal
+  / auth-session pass and does not mention the `verify:release` wiring change,
+  so the only commit-specific evidence here is the two-file diff above.
 
-Next owner / command:
+Next exact reliable-owned primitive:
 
-- `main:reliable-exec` should land the next exact primitive beyond malformed
-  auth identity drift hardening: a production-owned, non-lab-backed source
-  mutation boundary on the real Reprint endpoint that mints a live auth
-  session on the endpoint, reads the same session back after restart from
-  durable journal storage, proves lease-fenced ownership of those persisted
-  journal rows, and revalidates that session at apply time before the first
-  mutation without falling back to Playground package-mode scaffolding. The
-  proof should come through
-  `scripts/playground/production-shaped-release-verify.mjs`,
-  `scripts/playground/push-remote-rest-plugin.php`,
-  `src/recovery-journal.js`, and `src/authenticated-http-push-client.js` with
-  `timeout 300s npm run verify:release`.
+- `main:reliable-exec` still needs to land one production-owned, non-lab-backed
+  release boundary on the real Reprint endpoint where the checked release
+  command mints a live auth session, persists it in durable restart-readable
+  journal storage with lease-fenced ownership, reads it back after restart, and
+  revalidates that same session at apply time before the first mutation without
+  falling back to Playground package-mode verifier scaffolding. Until that
+  primitive exists, adding more Playground legs to `verify:release` does not
+  advance the supervised gate beyond `0/4`.
