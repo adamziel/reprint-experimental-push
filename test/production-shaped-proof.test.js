@@ -2897,6 +2897,27 @@ test('packaged production plugin runtime source binding preserves the prior comm
   );
 });
 
+test('packaged production plugin runtime source binding drops malformed prior commands', () => {
+  assert.deepEqual(
+    bindPackagedProductionPluginRuntimeSource({
+      sourceUrl: 'http://127.0.0.1:8080',
+      authSessionSource: {
+        ok: false,
+        error: 'missing auth session source',
+      },
+      authSessionSourceCommand: { command: 'stale-command' },
+      runtimeSourceUrl: 'http://127.0.0.1:49152',
+    }),
+    {
+      sourceUrl: 'http://127.0.0.1:49152',
+      authSessionSource: {
+        ok: false,
+        error: 'missing auth session source',
+      },
+    },
+  );
+});
+
 test('production auth/session lifecycle helper requires an active unexpired packaged session', () => {
   assert.deepEqual(
     evaluateProductionAuthSessionLifecycle({

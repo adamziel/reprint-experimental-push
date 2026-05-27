@@ -71,19 +71,24 @@ export function bindPackagedProductionPluginRuntimeSource({
   authSessionSourceCommand = '',
   runtimeSourceUrl = '',
 }) {
+  const normalizedAuthSessionSourceCommand = normalizePackagedProductionPluginSourceCommand(
+    authSessionSourceCommand,
+  );
   const normalizedRuntimeSourceUrl = normalizeRuntimeSourceUrl(runtimeSourceUrl);
   if (!normalizedRuntimeSourceUrl) {
     return {
       sourceUrl,
       authSessionSource,
-      ...(authSessionSourceCommand ? { authSessionSourceCommand } : {}),
+      ...(normalizedAuthSessionSourceCommand
+        ? { authSessionSourceCommand: normalizedAuthSessionSourceCommand }
+        : {}),
     };
   }
 
   const runtimeAuthSessionSourceCommand = buildRuntimePackagedProductionPluginSourceCommand({
     runtimeSourceUrl: normalizedRuntimeSourceUrl,
     authSessionSource,
-    authSessionSourceCommand,
+    authSessionSourceCommand: normalizedAuthSessionSourceCommand,
   });
 
   return {
@@ -96,8 +101,8 @@ export function bindPackagedProductionPluginRuntimeSource({
       : authSessionSource,
     ...(runtimeAuthSessionSourceCommand
       ? { authSessionSourceCommand: runtimeAuthSessionSourceCommand }
-      : authSessionSourceCommand
-        ? { authSessionSourceCommand }
+      : normalizedAuthSessionSourceCommand
+        ? { authSessionSourceCommand: normalizedAuthSessionSourceCommand }
         : {}),
   };
 }
@@ -131,4 +136,17 @@ function buildRuntimePackagedProductionPluginSourceCommand({
   } catch {
     return authSessionSourceCommand || '';
   }
+}
+
+function normalizePackagedProductionPluginSourceCommand(value) {
+  if (typeof value !== 'string') {
+    return '';
+  }
+
+  const normalized = value.trim();
+  if (!normalized || normalized !== value || /[\u0000-\u001f\u007f]/.test(normalized)) {
+    return '';
+  }
+
+  return normalized;
 }
