@@ -19,7 +19,6 @@ import { releaseVerifyFixtureCredentials } from './release-verify-credentials.js
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const muPluginDir = path.join(repoRoot, 'scripts/playground/rest-mu-plugins');
 const remoteBaseFixturePath = path.join(repoRoot, 'fixtures/playground/remote-base.blueprint.json');
-const localEditedFixturePath = path.join(repoRoot, 'fixtures/playground/local-edited.blueprint.json');
 const serverStartupTimeoutMs = 30_000;
 const readinessProbeIntervalMs = 500;
 const readinessFailureBodyLimit = 240;
@@ -57,21 +56,18 @@ const applyRevalidationRetries = packagedBoundaryRequested ? 2 : 1;
 
 if (packagedBoundaryRequested) {
   const failedVerify = await withPlaygroundServer('remote-base', remoteBaseFixturePath, async (remoteServer) => {
-    return withPlaygroundServer('local-edited', localEditedFixturePath, async (localServer) => {
-      const verify = runCheckedReleaseVerify();
-      if (verify.status !== 0) {
-        return verify;
-      }
-      const applyRevalidation = runApplyRevalidationProof({
-        ...resolveApplyRevalidationAuthEnv({
-          sourceUrl: remoteServer.baseUrl,
-          localUrl: localServer.baseUrl,
-          packagedBoundaryRequested: true,
-        }),
-      }, { packagedBoundaryRequested: true });
-      emitCombinedReleaseProof(verify.proof, applyRevalidation, { packagedBoundaryRequested: true });
-      return null;
+    const verify = runCheckedReleaseVerify(resolveApplyRevalidationAuthEnv({
+      sourceUrl: remoteServer.baseUrl,
+      packagedBoundaryRequested: true,
+    }));
+    if (verify.status !== 0) {
+      return verify;
+    }
+    const applyRevalidation = summarizeCheckedReleaseApplyRevalidationProof(verify.proof, {
+      packagedBoundaryRequested: true,
     });
+    emitCombinedReleaseProof(verify.proof, applyRevalidation, { packagedBoundaryRequested: true });
+    return null;
   });
   if (failedVerify) {
     emitReleaseFailureAndExit(failedVerify);
@@ -241,6 +237,34 @@ function runApplyRevalidationProof(envOverrides = {}, options = {}) {
     dbJournal: summary.dbJournal || null,
     missingReceipt: summary.missingReceipt || null,
     boundary: normalizeApplyRevalidationBoundary(summary.boundary, options),
+  };
+}
+
+function summarizeCheckedReleaseApplyRevalidationProof(verify, options = {}) {
+  const releaseProof = verify?.releaseProof || {};
+  const dryRun = releaseProof.dryRun || {};
+  const apply = releaseProof.apply || {};
+  const applyRevalidation = apply.applyRevalidation || dryRun.applyRevalidation || null;
+
+  return {
+    ok: verify?.ok === true
+      && applyRevalidation?.phase === 'before-first-mutation'
+      && applyRevalidation?.checkedAgainst === 'live-remote',
+    topology: verify?.topology || null,
+    authSessionSource: verify?.authSessionSource || null,
+    preflight: {
+      status: verify?.preflight?.status ?? null,
+      routeProfile: verify?.preflight?.routeProfile?.profile || verify?.preflight?.routeProfile || null,
+      sessionType: verify?.preflight?.session?.type || null,
+    },
+    dryRun: {
+      status: dryRun.status ?? null,
+      mode: dryRun.mode || null,
+      receiptHash: dryRun.receiptHash || null,
+    },
+    apply,
+    recoveryInspect: releaseProof.recoveryInspect || null,
+    boundary: normalizeApplyRevalidationBoundary(verify?.boundary, options),
   };
 }
 

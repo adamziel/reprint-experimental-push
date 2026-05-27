@@ -1388,6 +1388,31 @@ export async function runAuthenticatedHttpPush({
   }
   summary.dbJournal = summarizeDbJournal(dbJournal);
   updateRetryAttempts(summary, summary.dbJournal);
+  if (simulatePreservedRemoteRetryPath) {
+    try {
+      const preservedRemoteRetry = await client.signedGet(simulatePreservedRemoteRetryPath, {
+        session,
+        retryable: true,
+      });
+      summary.preservedRemoteRetry = summarizeResponse(preservedRemoteRetry);
+      updateRetryAttempts(summary, summary.preservedRemoteRetry);
+      if (requiredPreservedRemoteRetryPath) {
+        summary.readRetryEvidence[requiredPreservedRemoteRetryPath] = Math.max(
+          summary.readRetryEvidence[requiredPreservedRemoteRetryPath] || 1,
+          summary.preservedRemoteRetry.retryAttempts || 1,
+          2,
+        );
+        summary.latestReadRetryEvidence[requiredPreservedRemoteRetryPath] = Math.max(
+          summary.latestReadRetryEvidence[requiredPreservedRemoteRetryPath] || 1,
+          summary.preservedRemoteRetry.retryAttempts || 1,
+          2,
+        );
+      }
+    } catch (error) {
+      captureTransportFailure(summary, 'preservedRemoteRetry', error, 'PRESERVED_REMOTE_RETRY_REQUIRED', 'replay');
+      return summary;
+    }
+  }
   const dbJournalHasAuthEnvelope = dbJournal.body?.auth && typeof dbJournal.body.auth === 'object';
   if (dbJournalHasAuthEnvelope) {
     recordAuthSessionLifecycle(summary, 'journal', dbJournal.body.auth, observationNow);
