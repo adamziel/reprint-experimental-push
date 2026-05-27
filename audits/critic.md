@@ -1,20 +1,19 @@
 # Critic Verdict
 
-Current reliable head: `22e1eb7bb37846fb379e6ea7e71a73304235e3da`
-(`Carry auth identity user id through lifecycle`).
+Current reliable head: `e9a7b19ac4ac3dad32c1672712f6825946632818`
+(`Fence inherited durable claim markers`).
 
 Verdict: `0/4`
 
 Reason:
 
-- This head requires authenticated identity `userId` continuity across the
-  checked auth/session lifecycle, including preserved reads and journaled
-  replay surfaces. That is useful fail-closed hardening of the verifier/client
-  boundary.
-- The new tests prove the lifecycle summary fails closed when a preserved
-  read changes `auth.identity.userId`, but they still run inside the checked
-  harness/client proof surface rather than a production-owned real Reprint
-  endpoint.
+- This head hardens the checked durable-journal contract by rejecting inherited
+  claim-marker fields, including inherited active claim markers on the
+  boundary input. That is useful fail-closed support for the release verifier
+  and recovery surface.
+- The new tests prove the boundary closes when those markers come from
+  prototype inheritance, but they still run inside the checked recovery/journal
+  proof surface rather than a production-owned real Reprint endpoint.
 - This head therefore does not close any supervised release gate. The missing
   primitive remains a real endpoint proof that issues and reads back a live
   auth session, persists it in restart-readable durable journal storage with
@@ -23,8 +22,8 @@ Reason:
 
 Next owner / command:
 
-- `main:reliable-exec` should land the next exact primitive beyond auth
-  identity user-id continuity hardening: a production-owned, non-lab-backed
+- `main:reliable-exec` should land the next exact primitive beyond inherited
+  claim-marker fencing: a production-owned, non-lab-backed
   source-mutation/auth-session boundary on the real Reprint endpoint that
   issues a live session, reads it back after restart from durable journal
   storage, enforces lease-fenced ownership of those journal rows, and
