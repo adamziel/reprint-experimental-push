@@ -5126,6 +5126,7 @@ test('db journal claim summary preserves active and previous claim identity for 
     abandonedEvent: 'stale-claim-abandoned',
     previousStartedSequence: 12,
     previousClaimId: 'retry-claim-id-01',
+    previousClaimHash: '79c7be3934690cbf6c39de9c6b4c84f8aee882c25d251b554f73557df5c8d895',
     previousClaimSequence: 11,
     previousClaimKeyHash: 'retry-claim-hash-01',
     previousClaimEvent: 'idempotency-opened',

@@ -827,7 +827,9 @@ function reprint_push_lab_db_journal_claim_summary(
     if (is_array($previous_claim_row) && !empty($previous_claim_row)) {
         $previous_claim_key_hash = (string) ($previous_claim_row['claimKeyHash'] ?? '');
         if ($previous_claim_key_hash !== '') {
-            $summary['previousClaimId'] = reprint_push_lab_db_journal_claim_id_from_row($previous_claim_row);
+            $previous_claim_id = reprint_push_lab_db_journal_claim_id_from_row($previous_claim_row);
+            $summary['previousClaimId'] = $previous_claim_id;
+            $summary['previousClaimHash'] = reprint_push_lab_db_journal_claim_hash($previous_claim_id);
             $summary['previousClaimKeyHash'] = $previous_claim_key_hash;
             $summary['previousClaimSequence'] = (int) ($previous_claim_row['sequence'] ?? 0);
             $summary['previousClaimEvent'] = (string) ($previous_claim_row['event'] ?? '');
@@ -939,6 +941,10 @@ function reprint_push_lab_db_journal_claim_contract_matches($claim): bool
         && is_bool($stale_claim_rejected)
         && (!$has_previous_claim_identity || (
             reprint_push_lab_db_journal_non_empty_string($claim['previousClaimId'] ?? null)
+            && reprint_push_lab_db_journal_claim_hash_matches_id(
+                $claim['previousClaimHash'] ?? null,
+                $claim['previousClaimId'] ?? null
+            )
             &&
             reprint_push_lab_db_journal_non_empty_string($claim['previousClaimKeyHash'] ?? null)
             && reprint_push_lab_db_journal_is_positive_int($claim['previousClaimSequence'] ?? null)
@@ -1583,6 +1589,20 @@ function reprint_push_lab_db_journal_checked_boundary_scope_matches($scope): boo
 function reprint_push_lab_db_journal_non_empty_string($value): bool
 {
     return is_string($value) && $value !== '';
+}
+
+function reprint_push_lab_db_journal_claim_hash($claim_id): string
+{
+    return reprint_push_lab_db_journal_non_empty_string($claim_id)
+        ? hash('sha256', $claim_id)
+        : '';
+}
+
+function reprint_push_lab_db_journal_claim_hash_matches_id($claim_hash, $claim_id): bool
+{
+    return reprint_push_lab_db_journal_non_empty_string($claim_id)
+        && reprint_push_lab_db_journal_non_empty_string($claim_hash)
+        && (string) $claim_hash === reprint_push_lab_db_journal_claim_hash($claim_id);
 }
 
 function reprint_push_lab_db_journal_is_positive_int($value): bool
