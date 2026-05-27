@@ -433,6 +433,36 @@ export function buildProductionPluginPackageProofSummary(
       requestedStatus: requestedScenarioStatuses['driver-registration-guards'] ?? null,
       requestedBundleStatus: requestedBundleStatuses.driverRegistrationGuards ?? null,
     },
+    callbackGuards: {
+      requested: normalizedRequestedScenarios === null
+        ? true
+        : normalizedRequestedScenarios.includes('driver-callback-guards'),
+      selected: selectedScenarios === null
+        || scenarioGroups['driver-callback-guards'].every((scenario) => selectedScenarios.has(scenario)),
+      ok: bundleResults.driverCallbackGuards === 'passed',
+      status: bundleResults.driverCallbackGuards,
+      exportStatus: scenarioResults.driverMissingExportGuard,
+      applyStatus: scenarioResults.driverMissingApplyGuard,
+      validateStatus: scenarioResults.driverMissingValidateGuard,
+      requestedStatus: requestedScenarioStatuses['driver-callback-guards'] ?? null,
+      requestedBundleStatus: requestedBundleStatuses.driverCallbackGuards ?? null,
+    },
+    registrationShapeGuards: {
+      requested: normalizedRequestedScenarios === null
+        ? true
+        : normalizedRequestedScenarios.includes('driver-registration-shape-guards'),
+      selected: selectedScenarios === null
+        || scenarioGroups['driver-registration-shape-guards'].every((scenario) => selectedScenarios.has(scenario)),
+      ok: bundleResults.driverRegistrationShapeGuards === 'passed',
+      status: bundleResults.driverRegistrationShapeGuards,
+      missingNameStatus: scenarioResults.driverMissingNameGuard,
+      missingPluginOwnerStatus: scenarioResults.driverMissingPluginOwnerGuard,
+      missingTableStatus: scenarioResults.driverMissingTableGuard,
+      duplicateNameStatus: scenarioResults.driverDuplicateNameGuard,
+      duplicateTableStatus: scenarioResults.driverDuplicateTableGuard,
+      requestedStatus: requestedScenarioStatuses['driver-registration-shape-guards'] ?? null,
+      requestedBundleStatus: requestedBundleStatuses.driverRegistrationShapeGuards ?? null,
+    },
     bundles: bundleResults,
     scenarios: scenarioResults,
   };

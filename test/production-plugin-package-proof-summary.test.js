@@ -590,6 +590,47 @@ test('plugin-driver proof summary scopes requested bundle verdicts to requested 
   });
 });
 
+test('plugin-driver proof summary reports requested callback bundle verdicts directly', () => {
+  const summary = buildProductionPluginPackageProofSummary(
+    {
+      driverExportGuard: {
+        missingExportRowsCallback: true,
+      },
+      driverApplyGuard: {
+        missingApplyRowCallback: true,
+      },
+      driverValidateGuard: {
+        missingValidateMutationCallback: true,
+      },
+    },
+    {
+      requestedScenarios: ['driver-callback-guards'],
+      selectedScenarios: new Set(scenarioGroups['driver-callback-guards']),
+    },
+  );
+
+  assert.equal(summary.requestedScenariosSatisfied, true);
+  assert.equal(summary.requestedBundlesSatisfied, true);
+  assert.deepEqual(summary.requestedScenarioStatuses, {
+    'driver-callback-guards': 'passed',
+  });
+  assert.deepEqual(summary.requestedBundleStatuses, {
+    driverCallbackGuards: 'passed',
+  });
+  assert.equal(summary.bundles.driverCallbackGuards, 'passed');
+  assert.deepEqual(summary.callbackGuards, {
+    requested: true,
+    selected: true,
+    ok: true,
+    status: 'passed',
+    exportStatus: 'passed',
+    applyStatus: 'passed',
+    validateStatus: 'passed',
+    requestedStatus: 'passed',
+    requestedBundleStatus: 'passed',
+  });
+});
+
 test('plugin-driver proof summary exposes bounded release-proof bundle status', () => {
   const summary = buildProductionPluginPackageProofSummary(
     {
@@ -761,6 +802,55 @@ test('plugin-driver proof summary reports requested verifier bundle verdicts dir
     exportStatus: 'passed',
     applyStatus: 'passed',
     validateStatus: 'passed',
+    missingNameStatus: 'passed',
+    missingPluginOwnerStatus: 'passed',
+    missingTableStatus: 'passed',
+    duplicateNameStatus: 'passed',
+    duplicateTableStatus: 'passed',
+    requestedStatus: 'passed',
+    requestedBundleStatus: 'passed',
+  });
+});
+
+test('plugin-driver proof summary reports requested registration-shape bundle verdicts directly', () => {
+  const summary = buildProductionPluginPackageProofSummary(
+    {
+      driverMissingNameGuard: {
+        missingDriverName: true,
+      },
+      driverPluginOwnerGuard: {
+        missingPluginOwner: true,
+      },
+      driverMissingTableGuard: {
+        missingTable: true,
+      },
+      driverDuplicateNameGuard: {
+        duplicateDriverName: true,
+      },
+      driverDuplicateTableGuard: {
+        duplicateTable: true,
+      },
+    },
+    {
+      requestedScenarios: ['driver-registration-shape-guards'],
+      selectedScenarios: new Set(scenarioGroups['driver-registration-shape-guards']),
+    },
+  );
+
+  assert.equal(summary.requestedScenariosSatisfied, true);
+  assert.equal(summary.requestedBundlesSatisfied, true);
+  assert.deepEqual(summary.requestedScenarioStatuses, {
+    'driver-registration-shape-guards': 'passed',
+  });
+  assert.deepEqual(summary.requestedBundleStatuses, {
+    driverRegistrationShapeGuards: 'passed',
+  });
+  assert.equal(summary.bundles.driverRegistrationShapeGuards, 'passed');
+  assert.deepEqual(summary.registrationShapeGuards, {
+    requested: true,
+    selected: true,
+    ok: true,
+    status: 'passed',
     missingNameStatus: 'passed',
     missingPluginOwnerStatus: 'passed',
     missingTableStatus: 'passed',
@@ -1577,6 +1667,30 @@ test('plugin-driver proof summary fails requested bundles when the selected proo
     exportStatus: 'passed',
     applyStatus: 'passed',
     validateStatus: 'passed',
+    missingNameStatus: 'passed',
+    missingPluginOwnerStatus: 'passed',
+    missingTableStatus: 'passed',
+    duplicateNameStatus: 'passed',
+    duplicateTableStatus: 'skipped',
+    requestedStatus: null,
+    requestedBundleStatus: null,
+  });
+  assert.deepEqual(summary.callbackGuards, {
+    requested: false,
+    selected: true,
+    ok: false,
+    status: 'skipped',
+    exportStatus: 'passed',
+    applyStatus: 'passed',
+    validateStatus: 'passed',
+    requestedStatus: null,
+    requestedBundleStatus: null,
+  });
+  assert.deepEqual(summary.registrationShapeGuards, {
+    requested: false,
+    selected: false,
+    ok: false,
+    status: 'skipped',
     missingNameStatus: 'passed',
     missingPluginOwnerStatus: 'passed',
     missingTableStatus: 'passed',
