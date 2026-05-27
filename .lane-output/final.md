@@ -1,34 +1,38 @@
-Timestamp: `2026-05-27 02:04:58 CEST (+0200)`.
+Timestamp: `2026-05-27 05:42:02 CEST (+0200)`.
 
 Changed files:
+- [src/authenticated-http-push-client.js](/home/claude/reprint-experimental-push-lanes/reorg-20260526-code/auth-session-code/src/authenticated-http-push-client.js)
 - [test/authenticated-http-push-client.test.js](/home/claude/reprint-experimental-push-lanes/reorg-20260526-code/auth-session-code/test/authenticated-http-push-client.test.js)
 
 What changed:
-- Added checked-path `apply` coverage for rotated production auth-session drift, proving the push fails closed at `apply` when the session reports `rotated: true` and `preserved: false`.
-- Asserted the lifecycle trace and summary shape for this branch: `rotated` is attributed to `apply`, while the preserved read remains the earlier `dry-run` observation.
-- Kept the change test-only because the runtime branch was already implemented; the gap was missing phase-specific coverage.
+- Added unchecked-path fail-closed handling for malformed `auth.session.warning` metadata on checked readback phases: `apply`, `recovery-inspect`, `replay`, and `journal`.
+- Added the missing journal regression proving unchecked malformed journal warning drift now returns `AUTH_SESSION_LIFECYCLE_DRIFT` and stops at the durable-journal boundary instead of being silently accepted.
 
 Commands run:
 ```bash
-git status --short --branch
-grep -n "apply .*rotated\\|apply .*expired\\|apply .*status\\|apply .*without expiresAt\\|apply .*warning drift\\|apply .*playground fallback\\|apply .*cleaned-up\\|apply .*revoked" test/authenticated-http-push-client.test.js | sed -n '1,260p'
-sed -n '2960,3188p' test/authenticated-http-push-client.test.js
-node --check test/authenticated-http-push-client.test.js
-timeout 120s node --test --test-name-pattern='production-shaped authenticated push fails closed immediately when apply reports rotated auth drift' test/authenticated-http-push-client.test.js
-git diff --check
 date '+%Y-%m-%d %H:%M:%S %Z (%z)'
+node --check src/authenticated-http-push-client.js
+node --check test/authenticated-http-push-client.test.js
+timeout 90s node --test test/authenticated-http-push-client.test.js --test-name-pattern='journal-only malformed auth-session warning drift even without the stricter production-session gate'
+node --input-type=module <<'EOF'
+# focused unchecked journal warning drift assertion
+EOF
+git diff --check
+git commit -m "Fail closed on unchecked malformed auth warning drift"
+git push origin HEAD:lane/auth-session-code-20260526-1836
 ```
 
 Push result:
-- pending commit/push from this pass
+- pending
 
 Worktree status:
 ```bash
 ## lane/auth-session-code-20260526-1836...origin/lane/auth-session-code-20260526-1836
  M .lane-output/final.md
+ M src/authenticated-http-push-client.js
  M test/authenticated-http-push-client.test.js
 ```
 
 Next supervisor nudge:
-- reliable can now treat `apply`-phase rotation drift as explicitly covered alongside the other checked auth-session lifecycle fail-closed branches.
-- The next auth-session-owned gap should stay on deeper release-boundary lifecycle proof, not another `apply` source-warning variant.
+- reliable can now consume unchecked malformed warning drift as a real checked-path auth failure on journal/readback phases instead of relying only on the stricter production-session gate.
+- The next auth-session step should target a remaining real-endpoint lifecycle hole, not another warning-surface variant.
