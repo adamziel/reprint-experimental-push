@@ -996,7 +996,8 @@ test('production-shaped release verify source runs the packaged plugin driver re
   );
 
   assert.match(verifySource, /REPRINT_PUSH_PACKAGE_SMOKE_MODE: 'driver-guard-only'/);
-  assert.match(verifySource, /timeout: 45_000/);
+  assert.match(verifySource, /timeout: 90_000/);
+  assert.match(verifySource, /REPRINT_PUSH_PACKAGE_SMOKE_SCENARIO: 'driver-receipt-guards'/);
   assert.match(verifySource, /packagedRevokedCredentialGuard: summary\.driverReceiptRevokedCredentialGuard \|\| null/);
   assert.match(verifySource, /const packagedPluginDriverProof = packagedSourceFixture\s*\?\s*summarizePackagedPluginDriverProof\(\)\s*:\s*null;/);
   assert.match(verifySource, /\.\.\.\(packagedPluginDriverProof \? \{ pluginDriver: packagedPluginDriverProof \} : \{\}\)/);

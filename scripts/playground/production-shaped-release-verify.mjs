@@ -2157,7 +2157,7 @@ function summarizePackagedPluginDriverProof() {
       ['scripts/playground/production-plugin-package-smoke.mjs'],
       {
         cwd: repoRoot,
-        timeout: 130_000,
+        timeout: 90_000,
         killSignal: 'SIGKILL',
         encoding: 'utf8',
         maxBuffer: 1024 * 1024 * 20,
@@ -2165,7 +2165,11 @@ function summarizePackagedPluginDriverProof() {
           ...process.env,
           NODE_NO_WARNINGS: '1',
           REPRINT_PUSH_PACKAGE_SMOKE_MODE: 'driver-guard-only',
-          REPRINT_PUSH_PACKAGE_SMOKE_SCENARIO: 'driver-verifier-guards',
+          // The checked release verifier only consumes the revoked-credential
+          // receipt guard summary from package smoke. Keep the broader driver
+          // verifier bundle in `verify:release`, but keep this inline helper
+          // scoped to the one scenario its output actually reads.
+          REPRINT_PUSH_PACKAGE_SMOKE_SCENARIO: 'driver-receipt-guards',
         },
       },
       'packaged plugin driver revoked-credential guard smoke',
