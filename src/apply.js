@@ -187,9 +187,15 @@ export function applyPlan(remote, plan, options = {}) {
         );
         try {
           assertRecoveryStateEnvelope(recoveryState);
-          ensureDurableJournalSupportReport();
+          if (
+            !(
+              durableJournal?.kind === 'production-recovery-journal'
+              && !durableJournalHasPriorRecords(durableJournal)
+            )
+          ) {
+            ensureDurableJournalSupportReport();
+          }
           recordDurableReplay(durableJournal, remote, plan, recoveryState, completedJournal, durableJournalSupportReport);
-          recordDurableRecoveryState(durableJournal, remote, plan, recoveryState, durableJournalSupportReport);
         } catch (error) {
           throw journalWriteFailureFullyUpdated(error, remote, plan, completedJournal, 'journal-replayed');
         }
