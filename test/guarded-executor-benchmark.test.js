@@ -13770,17 +13770,60 @@ test('guarded benchmark surfaces receipt-cursor recovery blockers at runtime', (
     ].includes(entry.id))
     .sort((left, right) => left.id.localeCompare(right.id));
 
-  assert.deepEqual(receiptCursorRecoveryRejectedFastPaths.map(({ id }) => id), [
-    'cached-receipt-cursor-and-queue-budget-match-skips-backpressure-pause-after-retry',
-    'cached-receipt-cursor-and-queue-headroom-skips-backpressure-pause-after-retry',
-    'cached-receipt-cursor-queue-headroom-authorizes-atomic-group-commit-after-retry',
-    'cached-receipt-cursor-queue-slack-authorizes-commit-after-pause',
-    'cached-receipt-cursor-staging-disk-headroom-and-journal-lag-skips-post-pause-replay',
-  ]);
-
-  assert.deepEqual(summarizeRejectedGates(receiptCursorRecoveryRejectedFastPaths), [
-    { rejectedGate: 'recovery', count: 5 },
-  ]);
+  assert.deepEqual(
+    receiptCursorRecoveryRejectedFastPaths.map(({ id, rejectedGate, blockerRefs }) => ({
+      id,
+      rejectedGate,
+      blockerRefs,
+    })),
+    [
+      {
+        id: 'cached-receipt-cursor-and-queue-budget-match-skips-backpressure-pause-after-retry',
+        rejectedGate: 'recovery',
+        blockerRefs: [
+          'memory-ceiling-match-visible-without-queue-slack-visibility',
+          'queue-headroom-visible-without-queue-slack-visibility',
+        ],
+      },
+      {
+        id: 'cached-receipt-cursor-and-queue-headroom-skips-backpressure-pause-after-retry',
+        rejectedGate: 'recovery',
+        blockerRefs: [
+          'memory-ceiling-match-visible-without-queue-slack-visibility',
+          'queue-headroom-visible-without-queue-slack-visibility',
+        ],
+      },
+      {
+        id: 'cached-receipt-cursor-queue-headroom-authorizes-atomic-group-commit-after-retry',
+        rejectedGate: 'recovery',
+        blockerRefs: [
+          'memory-ceiling-match-visible-without-queue-slack-visibility',
+          'queue-headroom-visible-without-queue-slack-visibility',
+        ],
+      },
+      {
+        id: 'cached-receipt-cursor-queue-slack-authorizes-commit-after-pause',
+        rejectedGate: 'recovery',
+        blockerRefs: [
+          'memory-ceiling-match-visible-without-queue-slack-visibility',
+          'queue-headroom-visible-without-queue-slack-visibility',
+          'queue-pause-without-visible-receipt-cursor-queue-slack',
+          'receipt-cursor-memory-headroom-visible-without-queue-slack-visibility',
+        ],
+      },
+      {
+        id: 'cached-receipt-cursor-staging-disk-headroom-and-journal-lag-skips-post-pause-replay',
+        rejectedGate: 'recovery',
+        blockerRefs: [
+          'staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint',
+          'queue-pause-without-resource-headroom-safe-receipt-cursor-backpressure',
+          'queue-pause-without-resource-headroom-safe-receipt-cursor-slack',
+          'queue-pause-without-consistent-receipt-cursor-slack',
+          'queue-pause-without-memory-safe-receipt-cursor-slack',
+        ],
+      },
+    ],
+  );
 });
 
 test('guarded benchmark surfaces retry blockers at runtime', () => {
