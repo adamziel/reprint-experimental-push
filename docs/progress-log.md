@@ -3,6 +3,28 @@
 This log records evidence present in this repository. Public status should use
 release gates and named evidence gaps rather than stale percentage estimates.
 
+# 2026-05-27 - Public Status Audit 05:17:14
+
+<a id="2026-05-27-public-status-audit-051714"></a>
+
+- Refreshed [progress.html](../progress.html) to keep the current reliable
+  head `c0005b7a322d3041317436d054113ea3cb035b8e` visible on the public
+  status surface for the active supervision cycle.
+- Release gates remain `0/4`. The latest reliable head still defaults the
+  checked live branch to the packaged boundary, which is wrapper/boundary-
+  selection plumbing rather than a real production boundary gate move, and it
+  still stops short of the missing production-owned, non-lab-backed source
+  mutation boundary on the real Reprint endpoint: one primitive that owns
+  auth/session issuance/readback, durable restart-readable journal storage with
+  lease fencing, and apply-time revalidation before first mutation.
+- The public page keeps packaged plugin-driver guards pinned into
+  `verify:release` as support evidence, while the packaged-boundary selection
+  change and the production-owned source mutation boundary still block gate
+  movement. The stale percentage bars stay removed.
+- Evidence trail: [progress.html](../progress.html),
+  [objective audit](../audits/objective-audit.md),
+  [release-gate checklist](../progress.html#proof-gates).
+
 # 2026-05-27 - Public Status Audit 05:00:50
 
 <a id="2026-05-27-public-status-audit-050050"></a>
