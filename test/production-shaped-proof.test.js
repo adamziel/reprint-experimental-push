@@ -3330,6 +3330,45 @@ test('packaged timeout fallback helpers preserve packaged startup context for si
   }
 });
 
+test('packaged readiness helpers distinguish signed preflight timeouts after snapshot responses from snapshot timeouts', () => {
+  const smokeSource = readFileSync(
+    path.join(repoRoot, 'scripts/playground/production-plugin-package-smoke.mjs'),
+    'utf8',
+  );
+  const verifierSource = readFileSync(
+    path.join(repoRoot, 'scripts/playground/production-shaped-release-verify.mjs'),
+    'utf8',
+  );
+
+  for (const source of [smokeSource, verifierSource]) {
+    assert.match(
+      source,
+      /activePackagedReadinessPhase === 'preflight' && activeSnapshotProbe !== null/,
+    );
+    assert.match(
+      source,
+      /signed preflight probe timed out after snapshot responded; probing \/wp-json\/ readiness at \$\{baseUrl\}/,
+    );
+    assert.match(
+      source,
+      /const preflightProbe = buildPackagedTimeoutFallbackProbe\('\/wp-json\/reprint\/v1\/push\/preflight', error\);/,
+    );
+    assert.match(
+      source,
+      /const indexProbe = await fetchPackagedWordPressIndexProbe\(baseUrl, child\)\.catch\(\(indexError\) =>\s*buildPackagedTimeoutFallbackProbe\('\/wp-json\/', indexError\),\s*\);/s,
+    );
+    assert.ok(
+      source.includes('Packaged production plugin preflight probe timed out while /wp-json/ kept reporting global WordPress startup HTTP ${indexProbe?.status ?? 0} after ${activeSnapshotNotReadyProbeCount} consecutive startup-shaped snapshot response${activeSnapshotNotReadyProbeCount === 1 ? \'\' : \'s\'} at ${baseUrl}')
+      || source.includes('Packaged production plugin preflight probe timed out while /wp-json/ kept reporting global WordPress startup HTTP ${indexProbe?.status ?? 0} after ${activeSnapshotNotReadyProbeCount} consecutive startup-shaped snapshot response${activeSnapshotNotReadyProbeCount === 1 ? "" : "s"} at ${baseUrl}'),
+      'expected packaged signed preflight timeout branch to retain snapshot-count-aware global-startup diagnostics',
+    );
+    assert.ok(
+      source.includes('Packaged production plugin preflight probe timed out after snapshot responded at ${baseUrl}'),
+      'expected packaged signed preflight timeout branch to distinguish snapshot responses from snapshot timeouts',
+    );
+  }
+});
+
 test('packaged timeout fallback helpers preserve parsed preflight bodies when retryability is recomputed', () => {
   const smokeSource = readFileSync(
     path.join(repoRoot, 'scripts/playground/production-plugin-package-smoke.mjs'),

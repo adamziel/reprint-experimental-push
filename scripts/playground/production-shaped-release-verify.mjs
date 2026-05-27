@@ -1314,6 +1314,9 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
   let lastTimeoutFallbackProbes = null;
   let notReadyProbeCounts = { snapshot: 0, preflight: 0 };
   let timeoutProbeCount = 0;
+  let activePackagedReadinessPhase = 'snapshot';
+  let activeSnapshotProbe = null;
+  let activeSnapshotNotReadyProbeCount = 0;
   const readinessPhases = new Set();
   const noteReadinessPhase = (phase, message) => {
     if (readinessPhases.has(phase)) {
@@ -1339,6 +1342,9 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
       throw new Error(message);
     }
     try {
+      activePackagedReadinessPhase = 'snapshot';
+      activeSnapshotProbe = null;
+      activeSnapshotNotReadyProbeCount = 0;
       noteReadinessPhase('snapshot', `probing packaged snapshot readiness at ${baseUrl}`);
       const { response: snapshot, bodyText: snapshotText } = await fetchTextWithTimeout(`${baseUrl}/wp-json/reprint/v1/push/snapshot`, {
         headers: {
@@ -1358,6 +1364,11 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
         snapshotText,
       );
       const snapshotNotReadyProbeCount = notReadyProbeCounts.snapshot;
+      activeSnapshotProbe = {
+        status: snapshot.status,
+        body: snapshotText,
+      };
+      activeSnapshotNotReadyProbeCount = snapshotNotReadyProbeCount;
       lastProbes.push({
         route: '/wp-json/reprint/v1/push/snapshot',
         status: snapshot.status,
@@ -1371,6 +1382,7 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
         if (packagedProductionPluginReadinessBodyRetryable(snapshot.status, snapshotText)) {
           lastError = new Error(`Production plugin package snapshot readiness HTTP ${snapshot.status}`);
           noteReadinessPhase('preflight-fallback', `snapshot is still startup-shaped; probing signed preflight readiness at ${baseUrl}`);
+          activePackagedReadinessPhase = 'preflight';
           const preflightProbe = await fetchPackagedPreflightProbe(baseUrl, child, {
             packagedStartup: true,
             snapshotProbe: {
@@ -1530,6 +1542,7 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
       })) {
         lastError = new Error(`Production plugin package snapshot readiness HTTP ${snapshot.status}`);
         noteReadinessPhase('preflight-fallback', `snapshot is still startup-shaped; probing signed preflight readiness at ${baseUrl}`);
+        activePackagedReadinessPhase = 'preflight';
         const preflightProbe = await fetchPackagedPreflightProbe(baseUrl, child, {
           packagedStartup: true,
           snapshotProbe: {
@@ -1794,6 +1807,7 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
         'snapshot',
       );
       noteReadinessPhase('preflight', `snapshot responded; probing signed preflight readiness at ${baseUrl}`);
+      activePackagedReadinessPhase = 'preflight';
 
       const { response: preflight, bodyText: preflightText } = await fetchTextWithTimeout(`${baseUrl}/wp-json/reprint/v1/push/preflight`, {
         method: 'GET',
@@ -2108,6 +2122,124 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
         throw error;
       }
       if (packagedProductionPluginReadinessProbeTimedOut(error)) {
+        if (activePackagedReadinessPhase === 'preflight' && activeSnapshotProbe !== null) {
+          noteReadinessPhase('preflight-timeout', `signed preflight probe timed out after snapshot responded; probing /wp-json/ readiness at ${baseUrl}`);
+          const preflightProbe = buildPackagedTimeoutFallbackProbe('/wp-json/reprint/v1/push/preflight', error);
+          const indexProbe = await fetchPackagedWordPressIndexProbe(baseUrl, child).catch((indexError) =>
+            buildPackagedTimeoutFallbackProbe('/wp-json/', indexError),
+          );
+          lastTimeoutFallbackProbes = { preflightProbe, indexProbe };
+          lastProbes.push(preflightProbe);
+          const startupBranch = packagedProductionPluginClassifyTimeoutFallbackStartup(
+            preflightProbe,
+            indexProbe,
+          );
+          if (startupBranch?.kind === 'timed-out-route-wordpress-starting') {
+            if (packagedProductionPluginGlobalStartupStillWithinBudget(activeSnapshotNotReadyProbeCount)) {
+              lastError = error;
+              timeoutProbeCount = 0;
+              await sleepUnlessChildExit(readinessProbeIntervalMs, child);
+              continue;
+            }
+            lastError = error;
+            await throwPlaygroundReadinessFailure(
+              child,
+              `Packaged production plugin preflight probe timed out while /wp-json/ kept reporting global WordPress startup HTTP ${indexProbe?.status ?? 0} after ${activeSnapshotNotReadyProbeCount} consecutive startup-shaped snapshot response${activeSnapshotNotReadyProbeCount === 1 ? '' : 's'} at ${baseUrl}`,
+              lastError,
+              lastProbes,
+              getOutput(),
+              {
+                childPid: child.pid ?? null,
+                packagedProductionPlugin: true,
+                globalWordPressStartup: true,
+                snapshotNotReadyProbeCount: activeSnapshotNotReadyProbeCount,
+              },
+              lastTimeoutFallbackProbes,
+            );
+          }
+          if (startupBranch?.kind === 'timed-out-route-packaged-route-starting') {
+            if (
+              packagedProductionPluginPackagedRouteStartupStillWithinBudget(
+                activeSnapshotNotReadyProbeCount,
+                maxPackagedRouteStartupAfterGlobalReadyProbes,
+              )
+            ) {
+              lastError = error;
+              timeoutProbeCount = 0;
+              await sleepUnlessChildExit(readinessProbeIntervalMs, child);
+              continue;
+            }
+            lastError = error;
+            await throwPlaygroundReadinessFailure(
+              child,
+              `Packaged production plugin preflight probe timed out after global WordPress startup HTTP ${indexProbe?.status ?? 0} following ${activeSnapshotNotReadyProbeCount} consecutive startup-shaped snapshot response${activeSnapshotNotReadyProbeCount === 1 ? '' : 's'} at ${baseUrl}`,
+              lastError,
+              lastProbes,
+              getOutput(),
+              {
+                childPid: child.pid ?? null,
+                packagedProductionPlugin: true,
+                packagedRouteStartup: true,
+                snapshotNotReadyProbeCount: activeSnapshotNotReadyProbeCount,
+              },
+              lastTimeoutFallbackProbes,
+            );
+          }
+          if (startupBranch?.kind === 'timed-out-route-index-timeout') {
+            lastError = error;
+            await throwPlaygroundReadinessFailure(
+              child,
+              `Packaged production plugin preflight probe timed out while /wp-json/ also timed out after snapshot responded at ${baseUrl}`,
+              lastError,
+              lastProbes,
+              getOutput(),
+              {
+                childPid: child.pid ?? null,
+                packagedProductionPlugin: true,
+                indexProbeTimedOut: true,
+                snapshotNotReadyProbeCount: activeSnapshotNotReadyProbeCount,
+              },
+              lastTimeoutFallbackProbes,
+            );
+          }
+          if (startupBranch?.kind === 'timed-out-route-index-terminal') {
+            const malformedIndexBody =
+              packagedProductionPluginMalformedTerminalIndexProbe(indexProbe);
+            lastError = error;
+            await throwPlaygroundReadinessFailure(
+              child,
+              malformedIndexBody
+                ? `Packaged production plugin preflight probe timed out while /wp-json/ returned an invalid readiness body after snapshot responded at ${baseUrl}`
+                : `Packaged production plugin preflight probe timed out while /wp-json/ returned a terminal readiness failure HTTP ${indexProbe?.status ?? 0} after snapshot responded at ${baseUrl}`,
+              lastError,
+              lastProbes,
+              getOutput(),
+              {
+                childPid: child.pid ?? null,
+                packagedProductionPlugin: true,
+                ...(malformedIndexBody ? { invalidReadinessBody: true } : {}),
+                indexTerminal: true,
+                snapshotNotReadyProbeCount: activeSnapshotNotReadyProbeCount,
+              },
+              lastTimeoutFallbackProbes,
+            );
+          }
+          lastError = error;
+          await throwPlaygroundReadinessFailure(
+            child,
+            `Packaged production plugin preflight probe timed out after snapshot responded at ${baseUrl}`,
+            lastError,
+            lastProbes,
+            getOutput(),
+            {
+              childPid: child.pid ?? null,
+              packagedProductionPlugin: true,
+              preflightTimedOutAfterSnapshot: true,
+              snapshotNotReadyProbeCount: activeSnapshotNotReadyProbeCount,
+            },
+            lastTimeoutFallbackProbes,
+          );
+        }
         noteReadinessPhase('timeout-fallback', `snapshot probe timed out; falling back to signed preflight and /wp-json/ readiness probes at ${baseUrl}`);
         const { preflightProbe, indexProbe } = await fetchPackagedTimeoutFallbackProbes(
           baseUrl,
