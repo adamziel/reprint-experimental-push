@@ -704,10 +704,14 @@ try {
   if (packagedSourceFixture) {
     const packagedRuntimeSource = bindPackagedProductionPluginRuntimeSource({
       sourceUrl: liveSourceUrl,
+      authSessionSourceCommand,
       authSessionSource,
+      username,
+      applicationPassword,
       runtimeSourceUrl: remoteServer.baseUrl,
     });
     liveSourceUrl = packagedRuntimeSource.sourceUrl;
+    authSessionSourceCommand = packagedRuntimeSource.authSessionSourceCommand;
     authSessionSource = packagedRuntimeSource.authSessionSource;
   }
 

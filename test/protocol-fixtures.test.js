@@ -4625,6 +4625,15 @@ test('verify:release stays pinned to the checked release entrypoint and proves t
     /"boundary": \{\s*"firstRemainingProductionBoundary": null,\s*"status": "checked",\s*"verdict": "PACKAGED_RELEASE_BOUNDARY_OK"/,
   );
   assert.match(proof.stdout, /"checkedAccepted": true/);
+  assert.match(proof.stdout, /"authSessionSource": \{[\s\S]*"sourceUrl": "http:\/\/127\.0\.0\.1:\d+"/);
+  assert.match(
+    proof.stdout,
+    /"command": "REPRINT_PUSH_PACKAGED_PRODUCTION_PLUGIN=1 [\s\S]*?sourceUrl:'http:\/\/127\.0\.0\.1:\d+[\s\S]*?"/,
+  );
+  assert.doesNotMatch(
+    proof.stdout,
+    /"command": "REPRINT_PUSH_PACKAGED_PRODUCTION_PLUGIN=1 [\s\S]*?sourceUrl:'http:\/\/127\.0\.0\.1:8080[\s\S]*?"/,
+  );
 });
 
 test('verify:release keeps preserved-remote retry pinned at the checked entrypoint', () => {

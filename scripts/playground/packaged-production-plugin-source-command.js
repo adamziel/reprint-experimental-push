@@ -1,4 +1,7 @@
-import { resolveAuthSessionSourceCommand } from './auth-session-source-command.js';
+import {
+  buildAuthSessionSourceCommand,
+  resolveAuthSessionSourceCommand,
+} from './auth-session-source-command.js';
 import { loadAuthSessionSource } from './auth-session-source.js';
 
 export function resolvePackagedProductionPluginSourceCommand({
@@ -82,18 +85,38 @@ export function shouldRequestPackagedProductionPluginAuthSession({
 
 export function bindPackagedProductionPluginRuntimeSource({
   sourceUrl,
+  authSessionSourceCommand = '',
   authSessionSource,
+  username = '',
+  applicationPassword = '',
   runtimeSourceUrl = '',
 }) {
   if (!runtimeSourceUrl) {
     return {
       sourceUrl,
+      authSessionSourceCommand,
       authSessionSource,
     };
   }
 
+  const runtimeUsername = authSessionSource?.ok
+    ? authSessionSource.username
+    : username;
+  const runtimeApplicationPassword = authSessionSource?.ok
+    ? authSessionSource.applicationPassword
+    : applicationPassword;
+
+  const runtimeAuthSessionSourceCommand = runtimeUsername && runtimeApplicationPassword
+    ? `REPRINT_PUSH_PACKAGED_PRODUCTION_PLUGIN=1 ${buildAuthSessionSourceCommand({
+        sourceUrl: runtimeSourceUrl,
+        username: runtimeUsername,
+        applicationPassword: runtimeApplicationPassword,
+      })}`
+    : authSessionSourceCommand;
+
   return {
     sourceUrl: runtimeSourceUrl,
+    authSessionSourceCommand: runtimeAuthSessionSourceCommand,
     authSessionSource: authSessionSource?.ok
       ? {
           ...authSessionSource,
