@@ -2186,6 +2186,7 @@ export function appendRecoveryClaimOpened(journal, {
   return journal.appendEvent('recovery-claim-opened', {
     planId: plan.id,
     state: 'active',
+    claimId,
     claimHash: nextClaimHash,
     claimLease: claimLeasePayloadForJournal(journal, claimId),
     observedHash: digest(current),
@@ -2233,6 +2234,7 @@ export function appendStaleClaimAdvanced(journal, {
   return journal.appendEvent('stale-claim-advanced', {
     planId: plan.id,
     state: 'advanced',
+    claimId,
     previousClaimHash,
     claimHash: nextClaimHash,
     claimLease: claimLeasePayloadForJournal(journal, claimId),
@@ -2392,6 +2394,19 @@ export function classifyRecoveryJournalClaims(records) {
     if (!CLAIM_HASH_PATTERN.test(record.claimHash || '')) {
       return blockedClaimState(record, 'Recovery claim record is missing a valid claim hash.');
     }
+    if (!Object.hasOwn(record, 'claimId')) {
+      return blockedClaimState(record, 'Recovery claim record is missing an explicit claim id.');
+    }
+    if (
+      typeof record.claimId !== 'string'
+      || record.claimId.trim().length === 0
+      || record.claimId.trim() !== record.claimId
+    ) {
+      return blockedClaimState(record, 'Recovery claim record is missing a valid claim id.');
+    }
+    if (record.claimHash !== recoveryClaimHash(record.claimId)) {
+      return blockedClaimState(record, 'Recovery claim record claim id must match the persisted active claim hash.');
+    }
     if (
       record.type === 'stale-claim-advanced'
       && !Object.hasOwn(record, 'previousClaimHash')
@@ -2438,7 +2453,14 @@ export function classifyRecoveryJournalClaims(records) {
     if (
       Object.hasOwn(record, 'claimLease')
       && isValidProductionWriterLease(record.claimLease)
-      && record.claimHash !== recoveryClaimHash(record.claimLease.id)
+      && record.claimId !== record.claimLease.id
+    ) {
+      return blockedClaimState(record, 'Recovery claim record claim id must match the persisted lease identity.');
+    }
+    if (
+      Object.hasOwn(record, 'claimLease')
+      && isValidProductionWriterLease(record.claimLease)
+      && record.claimHash !== recoveryClaimHash(record.claimId)
     ) {
       return blockedClaimState(record, 'Recovery claim record claim lease must match the persisted active claim hash.');
     }
@@ -2449,6 +2471,7 @@ export function classifyRecoveryJournalClaims(records) {
   const latest = claimRecords.at(-1);
   return {
     status: latest.type === 'stale-claim-advanced' ? 'advanced' : 'active',
+    activeClaimId: latest.claimId,
     activeClaimHash: latest.claimHash,
     activeClaimLease: isValidProductionWriterLease(latest.claimLease)
       ? freezeProductionWriterLease(latest.claimLease)
@@ -2587,6 +2610,7 @@ class RecoveryJournalWriter {
 function blockedClaimState(record, reason) {
   return {
     status: 'blocked',
+    activeClaimId: record.claimId || null,
     activeClaimHash: record.claimHash || null,
     activeClaimLease: isValidProductionWriterLease(record.claimLease)
       ? freezeProductionWriterLease(record.claimLease)

@@ -124,6 +124,7 @@ test('file-backed plan journal preserves optional claim identity before planned 
   const restarted = readRecoveryJournal(filePath);
   assert.equal(restarted.integrity.status, 'ok');
   assert.equal(restarted.records[0].type, 'recovery-claim-opened');
+  assert.equal(restarted.records[0].claimId, claimId);
   assert.equal(restarted.records[0].claimHash, recoveryClaimHash(claimId));
   assert.deepEqual(restarted.records[0].claimLease, { id: claimId });
   assert.equal(restarted.records[1].type, 'journal-opened');
@@ -134,6 +135,7 @@ test('file-backed plan journal preserves optional claim identity before planned 
 
   const claim = classifyRecoveryJournalClaims(restarted.records);
   assert.equal(claim.status, 'active');
+  assert.equal(claim.activeClaimId, claimId);
   assert.equal(claim.activeClaimHash, recoveryClaimHash(claimId));
   assert.deepEqual(claim.activeClaimLease, { id: claimId });
 });
@@ -5244,6 +5246,79 @@ test('production recovery journal consumption fails closed when the compatibilit
     assert.equal(error?.details?.activeClaimType, 'recovery-claim-opened');
     return true;
   });
+});
+
+test('production recovery journal claim classification fails closed when a persisted claim omits its explicit claim id', () => {
+  const filePath = tempJournalPath();
+  const remote = baseSite();
+  const plan = planFor(baseSite(), localSite(), remote);
+  const claimId = 'claim-id-missing';
+  const artifactRefs = {
+    journal: filePath,
+  };
+
+  const journal = openProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs,
+    claimId,
+  });
+  appendRecoveryClaimOpened(journal, {
+    plan,
+    current: remote,
+    claimId,
+    artifactRefs,
+  });
+  journal.close();
+
+  const persisted = readRecoveryJournal(filePath);
+  delete persisted.records.at(-1).claimId;
+  fs.writeFileSync(filePath, `${persisted.records.map((record) => JSON.stringify(record)).join('\n')}\n`);
+
+  const claim = classifyRecoveryJournalClaims(readRecoveryJournal(filePath).records);
+  assert.equal(claim.status, 'blocked');
+  assert.equal(claim.activeClaimId, null);
+  assert.equal(claim.activeClaimHash, recoveryClaimHash(claimId));
+  assert.equal(claim.reason, 'Recovery claim record is missing an explicit claim id.');
+});
+
+test('production recovery journal claim classification fails closed when a persisted claim id diverges from its lease identity', () => {
+  const filePath = tempJournalPath();
+  const remote = baseSite();
+  const plan = planFor(baseSite(), localSite(), remote);
+  const claimId = 'claim-id-drifted';
+  const artifactRefs = {
+    journal: filePath,
+  };
+
+  const journal = openProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs,
+    claimId,
+  });
+  appendRecoveryClaimOpened(journal, {
+    plan,
+    current: remote,
+    claimId,
+    artifactRefs,
+  });
+  journal.close();
+
+  const persisted = readRecoveryJournal(filePath);
+  persisted.records.at(-1).claimId = 'claim-id-other';
+  fs.writeFileSync(filePath, `${persisted.records.map((record) => JSON.stringify(record)).join('\n')}\n`);
+
+  const claim = classifyRecoveryJournalClaims(readRecoveryJournal(filePath).records);
+  assert.equal(claim.status, 'blocked');
+  assert.equal(claim.activeClaimId, 'claim-id-other');
+  assert.equal(claim.activeClaimHash, recoveryClaimHash(claimId));
+  assert.equal(
+    claim.reason,
+    'Recovery claim record claim id must match the persisted active claim hash.',
+  );
 });
 
 test('checked durable journal boundary stays closed until stale-claim rejection is proven on the lease fence', () => {
