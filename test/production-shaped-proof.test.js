@@ -5803,6 +5803,20 @@ test('packaged release verifier readiness helper fails closed when signed prefli
         userId: 0,
       },
     },
+    {
+      label: 'non-string auth identity userLogin',
+      identity: {
+        userLogin: 7,
+        userId: 7,
+      },
+    },
+    {
+      label: 'string auth identity userId',
+      identity: {
+        userLogin: 'reprint_push_admin',
+        userId: '7',
+      },
+    },
   ];
 
   for (const { label, identity } of brokenAuthIdentityEnvelopes) {
@@ -9895,6 +9909,20 @@ test('packaged production plugin smoke readiness helper fails closed when signed
       identity: {
         userLogin: 'reprint_push_admin',
         userId: 0,
+      },
+    },
+    {
+      label: 'non-string auth identity userLogin',
+      identity: {
+        userLogin: 7,
+        userId: 7,
+      },
+    },
+    {
+      label: 'string auth identity userId',
+      identity: {
+        userLogin: 'reprint_push_admin',
+        userId: '7',
       },
     },
   ];
