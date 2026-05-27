@@ -895,6 +895,18 @@ export function productionRecoverySupportReport(writer) {
     ) {
       addMissingDependency('supported production recovery journal adapter surface');
     }
+    if (
+      Object.hasOwn(writer ?? {}, 'productionAdapter')
+      && !writerProductionAdapterHidden
+      && writer.productionAdapter === true
+      && (
+        !Object.hasOwn(inspected, 'productionAdapter')
+        || hasHiddenOwnStringProperty(inspected, 'productionAdapter')
+        || inspected.productionAdapter !== true
+      )
+    ) {
+      addMissingDependency('explicit production recovery adapter marker');
+    }
     if (inspectedJournalPath !== writer.journalPath) {
       addMissingDependency('restart-readable recovery artifact location');
     }
@@ -1562,6 +1574,9 @@ function checkedDurableJournalBoundaryProof(
     : null;
   const checkedBoundaryContractAligned = inspectedLeaseFenceBoundaryMatchesWriterContract(inspected);
   const checkedBoundaryBlockedByMissingDependency = missingDependency.length > 0;
+  const inspectedProductionAdapter = Object.hasOwn(inspected ?? {}, 'productionAdapter')
+    && !hasHiddenOwnStringProperty(inspected, 'productionAdapter')
+    && inspected.productionAdapter === true;
   const inspectedSupportedSurface = Object.hasOwn(inspected ?? {}, 'supportedSurface')
     && !hasHiddenOwnStringProperty(inspected, 'supportedSurface')
     && inspected.supportedSurface === 'production-recovery-journal-adapter'
@@ -1725,7 +1740,9 @@ function checkedDurableJournalBoundaryProof(
     ownership: {
       ownsJournal: inspectedOwnsJournal,
       restartReadable: inspectedRestartReadable,
-      productionAdapter: inspectedBoundary,
+      productionAdapter: inspectedProductionAdapter
+        ? inspectedBoundary
+        : null,
       supportedSurface: inspectedSupportedSurface,
     },
     writerLease: hasValidLeaseFenceWriterContract(inspected?.writerLeaseContract)
