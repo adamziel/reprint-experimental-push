@@ -23803,6 +23803,76 @@ test('openProductionRecoveryJournal fails closed when a consumed claim is reopen
   });
 });
 
+test('openProductionRecoveryJournal fails closed when the compatibility overload reopens a consumed claim with a hidden artifactRefs.remote', () => {
+  const base = baseSite();
+  const local = structuredClone(base);
+  local.db.wp_options['option_name:blogname'] = {
+    option_name: 'blogname',
+    option_value: 'Consumed Claim Hidden Compatibility Artifact Refs Remote Site',
+  };
+  const remote = structuredClone(base);
+  const plan = planFor(base, local, remote);
+  const filePath = tempRecoveryJournalPath();
+  const remoteArtifactPath = `${path.dirname(filePath)}/consumed-hidden-compatibility-artifact-refs-remote.jsonl`;
+  const claimId = 'claim-consumed-hidden-compatibility-artifact-refs-remote';
+  const writerLease = { id: claimId, epoch: 3 };
+  const artifactRefs = {
+    journal: filePath,
+    remote: remoteArtifactPath,
+  };
+  const journal = openProductionRecoveryJournal(filePath, {
+    truncate: true,
+    now: fixedNow,
+    claimId,
+    writerLease,
+    ownsRemoteArtifact: true,
+    remoteArtifactPath,
+  });
+  appendRecoveryClaimOpened(journal, {
+    plan,
+    current: remote,
+    claimId,
+    artifactRefs,
+  });
+  journal.close();
+
+  consumeProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs,
+    writerLease,
+  });
+
+  const hiddenArtifactRefs = {
+    journal: filePath,
+  };
+  Object.defineProperty(hiddenArtifactRefs, 'remote', {
+    value: remoteArtifactPath,
+    enumerable: false,
+  });
+  const error = captureError(() => openProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    claimId,
+    writerLease,
+    ownsRemoteArtifact: true,
+    artifactRefs: hiddenArtifactRefs,
+    remoteArtifactPath,
+  }));
+
+  assert.equal(error.code, 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL');
+  assert.equal(
+    error.message,
+    'Production recovery journal support requires enumerable artifactRefs keys.',
+  );
+  assert.deepEqual(error.details.artifactRefs, {
+    journal: filePath,
+    remote: remoteArtifactPath,
+  });
+});
+
 test('openProductionRecoveryJournal fails closed when a consumed claim is reopened with drifted artifactRefs.journal', () => {
   const base = baseSite();
   const local = structuredClone(base);
@@ -23921,6 +23991,76 @@ test('openProductionRecoveryJournal fails closed when a consumed claim is reopen
     ownsRemoteArtifact: true,
     remoteArtifactPath,
     artifactRefs: hiddenArtifactRefs,
+  }));
+
+  assert.equal(error.code, 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL');
+  assert.equal(
+    error.message,
+    'Production recovery journal support requires enumerable artifactRefs keys.',
+  );
+  assert.deepEqual(error.details.artifactRefs, {
+    journal: filePath,
+    remote: remoteArtifactPath,
+  });
+});
+
+test('openProductionRecoveryJournal fails closed when the compatibility overload reopens a consumed claim with a hidden artifactRefs.journal', () => {
+  const base = baseSite();
+  const local = structuredClone(base);
+  local.db.wp_options['option_name:blogname'] = {
+    option_name: 'blogname',
+    option_value: 'Consumed Claim Hidden Compatibility Artifact Refs Journal Site',
+  };
+  const remote = structuredClone(base);
+  const plan = planFor(base, local, remote);
+  const filePath = tempRecoveryJournalPath();
+  const remoteArtifactPath = `${path.dirname(filePath)}/consumed-hidden-compatibility-artifact-refs-journal.jsonl`;
+  const claimId = 'claim-consumed-hidden-compatibility-artifact-refs-journal';
+  const writerLease = { id: claimId, epoch: 3 };
+  const artifactRefs = {
+    journal: filePath,
+    remote: remoteArtifactPath,
+  };
+  const journal = openProductionRecoveryJournal(filePath, {
+    truncate: true,
+    now: fixedNow,
+    claimId,
+    writerLease,
+    ownsRemoteArtifact: true,
+    remoteArtifactPath,
+  });
+  appendRecoveryClaimOpened(journal, {
+    plan,
+    current: remote,
+    claimId,
+    artifactRefs,
+  });
+  journal.close();
+
+  consumeProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs,
+    writerLease,
+  });
+
+  const hiddenArtifactRefs = {
+    remote: remoteArtifactPath,
+  };
+  Object.defineProperty(hiddenArtifactRefs, 'journal', {
+    value: filePath,
+    enumerable: false,
+  });
+  const error = captureError(() => openProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    claimId,
+    writerLease,
+    ownsRemoteArtifact: true,
+    artifactRefs: hiddenArtifactRefs,
+    remoteArtifactPath,
   }));
 
   assert.equal(error.code, 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL');
