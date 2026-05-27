@@ -1,9 +1,18 @@
 import { scenarioGroups } from './production-plugin-package-scenarios.js';
 
+const registrationGuardScenarioNames = [
+  ...scenarioGroups['driver-registration-guards'],
+];
+const callbackGuardScenarioNames = [
+  ...scenarioGroups['driver-callback-guards'],
+];
+const registrationShapeGuardScenarioNames = [
+  ...scenarioGroups['driver-registration-shape-guards'],
+];
+
 const bundleSummaryGroups = {
   'driver-positive-proof': [
-    'core-package-routes',
-    'driver-delete-apply',
+    ...scenarioGroups['driver-positive-proof'],
   ],
   'driver-release-proof': [
     'core-package-routes',
@@ -12,38 +21,20 @@ const bundleSummaryGroups = {
   ],
   'driver-verifier-guards': [
     'driver-receipt-guards',
-    'driver-missing-export-guard',
-    'driver-missing-apply-guard',
-    'driver-missing-validate-guard',
-    'driver-missing-name-guard',
-    'driver-missing-plugin-owner-guard',
-    'driver-missing-table-guard',
-    'driver-duplicate-name-guard',
-    'driver-duplicate-table-guard',
+    ...registrationGuardScenarioNames,
   ],
   'driver-registration-guards': [
-    'driver-missing-export-guard',
-    'driver-missing-apply-guard',
-    'driver-missing-validate-guard',
-    'driver-missing-name-guard',
-    'driver-missing-plugin-owner-guard',
-    'driver-missing-table-guard',
-    'driver-duplicate-name-guard',
-    'driver-duplicate-table-guard',
+    ...registrationGuardScenarioNames,
   ],
   'driver-callback-guards': [
-    'driver-missing-export-guard',
-    'driver-missing-apply-guard',
-    'driver-missing-validate-guard',
+    ...callbackGuardScenarioNames,
   ],
   'driver-registration-shape-guards': [
-    'driver-missing-name-guard',
-    'driver-missing-plugin-owner-guard',
-    'driver-missing-table-guard',
-    'driver-duplicate-name-guard',
-    'driver-duplicate-table-guard',
+    ...registrationShapeGuardScenarioNames,
   ],
 };
+
+export { bundleSummaryGroups };
 
 function isBundleAliasScenario(name) {
   return Object.hasOwn(bundleSummaryGroups, name) || name === 'driver-receipt-guards';

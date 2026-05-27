@@ -1,7 +1,44 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { buildProductionPluginPackageProofSummary } from '../scripts/playground/production-plugin-package-proof-summary.js';
+import {
+  buildProductionPluginPackageProofSummary,
+  bundleSummaryGroups,
+} from '../scripts/playground/production-plugin-package-proof-summary.js';
 import { scenarioGroups } from '../scripts/playground/production-plugin-package-scenarios.js';
+
+test('plugin-driver proof summary bundle groups stay aligned with shared scenario groups', () => {
+  assert.deepEqual(
+    bundleSummaryGroups['driver-positive-proof'],
+    scenarioGroups['driver-positive-proof'],
+  );
+  assert.deepEqual(
+    bundleSummaryGroups['driver-registration-guards'],
+    scenarioGroups['driver-registration-guards'],
+  );
+  assert.deepEqual(
+    bundleSummaryGroups['driver-callback-guards'],
+    scenarioGroups['driver-callback-guards'],
+  );
+  assert.deepEqual(
+    bundleSummaryGroups['driver-registration-shape-guards'],
+    scenarioGroups['driver-registration-shape-guards'],
+  );
+  assert.deepEqual(
+    bundleSummaryGroups['driver-verifier-guards'],
+    [
+      'driver-receipt-guards',
+      ...scenarioGroups['driver-registration-guards'],
+    ],
+  );
+  assert.deepEqual(
+    bundleSummaryGroups['driver-release-proof'],
+    [
+      'core-package-routes',
+      'driver-receipt-guards',
+      'driver-delete-apply',
+    ],
+  );
+});
 
 test('plugin-driver proof summary reports full packaged guard coverage', () => {
   const summary = buildProductionPluginPackageProofSummary({
