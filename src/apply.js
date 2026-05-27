@@ -1609,13 +1609,7 @@ function checkedDurableJournalBoundaryProof(
     && writer.supportedSurface === 'production-recovery-journal-adapter'
   )
     ? writer.supportedSurface
-    : (
-      Object.hasOwn(inspected ?? {}, 'supportedSurface')
-      && !hasHiddenOwnStringProperty(inspected, 'supportedSurface')
-      && inspected.supportedSurface === 'production-recovery-journal-adapter'
-        ? inspected.supportedSurface
-        : null
-    );
+    : null;
   const writerAcceptedOnCheckedBoundary = Object.hasOwn(writer ?? {}, 'acceptedOnCheckedBoundary')
     && !hasHiddenOwnStringProperty(writer, 'acceptedOnCheckedBoundary')
       ? writer.acceptedOnCheckedBoundary === true
