@@ -251,18 +251,29 @@ function reprint_push_lab_rest_lab_routes_enabled(): bool
     return !defined('REPRINT_PUSH_DISABLE_LAB_ROUTES') || REPRINT_PUSH_DISABLE_LAB_ROUTES !== true;
 }
 
+function reprint_push_lab_rest_packaged_production_mode(): bool
+{
+    return defined('REPRINT_PUSH_DISABLE_LAB_ROUTES')
+        && REPRINT_PUSH_DISABLE_LAB_ROUTES === true
+        && defined('REPRINT_PUSH_DISABLE_AUTH_BOOTSTRAP')
+        && REPRINT_PUSH_DISABLE_AUTH_BOOTSTRAP === true;
+}
+
 function reprint_push_lab_rest_route_profile(WP_REST_Request $request): array
 {
     $route = (string) $request->get_route();
     if (strpos($route, '/' . REPRINT_PUSH_PRODUCTION_SHAPED_REST_NAMESPACE . '/push/') === 0) {
+        $packaged_production_mode = reprint_push_lab_rest_packaged_production_mode();
         return [
             'profile' => 'production-shaped',
             'restNamespace' => REPRINT_PUSH_PRODUCTION_SHAPED_REST_NAMESPACE,
             'routePrefix' => '/push',
             'dryRunRoute' => '/push/dry-run',
             'authScope' => REPRINT_PUSH_LAB_AUTH_SCOPE,
-            'labBacked' => true,
-            'warning' => 'Production-shaped route names backed by the local Playground lab harness; not a production Reprint endpoint.',
+            'labBacked' => !$packaged_production_mode,
+            'warning' => $packaged_production_mode
+                ? null
+                : 'Production-shaped route names backed by the local Playground lab harness; not a production Reprint endpoint.',
         ];
     }
 

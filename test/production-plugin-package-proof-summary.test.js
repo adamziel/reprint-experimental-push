@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { buildProductionPluginPackageProofSummary } from '../scripts/playground/production-plugin-package-proof-summary.js';
+import { scenarioGroups } from '../scripts/playground/production-plugin-package-scenarios.js';
 
 test('plugin-driver proof summary reports full packaged guard coverage', () => {
   const summary = buildProductionPluginPackageProofSummary({
@@ -13,6 +14,7 @@ test('plugin-driver proof summary reports full packaged guard coverage', () => {
       profile: 'production-shaped',
       labNamespaceDisabled: true,
       authBootstrapDisabled: true,
+      labBacked: false,
     },
     cli: {
       ok: true,
@@ -126,6 +128,7 @@ test('plugin-driver proof summary reports full packaged guard coverage', () => {
   assert.equal(summary.requestedBundlesSatisfied, true);
   assert.equal(summary.requestedConcreteScenariosSatisfied, true);
   assert.equal(summary.selectedScenarios, 'all');
+  assert.equal(summary.routes.labBacked, false);
   assert.equal(summary.receiptGuards.revokedCredential, 'reprint_push_lab_auth_required');
   assert.equal(summary.mutationProof.deleteRejected, true);
   assert.deepEqual(summary.bundles, {
@@ -162,6 +165,7 @@ test('plugin-driver proof summary marks unselected scenarios as skipped', () => 
         profile: 'production-shaped',
         labNamespaceDisabled: true,
         authBootstrapDisabled: true,
+        labBacked: false,
       },
       cli: {
         ok: true,
@@ -308,6 +312,37 @@ test('plugin-driver proof summary marks unselected scenarios as skipped', () => 
   assert.equal(summary.scenarios.driverDuplicateTableGuard, 'passed');
 });
 
+test('plugin-driver proof summary fails core package routes when packaged routes still report lab-backed mode', () => {
+  const summary = buildProductionPluginPackageProofSummary({
+    package: {
+      plugin: 'reprint-push/reprint-push.php',
+      mountedAs: '/wordpress/wp-content/plugins/reprint-push',
+    },
+    routes: {
+      namespace: 'reprint/v1',
+      profile: 'production-shaped',
+      labNamespaceDisabled: true,
+      authBootstrapDisabled: true,
+      labBacked: true,
+    },
+    cli: {
+      ok: true,
+    },
+    final: {
+      finalMatchesLocal: true,
+    },
+  }, {
+    requestedScenarios: ['driver-positive-proof'],
+    selectedScenarios: new Set(scenarioGroups['driver-positive-proof']),
+  });
+
+  assert.equal(summary.ok, false);
+  assert.equal(summary.scenarios.corePackageRoutes, 'missing');
+  assert.equal(summary.bundles.driverPositiveProof, 'missing');
+  assert.deepEqual(summary.failedRequestedScenarios, ['driver-positive-proof']);
+  assert.deepEqual(summary.failedRequestedBundles, ['driverPositiveProof']);
+});
+
 test('plugin-driver proof summary fails requested bundle verdict when a requested guard is missing', () => {
   const summary = buildProductionPluginPackageProofSummary(
     {
@@ -320,6 +355,7 @@ test('plugin-driver proof summary fails requested bundle verdict when a requeste
         profile: 'production-shaped',
         labNamespaceDisabled: true,
         authBootstrapDisabled: true,
+        labBacked: false,
       },
       driverUpdateApply: {
         applied: 1,
@@ -443,6 +479,7 @@ test('plugin-driver proof summary dedupes repeated requested bundle aliases', ()
         profile: 'production-shaped',
         labNamespaceDisabled: true,
         authBootstrapDisabled: true,
+        labBacked: false,
       },
       cli: {
         ok: true,
@@ -562,6 +599,7 @@ test('plugin-driver proof summary exposes requested concrete scenarios separatel
         profile: 'production-shaped',
         labNamespaceDisabled: true,
         authBootstrapDisabled: true,
+        labBacked: false,
       },
       cli: {
         ok: true,
@@ -684,6 +722,7 @@ test('plugin-driver proof summary exposes failing requested concrete scenarios w
         profile: 'production-shaped',
         labNamespaceDisabled: true,
         authBootstrapDisabled: true,
+        labBacked: false,
       },
       cli: {
         ok: true,
@@ -787,6 +826,7 @@ test('plugin-driver proof summary treats bundle verdicts as satisfied when only 
         profile: 'production-shaped',
         labNamespaceDisabled: true,
         authBootstrapDisabled: true,
+        labBacked: false,
       },
       cli: {
         ok: true,
@@ -837,6 +877,7 @@ test('plugin-driver proof summary exposes failed requested bundles directly', ()
         profile: 'production-shaped',
         labNamespaceDisabled: true,
         authBootstrapDisabled: true,
+        labBacked: false,
       },
       cli: {
         ok: true,

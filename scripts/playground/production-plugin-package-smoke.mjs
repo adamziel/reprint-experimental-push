@@ -452,7 +452,7 @@ echo "REPRINT_PUSH_DRIVER_GUARD_JSON_END\\n";
     assert.equal(preflight.body.ok, true);
     assert.equal(preflight.body.routeProfile.profile, 'production-shaped');
     assert.equal(preflight.body.routeProfile.restNamespace, 'reprint/v1');
-    assert.equal(preflight.body.routeProfile.labBacked, true);
+    assert.equal(preflight.body.routeProfile.labBacked, false);
     assert.equal(preflight.body.auth.session.credentialScope, 'reprint-push-lab:authenticated-http-push');
     assert.equal(preflight.body.auth.session.credentialType, 'push-application-password');
     assertSignedStoreCleanup(preflight.body.sessionStore?.cleanup);
@@ -499,6 +499,7 @@ echo "REPRINT_PUSH_DRIVER_GUARD_JSON_END\\n";
       namespace: preflight.body.routeProfile.restNamespace,
       labNamespaceDisabled: labRoute.status === 404,
       profile: preflight.body.routeProfile.profile,
+      labBacked: preflight.body.routeProfile.labBacked,
       authBootstrapDisabled: true,
       unprovisionedAlternateStatus: unprovisionedAlternatePreflight.status,
       unscopedApplicationPasswordStatus: unscopedPreflight.status,

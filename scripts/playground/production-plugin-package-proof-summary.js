@@ -7,6 +7,7 @@ const scenarioDefinitions = [
     evaluate(summary) {
       return summary?.routes?.namespace === 'reprint/v1'
         && summary?.routes?.labNamespaceDisabled === true
+        && summary?.routes?.labBacked === false
         && summary?.cli?.ok === true
         && summary?.final?.finalMatchesLocal === true;
     },
@@ -281,6 +282,7 @@ export function buildProductionPluginPackageProofSummary(
     routes: {
       namespace: summary?.routes?.namespace ?? null,
       profile: summary?.routes?.profile ?? null,
+      labBacked: summary?.routes?.labBacked ?? null,
       labNamespaceDisabled: summary?.routes?.labNamespaceDisabled ?? null,
       authBootstrapDisabled: summary?.routes?.authBootstrapDisabled ?? null,
     },
