@@ -171,6 +171,17 @@ function packagedProductionPluginSessionIdentityReady(preflight) {
     && topLevelSessionId === authSessionId;
 }
 
+function packagedProductionPluginAuthIdentityReady(preflight) {
+  const userLogin = typeof preflight?.body?.auth?.identity?.userLogin === 'string'
+    ? preflight.body.auth.identity.userLogin.trim()
+    : '';
+  const userId = Number.isInteger(preflight?.body?.auth?.identity?.userId)
+    ? preflight.body.auth.identity.userId
+    : 0;
+
+  return userLogin.length > 0 && userId > 0;
+}
+
 export function packagedProductionPluginRestIndexReady(status, bodyText = '') {
   if (status !== 200) {
     return false;
@@ -246,6 +257,7 @@ export function packagedProductionPluginPreflightReady(preflight) {
   return packagedProductionPluginRouteProfileReady(preflight.body?.routeProfile)
     && packagedProductionPluginSessionEnvelopeReady(preflight.body?.session)
     && packagedProductionPluginSessionIdentityReady(preflight)
+    && packagedProductionPluginAuthIdentityReady(preflight)
     && evaluateProductionAuthSessionLifecycle(preflight.body?.auth?.session).ok;
 }
 
