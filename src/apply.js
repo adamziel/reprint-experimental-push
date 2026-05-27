@@ -1339,6 +1339,11 @@ export function productionRecoverySupportReport(writer) {
 
 function checkedDurableJournalBoundaryProof(writer, inspected, missingDependency = []) {
   const staleClaimLineageProven = hasStaleClaimRejectionEvidence(inspected?.records);
+  const checkedBoundaryStaleClaimRejected = hasValidLeaseFenceWriterContract(inspected?.writerLeaseContract)
+    && inspected.writerLeaseContract.staleClaimRejected === true
+    && hasValidLeaseFenceEnvelopeContract(inspected?.leaseFenceContract)
+    && inspected.leaseFenceContract.staleClaimRejected === true
+    && staleClaimLineageProven;
   const inspectedBoundary = isStrictPlainObject(inspected?.leaseFenceContract)
     && !hasHiddenOwnStringKeys(inspected.leaseFenceContract)
     && typeof inspected.leaseFenceContract.boundary === 'string'
@@ -1387,7 +1392,8 @@ function checkedDurableJournalBoundaryProof(writer, inspected, missingDependency
   ) && !checkedBoundaryBlockedByMissingDependency
     && inspectedOwnsJournal
     && inspectedRestartReadable
-    && checkedBoundaryContractAligned;
+    && checkedBoundaryContractAligned
+    && checkedBoundaryStaleClaimRejected;
 
   return {
     scope,

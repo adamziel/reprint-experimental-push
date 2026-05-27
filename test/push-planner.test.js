@@ -21604,7 +21604,7 @@ test('production recovery support report keeps checked boundary closed without s
   assert.equal(report.supported, true);
   assert.equal(report.checkedBoundarySatisfied, false);
   assert.equal(report.checkedBoundaryProof.scope, 'packaged production journal scope');
-  assert.equal(report.checkedBoundaryProof.acceptedOnCheckedBoundary, true);
+  assert.equal(report.checkedBoundaryProof.acceptedOnCheckedBoundary, false);
   assert.equal(report.checkedBoundaryProof.ownership.productionAdapter, 'wpdb-single-statement-cas');
   assert.equal(report.checkedBoundaryProof.writerLease.staleClaimRejected, false);
   assert.equal(report.checkedBoundaryProof.leaseFence.staleClaimRejected, false);
