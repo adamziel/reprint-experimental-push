@@ -599,6 +599,92 @@ async function waitForServer(child, baseUrl, logs) {
             return;
           }
           if (preflightProbe.terminal) {
+            const indexProbe = await fetchPackagedWordPressIndexProbe(baseUrl, child).catch((indexError) =>
+              buildPackagedTimeoutFallbackProbe('/wp-json/', indexError),
+            );
+            lastProbe = indexProbe;
+            lastProbes.push(indexProbe);
+            const startupBranch = packagedProductionPluginClassifyBoundedStartup(
+              {
+                retryable: true,
+                status: snapshotResponse.status,
+                body: snapshotText,
+              },
+              indexProbe,
+            );
+            if (startupBranch?.kind === 'retryable-route-wordpress-starting') {
+              if (packagedProductionPluginGlobalStartupStillWithinBudget(snapshotNotReadyProbeCount)) {
+                await sleepUnlessChildExit(readinessProbeIntervalMs, child);
+                continue;
+              }
+              throw new Error(
+                formatPackagedReadinessFailure(
+                  `Packaged production plugin snapshot stayed startup-shaped while /wp-json/ kept reporting global WordPress startup HTTP ${indexProbe.status} for ${snapshotNotReadyProbeCount} consecutive response${snapshotNotReadyProbeCount === 1 ? '' : 's'} (limit ${maxPackagedStartupNotReadyProbeCount})`,
+                  lastError,
+                  lastProbes,
+                  logs,
+                  {
+                    packagedProductionPlugin: true,
+                    globalWordPressStartup: true,
+                    snapshotNotReadyProbeCount,
+                  },
+                  lastTimeoutFallbackProbes,
+                ),
+              );
+            }
+            if (startupBranch?.kind === 'retryable-route-packaged-route-starting') {
+              if (
+                packagedProductionPluginPackagedRouteStartupLimitReached(
+                  snapshotNotReadyProbeCount,
+                  maxPackagedRouteStartupAfterGlobalReadyProbes,
+                )
+              ) {
+                throw new Error(
+                  formatPackagedReadinessFailure(
+                    `Packaged production plugin snapshot stayed startup-shaped after global WordPress startup HTTP ${indexProbe.status} for ${snapshotNotReadyProbeCount} consecutive response${snapshotNotReadyProbeCount === 1 ? '' : 's'} (limit ${maxPackagedRouteStartupAfterGlobalReadyProbes})`,
+                    lastError,
+                    lastProbes,
+                    logs,
+                    {
+                      packagedProductionPlugin: true,
+                      packagedRouteStartup: true,
+                      snapshotNotReadyProbeCount,
+                    },
+                    lastTimeoutFallbackProbes,
+                  ),
+                );
+              }
+              if (
+                packagedProductionPluginPackagedRouteStartupStillWithinBudget(
+                  snapshotNotReadyProbeCount,
+                  maxPackagedRouteStartupAfterGlobalReadyProbes,
+                )
+              ) {
+                await sleepUnlessChildExit(readinessProbeIntervalMs, child);
+                continue;
+              }
+            }
+            if (startupBranch?.kind === 'retryable-route-index-terminal') {
+              const malformedIndexBody =
+                packagedProductionPluginMalformedTerminalIndexProbe(indexProbe);
+              throw new Error(
+                formatPackagedReadinessFailure(
+                  malformedIndexBody
+                    ? `Packaged production plugin snapshot stayed startup-shaped while /wp-json/ returned an invalid readiness body after ${snapshotNotReadyProbeCount} consecutive response${snapshotNotReadyProbeCount === 1 ? '' : 's'} (limit ${maxPackagedStartupNotReadyProbeCount})`
+                    : `Packaged production plugin snapshot stayed startup-shaped while /wp-json/ returned a terminal readiness failure HTTP ${indexProbe.status} after ${snapshotNotReadyProbeCount} consecutive response${snapshotNotReadyProbeCount === 1 ? '' : 's'} (limit ${maxPackagedStartupNotReadyProbeCount})`,
+                  lastError,
+                  lastProbes,
+                  logs,
+                  {
+                    packagedProductionPlugin: true,
+                    ...(malformedIndexBody ? { invalidReadinessBody: true } : {}),
+                    indexTerminal: true,
+                    snapshotNotReadyProbeCount,
+                  },
+                  lastTimeoutFallbackProbes,
+                ),
+              );
+            }
             const malformedSnapshotFallbackPreflightBody =
               preflightProbe.parsedBody === null
               && !packagedProductionPluginReadinessBodyRetryable(
@@ -893,6 +979,92 @@ async function waitForServer(child, baseUrl, logs) {
             continue;
           }
           if (preflightProbe.terminal) {
+            const indexProbe = await fetchPackagedWordPressIndexProbe(baseUrl, child).catch((indexError) =>
+              buildPackagedTimeoutFallbackProbe('/wp-json/', indexError),
+            );
+            lastProbe = indexProbe;
+            lastProbes.push(indexProbe);
+            const startupBranch = packagedProductionPluginClassifyBoundedStartup(
+              {
+                retryable: true,
+                status: snapshotResponse.status,
+                body: snapshotText,
+              },
+              indexProbe,
+            );
+            if (startupBranch?.kind === 'retryable-route-wordpress-starting') {
+              if (packagedProductionPluginGlobalStartupStillWithinBudget(snapshotNotReadyProbeCount)) {
+                await sleepUnlessChildExit(readinessProbeIntervalMs, child);
+                continue;
+              }
+              throw new Error(
+                formatPackagedReadinessFailure(
+                  `Packaged production plugin snapshot stayed startup-shaped while /wp-json/ kept reporting global WordPress startup HTTP ${indexProbe.status} for ${snapshotNotReadyProbeCount} consecutive response${snapshotNotReadyProbeCount === 1 ? '' : 's'} (limit ${maxPackagedStartupNotReadyProbeCount})`,
+                  lastError,
+                  lastProbes,
+                  logs,
+                  {
+                    packagedProductionPlugin: true,
+                    globalWordPressStartup: true,
+                    snapshotNotReadyProbeCount,
+                  },
+                  lastTimeoutFallbackProbes,
+                ),
+              );
+            }
+            if (startupBranch?.kind === 'retryable-route-packaged-route-starting') {
+              if (
+                packagedProductionPluginPackagedRouteStartupLimitReached(
+                  snapshotNotReadyProbeCount,
+                  maxPackagedRouteStartupAfterGlobalReadyProbes,
+                )
+              ) {
+                throw new Error(
+                  formatPackagedReadinessFailure(
+                    `Packaged production plugin snapshot stayed startup-shaped after global WordPress startup HTTP ${indexProbe.status} for ${snapshotNotReadyProbeCount} consecutive response${snapshotNotReadyProbeCount === 1 ? '' : 's'} (limit ${maxPackagedRouteStartupAfterGlobalReadyProbes})`,
+                    lastError,
+                    lastProbes,
+                    logs,
+                    {
+                      packagedProductionPlugin: true,
+                      packagedRouteStartup: true,
+                      snapshotNotReadyProbeCount,
+                    },
+                    lastTimeoutFallbackProbes,
+                  ),
+                );
+              }
+              if (
+                packagedProductionPluginPackagedRouteStartupStillWithinBudget(
+                  snapshotNotReadyProbeCount,
+                  maxPackagedRouteStartupAfterGlobalReadyProbes,
+                )
+              ) {
+                await sleepUnlessChildExit(readinessProbeIntervalMs, child);
+                continue;
+              }
+            }
+            if (startupBranch?.kind === 'retryable-route-index-terminal') {
+              const malformedIndexBody =
+                packagedProductionPluginMalformedTerminalIndexProbe(indexProbe);
+              throw new Error(
+                formatPackagedReadinessFailure(
+                  malformedIndexBody
+                    ? `Packaged production plugin snapshot stayed startup-shaped while /wp-json/ returned an invalid readiness body after ${snapshotNotReadyProbeCount} consecutive response${snapshotNotReadyProbeCount === 1 ? '' : 's'} (limit ${maxPackagedStartupNotReadyProbeCount})`
+                    : `Packaged production plugin snapshot stayed startup-shaped while /wp-json/ returned a terminal readiness failure HTTP ${indexProbe.status} after ${snapshotNotReadyProbeCount} consecutive response${snapshotNotReadyProbeCount === 1 ? '' : 's'} (limit ${maxPackagedStartupNotReadyProbeCount})`,
+                  lastError,
+                  lastProbes,
+                  logs,
+                  {
+                    packagedProductionPlugin: true,
+                    ...(malformedIndexBody ? { invalidReadinessBody: true } : {}),
+                    indexTerminal: true,
+                    snapshotNotReadyProbeCount,
+                  },
+                  lastTimeoutFallbackProbes,
+                ),
+              );
+            }
             const malformedSnapshotFallbackPreflightBody =
               preflightProbe.parsedBody === null
               && !packagedProductionPluginReadinessBodyRetryable(

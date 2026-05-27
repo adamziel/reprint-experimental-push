@@ -3925,6 +3925,137 @@ test('packaged release verifier readiness helper waits through packaged-route st
   ]);
 });
 
+test('packaged release verifier readiness helper keeps waiting through packaged-route startup after terminal signed preflight while snapshot startup is still in progress', async () => {
+  const snapshotStartupBody = JSON.stringify({
+    code: 'rest_no_route',
+    message: 'No route was found matching the URL and request method.',
+  });
+  const readySnapshotBody = JSON.stringify({
+    ok: true,
+    snapshot: {},
+  });
+  const readyPreflightBody = JSON.stringify({
+    ok: true,
+    routeProfile: {
+      profile: 'production-shaped',
+      restNamespace: 'reprint/v1',
+      routePrefix: '/push',
+      labBacked: false,
+    },
+    auth: {
+      session: {
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+      },
+    },
+  });
+  const fetchCalls = [];
+  const sleepCalls = [];
+  let snapshotAttempts = 0;
+  let preflightFallbackAttempts = 0;
+  const helper = buildPackagedReleaseVerifierWaitHelper({
+    packagedProductionPluginRouteStartupClassificationReady: () => true,
+    packagedProductionPluginGlobalStartupStillWithinBudget: () => false,
+    buildPackagedTimeoutFallbackProbe: () => {
+      throw new Error('unexpected timeout fallback probe during terminal packaged-route startup runtime proof');
+    },
+    fetchTextWithTimeout: async (url) => {
+      fetchCalls.push(url);
+      if (url.endsWith('/wp-json/reprint/v1/push/snapshot')) {
+        snapshotAttempts += 1;
+        if (snapshotAttempts === 1) {
+          return {
+            response: {
+              status: 404,
+              ok: false,
+            },
+            bodyText: snapshotStartupBody,
+          };
+        }
+        return {
+          response: {
+            status: 200,
+            ok: true,
+          },
+          bodyText: readySnapshotBody,
+        };
+      }
+      if (url.endsWith('/wp-json/reprint/v1/push/preflight')) {
+        return {
+          response: {
+            status: 200,
+            ok: true,
+          },
+          bodyText: readyPreflightBody,
+        };
+      }
+      throw new Error(`unexpected readiness fetch ${url}`);
+    },
+    fetchPackagedPreflightProbe: async () => {
+      preflightFallbackAttempts += 1;
+      if (preflightFallbackAttempts !== 1) {
+        throw new Error('unexpected extra snapshot-startup fallback preflight probe');
+      }
+      return {
+        route: '/wp-json/reprint/v1/push/preflight',
+        status: 401,
+        ok: false,
+        body: JSON.stringify({
+          code: 'rest_forbidden',
+          message: 'forbidden',
+        }),
+        parsedBody: {
+          code: 'rest_forbidden',
+          message: 'forbidden',
+        },
+        ready: false,
+        retryable: false,
+        terminal: true,
+      };
+    },
+    fetchPackagedWordPressIndexProbe: async () => ({
+      route: '/wp-json/',
+      status: 200,
+      ok: true,
+      body: JSON.stringify({ namespaces: ['reprint/v1'] }),
+      parsedBody: {
+        namespaces: ['reprint/v1'],
+      },
+      ready: true,
+      retryable: false,
+      terminal: false,
+    }),
+    fetchPackagedTimeoutFallbackProbes: async () => {
+      throw new Error('unexpected timeout fallback fetch in terminal packaged-route startup runtime proof');
+    },
+    sleepUnlessChildExit: async (ms, child) => {
+      sleepCalls.push({ ms, child });
+    },
+    throwPlaygroundReadinessFailure: async (child, prefix) => {
+      const error = new Error(prefix);
+      error.isPlaygroundReadinessFailure = true;
+      throw error;
+    },
+  });
+  const child = {
+    exitCode: null,
+    signalCode: null,
+    pid: 9456,
+  };
+
+  await helper(child, 'http://127.0.0.1:65535', () => 'packaged server boot log');
+
+  assert.equal(sleepCalls.length, 1);
+  assert.equal(sleepCalls[0].ms, 1);
+  assert.equal(sleepCalls[0].child, child);
+  assert.deepEqual(fetchCalls, [
+    'http://127.0.0.1:65535/wp-json/reprint/v1/push/snapshot',
+    'http://127.0.0.1:65535/wp-json/reprint/v1/push/snapshot',
+    'http://127.0.0.1:65535/wp-json/reprint/v1/push/preflight',
+  ]);
+});
+
 test('packaged release verifier readiness helper fails closed when packaged-route startup exceeds the post-global-ready budget', async () => {
   const readySnapshotBody = JSON.stringify({
     ok: true,
@@ -5500,6 +5631,125 @@ test('packaged production plugin smoke readiness helper waits through packaged-r
   assert.deepEqual(fetchCalls, [
     'http://127.0.0.1:65535/wp-json/reprint/v1/push/snapshot',
     'http://127.0.0.1:65535/wp-json/reprint/v1/push/preflight',
+    'http://127.0.0.1:65535/wp-json/reprint/v1/push/snapshot',
+    'http://127.0.0.1:65535/wp-json/reprint/v1/push/preflight',
+  ]);
+});
+
+test('packaged production plugin smoke readiness helper keeps waiting through packaged-route startup after terminal signed preflight while snapshot startup is still in progress', async () => {
+  const snapshotStartupBody = JSON.stringify({
+    code: 'rest_no_route',
+    message: 'No route was found matching the URL and request method.',
+  });
+  const readySnapshotBody = JSON.stringify({
+    ok: true,
+    snapshot: {},
+  });
+  const readyPreflightBody = JSON.stringify({
+    ok: true,
+    routeProfile: {
+      profile: 'production-shaped',
+      restNamespace: 'reprint/v1',
+      routePrefix: '/push',
+      labBacked: false,
+    },
+    auth: {
+      session: {
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+      },
+    },
+  });
+  const fetchCalls = [];
+  const sleepCalls = [];
+  let snapshotAttempts = 0;
+  let preflightFallbackAttempts = 0;
+  const helper = buildPackagedSmokeWaitHelper({
+    packagedProductionPluginRouteStartupClassificationReady: () => true,
+    fetchTextWithTimeout: async (url) => {
+      fetchCalls.push(url);
+      if (url.endsWith('/wp-json/reprint/v1/push/snapshot')) {
+        snapshotAttempts += 1;
+        if (snapshotAttempts === 1) {
+          return {
+            response: {
+              status: 404,
+              ok: false,
+            },
+            bodyText: snapshotStartupBody,
+          };
+        }
+        return {
+          response: {
+            status: 200,
+            ok: true,
+          },
+          bodyText: readySnapshotBody,
+        };
+      }
+      if (url.endsWith('/wp-json/reprint/v1/push/preflight')) {
+        return {
+          response: {
+            status: 200,
+            ok: true,
+          },
+          bodyText: readyPreflightBody,
+        };
+      }
+      throw new Error(`unexpected readiness fetch ${url}`);
+    },
+    fetchPackagedPreflightProbe: async () => {
+      preflightFallbackAttempts += 1;
+      if (preflightFallbackAttempts !== 1) {
+        throw new Error('unexpected extra snapshot-startup fallback preflight probe');
+      }
+      return {
+        route: '/wp-json/reprint/v1/push/preflight',
+        status: 401,
+        ok: false,
+        body: JSON.stringify({
+          code: 'rest_forbidden',
+          message: 'forbidden',
+        }),
+        parsedBody: {
+          code: 'rest_forbidden',
+          message: 'forbidden',
+        },
+        ready: false,
+        retryable: false,
+        terminal: true,
+      };
+    },
+    fetchPackagedWordPressIndexProbe: async () => ({
+      route: '/wp-json/',
+      status: 200,
+      ok: true,
+      body: JSON.stringify({ namespaces: ['reprint/v1'] }),
+      parsedBody: {
+        namespaces: ['reprint/v1'],
+      },
+      ready: true,
+      retryable: false,
+      terminal: false,
+    }),
+    sleepUnlessChildExit: async (ms, child) => {
+      sleepCalls.push({ ms, child });
+    },
+  });
+  const child = {
+    exitCode: null,
+    signalCode: null,
+    pid: 9462,
+  };
+
+  await helper(child, 'http://127.0.0.1:65535', ['packaged smoke boot log']);
+
+  assert.equal(sleepCalls.length, 1);
+  assert.equal(sleepCalls[0].ms, 1);
+  assert.equal(sleepCalls[0].child, child);
+  assert.deepEqual(fetchCalls, [
+    'http://127.0.0.1:65535/wp-json/reprint/v1/push/snapshot',
     'http://127.0.0.1:65535/wp-json/reprint/v1/push/snapshot',
     'http://127.0.0.1:65535/wp-json/reprint/v1/push/preflight',
   ]);
