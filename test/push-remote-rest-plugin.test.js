@@ -709,7 +709,7 @@ function buildAcceptedInlineRecoveryJournal() {
     },
     writerLease: {
       strategy: 'claim-fenced-single-writer',
-      claimId: 'authoritative-claim-hash-02',
+      claimId: 'retry-claim-hash-02',
       claimKeyUnique: true,
       fsyncEvidence: true,
       storageGuard: 'wpdb-single-statement-cas',
@@ -834,7 +834,7 @@ function buildCheckedRecoveryJournalSummary() {
     },
     writerLease: {
       strategy: 'claim-fenced-single-writer',
-      claimId: 'authoritative-claim-hash-02',
+      claimId: 'retry-claim-hash-02',
       claimKeyUnique: true,
       fsyncEvidence: true,
       storageGuard: 'wpdb-single-statement-cas',
@@ -947,6 +947,7 @@ function buildAcceptedInlineDbJournal() {
       ownsJournal: true,
       restartReadable: true,
       productionAdapter: 'wpdb-single-statement-cas',
+      supportedSurface: 'claim-fenced-restart-readable',
     },
     writerLease: {
       strategy: 'claim-fenced-single-writer',
@@ -2746,6 +2747,26 @@ test('checked recovery inspect evidence fails closed when accepted checked summa
   assert.equal(parsed.recovery.journal.claim, undefined);
 });
 
+test('checked recovery inspect evidence fails closed when accepted inline writer-lease claim identity diverges from the checked claim', { skip: !hasPhp }, () => {
+  const inlineJournal = buildAcceptedInlineRecoveryJournal();
+  inlineJournal.writerLease.claimId = 'different-active-claim-id';
+
+  const result = runAttachCheckedRecoveryJournalEvidence(
+    {
+      recovery: {
+        journal: inlineJournal,
+      },
+    },
+    true,
+    false,
+    buildCheckedRecoveryJournalSummary(),
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.recovery.journal.acceptedOnCheckedBoundary, false);
+});
+
 test('checked recovery inspect evidence fails closed on conflicting checked writer-lease storage guards', { skip: !hasPhp }, () => {
   const result = runAttachCheckedRecoveryJournalEvidence(
     {
@@ -3514,6 +3535,7 @@ test('checked recovery inspect evidence fails closed when accepted checked summa
       ownsJournal: true,
       restartReadable: true,
       productionAdapter: 'wpdb-single-statement-cas',
+      supportedSurface: 'claim-fenced-restart-readable',
     },
     writerLease: {
       strategy: 'claim-fenced-single-writer',
@@ -13497,102 +13519,7 @@ test('checked db journal boundary contract carries the active claim id into both
 });
 
 test('checked db journal boundary contract fails closed when the checked claim contract is missing or malformed', { skip: !hasPhp }, () => {
-  const baseJournal = {
-    schemaVersion: 1,
-    acceptedOnCheckedBoundary: true,
-    table: 'wp_reprint_push_lab_push_journal',
-    rowCount: 1,
-    scope: 'checked live production-shaped journal surface; not local Playground fixture only',
-    claim: {
-      status: 'stale-claim-rejected',
-      activeClaimKeyHash: 'retry-claim-hash-02',
-      activeClaimSequence: 20,
-      activeClaimEvent: 'stale-claim-retry-started',
-      idempotencyKeyHash: 'idempotency-hash-01',
-      requestHash: 'request-hash-01',
-      staleClaimRejected: true,
-      abandonedSequence: 18,
-      abandonedEvent: 'stale-claim-abandoned',
-      previousStartedSequence: 12,
-      previousClaimSequence: 11,
-      previousClaimKeyHash: 'retry-claim-hash-01',
-      previousClaimEvent: 'idempotency-opened',
-    },
-    claimEvidence: {
-      activeRow: {
-        sequence: 20,
-        event: 'stale-claim-retry-started',
-        claimKeyHash: 'retry-claim-hash-02',
-        idempotencyKeyHash: 'idempotency-hash-01',
-        requestHash: 'request-hash-01',
-      },
-      abandonedRow: {
-        sequence: 18,
-        event: 'stale-claim-abandoned',
-        idempotencyKeyHash: 'idempotency-hash-01',
-        requestHash: 'request-hash-01',
-        startedCursor: 'db-journal:12',
-        claimCursor: 'db-journal:11',
-      },
-      previousRow: {
-        sequence: 11,
-        event: 'idempotency-opened',
-        claimKeyHash: 'retry-claim-hash-01',
-        idempotencyKeyHash: 'idempotency-hash-01',
-        requestHash: 'request-hash-01',
-      },
-    },
-    ownership: {
-      ownsJournal: true,
-      restartReadable: true,
-      productionAdapter: 'wpdb-single-statement-cas',
-    },
-    writerLease: {
-      strategy: 'claim-fenced-single-writer',
-      claimKeyUnique: true,
-      fsyncEvidence: true,
-      storageGuard: 'wpdb-single-statement-cas',
-      monotonicSequence: true,
-      restartReadable: true,
-      staleClaimRejected: true,
-    },
-    leaseFence: {
-      boundary: 'wpdb-single-statement-cas',
-      claimKeyUnique: true,
-      fsyncEvidence: true,
-      monotonicSequence: true,
-      restartReadable: true,
-      staleClaimRejected: true,
-      writerLease: {
-        strategy: 'claim-fenced-single-writer',
-        claimKeyUnique: true,
-        fsyncEvidence: true,
-        storageGuard: 'wpdb-single-statement-cas',
-        monotonicSequence: true,
-        restartReadable: true,
-        staleClaimRejected: true,
-      },
-    },
-    storageGuard: {
-      boundary: 'wpdb-single-statement-cas',
-      operation: 'update',
-      outcome: 'applied',
-    },
-    latestRows: [
-      {
-        id: 20,
-        sequence: 20,
-        event: 'stale-claim-rejected',
-      },
-    ],
-    eventSummaries: [
-      {
-        event: 'stale-claim-rejected',
-        count: 1,
-        latestId: 20,
-      },
-    ],
-  };
+  const baseJournal = structuredClone(buildAcceptedInlineDbJournal());
 
   let result = runCheckedBoundaryContractMatches(baseJournal);
   assert.equal(result.status, 0, result.stderr);
@@ -13630,6 +13557,16 @@ test('checked db journal boundary contract fails closed when the checked claim c
         ...baseJournal.claimEvidence.activeRow,
         sequence: 21,
       },
+    },
+  });
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(JSON.parse(result.stdout), false);
+
+  result = runCheckedBoundaryContractMatches({
+    ...baseJournal,
+    writerLease: {
+      ...baseJournal.writerLease,
+      claimId: 'different-active-claim-id',
     },
   });
   assert.equal(result.status, 0, result.stderr);
