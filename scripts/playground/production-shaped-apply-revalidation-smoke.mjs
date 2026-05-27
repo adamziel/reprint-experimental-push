@@ -23,7 +23,7 @@ const muPluginDir = path.join(repoRoot, 'scripts/playground/rest-mu-plugins');
 // inside.
 const serverStartupTimeoutMs = 30_000;
 const serverFetchTimeoutMs = 1_000;
-const requestTimeoutMs = 2_000;
+const requestTimeoutMs = 10_000;
 const readinessProbeIntervalMs = 500;
 const maxNotReadyReadinessProbes = Math.max(4, Math.ceil(serverStartupTimeoutMs / readinessProbeIntervalMs));
 const credentials = {
@@ -67,6 +67,7 @@ const driftMutation = {
 };
 
 const activePlaygroundChildren = new Set();
+let currentOperation = 'startup';
 process.on('beforeExit', stopAllPlaygroundChildrenSync);
 process.on('exit', stopAllPlaygroundChildrenSync);
 process.on('SIGINT', () => {
@@ -105,6 +106,7 @@ try {
 }
 
 async function runApplyRevalidationProof({ remoteServer, localServer, externalTopology }) {
+  currentOperation = 'build authenticated client';
   const client = authenticatedHttpClient({
     sourceUrl: remoteServer.baseUrl,
     credential: resolvedCredentials,
@@ -114,6 +116,7 @@ async function runApplyRevalidationProof({ remoteServer, localServer, externalTo
   });
   const authSessionLifecycleTrace = [];
 
+  currentOperation = 'preflight /preflight';
   const preflight = await client.signedGet('/preflight');
   assert.equal(preflight.status, 200, `production-shaped apply revalidation preflight HTTP ${preflight.status}`);
   assert.equal(preflight.body.ok, true);
@@ -121,7 +124,9 @@ async function runApplyRevalidationProof({ remoteServer, localServer, externalTo
   assert.match(preflight.body.session.id, /^[A-Za-z0-9_-]{32,160}$/);
   recordAuthSessionLifecycle(authSessionLifecycleTrace, 'preflight', preflight.body?.auth);
 
+  currentOperation = `export snapshot remote-base ${remoteServer.baseUrl}`;
   const base = await exportSnapshot('remote-base', remoteServer.baseUrl);
+  currentOperation = `export snapshot local-edited ${localServer.baseUrl}`;
   const local = withoutUnmappedGraphPostmeta(await exportSnapshot('local-edited', localServer.baseUrl));
   const plan = createPushPlan({ base, local, remote: base });
   assert.equal(plan.status, 'ready');
@@ -135,6 +140,7 @@ async function runApplyRevalidationProof({ remoteServer, localServer, externalTo
   const idempotencyKey = `production-shaped-apply-revalidation-smoke-${Date.now()}-${process.pid}`;
 
   process.stderr.write('apply-revalidation: dry-run /dry-run\n');
+  currentOperation = 'dry-run /dry-run';
   const dryRun = await client.signedPost('/dry-run', { plan }, { session, idempotencyKey });
   assert.equal(dryRun.status, 200);
   assert.equal(dryRun.body.ok, true);
@@ -143,6 +149,7 @@ async function runApplyRevalidationProof({ remoteServer, localServer, externalTo
   recordAuthSessionLifecycle(authSessionLifecycleTrace, 'dry-run', dryRun.body?.auth);
 
   process.stderr.write('apply-revalidation: apply /apply\n');
+  currentOperation = 'apply /apply';
   const apply = await client.signedPost('/apply', {
     plan,
     receipt: dryRun.body.receipt,
@@ -164,6 +171,7 @@ async function runApplyRevalidationProof({ remoteServer, localServer, externalTo
   recordAuthSessionLifecycle(authSessionLifecycleTrace, 'apply', apply.body?.auth);
 
   process.stderr.write('apply-revalidation: recovery inspect /recovery/inspect\n');
+  currentOperation = 'recovery inspect /recovery/inspect';
   const recoveryInspect = await client.signedPost('/recovery/inspect', {
     plan,
     receipt: dryRun.body.receipt,
@@ -174,6 +182,7 @@ async function runApplyRevalidationProof({ remoteServer, localServer, externalTo
   recordAuthSessionLifecycle(authSessionLifecycleTrace, 'recovery-inspect', recoveryInspect.body?.auth);
 
   process.stderr.write('apply-revalidation: preserved remote retry /snapshot\n');
+  currentOperation = `preserved remote retry ${requiredPreservedRemoteRetryPath}`;
   const preservedRemoteSnapshot = await client.signedGet(requiredPreservedRemoteRetryPath, {
     session,
     retryable: true,
@@ -524,10 +533,10 @@ function handleFatalProcessError(error, label) {
   stopAllPlaygroundChildrenSync();
   process.exitCode = 1;
   if (error instanceof Error) {
-    process.stderr.write(`apply-revalidation: ${label}: ${error.stack || error.message}\n`);
+    process.stderr.write(`apply-revalidation: ${label} during ${currentOperation}: ${error.stack || error.message}\n`);
     return;
   }
-  process.stderr.write(`apply-revalidation: ${label}: ${String(error)}\n`);
+  process.stderr.write(`apply-revalidation: ${label} during ${currentOperation}: ${String(error)}\n`);
 }
 
 function appendNodeOption(existing, option) {

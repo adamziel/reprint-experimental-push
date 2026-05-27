@@ -29,6 +29,7 @@ const credentials = {
   applicationPassword: releaseVerifyFixtureCredentials.applicationPassword,
 };
 const explicitLiveSourceUrl = process.env.REPRINT_PUSH_SOURCE_URL || process.env.REPRINT_PUSH_REMOTE_URL || '';
+const explicitApplyRevalidationSourceUrl = process.env.REPRINT_PUSH_APPLY_REVALIDATION_SOURCE_URL || '';
 const explicitLiveRemoteChangedUrl = process.env.REPRINT_PUSH_REMOTE_CHANGED_URL || '';
 const explicitLiveLocalUrl = process.env.REPRINT_PUSH_LOCAL_URL || '';
 const explicitLiveUsername = process.env.REPRINT_PUSH_USERNAME || process.env.REPRINT_PUSH_LAB_AUTH_ADMIN_USER || '';
@@ -78,7 +79,11 @@ if (packagedBoundaryRequested) {
   });
   const verify = runCheckedReleaseVerify(liveBoundaryEnv);
   const applyRevalidation = runApplyRevalidationProof(resolveApplyRevalidationAuthEnv({
-    sourceUrl: explicitLiveSourceUrl,
+    // Keep apply-time revalidation on an independently preserved base when the
+    // explicit wrapper provides one. The checked release verify leg can advance
+    // its source remote, which would otherwise collapse the follow-up
+    // apply-revalidation plan to zero mutations.
+    sourceUrl: explicitApplyRevalidationSourceUrl || explicitLiveSourceUrl,
     remoteChangedUrl: explicitLiveRemoteChangedUrl,
     localUrl: explicitLiveLocalUrl,
     packagedBoundaryRequested: false,

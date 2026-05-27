@@ -4173,8 +4173,9 @@ maybeTest('production-shaped release verify command runs the live protocol branc
 
 maybeTest('production-shaped live release verify command proves the explicit checked live boundary end to end', () => {
   return withPlaygroundServer('remote-base', path.join(repoRoot, 'fixtures/playground/remote-base.blueprint.json'), async (remoteServer) => {
-    return withPlaygroundServer('remote-changed', path.join(repoRoot, 'fixtures/playground/remote-changed.blueprint.json'), async (remoteChangedServer) => {
-      return withPlaygroundServer('local-edited', path.join(repoRoot, 'fixtures/playground/local-edited.blueprint.json'), async (localServer) => {
+    return withPlaygroundServer('remote-base-apply', path.join(repoRoot, 'fixtures/playground/remote-base.blueprint.json'), async (applyRemoteServer) => {
+      return withPlaygroundServer('remote-changed', path.join(repoRoot, 'fixtures/playground/remote-changed.blueprint.json'), async (remoteChangedServer) => {
+        return withPlaygroundServer('local-edited', path.join(repoRoot, 'fixtures/playground/local-edited.blueprint.json'), async (localServer) => {
         const proof = spawnBoundedSync(
           process.execPath,
           ['scripts/playground/production-shaped-live-release-verify.mjs'],
@@ -4186,6 +4187,7 @@ maybeTest('production-shaped live release verify command proves the explicit che
               ...process.env,
               REPRINT_PUSH_SOURCE_URL: remoteServer.baseUrl,
               REPRINT_PUSH_REMOTE_URL: remoteServer.baseUrl,
+              REPRINT_PUSH_APPLY_REVALIDATION_SOURCE_URL: applyRemoteServer.baseUrl,
               REPRINT_PUSH_REMOTE_CHANGED_URL: remoteChangedServer.baseUrl,
               REPRINT_PUSH_LOCAL_URL: localServer.baseUrl,
               REPRINT_PUSH_LAB_AUTH_ADMIN_USER: liveCredentials.username,
@@ -4222,6 +4224,7 @@ maybeTest('production-shaped live release verify command proves the explicit che
         assert.equal(summary.applyRevalidation?.ok, true);
         assert.equal(summary.applyRevalidation?.boundary?.firstRemainingProductionBoundary, null);
         assert.equal(summary.applyRevalidation?.boundary?.verdict, 'LIVE_RELEASE_BOUNDARY_OK');
+        });
       });
     });
   });
