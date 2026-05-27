@@ -869,6 +869,120 @@ function buildCheckedRecoveryJournalSummary() {
   };
 }
 
+function buildAcceptedInlineDbJournal() {
+  return {
+    scope: 'checked live production-shaped journal surface; not local Playground fixture only',
+    acceptedOnCheckedBoundary: true,
+    schemaVersion: 1,
+    table: 'wp_reprint_push_lab_push_journal',
+    rowCount: 1,
+    claim: {
+      status: 'stale-claim-rejected',
+      activeClaimKeyHash: 'authoritative-claim-hash-02',
+      activeClaimSequence: 33,
+      activeClaimEvent: 'stale-claim-rejected',
+      idempotencyKeyHash: 'idem-hash-01',
+      requestHash: 'request-hash-01',
+      staleClaimRejected: true,
+      abandonedSequence: 24,
+      abandonedEvent: 'stale-claim-abandoned',
+      previousStartedSequence: 19,
+      previousClaimKeyHash: 'retry-claim-hash-01',
+      previousClaimSequence: 18,
+      previousClaimEvent: 'idempotency-opened',
+    },
+    claimEvidence: {
+      activeRow: {
+        sequence: 33,
+        event: 'stale-claim-rejected',
+        claimKeyHash: 'authoritative-claim-hash-02',
+        idempotencyKeyHash: 'idem-hash-01',
+        requestHash: 'request-hash-01',
+      },
+      abandonedRow: {
+        sequence: 24,
+        event: 'stale-claim-abandoned',
+        claimKeyHash: 'retry-claim-hash-01',
+        idempotencyKeyHash: 'idem-hash-01',
+        requestHash: 'request-hash-01',
+        startedCursor: 'db-journal:19',
+        claimCursor: 'db-journal:18',
+      },
+      previousRow: {
+        sequence: 18,
+        event: 'idempotency-opened',
+        claimKeyHash: 'retry-claim-hash-01',
+        idempotencyKeyHash: 'idem-hash-01',
+        requestHash: 'request-hash-01',
+      },
+    },
+    ownership: {
+      ownsJournal: true,
+      restartReadable: true,
+      productionAdapter: 'wpdb-single-statement-cas',
+    },
+    writerLease: {
+      strategy: 'claim-fenced-single-writer',
+      claimKeyUnique: true,
+      fsyncEvidence: true,
+      storageGuard: 'wpdb-single-statement-cas',
+      monotonicSequence: true,
+      restartReadable: true,
+      staleClaimRejected: true,
+    },
+    leaseFence: {
+      boundary: 'wpdb-single-statement-cas',
+      claimKeyUnique: true,
+      fsyncEvidence: true,
+      monotonicSequence: true,
+      restartReadable: true,
+      staleClaimRejected: true,
+      writerLease: {
+        strategy: 'claim-fenced-single-writer',
+        claimKeyUnique: true,
+        fsyncEvidence: true,
+        storageGuard: 'wpdb-single-statement-cas',
+        monotonicSequence: true,
+        restartReadable: true,
+        staleClaimRejected: true,
+      },
+    },
+    storageGuard: {
+      boundary: 'wpdb-single-statement-cas',
+      operation: 'update',
+      outcome: 'applied',
+    },
+    latestRows: [
+      {
+        sequence: 33,
+        event: 'stale-claim-rejected',
+        claimKeyHash: 'authoritative-claim-hash-02',
+        idempotencyKeyHash: 'idem-hash-01',
+        requestHash: 'request-hash-01',
+      },
+    ],
+    eventSummaries: [
+      {
+        event: 'stale-claim-rejected',
+        count: 1,
+        latestId: 33,
+      },
+    ],
+    idempotencyEvidence: [
+      {
+        idempotencyKeyHash: 'idem-hash-01',
+        events: 1,
+        requestHashes: 1,
+        latestId: 33,
+      },
+    ],
+  };
+}
+
+function buildCheckedDbJournalSummary() {
+  return structuredClone(buildAcceptedInlineDbJournal());
+}
+
 test('checked db journal merge fills nested ownership and lease fence gaps', { skip: !hasPhp }, () => {
   const result = runMerge(
     {
@@ -11416,6 +11530,82 @@ test('checked db journal attachment fails closed on conflicting accepted inline 
       restartReadable: false,
       staleClaimRejected: false,
     },
+  });
+});
+
+test('checked db journal attachment fails closed on missing accepted inline ownership restart readability instead of backfilling it from checked evidence', { skip: !hasPhp }, () => {
+  const inlineJournal = buildAcceptedInlineDbJournal();
+  delete inlineJournal.ownership.restartReadable;
+
+  const result = runAttachCheckedDbJournalContract(
+    { ok: true, dbJournal: inlineJournal },
+    buildCheckedDbJournalSummary(),
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.dbJournal.acceptedOnCheckedBoundary, false);
+  assert.deepEqual(parsed.dbJournal.ownership, {
+    ownsJournal: true,
+    productionAdapter: 'wpdb-single-statement-cas',
+  });
+});
+
+test('checked db journal attachment fails closed on missing accepted inline nested writer-lease stale-claim evidence instead of backfilling it from checked evidence', { skip: !hasPhp }, () => {
+  const inlineJournal = buildAcceptedInlineDbJournal();
+  delete inlineJournal.leaseFence.writerLease.staleClaimRejected;
+
+  const result = runAttachCheckedDbJournalContract(
+    { ok: true, dbJournal: inlineJournal },
+    buildCheckedDbJournalSummary(),
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.dbJournal.acceptedOnCheckedBoundary, false);
+  assert.deepEqual(parsed.dbJournal.leaseFence.writerLease, {
+    strategy: 'claim-fenced-single-writer',
+    claimKeyUnique: true,
+    fsyncEvidence: true,
+    storageGuard: 'wpdb-single-statement-cas',
+    monotonicSequence: true,
+    restartReadable: true,
+  });
+});
+
+test('checked db journal attachment fails closed on missing accepted inline top-level storage-guard boundary instead of backfilling it from checked evidence', { skip: !hasPhp }, () => {
+  const inlineJournal = buildAcceptedInlineDbJournal();
+  delete inlineJournal.storageGuard.boundary;
+
+  const result = runAttachCheckedDbJournalContract(
+    { ok: true, dbJournal: inlineJournal },
+    buildCheckedDbJournalSummary(),
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.dbJournal.acceptedOnCheckedBoundary, false);
+  assert.deepEqual(parsed.dbJournal.storageGuard, {
+    operation: 'update',
+    outcome: 'applied',
+  });
+});
+
+test('checked db journal attachment fails closed on missing accepted inline top-level storage-guard operation instead of backfilling it from checked evidence', { skip: !hasPhp }, () => {
+  const inlineJournal = buildAcceptedInlineDbJournal();
+  delete inlineJournal.storageGuard.operation;
+
+  const result = runAttachCheckedDbJournalContract(
+    { ok: true, dbJournal: inlineJournal },
+    buildCheckedDbJournalSummary(),
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.dbJournal.acceptedOnCheckedBoundary, false);
+  assert.deepEqual(parsed.dbJournal.storageGuard, {
+    boundary: 'wpdb-single-statement-cas',
+    outcome: 'applied',
   });
 });
 
