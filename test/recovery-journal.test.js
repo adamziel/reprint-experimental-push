@@ -5303,6 +5303,24 @@ test('checked durable journal boundary stays closed until stale-claim rejection 
   assert.equal(
     checkedDurableJournalBoundarySatisfied({
       ...baseContract,
+      writerLease: {
+        ...baseContract.writerLease,
+        staleClaimRejected: true,
+      },
+      leaseFence: {
+        ...baseContract.leaseFence,
+        staleClaimRejected: true,
+        writerLease: {
+          ...baseContract.leaseFence.writerLease,
+          staleClaimRejected: true,
+        },
+      },
+    }),
+    true,
+  );
+  assert.equal(
+    checkedDurableJournalBoundarySatisfied({
+      ...baseContract,
       ownership: {
         ...baseContract.ownership,
         supportedSurface: null,
@@ -5320,7 +5338,7 @@ test('checked durable journal boundary stays closed until stale-claim rejection 
         },
       },
     }),
-    true,
+    false,
   );
   assert.equal(
     checkedDurableJournalBoundarySatisfied({
