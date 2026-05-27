@@ -102,6 +102,57 @@ test('plugin-driver proof summary resolves runtime mode aliases to the canonical
   assert.equal(resolveProductionPluginPackageModeProofKey(null), null);
 });
 
+test('plugin-driver proof summary resolves every exported runtime mode alias to one canonical proof key', () => {
+  const expectations = new Map([
+    ['driverRouteOnly', { canonicalMode: 'core-package-routes', proofKey: 'driverRouteProof' }],
+    ['driverRouteProof', { canonicalMode: 'core-package-routes', proofKey: 'driverRouteProof' }],
+    ['driverRouteProofOnly', { canonicalMode: 'core-package-routes', proofKey: 'driverRouteProof' }],
+    ['driverReceiptOnly', { canonicalMode: 'driver-receipt-guards', proofKey: 'driverReceiptGuards' }],
+    ['driverReceiptGuards', { canonicalMode: 'driver-receipt-guards', proofKey: 'driverReceiptGuards' }],
+    ['driverReceiptGuardsOnly', { canonicalMode: 'driver-receipt-guards', proofKey: 'driverReceiptGuards' }],
+    ['driverDeleteOnly', { canonicalMode: 'driver-delete-apply', proofKey: 'driverDeleteApplyProof' }],
+    ['driverDeleteApplyProof', { canonicalMode: 'driver-delete-apply', proofKey: 'driverDeleteApplyProof' }],
+    ['driverDeleteApplyProofOnly', { canonicalMode: 'driver-delete-apply', proofKey: 'driverDeleteApplyProof' }],
+    ['driverPositiveOnly', { canonicalMode: 'driver-positive-proof', proofKey: 'driverPositiveProof' }],
+    ['driverPositiveProof', { canonicalMode: 'driver-positive-proof', proofKey: 'driverPositiveProof' }],
+    ['driverPositiveProofOnly', { canonicalMode: 'driver-positive-proof', proofKey: 'driverPositiveProof' }],
+    ['driverReleaseOnly', { canonicalMode: 'driver-release-proof', proofKey: 'driverReleaseProof' }],
+    ['driverReleaseProof', { canonicalMode: 'driver-release-proof', proofKey: 'driverReleaseProof' }],
+    ['driverReleaseProofOnly', { canonicalMode: 'driver-release-proof', proofKey: 'driverReleaseProof' }],
+    ['driverMutationProof', { canonicalMode: 'driver-release-proof', proofKey: 'driverReleaseProof' }],
+    ['driverMutationProofOnly', { canonicalMode: 'driver-release-proof', proofKey: 'driverReleaseProof' }],
+    ['driverProof', { canonicalMode: 'driver-proof', proofKey: 'driverProof' }],
+    ['driverProofOnly', { canonicalMode: 'driver-proof', proofKey: 'driverProof' }],
+    ['driverVerifierOnly', { canonicalMode: 'driver-verifier-guards', proofKey: 'driverVerifierGuards' }],
+    ['driverVerifierGuards', { canonicalMode: 'driver-verifier-guards', proofKey: 'driverVerifierGuards' }],
+    ['driverVerifierGuardsOnly', { canonicalMode: 'driver-verifier-guards', proofKey: 'driverVerifierGuards' }],
+    ['driverRegistrationOnly', { canonicalMode: 'driver-registration-guards', proofKey: 'driverRegistrationGuards' }],
+    ['driverRegistrationGuards', { canonicalMode: 'driver-registration-guards', proofKey: 'driverRegistrationGuards' }],
+    ['driverRegistrationGuardsOnly', { canonicalMode: 'driver-registration-guards', proofKey: 'driverRegistrationGuards' }],
+    ['driverReceiptRegistrationOnly', { canonicalMode: 'driver-receipt-registration-guards', proofKey: 'driverReceiptRegistrationGuards' }],
+    ['driverReceiptRegistrationGuards', { canonicalMode: 'driver-receipt-registration-guards', proofKey: 'driverReceiptRegistrationGuards' }],
+    ['driverReceiptRegistrationGuardsOnly', { canonicalMode: 'driver-receipt-registration-guards', proofKey: 'driverReceiptRegistrationGuards' }],
+    ['driverCallbackOnly', { canonicalMode: 'driver-callback-guards', proofKey: 'driverCallbackGuards' }],
+    ['driverCallbackGuards', { canonicalMode: 'driver-callback-guards', proofKey: 'driverCallbackGuards' }],
+    ['driverCallbackGuardsOnly', { canonicalMode: 'driver-callback-guards', proofKey: 'driverCallbackGuards' }],
+    ['driverRegistrationShapeOnly', { canonicalMode: 'driver-registration-shape-guards', proofKey: 'driverRegistrationShapeGuards' }],
+    ['driverRegistrationShapeGuards', { canonicalMode: 'driver-registration-shape-guards', proofKey: 'driverRegistrationShapeGuards' }],
+    ['driverRegistrationShapeGuardsOnly', { canonicalMode: 'driver-registration-shape-guards', proofKey: 'driverRegistrationShapeGuards' }],
+  ]);
+
+  for (const [mode, expected] of expectations) {
+    assert.deepEqual(
+      resolveProductionPluginPackageModeProofKey(mode),
+      {
+        mode,
+        canonicalMode: expected.canonicalMode,
+        proofKey: expected.proofKey,
+      },
+      `${mode} should resolve to one canonical proof key`,
+    );
+  }
+});
+
 test('plugin-driver proof summary resolves runtime mode aliases directly to proof payloads', () => {
   const summary = buildProductionPluginPackageProofSummary(
     {
@@ -170,6 +221,44 @@ test('plugin-driver proof summary resolves runtime mode aliases directly to proo
     proof: summary.driverVerifierGuards,
   });
   assert.equal(resolveProductionPluginPackageModeProof(summary, null), null);
+});
+
+test('plugin-driver proof summary resolves exported runtime mode aliases directly to their canonical proof payloads', () => {
+  const summary = {
+    driverRouteProof: { id: 'route' },
+    driverReceiptGuards: { id: 'receipt' },
+    driverDeleteApplyProof: { id: 'delete' },
+    driverPositiveProof: { id: 'positive' },
+    driverReleaseProof: { id: 'release' },
+    driverProof: { id: 'proof' },
+    driverVerifierGuards: { id: 'verifier' },
+    driverReceiptRegistrationGuards: { id: 'receipt-registration' },
+    driverRegistrationGuards: { id: 'registration' },
+    driverCallbackGuards: { id: 'callback' },
+    driverRegistrationShapeGuards: { id: 'registration-shape' },
+  };
+
+  const expectations = new Map([
+    ['driverRouteProofOnly', summary.driverRouteProof],
+    ['driverReceiptGuardsOnly', summary.driverReceiptGuards],
+    ['driverDeleteApplyProofOnly', summary.driverDeleteApplyProof],
+    ['driverPositiveProofOnly', summary.driverPositiveProof],
+    ['driverMutationProofOnly', summary.driverReleaseProof],
+    ['driverProofOnly', summary.driverProof],
+    ['driverVerifierGuardsOnly', summary.driverVerifierGuards],
+    ['driverReceiptRegistrationGuardsOnly', summary.driverReceiptRegistrationGuards],
+    ['driverRegistrationGuardsOnly', summary.driverRegistrationGuards],
+    ['driverCallbackGuardsOnly', summary.driverCallbackGuards],
+    ['driverRegistrationShapeGuardsOnly', summary.driverRegistrationShapeGuards],
+  ]);
+
+  for (const [mode, expectedProof] of expectations) {
+    assert.equal(
+      resolveProductionPluginPackageModeProof(summary, mode)?.proof,
+      expectedProof,
+      `${mode} should resolve directly to the canonical proof payload`,
+    );
+  }
 });
 
 test('plugin-driver proof summary reports driver-proof as a first-class requested bundle', () => {
