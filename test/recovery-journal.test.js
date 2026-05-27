@@ -219,6 +219,7 @@ test('production recovery journal adapter is restart-readable and release-path c
   assert.equal(journal.ownsJournal, true);
   assert.equal(journal.leaseFence.id, 'claim-1');
   assert.equal(journal.leaseFence.epoch, 7);
+  assert.equal(journal.leaseFence.storageGuard, 'filesystem-compare-rename');
   assert.equal(Object.isFrozen(journal.leaseFence), true);
   assert.equal(journal.claimHash, recoveryClaimHash('claim-1'));
   assert.equal(journal.journalPath, filePath);
@@ -308,7 +309,7 @@ test('production recovery journal descriptor normalizes lease and artifact evide
     ownsRemoteArtifact: true,
     claimId: 'claim-describe',
     claimHash: recoveryClaimHash('claim-describe'),
-    leaseFence: { id: 'claim-describe', epoch: 11 },
+    leaseFence: { id: 'claim-describe', epoch: 11, storageGuard: 'filesystem-compare-rename' },
     writerLease: { id: 'claim-describe', epoch: 11 },
     journalPath: filePath,
     artifactRefs: { journal: filePath, remote: `${filePath}.remote` },
@@ -1456,7 +1457,7 @@ test('production recovery journal compatibility overload supports reliable relea
 
   assert.equal(inspection.consumed, true);
   assert.equal(inspection.journal.kind, 'production-recovery-journal');
-  assert.equal(inspection.journal.productionAdapter, 'openProductionRecoveryJournal');
+  assert.equal(inspection.journal.productionAdapter, 'filesystem-compare-rename');
   assert.equal(inspection.journal.supportedSurface, 'production-recovery-journal-adapter');
   assert.equal(inspection.journal.ownsJournal, true);
   assert.equal(inspection.journal.ownsRemoteArtifact, true);
@@ -1466,7 +1467,7 @@ test('production recovery journal compatibility overload supports reliable relea
   assert.deepEqual(inspection.journal.artifactRefs, artifactRefs);
   assert.deepEqual(inspection.journal.checked, [filePath]);
   assert.deepEqual(inspection.journal.writerLease, { id: claimId });
-  assert.deepEqual(inspection.journal.leaseFence, { id: claimId });
+  assert.deepEqual(inspection.journal.leaseFence, { id: claimId, storageGuard: 'filesystem-compare-rename' });
   assert.deepEqual(inspection.journal.consumedClaim, {
     sequence: 2,
     claimId,
@@ -1794,7 +1795,7 @@ test('production recovery journal consumption derives claim identity from the fe
   assert.equal(inspection.journal.claimId, claimId);
   assert.equal(inspection.journal.claimHash, recoveryClaimHash(claimId));
   assert.deepEqual(inspection.journal.writerLease, writerLease);
-  assert.deepEqual(inspection.journal.leaseFence, writerLease);
+  assert.deepEqual(inspection.journal.leaseFence, { ...writerLease, storageGuard: 'filesystem-compare-rename' });
   assert.deepEqual(inspection.journal.consumedClaim, {
     sequence: 2,
     claimId,
@@ -4448,7 +4449,7 @@ test('production recovery journal consumption surfaces stale claim advancement a
   assert.equal(inspection.journal.staleClaimRejected, true);
   assert.equal(inspection.journal.claimHash, recoveryClaimHash('claim-2'));
   assert.deepEqual(inspection.journal.writerLease, { id: 'claim-2', epoch: 2 });
-  assert.deepEqual(inspection.journal.leaseFence, { id: 'claim-2', epoch: 2 });
+  assert.deepEqual(inspection.journal.leaseFence, { id: 'claim-2', epoch: 2, storageGuard: 'filesystem-compare-rename' });
   assert.deepEqual(inspection.journal.writerLeaseContract, {
     strategy: 'claim-fenced-single-writer',
     claimKeyUnique: true,

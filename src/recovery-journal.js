@@ -772,7 +772,7 @@ export function openProductionRecoveryJournal(filePathOrOptions, options = {}) {
     now: normalized.now,
     claimId,
   });
-  const leaseFence = freezeProductionWriterLease(writerLease);
+  const leaseFence = surfaceProductionLeaseFence(writerLease);
   const assertProductionWriterLeaseCurrent = (eventType) => {
     if (
       !CLAIM_APPEND_EVENT_TYPES.has(eventType)
@@ -890,7 +890,7 @@ export function consumeProductionRecoveryJournal(options) {
     ? freezeProductionWriterLease(normalized.writerLease)
     : null;
   const claimId = explicitClaimId ?? writerLease?.id ?? null;
-  const leaseFence = freezeProductionWriterLease(writerLease);
+  const leaseFence = surfaceProductionLeaseFence(writerLease);
   if (normalized.ownsRemoteArtifact === true && normalized.remoteArtifactPath === null) {
     throw new UnsupportedProductionRecoveryJournalError(
       'Production recovery journal support requires an explicit remote artifact path when remote ownership is claimed.',
@@ -963,7 +963,7 @@ export function consumeProductionRecoveryJournal(options) {
       journalPath: filePath,
       checked: [filePath],
       artifactRefs,
-      productionAdapter: 'openProductionRecoveryJournal',
+      productionAdapter: 'filesystem-compare-rename',
       supportedSurface: 'production-recovery-journal-adapter',
       claimId,
       ownsJournal: true,
@@ -1042,10 +1042,10 @@ export function describeProductionRecoveryJournal(writer) {
       : null;
   const rawLeaseFence = Object.hasOwn(writer, 'leaseFence')
     && !hasHiddenOwnStringProperty(writer, 'leaseFence')
-    && isValidProductionWriterLease(writer.leaseFence)
+    && isValidProductionWriterLeaseFence(writer.leaseFence)
     ? writer.leaseFence
     : null;
-  const leaseFence = rawLeaseFence && writerLease && productionLeaseIdentitiesMatch(rawLeaseFence, writerLease)
+  const leaseFence = rawLeaseFence && writerLease && productionLeaseFenceMatchesWriterLease(rawLeaseFence, writerLease)
     ? Object.freeze({ ...rawLeaseFence })
     : null;
   const rawArtifactRefs = Object.hasOwn(writer, 'artifactRefs')
@@ -1142,6 +1142,44 @@ function isValidProductionWriterLease(writerLease) {
       || (Number.isInteger(writerLease.epoch) && writerLease.epoch >= 0)
     )
   );
+}
+
+function isValidProductionWriterLeaseFence(writerLease) {
+  const ownKeys = Reflect.ownKeys(writerLease ?? {});
+  return (
+    isStrictPlainObject(writerLease)
+    && !hasHiddenOwnStringKeys(writerLease)
+    && ownKeys.every((key) => key === 'id' || key === 'epoch' || key === 'storageGuard')
+    && Object.hasOwn(writerLease, 'id')
+    && typeof writerLease.id === 'string'
+    && writerLease.id.trim().length > 0
+    && writerLease.id.trim() === writerLease.id
+    && (
+      !Object.hasOwn(writerLease, 'epoch')
+      || (Number.isInteger(writerLease.epoch) && writerLease.epoch >= 0)
+    )
+    && (
+      !Object.hasOwn(writerLease, 'storageGuard')
+      || (
+        typeof writerLease.storageGuard === 'string'
+        && writerLease.storageGuard === 'filesystem-compare-rename'
+      )
+    )
+  );
+}
+
+function productionLeaseFenceMatchesWriterLease(leaseFence, writerLease) {
+  return isValidProductionWriterLeaseFence(leaseFence)
+    && isValidProductionWriterLease(writerLease)
+    && leaseFence.id === writerLease.id
+    && (
+      (!Object.hasOwn(leaseFence, 'epoch') && !Object.hasOwn(writerLease, 'epoch'))
+      || (
+        Object.hasOwn(leaseFence, 'epoch')
+        && Object.hasOwn(writerLease, 'epoch')
+        && leaseFence.epoch === writerLease.epoch
+      )
+    );
 }
 
 function productionLeaseIdentitiesMatch(left, right) {
@@ -2183,6 +2221,17 @@ function freezeProductionWriterLease(writerLease) {
 
   return Object.freeze({
     ...writerLease,
+  });
+}
+
+function surfaceProductionLeaseFence(writerLease) {
+  if (!isValidProductionWriterLease(writerLease)) {
+    return writerLease;
+  }
+
+  return Object.freeze({
+    ...writerLease,
+    storageGuard: 'filesystem-compare-rename',
   });
 }
 
