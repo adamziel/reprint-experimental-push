@@ -53,6 +53,7 @@ export async function runAuthenticatedHttpPush({
   requireProductionAuthSession = false,
   simulateStaleClaimRetry = false,
   simulatePreservedRemoteRetryPath = '',
+  probePreservedRemoteRetry = false,
   proveDurableJournalBoundary = false,
   labAuthSessionDrift = '',
   authSessionSource = null,
@@ -86,7 +87,7 @@ export async function runAuthenticatedHttpPush({
     sourceUrl: resolvedSource.sourceUrl,
     credential,
     routeProfile: profile.name,
-    simulatePreservedRemoteRetryPath,
+    simulatePreservedRemoteRetryPath: probePreservedRemoteRetry ? '' : simulatePreservedRemoteRetryPath,
   });
   const summary = {
     ok: false,
@@ -1388,26 +1389,15 @@ export async function runAuthenticatedHttpPush({
   }
   summary.dbJournal = summarizeDbJournal(dbJournal);
   updateRetryAttempts(summary, summary.dbJournal);
-  if (simulatePreservedRemoteRetryPath) {
+  if (probePreservedRemoteRetry && simulatePreservedRemoteRetryPath) {
     try {
       const preservedRemoteRetry = await client.signedGet(simulatePreservedRemoteRetryPath, {
         session,
         retryable: true,
+        simulateTransientReadFailure: true,
       });
       summary.preservedRemoteRetry = summarizeResponse(preservedRemoteRetry);
       updateRetryAttempts(summary, summary.preservedRemoteRetry);
-      if (requiredPreservedRemoteRetryPath) {
-        summary.readRetryEvidence[requiredPreservedRemoteRetryPath] = Math.max(
-          summary.readRetryEvidence[requiredPreservedRemoteRetryPath] || 1,
-          summary.preservedRemoteRetry.retryAttempts || 1,
-          2,
-        );
-        summary.latestReadRetryEvidence[requiredPreservedRemoteRetryPath] = Math.max(
-          summary.latestReadRetryEvidence[requiredPreservedRemoteRetryPath] || 1,
-          summary.preservedRemoteRetry.retryAttempts || 1,
-          2,
-        );
-      }
     } catch (error) {
       captureTransportFailure(summary, 'preservedRemoteRetry', error, 'PRESERVED_REMOTE_RETRY_REQUIRED', 'replay');
       return summary;
@@ -1948,6 +1938,9 @@ export function authenticatedHttpClient({
     },
     signedGet(pathSuffix, options = {}) {
       const pathname = `${profile.namespacePath}${pathSuffix}`;
+      const beforeAttempt = options.simulateTransientReadFailure === true
+        ? createOneShotTransientReadFailureProbe(pathname)
+        : maybeSimulateTransientReadFailure;
       return requestJsonRaw(
         baseUrl,
         'GET',
@@ -1957,7 +1950,7 @@ export function authenticatedHttpClient({
         requestTimeoutMs,
         {
           retryable: options.retryable === true && !hasSideEffectQueryParam(pathname),
-          beforeAttempt: maybeSimulateTransientReadFailure,
+          beforeAttempt,
         },
       );
     },
@@ -3902,6 +3895,19 @@ function createTransientReadFailureProbe(baseUrl, namespacePath, pathSuffix) {
     }
     pending = false;
     throw Object.assign(new TypeError(`simulated transient read failure for ${requestPath}`), {
+      cause: { code: 'ECONNRESET' },
+    });
+  };
+}
+
+function createOneShotTransientReadFailureProbe(pathname) {
+  let pending = true;
+  return ({ method, attempt }) => {
+    if (!pending || method !== 'GET' || attempt !== 1) {
+      return;
+    }
+    pending = false;
+    throw Object.assign(new TypeError(`simulated transient read failure for ${pathname}`), {
       cause: { code: 'ECONNRESET' },
     });
   };
