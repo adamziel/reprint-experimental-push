@@ -260,6 +260,55 @@ Key structured output from the published `24ec8558b` ref:
 | GATE-3 Live Docker/Playground production topology | The verifier blocks fallback sources and records local-only ingress policy. | A checked live source/local/changed topology against a real production-owned boundary. | `24ec8558b` reports `packagedFallbackAllowed: false`, source/local/drift ports as `null`, and release movement `allowed: false`. | No gate movement. |
 | GATE-4 Plugin-driver ownership boundary | No live plugin-driver mutation proof is present in these verifier runs. | Plugin-owned mutation on the release boundary with allowlisted semantics, precondition evidence, rejected remote preservation, apply-time revalidation, and audit evidence. | The local consolidated command exits at the missing live-source boundary before plugin-driver release proof can move a gate. | No gate movement. |
 
+## Follow-Up Artifact-Only Check 18:25
+
+Commands:
+
+```bash
+git fetch --all --prune
+git for-each-ref --sort=-committerdate --format='%(refname:short) %(objectname:short) %(committerdate:iso8601) %(subject)' \
+  refs/remotes/origin/supervisor/release-boundary-consolidated-20260527 \
+  refs/heads/supervisor/release-boundary-consolidated-20260527 \
+  refs/remotes/origin/lane/auth-session-boundary-v2-20260527 \
+  refs/heads/lane/auth-session-boundary-v2-20260527 \
+  refs/remotes/origin/lane/durable-journal-boundary-v2-20260527 \
+  refs/heads/lane/durable-journal-boundary-v2-20260527 \
+  refs/remotes/origin/lane/apply-revalidation-boundary-v2-20260527 \
+  refs/heads/lane/apply-revalidation-boundary-v2-20260527 \
+  refs/remotes/origin/lane/plugin-driver-boundary-v2-20260527 \
+  refs/heads/lane/plugin-driver-boundary-v2-20260527 \
+  refs/remotes/origin/lane/topology-verifier-v2-20260527 \
+  refs/heads/lane/topology-verifier-v2-20260527 \
+  refs/remotes/origin/lane/critic-reorg-v2-20260527 \
+  refs/remotes/origin/lane/auditor-reorg-20260527 \
+  refs/heads/lane/auditor-reorg-20260527
+timeout 300s npm run verify:release
+```
+
+New artifact facts since the previous auditor update:
+
+| Ref | Head | Status |
+| --- | --- | --- |
+| `origin/lane/durable-journal-boundary-v2-20260527` | `64ee80c54` | Newly present remote v2 support branch |
+| `origin/lane/critic-reorg-v2-20260527` | `2ab77caa7` | Critic update still keeps verdict at `0/4` |
+| `lane/plugin-driver-boundary-v2-20260527` | `979d680cd` | New local-only support head; no matching remote ref observed |
+
+The repeat consolidated verifier run in `/tmp/reprint-reorg-integrator-20260527`
+again exited `1` with `REPRINT_PUSH_LIVE_SOURCE_REQUIRED`,
+`packagedFallbackAllowed: false`, source/local/drift ports as `null`, and
+release movement `allowed: false`. This is the same missing-live-source
+support evidence, not release-gate movement.
+
+Durable v2 artifact note: comparing
+`origin/supervisor/release-boundary-consolidated-20260527..origin/lane/durable-journal-boundary-v2-20260527`
+shows changes under release verifier/client/test files, but no command evidence
+in this audit proves `ownsJournal: true`, `restartReadable: true`, or
+`leaseFenced: true` on a real live `REPRINT_PUSH_SOURCE_URL`.
+
+Plugin v2 artifact note: the newest plugin-driver v2 head is local-only in this
+workspace. It cannot move GATE-4 without a checked live release command proving
+plugin-driver ownership on the same real source boundary.
+
 ## Blocker
 
 The consolidated branch requested by `NEXT_TASKS.md` now exists remotely at
