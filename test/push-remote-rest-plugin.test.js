@@ -7736,6 +7736,78 @@ test('checked recovery inspect evidence fails closed on missing accepted inline 
   assert.deepEqual(parsed.recovery.journal.leaseFence.writerLease, inlineJournal.leaseFence.writerLease);
 });
 
+test('checked recovery inspect evidence fails closed on conflicting accepted inline writer-lease claim identity instead of silently normalizing it', { skip: !hasPhp }, () => {
+  const inlineJournal = buildAcceptedInlineRecoveryJournal();
+  inlineJournal.writerLease.claimId = 'conflicting-inline-active-claim-id';
+
+  const result = runAttachCheckedRecoveryJournalEvidence(
+    { recovery: { journal: inlineJournal } },
+    true,
+    false,
+    buildCheckedRecoveryJournalSummary(),
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.recovery.journal.acceptedOnCheckedBoundary, false);
+  assert.deepEqual(parsed.recovery.journal.writerLease, inlineJournal.writerLease);
+  assert.deepEqual(parsed.recovery.journal.leaseFence, inlineJournal.leaseFence);
+});
+
+test('checked recovery inspect evidence fails closed on conflicting accepted inline writer-lease claim-key hash instead of silently normalizing it', { skip: !hasPhp }, () => {
+  const inlineJournal = buildAcceptedInlineRecoveryJournal();
+  inlineJournal.writerLease.claimKeyHash = 'conflicting-inline-active-claim-key-hash';
+
+  const result = runAttachCheckedRecoveryJournalEvidence(
+    { recovery: { journal: inlineJournal } },
+    true,
+    false,
+    buildCheckedRecoveryJournalSummary(),
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.recovery.journal.acceptedOnCheckedBoundary, false);
+  assert.deepEqual(parsed.recovery.journal.writerLease, inlineJournal.writerLease);
+  assert.deepEqual(parsed.recovery.journal.leaseFence, inlineJournal.leaseFence);
+});
+
+test('checked recovery inspect evidence fails closed on conflicting accepted inline nested writer-lease claim identity instead of silently normalizing it', { skip: !hasPhp }, () => {
+  const inlineJournal = buildAcceptedInlineRecoveryJournal();
+  inlineJournal.leaseFence.writerLease.claimId = 'conflicting-nested-active-claim-id';
+
+  const result = runAttachCheckedRecoveryJournalEvidence(
+    { recovery: { journal: inlineJournal } },
+    true,
+    false,
+    buildCheckedRecoveryJournalSummary(),
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.recovery.journal.acceptedOnCheckedBoundary, false);
+  assert.deepEqual(parsed.recovery.journal.writerLease, inlineJournal.writerLease);
+  assert.deepEqual(parsed.recovery.journal.leaseFence, inlineJournal.leaseFence);
+});
+
+test('checked recovery inspect evidence fails closed on conflicting accepted inline nested writer-lease claim-key hash instead of silently normalizing it', { skip: !hasPhp }, () => {
+  const inlineJournal = buildAcceptedInlineRecoveryJournal();
+  inlineJournal.leaseFence.writerLease.claimKeyHash = 'conflicting-nested-active-claim-key-hash';
+
+  const result = runAttachCheckedRecoveryJournalEvidence(
+    { recovery: { journal: inlineJournal } },
+    true,
+    false,
+    buildCheckedRecoveryJournalSummary(),
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.recovery.journal.acceptedOnCheckedBoundary, false);
+  assert.deepEqual(parsed.recovery.journal.writerLease, inlineJournal.writerLease);
+  assert.deepEqual(parsed.recovery.journal.leaseFence, inlineJournal.leaseFence);
+});
+
 test('checked recovery inspect evidence fails closed on missing accepted inline writer-lease storage guard instead of backfilling it from checked evidence', { skip: !hasPhp }, () => {
   const inlineJournal = buildAcceptedInlineRecoveryJournal();
   delete inlineJournal.writerLease.storageGuard;

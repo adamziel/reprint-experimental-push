@@ -643,6 +643,25 @@ function reprint_push_lab_rest_attach_checked_recovery_journal_evidence(
             unset($result['recovery']['journal']['claim']);
         }
     }
+    if (
+        is_array($premerge_checked_journal)
+        && reprint_push_lab_rest_checked_writer_lease_claim_identity_conflicts(
+            $premerge_checked_journal,
+            $checked_db_journal
+        )
+    ) {
+        if (array_key_exists('writerLease', $premerge_checked_journal)) {
+            $result['recovery']['journal']['writerLease'] = $premerge_checked_journal['writerLease'];
+        } else {
+            unset($result['recovery']['journal']['writerLease']);
+        }
+
+        if (array_key_exists('leaseFence', $premerge_checked_journal)) {
+            $result['recovery']['journal']['leaseFence'] = $premerge_checked_journal['leaseFence'];
+        } else {
+            unset($result['recovery']['journal']['leaseFence']);
+        }
+    }
     return $result;
 }
 
