@@ -75,6 +75,12 @@ const HIDDEN_MEMORY_CEILING_VISIBILITY_BLOCKER_REFS = Object.freeze([
   'receipt-cursor-memory-headroom-visible-without-memory-ceiling-visibility',
   'receipt-cursor-queue-slack-visible-without-memory-ceiling-visibility',
 ]);
+const HIDDEN_STAGING_DISK_VISIBILITY_BLOCKER_REFS = Object.freeze([
+  'staging-disk-headroom-not-visible',
+]);
+const POST_PAUSE_STAGING_DISK_FOOTPRINT_BLOCKER_REFS = Object.freeze([
+  'staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint',
+]);
 const POST_PAUSE_HIDDEN_RESOURCE_VISIBILITY_BLOCKER_REFS = Object.freeze([
   'staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint',
   ...HIDDEN_MEMORY_CEILING_VISIBILITY_BLOCKER_REFS,
@@ -82,6 +88,15 @@ const POST_PAUSE_HIDDEN_RESOURCE_VISIBILITY_BLOCKER_REFS = Object.freeze([
 const POST_PAUSE_HIDDEN_QUEUE_BUDGET_RESOURCE_VISIBILITY_BLOCKER_REFS = Object.freeze([
   'staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint',
   ...HIDDEN_QUEUE_BUDGET_VISIBILITY_BLOCKER_REFS,
+]);
+const POST_PAUSE_HIDDEN_QUEUE_HEADROOM_RESOURCE_VISIBILITY_BLOCKER_REFS = Object.freeze([
+  'staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint',
+  'queue-budget-visible-without-queue-headroom-visible',
+  'memory-ceiling-match-visible-without-queue-headroom-visibility',
+  'memory-ceiling-visible-without-queue-headroom-visible',
+  'queue-headroom-not-visible',
+  'receipt-cursor-memory-headroom-visible-without-queue-headroom-visibility',
+  'receipt-cursor-queue-slack-visible-without-queue-headroom-visibility',
 ]);
 
 function summarizeRejectedGates(entries) {
@@ -11755,18 +11770,11 @@ test('guarded benchmark carries hidden queue-budget visibility blockers into rel
   const details = productionThroughputDetails(mutated);
   const blockers = productionThroughputBlockers(mutated);
   const releaseBundlePauseRejectedFastPaths = details.rejectedFastPaths.filter((entry) => [
-    'compressed-remote-index-and-cached-row-batch-receipts-skips-release-bundle-commit-after-pause',
-    'compressed-remote-index-and-cached-row-receipts-skips-release-bundle-commit-after-pause',
     'compressed-remote-index-and-cached-dependency-graph-skips-release-bundle-commit-after-pause',
     'compressed-remote-index-and-cached-file-hash-skips-release-bundle-commit-after-pause',
-    'compressed-remote-index-and-cached-release-manifest-and-batched-receipt-flush-skips-release-bundle-commit-after-pause',
-    'compressed-remote-index-and-cached-release-manifest-and-journal-lag-skips-release-bundle-commit-after-pause',
     'compressed-remote-index-and-cached-release-manifest-and-batched-receipt-flush-skips-release-bundle-planning-after-pause',
     'cached-receipt-cursor-and-staging-disk-headroom-skips-release-bundle-commit-after-pause',
     'cached-receipt-cursor-staging-disk-headroom-and-journal-lag-skips-release-bundle-commit-after-pause',
-    'compressed-remote-index-and-cached-release-cursor-skips-release-bundle-commit-after-pause',
-    'compressed-remote-index-and-batched-receipt-flush-skips-release-bundle-commit-after-pause',
-    'compressed-remote-index-and-batched-chunk-and-db-receipts-skips-release-bundle-commit-after-pause',
   ].includes(entry.id));
 
   assert.ok(blockers.includes('queue-budget-not-visible'));
@@ -11843,6 +11851,125 @@ test('guarded benchmark carries hidden queue-budget visibility blockers into rel
         id: 'compressed-remote-index-and-cached-row-receipts-skips-release-bundle-commit-after-pause',
         rejectedGate: 'group',
         blockerRefs: POST_PAUSE_HIDDEN_QUEUE_BUDGET_RESOURCE_VISIBILITY_BLOCKER_REFS,
+      },
+    ].sort((left, right) => left.id.localeCompare(right.id)),
+  );
+});
+
+test('guarded benchmark carries hidden queue-headroom visibility blockers into release-bundle post-pause summaries', () => {
+  const report = smallBenchmark();
+  const mutated = clone(report);
+
+  mutated.executorCapabilities.productionAtomicCommit = 'production-atomic-group-commit';
+  mutated.executorCapabilities.fileReceipts = 'production-storage-receipts';
+  mutated.executorCapabilities.rowApply = 'production-batched-compare-and-swap';
+  mutated.evidence.parallelism.parallelismLimitsMeasured = true;
+  mutated.evidence.parallelism.parallelismLimitsVisible = true;
+  mutated.evidence.parallelism.parallelismLimits = {
+    chunkUpload: 4,
+    fileHashing: 2,
+    dbBatchPerTable: 2,
+  };
+  mutated.evidence.atomicGroup.productionAtomicCommitMeasured = true;
+  mutated.evidence.atomicGroup.productionAtomicCommitVisible = true;
+  mutated.evidence.atomicGroup.productionAtomicGroupMetadataVisible = true;
+  mutated.evidence.atomicGroup.productionStorageReceiptsMeasured = true;
+  mutated.evidence.atomicGroup.productionStorageReceiptsVisible = true;
+  mutated.evidence.atomicGroup.productionRowBatchExecutorMeasured = true;
+  mutated.evidence.atomicGroup.productionRowBatchExecutorVisible = true;
+  mutated.evidence.backpressure.queueHeadroomVisible = false;
+
+  const details = productionThroughputDetails(mutated);
+  const blockers = productionThroughputBlockers(mutated);
+  const releaseBundlePauseRejectedFastPaths = details.rejectedFastPaths.filter((entry) => [
+    'compressed-remote-index-and-cached-row-batch-receipts-skips-release-bundle-commit-after-pause',
+    'compressed-remote-index-and-cached-row-receipts-skips-release-bundle-commit-after-pause',
+    'compressed-remote-index-and-cached-dependency-graph-skips-release-bundle-commit-after-pause',
+    'compressed-remote-index-and-cached-file-hash-skips-release-bundle-commit-after-pause',
+    'compressed-remote-index-and-cached-release-manifest-and-batched-receipt-flush-skips-release-bundle-commit-after-pause',
+    'compressed-remote-index-and-cached-release-manifest-and-journal-lag-skips-release-bundle-commit-after-pause',
+    'compressed-remote-index-and-cached-release-manifest-and-batched-receipt-flush-skips-release-bundle-planning-after-pause',
+    'cached-receipt-cursor-and-staging-disk-headroom-skips-release-bundle-commit-after-pause',
+    'cached-receipt-cursor-staging-disk-headroom-and-journal-lag-skips-release-bundle-commit-after-pause',
+    'compressed-remote-index-and-cached-release-cursor-skips-release-bundle-commit-after-pause',
+    'compressed-remote-index-and-batched-receipt-flush-skips-release-bundle-commit-after-pause',
+    'compressed-remote-index-and-batched-chunk-and-db-receipts-skips-release-bundle-commit-after-pause',
+  ].includes(entry.id));
+
+  assert.ok(blockers.includes('queue-budget-visible-without-queue-headroom-visible'));
+  assert.ok(blockers.includes('memory-ceiling-match-visible-without-queue-headroom-visibility'));
+  assert.ok(blockers.includes('memory-ceiling-visible-without-queue-headroom-visible'));
+  assert.ok(blockers.includes('queue-headroom-not-visible'));
+  assert.ok(blockers.includes('receipt-cursor-memory-headroom-visible-without-queue-headroom-visibility'));
+  assert.ok(blockers.includes('receipt-cursor-queue-slack-visible-without-queue-headroom-visibility'));
+  assert.deepEqual(
+    releaseBundlePauseRejectedFastPaths
+      .map((entry) => ({
+        id: entry.id,
+        rejectedGate: entry.rejectedGate,
+        blockerRefs: entry.blockerRefs,
+      }))
+      .sort((left, right) => left.id.localeCompare(right.id)),
+    [
+      {
+        id: 'cached-receipt-cursor-and-staging-disk-headroom-skips-release-bundle-commit-after-pause',
+        rejectedGate: 'recovery',
+        blockerRefs: POST_PAUSE_HIDDEN_QUEUE_HEADROOM_RESOURCE_VISIBILITY_BLOCKER_REFS,
+      },
+      {
+        id: 'cached-receipt-cursor-staging-disk-headroom-and-journal-lag-skips-release-bundle-commit-after-pause',
+        rejectedGate: 'recovery',
+        blockerRefs: POST_PAUSE_HIDDEN_QUEUE_HEADROOM_RESOURCE_VISIBILITY_BLOCKER_REFS,
+      },
+      {
+        id: 'compressed-remote-index-and-batched-chunk-and-db-receipts-skips-release-bundle-commit-after-pause',
+        rejectedGate: 'group',
+        blockerRefs: POST_PAUSE_STAGING_DISK_FOOTPRINT_BLOCKER_REFS,
+      },
+      {
+        id: 'compressed-remote-index-and-batched-receipt-flush-skips-release-bundle-commit-after-pause',
+        rejectedGate: 'recovery',
+        blockerRefs: POST_PAUSE_STAGING_DISK_FOOTPRINT_BLOCKER_REFS,
+      },
+      {
+        id: 'compressed-remote-index-and-cached-dependency-graph-skips-release-bundle-commit-after-pause',
+        rejectedGate: 'group',
+        blockerRefs: POST_PAUSE_HIDDEN_QUEUE_HEADROOM_RESOURCE_VISIBILITY_BLOCKER_REFS,
+      },
+      {
+        id: 'compressed-remote-index-and-cached-file-hash-skips-release-bundle-commit-after-pause',
+        rejectedGate: 'group',
+        blockerRefs: POST_PAUSE_HIDDEN_QUEUE_HEADROOM_RESOURCE_VISIBILITY_BLOCKER_REFS,
+      },
+      {
+        id: 'compressed-remote-index-and-cached-release-cursor-skips-release-bundle-commit-after-pause',
+        rejectedGate: 'recovery',
+        blockerRefs: POST_PAUSE_STAGING_DISK_FOOTPRINT_BLOCKER_REFS,
+      },
+      {
+        id: 'compressed-remote-index-and-cached-release-manifest-and-batched-receipt-flush-skips-release-bundle-commit-after-pause',
+        rejectedGate: 'group',
+        blockerRefs: POST_PAUSE_STAGING_DISK_FOOTPRINT_BLOCKER_REFS,
+      },
+      {
+        id: 'compressed-remote-index-and-cached-release-manifest-and-batched-receipt-flush-skips-release-bundle-planning-after-pause',
+        rejectedGate: 'skip',
+        blockerRefs: POST_PAUSE_HIDDEN_QUEUE_HEADROOM_RESOURCE_VISIBILITY_BLOCKER_REFS,
+      },
+      {
+        id: 'compressed-remote-index-and-cached-release-manifest-and-journal-lag-skips-release-bundle-commit-after-pause',
+        rejectedGate: 'group',
+        blockerRefs: POST_PAUSE_STAGING_DISK_FOOTPRINT_BLOCKER_REFS,
+      },
+      {
+        id: 'compressed-remote-index-and-cached-row-batch-receipts-skips-release-bundle-commit-after-pause',
+        rejectedGate: 'group',
+        blockerRefs: POST_PAUSE_STAGING_DISK_FOOTPRINT_BLOCKER_REFS,
+      },
+      {
+        id: 'compressed-remote-index-and-cached-row-receipts-skips-release-bundle-commit-after-pause',
+        rejectedGate: 'group',
+        blockerRefs: POST_PAUSE_STAGING_DISK_FOOTPRINT_BLOCKER_REFS,
       },
     ].sort((left, right) => left.id.localeCompare(right.id)),
   );
