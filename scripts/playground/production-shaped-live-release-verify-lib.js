@@ -113,6 +113,7 @@ export function shouldUseProductionSnapshotExport({
 export function resolveCheckedReleaseTopology({
   remoteBaseUrl = '',
   explicitSourceUrl = '',
+  explicitRemoteChangedUrl = '',
   explicitLocalUrl = '',
   packagedBoundaryRequested = false,
 } = {}) {
@@ -120,7 +121,9 @@ export function resolveCheckedReleaseTopology({
 
   return {
     remoteBase: remoteBaseUrl,
-    remoteChanged: explicitLiveTopologyRequested ? explicitSourceUrl : 'remote-changed',
+    remoteChanged: explicitLiveTopologyRequested
+      ? (explicitRemoteChangedUrl || explicitSourceUrl)
+      : 'remote-changed',
     localEdited: explicitLocalUrl || 'local-edited',
   };
 }

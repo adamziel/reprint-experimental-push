@@ -81,6 +81,7 @@ const requireProductionAuthSession = process.env.REPRINT_PUSH_REQUIRE_PRODUCTION
 const labAuthSessionDrift = process.env.REPRINT_PUSH_LAB_AUTH_SESSION_DRIFT || '';
 const requiredPreservedRemoteRetryPath = process.env.REPRINT_PUSH_SIMULATE_PRESERVED_REMOTE_RETRY_PATH || '/snapshot';
 const explicitReleaseVerifySourceUrl = process.env.REPRINT_PUSH_SOURCE_URL || process.env.REPRINT_PUSH_REMOTE_URL || '';
+const explicitReleaseVerifyRemoteChangedUrl = process.env.REPRINT_PUSH_REMOTE_CHANGED_URL || '';
 const explicitReleaseVerifyLocalUrl = process.env.REPRINT_PUSH_LOCAL_URL || '';
 const explicitReleaseVerifyUsername = process.env.REPRINT_PUSH_LAB_AUTH_ADMIN_USER || process.env.REPRINT_PUSH_USERNAME || '';
 const explicitReleaseVerifyApplicationPassword = process.env.REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD || process.env.REPRINT_PUSH_APPLICATION_PASSWORD || '';
@@ -727,6 +728,7 @@ try {
   const checkedTopology = resolveCheckedReleaseTopology({
     remoteBaseUrl: remoteServer.baseUrl,
     explicitSourceUrl: explicitReleaseVerifySourceUrl,
+    explicitRemoteChangedUrl: explicitReleaseVerifyRemoteChangedUrl,
     explicitLocalUrl: explicitReleaseVerifyLocalUrl,
     packagedBoundaryRequested: packagedSourceFixture !== null,
   });
@@ -735,7 +737,9 @@ try {
       ? await exportSnapshot('local-edited', explicitReleaseVerifyLocalUrl)
       : exportSnapshotFromBlueprint('local-edited', localEditedFixturePath),
   );
-  const remoteChangedSnapshot = exportSnapshotFromBlueprint('remote-changed', remoteChangedFixturePath);
+  const remoteChangedSnapshot = explicitReleaseVerifyRemoteChangedUrl
+    ? await exportSnapshot('remote-changed', explicitReleaseVerifyRemoteChangedUrl)
+    : exportSnapshotFromBlueprint('remote-changed', remoteChangedFixturePath);
   try {
       const client = authenticatedHttpClient({
         sourceUrl: liveSourceUrl,
@@ -791,7 +795,11 @@ try {
               drift: labDriftAfterSnapshot ? {
                 mode: labDriftAfterSnapshot,
                 sameRemoteIdentity: true,
-                changedHash: snapshotHash(proof.remoteSnapshotObject || remoteChangedSnapshot),
+                changedHash: snapshotHash(
+                  explicitReleaseVerifyRemoteChangedUrl
+                    ? remoteChangedSnapshot
+                    : (proof.remoteSnapshotObject || remoteChangedSnapshot)
+                ),
               } : {
                 sameRemoteIdentity: true,
               },
@@ -1085,13 +1093,17 @@ try {
         sameRemoteIdentity: true,
         baseHash: snapshotHash(remoteBaseSnapshot),
         changedHash: snapshotHash(
-          explicitReleaseVerifySourceUrl && packagedSourceFixture === null
-            ? (proof.remoteSnapshotObject || remoteBaseSnapshot)
+          explicitReleaseVerifyRemoteChangedUrl
+            ? remoteChangedSnapshot
+            : explicitReleaseVerifySourceUrl && packagedSourceFixture === null
+              ? (proof.remoteSnapshotObject || remoteBaseSnapshot)
             : remoteChangedSnapshot
         ),
         changedFixture:
-          explicitReleaseVerifySourceUrl && packagedSourceFixture === null
-            ? (proof.remoteSnapshotObject?.meta?.fixture || null)
+          explicitReleaseVerifyRemoteChangedUrl
+            ? (remoteChangedSnapshot.meta?.fixture || null)
+            : explicitReleaseVerifySourceUrl && packagedSourceFixture === null
+              ? (proof.remoteSnapshotObject?.meta?.fixture || null)
             : remoteChangedSnapshot.meta?.fixture,
       };
       const authSessionLifecycleSummary =
@@ -1490,7 +1502,11 @@ try {
               ? {
                   mode: labDriftAfterSnapshot,
                   sameRemoteIdentity: true,
-                  changedHash: snapshotHash(proof.remoteSnapshotObject || remoteChangedSnapshot),
+                  changedHash: snapshotHash(
+                    explicitReleaseVerifyRemoteChangedUrl
+                      ? remoteChangedSnapshot
+                      : (proof.remoteSnapshotObject || remoteChangedSnapshot)
+                  ),
                 }
               : {
                   sameRemoteIdentity: true,
