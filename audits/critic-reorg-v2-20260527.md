@@ -106,6 +106,116 @@ full boundary.
 
 Verdict: `0/4`
 
+## Follow-up - Current V2 Heads And Consolidated Audit Refresh
+
+Commit:
+
+- Reviewed `origin/supervisor/release-boundary-consolidated-20260527` at
+  `4fe66dc8ccf880c0e8e34f46f370368d5a67ec2f`
+  (`Refresh auditor auth durable v2 heads`).
+- Reviewed `origin/lane/auth-session-boundary-v2-20260527` at
+  `19b4a5ad9d68eca26b0a102ab6d36ae088d33889`
+  (`Cover auth readback source drift`).
+- Reviewed `origin/lane/durable-journal-boundary-v2-20260527` at
+  `532a659f0611f4896fb071b9b1601ff41cc23e87`
+  (`Scope preserved retry release probe`).
+- Reviewed `origin/lane/apply-revalidation-boundary-v2-20260527` at
+  `ff23bd33e8cea6d25fa91d402b086615a6360a8b`
+  (`Merge branch 'supervisor/release-boundary-consolidated-20260527' into
+  lane/apply-revalidation-boundary-v2-20260527`).
+- Reviewed `origin/lane/plugin-driver-boundary-v2-20260527` at
+  `08e6b1c3dc0994e09d4a19bc19352d8b9adc0306`
+  (`Harden plugin driver boundary tests`).
+- Reviewed `origin/lane/topology-verifier-v2-20260527` at
+  `e824aaf48bb1dd9a932a76a84bc630fcf96ce256`
+  (`Merge consolidated topology base`).
+- Confirmed `origin/lane/reliable-executor` remains at
+  `c54fbd738357c55fb57fe3b6f5e73b8e99450dbf`
+  (`Map more core WordPress graph identities`).
+
+Claim:
+
+- New fact: the consolidated branch now contains the refreshed auditor v2
+  artifact for the current v2 heads.
+- New fact: all reviewed v2 support lanes are now present on origin.
+- New fact: the integrator worktree is no longer conflicted; after fetch it is
+  aligned with `origin/supervisor/release-boundary-consolidated-20260527` and
+  has only untracked `.agents/` files.
+- Release verdict remains `0/4`.
+
+Evidence:
+
+- `git fetch origin --prune` completed.
+- `git for-each-ref` returned the heads listed above.
+- `git -C /tmp/reprint-reorg-integrator-20260527 fetch origin --prune`
+  completed, and `git -C /tmp/reprint-reorg-integrator-20260527 status
+  --short --branch` reported the consolidated branch tracking origin with only
+  untracked `.agents/` files.
+- `git -C /tmp/reprint-reorg-integrator-20260527 diff --check` completed with
+  no output.
+- `origin/supervisor/release-boundary-consolidated-20260527` changes only the
+  auditor artifact at its current head.
+- `origin/lane/auth-session-boundary-v2-20260527` adds readback source-drift
+  coverage in `test/production-shaped-proof.test.js`.
+- `origin/lane/durable-journal-boundary-v2-20260527` scopes the preserved
+  remote retry probe through
+  `scripts/playground/production-shaped-release-verify.mjs` and
+  `src/authenticated-http-push-client.js`.
+- `origin/lane/apply-revalidation-boundary-v2-20260527` is a consolidated
+  merge after the focused apply-revalidation support test work.
+- `origin/lane/plugin-driver-boundary-v2-20260527` is test-only hardening in
+  `test/production-shaped-proof.test.js`.
+- `origin/lane/topology-verifier-v2-20260527` carries the topology
+  fail-closed support proof and consolidated topology base.
+- The only retained release-command evidence remains missing-source failure:
+  exit `1`, `REPRINT_PUSH_LIVE_SOURCE_REQUIRED`,
+  `releaseMovement.allowed: false`, `releaseMovement.gates: 0/4`, and
+  `packagedFallbackAllowed: false`.
+- Reviewed code and tests include loopback/Playground source URLs and
+  placeholder real-source command text, but no retained command output from a
+  real non-lab `REPRINT_PUSH_SOURCE_URL`.
+
+gate-by-gate movement:
+
+- GATE-1: no movement. Auth v2 rejects remote/source aliasing and covers
+  source-drift readback failure, but the proof is still test/support evidence,
+  not live auth/session issuance and readback from the same real source
+  boundary.
+- GATE-2: no movement. Durable v2 scopes preserved-remote retry probing and
+  carries lease/journal support metadata, but no live run proves
+  `ownsJournal: true`, `restartReadable: true`, and lease-fenced ownership
+  after restart on the mutation boundary.
+- GATE-3: no movement. Topology v2 and the consolidated verifier fail closed
+  for missing source, packaged fallback, and wrong-source cases, but no
+  source/local/changed production topology has been proven with a real live
+  `REPRINT_PUSH_SOURCE_URL`.
+- GATE-4: no movement. Plugin v2 is guard/test hardening, and apply v2 is
+  revalidation support evidence; neither proves a production-owned
+  plugin-driver mutation with rejected-remote preservation on the live release
+  boundary.
+
+First missing production primitive:
+
+- A retained, checked release run using a real live
+  `REPRINT_PUSH_SOURCE_URL` that proves, on the same boundary, auth/session
+  issuance and readback, durable restart-readable lease-fenced journal
+  ownership, preserved rejected-remote evidence, apply-time revalidation before
+  the first mutation, and plugin-driver ownership.
+
+Next exact command:
+
+```bash
+REPRINT_PUSH_SOURCE_URL=<real-live-reprint-source-url> \
+REPRINT_PUSH_REMOTE_CHANGED_URL=<real-live-changed-url> \
+REPRINT_PUSH_LOCAL_URL=<real-live-local-edited-url> \
+REPRINT_PUSH_USERNAME=<production-user> \
+REPRINT_PUSH_APPLICATION_PASSWORD=<production-application-password> \
+REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND=<same-live-source-readback-command> \
+timeout 300s npm run verify:release
+```
+
+Verdict: `0/4`
+
 ## Follow-up - Apply V2 And Auditor Verdict
 
 Commit:
