@@ -60387,6 +60387,226 @@ test('blocks a local term relationship owned by an existing wp_navigation post e
   assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
 });
 
+test('blocks a local term relationship owned by an existing wp_navigation post even when it targets a same-plan term taxonomy and unrelated remote revision noise exists', () => {
+  const navigationPostResourceKey = 'row:["wp_posts","ID:6"]';
+  const taxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:9"]';
+  const relationshipResourceKey = 'row:["wp_term_relationships","object_id:6|term_taxonomy_id:9"]';
+  const base = baseSite();
+  const local = baseSite();
+  const remote = baseSite();
+  base.db.wp_posts['ID:6'] = {
+    ID: 6,
+    post_title: 'Existing navigation term post',
+    post_content: 'base-private-existing-navigation-term-post-body',
+    post_status: 'publish',
+    post_type: 'wp_navigation',
+  };
+  local.db.wp_posts['ID:6'] = {
+    ...base.db.wp_posts['ID:6'],
+  };
+  remote.db.wp_posts['ID:6'] = {
+    ...base.db.wp_posts['ID:6'],
+  };
+  local.db.wp_terms = {
+    'term_id:7': {
+      term_id: 7,
+      name: 'Local term for navigation',
+      slug: 'local-term-for-navigation',
+    },
+  };
+  local.db.wp_term_taxonomy = {
+    'term_taxonomy_id:9': {
+      term_taxonomy_id: 9,
+      term_id: 7,
+      taxonomy: 'category',
+      description: '',
+      parent: 0,
+      count: 0,
+    },
+  };
+  local.db.wp_term_relationships = {
+    'object_id:6|term_taxonomy_id:9': {
+      object_id: 6,
+      term_taxonomy_id: 9,
+      term_order: 0,
+    },
+  };
+  remote.db.wp_posts['ID:11'] = {
+    ID: 11,
+    post_title: 'Remote revision noise',
+    post_content: 'remote-private-unrelated-navigation-revision-body',
+    post_status: 'inherit',
+    post_type: 'revision',
+    post_parent: 1,
+  };
+
+  const plan = planFor(base, local, remote);
+  const navigationMutation = mutationFor(plan, navigationPostResourceKey);
+  const taxonomyMutation = mutationFor(plan, taxonomyResourceKey);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === relationshipResourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(navigationMutation, undefined);
+  assert.equal(taxonomyMutation.changeKind, 'create');
+  assert.equal(mutationFor(plan, relationshipResourceKey), undefined);
+  assert.equal(blocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(blocker.surface, 'wp_navigation');
+  assert.equal(
+    JSON.stringify(blocker).includes('base-private-existing-navigation-term-post-body'),
+    false,
+  );
+  assert.equal(
+    JSON.stringify(blocker).includes('remote-private-unrelated-navigation-revision-body'),
+    false,
+  );
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
+});
+
+test('blocks a local term relationship owned by an existing wp_navigation post even when it targets a same-plan term taxonomy and unrelated remote wp_navigation noise exists', () => {
+  const navigationPostResourceKey = 'row:["wp_posts","ID:6"]';
+  const taxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:9"]';
+  const relationshipResourceKey = 'row:["wp_term_relationships","object_id:6|term_taxonomy_id:9"]';
+  const base = baseSite();
+  const local = baseSite();
+  const remote = baseSite();
+  base.db.wp_posts['ID:6'] = {
+    ID: 6,
+    post_title: 'Existing navigation term post',
+    post_content: 'base-private-existing-navigation-term-post-body',
+    post_status: 'publish',
+    post_type: 'wp_navigation',
+  };
+  local.db.wp_posts['ID:6'] = {
+    ...base.db.wp_posts['ID:6'],
+  };
+  remote.db.wp_posts['ID:6'] = {
+    ...base.db.wp_posts['ID:6'],
+  };
+  local.db.wp_terms = {
+    'term_id:7': {
+      term_id: 7,
+      name: 'Local term for navigation',
+      slug: 'local-term-for-navigation',
+    },
+  };
+  local.db.wp_term_taxonomy = {
+    'term_taxonomy_id:9': {
+      term_taxonomy_id: 9,
+      term_id: 7,
+      taxonomy: 'category',
+      description: '',
+      parent: 0,
+      count: 0,
+    },
+  };
+  local.db.wp_term_relationships = {
+    'object_id:6|term_taxonomy_id:9': {
+      object_id: 6,
+      term_taxonomy_id: 9,
+      term_order: 0,
+    },
+  };
+  remote.db.wp_posts['ID:11'] = {
+    ID: 11,
+    post_title: 'Remote navigation noise',
+    post_content: 'remote-private-unrelated-navigation-body',
+    post_status: 'publish',
+    post_type: 'wp_navigation',
+  };
+
+  const plan = planFor(base, local, remote);
+  const navigationMutation = mutationFor(plan, navigationPostResourceKey);
+  const taxonomyMutation = mutationFor(plan, taxonomyResourceKey);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === relationshipResourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(navigationMutation, undefined);
+  assert.equal(taxonomyMutation.changeKind, 'create');
+  assert.equal(mutationFor(plan, relationshipResourceKey), undefined);
+  assert.equal(blocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(blocker.surface, 'wp_navigation');
+  assert.equal(
+    JSON.stringify(blocker).includes('base-private-existing-navigation-term-post-body'),
+    false,
+  );
+  assert.equal(JSON.stringify(blocker).includes('remote-private-unrelated-navigation-body'), false);
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
+});
+
+test('blocks a local term relationship owned by an existing wp_navigation post even when it targets a same-plan term taxonomy and unrelated remote nav_menu_item noise exists', () => {
+  const navigationPostResourceKey = 'row:["wp_posts","ID:6"]';
+  const taxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:9"]';
+  const relationshipResourceKey = 'row:["wp_term_relationships","object_id:6|term_taxonomy_id:9"]';
+  const base = baseSite();
+  const local = baseSite();
+  const remote = baseSite();
+  base.db.wp_posts['ID:6'] = {
+    ID: 6,
+    post_title: 'Existing navigation term post',
+    post_content: 'base-private-existing-navigation-term-post-body',
+    post_status: 'publish',
+    post_type: 'wp_navigation',
+  };
+  local.db.wp_posts['ID:6'] = {
+    ...base.db.wp_posts['ID:6'],
+  };
+  remote.db.wp_posts['ID:6'] = {
+    ...base.db.wp_posts['ID:6'],
+  };
+  local.db.wp_terms = {
+    'term_id:7': {
+      term_id: 7,
+      name: 'Local term for navigation',
+      slug: 'local-term-for-navigation',
+    },
+  };
+  local.db.wp_term_taxonomy = {
+    'term_taxonomy_id:9': {
+      term_taxonomy_id: 9,
+      term_id: 7,
+      taxonomy: 'category',
+      description: '',
+      parent: 0,
+      count: 0,
+    },
+  };
+  local.db.wp_term_relationships = {
+    'object_id:6|term_taxonomy_id:9': {
+      object_id: 6,
+      term_taxonomy_id: 9,
+      term_order: 0,
+    },
+  };
+  remote.db.wp_posts['ID:11'] = {
+    ID: 11,
+    post_title: 'Remote nav menu item noise',
+    post_content: 'remote-private-unrelated-navigation-nav-menu-item-body',
+    post_status: 'publish',
+    post_type: 'nav_menu_item',
+  };
+
+  const plan = planFor(base, local, remote);
+  const navigationMutation = mutationFor(plan, navigationPostResourceKey);
+  const taxonomyMutation = mutationFor(plan, taxonomyResourceKey);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === relationshipResourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(navigationMutation, undefined);
+  assert.equal(taxonomyMutation.changeKind, 'create');
+  assert.equal(mutationFor(plan, relationshipResourceKey), undefined);
+  assert.equal(blocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(blocker.surface, 'wp_navigation');
+  assert.equal(
+    JSON.stringify(blocker).includes('base-private-existing-navigation-term-post-body'),
+    false,
+  );
+  assert.equal(
+    JSON.stringify(blocker).includes('remote-private-unrelated-navigation-nav-menu-item-body'),
+    false,
+  );
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
+});
+
 test('allows a local term relationship to a same-plan term taxonomy when the owning post is also created by the same plan', () => {
   const postResourceKey = 'row:["wp_posts","ID:6"]';
   const termResourceKey = 'row:["wp_terms","term_id:7"]';
