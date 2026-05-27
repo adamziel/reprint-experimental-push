@@ -4,6 +4,8 @@ import {
   attachProductionPluginPackagePluginDriverProof,
   buildProductionPluginPackageProofSummary,
   bundleSummaryGroups,
+  guardProofModeAliases,
+  guardProofModeNames,
   proofKeyByCanonicalMode,
   resolveProductionPluginPackagePluginDriverProof,
   resolveProductionPluginPackageProofSummaryOptions,
@@ -172,6 +174,31 @@ test('plugin-driver proof summary tracks every shared plugin-driver scenario exa
       .sort(),
     Object.keys(scenarioGroups).sort(),
   );
+});
+
+test('plugin-driver proof summary exports guard-proof mode aliases for every canonical guarded bundle', () => {
+  assert.deepEqual(guardProofModeNames, [
+    'driver-callback-guards',
+    'driver-proof',
+    'driver-receipt-guards',
+    'driver-receipt-registration-guards',
+    'driver-registration-guards',
+    'driver-registration-shape-guards',
+    'driver-release-proof',
+    'driver-verifier-guards',
+  ]);
+
+  for (const canonicalMode of guardProofModeNames) {
+    assert.deepEqual(
+      guardProofModeAliases[canonicalMode],
+      modeAliasesByCanonicalMode[canonicalMode],
+      `${canonicalMode} should export the exact runtime aliases accepted by the scenario resolver`,
+    );
+    assert.ok(
+      guardProofModeAliases[canonicalMode].length > 0,
+      `${canonicalMode} should keep at least one exported runtime alias`,
+    );
+  }
 });
 
 test('plugin-driver proof summary exports canonical proof keys for downstream mode consumers', () => {
