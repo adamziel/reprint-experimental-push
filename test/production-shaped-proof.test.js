@@ -7,6 +7,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   loadAuthSessionSource,
+  loadAuthSessionSourceFromRuntimeEnvironment,
   resolveAuthSessionRequestState,
   resolveAuthSessionSourceCredentials,
 } from '../scripts/playground/auth-session-source.js';
@@ -984,7 +985,7 @@ test('production auth/session source loader fails closed when sourceUrl is malfo
 
   assert.deepEqual(source, {
     ok: false,
-    error: 'Auth session source command must return a supported https or loopback sourceUrl',
+    error: 'Auth session source command must return a supported local sourceUrl',
   });
 });
 
@@ -1000,11 +1001,11 @@ test('production auth/session source loader fails closed when sourceUrl is insec
 
   assert.deepEqual(source, {
     ok: false,
-    error: 'Auth session source command must return a supported https or loopback sourceUrl',
+    error: 'Auth session source command must return a supported local sourceUrl',
   });
 });
 
-test('production auth/session source loader accepts https and ipv6 loopback sourceUrl values', () => {
+test('production auth/session source loader fails closed on remote https sourceUrl values without an explicit live boundary', () => {
   const httpsRemoteSource = loadAuthSessionSource(
     `${process.execPath} -e "process.stdout.write(JSON.stringify({sourceUrl:'https://example.com/push', username:'reprint_push_admin', applicationPassword:'secret-value'}))"`,
     {
@@ -1014,8 +1015,24 @@ test('production auth/session source loader accepts https and ipv6 loopback sour
     repoRoot,
   );
   assert.deepEqual(httpsRemoteSource, {
+    ok: false,
+    error: 'Auth session source command must return a supported local sourceUrl',
+  });
+});
+
+test('production auth/session source loader accepts matching explicit live sourceUrl values and ipv6 loopback', () => {
+  const httpsRemoteSource = loadAuthSessionSourceFromRuntimeEnvironment(
+    `${process.execPath} -e "process.stdout.write(JSON.stringify({sourceUrl:'https://example.com/push?session=1#preserved', username:'reprint_push_admin', applicationPassword:'secret-value'}))"`,
+    {
+      ...process.env,
+      NODE_NO_WARNINGS: '1',
+      REPRINT_PUSH_SOURCE_URL: 'https://example.com/push',
+    },
+    repoRoot,
+  );
+  assert.deepEqual(httpsRemoteSource, {
     ok: true,
-    sourceUrl: 'https://example.com/push',
+    sourceUrl: 'https://example.com/push?session=1#preserved',
     username: 'reprint_push_admin',
     applicationPassword: 'secret-value',
   });
@@ -1033,6 +1050,23 @@ test('production auth/session source loader accepts https and ipv6 loopback sour
     sourceUrl: 'http://[::1]:8080/push',
     username: 'reprint_push_admin',
     applicationPassword: 'secret-value',
+  });
+});
+
+test('production auth/session source loader fails closed when a remote sourceUrl does not match the explicit live boundary', () => {
+  const source = loadAuthSessionSourceFromRuntimeEnvironment(
+    `${process.execPath} -e "process.stdout.write(JSON.stringify({sourceUrl:'https://different.example.test/push', username:'reprint_push_admin', applicationPassword:'secret-value'}))"`,
+    {
+      ...process.env,
+      NODE_NO_WARNINGS: '1',
+      REPRINT_PUSH_SOURCE_URL: 'https://example.com/push',
+    },
+    repoRoot,
+  );
+
+  assert.deepEqual(source, {
+    ok: false,
+    error: 'Auth session source command must return a supported local sourceUrl or match the explicit live sourceUrl',
   });
 });
 test('production-shaped release verify synthesizes the packaged production auth/session source command on the checked release path', () => {
@@ -1233,6 +1267,31 @@ test('production-shaped release verify can force the production auth/session sou
   );
 });
 
+test('production-shaped release verify can force a matching non-local production auth/session source to override stale env credentials', () => {
+  const source = {
+    ok: true,
+    sourceUrl: 'https://example.test/wp/?session=1#preserved',
+    username: 'reprint_push_admin',
+    applicationPassword: 'reprint-push-admin-app-password',
+  };
+  assert.deepEqual(
+    resolveAuthSessionSourceCredentials(
+      {
+        liveSourceUrl: 'https://example.test/wp',
+        username: 'stale-lab-username',
+        applicationPassword: 'stale-lab-password',
+      },
+      source,
+      { preferSource: true },
+    ),
+    {
+      liveSourceUrl: 'https://example.test/wp/?session=1#preserved',
+      username: 'reprint_push_admin',
+      applicationPassword: 'reprint-push-admin-app-password',
+    },
+  );
+});
+
 test('production-shaped release verify keeps fixture bootstrap credentials separate from live source credentials', () => {
   const resolved = resolveReleaseVerifyCredentials({
     liveSourceUrl: 'http://127.0.0.1:8080',
@@ -1267,6 +1326,38 @@ test('production-shaped release verify request state carries explicit direct cre
       credentials: {
         username: 'trusted-runtime-username',
         password: 'trusted-runtime-password',
+      },
+    },
+  );
+});
+
+test('production-shaped release verify lets a required matching non-local production auth/session source override explicit direct credentials', () => {
+  const source = {
+    ok: true,
+    sourceUrl: 'https://example.test/wp/?session=1#preserved',
+    username: 'reprint_push_admin',
+    applicationPassword: 'reprint-push-admin-app-password',
+  };
+
+  assert.deepEqual(
+    resolveAuthSessionRequestState(
+      {
+        liveSourceUrl: 'https://example.test/wp',
+        username: 'trusted-runtime-username',
+        applicationPassword: 'trusted-runtime-password',
+        fallbackUsername: 'stale-fallback-username',
+        fallbackApplicationPassword: 'stale-fallback-password',
+      },
+      source,
+      { preferSource: true },
+    ),
+    {
+      liveSourceUrl: 'https://example.test/wp/?session=1#preserved',
+      username: 'reprint_push_admin',
+      applicationPassword: 'reprint-push-admin-app-password',
+      credentials: {
+        username: 'reprint_push_admin',
+        password: 'reprint-push-admin-app-password',
       },
     },
   );

@@ -8,7 +8,7 @@ import { authenticatedHttpClient } from '../../src/authenticated-http-push-clien
 import { createPushPlan } from '../../src/planner.js';
 import { checkedDurableJournalBoundarySatisfied } from '../../src/recovery-journal.js';
 import {
-  loadAuthSessionSource,
+  loadAuthSessionSourceFromRuntimeEnvironment,
   resolveAuthSessionRequestState,
 } from './auth-session-source.js';
 import {
@@ -39,9 +39,16 @@ const externalRemoteBaseUrl = process.env.REPRINT_PUSH_SOURCE_URL || process.env
 const externalRemoteChangedUrl = process.env.REPRINT_PUSH_REMOTE_CHANGED_URL || '';
 const externalLocalEditedUrl = process.env.REPRINT_PUSH_LOCAL_URL || '';
 const authSessionSourceCommand = process.env.REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND || '';
-const authSessionSource = authSessionSourceCommand
-  ? loadAuthSessionSource(authSessionSourceCommand)
-  : null;
+const authSessionSource = loadAuthSessionSourceFromRuntimeEnvironment(
+  authSessionSourceCommand,
+  process.env,
+  process.cwd(),
+  {
+    sourceUrl: externalRemoteBaseUrl,
+    remoteUrl: externalRemoteChangedUrl,
+    localUrl: externalLocalEditedUrl,
+  },
+);
 const resolvedAuthSessionRequest = resolveAuthSessionRequestState({
   liveSourceUrl: externalRemoteBaseUrl,
   username: credentials.username,

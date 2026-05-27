@@ -15,7 +15,7 @@ import {
 } from '../../src/authenticated-http-push-client.js';
 import { digest } from '../../src/stable-json.js';
 import {
-  loadAuthSessionSource,
+  loadAuthSessionSourceFromRuntimeEnvironment,
   resolveAuthSessionRequestState,
 } from './auth-session-source.js';
 import {
@@ -93,7 +93,16 @@ const liveAuthSessionSourceBlocker = {
   verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
 };
 let authSessionSourceCommand = process.env.REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND || '';
-let authSessionSource = authSessionSourceCommand ? loadAuthSessionSource(authSessionSourceCommand) : null;
+let authSessionSource = loadAuthSessionSourceFromRuntimeEnvironment(
+  authSessionSourceCommand,
+  process.env,
+  process.cwd(),
+  {
+    sourceUrl: explicitReleaseVerifySourceUrl,
+    remoteUrl: explicitReleaseVerifyRemoteChangedUrl,
+    localUrl: explicitReleaseVerifyLocalUrl,
+  },
+);
 let packagedProductionPluginAuthSessionSource = null;
 let packagedProductionPluginRequested = isPackagedProductionPluginSourceCommand(authSessionSourceCommand);
 const requireExplicitLiveCheckedBoundary =
