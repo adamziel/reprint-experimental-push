@@ -29488,6 +29488,54 @@ test('blocks steady unsupported legacy link rows before they can be treated as a
   assert.equal(remote.plugins.forms.description, 'remote-only plugin changes');
 });
 
+test('blocks steady unsupported legacy link rows before they can be treated as already in sync while preserving a matching independent file type swap and remote-only plugin drift', () => {
+  const resourceKey = 'row:["wp_links","link_id:21"]';
+  const base = baseSite();
+  base.db.wp_links = {
+    'link_id:21': {
+      link_id: 21,
+      link_url: 'https://steady.example.test',
+      link_name: 'Steady unsupported link',
+    },
+  };
+  base.files['wp-content/uploads/steady-legacy-link'] = 'base steady legacy link file';
+
+  const local = baseSite();
+  local.db.wp_links = JSON.parse(JSON.stringify(base.db.wp_links));
+  local.files['wp-content/uploads/steady-legacy-link'] = { type: 'directory' };
+
+  const remote = baseSite();
+  remote.db.wp_links = JSON.parse(JSON.stringify(base.db.wp_links));
+  remote.files['wp-content/uploads/steady-legacy-link'] = { type: 'directory' };
+  remote.plugins.forms.description = 'remote-only plugin drift';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin drift */';
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers[0];
+  const typeSwapDecision = decisionFor(plan, 'file:wp-content/uploads/steady-legacy-link');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(plan.conflicts.length, 0);
+  assert.equal(blocker.class, 'unsupported-legacy-links-resource');
+  assert.equal(blocker.resourceKind, 'legacy-link');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.unsupportedState, 'steady-unsupported');
+  assert.equal(blocker.reason, 'Legacy link graph resources are not yet supported by the planner.');
+  assert.equal(typeSwapDecision.decision, 'already-in-sync');
+  assert.equal(typeSwapDecision.change.localChange, 'type-change');
+  assert.equal(typeSwapDecision.change.remoteChange, 'type-change');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('Steady unsupported link'), false);
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin drift');
+  assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin drift */');
+});
+
 test('blocks local term-relationship object references to a same-plan created attachment identity while preserving a matching independent edit and remote-only plugin changes', () => {
   const resourceKey = 'row:["wp_term_relationships","object_id:8,term_taxonomy_id:5"]';
   const targetResourceKey = 'row:["wp_posts","ID:8"]';
