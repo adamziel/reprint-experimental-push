@@ -1041,7 +1041,8 @@ function dbJournalCheckedBoundaryContractIsPresent(dbJournal) {
     && dbJournal?.leaseFence?.claimKeyUnique === true
     && dbJournal?.leaseFence?.fsyncEvidence === true
     && dbJournal?.leaseFence?.monotonicSequence === true
-    && dbJournal?.leaseFence?.restartReadable === true;
+    && dbJournal?.leaseFence?.restartReadable === true
+    && dbJournal?.leaseFence?.staleClaimRejected === true;
 }
 
 function dbJournalClaimContractIsPresent(claim) {
