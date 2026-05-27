@@ -11936,12 +11936,12 @@ test('guarded benchmark carries hidden queue-headroom visibility blockers into r
       {
         id: 'compressed-remote-index-and-batched-chunk-and-db-receipts-skips-release-bundle-commit-after-pause',
         rejectedGate: 'group',
-        blockerRefs: POST_PAUSE_STAGING_DISK_FOOTPRINT_BLOCKER_REFS,
+        blockerRefs: POST_PAUSE_HIDDEN_QUEUE_HEADROOM_RESOURCE_VISIBILITY_BLOCKER_REFS,
       },
       {
         id: 'compressed-remote-index-and-batched-receipt-flush-skips-release-bundle-commit-after-pause',
         rejectedGate: 'recovery',
-        blockerRefs: POST_PAUSE_STAGING_DISK_FOOTPRINT_BLOCKER_REFS,
+        blockerRefs: POST_PAUSE_HIDDEN_QUEUE_HEADROOM_RESOURCE_VISIBILITY_BLOCKER_REFS,
       },
       {
         id: 'compressed-remote-index-and-cached-dependency-graph-skips-release-bundle-commit-after-pause',
@@ -11956,12 +11956,12 @@ test('guarded benchmark carries hidden queue-headroom visibility blockers into r
       {
         id: 'compressed-remote-index-and-cached-release-cursor-skips-release-bundle-commit-after-pause',
         rejectedGate: 'recovery',
-        blockerRefs: POST_PAUSE_STAGING_DISK_FOOTPRINT_BLOCKER_REFS,
+        blockerRefs: POST_PAUSE_HIDDEN_QUEUE_HEADROOM_RESOURCE_VISIBILITY_BLOCKER_REFS,
       },
       {
         id: 'compressed-remote-index-and-cached-release-manifest-and-batched-receipt-flush-skips-release-bundle-commit-after-pause',
         rejectedGate: 'group',
-        blockerRefs: POST_PAUSE_STAGING_DISK_FOOTPRINT_BLOCKER_REFS,
+        blockerRefs: POST_PAUSE_HIDDEN_QUEUE_HEADROOM_RESOURCE_VISIBILITY_BLOCKER_REFS,
       },
       {
         id: 'compressed-remote-index-and-cached-release-manifest-and-batched-receipt-flush-skips-release-bundle-planning-after-pause',
@@ -11971,17 +11971,17 @@ test('guarded benchmark carries hidden queue-headroom visibility blockers into r
       {
         id: 'compressed-remote-index-and-cached-release-manifest-and-journal-lag-skips-release-bundle-commit-after-pause',
         rejectedGate: 'group',
-        blockerRefs: POST_PAUSE_STAGING_DISK_FOOTPRINT_BLOCKER_REFS,
+        blockerRefs: POST_PAUSE_HIDDEN_QUEUE_HEADROOM_RESOURCE_VISIBILITY_BLOCKER_REFS,
       },
       {
         id: 'compressed-remote-index-and-cached-row-batch-receipts-skips-release-bundle-commit-after-pause',
         rejectedGate: 'group',
-        blockerRefs: POST_PAUSE_STAGING_DISK_FOOTPRINT_BLOCKER_REFS,
+        blockerRefs: POST_PAUSE_HIDDEN_QUEUE_HEADROOM_RESOURCE_VISIBILITY_BLOCKER_REFS,
       },
       {
         id: 'compressed-remote-index-and-cached-row-receipts-skips-release-bundle-commit-after-pause',
         rejectedGate: 'group',
-        blockerRefs: POST_PAUSE_STAGING_DISK_FOOTPRINT_BLOCKER_REFS,
+        blockerRefs: POST_PAUSE_HIDDEN_QUEUE_HEADROOM_RESOURCE_VISIBILITY_BLOCKER_REFS,
       },
     ].sort((left, right) => left.id.localeCompare(right.id)),
   );
