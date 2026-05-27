@@ -1013,6 +1013,16 @@ test('packaged production plugin source command preserves an explicit command ov
   assert.equal(sourceCommand, 'REPRINT_PUSH_PACKAGED_PRODUCTION_PLUGIN=1 custom-source-command');
 });
 
+test('packaged production plugin source command preserves an existing packaged command override', () => {
+  const sourceCommand = resolvePackagedProductionPluginSourceCommand({
+    sourceUrl: 'http://127.0.0.1:8080',
+    username: 'reprint_push_admin',
+    applicationPassword: 'reprint-push-admin-app-password',
+    authSessionSourceCommand: 'REPRINT_PUSH_PACKAGED_PRODUCTION_PLUGIN=1 custom-source-command',
+  });
+  assert.equal(sourceCommand, 'REPRINT_PUSH_PACKAGED_PRODUCTION_PLUGIN=1 custom-source-command');
+});
+
 test('production-shaped release verify prefers the consumed production auth/session source over stale env credentials', () => {
   const source = {
     ok: true,

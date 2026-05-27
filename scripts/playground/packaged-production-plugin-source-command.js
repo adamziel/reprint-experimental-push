@@ -18,6 +18,10 @@ export function resolvePackagedProductionPluginSourceCommand({
     allowedSourceUrl: sourceUrl,
   });
 
+  if (isPackagedProductionPluginSourceCommand(command)) {
+    return command;
+  }
+
   return `REPRINT_PUSH_PACKAGED_PRODUCTION_PLUGIN=1 ${command}`;
 }
 
