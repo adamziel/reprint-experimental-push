@@ -1203,6 +1203,78 @@ test('packaged production plugin readiness helper retries only startup-shaped pa
     true,
   );
   assert.equal(
+    packagedProductionPluginPreflightRetryable(
+      {
+        status: 401,
+        body: {
+          code: 'reprint_push_lab_auth_required',
+          message: 'Authenticated push routes require WordPress Application Password basic auth.',
+        },
+      },
+      {
+        indexProbe: {
+          status: 500,
+          body: 'Internal Server Error',
+        },
+      },
+    ),
+    false,
+  );
+  assert.equal(
+    packagedProductionPluginPreflightRetryable(
+      {
+        status: 401,
+        body: {
+          code: 'reprint_push_lab_auth_required',
+          message: 'Authenticated push routes require WordPress Application Password basic auth.',
+        },
+      },
+      {
+        snapshotProbe: {
+          status: 500,
+          body: 'Internal Server Error',
+        },
+      },
+    ),
+    false,
+  );
+  assert.equal(
+    packagedProductionPluginPreflightTerminal(
+      {
+        status: 401,
+        body: {
+          code: 'reprint_push_lab_auth_required',
+          message: 'Authenticated push routes require WordPress Application Password basic auth.',
+        },
+      },
+      {
+        indexProbe: {
+          status: 500,
+          body: 'Internal Server Error',
+        },
+      },
+    ),
+    true,
+  );
+  assert.equal(
+    packagedProductionPluginPreflightTerminal(
+      {
+        status: 401,
+        body: {
+          code: 'reprint_push_lab_auth_required',
+          message: 'Authenticated push routes require WordPress Application Password basic auth.',
+        },
+      },
+      {
+        snapshotProbe: {
+          status: 500,
+          body: 'Internal Server Error',
+        },
+      },
+    ),
+    true,
+  );
+  assert.equal(
     packagedProductionPluginSnapshotRetryable({
       status: 401,
       body: {
