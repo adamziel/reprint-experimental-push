@@ -13014,33 +13014,54 @@ test('guarded benchmark surfaces plugin-install blockers at runtime', () => {
   const report = largeBenchmark();
   const details = productionThroughputDetails(report);
   const pluginInstallRejectedFastPaths = details.rejectedFastPaths
-    .filter((entry) => [
-      'compressed-remote-index-and-batched-receipt-flush-skips-plugin-install-finalize-after-pause',
-      'compressed-remote-index-and-batched-row-receipt-flush-skips-plugin-install-finalize-after-pause',
-      'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-install-backpressure',
-      'compressed-remote-index-and-cached-row-receipts-skips-plugin-install-backpressure-after-pause',
-      'compressed-remote-index-and-cached-row-receipts-skips-plugin-install-finalize-after-pause',
-      'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-install-finalize-after-pause',
-      'compressed-remote-index-and-cached-file-fingerprint-skips-plugin-install-finalize-after-pause',
-      'compressed-remote-index-and-cached-plugin-activation-map-skips-plugin-install-commit-after-pause',
-      'compressed-remote-index-and-parallel-row-batches-skips-plugin-install-backpressure-after-pause',
-    ].includes(entry.id))
+    .filter((entry) => entry.id.includes('plugin-install'))
     .sort((left, right) => left.id.localeCompare(right.id));
 
   assert.deepEqual(pluginInstallRejectedFastPaths.map(({ id }) => id), [
     'compressed-remote-index-and-batched-receipt-flush-skips-plugin-install-finalize-after-pause',
     'compressed-remote-index-and-batched-row-receipt-flush-skips-plugin-install-finalize-after-pause',
+    'compressed-remote-index-and-cached-chunk-digests-skips-plugin-install-finalize-after-pause',
+    'compressed-remote-index-and-cached-chunk-receipts-skips-plugin-install-activation',
+    'compressed-remote-index-and-cached-chunk-receipts-skips-plugin-install-finalize',
+    'compressed-remote-index-and-cached-chunk-receipts-skips-plugin-install-finalize-after-pause',
+    'compressed-remote-index-and-cached-chunk-receipts-skips-plugin-install-writeback',
+    'compressed-remote-index-and-cached-chunk-receipts-skips-plugin-install-writeback-after-pause',
+    'compressed-remote-index-and-cached-dependency-graph-skips-plugin-install-activation',
+    'compressed-remote-index-and-cached-dependency-graph-skips-plugin-install-activation-after-pause',
+    'compressed-remote-index-and-cached-dependency-graph-skips-plugin-install-activation-after-pause-and-backpressure',
+    'compressed-remote-index-and-cached-dependency-graph-skips-plugin-install-dependency-checks',
+    'compressed-remote-index-and-cached-dependency-graph-skips-plugin-install-finalize',
     'compressed-remote-index-and-cached-file-fingerprint-skips-plugin-install-finalize-after-pause',
+    'compressed-remote-index-and-cached-file-hash-skips-plugin-install-activation',
+    'compressed-remote-index-and-cached-file-hash-skips-plugin-install-finalize',
+    'compressed-remote-index-and-cached-file-hash-skips-plugin-install-finalize-after-pause',
+    'compressed-remote-index-and-cached-file-hash-skips-plugin-install-writeback',
+    'compressed-remote-index-and-cached-manifest-hash-skips-plugin-install-finalize',
+    'compressed-remote-index-and-cached-manifest-hash-skips-plugin-install-writeback',
+    'compressed-remote-index-and-cached-package-cache-skips-plugin-install-activation',
+    'compressed-remote-index-and-cached-package-cache-skips-plugin-install-dependency-checks',
+    'compressed-remote-index-and-cached-package-cache-skips-plugin-install-finalize',
+    'compressed-remote-index-and-cached-package-hash-skips-plugin-install-activation',
+    'compressed-remote-index-and-cached-package-hash-skips-plugin-install-activation-after-pause',
+    'compressed-remote-index-and-cached-package-hash-skips-plugin-install-activation-after-pause-and-backpressure',
+    'compressed-remote-index-and-cached-package-hash-skips-plugin-install-dependency-checks',
+    'compressed-remote-index-and-cached-package-hash-skips-plugin-install-finalize',
+    'compressed-remote-index-and-cached-package-hash-skips-plugin-install-finalize-after-pause-and-backpressure',
+    'compressed-remote-index-and-cached-package-hash-skips-plugin-install-writeback',
     'compressed-remote-index-and-cached-plugin-activation-map-skips-plugin-install-commit-after-pause',
+    'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-install-activation',
     'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-install-backpressure',
     'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-install-finalize-after-pause',
+    'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-install-writeback',
+    'compressed-remote-index-and-cached-row-receipts-skips-plugin-install-activation',
     'compressed-remote-index-and-cached-row-receipts-skips-plugin-install-backpressure-after-pause',
     'compressed-remote-index-and-cached-row-receipts-skips-plugin-install-finalize-after-pause',
+    'compressed-remote-index-and-cached-row-receipts-skips-plugin-install-writeback',
     'compressed-remote-index-and-parallel-row-batches-skips-plugin-install-backpressure-after-pause',
   ]);
 
   assert.deepEqual(summarizeRejectedGates(pluginInstallRejectedFastPaths), [
-    { rejectedGate: 'group', count: 5 },
+    { rejectedGate: 'group', count: 36 },
     { rejectedGate: 'recovery', count: 4 },
   ]);
 });
