@@ -11794,6 +11794,92 @@ test('blocks an existing _thumbnail_id row owned by an attachment when it target
   );
 });
 
+test('blocks an existing _thumbnail_id row owned by an attachment when it targets a same-plan attachment and unrelated remote attachment noise exists', () => {
+  const ownerResourceKey = 'row:["wp_posts","ID:1"]';
+  const attachmentResourceKey = 'row:["wp_posts","ID:2"]';
+  const postmetaResourceKey = 'row:["wp_postmeta","meta_id:45"]';
+  const base = baseSite();
+  base.db.wp_posts['ID:1'] = {
+    ID: 1,
+    post_title: 'Existing attachment owner',
+    post_content: 'base-private-existing-attachment-owner-body',
+    post_status: 'inherit',
+    post_type: 'attachment',
+  };
+  base.db.wp_postmeta = {
+    'meta_id:45': {
+      meta_id: 45,
+      post_id: 1,
+      meta_key: '_thumbnail_id',
+      meta_value: 9,
+    },
+  };
+  const local = baseSite();
+  local.db.wp_posts['ID:1'] = {
+    ...base.db.wp_posts['ID:1'],
+  };
+  local.db.wp_postmeta = {
+    'meta_id:45': {
+      meta_id: 45,
+      post_id: 1,
+      meta_key: '_thumbnail_id',
+      meta_value: 2,
+    },
+  };
+  local.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_title: 'Local attachment target',
+    post_content: 'local-private-existing-thumbnail-target-body',
+    post_status: 'inherit',
+    post_type: 'attachment',
+  };
+  const remote = baseSite();
+  remote.db.wp_posts['ID:1'] = {
+    ...base.db.wp_posts['ID:1'],
+  };
+  remote.db.wp_postmeta = {
+    'meta_id:45': {
+      meta_id: 45,
+      post_id: 1,
+      meta_key: '_thumbnail_id',
+      meta_value: 9,
+    },
+  };
+  remote.db.wp_posts['ID:21'] = {
+    ID: 21,
+    post_title: 'Remote attachment noise',
+    post_content: 'remote-private-unrelated-thumbnail-attachment-body',
+    post_status: 'inherit',
+    post_type: 'attachment',
+  };
+
+  const plan = planFor(base, local, remote);
+  const ownerMutation = mutationFor(plan, ownerResourceKey);
+  const attachmentMutation = mutationFor(plan, attachmentResourceKey);
+  const postmetaMutation = mutationFor(plan, postmetaResourceKey);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === postmetaResourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(ownerMutation, undefined);
+  assert.equal(attachmentMutation.changeKind, 'create');
+  assert.equal(postmetaMutation, undefined);
+  assert.equal(blocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(blocker.surface, 'attachment');
+  assert.equal(
+    JSON.stringify(blocker).includes('base-private-existing-attachment-owner-body'),
+    false,
+  );
+  assert.equal(
+    JSON.stringify(blocker).includes('local-private-existing-thumbnail-target-body'),
+    false,
+  );
+  assert.equal(
+    JSON.stringify(blocker).includes('remote-private-unrelated-thumbnail-attachment-body'),
+    false,
+  );
+  assert.equal(remote.db.wp_posts['ID:21'].post_title, 'Remote attachment noise');
+});
+
 test('allows a local post, attachment, and thumbnail graph to resolve in the same plan', () => {
   const parentResourceKey = 'row:["wp_posts","ID:3"]';
   const attachmentResourceKey = 'row:["wp_posts","ID:2"]';
