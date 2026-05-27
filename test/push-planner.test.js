@@ -17855,6 +17855,79 @@ test('blocks local term-taxonomy parent references to a same-plan created term i
   assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
 });
 
+test('blocks local term-taxonomy parent references to a same-plan created term identity while preserving a matching independent restore and remote-only plugin removals', () => {
+  const resourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:5"]';
+  const targetResourceKey = 'row:["wp_terms","term_id:9"]';
+  const matchingRestoreResourceKey = 'file:about.php';
+  const base = baseSite();
+  base.db.wp_terms = {
+    'term_id:4': { term_id: 4, name: 'Base shared term', slug: 'base-shared-term' },
+  };
+  base.db.wp_term_taxonomy = {
+    'term_taxonomy_id:5': {
+      term_taxonomy_id: 5,
+      term_id: 4,
+      taxonomy: 'category',
+      parent: 0,
+      description: 'base term taxonomy description',
+    },
+  };
+  base.files['about.php'] = '<?php echo "base about";';
+
+  const local = baseSite();
+  local.db.wp_terms = {
+    'term_id:4': { term_id: 4, name: 'Base shared term', slug: 'base-shared-term' },
+    'term_id:9': {
+      term_id: 9,
+      name: 'Local same-plan parent term',
+      slug: 'local-same-plan-parent-term',
+    },
+  };
+  local.db.wp_term_taxonomy = {
+    'term_taxonomy_id:5': {
+      term_taxonomy_id: 5,
+      term_id: 4,
+      taxonomy: 'category',
+      parent: 9,
+      description: 'local term taxonomy description',
+    },
+  };
+  local.files['about.php'] = '<?php echo "shared restore";';
+
+  const remote = baseSite();
+  remote.db.wp_terms = JSON.parse(JSON.stringify(base.db.wp_terms));
+  remote.db.wp_term_taxonomy = JSON.parse(JSON.stringify(base.db.wp_term_taxonomy));
+  remote.files['about.php'] = '<?php echo "shared restore";';
+  delete remote.plugins.forms;
+  delete remote.files['wp-content/plugins/forms/forms.php'];
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  const matchingRestore = decisionFor(plan, matchingRestoreResourceKey);
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(decisionFor(plan, targetResourceKey), undefined);
+  assert.equal(plan.conflicts.length, 0);
+  assert.equal(blocker.class, 'unsupported-term-taxonomy-resource');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.reason, `WordPress graph mutation ${resourceKey} is created in the same plan as a parent term identity that depends on it, and identity rewriting is not yet supported.`);
+  assert.equal(matchingRestore.decision, 'already-in-sync');
+  assert.equal(matchingRestore.change.localChange, 'update');
+  assert.equal(matchingRestore.change.remoteChange, 'update');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('shared restore'), false);
+  assert.equal(remote.files['about.php'], '<?php echo "shared restore";');
+  assert.equal(Object.hasOwn(remote.plugins, 'forms'), false);
+  assert.equal(Object.hasOwn(remote.files, 'wp-content/plugins/forms/forms.php'), false);
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
+});
+
 test('allows an existing term-taxonomy row to reference a term created by the same plan while preserving remote-only plugin removals', () => {
   const resourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:5"]';
   const targetResourceKey = 'row:["wp_terms","term_id:9"]';
