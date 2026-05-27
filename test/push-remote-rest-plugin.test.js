@@ -4047,6 +4047,46 @@ test('checked recovery inspect evidence fails closed when authoritative checked 
   assert.equal(parsed.recovery.journal.acceptedOnCheckedBoundary, false);
 });
 
+test('checked recovery inspect evidence fails closed when authoritative checked summaries omit accepted ownership owns-journal flag', { skip: !hasPhp }, () => {
+  const checkedSummary = buildCheckedRecoveryJournalSummary();
+  delete checkedSummary.ownership.ownsJournal;
+
+  const result = runAttachCheckedRecoveryJournalEvidence(
+    {
+      recovery: {
+        journal: buildAcceptedInlineRecoveryJournal(),
+      },
+    },
+    true,
+    false,
+    checkedSummary,
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.recovery.journal.acceptedOnCheckedBoundary, false);
+});
+
+test('checked recovery inspect evidence fails closed when authoritative checked summaries omit accepted lease-fence stale-claim rejection flag', { skip: !hasPhp }, () => {
+  const checkedSummary = buildCheckedRecoveryJournalSummary();
+  delete checkedSummary.leaseFence.staleClaimRejected;
+
+  const result = runAttachCheckedRecoveryJournalEvidence(
+    {
+      recovery: {
+        journal: buildAcceptedInlineRecoveryJournal(),
+      },
+    },
+    true,
+    false,
+    checkedSummary,
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.recovery.journal.acceptedOnCheckedBoundary, false);
+});
+
 test('checked recovery inspect evidence fails closed when authoritative checked summaries omit accepted lease-fence boundary', { skip: !hasPhp }, () => {
   const checkedSummary = buildCheckedRecoveryJournalSummary();
   delete checkedSummary.leaseFence.boundary;
@@ -10890,6 +10930,40 @@ test('checked db journal attachment fails closed when authoritative checked summ
 test('checked db journal attachment fails closed when authoritative checked summaries omit accepted ownership supported surface', { skip: !hasPhp }, () => {
   const checkedSummary = buildCheckedRecoveryJournalSummary();
   delete checkedSummary.ownership.supportedSurface;
+
+  const result = runAttachCheckedDbJournalContract(
+    {
+      ok: true,
+      dbJournal: buildAcceptedInlineRecoveryJournal(),
+    },
+    checkedSummary,
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.dbJournal.acceptedOnCheckedBoundary, false);
+});
+
+test('checked db journal attachment fails closed when authoritative checked summaries omit accepted ownership owns-journal flag', { skip: !hasPhp }, () => {
+  const checkedSummary = buildCheckedRecoveryJournalSummary();
+  delete checkedSummary.ownership.ownsJournal;
+
+  const result = runAttachCheckedDbJournalContract(
+    {
+      ok: true,
+      dbJournal: buildAcceptedInlineRecoveryJournal(),
+    },
+    checkedSummary,
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.dbJournal.acceptedOnCheckedBoundary, false);
+});
+
+test('checked db journal attachment fails closed when authoritative checked summaries omit accepted lease-fence stale-claim rejection flag', { skip: !hasPhp }, () => {
+  const checkedSummary = buildCheckedRecoveryJournalSummary();
+  delete checkedSummary.leaseFence.staleClaimRejected;
 
   const result = runAttachCheckedDbJournalContract(
     {
