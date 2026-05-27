@@ -26205,6 +26205,181 @@ test('openProductionRecoveryJournal fails closed when a consumed claim is reopen
   assert.deepEqual(error.details.consumedClaim.claimLease, writerLease);
 });
 
+test('openProductionRecoveryJournal fails closed when a consumed claim is reopened after a later claim reopen rewrites the owned journal artifact path', () => {
+  const base = baseSite();
+  const local = structuredClone(base);
+  local.db.wp_options['option_name:blogname'] = {
+    option_name: 'blogname',
+    option_value: 'Consumed Claim Reopened Drifted Journal Path Site',
+  };
+  const remote = structuredClone(base);
+  const plan = planFor(base, local, remote);
+  const filePath = tempRecoveryJournalPath();
+  const driftedJournalPath = `${path.dirname(filePath)}/consumed-claim-reopened-drifted-journal.jsonl`;
+  const remoteArtifactPath = `${path.dirname(filePath)}/consumed-claim-reopened-owned-remote.jsonl`;
+  const claimId = 'claim-consumed-reopened-drifted-journal';
+  const writerLease = { id: claimId, epoch: 3 };
+  const artifactRefs = {
+    journal: filePath,
+    remote: remoteArtifactPath,
+  };
+  const journal = openProductionRecoveryJournal(filePath, {
+    truncate: true,
+    now: fixedNow,
+    claimId,
+    writerLease,
+    ownsRemoteArtifact: true,
+    remoteArtifactPath,
+  });
+  appendRecoveryClaimOpened(journal, {
+    plan,
+    current: remote,
+    claimId,
+    artifactRefs,
+  });
+  journal.close();
+
+  consumeProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs,
+    writerLease,
+  });
+
+  const persisted = readRecoveryJournal(filePath);
+  persisted.records.push({
+    schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+    sequence: persisted.records.length + 1,
+    type: 'recovery-claim-opened',
+    timestamp: fixedNow.toISOString(),
+    planId: plan.id,
+    state: 'active',
+    claimHash: recoveryClaimHash(claimId),
+    claimLease: writerLease,
+    observedHash: digest(remote),
+    artifactRefs: {
+      journal: driftedJournalPath,
+      remote: remoteArtifactPath,
+    },
+    fsync: {
+      requested: true,
+      strategy: 'after-append',
+    },
+  });
+  fs.writeFileSync(filePath, `${persisted.records.map((record) => JSON.stringify(record)).join('\n')}\n`);
+
+  const error = captureError(() => openProductionRecoveryJournal(filePath, {
+    claimId,
+    writerLease,
+    ownsRemoteArtifact: true,
+    remoteArtifactPath,
+  }));
+
+  assert.equal(error.code, 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL');
+  assert.equal(
+    error.message,
+    'Production recovery journal persistence rewrote the owned journal artifact path.',
+  );
+  assert.deepEqual(error.details.artifactRefs, {
+    journal: filePath,
+    remote: remoteArtifactPath,
+  });
+  assert.deepEqual(error.details.persistedArtifactRefs, {
+    journal: null,
+    remote: null,
+  });
+});
+
+test('openProductionRecoveryJournal fails closed when the compatibility overload reopens a consumed claim after a later claim reopen rewrites the owned journal artifact path', () => {
+  const base = baseSite();
+  const local = structuredClone(base);
+  local.db.wp_options['option_name:blogname'] = {
+    option_name: 'blogname',
+    option_value: 'Consumed Claim Reopened Compatibility Drifted Journal Path Site',
+  };
+  const remote = structuredClone(base);
+  const plan = planFor(base, local, remote);
+  const filePath = tempRecoveryJournalPath();
+  const driftedJournalPath = `${path.dirname(filePath)}/consumed-claim-reopened-compatibility-drifted-journal.jsonl`;
+  const remoteArtifactPath = `${path.dirname(filePath)}/consumed-claim-reopened-compatibility-owned-remote.jsonl`;
+  const claimId = 'claim-consumed-reopened-compatibility-drifted-journal';
+  const writerLease = { id: claimId, epoch: 3 };
+  const artifactRefs = {
+    journal: filePath,
+    remote: remoteArtifactPath,
+  };
+  const journal = openProductionRecoveryJournal(filePath, {
+    truncate: true,
+    now: fixedNow,
+    claimId,
+    writerLease,
+    ownsRemoteArtifact: true,
+    remoteArtifactPath,
+  });
+  appendRecoveryClaimOpened(journal, {
+    plan,
+    current: remote,
+    claimId,
+    artifactRefs,
+  });
+  journal.close();
+
+  consumeProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs,
+    writerLease,
+  });
+
+  const persisted = readRecoveryJournal(filePath);
+  persisted.records.push({
+    schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+    sequence: persisted.records.length + 1,
+    type: 'recovery-claim-opened',
+    timestamp: fixedNow.toISOString(),
+    planId: plan.id,
+    state: 'active',
+    claimHash: recoveryClaimHash(claimId),
+    claimLease: writerLease,
+    observedHash: digest(remote),
+    artifactRefs: {
+      journal: driftedJournalPath,
+      remote: remoteArtifactPath,
+    },
+    fsync: {
+      requested: true,
+      strategy: 'after-append',
+    },
+  });
+  fs.writeFileSync(filePath, `${persisted.records.map((record) => JSON.stringify(record)).join('\n')}\n`);
+
+  const error = captureError(() => openProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    claimId,
+    writerLease,
+    ownsRemoteArtifact: true,
+    remoteArtifactPath,
+  }));
+
+  assert.equal(error.code, 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL');
+  assert.equal(
+    error.message,
+    'Production recovery journal persistence rewrote the owned journal artifact path.',
+  );
+  assert.deepEqual(error.details.artifactRefs, {
+    journal: filePath,
+    remote: remoteArtifactPath,
+  });
+  assert.deepEqual(error.details.persistedArtifactRefs, {
+    journal: null,
+    remote: null,
+  });
+});
+
 test('openProductionRecoveryJournal fails closed when a reopen introduces remote ownership state absent from persisted artifacts', () => {
   const base = baseSite();
   const local = structuredClone(base);

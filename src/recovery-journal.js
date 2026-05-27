@@ -482,13 +482,6 @@ export function openProductionRecoveryJournal(filePathOrOptions, options = {}) {
     ownsRemoteArtifact,
     remoteArtifactPath,
   });
-  assertPersistedConsumedClaimMatchesWriterLease({
-    filePath,
-    claimId,
-    writerLease,
-    ownsRemoteArtifact,
-    remoteArtifactPath,
-  });
 
   const persistedArtifactRefs = persistedProductionArtifactRefs(filePath);
   if (persistedArtifactRefs.invalidReason) {
@@ -515,6 +508,13 @@ export function openProductionRecoveryJournal(filePathOrOptions, options = {}) {
       },
     );
   }
+  assertPersistedConsumedClaimMatchesWriterLease({
+    filePath,
+    claimId,
+    writerLease,
+    ownsRemoteArtifact,
+    remoteArtifactPath,
+  });
   if (
     remoteArtifactPath !== null
     && persistedArtifactRefs.remote === null
