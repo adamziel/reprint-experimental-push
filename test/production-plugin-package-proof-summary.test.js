@@ -96,6 +96,30 @@ test('plugin-driver proof summary reports driver-proof as a first-class requeste
       driverReceiptRevokedCredentialGuard: {
         applyRejectedCode: 'reprint_push_lab_auth_required',
       },
+      driverExportGuard: {
+        missingExportRowsCallback: true,
+      },
+      driverApplyGuard: {
+        missingApplyRowCallback: true,
+      },
+      driverValidateGuard: {
+        missingValidateMutationCallback: true,
+      },
+      driverMissingNameGuard: {
+        missingDriverName: true,
+      },
+      driverPluginOwnerGuard: {
+        missingPluginOwner: true,
+      },
+      driverMissingTableGuard: {
+        missingTable: true,
+      },
+      driverDuplicateNameGuard: {
+        duplicateDriverName: true,
+      },
+      driverDuplicateTableGuard: {
+        duplicateTable: true,
+      },
       driverDeleteApply: {
         deletedAfterApply: true,
       },
@@ -997,6 +1021,30 @@ test('plugin-driver proof summary scopes requested bundle verdicts to requested 
       driverReceiptRevokedCredentialGuard: {
         applyRejectedCode: 'reprint_push_lab_auth_required',
       },
+      driverExportGuard: {
+        missingExportRowsCallback: true,
+      },
+      driverApplyGuard: {
+        missingApplyRowCallback: true,
+      },
+      driverValidateGuard: {
+        missingValidateMutationCallback: true,
+      },
+      driverMissingNameGuard: {
+        missingDriverName: true,
+      },
+      driverPluginOwnerGuard: {
+        missingPluginOwner: true,
+      },
+      driverMissingTableGuard: {
+        missingTable: true,
+      },
+      driverDuplicateNameGuard: {
+        duplicateDriverName: true,
+      },
+      driverDuplicateTableGuard: {
+        duplicateTable: true,
+      },
       driverDeleteApply: {
         deletedAfterApply: true,
       },
@@ -1419,6 +1467,30 @@ test('plugin-driver proof summary exposes bounded release-proof bundle status', 
       },
       driverReceiptRevokedCredentialGuard: {
         applyRejectedCode: 'reprint_push_lab_auth_required',
+      },
+      driverExportGuard: {
+        missingExportRowsCallback: true,
+      },
+      driverApplyGuard: {
+        missingApplyRowCallback: true,
+      },
+      driverValidateGuard: {
+        missingValidateMutationCallback: true,
+      },
+      driverMissingNameGuard: {
+        missingDriverName: true,
+      },
+      driverPluginOwnerGuard: {
+        missingPluginOwner: true,
+      },
+      driverMissingTableGuard: {
+        missingTable: true,
+      },
+      driverDuplicateNameGuard: {
+        duplicateDriverName: true,
+      },
+      driverDuplicateTableGuard: {
+        duplicateTable: true,
       },
       driverDeleteApply: {
         deletedAfterApply: true,
@@ -2197,7 +2269,94 @@ test('plugin-driver proof summary narrows modeProof requests to the selected can
   assert.deepEqual(summary.modeProof?.requestedScenarioStatuses, {
     'driver-release-proof': 'passed',
   });
+  assert.deepEqual(summary.modeProof?.requestedBundleStatuses, {
+    driverReleaseProof: 'passed',
+  });
   assert.deepEqual(summary.modeProof?.requestedConcreteScenarioStatuses, {});
+  assert.equal(summary.modeProof?.requestedSatisfied, true);
+  assert.equal(summary.modeProof?.requestedScenariosSatisfied, true);
+  assert.equal(summary.modeProof?.requestedBundlesSatisfied, true);
+  assert.equal(summary.modeProof?.requestedConcreteScenariosSatisfied, true);
+});
+
+test('plugin-driver proof summary keeps modeProof satisfaction scoped to the selected canonical mode', () => {
+  const summary = buildProductionPluginPackageProofSummary(
+    {
+      driverUpdateApply: {
+        applied: 1,
+      },
+      driverDeleteGuard: {
+        dryRunRejectedCode: 'INVALID_PLAN',
+      },
+      driverUpdateValidationGuard: {
+        dryRunRejectedCode: 'INVALID_PLAN',
+      },
+      driverReceiptPlanBindingGuard: {
+        applyRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+      },
+      driverReceiptExpiryGuard: {
+        applyRejectedCode: 'AUTH_RECEIPT_EXPIRED',
+      },
+      driverReceiptIdentityGuard: {
+        applyRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+      },
+      driverReceiptRotatedCredentialGuard: {
+        rotatedCredentialRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+      },
+      driverReceiptRevokedCredentialGuard: {
+        applyRejectedCode: 'reprint_push_lab_auth_required',
+      },
+      driverExportGuard: {
+        missingExportRowsCallback: true,
+      },
+      driverApplyGuard: {
+        missingApplyRowCallback: true,
+      },
+      driverValidateGuard: {
+        missingValidateMutationCallback: true,
+      },
+      driverMissingNameGuard: {
+        missingDriverName: true,
+      },
+      driverPluginOwnerGuard: {
+        missingPluginOwner: true,
+      },
+      driverMissingTableGuard: {
+        missingTable: true,
+      },
+      driverDuplicateNameGuard: {
+        duplicateDriverName: true,
+      },
+      driverDuplicateTableGuard: {
+        duplicateTable: true,
+      },
+      driverDeleteApply: {
+        deletedAfterApply: true,
+      },
+    },
+    {
+      requestedScenarios: ['driver-release-proof', 'driver-verifier-guards'],
+      selectedScenarios: new Set([
+        'driver-verifier-guards',
+        ...scenarioGroups['driver-verifier-guards'],
+      ]),
+      resolvedMode: 'driverVerifierGuards',
+      canonicalMode: 'driver-verifier-guards',
+    },
+  );
+
+  assert.equal(summary.requestedScenariosSatisfied, false);
+  assert.equal(summary.requestedBundlesSatisfied, false);
+  assert.deepEqual(summary.modeProof?.requestedScenarioStatuses, {
+    'driver-verifier-guards': 'passed',
+  });
+  assert.deepEqual(summary.modeProof?.requestedBundleStatuses, {
+    driverVerifierGuards: 'passed',
+  });
+  assert.equal(summary.modeProof?.requestedSatisfied, true);
+  assert.equal(summary.modeProof?.requestedScenariosSatisfied, true);
+  assert.equal(summary.modeProof?.requestedBundlesSatisfied, true);
+  assert.equal(summary.modeProof?.requestedConcreteScenariosSatisfied, true);
 });
 
 test('plugin-driver proof summary reports requested verifier bundle verdicts directly', () => {

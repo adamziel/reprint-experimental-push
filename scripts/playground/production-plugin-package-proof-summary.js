@@ -397,6 +397,14 @@ function filterRequestedStatusMapForMode(statusMap, allowedValues) {
   );
 }
 
+function requestedStatusesSatisfied(statusMap) {
+  if (statusMap === null || statusMap === 'all') {
+    return true;
+  }
+  const statuses = Object.values(statusMap);
+  return statuses.length === 0 || statuses.every((status) => status === 'passed');
+}
+
 export function buildProductionPluginPackageProofSummary(
   summary,
   {
@@ -1193,7 +1201,9 @@ export function buildProductionPluginPackageProofSummary(
   ]);
   const canonicalModeRequestedBundleNames = canonicalMode === null
     ? new Set()
-    : new Set([toBundleKey(canonicalMode)]);
+    : isBundleAliasScenario(canonicalMode)
+      ? new Set([toBundleKey(canonicalMode)])
+      : new Set();
   const modeRequestedScenarios = canonicalMode === null
     ? []
     : filterRequestedListForMode(
@@ -1224,6 +1234,17 @@ export function buildProductionPluginPackageProofSummary(
       proofSummary.requestedConcreteScenarioStatuses,
       new Set(canonicalModeScenarios),
     );
+  const modeRequestedBundleStatuses = canonicalMode === null
+    ? null
+    : canonicalModeRequestedBundleNames.size === 0
+      ? null
+      : filterRequestedStatusMapForMode(
+        canonicalProof?.requestedBundleStatuses ?? {},
+        canonicalModeRequestedBundleNames,
+      );
+  const modeRequestedBundleStatus = canonicalMode === null
+    ? null
+    : collapseRequestedBundleStatus(modeRequestedBundleStatuses);
   proofSummary.modeProof = canonicalProof === null
     ? null
     : {
@@ -1255,12 +1276,12 @@ export function buildProductionPluginPackageProofSummary(
       requestedStatus: canonicalProof.requestedStatus ?? null,
       requestedScenarioStatuses: modeRequestedScenarioStatuses,
       requestedConcreteScenarioStatuses: modeRequestedConcreteScenarioStatuses,
-      requestedSatisfied: (canonicalProof.requestedStatus ?? null) === 'passed',
-      requestedScenariosSatisfied: proofSummary.requestedScenariosSatisfied,
-      requestedBundlesSatisfied: proofSummary.requestedBundlesSatisfied,
-      requestedConcreteScenariosSatisfied: proofSummary.requestedConcreteScenariosSatisfied,
-      requestedBundleStatus: canonicalProof.requestedBundleStatus ?? null,
-      requestedBundleStatuses: canonicalProof.requestedBundleStatuses ?? null,
+      requestedSatisfied: requestedStatusesSatisfied(modeRequestedScenarioStatuses),
+      requestedScenariosSatisfied: requestedStatusesSatisfied(modeRequestedScenarioStatuses),
+      requestedBundlesSatisfied: requestedStatusesSatisfied(modeRequestedBundleStatuses),
+      requestedConcreteScenariosSatisfied: requestedStatusesSatisfied(modeRequestedConcreteScenarioStatuses),
+      requestedBundleStatus: modeRequestedBundleStatus,
+      requestedBundleStatuses: modeRequestedBundleStatuses,
     };
 
   return proofSummary;
