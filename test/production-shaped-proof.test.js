@@ -3754,6 +3754,98 @@ test('packaged release verifier readiness helper fails closed when signed prefli
   }
 });
 
+test('packaged release verifier readiness helper fails closed when signed preflight keeps a broken top-level auth envelope after the snapshot probe times out', async () => {
+  const timeoutError = new Error('Timed out fetching http://127.0.0.1:65535/wp-json/reprint/v1/push/snapshot');
+  const brokenAuthEnvelopes = [
+    {
+      label: 'missing top-level auth',
+      body: {
+        ok: true,
+        routeProfile: {
+          profile: 'production-shaped',
+          restNamespace: 'reprint/v1',
+          routePrefix: '/push',
+          labBacked: false,
+        },
+        session: {
+          id: 'session_123',
+          type: 'production-auth-session',
+        },
+      },
+    },
+    {
+      label: 'missing top-level auth session',
+      body: {
+        ok: true,
+        routeProfile: {
+          profile: 'production-shaped',
+          restNamespace: 'reprint/v1',
+          routePrefix: '/push',
+          labBacked: false,
+        },
+        auth: {},
+        session: {
+          id: 'session_123',
+          type: 'production-auth-session',
+        },
+      },
+    },
+  ];
+
+  for (const { label, body } of brokenAuthEnvelopes) {
+    const helper = buildPackagedReleaseVerifierWaitHelper({
+      packagedProductionPluginClassifyTimeoutFallbackStartup: () => {
+        throw new Error(`unexpected timeout fallback startup classification during ${label} runtime proof`);
+      },
+      sleepUnlessChildExit: async () => {
+        throw new Error(`unexpected readiness sleep during ${label} runtime proof`);
+      },
+      fetchTextWithTimeout: async (url) => {
+        if (url.endsWith('/wp-json/reprint/v1/push/snapshot')) {
+          throw timeoutError;
+        }
+        throw new Error(`unexpected readiness fetch ${url}`);
+      },
+      fetchPackagedTimeoutFallbackProbes: async () => ({
+        preflightProbe: {
+          route: '/wp-json/reprint/v1/push/preflight',
+          status: 200,
+          ok: true,
+          body: JSON.stringify(body),
+          parsedBody: body,
+          invalidReadinessBody: true,
+          ready: false,
+          retryable: false,
+          terminal: true,
+        },
+        indexProbe: null,
+      }),
+      throwPlaygroundReadinessFailure: async (child, prefix) => {
+        const error = new Error(prefix);
+        error.isPlaygroundReadinessFailure = true;
+        throw error;
+      },
+    });
+    const child = {
+      exitCode: null,
+      signalCode: null,
+      pid: 94546,
+    };
+
+    await assert.rejects(
+      helper(child, 'http://127.0.0.1:65535', () => 'packaged server boot log'),
+      (error) => {
+        assert.match(
+          error.message,
+          /Packaged production plugin signed preflight returned an invalid readiness body while the snapshot probe timed out at http:\/\/127\.0\.0\.1:65535/,
+          label,
+        );
+        return true;
+      },
+    );
+  }
+});
+
 test('packaged release verifier readiness helper fails closed when signed preflight keeps a broken auth session envelope after the snapshot probe times out', async () => {
   const timeoutError = new Error('Timed out fetching http://127.0.0.1:65535/wp-json/reprint/v1/push/snapshot');
   const brokenAuthSessionEnvelopes = [
@@ -7640,6 +7732,93 @@ test('packaged production plugin smoke readiness helper fails closed when signed
         preflightProbe: {
           route: '/wp-json/reprint/v1/push/preflight',
           status: 200,
+          body: JSON.stringify(body),
+          parsedBody: body,
+          invalidReadinessBody: true,
+          ready: false,
+          retryable: false,
+          terminal: true,
+        },
+        indexProbe: null,
+      }),
+    });
+    const child = {
+      exitCode: null,
+      signalCode: null,
+      pid: 9468,
+    };
+
+    await assert.rejects(
+      helper(child, 'http://127.0.0.1:65535', ['packaged smoke boot log']),
+      (error) => {
+        assert.match(
+          error.message,
+          /Packaged production plugin signed preflight returned an invalid readiness body while the snapshot probe timed out at http:\/\/127\.0\.0\.1:65535/,
+          label,
+        );
+        return true;
+      },
+    );
+  }
+});
+
+test('packaged production plugin smoke readiness helper fails closed when signed preflight keeps a broken top-level auth envelope after the snapshot probe times out', async () => {
+  const timeoutError = new Error('Timed out fetching http://127.0.0.1:65535/wp-json/reprint/v1/push/snapshot');
+  const brokenAuthEnvelopes = [
+    {
+      label: 'missing top-level auth',
+      body: {
+        ok: true,
+        routeProfile: {
+          profile: 'production-shaped',
+          restNamespace: 'reprint/v1',
+          routePrefix: '/push',
+          labBacked: false,
+        },
+        session: {
+          id: 'session_123',
+          type: 'production-auth-session',
+        },
+      },
+    },
+    {
+      label: 'missing top-level auth session',
+      body: {
+        ok: true,
+        routeProfile: {
+          profile: 'production-shaped',
+          restNamespace: 'reprint/v1',
+          routePrefix: '/push',
+          labBacked: false,
+        },
+        auth: {},
+        session: {
+          id: 'session_123',
+          type: 'production-auth-session',
+        },
+      },
+    },
+  ];
+
+  for (const { label, body } of brokenAuthEnvelopes) {
+    const helper = buildPackagedSmokeWaitHelper({
+      packagedProductionPluginClassifyTimeoutFallbackStartup: () => {
+        throw new Error(`unexpected timeout fallback startup classification during ${label} runtime proof`);
+      },
+      sleepUnlessChildExit: async () => {
+        throw new Error(`unexpected readiness sleep during ${label} runtime proof`);
+      },
+      fetchTextWithTimeout: async (url) => {
+        if (url.endsWith('/wp-json/reprint/v1/push/snapshot')) {
+          throw timeoutError;
+        }
+        throw new Error(`unexpected readiness fetch ${url}`);
+      },
+      fetchPackagedTimeoutFallbackProbes: async () => ({
+        preflightProbe: {
+          route: '/wp-json/reprint/v1/push/preflight',
+          status: 200,
+          ok: true,
           body: JSON.stringify(body),
           parsedBody: body,
           invalidReadinessBody: true,
