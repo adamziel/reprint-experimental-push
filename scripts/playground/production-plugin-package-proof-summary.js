@@ -698,7 +698,7 @@ export function buildProductionPluginPackageProofSummary(
     requestedBundleStatuses: buildConcreteRequestedBundleStatuses('driver-release-proof'),
   };
 
-  return {
+  const proofSummary = {
     kind: 'production-plugin-package-driver-proof',
     ok: checkedScenarioCount > 0 && checkedScenarioCount === passedScenarioCount,
     checkedScenarioCount,
@@ -1099,4 +1099,13 @@ export function buildProductionPluginPackageProofSummary(
     bundles: bundleResults,
     scenarios: scenarioResults,
   };
+
+  proofSummary.driverReceiptGuards = proofSummary.receiptGuards;
+  proofSummary.driverVerifierGuards = proofSummary.verifierGuards;
+  proofSummary.driverReceiptRegistrationGuards = proofSummary.receiptRegistrationGuards;
+  proofSummary.driverRegistrationGuards = proofSummary.registrationGuards;
+  proofSummary.driverCallbackGuards = proofSummary.callbackGuards;
+  proofSummary.driverRegistrationShapeGuards = proofSummary.registrationShapeGuards;
+
+  return proofSummary;
 }

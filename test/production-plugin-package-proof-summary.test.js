@@ -1718,6 +1718,12 @@ test('plugin-driver proof summary exposes release and positive proof aliases alo
 
   assert.deepEqual(summary.driverPositiveProof, summary.positiveProof);
   assert.deepEqual(summary.driverReleaseProof, summary.releaseProof);
+  assert.equal(summary.driverReceiptGuards, summary.receiptGuards);
+  assert.equal(summary.driverVerifierGuards, summary.verifierGuards);
+  assert.equal(summary.driverReceiptRegistrationGuards, summary.receiptRegistrationGuards);
+  assert.equal(summary.driverRegistrationGuards, summary.registrationGuards);
+  assert.equal(summary.driverCallbackGuards, summary.callbackGuards);
+  assert.equal(summary.driverRegistrationShapeGuards, summary.registrationShapeGuards);
 });
 
 test('plugin-driver proof summary reports requested verifier bundle verdicts directly', () => {
