@@ -2084,7 +2084,7 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
               },
             );
           }
-          const startupBranch = packagedProductionPluginClassifyBoundedStartup(
+          const startupBranch = packagedProductionPluginClassifyTimeoutFallbackStartup(
             {
               retryable: true,
               status: preflight.status,

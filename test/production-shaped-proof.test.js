@@ -7781,6 +7781,24 @@ test('packaged timeout fallback helpers preserve packaged startup context for si
   }
 });
 
+test('packaged signed preflight startup branches use the timeout-fallback classifier when /wp-json/ may time out', () => {
+  const smokeSource = readFileSync(
+    path.join(repoRoot, 'scripts/playground/production-plugin-package-smoke.mjs'),
+    'utf8',
+  );
+  const verifierSource = readFileSync(
+    path.join(repoRoot, 'scripts/playground/production-shaped-release-verify.mjs'),
+    'utf8',
+  );
+
+  for (const source of [smokeSource, verifierSource]) {
+    assert.match(
+      source,
+      /const startupBranch = packagedProductionPluginClassifyTimeoutFallbackStartup\(\s*\{\s*retryable:\s*true,\s*status:\s*preflight(?:Response)?\.status,\s*body:\s*preflightText,\s*\},\s*indexProbe,\s*\)/s,
+    );
+  }
+});
+
 test('packaged readiness helpers distinguish signed preflight timeouts after snapshot responses from snapshot timeouts', () => {
   const smokeSource = readFileSync(
     path.join(repoRoot, 'scripts/playground/production-plugin-package-smoke.mjs'),

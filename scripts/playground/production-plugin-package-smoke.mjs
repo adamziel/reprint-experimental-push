@@ -1282,7 +1282,7 @@ async function waitForServer(child, baseUrl, logs) {
               ),
             );
           }
-          const startupBranch = packagedProductionPluginClassifyBoundedStartup(
+          const startupBranch = packagedProductionPluginClassifyTimeoutFallbackStartup(
             {
               retryable: true,
               status: preflightResponse.status,
