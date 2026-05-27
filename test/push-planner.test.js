@@ -18753,6 +18753,101 @@ test('allows an existing term-taxonomy row to reference a term created by the sa
   assert.equal(Object.hasOwn(result.site.files, 'wp-content/plugins/forms/forms.php'), false);
 });
 
+test('allows an existing term-taxonomy row to reference a term created by the same plan while preserving a matching independent edit and remote-only plugin changes', () => {
+  const resourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:5"]';
+  const targetResourceKey = 'row:["wp_terms","term_id:9"]';
+  const matchingEditResourceKey = 'row:["wp_posts","ID:1"]';
+  const base = baseSite();
+  base.db.wp_posts['ID:1'].post_title = 'Base shared post title';
+  base.db.wp_term_taxonomy = {
+    'term_taxonomy_id:5': {
+      term_taxonomy_id: 5,
+      term_id: 9,
+      taxonomy: 'category',
+      parent: 0,
+      description: 'base term taxonomy description',
+    },
+  };
+
+  const local = baseSite();
+  local.db.wp_posts['ID:1'].post_title = 'Shared post title';
+  local.db.wp_terms = {
+    'term_id:9': {
+      term_id: 9,
+      name: 'Local same-plan term',
+      slug: 'local-same-plan-term',
+    },
+  };
+  local.db.wp_term_taxonomy = {
+    'term_taxonomy_id:5': {
+      term_taxonomy_id: 5,
+      term_id: 9,
+      taxonomy: 'category',
+      parent: 0,
+      description: 'local term taxonomy description',
+    },
+  };
+
+  const remote = baseSite();
+  remote.db.wp_posts['ID:1'].post_title = 'Shared post title';
+  remote.db.wp_term_taxonomy = JSON.parse(JSON.stringify(base.db.wp_term_taxonomy));
+  remote.plugins.forms.description = 'remote-only plugin change';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin change */';
+
+  const plan = planFor(base, local, remote);
+  const termMutation = mutationFor(plan, targetResourceKey);
+  const taxonomyMutation = mutationFor(plan, resourceKey);
+  const matchingEdit = decisionFor(plan, matchingEditResourceKey);
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const reference = taxonomyMutation.wordpressGraphReferences[0];
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.blockers, 0);
+  assert.equal(plan.summary.mutations, 2);
+  assert.equal(termMutation.changeKind, 'create');
+  assert.equal(taxonomyMutation.changeKind, 'update');
+  assert.equal(matchingEdit.decision, 'already-in-sync');
+  assert.equal(matchingEdit.change.localChange, 'update');
+  assert.equal(matchingEdit.change.remoteChange, 'update');
+  assert.ok(
+    plan.mutations.indexOf(termMutation) < plan.mutations.indexOf(taxonomyMutation),
+    'term create must be ordered before dependent existing term-taxonomy update',
+  );
+  assert.deepEqual(taxonomyMutation.dependsOnMutationIds, [termMutation.id]);
+  assert.equal(plan.summary.graphDependencies, 1);
+  assert.deepEqual(plan.graphDependencies, [
+    {
+      sourceMutationId: taxonomyMutation.id,
+      sourceResourceKey: resourceKey,
+      relationshipKey: 'wp_term_taxonomy.term_id',
+      relationshipType: 'term-taxonomy-term',
+      targetMutationId: termMutation.id,
+      targetResourceKey,
+      resolutionPolicy: 'same-plan-local-create',
+      source: 'same-plan-local-create',
+      targetLocalHash: termMutation.localHash,
+    },
+  ]);
+  assert.equal(reference.relationshipKey, 'wp_term_taxonomy.term_id');
+  assert.equal(reference.relationshipType, 'term-taxonomy-term');
+  assert.equal(reference.sourceResourceKey, resourceKey);
+  assert.equal(reference.targetResourceKey, targetResourceKey);
+  assert.equal(reference.resolutionPolicy, 'same-plan-local-create');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin change');
+  assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin change */');
+
+  const result = applyPlan(remote, plan);
+  assert.equal(result.site.db.wp_posts['ID:1'].post_title, 'Shared post title');
+  assert.equal(result.site.db.wp_terms['term_id:9'].name, 'Local same-plan term');
+  assert.equal(result.site.db.wp_term_taxonomy['term_taxonomy_id:5'].term_id, 9);
+  assert.equal(result.site.db.wp_term_taxonomy['term_taxonomy_id:5'].description, 'local term taxonomy description');
+  assert.equal(result.site.plugins.forms.description, 'remote-only plugin change');
+  assert.equal(result.site.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin change */');
+});
+
 test('blocks local term-taxonomy term references to a same-plan created term identity while preserving remote-only plugin drift', () => {
   const resourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:5"]';
   const targetResourceKey = 'row:["wp_terms","term_id:9"]';
