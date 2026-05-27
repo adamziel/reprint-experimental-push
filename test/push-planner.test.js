@@ -35876,6 +35876,103 @@ test('production durable journal adapter preserves remote artifact ownership on 
   assert.equal(persistedRecoveryState.state, 'blocked-recovery');
 });
 
+test('production durable journal retries keep blocked partial commits blocked and do not reopen the journal', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const plan = planFor(base, local, baseSite());
+  const durableJournalPath = tempRecoveryJournalPath();
+  const remoteArtifactPath = `${durableJournalPath}.remote`;
+  const claimId = 'lease-partial-retry-stays-blocked';
+  const durableJournal = openProductionRecoveryJournal(durableJournalPath, {
+    truncate: true,
+    now: fixedNow,
+    claimId,
+    ownsRemoteArtifact: true,
+    remoteArtifactPath,
+    writerLease: { id: claimId },
+  });
+  const remote = baseSite();
+  appendRecoveryClaimOpened(durableJournal, {
+    plan,
+    current: remote,
+    claimId,
+    artifactRefs: {
+      journal: durableJournalPath,
+      remote: remoteArtifactPath,
+    },
+  });
+  durableJournal.appendEvent('journal-opened', {
+    planId: plan.id,
+    state: 'opened',
+    observedHash: 'snapshot-hash-only',
+    artifactRefs: {
+      journal: durableJournalPath,
+      remote: remoteArtifactPath,
+    },
+  });
+
+  const partialError = captureError(() =>
+    applyPlan(remote, plan, {
+      durableJournal,
+      requireProductionDurableJournal: true,
+      mutateRemote: true,
+      failDuringCommitAtMutation: 1,
+    }),
+  );
+
+  durableJournal.close();
+
+  assert.equal(partialError.code, 'INJECTED_FAILURE_DURING_COMMIT');
+  assert.equal(partialError.details.recovery.status, 'blocked-recovery');
+  const persistedBeforeRetry = readRecoveryJournal(durableJournalPath);
+  const blockedRecoveryRecordsBeforeRetry = persistedBeforeRetry.records.filter(
+    (record) => record.type === 'recovery-state' && record.state === 'blocked-recovery',
+  ).length;
+
+  const retryWriter = openProductionRecoveryJournal(durableJournalPath, {
+    now: fixedNow,
+    claimId,
+    ownsRemoteArtifact: true,
+    remoteArtifactPath,
+    writerLease: { id: claimId },
+  });
+  const retryError = captureError(() =>
+    applyPlan(remote, plan, {
+      durableJournal: retryWriter,
+      requireProductionDurableJournal: true,
+      journal: partialError.details.recovery.artifacts.journal,
+      mutateRemote: true,
+    }),
+  );
+  retryWriter.close();
+
+  const persistedAfterRetry = readRecoveryJournal(durableJournalPath);
+  const blockedRecoveryRecordsAfterRetry = persistedAfterRetry.records.filter(
+    (record) => record.type === 'recovery-state' && record.state === 'blocked-recovery',
+  ).length;
+
+  assert.equal(retryError.code, 'RECOVERY_BLOCKED');
+  assert.equal(retryError.details.recovery.status, 'blocked-recovery');
+  assert.ok(retryError.details.recovery.artifacts.journal, 'retry must keep journal artifacts');
+  assert.ok(retryError.details.recovery.artifacts.remote, 'retry must keep remote artifacts');
+  assert.equal(
+    retryError.details.recovery.artifacts.remote.files['index.php'],
+    '<?php echo "local";',
+    'retry must preserve the partial remote snapshot instead of reopening writes',
+  );
+  assert.equal(
+    persistedAfterRetry.records.filter((record) => record.type === 'journal-retry-opened').length,
+    0,
+  );
+  assert.equal(
+    blockedRecoveryRecordsAfterRetry,
+    blockedRecoveryRecordsBeforeRetry,
+    'retrying a blocked partial commit must not append a second blocked recovery state',
+  );
+});
+
 test('production durable journal partial commits fail closed when the remote artifact ref disappears mid-run', () => {
   const base = baseSite();
   const local = baseSite();

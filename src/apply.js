@@ -134,7 +134,13 @@ export function applyPlan(remote, plan, options = {}) {
   try {
     durableJournal = getDurableJournalWriter(options);
     shouldCloseDurableJournal = shouldCloseOwnedDurableJournal(durableJournal);
-    durableJournalSupportReport = assertProductionDurableJournalSupport(options, durableJournal);
+    const ensureDurableJournalSupportReport = () => {
+      if (durableJournalSupportReport || !options?.requireProductionDurableJournal) {
+        return durableJournalSupportReport;
+      }
+      durableJournalSupportReport = assertProductionDurableJournalSupport(options, durableJournal);
+      return durableJournalSupportReport;
+    };
     const hasPreviousJournal = Boolean(options.journal);
     let previousJournalState = null;
     let journal = prepareJournal(remote, plan, options.journal);
@@ -143,6 +149,7 @@ export function applyPlan(remote, plan, options = {}) {
       try {
         replayResult = replayCompletedPlan(remote, plan, journal);
         assertRecoveryStateEnvelope(replayResult.recoveryState);
+        ensureDurableJournalSupportReport();
         recordDurableReplay(durableJournal, remote, plan, replayResult.recoveryState, journal, durableJournalSupportReport);
         return replayResult;
       } catch (error) {
@@ -173,6 +180,7 @@ export function applyPlan(remote, plan, options = {}) {
         );
         try {
           assertRecoveryStateEnvelope(recoveryState);
+          ensureDurableJournalSupportReport();
           recordDurableReplay(durableJournal, remote, plan, recoveryState, completedJournal, durableJournalSupportReport);
           recordDurableRecoveryState(durableJournal, remote, plan, recoveryState, durableJournalSupportReport);
         } catch (error) {
@@ -192,6 +200,7 @@ export function applyPlan(remote, plan, options = {}) {
       }
     }
 
+    ensureDurableJournalSupportReport();
     validatePreconditions(remote, plan);
     try {
       recordDurablePlanOpened(durableJournal, remote, plan, {
