@@ -1,21 +1,18 @@
 # Critic Verdict
 
-Current reliable head: `c208a12d28b3abcef15920c27eef424d68cad996`
-(`Fail closed on malformed auth identity drift`).
+Current reliable head: `c40affc90c17853bc61a213e6e32fa6ffdfb510c`
+(`Require journal auth continuity`).
 
 Verdict: `0/4`
 
 Reason:
 
-- This head adds fail-closed checks for malformed auth identity fields in the
-  checked release-path client. In `src/authenticated-http-push-client.js`, the
-  production-auth-session path now rejects malformed `auth.identity.userLogin`
-  values at preflight, dry-run, apply, recovery inspect, replay, and db-journal
-  inspection time when `requireProductionAuthSession` is enabled.
-- The added tests in `test/authenticated-http-push-client.test.js` cover array-
-  valued and whitespace-padded auth identity/session fields and prove the
-  client returns `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED` with invalid
-  field diagnostics.
+- This head extends the checked release-path client so journal-auth continuity
+  is preserved across the production-auth-session path. In
+  `src/authenticated-http-push-client.js`, the release-path checks now carry the
+  journal auth identity through the lifecycle gates, and
+  `test/authenticated-http-push-client.test.js` adds focused coverage for the
+  continuity cases.
 - The diff is still support-side hardening on the checked verifier path: it
   does not prove a production-owned, non-lab-backed mutation boundary on the
   real Reprint endpoint, live auth/session issuance and readback, durable
