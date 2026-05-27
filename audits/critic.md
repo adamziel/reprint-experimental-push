@@ -1,21 +1,23 @@
 # Critic Verdict
 
-Current reliable head: `37aab99a33dc9a21c78193d9b2d086dfcf1b9368`
-(`Use release clock for auth session expiry`).
+Current reliable head: `c54fbd738357665d0f26813b34e2985a6d01d221`
+(`Map more core WordPress graph identities`).
 
 Verdict: `0/4`
 
 Reason:
 
-- This head makes checked auth/session expiry evaluation use the release
-  observation clock consistently through preflight, dry-run, apply, recovery
-  inspect, replay, and db-journal readback. The change is in
-  `src/authenticated-http-push-client.js`, with focused coverage in
-  `test/authenticated-http-push-client.test.js`.
-- That is useful fail-closed support evidence, but it is still client/test
-  hardening. It does not prove a production-owned, non-lab-backed mutation
-  boundary on the real Reprint endpoint, live auth/session issuance and
-  readback, durable restart-readable journal storage with lease fencing, or
+- This head adds safe same-plan planner support for additional core WordPress
+  graph relationships, including `comment-user`, link owner, multisite
+  blog/site metadata references, and fail-closed handling for custom taxonomy
+  surfaces and same-plan target deletion.
+- The focused planner and inventory checks passed, so this is useful mapping
+  support evidence. It reduces graph-identity ambiguity for downstream
+  unfiltered smokes.
+- It still does not prove a production-owned, non-lab-backed mutation boundary
+  on the real Reprint endpoint. It does not prove live auth/session issuance
+  and readback, durable restart-readable journal storage with lease fencing,
+  plugin-driver release ownership, preserved rejected-remote evidence, or
   apply-time revalidation before the first mutation.
 - Verdict therefore remains `0/4`.
 
