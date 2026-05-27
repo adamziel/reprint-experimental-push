@@ -540,6 +540,21 @@ test('production recovery journal inspection surface helper fails closed when le
   divergentStorageGuard.leaseFence.writerLease.storageGuard = 'wpdb-single-statement-cas';
   assert.equal(productionRecoveryJournalInspectionSurfaceIsPresent(divergentStorageGuard), false);
 
+  const divergentJournalStorageGuard = clone(inspection);
+  divergentJournalStorageGuard.journal.storageGuard.boundary = 'wpdb-single-statement-cas';
+  assert.equal(productionRecoveryJournalInspectionSurfaceIsPresent(divergentJournalStorageGuard), false);
+
+  const inheritedJournalStorageGuard = clone(inspection);
+  inheritedJournalStorageGuard.journal.storageGuard = Object.assign(
+    Object.create({ boundary: inheritedJournalStorageGuard.journal.storageGuard.boundary }),
+    {
+      operation: inheritedJournalStorageGuard.journal.storageGuard.operation,
+      outcome: inheritedJournalStorageGuard.journal.storageGuard.outcome,
+    },
+  );
+  delete inheritedJournalStorageGuard.journal.storageGuard.boundary;
+  assert.equal(productionRecoveryJournalInspectionSurfaceIsPresent(inheritedJournalStorageGuard), false);
+
   const inheritedLeaseFenceMarker = clone(inspection);
   inheritedLeaseFenceMarker.leaseFence = Object.assign(
     Object.create({ staleClaimRejected: inheritedLeaseFenceMarker.leaseFence.staleClaimRejected }),

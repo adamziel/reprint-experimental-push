@@ -280,6 +280,7 @@ export function productionRecoveryJournalInspectionSurfaceIsPresent(inspection) 
     'claimHash',
     'consumedClaimId',
     'consumedClaimHash',
+    'storageGuard',
     'writerLease',
   ])
     && journal?.kind === PRODUCTION_RECOVERY_JOURNAL_KIND
@@ -305,12 +306,17 @@ export function productionRecoveryJournalInspectionSurfaceIsPresent(inspection) 
     && journal?.claimId === claim.activeClaimId
     && journal?.claimHash === claim.activeClaimHash
     && consumedIdentityMatches
+    && storageGuardContractMatches(journal?.storageGuard)
+    && journal?.storageGuard?.boundary === PRODUCTION_RECOVERY_JOURNAL_STORAGE_ADAPTER
+    && journal?.storageGuard?.operation === 'update'
+    && journal?.storageGuard?.outcome === 'applied'
     && productionRecoveryJournalWriterLeaseContractMatches(writerLease, claim)
     && writerLease?.restartReadable === journal.restartReadable
     && writerLease?.staleClaimRejected === journal.staleClaimRejected
     && productionRecoveryJournalLeaseFenceContractMatches(leaseFence)
     && productionRecoveryJournalWriterLeaseContractMatches(leaseFenceWriterLease, claim)
     && productionRecoveryJournalWriterLeasesAgree(writerLease, leaseFenceWriterLease)
+    && leaseFence?.storageGuard === journal?.storageGuard?.boundary
     && leaseFenceWriterLease?.storageGuard === PRODUCTION_RECOVERY_JOURNAL_STORAGE_ADAPTER
     && leaseFenceWriterLease?.restartReadable === journal.restartReadable
     && leaseFenceWriterLease?.staleClaimRejected === journal.staleClaimRejected
