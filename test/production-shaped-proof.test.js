@@ -11457,6 +11457,84 @@ test('production auth/session lifecycle summary fails closed when direct preserv
   );
 });
 
+test('production auth/session lifecycle summary fails closed when direct preserved summary carries stale auth identity', () => {
+  const summary = {
+    issued: {
+      step: 'preflight',
+      id: 'session-01',
+      type: 'production-auth-session',
+      status: 'active',
+      expiresAt: '2099-01-01T00:00:00Z',
+      authUser: 'reprint_push_admin',
+    },
+    read: {
+      step: 'journal',
+      id: 'session-01',
+      type: 'production-auth-session',
+      status: 'active',
+      expiresAt: '2099-01-01T00:00:00Z',
+      authUser: 'reprint_push_admin',
+      preserved: true,
+    },
+    preserved: {
+      step: 'apply',
+      id: 'session-01',
+      type: 'production-auth-session',
+      status: 'active',
+      expiresAt: '2099-01-01T00:00:00Z',
+      authUser: 'different_user',
+      preserved: true,
+    },
+    observations: [
+      {
+        step: 'preflight',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+        authUser: 'reprint_push_admin',
+        preserved: false,
+      },
+      {
+        step: 'dry-run',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+        authUser: 'reprint_push_admin',
+        preserved: true,
+      },
+      {
+        step: 'apply',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+        authUser: 'reprint_push_admin',
+        preserved: true,
+      },
+      {
+        step: 'journal',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+        authUser: 'reprint_push_admin',
+        preserved: true,
+      },
+    ],
+  };
+
+  assert.deepEqual(
+    evaluateProductionAuthSessionLifecycleSummary(summary),
+    {
+      ok: false,
+      required: 'preserved read',
+      observed: 'stale-preserved-summary',
+    },
+  );
+});
+
 test('checked release auth/session lifecycle summary fails closed when direct preserved summary carries stale lifecycle fields', () => {
   const summary = {
     issued: {
@@ -11513,6 +11591,244 @@ test('checked release auth/session lifecycle summary fails closed when direct pr
         type: 'production-auth-session',
         status: 'active',
         expiresAt: '2099-01-01T00:00:00Z',
+        preserved: true,
+      },
+    ],
+  };
+
+  assert.deepEqual(
+    evaluateCheckedReleaseAuthSessionLifecycleSummary(summary),
+    {
+      ok: false,
+      required: 'preserved read',
+      observed: 'stale-preserved-summary',
+    },
+  );
+});
+
+test('checked release auth/session lifecycle summary fails closed when direct preserved summary carries stale auth identity', () => {
+  const summary = {
+    issued: {
+      step: 'preflight',
+      id: 'session-01',
+      type: 'production-auth-session',
+      status: 'active',
+      expiresAt: '2099-01-01T00:00:00Z',
+      authUser: 'reprint_push_admin',
+    },
+    read: {
+      step: 'journal',
+      id: 'session-01',
+      type: 'production-auth-session',
+      status: 'active',
+      expiresAt: '2099-01-01T00:00:00Z',
+      authUser: 'reprint_push_admin',
+      preserved: true,
+    },
+    preserved: {
+      step: 'apply',
+      id: 'session-01',
+      type: 'production-auth-session',
+      status: 'active',
+      expiresAt: '2099-01-01T00:00:00Z',
+      authUser: 'different_user',
+      preserved: true,
+    },
+    observations: [
+      {
+        step: 'preflight',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+        authUser: 'reprint_push_admin',
+        preserved: false,
+      },
+      {
+        step: 'dry-run',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+        authUser: 'reprint_push_admin',
+        preserved: true,
+      },
+      {
+        step: 'apply',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+        authUser: 'reprint_push_admin',
+        preserved: true,
+      },
+      {
+        step: 'journal',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+        authUser: 'reprint_push_admin',
+        preserved: true,
+      },
+    ],
+  };
+
+  assert.deepEqual(
+    evaluateCheckedReleaseAuthSessionLifecycleSummary(summary),
+    {
+      ok: false,
+      required: 'preserved read',
+      observed: 'stale-preserved-summary',
+    },
+  );
+});
+
+test('production auth/session lifecycle summary fails closed when direct preserved summary carries stale field attribution metadata', () => {
+  const summary = {
+    issued: {
+      step: 'preflight',
+      id: 'session-01',
+      type: 'production-auth-session',
+      status: 'active',
+      expiresAt: '2099-01-01T00:00:00Z',
+      authUser: 'reprint_push_admin',
+    },
+    read: {
+      step: 'journal',
+      id: 'session-01',
+      type: 'production-auth-session',
+      status: 'active',
+      expiresAt: '2099-01-01T00:00:00Z',
+      authUser: 'reprint_push_admin',
+      preserved: true,
+    },
+    preserved: {
+      step: 'apply',
+      id: 'session-01',
+      type: 'production-auth-session',
+      status: 'active',
+      expiresAt: '2099-01-01T00:00:00Z',
+      authUser: 'reprint_push_admin',
+      unrevokedField: 'auth.session.cleanup',
+      preserved: true,
+    },
+    observations: [
+      {
+        step: 'preflight',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+        authUser: 'reprint_push_admin',
+        preserved: false,
+      },
+      {
+        step: 'dry-run',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+        authUser: 'reprint_push_admin',
+        preserved: true,
+      },
+      {
+        step: 'apply',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+        authUser: 'reprint_push_admin',
+        unrevokedField: 'auth.session.status',
+        preserved: true,
+      },
+      {
+        step: 'journal',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+        authUser: 'reprint_push_admin',
+        preserved: true,
+      },
+    ],
+  };
+
+  assert.deepEqual(
+    evaluateProductionAuthSessionLifecycleSummary(summary),
+    {
+      ok: false,
+      required: 'preserved read',
+      observed: 'stale-preserved-summary',
+    },
+  );
+});
+
+test('checked release auth/session lifecycle summary fails closed when direct preserved summary carries stale field attribution metadata', () => {
+  const summary = {
+    issued: {
+      step: 'preflight',
+      id: 'session-01',
+      type: 'production-auth-session',
+      status: 'active',
+      expiresAt: '2099-01-01T00:00:00Z',
+      authUser: 'reprint_push_admin',
+    },
+    read: {
+      step: 'journal',
+      id: 'session-01',
+      type: 'production-auth-session',
+      status: 'active',
+      expiresAt: '2099-01-01T00:00:00Z',
+      authUser: 'reprint_push_admin',
+      preserved: true,
+    },
+    preserved: {
+      step: 'apply',
+      id: 'session-01',
+      type: 'production-auth-session',
+      status: 'active',
+      expiresAt: '2099-01-01T00:00:00Z',
+      authUser: 'reprint_push_admin',
+      unrevokedField: 'auth.session.cleanup',
+      preserved: true,
+    },
+    observations: [
+      {
+        step: 'preflight',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+        authUser: 'reprint_push_admin',
+        preserved: false,
+      },
+      {
+        step: 'dry-run',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+        authUser: 'reprint_push_admin',
+        preserved: true,
+      },
+      {
+        step: 'apply',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+        authUser: 'reprint_push_admin',
+        unrevokedField: 'auth.session.status',
+        preserved: true,
+      },
+      {
+        step: 'journal',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+        authUser: 'reprint_push_admin',
         preserved: true,
       },
     ],
