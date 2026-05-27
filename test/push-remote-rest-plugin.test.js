@@ -7,6 +7,42 @@ import { fileURLToPath } from 'node:url';
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const pluginFile = path.join(repoRoot, 'scripts/playground/push-remote-rest-plugin.php');
 const hasPhp = spawnSync('php', ['-v'], { encoding: 'utf8' }).status === 0;
+const checkedClaimContractOmissionCases = [
+  ['claim status', 'claim.status'],
+  ['claim active identity', 'claim.activeClaimId'],
+  ['claim active claim-key hash', 'claim.activeClaimKeyHash'],
+  ['claim active sequence', 'claim.activeClaimSequence'],
+  ['claim active event', 'claim.activeClaimEvent'],
+  ['claim idempotency-key hash', 'claim.idempotencyKeyHash'],
+  ['claim request hash', 'claim.requestHash'],
+  ['claim stale-claim rejection flag', 'claim.staleClaimRejected'],
+  ['claim previous identity', 'claim.previousClaimId'],
+  ['claim previous claim-key hash', 'claim.previousClaimKeyHash'],
+  ['claim previous sequence', 'claim.previousClaimSequence'],
+  ['claim previous event', 'claim.previousClaimEvent'],
+  ['claim previous-started sequence', 'claim.previousStartedSequence'],
+  ['claim abandoned sequence', 'claim.abandonedSequence'],
+  ['claim abandoned event', 'claim.abandonedEvent'],
+];
+
+function deleteNestedProperty(object, propertyPath) {
+  const pathSegments = propertyPath.split('.');
+  const finalKey = pathSegments.pop();
+  let current = object;
+
+  for (const segment of pathSegments) {
+    if (!current || typeof current !== 'object') {
+      return;
+    }
+    current = current[segment];
+  }
+
+  if (!current || typeof current !== 'object' || finalKey === undefined) {
+    return;
+  }
+
+  delete current[finalKey];
+}
 
 function runMerge(dbJournal, checkedSummary) {
   return spawnSync('php', [
@@ -3906,6 +3942,28 @@ test('checked recovery inspect evidence fails closed when authoritative checked 
   const parsed = JSON.parse(result.stdout);
   assert.equal(parsed.recovery.journal.acceptedOnCheckedBoundary, false);
 });
+
+for (const [label, propertyPath] of checkedClaimContractOmissionCases) {
+  test(`checked recovery inspect evidence fails closed when authoritative checked summaries omit accepted ${label}`, { skip: !hasPhp }, () => {
+    const checkedSummary = buildCheckedRecoveryJournalSummary();
+    deleteNestedProperty(checkedSummary, propertyPath);
+
+    const result = runAttachCheckedRecoveryJournalEvidence(
+      {
+        recovery: {
+          journal: buildAcceptedInlineRecoveryJournal(),
+        },
+      },
+      true,
+      false,
+      checkedSummary,
+    );
+
+    assert.equal(result.status, 0, result.stderr);
+    const parsed = JSON.parse(result.stdout);
+    assert.equal(parsed.recovery.journal.acceptedOnCheckedBoundary, false);
+  });
+}
 
 test('checked recovery inspect evidence fails closed when authoritative checked summaries omit accepted writer-lease claim identity', { skip: !hasPhp }, () => {
   const checkedSummary = buildCheckedRecoveryJournalSummary();
@@ -11229,6 +11287,25 @@ test('checked db journal attachment fails closed when authoritative checked summ
   const parsed = JSON.parse(result.stdout);
   assert.equal(parsed.dbJournal.acceptedOnCheckedBoundary, false);
 });
+
+for (const [label, propertyPath] of checkedClaimContractOmissionCases) {
+  test(`checked db journal attachment fails closed when authoritative checked summaries omit accepted ${label}`, { skip: !hasPhp }, () => {
+    const checkedSummary = buildCheckedRecoveryJournalSummary();
+    deleteNestedProperty(checkedSummary, propertyPath);
+
+    const result = runAttachCheckedDbJournalContract(
+      {
+        ok: true,
+        dbJournal: buildAcceptedInlineRecoveryJournal(),
+      },
+      checkedSummary,
+    );
+
+    assert.equal(result.status, 0, result.stderr);
+    const parsed = JSON.parse(result.stdout);
+    assert.equal(parsed.dbJournal.acceptedOnCheckedBoundary, false);
+  });
+}
 
 test('checked db journal attachment fails closed when authoritative checked summaries omit accepted writer-lease claim identity', { skip: !hasPhp }, () => {
   const checkedSummary = buildCheckedRecoveryJournalSummary();
