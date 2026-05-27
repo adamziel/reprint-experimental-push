@@ -53,7 +53,7 @@ export async function runAuthenticatedHttpPush({
   authSessionSource = null,
   now = new Date(),
 }) {
-  const normalizedAuthSessionSource = normalizeAuthenticatedHttpPushSource(authSessionSource);
+  const normalizedAuthSessionSource = normalizeAuthenticatedHttpPushSource(authSessionSource, sourceUrl);
   const resolvedSource = normalizedAuthSessionSource
     ? {
       sourceUrl: normalizedAuthSessionSource.sourceUrl,
@@ -87,6 +87,7 @@ export async function runAuthenticatedHttpPush({
     sourceUrl: resolvedSource.sourceUrl,
     credential,
     routeProfile: profile.name,
+    allowedSourceUrl: sourceUrl,
     simulatePreservedRemoteRetryPath,
   });
   const summary = {
@@ -823,7 +824,7 @@ export function resolveAuthenticatedHttpPushSource({
   applicationPassword = '',
   authSessionSource = null,
 }) {
-  const normalizedAuthSessionSource = normalizeAuthenticatedHttpPushSource(authSessionSource);
+  const normalizedAuthSessionSource = normalizeAuthenticatedHttpPushSource(authSessionSource, sourceUrl);
   if (!normalizedAuthSessionSource) {
     return {
       sourceUrl,
@@ -839,12 +840,15 @@ export function resolveAuthenticatedHttpPushSource({
   };
 }
 
-function normalizeAuthenticatedHttpPushSource(authSessionSource) {
+function normalizeAuthenticatedHttpPushSource(authSessionSource, allowedSourceUrl = '') {
   if (!authSessionSource?.ok) {
     return null;
   }
 
-  const sourceUrl = normalizeSupportedAuthenticatedHttpPushSourceUrl(authSessionSource.sourceUrl);
+  const sourceUrl = normalizeSupportedAuthenticatedHttpPushSourceUrl(
+    authSessionSource.sourceUrl,
+    allowedSourceUrl,
+  );
   const username = normalizeAuthenticatedHttpPushSourceField(authSessionSource.username);
   const applicationPassword = normalizeAuthenticatedHttpPushSourceField(authSessionSource.applicationPassword);
   if (!sourceUrl || !username || !applicationPassword) {
@@ -871,18 +875,18 @@ function normalizeAuthenticatedHttpPushSourceField(value) {
   return normalized;
 }
 
-function normalizeSupportedAuthenticatedHttpPushSourceUrl(value) {
+function normalizeSupportedAuthenticatedHttpPushSourceUrl(value, allowedSourceUrl = '') {
   const sourceUrl = normalizeAuthenticatedHttpPushSourceField(value);
   if (!sourceUrl) {
     return '';
   }
 
-  return isSupportedAuthenticatedHttpPushSourceUrl(sourceUrl)
+  return isSupportedAuthenticatedHttpPushSourceUrl(sourceUrl, allowedSourceUrl)
     ? sourceUrl
     : '';
 }
 
-function isSupportedAuthenticatedHttpPushSourceUrl(sourceUrl) {
+function isSupportedAuthenticatedHttpPushSourceUrl(sourceUrl, allowedSourceUrl = '') {
   let parsed;
   try {
     parsed = new URL(sourceUrl);
@@ -897,6 +901,11 @@ function isSupportedAuthenticatedHttpPushSourceUrl(sourceUrl) {
     return true;
   }
 
+  const normalizedAllowedSourceUrl = normalizeAuthenticatedHttpPushSourceField(allowedSourceUrl);
+  if (normalizedAllowedSourceUrl && sourceUrl === normalizedAllowedSourceUrl) {
+    return true;
+  }
+
   return false;
 }
 
@@ -904,12 +913,13 @@ export function authenticatedHttpClient({
   sourceUrl,
   credential,
   routeProfile = 'lab-authenticated',
+  allowedSourceUrl = '',
   requestTimeoutMs = 10_000,
   simulatePreservedRemoteRetryPath = '',
 }) {
   const baseUrl = normalizeBaseUrl(sourceUrl);
   const profile = resolveRouteProfile(routeProfile);
-  assertSupportedSourceUrlForRouteProfile(baseUrl, profile);
+  assertSupportedSourceUrlForRouteProfile(baseUrl, profile, allowedSourceUrl);
   assertSupportedCredentialForRouteProfile(credential, profile);
   const maybeSimulateTransientReadFailure = createTransientReadFailureProbe(
     baseUrl,
@@ -2484,7 +2494,7 @@ function normalizeBaseUrl(sourceUrl) {
   return parsed;
 }
 
-function assertSupportedSourceUrlForRouteProfile(baseUrl, profile) {
+function assertSupportedSourceUrlForRouteProfile(baseUrl, profile, allowedSourceUrl = '') {
   if (profile.name !== 'production-shaped') {
     return;
   }
@@ -2494,6 +2504,24 @@ function assertSupportedSourceUrlForRouteProfile(baseUrl, profile) {
     && isLoopbackHost(baseUrl.hostname)
   ) {
     return;
+  }
+
+  const normalizedAllowedSourceUrl = normalizeAuthenticatedHttpPushSourceField(allowedSourceUrl);
+  if (normalizedAllowedSourceUrl) {
+    let allowedBaseUrl;
+    try {
+      allowedBaseUrl = normalizeBaseUrl(normalizedAllowedSourceUrl);
+    } catch {
+      allowedBaseUrl = null;
+    }
+    if (
+      allowedBaseUrl
+      && allowedBaseUrl.protocol === baseUrl.protocol
+      && allowedBaseUrl.host === baseUrl.host
+      && allowedBaseUrl.pathname === baseUrl.pathname
+    ) {
+      return;
+    }
   }
 
   throw new Error(
