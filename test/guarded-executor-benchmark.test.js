@@ -12403,13 +12403,13 @@ test('guarded benchmark surfaces release-manifest release-bundle commit blockers
 test('guarded benchmark surfaces release-bundle planning blockers at runtime', () => {
   const report = largeBenchmark();
   const details = productionThroughputDetails(report);
+  const releaseBundlePlanningRejectedFastPaths = details.rejectedFastPaths.filter((entry) => [
+    'compressed-remote-index-and-cached-release-manifest-skips-release-bundle-planning',
+    'compressed-remote-index-and-cached-release-manifest-and-batched-receipt-flush-skips-release-bundle-planning-after-pause',
+  ].includes(entry.id));
 
   assert.deepEqual(
-    details.rejectedFastPaths
-      .filter((entry) => [
-        'compressed-remote-index-and-cached-release-manifest-skips-release-bundle-planning',
-        'compressed-remote-index-and-cached-release-manifest-and-batched-receipt-flush-skips-release-bundle-planning-after-pause',
-      ].includes(entry.id))
+    releaseBundlePlanningRejectedFastPaths
       .map((entry) => ({
         id: entry.id,
         rejectedGate: entry.rejectedGate,
@@ -12428,6 +12428,10 @@ test('guarded benchmark surfaces release-bundle planning blockers at runtime', (
       },
     ],
   );
+
+  assert.deepEqual(summarizeRejectedGates(releaseBundlePlanningRejectedFastPaths), [
+    { rejectedGate: 'skip', count: 2 },
+  ]);
 });
 
 test('guarded benchmark surfaces release-cursor and receipt-flush release-bundle pause blockers at runtime', () => {
