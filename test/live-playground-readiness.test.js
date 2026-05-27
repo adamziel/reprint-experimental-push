@@ -1507,6 +1507,22 @@ test('packaged server readiness fails closed for terminal production auth sessio
       },
     },
     {
+      label: 'cleaned-up status',
+      session: {
+        status: 'cleaned-up',
+        type: 'production-auth-session',
+        expiresAt: '2099-01-01T00:00:00Z',
+      },
+    },
+    {
+      label: 'cleanup alias status',
+      session: {
+        status: 'cleaned_up',
+        type: 'production-auth-session',
+        expiresAt: '2099-01-01T00:00:00Z',
+      },
+    },
+    {
       label: 'cleaned up',
       session: {
         status: 'active',
