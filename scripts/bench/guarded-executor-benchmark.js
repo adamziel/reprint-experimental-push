@@ -100,6 +100,8 @@ const ROLLOUT_REJECTED_FAST_PATH_SPECS = Object.freeze([
       'queue-pause-without-terminal-receipt-cursor',
       'receipt-cursor-not-terminal',
       'staging-disk-headroom-not-visible',
+      'staging-disk-headroom-visible-without-measurement',
+      'staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint',
       'queue-pause-without-resource-headroom-safe-receipt-cursor-backpressure',
       'queue-pause-without-resource-headroom-safe-receipt-cursor-slack',
       'queue-pause-without-consistent-receipt-cursor-slack',
