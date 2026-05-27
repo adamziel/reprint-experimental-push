@@ -1614,6 +1614,22 @@ test('auth-session source loader fails closed when the source command exits non-
   });
 });
 
+test('auth-session source loader fails closed when the source command terminates by signal', () => {
+  const source = loadAuthSessionSource(
+    `${process.execPath} -e "process.kill(process.pid, 'SIGTERM')"`,
+    {
+      ...process.env,
+      NODE_NO_WARNINGS: '1',
+    },
+    repoRoot,
+  );
+
+  assert.deepEqual(source, {
+    ok: false,
+    error: 'Auth session source command terminated by SIGTERM',
+  });
+});
+
 test('auth-session source loader fails closed when the source command returns invalid JSON', () => {
   const source = loadAuthSessionSource(
     `${process.execPath} -e "process.stdout.write('not-json')"`,
@@ -1749,6 +1765,33 @@ test('production-shaped release verify fails closed when a required production a
   assert.match(proof.stdout, /"verdict": "PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED"/);
   assert.match(proof.stdout, /"observed": "invalid-production-auth-session-source"/);
   assert.match(proof.stdout, /"error": "Auth session source command must return a supported local sourceUrl"/);
+  assert.match(proof.stdout, /"authSessionType": "invalid-production-auth-session-source"/);
+});
+
+test('production-shaped release verify fails closed when a required production auth/session source command terminates by signal', () => {
+  const proof = spawnProductionShapedReleaseVerifySync(
+    {
+      ...process.env,
+      REPRINT_PUSH_SOURCE_URL: 'http://127.0.0.1:8080',
+      REPRINT_PUSH_REMOTE_URL: 'http://127.0.0.1:8080',
+      REPRINT_PUSH_USERNAME: 'stale-lab-username',
+      REPRINT_PUSH_APPLICATION_PASSWORD: 'stale-lab-password',
+      REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND: `${process.execPath} -e "process.kill(process.pid, 'SIGTERM')"`,
+      REPRINT_PUSH_REQUIRE_PRODUCTION_AUTH_SESSION: '1',
+      NODE_NO_WARNINGS: '1',
+    },
+    {
+      timeout: releaseVerifyInnerTimeoutMs,
+      killSignal: proofSubprocessKillSignal,
+    },
+    'signaled auth/session source release verify',
+  );
+  assertSpawnCompletedWithoutSpawnError(proof, 'signaled auth/session source release verify', releaseVerifyInnerTimeoutMs);
+  assert.equal(proof.status, 1, proof.stderr);
+  assert.match(proof.stdout, /"ok": false/);
+  assert.match(proof.stdout, /"verdict": "PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED"/);
+  assert.match(proof.stdout, /"observed": "invalid-production-auth-session-source"/);
+  assert.match(proof.stdout, /"error": "Auth session source command terminated by SIGTERM"/);
   assert.match(proof.stdout, /"authSessionType": "invalid-production-auth-session-source"/);
 });
 
