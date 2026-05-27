@@ -109,6 +109,20 @@ export function evaluateProductionAuthSessionLifecycleSummary(summary, now = Dat
     };
   }
 
+  const invalidSummaryFlag = resolveInvalidAuthSessionSummaryFlag(summary);
+  if (invalidSummaryFlag) {
+    return {
+      ok: false,
+      required: 'boolean lifecycle flags',
+      observed: `invalid-${invalidSummaryFlag}`,
+    };
+  }
+
+  const invalidSummaryObservation = resolveInvalidAuthSessionSummaryObservationField(summary);
+  if (invalidSummaryObservation) {
+    return invalidSummaryObservation;
+  }
+
   const issuedObservation = summary.issued;
   if (!issuedObservation || typeof issuedObservation !== 'object') {
     return {
@@ -137,6 +151,10 @@ export function evaluateProductionAuthSessionLifecycleSummary(summary, now = Dat
 
   const issuedAuthUser = resolveAuthSessionIdentitySummary(issuedObservation);
   const observations = Array.isArray(summary.observations) ? summary.observations : [];
+  const staleIssuedObservation = resolveMismatchedSummaryIssuedObservation(issuedObservation, observations);
+  if (staleIssuedObservation) {
+    return staleIssuedObservation;
+  }
   const lifecycleBoundaryObservations = observations.slice(
     0,
     resolveLifecycleBoundaryObservationCount(observations, summary.read),
@@ -219,6 +237,11 @@ export function evaluateProductionAuthSessionLifecycleSummary(summary, now = Dat
     return readLifecycle;
   }
 
+  const staleReadObservation = resolveMismatchedSummaryReadObservation(readObservation, observations);
+  if (staleReadObservation) {
+    return staleReadObservation;
+  }
+
   const readAuthUser = resolveAuthSessionIdentitySummary(readObservation);
   if (!issuedAuthUser.missing && readAuthUser.missing) {
     return {
@@ -255,6 +278,11 @@ export function evaluateProductionAuthSessionLifecycleSummary(summary, now = Dat
       required: 'preserved read',
       observed: readObservation.rotated ? 'rotated' : 'unpreserved',
     };
+  }
+
+  const mismatchedSummaryObservationSession = resolveMismatchedSummaryObservationSession(summary, issuedSessionId);
+  if (mismatchedSummaryObservationSession) {
+    return mismatchedSummaryObservationSession;
   }
 
   if (summary.rotated) {
