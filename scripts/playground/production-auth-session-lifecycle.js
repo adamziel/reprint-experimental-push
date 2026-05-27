@@ -23,6 +23,7 @@ export function evaluateProductionAuthSessionLifecycle(session, now = Date.now()
   const observedExpiresAt = session?.expiresAt || 'missing';
   const revoked = session?.revoked === true || session?.status === 'revoked';
   const cleanedUp = session?.cleanedUp === true || session?.cleanup === true;
+  const rotated = session?.rotated === true;
 
   if (observedType !== 'production-auth-session') {
     return {
@@ -48,11 +49,11 @@ export function evaluateProductionAuthSessionLifecycle(session, now = Date.now()
     };
   }
 
-  if (revoked || cleanedUp) {
+  if (revoked || cleanedUp || rotated) {
     return {
       ok: false,
       required: 'unrevoked',
-      observed: revoked ? 'revoked' : 'cleaned-up',
+      observed: revoked ? 'revoked' : (cleanedUp ? 'cleaned-up' : 'rotated'),
     };
   }
 
