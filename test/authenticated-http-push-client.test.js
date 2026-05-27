@@ -3792,6 +3792,53 @@ test('production-shaped authenticated push fails closed immediately when apply r
         verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
       },
     });
+    assert.deepEqual(
+      summary.authSessionLifecycleTrace.map(({
+        step, id, warning, playgroundFallback, preserved,
+      }) => ({
+        step,
+        id,
+        warning: warning ?? null,
+        playgroundFallback: playgroundFallback === true,
+        preserved,
+      })),
+      [
+        {
+          step: 'preflight',
+          id: 'psh_01j00000000000000000000000',
+          warning: null,
+          playgroundFallback: false,
+          preserved: false,
+        },
+        {
+          step: 'dry-run',
+          id: 'psh_01j00000000000000000000000',
+          warning: null,
+          playgroundFallback: false,
+          preserved: true,
+        },
+        {
+          step: 'apply',
+          id: 'psh_01j00000000000000000000000',
+          warning: 'Lab-only Playground Basic bootstrap fallback; not production authentication.',
+          playgroundFallback: false,
+          preserved: true,
+        },
+      ],
+    );
+    assert.equal(summary.authSessionLifecycle.minted?.id, 'psh_01j00000000000000000000000');
+    assert.equal(summary.authSessionLifecycle.history?.length, 3);
+    assert.equal(summary.authSessionLifecycle.read?.step, 'apply');
+    assert.equal(
+      summary.authSessionLifecycle.history?.at(-1)?.warning,
+      'Lab-only Playground Basic bootstrap fallback; not production authentication.',
+    );
+    assert.equal(
+      summary.authSessionLifecycleSummary.read?.warning,
+      'Lab-only Playground Basic bootstrap fallback; not production authentication.',
+    );
+    assert.equal(summary.authSessionLifecycleSummary.issued?.step, 'preflight');
+    assert.equal(summary.authSessionLifecycleSummary.read?.step, 'apply');
     assert.equal(seen.length, 4);
     assert.match(seen[3].url, /\/wp-json\/reprint\/v1\/push\/apply$/);
   } finally {
@@ -3905,6 +3952,11 @@ test('production-shaped authenticated push fails closed immediately when apply r
     });
     assert.equal(summary.authSessionLifecycleTrace.at(-1)?.step, 'apply');
     assert.equal(summary.authSessionLifecycleTrace.at(-1)?.playgroundFallback, true);
+    assert.equal(summary.authSessionLifecycle.minted?.id, 'psh_01j00000000000000000000000');
+    assert.equal(summary.authSessionLifecycle.history?.length, 3);
+    assert.equal(summary.authSessionLifecycle.read?.step, 'apply');
+    assert.equal(summary.authSessionLifecycle.history?.at(-1)?.playgroundFallback, true);
+    assert.equal(summary.authSessionLifecycleSummary.issued?.step, 'preflight');
     assert.equal(summary.authSessionLifecycleSummary.read?.step, 'apply');
     assert.equal(summary.authSessionLifecycleSummary.read?.playgroundFallback, true);
     assert.equal(seen.length, 4);
