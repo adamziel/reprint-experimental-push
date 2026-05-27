@@ -357,6 +357,7 @@ export async function runAuthenticatedHttpPush({
       ...dryRunObservedProductionAuthIdentityDrift,
       verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
     };
+    annotateAuthSessionLifecycleDrift(summary, summary.authSession);
     setAuthSessionBoundary(summary, summary.authSession);
     return summary;
   }
@@ -386,6 +387,7 @@ export async function runAuthenticatedHttpPush({
   if (dryRunAuthEnvelopeDrift) {
     summary.code = 'AUTH_SESSION_LIFECYCLE_DRIFT';
     summary.authSession = dryRunAuthEnvelopeDrift;
+    annotateAuthSessionLifecycleDrift(summary, summary.authSession);
     setDurableJournalBoundary(summary, 'dry-run');
     return summary;
   }
@@ -485,6 +487,7 @@ export async function runAuthenticatedHttpPush({
       ...applyObservedProductionAuthIdentityDrift,
       verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
     };
+    annotateAuthSessionLifecycleDrift(summary, summary.authSession);
     setAuthSessionBoundary(summary, summary.authSession);
     return summary;
   }
@@ -502,6 +505,7 @@ export async function runAuthenticatedHttpPush({
   if (applyAuthEnvelopeDrift) {
     summary.code = 'AUTH_SESSION_LIFECYCLE_DRIFT';
     summary.authSession = applyAuthEnvelopeDrift;
+    annotateAuthSessionLifecycleDrift(summary, summary.authSession);
     setDurableJournalBoundary(summary, 'apply');
     return summary;
   }
@@ -603,6 +607,7 @@ export async function runAuthenticatedHttpPush({
       ...recoveryInspectObservedProductionAuthIdentityDrift,
       verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
     };
+    annotateAuthSessionLifecycleDrift(summary, summary.authSession);
     setAuthSessionBoundary(summary, summary.authSession);
     return summary;
   }
@@ -645,6 +650,7 @@ export async function runAuthenticatedHttpPush({
   if (recoveryInspectAuthEnvelopeDrift) {
     summary.code = 'AUTH_SESSION_LIFECYCLE_DRIFT';
     summary.authSession = recoveryInspectAuthEnvelopeDrift;
+    annotateAuthSessionLifecycleDrift(summary, summary.authSession);
     setDurableJournalBoundary(summary, 'recovery-inspect');
     return summary;
   }
@@ -727,6 +733,7 @@ export async function runAuthenticatedHttpPush({
       ...replayObservedProductionAuthIdentityDrift,
       verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
     };
+    annotateAuthSessionLifecycleDrift(summary, summary.authSession);
     setAuthSessionBoundary(summary, summary.authSession);
     return summary;
   }
@@ -769,6 +776,7 @@ export async function runAuthenticatedHttpPush({
     summary.code = 'AUTH_SESSION_LIFECYCLE_DRIFT';
     summary.authSession = recoveryInspectAuthEnvelopeDrift
       || replayAuthEnvelopeDrift;
+    annotateAuthSessionLifecycleDrift(summary, summary.authSession);
     setDurableJournalBoundary(summary, 'replay');
     return summary;
   }
@@ -841,6 +849,7 @@ export async function runAuthenticatedHttpPush({
       ...dbJournalObservedProductionAuthIdentityDrift,
       verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
     };
+    annotateAuthSessionLifecycleDrift(summary, summary.authSession);
     setAuthSessionBoundary(summary, summary.authSession);
     return summary;
   }
@@ -892,6 +901,7 @@ export async function runAuthenticatedHttpPush({
   if (dbJournalAuthEnvelopeDrift) {
     summary.code = 'AUTH_SESSION_LIFECYCLE_DRIFT';
     summary.authSession = dbJournalAuthEnvelopeDrift;
+    annotateAuthSessionLifecycleDrift(summary, summary.authSession);
     setDurableJournalBoundary(summary, 'journal-inspect');
     return summary;
   }
@@ -1409,6 +1419,44 @@ function summarizeAuthSessionLifecycleHistory(history) {
     ) || null,
     observations,
   };
+}
+
+function annotateAuthSessionLifecycleDrift(summary, authSession) {
+  const invalidIdentityField = resolveAuthSessionDriftIdentityLabel(authSession?.field);
+  if (!invalidIdentityField) {
+    return;
+  }
+
+  const trace = summary?.authSessionLifecycleTrace;
+  const history = summary?.authSessionLifecycle?.history;
+  const latestTrace = Array.isArray(trace) && trace.length > 0 ? trace[trace.length - 1] : null;
+  const latestHistory = Array.isArray(history) && history.length > 0 ? history[history.length - 1] : null;
+
+  if (latestTrace && !latestTrace.invalidIdentityField) {
+    latestTrace.invalidIdentityField = invalidIdentityField;
+  }
+  if (latestHistory && !latestHistory.invalidIdentityField) {
+    latestHistory.invalidIdentityField = invalidIdentityField;
+  }
+  if (latestTrace?.step === 'preflight' && summary?.authSessionLifecycle?.minted) {
+    summary.authSessionLifecycle.minted.invalidIdentityField = invalidIdentityField;
+  }
+  if (latestTrace?.step && isAuthSessionReadStep(latestTrace.step) && summary?.authSessionLifecycle?.read) {
+    summary.authSessionLifecycle.read.invalidIdentityField = invalidIdentityField;
+  }
+  if (Array.isArray(history) && history.length > 0) {
+    summary.authSessionLifecycleSummary = summarizeAuthSessionLifecycleHistory(history);
+  }
+}
+
+function resolveAuthSessionDriftIdentityLabel(field) {
+  if (field === 'auth.identity.userId') {
+    return 'user-id';
+  }
+  if (field === 'auth.identity.userLogin') {
+    return 'user-login';
+  }
+  return null;
 }
 
 function resolveRequiredProductionAuthSessionSummary(summary) {
