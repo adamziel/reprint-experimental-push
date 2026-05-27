@@ -5741,6 +5741,51 @@ test('production recovery journal reopen fails closed when a later persisted rec
   });
 });
 
+test('production recovery journal consumption fails closed when a later persisted record rewrites the owned journal artifact path', () => {
+  const filePath = tempJournalPath();
+  const remote = baseSite();
+  const plan = planFor(baseSite(), localSite(), remote);
+  const claimId = 'claim-consume-late-rewritten-journal-ref';
+  const artifactRefs = {
+    journal: filePath,
+  };
+  const journal = openProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs,
+    claimId,
+  });
+  appendRecoveryClaimOpened(journal, {
+    plan,
+    current: remote,
+    claimId,
+    artifactRefs,
+  });
+  journal.appendEvent('recovery-state', {
+    planId: plan.id,
+    state: 'blocked-recovery',
+    observedHash: 'snapshot-hash-only',
+    artifactRefs: {
+      journal: `${filePath}.rewritten`,
+    },
+  });
+  journal.close();
+
+  assert.throws(() => {
+    consumeProductionRecoveryJournal({
+      filePath,
+      plan,
+      current: remote,
+      artifactRefs,
+      claimId,
+    });
+  }, {
+    name: 'UnsupportedProductionRecoveryJournalError',
+    code: 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL',
+  });
+});
+
 test('production recovery journal consumption fails closed when a later persisted record adds undeclared artifact reference keys', () => {
   const filePath = tempJournalPath();
   const remote = baseSite();
