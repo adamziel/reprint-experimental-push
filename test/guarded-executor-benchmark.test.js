@@ -12019,6 +12019,38 @@ test('guarded benchmark blocks release-bundle post-pause planning summaries when
   });
 });
 
+test('guarded benchmark blocks release-bundle post-pause planning summaries when queue-budget visibility is hidden', () => {
+  const report = smallBenchmark();
+  const mutated = clone(report);
+
+  mutated.evidence.backpressure.queueBudgetVisible = false;
+
+  const details = productionThroughputDetails(mutated);
+  const blockers = productionThroughputBlockers(mutated);
+
+  assert.ok(blockers.includes('queue-budget-not-visible'));
+  assert.ok(blockers.includes('memory-ceiling-match-visible-without-queue-budget-visibility'));
+  assert.ok(blockers.includes('memory-ceiling-visible-without-queue-budget-visibility'));
+  assert.ok(blockers.includes('queue-headroom-visible-without-queue-budget-visibility'));
+  assert.ok(blockers.includes('receipt-cursor-memory-headroom-visible-without-queue-budget-visibility'));
+  assert.ok(blockers.includes('receipt-cursor-queue-slack-visible-without-queue-budget-visibility'));
+  assert.deepEqual(details.releaseBundlePlanningSummary, {
+    surface: 'release-bundle-post-pause-planning',
+    status: 'blocked',
+    measured: false,
+    visible: false,
+    blockerRefs: [
+      'staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint',
+      'queue-budget-not-visible',
+      'memory-ceiling-match-visible-without-queue-budget-visibility',
+      'memory-ceiling-visible-without-queue-budget-visibility',
+      'queue-headroom-visible-without-queue-budget-visibility',
+      'receipt-cursor-memory-headroom-visible-without-queue-budget-visibility',
+      'receipt-cursor-queue-slack-visible-without-queue-budget-visibility',
+    ],
+  });
+});
+
 test('guarded benchmark blocks release-bundle post-pause planning summaries when memory-ceiling visibility is hidden', () => {
   const report = smallBenchmark();
   const mutated = clone(report);
