@@ -1173,10 +1173,7 @@ function reprint_push_lab_db_journal_checked_boundary_stale_claim_row_matches($r
         return false;
     }
 
-    if (
-        ($row['event'] ?? null) === 'stale-claim-rejected'
-        && ($claim['activeClaimEvent'] ?? null) === 'stale-claim-rejected'
-    ) {
+    if (($row['event'] ?? null) === 'stale-claim-rejected') {
         if (
             reprint_push_lab_db_journal_is_positive_int($claim['activeClaimSequence'] ?? null)
             && reprint_push_lab_db_journal_checked_boundary_latest_row_sequence($row)

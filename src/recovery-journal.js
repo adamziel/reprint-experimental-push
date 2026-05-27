@@ -210,10 +210,7 @@ function checkedBoundaryStaleClaimRowMatches(row, claim) {
     return false;
   }
 
-  if (
-    row.event === 'stale-claim-rejected'
-    && claim?.activeClaimEvent === 'stale-claim-rejected'
-  ) {
+  if (row.event === 'stale-claim-rejected') {
     if (
       isPositiveInteger(claim?.activeClaimSequence)
       && checkedBoundaryLatestRowSequence(row) !== claim.activeClaimSequence
