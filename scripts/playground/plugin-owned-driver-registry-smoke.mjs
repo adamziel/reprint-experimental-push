@@ -10,6 +10,8 @@ import { createPushPlan } from '../../src/planner.js';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const fixedNow = new Date('2026-05-26T18:00:00.000Z');
+const syncChildTimeoutMs = 120_000;
+const syncChildKillSignal = 'SIGKILL';
 const driverName = 'fixture-arbitrary-plugin-table';
 const driverTable = 'wp_reprint_push_driver_fixture';
 const pluginOwner = 'driver-fixture';
@@ -434,8 +436,11 @@ function exportSnapshot(name, blueprintPath) {
     cwd: repoRoot,
     encoding: 'utf8',
     maxBuffer: 1024 * 1024 * 20,
+    timeout: syncChildTimeoutMs,
+    killSignal: syncChildKillSignal,
   });
 
+  assertSyncChildCompleted(result, `Playground snapshot export for ${name}`);
   if (result.status !== 0) {
     throw new Error(`Playground snapshot export failed for ${name}\nSTDOUT:\n${result.stdout}\nSTDERR:\n${result.stderr}`);
   }
@@ -465,8 +470,11 @@ function exportSnapshotFailure(name, blueprintPath) {
     cwd: repoRoot,
     encoding: 'utf8',
     maxBuffer: 1024 * 1024 * 20,
+    timeout: syncChildTimeoutMs,
+    killSignal: syncChildKillSignal,
   });
 
+  assertSyncChildCompleted(result, `Playground snapshot export failure probe for ${name}`);
   if (result.status === 0) {
     throw new Error(`Expected Playground snapshot export to fail for ${name}\nSTDOUT:\n${result.stdout}\nSTDERR:\n${result.stderr}`);
   }
@@ -512,8 +520,11 @@ function applyPlanToBase(blueprintPath, planFilePath, { expectStatus = 0 } = {})
     cwd: repoRoot,
     encoding: 'utf8',
     maxBuffer: 1024 * 1024 * 20,
+    timeout: syncChildTimeoutMs,
+    killSignal: syncChildKillSignal,
   });
 
+  assertSyncChildCompleted(result, `Playground apply for ${path.basename(planFilePath)}`);
   const payload = parseMarkedJson(
     result.stdout,
     'REPRINT_PUSH_APPLY_JSON_BEGIN',
@@ -526,6 +537,19 @@ function applyPlanToBase(blueprintPath, planFilePath, { expectStatus = 0 } = {})
   }
 
   return payload;
+}
+
+function assertSyncChildCompleted(result, label) {
+  if (result.error) {
+    throw new Error(
+      `${label} failed before completion: ${result.error.message}\nSTDOUT:\n${result.stdout ?? ''}\nSTDERR:\n${result.stderr ?? ''}`,
+    );
+  }
+  if (result.signal) {
+    throw new Error(
+      `${label} did not complete before timeout (${syncChildTimeoutMs}ms, signal ${result.signal})\nSTDOUT:\n${result.stdout ?? ''}\nSTDERR:\n${result.stderr ?? ''}`,
+    );
+  }
 }
 
 function parseMarkedJson(stdout, begin, end, missingMessage) {
