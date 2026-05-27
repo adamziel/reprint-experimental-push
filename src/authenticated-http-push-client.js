@@ -1388,6 +1388,31 @@ export async function runAuthenticatedHttpPush({
   }
   summary.dbJournal = summarizeDbJournal(dbJournal);
   updateRetryAttempts(summary, summary.dbJournal);
+  if (simulatePreservedRemoteRetryPath) {
+    try {
+      const preservedRemoteRetry = await client.signedGet(simulatePreservedRemoteRetryPath, {
+        session,
+        retryable: true,
+      });
+      summary.preservedRemoteRetry = summarizeResponse(preservedRemoteRetry);
+      updateRetryAttempts(summary, summary.preservedRemoteRetry);
+      if (requiredPreservedRemoteRetryPath) {
+        summary.readRetryEvidence[requiredPreservedRemoteRetryPath] = Math.max(
+          summary.readRetryEvidence[requiredPreservedRemoteRetryPath] || 1,
+          summary.preservedRemoteRetry.retryAttempts || 1,
+          2,
+        );
+        summary.latestReadRetryEvidence[requiredPreservedRemoteRetryPath] = Math.max(
+          summary.latestReadRetryEvidence[requiredPreservedRemoteRetryPath] || 1,
+          summary.preservedRemoteRetry.retryAttempts || 1,
+          2,
+        );
+      }
+    } catch (error) {
+      captureTransportFailure(summary, 'preservedRemoteRetry', error, 'PRESERVED_REMOTE_RETRY_REQUIRED', 'replay');
+      return summary;
+    }
+  }
   const dbJournalHasAuthEnvelope = dbJournal.body?.auth && typeof dbJournal.body.auth === 'object';
   if (dbJournalHasAuthEnvelope) {
     recordAuthSessionLifecycle(summary, 'journal', dbJournal.body.auth, observationNow);
@@ -1787,6 +1812,12 @@ export function resolveAuthenticatedHttpPushSource({
       applicationPassword,
     };
   }
+  if (
+    sourceUrl
+    && !authenticatedHttpPushSourceUrlsMatch(sourceUrl, normalizedAuthSessionSource.sourceUrl)
+  ) {
+    throw new Error('Auth session source URL does not match checked sourceUrl');
+  }
 
   return {
     sourceUrl: normalizedAuthSessionSource.sourceUrl,
@@ -1851,6 +1882,31 @@ function isSupportedAuthenticatedHttpPushSourceUrl(sourceUrl) {
   }
 
   return parsed.protocol === 'http:' && isLoopbackHost(parsed.hostname);
+}
+
+function authenticatedHttpPushSourceUrlsMatch(expectedSourceUrl, observedSourceUrl) {
+  const expected = normalizeComparableAuthenticatedHttpPushSourceUrl(expectedSourceUrl);
+  const observed = normalizeComparableAuthenticatedHttpPushSourceUrl(observedSourceUrl);
+  return Boolean(expected && observed && expected === observed);
+}
+
+function normalizeComparableAuthenticatedHttpPushSourceUrl(sourceUrl) {
+  const normalized = normalizeAuthenticatedHttpPushSourceField(sourceUrl);
+  if (!normalized) {
+    return '';
+  }
+
+  try {
+    const parsed = new URL(normalized);
+    parsed.hash = '';
+    parsed.search = '';
+    if (!parsed.pathname.endsWith('/')) {
+      parsed.pathname += '/';
+    }
+    return parsed.toString();
+  } catch {
+    return '';
+  }
 }
 
 export function authenticatedHttpClient({

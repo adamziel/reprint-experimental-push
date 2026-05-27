@@ -394,9 +394,9 @@ test('authenticated push client fails closed for missing production-shaped crede
   );
 });
 
-test('authenticated push source prefers a complete auth/session source triple over direct credentials', () => {
-  assert.deepEqual(
-    resolveAuthenticatedHttpPushSource({
+test('authenticated push source rejects an auth/session source for a different checked source URL', () => {
+  assert.throws(
+    () => resolveAuthenticatedHttpPushSource({
       sourceUrl: 'http://127.0.0.1:9090',
       username: 'trusted-runtime-username',
       applicationPassword: 'trusted-runtime-password',
@@ -407,11 +407,7 @@ test('authenticated push source prefers a complete auth/session source triple ov
         applicationPassword: 'reprint-push-admin-app-password',
       },
     }),
-    {
-      sourceUrl: 'http://127.0.0.1:8080',
-      username: 'reprint_push_admin',
-      applicationPassword: 'reprint-push-admin-app-password',
-    },
+    /Auth session source URL does not match checked sourceUrl/,
   );
 });
 
