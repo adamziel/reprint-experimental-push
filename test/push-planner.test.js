@@ -21216,6 +21216,75 @@ test('production recovery support report fails closed when inspected remote arti
   assert.ok(report.missingDependency.includes('restart-readable remote recovery artifact ownership'));
 });
 
+test('production recovery support report fails closed when inspected remote artifact refs collapse to the journal path', () => {
+  const filePath = '/var/lib/reprint/recovery.jsonl';
+  const remoteArtifactPath = '/var/lib/reprint/remote.json';
+  const claimId = 'claim-collapsed-inspected-remote-artifact';
+  const claimHash = digest({ recoveryJournalClaim: claimId });
+  const report = productionRecoverySupportReport({
+    kind: 'production-recovery-journal',
+    productionAdapter: true,
+    supportedSurface: 'production-recovery-journal-adapter',
+    restartReadable: true,
+    ownsJournal: true,
+    ownsRemoteArtifact: true,
+    claimHash,
+    writerLease: { id: claimId, epoch: 3 },
+    leaseFence: { id: claimId, epoch: 3 },
+    journalPath: filePath,
+    artifactRefs: {
+      journal: filePath,
+      remote: remoteArtifactPath,
+    },
+    schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+    appendEvent() {
+      return null;
+    },
+    flush() {},
+    close() {},
+    inspect() {
+      return {
+        filePath,
+        schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+        claimHash,
+        ownsJournal: true,
+        restartReadable: true,
+        ownsRemoteArtifact: true,
+        artifactRefs: {
+          journal: filePath,
+          remote: filePath,
+        },
+        writerLease: { id: claimId, epoch: 3 },
+        leaseFence: { id: claimId, epoch: 3 },
+        records: [
+          {
+            sequence: 1,
+            type: 'recovery-claim-opened',
+            claimHash,
+            claimLease: { id: claimId, epoch: 3 },
+            artifactRefs: {
+              journal: filePath,
+              remote: filePath,
+            },
+          },
+          {
+            sequence: 2,
+            type: 'journal-opened',
+            artifactRefs: {
+              journal: filePath,
+              remote: filePath,
+            },
+          },
+        ],
+      };
+    },
+    assertCurrentClaim() {},
+  });
+
+  assert.equal(report.supported, false);
+  assert.ok(report.missingDependency.includes('restart-readable recovery remote artifact references'));
+});
+
 test('production recovery support report keeps checked boundary closed without stale-claim lineage evidence', () => {
   const filePath = tempRecoveryJournalPath();
   const remoteArtifactPath = `${path.dirname(filePath)}/checked-boundary-no-lineage-remote.jsonl`;
