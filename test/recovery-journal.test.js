@@ -807,6 +807,50 @@ test('production recovery journal inspection scopes consumed evidence to the act
   assert.equal(productionRecoveryJournalInspectionSurfaceIsPresent(advancedInspection), true);
 });
 
+test('production recovery journal inspection ignores consumed records that omit the active claim identity', () => {
+  const filePath = tempJournalPath();
+  const remote = baseSite();
+  const plan = planFor(baseSite(), localSite(), remote);
+  const claimId = 'production-claim-consumed-identity-01';
+
+  consumeProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs: {
+      releaseProof: 'artifact://release-proof-consumed-identity',
+    },
+    claimId,
+  });
+
+  const persisted = readRecoveryJournal(filePath);
+  const consumedRecord = persisted.records.at(-1);
+  assert.equal(consumedRecord?.type, 'recovery-journal-consumed');
+  delete consumedRecord.claimId;
+  fs.writeFileSync(
+    filePath,
+    `${persisted.records.map((record) => JSON.stringify(record)).join('\n')}\n`,
+  );
+
+  const reopened = openProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs: {
+      releaseProof: 'artifact://release-proof-consumed-identity',
+    },
+    truncate: false,
+    claimId,
+  });
+  const inspection = reopened.inspect();
+  reopened.close();
+
+  assert.equal(inspection.journal.consumed, false);
+  assert.equal(inspection.journal.consumedClaimId, null);
+  assert.equal(inspection.journal.consumedClaimHash, null);
+  assert.equal(productionRecoveryJournalInspectionSurfaceIsPresent(inspection), true);
+});
+
 test('production recovery journal wrapper rejects hidden open options', () => {
   const filePath = tempJournalPath();
   const remote = baseSite();

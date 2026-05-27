@@ -65,13 +65,18 @@ function claimScopedStaleClaimRejectionEvidence(records, claim) {
 }
 
 function claimScopedConsumedRecord(records, claim) {
-  if (!CLAIM_HASH_PATTERN.test(claim?.activeClaimHash || '')) {
+  if (
+    !CLAIM_HASH_PATTERN.test(claim?.activeClaimHash || '')
+    || typeof claim?.activeClaimId !== 'string'
+    || claim.activeClaimId.length === 0
+  ) {
     return null;
   }
 
   return (Array.isArray(records) ? records : []).find(
     (record) => record.type === 'recovery-journal-consumed'
-      && record.claimHash === claim.activeClaimHash,
+      && record.claimHash === claim.activeClaimHash
+      && record.claimId === claim.activeClaimId,
   ) || null;
 }
 
@@ -1024,8 +1029,8 @@ export function openProductionRecoveryJournal(options) {
     const staleClaimRejected = claimScopedStaleClaimRejectionEvidence(persisted.records, claim);
     const consumedRecord = claimScopedConsumedRecord(persisted.records, claim);
     const consumed = consumedRecord !== null;
-    const consumedClaimId = consumed ? claim?.activeClaimId || null : null;
-    const consumedClaimHash = consumed ? claim?.activeClaimHash || null : null;
+    const consumedClaimId = consumed ? consumedRecord?.claimId || null : null;
+    const consumedClaimHash = consumed ? consumedRecord?.claimHash || null : null;
     const writerLease = productionRecoveryJournalWriterLease(persisted, claim);
     const leaseFence = {
       boundary: PRODUCTION_RECOVERY_JOURNAL_STORAGE_ADAPTER,
