@@ -5,7 +5,7 @@ import { deserializeResourceValue, resourceHash } from './resources.js';
 
 export const RECOVERY_JOURNAL_SCHEMA_VERSION = 1;
 const CHECKED_DURABLE_JOURNAL_SCOPE_PATTERN =
-  /^(?:packaged production journal scope|checked live production-shaped journal surface; not local Playground fixture only)$/i;
+  /^(?:packaged production journal scope|packaged production plugin recovery journal surface|checked live production-shaped journal surface; not local Playground fixture only|checked live production-shaped recovery journal surface)$/i;
 
 const CLAIM_STATE_EVENT_TYPES = new Set([
   'recovery-claim-opened',

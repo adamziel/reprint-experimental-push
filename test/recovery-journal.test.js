@@ -5091,6 +5091,86 @@ test('checked durable journal boundary accepts the packaged production journal s
   );
 });
 
+test('checked durable journal boundary accepts the explicit packaged recovery journal scope', () => {
+  const packagedContract = {
+    acceptedOnCheckedBoundary: true,
+    scope: 'packaged production plugin recovery journal surface',
+    ownership: {
+      ownsJournal: true,
+      restartReadable: true,
+      productionAdapter: 'wpdb-single-statement-cas',
+    },
+    writerLease: {
+      strategy: 'claim-fenced-single-writer',
+      claimKeyUnique: true,
+      fsyncEvidence: true,
+      storageGuard: 'wpdb-single-statement-cas',
+      monotonicSequence: true,
+      restartReadable: true,
+      staleClaimRejected: true,
+    },
+    leaseFence: {
+      boundary: 'wpdb-single-statement-cas',
+      claimKeyUnique: true,
+      fsyncEvidence: true,
+      monotonicSequence: true,
+      restartReadable: true,
+      staleClaimRejected: true,
+      writerLease: {
+        strategy: 'claim-fenced-single-writer',
+        claimKeyUnique: true,
+        fsyncEvidence: true,
+        storageGuard: 'wpdb-single-statement-cas',
+        monotonicSequence: true,
+        restartReadable: true,
+        staleClaimRejected: true,
+      },
+    },
+  };
+
+  assert.equal(checkedDurableJournalBoundarySatisfied(packagedContract), true);
+});
+
+test('checked durable journal boundary accepts the explicit live recovery journal scope', () => {
+  const liveContract = {
+    acceptedOnCheckedBoundary: true,
+    scope: 'checked live production-shaped recovery journal surface',
+    ownership: {
+      ownsJournal: true,
+      restartReadable: true,
+      productionAdapter: 'wpdb-single-statement-cas',
+    },
+    writerLease: {
+      strategy: 'claim-fenced-single-writer',
+      claimKeyUnique: true,
+      fsyncEvidence: true,
+      storageGuard: 'wpdb-single-statement-cas',
+      monotonicSequence: true,
+      restartReadable: true,
+      staleClaimRejected: true,
+    },
+    leaseFence: {
+      boundary: 'wpdb-single-statement-cas',
+      claimKeyUnique: true,
+      fsyncEvidence: true,
+      monotonicSequence: true,
+      restartReadable: true,
+      staleClaimRejected: true,
+      writerLease: {
+        strategy: 'claim-fenced-single-writer',
+        claimKeyUnique: true,
+        fsyncEvidence: true,
+        storageGuard: 'wpdb-single-statement-cas',
+        monotonicSequence: true,
+        restartReadable: true,
+        staleClaimRejected: true,
+      },
+    },
+  };
+
+  assert.equal(checkedDurableJournalBoundarySatisfied(liveContract), true);
+});
+
 test('checked durable journal boundary rejects nearby stale scope wording', () => {
   const staleScopeContract = {
     acceptedOnCheckedBoundary: true,

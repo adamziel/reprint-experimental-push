@@ -40,7 +40,7 @@ const DURABLE_TERMINAL_RECORD_TYPES = new Set([
 ]);
 const RECOVERY_JOURNAL_RECORD_TYPE_PATTERN = /^[a-z0-9-]+$/;
 const CHECKED_DURABLE_JOURNAL_SCOPE_PATTERN =
-  /^(?:packaged production journal scope|checked live production-shaped journal surface; not local Playground fixture only)$/i;
+  /^(?:packaged production journal scope|packaged production plugin recovery journal surface|checked live production-shaped journal surface; not local Playground fixture only|checked live production-shaped recovery journal surface)$/i;
 export const ACCEPTABLE_RECOVERY_STATES = Object.freeze([
   'old-remote',
   'fully-updated-remote',
