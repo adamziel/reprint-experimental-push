@@ -1351,6 +1351,9 @@ function checkedDurableJournalBoundaryProof(writer, inspected, missingDependency
     : null;
   const checkedBoundaryContractAligned = inspectedLeaseFenceBoundaryMatchesWriterContract(inspected);
   const checkedBoundaryBlockedByMissingDependency = missingDependency.some((dependency) => [
+      'production recovery journal adapter marker',
+      'explicit production recovery adapter marker',
+      'supported production recovery journal adapter surface',
       'owned restart-readable recovery journal path',
       'absolute restart-readable recovery journal path',
       'restart-readable recovery journal schema',
