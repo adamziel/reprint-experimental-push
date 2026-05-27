@@ -5228,6 +5228,78 @@ test('allows an existing menu item parent metadata row to retarget to a post cre
   assert.equal(result.site.db.wp_posts['ID:21'].post_title, 'Remote attachment noise');
 });
 
+test('allows an existing menu item parent metadata row to retarget to a post created by the same plan even when an unrelated remote nav_menu_item post exists', () => {
+  const resourceKey = 'row:["wp_postmeta","meta_id:46"]';
+  const targetResourceKey = 'row:["wp_posts","ID:2"]';
+  const base = baseSite();
+  const local = baseSite();
+  const remote = baseSite();
+  base.db.wp_postmeta = {
+    'meta_id:46': {
+      meta_id: 46,
+      post_id: 1,
+      meta_key: 'menu_item_parent',
+      meta_value: 1,
+    },
+  };
+  remote.db.wp_postmeta = {
+    'meta_id:46': {
+      ...base.db.wp_postmeta['meta_id:46'],
+    },
+  };
+  remote.db.wp_posts = {
+    ...remote.db.wp_posts,
+    'ID:21': {
+      ID: 21,
+      post_title: 'Remote nav menu item noise',
+      post_content: 'remote-nav-menu-item-noise-body',
+      post_status: 'publish',
+      post_type: 'nav_menu_item',
+    },
+  };
+  local.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_title: 'Local parent post',
+    post_content: 'local-private-parent-body',
+    post_status: 'publish',
+  };
+  local.db.wp_postmeta = {
+    'meta_id:46': {
+      meta_id: 46,
+      post_id: 1,
+      meta_key: 'menu_item_parent',
+      meta_value: 2,
+    },
+  };
+
+  const plan = planFor(base, local, remote);
+  const targetMutation = mutationFor(plan, targetResourceKey);
+  const postmetaMutation = mutationFor(plan, resourceKey);
+  const reference = postmetaMutation.wordpressGraphReferences.find((entry) => entry.relationshipType === 'menu-item-parent-post');
+  const referenceJson = JSON.stringify(reference);
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.blockers, 0);
+  assert.equal(targetMutation.changeKind, 'create');
+  assert.equal(postmetaMutation.changeKind, 'update');
+  assert.ok(
+    plan.mutations.indexOf(targetMutation) < plan.mutations.indexOf(postmetaMutation),
+    'target post create must be ordered before dependent existing menu item parent metadata',
+  );
+  assert.deepEqual(postmetaMutation.dependsOnMutationIds, [targetMutation.id]);
+  assert.equal(reference.resolutionPolicy, 'same-plan-local-create');
+  assert.equal(reference.relationshipKey, 'wp_postmeta.meta_value');
+  assert.equal(reference.relationshipType, 'menu-item-parent-post');
+  assert.equal(reference.targetResourceKey, targetResourceKey);
+  assert.equal(referenceJson.includes('local-private-parent-body'), false);
+  assert.equal(referenceJson.includes('remote-nav-menu-item-noise-body'), false);
+
+  const result = applyPlan(remote, plan);
+  assert.equal(result.site.db.wp_posts['ID:2'].post_title, 'Local parent post');
+  assert.equal(result.site.db.wp_postmeta['meta_id:46'].meta_value, 2);
+  assert.equal(result.site.db.wp_posts['ID:21'].post_title, 'Remote nav menu item noise');
+});
+
 test('allows an existing menu item parent metadata row to retarget to a post created by the same plan even when an unrelated remote wp_navigation post exists', () => {
   const resourceKey = 'row:["wp_postmeta","meta_id:46"]';
   const targetResourceKey = 'row:["wp_posts","ID:2"]';
@@ -5462,6 +5534,108 @@ test('allows an existing menu item parent metadata row to retarget to a post cre
   assert.equal(reference.relationshipType, 'menu-item-parent-post');
   assert.equal(reference.targetResourceKey, targetResourceKey);
   assert.equal(JSON.stringify(reference).includes('local-private-blocked-elsewhere-menu-parent-body'), false);
+});
+
+test('allows an existing menu item parent metadata row to retarget to a post created by the same plan even when a navigation menu taxonomy is blocked elsewhere and an unrelated remote nav_menu_item post exists', () => {
+  const blockedTaxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:9"]';
+  const postmetaResourceKey = 'row:["wp_postmeta","meta_id:46"]';
+  const targetResourceKey = 'row:["wp_posts","ID:2"]';
+  const base = baseSite();
+  base.db.wp_postmeta = {
+    'meta_id:46': {
+      meta_id: 46,
+      post_id: 1,
+      meta_key: 'menu_item_parent',
+      meta_value: 1,
+    },
+  };
+  const local = baseSite();
+  local.db.wp_postmeta = {
+    'meta_id:46': {
+      meta_id: 46,
+      post_id: 1,
+      meta_key: 'menu_item_parent',
+      meta_value: 2,
+    },
+  };
+  local.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_title: 'Local parent post',
+    post_content: 'local-private-blocked-elsewhere-menu-parent-body',
+    post_status: 'publish',
+  };
+  local.db.wp_terms = {
+    'term_id:9': {
+      term_id: 9,
+      name: 'Local blocked navigation term',
+      slug: 'local-blocked-navigation-term',
+    },
+  };
+  local.db.wp_term_taxonomy = {
+    'term_taxonomy_id:9': {
+      term_taxonomy_id: 9,
+      term_id: 9,
+      taxonomy: 'nav_menu',
+      description: '',
+      parent: 0,
+      count: 0,
+    },
+  };
+  const remote = baseSite();
+  remote.db.wp_postmeta = {
+    'meta_id:46': {
+      ...base.db.wp_postmeta['meta_id:46'],
+    },
+  };
+  remote.db.wp_posts = {
+    ...remote.db.wp_posts,
+    'ID:21': {
+      ID: 21,
+      post_title: 'Remote nav menu item noise',
+      post_content: 'remote-nav-menu-item-noise-body',
+      post_status: 'publish',
+      post_type: 'nav_menu_item',
+    },
+  };
+
+  const plan = planFor(base, local, remote);
+  const blockedTaxonomyMutation = mutationFor(plan, blockedTaxonomyResourceKey);
+  const blockedTaxonomy = plan.blockers.find((entry) => entry.resourceKey === blockedTaxonomyResourceKey);
+  const targetMutation = mutationFor(plan, targetResourceKey);
+  const postmetaMutation = mutationFor(plan, postmetaResourceKey);
+  const reference = postmetaMutation.wordpressGraphReferences.find((entry) => entry.relationshipType === 'menu-item-parent-post');
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(blockedTaxonomyMutation, undefined);
+  assert.equal(blockedTaxonomy.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(blockedTaxonomy.surface, 'nav_menu');
+  assert.equal(targetMutation.changeKind, 'create');
+  assert.equal(postmetaMutation.changeKind, 'update');
+  assert.ok(
+    plan.mutations.indexOf(targetMutation) < plan.mutations.indexOf(postmetaMutation),
+    'target post create must be ordered before dependent existing menu item parent metadata update',
+  );
+  assert.deepEqual(postmetaMutation.dependsOnMutationIds, [targetMutation.id]);
+  assert.equal(plan.summary.graphDependencies, 1);
+  assert.deepEqual(plan.graphDependencies, [
+    {
+      sourceMutationId: postmetaMutation.id,
+      sourceResourceKey: postmetaResourceKey,
+      relationshipKey: 'wp_postmeta.meta_value',
+      relationshipType: 'menu-item-parent-post',
+      targetMutationId: targetMutation.id,
+      targetResourceKey,
+      resolutionPolicy: 'same-plan-local-create',
+      source: 'same-plan-local-create',
+      targetLocalHash: targetMutation.localHash,
+    },
+  ]);
+  assert.equal(reference.resolutionPolicy, 'same-plan-local-create');
+  assert.equal(reference.relationshipKey, 'wp_postmeta.meta_value');
+  assert.equal(reference.relationshipType, 'menu-item-parent-post');
+  assert.equal(reference.targetResourceKey, targetResourceKey);
+  assert.equal(JSON.stringify(reference).includes('local-private-blocked-elsewhere-menu-parent-body'), false);
+  assert.equal(JSON.stringify(reference).includes('remote-nav-menu-item-noise-body'), false);
 });
 
 test('allows an existing menu item parent metadata row to retarget to a post created by the same plan even when a navigation menu taxonomy is blocked elsewhere and an unrelated remote revision post exists', () => {
