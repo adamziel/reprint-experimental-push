@@ -5455,7 +5455,7 @@ test('production-shaped live release verify retries helper Playground port colli
   assert.match(source, /Unable to start Playground server for \$\{name\} after retrying port collisions/);
 });
 
-test('production-shaped live release verify defaults the checked live branch to the packaged auth/session boundary', () => {
+test('production-shaped live release verify classifies packaged auth/session fallback for rejection', () => {
   assert.equal(
     shouldRequestCheckedLivePackagedBoundary({
       fixtureUsername: liveCredentials.username,
