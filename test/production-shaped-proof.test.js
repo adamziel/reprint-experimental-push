@@ -2057,6 +2057,73 @@ test('production auth/session lifecycle helper fails closed on string-valued cle
   );
 });
 
+test('production auth/session lifecycle helper fails closed on malformed lifecycle flags', () => {
+  const baseSession = {
+    id: 'psh_01j00000000000000000000000',
+    type: 'production-auth-session',
+    status: 'active',
+    expiresAt: '2099-01-01T00:00:00Z',
+  };
+
+  const malformedFlags = [
+    ['revoked', 'invalid-revoked'],
+    ['cleanedUp', 'invalid-cleanedUp'],
+    ['expired', 'invalid-expired'],
+    ['rotated', 'invalid-rotated'],
+    ['preserved', 'invalid-preserved'],
+    ['playgroundFallback', 'invalid-playgroundFallback'],
+  ];
+
+  for (const [field, observed] of malformedFlags) {
+    assert.deepEqual(
+      evaluateProductionAuthSessionLifecycle({
+        ...baseSession,
+        [field]: 'true',
+      }),
+      {
+        ok: false,
+        field: `auth.session.${field}`,
+        required: 'boolean lifecycle flags',
+        observed,
+      },
+    );
+  }
+});
+
+test('production auth/session lifecycle helper fails closed on production source warnings and fallback', () => {
+  assert.deepEqual(
+    evaluateProductionAuthSessionLifecycle({
+      id: 'psh_01j00000000000000000000000',
+      type: 'production-auth-session',
+      status: 'active',
+      expiresAt: '2099-01-01T00:00:00Z',
+      warning: 'lab-only-warning',
+    }),
+    {
+      ok: false,
+      field: 'auth.session.warning',
+      required: 'production-backed auth',
+      observed: 'lab-only-warning',
+    },
+  );
+
+  assert.deepEqual(
+    evaluateProductionAuthSessionLifecycle({
+      id: 'psh_01j00000000000000000000000',
+      type: 'production-auth-session',
+      status: 'active',
+      expiresAt: '2099-01-01T00:00:00Z',
+      playgroundFallback: true,
+    }),
+    {
+      ok: false,
+      field: 'auth.session.playgroundFallback',
+      required: 'production-backed auth',
+      observed: 'playground-fallback',
+    },
+  );
+});
+
 test('production auth/session lifecycle helper fails closed on malformed lifecycle identity fields', () => {
   assert.deepEqual(
     evaluateProductionAuthSessionLifecycle({
