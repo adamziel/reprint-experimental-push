@@ -1,12 +1,19 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import { resolveProductionPluginPackageScenarios } from '../scripts/playground/production-plugin-package-scenarios.js';
 
 const packageJson = JSON.parse(fs.readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
 
 function packageSmokeMode(scriptName) {
   const command = packageJson.scripts[scriptName];
   const match = command?.match(/REPRINT_PUSH_PACKAGE_SMOKE_MODE=([^ ]+)/);
+  return match?.[1] ?? null;
+}
+
+function packageSmokeScenario(scriptName) {
+  const command = packageJson.scripts[scriptName];
+  const match = command?.match(/REPRINT_PUSH_PACKAGE_SMOKE_SCENARIO=([^ ]+)/);
   return match?.[1] ?? null;
 }
 
@@ -369,6 +376,57 @@ test('package scripts keep plugin-driver only entrypoints on exact Only mode ali
       packageSmokeMode(scriptName) ?? '',
       /Only$/,
       `${scriptName} should use an exact Only mode alias`,
+    );
+  }
+});
+
+test('package scripts keep every plugin-driver smoke entrypoint resolvable by the scenario parser', () => {
+  const driverScripts = Object.keys(packageJson.scripts)
+    .filter((scriptName) => scriptName.startsWith('test:playground:production-plugin-driver-'));
+
+  for (const scriptName of driverScripts) {
+    const mode = packageSmokeMode(scriptName);
+    const scenario = packageSmokeScenario(scriptName);
+
+    assert.notEqual(
+      mode === null && scenario === null,
+      true,
+      `${scriptName} should pin either a smoke mode or a smoke scenario`,
+    );
+    assert.equal(
+      mode !== null && scenario !== null,
+      false,
+      `${scriptName} should not pin both a smoke mode and a smoke scenario`,
+    );
+
+    if (mode !== null) {
+      const resolved = resolveProductionPluginPackageScenarios([], undefined, mode);
+      assert.equal(
+        resolved.resolvedMode,
+        mode,
+        `${scriptName} should keep the exact smoke mode alias accepted by the resolver`,
+      );
+      assert.ok(
+        resolved.canonicalMode,
+        `${scriptName} should resolve to a canonical plugin-driver scenario bundle`,
+      );
+      continue;
+    }
+
+    const resolved = resolveProductionPluginPackageScenarios(
+      [`--scenario=${scenario}`],
+      undefined,
+      undefined,
+    );
+    assert.deepEqual(
+      resolved.requestedScenarios,
+      [scenario],
+      `${scriptName} should keep its direct smoke scenario accepted by the resolver`,
+    );
+    assert.equal(
+      resolved.resolvedMode,
+      null,
+      `${scriptName} should not infer a smoke mode for direct scenario entrypoints`,
     );
   }
 });
