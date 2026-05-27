@@ -238,6 +238,17 @@ export function normalizeSupportedAuthSessionSourceUrl(value) {
   return sourceUrl;
 }
 
+export function resolveExplicitAllowedAuthSessionSourceUrl(...values) {
+  for (const value of values) {
+    const normalizedValue = normalizeExplicitAllowedAuthSessionSourceUrl(value);
+    if (normalizedValue) {
+      return normalizedValue;
+    }
+  }
+
+  return '';
+}
+
 function normalizeAuthSessionSourceField(value) {
   if (typeof value !== 'string') {
     return '';

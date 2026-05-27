@@ -7,6 +7,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   loadAuthSessionSource,
+  resolveExplicitAllowedAuthSessionSourceUrl,
   resolveAuthSessionRequestCredentials,
   resolveAuthSessionRequestState,
   resolveAuthSessionSourceCredentials,
@@ -1630,6 +1631,39 @@ test('auth-session source command builder accepts a non-local sourceUrl when it 
     username: 'reprint_push_admin',
     applicationPassword: 'reprint-push-admin-app-password',
   });
+});
+
+test('explicit allowed auth/session source URL resolver normalizes the first supported explicit source', () => {
+  assert.equal(
+    resolveExplicitAllowedAuthSessionSourceUrl(
+      '',
+      'https://example.com/push?token=secret#hash',
+      'https://ignored.example.com/other',
+    ),
+    'https://example.com/push/',
+  );
+});
+
+test('explicit allowed auth/session source URL resolver falls back across source and remote values', () => {
+  assert.equal(
+    resolveExplicitAllowedAuthSessionSourceUrl(
+      'not-a-url',
+      ' https://example.com/push ',
+      'https://example.com/remote',
+    ),
+    'https://example.com/remote/',
+  );
+});
+
+test('explicit allowed auth/session source URL resolver returns empty when every candidate is invalid', () => {
+  assert.equal(
+    resolveExplicitAllowedAuthSessionSourceUrl(
+      '',
+      'not-a-url',
+      ' https://example.com/push ',
+    ),
+    '',
+  );
 });
 
 test('packaged production plugin source command resolver accepts an explicit live sourceUrl', () => {
