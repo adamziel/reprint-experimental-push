@@ -22982,6 +22982,53 @@ test('production recovery support report keeps checked boundary claim closed whe
   assert.ok(report.missingDependency.includes('fencing or lease ownership for the journal writer'));
 });
 
+test('production recovery support report keeps checked boundary journal path closed when restart inspection falls back to a non-absolute file path', () => {
+  const writerJournalPath = '/var/lib/reprint/recovery.jsonl';
+
+  const report = productionRecoverySupportReport({
+    kind: 'production-recovery-journal',
+    productionAdapter: true,
+    supportedSurface: 'production-recovery-journal-adapter',
+    restartReadable: true,
+    ownsJournal: true,
+    ownsRemoteArtifact: false,
+    acceptedOnCheckedBoundary: true,
+    scope: 'packaged production journal scope',
+    journalPath: writerJournalPath,
+    artifactRefs: {
+      journal: writerJournalPath,
+      remote: null,
+    },
+    schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+    appendEvent() {
+      return null;
+    },
+    flush() {},
+    close() {},
+    inspect() {
+      return {
+        filePath: 'var/lib/reprint/recovery.jsonl',
+        schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+        artifactRefs: {
+          journal: 'var/lib/reprint/recovery.jsonl',
+          remote: null,
+        },
+        records: [],
+      };
+    },
+    assertCurrentClaim() {},
+  });
+
+  assert.equal(report.supported, false);
+  assert.equal(report.checkedBoundarySatisfied, false);
+  assert.equal(report.inspectedJournalPath, 'var/lib/reprint/recovery.jsonl');
+  assert.equal(report.checkedBoundaryProof.acceptedOnCheckedBoundary, false);
+  assert.equal(report.checkedBoundaryProof.journalPath, null);
+  assert.equal(report.checkedBoundaryProof.artifactRefs, null);
+  assert.ok(report.missingDependency.includes('restart-readable recovery artifact location'));
+  assert.ok(report.missingDependency.includes('restart-readable recovery artifact references'));
+});
+
 test('production recovery support report keeps checked boundary closed when the inspected lease-fence boundary drifts from the writer contract', () => {
   const filePath = '/var/lib/reprint/recovery.jsonl';
   const remoteArtifactPath = '/var/lib/reprint/recovery-remote.jsonl';

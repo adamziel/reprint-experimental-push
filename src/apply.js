@@ -1554,11 +1554,16 @@ function checkedDurableJournalBoundaryProof(
   const inspectedRestartReadable = Object.hasOwn(inspected ?? {}, 'restartReadable')
     && !hasHiddenOwnStringProperty(inspected, 'restartReadable')
     && inspected.restartReadable === true;
+  const inspectedJournalPathFromInspection = durableJournalInspectPath(inspected);
   const inspectedJournalPath = Object.hasOwn(inspected ?? {}, 'journalPath')
     && !hasHiddenOwnStringProperty(inspected, 'journalPath')
     && isCanonicalAbsolutePath(inspected.journalPath)
       ? inspected.journalPath
-      : durableJournalInspectPath(inspected);
+      : (
+        isCanonicalAbsolutePath(inspectedJournalPathFromInspection)
+          ? inspectedJournalPathFromInspection
+          : null
+      );
   const inspectedArtifactRefs = durableJournalInspectArtifactRefs(inspected)
     && inspectedJournalPath !== null
     && inspected.artifactRefs.journal === inspectedJournalPath
