@@ -13312,6 +13312,65 @@ test('guarded benchmark blocks release-bundle post-pause planning summaries when
   );
 });
 
+test('guarded benchmark carries queue-headroom drift blockers into release-bundle post-pause planning summaries', () => {
+  const report = smallBenchmark();
+  const mutated = clone(report);
+
+  mutated.evidence.backpressure.receiptCursorMemoryCeilingBytes =
+    mutated.evidence.backpressure.queueBudgetBytes;
+  mutated.evidence.backpressure.receiptCursorQueueSlackMatchesQueueHeadroom = true;
+  mutated.evidence.backpressure.queueHeadroomBytes -= 1;
+
+  const details = productionThroughputDetails(mutated);
+  const blockers = productionThroughputBlockers(mutated);
+  const releaseBundlePlanning = details.rejectedFastPaths.find(
+    (entry) =>
+      entry.id ===
+        'compressed-remote-index-and-cached-release-manifest-and-batched-receipt-flush-skips-release-bundle-planning-after-pause',
+  );
+
+  assert.ok(blockers.includes('queue-headroom-exceeds-resource-ceiling'));
+  assert.ok(blockers.includes('queue-headroom-memory-headroom-mismatch'));
+  assert.ok(blockers.includes('receipt-cursor-headroom-mismatch'));
+  assert.ok(blockers.includes('receipt-cursor-headroom-not-covered-by-queue-budget'));
+  assert.ok(blockers.includes('receipt-cursor-memory-headroom-not-covered-by-queue-budget'));
+  assert.ok(blockers.includes('receipt-cursor-queue-slack-headroom-mismatch'));
+  assert.deepEqual(details.releaseBundlePlanningSummary, {
+    surface: 'release-bundle-post-pause-planning',
+    status: 'blocked',
+    measured: false,
+    visible: false,
+    blockerRefs: [
+      'queue-headroom-exceeds-resource-ceiling',
+      'queue-headroom-memory-headroom-mismatch',
+      'receipt-cursor-headroom-mismatch',
+      'receipt-cursor-headroom-not-covered-by-queue-budget',
+      'receipt-cursor-memory-headroom-not-covered-by-queue-budget',
+      'receipt-cursor-queue-slack-headroom-mismatch',
+    ],
+  });
+  assert.deepEqual(
+    {
+      id: releaseBundlePlanning?.id,
+      rejectedGate: releaseBundlePlanning?.rejectedGate,
+      blockerRefs: releaseBundlePlanning?.blockerRefs,
+    },
+    {
+      id: 'compressed-remote-index-and-cached-release-manifest-and-batched-receipt-flush-skips-release-bundle-planning-after-pause',
+      rejectedGate: 'skip',
+      blockerRefs: [
+        'production-capability-measurement-not-aligned',
+        'queue-headroom-exceeds-resource-ceiling',
+        'queue-headroom-memory-headroom-mismatch',
+        'receipt-cursor-headroom-mismatch',
+        'receipt-cursor-headroom-not-covered-by-queue-budget',
+        'receipt-cursor-memory-headroom-not-covered-by-queue-budget',
+        'receipt-cursor-queue-slack-headroom-mismatch',
+      ],
+    },
+  );
+});
+
 test('guarded benchmark keeps rollout summaries pinned when raw memory-ceiling bytes drift under visible production capability evidence', () => {
   const report = smallBenchmark();
   const mutated = clone(report);

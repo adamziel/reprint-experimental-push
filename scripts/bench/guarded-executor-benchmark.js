@@ -310,6 +310,12 @@ const ROLLOUT_REJECTED_FAST_PATH_SPECS = Object.freeze([
       ...POST_PAUSE_ALIGNED_QUEUE_SLACK_BLOCKER_REFS,
       ...POST_PAUSE_HIDDEN_QUEUE_BUDGET_RESOURCE_VISIBILITY_BLOCKER_REFS,
       ...POST_PAUSE_HIDDEN_QUEUE_HEADROOM_RESOURCE_VISIBILITY_BLOCKER_REFS,
+      'queue-headroom-exceeds-resource-ceiling',
+      'queue-headroom-memory-headroom-mismatch',
+      'receipt-cursor-headroom-mismatch',
+      'receipt-cursor-headroom-not-covered-by-queue-budget',
+      'receipt-cursor-memory-headroom-not-covered-by-queue-budget',
+      'receipt-cursor-queue-slack-headroom-mismatch',
     ]),
   }),
   Object.freeze({
@@ -4313,6 +4319,12 @@ function summarizeReleaseBundlePlanning({
     'queue-budget-visible-without-queue-headroom-measurement',
     'memory-ceiling-visible-without-queue-headroom-measurement',
     'queue-headroom-visible-without-measurement',
+    'queue-headroom-exceeds-resource-ceiling',
+    'queue-headroom-memory-headroom-mismatch',
+    'receipt-cursor-headroom-mismatch',
+    'receipt-cursor-headroom-not-covered-by-queue-budget',
+    'receipt-cursor-memory-headroom-not-covered-by-queue-budget',
+    'receipt-cursor-queue-slack-headroom-mismatch',
   ];
   const presentBlockers = [...new Set(blockerRefs)].filter((blocker) => blockerSet.has(blocker));
 
