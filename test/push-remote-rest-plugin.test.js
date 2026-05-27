@@ -409,68 +409,7 @@ function runFinalizeAuthenticatedApplyResult(result, authEvidence, signedRequest
     JSON.stringify(result),
     JSON.stringify(authEvidence),
     JSON.stringify(signedRequestEvidence),
-    JSON.stringify({
-      acceptedOnCheckedBoundary: true,
-      table: 'wp_reprint_push_lab_push_journal',
-      rowCount: 1,
-      scope: 'checked live production-shaped journal surface; not local Playground fixture only',
-      claim: {
-        status: 'active',
-        activeClaimKeyHash: 'claim-hash-01',
-        activeClaimSequence: 18,
-        activeClaimEvent: 'idempotency-opened',
-        idempotencyKeyHash: 'idem-hash-01',
-        requestHash: 'request-hash-01',
-        staleClaimRejected: false,
-      },
-      ownership: {
-        ownsJournal: true,
-        restartReadable: true,
-        productionAdapter: 'wpdb-single-statement-cas',
-      },
-      writerLease: {
-        strategy: 'claim-fenced-single-writer',
-        claimKeyUnique: true,
-        fsyncEvidence: true,
-        storageGuard: 'wpdb-single-statement-cas',
-        monotonicSequence: true,
-        restartReadable: true,
-        staleClaimRejected: false,
-      },
-      leaseFence: {
-        boundary: 'wpdb-single-statement-cas',
-        storageGuard: 'wpdb-single-statement-cas',
-        claimKeyUnique: true,
-        fsyncEvidence: true,
-        monotonicSequence: true,
-        restartReadable: true,
-        staleClaimRejected: false,
-        writerLease: {
-          strategy: 'claim-fenced-single-writer',
-          claimKeyUnique: true,
-          fsyncEvidence: true,
-          storageGuard: 'wpdb-single-statement-cas',
-          monotonicSequence: true,
-          restartReadable: true,
-          staleClaimRejected: false,
-        },
-      },
-      latestRows: [
-        {
-          event: 'apply-rejected',
-          result: {
-            storageGuard: {
-              boundary: 'wpdb-single-statement-cas',
-              operation: 'compare-and-swap',
-              outcome: 'precondition-failed',
-            },
-          },
-        },
-      ],
-      eventSummaries: [
-        { event: 'apply-rejected', count: 1, latestId: 18 },
-      ],
-    }),
+    JSON.stringify(buildAcceptedInlineDbJournal()),
   ], {
     cwd: repoRoot,
     encoding: 'utf8',
@@ -509,31 +448,7 @@ function runFinalizeAuthenticatedJournalResult(result, authEvidence, signedReque
     JSON.stringify(result),
     JSON.stringify(authEvidence),
     JSON.stringify(signedRequestEvidence),
-    JSON.stringify({
-      scope: 'checked live production-shaped journal surface; not local Playground fixture only',
-      acceptedOnCheckedBoundary: true,
-      claim: {
-        status: 'active',
-        activeClaimKeyHash: 'claim-hash-01',
-        activeClaimSequence: 18,
-        activeClaimEvent: 'idempotency-opened',
-        idempotencyKeyHash: 'idem-hash-01',
-        requestHash: 'request-hash-01',
-        staleClaimRejected: false,
-      },
-      ownership: {
-        ownsJournal: true,
-        restartReadable: true,
-        productionAdapter: 'wpdb-single-statement-cas',
-      },
-      leaseFence: {
-        boundary: 'wpdb-single-statement-cas',
-        claimKeyUnique: true,
-        monotonicSequence: true,
-        restartReadable: true,
-        staleClaimRejected: false,
-      },
-    }),
+    JSON.stringify(buildAcceptedInlineDbJournal()),
   ], {
     cwd: repoRoot,
     encoding: 'utf8',
@@ -797,6 +712,7 @@ function buildAcceptedInlineRecoveryJournal() {
       abandonedEvent: 'stale-claim-abandoned',
       previousStartedSequence: 19,
       previousClaimId: 'retry-claim-hash-01',
+      previousClaimHash: 'd9b400236ca859bc61e71afa037b2e3b39d723fbd51b31df353c7b857467d8fb',
       previousClaimKeyHash: 'retry-claim-hash-01',
       previousClaimSequence: 18,
       previousClaimEvent: 'idempotency-opened',
@@ -925,6 +841,7 @@ function buildCheckedRecoveryJournalSummary() {
       abandonedEvent: 'stale-claim-abandoned',
       previousStartedSequence: 19,
       previousClaimId: 'retry-claim-hash-01',
+      previousClaimHash: 'd9b400236ca859bc61e71afa037b2e3b39d723fbd51b31df353c7b857467d8fb',
       previousClaimKeyHash: 'retry-claim-hash-01',
       previousClaimSequence: 18,
       previousClaimEvent: 'idempotency-opened',
@@ -1050,6 +967,7 @@ function buildAcceptedInlineDbJournal() {
       abandonedEvent: 'stale-claim-abandoned',
       previousStartedSequence: 19,
       previousClaimId: 'retry-claim-hash-01',
+      previousClaimHash: 'd9b400236ca859bc61e71afa037b2e3b39d723fbd51b31df353c7b857467d8fb',
       previousClaimKeyHash: 'retry-claim-hash-01',
       previousClaimSequence: 18,
       previousClaimEvent: 'idempotency-opened',
@@ -1132,6 +1050,13 @@ function buildAcceptedInlineDbJournal() {
         claimKeyHash: 'authoritative-claim-hash-02',
         idempotencyKeyHash: 'idem-hash-01',
         requestHash: 'request-hash-01',
+        result: {
+          storageGuard: {
+            boundary: 'wpdb-single-statement-cas',
+            operation: 'update',
+            outcome: 'applied',
+          },
+        },
       },
     ],
     eventSummaries: [
@@ -1264,6 +1189,7 @@ test('checked db journal merge fails closed when the authoritative summary omits
         ownsJournal: true,
         restartReadable: true,
         productionAdapter: 'wpdb-single-statement-cas',
+        supportedSurface: 'claim-fenced-restart-readable',
       },
       claim: {
         status: 'stale-claim-rejected',
@@ -1758,6 +1684,7 @@ test('checked recovery inspect evidence carries authoritative stale-claim fencin
         ownsJournal: true,
         restartReadable: true,
         productionAdapter: 'wpdb-single-statement-cas',
+        supportedSurface: 'claim-fenced-restart-readable',
       },
       writerLease: {
         strategy: 'claim-fenced-single-writer',
@@ -6775,6 +6702,7 @@ test('authenticated apply finalization upgrades checked failure journal evidence
   );
 
   assert.equal(result.status, 0, result.stderr);
+  const expectedCheckedJournal = buildAcceptedInlineDbJournal();
   assert.deepEqual(JSON.parse(result.stdout), {
     ok: false,
     code: 'PRECONDITION_FAILED',
@@ -6782,73 +6710,12 @@ test('authenticated apply finalization upgrades checked failure journal evidence
     dbJournal: {
       event: 'apply-rejected',
       sequence: 18,
-      scope: 'checked live production-shaped journal surface; not local Playground fixture only',
-      acceptedOnCheckedBoundary: true,
-      claim: {
-        status: 'active',
-        activeClaimKeyHash: 'claim-hash-01',
-        activeClaimSequence: 18,
-        activeClaimEvent: 'idempotency-opened',
-        idempotencyKeyHash: 'idem-hash-01',
-        requestHash: 'request-hash-01',
-        staleClaimRejected: false,
-      },
-      ownership: {
-        ownsJournal: true,
-        restartReadable: true,
-        productionAdapter: 'wpdb-single-statement-cas',
-      },
-      writerLease: {
-        strategy: 'claim-fenced-single-writer',
-        claimKeyUnique: true,
-        fsyncEvidence: true,
-        storageGuard: 'wpdb-single-statement-cas',
-        monotonicSequence: true,
-        restartReadable: true,
-        staleClaimRejected: false,
-      },
-      leaseFence: {
-        boundary: 'wpdb-single-statement-cas',
-        claimKeyUnique: true,
-        fsyncEvidence: true,
-        monotonicSequence: true,
-        restartReadable: true,
-        staleClaimRejected: false,
-        writerLease: {
-          strategy: 'claim-fenced-single-writer',
-          claimKeyUnique: true,
-          fsyncEvidence: true,
-          storageGuard: 'wpdb-single-statement-cas',
-          monotonicSequence: true,
-          restartReadable: true,
-          staleClaimRejected: false,
-        },
-      },
-      latestRows: [
-        {
-          event: 'apply-rejected',
-          result: {
-            storageGuard: {
-              boundary: 'wpdb-single-statement-cas',
-              operation: 'compare-and-swap',
-              outcome: 'precondition-failed',
-            },
-          },
-        },
-      ],
-      eventSummaries: [
-        { event: 'apply-rejected', count: 1, latestId: 18 },
-      ],
-      storageGuard: {
-        boundary: 'wpdb-single-statement-cas',
-        operation: 'compare-and-swap',
-        outcome: 'precondition-failed',
-      },
+      ...expectedCheckedJournal,
     },
     storageGuard: {
       boundary: 'wpdb-single-statement-cas',
-      operation: 'compare-and-swap',
-      outcome: 'precondition-failed',
+      operation: 'update',
+      outcome: 'applied',
     },
     responseSchemaVersion: 1,
     auth: {
@@ -6936,78 +6803,16 @@ test('authenticated apply finalization injects checked db journal contract when 
   );
 
   assert.equal(result.status, 0, result.stderr);
+  const expectedCheckedJournal = buildAcceptedInlineDbJournal();
   assert.deepEqual(JSON.parse(result.stdout), {
     ok: false,
     code: 'AUTH_RECEIPT_EXPIRED',
     message: 'Signed apply receipt expired before the checked apply could start.',
-    dbJournal: {
-      acceptedOnCheckedBoundary: true,
-      scope: 'checked live production-shaped journal surface; not local Playground fixture only',
-      claim: {
-        status: 'active',
-        activeClaimKeyHash: 'claim-hash-01',
-        activeClaimSequence: 18,
-        activeClaimEvent: 'idempotency-opened',
-        idempotencyKeyHash: 'idem-hash-01',
-        requestHash: 'request-hash-01',
-        staleClaimRejected: false,
-      },
-      ownership: {
-        ownsJournal: true,
-        restartReadable: true,
-        productionAdapter: 'wpdb-single-statement-cas',
-      },
-      writerLease: {
-        strategy: 'claim-fenced-single-writer',
-        claimKeyUnique: true,
-        fsyncEvidence: true,
-        storageGuard: 'wpdb-single-statement-cas',
-        monotonicSequence: true,
-        restartReadable: true,
-        staleClaimRejected: false,
-      },
-      leaseFence: {
-        boundary: 'wpdb-single-statement-cas',
-        claimKeyUnique: true,
-        fsyncEvidence: true,
-        monotonicSequence: true,
-        restartReadable: true,
-        staleClaimRejected: false,
-        writerLease: {
-          strategy: 'claim-fenced-single-writer',
-          claimKeyUnique: true,
-          fsyncEvidence: true,
-          storageGuard: 'wpdb-single-statement-cas',
-          monotonicSequence: true,
-          restartReadable: true,
-          staleClaimRejected: false,
-        },
-      },
-      latestRows: [
-        {
-          event: 'apply-rejected',
-          result: {
-            storageGuard: {
-              boundary: 'wpdb-single-statement-cas',
-              operation: 'compare-and-swap',
-              outcome: 'precondition-failed',
-            },
-          },
-        },
-      ],
-      eventSummaries: [
-        { event: 'apply-rejected', count: 1, latestId: 18 },
-      ],
-      storageGuard: {
-        boundary: 'wpdb-single-statement-cas',
-        operation: 'compare-and-swap',
-        outcome: 'precondition-failed',
-      },
-    },
+    dbJournal: expectedCheckedJournal,
     storageGuard: {
       boundary: 'wpdb-single-statement-cas',
-      operation: 'compare-and-swap',
-      outcome: 'precondition-failed',
+      operation: 'update',
+      outcome: 'applied',
     },
     responseSchemaVersion: 1,
     auth: {
@@ -7049,7 +6854,7 @@ test('authenticated apply finalization injects checked db journal contract when 
   });
 });
 
-test('authenticated db journal finalization preserves checked journal evidence and adds signed auth metadata', { skip: !hasPhp }, () => {
+test('authenticated db journal finalization fails closed on conflicting checked journal lineage and adds signed auth metadata', { skip: !hasPhp }, () => {
   const result = runFinalizeAuthenticatedJournalResult(
     {
       ok: true,
@@ -7063,6 +6868,7 @@ test('authenticated db journal finalization preserves checked journal evidence a
         },
         leaseFence: {
           boundary: 'wpdb-single-statement-cas',
+          storageGuard: 'wpdb-single-statement-cas',
           claimKeyUnique: true,
           monotonicSequence: true,
           restartReadable: true,
@@ -7114,74 +6920,54 @@ test('authenticated db journal finalization preserves checked journal evidence a
   );
 
   assert.equal(result.status, 0, result.stderr);
-  assert.deepEqual(JSON.parse(result.stdout), {
-    ok: true,
-    dbJournal: {
-      scope: 'checked live production-shaped journal surface; not local Playground fixture only',
-      acceptedOnCheckedBoundary: true,
-      claim: {
-        status: 'active',
-        activeClaimKeyHash: 'claim-hash-01',
-        activeClaimSequence: 18,
-        activeClaimEvent: 'idempotency-opened',
-        idempotencyKeyHash: 'idem-hash-01',
-        requestHash: 'request-hash-01',
-        staleClaimRejected: false,
-      },
-      ownership: {
-        ownsJournal: true,
-        restartReadable: true,
-        productionAdapter: 'wpdb-single-statement-cas',
-      },
-      leaseFence: {
-        boundary: 'wpdb-single-statement-cas',
-        claimKeyUnique: true,
-        monotonicSequence: true,
-        restartReadable: true,
-        staleClaimRejected: false,
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.ok, true);
+  assert.equal(parsed.responseSchemaVersion, 1);
+  assert.equal(parsed.dbJournal.scope, 'checked live production-shaped journal surface; not local Playground fixture only');
+  assert.equal(parsed.dbJournal.acceptedOnCheckedBoundary, false);
+  assert.equal(parsed.dbJournal.ownership?.supportedSurface, 'claim-fenced-restart-readable');
+  assert.equal(parsed.dbJournal.writerLease?.storageGuard, 'wpdb-single-statement-cas');
+  assert.equal(parsed.dbJournal.leaseFence?.writerLease?.claimId, 'authoritative-claim-hash-02');
+  assert.equal(parsed.dbJournal.claim?.activeClaimId, 'authoritative-claim-hash-02');
+  assert.deepEqual(parsed.storageGuard, {
+    boundary: 'wpdb-single-statement-cas',
+    operation: 'compare-and-swap',
+    outcome: 'committed',
+  });
+  assert.deepEqual(parsed.auth, {
+    schemaVersion: 1,
+    scope: 'reprint-push-lab:authenticated-http-push',
+    identity: {
+      userId: 1,
+      userLogin: 'push-admin',
+      roles: ['administrator'],
+      capabilities: {
+        manage_options: true,
       },
     },
-    storageGuard: {
-      boundary: 'wpdb-single-statement-cas',
-      operation: 'compare-and-swap',
-      outcome: 'committed',
+    session: {
+      id: 'signed-session-token',
+      type: 'production-auth-session',
+      status: 'active',
+      revoked: false,
+      cleanedUp: false,
+      expiresAt: '2026-05-26T20:00:00Z',
+      playgroundFallback: false,
     },
-    responseSchemaVersion: 1,
-    auth: {
-      schemaVersion: 1,
-      scope: 'reprint-push-lab:authenticated-http-push',
-      identity: {
-        userId: 1,
-        userLogin: 'push-admin',
-        roles: ['administrator'],
-        capabilities: {
-          manage_options: true,
-        },
-      },
-      session: {
-        id: 'signed-session-token',
-        type: 'production-auth-session',
-        status: 'active',
-        revoked: false,
-        cleanedUp: false,
-        expiresAt: '2026-05-26T20:00:00Z',
-        playgroundFallback: false,
-      },
+  });
+  assert.deepEqual(parsed.signedRequest, {
+    schemaVersion: 1,
+    contentHash: 'abc123',
+    timestamp: '2026-05-26T20:00:00Z',
+    nonceHash: 'def456',
+    sessionHash: 'ghi789',
+    signingKeyHash: 'jkl012',
+    cleanup: {
+      deletedExpiredTotal: 0,
     },
-    signedRequest: {
-      schemaVersion: 1,
-      contentHash: 'abc123',
-      timestamp: '2026-05-26T20:00:00Z',
-      nonceHash: 'def456',
-      sessionHash: 'ghi789',
-      signingKeyHash: 'jkl012',
-      cleanup: {
-        deletedExpiredTotal: 0,
-      },
-      request: {
-        method: 'GET',
-        path: '/wp-json/reprint/v1/push/db-journal',
-      },
+    request: {
+      method: 'GET',
+      path: '/wp-json/reprint/v1/push/db-journal',
     },
   });
 });
