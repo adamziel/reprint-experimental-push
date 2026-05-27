@@ -1994,17 +1994,65 @@ function productionRecoveryClaimTransitionIntegrityError(records) {
   const claimRecords = Array.isArray(records)
     ? records.filter((record) => CLAIM_FENCE_RECORD_TYPES.has(record?.type))
     : [];
+  let activeClaimHash = null;
 
   for (let index = 0; index < claimRecords.length; index += 1) {
     const record = claimRecords[index];
-    if (record?.type !== 'recovery-claim-opened') {
+    if (record?.type === 'recovery-claim-opened') {
+      if (index !== 0) {
+        return 'Recovery claim transition sequence must use stale-claim-advanced instead of reopening a later active claim.';
+      }
+      activeClaimHash = record.claimHash;
       continue;
     }
-    if (index !== 0) {
-      return 'Recovery claim transition sequence must use stale-claim-advanced instead of reopening a later active claim.';
+
+    if (record?.type === 'stale-claim-rejected') {
+      const rejectionIntegrityError = staleClaimRejectionIntegrityError(record, activeClaimHash);
+      if (rejectionIntegrityError) {
+        return rejectionIntegrityError;
+      }
+      continue;
+    }
+
+    if (record?.type === 'stale-claim-advanced') {
+      activeClaimHash = record.claimHash;
     }
   }
 
+  return null;
+}
+
+function staleClaimRejectionIntegrityError(record, activeClaimHash) {
+  if (typeof activeClaimHash !== 'string' || !/^[a-f0-9]{64}$/.test(activeClaimHash)) {
+    return 'Recovery claim transition sequence must open an active claim before recording stale-claim rejection evidence.';
+  }
+  if (
+    !Object.hasOwn(record, 'claimHash')
+    || typeof record.claimHash !== 'string'
+    || !/^[a-f0-9]{64}$/.test(record.claimHash)
+  ) {
+    return 'Stale-claim rejection evidence must preserve an explicit rejected claim hash.';
+  }
+  if (
+    !Object.hasOwn(record, 'previousClaimHash')
+    || typeof record.previousClaimHash !== 'string'
+    || !/^[a-f0-9]{64}$/.test(record.previousClaimHash)
+  ) {
+    return 'Stale-claim rejection evidence must preserve an explicit active claim hash lineage.';
+  }
+  if (record.previousClaimHash !== activeClaimHash) {
+    return 'Stale-claim rejection evidence must chain from the immediately active claim hash.';
+  }
+  if (record.claimHash === activeClaimHash) {
+    return 'Stale-claim rejection evidence must preserve a distinct rejected claim hash.';
+  }
+  if (
+    !Object.hasOwn(record, 'claimLease')
+    || !hasValidProductionLeaseIdentity(record.claimLease)
+    || record.claimHash !== digest({ recoveryJournalClaim: record.claimLease.id })
+  ) {
+    return 'Stale-claim rejection evidence must preserve the rejected claim lease identity.';
+  }
   return null;
 }
 
