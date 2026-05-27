@@ -1636,6 +1636,116 @@ test('production-shaped release verify lets a required auth/session source overr
   );
 });
 
+test('production-shaped release verify request credentials fall back past a malformed explicit live source URL when a matching runtime candidate is present', () => {
+  const source = {
+    ok: true,
+    sourceUrl: 'https://example.test/local/?session=1#preserved',
+    username: 'reprint_push_admin',
+    applicationPassword: 'reprint-push-admin-app-password',
+  };
+
+  assert.deepEqual(
+    resolveAuthSessionRequestCredentials(
+      {
+        liveSourceUrl: ' https://invalid.example.test/push ',
+        remoteUrl: 'https://example.test/remote',
+        localUrl: 'https://example.test/local',
+        username: 'trusted-runtime-username',
+        applicationPassword: 'trusted-runtime-password',
+        fallbackUsername: 'stale-fallback-username',
+        fallbackApplicationPassword: 'stale-fallback-password',
+      },
+      source,
+    ),
+    {
+      liveSourceUrl: 'https://example.test/local/?session=1#preserved',
+      username: 'trusted-runtime-username',
+      applicationPassword: 'trusted-runtime-password',
+    },
+  );
+});
+
+test('production-shaped release verify request credentials let a required auth/session source override a malformed explicit live source URL when it matches a runtime candidate', () => {
+  const source = {
+    ok: true,
+    sourceUrl: 'https://example.test/local/?session=1#preserved',
+    username: 'reprint_push_admin',
+    applicationPassword: 'reprint-push-admin-app-password',
+  };
+
+  assert.deepEqual(
+    resolveAuthSessionRequestCredentials(
+      {
+        liveSourceUrl: ' https://invalid.example.test/push ',
+        remoteUrl: 'https://example.test/remote',
+        localUrl: 'https://example.test/local',
+        username: 'trusted-runtime-username',
+        applicationPassword: 'trusted-runtime-password',
+        fallbackUsername: 'stale-fallback-username',
+        fallbackApplicationPassword: 'stale-fallback-password',
+      },
+      source,
+      { preferSource: true },
+    ),
+    {
+      liveSourceUrl: 'https://example.test/local/?session=1#preserved',
+      username: 'reprint_push_admin',
+      applicationPassword: 'reprint-push-admin-app-password',
+    },
+  );
+});
+
+test('production-shaped release verify request credentials let a required auth/session source override partial explicit direct credentials when it matches a runtime candidate', () => {
+  const source = {
+    ok: true,
+    sourceUrl: 'https://example.test/local/?session=1#preserved',
+    username: 'reprint_push_admin',
+    applicationPassword: 'reprint-push-admin-app-password',
+  };
+
+  assert.deepEqual(
+    resolveAuthSessionRequestCredentials(
+      {
+        liveSourceUrl: '',
+        remoteUrl: 'https://example.test/remote',
+        localUrl: 'https://example.test/local',
+        username: 'trusted-runtime-username',
+        applicationPassword: '',
+        fallbackUsername: 'stale-fallback-username',
+        fallbackApplicationPassword: 'stale-fallback-password',
+      },
+      source,
+      { preferSource: true },
+    ),
+    {
+      liveSourceUrl: 'https://example.test/local/?session=1#preserved',
+      username: 'reprint_push_admin',
+      applicationPassword: 'reprint-push-admin-app-password',
+    },
+  );
+
+  assert.deepEqual(
+    resolveAuthSessionRequestCredentials(
+      {
+        liveSourceUrl: '',
+        remoteUrl: 'https://example.test/remote',
+        localUrl: 'https://example.test/local',
+        username: '',
+        applicationPassword: 'trusted-runtime-password',
+        fallbackUsername: 'stale-fallback-username',
+        fallbackApplicationPassword: 'stale-fallback-password',
+      },
+      source,
+      { preferSource: true },
+    ),
+    {
+      liveSourceUrl: 'https://example.test/local/?session=1#preserved',
+      username: 'reprint_push_admin',
+      applicationPassword: 'reprint-push-admin-app-password',
+    },
+  );
+});
+
 test('production-shaped release verify request state falls back past a malformed explicit live source URL when a matching runtime candidate is present', () => {
   const source = {
     ok: true,
