@@ -106,6 +106,73 @@ full boundary.
 
 Verdict: `0/4`
 
+## Follow-up - Apply V2 And Auditor Verdict
+
+Commit:
+
+- Reviewed `origin/supervisor/release-boundary-consolidated-20260527` at
+  `a16ba719bdd522294d262343c4d86afa5c300e84`
+  (`Record reorg v2 auditor verdict`).
+- Reviewed `origin/lane/apply-revalidation-boundary-v2-20260527` at
+  `459f9c514fbaa1492d77a33e6993575b0da5ac0f`
+  (`Add focused apply revalidation boundary test`).
+
+Claim:
+
+- New fact: the consolidated branch now includes
+  `audits/auditor-reorg-v2-20260527.md`.
+- New fact: apply-revalidation v2 now exists on origin.
+- Release verdict remains `0/4`.
+
+Evidence:
+
+- The auditor artifact records verdict `0/4` and says no release gate moves
+  without a checked command that uses a real live `REPRINT_PUSH_SOURCE_URL`.
+- The auditor artifact records the consolidated `timeout 300s npm run
+  verify:release` missing-source run as exit `1` with
+  `REPRINT_PUSH_LIVE_SOURCE_REQUIRED`, `releaseMovement.allowed: false`, and
+  `releaseMovement.gates: 0/4`.
+- `origin/lane/apply-revalidation-boundary-v2-20260527` adds
+  `test/apply-revalidation-boundary.test.js` and a
+  `test:apply-revalidation-boundary` package script.
+- The apply v2 test asserts `verify:release` runs
+  `test:playground:production-shaped-live-source-gate` before
+  support-only release proofs, and checks the apply revalidation smoke returns
+  `PRECONDITION_FAILED`, `phase: before-first-mutation`, zero mutations before
+  failure, replayed 412, and preserved remote evidence.
+- No reviewed branch includes a real live `REPRINT_PUSH_SOURCE_URL` command
+  run proving the production mutation boundary.
+
+gate-by-gate movement:
+
+- GATE-1: no movement. Auditor and apply v2 add audit/test support, not live
+  auth/session issuance and readback proof.
+- GATE-2: no movement. Apply v2 does not prove a live durable journal boundary.
+- GATE-3: no movement. The only command evidence is missing-source refusal.
+- GATE-4: no movement. Apply v2 is not a live plugin-driver mutation proof.
+
+First missing production primitive:
+
+- A checked live `verify:release` run against a real
+  `REPRINT_PUSH_SOURCE_URL`, with remote-changed and local-edited topology,
+  production credentials, same-source auth-session readback, durable journal
+  readback, preserved rejected remote evidence, and plugin-driver ownership on
+  that same boundary.
+
+Next exact command:
+
+```bash
+git fetch origin --prune && git show --stat --oneline origin/supervisor/release-boundary-consolidated-20260527 origin/lane/apply-revalidation-boundary-v2-20260527
+```
+
+Release gate movement still requires:
+
+```bash
+REPRINT_PUSH_SOURCE_URL=<real-live-reprint-source-url> timeout 300s npm run verify:release
+```
+
+Verdict: `0/4`
+
 ## Follow-up - Auth V2 And Pushed Plugin V2
 
 Commit:
