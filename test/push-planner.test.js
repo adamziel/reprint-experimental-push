@@ -6425,7 +6425,7 @@ test('blocks plugin-owned option deletions when the live remote removed the owne
   const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
   const blockerJson = JSON.stringify(blocker);
 
-  assert.equal(plan.status, 'conflict');
+  assert.equal(plan.status, 'blocked');
   assert.equal(plan.summary.mutations, 0);
   assert.equal(mutationFor(plan, resourceKey), undefined);
   assert.equal(decisionFor(plan, 'plugin:forms').decision, 'keep-remote');
@@ -6466,7 +6466,7 @@ test('blocks plugin-owned option deletions with explicit delete support when the
   const plan = planFor(base, local, remote);
   const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
 
-  assert.equal(plan.status, 'conflict');
+  assert.equal(plan.status, 'blocked');
   assert.equal(plan.summary.mutations, 0);
   assert.equal(mutationFor(plan, resourceKey), undefined);
   assert.equal(decisionFor(plan, 'plugin:forms').decision, 'keep-remote');
@@ -6504,7 +6504,7 @@ test('bounds stale plugin owner evidence when many owner-context resources are p
   remote.files['wp-content/plugins/forms/readme.txt'] = 'remote-private-readme';
 
   const plan = planFor(base, local, remote);
-  const blocker = plan.blockers.find((entry) => entry.resourceKey === targetResourceKey);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
   const blockerJson = JSON.stringify(blocker);
 
   assert.equal(plan.status, 'blocked');
@@ -6559,7 +6559,7 @@ test('blocks a stale plugin-owned delete while preserving a matching edit and re
   assert.ok(blocker);
   assert.equal(blocker.class, 'stale-plugin-owner-context');
   assert.equal(blocker.pluginOwner, 'forms');
-  assert.equal(blocker.resourceKey, targetResourceKey);
+  assert.equal(blocker.resourceKey, resourceKey);
   assert.equal(blockerJsonHasRawPluginData(planJson), false);
   assert.equal(planJson.includes('remote-only plugin drift'), false);
 });
@@ -6601,7 +6601,7 @@ test('blocks a stale plugin-owned delete while preserving a matching restore and
   assert.ok(blocker);
   assert.equal(blocker.class, 'stale-plugin-owner-context');
   assert.equal(blocker.pluginOwner, 'forms');
-  assert.equal(blocker.resourceKey, targetResourceKey);
+  assert.equal(blocker.resourceKey, resourceKey);
   assert.equal(planJson.includes('remote-only plugin drift'), false);
   assert.equal(planJson.includes('Shared restored title'), false);
 });
@@ -6627,7 +6627,7 @@ test('blocks plugin-owned option deletions while preserving unrelated remote-onl
   remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-private-forms-code */';
 
   const plan = planFor(base, local, remote);
-  const blocker = plan.conflicts.find((entry) => entry.resourceKey === resourceKey);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
   const blockerJson = JSON.stringify(blocker);
 
   assert.equal(plan.status, 'blocked');
@@ -6635,7 +6635,7 @@ test('blocks plugin-owned option deletions while preserving unrelated remote-onl
   assert.equal(decisionFor(plan, 'plugin:forms').decision, 'keep-remote');
   assert.equal(decisionFor(plan, 'file:wp-content/plugins/forms/forms.php').decision, 'keep-remote');
   assert.equal(blocker.class, 'stale-plugin-owner-context');
-  assert.equal(blocker.resourceKey, targetResourceKey);
+  assert.equal(blocker.resourceKey, resourceKey);
   assert.equal(blocker.pluginOwner, 'forms');
   assert.equal(blockerJson.includes('remote-private-forms-code'), false);
   assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
@@ -6664,7 +6664,7 @@ test('blocks plugin-owned option deletions while preserving remote-only plugin d
   remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-private-forms-code */';
 
   const plan = planFor(base, local, remote);
-  const blocker = plan.conflicts.find((entry) => entry.resourceKey === resourceKey);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
 
   assert.equal(plan.status, 'blocked');
   assert.equal(plan.summary.mutations, 0);
@@ -6674,7 +6674,7 @@ test('blocks plugin-owned option deletions while preserving remote-only plugin d
   assert.equal(decisionFor(plan, 'row:["wp_posts","ID:1"]').decision, 'already-in-sync');
   assert.equal(mutationFor(plan, resourceKey), undefined);
   assert.equal(blocker.class, 'stale-plugin-owner-context');
-  assert.equal(blocker.resourceKey, targetResourceKey);
+  assert.equal(blocker.resourceKey, resourceKey);
   assert.equal(blocker.pluginOwner, 'forms');
   assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
   assert.equal(remote.plugins.forms.version, '1.1.0');
@@ -6704,7 +6704,7 @@ test('blocks plugin-owned option deletions while preserving remote-only plugin d
   remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-private-forms-code */';
 
   const plan = planFor(base, local, remote);
-  const blocker = plan.conflicts.find((entry) => entry.resourceKey === resourceKey);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
 
   assert.equal(plan.status, 'blocked');
   assert.equal(plan.summary.mutations, 0);
@@ -6715,7 +6715,7 @@ test('blocks plugin-owned option deletions while preserving remote-only plugin d
   assert.equal(decisionFor(plan, 'file:wp-content/plugins/forms/forms.php').decision, 'keep-remote');
   assert.equal(mutationFor(plan, resourceKey), undefined);
   assert.equal(blocker.class, 'stale-plugin-owner-context');
-  assert.equal(blocker.resourceKey, targetResourceKey);
+  assert.equal(blocker.resourceKey, resourceKey);
   assert.equal(blocker.pluginOwner, 'forms');
   assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
   assert.equal(Object.hasOwn(remote.files, 'index.php'), false);
@@ -6746,7 +6746,7 @@ test('blocks plugin-owned deletions while preserving remote-only plugin drift an
   remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-private-forms-code */';
 
   const plan = planFor(base, local, remote);
-  const blocker = plan.blockers.find((entry) => entry.resourceKey === targetResourceKey);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
 
   assert.equal(plan.status, 'blocked');
   assert.equal(plan.summary.mutations, 0);
@@ -6757,7 +6757,7 @@ test('blocks plugin-owned deletions while preserving remote-only plugin drift an
   assert.equal(decisionFor(plan, 'file:wp-content/plugins/forms/forms.php').decision, 'keep-remote');
   assert.equal(mutationFor(plan, resourceKey), undefined);
   assert.equal(blocker.class, 'stale-plugin-owner-context');
-  assert.equal(blocker.resourceKey, targetResourceKey);
+  assert.equal(blocker.resourceKey, resourceKey);
   assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
   assert.equal(remote.plugins.forms.version, '1.1.1');
   assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-private-forms-code */');
@@ -6796,7 +6796,7 @@ test('blocks plugin-owned deletions while preserving remote-only plugin drift an
   assert.equal(decisionFor(plan, 'file:wp-content/plugins/forms/forms.php').decision, 'keep-remote');
   assert.equal(mutationFor(plan, resourceKey), undefined);
   assert.equal(blocker.class, 'stale-plugin-owner-context');
-  assert.equal(blocker.resourceKey, targetResourceKey);
+  assert.equal(blocker.resourceKey, resourceKey);
   assert.equal(blocker.pluginOwner, 'forms');
   assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
   assert.equal(Object.hasOwn(remote.files, 'index.php'), false);
@@ -6824,8 +6824,7 @@ test('blocks plugin-owned deletions while preserving remote-only plugin drift an
   remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-private-forms-code */';
 
   const plan = planFor(base, local, remote);
-  const blocker = plan.blockers.find((entry) =>
-    entry.class === 'unsupported-attachment-resource' && entry.resourceKey === targetResourceKey);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
 
   assert.equal(plan.status, 'blocked');
   assert.equal(plan.summary.mutations, 0);
@@ -6835,7 +6834,7 @@ test('blocks plugin-owned deletions while preserving remote-only plugin drift an
   assert.equal(decisionFor(plan, 'file:wp-content/plugins/forms/forms.php').decision, 'keep-remote');
   assert.equal(mutationFor(plan, resourceKey), undefined);
   assert.equal(blocker.class, 'stale-plugin-owner-context');
-  assert.equal(blocker.resourceKey, targetResourceKey);
+  assert.equal(blocker.resourceKey, resourceKey);
   assert.equal(blocker.pluginOwner, 'forms');
   assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
   assert.equal(remote.plugins.forms.version, '1.1.3');
@@ -6863,8 +6862,7 @@ test('blocks plugin-owned deletions while preserving remote-only plugin drift an
   remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin drift */';
 
   const plan = planFor(base, local, remote);
-  const blocker = plan.blockers.find((entry) =>
-    entry.class === 'unsupported-attachment-resource' && entry.resourceKey === targetResourceKey);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
 
   assert.equal(plan.status, 'blocked');
   assert.equal(plan.summary.mutations, 0);
@@ -6875,7 +6873,7 @@ test('blocks plugin-owned deletions while preserving remote-only plugin drift an
   assert.equal(decisionFor(plan, 'file:wp-content/plugins/forms/forms.php').decision, 'keep-remote');
   assert.equal(mutationFor(plan, resourceKey), undefined);
   assert.equal(blocker.class, 'stale-plugin-owner-context');
-  assert.equal(blocker.resourceKey, targetResourceKey);
+  assert.equal(blocker.resourceKey, resourceKey);
   assert.equal(blocker.pluginOwner, 'forms');
   assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
   assert.equal(remote.plugins.forms.description, 'remote-only plugin drift');
