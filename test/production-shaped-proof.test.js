@@ -3925,6 +3925,76 @@ test('packaged production plugin smoke readiness helper preserves timeout fallba
   );
 });
 
+test('packaged production plugin smoke readiness helper preserves timeout fallback probes when the snapshot probe times out and /wp-json/ becomes terminal', async () => {
+  const timeoutError = new Error('Timed out fetching http://127.0.0.1:65535/wp-json/reprint/v1/push/snapshot after 100ms');
+  timeoutError.name = 'TimeoutError';
+  const timeoutFallbackProbes = {
+    preflightProbe: {
+      route: '/wp-json/reprint/v1/push/preflight',
+      status: 404,
+      ok: false,
+      body: '{"code":"rest_no_route","message":"No route was found matching the URL and request method."}',
+      parsedBody: {
+        code: 'rest_no_route',
+        message: 'No route was found matching the URL and request method.',
+      },
+      ready: false,
+      retryable: true,
+      terminal: false,
+    },
+    indexProbe: {
+      route: '/wp-json/',
+      status: 401,
+      ok: false,
+      body: '{"code":"rest_forbidden","message":"forbidden"}',
+      parsedBody: {
+        code: 'rest_forbidden',
+        message: 'forbidden',
+      },
+      ready: false,
+      retryable: false,
+      terminal: true,
+    },
+  };
+  const helper = buildPackagedSmokeWaitHelper({
+    fetchTextWithTimeout: async () => {
+      throw timeoutError;
+    },
+    fetchPackagedTimeoutFallbackProbes: async () => timeoutFallbackProbes,
+    packagedProductionPluginClassifyTimeoutFallbackStartup: () => ({
+      kind: 'retryable-route-index-terminal',
+    }),
+  });
+  const child = {
+    exitCode: null,
+    signalCode: null,
+    pid: 9460,
+  };
+
+  await assert.rejects(
+    helper(child, 'http://127.0.0.1:65535', ['packaged smoke boot log']),
+    (error) => {
+      assert.match(
+        error.message,
+        /Packaged production plugin signed preflight stayed startup-shaped while \/wp-json\/ returned a terminal readiness failure HTTP 401 after the snapshot probe timed out/,
+      );
+      assert.match(
+        error.message,
+        /Last timeout fallback preflight route: \/wp-json\/reprint\/v1\/push\/preflight/,
+      );
+      assert.match(
+        error.message,
+        /Last timeout fallback index route: \/wp-json\//,
+      );
+      assert.match(
+        error.message,
+        /indexTerminal/,
+      );
+      return true;
+    },
+  );
+});
+
 test('packaged production plugin smoke readiness helper preserves invalid timeout fallback probes when signed preflight times out and /wp-json/ returns an invalid body', async () => {
   const timeoutError = new Error('Timed out fetching http://127.0.0.1:65535/wp-json/reprint/v1/push/snapshot after 100ms');
   timeoutError.name = 'TimeoutError';
@@ -3983,6 +4053,73 @@ test('packaged production plugin smoke readiness helper preserves invalid timeou
       assert.match(
         error.message,
         /invalidReadinessBody/,
+      );
+      return true;
+    },
+  );
+});
+
+test('packaged production plugin smoke readiness helper preserves terminal timeout fallback probes when signed preflight times out and /wp-json/ returns a terminal body', async () => {
+  const timeoutError = new Error('Timed out fetching http://127.0.0.1:65535/wp-json/reprint/v1/push/snapshot after 100ms');
+  timeoutError.name = 'TimeoutError';
+  const timeoutFallbackProbes = {
+    preflightProbe: {
+      route: '/wp-json/reprint/v1/push/preflight',
+      status: 0,
+      ok: false,
+      body: 'Timed out fetching http://127.0.0.1:65535/wp-json/reprint/v1/push/preflight after 100ms',
+      ready: false,
+      retryable: false,
+      terminal: false,
+      timedOut: true,
+    },
+    indexProbe: {
+      route: '/wp-json/',
+      status: 401,
+      ok: false,
+      body: '{"code":"rest_forbidden","message":"forbidden"}',
+      parsedBody: {
+        code: 'rest_forbidden',
+        message: 'forbidden',
+      },
+      ready: false,
+      retryable: false,
+      terminal: true,
+    },
+  };
+  const helper = buildPackagedSmokeWaitHelper({
+    fetchTextWithTimeout: async () => {
+      throw timeoutError;
+    },
+    fetchPackagedTimeoutFallbackProbes: async () => timeoutFallbackProbes,
+    packagedProductionPluginClassifyTimeoutFallbackStartup: () => ({
+      kind: 'timed-out-route-index-terminal',
+    }),
+  });
+  const child = {
+    exitCode: null,
+    signalCode: null,
+    pid: 9461,
+  };
+
+  await assert.rejects(
+    helper(child, 'http://127.0.0.1:65535', ['packaged smoke boot log']),
+    (error) => {
+      assert.match(
+        error.message,
+        /Packaged production plugin signed preflight probe timed out while \/wp-json\/ returned a terminal readiness failure HTTP 401 after the snapshot probe timed out/,
+      );
+      assert.match(
+        error.message,
+        /Last timeout fallback preflight route: \/wp-json\/reprint\/v1\/push\/preflight/,
+      );
+      assert.match(
+        error.message,
+        /Last timeout fallback index route: \/wp-json\//,
+      );
+      assert.match(
+        error.message,
+        /indexTerminal/,
       );
       return true;
     },
