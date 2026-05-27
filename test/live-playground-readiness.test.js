@@ -1515,6 +1515,21 @@ test('packaged server readiness fails closed for terminal production auth sessio
         cleanedUp: true,
       },
     },
+    {
+      label: 'wrong auth session type',
+      session: {
+        status: 'active',
+        type: 'lab-signed-push-session',
+        expiresAt: '2099-01-01T00:00:00Z',
+      },
+    },
+    {
+      label: 'missing auth session status',
+      session: {
+        type: 'production-auth-session',
+        expiresAt: '2099-01-01T00:00:00Z',
+      },
+    },
   ];
 
   for (const { label, session } of terminalSessions) {
