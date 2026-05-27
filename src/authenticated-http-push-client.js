@@ -1793,7 +1793,7 @@ function summarizeAuthSessionLifecycleHistory(history) {
   const observations = history.filter((entry) => entry && typeof entry === 'object');
   return {
     issued: observations.find((entry) => entry.step === 'preflight') || null,
-    read: [...observations].reverse().find((entry) => isAuthSessionReadStep(entry.step)) || null,
+    read: resolvePreferredAuthSessionReadObservation(observations),
     expired: observations.find((entry) => entry.expired) || null,
     revoked: observations.find((entry) => entry.revoked) || null,
     cleanedUp: observations.find((entry) => entry.cleanedUp) || null,
@@ -1809,6 +1809,13 @@ function isAuthSessionReadStep(step) {
     || step === 'recovery-inspect'
     || step === 'replay'
     || step === 'journal';
+}
+
+function resolvePreferredAuthSessionReadObservation(observations) {
+  const reversed = [...observations].reverse();
+  return reversed.find((entry) => entry.step === 'journal' || entry.step === 'replay')
+    || reversed.find((entry) => isAuthSessionReadStep(entry.step))
+    || null;
 }
 
 function summarizeSnapshot(response, local) {

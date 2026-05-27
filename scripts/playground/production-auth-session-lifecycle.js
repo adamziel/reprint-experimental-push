@@ -434,13 +434,7 @@ export function summarizeProductionAuthSessionLifecycleTrace(trace) {
         preserved: isAuthSessionReadStep(entry.step) && entry.preserved === true,
       };
     });
-  const readObservation = [...observations]
-    .reverse()
-    .find((entry) => entry.step === 'journal'
-      || entry.step === 'replay'
-      || entry.step === 'recovery-inspect'
-      || entry.step === 'apply'
-      || entry.step === 'dry-run') ?? null;
+  const readObservation = resolvePreferredAuthSessionReadObservation(observations);
 
   return {
     issued: observations.find((entry) => entry.step === 'preflight') ?? null,
@@ -460,6 +454,13 @@ function isAuthSessionReadStep(step) {
     || step === 'recovery-inspect'
     || step === 'replay'
     || step === 'journal';
+}
+
+function resolvePreferredAuthSessionReadObservation(observations) {
+  const reversed = [...observations].reverse();
+  return reversed.find((entry) => entry.step === 'journal' || entry.step === 'replay')
+    || reversed.find((entry) => isAuthSessionReadStep(entry.step))
+    || null;
 }
 
 function normalizeAuthSessionObservationId(id) {
