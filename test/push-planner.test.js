@@ -31850,7 +31850,7 @@ test('blocks remote-only legacy link drift while preserving a matching independe
   assert.equal(remote.plugins.forms.description, 'remote-only plugin changes');
 });
 
-test('blocks legacy links graph resources while preserving a matching independent delete and remote-only plugin changes', () => {
+test('blocks legacy link resource deletes while preserving a matching independent delete and remote-only plugin changes', () => {
   const resourceKey = 'row:["wp_links","link_id:21"]';
   const base = baseSite();
   base.db.wp_links = {
