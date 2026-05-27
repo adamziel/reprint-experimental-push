@@ -258,6 +258,33 @@ test('guarded executor benchmark keeps large-site rollout proof bounded and name
       ],
     },
     {
+      id: 'compressed-remote-index-and-cached-release-manifest-skips-release-bundle-commit',
+      rejectedGate: 'group',
+      blockerRefs: [
+        'production-atomic-group-commit-not-measured',
+        'production-storage-receipts-not-measured',
+        'production-row-batch-executor-not-measured',
+      ],
+    },
+    {
+      id: 'compressed-remote-index-and-cached-release-manifest-and-batched-receipt-flush-skips-release-bundle-commit-after-pause',
+      rejectedGate: 'group',
+      blockerRefs: [
+        'production-atomic-group-commit-not-measured',
+        'production-storage-receipts-not-measured',
+        'production-row-batch-executor-not-measured',
+      ],
+    },
+    {
+      id: 'compressed-remote-index-and-batched-row-receipts-skips-release-bundle-commit',
+      rejectedGate: 'group',
+      blockerRefs: [
+        'production-atomic-group-commit-not-measured',
+        'production-storage-receipts-not-measured',
+        'production-row-batch-executor-not-measured',
+      ],
+    },
+    {
       id: 'compressed-remote-index-and-cached-row-batch-receipts-skips-release-bundle-commit-after-pause-and-backpressure',
       rejectedGate: 'recovery',
       blockerRefs: [
@@ -364,7 +391,7 @@ test('guarded executor benchmark keeps large-site rollout proof bounded and name
   assert.deepEqual(
     report.claims.productionThroughputDetails.rejectedFastPathGateSummary,
     [
-      { rejectedGate: 'group', count: 3 },
+      { rejectedGate: 'group', count: 6 },
       { rejectedGate: 'live', count: 1 },
       { rejectedGate: 'recovery', count: 4 },
     ],
@@ -9915,6 +9942,54 @@ test('guarded benchmark carries direct aligned queue-slack proof blockers into r
     'queue-pause-without-consistent-receipt-cursor-slack',
     'queue-pause-without-memory-safe-receipt-cursor-slack',
   ]);
+});
+
+test('guarded benchmark surfaces release-manifest release-bundle commit blockers at runtime', () => {
+  const report = largeBenchmark();
+  const details = productionThroughputDetails(report);
+
+  assert.deepEqual(
+    details.rejectedFastPaths
+      .filter((entry) => [
+        'compressed-remote-index-and-cached-release-manifest-skips-release-bundle-commit',
+        'compressed-remote-index-and-cached-release-manifest-and-batched-receipt-flush-skips-release-bundle-commit-after-pause',
+        'compressed-remote-index-and-batched-row-receipts-skips-release-bundle-commit',
+      ].includes(entry.id))
+      .map((entry) => ({
+        id: entry.id,
+        rejectedGate: entry.rejectedGate,
+        blockerRefs: entry.blockerRefs,
+      })),
+    [
+      {
+        id: 'compressed-remote-index-and-cached-release-manifest-skips-release-bundle-commit',
+        rejectedGate: 'group',
+        blockerRefs: [
+          'production-atomic-group-commit-not-measured',
+          'production-storage-receipts-not-measured',
+          'production-row-batch-executor-not-measured',
+        ],
+      },
+      {
+        id: 'compressed-remote-index-and-cached-release-manifest-and-batched-receipt-flush-skips-release-bundle-commit-after-pause',
+        rejectedGate: 'group',
+        blockerRefs: [
+          'production-atomic-group-commit-not-measured',
+          'production-storage-receipts-not-measured',
+          'production-row-batch-executor-not-measured',
+        ],
+      },
+      {
+        id: 'compressed-remote-index-and-batched-row-receipts-skips-release-bundle-commit',
+        rejectedGate: 'group',
+        blockerRefs: [
+          'production-atomic-group-commit-not-measured',
+          'production-storage-receipts-not-measured',
+          'production-row-batch-executor-not-measured',
+        ],
+      },
+    ],
+  );
 });
 
 test('guarded benchmark carries hidden staging-disk visibility blockers into rollout summaries under visible production capability evidence', () => {

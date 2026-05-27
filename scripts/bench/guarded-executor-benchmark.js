@@ -111,6 +111,30 @@ const ROLLOUT_REJECTED_FAST_PATH_SPECS = Object.freeze([
     ]),
   }),
   Object.freeze({
+    id: 'compressed-remote-index-and-cached-release-manifest-skips-release-bundle-commit',
+    blockerRefs: Object.freeze([
+      'production-atomic-group-commit-not-measured',
+      'production-storage-receipts-not-measured',
+      'production-row-batch-executor-not-measured',
+    ]),
+  }),
+  Object.freeze({
+    id: 'compressed-remote-index-and-cached-release-manifest-and-batched-receipt-flush-skips-release-bundle-commit-after-pause',
+    blockerRefs: Object.freeze([
+      'production-atomic-group-commit-not-measured',
+      'production-storage-receipts-not-measured',
+      'production-row-batch-executor-not-measured',
+    ]),
+  }),
+  Object.freeze({
+    id: 'compressed-remote-index-and-batched-row-receipts-skips-release-bundle-commit',
+    blockerRefs: Object.freeze([
+      'production-atomic-group-commit-not-measured',
+      'production-storage-receipts-not-measured',
+      'production-row-batch-executor-not-measured',
+    ]),
+  }),
+  Object.freeze({
     id: 'compressed-remote-index-and-cached-row-batch-receipts-skips-release-bundle-commit-after-pause-and-backpressure',
     blockerRefs: Object.freeze([
       'queue-pause-with-complete-footprint-without-measured-and-aligned-receipt-cursor-queue-slack',
