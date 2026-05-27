@@ -186,10 +186,10 @@ test('package scripts pin the bounded plugin-driver duplicate-table guard entryp
   );
 });
 
-test('package scripts pin the bounded plugin-driver proof bundle entrypoint', () => {
+test('package scripts pin the bounded plugin-driver proof mode entrypoint', () => {
   assert.equal(
     packageJson.scripts['test:playground:production-plugin-driver-proof'],
-    'REPRINT_PUSH_PACKAGE_SMOKE_SCENARIO=driver-delete-apply,driver-verifier-guards node ./scripts/playground/production-plugin-package-smoke.mjs',
+    'REPRINT_PUSH_PACKAGE_SMOKE_MODE=driver-proof-only node ./scripts/playground/production-plugin-package-smoke.mjs',
   );
 });
 
