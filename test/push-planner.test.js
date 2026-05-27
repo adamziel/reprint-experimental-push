@@ -47695,6 +47695,51 @@ test('blocks steady unsupported special file entries before they can be treated 
   assert.equal(remote.files['wp-content/plugins/forms/forms.php'], undefined);
 });
 
+test('blocks steady unsupported special file entries before they can be treated as already in sync while preserving a matching independent delete and remote-only plugin removals', () => {
+  const resourceKey = 'file:wp-content/uploads/steady-delete-symlink';
+  const matchingDeleteResourceKey = 'file:about.php';
+  const base = baseSite();
+  base.files['wp-content/uploads/steady-delete-symlink'] = { type: 'symlink', target: '../shared/delete-target' };
+  base.files['about.php'] = '<?php echo "base about";';
+
+  const local = baseSite();
+  local.files['wp-content/uploads/steady-delete-symlink'] = { type: 'symlink', target: '../shared/delete-target' };
+  delete local.files['about.php'];
+
+  const remote = baseSite();
+  remote.files['wp-content/uploads/steady-delete-symlink'] = JSON.parse(JSON.stringify(base.files['wp-content/uploads/steady-delete-symlink']));
+  delete remote.files['about.php'];
+  delete remote.plugins.forms;
+  delete remote.files['wp-content/plugins/forms/forms.php'];
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  const matchingDelete = decisionFor(plan, matchingDeleteResourceKey);
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.ok(plan.summary.decisions >= 2);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(plan.conflicts.length, 0);
+  assert.ok(blocker);
+  assert.equal(blocker.class, 'unsupported-special-file-resource');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.unsupportedState, 'steady-unsupported');
+  assert.equal(blocker.reason, 'Special file entries are not yet supported by the planner.');
+  assert.equal(matchingDelete.decision, 'already-in-sync');
+  assert.equal(matchingDelete.change.localChange, 'delete');
+  assert.equal(matchingDelete.change.remoteChange, 'delete');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('../shared/delete-target'), false);
+  assert.equal(Object.hasOwn(remote.files, 'about.php'), false);
+  assert.equal(remote.plugins.forms, undefined);
+  assert.equal(remote.files['wp-content/plugins/forms/forms.php'], undefined);
+});
+
 test('blocks steady unsupported special file entries before they can be treated as already in sync while preserving a matching independent edit and remote-only plugin changes', () => {
   const resourceKey = 'file:wp-content/uploads/steady-symlink';
   const matchingEditResourceKey = 'row:["wp_posts","ID:1"]';
