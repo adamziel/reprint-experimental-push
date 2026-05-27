@@ -28,8 +28,28 @@ const packagedBoundaryRequested = shouldRequestPackagedProductionPluginAuthSessi
   fixtureApplicationPassword: credentials.applicationPassword,
 });
 const innerVerifyTimeoutMs = packagedBoundaryRequested ? 180_000 : 90_000;
+const applyRevalidationTimeoutMs = packagedBoundaryRequested ? 60_000 : 45_000;
 
 if (packagedBoundaryRequested) {
+  const verify = runCheckedReleaseVerify();
+  const applyRevalidation = runApplyRevalidationProof();
+  emitCombinedReleaseProof(verify, applyRevalidation);
+} else {
+  await withPlaygroundServer('remote-base', remoteBaseFixturePath, async (remoteServer) => {
+    const verify = runCheckedReleaseVerify({
+      REPRINT_PUSH_SOURCE_URL: remoteServer.baseUrl,
+      REPRINT_PUSH_REMOTE_URL: remoteServer.baseUrl,
+      REPRINT_PUSH_USERNAME: credentials.username,
+      REPRINT_PUSH_APPLICATION_PASSWORD: credentials.applicationPassword,
+      REPRINT_PUSH_LAB_AUTH_ADMIN_USER: credentials.username,
+      REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD: credentials.applicationPassword,
+    });
+    const applyRevalidation = runApplyRevalidationProof();
+    emitCombinedReleaseProof(verify, applyRevalidation);
+  });
+}
+
+function runCheckedReleaseVerify(envOverrides = {}) {
   const verify = spawnSync(process.execPath, ['scripts/playground/production-shaped-release-verify.mjs'], {
     cwd: repoRoot,
     encoding: 'utf8',
@@ -38,43 +58,75 @@ if (packagedBoundaryRequested) {
     maxBuffer: 1024 * 1024 * 20,
     env: {
       ...process.env,
+      ...envOverrides,
       NODE_NO_WARNINGS: '1',
     },
   });
 
-  process.stdout.write(verify.stdout || '');
   process.stderr.write(verify.stderr || '');
-
   assert.equal(verify.error, undefined, verify.error?.stack || verify.stderr || verify.stdout);
   assert.equal(verify.signal, null, verify.stderr || verify.stdout);
   assert.equal(verify.status, 0, verify.stderr || verify.stdout);
-} else {
-  await withPlaygroundServer('remote-base', remoteBaseFixturePath, async (remoteServer) => {
-    const verify = spawnSync(process.execPath, ['scripts/playground/production-shaped-release-verify.mjs'], {
-      cwd: repoRoot,
-      encoding: 'utf8',
-      timeout: innerVerifyTimeoutMs,
-      killSignal: 'SIGKILL',
-      maxBuffer: 1024 * 1024 * 20,
-      env: {
-        ...process.env,
-        REPRINT_PUSH_SOURCE_URL: remoteServer.baseUrl,
-        REPRINT_PUSH_REMOTE_URL: remoteServer.baseUrl,
-        REPRINT_PUSH_USERNAME: credentials.username,
-        REPRINT_PUSH_APPLICATION_PASSWORD: credentials.applicationPassword,
-        REPRINT_PUSH_LAB_AUTH_ADMIN_USER: credentials.username,
-        REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD: credentials.applicationPassword,
-        NODE_NO_WARNINGS: '1',
-      },
-    });
+  return parseJsonOutput(verify.stdout, 'checked live release verify');
+}
 
-    process.stdout.write(verify.stdout || '');
-    process.stderr.write(verify.stderr || '');
-
-    assert.equal(verify.error, undefined, verify.error?.stack || verify.stderr || verify.stdout);
-    assert.equal(verify.signal, null, verify.stderr || verify.stdout);
-    assert.equal(verify.status, 0, verify.stderr || verify.stdout);
+function runApplyRevalidationProof() {
+  const proof = spawnSync(process.execPath, ['scripts/playground/production-shaped-apply-revalidation-smoke.mjs'], {
+    cwd: repoRoot,
+    encoding: 'utf8',
+    timeout: applyRevalidationTimeoutMs,
+    killSignal: 'SIGKILL',
+    maxBuffer: 1024 * 1024 * 20,
+    env: {
+      ...process.env,
+      NODE_NO_WARNINGS: '1',
+    },
   });
+
+  process.stderr.write(proof.stderr || '');
+  assert.equal(proof.error, undefined, proof.error?.stack || proof.stderr || proof.stdout);
+  assert.equal(proof.signal, null, proof.stderr || proof.stdout);
+  assert.equal(proof.status, 0, proof.stderr || proof.stdout);
+
+  const summary = parseJsonOutput(proof.stdout, 'apply revalidation proof');
+  return {
+    ok: summary.ok === true,
+    topology: summary.topology || null,
+    preflight: {
+      status: summary.preflight?.status ?? null,
+      routeProfile: summary.preflight?.routeProfile?.profile || summary.preflight?.routeProfile || null,
+      sessionType: summary.preflight?.session?.type || null,
+    },
+    dryRun: {
+      status: summary.dryRun?.status ?? null,
+      mode: summary.dryRun?.mode || null,
+      receiptHash: summary.dryRun?.receiptHash || null,
+    },
+    apply: summary.apply || null,
+    recoveryInspect: summary.recoveryInspect || null,
+    boundary: summary.boundary || null,
+  };
+}
+
+function emitCombinedReleaseProof(verify, applyRevalidation) {
+  process.stdout.write(
+    JSON.stringify(
+      {
+        ...verify,
+        applyRevalidation,
+      },
+      null,
+      2,
+    ),
+  );
+  process.stdout.write('\n');
+}
+
+function parseJsonOutput(stdout, label) {
+  const trimmed = (stdout || '').trim();
+  const firstBrace = trimmed.indexOf('{');
+  assert.notEqual(firstBrace, -1, `${label} did not emit JSON\n${stdout}`);
+  return JSON.parse(trimmed.slice(firstBrace));
 }
 
 async function withPlaygroundServer(name, blueprintPath, run) {

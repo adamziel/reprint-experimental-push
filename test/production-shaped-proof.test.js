@@ -3803,6 +3803,15 @@ maybeTest('production-shaped release verify command runs the live protocol branc
       proof.stdout,
       /"replayAndRetry": \{\s*"required": "\/snapshot",\s*"observed": "\/snapshot",\s*"retryAttempts": 2,\s*"verdict": "PRESERVED_REMOTE_RETRY_PROVEN"\s*\}/,
     );
+    assert.match(proof.stdout, /"applyRevalidation": \{\s*"ok": true,/);
+    assert.match(
+      proof.stdout,
+      /"applyRevalidation": \{[\s\S]*"apply": \{\s*"status": 412,\s*"code": "PRECONDITION_FAILED",\s*"preconditionCheck": "just-in-time",\s*"recovery": \{\s*"required": true,\s*"state": "blocked-recovery"/,
+    );
+    assert.match(
+      proof.stdout,
+      /"applyRevalidation": \{[\s\S]*"boundary": \{\s*"firstRemainingProductionBoundary": "auth\/session lifecycle and durable journal semantics",\s*"verdict": "PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED"/,
+    );
     assert.match(proof.stdout, /"preflight": \{\s*"status": 200,\s*"ok": true,\s*"mode": "preflight"/);
   });
 });
