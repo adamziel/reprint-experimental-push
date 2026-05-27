@@ -165,6 +165,36 @@ const ROLLOUT_REJECTED_FAST_PATH_SPECS = Object.freeze([
     ]),
   }),
   Object.freeze({
+    id: 'cached-receipt-cursor-and-staging-disk-headroom-skips-atomic-group-commit-after-pause',
+    blockerRefs: Object.freeze([
+      'queue-pause-with-complete-footprint-without-measured-and-aligned-receipt-cursor-queue-slack',
+      'queue-pause-without-measured-and-aligned-receipt-cursor-queue-slack-proof',
+      'queue-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof',
+      'staging-disk-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof',
+      'staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint',
+    ]),
+  }),
+  Object.freeze({
+    id: 'cached-receipt-cursor-and-staging-disk-headroom-skips-release-bundle-commit-after-pause',
+    blockerRefs: Object.freeze([
+      'queue-pause-with-complete-footprint-without-measured-and-aligned-receipt-cursor-queue-slack',
+      'queue-pause-without-measured-and-aligned-receipt-cursor-queue-slack-proof',
+      'queue-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof',
+      'staging-disk-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof',
+      'staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint',
+    ]),
+  }),
+  Object.freeze({
+    id: 'cached-receipt-cursor-staging-disk-headroom-and-journal-lag-skips-release-bundle-commit-after-pause',
+    blockerRefs: Object.freeze([
+      'queue-pause-with-complete-footprint-without-measured-and-aligned-receipt-cursor-queue-slack',
+      'queue-pause-without-measured-and-aligned-receipt-cursor-queue-slack-proof',
+      'queue-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof',
+      'staging-disk-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof',
+      'staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint',
+    ]),
+  }),
+  Object.freeze({
     id: 'cached-receipt-cursor-and-queue-budget-match-skips-backpressure-pause-after-retry',
     blockerRefs: Object.freeze([
       'queue-pause-without-measured-queue-headroom-proof',
