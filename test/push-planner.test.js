@@ -24620,6 +24620,137 @@ test('openProductionRecoveryJournal fails closed when the compatibility overload
   });
 });
 
+test('openProductionRecoveryJournal fails closed when a consumed claim is reopened with a prototype artifactRefs.remote', () => {
+  const base = baseSite();
+  const local = structuredClone(base);
+  local.db.wp_options['option_name:blogname'] = {
+    option_name: 'blogname',
+    option_value: 'Consumed Claim Prototype Artifact Refs Remote Site',
+  };
+  const remote = structuredClone(base);
+  const plan = planFor(base, local, remote);
+  const filePath = tempRecoveryJournalPath();
+  const remoteArtifactPath = `${path.dirname(filePath)}/consumed-prototype-artifact-refs-remote.jsonl`;
+  const claimId = 'claim-consumed-prototype-artifact-refs-remote';
+  const writerLease = { id: claimId, epoch: 3 };
+  const artifactRefs = {
+    journal: filePath,
+    remote: remoteArtifactPath,
+  };
+  const journal = openProductionRecoveryJournal(filePath, {
+    truncate: true,
+    now: fixedNow,
+    claimId,
+    writerLease,
+    ownsRemoteArtifact: true,
+    remoteArtifactPath,
+  });
+  appendRecoveryClaimOpened(journal, {
+    plan,
+    current: remote,
+    claimId,
+    artifactRefs,
+  });
+  journal.close();
+
+  consumeProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs,
+    writerLease,
+  });
+
+  const prototypeArtifactRefs = Object.create({
+    remote: remoteArtifactPath,
+  });
+  prototypeArtifactRefs.journal = filePath;
+  const error = captureError(() => openProductionRecoveryJournal(filePath, {
+    claimId,
+    writerLease,
+    ownsRemoteArtifact: true,
+    remoteArtifactPath,
+    artifactRefs: prototypeArtifactRefs,
+  }));
+
+  assert.equal(error.code, 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL');
+  assert.equal(
+    error.message,
+    'Production recovery journal support requires strict plain artifact refs.',
+  );
+  assert.deepEqual(error.details.artifactRefs, {
+    journal: null,
+    remote: null,
+  });
+});
+
+test('openProductionRecoveryJournal fails closed when the compatibility overload reopens a consumed claim with a prototype artifactRefs.remote', () => {
+  const base = baseSite();
+  const local = structuredClone(base);
+  local.db.wp_options['option_name:blogname'] = {
+    option_name: 'blogname',
+    option_value: 'Consumed Claim Prototype Compatibility Artifact Refs Remote Site',
+  };
+  const remote = structuredClone(base);
+  const plan = planFor(base, local, remote);
+  const filePath = tempRecoveryJournalPath();
+  const remoteArtifactPath = `${path.dirname(filePath)}/consumed-prototype-compatibility-artifact-refs-remote.jsonl`;
+  const claimId = 'claim-consumed-prototype-compatibility-artifact-refs-remote';
+  const writerLease = { id: claimId, epoch: 3 };
+  const artifactRefs = {
+    journal: filePath,
+    remote: remoteArtifactPath,
+  };
+  const journal = openProductionRecoveryJournal(filePath, {
+    truncate: true,
+    now: fixedNow,
+    claimId,
+    writerLease,
+    ownsRemoteArtifact: true,
+    remoteArtifactPath,
+  });
+  appendRecoveryClaimOpened(journal, {
+    plan,
+    current: remote,
+    claimId,
+    artifactRefs,
+  });
+  journal.close();
+
+  consumeProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs,
+    writerLease,
+  });
+
+  const prototypeArtifactRefs = Object.create({
+    remote: remoteArtifactPath,
+  });
+  prototypeArtifactRefs.journal = filePath;
+  const error = captureError(() => openProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    claimId,
+    writerLease,
+    ownsRemoteArtifact: true,
+    artifactRefs: prototypeArtifactRefs,
+    remoteArtifactPath,
+  }));
+
+  assert.equal(error.code, 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL');
+  assert.equal(
+    error.message,
+    'Production recovery journal compatibility overload requires strict plain artifact refs.',
+  );
+  assert.deepEqual(error.details.artifactRefs, {
+    journal: null,
+    remote: null,
+  });
+});
+
 test('openProductionRecoveryJournal fails closed when a consumed claim is reopened with drifted artifactRefs.journal', () => {
   const base = baseSite();
   const local = structuredClone(base);
