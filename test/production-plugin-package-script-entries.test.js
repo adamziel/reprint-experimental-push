@@ -29,6 +29,13 @@ test('package scripts pin the bounded plugin-driver guard-only mode entrypoint',
   );
 });
 
+test('package scripts pin the standalone plugin-driver registry smoke entrypoint', () => {
+  assert.equal(
+    packageJson.scripts['test:playground:plugin-driver-registry'],
+    'node ./scripts/playground/plugin-owned-driver-registry-smoke.mjs',
+  );
+});
+
 test('package scripts pin the direct core package routes scenario entrypoint', () => {
   assert.equal(
     packageJson.scripts['test:playground:production-plugin-driver-core-package-routes'],
