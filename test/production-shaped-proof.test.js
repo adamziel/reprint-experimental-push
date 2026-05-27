@@ -3825,6 +3825,10 @@ test('packaged release verifier readiness helper waits through packaged-route st
   const sleepCalls = [];
   const helper = buildPackagedReleaseVerifierWaitHelper({
     packagedProductionPluginRouteStartupClassificationReady: () => true,
+    packagedProductionPluginGlobalStartupStillWithinBudget: () => false,
+    buildPackagedTimeoutFallbackProbe: () => {
+      throw new Error('unexpected timeout fallback probe during packaged-route startup budget runtime proof');
+    },
     fetchTextWithTimeout: async (url) => {
       fetchCalls.push(url);
       if (url.endsWith('/wp-json/reprint/v1/push/snapshot')) {
@@ -4297,6 +4301,9 @@ test('packaged release verifier readiness helper waits through global WordPress 
     fetchPackagedPreflightProbe: async () => {
       throw new Error('unexpected snapshot-startup fallback preflight probe');
     },
+    fetchPackagedTimeoutFallbackProbes: async () => {
+      throw new Error('unexpected timeout fallback probes during packaged-route startup budget runtime proof');
+    },
     fetchPackagedWordPressIndexProbe: async () => ({
       route: '/wp-json/',
       status: 503,
@@ -4309,6 +4316,14 @@ test('packaged release verifier readiness helper waits through global WordPress 
     }),
     sleepUnlessChildExit: async (ms, child) => {
       sleepCalls.push({ ms, child });
+    },
+    throwPlaygroundReadinessFailure: async (child, prefix) => {
+      const error = new Error(prefix);
+      error.isPlaygroundReadinessFailure = true;
+      throw error;
+    },
+    stopSpawnedServer: async () => {
+      throw new Error('unexpected server stop during packaged-route startup budget runtime proof');
     },
   });
   const child = {
@@ -7918,6 +7933,11 @@ test('packaged readiness helpers keep a bounded widened route-startup budget aft
       /Packaged production plugin signed preflight stayed startup-shaped after global WordPress startup HTTP[\s\S]*?limit \$\{maxPackagedRouteStartupAfterGlobalReadyProbes\}/s,
     );
   }
+
+  assert.match(
+    verifierSource,
+    /Packaged production plugin signed preflight stayed startup-shaped after global WordPress startup HTTP \$\{indexProbe\.status\} for \$\{preflightNotReadyProbeCount\} consecutive response\$\{preflightNotReadyProbeCount === 1 \? '' : 's'\} \(limit \$\{maxPackagedRouteStartupAfterGlobalReadyProbes\}\)[\s\S]*?packagedRouteStartup:\s*true[\s\S]*?preflightNotReadyProbeCount,/s,
+  );
 });
 
 test('lab Playground readiness helper rejects malformed ready responses and retries only startup-shaped failures', () => {
