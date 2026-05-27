@@ -8,6 +8,11 @@ import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 import { buildAuthSessionSourceCommand } from './auth-session-source-command.js';
+import {
+  buildComplexSitePlannerProof,
+  buildComplexSiteReleaseEvidence,
+  buildComplexSiteSeedPhp,
+} from './local-production-complex-site-proof.js';
 import { releaseVerifyFixtureCredentials } from './release-verify-credentials.js';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
@@ -19,6 +24,7 @@ const readinessProbeIntervalMs = 1000;
 const credentials = releaseVerifyFixtureCredentials;
 const fullBrewcommerceImport = process.env.REPRINT_PUSH_LOCAL_PRODUCTION_FULL_BREWCOMMERCE === '1';
 const installWooCommerce = fullBrewcommerceImport || process.env.REPRINT_PUSH_LOCAL_PRODUCTION_INSTALL_WOOCOMMERCE === '1';
+const complexSiteProofEnabled = process.env.REPRINT_PUSH_LOCAL_PRODUCTION_COMPLEX_SITE_PROOF === '1';
 
 const siteVariants = Object.freeze([
   {
@@ -67,6 +73,7 @@ try {
     runtime: 'local-playground-wordpress',
     fullBrewcommerceImport,
     installWooCommerce,
+    complexSiteProofEnabled,
     brewcommerceBlueprintDir: brewcommerceDir,
     tempDir,
     sites: blueprints.map(({ variant, blueprintPath }) => ({
@@ -82,6 +89,9 @@ try {
   }
 
   const urls = Object.fromEntries(servers.map((server) => [server.key, server.baseUrl]));
+  const complexSitePlannerProof = complexSiteProofEnabled
+    ? await buildAndPrintComplexSitePlannerProof(urls)
+    : null;
   const authSessionSourceCommand = buildAuthSessionSourceCommand({
     sourceUrl: urls.source,
     username: credentials.username,
@@ -109,6 +119,16 @@ try {
     authSessionSourceCommand,
   });
 
+  let complexSiteReleaseEvidence = null;
+  if (complexSiteProofEnabled) {
+    complexSiteReleaseEvidence = buildComplexSiteReleaseEvidence({
+      plannerProof: complexSitePlannerProof,
+      verifyOutput: verify.stdout,
+      verifyStatus: verify.status,
+      verifySignal: verify.signal,
+    });
+  }
+
   process.stdout.write(JSON.stringify({
     event: 'local-production-release-result',
     status: verify.status,
@@ -120,8 +140,15 @@ try {
   process.stdout.write('\n');
   process.stdout.write(verify.stdout);
   process.stderr.write(verify.stderr);
+  if (complexSiteReleaseEvidence) {
+    process.stdout.write(JSON.stringify({
+      event: 'local-production-complex-site-release-proof',
+      ...complexSiteReleaseEvidence,
+    }, null, 2));
+    process.stdout.write('\n');
+  }
 
-  process.exitCode = verify.status === 0 ? 0 : 1;
+  process.exitCode = verify.status === 0 && (!complexSiteReleaseEvidence || complexSiteReleaseEvidence.ok) ? 0 : 1;
 } catch (error) {
   process.stderr.write(`${error instanceof Error ? error.stack || error.message : String(error)}\n`);
   process.exitCode = 1;
@@ -253,7 +280,46 @@ function buildSiteSeedPhp(variant) {
     "$wpdb->query('CREATE TABLE IF NOT EXISTS ' . $release_table . ' (state_id bigint(20) unsigned NOT NULL, payload_json longtext NOT NULL, updated_marker varchar(32) NOT NULL, PRIMARY KEY (state_id)) ' . $wpdb->get_charset_collate());",
     "$release_payload = wp_json_encode(array('owner'=>'reprint-push','mode'=>" + phpString(variant.releaseStateMode) + ",'version'=>" + String(variant.releaseStateVersion) + ",'releaseBoundaryProof'=>'plugin-driver-boundary'));",
     "$wpdb->replace($release_table, array('state_id'=>1,'payload_json'=>$release_payload,'updated_marker'=>" + phpString(variant.releaseStateMarker) + "), array('%d','%s','%s'));",
+    complexSiteProofEnabled ? buildComplexSiteSeedPhp(variant) : '',
   ].join(' ');
+}
+
+async function buildAndPrintComplexSitePlannerProof(urls) {
+  const [sourceSnapshot, localEditedSnapshot, remoteChangedSnapshot] = await Promise.all([
+    exportSnapshot('source', urls.source),
+    exportSnapshot('local-edited', urls['local-edited']),
+    exportSnapshot('remote-changed', urls['remote-changed']),
+  ]);
+  const proof = buildComplexSitePlannerProof({
+    sourceSnapshot,
+    localEditedSnapshot,
+    remoteChangedSnapshot,
+    fullBrewcommerceImport,
+    installWooCommerce,
+    brewcommerceBlueprintDir: brewcommerceDir,
+  });
+  process.stdout.write(JSON.stringify({
+    event: 'local-production-complex-site-planner-proof',
+    ...proof,
+  }, null, 2));
+  process.stdout.write('\n');
+  assert.equal(proof.ok, true, `Complex-site local production planner proof failed:\n${JSON.stringify(proof, null, 2)}`);
+  return proof;
+}
+
+async function exportSnapshot(label, baseUrl) {
+  const response = await fetchWithTimeout(`${baseUrl}/wp-json/reprint-push-lab/v1/snapshot`, 15000);
+  const body = await response.text();
+  assert.equal(response.status, 200, `${label} snapshot HTTP ${response.status}: ${body.slice(0, 240)}`);
+  let payload;
+  try {
+    payload = JSON.parse(body);
+  } catch (error) {
+    throw new Error(`${label} snapshot returned invalid JSON: ${error.message}\n${body.slice(0, 500)}`);
+  }
+  assert.equal(payload.ok, true, `${label} snapshot body not ok: ${body.slice(0, 240)}`);
+  assert.ok(payload.snapshot, `${label} snapshot payload missing snapshot`);
+  return payload.snapshot;
 }
 
 async function startLocalWordPressSite(variant, blueprintPath) {

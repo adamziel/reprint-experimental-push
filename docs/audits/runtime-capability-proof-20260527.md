@@ -24,6 +24,16 @@ Current sandbox result:
 - Closest checked local substitute: `npm run verify:release:local-production`
   with the Brewcommerce blueprint assets under
   `/tmp/wp-blueprints-brewcommerce/blueprints/brewcommerce`.
+- Complex local substitute: `npm run verify:release:local-production:complex-site`
+  passed on 2026-05-28 00:03 CEST. It remains local Playground evidence, but it
+  adds a bounded Brewcommerce-derived site with 22 checked mutations, a dry-run
+  receipt, auth/session readback, durable DB-journal gates, and remote-drift
+  no-data-loss conflicts.
+- Full Brewcommerce/WooCommerce import was attempted with
+  `REPRINT_PUSH_LOCAL_PRODUCTION_FULL_BREWCOMMERCE=1`; all four sites booted,
+  but the checked release verifier failed closed with
+  `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED` after source auth/session
+  preflight timed out. That run is a blocker signal, not release evidence.
 
 The exact next command for a Docker or external WordPress host is:
 

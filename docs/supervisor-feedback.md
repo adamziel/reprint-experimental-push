@@ -1,9 +1,36 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-27 23:39 CEST
+Last updated: 2026-05-28 00:03 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-28 00:03 CEST - Complex Local Production Evidence
+
+- Going well: `npm run verify:release:local-production:complex-site` passed
+  against four Brewcommerce-derived local Playground WordPress sites. The proof
+  reported 22 mutations, 22 live-remote preconditions, a dry-run receipt,
+  auth/session continuity, durable DB-journal acceptance, and replay
+  equivalence.
+- Also going well: the remote-drift planner proof failed closed with 9
+  preserve-remote conflicts and no unsupported plugin-owned blockers.
+- Not going well: the full Brewcommerce/WooCommerce import path booted all four
+  sites but failed closed at the checked source auth/session preflight timeout.
+  Docker/external WordPress remains unavailable in this sandbox.
+- Progress change: bounded complex-site evidence moves invariants, recovery,
+  reliable executor, fast-path, and independent evidence slightly up. It does
+  not make the release ready.
+- Next nudge: either expand journal pagination/receipt windows beyond the
+  accepted 22-mutation proof or rerun the same checked path on Docker/external
+  WordPress.
+
+| Lane | Nudge |
+| --- | --- |
+| Invariants | Keep remote-drift conflicts preserve-remote while expanding graph surfaces beyond posts/postmeta/files/options. |
+| Recovery | Prove the same 22-mutation journal path through Docker/external restart or expand DB-journal readback windows safely. |
+| Reliable executor | Preserve the auth/session and durable-journal gates while moving off Playground. |
+| Fast paths | Turn the bounded receipt proof into chunk/window evidence before claiming large-site throughput. |
+| Audit and critic | Treat the full Woo timeout and 35-mutation readback failure as blockers, not successes. |
 
 ## 2026-05-27 23:39 CEST - Runtime And Graph Evidence Integrated
 

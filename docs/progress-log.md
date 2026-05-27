@@ -4,6 +4,59 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-05-28 - Complex Local Production Evidence
+
+- Last update: 2026-05-28 00:03 CEST.
+- Current complex-site lane:
+  `lane/complex-site-local-production-20260527`.
+- Full Brewcommerce/WooCommerce import attempt:
+
+  ```bash
+  REPRINT_PUSH_LOCAL_PRODUCTION_FULL_BREWCOMMERCE=1 \
+  REPRINT_PUSH_LOCAL_PROD_STARTUP_TIMEOUT_MS=120000 \
+  NODE_NO_WARNINGS=1 \
+  timeout 240s node ./scripts/playground/local-production-release-verify.mjs
+  ```
+
+  It booted all four local Playground WordPress sites, then failed closed in the
+  checked release verifier with `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED`
+  because the live source auth/session preflight read timed out. This is not
+  accepted release evidence.
+- New bounded proof command:
+  `npm run verify:release:local-production:complex-site` passed.
+- Complex-site planner evidence: the Brewcommerce-derived local topology now
+  seeds 14 exported posts per site, including 12 complex fixture posts, 5
+  complex form-schema postmeta rows, 3 complex upload files, 4 forms-lab rows,
+  1 release-state row, and 12 plugin-owned allowlist entries. The ready plan
+  has 22 mutations and 22 live-remote preconditions. The remote-drift plan
+  fails closed with 9 conflicts, all `preserve-remote-and-stop`.
+- Complex-site release evidence: the checked verifier applied 22 mutations,
+  emitted dry-run receipt
+  `e43b5f22433929fbea204fb0cd7e4d8ad8ce7a031badea3b89377416614804f6`,
+  reported 74 durable DB journal rows, `mutationApplied: 22`,
+  `applyCommitted: true`, `checkedAccepted: true`,
+  `AUTH_SESSION_BOUNDARY_OK`, `LIVE_RELEASE_BOUNDARY_OK` for auth session and
+  durable journal, replay equivalence, and
+  `releaseMovement.gates: candidate-for-review`.
+- Guardrail learned during implementation: a larger 35-mutation dense run
+  correctly failed closed because the current DB-journal readback window only
+  retained 25 mutation-applied events. The accepted proof is therefore bounded
+  to 22 mutations until journal pagination/receipt windows are expanded.
+- Targeted checks passed:
+  `node --check scripts/playground/local-production-complex-site-proof.js`,
+  `node --check scripts/playground/local-production-release-verify.mjs`,
+  `npm run test:playground:local-production-complex-site-proof`, and
+  `npm run verify:release:local-production:complex-site`.
+- Caveat: this remains local Playground production-shaped evidence. Docker or
+  external WordPress, external crash durability, rollback, broader WordPress
+  graph surfaces, and general plugin-driver proof still block final release
+  readiness.
+- Percent movement: merge invariants move from 54% to 55%; recovery boundaries
+  move from 45% to 46%; reliable executor/protocol moves from 60% to 61%;
+  fast path and chunking moves from 20% to 24% because there is now a bounded
+  complex-site receipt/journal proof, not a large chunk proof; independent
+  evidence moves from 51% to 53%.
+
 ## 2026-05-27 - Runtime And Graph Identity Evidence
 
 - Last update: 2026-05-27 23:39 CEST.

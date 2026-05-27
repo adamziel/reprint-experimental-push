@@ -474,13 +474,16 @@
       <div>
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
-        <p class="lead">Current integrated evidence is on <strong>lane/evidence-integration-20260527</strong>; it combines the durable local-production proof, the runtime capability proof, and the real Playground graph-identity proof. The local release movement remains <strong>candidate-for-review</strong>; Docker or external production WordPress and general plugin-driver proof still block final release readiness.</p>
-        <time class="update-stamp" datetime="2026-05-27T23:39:00+02:00">Last updated: May 27, 2026, 23:39 CEST</time>
+        <p class="lead">Current complex-site evidence is on <strong>lane/complex-site-local-production-20260527</strong>; it adds a bounded Brewcommerce-derived local production proof with 22 checked mutations, receipts, auth/session gates, durable DB-journal gates, and remote-drift conflict refusal. Docker or external production WordPress, full WooCommerce import stability, and general plugin-driver proof still block final release readiness.</p>
+        <time class="update-stamp" datetime="2026-05-28T00:03:00+02:00">Last updated: May 28, 2026, 00:03 CEST</time>
         <div class="meta" aria-label="Project status">
           <span class="pill">Targeted journal tests passing</span>
-          <span class="pill">Local candidate-for-review proof</span>
+          <span class="pill">Complex local candidate proof</span>
           <span class="pill">Durable DB journal accepted</span>
+          <span class="pill">22 checked mutations</span>
+          <span class="pill">9 remote-drift conflicts held</span>
           <span class="pill">Docker unavailable in sandbox</span>
+          <span class="pill">Full Woo import timed out at auth gate</span>
           <span class="pill">Runtime proof fails closed</span>
           <span class="pill">Graph post identity mapped</span>
           <span class="pill">Release-state plugin driver guarded</span>
@@ -505,8 +508,8 @@
         <span>durable local release proof</span>
       </div>
       <div class="metric">
-        <strong>8</strong>
-        <span>graph smoke mutations</span>
+        <strong>22</strong>
+        <span>complex proof mutations</span>
       </div>
       <div class="metric">
         <strong>0</strong>
@@ -522,33 +525,33 @@
         </div>
 
         <div class="lane">
-          <div class="lane-head"><strong>No Data Loss: merge invariants</strong><span class="percent">54%</span></div>
-          <div class="bar" aria-label="No data loss merge invariants 54 percent"><div class="fill green" style="width:54%"></div></div>
-          <p class="note">Independent delete/edit, local production release-state drift, checked apply refusal, and a real Playground post/postmeta author graph identity now pass. Gap: broader WordPress graph surfaces and general plugin drivers.</p>
+          <div class="lane-head"><strong>No Data Loss: merge invariants</strong><span class="percent">55%</span></div>
+          <div class="bar" aria-label="No data loss merge invariants 55 percent"><div class="fill green" style="width:55%"></div></div>
+          <p class="note">Independent delete/edit, local production release-state drift, checked apply refusal, a real Playground post/postmeta author graph identity, and a 22-mutation complex local plan now pass. The remote-drift plan fails closed with 9 preserve-remote conflicts. Gap: broader WordPress graph surfaces and general plugin drivers.</p>
         </div>
 
         <div class="lane">
-          <div class="lane-head"><strong>No Data Loss: recovery boundaries</strong><span class="percent">45%</span></div>
-          <div class="bar" aria-label="No data loss recovery boundaries 45 percent"><div class="fill green" style="width:45%"></div></div>
-          <p class="note">The live local topology now accepts a restart-readable DB journal with `wpdb-single-statement-cas` lease-fence storage guards and stale-claim rejection. Gap: Docker/external crash durability and broader resource recovery.</p>
+          <div class="lane-head"><strong>No Data Loss: recovery boundaries</strong><span class="percent">46%</span></div>
+          <div class="bar" aria-label="No data loss recovery boundaries 46 percent"><div class="fill green" style="width:46%"></div></div>
+          <p class="note">The live local topology now accepts a restart-readable DB journal with `wpdb-single-statement-cas` lease-fence storage guards, stale-claim rejection, and 22 mutation-applied journal events. Gap: Docker/external crash durability and broader resource recovery.</p>
         </div>
 
         <div class="lane">
-          <div class="lane-head"><strong>Reliable executor and protocol</strong><span class="percent">60%</span></div>
-          <div class="bar" aria-label="Reliable executor and protocol 60 percent"><div class="fill amber" style="width:60%"></div></div>
-          <p class="note">The release verifier reports `LIVE_RELEASE_BOUNDARY_OK` locally, and the runtime capability proof now fails closed with the exact Docker/external command. Gap: Docker/external production runtime, credential lifecycle, and general plugin drivers.</p>
+          <div class="lane-head"><strong>Reliable executor and protocol</strong><span class="percent">61%</span></div>
+          <div class="bar" aria-label="Reliable executor and protocol 61 percent"><div class="fill amber" style="width:61%"></div></div>
+          <p class="note">The release verifier reports `LIVE_RELEASE_BOUNDARY_OK` locally with a 22-mutation receipt, auth/session continuity, durable journal readback, and replay equivalence. Gap: Docker/external production runtime, credential lifecycle, and general plugin drivers.</p>
         </div>
 
         <div class="lane">
-          <div class="lane-head"><strong>Fast path and chunking</strong><span class="percent">20%</span></div>
-          <div class="bar" aria-label="Fast path and chunking 20 percent"><div class="fill" style="width:20%"></div></div>
-          <p class="note">The Brewcommerce-derived topology is ready for runtime benchmarking, but no large-site chunk proof has landed. Gap: guarded benchmark and rollout proof.</p>
+          <div class="lane-head"><strong>Fast path and chunking</strong><span class="percent">24%</span></div>
+          <div class="bar" aria-label="Fast path and chunking 24 percent"><div class="fill" style="width:24%"></div></div>
+          <p class="note">The Brewcommerce-derived topology now has a bounded complex-site receipt and journal proof. The larger 35-mutation attempt failed closed on the current journal readback window, and no large chunk proof has landed. Gap: guarded chunk benchmark and rollout proof.</p>
         </div>
 
         <div class="lane">
-          <div class="lane-head"><strong>Independent evidence and critique</strong><span class="percent">51%</span></div>
-          <div class="bar" aria-label="Independent evidence and critique 51 percent"><div class="fill red" style="width:51%"></div></div>
-          <p class="note">Durable local production, runtime capability, and graph identity proofs are tmux-visible and pushed on separate lanes. Gap: independent re-audit against Docker/external WordPress and general plugin drivers.</p>
+          <div class="lane-head"><strong>Independent evidence and critique</strong><span class="percent">53%</span></div>
+          <div class="bar" aria-label="Independent evidence and critique 53 percent"><div class="fill red" style="width:53%"></div></div>
+          <p class="note">Durable local production, runtime capability, graph identity, and complex-site local production proofs are tmux-visible. Gap: independent re-audit against Docker/external WordPress and general plugin drivers.</p>
         </div>
       </section>
 
@@ -556,10 +559,10 @@
         <section class="panel" aria-labelledby="supervisor-feedback">
           <h2 id="supervisor-feedback">Supervisor Feedback</h2>
           <ul class="compact-list">
-            <li><strong>Going well</strong><span>The durable local-production proof is still green, and the graph lane now maps a real Playground postmeta row through the created post author identity.</span></li>
-            <li><strong>Not going well</strong><span>Docker is not installed in this sandbox, and final readiness still lacks external WordPress and general plugin-driver proof.</span></li>
-            <li><strong>Progress change</strong><span>`main:graph-id-proof` passed `npm run test:playground:push-protocol` with an 8-mutation ready plan and no `wp_users` mutation; `main:runtime-proof` pushed a fail-closed runtime proof.</span></li>
-            <li><strong>Next nudge</strong><span>Use the complex local production site as the next substitute, while keeping Docker/external runtime as the release blocker.</span></li>
+            <li><strong>Going well</strong><span>The complex-site local production proof passed with 22 mutations, 22 preconditions, receipt binding, auth/session continuity, durable DB-journal gates, and replay equivalence.</span></li>
+            <li><strong>Not going well</strong><span>Full Brewcommerce/WooCommerce import booted but failed closed at the auth/session preflight timeout. Docker is still not installed in this sandbox, and final readiness still lacks external WordPress and general plugin-driver proof.</span></li>
+            <li><strong>Progress change</strong><span>`npm run verify:release:local-production:complex-site` passed; the larger 35-mutation attempt exposed a bounded journal readback limit and was not accepted.</span></li>
+            <li><strong>Next nudge</strong><span>Expand journal pagination/receipt windows or move the same proof to Docker/external WordPress while keeping final release held.</span></li>
           </ul>
           <p class="note"><a href="docs/supervisor-feedback.md">Open full feedback log</a></p>
         </section>
@@ -568,6 +571,8 @@
           <h2 id="latest-evidence">Latest Evidence</h2>
           <ul class="link-list">
             <li><a href="scripts/playground/local-production-release-verify.mjs">Local production release verifier</a></li>
+            <li><a href="scripts/playground/local-production-complex-site-proof.js">Complex local production proof helper</a></li>
+            <li><a href="test/local-production-complex-site-proof.test.js">Complex local production proof test</a></li>
             <li><a href="scripts/playground/push-db-journal-lib.php">Durable DB journal library</a></li>
             <li><a href="scripts/playground/runtime-capability-proof.mjs">Runtime capability proof</a></li>
             <li><a href="docs/audits/runtime-capability-proof-20260527.md">Runtime capability audit</a></li>
@@ -592,11 +597,11 @@
         <section class="panel" aria-labelledby="proof-gates">
           <h2 id="proof-gates">Pending Proof Gates</h2>
           <div class="proof-list">
-            <div class="proof-item"><span class="status">Local candidate</span><p>`verify:release:local-production` runs against live local WordPress URLs and reports `releaseMovement.allowed: true` with `gates: candidate-for-review`.</p></div>
+            <div class="proof-item"><span class="status">Local candidate</span><p>`verify:release:local-production:complex-site` runs against live local WordPress URLs and reports `releaseMovement.allowed: true` with `gates: candidate-for-review` for a bounded 22-mutation complex site.</p></div>
             <div class="proof-item"><span class="status">Covered locally</span><p>Auth-session source readback, restart-readable DB journal ownership, lease fencing, stale-claim rejection, and replay/retry are proven in the local topology.</p></div>
             <div class="proof-item"><span class="status">Covered locally</span><p>The graph identity smoke maps a real Playground post/postmeta author identity and keeps menu/navigation surfaces fail-closed.</p></div>
             <div class="proof-item"><span class="status">Pending</span><p>Docker or external WordPress runtime with the same durable journal and credential lifecycle evidence.</p></div>
-            <div class="proof-item"><span class="status">Partial</span><p>Brewcommerce-derived local Playground integration exists; Docker remains unavailable in this sandbox.</p></div>
+            <div class="proof-item"><span class="status">Blocked</span><p>Full Brewcommerce/WooCommerce import booted four sites but failed closed when the checked source auth/session preflight timed out.</p></div>
             <div class="proof-item"><span class="status">Pending</span><p>General plugin drivers, broader WordPress graph surfaces, external runtime crash durability, and rollback.</p></div>
           </div>
         </section>
@@ -605,7 +610,7 @@
           <figure class="evidence-map">
             <figcaption>
               <h2 id="evidence-map-title">Evidence Path</h2>
-              <p>Snapshots feed guarded plans; local production Playground sites now prove release-state apply refusal, durable DB journal lease fencing, and one real post/postmeta graph identity. Docker/external storage and broader plugin safety remain pending.</p>
+              <p>Snapshots feed guarded plans; local production Playground sites now prove release-state apply refusal, durable DB journal lease fencing, one real post/postmeta graph identity, and a bounded 22-mutation complex-site receipt path. Docker/external storage and broader plugin safety remain pending.</p>
             </figcaption>
             <svg role="img" viewBox="0 0 720 190" aria-labelledby="map-title map-desc">
               <title id="map-title">Current evidence path</title>
