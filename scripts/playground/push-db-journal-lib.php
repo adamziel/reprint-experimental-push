@@ -1013,6 +1013,7 @@ function reprint_push_lab_db_journal_checked_boundary_event_summaries_evidence_m
         if (
             is_array($event_summary)
             && reprint_push_lab_db_journal_non_empty_string($event_summary['event'] ?? null)
+            && reprint_push_lab_db_journal_is_positive_int($event_summary['count'] ?? null)
             && reprint_push_lab_db_journal_is_positive_int($event_summary['latestId'] ?? null)
         ) {
             return true;
@@ -1084,6 +1085,7 @@ function reprint_push_lab_db_journal_checked_boundary_stale_claim_evidence_match
         $event = (string) ($summary['event'] ?? '');
         if (
             ($event === 'stale-claim-abandoned' || $event === 'stale-claim-rejected')
+            && reprint_push_lab_db_journal_is_positive_int($summary['count'] ?? null)
             && reprint_push_lab_db_journal_is_positive_int($summary['latestId'] ?? null)
             && (int) ($summary['latestId'] ?? 0) >= $stale_claim_evidence_floor
         ) {
@@ -1353,6 +1355,9 @@ function reprint_push_lab_db_journal_has_stale_claim_rejection_evidence(
             $event === 'stale-claim-abandoned'
             || $event === 'stale-claim-rejected'
         ) {
+            if (!reprint_push_lab_db_journal_is_positive_int($summary['count'] ?? null)) {
+                continue;
+            }
             if (!reprint_push_lab_db_journal_is_positive_int($summary['latestId'] ?? null)) {
                 continue;
             }

@@ -132,7 +132,9 @@ function checkedBoundaryLatestRowsEvidenceMatches(latestRows) {
 
 function checkedBoundaryEventSummariesEvidenceMatches(eventSummaries) {
   return eventSummaries.some(
-    (summary) => hasNonEmptyString(summary?.event) && isPositiveInteger(summary?.latestId),
+    (summary) => hasNonEmptyString(summary?.event)
+      && isPositiveInteger(summary?.count)
+      && isPositiveInteger(summary?.latestId),
   );
 }
 
@@ -164,6 +166,7 @@ function checkedBoundaryStaleClaimEvidenceMatches(dbJournal) {
   for (const summary of Array.isArray(dbJournal?.eventSummaries) ? dbJournal.eventSummaries : []) {
     if (
       checkedBoundaryStaleClaimEventMatches(summary?.event)
+      && isPositiveInteger(summary?.count)
       && isPositiveInteger(summary?.latestId)
       && summary.latestId >= staleClaimEvidenceFloor
     ) {

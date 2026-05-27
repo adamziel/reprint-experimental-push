@@ -6739,6 +6739,19 @@ test('db journal stale-claim evidence rejects retry-started markers without an a
   assert.equal(JSON.parse(fromEventSummaries.stdout), false);
 });
 
+test('db journal stale-claim evidence rejects zero-count stale-claim summaries', { skip: !hasPhp }, () => {
+  const fromEventSummaries = runHasStaleClaimRejectionEvidence(
+    [
+      { sequence: 61, event: 'apply-committed' },
+    ],
+    [
+      { event: 'stale-claim-rejected', count: 0, latestId: 62 },
+    ],
+  );
+  assert.equal(fromEventSummaries.status, 0, fromEventSummaries.stderr);
+  assert.equal(JSON.parse(fromEventSummaries.stdout), false);
+});
+
 test('db journal writer lease contract preserves observed checked-boundary evidence instead of hard-coding stronger guarantees', { skip: !hasPhp }, () => {
   const result = runWriterLeaseContract({
     staleClaimRejected: true,
@@ -7222,6 +7235,19 @@ test('checked db journal boundary contract fails closed when persisted journal a
     eventSummaries: [
       {
         count: 1,
+        latestId: 20,
+      },
+    ],
+  });
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(JSON.parse(result.stdout), false);
+
+  result = runCheckedBoundaryContractMatches({
+    ...baseJournal,
+    eventSummaries: [
+      {
+        event: 'stale-claim-rejected',
+        count: 0,
         latestId: 20,
       },
     ],
