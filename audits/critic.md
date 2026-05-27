@@ -1,20 +1,22 @@
 # Critic Verdict
 
-Current reliable head: `578c708487d4fff6ba97be498f844714ccde2b76`
-(`Honor explicit live topology in release verify`).
+Current reliable head: `1e0a553b731b6b3a09619547f2be4beed7a547c2`
+(`Honor explicit live drift topology`).
 
-Previous classified reliable head: `051fe7f44a2dd400d4f1e08c7cff4f745e944a02`
-(`Use production snapshot export for live source verify`).
+Previous classified reliable head: `578c708487d4fff6ba97be498f844714ccde2b76`
+(`Honor explicit live topology in release verify`).
 
 Verdict: `0/4`
 
 Reason:
 
 - I repolled `origin/lane/reliable-executor` and confirmed it points at
-  `578c708487d4fff6ba97be498f844714ccde2b76`.
-- The `051fe7f4..578c7084` delta only adds a helper that selects the explicit
-  live topology for the checked release verifier and adjusts the proof fixture
-  to assert that topology on explicit live runs. It still stays inside
+  `1e0a553b731b6b3a09619547f2be4beed7a547c2`.
+- The `578c7084..1e0a553b` delta only adds explicit live drift topology wiring
+  for the checked release verifier. It threads
+  `REPRINT_PUSH_REMOTE_CHANGED_URL` into the explicit live-source proof path,
+  adjusts the checked topology resolver to prefer that URL when provided, and
+  updates the proof fixture assertions accordingly. It still stays inside
   `scripts/playground/production-shaped-live-release-verify-lib.js`,
   `scripts/playground/production-shaped-release-verify.mjs`, and
   `test/production-shaped-proof.test.js`.
@@ -25,9 +27,9 @@ Reason:
   lease-fenced ownership, preserves the rejected remote evidence for audit, and
   performs apply-time revalidation before the first mutation on that same live
   boundary.
-- So the verdict remains `0/4`: `578c7084` clarifies explicit live topology
-  selection on the checked verifier path, but it still does not prove the
-  missing production-owned, non-lab-backed checked release boundary.
+- So the verdict remains `0/4`: `1e0a553b` clarifies explicit live drift
+  topology selection on the checked verifier path, but it still does not prove
+  the missing production-owned, non-lab-backed checked release boundary.
 
 Next exact reliable-owned primitive:
 
