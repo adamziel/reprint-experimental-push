@@ -2060,7 +2060,13 @@ function optionalWriterLeaseIdentityMatches(left, right, key) {
 function recoveryJournalConsumedRecord(records) {
   return [...(Array.isArray(records) ? records : [])]
     .reverse()
-    .find((record) => record?.type === 'recovery-journal-consumed') || null;
+    .find((record) => (
+      record !== null
+      && typeof record === 'object'
+      && Object.hasOwn(record, 'type')
+      && !hasHiddenOwnStringProperty(record, 'type')
+      && record.type === 'recovery-journal-consumed'
+    )) || null;
 }
 
 function consumedRecoveryClaimSummary(records) {
