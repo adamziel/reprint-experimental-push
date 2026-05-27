@@ -5216,6 +5216,87 @@ test('packaged release verifier readiness helper fails closed when signed prefli
   ]);
 });
 
+test('packaged release verifier readiness helper fails closed when signed preflight auth session id is missing after snapshot readiness succeeds', async () => {
+  const readySnapshotBody = JSON.stringify({
+    ok: true,
+    snapshot: {},
+  });
+  const missingAuthSessionIdBody = JSON.stringify({
+    ok: true,
+    routeProfile: {
+      profile: 'production-shaped',
+      restNamespace: 'reprint/v1',
+      routePrefix: '/push',
+      labBacked: false,
+    },
+    auth: {
+      session: {
+        status: 'active',
+        type: 'production-auth-session',
+        expiresAt: '2099-01-01T00:00:00Z',
+      },
+    },
+    session: {
+      id: 'session_123',
+      type: 'production-auth-session',
+    },
+  });
+  const fetchCalls = [];
+  const helper = buildPackagedReleaseVerifierWaitHelper({
+    fetchTextWithTimeout: async (url) => {
+      fetchCalls.push(url);
+      if (url.endsWith('/wp-json/reprint/v1/push/snapshot')) {
+        return {
+          response: {
+            status: 200,
+            ok: true,
+          },
+          bodyText: readySnapshotBody,
+        };
+      }
+      if (url.endsWith('/wp-json/reprint/v1/push/preflight')) {
+        return {
+          response: {
+            status: 200,
+            ok: true,
+          },
+          bodyText: missingAuthSessionIdBody,
+        };
+      }
+      throw new Error(`unexpected readiness fetch ${url}`);
+    },
+    fetchPackagedPreflightProbe: async () => {
+      throw new Error('unexpected snapshot-startup fallback preflight probe');
+    },
+    throwPlaygroundReadinessFailure: async (child, prefix) => {
+      const error = new Error(prefix);
+      error.isPlaygroundReadinessFailure = true;
+      throw error;
+    },
+  });
+  const child = {
+    exitCode: null,
+    signalCode: null,
+    pid: 9465,
+  };
+
+  await assert.rejects(
+    helper(child, 'http://127.0.0.1:65535', () => 'packaged server boot log'),
+    (error) => {
+      assert.match(
+        error.message,
+        /Packaged production plugin signed preflight returned an invalid readiness body at http:\/\/127\.0\.0\.1:65535/,
+      );
+      return true;
+    },
+  );
+
+  assert.deepEqual(fetchCalls, [
+    'http://127.0.0.1:65535/wp-json/reprint/v1/push/snapshot',
+    'http://127.0.0.1:65535/wp-json/reprint/v1/push/preflight',
+  ]);
+});
+
 test('packaged release verifier readiness helper fails closed when signed preflight auth session has the wrong type after snapshot readiness succeeds', async () => {
   const readySnapshotBody = JSON.stringify({
     ok: true,
@@ -7455,6 +7536,94 @@ test('packaged production plugin smoke readiness helper fails closed when signed
     exitCode: null,
     signalCode: null,
     pid: 9466,
+  };
+
+  await assert.rejects(
+    helper(child, 'http://127.0.0.1:65535', ['packaged smoke boot log']),
+    (error) => {
+      assert.match(
+        error.message,
+        /Packaged production plugin signed preflight returned an invalid readiness body at http:\/\/127\.0\.0\.1:65535/,
+      );
+      return true;
+    },
+  );
+
+  assert.deepEqual(fetchCalls, [
+    'http://127.0.0.1:65535/wp-json/reprint/v1/push/snapshot',
+    'http://127.0.0.1:65535/wp-json/reprint/v1/push/preflight',
+  ]);
+});
+
+test('packaged production plugin smoke readiness helper fails closed when signed preflight auth session id is missing after snapshot readiness succeeds', async () => {
+  const readySnapshotBody = JSON.stringify({
+    ok: true,
+    snapshot: {},
+  });
+  const missingAuthSessionIdBody = JSON.stringify({
+    ok: true,
+    routeProfile: {
+      profile: 'production-shaped',
+      restNamespace: 'reprint/v1',
+      routePrefix: '/push',
+      labBacked: false,
+    },
+    auth: {
+      session: {
+        status: 'active',
+        type: 'production-auth-session',
+        expiresAt: '2099-01-01T00:00:00Z',
+      },
+    },
+    session: {
+      id: 'session_123',
+      type: 'production-auth-session',
+    },
+  });
+  const fetchCalls = [];
+  const helper = buildPackagedSmokeWaitHelper({
+    packagedProductionPluginRouteStartupClassificationReady: () => {
+      throw new Error('unexpected route startup classification during missing auth session id runtime proof');
+    },
+    fetchPackagedWordPressIndexProbe: async () => {
+      throw new Error('unexpected /wp-json/ probe during missing auth session id runtime proof');
+    },
+    sleepUnlessChildExit: async () => {
+      throw new Error('unexpected readiness sleep during missing auth session id runtime proof');
+    },
+    fetchPackagedTimeoutFallbackProbes: async () => {
+      throw new Error('unexpected timeout fallback probes during missing auth session id runtime proof');
+    },
+    fetchTextWithTimeout: async (url) => {
+      fetchCalls.push(url);
+      if (url.endsWith('/wp-json/reprint/v1/push/snapshot')) {
+        return {
+          response: {
+            status: 200,
+            ok: true,
+          },
+          bodyText: readySnapshotBody,
+        };
+      }
+      if (url.endsWith('/wp-json/reprint/v1/push/preflight')) {
+        return {
+          response: {
+            status: 200,
+            ok: true,
+          },
+          bodyText: missingAuthSessionIdBody,
+        };
+      }
+      throw new Error(`unexpected readiness fetch ${url}`);
+    },
+    fetchPackagedPreflightProbe: async () => {
+      throw new Error('unexpected snapshot-startup fallback preflight probe');
+    },
+  });
+  const child = {
+    exitCode: null,
+    signalCode: null,
+    pid: 9467,
   };
 
   await assert.rejects(

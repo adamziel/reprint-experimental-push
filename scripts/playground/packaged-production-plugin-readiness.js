@@ -164,11 +164,11 @@ function packagedProductionPluginSessionIdentityReady(preflight) {
   const topLevelSessionId = preflight?.body?.session?.id;
   const authSessionId = preflight?.body?.auth?.session?.id;
 
-  if (typeof authSessionId !== 'string' || authSessionId.length === 0) {
-    return true;
-  }
-
-  return topLevelSessionId === authSessionId;
+  return typeof topLevelSessionId === 'string'
+    && topLevelSessionId.length > 0
+    && typeof authSessionId === 'string'
+    && authSessionId.length > 0
+    && topLevelSessionId === authSessionId;
 }
 
 export function packagedProductionPluginRestIndexReady(status, bodyText = '') {
