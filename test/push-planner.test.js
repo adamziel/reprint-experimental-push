@@ -36084,6 +36084,63 @@ test('blocks local comments graph resources while preserving a matching independ
   assert.equal(Object.hasOwn(remote.files, 'wp-content/plugins/forms/forms.php'), false);
 });
 
+test('blocks local comments graph resources while preserving a matching independent file type swap and remote-only plugin changes', () => {
+  const resourceKey = 'row:["wp_comments","comment_ID:19"]';
+  const matchingTypeSwapKey = 'file:wp-content/uploads/comments-type-swap';
+  const base = baseSite();
+  base.files[matchingTypeSwapKey.replace('file:', '')] = 'Base comments type swap bytes';
+  base.db.wp_comments = {
+    'comment_ID:19': {
+      comment_ID: 19,
+      comment_post_ID: 7,
+      comment_content: 'Base matching comments type swap content',
+      comment_approved: '1',
+    },
+  };
+
+  const local = baseSite();
+  local.files[matchingTypeSwapKey.replace('file:', '')] = { type: 'directory' };
+  local.db.wp_comments = {
+    'comment_ID:19': {
+      comment_ID: 19,
+      comment_post_ID: 7,
+      comment_content: 'Local matching comments type swap content',
+      comment_approved: '1',
+    },
+  };
+
+  const remote = baseSite();
+  remote.files[matchingTypeSwapKey.replace('file:', '')] = { type: 'directory' };
+  remote.db.wp_comments = JSON.parse(JSON.stringify(base.db.wp_comments));
+  remote.plugins.forms.description = 'remote-only plugin changes';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin changes */';
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers[0];
+  const matchingTypeSwap = decisionFor(plan, matchingTypeSwapKey);
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(plan.conflicts.length, 0);
+  assert.equal(blocker.class, 'unsupported-comments-users-resource');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.reason, 'Comments graph resources are not yet supported by the planner.');
+  assert.equal(matchingTypeSwap.decision, 'already-in-sync');
+  assert.equal(matchingTypeSwap.change.localChange, 'type-change');
+  assert.equal(matchingTypeSwap.change.remoteChange, 'type-change');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('Local matching comments type swap content'), false);
+  assert.equal(planJson.includes('Base matching comments type swap content'), false);
+  assert.equal(planJson.includes('Base comments type swap bytes'), false);
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin changes');
+  assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin changes */');
+});
+
 test('blocks local same-plan created comment user target identity while preserving remote-only plugin drift', () => {
   const resourceKey = 'row:["wp_comments","comment_ID:22"]';
   const targetResourceKey = 'row:["wp_users","ID:7"]';
